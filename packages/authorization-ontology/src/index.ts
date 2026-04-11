@@ -503,6 +503,31 @@ export interface CerbosDerivedRolesProjectionInput {
   sourceRef?: string;
 }
 
+export interface CerbosPolicySourceMetadata {
+  sourceRef?: string;
+  bundleId?: string;
+  revision?: string;
+  path?: string;
+}
+
+export interface CerbosPolicySourceProjectionInput {
+  policyRealm: AuthorizationRealm;
+  resourceRealm: AuthorizationRealm;
+  actionRealm?: AuthorizationRealm;
+  roleRealm?: AuthorizationRealm;
+  source: string | CerbosResourcePolicyLike | CerbosDerivedRolesLike;
+  sourceType?: "json" | "object";
+  metadata?: CerbosPolicySourceMetadata;
+}
+
+export type CerbosPolicySourceKind = "resource_policy" | "derived_roles";
+
+export interface CerbosPolicySourceProjectionResult {
+  sourceKind: CerbosPolicySourceKind;
+  graph: AuthorizationOntologyGraph;
+  metadata: CerbosPolicySourceMetadata;
+}
+
 export const LINEAGE_AUTHORIZATION_TRANSFORMS = [
   "direct",
   "rename",
@@ -1943,6 +1968,90 @@ export function projectCerbosDerivedRoles(
     realms: [input.policyRealm, roleRealm],
     nodes: uniqueNodes([policyNode, ...derivedRoleNodes, ...parentRoleNodes]),
     relations: uniqueRelations(relations),
+  };
+}
+
+function parseCerbosPolicySource(
+  source: CerbosPolicySourceProjectionInput["source"],
+): CerbosResourcePolicyLike | CerbosDerivedRolesLike {
+  if (typeof source !== "string") {
+    return source;
+  }
+  try {
+    return JSON.parse(source) as CerbosResourcePolicyLike | CerbosDerivedRolesLike;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown parse error";
+    throw new Error(`Invalid Cerbos policy JSON source: ${message}`);
+  }
+}
+
+function detectCerbosPolicySourceKind(
+  source: CerbosResourcePolicyLike | CerbosDerivedRolesLike,
+): CerbosPolicySourceKind {
+  if ("resourcePolicy" in source) return "resource_policy";
+  if ("derivedRoles" in source) return "derived_roles";
+  throw new Error("Unsupported Cerbos policy source: expected resourcePolicy or derivedRoles");
+}
+
+function sourceRefFromMetadata(metadata: CerbosPolicySourceMetadata = {}): string | undefined {
+  if (metadata.sourceRef) return metadata.sourceRef;
+  const parts = [metadata.bundleId, metadata.path, metadata.revision].filter(
+    (part): part is string => Boolean(part),
+  );
+  return parts.length > 0 ? parts.join("@") : undefined;
+}
+
+function annotateGraphSourceMetadata(
+  graph: AuthorizationOntologyGraph,
+  metadata: CerbosPolicySourceMetadata,
+): AuthorizationOntologyGraph {
+  if (!metadata.bundleId && !metadata.path && !metadata.revision) {
+    return graph;
+  }
+  return {
+    ...graph,
+    nodes: graph.nodes.map((node) =>
+      node.kind === "policy"
+        ? {
+            ...node,
+            metadata: {
+              ...(node.metadata ?? {}),
+              bundleId: metadata.bundleId,
+              path: metadata.path,
+              revision: metadata.revision,
+            },
+          }
+        : node,
+    ),
+  };
+}
+
+export function projectCerbosPolicySource(
+  input: CerbosPolicySourceProjectionInput,
+): CerbosPolicySourceProjectionResult {
+  const source = parseCerbosPolicySource(input.source);
+  const sourceKind = detectCerbosPolicySourceKind(source);
+  const sourceRef = sourceRefFromMetadata(input.metadata);
+  const graph =
+    sourceKind === "resource_policy"
+      ? projectCerbosResourcePolicy({
+          policyRealm: input.policyRealm,
+          resourceRealm: input.resourceRealm,
+          actionRealm: input.actionRealm,
+          policy: source as CerbosResourcePolicyLike,
+          sourceRef,
+        })
+      : projectCerbosDerivedRoles({
+          policyRealm: input.policyRealm,
+          roleRealm: input.roleRealm,
+          derivedRoles: source as CerbosDerivedRolesLike,
+          sourceRef,
+        });
+
+  return {
+    sourceKind,
+    graph: annotateGraphSourceMetadata(graph, input.metadata ?? {}),
+    metadata: input.metadata ?? {},
   };
 }
 

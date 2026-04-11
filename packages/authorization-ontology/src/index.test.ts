@@ -18,6 +18,7 @@ import {
   projectAuthorizationDecision,
   projectCerbosDecisionObservation,
   projectCerbosDerivedRoles,
+  projectCerbosPolicySource,
   projectCerbosResourcePolicy,
   projectColumnPolicyPropagation,
   projectEnforcementRoute,
@@ -205,6 +206,82 @@ describe("authorization-ontology", () => {
       "derives_role_from",
       "imports_derived_role",
     ]);
+  });
+
+  it("projects Cerbos JSON policy sources with source metadata", () => {
+    const policyRealm = createAuthorizationRealm({
+      kind: "policy",
+      authority: "cerbos:prod",
+      environment: "prod",
+    });
+    const resourceRealm = createAuthorizationRealm({
+      kind: "application",
+      authority: "service:crm",
+      environment: "prod",
+    });
+    const result = projectCerbosPolicySource({
+      policyRealm,
+      resourceRealm,
+      source: JSON.stringify({
+        resourcePolicy: {
+          resource: "crm.customer_profile",
+          version: "v1",
+          rules: [
+            {
+              actions: ["read"],
+              effect: "EFFECT_ALLOW",
+              roles: ["analyst"],
+            },
+          ],
+        },
+      }),
+      metadata: {
+        bundleId: "cerbos-bundle:prod",
+        path: "policies/crm/customer.yaml",
+        revision: "rev-1",
+      },
+    });
+
+    expect(result.sourceKind).toBe("resource_policy");
+    expect(result.graph.nodes.find((node) => node.kind === "policy")?.metadata).toEqual(
+      expect.objectContaining({
+        sourceRef: "cerbos-bundle:prod@policies/crm/customer.yaml@rev-1",
+        bundleId: "cerbos-bundle:prod",
+        path: "policies/crm/customer.yaml",
+        revision: "rev-1",
+      }),
+    );
+
+    const derivedRolesResult = projectCerbosPolicySource({
+      policyRealm,
+      resourceRealm,
+      source: {
+        derivedRoles: {
+          name: "crm_derived_roles",
+          definitions: [
+            {
+              name: "regional_analyst",
+              parentRoles: ["analyst"],
+            },
+          ],
+        },
+      },
+      metadata: {
+        sourceRef: "git://policy-repo/derived_roles.yaml@rev-1",
+      },
+    });
+    expect(derivedRolesResult.sourceKind).toBe("derived_roles");
+    expect(derivedRolesResult.graph.relations.map((relation) => relation.kind)).toEqual(
+      expect.arrayContaining(["imports_derived_role", "derives_role_from"]),
+    );
+
+    expect(() =>
+      projectCerbosPolicySource({
+        policyRealm,
+        resourceRealm,
+        source: "{ invalid json",
+      }),
+    ).toThrow("Invalid Cerbos policy JSON source");
   });
 
   it("classifies column-level policy propagation by lineage transform", () => {

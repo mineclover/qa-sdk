@@ -34,8 +34,9 @@ def:
 
 ### Policy Source Adapter
 
-- [ ] Cerbos YAML/JSON loader 추가
-- [ ] Cerbos bundle/sourceRef/version metadata adapter 추가
+- [x] Cerbos JSON loader 추가
+- [ ] Cerbos YAML loader 추가
+- [x] Cerbos bundle/sourceRef/version metadata adapter 추가
 - [ ] Caddy config adapter 추가
 - [ ] Authentik outpost/application adapter 추가
 - [ ] ArgoCD/Pulumi output에서 route-policy map 자동 생성

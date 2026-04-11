@@ -28,6 +28,7 @@ def:
 - `AuthorizationNode`
 - `AuthorizationRelation`
 - `projectCerbosResourcePolicy`
+- `projectCerbosPolicySource`
 - `evaluateColumnPolicyPropagation`
 - `projectColumnPolicyPropagation`
 - `createAuthorizationDecisionNode`
