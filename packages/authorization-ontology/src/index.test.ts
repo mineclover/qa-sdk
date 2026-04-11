@@ -29,11 +29,25 @@ import {
   projectStructuredApplicationAuthorization,
   projectStructuredEnforcementRoute,
   parseNginxProxyLocations,
+  authorizationOntologyPack,
   validateCerbosDerivedRolesLike,
+  validateAuthorizationOntologyPack,
   validateCerbosResourcePolicyLike,
 } from "./index.js";
 
 describe("authorization-ontology", () => {
+  it("declares a valid operational ontology pack", () => {
+    const validation = validateAuthorizationOntologyPack();
+
+    expect(authorizationOntologyPack.packId).toBe("authorization-ontology");
+    expect(validation.valid).toBe(true);
+    expect(validation.issues).toEqual([]);
+    expect(validation.blueprintValidations.map((item) => item.blueprintId)).toEqual([
+      "authorization-decision-observation",
+      "authorization-graph-audit",
+    ]);
+  });
+
   it("projects Cerbos resource policies into policy/resource/action graph", () => {
     const policyRealm = createAuthorizationRealm({
       kind: "policy",

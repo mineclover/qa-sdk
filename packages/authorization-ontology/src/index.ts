@@ -2,10 +2,13 @@ import {
   createEdgeCanonicalKey,
   createInformationFacetRef,
   createNodeCoord,
+  validateOperationalOntologyPack,
   type DataLineageLink,
   type InformationFacetKind,
   type InformationFacetRef,
   type NodeCoord,
+  type OperationalOntologyPack,
+  type OperationalOntologyPackValidationResult,
 } from "operational-ontology";
 
 export const AUTHORIZATION_REALM_KINDS = [
@@ -3462,4 +3465,159 @@ export function createAuthorizationFacetRef(
     nodeId: node.nodeId,
     facetKind,
   });
+}
+
+export const authorizationOntologyPack = {
+  packId: "authorization-ontology",
+  schema: {
+    axes: [
+      {
+        id: "authorization_node_kind",
+        values: [...AUTHORIZATION_NODE_KINDS],
+      },
+      {
+        id: "authorization_resource_kind",
+        values: [...AUTHORIZATION_RESOURCE_KINDS],
+      },
+      {
+        id: "authorization_relation_kind",
+        values: [...AUTHORIZATION_RELATION_KINDS],
+      },
+      {
+        id: "authorization_decision_effect",
+        values: ["allow", "deny"],
+      },
+      {
+        id: "authorization_enforcement_kind",
+        values: [
+          "cloud_lb",
+          "caddy",
+          "nginx_proxy",
+          "authentik_proxy",
+          "service_middleware",
+          "cerbos_pdp",
+        ],
+      },
+      {
+        id: "authorization_lineage_transform",
+        values: [...LINEAGE_AUTHORIZATION_TRANSFORMS],
+      },
+    ],
+    taxonomies: [
+      {
+        id: "authorization-node",
+        appliesTo: ["node"],
+        axisIds: ["authorization_node_kind"],
+        identityAxisIds: ["authorization_node_kind"],
+        space: "authorization",
+      },
+      {
+        id: "authorization-resource",
+        appliesTo: ["node"],
+        axisIds: ["authorization_resource_kind"],
+        identityAxisIds: ["authorization_resource_kind"],
+        space: "authorization",
+      },
+      {
+        id: "authorization-decision",
+        appliesTo: ["node"],
+        axisIds: ["authorization_decision_effect"],
+        identityAxisIds: ["authorization_decision_effect"],
+        space: "authorization",
+      },
+      {
+        id: "authorization-enforcement",
+        appliesTo: ["node"],
+        axisIds: ["authorization_enforcement_kind"],
+        identityAxisIds: ["authorization_enforcement_kind"],
+        space: "authorization",
+      },
+      {
+        id: "authorization-lineage",
+        appliesTo: ["edge"],
+        axisIds: ["authorization_lineage_transform"],
+        identityAxisIds: ["authorization_lineage_transform"],
+        space: "authorization",
+      },
+    ],
+    relationCategories: [
+      {
+        category: "authorization_relation",
+        requiredAxes: ["authorization_relation_kind"],
+      },
+      {
+        category: "authorization_lineage",
+        requiredAxes: ["authorization_lineage_transform"],
+      },
+      {
+        category: "authorization_decision_effect",
+        requiredAxes: ["authorization_decision_effect"],
+      },
+    ],
+    traversals: [
+      {
+        purpose: "authorization_audit",
+        allowedRelationCategories: [
+          "authorization_relation",
+          "authorization_lineage",
+          "authorization_decision_effect",
+        ],
+        canonicalizable: true,
+      },
+    ],
+  },
+  blueprints: [
+    {
+      blueprintId: "authorization-decision-observation",
+      coordinateRef: "checkpoint:authorization-decision",
+      unitKind: "checkpoint_lattice",
+      requiredSchemas: ["authorization-decision", "authorization_relation"],
+      implementationBinding: {
+        coordinateRef: "checkpoint:authorization-decision",
+        implementationRefs: [{ kind: "code", ref: "packages/authorization-ontology/src/index.ts" }],
+        relationCategories: ["authorization_relation", "authorization_decision_effect"],
+      },
+      verificationBinding: {
+        coordinateRef: "checkpoint:authorization-decision",
+        verificationRefs: [{ kind: "test", ref: "packages/authorization-ontology/src/index.test.ts" }],
+      },
+      constraints: [
+        { kind: "unit_boundary", severity: "core" },
+        {
+          kind: "allowed_relations",
+          allowedRefs: ["authorization_relation", "authorization_decision_effect"],
+        },
+        { kind: "validation_surface", requiredRefs: ["test"] },
+      ],
+      evolutionPolicy: { kind: "append_only" },
+    },
+    {
+      blueprintId: "authorization-graph-audit",
+      coordinateRef: "traversal:authorization-audit",
+      unitKind: "traversal_bundle",
+      requiredSchemas: ["authorization_audit", "authorization_relation"],
+      implementationBinding: {
+        coordinateRef: "traversal:authorization-audit",
+        implementationRefs: [{ kind: "code", ref: "packages/authorization-ontology/src/index.ts" }],
+        relationCategories: ["authorization_relation", "authorization_lineage"],
+      },
+      verificationBinding: {
+        coordinateRef: "traversal:authorization-audit",
+        verificationRefs: [{ kind: "test", ref: "packages/authorization-ontology/src/index.test.ts" }],
+      },
+      constraints: [
+        { kind: "unit_boundary", severity: "core" },
+        {
+          kind: "allowed_relations",
+          allowedRefs: ["authorization_relation", "authorization_lineage"],
+        },
+        { kind: "validation_surface", requiredRefs: ["test"] },
+      ],
+      evolutionPolicy: { kind: "append_only" },
+    },
+  ],
+} satisfies OperationalOntologyPack;
+
+export function validateAuthorizationOntologyPack(): OperationalOntologyPackValidationResult {
+  return validateOperationalOntologyPack(authorizationOntologyPack);
 }
