@@ -206,6 +206,23 @@ export interface StructuredEnforcementRouteConfig {
   };
 }
 
+export interface NginxProxyLocation {
+  path: string;
+  proxyPass: string;
+  upstreamName?: string;
+  upstreamTarget?: string;
+}
+
+export interface NginxProxyConfigProjectionOptions {
+  environment: string;
+  proxyAuthority: string;
+  proxyId: string;
+  host?: string;
+  upstreamAuthority?: string;
+  deployment?: StructuredEnforcementRouteConfig["deployment"];
+  policyByPath?: Record<string, StructuredEnforcementRouteConfig["policy"]>;
+}
+
 export interface CerbosResourcePolicyLike {
   apiVersion?: string;
   resourcePolicy: {
@@ -1249,6 +1266,89 @@ export function projectStructuredEnforcementRoute(
   config: StructuredEnforcementRouteConfig,
 ): AuthorizationOntologyGraph {
   return projectEnforcementRoute(normalizeStructuredEnforcementRoute(config));
+}
+
+function parseNginxUpstreams(configText: string): Map<string, string> {
+  const upstreams = new Map<string, string>();
+  const upstreamPattern = /upstream\s+([a-zA-Z0-9_-]+)\s*\{([\s\S]*?)\}/g;
+  for (const match of configText.matchAll(upstreamPattern)) {
+    const name = match[1];
+    const body = match[2] ?? "";
+    const server = body.match(/server\s+([^;]+);/)?.[1]?.trim();
+    if (name && server) {
+      upstreams.set(name, server);
+    }
+  }
+  return upstreams;
+}
+
+export function parseNginxProxyLocations(configText: string): NginxProxyLocation[] {
+  const upstreams = parseNginxUpstreams(configText);
+  const locations: NginxProxyLocation[] = [];
+  const locationPattern = /location\s+([^\s{]+)\s*\{([\s\S]*?)\}/g;
+  for (const match of configText.matchAll(locationPattern)) {
+    const path = match[1];
+    const body = match[2] ?? "";
+    const proxyPass = body.match(/proxy_pass\s+([^;]+);/)?.[1]?.trim();
+    if (!path || !proxyPass) {
+      continue;
+    }
+    const upstreamName = proxyPass.match(/^https?:\/\/([^/:;]+)/)?.[1];
+    locations.push({
+      path,
+      proxyPass,
+      upstreamName,
+      upstreamTarget: upstreamName ? upstreams.get(upstreamName) : undefined,
+    });
+  }
+  return locations;
+}
+
+export function nginxProxyLocationToStructuredRoute(
+  location: NginxProxyLocation,
+  options: NginxProxyConfigProjectionOptions,
+): StructuredEnforcementRouteConfig {
+  const host = options.host ?? "localhost";
+  return {
+    environment: options.environment,
+    route: {
+      id: `${host}${location.path}`,
+      host,
+      path: location.path,
+      methods: ["*"],
+    },
+    proxy: {
+      authority: options.proxyAuthority,
+      kind: "caddy",
+      id: options.proxyId,
+    },
+    upstream: location.upstreamName
+      ? {
+          authority: options.upstreamAuthority ?? `upstream:${location.upstreamName}`,
+          id: location.upstreamName,
+          kind: "service",
+        }
+      : undefined,
+    policy: options.policyByPath?.[location.path],
+    deployment: options.deployment,
+  };
+}
+
+export function projectNginxProxyConfig(
+  configText: string,
+  options: NginxProxyConfigProjectionOptions,
+): AuthorizationOntologyGraph {
+  const routeGraphs = parseNginxProxyLocations(configText).map((location) =>
+    projectStructuredEnforcementRoute(
+      nginxProxyLocationToStructuredRoute(location, options),
+    ),
+  );
+
+  return {
+    realms: uniqueRealms(routeGraphs.flatMap((graph) => graph.realms)),
+    nodes: uniqueNodes(routeGraphs.flatMap((graph) => graph.nodes)),
+    relations: uniqueRelations(routeGraphs.flatMap((graph) => graph.relations)),
+  };
 }
 
 export function createAuthorizationDecisionNode(input: AuthorizationDecision): AuthorizationNode {

@@ -14,7 +14,9 @@ import {
   projectCerbosResourcePolicy,
   projectColumnPolicyPropagation,
   projectEnforcementRoute,
+  projectNginxProxyConfig,
   projectStructuredEnforcementRoute,
+  parseNginxProxyLocations,
   validateCerbosDerivedRolesLike,
   validateCerbosResourcePolicyLike,
 } from "./index.js";
@@ -460,6 +462,66 @@ describe("authorization-ontology", () => {
       },
     });
     expect(graph.relations.map((relation) => relation.kind)).toEqual(["enforced_at"]);
+  });
+
+  it("projects Nginx proxy config into enforcement route graph", () => {
+    const config = `
+upstream zitadel_api {
+  server zitadel:8080;
+}
+upstream zitadel_login {
+  server zitadel-login:3000;
+}
+server {
+  listen 80;
+  server_name localhost;
+  location /ui/v2/login {
+    proxy_pass http://zitadel_login;
+  }
+  location / {
+    proxy_pass http://zitadel_api;
+  }
+}
+`;
+
+    expect(parseNginxProxyLocations(config)).toEqual([
+      {
+        path: "/ui/v2/login",
+        proxyPass: "http://zitadel_login",
+        upstreamName: "zitadel_login",
+        upstreamTarget: "zitadel-login:3000",
+      },
+      {
+        path: "/",
+        proxyPass: "http://zitadel_api",
+        upstreamName: "zitadel_api",
+        upstreamTarget: "zitadel:8080",
+      },
+    ]);
+
+    const graph = projectNginxProxyConfig(config, {
+      environment: "local",
+      proxyAuthority: "nginx:zitadel",
+      proxyId: "zitadel-nginx",
+      host: "localhost:8085",
+      deployment: {
+        authority: "docker-compose:local",
+        id: "infra-engine:docker-compose.infra.yaml",
+        kind: "git",
+        revision: "working-tree",
+      },
+    });
+
+    expect(graph.nodes.filter((node) => node.kind === "resource")).toHaveLength(4);
+    expect(graph.nodes.filter((node) => node.kind === "enforcement_point")).toHaveLength(1);
+    expect(graph.relations.map((relation) => relation.kind).toSorted()).toEqual([
+      "deployed_by",
+      "deployed_by",
+      "enforced_at",
+      "enforced_at",
+      "matches_resource",
+      "matches_resource",
+    ]);
   });
 
   it("projects direct authorization decisions into observable graph", () => {
