@@ -37,6 +37,8 @@ def:
       type: contains
     - target: authorization-ontology-package-architecture
       type: contains
+    - target: authorization-ontology-operational-pack-plan
+      type: contains
     - target: authorization-management-usecases
       type: contains
     - target: authorization-management-usage-rule
