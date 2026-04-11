@@ -145,7 +145,7 @@ export interface PolicyRef {
 export interface EnforcementPointRef {
   realm: AuthorizationRealm;
   enforcementPointId: string;
-  kind: "cloud_lb" | "caddy" | "authentik_proxy" | "service_middleware" | "cerbos_pdp";
+  kind: "cloud_lb" | "caddy" | "nginx_proxy" | "authentik_proxy" | "service_middleware" | "cerbos_pdp";
 }
 
 export interface IdentityProviderRef {
@@ -184,7 +184,7 @@ export interface StructuredEnforcementRouteConfig {
   };
   proxy: {
     authority: string;
-    kind: "cloud_lb" | "caddy" | "authentik_proxy" | "service_middleware";
+    kind: "cloud_lb" | "caddy" | "nginx_proxy" | "authentik_proxy" | "service_middleware";
     id: string;
   };
   upstream?: {
@@ -218,6 +218,7 @@ export interface NginxProxyConfigProjectionOptions {
   proxyAuthority: string;
   proxyId: string;
   host?: string;
+  proxyKind?: StructuredEnforcementRouteConfig["proxy"]["kind"];
   upstreamAuthority?: string;
   deployment?: StructuredEnforcementRouteConfig["deployment"];
   policyByPath?: Record<string, StructuredEnforcementRouteConfig["policy"]>;
@@ -1319,7 +1320,7 @@ export function nginxProxyLocationToStructuredRoute(
     },
     proxy: {
       authority: options.proxyAuthority,
-      kind: "caddy",
+      kind: options.proxyKind ?? "nginx_proxy",
       id: options.proxyId,
     },
     upstream: location.upstreamName

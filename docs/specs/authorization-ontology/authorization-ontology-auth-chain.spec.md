@@ -46,3 +46,5 @@ Pulumi, ArgoCD, Cloud LB, Caddy, Authentik proxy, ZITADEL, Cerbos를 하나의 �
 structured route config는 실제 Caddy/AuthentiK/Pulumi/ArgoCD parser가 생기기 전의 canonical intermediate shape다. 외부 설정 parser는 이 shape로 변환한 뒤 authorization ontology projection을 호출한다.
 
 Nginx/Zitadel 로컬 프록시 설정은 `parseNginxProxyLocations()`와 `projectNginxProxyConfig()`로 최소 투영할 수 있다. 이 parser는 범용 Nginx parser가 아니라 `upstream`, `location`, `proxy_pass` 기반의 프록시 경로 추출용 adapter다.
+
+Nginx adapter의 enforcement point kind는 기본적으로 `nginx_proxy`다. route path별 Cerbos policy 매핑은 `policyByPath`로 주입하며, 결과 graph는 `proxy_route -> enforced_at -> nginx_proxy`, `proxy_route -> matches_resource -> upstream service`, `policy -> protects -> proxy_route` 관계를 함께 가진다.

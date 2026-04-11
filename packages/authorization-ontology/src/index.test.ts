@@ -514,6 +514,10 @@ server {
 
     expect(graph.nodes.filter((node) => node.kind === "resource")).toHaveLength(4);
     expect(graph.nodes.filter((node) => node.kind === "enforcement_point")).toHaveLength(1);
+    expect(
+      graph.nodes.find((node) => node.kind === "enforcement_point")?.coord.taxonomies
+        .enforcement_kind,
+    ).toBe("nginx_proxy");
     expect(graph.relations.map((relation) => relation.kind).toSorted()).toEqual([
       "deployed_by",
       "deployed_by",

@@ -81,6 +81,59 @@ server {
     expect(output.stdout).toContain("nodes: 3");
     expect(output.stdout).toContain("relations: 2");
   });
+
+  it("authz graph handler는 route별 policy map을 합성한다", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-infra-authz-policy-"));
+    const nginxPath = join(dir, "nginx.conf");
+    const policyMapPath = join(dir, "policy-map.json");
+    await writeFile(
+      nginxPath,
+      `
+upstream crm {
+  server crm:3000;
+}
+server {
+  listen 80;
+  server_name crm.local;
+  location /customers {
+    proxy_pass http://crm;
+  }
+}
+`,
+      "utf8",
+    );
+    await writeFile(
+      policyMapPath,
+      JSON.stringify({
+        "/customers": "cerbos:resource:crm.customer_profile",
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await authzGraphHandler({
+        args: {},
+        options: {},
+        rest: [],
+        rawArgs: [
+          "--nginx",
+          nginxPath,
+          "--host",
+          "crm.local",
+          "--policy-map",
+          policyMapPath,
+          "--policy-authority",
+          "cerbos:local",
+        ],
+      });
+    });
+
+    expect(output.stdout).toContain("nodes: 4");
+    expect(output.stdout).toContain("relations: 3");
+    expect(output.stdout).toContain("cerbos:resource:crm.customer_profile");
+    expect(output.stdout).toContain("enforcement_kind=nginx_proxy");
+    expect(output.stdout).toContain("protects");
+  });
 });
 
 async function captureConsoleAsync(run: () => Promise<void>) {

@@ -18,7 +18,7 @@
 - Config → Provision → Register → Verify → Observe 5단계 배포 파이프라인을 실행한다.
 - `registry-service`, `definition-service`, `gate-service`, `ingest-server`와의 연동을 adapter로 캡슐화한다.
 - CLI 표면과 라이브러리 표면을 같은 패키지에서 제공한다.
-- `infra authz graph`로 Nginx/Zitadel proxy config를 authorization ontology graph로 투영한다.
+- `infra authz graph`로 Nginx/Zitadel proxy config와 route별 Cerbos policy map을 authorization ontology graph로 투영한다.
 
 ## 코드 진입점
 
@@ -37,6 +37,7 @@
 pnpm --filter infra-engine build
 pnpm --filter infra-engine test
 pnpm --filter infra-engine infra --help
+pnpm --filter infra-engine infra authz graph --nginx nginx-zitadel.conf --policy-map /tmp/qa-authz-policy-map.json
 ```
 
 패키지 로컬 `docs/`는 보조 문서다. 구현 목표와 변경 영향은 중앙 spec을 먼저 갱신한 뒤 이 패키지 코드를 따라가는 순서로 작업한다.

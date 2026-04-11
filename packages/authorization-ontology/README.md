@@ -13,7 +13,8 @@
 - `projectCerbosDecisionObservation()`로 Cerbos check 결과를 decision/principal/resource/action/policy/enforcement graph로 변환한다.
 - `projectEnforcementRoute()`로 Caddy/AuthentiK/Cloud LB route를 enforcement point, upstream resource, Cerbos policy, deployment provenance graph로 변환한다.
 - `normalizeStructuredEnforcementRoute()`와 `projectStructuredEnforcementRoute()`로 실제 proxy config parser가 사용할 canonical intermediate shape를 제공한다.
-- `parseNginxProxyLocations()`와 `projectNginxProxyConfig()`로 Nginx/Zitadel proxy config의 upstream/location/proxy_pass를 최소 enforcement route graph로 변환한다.
+- `parseNginxProxyLocations()`와 `projectNginxProxyConfig()`로 Nginx/Zitadel proxy config의 upstream/location/proxy_pass를 `nginx_proxy` enforcement route graph로 변환한다.
+- `NginxProxyConfigProjectionOptions.policyByPath`로 route path별 Cerbos policy를 합성해 `policy -> protects -> proxy_route` 관계를 관측한다.
 - `evaluateColumnPolicyPropagation()`와 `projectColumnPolicyPropagation()`로 컬럼 리니지 transform에 따른 권한 전파 모드를 계산한다.
 - Authentik/ZITADEL/Caddy/LB/Pulumi/ArgoCD는 권한 엔진이 아니라 identity/enforcement/deployment provenance realm으로 모델링한다.
 
