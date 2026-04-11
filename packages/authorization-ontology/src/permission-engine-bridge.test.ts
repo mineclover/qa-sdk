@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   OrgRoleRegistry,
+  PermissionMiddleware,
   PermissionSet,
   RoleRegistry,
   RoleResolver,
+  TokenEnrichmentHandler,
   UserOverrideStore,
   UserPermissionEngine,
+  InMemoryPermissionVersionStore,
   type DimDef,
 } from "../../permission-engine/src/index.js";
 
@@ -15,6 +18,7 @@ import {
   createAuthorizationRealm,
   mergeAuthorizationGraphs,
   projectPermissionEngineAudit,
+  projectPermissionEngineMiddlewareFeedback,
   projectPermissionEnginePermissionSet,
   projectPermissionEngineRoles,
 } from "./index.js";
@@ -288,5 +292,78 @@ describe("authorization-ontology permission-engine bridge proof", () => {
       ),
     ).toBe(true);
     expect(graph.relations.some((relation) => relation.kind === "materializes_permission")).toBe(true);
+  });
+
+  it("projects actual PermissionMiddleware feedback for denied feature checks", async () => {
+    const { roles, engine } = buildPermissionRuntime();
+    const versionStore = new InMemoryPermissionVersionStore();
+    const middleware = new PermissionMiddleware(roles, versionStore);
+    const enricher = new TokenEnrichmentHandler(
+      engine,
+      roles,
+      versionStore,
+      async () => ({
+        directAssignments: [],
+        orgRoleId: "team_lead",
+      }),
+    );
+    const token = {
+      sub: "user-3",
+      ...(await enricher.enrich("user-3")),
+    };
+
+    const feedback = await middleware.check(token, "project", "resource:delete");
+    expect(feedback.ok).toBe(false);
+    expect((feedback as any).error.kind).toBe("PERMISSION_DENIED");
+
+    const identityRealm = createAuthorizationRealm({
+      kind: "identity",
+      authority: "zitadel:test",
+      environment: "test",
+    });
+    const featureRealm = createAuthorizationRealm({
+      kind: "application",
+      authority: "permission-engine:project",
+      environment: "test",
+    });
+    const policyRealm = createAuthorizationRealm({
+      kind: "policy",
+      authority: "permission-engine:runtime",
+      environment: "test",
+    });
+    const enforcementRealm = createAuthorizationRealm({
+      kind: "enforcement",
+      authority: "service:project",
+      environment: "test",
+    });
+
+    const graph = projectPermissionEngineMiddlewareFeedback({
+      identityRealm,
+      featureRealm,
+      policyRealm,
+      enforcementPoint: {
+        realm: enforcementRealm,
+        enforcementPointId: "project-api:permission-middleware",
+        kind: "service_middleware",
+      },
+      feedback: {
+        ok: feedback.ok,
+        userId: token.sub,
+        domain: "project",
+        feature: "resource:delete",
+        error: feedback.ok ? undefined : feedback.error,
+        tokenVersion: token.perms_v,
+      },
+      observedAt: "2026-04-11T00:00:00.000Z",
+    });
+
+    expect(graph.relations.map((relation) => relation.kind)).toEqual(
+      expect.arrayContaining(["decision_policy", "denies_action", "protects"]),
+    );
+    expect(graph.relations.find((relation) => relation.kind === "denies_action")?.metadata).toEqual(
+      expect.objectContaining({
+        errorKind: "PERMISSION_DENIED",
+      }),
+    );
   });
 });

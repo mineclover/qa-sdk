@@ -97,6 +97,7 @@ describe("Auth × Permission 통합 시나리오", () => {
 
       const result = await middleware.check(token, "project", "resource:write");
       expect(result.ok).toBe(false);
+      expect((result as any).error.kind).toBe("PERMISSION_DENIED");
     });
   });
 

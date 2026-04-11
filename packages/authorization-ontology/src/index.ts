@@ -367,6 +367,40 @@ export interface PermissionEngineAuditProjectionInput {
   observedAt?: string;
 }
 
+export type PermissionEngineMiddlewareFeedbackKind =
+  | "VERSION_MISMATCH"
+  | "SCHEMA_MISMATCH"
+  | "NO_DOMAIN_CLAIM"
+  | "FEATURE_NOT_FOUND"
+  | "PERMISSION_DENIED";
+
+export interface PermissionEngineMiddlewareFeedbackLike {
+  ok: boolean;
+  userId: string;
+  domain: string;
+  feature: string;
+  error?: {
+    kind: PermissionEngineMiddlewareFeedbackKind;
+    message: string;
+  };
+  tokenVersion?: number;
+  currentVersion?: number;
+  tokenSchema?: string;
+  currentSchema?: string;
+}
+
+export interface PermissionEngineMiddlewareFeedbackProjectionInput {
+  identityRealm: AuthorizationRealm;
+  featureRealm: AuthorizationRealm;
+  policyRealm: AuthorizationRealm;
+  actionRealm?: AuthorizationRealm;
+  decisionRealm?: AuthorizationRealm;
+  enforcementPoint?: EnforcementPointRef;
+  feedback: PermissionEngineMiddlewareFeedbackLike;
+  decisionId?: string;
+  observedAt?: string;
+}
+
 export interface CerbosResourcePolicyLike {
   apiVersion?: string;
   resourcePolicy: {
@@ -1637,6 +1671,98 @@ export function projectPermissionEngineAudit(
             }),
           ]
         : []),
+    ]),
+  });
+}
+
+export function projectPermissionEngineMiddlewareFeedback(
+  input: PermissionEngineMiddlewareFeedbackProjectionInput,
+): AuthorizationOntologyGraph {
+  const actionRealm = input.actionRealm ?? input.policyRealm;
+  const policyNode = createPolicyNode({
+    realm: input.policyRealm,
+    policyId: `permission-engine:${input.feedback.domain}:middleware-check`,
+    policyKind: "permission_engine_middleware_check",
+  });
+  const featureNode = permissionFeatureNode({
+    realm: input.featureRealm,
+    domain: input.feedback.domain,
+    feature: input.feedback.feature,
+  });
+  const actionNode = createActionNode({
+    realm: actionRealm,
+    actionId: input.feedback.feature,
+    actionKind: input.feedback.feature,
+  });
+  const decision = projectAuthorizationDecision({
+    decisionId:
+      input.decisionId ??
+      `permission-engine:middleware:${input.feedback.userId}:${input.feedback.domain}:${input.feedback.feature}`,
+    principal: {
+      realm: input.identityRealm,
+      principalId: input.feedback.userId,
+      principalKind: "human_user",
+    },
+    resource: {
+      realm: input.featureRealm,
+      resourceId: `${input.feedback.domain}:${input.feedback.feature}`,
+      resourceKind: "permission_feature",
+      attributes: {
+        domain: input.feedback.domain,
+        feature: input.feedback.feature,
+      },
+    },
+    action: {
+      realm: actionRealm,
+      actionId: input.feedback.feature,
+      actionKind: input.feedback.feature,
+    },
+    policy: {
+      realm: input.policyRealm,
+      policyId: `permission-engine:${input.feedback.domain}:middleware-check`,
+      policyKind: "permission_engine_middleware_check",
+    },
+    enforcementPoint: input.enforcementPoint,
+    effect: input.feedback.ok ? "allow" : "deny",
+    observedAt: input.observedAt ?? new Date().toISOString(),
+    reason: input.feedback.error?.kind,
+  });
+
+  return mergeAuthorizationGraphs(decision, {
+    realms: uniqueRealms([
+      input.identityRealm,
+      input.featureRealm,
+      input.policyRealm,
+      actionRealm,
+      ...(input.enforcementPoint ? [input.enforcementPoint.realm] : []),
+      ...(input.decisionRealm ? [input.decisionRealm] : []),
+    ]),
+    nodes: uniqueNodes([policyNode, featureNode, actionNode]),
+    relations: uniqueRelations([
+      createAuthorizationRelation({
+        kind: "protects",
+        fromNodeId: policyNode.nodeId,
+        toNodeId: featureNode.nodeId,
+        metadata: {
+          source: "permission-engine:PermissionMiddleware",
+          domain: input.feedback.domain,
+        },
+      }),
+      createAuthorizationRelation({
+        kind: input.feedback.ok ? "allows_action" : "denies_action",
+        fromNodeId: policyNode.nodeId,
+        toNodeId: actionNode.nodeId,
+        metadata: {
+          source: "permission-engine:PermissionMiddleware",
+          domain: input.feedback.domain,
+          errorKind: input.feedback.error?.kind,
+          errorMessage: input.feedback.error?.message,
+          tokenVersion: input.feedback.tokenVersion,
+          currentVersion: input.feedback.currentVersion,
+          tokenSchema: input.feedback.tokenSchema,
+          currentSchema: input.feedback.currentSchema,
+        },
+      }),
     ]),
   });
 }

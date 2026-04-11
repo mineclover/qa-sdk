@@ -42,7 +42,8 @@ schema hash는 매 체크 시 동적 계산 — registry 변경 즉시 반영, �
 |------|------|----------------|
 | `VERSION_MISMATCH` | 권한 변경 후 구 토큰 | 토큰 재발급 (refresh) |
 | `SCHEMA_MISMATCH` | feature 정의 변경 | 재인증 |
-| `NO_DOMAIN_CLAIM` | 해당 도메인 권한 없음 | 403 |
+| `NO_DOMAIN_CLAIM` | 해당 도메인 claim 없음 | 403 |
+| `PERMISSION_DENIED` | 도메인 claim은 있으나 feature bit가 꺼짐 | 403 |
 | `FEATURE_NOT_FOUND` | 알 수 없는 feature ID | 서버 설정 오류 |
 
 ### validate() + checkFromClaims() 분리 패턴

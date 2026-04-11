@@ -26,7 +26,8 @@ export type MiddlewareErrorKind =
   | "VERSION_MISMATCH"   // 권한 변경됨 → 토큰 재발급 필요
   | "SCHEMA_MISMATCH"    // feature 정의 변경됨 → 재발급 필요
   | "NO_DOMAIN_CLAIM"    // 토큰에 해당 도메인 없음
-  | "FEATURE_NOT_FOUND"; // 알 수 없는 feature ID
+  | "FEATURE_NOT_FOUND"  // 알 수 없는 feature ID
+  | "PERMISSION_DENIED"; // claim은 있으나 해당 feature bit가 꺼져 있음
 
 export interface MiddlewareError {
   kind: MiddlewareErrorKind;
@@ -136,7 +137,7 @@ export class PermissionMiddleware {
     const mask = base64ToUint8(b64);
     return hasBit(mask, idx) ? { ok: true } : {
       ok: false,
-      error: { kind: "NO_DOMAIN_CLAIM", message: `Permission denied: "${feature}" in domain "${domain}"` },
+      error: { kind: "PERMISSION_DENIED", message: `Permission denied: "${feature}" in domain "${domain}"` },
     };
   }
 }

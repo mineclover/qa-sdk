@@ -18,6 +18,7 @@ import {
   projectEnforcementRoute,
   projectNginxProxyConfig,
   projectPermissionEngineAudit,
+  projectPermissionEngineMiddlewareFeedback,
   projectPermissionEnginePermissionSet,
   projectPermissionEngineRoles,
   projectStructuredApplicationAuthorization,
@@ -1290,5 +1291,62 @@ server {
       requireApplicationResourceEnforcement: false,
     });
     expect(report.ok).toBe(true);
+  });
+
+  it("projects permission middleware feedback into denial decision graph", () => {
+    const identityRealm = createAuthorizationRealm({
+      kind: "identity",
+      authority: "zitadel:prod",
+      environment: "prod",
+    });
+    const featureRealm = createAuthorizationRealm({
+      kind: "application",
+      authority: "permission-engine:project",
+      environment: "prod",
+    });
+    const policyRealm = createAuthorizationRealm({
+      kind: "policy",
+      authority: "permission-engine:runtime",
+      environment: "prod",
+    });
+    const enforcementRealm = createAuthorizationRealm({
+      kind: "enforcement",
+      authority: "service:project",
+      environment: "prod",
+    });
+
+    const graph = projectPermissionEngineMiddlewareFeedback({
+      identityRealm,
+      featureRealm,
+      policyRealm,
+      enforcementPoint: {
+        realm: enforcementRealm,
+        enforcementPointId: "project-api:permission-middleware",
+        kind: "service_middleware",
+      },
+      feedback: {
+        ok: false,
+        userId: "user-1",
+        domain: "project",
+        feature: "resource:write",
+        error: {
+          kind: "PERMISSION_DENIED",
+          message: "Permission denied",
+        },
+      },
+      observedAt: "2026-04-11T00:00:00.000Z",
+    });
+
+    expect(graph.nodes.map((node) => node.kind)).toEqual(
+      expect.arrayContaining(["decision", "principal", "resource", "action", "policy"]),
+    );
+    expect(graph.relations.map((relation) => relation.kind)).toEqual(
+      expect.arrayContaining(["decision_policy", "denies_action", "protects"]),
+    );
+    expect(graph.relations.find((relation) => relation.kind === "denies_action")?.metadata).toEqual(
+      expect.objectContaining({
+        errorKind: "PERMISSION_DENIED",
+      }),
+    );
   });
 });
