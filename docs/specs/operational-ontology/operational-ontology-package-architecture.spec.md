@@ -54,6 +54,7 @@ def:
 - `operational-ontology/projectors/path`
 - `operational-ontology/projectors/snapshot`
 - `operational-ontology/persistence`
+- `@qa-sdk/operational-ontology-web`
 
 ## 정의 ^defines
 
@@ -85,6 +86,8 @@ def:
   current system inputs를 operational-ontology 결과로 투영하는 aggregate compatibility layer
 - **persistence plane**
   object/facet/payload 저장 계약 검증
+- **visualization web**
+  store JSON을 읽는 read-only topology viewer
 
 projector의 실제 책임 경계는 아래 subpath에 맞춘다.
 

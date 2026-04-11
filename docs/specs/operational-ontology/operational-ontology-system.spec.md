@@ -53,6 +53,8 @@ def:
       type: contains
     - target: operational-ontology-package-architecture
       type: contains
+    - target: operational-ontology-visualization-web
+      type: contains
     - target: operational-ontology-core-model
       type: contains
     - target: operational-ontology-relation-taxonomy
