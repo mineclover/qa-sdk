@@ -15,7 +15,7 @@ def:
     - target: event-taxonomy-layering-plan
       type: depends_on
     - target: service-event-adoption-spec
-      type: depends_on
+      type: constrains
 ---
 
 # Event Taxonomy Role Contract

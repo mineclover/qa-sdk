@@ -13,7 +13,7 @@ def:
     - target: event-taxonomy-roadmap-plan
       type: refines
     - target: event-taxonomy-rollout-todo
-      type: depends_on
+      type: traces_to
     - target: registry-events-module
       type: depends_on
     - target: service-ownership-spec

@@ -22,9 +22,9 @@ def:
     - target: pm-taxonomy
       type: contains
     - target: decision-definition-bridge
-      type: depends_on
+      type: traces_to
     - target: dual-coordinate-system
-      type: refines
+      type: traces_to
 ---
 
 # Taxonomy Boundaries — 분류 체계 패밀리와 경계

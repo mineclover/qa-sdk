@@ -1,7 +1,7 @@
 ---
 def:
   id: event-taxonomy-roadmap-plan
-  level: leaf
+  level: module
   scope: flow
   aspect: process_flow
   depth: specification

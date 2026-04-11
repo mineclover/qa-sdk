@@ -13,7 +13,7 @@ def:
     - target: event-taxonomy-layering-plan
       type: refines
     - target: event-taxonomy-usecases-plan
-      type: depends_on
+      type: traces_to
     - target: service-ownership-spec
       type: depends_on
     - target: event-mapping-pack-plan

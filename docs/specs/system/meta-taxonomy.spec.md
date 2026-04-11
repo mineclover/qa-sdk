@@ -3,7 +3,7 @@ def:
   id: meta-taxonomy
   type: knowledge
   knowledge_kind: concept
-  level: module
+  level: leaf
   scope: data
   aspect: domain_data
   depth: specification

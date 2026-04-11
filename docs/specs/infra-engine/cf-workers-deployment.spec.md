@@ -2,7 +2,7 @@
 def:
   id: cf-workers-deployment
   scope: flow
-  aspect: func_def
+  aspect: process_flow
   depth: specification
   level: leaf
   lifecycle: approved

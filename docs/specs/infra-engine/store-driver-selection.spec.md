@@ -1,8 +1,8 @@
 ---
 def:
   id: store-driver-selection
-  scope: interface
-  aspect: func_def
+  scope: constraint
+  aspect: infra_constraint
   depth: specification
   level: leaf
   lifecycle: approved

@@ -11,11 +11,11 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: operational-ontology-relation-taxonomy
-      type: refines
+      type: constrains
     - target: operational-ontology-category-constraint
-      type: refines
+      type: constrains
     - target: operational-ontology-schema-validation
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Relation Category Schema — relation type grammar의 schema 정의

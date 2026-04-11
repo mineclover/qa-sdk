@@ -3,8 +3,8 @@ def:
   id: authorization-ontology-decision-observation
   type: knowledge
   knowledge_kind: concept
-  scope: observability
-  aspect: runtime_signal
+  scope: flow
+  aspect: relation
   depth: specification
   lifecycle: draft
   layer: domain

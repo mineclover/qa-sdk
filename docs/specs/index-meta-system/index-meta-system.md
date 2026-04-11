@@ -31,6 +31,8 @@ def:
       type: contains
     - target: address-scenarios-group
       type: contains
+    - target: index-meta-workers
+      type: contains
     - target: user-scenarios
       type: contains
     - target: canonical-format-spec

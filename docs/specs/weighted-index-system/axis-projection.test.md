@@ -3,7 +3,7 @@ def:
   id: axis-projection-test
   level: leaf
   scope: feature
-  aspect: test_scenario
+  aspect: scenario
   depth: specification
   lifecycle: approved
   layer: domain

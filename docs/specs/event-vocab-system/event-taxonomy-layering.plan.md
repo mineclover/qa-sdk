@@ -1,7 +1,7 @@
 ---
 def:
   id: event-taxonomy-layering-plan
-  level: leaf
+  level: module
   scope: flow
   aspect: process_flow
   depth: specification

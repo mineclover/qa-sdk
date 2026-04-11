@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: decision-flow
-  tags: [decision]
+  tags: [decision, cross-scope]
   links:
     - target: df-constraint
       type: depends_on

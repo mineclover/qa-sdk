@@ -12,9 +12,9 @@ def:
   tags: [cross-scope, structural, entry-point]
   links:
     - target: taxonomy-boundaries
-      type: depends_on
+      type: traces_to
     - target: pm-taxonomy-plan
-      type: depends_on
+      type: traces_to
     - target: definition-mgmt-state-tracking
       type: depends_on
     - target: df-state-model
@@ -24,7 +24,7 @@ def:
     - target: infra-observe-stage
       type: depends_on
     - target: decision-definition-bridge
-      type: refines
+      type: traces_to
 ---
 
 # Status Crosswalk — 상태 체계 번역표

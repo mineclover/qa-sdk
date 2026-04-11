@@ -13,9 +13,9 @@ def:
     - target: event-taxonomy-layering-plan
       type: refines
     - target: event-taxonomy-roadmap-plan
-      type: depends_on
+      type: traces_to
     - target: event-seed-materialization-phase0-plan
-      type: depends_on
+      type: traces_to
     - target: event-mapping-pack-plan
       type: depends_on
     - target: service-event-adoption-plan

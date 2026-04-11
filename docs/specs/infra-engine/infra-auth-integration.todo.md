@@ -7,6 +7,7 @@ def:
   depth: specification
   lifecycle: draft
   layer: mediation
+  tags: [cross-scope]
   links:
     - target: infra-auth-integration
       type: refines

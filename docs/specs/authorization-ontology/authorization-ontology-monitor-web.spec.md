@@ -4,7 +4,7 @@ def:
   type: knowledge
   knowledge_kind: concept
   scope: ui
-  aspect: visualization
+  aspect: component
   depth: specification
   lifecycle: draft
   layer: experience

@@ -3,7 +3,7 @@ def:
   id: operational-ontology-lineage
   type: knowledge
   knowledge_kind: concept
-  scope: data
+  scope: flow
   aspect: relation
   depth: specification
   lifecycle: draft

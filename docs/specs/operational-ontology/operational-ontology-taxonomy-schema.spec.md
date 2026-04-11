@@ -13,7 +13,7 @@ def:
     - target: operational-ontology-core-model
       type: constrains
     - target: operational-ontology-schema-validation
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Taxonomy Schema — taxonomy를 정의하기 위한 schema plane

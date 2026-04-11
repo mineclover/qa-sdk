@@ -2,7 +2,7 @@
 def:
   id: infra-port-allocation
   scope: constraint
-  aspect: func_def
+  aspect: infra_constraint
   depth: specification
   level: leaf
   lifecycle: approved

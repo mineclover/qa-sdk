@@ -2,7 +2,7 @@
 def:
   id: codec-proto
   scope: interface
-  aspect: func_def
+  aspect: api_contract
   depth: specification
   level: leaf
   lifecycle: approved

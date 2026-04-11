@@ -27,6 +27,10 @@ def:
       type: contains
     - target: range-query-spec
       type: contains
+    - target: axis-projection
+      type: contains
+    - target: axis-projection-test
+      type: contains
     - target: wi-hardware-acceleration
       type: contains
     - target: weighted-index-explorer-spec

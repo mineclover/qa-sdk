@@ -10,6 +10,10 @@ def:
   links:
     - target: infra-engine-pipeline
       type: depends_on
+    - target: infra-auth-usecases
+      type: contains
+    - target: infra-auth-integration-todo
+      type: contains
 ---
 
 # AuthN/AuthZ 통합

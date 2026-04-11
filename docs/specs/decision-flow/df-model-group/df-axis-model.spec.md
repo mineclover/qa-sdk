@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: decision-flow
-  tags: [decision]
+  tags: [decision, cross-scope]
   links:
     - target: axis-decision-guide
       type: depends_on
