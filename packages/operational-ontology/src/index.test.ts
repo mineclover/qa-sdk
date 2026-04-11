@@ -71,6 +71,9 @@ describe("submodule facades", () => {
     expect(typeof operationalOntologyImplementationGovernancePlane.validateImplementationGovernanceTaxonomy).toBe(
       "function",
     );
+    expect(typeof operationalOntologyImplementationGovernancePlane.persistImplementationGovernanceRun).toBe(
+      "function",
+    );
     expect(typeof operationalOntologyPersistencePlane.validateFacetKindsForObjectKind).toBe("function");
     expect(typeof projectEventRecordProjectorOnly).toBe("function");
     expect(typeof projectPipeGraphProjectorOnly).toBe("function");
@@ -502,6 +505,49 @@ describe("in-memory adapters", () => {
 
     expect(blueprintBundle?.facetValidation.valid).toBe(true);
     expect(runBundle?.facetValidation.valid).toBe(true);
+  });
+
+  it("persists implementation governance run results through the governance helper", async () => {
+    const store = new InMemoryOperationalOntologyStore();
+    const evaluation = operationalOntologyImplementationGovernancePlane.evaluateImplementationGovernance({
+      blueprint: {
+        blueprintId: "event-ingest-governance",
+        coordinateRef: "corridor:event-ingest",
+        unitKind: "corridor_bundle",
+        implementationBinding: {
+          coordinateRef: "corridor:event-ingest",
+          implementationRefs: [{ kind: "code", ref: "src/event-projector.ts" }],
+        },
+        verificationBinding: {
+          coordinateRef: "corridor:event-ingest",
+          verificationRefs: [{ kind: "test", ref: "src/event-projector.test.ts" }],
+        },
+        constraints: [{ kind: "unit_boundary" }],
+      },
+      runId: "governance-run:event-ingest:helper",
+    });
+
+    const persisted = await operationalOntologyImplementationGovernancePlane.persistImplementationGovernanceRun(
+      store,
+      evaluation.governanceRun,
+      { now: "2026-04-10T00:00:06.000Z" },
+    );
+
+    const bundle = await store.getObjectBundle(persisted.objectId);
+    const observations = await store.listObservations({
+      observationKind: "governance_evaluated",
+    });
+
+    expect(bundle?.object.objectKind).toBe("governance_run");
+    expect(bundle?.facetValidation.valid).toBe(true);
+    expect(observations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          targetObjectId: persisted.objectId,
+          observationKind: "governance_evaluated",
+        }),
+      ]),
+    );
   });
 
   it("persists and reloads runtime snapshots through the persistence helper", async () => {

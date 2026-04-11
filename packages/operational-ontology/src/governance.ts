@@ -25,16 +25,21 @@ export {
   type GovernanceRun,
   type ImplementationGovernanceEvaluationInput,
   type ImplementationGovernanceEvaluationResult,
+  type PersistImplementationGovernanceRunOptions,
+  type PersistImplementationGovernanceRunResult,
   validateImplementationGovernanceTaxonomy,
   evaluateImplementationGovernance,
+  persistImplementationGovernanceRun,
 } from './internal/implementation-governance-core.js';
 
 import {
   evaluateImplementationGovernance,
+  persistImplementationGovernanceRun,
   validateImplementationGovernanceTaxonomy,
 } from './internal/implementation-governance-core.js';
 
 export const operationalOntologyImplementationGovernancePlane = {
   validateImplementationGovernanceTaxonomy,
   evaluateImplementationGovernance,
+  persistImplementationGovernanceRun,
 };

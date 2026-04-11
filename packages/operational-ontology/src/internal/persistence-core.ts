@@ -118,6 +118,7 @@ export const OPERATIONAL_ONTOLOGY_OBSERVATION_KINDS = [
   "node_observed",
   "edge_activated",
   "traversal_observed",
+  "governance_evaluated",
   "schema_drift_detected",
   "validation_warning_emitted",
 ] as const;
