@@ -71,6 +71,12 @@ describe("submodule facades", () => {
     expect(typeof operationalOntologyImplementationGovernancePlane.validateImplementationGovernanceTaxonomy).toBe(
       "function",
     );
+    expect(typeof operationalOntologyImplementationGovernancePlane.validateImplementationBlueprint).toBe(
+      "function",
+    );
+    expect(typeof operationalOntologyImplementationGovernancePlane.persistImplementationGovernanceBlueprint).toBe(
+      "function",
+    );
     expect(typeof operationalOntologyImplementationGovernancePlane.persistImplementationGovernanceRun).toBe(
       "function",
     );
@@ -179,6 +185,22 @@ describe("implementation governance evaluator", () => {
     expect(result.valid).toBe(true);
     expect(result.verdicts).toEqual([]);
     expect(result.governanceRun.familyKey).toBe("governance:corridor:event-ingest:corridor_bundle");
+  });
+
+  it("validates blueprint contracts before runtime binding evaluation", () => {
+    const result = operationalOntologyImplementationGovernancePlane.validateImplementationBlueprint({
+      schema,
+      blueprint: {
+        blueprintId: "event-ingest-governance",
+        coordinateRef: "corridor:event-ingest",
+        unitKind: "corridor_bundle",
+        requiredSchemas: ["information-role"],
+        constraints: [{ kind: "unit_boundary" }],
+      },
+    });
+
+    expect(result.valid).toBe(true);
+    expect(result.verdicts).toEqual([]);
   });
 
   it("suggests defer when verification binding is missing", () => {
@@ -507,6 +529,38 @@ describe("in-memory adapters", () => {
     expect(runBundle?.facetValidation.valid).toBe(true);
   });
 
+  it("persists implementation governance blueprints through the governance helper", async () => {
+    const store = new InMemoryOperationalOntologyStore();
+
+    const persisted = await operationalOntologyImplementationGovernancePlane.persistImplementationGovernanceBlueprint(
+      store,
+      {
+        blueprintId: "event-ingest-governance",
+        coordinateRef: "corridor:event-ingest",
+        unitKind: "corridor_bundle",
+        constraints: [{ kind: "unit_boundary" }],
+      },
+      { now: "2026-04-10T00:00:06.000Z" },
+    );
+
+    const bundle = await store.getObjectBundle(persisted.objectId);
+
+    expect(bundle?.object.objectKind).toBe("governance_blueprint");
+    expect(bundle?.facetValidation.valid).toBe(true);
+    expect(bundle?.payloadValidations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          facetKind: "schema",
+          validation: expect.objectContaining({ valid: true }),
+        }),
+        expect.objectContaining({
+          facetKind: "validation",
+          validation: expect.objectContaining({ valid: true }),
+        }),
+      ]),
+    );
+  });
+
   it("persists implementation governance run results through the governance helper", async () => {
     const store = new InMemoryOperationalOntologyStore();
     const evaluation = operationalOntologyImplementationGovernancePlane.evaluateImplementationGovernance({
@@ -548,6 +602,44 @@ describe("in-memory adapters", () => {
         }),
       ]),
     );
+  });
+
+  it("preserves governance run createdAt when persisting the same run again", async () => {
+    const store = new InMemoryOperationalOntologyStore();
+    const evaluation = operationalOntologyImplementationGovernancePlane.evaluateImplementationGovernance({
+      blueprint: {
+        blueprintId: "event-ingest-governance",
+        coordinateRef: "corridor:event-ingest",
+        unitKind: "corridor_bundle",
+        implementationBinding: {
+          coordinateRef: "corridor:event-ingest",
+          implementationRefs: [{ kind: "code", ref: "src/event-projector.ts" }],
+        },
+        verificationBinding: {
+          coordinateRef: "corridor:event-ingest",
+          verificationRefs: [{ kind: "test", ref: "src/event-projector.test.ts" }],
+        },
+      },
+      runId: "governance-run:event-ingest:stable-created-at",
+    });
+
+    await operationalOntologyImplementationGovernancePlane.persistImplementationGovernanceRun(
+      store,
+      evaluation.governanceRun,
+      { now: "2026-04-10T00:00:06.000Z" },
+    );
+    await operationalOntologyImplementationGovernancePlane.persistImplementationGovernanceRun(
+      store,
+      evaluation.governanceRun,
+      { now: "2026-04-10T00:00:07.000Z" },
+    );
+
+    const object = await store.findObjectById("governance-run:event-ingest:stable-created-at");
+    const facets = await store.listFacets("governance-run:event-ingest:stable-created-at");
+
+    expect(object?.createdAt).toBe("2026-04-10T00:00:06.000Z");
+    expect(object?.updatedAt).toBe("2026-04-10T00:00:07.000Z");
+    expect(facets.filter((facet) => facet.facetKind === "evidence")).toHaveLength(2);
   });
 
   it("persists and reloads runtime snapshots through the persistence helper", async () => {

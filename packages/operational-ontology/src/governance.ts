@@ -23,23 +23,33 @@ export {
   type ConsistencyVerdict,
   type AdjustmentSuggestion,
   type GovernanceRun,
+  type ImplementationBlueprintValidationInput,
+  type ImplementationBlueprintValidationResult,
   type ImplementationGovernanceEvaluationInput,
   type ImplementationGovernanceEvaluationResult,
+  type PersistImplementationGovernanceBlueprintOptions,
+  type PersistImplementationGovernanceBlueprintResult,
   type PersistImplementationGovernanceRunOptions,
   type PersistImplementationGovernanceRunResult,
+  validateImplementationBlueprint,
   validateImplementationGovernanceTaxonomy,
   evaluateImplementationGovernance,
+  persistImplementationGovernanceBlueprint,
   persistImplementationGovernanceRun,
 } from './internal/implementation-governance-core.js';
 
 import {
   evaluateImplementationGovernance,
+  persistImplementationGovernanceBlueprint,
   persistImplementationGovernanceRun,
+  validateImplementationBlueprint,
   validateImplementationGovernanceTaxonomy,
 } from './internal/implementation-governance-core.js';
 
 export const operationalOntologyImplementationGovernancePlane = {
   validateImplementationGovernanceTaxonomy,
+  validateImplementationBlueprint,
   evaluateImplementationGovernance,
+  persistImplementationGovernanceBlueprint,
   persistImplementationGovernanceRun,
 };

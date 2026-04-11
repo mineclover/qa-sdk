@@ -163,6 +163,17 @@ export interface ImplementationGovernanceEvaluationInput {
   runId?: string;
 }
 
+export interface ImplementationBlueprintValidationInput {
+  blueprint: ImplementationBlueprint;
+  schema?: OperationalOntologySchema;
+  taxonomy?: ImplementationGovernanceTaxonomy;
+}
+
+export interface ImplementationBlueprintValidationResult {
+  valid: boolean;
+  verdicts: readonly ConsistencyVerdict[];
+}
+
 export interface ImplementationGovernanceEvaluationResult {
   valid: boolean;
   verdicts: readonly ConsistencyVerdict[];
@@ -183,6 +194,21 @@ export interface PersistImplementationGovernanceRunResult {
   evidenceFacetVersion: string;
   statusFacetVersion: string;
   observationId?: string;
+}
+
+export interface PersistImplementationGovernanceBlueprintOptions {
+  now?: string;
+  objectId?: string;
+  schemaVersion?: string;
+  lifecycle?: string;
+  taxonomy?: ImplementationGovernanceTaxonomy;
+}
+
+export interface PersistImplementationGovernanceBlueprintResult {
+  objectId: string;
+  schemaFacetVersion: string;
+  validationFacetVersion: string;
+  grammarFacetVersion?: string;
 }
 
 const DEFAULT_ADJUSTMENT_POLICY: AdjustmentPolicy = {
@@ -304,6 +330,21 @@ function createEscalationForVerdict(verdict: ConsistencyVerdict): AdjustmentSugg
   return createAdjustment('escalate', verdict.constraintKind, verdict.message, verdict.refs);
 }
 
+function isGovernanceTaxonomyVerdict(verdict: ConsistencyVerdict): boolean {
+  return [
+    'governance-axis-empty',
+    'governance-axis-duplicate',
+    'governance-taxonomy-id-empty',
+    'governance-unit-kind-unknown',
+    'implementation-surface-kind-unknown',
+    'verification-surface-kind-unknown',
+    'constraint-kind-unknown',
+    'constraint-severity-unknown',
+    'adjustment-action-unknown',
+    'evolution-policy-unknown',
+  ].includes(verdict.code);
+}
+
 function hasValue(values: readonly string[], value: string | undefined): boolean {
   return typeof value === 'string' && values.includes(value);
 }
@@ -408,6 +449,87 @@ function evaluateTaxonomyMembership(
   }
 
   return verdicts;
+}
+
+function evaluateSchemaRequirements(
+  blueprint: ImplementationBlueprint,
+  schema?: OperationalOntologySchema,
+): ConsistencyVerdict[] {
+  const verdicts: ConsistencyVerdict[] = [];
+  const knownSchemaIds = schemaIds(schema);
+
+  for (const schemaId of blueprint.requiredSchemas ?? []) {
+    if (!schema) {
+      verdicts.push(
+        createVerdict(
+          'required-schema-registry-missing',
+          `Blueprint requires schema "${schemaId}" but no schema registry was provided`,
+          'unit_boundary',
+          [schemaId],
+        ),
+      );
+    } else if (!knownSchemaIds.has(schemaId)) {
+      verdicts.push(
+        createVerdict(
+          'required-schema-missing',
+          `Blueprint references unknown schema "${schemaId}"`,
+          'unit_boundary',
+          [schemaId],
+        ),
+      );
+    }
+  }
+
+  return verdicts;
+}
+
+export function validateImplementationBlueprint(
+  input: ImplementationBlueprintValidationInput,
+): ImplementationBlueprintValidationResult {
+  const blueprint = input.blueprint;
+  const taxonomy = input.taxonomy ?? DEFAULT_IMPLEMENTATION_GOVERNANCE_TAXONOMY;
+  const taxonomyValidation = validateImplementationGovernanceTaxonomy(taxonomy);
+  const verdicts: ConsistencyVerdict[] = [];
+
+  verdicts.push(
+    ...taxonomyValidation.issues.map((issue) =>
+      createVerdict(issue.code, issue.message, 'unit_boundary', [issue.path]),
+    ),
+  );
+  verdicts.push(
+    ...evaluateTaxonomyMembership(
+      blueprint,
+      blueprint.implementationBinding,
+      blueprint.verificationBinding,
+      taxonomy,
+    ),
+  );
+  verdicts.push(...evaluateSchemaRequirements(blueprint, input.schema));
+
+  if (!blueprint.blueprintId.trim()) {
+    verdicts.push(
+      createVerdict(
+        'blueprint-id-empty',
+        'Implementation governance blueprint id must not be empty',
+        'unit_boundary',
+      ),
+    );
+  }
+
+  if (!blueprint.coordinateRef.trim()) {
+    verdicts.push(
+      createVerdict(
+        'blueprint-coordinate-empty',
+        'Implementation governance blueprint coordinateRef must not be empty',
+        'unit_boundary',
+      ),
+    );
+  }
+
+  return {
+    valid: verdicts.every((verdict) => verdict.valid),
+    verdicts,
+  };
 }
 
 function relationCategoryMap(
@@ -540,65 +662,31 @@ export function evaluateImplementationGovernance(
   const taxonomy = input.taxonomy ?? DEFAULT_IMPLEMENTATION_GOVERNANCE_TAXONOMY;
   const verdicts: ConsistencyVerdict[] = [];
   const adjustments: AdjustmentSuggestion[] = [];
-  const knownSchemaIds = schemaIds(input.schema);
-  const taxonomyValidation = validateImplementationGovernanceTaxonomy(taxonomy);
+  const blueprintValidation = validateImplementationBlueprint({
+    blueprint,
+    schema: input.schema,
+    taxonomy,
+  });
 
-  verdicts.push(
-    ...taxonomyValidation.issues.map((issue) =>
-      createVerdict(issue.code, issue.message, 'unit_boundary', [issue.path]),
-    ),
-  );
-  verdicts.push(
-    ...evaluateTaxonomyMembership(blueprint, implementation, verification, taxonomy),
-  );
+  verdicts.push(...blueprintValidation.verdicts);
+  if (input.implementationBinding || input.verificationBinding) {
+    verdicts.push(
+      ...evaluateTaxonomyMembership(blueprint, implementation, verification, taxonomy).filter(
+        (verdict) =>
+          verdict.code === 'implementation-surface-kind-unknown' ||
+          verdict.code === 'verification-surface-kind-unknown',
+      ),
+    );
+  }
 
-  for (const verdict of verdicts.filter(
-    (item) =>
-      !item.valid &&
-      [
-        'governance-axis-empty',
-        'governance-axis-duplicate',
-        'governance-taxonomy-id-empty',
-        'governance-unit-kind-unknown',
-        'implementation-surface-kind-unknown',
-        'verification-surface-kind-unknown',
-        'constraint-kind-unknown',
-        'constraint-severity-unknown',
-        'adjustment-action-unknown',
-        'evolution-policy-unknown',
-      ].includes(item.code),
-  )) {
+  for (const verdict of verdicts.filter((item) => !item.valid && isGovernanceTaxonomyVerdict(item))) {
     adjustments.push(createEscalationForVerdict(verdict));
   }
 
-  for (const schemaId of blueprint.requiredSchemas ?? []) {
-    if (!input.schema) {
-      verdicts.push(
-        createVerdict(
-          'required-schema-registry-missing',
-          `Blueprint requires schema "${schemaId}" but no schema registry was provided`,
-          'unit_boundary',
-          [schemaId],
-        ),
-      );
-      adjustments.push(
-        createAdjustment(
-          'escalate',
-          'unit_boundary',
-          `Blueprint requires schema "${schemaId}" but no schema registry was provided`,
-          [schemaId],
-        ),
-      );
-    } else if (!knownSchemaIds.has(schemaId)) {
-      verdicts.push(
-        createVerdict(
-          'required-schema-missing',
-          `Blueprint references unknown schema "${schemaId}"`,
-          'unit_boundary',
-          [schemaId],
-        ),
-      );
-    }
+  for (const verdict of verdicts.filter(
+    (item) => !item.valid && item.code === 'required-schema-registry-missing',
+  )) {
+    adjustments.push(createEscalationForVerdict(verdict));
   }
 
   if (!implementation || implementation.implementationRefs.length === 0) {
@@ -674,7 +762,10 @@ export function evaluateImplementationGovernance(
 }
 
 export async function persistImplementationGovernanceRun(
-  store: Pick<OperationalOntologyStore, 'upsertObject' | 'putFacet' | 'appendObservation'>,
+  store: Pick<
+    OperationalOntologyStore,
+    'findObjectById' | 'upsertObject' | 'putFacet' | 'appendObservation'
+  >,
   run: GovernanceRun,
   options: PersistImplementationGovernanceRunOptions = {},
 ): Promise<PersistImplementationGovernanceRunResult> {
@@ -683,8 +774,9 @@ export async function persistImplementationGovernanceRun(
   const schemaVersion = options.schemaVersion ?? 'v1';
   const state = run.constraintVerdicts.every((verdict) => verdict.valid) ? 'passed' : 'failed';
   const lifecycle = options.lifecycle ?? 'active';
-  const evidenceFacetVersion = `${schemaVersion}:evidence`;
-  const statusFacetVersion = `${schemaVersion}:status`;
+  const existing = await store.findObjectById(objectId);
+  const evidenceFacetVersion = `${schemaVersion}:evidence:${now}`;
+  const statusFacetVersion = `${schemaVersion}:status:${now}`;
 
   await store.upsertObject({
     objectId,
@@ -692,7 +784,7 @@ export async function persistImplementationGovernanceRun(
     canonicalKey: `${run.familyKey}:${run.runId}`,
     schemaVersion,
     lifecycle,
-    createdAt: now,
+    createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   });
 
@@ -750,4 +842,60 @@ export async function persistImplementationGovernanceRun(
   }
 
   return { objectId, evidenceFacetVersion, statusFacetVersion };
+}
+
+export async function persistImplementationGovernanceBlueprint(
+  store: Pick<OperationalOntologyStore, 'findObjectById' | 'upsertObject' | 'putFacet'>,
+  blueprint: ImplementationBlueprint,
+  options: PersistImplementationGovernanceBlueprintOptions = {},
+): Promise<PersistImplementationGovernanceBlueprintResult> {
+  const now = options.now ?? new Date().toISOString();
+  const objectId = options.objectId ?? `governance-blueprint:${blueprint.blueprintId}`;
+  const schemaVersion = options.schemaVersion ?? 'v1';
+  const lifecycle = options.lifecycle ?? 'active';
+  const taxonomy = options.taxonomy ?? DEFAULT_IMPLEMENTATION_GOVERNANCE_TAXONOMY;
+  const validation = validateImplementationBlueprint({ blueprint, taxonomy });
+  const existing = await store.findObjectById(objectId);
+  const schemaFacetVersion = `${schemaVersion}:schema:${now}`;
+  const validationFacetVersion = `${schemaVersion}:validation:${now}`;
+  const grammarFacetVersion = `${schemaVersion}:grammar:${now}`;
+
+  await store.upsertObject({
+    objectId,
+    objectKind: 'governance_blueprint',
+    canonicalKey: `governance-blueprint:${blueprint.coordinateRef}:${blueprint.blueprintId}`,
+    schemaVersion,
+    lifecycle,
+    createdAt: existing?.createdAt ?? now,
+    updatedAt: now,
+  });
+
+  await store.putFacet({
+    objectId,
+    facetKind: 'schema',
+    version: schemaFacetVersion,
+    payloadJson: { blueprint },
+    recordedAt: now,
+  });
+
+  await store.putFacet({
+    objectId,
+    facetKind: 'validation',
+    version: validationFacetVersion,
+    payloadJson: {
+      valid: validation.valid,
+      issues: validation.verdicts,
+    },
+    recordedAt: now,
+  });
+
+  await store.putFacet({
+    objectId,
+    facetKind: 'grammar',
+    version: grammarFacetVersion,
+    payloadJson: { taxonomy },
+    recordedAt: now,
+  });
+
+  return { objectId, schemaFacetVersion, validationFacetVersion, grammarFacetVersion };
 }

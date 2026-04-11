@@ -35,7 +35,9 @@ import {
 } from "./internal/persistence-core.js";
 import {
   evaluateImplementationGovernance,
+  persistImplementationGovernanceBlueprint,
   persistImplementationGovernanceRun,
+  validateImplementationBlueprint,
   validateImplementationGovernanceTaxonomy,
 } from "./internal/implementation-governance-core.js";
 
@@ -69,7 +71,9 @@ export const operationalOntologySchemaPlane = {
 
 export const operationalOntologyImplementationGovernancePlane = {
   validateImplementationGovernanceTaxonomy,
+  validateImplementationBlueprint,
   evaluateImplementationGovernance,
+  persistImplementationGovernanceBlueprint,
   persistImplementationGovernanceRun,
 };
 
