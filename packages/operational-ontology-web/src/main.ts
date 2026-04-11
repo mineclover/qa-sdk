@@ -74,6 +74,21 @@ interface UiState {
   sourceName: string;
 }
 
+type StoreSectionKey = "objects" | "facets" | "observations" | "projections";
+
+interface StoreSectionInfo {
+  key: StoreSectionKey;
+  label: string;
+  summary: string;
+  reads: string;
+}
+
+interface SampleFile {
+  label: string;
+  description: string;
+  path: string;
+}
+
 const sampleStore: OntologyStoreFile = {
   objects: [
     {
@@ -209,11 +224,58 @@ const state: UiState = {
   sourceName: "sample store",
 };
 
-const sampleFiles = [
-  { label: "Event store", path: "/samples/event-store.json" },
-  { label: "Pipe store", path: "/samples/pipe-store.json" },
-  { label: "Snapshot store", path: "/samples/snapshot-store.json" },
+const sampleFiles: SampleFile[] = [
+  {
+    label: "Event observation",
+    description: "EventRecord payload and address_context bindings.",
+    path: "/samples/event-store.json",
+  },
+  {
+    label: "Pipe execution",
+    description: "PipeGraph steps, conditions, transmissions, and junctions.",
+    path: "/samples/pipe-store.json",
+  },
+  {
+    label: "Complete snapshot",
+    description: "Corridor, checkpoint, traversal, and validation bundles.",
+    path: "/samples/snapshot-store.json",
+  },
 ];
+
+const storeSections: StoreSectionInfo[] = [
+  {
+    key: "objects",
+    label: "Objects",
+    summary: "Canonical identities for schema, graph, traversal, and governance records.",
+    reads: "What exists?",
+  },
+  {
+    key: "facets",
+    label: "Facets",
+    summary: "Versioned facts attached to an object: status, route, evidence, grammar, or validation.",
+    reads: "What is known?",
+  },
+  {
+    key: "observations",
+    label: "Observations",
+    summary: "Append-only signals that say a target object was seen, evaluated, traversed, or changed.",
+    reads: "What happened?",
+  },
+  {
+    key: "projections",
+    label: "Projections",
+    summary: "Derived topology views rebuilt from objects, facets, and observations.",
+    reads: "What can be queried?",
+  },
+];
+
+const metricLabels: Record<string, string> = {
+  objects: "Objects",
+  projections: "Projections",
+  observations: "Observations",
+  governanceRuns: "Governance runs",
+  failed: "Failed",
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -227,6 +289,21 @@ function escapeHtml(value: string): string {
     .replaceAll('"', "&quot;");
 }
 
+function metricLabel(key: string): string {
+  return metricLabels[key] ?? key.replace(/([A-Z])/g, " $1").toLowerCase();
+}
+
+function visibleModelForFilter(model: OntologyGraphViewModel): OntologyGraphViewModel {
+  if (state.filter === "all") return model;
+  const nodes = model.nodes.filter((node) => node.lane === state.filter);
+  const visibleIds = new Set(nodes.map((node) => node.id));
+  return {
+    ...model,
+    nodes,
+    edges: model.edges.filter((edge) => visibleIds.has(edge.from) && visibleIds.has(edge.to)),
+  };
+}
+
 function asStoreFile(value: unknown): OntologyStoreFile {
   if (!isRecord(value)) throw new Error("JSON root must be an object");
   return {
@@ -235,6 +312,27 @@ function asStoreFile(value: unknown): OntologyStoreFile {
     observations: Array.isArray(value["observations"]) ? (value["observations"] as OntologyObservationRecord[]) : [],
     projections: Array.isArray(value["projections"]) ? (value["projections"] as OntologyProjectionRecord[]) : [],
   };
+}
+
+function renderStorePrimer(store: OntologyStoreFile): string {
+  return `
+    <section class="store-primer" aria-label="Store shape">
+      <div class="primer-copy">
+        <p class="eyebrow">Store shape</p>
+        <h2>Four records, one operational view</h2>
+        <p>Store JSON is the read model for operational ontology collection. It keeps identity, facts, incoming signals, and rebuilt topology separate so each layer can evolve without freezing the others.</p>
+      </div>
+      <dl class="store-terms">
+        ${storeSections.map((section) => `
+          <div>
+            <dt>${escapeHtml(section.label)} <span>${store[section.key].length}</span></dt>
+            <dd>${escapeHtml(section.summary)}</dd>
+            <dd class="reads">${escapeHtml(section.reads)}</dd>
+          </div>
+        `).join("")}
+      </dl>
+    </section>
+  `;
 }
 
 function renderInspector(model: OntologyGraphViewModel): string {
@@ -268,6 +366,7 @@ function renderObservationRows(store: OntologyStoreFile): string {
 
 function renderApp(): void {
   const model = operationalStoreToOntologyView(state.store);
+  const visibleModel = visibleModelForFilter(model);
   const app = document.querySelector<HTMLDivElement>("#app");
   if (!app) return;
 
@@ -287,7 +386,7 @@ function renderApp(): void {
     </header>
 
     <section class="metrics" aria-label="Store metrics">
-      ${Object.entries(model.metrics ?? {}).map(([key, value]) => `<div><span>${escapeHtml(key)}</span><strong>${value}</strong></div>`).join("")}
+      ${Object.entries(model.metrics ?? {}).map(([key, value]) => `<div><span>${escapeHtml(metricLabel(key))}</span><strong>${value}</strong></div>`).join("")}
     </section>
 
     <nav class="filters" aria-label="Topology filter">
@@ -297,16 +396,23 @@ function renderApp(): void {
     </nav>
 
     <section class="sample-row" aria-label="Sample stores">
-      <span>Store JSON</span>
-      ${sampleFiles.map((sample) => `<button type="button" data-sample-path="${sample.path}">${sample.label}</button>`).join("")}
+      <span>Sample scenarios</span>
+      ${sampleFiles.map((sample) => `
+        <button type="button" data-sample-path="${sample.path}">
+          <strong>${escapeHtml(sample.label)}</strong>
+          <small>${escapeHtml(sample.description)}</small>
+        </button>
+      `).join("")}
     </section>
+
+    ${renderStorePrimer(state.store)}
 
     <section class="workspace">
       <div class="map">
         <div class="source-line">Source: ${escapeHtml(state.sourceName)}</div>
-        <div class="topology">${renderOntologyGraphSvg(layoutOntologyGraph(model, { laneOrder: ["snapshot", "corridor", "checkpoint", "traversal", "governance"], nodeWidth: 150 }))}</div>
+        <div class="topology">${renderOntologyGraphSvg(layoutOntologyGraph(visibleModel, { laneOrder: ["snapshot", "corridor", "checkpoint", "traversal", "governance"], nodeWidth: 150 }), { selectedNodeId: state.selectedId })}</div>
       </div>
-      ${renderInspector(model)}
+      ${renderInspector(visibleModel)}
     </section>
 
     <section class="observations">

@@ -103,11 +103,12 @@ describe("ontology graph view model", () => {
       edges: [{ from: "snapshot:one", to: "corridor:one", label: "contains" }],
     });
 
-    const svg = renderOntologyGraphSvg(layout);
+    const svg = renderOntologyGraphSvg(layout, { selectedNodeId: "corridor:one" });
 
     expect(layout.nodes[0].x).toBeLessThan(layout.nodes[1].x);
     expect(svg).toContain("ontology-graph-svg");
     expect(svg).toContain("snapshot:one");
     expect(svg).toContain("corridor:one");
+    expect(svg).toContain("selected");
   });
 });

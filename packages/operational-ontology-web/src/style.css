@@ -1,13 +1,13 @@
 :root {
   color: #1f2521;
-  background: #f6f7f1;
+  background: #f4f7f8;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.5;
   letter-spacing: 0;
   --ink: #1f2521;
   --muted: #667067;
-  --line: #d8ded1;
+  --line: #d4dde0;
   --surface: #ffffff;
   --green: #2f7a4f;
   --red: #b6463a;
@@ -27,7 +27,7 @@ body {
   background:
     linear-gradient(90deg, rgba(31, 37, 33, 0.04) 1px, transparent 1px),
     linear-gradient(180deg, rgba(31, 37, 33, 0.04) 1px, transparent 1px),
-    #f6f7f1;
+    #f4f7f8;
   background-size: 36px 36px;
 }
 
@@ -51,7 +51,8 @@ button {
 .workspace,
 .observations,
 .metrics,
-.filters {
+.filters,
+.store-primer {
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(8px);
@@ -156,7 +157,7 @@ h2 {
 .sample-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: stretch;
   gap: 10px;
   border: 1px solid var(--line);
   border-top: 0;
@@ -165,6 +166,7 @@ h2 {
 }
 
 .sample-row span {
+  align-self: center;
   color: var(--muted);
   font-size: 12px;
   font-weight: 800;
@@ -172,17 +174,87 @@ h2 {
 }
 
 .sample-row button {
+  display: grid;
+  min-width: 210px;
+  max-width: 260px;
+  gap: 3px;
   border: 1px solid #bac5b7;
   border-radius: 8px;
   background: #ffffff;
   color: var(--ink);
-  padding: 8px 12px;
+  padding: 10px 12px;
   font-weight: 700;
+  text-align: left;
+}
+
+.sample-row button small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
 }
 
 .filters button.active {
   background: var(--ink);
   color: #fff;
+}
+
+.store-primer {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 22px;
+  border-top: 0;
+  padding: 22px;
+}
+
+.primer-copy p:last-child {
+  margin: 10px 0 0;
+  color: var(--muted);
+}
+
+.store-terms {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.store-terms div {
+  min-height: 148px;
+  padding: 16px;
+  border-right: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.store-terms div:last-child {
+  border-right: 0;
+}
+
+.store-terms dt {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.store-terms dt span {
+  color: var(--green);
+  font-size: 18px;
+}
+
+.store-terms dd {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.store-terms .reads {
+  color: var(--ink);
+  font-weight: 800;
 }
 
 .workspace {
@@ -240,7 +312,7 @@ h2 {
   color: var(--ink);
   padding: 10px;
   text-align: left;
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
 .ontology-node {
@@ -248,6 +320,7 @@ h2 {
   width: auto;
   min-height: 0;
   padding: 0;
+  cursor: pointer;
   overflow: visible;
 }
 
@@ -271,11 +344,14 @@ h2 {
 }
 
 .graph-node:hover,
-.graph-node.selected,
-.ontology-node:hover {
-  transform: translateY(-2px);
+.graph-node.selected {
   border-color: var(--ink);
   box-shadow: 0 10px 22px rgba(31, 37, 33, 0.12);
+}
+
+.ontology-node:hover rect,
+.ontology-node.selected rect {
+  stroke-width: 2;
 }
 
 .graph-node span {
@@ -387,7 +463,8 @@ td {
 
   .shell-header,
   .workspace,
-  .observations {
+  .observations,
+  .store-primer {
     grid-template-columns: 1fr;
   }
 
@@ -400,8 +477,53 @@ td {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .store-terms {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .store-terms div:nth-child(2n) {
+    border-right: 0;
+  }
+
   .map {
     border-right: 0;
     border-bottom: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 640px) {
+  h1 {
+    font-size: 34px;
+  }
+
+  .map {
+    min-height: 430px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .source-line {
+    position: sticky;
+    left: 12px;
+    width: max-content;
+  }
+
+  .topology {
+    width: 920px;
+    height: 430px;
+  }
+
+  .store-terms {
+    grid-template-columns: 1fr;
+  }
+
+  .store-terms div,
+  .store-terms div:nth-child(2n) {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .store-terms div:last-child {
+    border-bottom: 0;
   }
 }

@@ -50,6 +50,10 @@ export interface PositionedOntologyGraph {
   height: number;
 }
 
+export interface OntologyRenderOptions {
+  selectedNodeId?: string | null;
+}
+
 export interface OntologyLayoutOptions {
   laneOrder?: readonly OntologyLane[];
   laneGap?: number;
@@ -317,7 +321,7 @@ function escapeHtml(value: string): string {
     .replaceAll('"', '&quot;');
 }
 
-export function renderOntologyGraphSvg(graph: PositionedOntologyGraph): string {
+export function renderOntologyGraphSvg(graph: PositionedOntologyGraph, options: OntologyRenderOptions = {}): string {
   const byId = new Map(graph.nodes.map((node) => [node.id, node]));
   const edges = graph.edges
     .filter((edge) => byId.has(edge.from) && byId.has(edge.to))
@@ -330,7 +334,7 @@ export function renderOntologyGraphSvg(graph: PositionedOntologyGraph): string {
     .join('');
   const nodes = graph.nodes
     .map((node) => `
-      <g class="ontology-node ${escapeHtml(node.lane)} ${escapeHtml(node.status ?? 'unknown')}" data-node-id="${escapeHtml(node.id)}" transform="translate(${node.x - node.width / 2} ${node.y - node.height / 2})">
+      <g class="ontology-node ${escapeHtml(node.lane)} ${escapeHtml(node.status ?? 'unknown')} ${node.id === options.selectedNodeId ? 'selected' : ''}" data-node-id="${escapeHtml(node.id)}" transform="translate(${node.x - node.width / 2} ${node.y - node.height / 2})">
         <rect width="${node.width}" height="${node.height}" rx="8" />
         <text class="ontology-node-kind" x="10" y="20">${escapeHtml(node.kind)}</text>
         <text class="ontology-node-label" x="10" y="42">${escapeHtml(node.label)}</text>
