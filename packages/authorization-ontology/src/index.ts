@@ -3158,6 +3158,129 @@ export async function diffAuthorizationGraphSnapshots(
   });
 }
 
+export type AuthorizationGraphIngestKind =
+  | "graph"
+  | "authorization_decision"
+  | "cerbos_decision"
+  | "permission_engine_audit"
+  | "permission_engine_middleware_feedback";
+
+interface AuthorizationGraphIngestBase {
+  graphId?: string;
+  snapshotId?: string;
+  observedAt?: string;
+  sourceRef?: string;
+  tags?: string[];
+  labels?: Record<string, string>;
+  metadata?: Record<string, unknown>;
+  audit?: boolean;
+  auditOptions?: AuthorizationGraphAuditOptions;
+  mergeWithLatest?: boolean;
+}
+
+export type AuthorizationGraphIngestInput =
+  | (AuthorizationGraphIngestBase & {
+      kind: "graph";
+      graph: AuthorizationOntologyGraph;
+    })
+  | (AuthorizationGraphIngestBase & {
+      kind: "authorization_decision";
+      decision: AuthorizationDecision;
+    })
+  | (AuthorizationGraphIngestBase & {
+      kind: "cerbos_decision";
+      decision: CerbosDecisionObservationProjectionInput;
+    })
+  | (AuthorizationGraphIngestBase & {
+      kind: "permission_engine_audit";
+      audit: PermissionEngineAuditProjectionInput;
+    })
+  | (AuthorizationGraphIngestBase & {
+      kind: "permission_engine_middleware_feedback";
+      feedback: PermissionEngineMiddlewareFeedbackProjectionInput;
+    });
+
+export interface AuthorizationGraphIngestResult {
+  projectedGraph: AuthorizationOntologyGraph;
+  storedGraph: AuthorizationOntologyGraph;
+  record: AuthorizationGraphSnapshotRecord;
+  previousSnapshot?: AuthorizationGraphSnapshotRecord;
+  diff?: AuthorizationGraphDiff;
+}
+
+function projectAuthorizationGraphIngestInput(
+  input: AuthorizationGraphIngestInput,
+): AuthorizationOntologyGraph {
+  switch (input.kind) {
+    case "graph":
+      return input.graph;
+    case "authorization_decision":
+      return projectAuthorizationDecision(input.decision);
+    case "cerbos_decision":
+      return projectCerbosDecisionObservation(input.decision);
+    case "permission_engine_audit":
+      return projectPermissionEngineAudit(input.audit);
+    case "permission_engine_middleware_feedback":
+      return projectPermissionEngineMiddlewareFeedback(input.feedback);
+  }
+}
+
+function defaultTagsForIngest(input: AuthorizationGraphIngestInput): string[] {
+  return [...new Set([input.kind, ...(input.tags ?? [])])];
+}
+
+async function loadLatestSnapshotForGraph(
+  store: Pick<AuthorizationGraphStore, "listSnapshots">,
+  graphId: string,
+): Promise<AuthorizationGraphSnapshotRecord | undefined> {
+  const snapshots = await store.listSnapshots({ graphId });
+  return snapshots[snapshots.length - 1];
+}
+
+export class AuthorizationGraphIngestService {
+  constructor(private readonly store: AuthorizationGraphStore) {}
+
+  async ingest(input: AuthorizationGraphIngestInput): Promise<AuthorizationGraphIngestResult> {
+    const graphId = input.graphId ?? "authorization-observations";
+    const projectedGraph = projectAuthorizationGraphIngestInput(input);
+    const previousSnapshot = input.mergeWithLatest
+      ? await loadLatestSnapshotForGraph(this.store, graphId)
+      : undefined;
+    const storedGraph = previousSnapshot
+      ? mergeAuthorizationGraphs(previousSnapshot.graph, projectedGraph)
+      : projectedGraph;
+    const record = await this.store.saveSnapshot({
+      graphId,
+      snapshotId: input.snapshotId,
+      graph: storedGraph,
+      createdAt: input.observedAt,
+      sourceRef: input.sourceRef,
+      tags: defaultTagsForIngest(input),
+      labels: {
+        ingestKind: input.kind,
+        ...(input.labels ?? {}),
+      },
+      metadata: input.metadata,
+      audit: input.audit,
+      auditOptions: input.auditOptions,
+    });
+    const diff = previousSnapshot
+      ? diffAuthorizationGraphs(previousSnapshot.graph, record.graph, {
+          fromSnapshotId: previousSnapshot.snapshotId,
+          toSnapshotId: record.snapshotId,
+        })
+      : undefined;
+
+    return {
+      projectedGraph,
+      storedGraph: record.graph,
+      record,
+      previousSnapshot,
+      diff,
+    };
+  }
+}
+
 export function createAuthorizationFacetRef(
   node: AuthorizationNode,
   facetKind: InformationFacetKind,

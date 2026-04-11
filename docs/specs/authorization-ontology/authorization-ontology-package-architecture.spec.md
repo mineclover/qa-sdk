@@ -49,6 +49,7 @@ def:
 - `auditAuthorizationGraph`
 - `AuthorizationGraphStore`
 - `InMemoryAuthorizationGraphStore`
+- `AuthorizationGraphIngestService`
 - `diffAuthorizationGraphs`
 - `diffAuthorizationGraphSnapshots`
 
@@ -63,3 +64,5 @@ application enforcement surface는 서비스 내부 middleware가 어떤 domain 
 permission-engine bridge surface는 `PermissionSetSnapshot`, `DomainRoleDef`, `OrgRoleDef`, `UserPermissionEngine.audit()`, `PermissionMiddleware.check()` 결과와 호환되는 plain object를 graph로 투영한다. 이 bridge는 `permission-engine` 실행 커널을 import하지 않고, bitmask/role/audit/middleware feedback 결과를 관측 가능한 relation으로 변환한다.
 
 graph store surface는 `AuthorizationOntologyGraph` snapshot을 저장하고, 조회/list/delete/diff할 수 있는 최소 계약이다. 초기 adapter는 `InMemoryAuthorizationGraphStore`이며, 운영 DB adapter는 같은 `AuthorizationGraphStore` 인터페이스를 구현한다.
+
+ingest surface는 decision, Cerbos decision, permission-engine audit, permission middleware feedback을 graph snapshot으로 저장한다. `mergeWithLatest`를 사용하면 같은 graphId의 최신 snapshot에 새 observation을 누적하고 diff를 반환한다.

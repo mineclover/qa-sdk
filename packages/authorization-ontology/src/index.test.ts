@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   auditAuthorizationGraph,
+  AuthorizationGraphIngestService,
   createAuthorizationRealm,
   createAuthorizationRelation,
   diffAuthorizationGraphSnapshots,
@@ -1447,5 +1448,111 @@ server {
     expect(storedDiff?.toSnapshotId).toBe(second.snapshotId);
     expect(await store.deleteSnapshot(first.snapshotId)).toBe(true);
     expect(await store.getSnapshot(first.snapshotId)).toBeNull();
+  });
+
+  it("ingests decision observations into graph snapshots and returns diffs", async () => {
+    const store = new InMemoryAuthorizationGraphStore();
+    const ingest = new AuthorizationGraphIngestService(store);
+    const identityRealm = createAuthorizationRealm({
+      kind: "identity",
+      authority: "zitadel:prod",
+      environment: "prod",
+    });
+    const policyRealm = createAuthorizationRealm({
+      kind: "policy",
+      authority: "cerbos:prod",
+      environment: "prod",
+    });
+    const resourceRealm = createAuthorizationRealm({
+      kind: "application",
+      authority: "service:crm",
+      environment: "prod",
+    });
+    const enforcementRealm = createAuthorizationRealm({
+      kind: "enforcement",
+      authority: "service:crm",
+      environment: "prod",
+    });
+
+    const first = await ingest.ingest({
+      kind: "cerbos_decision",
+      graphId: "crm-authz-observations",
+      observedAt: "2026-04-11T00:00:00.000Z",
+      sourceRef: "cerbos://decision/req-1",
+      audit: true,
+      auditOptions: {
+        requireRoutePolicy: false,
+        requireRouteEnforcement: false,
+        requireRouteUpstream: false,
+        requireApplicationResourcePolicy: false,
+        requireApplicationResourceEnforcement: false,
+        requireDecisionPolicyAction: false,
+        requireDecisionPolicyResource: false,
+      },
+      decision: {
+        identityRealm,
+        policyRealm,
+        resourceRealm,
+        enforcementPoint: {
+          realm: enforcementRealm,
+          enforcementPointId: "crm-api:cerbos-middleware",
+          kind: "service_middleware",
+        },
+        decision: {
+          requestId: "req-1",
+          principal: {
+            id: "user-1",
+            roles: ["analyst"],
+          },
+          resource: {
+            id: "crm.customer_profile",
+            kind: "service",
+          },
+          actions: [
+            {
+              action: "read",
+              effect: "EFFECT_ALLOW",
+              policyId: "cerbos:resource:crm.customer_profile",
+            },
+          ],
+          observedAt: "2026-04-11T00:00:00.000Z",
+        },
+      },
+    });
+
+    const second = await ingest.ingest({
+      kind: "permission_engine_middleware_feedback",
+      graphId: "crm-authz-observations",
+      observedAt: "2026-04-11T00:01:00.000Z",
+      mergeWithLatest: true,
+      feedback: {
+        identityRealm,
+        featureRealm: resourceRealm,
+        policyRealm,
+        enforcementPoint: {
+          realm: enforcementRealm,
+          enforcementPointId: "crm-api:permission-middleware",
+          kind: "service_middleware",
+        },
+        feedback: {
+          ok: false,
+          userId: "user-1",
+          domain: "crm",
+          feature: "resource:export",
+          error: {
+            kind: "PERMISSION_DENIED",
+            message: "Permission denied",
+          },
+        },
+        observedAt: "2026-04-11T00:01:00.000Z",
+      },
+    });
+
+    expect(first.record.auditReport?.ok).toBe(true);
+    expect(second.previousSnapshot?.snapshotId).toBe(first.record.snapshotId);
+    expect(second.diff?.summary.addedNodeCount).toBeGreaterThan(0);
+    expect(second.storedGraph.nodes.length).toBeGreaterThan(first.storedGraph.nodes.length);
+    expect(await store.listSnapshots({ labels: { ingestKind: "cerbos_decision" } })).toHaveLength(1);
+    expect(await store.listSnapshots({ tag: "permission_engine_middleware_feedback" })).toHaveLength(1);
   });
 });

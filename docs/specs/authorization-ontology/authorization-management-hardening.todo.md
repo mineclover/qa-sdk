@@ -29,7 +29,7 @@ def:
 
 - [x] `AuthorizationOntologyGraph` 저장용 store adapter 정의
 - [x] graph snapshot 저장/조회 API 추가
-- [ ] decision observation ingest API 연결
+- [x] decision observation ingest API 연결
 - [x] graph diff API 추가
 
 ### Policy Source Adapter
@@ -42,7 +42,7 @@ def:
 
 ### Runtime Feedback
 
-- [ ] `PermissionMiddleware` feedback을 ingest event로 전송하는 adapter 추가
+- [x] `PermissionMiddleware` feedback을 ingest event로 전송하는 adapter 추가
 - [ ] `VERSION_MISMATCH` 발생 시 token refresh/remediation workflow 정의
 - [ ] `SCHEMA_MISMATCH` 발생 시 re-authentication workflow 정의
 - [ ] `PERMISSION_DENIED`와 `NO_DOMAIN_CLAIM`의 운영 alert severity 분리
