@@ -69,6 +69,8 @@ export const AUTHORIZATION_RELATION_KINDS = [
   "evaluated_by",
   "deployed_by",
   "has_role",
+  "derives_role_from",
+  "imports_derived_role",
   "matches_resource",
   "allows_action",
   "denies_action",
@@ -160,6 +162,21 @@ export interface CerbosResourcePolicyLike {
   metadata?: Record<string, unknown>;
 }
 
+export interface CerbosDerivedRolesLike {
+  apiVersion?: string;
+  derivedRoles: {
+    name: string;
+    definitions?: CerbosDerivedRoleDefinitionLike[];
+  };
+  metadata?: Record<string, unknown>;
+}
+
+export interface CerbosDerivedRoleDefinitionLike {
+  name: string;
+  parentRoles: string[];
+  condition?: unknown;
+}
+
 export interface CerbosPolicyRuleLike {
   actions: string[];
   effect: "EFFECT_ALLOW" | "EFFECT_DENY" | "allow" | "deny" | string;
@@ -202,11 +219,33 @@ export interface NormalizedCerbosResourcePolicy {
   metadata?: Record<string, unknown>;
 }
 
+export interface NormalizedCerbosDerivedRoleDefinition {
+  name: string;
+  parentRoles: string[];
+  condition?: unknown;
+}
+
+export interface NormalizedCerbosDerivedRoles {
+  apiVersion?: string;
+  derivedRoles: {
+    name: string;
+    definitions: NormalizedCerbosDerivedRoleDefinition[];
+  };
+  metadata?: Record<string, unknown>;
+}
+
 export interface CerbosPolicyProjectionInput {
   policyRealm: AuthorizationRealm;
   resourceRealm: AuthorizationRealm;
   actionRealm?: AuthorizationRealm;
   policy: CerbosResourcePolicyLike;
+  sourceRef?: string;
+}
+
+export interface CerbosDerivedRolesProjectionInput {
+  policyRealm: AuthorizationRealm;
+  roleRealm?: AuthorizationRealm;
+  derivedRoles: CerbosDerivedRolesLike;
   sourceRef?: string;
 }
 
@@ -365,6 +404,33 @@ export function createActionNode(input: ActionRef): AuthorizationNode {
     nodeId: nodeIdFromCoord(coord),
     kind: "action",
     coord,
+  };
+}
+
+export function createRoleNode(input: {
+  realm: AuthorizationRealm;
+  roleId: string;
+  roleKind?: "role" | "derived_role";
+  sourcePolicyId?: string;
+  condition?: unknown;
+}): AuthorizationNode {
+  const coord = createAuthNodeCoord({
+    realm: input.realm,
+    space: "role",
+    anchor: input.roleId,
+    taxonomies: {
+      node_kind: "role",
+      role_kind: input.roleKind ?? "role",
+    },
+  });
+  return {
+    nodeId: nodeIdFromCoord(coord),
+    kind: "role",
+    coord,
+    metadata: {
+      sourcePolicyId: input.sourcePolicyId,
+      condition: input.condition,
+    },
   };
 }
 
@@ -576,6 +642,107 @@ export function validateCerbosResourcePolicyLike(
   };
 }
 
+export function normalizeCerbosDerivedRoles(
+  derivedRoles: CerbosDerivedRolesLike,
+): NormalizedCerbosDerivedRoles {
+  return {
+    apiVersion: derivedRoles.apiVersion,
+    metadata: derivedRoles.metadata,
+    derivedRoles: {
+      name: derivedRoles.derivedRoles.name,
+      definitions: (derivedRoles.derivedRoles.definitions ?? []).map((definition) => ({
+        name: definition.name,
+        parentRoles: [...new Set(definition.parentRoles)],
+        condition: definition.condition,
+      })),
+    },
+  };
+}
+
+export function validateCerbosDerivedRolesLike(
+  input: unknown,
+): CerbosPolicyValidationResult {
+  const issues: CerbosPolicyValidationIssue[] = [];
+
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return {
+      valid: false,
+      issues: [
+        createCerbosIssue(
+          "error",
+          "derived-roles-not-object",
+          "$",
+          "Cerbos derivedRoles must be an object",
+        ),
+      ],
+    };
+  }
+
+  const record = input as Partial<CerbosDerivedRolesLike>;
+  if (!record.derivedRoles || typeof record.derivedRoles !== "object") {
+    issues.push(
+      createCerbosIssue(
+        "error",
+        "derived-roles-missing",
+        "derivedRoles",
+        "derivedRoles is required",
+      ),
+    );
+  } else {
+    if (!record.derivedRoles.name || record.derivedRoles.name.trim().length === 0) {
+      issues.push(
+        createCerbosIssue(
+          "error",
+          "derived-roles-name-missing",
+          "derivedRoles.name",
+          "derivedRoles.name is required",
+        ),
+      );
+    }
+
+    const definitions = record.derivedRoles.definitions ?? [];
+    if (definitions.length === 0) {
+      issues.push(
+        createCerbosIssue(
+          "warning",
+          "derived-role-definitions-empty",
+          "derivedRoles.definitions",
+          "derivedRoles should define at least one definition",
+        ),
+      );
+    }
+
+    definitions.forEach((definition, index) => {
+      const path = `derivedRoles.definitions.${index}`;
+      if (!definition.name || definition.name.trim().length === 0) {
+        issues.push(
+          createCerbosIssue(
+            "error",
+            "derived-role-name-missing",
+            `${path}.name`,
+            "derived role definition name is required",
+          ),
+        );
+      }
+      if (!Array.isArray(definition.parentRoles) || definition.parentRoles.length === 0) {
+        issues.push(
+          createCerbosIssue(
+            "error",
+            "derived-role-parent-roles-empty",
+            `${path}.parentRoles`,
+            "derived role definition parentRoles must contain at least one role",
+          ),
+        );
+      }
+    });
+  }
+
+  return {
+    valid: issues.every((issue) => issue.level !== "error"),
+    issues,
+  };
+}
+
 function uniqueNodes(nodes: AuthorizationNode[]): AuthorizationNode[] {
   return [...new Map(nodes.map((node) => [node.nodeId, node])).values()];
 }
@@ -660,6 +827,87 @@ export function projectCerbosResourcePolicy(
   return {
     realms: [input.policyRealm, input.resourceRealm, actionRealm],
     nodes: uniqueNodes([policyNode, resourceNode, ...actionNodes]),
+    relations: uniqueRelations(relations),
+  };
+}
+
+export function projectCerbosDerivedRoles(
+  input: CerbosDerivedRolesProjectionInput,
+): AuthorizationOntologyGraph {
+  const validation = validateCerbosDerivedRolesLike(input.derivedRoles);
+  if (!validation.valid) {
+    throw new Error(
+      `Invalid Cerbos derivedRoles: ${validation.issues
+        .filter((issue) => issue.level === "error")
+        .map((issue) => `${issue.code}@${issue.path}`)
+        .join(", ")}`,
+    );
+  }
+  const normalized = normalizeCerbosDerivedRoles(input.derivedRoles);
+  const policyNode = createPolicyNode({
+    realm: input.policyRealm,
+    policyId: `cerbos:derivedRoles:${normalized.derivedRoles.name}`,
+    policyKind: "cerbos_derived_roles",
+    sourceRef: input.sourceRef,
+  });
+  const roleRealm = input.roleRealm ?? input.policyRealm;
+  const derivedRoleNodes = normalized.derivedRoles.definitions.map((definition) =>
+    createRoleNode({
+      realm: roleRealm,
+      roleId: definition.name,
+      roleKind: "derived_role",
+      sourcePolicyId: policyNode.nodeId,
+      condition: definition.condition,
+    }),
+  );
+  const parentRoleNodes = normalized.derivedRoles.definitions.flatMap((definition) =>
+    definition.parentRoles.map((parentRole) =>
+      createRoleNode({
+        realm: roleRealm,
+        roleId: parentRole,
+        roleKind: "role",
+      }),
+    ),
+  );
+
+  const relations = [
+    ...derivedRoleNodes.map((roleNode) =>
+      createAuthorizationRelation({
+        kind: "imports_derived_role",
+        fromNodeId: policyNode.nodeId,
+        toNodeId: roleNode.nodeId,
+        metadata: {
+          derivedRolesName: normalized.derivedRoles.name,
+        },
+      }),
+    ),
+    ...normalized.derivedRoles.definitions.flatMap((definition) => {
+      const roleNode = createRoleNode({
+        realm: roleRealm,
+        roleId: definition.name,
+        roleKind: "derived_role",
+      });
+      return definition.parentRoles.map((parentRole) => {
+        const parentRoleNode = createRoleNode({
+          realm: roleRealm,
+          roleId: parentRole,
+          roleKind: "role",
+        });
+        return createAuthorizationRelation({
+          kind: "derives_role_from",
+          fromNodeId: roleNode.nodeId,
+          toNodeId: parentRoleNode.nodeId,
+          metadata: {
+            condition: definition.condition,
+          },
+        });
+      });
+    }),
+  ];
+
+  return {
+    realms: [input.policyRealm, roleRealm],
+    nodes: uniqueNodes([policyNode, ...derivedRoleNodes, ...parentRoleNodes]),
     relations: uniqueRelations(relations),
   };
 }

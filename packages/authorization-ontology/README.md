@@ -9,6 +9,7 @@
 - `AuthorizationRealm`으로 identity/policy/enforcement/infra/application/data/observation 권위 경계를 구분한다.
 - `PrincipalRef`, `ResourceRef`, `ActionRef`, `PolicyRef`를 `NodeCoord` 기반 `AuthorizationNode`로 투영한다.
 - `projectCerbosResourcePolicy()`로 Cerbos resource policy를 policy/resource/action graph로 변환한다.
+- `projectCerbosDerivedRoles()`로 Cerbos derived roles를 policy/derived-role/parent-role graph로 변환한다.
 - `evaluateColumnPolicyPropagation()`와 `projectColumnPolicyPropagation()`로 컬럼 리니지 transform에 따른 권한 전파 모드를 계산한다.
 - Authentik/ZITADEL/Caddy/LB/Pulumi/ArgoCD는 권한 엔진이 아니라 identity/enforcement/deployment provenance realm으로 모델링한다.
 

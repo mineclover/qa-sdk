@@ -6,8 +6,11 @@ import {
   createResourceNode,
   evaluateColumnPolicyPropagation,
   normalizeCerbosResourcePolicy,
+  normalizeCerbosDerivedRoles,
+  projectCerbosDerivedRoles,
   projectCerbosResourcePolicy,
   projectColumnPolicyPropagation,
+  validateCerbosDerivedRolesLike,
   validateCerbosResourcePolicyLike,
 } from "./index.js";
 
@@ -112,6 +115,63 @@ describe("authorization-ontology", () => {
     ]);
 
     expect(validateCerbosResourcePolicyLike({}).valid).toBe(false);
+  });
+
+  it("projects Cerbos derived roles into role graph", () => {
+    const policyRealm = createAuthorizationRealm({
+      kind: "policy",
+      authority: "cerbos:prod",
+      environment: "prod",
+    });
+
+    const derivedRoles = {
+      derivedRoles: {
+        name: "crm_derived_roles",
+        definitions: [
+          {
+            name: "regional_analyst",
+            parentRoles: ["analyst", "viewer"],
+            condition: {
+              match: {
+                expr: "request.principal.attr.region == request.resource.attr.region",
+              },
+            },
+          },
+        ],
+      },
+    };
+
+    expect(validateCerbosDerivedRolesLike(derivedRoles)).toEqual({
+      valid: true,
+      issues: [],
+    });
+    expect(normalizeCerbosDerivedRoles(derivedRoles).derivedRoles.definitions[0]).toEqual({
+      name: "regional_analyst",
+      parentRoles: ["analyst", "viewer"],
+      condition: {
+        match: {
+          expr: "request.principal.attr.region == request.resource.attr.region",
+        },
+      },
+    });
+
+    const graph = projectCerbosDerivedRoles({
+      policyRealm,
+      derivedRoles,
+      sourceRef: "git://policy-repo/derived_roles.yaml@abc123",
+    });
+
+    expect(graph.nodes.map((node) => `${node.kind}:${node.coord.anchor}`).toSorted()).toEqual([
+      "policy:cerbos:derivedRoles:crm_derived_roles",
+      "role:analyst",
+      "role:regional_analyst",
+      "role:viewer",
+    ]);
+    expect(graph.relations.map((relation) => relation.kind).toSorted()).toEqual([
+      "derives_role_from",
+      "derives_role_from",
+      "imports_derived_role",
+    ]);
   });
 
   it("classifies column-level policy propagation by lineage transform", () => {
