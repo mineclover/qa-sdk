@@ -155,6 +155,24 @@ export interface IdentityProviderRef {
   issuer?: string;
 }
 
+export interface EnforcementRouteRef {
+  routeRealm: AuthorizationRealm;
+  routeId: string;
+  routeKind: "proxy_route" | "api_route" | "cloud_lb" | string;
+  host?: string;
+  path?: string;
+  methods?: string[];
+  upstreamResource?: ResourceRef;
+  enforcementPoint: EnforcementPointRef;
+  policy?: PolicyRef;
+  deploymentSource?: {
+    realm: AuthorizationRealm;
+    sourceId: string;
+    kind: "pulumi" | "argocd" | "git" | string;
+    revision?: string;
+  };
+}
+
 export interface CerbosResourcePolicyLike {
   apiVersion?: string;
   resourcePolicy: {
@@ -530,6 +548,32 @@ export function createIdentityProviderNode(input: IdentityProviderRef): Authoriz
     coord,
     metadata: {
       issuer: input.issuer,
+    },
+  };
+}
+
+export function createDeploymentSourceNode(input: {
+  realm: AuthorizationRealm;
+  sourceId: string;
+  kind: "pulumi" | "argocd" | "git" | string;
+  revision?: string;
+}): AuthorizationNode {
+  const coord = createAuthNodeCoord({
+    realm: input.realm,
+    space: "deployment-source",
+    anchor: input.sourceId,
+    taxonomies: {
+      node_kind: "deployment_source",
+      deployment_kind: input.kind,
+      ...(input.revision ? { revision: input.revision } : {}),
+    },
+  });
+  return {
+    nodeId: nodeIdFromCoord(coord),
+    kind: "deployment_source",
+    coord,
+    metadata: {
+      revision: input.revision,
     },
   };
 }
@@ -1027,6 +1071,79 @@ export function projectColumnPolicyPropagation(
         },
       }),
     ],
+  };
+}
+
+export function projectEnforcementRoute(input: EnforcementRouteRef): AuthorizationOntologyGraph {
+  const routeNode = createResourceNode({
+    realm: input.routeRealm,
+    resourceId: input.routeId,
+    resourceKind: "proxy_route",
+    attributes: {
+      routeKind: input.routeKind,
+      host: input.host,
+      path: input.path,
+      methods: input.methods ?? [],
+    },
+  });
+  const enforcementNode = createEnforcementPointNode(input.enforcementPoint);
+  const upstreamNode = input.upstreamResource
+    ? createResourceNode(input.upstreamResource)
+    : undefined;
+  const policyNode = input.policy ? createPolicyNode(input.policy) : undefined;
+  const deploymentNode = input.deploymentSource
+    ? createDeploymentSourceNode(input.deploymentSource)
+    : undefined;
+
+  return {
+    realms: uniqueRealms([
+      input.routeRealm,
+      input.enforcementPoint.realm,
+      ...(input.upstreamResource ? [input.upstreamResource.realm] : []),
+      ...(input.policy ? [input.policy.realm] : []),
+      ...(input.deploymentSource ? [input.deploymentSource.realm] : []),
+    ]),
+    nodes: uniqueNodes([
+      routeNode,
+      enforcementNode,
+      ...(upstreamNode ? [upstreamNode] : []),
+      ...(policyNode ? [policyNode] : []),
+      ...(deploymentNode ? [deploymentNode] : []),
+    ]),
+    relations: uniqueRelations([
+      createAuthorizationRelation({
+        kind: "enforced_at",
+        fromNodeId: routeNode.nodeId,
+        toNodeId: enforcementNode.nodeId,
+      }),
+      ...(upstreamNode
+        ? [
+            createAuthorizationRelation({
+              kind: "matches_resource",
+              fromNodeId: routeNode.nodeId,
+              toNodeId: upstreamNode.nodeId,
+            }),
+          ]
+        : []),
+      ...(policyNode
+        ? [
+            createAuthorizationRelation({
+              kind: "protects",
+              fromNodeId: policyNode.nodeId,
+              toNodeId: routeNode.nodeId,
+            }),
+          ]
+        : []),
+      ...(deploymentNode
+        ? [
+            createAuthorizationRelation({
+              kind: "deployed_by",
+              fromNodeId: routeNode.nodeId,
+              toNodeId: deploymentNode.nodeId,
+            }),
+          ]
+        : []),
+    ]),
   };
 }
 

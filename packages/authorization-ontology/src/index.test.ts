@@ -12,6 +12,7 @@ import {
   projectCerbosDerivedRoles,
   projectCerbosResourcePolicy,
   projectColumnPolicyPropagation,
+  projectEnforcementRoute,
   validateCerbosDerivedRolesLike,
   validateCerbosResourcePolicyLike,
 } from "./index.js";
@@ -336,6 +337,78 @@ describe("authorization-ontology", () => {
       "decision_principal",
       "decision_resource",
       "has_role",
+    ]);
+  });
+
+  it("projects proxy enforcement routes into route/enforcement/policy graph", () => {
+    const routeRealm = createAuthorizationRealm({
+      kind: "enforcement",
+      authority: "caddy:prod",
+      environment: "prod",
+    });
+    const enforcementRealm = createAuthorizationRealm({
+      kind: "enforcement",
+      authority: "authentik:prod",
+      environment: "prod",
+    });
+    const appRealm = createAuthorizationRealm({
+      kind: "application",
+      authority: "service:crm",
+      environment: "prod",
+    });
+    const policyRealm = createAuthorizationRealm({
+      kind: "policy",
+      authority: "cerbos:prod",
+      environment: "prod",
+    });
+    const deploymentRealm = createAuthorizationRealm({
+      kind: "infra",
+      authority: "argocd:prod",
+      environment: "prod",
+    });
+
+    const graph = projectEnforcementRoute({
+      routeRealm,
+      routeId: "crm.example.com/customers/*",
+      routeKind: "proxy_route",
+      host: "crm.example.com",
+      path: "/customers/*",
+      methods: ["GET"],
+      enforcementPoint: {
+        realm: enforcementRealm,
+        enforcementPointId: "outpost:crm",
+        kind: "authentik_proxy",
+      },
+      upstreamResource: {
+        realm: appRealm,
+        resourceId: "crm.customer_profile",
+        resourceKind: "service",
+      },
+      policy: {
+        realm: policyRealm,
+        policyId: "cerbos:resource:crm.customer_profile",
+        policyKind: "cerbos_resource_policy",
+      },
+      deploymentSource: {
+        realm: deploymentRealm,
+        sourceId: "argocd:crm",
+        kind: "argocd",
+        revision: "rev-1",
+      },
+    });
+
+    expect(graph.nodes.map((node) => node.kind).toSorted()).toEqual([
+      "deployment_source",
+      "enforcement_point",
+      "policy",
+      "resource",
+      "resource",
+    ]);
+    expect(graph.relations.map((relation) => relation.kind).toSorted()).toEqual([
+      "deployed_by",
+      "enforced_at",
+      "matches_resource",
+      "protects",
     ]);
   });
 

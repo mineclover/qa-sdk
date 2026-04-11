@@ -11,6 +11,7 @@
 - `projectCerbosResourcePolicy()`로 Cerbos resource policy를 policy/resource/action graph로 변환한다.
 - `projectCerbosDerivedRoles()`로 Cerbos derived roles를 policy/derived-role/parent-role graph로 변환한다.
 - `projectCerbosDecisionObservation()`로 Cerbos check 결과를 decision/principal/resource/action/policy/enforcement graph로 변환한다.
+- `projectEnforcementRoute()`로 Caddy/AuthentiK/Cloud LB route를 enforcement point, upstream resource, Cerbos policy, deployment provenance graph로 변환한다.
 - `evaluateColumnPolicyPropagation()`와 `projectColumnPolicyPropagation()`로 컬럼 리니지 transform에 따른 권한 전파 모드를 계산한다.
 - Authentik/ZITADEL/Caddy/LB/Pulumi/ArgoCD는 권한 엔진이 아니라 identity/enforcement/deployment provenance realm으로 모델링한다.
 
