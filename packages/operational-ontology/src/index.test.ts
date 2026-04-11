@@ -227,7 +227,11 @@ describe("implementation governance evaluator", () => {
         expect.objectContaining({
           action: "defer",
           constraintKind: "validation_surface",
-          proposedChange: "Defer validation_surface completion to a follow-up governance run",
+          proposedChange: expect.objectContaining({
+            kind: "defer_completion",
+            summary: "Defer validation_surface completion to a follow-up governance run",
+            constraintKind: "validation_surface",
+          }),
           requiresDecision: false,
         }),
       ]),
@@ -263,6 +267,10 @@ describe("implementation governance evaluator", () => {
         expect.objectContaining({
           action: "escalate",
           constraintKind: "unit_boundary",
+          proposedChange: expect.objectContaining({
+            kind: "escalate_decision",
+            constraintKind: "unit_boundary",
+          }),
           requiresDecision: true,
         }),
       ]),

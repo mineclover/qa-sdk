@@ -123,13 +123,28 @@ export interface ConsistencyVerdict {
   refs: readonly string[];
 }
 
+export type GovernanceProposedChangeKind =
+  | 'relax_constraint'
+  | 'split_unit'
+  | 'defer_completion'
+  | 'escalate_decision'
+  | 'custom_adjustment';
+
+export interface GovernanceProposedChange {
+  kind: GovernanceProposedChangeKind;
+  summary: string;
+  constraintKind: GovernanceVocabularyValue<ConsistencyConstraintKind>;
+  refs: readonly string[];
+  targetRef?: string;
+}
+
 export interface AdjustmentSuggestion {
   action: GovernanceVocabularyValue<AdjustmentAction>;
   constraintKind: GovernanceVocabularyValue<ConsistencyConstraintKind>;
   reason: string;
   refs: readonly string[];
   targetRef?: string;
-  proposedChange?: string;
+  proposedChange?: GovernanceProposedChange;
   requiresDecision?: boolean;
 }
 

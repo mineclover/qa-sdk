@@ -10,6 +10,8 @@ import type {
   ConsistencyConstraint,
   ConsistencyConstraintKind,
   ConsistencyVerdict,
+  GovernanceProposedChange,
+  GovernanceProposedChangeKind,
   GovernanceVocabularyValue,
   ImplementationBinding,
   ImplementationBlueprint,
@@ -50,7 +52,17 @@ function chooseAdjustment(
   return 'escalate';
 }
 
-function proposedChangeForAction(
+function proposedChangeKindForAction(
+  action: GovernanceVocabularyValue<AdjustmentAction>,
+): GovernanceProposedChangeKind {
+  if (action === 'relax') return 'relax_constraint';
+  if (action === 'split') return 'split_unit';
+  if (action === 'defer') return 'defer_completion';
+  if (action === 'escalate') return 'escalate_decision';
+  return 'custom_adjustment';
+}
+
+function proposedChangeSummaryForAction(
   action: GovernanceVocabularyValue<AdjustmentAction>,
   constraintKind: GovernanceVocabularyValue<ConsistencyConstraintKind>,
 ): string {
@@ -58,6 +70,20 @@ function proposedChangeForAction(
   if (action === 'split') return `Split implementation or verification unit for ${constraintKind}`;
   if (action === 'defer') return `Defer ${constraintKind} completion to a follow-up governance run`;
   return `Escalate ${constraintKind} decision to governance owner`;
+}
+
+function createProposedChange(
+  action: GovernanceVocabularyValue<AdjustmentAction>,
+  constraintKind: GovernanceVocabularyValue<ConsistencyConstraintKind>,
+  refs: readonly string[],
+): GovernanceProposedChange {
+  return {
+    kind: proposedChangeKindForAction(action),
+    summary: proposedChangeSummaryForAction(action, constraintKind),
+    constraintKind,
+    refs,
+    targetRef: refs[0],
+  };
 }
 
 function createAdjustment(
@@ -72,7 +98,7 @@ function createAdjustment(
     reason,
     refs,
     targetRef: refs[0],
-    proposedChange: proposedChangeForAction(action, constraintKind),
+    proposedChange: createProposedChange(action, constraintKind, refs),
     requiresDecision: action === 'escalate',
   };
 }

@@ -110,7 +110,7 @@ factory가 강제하는 제약은 구현 단위와 검증 단위가 닫히도록
 - `defer` — 구조 일관성을 깨지 않는 enrichment를 후속 run으로 미룬다.
 - `escalate` — required facet, identity axis, relation grammar 같은 core 제약 변경은 사람 결정으로 올린다.
 
-조정 후보는 `targetRef`, `proposedChange`, `requiresDecision`을 포함해 다음 실행자가 후속 작업을 판단할 수 있어야 한다.
+조정 후보는 `targetRef`, 구조화된 `proposedChange`, `requiresDecision`을 포함해 다음 실행자가 후속 작업을 판단할 수 있어야 한다.
 
 core evaluator가 모르는 custom constraint는 자동 통과시키지 않는다. extension evaluator가 없으면 unsupported constraint로 실패시킨다.
 
