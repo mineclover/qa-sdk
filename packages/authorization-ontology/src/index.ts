@@ -173,6 +173,39 @@ export interface EnforcementRouteRef {
   };
 }
 
+export interface StructuredEnforcementRouteConfig {
+  environment: string;
+  route: {
+    id?: string;
+    kind?: "proxy_route" | "api_route" | "cloud_lb" | string;
+    host: string;
+    path: string;
+    methods?: string[];
+  };
+  proxy: {
+    authority: string;
+    kind: "cloud_lb" | "caddy" | "authentik_proxy" | "service_middleware";
+    id: string;
+  };
+  upstream?: {
+    authority: string;
+    id: string;
+    kind?: AuthorizationResourceKind;
+  };
+  policy?: {
+    authority: string;
+    id: string;
+    kind?: PolicyRef["policyKind"];
+    version?: string;
+  };
+  deployment?: {
+    authority: string;
+    id: string;
+    kind: "pulumi" | "argocd" | "git" | string;
+    revision?: string;
+  };
+}
+
 export interface CerbosResourcePolicyLike {
   apiVersion?: string;
   resourcePolicy: {
@@ -1145,6 +1178,77 @@ export function projectEnforcementRoute(input: EnforcementRouteRef): Authorizati
         : []),
     ]),
   };
+}
+
+export function normalizeStructuredEnforcementRoute(
+  config: StructuredEnforcementRouteConfig,
+): EnforcementRouteRef {
+  const routeId = config.route.id ?? `${config.route.host}${config.route.path}`;
+  const routeRealm = createAuthorizationRealm({
+    kind: "enforcement",
+    authority: config.proxy.authority,
+    environment: config.environment,
+  });
+  const enforcementRealm = createAuthorizationRealm({
+    kind: "enforcement",
+    authority: config.proxy.authority,
+    environment: config.environment,
+  });
+
+  return {
+    routeRealm,
+    routeId,
+    routeKind: config.route.kind ?? "proxy_route",
+    host: config.route.host,
+    path: config.route.path,
+    methods: config.route.methods ?? [],
+    enforcementPoint: {
+      realm: enforcementRealm,
+      enforcementPointId: config.proxy.id,
+      kind: config.proxy.kind,
+    },
+    upstreamResource: config.upstream
+      ? {
+          realm: createAuthorizationRealm({
+            kind: "application",
+            authority: config.upstream.authority,
+            environment: config.environment,
+          }),
+          resourceId: config.upstream.id,
+          resourceKind: config.upstream.kind ?? "service",
+        }
+      : undefined,
+    policy: config.policy
+      ? {
+          realm: createAuthorizationRealm({
+            kind: "policy",
+            authority: config.policy.authority,
+            environment: config.environment,
+          }),
+          policyId: config.policy.id,
+          policyKind: config.policy.kind ?? "cerbos_resource_policy",
+          version: config.policy.version,
+        }
+      : undefined,
+    deploymentSource: config.deployment
+      ? {
+          realm: createAuthorizationRealm({
+            kind: "infra",
+            authority: config.deployment.authority,
+            environment: config.environment,
+          }),
+          sourceId: config.deployment.id,
+          kind: config.deployment.kind,
+          revision: config.deployment.revision,
+        }
+      : undefined,
+  };
+}
+
+export function projectStructuredEnforcementRoute(
+  config: StructuredEnforcementRouteConfig,
+): AuthorizationOntologyGraph {
+  return projectEnforcementRoute(normalizeStructuredEnforcementRoute(config));
 }
 
 export function createAuthorizationDecisionNode(input: AuthorizationDecision): AuthorizationNode {

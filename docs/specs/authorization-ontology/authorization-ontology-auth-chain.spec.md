@@ -41,4 +41,6 @@ Pulumi, ArgoCD, Cloud LB, Caddy, Authentik proxy, ZITADEL, Cerbos를 하나의 �
 
 권한 관리 주체는 하나로 유지한다. 나머지 컴포넌트는 권한 결정을 직접 소유하는 것이 아니라, identity 발급, request ingress, path blocking, policy deployment, decision observation 중 하나의 역할을 가진다.
 
-초기 구현은 `projectEnforcementRoute()`로 제공한다. 이 helper는 Caddy/AuthentiK/Cloud LB 같은 route enforcement를 route resource, enforcement point, upstream resource, Cerbos policy, deployment source graph로 투영한다.
+초기 구현은 `projectEnforcementRoute()`와 `projectStructuredEnforcementRoute()`로 제공한다. 이 helper는 Caddy/AuthentiK/Cloud LB 같은 route enforcement를 route resource, enforcement point, upstream resource, Cerbos policy, deployment source graph로 투영한다.
+
+structured route config는 실제 Caddy/AuthentiK/Pulumi/ArgoCD parser가 생기기 전의 canonical intermediate shape다. 외부 설정 parser는 이 shape로 변환한 뒤 authorization ontology projection을 호출한다.

@@ -7,12 +7,14 @@ import {
   evaluateColumnPolicyPropagation,
   normalizeCerbosResourcePolicy,
   normalizeCerbosDerivedRoles,
+  normalizeStructuredEnforcementRoute,
   projectAuthorizationDecision,
   projectCerbosDecisionObservation,
   projectCerbosDerivedRoles,
   projectCerbosResourcePolicy,
   projectColumnPolicyPropagation,
   projectEnforcementRoute,
+  projectStructuredEnforcementRoute,
   validateCerbosDerivedRolesLike,
   validateCerbosResourcePolicyLike,
 } from "./index.js";
@@ -410,6 +412,54 @@ describe("authorization-ontology", () => {
       "matches_resource",
       "protects",
     ]);
+  });
+
+  it("normalizes structured proxy route configs into enforcement graph", () => {
+    const route = normalizeStructuredEnforcementRoute({
+      environment: "prod",
+      route: {
+        host: "crm.example.com",
+        path: "/customers/*",
+        methods: ["GET"],
+      },
+      proxy: {
+        authority: "authentik:prod",
+        kind: "authentik_proxy",
+        id: "outpost:crm",
+      },
+      upstream: {
+        authority: "service:crm",
+        id: "crm.customer_profile",
+      },
+      policy: {
+        authority: "cerbos:prod",
+        id: "cerbos:resource:crm.customer_profile",
+      },
+      deployment: {
+        authority: "argocd:prod",
+        id: "argocd:crm",
+        kind: "argocd",
+        revision: "rev-1",
+      },
+    });
+
+    expect(route.routeId).toBe("crm.example.com/customers/*");
+    expect(route.enforcementPoint.kind).toBe("authentik_proxy");
+    expect(route.policy?.policyId).toBe("cerbos:resource:crm.customer_profile");
+
+    const graph = projectStructuredEnforcementRoute({
+      environment: "prod",
+      route: {
+        host: "crm.example.com",
+        path: "/customers/*",
+      },
+      proxy: {
+        authority: "authentik:prod",
+        kind: "authentik_proxy",
+        id: "outpost:crm",
+      },
+    });
+    expect(graph.relations.map((relation) => relation.kind)).toEqual(["enforced_at"]);
   });
 
   it("projects direct authorization decisions into observable graph", () => {
