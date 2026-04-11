@@ -36,6 +36,7 @@ qa-sdk에는 5개 taxonomy가 독립적으로 존재한다. 각 taxonomy는 자�
 | [coordinate-matrix.memo.md](coordinate-matrix.memo.md) | 좌표 행렬, taxonomy 흐름의 수학적 표현 |
 | [document-addressing-contract.memo.md](document-addressing-contract.memo.md) | 문서 주소 계약, family/role, identity/path 분리 |
 | [link-tag-redesign.memo.md](link-tag-redesign.memo.md) | links/tags 재설계 방향 |
+| [taxonomy-as-indexing.memo.md](taxonomy-as-indexing.memo.md) | RDF + 좌표 인덱싱 + 재귀 내포, 상대 깊이 원칙, 위치 기반 컨텍스트 주입 |
 
 ## 관련 spec
 
