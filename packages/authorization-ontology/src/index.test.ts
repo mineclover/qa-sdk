@@ -560,4 +560,190 @@ server {
       ]),
     );
   });
+
+  it("composes Cerbos policy, proxy route, decision, and column lineage into one authorization flow", () => {
+    const identityRealm = createAuthorizationRealm({
+      kind: "identity",
+      authority: "zitadel:prod",
+      environment: "prod",
+    });
+    const policyRealm = createAuthorizationRealm({
+      kind: "policy",
+      authority: "cerbos:prod",
+      environment: "prod",
+    });
+    const enforcementRealm = createAuthorizationRealm({
+      kind: "enforcement",
+      authority: "authentik:prod",
+      environment: "prod",
+    });
+    const appRealm = createAuthorizationRealm({
+      kind: "application",
+      authority: "service:crm",
+      environment: "prod",
+    });
+    const dataRealm = createAuthorizationRealm({
+      kind: "data",
+      authority: "bq:commerce:analytics",
+      environment: "prod",
+    });
+    const infraRealm = createAuthorizationRealm({
+      kind: "infra",
+      authority: "argocd:prod",
+      environment: "prod",
+    });
+
+    const derivedRolesGraph = projectCerbosDerivedRoles({
+      policyRealm,
+      derivedRoles: {
+        derivedRoles: {
+          name: "crm_derived_roles",
+          definitions: [
+            {
+              name: "regional_analyst",
+              parentRoles: ["analyst"],
+              condition: {
+                match: {
+                  expr: "request.principal.attr.region == request.resource.attr.region",
+                },
+              },
+            },
+          ],
+        },
+      },
+    });
+
+    const policyGraph = projectCerbosResourcePolicy({
+      policyRealm,
+      resourceRealm: appRealm,
+      policy: {
+        resourcePolicy: {
+          resource: "crm.customer_profile",
+          version: "v1",
+          importDerivedRoles: ["crm_derived_roles"],
+          rules: [
+            {
+              actions: ["read"],
+              effect: "EFFECT_ALLOW",
+              derivedRoles: ["regional_analyst"],
+            },
+          ],
+        },
+      },
+    });
+
+    const routeGraph = projectEnforcementRoute({
+      routeRealm: enforcementRealm,
+      routeId: "crm.example.com/customers/*",
+      routeKind: "proxy_route",
+      host: "crm.example.com",
+      path: "/customers/*",
+      methods: ["GET"],
+      enforcementPoint: {
+        realm: enforcementRealm,
+        enforcementPointId: "outpost:crm",
+        kind: "authentik_proxy",
+      },
+      upstreamResource: {
+        realm: appRealm,
+        resourceId: "crm.customer_profile",
+        resourceKind: "service",
+      },
+      policy: {
+        realm: policyRealm,
+        policyId: "cerbos:resource:crm.customer_profile",
+        policyKind: "cerbos_resource_policy",
+        version: "v1",
+      },
+      deploymentSource: {
+        realm: infraRealm,
+        sourceId: "argocd:crm",
+        kind: "argocd",
+        revision: "rev-1",
+      },
+    });
+
+    const decisionGraph = projectCerbosDecisionObservation({
+      identityRealm,
+      resourceRealm: appRealm,
+      policyRealm,
+      enforcementPoint: {
+        realm: enforcementRealm,
+        enforcementPointId: "outpost:crm",
+        kind: "authentik_proxy",
+      },
+      decision: {
+        requestId: "req-authorization-flow",
+        principal: {
+          id: "user-1",
+          roles: ["analyst"],
+          attr: { region: "kr" },
+        },
+        resource: {
+          id: "crm.customer_profile",
+          kind: "service",
+          attr: { region: "kr" },
+        },
+        actions: [
+          {
+            action: "read",
+            effect: "EFFECT_ALLOW",
+            policyId: "cerbos:resource:crm.customer_profile",
+          },
+        ],
+        observedAt: "2026-04-11T00:00:00.000Z",
+      },
+    });
+
+    const lineageGraph = projectColumnPolicyPropagation({
+      source: {
+        realm: dataRealm,
+        resourceId: "users.email",
+        resourceKind: "column",
+        classification: "pii",
+      },
+      target: {
+        realm: dataRealm,
+        resourceId: "crm.customer_email",
+        resourceKind: "column",
+        classification: "pii",
+      },
+      transform: "copy",
+      sourcePolicyId: "cerbos:resource:crm.customer_profile",
+      rules: [
+        {
+          sourceClassification: "pii",
+          transform: "copy",
+          propagation: "inherit",
+        },
+      ],
+    });
+
+    const allRelations = [
+      ...derivedRolesGraph.relations,
+      ...policyGraph.relations,
+      ...routeGraph.relations,
+      ...decisionGraph.relations,
+      ...lineageGraph.relations,
+    ].map((relation) => relation.kind);
+
+    expect(allRelations).toEqual(
+      expect.arrayContaining([
+        "imports_derived_role",
+        "derives_role_from",
+        "protects",
+        "allows_action",
+        "enforced_at",
+        "matches_resource",
+        "deployed_by",
+        "decision_principal",
+        "decision_resource",
+        "decision_action",
+        "decision_policy",
+        "decision_enforcement",
+        "derives_from",
+        "inherits_policy_from",
+      ]),
+    );
+  });
 });
