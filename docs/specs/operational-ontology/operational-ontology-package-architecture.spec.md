@@ -27,6 +27,7 @@ def:
 현재 공개 표면은 아래 grouped facade로 나뉜다. 이 문서는 패키지 public surface를 설명하는 leaf 문서이고, 각 plane의 개념 정의 자체는 별도 문서를 참조한다.
 
 - `operationalOntologySchemaPlane`
+- `operationalOntologyPackPlane`
 - `operationalOntologyImplementationGovernancePlane`
 - `operationalOntologyLineagePlane`
 - `operationalOntologyCorridorPlane`
@@ -39,6 +40,7 @@ def:
 동시에 subpath import도 같은 경계를 반영한다.
 
 - `operational-ontology/schema`
+- `operational-ontology/pack`
 - `operational-ontology/governance`
 - `operational-ontology/runtime`
 - `operational-ontology/lineage`
@@ -65,6 +67,8 @@ def:
 
 - **schema plane**
   taxonomy/schema validation
+- **pack plane**
+  도메인 ontology pack의 schema/governance/blueprint 일괄 검증
 - **implementation governance plane**
   승인된 schema에서 구조 좌표와 구현/검증 binding, 제약 gate를 매칭하는 구현 거버넌스 계약
 - **corridor plane**
@@ -95,6 +99,7 @@ projector의 실제 책임 경계는 아래 subpath에 맞춘다.
 
 - `src/internal/schema-core.ts`
 - `src/internal/schema-memory.ts`
+- `src/internal/pack-core.ts`
 - `src/internal/implementation-governance-core.ts`
 - `src/internal/implementation-governance-types.ts`
 - `src/internal/implementation-governance-taxonomy.ts`

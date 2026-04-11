@@ -40,9 +40,11 @@ import {
   validateImplementationBlueprint,
   validateImplementationGovernanceTaxonomy,
 } from "./internal/implementation-governance-core.js";
+import { validateOperationalOntologyPack } from "./internal/pack-core.js";
 
 export * from "./internal/schema-core.js";
 export * from "./internal/schema-memory.js";
+export * from "./internal/pack-core.js";
 export * from "./internal/implementation-governance-core.js";
 export * from "./internal/runtime-core.js";
 export * from "./internal/lineage-core.js";
@@ -67,6 +69,10 @@ export const operationalOntologySchemaPlane = {
   validateRelationCategorySchema,
   validateTraversalSchema,
   validateOperationalOntologySchema,
+};
+
+export const operationalOntologyPackPlane = {
+  validateOperationalOntologyPack,
 };
 
 export const operationalOntologyImplementationGovernancePlane = {

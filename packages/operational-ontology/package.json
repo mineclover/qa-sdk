@@ -15,6 +15,11 @@
       "import": "./dist/schema.js",
       "require": "./dist/schema.cjs"
     },
+    "./pack": {
+      "types": "./dist/pack.d.ts",
+      "import": "./dist/pack.js",
+      "require": "./dist/pack.cjs"
+    },
     "./governance": {
       "types": "./dist/governance.d.ts",
       "import": "./dist/governance.js",

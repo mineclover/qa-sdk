@@ -23,6 +23,8 @@ def:
       type: contains
     - target: operational-ontology-schema-validation
       type: contains
+    - target: operational-ontology-pack-interface
+      type: contains
     - target: operational-ontology-production-factory
       type: contains
     - target: operational-ontology-persistence
@@ -82,6 +84,8 @@ taxonomy를 먼저 schema로 선언하고 검증한 뒤, 그 schema에서 node, 
   - `TraversalSchema` — purpose별 route family 정의
 - **Validation plane**
   - schema 무결성, axis 중복, unknown reference, category overlap 검증
+- **Pack plane**
+  - schema, governance taxonomy, blueprint를 도메인 pack 단위로 묶고 한 번에 검증
 - **Implementation governance plane**
   - 승인된 schema와 taxonomy 좌표를 구현/검증 binding과 consistency constraint로 매칭하는 거버넌스 계약
 - **Instance plane**
@@ -126,6 +130,7 @@ RDF bridge는 이 4층 전체에 대응되는 외부 의미 계층이다.
 이 패키지가 다루는 operational ontology의 범위:
 
 - axis/taxonomy schema 정의와 검증
+- 도메인 pack 단위 schema/governance/blueprint 검증
 - relation category schema와 traversal schema 정의
 - node identity canonicalization
 - relation type taxonomy와 category root
@@ -142,6 +147,7 @@ RDF bridge는 이 4층 전체에 대응되는 외부 의미 계층이다.
 - `operational-ontology-taxonomy-schema` — axis/taxonomy를 schema plane으로 선언하는 규칙
 - `operational-ontology-relation-category-schema` — relation type category schema 정의
 - `operational-ontology-schema-validation` — schema plane과 instance plane 사이의 검증 규칙
+- `operational-ontology-pack-interface` — schema/governance/blueprint를 pack 단위로 묶는 인터페이스
 - `operational-ontology-persistence` — schema/registry/assertion/observation/projection 저장 모델
 - `operational-ontology-data-facets` — 정보를 canonical data facet bundle로 읽는 원칙
 - `operational-ontology-flow-corridor` — 데이터가 지나가는 통로를 정의하는 원칙

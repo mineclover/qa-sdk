@@ -4,6 +4,7 @@ export default defineConfig({
   entry: [
     "src/index.ts",
     "src/schema.ts",
+    "src/pack.ts",
     "src/governance.ts",
     "src/runtime.ts",
     "src/lineage.ts",
