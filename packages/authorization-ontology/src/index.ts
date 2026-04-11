@@ -51,6 +51,8 @@ export const AUTHORIZATION_RESOURCE_KINDS = [
   "cloud_lb",
   "proxy_route",
   "domain_resource",
+  "permission_feature",
+  "permission_scope",
   "dataset",
   "table",
   "view",
@@ -70,9 +72,15 @@ export const AUTHORIZATION_RELATION_KINDS = [
   "evaluated_by",
   "deployed_by",
   "has_role",
+  "assigns_role",
   "derives_role_from",
+  "denies_role",
   "imports_derived_role",
   "matches_resource",
+  "grants_feature",
+  "denies_feature",
+  "materializes_permission",
+  "overrides_permission",
   "allows_action",
   "denies_action",
   "derives_from",
@@ -273,6 +281,90 @@ export interface StructuredApplicationAuthorizationConfig {
     kind: "pulumi" | "argocd" | "git" | string;
     revision?: string;
   };
+}
+
+export interface PermissionEnginePermissionSetSnapshotLike {
+  features: readonly string[];
+  roles: readonly string[];
+  mask: string;
+}
+
+export interface PermissionEngineGrantLike {
+  feature: string;
+  role: string;
+  address?: number;
+}
+
+export interface PermissionEnginePermissionSetProjectionInput {
+  policyRealm: AuthorizationRealm;
+  roleRealm?: AuthorizationRealm;
+  featureRealm: AuthorizationRealm;
+  scopeRealm?: AuthorizationRealm;
+  domain: string;
+  scopeKey?: string;
+  policyId?: string;
+  sourceRef?: string;
+  snapshot?: PermissionEnginePermissionSetSnapshotLike;
+  grants?: readonly PermissionEngineGrantLike[];
+  includeDenied?: boolean;
+}
+
+export interface PermissionEngineDomainRoleDefLike {
+  id: string;
+  domain: string;
+  ownFeatures: readonly string[];
+  parents: readonly string[];
+  denyRoles?: readonly string[];
+  denyFeatures?: readonly string[];
+}
+
+export interface PermissionEngineDomainAssignmentLike {
+  domain: string;
+  role: string;
+}
+
+export interface PermissionEngineOrgRoleDefLike {
+  id: string;
+  ownAssignments: readonly PermissionEngineDomainAssignmentLike[];
+  parents: readonly string[];
+}
+
+export interface PermissionEngineRoleProjectionInput {
+  roleRealm: AuthorizationRealm;
+  featureRealm: AuthorizationRealm;
+  orgRoleRealm?: AuthorizationRealm;
+  domains?: readonly string[];
+  roles: readonly PermissionEngineDomainRoleDefLike[];
+  orgRoles?: readonly PermissionEngineOrgRoleDefLike[];
+}
+
+export interface PermissionEngineAuditGrantSourceLike {
+  source: "direct" | "org-role";
+  orgRoleId?: string;
+  domainRole: string;
+  inheritancePath: readonly string[];
+}
+
+export interface PermissionEngineAuditResultLike {
+  feature: string;
+  domain: string;
+  userId: string;
+  granted: boolean;
+  sources: readonly PermissionEngineAuditGrantSourceLike[];
+  denialReason: { kind: "not-assigned" | "user-override" } | null;
+}
+
+export interface PermissionEngineAuditProjectionInput {
+  identityRealm: AuthorizationRealm;
+  featureRealm: AuthorizationRealm;
+  roleRealm: AuthorizationRealm;
+  policyRealm: AuthorizationRealm;
+  actionRealm?: AuthorizationRealm;
+  decisionRealm?: AuthorizationRealm;
+  enforcementPoint?: EnforcementPointRef;
+  audit: PermissionEngineAuditResultLike;
+  decisionId?: string;
+  observedAt?: string;
 }
 
 export interface CerbosResourcePolicyLike {
@@ -630,7 +722,7 @@ export function createActionNode(input: ActionRef): AuthorizationNode {
 export function createRoleNode(input: {
   realm: AuthorizationRealm;
   roleId: string;
-  roleKind?: "role" | "derived_role";
+  roleKind?: "role" | "derived_role" | "domain_role" | "org_role" | string;
   sourcePolicyId?: string;
   condition?: unknown;
 }): AuthorizationNode {
@@ -1009,6 +1101,544 @@ export function mergeAuthorizationGraphs(
     nodes: uniqueNodes(graphs.flatMap((graph) => graph.nodes)),
     relations: uniqueRelations(graphs.flatMap((graph) => graph.relations)),
   };
+}
+
+const BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+function decodeBase64Bytes(value: string): Uint8Array {
+  const clean = value.replace(/=+$/, "");
+  const bytes = new Uint8Array(Math.floor((clean.length * 3) / 4));
+  let out = 0;
+
+  for (let index = 0; index < clean.length; index += 4) {
+    const a = BASE64_CHARS.indexOf(clean[index] ?? "");
+    const b = BASE64_CHARS.indexOf(clean[index + 1] ?? "");
+    const c = BASE64_CHARS.indexOf(clean[index + 2] ?? "");
+    const d = BASE64_CHARS.indexOf(clean[index + 3] ?? "");
+    if (a < 0 || b < 0) break;
+    bytes[out++] = (a << 2) | (b >> 4);
+    if (c >= 0) bytes[out++] = ((b & 0xf) << 4) | (c >> 2);
+    if (d >= 0) bytes[out++] = ((c & 3) << 6) | d;
+  }
+
+  return bytes.slice(0, out);
+}
+
+function hasMaskBit(mask: Uint8Array, address: number): boolean {
+  return Boolean(mask[address >> 3] & (1 << (address & 7)));
+}
+
+function permissionFeatureNode(input: {
+  realm: AuthorizationRealm;
+  domain: string;
+  feature: string;
+}): AuthorizationNode {
+  return createResourceNode({
+    realm: input.realm,
+    resourceId: `${input.domain}:${input.feature}`,
+    resourceKind: "permission_feature",
+    attributes: {
+      domain: input.domain,
+      feature: input.feature,
+    },
+  });
+}
+
+function permissionRoleNode(input: {
+  realm: AuthorizationRealm;
+  domain: string;
+  role: string;
+  roleKind?: "domain_role" | "org_role" | string;
+}): AuthorizationNode {
+  return createRoleNode({
+    realm: input.realm,
+    roleId: `${input.domain}:${input.role}`,
+    roleKind: input.roleKind ?? "domain_role",
+  });
+}
+
+function permissionEnginePolicyNode(input: PermissionEnginePermissionSetProjectionInput): AuthorizationNode {
+  return createPolicyNode({
+    realm: input.policyRealm,
+    policyId: input.policyId ?? `permission-engine:${input.domain}:${input.scopeKey ?? "default"}`,
+    policyKind: "permission_engine_mask",
+    sourceRef: input.sourceRef,
+  });
+}
+
+function grantsFromPermissionSetInput(
+  input: PermissionEnginePermissionSetProjectionInput,
+): PermissionEngineGrantLike[] {
+  const grants: PermissionEngineGrantLike[] = [...(input.grants ?? [])];
+  if (!input.snapshot) return grants;
+
+  const mask = decodeBase64Bytes(input.snapshot.mask);
+  const roleCount = input.snapshot.roles.length;
+  for (let featureIndex = 0; featureIndex < input.snapshot.features.length; featureIndex += 1) {
+    for (let roleIndex = 0; roleIndex < input.snapshot.roles.length; roleIndex += 1) {
+      const address = featureIndex * roleCount + roleIndex;
+      if (hasMaskBit(mask, address)) {
+        grants.push({
+          feature: input.snapshot.features[featureIndex]!,
+          role: input.snapshot.roles[roleIndex]!,
+          address,
+        });
+      }
+    }
+  }
+  return grants;
+}
+
+export function projectPermissionEnginePermissionSet(
+  input: PermissionEnginePermissionSetProjectionInput,
+): AuthorizationOntologyGraph {
+  const roleRealm = input.roleRealm ?? input.policyRealm;
+  const grants = grantsFromPermissionSetInput(input);
+  const features = input.snapshot?.features ?? [...new Set(grants.map((grant) => grant.feature))];
+  const roles = input.snapshot?.roles ?? [...new Set(grants.map((grant) => grant.role))];
+  const policyNode = permissionEnginePolicyNode(input);
+  const featureNodes = features.map((feature) =>
+    permissionFeatureNode({
+      realm: input.featureRealm,
+      domain: input.domain,
+      feature,
+    }),
+  );
+  const roleNodes = roles.map((role) =>
+    permissionRoleNode({
+      realm: roleRealm,
+      domain: input.domain,
+      role,
+    }),
+  );
+  const scopeNode = input.scopeKey
+    ? createResourceNode({
+        realm: input.scopeRealm ?? input.policyRealm,
+        resourceId: `${input.domain}:${input.scopeKey}`,
+        resourceKind: "permission_scope",
+        attributes: {
+          domain: input.domain,
+          scopeKey: input.scopeKey,
+        },
+      })
+    : undefined;
+
+  const featureById = new Map(
+    featureNodes.map((node) => [node.coord.anchor.split(":").slice(1).join(":"), node]),
+  );
+  const roleById = new Map(
+    roleNodes.map((node) => [node.coord.anchor.split(":").slice(1).join(":"), node]),
+  );
+  const grantedKeys = new Set(grants.map((grant) => `${grant.feature}\u0000${grant.role}`));
+  const deniedGrants: PermissionEngineGrantLike[] = input.includeDenied
+    ? features.flatMap((feature, featureIndex) =>
+        roles
+          .filter((role) => !grantedKeys.has(`${feature}\u0000${role}`))
+          .map((role, roleIndex) => ({
+            feature,
+            role,
+            address: featureIndex * roles.length + roleIndex,
+          })),
+      )
+    : [];
+
+  return {
+    realms: uniqueRealms([
+      input.policyRealm,
+      roleRealm,
+      input.featureRealm,
+      ...(scopeNode ? [input.scopeRealm ?? input.policyRealm] : []),
+    ]),
+    nodes: uniqueNodes([
+      policyNode,
+      ...featureNodes,
+      ...roleNodes,
+      ...(scopeNode ? [scopeNode] : []),
+    ]),
+    relations: uniqueRelations([
+      ...featureNodes.map((featureNode) =>
+        createAuthorizationRelation({
+          kind: "protects",
+          fromNodeId: policyNode.nodeId,
+          toNodeId: featureNode.nodeId,
+          metadata: {
+            domain: input.domain,
+            scopeKey: input.scopeKey,
+            source: "permission-engine",
+          },
+        }),
+      ),
+      ...(scopeNode
+        ? [
+            createAuthorizationRelation({
+              kind: "materializes_permission",
+              fromNodeId: policyNode.nodeId,
+              toNodeId: scopeNode.nodeId,
+              metadata: {
+                domain: input.domain,
+                scopeKey: input.scopeKey,
+              },
+            }),
+          ]
+        : []),
+      ...grants.flatMap((grant) => {
+        const roleNode = roleById.get(grant.role);
+        const featureNode = featureById.get(grant.feature);
+        if (!roleNode || !featureNode) return [];
+        return [
+          createAuthorizationRelation({
+            kind: "grants_feature",
+            fromNodeId: roleNode.nodeId,
+            toNodeId: featureNode.nodeId,
+            metadata: {
+              domain: input.domain,
+              scopeKey: input.scopeKey,
+              address: grant.address,
+              source: "permission-engine:PermissionSet",
+            },
+          }),
+        ];
+      }),
+      ...deniedGrants.flatMap((grant) => {
+        const roleNode = roleById.get(grant.role);
+        const featureNode = featureById.get(grant.feature);
+        if (!roleNode || !featureNode) return [];
+        return [
+          createAuthorizationRelation({
+            kind: "denies_feature",
+            fromNodeId: roleNode.nodeId,
+            toNodeId: featureNode.nodeId,
+            metadata: {
+              domain: input.domain,
+              scopeKey: input.scopeKey,
+              address: grant.address,
+              source: "permission-engine:PermissionSet",
+              reason: "bit-unset",
+            },
+          }),
+        ];
+      }),
+    ]),
+  };
+}
+
+export function projectPermissionEngineRoles(
+  input: PermissionEngineRoleProjectionInput,
+): AuthorizationOntologyGraph {
+  const orgRoleRealm = input.orgRoleRealm ?? input.roleRealm;
+  const domains = input.domains ? new Set(input.domains) : undefined;
+  const roles = input.roles.filter((role) => !domains || domains.has(role.domain));
+  const roleNodes = roles.map((role) =>
+    permissionRoleNode({
+      realm: input.roleRealm,
+      domain: role.domain,
+      role: role.id,
+    }),
+  );
+  const featurePairs = [
+    ...new Map(
+      roles
+        .flatMap((role) =>
+          [...role.ownFeatures, ...(role.denyFeatures ?? [])].map((feature) => ({
+            domain: role.domain,
+            feature,
+          })),
+        )
+        .map((pair) => [`${pair.domain}\u0000${pair.feature}`, pair]),
+    ).values(),
+  ];
+  const featureNodes = featurePairs.map((pair) =>
+    permissionFeatureNode({
+      realm: input.featureRealm,
+      domain: pair.domain,
+      feature: pair.feature,
+    }),
+  );
+  const orgRoleNodes = (input.orgRoles ?? []).map((orgRole) =>
+    createRoleNode({
+      realm: orgRoleRealm,
+      roleId: `org:${orgRole.id}`,
+      roleKind: "org_role",
+    }),
+  );
+
+  const roleByKey = new Map(roleNodes.map((node) => [node.coord.anchor, node]));
+  const featureByKey = new Map(featureNodes.map((node) => [node.coord.anchor, node]));
+  const orgRoleById = new Map(orgRoleNodes.map((node) => [node.coord.anchor.slice("org:".length), node]));
+
+  return {
+    realms: uniqueRealms([input.roleRealm, input.featureRealm, orgRoleRealm]),
+    nodes: uniqueNodes([...roleNodes, ...featureNodes, ...orgRoleNodes]),
+    relations: uniqueRelations([
+      ...roles.flatMap((role) => {
+        const roleNode = roleByKey.get(`${role.domain}:${role.id}`);
+        if (!roleNode) return [];
+        return [
+          ...role.parents.flatMap((parent) => {
+            const parentNode = roleByKey.get(`${role.domain}:${parent}`);
+            if (!parentNode) return [];
+            return [
+              createAuthorizationRelation({
+                kind: "derives_role_from",
+                fromNodeId: roleNode.nodeId,
+                toNodeId: parentNode.nodeId,
+                metadata: {
+                  domain: role.domain,
+                  source: "permission-engine:RoleRegistry",
+                },
+              }),
+            ];
+          }),
+          ...role.ownFeatures.flatMap((feature) => {
+            const featureNode = featureByKey.get(`${role.domain}:${feature}`);
+            if (!featureNode) return [];
+            return [
+              createAuthorizationRelation({
+                kind: "grants_feature",
+                fromNodeId: roleNode.nodeId,
+                toNodeId: featureNode.nodeId,
+                metadata: {
+                  domain: role.domain,
+                  source: "permission-engine:RoleRegistry",
+                  direct: true,
+                },
+              }),
+            ];
+          }),
+          ...(role.denyFeatures ?? []).flatMap((feature) => {
+            const featureNode = featureByKey.get(`${role.domain}:${feature}`);
+            if (!featureNode) return [];
+            return [
+              createAuthorizationRelation({
+                kind: "denies_feature",
+                fromNodeId: roleNode.nodeId,
+                toNodeId: featureNode.nodeId,
+                metadata: {
+                  domain: role.domain,
+                  source: "permission-engine:RoleRegistry",
+                },
+              }),
+            ];
+          }),
+          ...(role.denyRoles ?? []).flatMap((denyRole) => {
+            const deniedRoleNode = roleByKey.get(`${role.domain}:${denyRole}`);
+            if (!deniedRoleNode) return [];
+            return [
+              createAuthorizationRelation({
+                kind: "denies_role",
+                fromNodeId: roleNode.nodeId,
+                toNodeId: deniedRoleNode.nodeId,
+                metadata: {
+                  domain: role.domain,
+                  source: "permission-engine:RoleRegistry",
+                },
+              }),
+            ];
+          }),
+        ];
+      }),
+      ...(input.orgRoles ?? []).flatMap((orgRole) => {
+        const orgRoleNode = orgRoleById.get(orgRole.id);
+        if (!orgRoleNode) return [];
+        return [
+          ...orgRole.parents.flatMap((parent) => {
+            const parentNode = orgRoleById.get(parent);
+            if (!parentNode) return [];
+            return [
+              createAuthorizationRelation({
+                kind: "derives_role_from",
+                fromNodeId: orgRoleNode.nodeId,
+                toNodeId: parentNode.nodeId,
+                metadata: {
+                  source: "permission-engine:OrgRoleRegistry",
+                },
+              }),
+            ];
+          }),
+          ...orgRole.ownAssignments.flatMap((assignment) => {
+            const roleNode = roleByKey.get(`${assignment.domain}:${assignment.role}`);
+            if (!roleNode) return [];
+            return [
+              createAuthorizationRelation({
+                kind: "assigns_role",
+                fromNodeId: orgRoleNode.nodeId,
+                toNodeId: roleNode.nodeId,
+                metadata: {
+                  domain: assignment.domain,
+                  source: "permission-engine:OrgRoleRegistry",
+                },
+              }),
+            ];
+          }),
+        ];
+      }),
+    ]),
+  };
+}
+
+export function projectPermissionEngineAudit(
+  input: PermissionEngineAuditProjectionInput,
+): AuthorizationOntologyGraph {
+  const policyRealm = input.policyRealm;
+  const actionRealm = input.actionRealm ?? policyRealm;
+  const decisionRealm = input.decisionRealm ?? input.enforcementPoint?.realm ?? input.featureRealm;
+  const decision = projectAuthorizationDecision({
+    decisionId: input.decisionId ?? `permission-engine:${input.audit.userId}:${input.audit.domain}:${input.audit.feature}`,
+    principal: {
+      realm: input.identityRealm,
+      principalId: input.audit.userId,
+      principalKind: "human_user",
+      roles: [],
+    },
+    resource: {
+      realm: input.featureRealm,
+      resourceId: `${input.audit.domain}:${input.audit.feature}`,
+      resourceKind: "permission_feature",
+      attributes: {
+        domain: input.audit.domain,
+        feature: input.audit.feature,
+      },
+    },
+    action: {
+      realm: actionRealm,
+      actionId: input.audit.feature,
+      actionKind: input.audit.feature,
+    },
+    policy: {
+      realm: policyRealm,
+      policyId: `permission-engine:${input.audit.domain}:final-mask`,
+      policyKind: "permission_engine_final_mask",
+    },
+    enforcementPoint: input.enforcementPoint,
+    effect: input.audit.granted ? "allow" : "deny",
+    observedAt: input.observedAt ?? new Date().toISOString(),
+    reason: input.audit.denialReason?.kind,
+  });
+  const principalNode = createPrincipalNode({
+    realm: input.identityRealm,
+    principalId: input.audit.userId,
+    principalKind: "human_user",
+  });
+  const sourceRoleNodes = input.audit.sources.map((source) =>
+    permissionRoleNode({
+      realm: input.roleRealm,
+      domain: input.audit.domain,
+      role: source.domainRole,
+    }),
+  );
+  const overridePolicyNode =
+    input.audit.denialReason?.kind === "user-override"
+      ? createPolicyNode({
+          realm: policyRealm,
+          policyId: `permission-engine:${input.audit.domain}:${input.audit.userId}:override`,
+          policyKind: "permission_engine_user_override",
+        })
+      : undefined;
+  const featureNode = permissionFeatureNode({
+    realm: input.featureRealm,
+    domain: input.audit.domain,
+    feature: input.audit.feature,
+  });
+  const finalPolicyNode = createPolicyNode({
+    realm: policyRealm,
+    policyId: `permission-engine:${input.audit.domain}:final-mask`,
+    policyKind: "permission_engine_final_mask",
+  });
+  const actionNode = createActionNode({
+    realm: actionRealm,
+    actionId: input.audit.feature,
+    actionKind: input.audit.feature,
+  });
+
+  return mergeAuthorizationGraphs(decision, {
+    realms: uniqueRealms([
+      input.identityRealm,
+      input.roleRealm,
+      input.featureRealm,
+      policyRealm,
+      actionRealm,
+      ...(overridePolicyNode ? [policyRealm] : []),
+    ]),
+    nodes: uniqueNodes([
+      principalNode,
+      ...sourceRoleNodes,
+      featureNode,
+      finalPolicyNode,
+      actionNode,
+      ...(overridePolicyNode ? [overridePolicyNode] : []),
+    ]),
+    relations: uniqueRelations([
+      createAuthorizationRelation({
+        kind: "protects",
+        fromNodeId: finalPolicyNode.nodeId,
+        toNodeId: featureNode.nodeId,
+        metadata: {
+          domain: input.audit.domain,
+          source: "permission-engine:UserPermissionEngine.audit",
+        },
+      }),
+      createAuthorizationRelation({
+        kind: input.audit.granted ? "allows_action" : "denies_action",
+        fromNodeId: finalPolicyNode.nodeId,
+        toNodeId: actionNode.nodeId,
+        metadata: {
+          domain: input.audit.domain,
+          source: "permission-engine:UserPermissionEngine.audit",
+          denialReason: input.audit.denialReason?.kind,
+        },
+      }),
+      ...input.audit.sources.flatMap((source, index) => {
+        const roleNode = sourceRoleNodes[index];
+        if (!roleNode) return [];
+        return [
+          createAuthorizationRelation({
+            kind: "has_role",
+            fromNodeId: principalNode.nodeId,
+            toNodeId: roleNode.nodeId,
+            metadata: {
+              domain: input.audit.domain,
+              source: source.source,
+              orgRoleId: source.orgRoleId,
+              inheritancePath: source.inheritancePath,
+            },
+          }),
+          createAuthorizationRelation({
+            kind: "grants_feature",
+            fromNodeId: roleNode.nodeId,
+            toNodeId: featureNode.nodeId,
+            metadata: {
+              domain: input.audit.domain,
+              source: "permission-engine:UserPermissionEngine.audit",
+              finalGranted: input.audit.granted,
+            },
+          }),
+        ];
+      }),
+      ...(overridePolicyNode
+        ? [
+            createAuthorizationRelation({
+              kind: "denies_feature",
+              fromNodeId: overridePolicyNode.nodeId,
+              toNodeId: featureNode.nodeId,
+              metadata: {
+                domain: input.audit.domain,
+                userId: input.audit.userId,
+                reason: "user-override",
+              },
+            }),
+            createAuthorizationRelation({
+              kind: "overrides_permission",
+              fromNodeId: overridePolicyNode.nodeId,
+              toNodeId: principalNode.nodeId,
+              metadata: {
+                domain: input.audit.domain,
+                feature: input.audit.feature,
+              },
+            }),
+          ]
+        : []),
+    ]),
+  });
 }
 
 export function projectCerbosResourcePolicy(

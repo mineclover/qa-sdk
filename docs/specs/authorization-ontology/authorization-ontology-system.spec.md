@@ -25,6 +25,8 @@ def:
       type: contains
     - target: authorization-ontology-column-lineage-policy
       type: contains
+    - target: authorization-ontology-permission-engine-bridge
+      type: contains
     - target: authorization-ontology-decision-observation
       type: contains
     - target: authorization-ontology-audit-layer

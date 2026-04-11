@@ -14,6 +14,7 @@
 - `projectEnforcementRoute()`로 Caddy/AuthentiK/Cloud LB route를 enforcement point, upstream resource, Cerbos policy, deployment provenance graph로 변환한다.
 - `normalizeStructuredEnforcementRoute()`와 `projectStructuredEnforcementRoute()`로 실제 proxy config parser가 사용할 canonical intermediate shape를 제공한다.
 - `projectStructuredApplicationAuthorization()`으로 서비스 내부 middleware가 domain resource/action/policy를 enforcement 하는 구조를 투영한다.
+- `projectPermissionEnginePermissionSet()`, `projectPermissionEngineRoles()`, `projectPermissionEngineAudit()`로 `permission-engine`의 bitmask, role inheritance, org-role, user override, audit 결과를 graph로 변환한다.
 - `parseNginxProxyLocations()`와 `projectNginxProxyConfig()`로 Nginx/Zitadel proxy config의 upstream/location/proxy_pass를 `nginx_proxy` enforcement route graph로 변환한다.
 - `NginxProxyConfigProjectionOptions.policyByPath`로 route path별 Cerbos policy를 합성해 `policy -> protects -> proxy_route` 관계를 관측한다.
 - `mergeAuthorizationGraphs()`와 `auditAuthorizationGraph()`로 정책 선언, proxy 적용, decision 관측 graph의 연결 누락을 검사한다.

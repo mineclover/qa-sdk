@@ -39,6 +39,9 @@ def:
 - `projectApplicationAuthorizationBinding`
 - `normalizeStructuredApplicationAuthorization`
 - `projectStructuredApplicationAuthorization`
+- `projectPermissionEnginePermissionSet`
+- `projectPermissionEngineRoles`
+- `projectPermissionEngineAudit`
 - `parseNginxProxyLocations`
 - `projectNginxProxyConfig`
 - `mergeAuthorizationGraphs`
@@ -51,3 +54,5 @@ Nginx projection은 `NginxProxyConfigProjectionOptions.policyByPath`를 통해 r
 audit surface는 Cerbos PDP를 대체하지 않는다. `auditAuthorizationGraph()`는 선언 graph와 관측 graph가 연결되어 있는지 검사하고, 누락된 route policy, decision policy/action/resource 연결, dangling relation을 report한다.
 
 application enforcement surface는 서비스 내부 middleware가 어떤 domain resource와 action을 Cerbos policy로 보호하는지 선언한다. proxy route graph와 달리 보호 대상은 `domain_resource`이고 enforcement point kind는 기본적으로 `service_middleware`다.
+
+permission-engine bridge surface는 `PermissionSetSnapshot`, `DomainRoleDef`, `OrgRoleDef`, `UserPermissionEngine.audit()` 결과와 호환되는 plain object를 graph로 투영한다. 이 bridge는 `permission-engine` 실행 커널을 import하지 않고, bitmask/role/audit 결과를 관측 가능한 relation으로 변환한다.

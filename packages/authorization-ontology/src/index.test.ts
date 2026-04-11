@@ -17,6 +17,9 @@ import {
   projectColumnPolicyPropagation,
   projectEnforcementRoute,
   projectNginxProxyConfig,
+  projectPermissionEngineAudit,
+  projectPermissionEnginePermissionSet,
+  projectPermissionEngineRoles,
   projectStructuredApplicationAuthorization,
   projectStructuredEnforcementRoute,
   parseNginxProxyLocations,
@@ -1103,5 +1106,189 @@ server {
     expect(brokenReport.issues.map((issue) => issue.code)).toEqual(
       expect.arrayContaining(["application_resource_missing_policy"]),
     );
+  });
+
+  it("projects permission-engine bitmask grants into feature/role graph", () => {
+    const policyRealm = createAuthorizationRealm({
+      kind: "policy",
+      authority: "permission-engine:prod",
+      environment: "prod",
+    });
+    const featureRealm = createAuthorizationRealm({
+      kind: "application",
+      authority: "permission-engine:project",
+      environment: "prod",
+    });
+
+    const graph = projectPermissionEnginePermissionSet({
+      policyRealm,
+      featureRealm,
+      domain: "project",
+      scopeKey: "prod:kr",
+      snapshot: {
+        features: ["resource:read", "resource:write"],
+        roles: ["viewer", "author"],
+        mask: "CQ==",
+      },
+      includeDenied: true,
+    });
+
+    expect(graph.nodes.map((node) => `${node.kind}:${node.coord.anchor}`).toSorted()).toEqual([
+      "policy:permission-engine:project:prod:kr",
+      "resource:project:prod:kr",
+      "resource:project:resource:read",
+      "resource:project:resource:write",
+      "role:project:author",
+      "role:project:viewer",
+    ]);
+    expect(graph.relations.map((relation) => relation.kind).toSorted()).toEqual([
+      "denies_feature",
+      "denies_feature",
+      "grants_feature",
+      "grants_feature",
+      "materializes_permission",
+      "protects",
+      "protects",
+    ]);
+    expect(
+      graph.relations.find((relation) => relation.kind === "grants_feature")?.metadata,
+    ).toEqual(
+      expect.objectContaining({
+        source: "permission-engine:PermissionSet",
+      }),
+    );
+  });
+
+  it("projects permission-engine role and org-role inheritance", () => {
+    const roleRealm = createAuthorizationRealm({
+      kind: "policy",
+      authority: "permission-engine:roles",
+      environment: "prod",
+    });
+    const featureRealm = createAuthorizationRealm({
+      kind: "application",
+      authority: "permission-engine:project",
+      environment: "prod",
+    });
+
+    const graph = projectPermissionEngineRoles({
+      roleRealm,
+      featureRealm,
+      roles: [
+        {
+          id: "viewer",
+          domain: "project",
+          parents: [],
+          ownFeatures: ["resource:read"],
+        },
+        {
+          id: "author",
+          domain: "project",
+          parents: ["viewer"],
+          ownFeatures: ["resource:write"],
+          denyFeatures: ["resource:delete"],
+        },
+      ],
+      orgRoles: [
+        {
+          id: "team_lead",
+          parents: [],
+          ownAssignments: [{ domain: "project", role: "author" }],
+        },
+      ],
+    });
+
+    expect(graph.relations.map((relation) => relation.kind).toSorted()).toEqual([
+      "assigns_role",
+      "denies_feature",
+      "derives_role_from",
+      "grants_feature",
+      "grants_feature",
+    ]);
+    expect(graph.nodes.map((node) => `${node.kind}:${node.coord.anchor}`)).toContain(
+      "role:org:team_lead",
+    );
+  });
+
+  it("projects permission-engine audit results into decision graph", () => {
+    const identityRealm = createAuthorizationRealm({
+      kind: "identity",
+      authority: "zitadel:prod",
+      environment: "prod",
+    });
+    const featureRealm = createAuthorizationRealm({
+      kind: "application",
+      authority: "permission-engine:project",
+      environment: "prod",
+    });
+    const roleRealm = createAuthorizationRealm({
+      kind: "policy",
+      authority: "permission-engine:roles",
+      environment: "prod",
+    });
+    const policyRealm = createAuthorizationRealm({
+      kind: "policy",
+      authority: "permission-engine:prod",
+      environment: "prod",
+    });
+    const enforcementRealm = createAuthorizationRealm({
+      kind: "enforcement",
+      authority: "service:project",
+      environment: "prod",
+    });
+
+    const graph = projectPermissionEngineAudit({
+      identityRealm,
+      featureRealm,
+      roleRealm,
+      policyRealm,
+      enforcementPoint: {
+        realm: enforcementRealm,
+        enforcementPointId: "project-api:permission-middleware",
+        kind: "service_middleware",
+      },
+      audit: {
+        feature: "resource:write",
+        domain: "project",
+        userId: "user-1",
+        granted: false,
+        sources: [
+          {
+            source: "org-role",
+            orgRoleId: "team_lead",
+            domainRole: "author",
+            inheritancePath: ["viewer", "author"],
+          },
+        ],
+        denialReason: { kind: "user-override" },
+      },
+      observedAt: "2026-04-11T00:00:00.000Z",
+    });
+
+    expect(graph.nodes.map((node) => node.kind)).toEqual(
+      expect.arrayContaining(["decision", "principal", "resource", "action", "policy", "role"]),
+    );
+    expect(graph.relations.map((relation) => relation.kind)).toEqual(
+      expect.arrayContaining([
+        "decision_principal",
+        "decision_resource",
+        "decision_action",
+        "decision_policy",
+        "decision_enforcement",
+        "has_role",
+        "grants_feature",
+        "denies_feature",
+        "overrides_permission",
+      ]),
+    );
+
+    const report = auditAuthorizationGraph(graph, {
+      requireRoutePolicy: false,
+      requireRouteEnforcement: false,
+      requireRouteUpstream: false,
+      requireApplicationResourcePolicy: false,
+      requireApplicationResourceEnforcement: false,
+    });
+    expect(report.ok).toBe(true);
   });
 });
