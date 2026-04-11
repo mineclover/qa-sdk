@@ -49,6 +49,11 @@
       "types": "./dist/scope-nesting-timeline.d.ts",
       "import": "./dist/scope-nesting-timeline.js",
       "require": "./dist/scope-nesting-timeline.cjs"
+    },
+    "./ontology-graph": {
+      "types": "./dist/ontology-graph.d.ts",
+      "import": "./dist/ontology-graph.js",
+      "require": "./dist/ontology-graph.cjs"
     }
   },
   "main": "./dist/index.cjs",

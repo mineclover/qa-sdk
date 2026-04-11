@@ -9,6 +9,9 @@
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
+  "dependencies": {
+    "viz-core": "workspace:*"
+  },
   "devDependencies": {
     "typescript": "^5.8.2",
     "vite": "^6.3.5"

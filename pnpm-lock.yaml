@@ -1392,6 +1392,10 @@ importers:
         version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(lightningcss@1.32.0)
 
   packages/operational-ontology-web:
+    dependencies:
+      viz-core:
+        specifier: workspace:*
+        version: link:../viz-core
     devDependencies:
       typescript:
         specifier: ^5.8.2

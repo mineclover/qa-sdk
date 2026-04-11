@@ -74,3 +74,23 @@ export type {
   RowType, TimelineBlock, ScopeTimelineRow,
   ScopeTimelineData, ScopeTimelineSvgOptions, D3TimelineData,
 } from "./scope-nesting-timeline.js";
+
+// ── Ontology Graph ──
+export {
+  operationalStoreToOntologyView,
+  authorizationGraphToOntologyView,
+  layoutOntologyGraph,
+  renderOntologyGraphSvg,
+} from "./ontology-graph.js";
+export type {
+  OntologyLane,
+  OntologyNodeStatus,
+  OntologyViewNode,
+  OntologyViewEdge,
+  OntologyGraphViewModel,
+  PositionedOntologyNode,
+  PositionedOntologyGraph,
+  OntologyLayoutOptions,
+  OperationalStoreLike,
+  AuthorizationGraphLike,
+} from "./ontology-graph.js";

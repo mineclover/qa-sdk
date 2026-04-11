@@ -11,6 +11,7 @@ export default defineConfig({
     "src/pipe-svg.ts",
     "src/scope-nesting-timeline.ts",
     "src/concept-grid.ts",
+    "src/ontology-graph.ts",
   ],
   format: ["esm", "cjs"],
   dts: true,

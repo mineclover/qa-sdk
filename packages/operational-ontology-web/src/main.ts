@@ -1,3 +1,12 @@
+import {
+  layoutOntologyGraph,
+  operationalStoreToOntologyView,
+  renderOntologyGraphSvg,
+  type OntologyGraphViewModel,
+  type OntologyLane,
+  type OntologyViewNode,
+} from "viz-core/ontology-graph";
+
 type ObjectKind =
   | "axis_schema"
   | "taxonomy_schema"
@@ -54,29 +63,9 @@ interface OntologyStoreFile {
   projections: OntologyProjectionRecord[];
 }
 
-type NodeLane = "snapshot" | "corridor" | "checkpoint" | "traversal" | "governance";
+type NodeLane = Extract<OntologyLane, "snapshot" | "corridor" | "checkpoint" | "traversal" | "governance">;
 
-interface ViewNode {
-  id: string;
-  label: string;
-  kind: string;
-  lane: NodeLane;
-  status: "passed" | "failed" | "active" | "observed" | "unknown";
-  summary: string;
-  raw: unknown;
-}
-
-interface ViewEdge {
-  from: string;
-  to: string;
-  label: string;
-}
-
-interface ViewModel {
-  nodes: ViewNode[];
-  edges: ViewEdge[];
-  metrics: Record<string, number>;
-}
+type ViewNode = OntologyViewNode;
 
 interface UiState {
   store: OntologyStoreFile;
@@ -248,164 +237,16 @@ function asStoreFile(value: unknown): OntologyStoreFile {
   };
 }
 
-function payloadLabel(payload: unknown, keys: string[]): string | undefined {
-  if (!isRecord(payload)) return undefined;
-  for (const key of keys) {
-    const value = payload[key];
-    if (typeof value === "string" && value.length > 0) return value;
-  }
-  return undefined;
-}
-
-function statusForObject(object: OntologyObjectRecord, facets: OntologyFacetRecord[]): ViewNode["status"] {
-  const statusFacet = facets
-    .filter((facet) => facet.objectId === object.objectId && facet.facetKind === "status")
-    .at(-1);
-  if (isRecord(statusFacet?.payloadJson)) {
-    const stateValue = statusFacet.payloadJson["state"];
-    if (stateValue === "passed" || stateValue === "failed") return stateValue;
-  }
-  return object.lifecycle === "active" ? "active" : "unknown";
-}
-
-function laneForProjection(kind: string): NodeLane {
-  if (kind.includes("checkpoint")) return "checkpoint";
-  if (kind.includes("corridor") || kind.includes("control-flow")) return "corridor";
-  if (kind.includes("traversal")) return "traversal";
-  return "snapshot";
-}
-
-function buildViewModel(store: OntologyStoreFile): ViewModel {
-  const nodes = new Map<string, ViewNode>();
-  const edges: ViewEdge[] = [];
-
-  for (const projection of store.projections) {
-    const lane = laneForProjection(projection.projectionKind);
-    const label =
-      payloadLabel(projection.payloadJson, ["flowId", "rootCheckpointId", "canonicalKey"]) ??
-      projection.projectionId;
-    nodes.set(projection.projectionId, {
-      id: projection.projectionId,
-      label,
-      kind: projection.projectionKind,
-      lane,
-      status: "active",
-      summary: `${projection.targetScope} · ${projection.builtAt}`,
-      raw: projection,
-    });
-    for (const source of projection.builtFrom ?? []) {
-      edges.push({ from: source, to: projection.projectionId, label: "built" });
-    }
-  }
-
-  for (const object of store.objects) {
-    if (!["governance_blueprint", "governance_run", "traversal"].includes(object.objectKind)) continue;
-    const lane: NodeLane = object.objectKind === "traversal" ? "traversal" : "governance";
-    nodes.set(object.objectId, {
-      id: object.objectId,
-      label: object.objectId.replace(/^governance-/, ""),
-      kind: object.objectKind,
-      lane,
-      status: statusForObject(object, store.facets),
-      summary: `${object.schemaVersion} · ${object.updatedAt}`,
-      raw: {
-        object,
-        facets: store.facets.filter((facet) => facet.objectId === object.objectId),
-      },
-    });
-  }
-
-  for (const observation of store.observations) {
-    const target = nodes.get(observation.targetObjectId);
-    if (target) {
-      target.status = observation.observationKind.includes("governance") ? target.status : "observed";
-    }
-  }
-
-  const snapshotIds = [...nodes.values()].filter((node) => node.lane === "snapshot").map((node) => node.id);
-  for (const node of nodes.values()) {
-    if (node.lane !== "snapshot" && snapshotIds.length > 0 && !edges.some((edge) => edge.to === node.id)) {
-      edges.push({ from: snapshotIds[0]!, to: node.id, label: "scope" });
-    }
-  }
-
-  return {
-    nodes: [...nodes.values()],
-    edges: edges.filter((edge) => nodes.has(edge.from) && nodes.has(edge.to)),
-    metrics: {
-      objects: store.objects.length,
-      projections: store.projections.length,
-      observations: store.observations.length,
-      governanceRuns: store.objects.filter((object) => object.objectKind === "governance_run").length,
-      failed: [...nodes.values()].filter((node) => node.status === "failed").length,
-    },
-  };
-}
-
-function visibleNodes(model: ViewModel): ViewNode[] {
-  return model.nodes.filter((node) => state.filter === "all" || node.lane === state.filter);
-}
-
-function nodePosition(node: ViewNode, indexInLane: number): { x: number; y: number } {
-  const lanes: NodeLane[] = ["snapshot", "corridor", "checkpoint", "traversal", "governance"];
-  const laneIndex = lanes.indexOf(node.lane);
-  return {
-    x: 105 + laneIndex * 210,
-    y: 92 + indexInLane * 96,
-  };
-}
-
-function renderTopology(model: ViewModel): string {
-  const visible = visibleNodes(model);
-  const positions = new Map<string, { x: number; y: number }>();
-  const laneCounts = new Map<NodeLane, number>();
-  for (const node of visible) {
-    const count = laneCounts.get(node.lane) ?? 0;
-    positions.set(node.id, nodePosition(node, count));
-    laneCounts.set(node.lane, count + 1);
-  }
-
-  const edges = model.edges
-    .filter((edge) => positions.has(edge.from) && positions.has(edge.to))
-    .map((edge) => {
-      const from = positions.get(edge.from)!;
-      const to = positions.get(edge.to)!;
-      const midX = (from.x + to.x) / 2;
-      return `<path class="edge" d="M ${from.x + 72} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x - 72} ${to.y}" />`;
-    })
-    .join("");
-
-  const nodes = visible
-    .map((node) => {
-      const point = positions.get(node.id)!;
-      const selected = state.selectedId === node.id ? " selected" : "";
-      return `
-        <button class="graph-node ${node.lane} ${node.status}${selected}" style="left:${point.x - 70}px; top:${point.y - 32}px" data-node-id="${escapeHtml(node.id)}">
-          <span>${escapeHtml(node.kind)}</span>
-          <strong>${escapeHtml(node.label)}</strong>
-        </button>
-      `;
-    })
-    .join("");
-
-  return `
-    <div class="topology">
-      <svg class="edges" viewBox="0 0 980 620" preserveAspectRatio="none" aria-hidden="true">${edges}</svg>
-      ${nodes}
-    </div>
-  `;
-}
-
-function renderInspector(model: ViewModel): string {
+function renderInspector(model: OntologyGraphViewModel): string {
   const selected = model.nodes.find((node) => node.id === state.selectedId) ?? model.nodes[0];
   if (!selected) {
     return `<section class="inspector"><h2>Inspector</h2><p>No ontology data loaded.</p></section>`;
   }
   return `
     <section class="inspector">
-      <p class="eyebrow">${escapeHtml(selected.lane)} / ${escapeHtml(selected.status)}</p>
+      <p class="eyebrow">${escapeHtml(selected.lane)} / ${escapeHtml(selected.status ?? "unknown")}</p>
       <h2>${escapeHtml(selected.label)}</h2>
-      <p>${escapeHtml(selected.summary)}</p>
+      <p>${escapeHtml(selected.summary ?? "")}</p>
       <pre>${escapeHtml(JSON.stringify(selected.raw, null, 2))}</pre>
     </section>
   `;
@@ -426,7 +267,7 @@ function renderObservationRows(store: OntologyStoreFile): string {
 }
 
 function renderApp(): void {
-  const model = buildViewModel(state.store);
+  const model = operationalStoreToOntologyView(state.store);
   const app = document.querySelector<HTMLDivElement>("#app");
   if (!app) return;
 
@@ -446,7 +287,7 @@ function renderApp(): void {
     </header>
 
     <section class="metrics" aria-label="Store metrics">
-      ${Object.entries(model.metrics).map(([key, value]) => `<div><span>${escapeHtml(key)}</span><strong>${value}</strong></div>`).join("")}
+      ${Object.entries(model.metrics ?? {}).map(([key, value]) => `<div><span>${escapeHtml(key)}</span><strong>${value}</strong></div>`).join("")}
     </section>
 
     <nav class="filters" aria-label="Topology filter">
@@ -463,7 +304,7 @@ function renderApp(): void {
     <section class="workspace">
       <div class="map">
         <div class="source-line">Source: ${escapeHtml(state.sourceName)}</div>
-        ${renderTopology(model)}
+        <div class="topology">${renderOntologyGraphSvg(layoutOntologyGraph(model, { laneOrder: ["snapshot", "corridor", "checkpoint", "traversal", "governance"], nodeWidth: 150 }))}</div>
       </div>
       ${renderInspector(model)}
     </section>
