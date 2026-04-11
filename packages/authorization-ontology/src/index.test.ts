@@ -7,6 +7,8 @@ import {
   evaluateColumnPolicyPropagation,
   normalizeCerbosResourcePolicy,
   normalizeCerbosDerivedRoles,
+  projectAuthorizationDecision,
+  projectCerbosDecisionObservation,
   projectCerbosDerivedRoles,
   projectCerbosResourcePolicy,
   projectColumnPolicyPropagation,
@@ -261,5 +263,116 @@ describe("authorization-ontology", () => {
       toNodeId: node.nodeId,
     });
     expect(relation.relationId).toContain("authz:protects");
+  });
+
+  it("projects Cerbos decision observations into decision graph", () => {
+    const identityRealm = createAuthorizationRealm({
+      kind: "identity",
+      authority: "zitadel:prod",
+      environment: "prod",
+    });
+    const policyRealm = createAuthorizationRealm({
+      kind: "policy",
+      authority: "cerbos:prod",
+      environment: "prod",
+    });
+    const resourceRealm = createAuthorizationRealm({
+      kind: "application",
+      authority: "service:crm",
+      environment: "prod",
+    });
+    const enforcementRealm = createAuthorizationRealm({
+      kind: "enforcement",
+      authority: "authentik:prod",
+      environment: "prod",
+    });
+
+    const graph = projectCerbosDecisionObservation({
+      identityRealm,
+      policyRealm,
+      resourceRealm,
+      enforcementPoint: {
+        realm: enforcementRealm,
+        enforcementPointId: "outpost:crm",
+        kind: "authentik_proxy",
+      },
+      decision: {
+        requestId: "req-1",
+        principal: {
+          id: "user-1",
+          roles: ["analyst"],
+          attr: { region: "kr" },
+        },
+        resource: {
+          id: "crm.customer_profile",
+          kind: "service",
+          attr: { region: "kr" },
+        },
+        actions: [
+          {
+            action: "read",
+            effect: "EFFECT_ALLOW",
+            policyId: "cerbos:resource:crm.customer_profile",
+            reason: "matched regional analyst",
+          },
+        ],
+        observedAt: "2026-04-11T00:00:00.000Z",
+      },
+    });
+
+    expect(graph.nodes.map((node) => node.kind).toSorted()).toEqual([
+      "action",
+      "decision",
+      "enforcement_point",
+      "policy",
+      "principal",
+      "resource",
+      "role",
+    ]);
+    expect(graph.relations.map((relation) => relation.kind).toSorted()).toEqual([
+      "decision_action",
+      "decision_enforcement",
+      "decision_policy",
+      "decision_principal",
+      "decision_resource",
+      "has_role",
+    ]);
+  });
+
+  it("projects direct authorization decisions into observable graph", () => {
+    const realm = createAuthorizationRealm({
+      kind: "application",
+      authority: "service:crm",
+      environment: "prod",
+    });
+    const graph = projectAuthorizationDecision({
+      decisionId: "decision-1",
+      principal: {
+        realm,
+        principalId: "svc-1",
+        principalKind: "service_account",
+        roles: ["reader"],
+      },
+      resource: {
+        realm,
+        resourceId: "crm.customer_profile",
+        resourceKind: "service",
+      },
+      action: {
+        realm,
+        actionId: "read",
+      },
+      effect: "allow",
+      observedAt: "2026-04-11T00:00:01.000Z",
+    });
+
+    expect(graph.nodes.some((node) => node.kind === "decision")).toBe(true);
+    expect(graph.relations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "decision_principal" }),
+        expect.objectContaining({ kind: "decision_resource" }),
+        expect.objectContaining({ kind: "decision_action" }),
+      ]),
+    );
   });
 });

@@ -23,6 +23,8 @@ def:
       type: contains
     - target: authorization-ontology-column-lineage-policy
       type: contains
+    - target: authorization-ontology-decision-observation
+      type: contains
     - target: authorization-ontology-package-architecture
       type: contains
 ---
@@ -60,5 +62,6 @@ authorization ontology는 Cerbos를 대체하지 않는다. Cerbos가 표현하�
 4. ZITADEL은 identity issuer/SSO realm이다.
 5. Pulumi/ArgoCD는 policy와 service wiring의 provenance다.
 6. column-level lineage는 권한 정책 전파의 근거다.
-7. realm은 resource kind가 아니라 authority boundary다.
-8. 실제 decision은 checkpoint로 관측되고 snapshot/diff로 관리된다.
+7. 실제 Cerbos decision은 별도 decision node와 relation graph로 관측한다.
+8. realm은 resource kind가 아니라 authority boundary다.
+9. 실제 decision은 checkpoint로 관측되고 snapshot/diff로 관리된다.

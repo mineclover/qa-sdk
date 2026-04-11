@@ -266,6 +266,7 @@ Cerbos를 단일 권한 선언/판정 중심으로 두고 identity/enforcement/d
 | [authorization-ontology-cerbos-mapping.spec.md](authorization-ontology/authorization-ontology-cerbos-mapping.spec.md) | Cerbos resource policy를 policy/resource/action graph로 투영하는 규칙 | draft |
 | [authorization-ontology-auth-chain.spec.md](authorization-ontology/authorization-ontology-auth-chain.spec.md) | Pulumi/ArgoCD/LB/Caddy/Authentik/ZITADEL/Cerbos 역할 체인 | draft |
 | [authorization-ontology-column-lineage-policy.spec.md](authorization-ontology/authorization-ontology-column-lineage-policy.spec.md) | 컬럼 리니지 transform 기반 권한 정책 전파 규칙 | draft |
+| [authorization-ontology-decision-observation.spec.md](authorization-ontology/authorization-ontology-decision-observation.spec.md) | Cerbos check 결과를 decision graph로 관측하는 모델 | draft |
 | [authorization-ontology-package-architecture.spec.md](authorization-ontology/authorization-ontology-package-architecture.spec.md) | authorization-ontology 패키지 공개 표면 | draft |
 
 ### skill-catalog/ — 스킬 카탈로그

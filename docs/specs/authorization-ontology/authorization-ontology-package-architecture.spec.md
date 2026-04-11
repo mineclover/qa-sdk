@@ -31,5 +31,7 @@ def:
 - `evaluateColumnPolicyPropagation`
 - `projectColumnPolicyPropagation`
 - `createAuthorizationDecisionNode`
+- `projectAuthorizationDecision`
+- `projectCerbosDecisionObservation`
 
 패키지는 `operational-ontology`에 의존한다. 권한 전용 DB나 PDP를 포함하지 않는다.

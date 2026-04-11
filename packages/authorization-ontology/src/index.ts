@@ -78,6 +78,11 @@ export const AUTHORIZATION_RELATION_KINDS = [
   "inherits_policy_from",
   "downgrades_policy_from",
   "requires_manual_review",
+  "decision_principal",
+  "decision_resource",
+  "decision_action",
+  "decision_policy",
+  "decision_enforcement",
 ] as const;
 
 export type AuthorizationRelationKind = (typeof AUTHORIZATION_RELATION_KINDS)[number];
@@ -306,6 +311,43 @@ export interface AuthorizationDecision {
   effect: "allow" | "deny";
   observedAt: string;
   reason?: string;
+}
+
+export interface CerbosPrincipalLike {
+  id: string;
+  roles?: string[];
+  attr?: Record<string, unknown>;
+}
+
+export interface CerbosResourceLike {
+  id: string;
+  kind?: AuthorizationResourceKind | string;
+  attr?: Record<string, unknown>;
+}
+
+export interface CerbosActionDecisionLike {
+  action: string;
+  effect: "EFFECT_ALLOW" | "EFFECT_DENY" | "allow" | "deny" | string;
+  policyId?: string;
+  reason?: string;
+}
+
+export interface CerbosDecisionObservationLike {
+  requestId?: string;
+  principal: CerbosPrincipalLike;
+  resource: CerbosResourceLike;
+  actions: Record<string, string> | CerbosActionDecisionLike[];
+  observedAt?: string;
+}
+
+export interface CerbosDecisionObservationProjectionInput {
+  identityRealm: AuthorizationRealm;
+  resourceRealm: AuthorizationRealm;
+  policyRealm?: AuthorizationRealm;
+  actionRealm?: AuthorizationRealm;
+  enforcementPoint?: EnforcementPointRef;
+  decisionRealm?: AuthorizationRealm;
+  decision: CerbosDecisionObservationLike;
 }
 
 export function createAuthorizationRealmId(input: Omit<AuthorizationRealm, "realmId">): string {
@@ -751,6 +793,10 @@ function uniqueRelations(relations: AuthorizationRelation[]): AuthorizationRelat
   return [...new Map(relations.map((relation) => [relation.relationId, relation])).values()];
 }
 
+function uniqueRealms(realms: AuthorizationRealm[]): AuthorizationRealm[] {
+  return [...new Map(realms.map((realm) => [realm.realmId, realm])).values()];
+}
+
 export function projectCerbosResourcePolicy(
   input: CerbosPolicyProjectionInput,
 ): AuthorizationOntologyGraph {
@@ -1003,6 +1049,164 @@ export function createAuthorizationDecisionNode(input: AuthorizationDecision): A
       observedAt: input.observedAt,
       reason: input.reason,
     },
+  };
+}
+
+export function projectAuthorizationDecision(
+  input: AuthorizationDecision,
+): AuthorizationOntologyGraph {
+  const principalNode = createPrincipalNode(input.principal);
+  const resourceNode = createResourceNode(input.resource);
+  const actionNode = createActionNode(input.action);
+  const decisionNode = createAuthorizationDecisionNode(input);
+  const policyNode = input.policy ? createPolicyNode(input.policy) : undefined;
+  const enforcementNode = input.enforcementPoint
+    ? createEnforcementPointNode(input.enforcementPoint)
+    : undefined;
+  const roleNodes = (input.principal.roles ?? []).map((role) =>
+    createRoleNode({
+      realm: input.principal.realm,
+      roleId: role,
+      roleKind: "role",
+    }),
+  );
+
+  return {
+    realms: uniqueRealms([
+      input.principal.realm,
+      input.resource.realm,
+      input.action.realm,
+      ...(input.policy ? [input.policy.realm] : []),
+      ...(input.enforcementPoint ? [input.enforcementPoint.realm] : []),
+    ]),
+    nodes: uniqueNodes([
+      principalNode,
+      resourceNode,
+      actionNode,
+      decisionNode,
+      ...(policyNode ? [policyNode] : []),
+      ...(enforcementNode ? [enforcementNode] : []),
+      ...roleNodes,
+    ]),
+    relations: uniqueRelations([
+      createAuthorizationRelation({
+        kind: "decision_principal",
+        fromNodeId: decisionNode.nodeId,
+        toNodeId: principalNode.nodeId,
+      }),
+      createAuthorizationRelation({
+        kind: "decision_resource",
+        fromNodeId: decisionNode.nodeId,
+        toNodeId: resourceNode.nodeId,
+      }),
+      createAuthorizationRelation({
+        kind: "decision_action",
+        fromNodeId: decisionNode.nodeId,
+        toNodeId: actionNode.nodeId,
+      }),
+      ...(policyNode
+        ? [
+            createAuthorizationRelation({
+              kind: "decision_policy",
+              fromNodeId: decisionNode.nodeId,
+              toNodeId: policyNode.nodeId,
+            }),
+          ]
+        : []),
+      ...(enforcementNode
+        ? [
+            createAuthorizationRelation({
+              kind: "decision_enforcement",
+              fromNodeId: decisionNode.nodeId,
+              toNodeId: enforcementNode.nodeId,
+            }),
+          ]
+        : []),
+      ...roleNodes.map((roleNode) =>
+        createAuthorizationRelation({
+          kind: "has_role",
+          fromNodeId: principalNode.nodeId,
+          toNodeId: roleNode.nodeId,
+        }),
+      ),
+    ]),
+  };
+}
+
+function normalizeCerbosActionDecisions(
+  actions: CerbosDecisionObservationLike["actions"],
+): CerbosActionDecisionLike[] {
+  if (Array.isArray(actions)) {
+    return actions.map((action) => ({
+      ...action,
+      effect: normalizeEffect(action.effect),
+    }));
+  }
+
+  return Object.entries(actions).map(([action, effect]) => ({
+    action,
+    effect: normalizeEffect(effect),
+  }));
+}
+
+export function projectCerbosDecisionObservation(
+  input: CerbosDecisionObservationProjectionInput,
+): AuthorizationOntologyGraph {
+  const principal: PrincipalRef = {
+    realm: input.identityRealm,
+    principalId: input.decision.principal.id,
+    principalKind: "human_user",
+    issuer: input.identityRealm.authority,
+    roles: input.decision.principal.roles ?? [],
+    attributes: input.decision.principal.attr ?? {},
+  };
+  const resource: ResourceRef = {
+    realm: input.resourceRealm,
+    resourceId: input.decision.resource.id,
+    resourceKind: (input.decision.resource.kind ?? "service") as AuthorizationResourceKind,
+    attributes: input.decision.resource.attr ?? {},
+  };
+  const actionRealm = input.actionRealm ?? input.policyRealm ?? input.resourceRealm;
+  const decisionRealm =
+    input.decisionRealm ?? input.enforcementPoint?.realm ?? input.policyRealm ?? input.resourceRealm;
+  const observedAt = input.decision.observedAt ?? new Date().toISOString();
+  const actionDecisions = normalizeCerbosActionDecisions(input.decision.actions);
+  const graphs = actionDecisions.map((actionDecision) =>
+    projectAuthorizationDecision({
+      decisionId: `${input.decision.requestId ?? input.decision.resource.id}:${actionDecision.action}`,
+      principal,
+      resource,
+      action: {
+        realm: actionRealm,
+        actionId: actionDecision.action,
+        actionKind: actionDecision.action,
+      },
+      policy: actionDecision.policyId
+        ? {
+            realm: input.policyRealm ?? decisionRealm,
+            policyId: actionDecision.policyId,
+            policyKind: "cerbos_resource_policy",
+          }
+        : undefined,
+      enforcementPoint: input.enforcementPoint,
+      effect: normalizeEffect(actionDecision.effect),
+      observedAt,
+      reason: actionDecision.reason,
+    }),
+  );
+
+  return {
+    realms: uniqueRealms([
+      input.identityRealm,
+      input.resourceRealm,
+      actionRealm,
+      decisionRealm,
+      ...(input.policyRealm ? [input.policyRealm] : []),
+      ...(input.enforcementPoint ? [input.enforcementPoint.realm] : []),
+      ...graphs.flatMap((graph) => graph.realms),
+    ]),
+    nodes: uniqueNodes(graphs.flatMap((graph) => graph.nodes)),
+    relations: uniqueRelations(graphs.flatMap((graph) => graph.relations)),
   };
 }
 
