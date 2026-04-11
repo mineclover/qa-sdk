@@ -325,6 +325,82 @@ describe("implementation governance evaluator", () => {
       ]),
     );
   });
+
+  it("requires an evaluator for custom governance constraints", () => {
+    const blueprint = {
+      blueprintId: "custom-governance",
+      coordinateRef: "corridor:event-ingest",
+      unitKind: "corridor_bundle",
+      implementationBinding: {
+        coordinateRef: "corridor:event-ingest",
+        implementationRefs: [{ kind: "code", ref: "src/event-projector.ts" }],
+      },
+      verificationBinding: {
+        coordinateRef: "corridor:event-ingest",
+        verificationRefs: [{ kind: "test", ref: "src/event-projector.test.ts" }],
+      },
+      constraints: [{ kind: "security_review" }],
+    };
+    const taxonomy = {
+      taxonomyId: "custom-governance",
+      unitKinds: ["corridor_bundle"],
+      implementationSurfaceKinds: ["code"],
+      verificationSurfaceKinds: ["test"],
+      constraintKinds: ["unit_boundary", "security_review"],
+      constraintSeverities: ["core", "required"],
+      adjustmentActions: ["escalate", "manual_review"],
+      evolutionPolicies: ["append_only"],
+    };
+
+    const missingEvaluator = operationalOntologyImplementationGovernancePlane.evaluateImplementationGovernance({
+      blueprint,
+      taxonomy,
+    });
+    const customEvaluator = operationalOntologyImplementationGovernancePlane.evaluateImplementationGovernance({
+      blueprint,
+      taxonomy,
+      constraintEvaluators: {
+        security_review: () => [],
+      },
+    });
+
+    expect(missingEvaluator.valid).toBe(false);
+    expect(missingEvaluator.verdicts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "unsupported-constraint-evaluator" }),
+      ]),
+    );
+    expect(customEvaluator.valid).toBe(true);
+  });
+
+  it("uses runtime override bindings without validating stale blueprint bindings", () => {
+    const result = operationalOntologyImplementationGovernancePlane.evaluateImplementationGovernance({
+      blueprint: {
+        blueprintId: "override-governance",
+        coordinateRef: "corridor:event-ingest",
+        unitKind: "corridor_bundle",
+        implementationBinding: {
+          coordinateRef: "corridor:event-ingest",
+          implementationRefs: [{ kind: "spreadsheet" as never, ref: "sheet:old-binding" }],
+        },
+      },
+      implementationBinding: {
+        coordinateRef: "corridor:event-ingest",
+        implementationRefs: [{ kind: "code", ref: "src/event-projector.ts" }],
+      },
+      verificationBinding: {
+        coordinateRef: "corridor:event-ingest",
+        verificationRefs: [{ kind: "test", ref: "src/event-projector.test.ts" }],
+      },
+    });
+
+    expect(result.valid).toBe(true);
+    expect(result.verdicts).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "implementation-surface-kind-unknown" }),
+      ]),
+    );
+  });
 });
 
 describe("in-memory adapters", () => {

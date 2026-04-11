@@ -124,7 +124,7 @@ export interface ConsistencyVerdict {
 }
 
 export interface AdjustmentSuggestion {
-  action: AdjustmentAction;
+  action: GovernanceVocabularyValue<AdjustmentAction>;
   constraintKind: GovernanceVocabularyValue<ConsistencyConstraintKind>;
   reason: string;
   refs: readonly string[];
@@ -149,6 +149,18 @@ export interface ImplementationGovernanceEvaluationInput {
   verificationBinding?: VerificationBinding;
   schema?: OperationalOntologySchema;
   taxonomy?: ImplementationGovernanceTaxonomy;
+  constraintEvaluators?: Partial<
+    Record<
+      string,
+      (input: {
+        constraint: ConsistencyConstraint;
+        blueprint: ImplementationBlueprint;
+        implementation: ImplementationBinding;
+        verification: VerificationBinding;
+        schema?: OperationalOntologySchema;
+      }) => readonly ConsistencyVerdict[]
+    >
+  >;
   now?: string;
   runId?: string;
 }
@@ -157,6 +169,7 @@ export interface ImplementationBlueprintValidationInput {
   blueprint: ImplementationBlueprint;
   schema?: OperationalOntologySchema;
   taxonomy?: ImplementationGovernanceTaxonomy;
+  validateBindings?: boolean;
 }
 
 export interface ImplementationBlueprintValidationResult {

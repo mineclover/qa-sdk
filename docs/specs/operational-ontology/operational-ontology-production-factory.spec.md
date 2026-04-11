@@ -51,6 +51,8 @@ implementation governance plane은 schema plane과 instance/projection plane 사
 
 초기 taxonomy interface는 `unitKinds`, `implementationSurfaceKinds`, `verificationSurfaceKinds`, `constraintKinds`, `constraintSeverities`, `adjustmentActions`, `evolutionPolicies`를 닫힌 vocabulary로 둔다. evaluator는 blueprint와 binding이 이 vocabulary 밖의 값을 쓰면 governance violation으로 판정한다.
 
+패키지 내부 구현은 types, taxonomy, evaluator, persistence 모듈로 분리한다. core 파일은 public re-export 경계로만 둔다.
+
 ## 정의 ^defines
 
 ### 왜 governance plane이 필요한가
@@ -109,6 +111,8 @@ factory가 강제하는 제약은 구현 단위와 검증 단위가 닫히도록
 - `escalate` — required facet, identity axis, relation grammar 같은 core 제약 변경은 사람 결정으로 올린다.
 
 조정 후보는 `targetRef`, `proposedChange`, `requiresDecision`을 포함해 다음 실행자가 후속 작업을 판단할 수 있어야 한다.
+
+core evaluator가 모르는 custom constraint는 자동 통과시키지 않는다. extension evaluator가 없으면 unsupported constraint로 실패시킨다.
 
 ### evolution policy
 

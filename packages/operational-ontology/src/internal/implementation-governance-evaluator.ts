@@ -51,7 +51,7 @@ function chooseAdjustment(
 }
 
 function proposedChangeForAction(
-  action: AdjustmentAction,
+  action: GovernanceVocabularyValue<AdjustmentAction>,
   constraintKind: GovernanceVocabularyValue<ConsistencyConstraintKind>,
 ): string {
   if (action === 'relax') return `Relax non-core ${constraintKind} constraint`;
@@ -61,7 +61,7 @@ function proposedChangeForAction(
 }
 
 function createAdjustment(
-  action: AdjustmentAction,
+  action: GovernanceVocabularyValue<AdjustmentAction>,
   constraintKind: GovernanceVocabularyValue<ConsistencyConstraintKind>,
   reason: string,
   refs: readonly string[] = [],
@@ -250,6 +250,7 @@ export function validateImplementationBlueprint(
   const taxonomy = input.taxonomy ?? DEFAULT_IMPLEMENTATION_GOVERNANCE_TAXONOMY;
   const taxonomyValidation = validateImplementationGovernanceTaxonomy(taxonomy);
   const verdicts: ConsistencyVerdict[] = [];
+  const validateBindings = input.validateBindings ?? true;
 
   verdicts.push(
     ...taxonomyValidation.issues.map((issue) =>
@@ -259,8 +260,8 @@ export function validateImplementationBlueprint(
   verdicts.push(
     ...evaluateTaxonomyMembership(
       blueprint,
-      blueprint.implementationBinding,
-      blueprint.verificationBinding,
+      validateBindings ? blueprint.implementationBinding : undefined,
+      validateBindings ? blueprint.verificationBinding : undefined,
       taxonomy,
     ),
   );
@@ -312,12 +313,29 @@ function evaluateConstraint(
   implementation: ImplementationBinding,
   verification: VerificationBinding,
   schema?: OperationalOntologySchema,
+  customEvaluator?: (input: {
+    constraint: ConsistencyConstraint;
+    blueprint: ImplementationBlueprint;
+    implementation: ImplementationBinding;
+    verification: VerificationBinding;
+    schema?: OperationalOntologySchema;
+  }) => readonly ConsistencyVerdict[],
 ): readonly ConsistencyVerdict[] {
   const requiredRefs = constraint.requiredRefs ?? [];
   const allowedRefs = constraint.allowedRefs ?? [];
 
   if (!new Set(DEFAULT_IMPLEMENTATION_GOVERNANCE_TAXONOMY.constraintKinds).has(constraint.kind)) {
-    return [];
+    if (customEvaluator) {
+      return customEvaluator({ constraint, blueprint, implementation, verification, schema });
+    }
+    return [
+      createVerdict(
+        'unsupported-constraint-evaluator',
+        `No evaluator is registered for governance constraint "${constraint.kind}"`,
+        constraint.kind,
+        [constraint.kind],
+      ),
+    ];
   }
 
   if (constraint.kind === 'unit_boundary') {
@@ -417,6 +435,7 @@ export function evaluateImplementationGovernance(
     blueprint,
     schema: input.schema,
     taxonomy,
+    validateBindings: !(input.implementationBinding || input.verificationBinding),
   });
 
   verdicts.push(...blueprintValidation.verdicts);
@@ -477,6 +496,7 @@ export function evaluateImplementationGovernance(
         implementation,
         verification,
         input.schema,
+        input.constraintEvaluators?.[constraint.kind],
       );
       verdicts.push(...constraintVerdicts);
 

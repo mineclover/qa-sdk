@@ -96,6 +96,10 @@ projector의 실제 책임 경계는 아래 subpath에 맞춘다.
 - `src/internal/schema-core.ts`
 - `src/internal/schema-memory.ts`
 - `src/internal/implementation-governance-core.ts`
+- `src/internal/implementation-governance-types.ts`
+- `src/internal/implementation-governance-taxonomy.ts`
+- `src/internal/implementation-governance-evaluator.ts`
+- `src/internal/implementation-governance-persistence.ts`
 - `src/internal/runtime-core.ts`
 - `src/internal/lineage-core.ts`
 - `src/internal/corridor-core.ts`
