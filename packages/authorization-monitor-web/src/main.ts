@@ -294,11 +294,11 @@ function renderTopology(container: HTMLElement, model: AuthzMonitorModel): void 
   }
 
   const lines = graph.relations
-    .map((relation) => {
+    .map((relation, index) => {
       const start = positions.get(relation.fromNodeId);
       const end = positions.get(relation.toNodeId);
       if (!start || !end) return "";
-      return `<path class="edge ${classifyRelation(relation)}" d="M ${start.x} ${start.y} C ${(start.x + end.x) / 2} ${start.y}, ${(start.x + end.x) / 2} ${end.y}, ${end.x} ${end.y}" />`;
+      return `<path class="edge ${classifyRelation(relation)}" d="M ${start.x} ${start.y} C ${(start.x + end.x) / 2} ${start.y}, ${(start.x + end.x) / 2} ${end.y}, ${end.x} ${end.y}" data-qa-address="authz-monitor:edge:${index}:${escapeHtml(relation.kind)}" />`;
     })
     .join("");
 
@@ -308,7 +308,7 @@ function renderTopology(container: HTMLElement, model: AuthzMonitorModel): void 
       if (!pos) return "";
       const selected = state.selectedNodeId === node.nodeId ? " selected" : "";
       return `
-        <button class="node ${classifyNode(node)}${selected}" style="left:${pos.x - 58}px;top:${pos.y - 23}px" data-node-index="${nodeIndex.get(node.nodeId)}">
+        <button class="node ${classifyNode(node)}${selected}" style="left:${pos.x - 58}px;top:${pos.y - 23}px" data-node-index="${nodeIndex.get(node.nodeId)}" data-qa-address="authz-monitor:node:${classifyNode(node)}:${escapeHtml(node.coord.anchor)}">
           <span>${escapeHtml(node.kind)}</span>
           <b>${escapeHtml(node.coord.anchor)}</b>
         </button>
@@ -317,14 +317,16 @@ function renderTopology(container: HTMLElement, model: AuthzMonitorModel): void 
     .join("");
 
   container.innerHTML = `
-    <div class="lanes">
-      <span style="top:40px">policy</span>
-      <span style="top:116px">proxy gate</span>
-      <span style="top:192px">application gate</span>
-      <span style="top:268px">decision</span>
+    <div class="graph-surface" style="width:${width}px;height:${height}px" data-qa-address="authz-monitor:surface:graph-canvas">
+      <div class="lanes" data-qa-address="authz-monitor:surface:lanes">
+        <span style="top:40px">policy</span>
+        <span style="top:116px">proxy gate</span>
+        <span style="top:192px">application gate</span>
+        <span style="top:268px">decision</span>
+      </div>
+      <svg class="graph-svg" viewBox="0 0 ${width} ${height}" aria-hidden="true" data-qa-address="authz-monitor:surface:edges">${lines}</svg>
+      <div class="graph-nodes" data-qa-address="authz-monitor:surface:nodes">${nodeMarkup}</div>
     </div>
-    <svg class="graph-svg" viewBox="0 0 ${width} ${height}" aria-hidden="true">${lines}</svg>
-    <div class="graph-nodes">${nodeMarkup}</div>
   `;
 
   container.querySelectorAll<HTMLButtonElement>(".node").forEach((button) => {
@@ -342,7 +344,7 @@ function renderInspector(container: HTMLElement, model: AuthzMonitorModel): void
     : null;
   if (!selected) {
     container.innerHTML = `
-      <div class="empty">
+      <div class="empty" data-qa-address="authz-monitor:surface:inspector-empty">
         <b>관측 노드를 선택하세요</b>
         <span>route, middleware, policy, decision 좌표와 relation을 확인합니다.</span>
       </div>
@@ -353,7 +355,7 @@ function renderInspector(container: HTMLElement, model: AuthzMonitorModel): void
   const incoming = model.graph.relations.filter((relation) => relation.toNodeId === selected.nodeId);
   const outgoing = model.graph.relations.filter((relation) => relation.fromNodeId === selected.nodeId);
   container.innerHTML = `
-    <div class="ins-head">
+    <div class="ins-head" data-qa-address="authz-monitor:surface:inspector-head">
       <span>${escapeHtml(selected.kind)}</span>
       <b>${escapeHtml(selected.coord.anchor)}</b>
     </div>
@@ -404,18 +406,18 @@ function renderApp(): void {
         <h1>권한은 두 번 막고, 한 번의 graph로 관측한다.</h1>
         <p>프록시는 입구를 차단하고, 애플리케이션은 도메인 리소스를 확인합니다. 두 계층의 Cerbos policy와 decision을 같은 좌표계에서 비교합니다.</p>
       </div>
-      <div id="summary" class="summary"></div>
+      <div id="summary" class="summary" data-qa-address="authz-monitor:surface:audit-summary"></div>
     </section>
-    <section class="controls" aria-label="권한 관측 필터">
+    <section class="controls" aria-label="권한 관측 필터" data-qa-address="authz-monitor:surface:focus-controls">
       <button data-focus="all" class="active">전체 경로</button>
       <button data-focus="proxy">프록시 부여</button>
       <button data-focus="application">애플리케이션 부여</button>
     </section>
-    <section class="workspace">
-      <div class="graph" id="graph"></div>
-      <aside class="inspector" id="inspector"></aside>
+    <section class="workspace" data-qa-address="authz-monitor:surface:workspace">
+      <div class="graph" id="graph" data-qa-address="authz-monitor:surface:graph"></div>
+      <aside class="inspector" id="inspector" data-qa-address="authz-monitor:surface:inspector"></aside>
     </section>
-    <section class="sequence" id="sequence"></section>
+    <section class="sequence" id="sequence" data-qa-address="authz-monitor:surface:sequence"></section>
   `;
 
   document.querySelectorAll<HTMLButtonElement>("[data-focus]").forEach((button) => {

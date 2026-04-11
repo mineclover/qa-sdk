@@ -15,6 +15,21 @@
 - Cerbos policy가 `proxy_route`와 `domain_resource`를 어떻게 보호하는지 보여준다.
 - decision observation이 principal/resource/action/policy/enforcement point를 어떻게 연결하는지 보여준다.
 - 현재는 브라우저 안전성을 위해 샘플 graph view model을 사용한다. 실제 store/API 연동은 별도 adapter로 추가한다.
+- RLSC 수집을 위해 주요 surface, node, edge에 `data-qa-address`를 부여한다.
+
+## RLSC 관측
+
+브라우저에서 `rlsc`를 주입해 다음처럼 수집할 수 있다.
+
+```ts
+import { collectLayout } from "rlsc";
+
+const doc = collectLayout(document.querySelector("#app")!, {
+  addressAttribute: "data-qa-address",
+});
+```
+
+그래프 canvas는 `authz-monitor:surface:graph-canvas`, 노드는 `authz-monitor:node:<lane>:<anchor>`, edge는 `authz-monitor:edge:<index>:<relation>` 주소로 관측된다.
 
 ## 실행
 
