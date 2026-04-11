@@ -68,6 +68,9 @@ describe("submodule facades", () => {
     expect(typeof operationalOntologyImplementationGovernancePlane.evaluateImplementationGovernance).toBe(
       "function",
     );
+    expect(typeof operationalOntologyImplementationGovernancePlane.validateImplementationGovernanceTaxonomy).toBe(
+      "function",
+    );
     expect(typeof operationalOntologyPersistencePlane.validateFacetKindsForObjectKind).toBe("function");
     expect(typeof projectEventRecordProjectorOnly).toBe("function");
     expect(typeof projectPipeGraphProjectorOnly).toBe("function");
@@ -113,6 +116,32 @@ describe("implementation governance evaluator", () => {
       },
     ],
   };
+
+  it("validates the finite governance taxonomy interface", () => {
+    expect(
+      operationalOntologyImplementationGovernancePlane.validateImplementationGovernanceTaxonomy(),
+    ).toEqual({ valid: true, issues: [] });
+
+    expect(
+      operationalOntologyImplementationGovernancePlane.validateImplementationGovernanceTaxonomy({
+        taxonomyId: "broken-governance",
+        unitKinds: ["corridor_bundle", "corridor_bundle"],
+        implementationSurfaceKinds: ["code"],
+        verificationSurfaceKinds: ["test"],
+        constraintKinds: ["unit_boundary"],
+        constraintSeverities: ["core"],
+        adjustmentActions: ["defer"],
+        evolutionPolicies: ["append_only"],
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        valid: false,
+        issues: expect.arrayContaining([
+          expect.objectContaining({ code: "governance-axis-duplicate" }),
+        ]),
+      }),
+    );
+  });
 
   it("passes when implementation and verification bindings match the same coordinate", () => {
     const result = operationalOntologyImplementationGovernancePlane.evaluateImplementationGovernance({
@@ -175,6 +204,37 @@ describe("implementation governance evaluator", () => {
     );
   });
 
+  it("fails closed when required schemas are declared without a schema registry", () => {
+    const result = operationalOntologyImplementationGovernancePlane.evaluateImplementationGovernance({
+      blueprint: {
+        blueprintId: "schema-bound-governance",
+        coordinateRef: "corridor:event-ingest",
+        unitKind: "corridor_bundle",
+        requiredSchemas: ["information-role"],
+        implementationBinding: {
+          coordinateRef: "corridor:event-ingest",
+          implementationRefs: [{ kind: "code", ref: "src/event-projector.ts" }],
+        },
+        verificationBinding: {
+          coordinateRef: "corridor:event-ingest",
+          verificationRefs: [{ kind: "test", ref: "src/event-projector.test.ts" }],
+        },
+      },
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.verdicts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "required-schema-registry-missing" }),
+      ]),
+    );
+    expect(result.adjustments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ action: "escalate", constraintKind: "unit_boundary" }),
+      ]),
+    );
+  });
+
   it("escalates core coordinate mismatches", () => {
     const result = operationalOntologyImplementationGovernancePlane.evaluateImplementationGovernance({
       blueprint: {
@@ -197,6 +257,37 @@ describe("implementation governance evaluator", () => {
     expect(result.adjustments).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ action: "escalate", constraintKind: "unit_boundary" }),
+      ]),
+    );
+  });
+
+  it("rejects implementation bindings outside the governance taxonomy", () => {
+    const result = operationalOntologyImplementationGovernancePlane.evaluateImplementationGovernance({
+      blueprint: {
+        blueprintId: "unknown-surface-governance",
+        coordinateRef: "corridor:event-ingest",
+        unitKind: "unknown_unit",
+        implementationBinding: {
+          coordinateRef: "corridor:event-ingest",
+          implementationRefs: [{ kind: "spreadsheet" as never, ref: "sheet:manual-map" }],
+        },
+        verificationBinding: {
+          coordinateRef: "corridor:event-ingest",
+          verificationRefs: [{ kind: "test", ref: "packages/operational-ontology/src/index.test.ts" }],
+        },
+      },
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.verdicts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "governance-unit-kind-unknown" }),
+        expect.objectContaining({ code: "implementation-surface-kind-unknown" }),
+      ]),
+    );
+    expect(result.adjustments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ action: "escalate" }),
       ]),
     );
   });
@@ -339,6 +430,78 @@ describe("in-memory adapters", () => {
         recordedAt: "2026-04-10T00:00:05.000Z",
       }),
     ).rejects.toThrow(/Invalid payload shape/);
+  });
+
+  it("stores governance blueprints and run evidence as first-class bundles", async () => {
+    const store = new InMemoryOperationalOntologyStore();
+
+    await store.upsertObject({
+      objectId: "governance-blueprint:event-ingest",
+      objectKind: "governance_blueprint",
+      canonicalKey: "governance-blueprint:corridor:event-ingest",
+      schemaVersion: "v1",
+      lifecycle: "active",
+      createdAt: "2026-04-10T00:00:00.000Z",
+      updatedAt: "2026-04-10T00:00:00.000Z",
+    });
+
+    await store.putFacet({
+      objectId: "governance-blueprint:event-ingest",
+      facetKind: "schema",
+      version: "v1",
+      payloadJson: {
+        blueprint: {
+          blueprintId: "event-ingest-governance",
+          coordinateRef: "corridor:event-ingest",
+          unitKind: "corridor_bundle",
+        },
+      },
+      recordedAt: "2026-04-10T00:00:01.000Z",
+    });
+
+    await store.putFacet({
+      objectId: "governance-blueprint:event-ingest",
+      facetKind: "validation",
+      version: "v1",
+      payloadJson: { valid: true, issues: [] },
+      recordedAt: "2026-04-10T00:00:02.000Z",
+    });
+
+    await store.upsertObject({
+      objectId: "governance-run:event-ingest:1",
+      objectKind: "governance_run",
+      canonicalKey: "governance-run:corridor:event-ingest:1",
+      schemaVersion: "v1",
+      lifecycle: "active",
+      createdAt: "2026-04-10T00:00:03.000Z",
+      updatedAt: "2026-04-10T00:00:03.000Z",
+    });
+
+    await store.putFacet({
+      objectId: "governance-run:event-ingest:1",
+      facetKind: "evidence",
+      version: "v1",
+      payloadJson: {
+        implementationRefs: ["src/event-projector.ts"],
+        verificationRefs: ["src/event-projector.test.ts"],
+        constraintVerdicts: [],
+      },
+      recordedAt: "2026-04-10T00:00:04.000Z",
+    });
+
+    await store.putFacet({
+      objectId: "governance-run:event-ingest:1",
+      facetKind: "status",
+      version: "v1",
+      payloadJson: { state: "passed" },
+      recordedAt: "2026-04-10T00:00:05.000Z",
+    });
+
+    const blueprintBundle = await store.getObjectBundle("governance-blueprint:event-ingest");
+    const runBundle = await store.getObjectBundle("governance-run:event-ingest:1");
+
+    expect(blueprintBundle?.facetValidation.valid).toBe(true);
+    expect(runBundle?.facetValidation.valid).toBe(true);
   });
 
   it("persists and reloads runtime snapshots through the persistence helper", async () => {

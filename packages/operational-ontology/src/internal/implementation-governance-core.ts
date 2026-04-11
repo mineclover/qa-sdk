@@ -25,6 +25,61 @@ export type ConsistencyConstraintSeverity = 'core' | 'required' | 'optional';
 export type AdjustmentAction = 'relax' | 'split' | 'defer' | 'escalate';
 
 export type EvolutionPolicyKind = 'append_only' | 'supersede' | 'fork' | 'merge';
+export type GovernanceVocabularyValue<TCore extends string> = TCore | (string & {});
+
+export const IMPLEMENTATION_GOVERNANCE_UNIT_KINDS = [
+  'node_bundle',
+  'relation_type_bundle',
+  'edge_assertion_bundle',
+  'traversal_bundle',
+  'corridor_bundle',
+  'junction_bundle',
+  'checkpoint_lattice',
+  'snapshot_projection',
+] as const;
+
+export type ImplementationGovernanceUnitKind =
+  (typeof IMPLEMENTATION_GOVERNANCE_UNIT_KINDS)[number];
+
+export interface ImplementationGovernanceTaxonomy {
+  taxonomyId: string;
+  unitKinds: readonly string[];
+  implementationSurfaceKinds: readonly string[];
+  verificationSurfaceKinds: readonly string[];
+  constraintKinds: readonly string[];
+  constraintSeverities: readonly string[];
+  adjustmentActions: readonly string[];
+  evolutionPolicies: readonly string[];
+}
+
+export interface ImplementationGovernanceTaxonomyValidationIssue {
+  level: 'error' | 'warning';
+  code: string;
+  message: string;
+  path: string;
+}
+
+export interface ImplementationGovernanceTaxonomyValidationResult {
+  valid: boolean;
+  issues: readonly ImplementationGovernanceTaxonomyValidationIssue[];
+}
+
+export const DEFAULT_IMPLEMENTATION_GOVERNANCE_TAXONOMY: ImplementationGovernanceTaxonomy = {
+  taxonomyId: 'implementation-governance',
+  unitKinds: IMPLEMENTATION_GOVERNANCE_UNIT_KINDS,
+  implementationSurfaceKinds: IMPLEMENTATION_SURFACE_KINDS,
+  verificationSurfaceKinds: VERIFICATION_SURFACE_KINDS,
+  constraintKinds: [
+    'unit_boundary',
+    'required_facets',
+    'allowed_relations',
+    'validation_surface',
+    'evolution_rule',
+  ],
+  constraintSeverities: ['core', 'required', 'optional'],
+  adjustmentActions: ['relax', 'split', 'defer', 'escalate'],
+  evolutionPolicies: ['append_only', 'supersede', 'fork', 'merge'],
+};
 
 export interface GovernanceSurfaceRef<TKind extends string = string> {
   kind: TKind;
@@ -32,25 +87,25 @@ export interface GovernanceSurfaceRef<TKind extends string = string> {
 }
 
 export interface ConsistencyConstraint {
-  kind: ConsistencyConstraintKind;
-  severity?: ConsistencyConstraintSeverity;
+  kind: GovernanceVocabularyValue<ConsistencyConstraintKind>;
+  severity?: GovernanceVocabularyValue<ConsistencyConstraintSeverity>;
   requiredRefs?: readonly string[];
   allowedRefs?: readonly string[];
   description?: string;
 }
 
 export interface AdjustmentPolicy {
-  allowedActions: readonly AdjustmentAction[];
+  allowedActions: readonly GovernanceVocabularyValue<AdjustmentAction>[];
 }
 
 export interface EvolutionPolicy {
-  kind: EvolutionPolicyKind;
+  kind: GovernanceVocabularyValue<EvolutionPolicyKind>;
 }
 
 export interface ImplementationBlueprint {
   blueprintId: string;
   coordinateRef: string;
-  unitKind: string;
+  unitKind: ImplementationGovernanceUnitKind | string;
   requiredSchemas?: readonly string[];
   implementationBinding?: ImplementationBinding;
   verificationBinding?: VerificationBinding;
@@ -61,14 +116,14 @@ export interface ImplementationBlueprint {
 
 export interface ImplementationBinding {
   coordinateRef: string;
-  implementationRefs: readonly GovernanceSurfaceRef<ImplementationSurfaceKind>[];
+  implementationRefs: readonly GovernanceSurfaceRef<GovernanceVocabularyValue<ImplementationSurfaceKind>>[];
   facets?: readonly string[];
   relationCategories?: readonly string[];
 }
 
 export interface VerificationBinding {
   coordinateRef: string;
-  verificationRefs: readonly GovernanceSurfaceRef<VerificationSurfaceKind>[];
+  verificationRefs: readonly GovernanceSurfaceRef<GovernanceVocabularyValue<VerificationSurfaceKind>>[];
 }
 
 export interface ConsistencyVerdict {
@@ -76,13 +131,13 @@ export interface ConsistencyVerdict {
   level: 'error' | 'warning';
   code: string;
   message: string;
-  constraintKind: ConsistencyConstraintKind;
+  constraintKind: GovernanceVocabularyValue<ConsistencyConstraintKind>;
   refs: readonly string[];
 }
 
 export interface AdjustmentSuggestion {
   action: AdjustmentAction;
-  constraintKind: ConsistencyConstraintKind;
+  constraintKind: GovernanceVocabularyValue<ConsistencyConstraintKind>;
   reason: string;
   refs: readonly string[];
 }
@@ -102,6 +157,7 @@ export interface ImplementationGovernanceEvaluationInput {
   implementationBinding?: ImplementationBinding;
   verificationBinding?: VerificationBinding;
   schema?: OperationalOntologySchema;
+  taxonomy?: ImplementationGovernanceTaxonomy;
   now?: string;
   runId?: string;
 }
@@ -117,10 +173,91 @@ const DEFAULT_ADJUSTMENT_POLICY: AdjustmentPolicy = {
   allowedActions: ['relax', 'split', 'defer', 'escalate'],
 };
 
+const CORE_CONSTRAINT_KINDS = new Set<string>(
+  DEFAULT_IMPLEMENTATION_GOVERNANCE_TAXONOMY.constraintKinds,
+);
+
+function createTaxonomyIssue(
+  code: string,
+  message: string,
+  path: string,
+): ImplementationGovernanceTaxonomyValidationIssue {
+  return { level: 'error', code, message, path };
+}
+
+function duplicateValues(values: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const value of values) {
+    if (seen.has(value)) duplicates.add(value);
+    seen.add(value);
+  }
+  return [...duplicates];
+}
+
+function validateTaxonomyAxis(
+  taxonomy: ImplementationGovernanceTaxonomy,
+  axisKey: keyof Omit<ImplementationGovernanceTaxonomy, 'taxonomyId'>,
+): ImplementationGovernanceTaxonomyValidationIssue[] {
+  const values = taxonomy[axisKey];
+  const issues: ImplementationGovernanceTaxonomyValidationIssue[] = [];
+
+  if (values.length === 0) {
+    issues.push(
+      createTaxonomyIssue(
+        'governance-axis-empty',
+        `Governance taxonomy axis "${axisKey}" must define at least one value`,
+        `${taxonomy.taxonomyId}.${axisKey}`,
+      ),
+    );
+  }
+
+  for (const duplicate of duplicateValues(values)) {
+    issues.push(
+      createTaxonomyIssue(
+        'governance-axis-duplicate',
+        `Governance taxonomy axis "${axisKey}" contains duplicate value "${duplicate}"`,
+        `${taxonomy.taxonomyId}.${axisKey}`,
+      ),
+    );
+  }
+
+  return issues;
+}
+
+export function validateImplementationGovernanceTaxonomy(
+  taxonomy: ImplementationGovernanceTaxonomy = DEFAULT_IMPLEMENTATION_GOVERNANCE_TAXONOMY,
+): ImplementationGovernanceTaxonomyValidationResult {
+  const issues: ImplementationGovernanceTaxonomyValidationIssue[] = [];
+
+  if (taxonomy.taxonomyId.trim().length === 0) {
+    issues.push(
+      createTaxonomyIssue(
+        'governance-taxonomy-id-empty',
+        'Governance taxonomy id must not be empty',
+        'taxonomyId',
+      ),
+    );
+  }
+
+  issues.push(...validateTaxonomyAxis(taxonomy, 'unitKinds'));
+  issues.push(...validateTaxonomyAxis(taxonomy, 'implementationSurfaceKinds'));
+  issues.push(...validateTaxonomyAxis(taxonomy, 'verificationSurfaceKinds'));
+  issues.push(...validateTaxonomyAxis(taxonomy, 'constraintKinds'));
+  issues.push(...validateTaxonomyAxis(taxonomy, 'constraintSeverities'));
+  issues.push(...validateTaxonomyAxis(taxonomy, 'adjustmentActions'));
+  issues.push(...validateTaxonomyAxis(taxonomy, 'evolutionPolicies'));
+
+  return {
+    valid: issues.length === 0,
+    issues,
+  };
+}
+
 function createVerdict(
   code: string,
   message: string,
-  constraintKind: ConsistencyConstraintKind,
+  constraintKind: GovernanceVocabularyValue<ConsistencyConstraintKind>,
   refs: readonly string[] = [],
   level: 'error' | 'warning' = 'error',
 ): ConsistencyVerdict {
@@ -140,11 +277,121 @@ function chooseAdjustment(
 
 function createAdjustment(
   action: AdjustmentAction,
-  constraintKind: ConsistencyConstraintKind,
+  constraintKind: GovernanceVocabularyValue<ConsistencyConstraintKind>,
   reason: string,
   refs: readonly string[] = [],
 ): AdjustmentSuggestion {
   return { action, constraintKind, reason, refs };
+}
+
+function createEscalationForVerdict(verdict: ConsistencyVerdict): AdjustmentSuggestion {
+  return createAdjustment('escalate', verdict.constraintKind, verdict.message, verdict.refs);
+}
+
+function hasValue(values: readonly string[], value: string | undefined): boolean {
+  return typeof value === 'string' && values.includes(value);
+}
+
+function evaluateTaxonomyMembership(
+  blueprint: ImplementationBlueprint,
+  implementation: ImplementationBinding | undefined,
+  verification: VerificationBinding | undefined,
+  taxonomy: ImplementationGovernanceTaxonomy,
+): ConsistencyVerdict[] {
+  const verdicts: ConsistencyVerdict[] = [];
+
+  if (!hasValue(taxonomy.unitKinds, blueprint.unitKind)) {
+    verdicts.push(
+      createVerdict(
+        'governance-unit-kind-unknown',
+        `Blueprint unit kind "${blueprint.unitKind}" is not in the governance taxonomy`,
+        'unit_boundary',
+        [blueprint.unitKind],
+      ),
+    );
+  }
+
+  for (const ref of implementation?.implementationRefs ?? []) {
+    if (!hasValue(taxonomy.implementationSurfaceKinds, ref.kind)) {
+      verdicts.push(
+        createVerdict(
+          'implementation-surface-kind-unknown',
+          `Implementation surface kind "${ref.kind}" is not in the governance taxonomy`,
+          'unit_boundary',
+          [ref.kind, ref.ref],
+        ),
+      );
+    }
+  }
+
+  for (const ref of verification?.verificationRefs ?? []) {
+    if (!hasValue(taxonomy.verificationSurfaceKinds, ref.kind)) {
+      verdicts.push(
+        createVerdict(
+          'verification-surface-kind-unknown',
+          `Verification surface kind "${ref.kind}" is not in the governance taxonomy`,
+          'validation_surface',
+          [ref.kind, ref.ref],
+        ),
+      );
+    }
+  }
+
+  for (const constraint of blueprint.constraints ?? []) {
+    if (!hasValue(taxonomy.constraintKinds, constraint.kind)) {
+      verdicts.push(
+        createVerdict(
+          'constraint-kind-unknown',
+          `Constraint kind "${constraint.kind}" is not in the governance taxonomy`,
+          constraint.kind,
+          [constraint.kind],
+        ),
+      );
+    }
+
+    if (
+      constraint.severity &&
+      !hasValue(taxonomy.constraintSeverities, constraint.severity)
+    ) {
+      verdicts.push(
+        createVerdict(
+          'constraint-severity-unknown',
+          `Constraint severity "${constraint.severity}" is not in the governance taxonomy`,
+          constraint.kind,
+          [constraint.severity],
+        ),
+      );
+    }
+  }
+
+  for (const action of blueprint.adjustmentPolicy?.allowedActions ?? []) {
+    if (!hasValue(taxonomy.adjustmentActions, action)) {
+      verdicts.push(
+        createVerdict(
+          'adjustment-action-unknown',
+          `Adjustment action "${action}" is not in the governance taxonomy`,
+          'evolution_rule',
+          [action],
+        ),
+      );
+    }
+  }
+
+  if (
+    blueprint.evolutionPolicy &&
+    !hasValue(taxonomy.evolutionPolicies, blueprint.evolutionPolicy.kind)
+  ) {
+    verdicts.push(
+      createVerdict(
+        'evolution-policy-unknown',
+        `Evolution policy "${blueprint.evolutionPolicy.kind}" is not in the governance taxonomy`,
+        'evolution_rule',
+        [blueprint.evolutionPolicy.kind],
+      ),
+    );
+  }
+
+  return verdicts;
 }
 
 function relationCategoryMap(
@@ -179,6 +426,10 @@ function evaluateConstraint(
 ): readonly ConsistencyVerdict[] {
   const requiredRefs = constraint.requiredRefs ?? [];
   const allowedRefs = constraint.allowedRefs ?? [];
+
+  if (!CORE_CONSTRAINT_KINDS.has(constraint.kind)) {
+    return [];
+  }
 
   if (constraint.kind === 'unit_boundary') {
     const verdicts: ConsistencyVerdict[] = [];
@@ -270,12 +521,59 @@ export function evaluateImplementationGovernance(
   const implementation = input.implementationBinding ?? blueprint.implementationBinding;
   const verification = input.verificationBinding ?? blueprint.verificationBinding;
   const policy = blueprint.adjustmentPolicy ?? DEFAULT_ADJUSTMENT_POLICY;
+  const taxonomy = input.taxonomy ?? DEFAULT_IMPLEMENTATION_GOVERNANCE_TAXONOMY;
   const verdicts: ConsistencyVerdict[] = [];
   const adjustments: AdjustmentSuggestion[] = [];
   const knownSchemaIds = schemaIds(input.schema);
+  const taxonomyValidation = validateImplementationGovernanceTaxonomy(taxonomy);
+
+  verdicts.push(
+    ...taxonomyValidation.issues.map((issue) =>
+      createVerdict(issue.code, issue.message, 'unit_boundary', [issue.path]),
+    ),
+  );
+  verdicts.push(
+    ...evaluateTaxonomyMembership(blueprint, implementation, verification, taxonomy),
+  );
+
+  for (const verdict of verdicts.filter(
+    (item) =>
+      !item.valid &&
+      [
+        'governance-axis-empty',
+        'governance-axis-duplicate',
+        'governance-taxonomy-id-empty',
+        'governance-unit-kind-unknown',
+        'implementation-surface-kind-unknown',
+        'verification-surface-kind-unknown',
+        'constraint-kind-unknown',
+        'constraint-severity-unknown',
+        'adjustment-action-unknown',
+        'evolution-policy-unknown',
+      ].includes(item.code),
+  )) {
+    adjustments.push(createEscalationForVerdict(verdict));
+  }
 
   for (const schemaId of blueprint.requiredSchemas ?? []) {
-    if (input.schema && !knownSchemaIds.has(schemaId)) {
+    if (!input.schema) {
+      verdicts.push(
+        createVerdict(
+          'required-schema-registry-missing',
+          `Blueprint requires schema "${schemaId}" but no schema registry was provided`,
+          'unit_boundary',
+          [schemaId],
+        ),
+      );
+      adjustments.push(
+        createAdjustment(
+          'escalate',
+          'unit_boundary',
+          `Blueprint requires schema "${schemaId}" but no schema registry was provided`,
+          [schemaId],
+        ),
+      );
+    } else if (!knownSchemaIds.has(schemaId)) {
       verdicts.push(
         createVerdict(
           'required-schema-missing',

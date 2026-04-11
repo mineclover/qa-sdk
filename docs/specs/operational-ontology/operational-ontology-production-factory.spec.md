@@ -49,16 +49,7 @@ implementation governance plane은 schema plane과 instance/projection plane 사
 - **EvolutionPolicy**
   - 새 구현 결과가 기존 family와 어떤 관계를 맺는지 정하는 규칙
 
-초기 구현/검증 단위 kind는 아래를 기준으로 둔다.
-
-- `node_bundle`
-- `relation_type_bundle`
-- `edge_assertion_bundle`
-- `traversal_bundle`
-- `corridor_bundle`
-- `junction_bundle`
-- `checkpoint_lattice`
-- `snapshot_projection`
+초기 taxonomy interface는 `unitKinds`, `implementationSurfaceKinds`, `verificationSurfaceKinds`, `constraintKinds`, `constraintSeverities`, `adjustmentActions`, `evolutionPolicies`를 닫힌 vocabulary로 둔다. evaluator는 blueprint와 binding이 이 vocabulary 밖의 값을 쓰면 governance violation으로 판정한다.
 
 ## 정의 ^defines
 
@@ -105,7 +96,7 @@ factory가 강제하는 제약은 구현 단위와 검증 단위가 닫히도록
 핵심은 "정확한 구조를 강제한다"가 아니라 "정의 가능한 단위와 검증 가능한 단위로 구현되게 강제한다"이다.
 
 ### 최소 데이터 모델
-`ImplementationBlueprint`는 `blueprintId`, `coordinateRef`, `unitKind`, `requiredSchemas`, `implementationBinding`, `verificationBinding`, `constraints`, `adjustmentPolicy`, `evolutionPolicy`를 가진다. `GovernanceRun`은 `runId`, `blueprintId`, `implementationRefs`, `verificationRefs`, `familyKey`, `constraintVerdicts`, `adjustmentRecords`를 가진다.
+`ImplementationBlueprint`는 `blueprintId`, `coordinateRef`, `unitKind`, `requiredSchemas`, `implementationBinding`, `verificationBinding`, `constraints`, `adjustmentPolicy`, `evolutionPolicy`를 가진다. `GovernanceRun`은 `runId`, `blueprintId`, `implementationRefs`, `verificationRefs`, `familyKey`, `constraintVerdicts`, `adjustmentRecords`를 가진다. `ImplementationGovernanceTaxonomy`는 이 값들이 속해야 하는 닫힌 vocabulary를 제공한다.
 
 저장은 object/facet bundle을 따른다. `ImplementationBlueprint`는 `schema`, `grammar`, `validation` facet을, `GovernanceRun`은 `evidence`, `status`, `projection_meta` facet을 가질 수 있다.
 

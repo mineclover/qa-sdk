@@ -7,6 +7,12 @@ export {
   type ConsistencyConstraintSeverity,
   type AdjustmentAction,
   type EvolutionPolicyKind,
+  IMPLEMENTATION_GOVERNANCE_UNIT_KINDS,
+  type ImplementationGovernanceUnitKind,
+  type ImplementationGovernanceTaxonomy,
+  type ImplementationGovernanceTaxonomyValidationIssue,
+  type ImplementationGovernanceTaxonomyValidationResult,
+  DEFAULT_IMPLEMENTATION_GOVERNANCE_TAXONOMY,
   type GovernanceSurfaceRef,
   type ConsistencyConstraint,
   type AdjustmentPolicy,
@@ -19,11 +25,16 @@ export {
   type GovernanceRun,
   type ImplementationGovernanceEvaluationInput,
   type ImplementationGovernanceEvaluationResult,
+  validateImplementationGovernanceTaxonomy,
   evaluateImplementationGovernance,
 } from './internal/implementation-governance-core.js';
 
-import { evaluateImplementationGovernance } from './internal/implementation-governance-core.js';
+import {
+  evaluateImplementationGovernance,
+  validateImplementationGovernanceTaxonomy,
+} from './internal/implementation-governance-core.js';
 
 export const operationalOntologyImplementationGovernancePlane = {
+  validateImplementationGovernanceTaxonomy,
   evaluateImplementationGovernance,
 };

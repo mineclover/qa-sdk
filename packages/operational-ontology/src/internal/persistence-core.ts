@@ -16,6 +16,8 @@ export const OPERATIONAL_ONTOLOGY_OBJECT_KINDS = [
   "relation_type",
   "edge",
   "traversal",
+  "governance_blueprint",
+  "governance_run",
 ] as const;
 
 export type OperationalOntologyObjectKind =
@@ -47,6 +49,8 @@ export const REQUIRED_FACET_KINDS_BY_OBJECT_KIND = {
   relation_type: ["identity", "grammar"],
   edge: ["assertion"],
   traversal: ["route"],
+  governance_blueprint: ["schema", "validation"],
+  governance_run: ["evidence", "status"],
 } as const satisfies Record<OperationalOntologyObjectKind, readonly OperationalOntologyFacetKind[]>;
 
 export const OPTIONAL_FACET_KINDS_BY_OBJECT_KIND = {
@@ -58,6 +62,8 @@ export const OPTIONAL_FACET_KINDS_BY_OBJECT_KIND = {
   relation_type: ["semantic", "status", "projection_meta"],
   edge: ["status", "evidence", "projection_meta"],
   traversal: ["aggregate", "evidence", "status", "projection_meta"],
+  governance_blueprint: ["grammar", "semantic", "status", "projection_meta"],
+  governance_run: ["aggregate", "projection_meta"],
 } as const satisfies Record<OperationalOntologyObjectKind, readonly OperationalOntologyFacetKind[]>;
 
 export const ALLOWED_FACET_KINDS_BY_OBJECT_KIND = {
@@ -75,6 +81,14 @@ export const ALLOWED_FACET_KINDS_BY_OBJECT_KIND = {
   ],
   edge: [...REQUIRED_FACET_KINDS_BY_OBJECT_KIND.edge, ...OPTIONAL_FACET_KINDS_BY_OBJECT_KIND.edge],
   traversal: [...REQUIRED_FACET_KINDS_BY_OBJECT_KIND.traversal, ...OPTIONAL_FACET_KINDS_BY_OBJECT_KIND.traversal],
+  governance_blueprint: [
+    ...REQUIRED_FACET_KINDS_BY_OBJECT_KIND.governance_blueprint,
+    ...OPTIONAL_FACET_KINDS_BY_OBJECT_KIND.governance_blueprint,
+  ],
+  governance_run: [
+    ...REQUIRED_FACET_KINDS_BY_OBJECT_KIND.governance_run,
+    ...OPTIONAL_FACET_KINDS_BY_OBJECT_KIND.governance_run,
+  ],
 } as const satisfies Record<OperationalOntologyObjectKind, readonly OperationalOntologyFacetKind[]>;
 
 export const DEFAULT_FACET_KINDS_BY_OBJECT_KIND = ALLOWED_FACET_KINDS_BY_OBJECT_KIND;
@@ -364,6 +378,50 @@ export const FACET_PAYLOAD_SHAPES_BY_OBJECT_KIND = {
     projection_meta: {
       requiredKeys: ["projectionRefs"],
       description: "Traversal projection metadata payload",
+    },
+  },
+  governance_blueprint: {
+    schema: {
+      requiredKeys: ["blueprint"],
+      description: "Implementation governance blueprint payload",
+    },
+    grammar: {
+      requiredKeys: ["taxonomy"],
+      description: "Implementation governance taxonomy payload",
+    },
+    validation: {
+      requiredKeys: ["valid", "issues"],
+      description: "Implementation governance taxonomy validation result payload",
+    },
+    semantic: {
+      requiredKeys: ["summary"],
+      description: "Implementation governance semantic payload",
+    },
+    status: {
+      requiredKeys: ["state"],
+      description: "Implementation governance blueprint status payload",
+    },
+    projection_meta: {
+      requiredKeys: ["projectionRefs"],
+      description: "Implementation governance blueprint projection metadata payload",
+    },
+  },
+  governance_run: {
+    evidence: {
+      requiredKeys: ["implementationRefs", "verificationRefs", "constraintVerdicts"],
+      description: "Implementation governance run evidence payload",
+    },
+    status: {
+      requiredKeys: ["state"],
+      description: "Implementation governance run status payload",
+    },
+    aggregate: {
+      requiredKeys: ["adjustmentCount"],
+      description: "Implementation governance run aggregate payload",
+    },
+    projection_meta: {
+      requiredKeys: ["projectionRefs"],
+      description: "Implementation governance run projection metadata payload",
     },
   },
 } as const satisfies Record<
