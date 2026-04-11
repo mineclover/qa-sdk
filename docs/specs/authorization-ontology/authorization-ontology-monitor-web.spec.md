@@ -39,4 +39,4 @@ proxy route enforcement와 application middleware enforcement를 한 화면에�
 
 초기 구현은 브라우저 안전성을 위해 샘플 graph view model을 내장한다. `authorization-ontology` 런타임은 현재 `operational-ontology`의 Node API 의존성을 transitively 포함하므로, browser bundle에 직접 import하지 않는다.
 
-운영 단계에서는 graph store/API adapter를 통해 `AuthorizationOntologyGraph` JSON을 읽고, 현재 view model을 API 응답으로 대체한다.
+monitor web은 `/authorization-graph-snapshot.json` 또는 `?graph=<url>`로 graph snapshot JSON을 읽을 수 있다. payload는 `AuthorizationOntologyGraph` 자체이거나 `{ graphId, snapshotId, graph }` 형태의 snapshot object일 수 있다. fetch 실패 시 내장 샘플 graph로 fallback한다.

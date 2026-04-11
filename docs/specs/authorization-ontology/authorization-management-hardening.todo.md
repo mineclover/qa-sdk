@@ -58,8 +58,8 @@ def:
 
 ### Monitor Web
 
-- [ ] `authorization-monitor-web` live API adapter 추가
-- [ ] graph store에서 실제 graph를 읽는 모드 추가
+- [x] `authorization-monitor-web` live API adapter 추가
+- [x] graph store에서 실제 graph를 읽는 모드 추가
 - [ ] audit issue panel 추가
 - [ ] RLSC layout snapshot 자동 수집 테스트 추가
 - [ ] edge/node alignment regression test 추가

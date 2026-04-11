@@ -73,6 +73,19 @@ code {
   color: #496170;
 }
 
+.source-line {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.72rem !important;
+  color: #6f8795 !important;
+}
+
+.fatal {
+  padding: 24px;
+  color: #b03a2e;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(176, 58, 46, 0.22);
+}
+
 .summary {
   display: grid;
   gap: 14px;

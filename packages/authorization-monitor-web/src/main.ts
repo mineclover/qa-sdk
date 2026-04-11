@@ -34,11 +34,29 @@ interface AuthzGraph {
   relations: AuthzRelation[];
 }
 
+interface AuthzGraphSnapshot {
+  graphId?: string;
+  snapshotId?: string;
+  graph: AuthzGraph;
+  auditReport?: {
+    ok: boolean;
+    summary?: {
+      routeCount?: number;
+      applicationResourceCount?: number;
+      decisionCount?: number;
+      warnings?: number;
+    };
+  };
+}
+
 interface AuthzMonitorModel {
   graph: AuthzGraph;
   proxyGraph: AuthzGraph;
   appGraph: AuthzGraph;
   decisionGraph: AuthzGraph;
+  source: "sample" | "live";
+  snapshotId?: string;
+  graphId?: string;
 }
 
 interface AuthzMonitorState {
@@ -94,6 +112,79 @@ function mergeGraphs(...graphs: AuthzGraph[]): AuthzGraph {
       ).values(),
     ],
   };
+}
+
+function emptyGraph(): AuthzGraph {
+  return { nodes: [], relations: [] };
+}
+
+function isAuthzGraph(value: unknown): value is AuthzGraph {
+  if (!value || typeof value !== "object") return false;
+  const record = value as Partial<AuthzGraph>;
+  return Array.isArray(record.nodes) && Array.isArray(record.relations);
+}
+
+function graphFromSnapshotPayload(payload: unknown): AuthzGraphSnapshot {
+  if (isAuthzGraph(payload)) {
+    return { graph: payload };
+  }
+  if (payload && typeof payload === "object" && isAuthzGraph((payload as { graph?: unknown }).graph)) {
+    return payload as AuthzGraphSnapshot;
+  }
+  throw new Error("Invalid authorization graph payload");
+}
+
+function splitGraphByLane(graph: AuthzGraph): Pick<AuthzMonitorModel, "proxyGraph" | "appGraph" | "decisionGraph"> {
+  const proxyNodeIds = expandWithAdjacentNodes(graph, new Set(
+    graph.nodes
+      .filter((node) => classifyNode(node) === "proxy" || classifyNode(node) === "policy")
+      .map((node) => node.nodeId),
+  ));
+  const appNodeIds = expandWithAdjacentNodes(graph, new Set(
+    graph.nodes
+      .filter((node) => classifyNode(node) === "application" || classifyNode(node) === "policy")
+      .map((node) => node.nodeId),
+  ));
+  const decisionNodeIds = expandWithAdjacentNodes(graph, new Set(
+    graph.nodes.filter((node) => classifyNode(node) === "decision").map((node) => node.nodeId),
+  ));
+
+  const byIds = (ids: Set<string>): AuthzGraph => ({
+    nodes: graph.nodes.filter((node) => ids.has(node.nodeId)),
+    relations: graph.relations.filter(
+      (relation) => ids.has(relation.fromNodeId) && ids.has(relation.toNodeId),
+    ),
+  });
+
+  return {
+    proxyGraph: byIds(proxyNodeIds),
+    appGraph: byIds(appNodeIds),
+    decisionGraph: byIds(decisionNodeIds),
+  };
+}
+
+function expandWithAdjacentNodes(graph: AuthzGraph, nodeIds: Set<string>): Set<string> {
+  const expanded = new Set(nodeIds);
+  for (const relation of graph.relations) {
+    if (nodeIds.has(relation.fromNodeId) || nodeIds.has(relation.toNodeId)) {
+      expanded.add(relation.fromNodeId);
+      expanded.add(relation.toNodeId);
+    }
+  }
+  return expanded;
+}
+
+async function fetchLiveSnapshot(): Promise<AuthzGraphSnapshot | null> {
+  const url = new URL(window.location.href);
+  const graphUrl = url.searchParams.get("graph") ?? "/authorization-graph-snapshot.json";
+  try {
+    const response = await fetch(graphUrl, { headers: { accept: "application/json" } });
+    if (!response.ok) return null;
+    return graphFromSnapshotPayload(await response.json());
+  } catch (error) {
+    console.warn("authorization graph live fetch failed; falling back to sample", error);
+    return null;
+  }
 }
 
 function auditGraph(graph: AuthzGraph): {
@@ -227,6 +318,20 @@ function buildModel(): AuthzMonitorModel {
     proxyGraph,
     appGraph,
     decisionGraph,
+    source: "sample",
+  };
+}
+
+async function loadModel(): Promise<AuthzMonitorModel> {
+  const live = await fetchLiveSnapshot();
+  if (!live) return buildModel();
+  const split = splitGraphByLane(live.graph);
+  return {
+    graph: live.graph,
+    ...split,
+    source: "live",
+    snapshotId: live.snapshotId,
+    graphId: live.graphId,
   };
 }
 
@@ -260,7 +365,7 @@ function renderSummary(container: HTMLElement, model: AuthzMonitorModel): void {
   const report = auditGraph(model.graph);
   container.innerHTML = `
     <div class="score">
-      <span>Audit</span>
+      <span>Audit · ${model.source}${model.snapshotId ? ` · ${escapeHtml(model.snapshotId)}` : ""}</span>
       <b class="${report.ok ? "ok" : "bad"}">${report.ok ? "OK" : "Drift"}</b>
     </div>
     <div class="kpis">
@@ -394,8 +499,8 @@ function refresh(model: AuthzMonitorModel): void {
   });
 }
 
-function renderApp(): void {
-  const model = buildModel();
+async function renderApp(): Promise<void> {
+  const model = await loadModel();
   const app = document.querySelector<HTMLElement>("#app");
   if (!app) return;
 
@@ -405,6 +510,7 @@ function renderApp(): void {
         <p class="eyebrow">Authorization Ontology Monitor</p>
         <h1>권한은 두 번 막고, 한 번의 graph로 관측한다.</h1>
         <p>프록시는 입구를 차단하고, 애플리케이션은 도메인 리소스를 확인합니다. 두 계층의 Cerbos policy와 decision을 같은 좌표계에서 비교합니다.</p>
+        <p class="source-line">source: ${model.source}${model.graphId ? ` / ${escapeHtml(model.graphId)}` : ""}</p>
       </div>
       <div id="summary" class="summary" data-qa-address="authz-monitor:surface:audit-summary"></div>
     </section>
@@ -432,4 +538,9 @@ function renderApp(): void {
   refresh(model);
 }
 
-renderApp();
+renderApp().catch((error) => {
+  const app = document.querySelector<HTMLElement>("#app");
+  if (app) {
+    app.innerHTML = `<pre class="fatal">${escapeHtml(error instanceof Error ? error.message : String(error))}</pre>`;
+  }
+});
