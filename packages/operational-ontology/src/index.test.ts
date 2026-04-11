@@ -224,7 +224,12 @@ describe("implementation governance evaluator", () => {
     );
     expect(result.adjustments).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ action: "defer", constraintKind: "validation_surface" }),
+        expect.objectContaining({
+          action: "defer",
+          constraintKind: "validation_surface",
+          proposedChange: "Defer validation_surface completion to a follow-up governance run",
+          requiresDecision: false,
+        }),
       ]),
     );
   });
@@ -255,7 +260,11 @@ describe("implementation governance evaluator", () => {
     );
     expect(result.adjustments).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ action: "escalate", constraintKind: "unit_boundary" }),
+        expect.objectContaining({
+          action: "escalate",
+          constraintKind: "unit_boundary",
+          requiresDecision: true,
+        }),
       ]),
     );
   });
@@ -561,6 +570,54 @@ describe("in-memory adapters", () => {
     );
   });
 
+  it("rejects invalid governance blueprint persistence unless explicitly allowed", async () => {
+    const store = new InMemoryOperationalOntologyStore();
+    const governanceSchema = {
+      axes: [
+        {
+          id: "facet_role",
+          values: ["definition", "production", "consumption"],
+        },
+      ],
+      taxonomies: [
+        {
+          id: "information-role",
+          appliesTo: ["node"],
+          axisIds: ["facet_role"],
+        },
+      ],
+      relationCategories: [
+        {
+          category: "flow",
+          requiredAxes: ["facet_role"],
+        },
+      ],
+    };
+    const blueprint = {
+      blueprintId: "schema-bound-governance",
+      coordinateRef: "corridor:event-ingest",
+      unitKind: "corridor_bundle",
+      requiredSchemas: ["missing-schema"],
+    };
+
+    await expect(
+      operationalOntologyImplementationGovernancePlane.persistImplementationGovernanceBlueprint(
+        store,
+        blueprint,
+        { now: "2026-04-10T00:00:06.000Z", schema: governanceSchema },
+      ),
+    ).rejects.toThrow(/Cannot persist invalid implementation governance blueprint/);
+
+    const persisted = await operationalOntologyImplementationGovernancePlane.persistImplementationGovernanceBlueprint(
+      store,
+      blueprint,
+      { now: "2026-04-10T00:00:07.000Z", schema: governanceSchema, allowInvalid: true },
+    );
+    const object = await store.findObjectById(persisted.objectId);
+
+    expect(object?.lifecycle).toBe("draft");
+  });
+
   it("persists implementation governance run results through the governance helper", async () => {
     const store = new InMemoryOperationalOntologyStore();
     const evaluation = operationalOntologyImplementationGovernancePlane.evaluateImplementationGovernance({
@@ -640,6 +697,7 @@ describe("in-memory adapters", () => {
     expect(object?.createdAt).toBe("2026-04-10T00:00:06.000Z");
     expect(object?.updatedAt).toBe("2026-04-10T00:00:07.000Z");
     expect(facets.filter((facet) => facet.facetKind === "evidence")).toHaveLength(2);
+    expect(facets.filter((facet) => facet.facetKind === "aggregate")).toHaveLength(2);
   });
 
   it("persists and reloads runtime snapshots through the persistence helper", async () => {

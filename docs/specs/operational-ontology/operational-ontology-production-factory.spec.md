@@ -98,7 +98,7 @@ factory가 강제하는 제약은 구현 단위와 검증 단위가 닫히도록
 ### 최소 데이터 모델
 `ImplementationBlueprint`는 `blueprintId`, `coordinateRef`, `unitKind`, `requiredSchemas`, `implementationBinding`, `verificationBinding`, `constraints`, `adjustmentPolicy`, `evolutionPolicy`를 가진다. `GovernanceRun`은 `runId`, `blueprintId`, `implementationRefs`, `verificationRefs`, `familyKey`, `constraintVerdicts`, `adjustmentRecords`를 가진다. `ImplementationGovernanceTaxonomy`는 이 값들이 속해야 하는 닫힌 vocabulary를 제공한다.
 
-저장은 object/facet bundle을 따른다. `ImplementationBlueprint`는 `schema`, `grammar`, `validation` facet을, `GovernanceRun`은 `evidence`, `status`, `projection_meta` facet을 가질 수 있다.
+저장은 object/facet bundle을 따른다. `ImplementationBlueprint`는 `schema`, `grammar`, `validation` facet을, `GovernanceRun`은 `evidence`, `status`, `aggregate`, `projection_meta` facet을 가질 수 있다. 저장 helper는 `persistImplementationGovernanceBlueprint()`와 `persistImplementationGovernanceRun()`으로 나뉘며, invalid blueprint는 명시적으로 허용하지 않으면 저장하지 않는다.
 
 ### adjustment policy
 제약이 구현 불가능한 상태를 만들면 factory는 실패만 반환하지 않고 조정 후보를 만들어야 한다.
@@ -107,6 +107,8 @@ factory가 강제하는 제약은 구현 단위와 검증 단위가 닫히도록
 - `split` — 단위가 너무 커서 검증 불가능하면 더 작은 구현/검증 target으로 나눈다.
 - `defer` — 구조 일관성을 깨지 않는 enrichment를 후속 run으로 미룬다.
 - `escalate` — required facet, identity axis, relation grammar 같은 core 제약 변경은 사람 결정으로 올린다.
+
+조정 후보는 `targetRef`, `proposedChange`, `requiresDecision`을 포함해 다음 실행자가 후속 작업을 판단할 수 있어야 한다.
 
 ### evolution policy
 
