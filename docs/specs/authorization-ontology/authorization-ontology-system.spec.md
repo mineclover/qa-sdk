@@ -35,6 +35,14 @@ def:
       type: contains
     - target: authorization-ontology-package-architecture
       type: contains
+    - target: authorization-management-usecases
+      type: contains
+    - target: authorization-management-usage-rule
+      type: contains
+    - target: authorization-management-hardening-todo
+      type: contains
+    - target: authorization-management-roadmap-plan
+      type: contains
 ---
 
 # Authorization Ontology System — Cerbos 중심 권한 관리 온톨로지
