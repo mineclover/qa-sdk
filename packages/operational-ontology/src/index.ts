@@ -33,9 +33,11 @@ import {
   validateFacetKindsForObjectKind,
   validateFacetPayloadShape,
 } from "./internal/persistence-core.js";
+import { evaluateImplementationGovernance } from "./internal/implementation-governance-core.js";
 
 export * from "./internal/schema-core.js";
 export * from "./internal/schema-memory.js";
+export * from "./internal/implementation-governance-core.js";
 export * from "./internal/runtime-core.js";
 export * from "./internal/lineage-core.js";
 export * from "./internal/corridor-core.js";
@@ -59,6 +61,10 @@ export const operationalOntologySchemaPlane = {
   validateRelationCategorySchema,
   validateTraversalSchema,
   validateOperationalOntologySchema,
+};
+
+export const operationalOntologyImplementationGovernancePlane = {
+  evaluateImplementationGovernance,
 };
 
 export const operationalOntologyCorridorPlane = {

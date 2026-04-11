@@ -24,6 +24,7 @@ import { operationalOntologyJunctionPlane } from "./junction.js";
 import { operationalOntologyCheckpointPlane } from "./checkpoint.js";
 import { operationalOntologyTopologyPlane } from "./topology.js";
 import { operationalOntologyProjectors } from "./projectors.js";
+import { operationalOntologyImplementationGovernancePlane } from "./governance.js";
 import {
   diffOperationalOntologyCorridor,
   diffOperationalOntologySnapshots,
@@ -64,6 +65,9 @@ describe("submodule facades", () => {
     expect(typeof operationalOntologyCheckpointPlane.defaultCheckpointTemplateRegistry.get).toBe("function");
     expect(typeof operationalOntologyTopologyPlane.validateObservationTopologyAgainstTemplate).toBe("function");
     expect(typeof operationalOntologyProjectors.projectOperationalOntologySnapshot).toBe("function");
+    expect(typeof operationalOntologyImplementationGovernancePlane.evaluateImplementationGovernance).toBe(
+      "function",
+    );
     expect(typeof operationalOntologyPersistencePlane.validateFacetKindsForObjectKind).toBe("function");
     expect(typeof projectEventRecordProjectorOnly).toBe("function");
     expect(typeof projectPipeGraphProjectorOnly).toBe("function");
@@ -84,6 +88,117 @@ describe("submodule facades", () => {
       taxonomies: {},
       canonicalKey: "node:software/delivery/checkout",
     });
+  });
+});
+
+describe("implementation governance evaluator", () => {
+  const schema = {
+    axes: [
+      {
+        id: "facet_role",
+        values: ["definition", "production", "consumption"],
+      },
+    ],
+    taxonomies: [
+      {
+        id: "information-role",
+        appliesTo: ["node"],
+        axisIds: ["facet_role"],
+      },
+    ],
+    relationCategories: [
+      {
+        category: "flow",
+        requiredAxes: ["facet_role"],
+      },
+    ],
+  };
+
+  it("passes when implementation and verification bindings match the same coordinate", () => {
+    const result = operationalOntologyImplementationGovernancePlane.evaluateImplementationGovernance({
+      schema,
+      blueprint: {
+        blueprintId: "event-ingest-governance",
+        coordinateRef: "corridor:event-ingest",
+        unitKind: "corridor_bundle",
+        requiredSchemas: ["information-role", "flow"],
+        implementationBinding: {
+          coordinateRef: "corridor:event-ingest",
+          implementationRefs: [
+            { kind: "code", ref: "packages/operational-ontology/src/internal/event-projector.ts" },
+          ],
+          facets: ["identity", "route"],
+          relationCategories: ["flow"],
+        },
+        verificationBinding: {
+          coordinateRef: "corridor:event-ingest",
+          verificationRefs: [{ kind: "test", ref: "packages/operational-ontology/src/index.test.ts" }],
+        },
+        constraints: [
+          { kind: "unit_boundary", severity: "core" },
+          { kind: "required_facets", requiredRefs: ["identity", "route"] },
+          { kind: "allowed_relations", allowedRefs: ["flow"] },
+          { kind: "validation_surface", requiredRefs: ["test"] },
+        ],
+        evolutionPolicy: { kind: "append_only" },
+      },
+    });
+
+    expect(result.valid).toBe(true);
+    expect(result.verdicts).toEqual([]);
+    expect(result.governanceRun.familyKey).toBe("governance:corridor:event-ingest:corridor_bundle");
+  });
+
+  it("suggests defer when verification binding is missing", () => {
+    const result = operationalOntologyImplementationGovernancePlane.evaluateImplementationGovernance({
+      blueprint: {
+        blueprintId: "checkpoint-governance",
+        coordinateRef: "checkpoint:event-ingest",
+        unitKind: "checkpoint_lattice",
+        implementationBinding: {
+          coordinateRef: "checkpoint:event-ingest",
+          implementationRefs: [{ kind: "runtime_projection", ref: "checkpoint:lattice" }],
+        },
+      },
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.verdicts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "verification-binding-missing" }),
+      ]),
+    );
+    expect(result.adjustments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ action: "defer", constraintKind: "validation_surface" }),
+      ]),
+    );
+  });
+
+  it("escalates core coordinate mismatches", () => {
+    const result = operationalOntologyImplementationGovernancePlane.evaluateImplementationGovernance({
+      blueprint: {
+        blueprintId: "route-governance",
+        coordinateRef: "traversal:observe",
+        unitKind: "traversal_bundle",
+        implementationBinding: {
+          coordinateRef: "traversal:implement",
+          implementationRefs: [{ kind: "code", ref: "src/traversal.ts" }],
+        },
+        verificationBinding: {
+          coordinateRef: "traversal:observe",
+          verificationRefs: [{ kind: "simulation", ref: "simulation:observe-route" }],
+        },
+        constraints: [{ kind: "unit_boundary", severity: "core" }],
+      },
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.adjustments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ action: "escalate", constraintKind: "unit_boundary" }),
+      ]),
+    );
   });
 });
 

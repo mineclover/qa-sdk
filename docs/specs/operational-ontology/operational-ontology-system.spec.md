@@ -23,6 +23,8 @@ def:
       type: contains
     - target: operational-ontology-schema-validation
       type: contains
+    - target: operational-ontology-production-factory
+      type: contains
     - target: operational-ontology-persistence
       type: contains
     - target: operational-ontology-data-facets
@@ -71,7 +73,7 @@ taxonomy를 먼저 schema로 선언하고 검증한 뒤, 그 schema에서 node, 
 
 ## 구성 ^overview
 
-이 시스템은 schema plane, validation plane, instance plane, persistence plane 위에 현재 우선순위로 `corridor / junction / checkpoint` 관점의 해석층을 올리는 구조로 구성된다.
+이 시스템은 schema plane, validation plane, implementation governance plane, instance plane, persistence plane 위에 현재 우선순위로 `corridor / junction / checkpoint` 관점의 해석층을 올리는 구조로 구성된다.
 
 - **Schema plane**
   - `AxisSchema` — 축 정의
@@ -80,6 +82,8 @@ taxonomy를 먼저 schema로 선언하고 검증한 뒤, 그 schema에서 node, 
   - `TraversalSchema` — purpose별 route family 정의
 - **Validation plane**
   - schema 무결성, axis 중복, unknown reference, category overlap 검증
+- **Implementation governance plane**
+  - 승인된 schema와 taxonomy 좌표를 구현/검증 binding과 consistency constraint로 매칭하는 거버넌스 계약
 - **Instance plane**
   - `NodeCoord`
   - `RelationTypeCoord`

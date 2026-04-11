@@ -15,6 +15,11 @@
       "import": "./dist/schema.js",
       "require": "./dist/schema.cjs"
     },
+    "./governance": {
+      "types": "./dist/governance.d.ts",
+      "import": "./dist/governance.js",
+      "require": "./dist/governance.cjs"
+    },
     "./runtime": {
       "types": "./dist/runtime.d.ts",
       "import": "./dist/runtime.js",
