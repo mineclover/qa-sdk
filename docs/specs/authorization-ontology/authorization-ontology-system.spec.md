@@ -21,6 +21,8 @@ def:
       type: contains
     - target: authorization-ontology-auth-chain
       type: contains
+    - target: authorization-ontology-application-enforcement
+      type: contains
     - target: authorization-ontology-column-lineage-policy
       type: contains
     - target: authorization-ontology-decision-observation

@@ -50,6 +50,7 @@ export const AUTHORIZATION_RESOURCE_KINDS = [
   "k8s_object",
   "cloud_lb",
   "proxy_route",
+  "domain_resource",
   "dataset",
   "table",
   "view",
@@ -222,6 +223,56 @@ export interface NginxProxyConfigProjectionOptions {
   upstreamAuthority?: string;
   deployment?: StructuredEnforcementRouteConfig["deployment"];
   policyByPath?: Record<string, StructuredEnforcementRouteConfig["policy"]>;
+}
+
+export interface ApplicationAuthorizationBindingRef {
+  serviceResource: ResourceRef;
+  resource: ResourceRef;
+  enforcementPoint: EnforcementPointRef;
+  policy?: PolicyRef;
+  actions?: ActionRef[];
+  deploymentSource?: {
+    realm: AuthorizationRealm;
+    sourceId: string;
+    kind: "pulumi" | "argocd" | "git" | string;
+    revision?: string;
+  };
+}
+
+export interface StructuredApplicationAuthorizationConfig {
+  environment: string;
+  service: {
+    authority: string;
+    id: string;
+    kind?: AuthorizationResourceKind;
+  };
+  middleware?: {
+    authority?: string;
+    id?: string;
+    kind?: EnforcementPointRef["kind"];
+  };
+  resource: {
+    authority?: string;
+    id: string;
+    kind?: AuthorizationResourceKind;
+    parentResourceId?: string;
+    classification?: string;
+    sensitivity?: string;
+    attributes?: Record<string, unknown>;
+  };
+  policy?: {
+    authority: string;
+    id: string;
+    kind?: PolicyRef["policyKind"];
+    version?: string;
+  };
+  actions?: Array<string | { id: string; kind?: ActionRef["actionKind"] }>;
+  deployment?: {
+    authority: string;
+    id: string;
+    kind: "pulumi" | "argocd" | "git" | string;
+    revision?: string;
+  };
 }
 
 export interface CerbosResourcePolicyLike {
@@ -426,6 +477,8 @@ export type AuthorizationAuditIssueCode =
   | "proxy_route_missing_enforcement"
   | "proxy_route_missing_policy"
   | "proxy_route_missing_upstream"
+  | "application_resource_missing_policy"
+  | "application_resource_missing_enforcement"
   | "decision_missing_resource"
   | "decision_missing_action"
   | "decision_missing_policy"
@@ -444,9 +497,12 @@ export interface AuthorizationAuditIssue {
 
 export interface AuthorizationGraphAuditOptions {
   routeResourceKinds?: AuthorizationResourceKind[];
+  applicationResourceKinds?: AuthorizationResourceKind[];
   requireRoutePolicy?: boolean;
   requireRouteEnforcement?: boolean;
   requireRouteUpstream?: boolean;
+  requireApplicationResourcePolicy?: boolean;
+  requireApplicationResourceEnforcement?: boolean;
   requireDecisionPolicy?: boolean;
   requireDecisionEnforcement?: boolean;
   requireDecisionPolicyAction?: boolean;
@@ -457,6 +513,9 @@ export interface AuthorizationGraphAuditSummary {
   routeCount: number;
   protectedRouteCount: number;
   enforcedRouteCount: number;
+  applicationResourceCount: number;
+  protectedApplicationResourceCount: number;
+  enforcedApplicationResourceCount: number;
   decisionCount: number;
   decisionsWithPolicyCount: number;
   errors: number;
@@ -1329,6 +1388,178 @@ export function projectStructuredEnforcementRoute(
   return projectEnforcementRoute(normalizeStructuredEnforcementRoute(config));
 }
 
+export function projectApplicationAuthorizationBinding(
+  input: ApplicationAuthorizationBindingRef,
+): AuthorizationOntologyGraph {
+  const serviceNode = createResourceNode(input.serviceResource);
+  const resourceNode = createResourceNode(input.resource);
+  const enforcementNode = createEnforcementPointNode(input.enforcementPoint);
+  const policyNode = input.policy ? createPolicyNode(input.policy) : undefined;
+  const actionNodes = (input.actions ?? []).map((action) => createActionNode(action));
+  const deploymentNode = input.deploymentSource
+    ? createDeploymentSourceNode(input.deploymentSource)
+    : undefined;
+
+  return {
+    realms: uniqueRealms([
+      input.serviceResource.realm,
+      input.resource.realm,
+      input.enforcementPoint.realm,
+      ...(input.policy ? [input.policy.realm] : []),
+      ...(input.actions ?? []).map((action) => action.realm),
+      ...(input.deploymentSource ? [input.deploymentSource.realm] : []),
+    ]),
+    nodes: uniqueNodes([
+      serviceNode,
+      resourceNode,
+      enforcementNode,
+      ...(policyNode ? [policyNode] : []),
+      ...actionNodes,
+      ...(deploymentNode ? [deploymentNode] : []),
+    ]),
+    relations: uniqueRelations([
+      createAuthorizationRelation({
+        kind: "matches_resource",
+        fromNodeId: serviceNode.nodeId,
+        toNodeId: resourceNode.nodeId,
+      }),
+      createAuthorizationRelation({
+        kind: "enforced_at",
+        fromNodeId: resourceNode.nodeId,
+        toNodeId: enforcementNode.nodeId,
+      }),
+      ...(policyNode
+        ? [
+            createAuthorizationRelation({
+              kind: "protects",
+              fromNodeId: policyNode.nodeId,
+              toNodeId: resourceNode.nodeId,
+            }),
+          ]
+        : []),
+      ...actionNodes.map((actionNode) =>
+        createAuthorizationRelation({
+          kind: "evaluated_by",
+          fromNodeId: actionNode.nodeId,
+          toNodeId: enforcementNode.nodeId,
+          metadata: {
+            resourceNodeId: resourceNode.nodeId,
+            policyNodeId: policyNode?.nodeId,
+          },
+        }),
+      ),
+      ...(deploymentNode
+        ? [
+            createAuthorizationRelation({
+              kind: "deployed_by",
+              fromNodeId: resourceNode.nodeId,
+              toNodeId: deploymentNode.nodeId,
+            }),
+          ]
+        : []),
+    ]),
+  };
+}
+
+function normalizeStructuredApplicationActions(
+  config: StructuredApplicationAuthorizationConfig,
+  actionRealm: AuthorizationRealm,
+): ActionRef[] {
+  return (config.actions ?? []).map((action) => {
+    if (typeof action === "string") {
+      return {
+        realm: actionRealm,
+        actionId: action,
+        actionKind: action,
+      };
+    }
+    return {
+      realm: actionRealm,
+      actionId: action.id,
+      actionKind: action.kind ?? action.id,
+    };
+  });
+}
+
+export function normalizeStructuredApplicationAuthorization(
+  config: StructuredApplicationAuthorizationConfig,
+): ApplicationAuthorizationBindingRef {
+  const serviceRealm = createAuthorizationRealm({
+    kind: "application",
+    authority: config.service.authority,
+    environment: config.environment,
+  });
+  const resourceRealm = createAuthorizationRealm({
+    kind: "application",
+    authority: config.resource.authority ?? config.service.authority,
+    environment: config.environment,
+  });
+  const enforcementRealm = createAuthorizationRealm({
+    kind: "enforcement",
+    authority: config.middleware?.authority ?? config.service.authority,
+    environment: config.environment,
+  });
+  const policyRealm = config.policy
+    ? createAuthorizationRealm({
+        kind: "policy",
+        authority: config.policy.authority,
+        environment: config.environment,
+      })
+    : undefined;
+  const actionRealm = policyRealm ?? resourceRealm;
+
+  return {
+    serviceResource: {
+      realm: serviceRealm,
+      resourceId: config.service.id,
+      resourceKind: config.service.kind ?? "service",
+    },
+    resource: {
+      realm: resourceRealm,
+      resourceId: config.resource.id,
+      resourceKind: config.resource.kind ?? "domain_resource",
+      parentResourceId: config.resource.parentResourceId ?? config.service.id,
+      classification: config.resource.classification,
+      sensitivity: config.resource.sensitivity,
+      attributes: config.resource.attributes,
+    },
+    enforcementPoint: {
+      realm: enforcementRealm,
+      enforcementPointId: config.middleware?.id ?? `${config.service.id}:middleware`,
+      kind: config.middleware?.kind ?? "service_middleware",
+    },
+    policy: config.policy
+      ? {
+          realm: policyRealm!,
+          policyId: config.policy.id,
+          policyKind: config.policy.kind ?? "cerbos_resource_policy",
+          version: config.policy.version,
+        }
+      : undefined,
+    actions: normalizeStructuredApplicationActions(config, actionRealm),
+    deploymentSource: config.deployment
+      ? {
+          realm: createAuthorizationRealm({
+            kind: "infra",
+            authority: config.deployment.authority,
+            environment: config.environment,
+          }),
+          sourceId: config.deployment.id,
+          kind: config.deployment.kind,
+          revision: config.deployment.revision,
+        }
+      : undefined,
+  };
+}
+
+export function projectStructuredApplicationAuthorization(
+  config: StructuredApplicationAuthorizationConfig,
+): AuthorizationOntologyGraph {
+  return projectApplicationAuthorizationBinding(
+    normalizeStructuredApplicationAuthorization(config),
+  );
+}
+
 function parseNginxUpstreams(configText: string): Map<string, string> {
   const upstreams = new Map<string, string>();
   const upstreamPattern = /upstream\s+([a-zA-Z0-9_-]+)\s*\{([\s\S]*?)\}/g;
@@ -1611,20 +1842,6 @@ function getOutgoingRelations(
   );
 }
 
-function hasRelation(
-  graph: AuthorizationOntologyGraph,
-  kind: AuthorizationRelationKind,
-  fromNodeId: string,
-  toNodeId: string,
-): boolean {
-  return graph.relations.some(
-    (relation) =>
-      relation.kind === kind &&
-      relation.fromNodeId === fromNodeId &&
-      relation.toNodeId === toNodeId,
-  );
-}
-
 function findEquivalentNodeIds(
   graph: AuthorizationOntologyGraph,
   nodesById: Map<string, AuthorizationNode>,
@@ -1698,9 +1915,13 @@ export function auditAuthorizationGraph(
   options: AuthorizationGraphAuditOptions = {},
 ): AuthorizationGraphAuditReport {
   const routeResourceKinds = options.routeResourceKinds ?? ["proxy_route"];
+  const applicationResourceKinds = options.applicationResourceKinds ?? ["domain_resource"];
   const requireRoutePolicy = options.requireRoutePolicy ?? true;
   const requireRouteEnforcement = options.requireRouteEnforcement ?? true;
   const requireRouteUpstream = options.requireRouteUpstream ?? true;
+  const requireApplicationResourcePolicy = options.requireApplicationResourcePolicy ?? true;
+  const requireApplicationResourceEnforcement =
+    options.requireApplicationResourceEnforcement ?? true;
   const requireDecisionPolicy = options.requireDecisionPolicy ?? true;
   const requireDecisionEnforcement = options.requireDecisionEnforcement ?? true;
   const requireDecisionPolicyAction = options.requireDecisionPolicyAction ?? true;
@@ -1775,6 +1996,50 @@ export function auditAuthorizationGraph(
           code: "proxy_route_missing_upstream",
           message: `Proxy route ${routeNode.coord.anchor} is not linked to an upstream resource`,
           nodeId: routeNode.nodeId,
+        }),
+      );
+    }
+  }
+
+  const applicationResourceNodes = graph.nodes.filter(
+    (node) =>
+      node.kind === "resource" &&
+      applicationResourceKinds.includes(
+        getNodeTaxonomy(node, "resource_kind") as AuthorizationResourceKind,
+      ),
+  );
+  let protectedApplicationResourceCount = 0;
+  let enforcedApplicationResourceCount = 0;
+
+  for (const resourceNode of applicationResourceNodes) {
+    const hasPolicy = graph.relations.some(
+      (relation) => relation.kind === "protects" && relation.toNodeId === resourceNode.nodeId,
+    );
+    const hasEnforcement = graph.relations.some(
+      (relation) =>
+        relation.kind === "enforced_at" && relation.fromNodeId === resourceNode.nodeId,
+    );
+
+    if (hasPolicy) protectedApplicationResourceCount += 1;
+    if (hasEnforcement) enforcedApplicationResourceCount += 1;
+
+    if (requireApplicationResourcePolicy && !hasPolicy) {
+      issues.push(
+        createAuditIssue({
+          severity: "error",
+          code: "application_resource_missing_policy",
+          message: `Application resource ${resourceNode.coord.anchor} is not protected by a policy`,
+          nodeId: resourceNode.nodeId,
+        }),
+      );
+    }
+    if (requireApplicationResourceEnforcement && !hasEnforcement) {
+      issues.push(
+        createAuditIssue({
+          severity: "error",
+          code: "application_resource_missing_enforcement",
+          message: `Application resource ${resourceNode.coord.anchor} has no application enforcement point`,
+          nodeId: resourceNode.nodeId,
         }),
       );
     }
@@ -1922,6 +2187,9 @@ export function auditAuthorizationGraph(
       routeCount: routeNodes.length,
       protectedRouteCount,
       enforcedRouteCount,
+      applicationResourceCount: applicationResourceNodes.length,
+      protectedApplicationResourceCount,
+      enforcedApplicationResourceCount,
       decisionCount: decisionNodes.length,
       decisionsWithPolicyCount,
       errors,

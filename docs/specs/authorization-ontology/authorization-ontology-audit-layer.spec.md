@@ -31,6 +31,7 @@ audit layer는 다음 graph를 입력으로 받는다.
 - Cerbos resource policy graph
 - Cerbos derived roles graph
 - proxy route enforcement graph
+- application middleware enforcement graph
 - Cerbos decision observation graph
 - column lineage policy propagation graph
 
@@ -43,6 +44,7 @@ audit layer는 다음 graph를 입력으로 받는다.
 - proxy route가 enforcement point에 연결되어 있는가
 - proxy route가 policy로 보호되는가
 - proxy route가 upstream resource에 연결되어 있는가
+- domain resource가 policy로 보호되고 service middleware에서 enforcement 되는가
 - decision이 resource/action/policy/enforcement relation을 가지는가
 - allow decision의 action이 policy의 `allows_action` 관계로 선언되어 있는가
 - decision resource가 policy의 `protects` 관계 또는 `policy -> route -> upstream` 경로로 연결되는가
