@@ -56,6 +56,10 @@ importers:
         version: 5.9.3
 
   packages/authorization-monitor-web:
+    dependencies:
+      viz-core:
+        specifier: workspace:*
+        version: link:../viz-core
     devDependencies:
       typescript:
         specifier: ^5.8.2

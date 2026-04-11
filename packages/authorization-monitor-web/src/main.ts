@@ -1,3 +1,11 @@
+import {
+  authorizationGraphToOntologyView,
+  layoutOntologyGraph,
+  renderOntologyGraphSvg,
+  type OntologyGraphViewModel,
+  type OntologyLane,
+} from "viz-core/ontology-graph";
+
 type FocusMode = "all" | "proxy" | "application";
 
 type NodeKind =
@@ -51,9 +59,7 @@ interface AuthzGraphSnapshot {
 
 interface AuthzMonitorModel {
   graph: AuthzGraph;
-  proxyGraph: AuthzGraph;
-  appGraph: AuthzGraph;
-  decisionGraph: AuthzGraph;
+  viewModel: OntologyGraphViewModel;
   source: "sample" | "live";
   snapshotId?: string;
   graphId?: string;
@@ -132,46 +138,6 @@ function graphFromSnapshotPayload(payload: unknown): AuthzGraphSnapshot {
     return payload as AuthzGraphSnapshot;
   }
   throw new Error("Invalid authorization graph payload");
-}
-
-function splitGraphByLane(graph: AuthzGraph): Pick<AuthzMonitorModel, "proxyGraph" | "appGraph" | "decisionGraph"> {
-  const proxyNodeIds = expandWithAdjacentNodes(graph, new Set(
-    graph.nodes
-      .filter((node) => classifyNode(node) === "proxy" || classifyNode(node) === "policy")
-      .map((node) => node.nodeId),
-  ));
-  const appNodeIds = expandWithAdjacentNodes(graph, new Set(
-    graph.nodes
-      .filter((node) => classifyNode(node) === "application" || classifyNode(node) === "policy")
-      .map((node) => node.nodeId),
-  ));
-  const decisionNodeIds = expandWithAdjacentNodes(graph, new Set(
-    graph.nodes.filter((node) => classifyNode(node) === "decision").map((node) => node.nodeId),
-  ));
-
-  const byIds = (ids: Set<string>): AuthzGraph => ({
-    nodes: graph.nodes.filter((node) => ids.has(node.nodeId)),
-    relations: graph.relations.filter(
-      (relation) => ids.has(relation.fromNodeId) && ids.has(relation.toNodeId),
-    ),
-  });
-
-  return {
-    proxyGraph: byIds(proxyNodeIds),
-    appGraph: byIds(appNodeIds),
-    decisionGraph: byIds(decisionNodeIds),
-  };
-}
-
-function expandWithAdjacentNodes(graph: AuthzGraph, nodeIds: Set<string>): Set<string> {
-  const expanded = new Set(nodeIds);
-  for (const relation of graph.relations) {
-    if (nodeIds.has(relation.fromNodeId) || nodeIds.has(relation.toNodeId)) {
-      expanded.add(relation.fromNodeId);
-      expanded.add(relation.toNodeId);
-    }
-  }
-  return expanded;
 }
 
 async function fetchLiveSnapshot(): Promise<AuthzGraphSnapshot | null> {
@@ -315,9 +281,7 @@ function buildModel(): AuthzMonitorModel {
 
   return {
     graph: mergeGraphs(policyGraph, proxyGraph, appGraph, decisionGraph),
-    proxyGraph,
-    appGraph,
-    decisionGraph,
+    viewModel: authorizationGraphToOntologyView(mergeGraphs(policyGraph, proxyGraph, appGraph, decisionGraph)),
     source: "sample",
   };
 }
@@ -325,40 +289,38 @@ function buildModel(): AuthzMonitorModel {
 async function loadModel(): Promise<AuthzMonitorModel> {
   const live = await fetchLiveSnapshot();
   if (!live) return buildModel();
-  const split = splitGraphByLane(live.graph);
   return {
     graph: live.graph,
-    ...split,
+    viewModel: authorizationGraphToOntologyView(live.graph),
     source: "live",
     snapshotId: live.snapshotId,
     graphId: live.graphId,
   };
 }
 
-function graphForFocus(model: AuthzMonitorModel): AuthzGraph {
-  if (state.focus === "proxy") return mergeGraphs(model.proxyGraph, model.decisionGraph);
-  if (state.focus === "application") return mergeGraphs(model.appGraph, model.decisionGraph);
-  return model.graph;
-}
+function viewModelForFocus(model: AuthzMonitorModel): OntologyGraphViewModel {
+  if (state.focus === "all") return model.viewModel;
 
-function classifyNode(node: AuthzNode): string {
-  const resourceKind = node.coord.taxonomies["resource_kind"];
-  if (resourceKind === "proxy_route") return "proxy";
-  if (resourceKind === "domain_resource") return "application";
-  if (node.kind === "decision") return "decision";
-  if (node.kind === "policy") return "policy";
-  if (node.kind === "enforcement_point") {
-    return node.coord.taxonomies["enforcement_kind"] === "service_middleware" ? "application" : "proxy";
+  const focusLanes: OntologyLane[] =
+    state.focus === "proxy"
+      ? ["policy", "proxy", "decision"]
+      : ["policy", "application", "decision"];
+  const seedIds = new Set(
+    model.viewModel.nodes
+      .filter((node) => focusLanes.includes(node.lane))
+      .map((node) => node.id),
+  );
+  for (const edge of model.viewModel.edges) {
+    if (seedIds.has(edge.from) || seedIds.has(edge.to)) {
+      seedIds.add(edge.from);
+      seedIds.add(edge.to);
+    }
   }
-  return "neutral";
-}
-
-function classifyRelation(relation: AuthzRelation): string {
-  if (relation.kind.startsWith("decision_")) return "decision";
-  if (relation.kind === "evaluated_by") return "application";
-  if (relation.kind === "protects") return "policy";
-  if (relation.kind === "enforced_at" || relation.kind === "matches_resource") return "flow";
-  return "neutral";
+  return {
+    ...model.viewModel,
+    nodes: model.viewModel.nodes.filter((node) => seedIds.has(node.id)),
+    edges: model.viewModel.edges.filter((edge) => seedIds.has(edge.from) && seedIds.has(edge.to)),
+  };
 }
 
 function renderSummary(container: HTMLElement, model: AuthzMonitorModel): void {
@@ -378,74 +340,63 @@ function renderSummary(container: HTMLElement, model: AuthzMonitorModel): void {
 }
 
 function renderTopology(container: HTMLElement, model: AuthzMonitorModel): void {
-  const graph = graphForFocus(model);
-  const nodes = graph.nodes;
-  const nodeIndex = new Map(nodes.map((node, index) => [node.nodeId, index]));
-  const width = 940;
-  const height = 390;
-  const lanes = ["policy", "proxy", "application", "decision", "neutral"];
-  const laneY = new Map(lanes.map((lane, index) => [lane, 58 + index * 76]));
-  const laneCounts = new Map<string, number>();
-  const positions = new Map<string, { x: number; y: number }>();
-
-  for (const node of nodes) {
-    const lane = classifyNode(node);
-    const count = laneCounts.get(lane) ?? 0;
-    laneCounts.set(lane, count + 1);
-    positions.set(node.nodeId, {
-      x: Math.min(95 + count * 155 + (lane === "decision" ? 40 : 0), width - 100),
-      y: laneY.get(lane) ?? 350,
-    });
-  }
-
-  const lines = graph.relations
-    .map((relation, index) => {
-      const start = positions.get(relation.fromNodeId);
-      const end = positions.get(relation.toNodeId);
-      if (!start || !end) return "";
-      return `<path class="edge ${classifyRelation(relation)}" d="M ${start.x} ${start.y} C ${(start.x + end.x) / 2} ${start.y}, ${(start.x + end.x) / 2} ${end.y}, ${end.x} ${end.y}" data-qa-address="authz-monitor:edge:${index}:${escapeHtml(relation.kind)}" />`;
-    })
-    .join("");
-
-  const nodeMarkup = nodes
-    .map((node) => {
-      const pos = positions.get(node.nodeId);
-      if (!pos) return "";
-      const selected = state.selectedNodeId === node.nodeId ? " selected" : "";
-      return `
-        <button class="node ${classifyNode(node)}${selected}" style="left:${pos.x - 58}px;top:${pos.y - 23}px" data-node-index="${nodeIndex.get(node.nodeId)}" data-qa-address="authz-monitor:node:${classifyNode(node)}:${escapeHtml(node.coord.anchor)}">
-          <span>${escapeHtml(node.kind)}</span>
-          <b>${escapeHtml(node.coord.anchor)}</b>
-        </button>
-      `;
-    })
+  const viewModel = viewModelForFocus(model);
+  const positioned = layoutOntologyGraph(viewModel, {
+    laneOrder: ["policy", "proxy", "application", "decision", "neutral"],
+    laneGap: 190,
+    rowGap: 92,
+    nodeWidth: 150,
+    nodeHeight: 66,
+    paddingX: 110,
+    paddingY: 70,
+  });
+  const laneLabels = [
+    { label: "policy", x: 110 },
+    { label: "proxy gate", x: 300 },
+    { label: "application gate", x: 490 },
+    { label: "decision", x: 680 },
+    { label: "other", x: 870 },
+  ]
+    .map(
+      (lane) =>
+        `<span style="left:${lane.x - 75}px;top:24px;width:150px">${lane.label}</span>`,
+    )
     .join("");
 
   container.innerHTML = `
-    <div class="graph-surface" style="width:${width}px;height:${height}px" data-qa-address="authz-monitor:surface:graph-canvas">
+    <div class="graph-surface" style="width:${positioned.width}px;height:${positioned.height}px" data-qa-address="authz-monitor:surface:graph-canvas">
       <div class="lanes" data-qa-address="authz-monitor:surface:lanes">
-        <span style="top:40px">policy</span>
-        <span style="top:116px">proxy gate</span>
-        <span style="top:192px">application gate</span>
-        <span style="top:268px">decision</span>
+        ${laneLabels}
       </div>
-      <svg class="graph-svg" viewBox="0 0 ${width} ${height}" aria-hidden="true" data-qa-address="authz-monitor:surface:edges">${lines}</svg>
-      <div class="graph-nodes" data-qa-address="authz-monitor:surface:nodes">${nodeMarkup}</div>
+      <div class="topology" data-qa-address="authz-monitor:surface:ontology-graph">${renderOntologyGraphSvg(positioned)}</div>
     </div>
   `;
 
-  container.querySelectorAll<HTMLButtonElement>(".node").forEach((button) => {
-    button.addEventListener("click", () => {
-      const index = Number(button.dataset["nodeIndex"]);
-      state.selectedNodeId = nodes[index]?.nodeId ?? null;
+  container.querySelectorAll<SVGElement>("[data-node-id]").forEach((nodeElement) => {
+    const nodeId = nodeElement.dataset["nodeId"] ?? "";
+    const node = viewModel.nodes.find((candidate) => candidate.id === nodeId);
+    nodeElement.setAttribute(
+      "data-qa-address",
+      `authz-monitor:node:${node?.lane ?? "neutral"}:${node?.label ?? nodeId}`,
+    );
+    if (state.selectedNodeId === nodeId) nodeElement.classList.add("selected");
+    nodeElement.addEventListener("click", () => {
+      state.selectedNodeId = nodeId;
       refresh(model);
     });
+  });
+  container.querySelectorAll<SVGPathElement>(".ontology-edge").forEach((edgeElement, index) => {
+    const edge = viewModel.edges[index];
+    edgeElement.setAttribute(
+      "data-qa-address",
+      `authz-monitor:edge:${index}:${edge?.label ?? edge?.kind ?? "edge"}`,
+    );
   });
 }
 
 function renderInspector(container: HTMLElement, model: AuthzMonitorModel): void {
   const selected = state.selectedNodeId
-    ? model.graph.nodes.find((node) => node.nodeId === state.selectedNodeId)
+    ? model.viewModel.nodes.find((node) => node.id === state.selectedNodeId)
     : null;
   if (!selected) {
     container.innerHTML = `
@@ -457,23 +408,24 @@ function renderInspector(container: HTMLElement, model: AuthzMonitorModel): void
     return;
   }
 
-  const incoming = model.graph.relations.filter((relation) => relation.toNodeId === selected.nodeId);
-  const outgoing = model.graph.relations.filter((relation) => relation.fromNodeId === selected.nodeId);
+  const incoming = model.viewModel.edges.filter((edge) => edge.to === selected.id);
+  const outgoing = model.viewModel.edges.filter((edge) => edge.from === selected.id);
   container.innerHTML = `
     <div class="ins-head" data-qa-address="authz-monitor:surface:inspector-head">
-      <span>${escapeHtml(selected.kind)}</span>
-      <b>${escapeHtml(selected.coord.anchor)}</b>
+      <span>${escapeHtml(selected.lane)} / ${escapeHtml(selected.kind)}</span>
+      <b>${escapeHtml(selected.label)}</b>
     </div>
     <dl class="ins-meta">
-      <dt>realm</dt><dd>${escapeHtml(selected.coord.realm)}</dd>
-      <dt>space</dt><dd>${escapeHtml(selected.coord.space)}</dd>
-      <dt>taxonomy</dt><dd>${escapeHtml(JSON.stringify(selected.coord.taxonomies))}</dd>
+      <dt>id</dt><dd>${escapeHtml(selected.id)}</dd>
+      <dt>status</dt><dd>${escapeHtml(selected.status ?? "unknown")}</dd>
+      <dt>summary</dt><dd>${escapeHtml(selected.summary ?? "")}</dd>
+      <dt>raw</dt><dd>${escapeHtml(JSON.stringify(selected.raw ?? {}, null, 2))}</dd>
     </dl>
     <div class="rel-list">
       <h4>incoming</h4>
-      ${incoming.map((relation) => `<code>${escapeHtml(relation.kind)}</code>`).join("") || "<span>none</span>"}
+      ${incoming.map((edge) => `<code>${escapeHtml(edge.label ?? edge.kind ?? "edge")}</code>`).join("") || "<span>none</span>"}
       <h4>outgoing</h4>
-      ${outgoing.map((relation) => `<code>${escapeHtml(relation.kind)}</code>`).join("") || "<span>none</span>"}
+      ${outgoing.map((edge) => `<code>${escapeHtml(edge.label ?? edge.kind ?? "edge")}</code>`).join("") || "<span>none</span>"}
     </div>
   `;
 }

@@ -14,6 +14,7 @@
 - proxy route gate와 application domain-resource gate를 같은 graph로 시각화한다.
 - Cerbos policy가 `proxy_route`와 `domain_resource`를 어떻게 보호하는지 보여준다.
 - decision observation이 principal/resource/action/policy/enforcement point를 어떻게 연결하는지 보여준다.
+- graph adapter/layout/SVG rendering은 `viz-core/ontology-graph`의 공통 ontology visualization model을 사용한다.
 - `/authorization-graph-snapshot.json` 또는 `?graph=<url>`로 graph snapshot JSON을 읽고, 실패하면 샘플 graph view model로 fallback한다.
 - RLSC 수집을 위해 주요 surface, node, edge에 `data-qa-address`를 부여한다.
 

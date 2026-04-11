@@ -195,7 +195,7 @@ code {
 .graph-surface {
   position: relative;
   min-width: 940px;
-  min-height: 390px;
+  min-height: 520px;
 }
 
 .lanes {
@@ -206,10 +206,7 @@ code {
 
 .lanes span {
   position: absolute;
-  left: 14px;
-  width: calc(100% - 28px);
-  padding-top: 8px;
-  border-top: 1px solid rgba(13, 36, 50, 0.12);
+  text-align: center;
   font-size: 0.64rem;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -217,14 +214,16 @@ code {
   color: rgba(13, 36, 50, 0.36);
 }
 
-.graph-svg {
+.graph-svg,
+.ontology-graph-svg {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
 }
 
-.edge {
+.edge,
+.ontology-edge {
   fill: none;
   stroke: rgba(13, 36, 50, 0.28);
   stroke-width: 2.2;
@@ -232,19 +231,24 @@ code {
   animation: draw 620ms ease-out both;
 }
 
+.ontology-edge[data-kind="protects"],
 .edge.policy {
   stroke: rgba(17, 122, 80, 0.52);
 }
 
+.ontology-edge[data-kind="evaluated_by"],
 .edge.application {
   stroke: rgba(192, 96, 26, 0.52);
 }
 
+.ontology-edge[data-kind^="decision_"],
 .edge.decision {
   stroke: rgba(41, 128, 185, 0.5);
   stroke-dasharray: 7 6;
 }
 
+.ontology-edge[data-kind="enforced_at"],
+.ontology-edge[data-kind="matches_resource"],
 .edge.flow {
   stroke: rgba(30, 58, 95, 0.42);
 }
@@ -252,6 +256,54 @@ code {
 .graph-nodes {
   position: absolute;
   inset: 0;
+}
+
+.ontology-node {
+  cursor: pointer;
+}
+
+.ontology-node rect {
+  fill: rgba(255, 255, 255, 0.9);
+  stroke: rgba(13, 36, 50, 0.18);
+  stroke-width: 1.2;
+  filter: drop-shadow(0 14px 24px rgba(13, 36, 50, 0.08));
+}
+
+.ontology-node:hover rect,
+.ontology-node.selected rect {
+  stroke: rgba(13, 36, 50, 0.46);
+  stroke-width: 1.8;
+}
+
+.ontology-node.policy rect {
+  stroke: rgba(17, 122, 80, 0.72);
+}
+
+.ontology-node.proxy rect {
+  stroke: rgba(30, 58, 95, 0.72);
+}
+
+.ontology-node.application rect {
+  stroke: rgba(192, 96, 26, 0.72);
+}
+
+.ontology-node.decision rect {
+  stroke: rgba(41, 128, 185, 0.72);
+}
+
+.ontology-node-kind {
+  fill: #69808e;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ontology-node-label {
+  fill: #12283a;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .node {
