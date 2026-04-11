@@ -1,0 +1,403 @@
+{
+  "objects": [],
+  "facets": [],
+  "observations": [],
+  "projections": [
+    {
+      "projectionId": "snapshot:web-pipe",
+      "projectionKind": "operational_ontology_snapshot",
+      "targetScope": "web-pipe",
+      "payloadJson": {
+        "topologyTemplateKind": "runtime_snapshot",
+        "topologyTemplateDescription": "Snapshot that combines corridor, junction, checkpoint, transmission, lineage, and traversal views",
+        "topologyValidation": {
+          "valid": false,
+          "corridorCount": 1,
+          "maxCheckpointLatticeDepth": 0,
+          "missingCorridorKinds": [
+            "event_record_observed"
+          ],
+          "missingJunctionTemplateKinds": [],
+          "missingCheckpointTemplateKinds": [],
+          "missingCheckpointLattices": true,
+          "missingRouteDecisions": false,
+          "missingTraversals": false,
+          "tooFewCorridors": false,
+          "tooManyCorridors": false,
+          "checkpointDepthTooShallow": true,
+          "routeDecisionsMissingRefs": [],
+          "checkpointsMissingCorridor": []
+        },
+        "corridors": [
+          {
+            "flowId": "pipe-web",
+            "templateKind": "pipe_graph",
+            "templateDescription": "Corridor materialized from PipeGraph and optional schema/lineage alignment",
+            "entryNodeId": "collect-order",
+            "nodeIds": [
+              "collect-order",
+              "validate-order",
+              "persist-order"
+            ],
+            "schemaIds": [],
+            "endpoints": [
+              {
+                "endpointId": "endpoint:collect-order:port:out",
+                "templateKind": "port",
+                "nodeId": "collect-order",
+                "direction": "out",
+                "facetKind": "production",
+                "portId": "out",
+                "sourceKind": "port"
+              },
+              {
+                "endpointId": "endpoint:validate-order:port:in",
+                "templateKind": "port",
+                "nodeId": "validate-order",
+                "direction": "in",
+                "facetKind": "consumption",
+                "portId": "in",
+                "sourceKind": "port"
+              },
+              {
+                "endpointId": "endpoint:persist-order:port:in",
+                "templateKind": "port",
+                "nodeId": "persist-order",
+                "direction": "in",
+                "facetKind": "consumption",
+                "portId": "in",
+                "sourceKind": "port"
+              }
+            ],
+            "contracts": [],
+            "links": [
+              {
+                "linkId": "flow-link:collect-order:conditional:validate-order:order.valid == true",
+                "templateKind": "pipe_connection",
+                "fromEndpointId": "endpoint:collect-order:port:out",
+                "toEndpointId": "endpoint:validate-order:port:in",
+                "semantic": "production_to_consumption",
+                "medium": "direct",
+                "condition": "order.valid == true",
+                "relationType": "pipe_connection:conditional",
+                "sourceKind": "connection"
+              },
+              {
+                "linkId": "flow-link:validate-order:next:persist-order:",
+                "templateKind": "pipe_connection",
+                "fromEndpointId": "endpoint:validate-order:out:_node",
+                "toEndpointId": "endpoint:persist-order:port:in",
+                "semantic": "production_to_consumption",
+                "medium": "direct",
+                "relationType": "pipe_connection:next",
+                "sourceKind": "connection"
+              }
+            ],
+            "templateValidation": {
+              "valid": true,
+              "missingEndpointKinds": [],
+              "disallowedEndpointKinds": [],
+              "missingContractKinds": [],
+              "disallowedContractKinds": [],
+              "missingLinkKinds": [],
+              "disallowedLinkKinds": []
+            }
+          }
+        ],
+        "controlFlows": [
+          {
+            "graphId": "pipe-web",
+            "entryNodeId": "collect-order",
+            "nodes": [
+              {
+                "nodeId": "collect-order",
+                "kind": "step",
+                "facet": "production",
+                "entryCondition": "event:order.submit",
+                "sourceKind": "step"
+              },
+              {
+                "nodeId": "validate-order",
+                "kind": "step",
+                "facet": "consumption",
+                "entryCondition": "event:order.created",
+                "sourceKind": "step"
+              },
+              {
+                "nodeId": "persist-order",
+                "kind": "step",
+                "facet": "management",
+                "entryCondition": "event:order.validated",
+                "sourceKind": "step"
+              }
+            ],
+            "edges": [
+              {
+                "from": "collect-order",
+                "to": "validate-order",
+                "kind": "conditional",
+                "condition": "order.valid == true",
+                "sourceKind": "conditional"
+              },
+              {
+                "from": "validate-order",
+                "to": "persist-order",
+                "kind": "next",
+                "sourceKind": "next"
+              }
+            ],
+            "version": "v1"
+          }
+        ],
+        "checkpoints": [],
+        "checkpointLattices": [],
+        "junctions": [
+          {
+            "templateKind": "conditional_branch",
+            "templateDescription": "Junction materialized from conditional PipeConnection paths",
+            "templateValidation": {
+              "valid": true,
+              "pathCount": 1,
+              "tooFewPaths": false,
+              "tooManyPaths": false,
+              "pathsMissingCondition": []
+            },
+            "branchNodeId": "collect-order",
+            "mode": "first_match",
+            "paths": [
+              {
+                "pathId": "collect-order->validate-order:0",
+                "when": {
+                  "conditionId": "collect-order:condition:0",
+                  "expression": "order.valid == true"
+                },
+                "nextNodeIds": [
+                  "validate-order"
+                ],
+                "priority": 0
+              }
+            ]
+          }
+        ],
+        "routeDecisions": [],
+        "traversals": [],
+        "transmissions": [
+          {
+            "transmissionId": "transmission:production_to_consumption:facet:collect-order:production->facet:validate-order:consumption",
+            "source": {
+              "nodeId": "collect-order",
+              "facetKind": "production",
+              "key": "facet:collect-order:production"
+            },
+            "target": {
+              "nodeId": "validate-order",
+              "facetKind": "consumption",
+              "key": "facet:validate-order:consumption"
+            },
+            "semantic": "production_to_consumption",
+            "medium": "direct",
+            "direction": "forward",
+            "relationType": "pipe_connection:conditional",
+            "contractRefs": [
+              "order.valid == true"
+            ]
+          },
+          {
+            "transmissionId": "transmission:production_to_consumption:facet:validate-order:consumption->facet:persist-order:consumption",
+            "source": {
+              "nodeId": "validate-order",
+              "facetKind": "consumption",
+              "key": "facet:validate-order:consumption"
+            },
+            "target": {
+              "nodeId": "persist-order",
+              "facetKind": "consumption",
+              "key": "facet:persist-order:consumption"
+            },
+            "semantic": "production_to_consumption",
+            "medium": "direct",
+            "direction": "forward",
+            "relationType": "pipe_connection:next"
+          }
+        ],
+        "lineageLinks": [],
+        "observedNodeKeys": [],
+        "observedEdgeKeys": []
+      },
+      "builtFrom": [
+        "pipe-web"
+      ],
+      "builtAt": "2026-04-11T22:27:21.369Z"
+    },
+    {
+      "projectionId": "snapshot:web-pipe:corridor:pipe-web",
+      "projectionKind": "operational_ontology_corridor",
+      "targetScope": "pipe-web",
+      "payloadJson": {
+        "flowId": "pipe-web",
+        "templateKind": "pipe_graph",
+        "templateDescription": "Corridor materialized from PipeGraph and optional schema/lineage alignment",
+        "entryNodeId": "collect-order",
+        "nodeIds": [
+          "collect-order",
+          "validate-order",
+          "persist-order"
+        ],
+        "schemaIds": [],
+        "endpoints": [
+          {
+            "endpointId": "endpoint:collect-order:port:out",
+            "templateKind": "port",
+            "nodeId": "collect-order",
+            "direction": "out",
+            "facetKind": "production",
+            "portId": "out",
+            "sourceKind": "port"
+          },
+          {
+            "endpointId": "endpoint:validate-order:port:in",
+            "templateKind": "port",
+            "nodeId": "validate-order",
+            "direction": "in",
+            "facetKind": "consumption",
+            "portId": "in",
+            "sourceKind": "port"
+          },
+          {
+            "endpointId": "endpoint:persist-order:port:in",
+            "templateKind": "port",
+            "nodeId": "persist-order",
+            "direction": "in",
+            "facetKind": "consumption",
+            "portId": "in",
+            "sourceKind": "port"
+          }
+        ],
+        "contracts": [],
+        "links": [
+          {
+            "linkId": "flow-link:collect-order:conditional:validate-order:order.valid == true",
+            "templateKind": "pipe_connection",
+            "fromEndpointId": "endpoint:collect-order:port:out",
+            "toEndpointId": "endpoint:validate-order:port:in",
+            "semantic": "production_to_consumption",
+            "medium": "direct",
+            "condition": "order.valid == true",
+            "relationType": "pipe_connection:conditional",
+            "sourceKind": "connection"
+          },
+          {
+            "linkId": "flow-link:validate-order:next:persist-order:",
+            "templateKind": "pipe_connection",
+            "fromEndpointId": "endpoint:validate-order:out:_node",
+            "toEndpointId": "endpoint:persist-order:port:in",
+            "semantic": "production_to_consumption",
+            "medium": "direct",
+            "relationType": "pipe_connection:next",
+            "sourceKind": "connection"
+          }
+        ],
+        "templateValidation": {
+          "valid": true,
+          "missingEndpointKinds": [],
+          "disallowedEndpointKinds": [],
+          "missingContractKinds": [],
+          "disallowedContractKinds": [],
+          "missingLinkKinds": [],
+          "disallowedLinkKinds": []
+        }
+      },
+      "builtFrom": [
+        "snapshot:web-pipe"
+      ],
+      "builtAt": "2026-04-11T22:27:21.369Z"
+    },
+    {
+      "projectionId": "snapshot:web-pipe:control-flow:pipe-web",
+      "projectionKind": "operational_ontology_control_flow",
+      "targetScope": "pipe-web",
+      "payloadJson": {
+        "graphId": "pipe-web",
+        "entryNodeId": "collect-order",
+        "nodes": [
+          {
+            "nodeId": "collect-order",
+            "kind": "step",
+            "facet": "production",
+            "entryCondition": "event:order.submit",
+            "sourceKind": "step"
+          },
+          {
+            "nodeId": "validate-order",
+            "kind": "step",
+            "facet": "consumption",
+            "entryCondition": "event:order.created",
+            "sourceKind": "step"
+          },
+          {
+            "nodeId": "persist-order",
+            "kind": "step",
+            "facet": "management",
+            "entryCondition": "event:order.validated",
+            "sourceKind": "step"
+          }
+        ],
+        "edges": [
+          {
+            "from": "collect-order",
+            "to": "validate-order",
+            "kind": "conditional",
+            "condition": "order.valid == true",
+            "sourceKind": "conditional"
+          },
+          {
+            "from": "validate-order",
+            "to": "persist-order",
+            "kind": "next",
+            "sourceKind": "next"
+          }
+        ],
+        "version": "v1"
+      },
+      "builtFrom": [
+        "snapshot:web-pipe"
+      ],
+      "builtAt": "2026-04-11T22:27:21.369Z"
+    },
+    {
+      "projectionId": "snapshot:web-pipe:junction:collect-order",
+      "projectionKind": "operational_ontology_junction",
+      "targetScope": "collect-order",
+      "payloadJson": {
+        "templateKind": "conditional_branch",
+        "templateDescription": "Junction materialized from conditional PipeConnection paths",
+        "templateValidation": {
+          "valid": true,
+          "pathCount": 1,
+          "tooFewPaths": false,
+          "tooManyPaths": false,
+          "pathsMissingCondition": []
+        },
+        "branchNodeId": "collect-order",
+        "mode": "first_match",
+        "paths": [
+          {
+            "pathId": "collect-order->validate-order:0",
+            "when": {
+              "conditionId": "collect-order:condition:0",
+              "expression": "order.valid == true"
+            },
+            "nextNodeIds": [
+              "validate-order"
+            ],
+            "priority": 0
+          }
+        ]
+      },
+      "builtFrom": [
+        "snapshot:web-pipe"
+      ],
+      "builtAt": "2026-04-11T22:27:21.369Z"
+    }
+  ]
+}

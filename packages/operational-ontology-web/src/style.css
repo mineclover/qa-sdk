@@ -153,6 +153,33 @@ h2 {
   padding: 14px;
 }
 
+.sample-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-top: 0;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 14px;
+}
+
+.sample-row span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sample-row button {
+  border: 1px solid #bac5b7;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--ink);
+  padding: 8px 12px;
+  font-weight: 700;
+}
+
 .filters button.active {
   background: var(--ink);
   color: #fff;

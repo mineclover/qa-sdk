@@ -220,6 +220,12 @@ const state: UiState = {
   sourceName: "sample store",
 };
 
+const sampleFiles = [
+  { label: "Event store", path: "/samples/event-store.json" },
+  { label: "Pipe store", path: "/samples/pipe-store.json" },
+  { label: "Snapshot store", path: "/samples/snapshot-store.json" },
+];
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -449,6 +455,11 @@ function renderApp(): void {
       `).join("")}
     </nav>
 
+    <section class="sample-row" aria-label="Sample stores">
+      <span>Store JSON</span>
+      ${sampleFiles.map((sample) => `<button type="button" data-sample-path="${sample.path}">${sample.label}</button>`).join("")}
+    </section>
+
     <section class="workspace">
       <div class="map">
         <div class="source-line">Source: ${escapeHtml(state.sourceName)}</div>
@@ -489,6 +500,18 @@ function renderApp(): void {
     state.sourceName = "sample store";
     state.selectedId = null;
     renderApp();
+  });
+
+  app.querySelectorAll<HTMLButtonElement>("[data-sample-path]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const path = button.dataset["samplePath"];
+      if (!path) return;
+      const response = await fetch(path);
+      state.store = asStoreFile((await response.json()) as unknown);
+      state.sourceName = path;
+      state.selectedId = null;
+      renderApp();
+    });
   });
 
   app.querySelector<HTMLInputElement>("#file-input")?.addEventListener("change", async (event) => {
