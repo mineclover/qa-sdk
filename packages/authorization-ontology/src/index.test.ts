@@ -5,8 +5,10 @@ import {
   createAuthorizationRelation,
   createResourceNode,
   evaluateColumnPolicyPropagation,
+  normalizeCerbosResourcePolicy,
   projectCerbosResourcePolicy,
   projectColumnPolicyPropagation,
+  validateCerbosResourcePolicyLike,
 } from "./index.js";
 
 describe("authorization-ontology", () => {
@@ -65,6 +67,51 @@ describe("authorization-ontology", () => {
         }),
       ]),
     );
+  });
+
+  it("validates and normalizes Cerbos resource policy shape", () => {
+    expect(
+      validateCerbosResourcePolicyLike({
+        resourcePolicy: {
+          resource: "crm.customer_profile",
+          rules: [
+            {
+              actions: ["read", "read"],
+              effect: "EFFECT_ALLOW",
+              roles: ["analyst"],
+            },
+          ],
+        },
+      }),
+    ).toEqual({
+      valid: true,
+      issues: [],
+    });
+
+    expect(
+      normalizeCerbosResourcePolicy({
+        resourcePolicy: {
+          resource: "crm.customer_profile",
+          rules: [
+            {
+              actions: ["read", "read"],
+              effect: "EFFECT_DENY",
+            },
+          ],
+        },
+      }).resourcePolicy.rules,
+    ).toEqual([
+      {
+        actions: ["read"],
+        effect: "deny",
+        roles: [],
+        derivedRoles: [],
+        condition: undefined,
+        name: undefined,
+      },
+    ]);
+
+    expect(validateCerbosResourcePolicyLike({}).valid).toBe(false);
   });
 
   it("classifies column-level policy propagation by lineage transform", () => {

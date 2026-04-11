@@ -169,6 +169,39 @@ export interface CerbosPolicyRuleLike {
   name?: string;
 }
 
+export interface CerbosPolicyValidationIssue {
+  level: "error" | "warning";
+  code: string;
+  path: string;
+  message: string;
+}
+
+export interface CerbosPolicyValidationResult {
+  valid: boolean;
+  issues: CerbosPolicyValidationIssue[];
+}
+
+export interface NormalizedCerbosPolicyRule {
+  actions: string[];
+  effect: "allow" | "deny";
+  roles: string[];
+  derivedRoles: string[];
+  condition?: unknown;
+  name?: string;
+}
+
+export interface NormalizedCerbosResourcePolicy {
+  apiVersion?: string;
+  resourcePolicy: {
+    version: string;
+    resource: string;
+    scope?: string;
+    importDerivedRoles: string[];
+    rules: NormalizedCerbosPolicyRule[];
+  };
+  metadata?: Record<string, unknown>;
+}
+
 export interface CerbosPolicyProjectionInput {
   policyRealm: AuthorizationRealm;
   resourceRealm: AuthorizationRealm;
@@ -416,6 +449,133 @@ function normalizeEffect(effect: string): "allow" | "deny" {
   return effect === "EFFECT_DENY" || effect === "deny" ? "deny" : "allow";
 }
 
+function createCerbosIssue(
+  level: "error" | "warning",
+  code: string,
+  path: string,
+  message: string,
+): CerbosPolicyValidationIssue {
+  return { level, code, path, message };
+}
+
+export function normalizeCerbosResourcePolicy(
+  policy: CerbosResourcePolicyLike,
+): NormalizedCerbosResourcePolicy {
+  return {
+    apiVersion: policy.apiVersion,
+    metadata: policy.metadata,
+    resourcePolicy: {
+      version: policy.resourcePolicy.version ?? "default",
+      resource: policy.resourcePolicy.resource,
+      scope: policy.resourcePolicy.scope,
+      importDerivedRoles: policy.resourcePolicy.importDerivedRoles ?? [],
+      rules: (policy.resourcePolicy.rules ?? []).map((rule) => ({
+        actions: [...new Set(rule.actions)],
+        effect: normalizeEffect(rule.effect),
+        roles: rule.roles ?? [],
+        derivedRoles: rule.derivedRoles ?? [],
+        condition: rule.condition,
+        name: rule.name,
+      })),
+    },
+  };
+}
+
+export function validateCerbosResourcePolicyLike(
+  policy: unknown,
+): CerbosPolicyValidationResult {
+  const issues: CerbosPolicyValidationIssue[] = [];
+
+  if (!policy || typeof policy !== "object" || Array.isArray(policy)) {
+    return {
+      valid: false,
+      issues: [
+        createCerbosIssue(
+          "error",
+          "policy-not-object",
+          "$",
+          "Cerbos policy must be an object",
+        ),
+      ],
+    };
+  }
+
+  const record = policy as Partial<CerbosResourcePolicyLike>;
+  const resourcePolicy = record.resourcePolicy;
+  if (!resourcePolicy || typeof resourcePolicy !== "object") {
+    issues.push(
+      createCerbosIssue(
+        "error",
+        "resource-policy-missing",
+        "resourcePolicy",
+        "resourcePolicy is required",
+      ),
+    );
+  } else {
+    if (!resourcePolicy.resource || resourcePolicy.resource.trim().length === 0) {
+      issues.push(
+        createCerbosIssue(
+          "error",
+          "resource-missing",
+          "resourcePolicy.resource",
+          "resourcePolicy.resource is required",
+        ),
+      );
+    }
+
+    const rules = resourcePolicy.rules ?? [];
+    if (rules.length === 0) {
+      issues.push(
+        createCerbosIssue(
+          "warning",
+          "rules-empty",
+          "resourcePolicy.rules",
+          "resourcePolicy should define at least one rule",
+        ),
+      );
+    }
+
+    rules.forEach((rule, index) => {
+      const path = `resourcePolicy.rules.${index}`;
+      if (!Array.isArray(rule.actions) || rule.actions.length === 0) {
+        issues.push(
+          createCerbosIssue(
+            "error",
+            "rule-actions-empty",
+            `${path}.actions`,
+            "rule.actions must contain at least one action",
+          ),
+        );
+      }
+      if (!rule.effect || typeof rule.effect !== "string") {
+        issues.push(
+          createCerbosIssue(
+            "error",
+            "rule-effect-missing",
+            `${path}.effect`,
+            "rule.effect is required",
+          ),
+        );
+      }
+      if ((rule.roles?.length ?? 0) === 0 && (rule.derivedRoles?.length ?? 0) === 0) {
+        issues.push(
+          createCerbosIssue(
+            "warning",
+            "rule-principal-match-empty",
+            path,
+            "rule has no roles or derivedRoles",
+          ),
+        );
+      }
+    });
+  }
+
+  return {
+    valid: issues.every((issue) => issue.level !== "error"),
+    issues,
+  };
+}
+
 function uniqueNodes(nodes: AuthorizationNode[]): AuthorizationNode[] {
   return [...new Map(nodes.map((node) => [node.nodeId, node])).values()];
 }
@@ -427,26 +587,36 @@ function uniqueRelations(relations: AuthorizationRelation[]): AuthorizationRelat
 export function projectCerbosResourcePolicy(
   input: CerbosPolicyProjectionInput,
 ): AuthorizationOntologyGraph {
+  const validation = validateCerbosResourcePolicyLike(input.policy);
+  if (!validation.valid) {
+    throw new Error(
+      `Invalid Cerbos resource policy: ${validation.issues
+        .filter((issue) => issue.level === "error")
+        .map((issue) => `${issue.code}@${issue.path}`)
+        .join(", ")}`,
+    );
+  }
+  const normalized = normalizeCerbosResourcePolicy(input.policy);
   const policyRef: PolicyRef = {
     realm: input.policyRealm,
-    policyId: `cerbos:resource:${input.policy.resourcePolicy.resource}`,
+    policyId: `cerbos:resource:${normalized.resourcePolicy.resource}`,
     policyKind: "cerbos_resource_policy",
-    version: input.policy.resourcePolicy.version,
+    version: normalized.resourcePolicy.version,
     sourceRef: input.sourceRef,
   };
   const policyNode = createPolicyNode(policyRef);
   const resourceNode = createResourceNode({
     realm: input.resourceRealm,
-    resourceId: input.policy.resourcePolicy.resource,
+    resourceId: normalized.resourcePolicy.resource,
     resourceKind: "service",
     attributes: {
-      cerbosScope: input.policy.resourcePolicy.scope,
-      importDerivedRoles: input.policy.resourcePolicy.importDerivedRoles ?? [],
+      cerbosScope: normalized.resourcePolicy.scope,
+      importDerivedRoles: normalized.resourcePolicy.importDerivedRoles,
     },
   });
 
   const actionRealm = input.actionRealm ?? input.policyRealm;
-  const actionNodes = (input.policy.resourcePolicy.rules ?? []).flatMap((rule) =>
+  const actionNodes = normalized.resourcePolicy.rules.flatMap((rule) =>
     rule.actions.map((action) =>
       createActionNode({
         realm: actionRealm,
@@ -462,10 +632,10 @@ export function projectCerbosResourcePolicy(
       fromNodeId: policyNode.nodeId,
       toNodeId: resourceNode.nodeId,
       metadata: {
-        cerbosResource: input.policy.resourcePolicy.resource,
+        cerbosResource: normalized.resourcePolicy.resource,
       },
     }),
-    ...(input.policy.resourcePolicy.rules ?? []).flatMap((rule) =>
+    ...normalized.resourcePolicy.rules.flatMap((rule) =>
       rule.actions.map((action) => {
         const actionNode = createActionNode({
           realm: actionRealm,
@@ -473,7 +643,7 @@ export function projectCerbosResourcePolicy(
           actionKind: action,
         });
         return createAuthorizationRelation({
-          kind: normalizeEffect(rule.effect) === "allow" ? "allows_action" : "denies_action",
+          kind: rule.effect === "allow" ? "allows_action" : "denies_action",
           fromNodeId: policyNode.nodeId,
           toNodeId: actionNode.nodeId,
           metadata: {

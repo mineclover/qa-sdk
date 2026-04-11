@@ -31,10 +31,14 @@ Cerbos resource policy를 authorization ontology의 policy/resource/action/relat
 - Cerbos `actions` → `ActionRef`
 - Cerbos `rules.effect` → `allows_action` 또는 `denies_action`
 - Cerbos `roles/derivedRoles/condition` → relation metadata
+- `validateCerbosResourcePolicyLike()` → 최소 shape 검증
+- `normalizeCerbosResourcePolicy()` → effect/action/role 기본값 정규화
 
 ## 정의 ^defines
 
 Cerbos는 policy decision point이자 선언형 권한 정책 중심이다. authorization ontology는 Cerbos policy YAML을 opaque file로 보지 않고, policy/resource/action/condition/effect/relation으로 분해하여 관측과 diff가 가능한 graph로 만든다.
+
+초기 구현은 YAML parser를 포함하지 않는다. YAML/JSON 파싱은 호출자가 수행하고, 패키지는 Cerbos-like object의 shape 검증과 정규화, graph projection을 담당한다.
 
 Cerbos가 직접 커버하지 않는 영역:
 
