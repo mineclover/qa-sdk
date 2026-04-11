@@ -56,3 +56,11 @@ bridge는 `permission-engine`을 대체하지 않는다. 실행 성능과 O(1) c
 `UserPermissionEngine.audit()`는 최종 권한 판정을 decision graph로 투영한다. role 단계 source는 `principal -> has_role -> domain_role`과 `domain_role -> grants_feature -> permission_feature`로 남기고, user override는 `permission_engine_user_override -> denies_feature` 및 `overrides_permission`으로 남긴다.
 
 이 bridge는 `permission-engine` runtime을 직접 import하지 않는다. 대신 snapshot/audit result와 호환되는 plain object를 입력으로 받아 브라우저/서버 양쪽에서 사용할 수 있는 graph 계약을 유지한다.
+
+## 검증 ^validation
+
+`authorization-ontology`는 bridge projector의 순수 계약 테스트와 별도로, `permission-engine` source runtime을 직접 사용하는 proof test를 가진다.
+
+- 실제 `PermissionSet.toSnapshot()`의 bitmask grant와 `grants_feature` relation address가 일치해야 한다.
+- 실제 `RoleRegistry`의 parent inheritance와 `OrgRoleRegistry`의 domain role assignment가 relation graph로 표현되어야 한다.
+- 실제 `UserPermissionEngine.audit()`의 `granted`, `sources`, `denialReason`이 decision graph, role source, user override relation으로 보존되어야 한다.
