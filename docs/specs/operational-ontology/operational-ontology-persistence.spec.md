@@ -91,6 +91,8 @@ def:
 - `relation_type`
 - `edge`
 - `traversal`
+- `governance_blueprint`
+- `governance_run`
 
 ### facet kind
 
@@ -124,6 +126,8 @@ facet kind는 object kind에 따라 허용 조합이 달라질 수 있다.
 | `relation_type` | `identity`, `grammar`, `semantic`, `status`, `projection_meta` | relation type vocabulary와 파생 메타 |
 | `edge` | `assertion`, `status`, `evidence`, `projection_meta` | graph fact와 provenance |
 | `traversal` | `route`, `aggregate`, `evidence`, `status`, `projection_meta` | canonical traversal family 또는 관측 요약 |
+| `governance_blueprint` | `schema`, `validation`, `grammar`, `semantic`, `status`, `projection_meta` | 구현 거버넌스 blueprint와 taxonomy 검증 |
+| `governance_run` | `evidence`, `status`, `aggregate`, `projection_meta` | 구현/검증 binding 평가 결과와 조정 기록 |
 
 여기서 `projection_meta`는 projection store 전체를 대체하는 것이 아니라, 특정 객체에 붙는 경량 파생 메타데이터만 허용한다. 대형 graph view, traversal cache, embedding 결과는 여전히 `oo_projection`에 둔다.
 
@@ -141,6 +145,8 @@ facet kind는 object kind에 따라 허용 조합이 달라질 수 있다.
 | `relation_type` | `identity`, `grammar` | `semantic`, `status`, `projection_meta` |
 | `edge` | `assertion` | `status`, `evidence`, `projection_meta` |
 | `traversal` | `route` | `aggregate`, `evidence`, `status`, `projection_meta` |
+| `governance_blueprint` | `schema`, `validation` | `grammar`, `semantic`, `status`, `projection_meta` |
+| `governance_run` | `evidence`, `status` | `aggregate`, `projection_meta` |
 
 원칙:
 
@@ -183,6 +189,16 @@ facet의 존재만으로는 충분하지 않다. `payload_json`의 shape도 obje
 | `traversal` | `evidence` | `{ evidenceRefs, confidence?, sourceKind? }` |
 | `traversal` | `status` | `{ state, reason?, validFrom?, validTo? }` |
 | `traversal` | `projection_meta` | `{ projectionRefs, lastProjectedAt? }` |
+| `governance_blueprint` | `schema` | `{ blueprint }` |
+| `governance_blueprint` | `grammar` | `{ taxonomy }` |
+| `governance_blueprint` | `validation` | `{ valid, issues }` |
+| `governance_blueprint` | `semantic` | `{ summary }` |
+| `governance_blueprint` | `status` | `{ state, reason?, validFrom?, validTo? }` |
+| `governance_blueprint` | `projection_meta` | `{ projectionRefs, lastProjectedAt? }` |
+| `governance_run` | `evidence` | `{ implementationRefs, verificationRefs, constraintVerdicts, adjustmentRecords? }` |
+| `governance_run` | `status` | `{ state, reason?, validFrom?, validTo? }` |
+| `governance_run` | `aggregate` | `{ adjustmentCount, verdictCount }` |
+| `governance_run` | `projection_meta` | `{ projectionRefs, lastProjectedAt? }` |
 
 원칙:
 
@@ -242,6 +258,7 @@ observation log는 append-only 원칙을 따른다.
 - node observed
 - edge activated
 - traversal observed
+- governance evaluated
 - schema drift detected
 - validation warning emitted
 
