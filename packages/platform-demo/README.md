@@ -9,13 +9,11 @@
 - [platform-demo-api.spec.md](../../docs/specs/viz-system/platform-demo-api.spec.md) — 데모가 소비하는 API 경계
 - [indexing/README.md](../../docs/specs/indexing/README.md) — 좌표 시스템 개념 맵과 플랫폼 데모 위치
 - [rlsc.spec.md](../../docs/specs/rlsc/rlsc.spec.md) — `rlsc` 페이지가 시연하는 모델
-- [authorization-ontology-system.spec.md](../../docs/specs/authorization-ontology/authorization-ontology-system.spec.md) — `authz-monitor` 페이지가 시각화하는 proxy/application 권한 관측 모델
 
 ## 패키지 역할
 
 - monitor/diagram/debugger 성격의 시각화 페이지와 좌표계 데모 페이지를 묶는다.
 - `weighted-index`, `permission-engine`, `demo-snapshot`, `rlsc`, `weighted-ui`를 조합해 브라우저에서 개념을 시연한다.
-- `authz-monitor` 페이지에서 proxy route enforcement와 application middleware enforcement 차이를 graph로 시각화한다.
 - 별도 백엔드 없이 Vite 앱으로 동작하며, 필요한 데이터는 registry/ingest/platform-demo-api에서 읽는다.
 
 ## 코드 진입점

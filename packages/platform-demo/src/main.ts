@@ -32,7 +32,6 @@ import { renderLayoutPage } from "./pages/layout.js";
 import { renderCasbinPage } from "./pages/casbin.js";
 import { renderPermEnginePage } from "./pages/perm-engine.js";
 import { renderPrefixMetaPage } from "./pages/prefix-meta.js";
-import { renderAuthzMonitorPage } from "./pages/authz-monitor.js";
 import {
   DEMO_ROLE_CAP, DEMO_EVENT_CAP, DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
   DEMO_INITIATORS, demoRolesFor, demoEventsFor, demoFeatures,
@@ -44,10 +43,10 @@ import { resetGrants } from "./registry.js";
 //  App state
 // ═══════════════════════════════════════════════════════════════════════════
 
-type SheetId = "overview" | "service" | "permission" | "event" | "scenario" | "grant" | "casbin" | "range" | "access" | "logging" | "layout" | "version" | "perm-engine" | "prefix-meta" | "authz-monitor";
+type SheetId = "overview" | "service" | "permission" | "event" | "scenario" | "grant" | "casbin" | "range" | "access" | "logging" | "layout" | "version" | "perm-engine" | "prefix-meta";
 type Ver = "v1" | "v2" | "v3" | "v4";
 
-const SHEET_IDS: readonly SheetId[] = ["overview", "range", "access", "service", "permission", "event", "scenario", "grant", "casbin", "logging", "layout", "version", "perm-engine", "prefix-meta", "authz-monitor"] as const;
+const SHEET_IDS: readonly SheetId[] = ["overview", "range", "access", "service", "permission", "event", "scenario", "grant", "casbin", "logging", "layout", "version", "perm-engine", "prefix-meta"] as const;
 
 // Sheets that depend on the active version
 const VERSION_SENSITIVE_SHEETS: readonly SheetId[] = ["permission", "event", "scenario", "grant", "casbin", "access", "logging", "version", "perm-engine"];
@@ -180,11 +179,6 @@ const permEngineContainer = document.getElementById("perm-engine-container")!;
 // eslint-disable-next-line typescript/no-non-null-assertion
 const prefixMetaContainer = document.getElementById("prefix-meta-container")!;
 
-// Authorization Monitor sheet refs
-// eslint-disable-next-line typescript/no-non-null-assertion
-const authzMonitorContainer = document.getElementById("authz-monitor-container")!;
-
-
 // ═══════════════════════════════════════════════════════════════════════════
 //  Status bar (version-aware)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -213,7 +207,6 @@ function getSheetInfo(sheet: SheetId, ver: Ver): { shape: string; slots: string 
     case "version":    return { shape: "MetaRegistry 스냅샷 v1 / v2", slots: "버전 비교" };
     case "perm-engine": return { shape: "PermissionSet · bitmask [feature × role]", slots: "마이그레이션 비교" };
     case "prefix-meta": return { shape: "Prefix 메타 · dim/index capacity", slots: "축 + 합성 prefix 조회" };
-    case "authz-monitor": return { shape: "authorization graph · proxy + app enforcement", slots: "권한 관측 모니터" };
   }
 }
 
@@ -290,9 +283,6 @@ function updateFormulaBar(): void {
   } else if (sheet === "perm-engine") {
     nameBox.textContent = "—";
     fbFormula.textContent = `PermissionSet([feature, role]) → bitmask  |  O(1) grant/check  |  migratePermissions(v1 → v2)`;
-  } else if (sheet === "authz-monitor") {
-    nameBox.textContent = "—";
-    fbFormula.textContent = "policy -> protects -> proxy_route/domain_resource  |  decision -> principal/resource/action/policy/enforcement";
   } else {
     const { selectedValue, fixedInitiator } = state.evt;
     const initLabel = fixedInitiator === 1 ? "web" : "mobile";
@@ -385,7 +375,6 @@ function switchSheet(id: SheetId, pushState = true): void {
     if (id === "version")    renderVersionPage(versionContainer, handleVersionChange, state.ver);
     if (id === "perm-engine") renderPermEnginePage(permEngineContainer, state.ver);
     if (id === "prefix-meta") renderPrefixMetaPage(prefixMetaContainer);
-    if (id === "authz-monitor") renderAuthzMonitorPage(authzMonitorContainer);
   }
 
   updateStatusBar();

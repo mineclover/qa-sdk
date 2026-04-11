@@ -16,22 +16,29 @@ interface AuthzCoord {
   taxonomies: Record<string, string>;
 }
 
-interface AuthorizationNode {
+interface AuthzNode {
   nodeId: string;
   kind: NodeKind;
   coord: AuthzCoord;
 }
 
-interface AuthorizationRelation {
+interface AuthzRelation {
   relationId: string;
   kind: string;
   fromNodeId: string;
   toNodeId: string;
 }
 
-interface AuthorizationOntologyGraph {
-  nodes: AuthorizationNode[];
-  relations: AuthorizationRelation[];
+interface AuthzGraph {
+  nodes: AuthzNode[];
+  relations: AuthzRelation[];
+}
+
+interface AuthzMonitorModel {
+  graph: AuthzGraph;
+  proxyGraph: AuthzGraph;
+  appGraph: AuthzGraph;
+  decisionGraph: AuthzGraph;
 }
 
 interface AuthzMonitorState {
@@ -39,17 +46,18 @@ interface AuthzMonitorState {
   selectedNodeId: string | null;
 }
 
-interface AuthzMonitorModel {
-  graph: AuthorizationOntologyGraph;
-  proxyGraph: AuthorizationOntologyGraph;
-  appGraph: AuthorizationOntologyGraph;
-  decisionGraph: AuthorizationOntologyGraph;
-}
-
-const STATE: AuthzMonitorState = {
+const state: AuthzMonitorState = {
   focus: "all",
   selectedNodeId: null,
 };
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
 
 function makeNode(
   kind: NodeKind,
@@ -57,27 +65,18 @@ function makeNode(
   space: string,
   anchor: string,
   taxonomies: Record<string, string>,
-): AuthorizationNode {
+): AuthzNode {
   const query = Object.entries(taxonomies)
     .map(([key, value]) => `${key}=${value}`)
     .join("&");
   return {
     nodeId: `node:${realm}/${space}/${anchor}?${query}`,
     kind,
-    coord: {
-      realm,
-      space,
-      anchor,
-      taxonomies,
-    },
+    coord: { realm, space, anchor, taxonomies },
   };
 }
 
-function makeRelation(
-  kind: string,
-  fromNodeId: string,
-  toNodeId: string,
-): AuthorizationRelation {
+function makeRelation(kind: string, fromNodeId: string, toNodeId: string): AuthzRelation {
   return {
     relationId: `authz:${kind}:${fromNodeId}->${toNodeId}`,
     kind,
@@ -86,9 +85,7 @@ function makeRelation(
   };
 }
 
-function mergeAuthorizationGraphs(
-  ...graphs: AuthorizationOntologyGraph[]
-): AuthorizationOntologyGraph {
+function mergeGraphs(...graphs: AuthzGraph[]): AuthzGraph {
   return {
     nodes: [...new Map(graphs.flatMap((graph) => graph.nodes).map((node) => [node.nodeId, node])).values()],
     relations: [
@@ -99,7 +96,7 @@ function mergeAuthorizationGraphs(
   };
 }
 
-function auditAuthorizationGraph(graph: AuthorizationOntologyGraph): {
+function auditGraph(graph: AuthzGraph): {
   ok: boolean;
   summary: {
     routeCount: number;
@@ -109,9 +106,7 @@ function auditAuthorizationGraph(graph: AuthorizationOntologyGraph): {
   };
 } {
   const routes = graph.nodes.filter((node) => node.coord.taxonomies["resource_kind"] === "proxy_route");
-  const appResources = graph.nodes.filter(
-    (node) => node.coord.taxonomies["resource_kind"] === "domain_resource",
-  );
+  const appResources = graph.nodes.filter((node) => node.coord.taxonomies["resource_kind"] === "domain_resource");
   const decisions = graph.nodes.filter((node) => node.kind === "decision");
   const warnings =
     routes.filter((route) => !graph.relations.some((relation) => relation.kind === "protects" && relation.toNodeId === route.nodeId)).length +
@@ -127,14 +122,6 @@ function auditAuthorizationGraph(graph: AuthorizationOntologyGraph): {
       warnings,
     },
   };
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }
 
 function buildModel(): AuthzMonitorModel {
@@ -191,7 +178,7 @@ function buildModel(): AuthzMonitorModel {
     revision: "rev-prod",
   });
 
-  const policyGraph: AuthorizationOntologyGraph = {
+  const policyGraph: AuthzGraph = {
     nodes: [policy, service, readAction, exportAction],
     relations: [
       makeRelation("protects", policy.nodeId, service.nodeId),
@@ -199,8 +186,7 @@ function buildModel(): AuthzMonitorModel {
       makeRelation("allows_action", policy.nodeId, exportAction.nodeId),
     ],
   };
-
-  const proxyGraph: AuthorizationOntologyGraph = {
+  const proxyGraph: AuthzGraph = {
     nodes: [proxyRoute, proxy, service, policy, deployment],
     relations: [
       makeRelation("enforced_at", proxyRoute.nodeId, proxy.nodeId),
@@ -209,8 +195,7 @@ function buildModel(): AuthzMonitorModel {
       makeRelation("deployed_by", proxyRoute.nodeId, deployment.nodeId),
     ],
   };
-
-  const appGraph: AuthorizationOntologyGraph = {
+  const appGraph: AuthzGraph = {
     nodes: [service, domainResource, serviceMiddleware, policy, readAction, exportAction, deployment],
     relations: [
       makeRelation("matches_resource", service.nodeId, domainResource.nodeId),
@@ -221,8 +206,7 @@ function buildModel(): AuthzMonitorModel {
       makeRelation("deployed_by", domainResource.nodeId, deployment.nodeId),
     ],
   };
-
-  const decisionGraph: AuthorizationOntologyGraph = {
+  const decisionGraph: AuthzGraph = {
     nodes: [proxyDecision, appDecision, principal, service, domainResource, readAction, exportAction, policy, proxy, serviceMiddleware],
     relations: [
       makeRelation("decision_principal", proxyDecision.nodeId, principal.nodeId),
@@ -239,53 +223,47 @@ function buildModel(): AuthzMonitorModel {
   };
 
   return {
-    graph: mergeAuthorizationGraphs(policyGraph, proxyGraph, appGraph, decisionGraph),
+    graph: mergeGraphs(policyGraph, proxyGraph, appGraph, decisionGraph),
     proxyGraph,
     appGraph,
     decisionGraph,
   };
 }
 
-function graphForFocus(model: AuthzMonitorModel, focus: FocusMode): AuthorizationOntologyGraph {
-  if (focus === "proxy") {
-    return mergeAuthorizationGraphs(model.proxyGraph, model.decisionGraph);
-  }
-  if (focus === "application") {
-    return mergeAuthorizationGraphs(model.appGraph, model.decisionGraph);
-  }
+function graphForFocus(model: AuthzMonitorModel): AuthzGraph {
+  if (state.focus === "proxy") return mergeGraphs(model.proxyGraph, model.decisionGraph);
+  if (state.focus === "application") return mergeGraphs(model.appGraph, model.decisionGraph);
   return model.graph;
 }
 
-function classifyNode(node: AuthorizationNode): string {
+function classifyNode(node: AuthzNode): string {
   const resourceKind = node.coord.taxonomies["resource_kind"];
   if (resourceKind === "proxy_route") return "proxy";
   if (resourceKind === "domain_resource") return "application";
   if (node.kind === "decision") return "decision";
   if (node.kind === "policy") return "policy";
   if (node.kind === "enforcement_point") {
-    return node.coord.taxonomies["enforcement_kind"] === "service_middleware"
-      ? "application"
-      : "proxy";
+    return node.coord.taxonomies["enforcement_kind"] === "service_middleware" ? "application" : "proxy";
   }
   return "neutral";
 }
 
-function classifyRelation(relation: AuthorizationRelation): string {
+function classifyRelation(relation: AuthzRelation): string {
   if (relation.kind.startsWith("decision_")) return "decision";
   if (relation.kind === "evaluated_by") return "application";
-  if (relation.kind === "enforced_at" || relation.kind === "matches_resource") return "flow";
   if (relation.kind === "protects") return "policy";
+  if (relation.kind === "enforced_at" || relation.kind === "matches_resource") return "flow";
   return "neutral";
 }
 
 function renderSummary(container: HTMLElement, model: AuthzMonitorModel): void {
-  const report = auditAuthorizationGraph(model.graph);
+  const report = auditGraph(model.graph);
   container.innerHTML = `
-    <div class="azm-score">
-      <span class="azm-score-label">Audit</span>
-      <span class="azm-score-value ${report.ok ? "ok" : "bad"}">${report.ok ? "OK" : "Drift"}</span>
+    <div class="score">
+      <span>Audit</span>
+      <b class="${report.ok ? "ok" : "bad"}">${report.ok ? "OK" : "Drift"}</b>
     </div>
-    <div class="azm-kpis">
+    <div class="kpis">
       <div><b>${report.summary.routeCount}</b><span>proxy routes</span></div>
       <div><b>${report.summary.applicationResourceCount}</b><span>domain resources</span></div>
       <div><b>${report.summary.decisionCount}</b><span>decisions</span></div>
@@ -295,7 +273,7 @@ function renderSummary(container: HTMLElement, model: AuthzMonitorModel): void {
 }
 
 function renderTopology(container: HTMLElement, model: AuthzMonitorModel): void {
-  const graph = graphForFocus(model, STATE.focus);
+  const graph = graphForFocus(model);
   const nodes = graph.nodes;
   const nodeIndex = new Map(nodes.map((node, index) => [node.nodeId, index]));
   const width = 940;
@@ -309,9 +287,8 @@ function renderTopology(container: HTMLElement, model: AuthzMonitorModel): void 
     const lane = classifyNode(node);
     const count = laneCounts.get(lane) ?? 0;
     laneCounts.set(lane, count + 1);
-    const x = 95 + count * 155 + (lane === "decision" ? 40 : 0);
     positions.set(node.nodeId, {
-      x: Math.min(x, width - 100),
+      x: Math.min(95 + count * 155 + (lane === "decision" ? 40 : 0), width - 100),
       y: laneY.get(lane) ?? 350,
     });
   }
@@ -321,8 +298,7 @@ function renderTopology(container: HTMLElement, model: AuthzMonitorModel): void 
       const start = positions.get(relation.fromNodeId);
       const end = positions.get(relation.toNodeId);
       if (!start || !end) return "";
-      const relClass = classifyRelation(relation);
-      return `<path class="azm-edge ${relClass}" d="M ${start.x} ${start.y} C ${(start.x + end.x) / 2} ${start.y}, ${(start.x + end.x) / 2} ${end.y}, ${end.x} ${end.y}" data-rel="${escapeHtml(relation.kind)}" />`;
+      return `<path class="edge ${classifyRelation(relation)}" d="M ${start.x} ${start.y} C ${(start.x + end.x) / 2} ${start.y}, ${(start.x + end.x) / 2} ${end.y}, ${end.x} ${end.y}" />`;
     })
     .join("");
 
@@ -330,9 +306,9 @@ function renderTopology(container: HTMLElement, model: AuthzMonitorModel): void 
     .map((node) => {
       const pos = positions.get(node.nodeId);
       if (!pos) return "";
-      const selected = STATE.selectedNodeId === node.nodeId ? " selected" : "";
+      const selected = state.selectedNodeId === node.nodeId ? " selected" : "";
       return `
-        <button class="azm-node ${classifyNode(node)}${selected}" style="left:${pos.x - 58}px;top:${pos.y - 23}px" data-node-index="${nodeIndex.get(node.nodeId)}">
+        <button class="node ${classifyNode(node)}${selected}" style="left:${pos.x - 58}px;top:${pos.y - 23}px" data-node-index="${nodeIndex.get(node.nodeId)}">
           <span>${escapeHtml(node.kind)}</span>
           <b>${escapeHtml(node.coord.anchor)}</b>
         </button>
@@ -341,34 +317,32 @@ function renderTopology(container: HTMLElement, model: AuthzMonitorModel): void 
     .join("");
 
   container.innerHTML = `
-    <div class="azm-lanes">
+    <div class="lanes">
       <span style="top:40px">policy</span>
       <span style="top:116px">proxy gate</span>
       <span style="top:192px">application gate</span>
       <span style="top:268px">decision</span>
     </div>
-    <svg class="azm-graph-svg" viewBox="0 0 ${width} ${height}" aria-hidden="true">
-      ${lines}
-    </svg>
-    <div class="azm-graph-nodes">${nodeMarkup}</div>
+    <svg class="graph-svg" viewBox="0 0 ${width} ${height}" aria-hidden="true">${lines}</svg>
+    <div class="graph-nodes">${nodeMarkup}</div>
   `;
 
-  container.querySelectorAll<HTMLButtonElement>(".azm-node").forEach((button) => {
+  container.querySelectorAll<HTMLButtonElement>(".node").forEach((button) => {
     button.addEventListener("click", () => {
       const index = Number(button.dataset["nodeIndex"]);
-      STATE.selectedNodeId = nodes[index]?.nodeId ?? null;
-      refreshAuthzMonitor(container.closest(".azm-wrap") as HTMLElement, model);
+      state.selectedNodeId = nodes[index]?.nodeId ?? null;
+      refresh(model);
     });
   });
 }
 
 function renderInspector(container: HTMLElement, model: AuthzMonitorModel): void {
-  const selected = STATE.selectedNodeId
-    ? model.graph.nodes.find((node) => node.nodeId === STATE.selectedNodeId)
+  const selected = state.selectedNodeId
+    ? model.graph.nodes.find((node) => node.nodeId === state.selectedNodeId)
     : null;
   if (!selected) {
     container.innerHTML = `
-      <div class="azm-inspector-empty">
+      <div class="empty">
         <b>관측 노드를 선택하세요</b>
         <span>route, middleware, policy, decision 좌표와 relation을 확인합니다.</span>
       </div>
@@ -379,16 +353,16 @@ function renderInspector(container: HTMLElement, model: AuthzMonitorModel): void
   const incoming = model.graph.relations.filter((relation) => relation.toNodeId === selected.nodeId);
   const outgoing = model.graph.relations.filter((relation) => relation.fromNodeId === selected.nodeId);
   container.innerHTML = `
-    <div class="azm-ins-head">
+    <div class="ins-head">
       <span>${escapeHtml(selected.kind)}</span>
       <b>${escapeHtml(selected.coord.anchor)}</b>
     </div>
-    <dl class="azm-ins-meta">
+    <dl class="ins-meta">
       <dt>realm</dt><dd>${escapeHtml(selected.coord.realm)}</dd>
       <dt>space</dt><dd>${escapeHtml(selected.coord.space)}</dd>
       <dt>taxonomy</dt><dd>${escapeHtml(JSON.stringify(selected.coord.taxonomies))}</dd>
     </dl>
-    <div class="azm-rel-list">
+    <div class="rel-list">
       <h4>incoming</h4>
       ${incoming.map((relation) => `<code>${escapeHtml(relation.kind)}</code>`).join("") || "<span>none</span>"}
       <h4>outgoing</h4>
@@ -399,80 +373,61 @@ function renderInspector(container: HTMLElement, model: AuthzMonitorModel): void
 
 function renderSequence(container: HTMLElement): void {
   container.innerHTML = `
-    <div class="azm-step proxy">
-      <span>1</span>
-      <b>Proxy gate</b>
-      <p>host/path/method 기준으로 route를 차단하고 upstream service로 보냅니다.</p>
-      <code>proxy_route -> enforced_at -> nginx_proxy</code>
-    </div>
-    <div class="azm-step policy">
-      <span>2</span>
-      <b>Cerbos policy</b>
-      <p>동일한 policy id가 route와 domain resource를 보호합니다.</p>
-      <code>policy -> protects -> resource</code>
-    </div>
-    <div class="azm-step app">
-      <span>3</span>
-      <b>Application gate</b>
-      <p>서비스 내부에서 객체/컬럼/action 단위의 fine-grained check를 수행합니다.</p>
-      <code>domain_resource -> enforced_at -> service_middleware</code>
-    </div>
-    <div class="azm-step decision">
-      <span>4</span>
-      <b>Decision observation</b>
-      <p>principal, resource, action, policy, enforcement point를 decision node로 남깁니다.</p>
-      <code>decision -> decision_policy -> policy</code>
-    </div>
+    <div class="step proxy"><span>1</span><b>Proxy gate</b><p>host/path/method 기준으로 route를 차단하고 upstream service로 보냅니다.</p><code>proxy_route -> enforced_at -> nginx_proxy</code></div>
+    <div class="step policy"><span>2</span><b>Cerbos policy</b><p>동일한 policy id가 route와 domain resource를 보호합니다.</p><code>policy -> protects -> resource</code></div>
+    <div class="step app"><span>3</span><b>Application gate</b><p>서비스 내부에서 객체/컬럼/action 단위의 fine-grained check를 수행합니다.</p><code>domain_resource -> enforced_at -> service_middleware</code></div>
+    <div class="step decision"><span>4</span><b>Decision observation</b><p>principal, resource, action, policy, enforcement point를 decision node로 남깁니다.</p><code>decision -> decision_policy -> policy</code></div>
   `;
 }
 
-function renderFocusButtons(container: HTMLElement, model: AuthzMonitorModel): void {
-  container.querySelectorAll<HTMLButtonElement>("[data-focus]").forEach((button) => {
-    button.classList.toggle("active", button.dataset["focus"] === STATE.focus);
-    button.addEventListener("click", () => {
-      STATE.focus = (button.dataset["focus"] as FocusMode) ?? "all";
-      STATE.selectedNodeId = null;
-      refreshAuthzMonitor(container, model);
-    });
-  });
-}
-
-function refreshAuthzMonitor(root: HTMLElement, model: AuthzMonitorModel): void {
-  const summary = root.querySelector<HTMLElement>("#azm-summary");
-  const graph = root.querySelector<HTMLElement>("#azm-graph");
-  const inspector = root.querySelector<HTMLElement>("#azm-inspector");
+function refresh(model: AuthzMonitorModel): void {
+  const summary = document.querySelector<HTMLElement>("#summary");
+  const graph = document.querySelector<HTMLElement>("#graph");
+  const inspector = document.querySelector<HTMLElement>("#inspector");
   if (summary) renderSummary(summary, model);
   if (graph) renderTopology(graph, model);
   if (inspector) renderInspector(inspector, model);
-  renderFocusButtons(root, model);
+  document.querySelectorAll<HTMLButtonElement>("[data-focus]").forEach((button) => {
+    button.classList.toggle("active", button.dataset["focus"] === state.focus);
+  });
 }
 
-export function renderAuthzMonitorPage(container: HTMLElement): void {
+function renderApp(): void {
   const model = buildModel();
-  STATE.selectedNodeId = null;
-  container.innerHTML = `
-    <div class="azm-wrap">
-      <section class="azm-head">
-        <div>
-          <p class="azm-eyebrow">Authorization Ontology Monitor</p>
-          <h2>권한은 두 번 막고, 한 번의 graph로 관측한다.</h2>
-          <p>프록시는 입구를 차단하고, 애플리케이션은 도메인 리소스를 확인합니다. 두 계층의 Cerbos policy와 decision을 같은 좌표계에서 비교합니다.</p>
-        </div>
-        <div id="azm-summary" class="azm-summary"></div>
-      </section>
-      <section class="azm-controls" aria-label="권한 관측 필터">
-        <button data-focus="all" class="active">전체 경로</button>
-        <button data-focus="proxy">프록시 부여</button>
-        <button data-focus="application">애플리케이션 부여</button>
-      </section>
-      <section class="azm-workspace">
-        <div class="azm-graph" id="azm-graph"></div>
-        <aside class="azm-inspector" id="azm-inspector"></aside>
-      </section>
-      <section class="azm-sequence" id="azm-sequence"></section>
-    </div>
+  const app = document.querySelector<HTMLElement>("#app");
+  if (!app) return;
+
+  app.innerHTML = `
+    <section class="head">
+      <div>
+        <p class="eyebrow">Authorization Ontology Monitor</p>
+        <h1>권한은 두 번 막고, 한 번의 graph로 관측한다.</h1>
+        <p>프록시는 입구를 차단하고, 애플리케이션은 도메인 리소스를 확인합니다. 두 계층의 Cerbos policy와 decision을 같은 좌표계에서 비교합니다.</p>
+      </div>
+      <div id="summary" class="summary"></div>
+    </section>
+    <section class="controls" aria-label="권한 관측 필터">
+      <button data-focus="all" class="active">전체 경로</button>
+      <button data-focus="proxy">프록시 부여</button>
+      <button data-focus="application">애플리케이션 부여</button>
+    </section>
+    <section class="workspace">
+      <div class="graph" id="graph"></div>
+      <aside class="inspector" id="inspector"></aside>
+    </section>
+    <section class="sequence" id="sequence"></section>
   `;
 
-  renderSequence(container.querySelector<HTMLElement>("#azm-sequence")!);
-  refreshAuthzMonitor(container.querySelector<HTMLElement>(".azm-wrap")!, model);
+  document.querySelectorAll<HTMLButtonElement>("[data-focus]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.focus = (button.dataset["focus"] as FocusMode) ?? "all";
+      state.selectedNodeId = null;
+      refresh(model);
+    });
+  });
+
+  renderSequence(document.querySelector<HTMLElement>("#sequence")!);
+  refresh(model);
 }
+
+renderApp();
