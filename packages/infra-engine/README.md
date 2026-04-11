@@ -18,6 +18,7 @@
 - Config → Provision → Register → Verify → Observe 5단계 배포 파이프라인을 실행한다.
 - `registry-service`, `definition-service`, `gate-service`, `ingest-server`와의 연동을 adapter로 캡슐화한다.
 - CLI 표면과 라이브러리 표면을 같은 패키지에서 제공한다.
+- `infra authz graph`로 Nginx/Zitadel proxy config를 authorization ontology graph로 투영한다.
 
 ## 코드 진입점
 
@@ -28,6 +29,7 @@
 - `src/providers/*` — cloudflare/aws/gcp/railway/vultr/local provider
 - `src/adapters/*` — registry/gate/definition/ingest/coordinate/service-profile 연동
 - `src/cli/index.ts` — `infra` CLI 트리
+- `src/cli/cmd-authz.ts` — authorization topology graph 생성 명령
 
 ## 실행
 

@@ -1068,6 +1068,9 @@ importers:
       '@qa-sdk/core':
         specifier: workspace:*
         version: link:../core
+      authorization-ontology:
+        specifier: workspace:*
+        version: link:../authorization-ontology
       cli-command:
         specifier: workspace:*
         version: link:../cli-command

@@ -23,6 +23,7 @@
     "@pulumi/kubernetes": "^4.28.0",
     "@pulumi/pulumi": "^3.229.0",
     "@qa-sdk/core": "workspace:*",
+    "authorization-ontology": "workspace:*",
     "cli-command": "workspace:*",
     "demo-snapshot": "workspace:*",
     "execa": "^9.0.0",

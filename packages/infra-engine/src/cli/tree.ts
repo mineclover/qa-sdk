@@ -14,6 +14,7 @@ import { envUpHandler, envDownHandler, envStatusHandler, envResetHandler } from 
 import { versionListHandler, versionShowHandler, versionRollbackHandler } from "./cmd-version.js";
 import { secretsShowHandler, secretsInitHandler, secretsRotateHandler } from "./cmd-secrets.js";
 import { enrichmentStartHandler, enrichmentSetupHandler } from "./cmd-enrichment.js";
+import { authzGraphHandler } from "./cmd-authz.js";
 
 /** infra-engine CLI 명령 트리 */
 export const INFRA_COMMAND_TREE: CliCommandNode[] = [
@@ -153,6 +154,24 @@ export const INFRA_COMMAND_TREE: CliCommandNode[] = [
     children: [
       { segment: "start", description: "enrichment 서버 시작", handler: enrichmentStartHandler },
       { segment: "setup", description: "Zitadel Action + metadata 설정", handler: enrichmentSetupHandler },
+    ],
+  },
+  {
+    segment: "authz",
+    description: "authorization ontology topology",
+    children: [
+      {
+        segment: "graph",
+        description: "Nginx/Auth proxy config → authorization graph",
+        handler: authzGraphHandler,
+        options: [
+          { flag: "--nginx", type: "string", description: "Nginx config path" },
+          { flag: "--env", type: "string", description: "environment label" },
+          { flag: "--host", type: "string", description: "external host" },
+          { flag: "--proxy-id", type: "string", description: "proxy enforcement id" },
+          { flag: "--json", type: "boolean", description: "JSON 출력" },
+        ],
+      },
     ],
   },
 ];
