@@ -654,6 +654,21 @@ export interface AuthorizationGraphAuditReport {
   issues: AuthorizationAuditIssue[];
 }
 
+export interface AuthorizationCoverageMetric {
+  total: number;
+  covered: number;
+  score: number;
+}
+
+export interface AuthorizationCoverageReport {
+  proxyRouteCoverage: AuthorizationCoverageMetric;
+  applicationResourceCoverage: AuthorizationCoverageMetric;
+  decisionCompleteness: AuthorizationCoverageMetric;
+  policyActionConsistency: AuthorizationCoverageMetric;
+  routePolicyResourceCoverage: AuthorizationCoverageMetric;
+  overallScore: number;
+}
+
 export function createAuthorizationRealmId(input: Omit<AuthorizationRealm, "realmId">): string {
   const parts = [
     input.kind,
@@ -2664,6 +2679,164 @@ function policyProtectsResourceThroughRoute(
         resourceNodeIds.includes(relation.toNodeId),
     );
   });
+}
+
+function metric(total: number, covered: number): AuthorizationCoverageMetric {
+  return {
+    total,
+    covered,
+    score: total === 0 ? 1 : covered / total,
+  };
+}
+
+function averageScores(metrics: AuthorizationCoverageMetric[]): number {
+  const applicable = metrics.filter((item) => item.total > 0);
+  if (applicable.length === 0) return 1;
+  return applicable.reduce((sum, item) => sum + item.score, 0) / applicable.length;
+}
+
+function relationTargets(
+  graph: AuthorizationOntologyGraph,
+  fromNodeId: string,
+  kind: AuthorizationRelationKind,
+): string[] {
+  return graph.relations
+    .filter((relation) => relation.fromNodeId === fromNodeId && relation.kind === kind)
+    .map((relation) => relation.toNodeId);
+}
+
+function relationSources(
+  graph: AuthorizationOntologyGraph,
+  toNodeId: string,
+  kind: AuthorizationRelationKind,
+): string[] {
+  return graph.relations
+    .filter((relation) => relation.toNodeId === toNodeId && relation.kind === kind)
+    .map((relation) => relation.fromNodeId);
+}
+
+function hasAnyPolicyActionForDecision(
+  graph: AuthorizationOntologyGraph,
+  decisionNode: AuthorizationNode,
+  policyRelations: AuthorizationRelation[],
+  actionRelations: AuthorizationRelation[],
+  nodesById: Map<string, AuthorizationNode>,
+): boolean {
+  const effect = getNodeTaxonomy(decisionNode, "effect");
+  return policyRelations.some((policyRelation) => {
+    const policyNodeIds = findEquivalentNodeIds(graph, nodesById, policyRelation.toNodeId);
+    return actionRelations.some((actionRelation) => {
+      const actionNodeIds = findEquivalentNodeIds(graph, nodesById, actionRelation.toNodeId);
+      if (effect === "allow") {
+        return hasRelationBetweenAny(graph, "allows_action", policyNodeIds, actionNodeIds);
+      }
+      if (effect === "deny") {
+        return hasRelationBetweenAny(graph, "denies_action", policyNodeIds, actionNodeIds);
+      }
+      return (
+        hasRelationBetweenAny(graph, "allows_action", policyNodeIds, actionNodeIds) ||
+        hasRelationBetweenAny(graph, "denies_action", policyNodeIds, actionNodeIds)
+      );
+    });
+  });
+}
+
+function routeHasPolicyResourceBridge(
+  graph: AuthorizationOntologyGraph,
+  routeNode: AuthorizationNode,
+  nodesById: Map<string, AuthorizationNode>,
+): boolean {
+  const routePolicyIds = relationSources(graph, routeNode.nodeId, "protects");
+  if (routePolicyIds.length === 0) return false;
+  const upstreamIds = relationTargets(graph, routeNode.nodeId, "matches_resource");
+  if (upstreamIds.length === 0) return false;
+
+  return routePolicyIds.some((policyNodeId) => {
+    const policyNodeIds = findEquivalentNodeIds(graph, nodesById, policyNodeId);
+    return upstreamIds.some((upstreamId) => {
+      const upstreamNodeIds = findEquivalentNodeIds(graph, nodesById, upstreamId);
+      return policyNodeIds.some((candidatePolicyId) =>
+        upstreamNodeIds.some((candidateResourceId) =>
+          graph.relations.some(
+            (relation) =>
+              relation.kind === "protects" &&
+              relation.fromNodeId === candidatePolicyId &&
+              relation.toNodeId === candidateResourceId,
+          ),
+        ),
+      );
+    });
+  });
+}
+
+export function computeAuthorizationCoverage(
+  graph: AuthorizationOntologyGraph,
+  options: Pick<
+    AuthorizationGraphAuditOptions,
+    "routeResourceKinds" | "applicationResourceKinds"
+  > = {},
+): AuthorizationCoverageReport {
+  const routeResourceKinds = options.routeResourceKinds ?? ["proxy_route"];
+  const applicationResourceKinds = options.applicationResourceKinds ?? ["domain_resource"];
+  const nodesById = new Map(graph.nodes.map((node) => [node.nodeId, node]));
+  const routeNodes = graph.nodes.filter(
+    (node) =>
+      node.kind === "resource" &&
+      routeResourceKinds.includes(getNodeTaxonomy(node, "resource_kind") as AuthorizationResourceKind),
+  );
+  const applicationResourceNodes = graph.nodes.filter(
+    (node) =>
+      node.kind === "resource" &&
+      applicationResourceKinds.includes(
+        getNodeTaxonomy(node, "resource_kind") as AuthorizationResourceKind,
+      ),
+  );
+  const decisionNodes = graph.nodes.filter((node) => node.kind === "decision");
+
+  const routeCovered = routeNodes.filter(
+    (node) =>
+      relationSources(graph, node.nodeId, "protects").length > 0 &&
+      relationTargets(graph, node.nodeId, "enforced_at").length > 0 &&
+      relationTargets(graph, node.nodeId, "matches_resource").length > 0,
+  ).length;
+  const appCovered = applicationResourceNodes.filter(
+    (node) =>
+      relationSources(graph, node.nodeId, "protects").length > 0 &&
+      relationTargets(graph, node.nodeId, "enforced_at").length > 0,
+  ).length;
+  const decisionComplete = decisionNodes.filter(
+    (node) =>
+      relationTargets(graph, node.nodeId, "decision_principal").length > 0 &&
+      relationTargets(graph, node.nodeId, "decision_resource").length > 0 &&
+      relationTargets(graph, node.nodeId, "decision_action").length > 0 &&
+      relationTargets(graph, node.nodeId, "decision_policy").length > 0 &&
+      relationTargets(graph, node.nodeId, "decision_enforcement").length > 0,
+  ).length;
+  const policyActionConsistent = decisionNodes.filter((node) =>
+    hasAnyPolicyActionForDecision(
+      graph,
+      node,
+      getOutgoingRelations(graph, node.nodeId, "decision_policy"),
+      getOutgoingRelations(graph, node.nodeId, "decision_action"),
+      nodesById,
+    ),
+  ).length;
+  const routePolicyResourceCovered = routeNodes.filter((node) =>
+    routeHasPolicyResourceBridge(graph, node, nodesById),
+  ).length;
+
+  const metrics = {
+    proxyRouteCoverage: metric(routeNodes.length, routeCovered),
+    applicationResourceCoverage: metric(applicationResourceNodes.length, appCovered),
+    decisionCompleteness: metric(decisionNodes.length, decisionComplete),
+    policyActionConsistency: metric(decisionNodes.length, policyActionConsistent),
+    routePolicyResourceCoverage: metric(routeNodes.length, routePolicyResourceCovered),
+  };
+
+  return {
+    ...metrics,
+    overallScore: averageScores(Object.values(metrics)),
+  };
 }
 
 export function auditAuthorizationGraph(

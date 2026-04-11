@@ -49,7 +49,7 @@ def:
 
 ### Audit / Coverage
 
-- [ ] route-policy-domain-resource coverage score 계산
+- [x] route-policy-domain-resource coverage score 계산
 - [ ] proxy-only 보호 route와 app-only 보호 resource 차이 report
 - [ ] allow decision이 policy action과 불일치할 때 gate 실패 처리
 - [ ] dangling relation을 build/test gate로 승격

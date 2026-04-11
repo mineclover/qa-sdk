@@ -18,6 +18,7 @@
 - `parseNginxProxyLocations()`와 `projectNginxProxyConfig()`로 Nginx/Zitadel proxy config의 upstream/location/proxy_pass를 `nginx_proxy` enforcement route graph로 변환한다.
 - `NginxProxyConfigProjectionOptions.policyByPath`로 route path별 Cerbos policy를 합성해 `policy -> protects -> proxy_route` 관계를 관측한다.
 - `mergeAuthorizationGraphs()`와 `auditAuthorizationGraph()`로 정책 선언, proxy 적용, decision 관측 graph의 연결 누락을 검사한다.
+- `computeAuthorizationCoverage()`로 proxy/app/decision/policy-action/route-policy-resource coverage score를 계산한다.
 - `InMemoryAuthorizationGraphStore`, `diffAuthorizationGraphs()`, `diffAuthorizationGraphSnapshots()`로 graph snapshot 저장/조회/list/delete/diff의 최소 계약을 제공한다.
 - `AuthorizationGraphIngestService`로 decision/audit/middleware feedback projection을 graph snapshot으로 저장한다.
 - `evaluateColumnPolicyPropagation()`와 `projectColumnPolicyPropagation()`로 컬럼 리니지 transform에 따른 권한 전파 모드를 계산한다.

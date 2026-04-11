@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   auditAuthorizationGraph,
   AuthorizationGraphIngestService,
+  computeAuthorizationCoverage,
   createAuthorizationRealm,
   createAuthorizationRelation,
   diffAuthorizationGraphSnapshots,
@@ -1554,5 +1555,149 @@ server {
     expect(second.storedGraph.nodes.length).toBeGreaterThan(first.storedGraph.nodes.length);
     expect(await store.listSnapshots({ labels: { ingestKind: "cerbos_decision" } })).toHaveLength(1);
     expect(await store.listSnapshots({ tag: "permission_engine_middleware_feedback" })).toHaveLength(1);
+  });
+
+  it("computes authorization coverage scores for proxy, app, and decisions", () => {
+    const identityRealm = createAuthorizationRealm({
+      kind: "identity",
+      authority: "zitadel:prod",
+      environment: "prod",
+    });
+    const policyRealm = createAuthorizationRealm({
+      kind: "policy",
+      authority: "cerbos:prod",
+      environment: "prod",
+    });
+    const appRealm = createAuthorizationRealm({
+      kind: "application",
+      authority: "service:crm",
+      environment: "prod",
+    });
+    const enforcementRealm = createAuthorizationRealm({
+      kind: "enforcement",
+      authority: "service:crm",
+      environment: "prod",
+    });
+    const policyGraph = projectCerbosResourcePolicy({
+      policyRealm,
+      resourceRealm: appRealm,
+      policy: {
+        resourcePolicy: {
+          resource: "crm.customer_profile",
+          rules: [
+            {
+              actions: ["read", "export"],
+              effect: "EFFECT_ALLOW",
+              roles: ["analyst"],
+            },
+          ],
+        },
+      },
+    });
+    const routeGraph = projectStructuredEnforcementRoute({
+      environment: "prod",
+      route: {
+        host: "crm.example.com",
+        path: "/customers",
+      },
+      proxy: {
+        authority: "nginx:prod",
+        kind: "nginx_proxy",
+        id: "edge-nginx:crm",
+      },
+      upstream: {
+        authority: "service:crm",
+        id: "crm.customer_profile",
+      },
+      policy: {
+        authority: "cerbos:prod",
+        id: "cerbos:resource:crm.customer_profile",
+      },
+    });
+    const appGraph = projectStructuredApplicationAuthorization({
+      environment: "prod",
+      service: {
+        authority: "service:crm",
+        id: "crm-api",
+      },
+      middleware: {
+        authority: "service:crm",
+        id: "crm-api:cerbos-middleware",
+      },
+      resource: {
+        id: "crm.customer_profile:customer-123",
+        kind: "domain_resource",
+      },
+      policy: {
+        authority: "cerbos:prod",
+        id: "cerbos:resource:crm.customer_profile",
+      },
+      actions: ["read"],
+    });
+    const decisionGraph = projectCerbosDecisionObservation({
+      identityRealm,
+      resourceRealm: appRealm,
+      policyRealm,
+      enforcementPoint: {
+        realm: enforcementRealm,
+        enforcementPointId: "crm-api:cerbos-middleware",
+        kind: "service_middleware",
+      },
+      decision: {
+        requestId: "req-coverage",
+        principal: {
+          id: "user-1",
+          roles: ["analyst"],
+        },
+        resource: {
+          id: "crm.customer_profile",
+          kind: "service",
+        },
+        actions: [
+          {
+            action: "read",
+            effect: "EFFECT_ALLOW",
+            policyId: "cerbos:resource:crm.customer_profile",
+          },
+        ],
+      },
+    });
+
+    const full = computeAuthorizationCoverage(
+      mergeAuthorizationGraphs(policyGraph, routeGraph, appGraph, decisionGraph),
+    );
+
+    expect(full.proxyRouteCoverage.score).toBe(1);
+    expect(full.applicationResourceCoverage.score).toBe(1);
+    expect(full.decisionCompleteness.score).toBe(1);
+    expect(full.policyActionConsistency.score).toBe(1);
+    expect(full.routePolicyResourceCoverage.score).toBe(1);
+    expect(full.overallScore).toBe(1);
+
+    const degraded = computeAuthorizationCoverage(
+      mergeAuthorizationGraphs(
+        policyGraph,
+        projectStructuredEnforcementRoute({
+          environment: "prod",
+          route: {
+            host: "crm.example.com",
+            path: "/exports",
+          },
+          proxy: {
+            authority: "nginx:prod",
+            kind: "nginx_proxy",
+            id: "edge-nginx:crm",
+          },
+          upstream: {
+            authority: "service:crm",
+            id: "crm.customer_profile",
+          },
+        }),
+      ),
+    );
+
+    expect(degraded.proxyRouteCoverage.score).toBe(0);
+    expect(degraded.routePolicyResourceCoverage.score).toBe(0);
+    expect(degraded.overallScore).toBeLessThan(1);
   });
 });

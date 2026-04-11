@@ -52,3 +52,12 @@ audit layer는 다음 graph를 입력으로 받는다.
 Cerbos policy version은 선언 graph에는 `version=default`로 들어갈 수 있고, route/decision 관측에는 version 없이 들어올 수 있다. audit layer는 같은 realm/space/anchor를 가진 policy node를 equivalent policy로 취급해 이 차이를 흡수한다.
 
 audit result는 authorization 결정 결과가 아니라 graph completeness report다. 실제 allow/deny 판정은 계속 Cerbos가 담당한다.
+
+`computeAuthorizationCoverage()`는 audit 대상 graph를 운영 지표로 변환한다. 반환 항목은 다음과 같다.
+
+- proxy route coverage
+- application resource coverage
+- decision completeness
+- policy-action consistency
+- route-policy-resource bridge coverage
+- overall score

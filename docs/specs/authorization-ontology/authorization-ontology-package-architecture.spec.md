@@ -47,6 +47,7 @@ def:
 - `projectNginxProxyConfig`
 - `mergeAuthorizationGraphs`
 - `auditAuthorizationGraph`
+- `computeAuthorizationCoverage`
 - `AuthorizationGraphStore`
 - `InMemoryAuthorizationGraphStore`
 - `AuthorizationGraphIngestService`
