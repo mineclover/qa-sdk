@@ -419,6 +419,56 @@ export interface CerbosDecisionObservationProjectionInput {
   decision: CerbosDecisionObservationLike;
 }
 
+export type AuthorizationAuditSeverity = "error" | "warning";
+
+export type AuthorizationAuditIssueCode =
+  | "dangling_relation"
+  | "proxy_route_missing_enforcement"
+  | "proxy_route_missing_policy"
+  | "proxy_route_missing_upstream"
+  | "decision_missing_resource"
+  | "decision_missing_action"
+  | "decision_missing_policy"
+  | "decision_missing_enforcement"
+  | "decision_policy_action_unlinked"
+  | "decision_policy_resource_unlinked";
+
+export interface AuthorizationAuditIssue {
+  severity: AuthorizationAuditSeverity;
+  code: AuthorizationAuditIssueCode;
+  message: string;
+  nodeId?: string;
+  relationId?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface AuthorizationGraphAuditOptions {
+  routeResourceKinds?: AuthorizationResourceKind[];
+  requireRoutePolicy?: boolean;
+  requireRouteEnforcement?: boolean;
+  requireRouteUpstream?: boolean;
+  requireDecisionPolicy?: boolean;
+  requireDecisionEnforcement?: boolean;
+  requireDecisionPolicyAction?: boolean;
+  requireDecisionPolicyResource?: boolean;
+}
+
+export interface AuthorizationGraphAuditSummary {
+  routeCount: number;
+  protectedRouteCount: number;
+  enforcedRouteCount: number;
+  decisionCount: number;
+  decisionsWithPolicyCount: number;
+  errors: number;
+  warnings: number;
+}
+
+export interface AuthorizationGraphAuditReport {
+  ok: boolean;
+  summary: AuthorizationGraphAuditSummary;
+  issues: AuthorizationAuditIssue[];
+}
+
 export function createAuthorizationRealmId(input: Omit<AuthorizationRealm, "realmId">): string {
   const parts = [
     input.kind,
@@ -890,6 +940,16 @@ function uniqueRelations(relations: AuthorizationRelation[]): AuthorizationRelat
 
 function uniqueRealms(realms: AuthorizationRealm[]): AuthorizationRealm[] {
   return [...new Map(realms.map((realm) => [realm.realmId, realm])).values()];
+}
+
+export function mergeAuthorizationGraphs(
+  ...graphs: AuthorizationOntologyGraph[]
+): AuthorizationOntologyGraph {
+  return {
+    realms: uniqueRealms(graphs.flatMap((graph) => graph.realms)),
+    nodes: uniqueNodes(graphs.flatMap((graph) => graph.nodes)),
+    relations: uniqueRelations(graphs.flatMap((graph) => graph.relations)),
+  };
 }
 
 export function projectCerbosResourcePolicy(
@@ -1529,6 +1589,345 @@ export function projectCerbosDecisionObservation(
     ]),
     nodes: uniqueNodes(graphs.flatMap((graph) => graph.nodes)),
     relations: uniqueRelations(graphs.flatMap((graph) => graph.relations)),
+  };
+}
+
+function getNodeTaxonomy(node: AuthorizationNode, key: string): string | undefined {
+  return node.coord.taxonomies[key];
+}
+
+function createAuditIssue(input: AuthorizationAuditIssue): AuthorizationAuditIssue {
+  return input;
+}
+
+function getOutgoingRelations(
+  graph: AuthorizationOntologyGraph,
+  fromNodeId: string,
+  kind?: AuthorizationRelationKind,
+): AuthorizationRelation[] {
+  return graph.relations.filter(
+    (relation) =>
+      relation.fromNodeId === fromNodeId && (kind === undefined || relation.kind === kind),
+  );
+}
+
+function hasRelation(
+  graph: AuthorizationOntologyGraph,
+  kind: AuthorizationRelationKind,
+  fromNodeId: string,
+  toNodeId: string,
+): boolean {
+  return graph.relations.some(
+    (relation) =>
+      relation.kind === kind &&
+      relation.fromNodeId === fromNodeId &&
+      relation.toNodeId === toNodeId,
+  );
+}
+
+function findEquivalentNodeIds(
+  graph: AuthorizationOntologyGraph,
+  nodesById: Map<string, AuthorizationNode>,
+  nodeId: string,
+): string[] {
+  const node = nodesById.get(nodeId);
+  if (!node) {
+    return [nodeId];
+  }
+  return graph.nodes
+    .filter(
+      (candidate) =>
+        candidate.kind === node.kind &&
+        candidate.coord.realm === node.coord.realm &&
+        candidate.coord.space === node.coord.space &&
+        candidate.coord.anchor === node.coord.anchor,
+    )
+    .map((candidate) => candidate.nodeId);
+}
+
+function hasRelationBetweenAny(
+  graph: AuthorizationOntologyGraph,
+  kind: AuthorizationRelationKind,
+  fromNodeIds: string[],
+  toNodeIds: string[],
+): boolean {
+  return graph.relations.some(
+    (relation) =>
+      relation.kind === kind &&
+      fromNodeIds.includes(relation.fromNodeId) &&
+      toNodeIds.includes(relation.toNodeId),
+  );
+}
+
+function policyProtectsResourceThroughRoute(
+  graph: AuthorizationOntologyGraph,
+  policyNodeIds: string[],
+  resourceNodeIds: string[],
+  routeResourceKinds: AuthorizationResourceKind[],
+  nodesById: Map<string, AuthorizationNode>,
+): boolean {
+  return graph.relations.some((protectsRelation) => {
+    if (
+      protectsRelation.kind !== "protects" ||
+      !policyNodeIds.includes(protectsRelation.fromNodeId)
+    ) {
+      return false;
+    }
+    if (resourceNodeIds.includes(protectsRelation.toNodeId)) {
+      return true;
+    }
+    const protectedNode = nodesById.get(protectsRelation.toNodeId);
+    if (!protectedNode || protectedNode.kind !== "resource") {
+      return false;
+    }
+    const resourceKind = getNodeTaxonomy(protectedNode, "resource_kind");
+    if (!routeResourceKinds.includes(resourceKind as AuthorizationResourceKind)) {
+      return false;
+    }
+    return graph.relations.some(
+      (relation) =>
+        relation.kind === "matches_resource" &&
+        relation.fromNodeId === protectedNode.nodeId &&
+        resourceNodeIds.includes(relation.toNodeId),
+    );
+  });
+}
+
+export function auditAuthorizationGraph(
+  graph: AuthorizationOntologyGraph,
+  options: AuthorizationGraphAuditOptions = {},
+): AuthorizationGraphAuditReport {
+  const routeResourceKinds = options.routeResourceKinds ?? ["proxy_route"];
+  const requireRoutePolicy = options.requireRoutePolicy ?? true;
+  const requireRouteEnforcement = options.requireRouteEnforcement ?? true;
+  const requireRouteUpstream = options.requireRouteUpstream ?? true;
+  const requireDecisionPolicy = options.requireDecisionPolicy ?? true;
+  const requireDecisionEnforcement = options.requireDecisionEnforcement ?? true;
+  const requireDecisionPolicyAction = options.requireDecisionPolicyAction ?? true;
+  const requireDecisionPolicyResource = options.requireDecisionPolicyResource ?? true;
+
+  const nodesById = new Map(graph.nodes.map((node) => [node.nodeId, node]));
+  const issues: AuthorizationAuditIssue[] = [];
+
+  for (const relation of graph.relations) {
+    if (!nodesById.has(relation.fromNodeId) || !nodesById.has(relation.toNodeId)) {
+      issues.push(
+        createAuditIssue({
+          severity: "error",
+          code: "dangling_relation",
+          message: `Relation ${relation.kind} points to a missing node`,
+          relationId: relation.relationId,
+          metadata: {
+            fromNodeExists: nodesById.has(relation.fromNodeId),
+            toNodeExists: nodesById.has(relation.toNodeId),
+          },
+        }),
+      );
+    }
+  }
+
+  const routeNodes = graph.nodes.filter(
+    (node) =>
+      node.kind === "resource" &&
+      routeResourceKinds.includes(getNodeTaxonomy(node, "resource_kind") as AuthorizationResourceKind),
+  );
+  let protectedRouteCount = 0;
+  let enforcedRouteCount = 0;
+
+  for (const routeNode of routeNodes) {
+    const hasPolicy = graph.relations.some(
+      (relation) => relation.kind === "protects" && relation.toNodeId === routeNode.nodeId,
+    );
+    const hasEnforcement = graph.relations.some(
+      (relation) => relation.kind === "enforced_at" && relation.fromNodeId === routeNode.nodeId,
+    );
+    const hasUpstream = graph.relations.some(
+      (relation) => relation.kind === "matches_resource" && relation.fromNodeId === routeNode.nodeId,
+    );
+
+    if (hasPolicy) protectedRouteCount += 1;
+    if (hasEnforcement) enforcedRouteCount += 1;
+
+    if (requireRoutePolicy && !hasPolicy) {
+      issues.push(
+        createAuditIssue({
+          severity: "error",
+          code: "proxy_route_missing_policy",
+          message: `Proxy route ${routeNode.coord.anchor} is not protected by a policy`,
+          nodeId: routeNode.nodeId,
+        }),
+      );
+    }
+    if (requireRouteEnforcement && !hasEnforcement) {
+      issues.push(
+        createAuditIssue({
+          severity: "error",
+          code: "proxy_route_missing_enforcement",
+          message: `Proxy route ${routeNode.coord.anchor} has no enforcement point`,
+          nodeId: routeNode.nodeId,
+        }),
+      );
+    }
+    if (requireRouteUpstream && !hasUpstream) {
+      issues.push(
+        createAuditIssue({
+          severity: "warning",
+          code: "proxy_route_missing_upstream",
+          message: `Proxy route ${routeNode.coord.anchor} is not linked to an upstream resource`,
+          nodeId: routeNode.nodeId,
+        }),
+      );
+    }
+  }
+
+  const decisionNodes = graph.nodes.filter((node) => node.kind === "decision");
+  let decisionsWithPolicyCount = 0;
+
+  for (const decisionNode of decisionNodes) {
+    const policyRelations = getOutgoingRelations(graph, decisionNode.nodeId, "decision_policy");
+    const resourceRelations = getOutgoingRelations(graph, decisionNode.nodeId, "decision_resource");
+    const actionRelations = getOutgoingRelations(graph, decisionNode.nodeId, "decision_action");
+    const enforcementRelations = getOutgoingRelations(
+      graph,
+      decisionNode.nodeId,
+      "decision_enforcement",
+    );
+
+    if (policyRelations.length > 0) decisionsWithPolicyCount += 1;
+
+    if (resourceRelations.length === 0) {
+      issues.push(
+        createAuditIssue({
+          severity: "error",
+          code: "decision_missing_resource",
+          message: `Decision ${decisionNode.coord.anchor} has no resource relation`,
+          nodeId: decisionNode.nodeId,
+        }),
+      );
+    }
+    if (actionRelations.length === 0) {
+      issues.push(
+        createAuditIssue({
+          severity: "error",
+          code: "decision_missing_action",
+          message: `Decision ${decisionNode.coord.anchor} has no action relation`,
+          nodeId: decisionNode.nodeId,
+        }),
+      );
+    }
+    if (requireDecisionPolicy && policyRelations.length === 0) {
+      issues.push(
+        createAuditIssue({
+          severity: "error",
+          code: "decision_missing_policy",
+          message: `Decision ${decisionNode.coord.anchor} has no policy relation`,
+          nodeId: decisionNode.nodeId,
+        }),
+      );
+    }
+    if (requireDecisionEnforcement && enforcementRelations.length === 0) {
+      issues.push(
+        createAuditIssue({
+          severity: "warning",
+          code: "decision_missing_enforcement",
+          message: `Decision ${decisionNode.coord.anchor} has no enforcement relation`,
+          nodeId: decisionNode.nodeId,
+        }),
+      );
+    }
+
+    for (const policyRelation of policyRelations) {
+      const policyNodeIds = findEquivalentNodeIds(
+        graph,
+        nodesById,
+        policyRelation.toNodeId,
+      );
+      for (const actionRelation of actionRelations) {
+        const actionNodeIds = findEquivalentNodeIds(
+          graph,
+          nodesById,
+          actionRelation.toNodeId,
+        );
+        const allowsAction = hasRelationBetweenAny(
+          graph,
+          "allows_action",
+          policyNodeIds,
+          actionNodeIds,
+        );
+        const deniesAction = hasRelationBetweenAny(
+          graph,
+          "denies_action",
+          policyNodeIds,
+          actionNodeIds,
+        );
+        const effect = getNodeTaxonomy(decisionNode, "effect");
+        const actionLinked = allowsAction || deniesAction;
+        if (
+          requireDecisionPolicyAction &&
+          (!actionLinked || (effect === "allow" && !allowsAction))
+        ) {
+          issues.push(
+            createAuditIssue({
+              severity: effect === "allow" ? "error" : "warning",
+              code: "decision_policy_action_unlinked",
+              message: `Decision ${decisionNode.coord.anchor} action is not declared by its policy`,
+              nodeId: decisionNode.nodeId,
+              metadata: {
+                policyNodeId: policyRelation.toNodeId,
+                actionNodeId: actionRelation.toNodeId,
+                effect,
+              },
+            }),
+          );
+        }
+      }
+
+      for (const resourceRelation of resourceRelations) {
+        const resourceNodeIds = findEquivalentNodeIds(
+          graph,
+          nodesById,
+          resourceRelation.toNodeId,
+        );
+        const linked = policyProtectsResourceThroughRoute(
+          graph,
+          policyNodeIds,
+          resourceNodeIds,
+          routeResourceKinds,
+          nodesById,
+        );
+        if (requireDecisionPolicyResource && !linked) {
+          issues.push(
+            createAuditIssue({
+              severity: "warning",
+              code: "decision_policy_resource_unlinked",
+              message: `Decision ${decisionNode.coord.anchor} resource is not protected by its policy graph`,
+              nodeId: decisionNode.nodeId,
+              metadata: {
+                policyNodeId: policyRelation.toNodeId,
+                resourceNodeId: resourceRelation.toNodeId,
+              },
+            }),
+          );
+        }
+      }
+    }
+  }
+
+  const errors = issues.filter((issue) => issue.severity === "error").length;
+  const warnings = issues.filter((issue) => issue.severity === "warning").length;
+
+  return {
+    ok: errors === 0,
+    summary: {
+      routeCount: routeNodes.length,
+      protectedRouteCount,
+      enforcedRouteCount,
+      decisionCount: decisionNodes.length,
+      decisionsWithPolicyCount,
+      errors,
+      warnings,
+    },
+    issues,
   };
 }
 

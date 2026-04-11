@@ -25,6 +25,8 @@ def:
       type: contains
     - target: authorization-ontology-decision-observation
       type: contains
+    - target: authorization-ontology-audit-layer
+      type: contains
     - target: authorization-ontology-package-architecture
       type: contains
 ---

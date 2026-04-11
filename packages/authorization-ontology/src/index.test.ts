@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  auditAuthorizationGraph,
   createAuthorizationRealm,
   createAuthorizationRelation,
   createResourceNode,
   evaluateColumnPolicyPropagation,
+  mergeAuthorizationGraphs,
   normalizeCerbosResourcePolicy,
   normalizeCerbosDerivedRoles,
   normalizeStructuredEnforcementRoute,
@@ -747,6 +749,167 @@ server {
         "decision_enforcement",
         "derives_from",
         "inherits_policy_from",
+      ]),
+    );
+  });
+
+  it("audits policy declarations, proxy routes, and decision observations", () => {
+    const identityRealm = createAuthorizationRealm({
+      kind: "identity",
+      authority: "zitadel:prod",
+      environment: "prod",
+    });
+    const policyRealm = createAuthorizationRealm({
+      kind: "policy",
+      authority: "cerbos:prod",
+      environment: "prod",
+    });
+    const enforcementRealm = createAuthorizationRealm({
+      kind: "enforcement",
+      authority: "nginx:prod",
+      environment: "prod",
+    });
+    const appRealm = createAuthorizationRealm({
+      kind: "application",
+      authority: "service:crm",
+      environment: "prod",
+    });
+
+    const policyGraph = projectCerbosResourcePolicy({
+      policyRealm,
+      resourceRealm: appRealm,
+      policy: {
+        resourcePolicy: {
+          resource: "crm.customer_profile",
+          rules: [
+            {
+              actions: ["read"],
+              effect: "EFFECT_ALLOW",
+              roles: ["analyst"],
+            },
+          ],
+        },
+      },
+    });
+    const routeGraph = projectStructuredEnforcementRoute({
+      environment: "prod",
+      route: {
+        host: "crm.example.com",
+        path: "/customers",
+      },
+      proxy: {
+        authority: "nginx:prod",
+        kind: "nginx_proxy",
+        id: "nginx:crm",
+      },
+      upstream: {
+        authority: "service:crm",
+        id: "crm.customer_profile",
+      },
+      policy: {
+        authority: "cerbos:prod",
+        id: "cerbos:resource:crm.customer_profile",
+      },
+    });
+    const decisionGraph = projectCerbosDecisionObservation({
+      identityRealm,
+      resourceRealm: appRealm,
+      policyRealm,
+      enforcementPoint: {
+        realm: enforcementRealm,
+        enforcementPointId: "nginx:crm",
+        kind: "nginx_proxy",
+      },
+      decision: {
+        requestId: "req-audit",
+        principal: {
+          id: "user-1",
+          roles: ["analyst"],
+        },
+        resource: {
+          id: "crm.customer_profile",
+          kind: "service",
+        },
+        actions: [
+          {
+            action: "read",
+            effect: "EFFECT_ALLOW",
+            policyId: "cerbos:resource:crm.customer_profile",
+          },
+        ],
+      },
+    });
+
+    const report = auditAuthorizationGraph(
+      mergeAuthorizationGraphs(policyGraph, routeGraph, decisionGraph),
+    );
+
+    expect(report.ok).toBe(true);
+    expect(report.summary).toEqual(
+      expect.objectContaining({
+        routeCount: 1,
+        protectedRouteCount: 1,
+        decisionCount: 1,
+        decisionsWithPolicyCount: 1,
+        errors: 0,
+      }),
+    );
+
+    const brokenReport = auditAuthorizationGraph(
+      mergeAuthorizationGraphs(
+        projectStructuredEnforcementRoute({
+          environment: "prod",
+          route: {
+            host: "crm.example.com",
+            path: "/exports",
+          },
+          proxy: {
+            authority: "nginx:prod",
+            kind: "nginx_proxy",
+            id: "nginx:crm",
+          },
+          upstream: {
+            authority: "service:crm",
+            id: "crm.customer_profile",
+          },
+        }),
+        projectCerbosDecisionObservation({
+          identityRealm,
+          resourceRealm: appRealm,
+          policyRealm,
+          enforcementPoint: {
+            realm: enforcementRealm,
+            enforcementPointId: "nginx:crm",
+            kind: "nginx_proxy",
+          },
+          decision: {
+            requestId: "req-broken-audit",
+            principal: {
+              id: "user-1",
+              roles: ["analyst"],
+            },
+            resource: {
+              id: "crm.customer_profile",
+              kind: "service",
+            },
+            actions: [
+              {
+                action: "export",
+                effect: "EFFECT_ALLOW",
+                policyId: "cerbos:resource:crm.customer_profile",
+              },
+            ],
+          },
+        }),
+      ),
+    );
+
+    expect(brokenReport.ok).toBe(false);
+    expect(brokenReport.issues.map((issue) => issue.code)).toEqual(
+      expect.arrayContaining([
+        "proxy_route_missing_policy",
+        "decision_policy_action_unlinked",
+        "decision_policy_resource_unlinked",
       ]),
     );
   });
