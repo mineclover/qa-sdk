@@ -30,6 +30,11 @@
       "import": "./dist/prompt-artifacts.js",
       "require": "./dist/prompt-artifacts.cjs"
     },
+    "./programming-artifacts": {
+      "types": "./dist/programming-artifacts.d.ts",
+      "import": "./dist/programming-artifacts.js",
+      "require": "./dist/programming-artifacts.cjs"
+    },
     "./runtime": {
       "types": "./dist/runtime.d.ts",
       "import": "./dist/runtime.js",

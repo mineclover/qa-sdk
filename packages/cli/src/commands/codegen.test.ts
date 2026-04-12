@@ -27,6 +27,52 @@ describe("codegen command", () => {
     await rm(TMP, { recursive: true, force: true });
   });
 
+  it("codegen 산출물을 artifact registry record로 기록한다", async () => {
+    const output = join(TMP, "registry-output");
+    const artifactRegistry = join(TMP, "artifacts", "programming-artifacts.json");
+    const { DEMO_CATALOG } = await import("demo-snapshot");
+
+    await codegen({
+      output,
+      loadedCatalog: DEMO_CATALOG,
+      artifactRegistry,
+    });
+
+    const payload = JSON.parse(await readFile(artifactRegistry, "utf8")) as {
+      artifacts: Array<{
+        artifactRef: string;
+        kind: string;
+        producedByRef?: string;
+        ownerDefinitionId?: string;
+        materializesOutputRefs?: string[];
+        relations?: Array<{ kind: string; toRef: string }>;
+      }>;
+    };
+
+    expect(payload.artifacts.length).toBeGreaterThan(0);
+    expect(payload.artifacts[0]).toMatchObject({
+      kind: "generated-source",
+      producedByRef: "qa-sdk codegen",
+      ownerDefinitionId: "codegen-schema-output",
+      materializesOutputRefs: ["apm-codegen-system", "codegen-schema-output"],
+    });
+    expect(payload.artifacts[0]!.artifactRef).toContain("registry-output/");
+    expect(payload.artifacts[0]!.relations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "produced_by",
+          toRef: "qa-sdk codegen",
+        }),
+        expect.objectContaining({
+          kind: "owned_by_definition",
+          toRef: "codegen-schema-output",
+        }),
+      ]),
+    );
+
+    await rm(TMP, { recursive: true, force: true });
+  });
+
   it("catalog 경로가 존재하지 않으면 에러", async () => {
     await expect(
       codegen({ output: join(TMP, "empty"), catalog: "/nonexistent/path/catalog.ts" }),

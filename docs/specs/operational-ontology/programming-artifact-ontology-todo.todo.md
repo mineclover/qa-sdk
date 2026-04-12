@@ -11,8 +11,6 @@ def:
   links:
     - target: programming-artifact-ontology-plan
       type: refines
-    - target: operational-ontology-prompt-artifact-generation
-      type: depends_on
 ---
 
 # Programming Artifact Ontology — 구현 TODO
@@ -26,11 +24,22 @@ def:
 - [x] `PromptArtifactContextProvider` / registry 인터페이스 추가
 - [x] `qa-sdk ontology prompt extract-artifact <artifact-ref>` fallback CLI 추가
 - [x] `--persist-governance`로 prompt extraction governance evidence 저장
-- [ ] `programming-artifact-ontology` pack schema 초안 작성
-- [ ] artifact kind vocabulary 정의: build, generated-source, quality-status, deployment-output, prompt-artifact
-- [ ] artifact registry store 인터페이스 정의
-- [ ] build/codegen/quality export 명령에서 artifact registry record 생성
-- [ ] `extract-artifact`가 registry provider를 우선 사용하도록 연결
-- [ ] artifact provider용 unit test 추가
+- [x] `programming-artifact-ontology` pack schema 초안 작성
+- [x] artifact kind vocabulary 정의: build, generated-source, quality-status, deployment-output, prompt-artifact
+- [x] artifact relation vocabulary 정의: produced_by, derived_from, verifies, owned_by_definition, materializes_output
+- [x] artifact registry store 인터페이스 정의
+- [x] artifact registry provider를 `PromptArtifactContextProvider`로 구현
+- [x] 지속 개발 context 확인 순서와 handoff guide 작성
+- [x] artifact registry CLI surface spec 작성
+- [x] `extract-artifact`가 registry provider를 우선 사용하도록 연결
+- [x] artifact provider용 unit test 추가
+- [x] codegen/quality export 명령에서 artifact registry record 생성
+- [x] deployment-output, prompt-artifact 생성 경로에서 registry record 생성 대상 여부 결정
+- [x] export write path별 relation 채움 규칙 구현: produced_by, derived_from, verifies, owned_by_definition, materializes_output
+- [ ] build output registry hook 추가: CLI-owned build/export 산출물 경로가 생기면 `kind=build` record 생성 연결
+- [ ] deployment-output registry hook 구현: `infra deploy`/post-deploy output을 `kind=deployment-output` record로 append
+- [ ] prompt-artifact registry hook 구현: prompt artifact가 stdout이 아니라 파일/registry로 materialize될 때 `kind=prompt-artifact` record로 append
 - [ ] artifact ref가 없는 자유 문자열 fallback의 품질 등급을 별도 warning으로 분리
+- [x] `extract-artifact --json`에 registry hit/miss/file/doc/search fallback source를 구조화해 출력
+- [ ] artifact registry JSON validate/list/append CLI 필요 여부 결정
 - [ ] artifact governance run을 실제 quality gate 결과와 연결

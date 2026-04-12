@@ -5,6 +5,7 @@ import type { QualityGateSpec } from "work-domain";
 import {
   buildGateDiagnosis,
   buildQualityRunJsonResult,
+  buildQualityStatusArtifactRegistryRecord,
   buildReviewBindings,
   buildClaimAuditBindings,
   collectClaimAuditReviewScopes,
@@ -161,7 +162,7 @@ describe("quality claim audit helpers", () => {
 
 describe("quality CLI surface", () => {
   it("usage와 subcommand 해석에 quality export를 노출한다", () => {
-    expect(USAGE).toContain("qa-sdk quality export [bundle-id] [--output=<path>]");
+    expect(USAGE).toContain("qa-sdk quality export [bundle-id] [--output=<path>] [--artifact-registry=<file>]");
     expect(resolveSubcommand(["quality", "export", "quality-gates-system", "--output=artifacts/status.json"])).toEqual({
       name: "quality export",
       rest: ["quality-gates-system", "--output=artifacts/status.json"],
@@ -173,6 +174,63 @@ describe("quality CLI surface", () => {
       name: "quality diagnose",
       rest: ["gate-id", "--json"],
     });
+  });
+});
+
+describe("quality artifact registry records", () => {
+  it("quality export snapshot을 quality-status registry record로 변환한다", () => {
+    const record = buildQualityStatusArtifactRegistryRecord({
+      rootDir: "/repo",
+      rootId: "quality-gates-system",
+      output: "/repo/artifacts/quality-gates-system.json",
+      snapshot: {
+        rootId: "quality-gates-system",
+        generatedAt: "2026-04-12T00:00:00.000Z",
+        bundles: [
+          {
+            bundleId: "definition-quality-gates",
+            title: "Definition quality gates",
+            gateCount: 2,
+            claimCount: 3,
+            verifiedClaimCount: 3,
+            bundleState: "verified",
+            verifiedGates: 2,
+            totalGates: 2,
+            reviewScopes: [],
+          },
+        ],
+      },
+    });
+
+    expect(record).toMatchObject({
+      artifactId: "quality-status-quality-gates-system",
+      artifactRef: "artifacts/quality-gates-system.json",
+      kind: "quality-status",
+      producedByRef: "qa-sdk quality export quality-gates-system",
+      ownerDefinitionId: "quality-gates-system",
+      materializesOutputRefs: ["quality-gates-system"],
+      outputPath: "artifacts/quality-gates-system.json",
+    });
+    expect(record.derivedFromRefs).toEqual([
+      "quality-gates-system",
+      "definition-quality-gates",
+    ]);
+    expect(record.verifiesRefs).toEqual([
+      "quality-gates-system",
+      "definition-quality-gates",
+    ]);
+    expect(record.relations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "verifies",
+          toRef: "definition-quality-gates",
+        }),
+        expect.objectContaining({
+          kind: "materializes_output",
+          toRef: "quality-gates-system",
+        }),
+      ]),
+    );
   });
 });
 

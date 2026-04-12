@@ -69,9 +69,7 @@ def:
       type: contains
     - target: operational-ontology-rdf-bridge
       type: contains
-    - target: programming-artifact-ontology-plan
-      type: contains
-    - target: programming-artifact-ontology-todo
+    - target: programming-artifact-ontology-system
       type: contains
 ---
 
@@ -98,6 +96,8 @@ taxonomy를 먼저 schema로 선언하고 검증한 뒤, 그 schema에서 node, 
   - 승인된 schema와 taxonomy 좌표를 구현/검증 binding과 consistency constraint로 매칭하는 거버넌스 계약
 - **Prompt artifact plane**
   - governance evidence에서 작업영역별 `self_reflection` / `code_editing_rules`를 생성하는 파생 산출물 표면
+- **Programming artifact plane**
+  - build/generated/quality/deploy/prompt 산출물을 artifact registry provider로 해석하는 pack schema
 - **Instance plane**
   - `NodeCoord`
   - `RelationTypeCoord`
@@ -181,5 +181,4 @@ RDF bridge는 이 4층 전체에 대응되는 외부 의미 계층이다.
 - `operational-ontology-category-constraint` — category-constrained grammar와 운영 규칙
 - `operational-ontology-traversal-coordinate` — route identity와 purpose projection
 - `operational-ontology-rdf-bridge` — RDF와 operational coordinate의 대응 규칙
-- `programming-artifact-ontology-plan` — 외부 artifact provider/pack으로 산출물 context를 관리하는 장기 계획
-- `programming-artifact-ontology-todo` — programming artifact ontology 구현 항목
+- `programming-artifact-ontology-system` — build/generated/quality/deploy/prompt 산출물 vocabulary와 registry provider pack

@@ -12,7 +12,7 @@ export const QUALITY_COMMAND_DESCRIPTORS = [
   { id: "quality.root", path: ["quality"], handlerKey: "quality.list" },
   { id: "quality.list", path: ["quality", "list"], usage: "qa-sdk quality list [filters]      gate 문서 목록", handlerKey: "quality.list" },
   { id: "quality.status", path: ["quality", "status"], usage: "qa-sdk quality status [bundle-id]  quality bundle 상태 요약", handlerKey: "quality.status" },
-  { id: "quality.export", path: ["quality", "export"], usage: "qa-sdk quality export [bundle-id] [--output=<path>]  quality bundle 상태 JSON export", handlerKey: "quality.export" },
+  { id: "quality.export", path: ["quality", "export"], usage: "qa-sdk quality export [bundle-id] [--output=<path>] [--artifact-registry=<file>]  quality bundle 상태 JSON export", handlerKey: "quality.export" },
   { id: "quality.bundle", path: ["quality", "bundle"], usage: "qa-sdk quality bundle <bundle-id>  gate 번들 문서 조회", handlerKey: "quality.bundle" },
   { id: "quality.claims", path: ["quality", "claims"], usage: "qa-sdk quality claims <bundle-id>  contract claim 감사표 조회", handlerKey: "quality.claims" },
   { id: "quality.show", path: ["quality", "show"], usage: "qa-sdk quality show <gate-id>      gate 문서 상세", handlerKey: "quality.show" },

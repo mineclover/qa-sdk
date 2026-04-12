@@ -101,6 +101,102 @@ describe("ontology CLI", () => {
     expect(persisted.stdout).not.toContain("actions: close_governance_evidence");
   });
 
+  it("prompt extract-artifact --json reports registry hits as structured source", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-hit-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "build-dist-index",
+            artifactRef: "dist/index.js",
+            kind: "build",
+            producedByRef: "pnpm --filter @qa-sdk/cli build",
+            ownerDefinitionId: "programming-artifact-ontology-system",
+            materializesOutputRefs: ["@qa-sdk/cli"],
+            outputPath: "dist/index.js",
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "dist/index.js",
+        "--artifact-registry",
+        registryPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        kind: string;
+        registry: { status: string; providerId: string; recordCount: number };
+        warnings: string[];
+      };
+    };
+
+    expect(parsed.source).toMatchObject({
+      kind: "artifact-registry-hit",
+      registry: {
+        status: "hit",
+        providerId: "programming-artifact-registry",
+        recordCount: 1,
+      },
+      warnings: [],
+    });
+  });
+
+  it("prompt extract-artifact --json reports registry misses and search fallback", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-miss-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    await writeFile(registryPath, JSON.stringify({ artifacts: [] }), "utf8");
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        kind: string;
+        registry: { status: string; recordCount: number };
+        fallback?: { kind: string; target: string };
+        warnings: string[];
+        recommendedManagementActions: string[];
+      };
+    };
+
+    expect(parsed.source).toMatchObject({
+      kind: "artifact-search-fallback",
+      registry: {
+        status: "miss",
+        recordCount: 0,
+      },
+      fallback: {
+        kind: "search",
+        target: "unmanaged-artifact",
+      },
+      recommendedManagementActions: ["create_programming_artifact_registry_record"],
+    });
+    expect(parsed.source.warnings).toEqual([
+      "artifact-registry-miss",
+      "artifact-search-fallback",
+    ]);
+  }, 10_000);
+
   it("event ingest 후 snapshot list/show를 수행한다", async () => {
     const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-event-"));
     const storePath = join(dir, "store.json");

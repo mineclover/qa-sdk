@@ -41,6 +41,8 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
   self-check / converge / metrics / overview 종합 점검
 - `docs/skills/definition-boundary-workflow.md`
   boundary / boundary-context 기준의 문서 경계 정리와 영향 범위 읽기
+- `docs/specs/operational-ontology/programming-artifact-ontology-development-guide.spec.md`
+  programming artifact ontology 작업 전 context 확인 순서와 handoff 규칙
 - `skills/def-entry-sync/SKILL.md`
   기능 추가 뒤 root entry 문서와 skill index를 같이 갱신하는 체크리스트
 - `qa-sdk def body <문서ID>`

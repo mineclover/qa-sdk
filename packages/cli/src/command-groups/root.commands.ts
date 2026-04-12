@@ -64,6 +64,7 @@ export const ROOT_COMMAND_DESCRIPTORS = [
       { flag: "--catalog", valueHint: "<path>", type: "string", description: "Catalog 파일 경로 (TS/JS/JSON)" },
       { flag: "--registry", valueHint: "<url>", type: "string", description: "Registry URL (원격 카탈로그)" },
       { flag: "--output", valueHint: "<dir>", type: "string", description: "출력 디렉토리 (기본: ./generated)" },
+      { flag: "--artifact-registry", valueHint: "<file>", type: "string", description: "생성 산출물 registry JSON 기록" },
     ],
   },
   {
@@ -204,6 +205,8 @@ export function createRootHandlerRegistry(
           registry: { type: "string" },
           "catalog-id": { type: "string" },
           "data-objects": { type: "string" },
+          "artifact-registry": { type: "string" },
+          "owner-definition": { type: "string" },
           "test-migration": { type: "boolean" },
           prefix: { type: "string" },
           from: { type: "string" },
@@ -216,6 +219,8 @@ export function createRootHandlerRegistry(
         await codegenDataObjects({
           bindingsPath: values["data-objects"],
           output: values.output ?? "./generated",
+          artifactRegistry: values["artifact-registry"],
+          ownerDefinitionId: values["owner-definition"],
         });
         return;
       }
@@ -241,6 +246,8 @@ export function createRootHandlerRegistry(
           catalogId: values["catalog-id"],
           dkgConfig: values["dkg-config"],
           lockVersion: values["lock-version"],
+          artifactRegistry: values["artifact-registry"],
+          ownerDefinitionId: values["owner-definition"],
         });
         return;
       }
@@ -250,6 +257,8 @@ export function createRootHandlerRegistry(
         loadedCatalog,
         dkgConfig: values["dkg-config"],
         lockVersion: values["lock-version"],
+        artifactRegistry: values["artifact-registry"],
+        ownerDefinitionId: values["owner-definition"],
       });
     },
     "root.inspect": async (rest) => {

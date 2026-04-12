@@ -11,6 +11,9 @@
 - [operational-ontology-relation-category-schema.spec.md](../../docs/specs/operational-ontology/operational-ontology-relation-category-schema.spec.md) — relation type category schema 정의
 - [operational-ontology-schema-validation.spec.md](../../docs/specs/operational-ontology/operational-ontology-schema-validation.spec.md) — schema validation plane 정의
 - [operational-ontology-persistence.spec.md](../../docs/specs/operational-ontology/operational-ontology-persistence.spec.md) — facet bundle + append-only observation 저장 모델
+- [programming-artifact-ontology-system.spec.md](../../docs/specs/operational-ontology/programming-artifact-ontology-system.spec.md) — programming artifact vocabulary와 registry provider 초안
+- [programming-artifact-ontology-development-guide.spec.md](../../docs/specs/operational-ontology/programming-artifact-ontology-development-guide.spec.md) — programming artifact 지속 개발 context 확인 순서
+- [programming-artifact-ontology-cli.spec.md](../../docs/specs/operational-ontology/programming-artifact-ontology-cli.spec.md) — artifact registry 우선 CLI extraction surface
 - [operational-ontology-core-model.spec.md](../../docs/specs/operational-ontology/operational-ontology-core-model.spec.md) — NodeCoord, canonical identity, anchor 모델
 - [operational-ontology-relation-taxonomy.spec.md](../../docs/specs/operational-ontology/operational-ontology-relation-taxonomy.spec.md) — relation type 자체를 taxonomy로 다루는 규칙
 - [operational-ontology-edge-assertion.spec.md](../../docs/specs/operational-ontology/operational-ontology-edge-assertion.spec.md) — relation type이 특정 node pair에서 성립한 assertion 모델
@@ -64,6 +67,7 @@
 - `operationalOntologyTopologyPlane` — snapshot 조합과 topology validation
 - `operationalOntologyProjectors` — projector 모음
 - `operationalOntologyPersistencePlane` — object/facet/payload 저장 계약 검증
+- `operationalOntologyProgrammingArtifactPlane` — programming artifact pack/provider 초안
 
 ## Subpath Imports
 
@@ -80,6 +84,7 @@
 - `operational-ontology/projectors/path`
 - `operational-ontology/projectors/snapshot`
 - `operational-ontology/persistence`
+- `operational-ontology/programming-artifacts`
 
 `operational-ontology/projectors`는 aggregate convenience layer이고, 실제 책임 경계는 event/pipe/path/snapshot subpath에 맞춘다.
 
@@ -87,6 +92,7 @@
 
 - `src/index.ts` — 얇은 composition root. internal core 재수출과 facade 조합만 담당
 - `src/internal/schema-core.ts` — axis/taxonomy/relation/traversal schema와 검증
+- `src/internal/programming-artifact-core.ts` — programming artifact vocabulary, pack schema, registry provider
 - `src/internal/schema-memory.ts` — in-memory schema registry adapter
 - `src/internal/runtime-core.ts` — node/relation/edge/traversal/control-flow/runtime primitive
 - `src/internal/lineage-core.ts` — lineage transform, lineage link, lineage canonical key helper

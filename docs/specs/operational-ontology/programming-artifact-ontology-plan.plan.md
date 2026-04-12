@@ -9,10 +9,6 @@ def:
   layer: operation
   tags: [structural, observability, contract]
   links:
-    - target: operational-ontology-prompt-artifact-generation
-      type: refines
-    - target: operational-ontology-pack-interface
-      type: depends_on
     - target: decision-definition-bridge
       type: depends_on
 ---
@@ -25,7 +21,7 @@ def:
 
 ## 현재 목표
 
-현재 구현은 `PromptArtifactContextProvider`를 통해 외부 provider 주입 패턴을 열고, CLI에서 `extract-artifact` fallback을 제공하는 단계다. 산출물 ref가 code path나 doc id이면 기존 해석으로 위임하고, 자유 문자열이면 definition 후보 검색으로 최소 context를 만든다.
+현재 구현은 `programming-artifact-ontology` pack schema, artifact kind/relation vocabulary, in-memory registry store, `ArtifactRegistryPromptArtifactContextProvider`, `extract-artifact --artifact-registry` 우선 조회, `extract-artifact --json` fallback source 구조화, codegen/quality export registry append 초안까지 열린 단계다. 다음 목표는 build/deployment/prompt artifact 생성 경로를 실제 산출물 파일 write와 연결하고, governance closure를 quality gate 결과와 연결하는 것이다.
 
 ## 장기 목표
 
@@ -33,6 +29,8 @@ programming/artifact ontology는 별도 pack 또는 plugin으로 관리한다. �
 
 ## 단계
 
+0. 개발 지침과 context handoff 고정
+   system spec, plan, todo, CLI spec, development guide 순서를 세션 시작 표준으로 유지한다.
 1. Provider contract 안정화
    `PromptArtifactContextProvider`를 외부 plugin이 구현할 수 있는 최소 surface로 유지한다.
 2. Artifact vocabulary 정의
@@ -41,5 +39,13 @@ programming/artifact ontology는 별도 pack 또는 plugin으로 관리한다. �
    산출물 ref, producing command, source inputs, verification gate, owner definition을 저장한다.
 4. CLI provider 연결
    `qa-sdk ontology prompt extract-artifact`가 registry provider를 먼저 조회하고 fallback search는 보조 경로로만 사용한다.
-5. Governance closure 연결
+5. Export write path 연결
+   codegen과 quality export는 `--artifact-registry`로 registry record를 append한다. build output은 아직 CLI-owned export surface가 없어 factory만 공유하고, deployment output과 prompt artifact는 파일/registry로 materialized 되는 경로에서 record를 생성한다.
+6. Fallback 품질 분리
+   registry hit/miss, file/doc fallback, free-string search fallback을 CLI JSON `source`와 quality warning에서 구분한다.
+7. Governance closure 연결
    artifact extraction 결과를 실제 governance run persistence와 연결해 synthetic evidence 의존도를 낮춘다.
+
+## 다음 세션 기준
+
+다음 세션은 `programming-artifact-ontology-development-guide`의 컨텍스트 확인 순서를 먼저 따른다. 실행 목표는 `programming-artifact-ontology-todo`의 미완료 항목 중 export write path, fallback 품질 분리, governance closure 순서로 선택한다.

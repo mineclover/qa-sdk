@@ -142,8 +142,8 @@ const quality = operationalOntologyPromptArtifactPlane.evaluatePromptArtifactQua
 CLI에서는 `qa-sdk ontology prompt extract <doc-id> --use-case feature_modification --kind all`로 definition context 기반 artifact를 추출한다.
 코드 파일에서 시작할 때는 `qa-sdk ontology prompt extract-file <code-path[:symbol]> --use-case feature_modification --kind all`로 authoritative definition boundary를 먼저 해석한다.
 권한 기준에서 시작할 때는 `qa-sdk ontology prompt extract-permission <permission-ref> --kind all`로 authorization ontology의 permission 관련 context를 묶는다.
-산출물 기준에서 시작할 때는 `qa-sdk ontology prompt extract-artifact <artifact-ref> --artifact-type <type> --kind all`로 파일/doc/품질 게이트 후보를 연결한다.
-장기적으로 programming/artifact ontology는 `PromptArtifactContextProvider`를 구현한 외부 provider로 주입한다. provider는 `definition`, `code`, `permission`, `artifact` target을 `PromptArtifactDefinitionContextExtraction`으로 변환한다.
+산출물 기준에서 시작할 때는 `qa-sdk ontology prompt extract-artifact <artifact-ref> --artifact-type <type> --artifact-registry <file> --kind all`로 registry record를 먼저 조회하고, 없으면 파일/doc/품질 게이트 후보 검색으로 내려간다.
+programming/artifact ontology는 `PromptArtifactContextProvider`를 구현한 provider로 주입한다. provider는 artifact registry record를 `PromptArtifactDefinitionContextExtraction`으로 변환하고, 일반 provider contract는 `definition`, `code`, `permission`, `artifact` target을 같은 출력 형태로 맞춘다.
 usecase에서 필수가 아닌 품질 차원은 `applicable: false`로 표시하고 score 계산과 management action에서 제외한다.
 `close_governance_evidence`가 남으면 `--persist-governance --store <file>`로 synthetic governance evaluation을 운영 store에 기록하고 재추출한다.
 

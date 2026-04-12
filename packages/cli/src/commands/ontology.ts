@@ -65,6 +65,11 @@ import {
   PROMPT_ARTIFACT_KINDS,
   PROMPT_ARTIFACT_USE_CASES,
 } from "operational-ontology/prompt-artifacts";
+import {
+  ArtifactRegistryPromptArtifactContextProvider,
+  InMemoryProgrammingArtifactRegistryStore,
+  type ProgrammingArtifactRegistryRecord,
+} from "operational-ontology/programming-artifacts";
 import { getQaSdkDir } from "../lib/qa-dir.js";
 
 interface PersistedOntologyStoreFile {
@@ -72,6 +77,40 @@ interface PersistedOntologyStoreFile {
   facets: OperationalOntologyFacetRecord[];
   observations: OperationalOntologyObservationRecord[];
   projections: OperationalOntologyProjectionRecord[];
+}
+
+interface ProgrammingArtifactRegistryFile {
+  artifacts?: ProgrammingArtifactRegistryRecord[];
+}
+
+type ArtifactExtractionSourceKind =
+  | "artifact-registry-hit"
+  | "artifact-registry-miss"
+  | "artifact-file-fallback"
+  | "artifact-definition-fallback"
+  | "artifact-search-fallback";
+
+interface ArtifactExtractionSource {
+  kind: ArtifactExtractionSourceKind;
+  registry: {
+    status: "hit" | "miss" | "not-provided";
+    path?: string;
+    providerId?: string;
+    recordCount?: number;
+  };
+  fallback?: {
+    kind: "file" | "definition" | "search";
+    target: string;
+    matchedDocs?: readonly string[];
+  };
+  warnings: readonly string[];
+  recommendedManagementActions: readonly string[];
+}
+
+interface LoadedArtifactRegistryProvider {
+  provider: ArtifactRegistryPromptArtifactContextProvider;
+  registryPath: string;
+  recordCount: number;
 }
 
 const DEFAULT_STORE_FILE = join(getQaSdkDir(), "operational-ontology-store.json");
@@ -131,6 +170,25 @@ async function loadStore(storePath: string): Promise<InMemoryOperationalOntology
     await store.putProjection(projection);
   }
   return store;
+}
+
+async function loadArtifactRegistryProvider(
+  flags: Record<string, string>,
+): Promise<LoadedArtifactRegistryProvider | undefined> {
+  const registryPath = flags["artifact-registry"] ?? flags["artifact-registry-file"];
+  if (!registryPath) return undefined;
+
+  const payload = await loadJsonFile<
+    ProgrammingArtifactRegistryRecord[] | ProgrammingArtifactRegistryFile
+  >(resolve(registryPath));
+  const records = Array.isArray(payload) ? payload : payload.artifacts ?? [];
+  return {
+    provider: new ArtifactRegistryPromptArtifactContextProvider(
+      new InMemoryProgrammingArtifactRegistryStore(records),
+    ),
+    registryPath: resolve(registryPath),
+    recordCount: records.length,
+  };
 }
 
 async function saveStore(
@@ -225,6 +283,71 @@ function inferArtifactType(artifactRef: string): string | undefined {
   if (artifactRef.includes("build")) return "build";
   if (artifactRef.includes("schema")) return "schema";
   return undefined;
+}
+
+function parseArtifactExtractionSource(
+  flags: Record<string, string>,
+): ArtifactExtractionSource | undefined {
+  const value = flags["artifact-source"];
+  if (!value) return undefined;
+  return JSON.parse(value) as ArtifactExtractionSource;
+}
+
+function artifactRegistryHitSource(
+  loadedRegistry: LoadedArtifactRegistryProvider,
+): ArtifactExtractionSource {
+  return {
+    kind: "artifact-registry-hit",
+    registry: {
+      status: "hit",
+      path: loadedRegistry.registryPath,
+      providerId: loadedRegistry.provider.providerId,
+      recordCount: loadedRegistry.recordCount,
+    },
+    warnings: [],
+    recommendedManagementActions: [],
+  };
+}
+
+function artifactFallbackSource(input: {
+  kind: Exclude<ArtifactExtractionSourceKind, "artifact-registry-hit" | "artifact-registry-miss">;
+  fallbackKind: "file" | "definition" | "search";
+  target: string;
+  loadedRegistry?: LoadedArtifactRegistryProvider;
+  matchedDocs?: readonly string[];
+}): ArtifactExtractionSource {
+  const registryStatus = input.loadedRegistry
+    ? {
+        status: "miss" as const,
+        path: input.loadedRegistry.registryPath,
+        providerId: input.loadedRegistry.provider.providerId,
+        recordCount: input.loadedRegistry.recordCount,
+      }
+    : { status: "not-provided" as const };
+  const warnings = [
+    ...(input.loadedRegistry ? ["artifact-registry-miss"] : []),
+    ...(input.kind === "artifact-search-fallback" ? ["artifact-search-fallback"] : []),
+  ];
+  return {
+    kind: input.kind,
+    registry: registryStatus,
+    fallback: {
+      kind: input.fallbackKind,
+      target: input.target,
+      ...(input.matchedDocs ? { matchedDocs: input.matchedDocs } : {}),
+    },
+    warnings,
+    recommendedManagementActions: input.kind === "artifact-search-fallback"
+      ? ["create_programming_artifact_registry_record"]
+      : [],
+  };
+}
+
+function withArtifactSourceFlag(
+  args: readonly string[],
+  source: ArtifactExtractionSource,
+): string[] {
+  return [...args, "--artifact-source", JSON.stringify(source)];
 }
 
 async function defDocWithBody(source: Awaited<ReturnType<typeof createDataSource>>, doc: DefDoc) {
@@ -359,6 +482,7 @@ async function cmdPromptExtract(rest: string[]): Promise<void> {
     printJson({
       docId,
       useCase,
+      source: parseArtifactExtractionSource(flags),
       workArea: extraction.workArea,
       sourceSummary: {
         corridors: extraction.sources.corridors?.length ?? 0,
@@ -481,6 +605,7 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
       boundaryDocId: mapping.anchor.docId,
       contextDocId: docId,
       useCase,
+      source: parseArtifactExtractionSource(flags),
       workArea,
       artifacts: evaluations,
     });
@@ -615,26 +740,98 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
   const artifactRef = positional[0];
   if (!artifactRef) {
     console.error(
-      "Usage: qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--json] [--local|--server|--scan] [--db <path>]",
+      "Usage: qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--json] [--local|--server|--scan] [--db <path>]",
     );
-    return;
-  }
-
-  if (artifactRef.startsWith("packages/") || artifactRef.startsWith("docs/")) {
-    await cmdPromptExtractFile(rest);
     return;
   }
 
   const kind = parsePromptArtifactKind(flags["kind"]);
   const useCase = parsePromptArtifactUseCase(flags["use-case"] ?? "release_verification");
-  const source = await createDataSource(toDefinitionDataSourceOptions(flags));
-  const directDoc = await source.get(artifactRef);
-  if (directDoc) {
-    await cmdPromptExtract([artifactRef, ...rest.slice(1)]);
+  const artifactType = flags["artifact-type"] ?? inferArtifactType(artifactRef);
+  const loadedRegistry = await loadArtifactRegistryProvider(flags);
+  const registryExtraction = loadedRegistry?.provider.resolve({
+    targetKind: "artifact",
+    targetRef: artifactRef,
+    useCase,
+    now: new Date().toISOString(),
+    metadata: artifactType ? { artifactType } : undefined,
+  });
+  if (loadedRegistry && registryExtraction) {
+    await maybePersistGovernanceEvidence(flags, registryExtraction);
+    const artifacts = kind === "all"
+      ? generatePromptArtifacts({ ...registryExtraction, useCase })
+      : [generatePromptArtifact({ ...registryExtraction, kind, useCase })];
+    const evaluations = artifacts.map((artifact) => ({
+      artifact,
+      quality: evaluatePromptArtifactQuality({
+        artifact,
+        workArea: registryExtraction.workArea,
+        sources: registryExtraction.sources,
+      }),
+    }));
+
+    if (flags["json"] === "true") {
+      printJson({
+        artifactRef,
+        artifactType,
+        providerId: loadedRegistry.provider.providerId,
+        source: artifactRegistryHitSource(loadedRegistry),
+        useCase,
+        workArea: registryExtraction.workArea,
+        artifacts: evaluations,
+      });
+      return;
+    }
+
+    console.log(`artifact: ${artifactRef}`);
+    if (artifactType) console.log(`artifactType: ${artifactType}`);
+    console.log(`provider: ${loadedRegistry.provider.providerId}`);
+    for (const { artifact, quality } of evaluations) {
+      console.log(`--- ${artifact.kind} ---`);
+      console.log(`artifactId: ${artifact.artifactId}`);
+      console.log(`useCase: ${artifact.useCase ?? "(none)"}`);
+      console.log(`quality: ${quality.grade} (${quality.score})`);
+      console.log(`ontologyManagementRequired: ${quality.ontologyManagementRequired}`);
+      if (quality.recommendedManagementActions.length > 0) {
+        console.log(
+          `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(", ")}`,
+        );
+      }
+      if (flags["quality-only"] !== "true") {
+        console.log(artifact.content);
+      }
+    }
     return;
   }
 
-  const artifactType = flags["artifact-type"] ?? inferArtifactType(artifactRef);
+  if (artifactRef.startsWith("packages/") || artifactRef.startsWith("docs/")) {
+    await cmdPromptExtractFile(withArtifactSourceFlag(
+      rest,
+      artifactFallbackSource({
+        kind: "artifact-file-fallback",
+        fallbackKind: "file",
+        target: artifactRef,
+        loadedRegistry,
+      }),
+    ));
+    return;
+  }
+
+  const source = await createDataSource(toDefinitionDataSourceOptions(flags));
+  const directDoc = await source.get(artifactRef);
+  if (directDoc) {
+    await cmdPromptExtract(withArtifactSourceFlag(
+      [artifactRef, ...rest.slice(1)],
+      artifactFallbackSource({
+        kind: "artifact-definition-fallback",
+        fallbackKind: "definition",
+        target: artifactRef,
+        loadedRegistry,
+      }),
+    ));
+    return;
+  }
+
   const query = flags["q"] ?? artifactRef.split(/[/:#]/).filter(Boolean).at(-1) ?? artifactRef;
   const candidates = await source.list({ q: query, limit: 8 });
   const rootDoc = {
@@ -686,6 +883,13 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
     printJson({
       artifactRef,
       artifactType,
+      source: artifactFallbackSource({
+        kind: "artifact-search-fallback",
+        fallbackKind: "search",
+        target: query,
+        loadedRegistry,
+        matchedDocs: candidates.map((doc) => doc.docId),
+      }),
       matchedDocs: candidates.map((doc) => doc.docId),
       useCase,
       workArea,
@@ -1812,7 +2016,7 @@ export async function cliOntology(args: string[]): Promise<void> {
           "  qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--json]",
           "  qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--json]",
           "  qa-sdk ontology prompt extract-permission <permission-ref> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--json]",
-          "  qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--json]",
+          "  qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--json]",
           "  qa-sdk ontology snapshot ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]",
           "  qa-sdk ontology snapshot list [--store <file>] [--scope <scope>] [--json]",
           "  qa-sdk ontology snapshot show <snapshot-id> [--store <file>] [--json]",

@@ -48,6 +48,17 @@ import {
   validatePromptArtifact,
 } from "./internal/prompt-artifact-core.js";
 import {
+  ArtifactRegistryPromptArtifactContextProvider,
+  InMemoryProgrammingArtifactRegistryStore,
+  PROGRAMMING_ARTIFACT_KINDS,
+  PROGRAMMING_ARTIFACT_RELATION_KINDS,
+  buildProgrammingArtifactRelations,
+  createProgrammingArtifactRegistryRecord,
+  extractPromptArtifactSourcesFromProgrammingArtifactRecord,
+  programmingArtifactOntologyPack,
+  validateProgrammingArtifactOntologyPack,
+} from "./internal/programming-artifact-core.js";
+import {
   validateOperationalOntologyPack,
   validateOperationalOntologyPacks,
 } from "./internal/pack-core.js";
@@ -71,6 +82,7 @@ export * from "./internal/persistence-query.js";
 export * from "./internal/persistence-service.js";
 export * from "./internal/persistence-diff.js";
 export * from "./internal/prompt-artifact-core.js";
+export * from "./internal/programming-artifact-core.js";
 
 // ── Architecture Facades ───────────────────────────────
 
@@ -101,6 +113,18 @@ export const operationalOntologyPromptArtifactPlane = {
   validatePromptArtifact,
   evaluatePromptArtifactQuality,
   extractPromptArtifactSourcesFromDefinitionContext,
+};
+
+export const operationalOntologyProgrammingArtifactPlane = {
+  PROGRAMMING_ARTIFACT_KINDS,
+  PROGRAMMING_ARTIFACT_RELATION_KINDS,
+  programmingArtifactOntologyPack,
+  validateProgrammingArtifactOntologyPack,
+  InMemoryProgrammingArtifactRegistryStore,
+  ArtifactRegistryPromptArtifactContextProvider,
+  createProgrammingArtifactRegistryRecord,
+  buildProgrammingArtifactRelations,
+  extractPromptArtifactSourcesFromProgrammingArtifactRecord,
 };
 
 export const operationalOntologyCorridorPlane = {

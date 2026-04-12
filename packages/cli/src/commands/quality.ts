@@ -8,9 +8,13 @@
 
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { execa, execaSync } from "execa";
 import { createDataSource, type DataSourceOptions } from "definition-data-source";
+import {
+  createProgrammingArtifactRegistryRecord,
+  type ProgrammingArtifactRegistryRecord,
+} from "operational-ontology/programming-artifacts";
 import {
   CONTRACT_MARKER_NAMES,
   assembleContract,
@@ -47,6 +51,9 @@ import type {
 import {
   generateVerificationClaimAudit,
 } from "spec-tracker";
+import {
+  appendProgrammingArtifactRegistryRecord,
+} from "../lib/programming-artifact-registry.js";
 import { getQaSdkDir } from "../lib/qa-dir.js";
 
 const QA_DIR = getQaSdkDir();
@@ -1421,8 +1428,53 @@ async function cmdExport(
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   writeFileSync(output, JSON.stringify(snapshot, null, 2) + "\n");
 
+  if (flags["artifact-registry"]) {
+    const record = buildQualityStatusArtifactRegistryRecord({
+      rootDir,
+      rootId,
+      output,
+      snapshot,
+    });
+    await appendProgrammingArtifactRegistryRecord(flags["artifact-registry"], record);
+    console.log(`artifact registry: ${record.artifactId} -> ${flags["artifact-registry"]}`);
+  }
+
   console.log(`written: ${output}`);
   console.log(`bundles: ${snapshot.bundles.length}`);
+}
+
+export function buildQualityStatusArtifactRegistryRecord(input: {
+  rootDir: string;
+  rootId: string;
+  output: string;
+  snapshot: QualityStatusSnapshot;
+}): ProgrammingArtifactRegistryRecord {
+  const outputPath = portablePath(input.rootDir, input.output);
+  const bundleIds = input.snapshot.bundles.map((bundle) => bundle.bundleId);
+  return createProgrammingArtifactRegistryRecord({
+    artifactId: `quality-status-${input.rootId}`,
+    artifactRef: outputPath,
+    kind: "quality-status",
+    producedByRef: `qa-sdk quality export ${input.rootId}`,
+    derivedFromRefs: [input.rootId, ...bundleIds],
+    verifiesRefs: [input.rootId, ...bundleIds],
+    ownerDefinitionId: input.rootId,
+    materializesOutputRefs: [input.rootId],
+    outputPath,
+    verificationRefs: bundleIds,
+    createdAt: input.snapshot.generatedAt,
+    metadata: {
+      rootId: input.rootId,
+      bundleCount: input.snapshot.bundles.length,
+    },
+  });
+}
+
+function portablePath(rootDir: string, filePath: string): string {
+  const resolved = resolve(filePath);
+  const rel = relative(rootDir, resolved);
+  if (rel && !rel.startsWith("..") && !isAbsolute(rel)) return rel;
+  return filePath;
 }
 
 async function cmdList(
@@ -2012,7 +2064,7 @@ function printUsage(): void {
   console.log(`Usage:
   qa-sdk quality list [--local|--server|--scan] [--domain=<id>] [--kind=<id>] [--story=<id>] [--pkg=<name>] [--q=<text>]
   qa-sdk quality status [bundle-or-system-id] [--json]
-  qa-sdk quality export [bundle-or-system-id] [--output=<path>]
+  qa-sdk quality export [bundle-or-system-id] [--output=<path>] [--artifact-registry=<file>]
   qa-sdk quality bundle <bundle-doc-id> [--local|--server|--scan]
   qa-sdk quality claims <bundle-doc-id>
   qa-sdk quality show <gate-doc-id> [--local|--server|--scan]
