@@ -72,6 +72,8 @@ interface UiState {
   selectedId: string | null;
   filter: "all" | NodeLane;
   sourceName: string;
+  storeSection: StoreSectionKey;
+  selectedRecordKey: string | null;
 }
 
 type StoreSectionKey = "objects" | "facets" | "observations" | "projections";
@@ -222,6 +224,8 @@ const state: UiState = {
   selectedId: null,
   filter: "all",
   sourceName: "sample store",
+  storeSection: "projections",
+  selectedRecordKey: null,
 };
 
 const sampleFiles: SampleFile[] = [
@@ -289,6 +293,18 @@ function escapeHtml(value: string): string {
     .replaceAll('"', "&quot;");
 }
 
+function stringField(record: unknown, key: string): string | undefined {
+  if (!isRecord(record)) return undefined;
+  const value = record[key];
+  return typeof value === "string" ? value : undefined;
+}
+
+function arrayLengthField(record: unknown, key: string): number {
+  if (!isRecord(record)) return 0;
+  const value = record[key];
+  return Array.isArray(value) ? value.length : 0;
+}
+
 function metricLabel(key: string): string {
   return metricLabels[key] ?? key.replace(/([A-Z])/g, " $1").toLowerCase();
 }
@@ -331,6 +347,138 @@ function renderStorePrimer(store: OntologyStoreFile): string {
           </div>
         `).join("")}
       </dl>
+    </section>
+  `;
+}
+
+function storeRecordKey(section: StoreSectionKey, record: unknown, index: number): string {
+  switch (section) {
+    case "objects":
+      return stringField(record, "objectId") ?? `${section}:${index}`;
+    case "facets":
+      return [
+        stringField(record, "objectId"),
+        stringField(record, "facetKind"),
+        stringField(record, "version"),
+      ].filter(Boolean).join(":") || `${section}:${index}`;
+    case "observations":
+      return stringField(record, "observationId") ?? `${section}:${index}`;
+    case "projections":
+      return stringField(record, "projectionId") ?? `${section}:${index}`;
+  }
+}
+
+function storeRecordTitle(section: StoreSectionKey, record: unknown): string {
+  switch (section) {
+    case "objects":
+      return stringField(record, "objectId") ?? "object";
+    case "facets":
+      return stringField(record, "objectId") ?? "facet";
+    case "observations":
+      return stringField(record, "observationKind") ?? "observation";
+    case "projections":
+      return stringField(record, "projectionId") ?? "projection";
+  }
+}
+
+function storeRecordKind(section: StoreSectionKey, record: unknown): string {
+  switch (section) {
+    case "objects":
+      return stringField(record, "objectKind") ?? "object";
+    case "facets":
+      return stringField(record, "facetKind") ?? "facet";
+    case "observations":
+      return stringField(record, "targetObjectId") ?? "target";
+    case "projections":
+      return stringField(record, "projectionKind") ?? "projection";
+  }
+}
+
+function storeRecordDetail(section: StoreSectionKey, record: unknown): string {
+  switch (section) {
+    case "objects":
+      return stringField(record, "canonicalKey") ?? stringField(record, "lifecycle") ?? "";
+    case "facets":
+      return stringField(record, "version") ?? stringField(record, "sourceRef") ?? "";
+    case "observations":
+      return stringField(record, "observationId") ?? "";
+    case "projections": {
+      const targetScope = stringField(record, "targetScope") ?? "scope";
+      const builtFromCount = arrayLengthField(record, "builtFrom");
+      return `${targetScope} · built from ${builtFromCount}`;
+    }
+  }
+}
+
+function storeRecordTimestamp(section: StoreSectionKey, record: unknown): string {
+  switch (section) {
+    case "objects":
+      return stringField(record, "updatedAt") ?? "";
+    case "facets":
+      return stringField(record, "recordedAt") ?? "";
+    case "observations":
+      return stringField(record, "observedAt") ?? "";
+    case "projections":
+      return stringField(record, "builtAt") ?? "";
+  }
+}
+
+function renderStoreBrowser(store: OntologyStoreFile): string {
+  const section = storeSections.find((entry) => entry.key === state.storeSection) ?? storeSections[0];
+  const records = store[section.key] as readonly unknown[];
+  const rows = records.map((record, index) => {
+    const key = storeRecordKey(section.key, record, index);
+    return {
+      key,
+      record,
+      title: storeRecordTitle(section.key, record),
+      kind: storeRecordKind(section.key, record),
+      detail: storeRecordDetail(section.key, record),
+      timestamp: storeRecordTimestamp(section.key, record),
+    };
+  });
+  const selected = rows.find((row) => row.key === state.selectedRecordKey) ?? rows[0];
+
+  return `
+    <section class="store-browser" aria-label="Store records">
+      <div class="record-header">
+        <div>
+          <p class="eyebrow">Store records</p>
+          <h2>${escapeHtml(section.label)}</h2>
+          <p>${escapeHtml(section.summary)}</p>
+        </div>
+        <nav class="record-tabs" aria-label="Store record type">
+          ${storeSections.map((entry) => `
+            <button type="button" class="${state.storeSection === entry.key ? "active" : ""}" data-store-section="${entry.key}">
+              ${escapeHtml(entry.label)}
+              <span>${store[entry.key].length}</span>
+            </button>
+          `).join("")}
+        </nav>
+      </div>
+      <div class="record-grid">
+        <div class="record-list" role="list">
+          ${rows.length === 0 ? `<p class="empty-records">No ${escapeHtml(section.label.toLowerCase())} in this store.</p>` : rows.map((row) => `
+            <button type="button" role="listitem" class="${selected?.key === row.key ? "selected" : ""}" data-store-record-key="${escapeHtml(row.key)}">
+              <span>${escapeHtml(row.kind)}</span>
+              <strong>${escapeHtml(row.title)}</strong>
+              <small>${escapeHtml(row.detail)}</small>
+            </button>
+          `).join("")}
+        </div>
+        <div class="record-detail">
+          ${selected ? `
+            <div class="record-detail-head">
+              <span>${escapeHtml(selected.kind)}</span>
+              <strong>${escapeHtml(selected.title)}</strong>
+              <small>${escapeHtml(selected.timestamp)}</small>
+            </div>
+            <pre>${escapeHtml(JSON.stringify(selected.record, null, 2))}</pre>
+          ` : `
+            <p>No record selected.</p>
+          `}
+        </div>
+      </div>
     </section>
   `;
 }
@@ -407,6 +555,8 @@ function renderApp(): void {
 
     ${renderStorePrimer(state.store)}
 
+    ${renderStoreBrowser(state.store)}
+
     <section class="workspace">
       <div class="map">
         <div class="source-line">Source: ${escapeHtml(state.sourceName)}</div>
@@ -442,10 +592,26 @@ function renderApp(): void {
     });
   });
 
+  app.querySelectorAll<HTMLButtonElement>("[data-store-section]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.storeSection = button.dataset["storeSection"] as StoreSectionKey;
+      state.selectedRecordKey = null;
+      renderApp();
+    });
+  });
+
+  app.querySelectorAll<HTMLButtonElement>("[data-store-record-key]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.selectedRecordKey = button.dataset["storeRecordKey"] ?? null;
+      renderApp();
+    });
+  });
+
   app.querySelector<HTMLButtonElement>("#sample-button")?.addEventListener("click", () => {
     state.store = sampleStore;
     state.sourceName = "sample store";
     state.selectedId = null;
+    state.selectedRecordKey = null;
     renderApp();
   });
 
@@ -457,6 +623,7 @@ function renderApp(): void {
       state.store = asStoreFile((await response.json()) as unknown);
       state.sourceName = path;
       state.selectedId = null;
+      state.selectedRecordKey = null;
       renderApp();
     });
   });
@@ -470,6 +637,7 @@ function renderApp(): void {
       state.store = asStoreFile(parsed);
       state.sourceName = file.name;
       state.selectedId = null;
+      state.selectedRecordKey = null;
       renderApp();
     } catch (error) {
       window.alert(error instanceof Error ? error.message : "Invalid store JSON");

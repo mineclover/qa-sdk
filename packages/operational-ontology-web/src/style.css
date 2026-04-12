@@ -52,7 +52,8 @@ button {
 .observations,
 .metrics,
 .filters,
-.store-primer {
+.store-primer,
+.store-browser {
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(8px);
@@ -255,6 +256,155 @@ h2 {
 .store-terms .reads {
   color: var(--ink);
   font-weight: 800;
+}
+
+.store-browser {
+  border-top: 0;
+  padding: 22px;
+}
+
+.record-header {
+  display: grid;
+  grid-template-columns: minmax(240px, 360px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.record-header p:last-child {
+  margin: 10px 0 0;
+  color: var(--muted);
+}
+
+.record-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.record-tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid #bac5b7;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 10px 12px;
+  font-weight: 800;
+}
+
+.record-tabs button.active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
+.record-tabs span {
+  color: inherit;
+  opacity: 0.76;
+}
+
+.record-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.42fr) minmax(0, 1fr);
+  min-height: 380px;
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.record-list {
+  max-height: 520px;
+  overflow: auto;
+  border-right: 1px solid var(--line);
+  background: rgba(248, 250, 245, 0.66);
+}
+
+.record-list button {
+  display: grid;
+  width: 100%;
+  gap: 4px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  padding: 13px 14px;
+  text-align: left;
+}
+
+.record-list button:hover,
+.record-list button.selected {
+  background: #fff;
+}
+
+.record-list button.selected {
+  box-shadow: inset 4px 0 0 var(--green);
+}
+
+.record-list span {
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.record-list strong,
+.record-list small {
+  overflow-wrap: anywhere;
+}
+
+.record-list strong {
+  font-size: 13px;
+}
+
+.record-list small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.empty-records {
+  margin: 0;
+  padding: 16px;
+  color: var(--muted);
+}
+
+.record-detail {
+  min-width: 0;
+  padding: 16px;
+}
+
+.record-detail-head {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.record-detail-head span {
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.record-detail-head strong,
+.record-detail-head small {
+  overflow-wrap: anywhere;
+}
+
+.record-detail-head strong {
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.record-detail-head small {
+  color: var(--muted);
+}
+
+.record-detail pre {
+  max-height: 420px;
 }
 
 .workspace {
@@ -464,7 +614,9 @@ td {
   .shell-header,
   .workspace,
   .observations,
-  .store-primer {
+  .store-primer,
+  .record-header,
+  .record-grid {
     grid-template-columns: 1fr;
   }
 
@@ -483,6 +635,16 @@ td {
 
   .store-terms div:nth-child(2n) {
     border-right: 0;
+  }
+
+  .record-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .record-list {
+    max-height: 260px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
   }
 
   .map {
