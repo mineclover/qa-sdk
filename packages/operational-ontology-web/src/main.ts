@@ -612,6 +612,52 @@ function allStoreRecordRows(store: OntologyStoreFile): StoreRecordRow[] {
   return storeSections.flatMap((section) => storeRecordRows(store, section.key));
 }
 
+function findStoreRecordRow(store: OntologyStoreFile, section: StoreSectionKey, key: string): StoreRecordRow | undefined {
+  return storeRecordRows(store, section).find((row) => row.key === key);
+}
+
+function graphNodeIdForStoreRecord(row: StoreRecordRow, model: OntologyGraphViewModel): string | null {
+  const nodeIds = new Set(model.nodes.map((node) => node.id));
+  const candidates =
+    row.section === "objects"
+      ? [stringField(row.record, "objectId")]
+      : row.section === "projections"
+        ? [stringField(row.record, "projectionId")]
+        : row.section === "facets"
+          ? [stringField(row.record, "objectId"), stringField(row.record, "sourceRef")]
+          : [stringField(row.record, "targetObjectId"), stringField(row.record, "observationId")];
+  return candidates.find((candidate): candidate is string => candidate !== undefined && nodeIds.has(candidate)) ?? null;
+}
+
+function storeRecordForGraphNode(store: OntologyStoreFile, nodeId: string): StoreRecordRow | undefined {
+  const projection = storeRecordRows(store, "projections").find((row) => stringField(row.record, "projectionId") === nodeId);
+  if (projection) return projection;
+  const object = storeRecordRows(store, "objects").find((row) => stringField(row.record, "objectId") === nodeId);
+  if (object) return object;
+  const facet = storeRecordRows(store, "facets").find((row) => stringField(row.record, "objectId") === nodeId || stringField(row.record, "sourceRef") === nodeId);
+  if (facet) return facet;
+  return storeRecordRows(store, "observations").find((row) => stringField(row.record, "targetObjectId") === nodeId);
+}
+
+function selectStoreRecord(row: StoreRecordRow, model: OntologyGraphViewModel): void {
+  state.storeSection = row.section;
+  state.selectedRecordKey = row.key;
+  const graphNodeId = graphNodeIdForStoreRecord(row, model);
+  state.selectedId = graphNodeId;
+  if (graphNodeId && state.filter !== "all") {
+    const node = model.nodes.find((entry) => entry.id === graphNodeId);
+    if (node && node.lane !== state.filter) state.filter = "all";
+  }
+}
+
+function selectGraphNode(store: OntologyStoreFile, nodeId: string): void {
+  state.selectedId = nodeId;
+  const record = storeRecordForGraphNode(store, nodeId);
+  if (!record) return;
+  state.storeSection = record.section;
+  state.selectedRecordKey = record.key;
+}
+
 function isReferenceKey(key: string): boolean {
   const lower = key.toLowerCase();
   return (
@@ -1093,12 +1139,13 @@ function renderRelatedRecords(related: RelatedRecordRow[]): string {
   `;
 }
 
-function renderStoreBrowser(store: OntologyStoreFile): string {
+function renderStoreBrowser(store: OntologyStoreFile, model: OntologyGraphViewModel): string {
   const section = storeSections.find((entry) => entry.key === state.storeSection) ?? storeSections[0];
   const rows = storeRecordRows(store, section.key);
   const selected = rows.find((row) => row.key === state.selectedRecordKey) ?? rows[0];
   const insight = selected ? recordInsight(section.key, selected.record) : null;
   const related = selected ? relatedRecords(store, selected) : [];
+  const selectedGraphNodeId = selected ? graphNodeIdForStoreRecord(selected, model) : null;
 
   return `
     <section class="store-browser" aria-label="Store records">
@@ -1119,13 +1166,16 @@ function renderStoreBrowser(store: OntologyStoreFile): string {
       </div>
       <div class="record-grid">
         <div class="record-list" role="list">
-          ${rows.length === 0 ? `<p class="empty-records">No ${escapeHtml(section.label.toLowerCase())} in this store.</p>` : rows.map((row) => `
-            <button type="button" role="listitem" class="${selected?.key === row.key ? "selected" : ""}" data-store-record-key="${escapeHtml(row.key)}">
+          ${rows.length === 0 ? `<p class="empty-records">No ${escapeHtml(section.label.toLowerCase())} in this store.</p>` : rows.map((row) => {
+            const graphNodeId = graphNodeIdForStoreRecord(row, model);
+            return `
+            <button type="button" role="listitem" class="${selected?.key === row.key ? "selected" : ""} ${graphNodeId ? "graph-linked" : ""}" data-store-record-key="${escapeHtml(row.key)}">
               <span>${escapeHtml(row.kind)}</span>
               <strong>${escapeHtml(row.title)}</strong>
-              <small>${escapeHtml(row.detail)}</small>
+              <small>${escapeHtml(graphNodeId ? `Graph node: ${graphNodeId}` : row.detail)}</small>
             </button>
-          `).join("")}
+          `;
+          }).join("")}
         </div>
         <div class="record-detail">
           ${selected ? `
@@ -1133,6 +1183,7 @@ function renderStoreBrowser(store: OntologyStoreFile): string {
               <span>${escapeHtml(selected.kind)}</span>
               <strong>${escapeHtml(selected.title)}</strong>
               <small>${escapeHtml(selected.timestamp)}</small>
+              ${selectedGraphNodeId ? `<small class="graph-link-note">Linked graph node: ${escapeHtml(selectedGraphNodeId)}</small>` : ""}
             </div>
             ${insight ? renderRecordInsight(insight) : ""}
             ${renderRelatedRecords(related)}
@@ -1147,8 +1198,8 @@ function renderStoreBrowser(store: OntologyStoreFile): string {
   `;
 }
 
-function renderInspector(model: OntologyGraphViewModel): string {
-  const selected = model.nodes.find((node) => node.id === state.selectedId) ?? model.nodes[0];
+function renderInspector(model: OntologyGraphViewModel, selectedNodeId: string | null): string {
+  const selected = model.nodes.find((node) => node.id === selectedNodeId) ?? model.nodes[0];
   if (!selected) {
     return `<section class="inspector"><h2>Inspector</h2><p>No ontology data loaded.</p></section>`;
   }
@@ -1178,6 +1229,10 @@ function renderObservationRows(store: OntologyStoreFile): string {
 
 function renderApp(): void {
   const model = operationalStoreToOntologyView(state.store);
+  const activeStoreRecord =
+    (state.selectedRecordKey ? findStoreRecordRow(state.store, state.storeSection, state.selectedRecordKey) : undefined) ??
+    storeRecordRows(state.store, state.storeSection)[0];
+  const activeGraphNodeId = state.selectedId ?? (activeStoreRecord ? graphNodeIdForStoreRecord(activeStoreRecord, model) : null);
   const visibleModel = visibleModelForFilter(model);
   const app = document.querySelector<HTMLDivElement>("#app");
   if (!app) return;
@@ -1224,14 +1279,14 @@ function renderApp(): void {
 
     ${renderReadPath()}
 
-    ${renderStoreBrowser(state.store)}
+    ${renderStoreBrowser(state.store, model)}
 
     <section class="workspace">
       <div class="map">
         <div class="source-line">Source: ${escapeHtml(state.sourceName)}</div>
-        <div class="topology">${renderOntologyGraphSvg(layoutOntologyGraph(visibleModel, { laneOrder: ["snapshot", "corridor", "checkpoint", "traversal", "governance"], nodeWidth: 150 }), { selectedNodeId: state.selectedId })}</div>
+        <div class="topology">${renderOntologyGraphSvg(layoutOntologyGraph(visibleModel, { laneOrder: ["snapshot", "corridor", "checkpoint", "traversal", "governance"], nodeWidth: 150 }), { selectedNodeId: activeGraphNodeId })}</div>
       </div>
-      ${renderInspector(visibleModel)}
+      ${renderInspector(visibleModel, activeGraphNodeId)}
     </section>
 
     <section class="observations">
@@ -1254,9 +1309,10 @@ function renderApp(): void {
     });
   });
 
-  app.querySelectorAll<HTMLButtonElement>("[data-node-id]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.selectedId = button.dataset["nodeId"] ?? null;
+  app.querySelectorAll<SVGGElement>("[data-node-id]").forEach((node) => {
+    node.addEventListener("click", () => {
+      const nodeId = node.dataset["nodeId"];
+      if (nodeId) selectGraphNode(state.store, nodeId);
       renderApp();
     });
   });
@@ -1271,15 +1327,21 @@ function renderApp(): void {
 
   app.querySelectorAll<HTMLButtonElement>("[data-store-record-key]").forEach((button) => {
     button.addEventListener("click", () => {
-      state.selectedRecordKey = button.dataset["storeRecordKey"] ?? null;
+      const key = button.dataset["storeRecordKey"];
+      if (!key) return;
+      const row = findStoreRecordRow(state.store, state.storeSection, key);
+      if (row) selectStoreRecord(row, model);
       renderApp();
     });
   });
 
   app.querySelectorAll<HTMLButtonElement>("[data-related-section]").forEach((button) => {
     button.addEventListener("click", () => {
-      state.storeSection = button.dataset["relatedSection"] as StoreSectionKey;
-      state.selectedRecordKey = button.dataset["relatedRecordKey"] ?? null;
+      const section = button.dataset["relatedSection"] as StoreSectionKey | undefined;
+      const key = button.dataset["relatedRecordKey"];
+      if (!section || !key) return;
+      const row = findStoreRecordRow(state.store, section, key);
+      if (row) selectStoreRecord(row, model);
       renderApp();
     });
   });

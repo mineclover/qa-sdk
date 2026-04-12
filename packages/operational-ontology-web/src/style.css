@@ -453,6 +453,10 @@ h2 {
   box-shadow: inset 4px 0 0 var(--green);
 }
 
+.record-list button.graph-linked {
+  background: #fbfcf8;
+}
+
 .record-list span {
   color: var(--green);
   font-size: 11px;
@@ -510,6 +514,11 @@ h2 {
 
 .record-detail-head small {
   color: var(--muted);
+}
+
+.graph-link-note {
+  color: var(--green);
+  font-weight: 800;
 }
 
 .record-insight {
