@@ -91,6 +91,19 @@ interface SampleFile {
   path: string;
 }
 
+interface InsightFact {
+  label: string;
+  value: string;
+}
+
+interface RecordInsight {
+  title: string;
+  description: string;
+  facts: InsightFact[];
+  interpretation: string[];
+  sourceRefs: string[];
+}
+
 const sampleStore: OntologyStoreFile = {
   objects: [
     {
@@ -305,6 +318,57 @@ function arrayLengthField(record: unknown, key: string): number {
   return Array.isArray(value) ? value.length : 0;
 }
 
+function payloadJson(record: unknown): unknown {
+  return isRecord(record) ? record["payloadJson"] : undefined;
+}
+
+function payloadRecord(record: unknown): Record<string, unknown> | undefined {
+  const payload = payloadJson(record);
+  return isRecord(payload) ? payload : undefined;
+}
+
+function payloadArrayLength(record: unknown, key: string): number {
+  const payload = payloadRecord(record);
+  const value = payload?.[key];
+  return Array.isArray(value) ? value.length : 0;
+}
+
+function payloadString(record: unknown, key: string): string | undefined {
+  const payload = payloadRecord(record);
+  const value = payload?.[key];
+  return typeof value === "string" ? value : undefined;
+}
+
+function payloadBoolean(record: unknown, key: string): boolean | undefined {
+  const payload = payloadRecord(record);
+  const value = payload?.[key];
+  return typeof value === "boolean" ? value : undefined;
+}
+
+function nestedPayloadBoolean(record: unknown, parentKey: string, childKey: string): boolean | undefined {
+  const parent = payloadRecord(record)?.[parentKey];
+  if (!isRecord(parent)) return undefined;
+  const value = parent[childKey];
+  return typeof value === "boolean" ? value : undefined;
+}
+
+function payloadKeys(record: unknown): string[] {
+  return Object.keys(payloadRecord(record) ?? {});
+}
+
+function formatCount(value: number, label: string): string {
+  return `${value} ${label}`;
+}
+
+function formatList(values: readonly string[], empty = "none"): string {
+  if (values.length === 0) return empty;
+  return values.slice(0, 4).join(", ") + (values.length > 4 ? ` +${values.length - 4}` : "");
+}
+
+function humanizeKind(value: string): string {
+  return value.replaceAll("_", " ");
+}
+
 function metricLabel(key: string): string {
   return metricLabels[key] ?? key.replace(/([A-Z])/g, " $1").toLowerCase();
 }
@@ -347,6 +411,33 @@ function renderStorePrimer(store: OntologyStoreFile): string {
           </div>
         `).join("")}
       </dl>
+    </section>
+  `;
+}
+
+function renderReadPath(): string {
+  return `
+    <section class="read-path" aria-label="Operational ontology read path">
+      <div>
+        <span>1</span>
+        <strong>Signal enters</strong>
+        <p>Observations capture evaluator, traversal, and runtime events.</p>
+      </div>
+      <div>
+        <span>2</span>
+        <strong>Identity is anchored</strong>
+        <p>Objects give each schema, traversal, edge, or governance run a stable coordinate.</p>
+      </div>
+      <div>
+        <span>3</span>
+        <strong>Facts attach</strong>
+        <p>Facets add status, route, evidence, aggregate, and validation details.</p>
+      </div>
+      <div>
+        <span>4</span>
+        <strong>View is rebuilt</strong>
+        <p>Projections assemble the current topology for graph, search, and inspection.</p>
+      </div>
     </section>
   `;
 }
@@ -423,6 +514,167 @@ function storeRecordTimestamp(section: StoreSectionKey, record: unknown): string
   }
 }
 
+function projectionInsight(record: unknown): RecordInsight {
+  const kind = stringField(record, "projectionKind") ?? "projection";
+  const scope = stringField(record, "targetScope") ?? "unknown scope";
+  const builtFrom = isRecord(record) && Array.isArray(record["builtFrom"]) ? record["builtFrom"].filter((value): value is string => typeof value === "string") : [];
+  const validation = nestedPayloadBoolean(record, "topologyValidation", "valid");
+  const counts = [
+    ["Corridors", payloadArrayLength(record, "corridors")],
+    ["Control flows", payloadArrayLength(record, "controlFlows")],
+    ["Checkpoints", payloadArrayLength(record, "checkpoints")],
+    ["Checkpoint lattices", payloadArrayLength(record, "checkpointLattices")],
+    ["Traversals", payloadArrayLength(record, "traversals")],
+    ["Transmissions", payloadArrayLength(record, "transmissions")],
+    ["Junctions", payloadArrayLength(record, "junctions")],
+    ["Route decisions", payloadArrayLength(record, "routeDecisions")],
+  ].filter(([, value]) => Number(value) > 0) as [string, number][];
+  const topologyKind = payloadString(record, "topologyTemplateKind");
+  const projectionRole = kind.includes("snapshot")
+    ? "scope 전체를 하나의 operational topology로 다시 조립한 조회 결과입니다."
+    : kind.includes("corridor")
+      ? "하나의 흐름 corridor를 중심으로 관련 control-flow와 route 정보를 묶은 조회 결과입니다."
+      : kind.includes("checkpoint")
+        ? "checkpoint 구조와 검증 깊이를 확인하기 위한 조회 결과입니다."
+        : kind.includes("traversal")
+          ? "관측된 이동 경로와 도달 결과를 확인하기 위한 조회 결과입니다."
+          : "원본 store 기록에서 다시 만들 수 있는 조회 결과입니다.";
+
+  return {
+    title: `${humanizeKind(kind)} for ${scope}`,
+    description: projectionRole,
+    facts: [
+      { label: "Scope", value: scope },
+      { label: "Kind", value: humanizeKind(kind) },
+      { label: "Template", value: topologyKind ? humanizeKind(topologyKind) : "not declared" },
+      { label: "Built from", value: formatList(builtFrom) },
+      { label: "Validation", value: validation === undefined ? "not reported" : validation ? "valid" : "needs attention" },
+      { label: "Payload", value: counts.length > 0 ? counts.map(([label, value]) => formatCount(value, label.toLowerCase())).join(" · ") : "raw projection payload" },
+    ],
+    interpretation: [
+      "Projection은 원본 사실이 아니라, store에 쌓인 기록을 운영자가 조회하기 좋게 다시 조립한 view입니다.",
+      "그래프는 주로 projection의 corridor, checkpoint, traversal 정보를 읽어 topology로 렌더링합니다.",
+      validation === false
+        ? "validation이 실패했으므로 missing corridor, checkpoint depth, route reference 같은 항목을 먼저 확인해야 합니다."
+        : "validation이 통과했거나 아직 기록되지 않았으므로, 포함된 bundle 수와 builtFrom 경로를 먼저 보면 됩니다.",
+    ],
+    sourceRefs: builtFrom,
+  };
+}
+
+function objectInsight(record: unknown): RecordInsight {
+  const objectId = stringField(record, "objectId") ?? "object";
+  const objectKind = stringField(record, "objectKind") ?? "object";
+  const canonicalKey = stringField(record, "canonicalKey") ?? "not declared";
+  const lifecycle = stringField(record, "lifecycle") ?? "unknown";
+
+  return {
+    title: objectId,
+    description: "Object는 store 안에서 추적 가능한 대상의 canonical identity입니다.",
+    facts: [
+      { label: "Kind", value: humanizeKind(objectKind) },
+      { label: "Lifecycle", value: lifecycle },
+      { label: "Schema", value: stringField(record, "schemaVersion") ?? "unknown" },
+      { label: "Canonical key", value: canonicalKey },
+    ],
+    interpretation: [
+      "Object 자체는 많은 설명을 들고 있지 않고, facet과 observation이 이 object에 의미를 붙입니다.",
+      "같은 objectId를 기준으로 facets를 찾으면 상태, route, evidence, validation 같은 세부 정보를 확인할 수 있습니다.",
+      "projection 안에 이 id가 등장하면 이 object가 조회용 topology에 materialize된 것입니다.",
+    ],
+    sourceRefs: [],
+  };
+}
+
+function facetInsight(record: unknown): RecordInsight {
+  const objectId = stringField(record, "objectId") ?? "object";
+  const facetKind = stringField(record, "facetKind") ?? "facet";
+  const keys = payloadKeys(record);
+
+  return {
+    title: `${humanizeKind(facetKind)} on ${objectId}`,
+    description: "Facet은 object에 붙는 versioned fact입니다.",
+    facts: [
+      { label: "Target object", value: objectId },
+      { label: "Facet kind", value: humanizeKind(facetKind) },
+      { label: "Version", value: stringField(record, "version") ?? "not versioned" },
+      { label: "Payload keys", value: formatList(keys, "no payload keys") },
+    ],
+    interpretation: [
+      "Facet은 새 대상이 아니라 이미 존재하는 object를 설명하는 정보 조각입니다.",
+      "status facet은 현재 판정, route facet은 이동 경로, evidence facet은 구현/검증 근거를 담습니다.",
+      "같은 objectId에 여러 facet이 붙으면 하나의 operational 대상이 여러 관점으로 해석됩니다.",
+    ],
+    sourceRefs: [stringField(record, "sourceRef")].filter((value): value is string => Boolean(value)),
+  };
+}
+
+function observationInsight(record: unknown): RecordInsight {
+  const observationKind = stringField(record, "observationKind") ?? "observation";
+  const targetObjectId = stringField(record, "targetObjectId") ?? "target";
+  const reached = payloadBoolean(record, "reached");
+  const keys = payloadKeys(record);
+
+  return {
+    title: humanizeKind(observationKind),
+    description: "Observation은 runtime이나 evaluator에서 들어온 append-only signal입니다.",
+    facts: [
+      { label: "Target", value: targetObjectId },
+      { label: "Observed at", value: stringField(record, "observedAt") ?? "unknown" },
+      { label: "Payload keys", value: formatList(keys, "no payload keys") },
+      { label: "Reached", value: reached === undefined ? "not reported" : reached ? "yes" : "no" },
+    ],
+    interpretation: [
+      "Observation은 store에 들어온 실제 사건입니다. 삭제/수정 대상이라기보다 이후 projection을 다시 만드는 입력입니다.",
+      "targetObjectId를 기준으로 object와 facet을 연결하면 이 signal이 무엇을 갱신했는지 볼 수 있습니다.",
+      "projection은 여러 observation을 묶어서 조회 가능한 topology 상태로 재구성합니다.",
+    ],
+    sourceRefs: [stringField(record, "observationId")].filter((value): value is string => Boolean(value)),
+  };
+}
+
+function recordInsight(section: StoreSectionKey, record: unknown): RecordInsight {
+  switch (section) {
+    case "objects":
+      return objectInsight(record);
+    case "facets":
+      return facetInsight(record);
+    case "observations":
+      return observationInsight(record);
+    case "projections":
+      return projectionInsight(record);
+  }
+}
+
+function renderRecordInsight(insight: RecordInsight): string {
+  return `
+    <div class="record-insight">
+      <div class="insight-copy">
+        <span>Readable interpretation</span>
+        <strong>${escapeHtml(insight.title)}</strong>
+        <p>${escapeHtml(insight.description)}</p>
+      </div>
+      <dl class="insight-facts">
+        ${insight.facts.map((fact) => `
+          <div>
+            <dt>${escapeHtml(fact.label)}</dt>
+            <dd>${escapeHtml(fact.value)}</dd>
+          </div>
+        `).join("")}
+      </dl>
+      <ul class="insight-notes">
+        ${insight.interpretation.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}
+      </ul>
+      ${insight.sourceRefs.length > 0 ? `
+        <div class="source-refs">
+          <span>Source refs</span>
+          <p>${escapeHtml(formatList(insight.sourceRefs))}</p>
+        </div>
+      ` : ""}
+    </div>
+  `;
+}
+
 function renderStoreBrowser(store: OntologyStoreFile): string {
   const section = storeSections.find((entry) => entry.key === state.storeSection) ?? storeSections[0];
   const records = store[section.key] as readonly unknown[];
@@ -438,6 +690,7 @@ function renderStoreBrowser(store: OntologyStoreFile): string {
     };
   });
   const selected = rows.find((row) => row.key === state.selectedRecordKey) ?? rows[0];
+  const insight = selected ? recordInsight(section.key, selected.record) : null;
 
   return `
     <section class="store-browser" aria-label="Store records">
@@ -473,6 +726,8 @@ function renderStoreBrowser(store: OntologyStoreFile): string {
               <strong>${escapeHtml(selected.title)}</strong>
               <small>${escapeHtml(selected.timestamp)}</small>
             </div>
+            ${insight ? renderRecordInsight(insight) : ""}
+            <p class="raw-label">Raw JSON</p>
             <pre>${escapeHtml(JSON.stringify(selected.record, null, 2))}</pre>
           ` : `
             <p>No record selected.</p>
@@ -522,7 +777,8 @@ function renderApp(): void {
     <header class="shell-header">
       <div>
         <p class="eyebrow">Operational Ontology Web</p>
-        <h1>Collected topology</h1>
+        <h1>Operational store reader</h1>
+        <p class="header-copy">Read collected signals, materialized facts, and rebuilt topology views from one store JSON.</p>
       </div>
       <div class="actions">
         <label class="file-action">
@@ -554,6 +810,8 @@ function renderApp(): void {
     </section>
 
     ${renderStorePrimer(state.store)}
+
+    ${renderReadPath()}
 
     ${renderStoreBrowser(state.store)}
 
