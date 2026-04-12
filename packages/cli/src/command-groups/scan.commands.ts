@@ -17,9 +17,9 @@ export const SCAN_COMMAND_DESCRIPTORS = [
     usage: "qa-sdk scan git [options]          Git 메타데이터 수집 → SchemaSnapshot",
     handlerKey: "scan.git",
     options: [
-      { flag: "--root", valueHint: "<path>", description: "모노레포 루트 (기본: .)" },
-      { flag: "--output", valueHint: "<dir>", description: "저장 디렉토리 (기본: ./schemas)" },
-      { flag: "--id", valueHint: "<name>", description: "스키마 ID (기본: repo 이름에서 추출)" },
+      { flag: "--root", valueHint: "<path>", type: "string", description: "모노레포 루트 (기본: .)" },
+      { flag: "--output", valueHint: "<dir>", type: "string", description: "저장 디렉토리 (기본: ./schemas)" },
+      { flag: "--id", valueHint: "<name>", type: "string", description: "스키마 ID (기본: repo 이름에서 추출)" },
     ],
   },
 ] as const satisfies readonly CommandDescriptor[];

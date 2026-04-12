@@ -416,7 +416,7 @@ async function cmdImpact(source: DefDataSource, docId?: string, address?: string
 
   const feedbackMatches = await collectFeedbackMatches(
     source,
-    [docId, ...primary.map((link) => link.source)],
+    [doc.docId, ...primary.map((link) => link.source)],
   );
   if (feedbackMatches.length > 0) {
     console.log(`\n  ── Feedback Trace ──`);

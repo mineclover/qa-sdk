@@ -39,9 +39,9 @@ export const ROOT_COMMAND_DESCRIPTORS = [
     usage: "qa-sdk register [options]          SchemaSnapshot → Registry 등록",
     handlerKey: "root.register",
     options: [
-      { flag: "--registry", valueHint: "<url>", description: "Registry 서버 URL ($QA_REGISTRY_URL)" },
-      { flag: "--input", valueHint: "<path>", description: "SchemaSnapshot (파일 또는 디렉토리, 기본: ./schemas)" },
-      { flag: "--version-id", valueHint: "<id>", description: "등록할 버전 ID (필수)" },
+      { flag: "--registry", valueHint: "<url>", type: "string", description: "Registry 서버 URL ($QA_REGISTRY_URL)" },
+      { flag: "--input", valueHint: "<path>", type: "string", description: "SchemaSnapshot (파일 또는 디렉토리, 기본: ./schemas)" },
+      { flag: "--version-id", valueHint: "<id>", type: "string", description: "등록할 버전 ID (필수)" },
     ],
   },
   {
@@ -50,9 +50,9 @@ export const ROOT_COMMAND_DESCRIPTORS = [
     usage: "qa-sdk dry-run [options]           변경 시뮬레이션 (DAG 전파, 변경 없음)",
     handlerKey: "root.dry-run",
     options: [
-      { flag: "--catalog", valueHint: "<path>", description: "Catalog 파일 경로 (미지정 시 자동 탐색)" },
-      { flag: "--change", valueHint: "<json>", description: "변경 시나리오 JSON" },
-      { flag: "--registry", valueHint: "<url>", description: "Registry 기준 (원격 시뮬레이션)" },
+      { flag: "--catalog", valueHint: "<path>", type: "string", description: "Catalog 파일 경로 (미지정 시 자동 탐색)" },
+      { flag: "--change", valueHint: "<json>", type: "string", description: "변경 시나리오 JSON" },
+      { flag: "--registry", valueHint: "<url>", type: "string", description: "Registry 기준 (원격 시뮬레이션)" },
     ],
   },
   {
@@ -61,9 +61,9 @@ export const ROOT_COMMAND_DESCRIPTORS = [
     usage: "qa-sdk codegen [options]           SchemaSnapshot → 타입 인터페이스 생성",
     handlerKey: "root.codegen",
     options: [
-      { flag: "--catalog", valueHint: "<path>", description: "Catalog 파일 경로 (TS/JS/JSON)" },
-      { flag: "--registry", valueHint: "<url>", description: "Registry URL (원격 카탈로그)" },
-      { flag: "--output", valueHint: "<dir>", description: "출력 디렉토리 (기본: ./generated)" },
+      { flag: "--catalog", valueHint: "<path>", type: "string", description: "Catalog 파일 경로 (TS/JS/JSON)" },
+      { flag: "--registry", valueHint: "<url>", type: "string", description: "Registry URL (원격 카탈로그)" },
+      { flag: "--output", valueHint: "<dir>", type: "string", description: "출력 디렉토리 (기본: ./generated)" },
     ],
   },
   {
@@ -72,9 +72,9 @@ export const ROOT_COMMAND_DESCRIPTORS = [
     usage: "qa-sdk inspect [options]           Registry 상태 조회",
     handlerKey: "root.inspect",
     options: [
-      { flag: "--registry", valueHint: "<url>", description: "Registry 서버 URL ($QA_REGISTRY_URL)" },
-      { flag: "--snapshot-id", valueHint: "<id>", description: "특정 스냅샷 ID (생략 시 active)" },
-      { flag: "--output", valueHint: "<dir>", description: "저장 디렉토리 (기본: ./schemas)" },
+      { flag: "--registry", valueHint: "<url>", type: "string", description: "Registry 서버 URL ($QA_REGISTRY_URL)" },
+      { flag: "--snapshot-id", valueHint: "<id>", type: "string", description: "특정 스냅샷 ID (생략 시 active)" },
+      { flag: "--output", valueHint: "<dir>", type: "string", description: "저장 디렉토리 (기본: ./schemas)" },
     ],
   },
   {
@@ -83,8 +83,8 @@ export const ROOT_COMMAND_DESCRIPTORS = [
     usage: "qa-sdk sync-obsidian [options]     CATALOG → Obsidian 볼트 전체 동기화",
     handlerKey: "root.sync-obsidian",
     options: [
-      { flag: "--vault", valueHint: "<name>", description: "대상 Obsidian 볼트 (기본: spec-prefix)" },
-      { flag: "--dry-run", description: "미리보기 (실제 쓰기 없음)" },
+      { flag: "--vault", valueHint: "<name>", type: "string", description: "대상 Obsidian 볼트 (기본: spec-prefix)" },
+      { flag: "--dry-run", type: "boolean", description: "미리보기 (실제 쓰기 없음)" },
     ],
   },
   { id: "root.encode", path: ["encode"], usage: "qa-sdk encode <prefix> [--dim val] 문자열 → 주소 인코딩", handlerKey: "root.encode" },

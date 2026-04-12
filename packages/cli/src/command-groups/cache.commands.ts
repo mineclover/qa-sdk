@@ -14,8 +14,8 @@ const CACHE_COMMAND_DESCRIPTORS = [
     usage: "qa-sdk cache stats                    Redis 캐시 통계 조회",
     handlerKey: "cache.stats",
     options: [
-      { flag: "--redis-url", valueHint: "<url>", description: "Redis URL ($REDIS_URL)" },
-      { flag: "--prefix", valueHint: "<prefix>", description: "캐시 prefix 필터 (기본: decode:)" },
+      { flag: "--redis-url", valueHint: "<url>", type: "string", description: "Redis URL ($REDIS_URL)" },
+      { flag: "--prefix", valueHint: "<prefix>", type: "string", description: "캐시 prefix 필터 (기본: decode:)" },
     ],
   },
   {
@@ -24,9 +24,9 @@ const CACHE_COMMAND_DESCRIPTORS = [
     usage: "qa-sdk cache clear [--prefix <id>]   Redis 캐시 삭제",
     handlerKey: "cache.clear",
     options: [
-      { flag: "--redis-url", valueHint: "<url>", description: "Redis URL ($REDIS_URL)" },
-      { flag: "--prefix", valueHint: "<id>", description: "특정 prefix만 삭제 (기본: decode:)" },
-      { flag: "--all", description: "모든 캐시 prefix 삭제" },
+      { flag: "--redis-url", valueHint: "<url>", type: "string", description: "Redis URL ($REDIS_URL)" },
+      { flag: "--prefix", valueHint: "<id>", type: "string", description: "특정 prefix만 삭제 (기본: decode:)" },
+      { flag: "--all", type: "boolean", description: "모든 캐시 prefix 삭제" },
     ],
   },
 ] as const satisfies readonly CommandDescriptor[];
