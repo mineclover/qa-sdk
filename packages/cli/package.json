@@ -19,7 +19,7 @@
   "scripts": {
     "build": "pnpm --filter cli-command build && tsup",
     "dev": "pnpm --filter cli-command build && tsup --watch",
-    "test": "pnpm --filter cli-command build && vitest run",
+    "test": "pnpm --filter cli-command build && node scripts/run-vitest.mjs",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "db:generate": "drizzle-kit generate"
