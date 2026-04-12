@@ -52,6 +52,7 @@ button {
 .observations,
 .metrics,
 .health-strip,
+.issue-queue,
 .filters,
 .store-primer,
 .read-path,
@@ -216,6 +217,78 @@ h2 {
 
 .health-item.error {
   box-shadow: inset 0 4px 0 var(--red);
+}
+
+.issue-queue {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 18px;
+  border-top: 0;
+  padding: 18px 22px;
+}
+
+.issue-copy {
+  align-self: center;
+}
+
+.issue-copy p:last-child {
+  margin: 10px 0 0;
+  color: var(--muted);
+}
+
+.issue-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.issue-list button,
+.issue-empty {
+  display: grid;
+  min-height: 112px;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 12px;
+  text-align: left;
+}
+
+.issue-list button.warning {
+  box-shadow: inset 0 4px 0 var(--yellow);
+}
+
+.issue-list button.error {
+  box-shadow: inset 0 4px 0 var(--red);
+}
+
+.issue-list button:hover {
+  border-color: var(--ink);
+}
+
+.issue-list span,
+.issue-empty span {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.issue-list strong,
+.issue-list small,
+.issue-empty strong {
+  overflow-wrap: anywhere;
+}
+
+.issue-list small {
+  color: var(--muted);
+}
+
+.issue-empty {
+  grid-column: 1 / -1;
+  min-height: 86px;
 }
 
 .filters {
@@ -1107,6 +1180,7 @@ td {
   .workspace,
   .observations,
   .health-strip,
+  .issue-queue,
   .scenario-guide,
   .store-primer,
   .read-path,
@@ -1126,6 +1200,10 @@ td {
 
   .health-items {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .issue-list {
+    grid-template-columns: 1fr;
   }
 
   .scenario-steps {

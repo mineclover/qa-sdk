@@ -129,6 +129,14 @@ interface StoreHealthItem {
   detail: string;
 }
 
+interface StoreIssue {
+  id: string;
+  severity: Exclude<HealthSeverity, "ok">;
+  title: string;
+  detail: string;
+  row: StoreRecordRow;
+}
+
 interface ProjectionAnalysis {
   mode: "snapshot" | "corridor" | "checkpoint" | "traversal" | "generic";
   validation: boolean | undefined;
@@ -553,6 +561,33 @@ function renderStoreHealth(store: OntologyStoreFile): string {
   `;
 }
 
+function renderIssueQueue(store: OntologyStoreFile): string {
+  const issues = storeIssues(store);
+  return `
+    <section class="issue-queue" aria-label="Issue queue">
+      <div class="issue-copy">
+        <p class="eyebrow">Issue queue</p>
+        <h2>${issues.length > 0 ? `${issues.length} open` : "No open issues"}</h2>
+        <p>${issues.length > 0 ? "Open a queued issue to inspect the source record with the Issues filter applied." : "Health checks did not find projection, governance, traversal, or observation-link issues in this store."}</p>
+      </div>
+      <div class="issue-list">
+        ${issues.length === 0 ? `
+          <div class="issue-empty">
+            <strong>Clear</strong>
+            <span>Projection validation, missing topology, governance, traversal, and observation links are clean.</span>
+          </div>
+        ` : issues.map((issue) => `
+          <button type="button" class="${issue.severity}" data-issue-section="${issue.row.section}" data-issue-record-key="${escapeHtml(issue.row.key)}">
+            <span>${escapeHtml(issue.row.section)} / ${escapeHtml(issue.row.kind)}</span>
+            <strong>${escapeHtml(issue.title)}</strong>
+            <small>${escapeHtml(issue.detail)}</small>
+          </button>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
 function renderScenarioGuide(): string {
   const guide = sampleGuides[state.sampleKey] ?? sampleGuides.custom;
   return `
@@ -927,6 +962,31 @@ function recordIssueReason(store: OntologyStoreFile, row: StoreRecordRow): strin
     if (payload["recoveryUsed"] === true) return "Traversal used recovery";
   }
   return null;
+}
+
+function issueSeverity(reason: string): Exclude<HealthSeverity, "ok"> {
+  const lower = reason.toLowerCase();
+  return lower.includes("failed") || lower.includes("validation needs attention") ? "error" : "warning";
+}
+
+function storeIssues(store: OntologyStoreFile): StoreIssue[] {
+  return allStoreRecordRows(store)
+    .map((row) => {
+      const reason = recordIssueReason(store, row);
+      if (!reason) return null;
+      return {
+        id: `${row.section}:${row.key}`,
+        severity: issueSeverity(reason),
+        title: row.title,
+        detail: reason,
+        row,
+      };
+    })
+    .filter((issue): issue is StoreIssue => Boolean(issue))
+    .toSorted((left, right) => {
+      const severity = left.severity === right.severity ? 0 : left.severity === "error" ? -1 : 1;
+      return severity || left.row.section.localeCompare(right.row.section) || left.title.localeCompare(right.title);
+    });
 }
 
 function recordSearchText(row: StoreRecordRow): string {
@@ -1530,6 +1590,8 @@ function renderApp(): void {
 
     ${renderStoreHealth(state.store)}
 
+    ${renderIssueQueue(state.store)}
+
     <nav class="filters" aria-label="Topology filter">
       ${(["all", "snapshot", "corridor", "checkpoint", "traversal", "governance"] as const).map((filter) => `
         <button type="button" class="${state.filter === filter ? "active" : ""}" data-filter="${filter}">${filter}</button>
@@ -1637,6 +1699,19 @@ function renderApp(): void {
       const row = findStoreRecordRow(state.store, section, key);
       state.recordQuery = "";
       state.recordFilter = "all";
+      if (row) selectStoreRecord(row, model);
+      renderApp();
+    });
+  });
+
+  app.querySelectorAll<HTMLButtonElement>("[data-issue-section]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const section = button.dataset["issueSection"] as StoreSectionKey | undefined;
+      const key = button.dataset["issueRecordKey"];
+      if (!section || !key) return;
+      const row = findStoreRecordRow(state.store, section, key);
+      state.recordQuery = "";
+      state.recordFilter = "issues";
       if (row) selectStoreRecord(row, model);
       renderApp();
     });
