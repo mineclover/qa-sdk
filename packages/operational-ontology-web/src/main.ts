@@ -75,6 +75,8 @@ interface UiState {
   sampleKey: SampleScenarioKey;
   storeSection: StoreSectionKey;
   selectedRecordKey: string | null;
+  rawJsonExpanded: boolean;
+  copyNotice: string | null;
 }
 
 type StoreSectionKey = "objects" | "facets" | "observations" | "projections";
@@ -134,6 +136,7 @@ interface ProjectionAnalysis {
 
 interface StoreRecordRow {
   section: StoreSectionKey;
+  index: number;
   key: string;
   record: unknown;
   title: string;
@@ -283,6 +286,8 @@ const state: UiState = {
   sampleKey: "inline",
   storeSection: "projections",
   selectedRecordKey: null,
+  rawJsonExpanded: false,
+  copyNotice: null,
 };
 
 const sampleFiles: SampleFile[] = [
@@ -675,6 +680,7 @@ function storeRecords(store: OntologyStoreFile, section: StoreSectionKey): reado
 function storeRecordRow(section: StoreSectionKey, record: unknown, index: number): StoreRecordRow {
   return {
     section,
+    index,
     key: storeRecordKey(section, record, index),
     record,
     title: storeRecordTitle(section, record),
@@ -692,8 +698,24 @@ function allStoreRecordRows(store: OntologyStoreFile): StoreRecordRow[] {
   return storeSections.flatMap((section) => storeRecordRows(store, section.key));
 }
 
+function getActiveStoreRecord(store: OntologyStoreFile): StoreRecordRow | undefined {
+  return (
+    (state.selectedRecordKey ? findStoreRecordRow(store, state.storeSection, state.selectedRecordKey) : undefined) ??
+    storeRecordRows(store, state.storeSection)[0]
+  );
+}
+
 function findStoreRecordRow(store: OntologyStoreFile, section: StoreSectionKey, key: string): StoreRecordRow | undefined {
   return storeRecordRows(store, section).find((row) => row.key === key);
+}
+
+function recordPath(row: StoreRecordRow): string {
+  return `store.${row.section}[${row.index}]`;
+}
+
+function rawJsonPreview(rawJson: string): string {
+  const compact = rawJson.replace(/\s+/g, " ");
+  return compact.length > 260 ? `${compact.slice(0, 260)}...` : compact;
 }
 
 function graphNodeIdForStoreRecord(row: StoreRecordRow, model: OntologyGraphViewModel): string | null {
@@ -722,6 +744,8 @@ function storeRecordForGraphNode(store: OntologyStoreFile, nodeId: string): Stor
 function selectStoreRecord(row: StoreRecordRow, model: OntologyGraphViewModel): void {
   state.storeSection = row.section;
   state.selectedRecordKey = row.key;
+  state.rawJsonExpanded = false;
+  state.copyNotice = null;
   const graphNodeId = graphNodeIdForStoreRecord(row, model);
   state.selectedId = graphNodeId;
   if (graphNodeId && state.filter !== "all") {
@@ -736,6 +760,8 @@ function selectGraphNode(store: OntologyStoreFile, nodeId: string): void {
   if (!record) return;
   state.storeSection = record.section;
   state.selectedRecordKey = record.key;
+  state.rawJsonExpanded = false;
+  state.copyNotice = null;
 }
 
 function isReferenceKey(key: string): boolean {
@@ -1219,6 +1245,31 @@ function renderRelatedRecords(related: RelatedRecordRow[]): string {
   `;
 }
 
+function renderRawJsonPanel(row: StoreRecordRow): string {
+  const rawJson = JSON.stringify(row.record, null, 2);
+  return `
+    <div class="raw-panel">
+      <div class="raw-toolbar">
+        <div>
+          <span>Raw JSON</span>
+          <strong>${escapeHtml(recordPath(row))}</strong>
+          <small>${escapeHtml(row.key)}</small>
+        </div>
+        <div class="raw-actions">
+          <button type="button" data-toggle-raw-json>${state.rawJsonExpanded ? "Collapse" : "Expand"}</button>
+          <button type="button" data-copy-record-json>Copy JSON</button>
+        </div>
+      </div>
+      ${state.copyNotice ? `<p class="copy-notice">${escapeHtml(state.copyNotice)}</p>` : ""}
+      ${state.rawJsonExpanded ? `
+        <pre>${escapeHtml(rawJson)}</pre>
+      ` : `
+        <div class="raw-preview"><code>${escapeHtml(rawJsonPreview(rawJson))}</code></div>
+      `}
+    </div>
+  `;
+}
+
 function renderStoreBrowser(store: OntologyStoreFile, model: OntologyGraphViewModel): string {
   const section = storeSections.find((entry) => entry.key === state.storeSection) ?? storeSections[0];
   const rows = storeRecordRows(store, section.key);
@@ -1267,8 +1318,7 @@ function renderStoreBrowser(store: OntologyStoreFile, model: OntologyGraphViewMo
             </div>
             ${insight ? renderRecordInsight(insight) : ""}
             ${renderRelatedRecords(related)}
-            <p class="raw-label">Raw JSON</p>
-            <pre>${escapeHtml(JSON.stringify(selected.record, null, 2))}</pre>
+            ${renderRawJsonPanel(selected)}
           ` : `
             <p>No record selected.</p>
           `}
@@ -1307,11 +1357,25 @@ function renderObservationRows(store: OntologyStoreFile): string {
     .join("");
 }
 
+async function copyTextToClipboard(value: string): Promise<void> {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = value;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  document.body.removeChild(textarea);
+}
+
 function renderApp(): void {
   const model = operationalStoreToOntologyView(state.store);
-  const activeStoreRecord =
-    (state.selectedRecordKey ? findStoreRecordRow(state.store, state.storeSection, state.selectedRecordKey) : undefined) ??
-    storeRecordRows(state.store, state.storeSection)[0];
+  const activeStoreRecord = getActiveStoreRecord(state.store);
   const activeGraphNodeId = state.selectedId ?? (activeStoreRecord ? graphNodeIdForStoreRecord(activeStoreRecord, model) : null);
   const visibleModel = visibleModelForFilter(model);
   const app = document.querySelector<HTMLDivElement>("#app");
@@ -1403,6 +1467,8 @@ function renderApp(): void {
     button.addEventListener("click", () => {
       state.storeSection = button.dataset["storeSection"] as StoreSectionKey;
       state.selectedRecordKey = null;
+      state.rawJsonExpanded = false;
+      state.copyNotice = null;
       renderApp();
     });
   });
@@ -1428,12 +1494,32 @@ function renderApp(): void {
     });
   });
 
+  app.querySelector<HTMLButtonElement>("[data-toggle-raw-json]")?.addEventListener("click", () => {
+    state.rawJsonExpanded = !state.rawJsonExpanded;
+    state.copyNotice = null;
+    renderApp();
+  });
+
+  app.querySelector<HTMLButtonElement>("[data-copy-record-json]")?.addEventListener("click", async () => {
+    const row = getActiveStoreRecord(state.store);
+    if (!row) return;
+    try {
+      await copyTextToClipboard(JSON.stringify(row.record, null, 2));
+      state.copyNotice = `Copied ${recordPath(row)}`;
+    } catch {
+      state.copyNotice = "Copy failed";
+    }
+    renderApp();
+  });
+
   app.querySelector<HTMLButtonElement>("#sample-button")?.addEventListener("click", () => {
     state.store = sampleStore;
     state.sourceName = "sample store";
     state.sampleKey = "inline";
     state.selectedId = null;
     state.selectedRecordKey = null;
+    state.rawJsonExpanded = false;
+    state.copyNotice = null;
     renderApp();
   });
 
@@ -1447,6 +1533,8 @@ function renderApp(): void {
       state.sampleKey = (button.dataset["sampleKey"] as SampleScenarioKey | undefined) ?? "custom";
       state.selectedId = null;
       state.selectedRecordKey = null;
+      state.rawJsonExpanded = false;
+      state.copyNotice = null;
       renderApp();
     });
   });
@@ -1462,6 +1550,8 @@ function renderApp(): void {
       state.sampleKey = "custom";
       state.selectedId = null;
       state.selectedRecordKey = null;
+      state.rawJsonExpanded = false;
+      state.copyNotice = null;
       renderApp();
     } catch (error) {
       window.alert(error instanceof Error ? error.message : "Invalid store JSON");

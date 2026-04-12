@@ -594,7 +594,7 @@ h2 {
 
 .insight-copy span,
 .source-refs span,
-.raw-label {
+.raw-toolbar span {
   color: var(--green);
   font-size: 11px;
   font-weight: 800;
@@ -733,10 +733,79 @@ h2 {
   color: var(--muted);
 }
 
-.raw-label {
-  margin: 12px 0 8px;
+.raw-panel {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 16px;
 }
 
+.raw-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.raw-toolbar > div:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.raw-toolbar strong,
+.raw-toolbar small {
+  overflow-wrap: anywhere;
+}
+
+.raw-toolbar strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.raw-toolbar small {
+  color: var(--muted);
+}
+
+.raw-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.raw-actions button {
+  border: 1px solid #bac5b7;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 8px 10px;
+  font-weight: 800;
+}
+
+.raw-preview {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8faf5;
+  padding: 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.raw-preview code {
+  font-size: 12px;
+}
+
+.copy-notice {
+  margin: 0;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.raw-panel pre,
 .record-detail pre {
   max-height: 420px;
 }
