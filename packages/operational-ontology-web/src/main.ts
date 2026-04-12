@@ -72,11 +72,13 @@ interface UiState {
   selectedId: string | null;
   filter: "all" | NodeLane;
   sourceName: string;
+  sampleKey: SampleScenarioKey;
   storeSection: StoreSectionKey;
   selectedRecordKey: string | null;
 }
 
 type StoreSectionKey = "objects" | "facets" | "observations" | "projections";
+type SampleScenarioKey = "inline" | "event" | "pipe" | "snapshot" | "custom";
 
 interface StoreSectionInfo {
   key: StoreSectionKey;
@@ -86,9 +88,18 @@ interface StoreSectionInfo {
 }
 
 interface SampleFile {
+  key: SampleScenarioKey;
   label: string;
   description: string;
   path: string;
+}
+
+interface SampleGuide {
+  label: string;
+  question: string;
+  inspect: string[];
+  expected: string[];
+  note: string;
 }
 
 interface InsightFact {
@@ -269,27 +280,69 @@ const state: UiState = {
   selectedId: null,
   filter: "all",
   sourceName: "sample store",
+  sampleKey: "inline",
   storeSection: "projections",
   selectedRecordKey: null,
 };
 
 const sampleFiles: SampleFile[] = [
   {
+    key: "event",
     label: "Event observation",
     description: "EventRecord payload and address_context bindings.",
     path: "/samples/event-store.json",
   },
   {
+    key: "pipe",
     label: "Pipe execution",
     description: "PipeGraph steps, conditions, transmissions, and junctions.",
     path: "/samples/pipe-store.json",
   },
   {
+    key: "snapshot",
     label: "Complete snapshot",
     description: "Corridor, checkpoint, traversal, and validation bundles.",
     path: "/samples/snapshot-store.json",
   },
 ];
+
+const sampleGuides: Record<SampleScenarioKey, SampleGuide> = {
+  inline: {
+    label: "Inline sample",
+    question: "Can a governance run, traversal record, and runtime snapshot be read as one small operational topology?",
+    inspect: ["Projection summary", "Governance run object", "Traversal route facet"],
+    expected: ["Graph nodes link back to store records", "Governance run status is passed", "Traversal observation targets a known object"],
+    note: "This sample is intentionally small. Use it to verify the reader workflow before loading larger store files.",
+  },
+  event: {
+    label: "Event observation",
+    question: "Does an EventRecord payload and address_context become an observable corridor?",
+    inspect: ["Projection validation", "Corridors", "Address binding contracts", "Observation links"],
+    expected: ["Event payload fields appear as production endpoints", "address_context bindings appear as consumption endpoints", "Health may warn because this sample only includes the event side"],
+    note: "A missing pipe_graph warning is expected here. This sample isolates event materialization, not full topology completeness.",
+  },
+  pipe: {
+    label: "Pipe execution",
+    question: "Does a PipeGraph produce a corridor with conditional paths and transmissions?",
+    inspect: ["Control flows", "Junctions", "Transmissions", "Missing topology health"],
+    expected: ["collect-order branches to validate-order", "transmissions connect production to consumption", "Health may warn because event and checkpoint material are intentionally absent"],
+    note: "Use this sample to inspect implementation flow shape. It is not expected to satisfy full snapshot completeness by itself.",
+  },
+  snapshot: {
+    label: "Complete snapshot",
+    question: "Do event, pipe, checkpoint, and traversal bundles combine into a complete operational snapshot?",
+    inspect: ["Store health", "Snapshot projection", "Checkpoint lattice", "Traversal signals"],
+    expected: ["Projection validation is clear", "Corridor coverage includes both pipe and event sides", "Traversal reaches the expected goal without loop or recovery"],
+    note: "Use this sample as the baseline for what a healthy combined store should feel like.",
+  },
+  custom: {
+    label: "Loaded file",
+    question: "What does this store file say about collected signals, materialized facts, and rebuilt views?",
+    inspect: ["Store health", "Projection diagnostics", "Related records", "Graph links"],
+    expected: ["Projection validation identifies missing topology", "Related records expose target/source references", "Graph-linked records highlight visible topology nodes"],
+    note: "For uploaded files, start with Store health, then open the first failing or warning projection.",
+  },
+};
 
 const storeSections: StoreSectionInfo[] = [
   {
@@ -484,6 +537,33 @@ function renderStoreHealth(store: OntologyStoreFile): string {
             <p>${escapeHtml(item.detail)}</p>
           </div>
         `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderScenarioGuide(): string {
+  const guide = sampleGuides[state.sampleKey] ?? sampleGuides.custom;
+  return `
+    <section class="scenario-guide" aria-label="Scenario guide">
+      <div class="scenario-copy">
+        <p class="eyebrow">Scenario guide</p>
+        <h2>${escapeHtml(guide.label)}</h2>
+        <p>${escapeHtml(guide.question)}</p>
+      </div>
+      <div class="scenario-steps">
+        <div>
+          <span>Inspect</span>
+          <ul>${guide.inspect.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        </div>
+        <div>
+          <span>Expected signals</span>
+          <ul>${guide.expected.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        </div>
+        <div>
+          <span>Read note</span>
+          <p>${escapeHtml(guide.note)}</p>
+        </div>
       </div>
     </section>
   `;
@@ -1268,12 +1348,14 @@ function renderApp(): void {
     <section class="sample-row" aria-label="Sample stores">
       <span>Sample scenarios</span>
       ${sampleFiles.map((sample) => `
-        <button type="button" data-sample-path="${sample.path}">
+        <button type="button" class="${state.sampleKey === sample.key ? "active" : ""}" data-sample-key="${sample.key}" data-sample-path="${sample.path}">
           <strong>${escapeHtml(sample.label)}</strong>
           <small>${escapeHtml(sample.description)}</small>
         </button>
       `).join("")}
     </section>
+
+    ${renderScenarioGuide()}
 
     ${renderStorePrimer(state.store)}
 
@@ -1349,6 +1431,7 @@ function renderApp(): void {
   app.querySelector<HTMLButtonElement>("#sample-button")?.addEventListener("click", () => {
     state.store = sampleStore;
     state.sourceName = "sample store";
+    state.sampleKey = "inline";
     state.selectedId = null;
     state.selectedRecordKey = null;
     renderApp();
@@ -1361,6 +1444,7 @@ function renderApp(): void {
       const response = await fetch(path);
       state.store = asStoreFile((await response.json()) as unknown);
       state.sourceName = path;
+      state.sampleKey = (button.dataset["sampleKey"] as SampleScenarioKey | undefined) ?? "custom";
       state.selectedId = null;
       state.selectedRecordKey = null;
       renderApp();
@@ -1375,6 +1459,7 @@ function renderApp(): void {
       const parsed = JSON.parse(await file.text()) as unknown;
       state.store = asStoreFile(parsed);
       state.sourceName = file.name;
+      state.sampleKey = "custom";
       state.selectedId = null;
       state.selectedRecordKey = null;
       renderApp();
