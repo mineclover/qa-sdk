@@ -471,6 +471,72 @@ h2 {
   opacity: 0.76;
 }
 
+.record-controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+  gap: 12px;
+  align-items: end;
+  margin-top: 18px;
+}
+
+.record-search {
+  display: grid;
+  gap: 6px;
+}
+
+.record-search span {
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.record-search input {
+  width: 100%;
+  border: 1px solid #bac5b7;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 10px 12px;
+}
+
+.record-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.record-filter-group button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #bac5b7;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 10px 12px;
+  font-weight: 800;
+}
+
+.record-filter-group button.active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
+.record-filter-group span {
+  opacity: 0.76;
+}
+
+.record-controls p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+  text-transform: uppercase;
+}
+
 .record-grid {
   display: grid;
   grid-template-columns: minmax(260px, 0.42fr) minmax(0, 1fr);
@@ -511,6 +577,10 @@ h2 {
 
 .record-list button.graph-linked {
   background: #fbfcf8;
+}
+
+.record-list button.issue-record {
+  box-shadow: inset 4px 0 0 var(--yellow);
 }
 
 .record-list span {
@@ -1081,6 +1151,14 @@ td {
 
   .record-tabs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .record-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .record-controls p {
+    text-align: left;
   }
 
   .insight-facts {

@@ -75,12 +75,15 @@ interface UiState {
   sampleKey: SampleScenarioKey;
   storeSection: StoreSectionKey;
   selectedRecordKey: string | null;
+  recordQuery: string;
+  recordFilter: RecordFilterMode;
   rawJsonExpanded: boolean;
   copyNotice: string | null;
 }
 
 type StoreSectionKey = "objects" | "facets" | "observations" | "projections";
 type SampleScenarioKey = "inline" | "event" | "pipe" | "snapshot" | "custom";
+type RecordFilterMode = "all" | "graph-linked" | "issues";
 
 interface StoreSectionInfo {
   key: StoreSectionKey;
@@ -286,6 +289,8 @@ const state: UiState = {
   sampleKey: "inline",
   storeSection: "projections",
   selectedRecordKey: null,
+  recordQuery: "",
+  recordFilter: "all",
   rawJsonExpanded: false,
   copyNotice: null,
 };
@@ -699,9 +704,10 @@ function allStoreRecordRows(store: OntologyStoreFile): StoreRecordRow[] {
   return storeSections.flatMap((section) => storeRecordRows(store, section.key));
 }
 
-function getActiveStoreRecord(store: OntologyStoreFile): StoreRecordRow | undefined {
+function getActiveStoreRecord(store: OntologyStoreFile, model: OntologyGraphViewModel): StoreRecordRow | undefined {
   return (
-    (state.selectedRecordKey ? findStoreRecordRow(store, state.storeSection, state.selectedRecordKey) : undefined) ??
+    (state.selectedRecordKey ? visibleRecordRows(store, model, state.storeSection).find((row) => row.key === state.selectedRecordKey) : undefined) ??
+    visibleRecordRows(store, model, state.storeSection)[0] ??
     storeRecordRows(store, state.storeSection)[0]
   );
 }
@@ -717,6 +723,10 @@ function recordPath(row: StoreRecordRow): string {
 function rawJsonPreview(rawJson: string): string {
   const compact = rawJson.replace(/\s+/g, " ");
   return compact.length > 260 ? `${compact.slice(0, 260)}...` : compact;
+}
+
+function normalizedQuery(): string {
+  return state.recordQuery.trim().toLowerCase();
 }
 
 function graphNodeIdForStoreRecord(row: StoreRecordRow, model: OntologyGraphViewModel): string | null {
@@ -759,6 +769,8 @@ function selectGraphNode(store: OntologyStoreFile, nodeId: string): void {
   state.selectedId = nodeId;
   const record = storeRecordForGraphNode(store, nodeId);
   if (!record) return;
+  state.recordQuery = "";
+  state.recordFilter = "all";
   state.storeSection = record.section;
   state.selectedRecordKey = record.key;
   state.rawJsonExpanded = false;
@@ -887,6 +899,74 @@ function relatedRecords(store: OntologyStoreFile, selected: StoreRecordRow): Rel
     .filter((row): row is RelatedRecordRow => Boolean(row))
     .toSorted((left, right) => right.score - left.score || left.section.localeCompare(right.section) || left.title.localeCompare(right.title))
     .slice(0, 10);
+}
+
+function recordIssueReason(store: OntologyStoreFile, row: StoreRecordRow): string | null {
+  if (row.section === "projections") {
+    const analysis = analyzeProjection(row.record);
+    if (analysis.validation === false) return "Projection validation needs attention";
+    if (analysis.issues.length > 0) return formatList(analysis.issues);
+  }
+  if (row.section === "objects") {
+    const objectId = stringField(row.record, "objectId");
+    if (objectId && stringField(row.record, "objectKind") === "governance_run" && latestStatusForObject(store, objectId) === "failed") {
+      return "Governance run failed";
+    }
+  }
+  if (row.section === "facets") {
+    const payload = isRecord(row.record) && isRecord(row.record["payloadJson"]) ? row.record["payloadJson"] : {};
+    if (row.kind === "status" && payload["state"] === "failed") return "Status facet failed";
+  }
+  if (row.section === "observations") {
+    const objectIds = new Set(store.objects.map((object) => object.objectId));
+    const target = stringField(row.record, "targetObjectId");
+    const payload = isRecord(row.record) && isRecord(row.record["payloadJson"]) ? row.record["payloadJson"] : {};
+    if (target && !objectIds.has(target)) return "Observation target is missing";
+    if (arrayLengthField(payload, "unreachableGoalIds") > 0) return "Traversal has unreachable goals";
+    if (payload["loopDetected"] === true) return "Traversal loop detected";
+    if (payload["recoveryUsed"] === true) return "Traversal used recovery";
+  }
+  return null;
+}
+
+function recordSearchText(row: StoreRecordRow): string {
+  return [
+    row.section,
+    row.key,
+    row.title,
+    row.kind,
+    row.detail,
+    row.timestamp,
+    recordPath(row),
+    recordText(row.record),
+  ].join(" ").toLowerCase();
+}
+
+function recordMatchesSearch(row: StoreRecordRow): boolean {
+  const query = normalizedQuery();
+  if (!query) return true;
+  return recordSearchText(row).includes(query);
+}
+
+function recordMatchesFilter(store: OntologyStoreFile, model: OntologyGraphViewModel, row: StoreRecordRow): boolean {
+  if (state.recordFilter === "graph-linked") return Boolean(graphNodeIdForStoreRecord(row, model));
+  if (state.recordFilter === "issues") return Boolean(recordIssueReason(store, row));
+  return true;
+}
+
+function visibleRecordRows(store: OntologyStoreFile, model: OntologyGraphViewModel, section: StoreSectionKey): StoreRecordRow[] {
+  return storeRecordRows(store, section)
+    .filter((row) => recordMatchesSearch(row))
+    .filter((row) => recordMatchesFilter(store, model, row));
+}
+
+function recordFilterCounts(store: OntologyStoreFile, model: OntologyGraphViewModel, section: StoreSectionKey): Record<RecordFilterMode, number> {
+  const rows = storeRecordRows(store, section).filter((row) => recordMatchesSearch(row));
+  return {
+    all: rows.length,
+    "graph-linked": rows.filter((row) => Boolean(graphNodeIdForStoreRecord(row, model))).length,
+    issues: rows.filter((row) => Boolean(recordIssueReason(store, row))).length,
+  };
 }
 
 function latestStatusForObject(store: OntologyStoreFile, objectId: string): string | undefined {
@@ -1246,6 +1326,38 @@ function renderRelatedRecords(related: RelatedRecordRow[]): string {
   `;
 }
 
+function recordFilterLabel(filter: RecordFilterMode): string {
+  if (filter === "graph-linked") return "Graph linked";
+  if (filter === "issues") return "Issues";
+  return "All";
+}
+
+function renderRecordControls(
+  store: OntologyStoreFile,
+  model: OntologyGraphViewModel,
+  section: StoreSectionKey,
+  visibleCount: number,
+): string {
+  const counts = recordFilterCounts(store, model, section);
+  return `
+    <div class="record-controls">
+      <label class="record-search">
+        <span>Search records</span>
+        <input id="record-search-input" type="search" value="${escapeHtml(state.recordQuery)}" placeholder="id, kind, scope, payload..." />
+      </label>
+      <div class="record-filter-group" aria-label="Record filters">
+        ${(["all", "graph-linked", "issues"] as const).map((filter) => `
+          <button type="button" class="${state.recordFilter === filter ? "active" : ""}" data-record-filter="${filter}">
+            ${recordFilterLabel(filter)}
+            <span>${counts[filter]}</span>
+          </button>
+        `).join("")}
+      </div>
+      <p>${visibleCount} matching ${visibleCount === 1 ? "record" : "records"}</p>
+    </div>
+  `;
+}
+
 function renderRawJsonPanel(row: StoreRecordRow): string {
   const rawJson = JSON.stringify(row.record, null, 2);
   return `
@@ -1273,7 +1385,7 @@ function renderRawJsonPanel(row: StoreRecordRow): string {
 
 function renderStoreBrowser(store: OntologyStoreFile, model: OntologyGraphViewModel): string {
   const section = storeSections.find((entry) => entry.key === state.storeSection) ?? storeSections[0];
-  const rows = storeRecordRows(store, section.key);
+  const rows = visibleRecordRows(store, model, section.key);
   const selected = rows.find((row) => row.key === state.selectedRecordKey) ?? rows[0];
   const insight = selected ? recordInsight(section.key, selected.record) : null;
   const related = selected ? relatedRecords(store, selected) : [];
@@ -1296,15 +1408,17 @@ function renderStoreBrowser(store: OntologyStoreFile, model: OntologyGraphViewMo
           `).join("")}
         </nav>
       </div>
+      ${renderRecordControls(store, model, section.key, rows.length)}
       <div class="record-grid">
         <div class="record-list" role="list">
-          ${rows.length === 0 ? `<p class="empty-records">No ${escapeHtml(section.label.toLowerCase())} in this store.</p>` : rows.map((row) => {
+          ${rows.length === 0 ? `<p class="empty-records">No ${escapeHtml(section.label.toLowerCase())} match the current search and filter.</p>` : rows.map((row) => {
             const graphNodeId = graphNodeIdForStoreRecord(row, model);
+            const issue = recordIssueReason(store, row);
             return `
-            <button type="button" role="listitem" class="${selected?.key === row.key ? "selected" : ""} ${graphNodeId ? "graph-linked" : ""}" data-store-record-key="${escapeHtml(row.key)}">
+            <button type="button" role="listitem" class="${selected?.key === row.key ? "selected" : ""} ${graphNodeId ? "graph-linked" : ""} ${issue ? "issue-record" : ""}" data-store-record-key="${escapeHtml(row.key)}">
               <span>${escapeHtml(row.kind)}</span>
               <strong>${escapeHtml(row.title)}</strong>
-              <small>${escapeHtml(graphNodeId ? `Graph node: ${graphNodeId}` : row.detail)}</small>
+              <small>${escapeHtml(issue ? `Issue: ${issue}` : graphNodeId ? `Graph node: ${graphNodeId}` : row.detail)}</small>
             </button>
           `;
           }).join("")}
@@ -1388,7 +1502,7 @@ async function copyTextToClipboard(value: string): Promise<void> {
 
 function renderApp(): void {
   const model = operationalStoreToOntologyView(state.store);
-  const activeStoreRecord = getActiveStoreRecord(state.store);
+  const activeStoreRecord = getActiveStoreRecord(state.store, model);
   const activeGraphNodeId = state.selectedId ?? (activeStoreRecord ? graphNodeIdForStoreRecord(activeStoreRecord, model) : null);
   const visibleModel = visibleModelForFilter(model);
   const app = document.querySelector<HTMLDivElement>("#app");
@@ -1486,6 +1600,25 @@ function renderApp(): void {
     });
   });
 
+  app.querySelector<HTMLInputElement>("#record-search-input")?.addEventListener("input", (event) => {
+    const input = event.target instanceof HTMLInputElement ? event.target : null;
+    state.recordQuery = input?.value ?? "";
+    state.selectedRecordKey = null;
+    state.rawJsonExpanded = false;
+    state.copyNotice = null;
+    renderApp();
+  });
+
+  app.querySelectorAll<HTMLButtonElement>("[data-record-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.recordFilter = button.dataset["recordFilter"] as RecordFilterMode;
+      state.selectedRecordKey = null;
+      state.rawJsonExpanded = false;
+      state.copyNotice = null;
+      renderApp();
+    });
+  });
+
   app.querySelectorAll<HTMLButtonElement>("[data-store-record-key]").forEach((button) => {
     button.addEventListener("click", () => {
       const key = button.dataset["storeRecordKey"];
@@ -1502,6 +1635,8 @@ function renderApp(): void {
       const key = button.dataset["relatedRecordKey"];
       if (!section || !key) return;
       const row = findStoreRecordRow(state.store, section, key);
+      state.recordQuery = "";
+      state.recordFilter = "all";
       if (row) selectStoreRecord(row, model);
       renderApp();
     });
@@ -1514,7 +1649,7 @@ function renderApp(): void {
   });
 
   app.querySelector<HTMLButtonElement>("[data-copy-record-json]")?.addEventListener("click", async () => {
-    const row = getActiveStoreRecord(state.store);
+    const row = getActiveStoreRecord(state.store, model);
     if (!row) return;
     try {
       await copyTextToClipboard(JSON.stringify(row.record, null, 2));
@@ -1531,6 +1666,8 @@ function renderApp(): void {
     state.sampleKey = "inline";
     state.selectedId = null;
     state.selectedRecordKey = null;
+    state.recordQuery = "";
+    state.recordFilter = "all";
     state.rawJsonExpanded = false;
     state.copyNotice = null;
     renderApp();
@@ -1546,6 +1683,8 @@ function renderApp(): void {
       state.sampleKey = (button.dataset["sampleKey"] as SampleScenarioKey | undefined) ?? "custom";
       state.selectedId = null;
       state.selectedRecordKey = null;
+      state.recordQuery = "";
+      state.recordFilter = "all";
       state.rawJsonExpanded = false;
       state.copyNotice = null;
       renderApp();
@@ -1563,6 +1702,8 @@ function renderApp(): void {
       state.sampleKey = "custom";
       state.selectedId = null;
       state.selectedRecordKey = null;
+      state.recordQuery = "";
+      state.recordFilter = "all";
       state.rawJsonExpanded = false;
       state.copyNotice = null;
       renderApp();
