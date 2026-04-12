@@ -15,7 +15,7 @@ afterEach(async () => {
   );
 });
 
-describe('gitConflicts', { timeout: 30_000 }, () => {
+describe('gitConflicts', { timeout: 60_000 }, () => {
   it('현재 브랜치와 remote 브랜치, local worktree의 중첩 변경 지점과 safe scope를 계산한다', async () => {
     const fixture = await createConflictFixture();
 

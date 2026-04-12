@@ -20,6 +20,9 @@
     "build": "pnpm --filter cli-command build && tsup",
     "dev": "pnpm --filter cli-command build && tsup --watch",
     "test": "pnpm --filter cli-command build && node scripts/run-vitest.mjs",
+    "test:parallel": "pnpm --filter cli-command build && node scripts/run-vitest.mjs --parallel",
+    "test:serial": "pnpm --filter cli-command build && node scripts/run-vitest.mjs --serial",
+    "test:slow": "pnpm --filter cli-command build && node scripts/run-vitest.mjs --slow",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "db:generate": "drizzle-kit generate"

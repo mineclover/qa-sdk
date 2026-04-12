@@ -2,9 +2,31 @@
 
 import { spawn } from "node:child_process";
 
-const forwardedArgs = process.argv.slice(2);
-const filters = forwardedArgs[0] === "--" ? forwardedArgs.slice(1) : forwardedArgs;
-const args = ["vitest", "run", "--no-file-parallelism", ...filters];
+let forwardedArgs = process.argv.slice(2);
+if (forwardedArgs[0] === "--") forwardedArgs = forwardedArgs.slice(1);
+
+const knownModes = new Set(["--parallel", "--serial", "--slow"]);
+const mode = knownModes.has(forwardedArgs[0] ?? "") ? forwardedArgs.shift() : "--serial";
+if (forwardedArgs[0] === "--") forwardedArgs = forwardedArgs.slice(1);
+const filters = forwardedArgs;
+
+const SLOW_TEST_FILES = [
+  "src/commands/git-conflicts.test.ts",
+  "src/commands/def.test.ts",
+  "src/commands/ontology.test.ts",
+  "src/commands/dkg.e2e.test.ts",
+  "src/commands/quality-smoke.e2e.test.ts",
+  "src/commands/review.test.ts",
+  "src/commands/git-scan.test.ts",
+];
+
+const args = [
+  "vitest",
+  "run",
+  ...(mode !== "--parallel" ? ["--no-file-parallelism"] : []),
+  ...(mode === "--slow" ? SLOW_TEST_FILES : []),
+  ...filters,
+];
 
 const child = spawn("pnpm", ["exec", ...args], {
   cwd: new URL("..", import.meta.url),
