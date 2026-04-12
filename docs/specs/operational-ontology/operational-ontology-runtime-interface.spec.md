@@ -33,6 +33,14 @@ def:
       type: contains
     - target: operational-ontology-snapshot-projector
       type: contains
+sources:
+  - packages/operational-ontology/src/internal/runtime-core.ts
+  - packages/operational-ontology/src/internal/projector-core.ts
+  - packages/operational-ontology/src/internal/projector-types.ts
+  - packages/operational-ontology/src/internal/projector-shared.ts
+  - packages/operational-ontology/src/internal/projector-utils.ts
+  - packages/operational-ontology/src/projectors.ts
+  - packages/operational-ontology/src/runtime.ts
 ---
 
 # Operational Ontology Runtime Interface — 현재 시스템에 붙기 위한 운영 포트

@@ -25,6 +25,11 @@
       "import": "./dist/governance.js",
       "require": "./dist/governance.cjs"
     },
+    "./prompt-artifacts": {
+      "types": "./dist/prompt-artifacts.d.ts",
+      "import": "./dist/prompt-artifacts.js",
+      "require": "./dist/prompt-artifacts.cjs"
+    },
     "./runtime": {
       "types": "./dist/runtime.d.ts",
       "import": "./dist/runtime.js",

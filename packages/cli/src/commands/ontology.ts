@@ -2,6 +2,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
+import type { DefDoc, DefIncomingLink, DefOutgoingLink } from "definition-catalog";
+import { createDataSource, type DataSourceOptions } from "definition-data-source";
 import {
   diffOperationalOntologyCheckpoint,
   diffOperationalOntologyCorridor,
@@ -47,9 +49,22 @@ import {
   type OperationalOntologyFacetRecord,
   type OperationalOntologyObservationRecord,
   type OperationalOntologyProjectionRecord,
-  type EventRecordObservationInput,
-  type PipeGraphProjectionInput,
 } from "operational-ontology/persistence";
+import { persistImplementationGovernanceRun } from "operational-ontology/governance";
+import type {
+  EventRecordObservationInput,
+  PipeGraphProjectionInput,
+} from "operational-ontology/projectors";
+import {
+  extractPromptArtifactSourcesFromDefinitionContext,
+  generatePromptArtifact,
+  generatePromptArtifacts,
+  evaluatePromptArtifactQuality,
+  type PromptArtifactKind,
+  type PromptArtifactUseCase,
+  PROMPT_ARTIFACT_KINDS,
+  PROMPT_ARTIFACT_USE_CASES,
+} from "operational-ontology/prompt-artifacts";
 import { getQaSdkDir } from "../lib/qa-dir.js";
 
 interface PersistedOntologyStoreFile {
@@ -167,6 +182,538 @@ function toIngestOptions(flags: Record<string, string>): IngestOperationalOntolo
     targetScope: flags["scope"],
     builtAt: flags["built-at"],
   };
+}
+
+function toDefinitionDataSourceOptions(flags: Record<string, string>): DataSourceOptions {
+  return {
+    mode: flags["local"] === "true"
+      ? "local"
+      : flags["server"] === "true"
+        ? "server"
+        : flags["scan"] === "true"
+          ? "scan"
+          : undefined,
+    dbPath: flags["db"],
+    serverUrl: flags["server-url"],
+  };
+}
+
+function parsePromptArtifactKind(value: string | undefined): PromptArtifactKind | "all" {
+  if (!value || value === "all") return "all";
+  if ((PROMPT_ARTIFACT_KINDS as readonly string[]).includes(value)) {
+    return value as PromptArtifactKind;
+  }
+  throw new Error(`Unknown prompt artifact kind "${value}"`);
+}
+
+function parsePromptArtifactUseCase(value: string | undefined): PromptArtifactUseCase {
+  const useCase = value ?? "feature_modification";
+  if ((PROMPT_ARTIFACT_USE_CASES as readonly string[]).includes(useCase)) {
+    return useCase as PromptArtifactUseCase;
+  }
+  throw new Error(`Unknown prompt artifact use case "${useCase}"`);
+}
+
+function uniqueCliValues(values: readonly string[]): string[] {
+  return [...new Set(values.filter((value) => value.trim().length > 0))];
+}
+
+function inferArtifactType(artifactRef: string): string | undefined {
+  if (artifactRef.endsWith(".json")) return "json";
+  if (artifactRef.endsWith(".ts")) return "typescript";
+  if (artifactRef.includes("quality")) return "quality-status";
+  if (artifactRef.includes("build")) return "build";
+  if (artifactRef.includes("schema")) return "schema";
+  return undefined;
+}
+
+async function defDocWithBody(source: Awaited<ReturnType<typeof createDataSource>>, doc: DefDoc) {
+  const body = await source.getBody(doc.docId);
+  const sourcePath = doc.sourcePath ?? body?.sourcePath;
+  const rawBody = sourcePath && existsSync(sourcePath)
+    ? await readFile(sourcePath, "utf8")
+    : body?.body;
+  return {
+    docId: doc.docId,
+    title: doc.title,
+    scope: doc.scope,
+    aspect: doc.aspect,
+    depth: doc.depth,
+    lifecycle: doc.lifecycle,
+    layer: doc.layer,
+    tags: doc.tags,
+    purpose: doc.purpose,
+    sourcePath,
+    body: rawBody,
+  };
+}
+
+const AUTHORIZATION_PERMISSION_CONTEXT_DOC_IDS = [
+  "authorization-ontology-permission-engine-bridge",
+  "authorization-management-usecases",
+  "authorization-management-usage-rule",
+  "authorization-ontology-decision-observation",
+  "authorization-ontology-audit-layer",
+] as const;
+
+function outgoingLinkToPromptLink(root: DefDoc, link: DefOutgoingLink) {
+  return {
+    source: root.docId,
+    target: link.target,
+    type: link.type,
+  };
+}
+
+function incomingLinkToPromptLink(root: DefDoc, link: DefIncomingLink) {
+  return {
+    source: link.source,
+    target: root.docId,
+    type: link.type,
+  };
+}
+
+async function markPersistedGovernanceEvidence(
+  store: InMemoryOperationalOntologyStore,
+  extraction: ReturnType<typeof extractPromptArtifactSourcesFromDefinitionContext>,
+): Promise<void> {
+  const runs = extraction.sources.governanceRuns ?? [];
+  if (runs.length === 0) return;
+
+  const persistedObjects = await Promise.all(
+    runs.map((run) => store.findObjectById(run.runId)),
+  );
+  if (persistedObjects.some(Boolean)) {
+    extraction.sources.governanceRuns = runs.map((run, index) =>
+      persistedObjects[index] ? { ...run, runId: `${run.runId}:persisted` } : run,
+    );
+  }
+}
+
+async function maybePersistGovernanceEvidence(
+  flags: Record<string, string>,
+  extraction: ReturnType<typeof extractPromptArtifactSourcesFromDefinitionContext>,
+): Promise<void> {
+  const store = await loadStore(getStorePath(flags));
+  if (flags["persist-governance"] === "true") {
+    for (const run of extraction.sources.governanceRuns ?? []) {
+      await persistImplementationGovernanceRun(store, run, {
+        now: flags["built-at"] ?? new Date().toISOString(),
+      });
+    }
+    await saveStore(store, getStorePath(flags));
+  }
+  await markPersistedGovernanceEvidence(store, extraction);
+}
+
+async function cmdPromptExtract(rest: string[]): Promise<void> {
+  const { positional, flags } = parseFlags(rest);
+  const docId = positional[0];
+  if (!docId) {
+    console.error(
+      "Usage: qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--json] [--local|--server|--scan] [--db <path>]",
+    );
+    return;
+  }
+
+  const kind = parsePromptArtifactKind(flags["kind"]);
+  const useCase = parsePromptArtifactUseCase(flags["use-case"]);
+  const source = await createDataSource(toDefinitionDataSourceOptions(flags));
+  const root = await source.get(docId);
+  if (!root) {
+    console.error(`Definition document not found: ${docId}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  const [children, outgoingLinks, incomingLinks] = await Promise.all([
+    source.getChildren(docId),
+    source.getOutgoingLinks(docId),
+    source.getIncomingLinks(docId),
+  ]);
+  const [rootDoc, childDocs] = await Promise.all([
+    defDocWithBody(source, root),
+    Promise.all(children.map((child) => defDocWithBody(source, child))),
+  ]);
+  const extraction = extractPromptArtifactSourcesFromDefinitionContext({
+    root: rootDoc,
+    children: childDocs,
+    outgoingLinks: outgoingLinks.map((link) => outgoingLinkToPromptLink(root, link)),
+    incomingLinks: incomingLinks.map((link) => incomingLinkToPromptLink(root, link)),
+    useCase,
+    now: new Date().toISOString(),
+  });
+  await maybePersistGovernanceEvidence(flags, extraction);
+  const artifacts = kind === "all"
+    ? generatePromptArtifacts({ ...extraction, useCase })
+    : [generatePromptArtifact({ ...extraction, kind, useCase })];
+  const evaluations = artifacts.map((artifact) => ({
+    artifact,
+    quality: evaluatePromptArtifactQuality({
+      artifact,
+      workArea: extraction.workArea,
+      sources: extraction.sources,
+    }),
+  }));
+
+  if (flags["json"] === "true") {
+    printJson({
+      docId,
+      useCase,
+      workArea: extraction.workArea,
+      sourceSummary: {
+        corridors: extraction.sources.corridors?.length ?? 0,
+        checkpointLattices: extraction.sources.checkpointLattices?.length ?? 0,
+        traversals: extraction.sources.traversals?.length ?? 0,
+        blueprints: extraction.sources.blueprints?.length ?? 0,
+        governanceRuns: extraction.sources.governanceRuns?.length ?? 0,
+      },
+      artifacts: evaluations,
+    });
+    return;
+  }
+
+  for (const { artifact, quality } of evaluations) {
+    console.log(`--- ${artifact.kind} ---`);
+    console.log(`artifactId: ${artifact.artifactId}`);
+    console.log(`useCase: ${artifact.useCase ?? "(none)"}`);
+    console.log(`quality: ${quality.grade} (${quality.score})`);
+    console.log(`ontologyManagementRequired: ${quality.ontologyManagementRequired}`);
+    if (quality.recommendedManagementActions.length > 0) {
+      console.log(
+        `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(", ")}`,
+      );
+    }
+    if (flags["quality-only"] !== "true") {
+      console.log(artifact.content);
+    }
+  }
+}
+
+async function cmdPromptExtractFile(rest: string[]): Promise<void> {
+  const { positional, flags } = parseFlags(rest);
+  const filePath = positional[0];
+  if (!filePath) {
+    console.error(
+      "Usage: qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--json] [--local|--server] [--db <path>]",
+    );
+    return;
+  }
+
+  const kind = parsePromptArtifactKind(flags["kind"]);
+  const useCase = parsePromptArtifactUseCase(flags["use-case"]);
+  const source = await createDataSource(toDefinitionDataSourceOptions(flags));
+  if (source.mode === "scan") {
+    console.error("extract-file requires DB-owned code references. Run `qa-sdk def sync` and use local/server datasource.");
+    process.exitCode = 1;
+    return;
+  }
+
+  const mapping = await source.resolveByFile(filePath);
+  if (mapping.kind === "none") {
+    console.error(`No definition boundary mapping for file: ${filePath}`);
+    process.exitCode = 1;
+    return;
+  }
+  if (mapping.kind === "ambiguous") {
+    console.error(`Ambiguous definition boundary mapping for file: ${filePath}`);
+    for (const candidate of mapping.candidates) {
+      console.error(`  candidate: ${candidate.anchor.docId}`);
+    }
+    process.exitCode = 1;
+    return;
+  }
+
+  const specificDoc =
+    mapping.supportingDocs.length === 1 ? mapping.supportingDocs[0]! : mapping.anchor;
+  const docId = specificDoc.docId;
+  const [children, outgoingLinks, incomingLinks] = await Promise.all([
+    source.getChildren(docId),
+    source.getOutgoingLinks(docId),
+    source.getIncomingLinks(docId),
+  ]);
+  const supportingDocIds = new Set(mapping.supportingDocs.map((doc) => doc.docId));
+  const childCandidates = [
+    ...mapping.supportingDocs.filter((doc) => doc.docId !== docId),
+    ...children.filter((doc) => !supportingDocIds.has(doc.docId)),
+  ];
+  const [rootDoc, childDocs] = await Promise.all([
+    defDocWithBody(source, specificDoc),
+    Promise.all(childCandidates.map((child) => defDocWithBody(source, child))),
+  ]);
+  const extraction = extractPromptArtifactSourcesFromDefinitionContext({
+    root: {
+      ...rootDoc,
+      sourcePath: rootDoc.sourcePath ?? mapping.codePath,
+    },
+    children: childDocs,
+    outgoingLinks: outgoingLinks.map((link) => outgoingLinkToPromptLink(specificDoc, link)),
+    incomingLinks: incomingLinks.map((link) => incomingLinkToPromptLink(specificDoc, link)),
+    useCase,
+    verificationRefs: mapping.references
+      .filter((ref) => ref.codePath.endsWith(".test.ts"))
+      .map((ref) => ref.codePath),
+    now: new Date().toISOString(),
+  });
+  await maybePersistGovernanceEvidence(flags, extraction);
+  const workArea = {
+    ...extraction.workArea,
+    paths: uniqueCliValues([mapping.codePath, ...(extraction.workArea.paths ?? [])]),
+    constraints: uniqueCliValues([
+      `file:${mapping.codePath}`,
+      ...(extraction.workArea.constraints ?? []),
+    ]),
+  };
+  const artifacts = kind === "all"
+    ? generatePromptArtifacts({ workArea, sources: extraction.sources, useCase })
+    : [generatePromptArtifact({ workArea, sources: extraction.sources, kind, useCase })];
+  const evaluations = artifacts.map((artifact) => ({
+    artifact,
+    quality: evaluatePromptArtifactQuality({
+      artifact,
+      workArea,
+      sources: extraction.sources,
+    }),
+  }));
+
+  if (flags["json"] === "true") {
+    printJson({
+      filePath,
+      boundaryDocId: mapping.anchor.docId,
+      contextDocId: docId,
+      useCase,
+      workArea,
+      artifacts: evaluations,
+    });
+    return;
+  }
+
+  console.log(`file: ${filePath}`);
+  console.log(`boundary: ${mapping.anchor.docId}`);
+  if (docId !== mapping.anchor.docId) {
+    console.log(`context: ${docId}`);
+  }
+  for (const { artifact, quality } of evaluations) {
+    console.log(`--- ${artifact.kind} ---`);
+    console.log(`artifactId: ${artifact.artifactId}`);
+    console.log(`useCase: ${artifact.useCase ?? "(none)"}`);
+    console.log(`quality: ${quality.grade} (${quality.score})`);
+    console.log(`ontologyManagementRequired: ${quality.ontologyManagementRequired}`);
+    if (quality.recommendedManagementActions.length > 0) {
+      console.log(
+        `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(", ")}`,
+      );
+    }
+    if (flags["quality-only"] !== "true") {
+      console.log(artifact.content);
+    }
+  }
+}
+
+async function cmdPromptExtractPermission(rest: string[]): Promise<void> {
+  const { positional, flags } = parseFlags(rest);
+  const permissionRef = positional[0];
+  if (!permissionRef) {
+    console.error(
+      "Usage: qa-sdk ontology prompt extract-permission <permission-ref> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--json] [--local|--server|--scan] [--db <path>]",
+    );
+    return;
+  }
+
+  const kind = parsePromptArtifactKind(flags["kind"]);
+  const useCase = parsePromptArtifactUseCase(flags["use-case"] ?? "schema_governance_review");
+  const source = await createDataSource(toDefinitionDataSourceOptions(flags));
+  const root = await source.get("authorization-ontology-system");
+  if (!root) {
+    console.error("Definition document not found: authorization-ontology-system");
+    process.exitCode = 1;
+    return;
+  }
+
+  const contextDocs = (
+    await Promise.all(
+      AUTHORIZATION_PERMISSION_CONTEXT_DOC_IDS.map((docId) => source.get(docId)),
+    )
+  ).filter((doc): doc is DefDoc => Boolean(doc));
+  const rootDoc = await defDocWithBody(source, root);
+  const childDocs = await Promise.all(contextDocs.map((doc) => defDocWithBody(source, doc)));
+  const outgoingLinks = (await source.getOutgoingLinks(root.docId))
+    .filter((link) =>
+      AUTHORIZATION_PERMISSION_CONTEXT_DOC_IDS.includes(link.target as never) ||
+      link.target === "permission-system",
+    )
+    .map((link) => outgoingLinkToPromptLink(root, link));
+  const extraction = extractPromptArtifactSourcesFromDefinitionContext({
+    root: {
+      ...rootDoc,
+      purpose: `${rootDoc.purpose ?? root.docId} Permission query: ${permissionRef}`,
+    },
+    children: childDocs,
+    outgoingLinks,
+    useCase,
+    verificationRefs: [
+      "packages/authorization-ontology/src/index.test.ts",
+      "packages/authorization-ontology/src/permission-engine-bridge.test.ts",
+    ],
+    now: new Date().toISOString(),
+  });
+  const workArea = {
+    ...extraction.workArea,
+    workAreaId: `permission:${permissionRef}`,
+    displayName: `Permission context: ${permissionRef}`,
+    constraints: uniqueCliValues([
+      `permission:${permissionRef}`,
+      ...(extraction.workArea.constraints ?? []),
+    ]),
+    localInstructions: [
+      "Resolve permission refs through permission_feature, grants_feature, denies_feature, materializes_permission, and decision_* relations.",
+      "Treat this extraction as authorization-context evidence until a graph-store permission query is available.",
+    ],
+  };
+  await maybePersistGovernanceEvidence(flags, extraction);
+  const artifacts = kind === "all"
+    ? generatePromptArtifacts({ workArea, sources: extraction.sources, useCase })
+    : [generatePromptArtifact({ workArea, sources: extraction.sources, kind, useCase })];
+  const evaluations = artifacts.map((artifact) => ({
+    artifact,
+    quality: evaluatePromptArtifactQuality({
+      artifact,
+      workArea,
+      sources: extraction.sources,
+    }),
+  }));
+
+  if (flags["json"] === "true") {
+    printJson({
+      permissionRef,
+      useCase,
+      workArea,
+      artifacts: evaluations,
+    });
+    return;
+  }
+
+  console.log(`permission: ${permissionRef}`);
+  for (const { artifact, quality } of evaluations) {
+    console.log(`--- ${artifact.kind} ---`);
+    console.log(`artifactId: ${artifact.artifactId}`);
+    console.log(`useCase: ${artifact.useCase ?? "(none)"}`);
+    console.log(`quality: ${quality.grade} (${quality.score})`);
+    console.log(`ontologyManagementRequired: ${quality.ontologyManagementRequired}`);
+    if (quality.recommendedManagementActions.length > 0) {
+      console.log(
+        `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(", ")}`,
+      );
+    }
+    if (flags["quality-only"] !== "true") {
+      console.log(artifact.content);
+    }
+  }
+}
+
+async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
+  const { positional, flags } = parseFlags(rest);
+  const artifactRef = positional[0];
+  if (!artifactRef) {
+    console.error(
+      "Usage: qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--json] [--local|--server|--scan] [--db <path>]",
+    );
+    return;
+  }
+
+  if (artifactRef.startsWith("packages/") || artifactRef.startsWith("docs/")) {
+    await cmdPromptExtractFile(rest);
+    return;
+  }
+
+  const kind = parsePromptArtifactKind(flags["kind"]);
+  const useCase = parsePromptArtifactUseCase(flags["use-case"] ?? "release_verification");
+  const source = await createDataSource(toDefinitionDataSourceOptions(flags));
+  const directDoc = await source.get(artifactRef);
+  if (directDoc) {
+    await cmdPromptExtract([artifactRef, ...rest.slice(1)]);
+    return;
+  }
+
+  const artifactType = flags["artifact-type"] ?? inferArtifactType(artifactRef);
+  const query = flags["q"] ?? artifactRef.split(/[/:#]/).filter(Boolean).at(-1) ?? artifactRef;
+  const candidates = await source.list({ q: query, limit: 8 });
+  const rootDoc = {
+    docId: `artifact:${artifactRef}`,
+    title: `Artifact context: ${artifactRef}`,
+    purpose: `Manage context for artifact ${artifactRef}${artifactType ? ` (${artifactType})` : ""}.`,
+    tags: ["artifact", ...(artifactType ? [`artifact-type:${artifactType}`] : [])],
+    sourcePath: artifactRef.startsWith("artifacts/") ? artifactRef : undefined,
+    lifecycle: "draft",
+  };
+  const childDocs = await Promise.all(candidates.map((doc) => defDocWithBody(source, doc)));
+  const extraction = extractPromptArtifactSourcesFromDefinitionContext({
+    root: rootDoc,
+    children: childDocs,
+    useCase,
+    verificationRefs: candidates
+      .filter((doc) => doc.tags.some((tag) => tag.startsWith("quality-gate") || tag === "testing"))
+      .map((doc) => doc.docId),
+    now: new Date().toISOString(),
+  });
+  const workArea = {
+    ...extraction.workArea,
+    workAreaId: `artifact:${artifactRef}`,
+    displayName: `Artifact context: ${artifactRef}`,
+    constraints: uniqueCliValues([
+      `artifact:${artifactRef}`,
+      ...(artifactType ? [`artifact-type:${artifactType}`] : []),
+      ...(extraction.workArea.constraints ?? []),
+    ]),
+    localInstructions: [
+      "Treat artifact refs as deliverable evidence, not as source code ownership by themselves.",
+      "Resolve artifact context through matching definition docs, quality gates, and source maps before editing.",
+    ],
+  };
+  await maybePersistGovernanceEvidence(flags, extraction);
+  const artifacts = kind === "all"
+    ? generatePromptArtifacts({ workArea, sources: extraction.sources, useCase })
+    : [generatePromptArtifact({ workArea, sources: extraction.sources, kind, useCase })];
+  const evaluations = artifacts.map((artifact) => ({
+    artifact,
+    quality: evaluatePromptArtifactQuality({
+      artifact,
+      workArea,
+      sources: extraction.sources,
+    }),
+  }));
+
+  if (flags["json"] === "true") {
+    printJson({
+      artifactRef,
+      artifactType,
+      matchedDocs: candidates.map((doc) => doc.docId),
+      useCase,
+      workArea,
+      artifacts: evaluations,
+    });
+    return;
+  }
+
+  console.log(`artifact: ${artifactRef}`);
+  if (artifactType) console.log(`artifactType: ${artifactType}`);
+  if (candidates.length > 0) {
+    console.log(`matchedDocs: ${candidates.map((doc) => doc.docId).join(", ")}`);
+  }
+  for (const { artifact, quality } of evaluations) {
+    console.log(`--- ${artifact.kind} ---`);
+    console.log(`artifactId: ${artifact.artifactId}`);
+    console.log(`useCase: ${artifact.useCase ?? "(none)"}`);
+    console.log(`quality: ${quality.grade} (${quality.score})`);
+    console.log(`ontologyManagementRequired: ${quality.ontologyManagementRequired}`);
+    if (quality.recommendedManagementActions.length > 0) {
+      console.log(
+        `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(", ")}`,
+      );
+    }
+    if (flags["quality-only"] !== "true") {
+      console.log(artifact.content);
+    }
+  }
 }
 
 async function cmdSnapshotIngest(rest: string[]): Promise<void> {
@@ -1262,6 +1809,10 @@ export async function cliOntology(args: string[]): Promise<void> {
           "qa-sdk ontology",
           "",
           "  qa-sdk ontology status [--scope <scope> | --snapshot <id>] [--store <file>] [--json] [--table]",
+          "  qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--json]",
+          "  qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--json]",
+          "  qa-sdk ontology prompt extract-permission <permission-ref> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--json]",
+          "  qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--json]",
           "  qa-sdk ontology snapshot ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]",
           "  qa-sdk ontology snapshot list [--store <file>] [--scope <scope>] [--json]",
           "  qa-sdk ontology snapshot show <snapshot-id> [--store <file>] [--json]",
@@ -1295,6 +1846,18 @@ export async function cliOntology(args: string[]): Promise<void> {
       return;
     case "status":
       await cmdStatus(rest);
+      return;
+    case "prompt.extract":
+      await cmdPromptExtract(rest);
+      return;
+    case "prompt.extract-file":
+      await cmdPromptExtractFile(rest);
+      return;
+    case "prompt.extract-permission":
+      await cmdPromptExtractPermission(rest);
+      return;
+    case "prompt.extract-artifact":
+      await cmdPromptExtractArtifact(rest);
       return;
     case "snapshot.ingest":
       await cmdSnapshotIngest(rest);

@@ -16,6 +16,9 @@ def:
       type: depends_on
     - target: operational-ontology-flow-corridor
       type: depends_on
+sources:
+  - packages/operational-ontology/src/internal/event-projector.ts
+  - packages/operational-ontology/src/projectors-event.ts
 ---
 
 # Operational Ontology Event Projector — EventRecord 관측 투영 표면
@@ -59,3 +62,7 @@ event projector는 아래를 담당한다.
 - event projector는 route decision을 직접 만들지 않는다.
 - route decision checkpoint 추가는 snapshot orchestrator 단계에서 수행한다.
 - event projector는 synthetic observed corridor를 만들지만, graph-level corridor와의 결합은 상위 snapshot이 담당한다.
+
+## 검증 참조
+
+- 테스트: `packages/operational-ontology/src/projectors-event.test.ts`

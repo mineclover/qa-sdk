@@ -16,6 +16,8 @@ def:
       type: depends_on
     - target: operational-ontology-simulation
       type: refines
+sources:
+  - packages/operational-ontology/src/internal/junction-core.ts
 ---
 
 # Operational Ontology Junction — 갈림길과 합류 지점 정의
@@ -73,3 +75,7 @@ junction는 branch만 뜻하지 않는다. 현재 vocabulary로는:
 - retry / feedback
 
 도 같은 계열의 제어 지점으로 읽을 수 있다. 다만 현재 baseline projector는 우선 `conditional` connection을 중심으로 `BranchDefinition`을 생성한다.
+
+## 검증 참조
+
+- 테스트: `packages/operational-ontology/src/projectors-pipe.test.ts`, `packages/operational-ontology/src/projectors-path.test.ts`

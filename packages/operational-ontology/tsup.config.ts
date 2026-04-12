@@ -6,6 +6,7 @@ export default defineConfig({
     "src/schema.ts",
     "src/pack.ts",
     "src/governance.ts",
+    "src/prompt-artifacts.ts",
     "src/runtime.ts",
     "src/lineage.ts",
     "src/corridor.ts",

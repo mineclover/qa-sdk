@@ -20,6 +20,9 @@ def:
       type: depends_on
     - target: operational-ontology-path-projector
       type: depends_on
+sources:
+  - packages/operational-ontology/src/internal/snapshot-projector.ts
+  - packages/operational-ontology/src/projectors-snapshot.ts
 ---
 
 # Operational Ontology Snapshot Projector — 종합 관측 스냅샷 합성 표면
@@ -65,3 +68,7 @@ snapshot projector는 아래를 담당한다.
 - snapshot projector는 새로운 raw observation을 수집하지 않는다.
 - 개별 projector의 내부 규칙을 대체하지 않고, 결과를 topology 아래에서 정렬한다.
 - aggregate import인 `operational-ontology/projectors`는 convenience layer이고, 실제 책임은 각 projector subpath와 snapshot projector에 분산된다.
+
+## 검증 참조
+
+- 테스트: `packages/operational-ontology/src/projectors-snapshot.test.ts`

@@ -9,6 +9,7 @@ import { operationalOntologyCheckpointPlane } from "./checkpoint.js";
 import { operationalOntologyTopologyPlane } from "./topology.js";
 import { operationalOntologyProjectors } from "./projectors.js";
 import { operationalOntologyImplementationGovernancePlane } from "./governance.js";
+import { operationalOntologyPromptArtifactPlane } from "./prompt-artifacts.js";
 import { operationalOntologyPersistencePlane } from "./persistence.js";
 import { createNodeCoord } from "./runtime.js";
 import { projectEventRecordToOperationalOntology as projectEventRecordProjectorOnly } from "./projectors-event.js";
@@ -42,6 +43,10 @@ describe("submodule facades", () => {
     expect(typeof operationalOntologyImplementationGovernancePlane.persistImplementationGovernanceRun).toBe(
       "function",
     );
+    expect(typeof operationalOntologyPromptArtifactPlane.generatePromptArtifact).toBe("function");
+    expect(typeof operationalOntologyPromptArtifactPlane.generatePromptArtifacts).toBe("function");
+    expect(typeof operationalOntologyPromptArtifactPlane.validatePromptArtifact).toBe("function");
+    expect(typeof operationalOntologyPromptArtifactPlane.evaluatePromptArtifactQuality).toBe("function");
     expect(typeof operationalOntologyPersistencePlane.validateFacetKindsForObjectKind).toBe("function");
     expect(typeof projectEventRecordProjectorOnly).toBe("function");
     expect(typeof projectPipeGraphProjectorOnly).toBe("function");

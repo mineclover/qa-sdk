@@ -27,6 +27,8 @@ def:
       type: contains
     - target: operational-ontology-production-factory
       type: contains
+    - target: operational-ontology-prompt-artifact-generation
+      type: contains
     - target: operational-ontology-persistence
       type: contains
     - target: operational-ontology-data-facets
@@ -67,6 +69,10 @@ def:
       type: contains
     - target: operational-ontology-rdf-bridge
       type: contains
+    - target: programming-artifact-ontology-plan
+      type: contains
+    - target: programming-artifact-ontology-todo
+      type: contains
 ---
 
 # Operational Ontology System — schema-first operational ontology 초안
@@ -90,6 +96,8 @@ taxonomy를 먼저 schema로 선언하고 검증한 뒤, 그 schema에서 node, 
   - schema, governance taxonomy, blueprint를 도메인 pack 단위로 묶고 한 번에 검증
 - **Implementation governance plane**
   - 승인된 schema와 taxonomy 좌표를 구현/검증 binding과 consistency constraint로 매칭하는 거버넌스 계약
+- **Prompt artifact plane**
+  - governance evidence에서 작업영역별 `self_reflection` / `code_editing_rules`를 생성하는 파생 산출물 표면
 - **Instance plane**
   - `NodeCoord`
   - `RelationTypeCoord`
@@ -133,6 +141,7 @@ RDF bridge는 이 4층 전체에 대응되는 외부 의미 계층이다.
 
 - axis/taxonomy schema 정의와 검증
 - 도메인 pack 단위 schema/governance/blueprint 검증
+- 작업영역별 prompt artifact 생성과 검증
 - relation category schema와 traversal schema 정의
 - node identity canonicalization
 - relation type taxonomy와 category root
@@ -150,6 +159,7 @@ RDF bridge는 이 4층 전체에 대응되는 외부 의미 계층이다.
 - `operational-ontology-relation-category-schema` — relation type category schema 정의
 - `operational-ontology-schema-validation` — schema plane과 instance plane 사이의 검증 규칙
 - `operational-ontology-pack-interface` — schema/governance/blueprint를 pack 단위로 묶는 인터페이스
+- `operational-ontology-prompt-artifact-generation` — 작업영역별 prompt artifact 생성과 검증 규칙
 - `operational-ontology-persistence` — schema/registry/assertion/observation/projection 저장 모델
 - `operational-ontology-data-facets` — 정보를 canonical data facet bundle로 읽는 원칙
 - `operational-ontology-flow-corridor` — 데이터가 지나가는 통로를 정의하는 원칙
@@ -171,3 +181,5 @@ RDF bridge는 이 4층 전체에 대응되는 외부 의미 계층이다.
 - `operational-ontology-category-constraint` — category-constrained grammar와 운영 규칙
 - `operational-ontology-traversal-coordinate` — route identity와 purpose projection
 - `operational-ontology-rdf-bridge` — RDF와 operational coordinate의 대응 규칙
+- `programming-artifact-ontology-plan` — 외부 artifact provider/pack으로 산출물 context를 관리하는 장기 계획
+- `programming-artifact-ontology-todo` — programming artifact ontology 구현 항목

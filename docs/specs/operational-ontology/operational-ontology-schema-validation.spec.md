@@ -16,6 +16,10 @@ def:
       type: depends_on
     - target: operational-ontology-category-constraint
       type: depends_on
+sources:
+  - packages/operational-ontology/src/internal/schema-core.ts
+  - packages/operational-ontology/src/internal/schema-memory.ts
+  - packages/operational-ontology/src/schema.ts
 ---
 
 # Operational Ontology Schema Validation — taxonomy를 만들기 전에 검증하기

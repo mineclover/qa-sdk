@@ -16,6 +16,9 @@ def:
       type: depends_on
     - target: operational-ontology-traversal-coordinate
       type: depends_on
+sources:
+  - packages/operational-ontology/src/internal/path-projector.ts
+  - packages/operational-ontology/src/projectors-path.ts
 ---
 
 # Operational Ontology Path Projector — PathObservation 투영 표면
@@ -54,3 +57,7 @@ path projector는 아래를 담당한다.
 - path projector는 corridor를 직접 만들지 않는다.
 - checkpoint lattice를 직접 만들지 않는다.
 - `corridorId`, `junctionId`, `traversalKey`의 완전한 연결은 snapshot 단계에서 보강된다.
+
+## 검증 참조
+
+- 테스트: `packages/operational-ontology/src/projectors-path.test.ts`

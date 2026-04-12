@@ -22,6 +22,13 @@ def:
       type: depends_on
     - target: operational-ontology-simulation
       type: depends_on
+sources:
+  - packages/operational-ontology/src/internal/implementation-governance-core.ts
+  - packages/operational-ontology/src/internal/implementation-governance-types.ts
+  - packages/operational-ontology/src/internal/implementation-governance-taxonomy.ts
+  - packages/operational-ontology/src/internal/implementation-governance-evaluator.ts
+  - packages/operational-ontology/src/internal/implementation-governance-persistence.ts
+  - packages/operational-ontology/src/governance.ts
 ---
 
 # Operational Ontology Implementation Governance — 구조 좌표와 구현/검증 매칭 plane
@@ -42,6 +49,8 @@ implementation governance plane은 schema plane과 instance/projection plane 사
   - 구현 단위와 gate, simulation, test surface를 연결하는 매칭
 - **GovernanceRun**
   - 특정 구현 변경에 factory 규범을 적용한 기록
+- **PromptArtifact**
+  - governance run과 작업영역 evidence에서 생성되는 `self_reflection` / `code_editing_rules` 산출물
 - **ConsistencyConstraint**
   - 구현 단위가 반드시 만족해야 하는 구조 규칙
 - **AdjustmentPolicy**
@@ -66,6 +75,8 @@ Schema -> Validate -> Bind Implementation -> Bind Verification -> Check -> Adjus
 ```
 
 따라서 factory는 code-level 생성 헬퍼가 아니라 ontology 운영 규범 단위다. 같은 구조 좌표를 실현하는 구현 결과는 같은 family에 속하고, binding, constraint verdict, adjustment record, evolution edge를 통해 반복 발전 이력을 남겨야 한다.
+
+prompt artifact generation은 이 governance run을 agent 실행 환경으로 전달하는 파생 단계다. factory가 만든 blueprint, binding, constraint verdict, adjustment record를 작업영역별 prompt section으로 투영하여 agent가 같은 설계 경계와 검증 단위를 반복 사용하게 한다.
 
 ### binding과 factory의 경계
 

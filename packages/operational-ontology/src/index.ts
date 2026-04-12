@@ -41,6 +41,13 @@ import {
   validateImplementationGovernanceTaxonomy,
 } from "./internal/implementation-governance-core.js";
 import {
+  evaluatePromptArtifactQuality,
+  extractPromptArtifactSourcesFromDefinitionContext,
+  generatePromptArtifact,
+  generatePromptArtifacts,
+  validatePromptArtifact,
+} from "./internal/prompt-artifact-core.js";
+import {
   validateOperationalOntologyPack,
   validateOperationalOntologyPacks,
 } from "./internal/pack-core.js";
@@ -63,6 +70,7 @@ export * from "./internal/persistence-ingest.js";
 export * from "./internal/persistence-query.js";
 export * from "./internal/persistence-service.js";
 export * from "./internal/persistence-diff.js";
+export * from "./internal/prompt-artifact-core.js";
 
 // ── Architecture Facades ───────────────────────────────
 
@@ -85,6 +93,14 @@ export const operationalOntologyImplementationGovernancePlane = {
   evaluateImplementationGovernance,
   persistImplementationGovernanceBlueprint,
   persistImplementationGovernanceRun,
+};
+
+export const operationalOntologyPromptArtifactPlane = {
+  generatePromptArtifact,
+  generatePromptArtifacts,
+  validatePromptArtifact,
+  evaluatePromptArtifactQuality,
+  extractPromptArtifactSourcesFromDefinitionContext,
 };
 
 export const operationalOntologyCorridorPlane = {

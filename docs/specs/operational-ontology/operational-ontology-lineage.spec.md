@@ -16,6 +16,10 @@ def:
       type: depends_on
     - target: meta-semantic-ir
       type: depends_on
+sources:
+  - packages/operational-ontology/src/internal/lineage-core.ts
+  - packages/operational-ontology/src/internal/lineage-projector.ts
+  - packages/operational-ontology/src/lineage.ts
 ---
 
 # Operational Ontology Lineage — 데이터 계보 추적을 해석층으로 다루기
@@ -71,3 +75,7 @@ lineage는 아래 질문에 답한다.
 3. simulation 결과와 lineage를 어떻게 비교할지
 
 를 먼저 고정하는 것이 중요하다.
+
+## 검증 참조
+
+- 테스트: `packages/operational-ontology/src/projectors-lineage.test.ts`, `packages/operational-ontology/src/projectors-snapshot.test.ts`

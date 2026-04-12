@@ -16,6 +16,8 @@ def:
       type: depends_on
     - target: operational-ontology-persistence
       type: refines
+sources:
+  - packages/operational-ontology/src/internal/checkpoint-core.ts
 ---
 
 # Operational Ontology Checkpoint — 통로 위 관측 지점 정의
@@ -81,3 +83,7 @@ checkpoint template는 현재 아래 shape contract를 가질 수 있다.
 - `requireObservedFields`
 - `requireObservedPrefixIds`
 - `requireObservedNodeHit`
+
+## 검증 참조
+
+- 테스트: `packages/operational-ontology/src/projectors-event.test.ts`, `packages/operational-ontology/src/projectors-snapshot.test.ts`

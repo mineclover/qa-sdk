@@ -16,6 +16,7 @@ def:
       type: depends_on
     - target: authorization-ontology-audit-layer
       type: depends_on
+source: packages/authorization-ontology/src/permission-engine-bridge.test.ts
 ---
 
 # Authorization Ontology Permission Engine Bridge — bitmask 권한 커널 투영
@@ -68,3 +69,8 @@ bridge는 `permission-engine`을 대체하지 않는다. 실행 성능과 O(1) c
 - 실제 `RoleRegistry`의 parent inheritance와 `OrgRoleRegistry`의 domain role assignment가 relation graph로 표현되어야 한다.
 - 실제 `UserPermissionEngine.audit()`의 `granted`, `sources`, `denialReason`이 decision graph, role source, user override relation으로 보존되어야 한다.
 - 실제 `PermissionMiddleware.check()`의 deny feedback이 `PERMISSION_DENIED`로 분리되고, middleware feedback graph에 보존되어야 한다.
+
+## 구현 참조
+
+- 구현: `packages/authorization-ontology/src/index.ts`
+- 테스트: `packages/authorization-ontology/src/permission-engine-bridge.test.ts`

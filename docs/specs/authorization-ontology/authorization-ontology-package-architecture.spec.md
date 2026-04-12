@@ -12,6 +12,7 @@ def:
   links:
     - target: authorization-ontology-system
       type: refines
+source: packages/authorization-ontology/src/index.ts
 ---
 
 # Authorization Ontology Package Architecture — 패키지 공개 표면
@@ -68,3 +69,8 @@ permission-engine bridge surface는 `PermissionSetSnapshot`, `DomainRoleDef`, `O
 graph store surface는 `AuthorizationOntologyGraph` snapshot을 저장하고, 조회/list/delete/diff할 수 있는 최소 계약이다. 초기 adapter는 `InMemoryAuthorizationGraphStore`이며, 운영 DB adapter는 같은 `AuthorizationGraphStore` 인터페이스를 구현한다.
 
 ingest surface는 decision, Cerbos decision, permission-engine audit, permission middleware feedback을 graph snapshot으로 저장한다. `mergeWithLatest`를 사용하면 같은 graphId의 최신 snapshot에 새 observation을 누적하고 diff를 반환한다.
+
+## 구현 참조
+
+- 구현: `packages/authorization-ontology/src/index.ts`
+- 테스트: `packages/authorization-ontology/src/index.test.ts`

@@ -16,6 +16,8 @@ def:
       type: depends_on
     - target: operational-ontology-control-flow
       type: refines
+sources:
+  - packages/operational-ontology/src/internal/corridor-core.ts
 ---
 
 # Operational Ontology Flow Corridor — 데이터가 지나가는 통로 정의
@@ -67,3 +69,7 @@ corridor는 아래 질문에 답한다.
 - custom corridor template registry를 주입하면 `allowed/required endpoint/contract/link` 규칙에 따라 `templateValidation`도 달라질 수 있다
 
 즉 corridor는 설계 시점에도 존재하고, 관측 시점에도 synthetic하게 형성될 수 있다.
+
+## 검증 참조
+
+- 테스트: `packages/operational-ontology/src/projectors-pipe.test.ts`, `packages/operational-ontology/src/projectors-event.test.ts`

@@ -18,6 +18,9 @@ def:
       type: depends_on
     - target: operational-ontology-runtime-interface
       type: refines
+sources:
+  - packages/operational-ontology/src/internal/topology-core.ts
+  - packages/operational-ontology/src/topology.ts
 ---
 
 # Operational Ontology Observation Topology — corridor/junction/checkpoint 상위 계약
@@ -73,3 +76,7 @@ corridor, junction, checkpoint를 각각 validation해도:
 같은 조합 불일치는 놓칠 수 있다.
 
 topology template는 이런 조합 수준의 불일치를 잡는다.
+
+## 검증 참조
+
+- 테스트: `packages/operational-ontology/src/projectors-snapshot.test.ts`

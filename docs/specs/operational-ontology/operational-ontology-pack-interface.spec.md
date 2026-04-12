@@ -16,6 +16,9 @@ def:
       type: depends_on
     - target: operational-ontology-production-factory
       type: depends_on
+sources:
+  - packages/operational-ontology/src/internal/pack-core.ts
+  - packages/operational-ontology/src/pack.ts
 ---
 
 # Operational Ontology Pack Interface — 도메인 온톨로지 pack 검증 표면
@@ -64,3 +67,7 @@ registry 규칙:
 1. pack registry는 pack 목록 조회와 id 기반 조회를 제공한다.
 2. `validateAll()`은 pack id 중복과 각 pack 내부 검증 결과를 함께 반환한다.
 3. registry는 pack 내용을 직접 수정하지 않고, pack validation 결과만 제공한다.
+
+## 검증 참조
+
+- 테스트: `packages/operational-ontology/src/pack.test.ts`

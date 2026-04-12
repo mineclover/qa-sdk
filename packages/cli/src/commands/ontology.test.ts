@@ -10,6 +10,10 @@ import { USAGE, resolveSubcommand } from "../index.js";
 describe("ontology CLI", () => {
   it("usage와 subcommand 해석에 ontology 루트를 노출한다", () => {
     expect(USAGE).toContain("qa-sdk ontology status");
+    expect(USAGE).toContain("qa-sdk ontology prompt extract");
+    expect(USAGE).toContain("qa-sdk ontology prompt extract-file");
+    expect(USAGE).toContain("qa-sdk ontology prompt extract-permission");
+    expect(USAGE).toContain("qa-sdk ontology prompt extract-artifact");
     expect(USAGE).toContain("qa-sdk ontology snapshot ingest");
     expect(USAGE).toContain("qa-sdk ontology corridor list");
     expect(USAGE).toContain("qa-sdk ontology checkpoint list");
@@ -58,6 +62,43 @@ describe("ontology CLI", () => {
       name: "ontology corridor show-latest",
       rest: ["pipe-cli", "--scope", "pipe-scope"],
     });
+  });
+
+  it("prompt extract-file can persist governance evidence", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-prompt-"));
+    const storePath = join(dir, "store.json");
+
+    const first = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-file",
+        "packages/operational-ontology/src/internal/checkpoint-core.ts",
+        "--use-case",
+        "feature_modification",
+        "--kind",
+        "code_editing_rules",
+        "--store",
+        storePath,
+        "--quality-only",
+      ]);
+    });
+    expect(first.stdout).toContain("actions: close_governance_evidence");
+
+    const persisted = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-file",
+        "packages/operational-ontology/src/internal/checkpoint-core.ts",
+        "--use-case",
+        "feature_modification",
+        "--kind",
+        "code_editing_rules",
+        "--store",
+        storePath,
+        "--persist-governance",
+        "--quality-only",
+      ]);
+    });
+    expect(persisted.stdout).toContain("ontologyManagementRequired: false");
+    expect(persisted.stdout).not.toContain("actions: close_governance_evidence");
   });
 
   it("event ingest 후 snapshot list/show를 수행한다", async () => {

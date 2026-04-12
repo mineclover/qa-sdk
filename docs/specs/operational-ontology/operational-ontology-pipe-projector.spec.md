@@ -18,6 +18,9 @@ def:
       type: depends_on
     - target: operational-ontology-lineage
       type: depends_on
+sources:
+  - packages/operational-ontology/src/internal/pipe-projector.ts
+  - packages/operational-ontology/src/projectors-pipe.ts
 ---
 
 # Operational Ontology Pipe Projector — PipeGraph 투영 표면
@@ -65,3 +68,7 @@ pipe projector는 아래를 담당한다.
 - pipe projector는 실제 runtime observation을 만들지 않는다.
 - event-derived checkpoint는 만들지 않는다.
 - path observation과의 결합은 snapshot orchestrator가 담당한다.
+
+## 검증 참조
+
+- 테스트: `packages/operational-ontology/src/projectors-pipe.test.ts`

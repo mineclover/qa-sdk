@@ -22,6 +22,15 @@ def:
       type: depends_on
     - target: address-context-storage
       type: refines
+sources:
+  - packages/operational-ontology/src/internal/persistence-core.ts
+  - packages/operational-ontology/src/internal/persistence-memory.ts
+  - packages/operational-ontology/src/internal/persistence-snapshot.ts
+  - packages/operational-ontology/src/internal/persistence-ingest.ts
+  - packages/operational-ontology/src/internal/persistence-query.ts
+  - packages/operational-ontology/src/internal/persistence-service.ts
+  - packages/operational-ontology/src/internal/persistence-diff.ts
+  - packages/operational-ontology/src/persistence.ts
 ---
 
 # Operational Ontology Persistence — facet bundle + append-only observation 저장 모델

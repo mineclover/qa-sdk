@@ -14,6 +14,11 @@ def:
       type: refines
     - target: operational-ontology-runtime-interface
       type: depends_on
+sources:
+  - packages/operational-ontology/src/index.ts
+  - packages/operational-ontology/src/checkpoint.ts
+  - packages/operational-ontology/src/corridor.ts
+  - packages/operational-ontology/src/junction.ts
 ---
 
 # Operational Ontology Package Architecture — plane별 공개 표면
@@ -29,6 +34,7 @@ def:
 - `operationalOntologySchemaPlane`
 - `operationalOntologyPackPlane`
 - `operationalOntologyImplementationGovernancePlane`
+- `operationalOntologyPromptArtifactPlane`
 - `operationalOntologyLineagePlane`
 - `operationalOntologyCorridorPlane`
 - `operationalOntologyJunctionPlane`
@@ -42,6 +48,7 @@ def:
 - `operational-ontology/schema`
 - `operational-ontology/pack`
 - `operational-ontology/governance`
+- `operational-ontology/prompt-artifacts`
 - `operational-ontology/runtime`
 - `operational-ontology/lineage`
 - `operational-ontology/corridor`
@@ -72,6 +79,8 @@ def:
   도메인 ontology pack의 schema/governance/blueprint 일괄 검증과 pack registry 조회
 - **implementation governance plane**
   승인된 schema에서 구조 좌표와 구현/검증 binding, 제약 gate를 매칭하는 구현 거버넌스 계약
+- **prompt artifact plane**
+  작업영역별 `self_reflection` / `code_editing_rules` artifact 생성과 shape 검증
 - **corridor plane**
   corridor template와 corridor validation
 - **lineage plane**
@@ -108,6 +117,7 @@ projector의 실제 책임 경계는 아래 subpath에 맞춘다.
 - `src/internal/implementation-governance-taxonomy.ts`
 - `src/internal/implementation-governance-evaluator.ts`
 - `src/internal/implementation-governance-persistence.ts`
+- `src/internal/prompt-artifact-core.ts`
 - `src/internal/runtime-core.ts`
 - `src/internal/lineage-core.ts`
 - `src/internal/corridor-core.ts`
