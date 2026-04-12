@@ -104,6 +104,23 @@ interface RecordInsight {
   sourceRefs: string[];
 }
 
+type HealthSeverity = "ok" | "warning" | "error";
+
+interface StoreHealthItem {
+  label: string;
+  value: string;
+  severity: HealthSeverity;
+  detail: string;
+}
+
+interface ProjectionAnalysis {
+  mode: "snapshot" | "corridor" | "checkpoint" | "traversal" | "generic";
+  validation: boolean | undefined;
+  issues: string[];
+  counts: [string, number][];
+  focus: InsightFact[];
+}
+
 const sampleStore: OntologyStoreFile = {
   objects: [
     {
@@ -333,6 +350,12 @@ function payloadArrayLength(record: unknown, key: string): number {
   return Array.isArray(value) ? value.length : 0;
 }
 
+function payloadArray(record: unknown, key: string): unknown[] {
+  const payload = payloadRecord(record);
+  const value = payload?.[key];
+  return Array.isArray(value) ? value : [];
+}
+
 function payloadString(record: unknown, key: string): string | undefined {
   const payload = payloadRecord(record);
   const value = payload?.[key];
@@ -350,6 +373,15 @@ function nestedPayloadBoolean(record: unknown, parentKey: string, childKey: stri
   if (!isRecord(parent)) return undefined;
   const value = parent[childKey];
   return typeof value === "boolean" ? value : undefined;
+}
+
+function nestedPayloadRecord(record: unknown, parentKey: string): Record<string, unknown> | undefined {
+  const parent = payloadRecord(record)?.[parentKey];
+  return isRecord(parent) ? parent : undefined;
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
 }
 
 function payloadKeys(record: unknown): string[] {
@@ -411,6 +443,33 @@ function renderStorePrimer(store: OntologyStoreFile): string {
           </div>
         `).join("")}
       </dl>
+    </section>
+  `;
+}
+
+function renderStoreHealth(store: OntologyStoreFile): string {
+  const health = storeHealth(store);
+  const summary = health.some((item) => item.severity === "error")
+    ? "Action needed"
+    : health.some((item) => item.severity === "warning")
+      ? "Review recommended"
+      : "Clear";
+
+  return `
+    <section class="health-strip" aria-label="Store health">
+      <div class="health-title">
+        <p class="eyebrow">Store health</p>
+        <h2>${escapeHtml(summary)}</h2>
+      </div>
+      <div class="health-items">
+        ${health.map((item) => `
+          <div class="health-item ${item.severity}">
+            <span>${escapeHtml(item.label)}</span>
+            <strong>${escapeHtml(item.value)}</strong>
+            <p>${escapeHtml(item.detail)}</p>
+          </div>
+        `).join("")}
+      </div>
     </section>
   `;
 }
@@ -514,12 +573,57 @@ function storeRecordTimestamp(section: StoreSectionKey, record: unknown): string
   }
 }
 
-function projectionInsight(record: unknown): RecordInsight {
-  const kind = stringField(record, "projectionKind") ?? "projection";
-  const scope = stringField(record, "targetScope") ?? "unknown scope";
-  const builtFrom = isRecord(record) && Array.isArray(record["builtFrom"]) ? record["builtFrom"].filter((value): value is string => typeof value === "string") : [];
-  const validation = nestedPayloadBoolean(record, "topologyValidation", "valid");
-  const counts = [
+function latestStatusForObject(store: OntologyStoreFile, objectId: string): string | undefined {
+  const status = store.facets
+    .filter((facet) => facet.objectId === objectId && facet.facetKind === "status")
+    .at(-1);
+  const payload = isRecord(status?.payloadJson) ? status.payloadJson : undefined;
+  const state = payload?.["state"];
+  return typeof state === "string" ? state : undefined;
+}
+
+function projectionMode(record: unknown): ProjectionAnalysis["mode"] {
+  const kind = (stringField(record, "projectionKind") ?? "").toLowerCase();
+  const template = (payloadString(record, "topologyTemplateKind") ?? "").toLowerCase();
+  if (kind.includes("snapshot") || template.includes("snapshot")) return "snapshot";
+  if (kind.includes("corridor")) return "corridor";
+  if (kind.includes("checkpoint")) return "checkpoint";
+  if (kind.includes("traversal")) return "traversal";
+  return "generic";
+}
+
+function validationIssues(record: unknown): string[] {
+  const validation = nestedPayloadRecord(record, "topologyValidation");
+  if (!validation) return [];
+  const issues: string[] = [];
+  const arrayIssueKeys = [
+    ["missingCorridorKinds", "Missing corridor kinds"],
+    ["missingJunctionTemplateKinds", "Missing junction templates"],
+    ["missingCheckpointTemplateKinds", "Missing checkpoint templates"],
+    ["routeDecisionsMissingRefs", "Route decisions missing refs"],
+    ["checkpointsMissingCorridor", "Checkpoints missing corridor"],
+  ] as const;
+  const booleanIssueKeys = [
+    ["missingCheckpointLattices", "Missing checkpoint lattices"],
+    ["missingRouteDecisions", "Missing route decisions"],
+    ["missingTraversals", "Missing traversals"],
+    ["tooFewCorridors", "Too few corridors"],
+    ["tooManyCorridors", "Too many corridors"],
+    ["checkpointDepthTooShallow", "Checkpoint depth too shallow"],
+  ] as const;
+
+  for (const [key, label] of arrayIssueKeys) {
+    const values = stringArray(validation[key]);
+    if (values.length > 0) issues.push(`${label}: ${formatList(values)}`);
+  }
+  for (const [key, label] of booleanIssueKeys) {
+    if (validation[key] === true) issues.push(label);
+  }
+  return issues;
+}
+
+function projectionCounts(record: unknown): [string, number][] {
+  return [
     ["Corridors", payloadArrayLength(record, "corridors")],
     ["Control flows", payloadArrayLength(record, "controlFlows")],
     ["Checkpoints", payloadArrayLength(record, "checkpoints")],
@@ -529,16 +633,135 @@ function projectionInsight(record: unknown): RecordInsight {
     ["Junctions", payloadArrayLength(record, "junctions")],
     ["Route decisions", payloadArrayLength(record, "routeDecisions")],
   ].filter(([, value]) => Number(value) > 0) as [string, number][];
+}
+
+function firstRecord(values: unknown[]): Record<string, unknown> | undefined {
+  return values.find(isRecord);
+}
+
+function projectionFocus(record: unknown, mode: ProjectionAnalysis["mode"]): InsightFact[] {
+  if (mode === "snapshot") {
+    const validation = nestedPayloadRecord(record, "topologyValidation");
+    const corridorCount = validation?.["corridorCount"];
+    const depth = validation?.["maxCheckpointLatticeDepth"];
+    return [
+      { label: "Corridor coverage", value: typeof corridorCount === "number" ? String(corridorCount) : String(payloadArrayLength(record, "corridors")) },
+      { label: "Checkpoint depth", value: typeof depth === "number" ? String(depth) : "not reported" },
+      { label: "Traversal bundles", value: String(payloadArrayLength(record, "traversals")) },
+    ];
+  }
+  if (mode === "corridor") {
+    const corridor = firstRecord(payloadArray(record, "corridors")) ?? payloadRecord(record);
+    return [
+      { label: "Flow", value: stringField(corridor, "flowId") ?? "not declared" },
+      { label: "Entry node", value: stringField(corridor, "entryNodeId") ?? "not declared" },
+      { label: "Endpoints", value: String(arrayLengthField(corridor, "endpoints")) },
+      { label: "Contracts", value: String(arrayLengthField(corridor, "contracts")) },
+      { label: "Links", value: String(arrayLengthField(corridor, "links")) },
+    ];
+  }
+  if (mode === "checkpoint") {
+    const lattice = firstRecord(payloadArray(record, "checkpointLattices")) ?? payloadRecord(record);
+    return [
+      { label: "Root checkpoint", value: stringField(lattice, "rootCheckpointId") ?? "not declared" },
+      { label: "Corridor", value: stringField(lattice, "corridorId") ?? "not declared" },
+      { label: "Checkpoints", value: String(payloadArrayLength(record, "checkpoints")) },
+    ];
+  }
+  if (mode === "traversal") {
+    const traversalBundle = firstRecord(payloadArray(record, "traversals"));
+    const traversal = isRecord(traversalBundle?.["traversal"]) ? traversalBundle["traversal"] : payloadRecord(record);
+    return [
+      { label: "Purpose", value: stringField(traversal, "purpose") ?? "not declared" },
+      { label: "Start", value: stringField(traversal, "start") ?? "not declared" },
+      { label: "End", value: stringField(traversal, "end") ?? "not declared" },
+      { label: "Reached goals", value: String(arrayLengthField(record, "reachedGoalIds")) },
+      { label: "Unreachable goals", value: String(arrayLengthField(record, "unreachableGoalIds")) },
+    ];
+  }
+  return payloadKeys(record).slice(0, 5).map((key) => ({ label: key, value: "present" }));
+}
+
+function analyzeProjection(record: unknown): ProjectionAnalysis {
+  const mode = projectionMode(record);
+  return {
+    mode,
+    validation: nestedPayloadBoolean(record, "topologyValidation", "valid"),
+    issues: validationIssues(record),
+    counts: projectionCounts(record),
+    focus: projectionFocus(record, mode),
+  };
+}
+
+function storeHealth(store: OntologyStoreFile): StoreHealthItem[] {
+  const invalidProjections = store.projections.filter((projection) => analyzeProjection(projection).validation === false);
+  const reportedProjectionValidations = store.projections.filter((projection) => analyzeProjection(projection).validation !== undefined).length;
+  const projectionIssues = store.projections.flatMap((projection) => analyzeProjection(projection).issues);
+  const governanceRuns = store.objects.filter((object) => object.objectKind === "governance_run");
+  const failedGovernanceRuns = governanceRuns.filter((object) => latestStatusForObject(store, object.objectId) === "failed");
+  const traversalIssues = store.observations.filter((observation) => {
+    const payload = isRecord(observation.payloadJson) ? observation.payloadJson : {};
+    return (
+      arrayLengthField(payload, "unreachableGoalIds") > 0 ||
+      payload["loopDetected"] === true ||
+      payload["recoveryUsed"] === true
+    );
+  });
+  const objectIds = new Set(store.objects.map((object) => object.objectId));
+  const orphanObservations = store.observations.filter((observation) => !objectIds.has(observation.targetObjectId));
+
+  return [
+    {
+      label: "Projection validation",
+      value: invalidProjections.length === 0 ? "clear" : `${invalidProjections.length} failing`,
+      severity: invalidProjections.length > 0 ? "error" : reportedProjectionValidations === 0 ? "warning" : "ok",
+      detail: reportedProjectionValidations === 0
+        ? "No projection reported topologyValidation."
+        : `${reportedProjectionValidations} projection validations reported.`,
+    },
+    {
+      label: "Missing topology",
+      value: projectionIssues.length === 0 ? "none" : `${projectionIssues.length} issues`,
+      severity: projectionIssues.length > 0 ? "warning" : "ok",
+      detail: projectionIssues.length > 0 ? formatList(projectionIssues) : "No missing corridor, checkpoint, route, or traversal issues reported.",
+    },
+    {
+      label: "Governance runs",
+      value: failedGovernanceRuns.length === 0 ? `${governanceRuns.length} clear` : `${failedGovernanceRuns.length} failed`,
+      severity: failedGovernanceRuns.length > 0 ? "error" : "ok",
+      detail: failedGovernanceRuns.length > 0 ? formatList(failedGovernanceRuns.map((object) => object.objectId)) : "No failed governance runs in status facets.",
+    },
+    {
+      label: "Traversal signals",
+      value: traversalIssues.length === 0 ? "complete" : `${traversalIssues.length} flagged`,
+      severity: traversalIssues.length > 0 ? "warning" : "ok",
+      detail: traversalIssues.length > 0 ? "Unreachable goals, loops, or recovery usage were observed." : "No unreachable goals, loops, or recovery usage observed.",
+    },
+    {
+      label: "Observation links",
+      value: orphanObservations.length === 0 ? "anchored" : `${orphanObservations.length} orphan`,
+      severity: orphanObservations.length > 0 ? "warning" : "ok",
+      detail: orphanObservations.length > 0 ? "Some observations target objects not present in this store file." : "All observations target known objects in this store file.",
+    },
+  ];
+}
+
+function projectionInsight(record: unknown): RecordInsight {
+  const kind = stringField(record, "projectionKind") ?? "projection";
+  const scope = stringField(record, "targetScope") ?? "unknown scope";
+  const builtFrom = stringArray(isRecord(record) ? record["builtFrom"] : []);
+  const analysis = analyzeProjection(record);
   const topologyKind = payloadString(record, "topologyTemplateKind");
-  const projectionRole = kind.includes("snapshot")
+  const projectionRole = analysis.mode === "snapshot"
     ? "scope 전체를 하나의 operational topology로 다시 조립한 조회 결과입니다."
-    : kind.includes("corridor")
+    : analysis.mode === "corridor"
       ? "하나의 흐름 corridor를 중심으로 관련 control-flow와 route 정보를 묶은 조회 결과입니다."
-      : kind.includes("checkpoint")
+      : analysis.mode === "checkpoint"
         ? "checkpoint 구조와 검증 깊이를 확인하기 위한 조회 결과입니다."
-        : kind.includes("traversal")
+        : analysis.mode === "traversal"
           ? "관측된 이동 경로와 도달 결과를 확인하기 위한 조회 결과입니다."
           : "원본 store 기록에서 다시 만들 수 있는 조회 결과입니다.";
+  const focus = analysis.focus.filter((fact) => fact.value !== "0" && fact.value !== "not declared");
 
   return {
     title: `${humanizeKind(kind)} for ${scope}`,
@@ -548,15 +771,24 @@ function projectionInsight(record: unknown): RecordInsight {
       { label: "Kind", value: humanizeKind(kind) },
       { label: "Template", value: topologyKind ? humanizeKind(topologyKind) : "not declared" },
       { label: "Built from", value: formatList(builtFrom) },
-      { label: "Validation", value: validation === undefined ? "not reported" : validation ? "valid" : "needs attention" },
-      { label: "Payload", value: counts.length > 0 ? counts.map(([label, value]) => formatCount(value, label.toLowerCase())).join(" · ") : "raw projection payload" },
+      { label: "Validation", value: analysis.validation === undefined ? "not reported" : analysis.validation ? "valid" : "needs attention" },
+      { label: "Payload", value: analysis.counts.length > 0 ? analysis.counts.map(([label, value]) => formatCount(value, label.toLowerCase())).join(" · ") : "raw projection payload" },
+      ...focus,
     ],
     interpretation: [
       "Projection은 원본 사실이 아니라, store에 쌓인 기록을 운영자가 조회하기 좋게 다시 조립한 view입니다.",
-      "그래프는 주로 projection의 corridor, checkpoint, traversal 정보를 읽어 topology로 렌더링합니다.",
-      validation === false
-        ? "validation이 실패했으므로 missing corridor, checkpoint depth, route reference 같은 항목을 먼저 확인해야 합니다."
-        : "validation이 통과했거나 아직 기록되지 않았으므로, 포함된 bundle 수와 builtFrom 경로를 먼저 보면 됩니다.",
+      analysis.mode === "snapshot"
+        ? "snapshot projection은 corridor, checkpoint, traversal bundle이 함께 있는지 보는 completeness 기준점입니다."
+        : analysis.mode === "corridor"
+          ? "corridor projection은 entry node, endpoint, contract, link가 일관되게 연결됐는지 보는 흐름 기준점입니다."
+          : analysis.mode === "checkpoint"
+            ? "checkpoint projection은 corridor 안의 검증 지점과 lattice 깊이가 충분한지 보는 검증 기준점입니다."
+            : analysis.mode === "traversal"
+              ? "traversal projection은 목표 도달, unreachable goal, loop, recovery를 보는 실행 경로 기준점입니다."
+              : "그래프는 주로 projection의 corridor, checkpoint, traversal 정보를 읽어 topology로 렌더링합니다.",
+      analysis.issues.length > 0
+        ? `먼저 확인할 항목: ${formatList(analysis.issues)}.`
+        : "validation 이슈가 없거나 아직 기록되지 않았으므로, 포함된 bundle 수와 builtFrom 경로를 먼저 보면 됩니다.",
     ],
     sourceRefs: builtFrom,
   };
@@ -792,6 +1024,8 @@ function renderApp(): void {
     <section class="metrics" aria-label="Store metrics">
       ${Object.entries(model.metrics ?? {}).map(([key, value]) => `<div><span>${escapeHtml(metricLabel(key))}</span><strong>${value}</strong></div>`).join("")}
     </section>
+
+    ${renderStoreHealth(state.store)}
 
     <nav class="filters" aria-label="Topology filter">
       ${(["all", "snapshot", "corridor", "checkpoint", "traversal", "governance"] as const).map((filter) => `
