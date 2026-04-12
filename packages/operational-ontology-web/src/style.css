@@ -598,6 +598,76 @@ h2 {
   padding-top: 12px;
 }
 
+.related-records {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 16px;
+}
+
+.related-heading {
+  display: grid;
+  gap: 5px;
+}
+
+.related-heading span {
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.related-heading strong {
+  color: var(--ink);
+  font-size: 17px;
+}
+
+.related-heading p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.related-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.related-list button {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8faf5;
+  color: var(--ink);
+  padding: 12px;
+  text-align: left;
+}
+
+.related-list button:hover {
+  border-color: var(--ink);
+  background: #fff;
+}
+
+.related-list span {
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.related-list strong,
+.related-list small {
+  overflow-wrap: anywhere;
+}
+
+.related-list small {
+  color: var(--muted);
+}
+
 .raw-label {
   margin: 12px 0 8px;
 }
@@ -857,6 +927,10 @@ td {
 
   .insight-facts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .related-list {
+    grid-template-columns: 1fr;
   }
 
   .record-list {

@@ -121,6 +121,21 @@ interface ProjectionAnalysis {
   focus: InsightFact[];
 }
 
+interface StoreRecordRow {
+  section: StoreSectionKey;
+  key: string;
+  record: unknown;
+  title: string;
+  kind: string;
+  detail: string;
+  timestamp: string;
+}
+
+interface RelatedRecordRow extends StoreRecordRow {
+  reason: string;
+  score: number;
+}
+
 const sampleStore: OntologyStoreFile = {
   objects: [
     {
@@ -573,6 +588,154 @@ function storeRecordTimestamp(section: StoreSectionKey, record: unknown): string
   }
 }
 
+function storeRecords(store: OntologyStoreFile, section: StoreSectionKey): readonly unknown[] {
+  return store[section] as readonly unknown[];
+}
+
+function storeRecordRow(section: StoreSectionKey, record: unknown, index: number): StoreRecordRow {
+  return {
+    section,
+    key: storeRecordKey(section, record, index),
+    record,
+    title: storeRecordTitle(section, record),
+    kind: storeRecordKind(section, record),
+    detail: storeRecordDetail(section, record),
+    timestamp: storeRecordTimestamp(section, record),
+  };
+}
+
+function storeRecordRows(store: OntologyStoreFile, section: StoreSectionKey): StoreRecordRow[] {
+  return storeRecords(store, section).map((record, index) => storeRecordRow(section, record, index));
+}
+
+function allStoreRecordRows(store: OntologyStoreFile): StoreRecordRow[] {
+  return storeSections.flatMap((section) => storeRecordRows(store, section.key));
+}
+
+function isReferenceKey(key: string): boolean {
+  const lower = key.toLowerCase();
+  return (
+    lower.endsWith("id") ||
+    lower.endsWith("ids") ||
+    lower.endsWith("key") ||
+    lower.endsWith("keys") ||
+    lower.includes("ref") ||
+    ["start", "end", "flowid", "entrynodeid", "corridorid", "rootcheckpointid", "source", "target"].includes(lower)
+  );
+}
+
+function collectStrongReferences(value: unknown, refs = new Set<string>(), parentKey = ""): Set<string> {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      if (typeof item === "string" && item.length >= 3 && isReferenceKey(parentKey)) {
+        refs.add(item);
+      } else {
+        collectStrongReferences(item, refs, parentKey);
+      }
+    }
+    return refs;
+  }
+  if (!isRecord(value)) return refs;
+  for (const [key, entry] of Object.entries(value)) {
+    if (typeof entry === "string" && entry.length >= 3 && isReferenceKey(key)) {
+      refs.add(entry);
+    } else if (Array.isArray(entry) || isRecord(entry)) {
+      collectStrongReferences(entry, refs, key);
+    }
+  }
+  return refs;
+}
+
+function recordReferenceSet(row: Pick<StoreRecordRow, "key" | "record" | "title">): Set<string> {
+  const refs = collectStrongReferences(row.record);
+  refs.add(row.key);
+  refs.add(row.title);
+  return refs;
+}
+
+function intersection(left: Set<string>, right: Set<string>): string[] {
+  return [...left].filter((value) => right.has(value));
+}
+
+function recordText(record: unknown): string {
+  try {
+    return JSON.stringify(record);
+  } catch {
+    return "";
+  }
+}
+
+function relatedReason(selected: StoreRecordRow, candidate: StoreRecordRow): { reason: string; score: number } | null {
+  const selectedRefs = recordReferenceSet(selected);
+  const candidateRefs = recordReferenceSet(candidate);
+  const selectedText = recordText(selected.record);
+  const candidateText = recordText(candidate.record);
+  const shared = intersection(selectedRefs, candidateRefs);
+  const selectedObjectId = stringField(selected.record, "objectId");
+  const selectedProjectionId = stringField(selected.record, "projectionId");
+  const selectedObservationId = stringField(selected.record, "observationId");
+  const selectedTargetObjectId = stringField(selected.record, "targetObjectId");
+  const candidateObjectId = stringField(candidate.record, "objectId");
+  const candidateProjectionId = stringField(candidate.record, "projectionId");
+  const candidateObservationId = stringField(candidate.record, "observationId");
+  const candidateTargetObjectId = stringField(candidate.record, "targetObjectId");
+  const candidateSourceRef = stringField(candidate.record, "sourceRef");
+  const selectedBuiltFrom = stringArray(isRecord(selected.record) ? selected.record["builtFrom"] : []);
+  const candidateBuiltFrom = stringArray(isRecord(candidate.record) ? candidate.record["builtFrom"] : []);
+
+  if (selected.section === "objects" && selectedObjectId) {
+    if (candidate.section === "facets" && candidateObjectId === selectedObjectId) return { reason: "Facet for this object", score: 100 };
+    if (candidate.section === "observations" && candidateTargetObjectId === selectedObjectId) return { reason: "Observation targets this object", score: 96 };
+    if (candidate.section === "projections" && candidateText.includes(selectedObjectId)) return { reason: "Projection references this object", score: 76 };
+  }
+
+  if (selected.section === "facets" && selectedObjectId) {
+    if (candidate.section === "objects" && candidateObjectId === selectedObjectId) return { reason: "Target object", score: 100 };
+    if (candidate.section === "observations" && candidateTargetObjectId === selectedObjectId) return { reason: "Signal for the same object", score: 88 };
+    if (candidate.section === "projections" && (candidateText.includes(selectedObjectId) || candidateProjectionId === stringField(selected.record, "sourceRef"))) {
+      return { reason: "Projection carries this facet context", score: 78 };
+    }
+  }
+
+  if (selected.section === "observations") {
+    if (candidate.section === "objects" && candidateObjectId === selectedTargetObjectId) return { reason: "Observed object", score: 100 };
+    if (candidate.section === "facets" && candidateObjectId === selectedTargetObjectId) return { reason: "Facet on observed object", score: 92 };
+    if (candidate.section === "projections" && selectedObservationId && candidateText.includes(selectedObservationId)) return { reason: "Projection built from this signal", score: 84 };
+    if (candidate.section === "projections" && selectedTargetObjectId && candidateText.includes(selectedTargetObjectId)) return { reason: "Projection includes observed target", score: 78 };
+  }
+
+  if (selected.section === "projections") {
+    if (candidate.section === "projections" && candidateProjectionId && selectedBuiltFrom.includes(candidateProjectionId)) return { reason: "Source projection in builtFrom", score: 100 };
+    if (candidate.section === "projections" && selectedProjectionId && candidateBuiltFrom.includes(selectedProjectionId)) return { reason: "Derived projection", score: 94 };
+    if (candidate.section === "objects" && candidateObjectId && selectedText.includes(candidateObjectId)) return { reason: "Object referenced by projection", score: 88 };
+    if (candidate.section === "facets" && candidateObjectId && selectedText.includes(candidateObjectId)) return { reason: "Facet target appears in projection", score: 78 };
+    if (candidate.section === "facets" && candidateSourceRef === selectedProjectionId) return { reason: "Facet recorded from projection", score: 82 };
+    if (candidate.section === "observations" && candidateObservationId && (selectedBuiltFrom.includes(candidateObservationId) || selectedText.includes(candidateObservationId))) {
+      return { reason: "Source observation", score: 86 };
+    }
+    if (candidate.section === "observations" && candidateTargetObjectId && selectedText.includes(candidateTargetObjectId)) {
+      return { reason: "Observation target appears in projection", score: 74 };
+    }
+  }
+
+  if (shared.length > 0) {
+    return { reason: `Shared reference: ${shared[0]}`, score: 50 };
+  }
+  return null;
+}
+
+function relatedRecords(store: OntologyStoreFile, selected: StoreRecordRow): RelatedRecordRow[] {
+  return allStoreRecordRows(store)
+    .filter((row) => !(row.section === selected.section && row.key === selected.key))
+    .map((row) => {
+      const relation = relatedReason(selected, row);
+      return relation ? { ...row, reason: relation.reason, score: relation.score } : null;
+    })
+    .filter((row): row is RelatedRecordRow => Boolean(row))
+    .toSorted((left, right) => right.score - left.score || left.section.localeCompare(right.section) || left.title.localeCompare(right.title))
+    .slice(0, 10);
+}
+
 function latestStatusForObject(store: OntologyStoreFile, objectId: string): string | undefined {
   const status = store.facets
     .filter((facet) => facet.objectId === objectId && facet.facetKind === "status")
@@ -907,22 +1070,35 @@ function renderRecordInsight(insight: RecordInsight): string {
   `;
 }
 
+function renderRelatedRecords(related: RelatedRecordRow[]): string {
+  return `
+    <div class="related-records">
+      <div class="related-heading">
+        <span>Related records</span>
+        <strong>${related.length > 0 ? "Follow store links" : "No direct links found"}</strong>
+        <p>${related.length > 0 ? "Jump to records sharing identity, source, target, or builtFrom references." : "This record does not share a strong reference with other records in the loaded store."}</p>
+      </div>
+      ${related.length > 0 ? `
+        <div class="related-list">
+          ${related.map((row) => `
+            <button type="button" data-related-section="${row.section}" data-related-record-key="${escapeHtml(row.key)}">
+              <span>${escapeHtml(row.section)} / ${escapeHtml(row.kind)}</span>
+              <strong>${escapeHtml(row.title)}</strong>
+              <small>${escapeHtml(row.reason)}</small>
+            </button>
+          `).join("")}
+        </div>
+      ` : ""}
+    </div>
+  `;
+}
+
 function renderStoreBrowser(store: OntologyStoreFile): string {
   const section = storeSections.find((entry) => entry.key === state.storeSection) ?? storeSections[0];
-  const records = store[section.key] as readonly unknown[];
-  const rows = records.map((record, index) => {
-    const key = storeRecordKey(section.key, record, index);
-    return {
-      key,
-      record,
-      title: storeRecordTitle(section.key, record),
-      kind: storeRecordKind(section.key, record),
-      detail: storeRecordDetail(section.key, record),
-      timestamp: storeRecordTimestamp(section.key, record),
-    };
-  });
+  const rows = storeRecordRows(store, section.key);
   const selected = rows.find((row) => row.key === state.selectedRecordKey) ?? rows[0];
   const insight = selected ? recordInsight(section.key, selected.record) : null;
+  const related = selected ? relatedRecords(store, selected) : [];
 
   return `
     <section class="store-browser" aria-label="Store records">
@@ -959,6 +1135,7 @@ function renderStoreBrowser(store: OntologyStoreFile): string {
               <small>${escapeHtml(selected.timestamp)}</small>
             </div>
             ${insight ? renderRecordInsight(insight) : ""}
+            ${renderRelatedRecords(related)}
             <p class="raw-label">Raw JSON</p>
             <pre>${escapeHtml(JSON.stringify(selected.record, null, 2))}</pre>
           ` : `
@@ -1095,6 +1272,14 @@ function renderApp(): void {
   app.querySelectorAll<HTMLButtonElement>("[data-store-record-key]").forEach((button) => {
     button.addEventListener("click", () => {
       state.selectedRecordKey = button.dataset["storeRecordKey"] ?? null;
+      renderApp();
+    });
+  });
+
+  app.querySelectorAll<HTMLButtonElement>("[data-related-section]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.storeSection = button.dataset["relatedSection"] as StoreSectionKey;
+      state.selectedRecordKey = button.dataset["relatedRecordKey"] ?? null;
       renderApp();
     });
   });
