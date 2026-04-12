@@ -824,13 +824,32 @@ h2 {
   border-right: 1px solid var(--line);
 }
 
-.source-line {
+.source-line,
+.map-heading {
   position: absolute;
   top: 18px;
   left: 18px;
   z-index: 2;
   color: var(--muted);
   font-size: 13px;
+}
+
+.map-heading {
+  display: grid;
+  max-width: min(520px, calc(100% - 36px));
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 12px;
+}
+
+.map-heading strong {
+  color: var(--ink);
+}
+
+.map-heading span {
+  overflow-wrap: anywhere;
 }
 
 .topology {
@@ -1095,7 +1114,8 @@ td {
     overflow-y: hidden;
   }
 
-  .source-line {
+  .source-line,
+  .map-heading {
     position: sticky;
     left: 12px;
     width: max-content;

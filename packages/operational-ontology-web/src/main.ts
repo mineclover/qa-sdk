@@ -380,6 +380,7 @@ const metricLabels: Record<string, string> = {
   objects: "Objects",
   projections: "Projections",
   observations: "Observations",
+  graphEdges: "Graph edges",
   governanceRuns: "Governance runs",
   failed: "Failed",
 };
@@ -1357,6 +1358,18 @@ function renderObservationRows(store: OntologyStoreFile): string {
     .join("");
 }
 
+function renderTopologyHeader(model: OntologyGraphViewModel): string {
+  const snapshotCount = model.nodes.filter((node) => node.lane === "snapshot").length;
+  const projectionCount = model.nodes.filter((node) => ["snapshot", "corridor", "checkpoint", "traversal"].includes(node.lane)).length;
+  return `
+    <div class="map-heading">
+      <p class="eyebrow">Projection topology</p>
+      <strong>Snapshot roots link to rebuilt operational views.</strong>
+      <span>Source: ${escapeHtml(state.sourceName)} · ${projectionCount} projection nodes · ${model.edges.length} edges · ${snapshotCount} snapshot roots</span>
+    </div>
+  `;
+}
+
 async function copyTextToClipboard(value: string): Promise<void> {
   if (navigator.clipboard?.writeText) {
     await navigator.clipboard.writeText(value);
@@ -1429,7 +1442,7 @@ function renderApp(): void {
 
     <section class="workspace">
       <div class="map">
-        <div class="source-line">Source: ${escapeHtml(state.sourceName)}</div>
+        ${renderTopologyHeader(model)}
         <div class="topology">${renderOntologyGraphSvg(layoutOntologyGraph(visibleModel, { laneOrder: ["snapshot", "corridor", "checkpoint", "traversal", "governance"], nodeWidth: 150 }), { selectedNodeId: activeGraphNodeId })}</div>
       </div>
       ${renderInspector(visibleModel, activeGraphNodeId)}

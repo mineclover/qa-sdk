@@ -45,17 +45,32 @@ describe("ontology graph view model", () => {
           builtFrom: [],
           builtAt: "2026-04-12T00:00:30.000Z",
         },
+        {
+          projectionId: "snapshot:one:corridor:alpha",
+          projectionKind: "corridor",
+          targetScope: "demo",
+          payloadJson: { flowId: "alpha", traversals: [{ traversal: { canonicalKey: "governance-run:one" } }] },
+          builtFrom: ["snapshot:one"],
+          builtAt: "2026-04-12T00:00:31.000Z",
+        },
       ],
     });
 
     expect(model.nodes).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: "snapshot:one", lane: "snapshot" }),
+        expect.objectContaining({ id: "snapshot:one", lane: "snapshot", label: "demo" }),
+        expect.objectContaining({ id: "snapshot:one:corridor:alpha", lane: "corridor", label: "alpha" }),
         expect.objectContaining({ id: "governance-run:one", lane: "governance", status: "passed" }),
       ]),
     );
+    expect(model.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ from: "snapshot:one", to: "snapshot:one:corridor:alpha", label: "builtFrom" }),
+        expect.objectContaining({ from: "snapshot:one:corridor:alpha", to: "governance-run:one", label: "references" }),
+      ]),
+    );
     expect(model.metrics).toEqual(
-      expect.objectContaining({ objects: 1, projections: 1, observations: 1, governanceRuns: 1 }),
+      expect.objectContaining({ objects: 1, projections: 2, observations: 1, graphEdges: 2, governanceRuns: 1 }),
     );
   });
 

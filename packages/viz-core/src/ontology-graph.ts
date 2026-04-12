@@ -142,11 +142,54 @@ function payloadLabel(payload: unknown, keys: readonly string[]): string | undef
   return undefined;
 }
 
+function recordText(value: unknown): string {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return '';
+  }
+}
+
 function operationalLaneForProjection(kind: string): OntologyLane {
   if (kind.includes('checkpoint')) return 'checkpoint';
   if (kind.includes('corridor') || kind.includes('control-flow')) return 'corridor';
   if (kind.includes('traversal')) return 'traversal';
   return 'snapshot';
+}
+
+function operationalLabelForProjection(projection: NonNullable<OperationalStoreLike['projections']>[number]): string {
+  const lane = operationalLaneForProjection(projection.projectionKind);
+  const label = payloadLabel(projection.payloadJson, ['flowId', 'rootCheckpointId', 'canonicalKey', 'traversalId']);
+  if (label) return label;
+  if (lane === 'snapshot' && projection.targetScope) return projection.targetScope;
+  return projection.projectionId;
+}
+
+function projectionPayloadCount(projection: NonNullable<OperationalStoreLike['projections']>[number], key: string): number {
+  if (!isRecord(projection.payloadJson)) return 0;
+  const value = projection.payloadJson[key];
+  return Array.isArray(value) ? value.length : 0;
+}
+
+function operationalSummaryForProjection(projection: NonNullable<OperationalStoreLike['projections']>[number]): string {
+  const counts = [
+    ['corridors', projectionPayloadCount(projection, 'corridors')],
+    ['checkpoints', projectionPayloadCount(projection, 'checkpointLattices')],
+    ['traversals', projectionPayloadCount(projection, 'traversals')],
+  ].filter(([, count]) => Number(count) > 0);
+  const suffix = counts.length > 0 ? ` · ${counts.map(([label, count]) => `${count} ${label}`).join(' · ')}` : '';
+  return `${projection.targetScope ?? 'scope'} · ${projection.builtAt ?? 'unknown'}${suffix}`;
+}
+
+function addOperationalEdge(
+  edges: OntologyViewEdge[],
+  seen: Set<string>,
+  edge: OntologyViewEdge,
+): void {
+  const id = edge.id ?? `${edge.from}->${edge.to}:${edge.label ?? edge.kind ?? 'edge'}`;
+  if (seen.has(id)) return;
+  seen.add(id);
+  edges.push({ ...edge, id });
 }
 
 function operationalStatusForObject(
@@ -170,23 +213,29 @@ export function operationalStoreToOntologyView(store: OperationalStoreLike): Ont
   const projections = store.projections ?? [];
   const nodes = new Map<string, OntologyViewNode>();
   const edges: OntologyViewEdge[] = [];
+  const edgeIds = new Set<string>();
+  const projectionTexts = new Map<string, string>();
 
   for (const projection of projections) {
     const lane = operationalLaneForProjection(projection.projectionKind);
-    const label =
-      payloadLabel(projection.payloadJson, ['flowId', 'rootCheckpointId', 'canonicalKey']) ??
-      projection.projectionId;
+    const label = operationalLabelForProjection(projection);
+    projectionTexts.set(projection.projectionId, recordText(projection));
     nodes.set(projection.projectionId, {
       id: projection.projectionId,
       label,
       kind: projection.projectionKind,
       lane,
       status: 'active',
-      summary: `${projection.targetScope ?? 'scope'} · ${projection.builtAt ?? 'unknown'}`,
+      summary: operationalSummaryForProjection(projection),
       raw: projection,
     });
     for (const source of projection.builtFrom ?? []) {
-      edges.push({ from: source, to: projection.projectionId, label: 'built' });
+      addOperationalEdge(edges, edgeIds, {
+        from: source,
+        to: projection.projectionId,
+        label: 'builtFrom',
+        kind: 'projection_built_from',
+      });
     }
   }
 
@@ -212,11 +261,49 @@ export function operationalStoreToOntologyView(store: OperationalStoreLike): Ont
     if (target && !observation.observationKind.includes('governance')) target.status = 'observed';
   }
 
-  const snapshotId = [...nodes.values()].find((node) => node.lane === 'snapshot')?.id;
+  const snapshotIds = [...nodes.values()].filter((node) => node.lane === 'snapshot').map((node) => node.id);
+  for (const projection of projections) {
+    if (operationalLaneForProjection(projection.projectionKind) === 'snapshot') continue;
+    const existingParent = edges.some((edge) => edge.to === projection.projectionId && nodes.has(edge.from));
+    if (existingParent) continue;
+    const parent = snapshotIds.find((snapshotId) => projection.projectionId.startsWith(`${snapshotId}:`)) ??
+      snapshotIds.find((snapshotId) => {
+        const snapshot = projections.find((entry) => entry.projectionId === snapshotId);
+        return snapshot?.targetScope && snapshot.targetScope === projection.targetScope;
+      });
+    if (parent) {
+      addOperationalEdge(edges, edgeIds, {
+        from: parent,
+        to: projection.projectionId,
+        label: 'contains',
+        kind: 'projection_contains',
+      });
+    }
+  }
+
+  for (const object of objects) {
+    if (!nodes.has(object.objectId)) continue;
+    const parent = [...projectionTexts.entries()].find(([, text]) => text.includes(object.objectId))?.[0];
+    if (parent) {
+      addOperationalEdge(edges, edgeIds, {
+        from: parent,
+        to: object.objectId,
+        label: object.objectKind === 'traversal' ? 'materializes' : 'references',
+        kind: 'projection_materializes_object',
+      });
+    }
+  }
+
+  const snapshotId = snapshotIds[0];
   if (snapshotId) {
     for (const node of nodes.values()) {
       if (node.lane !== 'snapshot' && !edges.some((edge) => edge.to === node.id)) {
-        edges.push({ from: snapshotId, to: node.id, label: 'scope' });
+        addOperationalEdge(edges, edgeIds, {
+          from: snapshotId,
+          to: node.id,
+          label: 'scope',
+          kind: 'projection_scope',
+        });
       }
     }
   }
@@ -228,6 +315,7 @@ export function operationalStoreToOntologyView(store: OperationalStoreLike): Ont
       objects: objects.length,
       projections: projections.length,
       observations: observations.length,
+      graphEdges: edges.filter((edge) => nodes.has(edge.from) && nodes.has(edge.to)).length,
       governanceRuns: objects.filter((object) => object.objectKind === 'governance_run').length,
       failed: [...nodes.values()].filter((node) => node.status === 'failed').length,
     },
