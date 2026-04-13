@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
+import { compareTimestamps } from "@qa-sdk/core";
 import type { DefDataSource, DefDoc, DefIncomingLink, DefOutgoingLink } from "definition-catalog";
 import { createDataSource, type DataSourceOptions } from "definition-data-source";
 import {
@@ -60,7 +61,13 @@ import type {
   EventRecordObservationInput,
   PipeGraphProjectionInput,
 } from "operational-ontology/projectors";
-import { QualityLedger, SqliteQualityStore, type GateDescriptor } from "quality-ledger";
+import {
+  QualityLedger,
+  SqliteQualityStore,
+  type BundleVerification,
+  type GateDescriptor,
+  type GateStatus,
+} from "quality-ledger";
 import {
   extractPromptArtifactSourcesFromDefinitionContext,
   generatePromptArtifact,
@@ -196,6 +203,30 @@ interface QualityStatusExportSnapshotEvidence {
   sourcePath: string;
 }
 
+interface QualityStatusLedgerGateStatusEvidence {
+  gateDocId: string;
+  currentVersion: number;
+  status: GateStatus["status"];
+  latestRunAt?: string;
+  latestRunId?: number;
+  latestRunDocVersion?: number;
+  latestRunOutcome?: "pass" | "fail";
+}
+
+interface QualityStatusLedgerEvidence {
+  sourcePath: string;
+  bundleId: string | null;
+  bundleRefs: readonly string[];
+  totalGates: number;
+  verifiedGates: number;
+  verified: boolean;
+  gateRefs: readonly string[];
+  verifiedGateRefs: readonly string[];
+  blockingGateStatuses: readonly QualityStatusLedgerGateStatusEvidence[];
+  latestRunTimestamps: readonly string[];
+  latestRunAt?: string;
+}
+
 interface QualityStatusSnapshotWarning {
   code:
     | "quality-status-snapshot-missing"
@@ -204,7 +235,8 @@ interface QualityStatusSnapshotWarning {
     | "quality-status-snapshot-read-failed"
     | "quality-status-ledger-missing"
     | "quality-status-ledger-read-failed"
-    | "quality-status-ledger-no-gate-descriptors";
+    | "quality-status-ledger-no-gate-descriptors"
+    | "quality-status-ledger-conflict";
   artifactId: string;
   artifactRef: string;
   outputPath?: string;
@@ -217,7 +249,9 @@ type QualityStatusRecordSourceSummary = RelatedQualityStatusRegistryRecordSummar
   gateDescriptors?: readonly GateDescriptor[];
   qualityExportSnapshot?: QualityStatusExportSnapshotEvidence;
   qualityExportWarning?: QualityStatusSnapshotWarning;
+  qualityLedgerEvidence?: QualityStatusLedgerEvidence;
   qualityLedgerWarning?: QualityStatusSnapshotWarning;
+  qualityLedgerConflictWarning?: QualityStatusSnapshotWarning;
   qualityGateDescriptorWarning?: QualityStatusSnapshotWarning;
 };
 
@@ -874,26 +908,35 @@ function promptQualityStatusEvidenceFromArtifactExtraction(
     const snapshot = summary.qualityExportSnapshot;
     const warning = summary.qualityExportWarning;
     const gateDescriptors = summary.gateDescriptors ?? [];
+    const ledgerEvidence = qualityStatusAuthoritativeLedgerEvidence(summary);
     const outcome = qualityStatusPromptEvidenceOutcome(summary);
-    const verifiedBundleRefs = snapshot
-      ? snapshot.bundles
+    const verifiedBundleRefs = ledgerEvidence
+      ? ledgerEvidence.verified
+        ? ledgerEvidence.bundleRefs
+        : []
+      : snapshot
+        ? snapshot.bundles
           .filter((bundle) => qualityStatusBundleVerified(bundle))
           .map((bundle) => bundle.bundleId)
-      : [];
-    const gateRefs = gateDescriptors.map((descriptor) => descriptor.gateDocId);
-    const verifiedGateRefs = outcome === "verified"
-      ? gateDescriptors
+        : [];
+    const gateRefs = ledgerEvidence?.gateRefs ??
+      gateDescriptors.map((descriptor) => descriptor.gateDocId);
+    const verifiedGateRefs = ledgerEvidence
+      ? ledgerEvidence.verifiedGateRefs
+      : outcome === "verified"
+        ? gateDescriptors
           .filter((descriptor) =>
             !descriptor.bundleId || verifiedBundleRefs.includes(descriptor.bundleId),
           )
           .map((descriptor) => descriptor.gateDocId)
-      : [];
-    const bundleRefs = uniqueCliValues([
-      ...(snapshot?.bundleIds ?? []),
-      ...gateDescriptors
-        .map((descriptor) => descriptor.bundleId)
-        .filter((bundleId): bundleId is string => Boolean(bundleId)),
-    ]);
+        : [];
+    const bundleRefs = ledgerEvidence?.bundleRefs ??
+      uniqueCliValues([
+        ...(snapshot?.bundleIds ?? []),
+        ...gateDescriptors
+          .map((descriptor) => descriptor.bundleId)
+          .filter((bundleId): bundleId is string => Boolean(bundleId)),
+      ]);
     return {
       evidenceId: `quality-status:${match.record.artifactId}`,
       outcome,
@@ -907,15 +950,16 @@ function promptQualityStatusEvidenceFromArtifactExtraction(
         match.record.artifactRef,
         match.record.outputPath,
         snapshot?.sourcePath,
+        ledgerEvidence?.sourcePath,
         warning?.resolvedPath,
       ].filter((value): value is string => Boolean(value))),
       bundleRefs,
       verifiedBundleRefs,
       gateRefs,
       verifiedGateRefs,
-      verifiedGateCount: snapshot?.totals.verifiedGates,
-      totalGateCount: snapshot?.totals.totalGates ?? gateDescriptors.length,
-      generatedAt: snapshot?.generatedAt,
+      verifiedGateCount: ledgerEvidence?.verifiedGates ?? snapshot?.totals.verifiedGates,
+      totalGateCount: ledgerEvidence?.totalGates ?? snapshot?.totals.totalGates ?? gateDescriptors.length,
+      generatedAt: ledgerEvidence?.latestRunAt ?? snapshot?.generatedAt,
       message: qualityStatusPromptEvidenceMessage(summary, outcome),
     };
   });
@@ -930,6 +974,14 @@ function promptQualityStatusEvidenceFromArtifactSource(
 }
 
 function qualityStatusPromptEvidenceOutcome(
+  summary: QualityStatusRecordSourceSummary,
+): PromptArtifactQualityStatusEvidence["outcome"] {
+  const ledgerEvidence = qualityStatusAuthoritativeLedgerEvidence(summary);
+  if (ledgerEvidence) return qualityStatusLedgerEvidenceOutcome(ledgerEvidence);
+  return qualityStatusSnapshotPromptEvidenceOutcome(summary);
+}
+
+function qualityStatusSnapshotPromptEvidenceOutcome(
   summary: QualityStatusRecordSourceSummary,
 ): PromptArtifactQualityStatusEvidence["outcome"] {
   if (summary.qualityExportWarning) {
@@ -952,6 +1004,12 @@ function qualityStatusPromptEvidenceMessage(
   summary: QualityStatusRecordSourceSummary,
   outcome: PromptArtifactQualityStatusEvidence["outcome"],
 ): string | undefined {
+  const ledgerEvidence = qualityStatusAuthoritativeLedgerEvidence(summary);
+  if (ledgerEvidence) {
+    if (outcome === "verified") return undefined;
+    const bundleRef = ledgerEvidence.bundleId ?? ledgerEvidence.bundleRefs[0] ?? "resolved gate surface";
+    return `Quality ledger fallback ${bundleRef} reported ${outcome} verification.`;
+  }
   if (summary.qualityExportWarning) return summary.qualityExportWarning.message;
   const snapshot = summary.qualityExportSnapshot;
   if (!snapshot) return "Quality-status record did not load a quality export snapshot.";
@@ -971,6 +1029,53 @@ function qualityStatusBundleFailed(
   bundle: QualityStatusSnapshotBundleEvidence,
 ): boolean {
   return bundle.bundleState === "failed";
+}
+
+function qualityStatusAuthoritativeLedgerEvidence(
+  summary: QualityStatusRecordSourceSummary,
+): QualityStatusLedgerEvidence | undefined {
+  if (!summary.qualityLedgerEvidence) return undefined;
+  if (summary.qualityLedgerConflictWarning) return undefined;
+  if (!shouldAttemptQualityLedgerFallback(summary)) return undefined;
+  if (summary.qualityExportWarning || !summary.qualityExportSnapshot) {
+    return summary.qualityLedgerEvidence;
+  }
+  return qualityStatusSnapshotPromptEvidenceOutcome(summary) === "incomplete"
+    ? summary.qualityLedgerEvidence
+    : undefined;
+}
+
+function shouldAttemptQualityLedgerFallback(
+  summary: QualityStatusRecordSourceSummary,
+): boolean {
+  if (summary.qualityExportWarning) return true;
+  const snapshot = summary.qualityExportSnapshot;
+  if (!snapshot) return true;
+  const outcome = qualityStatusSnapshotPromptEvidenceOutcome(summary);
+  if (outcome !== "verified") return true;
+  return !qualityStatusSnapshotHasVerifiedSurface(snapshot);
+}
+
+function qualityStatusSnapshotHasVerifiedSurface(
+  snapshot: QualityStatusExportSnapshotEvidence,
+): boolean {
+  return (
+    snapshot.bundles.some((bundle) => qualityStatusBundleVerified(bundle)) ||
+    snapshot.totals.verifiedGates > 0
+  );
+}
+
+function qualityStatusLedgerEvidenceOutcome(
+  evidence: QualityStatusLedgerEvidence,
+): PromptArtifactQualityStatusEvidence["outcome"] {
+  if (evidence.verified) return "verified";
+  if (evidence.blockingGateStatuses.some((status) => status.status === "failed")) {
+    return "failed";
+  }
+  if (evidence.blockingGateStatuses.some((status) => status.status === "stale")) {
+    return "stale";
+  }
+  return "incomplete";
 }
 
 function qualityStatusMatchVerifiesTarget(
@@ -1049,6 +1154,33 @@ async function loadQualityStatusSnapshotEvidence(
           ...summary,
           qualityLedgerWarning: ledgerWarning,
         };
+      }
+
+      if (
+        loadedLedger?.ledger &&
+        gateDescriptors.length > 0 &&
+        shouldAttemptQualityLedgerFallback(summary)
+      ) {
+        const ledgerEvidence = qualityStatusLedgerEvidence(
+          loadedLedger.ledger,
+          loadedLedger.path,
+          gateDescriptors,
+        );
+        summary = {
+          ...summary,
+          qualityLedgerEvidence: ledgerEvidence,
+        };
+        const conflictWarning = qualityStatusLedgerConflictWarning(
+          match.record,
+          summary,
+        );
+        if (conflictWarning) {
+          warnings.push(conflictWarning);
+          summary = {
+            ...summary,
+            qualityLedgerConflictWarning: conflictWarning,
+          };
+        }
       }
 
       recordSummaries.set(qualityStatusRecordKey(match.record), summary);
@@ -1365,6 +1497,137 @@ function qualityStatusNoGateDescriptorsWarning(
     message:
       "Quality-status record did not resolve to any quality gate descriptors for ledger verification.",
   });
+}
+
+function qualityStatusLedgerEvidence(
+  ledger: QualityLedger,
+  sourcePath: string,
+  gateDescriptors: readonly GateDescriptor[],
+): QualityStatusLedgerEvidence {
+  const verification = ledger.resolveBundleVerification(
+    gateDescriptors.map((descriptor) => ({ ...descriptor })),
+  );
+  return summarizeQualityStatusLedgerEvidence(
+    sourcePath,
+    gateDescriptors,
+    verification,
+  );
+}
+
+function summarizeQualityStatusLedgerEvidence(
+  sourcePath: string,
+  gateDescriptors: readonly GateDescriptor[],
+  verification: BundleVerification,
+): QualityStatusLedgerEvidence {
+  const statuses = [...verification.gateStatuses.values()];
+  const latestRunTimestamps = uniqueCliValues(
+    statuses
+      .map((status) => status.lastRun?.executedAt)
+      .filter((value): value is string => Boolean(value)),
+  );
+  const latestRunAt = latestQualityStatusTimestamp(latestRunTimestamps);
+  const verifiedGateRefs = statuses
+    .filter((status) => status.status === "verified")
+    .map((status) => status.gateDocId);
+
+  return {
+    sourcePath,
+    bundleId: verification.bundleId,
+    bundleRefs: uniqueCliValues(
+      gateDescriptors
+        .map((descriptor) => descriptor.bundleId)
+        .filter((bundleId): bundleId is string => Boolean(bundleId)),
+    ),
+    totalGates: verification.totalGates,
+    verifiedGates: verification.verifiedGates,
+    verified: verification.verified,
+    gateRefs: gateDescriptors.map((descriptor) => descriptor.gateDocId),
+    verifiedGateRefs,
+    blockingGateStatuses: verification.blockingGateStatuses.map(
+      qualityStatusLedgerGateStatusEvidence,
+    ),
+    latestRunTimestamps,
+    ...(latestRunAt ? { latestRunAt } : {}),
+  };
+}
+
+function qualityStatusLedgerGateStatusEvidence(
+  status: GateStatus,
+): QualityStatusLedgerGateStatusEvidence {
+  return {
+    gateDocId: status.gateDocId,
+    currentVersion: status.currentVersion,
+    status: status.status,
+    ...(status.lastRun
+      ? {
+          latestRunAt: status.lastRun.executedAt,
+          latestRunId: status.lastRun.id,
+          latestRunDocVersion: status.lastRun.docVersion,
+          latestRunOutcome: status.lastRun.outcome,
+        }
+      : {}),
+  };
+}
+
+function latestQualityStatusTimestamp(
+  timestamps: readonly string[],
+): string | undefined {
+  return timestamps.reduce<string | undefined>((latest, timestamp) => {
+    if (!latest) return timestamp;
+    return compareTimestamps(timestamp, latest) > 0 ? timestamp : latest;
+  }, undefined);
+}
+
+function qualityStatusLedgerConflictWarning(
+  record: ProgrammingArtifactRegistryRecord,
+  summary: QualityStatusRecordSourceSummary,
+): QualityStatusSnapshotWarning | undefined {
+  const snapshot = summary.qualityExportSnapshot;
+  const ledgerEvidence = summary.qualityLedgerEvidence;
+  if (!snapshot || !ledgerEvidence) return undefined;
+  if (!qualityStatusSnapshotAndLedgerSurfaceMatch(snapshot, ledgerEvidence)) {
+    return undefined;
+  }
+
+  const snapshotState = determinateQualityStatusState(
+    qualityStatusSnapshotPromptEvidenceOutcome(summary),
+  );
+  const ledgerState = determinateQualityStatusState(
+    qualityStatusLedgerEvidenceOutcome(ledgerEvidence),
+  );
+  if (!snapshotState || !ledgerState || snapshotState === ledgerState) {
+    return undefined;
+  }
+
+  return qualityStatusSnapshotWarning(record, {
+    code: "quality-status-ledger-conflict",
+    resolvedPath: ledgerEvidence.sourcePath,
+    message:
+      `Quality-status snapshot and quality ledger disagree for the same gate surface: snapshot=${snapshotState}, ledger=${ledgerState}.`,
+  });
+}
+
+function qualityStatusSnapshotAndLedgerSurfaceMatch(
+  snapshot: QualityStatusExportSnapshotEvidence,
+  ledgerEvidence: QualityStatusLedgerEvidence,
+): boolean {
+  const snapshotBundleIds = new Set(snapshot.bundleIds);
+  return ledgerEvidence.bundleRefs.some((bundleId) => snapshotBundleIds.has(bundleId)) ||
+    (ledgerEvidence.bundleId ? snapshotBundleIds.has(ledgerEvidence.bundleId) : false);
+}
+
+function determinateQualityStatusState(
+  outcome: PromptArtifactQualityStatusEvidence["outcome"],
+): "verified" | "failed" | "stale" | "invalid" | undefined {
+  if (
+    outcome === "verified" ||
+    outcome === "failed" ||
+    outcome === "stale" ||
+    outcome === "invalid"
+  ) {
+    return outcome;
+  }
+  return undefined;
 }
 
 function qualityStatusLedgerWarning(

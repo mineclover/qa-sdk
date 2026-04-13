@@ -104,12 +104,13 @@
         "pnpm --filter quality-ledger test passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Snapshot remains authoritative. Ledger fallback is additive and explicit.",
       "dependsOn": [
         "US-002",
         "US-003"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-005",
@@ -228,6 +229,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-13T22:29:31.835Z"
+    "updatedAt": "2026-04-13T22:39:26.936Z"
   }
 }

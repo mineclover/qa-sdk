@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { describe, expect, it, vi } from "vitest";
 
+import { QualityLedger, SqliteQualityStore } from "quality-ledger";
 import { cliOntology } from "./ontology.js";
 import { USAGE, resolveSubcommand } from "../index.js";
 
@@ -562,6 +563,323 @@ describe("ontology CLI", () => {
     expect(parsed.artifacts[0]!.artifact.sourceRefs).toEqual(
       expect.arrayContaining([
         "governance-run:governance:quality-status-unmanaged-artifact:quality-export-snapshot",
+      ]),
+    );
+  }, 10_000);
+
+  it("prompt extract-artifact keeps verified snapshots authoritative over ledger fallback", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-snapshot-primary-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    const snapshotPath = join(dir, "quality-status-unmanaged-artifact.json");
+    const ledgerPath = join(dir, "quality-ledger.sqlite");
+    writeQualityLedgerRuns(ledgerPath, [
+      { gateDocId: "gate-work-domain-typecheck", outcome: "fail" },
+      { gateDocId: "gate-work-domain-build", outcome: "fail" },
+      { gateDocId: "gate-work-domain-test", outcome: "fail" },
+    ]);
+    await writeFile(
+      snapshotPath,
+      JSON.stringify({
+        rootId: "quality-gates-system",
+        generatedAt: "2026-04-13T00:00:00.000Z",
+        bundles: [
+          {
+            bundleId: "work-domain-quality-bundle",
+            bundleState: "verified",
+            verifiedGates: 3,
+            totalGates: 3,
+          },
+        ],
+      }),
+      "utf8",
+    );
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-unmanaged-artifact",
+            artifactRef: "quality-status-unmanaged-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            outputPath: "quality-status-unmanaged-artifact.json",
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--quality-ledger",
+        ledgerPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        warnings: string[];
+        governanceClosure: {
+          status: string;
+          warning?: { code: string };
+        };
+        qualityStatusRecords: {
+          records: Array<{
+            qualityLedgerEvidence?: unknown;
+            qualityLedgerConflictWarning?: { code: string };
+          }>;
+        };
+      };
+      artifacts: Array<{
+        quality: {
+          issues: Array<{ code: string }>;
+        };
+      }>;
+    };
+
+    expect(parsed.source.governanceClosure).toMatchObject({
+      status: "quality-status-found",
+    });
+    expect(parsed.source.governanceClosure.warning).toBeUndefined();
+    expect(parsed.source.warnings).not.toContain("quality-status-ledger-conflict");
+    expect(parsed.source.qualityStatusRecords.records[0]!.qualityLedgerEvidence).toBeUndefined();
+    expect(parsed.source.qualityStatusRecords.records[0]!.qualityLedgerConflictWarning).toBeUndefined();
+    expect(parsed.artifacts[0]!.quality.issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "prompt-quality-status-evidence-failed",
+        }),
+      ]),
+    );
+  }, 10_000);
+
+  it("prompt extract-artifact uses ledger fallback when snapshot evidence is missing", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-ledger-fallback-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    const ledgerPath = join(dir, "quality-ledger.sqlite");
+    writeQualityLedgerRuns(ledgerPath, [
+      { gateDocId: "gate-work-domain-typecheck", outcome: "pass" },
+      { gateDocId: "gate-work-domain-build", outcome: "pass" },
+      { gateDocId: "gate-work-domain-test", outcome: "pass" },
+    ]);
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-ledger-artifact",
+            artifactRef: "quality-status-ledger-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            metadata: {
+              rootId: "quality-gates-system",
+              bundles: [
+                {
+                  bundleId: "work-domain-quality-bundle",
+                },
+              ],
+            },
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--quality-ledger",
+        ledgerPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        warnings: string[];
+        governanceClosure: {
+          status: string;
+          warning?: { code: string };
+        };
+        qualityStatusRecords: {
+          records: Array<{
+            qualityLedgerEvidence?: {
+              sourcePath: string;
+              bundleId: string | null;
+              bundleRefs: string[];
+              totalGates: number;
+              verifiedGates: number;
+              verified: boolean;
+              gateRefs: string[];
+              verifiedGateRefs: string[];
+              blockingGateStatuses: Array<{ gateDocId: string; status: string }>;
+              latestRunTimestamps: string[];
+              latestRunAt?: string;
+            };
+          }>;
+        };
+      };
+      artifacts: Array<{
+        quality: {
+          issues: Array<{ code: string }>;
+        };
+      }>;
+    };
+    const ledgerEvidence =
+      parsed.source.qualityStatusRecords.records[0]!.qualityLedgerEvidence!;
+
+    expect(parsed.source.governanceClosure).toMatchObject({
+      status: "quality-status-found",
+    });
+    expect(parsed.source.governanceClosure.warning).toBeUndefined();
+    expect(parsed.source.warnings).not.toContain("quality-status-ledger-conflict");
+    expect(ledgerEvidence).toMatchObject({
+      sourcePath: ledgerPath,
+      bundleId: "work-domain-quality-bundle",
+      bundleRefs: ["work-domain-quality-bundle"],
+      totalGates: 3,
+      verifiedGates: 3,
+      verified: true,
+      gateRefs: expect.arrayContaining([
+        "gate-work-domain-typecheck",
+        "gate-work-domain-build",
+        "gate-work-domain-test",
+      ]),
+      verifiedGateRefs: expect.arrayContaining([
+        "gate-work-domain-typecheck",
+        "gate-work-domain-build",
+        "gate-work-domain-test",
+      ]),
+      blockingGateStatuses: [],
+    });
+    expect(ledgerEvidence.latestRunTimestamps.length).toBeGreaterThanOrEqual(1);
+    expect(ledgerEvidence.latestRunAt).toBeDefined();
+    expect(parsed.artifacts[0]!.quality.issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "prompt-quality-status-evidence-incomplete",
+        }),
+      ]),
+    );
+  }, 10_000);
+
+  it("prompt extract-artifact warns on determinate snapshot and ledger conflicts without overriding the snapshot", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-ledger-conflict-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    const snapshotPath = join(dir, "quality-status-conflict-artifact.json");
+    const ledgerPath = join(dir, "quality-ledger.sqlite");
+    writeQualityLedgerRuns(ledgerPath, [
+      { gateDocId: "gate-work-domain-typecheck", outcome: "pass" },
+      { gateDocId: "gate-work-domain-build", outcome: "pass" },
+      { gateDocId: "gate-work-domain-test", outcome: "pass" },
+    ]);
+    await writeFile(
+      snapshotPath,
+      JSON.stringify({
+        rootId: "quality-gates-system",
+        generatedAt: "2026-04-13T00:00:00.000Z",
+        bundles: [
+          {
+            bundleId: "work-domain-quality-bundle",
+            bundleState: "failed",
+            verifiedGates: 0,
+            totalGates: 3,
+          },
+        ],
+      }),
+      "utf8",
+    );
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-conflict-artifact",
+            artifactRef: "quality-status-conflict-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            outputPath: "quality-status-conflict-artifact.json",
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--quality-ledger",
+        ledgerPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        warnings: string[];
+        governanceClosure: {
+          status: string;
+          warning?: { code: string; message: string };
+        };
+        qualityStatusRecords: {
+          warnings: Array<{ code: string; resolvedPath?: string }>;
+          records: Array<{
+            qualityLedgerEvidence?: { verified: boolean };
+            qualityLedgerConflictWarning?: { code: string; resolvedPath?: string };
+          }>;
+        };
+      };
+      artifacts: Array<{
+        quality: {
+          issues: Array<{ code: string }>;
+        };
+      }>;
+    };
+
+    expect(parsed.source.warnings).toContain("quality-status-ledger-conflict");
+    expect(parsed.source.qualityStatusRecords.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "quality-status-ledger-conflict",
+          resolvedPath: ledgerPath,
+        }),
+      ]),
+    );
+    expect(parsed.source.qualityStatusRecords.records[0]!.qualityLedgerEvidence).toMatchObject({
+      verified: true,
+    });
+    expect(parsed.source.qualityStatusRecords.records[0]!.qualityLedgerConflictWarning).toMatchObject({
+      code: "quality-status-ledger-conflict",
+      resolvedPath: ledgerPath,
+    });
+    expect(parsed.source.governanceClosure).toMatchObject({
+      status: "quality-status-invalid",
+      warning: {
+        code: "prompt-quality-status-evidence-failed",
+      },
+    });
+    expect(parsed.artifacts[0]!.quality.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "prompt-quality-status-evidence-failed",
+        }),
       ]),
     );
   }, 10_000);
@@ -1801,4 +2119,30 @@ async function captureConsoleAsync(run: () => Promise<void>) {
     stdout: stdout.join("\n"),
     stderr: stderr.join("\n"),
   };
+}
+
+function writeQualityLedgerRuns(
+  ledgerPath: string,
+  runs: readonly {
+    gateDocId: string;
+    outcome: "pass" | "fail";
+    docVersion?: number;
+    bundleId?: string;
+  }[],
+): void {
+  const store = new SqliteQualityStore(ledgerPath);
+  const ledger = new QualityLedger(store);
+  try {
+    for (const run of runs) {
+      ledger.recordRun({
+        gateDocId: run.gateDocId,
+        docVersion: run.docVersion ?? 1,
+        bundleId: run.bundleId ?? "work-domain-quality-bundle",
+        command: "pnpm test",
+        outcome: run.outcome,
+      });
+    }
+  } finally {
+    store.close();
+  }
 }

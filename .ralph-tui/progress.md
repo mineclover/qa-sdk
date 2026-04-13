@@ -8,6 +8,7 @@ after each iteration and it's included in prompts for context.
 - CLI-internal graph helpers should live under `packages/cli/src/lib/` when they are shared by commands but not intended as package API. For definition-catalog topology, accept `MemoryDefinitionRegistry` and/or `DefDataSource`-like inputs and keep command-specific ledger/status logic outside the helper.
 - Quality-status artifact extraction keeps snapshot evidence, gate descriptor resolution, and governance closure concerns separate: record summaries can carry `gateDescriptors` plus structured warnings while prompt quality evidence derives refs/counts without changing the snapshot outcome policy.
 - Optional quality-ledger inputs for prompt artifact extraction should stay explicit and artifact-source gated: validate/open only when `extract-artifact` is processing related quality-status records, emit structured warnings fail-open, and do not add automatic `.qa-sdk/quality-ledger.sqlite` lookup.
+- Snapshot-first ledger fallback should attach ledger-derived evidence to the quality-status record summary, then let prompt-quality evidence select it only when snapshot closure is missing/invalid/incomplete or lacks a verified surface; conflict warnings must not override a verified snapshot.
 
 ---
 
@@ -57,4 +58,20 @@ after each iteration and it's included in prompts for context.
   - `parseArtifactExtractionSource(flags)` is the existing internal boundary marker for artifact fallback flows that reuse non-artifact prompt commands.
   - `SqliteQualityStore` creates/migrates databases when opened, so explicit ledger loading must check `existsSync` first to avoid creating a missing fallback DB.
   - Ledger path failures fit the same source warning channel as snapshot and descriptor warnings, preserving snapshot-only closure policy until ledger-derived fallback evidence is implemented separately.
+---
+
+## 2026-04-14 - US-004
+- Implemented snapshot-first quality-ledger fallback evidence for quality-status artifact extraction.
+- Ledger fallback now calls `QualityLedger.resolveBundleVerification()` with resolved gate descriptors only when snapshot evidence is missing, invalid, incomplete, or lacks a verified closure surface.
+- Ledger-derived summaries now expose bundle id, total/verified gates, gate refs, verified gate refs, blocking gate statuses, and latest run timestamps when available.
+- Added narrow `quality-status-ledger-conflict` warnings for determinate snapshot/ledger disagreements on the same bundle surface without overriding snapshot-authoritative closure.
+- Added regressions for verified snapshot authority, missing-snapshot ledger fallback closure, and snapshot/ledger conflict behavior.
+- Files changed:
+  - `packages/cli/src/commands/ontology.ts`
+  - `packages/cli/src/commands/ontology.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - `QualityLedger.resolveBundleVerification()` already returns the right closure primitive for artifact extraction once the CLI has resolved `GateDescriptor[]`; no new ledger API is needed.
+  - Snapshot and ledger conflict detection needs to compare only shared resolved bundle surfaces and determinate states, otherwise old or incomplete ledger state becomes noisy.
+  - A verified snapshot should avoid ledger fallback resolution entirely, which prevents stale or failing local ledger state from downgrading exported closure evidence.
 ---
