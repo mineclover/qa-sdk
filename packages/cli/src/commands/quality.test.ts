@@ -3,7 +3,7 @@ import { mkdir, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import type { DefinitionEntry } from "definition-catalog";
+import { MemoryDefinitionRegistry, type DefinitionEntry, type DefinitionEntryInput } from "definition-catalog";
 import type { QualityGateSpec } from "work-domain";
 import {
   buildGateDiagnosis,
@@ -21,6 +21,10 @@ import {
   cliQuality,
 } from "./quality.js";
 import { USAGE, resolveSubcommand } from "../index.js";
+import {
+  collectContainedQualityDocs,
+  toGateDescriptors,
+} from "../lib/quality-gate-topology.js";
 
 function makeDoc(
   id: string,
@@ -50,6 +54,18 @@ function makeDoc(
     absPath: `/tmp/${id}.md`,
     purpose: `${id} purpose`,
   };
+}
+
+function registerDefinition(
+  registry: MemoryDefinitionRegistry,
+  input: Omit<DefinitionEntryInput, "lifecycle" | "createdAt" | "updatedAt">,
+): void {
+  registry.register({
+    lifecycle: "approved",
+    createdAt: "2026-03-29T00:00:00.000Z",
+    updatedAt: "2026-03-29T00:00:00.000Z",
+    ...input,
+  });
 }
 
 describe("selectNextDocs", () => {
@@ -162,6 +178,113 @@ describe("quality claim audit helpers", () => {
 
     expect(bindings[0]!.review).toEqual({ reviewed: true, accepted: true });
     expect(bindings[0]!.stale).not.toBe(true);
+  });
+});
+
+describe("quality gate topology helpers", () => {
+  it("recursively follows definition-catalog contains links and builds gate descriptors", () => {
+    const registry = new MemoryDefinitionRegistry();
+    registerDefinition(registry, {
+      id: "quality-root",
+      title: "Quality root",
+      scope: "flow",
+      aspect: "process_flow",
+      depth: "overview",
+      level: "group",
+      revision: 2,
+      tags: ["quality-bundle"],
+    });
+    registerDefinition(registry, {
+      id: "quality-bundle-a",
+      title: "Quality bundle A",
+      scope: "flow",
+      aspect: "process_flow",
+      depth: "overview",
+      level: "module",
+      revision: 3,
+      tags: ["quality-bundle"],
+    });
+    registerDefinition(registry, {
+      id: "quality-contract-a",
+      title: "Quality contract A",
+      scope: "interface",
+      aspect: "api_contract",
+      depth: "specification",
+      revision: 4,
+    });
+    registerDefinition(registry, {
+      id: "quality-gate-a",
+      title: "Quality gate A",
+      scope: "constraint",
+      aspect: "tech_constraint",
+      depth: "validation",
+      revision: 7,
+      tags: ["quality-gate"],
+      gate: {
+        kind: "typecheck",
+        workDomain: "productivity",
+        command: "pnpm --filter @qa-sdk/cli typecheck",
+      },
+    });
+
+    registry.link("quality-root", "quality-bundle-a", "contains");
+    registry.link("quality-bundle-a", "quality-contract-a", "contains");
+    registry.link("quality-contract-a", "quality-gate-a", "contains");
+
+    const docs = collectContainedQualityDocs(registry, "quality-root");
+
+    expect(docs.map((doc) => doc.id)).toEqual([
+      "quality-bundle-a",
+      "quality-contract-a",
+      "quality-gate-a",
+    ]);
+    expect(toGateDescriptors("quality-bundle-a", docs)).toEqual([
+      {
+        gateDocId: "quality-gate-a",
+        docVersion: 7,
+        bundleId: "quality-bundle-a",
+      },
+    ]);
+  });
+
+  it("can preserve the previous quality export graph version overlay behavior", () => {
+    const registry = new MemoryDefinitionRegistry();
+    registerDefinition(registry, {
+      id: "quality-bundle-a",
+      title: "Quality bundle A",
+      scope: "flow",
+      aspect: "process_flow",
+      depth: "overview",
+      level: "module",
+      revision: 3,
+    });
+    registerDefinition(registry, {
+      id: "quality-gate-a",
+      title: "Quality gate A",
+      scope: "constraint",
+      aspect: "tech_constraint",
+      depth: "validation",
+      revision: 7,
+      gate: {
+        kind: "typecheck",
+        workDomain: "productivity",
+        command: "pnpm --filter @qa-sdk/cli typecheck",
+      },
+    });
+
+    registry.link("quality-bundle-a", "quality-gate-a", "contains");
+
+    const docs = collectContainedQualityDocs(registry, "quality-bundle-a", {
+      version: 0,
+    });
+
+    expect(toGateDescriptors("quality-bundle-a", docs)).toEqual([
+      {
+        gateDocId: "quality-gate-a",
+        docVersion: 0,
+        bundleId: "quality-bundle-a",
+      },
+    ]);
   });
 });
 

@@ -55,6 +55,12 @@ import {
   appendProgrammingArtifactRegistryRecord,
 } from "../lib/programming-artifact-registry.js";
 import { getQaSdkDir } from "../lib/qa-dir.js";
+import {
+  collectContainedQualityDocs,
+  toGateDescriptors,
+  toQualityTopologyDoc,
+  type QualityTopologyDoc,
+} from "../lib/quality-gate-topology.js";
 
 const QA_DIR = getQaSdkDir();
 const QUALITY_LEDGER_DB = join(QA_DIR, "quality-ledger.sqlite");
@@ -72,18 +78,7 @@ interface QualityEntry {
   readonly gate: QualityGateSpec;
 }
 
-interface SimpleDoc {
-  readonly id: string;
-  readonly title: string;
-  readonly version: number;
-  readonly level?: string;
-  readonly scope: string;
-  readonly aspect: string;
-  readonly depth: string;
-  readonly serviceId?: string;
-  readonly tags?: readonly string[];
-  readonly gate?: QualityGateSpec;
-}
+type SimpleDoc = QualityTopologyDoc;
 
 export interface LoadedQualityDoc {
   readonly entry: QualityEntry;
@@ -943,9 +938,7 @@ async function findParentBundle(
     ?.getLinks(entryId, "incoming")
     .find((link) => link.linkType === "contains");
   const doc = parentLink ? index.registry?.get(parentLink.sourceId) : undefined;
-  return doc
-    ? { id: doc.id, title: doc.title, version: 0, level: doc.level, scope: doc.scope, aspect: doc.aspect, depth: doc.depth, serviceId: doc.serviceId, tags: doc.tags, gate: doc.gate }
-    : undefined;
+  return doc ? toQualityTopologyDoc(doc, { version: 0 }) : undefined;
 }
 
 async function findContractDocs(
@@ -973,18 +966,7 @@ async function findContractDocs(
     .map((id) => index.registry?.get(id))
     .filter((doc): doc is NonNullable<typeof doc> => doc !== undefined)
     .filter((doc) => doc.scope === "interface")
-    .map((doc) => ({
-      id: doc.id,
-      title: doc.title,
-      version: 0,
-      level: doc.level,
-      scope: doc.scope,
-      aspect: doc.aspect,
-      depth: doc.depth,
-      serviceId: doc.serviceId,
-      tags: doc.tags,
-      gate: doc.gate,
-    }));
+    .map((doc) => toQualityTopologyDoc(doc, { version: 0 }));
 }
 
 async function findBundleChildren(
@@ -1005,17 +987,7 @@ async function findBundleChildren(
   return ids
     .map((id) => index.registry?.get(id))
     .filter((doc): doc is NonNullable<typeof doc> => doc !== undefined)
-    .map((doc) => ({
-      id: doc.id,
-      title: doc.title,
-      version: 0,
-      level: doc.level,
-      scope: doc.scope,
-      aspect: doc.aspect,
-      depth: doc.depth,
-      tags: doc.tags,
-      gate: doc.gate,
-    }));
+    .map((doc) => toQualityTopologyDoc(doc, { version: 0 }));
 }
 
 async function getBundleDoc(
@@ -1026,57 +998,7 @@ async function getBundleDoc(
     return toSimpleDoc(await index.source.get(bundleId));
   }
   const doc = index.registry?.get(bundleId);
-  return doc
-    ? { id: doc.id, title: doc.title, version: 0, level: doc.level, scope: doc.scope, aspect: doc.aspect, depth: doc.depth, serviceId: doc.serviceId, tags: doc.tags, gate: doc.gate }
-    : undefined;
-}
-
-function collectContainedDocs(
-  registry: MemoryDefinitionRegistry,
-  rootId: string,
-): SimpleDoc[] {
-  const visited = new Set<string>();
-  const collected: SimpleDoc[] = [];
-
-  function visit(id: string): void {
-    if (visited.has(id)) return;
-    visited.add(id);
-
-    const children = registry
-      .getLinks(id, "outgoing")
-      .filter((link) => link.linkType === "contains")
-      .map((link) => registry.get(link.targetId))
-      .filter((doc): doc is NonNullable<typeof doc> => doc !== undefined);
-
-    for (const child of children) {
-      collected.push({
-        id: child.id,
-        title: child.title,
-        version: 0,
-        level: child.level,
-        scope: child.scope,
-        aspect: child.aspect,
-        depth: child.depth,
-        serviceId: child.serviceId,
-        tags: child.tags,
-        gate: child.gate,
-      });
-      visit(child.id);
-    }
-  }
-
-  visit(rootId);
-  return collected;
-}
-
-function toGateDescriptors(bundleId: string | null, docs: readonly SimpleDoc[]): GateDescriptor[] {
-  return docs
-    .filter((doc): doc is SimpleDoc & { readonly gate: QualityGateSpec } => doc.gate !== undefined)
-    .map((doc) => ({
-      gateDocId: doc.id,
-      docVersion: doc.version,
-      bundleId,
-    }));
+  return doc ? toQualityTopologyDoc(doc, { version: 0 }) : undefined;
 }
 
 export function collectClaimAuditReviewScopes(
@@ -1328,7 +1250,7 @@ async function buildBundleStatusSummary(
   const bundle = graph.registry.get(bundleId);
   if (!bundle) return null;
 
-  const descendants = collectContainedDocs(graph.registry, bundleId)
+  const descendants = collectContainedQualityDocs(graph.registry, bundleId, { version: 0 })
     .map((doc) => {
       const indexed = index.byId.get(doc.id);
       if (!indexed) return doc;
@@ -1681,7 +1603,7 @@ async function cmdBundle(
   }
 
   const children = (index.registry
-    ? collectContainedDocs(index.registry, bundleId)
+    ? collectContainedQualityDocs(index.registry, bundleId, { version: 0 })
     : await findBundleChildren(index, bundleId))
     .map((doc) => {
       const indexed = index.byId.get(doc.id);
@@ -2103,7 +2025,7 @@ async function cmdClaims(
     return;
   }
 
-  const descendants = collectContainedDocs(graph.registry, bundleId);
+  const descendants = collectContainedQualityDocs(graph.registry, bundleId, { version: 0 });
   const gateDocs = descendants
     .map((doc) => {
       const indexed = qualityIndex.byId.get(doc.id);

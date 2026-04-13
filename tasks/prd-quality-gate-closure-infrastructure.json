@@ -23,9 +23,10 @@
         "pnpm --filter quality-ledger test passes"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "Keep this helper CLI-internal unless reuse pressure proves a public API is necessary. Preserve quality export behavior exactly.",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-002",
@@ -225,6 +226,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-13T21:57:46.562Z"
+    "updatedAt": "2026-04-13T22:10:40.069Z"
   }
 }

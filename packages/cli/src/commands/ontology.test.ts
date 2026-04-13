@@ -537,6 +537,93 @@ describe("ontology CLI", () => {
     );
   }, 10_000);
 
+  it("prompt extract-artifact treats partially verified snapshots as incomplete not failed", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-partial-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    const snapshotPath = join(dir, "quality-status-partial-artifact.json");
+    await writeFile(
+      snapshotPath,
+      JSON.stringify({
+        rootId: "programming-artifact-ontology-system",
+        generatedAt: "2026-04-13T00:00:00.000Z",
+        bundles: [
+          {
+            bundleId: "programming-artifact-ontology-provider",
+            bundleState: "gate-bound",
+            verifiedGates: 1,
+            totalGates: 2,
+            claimCount: 4,
+            verifiedClaimCount: 1,
+          },
+        ],
+      }),
+      "utf8",
+    );
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-partial-artifact",
+            artifactRef: "quality-status-partial-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            outputPath: "quality-status-partial-artifact.json",
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        governanceClosure: {
+          status: string;
+          warning?: { code: string; message: string };
+        };
+      };
+      artifacts: Array<{
+        quality: {
+          issues: Array<{ code: string }>;
+        };
+      }>;
+    };
+
+    expect(parsed.source.governanceClosure).toMatchObject({
+      status: "quality-status-incomplete",
+      warning: {
+        code: "prompt-quality-status-evidence-incomplete",
+      },
+    });
+    expect(parsed.source.governanceClosure.warning?.message).not.toContain("failed");
+    expect(parsed.artifacts[0]!.quality.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "prompt-quality-status-evidence-incomplete",
+        }),
+      ]),
+    );
+    expect(parsed.artifacts[0]!.quality.issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "prompt-quality-status-evidence-failed",
+        }),
+      ]),
+    );
+  }, 10_000);
+
   it("prompt extract-artifact --json warns for missing or invalid quality export snapshots", async () => {
     const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-warning-"));
     const registryPath = join(dir, "artifact-registry.json");

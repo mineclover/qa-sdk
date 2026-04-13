@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
-import type { DefDoc, DefIncomingLink, DefOutgoingLink } from "definition-catalog";
+import type { DefDataSource, DefDoc, DefIncomingLink, DefOutgoingLink } from "definition-catalog";
 import { createDataSource, type DataSourceOptions } from "definition-data-source";
 import {
   diffOperationalOntologyCheckpoint,
@@ -90,6 +90,10 @@ import {
   appendProgrammingArtifactRegistryRecord,
   appendProgrammingArtifactRegistryRecords,
 } from "../lib/programming-artifact-registry.js";
+import {
+  collectContainedQualityDocsFromDataSource,
+  toGateDescriptors,
+} from "../lib/quality-gate-topology.js";
 
 interface PersistedOntologyStoreFile {
   objects: OperationalOntologyObjectRecord[];
@@ -860,9 +864,7 @@ function qualityStatusBundleVerified(
 function qualityStatusBundleFailed(
   bundle: QualityStatusSnapshotBundleEvidence,
 ): boolean {
-  const verifiedGates = bundle.verifiedGates ?? 0;
-  const totalGates = bundle.totalGates ?? 0;
-  return totalGates > 0 && verifiedGates < totalGates;
+  return bundle.bundleState === "failed";
 }
 
 function qualityStatusMatchVerifiesTarget(
@@ -1260,6 +1262,53 @@ function registryRecordQualityTargetRefs(
   ].filter((value): value is string => Boolean(value)));
 }
 
+async function expandQualityTopologyTargetRefs(
+  source: DefDataSource,
+  refs: readonly (string | undefined)[],
+): Promise<string[]> {
+  const initialRefs = uniqueCliValues(refs.filter((ref): ref is string => Boolean(ref)));
+  const expanded = initialRefs.slice();
+  const visited = new Set<string>();
+
+  for (const ref of initialRefs) {
+    const docId = definitionDocRefCandidate(ref);
+    if (!docId || visited.has(docId)) continue;
+    visited.add(docId);
+
+    try {
+      const root = await source.get(docId);
+      if (!root) continue;
+      const containedDocs = await collectContainedQualityDocsFromDataSource(
+        source,
+        root.docId,
+      );
+      if (containedDocs.length === 0) continue;
+      expanded.push(
+        root.docId,
+        ...containedDocs.map((doc) => doc.id),
+        ...toGateDescriptors(root.docId, containedDocs).map((descriptor) => descriptor.gateDocId),
+      );
+    } catch {
+      // Quality topology expansion is sidecar evidence discovery; extraction can continue without it.
+    }
+  }
+
+  return uniqueCliValues(expanded);
+}
+
+function definitionDocRefCandidate(ref: string): string | undefined {
+  const strippedArtifact = ref.startsWith("artifact:")
+    ? ref.slice("artifact:".length)
+    : ref;
+  const strippedWorkArea = strippedArtifact.startsWith("work-area:")
+    ? strippedArtifact.slice("work-area:".length)
+    : strippedArtifact;
+  if (!strippedWorkArea || strippedWorkArea.includes("/") || strippedWorkArea.includes(":")) {
+    return undefined;
+  }
+  return strippedWorkArea;
+}
+
 async function materializePromptArtifacts(input: {
   flags: Record<string, string>;
   artifacts: readonly PromptArtifact[];
@@ -1646,10 +1695,14 @@ async function cmdPromptExtract(rest: string[]): Promise<void> {
     useCase,
     now: new Date().toISOString(),
   });
-  const qualityStatusEvidence = await loadRelatedQualityStatusEvidenceFromFlags(flags, [
+  const qualityStatusTargetRefs = await expandQualityTopologyTargetRefs(source, [
     docId,
     ...workAreaQualityTargetRefs(extraction.workArea),
   ]);
+  const qualityStatusEvidence = await loadRelatedQualityStatusEvidenceFromFlags(
+    flags,
+    qualityStatusTargetRefs,
+  );
   const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
     appendQualityStatusEvidenceToPromptArtifactExtraction(
       extraction,
@@ -1795,13 +1848,17 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
       .map((ref) => ref.codePath),
     now: new Date().toISOString(),
   });
-  const qualityStatusEvidence = await loadRelatedQualityStatusEvidenceFromFlags(flags, [
+  const qualityStatusTargetRefs = await expandQualityTopologyTargetRefs(source, [
     filePath,
     mapping.codePath,
     mapping.anchor.docId,
     docId,
     ...workAreaQualityTargetRefs(extraction.workArea),
   ]);
+  const qualityStatusEvidence = await loadRelatedQualityStatusEvidenceFromFlags(
+    flags,
+    qualityStatusTargetRefs,
+  );
   const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
     appendQualityStatusEvidenceToPromptArtifactExtraction(
       extraction,
@@ -2158,12 +2215,16 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
       .map((doc) => doc.docId),
     now: new Date().toISOString(),
   });
-  const qualityStatusEvidence = await loadRelatedQualityStatusEvidence(loadedRegistry, [
+  const qualityStatusTargetRefs = await expandQualityTopologyTargetRefs(source, [
     artifactRef,
     query,
     ...candidates.map((doc) => doc.docId),
     ...workAreaQualityTargetRefs(extraction.workArea),
   ]);
+  const qualityStatusEvidence = await loadRelatedQualityStatusEvidence(
+    loadedRegistry,
+    qualityStatusTargetRefs,
+  );
   const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
     appendQualityStatusEvidenceToPromptArtifactExtraction(
       extraction,
