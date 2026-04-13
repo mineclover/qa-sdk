@@ -1426,9 +1426,10 @@ function qualityStatusRootAndBundleDescriptorRefs(
   rootId: string | undefined,
   bundleIds: readonly string[],
 ): QualityGateDescriptorResolutionRef[] {
-  const bundleRefs = qualityStatusRegularDescriptorRefs(bundleIds);
-  if (bundleRefs.length > 0) return bundleRefs;
-  return rootId ? [{ ref: rootId }] : [];
+  return [
+    ...(rootId ? [{ ref: rootId, directChildGatesOnly: bundleIds.length > 0 }] : []),
+    ...qualityStatusRegularDescriptorRefs(bundleIds),
+  ];
 }
 
 function qualityStatusMetadataBundleIds(

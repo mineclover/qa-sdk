@@ -317,10 +317,11 @@ describe("quality gate topology helpers", () => {
       ["quality-gate-a", doc("quality-gate-a", { version: 7, gate })],
       ["quality-bundle-b", doc("quality-bundle-b", { tags: ["quality-bundle"], version: 4 })],
       ["quality-gate-b", doc("quality-gate-b", { version: 9, gate })],
+      ["quality-gate-root", doc("quality-gate-root", { version: 10, gate })],
       ["quality-gate-direct", doc("quality-gate-direct", { version: 11, gate })],
     ]);
     const children = new Map<string, string[]>([
-      ["quality-root", ["quality-bundle-a", "quality-bundle-b"]],
+      ["quality-root", ["quality-gate-root", "quality-bundle-a", "quality-bundle-b"]],
       ["quality-bundle-a", ["quality-contract-a"]],
       ["quality-contract-a", ["quality-gate-a"]],
       ["quality-bundle-b", ["quality-gate-b"]],
@@ -343,6 +344,11 @@ describe("quality gate topology helpers", () => {
     ]);
 
     expect(descriptors).toEqual([
+      {
+        gateDocId: "quality-gate-root",
+        docVersion: 10,
+        bundleId: "quality-root",
+      },
       {
         gateDocId: "quality-gate-a",
         docVersion: 7,

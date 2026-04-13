@@ -35,6 +35,7 @@ export interface QualityGateDescriptorResolutionRef {
   readonly ref: string;
   readonly bundleId?: string | null;
   readonly directGateOnly?: boolean;
+  readonly directChildGatesOnly?: boolean;
 }
 
 interface TopologyDocVersionOptions {
@@ -202,24 +203,33 @@ async function resolveQualityGateDescriptorsForRef(
   }
   if (input.directGateOnly) return [];
 
-  return resolveQualityGateDescriptorsForContainer(source, root, input.bundleId);
+  return resolveQualityGateDescriptorsForContainer(
+    source,
+    root,
+    input.bundleId,
+    input.directChildGatesOnly === true,
+  );
 }
 
 async function resolveQualityGateDescriptorsForContainer(
   source: Pick<DefDataSource, "get" | "getChildren">,
   root: DefDoc,
   bundleId: string | null | undefined,
+  directChildGatesOnly = false,
 ): Promise<GateDescriptor[]> {
   const children = await source.getChildren(root.docId);
+  const directGateDescriptors = children
+    .filter((child) => child.gate !== undefined)
+    .map((child): GateDescriptor => ({
+      gateDocId: child.docId,
+      docVersion: child.version,
+      bundleId: bundleId === undefined ? root.docId : bundleId,
+    }));
+  if (directChildGatesOnly) {
+    return directGateDescriptors;
+  }
   const childBundles = children.filter(isQualityBundleDoc);
   if (bundleId === undefined && childBundles.length > 0) {
-    const directGateDescriptors = children
-      .filter((child) => child.gate !== undefined)
-      .map((child): GateDescriptor => ({
-        gateDocId: child.docId,
-        docVersion: child.version,
-        bundleId: root.docId,
-      }));
     const childBundleDescriptors = await Promise.all(
       childBundles.map(async (child) => {
         const containedDocs = await collectContainedQualityDocsFromDataSource(

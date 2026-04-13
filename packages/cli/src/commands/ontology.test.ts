@@ -1662,6 +1662,13 @@ describe("ontology CLI", () => {
         }),
       ]),
     );
+    expect(record.gateDescriptors?.map((descriptor) => descriptor.gateDocId)).not.toEqual(
+      expect.arrayContaining([
+        "gate-decision-flow-build",
+        "gate-decode-build",
+        "gate-definition-service-build",
+      ]),
+    );
   }, 10_000);
 
   it("prompt extract-artifact --json warns without crashing for missing quality ledger input", async () => {
