@@ -10,6 +10,7 @@ after each iteration and it's included in prompts for context.
 - Optional quality-ledger inputs for prompt artifact extraction should stay explicit and artifact-source gated: validate/open only when `extract-artifact` is processing related quality-status records, emit structured warnings fail-open, and do not add automatic `.qa-sdk/quality-ledger.sqlite` lookup.
 - Snapshot-first ledger fallback should attach ledger-derived evidence to the quality-status record summary, then let prompt-quality evidence select it only when snapshot closure is missing/invalid/incomplete or lacks a verified surface; conflict warnings must not override a verified snapshot.
 - Ledger fallback JSON should stay additive: keep existing evidence fields while adding clearer aliases/summary fields, route ledger warning codes through `source.qualityStatusRecords.warnings[]` and `source.warnings[]`, and never introduce new `governanceClosure.status` values.
+- Quality-status freshness SLA should be an opt-in outcome overlay after structural snapshot/ledger authority is decided, so generatedAt freshness stale does not masquerade as ledger docVersion stale or trigger snapshot-vs-ledger conflict fallback.
 
 ---
 
@@ -89,4 +90,24 @@ after each iteration and it's included in prompts for context.
   - `source.warnings[]` is derived from `QualityStatusSnapshotEvidence.warnings`, so new ledger warning codes should be represented as structured warning objects first.
   - Ledger fallback evidence is safest as an additive record-summary payload because prompt-quality evaluation can continue to decide whether snapshot or ledger evidence is authoritative.
   - Incomplete ledger fallback should report machine-readable gate evidence without expanding `governanceClosure.status`; the prompt-quality outcome already maps it to the existing incomplete closure path.
+---
+
+## 2026-04-14 - US-006
+- Added `--quality-status-max-age-days <n>` to `qa-sdk ontology prompt extract-artifact` usage and validation.
+- Implemented opt-in freshness evaluation for quality-status snapshots using snapshot `generatedAt`, and for ledger fallback using the oldest verified gate `lastRun.executedAt`.
+- Emitted `quality-status-generated-at-stale` JSON warnings for stale freshness policy failures while mapping prompt quality/governance closure to `prompt-quality-status-evidence-stale`.
+- Preserved default behavior when the max-age flag is absent and kept missing/invalid verified gate timestamps incomplete rather than stale.
+- Updated artifact extraction docs and marked the freshness SLA todo complete.
+- Files changed:
+  - `packages/cli/src/commands/ontology.ts`
+  - `packages/cli/src/commands/ontology.test.ts`
+  - `packages/cli/src/command-groups/ontology.commands.ts`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-cli.spec.md`
+  - `docs/specs/operational-ontology/operational-ontology-prompt-artifact-generation.spec.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-todo.todo.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Freshness must overlay only otherwise verified structural evidence; failed/incomplete gate surfaces should keep their original outcome.
+  - Ledger freshness needs the oldest verified gate run timestamp, not the latest aggregate run timestamp, or one old required gate can be hidden.
+  - GeneratedAt freshness stale and quality-ledger docVersion stale share the prompt outcome `stale`, so messages and docs need to identify which stale path fired.
 ---

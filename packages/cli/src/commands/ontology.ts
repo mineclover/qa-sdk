@@ -203,6 +203,24 @@ interface QualityStatusExportSnapshotEvidence {
   sourcePath: string;
 }
 
+interface QualityStatusFreshnessPolicy {
+  maxAgeDays: number;
+  now: string;
+}
+
+interface QualityStatusFreshnessEvidence {
+  status: "fresh" | "stale" | "incomplete";
+  source: "snapshot-generated-at" | "ledger-verified-gate-executed-at";
+  checkedAt: string;
+  maxAgeDays: number;
+  thresholdAt: string;
+  message: string;
+  generatedAt?: string;
+  oldestVerifiedGateExecutedAt?: string;
+  staleGateRefs?: readonly string[];
+  missingTimestampGateRefs?: readonly string[];
+}
+
 interface QualityStatusLedgerGateStatusEvidence {
   gateDocId: string;
   currentVersion: number;
@@ -230,8 +248,11 @@ interface QualityStatusLedgerEvidence {
   blockingGateStatuses: readonly QualityStatusLedgerGateStatusEvidence[];
   latestRunTimestamps: readonly string[];
   latestRunAt?: string;
+  oldestVerifiedGateExecutedAt?: string;
+  freshness?: QualityStatusFreshnessEvidence;
   timestampSummary: {
     latestRunAt?: string;
+    oldestVerifiedGateExecutedAt?: string;
     latestRunTimestamps: readonly string[];
     latestRunCount: number;
     gatesWithRuns: number;
@@ -249,7 +270,8 @@ interface QualityStatusSnapshotWarning {
     | "quality-status-ledger-read-failed"
     | "quality-status-ledger-no-gate-descriptors"
     | "quality-status-ledger-incomplete"
-    | "quality-status-ledger-conflict";
+    | "quality-status-ledger-conflict"
+    | "quality-status-generated-at-stale";
   artifactId: string;
   artifactRef: string;
   outputPath?: string;
@@ -262,6 +284,8 @@ type QualityStatusRecordSourceSummary = RelatedQualityStatusRegistryRecordSummar
   gateDescriptors?: readonly GateDescriptor[];
   qualityExportSnapshot?: QualityStatusExportSnapshotEvidence;
   qualityExportWarning?: QualityStatusSnapshotWarning;
+  qualityFreshness?: QualityStatusFreshnessEvidence;
+  qualityFreshnessWarning?: QualityStatusSnapshotWarning;
   qualityLedgerEvidence?: QualityStatusLedgerEvidence;
   qualityLedgerWarning?: QualityStatusSnapshotWarning;
   qualityLedgerIncompleteWarning?: QualityStatusSnapshotWarning;
@@ -308,6 +332,7 @@ interface PromptArtifactMaterialization {
 }
 
 const DEFAULT_STORE_FILE = join(getQaSdkDir(), "operational-ontology-store.json");
+const QUALITY_STATUS_FRESHNESS_DAY_MS = 24 * 60 * 60 * 1000;
 
 function parseFlags(args: string[]): { positional: string[]; flags: Record<string, string> } {
   const positional: string[] = [];
@@ -502,6 +527,33 @@ function loadQualityStatusLedger(ledgerPath: string | undefined): LoadedQualityS
       },
     };
   }
+}
+
+function parseQualityStatusFreshnessPolicy(
+  flags: Record<string, string>,
+): { policy?: QualityStatusFreshnessPolicy; error?: string } {
+  const rawValue = flags["quality-status-max-age-days"];
+  if (rawValue === undefined) return {};
+
+  const value = rawValue.trim();
+  const maxAgeDays = Number(value);
+  if (
+    value.length === 0 ||
+    !Number.isSafeInteger(maxAgeDays) ||
+    maxAgeDays <= 0
+  ) {
+    return {
+      error:
+        `Invalid --quality-status-max-age-days value "${rawValue}". Expected a positive integer number of days.`,
+    };
+  }
+
+  return {
+    policy: {
+      maxAgeDays,
+      now: new Date().toISOString(),
+    },
+  };
 }
 
 function closeQualityStatusLedger(loadedLedger: LoadedQualityStatusLedger | undefined): void {
@@ -851,11 +903,13 @@ async function loadRelatedQualityStatusEvidenceFromFlags(
       snapshotEvidence: emptyQualityStatusSnapshotEvidence(),
     };
   }
+  const artifactSource = parseArtifactExtractionSource(flags);
   return loadRelatedQualityStatusEvidence(
     loadedRegistry,
     targetRefs,
     source,
-    parseArtifactExtractionSource(flags) ? flags["quality-ledger"] : undefined,
+    artifactSource ? flags["quality-ledger"] : undefined,
+    artifactSource ? parseQualityStatusFreshnessPolicy(flags).policy : undefined,
   );
 }
 
@@ -864,6 +918,7 @@ async function loadRelatedQualityStatusEvidence(
   targetRefs: readonly (string | undefined)[],
   source?: Pick<DefDataSource, "get" | "getChildren">,
   qualityLedgerPath?: string,
+  freshnessPolicy?: QualityStatusFreshnessPolicy,
 ): Promise<RelatedQualityStatusEvidence> {
   const matches = findRelatedQualityStatusMatches(loadedRegistry, targetRefs);
   return {
@@ -873,6 +928,7 @@ async function loadRelatedQualityStatusEvidence(
       matches,
       source,
       qualityLedgerPath,
+      freshnessPolicy,
     ),
   };
 }
@@ -998,6 +1054,14 @@ function qualityStatusPromptEvidenceOutcome(
 function qualityStatusSnapshotPromptEvidenceOutcome(
   summary: QualityStatusRecordSourceSummary,
 ): PromptArtifactQualityStatusEvidence["outcome"] {
+  const structuralOutcome = qualityStatusSnapshotStructuralPromptEvidenceOutcome(summary);
+  if (structuralOutcome !== "verified") return structuralOutcome;
+  return qualityStatusFreshnessPromptEvidenceOutcome(summary.qualityFreshness, structuralOutcome);
+}
+
+function qualityStatusSnapshotStructuralPromptEvidenceOutcome(
+  summary: QualityStatusRecordSourceSummary,
+): PromptArtifactQualityStatusEvidence["outcome"] {
   if (summary.qualityExportWarning) {
     return summary.qualityExportWarning.code === "quality-status-snapshot-missing"
       ? "incomplete"
@@ -1020,15 +1084,33 @@ function qualityStatusPromptEvidenceMessage(
 ): string | undefined {
   const ledgerEvidence = qualityStatusAuthoritativeLedgerEvidence(summary);
   if (ledgerEvidence) {
+    if (
+      ledgerEvidence.freshness &&
+      (outcome === "stale" || outcome === "incomplete") &&
+      qualityStatusLedgerStructuralEvidenceOutcome(ledgerEvidence) === "verified"
+    ) {
+      return ledgerEvidence.freshness.message;
+    }
     if (outcome === "verified") return undefined;
     const bundleRef = ledgerEvidence.bundleId ?? ledgerEvidence.bundleRefs[0] ?? "resolved gate surface";
-    return `Quality ledger fallback ${bundleRef} reported ${outcome} verification.`;
+    return outcome === "stale"
+      ? `Quality ledger fallback ${bundleRef} reported stale gate docVersion verification.`
+      : `Quality ledger fallback ${bundleRef} reported ${outcome} verification.`;
+  }
+  if (
+    summary.qualityFreshness &&
+    (outcome === "stale" || outcome === "incomplete") &&
+    qualityStatusSnapshotStructuralPromptEvidenceOutcome(summary) === "verified"
+  ) {
+    return summary.qualityFreshness.message;
   }
   if (summary.qualityExportWarning) return summary.qualityExportWarning.message;
   const snapshot = summary.qualityExportSnapshot;
   if (!snapshot) return "Quality-status record did not load a quality export snapshot.";
   if (outcome === "verified") return undefined;
-  return `Quality-status snapshot ${snapshot.rootId} reported ${outcome} verification.`;
+  return outcome === "stale"
+    ? `Quality-status snapshot ${snapshot.rootId} reported stale verification state from the snapshot payload, not generatedAt freshness.`
+    : `Quality-status snapshot ${snapshot.rootId} reported ${outcome} verification.`;
 }
 
 function qualityStatusBundleVerified(
@@ -1054,7 +1136,7 @@ function qualityStatusAuthoritativeLedgerEvidence(
   if (summary.qualityExportWarning || !summary.qualityExportSnapshot) {
     return summary.qualityLedgerEvidence;
   }
-  return qualityStatusSnapshotPromptEvidenceOutcome(summary) === "incomplete"
+  return qualityStatusSnapshotStructuralPromptEvidenceOutcome(summary) === "incomplete"
     ? summary.qualityLedgerEvidence
     : undefined;
 }
@@ -1065,7 +1147,7 @@ function shouldAttemptQualityLedgerFallback(
   if (summary.qualityExportWarning) return true;
   const snapshot = summary.qualityExportSnapshot;
   if (!snapshot) return true;
-  const outcome = qualityStatusSnapshotPromptEvidenceOutcome(summary);
+  const outcome = qualityStatusSnapshotStructuralPromptEvidenceOutcome(summary);
   if (outcome !== "verified") return true;
   return !qualityStatusSnapshotHasVerifiedSurface(snapshot);
 }
@@ -1082,6 +1164,14 @@ function qualityStatusSnapshotHasVerifiedSurface(
 function qualityStatusLedgerEvidenceOutcome(
   evidence: QualityStatusLedgerEvidence,
 ): PromptArtifactQualityStatusEvidence["outcome"] {
+  const structuralOutcome = qualityStatusLedgerStructuralEvidenceOutcome(evidence);
+  if (structuralOutcome !== "verified") return structuralOutcome;
+  return qualityStatusFreshnessPromptEvidenceOutcome(evidence.freshness, structuralOutcome);
+}
+
+function qualityStatusLedgerStructuralEvidenceOutcome(
+  evidence: QualityStatusLedgerEvidence,
+): PromptArtifactQualityStatusEvidence["outcome"] {
   if (evidence.verified) return "verified";
   if (evidence.blockingGateStatuses.some((status) => status.status === "failed")) {
     return "failed";
@@ -1090,6 +1180,14 @@ function qualityStatusLedgerEvidenceOutcome(
     return "stale";
   }
   return "incomplete";
+}
+
+function qualityStatusFreshnessPromptEvidenceOutcome(
+  freshness: QualityStatusFreshnessEvidence | undefined,
+  fallback: PromptArtifactQualityStatusEvidence["outcome"],
+): PromptArtifactQualityStatusEvidence["outcome"] {
+  if (!freshness || freshness.status === "fresh") return fallback;
+  return freshness.status === "stale" ? "stale" : "incomplete";
 }
 
 function qualityStatusMatchVerifiesTarget(
@@ -1107,6 +1205,7 @@ async function loadQualityStatusSnapshotEvidence(
   matches: readonly RelatedQualityStatusRegistryRecordMatch[],
   source?: Pick<DefDataSource, "get" | "getChildren">,
   qualityLedgerPath?: string,
+  freshnessPolicy?: QualityStatusFreshnessPolicy,
 ): Promise<QualityStatusSnapshotEvidence> {
   if (!loadedRegistry || matches.length === 0) {
     return emptyQualityStatusSnapshotEvidence();
@@ -1138,6 +1237,30 @@ async function loadQualityStatusSnapshotEvidence(
             ...summary,
             qualityExportSnapshot: loaded.snapshot,
           };
+          const freshness = qualityStatusSnapshotFreshness(
+            loaded.snapshot,
+            freshnessPolicy,
+          );
+          if (freshness) {
+            summary = {
+              ...summary,
+              qualityFreshness: freshness,
+            };
+            if (
+              freshness.status === "stale" &&
+              qualityStatusSnapshotStructuralPromptEvidenceOutcome(summary) === "verified"
+            ) {
+              const warning = qualityStatusGeneratedAtStaleWarning(
+                match.record,
+                freshness,
+              );
+              warnings.push(warning);
+              summary = {
+                ...summary,
+                qualityFreshnessWarning: warning,
+              };
+            }
+          }
           governanceRuns.push(
             qualityStatusSnapshotGovernanceRun(match.record, loaded.snapshot),
           );
@@ -1179,11 +1302,26 @@ async function loadQualityStatusSnapshotEvidence(
           loadedLedger.ledger,
           loadedLedger.path,
           gateDescriptors,
+          freshnessPolicy,
         );
         summary = {
           ...summary,
           qualityLedgerEvidence: ledgerEvidence,
         };
+        if (
+          ledgerEvidence.freshness?.status === "stale" &&
+          qualityStatusLedgerStructuralEvidenceOutcome(ledgerEvidence) === "verified"
+        ) {
+          const freshnessWarning = qualityStatusGeneratedAtStaleWarning(
+            match.record,
+            ledgerEvidence.freshness,
+          );
+          warnings.push(freshnessWarning);
+          summary = {
+            ...summary,
+            qualityFreshnessWarning: freshnessWarning,
+          };
+        }
         if (!ledgerEvidence.verified) {
           const incompleteWarning = qualityStatusLedgerIncompleteWarning(
             match.record,
@@ -1524,10 +1662,21 @@ function qualityStatusNoGateDescriptorsWarning(
   });
 }
 
+function qualityStatusGeneratedAtStaleWarning(
+  record: ProgrammingArtifactRegistryRecord,
+  freshness: QualityStatusFreshnessEvidence,
+): QualityStatusSnapshotWarning {
+  return qualityStatusSnapshotWarning(record, {
+    code: "quality-status-generated-at-stale",
+    message: freshness.message,
+  });
+}
+
 function qualityStatusLedgerEvidence(
   ledger: QualityLedger,
   sourcePath: string,
   gateDescriptors: readonly GateDescriptor[],
+  freshnessPolicy?: QualityStatusFreshnessPolicy,
 ): QualityStatusLedgerEvidence {
   const verification = ledger.resolveBundleVerification(
     gateDescriptors.map((descriptor) => ({ ...descriptor })),
@@ -1536,6 +1685,7 @@ function qualityStatusLedgerEvidence(
     sourcePath,
     gateDescriptors,
     verification,
+    freshnessPolicy,
   );
 }
 
@@ -1543,6 +1693,7 @@ function summarizeQualityStatusLedgerEvidence(
   sourcePath: string,
   gateDescriptors: readonly GateDescriptor[],
   verification: BundleVerification,
+  freshnessPolicy?: QualityStatusFreshnessPolicy,
 ): QualityStatusLedgerEvidence {
   const statuses = [...verification.gateStatuses.values()];
   const latestRunTimestamps = uniqueCliValues(
@@ -1551,6 +1702,15 @@ function summarizeQualityStatusLedgerEvidence(
       .filter((value): value is string => Boolean(value)),
   );
   const latestRunAt = latestQualityStatusTimestamp(latestRunTimestamps);
+  const freshness = qualityStatusLedgerFreshness(statuses, freshnessPolicy);
+  const oldestVerifiedGateExecutedAt =
+    freshness?.oldestVerifiedGateExecutedAt ??
+    oldestQualityStatusTimestamp(
+      statuses
+        .filter((status) => status.status === "verified")
+        .map((status) => status.lastRun?.executedAt)
+        .filter((value): value is string => Boolean(value)),
+    );
   const verifiedGateRefs = statuses
     .filter((status) => status.status === "verified")
     .map((status) => status.gateDocId);
@@ -1565,6 +1725,7 @@ function summarizeQualityStatusLedgerEvidence(
   const gatesWithRuns = statuses.filter((status) => status.lastRun).length;
   const timestampSummary = {
     ...(latestRunAt ? { latestRunAt } : {}),
+    ...(oldestVerifiedGateExecutedAt ? { oldestVerifiedGateExecutedAt } : {}),
     latestRunTimestamps,
     latestRunCount: latestRunTimestamps.length,
     gatesWithRuns,
@@ -1588,6 +1749,8 @@ function summarizeQualityStatusLedgerEvidence(
     blockingGateStatuses: blockingGates,
     latestRunTimestamps,
     ...(latestRunAt ? { latestRunAt } : {}),
+    ...(oldestVerifiedGateExecutedAt ? { oldestVerifiedGateExecutedAt } : {}),
+    ...(freshness ? { freshness } : {}),
     timestampSummary,
   };
 }
@@ -1619,6 +1782,147 @@ function latestQualityStatusTimestamp(
   }, undefined);
 }
 
+function oldestQualityStatusTimestamp(
+  timestamps: readonly string[],
+): string | undefined {
+  return timestamps.reduce<string | undefined>((oldest, timestamp) => {
+    if (!oldest) return timestamp;
+    return compareTimestamps(timestamp, oldest) < 0 ? timestamp : oldest;
+  }, undefined);
+}
+
+function qualityStatusSnapshotFreshness(
+  snapshot: QualityStatusExportSnapshotEvidence,
+  policy: QualityStatusFreshnessPolicy | undefined,
+): QualityStatusFreshnessEvidence | undefined {
+  if (!policy) return undefined;
+  return qualityStatusTimestampFreshness({
+    source: "snapshot-generated-at",
+    timestamp: snapshot.generatedAt,
+    policy,
+    freshMessage:
+      `Quality-status snapshot ${snapshot.rootId} generatedAt is within --quality-status-max-age-days=${policy.maxAgeDays}.`,
+    staleMessage:
+      `Quality-status snapshot ${snapshot.rootId} generatedAt is older than --quality-status-max-age-days=${policy.maxAgeDays}; this is generatedAt freshness stale, not gate docVersion stale.`,
+    incompleteMessage:
+      `Quality-status snapshot ${snapshot.rootId} has no usable generatedAt for --quality-status-max-age-days=${policy.maxAgeDays}; freshness is incomplete, not stale.`,
+  });
+}
+
+function qualityStatusLedgerFreshness(
+  statuses: readonly GateStatus[],
+  policy: QualityStatusFreshnessPolicy | undefined,
+): QualityStatusFreshnessEvidence | undefined {
+  if (!policy) return undefined;
+  const verifiedStatuses = statuses.filter((status) => status.status === "verified");
+  const missingTimestampGateRefs = verifiedStatuses
+    .filter((status) => !isUsableQualityStatusTimestamp(status.lastRun?.executedAt))
+    .map((status) => status.gateDocId);
+  const oldestVerifiedGateExecutedAt = oldestQualityStatusTimestamp(
+    verifiedStatuses
+      .map((status) => status.lastRun?.executedAt)
+      .filter((value): value is string => isUsableQualityStatusTimestamp(value)),
+  );
+  const base = qualityStatusFreshnessBase(policy);
+
+  if (missingTimestampGateRefs.length > 0 || !oldestVerifiedGateExecutedAt) {
+    return {
+      ...base,
+      status: "incomplete",
+      source: "ledger-verified-gate-executed-at",
+      ...(oldestVerifiedGateExecutedAt ? { oldestVerifiedGateExecutedAt } : {}),
+      missingTimestampGateRefs,
+      message:
+        `Quality ledger fallback has verified gates without usable lastRun.executedAt for --quality-status-max-age-days=${policy.maxAgeDays}; freshness is incomplete, not stale.`,
+    };
+  }
+
+  if (qualityStatusTimestampIsOlderThanThreshold(oldestVerifiedGateExecutedAt, base.thresholdAt)) {
+    return {
+      ...base,
+      status: "stale",
+      source: "ledger-verified-gate-executed-at",
+      oldestVerifiedGateExecutedAt,
+      staleGateRefs: verifiedStatuses
+        .filter((status) =>
+          qualityStatusTimestampIsOlderThanThreshold(status.lastRun?.executedAt, base.thresholdAt),
+        )
+        .map((status) => status.gateDocId),
+      message:
+        `Quality ledger fallback oldest verified gate lastRun.executedAt is older than --quality-status-max-age-days=${policy.maxAgeDays}; this is generatedAt freshness stale, not gate docVersion stale.`,
+    };
+  }
+
+  return {
+    ...base,
+    status: "fresh",
+    source: "ledger-verified-gate-executed-at",
+    oldestVerifiedGateExecutedAt,
+    message:
+      `Quality ledger fallback oldest verified gate lastRun.executedAt is within --quality-status-max-age-days=${policy.maxAgeDays}.`,
+  };
+}
+
+function qualityStatusTimestampFreshness(input: {
+  source: QualityStatusFreshnessEvidence["source"];
+  timestamp: string | undefined;
+  policy: QualityStatusFreshnessPolicy;
+  freshMessage: string;
+  staleMessage: string;
+  incompleteMessage: string;
+}): QualityStatusFreshnessEvidence {
+  const base = qualityStatusFreshnessBase(input.policy);
+  if (!isUsableQualityStatusTimestamp(input.timestamp)) {
+    return {
+      ...base,
+      status: "incomplete",
+      source: input.source,
+      message: input.incompleteMessage,
+    };
+  }
+  if (qualityStatusTimestampIsOlderThanThreshold(input.timestamp, base.thresholdAt)) {
+    return {
+      ...base,
+      status: "stale",
+      source: input.source,
+      generatedAt: input.timestamp,
+      message: input.staleMessage,
+    };
+  }
+  return {
+    ...base,
+    status: "fresh",
+    source: input.source,
+    generatedAt: input.timestamp,
+    message: input.freshMessage,
+  };
+}
+
+function qualityStatusFreshnessBase(
+  policy: QualityStatusFreshnessPolicy,
+): Pick<QualityStatusFreshnessEvidence, "checkedAt" | "maxAgeDays" | "thresholdAt"> {
+  return {
+    checkedAt: policy.now,
+    maxAgeDays: policy.maxAgeDays,
+    thresholdAt: new Date(
+      new Date(policy.now).getTime() -
+        policy.maxAgeDays * QUALITY_STATUS_FRESHNESS_DAY_MS,
+    ).toISOString(),
+  };
+}
+
+function isUsableQualityStatusTimestamp(timestamp: string | undefined): timestamp is string {
+  return typeof timestamp === "string" && Number.isFinite(new Date(timestamp).getTime());
+}
+
+function qualityStatusTimestampIsOlderThanThreshold(
+  timestamp: string | undefined,
+  thresholdAt: string,
+): boolean {
+  return isUsableQualityStatusTimestamp(timestamp) &&
+    compareTimestamps(timestamp, thresholdAt) < 0;
+}
+
 function qualityStatusLedgerIncompleteWarning(
   record: ProgrammingArtifactRegistryRecord,
   evidence: QualityStatusLedgerEvidence,
@@ -1647,10 +1951,10 @@ function qualityStatusLedgerConflictWarning(
   }
 
   const snapshotState = determinateQualityStatusState(
-    qualityStatusSnapshotPromptEvidenceOutcome(summary),
+    qualityStatusSnapshotStructuralPromptEvidenceOutcome(summary),
   );
   const ledgerState = determinateQualityStatusState(
-    qualityStatusLedgerEvidenceOutcome(ledgerEvidence),
+    qualityStatusLedgerStructuralEvidenceOutcome(ledgerEvidence),
   );
   if (!snapshotState || !ledgerState || snapshotState === ledgerState) {
     return undefined;
@@ -2633,8 +2937,15 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
   const artifactRef = positional[0];
   if (!artifactRef) {
     console.error(
-      "Usage: qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--quality-ledger <path>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--output <file|dir>] [--json] [--local|--server|--scan] [--db <path>]",
+      "Usage: qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--quality-ledger <path>] [--quality-status-max-age-days <n>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--output <file|dir>] [--json] [--local|--server|--scan] [--db <path>]",
     );
+    return;
+  }
+
+  const freshnessPolicy = parseQualityStatusFreshnessPolicy(flags);
+  if (freshnessPolicy.error) {
+    console.error(freshnessPolicy.error);
+    process.exitCode = 1;
     return;
   }
 
@@ -2656,7 +2967,7 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
       artifactRef,
       ...registryRecordQualityTargetRefs(directRegistryRecord),
       ...workAreaQualityTargetRefs(registryExtraction.workArea),
-    ], qualityDescriptorSource, flags["quality-ledger"]);
+    ], qualityDescriptorSource, flags["quality-ledger"], freshnessPolicy.policy);
     const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
       appendQualityStatusEvidenceToPromptArtifactExtraction(
         registryExtraction,
@@ -2796,6 +3107,7 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
     qualityStatusTargetRefs,
     source,
     flags["quality-ledger"],
+    freshnessPolicy.policy,
   );
   const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
     appendQualityStatusEvidenceToPromptArtifactExtraction(
@@ -3993,7 +4305,7 @@ export async function cliOntology(args: string[]): Promise<void> {
           "  qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
           "  qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
           "  qa-sdk ontology prompt extract-permission <permission-ref> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
-          "  qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--quality-ledger <path>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
+          "  qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--quality-ledger <path>] [--quality-status-max-age-days <n>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
           "  qa-sdk ontology artifact registry validate --input <file> [--json]",
           "  qa-sdk ontology artifact registry list --input <file> [--kind <kind>] [--json]",
           "  qa-sdk ontology artifact registry append --output <file> (--input <record.json> | --kind <kind> --artifact-ref <ref>) [--json]",

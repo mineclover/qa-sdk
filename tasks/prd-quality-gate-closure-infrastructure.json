@@ -162,11 +162,12 @@
         "pnpm --filter quality-ledger test passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Freshness SLA is opt-in only. Distinguish docVersion stale from generatedAt freshness stale in messages and docs.",
       "dependsOn": [
         "US-004"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-007",
@@ -230,6 +231,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-13T22:44:02.735Z"
+    "updatedAt": "2026-04-13T22:56:45.864Z"
   }
 }

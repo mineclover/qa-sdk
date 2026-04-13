@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import { describe, expect, it, vi } from "vitest";
 
-import { QualityLedger, SqliteQualityStore } from "quality-ledger";
+import { SqliteQualityStore } from "quality-ledger";
 import { cliOntology } from "./ontology.js";
 import { USAGE, resolveSubcommand } from "../index.js";
 
@@ -16,6 +16,7 @@ describe("ontology CLI", () => {
     expect(USAGE).toContain("qa-sdk ontology prompt extract-permission");
     expect(USAGE).toContain("qa-sdk ontology prompt extract-artifact");
     expect(USAGE).toContain("--quality-ledger <path>");
+    expect(USAGE).toContain("--quality-status-max-age-days <n>");
     expect(USAGE).toContain("qa-sdk ontology artifact registry validate");
     expect(USAGE).toContain("qa-sdk ontology artifact registry append");
     expect(USAGE).toContain("qa-sdk ontology snapshot ingest");
@@ -567,6 +568,215 @@ describe("ontology CLI", () => {
     );
   }, 10_000);
 
+  it("prompt extract-artifact rejects invalid quality-status max-age values", async () => {
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--quality-status-max-age-days",
+        "0",
+        "--json",
+      ]);
+    });
+
+    expect(output.stdout).toBe("");
+    expect(output.stderr).toContain(
+      'Invalid --quality-status-max-age-days value "0". Expected a positive integer number of days.',
+    );
+    expect(process.exitCode).toBe(1);
+    process.exitCode = undefined;
+  });
+
+  it("prompt extract-artifact leaves old generatedAt evidence unchanged when no max-age policy is provided", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-no-sla-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    const snapshotPath = join(dir, "quality-status-old-artifact.json");
+    await writeFile(
+      snapshotPath,
+      JSON.stringify({
+        rootId: "quality-gates-system",
+        generatedAt: "2000-01-01T00:00:00.000Z",
+        bundles: [
+          {
+            bundleId: "work-domain-quality-bundle",
+            bundleState: "verified",
+            verifiedGates: 3,
+            totalGates: 3,
+          },
+        ],
+      }),
+      "utf8",
+    );
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-old-artifact",
+            artifactRef: "quality-status-old-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            outputPath: "quality-status-old-artifact.json",
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        warnings: string[];
+        governanceClosure: { status: string; warning?: { code: string } };
+        qualityStatusRecords: {
+          warnings: Array<{ code: string }>;
+          records: Array<{
+            qualityExportSnapshot?: { generatedAt?: string };
+            qualityFreshness?: unknown;
+          }>;
+        };
+      };
+      artifacts: Array<{ quality: { issues: Array<{ code: string }> } }>;
+    };
+
+    expect(parsed.source.governanceClosure).toMatchObject({
+      status: "quality-status-found",
+    });
+    expect(parsed.source.governanceClosure.warning).toBeUndefined();
+    expect(parsed.source.warnings).not.toContain("quality-status-generated-at-stale");
+    expect(parsed.source.qualityStatusRecords.warnings).toEqual([]);
+    expect(parsed.source.qualityStatusRecords.records[0]!.qualityExportSnapshot).toMatchObject({
+      generatedAt: "2000-01-01T00:00:00.000Z",
+    });
+    expect(parsed.source.qualityStatusRecords.records[0]!.qualityFreshness).toBeUndefined();
+    expect(parsed.artifacts[0]!.quality.issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "prompt-quality-status-evidence-stale",
+        }),
+      ]),
+    );
+  }, 10_000);
+
+  it("prompt extract-artifact treats verified snapshots older than max-age as generatedAt freshness stale", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-snapshot-stale-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    const snapshotPath = join(dir, "quality-status-stale-artifact.json");
+    await writeFile(
+      snapshotPath,
+      JSON.stringify({
+        rootId: "quality-gates-system",
+        generatedAt: "2000-01-01T00:00:00.000Z",
+        bundles: [
+          {
+            bundleId: "work-domain-quality-bundle",
+            bundleState: "verified",
+            verifiedGates: 3,
+            totalGates: 3,
+          },
+        ],
+      }),
+      "utf8",
+    );
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-stale-artifact",
+            artifactRef: "quality-status-stale-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            outputPath: "quality-status-stale-artifact.json",
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--quality-status-max-age-days",
+        "1",
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        warnings: string[];
+        governanceClosure: {
+          status: string;
+          warning?: { code: string; message: string };
+        };
+        qualityStatusRecords: {
+          warnings: Array<{ code: string; message: string }>;
+          records: Array<{
+            qualityFreshness?: {
+              status: string;
+              source: string;
+              generatedAt?: string;
+              maxAgeDays: number;
+            };
+            qualityFreshnessWarning?: { code: string; message: string };
+          }>;
+        };
+      };
+      artifacts: Array<{ quality: { issues: Array<{ code: string; message: string }> } }>;
+    };
+    const record = parsed.source.qualityStatusRecords.records[0]!;
+
+    expect(parsed.source.warnings).toContain("quality-status-generated-at-stale");
+    expect(parsed.source.qualityStatusRecords.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "quality-status-generated-at-stale",
+        }),
+      ]),
+    );
+    expect(record.qualityFreshness).toMatchObject({
+      status: "stale",
+      source: "snapshot-generated-at",
+      generatedAt: "2000-01-01T00:00:00.000Z",
+      maxAgeDays: 1,
+    });
+    expect(record.qualityFreshnessWarning).toMatchObject({
+      code: "quality-status-generated-at-stale",
+    });
+    expect(parsed.source.governanceClosure).toMatchObject({
+      status: "quality-status-invalid",
+      warning: {
+        code: "prompt-quality-status-evidence-stale",
+      },
+    });
+    expect(parsed.source.governanceClosure.warning?.message).toContain("generatedAt freshness stale");
+    expect(parsed.source.governanceClosure.warning?.message).toContain("not gate docVersion stale");
+    expect(parsed.artifacts[0]!.quality.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "prompt-quality-status-evidence-stale",
+        }),
+      ]),
+    );
+  }, 10_000);
+
   it("prompt extract-artifact keeps verified snapshots authoritative over ledger fallback", async () => {
     const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-snapshot-primary-"));
     const registryPath = join(dir, "artifact-registry.json");
@@ -794,6 +1004,245 @@ describe("ontology CLI", () => {
       expect.arrayContaining([
         expect.objectContaining({
           code: "prompt-quality-status-evidence-incomplete",
+        }),
+      ]),
+    );
+  }, 10_000);
+
+  it("prompt extract-artifact applies max-age to the oldest verified ledger gate timestamp", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-ledger-stale-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    const ledgerPath = join(dir, "quality-ledger.sqlite");
+    writeQualityLedgerRuns(ledgerPath, [
+      {
+        gateDocId: "gate-work-domain-typecheck",
+        outcome: "pass",
+        executedAt: "2000-01-01T00:00:00.000Z",
+      },
+      {
+        gateDocId: "gate-work-domain-build",
+        outcome: "pass",
+        executedAt: new Date().toISOString(),
+      },
+      {
+        gateDocId: "gate-work-domain-test",
+        outcome: "pass",
+        executedAt: new Date().toISOString(),
+      },
+    ]);
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-ledger-artifact",
+            artifactRef: "quality-status-ledger-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            metadata: {
+              rootId: "quality-gates-system",
+              bundles: [
+                {
+                  bundleId: "work-domain-quality-bundle",
+                },
+              ],
+            },
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--quality-ledger",
+        ledgerPath,
+        "--quality-status-max-age-days",
+        "1",
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        warnings: string[];
+        governanceClosure: {
+          status: string;
+          warning?: { code: string; message: string };
+        };
+        qualityStatusRecords: {
+          warnings: Array<{ code: string; resolvedPath?: string; message: string }>;
+          records: Array<{
+            qualityLedgerEvidence?: {
+              verified: boolean;
+              oldestVerifiedGateExecutedAt?: string;
+              freshness?: {
+                status: string;
+                source: string;
+                oldestVerifiedGateExecutedAt?: string;
+                staleGateRefs?: string[];
+              };
+            };
+            qualityFreshnessWarning?: { code: string };
+          }>;
+        };
+      };
+      artifacts: Array<{ quality: { issues: Array<{ code: string }> } }>;
+    };
+    const record = parsed.source.qualityStatusRecords.records[0]!;
+
+    expect(parsed.source.warnings).toContain("quality-status-generated-at-stale");
+    expect(parsed.source.qualityStatusRecords.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "quality-status-generated-at-stale",
+        }),
+      ]),
+    );
+    expect(record.qualityLedgerEvidence).toMatchObject({
+      verified: true,
+      oldestVerifiedGateExecutedAt: "2000-01-01T00:00:00.000Z",
+      freshness: {
+        status: "stale",
+        source: "ledger-verified-gate-executed-at",
+        oldestVerifiedGateExecutedAt: "2000-01-01T00:00:00.000Z",
+        staleGateRefs: ["gate-work-domain-typecheck"],
+      },
+    });
+    expect(record.qualityFreshnessWarning).toMatchObject({
+      code: "quality-status-generated-at-stale",
+    });
+    expect(parsed.source.governanceClosure).toMatchObject({
+      status: "quality-status-invalid",
+      warning: {
+        code: "prompt-quality-status-evidence-stale",
+      },
+    });
+    expect(parsed.source.governanceClosure.warning?.message).toContain("oldest verified gate");
+    expect(parsed.artifacts[0]!.quality.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "prompt-quality-status-evidence-stale",
+        }),
+      ]),
+    );
+  }, 10_000);
+
+  it("prompt extract-artifact treats missing verified ledger timestamps as incomplete not stale", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-ledger-no-time-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    const ledgerPath = join(dir, "quality-ledger.sqlite");
+    writeQualityLedgerRuns(ledgerPath, [
+      {
+        gateDocId: "gate-work-domain-typecheck",
+        outcome: "pass",
+        executedAt: "not-a-date",
+      },
+      {
+        gateDocId: "gate-work-domain-build",
+        outcome: "pass",
+        executedAt: new Date().toISOString(),
+      },
+      {
+        gateDocId: "gate-work-domain-test",
+        outcome: "pass",
+        executedAt: new Date().toISOString(),
+      },
+    ]);
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-ledger-artifact",
+            artifactRef: "quality-status-ledger-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            metadata: {
+              rootId: "quality-gates-system",
+              bundles: [
+                {
+                  bundleId: "work-domain-quality-bundle",
+                },
+              ],
+            },
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--quality-ledger",
+        ledgerPath,
+        "--quality-status-max-age-days",
+        "1",
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        warnings: string[];
+        governanceClosure: {
+          status: string;
+          warning?: { code: string; message: string };
+        };
+        qualityStatusRecords: {
+          records: Array<{
+            qualityLedgerEvidence?: {
+              verified: boolean;
+              freshness?: {
+                status: string;
+                missingTimestampGateRefs?: string[];
+              };
+            };
+          }>;
+        };
+      };
+      artifacts: Array<{ quality: { issues: Array<{ code: string }> } }>;
+    };
+    const ledgerEvidence =
+      parsed.source.qualityStatusRecords.records[0]!.qualityLedgerEvidence!;
+
+    expect(parsed.source.warnings).not.toContain("quality-status-generated-at-stale");
+    expect(ledgerEvidence).toMatchObject({
+      verified: true,
+      freshness: {
+        status: "incomplete",
+        missingTimestampGateRefs: ["gate-work-domain-typecheck"],
+      },
+    });
+    expect(parsed.source.governanceClosure).toMatchObject({
+      status: "quality-status-incomplete",
+      warning: {
+        code: "prompt-quality-status-evidence-incomplete",
+      },
+    });
+    expect(parsed.artifacts[0]!.quality.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "prompt-quality-status-evidence-incomplete",
+        }),
+      ]),
+    );
+    expect(parsed.artifacts[0]!.quality.issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "prompt-quality-status-evidence-stale",
         }),
       ]),
     );
@@ -2264,18 +2713,20 @@ function writeQualityLedgerRuns(
     outcome: "pass" | "fail";
     docVersion?: number;
     bundleId?: string;
+    executedAt?: string;
   }[],
 ): void {
   const store = new SqliteQualityStore(ledgerPath);
-  const ledger = new QualityLedger(store);
   try {
     for (const run of runs) {
-      ledger.recordRun({
+      store.insert({
         gateDocId: run.gateDocId,
         docVersion: run.docVersion ?? 1,
         bundleId: run.bundleId ?? "work-domain-quality-bundle",
         command: "pnpm test",
         outcome: run.outcome,
+        exitCode: run.outcome === "pass" ? 0 : 1,
+        executedAt: run.executedAt ?? new Date().toISOString(),
       });
     }
   } finally {
