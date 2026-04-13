@@ -677,23 +677,25 @@ function governanceClosureSummary(
     });
   }
 
-  if (targetEvidence.some(hasVerifiedQualityStatusClosureEvidence)) {
-    return {
-      status: "quality-status-found",
-      source: "quality-status",
+  const incompleteEvidence = targetEvidence.find(
+    (item) => !hasVerifiedQualityStatusClosureEvidence(item),
+  );
+  if (incompleteEvidence) {
+    return incompleteGovernanceClosure({
+      status: "quality-status-incomplete",
       matchedQualityStatusArtifactRefs,
       matchedQualityStatusArtifactIds,
-      recommendedManagementActions: [],
-    };
+      warning: qualityStatusGovernanceWarning(incompleteEvidence),
+    });
   }
 
-  const incompleteEvidence = targetEvidence[0]!;
-  return incompleteGovernanceClosure({
-    status: "quality-status-incomplete",
+  return {
+    status: "quality-status-found",
+    source: "quality-status",
     matchedQualityStatusArtifactRefs,
     matchedQualityStatusArtifactIds,
-    warning: qualityStatusGovernanceWarning(incompleteEvidence),
-  });
+    recommendedManagementActions: [],
+  };
 }
 
 function incompleteGovernanceClosure(input: {
@@ -723,12 +725,32 @@ function incompleteGovernanceClosure(input: {
 function hasVerifiedQualityStatusClosureEvidence(
   evidence: PromptArtifactQualityStatusEvidence,
 ): boolean {
-  return (
-    evidence.outcome === "verified" &&
-    ((evidence.verifiedBundleRefs?.length ?? 0) > 0 ||
-      (evidence.verifiedGateRefs?.length ?? 0) > 0 ||
-      (evidence.verifiedGateCount ?? 0) > 0)
-  );
+  return evidence.outcome === "verified" &&
+    hasCompleteVerifiedQualityStatusSurfaceEvidence(evidence);
+}
+
+function hasCompleteVerifiedQualityStatusSurfaceEvidence(
+  evidence: PromptArtifactQualityStatusEvidence,
+): boolean {
+  const bundleRefs = evidence.bundleRefs ?? [];
+  const verifiedBundleRefs = evidence.verifiedBundleRefs ?? [];
+  const hasCompleteBundleSurface =
+    verifiedBundleRefs.length > 0 &&
+    (bundleRefs.length === 0 || bundleRefs.every((ref) => verifiedBundleRefs.includes(ref)));
+  const gateRefs = evidence.gateRefs ?? [];
+  const verifiedGateRefs = evidence.verifiedGateRefs ?? [];
+  const hasCompleteGateRefSurface =
+    verifiedGateRefs.length > 0 &&
+    (gateRefs.length === 0 || gateRefs.every((ref) => verifiedGateRefs.includes(ref)));
+  const verifiedGateCount = evidence.verifiedGateCount ?? 0;
+  const hasCompleteGateCountSurface =
+    evidence.totalGateCount === undefined
+      ? verifiedGateCount > 0
+      : evidence.totalGateCount > 0 && verifiedGateCount >= evidence.totalGateCount;
+
+  return hasCompleteBundleSurface ||
+    hasCompleteGateRefSurface ||
+    hasCompleteGateCountSurface;
 }
 
 function qualityStatusGovernanceWarning(
@@ -742,7 +764,7 @@ function qualityStatusGovernanceWarning(
     message:
       evidence.message ??
       (evidence.outcome === "verified"
-        ? "Quality-status evidence verified the target but reported no verified bundles or gates."
+        ? "Quality-status evidence verified the target but did not report a complete verified bundle or gate surface."
         : `Quality-status evidence reported ${evidence.outcome} verification for the target.`),
     sourceRefs: qualityStatusPromptEvidenceSourceRefs(evidence),
   };

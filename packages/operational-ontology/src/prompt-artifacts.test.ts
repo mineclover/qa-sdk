@@ -498,6 +498,80 @@ describe("prompt artifact generator", () => {
     );
   });
 
+  it("requires target verification and complete quality-status surface before closing governance", () => {
+    const syntheticSources = {
+      ...richSources,
+      governanceRuns: [
+        {
+          ...richSources.governanceRuns[0]!,
+          runId: "governance:artifact:partial-quality-prompt:definition-context",
+        },
+      ],
+    };
+    const artifact = operationalOntologyPromptArtifactPlane.generatePromptArtifact({
+      kind: "code_editing_rules",
+      useCase: "feature_modification",
+      workArea,
+      sources: syntheticSources,
+    });
+
+    const targetMismatch =
+      operationalOntologyPromptArtifactPlane.evaluatePromptArtifactQuality({
+        artifact,
+        workArea,
+        sources: syntheticSources,
+        qualityStatusEvidence: [
+          {
+            evidenceId: "quality-status:target-mismatch",
+            outcome: "verified",
+            verifiesTarget: false,
+            targetRefs: ["other-artifact"],
+            verifiedBundleRefs: ["quality-bundle:other"],
+          },
+        ],
+      });
+    const partialGateSurface =
+      operationalOntologyPromptArtifactPlane.evaluatePromptArtifactQuality({
+        artifact,
+        workArea,
+        sources: syntheticSources,
+        qualityStatusEvidence: [
+          {
+            evidenceId: "quality-status:partial-ledger",
+            outcome: "verified",
+            verifiesTarget: true,
+            targetRefs: [artifact.workAreaId],
+            gateRefs: ["gate-a", "gate-b"],
+            verifiedGateRefs: ["gate-a"],
+            verifiedGateCount: 1,
+            totalGateCount: 2,
+            message: "Quality ledger fallback has unresolved gates.",
+          },
+        ],
+      });
+
+    expect(
+      targetMismatch.metrics.find((item) => item.dimension === "governance_closure")?.score,
+    ).toBe(75);
+    expect(targetMismatch.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "prompt-quality-status-evidence-target-missing",
+        }),
+      ]),
+    );
+    expect(
+      partialGateSurface.metrics.find((item) => item.dimension === "governance_closure")?.score,
+    ).toBe(80);
+    expect(partialGateSurface.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "prompt-quality-status-evidence-incomplete",
+        }),
+      ]),
+    );
+  });
+
   it("caps governance closure when artifact extraction expected quality-status evidence but none was found", () => {
     const artifact = operationalOntologyPromptArtifactPlane.generatePromptArtifact({
       kind: "code_editing_rules",

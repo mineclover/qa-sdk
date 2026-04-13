@@ -1009,6 +1009,110 @@ describe("ontology CLI", () => {
     );
   }, 10_000);
 
+  it("prompt extract-artifact keeps closure open for mixed verified and incomplete quality-status evidence", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-mixed-incomplete-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    const snapshotPath = join(dir, "quality-status-verified-artifact.json");
+    await writeFile(
+      snapshotPath,
+      JSON.stringify({
+        rootId: "quality-gates-system",
+        generatedAt: "2026-04-13T00:00:00.000Z",
+        bundles: [
+          {
+            bundleId: "work-domain-quality-bundle",
+            bundleState: "verified",
+            verifiedGates: 3,
+            totalGates: 3,
+          },
+        ],
+      }),
+      "utf8",
+    );
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-verified-artifact",
+            artifactRef: "quality-status-verified-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            outputPath: "quality-status-verified-artifact.json",
+          },
+          {
+            artifactId: "quality-status-incomplete-artifact",
+            artifactRef: "quality-status-incomplete-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            metadata: {
+              rootId: "quality-gates-system",
+              bundles: [
+                {
+                  bundleId: "work-domain-quality-bundle",
+                },
+              ],
+            },
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        governanceClosure: {
+          status: string;
+          warning?: { code: string };
+          recommendedManagementActions: Array<{ kind: string }>;
+        };
+        qualityStatusRecords: {
+          total: number;
+        };
+      };
+      artifacts: Array<{
+        quality: {
+          metrics: Array<{ dimension: string; score: number }>;
+          issues: Array<{ code: string }>;
+        };
+      }>;
+    };
+    const governanceMetric = parsed.artifacts[0]!.quality.metrics.find(
+      (item) => item.dimension === "governance_closure",
+    );
+
+    expect(parsed.source.qualityStatusRecords.total).toBe(2);
+    expect(parsed.source.governanceClosure).toMatchObject({
+      status: "quality-status-incomplete",
+      warning: {
+        code: "prompt-quality-status-evidence-incomplete",
+      },
+      recommendedManagementActions: [
+        expect.objectContaining({ kind: "close_governance_evidence" }),
+      ],
+    });
+    expect(governanceMetric?.score).toBeLessThan(85);
+    expect(parsed.artifacts[0]!.quality.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "prompt-quality-status-evidence-incomplete",
+        }),
+      ]),
+    );
+  }, 10_000);
+
   it("prompt extract-artifact applies max-age to the oldest verified ledger gate timestamp", async () => {
     const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-ledger-stale-"));
     const registryPath = join(dir, "artifact-registry.json");

@@ -11,6 +11,7 @@ after each iteration and it's included in prompts for context.
 - Snapshot-first ledger fallback should attach ledger-derived evidence to the quality-status record summary, then let prompt-quality evidence select it only when snapshot closure is missing/invalid/incomplete or lacks a verified surface; conflict warnings must not override a verified snapshot.
 - Ledger fallback JSON should stay additive: keep existing evidence fields while adding clearer aliases/summary fields, route ledger warning codes through `source.qualityStatusRecords.warnings[]` and `source.warnings[]`, and never introduce new `governanceClosure.status` values.
 - Quality-status freshness SLA should be an opt-in outcome overlay after structural snapshot/ledger authority is decided, so generatedAt freshness stale does not masquerade as ledger docVersion stale or trigger snapshot-vs-ledger conflict fallback.
+- Prompt quality governance closure should require every target-verifying quality-status evidence item to be verified and fresh with a complete bundle/gate surface; mixed incomplete/invalid/stale target evidence keeps closure open even if another record is verified.
 
 ---
 
@@ -110,4 +111,20 @@ after each iteration and it's included in prompts for context.
   - Freshness must overlay only otherwise verified structural evidence; failed/incomplete gate surfaces should keep their original outcome.
   - Ledger freshness needs the oldest verified gate run timestamp, not the latest aggregate run timestamp, or one old required gate can be hidden.
   - GeneratedAt freshness stale and quality-ledger docVersion stale share the prompt outcome `stale`, so messages and docs need to identify which stale path fired.
+---
+
+## 2026-04-14 - US-007
+- Propagated ledger/freshness semantics through the existing `PromptArtifactQualityStatusEvidence` path by requiring verified evidence to verify the target and carry a complete verified bundle or gate surface.
+- Aligned CLI `source.governanceClosure` with prompt-quality scoring so mixed verified plus incomplete target evidence remains open instead of reporting `quality-status-found`.
+- Added regressions for target mismatch, partial ledger/gate surfaces, and mixed verified/incomplete quality-status records.
+- Files changed:
+  - `packages/operational-ontology/src/internal/prompt-artifact-core.ts`
+  - `packages/operational-ontology/src/prompt-artifacts.test.ts`
+  - `packages/cli/src/commands/ontology.ts`
+  - `packages/cli/src/commands/ontology.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - `governanceClosureSummary()` and `evaluatePromptArtifactQuality()` need the same complete-surface predicate or JSON source status can drift from artifact quality metrics.
+  - Partial `verifiedGateCount`/`verifiedGateRefs` is not enough to close governance when `totalGateCount` or `gateRefs` names a larger required surface.
+  - Target mismatch is already represented by `verifiesTarget: false`; it should cap closure through the existing target-missing warning without adding a new quality dimension.
 ---
