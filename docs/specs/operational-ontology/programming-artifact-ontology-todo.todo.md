@@ -49,5 +49,8 @@ def:
 - [x] `extract-artifact --json`의 `source.governanceClosure`가 quality-status found/missing/invalid/incomplete 상태, matched refs, warning/action을 노출
 - [x] quality-status governance closure contract를 system/CLI/development guide/prompt artifact generation docs에 동기화
 - [x] `operational-ontology-registry-allocation.plan.md`와 `.todo.md`를 adjacent docs로 검토하고, ontology pack allocation lifecycle 변경이 없으므로 out of scope로 유지
-- [ ] quality export JSON snapshot evidence가 부족한 실제 사례가 나오면 quality-ledger lookup을 별도 provider/fallback으로 추가
+- [x] quality export JSON snapshot evidence가 부족한 경우 explicit `--quality-ledger` fallback으로 resolved gate descriptor surface를 검증
 - [x] quality-status `generatedAt` 기반 stale SLA가 필요해지면 freshness threshold와 warning policy를 별도 story로 추가
+- [x] snapshot-first authority, ledger conflict warning, descriptor priority, freshness SLA를 system/CLI/development guide/prompt artifact generation docs에 반영
+- [ ] local registry JSON을 registry-service/index-meta allocation lifecycle로 승격할 실제 운영 요구가 생기면 `operational-ontology-registry-allocation.plan.md` scope에서 새 story로 진행
+- [ ] quality-status closure가 registry JSON/ledger 외 원격 quality service를 읽어야 하는 요구가 생기면 별도 provider boundary와 failure policy를 설계

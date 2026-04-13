@@ -17,6 +17,10 @@ def:
       type: contains
     - target: programming-artifact-ontology-cli
       type: contains
+    - target: programming-artifact-ontology-context-simulation-plan
+      type: contains
+    - target: programming-artifact-ontology-context-simulation-todo
+      type: contains
 sources:
   - packages/operational-ontology/src/internal/programming-artifact-core.ts
   - packages/operational-ontology/src/programming-artifacts.ts
@@ -41,6 +45,8 @@ sources:
 - `ArtifactRegistryPromptArtifactContextProvider` — registry record를 `PromptArtifactDefinitionContextExtraction`으로 변환하고 관련 `quality-status` record를 sidecar governance evidence로 찾는다.
 - `programming-artifact-ontology-development-guide` — 세션 시작 컨텍스트 확인 순서와 변경 유형별 개발 지침을 고정한다.
 - `programming-artifact-ontology-cli` — `extract-artifact` registry 우선 조회와 fallback 품질 신호를 고정한다.
+- `programming-artifact-ontology-context-simulation-plan` — context selection, data flow, implementation trace를 fixture simulation으로 검증하기 위한 후속 방향을 고정한다.
+- `programming-artifact-ontology-context-simulation-todo` — simulation matrix와 traceability convention 구현 항목을 추적한다.
 
 ## Pack Schema ^defines
 
@@ -134,19 +140,37 @@ interface ProgrammingArtifactRegistryStore {
 
 CLI extraction은 matched `quality-status` record에 `outputPath`가 있으면 해당 quality export JSON을 추가로 읽는다. 읽은 snapshot은 `rootId`, bundle id 목록, bundle state, gate count, claim count, `generatedAt`만 요약해 source metadata에 붙이고, bundle별 gate verification을 `quality-export-snapshot` governance run으로 변환한다. 파일이 없거나 JSON이 깨졌거나 quality export shape가 아니면 extraction은 계속 진행하고 structured warning만 JSON source에 남긴다. 이 로딩은 새 artifact kind, relation kind, provider schema, registry allocation lifecycle을 만들지 않는다.
 
-Artifact extraction은 같은 matched quality record/snapshot을 `PromptArtifactQualityStatusEvidence`로도 변환해 `evaluatePromptArtifactQuality()`에 전달한다. exact TypeScript shape는 `packages/operational-ontology/src/internal/prompt-artifact-core.ts`가 SSOT다. 이 evidence는 `verified`, `failed`, `stale`, `invalid`, `incomplete` outcome과 target verification 여부, verified bundle/gate surface를 표현한다. `governance_closure`는 target을 `verifies`로 확인하고 verified bundle 또는 gate를 보고한 evidence만 additive bonus로 반영한다. failed/stale/invalid/incomplete evidence나 verified bundle/gate가 없는 evidence는 score를 올리지 않고 governance warning을 남긴다. artifact extraction이 quality-status evidence를 기대했지만 match가 없으면 extraction은 계속되며 governance closure confidence만 cap된다. 일반 definition/file/permission prompt extraction은 이 optional evidence를 넘기지 않으면 기존 품질 동작을 유지한다.
+Quality gate descriptor resolution은 ledger fallback과 prompt evidence surface의 공통 입력이다. CLI는 matched `quality-status` record마다 `GateDescriptor[]`를 sidecar로 붙이며, resolution input은 아래 우선순위로 모은 뒤 중복 gate id를 제거한다.
+
+1. quality export snapshot의 `rootId`/`bundleIds`
+2. registry record `metadata.rootId`/`metadata.bundles[].bundleId`
+3. registry record `verifiesRefs`
+4. registry record `materializesOutputRefs`
+5. registry record `verificationRefs` direct gate refs
+6. registry record `relations[]` 중 `verifies`와 `materializes_output`의 `toRef`
+
+bundle ref는 `contains` topology를 따라 gate doc으로 확장하고 direct gate ref는 gate doc만 허용한다. descriptor가 없으면 `quality-status-ledger-no-gate-descriptors` warning을 남기지만 prompt extraction은 fail-open으로 계속된다.
+
+Artifact extraction은 snapshot-first evidence policy를 따른다. verified snapshot이 verified bundle/gate surface를 제공하면 snapshot이 authoritative이고, `--quality-ledger`가 있어도 ledger fallback을 시도하지 않는다. snapshot이 missing/invalid/incomplete이거나 verified surface가 없을 때만 explicit ledger fallback이 열리며, fallback은 `quality-ledger`의 `QualityLedger.resolveBundleVerification()`과 resolved descriptor surface를 사용한다. ledger fallback은 optional CLI 입력으로만 동작하고 `.qa-sdk/quality-ledger.sqlite`를 자동 탐색하지 않는다. ledger가 없거나 읽히지 않으면 `quality-status-ledger-missing` 또는 `quality-status-ledger-read-failed` warning을 남기고 snapshot/fallback evidence만으로 진행한다. snapshot과 ledger가 같은 bundle surface에서 determinate하게 충돌하면 `quality-status-ledger-conflict` warning을 남기되 verified snapshot을 downgrade하지 않는다.
+
+Artifact extraction은 같은 matched quality record/snapshot/ledger evidence를 `PromptArtifactQualityStatusEvidence`로도 변환해 `evaluatePromptArtifactQuality()`에 전달한다. exact TypeScript shape는 `packages/operational-ontology/src/internal/prompt-artifact-core.ts`가 SSOT다. 이 evidence는 `verified`, `failed`, `stale`, `invalid`, `incomplete` outcome과 target verification 여부, complete verified bundle/gate surface를 표현한다. `governance_closure`는 target을 `verifies`로 확인하고 every target-verifying evidence item이 fresh verified complete surface를 보고할 때만 additive bonus로 반영한다. failed/stale/invalid/incomplete evidence, target mismatch, partial gate surface, mixed verified+incomplete evidence는 score를 올리지 않고 governance warning을 남긴다. artifact extraction이 quality-status evidence를 기대했지만 match가 없으면 extraction은 계속되며 governance closure confidence만 cap된다. 일반 definition/file/permission prompt extraction은 이 optional evidence를 넘기지 않으면 기존 품질 동작을 유지한다.
+
+Freshness SLA는 `--quality-status-max-age-days <n>`이 있을 때만 structural evidence 판정 위에 덮는 outcome overlay다. snapshot evidence는 snapshot `generatedAt`을 기준으로, ledger fallback evidence는 verified gate들의 `lastRun.executedAt` 중 가장 오래된 timestamp를 기준으로 freshness를 판정한다. threshold보다 오래된 otherwise verified evidence는 `quality-status-generated-at-stale` warning과 `prompt-quality-status-evidence-stale` outcome을 만든다. timestamp가 없거나 날짜로 해석할 수 없으면 stale이 아니라 incomplete가 되며, quality-ledger docVersion stale과 generatedAt freshness stale은 warning message로 구분한다.
 
 ## Quality-status Governance Closure Contract
 
 quality-status governance closure는 artifact extraction에 한정된 additive contract다.
 
-- closure source는 registry 안의 `kind: "quality-status"` record와 해당 record의 `outputPath` quality export JSON snapshot이다.
+- closure source는 registry 안의 `kind: "quality-status"` record, 해당 record의 `outputPath` quality export JSON snapshot, 그리고 명시적 `--quality-ledger` fallback evidence다.
 - closure match는 기존 relation field만 사용한다: `verifiesRefs`, `materializesOutputRefs`, `sourceRefs`, `outputPath`, `relations`.
-- target을 `verifies`로 확인하고 verified bundle 또는 gate surface를 가진 evidence만 closure를 닫는다.
-- failed, stale, invalid snapshot, missing snapshot, target mismatch, verified surface 없음은 extraction을 막지 않고 warning/action으로 노출한다.
+- snapshot evidence가 먼저 판정하고, ledger fallback은 snapshot이 없거나 invalid/incomplete이거나 verified closure surface가 없을 때만 authoritative evidence가 될 수 있다.
+- descriptor resolution은 snapshot → metadata → verifies/materializes refs → direct `verificationRefs` → relation refs 순서로 gate surface를 모은다.
+- target을 `verifies`로 확인하고 fresh verified complete bundle/gate surface를 가진 evidence만 closure를 닫는다.
+- failed, stale, invalid snapshot, missing snapshot, target mismatch, partial ledger surface, verified surface 없음은 extraction을 막지 않고 warning/action으로 노출한다.
 - prompt quality는 `PromptArtifactQualityStatusEvidence`가 전달된 artifact extraction에서만 `governance_closure` score를 보강하거나 cap한다.
 - `source.governanceClosure`는 `quality-status-found`, `quality-status-missing`, `quality-status-invalid`, `quality-status-incomplete` 네 상태만 사용한다.
 - search fallback warning은 `source.qualitySignal.warning`에 남고, governance closure warning은 `source.governanceClosure.warning`에 남아 서로 섞이지 않는다.
+- freshness SLA는 structural snapshot/ledger authority가 정해진 뒤 적용되며, 오래된 generated timestamp가 ledger docVersion stale이나 snapshot-vs-ledger conflict로 취급되지 않는다.
 - 이 feature는 local artifact registry JSON과 prompt quality closure만 닫는다. `operational-ontology-registry-allocation.plan.md` / `.todo.md`가 다루는 registry-service, index-meta, ontology pack allocation lifecycle은 out of scope이며 해당 adjacent 문서는 변경하지 않는다.
 
 `extract-artifact --json`은 이 quality-status closure 판정을 `source.governanceClosure`로도 노출한다. 이 객체는 `quality-status-found`, `quality-status-missing`, `quality-status-invalid`, `quality-status-incomplete` 중 하나의 상태, matched quality-status artifact ref/id 목록, 그리고 closure가 닫히지 않았을 때의 governance warning/action을 포함한다. free-string search fallback 품질 경고는 계속 `source.qualitySignal.warning`에 남고, governance closure warning과 합쳐지지 않는다. 이 JSON surface는 provider/registry relation vocabulary나 registry-service/index-meta allocation lifecycle을 활성화하지 않는 additive contract다.

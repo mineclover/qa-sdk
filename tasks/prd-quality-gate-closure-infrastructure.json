@@ -218,7 +218,7 @@
         "pnpm --filter quality-ledger test passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Execute after implementation stories unless a prior story needs immediate spec updates to keep validation green.",
       "dependsOn": [
         "US-001",
@@ -228,10 +228,11 @@
         "US-005",
         "US-006",
         "US-007"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-13T23:03:07.027Z"
+    "updatedAt": "2026-04-13T23:09:25.613Z"
   }
 }

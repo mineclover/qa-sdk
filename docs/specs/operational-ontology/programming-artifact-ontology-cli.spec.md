@@ -63,6 +63,7 @@ qa-sdk ontology artifact registry append --output <file> \
 
 - `--artifact-registry` is the primary local registry file flag for `extract-artifact`, prompt artifact materialization, codegen, quality export, deployment output, and registry append workflows.
 - `--artifact-registry-file` is accepted by `extract-artifact` as a compatibility alias for the read path.
+- `--quality-ledger <path>` is an explicit artifact extraction input. The CLI validates/opens this SQLite quality ledger only while processing related `quality-status` records from `extract-artifact`; it never performs automatic `.qa-sdk/quality-ledger.sqlite` lookup and non-artifact prompt extraction ignores the flag.
 - `--quality-status-max-age-days <n>` is an opt-in freshness SLA for `extract-artifact` quality-status evidence. `<n>` must be a positive integer. When absent, `generatedAt` and ledger `executedAt` timestamps do not make otherwise verified evidence stale.
 - `--json` on `extract-artifact` includes `source.kind`, `source.registry`, fallback details, `source.qualityStatusRecords`, `source.governanceClosure`, and `source.qualitySignal`.
 - `--json` on registry `validate` returns `{ input, valid, artifactCount, errors, warnings }`.
@@ -83,12 +84,16 @@ qa-sdk ontology artifact registry append --output <file> \
 6. registry 결과 유무와 별개로, registry 안의 `quality-status` record가 요청 artifact/definition/work area를 `verifiesRefs`, `materializesOutputRefs`, `sourceRefs`, `outputPath`, `relations`로 가리키면 prompt source evidence에 병합한다.
 7. matched `quality-status` record에 `outputPath`가 있으면 quality export JSON snapshot을 읽고, bundle/gate/claim summary와 snapshot-derived governance run을 추가한다.
 8. snapshot 파일이 없거나 invalid JSON/shape이면 extraction은 계속 진행하고 `source.qualityStatusRecords.warnings[]`와 `source.warnings[]`에 structured warning을 남긴다.
-9. `--quality-status-max-age-days`가 있으면 verified snapshot은 snapshot `generatedAt`, ledger fallback은 `BundleVerification.gateStatuses[*].lastRun.executedAt` 중 가장 오래된 verified gate timestamp로 freshness를 판정한다.
-10. matched quality record/snapshot을 prompt quality evaluation evidence로 변환한다. 이 evidence는 `artifacts[].quality`의 `governance_closure` metric과 `issues[]`에 반영되고, CLI JSON source에는 `source.governanceClosure` 요약으로도 노출된다.
-11. registry miss이면 기존 fallback으로 내려간다.
-12. `<artifact-ref>`가 `packages/` 또는 `docs/`로 시작하면 `extract-file`에 위임한다.
-13. `<artifact-ref>`가 definition doc id이면 `extract`에 위임한다.
-14. 나머지는 definition candidate search로 synthetic artifact context를 만든다.
+9. quality gate descriptor input을 snapshot, metadata, record refs, direct gate refs, relation refs 순서로 모으고 `DefDataSource.get/getChildren`으로 `GateDescriptor[]`를 resolve한다.
+10. `--quality-ledger`가 있고 snapshot evidence가 missing/invalid/incomplete이거나 verified closure surface가 없으면 resolved descriptors로 `QualityLedger.resolveBundleVerification()`을 호출해 ledger fallback evidence를 붙인다.
+11. verified snapshot이 verified surface를 제공하면 snapshot이 authoritative이고 ledger fallback은 conflict를 만들지 않도록 시도하지 않는다.
+12. snapshot과 ledger가 같은 resolved bundle surface에서 determinate하게 충돌하면 `quality-status-ledger-conflict` warning을 남기지만 snapshot outcome이 prompt quality/source closure를 계속 결정한다.
+13. `--quality-status-max-age-days`가 있으면 verified snapshot은 snapshot `generatedAt`, ledger fallback은 `BundleVerification.gateStatuses[*].lastRun.executedAt` 중 가장 오래된 verified gate timestamp로 freshness를 판정한다.
+14. matched quality record/snapshot/ledger evidence를 prompt quality evaluation evidence로 변환한다. 이 evidence는 `artifacts[].quality`의 `governance_closure` metric과 `issues[]`에 반영되고, CLI JSON source에는 `source.governanceClosure` 요약으로도 노출된다.
+15. registry miss이면 기존 fallback으로 내려간다.
+16. `<artifact-ref>`가 `packages/` 또는 `docs/`로 시작하면 `extract-file`에 위임한다.
+17. `<artifact-ref>`가 definition doc id이면 `extract`에 위임한다.
+18. 나머지는 definition candidate search로 synthetic artifact context를 만든다.
 
 related quality matching은 `kind === "quality-status"` record만 대상으로 하며 새 artifact kind, relation kind, registry service, allocation lifecycle을 만들지 않는다. direct artifact lookup은 계속 `artifactRef`, `artifactId`, `outputPath` 기준으로 동작하고, related quality discovery는 그 결과를 보강하는 sidecar 단계다.
 
@@ -248,6 +253,18 @@ related quality matching은 `kind === "quality-status"` record만 대상으로 �
 
 `records[].qualityExportSnapshot`은 matched quality record의 `outputPath` JSON이 로드될 때만 붙는 additive metadata다. exact TypeScript shape는 `packages/cli/src/commands/ontology.ts`가 SSOT이며, 공개 JSON에는 root id, bundle ids, per-bundle state/gate/claim counts, aggregate gate/claim counts, generated timestamp, resolved source path만 노출한다. snapshot load 실패는 `records[].qualityExportWarning`과 `qualityStatusRecords.warnings[]`로 구조화하며, warning code는 `quality-status-snapshot-missing`, `quality-status-snapshot-invalid-json`, `quality-status-snapshot-invalid-shape`, `quality-status-snapshot-read-failed` 중 하나다.
 
+`records[].gateDescriptors`는 quality-status record에서 resolve된 quality gate surface다. descriptor input priority는 snapshot `rootId`/`bundleIds`, registry metadata `rootId`/`bundles[].bundleId`, `verifiesRefs`, `materializesOutputRefs`, direct `verificationRefs`, `relations[]`의 `verifies`/`materializes_output` 순서다. bundle/container refs는 `contains` graph를 따라 gate docs로 확장하고 direct `verificationRefs`는 gate docs만 허용한다. descriptor를 resolve하지 못하면 `records[].qualityGateDescriptorWarning`과 `quality-status-ledger-no-gate-descriptors` warning을 남긴다.
+
+`records[].qualityLedgerEvidence`는 `--quality-ledger`가 제공되고 snapshot-first policy가 fallback을 허용할 때만 붙는다. 이 object는 additive JSON surface이며 `sourcePath`/`ledgerPath`, `bundleId`, `bundleIds`/`bundleRefs`, `totalGates`/`totalGateCount`, `verifiedGates`/`verifiedGateCount`, `verified`, `gateRefs`, `verifiedGateRefs`, `blockingGates`/`blockingGateStatuses`, `latestRunTimestamps`, `latestRunAt`, `oldestVerifiedGateExecutedAt`, optional `freshness`, and `timestampSummary`를 포함할 수 있다. `records[].qualityLedgerWarning`, `records[].qualityLedgerIncompleteWarning`, `records[].qualityLedgerConflictWarning`, `records[].qualityFreshnessWarning`은 각각 ledger open/read failure, incomplete ledger surface, snapshot/ledger conflict, freshness stale/incomplete evidence를 설명한다. 기존 `governanceClosure.status` enum은 확장하지 않는다.
+
+ledger warning code:
+
+- `quality-status-ledger-missing`
+- `quality-status-ledger-read-failed`
+- `quality-status-ledger-no-gate-descriptors`
+- `quality-status-ledger-incomplete`
+- `quality-status-ledger-conflict`
+
 `--quality-status-max-age-days`가 제공된 경우에만 freshness SLA를 적용한다. snapshot evidence는 snapshot `generatedAt`을 사용하고, ledger fallback evidence는 verified gate들의 `lastRun.executedAt` 중 가장 오래된 timestamp를 사용한다. 기준보다 오래되면 evidence outcome은 `stale`이고 `quality-status-generated-at-stale` warning이 `source.warnings[]`와 `source.qualityStatusRecords.warnings[]`에 남는다. required verified gate timestamp가 없거나 날짜로 해석할 수 없으면 outcome은 `incomplete`이며 freshness stale warning을 만들지 않는다. 이 generatedAt freshness stale은 quality-ledger의 gate `docVersion` mismatch가 만드는 stale과 별개다.
 
 `source.governanceClosure`는 quality-status evidence가 prompt governance closure를 왜 닫거나 닫지 못했는지 설명하는 JSON-only 요약이다. 상태는 아래 네 값 중 하나다.
@@ -263,7 +280,7 @@ related quality matching은 `kind === "quality-status"` record만 대상으로 �
 
 Valid snapshot evidence는 prompt source governance evidence에도 추가된다. 생성된 prompt artifact의 `sourceRefs`에는 `governance-run:governance:<quality-artifact-id>:quality-export-snapshot`이 포함될 수 있으며, 이 run은 bundle별 gate pass/fail을 `validation_surface` verdict로 표현한다.
 
-Artifact extraction으로 시작한 prompt quality evaluation은 matched quality status를 optional `qualityStatusEvidence` input으로도 받는다. `artifacts[].quality.metrics[]` 중 `dimension: "governance_closure"`는 target을 `verifies`로 확인한 quality-status evidence가 verified bundle 또는 verified gate count를 보고할 때만 additive로 상승한다. failed, stale, invalid, incomplete outcome이나 snapshot missing/invalid warning은 `artifacts[].quality.issues[]`에 governance warning으로 남고 score 상승에 쓰지 않는다. match가 없어서 evidence 배열이 비어 있으면 `prompt-quality-status-evidence-missing` warning으로 confidence만 낮춘다. Freshness SLA는 `--quality-status-max-age-days`가 있을 때만 동작하며 registry command나 registry allocation lifecycle은 추가하지 않는다.
+Artifact extraction으로 시작한 prompt quality evaluation은 matched quality status를 optional `qualityStatusEvidence` input으로도 받는다. `artifacts[].quality.metrics[]` 중 `dimension: "governance_closure"`는 target을 `verifies`로 확인한 quality-status evidence가 verified complete bundle/gate surface를 보고할 때만 additive로 상승한다. failed, stale, invalid, incomplete outcome, snapshot missing/invalid warning, partial ledger surface, mixed verified+incomplete target evidence는 `artifacts[].quality.issues[]`에 governance warning으로 남고 score 상승에 쓰지 않는다. match가 없어서 evidence 배열이 비어 있으면 `prompt-quality-status-evidence-missing` warning으로 confidence만 낮춘다. Freshness SLA는 `--quality-status-max-age-days`가 있을 때만 동작하며 registry command나 registry allocation lifecycle은 추가하지 않는다.
 
 관련 warning code:
 

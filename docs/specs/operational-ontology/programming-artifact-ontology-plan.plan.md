@@ -21,7 +21,7 @@ def:
 
 ## 현재 목표
 
-현재 구현은 `programming-artifact-ontology` pack schema, artifact kind/relation vocabulary, in-memory registry store, `ArtifactRegistryPromptArtifactContextProvider`, `extract-artifact --artifact-registry` 우선 조회, 관련 `quality-status` record sidecar discovery, quality export JSON snapshot 로딩, prompt quality `governance_closure` evidence 반영, `extract-artifact --json` fallback source 구조화와 `source.governanceClosure` 상태 요약, codegen/quality export/deployment output/prompt artifact/build output registry append, quality export registry metadata closure 요약, governance closure 문서 동기화까지 닫힌 단계다. 다음 목표는 JSON snapshot과 registry metadata만으로 부족한 경우 quality-ledger lookup이나 freshness SLA를 별도 story로 붙일지 판단하는 것이다.
+현재 구현은 `programming-artifact-ontology` pack schema, artifact kind/relation vocabulary, in-memory registry store, `ArtifactRegistryPromptArtifactContextProvider`, `extract-artifact --artifact-registry` 우선 조회, 관련 `quality-status` record sidecar discovery, quality export JSON snapshot 로딩, descriptor resolution, snapshot-first explicit quality-ledger fallback, prompt quality `governance_closure` evidence 반영, opt-in freshness SLA, `extract-artifact --json` fallback source 구조화와 `source.governanceClosure` 상태 요약, codegen/quality export/deployment output/prompt artifact/build output registry append, quality export registry metadata closure 요약, governance closure 문서 동기화까지 닫힌 단계다. 다음 목표는 local registry JSON이 충분하지 않은 운영 환경에서 registry-service/index-meta allocation lifecycle로 승격할지 별도 scope에서 판단하는 것이다.
 
 ## 장기 목표
 
@@ -46,12 +46,14 @@ programming/artifact ontology는 별도 pack 또는 plugin으로 관리한다. �
 7. Governance closure 연결
    artifact extraction 결과를 registry의 관련 `quality-status` record와 연결해 synthetic evidence 의존도를 낮춘다.
 8. Quality payload verdict 연결
-   quality-status JSON payload의 bundle/gate 상태를 governance verdict와 prompt quality closure에 직접 연결한다. 현재 단계는 `outputPath` JSON snapshot과 quality export registry metadata 요약 기반으로 완료됐고, ledger lookup과 freshness SLA는 후속 확장으로 남긴다.
+   quality-status JSON payload의 bundle/gate 상태를 governance verdict와 prompt quality closure에 직접 연결한다. 현재 단계는 `outputPath` JSON snapshot과 quality export registry metadata 요약 기반으로 완료됐고, snapshot-first policy에서만 쓰는 explicit quality-ledger fallback도 완료됐다.
 9. Closure JSON 해석 표면 고정
    `extract-artifact --json`의 `source.governanceClosure`가 `quality-status-found`, `quality-status-missing`, `quality-status-invalid`, `quality-status-incomplete`를 구분하고 matched quality-status refs, warning, action을 제공한다.
-10. Governance closure 문서 closure
-    system/CLI/plan/todo/development guide/prompt artifact generation spec이 현재 구현된 quality-status governance closure contract를 설명한다. `operational-ontology-registry-allocation.plan.md`와 `.todo.md`는 adjacent docs로 검토했지만, 이 feature가 registry-service, index-meta, ontology pack allocation lifecycle을 구현하지 않았으므로 out of scope로 남기고 변경하지 않는다.
+10. Freshness SLA와 mixed evidence closure
+    `--quality-status-max-age-days`가 snapshot `generatedAt`과 ledger verified gate `lastRun.executedAt`에 opt-in freshness overlay를 적용하고, mixed incomplete/invalid/stale target evidence가 closure를 열어두도록 구현됐다.
+11. Governance closure 문서 closure
+    system/CLI/plan/todo/development guide/prompt artifact generation spec이 현재 구현된 quality-status governance closure contract를 설명한다. `quality-ledger.spec.md`와 `quality-gates-system.md`는 public ledger/API 또는 root lifecycle 변경이 없어 변경하지 않는다. `operational-ontology-registry-allocation.plan.md`와 `.todo.md`는 adjacent docs로 검토했지만, 이 feature가 registry-service, index-meta, ontology pack allocation lifecycle을 구현하지 않았으므로 out of scope로 남기고 변경하지 않는다.
 
 ## 다음 세션 기준
 
-다음 세션은 `programming-artifact-ontology-development-guide`의 컨텍스트 확인 순서를 먼저 따른다. 실행 목표는 `programming-artifact-ontology-todo`의 미완료 항목 중 quality-ledger lookup 또는 quality-status freshness SLA를 선택한다. registry allocation lifecycle 연동은 `operational-ontology-registry-allocation.plan.md` / `.todo.md`의 별도 scope로만 다룬다.
+다음 세션은 `programming-artifact-ontology-development-guide`의 컨텍스트 확인 순서를 먼저 따른다. 실행 목표는 `programming-artifact-ontology-todo`의 미완료 항목 중 local registry JSON 이후의 운영화 gap을 선택한다. registry allocation lifecycle 연동은 `operational-ontology-registry-allocation.plan.md` / `.todo.md`의 별도 scope로만 다룬다.

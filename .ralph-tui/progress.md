@@ -12,6 +12,7 @@ after each iteration and it's included in prompts for context.
 - Ledger fallback JSON should stay additive: keep existing evidence fields while adding clearer aliases/summary fields, route ledger warning codes through `source.qualityStatusRecords.warnings[]` and `source.warnings[]`, and never introduce new `governanceClosure.status` values.
 - Quality-status freshness SLA should be an opt-in outcome overlay after structural snapshot/ledger authority is decided, so generatedAt freshness stale does not masquerade as ledger docVersion stale or trigger snapshot-vs-ledger conflict fallback.
 - Prompt quality governance closure should require every target-verifying quality-status evidence item to be verified and fresh with a complete bundle/gate surface; mixed incomplete/invalid/stale target evidence keeps closure open even if another record is verified.
+- Documentation closure for programming-artifact governance should update only the owning programming/prompt docs when behavior reuses existing quality-ledger/quality-gates APIs; leave adjacent allocation and public ledger/root lifecycle docs unchanged unless their public semantics actually change.
 
 ---
 
@@ -127,4 +128,22 @@ after each iteration and it's included in prompts for context.
   - `governanceClosureSummary()` and `evaluatePromptArtifactQuality()` need the same complete-surface predicate or JSON source status can drift from artifact quality metrics.
   - Partial `verifiedGateCount`/`verifiedGateRefs` is not enough to close governance when `totalGateCount` or `gateRefs` names a larger required surface.
   - Target mismatch is already represented by `verifiesTarget: false`; it should cap closure through the existing target-missing warning without adding a new quality dimension.
+---
+
+## 2026-04-14 - US-008
+- Updated programming-artifact system, CLI, plan, todo, development guide, and prompt artifact generation docs to reflect snapshot-first quality evidence, explicit quality-ledger fallback, descriptor resolution priority, freshness SLA, JSON additions, and warning codes.
+- Marked the quality-ledger fallback follow-up complete while preserving future gaps for registry-service/index-meta allocation lifecycle and possible remote quality-service provider work.
+- Confirmed no public quality-ledger API/root quality-gates lifecycle/registry allocation scope changes were needed, so those adjacent docs remained untouched.
+- Files changed:
+  - `docs/specs/operational-ontology/programming-artifact-ontology-system.spec.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-cli.spec.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-plan.plan.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-todo.todo.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-development-guide.spec.md`
+  - `docs/specs/operational-ontology/operational-ontology-prompt-artifact-generation.spec.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Snapshot-first documentation needs to describe both authority and non-authority cases: verified snapshots suppress ledger fallback, while missing/invalid/incomplete snapshots allow explicit ledger evidence.
+  - Descriptor resolution is the key bridge between programming-artifact records and quality-ledger reuse, so docs should name the priority order instead of implying ledger lookup can infer gates alone.
+  - Freshness SLA is deliberately opt-in and post-structural; docs should distinguish generated timestamp staleness from quality-ledger docVersion stale.
 ---
