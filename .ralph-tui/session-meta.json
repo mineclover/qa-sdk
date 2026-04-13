@@ -1,13 +1,14 @@
 {
-  "id": "04cfa54b-5d3b-4332-b760-3405badf529e",
+  "id": "499bd0c5-867f-4579-8f0d-f673411c2bd6",
   "status": "running",
-  "startedAt": "2026-04-13T12:26:51.693Z",
-  "updatedAt": "2026-04-13T13:24:01.517Z",
+  "startedAt": "2026-04-13T21:57:42.800Z",
+  "updatedAt": "2026-04-13T21:57:42.800Z",
   "agentPlugin": "codex",
   "trackerPlugin": "json",
-  "currentIteration": 5,
+  "prdPath": "./tasks/prd-quality-gate-closure-infrastructure.json",
+  "currentIteration": 0,
   "maxIterations": 0,
   "totalTasks": 0,
-  "tasksCompleted": 5,
+  "tasksCompleted": 0,
   "cwd": "/Users/junwoobang/workflow/qa-sdk"
 }

@@ -255,6 +255,34 @@ describe("ontology CLI", () => {
     ]);
   }, 10_000);
 
+  it("prompt extract-artifact preserves release verification use case through definition fallback", async () => {
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "quality-gates-system",
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      useCase: string;
+      source: { kind: string; fallback?: { kind: string; target: string } };
+      artifacts: Array<{ artifact: { useCase?: string } }>;
+    };
+
+    expect(parsed.useCase).toBe("release_verification");
+    expect(parsed.source).toMatchObject({
+      kind: "artifact-definition-fallback",
+      fallback: {
+        kind: "definition",
+        target: "quality-gates-system",
+      },
+    });
+    expect(parsed.artifacts[0]!.artifact.useCase).toBe("release_verification");
+  }, 10_000);
+
   it("prompt extract-artifact --json attaches related quality-status records on registry miss", async () => {
     const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-"));
     const registryPath = join(dir, "artifact-registry.json");

@@ -701,6 +701,16 @@ function withArtifactSourceFlag(
   return [...args, "--artifact-source", JSON.stringify(source)];
 }
 
+function withArtifactFallbackFlags(
+  args: readonly string[],
+  source: ArtifactExtractionSource,
+  useCase: PromptArtifactUseCase,
+  flags: Record<string, string>,
+): string[] {
+  const useCaseArgs = flags["use-case"] ? [...args] : [...args, "--use-case", useCase];
+  return withArtifactSourceFlag(useCaseArgs, source);
+}
+
 async function loadRelatedQualityStatusEvidenceFromFlags(
   flags: Record<string, string>,
   targetRefs: readonly (string | undefined)[],
@@ -2097,7 +2107,7 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
   }
 
   if (artifactRef.startsWith("packages/") || artifactRef.startsWith("docs/")) {
-    await cmdPromptExtractFile(withArtifactSourceFlag(
+    await cmdPromptExtractFile(withArtifactFallbackFlags(
       rest,
       artifactFallbackSource({
         kind: "artifact-file-fallback",
@@ -2105,6 +2115,8 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
         target: artifactRef,
         loadedRegistry,
       }),
+      useCase,
+      flags,
     ));
     return;
   }
@@ -2112,7 +2124,7 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
   const source = await createDataSource(toDefinitionDataSourceOptions(flags));
   const directDoc = await source.get(artifactRef);
   if (directDoc) {
-    await cmdPromptExtract(withArtifactSourceFlag(
+    await cmdPromptExtract(withArtifactFallbackFlags(
       [artifactRef, ...rest.slice(1)],
       artifactFallbackSource({
         kind: "artifact-definition-fallback",
@@ -2120,6 +2132,8 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
         target: artifactRef,
         loadedRegistry,
       }),
+      useCase,
+      flags,
     ));
     return;
   }

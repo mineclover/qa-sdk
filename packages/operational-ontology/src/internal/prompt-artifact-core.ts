@@ -1403,6 +1403,13 @@ function governanceClosureQualityStatusAdjustment(
   }
 
   const issues = targetEvidence.flatMap((item) => qualityStatusEvidenceWarnings(item));
+  if (issues.length > 0) {
+    return {
+      score: Math.min(baseScore, 80),
+      issues,
+    };
+  }
+
   const verifiedEvidence = targetEvidence.filter(hasVerifiedQualityStatusClosure);
   if (verifiedEvidence.length === 0) {
     return {

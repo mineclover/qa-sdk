@@ -439,6 +439,65 @@ describe("prompt artifact generator", () => {
     }
   });
 
+  it("keeps governance closure open when verified and invalid quality-status evidence are mixed", () => {
+    const syntheticSources = {
+      ...richSources,
+      governanceRuns: [
+        {
+          ...richSources.governanceRuns[0]!,
+          runId: "governance:artifact:mixed-quality-prompt:definition-context",
+        },
+      ],
+    };
+    const artifact = operationalOntologyPromptArtifactPlane.generatePromptArtifact({
+      kind: "code_editing_rules",
+      useCase: "feature_modification",
+      workArea,
+      sources: syntheticSources,
+    });
+
+    const quality = operationalOntologyPromptArtifactPlane.evaluatePromptArtifactQuality({
+      artifact,
+      workArea,
+      sources: syntheticSources,
+      qualityStatusEvidence: [
+        {
+          evidenceId: "quality-status:verified",
+          outcome: "verified",
+          verifiesTarget: true,
+          targetRefs: [artifact.workAreaId],
+          verifiedBundleRefs: ["quality-bundle:verified"],
+          verifiedGateCount: 2,
+          totalGateCount: 2,
+        },
+        {
+          evidenceId: "quality-status:invalid",
+          outcome: "invalid",
+          verifiesTarget: true,
+          targetRefs: [artifact.workAreaId],
+          sourceRefs: ["artifacts/quality-status-invalid.json"],
+        },
+      ],
+    });
+    const governance = quality.metrics.find(
+      (item) => item.dimension === "governance_closure",
+    );
+
+    expect(governance?.score).toBe(80);
+    expect(quality.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "prompt-quality-status-evidence-invalid",
+        }),
+      ]),
+    );
+    expect(quality.recommendedManagementActions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "close_governance_evidence" }),
+      ]),
+    );
+  });
+
   it("caps governance closure when artifact extraction expected quality-status evidence but none was found", () => {
     const artifact = operationalOntologyPromptArtifactPlane.generatePromptArtifact({
       kind: "code_editing_rules",

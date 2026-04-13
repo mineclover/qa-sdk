@@ -6,7 +6,7 @@
  * 2. 데이터 소스가 없으면 markdown scan fallback
  */
 
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { execa, execaSync } from "execa";
@@ -101,6 +101,7 @@ interface LoadedQualityIndex {
 interface LoadedDocGraph {
   readonly registry: MemoryDefinitionRegistry;
   readonly bodies: ReadonlyMap<string, string>;
+  readonly getBody: (id: string) => string | undefined;
   readonly errors: readonly { file: string; error: string }[];
 }
 
@@ -283,7 +284,14 @@ async function createReviewLedger(cwd: string) {
   return new ReviewLedger(new SqliteReviewStore(REVIEW_LEDGER_DB), cwd);
 }
 
-function parseFlags(args: string[]): {
+type ReviewLedgerInstance = Awaited<ReturnType<typeof createReviewLedger>>;
+
+interface QualityStatusBuildContext {
+  readonly ledger: QualityLedger;
+  readonly reviewLedger: ReviewLedgerInstance;
+}
+
+export function parseQualityCommandArgs(args: string[]): {
   positional: string[];
   flags: Record<string, string>;
   sourceOptions: DataSourceOptions;
@@ -292,13 +300,22 @@ function parseFlags(args: string[]): {
   const flags: Record<string, string> = {};
   let mode: DataSourceOptions["mode"];
 
-  for (const arg of args) {
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]!;
     if (arg === "--local") { mode = "local"; continue; }
     if (arg === "--server") { mode = "server"; continue; }
     if (arg === "--scan") { mode = "scan"; continue; }
     if (arg.startsWith("--")) {
-      const [key, value] = arg.slice(2).split("=", 2);
-      flags[key] = value ?? "true";
+      const [key, inline] = arg.slice(2).split("=", 2);
+      const next = args[index + 1];
+      if (inline !== undefined) {
+        flags[key] = inline;
+      } else if (next && !next.startsWith("--")) {
+        flags[key] = next;
+        index += 1;
+      } else {
+        flags[key] = "true";
+      }
       continue;
     }
     positional.push(arg);
@@ -374,7 +391,7 @@ async function loadQualityDocsFromScan(rootDir: string): Promise<LoadedQualityIn
       entry: {
         id: entry.id,
         title: entry.title,
-        version: 0,
+        version: entry.revision ?? 1,
         level: entry.level,
         scope: entry.scope,
         aspect: entry.aspect,
@@ -398,17 +415,57 @@ async function loadQualityDocsFromScan(rootDir: string): Promise<LoadedQualityIn
 async function loadDocGraph(rootDir: string): Promise<LoadedDocGraph> {
   const result = await scanAndBuild(rootDir, [join(rootDir, "docs")]);
   const bodies = new Map<string, string>();
+  const getBody = (id: string): string | undefined => {
+    const cached = bodies.get(id);
+    if (cached !== undefined) return cached;
 
-  for (const entry of result.registry.all()) {
-    if (!entry.ref) continue;
-    const absPath = join(rootDir, entry.ref);
-    bodies.set(entry.id, await readFile(absPath, "utf-8"));
-  }
+    const entry = result.registry.get(id);
+    if (!entry?.ref) return undefined;
+
+    try {
+      const body = readFileSync(join(rootDir, entry.ref), "utf-8");
+      bodies.set(id, body);
+      return body;
+    } catch {
+      return undefined;
+    }
+  };
 
   return {
     registry: result.registry,
     bodies,
+    getBody,
     errors: result.errors,
+  };
+}
+
+function loadQualityDocsFromGraph(graph: LoadedDocGraph): LoadedQualityIndex {
+  const docs: LoadedQualityDoc[] = [];
+
+  for (const entry of graph.registry.all()) {
+    if (!entry.gate || !entry.ref) continue;
+    docs.push({
+      entry: {
+        id: entry.id,
+        title: entry.title,
+        version: entry.revision ?? 1,
+        level: entry.level,
+        scope: entry.scope,
+        aspect: entry.aspect,
+        depth: entry.depth,
+        ref: entry.ref,
+        gate: entry.gate,
+      },
+      purpose: extractByLevel(graph.getBody(entry.id) ?? "", "purpose").text.trim(),
+    });
+  }
+
+  docs.sort((a, b) => a.entry.id.localeCompare(b.entry.id));
+  return {
+    docs,
+    byId: new Map(docs.map((doc) => [doc.entry.id, doc])),
+    registry: graph.registry,
+    errors: graph.errors,
   };
 }
 
@@ -1118,6 +1175,19 @@ export function buildReviewBindings(
   });
 }
 
+function reviewStatusesForBindings(
+  reviewLedger: ReviewLedgerInstance,
+  bindings: readonly ClaimAuditBinding[],
+): FileReviewStatus[] {
+  const files = new Set<string>();
+  for (const binding of bindings) {
+    for (const file of binding.implementation?.implementedBindings ?? binding.implementation?.bindings ?? []) {
+      files.add(file);
+    }
+  }
+  return [...files].map((file) => reviewLedger.statusForFile(file));
+}
+
 export function extractSourceFileBindings(
   body: string,
   rootDir: string,
@@ -1186,14 +1256,17 @@ function deriveTestPaths(
 
 export function buildSourceBindings(
   contract: { allSections: readonly { sourceId: string }[] },
-  bodies: ReadonlyMap<string, string>,
+  bodies: ReadonlyMap<string, string> | ((sourceId: string) => string | undefined),
   rootDir: string,
 ): ClaimAuditBinding[] {
   const sourceIds = [...new Set(contract.allSections.map((section) => section.sourceId))];
   const results: ClaimAuditBinding[] = [];
+  const getBody = typeof bodies === "function"
+    ? bodies
+    : (sourceId: string) => bodies.get(sourceId);
 
   for (const sourceId of sourceIds) {
-    const body = bodies.get(sourceId);
+    const body = getBody(sourceId);
     if (!body) continue;
 
     const bindings = extractSourceFileBindings(body, rootDir);
@@ -1249,6 +1322,7 @@ async function buildBundleStatusSummary(
   rootDir: string,
   index: LoadedQualityIndex,
   graph: LoadedDocGraph,
+  context: QualityStatusBuildContext,
   bundleId: string,
 ): Promise<QualityBundleStatusSummary | null> {
   const bundle = graph.registry.get(bundleId);
@@ -1285,12 +1359,10 @@ async function buildBundleStatusSummary(
     bundleId,
     (id) => graph.registry.get(id),
     (id, direction) => graph.registry.getLinks(id, direction),
-    (id) => graph.bodies.get(id),
+    graph.getBody,
   );
 
-  const ledger = createLedger();
-  const reviewLedger = await createReviewLedger(rootDir);
-  const bundleVerification = resolveBundleVerification(ledger, toGateDescriptors(bundle.id, gateDocs));
+  const bundleVerification = resolveBundleVerification(context.ledger, toGateDescriptors(bundle.id, gateDocs));
   const reviewScopes = collectClaimAuditReviewScopes({
     id: bundle.id,
     title: bundle.title,
@@ -1302,8 +1374,11 @@ async function buildBundleStatusSummary(
     serviceId: bundle.serviceId,
     tags: bundle.tags,
   }, gateDocs);
-  const reviews = reviewScopes.flatMap((scope) => reviewLedger.statusForScope(scope));
 
+  const sourceBindings = contract
+    ? buildSourceBindings(contract, graph.getBody, rootDir)
+    : [];
+  const reviews = reviewStatusesForBindings(context.reviewLedger, sourceBindings);
   const report = contract
     ? generateVerificationClaimAudit({
         sections: contract.allSections.map((section) => ({
@@ -1314,7 +1389,7 @@ async function buildBundleStatusSummary(
           body: section.body,
         })),
         bindings: [
-          ...buildReviewBindings(buildSourceBindings(contract, graph.bodies, rootDir), reviews),
+          ...buildReviewBindings(sourceBindings, reviews),
           ...buildClaimAuditBindings(reviewScopes),
         ],
         gateStatuses: toClaimAuditGateStatuses(bundleVerification.gateStatuses),
@@ -1340,9 +1415,6 @@ async function buildBundleStatusSummary(
     { verified: bundleVerification.verified },
   );
 
-  ledger.store.close();
-  reviewLedger.close();
-
   return {
     bundleId,
     title: bundle.title,
@@ -1363,6 +1435,7 @@ async function cmdStatus(
   sourceOptions: DataSourceOptions,
 ): Promise<void> {
   const snapshot = await buildQualityStatus(rootDir, rootId, sourceOptions);
+  if (!snapshot) return;
 
   if (flags["json"] === "true") {
     console.log(JSON.stringify(snapshot, null, 2));
@@ -1383,18 +1456,16 @@ async function buildQualityStatus(
   rootDir: string,
   rootId: string,
   sourceOptions: DataSourceOptions,
-): Promise<QualityStatusSnapshot> {
+): Promise<QualityStatusSnapshot | null> {
   const graph = await loadDocGraph(rootDir);
-  const index = await loadQualityDocs(rootDir, sourceOptions);
+  const index = sourceOptions.mode === "scan"
+    ? loadQualityDocsFromGraph(graph)
+    : await loadQualityDocs(rootDir, sourceOptions);
   const root = graph.registry.get(rootId);
   if (!root) {
     console.error(`bundle/system 문서 "${rootId}" 없음`);
     process.exitCode = 1;
-    return {
-      rootId,
-      bundles: [],
-      generatedAt: new Date().toISOString(),
-    };
+    return null;
   }
 
   const directChildren = graph.registry
@@ -1402,17 +1473,29 @@ async function buildQualityStatus(
     .filter((link) => link.linkType === "contains")
     .map((link) => link.targetId);
 
-  const summaries = (
-    await Promise.all(directChildren.map((id) => buildBundleStatusSummary(rootDir, index, graph, id)))
-  )
-    .filter((summary): summary is QualityBundleStatusSummary => summary !== null)
-    .toSorted((a, b) => a.bundleId.localeCompare(b.bundleId));
-
-  return {
-    rootId,
-    bundles: summaries,
-    generatedAt: new Date().toISOString(),
-  };
+  const ledger = createLedger();
+  const reviewLedger = await createReviewLedger(rootDir);
+  try {
+    const summaries: QualityBundleStatusSummary[] = [];
+    for (const id of directChildren) {
+      const summary = await buildBundleStatusSummary(
+        rootDir,
+        index,
+        graph,
+        { ledger, reviewLedger },
+        id,
+      );
+      if (summary) summaries.push(summary);
+    }
+    return {
+      rootId,
+      bundles: summaries.toSorted((a, b) => a.bundleId.localeCompare(b.bundleId)),
+      generatedAt: new Date().toISOString(),
+    };
+  } finally {
+    ledger.store.close();
+    reviewLedger.close();
+  }
 }
 
 async function cmdExport(
@@ -1422,6 +1505,7 @@ async function cmdExport(
   sourceOptions: DataSourceOptions,
 ): Promise<void> {
   const snapshot = await buildQualityStatus(rootDir, rootId, sourceOptions);
+  if (!snapshot) return;
   const output = flags["output"] ?? join(rootDir, "artifacts", `quality-status-${rootId}.json`);
 
   const dir = dirname(output);
@@ -2010,7 +2094,7 @@ async function cmdClaims(
     bundleId,
     (id) => graph.registry.get(id),
     (id, direction) => graph.registry.getLinks(id, direction),
-    (id) => graph.bodies.get(id),
+    graph.getBody,
   );
 
   if (!contract) {
@@ -2051,9 +2135,8 @@ async function cmdClaims(
     serviceId: bundle.serviceId,
     tags: bundle.tags,
   }, gateDocs);
-  const reviews = reviewScopes.flatMap((scope) => reviewLedger.statusForScope(scope));
-
-  const sourceBindings = buildSourceBindings(contract, graph.bodies, rootDir);
+  const sourceBindings = buildSourceBindings(contract, graph.getBody, rootDir);
+  const reviews = reviewStatusesForBindings(reviewLedger, sourceBindings);
   const reviewedBindings = buildReviewBindings(sourceBindings, reviews);
 
   const report = generateVerificationClaimAudit({
@@ -2099,9 +2182,12 @@ function printUsage(): void {
   qa-sdk quality diagnose <gate-doc-id> [--local|--server|--scan] [--outcome=pass|fail] [--json]`);
 }
 
-export async function cliQuality(args: string[]): Promise<void> {
-  const rootDir = process.cwd();
-  const { positional, flags, sourceOptions } = parseFlags(args);
+export async function cliQuality(
+  args: string[],
+  options: { rootDir?: string } = {},
+): Promise<void> {
+  const rootDir = options.rootDir ?? process.cwd();
+  const { positional, flags, sourceOptions } = parseQualityCommandArgs(args);
   const [cmd, ...rest] = positional;
 
   switch (cmd) {

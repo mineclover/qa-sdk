@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { existsSync } from "node:fs";
+import { mkdir, mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { describe, expect, it, vi } from "vitest";
 import type { DefinitionEntry } from "definition-catalog";
 import type { QualityGateSpec } from "work-domain";
 import {
@@ -13,7 +16,9 @@ import {
   extractSourceFileBindings,
   rankNextDocs,
   selectNextDocs,
+  parseQualityCommandArgs,
   type LoadedQualityDoc,
+  cliQuality,
 } from "./quality.js";
 import { USAGE, resolveSubcommand } from "../index.js";
 
@@ -175,6 +180,57 @@ describe("quality CLI surface", () => {
       rest: ["gate-id", "--json"],
     });
   });
+
+  it("quality command parser accepts split output and artifact-registry flags", () => {
+    const parsed = parseQualityCommandArgs([
+      "export",
+      "quality-gates-system",
+      "--output",
+      "artifacts/quality-gates-system.json",
+      "--artifact-registry",
+      "artifacts/programming-artifacts.json",
+      "--scan",
+      "--json",
+    ]);
+
+    expect(parsed.positional).toEqual(["export", "quality-gates-system"]);
+    expect(parsed.flags).toMatchObject({
+      output: "artifacts/quality-gates-system.json",
+      "artifact-registry": "artifacts/programming-artifacts.json",
+      json: "true",
+    });
+    expect(parsed.sourceOptions.mode).toBe("scan");
+  });
+
+  it("quality export does not write output or registry records when the root is missing", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-quality-export-missing-"));
+    await mkdir(join(dir, "docs"));
+    const outputPath = join(dir, "missing-root.json");
+    const registryPath = join(dir, "programming-artifacts.json");
+    const previousExitCode = process.exitCode;
+
+    try {
+      process.exitCode = undefined;
+      const output = await captureConsoleAsync(async () => {
+        await cliQuality([
+          "export",
+          "missing-quality-root",
+          "--output",
+          outputPath,
+          "--artifact-registry",
+          registryPath,
+          "--scan",
+        ], { rootDir: dir });
+      });
+
+      expect(output.stderr).toContain('bundle/system 문서 "missing-quality-root" 없음');
+      expect(process.exitCode).toBe(1);
+      expect(existsSync(outputPath)).toBe(false);
+      expect(existsSync(registryPath)).toBe(false);
+    } finally {
+      process.exitCode = previousExitCode;
+    }
+  }, 20_000);
 });
 
 describe("quality artifact registry records", () => {
@@ -567,3 +623,26 @@ describe("rankNextDocs", () => {
     expect(ranked[0]!.reasons).toContain("build 실패의 선행 정적 검증");
   });
 });
+
+async function captureConsoleAsync(run: () => Promise<void>) {
+  const stdout: string[] = [];
+  const stderr: string[] = [];
+  const logSpy = vi.spyOn(console, "log").mockImplementation((...args: unknown[]) => {
+    stdout.push(args.join(" "));
+  });
+  const errorSpy = vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
+    stderr.push(args.join(" "));
+  });
+
+  try {
+    await run();
+  } finally {
+    logSpy.mockRestore();
+    errorSpy.mockRestore();
+  }
+
+  return {
+    stdout: stdout.join("\n"),
+    stderr: stderr.join("\n"),
+  };
+}
