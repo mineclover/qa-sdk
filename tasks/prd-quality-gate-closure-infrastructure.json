@@ -77,9 +77,10 @@
         "pnpm --filter quality-ledger test passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Do not add automatic .qa-sdk/quality-ledger.sqlite lookup in this story.",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-004",
@@ -227,6 +228,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-13T22:23:01.559Z"
+    "updatedAt": "2026-04-13T22:29:31.835Z"
   }
 }

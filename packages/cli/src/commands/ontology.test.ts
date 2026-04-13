@@ -14,6 +14,7 @@ describe("ontology CLI", () => {
     expect(USAGE).toContain("qa-sdk ontology prompt extract-file");
     expect(USAGE).toContain("qa-sdk ontology prompt extract-permission");
     expect(USAGE).toContain("qa-sdk ontology prompt extract-artifact");
+    expect(USAGE).toContain("--quality-ledger <path>");
     expect(USAGE).toContain("qa-sdk ontology artifact registry validate");
     expect(USAGE).toContain("qa-sdk ontology artifact registry append");
     expect(USAGE).toContain("qa-sdk ontology snapshot ingest");
@@ -654,6 +655,197 @@ describe("ontology CLI", () => {
         }),
       ]),
     );
+  }, 10_000);
+
+  it("prompt extract-artifact --json warns without crashing for missing quality ledger input", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-ledger-missing-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    const missingLedgerPath = join(dir, "missing-quality-ledger.sqlite");
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-ledger-artifact",
+            artifactRef: "quality-status-ledger-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            metadata: {
+              rootId: "quality-gates-system",
+              bundles: [
+                {
+                  bundleId: "work-domain-quality-bundle",
+                },
+              ],
+            },
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--quality-ledger",
+        missingLedgerPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        warnings: string[];
+        qualityStatusRecords: {
+          warnings: Array<{ code: string; resolvedPath?: string; message: string }>;
+          records: Array<{
+            qualityLedgerWarning?: { code: string; resolvedPath?: string; message: string };
+          }>;
+        };
+      };
+      artifacts: unknown[];
+    };
+
+    expect(parsed.artifacts).toHaveLength(1);
+    expect(parsed.source.warnings).toEqual(
+      expect.arrayContaining(["quality-status-ledger-missing"]),
+    );
+    expect(parsed.source.qualityStatusRecords.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "quality-status-ledger-missing",
+          resolvedPath: missingLedgerPath,
+        }),
+      ]),
+    );
+    expect(parsed.source.qualityStatusRecords.records[0]!.qualityLedgerWarning).toMatchObject({
+      code: "quality-status-ledger-missing",
+      resolvedPath: missingLedgerPath,
+    });
+  }, 10_000);
+
+  it("prompt extract-artifact --json warns without crashing for corrupt quality ledger input", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-ledger-corrupt-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    const corruptLedgerPath = join(dir, "corrupt-quality-ledger.sqlite");
+    await writeFile(corruptLedgerPath, "not a sqlite database", "utf8");
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-ledger-artifact",
+            artifactRef: "quality-status-ledger-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            metadata: {
+              rootId: "quality-gates-system",
+              bundles: [
+                {
+                  bundleId: "work-domain-quality-bundle",
+                },
+              ],
+            },
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--quality-ledger",
+        corruptLedgerPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        warnings: string[];
+        qualityStatusRecords: {
+          warnings: Array<{ code: string; resolvedPath?: string; cause?: string }>;
+          records: Array<{
+            qualityLedgerWarning?: { code: string; resolvedPath?: string; cause?: string };
+          }>;
+        };
+      };
+      artifacts: unknown[];
+    };
+
+    expect(parsed.artifacts).toHaveLength(1);
+    expect(parsed.source.warnings).toEqual(
+      expect.arrayContaining(["quality-status-ledger-read-failed"]),
+    );
+    expect(parsed.source.qualityStatusRecords.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "quality-status-ledger-read-failed",
+          resolvedPath: corruptLedgerPath,
+        }),
+      ]),
+    );
+    expect(parsed.source.qualityStatusRecords.records[0]!.qualityLedgerWarning).toMatchObject({
+      code: "quality-status-ledger-read-failed",
+      resolvedPath: corruptLedgerPath,
+    });
+  }, 10_000);
+
+  it("non-artifact prompt extraction ignores quality ledger input", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-non-artifact-quality-ledger-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    const missingLedgerPath = join(dir, "missing-quality-ledger.sqlite");
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-quality-gates-system",
+            artifactRef: "quality-status-quality-gates-system.json",
+            kind: "quality-status",
+            verifiesRefs: ["quality-gates-system"],
+            metadata: {
+              rootId: "quality-gates-system",
+              bundles: [
+                {
+                  bundleId: "work-domain-quality-bundle",
+                },
+              ],
+            },
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract",
+        "quality-gates-system",
+        "--artifact-registry",
+        registryPath,
+        "--quality-ledger",
+        missingLedgerPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+
+    expect(output.stdout).not.toContain("quality-status-ledger-missing");
+    expect(output.stdout).not.toContain("quality-status-ledger-read-failed");
   }, 10_000);
 
   it("prompt extract-artifact treats partially verified snapshots as incomplete not failed", async () => {

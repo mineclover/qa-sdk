@@ -60,7 +60,7 @@ import type {
   EventRecordObservationInput,
   PipeGraphProjectionInput,
 } from "operational-ontology/projectors";
-import type { GateDescriptor } from "quality-ledger";
+import { QualityLedger, SqliteQualityStore, type GateDescriptor } from "quality-ledger";
 import {
   extractPromptArtifactSourcesFromDefinitionContext,
   generatePromptArtifact,
@@ -202,6 +202,8 @@ interface QualityStatusSnapshotWarning {
     | "quality-status-snapshot-invalid-json"
     | "quality-status-snapshot-invalid-shape"
     | "quality-status-snapshot-read-failed"
+    | "quality-status-ledger-missing"
+    | "quality-status-ledger-read-failed"
     | "quality-status-ledger-no-gate-descriptors";
   artifactId: string;
   artifactRef: string;
@@ -215,6 +217,7 @@ type QualityStatusRecordSourceSummary = RelatedQualityStatusRegistryRecordSummar
   gateDescriptors?: readonly GateDescriptor[];
   qualityExportSnapshot?: QualityStatusExportSnapshotEvidence;
   qualityExportWarning?: QualityStatusSnapshotWarning;
+  qualityLedgerWarning?: QualityStatusSnapshotWarning;
   qualityGateDescriptorWarning?: QualityStatusSnapshotWarning;
 };
 
@@ -227,6 +230,19 @@ interface QualityStatusSnapshotEvidence {
 interface RelatedQualityStatusEvidence {
   matches: readonly RelatedQualityStatusRegistryRecordMatch[];
   snapshotEvidence: QualityStatusSnapshotEvidence;
+}
+
+interface QualityStatusLedgerWarningTemplate {
+  code: "quality-status-ledger-missing" | "quality-status-ledger-read-failed";
+  resolvedPath: string;
+  message: string;
+  cause?: string;
+}
+
+interface LoadedQualityStatusLedger {
+  path: string;
+  ledger?: QualityLedger;
+  warning?: QualityStatusLedgerWarningTemplate;
 }
 
 interface LoadedArtifactRegistryProvider {
@@ -403,6 +419,49 @@ async function loadQualityStatusDescriptorSource(
     return await createDataSource(toDefinitionDataSourceOptions(flags));
   } catch {
     return undefined;
+  }
+}
+
+function loadQualityStatusLedger(ledgerPath: string | undefined): LoadedQualityStatusLedger | undefined {
+  if (!ledgerPath) return undefined;
+  const resolvedPath = resolve(ledgerPath);
+  if (!existsSync(resolvedPath)) {
+    return {
+      path: resolvedPath,
+      warning: {
+        code: "quality-status-ledger-missing",
+        resolvedPath,
+        message: `Quality ledger path does not exist: ${ledgerPath}`,
+      },
+    };
+  }
+
+  try {
+    const store = new SqliteQualityStore(resolvedPath);
+    return {
+      path: resolvedPath,
+      ledger: new QualityLedger(store),
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      path: resolvedPath,
+      warning: {
+        code: "quality-status-ledger-read-failed",
+        resolvedPath,
+        message: `Quality ledger path could not be read: ${ledgerPath}`,
+        cause: message,
+      },
+    };
+  }
+}
+
+function closeQualityStatusLedger(loadedLedger: LoadedQualityStatusLedger | undefined): void {
+  if (!loadedLedger?.ledger) return;
+  try {
+    loadedLedger.ledger.store.close();
+  } catch {
+    // 원장 정리는 부가 동작이므로 추출은 fail-open으로 유지한다.
   }
 }
 
@@ -744,13 +803,19 @@ async function loadRelatedQualityStatusEvidenceFromFlags(
       snapshotEvidence: emptyQualityStatusSnapshotEvidence(),
     };
   }
-  return loadRelatedQualityStatusEvidence(loadedRegistry, targetRefs, source);
+  return loadRelatedQualityStatusEvidence(
+    loadedRegistry,
+    targetRefs,
+    source,
+    parseArtifactExtractionSource(flags) ? flags["quality-ledger"] : undefined,
+  );
 }
 
 async function loadRelatedQualityStatusEvidence(
   loadedRegistry: LoadedArtifactRegistryProvider | undefined,
   targetRefs: readonly (string | undefined)[],
   source?: Pick<DefDataSource, "get" | "getChildren">,
+  qualityLedgerPath?: string,
 ): Promise<RelatedQualityStatusEvidence> {
   const matches = findRelatedQualityStatusMatches(loadedRegistry, targetRefs);
   return {
@@ -759,6 +824,7 @@ async function loadRelatedQualityStatusEvidence(
       loadedRegistry,
       matches,
       source,
+      qualityLedgerPath,
     ),
   };
 }
@@ -921,58 +987,74 @@ async function loadQualityStatusSnapshotEvidence(
   loadedRegistry: LoadedArtifactRegistryProvider | undefined,
   matches: readonly RelatedQualityStatusRegistryRecordMatch[],
   source?: Pick<DefDataSource, "get" | "getChildren">,
+  qualityLedgerPath?: string,
 ): Promise<QualityStatusSnapshotEvidence> {
   if (!loadedRegistry || matches.length === 0) {
     return emptyQualityStatusSnapshotEvidence();
   }
 
+  const loadedLedger = loadQualityStatusLedger(qualityLedgerPath);
   const recordSummaries = new Map<string, QualityStatusRecordSourceSummary>();
   const warnings: QualityStatusSnapshotWarning[] = [];
   const governanceRuns: GovernanceRun[] = [];
 
-  for (const match of matches) {
-    let summary: QualityStatusRecordSourceSummary = match.summary;
-    let snapshot: QualityStatusExportSnapshotEvidence | undefined;
-    if (match.record.outputPath) {
-      const loaded = await loadQualityStatusSnapshotForRecord(
-        loadedRegistry,
-        match.record,
-      );
-      if (loaded.warning) {
-        warnings.push(loaded.warning);
-        summary = {
-          ...summary,
-          qualityExportWarning: loaded.warning,
-        };
-      } else if (loaded.snapshot) {
-        snapshot = loaded.snapshot;
-        summary = {
-          ...summary,
-          qualityExportSnapshot: loaded.snapshot,
-        };
-        governanceRuns.push(
-          qualityStatusSnapshotGovernanceRun(match.record, loaded.snapshot),
+  try {
+    for (const match of matches) {
+      let summary: QualityStatusRecordSourceSummary = match.summary;
+      let snapshot: QualityStatusExportSnapshotEvidence | undefined;
+      if (match.record.outputPath) {
+        const loaded = await loadQualityStatusSnapshotForRecord(
+          loadedRegistry,
+          match.record,
         );
+        if (loaded.warning) {
+          warnings.push(loaded.warning);
+          summary = {
+            ...summary,
+            qualityExportWarning: loaded.warning,
+          };
+        } else if (loaded.snapshot) {
+          snapshot = loaded.snapshot;
+          summary = {
+            ...summary,
+            qualityExportSnapshot: loaded.snapshot,
+          };
+          governanceRuns.push(
+            qualityStatusSnapshotGovernanceRun(match.record, loaded.snapshot),
+          );
+        }
       }
-    }
 
-    const gateDescriptors = source
-      ? await resolveQualityStatusRecordGateDescriptors(source, match.record, snapshot)
-      : [];
-    if (gateDescriptors.length > 0) {
-      summary = {
-        ...summary,
-        gateDescriptors,
-      };
-    } else {
-      const warning = qualityStatusNoGateDescriptorsWarning(match.record);
-      warnings.push(warning);
-      summary = {
-        ...summary,
-        qualityGateDescriptorWarning: warning,
-      };
+      const gateDescriptors = source
+        ? await resolveQualityStatusRecordGateDescriptors(source, match.record, snapshot)
+        : [];
+      if (gateDescriptors.length > 0) {
+        summary = {
+          ...summary,
+          gateDescriptors,
+        };
+      } else {
+        const warning = qualityStatusNoGateDescriptorsWarning(match.record);
+        warnings.push(warning);
+        summary = {
+          ...summary,
+          qualityGateDescriptorWarning: warning,
+        };
+      }
+
+      const ledgerWarning = qualityStatusLedgerWarning(match.record, loadedLedger);
+      if (ledgerWarning) {
+        warnings.push(ledgerWarning);
+        summary = {
+          ...summary,
+          qualityLedgerWarning: ledgerWarning,
+        };
+      }
+
+      recordSummaries.set(qualityStatusRecordKey(match.record), summary);
     }
-    recordSummaries.set(qualityStatusRecordKey(match.record), summary);
+  } finally {
+    closeQualityStatusLedger(loadedLedger);
   }
 
   return {
@@ -1283,6 +1365,14 @@ function qualityStatusNoGateDescriptorsWarning(
     message:
       "Quality-status record did not resolve to any quality gate descriptors for ledger verification.",
   });
+}
+
+function qualityStatusLedgerWarning(
+  record: ProgrammingArtifactRegistryRecord,
+  loadedLedger: LoadedQualityStatusLedger | undefined,
+): QualityStatusSnapshotWarning | undefined {
+  if (!loadedLedger?.warning) return undefined;
+  return qualityStatusSnapshotWarning(record, loadedLedger.warning);
 }
 
 function appendQualityStatusSnapshotGovernanceEvidence(
@@ -2223,7 +2313,7 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
   const artifactRef = positional[0];
   if (!artifactRef) {
     console.error(
-      "Usage: qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--output <file|dir>] [--json] [--local|--server|--scan] [--db <path>]",
+      "Usage: qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--quality-ledger <path>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--output <file|dir>] [--json] [--local|--server|--scan] [--db <path>]",
     );
     return;
   }
@@ -2246,7 +2336,7 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
       artifactRef,
       ...registryRecordQualityTargetRefs(directRegistryRecord),
       ...workAreaQualityTargetRefs(registryExtraction.workArea),
-    ], qualityDescriptorSource);
+    ], qualityDescriptorSource, flags["quality-ledger"]);
     const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
       appendQualityStatusEvidenceToPromptArtifactExtraction(
         registryExtraction,
@@ -2385,6 +2475,7 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
     loadedRegistry,
     qualityStatusTargetRefs,
     source,
+    flags["quality-ledger"],
   );
   const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
     appendQualityStatusEvidenceToPromptArtifactExtraction(
@@ -3582,7 +3673,7 @@ export async function cliOntology(args: string[]): Promise<void> {
           "  qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
           "  qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
           "  qa-sdk ontology prompt extract-permission <permission-ref> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
-          "  qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
+          "  qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--quality-ledger <path>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
           "  qa-sdk ontology artifact registry validate --input <file> [--json]",
           "  qa-sdk ontology artifact registry list --input <file> [--kind <kind>] [--json]",
           "  qa-sdk ontology artifact registry append --output <file> (--input <record.json> | --kind <kind> --artifact-ref <ref>) [--json]",
