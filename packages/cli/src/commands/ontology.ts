@@ -333,13 +333,6 @@ function parseArtifactExtractionSource(
   return JSON.parse(value) as ArtifactExtractionSource;
 }
 
-function emptyQualityStatusRecordsSummary(): ArtifactExtractionSource["qualityStatusRecords"] {
-  return {
-    total: 0,
-    records: [],
-  };
-}
-
 function qualityStatusRecordsSummary(
   matches: readonly RelatedQualityStatusRegistryRecordMatch[],
 ): ArtifactExtractionSource["qualityStatusRecords"] {

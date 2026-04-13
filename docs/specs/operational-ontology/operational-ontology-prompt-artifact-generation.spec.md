@@ -143,6 +143,7 @@ CLI에서는 `qa-sdk ontology prompt extract <doc-id> --use-case feature_modific
 코드 파일에서 시작할 때는 `qa-sdk ontology prompt extract-file <code-path[:symbol]> --use-case feature_modification --kind all`로 authoritative definition boundary를 먼저 해석한다.
 권한 기준에서 시작할 때는 `qa-sdk ontology prompt extract-permission <permission-ref> --kind all`로 authorization ontology의 permission 관련 context를 묶는다.
 산출물 기준에서 시작할 때는 `qa-sdk ontology prompt extract-artifact <artifact-ref> --artifact-type <type> --artifact-registry <file> --kind all`로 registry record를 먼저 조회하고, 없으면 파일/doc/품질 게이트 후보 검색으로 내려간다.
+`--artifact-registry`가 제공되면 direct artifact lookup 결과와 별개로 관련 `quality-status` record를 찾는다. quality record가 요청 artifact, definition, work area를 `verifiesRefs`, `materializesOutputRefs`, `sourceRefs`, `outputPath`, `relations`로 가리키면 그 record에서 파생된 corridor/checkpoint/traversal/blueprint/governance run을 prompt source evidence에 병합한다. 이 병합은 fallback 종류를 바꾸지 않고 `source.qualityStatusRecords` JSON 요약으로 노출된다.
 prompt artifact를 파일로 보존할 때는 `--output <file|dir>`를 사용하고, `--artifact-registry <file>`를 함께 주면 생성된 prompt block도 `kind=prompt-artifact` registry record로 남긴다.
 programming/artifact ontology는 `PromptArtifactContextProvider`를 구현한 provider로 주입한다. provider는 artifact registry record를 `PromptArtifactDefinitionContextExtraction`으로 변환하고, 일반 provider contract는 `definition`, `code`, `permission`, `artifact` target을 같은 출력 형태로 맞춘다.
 usecase에서 필수가 아닌 품질 차원은 `applicable: false`로 표시하고 score 계산과 management action에서 제외한다.

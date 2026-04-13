@@ -21,7 +21,7 @@ def:
 
 ## 현재 목표
 
-현재 구현은 `programming-artifact-ontology` pack schema, artifact kind/relation vocabulary, in-memory registry store, `ArtifactRegistryPromptArtifactContextProvider`, `extract-artifact --artifact-registry` 우선 조회, `extract-artifact --json` fallback source 구조화, codegen/quality export/deployment output/prompt artifact/build output registry append 초안까지 열린 단계다. 다음 목표는 governance closure를 quality gate 결과에 연결하는 것이다.
+현재 구현은 `programming-artifact-ontology` pack schema, artifact kind/relation vocabulary, in-memory registry store, `ArtifactRegistryPromptArtifactContextProvider`, `extract-artifact --artifact-registry` 우선 조회, 관련 `quality-status` record sidecar discovery, `extract-artifact --json` fallback source 구조화, codegen/quality export/deployment output/prompt artifact/build output registry append 초안까지 열린 단계다. 다음 목표는 quality-status payload의 pass/fail 세부 결과를 governance verdict와 더 직접 연결하는 것이다.
 
 ## 장기 목표
 
@@ -44,8 +44,10 @@ programming/artifact ontology는 별도 pack 또는 plugin으로 관리한다. �
 6. Fallback 품질 분리
    registry hit/miss, file/doc fallback, free-string search fallback을 CLI JSON `source`와 quality warning에서 구분한다.
 7. Governance closure 연결
-   artifact extraction 결과를 실제 governance run persistence와 연결해 synthetic evidence 의존도를 낮춘다.
+   artifact extraction 결과를 registry의 관련 `quality-status` record와 연결해 synthetic evidence 의존도를 낮춘다.
+8. Quality payload verdict 연결
+   quality-status JSON payload의 bundle/gate 상태를 governance verdict와 직접 연결한다.
 
 ## 다음 세션 기준
 
-다음 세션은 `programming-artifact-ontology-development-guide`의 컨텍스트 확인 순서를 먼저 따른다. 실행 목표는 `programming-artifact-ontology-todo`의 미완료 항목 중 export write path, fallback 품질 분리, governance closure 순서로 선택한다.
+다음 세션은 `programming-artifact-ontology-development-guide`의 컨텍스트 확인 순서를 먼저 따른다. 실행 목표는 `programming-artifact-ontology-todo`의 미완료 항목 중 quality payload verdict 연결을 선택한다.

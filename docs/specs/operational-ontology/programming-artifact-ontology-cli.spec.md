@@ -62,10 +62,13 @@ qa-sdk ontology artifact registry append --output <file> \
 3. JSON이 object면 `artifacts` 필드를 registry record 목록으로 본다.
 4. `ArtifactRegistryPromptArtifactContextProvider`가 `<artifact-ref>`를 `artifactRef`, `artifactId`, `outputPath` 중 하나로 resolve하면 registry 결과를 사용한다.
 5. registry 결과가 있으면 `source.kind: "artifact-registry-hit"`와 `providerId`를 JSON 출력에 포함한다.
-6. registry miss이면 기존 fallback으로 내려간다.
-7. `<artifact-ref>`가 `packages/` 또는 `docs/`로 시작하면 `extract-file`에 위임한다.
-8. `<artifact-ref>`가 definition doc id이면 `extract`에 위임한다.
-9. 나머지는 definition candidate search로 synthetic artifact context를 만든다.
+6. registry 결과 유무와 별개로, registry 안의 `quality-status` record가 요청 artifact/definition/work area를 `verifiesRefs`, `materializesOutputRefs`, `sourceRefs`, `outputPath`, `relations`로 가리키면 prompt source evidence에 병합한다.
+7. registry miss이면 기존 fallback으로 내려간다.
+8. `<artifact-ref>`가 `packages/` 또는 `docs/`로 시작하면 `extract-file`에 위임한다.
+9. `<artifact-ref>`가 definition doc id이면 `extract`에 위임한다.
+10. 나머지는 definition candidate search로 synthetic artifact context를 만든다.
+
+related quality matching은 `kind === "quality-status"` record만 대상으로 하며 새 artifact kind, relation kind, registry service, allocation lifecycle을 만들지 않는다. direct artifact lookup은 계속 `artifactRef`, `artifactId`, `outputPath` 기준으로 동작하고, related quality discovery는 그 결과를 보강하는 sidecar 단계다.
 
 ## Registry JSON 계약
 
@@ -126,6 +129,31 @@ qa-sdk ontology artifact registry append --output <file> \
     },
     "warnings": ["artifact-registry-miss", "artifact-search-fallback"],
     "recommendedManagementActions": ["create_programming_artifact_registry_record"],
+    "qualityStatusRecords": {
+      "total": 1,
+      "records": [
+        {
+          "artifactId": "quality-status-unmanaged-artifact",
+          "artifactRef": "artifacts/quality-status-unmanaged-artifact.json",
+          "outputPath": "artifacts/quality-status-unmanaged-artifact.json",
+          "verifiesRefs": ["unmanaged-artifact"],
+          "materializesOutputRefs": ["artifact:unmanaged-artifact"],
+          "sourceRefs": ["packages/cli/src/commands/ontology.ts"],
+          "relations": [
+            {
+              "kind": "verifies",
+              "fromRef": "artifacts/quality-status-unmanaged-artifact.json",
+              "toRef": "unmanaged-artifact"
+            }
+          ],
+          "matchRefs": ["unmanaged-artifact", "artifact:unmanaged-artifact"],
+          "matchReasons": [
+            { "field": "verifiesRefs", "ref": "unmanaged-artifact" },
+            { "field": "materializesOutputRefs", "ref": "artifact:unmanaged-artifact" }
+          ]
+        }
+      ]
+    },
     "qualitySignal": {
       "code": "artifact-search-fallback",
       "grade": "degraded",
@@ -135,6 +163,8 @@ qa-sdk ontology artifact registry append --output <file> \
   }
 }
 ```
+
+`qualityStatusRecords.total`은 matched quality-status record 수이고, `records[]`는 prompt context에 병합된 품질 record의 구조화 요약이다. registry hit, registry miss, file fallback, definition fallback, search fallback 모두 같은 field를 출력한다. match가 없으면 `total: 0`, `records: []`다.
 
 ## Registry Write Path
 

@@ -38,7 +38,7 @@ sources:
 - `programming-artifact-relation` taxonomy — artifact edge identity를 relation kind 기준으로 좌표화한다.
 - `programming_artifact_relation` relation category — artifact relation edge grammar를 제공한다.
 - `artifact_prompt_context` traversal — artifact ref에서 prompt extraction context까지 가는 route family를 고정한다.
-- `ArtifactRegistryPromptArtifactContextProvider` — registry record를 `PromptArtifactDefinitionContextExtraction`으로 변환한다.
+- `ArtifactRegistryPromptArtifactContextProvider` — registry record를 `PromptArtifactDefinitionContextExtraction`으로 변환하고 관련 `quality-status` record를 sidecar governance evidence로 찾는다.
 - `programming-artifact-ontology-development-guide` — 세션 시작 컨텍스트 확인 순서와 변경 유형별 개발 지침을 고정한다.
 - `programming-artifact-ontology-cli` — `extract-artifact` registry 우선 조회와 fallback 품질 신호를 고정한다.
 
@@ -118,6 +118,17 @@ interface ProgrammingArtifactRegistryStore {
 3. record의 relation vocabulary를 definition-context 형태의 root/children/outgoingLinks로 변환한다.
 4. 변환 결과를 `extractPromptArtifactSourcesFromDefinitionContext()`에 전달한다.
 5. 반환된 work area에 `artifact-kind:*`, relation constraints, artifact registry local instruction을 덧붙인다.
+6. `listArtifacts()`가 있으면 `kind === "quality-status"`인 record 중 요청 artifact/definition/work area와 연결된 record를 추가로 찾는다.
+
+관련 `quality-status` matching은 새 schema나 relation kind를 만들지 않는다. matcher는 quality record의 기존 필드만 읽는다.
+
+- `verifiesRefs` — target artifact, definition, work area를 검증하는 품질 record.
+- `materializesOutputRefs` — target artifact, definition, work area의 품질 상태를 구체화한 record.
+- `sourceRefs` — target file/work area source와 연결된 품질 record.
+- `outputPath` — 요청 ref가 품질 상태 artifact 자체인 경우.
+- `relations` — 기존 relation vocabulary의 `verifies`, `materializes_output` edge만 사용한다.
+
+`appendQualityStatusEvidenceToPromptArtifactExtraction()`은 직접 registry hit/fallback extraction에 관련 quality record의 provider extraction을 병합한다. 이 병합은 prompt source set의 `corridors`, `checkpointLattices`, `traversals`, `blueprints`, `governanceRuns`를 추가하는 additive closure이며, direct artifact record lookup 결과를 대체하지 않는다.
 
 `createProgrammingArtifactRegistryRecord()`는 export command가 동일한 관계 채움 규칙을 쓰게 하는 factory다. 입력에서 알려진 값만 보존하고, `produced_by`, `derived_from`, `verifies`, `owned_by_definition`, `materializes_output` relation 배열을 정규화한다. 같은 relation이 field와 `relations` 양쪽에서 들어오면 `kind/fromRef/toRef/evidenceRef` 기준으로 dedupe한다.
 

@@ -68,6 +68,7 @@ sources:
 | CLI flag 변경 | `programming-artifact-ontology-cli`, command descriptor, help text, CLI tests if command parsing changes |
 | export command integration | source command spec, produced_by/derived_from/verifies/owned_by_definition/materializes_output mapping, registry write test |
 | governance closure 변경 | production factory spec, quality status source, persisted governance evidence, release verification use case |
+| quality-status discovery 변경 | matcher target refs, JSON `qualityStatusRecords` summary, fallback source preservation, provider/CLI tests |
 
 ## Registry Record 표준
 
@@ -86,6 +87,16 @@ artifact registry record를 생성할 때는 가능한 한 아래 필드를 채�
 필드를 모르면 빈 문자열로 채우지 않는다. 모르는 값은 생략하고, todo에 relation 보강 항목을 남긴다.
 
 현재 concrete write path는 `qa-sdk codegen --artifact-registry <file>`, `qa-sdk quality export ... --artifact-registry=<file>`, `infra deploy ... --artifact-registry <file>`, `qa-sdk ontology prompt extract* --output <file|dir> --artifact-registry <file>`, `qa-sdk ontology artifact registry append --kind build ...`이다.
+
+## Quality-status Discovery 검증
+
+`extract-artifact --artifact-registry <file>`가 직접 artifact record를 찾지 못해도 관련 `quality-status` record는 sidecar evidence로 붙어야 한다. 변경 시 아래를 확인한다.
+
+- direct registry hit의 `source.kind`는 계속 `artifact-registry-hit`이어야 한다.
+- miss/file/definition/search fallback의 `source.kind`, `warnings`, `recommendedManagementActions`는 기존 의미를 유지해야 한다.
+- JSON `source.qualityStatusRecords`는 항상 `{ total, records }` 구조로 출력한다.
+- matcher는 quality record의 `kind`, `verifiesRefs`, `materializesOutputRefs`, `sourceRefs`, `outputPath`, `relations`만 읽는다.
+- prompt artifact `sourceRefs`에는 관련 quality record에서 파생된 `governance-run:governance:artifact:<quality-id>:definition-context`가 포함되어야 한다.
 
 ## Handoff 규칙
 
@@ -121,6 +132,8 @@ pnpm --filter operational-ontology typecheck
 pnpm --filter operational-ontology test
 pnpm --filter operational-ontology build
 pnpm --filter @qa-sdk/cli typecheck
-pnpm --filter @qa-sdk/cli test -- ontology codegen quality
+pnpm --filter @qa-sdk/cli test
+pnpm --filter @qa-sdk/cli build
+node packages/cli/dist/index.js def sync
 node packages/cli/dist/index.js def validate
 ```

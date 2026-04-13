@@ -42,4 +42,5 @@ def:
 - [x] artifact ref가 없는 자유 문자열 fallback의 품질 등급을 별도 warning으로 분리
 - [x] `extract-artifact --json`에 registry hit/miss/file/doc/search fallback source를 구조화해 출력
 - [x] artifact registry JSON validate/list/append CLI 필요 여부 결정 및 최소 surface 구현
-- [ ] artifact governance run을 실제 quality gate 결과와 연결
+- [x] `extract-artifact --artifact-registry`가 관련 `quality-status` record를 찾아 prompt governance evidence와 JSON `qualityStatusRecords` 요약에 연결
+- [ ] quality-status JSON payload의 bundle/gate pass-fail 세부 상태를 governance verdict와 직접 연결
