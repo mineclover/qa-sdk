@@ -10,6 +10,7 @@ after each iteration and it's included in prompts for context.
 - Artifact registry sidecar evidence: keep direct registry hit/miss routing unchanged, then use `listArtifacts()` to attach related records as additive source evidence and JSON summaries.
 - Quality-status snapshot loading: treat `outputPath` JSON as additive closure evidence; valid snapshots become governance-run source refs, while missing/invalid files produce structured JSON warnings and extraction continues.
 - Prompt quality sidecar evidence: keep new scoring signals optional on the evaluator input, pass them only from artifact extraction, and use verified evidence as an additive bonus while failed/missing evidence becomes governance warnings.
+- Quality export registry metadata: keep provider reads on existing relation/output fields, and add closure summaries under optional `metadata` so old registry consumers remain compatible.
 
 ---
 
@@ -79,4 +80,26 @@ after each iteration and it's included in prompts for context.
   - `evaluatePromptArtifactQuality()` can remain backward compatible by treating absent `qualityStatusEvidence` differently from an explicitly empty evidence array.
   - Artifact extraction fallback can be distinguished from direct `prompt extract` / `extract-file` calls by the hidden `artifact-source` flag, which is the right place to preserve old non-artifact scoring behavior.
   - The existing CLI full test suite still has unrelated sandbox blockers: DKG SQLite state path setup and `127.0.0.1` listener permission in audit forwarding.
+---
+
+## 2026-04-13 - US-004
+- Enriched `quality export --artifact-registry` `quality-status` records with closure metadata: root id, generated timestamp, bundle count/states, per-bundle gate/claim counts, and aggregate totals.
+- Preserved existing registry compatibility by keeping `verifiesRefs` as root id + bundle ids, `materializesOutputRefs` as the root quality system id, and `verificationRefs` populated with bundle ids.
+- Updated quality registry tests to verify enriched metadata and existing relation refs, and documented the registry/provider/CLI/prompt closure contract changes.
+- Removed the duplicate `prompt-artifact-core.ts` source mapping from `programming-artifact-ontology-system` so definition validation has one authoritative boundary for that file.
+- Verification: operational-ontology typecheck/test/build passed; CLI typecheck/build and targeted `quality.test.ts` passed; `def sync` and `def validate` passed. Full CLI test still fails on unrelated sandbox-sensitive DKG cases: default SQLite state DB open and `127.0.0.1` listener EPERM.
+- Files changed:
+  - `packages/cli/src/commands/quality.ts`
+  - `packages/cli/src/commands/quality.test.ts`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-system.spec.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-cli.spec.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-plan.plan.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-todo.todo.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-development-guide.spec.md`
+  - `docs/specs/operational-ontology/operational-ontology-prompt-artifact-generation.spec.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Registry record enrichment can stay backward compatible by placing closure details under optional `metadata` and leaving provider matching on the existing refs/output fields.
+  - `quality export` snapshots already contain enough bundle/gate/claim state to derive both per-bundle summaries and aggregate totals without introducing registry-service allocation persistence.
+  - Definition validation treats broad `sources:` mappings as authoritative code boundaries, so cross-concept docs should mention shared implementation files in body text instead of claiming them in frontmatter.
 ---

@@ -198,6 +198,17 @@ describe("quality artifact registry records", () => {
             totalGates: 2,
             reviewScopes: [],
           },
+          {
+            bundleId: "cli-quality-gates",
+            title: "CLI quality gates",
+            gateCount: 3,
+            claimCount: 2,
+            verifiedClaimCount: 1,
+            bundleState: "partial",
+            verifiedGates: 1,
+            totalGates: 3,
+            reviewScopes: [],
+          },
         ],
       },
     });
@@ -214,11 +225,50 @@ describe("quality artifact registry records", () => {
     expect(record.derivedFromRefs).toEqual([
       "quality-gates-system",
       "definition-quality-gates",
+      "cli-quality-gates",
     ]);
     expect(record.verifiesRefs).toEqual([
       "quality-gates-system",
       "definition-quality-gates",
+      "cli-quality-gates",
     ]);
+    expect(record.verificationRefs).toEqual([
+      "definition-quality-gates",
+      "cli-quality-gates",
+    ]);
+    expect(record.metadata).toEqual({
+      rootId: "quality-gates-system",
+      generatedAt: "2026-04-12T00:00:00.000Z",
+      bundleCount: 2,
+      bundleStates: {
+        "definition-quality-gates": "verified",
+        "cli-quality-gates": "partial",
+      },
+      totals: {
+        verifiedGateCount: 3,
+        totalGateCount: 5,
+        claimCount: 5,
+        verifiedClaimCount: 4,
+      },
+      bundles: [
+        {
+          bundleId: "definition-quality-gates",
+          bundleState: "verified",
+          verifiedGateCount: 2,
+          totalGateCount: 2,
+          claimCount: 3,
+          verifiedClaimCount: 3,
+        },
+        {
+          bundleId: "cli-quality-gates",
+          bundleState: "partial",
+          verifiedGateCount: 1,
+          totalGateCount: 3,
+          claimCount: 2,
+          verifiedClaimCount: 1,
+        },
+      ],
+    });
     expect(record.relations).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

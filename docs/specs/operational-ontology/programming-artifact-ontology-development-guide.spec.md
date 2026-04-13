@@ -70,6 +70,7 @@ sources:
 | governance closure 변경 | production factory spec, quality status source, persisted governance evidence, release verification use case |
 | quality-status discovery 변경 | matcher target refs, JSON `qualityStatusRecords` summary, fallback source preservation, provider/CLI tests |
 | quality export snapshot 로딩 변경 | `outputPath` path resolution, structured warning codes, governance run sourceRefs, valid/missing/invalid CLI tests |
+| quality export registry metadata 변경 | `buildQualityStatusArtifactRegistryRecord`, metadata summary shape, verifies/materializes/verification refs, quality CLI tests |
 | prompt quality closure 변경 | `PromptArtifactQualityStatusEvidence`, `governance_closure` score cap/bonus, ready/usable/degraded prompt quality tests |
 
 ## Registry Record 표준
@@ -85,6 +86,7 @@ artifact registry record를 생성할 때는 가능한 한 아래 필드를 채�
 - `ownerDefinitionId` — 변경 책임 definition. `owned_by_definition` relation으로 변환된다.
 - `materializesOutputRefs` — 구체화한 blueprint/output/release target. `materializes_output` relation으로 변환된다.
 - `sourceRefs`, `outputPath`, `verificationRefs` — prompt extraction 품질과 governance closure를 높이는 보조 surface다.
+- `metadata` — optional structured summary. `quality-status` record는 `rootId`, `generatedAt`, bundle별 state/gate/claim counts, aggregate totals를 담아야 한다.
 
 필드를 모르면 빈 문자열로 채우지 않는다. 모르는 값은 생략하고, todo에 relation 보강 항목을 남긴다.
 
@@ -100,6 +102,7 @@ artifact registry record를 생성할 때는 가능한 한 아래 필드를 채�
 - matcher는 quality record의 `kind`, `verifiesRefs`, `materializesOutputRefs`, `sourceRefs`, `outputPath`, `relations`만 읽는다.
 - prompt artifact `sourceRefs`에는 관련 quality record에서 파생된 `governance-run:governance:artifact:<quality-id>:definition-context`가 포함되어야 한다.
 - matched quality record의 `outputPath` JSON이 존재하면 `records[].qualityExportSnapshot`에 root id, bundle ids, bundle state, gate counts, claim counts, generated timestamp를 노출해야 한다.
+- `quality export --artifact-registry`가 만든 quality record 자체의 `metadata`에도 같은 최소 closure summary가 있어야 하며, provider read path는 metadata 없이도 기존 필드로 계속 동작해야 한다.
 - snapshot load 실패는 extraction을 중단하지 않고 `qualityStatusRecords.warnings[]`, `records[].qualityExportWarning`, `source.warnings[]`에 structured warning code를 남겨야 한다.
 - valid snapshot은 `governance-run:governance:<quality-artifact-id>:quality-export-snapshot` source ref를 추가해야 한다.
 - artifact extraction에서 나온 quality-status match는 `evaluatePromptArtifactQuality()`의 optional `qualityStatusEvidence`로도 전달해야 한다.
@@ -151,6 +154,12 @@ quality export snapshot 로딩을 바꾸는 경우에는 전체 CLI test 전에 
 
 ```bash
 pnpm --filter @qa-sdk/cli test -- ontology.test.ts
+```
+
+quality export registry metadata를 바꾸는 경우에는 전체 CLI test 전에 아래 targeted test를 먼저 실행한다.
+
+```bash
+pnpm --filter @qa-sdk/cli test -- quality.test.ts
 ```
 
 prompt quality closure scoring을 바꾸는 경우에는 아래 targeted test도 먼저 실행한다.

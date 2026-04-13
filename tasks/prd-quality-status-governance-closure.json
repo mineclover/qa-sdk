@@ -132,9 +132,10 @@
         "node packages/cli/dist/index.js def validate passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "This story can be implemented independently of prompt quality scoring, but downstream stories should consume the enriched shape. It must not introduce registry-service allocation persistence.",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-005",
@@ -206,6 +207,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-13T13:07:55.090Z"
+    "updatedAt": "2026-04-13T13:15:23.053Z"
   }
 }

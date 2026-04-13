@@ -19,7 +19,6 @@ def:
       type: contains
 sources:
   - packages/operational-ontology/src/internal/programming-artifact-core.ts
-  - packages/operational-ontology/src/internal/prompt-artifact-core.ts
   - packages/operational-ontology/src/programming-artifacts.ts
 ---
 
@@ -111,6 +110,8 @@ interface ProgrammingArtifactRegistryStore {
 - `materializesOutputRefs`
 - `sourceRefs`, `outputPath`, `verificationRefs`
 - `contextDocs`, `relations`, `metadata`
+
+`quality export --artifact-registry`가 생성하는 `quality-status` record의 `metadata`는 governance closure 소비자가 snapshot 파일을 다시 해석하지 않아도 최소 상태를 알 수 있게 한다. metadata에는 `rootId`, `generatedAt`, `bundleCount`, bundle별 `bundleState`, `verifiedGateCount`, `totalGateCount`, `claimCount`, `verifiedClaimCount`, 그리고 aggregate `totals`를 담는다. 이 metadata는 additive field이므로 기존 provider read path는 계속 `kind`, relation refs, `outputPath`, `verificationRefs`를 읽을 수 있다.
 
 `ArtifactRegistryPromptArtifactContextProvider`는 `PromptArtifactContextProvider`를 구현한다.
 

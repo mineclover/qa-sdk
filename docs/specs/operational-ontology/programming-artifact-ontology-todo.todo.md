@@ -45,5 +45,6 @@ def:
 - [x] `extract-artifact --artifact-registry`가 관련 `quality-status` record를 찾아 prompt governance evidence와 JSON `qualityStatusRecords` 요약에 연결
 - [x] quality-status JSON payload의 bundle/gate pass-fail 세부 상태를 governance verdict와 직접 연결
 - [x] `evaluatePromptArtifactQuality()`가 artifact extraction quality-status evidence를 받아 `governance_closure` score와 warning에 반영
+- [x] `quality export --artifact-registry` record metadata에 bundle state, gate count, claim count, generated timestamp closure 요약 추가
 - [ ] quality export JSON snapshot evidence가 부족한 실제 사례가 나오면 quality-ledger lookup을 별도 provider/fallback으로 추가
 - [ ] quality-status `generatedAt` 기반 stale SLA가 필요해지면 freshness threshold와 warning policy를 별도 story로 추가

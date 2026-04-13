@@ -90,7 +90,31 @@ related quality matching은 `kind === "quality-status"` record만 대상으로 �
     "materializesOutputRefs": ["operational-ontology-prompt-artifact-generation"],
     "sourceRefs": ["packages/operational-ontology/src/internal/prompt-artifact-core.ts"],
     "outputPath": "artifacts/quality-status-operational-ontology.json",
-    "verificationRefs": ["packages/operational-ontology/src/programming-artifacts.test.ts"]
+    "verificationRefs": ["packages/operational-ontology/src/programming-artifacts.test.ts"],
+    "metadata": {
+      "rootId": "operational-ontology-prompt-artifact-generation",
+      "generatedAt": "2026-04-13T00:00:00.000Z",
+      "bundleCount": 1,
+      "bundleStates": {
+        "operational-ontology-prompt-artifact-generation": "verified"
+      },
+      "totals": {
+        "verifiedGateCount": 2,
+        "totalGateCount": 2,
+        "claimCount": 4,
+        "verifiedClaimCount": 4
+      },
+      "bundles": [
+        {
+          "bundleId": "operational-ontology-prompt-artifact-generation",
+          "bundleState": "verified",
+          "verifiedGateCount": 2,
+          "totalGateCount": 2,
+          "claimCount": 4,
+          "verifiedClaimCount": 4
+        }
+      ]
+    }
   }
 ]
 ```
@@ -194,6 +218,8 @@ related quality matching은 `kind === "quality-status"` record만 대상으로 �
 
 `records[].qualityExportSnapshot`은 matched quality record의 `outputPath` JSON이 로드될 때만 붙는 additive metadata다. exact TypeScript shape는 `packages/cli/src/commands/ontology.ts`가 SSOT이며, 공개 JSON에는 root id, bundle ids, per-bundle state/gate/claim counts, aggregate gate/claim counts, generated timestamp, resolved source path만 노출한다. snapshot load 실패는 `records[].qualityExportWarning`과 `qualityStatusRecords.warnings[]`로 구조화하며, warning code는 `quality-status-snapshot-missing`, `quality-status-snapshot-invalid-json`, `quality-status-snapshot-invalid-shape`, `quality-status-snapshot-read-failed` 중 하나다.
 
+`qa-sdk quality export ... --artifact-registry=<file>`가 append하는 `quality-status` record도 같은 closure 최소 요약을 `metadata`에 담는다. metadata shape는 optional additive field이며 기존 registry JSON 배열/object envelope, provider lookup, relation mapping을 바꾸지 않는다.
+
 Valid snapshot evidence는 prompt source governance evidence에도 추가된다. 생성된 prompt artifact의 `sourceRefs`에는 `governance-run:governance:<quality-artifact-id>:quality-export-snapshot`이 포함될 수 있으며, 이 run은 bundle별 gate pass/fail을 `validation_surface` verdict로 표현한다.
 
 Artifact extraction으로 시작한 prompt quality evaluation은 matched quality status를 optional `qualityStatusEvidence` input으로도 받는다. `artifacts[].quality.metrics[]` 중 `dimension: "governance_closure"`는 target을 `verifies`로 확인한 quality-status evidence가 verified bundle 또는 verified gate count를 보고할 때만 additive로 상승한다. failed, stale, invalid, incomplete outcome이나 snapshot missing/invalid warning은 `artifacts[].quality.issues[]`에 governance warning으로 남고 score 상승에 쓰지 않는다. match가 없어서 evidence 배열이 비어 있으면 `prompt-quality-status-evidence-missing` warning으로 confidence만 낮춘다. 새 CLI flag, registry command, registry allocation lifecycle은 추가하지 않는다.
@@ -224,7 +250,7 @@ qa-sdk ontology artifact registry append --output artifacts/programming-artifact
 
 - codegen generated source: `produced_by=qa-sdk codegen`, `derived_from=catalog/registry/config`, `owned_by_definition=codegen-schema-output`, `materializes_output=apm-codegen-system + codegen-schema-output`.
 - data object codegen: `produced_by=qa-sdk codegen --data-objects`, `derived_from=<bindingsPath>`, `owned_by_definition=data-object-codegen`, `materializes_output=data-object-codegen`.
-- quality status: `produced_by=qa-sdk quality export <rootId>`, `derived_from=<rootId + bundleIds>`, `verifies=<rootId + bundleIds>`, `owned_by_definition=<rootId>`, `materializes_output=<rootId>`.
+- quality status: `produced_by=qa-sdk quality export <rootId>`, `derived_from=<rootId + bundleIds>`, `verifies=<rootId + bundleIds>`, `owned_by_definition=<rootId>`, `materializes_output=<rootId>`, `verificationRefs=<bundleIds>`, `metadata=<generatedAt + bundle state/gate/claim summary>`.
 - deployment output: `produced_by=infra deploy <service> <env> --provider <provider>`, `derived_from=<configPath + service/env refs>`, `verifies=<service + endpoint refs when successful>`, `owned_by_definition=infra-engine-pipeline`, `materializes_output=<service + env + endpoint refs>`.
 - prompt artifact: `produced_by=qa-sdk ontology prompt extract*`, `derived_from=<artifact.sourceRefs>`, `verifies=<workAreaId when valid>`, `owned_by_definition=<source definition when known>`, `materializes_output=<prompt artifact id + work area + source target>`.
 - build output: `ontology artifact registry append --kind build`로 명시적 output path를 registry record로 기록한다. 실제 build 실행은 패키지 스크립트가 소유하고, CLI는 결과물을 registry에 관리 등록한다.

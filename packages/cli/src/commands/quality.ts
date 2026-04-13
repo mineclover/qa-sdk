@@ -1463,11 +1463,37 @@ export function buildQualityStatusArtifactRegistryRecord(input: {
     outputPath,
     verificationRefs: bundleIds,
     createdAt: input.snapshot.generatedAt,
-    metadata: {
-      rootId: input.rootId,
-      bundleCount: input.snapshot.bundles.length,
-    },
+    metadata: buildQualityStatusArtifactRegistryMetadata(input.snapshot),
   });
+}
+
+function buildQualityStatusArtifactRegistryMetadata(
+  snapshot: QualityStatusSnapshot,
+): Record<string, unknown> {
+  const bundles = snapshot.bundles.map((bundle) => ({
+    bundleId: bundle.bundleId,
+    bundleState: bundle.bundleState,
+    verifiedGateCount: bundle.verifiedGates,
+    totalGateCount: bundle.totalGates,
+    claimCount: bundle.claimCount,
+    verifiedClaimCount: bundle.verifiedClaimCount,
+  }));
+
+  return {
+    rootId: snapshot.rootId,
+    generatedAt: snapshot.generatedAt,
+    bundleCount: bundles.length,
+    bundleStates: Object.fromEntries(
+      bundles.map((bundle) => [bundle.bundleId, bundle.bundleState]),
+    ),
+    totals: {
+      verifiedGateCount: bundles.reduce((sum, bundle) => sum + bundle.verifiedGateCount, 0),
+      totalGateCount: bundles.reduce((sum, bundle) => sum + bundle.totalGateCount, 0),
+      claimCount: bundles.reduce((sum, bundle) => sum + bundle.claimCount, 0),
+      verifiedClaimCount: bundles.reduce((sum, bundle) => sum + bundle.verifiedClaimCount, 0),
+    },
+    bundles,
+  };
 }
 
 function portablePath(rootDir: string, filePath: string): string {
