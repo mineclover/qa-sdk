@@ -70,6 +70,7 @@ sources:
 | governance closure 변경 | production factory spec, quality status source, persisted governance evidence, release verification use case |
 | quality-status discovery 변경 | matcher target refs, JSON `qualityStatusRecords` summary, fallback source preservation, provider/CLI tests |
 | quality export snapshot 로딩 변경 | `outputPath` path resolution, structured warning codes, governance run sourceRefs, valid/missing/invalid CLI tests |
+| prompt quality closure 변경 | `PromptArtifactQualityStatusEvidence`, `governance_closure` score cap/bonus, ready/usable/degraded prompt quality tests |
 
 ## Registry Record 표준
 
@@ -101,6 +102,10 @@ artifact registry record를 생성할 때는 가능한 한 아래 필드를 채�
 - matched quality record의 `outputPath` JSON이 존재하면 `records[].qualityExportSnapshot`에 root id, bundle ids, bundle state, gate counts, claim counts, generated timestamp를 노출해야 한다.
 - snapshot load 실패는 extraction을 중단하지 않고 `qualityStatusRecords.warnings[]`, `records[].qualityExportWarning`, `source.warnings[]`에 structured warning code를 남겨야 한다.
 - valid snapshot은 `governance-run:governance:<quality-artifact-id>:quality-export-snapshot` source ref를 추가해야 한다.
+- artifact extraction에서 나온 quality-status match는 `evaluatePromptArtifactQuality()`의 optional `qualityStatusEvidence`로도 전달해야 한다.
+- target을 `verifies`로 확인하고 verified bundle 또는 gate를 보고한 evidence만 `governance_closure` bonus로 쓴다.
+- failed/stale/invalid/incomplete evidence와 missing evidence는 extraction을 막지 않고 prompt quality governance warning과 confidence cap으로 표현한다.
+- 직접 `prompt extract`/`extract-file`/`extract-permission` 호출은 artifact-source context가 없으면 기존 quality evaluation 동작을 유지해야 한다.
 
 ## Handoff 규칙
 
@@ -146,4 +151,10 @@ quality export snapshot 로딩을 바꾸는 경우에는 전체 CLI test 전에 
 
 ```bash
 pnpm --filter @qa-sdk/cli test -- ontology.test.ts
+```
+
+prompt quality closure scoring을 바꾸는 경우에는 아래 targeted test도 먼저 실행한다.
+
+```bash
+pnpm --filter operational-ontology test -- prompt-artifacts.test.ts
 ```

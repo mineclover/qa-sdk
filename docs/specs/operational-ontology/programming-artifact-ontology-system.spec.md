@@ -19,6 +19,7 @@ def:
       type: contains
 sources:
   - packages/operational-ontology/src/internal/programming-artifact-core.ts
+  - packages/operational-ontology/src/internal/prompt-artifact-core.ts
   - packages/operational-ontology/src/programming-artifacts.ts
 ---
 
@@ -131,6 +132,8 @@ interface ProgrammingArtifactRegistryStore {
 `appendQualityStatusEvidenceToPromptArtifactExtraction()`은 직접 registry hit/fallback extraction에 관련 quality record의 provider extraction을 병합한다. 이 병합은 prompt source set의 `corridors`, `checkpointLattices`, `traversals`, `blueprints`, `governanceRuns`를 추가하는 additive closure이며, direct artifact record lookup 결과를 대체하지 않는다.
 
 CLI extraction은 matched `quality-status` record에 `outputPath`가 있으면 해당 quality export JSON을 추가로 읽는다. 읽은 snapshot은 `rootId`, bundle id 목록, bundle state, gate count, claim count, `generatedAt`만 요약해 source metadata에 붙이고, bundle별 gate verification을 `quality-export-snapshot` governance run으로 변환한다. 파일이 없거나 JSON이 깨졌거나 quality export shape가 아니면 extraction은 계속 진행하고 structured warning만 JSON source에 남긴다. 이 로딩은 새 artifact kind, relation kind, provider schema, registry allocation lifecycle을 만들지 않는다.
+
+Artifact extraction은 같은 matched quality record/snapshot을 `PromptArtifactQualityStatusEvidence`로도 변환해 `evaluatePromptArtifactQuality()`에 전달한다. exact TypeScript shape는 `packages/operational-ontology/src/internal/prompt-artifact-core.ts`가 SSOT다. 이 evidence는 `verified`, `failed`, `stale`, `invalid`, `incomplete` outcome과 target verification 여부, verified bundle/gate surface를 표현한다. `governance_closure`는 target을 `verifies`로 확인하고 verified bundle 또는 gate를 보고한 evidence만 additive bonus로 반영한다. failed/stale/invalid/incomplete evidence나 verified bundle/gate가 없는 evidence는 score를 올리지 않고 governance warning을 남긴다. artifact extraction이 quality-status evidence를 기대했지만 match가 없으면 extraction은 계속되며 governance closure confidence만 cap된다. 일반 definition/file/permission prompt extraction은 이 optional evidence를 넘기지 않으면 기존 품질 동작을 유지한다.
 
 `createProgrammingArtifactRegistryRecord()`는 export command가 동일한 관계 채움 규칙을 쓰게 하는 factory다. 입력에서 알려진 값만 보존하고, `produced_by`, `derived_from`, `verifies`, `owned_by_definition`, `materializes_output` relation 배열을 정규화한다. 같은 relation이 field와 `relations` 양쪽에서 들어오면 `kind/fromRef/toRef/evidenceRef` 기준으로 dedupe한다.
 

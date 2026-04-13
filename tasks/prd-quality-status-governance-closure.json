@@ -96,12 +96,13 @@
         "node packages/cli/dist/index.js def validate passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Keep score adjustment additive and explicit. Missing evidence should degrade confidence, not block extraction. Do not couple prompt quality scoring to registry-service allocation state.",
       "dependsOn": [
         "US-001",
         "US-002"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-004",
@@ -205,6 +206,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-13T12:53:44.768Z"
+    "updatedAt": "2026-04-13T13:07:55.090Z"
   }
 }

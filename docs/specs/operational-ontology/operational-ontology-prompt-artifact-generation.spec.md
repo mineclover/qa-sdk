@@ -63,6 +63,7 @@ prompt artifact generation은 implementation governance plane의 파생 산출�
   - `governance_closure` — blueprint, governance run, verdict, adjustment가 닫혔는가
   - `verification_surface` — test/gate/simulation/review surface가 연결됐는가
   - `content_consistency` — validator가 artifact content를 신뢰할 수 있는가
+  - `qualityStatusEvidence` — artifact extraction에서 온 optional quality-status evidence. target verification과 verified bundle/gate evidence가 있을 때만 `governance_closure`를 additive로 보강한다.
 
 OpenAI GPT-5 prompting guide는 XML-like delimiter, bounded context gathering, agentic persistence, 코드 편집 시 명확하고 유지보수 가능한 code output을 권장한다. 이 문서는 그 지침을 qa-sdk의 설계 좌표로 변환해, 프롬프트 품질을 사람이 작성한 단일 문구가 아니라 운영 증거에서 재생성되는 artifact로 관리한다.
 
@@ -121,6 +122,8 @@ prompt artifact는 model system prompt에 삽입 가능한 구조화 문구이�
 - `bind_verification_surface` — 완료 조건을 검증할 surface가 없다.
 - `repair_prompt_artifact_content` — generator나 저장 artifact content가 sections와 drift됐다.
 
+`qualityStatusEvidence`는 artifact extraction 경로에서만 명시적으로 전달되는 optional input이다. 전달하지 않으면 기존 definition/file/permission prompt quality behavior가 유지된다. 전달된 evidence가 target을 `verifies`로 확인하고 verified bundle 또는 verified gate count를 보고하면 `governance_closure`는 기존 governance run score 위에 additive bonus를 받는다. failed, stale, invalid, incomplete outcome이나 verified bundle/gate가 없는 evidence는 score를 올리지 않고 `prompt-quality-status-evidence-*` governance warning을 남긴다. artifact extraction이 quality-status evidence를 기대했지만 match가 없으면 extraction은 막지 않고 `prompt-quality-status-evidence-missing` warning과 governance confidence cap으로 표현한다.
+
 ### 사용 방법
 
 ```ts
@@ -144,6 +147,7 @@ CLI에서는 `qa-sdk ontology prompt extract <doc-id> --use-case feature_modific
 권한 기준에서 시작할 때는 `qa-sdk ontology prompt extract-permission <permission-ref> --kind all`로 authorization ontology의 permission 관련 context를 묶는다.
 산출물 기준에서 시작할 때는 `qa-sdk ontology prompt extract-artifact <artifact-ref> --artifact-type <type> --artifact-registry <file> --kind all`로 registry record를 먼저 조회하고, 없으면 파일/doc/품질 게이트 후보 검색으로 내려간다.
 `--artifact-registry`가 제공되면 direct artifact lookup 결과와 별개로 관련 `quality-status` record를 찾는다. quality record가 요청 artifact, definition, work area를 `verifiesRefs`, `materializesOutputRefs`, `sourceRefs`, `outputPath`, `relations`로 가리키면 그 record에서 파생된 corridor/checkpoint/traversal/blueprint/governance run을 prompt source evidence에 병합한다. quality record의 `outputPath`가 quality export JSON이면 root id, bundle id, bundle state, verified/total gate counts, claim counts, generated timestamp를 source metadata로 붙이고 bundle gate status를 `quality-export-snapshot` governance run으로 추가한다. 파일이 없거나 invalid JSON이면 prompt extraction은 계속 진행하고 structured warning을 JSON source에 남긴다. 이 병합은 fallback 종류를 바꾸지 않고 `source.qualityStatusRecords` JSON 요약으로 노출된다.
+artifact extraction으로 생성된 prompt artifact quality evaluation은 같은 quality-status match를 `qualityStatusEvidence`로 넘긴다. registry hit/search fallback은 항상 evidence 배열을 넘겨 match 없음도 confidence cap으로 보이고, file/doc fallback에 위임된 경우에는 hidden artifact-source context가 있을 때만 이 evidence를 넘겨 일반 prompt extraction의 backward compatibility를 보존한다.
 prompt artifact를 파일로 보존할 때는 `--output <file|dir>`를 사용하고, `--artifact-registry <file>`를 함께 주면 생성된 prompt block도 `kind=prompt-artifact` registry record로 남긴다.
 programming/artifact ontology는 `PromptArtifactContextProvider`를 구현한 provider로 주입한다. provider는 artifact registry record를 `PromptArtifactDefinitionContextExtraction`으로 변환하고, 일반 provider contract는 `definition`, `code`, `permission`, `artifact` target을 같은 출력 형태로 맞춘다.
 usecase에서 필수가 아닌 품질 차원은 `applicable: false`로 표시하고 score 계산과 management action에서 제외한다.

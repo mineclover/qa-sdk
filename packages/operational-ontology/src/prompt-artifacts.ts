@@ -10,6 +10,8 @@ export {
   type PromptArtifactUseCase,
   type PromptArtifactWorkArea,
   type PromptArtifactSourceSet,
+  type PromptArtifactQualityStatusOutcome,
+  type PromptArtifactQualityStatusEvidence,
   type PromptArtifactGenerationInput,
   type PromptArtifactDefinitionDoc,
   type PromptArtifactDefinitionLink,

@@ -54,6 +54,29 @@ export interface PromptArtifactSourceSet {
   governanceRuns?: readonly GovernanceRun[];
 }
 
+export type PromptArtifactQualityStatusOutcome =
+  | "verified"
+  | "failed"
+  | "stale"
+  | "invalid"
+  | "incomplete";
+
+export interface PromptArtifactQualityStatusEvidence {
+  evidenceId: string;
+  outcome: PromptArtifactQualityStatusOutcome;
+  verifiesTarget: boolean;
+  targetRefs: readonly string[];
+  sourceRefs?: readonly string[];
+  bundleRefs?: readonly string[];
+  verifiedBundleRefs?: readonly string[];
+  gateRefs?: readonly string[];
+  verifiedGateRefs?: readonly string[];
+  verifiedGateCount?: number;
+  totalGateCount?: number;
+  generatedAt?: string;
+  message?: string;
+}
+
 export interface PromptArtifactGenerationInput {
   artifactId?: string;
   kind: PromptArtifactKind;
@@ -223,6 +246,7 @@ export interface PromptArtifactQualityEvaluationInput {
   artifact: PromptArtifact;
   workArea?: PromptArtifactWorkArea;
   sources?: PromptArtifactSourceSet;
+  qualityStatusEvidence?: readonly PromptArtifactQualityStatusEvidence[];
 }
 
 export interface PromptArtifactQualityEvaluation {
@@ -1084,6 +1108,21 @@ function qualityIssue(input: {
   };
 }
 
+function governanceWarning(input: {
+  code: string;
+  message: string;
+  sourceRefs?: readonly string[];
+}): PromptArtifactQualityIssue {
+  return {
+    level: "warning",
+    code: input.code,
+    message: input.message,
+    dimension: "governance_closure",
+    managementPlane: "governance",
+    sourceRefs: input.sourceRefs ?? [],
+  };
+}
+
 function metric(
   dimension: PromptArtifactQualityDimension,
   score: number,
@@ -1275,6 +1314,7 @@ function scoreTraversalGrounding(
 function scoreGovernanceClosure(
   artifact: PromptArtifact,
   sources: PromptArtifactSourceSet | undefined,
+  qualityStatusEvidence: readonly PromptArtifactQualityStatusEvidence[] | undefined,
 ): PromptArtifactQualityMetric {
   const blueprints = sources?.blueprints ?? [];
   const runs = sources?.governanceRuns ?? [];
@@ -1302,11 +1342,15 @@ function scoreGovernanceClosure(
       ? Math.min(rawScore, 95)
       : Math.min(rawScore, 80)
     : rawScore;
+  const qualityStatusAdjustment = qualityStatusEvidence
+    ? governanceClosureQualityStatusAdjustment(score, qualityStatusEvidence)
+    : { score };
+  const adjustedScore = qualityStatusAdjustment.score;
   const issues =
-    score < 85
+    adjustedScore < 85
       ? [
           qualityIssue({
-            score,
+            score: adjustedScore,
             code: hasOnlySyntheticRuns
               ? "prompt-governance-evidence-synthetic"
               : "prompt-governance-closure-low",
@@ -1319,7 +1363,120 @@ function scoreGovernanceClosure(
           }),
         ]
       : [];
-  return metric("governance_closure", score, issues);
+  return metric(
+    "governance_closure",
+    adjustedScore,
+    [...issues, ...(qualityStatusAdjustment.issues ?? [])],
+  );
+}
+
+function governanceClosureQualityStatusAdjustment(
+  baseScore: number,
+  evidence: readonly PromptArtifactQualityStatusEvidence[],
+): { score: number; issues?: readonly PromptArtifactQualityIssue[] } {
+  if (evidence.length === 0) {
+    return {
+      score: Math.min(baseScore, 75),
+      issues: [
+        governanceWarning({
+          code: "prompt-quality-status-evidence-missing",
+          message:
+            "Artifact extraction did not include quality-status evidence, so governance closure confidence is capped.",
+        }),
+      ],
+    };
+  }
+
+  const targetEvidence = evidence.filter((item) => item.verifiesTarget);
+  if (targetEvidence.length === 0) {
+    return {
+      score: Math.min(baseScore, 75),
+      issues: [
+        governanceWarning({
+          code: "prompt-quality-status-evidence-target-missing",
+          message:
+            "Quality-status evidence did not verify the prompt target, so it cannot close governance.",
+          sourceRefs: evidence.flatMap(qualityStatusEvidenceSourceRefs),
+        }),
+      ],
+    };
+  }
+
+  const issues = targetEvidence.flatMap((item) => qualityStatusEvidenceWarnings(item));
+  const verifiedEvidence = targetEvidence.filter(hasVerifiedQualityStatusClosure);
+  if (verifiedEvidence.length === 0) {
+    return {
+      score: Math.min(baseScore, 80),
+      issues,
+    };
+  }
+
+  const verifiedSurfaceCount = verifiedEvidence.reduce(
+    (sum, item) =>
+      sum +
+      (item.verifiedBundleRefs?.length ?? 0) +
+      (item.verifiedGateRefs?.length ?? 0) +
+      (item.verifiedGateCount ?? 0),
+    0,
+  );
+  const additiveScore = Math.min(20, 10 + verifiedSurfaceCount * 5);
+  return {
+    score: Math.min(100, baseScore + additiveScore),
+    issues,
+  };
+}
+
+function hasVerifiedQualityStatusClosure(
+  evidence: PromptArtifactQualityStatusEvidence,
+): boolean {
+  return (
+    evidence.outcome === "verified" &&
+    ((evidence.verifiedBundleRefs?.length ?? 0) > 0 ||
+      (evidence.verifiedGateRefs?.length ?? 0) > 0 ||
+      (evidence.verifiedGateCount ?? 0) > 0)
+  );
+}
+
+function qualityStatusEvidenceWarnings(
+  evidence: PromptArtifactQualityStatusEvidence,
+): PromptArtifactQualityIssue[] {
+  const refs = qualityStatusEvidenceSourceRefs(evidence);
+  if (evidence.outcome === "verified") {
+    if (hasVerifiedQualityStatusClosure(evidence)) return [];
+    return [
+      governanceWarning({
+        code: "prompt-quality-status-evidence-incomplete",
+        message:
+          evidence.message ??
+          "Quality-status evidence verified the target but reported no verified bundles or gates.",
+        sourceRefs: refs,
+      }),
+    ];
+  }
+
+  return [
+    governanceWarning({
+      code: `prompt-quality-status-evidence-${evidence.outcome}`,
+      message:
+        evidence.message ??
+        `Quality-status evidence reported ${evidence.outcome} verification for the target.`,
+      sourceRefs: refs,
+    }),
+  ];
+}
+
+function qualityStatusEvidenceSourceRefs(
+  evidence: PromptArtifactQualityStatusEvidence,
+): string[] {
+  return unique([
+    evidence.evidenceId,
+    ...evidence.targetRefs,
+    ...(evidence.sourceRefs ?? []),
+    ...(evidence.bundleRefs ?? []),
+    ...(evidence.verifiedBundleRefs ?? []),
+    ...(evidence.gateRefs ?? []),
+    ...(evidence.verifiedGateRefs ?? []),
+  ]);
 }
 
 function scoreVerificationSurface(
@@ -1473,7 +1630,11 @@ export function evaluatePromptArtifactQuality(
     scoreCorridorContractCoverage(input.artifact, input.sources),
     scoreCheckpointObservability(input.artifact, input.sources),
     scoreTraversalGrounding(input.artifact, input.sources),
-    scoreGovernanceClosure(input.artifact, input.sources),
+    scoreGovernanceClosure(
+      input.artifact,
+      input.sources,
+      input.qualityStatusEvidence,
+    ),
     scoreVerificationSurface(input.artifact, input.sources),
     scoreContentConsistency(validation),
   ].map((item) => applyUseCaseQualityProfile(item, profile));

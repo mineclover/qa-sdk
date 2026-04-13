@@ -67,6 +67,7 @@ import {
   evaluatePromptArtifactQuality,
   type PromptArtifact,
   type PromptArtifactKind,
+  type PromptArtifactQualityStatusEvidence,
   type PromptArtifactUseCase,
   PROMPT_ARTIFACT_KINDS,
   PROMPT_ARTIFACT_USE_CASES,
@@ -560,6 +561,110 @@ function qualityStatusSnapshotWarningCodes(
   evidence: QualityStatusSnapshotEvidence,
 ): string[] {
   return uniqueCliValues(evidence.warnings.map((warning) => warning.code));
+}
+
+function promptQualityStatusEvidenceFromArtifactExtraction(
+  evidence: RelatedQualityStatusEvidence,
+): PromptArtifactQualityStatusEvidence[] {
+  return evidence.matches.map((match) => {
+    const summary: QualityStatusRecordSourceSummary =
+      evidence.snapshotEvidence.recordSummaries.get(qualityStatusRecordKey(match.record)) ??
+      match.summary;
+    const snapshot = summary.qualityExportSnapshot;
+    const warning = summary.qualityExportWarning;
+    const outcome = qualityStatusPromptEvidenceOutcome(summary);
+    const verifiedBundleRefs = snapshot
+      ? snapshot.bundles
+          .filter((bundle) => qualityStatusBundleVerified(bundle))
+          .map((bundle) => bundle.bundleId)
+      : [];
+    return {
+      evidenceId: `quality-status:${match.record.artifactId}`,
+      outcome,
+      verifiesTarget: qualityStatusMatchVerifiesTarget(match),
+      targetRefs: uniqueCliValues([
+        ...summary.matchRefs,
+        ...summary.verifiesRefs,
+        ...summary.materializesOutputRefs,
+      ]),
+      sourceRefs: uniqueCliValues([
+        match.record.artifactRef,
+        match.record.outputPath,
+        snapshot?.sourcePath,
+        warning?.resolvedPath,
+      ].filter((value): value is string => Boolean(value))),
+      bundleRefs: snapshot?.bundleIds ?? [],
+      verifiedBundleRefs,
+      verifiedGateCount: snapshot?.totals.verifiedGates,
+      totalGateCount: snapshot?.totals.totalGates,
+      generatedAt: snapshot?.generatedAt,
+      message: qualityStatusPromptEvidenceMessage(summary, outcome),
+    };
+  });
+}
+
+function promptQualityStatusEvidenceFromArtifactSource(
+  source: ArtifactExtractionSource | undefined,
+  evidence: RelatedQualityStatusEvidence,
+): PromptArtifactQualityStatusEvidence[] | undefined {
+  if (!source) return undefined;
+  return promptQualityStatusEvidenceFromArtifactExtraction(evidence);
+}
+
+function qualityStatusPromptEvidenceOutcome(
+  summary: QualityStatusRecordSourceSummary,
+): PromptArtifactQualityStatusEvidence["outcome"] {
+  if (summary.qualityExportWarning) {
+    return summary.qualityExportWarning.code === "quality-status-snapshot-missing"
+      ? "incomplete"
+      : "invalid";
+  }
+  const snapshot = summary.qualityExportSnapshot;
+  if (!snapshot || snapshot.bundles.length === 0) return "incomplete";
+  if (snapshot.bundles.some((bundle) => bundle.bundleState === "stale")) return "stale";
+  if (snapshot.bundles.some((bundle) => bundle.bundleState === "invalid")) return "invalid";
+  if (snapshot.bundles.some((bundle) => qualityStatusBundleFailed(bundle))) return "failed";
+  if (snapshot.bundles.every((bundle) => qualityStatusBundleVerified(bundle))) {
+    return "verified";
+  }
+  return "incomplete";
+}
+
+function qualityStatusPromptEvidenceMessage(
+  summary: QualityStatusRecordSourceSummary,
+  outcome: PromptArtifactQualityStatusEvidence["outcome"],
+): string | undefined {
+  if (summary.qualityExportWarning) return summary.qualityExportWarning.message;
+  const snapshot = summary.qualityExportSnapshot;
+  if (!snapshot) return "Quality-status record did not load a quality export snapshot.";
+  if (outcome === "verified") return undefined;
+  return `Quality-status snapshot ${snapshot.rootId} reported ${outcome} verification.`;
+}
+
+function qualityStatusBundleVerified(
+  bundle: QualityStatusSnapshotBundleEvidence,
+): boolean {
+  const verifiedGates = bundle.verifiedGates ?? 0;
+  const totalGates = bundle.totalGates ?? 0;
+  return bundle.bundleState === "verified" || (totalGates > 0 && verifiedGates >= totalGates);
+}
+
+function qualityStatusBundleFailed(
+  bundle: QualityStatusSnapshotBundleEvidence,
+): boolean {
+  const verifiedGates = bundle.verifiedGates ?? 0;
+  const totalGates = bundle.totalGates ?? 0;
+  return totalGates > 0 && verifiedGates < totalGates;
+}
+
+function qualityStatusMatchVerifiesTarget(
+  match: RelatedQualityStatusRegistryRecordMatch,
+): boolean {
+  return match.summary.matchReasons.some(
+    (reason) =>
+      reason.field === "verifiesRefs" ||
+      (reason.field === "relations" && reason.relationKind === "verifies"),
+  );
 }
 
 async function loadQualityStatusSnapshotEvidence(
@@ -1353,6 +1458,10 @@ async function cmdPromptExtract(rest: string[]): Promise<void> {
     qualityStatusEvidence.matches,
     qualityStatusEvidence.snapshotEvidence,
   );
+  const promptQualityStatusEvidence = promptQualityStatusEvidenceFromArtifactSource(
+    artifactSource,
+    qualityStatusEvidence,
+  );
   await maybePersistGovernanceEvidence(flags, extractionWithQuality);
   const artifacts = kind === "all"
     ? generatePromptArtifacts({ ...extractionWithQuality, useCase })
@@ -1363,6 +1472,7 @@ async function cmdPromptExtract(rest: string[]): Promise<void> {
       artifact,
       workArea: extractionWithQuality.workArea,
       sources: extractionWithQuality.sources,
+      qualityStatusEvidence: promptQualityStatusEvidence,
     }),
   }));
   const outputs = await materializePromptArtifacts({
@@ -1500,6 +1610,10 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
     qualityStatusEvidence.matches,
     qualityStatusEvidence.snapshotEvidence,
   );
+  const promptQualityStatusEvidence = promptQualityStatusEvidenceFromArtifactSource(
+    artifactSource,
+    qualityStatusEvidence,
+  );
   await maybePersistGovernanceEvidence(flags, extractionWithQuality);
   const workArea = {
     ...extractionWithQuality.workArea,
@@ -1518,6 +1632,7 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
       artifact,
       workArea,
       sources: extractionWithQuality.sources,
+      qualityStatusEvidence: promptQualityStatusEvidence,
     }),
   }));
   const outputs = await materializePromptArtifacts({
@@ -1718,6 +1833,8 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
       ),
       qualityStatusEvidence.snapshotEvidence,
     );
+    const promptQualityStatusEvidence =
+      promptQualityStatusEvidenceFromArtifactExtraction(qualityStatusEvidence);
     await maybePersistGovernanceEvidence(flags, extractionWithQuality);
     const artifacts = kind === "all"
       ? generatePromptArtifacts({ ...extractionWithQuality, useCase })
@@ -1728,6 +1845,7 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
         artifact,
         workArea: extractionWithQuality.workArea,
         sources: extractionWithQuality.sources,
+        qualityStatusEvidence: promptQualityStatusEvidence,
       }),
     }));
     const outputs = await materializePromptArtifacts({
@@ -1844,6 +1962,8 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
     ),
     qualityStatusEvidence.snapshotEvidence,
   );
+  const promptQualityStatusEvidence =
+    promptQualityStatusEvidenceFromArtifactExtraction(qualityStatusEvidence);
   const workArea = {
     ...extractionWithQuality.workArea,
     workAreaId: `artifact:${artifactRef}`,
@@ -1869,6 +1989,7 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
       artifact,
       workArea,
       sources: extractionWithQuality.sources,
+      qualityStatusEvidence: promptQualityStatusEvidence,
     }),
   }));
   const fallbackSource = artifactFallbackSource({

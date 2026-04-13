@@ -9,6 +9,7 @@ after each iteration and it's included in prompts for context.
 
 - Artifact registry sidecar evidence: keep direct registry hit/miss routing unchanged, then use `listArtifacts()` to attach related records as additive source evidence and JSON summaries.
 - Quality-status snapshot loading: treat `outputPath` JSON as additive closure evidence; valid snapshots become governance-run source refs, while missing/invalid files produce structured JSON warnings and extraction continues.
+- Prompt quality sidecar evidence: keep new scoring signals optional on the evaluator input, pass them only from artifact extraction, and use verified evidence as an additive bonus while failed/missing evidence becomes governance warnings.
 
 ---
 
@@ -54,4 +55,28 @@ after each iteration and it's included in prompts for context.
   - Existing fallback source shapes can stay stable by adding snapshot details under `source.qualityStatusRecords` instead of changing `source.kind`.
   - Prompt quality closure distinguishes synthetic `:definition-context` runs from real governance evidence, so snapshot-derived runs should use a non-synthetic run id.
   - Missing files are now a meaningful warning path whenever a matched quality record has `outputPath`.
+---
+
+## 2026-04-13 - US-003
+- Added optional `PromptArtifactQualityStatusEvidence` input to prompt quality evaluation and wired artifact extraction to pass matched quality-status evidence into `governance_closure` scoring.
+- Made verified target evidence with verified bundles/gates improve governance closure additively, while missing, failed, stale, invalid, or incomplete evidence emits governance warnings and does not silently improve the score.
+- Preserved non-artifact prompt extraction behavior by only passing the new evidence from `extract-artifact` or hidden artifact-source fallback context.
+- Updated programming artifact ontology system/CLI/plan/todo/development guide docs and prompt artifact generation behavior docs.
+- Verification: operational-ontology typecheck/test/build passed; CLI typecheck/build and targeted ontology CLI tests passed; `def sync` and `def validate` passed; full CLI test remains blocked by pre-existing sandbox-sensitive DKG SQLite/local listener failures.
+- Files changed:
+  - `packages/operational-ontology/src/internal/prompt-artifact-core.ts`
+  - `packages/operational-ontology/src/prompt-artifacts.ts`
+  - `packages/operational-ontology/src/prompt-artifacts.test.ts`
+  - `packages/cli/src/commands/ontology.ts`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-system.spec.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-cli.spec.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-plan.plan.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-todo.todo.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-development-guide.spec.md`
+  - `docs/specs/operational-ontology/operational-ontology-prompt-artifact-generation.spec.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - `evaluatePromptArtifactQuality()` can remain backward compatible by treating absent `qualityStatusEvidence` differently from an explicitly empty evidence array.
+  - Artifact extraction fallback can be distinguished from direct `prompt extract` / `extract-file` calls by the hidden `artifact-source` flag, which is the right place to preserve old non-artifact scoring behavior.
+  - The existing CLI full test suite still has unrelated sandbox blockers: DKG SQLite state path setup and `127.0.0.1` listener permission in audit forwarding.
 ---

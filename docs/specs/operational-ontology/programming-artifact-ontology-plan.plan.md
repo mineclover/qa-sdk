@@ -21,7 +21,7 @@ def:
 
 ## 현재 목표
 
-현재 구현은 `programming-artifact-ontology` pack schema, artifact kind/relation vocabulary, in-memory registry store, `ArtifactRegistryPromptArtifactContextProvider`, `extract-artifact --artifact-registry` 우선 조회, 관련 `quality-status` record sidecar discovery, quality export JSON snapshot 로딩, `extract-artifact --json` fallback source 구조화, codegen/quality export/deployment output/prompt artifact/build output registry append 초안까지 열린 단계다. 다음 목표는 JSON snapshot만으로 부족한 경우 quality-ledger lookup을 별도 story로 붙일지 판단하는 것이다.
+현재 구현은 `programming-artifact-ontology` pack schema, artifact kind/relation vocabulary, in-memory registry store, `ArtifactRegistryPromptArtifactContextProvider`, `extract-artifact --artifact-registry` 우선 조회, 관련 `quality-status` record sidecar discovery, quality export JSON snapshot 로딩, prompt quality `governance_closure` evidence 반영, `extract-artifact --json` fallback source 구조화, codegen/quality export/deployment output/prompt artifact/build output registry append 초안까지 열린 단계다. 다음 목표는 JSON snapshot만으로 부족한 경우 quality-ledger lookup이나 freshness SLA를 별도 story로 붙일지 판단하는 것이다.
 
 ## 장기 목표
 
@@ -46,8 +46,8 @@ programming/artifact ontology는 별도 pack 또는 plugin으로 관리한다. �
 7. Governance closure 연결
    artifact extraction 결과를 registry의 관련 `quality-status` record와 연결해 synthetic evidence 의존도를 낮춘다.
 8. Quality payload verdict 연결
-   quality-status JSON payload의 bundle/gate 상태를 governance verdict와 직접 연결한다. 현재 단계는 `outputPath` JSON snapshot 기반으로 완료됐고, ledger lookup은 후속 확장으로 남긴다.
+   quality-status JSON payload의 bundle/gate 상태를 governance verdict와 prompt quality closure에 직접 연결한다. 현재 단계는 `outputPath` JSON snapshot 기반으로 완료됐고, ledger lookup과 freshness SLA는 후속 확장으로 남긴다.
 
 ## 다음 세션 기준
 
-다음 세션은 `programming-artifact-ontology-development-guide`의 컨텍스트 확인 순서를 먼저 따른다. 실행 목표는 `programming-artifact-ontology-todo`의 미완료 항목 중 quality-ledger lookup 또는 registry allocation lifecycle 연동 여부를 선택한다.
+다음 세션은 `programming-artifact-ontology-development-guide`의 컨텍스트 확인 순서를 먼저 따른다. 실행 목표는 `programming-artifact-ontology-todo`의 미완료 항목 중 quality-ledger lookup, quality-status freshness SLA, 또는 registry allocation lifecycle 연동 여부를 선택한다.

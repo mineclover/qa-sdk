@@ -266,6 +266,218 @@ describe("prompt artifact generator", () => {
     expect(quality.recommendedManagementActions).toEqual([]);
   });
 
+  it("uses verified quality-status evidence as an additive governance closure signal", () => {
+    const syntheticSources = {
+      ...richSources,
+      governanceRuns: [
+        {
+          ...richSources.governanceRuns[0]!,
+          runId: "governance:artifact:managed-prompt:definition-context",
+        },
+      ],
+    };
+    const artifact = operationalOntologyPromptArtifactPlane.generatePromptArtifact({
+      kind: "code_editing_rules",
+      useCase: "feature_modification",
+      workArea,
+      sources: syntheticSources,
+    });
+
+    const withoutEvidence =
+      operationalOntologyPromptArtifactPlane.evaluatePromptArtifactQuality({
+        artifact,
+        workArea,
+        sources: syntheticSources,
+      });
+    const withEvidence =
+      operationalOntologyPromptArtifactPlane.evaluatePromptArtifactQuality({
+        artifact,
+        workArea,
+        sources: syntheticSources,
+        qualityStatusEvidence: [
+          {
+            evidenceId: "quality-status:managed-prompt",
+            outcome: "verified",
+            verifiesTarget: true,
+            targetRefs: [artifact.workAreaId],
+            sourceRefs: ["artifacts/quality-status-managed-prompt.json"],
+            verifiedBundleRefs: ["quality-bundle:managed-prompt"],
+            verifiedGateCount: 2,
+            totalGateCount: 2,
+          },
+        ],
+      });
+
+    const withoutGovernance = withoutEvidence.metrics.find(
+      (item) => item.dimension === "governance_closure",
+    );
+    const withGovernance = withEvidence.metrics.find(
+      (item) => item.dimension === "governance_closure",
+    );
+
+    expect(withoutEvidence.grade).toBe("ready");
+    expect(withoutGovernance?.score).toBe(80);
+    expect(withoutEvidence.recommendedManagementActions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "close_governance_evidence" }),
+      ]),
+    );
+    expect(withEvidence.grade).toBe("ready");
+    expect(withEvidence.score).toBeGreaterThan(withoutEvidence.score);
+    expect(withGovernance?.score).toBe(100);
+    expect(withEvidence.recommendedManagementActions).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "close_governance_evidence" }),
+      ]),
+    );
+  });
+
+  it("keeps usable and degraded bands while verified quality-status evidence improves governance closure", () => {
+    const syntheticRun = {
+      ...richSources.governanceRuns[0]!,
+      runId: "governance:artifact:partial-prompt:definition-context",
+    };
+    const cases = [
+      {
+        expectedGrade: "usable",
+        sources: {
+          traversals: richSources.traversals,
+          blueprints: richSources.blueprints,
+          governanceRuns: [syntheticRun],
+        },
+      },
+      {
+        expectedGrade: "degraded",
+        sources: {
+          blueprints: richSources.blueprints,
+          governanceRuns: [syntheticRun],
+        },
+      },
+    ] as const;
+
+    for (const scenario of cases) {
+      const artifact = operationalOntologyPromptArtifactPlane.generatePromptArtifact({
+        kind: "code_editing_rules",
+        useCase: "feature_modification",
+        workArea,
+        sources: scenario.sources,
+      });
+      const withoutEvidence =
+        operationalOntologyPromptArtifactPlane.evaluatePromptArtifactQuality({
+          artifact,
+          workArea,
+          sources: scenario.sources,
+        });
+      const withEvidence =
+        operationalOntologyPromptArtifactPlane.evaluatePromptArtifactQuality({
+          artifact,
+          workArea,
+          sources: scenario.sources,
+          qualityStatusEvidence: [
+            {
+              evidenceId: `quality-status:${scenario.expectedGrade}`,
+              outcome: "verified",
+              verifiesTarget: true,
+              targetRefs: [artifact.workAreaId],
+              verifiedBundleRefs: [`quality-bundle:${scenario.expectedGrade}`],
+            },
+          ],
+        });
+
+      expect(withoutEvidence.grade).toBe(scenario.expectedGrade);
+      expect(withEvidence.grade).toBe(scenario.expectedGrade);
+      expect(withEvidence.score).toBeGreaterThan(withoutEvidence.score);
+    }
+  });
+
+  it("warns instead of improving governance closure for failed stale invalid or incomplete quality-status evidence", () => {
+    const syntheticSources = {
+      ...richSources,
+      governanceRuns: [
+        {
+          ...richSources.governanceRuns[0]!,
+          runId: "governance:artifact:warning-prompt:definition-context",
+        },
+      ],
+    };
+    const artifact = operationalOntologyPromptArtifactPlane.generatePromptArtifact({
+      kind: "code_editing_rules",
+      useCase: "feature_modification",
+      workArea,
+      sources: syntheticSources,
+    });
+
+    for (const outcome of ["failed", "stale", "invalid", "incomplete"] as const) {
+      const quality = operationalOntologyPromptArtifactPlane.evaluatePromptArtifactQuality({
+        artifact,
+        workArea,
+        sources: syntheticSources,
+        qualityStatusEvidence: [
+          {
+            evidenceId: `quality-status:${outcome}`,
+            outcome,
+            verifiesTarget: true,
+            targetRefs: [artifact.workAreaId],
+            sourceRefs: [`artifacts/quality-status-${outcome}.json`],
+            message: `Quality status is ${outcome}.`,
+          },
+        ],
+      });
+      const governance = quality.metrics.find(
+        (item) => item.dimension === "governance_closure",
+      );
+
+      expect(governance?.score).toBe(80);
+      expect(quality.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            level: "warning",
+            code: `prompt-quality-status-evidence-${outcome}`,
+          }),
+        ]),
+      );
+    }
+  });
+
+  it("caps governance closure when artifact extraction expected quality-status evidence but none was found", () => {
+    const artifact = operationalOntologyPromptArtifactPlane.generatePromptArtifact({
+      kind: "code_editing_rules",
+      useCase: "feature_modification",
+      workArea,
+      sources: richSources,
+    });
+    const withoutExpectedEvidence =
+      operationalOntologyPromptArtifactPlane.evaluatePromptArtifactQuality({
+        artifact,
+        workArea,
+        sources: richSources,
+      });
+    const withMissingEvidence =
+      operationalOntologyPromptArtifactPlane.evaluatePromptArtifactQuality({
+        artifact,
+        workArea,
+        sources: richSources,
+        qualityStatusEvidence: [],
+      });
+
+    const withoutGovernance = withoutExpectedEvidence.metrics.find(
+      (item) => item.dimension === "governance_closure",
+    );
+    const withGovernance = withMissingEvidence.metrics.find(
+      (item) => item.dimension === "governance_closure",
+    );
+
+    expect(withoutGovernance?.score).toBe(100);
+    expect(withGovernance?.score).toBe(75);
+    expect(withMissingEvidence.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "prompt-quality-status-evidence-missing",
+        }),
+      ]),
+    );
+  });
+
   it("separates context collection instructions by use case", () => {
     const testArtifact = operationalOntologyPromptArtifactPlane.generatePromptArtifact({
       kind: "self_reflection",
