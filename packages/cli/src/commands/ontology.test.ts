@@ -1,4 +1,4 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -14,6 +14,8 @@ describe("ontology CLI", () => {
     expect(USAGE).toContain("qa-sdk ontology prompt extract-file");
     expect(USAGE).toContain("qa-sdk ontology prompt extract-permission");
     expect(USAGE).toContain("qa-sdk ontology prompt extract-artifact");
+    expect(USAGE).toContain("qa-sdk ontology artifact registry validate");
+    expect(USAGE).toContain("qa-sdk ontology artifact registry append");
     expect(USAGE).toContain("qa-sdk ontology snapshot ingest");
     expect(USAGE).toContain("qa-sdk ontology corridor list");
     expect(USAGE).toContain("qa-sdk ontology checkpoint list");
@@ -138,6 +140,7 @@ describe("ontology CLI", () => {
         kind: string;
         registry: { status: string; providerId: string; recordCount: number };
         warnings: string[];
+        qualitySignal: { code: string; grade: string };
       };
     };
 
@@ -149,6 +152,10 @@ describe("ontology CLI", () => {
         recordCount: 1,
       },
       warnings: [],
+      qualitySignal: {
+        code: "artifact-registry-hit",
+        grade: "ready",
+      },
     });
   });
 
@@ -176,6 +183,12 @@ describe("ontology CLI", () => {
         fallback?: { kind: string; target: string };
         warnings: string[];
         recommendedManagementActions: string[];
+        qualitySignal: {
+          code: string;
+          grade: string;
+          warning?: string;
+          recommendedManagementActions: string[];
+        };
       };
     };
 
@@ -190,12 +203,151 @@ describe("ontology CLI", () => {
         target: "unmanaged-artifact",
       },
       recommendedManagementActions: ["create_programming_artifact_registry_record"],
+      qualitySignal: {
+        code: "artifact-search-fallback",
+        grade: "degraded",
+        recommendedManagementActions: ["create_programming_artifact_registry_record"],
+      },
     });
+    expect(parsed.source.qualitySignal.warning).toContain("free-string search");
     expect(parsed.source.warnings).toEqual([
       "artifact-registry-miss",
       "artifact-search-fallback",
     ]);
   }, 10_000);
+
+  it("prompt extract-artifact materializes prompt artifacts and appends registry records", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-prompt-output-"));
+    const outputPath = join(dir, "self-reflection.md");
+    const registryPath = join(dir, "programming-artifacts.json");
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--output",
+        outputPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      outputs: Array<{ artifactId: string; kind: string; outputPath: string }>;
+    };
+    const promptContent = await readFile(outputPath, "utf8");
+    const registry = JSON.parse(await readFile(registryPath, "utf8")) as {
+      artifacts: Array<{
+        kind: string;
+        artifactRef: string;
+        outputPath: string;
+        producedByRef?: string;
+        materializesOutputRefs?: string[];
+      }>;
+    };
+
+    expect(parsed.outputs).toEqual([
+      {
+        artifactId: "prompt-artifact:artifact:unmanaged-artifact:self_reflection",
+        kind: "self_reflection",
+        outputPath,
+      },
+    ]);
+    expect(promptContent).toContain("<self_reflection>");
+    expect(registry.artifacts).toHaveLength(1);
+    expect(registry.artifacts[0]).toMatchObject({
+      kind: "prompt-artifact",
+      artifactRef: outputPath,
+      outputPath,
+      producedByRef: "qa-sdk ontology prompt extract-artifact unmanaged-artifact",
+    });
+    expect(registry.artifacts[0]!.materializesOutputRefs).toEqual(
+      expect.arrayContaining([
+        "prompt-artifact:artifact:unmanaged-artifact:self_reflection",
+        "work-area:artifact:unmanaged-artifact",
+        "unmanaged-artifact",
+      ]),
+    );
+  }, 10_000);
+
+  it("artifact registry append/list/validate supports build records", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-registry-cli-"));
+    const registryPath = join(dir, "programming-artifacts.json");
+
+    const appendOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "artifact.registry.append",
+        "--output",
+        registryPath,
+        "--kind",
+        "build",
+        "--artifact-ref",
+        "packages/cli/dist/index.js",
+        "--produced-by",
+        "pnpm --filter @qa-sdk/cli build",
+        "--derived-from",
+        "packages/cli/src/index.ts,packages/cli/package.json",
+        "--owner-definition",
+        "programming-artifact-ontology-cli",
+        "--materializes-output",
+        "@qa-sdk/cli",
+        "--json",
+      ]);
+    });
+    const append = JSON.parse(appendOutput.stdout) as {
+      record: { kind: string; artifactRef: string; producedByRef?: string };
+      recordCount: number;
+    };
+
+    expect(append.record).toMatchObject({
+      kind: "build",
+      artifactRef: "packages/cli/dist/index.js",
+      producedByRef: "pnpm --filter @qa-sdk/cli build",
+    });
+    expect(append.recordCount).toBe(1);
+
+    const listOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "artifact.registry.list",
+        "--input",
+        registryPath,
+        "--kind",
+        "build",
+        "--json",
+      ]);
+    });
+    const listed = JSON.parse(listOutput.stdout) as {
+      artifacts: Array<{ kind: string; artifactRef: string }>;
+    };
+    expect(listed.artifacts).toEqual([
+      expect.objectContaining({
+        kind: "build",
+        artifactRef: "packages/cli/dist/index.js",
+      }),
+    ]);
+
+    const validateOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "artifact.registry.validate",
+        "--input",
+        registryPath,
+        "--json",
+      ]);
+    });
+    const validation = JSON.parse(validateOutput.stdout) as {
+      valid: boolean;
+      artifactCount: number;
+      errors: unknown[];
+    };
+    expect(validation).toMatchObject({
+      valid: true,
+      artifactCount: 1,
+      errors: [],
+    });
+  });
 
   it("event ingest 후 snapshot list/show를 수행한다", async () => {
     const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-event-"));

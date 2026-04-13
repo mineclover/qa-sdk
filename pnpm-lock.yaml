@@ -1099,6 +1099,9 @@ importers:
       hono:
         specifier: ^4.12.7
         version: 4.12.7
+      operational-ontology:
+        specifier: workspace:*
+        version: link:../operational-ontology
       zod:
         specifier: ^3.23.0
         version: 3.25.76

@@ -30,6 +30,7 @@ import { createServiceProfileAdapter } from "../src/adapters/service-profile.js"
 import { createLocalProvider, type LocalProviderOptions } from "../src/providers/local.js";
 import { registerProvider, getProvider } from "../src/providers/registry.js";
 import { createPulumiDeployFn } from "../src/providers/pulumi-deploy.js";
+import { writeDeploymentOutputArtifactRegistryRecord } from "../src/post-deploy/artifact-registry.js";
 import type {
   RegistryAdapter,
   IngestAdapter,
@@ -39,13 +40,52 @@ import type { DeployContext, DeployHistoryEntry } from "../src/core/types.js";
 
 // --- 설정 ---
 const DRY_RUN = process.argv.includes("--dry-run");
-const positionalArgs = process.argv.slice(2).filter(a => !a.startsWith("--"));
+const { positional: positionalArgs, flags } = parseScriptArgs(process.argv.slice(2));
 const SERVICE = positionalArgs[0] || "ingest-server";
 const ENV = positionalArgs[1] || "dev";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CONFIG_FILE = positionalArgs[2] || `${ENV}.json`;
 const CONFIG_PATH = resolve(__dirname, `../config/${CONFIG_FILE}`);
 const PROFILE_DIR = resolve(homedir(), ".qa-sdk");
+const ARTIFACT_REGISTRY = flags["artifact-registry"];
+
+function parseScriptArgs(args: readonly string[]): {
+  positional: string[];
+  flags: Record<string, string | undefined>;
+} {
+  const positional: string[] = [];
+  const parsedFlags: Record<string, string | undefined> = {};
+  const booleanFlags = new Set(["dry-run", "sync"]);
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]!;
+    if (!arg.startsWith("--")) {
+      positional.push(arg);
+      continue;
+    }
+
+    const [key, inlineValue] = arg.slice(2).split("=", 2);
+    if (booleanFlags.has(key)) {
+      parsedFlags[key] = inlineValue ?? "true";
+      continue;
+    }
+
+    if (inlineValue !== undefined) {
+      parsedFlags[key] = inlineValue;
+      continue;
+    }
+
+    const next = args[index + 1];
+    if (next && !next.startsWith("--")) {
+      parsedFlags[key] = next;
+      index += 1;
+    } else {
+      parsedFlags[key] = "true";
+    }
+  }
+
+  return { positional, flags: parsedFlags };
+}
 
 async function getGitSha(): Promise<string> {
   try {
@@ -188,6 +228,24 @@ async function main() {
           console.log(`[version] ${gitSha.slice(0, 8)} (초기 배포)`);
         }
       } catch { /* 버전 기록 실패 무시 */ }
+    }
+
+    if (result.success && ARTIFACT_REGISTRY) {
+      try {
+        const record = await writeDeploymentOutputArtifactRegistryRecord({
+          artifactRegistry: ARTIFACT_REGISTRY,
+          service: SERVICE,
+          env: ENV,
+          provider: "local",
+          configPath: CONFIG_PATH,
+          result,
+        });
+        if (record) {
+          console.log(`[artifact-registry] ${record.artifactId} -> ${ARTIFACT_REGISTRY}`);
+        }
+      } catch (err) {
+        console.warn(`[artifact-registry] 기록 실패: ${err}`);
+      }
     }
   }
 

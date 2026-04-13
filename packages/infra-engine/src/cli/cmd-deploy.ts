@@ -14,6 +14,9 @@ async function deployAll(ctx: CommandContext): Promise<void> {
   const env = ctx.args.service ?? "dev"; // --all 모드에서 첫 위치 인자가 env
   validateId(env, "env");
   const continueOnError = !!ctx.options.continueOnError;
+  const artifactRegistry = typeof ctx.options.artifactRegistry === "string"
+    ? ctx.options.artifactRegistry
+    : undefined;
   const configPath = resolve(configDir, `${env}.json`);
   assertPathContainment(configPath, configDir);
   let config: { services: Record<string, unknown> };
@@ -35,7 +38,14 @@ async function deployAll(ctx: CommandContext): Promise<void> {
     try {
       const { execa } = await import("execa");
       const scriptsDir = resolve(__dirname, "../../scripts");
-      await execa("pnpm", ["exec", "tsx", resolve(scriptsDir, "deploy-local.ts"), svc, env], {
+      await execa("pnpm", [
+        "exec",
+        "tsx",
+        resolve(scriptsDir, "deploy-local.ts"),
+        svc,
+        env,
+        ...(artifactRegistry ? ["--artifact-registry", artifactRegistry] : []),
+      ], {
         stdio: "inherit",
         env: process.env,
       });
@@ -71,6 +81,9 @@ async function deployCloudflare(ctx: CommandContext): Promise<void> {
   const configFile = configArg?.endsWith(".json") ? configArg : "cloudflare-prod.json";
   const configPath = resolve(configDir, configFile);
   const dryRun = !!ctx.options.dryRun;
+  const artifactRegistry = typeof ctx.options.artifactRegistry === "string"
+    ? ctx.options.artifactRegistry
+    : undefined;
 
   const { createPipeline } = await import("../core/pipeline.js");
   const { createConfigStage } = await import("../config/config-stage.js");
@@ -191,6 +204,25 @@ async function deployCloudflare(ctx: CommandContext): Promise<void> {
           console.log(`[endpoint-feedback] ${service}: ${result.endpoint}${current ? ` (이전: ${current})` : " (신규)"}`);
         }
       } catch (err) { console.warn(`[endpoint-feedback] 실패: ${err}`); }
+    }
+
+    if (artifactRegistry) {
+      try {
+        const { writeDeploymentOutputArtifactRegistryRecord } = await import("../post-deploy/artifact-registry.js");
+        const record = await writeDeploymentOutputArtifactRegistryRecord({
+          artifactRegistry,
+          service,
+          env,
+          provider: "cloudflare",
+          configPath,
+          result,
+        });
+        if (record) {
+          console.log(`[artifact-registry] ${record.artifactId} -> ${artifactRegistry}`);
+        }
+      } catch (err) {
+        console.warn(`[artifact-registry] 기록 실패: ${err}`);
+      }
     }
 
     // --sync 플래그: codegen + cascade 감지

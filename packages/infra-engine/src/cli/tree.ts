@@ -40,6 +40,7 @@ export const INFRA_COMMAND_TREE: CliCommandNode[] = [
       { flag: "--all", type: "boolean", description: "전체 서비스 배포" },
       { flag: "--continue-on-error", type: "boolean", description: "실패 시 계속" },
       { flag: "--sync", type: "boolean", description: "배포 후 codegen + cascade 자동 실행" },
+      { flag: "--artifact-registry", type: "string", description: "배포 산출물 registry JSON 기록" },
     ],
   },
   {

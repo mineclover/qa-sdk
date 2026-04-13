@@ -21,7 +21,7 @@ def:
 
 ## 현재 목표
 
-현재 구현은 `programming-artifact-ontology` pack schema, artifact kind/relation vocabulary, in-memory registry store, `ArtifactRegistryPromptArtifactContextProvider`, `extract-artifact --artifact-registry` 우선 조회, `extract-artifact --json` fallback source 구조화, codegen/quality export registry append 초안까지 열린 단계다. 다음 목표는 build/deployment/prompt artifact 생성 경로를 실제 산출물 파일 write와 연결하고, governance closure를 quality gate 결과와 연결하는 것이다.
+현재 구현은 `programming-artifact-ontology` pack schema, artifact kind/relation vocabulary, in-memory registry store, `ArtifactRegistryPromptArtifactContextProvider`, `extract-artifact --artifact-registry` 우선 조회, `extract-artifact --json` fallback source 구조화, codegen/quality export/deployment output/prompt artifact/build output registry append 초안까지 열린 단계다. 다음 목표는 governance closure를 quality gate 결과에 연결하는 것이다.
 
 ## 장기 목표
 
@@ -40,7 +40,7 @@ programming/artifact ontology는 별도 pack 또는 plugin으로 관리한다. �
 4. CLI provider 연결
    `qa-sdk ontology prompt extract-artifact`가 registry provider를 먼저 조회하고 fallback search는 보조 경로로만 사용한다.
 5. Export write path 연결
-   codegen과 quality export는 `--artifact-registry`로 registry record를 append한다. build output은 아직 CLI-owned export surface가 없어 factory만 공유하고, deployment output과 prompt artifact는 파일/registry로 materialized 되는 경로에서 record를 생성한다.
+   codegen, quality export, infra deploy output, prompt artifact output은 `--artifact-registry`로 registry record를 append한다. build output은 `ontology artifact registry append --kind build`로 실행 결과 path를 명시적으로 등록한다.
 6. Fallback 품질 분리
    registry hit/miss, file/doc fallback, free-string search fallback을 CLI JSON `source`와 quality warning에서 구분한다.
 7. Governance closure 연결

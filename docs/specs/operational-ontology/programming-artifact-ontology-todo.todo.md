@@ -36,10 +36,10 @@ def:
 - [x] codegen/quality export 명령에서 artifact registry record 생성
 - [x] deployment-output, prompt-artifact 생성 경로에서 registry record 생성 대상 여부 결정
 - [x] export write path별 relation 채움 규칙 구현: produced_by, derived_from, verifies, owned_by_definition, materializes_output
-- [ ] build output registry hook 추가: CLI-owned build/export 산출물 경로가 생기면 `kind=build` record 생성 연결
-- [ ] deployment-output registry hook 구현: `infra deploy`/post-deploy output을 `kind=deployment-output` record로 append
-- [ ] prompt-artifact registry hook 구현: prompt artifact가 stdout이 아니라 파일/registry로 materialize될 때 `kind=prompt-artifact` record로 append
-- [ ] artifact ref가 없는 자유 문자열 fallback의 품질 등급을 별도 warning으로 분리
+- [x] build output registry hook 추가: `ontology artifact registry append --kind build`로 build output path를 registry record로 등록
+- [x] deployment-output registry hook 구현: `infra deploy`/post-deploy output을 `kind=deployment-output` record로 append
+- [x] prompt-artifact registry hook 구현: prompt artifact가 stdout이 아니라 파일/registry로 materialize될 때 `kind=prompt-artifact` record로 append
+- [x] artifact ref가 없는 자유 문자열 fallback의 품질 등급을 별도 warning으로 분리
 - [x] `extract-artifact --json`에 registry hit/miss/file/doc/search fallback source를 구조화해 출력
-- [ ] artifact registry JSON validate/list/append CLI 필요 여부 결정
+- [x] artifact registry JSON validate/list/append CLI 필요 여부 결정 및 최소 surface 구현
 - [ ] artifact governance run을 실제 quality gate 결과와 연결

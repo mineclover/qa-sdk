@@ -60,6 +60,7 @@ import {
   generatePromptArtifact,
   generatePromptArtifacts,
   evaluatePromptArtifactQuality,
+  type PromptArtifact,
   type PromptArtifactKind,
   type PromptArtifactUseCase,
   PROMPT_ARTIFACT_KINDS,
@@ -68,9 +69,16 @@ import {
 import {
   ArtifactRegistryPromptArtifactContextProvider,
   InMemoryProgrammingArtifactRegistryStore,
+  PROGRAMMING_ARTIFACT_KINDS,
+  PROGRAMMING_ARTIFACT_RELATION_KINDS,
+  createProgrammingArtifactRegistryRecord,
   type ProgrammingArtifactRegistryRecord,
 } from "operational-ontology/programming-artifacts";
 import { getQaSdkDir } from "../lib/qa-dir.js";
+import {
+  appendProgrammingArtifactRegistryRecord,
+  appendProgrammingArtifactRegistryRecords,
+} from "../lib/programming-artifact-registry.js";
 
 interface PersistedOntologyStoreFile {
   objects: OperationalOntologyObjectRecord[];
@@ -105,12 +113,24 @@ interface ArtifactExtractionSource {
   };
   warnings: readonly string[];
   recommendedManagementActions: readonly string[];
+  qualitySignal: {
+    code: ArtifactExtractionSourceKind;
+    grade: "ready" | "usable" | "degraded";
+    warning?: string;
+    recommendedManagementActions: readonly string[];
+  };
 }
 
 interface LoadedArtifactRegistryProvider {
   provider: ArtifactRegistryPromptArtifactContextProvider;
   registryPath: string;
   recordCount: number;
+}
+
+interface PromptArtifactMaterialization {
+  artifactId: string;
+  kind: PromptArtifactKind;
+  outputPath: string;
 }
 
 const DEFAULT_STORE_FILE = join(getQaSdkDir(), "operational-ontology-store.json");
@@ -178,10 +198,7 @@ async function loadArtifactRegistryProvider(
   const registryPath = flags["artifact-registry"] ?? flags["artifact-registry-file"];
   if (!registryPath) return undefined;
 
-  const payload = await loadJsonFile<
-    ProgrammingArtifactRegistryRecord[] | ProgrammingArtifactRegistryFile
-  >(resolve(registryPath));
-  const records = Array.isArray(payload) ? payload : payload.artifacts ?? [];
+  const records = await loadProgrammingArtifactRegistryRecords(registryPath);
   return {
     provider: new ArtifactRegistryPromptArtifactContextProvider(
       new InMemoryProgrammingArtifactRegistryStore(records),
@@ -189,6 +206,18 @@ async function loadArtifactRegistryProvider(
     registryPath: resolve(registryPath),
     recordCount: records.length,
   };
+}
+
+async function loadProgrammingArtifactRegistryRecords(
+  registryPath: string,
+): Promise<ProgrammingArtifactRegistryRecord[]> {
+  const resolvedPath = resolve(registryPath);
+  const payload = existsSync(resolvedPath)
+    ? await loadJsonFile<
+        ProgrammingArtifactRegistryRecord[] | ProgrammingArtifactRegistryFile
+      >(resolvedPath)
+    : { artifacts: [] };
+  return Array.isArray(payload) ? payload : payload.artifacts ?? [];
 }
 
 async function saveStore(
@@ -306,6 +335,11 @@ function artifactRegistryHitSource(
     },
     warnings: [],
     recommendedManagementActions: [],
+    qualitySignal: {
+      code: "artifact-registry-hit",
+      grade: "ready",
+      recommendedManagementActions: [],
+    },
   };
 }
 
@@ -328,6 +362,9 @@ function artifactFallbackSource(input: {
     ...(input.loadedRegistry ? ["artifact-registry-miss"] : []),
     ...(input.kind === "artifact-search-fallback" ? ["artifact-search-fallback"] : []),
   ];
+  const recommendedManagementActions = input.kind === "artifact-search-fallback"
+    ? ["create_programming_artifact_registry_record"]
+    : [];
   return {
     kind: input.kind,
     registry: registryStatus,
@@ -337,9 +374,15 @@ function artifactFallbackSource(input: {
       ...(input.matchedDocs ? { matchedDocs: input.matchedDocs } : {}),
     },
     warnings,
-    recommendedManagementActions: input.kind === "artifact-search-fallback"
-      ? ["create_programming_artifact_registry_record"]
-      : [],
+    recommendedManagementActions,
+    qualitySignal: {
+      code: input.kind,
+      grade: input.kind === "artifact-search-fallback" ? "degraded" : "usable",
+      warning: input.kind === "artifact-search-fallback"
+        ? "Artifact context was synthesized from free-string search instead of a managed registry record."
+        : undefined,
+      recommendedManagementActions,
+    },
   };
 }
 
@@ -348,6 +391,277 @@ function withArtifactSourceFlag(
   source: ArtifactExtractionSource,
 ): string[] {
   return [...args, "--artifact-source", JSON.stringify(source)];
+}
+
+async function materializePromptArtifacts(input: {
+  flags: Record<string, string>;
+  artifacts: readonly PromptArtifact[];
+  producedByRef: string;
+  ownerDefinitionId?: string;
+  materializesOutputRefs?: readonly string[];
+}): Promise<PromptArtifactMaterialization[]> {
+  const output = input.flags["output"];
+  if (!output) return [];
+
+  const outputs = resolvePromptArtifactOutputs(output, input.artifacts);
+  await Promise.all(outputs.map(async ({ artifact, outputPath }) => {
+    await mkdir(dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, artifact.content + "\n", "utf8");
+  }));
+
+  const registryPath = input.flags["artifact-registry"] ?? input.flags["artifact-registry-file"];
+  if (registryPath) {
+    await appendProgrammingArtifactRegistryRecords(
+      registryPath,
+      outputs.map(({ artifact, outputPath }) =>
+        createProgrammingArtifactRegistryRecord({
+          artifactId: `prompt-artifact-${slugCliRef(artifact.artifactId)}`,
+          artifactRef: outputPath,
+          kind: "prompt-artifact",
+          producedByRef: input.producedByRef,
+          derivedFromRefs: artifact.sourceRefs,
+          verifiesRefs: artifact.validation.valid ? [artifact.workAreaId] : [],
+          ownerDefinitionId: input.ownerDefinitionId,
+          materializesOutputRefs: [
+            artifact.artifactId,
+            `work-area:${artifact.workAreaId}`,
+            ...(input.materializesOutputRefs ?? []),
+          ],
+          sourceRefs: artifact.sourceRefs,
+          outputPath,
+          verificationRefs: artifact.validation.valid ? [artifact.artifactId] : [],
+          createdAt: new Date().toISOString(),
+          metadata: {
+            promptArtifactKind: artifact.kind,
+            useCase: artifact.useCase,
+            workAreaId: artifact.workAreaId,
+            validation: artifact.validation,
+          },
+        }),
+      ),
+    );
+  }
+
+  return outputs.map(({ artifact, outputPath }) => ({
+    artifactId: artifact.artifactId,
+    kind: artifact.kind,
+    outputPath,
+  }));
+}
+
+function resolvePromptArtifactOutputs(
+  output: string,
+  artifacts: readonly PromptArtifact[],
+): Array<{ artifact: PromptArtifact; outputPath: string }> {
+  const resolvedOutput = resolve(output);
+  const outputIsDirectory = artifacts.length > 1 || output.endsWith("/");
+  return artifacts.map((artifact) => ({
+    artifact,
+    outputPath: outputIsDirectory
+      ? join(resolvedOutput, `${artifact.kind}.prompt.md`)
+      : resolvedOutput,
+  }));
+}
+
+function slugCliRef(ref: string): string {
+  const slug = ref
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || "unknown";
+}
+
+interface ArtifactRegistryValidationIssue {
+  level: "error" | "warning";
+  code: string;
+  artifactRef?: string;
+  message: string;
+}
+
+function validateProgrammingArtifactRegistryRecords(
+  records: readonly ProgrammingArtifactRegistryRecord[],
+): ArtifactRegistryValidationIssue[] {
+  const issues: ArtifactRegistryValidationIssue[] = [];
+  const seenRefs = new Set<string>();
+  const knownKinds = new Set<string>(PROGRAMMING_ARTIFACT_KINDS);
+  const knownRelationKinds = new Set<string>(PROGRAMMING_ARTIFACT_RELATION_KINDS);
+
+  for (const [index, record] of records.entries()) {
+    const label = record.artifactRef || record.artifactId || `index:${index}`;
+    if (!record.artifactId?.trim()) {
+      issues.push({
+        level: "error",
+        code: "artifact-id-missing",
+        artifactRef: label,
+        message: "artifactId is required",
+      });
+    }
+    if (!record.artifactRef?.trim()) {
+      issues.push({
+        level: "error",
+        code: "artifact-ref-missing",
+        artifactRef: label,
+        message: "artifactRef is required",
+      });
+    } else if (seenRefs.has(record.artifactRef)) {
+      issues.push({
+        level: "warning",
+        code: "artifact-ref-duplicate",
+        artifactRef: record.artifactRef,
+        message: "artifactRef appears more than once",
+      });
+    } else {
+      seenRefs.add(record.artifactRef);
+    }
+    if (!knownKinds.has(record.kind)) {
+      issues.push({
+        level: "error",
+        code: "artifact-kind-unknown",
+        artifactRef: label,
+        message: `Unknown artifact kind "${record.kind}"`,
+      });
+    }
+    for (const relation of record.relations ?? []) {
+      if (!knownRelationKinds.has(relation.kind)) {
+        issues.push({
+          level: "error",
+          code: "artifact-relation-kind-unknown",
+          artifactRef: label,
+          message: `Unknown relation kind "${relation.kind}"`,
+        });
+      }
+      if (!relation.fromRef?.trim() || !relation.toRef?.trim()) {
+        issues.push({
+          level: "error",
+          code: "artifact-relation-endpoint-missing",
+          artifactRef: label,
+          message: `Relation "${relation.kind}" must have fromRef and toRef`,
+        });
+      }
+    }
+  }
+
+  return issues;
+}
+
+function commaValues(value: string | undefined): string[] {
+  return (value ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseOptionalMetadata(value: string | undefined): Record<string, unknown> | undefined {
+  if (!value) return undefined;
+  const parsed = JSON.parse(value) as unknown;
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("--metadata must be a JSON object");
+  }
+  return parsed as Record<string, unknown>;
+}
+
+function createRegistryRecordFromFlags(
+  flags: Record<string, string>,
+): ProgrammingArtifactRegistryRecord {
+  const kind = flags["kind"];
+  if (!kind) throw new Error("--kind is required");
+  return createProgrammingArtifactRegistryRecord({
+    artifactId: flags["artifact-id"],
+    artifactRef: flags["artifact-ref"] ?? flags["ref"] ?? flags["output-path"],
+    kind,
+    producedByRef: flags["produced-by"],
+    derivedFromRefs: commaValues(flags["derived-from"]),
+    verifiesRefs: commaValues(flags["verifies"]),
+    ownerDefinitionId: flags["owner-definition"],
+    materializesOutputRefs: commaValues(flags["materializes-output"]),
+    sourceRefs: commaValues(flags["source-ref"] ?? flags["source-refs"]),
+    outputPath: flags["output-path"],
+    verificationRefs: commaValues(flags["verification-ref"] ?? flags["verification-refs"]),
+    createdAt: flags["created-at"] ?? new Date().toISOString(),
+    metadata: parseOptionalMetadata(flags["metadata"]),
+  });
+}
+
+async function cmdArtifactRegistryValidate(rest: string[]): Promise<void> {
+  const { flags } = parseFlags(rest);
+  const input = flags["input"];
+  if (!input) {
+    console.error("Usage: qa-sdk ontology artifact registry validate --input <file> [--json]");
+    return;
+  }
+
+  const records = await loadProgrammingArtifactRegistryRecords(input);
+  const issues = validateProgrammingArtifactRegistryRecords(records);
+  const errors = issues.filter((issue) => issue.level === "error");
+  const warnings = issues.filter((issue) => issue.level === "warning");
+  const result = {
+    input: resolve(input),
+    valid: errors.length === 0,
+    artifactCount: records.length,
+    errors,
+    warnings,
+  };
+
+  if (flags["json"] === "true") {
+    printJson(result);
+    return;
+  }
+
+  console.log(`${result.valid ? "valid" : "invalid"}: ${result.input}`);
+  console.log(`artifacts: ${records.length}`);
+  console.log(`errors: ${errors.length}`);
+  console.log(`warnings: ${warnings.length}`);
+  for (const issue of issues) {
+    console.log(`  [${issue.level}] ${issue.code}${issue.artifactRef ? ` ${issue.artifactRef}` : ""}: ${issue.message}`);
+  }
+}
+
+async function cmdArtifactRegistryList(rest: string[]): Promise<void> {
+  const { flags } = parseFlags(rest);
+  const input = flags["input"];
+  if (!input) {
+    console.error("Usage: qa-sdk ontology artifact registry list --input <file> [--kind <kind>] [--json]");
+    return;
+  }
+
+  const kind = flags["kind"];
+  const records = (await loadProgrammingArtifactRegistryRecords(input))
+    .filter((record) => !kind || record.kind === kind);
+  if (flags["json"] === "true") {
+    printJson({ input: resolve(input), kind, artifacts: records });
+    return;
+  }
+
+  console.log(`artifacts: ${records.length}`);
+  for (const record of records) {
+    console.log(`${record.kind}  ${record.artifactRef}  ${record.artifactId}`);
+  }
+}
+
+async function cmdArtifactRegistryAppend(rest: string[]): Promise<void> {
+  const { flags } = parseFlags(rest);
+  const output = flags["output"] ?? flags["artifact-registry"];
+  if (!output) {
+    console.error(
+      "Usage: qa-sdk ontology artifact registry append --output <registry.json> (--input <record.json> | --kind <kind> --artifact-ref <ref>) [--json]",
+    );
+    return;
+  }
+
+  const input = flags["input"];
+  const record = input
+    ? await loadJsonFile<ProgrammingArtifactRegistryRecord>(resolve(input))
+    : createRegistryRecordFromFlags(flags);
+  const result = await appendProgrammingArtifactRegistryRecord(output, record);
+
+  if (flags["json"] === "true") {
+    printJson(result);
+    return;
+  }
+
+  console.log(`artifact registry: ${record.artifactId} -> ${result.registryPath}`);
+  console.log(`artifacts: ${result.recordCount}`);
 }
 
 async function defDocWithBody(source: Awaited<ReturnType<typeof createDataSource>>, doc: DefDoc) {
@@ -433,7 +747,7 @@ async function cmdPromptExtract(rest: string[]): Promise<void> {
   const docId = positional[0];
   if (!docId) {
     console.error(
-      "Usage: qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--json] [--local|--server|--scan] [--db <path>]",
+      "Usage: qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--output <file|dir>] [--json] [--local|--server|--scan] [--db <path>]",
     );
     return;
   }
@@ -477,12 +791,20 @@ async function cmdPromptExtract(rest: string[]): Promise<void> {
       sources: extraction.sources,
     }),
   }));
+  const outputs = await materializePromptArtifacts({
+    flags,
+    artifacts,
+    producedByRef: `qa-sdk ontology prompt extract ${docId}`,
+    ownerDefinitionId: docId,
+    materializesOutputRefs: [docId],
+  });
 
   if (flags["json"] === "true") {
     printJson({
       docId,
       useCase,
       source: parseArtifactExtractionSource(flags),
+      outputs,
       workArea: extraction.workArea,
       sourceSummary: {
         corridors: extraction.sources.corridors?.length ?? 0,
@@ -496,6 +818,9 @@ async function cmdPromptExtract(rest: string[]): Promise<void> {
     return;
   }
 
+  for (const output of outputs) {
+    console.log(`output: ${output.outputPath}`);
+  }
   for (const { artifact, quality } of evaluations) {
     console.log(`--- ${artifact.kind} ---`);
     console.log(`artifactId: ${artifact.artifactId}`);
@@ -518,7 +843,7 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
   const filePath = positional[0];
   if (!filePath) {
     console.error(
-      "Usage: qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--json] [--local|--server] [--db <path>]",
+      "Usage: qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--output <file|dir>] [--json] [--local|--server] [--db <path>]",
     );
     return;
   }
@@ -598,6 +923,13 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
       sources: extraction.sources,
     }),
   }));
+  const outputs = await materializePromptArtifacts({
+    flags,
+    artifacts,
+    producedByRef: `qa-sdk ontology prompt extract-file ${filePath}`,
+    ownerDefinitionId: docId,
+    materializesOutputRefs: [docId, mapping.codePath],
+  });
 
   if (flags["json"] === "true") {
     printJson({
@@ -606,6 +938,7 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
       contextDocId: docId,
       useCase,
       source: parseArtifactExtractionSource(flags),
+      outputs,
       workArea,
       artifacts: evaluations,
     });
@@ -616,6 +949,9 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
   console.log(`boundary: ${mapping.anchor.docId}`);
   if (docId !== mapping.anchor.docId) {
     console.log(`context: ${docId}`);
+  }
+  for (const output of outputs) {
+    console.log(`output: ${output.outputPath}`);
   }
   for (const { artifact, quality } of evaluations) {
     console.log(`--- ${artifact.kind} ---`);
@@ -639,7 +975,7 @@ async function cmdPromptExtractPermission(rest: string[]): Promise<void> {
   const permissionRef = positional[0];
   if (!permissionRef) {
     console.error(
-      "Usage: qa-sdk ontology prompt extract-permission <permission-ref> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--json] [--local|--server|--scan] [--db <path>]",
+      "Usage: qa-sdk ontology prompt extract-permission <permission-ref> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--output <file|dir>] [--json] [--local|--server|--scan] [--db <path>]",
     );
     return;
   }
@@ -706,11 +1042,19 @@ async function cmdPromptExtractPermission(rest: string[]): Promise<void> {
       sources: extraction.sources,
     }),
   }));
+  const outputs = await materializePromptArtifacts({
+    flags,
+    artifacts,
+    producedByRef: `qa-sdk ontology prompt extract-permission ${permissionRef}`,
+    ownerDefinitionId: "authorization-ontology-system",
+    materializesOutputRefs: ["authorization-ontology-system", permissionRef],
+  });
 
   if (flags["json"] === "true") {
     printJson({
       permissionRef,
       useCase,
+      outputs,
       workArea,
       artifacts: evaluations,
     });
@@ -718,6 +1062,9 @@ async function cmdPromptExtractPermission(rest: string[]): Promise<void> {
   }
 
   console.log(`permission: ${permissionRef}`);
+  for (const output of outputs) {
+    console.log(`output: ${output.outputPath}`);
+  }
   for (const { artifact, quality } of evaluations) {
     console.log(`--- ${artifact.kind} ---`);
     console.log(`artifactId: ${artifact.artifactId}`);
@@ -740,7 +1087,7 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
   const artifactRef = positional[0];
   if (!artifactRef) {
     console.error(
-      "Usage: qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--json] [--local|--server|--scan] [--db <path>]",
+      "Usage: qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--output <file|dir>] [--json] [--local|--server|--scan] [--db <path>]",
     );
     return;
   }
@@ -769,6 +1116,12 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
         sources: registryExtraction.sources,
       }),
     }));
+    const outputs = await materializePromptArtifacts({
+      flags,
+      artifacts,
+      producedByRef: `qa-sdk ontology prompt extract-artifact ${artifactRef}`,
+      materializesOutputRefs: [artifactRef],
+    });
 
     if (flags["json"] === "true") {
       printJson({
@@ -777,6 +1130,7 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
         providerId: loadedRegistry.provider.providerId,
         source: artifactRegistryHitSource(loadedRegistry),
         useCase,
+        outputs,
         workArea: registryExtraction.workArea,
         artifacts: evaluations,
       });
@@ -786,6 +1140,9 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
     console.log(`artifact: ${artifactRef}`);
     if (artifactType) console.log(`artifactType: ${artifactType}`);
     console.log(`provider: ${loadedRegistry.provider.providerId}`);
+    for (const output of outputs) {
+      console.log(`output: ${output.outputPath}`);
+    }
     for (const { artifact, quality } of evaluations) {
       console.log(`--- ${artifact.kind} ---`);
       console.log(`artifactId: ${artifact.artifactId}`);
@@ -878,20 +1235,28 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
       sources: extraction.sources,
     }),
   }));
+  const fallbackSource = artifactFallbackSource({
+    kind: "artifact-search-fallback",
+    fallbackKind: "search",
+    target: query,
+    loadedRegistry,
+    matchedDocs: candidates.map((doc) => doc.docId),
+  });
+  const outputs = await materializePromptArtifacts({
+    flags,
+    artifacts,
+    producedByRef: `qa-sdk ontology prompt extract-artifact ${artifactRef}`,
+    materializesOutputRefs: [artifactRef],
+  });
 
   if (flags["json"] === "true") {
     printJson({
       artifactRef,
       artifactType,
-      source: artifactFallbackSource({
-        kind: "artifact-search-fallback",
-        fallbackKind: "search",
-        target: query,
-        loadedRegistry,
-        matchedDocs: candidates.map((doc) => doc.docId),
-      }),
+      source: fallbackSource,
       matchedDocs: candidates.map((doc) => doc.docId),
       useCase,
+      outputs,
       workArea,
       artifacts: evaluations,
     });
@@ -902,6 +1267,13 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
   if (artifactType) console.log(`artifactType: ${artifactType}`);
   if (candidates.length > 0) {
     console.log(`matchedDocs: ${candidates.map((doc) => doc.docId).join(", ")}`);
+  }
+  if (fallbackSource.qualitySignal.warning) {
+    console.log(`warning: ${fallbackSource.qualitySignal.code} (${fallbackSource.qualitySignal.grade})`);
+    console.log(`action: ${fallbackSource.qualitySignal.recommendedManagementActions.join(", ")}`);
+  }
+  for (const output of outputs) {
+    console.log(`output: ${output.outputPath}`);
   }
   for (const { artifact, quality } of evaluations) {
     console.log(`--- ${artifact.kind} ---`);
@@ -2013,10 +2385,13 @@ export async function cliOntology(args: string[]): Promise<void> {
           "qa-sdk ontology",
           "",
           "  qa-sdk ontology status [--scope <scope> | --snapshot <id>] [--store <file>] [--json] [--table]",
-          "  qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--json]",
-          "  qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--json]",
-          "  qa-sdk ontology prompt extract-permission <permission-ref> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--json]",
-          "  qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--json]",
+          "  qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
+          "  qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
+          "  qa-sdk ontology prompt extract-permission <permission-ref> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
+          "  qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
+          "  qa-sdk ontology artifact registry validate --input <file> [--json]",
+          "  qa-sdk ontology artifact registry list --input <file> [--kind <kind>] [--json]",
+          "  qa-sdk ontology artifact registry append --output <file> (--input <record.json> | --kind <kind> --artifact-ref <ref>) [--json]",
           "  qa-sdk ontology snapshot ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]",
           "  qa-sdk ontology snapshot list [--store <file>] [--scope <scope>] [--json]",
           "  qa-sdk ontology snapshot show <snapshot-id> [--store <file>] [--json]",
@@ -2062,6 +2437,15 @@ export async function cliOntology(args: string[]): Promise<void> {
       return;
     case "prompt.extract-artifact":
       await cmdPromptExtractArtifact(rest);
+      return;
+    case "artifact.registry.validate":
+      await cmdArtifactRegistryValidate(rest);
+      return;
+    case "artifact.registry.list":
+      await cmdArtifactRegistryList(rest);
+      return;
+    case "artifact.registry.append":
+      await cmdArtifactRegistryAppend(rest);
       return;
     case "snapshot.ingest":
       await cmdSnapshotIngest(rest);

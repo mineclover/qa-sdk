@@ -76,6 +76,12 @@ export { runPostDeployCodegen, type CodegenOptions } from "./post-deploy/codegen
 export { findCascadeTargets, executeCascade, type CascadeTarget } from "./post-deploy/cascade.js";
 export { createVersionStore, type VersionStore, type ServiceVersion } from "./post-deploy/version-manager.js";
 export { recordDeployVersion, syncToDefinitionService, type DeployVersion } from "./post-deploy/sync.js";
+export {
+  buildDeploymentOutputArtifactRegistryRecord,
+  writeDeploymentOutputArtifactRegistryRecord,
+  type DeploymentOutputArtifactRecordInput,
+  type DeploymentOutputArtifactRegistryWriteInput,
+} from "./post-deploy/artifact-registry.js";
 
 import { createPipeline } from "./core/pipeline.js";
 import { createConfigStage } from "./config/config-stage.js";

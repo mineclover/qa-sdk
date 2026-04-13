@@ -31,9 +31,26 @@ qa-sdk ontology prompt extract-artifact <artifact-ref> \
   [--use-case <usecase>] \
   [--persist-governance] \
   [--store <file>] \
+  [--output <file|dir>] \
   [--json] \
   [--local|--server|--scan] \
   [--db <path>]
+```
+
+Registry 관리 command도 제공한다.
+
+```bash
+qa-sdk ontology artifact registry validate --input <file> [--json]
+qa-sdk ontology artifact registry list --input <file> [--kind <kind>] [--json]
+qa-sdk ontology artifact registry append --output <file> \
+  (--input <record.json> | --kind <kind> --artifact-ref <ref>) \
+  [--produced-by <command>] \
+  [--derived-from <csv>] \
+  [--verifies <csv>] \
+  [--owner-definition <id>] \
+  [--materializes-output <csv>] \
+  [--output-path <path>] \
+  [--json]
 ```
 
 ## 처리 순서
@@ -108,7 +125,13 @@ qa-sdk ontology prompt extract-artifact <artifact-ref> \
       "matchedDocs": []
     },
     "warnings": ["artifact-registry-miss", "artifact-search-fallback"],
-    "recommendedManagementActions": ["create_programming_artifact_registry_record"]
+    "recommendedManagementActions": ["create_programming_artifact_registry_record"],
+    "qualitySignal": {
+      "code": "artifact-search-fallback",
+      "grade": "degraded",
+      "warning": "Artifact context was synthesized from free-string search instead of a managed registry record.",
+      "recommendedManagementActions": ["create_programming_artifact_registry_record"]
+    }
   }
 }
 ```
@@ -121,6 +144,9 @@ qa-sdk ontology prompt extract-artifact <artifact-ref> \
 qa-sdk codegen --output ./generated --artifact-registry artifacts/programming-artifacts.json
 qa-sdk codegen --data-objects ./bindings.json --output ./generated --artifact-registry artifacts/programming-artifacts.json
 qa-sdk quality export quality-gates-system --output=artifacts/quality-gates-system.json --artifact-registry=artifacts/programming-artifacts.json
+infra deploy order-api prod --provider cloudflare --artifact-registry artifacts/programming-artifacts.json
+qa-sdk ontology prompt extract-artifact dist/index.js --kind self_reflection --output artifacts/prompts/self-reflection.md --artifact-registry artifacts/programming-artifacts.json
+qa-sdk ontology artifact registry append --output artifacts/programming-artifacts.json --kind build --artifact-ref packages/cli/dist/index.js --produced-by "pnpm --filter @qa-sdk/cli build"
 ```
 
 관계 채움 규칙:
@@ -128,7 +154,9 @@ qa-sdk quality export quality-gates-system --output=artifacts/quality-gates-syst
 - codegen generated source: `produced_by=qa-sdk codegen`, `derived_from=catalog/registry/config`, `owned_by_definition=codegen-schema-output`, `materializes_output=apm-codegen-system + codegen-schema-output`.
 - data object codegen: `produced_by=qa-sdk codegen --data-objects`, `derived_from=<bindingsPath>`, `owned_by_definition=data-object-codegen`, `materializes_output=data-object-codegen`.
 - quality status: `produced_by=qa-sdk quality export <rootId>`, `derived_from=<rootId + bundleIds>`, `verifies=<rootId + bundleIds>`, `owned_by_definition=<rootId>`, `materializes_output=<rootId>`.
-- build output: 현재 `@qa-sdk/cli`에는 독립 `build export` surface가 없으므로 `createProgrammingArtifactRegistryRecord({ kind: "build" })` factory만 준비하고, CLI-owned build output path가 생길 때 command hook을 추가한다.
+- deployment output: `produced_by=infra deploy <service> <env> --provider <provider>`, `derived_from=<configPath + service/env refs>`, `verifies=<service + endpoint refs when successful>`, `owned_by_definition=infra-engine-pipeline`, `materializes_output=<service + env + endpoint refs>`.
+- prompt artifact: `produced_by=qa-sdk ontology prompt extract*`, `derived_from=<artifact.sourceRefs>`, `verifies=<workAreaId when valid>`, `owned_by_definition=<source definition when known>`, `materializes_output=<prompt artifact id + work area + source target>`.
+- build output: `ontology artifact registry append --kind build`로 명시적 output path를 registry record로 기록한다. 실제 build 실행은 패키지 스크립트가 소유하고, CLI는 결과물을 registry에 관리 등록한다.
 
 ## 다음 CLI Surface
 
@@ -140,4 +168,4 @@ qa-sdk ontology artifact registry append --input <record.json> --output <registr
 qa-sdk ontology artifact registry list --input <registry.json> [--kind <kind>] [--json]
 ```
 
-위 command들은 아직 구현하지 않는다. 먼저 build/codegen/quality/deployment/prompt artifact 생성 경로가 registry record를 쓰는 최소 write API를 갖춘 뒤 추가한다.
+위 command들은 registry 파일을 직접 조작하는 최소 운영 surface다. 별도 서버 저장소가 생기기 전까지 local JSON registry의 validate/list/append를 담당한다.

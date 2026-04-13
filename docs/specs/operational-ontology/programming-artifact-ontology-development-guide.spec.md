@@ -85,7 +85,7 @@ artifact registry record를 생성할 때는 가능한 한 아래 필드를 채�
 
 필드를 모르면 빈 문자열로 채우지 않는다. 모르는 값은 생략하고, todo에 relation 보강 항목을 남긴다.
 
-현재 concrete write path는 `qa-sdk codegen --artifact-registry <file>`와 `qa-sdk quality export ... --artifact-registry=<file>`이다. `deployment-output`은 `infra deploy` 또는 post-deploy output이 파일/registry에 남는 경로에서 생성 대상이고, `prompt-artifact`는 prompt extraction 결과가 stdout을 넘어 파일/registry 산출물로 materialize될 때 생성 대상이다.
+현재 concrete write path는 `qa-sdk codegen --artifact-registry <file>`, `qa-sdk quality export ... --artifact-registry=<file>`, `infra deploy ... --artifact-registry <file>`, `qa-sdk ontology prompt extract* --output <file|dir> --artifact-registry <file>`, `qa-sdk ontology artifact registry append --kind build ...`이다.
 
 ## Handoff 규칙
 
