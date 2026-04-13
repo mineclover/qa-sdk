@@ -63,10 +63,12 @@ qa-sdk ontology artifact registry append --output <file> \
 4. `ArtifactRegistryPromptArtifactContextProvider`가 `<artifact-ref>`를 `artifactRef`, `artifactId`, `outputPath` 중 하나로 resolve하면 registry 결과를 사용한다.
 5. registry 결과가 있으면 `source.kind: "artifact-registry-hit"`와 `providerId`를 JSON 출력에 포함한다.
 6. registry 결과 유무와 별개로, registry 안의 `quality-status` record가 요청 artifact/definition/work area를 `verifiesRefs`, `materializesOutputRefs`, `sourceRefs`, `outputPath`, `relations`로 가리키면 prompt source evidence에 병합한다.
-7. registry miss이면 기존 fallback으로 내려간다.
-8. `<artifact-ref>`가 `packages/` 또는 `docs/`로 시작하면 `extract-file`에 위임한다.
-9. `<artifact-ref>`가 definition doc id이면 `extract`에 위임한다.
-10. 나머지는 definition candidate search로 synthetic artifact context를 만든다.
+7. matched `quality-status` record에 `outputPath`가 있으면 quality export JSON snapshot을 읽고, bundle/gate/claim summary와 snapshot-derived governance run을 추가한다.
+8. snapshot 파일이 없거나 invalid JSON/shape이면 extraction은 계속 진행하고 `source.qualityStatusRecords.warnings[]`와 `source.warnings[]`에 structured warning을 남긴다.
+9. registry miss이면 기존 fallback으로 내려간다.
+10. `<artifact-ref>`가 `packages/` 또는 `docs/`로 시작하면 `extract-file`에 위임한다.
+11. `<artifact-ref>`가 definition doc id이면 `extract`에 위임한다.
+12. 나머지는 definition candidate search로 synthetic artifact context를 만든다.
 
 related quality matching은 `kind === "quality-status"` record만 대상으로 하며 새 artifact kind, relation kind, registry service, allocation lifecycle을 만들지 않는다. direct artifact lookup은 계속 `artifactRef`, `artifactId`, `outputPath` 기준으로 동작하고, related quality discovery는 그 결과를 보강하는 sidecar 단계다.
 
@@ -131,6 +133,7 @@ related quality matching은 `kind === "quality-status"` record만 대상으로 �
     "recommendedManagementActions": ["create_programming_artifact_registry_record"],
     "qualityStatusRecords": {
       "total": 1,
+      "warnings": [],
       "records": [
         {
           "artifactId": "quality-status-unmanaged-artifact",
@@ -150,7 +153,29 @@ related quality matching은 `kind === "quality-status"` record만 대상으로 �
           "matchReasons": [
             { "field": "verifiesRefs", "ref": "unmanaged-artifact" },
             { "field": "materializesOutputRefs", "ref": "artifact:unmanaged-artifact" }
-          ]
+          ],
+          "qualityExportSnapshot": {
+            "rootId": "programming-artifact-ontology-system",
+            "bundleIds": ["programming-artifact-ontology-provider"],
+            "bundles": [
+              {
+                "bundleId": "programming-artifact-ontology-provider",
+                "bundleState": "verified",
+                "verifiedGates": 2,
+                "totalGates": 2,
+                "claimCount": 4,
+                "verifiedClaimCount": 3
+              }
+            ],
+            "totals": {
+              "verifiedGates": 2,
+              "totalGates": 2,
+              "claimCount": 4,
+              "verifiedClaimCount": 3
+            },
+            "generatedAt": "2026-04-13T00:00:00.000Z",
+            "sourcePath": "artifacts/quality-status-unmanaged-artifact.json"
+          }
         }
       ]
     },
@@ -164,7 +189,11 @@ related quality matching은 `kind === "quality-status"` record만 대상으로 �
 }
 ```
 
-`qualityStatusRecords.total`은 matched quality-status record 수이고, `records[]`는 prompt context에 병합된 품질 record의 구조화 요약이다. registry hit, registry miss, file fallback, definition fallback, search fallback 모두 같은 field를 출력한다. match가 없으면 `total: 0`, `records: []`다.
+`qualityStatusRecords.total`은 matched quality-status record 수이고, `records[]`는 prompt context에 병합된 품질 record의 구조화 요약이다. registry hit, registry miss, file fallback, definition fallback, search fallback 모두 같은 field를 출력한다. match가 없으면 `total: 0`, `records: []`, `warnings: []`다.
+
+`records[].qualityExportSnapshot`은 matched quality record의 `outputPath` JSON이 로드될 때만 붙는 additive metadata다. exact TypeScript shape는 `packages/cli/src/commands/ontology.ts`가 SSOT이며, 공개 JSON에는 root id, bundle ids, per-bundle state/gate/claim counts, aggregate gate/claim counts, generated timestamp, resolved source path만 노출한다. snapshot load 실패는 `records[].qualityExportWarning`과 `qualityStatusRecords.warnings[]`로 구조화하며, warning code는 `quality-status-snapshot-missing`, `quality-status-snapshot-invalid-json`, `quality-status-snapshot-invalid-shape`, `quality-status-snapshot-read-failed` 중 하나다.
+
+Valid snapshot evidence는 prompt source governance evidence에도 추가된다. 생성된 prompt artifact의 `sourceRefs`에는 `governance-run:governance:<quality-artifact-id>:quality-export-snapshot`이 포함될 수 있으며, 이 run은 bundle별 gate pass/fail을 `validation_surface` verdict로 표현한다.
 
 ## Registry Write Path
 

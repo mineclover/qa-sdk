@@ -69,6 +69,7 @@ sources:
 | export command integration | source command spec, produced_by/derived_from/verifies/owned_by_definition/materializes_output mapping, registry write test |
 | governance closure 변경 | production factory spec, quality status source, persisted governance evidence, release verification use case |
 | quality-status discovery 변경 | matcher target refs, JSON `qualityStatusRecords` summary, fallback source preservation, provider/CLI tests |
+| quality export snapshot 로딩 변경 | `outputPath` path resolution, structured warning codes, governance run sourceRefs, valid/missing/invalid CLI tests |
 
 ## Registry Record 표준
 
@@ -94,9 +95,12 @@ artifact registry record를 생성할 때는 가능한 한 아래 필드를 채�
 
 - direct registry hit의 `source.kind`는 계속 `artifact-registry-hit`이어야 한다.
 - miss/file/definition/search fallback의 `source.kind`, `warnings`, `recommendedManagementActions`는 기존 의미를 유지해야 한다.
-- JSON `source.qualityStatusRecords`는 항상 `{ total, records }` 구조로 출력한다.
+- JSON `source.qualityStatusRecords`는 항상 `{ total, records, warnings }` 구조로 출력한다.
 - matcher는 quality record의 `kind`, `verifiesRefs`, `materializesOutputRefs`, `sourceRefs`, `outputPath`, `relations`만 읽는다.
 - prompt artifact `sourceRefs`에는 관련 quality record에서 파생된 `governance-run:governance:artifact:<quality-id>:definition-context`가 포함되어야 한다.
+- matched quality record의 `outputPath` JSON이 존재하면 `records[].qualityExportSnapshot`에 root id, bundle ids, bundle state, gate counts, claim counts, generated timestamp를 노출해야 한다.
+- snapshot load 실패는 extraction을 중단하지 않고 `qualityStatusRecords.warnings[]`, `records[].qualityExportWarning`, `source.warnings[]`에 structured warning code를 남겨야 한다.
+- valid snapshot은 `governance-run:governance:<quality-artifact-id>:quality-export-snapshot` source ref를 추가해야 한다.
 
 ## Handoff 규칙
 
@@ -136,4 +140,10 @@ pnpm --filter @qa-sdk/cli test
 pnpm --filter @qa-sdk/cli build
 node packages/cli/dist/index.js def sync
 node packages/cli/dist/index.js def validate
+```
+
+quality export snapshot 로딩을 바꾸는 경우에는 전체 CLI test 전에 아래 targeted test를 먼저 실행한다.
+
+```bash
+pnpm --filter @qa-sdk/cli test -- ontology.test.ts
 ```

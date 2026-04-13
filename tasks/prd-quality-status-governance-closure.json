@@ -62,11 +62,12 @@
         "node packages/cli/dist/index.js def validate passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Start with quality export JSON. quality-ledger lookup can be added later if JSON snapshot evidence is insufficient. Registry allocation plan/todo remain adjacent but out of scope.",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-003",
@@ -204,6 +205,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-13T12:40:55.328Z"
+    "updatedAt": "2026-04-13T12:53:44.768Z"
   }
 }

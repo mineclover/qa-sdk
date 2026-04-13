@@ -283,7 +283,11 @@ describe("ontology CLI", () => {
         kind: "search",
         target: "unmanaged-artifact",
       },
-      warnings: ["artifact-registry-miss", "artifact-search-fallback"],
+      warnings: [
+        "artifact-registry-miss",
+        "artifact-search-fallback",
+        "quality-status-snapshot-missing",
+      ],
       qualityStatusRecords: {
         total: 1,
         records: [
@@ -304,6 +308,225 @@ describe("ontology CLI", () => {
     expect(parsed.artifacts[0]!.artifact.sourceRefs).toEqual(
       expect.arrayContaining([
         "governance-run:governance:artifact:quality-status-unmanaged-artifact:definition-context",
+      ]),
+    );
+  }, 10_000);
+
+  it("prompt extract-artifact --json loads quality export snapshots from related quality-status records", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-snapshot-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    const snapshotPath = join(dir, "quality-status-unmanaged-artifact.json");
+    await writeFile(
+      snapshotPath,
+      JSON.stringify({
+        rootId: "programming-artifact-ontology-system",
+        generatedAt: "2026-04-13T00:00:00.000Z",
+        bundles: [
+          {
+            bundleId: "programming-artifact-ontology-provider",
+            title: "Programming artifact ontology provider",
+            gateCount: 2,
+            claimCount: 4,
+            verifiedClaimCount: 3,
+            bundleState: "verified",
+            verifiedGates: 2,
+            totalGates: 2,
+            reviewScopes: [],
+          },
+        ],
+      }),
+      "utf8",
+    );
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-unmanaged-artifact",
+            artifactRef: "quality-status-unmanaged-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            outputPath: "quality-status-unmanaged-artifact.json",
+            verificationRefs: ["packages/cli/src/commands/ontology.test.ts"],
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        qualityStatusRecords: {
+          warnings: Array<{ code: string }>;
+          records: Array<{
+            qualityExportSnapshot?: {
+              rootId: string;
+              bundleIds: string[];
+              generatedAt?: string;
+              sourcePath: string;
+              totals: {
+                verifiedGates: number;
+                totalGates: number;
+                claimCount: number;
+                verifiedClaimCount: number;
+              };
+              bundles: Array<{
+                bundleId: string;
+                bundleState?: string;
+                verifiedGates?: number;
+                totalGates?: number;
+                claimCount?: number;
+                verifiedClaimCount?: number;
+              }>;
+            };
+          }>;
+        };
+      };
+      artifacts: Array<{
+        artifact: {
+          sourceRefs: string[];
+        };
+      }>;
+    };
+
+    expect(parsed.source.qualityStatusRecords.warnings).toEqual([]);
+    expect(parsed.source.qualityStatusRecords.records[0]!.qualityExportSnapshot).toMatchObject({
+      rootId: "programming-artifact-ontology-system",
+      bundleIds: ["programming-artifact-ontology-provider"],
+      generatedAt: "2026-04-13T00:00:00.000Z",
+      sourcePath: snapshotPath,
+      totals: {
+        verifiedGates: 2,
+        totalGates: 2,
+        claimCount: 4,
+        verifiedClaimCount: 3,
+      },
+      bundles: [
+        {
+          bundleId: "programming-artifact-ontology-provider",
+          bundleState: "verified",
+          verifiedGates: 2,
+          totalGates: 2,
+          claimCount: 4,
+          verifiedClaimCount: 3,
+        },
+      ],
+    });
+    expect(parsed.artifacts[0]!.artifact.sourceRefs).toEqual(
+      expect.arrayContaining([
+        "governance-run:governance:quality-status-unmanaged-artifact:quality-export-snapshot",
+      ]),
+    );
+  }, 10_000);
+
+  it("prompt extract-artifact --json warns for missing or invalid quality export snapshots", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-warning-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    const invalidPath = join(dir, "invalid-quality-status.json");
+    await writeFile(invalidPath, "{not-json", "utf8");
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-missing",
+            artifactRef: "missing-quality-status.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            outputPath: "missing-quality-status.json",
+          },
+          {
+            artifactId: "quality-status-invalid",
+            artifactRef: "invalid-quality-status.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            outputPath: "invalid-quality-status.json",
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        warnings: string[];
+        qualityStatusRecords: {
+          total: number;
+          warnings: Array<{
+            code: string;
+            artifactId: string;
+            outputPath?: string;
+            message: string;
+          }>;
+          records: Array<{
+            artifactId: string;
+            qualityExportWarning?: { code: string };
+          }>;
+        };
+      };
+      artifacts: unknown[];
+    };
+
+    expect(parsed.artifacts).toHaveLength(1);
+    expect(parsed.source.qualityStatusRecords.total).toBe(2);
+    expect(parsed.source.warnings).toEqual(
+      expect.arrayContaining([
+        "quality-status-snapshot-missing",
+        "quality-status-snapshot-invalid-json",
+      ]),
+    );
+    expect(parsed.source.qualityStatusRecords.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "quality-status-snapshot-missing",
+          artifactId: "quality-status-missing",
+          outputPath: "missing-quality-status.json",
+        }),
+        expect.objectContaining({
+          code: "quality-status-snapshot-invalid-json",
+          artifactId: "quality-status-invalid",
+          outputPath: "invalid-quality-status.json",
+        }),
+      ]),
+    );
+    expect(parsed.source.qualityStatusRecords.records).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          artifactId: "quality-status-missing",
+          qualityExportWarning: expect.objectContaining({
+            code: "quality-status-snapshot-missing",
+          }),
+        }),
+        expect.objectContaining({
+          artifactId: "quality-status-invalid",
+          qualityExportWarning: expect.objectContaining({
+            code: "quality-status-snapshot-invalid-json",
+          }),
+        }),
       ]),
     );
   }, 10_000);

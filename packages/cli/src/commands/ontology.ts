@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 
 import type { DefDoc, DefIncomingLink, DefOutgoingLink } from "definition-catalog";
 import { createDataSource, type DataSourceOptions } from "definition-data-source";
@@ -50,7 +50,12 @@ import {
   type OperationalOntologyObservationRecord,
   type OperationalOntologyProjectionRecord,
 } from "operational-ontology/persistence";
-import { persistImplementationGovernanceRun } from "operational-ontology/governance";
+import {
+  persistImplementationGovernanceRun,
+  type AdjustmentSuggestion,
+  type ConsistencyVerdict,
+  type GovernanceRun,
+} from "operational-ontology/governance";
 import type {
   EventRecordObservationInput,
   PipeGraphProjectionInput,
@@ -119,7 +124,8 @@ interface ArtifactExtractionSource {
   recommendedManagementActions: readonly string[];
   qualityStatusRecords: {
     total: number;
-    records: readonly RelatedQualityStatusRegistryRecordSummary[];
+    records: readonly QualityStatusRecordSourceSummary[];
+    warnings: readonly QualityStatusSnapshotWarning[];
   };
   qualitySignal: {
     code: ArtifactExtractionSourceKind;
@@ -127,6 +133,59 @@ interface ArtifactExtractionSource {
     warning?: string;
     recommendedManagementActions: readonly string[];
   };
+}
+
+interface QualityStatusSnapshotBundleEvidence {
+  bundleId: string;
+  bundleState?: string;
+  verifiedGates?: number;
+  totalGates?: number;
+  claimCount?: number;
+  verifiedClaimCount?: number;
+}
+
+interface QualityStatusExportSnapshotEvidence {
+  rootId: string;
+  bundleIds: readonly string[];
+  bundles: readonly QualityStatusSnapshotBundleEvidence[];
+  totals: {
+    verifiedGates: number;
+    totalGates: number;
+    claimCount: number;
+    verifiedClaimCount: number;
+  };
+  generatedAt?: string;
+  sourcePath: string;
+}
+
+interface QualityStatusSnapshotWarning {
+  code:
+    | "quality-status-snapshot-missing"
+    | "quality-status-snapshot-invalid-json"
+    | "quality-status-snapshot-invalid-shape"
+    | "quality-status-snapshot-read-failed";
+  artifactId: string;
+  artifactRef: string;
+  outputPath?: string;
+  resolvedPath?: string;
+  message: string;
+  cause?: string;
+}
+
+type QualityStatusRecordSourceSummary = RelatedQualityStatusRegistryRecordSummary & {
+  qualityExportSnapshot?: QualityStatusExportSnapshotEvidence;
+  qualityExportWarning?: QualityStatusSnapshotWarning;
+};
+
+interface QualityStatusSnapshotEvidence {
+  recordSummaries: ReadonlyMap<string, QualityStatusRecordSourceSummary>;
+  warnings: readonly QualityStatusSnapshotWarning[];
+  governanceRuns: readonly GovernanceRun[];
+}
+
+interface RelatedQualityStatusEvidence {
+  matches: readonly RelatedQualityStatusRegistryRecordMatch[];
+  snapshotEvidence: QualityStatusSnapshotEvidence;
 }
 
 interface LoadedArtifactRegistryProvider {
@@ -335,27 +394,35 @@ function parseArtifactExtractionSource(
 
 function qualityStatusRecordsSummary(
   matches: readonly RelatedQualityStatusRegistryRecordMatch[],
+  snapshotEvidence: QualityStatusSnapshotEvidence = emptyQualityStatusSnapshotEvidence(),
 ): ArtifactExtractionSource["qualityStatusRecords"] {
   return {
     total: matches.length,
-    records: matches.map((match) => match.summary),
+    records: matches.map((match) =>
+      snapshotEvidence.recordSummaries.get(qualityStatusRecordKey(match.record)) ?? match.summary,
+    ),
+    warnings: snapshotEvidence.warnings,
   };
 }
 
 function withQualityStatusRecordsSummary(
   source: ArtifactExtractionSource | undefined,
   matches: readonly RelatedQualityStatusRegistryRecordMatch[],
+  snapshotEvidence: QualityStatusSnapshotEvidence = emptyQualityStatusSnapshotEvidence(),
 ): ArtifactExtractionSource | undefined {
   if (!source) return undefined;
+  const warningCodes = qualityStatusSnapshotWarningCodes(snapshotEvidence);
   return {
     ...source,
-    qualityStatusRecords: qualityStatusRecordsSummary(matches),
+    warnings: uniqueCliValues([...source.warnings, ...warningCodes]),
+    qualityStatusRecords: qualityStatusRecordsSummary(matches, snapshotEvidence),
   };
 }
 
 function artifactRegistryHitSource(
   loadedRegistry: LoadedArtifactRegistryProvider,
   qualityStatusMatches: readonly RelatedQualityStatusRegistryRecordMatch[],
+  snapshotEvidence: QualityStatusSnapshotEvidence = emptyQualityStatusSnapshotEvidence(),
 ): ArtifactExtractionSource {
   return {
     kind: "artifact-registry-hit",
@@ -365,9 +432,9 @@ function artifactRegistryHitSource(
       providerId: loadedRegistry.provider.providerId,
       recordCount: loadedRegistry.recordCount,
     },
-    warnings: [],
+    warnings: qualityStatusSnapshotWarningCodes(snapshotEvidence),
     recommendedManagementActions: [],
-    qualityStatusRecords: qualityStatusRecordsSummary(qualityStatusMatches),
+    qualityStatusRecords: qualityStatusRecordsSummary(qualityStatusMatches, snapshotEvidence),
     qualitySignal: {
       code: "artifact-registry-hit",
       grade: "ready",
@@ -383,7 +450,10 @@ function artifactFallbackSource(input: {
   loadedRegistry?: LoadedArtifactRegistryProvider;
   matchedDocs?: readonly string[];
   qualityStatusMatches?: readonly RelatedQualityStatusRegistryRecordMatch[];
+  qualityStatusSnapshotEvidence?: QualityStatusSnapshotEvidence;
 }): ArtifactExtractionSource {
+  const snapshotEvidence =
+    input.qualityStatusSnapshotEvidence ?? emptyQualityStatusSnapshotEvidence();
   const registryStatus = input.loadedRegistry
     ? {
         status: "miss" as const,
@@ -395,6 +465,7 @@ function artifactFallbackSource(input: {
   const warnings = [
     ...(input.loadedRegistry ? ["artifact-registry-miss"] : []),
     ...(input.kind === "artifact-search-fallback" ? ["artifact-search-fallback"] : []),
+    ...qualityStatusSnapshotWarningCodes(snapshotEvidence),
   ];
   const recommendedManagementActions = input.kind === "artifact-search-fallback"
     ? ["create_programming_artifact_registry_record"]
@@ -409,7 +480,10 @@ function artifactFallbackSource(input: {
     },
     warnings,
     recommendedManagementActions,
-    qualityStatusRecords: qualityStatusRecordsSummary(input.qualityStatusMatches ?? []),
+    qualityStatusRecords: qualityStatusRecordsSummary(
+      input.qualityStatusMatches ?? [],
+      snapshotEvidence,
+    ),
     qualitySignal: {
       code: input.kind,
       grade: input.kind === "artifact-search-fallback" ? "degraded" : "usable",
@@ -428,13 +502,29 @@ function withArtifactSourceFlag(
   return [...args, "--artifact-source", JSON.stringify(source)];
 }
 
-async function findRelatedQualityStatusMatchesFromFlags(
+async function loadRelatedQualityStatusEvidenceFromFlags(
   flags: Record<string, string>,
   targetRefs: readonly (string | undefined)[],
-): Promise<RelatedQualityStatusRegistryRecordMatch[]> {
+): Promise<RelatedQualityStatusEvidence> {
   const loadedRegistry = await loadArtifactRegistryProvider(flags);
-  if (!loadedRegistry) return [];
-  return findRelatedQualityStatusMatches(loadedRegistry, targetRefs);
+  if (!loadedRegistry) {
+    return {
+      matches: [],
+      snapshotEvidence: emptyQualityStatusSnapshotEvidence(),
+    };
+  }
+  return loadRelatedQualityStatusEvidence(loadedRegistry, targetRefs);
+}
+
+async function loadRelatedQualityStatusEvidence(
+  loadedRegistry: LoadedArtifactRegistryProvider | undefined,
+  targetRefs: readonly (string | undefined)[],
+): Promise<RelatedQualityStatusEvidence> {
+  const matches = findRelatedQualityStatusMatches(loadedRegistry, targetRefs);
+  return {
+    matches,
+    snapshotEvidence: await loadQualityStatusSnapshotEvidence(loadedRegistry, matches),
+  };
 }
 
 function findRelatedQualityStatusMatches(
@@ -452,6 +542,360 @@ function qualityStatusRecords(
   matches: readonly RelatedQualityStatusRegistryRecordMatch[],
 ): ProgrammingArtifactRegistryRecord[] {
   return matches.map((match) => match.record);
+}
+
+function emptyQualityStatusSnapshotEvidence(): QualityStatusSnapshotEvidence {
+  return {
+    recordSummaries: new Map(),
+    warnings: [],
+    governanceRuns: [],
+  };
+}
+
+function qualityStatusRecordKey(record: Pick<ProgrammingArtifactRegistryRecord, "artifactId" | "artifactRef">): string {
+  return `${record.artifactId}\n${record.artifactRef}`;
+}
+
+function qualityStatusSnapshotWarningCodes(
+  evidence: QualityStatusSnapshotEvidence,
+): string[] {
+  return uniqueCliValues(evidence.warnings.map((warning) => warning.code));
+}
+
+async function loadQualityStatusSnapshotEvidence(
+  loadedRegistry: LoadedArtifactRegistryProvider | undefined,
+  matches: readonly RelatedQualityStatusRegistryRecordMatch[],
+): Promise<QualityStatusSnapshotEvidence> {
+  if (!loadedRegistry || matches.length === 0) {
+    return emptyQualityStatusSnapshotEvidence();
+  }
+
+  const recordSummaries = new Map<string, QualityStatusRecordSourceSummary>();
+  const warnings: QualityStatusSnapshotWarning[] = [];
+  const governanceRuns: GovernanceRun[] = [];
+
+  for (const match of matches) {
+    if (!match.record.outputPath) continue;
+    const loaded = await loadQualityStatusSnapshotForRecord(
+      loadedRegistry,
+      match.record,
+    );
+    if (loaded.warning) {
+      warnings.push(loaded.warning);
+      recordSummaries.set(qualityStatusRecordKey(match.record), {
+        ...match.summary,
+        qualityExportWarning: loaded.warning,
+      });
+      continue;
+    }
+    if (!loaded.snapshot) continue;
+    recordSummaries.set(qualityStatusRecordKey(match.record), {
+      ...match.summary,
+      qualityExportSnapshot: loaded.snapshot,
+    });
+    governanceRuns.push(
+      qualityStatusSnapshotGovernanceRun(match.record, loaded.snapshot),
+    );
+  }
+
+  return {
+    recordSummaries,
+    warnings,
+    governanceRuns,
+  };
+}
+
+async function loadQualityStatusSnapshotForRecord(
+  loadedRegistry: LoadedArtifactRegistryProvider,
+  record: ProgrammingArtifactRegistryRecord,
+): Promise<{
+  snapshot?: QualityStatusExportSnapshotEvidence;
+  warning?: QualityStatusSnapshotWarning;
+}> {
+  const paths = qualityStatusSnapshotCandidatePaths(
+    record.outputPath,
+    loadedRegistry.registryPath,
+  );
+  let lastMissingPath: string | undefined;
+
+  for (const path of paths) {
+    try {
+      const content = await readFile(path, "utf8");
+      try {
+        const payload = JSON.parse(content) as unknown;
+        return {
+          snapshot: summarizeQualityStatusExportSnapshot(payload, path, record),
+        };
+      } catch (error) {
+        if (error instanceof SyntaxError) {
+          return {
+            warning: qualityStatusSnapshotWarning(record, {
+              code: "quality-status-snapshot-invalid-json",
+              resolvedPath: path,
+              message: `Quality-status outputPath is not valid JSON: ${record.outputPath}`,
+              cause: error.message,
+            }),
+          };
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        return {
+          warning: qualityStatusSnapshotWarning(record, {
+            code: "quality-status-snapshot-invalid-shape",
+            resolvedPath: path,
+            message: `Quality-status outputPath does not match quality export snapshot shape: ${record.outputPath}`,
+            cause: message,
+          }),
+        };
+      }
+    } catch (error) {
+      const code = nodeErrorCode(error);
+      if (code === "ENOENT") {
+        lastMissingPath = path;
+        continue;
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      return {
+        warning: qualityStatusSnapshotWarning(record, {
+          code: "quality-status-snapshot-read-failed",
+          resolvedPath: path,
+          message: `Quality-status outputPath could not be read: ${record.outputPath}`,
+          cause: message,
+        }),
+      };
+    }
+  }
+
+  return {
+    warning: qualityStatusSnapshotWarning(record, {
+      code: "quality-status-snapshot-missing",
+      resolvedPath: lastMissingPath,
+      message: `Quality-status outputPath does not exist: ${record.outputPath}`,
+    }),
+  };
+}
+
+function qualityStatusSnapshotCandidatePaths(
+  outputPath: string | undefined,
+  registryPath: string,
+): string[] {
+  if (!outputPath) return [];
+  if (isAbsolute(outputPath)) return [outputPath];
+  return uniqueCliValues([
+    resolve(outputPath),
+    resolve(dirname(registryPath), outputPath),
+  ]);
+}
+
+function summarizeQualityStatusExportSnapshot(
+  payload: unknown,
+  sourcePath: string,
+  record: ProgrammingArtifactRegistryRecord,
+): QualityStatusExportSnapshotEvidence {
+  if (!isObjectRecord(payload)) {
+    throw new Error("snapshot must be a JSON object");
+  }
+  const rootId = stringProperty(payload, "rootId");
+  if (!rootId) {
+    throw new Error("snapshot.rootId must be a non-empty string");
+  }
+  if (!Array.isArray(payload["bundles"])) {
+    throw new Error("snapshot.bundles must be an array");
+  }
+
+  const bundles = payload["bundles"].flatMap((bundle): QualityStatusSnapshotBundleEvidence[] => {
+    if (!isObjectRecord(bundle)) return [];
+    const bundleId = stringProperty(bundle, "bundleId");
+    if (!bundleId) return [];
+    return [{
+      bundleId,
+      ...optionalStringProperty(bundle, "bundleState"),
+      ...optionalNumberProperty(bundle, "verifiedGates"),
+      ...optionalNumberProperty(bundle, "totalGates"),
+      ...optionalNumberProperty(bundle, "claimCount"),
+      ...optionalNumberProperty(bundle, "verifiedClaimCount"),
+    }];
+  });
+  if (bundles.length !== payload["bundles"].length) {
+    throw new Error("snapshot.bundles entries must include bundleId");
+  }
+
+  return {
+    rootId,
+    bundleIds: bundles.map((bundle) => bundle.bundleId),
+    bundles,
+    totals: {
+      verifiedGates: sumNumbers(bundles.map((bundle) => bundle.verifiedGates)),
+      totalGates: sumNumbers(bundles.map((bundle) => bundle.totalGates)),
+      claimCount: sumNumbers(bundles.map((bundle) => bundle.claimCount)),
+      verifiedClaimCount: sumNumbers(bundles.map((bundle) => bundle.verifiedClaimCount)),
+    },
+    ...optionalStringProperty(payload, "generatedAt"),
+    sourcePath,
+  };
+}
+
+function qualityStatusSnapshotGovernanceRun(
+  record: ProgrammingArtifactRegistryRecord,
+  snapshot: QualityStatusExportSnapshotEvidence,
+): GovernanceRun {
+  const implementationRefs = uniqueCliValues([
+    record.artifactRef,
+    record.outputPath,
+    snapshot.sourcePath,
+    snapshot.rootId,
+    ...snapshot.bundleIds,
+  ].filter((value): value is string => Boolean(value)));
+  const verificationRefs = uniqueCliValues([
+    record.outputPath,
+    snapshot.sourcePath,
+    ...snapshot.bundleIds,
+    ...(record.verificationRefs ?? []),
+  ].filter((value): value is string => Boolean(value)));
+  const constraintVerdicts = snapshot.bundles.map((bundle) =>
+    qualityStatusBundleVerdict(record, snapshot, bundle),
+  );
+  const adjustmentRecords = constraintVerdicts
+    .filter((verdict) => !verdict.valid)
+    .map((verdict): AdjustmentSuggestion => ({
+      action: "defer",
+      constraintKind: "validation_surface",
+      reason: verdict.message,
+      refs: verdict.refs,
+    }));
+
+  return {
+    runId: `governance:${record.artifactId}:quality-export-snapshot`,
+    blueprintId: `quality-status:${record.artifactId}`,
+    implementationRefs,
+    verificationRefs,
+    familyKey: `governance:quality-status:${snapshot.rootId}`,
+    constraintVerdicts,
+    adjustmentRecords,
+  };
+}
+
+function qualityStatusBundleVerdict(
+  record: ProgrammingArtifactRegistryRecord,
+  snapshot: QualityStatusExportSnapshotEvidence,
+  bundle: QualityStatusSnapshotBundleEvidence,
+): ConsistencyVerdict {
+  const verifiedGates = bundle.verifiedGates ?? 0;
+  const totalGates = bundle.totalGates ?? 0;
+  const gatesVerified = totalGates > 0 && verifiedGates >= totalGates;
+  const gateText = `${verifiedGates}/${totalGates}`;
+  return {
+    valid: gatesVerified,
+    level: gatesVerified ? "warning" : "error",
+    code: gatesVerified
+      ? "quality-status-bundle-verified"
+      : "quality-status-bundle-unverified",
+    message: `Quality export bundle ${bundle.bundleId} has state=${bundle.bundleState ?? "unknown"}, gates=${gateText}, claims=${bundle.verifiedClaimCount ?? 0}/${bundle.claimCount ?? 0}.`,
+    constraintKind: "validation_surface",
+    refs: uniqueCliValues([
+      record.artifactRef,
+      record.outputPath,
+      snapshot.sourcePath,
+      snapshot.rootId,
+      bundle.bundleId,
+    ].filter((value): value is string => Boolean(value))),
+  };
+}
+
+function qualityStatusSnapshotWarning(
+  record: ProgrammingArtifactRegistryRecord,
+  input: Omit<QualityStatusSnapshotWarning, "artifactId" | "artifactRef" | "outputPath">,
+): QualityStatusSnapshotWarning {
+  return {
+    artifactId: record.artifactId,
+    artifactRef: record.artifactRef,
+    ...(record.outputPath ? { outputPath: record.outputPath } : {}),
+    ...input,
+  };
+}
+
+function appendQualityStatusSnapshotGovernanceEvidence(
+  extraction: ReturnType<typeof extractPromptArtifactSourcesFromDefinitionContext>,
+  evidence: QualityStatusSnapshotEvidence,
+): ReturnType<typeof extractPromptArtifactSourcesFromDefinitionContext> {
+  if (evidence.governanceRuns.length === 0) return extraction;
+  return {
+    workArea: {
+      ...extraction.workArea,
+      paths: uniqueCliValues([
+        ...(extraction.workArea.paths ?? []),
+        ...evidence.governanceRuns.flatMap((run) => run.implementationRefs),
+      ]),
+      constraints: uniqueCliValues([
+        ...(extraction.workArea.constraints ?? []),
+        ...evidence.governanceRuns.flatMap((run) =>
+          run.constraintVerdicts.map((verdict) => `quality-export:${verdict.code}`),
+        ),
+      ]),
+      localInstructions: uniqueCliValues([
+        ...(extraction.workArea.localInstructions ?? []),
+        "Treat loaded quality export snapshots as concrete governance closure evidence.",
+      ]),
+    },
+    sources: {
+      ...extraction.sources,
+      governanceRuns: uniqueGovernanceRuns([
+        ...(extraction.sources.governanceRuns ?? []),
+        ...evidence.governanceRuns,
+      ]),
+    },
+  };
+}
+
+function uniqueGovernanceRuns(runs: readonly GovernanceRun[]): GovernanceRun[] {
+  const byRunId = new Map<string, GovernanceRun>();
+  for (const run of runs) {
+    byRunId.set(run.runId, run);
+  }
+  return [...byRunId.values()];
+}
+
+function nodeErrorCode(error: unknown): string | undefined {
+  return isObjectRecord(error) && typeof error["code"] === "string"
+    ? error["code"]
+    : undefined;
+}
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function stringProperty(
+  value: Record<string, unknown>,
+  key: string,
+): string | undefined {
+  const item = value[key];
+  return typeof item === "string" && item.trim().length > 0 ? item : undefined;
+}
+
+function optionalStringProperty<T extends string>(
+  value: Record<string, unknown>,
+  key: T,
+): Partial<Record<T, string>> {
+  const item = stringProperty(value, key);
+  return item ? { [key]: item } as Partial<Record<T, string>> : {};
+}
+
+function optionalNumberProperty<T extends string>(
+  value: Record<string, unknown>,
+  key: T,
+): Partial<Record<T, number>> {
+  const item = value[key];
+  return typeof item === "number" && Number.isFinite(item)
+    ? { [key]: item } as Partial<Record<T, number>>
+    : {};
+}
+
+function sumNumbers(values: readonly (number | undefined)[]): number {
+  let sum = 0;
+  for (const value of values) {
+    sum += value ?? 0;
+  }
+  return sum;
 }
 
 function expandQualityStatusTargetRefs(
@@ -889,21 +1333,25 @@ async function cmdPromptExtract(rest: string[]): Promise<void> {
     useCase,
     now: new Date().toISOString(),
   });
-  const qualityStatusMatches = await findRelatedQualityStatusMatchesFromFlags(flags, [
+  const qualityStatusEvidence = await loadRelatedQualityStatusEvidenceFromFlags(flags, [
     docId,
     ...workAreaQualityTargetRefs(extraction.workArea),
   ]);
-  const extractionWithQuality = appendQualityStatusEvidenceToPromptArtifactExtraction(
-    extraction,
-    qualityStatusRecords(qualityStatusMatches),
-    {
-      useCase,
-      now: new Date().toISOString(),
-    },
+  const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
+    appendQualityStatusEvidenceToPromptArtifactExtraction(
+      extraction,
+      qualityStatusRecords(qualityStatusEvidence.matches),
+      {
+        useCase,
+        now: new Date().toISOString(),
+      },
+    ),
+    qualityStatusEvidence.snapshotEvidence,
   );
   const artifactSource = withQualityStatusRecordsSummary(
     parseArtifactExtractionSource(flags),
-    qualityStatusMatches,
+    qualityStatusEvidence.matches,
+    qualityStatusEvidence.snapshotEvidence,
   );
   await maybePersistGovernanceEvidence(flags, extractionWithQuality);
   const artifacts = kind === "all"
@@ -1029,24 +1477,28 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
       .map((ref) => ref.codePath),
     now: new Date().toISOString(),
   });
-  const qualityStatusMatches = await findRelatedQualityStatusMatchesFromFlags(flags, [
+  const qualityStatusEvidence = await loadRelatedQualityStatusEvidenceFromFlags(flags, [
     filePath,
     mapping.codePath,
     mapping.anchor.docId,
     docId,
     ...workAreaQualityTargetRefs(extraction.workArea),
   ]);
-  const extractionWithQuality = appendQualityStatusEvidenceToPromptArtifactExtraction(
-    extraction,
-    qualityStatusRecords(qualityStatusMatches),
-    {
-      useCase,
-      now: new Date().toISOString(),
-    },
+  const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
+    appendQualityStatusEvidenceToPromptArtifactExtraction(
+      extraction,
+      qualityStatusRecords(qualityStatusEvidence.matches),
+      {
+        useCase,
+        now: new Date().toISOString(),
+      },
+    ),
+    qualityStatusEvidence.snapshotEvidence,
   );
   const artifactSource = withQualityStatusRecordsSummary(
     parseArtifactExtractionSource(flags),
-    qualityStatusMatches,
+    qualityStatusEvidence.matches,
+    qualityStatusEvidence.snapshotEvidence,
   );
   await maybePersistGovernanceEvidence(flags, extractionWithQuality);
   const workArea = {
@@ -1250,18 +1702,21 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
   });
   if (loadedRegistry && registryExtraction) {
     const directRegistryRecord = loadedRegistry.store.getArtifactByRef(artifactRef);
-    const qualityStatusMatches = findRelatedQualityStatusMatches(loadedRegistry, [
+    const qualityStatusEvidence = await loadRelatedQualityStatusEvidence(loadedRegistry, [
       artifactRef,
       ...registryRecordQualityTargetRefs(directRegistryRecord),
       ...workAreaQualityTargetRefs(registryExtraction.workArea),
     ]);
-    const extractionWithQuality = appendQualityStatusEvidenceToPromptArtifactExtraction(
-      registryExtraction,
-      qualityStatusRecords(qualityStatusMatches),
-      {
-        useCase,
-        now: new Date().toISOString(),
-      },
+    const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
+      appendQualityStatusEvidenceToPromptArtifactExtraction(
+        registryExtraction,
+        qualityStatusRecords(qualityStatusEvidence.matches),
+        {
+          useCase,
+          now: new Date().toISOString(),
+        },
+      ),
+      qualityStatusEvidence.snapshotEvidence,
     );
     await maybePersistGovernanceEvidence(flags, extractionWithQuality);
     const artifacts = kind === "all"
@@ -1287,7 +1742,11 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
         artifactRef,
         artifactType,
         providerId: loadedRegistry.provider.providerId,
-        source: artifactRegistryHitSource(loadedRegistry, qualityStatusMatches),
+        source: artifactRegistryHitSource(
+          loadedRegistry,
+          qualityStatusEvidence.matches,
+          qualityStatusEvidence.snapshotEvidence,
+        ),
         useCase,
         outputs,
         workArea: extractionWithQuality.workArea,
@@ -1368,19 +1827,22 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
       .map((doc) => doc.docId),
     now: new Date().toISOString(),
   });
-  const qualityStatusMatches = findRelatedQualityStatusMatches(loadedRegistry, [
+  const qualityStatusEvidence = await loadRelatedQualityStatusEvidence(loadedRegistry, [
     artifactRef,
     query,
     ...candidates.map((doc) => doc.docId),
     ...workAreaQualityTargetRefs(extraction.workArea),
   ]);
-  const extractionWithQuality = appendQualityStatusEvidenceToPromptArtifactExtraction(
-    extraction,
-    qualityStatusRecords(qualityStatusMatches),
-    {
-      useCase,
-      now: new Date().toISOString(),
-    },
+  const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
+    appendQualityStatusEvidenceToPromptArtifactExtraction(
+      extraction,
+      qualityStatusRecords(qualityStatusEvidence.matches),
+      {
+        useCase,
+        now: new Date().toISOString(),
+      },
+    ),
+    qualityStatusEvidence.snapshotEvidence,
   );
   const workArea = {
     ...extractionWithQuality.workArea,
@@ -1415,7 +1877,8 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
     target: query,
     loadedRegistry,
     matchedDocs: candidates.map((doc) => doc.docId),
-    qualityStatusMatches,
+    qualityStatusMatches: qualityStatusEvidence.matches,
+    qualityStatusSnapshotEvidence: qualityStatusEvidence.snapshotEvidence,
   });
   const outputs = await materializePromptArtifacts({
     flags,

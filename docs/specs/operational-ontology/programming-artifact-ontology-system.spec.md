@@ -130,6 +130,8 @@ interface ProgrammingArtifactRegistryStore {
 
 `appendQualityStatusEvidenceToPromptArtifactExtraction()`은 직접 registry hit/fallback extraction에 관련 quality record의 provider extraction을 병합한다. 이 병합은 prompt source set의 `corridors`, `checkpointLattices`, `traversals`, `blueprints`, `governanceRuns`를 추가하는 additive closure이며, direct artifact record lookup 결과를 대체하지 않는다.
 
+CLI extraction은 matched `quality-status` record에 `outputPath`가 있으면 해당 quality export JSON을 추가로 읽는다. 읽은 snapshot은 `rootId`, bundle id 목록, bundle state, gate count, claim count, `generatedAt`만 요약해 source metadata에 붙이고, bundle별 gate verification을 `quality-export-snapshot` governance run으로 변환한다. 파일이 없거나 JSON이 깨졌거나 quality export shape가 아니면 extraction은 계속 진행하고 structured warning만 JSON source에 남긴다. 이 로딩은 새 artifact kind, relation kind, provider schema, registry allocation lifecycle을 만들지 않는다.
+
 `createProgrammingArtifactRegistryRecord()`는 export command가 동일한 관계 채움 규칙을 쓰게 하는 factory다. 입력에서 알려진 값만 보존하고, `produced_by`, `derived_from`, `verifies`, `owned_by_definition`, `materializes_output` relation 배열을 정규화한다. 같은 relation이 field와 `relations` 양쪽에서 들어오면 `kind/fromRef/toRef/evidenceRef` 기준으로 dedupe한다.
 
 CLI 연결은 두 방향이다.
