@@ -9,6 +9,7 @@ after each iteration and it's included in prompts for context.
 - Quality-status artifact extraction keeps snapshot evidence, gate descriptor resolution, and governance closure concerns separate: record summaries can carry `gateDescriptors` plus structured warnings while prompt quality evidence derives refs/counts without changing the snapshot outcome policy.
 - Optional quality-ledger inputs for prompt artifact extraction should stay explicit and artifact-source gated: validate/open only when `extract-artifact` is processing related quality-status records, emit structured warnings fail-open, and do not add automatic `.qa-sdk/quality-ledger.sqlite` lookup.
 - Snapshot-first ledger fallback should attach ledger-derived evidence to the quality-status record summary, then let prompt-quality evidence select it only when snapshot closure is missing/invalid/incomplete or lacks a verified surface; conflict warnings must not override a verified snapshot.
+- Ledger fallback JSON should stay additive: keep existing evidence fields while adding clearer aliases/summary fields, route ledger warning codes through `source.qualityStatusRecords.warnings[]` and `source.warnings[]`, and never introduce new `governanceClosure.status` values.
 
 ---
 
@@ -74,4 +75,18 @@ after each iteration and it's included in prompts for context.
   - `QualityLedger.resolveBundleVerification()` already returns the right closure primitive for artifact extraction once the CLI has resolved `GateDescriptor[]`; no new ledger API is needed.
   - Snapshot and ledger conflict detection needs to compare only shared resolved bundle surfaces and determinate states, otherwise old or incomplete ledger state becomes noisy.
   - A verified snapshot should avoid ledger fallback resolution entirely, which prevents stale or failing local ledger state from downgrading exported closure evidence.
+---
+
+## 2026-04-14 - US-005
+- Surfaced ledger fallback evidence in extract-artifact JSON with additive aliases for ledger path, bundle ids, verified/total gate counts, blocking gates, and timestamp summary while preserving the older evidence fields.
+- Added `quality-status-ledger-incomplete` as a stable structured warning when ledger fallback evidence exists but does not verify every resolved gate.
+- Kept governance closure statuses unchanged and covered incomplete ledger fallback with a regression test.
+- Files changed:
+  - `packages/cli/src/commands/ontology.ts`
+  - `packages/cli/src/commands/ontology.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - `source.warnings[]` is derived from `QualityStatusSnapshotEvidence.warnings`, so new ledger warning codes should be represented as structured warning objects first.
+  - Ledger fallback evidence is safest as an additive record-summary payload because prompt-quality evaluation can continue to decide whether snapshot or ledger evidence is authoritative.
+  - Incomplete ledger fallback should report machine-readable gate evidence without expanding `governanceClosure.status`; the prompt-quality outcome already maps it to the existing incomplete closure path.
 ---

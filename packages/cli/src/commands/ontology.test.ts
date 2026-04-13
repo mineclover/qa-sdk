@@ -717,16 +717,28 @@ describe("ontology CLI", () => {
           records: Array<{
             qualityLedgerEvidence?: {
               sourcePath: string;
+              ledgerPath: string;
               bundleId: string | null;
+              bundleIds: string[];
               bundleRefs: string[];
               totalGates: number;
+              totalGateCount: number;
               verifiedGates: number;
+              verifiedGateCount: number;
               verified: boolean;
               gateRefs: string[];
               verifiedGateRefs: string[];
+              blockingGates: Array<{ gateDocId: string; status: string }>;
               blockingGateStatuses: Array<{ gateDocId: string; status: string }>;
               latestRunTimestamps: string[];
               latestRunAt?: string;
+              timestampSummary: {
+                latestRunAt?: string;
+                latestRunTimestamps: string[];
+                latestRunCount: number;
+                gatesWithRuns: number;
+                gatesWithoutRuns: number;
+              };
             };
           }>;
         };
@@ -747,10 +759,14 @@ describe("ontology CLI", () => {
     expect(parsed.source.warnings).not.toContain("quality-status-ledger-conflict");
     expect(ledgerEvidence).toMatchObject({
       sourcePath: ledgerPath,
+      ledgerPath,
       bundleId: "work-domain-quality-bundle",
+      bundleIds: ["work-domain-quality-bundle"],
       bundleRefs: ["work-domain-quality-bundle"],
       totalGates: 3,
+      totalGateCount: 3,
       verifiedGates: 3,
+      verifiedGateCount: 3,
       verified: true,
       gateRefs: expect.arrayContaining([
         "gate-work-domain-typecheck",
@@ -762,10 +778,18 @@ describe("ontology CLI", () => {
         "gate-work-domain-build",
         "gate-work-domain-test",
       ]),
+      blockingGates: [],
       blockingGateStatuses: [],
     });
     expect(ledgerEvidence.latestRunTimestamps.length).toBeGreaterThanOrEqual(1);
     expect(ledgerEvidence.latestRunAt).toBeDefined();
+    expect(ledgerEvidence.timestampSummary).toMatchObject({
+      latestRunAt: ledgerEvidence.latestRunAt,
+      latestRunTimestamps: ledgerEvidence.latestRunTimestamps,
+      latestRunCount: ledgerEvidence.latestRunTimestamps.length,
+      gatesWithRuns: 3,
+      gatesWithoutRuns: 0,
+    });
     expect(parsed.artifacts[0]!.quality.issues).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -773,6 +797,118 @@ describe("ontology CLI", () => {
         }),
       ]),
     );
+  }, 10_000);
+
+  it("prompt extract-artifact reports incomplete ledger fallback evidence without new closure statuses", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-ledger-incomplete-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    const ledgerPath = join(dir, "quality-ledger.sqlite");
+    writeQualityLedgerRuns(ledgerPath, [
+      { gateDocId: "gate-work-domain-typecheck", outcome: "pass" },
+      { gateDocId: "gate-work-domain-build", outcome: "pass" },
+    ]);
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-ledger-artifact",
+            artifactRef: "quality-status-ledger-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            metadata: {
+              rootId: "quality-gates-system",
+              bundles: [
+                {
+                  bundleId: "work-domain-quality-bundle",
+                },
+              ],
+            },
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--quality-ledger",
+        ledgerPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        warnings: string[];
+        governanceClosure: {
+          status: string;
+          warning?: { code: string };
+        };
+        qualityStatusRecords: {
+          warnings: Array<{ code: string; resolvedPath?: string; message: string }>;
+          records: Array<{
+            qualityLedgerEvidence?: {
+              ledgerPath: string;
+              bundleIds: string[];
+              totalGateCount: number;
+              verifiedGateCount: number;
+              blockingGates: Array<{ gateDocId: string; status: string }>;
+              timestampSummary: {
+                latestRunCount: number;
+                gatesWithRuns: number;
+                gatesWithoutRuns: number;
+              };
+            };
+            qualityLedgerIncompleteWarning?: { code: string; resolvedPath?: string };
+          }>;
+        };
+      };
+    };
+    const record = parsed.source.qualityStatusRecords.records[0]!;
+
+    expect(parsed.source.warnings).toContain("quality-status-ledger-incomplete");
+    expect(parsed.source.qualityStatusRecords.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "quality-status-ledger-incomplete",
+          resolvedPath: ledgerPath,
+        }),
+      ]),
+    );
+    expect(record.qualityLedgerEvidence).toMatchObject({
+      ledgerPath,
+      bundleIds: ["work-domain-quality-bundle"],
+      totalGateCount: 3,
+      verifiedGateCount: 2,
+      blockingGates: [
+        expect.objectContaining({
+          gateDocId: "gate-work-domain-test",
+          status: "unverified",
+        }),
+      ],
+      timestampSummary: {
+        latestRunCount: expect.any(Number),
+        gatesWithRuns: 2,
+        gatesWithoutRuns: 1,
+      },
+    });
+    expect(record.qualityLedgerIncompleteWarning).toMatchObject({
+      code: "quality-status-ledger-incomplete",
+      resolvedPath: ledgerPath,
+    });
+    expect(parsed.source.governanceClosure).toMatchObject({
+      status: "quality-status-incomplete",
+      warning: {
+        code: "prompt-quality-status-evidence-incomplete",
+      },
+    });
   }, 10_000);
 
   it("prompt extract-artifact warns on determinate snapshot and ledger conflicts without overriding the snapshot", async () => {

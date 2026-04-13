@@ -132,11 +132,12 @@
         "pnpm --filter quality-ledger test passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Keep JSON additive and backward compatible. Do not add new governanceClosure statuses.",
       "dependsOn": [
         "US-004"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-006",
@@ -229,6 +230,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-13T22:39:26.936Z"
+    "updatedAt": "2026-04-13T22:44:02.735Z"
   }
 }

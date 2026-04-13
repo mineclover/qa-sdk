@@ -215,16 +215,28 @@ interface QualityStatusLedgerGateStatusEvidence {
 
 interface QualityStatusLedgerEvidence {
   sourcePath: string;
+  ledgerPath: string;
   bundleId: string | null;
+  bundleIds: readonly string[];
   bundleRefs: readonly string[];
   totalGates: number;
+  totalGateCount: number;
   verifiedGates: number;
+  verifiedGateCount: number;
   verified: boolean;
   gateRefs: readonly string[];
   verifiedGateRefs: readonly string[];
+  blockingGates: readonly QualityStatusLedgerGateStatusEvidence[];
   blockingGateStatuses: readonly QualityStatusLedgerGateStatusEvidence[];
   latestRunTimestamps: readonly string[];
   latestRunAt?: string;
+  timestampSummary: {
+    latestRunAt?: string;
+    latestRunTimestamps: readonly string[];
+    latestRunCount: number;
+    gatesWithRuns: number;
+    gatesWithoutRuns: number;
+  };
 }
 
 interface QualityStatusSnapshotWarning {
@@ -236,6 +248,7 @@ interface QualityStatusSnapshotWarning {
     | "quality-status-ledger-missing"
     | "quality-status-ledger-read-failed"
     | "quality-status-ledger-no-gate-descriptors"
+    | "quality-status-ledger-incomplete"
     | "quality-status-ledger-conflict";
   artifactId: string;
   artifactRef: string;
@@ -251,6 +264,7 @@ type QualityStatusRecordSourceSummary = RelatedQualityStatusRegistryRecordSummar
   qualityExportWarning?: QualityStatusSnapshotWarning;
   qualityLedgerEvidence?: QualityStatusLedgerEvidence;
   qualityLedgerWarning?: QualityStatusSnapshotWarning;
+  qualityLedgerIncompleteWarning?: QualityStatusSnapshotWarning;
   qualityLedgerConflictWarning?: QualityStatusSnapshotWarning;
   qualityGateDescriptorWarning?: QualityStatusSnapshotWarning;
 };
@@ -1170,6 +1184,17 @@ async function loadQualityStatusSnapshotEvidence(
           ...summary,
           qualityLedgerEvidence: ledgerEvidence,
         };
+        if (!ledgerEvidence.verified) {
+          const incompleteWarning = qualityStatusLedgerIncompleteWarning(
+            match.record,
+            ledgerEvidence,
+          );
+          warnings.push(incompleteWarning);
+          summary = {
+            ...summary,
+            qualityLedgerIncompleteWarning: incompleteWarning,
+          };
+        }
         const conflictWarning = qualityStatusLedgerConflictWarning(
           match.record,
           summary,
@@ -1529,25 +1554,41 @@ function summarizeQualityStatusLedgerEvidence(
   const verifiedGateRefs = statuses
     .filter((status) => status.status === "verified")
     .map((status) => status.gateDocId);
+  const bundleIds = uniqueCliValues(
+    gateDescriptors
+      .map((descriptor) => descriptor.bundleId)
+      .filter((bundleId): bundleId is string => Boolean(bundleId)),
+  );
+  const blockingGates = verification.blockingGateStatuses.map(
+    qualityStatusLedgerGateStatusEvidence,
+  );
+  const gatesWithRuns = statuses.filter((status) => status.lastRun).length;
+  const timestampSummary = {
+    ...(latestRunAt ? { latestRunAt } : {}),
+    latestRunTimestamps,
+    latestRunCount: latestRunTimestamps.length,
+    gatesWithRuns,
+    gatesWithoutRuns: Math.max(0, verification.totalGates - gatesWithRuns),
+  };
 
   return {
     sourcePath,
+    ledgerPath: sourcePath,
     bundleId: verification.bundleId,
-    bundleRefs: uniqueCliValues(
-      gateDescriptors
-        .map((descriptor) => descriptor.bundleId)
-        .filter((bundleId): bundleId is string => Boolean(bundleId)),
-    ),
+    bundleIds,
+    bundleRefs: bundleIds,
     totalGates: verification.totalGates,
+    totalGateCount: verification.totalGates,
     verifiedGates: verification.verifiedGates,
+    verifiedGateCount: verification.verifiedGates,
     verified: verification.verified,
     gateRefs: gateDescriptors.map((descriptor) => descriptor.gateDocId),
     verifiedGateRefs,
-    blockingGateStatuses: verification.blockingGateStatuses.map(
-      qualityStatusLedgerGateStatusEvidence,
-    ),
+    blockingGates,
+    blockingGateStatuses: blockingGates,
     latestRunTimestamps,
     ...(latestRunAt ? { latestRunAt } : {}),
+    timestampSummary,
   };
 }
 
@@ -1576,6 +1617,22 @@ function latestQualityStatusTimestamp(
     if (!latest) return timestamp;
     return compareTimestamps(timestamp, latest) > 0 ? timestamp : latest;
   }, undefined);
+}
+
+function qualityStatusLedgerIncompleteWarning(
+  record: ProgrammingArtifactRegistryRecord,
+  evidence: QualityStatusLedgerEvidence,
+): QualityStatusSnapshotWarning {
+  const blockingGateRefs = evidence.blockingGates.map((gate) => gate.gateDocId);
+  const blockingGateText = blockingGateRefs.length > 0
+    ? ` Blocking gates: ${blockingGateRefs.join(", ")}.`
+    : "";
+  return qualityStatusSnapshotWarning(record, {
+    code: "quality-status-ledger-incomplete",
+    resolvedPath: evidence.ledgerPath,
+    message:
+      `Quality ledger fallback verified ${evidence.verifiedGateCount}/${evidence.totalGateCount} resolved gates.${blockingGateText}`,
+  });
 }
 
 function qualityStatusLedgerConflictWarning(
