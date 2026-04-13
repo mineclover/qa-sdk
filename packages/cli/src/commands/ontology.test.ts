@@ -216,6 +216,98 @@ describe("ontology CLI", () => {
     ]);
   }, 10_000);
 
+  it("prompt extract-artifact --json attaches related quality-status records on registry miss", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-unmanaged-artifact",
+            artifactRef: "artifacts/quality-status-unmanaged-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            materializesOutputRefs: ["artifact:unmanaged-artifact"],
+            sourceRefs: ["packages/cli/src/commands/ontology.ts"],
+            outputPath: "artifacts/quality-status-unmanaged-artifact.json",
+            verificationRefs: ["packages/cli/src/commands/ontology.test.ts"],
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        kind: string;
+        registry: { status: string; recordCount: number };
+        fallback?: { kind: string; target: string };
+        warnings: string[];
+        qualityStatusRecords: {
+          total: number;
+          records: Array<{
+            artifactId: string;
+            artifactRef: string;
+            matchRefs: string[];
+            matchReasons: Array<{ field: string; ref: string }>;
+          }>;
+        };
+      };
+      artifacts: Array<{
+        artifact: {
+          sourceRefs: string[];
+        };
+      }>;
+    };
+
+    expect(parsed.source).toMatchObject({
+      kind: "artifact-search-fallback",
+      registry: {
+        status: "miss",
+        recordCount: 1,
+      },
+      fallback: {
+        kind: "search",
+        target: "unmanaged-artifact",
+      },
+      warnings: ["artifact-registry-miss", "artifact-search-fallback"],
+      qualityStatusRecords: {
+        total: 1,
+        records: [
+          expect.objectContaining({
+            artifactId: "quality-status-unmanaged-artifact",
+            artifactRef: "artifacts/quality-status-unmanaged-artifact.json",
+            matchRefs: expect.arrayContaining([
+              "unmanaged-artifact",
+              "artifact:unmanaged-artifact",
+            ]),
+          }),
+        ],
+      },
+    });
+    expect(
+      parsed.source.qualityStatusRecords.records[0]!.matchReasons.map((reason) => reason.field),
+    ).toEqual(expect.arrayContaining(["verifiesRefs", "materializesOutputRefs"]));
+    expect(parsed.artifacts[0]!.artifact.sourceRefs).toEqual(
+      expect.arrayContaining([
+        "governance-run:governance:artifact:quality-status-unmanaged-artifact:definition-context",
+      ]),
+    );
+  }, 10_000);
+
   it("prompt extract-artifact materializes prompt artifacts and appends registry records", async () => {
     const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-prompt-output-"));
     const outputPath = join(dir, "self-reflection.md");

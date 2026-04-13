@@ -71,8 +71,12 @@ import {
   InMemoryProgrammingArtifactRegistryStore,
   PROGRAMMING_ARTIFACT_KINDS,
   PROGRAMMING_ARTIFACT_RELATION_KINDS,
+  appendQualityStatusEvidenceToPromptArtifactExtraction,
   createProgrammingArtifactRegistryRecord,
+  findRelatedQualityStatusRegistryRecords,
   type ProgrammingArtifactRegistryRecord,
+  type RelatedQualityStatusRegistryRecordMatch,
+  type RelatedQualityStatusRegistryRecordSummary,
 } from "operational-ontology/programming-artifacts";
 import { getQaSdkDir } from "../lib/qa-dir.js";
 import {
@@ -113,6 +117,10 @@ interface ArtifactExtractionSource {
   };
   warnings: readonly string[];
   recommendedManagementActions: readonly string[];
+  qualityStatusRecords: {
+    total: number;
+    records: readonly RelatedQualityStatusRegistryRecordSummary[];
+  };
   qualitySignal: {
     code: ArtifactExtractionSourceKind;
     grade: "ready" | "usable" | "degraded";
@@ -123,6 +131,8 @@ interface ArtifactExtractionSource {
 
 interface LoadedArtifactRegistryProvider {
   provider: ArtifactRegistryPromptArtifactContextProvider;
+  store: InMemoryProgrammingArtifactRegistryStore;
+  records: readonly ProgrammingArtifactRegistryRecord[];
   registryPath: string;
   recordCount: number;
 }
@@ -199,10 +209,11 @@ async function loadArtifactRegistryProvider(
   if (!registryPath) return undefined;
 
   const records = await loadProgrammingArtifactRegistryRecords(registryPath);
+  const store = new InMemoryProgrammingArtifactRegistryStore(records);
   return {
-    provider: new ArtifactRegistryPromptArtifactContextProvider(
-      new InMemoryProgrammingArtifactRegistryStore(records),
-    ),
+    provider: new ArtifactRegistryPromptArtifactContextProvider(store),
+    store,
+    records,
     registryPath: resolve(registryPath),
     recordCount: records.length,
   };
@@ -322,8 +333,36 @@ function parseArtifactExtractionSource(
   return JSON.parse(value) as ArtifactExtractionSource;
 }
 
+function emptyQualityStatusRecordsSummary(): ArtifactExtractionSource["qualityStatusRecords"] {
+  return {
+    total: 0,
+    records: [],
+  };
+}
+
+function qualityStatusRecordsSummary(
+  matches: readonly RelatedQualityStatusRegistryRecordMatch[],
+): ArtifactExtractionSource["qualityStatusRecords"] {
+  return {
+    total: matches.length,
+    records: matches.map((match) => match.summary),
+  };
+}
+
+function withQualityStatusRecordsSummary(
+  source: ArtifactExtractionSource | undefined,
+  matches: readonly RelatedQualityStatusRegistryRecordMatch[],
+): ArtifactExtractionSource | undefined {
+  if (!source) return undefined;
+  return {
+    ...source,
+    qualityStatusRecords: qualityStatusRecordsSummary(matches),
+  };
+}
+
 function artifactRegistryHitSource(
   loadedRegistry: LoadedArtifactRegistryProvider,
+  qualityStatusMatches: readonly RelatedQualityStatusRegistryRecordMatch[],
 ): ArtifactExtractionSource {
   return {
     kind: "artifact-registry-hit",
@@ -335,6 +374,7 @@ function artifactRegistryHitSource(
     },
     warnings: [],
     recommendedManagementActions: [],
+    qualityStatusRecords: qualityStatusRecordsSummary(qualityStatusMatches),
     qualitySignal: {
       code: "artifact-registry-hit",
       grade: "ready",
@@ -349,6 +389,7 @@ function artifactFallbackSource(input: {
   target: string;
   loadedRegistry?: LoadedArtifactRegistryProvider;
   matchedDocs?: readonly string[];
+  qualityStatusMatches?: readonly RelatedQualityStatusRegistryRecordMatch[];
 }): ArtifactExtractionSource {
   const registryStatus = input.loadedRegistry
     ? {
@@ -375,6 +416,7 @@ function artifactFallbackSource(input: {
     },
     warnings,
     recommendedManagementActions,
+    qualityStatusRecords: qualityStatusRecordsSummary(input.qualityStatusMatches ?? []),
     qualitySignal: {
       code: input.kind,
       grade: input.kind === "artifact-search-fallback" ? "degraded" : "usable",
@@ -391,6 +433,81 @@ function withArtifactSourceFlag(
   source: ArtifactExtractionSource,
 ): string[] {
   return [...args, "--artifact-source", JSON.stringify(source)];
+}
+
+async function findRelatedQualityStatusMatchesFromFlags(
+  flags: Record<string, string>,
+  targetRefs: readonly (string | undefined)[],
+): Promise<RelatedQualityStatusRegistryRecordMatch[]> {
+  const loadedRegistry = await loadArtifactRegistryProvider(flags);
+  if (!loadedRegistry) return [];
+  return findRelatedQualityStatusMatches(loadedRegistry, targetRefs);
+}
+
+function findRelatedQualityStatusMatches(
+  loadedRegistry: LoadedArtifactRegistryProvider | undefined,
+  targetRefs: readonly (string | undefined)[],
+): RelatedQualityStatusRegistryRecordMatch[] {
+  if (!loadedRegistry) return [];
+  return findRelatedQualityStatusRegistryRecords({
+    records: loadedRegistry.records,
+    targetRefs: expandQualityStatusTargetRefs(targetRefs),
+  });
+}
+
+function qualityStatusRecords(
+  matches: readonly RelatedQualityStatusRegistryRecordMatch[],
+): ProgrammingArtifactRegistryRecord[] {
+  return matches.map((match) => match.record);
+}
+
+function expandQualityStatusTargetRefs(
+  refs: readonly (string | undefined)[],
+): string[] {
+  return uniqueCliValues(
+    refs.flatMap((ref) => {
+      if (!ref) return [];
+      const strippedWorkArea = ref.startsWith("work-area:")
+        ? ref.slice("work-area:".length)
+        : undefined;
+      const strippedArtifact = ref.startsWith("artifact:")
+        ? ref.slice("artifact:".length)
+        : undefined;
+      const baseRefs = uniqueCliValues([
+        ref,
+        strippedWorkArea,
+        strippedArtifact,
+      ].filter((value): value is string => Boolean(value)));
+      return baseRefs.flatMap((value) => [
+        value,
+        value.startsWith("artifact:") ? undefined : `artifact:${value}`,
+        value.startsWith("work-area:") ? undefined : `work-area:${value}`,
+      ]).filter((value): value is string => Boolean(value));
+    }),
+  );
+}
+
+function workAreaQualityTargetRefs(
+  workArea: ReturnType<typeof extractPromptArtifactSourcesFromDefinitionContext>["workArea"],
+): string[] {
+  return uniqueCliValues([
+    workArea.workAreaId,
+    workArea.rootRef,
+    ...(workArea.paths ?? []),
+  ].filter((value): value is string => Boolean(value)));
+}
+
+function registryRecordQualityTargetRefs(
+  record: ProgrammingArtifactRegistryRecord | undefined,
+): string[] {
+  if (!record) return [];
+  return uniqueCliValues([
+    record.outputPath,
+    ...(record.verifiesRefs ?? []),
+    ...(record.materializesOutputRefs ?? []),
+    ...(record.sourceRefs ?? []),
+    ...(record.relations ?? []).flatMap((relation) => [relation.fromRef, relation.toRef]),
+  ].filter((value): value is string => Boolean(value)));
 }
 
 async function materializePromptArtifacts(input: {
@@ -779,16 +896,32 @@ async function cmdPromptExtract(rest: string[]): Promise<void> {
     useCase,
     now: new Date().toISOString(),
   });
-  await maybePersistGovernanceEvidence(flags, extraction);
+  const qualityStatusMatches = await findRelatedQualityStatusMatchesFromFlags(flags, [
+    docId,
+    ...workAreaQualityTargetRefs(extraction.workArea),
+  ]);
+  const extractionWithQuality = appendQualityStatusEvidenceToPromptArtifactExtraction(
+    extraction,
+    qualityStatusRecords(qualityStatusMatches),
+    {
+      useCase,
+      now: new Date().toISOString(),
+    },
+  );
+  const artifactSource = withQualityStatusRecordsSummary(
+    parseArtifactExtractionSource(flags),
+    qualityStatusMatches,
+  );
+  await maybePersistGovernanceEvidence(flags, extractionWithQuality);
   const artifacts = kind === "all"
-    ? generatePromptArtifacts({ ...extraction, useCase })
-    : [generatePromptArtifact({ ...extraction, kind, useCase })];
+    ? generatePromptArtifacts({ ...extractionWithQuality, useCase })
+    : [generatePromptArtifact({ ...extractionWithQuality, kind, useCase })];
   const evaluations = artifacts.map((artifact) => ({
     artifact,
     quality: evaluatePromptArtifactQuality({
       artifact,
-      workArea: extraction.workArea,
-      sources: extraction.sources,
+      workArea: extractionWithQuality.workArea,
+      sources: extractionWithQuality.sources,
     }),
   }));
   const outputs = await materializePromptArtifacts({
@@ -803,15 +936,15 @@ async function cmdPromptExtract(rest: string[]): Promise<void> {
     printJson({
       docId,
       useCase,
-      source: parseArtifactExtractionSource(flags),
+      source: artifactSource,
       outputs,
-      workArea: extraction.workArea,
+      workArea: extractionWithQuality.workArea,
       sourceSummary: {
-        corridors: extraction.sources.corridors?.length ?? 0,
-        checkpointLattices: extraction.sources.checkpointLattices?.length ?? 0,
-        traversals: extraction.sources.traversals?.length ?? 0,
-        blueprints: extraction.sources.blueprints?.length ?? 0,
-        governanceRuns: extraction.sources.governanceRuns?.length ?? 0,
+        corridors: extractionWithQuality.sources.corridors?.length ?? 0,
+        checkpointLattices: extractionWithQuality.sources.checkpointLattices?.length ?? 0,
+        traversals: extractionWithQuality.sources.traversals?.length ?? 0,
+        blueprints: extractionWithQuality.sources.blueprints?.length ?? 0,
+        governanceRuns: extractionWithQuality.sources.governanceRuns?.length ?? 0,
       },
       artifacts: evaluations,
     });
@@ -903,24 +1036,43 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
       .map((ref) => ref.codePath),
     now: new Date().toISOString(),
   });
-  await maybePersistGovernanceEvidence(flags, extraction);
+  const qualityStatusMatches = await findRelatedQualityStatusMatchesFromFlags(flags, [
+    filePath,
+    mapping.codePath,
+    mapping.anchor.docId,
+    docId,
+    ...workAreaQualityTargetRefs(extraction.workArea),
+  ]);
+  const extractionWithQuality = appendQualityStatusEvidenceToPromptArtifactExtraction(
+    extraction,
+    qualityStatusRecords(qualityStatusMatches),
+    {
+      useCase,
+      now: new Date().toISOString(),
+    },
+  );
+  const artifactSource = withQualityStatusRecordsSummary(
+    parseArtifactExtractionSource(flags),
+    qualityStatusMatches,
+  );
+  await maybePersistGovernanceEvidence(flags, extractionWithQuality);
   const workArea = {
-    ...extraction.workArea,
-    paths: uniqueCliValues([mapping.codePath, ...(extraction.workArea.paths ?? [])]),
+    ...extractionWithQuality.workArea,
+    paths: uniqueCliValues([mapping.codePath, ...(extractionWithQuality.workArea.paths ?? [])]),
     constraints: uniqueCliValues([
       `file:${mapping.codePath}`,
-      ...(extraction.workArea.constraints ?? []),
+      ...(extractionWithQuality.workArea.constraints ?? []),
     ]),
   };
   const artifacts = kind === "all"
-    ? generatePromptArtifacts({ workArea, sources: extraction.sources, useCase })
-    : [generatePromptArtifact({ workArea, sources: extraction.sources, kind, useCase })];
+    ? generatePromptArtifacts({ workArea, sources: extractionWithQuality.sources, useCase })
+    : [generatePromptArtifact({ workArea, sources: extractionWithQuality.sources, kind, useCase })];
   const evaluations = artifacts.map((artifact) => ({
     artifact,
     quality: evaluatePromptArtifactQuality({
       artifact,
       workArea,
-      sources: extraction.sources,
+      sources: extractionWithQuality.sources,
     }),
   }));
   const outputs = await materializePromptArtifacts({
@@ -937,7 +1089,7 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
       boundaryDocId: mapping.anchor.docId,
       contextDocId: docId,
       useCase,
-      source: parseArtifactExtractionSource(flags),
+      source: artifactSource,
       outputs,
       workArea,
       artifacts: evaluations,
@@ -1104,16 +1256,30 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
     metadata: artifactType ? { artifactType } : undefined,
   });
   if (loadedRegistry && registryExtraction) {
-    await maybePersistGovernanceEvidence(flags, registryExtraction);
+    const directRegistryRecord = loadedRegistry.store.getArtifactByRef(artifactRef);
+    const qualityStatusMatches = findRelatedQualityStatusMatches(loadedRegistry, [
+      artifactRef,
+      ...registryRecordQualityTargetRefs(directRegistryRecord),
+      ...workAreaQualityTargetRefs(registryExtraction.workArea),
+    ]);
+    const extractionWithQuality = appendQualityStatusEvidenceToPromptArtifactExtraction(
+      registryExtraction,
+      qualityStatusRecords(qualityStatusMatches),
+      {
+        useCase,
+        now: new Date().toISOString(),
+      },
+    );
+    await maybePersistGovernanceEvidence(flags, extractionWithQuality);
     const artifacts = kind === "all"
-      ? generatePromptArtifacts({ ...registryExtraction, useCase })
-      : [generatePromptArtifact({ ...registryExtraction, kind, useCase })];
+      ? generatePromptArtifacts({ ...extractionWithQuality, useCase })
+      : [generatePromptArtifact({ ...extractionWithQuality, kind, useCase })];
     const evaluations = artifacts.map((artifact) => ({
       artifact,
       quality: evaluatePromptArtifactQuality({
         artifact,
-        workArea: registryExtraction.workArea,
-        sources: registryExtraction.sources,
+        workArea: extractionWithQuality.workArea,
+        sources: extractionWithQuality.sources,
       }),
     }));
     const outputs = await materializePromptArtifacts({
@@ -1128,10 +1294,10 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
         artifactRef,
         artifactType,
         providerId: loadedRegistry.provider.providerId,
-        source: artifactRegistryHitSource(loadedRegistry),
+        source: artifactRegistryHitSource(loadedRegistry, qualityStatusMatches),
         useCase,
         outputs,
-        workArea: registryExtraction.workArea,
+        workArea: extractionWithQuality.workArea,
         artifacts: evaluations,
       });
       return;
@@ -1209,30 +1375,45 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
       .map((doc) => doc.docId),
     now: new Date().toISOString(),
   });
+  const qualityStatusMatches = findRelatedQualityStatusMatches(loadedRegistry, [
+    artifactRef,
+    query,
+    ...candidates.map((doc) => doc.docId),
+    ...workAreaQualityTargetRefs(extraction.workArea),
+  ]);
+  const extractionWithQuality = appendQualityStatusEvidenceToPromptArtifactExtraction(
+    extraction,
+    qualityStatusRecords(qualityStatusMatches),
+    {
+      useCase,
+      now: new Date().toISOString(),
+    },
+  );
   const workArea = {
-    ...extraction.workArea,
+    ...extractionWithQuality.workArea,
     workAreaId: `artifact:${artifactRef}`,
     displayName: `Artifact context: ${artifactRef}`,
     constraints: uniqueCliValues([
       `artifact:${artifactRef}`,
       ...(artifactType ? [`artifact-type:${artifactType}`] : []),
-      ...(extraction.workArea.constraints ?? []),
+      ...(extractionWithQuality.workArea.constraints ?? []),
     ]),
     localInstructions: [
       "Treat artifact refs as deliverable evidence, not as source code ownership by themselves.",
       "Resolve artifact context through matching definition docs, quality gates, and source maps before editing.",
+      ...(extractionWithQuality.workArea.localInstructions ?? []),
     ],
   };
-  await maybePersistGovernanceEvidence(flags, extraction);
+  await maybePersistGovernanceEvidence(flags, extractionWithQuality);
   const artifacts = kind === "all"
-    ? generatePromptArtifacts({ workArea, sources: extraction.sources, useCase })
-    : [generatePromptArtifact({ workArea, sources: extraction.sources, kind, useCase })];
+    ? generatePromptArtifacts({ workArea, sources: extractionWithQuality.sources, useCase })
+    : [generatePromptArtifact({ workArea, sources: extractionWithQuality.sources, kind, useCase })];
   const evaluations = artifacts.map((artifact) => ({
     artifact,
     quality: evaluatePromptArtifactQuality({
       artifact,
       workArea,
-      sources: extraction.sources,
+      sources: extractionWithQuality.sources,
     }),
   }));
   const fallbackSource = artifactFallbackSource({
@@ -1241,6 +1422,7 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
     target: query,
     loadedRegistry,
     matchedDocs: candidates.map((doc) => doc.docId),
+    qualityStatusMatches,
   });
   const outputs = await materializePromptArtifacts({
     flags,

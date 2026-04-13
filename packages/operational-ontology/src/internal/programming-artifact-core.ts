@@ -87,6 +87,36 @@ export interface ArtifactRegistryPromptArtifactContextProviderOptions {
   providerId?: string;
 }
 
+export type RelatedQualityStatusRegistryMatchField =
+  | "outputPath"
+  | "verifiesRefs"
+  | "materializesOutputRefs"
+  | "sourceRefs"
+  | "relations";
+
+export interface RelatedQualityStatusRegistryMatchReason {
+  field: RelatedQualityStatusRegistryMatchField;
+  ref: string;
+  relationKind?: string;
+}
+
+export interface RelatedQualityStatusRegistryRecordSummary {
+  artifactId: string;
+  artifactRef: string;
+  outputPath?: string;
+  verifiesRefs: readonly string[];
+  materializesOutputRefs: readonly string[];
+  sourceRefs: readonly string[];
+  relations: readonly Pick<ProgrammingArtifactRelation, "kind" | "fromRef" | "toRef" | "evidenceRef">[];
+  matchRefs: readonly string[];
+  matchReasons: readonly RelatedQualityStatusRegistryMatchReason[];
+}
+
+export interface RelatedQualityStatusRegistryRecordMatch {
+  record: ProgrammingArtifactRegistryRecord;
+  summary: RelatedQualityStatusRegistryRecordSummary;
+}
+
 const ARTIFACT_AXIS_ID = "programming_artifact_kind";
 const ARTIFACT_RELATION_AXIS_ID = "programming_artifact_relation_kind";
 const ARTIFACT_RELATION_CATEGORY = "programming_artifact_relation";
@@ -314,6 +344,15 @@ export class ArtifactRegistryPromptArtifactContextProvider
     if (!record) return null;
     return extractPromptArtifactSourcesFromProgrammingArtifactRecord(record, request);
   }
+
+  findRelatedQualityStatusRecords(
+    targetRefs: readonly string[],
+  ): readonly RelatedQualityStatusRegistryRecordMatch[] {
+    return findRelatedQualityStatusRegistryRecords({
+      records: this.store.listArtifacts?.() ?? [],
+      targetRefs,
+    });
+  }
 }
 
 export function extractPromptArtifactSourcesFromProgrammingArtifactRecord(
@@ -361,6 +400,66 @@ export function extractPromptArtifactSourcesFromProgrammingArtifactRecord(
       ],
     },
     sources: extraction.sources,
+  };
+}
+
+export function findRelatedQualityStatusRegistryRecords(input: {
+  records: readonly ProgrammingArtifactRegistryRecord[];
+  targetRefs: readonly (string | undefined)[];
+}): RelatedQualityStatusRegistryRecordMatch[] {
+  const targetRefs = unique(input.targetRefs.filter((ref): ref is string => Boolean(ref)));
+  if (targetRefs.length === 0) return [];
+
+  const targetSet = new Set(targetRefs);
+  const matches: RelatedQualityStatusRegistryRecordMatch[] = [];
+  for (const record of input.records) {
+    if (record.kind !== "quality-status") continue;
+    const matchReasons = qualityStatusMatchReasons(record, targetSet);
+    if (matchReasons.length === 0) continue;
+    matches.push({
+      record: structuredClone(record),
+      summary: summarizeRelatedQualityStatusRecord(record, matchReasons),
+    });
+  }
+  return matches;
+}
+
+export function appendQualityStatusEvidenceToPromptArtifactExtraction(
+  extraction: PromptArtifactDefinitionContextExtraction,
+  qualityStatusRecords: readonly ProgrammingArtifactRegistryRecord[],
+  request: Pick<PromptArtifactContextRequest, "useCase" | "now"> = {},
+): PromptArtifactDefinitionContextExtraction {
+  const records = qualityStatusRecords.filter(
+    (record) => `artifact:${record.artifactId}` !== extraction.workArea.workAreaId,
+  );
+  if (records.length === 0) return extraction;
+
+  const qualityExtractions = records.map((record) =>
+    extractPromptArtifactSourcesFromProgrammingArtifactRecord(record, request),
+  );
+  return {
+    workArea: {
+      ...extraction.workArea,
+      paths: unique([
+        ...(extraction.workArea.paths ?? []),
+        ...records.flatMap((record) => pathLikeRefs([record.outputPath, ...(record.sourceRefs ?? [])])),
+        ...qualityExtractions.flatMap((item) => item.workArea.paths ?? []),
+      ]),
+      constraints: unique([
+        ...(extraction.workArea.constraints ?? []),
+        ...records.flatMap(qualityStatusConstraintLines),
+        ...qualityExtractions.flatMap((item) => item.workArea.constraints ?? []),
+      ]),
+      localInstructions: unique([
+        ...(extraction.workArea.localInstructions ?? []),
+        "Treat related quality-status registry records as governance evidence for this artifact extraction.",
+        ...qualityExtractions.flatMap((item) => item.workArea.localInstructions ?? []),
+      ]),
+    },
+    sources: mergePromptArtifactSourceSets([
+      extraction.sources,
+      ...qualityExtractions.map((item) => item.sources),
+    ]),
   };
 }
 
@@ -453,6 +552,92 @@ function relationConstraintLines(record: ProgrammingArtifactRegistryRecord): str
   return relationPairs(record).map((pair) => `${pair.kind}:${pair.toRef}`);
 }
 
+function qualityStatusConstraintLines(record: ProgrammingArtifactRegistryRecord): string[] {
+  return unique([
+    `quality-status:${record.artifactRef}`,
+    ...(record.verifiesRefs ?? []).map((ref) => `quality-status-verifies:${ref}`),
+    ...(record.materializesOutputRefs ?? []).map((ref) => `quality-status-materializes:${ref}`),
+    ...qualityStatusRelationPairs(record).map((pair) => `quality-status-${pair.kind}:${pair.toRef}`),
+  ]);
+}
+
+function qualityStatusMatchReasons(
+  record: ProgrammingArtifactRegistryRecord,
+  targetRefs: ReadonlySet<string>,
+): RelatedQualityStatusRegistryMatchReason[] {
+  return uniqueMatchReasons([
+    ...matchSingleRef("outputPath", record.outputPath, targetRefs),
+    ...matchArrayRefs("verifiesRefs", record.verifiesRefs, targetRefs),
+    ...matchArrayRefs("materializesOutputRefs", record.materializesOutputRefs, targetRefs),
+    ...matchArrayRefs("sourceRefs", record.sourceRefs, targetRefs),
+    ...matchRelationRefs(record.relations, targetRefs),
+  ]);
+}
+
+function summarizeRelatedQualityStatusRecord(
+  record: ProgrammingArtifactRegistryRecord,
+  matchReasons: readonly RelatedQualityStatusRegistryMatchReason[],
+): RelatedQualityStatusRegistryRecordSummary {
+  return {
+    artifactId: record.artifactId,
+    artifactRef: record.artifactRef,
+    ...(record.outputPath ? { outputPath: record.outputPath } : {}),
+    verifiesRefs: [...(record.verifiesRefs ?? [])],
+    materializesOutputRefs: [...(record.materializesOutputRefs ?? [])],
+    sourceRefs: [...(record.sourceRefs ?? [])],
+    relations: qualityStatusRelationPairs(record).map((relation) => ({
+      kind: relation.kind,
+      fromRef: relation.fromRef,
+      toRef: relation.toRef,
+      ...(relation.evidenceRef ? { evidenceRef: relation.evidenceRef } : {}),
+    })),
+    matchRefs: unique(matchReasons.map((reason) => reason.ref)),
+    matchReasons: [...matchReasons],
+  };
+}
+
+function qualityStatusRelationPairs(
+  record: ProgrammingArtifactRegistryRecord,
+): ProgrammingArtifactRelation[] {
+  return relationPairs(record).filter(
+    (relation) =>
+      relation.kind === "verifies" || relation.kind === "materializes_output",
+  );
+}
+
+function matchSingleRef(
+  field: RelatedQualityStatusRegistryMatchField,
+  ref: string | undefined,
+  targetRefs: ReadonlySet<string>,
+): RelatedQualityStatusRegistryMatchReason[] {
+  return ref && targetRefs.has(ref) ? [{ field, ref }] : [];
+}
+
+function matchArrayRefs(
+  field: RelatedQualityStatusRegistryMatchField,
+  refs: readonly string[] | undefined,
+  targetRefs: ReadonlySet<string>,
+): RelatedQualityStatusRegistryMatchReason[] {
+  return (refs ?? [])
+    .filter((ref) => targetRefs.has(ref))
+    .map((ref) => ({ field, ref }));
+}
+
+function matchRelationRefs(
+  relations: readonly ProgrammingArtifactRelation[] | undefined,
+  targetRefs: ReadonlySet<string>,
+): RelatedQualityStatusRegistryMatchReason[] {
+  return (relations ?? []).flatMap((relation) => {
+    if (relation.kind !== "verifies" && relation.kind !== "materializes_output") {
+      return [];
+    }
+    return [
+      ...matchSingleRef("relations", relation.toRef, targetRefs),
+      ...matchSingleRef("relations", relation.fromRef, targetRefs),
+    ].map((reason) => ({ ...reason, relationKind: relation.kind }));
+  });
+}
+
 function relationDocId(kind: string, ref: string): string {
   if (kind === "owned_by_definition" && /^[a-z0-9][a-z0-9-]*$/.test(ref)) {
     return ref;
@@ -506,6 +691,64 @@ function uniqueRelations(
     );
   }
   return [...byKey.values()];
+}
+
+function uniqueMatchReasons(
+  reasons: readonly RelatedQualityStatusRegistryMatchReason[],
+): RelatedQualityStatusRegistryMatchReason[] {
+  const byKey = new Map<string, RelatedQualityStatusRegistryMatchReason>();
+  for (const reason of reasons) {
+    byKey.set(
+      [
+        reason.field,
+        reason.ref,
+        reason.relationKind ?? "",
+      ].join("\0"),
+      reason,
+    );
+  }
+  return [...byKey.values()];
+}
+
+function uniqueBy<T>(values: readonly T[], keyOf: (value: T) => string): T[] {
+  const byKey = new Map<string, T>();
+  for (const value of values) {
+    byKey.set(keyOf(value), value);
+  }
+  return [...byKey.values()];
+}
+
+function mergePromptArtifactSourceSets(
+  sourceSets: readonly PromptArtifactDefinitionContextExtraction["sources"][],
+): PromptArtifactDefinitionContextExtraction["sources"] {
+  return {
+    corridors: uniqueBy(
+      sourceSets.flatMap((sourceSet) => sourceSet.corridors ?? []),
+      (corridor) => corridor.flowId,
+    ),
+    checkpointLattices: uniqueBy(
+      sourceSets.flatMap((sourceSet) => sourceSet.checkpointLattices ?? []),
+      (lattice) => lattice.corridorId,
+    ),
+    checkpoints: uniqueBy(
+      sourceSets.flatMap((sourceSet) => sourceSet.checkpoints ?? []),
+      (checkpoint) => checkpoint.checkpointId,
+    ),
+    traversals: uniqueBy(
+      sourceSets.flatMap((sourceSet) => sourceSet.traversals ?? []),
+      (observation) =>
+        observation.traversal.canonicalKey ??
+        `${observation.traversal.purpose}:${observation.traversal.start}->${observation.traversal.end}`,
+    ),
+    blueprints: uniqueBy(
+      sourceSets.flatMap((sourceSet) => sourceSet.blueprints ?? []),
+      (blueprint) => blueprint.blueprintId,
+    ),
+    governanceRuns: uniqueBy(
+      sourceSets.flatMap((sourceSet) => sourceSet.governanceRuns ?? []),
+      (run) => run.runId,
+    ),
+  };
 }
 
 function unique(values: readonly string[]): string[] {

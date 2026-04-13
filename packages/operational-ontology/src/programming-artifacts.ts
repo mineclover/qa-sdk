@@ -9,11 +9,17 @@ export {
   type CreateProgrammingArtifactRegistryRecordInput,
   type ProgrammingArtifactRegistryStore,
   type ArtifactRegistryPromptArtifactContextProviderOptions,
+  type RelatedQualityStatusRegistryMatchField,
+  type RelatedQualityStatusRegistryMatchReason,
+  type RelatedQualityStatusRegistryRecordSummary,
+  type RelatedQualityStatusRegistryRecordMatch,
   InMemoryProgrammingArtifactRegistryStore,
   ArtifactRegistryPromptArtifactContextProvider,
   createProgrammingArtifactRegistryRecord,
   buildProgrammingArtifactRelations,
   extractPromptArtifactSourcesFromProgrammingArtifactRecord,
+  findRelatedQualityStatusRegistryRecords,
+  appendQualityStatusEvidenceToPromptArtifactExtraction,
   validateProgrammingArtifactOntologyPack,
 } from "./internal/programming-artifact-core.js";
 
@@ -24,7 +30,9 @@ import {
   PROGRAMMING_ARTIFACT_RELATION_KINDS,
   buildProgrammingArtifactRelations,
   createProgrammingArtifactRegistryRecord,
+  appendQualityStatusEvidenceToPromptArtifactExtraction,
   extractPromptArtifactSourcesFromProgrammingArtifactRecord,
+  findRelatedQualityStatusRegistryRecords,
   programmingArtifactOntologyPack,
   validateProgrammingArtifactOntologyPack,
 } from "./internal/programming-artifact-core.js";
@@ -39,4 +47,6 @@ export const operationalOntologyProgrammingArtifactPlane = {
   createProgrammingArtifactRegistryRecord,
   buildProgrammingArtifactRelations,
   extractPromptArtifactSourcesFromProgrammingArtifactRecord,
+  findRelatedQualityStatusRegistryRecords,
+  appendQualityStatusEvidenceToPromptArtifactExtraction,
 };

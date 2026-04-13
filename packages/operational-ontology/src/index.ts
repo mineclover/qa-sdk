@@ -52,9 +52,11 @@ import {
   InMemoryProgrammingArtifactRegistryStore,
   PROGRAMMING_ARTIFACT_KINDS,
   PROGRAMMING_ARTIFACT_RELATION_KINDS,
+  appendQualityStatusEvidenceToPromptArtifactExtraction,
   buildProgrammingArtifactRelations,
   createProgrammingArtifactRegistryRecord,
   extractPromptArtifactSourcesFromProgrammingArtifactRecord,
+  findRelatedQualityStatusRegistryRecords,
   programmingArtifactOntologyPack,
   validateProgrammingArtifactOntologyPack,
 } from "./internal/programming-artifact-core.js";
@@ -130,6 +132,8 @@ export const operationalOntologyProgrammingArtifactPlane = {
   createProgrammingArtifactRegistryRecord,
   buildProgrammingArtifactRelations,
   extractPromptArtifactSourcesFromProgrammingArtifactRecord,
+  findRelatedQualityStatusRegistryRecords,
+  appendQualityStatusEvidenceToPromptArtifactExtraction,
 };
 
 export const operationalOntologyAllocationPlane = {

@@ -6,7 +6,10 @@ import {
   PROGRAMMING_ARTIFACT_RELATION_KINDS,
   ArtifactRegistryPromptArtifactContextProvider,
   InMemoryProgrammingArtifactRegistryStore,
+  appendQualityStatusEvidenceToPromptArtifactExtraction,
   createProgrammingArtifactRegistryRecord,
+  extractPromptArtifactSourcesFromProgrammingArtifactRecord,
+  findRelatedQualityStatusRegistryRecords,
   programmingArtifactOntologyPack,
   validateProgrammingArtifactOntologyPack,
 } from "./programming-artifacts.js";
@@ -152,5 +155,100 @@ describe("programming artifact ontology", () => {
         toRef: "apm-codegen-system",
       },
     ]);
+  });
+
+  it("discovers related quality-status records through existing registry fields", () => {
+    const buildRecord = createProgrammingArtifactRegistryRecord({
+      kind: "build",
+      artifactRef: "dist/index.js",
+      outputPath: "dist/index.js",
+      materializesOutputRefs: ["@qa-sdk/cli"],
+      sourceRefs: ["packages/cli/src/index.ts"],
+    });
+    const relatedQualityRecord = createProgrammingArtifactRegistryRecord({
+      artifactId: "quality-status-cli",
+      artifactRef: "artifacts/quality-status-cli.json",
+      kind: "quality-status",
+      verifiesRefs: ["@qa-sdk/cli"],
+      materializesOutputRefs: ["dist/index.js"],
+      sourceRefs: ["packages/cli/src/index.ts"],
+      outputPath: "artifacts/quality-status-cli.json",
+      relations: [
+        {
+          kind: "verifies",
+          fromRef: "artifacts/quality-status-cli.json",
+          toRef: "artifact:dist/index.js",
+        },
+      ],
+      verificationRefs: ["packages/cli/src/commands/ontology.test.ts"],
+      createdAt: "2026-04-12T00:00:00.000Z",
+    });
+    const unrelatedQualityRecord = createProgrammingArtifactRegistryRecord({
+      artifactId: "quality-status-other",
+      artifactRef: "artifacts/quality-status-other.json",
+      kind: "quality-status",
+      verifiesRefs: ["other-definition"],
+      outputPath: "artifacts/quality-status-other.json",
+    });
+
+    const matches = findRelatedQualityStatusRegistryRecords({
+      records: [buildRecord, relatedQualityRecord, unrelatedQualityRecord],
+      targetRefs: [
+        "dist/index.js",
+        "@qa-sdk/cli",
+        "packages/cli/src/index.ts",
+        "artifact:dist/index.js",
+      ],
+    });
+
+    expect(matches).toHaveLength(1);
+    expect(matches[0]!.summary).toMatchObject({
+      artifactId: "quality-status-cli",
+      artifactRef: "artifacts/quality-status-cli.json",
+      outputPath: "artifacts/quality-status-cli.json",
+      matchRefs: expect.arrayContaining([
+        "@qa-sdk/cli",
+        "dist/index.js",
+        "packages/cli/src/index.ts",
+        "artifact:dist/index.js",
+      ]),
+    });
+    expect(matches[0]!.summary.matchReasons.map((reason) => reason.field)).toEqual(
+      expect.arrayContaining([
+        "verifiesRefs",
+        "materializesOutputRefs",
+        "sourceRefs",
+        "relations",
+      ]),
+    );
+
+    const baseExtraction = extractPromptArtifactSourcesFromProgrammingArtifactRecord(
+      buildRecord,
+      {
+        useCase: "release_verification",
+        now: "2026-04-12T00:00:00.000Z",
+      },
+    );
+    const enrichedExtraction = appendQualityStatusEvidenceToPromptArtifactExtraction(
+      baseExtraction,
+      matches.map((match) => match.record),
+      {
+        useCase: "release_verification",
+        now: "2026-04-12T00:00:00.000Z",
+      },
+    );
+
+    expect(enrichedExtraction.sources.governanceRuns?.map((run) => run.runId)).toEqual(
+      expect.arrayContaining([
+        "governance:artifact:quality-status-cli:definition-context",
+      ]),
+    );
+    expect(enrichedExtraction.workArea.constraints).toEqual(
+      expect.arrayContaining([
+        "quality-status:artifacts/quality-status-cli.json",
+        "quality-status-verifies:@qa-sdk/cli",
+        "quality-status-materializes:dist/index.js",
+      ]),
+    );
   });
 });
