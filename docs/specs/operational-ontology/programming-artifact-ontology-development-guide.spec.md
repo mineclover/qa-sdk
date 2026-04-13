@@ -43,6 +43,13 @@ sources:
 8. `packages/cli/src/commands/ontology.ts`
    `extract-artifact` CLI routing과 fallback 순서의 SSOT다.
 
+Adjacent review:
+
+- `docs/specs/operational-ontology/operational-ontology-registry-allocation.plan.md`
+- `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md`
+
+위 두 문서는 registry-service/index-meta allocation lifecycle의 scope다. programming-artifact governance closure 작업에서는 읽어서 boundary를 확인하되, ontology pack allocation 구현이 동반되지 않으면 변경하지 않는다.
+
 ## 문서 구조 보강 방식
 
 문서 역할을 아래처럼 나눈다.
@@ -73,6 +80,7 @@ sources:
 | quality export registry metadata 변경 | `buildQualityStatusArtifactRegistryRecord`, metadata summary shape, verifies/materializes/verification refs, quality CLI tests |
 | prompt quality closure 변경 | `PromptArtifactQualityStatusEvidence`, `governance_closure` score cap/bonus, ready/usable/degraded prompt quality tests |
 | extract-artifact closure JSON 변경 | `source.governanceClosure` status/warning/action shape, search fallback warning separation, ontology CLI tests |
+| documentation closure 변경 | system/CLI/plan/todo/development guide/prompt artifact generation spec 동기화, adjacent registry allocation plan/todo out-of-scope 확인 |
 
 ## Registry Record 표준
 

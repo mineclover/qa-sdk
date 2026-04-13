@@ -196,7 +196,7 @@
         "node packages/cli/dist/index.js def validate passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "This story should be executed last unless earlier stories need immediate doc changes to keep validation green. Explicitly document that registry allocation plan/todo are out of scope for this feature.",
       "dependsOn": [
         "US-001",
@@ -204,10 +204,11 @@
         "US-003",
         "US-004",
         "US-005"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-13T13:24:01.371Z"
+    "updatedAt": "2026-04-13T13:31:06.445Z"
   }
 }

@@ -124,6 +124,15 @@ prompt artifact는 model system prompt에 삽입 가능한 구조화 문구이�
 
 `qualityStatusEvidence`는 artifact extraction 경로에서만 명시적으로 전달되는 optional input이다. 전달하지 않으면 기존 definition/file/permission prompt quality behavior가 유지된다. 전달된 evidence가 target을 `verifies`로 확인하고 verified bundle 또는 verified gate count를 보고하면 `governance_closure`는 기존 governance run score 위에 additive bonus를 받는다. failed, stale, invalid, incomplete outcome이나 verified bundle/gate가 없는 evidence는 score를 올리지 않고 `prompt-quality-status-evidence-*` governance warning을 남긴다. artifact extraction이 quality-status evidence를 기대했지만 match가 없으면 extraction은 막지 않고 `prompt-quality-status-evidence-missing` warning과 governance confidence cap으로 표현한다.
 
+quality-status evidence가 있는 artifact extraction의 prompt quality behavior는 아래 contract를 따른다.
+
+- absent `qualityStatusEvidence`는 기존 prompt quality behavior를 의미한다.
+- empty `qualityStatusEvidence: []`는 artifact extraction이 quality-status closure를 기대했지만 match하지 못한 상태이므로 `governance_closure` confidence를 cap한다.
+- target을 verify하지 않는 evidence는 `prompt-quality-status-evidence-target-missing`으로 남기고 score를 올리지 않는다.
+- `failed`, `stale`, `invalid`, `incomplete` outcome은 governance warning만 만들고 additive score에 쓰지 않는다.
+- `verified` outcome이면서 verified bundle ref, verified gate ref, 또는 verified gate count가 있을 때만 additive score를 준다.
+- CLI JSON의 `source.governanceClosure`는 같은 evidence 해석을 source-level 상태로 투영한다.
+
 ### 사용 방법
 
 ```ts

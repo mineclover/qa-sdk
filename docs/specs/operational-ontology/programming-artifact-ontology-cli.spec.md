@@ -27,6 +27,7 @@ sources:
 qa-sdk ontology prompt extract-artifact <artifact-ref> \
   [--artifact-type <type>] \
   [--artifact-registry <file>] \
+  [--artifact-registry-file <file>] \
   [--kind self_reflection|code_editing_rules|all] \
   [--use-case <usecase>] \
   [--persist-governance] \
@@ -50,8 +51,22 @@ qa-sdk ontology artifact registry append --output <file> \
   [--owner-definition <id>] \
   [--materializes-output <csv>] \
   [--output-path <path>] \
+  [--source-ref <csv>|--source-refs <csv>] \
+  [--verification-ref <csv>|--verification-refs <csv>] \
+  [--metadata <json-object>] \
   [--json]
 ```
+
+## Flag Contract
+
+- `--artifact-registry` is the primary local registry file flag for `extract-artifact`, prompt artifact materialization, codegen, quality export, deployment output, and registry append workflows.
+- `--artifact-registry-file` is accepted by `extract-artifact` as a compatibility alias for the read path.
+- `--json` on `extract-artifact` includes `source.kind`, `source.registry`, fallback details, `source.qualityStatusRecords`, `source.governanceClosure`, and `source.qualitySignal`.
+- `--json` on registry `validate` returns `{ input, valid, artifactCount, errors, warnings }`.
+- `--json` on registry `list` returns `{ input, kind, artifacts }`.
+- `--json` on registry `append` returns the append result from `appendProgrammingArtifactRegistryRecord()`, including the appended `record`, `registryPath`, and `recordCount`.
+- `append --input <record.json>` preserves the supplied record shape and upserts it by artifact identity.
+- `append --kind ... --artifact-ref ...` creates a record through `createProgrammingArtifactRegistryRecord()` and normalizes relation fields into the standard `relations[]` grammar.
 
 ## 처리 순서
 
@@ -275,14 +290,14 @@ qa-sdk ontology artifact registry append --output artifacts/programming-artifact
 - prompt artifact: `produced_by=qa-sdk ontology prompt extract*`, `derived_from=<artifact.sourceRefs>`, `verifies=<workAreaId when valid>`, `owned_by_definition=<source definition when known>`, `materializes_output=<prompt artifact id + work area + source target>`.
 - build output: `ontology artifact registry append --kind build`로 명시적 output path를 registry record로 기록한다. 실제 build 실행은 패키지 스크립트가 소유하고, CLI는 결과물을 registry에 관리 등록한다.
 
-## 다음 CLI Surface
+## Registry Command Behavior
 
-registry write path가 들어오면 아래 command를 검토한다.
+local registry command는 구현된 최소 운영 surface다.
 
 ```bash
 qa-sdk ontology artifact registry validate --input <file> [--json]
-qa-sdk ontology artifact registry append --input <record.json> --output <registry.json>
 qa-sdk ontology artifact registry list --input <registry.json> [--kind <kind>] [--json]
+qa-sdk ontology artifact registry append --output <registry.json> (--input <record.json> | --kind <kind> --artifact-ref <ref>) [--json]
 ```
 
-위 command들은 registry 파일을 직접 조작하는 최소 운영 surface다. 별도 서버 저장소가 생기기 전까지 local JSON registry의 validate/list/append를 담당한다.
+`validate`는 배열 또는 `{ "artifacts": [...] }` envelope를 읽고 missing field, invalid kind, invalid relation을 error/warning으로 분리한다. `list`는 optional `--kind` filter를 적용한다. `append`는 새 파일이면 `{ "artifacts": [] }` envelope를 만들고, 기존 object envelope의 추가 field를 보존해 record를 upsert한다. 기존 registry가 배열이면 쓰기 시 object envelope로 정규화된다. `--output` 대신 `--artifact-registry`를 output alias로 받을 수 있다. 이 command들은 별도 서버 저장소가 생기기 전까지 local JSON registry의 validate/list/append를 담당하며, registry-service/index-meta allocation lifecycle은 시작하지 않는다.

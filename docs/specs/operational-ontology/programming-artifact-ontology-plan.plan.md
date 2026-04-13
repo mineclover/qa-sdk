@@ -21,7 +21,7 @@ def:
 
 ## 현재 목표
 
-현재 구현은 `programming-artifact-ontology` pack schema, artifact kind/relation vocabulary, in-memory registry store, `ArtifactRegistryPromptArtifactContextProvider`, `extract-artifact --artifact-registry` 우선 조회, 관련 `quality-status` record sidecar discovery, quality export JSON snapshot 로딩, prompt quality `governance_closure` evidence 반영, `extract-artifact --json` fallback source 구조화와 `source.governanceClosure` 상태 요약, codegen/quality export/deployment output/prompt artifact/build output registry append, quality export registry metadata closure 요약까지 열린 단계다. 다음 목표는 JSON snapshot과 registry metadata만으로 부족한 경우 quality-ledger lookup이나 freshness SLA를 별도 story로 붙일지 판단하는 것이다.
+현재 구현은 `programming-artifact-ontology` pack schema, artifact kind/relation vocabulary, in-memory registry store, `ArtifactRegistryPromptArtifactContextProvider`, `extract-artifact --artifact-registry` 우선 조회, 관련 `quality-status` record sidecar discovery, quality export JSON snapshot 로딩, prompt quality `governance_closure` evidence 반영, `extract-artifact --json` fallback source 구조화와 `source.governanceClosure` 상태 요약, codegen/quality export/deployment output/prompt artifact/build output registry append, quality export registry metadata closure 요약, governance closure 문서 동기화까지 닫힌 단계다. 다음 목표는 JSON snapshot과 registry metadata만으로 부족한 경우 quality-ledger lookup이나 freshness SLA를 별도 story로 붙일지 판단하는 것이다.
 
 ## 장기 목표
 
@@ -49,7 +49,9 @@ programming/artifact ontology는 별도 pack 또는 plugin으로 관리한다. �
    quality-status JSON payload의 bundle/gate 상태를 governance verdict와 prompt quality closure에 직접 연결한다. 현재 단계는 `outputPath` JSON snapshot과 quality export registry metadata 요약 기반으로 완료됐고, ledger lookup과 freshness SLA는 후속 확장으로 남긴다.
 9. Closure JSON 해석 표면 고정
    `extract-artifact --json`의 `source.governanceClosure`가 `quality-status-found`, `quality-status-missing`, `quality-status-invalid`, `quality-status-incomplete`를 구분하고 matched quality-status refs, warning, action을 제공한다.
+10. Governance closure 문서 closure
+    system/CLI/plan/todo/development guide/prompt artifact generation spec이 현재 구현된 quality-status governance closure contract를 설명한다. `operational-ontology-registry-allocation.plan.md`와 `.todo.md`는 adjacent docs로 검토했지만, 이 feature가 registry-service, index-meta, ontology pack allocation lifecycle을 구현하지 않았으므로 out of scope로 남기고 변경하지 않는다.
 
 ## 다음 세션 기준
 
-다음 세션은 `programming-artifact-ontology-development-guide`의 컨텍스트 확인 순서를 먼저 따른다. 실행 목표는 `programming-artifact-ontology-todo`의 미완료 항목 중 quality-ledger lookup, quality-status freshness SLA, 또는 registry allocation lifecycle 연동 여부를 선택한다.
+다음 세션은 `programming-artifact-ontology-development-guide`의 컨텍스트 확인 순서를 먼저 따른다. 실행 목표는 `programming-artifact-ontology-todo`의 미완료 항목 중 quality-ledger lookup 또는 quality-status freshness SLA를 선택한다. registry allocation lifecycle 연동은 `operational-ontology-registry-allocation.plan.md` / `.todo.md`의 별도 scope로만 다룬다.

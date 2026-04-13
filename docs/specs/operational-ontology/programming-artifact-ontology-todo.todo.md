@@ -47,5 +47,7 @@ def:
 - [x] `evaluatePromptArtifactQuality()`가 artifact extraction quality-status evidence를 받아 `governance_closure` score와 warning에 반영
 - [x] `quality export --artifact-registry` record metadata에 bundle state, gate count, claim count, generated timestamp closure 요약 추가
 - [x] `extract-artifact --json`의 `source.governanceClosure`가 quality-status found/missing/invalid/incomplete 상태, matched refs, warning/action을 노출
+- [x] quality-status governance closure contract를 system/CLI/development guide/prompt artifact generation docs에 동기화
+- [x] `operational-ontology-registry-allocation.plan.md`와 `.todo.md`를 adjacent docs로 검토하고, ontology pack allocation lifecycle 변경이 없으므로 out of scope로 유지
 - [ ] quality export JSON snapshot evidence가 부족한 실제 사례가 나오면 quality-ledger lookup을 별도 provider/fallback으로 추가
 - [ ] quality-status `generatedAt` 기반 stale SLA가 필요해지면 freshness threshold와 warning policy를 별도 story로 추가

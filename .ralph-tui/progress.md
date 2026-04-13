@@ -12,6 +12,7 @@ after each iteration and it's included in prompts for context.
 - Prompt quality sidecar evidence: keep new scoring signals optional on the evaluator input, pass them only from artifact extraction, and use verified evidence as an additive bonus while failed/missing evidence becomes governance warnings.
 - Quality export registry metadata: keep provider reads on existing relation/output fields, and add closure summaries under optional `metadata` so old registry consumers remain compatible.
 - Artifact extraction JSON warnings: keep fallback/source quality signals and governance closure status as sibling fields (`qualitySignal` vs `governanceClosure`) so search fallback degradation does not get conflated with quality-status closure evidence.
+- Documentation closure boundary: update programming-artifact closure docs in place, but leave adjacent registry allocation plan/todo unchanged unless implementation actually crosses into registry-service/index-meta allocation lifecycle.
 
 ---
 
@@ -124,4 +125,25 @@ after each iteration and it's included in prompts for context.
   - `source.qualityStatusRecords` remains the raw matched evidence list, while `source.governanceClosure` is the interpreted closure verdict for agents and humans.
   - Non-found closure states should use prompt quality governance warning codes and `close_governance_evidence` action shape so JSON consumers can align with `artifacts[].quality`.
   - Search fallback degradation is a source-management problem and must stay separate from governance closure warnings derived from quality-status evidence.
+---
+
+## 2026-04-13 - US-006
+- Updated programming-artifact ontology documentation for the implemented quality-status governance closure contract.
+- Documented CLI JSON output, `--artifact-registry-file` compatibility, registry command JSON behavior, append flags, and local registry command semantics.
+- Refreshed plan/todo milestone state, including completed documentation closure work and remaining quality-ledger/freshness gaps.
+- Documented prompt quality behavior for absent vs empty `qualityStatusEvidence`, target mismatch, invalid/incomplete outcomes, and verified closure scoring.
+- Reviewed `operational-ontology-registry-allocation.plan.md` and `.todo.md` as adjacent docs; left them unchanged because this feature did not cross into registry-service/index-meta ontology pack allocation lifecycle.
+- Verification: `pnpm --filter operational-ontology typecheck`, `test`, and `build` passed; `pnpm --filter @qa-sdk/cli typecheck` and `build` passed; `node packages/cli/dist/index.js def sync` and `def validate` passed. Full `pnpm --filter @qa-sdk/cli test` still fails on existing sandbox-sensitive DKG cases: default SQLite state DB open and `127.0.0.1` listener EPERM. The ontology and quality CLI test files passed within that run.
+- Files changed:
+  - `docs/specs/operational-ontology/programming-artifact-ontology-system.spec.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-cli.spec.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-plan.plan.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-todo.todo.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-development-guide.spec.md`
+  - `docs/specs/operational-ontology/operational-ontology-prompt-artifact-generation.spec.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Documentation closure should make the governance status contract explicit instead of relying on scattered implementation notes across system, CLI, and prompt quality docs.
+  - Adjacent registry allocation docs are a boundary check for this feature, not an editing target, unless implementation creates registry-service/index-meta allocation behavior.
+  - CLI registry append accepts more operational flags than the short command usage advertised, so the spec needs a separate flag contract section for JSON consumers and maintainers.
 ---
