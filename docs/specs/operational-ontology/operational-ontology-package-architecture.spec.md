@@ -16,6 +16,7 @@ def:
       type: depends_on
 sources:
   - packages/operational-ontology/src/index.ts
+  - packages/operational-ontology/src/allocation.ts
   - packages/operational-ontology/src/checkpoint.ts
   - packages/operational-ontology/src/corridor.ts
   - packages/operational-ontology/src/junction.ts
@@ -32,6 +33,7 @@ sources:
 현재 공개 표면은 아래 grouped facade로 나뉜다. 이 문서는 패키지 public surface를 설명하는 leaf 문서이고, 각 plane의 개념 정의 자체는 별도 문서를 참조한다.
 
 - `operationalOntologySchemaPlane`
+- `operationalOntologyAllocationPlane`
 - `operationalOntologyPackPlane`
 - `operationalOntologyImplementationGovernancePlane`
 - `operationalOntologyPromptArtifactPlane`
@@ -46,6 +48,7 @@ sources:
 동시에 subpath import도 같은 경계를 반영한다.
 
 - `operational-ontology/schema`
+- `operational-ontology/allocation`
 - `operational-ontology/pack`
 - `operational-ontology/governance`
 - `operational-ontology/prompt-artifacts`
@@ -75,6 +78,8 @@ sources:
 
 - **schema plane**
   taxonomy/schema validation
+- **allocation plane**
+  schema를 registry-service/index-meta가 소비할 namespace/axis/taxonomy/address allocation record로 투영
 - **pack plane**
   도메인 ontology pack의 schema/governance/blueprint 일괄 검증과 pack registry 조회
 - **implementation governance plane**
@@ -111,6 +116,7 @@ projector의 실제 책임 경계는 아래 subpath에 맞춘다.
 
 - `src/internal/schema-core.ts`
 - `src/internal/schema-memory.ts`
+- `src/internal/ontology-allocation-core.ts`
 - `src/internal/pack-core.ts`
 - `src/internal/implementation-governance-core.ts`
 - `src/internal/implementation-governance-types.ts`

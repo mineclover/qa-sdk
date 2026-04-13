@@ -71,6 +71,12 @@ def:
       type: contains
     - target: programming-artifact-ontology-system
       type: contains
+    - target: operational-ontology-registry-allocation-plan
+      type: contains
+    - target: operational-ontology-registry-allocation-todo
+      type: contains
+    - target: operational-ontology-ssot-navigation-guide
+      type: contains
 ---
 
 # Operational Ontology System — schema-first operational ontology 초안
@@ -98,6 +104,8 @@ taxonomy를 먼저 schema로 선언하고 검증한 뒤, 그 schema에서 node, 
   - governance evidence에서 작업영역별 `self_reflection` / `code_editing_rules`를 생성하는 파생 산출물 표면
 - **Programming artifact plane**
   - build/generated/quality/deploy/prompt 산출물을 artifact registry provider로 해석하는 pack schema
+- **Registry allocation plane**
+  - schema allocation plan을 namespace/axis/taxonomy/address allocation record로 투영하고 registry-service/index-meta 승격 경계를 준비
 - **Instance plane**
   - `NodeCoord`
   - `RelationTypeCoord`
@@ -182,3 +190,6 @@ RDF bridge는 이 4층 전체에 대응되는 외부 의미 계층이다.
 - `operational-ontology-traversal-coordinate` — route identity와 purpose projection
 - `operational-ontology-rdf-bridge` — RDF와 operational coordinate의 대응 규칙
 - `programming-artifact-ontology-system` — build/generated/quality/deploy/prompt 산출물 vocabulary와 registry provider pack
+- `operational-ontology-registry-allocation-plan` — ontology-aware registry/address allocation 로드맵
+- `operational-ontology-registry-allocation-todo` — registry allocation 구현 체크리스트
+- `operational-ontology-ssot-navigation-guide` — schema/registry/address/observation SSOT 탐색 순서

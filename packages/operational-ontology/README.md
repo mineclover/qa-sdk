@@ -10,6 +10,8 @@
 - [operational-ontology-taxonomy-schema.spec.md](../../docs/specs/operational-ontology/operational-ontology-taxonomy-schema.spec.md) — axis/taxonomy schema plane 정의
 - [operational-ontology-relation-category-schema.spec.md](../../docs/specs/operational-ontology/operational-ontology-relation-category-schema.spec.md) — relation type category schema 정의
 - [operational-ontology-schema-validation.spec.md](../../docs/specs/operational-ontology/operational-ontology-schema-validation.spec.md) — schema validation plane 정의
+- [operational-ontology-registry-allocation.plan.md](../../docs/specs/operational-ontology/operational-ontology-registry-allocation.plan.md) — registry-service/index-meta 승격용 address allocation 로드맵
+- [operational-ontology-ssot-navigation-guide.spec.md](../../docs/specs/operational-ontology/operational-ontology-ssot-navigation-guide.spec.md) — schema/registry/address/observation SSOT 탐색 순서
 - [operational-ontology-persistence.spec.md](../../docs/specs/operational-ontology/operational-ontology-persistence.spec.md) — facet bundle + append-only observation 저장 모델
 - [programming-artifact-ontology-system.spec.md](../../docs/specs/operational-ontology/programming-artifact-ontology-system.spec.md) — programming artifact vocabulary와 registry provider 초안
 - [programming-artifact-ontology-development-guide.spec.md](../../docs/specs/operational-ontology/programming-artifact-ontology-development-guide.spec.md) — programming artifact 지속 개발 context 확인 순서
@@ -60,6 +62,7 @@
 ## Plane Facades
 
 - `operationalOntologySchemaPlane` — schema validation
+- `operationalOntologyAllocationPlane` — ontology namespace/axis/taxonomy/address allocation plan
 - `operationalOntologyLineagePlane` — lineage projection과 lineage skeleton 추론
 - `operationalOntologyCorridorPlane` — corridor template와 corridor validation
 - `operationalOntologyJunctionPlane` — junction template와 route decision 해석
@@ -72,6 +75,7 @@
 ## Subpath Imports
 
 - `operational-ontology/schema`
+- `operational-ontology/allocation`
 - `operational-ontology/runtime`
 - `operational-ontology/lineage`
 - `operational-ontology/corridor`
@@ -92,6 +96,7 @@
 
 - `src/index.ts` — 얇은 composition root. internal core 재수출과 facade 조합만 담당
 - `src/internal/schema-core.ts` — axis/taxonomy/relation/traversal schema와 검증
+- `src/internal/ontology-allocation-core.ts` — DB 독립 namespace/axis/taxonomy/address allocation plan과 검증
 - `src/internal/programming-artifact-core.ts` — programming artifact vocabulary, pack schema, registry provider
 - `src/internal/schema-memory.ts` — in-memory schema registry adapter
 - `src/internal/runtime-core.ts` — node/relation/edge/traversal/control-flow/runtime primitive
