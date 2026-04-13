@@ -120,7 +120,20 @@ function parseFlags(args: string[]): { positional: string[]; options: DataSource
     positional.push(arg);
   }
 
-  return { positional, options: { mode }, flags };
+  const dbPath = flags["db"] ?? flags["db-path"];
+  const serverUrl = flags["server-url"];
+  const docsDir = flags["docs"];
+
+  return {
+    positional,
+    options: {
+      ...(mode ? { mode } : {}),
+      ...(dbPath ? { dbPath } : {}),
+      ...(serverUrl ? { serverUrl } : {}),
+      ...(docsDir ? { docsDir } : {}),
+    },
+    flags,
+  };
 }
 
 function parseCsvFlag(value?: string): string[] {
