@@ -21,7 +21,7 @@ def:
 
 ## 현재 목표
 
-현재 구현은 `programming-artifact-ontology` pack schema, artifact kind/relation vocabulary, in-memory registry store, `ArtifactRegistryPromptArtifactContextProvider`, `extract-artifact --artifact-registry` 우선 조회, 관련 `quality-status` record sidecar discovery, quality export JSON snapshot 로딩, prompt quality `governance_closure` evidence 반영, `extract-artifact --json` fallback source 구조화, codegen/quality export/deployment output/prompt artifact/build output registry append, quality export registry metadata closure 요약까지 열린 단계다. 다음 목표는 JSON snapshot과 registry metadata만으로 부족한 경우 quality-ledger lookup이나 freshness SLA를 별도 story로 붙일지 판단하는 것이다.
+현재 구현은 `programming-artifact-ontology` pack schema, artifact kind/relation vocabulary, in-memory registry store, `ArtifactRegistryPromptArtifactContextProvider`, `extract-artifact --artifact-registry` 우선 조회, 관련 `quality-status` record sidecar discovery, quality export JSON snapshot 로딩, prompt quality `governance_closure` evidence 반영, `extract-artifact --json` fallback source 구조화와 `source.governanceClosure` 상태 요약, codegen/quality export/deployment output/prompt artifact/build output registry append, quality export registry metadata closure 요약까지 열린 단계다. 다음 목표는 JSON snapshot과 registry metadata만으로 부족한 경우 quality-ledger lookup이나 freshness SLA를 별도 story로 붙일지 판단하는 것이다.
 
 ## 장기 목표
 
@@ -47,6 +47,8 @@ programming/artifact ontology는 별도 pack 또는 plugin으로 관리한다. �
    artifact extraction 결과를 registry의 관련 `quality-status` record와 연결해 synthetic evidence 의존도를 낮춘다.
 8. Quality payload verdict 연결
    quality-status JSON payload의 bundle/gate 상태를 governance verdict와 prompt quality closure에 직접 연결한다. 현재 단계는 `outputPath` JSON snapshot과 quality export registry metadata 요약 기반으로 완료됐고, ledger lookup과 freshness SLA는 후속 확장으로 남긴다.
+9. Closure JSON 해석 표면 고정
+   `extract-artifact --json`의 `source.governanceClosure`가 `quality-status-found`, `quality-status-missing`, `quality-status-invalid`, `quality-status-incomplete`를 구분하고 matched quality-status refs, warning, action을 제공한다.
 
 ## 다음 세션 기준
 

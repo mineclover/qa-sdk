@@ -11,6 +11,7 @@ after each iteration and it's included in prompts for context.
 - Quality-status snapshot loading: treat `outputPath` JSON as additive closure evidence; valid snapshots become governance-run source refs, while missing/invalid files produce structured JSON warnings and extraction continues.
 - Prompt quality sidecar evidence: keep new scoring signals optional on the evaluator input, pass them only from artifact extraction, and use verified evidence as an additive bonus while failed/missing evidence becomes governance warnings.
 - Quality export registry metadata: keep provider reads on existing relation/output fields, and add closure summaries under optional `metadata` so old registry consumers remain compatible.
+- Artifact extraction JSON warnings: keep fallback/source quality signals and governance closure status as sibling fields (`qualitySignal` vs `governanceClosure`) so search fallback degradation does not get conflated with quality-status closure evidence.
 
 ---
 
@@ -102,4 +103,25 @@ after each iteration and it's included in prompts for context.
   - Registry record enrichment can stay backward compatible by placing closure details under optional `metadata` and leaving provider matching on the existing refs/output fields.
   - `quality export` snapshots already contain enough bundle/gate/claim state to derive both per-bundle summaries and aggregate totals without introducing registry-service allocation persistence.
   - Definition validation treats broad `sources:` mappings as authoritative code boundaries, so cross-concept docs should mention shared implementation files in body text instead of claiming them in frontmatter.
+---
+
+## 2026-04-13 - US-005
+- Added `source.governanceClosure` to `extract-artifact --json` source output with `quality-status-found`, `quality-status-missing`, `quality-status-invalid`, and `quality-status-incomplete` statuses.
+- Included matched quality-status artifact refs/ids plus governance warning and `close_governance_evidence` action data for non-found closure states, while keeping search fallback warning under `source.qualitySignal.warning`.
+- Extended ontology CLI tests to cover all four closure states and warning separation, and updated programming artifact ontology system/CLI/plan/todo/development guide plus prompt artifact generation docs.
+- Verification: operational-ontology typecheck/test/build passed; CLI typecheck/build passed; targeted ontology CLI tests passed; `def sync` and `def validate` passed. Full CLI test still fails on unrelated sandbox-sensitive DKG cases: default SQLite state DB open and `127.0.0.1` listener EPERM.
+- Files changed:
+  - `packages/cli/src/commands/ontology.ts`
+  - `packages/cli/src/commands/ontology.test.ts`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-system.spec.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-cli.spec.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-plan.plan.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-todo.todo.md`
+  - `docs/specs/operational-ontology/programming-artifact-ontology-development-guide.spec.md`
+  - `docs/specs/operational-ontology/operational-ontology-prompt-artifact-generation.spec.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - `source.qualityStatusRecords` remains the raw matched evidence list, while `source.governanceClosure` is the interpreted closure verdict for agents and humans.
+  - Non-found closure states should use prompt quality governance warning codes and `close_governance_evidence` action shape so JSON consumers can align with `artifacts[].quality`.
+  - Search fallback degradation is a source-management problem and must stay separate from governance closure warnings derived from quality-status evidence.
 ---

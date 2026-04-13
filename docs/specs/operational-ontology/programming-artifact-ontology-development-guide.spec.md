@@ -72,6 +72,7 @@ sources:
 | quality export snapshot 로딩 변경 | `outputPath` path resolution, structured warning codes, governance run sourceRefs, valid/missing/invalid CLI tests |
 | quality export registry metadata 변경 | `buildQualityStatusArtifactRegistryRecord`, metadata summary shape, verifies/materializes/verification refs, quality CLI tests |
 | prompt quality closure 변경 | `PromptArtifactQualityStatusEvidence`, `governance_closure` score cap/bonus, ready/usable/degraded prompt quality tests |
+| extract-artifact closure JSON 변경 | `source.governanceClosure` status/warning/action shape, search fallback warning separation, ontology CLI tests |
 
 ## Registry Record 표준
 
@@ -108,6 +109,9 @@ artifact registry record를 생성할 때는 가능한 한 아래 필드를 채�
 - artifact extraction에서 나온 quality-status match는 `evaluatePromptArtifactQuality()`의 optional `qualityStatusEvidence`로도 전달해야 한다.
 - target을 `verifies`로 확인하고 verified bundle 또는 gate를 보고한 evidence만 `governance_closure` bonus로 쓴다.
 - failed/stale/invalid/incomplete evidence와 missing evidence는 extraction을 막지 않고 prompt quality governance warning과 confidence cap으로 표현한다.
+- `source.governanceClosure.status`는 `quality-status-found`, `quality-status-missing`, `quality-status-invalid`, `quality-status-incomplete`를 모두 구분해야 한다.
+- `source.governanceClosure`에는 matched quality-status artifact refs/ids가 항상 있어야 하며, found가 아닌 상태는 governance warning과 `close_governance_evidence` action을 포함해야 한다.
+- free-string search fallback 경고는 `source.qualitySignal.warning`에 남겨 `source.governanceClosure.warning`과 섞지 않는다.
 - 직접 `prompt extract`/`extract-file`/`extract-permission` 호출은 artifact-source context가 없으면 기존 quality evaluation 동작을 유지해야 한다.
 
 ## Handoff 규칙

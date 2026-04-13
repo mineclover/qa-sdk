@@ -136,6 +136,8 @@ CLI extraction은 matched `quality-status` record에 `outputPath`가 있으면 �
 
 Artifact extraction은 같은 matched quality record/snapshot을 `PromptArtifactQualityStatusEvidence`로도 변환해 `evaluatePromptArtifactQuality()`에 전달한다. exact TypeScript shape는 `packages/operational-ontology/src/internal/prompt-artifact-core.ts`가 SSOT다. 이 evidence는 `verified`, `failed`, `stale`, `invalid`, `incomplete` outcome과 target verification 여부, verified bundle/gate surface를 표현한다. `governance_closure`는 target을 `verifies`로 확인하고 verified bundle 또는 gate를 보고한 evidence만 additive bonus로 반영한다. failed/stale/invalid/incomplete evidence나 verified bundle/gate가 없는 evidence는 score를 올리지 않고 governance warning을 남긴다. artifact extraction이 quality-status evidence를 기대했지만 match가 없으면 extraction은 계속되며 governance closure confidence만 cap된다. 일반 definition/file/permission prompt extraction은 이 optional evidence를 넘기지 않으면 기존 품질 동작을 유지한다.
 
+`extract-artifact --json`은 이 quality-status closure 판정을 `source.governanceClosure`로도 노출한다. 이 객체는 `quality-status-found`, `quality-status-missing`, `quality-status-invalid`, `quality-status-incomplete` 중 하나의 상태, matched quality-status artifact ref/id 목록, 그리고 closure가 닫히지 않았을 때의 governance warning/action을 포함한다. free-string search fallback 품질 경고는 계속 `source.qualitySignal.warning`에 남고, governance closure warning과 합쳐지지 않는다. 이 JSON surface는 provider/registry relation vocabulary나 registry-service/index-meta allocation lifecycle을 활성화하지 않는 additive contract다.
+
 `createProgrammingArtifactRegistryRecord()`는 export command가 동일한 관계 채움 규칙을 쓰게 하는 factory다. 입력에서 알려진 값만 보존하고, `produced_by`, `derived_from`, `verifies`, `owned_by_definition`, `materializes_output` relation 배열을 정규화한다. 같은 relation이 field와 `relations` 양쪽에서 들어오면 `kind/fromRef/toRef/evidenceRef` 기준으로 dedupe한다.
 
 CLI 연결은 두 방향이다.

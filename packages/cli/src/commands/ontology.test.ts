@@ -140,6 +140,12 @@ describe("ontology CLI", () => {
         kind: string;
         registry: { status: string; providerId: string; recordCount: number };
         warnings: string[];
+        governanceClosure: {
+          status: string;
+          matchedQualityStatusArtifactRefs: string[];
+          warning?: { code: string; message: string; sourceRefs: string[] };
+          recommendedManagementActions: Array<{ kind: string; plane: string }>;
+        };
         qualitySignal: { code: string; grade: string };
       };
     };
@@ -157,6 +163,20 @@ describe("ontology CLI", () => {
         grade: "ready",
       },
     });
+    expect(parsed.source.governanceClosure).toMatchObject({
+      status: "quality-status-missing",
+      matchedQualityStatusArtifactRefs: [],
+      warning: {
+        code: "prompt-quality-status-evidence-missing",
+      },
+      recommendedManagementActions: [
+        expect.objectContaining({
+          kind: "close_governance_evidence",
+          plane: "governance",
+        }),
+      ],
+    });
+    expect(parsed.source.governanceClosure.warning?.sourceRefs).toEqual(["dist/index.js"]);
   });
 
   it("prompt extract-artifact --json reports registry misses and search fallback", async () => {
@@ -183,6 +203,12 @@ describe("ontology CLI", () => {
         fallback?: { kind: string; target: string };
         warnings: string[];
         recommendedManagementActions: string[];
+        governanceClosure: {
+          status: string;
+          matchedQualityStatusArtifactRefs: string[];
+          warning?: { code: string; message: string };
+          recommendedManagementActions: Array<{ kind: string }>;
+        };
         qualitySignal: {
           code: string;
           grade: string;
@@ -210,6 +236,19 @@ describe("ontology CLI", () => {
       },
     });
     expect(parsed.source.qualitySignal.warning).toContain("free-string search");
+    expect(parsed.source.governanceClosure).toMatchObject({
+      status: "quality-status-missing",
+      matchedQualityStatusArtifactRefs: [],
+      warning: {
+        code: "prompt-quality-status-evidence-missing",
+      },
+      recommendedManagementActions: [
+        expect.objectContaining({
+          kind: "close_governance_evidence",
+        }),
+      ],
+    });
+    expect(parsed.source.governanceClosure.warning?.message).not.toContain("free-string search");
     expect(parsed.source.warnings).toEqual([
       "artifact-registry-miss",
       "artifact-search-fallback",
@@ -265,6 +304,13 @@ describe("ontology CLI", () => {
             matchReasons: Array<{ field: string; ref: string }>;
           }>;
         };
+        governanceClosure: {
+          status: string;
+          matchedQualityStatusArtifactRefs: string[];
+          warning?: { code: string; message: string; sourceRefs: string[] };
+          recommendedManagementActions: Array<{ kind: string; targetRefs: string[] }>;
+        };
+        qualitySignal: { warning?: string };
       };
       artifacts: Array<{
         artifact: {
@@ -302,6 +348,26 @@ describe("ontology CLI", () => {
         ],
       },
     });
+    expect(parsed.source.governanceClosure).toMatchObject({
+      status: "quality-status-incomplete",
+      matchedQualityStatusArtifactRefs: ["artifacts/quality-status-unmanaged-artifact.json"],
+      warning: {
+        code: "prompt-quality-status-evidence-incomplete",
+      },
+      recommendedManagementActions: [
+        expect.objectContaining({
+          kind: "close_governance_evidence",
+        }),
+      ],
+    });
+    expect(parsed.source.governanceClosure.warning?.sourceRefs).toEqual(
+      expect.arrayContaining([
+        "quality-status:quality-status-unmanaged-artifact",
+        "artifacts/quality-status-unmanaged-artifact.json",
+      ]),
+    );
+    expect(parsed.source.qualitySignal.warning).toContain("free-string search");
+    expect(parsed.source.governanceClosure.warning?.message).not.toContain("free-string search");
     expect(
       parsed.source.qualityStatusRecords.records[0]!.matchReasons.map((reason) => reason.field),
     ).toEqual(expect.arrayContaining(["verifiesRefs", "materializesOutputRefs"]));
@@ -393,6 +459,12 @@ describe("ontology CLI", () => {
             };
           }>;
         };
+        governanceClosure: {
+          status: string;
+          matchedQualityStatusArtifactRefs: string[];
+          warning?: { code: string };
+          recommendedManagementActions: Array<{ kind: string }>;
+        };
       };
       artifacts: Array<{
         artifact: {
@@ -402,6 +474,12 @@ describe("ontology CLI", () => {
     };
 
     expect(parsed.source.qualityStatusRecords.warnings).toEqual([]);
+    expect(parsed.source.governanceClosure).toMatchObject({
+      status: "quality-status-found",
+      matchedQualityStatusArtifactRefs: ["quality-status-unmanaged-artifact.json"],
+      recommendedManagementActions: [],
+    });
+    expect(parsed.source.governanceClosure.warning).toBeUndefined();
     expect(parsed.source.qualityStatusRecords.records[0]!.qualityExportSnapshot).toMatchObject({
       rootId: "programming-artifact-ontology-system",
       bundleIds: ["programming-artifact-ontology-provider"],
@@ -487,6 +565,13 @@ describe("ontology CLI", () => {
             qualityExportWarning?: { code: string };
           }>;
         };
+        governanceClosure: {
+          status: string;
+          matchedQualityStatusArtifactRefs: string[];
+          warning?: { code: string; message: string; sourceRefs: string[] };
+          recommendedManagementActions: Array<{ kind: string }>;
+        };
+        qualitySignal: { warning?: string };
       };
       artifacts: unknown[];
     };
@@ -529,6 +614,23 @@ describe("ontology CLI", () => {
         }),
       ]),
     );
+    expect(parsed.source.governanceClosure).toMatchObject({
+      status: "quality-status-invalid",
+      matchedQualityStatusArtifactRefs: [
+        "missing-quality-status.json",
+        "invalid-quality-status.json",
+      ],
+      warning: {
+        code: "prompt-quality-status-evidence-invalid",
+      },
+      recommendedManagementActions: [
+        expect.objectContaining({
+          kind: "close_governance_evidence",
+        }),
+      ],
+    });
+    expect(parsed.source.qualitySignal.warning).toContain("free-string search");
+    expect(parsed.source.governanceClosure.warning?.message).not.toContain("free-string search");
   }, 10_000);
 
   it("prompt extract-artifact materializes prompt artifacts and appends registry records", async () => {

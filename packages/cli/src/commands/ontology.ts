@@ -67,6 +67,7 @@ import {
   evaluatePromptArtifactQuality,
   type PromptArtifact,
   type PromptArtifactKind,
+  type PromptArtifactManagementAction,
   type PromptArtifactQualityStatusEvidence,
   type PromptArtifactUseCase,
   PROMPT_ARTIFACT_KINDS,
@@ -108,6 +109,33 @@ type ArtifactExtractionSourceKind =
   | "artifact-definition-fallback"
   | "artifact-search-fallback";
 
+type GovernanceClosureQualityStatusStatus =
+  | "quality-status-found"
+  | "quality-status-missing"
+  | "quality-status-invalid"
+  | "quality-status-incomplete";
+
+interface GovernanceClosureWarning {
+  code:
+    | "prompt-quality-status-evidence-missing"
+    | "prompt-quality-status-evidence-target-missing"
+    | "prompt-quality-status-evidence-failed"
+    | "prompt-quality-status-evidence-stale"
+    | "prompt-quality-status-evidence-invalid"
+    | "prompt-quality-status-evidence-incomplete";
+  message: string;
+  sourceRefs: readonly string[];
+}
+
+interface GovernanceClosureSummary {
+  status: GovernanceClosureQualityStatusStatus;
+  source: "quality-status";
+  matchedQualityStatusArtifactRefs: readonly string[];
+  matchedQualityStatusArtifactIds: readonly string[];
+  warning?: GovernanceClosureWarning;
+  recommendedManagementActions: readonly PromptArtifactManagementAction[];
+}
+
 interface ArtifactExtractionSource {
   kind: ArtifactExtractionSourceKind;
   registry: {
@@ -128,6 +156,7 @@ interface ArtifactExtractionSource {
     records: readonly QualityStatusRecordSourceSummary[];
     warnings: readonly QualityStatusSnapshotWarning[];
   };
+  governanceClosure: GovernanceClosureSummary;
   qualitySignal: {
     code: ArtifactExtractionSourceKind;
     grade: "ready" | "usable" | "degraded";
@@ -406,6 +435,153 @@ function qualityStatusRecordsSummary(
   };
 }
 
+function governanceClosureSummary(
+  matches: readonly RelatedQualityStatusRegistryRecordMatch[],
+  snapshotEvidence: QualityStatusSnapshotEvidence = emptyQualityStatusSnapshotEvidence(),
+  targetRefs: readonly string[] = [],
+): GovernanceClosureSummary {
+  const matchedQualityStatusArtifactRefs = uniqueCliValues(
+    matches.map((match) => match.record.artifactRef),
+  );
+  const matchedQualityStatusArtifactIds = uniqueCliValues(
+    matches.map((match) => match.record.artifactId),
+  );
+  const promptEvidence = promptQualityStatusEvidenceFromArtifactExtraction({
+    matches,
+    snapshotEvidence,
+  });
+
+  if (matches.length === 0) {
+    return incompleteGovernanceClosure({
+      status: "quality-status-missing",
+      matchedQualityStatusArtifactRefs,
+      matchedQualityStatusArtifactIds,
+      warning: {
+        code: "prompt-quality-status-evidence-missing",
+        message:
+          "Artifact extraction did not include quality-status evidence, so governance closure confidence is capped.",
+        sourceRefs: uniqueCliValues(targetRefs),
+      },
+    });
+  }
+
+  const targetEvidence = promptEvidence.filter((item) => item.verifiesTarget);
+  if (targetEvidence.length === 0) {
+    return incompleteGovernanceClosure({
+      status: "quality-status-incomplete",
+      matchedQualityStatusArtifactRefs,
+      matchedQualityStatusArtifactIds,
+      warning: {
+        code: "prompt-quality-status-evidence-target-missing",
+        message:
+          "Quality-status evidence did not verify the prompt target, so it cannot close governance.",
+        sourceRefs: uniqueCliValues([
+          ...targetRefs,
+          ...promptEvidence.flatMap(qualityStatusPromptEvidenceSourceRefs),
+        ]),
+      },
+    });
+  }
+
+  const invalidEvidence = targetEvidence.find((item) =>
+    item.outcome === "failed" ||
+    item.outcome === "stale" ||
+    item.outcome === "invalid",
+  );
+  if (invalidEvidence) {
+    return incompleteGovernanceClosure({
+      status: "quality-status-invalid",
+      matchedQualityStatusArtifactRefs,
+      matchedQualityStatusArtifactIds,
+      warning: qualityStatusGovernanceWarning(invalidEvidence),
+    });
+  }
+
+  if (targetEvidence.some(hasVerifiedQualityStatusClosureEvidence)) {
+    return {
+      status: "quality-status-found",
+      source: "quality-status",
+      matchedQualityStatusArtifactRefs,
+      matchedQualityStatusArtifactIds,
+      recommendedManagementActions: [],
+    };
+  }
+
+  const incompleteEvidence = targetEvidence[0]!;
+  return incompleteGovernanceClosure({
+    status: "quality-status-incomplete",
+    matchedQualityStatusArtifactRefs,
+    matchedQualityStatusArtifactIds,
+    warning: qualityStatusGovernanceWarning(incompleteEvidence),
+  });
+}
+
+function incompleteGovernanceClosure(input: {
+  status: Exclude<GovernanceClosureQualityStatusStatus, "quality-status-found">;
+  matchedQualityStatusArtifactRefs: readonly string[];
+  matchedQualityStatusArtifactIds: readonly string[];
+  warning: GovernanceClosureWarning;
+}): GovernanceClosureSummary {
+  return {
+    status: input.status,
+    source: "quality-status",
+    matchedQualityStatusArtifactRefs: input.matchedQualityStatusArtifactRefs,
+    matchedQualityStatusArtifactIds: input.matchedQualityStatusArtifactIds,
+    warning: input.warning,
+    recommendedManagementActions: [
+      {
+        kind: "close_governance_evidence",
+        plane: "governance",
+        priority: "required",
+        reason: input.warning.message,
+        targetRefs: input.warning.sourceRefs,
+      },
+    ],
+  };
+}
+
+function hasVerifiedQualityStatusClosureEvidence(
+  evidence: PromptArtifactQualityStatusEvidence,
+): boolean {
+  return (
+    evidence.outcome === "verified" &&
+    ((evidence.verifiedBundleRefs?.length ?? 0) > 0 ||
+      (evidence.verifiedGateRefs?.length ?? 0) > 0 ||
+      (evidence.verifiedGateCount ?? 0) > 0)
+  );
+}
+
+function qualityStatusGovernanceWarning(
+  evidence: PromptArtifactQualityStatusEvidence,
+): GovernanceClosureWarning {
+  const code: GovernanceClosureWarning["code"] = evidence.outcome === "verified"
+    ? "prompt-quality-status-evidence-incomplete"
+    : `prompt-quality-status-evidence-${evidence.outcome}`;
+  return {
+    code,
+    message:
+      evidence.message ??
+      (evidence.outcome === "verified"
+        ? "Quality-status evidence verified the target but reported no verified bundles or gates."
+        : `Quality-status evidence reported ${evidence.outcome} verification for the target.`),
+    sourceRefs: qualityStatusPromptEvidenceSourceRefs(evidence),
+  };
+}
+
+function qualityStatusPromptEvidenceSourceRefs(
+  evidence: PromptArtifactQualityStatusEvidence,
+): string[] {
+  return uniqueCliValues([
+    evidence.evidenceId,
+    ...evidence.targetRefs,
+    ...(evidence.sourceRefs ?? []),
+    ...(evidence.bundleRefs ?? []),
+    ...(evidence.verifiedBundleRefs ?? []),
+    ...(evidence.gateRefs ?? []),
+    ...(evidence.verifiedGateRefs ?? []),
+  ]);
+}
+
 function withQualityStatusRecordsSummary(
   source: ArtifactExtractionSource | undefined,
   matches: readonly RelatedQualityStatusRegistryRecordMatch[],
@@ -417,13 +593,25 @@ function withQualityStatusRecordsSummary(
     ...source,
     warnings: uniqueCliValues([...source.warnings, ...warningCodes]),
     qualityStatusRecords: qualityStatusRecordsSummary(matches, snapshotEvidence),
+    governanceClosure: governanceClosureSummary(
+      matches,
+      snapshotEvidence,
+      artifactExtractionSourceTargetRefs(source),
+    ),
   };
+}
+
+function artifactExtractionSourceTargetRefs(source: ArtifactExtractionSource): string[] {
+  return uniqueCliValues([
+    source.fallback?.target,
+  ].filter((value): value is string => Boolean(value)));
 }
 
 function artifactRegistryHitSource(
   loadedRegistry: LoadedArtifactRegistryProvider,
   qualityStatusMatches: readonly RelatedQualityStatusRegistryRecordMatch[],
   snapshotEvidence: QualityStatusSnapshotEvidence = emptyQualityStatusSnapshotEvidence(),
+  targetRefs: readonly string[] = [],
 ): ArtifactExtractionSource {
   return {
     kind: "artifact-registry-hit",
@@ -436,6 +624,11 @@ function artifactRegistryHitSource(
     warnings: qualityStatusSnapshotWarningCodes(snapshotEvidence),
     recommendedManagementActions: [],
     qualityStatusRecords: qualityStatusRecordsSummary(qualityStatusMatches, snapshotEvidence),
+    governanceClosure: governanceClosureSummary(
+      qualityStatusMatches,
+      snapshotEvidence,
+      targetRefs,
+    ),
     qualitySignal: {
       code: "artifact-registry-hit",
       grade: "ready",
@@ -484,6 +677,11 @@ function artifactFallbackSource(input: {
     qualityStatusRecords: qualityStatusRecordsSummary(
       input.qualityStatusMatches ?? [],
       snapshotEvidence,
+    ),
+    governanceClosure: governanceClosureSummary(
+      input.qualityStatusMatches ?? [],
+      snapshotEvidence,
+      [input.target],
     ),
     qualitySignal: {
       code: input.kind,
@@ -1864,6 +2062,7 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
           loadedRegistry,
           qualityStatusEvidence.matches,
           qualityStatusEvidence.snapshotEvidence,
+          [artifactRef],
         ),
         useCase,
         outputs,

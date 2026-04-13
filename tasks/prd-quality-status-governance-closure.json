@@ -164,13 +164,14 @@
         "node packages/cli/dist/index.js def validate passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "This story should not change non-JSON human-readable output except for optional concise warnings if needed. Governance closure JSON must not imply registry allocation activation.",
       "dependsOn": [
         "US-001",
         "US-002",
         "US-003"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-006",
@@ -207,6 +208,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-13T13:15:23.053Z"
+    "updatedAt": "2026-04-13T13:24:01.371Z"
   }
 }

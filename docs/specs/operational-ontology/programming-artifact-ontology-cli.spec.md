@@ -65,7 +65,7 @@ qa-sdk ontology artifact registry append --output <file> \
 6. registry 결과 유무와 별개로, registry 안의 `quality-status` record가 요청 artifact/definition/work area를 `verifiesRefs`, `materializesOutputRefs`, `sourceRefs`, `outputPath`, `relations`로 가리키면 prompt source evidence에 병합한다.
 7. matched `quality-status` record에 `outputPath`가 있으면 quality export JSON snapshot을 읽고, bundle/gate/claim summary와 snapshot-derived governance run을 추가한다.
 8. snapshot 파일이 없거나 invalid JSON/shape이면 extraction은 계속 진행하고 `source.qualityStatusRecords.warnings[]`와 `source.warnings[]`에 structured warning을 남긴다.
-9. matched quality record/snapshot을 prompt quality evaluation evidence로 변환한다. 이 evidence는 JSON top-level field를 새로 만들지 않고 `artifacts[].quality`의 `governance_closure` metric과 `issues[]`에 반영된다.
+9. matched quality record/snapshot을 prompt quality evaluation evidence로 변환한다. 이 evidence는 `artifacts[].quality`의 `governance_closure` metric과 `issues[]`에 반영되고, CLI JSON source에는 `source.governanceClosure` 요약으로도 노출된다.
 10. registry miss이면 기존 fallback으로 내려간다.
 11. `<artifact-ref>`가 `packages/` 또는 `docs/`로 시작하면 `extract-file`에 위임한다.
 12. `<artifact-ref>`가 definition doc id이면 `extract`에 위임한다.
@@ -204,6 +204,17 @@ related quality matching은 `kind === "quality-status"` record만 대상으로 �
         }
       ]
     },
+    "governanceClosure": {
+      "status": "quality-status-found",
+      "source": "quality-status",
+      "matchedQualityStatusArtifactRefs": [
+        "artifacts/quality-status-unmanaged-artifact.json"
+      ],
+      "matchedQualityStatusArtifactIds": [
+        "quality-status-unmanaged-artifact"
+      ],
+      "recommendedManagementActions": []
+    },
     "qualitySignal": {
       "code": "artifact-search-fallback",
       "grade": "degraded",
@@ -217,6 +228,15 @@ related quality matching은 `kind === "quality-status"` record만 대상으로 �
 `qualityStatusRecords.total`은 matched quality-status record 수이고, `records[]`는 prompt context에 병합된 품질 record의 구조화 요약이다. registry hit, registry miss, file fallback, definition fallback, search fallback 모두 같은 field를 출력한다. match가 없으면 `total: 0`, `records: []`, `warnings: []`다.
 
 `records[].qualityExportSnapshot`은 matched quality record의 `outputPath` JSON이 로드될 때만 붙는 additive metadata다. exact TypeScript shape는 `packages/cli/src/commands/ontology.ts`가 SSOT이며, 공개 JSON에는 root id, bundle ids, per-bundle state/gate/claim counts, aggregate gate/claim counts, generated timestamp, resolved source path만 노출한다. snapshot load 실패는 `records[].qualityExportWarning`과 `qualityStatusRecords.warnings[]`로 구조화하며, warning code는 `quality-status-snapshot-missing`, `quality-status-snapshot-invalid-json`, `quality-status-snapshot-invalid-shape`, `quality-status-snapshot-read-failed` 중 하나다.
+
+`source.governanceClosure`는 quality-status evidence가 prompt governance closure를 왜 닫거나 닫지 못했는지 설명하는 JSON-only 요약이다. 상태는 아래 네 값 중 하나다.
+
+- `quality-status-found` — target을 `verifies`로 확인한 quality-status evidence가 verified bundle 또는 gate를 보고했다.
+- `quality-status-missing` — artifact extraction에 연결된 quality-status record가 없다.
+- `quality-status-invalid` — matched quality-status evidence가 failed, stale, invalid snapshot/outcome을 보고했다.
+- `quality-status-incomplete` — matched quality-status record는 있지만 target verification이 없거나 verified bundle/gate surface가 없다.
+
+모든 상태는 `matchedQualityStatusArtifactRefs[]`와 `matchedQualityStatusArtifactIds[]`를 포함한다. `quality-status-found`가 아니면 `warning`과 `recommendedManagementActions[]`에 `close_governance_evidence` action을 포함한다. 이 warning은 governance closure 전용이며, free-string search fallback 경고는 계속 `source.qualitySignal.warning`에 별도로 남는다.
 
 `qa-sdk quality export ... --artifact-registry=<file>`가 append하는 `quality-status` record도 같은 closure 최소 요약을 `metadata`에 담는다. metadata shape는 optional additive field이며 기존 registry JSON 배열/object envelope, provider lookup, relation mapping을 바꾸지 않는다.
 
