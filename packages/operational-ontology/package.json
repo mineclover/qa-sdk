@@ -10,6 +10,11 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
+    "./allocation": {
+      "types": "./dist/allocation.d.ts",
+      "import": "./dist/allocation.js",
+      "require": "./dist/allocation.cjs"
+    },
     "./schema": {
       "types": "./dist/schema.d.ts",
       "import": "./dist/schema.js",

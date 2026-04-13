@@ -59,6 +59,10 @@ import {
   validateProgrammingArtifactOntologyPack,
 } from "./internal/programming-artifact-core.js";
 import {
+  allocateOntologyAddressSpace,
+  validateOntologyAddressAllocationPlan,
+} from "./internal/ontology-allocation-core.js";
+import {
   validateOperationalOntologyPack,
   validateOperationalOntologyPacks,
 } from "./internal/pack-core.js";
@@ -83,6 +87,7 @@ export * from "./internal/persistence-service.js";
 export * from "./internal/persistence-diff.js";
 export * from "./internal/prompt-artifact-core.js";
 export * from "./internal/programming-artifact-core.js";
+export * from "./internal/ontology-allocation-core.js";
 
 // ── Architecture Facades ───────────────────────────────
 
@@ -125,6 +130,11 @@ export const operationalOntologyProgrammingArtifactPlane = {
   createProgrammingArtifactRegistryRecord,
   buildProgrammingArtifactRelations,
   extractPromptArtifactSourcesFromProgrammingArtifactRecord,
+};
+
+export const operationalOntologyAllocationPlane = {
+  allocateOntologyAddressSpace,
+  validateOntologyAddressAllocationPlan,
 };
 
 export const operationalOntologyCorridorPlane = {

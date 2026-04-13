@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { operationalOntologySchemaPlane } from "./schema.js";
+import { operationalOntologyAllocationPlane } from "./allocation.js";
 import { operationalOntologyPackPlane } from "./pack.js";
 import { operationalOntologyLineagePlane } from "./lineage.js";
 import { operationalOntologyCorridorPlane } from "./corridor.js";
@@ -20,6 +21,8 @@ import { projectOperationalOntologySnapshot as projectSnapshotProjectorOnly } fr
 describe("submodule facades", () => {
   it("exposes plane-specific public surfaces", () => {
     expect(typeof operationalOntologySchemaPlane.validateOperationalOntologySchema).toBe("function");
+    expect(typeof operationalOntologySchemaPlane.allocateOntologyAddressSpace).toBe("function");
+    expect(typeof operationalOntologyAllocationPlane.allocateOntologyAddressSpace).toBe("function");
     expect(typeof operationalOntologyPackPlane.validateOperationalOntologyPack).toBe("function");
     expect(typeof operationalOntologyPackPlane.validateOperationalOntologyPacks).toBe("function");
     expect(typeof operationalOntologyLineagePlane.projectLineageToOperationalOntology).toBe("function");
