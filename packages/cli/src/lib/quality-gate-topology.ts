@@ -31,6 +31,12 @@ export interface QualityGateTopology {
   readonly gateDescriptors: readonly GateDescriptor[];
 }
 
+export interface QualityGateDescriptorResolutionRef {
+  readonly ref: string;
+  readonly bundleId?: string | null;
+  readonly directGateOnly?: boolean;
+}
+
 interface TopologyDocVersionOptions {
   readonly version?: number;
 }
@@ -153,4 +159,102 @@ export function resolveQualityGateTopology(
     gateDocs,
     gateDescriptors: toGateDescriptors(bundleId, gateDocs),
   };
+}
+
+export async function resolveQualityGateDescriptorsFromDataSource(
+  source: Pick<DefDataSource, "get" | "getChildren">,
+  refs: readonly QualityGateDescriptorResolutionRef[],
+): Promise<GateDescriptor[]> {
+  const descriptors: GateDescriptor[] = [];
+  const seenGateDocIds = new Set<string>();
+
+  for (const ref of refs) {
+    try {
+      const resolved = await resolveQualityGateDescriptorsForRef(source, ref);
+      for (const descriptor of resolved) {
+        if (seenGateDocIds.has(descriptor.gateDocId)) continue;
+        seenGateDocIds.add(descriptor.gateDocId);
+        descriptors.push(descriptor);
+      }
+    } catch {
+      // Descriptor resolution is sidecar topology discovery; callers decide how to report misses.
+    }
+  }
+
+  return descriptors;
+}
+
+async function resolveQualityGateDescriptorsForRef(
+  source: Pick<DefDataSource, "get" | "getChildren">,
+  input: QualityGateDescriptorResolutionRef,
+): Promise<GateDescriptor[]> {
+  const docId = definitionDocRefCandidate(input.ref);
+  if (!docId) return [];
+
+  const root = await source.get(docId);
+  if (!root) return [];
+  if (root.gate) {
+    return [{
+      gateDocId: root.docId,
+      docVersion: root.version,
+      bundleId: input.bundleId ?? null,
+    }];
+  }
+  if (input.directGateOnly) return [];
+
+  return resolveQualityGateDescriptorsForContainer(source, root, input.bundleId);
+}
+
+async function resolveQualityGateDescriptorsForContainer(
+  source: Pick<DefDataSource, "get" | "getChildren">,
+  root: DefDoc,
+  bundleId: string | null | undefined,
+): Promise<GateDescriptor[]> {
+  const children = await source.getChildren(root.docId);
+  const childBundles = children.filter(isQualityBundleDoc);
+  if (bundleId === undefined && childBundles.length > 0) {
+    const directGateDescriptors = children
+      .filter((child) => child.gate !== undefined)
+      .map((child): GateDescriptor => ({
+        gateDocId: child.docId,
+        docVersion: child.version,
+        bundleId: root.docId,
+      }));
+    const childBundleDescriptors = await Promise.all(
+      childBundles.map(async (child) => {
+        const containedDocs = await collectContainedQualityDocsFromDataSource(
+          source,
+          child.docId,
+        );
+        return toGateDescriptors(child.docId, containedDocs);
+      }),
+    );
+    return [
+      ...directGateDescriptors,
+      ...childBundleDescriptors.flat(),
+    ];
+  }
+
+  const containedDocs = await collectContainedQualityDocsFromDataSource(
+    source,
+    root.docId,
+  );
+  return toGateDescriptors(bundleId === undefined ? root.docId : bundleId, containedDocs);
+}
+
+function isQualityBundleDoc(doc: DefDoc): boolean {
+  return doc.tags.includes("quality-bundle");
+}
+
+function definitionDocRefCandidate(ref: string): string | undefined {
+  const strippedArtifact = ref.startsWith("artifact:")
+    ? ref.slice("artifact:".length)
+    : ref;
+  const strippedWorkArea = strippedArtifact.startsWith("work-area:")
+    ? strippedArtifact.slice("work-area:".length)
+    : strippedArtifact;
+  if (!strippedWorkArea || strippedWorkArea.includes("/") || strippedWorkArea.includes(":")) {
+    return undefined;
+  }
+  return strippedWorkArea;
 }

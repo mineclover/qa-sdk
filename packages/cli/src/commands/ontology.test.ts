@@ -361,6 +361,7 @@ describe("ontology CLI", () => {
         "artifact-registry-miss",
         "artifact-search-fallback",
         "quality-status-snapshot-missing",
+        "quality-status-ledger-no-gate-descriptors",
       ],
       qualityStatusRecords: {
         total: 1,
@@ -372,6 +373,9 @@ describe("ontology CLI", () => {
               "unmanaged-artifact",
               "artifact:unmanaged-artifact",
             ]),
+            qualityGateDescriptorWarning: expect.objectContaining({
+              code: "quality-status-ledger-no-gate-descriptors",
+            }),
           }),
         ],
       },
@@ -413,18 +417,18 @@ describe("ontology CLI", () => {
     await writeFile(
       snapshotPath,
       JSON.stringify({
-        rootId: "programming-artifact-ontology-system",
+        rootId: "quality-gates-system",
         generatedAt: "2026-04-13T00:00:00.000Z",
         bundles: [
           {
-            bundleId: "programming-artifact-ontology-provider",
-            title: "Programming artifact ontology provider",
-            gateCount: 2,
+            bundleId: "work-domain-quality-bundle",
+            title: "Work domain quality bundle",
+            gateCount: 3,
             claimCount: 4,
             verifiedClaimCount: 3,
             bundleState: "verified",
-            verifiedGates: 2,
-            totalGates: 2,
+            verifiedGates: 3,
+            totalGates: 3,
             reviewScopes: [],
           },
         ],
@@ -465,6 +469,11 @@ describe("ontology CLI", () => {
         qualityStatusRecords: {
           warnings: Array<{ code: string }>;
           records: Array<{
+            gateDescriptors?: Array<{
+              gateDocId: string;
+              docVersion: number;
+              bundleId: string | null;
+            }>;
             qualityExportSnapshot?: {
               rootId: string;
               bundleIds: string[];
@@ -509,30 +518,140 @@ describe("ontology CLI", () => {
     });
     expect(parsed.source.governanceClosure.warning).toBeUndefined();
     expect(parsed.source.qualityStatusRecords.records[0]!.qualityExportSnapshot).toMatchObject({
-      rootId: "programming-artifact-ontology-system",
-      bundleIds: ["programming-artifact-ontology-provider"],
+      rootId: "quality-gates-system",
+      bundleIds: ["work-domain-quality-bundle"],
       generatedAt: "2026-04-13T00:00:00.000Z",
       sourcePath: snapshotPath,
       totals: {
-        verifiedGates: 2,
-        totalGates: 2,
+        verifiedGates: 3,
+        totalGates: 3,
         claimCount: 4,
         verifiedClaimCount: 3,
       },
       bundles: [
         {
-          bundleId: "programming-artifact-ontology-provider",
+          bundleId: "work-domain-quality-bundle",
           bundleState: "verified",
-          verifiedGates: 2,
-          totalGates: 2,
+          verifiedGates: 3,
+          totalGates: 3,
           claimCount: 4,
           verifiedClaimCount: 3,
         },
       ],
     });
+    expect(parsed.source.qualityStatusRecords.records[0]!.gateDescriptors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          gateDocId: "gate-work-domain-typecheck",
+          docVersion: expect.any(Number),
+          bundleId: "work-domain-quality-bundle",
+        }),
+        expect.objectContaining({
+          gateDocId: "gate-work-domain-build",
+          docVersion: expect.any(Number),
+          bundleId: "work-domain-quality-bundle",
+        }),
+        expect.objectContaining({
+          gateDocId: "gate-work-domain-test",
+          docVersion: expect.any(Number),
+          bundleId: "work-domain-quality-bundle",
+        }),
+      ]),
+    );
     expect(parsed.artifacts[0]!.artifact.sourceRefs).toEqual(
       expect.arrayContaining([
         "governance-run:governance:quality-status-unmanaged-artifact:quality-export-snapshot",
+      ]),
+    );
+  }, 10_000);
+
+  it("prompt extract-artifact --json resolves quality-status metadata, direct gate refs, and relations into descriptors", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-descriptors-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "quality-status-descriptor-artifact",
+            artifactRef: "quality-status-descriptor-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["unmanaged-artifact"],
+            verificationRefs: ["gate-registry-test"],
+            relations: [
+              {
+                kind: "materializes_output",
+                fromRef: "quality-status-descriptor-artifact.json",
+                toRef: "query-quality-bundle",
+              },
+            ],
+            metadata: {
+              rootId: "quality-gates-system",
+              bundles: [
+                {
+                  bundleId: "work-domain-quality-bundle",
+                },
+              ],
+            },
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "unmanaged-artifact",
+        "--artifact-registry",
+        registryPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+        "--scan",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        warnings: string[];
+        qualityStatusRecords: {
+          records: Array<{
+            gateDescriptors?: Array<{
+              gateDocId: string;
+              docVersion: number;
+              bundleId: string | null;
+            }>;
+            qualityGateDescriptorWarning?: { code: string };
+          }>;
+        };
+      };
+      artifacts: Array<{
+        quality: {
+          issues: Array<{ sourceRefs?: string[] }>;
+        };
+      }>;
+    };
+    const record = parsed.source.qualityStatusRecords.records[0]!;
+
+    expect(parsed.source.warnings).not.toContain("quality-status-ledger-no-gate-descriptors");
+    expect(record.qualityGateDescriptorWarning).toBeUndefined();
+    expect(record.gateDescriptors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          gateDocId: "gate-work-domain-typecheck",
+          docVersion: expect.any(Number),
+          bundleId: "work-domain-quality-bundle",
+        }),
+        expect.objectContaining({
+          gateDocId: "gate-registry-test",
+          docVersion: expect.any(Number),
+          bundleId: null,
+        }),
+        expect.objectContaining({
+          gateDocId: "gate-query-test",
+          docVersion: expect.any(Number),
+          bundleId: "query-quality-bundle",
+        }),
       ]),
     );
   }, 10_000);
@@ -544,14 +663,14 @@ describe("ontology CLI", () => {
     await writeFile(
       snapshotPath,
       JSON.stringify({
-        rootId: "programming-artifact-ontology-system",
+        rootId: "quality-gates-system",
         generatedAt: "2026-04-13T00:00:00.000Z",
         bundles: [
           {
-            bundleId: "programming-artifact-ontology-provider",
+            bundleId: "work-domain-quality-bundle",
             bundleState: "gate-bound",
             verifiedGates: 1,
-            totalGates: 2,
+            totalGates: 3,
             claimCount: 4,
             verifiedClaimCount: 1,
           },

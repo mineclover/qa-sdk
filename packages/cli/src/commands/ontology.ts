@@ -60,6 +60,7 @@ import type {
   EventRecordObservationInput,
   PipeGraphProjectionInput,
 } from "operational-ontology/projectors";
+import type { GateDescriptor } from "quality-ledger";
 import {
   extractPromptArtifactSourcesFromDefinitionContext,
   generatePromptArtifact,
@@ -81,6 +82,7 @@ import {
   appendQualityStatusEvidenceToPromptArtifactExtraction,
   createProgrammingArtifactRegistryRecord,
   findRelatedQualityStatusRegistryRecords,
+  type ProgrammingArtifactRelation,
   type ProgrammingArtifactRegistryRecord,
   type RelatedQualityStatusRegistryRecordMatch,
   type RelatedQualityStatusRegistryRecordSummary,
@@ -92,6 +94,8 @@ import {
 } from "../lib/programming-artifact-registry.js";
 import {
   collectContainedQualityDocsFromDataSource,
+  resolveQualityGateDescriptorsFromDataSource,
+  type QualityGateDescriptorResolutionRef,
   toGateDescriptors,
 } from "../lib/quality-gate-topology.js";
 
@@ -197,7 +201,8 @@ interface QualityStatusSnapshotWarning {
     | "quality-status-snapshot-missing"
     | "quality-status-snapshot-invalid-json"
     | "quality-status-snapshot-invalid-shape"
-    | "quality-status-snapshot-read-failed";
+    | "quality-status-snapshot-read-failed"
+    | "quality-status-ledger-no-gate-descriptors";
   artifactId: string;
   artifactRef: string;
   outputPath?: string;
@@ -207,8 +212,10 @@ interface QualityStatusSnapshotWarning {
 }
 
 type QualityStatusRecordSourceSummary = RelatedQualityStatusRegistryRecordSummary & {
+  gateDescriptors?: readonly GateDescriptor[];
   qualityExportSnapshot?: QualityStatusExportSnapshotEvidence;
   qualityExportWarning?: QualityStatusSnapshotWarning;
+  qualityGateDescriptorWarning?: QualityStatusSnapshotWarning;
 };
 
 interface QualityStatusSnapshotEvidence {
@@ -387,6 +394,16 @@ function toDefinitionDataSourceOptions(flags: Record<string, string>): DataSourc
     dbPath: flags["db"],
     serverUrl: flags["server-url"],
   };
+}
+
+async function loadQualityStatusDescriptorSource(
+  flags: Record<string, string>,
+): Promise<Pick<DefDataSource, "get" | "getChildren"> | undefined> {
+  try {
+    return await createDataSource(toDefinitionDataSourceOptions(flags));
+  } catch {
+    return undefined;
+  }
 }
 
 function parsePromptArtifactKind(value: string | undefined): PromptArtifactKind | "all" {
@@ -718,6 +735,7 @@ function withArtifactFallbackFlags(
 async function loadRelatedQualityStatusEvidenceFromFlags(
   flags: Record<string, string>,
   targetRefs: readonly (string | undefined)[],
+  source?: Pick<DefDataSource, "get" | "getChildren">,
 ): Promise<RelatedQualityStatusEvidence> {
   const loadedRegistry = await loadArtifactRegistryProvider(flags);
   if (!loadedRegistry) {
@@ -726,17 +744,22 @@ async function loadRelatedQualityStatusEvidenceFromFlags(
       snapshotEvidence: emptyQualityStatusSnapshotEvidence(),
     };
   }
-  return loadRelatedQualityStatusEvidence(loadedRegistry, targetRefs);
+  return loadRelatedQualityStatusEvidence(loadedRegistry, targetRefs, source);
 }
 
 async function loadRelatedQualityStatusEvidence(
   loadedRegistry: LoadedArtifactRegistryProvider | undefined,
   targetRefs: readonly (string | undefined)[],
+  source?: Pick<DefDataSource, "get" | "getChildren">,
 ): Promise<RelatedQualityStatusEvidence> {
   const matches = findRelatedQualityStatusMatches(loadedRegistry, targetRefs);
   return {
     matches,
-    snapshotEvidence: await loadQualityStatusSnapshotEvidence(loadedRegistry, matches),
+    snapshotEvidence: await loadQualityStatusSnapshotEvidence(
+      loadedRegistry,
+      matches,
+      source,
+    ),
   };
 }
 
@@ -784,12 +807,27 @@ function promptQualityStatusEvidenceFromArtifactExtraction(
       match.summary;
     const snapshot = summary.qualityExportSnapshot;
     const warning = summary.qualityExportWarning;
+    const gateDescriptors = summary.gateDescriptors ?? [];
     const outcome = qualityStatusPromptEvidenceOutcome(summary);
     const verifiedBundleRefs = snapshot
       ? snapshot.bundles
           .filter((bundle) => qualityStatusBundleVerified(bundle))
           .map((bundle) => bundle.bundleId)
       : [];
+    const gateRefs = gateDescriptors.map((descriptor) => descriptor.gateDocId);
+    const verifiedGateRefs = outcome === "verified"
+      ? gateDescriptors
+          .filter((descriptor) =>
+            !descriptor.bundleId || verifiedBundleRefs.includes(descriptor.bundleId),
+          )
+          .map((descriptor) => descriptor.gateDocId)
+      : [];
+    const bundleRefs = uniqueCliValues([
+      ...(snapshot?.bundleIds ?? []),
+      ...gateDescriptors
+        .map((descriptor) => descriptor.bundleId)
+        .filter((bundleId): bundleId is string => Boolean(bundleId)),
+    ]);
     return {
       evidenceId: `quality-status:${match.record.artifactId}`,
       outcome,
@@ -805,10 +843,12 @@ function promptQualityStatusEvidenceFromArtifactExtraction(
         snapshot?.sourcePath,
         warning?.resolvedPath,
       ].filter((value): value is string => Boolean(value))),
-      bundleRefs: snapshot?.bundleIds ?? [],
+      bundleRefs,
       verifiedBundleRefs,
+      gateRefs,
+      verifiedGateRefs,
       verifiedGateCount: snapshot?.totals.verifiedGates,
-      totalGateCount: snapshot?.totals.totalGates,
+      totalGateCount: snapshot?.totals.totalGates ?? gateDescriptors.length,
       generatedAt: snapshot?.generatedAt,
       message: qualityStatusPromptEvidenceMessage(summary, outcome),
     };
@@ -880,6 +920,7 @@ function qualityStatusMatchVerifiesTarget(
 async function loadQualityStatusSnapshotEvidence(
   loadedRegistry: LoadedArtifactRegistryProvider | undefined,
   matches: readonly RelatedQualityStatusRegistryRecordMatch[],
+  source?: Pick<DefDataSource, "get" | "getChildren">,
 ): Promise<QualityStatusSnapshotEvidence> {
   if (!loadedRegistry || matches.length === 0) {
     return emptyQualityStatusSnapshotEvidence();
@@ -890,27 +931,48 @@ async function loadQualityStatusSnapshotEvidence(
   const governanceRuns: GovernanceRun[] = [];
 
   for (const match of matches) {
-    if (!match.record.outputPath) continue;
-    const loaded = await loadQualityStatusSnapshotForRecord(
-      loadedRegistry,
-      match.record,
-    );
-    if (loaded.warning) {
-      warnings.push(loaded.warning);
-      recordSummaries.set(qualityStatusRecordKey(match.record), {
-        ...match.summary,
-        qualityExportWarning: loaded.warning,
-      });
-      continue;
+    let summary: QualityStatusRecordSourceSummary = match.summary;
+    let snapshot: QualityStatusExportSnapshotEvidence | undefined;
+    if (match.record.outputPath) {
+      const loaded = await loadQualityStatusSnapshotForRecord(
+        loadedRegistry,
+        match.record,
+      );
+      if (loaded.warning) {
+        warnings.push(loaded.warning);
+        summary = {
+          ...summary,
+          qualityExportWarning: loaded.warning,
+        };
+      } else if (loaded.snapshot) {
+        snapshot = loaded.snapshot;
+        summary = {
+          ...summary,
+          qualityExportSnapshot: loaded.snapshot,
+        };
+        governanceRuns.push(
+          qualityStatusSnapshotGovernanceRun(match.record, loaded.snapshot),
+        );
+      }
     }
-    if (!loaded.snapshot) continue;
-    recordSummaries.set(qualityStatusRecordKey(match.record), {
-      ...match.summary,
-      qualityExportSnapshot: loaded.snapshot,
-    });
-    governanceRuns.push(
-      qualityStatusSnapshotGovernanceRun(match.record, loaded.snapshot),
-    );
+
+    const gateDescriptors = source
+      ? await resolveQualityStatusRecordGateDescriptors(source, match.record, snapshot)
+      : [];
+    if (gateDescriptors.length > 0) {
+      summary = {
+        ...summary,
+        gateDescriptors,
+      };
+    } else {
+      const warning = qualityStatusNoGateDescriptorsWarning(match.record);
+      warnings.push(warning);
+      summary = {
+        ...summary,
+        qualityGateDescriptorWarning: warning,
+      };
+    }
+    recordSummaries.set(qualityStatusRecordKey(match.record), summary);
   }
 
   return {
@@ -918,6 +980,91 @@ async function loadQualityStatusSnapshotEvidence(
     warnings,
     governanceRuns,
   };
+}
+
+async function resolveQualityStatusRecordGateDescriptors(
+  source: Pick<DefDataSource, "get" | "getChildren">,
+  record: ProgrammingArtifactRegistryRecord,
+  snapshot: QualityStatusExportSnapshotEvidence | undefined,
+): Promise<GateDescriptor[]> {
+  return resolveQualityGateDescriptorsFromDataSource(
+    source,
+    qualityStatusGateDescriptorRefs(record, snapshot),
+  );
+}
+
+function qualityStatusGateDescriptorRefs(
+  record: ProgrammingArtifactRegistryRecord,
+  snapshot: QualityStatusExportSnapshotEvidence | undefined,
+): QualityGateDescriptorResolutionRef[] {
+  return [
+    ...qualityStatusSnapshotDescriptorRefs(snapshot),
+    ...qualityStatusMetadataDescriptorRefs(record.metadata),
+    ...qualityStatusRegularDescriptorRefs(record.verifiesRefs),
+    ...qualityStatusRegularDescriptorRefs(record.materializesOutputRefs),
+    ...qualityStatusDirectGateDescriptorRefs(record.verificationRefs),
+    ...qualityStatusRelationDescriptorRefs(record.relations),
+  ];
+}
+
+function qualityStatusSnapshotDescriptorRefs(
+  snapshot: QualityStatusExportSnapshotEvidence | undefined,
+): QualityGateDescriptorResolutionRef[] {
+  if (!snapshot) return [];
+  return qualityStatusRootAndBundleDescriptorRefs(snapshot.rootId, snapshot.bundleIds);
+}
+
+function qualityStatusMetadataDescriptorRefs(
+  metadata: Record<string, unknown> | undefined,
+): QualityGateDescriptorResolutionRef[] {
+  if (!metadata) return [];
+  const rootId = stringProperty(metadata, "rootId");
+  const bundleIds = qualityStatusMetadataBundleIds(metadata);
+  return qualityStatusRootAndBundleDescriptorRefs(rootId, bundleIds);
+}
+
+function qualityStatusRootAndBundleDescriptorRefs(
+  rootId: string | undefined,
+  bundleIds: readonly string[],
+): QualityGateDescriptorResolutionRef[] {
+  const bundleRefs = qualityStatusRegularDescriptorRefs(bundleIds);
+  if (bundleRefs.length > 0) return bundleRefs;
+  return rootId ? [{ ref: rootId }] : [];
+}
+
+function qualityStatusMetadataBundleIds(
+  metadata: Record<string, unknown>,
+): string[] {
+  const bundles = metadata["bundles"];
+  if (!Array.isArray(bundles)) return [];
+  return uniqueCliValues(
+    bundles.flatMap((bundle) =>
+      isObjectRecord(bundle) ? [stringProperty(bundle, "bundleId")] : [],
+    ).filter((value): value is string => Boolean(value)),
+  );
+}
+
+function qualityStatusRegularDescriptorRefs(
+  refs: readonly string[] | undefined,
+): QualityGateDescriptorResolutionRef[] {
+  return (refs ?? []).map((ref) => ({ ref }));
+}
+
+function qualityStatusDirectGateDescriptorRefs(
+  refs: readonly string[] | undefined,
+): QualityGateDescriptorResolutionRef[] {
+  return (refs ?? []).map((ref) => ({ ref, directGateOnly: true }));
+}
+
+function qualityStatusRelationDescriptorRefs(
+  relations: readonly ProgrammingArtifactRelation[] | undefined,
+): QualityGateDescriptorResolutionRef[] {
+  return (relations ?? [])
+    .filter(
+      (relation) =>
+        relation.kind === "verifies" || relation.kind === "materializes_output",
+    )
+    .map((relation) => ({ ref: relation.toRef }));
 }
 
 async function loadQualityStatusSnapshotForRecord(
@@ -1126,6 +1273,16 @@ function qualityStatusSnapshotWarning(
     ...(record.outputPath ? { outputPath: record.outputPath } : {}),
     ...input,
   };
+}
+
+function qualityStatusNoGateDescriptorsWarning(
+  record: ProgrammingArtifactRegistryRecord,
+): QualityStatusSnapshotWarning {
+  return qualityStatusSnapshotWarning(record, {
+    code: "quality-status-ledger-no-gate-descriptors",
+    message:
+      "Quality-status record did not resolve to any quality gate descriptors for ledger verification.",
+  });
 }
 
 function appendQualityStatusSnapshotGovernanceEvidence(
@@ -1702,6 +1859,7 @@ async function cmdPromptExtract(rest: string[]): Promise<void> {
   const qualityStatusEvidence = await loadRelatedQualityStatusEvidenceFromFlags(
     flags,
     qualityStatusTargetRefs,
+    source,
   );
   const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
     appendQualityStatusEvidenceToPromptArtifactExtraction(
@@ -1858,6 +2016,7 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
   const qualityStatusEvidence = await loadRelatedQualityStatusEvidenceFromFlags(
     flags,
     qualityStatusTargetRefs,
+    source,
   );
   const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
     appendQualityStatusEvidenceToPromptArtifactExtraction(
@@ -2082,11 +2241,12 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
   });
   if (loadedRegistry && registryExtraction) {
     const directRegistryRecord = loadedRegistry.store.getArtifactByRef(artifactRef);
+    const qualityDescriptorSource = await loadQualityStatusDescriptorSource(flags);
     const qualityStatusEvidence = await loadRelatedQualityStatusEvidence(loadedRegistry, [
       artifactRef,
       ...registryRecordQualityTargetRefs(directRegistryRecord),
       ...workAreaQualityTargetRefs(registryExtraction.workArea),
-    ]);
+    ], qualityDescriptorSource);
     const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
       appendQualityStatusEvidenceToPromptArtifactExtraction(
         registryExtraction,
@@ -2224,6 +2384,7 @@ async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
   const qualityStatusEvidence = await loadRelatedQualityStatusEvidence(
     loadedRegistry,
     qualityStatusTargetRefs,
+    source,
   );
   const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
     appendQualityStatusEvidenceToPromptArtifactExtraction(

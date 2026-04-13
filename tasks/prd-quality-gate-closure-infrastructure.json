@@ -50,11 +50,12 @@
         "pnpm --filter quality-ledger test passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "This story is the key bridge from programming-artifact quality-status records to the existing quality-gates-system topology.",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-003",
@@ -226,6 +227,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-13T22:10:40.069Z"
+    "updatedAt": "2026-04-13T22:23:01.559Z"
   }
 }

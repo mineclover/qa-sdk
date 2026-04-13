@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { MemoryDefinitionRegistry, type DefinitionEntry, type DefinitionEntryInput } from "definition-catalog";
+import type { DefDoc } from "definition-catalog";
 import type { QualityGateSpec } from "work-domain";
 import {
   buildGateDiagnosis,
@@ -23,6 +24,7 @@ import {
 import { USAGE, resolveSubcommand } from "../index.js";
 import {
   collectContainedQualityDocs,
+  resolveQualityGateDescriptorsFromDataSource,
   toGateDescriptors,
 } from "../lib/quality-gate-topology.js";
 
@@ -283,6 +285,78 @@ describe("quality gate topology helpers", () => {
         gateDocId: "quality-gate-a",
         docVersion: 0,
         bundleId: "quality-bundle-a",
+      },
+    ]);
+  });
+
+  it("resolves system, bundle, and direct gate refs through a data-source graph", async () => {
+    const gate: QualityGateSpec = {
+      kind: "typecheck",
+      workDomain: "productivity",
+      command: "pnpm typecheck",
+    };
+    const doc = (
+      docId: string,
+      input: Partial<DefDoc> = {},
+    ): DefDoc => ({
+      docId,
+      title: docId,
+      scope: "flow",
+      aspect: "process_flow",
+      depth: "overview",
+      lifecycle: "approved",
+      tags: [],
+      links: [],
+      version: 1,
+      ...input,
+    });
+    const docs = new Map<string, DefDoc>([
+      ["quality-root", doc("quality-root")],
+      ["quality-bundle-a", doc("quality-bundle-a", { tags: ["quality-bundle"], version: 2 })],
+      ["quality-contract-a", doc("quality-contract-a", { version: 3 })],
+      ["quality-gate-a", doc("quality-gate-a", { version: 7, gate })],
+      ["quality-bundle-b", doc("quality-bundle-b", { tags: ["quality-bundle"], version: 4 })],
+      ["quality-gate-b", doc("quality-gate-b", { version: 9, gate })],
+      ["quality-gate-direct", doc("quality-gate-direct", { version: 11, gate })],
+    ]);
+    const children = new Map<string, string[]>([
+      ["quality-root", ["quality-bundle-a", "quality-bundle-b"]],
+      ["quality-bundle-a", ["quality-contract-a"]],
+      ["quality-contract-a", ["quality-gate-a"]],
+      ["quality-bundle-b", ["quality-gate-b"]],
+    ]);
+    const source = {
+      async get(docId: string): Promise<DefDoc | null> {
+        return docs.get(docId) ?? null;
+      },
+      async getChildren(docId: string): Promise<DefDoc[]> {
+        return (children.get(docId) ?? [])
+          .map((childId) => docs.get(childId))
+          .filter((child): child is DefDoc => child !== undefined);
+      },
+    };
+
+    const descriptors = await resolveQualityGateDescriptorsFromDataSource(source, [
+      { ref: "quality-root" },
+      { ref: "quality-bundle-a" },
+      { ref: "quality-gate-direct", directGateOnly: true },
+    ]);
+
+    expect(descriptors).toEqual([
+      {
+        gateDocId: "quality-gate-a",
+        docVersion: 7,
+        bundleId: "quality-bundle-a",
+      },
+      {
+        gateDocId: "quality-gate-b",
+        docVersion: 9,
+        bundleId: "quality-bundle-b",
+      },
+      {
+        gateDocId: "quality-gate-direct",
+        docVersion: 11,
+        bundleId: null,
       },
     ]);
   });
