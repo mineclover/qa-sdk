@@ -51,6 +51,7 @@ import {
   type OperationalOntologyObservationRecord,
   type OperationalOntologyProjectionRecord,
 } from "operational-ontology/persistence";
+import type { OntologyAddressModel } from "operational-ontology/allocation";
 import {
   persistImplementationGovernanceRun,
   type AdjustmentSuggestion,
@@ -99,6 +100,7 @@ import {
   appendProgrammingArtifactRegistryRecord,
   appendProgrammingArtifactRegistryRecords,
 } from "../lib/programming-artifact-registry.js";
+import { resolveKnownOntologyPack } from "../lib/known-ontology-packs.js";
 import {
   collectContainedQualityDocsFromDataSource,
   resolveQualityGateDescriptorsFromDataSource,
@@ -332,7 +334,13 @@ interface PromptArtifactMaterialization {
 }
 
 const DEFAULT_STORE_FILE = join(getQaSdkDir(), "operational-ontology-store.json");
+const DEFAULT_REGISTRY_ACTIVATION_STORE_FILE = join(
+  getQaSdkDir(),
+  "ontology-registry.sqlite",
+);
 const QUALITY_STATUS_FRESHNESS_DAY_MS = 24 * 60 * 60 * 1000;
+const REGISTRY_ACTIVATE_PACK_USAGE =
+  "Usage: qa-sdk ontology registry activate-pack <pack-id> [--store <path>] [--ontology-id <id>] [--namespace <namespace>] [--owner <owner>] [--version <versionId>] [--address-model product|sum] [--prefix <taxonomyId>=<prefix>] [--json]";
 
 function parseFlags(args: string[]): { positional: string[]; flags: Record<string, string> } {
   const positional: string[] = [];
@@ -362,6 +370,182 @@ function parseFlags(args: string[]): { positional: string[]; flags: Record<strin
 
 function getStorePath(flags: Record<string, string>): string {
   return resolve(flags["store"] ?? DEFAULT_STORE_FILE);
+}
+
+function getRegistryActivationStorePath(flags: Record<string, string>): string {
+  return flags["store"] ?? DEFAULT_REGISTRY_ACTIVATION_STORE_FILE;
+}
+
+interface ActivationCliError {
+  readonly code: string;
+  readonly message: string;
+  readonly details?: unknown;
+}
+
+interface ParsedRegistryActivatePackArgs {
+  readonly positional: readonly string[];
+  readonly flags: Record<string, string>;
+  readonly prefixByTaxonomyId: Record<string, string>;
+  readonly errors: readonly ActivationCliError[];
+}
+
+interface ActivationResultSummary {
+  readonly status: string;
+  readonly packId: string;
+  readonly ontologyId: string;
+  readonly allocationSummaries: readonly unknown[];
+  readonly smokeCheckSummary: {
+    readonly allocationCount: number;
+    readonly passedAllocationCount: number;
+    readonly failedAllocationCount: number;
+    readonly checkCount: number;
+    readonly passedCheckCount: number;
+    readonly failedCheckCount: number;
+  };
+  readonly warnings: readonly { readonly code?: string; readonly message: string }[];
+  readonly errors: readonly { readonly code?: string; readonly message: string }[];
+}
+
+function parseRegistryActivatePackArgs(args: string[]): ParsedRegistryActivatePackArgs {
+  const positional: string[] = [];
+  const flags: Record<string, string> = {};
+  const prefixByTaxonomyId: Record<string, string> = {};
+  const errors: ActivationCliError[] = [];
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]!;
+    if (!arg.startsWith("--")) {
+      positional.push(arg);
+      continue;
+    }
+
+    const { key, inlineValue } = splitCliFlag(arg);
+    const next = args[index + 1];
+    let value = inlineValue;
+    if (value === undefined && next && !next.startsWith("--")) {
+      value = next;
+      index += 1;
+    } else if (value === undefined) {
+      value = "true";
+    }
+
+    if (key === "prefix") {
+      const parsed = parsePrefixOverrideFlag(value);
+      if (parsed.ok) {
+        prefixByTaxonomyId[parsed.taxonomyId] = parsed.prefix;
+      } else {
+        errors.push(parsed.error);
+      }
+      continue;
+    }
+
+    flags[key] = value;
+  }
+
+  return { positional, flags, prefixByTaxonomyId, errors };
+}
+
+function splitCliFlag(arg: string): { key: string; inlineValue?: string } {
+  const raw = arg.slice(2);
+  const separatorIndex = raw.indexOf("=");
+  if (separatorIndex < 0) {
+    return { key: raw };
+  }
+  return {
+    key: raw.slice(0, separatorIndex),
+    inlineValue: raw.slice(separatorIndex + 1),
+  };
+}
+
+function parsePrefixOverrideFlag(
+  value: string,
+):
+  | { ok: true; taxonomyId: string; prefix: string }
+  | { ok: false; error: ActivationCliError } {
+  const separatorIndex = value.indexOf("=");
+  const taxonomyId = separatorIndex >= 0 ? value.slice(0, separatorIndex).trim() : "";
+  const prefix = separatorIndex >= 0 ? value.slice(separatorIndex + 1).trim() : "";
+
+  if (!taxonomyId || !prefix) {
+    return {
+      ok: false,
+      error: {
+        code: "invalid-prefix-override",
+        message: `Invalid --prefix value "${value}". Expected <taxonomyId>=<prefix>.`,
+        details: { value },
+      },
+    };
+  }
+
+  return { ok: true, taxonomyId, prefix };
+}
+
+function parseActivationAddressModel(
+  value: string | undefined,
+):
+  | { ok: true; addressModel?: OntologyAddressModel }
+  | { ok: false; error: ActivationCliError } {
+  if (!value) {
+    return { ok: true };
+  }
+  if (value === "product" || value === "sum") {
+    return { ok: true, addressModel: value };
+  }
+  return {
+    ok: false,
+    error: {
+      code: "invalid-address-model",
+      message: `Invalid --address-model value "${value}". Expected product or sum.`,
+      details: { value, supportedValues: ["product", "sum"] },
+    },
+  };
+}
+
+function hasRecordEntries(record: Record<string, string>): boolean {
+  return Object.keys(record).length > 0;
+}
+
+function printActivationCliErrors(
+  errors: readonly ActivationCliError[],
+  json: boolean,
+): void {
+  if (json) {
+    printJson({
+      status: "failed",
+      errors,
+    });
+  } else {
+    for (const error of errors) {
+      console.error(error.message);
+    }
+  }
+  process.exitCode = 1;
+}
+
+function printActivationSummary(
+  result: ActivationResultSummary,
+  storePath: string,
+): void {
+  console.log(`Ontology pack activation: ${result.packId}`);
+  console.log(`  status: ${result.status}`);
+  console.log(`  ontologyId: ${result.ontologyId}`);
+  console.log(`  store: ${storePath}`);
+  console.log(`  allocations: ${result.allocationSummaries.length}`);
+  console.log(
+    `  smoke: ${result.smokeCheckSummary.passedCheckCount}/${result.smokeCheckSummary.checkCount} checks passed (${result.smokeCheckSummary.passedAllocationCount}/${result.smokeCheckSummary.allocationCount} allocations)`,
+  );
+  if (result.warnings.length > 0) {
+    console.log(`  warnings: ${result.warnings.length}`);
+    for (const warning of result.warnings) {
+      console.log(`    - ${warning.code ? `${warning.code}: ` : ""}${warning.message}`);
+    }
+  }
+  if (result.errors.length > 0) {
+    console.log(`  errors: ${result.errors.length}`);
+    for (const error of result.errors) {
+      console.log(`    - ${error.code ? `${error.code}: ` : ""}${error.message}`);
+    }
+  }
 }
 
 async function loadJsonFile<T>(filePath: string): Promise<T> {
@@ -2474,6 +2658,77 @@ async function cmdArtifactRegistryAppend(rest: string[]): Promise<void> {
   console.log(`artifacts: ${result.recordCount}`);
 }
 
+async function cmdRegistryActivatePack(rest: string[]): Promise<void> {
+  const { positional, flags, prefixByTaxonomyId, errors } =
+    parseRegistryActivatePackArgs(rest);
+  const json = flags["json"] === "true";
+  const packId = positional[0];
+
+  if (!packId) {
+    printActivationCliErrors(
+      [
+        {
+          code: "missing-pack-id",
+          message: REGISTRY_ACTIVATE_PACK_USAGE,
+        },
+      ],
+      json,
+    );
+    return;
+  }
+  if (errors.length > 0) {
+    printActivationCliErrors(errors, json);
+    return;
+  }
+
+  const addressModelResult = parseActivationAddressModel(flags["address-model"]);
+  if (!addressModelResult.ok) {
+    printActivationCliErrors([addressModelResult.error], json);
+    return;
+  }
+
+  const packResolution = resolveKnownOntologyPack(packId);
+  if (!packResolution.ok) {
+    printActivationCliErrors([packResolution.error], json);
+    return;
+  }
+
+  const { createLocalOntologyActivationRuntime } = await import(
+    "@qa-sdk/registry-service/ontology-local-runtime"
+  );
+  const runtime = await createLocalOntologyActivationRuntime({
+    storePath: getRegistryActivationStorePath(flags),
+  });
+
+  try {
+    const result = await runtime.activationHelper.activateOntologyPack(
+      packResolution.pack,
+      {
+        ontologyId: flags["ontology-id"],
+        namespace: flags["namespace"],
+        owner: flags["owner"],
+        versionId: flags["version"],
+        addressModel: addressModelResult.addressModel,
+        prefixByTaxonomyId: hasRecordEntries(prefixByTaxonomyId)
+          ? prefixByTaxonomyId
+          : undefined,
+      },
+    );
+
+    if (json) {
+      printJson(result);
+    } else {
+      printActivationSummary(result, runtime.storePath);
+    }
+
+    if (result.status !== "succeeded") {
+      process.exitCode = 1;
+    }
+  } finally {
+    runtime.close();
+  }
+}
+
 async function defDocWithBody(source: Awaited<ReturnType<typeof createDataSource>>, doc: DefDoc) {
   const body = await source.getBody(doc.docId);
   const sourcePath = doc.sourcePath ?? body?.sourcePath;
@@ -4325,6 +4580,7 @@ export async function cliOntology(args: string[]): Promise<void> {
           "qa-sdk ontology",
           "",
           "  qa-sdk ontology status [--scope <scope> | --snapshot <id>] [--store <file>] [--json] [--table]",
+          "  qa-sdk ontology registry activate-pack <pack-id> [--store <path>] [--ontology-id <id>] [--namespace <namespace>] [--owner <owner>] [--version <versionId>] [--address-model product|sum] [--prefix <taxonomyId>=<prefix>] [--json]",
           "  qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
           "  qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
           "  qa-sdk ontology prompt extract-permission <permission-ref> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
@@ -4365,6 +4621,9 @@ export async function cliOntology(args: string[]): Promise<void> {
       return;
     case "status":
       await cmdStatus(rest);
+      return;
+    case "registry.activate-pack":
+      await cmdRegistryActivatePack(rest);
       return;
     case "prompt.extract":
       await cmdPromptExtract(rest);

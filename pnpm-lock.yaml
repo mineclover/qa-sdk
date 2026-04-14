@@ -182,6 +182,9 @@ importers:
       '@qa-sdk/core':
         specifier: workspace:*
         version: link:../core
+      '@qa-sdk/registry-service':
+        specifier: workspace:*
+        version: link:../registry-service
       '@qa-sdk/spec-core':
         specifier: workspace:*
         version: link:../spec-core

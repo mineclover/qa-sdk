@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -53,6 +53,7 @@ describe("ontology CLI", () => {
 
   it("usage와 subcommand 해석에 ontology 루트를 노출한다", () => {
     expect(USAGE).toContain("qa-sdk ontology status");
+    expect(USAGE).toContain("qa-sdk ontology registry activate-pack <pack-id>");
     expect(USAGE).toContain("qa-sdk ontology prompt extract");
     expect(USAGE).toContain("qa-sdk ontology prompt extract-file");
     expect(USAGE).toContain("qa-sdk ontology prompt extract-permission");
@@ -87,6 +88,19 @@ describe("ontology CLI", () => {
     expect(
       resolveSubcommand([
         "ontology",
+        "registry",
+        "activate-pack",
+        "programming-artifact-ontology",
+        "--store",
+        "registry.sqlite",
+      ]),
+    ).toEqual({
+      name: "ontology registry activate-pack",
+      rest: ["programming-artifact-ontology", "--store", "registry.sqlite"],
+    });
+    expect(
+      resolveSubcommand([
+        "ontology",
         "snapshot",
         "ingest",
         "--input",
@@ -109,6 +123,85 @@ describe("ontology CLI", () => {
       name: "ontology corridor show-latest",
       rest: ["pipe-cli", "--scope", "pipe-scope"],
     });
+  });
+
+  it("registry activate-pack activates a known pack through the local runtime", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activate-"));
+    try {
+      const storePath = join(dir, "registry.sqlite");
+      const output = await captureConsoleAsync(async () => {
+        await cliOntology([
+          "registry.activate-pack",
+          "programming-artifact-ontology",
+          "--store",
+          storePath,
+          "--ontology-id",
+          "artifact-cli",
+          "--namespace",
+          "artifact_cli",
+          "--owner",
+          "cli-test",
+          "--version",
+          "v-test",
+          "--address-model",
+          "sum",
+          "--prefix",
+          "programming-artifact=artifact_cli_kind",
+          "--json",
+        ]);
+      });
+      const parsed = JSON.parse(output.stdout) as {
+        status: string;
+        packId: string;
+        ontologyId: string;
+        namespaceSummary: { namespace: string; owner?: string } | null;
+        allocationSummaries: Array<{
+          taxonomyId: string;
+          prefix: string;
+          versionId: string;
+          addressModel: string;
+          activationStatus?: string;
+          syncStatus?: string;
+        }>;
+        smokeCheckSummary: {
+          failedAllocationCount: number;
+          failedCheckCount: number;
+        };
+        warnings: unknown[];
+        errors: unknown[];
+      };
+
+      expect(output.stderr).toBe("");
+      expect(parsed).toMatchObject({
+        status: "succeeded",
+        packId: "programming-artifact-ontology",
+        ontologyId: "artifact-cli",
+        namespaceSummary: {
+          namespace: "artifact_cli",
+          owner: "cli-test",
+        },
+        warnings: [],
+        errors: [],
+      });
+      expect(parsed.allocationSummaries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            taxonomyId: "programming-artifact",
+            prefix: "artifact_cli_kind",
+            versionId: "v-test",
+            addressModel: "sum",
+            activationStatus: "active",
+            syncStatus: "synced",
+          }),
+        ]),
+      );
+      expect(parsed.smokeCheckSummary).toMatchObject({
+        failedAllocationCount: 0,
+        failedCheckCount: 0,
+      });
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
   });
 
   it("prompt extract-file can persist governance evidence", async () => {

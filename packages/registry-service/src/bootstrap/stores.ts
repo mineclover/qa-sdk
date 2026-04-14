@@ -1,3 +1,7 @@
+import { existsSync, readdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import {
   InMemoryPrefixRegistry,
   InMemoryVersionLifecycleStore,
@@ -20,8 +24,29 @@ import { InMemoryServiceComponentVersionStore } from "../stores/in-memory-servic
 import { SqlServiceComponentVersionStore } from "../stores/sql-service-component-version-store.js";
 import { InMemoryOntologyRegistryStore } from "../stores/in-memory-ontology-registry-store.js";
 import { SqlOntologyRegistryStore } from "../stores/sql-ontology-registry-store.js";
-const migrationsFolder = new URL("../../drizzle", import.meta.url).pathname;
+
+const moduleDir = dirname(fileURLToPath(import.meta.url));
+const migrationsFolder = resolveRegistryMigrationsFolder(moduleDir);
 const logger = createLogger("registry-service");
+
+function resolveRegistryMigrationsFolder(baseDir: string): string {
+  const candidates = [
+    join(baseDir, "drizzle"),
+    join(baseDir, "../drizzle"),
+    join(baseDir, "../../drizzle"),
+  ];
+  return candidates.find((candidate) => isRegistryMigrationsFolder(candidate)) ?? candidates[0]!;
+}
+
+function isRegistryMigrationsFolder(candidate: string): boolean {
+  if (!existsSync(candidate)) {
+    return false;
+  }
+
+  return readdirSync(candidate, { withFileTypes: true }).some((entry) =>
+    entry.isDirectory() && existsSync(join(candidate, entry.name, "migration.sql")),
+  );
+}
 
 export async function createRegistryDatabaseDriver(
   sqlitePath: string,

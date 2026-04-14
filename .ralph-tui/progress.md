@@ -9,6 +9,7 @@ after each iteration and it's included in prompts for context.
 - Local ontology activation should use one SQLite driver for registry-service ontology rows and index-meta rows: apply registry-service/index-meta schema setup, then share the driver across `SqlOntologyRegistryStore`, `SqlPrefixRegistry`, and `SqlIndexMetaStore`.
 - CLI-local ontology pack sources should resolve through a pure result-union helper in `packages/cli/src/lib`, importing production pack exports only; SQLite/store activation wiring stays outside the resolver so unit tests remain store-free.
 - Local ontology activation runtime is exported from `@qa-sdk/registry-service/ontology-local-runtime`; it returns a closeable runtime over one SQLite driver and supports both `:memory:` and persistent `--store`-style paths.
+- Packaged registry-service runtime code must resolve Drizzle migrations from both source and bundled `dist` locations; bundled files run with `import.meta.url` under `dist`, so source-relative `../../drizzle` can accidentally select sibling workspace folders like `packages/drizzle`.
 
 ---
 
@@ -51,4 +52,19 @@ after each iteration and it's included in prompts for context.
   - `createRegistryStores(":memory:")` intentionally returns in-memory stores, so local activation uses `createRegistryDatabaseDriver()` directly to keep registry-service and index-meta rows on the same SQLite driver.
   - The local runtime can stay below the CLI command layer: US-004 can pass `--store` into `createLocalOntologyActivationRuntime()` without duplicating store construction or starting Nest.
   - `tsup` needed explicit `index` and `ontology-local-runtime` entries plus declarations so the package export subpath has concrete JS and type output.
+---
+
+## 2026-04-15 - US-004
+- Added the `qa-sdk ontology registry activate-pack <pack-id>` command descriptor under the ontology command group and routed it through the existing `cliOntology` handler proxy as `registry.activate-pack`.
+- Implemented the CLI handler to resolve known packs, parse activation flags, support repeatable deterministic `--prefix <taxonomyId>=<prefix>` overrides, create the local registry-service runtime, call `OntologyPackActivationHelper.activateOntologyPack()`, emit JSON or concise text output, and close the runtime driver.
+- Added `@qa-sdk/registry-service` as a CLI workspace dependency so the command can import the exported `ontology-local-runtime` subpath.
+- Added CLI coverage proving command discovery and a real `programming-artifact-ontology` activation through a temporary SQLite store with `--address-model sum`, metadata overrides, JSON output, and a taxonomy prefix override.
+- Fixed registry-service packaged runtime migration discovery so bundled `dist/ontology-local-runtime.js` resolves `dist/drizzle` instead of the unrelated sibling `packages/drizzle` folder.
+- Files changed: `packages/cli/src/command-groups/ontology.commands.ts`, `packages/cli/src/commands/ontology.ts`, `packages/cli/src/commands/ontology.test.ts`, `packages/cli/package.json`, `packages/registry-service/src/bootstrap/stores.ts`, `pnpm-lock.yaml`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter registry-service test`; `pnpm --filter registry-service typecheck`; `pnpm --filter registry-service build`; `pnpm --filter operational-ontology test -- allocation`; `pnpm --filter authorization-ontology test`; `node packages/cli/dist/index.js def validate`; built-CLI smoke `node packages/cli/dist/index.js ontology registry activate-pack programming-artifact-ontology --store <tmp>/registry.sqlite --ontology-id artifact-dist --namespace artifact_dist --version v-dist --json`.
+- **Learnings:**
+  - The ontology command group proxy already maps a descriptor id like `ontology.registry.activate-pack` to `cliOntology(["registry.activate-pack", ...rest])`; the handler only needs a matching switch case.
+  - The command layer can stay thin by passing parsed flags directly into `activationHelper.activateOntologyPack()` and leaving register/activate/sync/smoke lifecycle ordering inside registry-service.
+  - Repeatable `--prefix` needs command-specific parsing because the shared CLI `parseFlags()` intentionally collapses repeated flags into a single string value.
+  - Built package subpaths exercise different `import.meta.url` paths than source tests; CLI tests that dynamically import `@qa-sdk/registry-service/ontology-local-runtime` caught a dist-only migration path bug.
 ---
