@@ -23,6 +23,8 @@ def:
       type: contains
     - target: operational-ontology-schema-validation
       type: contains
+    - target: operational-ontology-registry-allocation
+      type: contains
     - target: operational-ontology-validation-boundary
       type: contains
     - target: operational-ontology-design-change-validation-matrix
@@ -110,6 +112,7 @@ taxonomy를 먼저 schema로 선언하고 검증한 뒤, 그 schema에서 node, 
   - `TraversalSchema` — purpose별 route family 정의
 - **Validation plane**
   - schema 무결성, axis 중복, unknown reference, category overlap 검증
+  - registry-service/index-meta가 소비할 수 있는 현재 allocation contract
   - ontology design 변경 전 확인해야 하는 local/system validation boundary
   - ontology design 변경 종류별 문서/소유 경계/테스트/명령 matrix
   - ontology module/leaf/plan/todo/knowledge 문서 graph requirement
@@ -187,6 +190,7 @@ RDF bridge는 이 4층 전체에 대응되는 외부 의미 계층이다.
 - `operational-ontology-taxonomy-schema` — axis/taxonomy를 schema plane으로 선언하는 규칙
 - `operational-ontology-relation-category-schema` — relation type category schema 정의
 - `operational-ontology-schema-validation` — schema plane과 instance plane 사이의 검증 규칙
+- `operational-ontology-registry-allocation` — 현재 구현된 local allocation model, validation issue target, handoff spec 반영 상태
 - `operational-ontology-validation-boundary` — ontology design 변경의 문서/패키지/시뮬레이션/registry lifecycle 검증 경계
 - `operational-ontology-design-change-validation-matrix` — axis/taxonomy/relation/allocation/definition/pack activation 변경별 검증 경로
 - `operational-ontology-definition-graph-requirements` — ontology module/leaf/plan/todo/knowledge 문서의 frontmatter, contains, split, sources 규칙

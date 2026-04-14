@@ -20,6 +20,7 @@
     "dev": "tsx watch src/main.ts",
     "build": "tsup",
     "build:tsc": "tsc",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "start": "node dist/main.js",
     "clean": "rm -rf dist",

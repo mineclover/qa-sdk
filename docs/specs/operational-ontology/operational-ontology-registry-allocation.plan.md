@@ -11,6 +11,8 @@ def:
   links:
     - target: operational-ontology-system
       type: refines
+    - target: operational-ontology-registry-allocation
+      type: traces_to
     - target: operational-ontology-taxonomy-schema
       type: depends_on
     - target: operational-ontology-pack-interface
@@ -39,6 +41,8 @@ operational ontology schema를 registry-service와 index-meta가 소비할 수 �
 ## 현재 목표
 
 현재 완료된 1단계는 DB에 의존하지 않는 allocation model이다. `OperationalOntologySchema`를 `OntologyNamespace`, `OntologyAxisRegistration`, `OntologyTaxonomyRegistration`, `OntologyAddressAllocation`, `OntologyAddressSegment`로 투영하고, registry-service DB 테이블 없이도 prefix/version/address allocation 계획을 검증할 수 있다.
+
+이 완료 상태와 ralph 안정화로 생성된 validation/handoff 계약은 `operational-ontology-registry-allocation` spec에 반영됐다. 이 plan은 앞으로 남은 persistence, service layer, index-meta sync, activation flow 방향만 유지한다.
 
 구현 위치:
 

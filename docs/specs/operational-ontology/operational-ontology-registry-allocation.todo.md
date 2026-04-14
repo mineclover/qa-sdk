@@ -9,6 +9,8 @@ def:
   layer: operation
   tags: [structural, testing, contract]
   links:
+    - target: operational-ontology-registry-allocation
+      type: traces_to
     - target: operational-ontology-registry-allocation-plan
       type: refines
     - target: operational-ontology-ssot-navigation-guide
@@ -20,6 +22,8 @@ def:
 ## 목적 ^purpose
 
 operational ontology schema를 registry-service의 ontology-aware registry/allocator로 승격하기 위한 구현 항목을 추적한다. 목표는 완료된 DB 독립 allocation model 다음에 registry-service persistence, service layer, index-meta sync, pack activation flow를 순서대로 닫는 것이다.
+
+완료된 local allocation model, validation issue target, validation boundary, matrix, graph requirement, persistence/index-meta handoff, scoped prefix decision은 `operational-ontology-registry-allocation` spec에 반영됐다. 이 TODO는 Phase 2A 이후의 미구현 persistence/service/sync/activation 작업을 추적한다.
 
 ## 실행 dependency map
 

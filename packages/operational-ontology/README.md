@@ -10,6 +10,7 @@
 - [operational-ontology-taxonomy-schema.spec.md](../../docs/specs/operational-ontology/operational-ontology-taxonomy-schema.spec.md) — axis/taxonomy schema plane 정의
 - [operational-ontology-relation-category-schema.spec.md](../../docs/specs/operational-ontology/operational-ontology-relation-category-schema.spec.md) — relation type category schema 정의
 - [operational-ontology-schema-validation.spec.md](../../docs/specs/operational-ontology/operational-ontology-schema-validation.spec.md) — schema validation plane 정의
+- [operational-ontology-registry-allocation.spec.md](../../docs/specs/operational-ontology/operational-ontology-registry-allocation.spec.md) — 현재 구현된 local allocation model과 validation/handoff 반영 상태
 - [operational-ontology-registry-allocation.plan.md](../../docs/specs/operational-ontology/operational-ontology-registry-allocation.plan.md) — registry-service/index-meta 승격용 address allocation 로드맵
 - [operational-ontology-registry-persistence-handoff.spec.md](../../docs/specs/operational-ontology/operational-ontology-registry-persistence-handoff.spec.md) — registry-service persistence record mapping과 future test 계약
 - [operational-ontology-index-meta-sync-handoff.spec.md](../../docs/specs/operational-ontology/operational-ontology-index-meta-sync-handoff.spec.md) — active allocation의 index-meta sync input, materialization, idempotency, smoke check 계약
