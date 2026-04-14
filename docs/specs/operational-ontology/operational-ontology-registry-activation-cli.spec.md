@@ -31,13 +31,14 @@ sources:
 
 ## 구성 ^overview
 
-이 CLI surface는 public/local execution boundary다. registry-service REST endpoint, remote activation service, scoped prefix API, artifact registry persistence는 포함하지 않는다.
+이 CLI surface는 public/local execution boundary다. 완료된 activation helper lifecycle을 실행하고, 명시적 `--artifact-registry`가 있을 때 성공한 activation result를 local programming artifact registry evidence로 append한다. registry-service REST endpoint, remote activation service, scoped prefix API는 포함하지 않는다.
 
 - **Command descriptor**: `packages/cli/src/command-groups/ontology.commands.ts`의 `ontology.registry.activate-pack`.
 - **Handler proxy**: ontology command group이 `cliOntology(["registry.activate-pack", ...rest])`로 위임한다.
 - **Known pack resolver**: `packages/cli/src/lib/known-ontology-packs.ts`가 production pack exports만 매핑한다.
 - **Local runtime**: `@qa-sdk/registry-service/ontology-local-runtime`이 하나의 SQLite driver 위에 registry-service ontology rows와 index-meta rows를 함께 구성한다.
 - **Activation helper**: `OntologyPackActivationHelper.activateOntologyPack()`이 lifecycle ordering과 smoke checks의 SSOT다.
+- **Activation evidence mapper**: `packages/cli/src/lib/activation-evidence-registry.ts`가 successful activation result와 resolved sidecar path를 `kind: "activation-evidence"` programming artifact registry record로 변환한다.
 
 ## Command Surface ^defines
 
@@ -51,6 +52,7 @@ qa-sdk ontology registry activate-pack <pack-id> \
   [--address-model product|sum] \
   [--prefix <taxonomyId>=<prefix>] \
   [--output <file>] \
+  [--artifact-registry <file>] \
   [--json]
 ```
 
@@ -69,6 +71,16 @@ Flag behavior:
 - `--prefix <taxonomyId>=<prefix>` is repeatable and provides deterministic taxonomy prefix overrides.
 - `--json` prints the unwrapped activation helper result on stdout.
 - `--output <file>` writes the same pretty JSON payload that `--json` prints. Parent directories are created before writing. Text mode still prints the concise activation summary and includes the resolved output path.
+- `--artifact-registry <file>` appends successful activation evidence to a local programming artifact registry. It requires `--output <file>` because the registry record must point at materialized sidecar evidence.
+
+Activation evidence append behavior:
+
+- `--output` alone remains sidecar-only JSON materialization and does not write a registry record.
+- With `--output` and `--artifact-registry`, the CLI writes the activation sidecar first, then builds and upserts an `activation-evidence` registry record only when `result.status === "succeeded"`.
+- Failed activation results and output-write failures do not append managed registry evidence.
+- The sidecar file remains the raw activation helper result. Registry append metadata is reported only in command stdout.
+- JSON stdout includes additive `activationEvidence` when append is attempted. Text stdout reports the registry path and record id on append success, and a sanitized append error on append failure.
+- Append failure sets process exit code 1 and does not rewrite the activation sidecar.
 
 ## Runtime Boundary
 
@@ -80,11 +92,12 @@ The CLI command must not:
 - call registry-service REST APIs,
 - create a second persistence abstraction,
 - reach into raw SQL from command code,
-- append activation output to the programming artifact registry.
+- append activation output implicitly from `--output` alone,
+- append failed activation results as managed programming artifact evidence.
 
 ## JSON Contract
 
-`--json` and `--output` materialize the activation helper payload without wrapping successful or helper-returned failed results.
+`--output` always materializes the activation helper payload without wrapping successful or helper-returned failed results. `--json` prints that same payload, except successful `--artifact-registry` runs and sanitized append failures may add an `activationEvidence` object to stdout only.
 
 Required stable summary fields:
 
@@ -100,6 +113,38 @@ Required stable summary fields:
 
 Raw detail fields such as `namespaceRecord`, `allocations`, `activationStatuses`, `syncReports`, and `smokeChecks` may also be present for debugging and future API surfaces.
 
+`activationEvidence` is additive stdout metadata and is intentionally absent from the sidecar file. Successful append shape:
+
+```json
+{
+  "activationEvidence": {
+    "appendStatus": "appended",
+    "registryPath": "artifacts/programming-artifacts.json",
+    "recordId": "activation-evidence-programming-artifact-ontology-programming-artifact-ontology",
+    "recordRef": "artifacts/activation/programming-artifact-ontology.json",
+    "recordCount": 1
+  }
+}
+```
+
+Sanitized append failure shape:
+
+```json
+{
+  "activationEvidence": {
+    "appendStatus": "failed",
+    "registryPath": "artifacts/programming-artifacts.json",
+    "recordId": "activation-evidence-programming-artifact-ontology-programming-artifact-ontology",
+    "recordRef": "artifacts/activation/programming-artifact-ontology.json",
+    "recordCount": null,
+    "error": {
+      "code": "activation-evidence-registry-append-error",
+      "message": "Activation evidence could not be appended to the artifact registry."
+    }
+  }
+}
+```
+
 Pre-helper CLI/runtime failures use a result-like failed payload with `allocationSummaries: []`, empty sync/smoke summaries, and a structured `errors[]` entry. Helper lifecycle failures keep the helper result shape and set `status: "failed"`.
 
 ## Failure Contract
@@ -114,10 +159,14 @@ Known CLI-origin failure codes include:
 | `invalid-address-model` | `--address-model` is neither `product` nor `sum` |
 | `activation-runtime-error` | runtime setup fails before the helper returns a structured result |
 | `activation-output-write-error` | `--output` cannot write the JSON sidecar |
+| `activation-evidence-output-required` | `--artifact-registry` was provided without `--output` |
+| `activation-evidence-registry-append-error` | successful activation wrote the sidecar but could not append the programming artifact registry record |
 
 Non-JSON CLI-origin failures preserve the stable JSON error code as a `<code>: <message>` prefix. Runtime and storage errors are sanitized; raw SQLite/SQL statement details are not printed.
 
 Helper lifecycle failures continue through the activation summary `errors` list. Duplicate activation currently returns a structured `duplicate-allocation` helper failure instead of a CLI-level idempotent success.
+
+`activation-evidence-registry-append-error` is reported through additive `activationEvidence.appendStatus: "failed"` instead of mutating the helper result or sidecar. It is a command failure for automation purposes, but the activation result itself remains successful.
 
 ## Proven Scenarios
 
@@ -125,25 +174,32 @@ The CLI test suite proves command discovery and dispatch through `main(["ontolog
 
 - `programming-artifact-ontology` activates through an isolated SQLite store, returns `programming-artifact` and `programming-artifact-relation` allocation summaries, syncs every allocation, and returns passing smoke checks.
 - Re-running `programming-artifact-ontology` against the same store returns a structured `duplicate-allocation` failed result without leaking raw SQL.
+- `programming-artifact-ontology --output <file> --artifact-registry <registry> --json` writes the raw activation sidecar, appends exactly one `activation-evidence` record, validates the registry, lists the record by kind, and resolves the sidecar through `ontology prompt extract-artifact` as an `artifact-registry-hit`.
+- Successful reruns with a fresh activation store and the same registry/output identity upsert the same activation evidence record instead of duplicating it.
+- Duplicate/failed activation against the original store does not append or replace successful registry evidence with failed evidence.
 - `authorization-ontology` activates through an isolated SQLite store, returns all eight authorization taxonomy allocation summaries, syncs every allocation, returns passing smoke checks, and exposes known authorization axes in `syncReports[*].materializedRecords[*].axisId`.
 - Unknown pack id, invalid address model, helper duplicate failure, runtime storage failure, JSON output, text output, and `--output` sidecar paths have CLI coverage.
+- Missing `--output` with `--artifact-registry`, output write failure, sanitized registry append failure, and text-mode activation evidence reporting have CLI coverage.
 
 ## Follow-up Work
 
-The activation CLI is not the artifact evidence system. Follow-up work remains:
+Completed public/local follow-up:
+
+- activation result persistence into the local programming artifact registry through `--artifact-registry`.
+
+Follow-up work remains:
 
 - registry-service REST activation endpoint,
 - remote activation service/deployment surface,
-- activation result persistence into the programming artifact registry,
 - scoped prefix support if `operational-ontology-scoped-prefix-decision` later approves it.
 
 ## 검증 명령
 
 - `pnpm --filter @qa-sdk/cli test -- ontology`
 - `pnpm --filter @qa-sdk/cli typecheck`
+- `pnpm --filter @qa-sdk/cli build`
+- `pnpm --filter operational-ontology test -- programming-artifacts`
+- `pnpm --filter operational-ontology typecheck`
 - `pnpm --filter registry-service test`
 - `pnpm --filter registry-service typecheck`
-- `pnpm --filter registry-service build`
-- `pnpm --filter operational-ontology test -- allocation`
-- `pnpm --filter authorization-ontology test`
 - `node packages/cli/dist/index.js def validate`

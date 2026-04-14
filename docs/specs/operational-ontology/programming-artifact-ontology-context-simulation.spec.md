@@ -47,7 +47,7 @@ simulation은 local artifact registry JSON과 CLI fixture를 입력으로 사용
 | quality-ledger fallback | CLI spec, `resolveQualityStatusRecordGateDescriptors()`, `QualityLedger.resolveBundleVerification()` | quality-gate topology helper tests | implicit `.qa-sdk/quality-ledger.sqlite` lookup |
 | freshness SLA | CLI spec, freshness helper functions, snapshot/ledger timestamp fixture | quality-ledger docVersion stale tests | non-artifact prompt extraction |
 | registry allocation boundary | system spec, context simulation plan/todo, adjacent registry allocation plan/todo | registry-service/index-meta docs | implementation of registry-service persistence |
-| non-quality artifact sidecar | programming artifact registry record, build/generated/deploy/prompt/activation-evidence kind vocabulary, related quality-status record | generated/deployment/prompt/activation evidence follow-up scenarios | 새 relation kind 추가 또는 activation append 구현 |
+| non-quality artifact sidecar | programming artifact registry record, build/generated/deploy/prompt/activation-evidence kind vocabulary, related quality-status record | generated/deployment/prompt follow-up scenarios, activation evidence persistence e2e test | 새 relation kind 추가 또는 scoped-prefix/REST activation 구현 |
 
 ## Data Flow Contract
 
@@ -75,7 +75,7 @@ simulation은 local artifact registry JSON과 CLI fixture를 입력으로 사용
 | missing ledger timestamp | `ontology.test.ts`, missing timestamp test | freshness `incomplete`, not stale |
 | build artifact sidecar | `ontology.test.ts`, non-quality build sidecar test | build registry hit consumes quality-status sidecar |
 
-`activation-evidence` does not add a scenario row at vocabulary-definition time. It uses the same direct registry hit/provider projection as other non-quality artifacts, and the activation consumption row belongs with the future CLI persistence story that writes activation evidence records.
+`activation-evidence` now has CLI persistence coverage: `ontology registry activate-pack ... --output <file> --artifact-registry <registry>` writes the record, validates/lists it, and resolves the activation sidecar through the same direct registry hit/provider projection as other non-quality artifacts. The simulation matrix does not need a new relation row because activation proof still uses existing `produced_by`, `derived_from`, `verifies`, `owned_by_definition`, and `materializes_output` relations.
 
 ## Implementation Trace Convention
 

@@ -58,20 +58,22 @@ sources:
   - packages/cli/package.json
   - packages/cli/src/commands/ontology.ts
   - packages/cli/src/command-groups/ontology.commands.ts
+  - packages/cli/src/lib/activation-evidence-registry.ts
   - packages/operational-ontology/src/programming-artifacts.ts
   - packages/authorization-ontology/src/index.ts
   - tasks/prd-ontology-registry-activation-cli.md
+  - tasks/prd-ontology-registry-activation-evidence-persistence.md
 ---
 
 # Operational Ontology Registry Allocation — 현재 구현 및 검증 계약
 
 ## 목적 ^purpose
 
-operational ontology schema를 registry-service와 index-meta가 소비할 수 있는 allocation contract로 고정한다. 목표는 현재 구현된 DB 독립 allocation model, Phase 2A persistence table surface, Phase 2B store adapter surface, Phase 3 service lifecycle surface, Phase 4 index-meta sync surface, Phase 5 activation helper/smoke surface, public/local activation CLI surface를 plan/todo가 아니라 현재 spec 표면으로 승격하는 것이다.
+operational ontology schema를 registry-service와 index-meta가 소비할 수 있는 allocation contract로 고정한다. 목표는 현재 구현된 DB 독립 allocation model, Phase 2A persistence table surface, Phase 2B store adapter surface, Phase 3 service lifecycle surface, Phase 4 index-meta sync surface, Phase 5 activation helper/smoke surface, public/local activation CLI surface, 그리고 CLI activation evidence persistence surface를 plan/todo가 아니라 현재 spec 표면으로 승격하는 것이다.
 
 ## 구성 ^overview
 
-현재 완료된 범위는 local allocation contract, handoff 문서화, Phase 2A registry-service persistence table surface, Phase 2B registry-service store adapter surface, Phase 3 registry-service service layer surface, Phase 4 index-meta sync surface, Phase 5 activation helper/smoke surface, local CLI activation execution surface다.
+현재 완료된 범위는 local allocation contract, handoff 문서화, Phase 2A registry-service persistence table surface, Phase 2B registry-service store adapter surface, Phase 3 registry-service service layer surface, Phase 4 index-meta sync surface, Phase 5 activation helper/smoke surface, local CLI activation execution surface, local activation evidence persistence surface다.
 
 - **Local allocation model** — `OperationalOntologySchema`를 namespace, axis registration, taxonomy registration, address allocation, segment record로 투영한다.
 - **Local validation** — 단일 allocation plan 안의 duplicate key, missing axis, invalid size/offset, segment drift를 structured issue로 판정한다.
@@ -81,6 +83,7 @@ operational ontology schema를 registry-service와 index-meta가 소비할 수 �
 - **Index-meta sync adapter** — active allocation bundle을 index-meta prefix registry/schema version records로 materialize하고 idempotent/repaired/blocked report와 post-sync smoke readback을 반환한다.
 - **Activation helper** — ontology module helper가 pack registration, all-allocation activation, index-meta sync, activation-level smoke summary를 service method 호출만으로 조립한다.
 - **Activation CLI** — `qa-sdk ontology registry activate-pack <pack-id>`가 completed helper lifecycle을 local SQLite runtime으로 실행하고 stable JSON/text/sidecar output을 제공한다.
+- **Activation evidence persistence** — `qa-sdk ontology registry activate-pack <pack-id> --output <file> --artifact-registry <registry>`가 successful activation sidecar를 `kind: "activation-evidence"` programming artifact registry record로 append/upsert한다.
 - **Design validation boundary** — ontology design 변경 시 definition graph, operational-ontology allocation, programming-artifact simulation, registry-service/index-meta lifecycle gate를 분리한다.
 - **Handoff contracts** — registry-service persistence와 index-meta sync가 소비할 record shape, collision rule, activation smoke 기준을 문서화한다.
 - **Prefix policy gate** — scoped prefix 도입 전까지 global `(prefix, versionId)` uniqueness와 현재 registry/index-meta/decode key shape를 유지한다.
@@ -101,7 +104,7 @@ ontology index-meta sync adapter SSOT는 `packages/registry-service/src/modules/
 
 ontology activation helper SSOT는 `packages/registry-service/src/modules/ontology/ontology-activation.helper.ts`다. Helper tests는 valid all-allocation activation, product/sum smoke checks, invalid no-write, duplicate/blocked sync behavior, memory/SQL backend matrix, and public result summary shape를 검증한다.
 
-activation CLI SSOT는 `packages/cli/src/command-groups/ontology.commands.ts`, `packages/cli/src/commands/ontology.ts`, `packages/cli/src/lib/known-ontology-packs.ts`, 그리고 `@qa-sdk/registry-service/ontology-local-runtime`이다. CLI tests는 public command path, known pack scenarios, structured failure output, raw SQL sanitization, text output, and `--output` JSON sidecar behavior를 검증한다.
+activation CLI SSOT는 `packages/cli/src/command-groups/ontology.commands.ts`, `packages/cli/src/commands/ontology.ts`, `packages/cli/src/lib/known-ontology-packs.ts`, `packages/cli/src/lib/activation-evidence-registry.ts`, 그리고 `@qa-sdk/registry-service/ontology-local-runtime`이다. CLI tests는 public command path, known pack scenarios, structured failure output, raw SQL sanitization, text output, `--output` JSON sidecar behavior, and `--artifact-registry` activation evidence append behavior를 검증한다.
 
 ## Projection Contract
 
@@ -317,6 +320,12 @@ Unexpected infrastructure errors are sanitized into `unexpected-error` issues wi
 - CLI-origin failures for unknown pack id, invalid flags, invalid address model, runtime storage setup, and output write failures return stable result-like JSON when `--json` or `--output` is used.
 - CLI text failures preserve the stable JSON error code as `<code>: <message>`, while helper lifecycle failures continue through activation summary `errors`.
 - CLI `--output <file>` writes the same pretty JSON payload as `--json` stdout and creates parent directories before writing.
+- CLI `--artifact-registry <registry>` requires `--output <file>`, writes the raw activation sidecar first, and appends managed registry evidence only for `status: "succeeded"` activation results.
+- CLI activation evidence uses `kind: "activation-evidence"`, deterministic record id `activation-evidence-<packId>-<ontologyId>`, `artifactRef`/`outputPath` pointing at the sidecar, command provenance in `producedByRef`, pack/import derivation, allocation spec verification, and sidecar/result materialization refs.
+- CLI JSON stdout reports additive `activationEvidence` append metadata while the sidecar remains the raw activation helper result.
+- CLI registry append failures report sanitized `activation-evidence-registry-append-error`, do not rewrite the sidecar, and set the command exit code to failure.
+- Activation evidence registry records validate through `ontology artifact registry validate`, list under `--kind activation-evidence`, and resolve through `ontology prompt extract-artifact <output-file> --artifact-registry <registry>` as `artifact-registry-hit`.
+- Successful activation reruns with the same registry/output identity upsert the same evidence record. Duplicate/failed activation against the same store does not append or replace successful evidence.
 
 ## 완료된 Handoff Specs
 
@@ -336,10 +345,9 @@ Phase 5 및 local CLI exposure 이후 아직 구현하지 않은 범위:
 
 - registry-service REST activation endpoint.
 - remote activation service/deployment surface.
-- activation result persistence into the programming artifact registry.
 - scoped prefix schema/API migration.
 
-REST exposure and artifact registry persistence stay follow-up work. scoped prefix는 `operational-ontology-scoped-prefix-decision`의 concrete need gate와 별도 decision PRD/implementation ADR 없이는 구현하지 않는다. Activation smoke와 local CLI execution은 완료됐고 Phase 3 active allocation/service error contract와 Phase 4 sync report/post-sync check surface를 소비하며 table/store/service/sync shape를 역으로 변경하지 않는다.
+Activation result persistence into the local programming artifact registry is complete as a public/local CLI follow-up surface, not an allocation lifecycle phase. REST exposure and remote activation service stay follow-up work. scoped prefix는 `operational-ontology-scoped-prefix-decision`의 concrete need gate와 별도 decision PRD/implementation ADR 없이는 구현하지 않는다. Activation smoke, local CLI execution, and activation evidence persistence are complete and consume Phase 3 active allocation/service error contract, Phase 4 sync report/post-sync check surface, and programming artifact registry helpers without changing table/store/service/sync shape.
 
 ## CLI Activation Surface ^cli-activation-surface
 
@@ -349,8 +357,22 @@ The implemented public/local command calls the completed activation helper witho
 - JSON: `tasks/prd-ontology-registry-activation-cli.json`
 - CLI spec: `operational-ontology-registry-activation-cli`
 - command: `qa-sdk ontology registry activate-pack <pack-id>`
-- scope: known pack resolver, local SQLite runtime, activation result JSON, text output, `--output` JSON sidecar, programming-artifact and authorization ontology scenario proofs
-- non-goals: registry-service REST endpoint, scoped prefix support, artifact registry append, remote activation service
+- scope: known pack resolver, local SQLite runtime, activation result JSON, text output, `--output` JSON sidecar, explicit `--artifact-registry` activation evidence append, programming-artifact and authorization ontology scenario proofs
+- non-goals: registry-service REST endpoint, scoped prefix support, remote activation service
+
+## Activation Evidence Persistence Surface ^activation-evidence-persistence
+
+Activation evidence persistence is a completed public/local follow-up over the activation CLI. It does not reopen Phase 2A/2B persistence, Phase 3 service orchestration, Phase 4 index-meta sync, Phase 5 activation helper/smoke, or Phase 6 scoped prefix policy.
+
+The contract is explicit:
+
+- `--output <file>` materializes the raw activation result sidecar.
+- `--artifact-registry <registry>` requires `--output <file>` and appends only successful activation evidence.
+- `--output` alone remains sidecar-only.
+- Failed activation, duplicate activation against the same store, and output-write failure do not append managed evidence.
+- Registry append failure is sanitized, leaves the sidecar unchanged, and is surfaced through additive stdout `activationEvidence.appendStatus: "failed"`.
+- The programming artifact record uses `kind: "activation-evidence"` and existing relation vocabulary only.
+- Existing artifact registry validate/list/provider lookup handles the evidence; no registry-service REST route or remote activation service is introduced.
 
 ## CLI Activation Boundary ^cli-activation-boundary
 
@@ -375,6 +397,7 @@ The confirmed flags are:
 - `--address-model product|sum` to select the allocation model.
 - `--prefix <taxonomyId>=<prefix>` as a repeatable deterministic taxonomy prefix override.
 - `--output <file>` to write the same pretty JSON payload emitted by `--json` as a sidecar materialization.
+- `--artifact-registry <file>` to append successful activation evidence to the local programming artifact registry after the output sidecar is written.
 - `--json` for machine-readable activation result output.
 
 The local runtime strategy is a single SQLite file per command invocation. The runtime must open the file through registry-service/index-meta SQL infrastructure, apply index-meta base DDL plus registry-service migrations, and construct all activation dependencies over the same driver: `SqlOntologyRegistryStore` for registry-service ontology rows, `SqlPrefixRegistry` for index-meta prefix records, and `SqlIndexMetaStore` for schema-version records. It then builds `OntologyIndexMetaSyncAdapter`, `OntologyRegistryService`, and `OntologyPackActivationHelper` and calls the helper/service port. It must not start a Nest HTTP server, call registry-service REST APIs, create new persistence abstractions, or reach into raw SQL from the CLI command.

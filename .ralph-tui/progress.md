@@ -10,6 +10,7 @@ after each iteration and it's included in prompts for context.
 - `pnpm --filter @qa-sdk/cli test -- ontology` is a Vitest path/name filter; CLI-local helper tests that must run under this gate should live in `ontology.test.ts` or include `ontology` in the test file name.
 - `activate-pack --artifact-registry` keeps `--output` as the raw activation result sidecar; append metadata is reported in stdout JSON under additive `activationEvidence`, so registry append failures do not rewrite the materialized proof.
 - Activation evidence upsert tests need a fresh SQLite activation store for the second succeeded run with the same registry/output identity; reusing the original store intentionally exercises `duplicate-allocation` failure and should assert no failed evidence append.
+- Documentation closeout stories should search adjacent specs/guides for future-tense follow-up wording, not only the acceptance-target files; otherwise implemented surfaces can remain contradicted by neighboring docs.
 
 ---
 
@@ -76,4 +77,16 @@ after each iteration and it's included in prompts for context.
   - The registry evidence consumer path is fully generic for activation evidence: matching `artifactRef`/`outputPath` to the sidecar is enough for `prompt extract-artifact` to return `artifact-registry-hit`.
   - Same-store activation reruns are intentionally failed by duplicate allocation checks, so registry upsert coverage for another successful activation needs a separate activation store while keeping the same output path and artifact registry.
   - Failed activation results still materialize their own sidecar when `--output` is provided, but managed registry evidence is appended only for `status: "succeeded"`.
+---
+
+## 2026-04-15 - US-006
+- Updated activation CLI, allocation lifecycle, programming artifact CLI/system, development guide, and context simulation docs to state that explicit local activation evidence persistence is complete.
+- Closed the activation evidence persistence follow-up in the registry allocation TODO while leaving REST activation endpoint and remote activation service follow-ups open.
+- Kept scoped prefix implementation frozen under `operational-ontology-scoped-prefix-decision`; the docs now state evidence persistence is a public/local CLI follow-up, not a new allocation lifecycle phase.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter @qa-sdk/cli build`; `pnpm --filter operational-ontology test -- programming-artifacts`; `pnpm --filter operational-ontology typecheck`; `pnpm --filter registry-service test -- ontology`; `pnpm --filter registry-service typecheck`; `node packages/cli/dist/index.js def validate`.
+- Files changed: `docs/specs/operational-ontology/operational-ontology-registry-activation-cli.spec.md`, `docs/specs/operational-ontology/operational-ontology-registry-allocation.spec.md`, `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md`, `docs/specs/operational-ontology/programming-artifact-ontology-cli.spec.md`, `docs/specs/operational-ontology/programming-artifact-ontology-system.spec.md`, `docs/specs/operational-ontology/programming-artifact-ontology-development-guide.spec.md`, `docs/specs/operational-ontology/programming-artifact-ontology-context-simulation.spec.md`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - Activation evidence persistence is documented as an explicit local CLI/programming-artifact registry surface: `--artifact-registry` requires `--output`, writes only successful activation evidence, and keeps append metadata out of the raw sidecar.
+  - Registry allocation docs should distinguish completed public/local follow-up surfaces from lifecycle phases so Phase 2A/2B/3/4/5 and Phase 6 scoped-prefix policy stay stable.
+  - Adjacent programming artifact docs can preserve stale future-tense text after implementation; a focused `rg` pass across the doc cluster catches those contradictions before validation.
 ---

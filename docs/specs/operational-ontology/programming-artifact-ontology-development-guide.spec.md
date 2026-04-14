@@ -107,7 +107,7 @@ artifact registry record를 생성할 때는 가능한 한 아래 필드를 채�
 
 필드를 모르면 빈 문자열로 채우지 않는다. 모르는 값은 생략하고, todo에 relation 보강 항목을 남긴다.
 
-현재 concrete write path는 `qa-sdk codegen --artifact-registry <file>`, `qa-sdk quality export ... --artifact-registry=<file>`, `infra deploy ... --artifact-registry <file>`, `qa-sdk ontology prompt extract* --output <file|dir> --artifact-registry <file>`, `qa-sdk ontology artifact registry append --kind build ...`이다. `activation-evidence`는 vocabulary와 registry validation/list 대상에 포함되지만, `qa-sdk ontology registry activate-pack --artifact-registry` append path는 activation evidence persistence follow-up에서 구현한다.
+현재 concrete write path는 `qa-sdk codegen --artifact-registry <file>`, `qa-sdk quality export ... --artifact-registry=<file>`, `infra deploy ... --artifact-registry <file>`, `qa-sdk ontology prompt extract* --output <file|dir> --artifact-registry <file>`, `qa-sdk ontology registry activate-pack <pack-id> --output <file> --artifact-registry <file>`, `qa-sdk ontology artifact registry append --kind build ...`이다. `activation-evidence`는 successful activation sidecar를 managed registry record로 append/upsert하는 구현된 write path를 가진다.
 
 ## Quality-status Discovery 검증
 

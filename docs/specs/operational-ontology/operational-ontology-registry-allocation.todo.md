@@ -23,7 +23,7 @@ def:
 
 operational ontology schema를 registry-service의 ontology-aware registry/allocator로 승격하기 위한 구현 항목을 추적한다. 목표는 완료된 DB 독립 allocation model 다음에 registry-service persistence, service layer, index-meta sync, pack activation flow를 순서대로 닫는 것이다.
 
-완료된 local allocation model, validation issue target, validation boundary, matrix, graph requirement, Phase 2A persistence schema, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, Phase 5 activation smoke, public/local activation CLI, persistence/index-meta handoff, scoped prefix decision은 `operational-ontology-registry-allocation` spec에 반영됐다. 이 TODO는 REST activation exposure, activation evidence persistence, scoped prefix가 별도 PRD로 재개되기 전까지 남은 정책-only 항목을 명시한다.
+완료된 local allocation model, validation issue target, validation boundary, matrix, graph requirement, Phase 2A persistence schema, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, Phase 5 activation smoke, public/local activation CLI, activation evidence persistence, persistence/index-meta handoff, scoped prefix decision은 `operational-ontology-registry-allocation` spec에 반영됐다. 이 TODO는 REST activation exposure, remote activation service, scoped prefix가 별도 PRD로 재개되기 전까지 남은 정책-only 항목을 명시한다.
 
 ## 실행 dependency map
 
@@ -370,11 +370,13 @@ Validation commands:
   - Closed by CLI command-path tests for programming-artifact activation, authorization activation, unknown pack, invalid address model, duplicate helper failure, raw SQL sanitization, and output sidecar behavior
 - [ ] REST activation endpoint for registry-service
   - Keep separate from local CLI because endpoint auth, remote store ownership, and deployment lifecycle need their own API contract.
-- [ ] Activation result persistence into programming artifact registry
-  - Keep separate from `--output`; sidecar JSON is evidence materialization, not a managed artifact registry append.
+- [x] Activation result persistence into programming artifact registry
+  - Closed as a public/local CLI follow-up by `qa-sdk ontology registry activate-pack <pack-id> --output <file> --artifact-registry <registry>`.
+  - `--output` alone remains sidecar-only. Managed persistence requires the explicit registry flag, appends only `status: "succeeded"` activation evidence, and reports append metadata in stdout `activationEvidence`.
+  - The sidecar remains the raw activation helper result. Registry append failure is sanitized and does not rewrite the materialized proof.
 - [ ] Remote activation service/deployment surface
   - Keep separate from local SQLite runtime until a concrete service boundary and operator workflow exists.
 
 ## 다음 구현 기준
 
-Phase 5 activation smoke와 public/local CLI activation surface까지 완료됐다. Phase 2A schema/migration/snapshot, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, Phase 5 activation helper/smoke, CLI activation command는 prefix global uniqueness를 깨지 않는다. 다음 lifecycle 구현은 현재 없다. REST exposure, artifact registry persistence, remote activation service는 새 PRD/API contract가 생길 때만 진행한다. scoped prefix는 `operational-ontology-scoped-prefix-decision`의 concrete need gate를 통과하고 새 decision PRD/implementation ADR이 생성되는 경우에만 별도 진행한다.
+Phase 5 activation smoke, public/local CLI activation surface, activation evidence persistence까지 완료됐다. Phase 2A schema/migration/snapshot, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, Phase 5 activation helper/smoke, CLI activation command, activation evidence append는 prefix global uniqueness를 깨지 않는다. 다음 lifecycle 구현은 현재 없다. REST exposure와 remote activation service는 새 PRD/API contract가 생길 때만 진행한다. scoped prefix는 `operational-ontology-scoped-prefix-decision`의 concrete need gate를 통과하고 새 decision PRD/implementation ADR이 생성되는 경우에만 별도 진행한다.

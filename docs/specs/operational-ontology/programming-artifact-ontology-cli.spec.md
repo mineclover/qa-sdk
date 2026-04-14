@@ -59,10 +59,22 @@ qa-sdk ontology artifact registry append --output <file> \
   [--json]
 ```
 
+Activation evidence producer command도 registry append를 지원한다.
+
+```bash
+qa-sdk ontology registry activate-pack <pack-id> \
+  [--store <path>] \
+  [--output <file>] \
+  [--artifact-registry <file>] \
+  [--json]
+```
+
 ## Flag Contract
 
-- `--artifact-registry` is the primary local registry file flag for `extract-artifact`, prompt artifact materialization, codegen, quality export, deployment output, and registry append workflows.
+- `--artifact-registry` is the primary local registry file flag for `extract-artifact`, prompt artifact materialization, codegen, quality export, deployment output, activation evidence append, and registry append workflows.
 - `--artifact-registry-file` is accepted by `extract-artifact` as a compatibility alias for the read path.
+- On `qa-sdk ontology registry activate-pack`, `--artifact-registry <file>` requires `--output <file>`, writes managed registry evidence only for `status: "succeeded"` activation results, and reports append metadata under additive stdout JSON `activationEvidence`.
+- `activate-pack --output <file>` without `--artifact-registry` remains sidecar-only and does not append a programming artifact registry record.
 - `--quality-ledger <path>` is an explicit artifact extraction input. The CLI validates/opens this SQLite quality ledger only while processing related `quality-status` records from `extract-artifact`; it never performs automatic `.qa-sdk/quality-ledger.sqlite` lookup and non-artifact prompt extraction ignores the flag.
 - `--quality-status-max-age-days <n>` is an opt-in freshness SLA for `extract-artifact` quality-status evidence. `<n>` must be a positive integer. When absent, `generatedAt` and ledger `executedAt` timestamps do not make otherwise verified evidence stale.
 - `--json` on `extract-artifact` includes `source.kind`, `source.registry`, fallback details, `source.qualityStatusRecords`, `source.governanceClosure`, and `source.qualitySignal`.
@@ -153,7 +165,11 @@ related quality matching은 `kind === "quality-status"` record만 대상으로 �
 }
 ```
 
-Activation proof can be represented as a managed record with `kind: "activation-evidence"` once an explicit activation registry append path is provided. Until that follow-up is implemented, `qa-sdk ontology registry activate-pack --output <file>` remains a JSON sidecar materialization only; the generic registry append/list/validate commands can still validate manually created activation-evidence records.
+Activation proof is represented as a managed record with `kind: "activation-evidence"` when `qa-sdk ontology registry activate-pack <pack-id> --output <file> --artifact-registry <registry>` succeeds. The record is appended after the raw activation sidecar is written. It uses deterministic identity `activation-evidence-<packId>-<ontologyId>`, points `artifactRef` and `outputPath` at the activation sidecar, records command provenance in `producedByRef`, includes pack/import derivation, verifies the pack/ontology/allocation spec, and materializes both the sidecar path and stable `activation-result:<packId>:<ontologyId>` ref.
+
+`activationEvidence` append metadata is stdout-only. The sidecar remains the raw activation helper result. Failed activation, duplicate activation against the same store, output-write failure, and missing `--output` do not append managed registry evidence. Registry append failure is sanitized as `activation-evidence-registry-append-error` and leaves the sidecar unchanged.
+
+Existing generic registry commands can validate/list/filter these records, and `extract-artifact <activation-output-file> --artifact-registry <registry>` resolves them through the normal provider lookup as `artifact-registry-hit`.
 
 ## Fallback 품질 신호
 
@@ -305,6 +321,7 @@ qa-sdk codegen --data-objects ./bindings.json --output ./generated --artifact-re
 qa-sdk quality export quality-gates-system --output=artifacts/quality-gates-system.json --artifact-registry=artifacts/programming-artifacts.json
 infra deploy order-api prod --provider cloudflare --artifact-registry artifacts/programming-artifacts.json
 qa-sdk ontology prompt extract-artifact dist/index.js --kind self_reflection --output artifacts/prompts/self-reflection.md --artifact-registry artifacts/programming-artifacts.json
+qa-sdk ontology registry activate-pack programming-artifact-ontology --output artifacts/activation/programming-artifact-ontology.json --artifact-registry artifacts/programming-artifacts.json
 qa-sdk ontology artifact registry append --output artifacts/programming-artifacts.json --kind build --artifact-ref packages/cli/dist/index.js --produced-by "pnpm --filter @qa-sdk/cli build"
 ```
 
@@ -315,6 +332,7 @@ qa-sdk ontology artifact registry append --output artifacts/programming-artifact
 - quality status: `produced_by=qa-sdk quality export <rootId>`, `derived_from=<rootId + bundleIds>`, `verifies=<rootId + bundleIds>`, `owned_by_definition=<rootId>`, `materializes_output=<rootId>`, `verificationRefs=<bundleIds>`, `metadata=<generatedAt + bundle state/gate/claim summary>`.
 - deployment output: `produced_by=infra deploy <service> <env> --provider <provider>`, `derived_from=<configPath + service/env refs>`, `verifies=<service + endpoint refs when successful>`, `owned_by_definition=infra-engine-pipeline`, `materializes_output=<service + env + endpoint refs>`.
 - prompt artifact: `produced_by=qa-sdk ontology prompt extract*`, `derived_from=<artifact.sourceRefs>`, `verifies=<workAreaId when valid>`, `owned_by_definition=<source definition when known>`, `materializes_output=<prompt artifact id + work area + source target>`.
+- activation evidence: `produced_by=qa-sdk ontology registry activate-pack <pack-id>`, `derived_from=<packId + known pack import ref>`, `verifies=<packId + ontologyId + operational-ontology-registry-allocation>`, `owned_by_definition=operational-ontology-registry-activation-cli`, `materializes_output=<output sidecar path + activation-result:<packId>:<ontologyId>>`, `metadata=<status + namespace + allocation/sync/smoke/warning/error summary + generatedAt>`.
 - build output: `ontology artifact registry append --kind build`로 명시적 output path를 registry record로 기록한다. 실제 build 실행은 패키지 스크립트가 소유하고, CLI는 결과물을 registry에 관리 등록한다.
 
 ## Registry Command Behavior
