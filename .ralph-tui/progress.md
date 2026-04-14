@@ -12,6 +12,7 @@ after each iteration and it's included in prompts for context.
 - SQL store adapters can keep raw `SqlDriver` queries while deriving table names from Drizzle schema exports via `getTableName()`, which keeps Phase table names tied to `db/schema.ts` without adopting Drizzle query builders.
 - SQL ontology writes should follow snapshot → shared validation → transaction insert, then revalidate/map SQLite unique constraint failures into `partial-write-rejected` conflicts for race/concurrent duplicate cases.
 - Registry-service adapter parity tests can live in one `describe.each` store-contract file fed by store factory contexts; keep adapter-specific tests for concerns outside the shared interface such as SQL serialization/race mapping or in-memory defensive copies.
+- Registry-service bootstrap parity tests can call `createRegistryStores(":memory:")` and a temporary SQLite path to verify both in-memory and SQL-backed adapters are exposed without wiring REST routes, CLI commands, or orchestration.
 
 ---
 
@@ -85,4 +86,18 @@ after each iteration and it's included in prompts for context.
   - The shared store interface is sufficient for most adapter parity checks; optional factory context hooks can add backend-specific assertions like raw SQL table counts without leaking SQL into the contract behavior.
   - Existing list methods expose deterministic ordering by natural key/address range, so the contract can assert exact record arrays instead of only checking IDs.
   - Keeping SQL JSON/race tests separate from the shared contract avoids coupling common behavior to adapter-only implementation details.
+---
+
+## 2026-04-14 - US-006
+- Wired `ontologyStore` into `createRegistryStores()` for both `:memory:` and SQL-backed bootstrap modes.
+- Added a focused bootstrap test that verifies `:memory:` returns `InMemoryOntologyRegistryStore` and a temporary SQLite path returns `SqlOntologyRegistryStore`.
+- Confirmed the change only touches store bootstrap and tests; no REST routes, CLI commands, or service orchestration were added.
+- Files changed:
+  - `packages/registry-service/src/bootstrap/stores.ts`
+  - `packages/registry-service/src/bootstrap/stores.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - `createRegistryStores()` is currently the sole registry-service bootstrap surface for store bundles, so Phase 3 consumers can get new store dependencies by extending this return object.
+  - SQL-backed bootstrap tests can use a temporary SQLite file path to exercise the non-`:memory:` branch while leaving schema migration behavior intact.
+  - The ontology adapter wiring can remain bootstrap-local; existing modules/routes do not need dependency injection changes until service code begins consuming the store.
 ---

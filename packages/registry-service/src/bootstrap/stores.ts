@@ -18,6 +18,8 @@ import { InMemoryAxisProfileStore } from "../stores/in-memory-axis-profile-store
 import { SqlAxisProfileStore } from "../stores/sql-axis-profile-store.js";
 import { InMemoryServiceComponentVersionStore } from "../stores/in-memory-service-component-version-store.js";
 import { SqlServiceComponentVersionStore } from "../stores/sql-service-component-version-store.js";
+import { InMemoryOntologyRegistryStore } from "../stores/in-memory-ontology-registry-store.js";
+import { SqlOntologyRegistryStore } from "../stores/sql-ontology-registry-store.js";
 const migrationsFolder = new URL("../../drizzle", import.meta.url).pathname;
 const logger = createLogger("registry-service");
 
@@ -57,6 +59,7 @@ export async function createRegistryStores(sqlitePath: string) {
       componentStore: new InMemoryServiceComponentVersionStore(),
       endpointStore: new InMemoryServiceEndpointStore(),
       eventSchemaStore: new InMemoryEventSchemaStore(),
+      ontologyStore: new InMemoryOntologyRegistryStore(),
     };
   }
 
@@ -76,5 +79,6 @@ export async function createRegistryStores(sqlitePath: string) {
     componentStore: new SqlServiceComponentVersionStore(driver),
     endpointStore: new SqlServiceEndpointStore(driver),
     eventSchemaStore: new SqlEventSchemaStore(driver),
+    ontologyStore: new SqlOntologyRegistryStore(driver),
   };
 }
