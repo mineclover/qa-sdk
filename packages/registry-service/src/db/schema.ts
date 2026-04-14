@@ -1,8 +1,9 @@
 /**
  * registry-service Drizzle ORM 스키마 정의
  *
- * 8개 테이블: prefix, draft_lock, axis_profile, catalogs,
- *            service_endpoint, config, event_schema, service_component_version
+ * 10개 테이블: prefix, draft_lock, axis_profile, catalogs,
+ *             ontology_namespace, ontology_axis, service_endpoint, config,
+ *             event_schema, service_component_version
  *
  * NOTE: schema_version 테이블은 앱 레벨 마이그레이션 트래커로
  * Drizzle 관리 대상에서 제외한다 (__drizzle_migrations와 별개).
@@ -12,6 +13,7 @@ import {
   text,
   integer,
   index,
+  uniqueIndex,
   primaryKey,
   check,
 } from "drizzle-orm/sqlite-core";
@@ -76,6 +78,49 @@ export const catalogs = sqliteTable("catalogs", {
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
+
+// ─── ontology_namespace ───────────────────────────────
+export const ontologyNamespace = sqliteTable(
+  "ontology_namespace",
+  {
+    ontologyId: text("ontology_id").primaryKey(),
+    namespace: text("namespace").notNull(),
+    owner: text("owner"),
+    lifecycle: text("lifecycle").notNull().default("draft"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [
+    uniqueIndex("uq_ontology_namespace_namespace").on(t.namespace),
+    check(
+      "chk_ontology_namespace_lifecycle",
+      sql`lifecycle IN ('draft', 'active', 'deprecated')`,
+    ),
+  ],
+);
+
+// ─── ontology_axis ────────────────────────────────────
+export const ontologyAxis = sqliteTable(
+  "ontology_axis",
+  {
+    ontologyId: text("ontology_id").notNull(),
+    axisId: text("axis_id").notNull(),
+    versionId: text("version_id").notNull(),
+    valuesJson: text("values_json").notNull(),
+    valuesHash: text("values_hash").notNull(),
+    capacity: integer("capacity").notNull(),
+    lifecycle: text("lifecycle").notNull().default("draft"),
+  },
+  (t) => [
+    primaryKey({
+      columns: [t.ontologyId, t.axisId, t.versionId],
+    }),
+    check(
+      "chk_ontology_axis_lifecycle",
+      sql`lifecycle IN ('draft', 'active', 'deprecated')`,
+    ),
+  ],
+);
 
 // ─── service_endpoint ───────────────────────────────────
 export const serviceEndpoint = sqliteTable(
