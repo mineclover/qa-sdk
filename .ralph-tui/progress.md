@@ -10,6 +10,7 @@ after each iteration and it's included in prompts for context.
 - Valid pack activation is an all-allocation path: `registerOntologyPack` validates before reservation, then the helper activates and syncs every returned allocation instead of selecting a subset.
 - Activation-level smoke checks should be assembled from `syncToPrefixRegistry` post-sync reports plus activated allocation status; the helper should not reach into prefix registry stores or SQL directly.
 - Sum activation smoke checks should assert leaf prefix/schema capacity and `postSyncChecks.sumAllocation` sidecar coverage only; do not reuse product shape/resolver checks for sum segments.
+- Activation no-write coverage should exercise `OntologyPackActivationHelper` through real `OntologyRegistryService` instances and a memory/SQL backend matrix, while asserting registry rows through store APIs and SQL index-meta rows through table counts.
 
 ---
 
@@ -70,4 +71,17 @@ after each iteration and it's included in prompts for context.
   - `syncToPrefixRegistry` already provides the complete sum smoke surface through the allocation `targetRecords[]` entry plus `postSyncChecks.sumAllocation`.
   - Sum allocation prefix registry records are leaf records: intended readback has capacity and no refs, while segment ranges remain report sidecars under `exact-allocation-range`.
   - Product resolver and shape checks must remain product-only; sum segments currently have explicit sidecar semantics, not product DAG decode semantics.
+---
+
+## 2026-04-14 - US-006
+- Added acceptance-level invalid activation no-write coverage for `OntologyPackActivationHelper`.
+- Invalid pack activation now has tests proving a structured `invalid-pack` register-phase error, no allocation activation/sync payloads, no registry-service writes, and no index-meta writes.
+- Invalid allocation-plan activation now has tests proving a structured `invalid-allocation-plan` register-phase error for duplicate prefix/version plans, with no namespace/axis/taxonomy/allocation/segment rows and no prefix registry/schema-version rows.
+- Covered both in-memory and SQLite-backed registry-service/index-meta stores where practical; SQL cases also assert raw backing table counts for registry-service and index-meta tables.
+- Files changed: `packages/registry-service/src/modules/ontology/ontology-activation.helper.test.ts`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - `OntologyRegistryService.registerOntologyPack` already owns the safe ordering: pack validation, allocation planning, allocation-plan validation, then store write. The helper only needs to surface the structured error and stop.
+  - `writeAllocationPlan` is not called for local invalid allocation-plan validation failures, so invalid activation retries leave no registry rows before SQL transactions are involved.
+  - `index-meta` has `PrefixRegistry.listAll()` for memory/SQL prefix checks, but schema-version emptiness is best proven by known target readbacks for memory and raw `schema_version` counts for SQL.
+  - Running the full registry-service suite concurrently with package builds/index-meta tests can push dashboard tests past their 5s timeout; rerunning `pnpm --filter registry-service test` alone passed.
 ---

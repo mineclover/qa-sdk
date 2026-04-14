@@ -1,12 +1,21 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { InMemoryIndexMetaStore, InMemoryPrefixRegistry } from 'index-meta';
+import {
+  InMemoryIndexMetaStore,
+  InMemoryPrefixRegistry,
+  SqlIndexMetaStore,
+  SqlPrefixRegistry,
+  type SqlDriver,
+} from 'index-meta';
 import { operationalOntologyAllocationPlane } from 'operational-ontology/allocation';
 import { operationalOntologyPackPlane } from 'operational-ontology/pack';
 import type { OperationalOntologyPack } from 'operational-ontology/pack';
+import { createRegistryDatabaseDriver } from '../../bootstrap/stores.js';
 import { InMemoryOntologyRegistryStore } from '../../stores/in-memory-ontology-registry-store.js';
+import { SqlOntologyRegistryStore } from '../../stores/sql-ontology-registry-store.js';
 import type {
   OntologyAddressAllocationRecord,
   OntologyNamespaceRecord,
+  OntologyRegistryStore,
 } from '../../stores/ontology-registry-store.js';
 import {
   createOntologyIndexMetaSyncAdapter,
@@ -63,9 +72,60 @@ const multiAllocationPack = {
   },
 } satisfies OperationalOntologyPack;
 
+const invalidPack = {
+  packId: 'broken-pack',
+  schema: {
+    axes: [{ id: 'resource_kind', values: ['service', 'service'] }],
+    taxonomies: [],
+    relationCategories: [],
+  },
+} satisfies OperationalOntologyPack;
+
+interface ActivationBackendContext {
+  readonly store: OntologyRegistryStore;
+  readonly prefixRegistry: InMemoryPrefixRegistry | SqlPrefixRegistry;
+  readonly schemaVersionStore: InMemoryIndexMetaStore | SqlIndexMetaStore;
+  readonly cleanup?: () => void | Promise<void>;
+  readonly assertNoBackendRows?: () => Promise<void>;
+}
+
+interface ActivationBackendCase {
+  readonly name: string;
+  readonly create: () => Promise<ActivationBackendContext>;
+}
+
+const activeBackends: ActivationBackendContext[] = [];
+
+const activationBackendCases = [
+  {
+    name: 'in-memory stores',
+    create: async () => ({
+      store: new InMemoryOntologyRegistryStore(),
+      prefixRegistry: new InMemoryPrefixRegistry(),
+      schemaVersionStore: new InMemoryIndexMetaStore(),
+    }),
+  },
+  {
+    name: 'SQL-backed stores',
+    create: async () => {
+      const driver = await createRegistryDatabaseDriver(':memory:');
+      return {
+        store: new SqlOntologyRegistryStore(driver),
+        prefixRegistry: new SqlPrefixRegistry(driver),
+        schemaVersionStore: new SqlIndexMetaStore(driver),
+        cleanup: () => driver.close(),
+        assertNoBackendRows: () => expectNoSqlRegistryOrIndexMetaRows(driver),
+      };
+    },
+  },
+] satisfies readonly ActivationBackendCase[];
+
 describe('OntologyPackActivationHelper', () => {
-  afterEach(() => {
+  afterEach(async () => {
     vi.restoreAllMocks();
+    while (activeBackends.length > 0) {
+      await activeBackends.pop()?.cleanup?.();
+    }
   });
 
   it('orchestrates activation through the ontology registry service port', async () => {
@@ -497,7 +557,207 @@ describe('OntologyPackActivationHelper', () => {
       }),
     );
   });
+
+  describe.each(activationBackendCases)(
+    'invalid activation no-write with $name',
+    ({ create }) => {
+      async function setup(): Promise<ActivationBackendContext> {
+        const context = await create();
+        activeBackends.push(context);
+        return context;
+      }
+
+      it('returns a structured invalid-pack error and leaves no registry or index-meta rows', async () => {
+        const context = await setup();
+        const service = new OntologyRegistryService({
+          store: context.store,
+          syncAdapter: createOntologyIndexMetaSyncAdapter({
+            prefixRegistry: context.prefixRegistry,
+            schemaVersionStore: context.schemaVersionStore,
+          }),
+        });
+        const helper = new OntologyPackActivationHelper(service);
+        const write = vi.spyOn(context.store, 'writeAllocationPlan');
+        const prefixRegister = vi.spyOn(context.prefixRegistry, 'register');
+        const schemaVersionInsert = vi.spyOn(
+          context.schemaVersionStore,
+          'insertSchemaVersion',
+        );
+
+        const result = await helper.activateOntologyPack(invalidPack, {
+          ontologyId: 'broken-runtime',
+          namespace: 'broken',
+          versionId: 'v2',
+        });
+
+        expect(result).toEqual(
+          expect.objectContaining({
+            status: 'failed',
+            packId: 'broken-pack',
+            ontologyId: 'broken-runtime',
+            namespaceRecord: null,
+            allocations: [],
+            activationStatuses: [],
+            syncReports: [],
+            smokeChecks: [],
+            warnings: [],
+            errors: [
+              expect.objectContaining({
+                level: 'error',
+                phase: 'register',
+                code: 'invalid-pack',
+                details: expect.objectContaining({
+                  code: 'invalid-pack',
+                  packId: 'broken-pack',
+                  issues: expect.arrayContaining([
+                    expect.objectContaining({ code: 'axis-values-duplicate' }),
+                  ]),
+                }),
+              }),
+            ],
+          }),
+        );
+        expect(write).not.toHaveBeenCalled();
+        expect(prefixRegister).not.toHaveBeenCalled();
+        expect(schemaVersionInsert).not.toHaveBeenCalled();
+        await expectActivationStoresEmpty(context, {
+          ontologyId: 'broken-runtime',
+          versionId: 'v2',
+          allocationIds: [],
+          indexMetaTargets: [
+            { prefix: 'broken_axis_resource_kind', versionId: 'v2' },
+            { prefix: 'broken_authorization_resource', versionId: 'v2' },
+          ],
+        });
+      });
+
+      it('returns a structured invalid-allocation-plan error and leaves no registry or index-meta rows', async () => {
+        const context = await setup();
+        const service = new OntologyRegistryService({
+          store: context.store,
+          syncAdapter: createOntologyIndexMetaSyncAdapter({
+            prefixRegistry: context.prefixRegistry,
+            schemaVersionStore: context.schemaVersionStore,
+          }),
+        });
+        const helper = new OntologyPackActivationHelper(service);
+        const write = vi.spyOn(context.store, 'writeAllocationPlan');
+        const prefixRegister = vi.spyOn(context.prefixRegistry, 'register');
+        const schemaVersionInsert = vi.spyOn(
+          context.schemaVersionStore,
+          'insertSchemaVersion',
+        );
+
+        const result = await helper.activateOntologyPack(multiAllocationPack, {
+          ontologyId: 'authz-runtime',
+          namespace: 'authz',
+          owner: 'registry-service',
+          versionId: 'v2',
+          prefixByTaxonomyId: {
+            'authorization-resource': 'authz_shared',
+            'authorization-decision': 'authz_shared',
+          },
+          timestamp: '2026-04-14T00:00:00.000Z',
+        });
+
+        expect(result).toEqual(
+          expect.objectContaining({
+            status: 'failed',
+            packId: 'authorization-ontology',
+            ontologyId: 'authz-runtime',
+            namespaceRecord: null,
+            allocations: [],
+            activationStatuses: [],
+            syncReports: [],
+            smokeChecks: [],
+            warnings: [],
+            errors: [
+              expect.objectContaining({
+                level: 'error',
+                phase: 'register',
+                code: 'invalid-allocation-plan',
+                details: expect.objectContaining({
+                  code: 'invalid-allocation-plan',
+                  packId: 'authorization-ontology',
+                  issues: expect.arrayContaining([
+                    expect.objectContaining({ code: 'ontology-prefix-version-duplicate' }),
+                  ]),
+                }),
+              }),
+            ],
+          }),
+        );
+        expect(write).not.toHaveBeenCalled();
+        expect(prefixRegister).not.toHaveBeenCalled();
+        expect(schemaVersionInsert).not.toHaveBeenCalled();
+        await expectActivationStoresEmpty(context, {
+          ontologyId: 'authz-runtime',
+          versionId: 'v2',
+          allocationIds: [
+            'authz-runtime:authorization-resource:v2',
+            'authz-runtime:authorization-decision:v2',
+          ],
+          indexMetaTargets: [
+            { prefix: 'authz_axis_resource_kind', versionId: 'v2' },
+            { prefix: 'authz_axis_decision_kind', versionId: 'v2' },
+            { prefix: 'authz_shared', versionId: 'v2' },
+          ],
+        });
+      });
+    },
+  );
 });
+
+async function expectActivationStoresEmpty(
+  context: ActivationBackendContext,
+  input: {
+    readonly ontologyId: string;
+    readonly versionId: string;
+    readonly allocationIds: readonly string[];
+    readonly indexMetaTargets: readonly { prefix: string; versionId: string }[];
+  },
+): Promise<void> {
+  expect(await context.store.listNamespaces()).toEqual([]);
+  expect(await context.store.getNamespace(input.ontologyId)).toBeNull();
+  expect(await context.store.listAxes(input.ontologyId, input.versionId)).toEqual([]);
+  expect(await context.store.listTaxonomies(input.ontologyId, input.versionId)).toEqual([]);
+  expect(await context.store.listAllocations(input.ontologyId, input.versionId)).toEqual([]);
+  expect(await context.store.listActiveAllocations()).toEqual([]);
+  for (const allocationId of input.allocationIds) {
+    expect(await context.store.getAllocation(allocationId)).toBeNull();
+    expect(await context.store.listSegments(allocationId)).toEqual([]);
+  }
+
+  expect(await context.prefixRegistry.listAll()).toEqual([]);
+  for (const target of input.indexMetaTargets) {
+    expect(
+      await context.schemaVersionStore.getSchemaVersion(target.prefix, target.versionId),
+    ).toBeNull();
+  }
+  await context.assertNoBackendRows?.();
+}
+
+async function expectNoSqlRegistryOrIndexMetaRows(driver: SqlDriver): Promise<void> {
+  const tableNames = [
+    'ontology_namespace',
+    'ontology_axis',
+    'ontology_taxonomy',
+    'ontology_address_allocation',
+    'ontology_address_segment',
+    'prefix_registry',
+    'prefix_ref',
+    'schema_version',
+  ];
+  const counts = await Promise.all(
+    tableNames.map(async (tableName) => {
+      const row = await driver.queryOne<{ count: number }>(
+        `SELECT COUNT(*) AS count FROM ${tableName}`,
+      );
+      return row?.count ?? 0;
+    }),
+  );
+  expect(counts).toEqual(tableNames.map(() => 0));
+}
 
 function namespaceRecord(): OntologyNamespaceRecord {
   return {
