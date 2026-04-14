@@ -11,6 +11,7 @@ after each iteration and it's included in prompts for context.
 - Operational ontology persistence lifecycle pattern: namespace, axis, and future taxonomy rows use plain text `lifecycle` values `draft | active | deprecated` with Drizzle `check(...)` constraints named `chk_<table>_lifecycle`; optional fields in the operational-ontology handoff model should stay nullable in the registry-service table until a service layer supplies a default.
 - Ontology address allocation schema pattern: allocation rows use `allocation_id` as the primary key, unique indexes for `(prefix, version_id)` and `(ontology_id, taxonomy_id, version_id)`, text enum checks for `address_model` (`product | sum`) and `status` (`reserved | active | deprecated`), and no index-meta/address cache behavior. Segment rows use composite `primaryKey({ columns: [allocation_id, segment_id] })` plus `consumes_json` text.
 - Registry-service migration generation gotcha: because some existing hand-written migration folders do not include snapshots, `pnpm --filter registry-service db:generate` can include older already-applied table DDL in the generated SQL. Review the generated `migration.sql` and trim unrelated historical churn while keeping the generated snapshot under `drizzle/**`.
+- Registry-service migration-backed schema test pattern: use `createRegistryDatabaseDriver(":memory:")` from `src/bootstrap/stores.ts` to apply index-meta plus registry-service migrations, then assert raw SQLite DDL/constraint behavior with direct `SqlDriver` queries/inserts; this avoids coupling schema tests to Nest controllers or registry service/store APIs.
 
 ---
 
@@ -92,4 +93,22 @@ after each iteration and it's included in prompts for context.
   - Patterns discovered: generated ontology migration SQL should contain only the new ontology DDL and indexes; `dist/drizzle` is copied by build but remains non-source output and should not be included in the committed scope.
   - Patterns discovered: Drizzle snapshot output is a full schema snapshot, while the executable migration SQL must be reviewed for unrelated historical churn before completion.
   - Gotchas encountered: missing snapshots for the existing `service_component_version` hand-written migrations caused drizzle-kit to generate duplicate `service_component_version` create/index SQL, so the new migration SQL was trimmed back to ontology-only changes.
+---
+
+## 2026-04-14 - US-006
+- Added migration-backed SQL schema tests for the five ontology persistence tables.
+- Verified table creation from registry-service migrations and duplicate-key rejection for namespace, axis, taxonomy, allocation, and segment natural identities.
+- Verified required gates:
+  - `pnpm --filter registry-service test`
+  - `pnpm --filter registry-service typecheck`
+  - `pnpm --filter registry-service build`
+  - `pnpm --filter operational-ontology test -- allocation`
+  - `node packages/cli/dist/index.js def validate`
+- Files changed:
+  - `packages/registry-service/src/ontology-persistence.schema.sql.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered: schema-level registry tests can instantiate a migration-initialized `NodeSqliteDriver` with `createRegistryDatabaseDriver(":memory:")` and validate raw SQL constraints without booting Nest or using registry service/store APIs.
+  - Patterns discovered: allocation collision tests must vary `allocation_id` and whichever unique key is not under test so the intended unique index is the one that rejects the duplicate.
+  - Gotchas encountered: `pnpm --filter registry-service test -- <file>` is not a reliable single-file Vitest filter in this package; use `pnpm --filter registry-service exec vitest run <file>` for targeted verification.
 ---
