@@ -1,21 +1,21 @@
-import type { OntologyAddressModel } from "operational-ontology/allocation";
-import type { OperationalOntologyPack } from "operational-ontology/pack";
+import type { OntologyAddressModel } from 'operational-ontology/allocation';
+import type { OperationalOntologyPack } from 'operational-ontology/pack';
 import type {
   OntologyAddressAllocationRecord,
   OntologyNamespaceRecord,
-} from "../../stores/ontology-registry-store.js";
+} from '../../stores/ontology-registry-store.js';
 import type {
   OntologyIndexMetaSyncDeferredReport,
   OntologyIndexMetaSyncMaterializationReport,
   OntologyIndexMetaSyncReport,
-} from "./index-meta-sync.adapter.js";
+} from './index-meta-sync.adapter.js';
 import {
   OntologyRegistryServiceError,
   type ActivateAllocationResult,
   type RegisterOntologyPackOptions,
   type RegisterOntologyPackResult,
   type SyncToPrefixRegistryResult,
-} from "./ontology-registry.service.js";
+} from './ontology-registry.service.js';
 
 export interface OntologyPackActivationOptions {
   readonly ontologyId?: string;
@@ -30,38 +30,37 @@ export interface OntologyPackActivationOptions {
   readonly now?: string;
 }
 
-export type OntologyPackActivationPhase =
-  | "register"
-  | "activate"
-  | "sync"
-  | "smoke";
+export type OntologyPackActivationPhase = 'register' | 'activate' | 'sync' | 'smoke';
 
-export type OntologyPackActivationResultStatus = "succeeded" | "failed";
+export type OntologyPackActivationResultStatus = 'succeeded' | 'failed';
 
 export type OntologyAllocationActivationState =
-  | "active"
-  | "sync-blocked"
-  | "sync-deferred"
-  | "failed"
-  | "skipped";
+  | 'active'
+  | 'sync-blocked'
+  | 'sync-deferred'
+  | 'failed'
+  | 'skipped';
 
 export interface OntologyAllocationActivationStatus {
   readonly allocationId: string;
   readonly taxonomyId: string;
   readonly prefix: string;
   readonly versionId: string;
-  readonly status: OntologyAddressAllocationRecord["status"];
+  readonly status: OntologyAddressAllocationRecord['status'];
   readonly activationStatus: OntologyAllocationActivationState;
-  readonly syncStatus?: OntologyIndexMetaSyncReport["syncStatus"] | "skipped";
+  readonly syncStatus?: OntologyIndexMetaSyncReport['syncStatus'] | 'skipped';
 }
 
 export type OntologyActivationSmokeCheckName =
-  | "source-allocation-active"
-  | "product-prefix-record-matches"
-  | "schema-version-capacity-matches-prefix-registry"
-  | "product-shape-matches-ordered-axis-capacities"
-  | "last-valid-address-in-range"
-  | "capacity-address-out-of-range";
+  | 'source-allocation-active'
+  | 'product-prefix-record-matches'
+  | 'sum-prefix-leaf-record-exists'
+  | 'schema-version-capacity-matches-prefix-registry'
+  | 'schema-version-capacity-matches-sum-allocation'
+  | 'product-shape-matches-ordered-axis-capacities'
+  | 'last-valid-address-in-range'
+  | 'capacity-address-out-of-range'
+  | 'sum-segment-sidecar-covers-allocation-range';
 
 export interface OntologyActivationSmokeCheckAssertion {
   readonly name: OntologyActivationSmokeCheckName;
@@ -75,15 +74,15 @@ export interface OntologyAllocationActivationSmokeChecks {
   readonly taxonomyId: string;
   readonly prefix: string;
   readonly versionId: string;
-  readonly addressModel: OntologyAddressAllocationRecord["addressModel"];
-  readonly kind: "product";
-  readonly syncStatus: OntologyIndexMetaSyncReport["syncStatus"];
+  readonly addressModel: OntologyAddressAllocationRecord['addressModel'];
+  readonly kind: 'product' | 'sum';
+  readonly syncStatus: OntologyIndexMetaSyncReport['syncStatus'];
   readonly passed: boolean;
   readonly checks: readonly OntologyActivationSmokeCheckAssertion[];
 }
 
 export interface OntologyPackActivationIssue {
-  readonly level: "warning" | "error";
+  readonly level: 'warning' | 'error';
   readonly phase: OntologyPackActivationPhase;
   readonly message: string;
   readonly code?: string;
@@ -109,18 +108,14 @@ export interface OntologyPackActivationRegistryServicePort {
     readonly pack: OperationalOntologyPack;
     readonly options?: RegisterOntologyPackOptions;
   }): Promise<RegisterOntologyPackResult>;
-  activateAllocation(input: {
-    readonly allocationId: string;
-  }): Promise<ActivateAllocationResult>;
+  activateAllocation(input: { readonly allocationId: string }): Promise<ActivateAllocationResult>;
   syncToPrefixRegistry(input: {
     readonly allocationId: string;
   }): Promise<SyncToPrefixRegistryResult>;
 }
 
 export class OntologyPackActivationHelper {
-  constructor(
-    private readonly registryService: OntologyPackActivationRegistryServicePort,
-  ) {}
+  constructor(private readonly registryService: OntologyPackActivationRegistryServicePort) {}
 
   activateOntologyPack(
     pack: OperationalOntologyPack,
@@ -149,7 +144,7 @@ export async function activateOntologyPack(
       options: toRegisterOptions(options),
     });
   } catch (error) {
-    errors.push(toActivationErrorIssue(error, "register"));
+    errors.push(toActivationErrorIssue(error, 'register'));
     return buildResult({
       pack,
       options,
@@ -178,9 +173,7 @@ export async function activateOntologyPack(
       });
       allocationById.set(allocation.allocationId, activated.allocation);
     } catch (error) {
-      errors.push(
-        toActivationErrorIssue(error, "activate", allocation.allocationId),
-      );
+      errors.push(toActivationErrorIssue(error, 'activate', allocation.allocationId));
       activationStatuses.push(toFailedActivationStatus(allocation));
       continue;
     }
@@ -192,37 +185,30 @@ export async function activateOntologyPack(
       });
       syncReports.push(syncReport);
     } catch (error) {
-      errors.push(
-        toActivationErrorIssue(
-          error,
-          "sync",
-          activated.allocation.allocationId,
-        ),
-      );
+      errors.push(toActivationErrorIssue(error, 'sync', activated.allocation.allocationId));
       activationStatuses.push(toFailedSyncStatus(activated.allocation));
       continue;
     }
 
-    if (syncReport.syncStatus === "blocked") {
+    if (syncReport.syncStatus === 'blocked') {
       errors.push(toBlockedSyncIssue(syncReport));
       activationStatuses.push(toBlockedSyncStatus(activated.allocation));
       continue;
     }
 
-    if (syncReport.syncStatus === "deferred") {
+    if (syncReport.syncStatus === 'deferred') {
       warnings.push(toDeferredSyncWarning(syncReport));
       activationStatuses.push(toDeferredSyncStatus(activated.allocation));
       continue;
     }
 
-    const productSmokeChecks = toProductActivationSmokeChecks(
-      activated.allocation,
-      syncReport,
-    );
-    if (productSmokeChecks) {
-      smokeChecks.push(productSmokeChecks);
-      if (!productSmokeChecks.passed) {
-        errors.push(toSmokeCheckFailureIssue(productSmokeChecks));
+    const activationSmokeChecks =
+      toProductActivationSmokeChecks(activated.allocation, syncReport) ??
+      toSumActivationSmokeChecks(activated.allocation, syncReport);
+    if (activationSmokeChecks) {
+      smokeChecks.push(activationSmokeChecks);
+      if (!activationSmokeChecks.passed) {
+        errors.push(toSmokeCheckFailureIssue(activationSmokeChecks));
       }
     }
 
@@ -242,9 +228,7 @@ export async function activateOntologyPack(
   });
 }
 
-function toRegisterOptions(
-  options: OntologyPackActivationOptions,
-): RegisterOntologyPackOptions {
+function toRegisterOptions(options: OntologyPackActivationOptions): RegisterOntologyPackOptions {
   const now = options.timestamp ?? options.now;
   return withoutUndefined({
     ontologyId: options.ontologyId,
@@ -262,18 +246,14 @@ function toRegisterOptions(
 function collectOptionWarnings(
   options: OntologyPackActivationOptions,
 ): OntologyPackActivationIssue[] {
-  if (
-    options.timestamp &&
-    options.now &&
-    options.timestamp !== options.now
-  ) {
+  if (options.timestamp && options.now && options.timestamp !== options.now) {
     return [
       {
-        level: "warning",
-        phase: "register",
-        code: "timestamp-overrides-now",
+        level: 'warning',
+        phase: 'register',
+        code: 'timestamp-overrides-now',
         message:
-          "Both timestamp and now were provided; timestamp was used for ontology allocation records.",
+          'Both timestamp and now were provided; timestamp was used for ontology allocation records.',
       },
     ];
   }
@@ -294,17 +274,13 @@ function buildResult(input: {
 }): OntologyPackActivationResult {
   const allocations =
     input.registration?.allocations.map(
-      (allocation) =>
-        input.allocationById.get(allocation.allocationId) ?? allocation,
+      (allocation) => input.allocationById.get(allocation.allocationId) ?? allocation,
     ) ?? [];
 
   return {
-    status: input.errors.length === 0 ? "succeeded" : "failed",
+    status: input.errors.length === 0 ? 'succeeded' : 'failed',
     packId: input.registration?.packId ?? input.pack.packId,
-    ontologyId:
-      input.registration?.ontologyId ??
-      input.options.ontologyId ??
-      input.pack.packId,
+    ontologyId: input.registration?.ontologyId ?? input.options.ontologyId ?? input.pack.packId,
     namespaceRecord: input.registration?.plan.namespace ?? null,
     allocations,
     activationStatuses: input.activationStatuses,
@@ -319,7 +295,7 @@ function toProductActivationSmokeChecks(
   allocation: OntologyAddressAllocationRecord,
   report: SyncToPrefixRegistryResult,
 ): OntologyAllocationActivationSmokeChecks | null {
-  if (allocation.addressModel !== "product") {
+  if (allocation.addressModel !== 'product') {
     return null;
   }
 
@@ -327,55 +303,48 @@ function toProductActivationSmokeChecks(
   const allocationTarget = materializedReport
     ? findAllocationTargetCheck(materializedReport, allocation)
     : undefined;
-  const productAllocation =
-    materializedReport?.postSyncChecks.productAllocation;
+  const productAllocation = materializedReport?.postSyncChecks.productAllocation;
   const schemaVersionCapacityMatchesPrefixRegistry =
     allocationTarget?.prefixRegistryRecordExists === true &&
     allocationTarget.schemaVersionCapacityExists === true &&
-    allocationTarget.prefixRegistryCapacity ===
-      allocationTarget.schemaVersionCapacity &&
+    allocationTarget.prefixRegistryCapacity === allocationTarget.schemaVersionCapacity &&
     allocationTarget.prefixRegistryCapacityMatches &&
     allocationTarget.schemaVersionCapacityMatches;
 
   const checks: OntologyActivationSmokeCheckAssertion[] = [
     {
-      name: "source-allocation-active",
-      passed: allocation.status === "active",
+      name: 'source-allocation-active',
+      passed: allocation.status === 'active',
       message: `Source allocation "${allocation.allocationId}" is active before smoke checks run.`,
       details: { status: allocation.status },
     },
     {
-      name: "product-prefix-record-matches",
+      name: 'product-prefix-record-matches',
       passed: allocationTarget?.prefixRegistryRecordMatchesIntended === true,
       message: `PrefixRegistry.getRecord("${allocation.prefix}", "${allocation.versionId}") returns the intended product allocation prefix record.`,
       details: {
         prefix: allocation.prefix,
         versionId: allocation.versionId,
-        prefixRegistryRecordExists:
-          allocationTarget?.prefixRegistryRecordExists ?? false,
+        prefixRegistryRecordExists: allocationTarget?.prefixRegistryRecordExists ?? false,
         prefixRegistryRecordMatchesIntended:
           allocationTarget?.prefixRegistryRecordMatchesIntended ?? false,
-        prefixRegistryRefsMatch:
-          allocationTarget?.prefixRegistryRefsMatch ?? false,
+        prefixRegistryRefsMatch: allocationTarget?.prefixRegistryRefsMatch ?? false,
       },
     },
     {
-      name: "schema-version-capacity-matches-prefix-registry",
+      name: 'schema-version-capacity-matches-prefix-registry',
       passed: schemaVersionCapacityMatchesPrefixRegistry,
       message: `Schema version capacity matches PrefixRegistry capacity for "${allocation.prefix}/${allocation.versionId}".`,
       details: {
         prefixRegistryCapacity: allocationTarget?.prefixRegistryCapacity,
         schemaVersionCapacity: allocationTarget?.schemaVersionCapacity,
-        prefixRegistryCapacityMatches:
-          allocationTarget?.prefixRegistryCapacityMatches ?? false,
-        schemaVersionCapacityMatches:
-          allocationTarget?.schemaVersionCapacityMatches ?? false,
+        prefixRegistryCapacityMatches: allocationTarget?.prefixRegistryCapacityMatches ?? false,
+        schemaVersionCapacityMatches: allocationTarget?.schemaVersionCapacityMatches ?? false,
       },
     },
     {
-      name: "product-shape-matches-ordered-axis-capacities",
-      passed:
-        productAllocation?.shapeMatchesOrderedAxisCapacities === true,
+      name: 'product-shape-matches-ordered-axis-capacities',
+      passed: productAllocation?.shapeMatchesOrderedAxisCapacities === true,
       message: `PrefixRegistry.getShape("${allocation.prefix}", "${allocation.versionId}") equals ordered axis capacities.`,
       details: {
         expectedShape: productAllocation?.expectedShape,
@@ -383,16 +352,14 @@ function toProductActivationSmokeChecks(
       },
     },
     {
-      name: "last-valid-address-in-range",
-      passed:
-        productAllocation?.resolverChecks.lastValidAddressInRange === true,
+      name: 'last-valid-address-in-range',
+      passed: productAllocation?.resolverChecks.lastValidAddressInRange === true,
       message: `Last valid address index resolves in range for "${allocation.prefix}/${allocation.versionId}".`,
       details: productAllocation?.resolverChecks.lastValidAddress,
     },
     {
-      name: "capacity-address-out-of-range",
-      passed:
-        productAllocation?.resolverChecks.capacityAddressOutOfRange === true,
+      name: 'capacity-address-out-of-range',
+      passed: productAllocation?.resolverChecks.capacityAddressOutOfRange === true,
       message: `Capacity address index resolves as out of range for "${allocation.prefix}/${allocation.versionId}".`,
       details: productAllocation?.resolverChecks.capacityAddress,
     },
@@ -404,7 +371,96 @@ function toProductActivationSmokeChecks(
     prefix: allocation.prefix,
     versionId: allocation.versionId,
     addressModel: allocation.addressModel,
-    kind: "product",
+    kind: 'product',
+    syncStatus: report.syncStatus,
+    passed: checks.every((check) => check.passed),
+    checks,
+  };
+}
+
+function toSumActivationSmokeChecks(
+  allocation: OntologyAddressAllocationRecord,
+  report: SyncToPrefixRegistryResult,
+): OntologyAllocationActivationSmokeChecks | null {
+  if (allocation.addressModel !== 'sum') {
+    return null;
+  }
+
+  const materializedReport = isMaterializationReport(report) ? report : null;
+  const allocationTarget = materializedReport
+    ? findAllocationTargetCheck(materializedReport, allocation)
+    : undefined;
+  const sumAllocation = materializedReport?.postSyncChecks.sumAllocation;
+  const prefixRegistryLeafRecordExists =
+    allocationTarget?.prefixRegistryRecordExists === true &&
+    allocationTarget.prefixRegistryRecordMatchesIntended &&
+    allocationTarget.prefixRegistryRefsMatch;
+  const schemaVersionCapacityMatchesSumAllocation =
+    allocationTarget?.schemaVersionCapacityExists === true &&
+    allocationTarget.schemaVersionCapacity === allocation.capacity &&
+    allocationTarget.schemaVersionCapacityMatches;
+  const segmentSidecarCoversAllocationRange =
+    sumAllocation?.coveragePolicy === 'exact-allocation-range' &&
+    sumAllocation.segmentSidecarCoversAllocation &&
+    sumAllocation.allocationStart === allocation.addressOffset &&
+    sumAllocation.allocationEnd === allocation.addressOffset + allocation.addressSize &&
+    sumAllocation.coveredSize === allocation.addressSize;
+
+  const checks: OntologyActivationSmokeCheckAssertion[] = [
+    {
+      name: 'source-allocation-active',
+      passed: allocation.status === 'active',
+      message: `Source allocation "${allocation.allocationId}" is active before smoke checks run.`,
+      details: { status: allocation.status },
+    },
+    {
+      name: 'sum-prefix-leaf-record-exists',
+      passed: prefixRegistryLeafRecordExists,
+      message: `PrefixRegistry.getRecord("${allocation.prefix}", "${allocation.versionId}") returns the intended sum allocation leaf record.`,
+      details: {
+        prefix: allocation.prefix,
+        versionId: allocation.versionId,
+        expectedCapacity: allocation.capacity,
+        prefixRegistryRecordExists: allocationTarget?.prefixRegistryRecordExists ?? false,
+        prefixRegistryRecordMatchesIntended:
+          allocationTarget?.prefixRegistryRecordMatchesIntended ?? false,
+        prefixRegistryCapacityMatches: allocationTarget?.prefixRegistryCapacityMatches ?? false,
+        prefixRegistryRefsMatch: allocationTarget?.prefixRegistryRefsMatch ?? false,
+      },
+    },
+    {
+      name: 'schema-version-capacity-matches-sum-allocation',
+      passed: schemaVersionCapacityMatchesSumAllocation,
+      message: `Schema version capacity matches sum allocation capacity for "${allocation.prefix}/${allocation.versionId}".`,
+      details: {
+        allocationCapacity: allocation.capacity,
+        schemaVersionCapacity: allocationTarget?.schemaVersionCapacity,
+        schemaVersionCapacityExists: allocationTarget?.schemaVersionCapacityExists ?? false,
+        schemaVersionCapacityMatches: allocationTarget?.schemaVersionCapacityMatches ?? false,
+      },
+    },
+    {
+      name: 'sum-segment-sidecar-covers-allocation-range',
+      passed: segmentSidecarCoversAllocationRange,
+      message: `Sum segment sidecar metadata covers allocation range [${allocation.addressOffset}, ${allocation.addressOffset + allocation.addressSize}) with exact-allocation-range policy.`,
+      details: {
+        coveragePolicy: sumAllocation?.coveragePolicy,
+        allocationStart: sumAllocation?.allocationStart,
+        allocationEnd: sumAllocation?.allocationEnd,
+        coveredSize: sumAllocation?.coveredSize,
+        segmentSidecarCoversAllocation: sumAllocation?.segmentSidecarCoversAllocation ?? false,
+        segments: sumAllocation?.segments ?? [],
+      },
+    },
+  ];
+
+  return {
+    allocationId: allocation.allocationId,
+    taxonomyId: allocation.taxonomyId,
+    prefix: allocation.prefix,
+    versionId: allocation.versionId,
+    addressModel: allocation.addressModel,
+    kind: 'sum',
     syncStatus: report.syncStatus,
     passed: checks.every((check) => check.passed),
     checks,
@@ -414,7 +470,7 @@ function toProductActivationSmokeChecks(
 function isMaterializationReport(
   report: SyncToPrefixRegistryResult,
 ): report is OntologyIndexMetaSyncMaterializationReport {
-  return "postSyncChecks" in report;
+  return 'postSyncChecks' in report;
 }
 
 function findAllocationTargetCheck(
@@ -423,7 +479,7 @@ function findAllocationTargetCheck(
 ) {
   return report.postSyncChecks.targetRecords.find(
     (target) =>
-      target.role === "allocation-prefix" &&
+      target.role === 'allocation-prefix' &&
       target.prefix === allocation.prefix &&
       target.versionId === allocation.versionId,
   );
@@ -438,8 +494,8 @@ function toActiveSyncStatus(
     prefix: allocation.prefix,
     versionId: allocation.versionId,
     status: allocation.status,
-    activationStatus: "active",
-    syncStatus: "synced",
+    activationStatus: 'active',
+    syncStatus: 'synced',
   };
 }
 
@@ -452,8 +508,8 @@ function toBlockedSyncStatus(
     prefix: allocation.prefix,
     versionId: allocation.versionId,
     status: allocation.status,
-    activationStatus: "sync-blocked",
-    syncStatus: "blocked",
+    activationStatus: 'sync-blocked',
+    syncStatus: 'blocked',
   };
 }
 
@@ -466,8 +522,8 @@ function toDeferredSyncStatus(
     prefix: allocation.prefix,
     versionId: allocation.versionId,
     status: allocation.status,
-    activationStatus: "sync-deferred",
-    syncStatus: "deferred",
+    activationStatus: 'sync-deferred',
+    syncStatus: 'deferred',
   };
 }
 
@@ -480,7 +536,7 @@ function toFailedSyncStatus(
     prefix: allocation.prefix,
     versionId: allocation.versionId,
     status: allocation.status,
-    activationStatus: "failed",
+    activationStatus: 'failed',
   };
 }
 
@@ -493,7 +549,7 @@ function toFailedActivationStatus(
     prefix: allocation.prefix,
     versionId: allocation.versionId,
     status: allocation.status,
-    activationStatus: "failed",
+    activationStatus: 'failed',
   };
 }
 
@@ -506,8 +562,8 @@ function toSkippedActivationStatus(
     prefix: allocation.prefix,
     versionId: allocation.versionId,
     status: allocation.status,
-    activationStatus: "skipped",
-    syncStatus: "skipped",
+    activationStatus: 'skipped',
+    syncStatus: 'skipped',
   };
 }
 
@@ -518,7 +574,7 @@ function toActivationErrorIssue(
 ): OntologyPackActivationIssue {
   if (error instanceof OntologyRegistryServiceError) {
     return {
-      level: "error",
+      level: 'error',
       phase,
       code: error.conflict.code,
       message: error.message,
@@ -529,34 +585,32 @@ function toActivationErrorIssue(
 
   if (error instanceof Error) {
     return {
-      level: "error",
+      level: 'error',
       phase,
-      code: "unexpected-error",
+      code: 'unexpected-error',
       message: error.message,
       allocationId,
     };
   }
 
   return {
-    level: "error",
+    level: 'error',
     phase,
-    code: "unexpected-error",
-    message: "Unexpected ontology activation error",
+    code: 'unexpected-error',
+    message: 'Unexpected ontology activation error',
     allocationId,
   };
 }
 
-function toBlockedSyncIssue(
-  report: SyncToPrefixRegistryResult,
-): OntologyPackActivationIssue {
+function toBlockedSyncIssue(report: SyncToPrefixRegistryResult): OntologyPackActivationIssue {
   return {
-    level: "error",
-    phase: "sync",
-    code: "sync-blocked",
+    level: 'error',
+    phase: 'sync',
+    code: 'sync-blocked',
     message: `Index-meta sync was blocked for ontology allocation "${report.allocationId}".`,
     allocationId: report.allocationId,
     details:
-      "collisions" in report
+      'collisions' in report
         ? { collisions: report.collisions }
         : { syncStatus: report.syncStatus },
   };
@@ -566,8 +620,8 @@ function toDeferredSyncWarning(
   report: OntologyIndexMetaSyncDeferredReport,
 ): OntologyPackActivationIssue {
   return {
-    level: "warning",
-    phase: "sync",
+    level: 'warning',
+    phase: 'sync',
     code: report.deferredReason,
     message: `Index-meta sync was deferred for ontology allocation "${report.allocationId}".`,
     allocationId: report.allocationId,
@@ -578,9 +632,9 @@ function toSmokeCheckFailureIssue(
   smokeChecks: OntologyAllocationActivationSmokeChecks,
 ): OntologyPackActivationIssue {
   return {
-    level: "error",
-    phase: "smoke",
-    code: "activation-smoke-check-failed",
+    level: 'error',
+    phase: 'smoke',
+    code: 'activation-smoke-check-failed',
     message: `Activation smoke checks failed for ontology allocation "${smokeChecks.allocationId}".`,
     allocationId: smokeChecks.allocationId,
     details: {
@@ -590,7 +644,5 @@ function toSmokeCheckFailureIssue(
 }
 
 function withoutUndefined<T extends Record<string, unknown>>(input: T): T {
-  return Object.fromEntries(
-    Object.entries(input).filter(([, value]) => value !== undefined),
-  ) as T;
+  return Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined)) as T;
 }

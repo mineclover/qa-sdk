@@ -9,6 +9,7 @@ after each iteration and it's included in prompts for context.
 - Ontology activation orchestration should live as an ontology module helper/provider that calls `OntologyRegistryService` methods (`registerOntologyPack`, `activateAllocation`, `syncToPrefixRegistry`) and returns namespace/allocation/sync/warning/error payloads without reaching into stores or SQL.
 - Valid pack activation is an all-allocation path: `registerOntologyPack` validates before reservation, then the helper activates and syncs every returned allocation instead of selecting a subset.
 - Activation-level smoke checks should be assembled from `syncToPrefixRegistry` post-sync reports plus activated allocation status; the helper should not reach into prefix registry stores or SQL directly.
+- Sum activation smoke checks should assert leaf prefix/schema capacity and `postSyncChecks.sumAllocation` sidecar coverage only; do not reuse product shape/resolver checks for sum segments.
 
 ---
 
@@ -58,4 +59,15 @@ after each iteration and it's included in prompts for context.
   - The activation helper can treat Phase 4 sync reports as the readback authority and compose smoke assertions without expanding its service-port boundary.
   - `targetRecords[]` needed an explicit `prefixRegistryRecordMatchesIntended` flag because capacity-only readback did not prove product prefix refs matched the intended composite record.
   - `pnpm --filter registry-service test -- ontology-activation.helper` still runs the full registry-service suite in this package, so exact acceptance commands were rerun separately.
+---
+
+## 2026-04-14 - US-005
+- Added sum activation smoke checks to `OntologyPackActivationResult`.
+- Sum smoke checks now assert active source allocation status, intended sum leaf prefix record readback, schema-version capacity matching the sum allocation capacity, and exact-allocation-range sidecar coverage.
+- Updated activation helper tests so sum activation payloads expose only sum leaf/sidecar assertions and do not claim product shape or resolver decode semantics.
+- Files changed: `packages/registry-service/src/modules/ontology/ontology-activation.helper.ts`, `packages/registry-service/src/modules/ontology/ontology-activation.helper.test.ts`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - `syncToPrefixRegistry` already provides the complete sum smoke surface through the allocation `targetRecords[]` entry plus `postSyncChecks.sumAllocation`.
+  - Sum allocation prefix registry records are leaf records: intended readback has capacity and no refs, while segment ranges remain report sidecars under `exact-allocation-range`.
+  - Product resolver and shape checks must remain product-only; sum segments currently have explicit sidecar semantics, not product DAG decode semantics.
 ---
