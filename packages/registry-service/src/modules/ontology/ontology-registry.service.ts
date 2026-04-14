@@ -25,13 +25,12 @@ import {
   type OntologyIndexMetaSyncAdapter,
   type OntologyIndexMetaSyncBundle,
   type OntologyIndexMetaSyncDeferredReport,
+  type OntologyIndexMetaSyncReport,
 } from "./index-meta-sync.adapter.js";
 
 export interface OntologyRegistryServiceDeps {
   readonly store: OntologyRegistryStore;
-  readonly syncAdapter?: OntologyIndexMetaSyncAdapter<
-    OntologyIndexMetaSyncDeferredReport
-  >;
+  readonly syncAdapter?: OntologyIndexMetaSyncAdapter;
 }
 
 export interface RegisterOntologyPackInput {
@@ -95,7 +94,7 @@ export interface SyncToPrefixRegistryInput {
   readonly allocationId: string;
 }
 
-export type SyncToPrefixRegistryResult = OntologyIndexMetaSyncDeferredReport;
+export type SyncToPrefixRegistryResult = OntologyIndexMetaSyncReport;
 
 export type OntologyRegistryServiceErrorCode =
   | "invalid-pack"
@@ -199,9 +198,7 @@ const deferredOntologyIndexMetaSyncAdapter: OntologyIndexMetaSyncAdapter<
 
 export class OntologyRegistryService {
   private readonly store: OntologyRegistryStore;
-  private readonly syncAdapter: OntologyIndexMetaSyncAdapter<
-    OntologyIndexMetaSyncDeferredReport
-  >;
+  private readonly syncAdapter: OntologyIndexMetaSyncAdapter;
 
   constructor(deps: OntologyRegistryServiceDeps) {
     this.store = deps.store;
