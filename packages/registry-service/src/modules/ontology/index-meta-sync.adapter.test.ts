@@ -85,6 +85,70 @@ describe("Ontology index-meta sync adapter", () => {
       capacity: 32,
       createdAt: NOW,
     });
+    expect(report.postSyncChecks.targetRecords).toEqual([
+      expect.objectContaining({
+        role: "axis-leaf",
+        axisId: "resource_kind",
+        prefix: RESOURCE_AXIS_PREFIX,
+        versionId: "v1",
+        expectedCapacity: 8,
+        prefixRegistryRecordExists: true,
+        prefixRegistryCapacity: 8,
+        prefixRegistryCapacityMatches: true,
+        schemaVersionCapacityExists: true,
+        schemaVersionCapacity: 8,
+        schemaVersionCapacityMatches: true,
+      }),
+      expect.objectContaining({
+        role: "axis-leaf",
+        axisId: "decision_kind",
+        prefix: DECISION_AXIS_PREFIX,
+        versionId: "v1",
+        expectedCapacity: 4,
+        prefixRegistryRecordExists: true,
+        prefixRegistryCapacity: 4,
+        prefixRegistryCapacityMatches: true,
+        schemaVersionCapacityExists: true,
+        schemaVersionCapacity: 4,
+        schemaVersionCapacityMatches: true,
+      }),
+      expect.objectContaining({
+        role: "allocation-prefix",
+        prefix: PARENT_PREFIX,
+        versionId: "v1",
+        expectedCapacity: 32,
+        prefixRegistryRecordExists: true,
+        prefixRegistryCapacity: 32,
+        prefixRegistryCapacityMatches: true,
+        schemaVersionCapacityExists: true,
+        schemaVersionCapacity: 32,
+        schemaVersionCapacityMatches: true,
+      }),
+    ]);
+    expect(report.postSyncChecks.productAllocation).toEqual({
+      prefix: PARENT_PREFIX,
+      versionId: "v1",
+      expectedShape: [8, 4],
+      actualShape: [8, 4],
+      shapeMatchesOrderedAxisCapacities: true,
+      resolverChecks: {
+        lastValidAddress: {
+          serialized: `${PARENT_PREFIX}:v1:31`,
+          index: 31,
+          resolved: true,
+          valid: true,
+        },
+        capacityAddress: {
+          serialized: `${PARENT_PREFIX}:v1:32`,
+          index: 32,
+          resolved: true,
+          valid: false,
+        },
+        lastValidAddressInRange: true,
+        capacityAddressOutOfRange: true,
+      },
+    });
+    expect(report.postSyncChecks.sumAllocation).toBeUndefined();
   });
 
   it("treats re-running the same product sync as idempotent", async () => {
@@ -629,6 +693,46 @@ describe("Ontology index-meta sync adapter", () => {
       capacity: 16,
       createdAt: NOW,
     });
+    expect(report.postSyncChecks.targetRecords).toEqual([
+      expect.objectContaining({
+        role: "allocation-prefix",
+        prefix: SUM_PREFIX,
+        versionId: "v2",
+        expectedCapacity: 16,
+        prefixRegistryRecordExists: true,
+        prefixRegistryCapacity: 16,
+        prefixRegistryCapacityMatches: true,
+        schemaVersionCapacityExists: true,
+        schemaVersionCapacity: 16,
+        schemaVersionCapacityMatches: true,
+      }),
+    ]);
+    expect(report.postSyncChecks.sumAllocation).toEqual({
+      prefix: SUM_PREFIX,
+      versionId: "v2",
+      coveragePolicy: "exact-allocation-range",
+      segmentSidecarCoversAllocation: true,
+      allocationStart: 100,
+      allocationEnd: 116,
+      coveredSize: 16,
+      segments: [
+        {
+          segmentId:
+            "authorization-ontology:authorization-resource:v2:resource_kind",
+          consumes: ["resource_kind"],
+          addressOffset: 100,
+          addressSize: 8,
+        },
+        {
+          segmentId:
+            "authorization-ontology:authorization-resource:v2:enforcement_kind",
+          consumes: ["enforcement_kind"],
+          addressOffset: 108,
+          addressSize: 8,
+        },
+      ],
+    });
+    expect(report.postSyncChecks.productAllocation).toBeUndefined();
   });
 
   it("treats re-running the same sum sync as idempotent", async () => {

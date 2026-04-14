@@ -703,6 +703,40 @@ describe("OntologyRegistryService", () => {
       repairedRecords: [],
       collisions: [],
       deferredSemantics: [],
+      postSyncChecks: {
+        targetRecords: expect.arrayContaining([
+          expect.objectContaining({
+            role: "axis-leaf",
+            axisId: "resource_kind",
+            prefix: "authorization_ontology_axis_resource_kind",
+            expectedCapacity: 8,
+            prefixRegistryRecordExists: true,
+            prefixRegistryCapacityMatches: true,
+            schemaVersionCapacityExists: true,
+            schemaVersionCapacityMatches: true,
+          }),
+          expect.objectContaining({
+            role: "allocation-prefix",
+            prefix: "authorization_ontology_authorization_resource",
+            expectedCapacity: 8,
+            prefixRegistryRecordExists: true,
+            prefixRegistryCapacityMatches: true,
+            schemaVersionCapacityExists: true,
+            schemaVersionCapacityMatches: true,
+          }),
+        ]),
+        productAllocation: expect.objectContaining({
+          prefix: "authorization_ontology_authorization_resource",
+          versionId: "v1",
+          expectedShape: [8],
+          actualShape: [8],
+          shapeMatchesOrderedAxisCapacities: true,
+          resolverChecks: expect.objectContaining({
+            lastValidAddressInRange: true,
+            capacityAddressOutOfRange: true,
+          }),
+        }),
+      },
     });
     if (report.syncStatus !== "synced") {
       throw new Error("expected active allocation sync to materialize");

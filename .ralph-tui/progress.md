@@ -11,6 +11,7 @@ after each iteration and it's included in prompts for context.
 - Sum ontology index-meta sync should materialize only the allocation prefix/schema as a leaf target, validate exact sidecar segment coverage before any write, and keep sum segments as report-only metadata rather than `prefix_ref` rows until index-meta owns a segment model.
 - Ontology/index-meta collision tests should seed mixed partial prefix/schema state to prove preflight is all-or-nothing: matching subsets can be completed, while any mismatched existing target blocks every missing write.
 - When replacing a deferred service shell with real materialization, remove the production fallback and require the adapter at service construction; keep deferred fakes explicit in tests that are not exercising sync.
+- Activation smoke-level validation should stay as post-sync report readbacks at the ontology adapter boundary: target prefix/schema existence, product shape/address resolver checks, and sum sidecar coverage, without adding a Phase 5 activation helper.
 
 ---
 
@@ -90,4 +91,17 @@ after each iteration and it's included in prompts for context.
   - `OntologyModule` is already the correct production owner for concrete index-meta wiring; the service should receive a ready adapter and stay ignorant of `SqlPrefixRegistry`/`SqlIndexMetaStore` construction.
   - Phase 3 precondition coverage stays strongest when reserved/missing allocation checks assert no index-meta calls before activation, then the active path verifies real materialization.
   - Explicit deferred test fakes preserve source-compatible report helper coverage without letting active service sync silently regress to `"deferred"`.
+---
+
+## 2026-04-14 - US-008
+- Added `postSyncChecks` to ontology index-meta materialization reports with per-target prefix registry readbacks and schema-version capacity readbacks.
+- Added product allocation smoke checks for ordered-axis `getShape()` equality and `PrefixRegistry.resolveAddress()` range behavior at `capacity - 1` and `capacity`.
+- Added sum allocation smoke checks proving the reported `exact-allocation-range` segment sidecar covers the allocation range.
+- Updated adapter and service tests to assert the new report fields without adding a full Phase 5 activation helper.
+- Ran the full requested acceptance checklist for registry-service, index-meta, operational-ontology allocation tests, and definition validation.
+- Files changed: `packages/registry-service/src/modules/ontology/index-meta-sync.adapter.ts`, `packages/registry-service/src/modules/ontology/index-meta-sync.adapter.test.ts`, `packages/registry-service/src/modules/ontology/ontology-registry.service.test.ts`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - Post-sync smoke checks are safest as readback evidence on successful sync reports; blocked reports can keep an empty check set because preflight and shape validation already explain the failure.
+  - Product smoke checks should reuse `taxonomy.axisIds` to derive the expected shape so activation smoke follows the same axis order as materialization.
+  - Sum smoke checks should evaluate the reported sidecar payload, not the original store rows, because the sidecar is the current handoff contract until index-meta owns segment rows.
 ---

@@ -70,6 +70,7 @@ export interface OntologyIndexMetaSyncMaterializationReport
   readonly repairedRecords: readonly OntologyIndexMetaSyncRecord[];
   readonly collisions: readonly OntologyIndexMetaSyncCollision[];
   readonly deferredSemantics: readonly OntologyIndexMetaSyncDeferredSemantics[];
+  readonly postSyncChecks: OntologyIndexMetaPostSyncChecks;
 }
 
 export type OntologyIndexMetaSyncReport =
@@ -130,6 +131,60 @@ export interface OntologyIndexMetaSyncSegmentSidecar {
   readonly consumes: readonly string[];
   readonly addressOffset: number;
   readonly addressSize: number;
+}
+
+export interface OntologyIndexMetaPostSyncChecks {
+  readonly targetRecords: readonly OntologyIndexMetaTargetPostSyncCheck[];
+  readonly productAllocation?: OntologyIndexMetaProductAllocationPostSyncCheck;
+  readonly sumAllocation?: OntologyIndexMetaSumAllocationPostSyncCheck;
+}
+
+export interface OntologyIndexMetaTargetPostSyncCheck {
+  readonly role: OntologyIndexMetaSyncRecordRole;
+  readonly prefix: string;
+  readonly versionId: string;
+  readonly expectedCapacity: number;
+  readonly prefixRegistryRecordExists: boolean;
+  readonly prefixRegistryCapacityMatches: boolean;
+  readonly schemaVersionCapacityExists: boolean;
+  readonly schemaVersionCapacityMatches: boolean;
+  readonly axisId?: string;
+  readonly prefixRegistryCapacity?: number;
+  readonly schemaVersionCapacity?: number;
+}
+
+export interface OntologyIndexMetaProductAllocationPostSyncCheck {
+  readonly prefix: string;
+  readonly versionId: string;
+  readonly expectedShape: readonly number[];
+  readonly actualShape: readonly number[] | null;
+  readonly shapeMatchesOrderedAxisCapacities: boolean;
+  readonly resolverChecks: OntologyIndexMetaResolverPostSyncChecks;
+}
+
+export interface OntologyIndexMetaResolverPostSyncChecks {
+  readonly lastValidAddress: OntologyIndexMetaAddressPostSyncCheck;
+  readonly capacityAddress: OntologyIndexMetaAddressPostSyncCheck;
+  readonly lastValidAddressInRange: boolean;
+  readonly capacityAddressOutOfRange: boolean;
+}
+
+export interface OntologyIndexMetaAddressPostSyncCheck {
+  readonly serialized: string;
+  readonly index: number;
+  readonly resolved: boolean;
+  readonly valid: boolean;
+}
+
+export interface OntologyIndexMetaSumAllocationPostSyncCheck {
+  readonly prefix: string;
+  readonly versionId: string;
+  readonly coveragePolicy: "exact-allocation-range" | null;
+  readonly segmentSidecarCoversAllocation: boolean;
+  readonly allocationStart: number;
+  readonly allocationEnd: number;
+  readonly coveredSize: number;
+  readonly segments: readonly OntologyIndexMetaSyncSegmentSidecar[];
 }
 
 export function buildDeferredOntologyIndexMetaSyncReport(
@@ -326,6 +381,16 @@ class OntologyIndexMetaSyncAdapterImpl
       }
     }
 
+    const postSyncChecks =
+      collisions.length === 0
+        ? await collectPostSyncChecks(
+            this.deps,
+            bundle,
+            targets,
+            deferredSemantics ?? [],
+          )
+        : emptyPostSyncChecks();
+
     return buildMaterializationReport(bundle, {
       syncStatus: collisions.length > 0 ? "blocked" : "synced",
       materializedRecords,
@@ -333,6 +398,7 @@ class OntologyIndexMetaSyncAdapterImpl
       repairedRecords,
       collisions,
       deferredSemantics,
+      postSyncChecks,
     });
   }
 }
@@ -768,6 +834,7 @@ function buildMaterializationReport(
     readonly repairedRecords?: readonly OntologyIndexMetaSyncRecord[];
     readonly collisions?: readonly OntologyIndexMetaSyncCollision[];
     readonly deferredSemantics?: readonly OntologyIndexMetaSyncDeferredSemantics[];
+    readonly postSyncChecks?: OntologyIndexMetaPostSyncChecks;
   },
 ): OntologyIndexMetaSyncMaterializationReport {
   return {
@@ -778,6 +845,207 @@ function buildMaterializationReport(
     repairedRecords: input.repairedRecords ?? [],
     collisions: input.collisions ?? [],
     deferredSemantics: input.deferredSemantics ?? [],
+    postSyncChecks: input.postSyncChecks ?? emptyPostSyncChecks(),
+  };
+}
+
+function emptyPostSyncChecks(): OntologyIndexMetaPostSyncChecks {
+  return { targetRecords: [] };
+}
+
+async function collectPostSyncChecks(
+  deps: OntologyIndexMetaSyncAdapterDeps,
+  bundle: OntologyIndexMetaSyncBundle,
+  targets: readonly OntologyIndexMetaPreflightTarget[],
+  deferredSemantics: readonly OntologyIndexMetaSyncDeferredSemantics[],
+): Promise<OntologyIndexMetaPostSyncChecks> {
+  const targetRecords = await Promise.all(
+    targets.map((target) => collectTargetPostSyncCheck(deps, target)),
+  );
+
+  if (bundle.allocation.addressModel === "product") {
+    return {
+      targetRecords,
+      productAllocation: await collectProductAllocationPostSyncCheck(
+        deps.prefixRegistry,
+        bundle,
+      ),
+    };
+  }
+
+  return {
+    targetRecords,
+    sumAllocation: collectSumAllocationPostSyncCheck(bundle, deferredSemantics),
+  };
+}
+
+async function collectTargetPostSyncCheck(
+  deps: OntologyIndexMetaSyncAdapterDeps,
+  target: OntologyIndexMetaPreflightTarget,
+): Promise<OntologyIndexMetaTargetPostSyncCheck> {
+  const [prefixRecord, schemaVersionRecord] = await Promise.all([
+    deps.prefixRegistry.getRecord(
+      target.prefixRecord.prefix,
+      target.prefixRecord.versionId,
+    ),
+    deps.schemaVersionStore.getSchemaVersion(
+      target.schemaVersionRecord.prefix,
+      target.schemaVersionRecord.versionId,
+    ),
+  ]);
+
+  return {
+    role: target.role,
+    prefix: target.prefixRecord.prefix,
+    versionId: target.prefixRecord.versionId,
+    expectedCapacity: target.prefixRecord.capacity,
+    prefixRegistryRecordExists: Boolean(prefixRecord),
+    prefixRegistryCapacityMatches:
+      prefixRecord?.capacity === target.prefixRecord.capacity,
+    schemaVersionCapacityExists: Boolean(schemaVersionRecord),
+    schemaVersionCapacityMatches:
+      schemaVersionRecord?.capacity === target.schemaVersionRecord.capacity,
+    ...(target.axisId ? { axisId: target.axisId } : {}),
+    ...(prefixRecord ? { prefixRegistryCapacity: prefixRecord.capacity } : {}),
+    ...(schemaVersionRecord
+      ? { schemaVersionCapacity: schemaVersionRecord.capacity }
+      : {}),
+  };
+}
+
+async function collectProductAllocationPostSyncCheck(
+  prefixRegistry: PrefixRegistry,
+  bundle: OntologyIndexMetaSyncBundle,
+): Promise<OntologyIndexMetaProductAllocationPostSyncCheck> {
+  const expectedShape = orderedAxisCapacities(bundle);
+  const actualShape = await prefixRegistry.getShape(
+    bundle.allocation.prefix,
+    bundle.allocation.versionId,
+  );
+  const lastValidAddress = await resolvePostSyncAddress(
+    prefixRegistry,
+    bundle.allocation.prefix,
+    bundle.allocation.versionId,
+    bundle.allocation.capacity - 1,
+  );
+  const capacityAddress = await resolvePostSyncAddress(
+    prefixRegistry,
+    bundle.allocation.prefix,
+    bundle.allocation.versionId,
+    bundle.allocation.capacity,
+  );
+
+  return {
+    prefix: bundle.allocation.prefix,
+    versionId: bundle.allocation.versionId,
+    expectedShape,
+    actualShape,
+    shapeMatchesOrderedAxisCapacities: sameNumbers(actualShape, expectedShape),
+    resolverChecks: {
+      lastValidAddress,
+      capacityAddress,
+      lastValidAddressInRange:
+        lastValidAddress.resolved && lastValidAddress.valid,
+      capacityAddressOutOfRange:
+        capacityAddress.resolved && !capacityAddress.valid,
+    },
+  };
+}
+
+async function resolvePostSyncAddress(
+  prefixRegistry: PrefixRegistry,
+  prefix: string,
+  versionId: string,
+  index: number,
+): Promise<OntologyIndexMetaAddressPostSyncCheck> {
+  const serialized = `${prefix}:${versionId}:${index}`;
+  const resolved = await prefixRegistry.resolveAddress(serialized);
+  return {
+    serialized,
+    index,
+    resolved: Boolean(resolved),
+    valid: resolved?.valid ?? false,
+  };
+}
+
+function collectSumAllocationPostSyncCheck(
+  bundle: OntologyIndexMetaSyncBundle,
+  deferredSemantics: readonly OntologyIndexMetaSyncDeferredSemantics[],
+): OntologyIndexMetaSumAllocationPostSyncCheck {
+  const allocationStart = bundle.allocation.addressOffset;
+  const allocationEnd = allocationStart + bundle.allocation.addressSize;
+  const exactRangeSidecar = deferredSemantics.find(
+    (semantics) => semantics.coveragePolicy === "exact-allocation-range",
+  );
+  const segments = exactRangeSidecar?.segments ?? [];
+  const coverage = evaluateExactAllocationRangeCoverage(
+    bundle.allocation,
+    segments,
+  );
+
+  return {
+    prefix: bundle.allocation.prefix,
+    versionId: bundle.allocation.versionId,
+    coveragePolicy: exactRangeSidecar?.coveragePolicy ?? null,
+    segmentSidecarCoversAllocation:
+      Boolean(exactRangeSidecar) && coverage.coversAllocation,
+    allocationStart,
+    allocationEnd,
+    coveredSize: coverage.coveredSize,
+    segments,
+  };
+}
+
+function evaluateExactAllocationRangeCoverage(
+  allocation: OntologyActiveAddressAllocationRecord,
+  segments: readonly OntologyIndexMetaSyncSegmentSidecar[],
+): {
+  readonly coversAllocation: boolean;
+  readonly coveredSize: number;
+} {
+  const allocationStart = allocation.addressOffset;
+  const allocationEnd = allocationStart + allocation.addressSize;
+  const orderedSegments = [...segments].sort((left, right) => {
+    const offsetDelta = left.addressOffset - right.addressOffset;
+    return offsetDelta !== 0
+      ? offsetDelta
+      : left.segmentId.localeCompare(right.segmentId);
+  });
+  let expectedOffset = allocationStart;
+  let coveredSize = 0;
+
+  if (
+    !Number.isInteger(allocation.capacity) ||
+    !Number.isInteger(allocation.addressOffset) ||
+    !Number.isInteger(allocation.addressSize) ||
+    allocation.capacity !== allocation.addressSize ||
+    allocation.addressSize <= 0 ||
+    orderedSegments.length === 0
+  ) {
+    return { coversAllocation: false, coveredSize };
+  }
+
+  for (const segment of orderedSegments) {
+    const segmentEnd = segment.addressOffset + segment.addressSize;
+    if (
+      segment.consumes.length === 0 ||
+      !Number.isInteger(segment.addressOffset) ||
+      !Number.isInteger(segment.addressSize) ||
+      segment.addressOffset !== expectedOffset ||
+      segment.addressSize <= 0 ||
+      segmentEnd > allocationEnd
+    ) {
+      return { coversAllocation: false, coveredSize };
+    }
+
+    expectedOffset = segmentEnd;
+    coveredSize += segment.addressSize;
+  }
+
+  return {
+    coversAllocation:
+      expectedOffset === allocationEnd && coveredSize === allocation.addressSize,
+    coveredSize,
   };
 }
 
@@ -916,6 +1184,27 @@ function sameRefs(
       leftRef.capacity === rightRef.capacity
     );
   });
+}
+
+function orderedAxisCapacities(
+  bundle: OntologyIndexMetaSyncBundle,
+): readonly number[] {
+  const axesById = new Map(bundle.axes.map((axis) => [axis.axisId, axis]));
+  return bundle.taxonomy.axisIds
+    .map((axisId) => axesById.get(axisId))
+    .filter((axis): axis is OntologyAxisRecord => Boolean(axis))
+    .map((axis) => axis.capacity);
+}
+
+function sameNumbers(
+  left: readonly number[] | null,
+  right: readonly number[],
+): boolean {
+  return (
+    left !== null &&
+    left.length === right.length &&
+    left.every((value, index) => value === right[index])
+  );
 }
 
 function sameStrings(
