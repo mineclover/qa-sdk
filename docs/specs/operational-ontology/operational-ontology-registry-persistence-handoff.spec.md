@@ -24,6 +24,8 @@ sources:
   - packages/operational-ontology/src/allocation.ts
   - packages/operational-ontology/src/allocation.test.ts
   - packages/registry-service/src/db/schema.ts
+  - packages/registry-service/drizzle/20260414043459_daily_vision/migration.sql
+  - packages/registry-service/src/ontology-persistence.schema.sql.test.ts
   - packages/registry-service/src/stores/in-memory-axis-profile-store.ts
   - packages/registry-service/src/stores/sql-axis-profile-store.ts
 ---
@@ -36,14 +38,14 @@ registry-service가 ontology namespace, axis, taxonomy, address allocation, allo
 
 ## 구성 ^overview
 
-이 문서는 Phase 2 persistence 구현의 입력 계약이다.
+이 문서는 Phase 2 persistence 구현의 입력 계약이다. Phase 2A schema/migration은 이 계약을 구현했으며, Phase 2B store adapter와 Phase 3 service layer는 같은 record/collision contract를 소비한다.
 
 - **Persistence records** — registry-service가 저장해야 하는 개념적 row shape.
 - **Local field mapping** — 각 row가 `OntologyAddressAllocationPlan`의 어떤 필드에서 오는지.
 - **Collision rules** — store unique constraint 또는 service validation으로 막아야 하는 중복과 drift.
 - **Future tests** — registry-service persistence가 시작될 때 추가해야 하는 테스트 목록.
 
-이 문서는 실제 `registry-service/src/db/schema.ts` 변경, SQL migration, store adapter, service/controller 구현을 만들지 않는다. 그런 구현은 별도 PRD 또는 후속 story에서 선택한다.
+Phase 2A는 실제 `registry-service/src/db/schema.ts` 변경, SQL migration, Drizzle snapshot, migration-backed SQL schema test를 추가했다. 이 문서는 아직 store adapter, service/controller 구현, REST/CLI exposure 결정을 만들지 않는다. 그런 구현은 Phase 2B/3 story에서 선택한다.
 
 ## Persistence Records ^defines
 
@@ -118,6 +120,17 @@ The allocation row is the registry-service owner of reserved/active/deprecated l
 
 Product allocation normally persists one segment that consumes all taxonomy axes. Sum allocation persists one segment per consumed axis in the local taxonomy order.
 
+## Phase 2A Implementation Refinements ^implementation-refinements
+
+The registry-service table implementation keeps these handoff refinements as part of the contract for later adapters:
+
+- DB table and column names use registry-service snake_case, while Drizzle exports keep camelCase properties.
+- JSON payload fields stay plain text columns named `*_json`; store adapters must serialize and parse them explicitly.
+- `owner` and `space` remain nullable because the local allocation model treats them as optional.
+- Namespace, axis, and taxonomy lifecycle values are checked as `draft | active | deprecated`; allocation status is separately checked as `reserved | active | deprecated`.
+- `address_model` is checked as `product | sum`, matching `operational-ontology` allocation output.
+- Phase 2A does not add SQLite foreign keys. Taxonomy axis existence, segment range/overlap, lifecycle transition, and no-partial-write validation remain store/service responsibilities.
+
 ## Store And Service Collision Rules
 
 Registry-service persistence must enforce these rules either as table constraints, store adapter checks, or service-level transaction validation:
@@ -135,14 +148,13 @@ Registry-service persistence must enforce these rules either as table constraint
 
 Before persistence writes, the service should run `validateOperationalOntologyPack()` when a pack is supplied and `validateOntologyAddressAllocationPlan()` on the projected plan. Invalid local plans must be no-write failures.
 
-## Registry-Service Tests To Add Later
+## Registry-Service Test Surface
 
-When registry-service persistence begins, add tests under `packages/registry-service` before or with the implementation:
+Phase 2A added `packages/registry-service/src/ontology-persistence.schema.sql.test.ts`. It initializes registry-service migrations with a SQL driver, verifies that the five ontology tables exist, and asserts duplicate-key rejection for namespace, axis, taxonomy, allocation, and segment identities.
+
+Phase 2B/3 still need these tests before or with their implementation:
 
 - `src/stores/ontology-registry-store.test.ts` — shared store contract covering namespace uniqueness, axis/taxonomy duplicate keys, allocation duplicate keys, and segment duplicate/range checks for both in-memory and SQL adapters.
-- `src/app.sql.test.ts` or a migration-specific SQL test — schema creates the five ontology persistence records and enforces primary/unique keys.
 - `src/modules/ontology/ontology-registry.service.test.ts` — valid plan persists namespace, axis, taxonomy, allocation, and segment rows in one transaction.
 - `src/modules/ontology/ontology-registry.service.test.ts` — invalid pack or invalid allocation plan leaves no partial rows.
 - `src/modules/ontology/ontology-registry.service.test.ts` — duplicate `(prefix, versionId)` and duplicate `(ontologyId, taxonomyId, versionId)` fail with structured conflict errors.
-
-Registry-service tests are not required for this handoff-only story because no registry-service code or DB schema is changed here.

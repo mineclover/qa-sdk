@@ -12,6 +12,7 @@ after each iteration and it's included in prompts for context.
 - Ontology address allocation schema pattern: allocation rows use `allocation_id` as the primary key, unique indexes for `(prefix, version_id)` and `(ontology_id, taxonomy_id, version_id)`, text enum checks for `address_model` (`product | sum`) and `status` (`reserved | active | deprecated`), and no index-meta/address cache behavior. Segment rows use composite `primaryKey({ columns: [allocation_id, segment_id] })` plus `consumes_json` text.
 - Registry-service migration generation gotcha: because some existing hand-written migration folders do not include snapshots, `pnpm --filter registry-service db:generate` can include older already-applied table DDL in the generated SQL. Review the generated `migration.sql` and trim unrelated historical churn while keeping the generated snapshot under `drizzle/**`.
 - Registry-service migration-backed schema test pattern: use `createRegistryDatabaseDriver(":memory:")` from `src/bootstrap/stores.ts` to apply index-meta plus registry-service migrations, then assert raw SQLite DDL/constraint behavior with direct `SqlDriver` queries/inserts; this avoids coupling schema tests to Nest controllers or registry service/store APIs.
+- Operational ontology phase-closure docs pattern: when an implementation phase closes, mark only that phase's `.todo.md` items complete, move the implemented surface into the current `.spec.md` with source references, and keep the handoff doc focused on contract refinements plus still-open adapter/service tests.
 
 ---
 
@@ -111,4 +112,18 @@ after each iteration and it's included in prompts for context.
   - Patterns discovered: schema-level registry tests can instantiate a migration-initialized `NodeSqliteDriver` with `createRegistryDatabaseDriver(":memory:")` and validate raw SQL constraints without booting Nest or using registry service/store APIs.
   - Patterns discovered: allocation collision tests must vary `allocation_id` and whichever unique key is not under test so the intended unique index is the one that rejects the duplicate.
   - Gotchas encountered: `pnpm --filter registry-service test -- <file>` is not a reliable single-file Vitest filter in this package; use `pnpm --filter registry-service exec vitest run <file>` for targeted verification.
+---
+
+## 2026-04-14 - US-007
+- Reflected Phase 2A completion in the operational ontology allocation TODO by marking the registry-service schema, migration, snapshot, and schema-test handoff items complete while leaving Phase 2B store adapter items open.
+- Updated the current allocation spec with the five-table persisted registry surface and the verified SQL constraint scenarios.
+- Refined the persistence handoff spec to treat Phase 2A schema work as implemented and keep remaining test expectations scoped to Phase 2B store adapters and Phase 3 services.
+- Files changed:
+  - `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md`
+  - `docs/specs/operational-ontology/operational-ontology-registry-allocation.spec.md`
+  - `docs/specs/operational-ontology/operational-ontology-registry-persistence-handoff.spec.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered: implementation phase closure should update the TODO, current spec, and handoff contract together so the next PRD starts at the next open phase instead of rediscovering completed schema work.
+  - Gotchas encountered: the persistence handoff was still worded as a future-only contract after Phase 2A schema/tests landed, so the remaining work needed to be split between completed migration-backed SQL coverage and still-open store/service coverage.
 ---

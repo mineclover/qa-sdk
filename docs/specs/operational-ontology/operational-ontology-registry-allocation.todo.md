@@ -23,7 +23,7 @@ def:
 
 operational ontology schema를 registry-service의 ontology-aware registry/allocator로 승격하기 위한 구현 항목을 추적한다. 목표는 완료된 DB 독립 allocation model 다음에 registry-service persistence, service layer, index-meta sync, pack activation flow를 순서대로 닫는 것이다.
 
-완료된 local allocation model, validation issue target, validation boundary, matrix, graph requirement, persistence/index-meta handoff, scoped prefix decision은 `operational-ontology-registry-allocation` spec에 반영됐다. 이 TODO는 Phase 2A 이후의 미구현 persistence/service/sync/activation 작업을 추적한다.
+완료된 local allocation model, validation issue target, validation boundary, matrix, graph requirement, persistence/index-meta handoff, scoped prefix decision은 `operational-ontology-registry-allocation` spec에 반영됐다. 이 TODO는 Phase 2B 이후의 미구현 store/service/sync/activation 작업을 추적한다.
 
 ## 실행 dependency map
 
@@ -66,7 +66,7 @@ Validation commands:
 - [x] missing taxonomy axis 검증 추가
 - [x] `operational-ontology-allocation-validation-contract`로 local allocation validation contract 문서화
 
-## Phase 2A: Persistence schema
+## Phase 2A: Persistence schema — 완료
 
 Goal: registry-service가 ontology namespace, axis, taxonomy, allocation, segment lifecycle state를 저장할 최소 DB schema와 migration snapshot을 갖는다.
 
@@ -97,28 +97,28 @@ US-001 implementation notes:
 - Secondary unique constraints are not present in the current registry schema. When Phase 2A adds them, prefer explicit `uq_<table>_<columns>` names to distinguish them from existing non-unique `idx_...` lookup indexes.
 - Migration/test pattern: source migrations live under `packages/registry-service/drizzle/**`; the initial migration includes `snapshot.json`, later hand-written/generated migrations currently have `migration.sql` only, and there is no committed `drizzle/meta/_journal.json`. SQL coverage currently lives in `src/app.sql.test.ts` through Nest `AppModule` plus the migrated SQL driver; ontology schema tests can extend that file or add a small migration-specific SQL test that initializes the registry-service migrations and asserts table creation plus uniqueness failures.
 
-- [ ] `registry-service/src/db/schema.ts`에 `ontology_namespace` 테이블 추가
-  - [ ] `ontology_id` primary key
-  - [ ] `namespace` unique
-  - [ ] `owner`, `lifecycle`, `created_at`, `updated_at`
-- [ ] `ontology_axis` 테이블 추가
-  - [ ] primary key `(ontology_id, axis_id, version_id)`
-  - [ ] `values_json`, `values_hash`, `capacity`, `lifecycle`
-  - [ ] `ontology_id` foreign key 또는 store-level existence check 결정
-- [ ] `ontology_taxonomy` 테이블 추가
-  - [ ] primary key `(ontology_id, taxonomy_id, version_id)`
-  - [ ] `applies_to_json`, `axis_ids_json`, `identity_axis_ids_json`, `space`, `lifecycle`
-  - [ ] referenced axis 존재 검증을 store/service 중 어디에서 수행할지 결정
-- [ ] `ontology_address_allocation` 테이블 추가
-  - [ ] `allocation_id` primary key
-  - [ ] unique `(prefix, version_id)`
-  - [ ] unique `(ontology_id, taxonomy_id, version_id)`
-  - [ ] `address_model`, `capacity`, `address_offset`, `address_size`, `status`
-- [ ] `ontology_address_segment` 테이블 추가
-  - [ ] primary key `(allocation_id, segment_id)`
-  - [ ] `consumes_json`, `address_offset`, `address_size`
-- [ ] schema implementation 전에 `operational-ontology-registry-persistence-handoff`의 registry-service test list를 implementation task로 복사
-- [ ] SQL migration/Drizzle schema snapshot 갱신
+- [x] `registry-service/src/db/schema.ts`에 `ontology_namespace` 테이블 추가
+  - [x] `ontology_id` primary key
+  - [x] `namespace` unique
+  - [x] `owner`, `lifecycle`, `created_at`, `updated_at`
+- [x] `ontology_axis` 테이블 추가
+  - [x] primary key `(ontology_id, axis_id, version_id)`
+  - [x] `values_json`, `values_hash`, `capacity`, `lifecycle`
+  - [x] `ontology_id` foreign key 또는 store-level existence check 결정
+- [x] `ontology_taxonomy` 테이블 추가
+  - [x] primary key `(ontology_id, taxonomy_id, version_id)`
+  - [x] `applies_to_json`, `axis_ids_json`, `identity_axis_ids_json`, `space`, `lifecycle`
+  - [x] referenced axis 존재 검증을 store/service 중 어디에서 수행할지 결정
+- [x] `ontology_address_allocation` 테이블 추가
+  - [x] `allocation_id` primary key
+  - [x] unique `(prefix, version_id)`
+  - [x] unique `(ontology_id, taxonomy_id, version_id)`
+  - [x] `address_model`, `capacity`, `address_offset`, `address_size`, `status`
+- [x] `ontology_address_segment` 테이블 추가
+  - [x] primary key `(allocation_id, segment_id)`
+  - [x] `consumes_json`, `address_offset`, `address_size`
+- [x] schema implementation 전에 `operational-ontology-registry-persistence-handoff`의 registry-service test list를 확인하고 migration-backed SQL schema test로 분리
+- [x] SQL migration/Drizzle schema snapshot 갱신
 
 ## Phase 2B: Store adapter
 
@@ -317,4 +317,4 @@ Validation commands:
 
 ## 다음 구현 기준
 
-다음 단계는 registry-service persistence부터 시작한다. 단, prefix global uniqueness를 바로 깨지 않는다. 먼저 `ontology_address_allocation`에서 collision guard를 갖춘 뒤, `operational-ontology-scoped-prefix-decision`의 concrete need gate를 통과하는 경우에만 scoped prefix implementation ADR을 작성한다.
+다음 단계는 Phase 2B registry-service store adapter부터 시작한다. Phase 2A schema/migration/snapshot은 완료됐지만 prefix global uniqueness는 깨지 않는다. `ontology_address_allocation`의 collision guard를 유지한 뒤, `operational-ontology-scoped-prefix-decision`의 concrete need gate를 통과하는 경우에만 scoped prefix implementation ADR을 작성한다.
