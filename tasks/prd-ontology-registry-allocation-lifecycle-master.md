@@ -82,6 +82,10 @@ No browser verification is required.
 
 **Goal:** Materialize active ontology allocations into index-meta prefix and schema records.
 
+**Execution PRD:**
+- `tasks/prd-ontology-registry-index-meta-sync.md`
+- `tasks/prd-ontology-registry-index-meta-sync.json`
+
 **Inputs:**
 - Phase 3 active allocation contract
 - `operational-ontology-index-meta-sync-handoff.spec.md`

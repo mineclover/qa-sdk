@@ -20,6 +20,10 @@ import {
   type OntologyRegistryStore,
   type OntologyRegistryStoreConflict,
 } from "../../stores/ontology-registry-store.js";
+import {
+  buildDeferredOntologyIndexMetaSyncReport,
+  type OntologyIndexMetaSyncDeferredReport,
+} from "./index-meta-sync.adapter.js";
 
 export interface OntologyRegistryServiceDeps {
   readonly store: OntologyRegistryStore;
@@ -86,15 +90,7 @@ export interface SyncToPrefixRegistryInput {
   readonly allocationId: string;
 }
 
-export interface SyncToPrefixRegistryResult {
-  readonly allocationId: string;
-  readonly prefix: string;
-  readonly versionId: string;
-  readonly taxonomyId: string;
-  readonly status: "active";
-  readonly syncStatus: "deferred";
-  readonly deferredReason: "phase-4-index-meta-sync-not-implemented";
-}
+export type SyncToPrefixRegistryResult = OntologyIndexMetaSyncDeferredReport;
 
 export type OntologyRegistryServiceErrorCode =
   | "invalid-pack"
@@ -332,15 +328,10 @@ export class OntologyRegistryService {
       });
     }
 
-    return {
-      allocationId: allocation.allocationId,
-      prefix: allocation.prefix,
-      versionId: allocation.versionId,
-      taxonomyId: allocation.taxonomyId,
-      status: allocation.status,
-      syncStatus: "deferred",
-      deferredReason: "phase-4-index-meta-sync-not-implemented",
-    };
+    return buildDeferredOntologyIndexMetaSyncReport({
+      ...allocation,
+      status: "active",
+    });
   }
 
   private async requireAllocation(
