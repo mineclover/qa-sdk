@@ -94,6 +94,9 @@ export interface OntologyIndexMetaSyncRecord {
   readonly capacity: number;
   readonly axisId?: string;
   readonly segmentId?: string;
+  readonly consumes?: readonly string[];
+  readonly addressOffset?: number;
+  readonly addressSize?: number;
   readonly refs?: readonly DimRef[];
 }
 
@@ -118,6 +121,7 @@ export interface OntologyIndexMetaSyncDeferredSemantics {
     | "sum-segment-prefix-ref-unsupported"
     | "index-meta-segment-store-unavailable";
   readonly message: string;
+  readonly coveragePolicy?: "exact-allocation-range";
   readonly segments: readonly OntologyIndexMetaSyncSegmentSidecar[];
 }
 
@@ -153,7 +157,7 @@ export function buildDeferredOntologyIndexMetaSyncReport(
 export function createOntologyIndexMetaSyncAdapter(
   deps: OntologyIndexMetaSyncAdapterDeps,
 ): OntologyIndexMetaSyncAdapter<OntologyIndexMetaSyncReport> {
-  return new OntologyProductIndexMetaSyncAdapter(deps);
+  return new OntologyIndexMetaSyncAdapterImpl(deps);
 }
 
 export function deriveOntologyAxisLeafPrefix(
@@ -175,7 +179,13 @@ interface OntologyIndexMetaPreflightTarget extends OntologyIndexMetaSyncTarget {
   readonly existingSchemaVersionRecord: SchemaVersionRecord | null;
 }
 
-class OntologyProductIndexMetaSyncAdapter
+interface OntologyIndexMetaSyncPlan {
+  readonly targets: readonly OntologyIndexMetaSyncTarget[];
+  readonly collisions: readonly OntologyIndexMetaSyncCollision[];
+  readonly deferredSemantics?: readonly OntologyIndexMetaSyncDeferredSemantics[];
+}
+
+class OntologyIndexMetaSyncAdapterImpl
   implements OntologyIndexMetaSyncAdapter<OntologyIndexMetaSyncReport>
 {
   constructor(private readonly deps: OntologyIndexMetaSyncAdapterDeps) {}
@@ -183,19 +193,15 @@ class OntologyProductIndexMetaSyncAdapter
   async sync(
     bundle: OntologyIndexMetaSyncBundle,
   ): Promise<OntologyIndexMetaSyncReport> {
-    if (bundle.allocation.addressModel !== "product") {
-      return {
-        ...buildSyncReportBase(bundle),
-        syncStatus: "deferred",
-        deferredReason: "sum-segment-semantics-unsupported",
-      };
-    }
-
-    const plan = planProductSyncTargets(bundle);
+    const plan: OntologyIndexMetaSyncPlan =
+      bundle.allocation.addressModel === "product"
+        ? planProductSyncTargets(bundle)
+        : planSumSyncTargets(bundle);
     if (plan.collisions.length > 0) {
       return buildMaterializationReport(bundle, {
         syncStatus: "blocked",
         collisions: plan.collisions,
+        deferredSemantics: plan.deferredSemantics,
       });
     }
 
@@ -204,10 +210,11 @@ class OntologyProductIndexMetaSyncAdapter
       return buildMaterializationReport(bundle, {
         syncStatus: "blocked",
         collisions: preflight.collisions,
+        deferredSemantics: plan.deferredSemantics,
       });
     }
 
-    return this.writeTargets(bundle, preflight.targets);
+    return this.writeTargets(bundle, preflight.targets, plan.deferredSemantics);
   }
 
   private async preflightTargets(
@@ -256,6 +263,7 @@ class OntologyProductIndexMetaSyncAdapter
   private async writeTargets(
     bundle: OntologyIndexMetaSyncBundle,
     targets: readonly OntologyIndexMetaPreflightTarget[],
+    deferredSemantics?: readonly OntologyIndexMetaSyncDeferredSemantics[],
   ): Promise<OntologyIndexMetaSyncMaterializationReport> {
     const materializedRecords: OntologyIndexMetaSyncRecord[] = [];
     const idempotentRecords: OntologyIndexMetaSyncRecord[] = [];
@@ -324,6 +332,7 @@ class OntologyProductIndexMetaSyncAdapter
       idempotentRecords,
       repairedRecords,
       collisions,
+      deferredSemantics,
     });
   }
 }
@@ -398,6 +407,47 @@ function planProductSyncTargets(bundle: OntologyIndexMetaSyncBundle): {
   return {
     targets,
     collisions: validateIntendedTargetSet(targets),
+  };
+}
+
+function planSumSyncTargets(
+  bundle: OntologyIndexMetaSyncBundle,
+): OntologyIndexMetaSyncPlan {
+  const prefixRecord: PrefixRegistryRecord = {
+    prefix: bundle.allocation.prefix,
+    versionId: bundle.allocation.versionId,
+    capacity: bundle.allocation.capacity,
+  };
+  const syncRecord = toSyncRecord({
+    kind: "prefix-registry",
+    role: "allocation-prefix",
+    record: prefixRecord,
+  });
+  const shapeCollisions = validateSumSegmentCoverage(bundle, syncRecord);
+  const deferredSemantics = [buildSumSegmentDeferredSemantics(bundle)];
+  if (shapeCollisions.length > 0) {
+    return {
+      targets: [],
+      collisions: shapeCollisions,
+      deferredSemantics,
+    };
+  }
+
+  const target = {
+    role: "allocation-prefix",
+    prefixRecord,
+    schemaVersionRecord: {
+      prefix: prefixRecord.prefix,
+      versionId: prefixRecord.versionId,
+      capacity: prefixRecord.capacity,
+      createdAt: schemaVersionCreatedAt(bundle.namespace),
+    },
+  } satisfies OntologyIndexMetaSyncTarget;
+
+  return {
+    targets: [target],
+    collisions: validateIntendedTargetSet([target]),
+    deferredSemantics,
   };
 }
 
@@ -489,6 +539,130 @@ function validateProductShape(
         ),
       );
     }
+  }
+
+  return collisions;
+}
+
+function validateSumSegmentCoverage(
+  bundle: OntologyIndexMetaSyncBundle,
+  record: OntologyIndexMetaSyncRecord,
+): readonly OntologyIndexMetaSyncCollision[] {
+  const collisions: OntologyIndexMetaSyncCollision[] = [];
+  const allocation = bundle.allocation;
+  const allocationStart = allocation.addressOffset;
+  const allocationEnd = allocationStart + allocation.addressSize;
+  const messagePrefix = `Cannot materialize sum allocation "${allocation.allocationId}"`;
+
+  if (
+    !Number.isInteger(allocation.capacity) ||
+    !Number.isInteger(allocation.addressSize) ||
+    allocation.capacity <= 0 ||
+    allocation.addressSize <= 0
+  ) {
+    collisions.push(
+      sumSegmentCoverageDrift(
+        record,
+        `${messagePrefix} because allocation capacity and addressSize must be positive integers`,
+      ),
+    );
+  }
+  if (allocation.capacity !== allocation.addressSize) {
+    collisions.push(
+      sumSegmentCoverageDrift(
+        record,
+        `${messagePrefix} because allocation capacity ${allocation.capacity} differs from addressSize ${allocation.addressSize}`,
+      ),
+    );
+  }
+  if (bundle.segments.length === 0) {
+    collisions.push(
+      sumSegmentCoverageDrift(
+        record,
+        `${messagePrefix} because sum allocation must have at least one segment sidecar`,
+      ),
+    );
+  }
+
+  const orderedSegments = [...bundle.segments].sort((left, right) => {
+    const offsetDelta = left.addressOffset - right.addressOffset;
+    return offsetDelta !== 0
+      ? offsetDelta
+      : left.segmentId.localeCompare(right.segmentId);
+  });
+  let expectedOffset = allocationStart;
+  let totalCovered = 0;
+
+  for (const segment of orderedSegments) {
+    const segmentRecord = toSegmentSidecarSyncRecord(bundle, segment);
+    const segmentStart = segment.addressOffset;
+    const segmentEnd = segmentStart + segment.addressSize;
+
+    if (
+      !Number.isInteger(segment.addressOffset) ||
+      !Number.isInteger(segment.addressSize) ||
+      segment.addressSize <= 0
+    ) {
+      collisions.push(
+        sumSegmentCoverageDrift(
+          segmentRecord,
+          `${messagePrefix} because segment "${segment.segmentId}" must have an integer offset and positive integer size`,
+        ),
+      );
+      continue;
+    }
+    if (segment.consumes.length === 0) {
+      collisions.push(
+        sumSegmentCoverageDrift(
+          segmentRecord,
+          `${messagePrefix} because segment "${segment.segmentId}" must declare consumed axes`,
+        ),
+      );
+    }
+    if (segmentStart < allocationStart || segmentEnd > allocationEnd) {
+      collisions.push(
+        sumSegmentCoverageDrift(
+          segmentRecord,
+          `${messagePrefix} because segment "${segment.segmentId}" range [${segmentStart}, ${segmentEnd}) falls outside allocation range [${allocationStart}, ${allocationEnd})`,
+        ),
+      );
+    }
+    if (segmentStart < expectedOffset) {
+      collisions.push(
+        sumSegmentCoverageDrift(
+          segmentRecord,
+          `${messagePrefix} because segment "${segment.segmentId}" overlaps a previous segment before offset ${expectedOffset}`,
+        ),
+      );
+    }
+    if (segmentStart > expectedOffset) {
+      collisions.push(
+        sumSegmentCoverageDrift(
+          segmentRecord,
+          `${messagePrefix} because segment "${segment.segmentId}" leaves a coverage gap [${expectedOffset}, ${segmentStart})`,
+        ),
+      );
+    }
+
+    expectedOffset = Math.max(expectedOffset, segmentEnd);
+    totalCovered += segment.addressSize;
+  }
+
+  if (expectedOffset < allocationEnd) {
+    collisions.push(
+      sumSegmentCoverageDrift(
+        record,
+        `${messagePrefix} because segment sidecars leave a trailing coverage gap [${expectedOffset}, ${allocationEnd})`,
+      ),
+    );
+  }
+  if (totalCovered !== allocation.addressSize) {
+    collisions.push(
+      sumSegmentCoverageDrift(
+        record,
+        `${messagePrefix} because segment sidecar sizes total ${totalCovered}, expected ${allocation.addressSize}`,
+      ),
+    );
   }
 
   return collisions;
@@ -619,6 +793,45 @@ function buildSyncReportBase(
   };
 }
 
+function buildSumSegmentDeferredSemantics(
+  bundle: OntologyIndexMetaSyncBundle,
+): OntologyIndexMetaSyncDeferredSemantics {
+  return {
+    code: "sum-segment-prefix-ref-unsupported",
+    message: `Sum allocation "${bundle.allocation.allocationId}" is materialized as a leaf prefix; segment ranges are report sidecars until index-meta owns a segment model`,
+    coveragePolicy: "exact-allocation-range",
+    segments: bundle.segments.map(toSegmentSidecar),
+  };
+}
+
+function toSegmentSidecar(
+  segment: OntologyAddressSegmentRecord,
+): OntologyIndexMetaSyncSegmentSidecar {
+  return {
+    segmentId: segment.segmentId,
+    consumes: [...segment.consumes],
+    addressOffset: segment.addressOffset,
+    addressSize: segment.addressSize,
+  };
+}
+
+function toSegmentSidecarSyncRecord(
+  bundle: OntologyIndexMetaSyncBundle,
+  segment: OntologyAddressSegmentRecord,
+): OntologyIndexMetaSyncRecord {
+  return {
+    kind: "segment-sidecar",
+    role: "sum-segment-sidecar",
+    prefix: bundle.allocation.prefix,
+    versionId: bundle.allocation.versionId,
+    capacity: segment.addressSize,
+    segmentId: segment.segmentId,
+    consumes: [...segment.consumes],
+    addressOffset: segment.addressOffset,
+    addressSize: segment.addressSize,
+  };
+}
+
 function toSyncRecord(input: {
   readonly kind: "prefix-registry";
   readonly role: OntologyIndexMetaSyncRecordRole;
@@ -656,6 +869,17 @@ function allocationShapeDrift(
 ): OntologyIndexMetaSyncCollision {
   return {
     code: "allocation-shape-drift",
+    message,
+    record,
+  };
+}
+
+function sumSegmentCoverageDrift(
+  record: OntologyIndexMetaSyncRecord,
+  message: string,
+): OntologyIndexMetaSyncCollision {
+  return {
+    code: "sum-segment-coverage-drift",
     message,
     record,
   };

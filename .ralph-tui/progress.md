@@ -8,6 +8,7 @@ after each iteration and it's included in prompts for context.
 - Ontology/index-meta sync boundaries should live in `packages/registry-service/src/modules/ontology/` as type-first adapter contracts. Keep the service-facing report shell source-compatible, and narrow dependencies to `PrefixRegistry` plus schema-version store methods instead of index-meta table details.
 - Active ontology sync bundles must reorder store-loaded axis rows by `taxonomy.axisIds`; store adapters return axis rows in stable storage order, not necessarily taxonomy order.
 - Product ontology index-meta sync should build the full intended prefix/schema target set, validate product segment shape and parent capacity math, then preflight existing records before any write. Matching records are idempotent, missing counterparts can be repaired, and capacity/refs drift blocks without overwrite.
+- Sum ontology index-meta sync should materialize only the allocation prefix/schema as a leaf target, validate exact sidecar segment coverage before any write, and keep sum segments as report-only metadata rather than `prefix_ref` rows until index-meta owns a segment model.
 
 ---
 
@@ -52,4 +53,16 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - US-003 already implemented the production schema-version write path; US-004 needed explicit coverage for all materialized schema rows and both safe partial-repair directions.
   - `def validate` can fail transiently if it is run while `index-meta` build is cleaning `dist/`; rerun it after the package build completes.
+---
+
+## 2026-04-14 - US-005
+- Implemented sum allocation materialization in the ontology index-meta sync adapter: allocation prefix/version now writes as a leaf `PrefixRegistryRecord`, matching `schema_version` is written, and segment data is preserved as report sidecar metadata with `coveragePolicy: "exact-allocation-range"`.
+- Added exact segment sidecar validation for range containment, no overlap, no gaps/trailing gaps, positive integer segment ranges, non-empty consumes, and allocation capacity/addressSize drift before any prefix or schema write.
+- Added regression coverage for sum leaf sync, no `prefix_ref` deps, sidecar report payload, idempotent rerun, coverage drift blockers, and capacity drift blockers.
+- Ran the full acceptance checklist for registry-service, index-meta, operational-ontology allocation tests, and definition validation.
+- Files changed: `packages/registry-service/src/modules/ontology/index-meta-sync.adapter.ts`, `packages/registry-service/src/modules/ontology/index-meta-sync.adapter.test.ts`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - The existing prefix/schema target preflight and write machinery can be shared by product and sum planners when the planner returns a common target set plus optional deferred sidecar semantics.
+  - `PrefixRegistryRecord.refs` absence is the safest representation for sum allocations today; `getDeps()` stays empty and `getShape()` returns `[capacity]`, matching the handoff smoke contract.
+  - Sum sidecar metadata should be emitted on both fresh and idempotent sync reports because it is audit/report state, not a persisted index-meta row.
 ---
