@@ -11,6 +11,7 @@ after each iteration and it's included in prompts for context.
 - Activation-level smoke checks should be assembled from `syncToPrefixRegistry` post-sync reports plus activated allocation status; the helper should not reach into prefix registry stores or SQL directly.
 - Sum activation smoke checks should assert leaf prefix/schema capacity and `postSyncChecks.sumAllocation` sidecar coverage only; do not reuse product shape/resolver checks for sum segments.
 - Activation no-write coverage should exercise `OntologyPackActivationHelper` through real `OntologyRegistryService` instances and a memory/SQL backend matrix, while asserting registry rows through store APIs and SQL index-meta rows through table counts.
+- Activation blocked-sync coverage should assert existing index-meta records remain unchanged through store readbacks and SQL table counts; composite prefix drift can legitimately return both capacity and refs drift, so tests should require the relevant collision with `arrayContaining` rather than exact singleton arrays.
 
 ---
 
@@ -84,4 +85,15 @@ after each iteration and it's included in prompts for context.
   - `writeAllocationPlan` is not called for local invalid allocation-plan validation failures, so invalid activation retries leave no registry rows before SQL transactions are involved.
   - `index-meta` has `PrefixRegistry.listAll()` for memory/SQL prefix checks, but schema-version emptiness is best proven by known target readbacks for memory and raw `schema_version` counts for SQL.
   - Running the full registry-service suite concurrently with package builds/index-meta tests can push dashboard tests past their 5s timeout; rerunning `pnpm --filter registry-service test` alone passed.
+---
+
+## 2026-04-14 - US-007
+- Proved duplicate active prefix/version activation is blocked before allocation status updates and before index-meta sync writes.
+- Added activation helper matrix coverage for mismatched existing prefix registry records and mismatched schema version capacity, asserting blocked sync errors and unchanged index-meta rows.
+- Enriched activation helper issue payloads with allocation taxonomy, prefix, and version when activate/sync/smoke context is available.
+- Files changed: `packages/registry-service/src/modules/ontology/ontology-activation.helper.ts`, `packages/registry-service/src/modules/ontology/ontology-activation.helper.test.ts`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - `OntologyRegistryService.activateAllocation` already owns the active allocation uniqueness gate through `listActiveAllocations()` before `updateAllocationStatus()`.
+  - `OntologyIndexMetaSyncAdapter` preflights all target prefix/schema records before writing, so one drifted allocation prefix blocks axis leaf materialization and schema repair too.
+  - Product prefix drift can emit both `prefix-capacity-drift` and `prefix-refs-drift` when the existing record is a leaf but the intended record is composite.
 ---

@@ -81,12 +81,24 @@ const invalidPack = {
   },
 } satisfies OperationalOntologyPack;
 
+const ACTIVATION_NOW = '2026-04-14T00:00:00.000Z';
+const AUTHZ_RESOURCE_ALLOCATION_ID = 'authz-runtime:authorization-resource:v2';
+const AUTHZ_RESOURCE_PREFIX = 'authz_runtime_resource';
+const AUTHZ_RESOURCE_AXIS_PREFIX = 'authz_axis_resource_kind';
+
+interface IndexMetaRowCounts {
+  readonly prefixRegistry: number;
+  readonly prefixRef: number;
+  readonly schemaVersion: number;
+}
+
 interface ActivationBackendContext {
   readonly store: OntologyRegistryStore;
   readonly prefixRegistry: InMemoryPrefixRegistry | SqlPrefixRegistry;
   readonly schemaVersionStore: InMemoryIndexMetaStore | SqlIndexMetaStore;
   readonly cleanup?: () => void | Promise<void>;
   readonly assertNoBackendRows?: () => Promise<void>;
+  readonly countIndexMetaRows?: () => Promise<IndexMetaRowCounts>;
 }
 
 interface ActivationBackendCase {
@@ -115,6 +127,7 @@ const activationBackendCases = [
         schemaVersionStore: new SqlIndexMetaStore(driver),
         cleanup: () => driver.close(),
         assertNoBackendRows: () => expectNoSqlRegistryOrIndexMetaRows(driver),
+        countIndexMetaRows: () => countSqlIndexMetaRows(driver),
       };
     },
   },
@@ -704,9 +717,320 @@ describe('OntologyPackActivationHelper', () => {
           ],
         });
       });
+
+      it('blocks activation when another active allocation owns the prefix/version', async () => {
+        const context = await setup();
+        const service = new OntologyRegistryService({
+          store: context.store,
+          syncAdapter: createOntologyIndexMetaSyncAdapter({
+            prefixRegistry: context.prefixRegistry,
+            schemaVersionStore: context.schemaVersionStore,
+          }),
+        });
+        const helper = new OntologyPackActivationHelper(service);
+        const activeAllocation: OntologyAddressAllocationRecord = {
+          allocationId: 'legacy-runtime:authorization-resource:v2',
+          ontologyId: 'legacy-runtime',
+          taxonomyId: 'authorization-resource',
+          prefix: AUTHZ_RESOURCE_PREFIX,
+          versionId: 'v2',
+          addressModel: 'product',
+          capacity: 8,
+          addressOffset: 0,
+          addressSize: 8,
+          status: 'active',
+        };
+        const listActive = vi
+          .spyOn(context.store, 'listActiveAllocations')
+          .mockResolvedValue([activeAllocation]);
+        const updateStatus = vi.spyOn(context.store, 'updateAllocationStatus');
+        const prefixRegister = vi.spyOn(context.prefixRegistry, 'register');
+        const schemaVersionInsert = vi.spyOn(
+          context.schemaVersionStore,
+          'insertSchemaVersion',
+        );
+
+        const result = await helper.activateOntologyPack(validPack, activationOptions());
+
+        expect(listActive).toHaveBeenCalled();
+        expect(updateStatus).not.toHaveBeenCalled();
+        expect(prefixRegister).not.toHaveBeenCalled();
+        expect(schemaVersionInsert).not.toHaveBeenCalled();
+        expect(result).toEqual(
+          expect.objectContaining({
+            status: 'failed',
+            packId: 'authorization-ontology',
+            ontologyId: 'authz-runtime',
+            activationStatuses: [
+              {
+                allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+                taxonomyId: 'authorization-resource',
+                prefix: AUTHZ_RESOURCE_PREFIX,
+                versionId: 'v2',
+                status: 'reserved',
+                activationStatus: 'failed',
+              },
+            ],
+            syncReports: [],
+            smokeChecks: [],
+            errors: [
+              expect.objectContaining({
+                level: 'error',
+                phase: 'activate',
+                code: 'duplicate-allocation',
+                allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+                prefix: AUTHZ_RESOURCE_PREFIX,
+                versionId: 'v2',
+                details: expect.objectContaining({
+                  code: 'duplicate-allocation',
+                  allocationIds: [
+                    AUTHZ_RESOURCE_ALLOCATION_ID,
+                    'legacy-runtime:authorization-resource:v2',
+                  ],
+                  allocationKeys: expect.arrayContaining([
+                    {
+                      recordKind: 'allocation',
+                      prefix: AUTHZ_RESOURCE_PREFIX,
+                      versionId: 'v2',
+                    },
+                  ]),
+                  storeConflicts: expect.arrayContaining([
+                    expect.objectContaining({
+                      code: 'duplicate-key',
+                      key: {
+                        recordKind: 'allocation',
+                        prefix: AUTHZ_RESOURCE_PREFIX,
+                        versionId: 'v2',
+                      },
+                    }),
+                  ]),
+                }),
+              }),
+            ],
+          }),
+        );
+        await expect(context.store.getAllocation(AUTHZ_RESOURCE_ALLOCATION_ID)).resolves.toEqual(
+          expect.objectContaining({ status: 'reserved' }),
+        );
+        expect(await context.prefixRegistry.listAll()).toEqual([]);
+        await expect(
+          context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_PREFIX, 'v2'),
+        ).resolves.toBeNull();
+        await expect(
+          context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_AXIS_PREFIX, 'v2'),
+        ).resolves.toBeNull();
+        await expectSqlIndexMetaRowCounts(context, {
+          prefixRegistry: 0,
+          prefixRef: 0,
+          schemaVersion: 0,
+        });
+      });
+
+      it('blocks sync when index-meta has a mismatched prefix registry record', async () => {
+        const context = await setup();
+        const existingPrefixRecord = {
+          prefix: AUTHZ_RESOURCE_PREFIX,
+          versionId: 'v2',
+          capacity: 4,
+        };
+        await context.prefixRegistry.register(existingPrefixRecord);
+        const service = new OntologyRegistryService({
+          store: context.store,
+          syncAdapter: createOntologyIndexMetaSyncAdapter({
+            prefixRegistry: context.prefixRegistry,
+            schemaVersionStore: context.schemaVersionStore,
+          }),
+        });
+        const helper = new OntologyPackActivationHelper(service);
+
+        const result = await helper.activateOntologyPack(validPack, activationOptions());
+
+        expect(result.status).toBe('failed');
+        expect(result.activationStatuses).toEqual([
+          {
+            allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+            taxonomyId: 'authorization-resource',
+            prefix: AUTHZ_RESOURCE_PREFIX,
+            versionId: 'v2',
+            status: 'active',
+            activationStatus: 'sync-blocked',
+            syncStatus: 'blocked',
+          },
+        ]);
+        expect(result.syncReports).toEqual([
+          expect.objectContaining({
+            allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+            prefix: AUTHZ_RESOURCE_PREFIX,
+            versionId: 'v2',
+            syncStatus: 'blocked',
+            collisions: expect.arrayContaining([
+              expect.objectContaining({
+                code: 'prefix-capacity-drift',
+                record: expect.objectContaining({
+                  prefix: AUTHZ_RESOURCE_PREFIX,
+                  versionId: 'v2',
+                  capacity: 8,
+                }),
+                existing: existingPrefixRecord,
+                intended: expect.objectContaining({
+                  prefix: AUTHZ_RESOURCE_PREFIX,
+                  versionId: 'v2',
+                  capacity: 8,
+                }),
+              }),
+            ]),
+          }),
+        ]);
+        expect(result.errors).toEqual([
+          expect.objectContaining({
+            level: 'error',
+            phase: 'sync',
+            code: 'sync-blocked',
+            allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+            prefix: AUTHZ_RESOURCE_PREFIX,
+            versionId: 'v2',
+            details: {
+              collisions: expect.arrayContaining([
+                expect.objectContaining({
+                  code: 'prefix-capacity-drift',
+                  record: expect.objectContaining({
+                    prefix: AUTHZ_RESOURCE_PREFIX,
+                    versionId: 'v2',
+                  }),
+                }),
+              ]),
+            },
+          }),
+        ]);
+        await expect(context.prefixRegistry.getRecord(AUTHZ_RESOURCE_PREFIX, 'v2')).resolves.toEqual(
+          existingPrefixRecord,
+        );
+        await expect(
+          context.prefixRegistry.getRecord(AUTHZ_RESOURCE_AXIS_PREFIX, 'v2'),
+        ).resolves.toBeNull();
+        await expect(
+          context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_PREFIX, 'v2'),
+        ).resolves.toBeNull();
+        await expect(
+          context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_AXIS_PREFIX, 'v2'),
+        ).resolves.toBeNull();
+        await expectSqlIndexMetaRowCounts(context, {
+          prefixRegistry: 1,
+          prefixRef: 0,
+          schemaVersion: 0,
+        });
+      });
+
+      it('blocks sync when index-meta has mismatched schema version capacity', async () => {
+        const context = await setup();
+        const existingSchemaVersion = {
+          prefix: AUTHZ_RESOURCE_PREFIX,
+          versionId: 'v2',
+          capacity: 4,
+          createdAt: ACTIVATION_NOW,
+        };
+        await context.schemaVersionStore.insertSchemaVersion(existingSchemaVersion);
+        const service = new OntologyRegistryService({
+          store: context.store,
+          syncAdapter: createOntologyIndexMetaSyncAdapter({
+            prefixRegistry: context.prefixRegistry,
+            schemaVersionStore: context.schemaVersionStore,
+          }),
+        });
+        const helper = new OntologyPackActivationHelper(service);
+
+        const result = await helper.activateOntologyPack(validPack, activationOptions());
+
+        expect(result.status).toBe('failed');
+        expect(result.activationStatuses).toEqual([
+          {
+            allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+            taxonomyId: 'authorization-resource',
+            prefix: AUTHZ_RESOURCE_PREFIX,
+            versionId: 'v2',
+            status: 'active',
+            activationStatus: 'sync-blocked',
+            syncStatus: 'blocked',
+          },
+        ]);
+        expect(result.syncReports).toEqual([
+          expect.objectContaining({
+            allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+            prefix: AUTHZ_RESOURCE_PREFIX,
+            versionId: 'v2',
+            syncStatus: 'blocked',
+            collisions: [
+              expect.objectContaining({
+                code: 'schema-version-capacity-drift',
+                record: expect.objectContaining({
+                  kind: 'schema-version',
+                  prefix: AUTHZ_RESOURCE_PREFIX,
+                  versionId: 'v2',
+                  capacity: 8,
+                }),
+                existing: existingSchemaVersion,
+                intended: expect.objectContaining({
+                  prefix: AUTHZ_RESOURCE_PREFIX,
+                  versionId: 'v2',
+                  capacity: 8,
+                }),
+              }),
+            ],
+          }),
+        ]);
+        expect(result.errors).toEqual([
+          expect.objectContaining({
+            level: 'error',
+            phase: 'sync',
+            code: 'sync-blocked',
+            allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+            prefix: AUTHZ_RESOURCE_PREFIX,
+            versionId: 'v2',
+            details: {
+              collisions: [
+                expect.objectContaining({
+                  code: 'schema-version-capacity-drift',
+                  record: expect.objectContaining({
+                    prefix: AUTHZ_RESOURCE_PREFIX,
+                    versionId: 'v2',
+                  }),
+                }),
+              ],
+            },
+          }),
+        ]);
+        await expect(
+          context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_PREFIX, 'v2'),
+        ).resolves.toEqual(existingSchemaVersion);
+        await expect(context.prefixRegistry.getRecord(AUTHZ_RESOURCE_PREFIX, 'v2')).resolves.toBeNull();
+        await expect(
+          context.prefixRegistry.getRecord(AUTHZ_RESOURCE_AXIS_PREFIX, 'v2'),
+        ).resolves.toBeNull();
+        await expect(
+          context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_AXIS_PREFIX, 'v2'),
+        ).resolves.toBeNull();
+        await expectSqlIndexMetaRowCounts(context, {
+          prefixRegistry: 0,
+          prefixRef: 0,
+          schemaVersion: 1,
+        });
+      });
     },
   );
 });
+
+function activationOptions() {
+  return {
+    ontologyId: 'authz-runtime',
+    namespace: 'authz',
+    owner: 'registry-service',
+    versionId: 'v2',
+    prefixByTaxonomyId: {
+      'authorization-resource': AUTHZ_RESOURCE_PREFIX,
+    },
+    timestamp: ACTIVATION_NOW,
+  };
+}
 
 async function expectActivationStoresEmpty(
   context: ActivationBackendContext,
@@ -757,6 +1081,33 @@ async function expectNoSqlRegistryOrIndexMetaRows(driver: SqlDriver): Promise<vo
     }),
   );
   expect(counts).toEqual(tableNames.map(() => 0));
+}
+
+async function expectSqlIndexMetaRowCounts(
+  context: ActivationBackendContext,
+  expected: IndexMetaRowCounts,
+): Promise<void> {
+  if (!context.countIndexMetaRows) {
+    return;
+  }
+
+  await expect(context.countIndexMetaRows()).resolves.toEqual(expected);
+}
+
+async function countSqlIndexMetaRows(driver: SqlDriver): Promise<IndexMetaRowCounts> {
+  const [prefixRegistry, prefixRef, schemaVersion] = await Promise.all([
+    countSqlRows(driver, 'prefix_registry'),
+    countSqlRows(driver, 'prefix_ref'),
+    countSqlRows(driver, 'schema_version'),
+  ]);
+  return { prefixRegistry, prefixRef, schemaVersion };
+}
+
+async function countSqlRows(driver: SqlDriver, tableName: string): Promise<number> {
+  const row = await driver.queryOne<{ count: number }>(
+    `SELECT COUNT(*) AS count FROM ${tableName}`,
+  );
+  return row?.count ?? 0;
 }
 
 function namespaceRecord(): OntologyNamespaceRecord {

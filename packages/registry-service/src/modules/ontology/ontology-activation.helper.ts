@@ -87,6 +87,9 @@ export interface OntologyPackActivationIssue {
   readonly message: string;
   readonly code?: string;
   readonly allocationId?: string;
+  readonly taxonomyId?: string;
+  readonly prefix?: string;
+  readonly versionId?: string;
   readonly details?: unknown;
 }
 
@@ -173,7 +176,7 @@ export async function activateOntologyPack(
       });
       allocationById.set(allocation.allocationId, activated.allocation);
     } catch (error) {
-      errors.push(toActivationErrorIssue(error, 'activate', allocation.allocationId));
+      errors.push(toActivationErrorIssue(error, 'activate', allocation));
       activationStatuses.push(toFailedActivationStatus(allocation));
       continue;
     }
@@ -185,7 +188,7 @@ export async function activateOntologyPack(
       });
       syncReports.push(syncReport);
     } catch (error) {
-      errors.push(toActivationErrorIssue(error, 'sync', activated.allocation.allocationId));
+      errors.push(toActivationErrorIssue(error, 'sync', activated.allocation));
       activationStatuses.push(toFailedSyncStatus(activated.allocation));
       continue;
     }
@@ -570,15 +573,27 @@ function toSkippedActivationStatus(
 function toActivationErrorIssue(
   error: unknown,
   phase: OntologyPackActivationPhase,
-  allocationId?: string,
+  allocation?: Pick<
+    OntologyAddressAllocationRecord,
+    'allocationId' | 'taxonomyId' | 'prefix' | 'versionId'
+  >,
 ): OntologyPackActivationIssue {
+  const allocationContext = allocation
+    ? {
+        allocationId: allocation.allocationId,
+        taxonomyId: allocation.taxonomyId,
+        prefix: allocation.prefix,
+        versionId: allocation.versionId,
+      }
+    : {};
+
   if (error instanceof OntologyRegistryServiceError) {
     return {
       level: 'error',
       phase,
       code: error.conflict.code,
       message: error.message,
-      allocationId,
+      ...allocationContext,
       details: error.conflict,
     };
   }
@@ -589,7 +604,7 @@ function toActivationErrorIssue(
       phase,
       code: 'unexpected-error',
       message: error.message,
-      allocationId,
+      ...allocationContext,
     };
   }
 
@@ -598,7 +613,7 @@ function toActivationErrorIssue(
     phase,
     code: 'unexpected-error',
     message: 'Unexpected ontology activation error',
-    allocationId,
+    ...allocationContext,
   };
 }
 
@@ -609,6 +624,9 @@ function toBlockedSyncIssue(report: SyncToPrefixRegistryResult): OntologyPackAct
     code: 'sync-blocked',
     message: `Index-meta sync was blocked for ontology allocation "${report.allocationId}".`,
     allocationId: report.allocationId,
+    taxonomyId: report.taxonomyId,
+    prefix: report.prefix,
+    versionId: report.versionId,
     details:
       'collisions' in report
         ? { collisions: report.collisions }
@@ -625,6 +643,9 @@ function toDeferredSyncWarning(
     code: report.deferredReason,
     message: `Index-meta sync was deferred for ontology allocation "${report.allocationId}".`,
     allocationId: report.allocationId,
+    taxonomyId: report.taxonomyId,
+    prefix: report.prefix,
+    versionId: report.versionId,
   };
 }
 
@@ -637,6 +658,9 @@ function toSmokeCheckFailureIssue(
     code: 'activation-smoke-check-failed',
     message: `Activation smoke checks failed for ontology allocation "${smokeChecks.allocationId}".`,
     allocationId: smokeChecks.allocationId,
+    taxonomyId: smokeChecks.taxonomyId,
+    prefix: smokeChecks.prefix,
+    versionId: smokeChecks.versionId,
     details: {
       failedChecks: smokeChecks.checks.filter((check) => !check.passed),
     },
