@@ -3,6 +3,7 @@ import type {
   OntologyAddressSegmentRecord,
   OntologyAllocationPlanWriteSet,
   OntologyAxisRecord,
+  OntologyRegistryDuplicateKeyConflict,
   OntologyNamespaceRecord,
   OntologyRegistryDriftConflict,
   OntologyRegistryInvalidSegmentConflict,
@@ -15,6 +16,7 @@ import type {
 const FIXTURE_NOW = "2026-04-14T00:00:00.000Z";
 
 export type OntologyRegistryValidationConflict =
+  | OntologyRegistryDuplicateKeyConflict
   | OntologyRegistryDriftConflict
   | OntologyRegistryMissingTaxonomyAxisConflict
   | OntologyRegistryInvalidSegmentConflict
@@ -156,6 +158,7 @@ export function validateOntologyRegistryRows(
   const segments = [...(existing.segments ?? []), ...(attempted.segments ?? [])];
 
   return [
+    ...detectOntologyRegistryDuplicateKeys(input),
     ...detectOntologyRegistrySameKeyDrift(input),
     ...validateOntologyTaxonomyAxisReferences({ axes, taxonomies }),
     ...validateOntologyAddressSegments({ allocations, segments }),
@@ -315,6 +318,51 @@ export function detectOntologyRegistrySameKeyDrift(
       allocationDriftFields,
     ),
     ...detectDriftForKind(
+      "segment",
+      existing.segments ?? [],
+      attempted.segments ?? [],
+      segmentDriftKeySpecs,
+      segmentDriftFields,
+    ),
+  ];
+}
+
+export function detectOntologyRegistryDuplicateKeys(
+  input: OntologyRegistryValidationInput,
+): OntologyRegistryDuplicateKeyConflict[] {
+  const existing = input.existing ?? {};
+  const attempted = input.attempted;
+
+  return [
+    ...detectDuplicatesForKind(
+      "namespace",
+      existing.namespaces ?? [],
+      attempted.namespaces ?? [],
+      namespaceDriftKeySpecs,
+      namespaceDriftFields,
+    ),
+    ...detectDuplicatesForKind(
+      "axis",
+      existing.axes ?? [],
+      attempted.axes ?? [],
+      axisDriftKeySpecs,
+      axisDriftFields,
+    ),
+    ...detectDuplicatesForKind(
+      "taxonomy",
+      existing.taxonomies ?? [],
+      attempted.taxonomies ?? [],
+      taxonomyDriftKeySpecs,
+      taxonomyDriftFields,
+    ),
+    ...detectDuplicatesForKind(
+      "allocation",
+      existing.allocations ?? [],
+      attempted.allocations ?? [],
+      allocationDriftKeySpecs,
+      allocationDriftFields,
+    ),
+    ...detectDuplicatesForKind(
       "segment",
       existing.segments ?? [],
       attempted.segments ?? [],
@@ -514,6 +562,65 @@ function detectDriftForKind<T extends object>(
         fields: changedFields,
         existing: existing as OntologyRegistryDriftConflict["existing"],
         attempted: record as OntologyRegistryDriftConflict["attempted"],
+      });
+    }
+  }
+
+  return conflicts;
+}
+
+function detectDuplicatesForKind<T extends object>(
+  recordKind: RecordKindName,
+  existingRecords: readonly T[],
+  attemptedRecords: readonly T[],
+  keySpecs: readonly DriftKeySpec<T>[],
+  fields: readonly (keyof T & string)[],
+): OntologyRegistryDuplicateKeyConflict[] {
+  const conflicts: OntologyRegistryDuplicateKeyConflict[] = [];
+  const objectIds = new WeakMap<object, number>();
+  let nextObjectId = 1;
+  const emittedPairs = new Set<string>();
+
+  const objectId = (record: T): number => {
+    const known = objectIds.get(record);
+    if (known !== undefined) return known;
+    const id = nextObjectId;
+    nextObjectId += 1;
+    objectIds.set(record, id);
+    return id;
+  };
+
+  for (const keySpec of keySpecs) {
+    const recordsByKey = new Map<string, T>();
+    for (const record of existingRecords) {
+      if (!recordsByKey.has(keySpec.keyOf(record))) {
+        recordsByKey.set(keySpec.keyOf(record), record);
+      }
+    }
+
+    for (const record of attemptedRecords) {
+      const key = keySpec.keyOf(record);
+      const existing = recordsByKey.get(key);
+      if (!existing) {
+        recordsByKey.set(key, record);
+        continue;
+      }
+
+      const isExactDuplicate = fields.every((field) =>
+        sameValue(existing[field], record[field]),
+      );
+      if (!isExactDuplicate) continue;
+
+      const pairKey = `${objectId(existing)}:${objectId(record)}`;
+      if (emittedPairs.has(pairKey)) continue;
+
+      emittedPairs.add(pairKey);
+      conflicts.push({
+        code: "duplicate-key",
+        message: `Duplicate ${recordKind} record for ${formatRecordKey(
+          keySpec.conflictKeyOf(record),
+        )}`,
+        key: keySpec.conflictKeyOf(record),
       });
     }
   }

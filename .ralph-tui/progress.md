@@ -8,6 +8,7 @@ after each iteration and it's included in prompts for context.
 *Add reusable patterns discovered during development here.*
 - Registry-service store contracts live as narrow dependency-free interface files under `packages/registry-service/src/stores/`; adapter-specific imports such as SQL drivers stay in `in-memory-*`/`sql-*` implementations.
 - Ontology registry persistence validation should stay stores-local and dependency-free, returning the structured `OntologyRegistryStoreConflict` shapes before either SQL or in-memory adapters translate them into write failures.
+- Full ontology allocation plan writes should collect validation conflicts first and throw `partial-write-rejected` before mutating adapter state; exact same-key repeats are `duplicate-key`, while changed same-key records are `drift`.
 
 ---
 
@@ -38,4 +39,19 @@ after each iteration and it's included in prompts for context.
   - Registry-service drift detection needs to cover both primary and secondary natural keys: namespace has `ontologyId` and global `namespace`, while allocation has `allocationId`, `(prefix, versionId)`, and `(ontologyId, taxonomyId, versionId)`.
   - Segment overlap should be checked per allocation with half-open ranges, so adjacent segments are valid while any `current.addressOffset < previousEnd` is a conflict.
   - Taxonomy `identityAxisIds` are also axis references at the persistence boundary, so same `ontologyId` and `versionId` lookup must include the union of `axisIds` and `identityAxisIds`.
+---
+
+## 2026-04-14 - US-003
+- Implemented `InMemoryOntologyRegistryStore` with write/list/get support for namespaces, axes, taxonomies, allocations, active allocations, and segments.
+- Added exact duplicate-key detection to shared ontology registry validation so stores can distinguish duplicate repeats from drift before writes.
+- Added in-memory store tests for successful persistence, defensive array copies, duplicate keys, namespace uniqueness drift, natural-key drift, missing taxonomy axes, invalid segments, out-of-range segments, overlap rejection, and no-partial-write behavior.
+- Files changed:
+  - `packages/registry-service/src/stores/in-memory-ontology-registry-store.ts`
+  - `packages/registry-service/src/stores/in-memory-ontology-registry-store.test.ts`
+  - `packages/registry-service/src/stores/ontology-registry-validation.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - `writeAllocationPlan()` can stay atomic in memory by validating against a cloned snapshot and only committing maps after every conflict check passes.
+  - The Phase 2A handoff needs duplicate and drift to be separated: exact natural-key repeats are `duplicate-key`, while changed values on the same natural key remain `drift`.
+  - Returning cloned array-backed records avoids mutable fixture/test code leaking into the in-memory store state.
 ---
