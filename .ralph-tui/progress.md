@@ -13,6 +13,7 @@ after each iteration and it's included in prompts for context.
 - Activation CLI JSON should print helper results unwrapped; pre-helper CLI/runtime failures should use a result-like failed payload with sanitized errors so automation can parse one stable contract.
 - CLI tests that need to prove command discovery/dispatch should invoke `main(["ontology", ...])`; `cliOntology(["registry.activate-pack", ...])` only proves the handler surface after proxy resolution.
 - Activation JSON represents ontology taxonomies in `allocationSummaries`; synced axis coverage is proven through `syncReports[*].materializedRecords[*].axisId` because `syncSummariesByAllocationId` intentionally stays count-only.
+- CLI-origin ontology activation text failures should preserve the stable JSON error code as a `<code>: <message>` prefix; helper-returned lifecycle failures should continue through the activation summary `errors` list.
 
 ---
 
@@ -110,4 +111,17 @@ after each iteration and it's included in prompts for context.
   - Authorization ontology activation currently materializes eight taxonomy allocation surfaces: node, principal, resource, action, policy, decision, enforcement, and lineage.
   - `allocationSummaries` are the right assertion surface for taxonomy coverage, while axis coverage requires reading the full `syncReports` materialized records.
   - Authorization activation uses product address-model smoke checks for every taxonomy by default, including lineage.
+---
+
+## 2026-04-15 - US-008
+- Made CLI-origin non-JSON `ontology registry activate-pack` failures include a stable `<code>: <message>` prefix so text-mode automation can distinguish bad input without parsing prose.
+- Added public command-path tests for unknown pack id failures in JSON and text output, including non-zero exit code and raw SQL leak assertions.
+- Added public command-path tests for invalid `--address-model` failures in JSON and text output, proving the structured `invalid-address-model` contract and non-zero exit code.
+- Extended the duplicate activation scenario to prove helper-returned `status: "failed"` results also produce useful non-JSON output without exposing raw SQL.
+- Files changed: `packages/cli/src/commands/ontology.ts`, `packages/cli/src/commands/ontology.test.ts`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter registry-service test`; `pnpm --filter registry-service typecheck`; `pnpm --filter registry-service build`; `pnpm --filter operational-ontology test -- allocation`; `pnpm --filter authorization-ontology test`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - Public failure scenarios should use `main(["ontology", "registry", "activate-pack", ...])` because resolver-level and handler-level tests can miss command discovery behavior.
+  - Text failure sanitization should avoid treating normal `.sqlite` store paths as leaks; assert against SQLite error tokens and SQL statement fragments instead.
+  - CLI pre-helper failures and helper lifecycle failures have different output paths, so both need explicit JSON/text coverage.
 ---

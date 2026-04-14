@@ -327,6 +327,27 @@ describe("ontology CLI", () => {
         ],
       });
       expect(secondOutput.stdout).not.toMatch(/SQLITE|SqliteError|sqlite/i);
+
+      const textOutput = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "registry",
+          "activate-pack",
+          "programming-artifact-ontology",
+          "--store",
+          storePath,
+        ]);
+      });
+
+      expect(textOutput.stderr).toBe("");
+      expect(textOutput.exitCode).toBe(1);
+      expect(textOutput.stdout).toContain(
+        "Ontology pack activation: programming-artifact-ontology",
+      );
+      expect(textOutput.stdout).toContain("status: failed");
+      expect(textOutput.stdout).toContain("duplicate-allocation");
+      expect(textOutput.stdout).toContain("Re-run with --json");
+      expectNoRawSql(textOutput.stdout);
     } finally {
       await rm(dir, { force: true, recursive: true });
     }
@@ -480,10 +501,12 @@ describe("ontology CLI", () => {
     }
   });
 
-  it("registry activate-pack --json reports CLI errors with the activation error contract", async () => {
+  it("registry activate-pack reports unknown pack failures through the public command path", async () => {
     const output = await captureConsoleWithExitCode(async () => {
-      await cliOntology([
-        "registry.activate-pack",
+      await main([
+        "ontology",
+        "registry",
+        "activate-pack",
         "missing-pack",
         "--json",
       ]);
@@ -527,6 +550,23 @@ describe("ontology CLI", () => {
       ],
     });
     expect(parsed.errors[0]?.supportedPackIds).toEqual(KNOWN_ONTOLOGY_PACK_IDS);
+    expectNoRawSql(output.stdout);
+
+    const textOutput = await captureConsoleWithExitCode(async () => {
+      await main([
+        "ontology",
+        "registry",
+        "activate-pack",
+        "missing-pack",
+      ]);
+    });
+
+    expect(textOutput.stdout).toBe("");
+    expect(textOutput.stderr).toContain("unknown-ontology-pack:");
+    expect(textOutput.stderr).toContain('Unknown ontology pack id "missing-pack"');
+    expect(textOutput.stderr).toContain("Supported pack ids:");
+    expect(textOutput.exitCode).toBe(1);
+    expectNoRawSql(textOutput.stderr);
   });
 
   it("registry activate-pack --json rejects invalid flags as structured JSON", async () => {
@@ -553,6 +593,78 @@ describe("ontology CLI", () => {
       code: "invalid-cli-flag",
       details: { flag: "--not-a-real-flag" },
     });
+  });
+
+  it("registry activate-pack rejects invalid address models with structured failure output", async () => {
+    const output = await captureConsoleWithExitCode(async () => {
+      await main([
+        "ontology",
+        "registry",
+        "activate-pack",
+        "programming-artifact-ontology",
+        "--address-model",
+        "tuple",
+        "--json",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      status: string;
+      packId: string;
+      ontologyId: string;
+      allocationSummaries: unknown[];
+      syncSummariesByAllocationId: Record<string, unknown>;
+      smokeCheckSummary: { allocationCount: number };
+      errors: Array<{
+        level: string;
+        phase: string;
+        code: string;
+        message: string;
+        details?: { value?: string; supportedValues?: string[] };
+      }>;
+    };
+
+    expect(output.stderr).toBe("");
+    expect(output.exitCode).toBe(1);
+    expect(parsed).toMatchObject({
+      status: "failed",
+      packId: "programming-artifact-ontology",
+      ontologyId: "programming-artifact-ontology",
+      allocationSummaries: [],
+      syncSummariesByAllocationId: {},
+      smokeCheckSummary: { allocationCount: 0 },
+      errors: [
+        expect.objectContaining({
+          level: "error",
+          phase: "cli",
+          code: "invalid-address-model",
+          message: 'Invalid --address-model value "tuple". Expected product or sum.',
+          details: {
+            value: "tuple",
+            supportedValues: ["product", "sum"],
+          },
+        }),
+      ],
+    });
+    expectNoRawSql(output.stdout);
+
+    const textOutput = await captureConsoleWithExitCode(async () => {
+      await main([
+        "ontology",
+        "registry",
+        "activate-pack",
+        "programming-artifact-ontology",
+        "--address-model",
+        "tuple",
+      ]);
+    });
+
+    expect(textOutput.stdout).toBe("");
+    expect(textOutput.stderr).toContain("invalid-address-model:");
+    expect(textOutput.stderr).toContain(
+      'Invalid --address-model value "tuple". Expected product or sum.',
+    );
+    expect(textOutput.exitCode).toBe(1);
+    expectNoRawSql(textOutput.stderr);
   });
 
   it("registry activate-pack emits helper failed results without wrapping them", async () => {
@@ -3665,6 +3777,12 @@ async function captureConsoleWithExitCode(run: () => Promise<void>) {
   } finally {
     process.exitCode = previousExitCode;
   }
+}
+
+function expectNoRawSql(output: string): void {
+  expect(output).not.toMatch(
+    /SQLITE_[A-Z_]+|SqliteError|INSERT\s+INTO|SELECT\s+|CREATE\s+TABLE|UPDATE\s+|DELETE\s+FROM/i,
+  );
 }
 
 function writeQualityLedgerRuns(

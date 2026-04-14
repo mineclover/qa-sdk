@@ -602,7 +602,7 @@ function printActivationCliErrors(
     printJson(buildActivationCliFailureResult(errors, context));
   } else {
     for (const error of errors) {
-      console.error(error.message);
+      console.error(`${error.code}: ${error.message}`);
     }
   }
   process.exitCode = 1;
