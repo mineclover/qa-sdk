@@ -11,7 +11,22 @@ after each iteration and it's included in prompts for context.
 - Ontology service methods should keep validation and projection in the service layer, then call store writes only after local validation passes; tests can spy on operational-ontology facades and `OntologyRegistryStore.writeAllocationPlan()` to lock no-write failures.
 - Reservation APIs over allocation policies should normalize `status: "reserved"` at the service boundary and keep raw `storeConflicts` while adding service-level allocation keys for callers.
 - Allocation activation should complete service-level lifecycle and active `(prefix, versionId)` collision checks before calling the store status mutation; duplicate-active failures can reuse the structured `duplicate-allocation` payload with allocation keys.
+- Deferred sync shells should validate service-owned lifecycle preconditions and return explicit report payloads, without accepting future adapter ports or writing external registries before the materialization phase.
 
+---
+
+## 2026-04-14 - US-005
+- Implemented `syncToPrefixRegistry()` as an allocation precondition/report shell that accepts an allocation id or `{ allocationId }`, requires an active allocation, and returns a deferred Phase 4 sync report.
+- Removed the Phase 3 PrefixRegistry write path from the ontology service and documented the deferred report shape for future index-meta materialization.
+- Files changed:
+  - `packages/registry-service/src/modules/ontology/ontology-registry.service.ts`
+  - `packages/registry-service/src/modules/ontology/ontology-registry.service.test.ts`
+  - `docs/specs/operational-ontology/operational-ontology-index-meta-sync-handoff.spec.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Phase 3 should not accept a `PrefixRegistry` port in `syncToPrefixRegistry()` because that makes real sync behavior observable before Phase 4 owns materialization, idempotency, and schema-version checks.
+  - Active allocation reports need only stable handoff coordinates: allocation id, prefix, version id, taxonomy id, status, and deferred sync status.
+  - No-index-meta behavior is strongest when the service has no index-meta dependency in the sync path and tests verify an external `InMemoryPrefixRegistry` remains untouched.
 ---
 
 ## 2026-04-14 - US-004

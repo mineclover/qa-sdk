@@ -510,56 +510,55 @@ describe("OntologyRegistryService", () => {
     ).toEqual(expect.objectContaining({ status: "reserved" }));
   });
 
-  it("syncs active allocations to PrefixRegistry with explicit preconditions", async () => {
+  it("returns a deferred prefix sync report for active allocations only", async () => {
     const service = new OntologyRegistryService({
       store: new InMemoryOntologyRegistryStore(),
     });
     const prefixRegistry = new InMemoryPrefixRegistry();
+    const indexMetaGet = vi.spyOn(prefixRegistry, "getRecord");
+    const indexMetaRegister = vi.spyOn(prefixRegistry, "register");
     await service.reserveAddressSpace({ pack: validPack });
 
     const reservedSyncError = await captureServiceError(
-      service.syncToPrefixRegistry({
-        allocationId: "authorization-ontology:authorization-resource:v1",
-        prefixRegistry,
-      }),
+      service.syncToPrefixRegistry("authorization-ontology:authorization-resource:v1"),
     );
     expect(reservedSyncError.conflict).toEqual(
       expect.objectContaining({
         code: "sync-precondition-failure",
         reason: "allocation-not-active",
+        status: "reserved",
+      }),
+    );
+
+    const missingSyncError = await captureServiceError(
+      service.syncToPrefixRegistry("missing"),
+    );
+    expect(missingSyncError.conflict).toEqual(
+      expect.objectContaining({
+        code: "missing-allocation",
+        allocationId: "missing",
       }),
     );
 
     await service.activateAllocation({
       allocationId: "authorization-ontology:authorization-resource:v1",
     });
-    const synced = await service.syncToPrefixRegistry({
+    const report = await service.syncToPrefixRegistry({
       allocationId: "authorization-ontology:authorization-resource:v1",
-      prefixRegistry,
     });
-    expect(synced).toEqual(
-      expect.objectContaining({
-        synced: true,
-        prefixRecord: {
-          prefix: "authorization_ontology_authorization_resource",
-          versionId: "v1",
-          capacity: 8,
-        },
-      }),
-    );
-    expect(
-      await prefixRegistry.getRecord(
-        "authorization_ontology_authorization_resource",
-        "v1",
-      ),
-    ).toEqual(synced.prefixRecord);
 
-    await expect(
-      service.syncToPrefixRegistry({
-        allocationId: "authorization-ontology:authorization-resource:v1",
-        prefixRegistry,
-      }),
-    ).resolves.toEqual(expect.objectContaining({ synced: false }));
+    expect(report).toEqual({
+      allocationId: "authorization-ontology:authorization-resource:v1",
+      prefix: "authorization_ontology_authorization_resource",
+      versionId: "v1",
+      taxonomyId: "authorization-resource",
+      status: "active",
+      syncStatus: "deferred",
+      deferredReason: "phase-4-index-meta-sync-not-implemented",
+    });
+    expect(indexMetaGet).not.toHaveBeenCalled();
+    expect(indexMetaRegister).not.toHaveBeenCalled();
+    expect(await prefixRegistry.listAll()).toEqual([]);
   });
 });
 

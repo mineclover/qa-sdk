@@ -1,7 +1,3 @@
-import type {
-  PrefixRegistry,
-  PrefixRegistryRecord,
-} from "index-meta";
 import {
   operationalOntologyAllocationPlane,
   type OntologyAddressAllocationIssue,
@@ -88,14 +84,16 @@ export interface ActivateAllocationResult {
 
 export interface SyncToPrefixRegistryInput {
   readonly allocationId: string;
-  readonly prefixRegistry: Pick<PrefixRegistry, "getRecord" | "register">;
 }
 
 export interface SyncToPrefixRegistryResult {
-  readonly allocation: OntologyAddressAllocationRecord;
-  readonly prefixRecord: PrefixRegistryRecord;
-  readonly synced: boolean;
-  readonly reason?: "already-synced";
+  readonly allocationId: string;
+  readonly prefix: string;
+  readonly versionId: string;
+  readonly taxonomyId: string;
+  readonly status: "active";
+  readonly syncStatus: "deferred";
+  readonly deferredReason: "phase-4-index-meta-sync-not-implemented";
 }
 
 export type OntologyRegistryServiceErrorCode =
@@ -166,8 +164,7 @@ export interface OntologyPrefixSyncPreconditionFailureConflict
   readonly reason: "allocation-not-active" | "prefix-registry-conflict";
   readonly prefix?: string;
   readonly versionId?: string;
-  readonly existing?: PrefixRegistryRecord;
-  readonly attempted?: PrefixRegistryRecord;
+  readonly status?: OntologyAddressAllocationRecord["status"];
 }
 
 export class OntologyRegistryServiceError extends Error {
@@ -311,9 +308,18 @@ export class OntologyRegistryService {
 
   async syncToPrefixRegistry(
     input: SyncToPrefixRegistryInput,
+  ): Promise<SyncToPrefixRegistryResult>;
+  async syncToPrefixRegistry(
+    allocationId: string,
+  ): Promise<SyncToPrefixRegistryResult>;
+  async syncToPrefixRegistry(
+    inputOrAllocationId: SyncToPrefixRegistryInput | string,
   ): Promise<SyncToPrefixRegistryResult> {
-    const allocation = await this.requireAllocation(input.allocationId);
-    const prefixRecord = toPrefixRegistryRecord(allocation);
+    const allocationId =
+      typeof inputOrAllocationId === "string"
+        ? inputOrAllocationId
+        : inputOrAllocationId.allocationId;
+    const allocation = await this.requireAllocation(allocationId);
     if (allocation.status !== "active") {
       throw new OntologyRegistryServiceError({
         code: "sync-precondition-failure",
@@ -322,54 +328,18 @@ export class OntologyRegistryService {
         reason: "allocation-not-active",
         prefix: allocation.prefix,
         versionId: allocation.versionId,
-        attempted: prefixRecord,
-      });
-    }
-
-    const existing = await input.prefixRegistry.getRecord(
-      allocation.prefix,
-      allocation.versionId,
-    );
-    if (existing) {
-      if (samePrefixRegistryRecord(existing, prefixRecord)) {
-        return {
-          allocation,
-          prefixRecord: existing,
-          synced: false,
-          reason: "already-synced",
-        };
-      }
-
-      throw new OntologyRegistryServiceError({
-        code: "sync-precondition-failure",
-        message: `Prefix registry already has a conflicting record for "${allocation.prefix}/${allocation.versionId}"`,
-        allocationId: allocation.allocationId,
-        reason: "prefix-registry-conflict",
-        prefix: allocation.prefix,
-        versionId: allocation.versionId,
-        existing,
-        attempted: prefixRecord,
-      });
-    }
-
-    try {
-      await input.prefixRegistry.register(prefixRecord);
-    } catch (error) {
-      throw new OntologyRegistryServiceError({
-        code: "sync-precondition-failure",
-        message: `Prefix registry sync failed for "${allocation.prefix}/${allocation.versionId}": ${formatUnknownError(error)}`,
-        allocationId: allocation.allocationId,
-        reason: "prefix-registry-conflict",
-        prefix: allocation.prefix,
-        versionId: allocation.versionId,
-        attempted: prefixRecord,
+        status: allocation.status,
       });
     }
 
     return {
-      allocation,
-      prefixRecord,
-      synced: true,
+      allocationId: allocation.allocationId,
+      prefix: allocation.prefix,
+      versionId: allocation.versionId,
+      taxonomyId: allocation.taxonomyId,
+      status: allocation.status,
+      syncStatus: "deferred",
+      deferredReason: "phase-4-index-meta-sync-not-implemented",
     };
   }
 
@@ -506,16 +476,6 @@ function toWriteSet(
   };
 }
 
-function toPrefixRegistryRecord(
-  allocation: OntologyAddressAllocationRecord,
-): PrefixRegistryRecord {
-  return {
-    prefix: allocation.prefix,
-    versionId: allocation.versionId,
-    capacity: allocation.capacity,
-  };
-}
-
 function mapStoreReservationError(
   error: unknown,
   packId: string,
@@ -624,19 +584,6 @@ function allocationMatchesKey(
   );
 }
 
-function samePrefixRegistryRecord(
-  left: PrefixRegistryRecord,
-  right: PrefixRegistryRecord,
-): boolean {
-  return (
-    left.prefix === right.prefix &&
-    left.versionId === right.versionId &&
-    left.capacity === right.capacity &&
-    (left.refs?.length ?? 0) === 0 &&
-    (right.refs?.length ?? 0) === 0
-  );
-}
-
 function missingAllocation(allocationId: string): OntologyRegistryServiceError {
   return new OntologyRegistryServiceError({
     code: "missing-allocation",
@@ -678,8 +625,4 @@ function duplicateActiveAllocation(
       },
     ],
   });
-}
-
-function formatUnknownError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }

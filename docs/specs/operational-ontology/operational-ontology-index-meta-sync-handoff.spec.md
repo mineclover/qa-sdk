@@ -64,6 +64,24 @@ Only active allocation may be sent to index-meta. The future sync adapter must r
 
 The sync adapter must not infer this data from index-meta. Registry-service owns allocation lifecycle and must pass the validated active allocation bundle as the source of truth.
 
+## Phase 3 Deferred Sync Report Shape
+
+Until Phase 4 implements real index-meta materialization, `OntologyRegistryService.syncToPrefixRegistry(allocationId)` is a precondition/report shell. It checks that the allocation exists and has `status: "active"`, but it does not write `prefix_registry`, `schema_version`, `prefix_ref`, entries, or segment materialization rows.
+
+The Phase 3 report payload is the stable handoff shell:
+
+| field | value |
+|-------|-------|
+| `allocationId` | source `ontology_address_allocation.allocation_id` |
+| `prefix` | source allocation prefix intended for future `prefix_registry.prefix` |
+| `versionId` | source allocation version intended for future `prefix_registry.version_id` and `schema_version.version_id` |
+| `taxonomyId` | source allocation taxonomy id |
+| `status` | always `"active"` for successful reports |
+| `syncStatus` | `"deferred"` to indicate real index-meta sync is intentionally not implemented in Phase 3 |
+| `deferredReason` | `"phase-4-index-meta-sync-not-implemented"` |
+
+Missing allocations return the registry-service `missing-allocation` error. Reserved or deprecated allocations return `sync-precondition-failure` with reason `allocation-not-active`. Phase 4 may replace the deferred implementation behind this same method only after adding the materialization, idempotency, collision, and smoke checks below.
+
 ## Product Allocation Mapping
 
 `addressModel: "product"` can be represented with the current index-meta prefix DAG.
