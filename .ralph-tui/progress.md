@@ -109,3 +109,16 @@ after each iteration and it's included in prompts for context.
   - Success payload assertions are most useful on the multi-allocation path because they prove `syncSummariesByAllocationId` grouping instead of just a single report mirror.
   - Unknown infrastructure failures should be converted to generic activation issues with `phase`, code, allocation identifiers, and error name only; raw SQL strings stay out of the payload.
 ---
+
+## 2026-04-14 - US-009
+- Reflected Phase 5 activation smoke completion in the registry allocation TODO, including helper flow, product/sum smoke scope, no-write coverage, result payload summaries, and final verification commands.
+- Updated the registry allocation spec with `OntologyPackActivationHelper` as the completed Phase 5 surface, documenting its service-port-only orchestration, all-allocation activation path, product/sum smoke responsibilities, and raw-plus-summary result payload.
+- Updated the index-meta sync handoff to clarify that the sync adapter owns post-sync readbacks while the activation helper owns activation-level smoke assembly and must not query stores or SQL directly.
+- Updated the lifecycle master PRD so Phase 5 is final and Phase 6 remains policy-only unless a scoped-prefix decision PRD is created.
+- Files changed: `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md`, `docs/specs/operational-ontology/operational-ontology-registry-allocation.spec.md`, `docs/specs/operational-ontology/operational-ontology-index-meta-sync-handoff.spec.md`, `tasks/prd-ontology-registry-allocation-lifecycle-master.md`, `.ralph-tui/progress.md`.
+- Verification passed: `pnpm --filter registry-service test`, `pnpm --filter registry-service typecheck`, `pnpm --filter registry-service build`, `pnpm --filter index-meta test`, `pnpm --filter index-meta typecheck`, `pnpm --filter index-meta build`, `pnpm --filter operational-ontology test -- allocation`, `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - The completed Phase 5 docs should describe activation as helper-level orchestration over `OntologyRegistryService`, while keeping Phase 4 sync responsible only for materialization reports and post-sync readbacks.
+  - Public activation consumers should be pointed at derived summaries instead of requiring them to infer grouping from raw registry and sync reports.
+  - Scoped prefix remains explicitly outside this lifecycle; reopening it needs the scoped-prefix decision gate plus a new PRD/ADR.
+---

@@ -32,6 +32,7 @@ sources:
   - packages/registry-service/src/modules/ontology/index-meta-sync.adapter.ts
   - packages/registry-service/src/modules/ontology/index-meta-sync.adapter.test.ts
   - packages/registry-service/src/modules/ontology/ontology-registry.service.ts
+  - packages/registry-service/src/modules/ontology/ontology-activation.helper.ts
   - packages/registry-service/src/modules/ontology/ontology.module.ts
 ---
 
@@ -39,19 +40,19 @@ sources:
 
 ## 목적 ^purpose
 
-Define the implemented handoff contract `OntologyRegistryService.syncToPrefixRegistry()` uses when an active ontology allocation is materialized into index-meta prefix registry and schema version records. The goal is to keep the sync input, product/sum mapping, idempotency, collision behavior, report shape, and Phase 5 smoke check surface explicit now that Phase 4 sync is complete.
+Define the implemented handoff contract `OntologyRegistryService.syncToPrefixRegistry()` uses when an active ontology allocation is materialized into index-meta prefix registry and schema version records. The goal is to keep the sync input, product/sum mapping, idempotency, collision behavior, report shape, and activation smoke check surface explicit now that Phase 4 sync and Phase 5 helper consumption are complete.
 
 ## 구성 ^overview
 
-This document is the Phase 4 implementation contract for index-meta sync and the Phase 5 input for activation smoke.
+This document is the Phase 4 implementation contract for index-meta sync and the Phase 5 input consumed by activation smoke.
 
 - **Sync input** - the active allocation bundle registry-service passes to the ontology sync adapter.
 - **Materialization mapping** - how product allocation, sum allocation, and segment records map to current index-meta records and report sidecars.
 - **Report shape** - real `synced`/`blocked` reports plus explicit deferred fake shape for tests.
 - **Idempotency and collisions** - retry, partial repair, preflight, and existing-prefix behavior.
-- **Activation smoke surface** - post-sync readback fields Phase 5 can consume without reimplementing sync validation.
+- **Activation smoke surface** - post-sync readback fields the activation helper consumes without reimplementing sync validation.
 
-This contract does not add REST routes, CLI commands, scoped prefix behavior, an index-meta segment table, eager product entries, or a Phase 5 activation helper.
+This contract does not add REST routes, CLI commands, scoped prefix behavior, an index-meta segment table, eager product entries, or activation orchestration inside the sync adapter.
 
 ## Active Allocation Sync Input ^defines
 
@@ -178,27 +179,29 @@ Registry-service blocks known lifecycle collisions before calling index-meta syn
 
 ## Post-Sync Smoke-Level Checks
 
-Phase 4 reports post-sync readbacks but does not implement the Phase 5 activation helper. A successful `synced` report provides:
+Phase 4 reports post-sync readbacks. Phase 5 activation smoke consumes those readbacks through `OntologyPackActivationHelper`; the sync adapter still does not perform pack activation orchestration.
+
+A successful `synced` report provides:
 
 1. `targetRecords[]`: for every intended target, whether prefix registry record exists, whether prefix capacity matches, whether schema version exists, and whether schema capacity matches.
 2. Product allocation checks: expected ordered axis capacities, actual `PrefixRegistry.getShape(prefix, versionId)`, shape match flag, last-valid address resolver check at `capacity - 1`, and out-of-range resolver check at `capacity`.
 3. Sum allocation checks: sidecar `coveragePolicy`, allocation range, covered size, segment list, and exact allocation range coverage flag.
 
-These fields are sufficient for Phase 5 smoke checks over the Phase 4 materialization surface: active allocation status can be checked in registry-service, target prefix/schema presence and capacity are in `targetRecords[]`, product decode bounds are in `productAllocation`, and sum segment coverage is in `sumAllocation`. Phase 5 must not assert axis `valuesHash` reproduction unless a future story implements axis-value entry materialization in index-meta.
+Activation-level responsibility split:
 
-Phase 5 activation smoke remains open and must still prove:
+- `OntologyIndexMetaSyncAdapter` owns target prefix/schema readbacks, product shape/resolver checks, sum sidecar coverage, idempotency, and drift/collision reporting.
+- `OntologyPackActivationHelper` owns source allocation active-status assertions, conversion of blocked sync reports into activation errors, conversion of deferred reports into warnings, per-allocation smoke check assembly, and aggregate smoke summaries.
+- No helper-level smoke check should query prefix registry stores, index-meta stores, or SQL directly. Tests may use store APIs and SQL table counts only as no-write evidence for invalid or blocked paths.
 
-1. The source allocation status is `active` and local allocation validation result has no errors.
-2. Valid pack activation produces active allocation plus sync success.
-3. Invalid pack leaves no partial registry rows.
-4. Duplicate prefix/version activation is blocked.
-5. Activation result payload includes namespace, allocation, sync, warning, and error summaries.
-6. If axis-value entries are requested by a future story, every axis leaf prefix has one-based entry positions matching ordered axis values and stored values reproduce the handoff `valuesHash`.
-7. No `address_state_cache` assertion is required for Phase 4.
+These fields are sufficient for activation smoke over the Phase 4 materialization surface: active allocation status is checked from registry-service activation results, target prefix/schema presence and capacity are in `targetRecords[]`, product decode bounds are in `productAllocation`, and sum segment coverage is in `sumAllocation`.
+
+Activation smoke must not assert axis `valuesHash` reproduction unless a future story implements axis-value entry materialization in index-meta. If axis-value entries are requested later, every axis leaf prefix must define one-based entry positions matching ordered axis values and stored values must reproduce the handoff `valuesHash`.
+
+No `address_state_cache` or `address_range_cache` assertion is required for Phase 4 sync or Phase 5 activation smoke.
 
 ## Non-Goals
 
-- No Phase 5 activation helper.
+- No activation orchestration inside the sync adapter.
 - No registry-service controller, REST route, or CLI command.
 - No new index-meta segment table, resolver, migration, or `prefix_ref` semantics.
 - No eager product-combination entry materialization.

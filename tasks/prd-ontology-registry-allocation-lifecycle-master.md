@@ -3,14 +3,15 @@
 
 ## Overview
 
-This master PRD tracks the remaining registry allocation lifecycle after the completed local allocation model, Phase 2A persistence schema, Phase 2B store adapter, Phase 3 service layer, and Phase 4 index-meta sync work. It is not the direct ralph-tui execution file. Each phase gets its own execution PRD and JSON. When a phase PRD closes, review the completed implementation and adjust the next phase PRD before running it.
+This master PRD tracks the registry allocation lifecycle after the completed local allocation model, Phase 2A persistence schema, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, and Phase 5 activation smoke work. It is not the direct ralph-tui execution file. Each implementation phase gets its own execution PRD and JSON. The remaining roadmap is Phase 6 policy-only unless a scoped-prefix decision PRD is created.
 
 ## Goals
 
-- Keep the completed Phase 2B through Phase 4 history and remaining Phase 5 roadmap visible in one place.
+- Keep the completed Phase 2B through Phase 5 history and remaining Phase 6 policy-only state visible in one place.
 - Preserve phase boundaries so ralph-tui agents do not mix store, service, sync, and activation responsibilities.
 - Make every phase consume the contracts completed by the previous phase.
 - Require review and PRD adjustment between phases.
+- Keep scoped prefix implementation out of scope unless a new decision PRD reopens it.
 
 ## Quality Gates
 
@@ -108,26 +109,28 @@ No browser verification is required.
 - `tasks/prd-ontology-registry-activation-smoke.md`
 - `tasks/prd-ontology-registry-activation-smoke.json`
 
+**Status:** Completed through US-009. The current behavior is documented in `operational-ontology-registry-allocation.spec.md`, `operational-ontology-index-meta-sync-handoff.spec.md`, and `operational-ontology-registry-allocation.todo.md`.
+
 **Inputs:**
 - Phase 3 service layer
 - Phase 4 sync behavior
 - `OntologyIndexMetaSyncMaterializationReport.postSyncChecks`
 
-**Next PRD Start Rule:**
-- The Phase 5 execution PRD must start with a review/adjustment story for the completed Phase 4 implementation.
-- Do not edit `tasks/prd-ontology-registry-index-meta-sync.json` after a ralph-tui run has started; carry any newly discovered Phase 4 assumptions into the first Phase 5 story instead.
-- The first Phase 5 story must reconcile the Phase 4 handoff statement about axis `valuesHash` drift with the actual index-meta materialization surface.
-
 **Exit Criteria:**
-- `activateOntologyPack(pack, options)` or equivalent helper exists.
-- Valid pack produces active allocation and index-meta resolve/decode smoke success.
-- Invalid pack leaves no partial registry rows.
-- Duplicate prefix/version activation is blocked.
-- Activation result payload includes namespace, allocation, sync, warning, and error summaries.
+- `OntologyPackActivationHelper` and `activateOntologyPack(pack, options)` exist under the ontology module boundary.
+- Valid pack activation is an all-allocation path: registration validates before reservation, then every returned allocation is activated, synced, and smoke checked.
+- Product activation smoke uses post-sync target records, ordered shape checks, and resolver bounds checks from Phase 4 reports.
+- Sum activation smoke uses only leaf prefix/schema capacity and exact-allocation-range sidecar coverage from Phase 4 reports.
+- Invalid pack and invalid allocation-plan activation leave no partial registry rows or index-meta rows.
+- Duplicate prefix/version activation is blocked before allocation status mutation and before index-meta sync writes.
+- Blocked sync activation preserves existing index-meta records and reports relevant drift collisions.
+- Activation result payload includes raw namespace/allocation/sync/smoke detail plus `namespaceSummary`, `allocationSummaries`, `syncSummariesByAllocationId`, `smokeCheckSummary`, warnings, and errors.
 
 ### Phase 6: Prefix Policy
 
 **Goal:** Keep scoped prefix schema changes frozen unless concrete need is proven.
+
+**Status:** Policy-only. No scoped prefix implementation is selected. Global `(prefix, versionId)` uniqueness remains the active registry-service/index-meta/decode key policy.
 
 **Inputs:**
 - `operational-ontology-scoped-prefix-decision.spec.md`
@@ -147,6 +150,8 @@ After each execution PRD closes:
 - If the next phase PRD already started running, do not edit that active PRD; put the adjustment in the first story of the following phase PRD.
 - Record the next execution PRD path in this master roadmap before handing it to ralph-tui.
 
+After Phase 5, there is no next implementation PRD in this lifecycle. Phase 6 can only reopen through the scoped-prefix decision gate and a new decision PRD.
+
 ## Non-Goals
 
 - Running this master PRD directly with ralph-tui.
@@ -155,5 +160,5 @@ After each execution PRD closes:
 
 ## Open Questions
 
-- Should activation smoke use an existing registry-service module or a new ontology module boundary?
+- None for the completed Phase 5 lifecycle. Activation smoke uses the existing registry-service ontology module boundary.
 [/PRD]

@@ -23,7 +23,7 @@ def:
 
 operational ontology schema를 registry-service의 ontology-aware registry/allocator로 승격하기 위한 구현 항목을 추적한다. 목표는 완료된 DB 독립 allocation model 다음에 registry-service persistence, service layer, index-meta sync, pack activation flow를 순서대로 닫는 것이다.
 
-완료된 local allocation model, validation issue target, validation boundary, matrix, graph requirement, Phase 2A persistence schema, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, persistence/index-meta handoff, scoped prefix decision은 `operational-ontology-registry-allocation` spec에 반영됐다. 이 TODO는 Phase 5 이후의 미구현 activation 작업을 추적한다.
+완료된 local allocation model, validation issue target, validation boundary, matrix, graph requirement, Phase 2A persistence schema, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, Phase 5 activation smoke, persistence/index-meta handoff, scoped prefix decision은 `operational-ontology-registry-allocation` spec에 반영됐다. 이 TODO는 scoped prefix가 별도 decision PRD로 재개되기 전까지 남은 정책-only 항목을 명시한다.
 
 ## 실행 dependency map
 
@@ -33,7 +33,7 @@ operational ontology schema를 registry-service의 ontology-aware registry/alloc
 - Phase 3 service layer는 Phase 2B store contract와 Phase 1 allocation validator를 소비해 완료됐다. Phase 4 이후 `syncToPrefixRegistry()`는 active allocation bundle을 수집한 뒤 ontology index-meta sync adapter에 위임한다.
 - Phase 3은 pack validation, address reservation, allocation activation workflow를 service boundary로 조율한다. Phase 2B store transaction은 complete allocation plan write를 원자화하고, service layer는 local validation no-write, reserved-only activation, active prefix/version collision guard를 담당한다.
 - Phase 4 index-meta sync는 active allocation contract를 소비해 완료됐다. Phase 4의 표현 방식 결정은 Phase 2A/2B persistence schema를 역으로 변경하지 않는다.
-- Phase 5 activation smoke는 Phase 3 service layer와 Phase 4 sync report/post-sync check surface를 먼저 필요로 한다. full prefix registry resolve/decode smoke는 Phase 4 완료 상태에서 실행한다.
+- Phase 5 activation smoke는 완료됐다. Helper는 Phase 3 service layer와 Phase 4 sync report/post-sync check surface만 소비하고, prefix registry store나 SQL에 직접 접근하지 않는다.
 - Phase 6 prefix policy는 schema 변경 전 결정 gate다. prefix table schema 변경은 Phase 6 결정 전까지 금지하지만 Phase 2A/2B의 `ontology_address_allocation` collision guard는 진행 가능하다.
 
 ## Phase 1: Operational schema allocation model — 완료
@@ -239,7 +239,7 @@ US-009 completion notes:
 - Product allocation은 namespace/axis 기반 deterministic axis leaf prefix, taxonomy `axisIds` 순서의 composite allocation prefix refs, matching schema version records를 materialize한다. Product segment는 parent shape evidence로 검증하고 별도 segment row를 쓰지 않는다.
 - Sum allocation은 allocation prefix/schema만 leaf target으로 materialize하고 segment ranges는 `coveragePolicy: "exact-allocation-range"` sidecar report로 보존한다. `prefix_ref` rows는 index-meta segment model이 생길 때까지 deferred semantics로 남긴다.
 - Sync는 전체 intended prefix/schema target set을 먼저 preflight한다. Existing matching records는 idempotent, safe partial target은 repaired, capacity/refs/schema/segment coverage drift는 blocked report로 반환하며 missing write를 진행하지 않는다.
-- Phase 4 smoke-level readback은 report의 `postSyncChecks`로 제공한다. Product는 target prefix/schema 존재, ordered shape, last-valid/capacity resolver checks를 보고하고 sum은 sidecar exact coverage를 보고한다. Phase 5 activation helper는 아직 구현하지 않는다.
+- Phase 4 smoke-level readback은 report의 `postSyncChecks`로 제공한다. Product는 target prefix/schema 존재, ordered shape, last-valid/capacity resolver checks를 보고하고 sum은 sidecar exact coverage를 보고한다. Phase 5 activation helper는 이 surface를 소비하되 Phase 4 sync adapter 내부에 activation orchestration을 넣지 않는다.
 
 - [x] `operational-ontology-index-meta-sync-handoff`로 handoff-only sync contract 작성
 - [x] active allocation → `index-meta.prefix_registry` 등록
@@ -261,7 +261,7 @@ US-009 completion notes:
 - [x] `schema_version` capacity drift 감지 테스트 추가
 - [x] `address_state_cache` 계산은 후속 validation phase로 보류
 
-## Phase 5: Activation smoke
+## Phase 5: Activation smoke — 완료
 
 Goal: pack activation helper와 smoke checks로 valid/invalid/duplicate lifecycle 결과를 끝까지 검증한다.
 
@@ -275,31 +275,43 @@ Prerequisites:
 
 Validation commands:
 
-- `pnpm --filter operational-ontology test`
 - `pnpm --filter registry-service test`
+- `pnpm --filter registry-service typecheck`
+- `pnpm --filter registry-service build`
 - `pnpm --filter index-meta test`
-- `pnpm --filter operational-ontology typecheck`
+- `pnpm --filter index-meta typecheck`
+- `pnpm --filter index-meta build`
+- `pnpm --filter operational-ontology test -- allocation`
 - `node packages/cli/dist/index.js def validate`
 
-- [ ] end-to-end helper 정의: `activateOntologyPack(pack, options)`
-- [ ] flow 단계 고정
-  - [ ] pack validation
-  - [ ] namespace upsert
-  - [ ] axis/taxonomy registration
-  - [ ] address allocation reservation
-  - [ ] allocation activation
-  - [ ] index-meta sync
-  - [ ] smoke resolve/decode
-- [ ] activation smoke 테스트: valid pack → allocation active → prefix registry resolve
-- [ ] activation smoke 테스트: invalid pack → no allocation persisted
-- [ ] activation smoke 테스트: duplicate prefix → blocked
-- [ ] activation result payload 정의
-  - [ ] namespace record
-  - [ ] allocation records
-  - [ ] index-meta sync summary
-  - [ ] warnings/errors
-- [ ] registry audit/report에 allocation drift 항목 추가
-- [ ] operational-ontology pack registry와 registry-service activation flow 연결 문서화
+US-009 completion notes:
+
+- `OntologyPackActivationHelper`는 ontology module provider로 노출되며 `registerOntologyPack`, `activateAllocation`, `syncToPrefixRegistry` service port만 호출한다.
+- Valid pack activation은 `registerOntologyPack()`이 반환한 모든 allocation을 `reserved -> active`로 전이한 뒤 allocation별 index-meta sync와 smoke checks를 실행한다.
+- Product smoke는 allocation active status, intended product prefix record readback, schema-version/prefix capacity agreement, ordered product shape, last-valid resolver, capacity out-of-range resolver를 검증한다.
+- Sum smoke는 allocation active status, sum leaf prefix/schema capacity, `postSyncChecks.sumAllocation` exact-allocation-range sidecar coverage만 검증한다. Product shape/resolver smoke는 sum segment에 재사용하지 않는다.
+- Invalid pack/invalid allocation-plan no-write와 blocked sync no-write는 real `OntologyRegistryService` + memory/SQL backend matrix로 검증하며, registry rows는 store APIs, SQL index-meta rows는 table counts로 확인한다.
+- Activation payload는 raw `namespaceRecord`, `allocations`, `activationStatuses`, `syncReports`, `smokeChecks`를 보존하고 public summary용 `namespaceSummary`, `allocationSummaries`, `syncSummariesByAllocationId`, `smokeCheckSummary`, `warnings`, `errors`를 함께 노출한다.
+
+- [x] end-to-end helper 정의: `activateOntologyPack(pack, options)`
+- [x] flow 단계 고정
+  - [x] pack validation
+  - [x] namespace record write
+  - [x] axis/taxonomy registration
+  - [x] address allocation reservation
+  - [x] allocation activation
+  - [x] index-meta sync
+  - [x] smoke resolve/decode
+- [x] activation smoke 테스트: valid pack → allocation active → prefix registry/post-sync smoke
+- [x] activation smoke 테스트: invalid pack → no allocation persisted
+- [x] activation smoke 테스트: duplicate prefix → blocked
+- [x] activation result payload 정의
+  - [x] namespace record
+  - [x] allocation records
+  - [x] index-meta sync summary
+  - [x] warnings/errors
+- [x] activation issue/report에 allocation drift context 추가
+- [x] operational-ontology pack registry와 registry-service activation flow 연결 문서화
 
 ## Phase 6: Prefix policy
 
@@ -338,14 +350,15 @@ Validation commands:
 
 ## Cross-phase 검증
 
-- [ ] `pnpm --filter operational-ontology test -- allocation`
-- [ ] `pnpm --filter operational-ontology typecheck`
-- [ ] `pnpm --filter operational-ontology build`
-- [ ] `pnpm --filter registry-service test`
-- [ ] `pnpm --filter index-meta test`
-- [ ] `pnpm --filter @qa-sdk/cli typecheck`
-- [ ] `node packages/cli/dist/index.js def validate`
+- [x] `pnpm --filter registry-service test`
+- [x] `pnpm --filter registry-service typecheck`
+- [x] `pnpm --filter registry-service build`
+- [x] `pnpm --filter index-meta test`
+- [x] `pnpm --filter index-meta typecheck`
+- [x] `pnpm --filter index-meta build`
+- [x] `pnpm --filter operational-ontology test -- allocation`
+- [x] `node packages/cli/dist/index.js def validate`
 
 ## 다음 구현 기준
 
-다음 단계는 Phase 5 activation smoke부터 시작한다. Phase 2A schema/migration/snapshot, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync는 완료됐지만 prefix global uniqueness는 깨지지 않는다. `ontology_address_allocation`의 collision guard와 Phase 4 post-sync check report를 유지한 뒤, Phase 5 activation helper/smoke를 구현한다. scoped prefix는 `operational-ontology-scoped-prefix-decision`의 concrete need gate를 통과하는 경우에만 별도 implementation ADR로 진행한다.
+Phase 5 activation smoke까지 완료됐다. Phase 2A schema/migration/snapshot, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, Phase 5 activation helper/smoke는 prefix global uniqueness를 깨지 않는다. 다음 구현은 현재 없다. scoped prefix는 `operational-ontology-scoped-prefix-decision`의 concrete need gate를 통과하고 새 decision PRD/implementation ADR이 생성되는 경우에만 별도 진행한다.
