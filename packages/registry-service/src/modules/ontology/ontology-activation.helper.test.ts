@@ -633,6 +633,172 @@ describe('OntologyPackActivationHelper', () => {
     expect(JSON.stringify(result)).not.toMatch(/SQLITE_CONSTRAINT|INSERT INTO|prefix_registry/);
   });
 
+  it('keeps earlier active/synced allocations and skips later allocations after a blocked sync without rollback', async () => {
+    const namespace = namespaceRecord();
+    const firstReserved = allocationRecord({ status: 'reserved' });
+    const secondReserved = {
+      ...allocationRecord({ status: 'reserved' }),
+      allocationId: 'authz-runtime:authorization-decision:v2',
+      taxonomyId: 'authorization-decision',
+      prefix: 'authz_runtime_decision',
+      capacity: 4,
+      addressSize: 4,
+    };
+    const thirdReserved = {
+      ...allocationRecord({ status: 'reserved' }),
+      allocationId: 'authz-runtime:authorization-extra:v2',
+      taxonomyId: 'authorization-extra',
+      prefix: 'authz_runtime_extra',
+      capacity: 2,
+      addressSize: 2,
+    };
+    const firstActive = { ...firstReserved, status: 'active' as const };
+    const secondActive = { ...secondReserved, status: 'active' as const };
+    const firstSyncReport = syncedReport(firstActive);
+    const blockedSyncReport: OntologyIndexMetaSyncReport = {
+      allocationId: secondActive.allocationId,
+      prefix: secondActive.prefix,
+      versionId: secondActive.versionId,
+      taxonomyId: secondActive.taxonomyId,
+      status: 'active',
+      syncStatus: 'blocked',
+      materializedRecords: [],
+      idempotentRecords: [],
+      repairedRecords: [],
+      deferredSemantics: [],
+      postSyncChecks: { targetRecords: [] },
+      collisions: [
+        {
+          code: 'prefix-capacity-drift',
+          message: 'existing prefix capacity does not match intended allocation',
+          record: {
+            kind: 'prefix-registry',
+            role: 'allocation-prefix',
+            prefix: secondActive.prefix,
+            versionId: secondActive.versionId,
+            capacity: secondActive.capacity,
+          },
+          existing: {
+            prefix: secondActive.prefix,
+            versionId: secondActive.versionId,
+            capacity: 99,
+          },
+          intended: {
+            prefix: secondActive.prefix,
+            versionId: secondActive.versionId,
+            capacity: secondActive.capacity,
+          },
+        },
+      ],
+    };
+    const registryService = {
+      registerOntologyPack: vi.fn(async () => ({
+        packId: 'authorization-ontology',
+        ontologyId: 'authz-runtime',
+        validation: operationalOntologyPackPlane.validateOperationalOntologyPack(validPack),
+        allocationValidation: { valid: true, issues: [] },
+        plan: {
+          namespace,
+          axes: [],
+          taxonomies: [],
+          allocations: [firstReserved, secondReserved, thirdReserved],
+          segments: [],
+          validation: { valid: true, issues: [] },
+        },
+        allocations: [firstReserved, secondReserved, thirdReserved],
+      })),
+      activateAllocation: vi.fn(async ({ allocationId }: { allocationId: string }) => {
+        if (allocationId === firstReserved.allocationId) {
+          return { allocation: firstActive };
+        }
+        if (allocationId === secondReserved.allocationId) {
+          return { allocation: secondActive };
+        }
+        throw new Error(`Unexpected activation for ${allocationId}`);
+      }),
+      syncToPrefixRegistry: vi.fn(async ({ allocationId }: { allocationId: string }) => {
+        if (allocationId === firstActive.allocationId) {
+          return firstSyncReport;
+        }
+        if (allocationId === secondActive.allocationId) {
+          return blockedSyncReport;
+        }
+        throw new Error(`Unexpected sync for ${allocationId}`);
+      }),
+    } satisfies OntologyPackActivationRegistryServicePort;
+
+    const result = await activateOntologyPack(registryService, validPack, {
+      ontologyId: 'authz-runtime',
+      namespace: 'authz',
+      versionId: 'v2',
+    });
+
+    expect(result.status).toBe('failed');
+    expect(registryService.activateAllocation).toHaveBeenCalledTimes(2);
+    expect(registryService.syncToPrefixRegistry).toHaveBeenCalledTimes(2);
+    expect(result.allocations).toEqual([firstActive, secondActive, thirdReserved]);
+    expect(result.activationStatuses).toEqual([
+      {
+        allocationId: firstActive.allocationId,
+        taxonomyId: firstActive.taxonomyId,
+        prefix: firstActive.prefix,
+        versionId: firstActive.versionId,
+        status: 'active',
+        activationStatus: 'active',
+        syncStatus: 'synced',
+      },
+      {
+        allocationId: secondActive.allocationId,
+        taxonomyId: secondActive.taxonomyId,
+        prefix: secondActive.prefix,
+        versionId: secondActive.versionId,
+        status: 'active',
+        activationStatus: 'sync-blocked',
+        syncStatus: 'blocked',
+      },
+      {
+        allocationId: thirdReserved.allocationId,
+        taxonomyId: thirdReserved.taxonomyId,
+        prefix: thirdReserved.prefix,
+        versionId: thirdReserved.versionId,
+        status: 'reserved',
+        activationStatus: 'skipped',
+        syncStatus: 'skipped',
+      },
+    ]);
+    expect(result.syncReports).toEqual([firstSyncReport, blockedSyncReport]);
+    expect(result.errors).toEqual([
+      expect.objectContaining({
+        level: 'error',
+        phase: 'sync',
+        code: 'sync-blocked',
+        allocationId: secondActive.allocationId,
+        prefix: secondActive.prefix,
+        versionId: secondActive.versionId,
+      }),
+    ]);
+    expect(result.allocationSummaries).toEqual([
+      expect.objectContaining({
+        allocationId: firstActive.allocationId,
+        status: 'active',
+        activationStatus: 'active',
+        syncStatus: 'synced',
+      }),
+      expect.objectContaining({
+        allocationId: secondActive.allocationId,
+        status: 'active',
+        activationStatus: 'sync-blocked',
+        syncStatus: 'blocked',
+      }),
+      expect.objectContaining({
+        allocationId: thirdReserved.allocationId,
+        status: 'reserved',
+        activationStatus: 'skipped',
+        syncStatus: 'skipped',
+      }),
+    ]);
+  });
+
   it('activates a pack and returns namespace, allocation, sync, warning, and error payload fields', async () => {
     const store = new InMemoryOntologyRegistryStore();
     const prefixRegistry = new InMemoryPrefixRegistry();

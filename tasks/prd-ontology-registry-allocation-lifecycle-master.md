@@ -3,7 +3,7 @@
 
 ## Overview
 
-This master PRD tracks the registry allocation lifecycle after the completed local allocation model, Phase 2A persistence schema, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, and Phase 5 activation smoke work. It is not the direct ralph-tui execution file. Each implementation phase gets its own execution PRD and JSON. The remaining roadmap is Phase 6 policy-only unless a scoped-prefix decision PRD is created.
+This master PRD tracks the registry allocation lifecycle after the completed local allocation model, Phase 2A persistence schema, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, and Phase 5 activation smoke work. It is not the direct ralph-tui execution file. Each implementation phase gets its own execution PRD and JSON. The remaining lifecycle roadmap is Phase 6 policy-only unless a scoped-prefix decision PRD is created. Public/local follow-up surfaces are tracked separately and must not reopen the lifecycle phases.
 
 ## Goals
 
@@ -139,6 +139,27 @@ No browser verification is required.
 - No implementation is needed while global prefix uniqueness remains sufficient.
 - If scoped prefix support becomes necessary, create a separate implementation ADR and PRD before changing prefix table, API, index-meta key shape, or decode cache keys.
 
+### Post-Lifecycle Follow-up: Activation Evidence Persistence
+
+**Goal:** Persist successful local activation CLI results into the programming artifact registry as managed evidence.
+
+**Execution PRD:**
+- `tasks/prd-ontology-registry-activation-evidence-persistence.md`
+- `tasks/prd-ontology-registry-activation-evidence-persistence.json`
+
+**Status:** Planned follow-up outside the allocation lifecycle. This does not create Phase 6 implementation work and does not change scoped prefix policy.
+
+**Inputs:**
+- Completed activation CLI: `tasks/prd-ontology-registry-activation-cli.md`
+- `operational-ontology-registry-activation-cli.spec.md`
+- `programming-artifact-ontology-cli.spec.md`
+
+**Exit Criteria:**
+- `qa-sdk ontology registry activate-pack <pack-id> --output <file> --artifact-registry <registry>` appends successful activation evidence explicitly.
+- `--output` alone remains sidecar-only and does not append registry records.
+- Existing artifact registry validate/list/provider lookup can consume the activation evidence record.
+- REST activation endpoint, remote activation service, and scoped prefix support remain separate follow-ups.
+
 ## Operating Rule
 
 After each execution PRD closes:
@@ -150,7 +171,7 @@ After each execution PRD closes:
 - If the next phase PRD already started running, do not edit that active PRD; put the adjustment in the first story of the following phase PRD.
 - Record the next execution PRD path in this master roadmap before handing it to ralph-tui.
 
-After Phase 5, there is no next implementation PRD in this lifecycle. Phase 6 can only reopen through the scoped-prefix decision gate and a new decision PRD.
+After Phase 5, there is no next implementation PRD in this lifecycle. Phase 6 can only reopen through the scoped-prefix decision gate and a new decision PRD. Post-lifecycle public/local follow-ups may have their own PRDs, but they must not change registry allocation lifecycle semantics.
 
 ## Non-Goals
 
