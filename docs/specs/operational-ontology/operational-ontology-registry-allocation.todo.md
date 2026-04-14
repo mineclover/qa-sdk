@@ -85,6 +85,18 @@ Validation commands:
 - `pnpm --filter registry-service build`
 - `node packages/cli/dist/index.js def validate`
 
+US-001 implementation notes:
+
+- Inspected registry-service schema surfaces: `src/db/schema.ts` is the Drizzle table SSOT, `drizzle.config.ts` emits SQLite migrations to `./drizzle`, `src/bootstrap/stores.ts` applies `../../drizzle` migrations from the built/source package path when creating a SQL driver, and `tsup.config.ts` copies `drizzle` into `dist/` after build.
+- Existing tables use snake_case DB table/column names with camelCase TypeScript exports/properties. Primary keys are either single text `.primaryKey()` columns or natural composite `primaryKey({ columns: [...] })`; generated SQL names composite constraints as `<table>_pk`. Non-unique lookup indexes use `idx_<table>_<purpose>`.
+- Existing registry JSON payload columns are plain `text` columns named `*_json`; store code serializes with `JSON.stringify()` and parses with helpers such as `parseJsonColumn()`. Do not switch ontology persistence to Drizzle JSON mode unless a separate story changes the registry-service convention.
+- Timestamps are text ISO strings owned by application/store code. Mutable records commonly have `updated_at`; lifecycle/versioned records use `created_at` plus `updated_at`, and lifecycle transition timestamps are nullable text columns such as `published_at`, `deprecated_at`, and `archived_at`.
+- Lifecycle/status fields are plain text enums (`status`, `state`, future `lifecycle`) with Drizzle `check(...)` declarations named `chk_<table>_<field>`. New ontology tables should generate enum checks in the table-creation migration and SQL tests should verify important collision constraints.
+- Existing schema does not use DB foreign-key references. For Phase 2A, keep referenced-axis/allocation existence checks as Phase 2B/3 store/service validation unless a follow-up explicitly introduces SQLite foreign keys across registry tables.
+- Key decisions for ontology tables: `ontology_namespace` uses `ontology_id` as primary key plus a secondary unique constraint/index for `namespace`; `ontology_axis` uses composite primary key `(ontology_id, axis_id, version_id)`; `ontology_taxonomy` uses composite primary key `(ontology_id, taxonomy_id, version_id)`; `ontology_address_allocation` uses `allocation_id` as primary key plus secondary unique constraints/indexes for `(prefix, version_id)` and `(ontology_id, taxonomy_id, version_id)`; `ontology_address_segment` uses composite primary key `(allocation_id, segment_id)`.
+- Secondary unique constraints are not present in the current registry schema. When Phase 2A adds them, prefer explicit `uq_<table>_<columns>` names to distinguish them from existing non-unique `idx_...` lookup indexes.
+- Migration/test pattern: source migrations live under `packages/registry-service/drizzle/**`; the initial migration includes `snapshot.json`, later hand-written/generated migrations currently have `migration.sql` only, and there is no committed `drizzle/meta/_journal.json`. SQL coverage currently lives in `src/app.sql.test.ts` through Nest `AppModule` plus the migrated SQL driver; ontology schema tests can extend that file or add a small migration-specific SQL test that initializes the registry-service migrations and asserts table creation plus uniqueness failures.
+
 - [ ] `registry-service/src/db/schema.ts`에 `ontology_namespace` 테이블 추가
   - [ ] `ontology_id` primary key
   - [ ] `namespace` unique
