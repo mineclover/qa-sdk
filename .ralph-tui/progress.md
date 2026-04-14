@@ -16,6 +16,7 @@ after each iteration and it's included in prompts for context.
 - Allocation drift fixtures should assert structured `target` data on validation issues, not only free-text messages. Prefix/version collisions should expose `prefix` and `versionId`; taxonomy-axis mismatches should expose `taxonomyId` and `axisId`.
 - Registry persistence handoff specs should define conceptual records, local model field mappings, collision rules, and future registry-service tests without adding Drizzle schema or migrations in the handoff story.
 - Index-meta sync handoff specs should map product allocations to current `PrefixRegistryRecord.refs`, keep sum allocations as leaf prefix records plus sidecar segment metadata until index-meta owns a segment model, and define retry/smoke rules without changing index-meta code.
+- Prefix policy decision docs should stay as focused ADR leaves under `operational-ontology-system`, freeze current registry/index-meta/decode key shapes, and treat scoped-prefix options as gated criteria until a separate implementation ADR exists.
 
 ---
 
@@ -165,4 +166,26 @@ after each iteration and it's included in prompts for context.
   - Current index-meta `PrefixRegistryRecord.refs` represents product shape, so sum allocation cannot be fully expressed through `prefix_ref` without a future segment/sum model.
   - Handoff docs can reference plan/TODO ids in prose while keeping frontmatter links one-way from the handoff to avoid definition graph cycles.
   - Focused handoff leaf specs should stay under the 150-line split warning by pushing implementation task lists back into the roadmap/TODO.
+---
+
+## 2026-04-14 - US-009
+- Added `operational-ontology-scoped-prefix-decision` as a focused ADR leaf for retaining global prefix uniqueness versus introducing scoped prefixes.
+- Documented concrete need criteria, catalog id / ontology id / tenant boundary / pack collision scenarios, affected `/prefixes/:prefix`, index-meta key shape, decode-service/cache key, and migration-plan surfaces.
+- Linked the decision doc from `operational-ontology-system`, referenced it from the registry allocation roadmap/TODO, marked Phase 6 criteria/surface-analysis items complete, and added it to the operational-ontology README.
+- Verified required gates:
+  - `pnpm --filter operational-ontology test`
+  - `pnpm --filter operational-ontology typecheck`
+  - `pnpm --filter operational-ontology build`
+  - `node packages/cli/dist/index.js def validate`
+- Files changed:
+  - `docs/specs/operational-ontology/operational-ontology-scoped-prefix-decision.spec.md`
+  - `docs/specs/operational-ontology/operational-ontology-system.spec.md`
+  - `docs/specs/operational-ontology/operational-ontology-registry-allocation.plan.md`
+  - `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md`
+  - `packages/operational-ontology/README.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Prefix schema decisions need an explicit freeze rule because registry-service routes, index-meta tables, and decode-service caches all currently assume prefix/version identity.
+  - Pack collision alone is not enough evidence for scoped prefixes; the collision must also prove a catalog, ontology, or tenant boundary that cannot be solved by deterministic renaming.
+  - `def context` can still return useful document context while exiting nonzero when the local feedback DB cannot open; completion should rely on `node packages/cli/dist/index.js def validate`.
 ---

@@ -125,6 +125,8 @@ sync input, product/sum materialization, idempotency/collision policy, and minim
 
 단기적으로는 기존 `registry-service.prefix`의 global prefix uniqueness를 유지하고, `ontology_address_allocation`이 collision guard를 맡는다. 장기적으로 여러 catalog/ontology가 같은 prefix 이름을 독립적으로 가져야 하면 registry-service API v2에서 `(catalog_id, prefix)` 또는 `(ontology_id, prefix)` scoped prefix로 확장한다.
 
+Phase 6의 decision criteria와 schema freeze rule은 `operational-ontology-scoped-prefix-decision`이 소유한다. 해당 문서가 scoped-prefix implementation ADR로 닫히기 전까지 registry-service `prefix` table primary key, `/prefixes/:prefix`, index-meta `(prefix, version_id)` key shape, decode-service prefix/version cache key는 변경하지 않는다.
+
 ## 위험과 대응
 
 | 위험 | 대응 |

@@ -35,6 +35,8 @@ def:
       type: contains
     - target: operational-ontology-index-meta-sync-handoff
       type: contains
+    - target: operational-ontology-scoped-prefix-decision
+      type: contains
     - target: operational-ontology-pack-interface
       type: contains
     - target: operational-ontology-production-factory
@@ -124,6 +126,7 @@ taxonomy를 먼저 schema로 선언하고 검증한 뒤, 그 schema에서 node, 
   - schema allocation plan을 namespace/axis/taxonomy/address allocation record로 투영하고 registry-service/index-meta 승격 경계를 준비
   - registry-service persistence가 시작할 때 소비할 namespace/axis/taxonomy/allocation/segment record handoff 계약
   - active allocation을 index-meta prefix registry/schema version record로 materialize할 sync handoff 계약
+  - scoped prefix가 필요한 concrete evidence와 registry/index-meta/decode migration surface를 결정하는 prefix policy gate
 - **Instance plane**
   - `NodeCoord`
   - `RelationTypeCoord`
@@ -190,6 +193,7 @@ RDF bridge는 이 4층 전체에 대응되는 외부 의미 계층이다.
 - `operational-ontology-allocation-validation-contract` — registry persistence가 보존해야 하는 local allocation 불변조건
 - `operational-ontology-registry-persistence-handoff` — registry-service persistence가 소비할 record mapping, collision rule, future test 계약
 - `operational-ontology-index-meta-sync-handoff` — active allocation의 index-meta sync input, materialization, idempotency, smoke check 계약
+- `operational-ontology-scoped-prefix-decision` — global prefix uniqueness 유지와 scoped prefix 도입을 가르는 Phase 6 decision criteria
 - `operational-ontology-pack-interface` — schema/governance/blueprint를 pack 단위로 묶는 인터페이스
 - `operational-ontology-prompt-artifact-generation` — 작업영역별 prompt artifact 생성과 검증 규칙
 - `operational-ontology-persistence` — schema/registry/assertion/observation/projection 저장 모델

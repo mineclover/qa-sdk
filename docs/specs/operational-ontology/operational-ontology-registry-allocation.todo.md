@@ -264,7 +264,7 @@ Prerequisites:
 
 - Phase 1 완료.
 - Phase 2A/2B는 global prefix uniqueness와 `ontology_address_allocation` collision guard를 유지한 상태로 진행 가능하다.
-- scoped prefix가 필요하다는 evidence가 생기면 별도 ADR 또는 decision doc으로 Phase 6을 먼저 닫는다.
+- scoped prefix가 필요하다는 evidence가 생기면 `operational-ontology-scoped-prefix-decision`의 criteria를 통과한 뒤 별도 implementation ADR로 Phase 6을 닫는다.
 
 Validation commands:
 
@@ -273,21 +273,21 @@ Validation commands:
 - `pnpm --filter operational-ontology build`
 - `node packages/cli/dist/index.js def validate`
 
-- [ ] 단기 정책 명시: 기존 `registry-service.prefix` global uniqueness 유지
-- [ ] `ontology_address_allocation`이 prefix/version collision guard를 맡는다는 ADR 작성
-- [ ] catalog scoped prefix가 필요한 구체 시나리오 수집
-  - [ ] 동일 prefix 이름을 서로 다른 ontology에서 독립 사용
-  - [ ] 동일 catalog 내 pack별 prefix 충돌
-  - [ ] 외부 tenant별 ontology namespace 분리
-- [ ] API v2 후보 설계
-  - [ ] `(catalog_id, prefix)`
-  - [ ] `(ontology_id, prefix)`
-  - [ ] global prefix + allocation namespace
-- [ ] 기존 `/prefixes/:prefix` API 영향 분석
-- [ ] index-meta key shape 영향 분석
-- [ ] decode-service/cache key 영향 분석
-- [ ] migration plan 작성 여부 결정
-- [ ] 최종 결정 전까지 registry-service prefix table schema 변경 금지
+- [x] 단기 정책 명시: 기존 `registry-service.prefix` global uniqueness 유지
+- [x] `ontology_address_allocation`이 prefix/version collision guard를 맡는다는 ADR 작성
+- [x] catalog scoped prefix가 필요한 구체 시나리오 수집
+  - [x] 동일 prefix 이름을 서로 다른 ontology에서 독립 사용
+  - [x] 동일 catalog 내 pack별 prefix 충돌
+  - [x] 외부 tenant별 ontology namespace 분리
+- [x] API v2 후보 설계
+  - [x] `(catalog_id, prefix)`
+  - [x] `(ontology_id, prefix)`
+  - [x] global prefix + allocation namespace
+- [x] 기존 `/prefixes/:prefix` API 영향 분석
+- [x] index-meta key shape 영향 분석
+- [x] decode-service/cache key 영향 분석
+- [x] migration plan 작성 여부 결정
+- [x] 최종 결정 전까지 registry-service prefix table schema 변경 금지
 
 ## Cross-phase 검증
 
@@ -301,4 +301,4 @@ Validation commands:
 
 ## 다음 구현 기준
 
-다음 단계는 registry-service persistence부터 시작한다. 단, prefix global uniqueness를 바로 깨지 않는다. 먼저 `ontology_address_allocation`에서 collision guard를 갖춘 뒤, catalog scoped prefix가 실제로 필요한지 별도 ADR로 판단한다.
+다음 단계는 registry-service persistence부터 시작한다. 단, prefix global uniqueness를 바로 깨지 않는다. 먼저 `ontology_address_allocation`에서 collision guard를 갖춘 뒤, `operational-ontology-scoped-prefix-decision`의 concrete need gate를 통과하는 경우에만 scoped prefix implementation ADR을 작성한다.
