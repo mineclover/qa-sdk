@@ -340,7 +340,7 @@ const DEFAULT_REGISTRY_ACTIVATION_STORE_FILE = join(
 );
 const QUALITY_STATUS_FRESHNESS_DAY_MS = 24 * 60 * 60 * 1000;
 const REGISTRY_ACTIVATE_PACK_USAGE =
-  "Usage: qa-sdk ontology registry activate-pack <pack-id> [--store <path>] [--ontology-id <id>] [--namespace <namespace>] [--owner <owner>] [--version <versionId>] [--address-model product|sum] [--prefix <taxonomyId>=<prefix>] [--json]";
+  "Usage: qa-sdk ontology registry activate-pack <pack-id> [--store <path>] [--ontology-id <id>] [--namespace <namespace>] [--owner <owner>] [--version <versionId>] [--address-model product|sum] [--prefix <taxonomyId>=<prefix>] [--output <file>] [--json]";
 const REGISTRY_ACTIVATE_PACK_VALUE_FLAGS = new Set([
   "store",
   "ontology-id",
@@ -349,6 +349,7 @@ const REGISTRY_ACTIVATE_PACK_VALUE_FLAGS = new Set([
   "version",
   "address-model",
   "prefix",
+  "output",
 ]);
 const REGISTRY_ACTIVATE_PACK_BOOLEAN_FLAGS = new Set(["json"]);
 const REGISTRY_ACTIVATE_PACK_ALLOWED_FLAGS = new Set([
@@ -590,19 +591,58 @@ function toActivationRuntimeError(): ActivationCliError {
   };
 }
 
-function printActivationCliErrors(
+function toActivationOutputWriteError(outputPath: string): ActivationCliError {
+  return {
+    code: "activation-output-write-error",
+    message: `Activation output could not be written to ${outputPath}.`,
+    details: { outputPath: resolve(outputPath) },
+  };
+}
+
+async function writeJsonPayloadFile(
+  outputPath: string | undefined,
+  payload: unknown,
+): Promise<
+  | { ok: true; outputPath?: string }
+  | { ok: false; error: ActivationCliError }
+> {
+  if (!outputPath) {
+    return { ok: true };
+  }
+
+  try {
+    const resolvedOutputPath = resolve(outputPath);
+    await mkdir(dirname(resolvedOutputPath), { recursive: true });
+    await writeFile(resolvedOutputPath, `${toPrettyJson(payload)}\n`, "utf8");
+    return { ok: true, outputPath: resolvedOutputPath };
+  } catch {
+    return { ok: false, error: toActivationOutputWriteError(outputPath) };
+  }
+}
+
+async function printActivationCliErrors(
   errors: readonly ActivationCliError[],
   json: boolean,
+  outputPath?: string,
   context?: {
     readonly packId?: string;
     readonly ontologyId?: string;
   },
-): void {
+): Promise<void> {
+  const result = buildActivationCliFailureResult(errors, context);
+  const outputWrite = await writeJsonPayloadFile(outputPath, result);
   if (json) {
-    printJson(buildActivationCliFailureResult(errors, context));
+    printJson(
+      outputWrite.ok
+        ? result
+        : buildActivationCliFailureResult([...errors, outputWrite.error], context),
+    );
   } else {
     for (const error of errors) {
       console.error(`${error.code}: ${error.message}`);
+    }
+    if (!outputWrite.ok) {
+      console.error(`${outputWrite.error.code}: ${outputWrite.error.message}`);
     }
   }
   process.exitCode = 1;
@@ -611,11 +651,15 @@ function printActivationCliErrors(
 function printActivationSummary(
   result: ActivationResultSummary,
   storePath: string,
+  outputPath?: string,
 ): void {
   console.log(`Ontology pack activation: ${result.packId}`);
   console.log(`  status: ${result.status}`);
   console.log(`  ontologyId: ${result.ontologyId}`);
   console.log(`  store: ${storePath}`);
+  if (outputPath) {
+    console.log(`  output: ${outputPath}`);
+  }
   console.log(`  allocations: ${result.allocationSummaries.length}`);
   console.log(
     `  smoke: ${result.smokeCheckSummary.passedCheckCount}/${result.smokeCheckSummary.checkCount} checks passed (${result.smokeCheckSummary.passedAllocationCount}/${result.smokeCheckSummary.allocationCount} allocations)`,
@@ -727,7 +771,11 @@ async function saveStore(
 }
 
 function printJson(data: unknown): void {
-  console.log(JSON.stringify(data, null, 2));
+  console.log(toPrettyJson(data));
+}
+
+function toPrettyJson(data: unknown): string {
+  return JSON.stringify(data, null, 2);
 }
 
 function printTable(headers: string[], row: string[]): void {
@@ -2759,7 +2807,7 @@ async function cmdRegistryActivatePack(rest: string[]): Promise<void> {
   const packId = positional[0];
 
   if (!packId) {
-    printActivationCliErrors(
+    await printActivationCliErrors(
       [
         {
           code: "missing-pack-id",
@@ -2767,32 +2815,48 @@ async function cmdRegistryActivatePack(rest: string[]): Promise<void> {
         },
       ],
       json,
+      flags["output"],
     );
     return;
   }
   if (errors.length > 0) {
-    printActivationCliErrors(errors, json, {
-      packId,
-      ontologyId: flags["ontology-id"],
-    });
+    await printActivationCliErrors(
+      errors,
+      json,
+      flags["output"],
+      {
+        packId,
+        ontologyId: flags["ontology-id"],
+      },
+    );
     return;
   }
 
   const addressModelResult = parseActivationAddressModel(flags["address-model"]);
   if (!addressModelResult.ok) {
-    printActivationCliErrors([addressModelResult.error], json, {
-      packId,
-      ontologyId: flags["ontology-id"],
-    });
+    await printActivationCliErrors(
+      [addressModelResult.error],
+      json,
+      flags["output"],
+      {
+        packId,
+        ontologyId: flags["ontology-id"],
+      },
+    );
     return;
   }
 
   const packResolution = resolveKnownOntologyPack(packId);
   if (!packResolution.ok) {
-    printActivationCliErrors([packResolution.error], json, {
-      packId,
-      ontologyId: flags["ontology-id"] ?? packId,
-    });
+    await printActivationCliErrors(
+      [packResolution.error],
+      json,
+      flags["output"],
+      {
+        packId,
+        ontologyId: flags["ontology-id"] ?? packId,
+      },
+    );
     return;
   }
 
@@ -2819,10 +2883,24 @@ async function cmdRegistryActivatePack(rest: string[]): Promise<void> {
         },
       );
 
+      const outputWrite = await writeJsonPayloadFile(flags["output"], result);
+      if (!outputWrite.ok) {
+        await printActivationCliErrors(
+          [outputWrite.error],
+          json,
+          undefined,
+          {
+            packId,
+            ontologyId: flags["ontology-id"] ?? packId,
+          },
+        );
+        return;
+      }
+
       if (json) {
         printJson(result);
       } else {
-        printActivationSummary(result, runtime.storePath);
+        printActivationSummary(result, runtime.storePath, outputWrite.outputPath);
       }
 
       if (result.status !== "succeeded") {
@@ -2832,10 +2910,15 @@ async function cmdRegistryActivatePack(rest: string[]): Promise<void> {
       runtime.close();
     }
   } catch {
-    printActivationCliErrors([toActivationRuntimeError()], json, {
-      packId,
-      ontologyId: flags["ontology-id"] ?? packId,
-    });
+    await printActivationCliErrors(
+      [toActivationRuntimeError()],
+      json,
+      flags["output"],
+      {
+        packId,
+        ontologyId: flags["ontology-id"] ?? packId,
+      },
+    );
   }
 }
 
@@ -4690,7 +4773,7 @@ export async function cliOntology(args: string[]): Promise<void> {
           "qa-sdk ontology",
           "",
           "  qa-sdk ontology status [--scope <scope> | --snapshot <id>] [--store <file>] [--json] [--table]",
-          "  qa-sdk ontology registry activate-pack <pack-id> [--store <path>] [--ontology-id <id>] [--namespace <namespace>] [--owner <owner>] [--version <versionId>] [--address-model product|sum] [--prefix <taxonomyId>=<prefix>] [--json]",
+          "  qa-sdk ontology registry activate-pack <pack-id> [--store <path>] [--ontology-id <id>] [--namespace <namespace>] [--owner <owner>] [--version <versionId>] [--address-model product|sum] [--prefix <taxonomyId>=<prefix>] [--output <file>] [--json]",
           "  qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
           "  qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
           "  qa-sdk ontology prompt extract-permission <permission-ref> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",

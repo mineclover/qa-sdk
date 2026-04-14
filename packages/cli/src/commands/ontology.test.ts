@@ -54,6 +54,7 @@ describe("ontology CLI", () => {
   it("usage와 subcommand 해석에 ontology 루트를 노출한다", () => {
     expect(USAGE).toContain("qa-sdk ontology status");
     expect(USAGE).toContain("qa-sdk ontology registry activate-pack <pack-id>");
+    expect(USAGE).toContain("[--prefix <taxonomyId>=<prefix>] [--output <file>] [--json]");
     expect(USAGE).toContain("qa-sdk ontology prompt extract");
     expect(USAGE).toContain("qa-sdk ontology prompt extract-file");
     expect(USAGE).toContain("qa-sdk ontology prompt extract-permission");
@@ -348,6 +349,52 @@ describe("ontology CLI", () => {
       expect(textOutput.stdout).toContain("duplicate-allocation");
       expect(textOutput.stdout).toContain("Re-run with --json");
       expectNoRawSql(textOutput.stdout);
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("registry activate-pack writes --output JSON matching --json stdout", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-output-activate-"));
+    try {
+      const storePath = join(dir, "state", "registry.sqlite");
+      const outputPath = join(dir, "evidence", "activation", "result.json");
+      const output = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "registry",
+          "activate-pack",
+          "programming-artifact-ontology",
+          "--store",
+          storePath,
+          "--ontology-id",
+          "artifact-output",
+          "--namespace",
+          "artifact_output",
+          "--output",
+          outputPath,
+          "--json",
+        ]);
+      });
+
+      const fileContent = await readFile(outputPath, "utf8");
+      const parsed = JSON.parse(fileContent) as RegistryActivationJson;
+
+      expect(output.stderr).toBe("");
+      expect(output.exitCode).toBeUndefined();
+      expect(fileContent.trim()).toBe(output.stdout.trim());
+      expect(parsed).toMatchObject({
+        status: "succeeded",
+        packId: "programming-artifact-ontology",
+        ontologyId: "artifact-output",
+        namespaceSummary: {
+          ontologyId: "artifact-output",
+          namespace: "artifact_output",
+        },
+        warnings: [],
+        errors: [],
+      });
+      expect(parsed.allocationSummaries.length).toBeGreaterThan(0);
     } finally {
       await rm(dir, { force: true, recursive: true });
     }

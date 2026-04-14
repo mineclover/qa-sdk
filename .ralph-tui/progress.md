@@ -14,6 +14,7 @@ after each iteration and it's included in prompts for context.
 - CLI tests that need to prove command discovery/dispatch should invoke `main(["ontology", ...])`; `cliOntology(["registry.activate-pack", ...])` only proves the handler surface after proxy resolution.
 - Activation JSON represents ontology taxonomies in `allocationSummaries`; synced axis coverage is proven through `syncReports[*].materializedRecords[*].axisId` because `syncSummariesByAllocationId` intentionally stays count-only.
 - CLI-origin ontology activation text failures should preserve the stable JSON error code as a `<code>: <message>` prefix; helper-returned lifecycle failures should continue through the activation summary `errors` list.
+- Activation CLI `--output` should be a sidecar materialization of the same pretty JSON payload printed by `--json`; keep `--json` stdout unchanged, create parent directories before writing, and do not append programming artifact registry records unless a later story explicitly adds that registry integration.
 
 ---
 
@@ -124,4 +125,18 @@ after each iteration and it's included in prompts for context.
   - Public failure scenarios should use `main(["ontology", "registry", "activate-pack", ...])` because resolver-level and handler-level tests can miss command discovery behavior.
   - Text failure sanitization should avoid treating normal `.sqlite` store paths as leaks; assert against SQLite error tokens and SQL statement fragments instead.
   - CLI pre-helper failures and helper lifecycle failures have different output paths, so both need explicit JSON/text coverage.
+---
+
+## 2026-04-15 - US-009
+- Added `--output <file>` support to `qa-sdk ontology registry activate-pack` command discovery, help text, usage text, and command-specific flag validation.
+- Activation result output now writes the same pretty JSON payload emitted by `--json` to the requested file and creates parent directories as needed.
+- CLI-origin activation failures can also persist the stable result-like failure payload when a valid `--output` path is provided.
+- Kept stdout behavior stable: `--json` still prints the unwrapped helper payload, while text mode prints the activation summary and includes the resolved output path when used.
+- Did not append activation output to the programming artifact registry in this story.
+- Files changed: `packages/cli/src/command-groups/ontology.commands.ts`, `packages/cli/src/commands/ontology.ts`, `packages/cli/src/commands/ontology.test.ts`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter registry-service test`; `pnpm --filter registry-service typecheck`; `pnpm --filter registry-service build`; `pnpm --filter operational-ontology test -- allocation`; `pnpm --filter authorization-ontology test`; `pnpm --filter @qa-sdk/cli build`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - Activation output persistence fits best as a sidecar JSON materialization, not as a second stdout mode, because existing automation already relies on `--json` being the canonical payload.
+  - The activation handler has both pre-helper failure paths and helper result paths; output writing needs to sit on both surfaces if automation should retain failure evidence.
+  - Output write failures should remain a CLI failure result instead of falling through the broad runtime catch as `activation-runtime-error`.
 ---
