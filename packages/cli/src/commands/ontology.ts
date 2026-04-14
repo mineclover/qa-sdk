@@ -102,6 +102,9 @@ import {
 } from "../lib/programming-artifact-registry.js";
 import { resolveKnownOntologyPack } from "../lib/known-ontology-packs.js";
 import {
+  buildActivationEvidenceRegistryRecord,
+} from "../lib/activation-evidence-registry.js";
+import {
   collectContainedQualityDocsFromDataSource,
   resolveQualityGateDescriptorsFromDataSource,
   type QualityGateDescriptorResolutionRef,
@@ -340,7 +343,7 @@ const DEFAULT_REGISTRY_ACTIVATION_STORE_FILE = join(
 );
 const QUALITY_STATUS_FRESHNESS_DAY_MS = 24 * 60 * 60 * 1000;
 const REGISTRY_ACTIVATE_PACK_USAGE =
-  "Usage: qa-sdk ontology registry activate-pack <pack-id> [--store <path>] [--ontology-id <id>] [--namespace <namespace>] [--owner <owner>] [--version <versionId>] [--address-model product|sum] [--prefix <taxonomyId>=<prefix>] [--output <file>] [--json]";
+  "Usage: qa-sdk ontology registry activate-pack <pack-id> [--store <path>] [--ontology-id <id>] [--namespace <namespace>] [--owner <owner>] [--version <versionId>] [--address-model product|sum] [--prefix <taxonomyId>=<prefix>] [--output <file>] [--artifact-registry <file>] [--json]";
 const REGISTRY_ACTIVATE_PACK_VALUE_FLAGS = new Set([
   "store",
   "ontology-id",
@@ -350,6 +353,7 @@ const REGISTRY_ACTIVATE_PACK_VALUE_FLAGS = new Set([
   "address-model",
   "prefix",
   "output",
+  "artifact-registry",
 ]);
 const REGISTRY_ACTIVATE_PACK_BOOLEAN_FLAGS = new Set(["json"]);
 const REGISTRY_ACTIVATE_PACK_ALLOWED_FLAGS = new Set([
@@ -434,6 +438,27 @@ interface ActivationResultSummary {
   readonly warnings: readonly { readonly code?: string; readonly message: string }[];
   readonly errors: readonly { readonly code?: string; readonly message: string }[];
 }
+
+interface ActivationEvidenceAppendSuccess {
+  readonly appendStatus: "appended";
+  readonly registryPath: string;
+  readonly recordId: string;
+  readonly recordRef: string;
+  readonly recordCount: number;
+}
+
+interface ActivationEvidenceAppendFailure {
+  readonly appendStatus: "failed";
+  readonly registryPath: string;
+  readonly recordId: string;
+  readonly recordRef: string;
+  readonly recordCount: null;
+  readonly error: ActivationCliError;
+}
+
+type ActivationEvidenceAppendSummary =
+  | ActivationEvidenceAppendSuccess
+  | ActivationEvidenceAppendFailure;
 
 function parseRegistryActivatePackArgs(args: string[]): ParsedRegistryActivatePackArgs {
   const positional: string[] = [];
@@ -599,6 +624,26 @@ function toActivationOutputWriteError(outputPath: string): ActivationCliError {
   };
 }
 
+function toActivationEvidenceOutputRequiredError(): ActivationCliError {
+  return {
+    code: "activation-evidence-output-required",
+    message:
+      "Activation evidence registry append requires --output <file> so the registry record can reference a materialized sidecar.",
+    details: {
+      requiredFlag: "--output",
+      dependentFlag: "--artifact-registry",
+    },
+  };
+}
+
+function toActivationEvidenceRegistryAppendError(): ActivationCliError {
+  return {
+    code: "activation-evidence-registry-append-error",
+    message:
+      "Activation evidence could not be appended to the artifact registry.",
+  };
+}
+
 async function writeJsonPayloadFile(
   outputPath: string | undefined,
   payload: unknown,
@@ -652,6 +697,7 @@ function printActivationSummary(
   result: ActivationResultSummary,
   storePath: string,
   outputPath?: string,
+  activationEvidence?: ActivationEvidenceAppendSummary,
 ): void {
   console.log(`Ontology pack activation: ${result.packId}`);
   console.log(`  status: ${result.status}`);
@@ -659,6 +705,18 @@ function printActivationSummary(
   console.log(`  store: ${storePath}`);
   if (outputPath) {
     console.log(`  output: ${outputPath}`);
+  }
+  if (activationEvidence) {
+    console.log(`  activation evidence registry: ${activationEvidence.registryPath}`);
+    console.log(`  activation evidence record: ${activationEvidence.recordId}`);
+    if (activationEvidence.appendStatus === "appended") {
+      console.log(`  activation evidence records: ${activationEvidence.recordCount}`);
+    } else {
+      console.log(`  activation evidence append: failed`);
+      console.log(
+        `  activation evidence error: ${activationEvidence.error.code}: ${activationEvidence.error.message}`,
+      );
+    }
   }
   console.log(`  allocations: ${result.allocationSummaries.length}`);
   console.log(
@@ -684,6 +742,26 @@ function printActivationSummary(
     console.log("    - Re-run with --json to inspect structured errors.");
     console.log("    - Fix the listed activation errors before using this pack downstream.");
   }
+}
+
+function withActivationEvidence<T extends object>(
+  result: T,
+  activationEvidence: ActivationEvidenceAppendSummary,
+): T & { activationEvidence: ActivationEvidenceAppendSummary } {
+  return {
+    ...result,
+    activationEvidence,
+  };
+}
+
+function knownOntologyPackImportRef(packId: string): string | undefined {
+  if (packId === "programming-artifact-ontology") {
+    return "operational-ontology/programming-artifacts";
+  }
+  if (packId === "authorization-ontology") {
+    return "authorization-ontology";
+  }
+  return undefined;
 }
 
 async function loadJsonFile<T>(filePath: string): Promise<T> {
@@ -2831,6 +2909,18 @@ async function cmdRegistryActivatePack(rest: string[]): Promise<void> {
     );
     return;
   }
+  if (flags["artifact-registry"] && !flags["output"]) {
+    await printActivationCliErrors(
+      [toActivationEvidenceOutputRequiredError()],
+      json,
+      undefined,
+      {
+        packId,
+        ontologyId: flags["ontology-id"] ?? packId,
+      },
+    );
+    return;
+  }
 
   const addressModelResult = parseActivationAddressModel(flags["address-model"]);
   if (!addressModelResult.ok) {
@@ -2897,13 +2987,60 @@ async function cmdRegistryActivatePack(rest: string[]): Promise<void> {
         return;
       }
 
-      if (json) {
-        printJson(result);
-      } else {
-        printActivationSummary(result, runtime.storePath, outputWrite.outputPath);
+      let activationEvidence: ActivationEvidenceAppendSummary | undefined;
+      if (result.status === "succeeded" && flags["artifact-registry"]) {
+        const record = buildActivationEvidenceRegistryRecord({
+          activationResult: result,
+          resolvedOutputPath: outputWrite.outputPath,
+          commandContext: {
+            packId,
+            knownPackImportRef: knownOntologyPackImportRef(packResolution.packId),
+          },
+        });
+
+        try {
+          const appendResult = await appendProgrammingArtifactRegistryRecord(
+            flags["artifact-registry"],
+            record,
+          );
+          activationEvidence = {
+            appendStatus: "appended",
+            registryPath: appendResult.registryPath,
+            recordId: appendResult.record.artifactId,
+            recordRef: appendResult.record.artifactRef,
+            recordCount: appendResult.recordCount,
+          };
+        } catch {
+          activationEvidence = {
+            appendStatus: "failed",
+            registryPath: resolve(flags["artifact-registry"]),
+            recordId: record.artifactId,
+            recordRef: record.artifactRef,
+            recordCount: null,
+            error: toActivationEvidenceRegistryAppendError(),
+          };
+        }
       }
 
-      if (result.status !== "succeeded") {
+      const printableResult = activationEvidence
+        ? withActivationEvidence(result, activationEvidence)
+        : result;
+
+      if (json) {
+        printJson(printableResult);
+      } else {
+        printActivationSummary(
+          result,
+          runtime.storePath,
+          outputWrite.outputPath,
+          activationEvidence,
+        );
+      }
+
+      if (
+        result.status !== "succeeded" ||
+        activationEvidence?.appendStatus === "failed"
+      ) {
         process.exitCode = 1;
       }
     } finally {
@@ -4773,7 +4910,7 @@ export async function cliOntology(args: string[]): Promise<void> {
           "qa-sdk ontology",
           "",
           "  qa-sdk ontology status [--scope <scope> | --snapshot <id>] [--store <file>] [--json] [--table]",
-          "  qa-sdk ontology registry activate-pack <pack-id> [--store <path>] [--ontology-id <id>] [--namespace <namespace>] [--owner <owner>] [--version <versionId>] [--address-model product|sum] [--prefix <taxonomyId>=<prefix>] [--output <file>] [--json]",
+          "  qa-sdk ontology registry activate-pack <pack-id> [--store <path>] [--ontology-id <id>] [--namespace <namespace>] [--owner <owner>] [--version <versionId>] [--address-model product|sum] [--prefix <taxonomyId>=<prefix>] [--output <file>] [--artifact-registry <file>] [--json]",
           "  qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
           "  qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
           "  qa-sdk ontology prompt extract-permission <permission-ref> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",

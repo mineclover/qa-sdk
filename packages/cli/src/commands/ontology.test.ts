@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -54,7 +54,7 @@ describe("ontology CLI", () => {
   it("usage와 subcommand 해석에 ontology 루트를 노출한다", () => {
     expect(USAGE).toContain("qa-sdk ontology status");
     expect(USAGE).toContain("qa-sdk ontology registry activate-pack <pack-id>");
-    expect(USAGE).toContain("[--prefix <taxonomyId>=<prefix>] [--output <file>] [--json]");
+    expect(USAGE).toContain("[--prefix <taxonomyId>=<prefix>] [--output <file>] [--artifact-registry <file>] [--json]");
     expect(USAGE).toContain("qa-sdk ontology prompt extract");
     expect(USAGE).toContain("qa-sdk ontology prompt extract-file");
     expect(USAGE).toContain("qa-sdk ontology prompt extract-permission");
@@ -394,7 +394,246 @@ describe("ontology CLI", () => {
         warnings: [],
         errors: [],
       });
+      expect(parsed.activationEvidence).toBeUndefined();
       expect(parsed.allocationSummaries.length).toBeGreaterThan(0);
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("registry activate-pack requires --output when artifact registry append is requested", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activation-registry-required-"));
+    try {
+      const storePath = join(dir, "registry.sqlite");
+      const registryPath = join(dir, "programming-artifacts.json");
+      const output = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "registry",
+          "activate-pack",
+          "programming-artifact-ontology",
+          "--store",
+          storePath,
+          "--artifact-registry",
+          registryPath,
+          "--json",
+        ]);
+      });
+      const parsed = JSON.parse(output.stdout) as RegistryActivationJson;
+
+      expect(output.stderr).toBe("");
+      expect(output.exitCode).toBe(1);
+      expect(parsed).toMatchObject({
+        status: "failed",
+        packId: "programming-artifact-ontology",
+        ontologyId: "programming-artifact-ontology",
+        allocationSummaries: [],
+        errors: [
+          expect.objectContaining({
+            level: "error",
+            phase: "cli",
+            code: "activation-evidence-output-required",
+          }),
+        ],
+      });
+      await expect(readFile(registryPath, "utf8")).rejects.toThrow();
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("registry activate-pack appends activation evidence after writing the sidecar", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activation-registry-"));
+    try {
+      const storePath = join(dir, "registry.sqlite");
+      const outputPath = join(dir, "activation", "programming-artifact-ontology.json");
+      const registryPath = join(dir, "programming-artifacts.json");
+      const output = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "registry",
+          "activate-pack",
+          "programming-artifact-ontology",
+          "--store",
+          storePath,
+          "--ontology-id",
+          "artifact-registry-activation",
+          "--namespace",
+          "artifact_registry_activation",
+          "--output",
+          outputPath,
+          "--artifact-registry",
+          registryPath,
+          "--json",
+        ]);
+      });
+      const parsed = JSON.parse(output.stdout) as RegistryActivationJson;
+      const sidecar = JSON.parse(await readFile(outputPath, "utf8")) as RegistryActivationJson;
+      const registry = JSON.parse(await readFile(registryPath, "utf8")) as {
+        artifacts: Array<{
+          artifactId: string;
+          artifactRef: string;
+          outputPath: string;
+          kind: string;
+          producedByRef?: string;
+        }>;
+      };
+
+      expect(output.stderr).toBe("");
+      expect(output.exitCode).toBeUndefined();
+      expect(parsed.status).toBe("succeeded");
+      expect(parsed.activationEvidence).toEqual({
+        appendStatus: "appended",
+        registryPath,
+        recordId:
+          "activation-evidence-programming-artifact-ontology-artifact-registry-activation",
+        recordRef: outputPath,
+        recordCount: 1,
+      });
+      expect(sidecar.status).toBe("succeeded");
+      expect(sidecar.activationEvidence).toBeUndefined();
+      expect(registry.artifacts).toEqual([
+        expect.objectContaining({
+          artifactId:
+            "activation-evidence-programming-artifact-ontology-artifact-registry-activation",
+          artifactRef: outputPath,
+          outputPath,
+          kind: "activation-evidence",
+          producedByRef:
+            "qa-sdk ontology registry activate-pack programming-artifact-ontology",
+        }),
+      ]);
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("registry activate-pack text output reports activation evidence append details", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activation-registry-text-"));
+    try {
+      const storePath = join(dir, "registry.sqlite");
+      const outputPath = join(dir, "activation.json");
+      const registryPath = join(dir, "programming-artifacts.json");
+      const output = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "registry",
+          "activate-pack",
+          "programming-artifact-ontology",
+          "--store",
+          storePath,
+          "--ontology-id",
+          "artifact-registry-text",
+          "--namespace",
+          "artifact_registry_text",
+          "--output",
+          outputPath,
+          "--artifact-registry",
+          registryPath,
+        ]);
+      });
+
+      expect(output.stderr).toBe("");
+      expect(output.exitCode).toBeUndefined();
+      expect(output.stdout).toContain(`activation evidence registry: ${registryPath}`);
+      expect(output.stdout).toContain(
+        "activation evidence record: activation-evidence-programming-artifact-ontology-artifact-registry-text",
+      );
+      expect(output.stdout).toContain("activation evidence records: 1");
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("registry activate-pack does not append evidence when output sidecar write fails", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activation-output-failure-"));
+    try {
+      const storePath = join(dir, "registry.sqlite");
+      const registryPath = join(dir, "programming-artifacts.json");
+      const output = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "registry",
+          "activate-pack",
+          "programming-artifact-ontology",
+          "--store",
+          storePath,
+          "--ontology-id",
+          "artifact-output-failure",
+          "--namespace",
+          "artifact_output_failure",
+          "--output",
+          dir,
+          "--artifact-registry",
+          registryPath,
+          "--json",
+        ]);
+      });
+      const parsed = JSON.parse(output.stdout) as RegistryActivationJson;
+
+      expect(output.stderr).toBe("");
+      expect(output.exitCode).toBe(1);
+      expect(parsed.status).toBe("failed");
+      expect(parsed.errors).toEqual([
+        expect.objectContaining({
+          code: "activation-output-write-error",
+        }),
+      ]);
+      await expect(readFile(registryPath, "utf8")).rejects.toThrow();
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("registry activate-pack reports sanitized artifact registry append failures", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activation-registry-failure-"));
+    try {
+      const storePath = join(dir, "registry.sqlite");
+      const outputPath = join(dir, "activation.json");
+      const registryPath = join(dir, "registry-directory");
+      await mkdir(registryPath, { recursive: true });
+      const output = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "registry",
+          "activate-pack",
+          "programming-artifact-ontology",
+          "--store",
+          storePath,
+          "--ontology-id",
+          "artifact-registry-failure",
+          "--namespace",
+          "artifact_registry_failure",
+          "--output",
+          outputPath,
+          "--artifact-registry",
+          registryPath,
+          "--json",
+        ]);
+      });
+      const parsed = JSON.parse(output.stdout) as RegistryActivationJson;
+      const sidecar = JSON.parse(await readFile(outputPath, "utf8")) as RegistryActivationJson;
+
+      expect(output.stderr).toBe("");
+      expect(output.exitCode).toBe(1);
+      expect(parsed.status).toBe("succeeded");
+      expect(parsed.activationEvidence).toEqual({
+        appendStatus: "failed",
+        registryPath,
+        recordId:
+          "activation-evidence-programming-artifact-ontology-artifact-registry-failure",
+        recordRef: outputPath,
+        recordCount: null,
+        error: {
+          code: "activation-evidence-registry-append-error",
+          message:
+            "Activation evidence could not be appended to the artifact registry.",
+        },
+      });
+      expect(sidecar.status).toBe("succeeded");
+      expect(sidecar.activationEvidence).toBeUndefined();
+      expectNoRawSql(output.stdout);
+      expect(output.stdout).not.toMatch(/EISDIR|ENOENT|ENOTDIR|stack|open '/i);
     } finally {
       await rm(dir, { force: true, recursive: true });
     }
@@ -629,7 +868,10 @@ describe("ontology CLI", () => {
     const parsed = JSON.parse(output.stdout) as {
       status: string;
       packId: string;
-      errors: Array<{ code: string; details?: { flag?: string } }>;
+      errors: Array<{
+        code: string;
+        details?: { flag?: string; supportedFlags?: string[] };
+      }>;
     };
 
     expect(output.stderr).toBe("");
@@ -640,6 +882,9 @@ describe("ontology CLI", () => {
       code: "invalid-cli-flag",
       details: { flag: "--not-a-real-flag" },
     });
+    expect(parsed.errors[0]?.details?.supportedFlags).toContain(
+      "--artifact-registry",
+    );
   });
 
   it("registry activate-pack rejects invalid address models with structured failure output", async () => {
@@ -718,6 +963,8 @@ describe("ontology CLI", () => {
     const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activate-failure-"));
     try {
       const storePath = join(dir, "registry.sqlite");
+      const outputPath = join(dir, "failed-activation.json");
+      const registryPath = join(dir, "programming-artifacts.json");
       await captureConsoleAsync(async () => {
         await cliOntology([
           "registry.activate-pack",
@@ -750,6 +997,10 @@ describe("ontology CLI", () => {
           "v-collision",
           "--prefix",
           "programming-artifact=artifact_collision",
+          "--output",
+          outputPath,
+          "--artifact-registry",
+          registryPath,
           "--json",
         ]);
       });
@@ -783,6 +1034,8 @@ describe("ontology CLI", () => {
           }),
         ],
       });
+      expect(parsed.activationEvidence).toBeUndefined();
+      await expect(readFile(registryPath, "utf8")).rejects.toThrow();
       expect(output.stdout).not.toMatch(/SQLITE|SqliteError|sqlite/i);
     } finally {
       await rm(dir, { force: true, recursive: true });
@@ -3842,6 +4095,17 @@ interface RegistryActivationJson {
     phase?: string;
     code?: string;
   }>;
+  activationEvidence?: {
+    appendStatus: "appended" | "failed";
+    registryPath: string;
+    recordId: string;
+    recordRef: string;
+    recordCount: number | null;
+    error?: {
+      code: string;
+      message: string;
+    };
+  };
 }
 
 async function captureConsoleAsync(run: () => Promise<void>) {

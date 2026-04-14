@@ -8,6 +8,7 @@ after each iteration and it's included in prompts for context.
 - Planning-only lifecycle boundary stories should close acceptance criteria in the execution PRD before implementation stories run: record the lifecycle boundary, selected vocabulary value, rejected alternatives, and 5Q rationale in the PRD itself.
 - CLI ontology tests consume exported workspace packages through their built `dist/` entrypoints; after changing exported operational-ontology vocabulary or pack code, run `pnpm --filter operational-ontology build` before CLI tests.
 - `pnpm --filter @qa-sdk/cli test -- ontology` is a Vitest path/name filter; CLI-local helper tests that must run under this gate should live in `ontology.test.ts` or include `ontology` in the test file name.
+- `activate-pack --artifact-registry` keeps `--output` as the raw activation result sidecar; append metadata is reported in stdout JSON under additive `activationEvidence`, so registry append failures do not rewrite the materialized proof.
 
 ---
 
@@ -48,4 +49,18 @@ after each iteration and it's included in prompts for context.
   - A CLI-local structural activation result type keeps the mapper independent of registry-service private module exports while remaining compatible with the helper result shape.
   - Activation evidence should summarize sync and smoke state in `metadata` and keep `materializesOutputRefs` to the sidecar plus a stable activation-result ref, rather than listing every generated index-meta prefix.
   - The CLI test wrapper forwards trailing args directly to Vitest, so new helper tests need an ontology-matching file path/name to be covered by the required `-- ontology` gate.
+---
+
+## 2026-04-15 - US-004
+- Added `--artifact-registry <file>` to `qa-sdk ontology registry activate-pack` usage, help, command descriptors, and structured flag validation.
+- Integrated successful activation evidence appends through the existing programming artifact registry upsert helper, only after the activation result sidecar is written successfully.
+- Preserved `--output`-only behavior as sidecar-only JSON and prevented managed registry writes for helper failures, missing output sidecars, output write failures, and sanitized append failures.
+- Added additive JSON stdout details under `activationEvidence` with append status, registry path, record id/ref, and record count; text output now reports registry append path and record id on success.
+- Added ontology CLI coverage for missing `--output`, successful append, text append reporting, failed activation no-append behavior, output write failure no-append behavior, sanitized append failure output, and supported flag validation.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter @qa-sdk/cli build`; `pnpm --filter operational-ontology test -- programming-artifacts`; `pnpm --filter operational-ontology typecheck`; `pnpm --filter registry-service test -- ontology`; `pnpm --filter registry-service typecheck`; `node packages/cli/dist/index.js def validate`.
+- Files changed: `packages/cli/src/commands/ontology.ts`, `packages/cli/src/commands/ontology.test.ts`, `packages/cli/src/command-groups/ontology.commands.ts`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - The activation command has a custom parser (`parseRegistryActivatePackArgs`) rather than using the generic `parseFlags`; adding a command option requires updating the usage string, value flag set, command descriptor, and help text together.
+  - The output sidecar writer is the sequencing boundary for managed evidence: build and append the registry record only after `writeJsonPayloadFile()` returns a resolved output path.
+  - Append failure can be represented without leaking Node filesystem internals by returning a sanitized `activationEvidence.appendStatus: "failed"` block while leaving the raw activation sidecar intact.
 ---
