@@ -107,6 +107,8 @@ active allocation만 index-meta로 내려보낸다.
 - 필요할 때만 initial `entry` materialization
 - `address_state_cache`는 activation 후 validation/analysis 단계에서 계산한다.
 
+sync input, product/sum materialization, idempotency/collision policy, and minimum smoke checks are defined by `operational-ontology-index-meta-sync-handoff`. This roadmap does not implement those records directly.
+
 ### Phase 5: Pack activation flow
 
 `OperationalOntologyPack` 등록을 registry activation workflow로 연결한다.

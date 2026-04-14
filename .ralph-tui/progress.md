@@ -15,6 +15,7 @@ after each iteration and it's included in prompts for context.
 - Large lifecycle TODOs can preserve legacy phase references by splitting a crowded phase into lettered subphases and adding a dependency map before the checklist. This keeps old acceptance criteria stable while making ralph-tui task boundaries executable.
 - Allocation drift fixtures should assert structured `target` data on validation issues, not only free-text messages. Prefix/version collisions should expose `prefix` and `versionId`; taxonomy-axis mismatches should expose `taxonomyId` and `axisId`.
 - Registry persistence handoff specs should define conceptual records, local model field mappings, collision rules, and future registry-service tests without adding Drizzle schema or migrations in the handoff story.
+- Index-meta sync handoff specs should map product allocations to current `PrefixRegistryRecord.refs`, keep sum allocations as leaf prefix records plus sidecar segment metadata until index-meta owns a segment model, and define retry/smoke rules without changing index-meta code.
 
 ---
 
@@ -142,4 +143,26 @@ after each iteration and it's included in prompts for context.
   - Handoff specs work best as leaf docs under the system overview: they can name registry-service files as future boundary evidence without changing that package.
   - Persistence record contracts should preserve ordered JSON fields from the local model, especially axis `values` and taxonomy axis lists, because local hashes and allocation offsets are order-sensitive.
   - Future registry-service tests should be split into store contract tests, SQL schema/constraint tests, and service transaction/no-write tests so Phase 2A/2B/3 can progress independently.
+---
+
+## 2026-04-14 - US-008
+- Added `operational-ontology-index-meta-sync-handoff` as a focused leaf spec for active allocation sync into index-meta prefix registry and schema version records.
+- Defined required active allocation sync input, product allocation materialization, sum allocation limits, segment materialization boundary, idempotency/collision expectations, and minimum activation smoke checks.
+- Linked the handoff from `operational-ontology-system`, referenced it from the registry allocation roadmap/TODO, marked the Phase 4 handoff-only contract item complete, and added it to the operational-ontology README.
+- Verified required gates:
+  - `pnpm --filter operational-ontology test`
+  - `pnpm --filter operational-ontology typecheck`
+  - `pnpm --filter operational-ontology build`
+  - `node packages/cli/dist/index.js def validate`
+- Files changed:
+  - `docs/specs/operational-ontology/operational-ontology-index-meta-sync-handoff.spec.md`
+  - `docs/specs/operational-ontology/operational-ontology-system.spec.md`
+  - `docs/specs/operational-ontology/operational-ontology-registry-allocation.plan.md`
+  - `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md`
+  - `packages/operational-ontology/README.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Current index-meta `PrefixRegistryRecord.refs` represents product shape, so sum allocation cannot be fully expressed through `prefix_ref` without a future segment/sum model.
+  - Handoff docs can reference plan/TODO ids in prose while keeping frontmatter links one-way from the handoff to avoid definition graph cycles.
+  - Focused handoff leaf specs should stay under the 150-line split warning by pushing implementation task lists back into the roadmap/TODO.
 ---

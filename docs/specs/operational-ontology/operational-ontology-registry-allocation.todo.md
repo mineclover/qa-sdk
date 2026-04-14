@@ -184,6 +184,7 @@ Prerequisites:
 
 - Phase 1 완료.
 - Phase 3의 active allocation contract 또는 동등한 handoff fixture.
+- `operational-ontology-index-meta-sync-handoff`에서 active allocation sync input, product/sum materialization, idempotency/collision, activation smoke checks 확인.
 - index-meta sync 표현 방식 결정은 Phase 2A/2B persistence tasks의 선행조건이 아니다.
 
 Validation commands:
@@ -194,6 +195,7 @@ Validation commands:
 - `pnpm --filter registry-service test`
 - `node packages/cli/dist/index.js def validate`
 
+- [x] `operational-ontology-index-meta-sync-handoff`로 handoff-only sync contract 작성
 - [ ] active allocation → `index-meta.prefix_registry` 등록
 - [ ] active allocation → `index-meta.schema_version` 등록
 - [ ] product allocation의 shape/refs 표현 방식 결정
