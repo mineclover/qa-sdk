@@ -11,6 +11,7 @@ after each iteration and it's included in prompts for context.
 - Full ontology allocation plan writes should collect validation conflicts first and throw `partial-write-rejected` before mutating adapter state; exact same-key repeats are `duplicate-key`, while changed same-key records are `drift`.
 - SQL store adapters can keep raw `SqlDriver` queries while deriving table names from Drizzle schema exports via `getTableName()`, which keeps Phase table names tied to `db/schema.ts` without adopting Drizzle query builders.
 - SQL ontology writes should follow snapshot → shared validation → transaction insert, then revalidate/map SQLite unique constraint failures into `partial-write-rejected` conflicts for race/concurrent duplicate cases.
+- Registry-service adapter parity tests can live in one `describe.each` store-contract file fed by store factory contexts; keep adapter-specific tests for concerns outside the shared interface such as SQL serialization/race mapping or in-memory defensive copies.
 
 ---
 
@@ -71,4 +72,17 @@ after each iteration and it's included in prompts for context.
   - Registry-service SQL stores commonly use `index-meta`'s `SqlDriver` directly; table-name derivation from Drizzle schema exports can keep raw SQL aligned with the Phase 2A schema.
   - Validation failures should happen before opening a write transaction, while SQL uniqueness races still need a catch-and-map path because the database is the final uniqueness boundary.
   - The D1-style `SqlDriver.transaction()` contract may be sequential rather than atomic, so the SQL adapter can guarantee no partial rows on pre-write validation failure and use atomic rollback where the dialect supports transactions.
+---
+
+## 2026-04-14 - US-005
+- Added a shared ontology registry store contract suite that runs the same behavioral tests against `InMemoryOntologyRegistryStore` and `SqlOntologyRegistryStore`.
+- The SQL contract path uses `createRegistryDatabaseDriver(":memory:")`, so registry Drizzle migrations are applied before each SQL adapter test.
+- Covered successful complete allocation plan persistence, namespace reuse drift, duplicate keys across namespace/axis/taxonomy/allocation/segment rows, same-key drift for hash/capacity/axis list/prefix/segment shape, missing taxonomy axes, segment out-of-range/overlap, and no-partial-write guarantees.
+- Files changed:
+  - `packages/registry-service/src/stores/ontology-registry-store.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - The shared store interface is sufficient for most adapter parity checks; optional factory context hooks can add backend-specific assertions like raw SQL table counts without leaking SQL into the contract behavior.
+  - Existing list methods expose deterministic ordering by natural key/address range, so the contract can assert exact record arrays instead of only checking IDs.
+  - Keeping SQL JSON/race tests separate from the shared contract avoids coupling common behavior to adapter-only implementation details.
 ---
