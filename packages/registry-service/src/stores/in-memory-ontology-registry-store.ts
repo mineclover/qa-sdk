@@ -54,6 +54,20 @@ export class InMemoryOntologyRegistryStore implements OntologyRegistryStore {
     }
   }
 
+  async updateAllocationStatus(
+    allocationId: string,
+    status: OntologyAddressAllocationRecord["status"],
+  ): Promise<OntologyAddressAllocationRecord | null> {
+    const existing = this.allocations.get(allocationId);
+    if (!existing) {
+      return null;
+    }
+
+    const updated = cloneAllocation({ ...existing, status });
+    this.allocations.set(allocationId, updated);
+    return cloneAllocation(updated);
+  }
+
   async listNamespaces(): Promise<OntologyNamespaceRecord[]> {
     return [...this.namespaces.values()]
       .map(cloneNamespace)

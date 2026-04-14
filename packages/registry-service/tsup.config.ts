@@ -28,6 +28,7 @@ export default defineConfig({
     "@qa-sdk/otel",
     "definition-catalog",
     "index-meta",
+    "operational-ontology",
     "pino",
     "pipe-store-sqlite",
     "weighted-index",

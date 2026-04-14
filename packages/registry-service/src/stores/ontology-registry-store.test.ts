@@ -97,6 +97,36 @@ describe.each(storeContractCases)("$name contract", ({ create }) => {
     expect(await store.listSegments("missing")).toEqual([]);
   });
 
+  it("updates allocation status through the store boundary", async () => {
+    const { store } = await setup();
+    const writeSet = buildWriteSet();
+    await store.writeAllocationPlan(writeSet);
+
+    const updated = await store.updateAllocationStatus(
+      "ontology-a:runtime-surface:v1",
+      "active",
+    );
+
+    expect(updated).toEqual(
+      expect.objectContaining({
+        allocationId: "ontology-a:runtime-surface:v1",
+        status: "active",
+      }),
+    );
+    expect(await store.getAllocation("ontology-a:runtime-surface:v1")).toEqual(
+      updated,
+    );
+    expect(
+      (await store.listActiveAllocations()).map(
+        (allocation) => allocation.allocationId,
+      ),
+    ).toEqual([
+      "ontology-a:deployment-surface:v1",
+      "ontology-a:runtime-surface:v1",
+    ]);
+    expect(await store.updateAllocationStatus("missing", "active")).toBeNull();
+  });
+
   it("rejects namespace reuse and exact duplicate keys without changing existing rows", async () => {
     const { store } = await setup();
     const writeSet = buildWriteSet();

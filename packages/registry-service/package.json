@@ -42,6 +42,7 @@
     "dotenv": "^17.3.1",
     "drizzle-orm": "1.0.0-beta.20",
     "index-meta": "workspace:*",
+    "operational-ontology": "workspace:*",
     "pino": "workspace:@qa-sdk/pino@*",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",

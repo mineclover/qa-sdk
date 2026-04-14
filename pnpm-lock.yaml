@@ -1736,6 +1736,9 @@ importers:
       index-meta:
         specifier: workspace:*
         version: link:../index-meta
+      operational-ontology:
+        specifier: workspace:*
+        version: link:../operational-ontology
       pino:
         specifier: workspace:@qa-sdk/pino@*
         version: link:../pino

@@ -81,6 +81,25 @@ export class SqlOntologyRegistryStore implements OntologyRegistryStore {
     return rows.map(toNamespaceRecord);
   }
 
+  async updateAllocationStatus(
+    allocationId: string,
+    status: OntologyAddressAllocationRecord["status"],
+  ): Promise<OntologyAddressAllocationRecord | null> {
+    const existing = await this.getAllocation(allocationId);
+    if (!existing) {
+      return null;
+    }
+
+    await this.driver.execute(
+      `UPDATE ${TABLES.allocation}
+       SET status = ?
+       WHERE allocation_id = ?`,
+      [status, allocationId],
+    );
+
+    return { ...existing, status };
+  }
+
   async getNamespace(ontologyId: string): Promise<OntologyNamespaceRecord | null> {
     const row = await this.driver.queryOne<NamespaceRow>(
       `SELECT ontology_id, namespace, owner, lifecycle, created_at, updated_at

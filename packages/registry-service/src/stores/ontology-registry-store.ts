@@ -216,6 +216,10 @@ export class OntologyRegistryStoreError extends Error {
 
 export interface OntologyRegistryStore {
   writeAllocationPlan(writeSet: OntologyAllocationPlanWriteSet): Promise<void>;
+  updateAllocationStatus(
+    allocationId: string,
+    status: OntologyAddressAllocationStatus,
+  ): Promise<OntologyAddressAllocationRecord | null>;
   listNamespaces(): Promise<OntologyNamespaceRecord[]>;
   getNamespace(ontologyId: string): Promise<OntologyNamespaceRecord | null>;
   listAxes(

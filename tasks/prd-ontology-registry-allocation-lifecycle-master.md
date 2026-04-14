@@ -61,6 +61,10 @@ No browser verification is required.
 
 **Goal:** Add lifecycle orchestration around the store adapter.
 
+**Execution PRD:**
+- `tasks/prd-ontology-registry-service-layer.md`
+- `tasks/prd-ontology-registry-service-layer.json`
+
 **Inputs:**
 - Phase 2B store contract
 - `validateOperationalOntologyPack()`
