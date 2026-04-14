@@ -8,6 +8,7 @@ after each iteration and it's included in prompts for context.
 - Phase 4 ontology/index-meta sync drift checks must be limited to the current persisted index-meta target surface: prefix capacity, ordered refs, schema-version capacity, and sum sidecar coverage. Axis `valuesHash` reproduction belongs to future axis-value entry materialization, not current prefix/schema sync.
 - Ontology activation orchestration should live as an ontology module helper/provider that calls `OntologyRegistryService` methods (`registerOntologyPack`, `activateAllocation`, `syncToPrefixRegistry`) and returns namespace/allocation/sync/warning/error payloads without reaching into stores or SQL.
 - Valid pack activation is an all-allocation path: `registerOntologyPack` validates before reservation, then the helper activates and syncs every returned allocation instead of selecting a subset.
+- Activation-level smoke checks should be assembled from `syncToPrefixRegistry` post-sync reports plus activated allocation status; the helper should not reach into prefix registry stores or SQL directly.
 
 ---
 
@@ -45,4 +46,16 @@ after each iteration and it's included in prompts for context.
   - The existing helper already implements the deterministic all-allocation policy by iterating over `registration.allocations`; US-003 needed stronger evidence across more than one taxonomy.
   - `OntologyRegistryService.registerOntologyPack` owns pack validation ordering, so helper-level tests can prove validation-before-reservation with spies on the operational ontology pack and allocation planes.
   - Product allocation sync materializes both allocation prefix records and schema version records; future smoke stories can reuse the same stores to add resolver and sidecar assertions.
+---
+
+## 2026-04-14 - US-004
+- Added product activation smoke check payloads to `OntologyPackActivationResult`.
+- Product smoke checks now assert active source allocation status, intended product prefix record readback, schema-version/prefix capacity agreement, ordered product shape, last valid resolver bounds, and capacity out-of-range resolver bounds.
+- Extended index-meta post-sync target checks to report intended prefix record and ordered-ref match status.
+- Added activation helper coverage proving product allocations return passing smoke checks after valid pack activation, while sum activation remains out of scope for US-004.
+- Files changed: `packages/registry-service/src/modules/ontology/ontology-activation.helper.ts`, `packages/registry-service/src/modules/ontology/ontology-activation.helper.test.ts`, `packages/registry-service/src/modules/ontology/index-meta-sync.adapter.ts`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - The activation helper can treat Phase 4 sync reports as the readback authority and compose smoke assertions without expanding its service-port boundary.
+  - `targetRecords[]` needed an explicit `prefixRegistryRecordMatchesIntended` flag because capacity-only readback did not prove product prefix refs matched the intended composite record.
+  - `pnpm --filter registry-service test -- ontology-activation.helper` still runs the full registry-service suite in this package, so exact acceptance commands were rerun separately.
 ---

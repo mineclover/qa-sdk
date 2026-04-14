@@ -152,6 +152,7 @@ describe("OntologyPackActivationHelper", () => {
           },
         ],
         syncReports: [syncReport],
+        smokeChecks: [],
         warnings: [],
         errors: [],
       }),
@@ -281,6 +282,55 @@ describe("OntologyPackActivationHelper", () => {
       "synced",
       "synced",
     ]);
+    expect(result.smokeChecks).toEqual([
+      expect.objectContaining({
+        allocationId: "authz-runtime:authorization-resource:v2",
+        taxonomyId: "authorization-resource",
+        prefix: "authz_authorization_resource",
+        versionId: "v2",
+        addressModel: "product",
+        kind: "product",
+        syncStatus: "synced",
+        passed: true,
+        checks: expect.arrayContaining([
+          expect.objectContaining({
+            name: "source-allocation-active",
+            passed: true,
+          }),
+          expect.objectContaining({
+            name: "product-prefix-record-matches",
+            passed: true,
+          }),
+          expect.objectContaining({
+            name: "schema-version-capacity-matches-prefix-registry",
+            passed: true,
+          }),
+          expect.objectContaining({
+            name: "product-shape-matches-ordered-axis-capacities",
+            passed: true,
+          }),
+          expect.objectContaining({
+            name: "last-valid-address-in-range",
+            passed: true,
+          }),
+          expect.objectContaining({
+            name: "capacity-address-out-of-range",
+            passed: true,
+          }),
+        ]),
+      }),
+      expect.objectContaining({
+        allocationId: "authz-runtime:authorization-decision:v2",
+        taxonomyId: "authorization-decision",
+        prefix: "authz_authorization_decision",
+        versionId: "v2",
+        addressModel: "product",
+        kind: "product",
+        syncStatus: "synced",
+        passed: true,
+      }),
+    ]);
+    expect(result.smokeChecks.flatMap((check) => check.checks)).toHaveLength(12);
     expect(sync).toHaveBeenCalledTimes(2);
     expect(
       sync.mock.calls.map(([bundle]) => bundle.allocation.allocationId),
@@ -390,6 +440,7 @@ describe("OntologyPackActivationHelper", () => {
         syncStatus: "synced",
       }),
     );
+    expect(result.smokeChecks).toEqual([]);
     expect(result.warnings).toEqual([]);
     expect(result.errors).toEqual([]);
     await expect(
@@ -448,7 +499,45 @@ function syncedReport(
     collisions: [],
     deferredSemantics: [],
     postSyncChecks: {
-      targetRecords: [],
+      targetRecords: [
+        {
+          role: "allocation-prefix",
+          prefix: allocation.prefix,
+          versionId: allocation.versionId,
+          expectedCapacity: allocation.capacity,
+          prefixRegistryRecordExists: true,
+          prefixRegistryRecordMatchesIntended: true,
+          prefixRegistryCapacityMatches: true,
+          prefixRegistryRefsMatch: true,
+          schemaVersionCapacityExists: true,
+          schemaVersionCapacityMatches: true,
+          prefixRegistryCapacity: allocation.capacity,
+          schemaVersionCapacity: allocation.capacity,
+        },
+      ],
+      productAllocation: {
+        prefix: allocation.prefix,
+        versionId: allocation.versionId,
+        expectedShape: [allocation.capacity],
+        actualShape: [allocation.capacity],
+        shapeMatchesOrderedAxisCapacities: true,
+        resolverChecks: {
+          lastValidAddress: {
+            serialized: `${allocation.prefix}:${allocation.versionId}:${allocation.capacity - 1}`,
+            index: allocation.capacity - 1,
+            resolved: true,
+            valid: true,
+          },
+          capacityAddress: {
+            serialized: `${allocation.prefix}:${allocation.versionId}:${allocation.capacity}`,
+            index: allocation.capacity,
+            resolved: true,
+            valid: false,
+          },
+          lastValidAddressInRange: true,
+          capacityAddressOutOfRange: true,
+        },
+      },
     },
   };
 }

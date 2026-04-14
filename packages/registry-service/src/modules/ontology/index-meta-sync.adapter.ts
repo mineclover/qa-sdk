@@ -145,7 +145,9 @@ export interface OntologyIndexMetaTargetPostSyncCheck {
   readonly versionId: string;
   readonly expectedCapacity: number;
   readonly prefixRegistryRecordExists: boolean;
+  readonly prefixRegistryRecordMatchesIntended: boolean;
   readonly prefixRegistryCapacityMatches: boolean;
+  readonly prefixRegistryRefsMatch: boolean;
   readonly schemaVersionCapacityExists: boolean;
   readonly schemaVersionCapacityMatches: boolean;
   readonly axisId?: string;
@@ -900,8 +902,15 @@ async function collectTargetPostSyncCheck(
     versionId: target.prefixRecord.versionId,
     expectedCapacity: target.prefixRecord.capacity,
     prefixRegistryRecordExists: Boolean(prefixRecord),
+    prefixRegistryRecordMatchesIntended:
+      Boolean(prefixRecord) &&
+      prefixRecord?.capacity === target.prefixRecord.capacity &&
+      sameRefs(prefixRecord?.refs, target.prefixRecord.refs),
     prefixRegistryCapacityMatches:
       prefixRecord?.capacity === target.prefixRecord.capacity,
+    prefixRegistryRefsMatch:
+      Boolean(prefixRecord) &&
+      sameRefs(prefixRecord?.refs, target.prefixRecord.refs),
     schemaVersionCapacityExists: Boolean(schemaVersionRecord),
     schemaVersionCapacityMatches:
       schemaVersionRecord?.capacity === target.schemaVersionRecord.capacity,
