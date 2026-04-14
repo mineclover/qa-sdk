@@ -57,7 +57,7 @@ ontology design을 바꾸기 전에 어떤 문서, 패키지, gate를 local vali
 
 | 경계 | 변경 신호 | 반드시 보는 문서 | 반드시 보는 코드/테스트 | local gate |
 |------|-----------|------------------|--------------------------|------------|
-| definition-catalog validation | ontology 문서, link, source mapping 변경 | `definition-management`, 이 문서, 변경 대상 spec | `packages/cli/src/commands/def.ts`, `packages/definition-catalog/src/validate.ts`, `packages/definition-catalog/src/validate-semantic.test.ts` | `node packages/cli/dist/index.js def validate` |
+| definition-catalog validation | ontology 문서, link, source mapping 변경 | `definition-management`, `operational-ontology-definition-graph-requirements`, 이 문서, 변경 대상 spec | `packages/cli/src/commands/def.ts`, `packages/definition-catalog/src/validate.ts`, `packages/definition-catalog/src/validate-semantic.test.ts` | `node packages/cli/dist/index.js def validate` |
 | operational-ontology allocation validation | axis/taxonomy/pack/allocation 의미 변경 | `operational-ontology-schema-validation`, `operational-ontology-registry-allocation-plan` | `packages/operational-ontology/src/internal/ontology-allocation-core.ts`, `packages/operational-ontology/src/allocation.test.ts` | `pnpm --filter operational-ontology test`, `typecheck`, `build` |
 | programming-artifact simulation validation | artifact kind/relation/provider/quality-status context 변경 | `programming-artifact-ontology-system`, `programming-artifact-ontology-context-simulation` | 해당 문서의 `sources`에 연결된 provider/CLI implementation 및 fixture tests | operational-ontology gates, CLI targeted test when CLI behavior changes |
 | registry-service/index-meta lifecycle validation | persistence table, activation flow, prefix sync, decode lifecycle 변경 | `operational-ontology-registry-allocation-plan`, `registry-system`, `index-meta-system` | `packages/registry-service/src/lib/registry-service.ts`, `packages/registry-service/src/db/schema.ts`, `packages/index-meta/src/prefix-registry.ts`, `packages/index-meta/src/schema-sync.ts` | registry-service/index-meta tests only when those packages are changed |
@@ -80,3 +80,5 @@ Escalate from local validation to lifecycle validation only when the change edit
 ## Source Convention
 
 Every ontology validation doc that describes implemented behavior should carry top-level `sources`. Use implementation files for the owned behavior and test files for the expected gate. Do not use prose-only references as a substitute for source links when a concrete package file exists.
+
+For ontology module/leaf/plan/todo/knowledge frontmatter, `contains`, split, and source-map rules, use `operational-ontology-definition-graph-requirements` as the local contract before editing implementation docs.
