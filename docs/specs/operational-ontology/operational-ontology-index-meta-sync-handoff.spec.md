@@ -63,7 +63,7 @@ Only active allocation may be sent to index-meta. The sync adapter receives one 
 | allocation range | `capacity`, `addressOffset`, `addressSize` |
 | namespace context | `namespace`, optional `owner`, activation timestamp used as schema record creation time |
 | taxonomy context | ordered `axisIds`, `identityAxisIds`, optional `appliesTo`, optional `space` |
-| axis refs | for every taxonomy axis in order: `axisId`, `versionId`, `capacity`, `valuesHash`, and the ordered `values` only when entry materialization is requested |
+| axis refs | for every taxonomy axis in order: `axisId`, `versionId`, and `capacity`; `valuesHash` and ordered `values` remain source axis metadata and are only actionable when future entry materialization is requested |
 | segments | every `OntologyAddressSegment` for the allocation, preserving `segmentId`, ordered `consumes`, `addressOffset`, and `addressSize` |
 | materialization policy | whether to write no entries, axis-value entries, or a later explicit segment model |
 
@@ -118,10 +118,12 @@ Collision codes are `prefix-capacity-drift`, `prefix-refs-drift`, `schema-versio
 
 - Each consumed ontology axis is materialized as a leaf prefix record before the taxonomy prefix is registered.
 - The axis leaf prefix name is deterministic: `${normalizeIdentifier(namespace)}_axis_${normalizeIdentifier(axisId)}`.
+- Phase 4 axis leaf records persist only the current index-meta surface: `(prefix, versionId, capacity)` in `prefix_registry` and `schema_version`.
 - The allocation prefix is materialized as a composite `PrefixRegistryRecord` with `refs` in taxonomy `axisIds` order.
 - Parent `PrefixRegistryRecord.capacity` must equal `OntologyAddressAllocation.capacity`, `addressSize`, and the product of ref capacities.
 - A matching `schema_version` record must exist for every axis leaf prefix and for the parent taxonomy prefix, with the same capacity as the prefix registry record.
 - Axis-value entry materialization is deferred. If it is enabled later, entries belong only to the axis leaf prefixes. The taxonomy product combinations are decoded lazily through `PrefixRegistryRecord.refs`; they are not eagerly written as one entry row per product combination.
+  At that point, ordered axis values must reproduce the source axis `valuesHash`. Until then, `valuesHash` is not persisted in index-meta and cannot be used as a Phase 4 sync drift signal.
 
 Product allocation segment handling:
 
@@ -160,7 +162,7 @@ Sync is idempotent by intended target record shape, not by blind upsert.
 - If a previous attempt wrote only part of the target set, the next attempt may repair missing records only when all existing records match the intended allocation shape.
 - Existing `schema_version` without matching `prefix_registry`, or the reverse, is partial-sync drift. It may be repaired only after capacity and refs match the same allocation intent.
 - Same `(prefix, versionId)` with different capacity, refs, address model, allocation id, ontology id, or taxonomy id is a collision and must fail without overwriting.
-- Same axis leaf prefix/version with different `valuesHash` or capacity is drift and must fail without overwriting.
+- Same axis leaf prefix/version with different persisted capacity is drift and must fail without overwriting. Parent composite records also detect ordered `refs` drift. `valuesHash` drift is enforced by registry-service ontology axis persistence, not by current Phase 4 index-meta sync, because index-meta does not store axis values or their hash.
 - Capacity expansion uses index-meta lifecycle tooling only when explicitly selected by a future implementation story. This handoff does not authorize implicit `updateCapacity()`.
 - The adapter builds and preflights the full intended prefix/schema target set before any write. Any mismatched existing target blocks every missing write.
 
@@ -181,6 +183,8 @@ Phase 4 reports post-sync readbacks but does not implement the Phase 5 activatio
 1. `targetRecords[]`: for every intended target, whether prefix registry record exists, whether prefix capacity matches, whether schema version exists, and whether schema capacity matches.
 2. Product allocation checks: expected ordered axis capacities, actual `PrefixRegistry.getShape(prefix, versionId)`, shape match flag, last-valid address resolver check at `capacity - 1`, and out-of-range resolver check at `capacity`.
 3. Sum allocation checks: sidecar `coveragePolicy`, allocation range, covered size, segment list, and exact allocation range coverage flag.
+
+These fields are sufficient for Phase 5 smoke checks over the Phase 4 materialization surface: active allocation status can be checked in registry-service, target prefix/schema presence and capacity are in `targetRecords[]`, product decode bounds are in `productAllocation`, and sum segment coverage is in `sumAllocation`. Phase 5 must not assert axis `valuesHash` reproduction unless a future story implements axis-value entry materialization in index-meta.
 
 Phase 5 activation smoke remains open and must still prove:
 

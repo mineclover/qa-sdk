@@ -105,7 +105,8 @@ No browser verification is required.
 **Goal:** Prove the end-to-end activation lifecycle.
 
 **Execution PRD:**
-- Not created yet. Record the concrete `tasks/prd-ontology-registry-activation-smoke...` path here before converting or running Phase 5.
+- `tasks/prd-ontology-registry-activation-smoke.md`
+- `tasks/prd-ontology-registry-activation-smoke.json`
 
 **Inputs:**
 - Phase 3 service layer
@@ -115,6 +116,7 @@ No browser verification is required.
 **Next PRD Start Rule:**
 - The Phase 5 execution PRD must start with a review/adjustment story for the completed Phase 4 implementation.
 - Do not edit `tasks/prd-ontology-registry-index-meta-sync.json` after a ralph-tui run has started; carry any newly discovered Phase 4 assumptions into the first Phase 5 story instead.
+- The first Phase 5 story must reconcile the Phase 4 handoff statement about axis `valuesHash` drift with the actual index-meta materialization surface.
 
 **Exit Criteria:**
 - `activateOntologyPack(pack, options)` or equivalent helper exists.
