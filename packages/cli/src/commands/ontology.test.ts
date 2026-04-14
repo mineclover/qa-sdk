@@ -7,8 +7,50 @@ import { describe, expect, it, vi } from "vitest";
 import { SqliteQualityStore } from "quality-ledger";
 import { cliOntology } from "./ontology.js";
 import { USAGE, resolveSubcommand } from "../index.js";
+import {
+  KNOWN_ONTOLOGY_PACK_IDS,
+  resolveKnownOntologyPack,
+} from "../lib/known-ontology-packs.js";
 
 describe("ontology CLI", () => {
+  it("known pack resolver resolves activation pack ids without store setup", () => {
+    expect(KNOWN_ONTOLOGY_PACK_IDS).toEqual([
+      "programming-artifact-ontology",
+      "authorization-ontology",
+    ]);
+
+    const programmingArtifact = resolveKnownOntologyPack(
+      "programming-artifact-ontology",
+    );
+    const authorization = resolveKnownOntologyPack("authorization-ontology");
+
+    expect(programmingArtifact).toMatchObject({
+      ok: true,
+      packId: "programming-artifact-ontology",
+      pack: { packId: "programming-artifact-ontology" },
+    });
+    expect(authorization).toMatchObject({
+      ok: true,
+      packId: "authorization-ontology",
+      pack: { packId: "authorization-ontology" },
+    });
+  });
+
+  it("known pack resolver reports unknown pack ids as structured errors", () => {
+    const result = resolveKnownOntologyPack("custom-fixture-pack");
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        code: "unknown-ontology-pack",
+        message:
+          'Unknown ontology pack id "custom-fixture-pack". Supported pack ids: programming-artifact-ontology, authorization-ontology',
+        packId: "custom-fixture-pack",
+        supportedPackIds: KNOWN_ONTOLOGY_PACK_IDS,
+      },
+    });
+  });
+
   it("usage와 subcommand 해석에 ontology 루트를 노출한다", () => {
     expect(USAGE).toContain("qa-sdk ontology status");
     expect(USAGE).toContain("qa-sdk ontology prompt extract");

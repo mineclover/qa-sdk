@@ -7,6 +7,7 @@ after each iteration and it's included in prompts for context.
 
 - CLI command discovery lives in `packages/cli/src/command-groups/*.commands.ts`; ontology descriptors are proxied by handler key into `cliOntology` in `packages/cli/src/commands/ontology.ts`.
 - Local ontology activation should use one SQLite driver for registry-service ontology rows and index-meta rows: apply registry-service/index-meta schema setup, then share the driver across `SqlOntologyRegistryStore`, `SqlPrefixRegistry`, and `SqlIndexMetaStore`.
+- CLI-local ontology pack sources should resolve through a pure result-union helper in `packages/cli/src/lib`, importing production pack exports only; SQLite/store activation wiring stays outside the resolver so unit tests remain store-free.
 
 ---
 
@@ -23,4 +24,16 @@ after each iteration and it's included in prompts for context.
   - `authorizationOntologyPack` is exported from the root `authorization-ontology` package, so the CLI needs a direct workspace dependency before a resolver imports it.
   - The existing ontology command registry already has the right dispatch shape; future command work should add only a descriptor plus `cliOntology` handling.
   - `createRegistryDatabaseDriver()` applies registry-service migrations over the index-meta SQLite driver setup, but `createRegistryStores()` does not expose the shared driver needed to also build `SqlIndexMetaStore` for activation sync.
+---
+
+## 2026-04-15 - US-002
+- Added a CLI-local known ontology pack resolver for `programming-artifact-ontology` and `authorization-ontology`.
+- Unknown pack ids now resolve to a structured `unknown-ontology-pack` error payload with the requested id, message, and supported pack ids.
+- Added resolver unit coverage in the ontology CLI test suite without constructing SQLite stores or importing test fixtures.
+- Files changed: `packages/cli/src/lib/known-ontology-packs.ts`, `packages/cli/src/commands/ontology.test.ts`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter registry-service test`; `pnpm --filter registry-service typecheck`; `pnpm --filter registry-service build`; `pnpm --filter operational-ontology test -- allocation`; `pnpm --filter authorization-ontology test`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - The resolver should stay independent from the future activation runtime: it only maps stable ids to `OperationalOntologyPack` values and returns a result union.
+  - `programmingArtifactOntologyPack` and `authorizationOntologyPack` are production exports, so resolver tests can validate pack ids without fixture imports.
+  - After US-001 added `authorization-ontology` as a CLI dependency, stale local workspace links can make Vitest unable to resolve it until `pnpm install --offline` refreshes node_modules.
 ---
