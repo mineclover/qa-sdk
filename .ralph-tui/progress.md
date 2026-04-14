@@ -9,6 +9,7 @@ after each iteration and it's included in prompts for context.
 - Active ontology sync bundles must reorder store-loaded axis rows by `taxonomy.axisIds`; store adapters return axis rows in stable storage order, not necessarily taxonomy order.
 - Product ontology index-meta sync should build the full intended prefix/schema target set, validate product segment shape and parent capacity math, then preflight existing records before any write. Matching records are idempotent, missing counterparts can be repaired, and capacity/refs drift blocks without overwrite.
 - Sum ontology index-meta sync should materialize only the allocation prefix/schema as a leaf target, validate exact sidecar segment coverage before any write, and keep sum segments as report-only metadata rather than `prefix_ref` rows until index-meta owns a segment model.
+- Ontology/index-meta collision tests should seed mixed partial prefix/schema state to prove preflight is all-or-nothing: matching subsets can be completed, while any mismatched existing target blocks every missing write.
 
 ---
 
@@ -65,4 +66,16 @@ after each iteration and it's included in prompts for context.
   - The existing prefix/schema target preflight and write machinery can be shared by product and sum planners when the planner returns a common target set plus optional deferred sidecar semantics.
   - `PrefixRegistryRecord.refs` absence is the safest representation for sum allocations today; `getDeps()` stays empty and `getShape()` returns `[capacity]`, matching the handoff smoke contract.
   - Sum sidecar metadata should be emitted on both fresh and idempotent sync reports because it is audit/report state, not a persisted index-meta row.
+---
+
+## 2026-04-14 - US-006
+- Added explicit sync collision and drift regression tests for mixed partial product prefix/schema state.
+- Isolated product prefix capacity drift from refs drift so each collision path is tested independently and existing records are asserted unchanged.
+- Verified matching partial records can be completed safely, while a mismatched existing record blocks every missing counterpart and allocation parent write.
+- Ran the full requested acceptance checklist for registry-service, index-meta, operational-ontology allocation tests, and definition validation.
+- Files changed: `packages/registry-service/src/modules/ontology/index-meta-sync.adapter.test.ts`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - Mixed partial prefix/schema fixtures catch bugs that full-category repair tests miss because they exercise idempotent, repaired, and materialized report buckets in one sync.
+  - The adapter preflights every intended prefix/schema target before calling any write method; collision tests should assert missing safe counterparts remain absent after a blocked report.
+  - Existing prefix capacity drift can be tested without refs drift by preserving intended refs and changing only the stored parent capacity.
 ---

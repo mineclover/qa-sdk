@@ -105,6 +105,10 @@ No browser verification is required.
 - Phase 3 service layer
 - Phase 4 sync behavior
 
+**Next PRD Start Rule:**
+- The Phase 5 execution PRD must start with a review/adjustment story for the completed Phase 4 implementation.
+- Do not edit `tasks/prd-ontology-registry-index-meta-sync.json` after a ralph-tui run has started; carry any newly discovered Phase 4 assumptions into the first Phase 5 story instead.
+
 **Exit Criteria:**
 - `activateOntologyPack(pack, options)` or equivalent helper exists.
 - Valid pack produces active allocation and index-meta resolve/decode smoke success.
@@ -131,6 +135,7 @@ After each execution PRD closes:
 - Update `operational-ontology-registry-allocation.spec.md` with completed current-state behavior.
 - Update `operational-ontology-registry-allocation.todo.md` to close completed items and keep later phase items open.
 - Adjust the next phase PRD before converting/running it.
+- If the next phase PRD already started running, do not edit that active PRD; put the adjustment in the first story of the following phase PRD.
 - Record the next execution PRD path in this master roadmap before handing it to ralph-tui.
 
 ## Non-Goals

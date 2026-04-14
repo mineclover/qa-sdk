@@ -257,6 +257,100 @@ describe("Ontology index-meta sync adapter", () => {
     });
   });
 
+  it("completes mixed partial matching records when every existing shape is safe", async () => {
+    const prefixRegistry = new InMemoryPrefixRegistry();
+    const schemaVersionStore = new InMemoryIndexMetaStore();
+    await prefixRegistry.register({
+      prefix: RESOURCE_AXIS_PREFIX,
+      versionId: "v1",
+      capacity: 8,
+    });
+    await schemaVersionStore.insertSchemaVersion({
+      prefix: DECISION_AXIS_PREFIX,
+      versionId: "v1",
+      capacity: 4,
+      createdAt: NOW,
+    });
+    const adapter = createOntologyIndexMetaSyncAdapter({
+      prefixRegistry,
+      schemaVersionStore,
+    });
+
+    const report = await adapter.sync(productBundle());
+
+    expect(report.syncStatus).toBe("synced");
+    if (report.syncStatus !== "synced") {
+      throw new Error("expected matching partial records to be completed");
+    }
+    expect(report.idempotentRecords).toEqual([
+      expect.objectContaining({
+        kind: "prefix-registry",
+        role: "axis-leaf",
+        prefix: RESOURCE_AXIS_PREFIX,
+        capacity: 8,
+      }),
+      expect.objectContaining({
+        kind: "schema-version",
+        role: "axis-leaf",
+        prefix: DECISION_AXIS_PREFIX,
+        capacity: 4,
+      }),
+    ]);
+    expect(report.repairedRecords).toEqual([
+      expect.objectContaining({
+        kind: "schema-version",
+        role: "axis-leaf",
+        prefix: RESOURCE_AXIS_PREFIX,
+        capacity: 8,
+      }),
+      expect.objectContaining({
+        kind: "prefix-registry",
+        role: "axis-leaf",
+        prefix: DECISION_AXIS_PREFIX,
+        capacity: 4,
+      }),
+    ]);
+    expect(report.materializedRecords).toEqual([
+      expect.objectContaining({
+        kind: "prefix-registry",
+        role: "allocation-prefix",
+        prefix: PARENT_PREFIX,
+        capacity: 32,
+      }),
+      expect.objectContaining({
+        kind: "schema-version",
+        role: "allocation-prefix",
+        prefix: PARENT_PREFIX,
+        capacity: 32,
+      }),
+    ]);
+    expect(report.collisions).toEqual([]);
+    expect(
+      await schemaVersionStore.getSchemaVersion(RESOURCE_AXIS_PREFIX, "v1"),
+    ).toEqual({
+      prefix: RESOURCE_AXIS_PREFIX,
+      versionId: "v1",
+      capacity: 8,
+      createdAt: NOW,
+    });
+    expect(
+      await prefixRegistry.getRecord(DECISION_AXIS_PREFIX, "v1"),
+    ).toEqual({
+      prefix: DECISION_AXIS_PREFIX,
+      versionId: "v1",
+      capacity: 4,
+    });
+    expect(await prefixRegistry.getRecord(PARENT_PREFIX, "v1")).toEqual({
+      prefix: PARENT_PREFIX,
+      versionId: "v1",
+      capacity: 32,
+      refs: [
+        { prefix: RESOURCE_AXIS_PREFIX, versionId: "v1", capacity: 8 },
+        { prefix: DECISION_AXIS_PREFIX, versionId: "v1", capacity: 4 },
+      ],
+    });
+  });
+
   it("blocks existing prefix capacity drift without overwriting", async () => {
     const prefixRegistry = new InMemoryPrefixRegistry();
     const schemaVersionStore = new InMemoryIndexMetaStore();
@@ -264,7 +358,10 @@ describe("Ontology index-meta sync adapter", () => {
       prefix: PARENT_PREFIX,
       versionId: "v1",
       capacity: 16,
-      refs: [{ prefix: RESOURCE_AXIS_PREFIX, versionId: "v1", capacity: 8 }],
+      refs: [
+        { prefix: RESOURCE_AXIS_PREFIX, versionId: "v1", capacity: 8 },
+        { prefix: DECISION_AXIS_PREFIX, versionId: "v1", capacity: 4 },
+      ],
     };
     await prefixRegistry.register(existing);
     const adapter = createOntologyIndexMetaSyncAdapter({
@@ -278,9 +375,9 @@ describe("Ontology index-meta sync adapter", () => {
     if (report.syncStatus !== "blocked") {
       throw new Error("expected prefix drift to block sync");
     }
-    expect(report.collisions.map((collision) => collision.code)).toEqual(
-      expect.arrayContaining(["prefix-capacity-drift", "prefix-refs-drift"]),
-    );
+    expect(report.collisions.map((collision) => collision.code)).toEqual([
+      "prefix-capacity-drift",
+    ]);
     expect(await prefixRegistry.getRecord(PARENT_PREFIX, "v1")).toEqual(existing);
     expect(
       await prefixRegistry.getRecord(RESOURCE_AXIS_PREFIX, "v1"),
@@ -349,6 +446,54 @@ describe("Ontology index-meta sync adapter", () => {
       capacity: 16,
       createdAt: NOW,
     });
+  });
+
+  it("blocks partial mismatched records without completing missing counterparts", async () => {
+    const prefixRegistry = new InMemoryPrefixRegistry();
+    const schemaVersionStore = new InMemoryIndexMetaStore();
+    const matchingPrefix = {
+      prefix: RESOURCE_AXIS_PREFIX,
+      versionId: "v1",
+      capacity: 8,
+    };
+    const mismatchedSchemaVersion = {
+      prefix: DECISION_AXIS_PREFIX,
+      versionId: "v1",
+      capacity: 2,
+      createdAt: NOW,
+    };
+    await prefixRegistry.register(matchingPrefix);
+    await schemaVersionStore.insertSchemaVersion(mismatchedSchemaVersion);
+    const adapter = createOntologyIndexMetaSyncAdapter({
+      prefixRegistry,
+      schemaVersionStore,
+    });
+
+    const report = await adapter.sync(productBundle());
+
+    expect(report.syncStatus).toBe("blocked");
+    if (report.syncStatus !== "blocked") {
+      throw new Error("expected partial drift to block sync");
+    }
+    expect(report.collisions.map((collision) => collision.code)).toEqual([
+      "schema-version-capacity-drift",
+    ]);
+    expect(await prefixRegistry.getRecord(RESOURCE_AXIS_PREFIX, "v1")).toEqual(
+      matchingPrefix,
+    );
+    expect(
+      await schemaVersionStore.getSchemaVersion(DECISION_AXIS_PREFIX, "v1"),
+    ).toEqual(mismatchedSchemaVersion);
+    expect(
+      await schemaVersionStore.getSchemaVersion(RESOURCE_AXIS_PREFIX, "v1"),
+    ).toBeNull();
+    expect(
+      await prefixRegistry.getRecord(DECISION_AXIS_PREFIX, "v1"),
+    ).toBeNull();
+    expect(await prefixRegistry.getRecord(PARENT_PREFIX, "v1")).toBeNull();
+    expect(
+      await schemaVersionStore.getSchemaVersion(PARENT_PREFIX, "v1"),
+    ).toBeNull();
   });
 
   it("checks product segment shape before writing parent records", async () => {
