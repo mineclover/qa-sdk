@@ -43,3 +43,13 @@ after each iteration and it's included in prompts for context.
   - Prefix/schema sync must be shape-idempotent rather than upsert-based: compare capacity and ordered refs first, then write only missing records.
   - Product segment records remain registry-service evidence, not index-meta rows; the adapter uses them to validate the composite parent shape before writing any prefix registry record.
 ---
+
+## 2026-04-14 - US-004
+- Verified the existing ontology index-meta sync adapter writes schema version records alongside every product allocation prefix registry target.
+- Added regression coverage proving both axis leaf schema versions are written, the allocation prefix schema version is written, capacities match the intended prefix registry shape, and matching partial prefix/schema rows are repaired without overwriting drift.
+- Ran the full acceptance checklist for registry-service, index-meta, operational-ontology allocation tests, and definition validation.
+- Files changed: `packages/registry-service/src/modules/ontology/index-meta-sync.adapter.test.ts`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - US-003 already implemented the production schema-version write path; US-004 needed explicit coverage for all materialized schema rows and both safe partial-repair directions.
+  - `def validate` can fail transiently if it is run while `index-meta` build is cleaning `dist/`; rerun it after the package build completes.
+---

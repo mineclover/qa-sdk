@@ -69,6 +69,14 @@ describe("Ontology index-meta sync adapter", () => {
       createdAt: NOW,
     });
     expect(
+      await schemaVersionStore.getSchemaVersion(DECISION_AXIS_PREFIX, "v1"),
+    ).toEqual({
+      prefix: DECISION_AXIS_PREFIX,
+      versionId: "v1",
+      capacity: 4,
+      createdAt: NOW,
+    });
+    expect(
       await schemaVersionStore.getSchemaVersion(PARENT_PREFIX, "v1"),
     ).toEqual({
       prefix: PARENT_PREFIX,
@@ -98,6 +106,154 @@ describe("Ontology index-meta sync adapter", () => {
     expect(report.repairedRecords).toEqual([]);
     expect(report.collisions).toEqual([]);
     expect(await prefixRegistry.listAll()).toHaveLength(3);
+  });
+
+  it("repairs missing schema versions when prefix records match the allocation shape", async () => {
+    const prefixRegistry = new InMemoryPrefixRegistry();
+    const schemaVersionStore = new InMemoryIndexMetaStore();
+    await prefixRegistry.register({
+      prefix: RESOURCE_AXIS_PREFIX,
+      versionId: "v1",
+      capacity: 8,
+    });
+    await prefixRegistry.register({
+      prefix: DECISION_AXIS_PREFIX,
+      versionId: "v1",
+      capacity: 4,
+    });
+    await prefixRegistry.register({
+      prefix: PARENT_PREFIX,
+      versionId: "v1",
+      capacity: 32,
+      refs: [
+        { prefix: RESOURCE_AXIS_PREFIX, versionId: "v1", capacity: 8 },
+        { prefix: DECISION_AXIS_PREFIX, versionId: "v1", capacity: 4 },
+      ],
+    });
+    const adapter = createOntologyIndexMetaSyncAdapter({
+      prefixRegistry,
+      schemaVersionStore,
+    });
+
+    const report = await adapter.sync(productBundle());
+
+    expect(report.syncStatus).toBe("synced");
+    if (report.syncStatus !== "synced") {
+      throw new Error("expected missing schema versions to be repaired");
+    }
+    expect(report.materializedRecords).toEqual([]);
+    expect(report.idempotentRecords).toHaveLength(3);
+    expect(report.repairedRecords).toEqual([
+      expect.objectContaining({
+        kind: "schema-version",
+        role: "axis-leaf",
+        prefix: RESOURCE_AXIS_PREFIX,
+        capacity: 8,
+      }),
+      expect.objectContaining({
+        kind: "schema-version",
+        role: "axis-leaf",
+        prefix: DECISION_AXIS_PREFIX,
+        capacity: 4,
+      }),
+      expect.objectContaining({
+        kind: "schema-version",
+        role: "allocation-prefix",
+        prefix: PARENT_PREFIX,
+        capacity: 32,
+      }),
+    ]);
+    expect(report.collisions).toEqual([]);
+    expect(
+      await schemaVersionStore.getSchemaVersion(RESOURCE_AXIS_PREFIX, "v1"),
+    ).toEqual({
+      prefix: RESOURCE_AXIS_PREFIX,
+      versionId: "v1",
+      capacity: 8,
+      createdAt: NOW,
+    });
+    expect(
+      await schemaVersionStore.getSchemaVersion(DECISION_AXIS_PREFIX, "v1"),
+    ).toEqual({
+      prefix: DECISION_AXIS_PREFIX,
+      versionId: "v1",
+      capacity: 4,
+      createdAt: NOW,
+    });
+    expect(
+      await schemaVersionStore.getSchemaVersion(PARENT_PREFIX, "v1"),
+    ).toEqual({
+      prefix: PARENT_PREFIX,
+      versionId: "v1",
+      capacity: 32,
+      createdAt: NOW,
+    });
+  });
+
+  it("repairs missing prefix records when schema versions match the allocation shape", async () => {
+    const prefixRegistry = new InMemoryPrefixRegistry();
+    const schemaVersionStore = new InMemoryIndexMetaStore();
+    await schemaVersionStore.insertSchemaVersion({
+      prefix: RESOURCE_AXIS_PREFIX,
+      versionId: "v1",
+      capacity: 8,
+      createdAt: NOW,
+    });
+    await schemaVersionStore.insertSchemaVersion({
+      prefix: DECISION_AXIS_PREFIX,
+      versionId: "v1",
+      capacity: 4,
+      createdAt: NOW,
+    });
+    await schemaVersionStore.insertSchemaVersion({
+      prefix: PARENT_PREFIX,
+      versionId: "v1",
+      capacity: 32,
+      createdAt: NOW,
+    });
+    const adapter = createOntologyIndexMetaSyncAdapter({
+      prefixRegistry,
+      schemaVersionStore,
+    });
+
+    const report = await adapter.sync(productBundle());
+
+    expect(report.syncStatus).toBe("synced");
+    if (report.syncStatus !== "synced") {
+      throw new Error("expected missing prefix records to be repaired");
+    }
+    expect(report.materializedRecords).toEqual([]);
+    expect(report.idempotentRecords).toHaveLength(3);
+    expect(report.repairedRecords).toEqual([
+      expect.objectContaining({
+        kind: "prefix-registry",
+        role: "axis-leaf",
+        prefix: RESOURCE_AXIS_PREFIX,
+        capacity: 8,
+      }),
+      expect.objectContaining({
+        kind: "prefix-registry",
+        role: "axis-leaf",
+        prefix: DECISION_AXIS_PREFIX,
+        capacity: 4,
+      }),
+      expect.objectContaining({
+        kind: "prefix-registry",
+        role: "allocation-prefix",
+        prefix: PARENT_PREFIX,
+        capacity: 32,
+      }),
+    ]);
+    expect(report.collisions).toEqual([]);
+    expect(await prefixRegistry.getRecord(PARENT_PREFIX, "v1")).toEqual({
+      prefix: PARENT_PREFIX,
+      versionId: "v1",
+      capacity: 32,
+      refs: [
+        { prefix: RESOURCE_AXIS_PREFIX, versionId: "v1", capacity: 8 },
+        { prefix: DECISION_AXIS_PREFIX, versionId: "v1", capacity: 4 },
+      ],
+    });
   });
 
   it("blocks existing prefix capacity drift without overwriting", async () => {
