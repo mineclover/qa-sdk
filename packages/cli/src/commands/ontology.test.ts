@@ -169,6 +169,7 @@ describe("ontology CLI", () => {
         };
         warnings: unknown[];
         errors: unknown[];
+        syncSummariesByAllocationId: Record<string, unknown>;
       };
 
       expect(output.stderr).toBe("");
@@ -199,6 +200,219 @@ describe("ontology CLI", () => {
         failedAllocationCount: 0,
         failedCheckCount: 0,
       });
+      expect(Object.keys(parsed.syncSummariesByAllocationId).length).toBeGreaterThan(0);
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("registry activate-pack --json reports CLI errors with the activation error contract", async () => {
+    const output = await captureConsoleWithExitCode(async () => {
+      await cliOntology([
+        "registry.activate-pack",
+        "missing-pack",
+        "--json",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      status: string;
+      packId: string;
+      ontologyId: string;
+      namespaceSummary: null;
+      allocationSummaries: unknown[];
+      syncSummariesByAllocationId: Record<string, unknown>;
+      smokeCheckSummary: { allocationCount: number };
+      warnings: unknown[];
+      errors: Array<{
+        level: string;
+        phase: string;
+        code: string;
+        packId: string;
+        supportedPackIds: string[];
+      }>;
+    };
+
+    expect(output.stderr).toBe("");
+    expect(output.exitCode).toBe(1);
+    expect(parsed).toMatchObject({
+      status: "failed",
+      packId: "missing-pack",
+      ontologyId: "missing-pack",
+      namespaceSummary: null,
+      allocationSummaries: [],
+      syncSummariesByAllocationId: {},
+      smokeCheckSummary: { allocationCount: 0 },
+      warnings: [],
+      errors: [
+        expect.objectContaining({
+          level: "error",
+          phase: "cli",
+          code: "unknown-ontology-pack",
+          packId: "missing-pack",
+        }),
+      ],
+    });
+    expect(parsed.errors[0]?.supportedPackIds).toEqual(KNOWN_ONTOLOGY_PACK_IDS);
+  });
+
+  it("registry activate-pack --json rejects invalid flags as structured JSON", async () => {
+    const output = await captureConsoleWithExitCode(async () => {
+      await cliOntology([
+        "registry.activate-pack",
+        "programming-artifact-ontology",
+        "--not-a-real-flag",
+        "value",
+        "--json",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      status: string;
+      packId: string;
+      errors: Array<{ code: string; details?: { flag?: string } }>;
+    };
+
+    expect(output.stderr).toBe("");
+    expect(output.exitCode).toBe(1);
+    expect(parsed.status).toBe("failed");
+    expect(parsed.packId).toBe("programming-artifact-ontology");
+    expect(parsed.errors[0]).toMatchObject({
+      code: "invalid-cli-flag",
+      details: { flag: "--not-a-real-flag" },
+    });
+  });
+
+  it("registry activate-pack emits helper failed results without wrapping them", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activate-failure-"));
+    try {
+      const storePath = join(dir, "registry.sqlite");
+      await captureConsoleAsync(async () => {
+        await cliOntology([
+          "registry.activate-pack",
+          "programming-artifact-ontology",
+          "--store",
+          storePath,
+          "--ontology-id",
+          "artifact-collision-a",
+          "--namespace",
+          "artifact_collision_a",
+          "--version",
+          "v-collision",
+          "--prefix",
+          "programming-artifact=artifact_collision",
+          "--json",
+        ]);
+      });
+
+      const output = await captureConsoleWithExitCode(async () => {
+        await cliOntology([
+          "registry.activate-pack",
+          "programming-artifact-ontology",
+          "--store",
+          storePath,
+          "--ontology-id",
+          "artifact-collision-b",
+          "--namespace",
+          "artifact_collision_b",
+          "--version",
+          "v-collision",
+          "--prefix",
+          "programming-artifact=artifact_collision",
+          "--json",
+        ]);
+      });
+      const parsed = JSON.parse(output.stdout) as {
+        status: string;
+        packId: string;
+        ontologyId: string;
+        namespaceSummary: unknown;
+        allocationSummaries: unknown[];
+        syncSummariesByAllocationId: Record<string, unknown>;
+        smokeCheckSummary: { allocationCount: number };
+        warnings: unknown[];
+        errors: Array<{ phase: string; code: string; message: string }>;
+      };
+
+      expect(output.stderr).toBe("");
+      expect(output.exitCode).toBe(1);
+      expect(parsed).toMatchObject({
+        status: "failed",
+        packId: "programming-artifact-ontology",
+        ontologyId: "artifact-collision-b",
+        namespaceSummary: null,
+        allocationSummaries: [],
+        syncSummariesByAllocationId: {},
+        smokeCheckSummary: { allocationCount: 0 },
+        warnings: [],
+        errors: [
+          expect.objectContaining({
+            phase: "register",
+            code: "duplicate-allocation",
+          }),
+        ],
+      });
+      expect(output.stdout).not.toMatch(/SQLITE|SqliteError|sqlite/i);
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("registry activate-pack hides raw runtime storage errors in JSON output", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-store-error-"));
+    try {
+      const output = await captureConsoleWithExitCode(async () => {
+        await cliOntology([
+          "registry.activate-pack",
+          "programming-artifact-ontology",
+          "--store",
+          dir,
+          "--json",
+        ]);
+      });
+      const parsed = JSON.parse(output.stdout) as {
+        status: string;
+        errors: Array<{ code: string; message: string }>;
+      };
+
+      expect(output.exitCode).toBe(1);
+      expect(parsed.status).toBe("failed");
+      expect(parsed.errors[0]).toEqual(
+        expect.objectContaining({
+          code: "activation-runtime-error",
+          message:
+            "Ontology activation failed before a structured helper result was produced.",
+        }),
+      );
+      expect(output.stdout).not.toMatch(/SQLITE|SqliteError|sqlite/i);
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("registry activate-pack text output stays concise and includes action hints", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activate-text-"));
+    try {
+      const storePath = join(dir, "registry.sqlite");
+      const output = await captureConsoleAsync(async () => {
+        await cliOntology([
+          "registry.activate-pack",
+          "programming-artifact-ontology",
+          "--store",
+          storePath,
+          "--ontology-id",
+          "artifact-text",
+          "--namespace",
+          "artifact_text",
+          "--version",
+          "v-text",
+        ]);
+      });
+
+      expect(output.stderr).toBe("");
+      expect(output.stdout).toContain("Ontology pack activation: programming-artifact-ontology");
+      expect(output.stdout).toContain("status: succeeded");
+      expect(output.stdout).toContain("allocations:");
+      expect(output.stdout).toContain("smoke:");
+      expect(output.stdout).toContain("action hints:");
     } finally {
       await rm(dir, { force: true, recursive: true });
     }
@@ -3095,6 +3309,21 @@ async function captureConsoleAsync(run: () => Promise<void>) {
     stdout: stdout.join("\n"),
     stderr: stderr.join("\n"),
   };
+}
+
+async function captureConsoleWithExitCode(run: () => Promise<void>) {
+  const previousExitCode = process.exitCode;
+  process.exitCode = undefined;
+
+  try {
+    const output = await captureConsoleAsync(run);
+    return {
+      ...output,
+      exitCode: process.exitCode,
+    };
+  } finally {
+    process.exitCode = previousExitCode;
+  }
 }
 
 function writeQualityLedgerRuns(

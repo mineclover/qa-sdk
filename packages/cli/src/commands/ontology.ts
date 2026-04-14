@@ -341,6 +341,32 @@ const DEFAULT_REGISTRY_ACTIVATION_STORE_FILE = join(
 const QUALITY_STATUS_FRESHNESS_DAY_MS = 24 * 60 * 60 * 1000;
 const REGISTRY_ACTIVATE_PACK_USAGE =
   "Usage: qa-sdk ontology registry activate-pack <pack-id> [--store <path>] [--ontology-id <id>] [--namespace <namespace>] [--owner <owner>] [--version <versionId>] [--address-model product|sum] [--prefix <taxonomyId>=<prefix>] [--json]";
+const REGISTRY_ACTIVATE_PACK_VALUE_FLAGS = new Set([
+  "store",
+  "ontology-id",
+  "namespace",
+  "owner",
+  "version",
+  "address-model",
+  "prefix",
+]);
+const REGISTRY_ACTIVATE_PACK_BOOLEAN_FLAGS = new Set(["json"]);
+const REGISTRY_ACTIVATE_PACK_ALLOWED_FLAGS = new Set([
+  ...REGISTRY_ACTIVATE_PACK_VALUE_FLAGS,
+  ...REGISTRY_ACTIVATE_PACK_BOOLEAN_FLAGS,
+]);
+const REGISTRY_ACTIVATE_PACK_SUPPORTED_FLAGS = Object.freeze(
+  [...REGISTRY_ACTIVATE_PACK_ALLOWED_FLAGS].map((flag) => `--${flag}`).sort(),
+);
+const EMPTY_ACTIVATION_SMOKE_CHECK_SUMMARY = Object.freeze({
+  allocationCount: 0,
+  passedAllocationCount: 0,
+  failedAllocationCount: 0,
+  checkCount: 0,
+  passedCheckCount: 0,
+  failedCheckCount: 0,
+  byAllocationId: {},
+});
 
 function parseFlags(args: string[]): { positional: string[]; flags: Record<string, string> } {
   const positional: string[] = [];
@@ -379,6 +405,8 @@ function getRegistryActivationStorePath(flags: Record<string, string>): string {
 interface ActivationCliError {
   readonly code: string;
   readonly message: string;
+  readonly packId?: string;
+  readonly supportedPackIds?: readonly string[];
   readonly details?: unknown;
 }
 
@@ -421,12 +449,37 @@ function parseRegistryActivatePackArgs(args: string[]): ParsedRegistryActivatePa
 
     const { key, inlineValue } = splitCliFlag(arg);
     const next = args[index + 1];
-    let value = inlineValue;
-    if (value === undefined && next && !next.startsWith("--")) {
+
+    if (!REGISTRY_ACTIVATE_PACK_ALLOWED_FLAGS.has(key)) {
+      if (inlineValue === undefined && next && !next.startsWith("--")) {
+        index += 1;
+      }
+      errors.push({
+        code: "invalid-cli-flag",
+        message: `Invalid flag "--${key}" for ontology registry activate-pack.`,
+        details: {
+          flag: `--${key}`,
+          supportedFlags: REGISTRY_ACTIVATE_PACK_SUPPORTED_FLAGS,
+        },
+      });
+      continue;
+    }
+
+    let value: string | undefined;
+    if (REGISTRY_ACTIVATE_PACK_BOOLEAN_FLAGS.has(key)) {
+      value = inlineValue ?? "true";
+    } else if (inlineValue !== undefined) {
+      value = inlineValue;
+    } else if (next && !next.startsWith("--")) {
       value = next;
       index += 1;
-    } else if (value === undefined) {
-      value = "true";
+    } else {
+      errors.push({
+        code: "missing-flag-value",
+        message: `Missing value for --${key}.`,
+        details: { flag: `--${key}` },
+      });
+      continue;
     }
 
     if (key === "prefix") {
@@ -505,15 +558,48 @@ function hasRecordEntries(record: Record<string, string>): boolean {
   return Object.keys(record).length > 0;
 }
 
+function buildActivationCliFailureResult(
+  errors: readonly ActivationCliError[],
+  context: {
+    readonly packId?: string;
+    readonly ontologyId?: string;
+  } = {},
+) {
+  return {
+    status: "failed",
+    packId: context.packId ?? null,
+    ontologyId: context.ontologyId ?? context.packId ?? null,
+    namespaceSummary: null,
+    allocationSummaries: [],
+    syncSummariesByAllocationId: {},
+    smokeCheckSummary: EMPTY_ACTIVATION_SMOKE_CHECK_SUMMARY,
+    warnings: [],
+    errors: errors.map((error) => ({
+      level: "error",
+      phase: "cli",
+      ...error,
+    })),
+  };
+}
+
+function toActivationRuntimeError(): ActivationCliError {
+  return {
+    code: "activation-runtime-error",
+    message:
+      "Ontology activation failed before a structured helper result was produced.",
+  };
+}
+
 function printActivationCliErrors(
   errors: readonly ActivationCliError[],
   json: boolean,
+  context?: {
+    readonly packId?: string;
+    readonly ontologyId?: string;
+  },
 ): void {
   if (json) {
-    printJson({
-      status: "failed",
-      errors,
-    });
+    printJson(buildActivationCliFailureResult(errors, context));
   } else {
     for (const error of errors) {
       console.error(error.message);
@@ -545,6 +631,14 @@ function printActivationSummary(
     for (const error of result.errors) {
       console.log(`    - ${error.code ? `${error.code}: ` : ""}${error.message}`);
     }
+  }
+  console.log("  action hints:");
+  if (result.status === "succeeded") {
+    console.log("    - Use --json when another tool needs the activation payload.");
+    console.log(`    - Reuse --store ${storePath} for follow-up registry checks.`);
+  } else {
+    console.log("    - Re-run with --json to inspect structured errors.");
+    console.log("    - Fix the listed activation errors before using this pack downstream.");
   }
 }
 
@@ -2677,55 +2771,71 @@ async function cmdRegistryActivatePack(rest: string[]): Promise<void> {
     return;
   }
   if (errors.length > 0) {
-    printActivationCliErrors(errors, json);
+    printActivationCliErrors(errors, json, {
+      packId,
+      ontologyId: flags["ontology-id"],
+    });
     return;
   }
 
   const addressModelResult = parseActivationAddressModel(flags["address-model"]);
   if (!addressModelResult.ok) {
-    printActivationCliErrors([addressModelResult.error], json);
+    printActivationCliErrors([addressModelResult.error], json, {
+      packId,
+      ontologyId: flags["ontology-id"],
+    });
     return;
   }
 
   const packResolution = resolveKnownOntologyPack(packId);
   if (!packResolution.ok) {
-    printActivationCliErrors([packResolution.error], json);
+    printActivationCliErrors([packResolution.error], json, {
+      packId,
+      ontologyId: flags["ontology-id"] ?? packId,
+    });
     return;
   }
 
-  const { createLocalOntologyActivationRuntime } = await import(
-    "@qa-sdk/registry-service/ontology-local-runtime"
-  );
-  const runtime = await createLocalOntologyActivationRuntime({
-    storePath: getRegistryActivationStorePath(flags),
-  });
-
   try {
-    const result = await runtime.activationHelper.activateOntologyPack(
-      packResolution.pack,
-      {
-        ontologyId: flags["ontology-id"],
-        namespace: flags["namespace"],
-        owner: flags["owner"],
-        versionId: flags["version"],
-        addressModel: addressModelResult.addressModel,
-        prefixByTaxonomyId: hasRecordEntries(prefixByTaxonomyId)
-          ? prefixByTaxonomyId
-          : undefined,
-      },
+    const { createLocalOntologyActivationRuntime } = await import(
+      "@qa-sdk/registry-service/ontology-local-runtime"
     );
+    const runtime = await createLocalOntologyActivationRuntime({
+      storePath: getRegistryActivationStorePath(flags),
+    });
 
-    if (json) {
-      printJson(result);
-    } else {
-      printActivationSummary(result, runtime.storePath);
-    }
+    try {
+      const result = await runtime.activationHelper.activateOntologyPack(
+        packResolution.pack,
+        {
+          ontologyId: flags["ontology-id"],
+          namespace: flags["namespace"],
+          owner: flags["owner"],
+          versionId: flags["version"],
+          addressModel: addressModelResult.addressModel,
+          prefixByTaxonomyId: hasRecordEntries(prefixByTaxonomyId)
+            ? prefixByTaxonomyId
+            : undefined,
+        },
+      );
 
-    if (result.status !== "succeeded") {
-      process.exitCode = 1;
+      if (json) {
+        printJson(result);
+      } else {
+        printActivationSummary(result, runtime.storePath);
+      }
+
+      if (result.status !== "succeeded") {
+        process.exitCode = 1;
+      }
+    } finally {
+      runtime.close();
     }
-  } finally {
-    runtime.close();
+  } catch {
+    printActivationCliErrors([toActivationRuntimeError()], json, {
+      packId,
+      ontologyId: flags["ontology-id"] ?? packId,
+    });
   }
 }
 

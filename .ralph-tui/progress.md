@@ -10,6 +10,7 @@ after each iteration and it's included in prompts for context.
 - CLI-local ontology pack sources should resolve through a pure result-union helper in `packages/cli/src/lib`, importing production pack exports only; SQLite/store activation wiring stays outside the resolver so unit tests remain store-free.
 - Local ontology activation runtime is exported from `@qa-sdk/registry-service/ontology-local-runtime`; it returns a closeable runtime over one SQLite driver and supports both `:memory:` and persistent `--store`-style paths.
 - Packaged registry-service runtime code must resolve Drizzle migrations from both source and bundled `dist` locations; bundled files run with `import.meta.url` under `dist`, so source-relative `../../drizzle` can accidentally select sibling workspace folders like `packages/drizzle`.
+- Activation CLI JSON should print helper results unwrapped; pre-helper CLI/runtime failures should use a result-like failed payload with sanitized errors so automation can parse one stable contract.
 
 ---
 
@@ -67,4 +68,18 @@ after each iteration and it's included in prompts for context.
   - The command layer can stay thin by passing parsed flags directly into `activationHelper.activateOntologyPack()` and leaving register/activate/sync/smoke lifecycle ordering inside registry-service.
   - Repeatable `--prefix` needs command-specific parsing because the shared CLI `parseFlags()` intentionally collapses repeated flags into a single string value.
   - Built package subpaths exercise different `import.meta.url` paths than source tests; CLI tests that dynamically import `@qa-sdk/registry-service/ontology-local-runtime` caught a dist-only migration path bug.
+---
+
+## 2026-04-15 - US-005
+- Defined the `ontology registry activate-pack --json` contract around the activation helper result: successful and helper-returned failed results are printed unwrapped, including `status`, `packId`, `ontologyId`, `namespaceSummary`, `allocationSummaries`, `syncSummariesByAllocationId`, `smokeCheckSummary`, `warnings`, and `errors`.
+- Added command-specific flag validation for `activate-pack`, including structured JSON failures for unknown flags and missing flag values when `--json` is present.
+- Added sanitized pre-helper runtime failure JSON so storage/runtime exceptions do not expose raw SQLite/SQL details in automation output.
+- Kept text output concise while adding action hints for follow-up registry checks or structured error inspection.
+- Added CLI coverage for JSON success fields, unknown pack JSON, invalid flag JSON, helper-returned failure payloads, runtime storage error sanitization, and text output action hints.
+- Files changed: `packages/cli/src/commands/ontology.ts`, `packages/cli/src/commands/ontology.test.ts`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter registry-service test`; `pnpm --filter registry-service typecheck`; `pnpm --filter registry-service build`; `pnpm --filter operational-ontology test -- allocation`; `pnpm --filter authorization-ontology test`; `pnpm --filter @qa-sdk/cli build`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - `activate-pack` needs command-specific flag validation because its descriptor still proxies raw rest args through `cliOntology`, so the shared command parser does not reject unknown flags for this handler.
+  - Helper-returned failures are already safe to print as the canonical contract; wrapping them would make automation distinguish success and lifecycle failure unnecessarily.
+  - Runtime creation can fail before the helper has a chance to sanitize errors, so the CLI boundary needs its own generic `activation-runtime-error` path for JSON output.
 ---
