@@ -10,6 +10,7 @@ after each iteration and it's included in prompts for context.
 - Product ontology index-meta sync should build the full intended prefix/schema target set, validate product segment shape and parent capacity math, then preflight existing records before any write. Matching records are idempotent, missing counterparts can be repaired, and capacity/refs drift blocks without overwrite.
 - Sum ontology index-meta sync should materialize only the allocation prefix/schema as a leaf target, validate exact sidecar segment coverage before any write, and keep sum segments as report-only metadata rather than `prefix_ref` rows until index-meta owns a segment model.
 - Ontology/index-meta collision tests should seed mixed partial prefix/schema state to prove preflight is all-or-nothing: matching subsets can be completed, while any mismatched existing target blocks every missing write.
+- When replacing a deferred service shell with real materialization, remove the production fallback and require the adapter at service construction; keep deferred fakes explicit in tests that are not exercising sync.
 
 ---
 
@@ -78,4 +79,15 @@ after each iteration and it's included in prompts for context.
   - Mixed partial prefix/schema fixtures catch bugs that full-category repair tests miss because they exercise idempotent, repaired, and materialized report buckets in one sync.
   - The adapter preflights every intended prefix/schema target before calling any write method; collision tests should assert missing safe counterparts remain absent after a blocked report.
   - Existing prefix capacity drift can be tested without refs drift by preserving intended refs and changing only the stored parent capacity.
+---
+
+## 2026-04-14 - US-007
+- Replaced the service-level deferred sync fallback by requiring an injected `OntologyIndexMetaSyncAdapter` when constructing `OntologyRegistryService`.
+- Updated the Phase 3 service sync test to wire the real in-memory index-meta adapter, verify active-only preconditions remain compatible, assert materialized/idempotent/repaired/collision report fields, and prove sync does not activate sibling reserved allocations.
+- Kept deferred adapter behavior as explicit test scaffolding for non-sync service tests instead of an implicit production default.
+- Files changed: `packages/registry-service/src/modules/ontology/ontology-registry.service.ts`, `packages/registry-service/src/modules/ontology/ontology-registry.service.test.ts`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - `OntologyModule` is already the correct production owner for concrete index-meta wiring; the service should receive a ready adapter and stay ignorant of `SqlPrefixRegistry`/`SqlIndexMetaStore` construction.
+  - Phase 3 precondition coverage stays strongest when reserved/missing allocation checks assert no index-meta calls before activation, then the active path verifies real materialization.
+  - Explicit deferred test fakes preserve source-compatible report helper coverage without letting active service sync silently regress to `"deferred"`.
 ---

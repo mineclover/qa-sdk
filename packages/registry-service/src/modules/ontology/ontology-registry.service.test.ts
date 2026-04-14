@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { InMemoryPrefixRegistry } from "index-meta";
+import { InMemoryIndexMetaStore, InMemoryPrefixRegistry } from "index-meta";
 import { operationalOntologyAllocationPlane } from "operational-ontology/allocation";
 import type { OperationalOntologyPack } from "operational-ontology/pack";
 
@@ -7,6 +7,7 @@ import { InMemoryOntologyRegistryStore } from "../../stores/in-memory-ontology-r
 import type { OntologyRegistryStore } from "../../stores/ontology-registry-store.js";
 import {
   buildDeferredOntologyIndexMetaSyncReport,
+  createOntologyIndexMetaSyncAdapter,
   type OntologyIndexMetaSyncAdapter,
   type OntologyIndexMetaSyncBundle,
   type OntologyIndexMetaSyncDeferredReport,
@@ -70,7 +71,7 @@ describe("OntologyRegistryService", () => {
 
   it("registers valid packs by allocating, validating, and writing reserved rows", async () => {
     const store = new InMemoryOntologyRegistryStore();
-    const service = new OntologyRegistryService({ store });
+    const service = createService(store);
     const allocate = vi.spyOn(
       operationalOntologyAllocationPlane,
       "allocateOntologyAddressSpace",
@@ -203,7 +204,7 @@ describe("OntologyRegistryService", () => {
 
   it("uses pack id as default ontology id unless options override it", async () => {
     const store = new InMemoryOntologyRegistryStore();
-    const service = new OntologyRegistryService({ store });
+    const service = createService(store);
 
     const result = await service.registerOntologyPack({
       pack: validPack,
@@ -233,7 +234,7 @@ describe("OntologyRegistryService", () => {
 
   it("reports invalid pack validation as a service-level no-write conflict", async () => {
     const store = new InMemoryOntologyRegistryStore();
-    const service = new OntologyRegistryService({ store });
+    const service = createService(store);
     const allocate = vi.spyOn(
       operationalOntologyAllocationPlane,
       "allocateOntologyAddressSpace",
@@ -268,7 +269,7 @@ describe("OntologyRegistryService", () => {
 
   it("reserves allocation plans through OntologyRegistryStore only", async () => {
     const store = new InMemoryOntologyRegistryStore();
-    const service = new OntologyRegistryService({ store });
+    const service = createService(store);
 
     const result = await service.reserveAddressSpace({
       pack: validPack,
@@ -299,7 +300,7 @@ describe("OntologyRegistryService", () => {
 
   it("accepts allocation schema and policy inputs while keeping reservations inactive", async () => {
     const store = new InMemoryOntologyRegistryStore();
-    const service = new OntologyRegistryService({ store });
+    const service = createService(store);
     const prefixRegistry = new InMemoryPrefixRegistry();
     const allocate = vi.spyOn(
       operationalOntologyAllocationPlane,
@@ -349,7 +350,7 @@ describe("OntologyRegistryService", () => {
 
   it("rejects invalid allocation plans before persistence", async () => {
     const store = new InMemoryOntologyRegistryStore();
-    const service = new OntologyRegistryService({ store });
+    const service = createService(store);
     const write = vi.spyOn(store, "writeAllocationPlan");
     const invalidPlanError = await captureServiceError(
       service.reserveAddressSpace({
@@ -376,9 +377,7 @@ describe("OntologyRegistryService", () => {
   });
 
   it("maps duplicate prefix/version reservations to structured service conflicts", async () => {
-    const service = new OntologyRegistryService({
-      store: new InMemoryOntologyRegistryStore(),
-    });
+    const service = createService(new InMemoryOntologyRegistryStore());
 
     await service.reserveAddressSpace(validPack.schema, {
       ontologyId: "authz-a",
@@ -430,9 +429,7 @@ describe("OntologyRegistryService", () => {
   });
 
   it("maps duplicate ontology/taxonomy/version reservations without dropping store details", async () => {
-    const service = new OntologyRegistryService({
-      store: new InMemoryOntologyRegistryStore(),
-    });
+    const service = createService(new InMemoryOntologyRegistryStore());
 
     await service.reserveAddressSpace(validPack.schema, {
       ontologyId: "authz",
@@ -482,7 +479,7 @@ describe("OntologyRegistryService", () => {
 
   it("activates reserved allocations through the store boundary without index-meta calls", async () => {
     const store = new InMemoryOntologyRegistryStore();
-    const service = new OntologyRegistryService({ store });
+    const service = createService(store);
     const prefixRegistry = new InMemoryPrefixRegistry();
     const updateStatus = vi.spyOn(store, "updateAllocationStatus");
     const indexMetaGet = vi.spyOn(prefixRegistry, "getRecord");
@@ -504,7 +501,7 @@ describe("OntologyRegistryService", () => {
 
   it("rejects missing, active-again, and deprecated activation paths", async () => {
     const store = new InMemoryOntologyRegistryStore();
-    const service = new OntologyRegistryService({ store });
+    const service = createService(store);
     await service.reserveAddressSpace({ pack: validPack });
 
     await service.activateAllocation({
@@ -552,7 +549,7 @@ describe("OntologyRegistryService", () => {
 
   it("blocks activation when another active allocation owns the prefix/version", async () => {
     const store = new InMemoryOntologyRegistryStore();
-    const service = new OntologyRegistryService({ store });
+    const service = createService(store);
     await service.reserveAddressSpace({ pack: validPack });
     const allocation = await store.getAllocation(
       "authorization-ontology:authorization-resource:v1",
@@ -608,13 +605,24 @@ describe("OntologyRegistryService", () => {
     ).toEqual(expect.objectContaining({ status: "reserved" }));
   });
 
-  it("returns a deferred prefix sync report for active allocations only", async () => {
-    const service = new OntologyRegistryService({
-      store: new InMemoryOntologyRegistryStore(),
-    });
+  it("syncs active allocations through the index-meta adapter only", async () => {
+    const store = new InMemoryOntologyRegistryStore();
     const prefixRegistry = new InMemoryPrefixRegistry();
+    const schemaVersionStore = new InMemoryIndexMetaStore();
+    const service = new OntologyRegistryService({
+      store,
+      syncAdapter: createOntologyIndexMetaSyncAdapter({
+        prefixRegistry,
+        schemaVersionStore,
+      }),
+    });
     const indexMetaGet = vi.spyOn(prefixRegistry, "getRecord");
     const indexMetaRegister = vi.spyOn(prefixRegistry, "register");
+    const schemaVersionGet = vi.spyOn(schemaVersionStore, "getSchemaVersion");
+    const schemaVersionInsert = vi.spyOn(
+      schemaVersionStore,
+      "insertSchemaVersion",
+    );
     await service.reserveAddressSpace({ pack: validPack });
 
     const reservedSyncError = await captureServiceError(
@@ -637,6 +645,10 @@ describe("OntologyRegistryService", () => {
         allocationId: "missing",
       }),
     );
+    expect(indexMetaGet).not.toHaveBeenCalled();
+    expect(indexMetaRegister).not.toHaveBeenCalled();
+    expect(schemaVersionGet).not.toHaveBeenCalled();
+    expect(schemaVersionInsert).not.toHaveBeenCalled();
 
     await service.activateAllocation({
       allocationId: "authorization-ontology:authorization-resource:v1",
@@ -651,12 +663,98 @@ describe("OntologyRegistryService", () => {
       versionId: "v1",
       taxonomyId: "authorization-resource",
       status: "active",
-      syncStatus: "deferred",
-      deferredReason: "phase-4-index-meta-sync-not-implemented",
+      syncStatus: "synced",
+      materializedRecords: expect.arrayContaining([
+        expect.objectContaining({
+          kind: "prefix-registry",
+          role: "axis-leaf",
+          prefix: "authorization_ontology_axis_resource_kind",
+          capacity: 8,
+          axisId: "resource_kind",
+        }),
+        expect.objectContaining({
+          kind: "schema-version",
+          role: "axis-leaf",
+          prefix: "authorization_ontology_axis_resource_kind",
+          capacity: 8,
+          axisId: "resource_kind",
+        }),
+        expect.objectContaining({
+          kind: "prefix-registry",
+          role: "allocation-prefix",
+          prefix: "authorization_ontology_authorization_resource",
+          capacity: 8,
+          refs: [
+            {
+              prefix: "authorization_ontology_axis_resource_kind",
+              versionId: "v1",
+              capacity: 8,
+            },
+          ],
+        }),
+        expect.objectContaining({
+          kind: "schema-version",
+          role: "allocation-prefix",
+          prefix: "authorization_ontology_authorization_resource",
+          capacity: 8,
+        }),
+      ]),
+      idempotentRecords: [],
+      repairedRecords: [],
+      collisions: [],
+      deferredSemantics: [],
     });
-    expect(indexMetaGet).not.toHaveBeenCalled();
-    expect(indexMetaRegister).not.toHaveBeenCalled();
-    expect(await prefixRegistry.listAll()).toEqual([]);
+    if (report.syncStatus !== "synced") {
+      throw new Error("expected active allocation sync to materialize");
+    }
+    expect(report.materializedRecords).toHaveLength(4);
+    expect(await prefixRegistry.getRecord(
+      "authorization_ontology_authorization_resource",
+      "v1",
+    )).toEqual({
+      prefix: "authorization_ontology_authorization_resource",
+      versionId: "v1",
+      capacity: 8,
+      refs: [
+        {
+          prefix: "authorization_ontology_axis_resource_kind",
+          versionId: "v1",
+          capacity: 8,
+        },
+      ],
+    });
+    expect(await schemaVersionStore.getSchemaVersion(
+      "authorization_ontology_authorization_resource",
+      "v1",
+    )).toEqual(
+      expect.objectContaining({
+        prefix: "authorization_ontology_authorization_resource",
+        versionId: "v1",
+        capacity: 8,
+      }),
+    );
+    expect(
+      await store.getAllocation(
+        "authorization-ontology:authorization-decision:v1",
+      ),
+    ).toEqual(expect.objectContaining({ status: "reserved" }));
+
+    const retryReport = await service.syncToPrefixRegistry(
+      "authorization-ontology:authorization-resource:v1",
+    );
+    expect(retryReport).toEqual(
+      expect.objectContaining({
+        syncStatus: "synced",
+        materializedRecords: [],
+        repairedRecords: [],
+        collisions: [],
+        deferredSemantics: [],
+      }),
+    );
+    if (retryReport.syncStatus !== "synced") {
+      throw new Error("expected active allocation retry sync to remain synced");
+    }
+    expect(retryReport.idempotentRecords).toHaveLength(4);
   });
 
   it("passes a complete active allocation bundle to the sync adapter", async () => {
@@ -820,6 +918,17 @@ describe("OntologyRegistryService", () => {
     }
   });
 });
+
+function createService(store: OntologyRegistryStore): OntologyRegistryService {
+  return new OntologyRegistryService({
+    store,
+    syncAdapter: {
+      async sync(bundle) {
+        return buildDeferredOntologyIndexMetaSyncReport(bundle);
+      },
+    },
+  });
+}
 
 async function captureServiceError(
   action: Promise<unknown>,

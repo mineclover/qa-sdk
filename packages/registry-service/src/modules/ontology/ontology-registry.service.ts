@@ -21,16 +21,14 @@ import {
   type OntologyRegistryStoreConflict,
 } from "../../stores/ontology-registry-store.js";
 import {
-  buildDeferredOntologyIndexMetaSyncReport,
   type OntologyIndexMetaSyncAdapter,
   type OntologyIndexMetaSyncBundle,
-  type OntologyIndexMetaSyncDeferredReport,
   type OntologyIndexMetaSyncReport,
 } from "./index-meta-sync.adapter.js";
 
 export interface OntologyRegistryServiceDeps {
   readonly store: OntologyRegistryStore;
-  readonly syncAdapter?: OntologyIndexMetaSyncAdapter;
+  readonly syncAdapter: OntologyIndexMetaSyncAdapter;
 }
 
 export interface RegisterOntologyPackInput {
@@ -188,21 +186,13 @@ export class OntologyRegistryServiceError extends Error {
   }
 }
 
-const deferredOntologyIndexMetaSyncAdapter: OntologyIndexMetaSyncAdapter<
-  OntologyIndexMetaSyncDeferredReport
-> = {
-  async sync(bundle) {
-    return buildDeferredOntologyIndexMetaSyncReport(bundle);
-  },
-};
-
 export class OntologyRegistryService {
   private readonly store: OntologyRegistryStore;
   private readonly syncAdapter: OntologyIndexMetaSyncAdapter;
 
   constructor(deps: OntologyRegistryServiceDeps) {
     this.store = deps.store;
-    this.syncAdapter = deps.syncAdapter ?? deferredOntologyIndexMetaSyncAdapter;
+    this.syncAdapter = deps.syncAdapter;
   }
 
   async registerOntologyPack(
