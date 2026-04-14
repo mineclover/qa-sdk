@@ -4,6 +4,13 @@ import { operationalOntologyAllocationPlane } from "operational-ontology/allocat
 import type { OperationalOntologyPack } from "operational-ontology/pack";
 
 import { InMemoryOntologyRegistryStore } from "../../stores/in-memory-ontology-registry-store.js";
+import type { OntologyRegistryStore } from "../../stores/ontology-registry-store.js";
+import {
+  buildDeferredOntologyIndexMetaSyncReport,
+  type OntologyIndexMetaSyncAdapter,
+  type OntologyIndexMetaSyncBundle,
+  type OntologyIndexMetaSyncDeferredReport,
+} from "./index-meta-sync.adapter.js";
 import {
   OntologyRegistryService,
   OntologyRegistryServiceError,
@@ -29,6 +36,26 @@ const validPack = {
         appliesTo: ["node"],
         axisIds: ["decision_kind"],
         identityAxisIds: ["decision_kind"],
+        space: "authorization",
+      },
+    ],
+    relationCategories: [],
+  },
+} satisfies OperationalOntologyPack;
+
+const multiAxisPack = {
+  packId: "authorization-ontology",
+  schema: {
+    axes: [
+      { id: "resource_kind", values: ["service", "route"], capacity: 8 },
+      { id: "decision_kind", values: ["allow", "deny"], capacity: 4 },
+    ],
+    taxonomies: [
+      {
+        id: "authorization-surface",
+        appliesTo: ["node"],
+        axisIds: ["resource_kind", "decision_kind"],
+        identityAxisIds: ["resource_kind"],
         space: "authorization",
       },
     ],
@@ -631,6 +658,167 @@ describe("OntologyRegistryService", () => {
     expect(indexMetaRegister).not.toHaveBeenCalled();
     expect(await prefixRegistry.listAll()).toEqual([]);
   });
+
+  it("passes a complete active allocation bundle to the sync adapter", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const capturedBundles: OntologyIndexMetaSyncBundle[] = [];
+    const syncAdapter: OntologyIndexMetaSyncAdapter<
+      OntologyIndexMetaSyncDeferredReport
+    > = {
+      async sync(bundle) {
+        capturedBundles.push(bundle);
+        return buildDeferredOntologyIndexMetaSyncReport(bundle);
+      },
+    };
+    const service = new OntologyRegistryService({ store, syncAdapter });
+
+    await service.reserveAddressSpace({
+      pack: multiAxisPack,
+      policy: {
+        namespace: "authz",
+        owner: "registry-service",
+        versionId: "v1",
+        now: "2026-04-14T00:00:00.000Z",
+      },
+    });
+    await service.activateAllocation(
+      "authorization-ontology:authorization-surface:v1",
+    );
+
+    await service.syncToPrefixRegistry(
+      "authorization-ontology:authorization-surface:v1",
+    );
+
+    expect(capturedBundles).toHaveLength(1);
+    expect(capturedBundles[0]).toEqual(
+      expect.objectContaining({
+        allocation: expect.objectContaining({
+          allocationId: "authorization-ontology:authorization-surface:v1",
+          status: "active",
+          addressOffset: 0,
+          addressSize: 32,
+        }),
+        namespace: expect.objectContaining({
+          ontologyId: "authorization-ontology",
+          namespace: "authz",
+        }),
+        taxonomy: expect.objectContaining({
+          taxonomyId: "authorization-surface",
+          axisIds: ["resource_kind", "decision_kind"],
+        }),
+      }),
+    );
+    expect(capturedBundles[0]?.axes.map((axis) => axis.axisId)).toEqual([
+      "resource_kind",
+      "decision_kind",
+    ]);
+    expect(capturedBundles[0]?.segments).toEqual([
+      {
+        allocationId: "authorization-ontology:authorization-surface:v1",
+        segmentId: "authorization-ontology:authorization-surface:v1:product",
+        consumes: ["resource_kind", "decision_kind"],
+        addressOffset: 0,
+        addressSize: 32,
+      },
+    ]);
+  });
+
+  it("returns structured sync precondition errors for incomplete bundle rows", async () => {
+    const cases = [
+      {
+        name: "namespace",
+        overrides: {
+          getNamespace: async () => null,
+        },
+        expected: {
+          reason: "missing-namespace",
+          missingRecordKind: "namespace",
+          ontologyId: "authorization-ontology",
+        },
+      },
+      {
+        name: "taxonomy",
+        overrides: {
+          listTaxonomies: async () => [],
+        },
+        expected: {
+          reason: "missing-taxonomy",
+          missingRecordKind: "taxonomy",
+          taxonomyId: "authorization-resource",
+        },
+      },
+      {
+        name: "axis",
+        overrides: {
+          listAxes: async () => [],
+        },
+        expected: {
+          reason: "missing-axis",
+          missingRecordKind: "axis",
+          axisId: "resource_kind",
+          axisIds: ["resource_kind"],
+        },
+      },
+      {
+        name: "segment",
+        overrides: {
+          listSegments: async () => [],
+        },
+        expected: {
+          reason: "missing-segment",
+          missingRecordKind: "segment",
+          taxonomyId: "authorization-resource",
+        },
+      },
+    ] satisfies {
+      readonly name: string;
+      readonly overrides: Partial<OntologyRegistryStore>;
+      readonly expected: Record<string, unknown>;
+    }[];
+
+    for (const testCase of cases) {
+      const store = new InMemoryOntologyRegistryStore();
+      const syncAdapter = {
+        sync: vi.fn(async (bundle: OntologyIndexMetaSyncBundle) =>
+          buildDeferredOntologyIndexMetaSyncReport(bundle),
+        ),
+      } satisfies OntologyIndexMetaSyncAdapter<
+        OntologyIndexMetaSyncDeferredReport
+      >;
+      const service = new OntologyRegistryService({
+        store: overrideStore(store, testCase.overrides),
+        syncAdapter,
+      });
+
+      await service.reserveAddressSpace({
+        pack: validPack,
+        policy: {
+          namespace: "authz",
+          owner: "registry-service",
+          versionId: "v1",
+          now: "2026-04-14T00:00:00.000Z",
+        },
+      });
+      await service.activateAllocation(
+        "authorization-ontology:authorization-resource:v1",
+      );
+
+      const error = await captureServiceError(
+        service.syncToPrefixRegistry(
+          "authorization-ontology:authorization-resource:v1",
+        ),
+      );
+
+      expect(error.conflict).toEqual(
+        expect.objectContaining({
+          code: "sync-precondition-failure",
+          allocationId: "authorization-ontology:authorization-resource:v1",
+          ...testCase.expected,
+        }),
+      );
+      expect(syncAdapter.sync).not.toHaveBeenCalled();
+    }
+  });
 });
 
 async function captureServiceError(
@@ -660,4 +848,21 @@ async function expectOntologyStoreEmpty(
   expect(
     await store.listSegments("authorization-ontology:authorization-decision:v1"),
   ).toEqual([]);
+}
+
+function overrideStore(
+  store: OntologyRegistryStore,
+  overrides: Partial<OntologyRegistryStore>,
+): OntologyRegistryStore {
+  return new Proxy(store, {
+    get(target, property, receiver) {
+      if (property in overrides) {
+        const value = overrides[property as keyof OntologyRegistryStore];
+        return typeof value === "function" ? value.bind(overrides) : value;
+      }
+
+      const value = Reflect.get(target, property, receiver);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+  }) as OntologyRegistryStore;
 }

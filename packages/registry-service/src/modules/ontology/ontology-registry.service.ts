@@ -22,11 +22,16 @@ import {
 } from "../../stores/ontology-registry-store.js";
 import {
   buildDeferredOntologyIndexMetaSyncReport,
+  type OntologyIndexMetaSyncAdapter,
+  type OntologyIndexMetaSyncBundle,
   type OntologyIndexMetaSyncDeferredReport,
 } from "./index-meta-sync.adapter.js";
 
 export interface OntologyRegistryServiceDeps {
   readonly store: OntologyRegistryStore;
+  readonly syncAdapter?: OntologyIndexMetaSyncAdapter<
+    OntologyIndexMetaSyncDeferredReport
+  >;
 }
 
 export interface RegisterOntologyPackInput {
@@ -157,7 +162,18 @@ export interface OntologyPrefixSyncPreconditionFailureConflict
   extends OntologyRegistryServiceConflictBase {
   readonly code: "sync-precondition-failure";
   readonly allocationId: string;
-  readonly reason: "allocation-not-active" | "prefix-registry-conflict";
+  readonly reason:
+    | "allocation-not-active"
+    | "missing-namespace"
+    | "missing-taxonomy"
+    | "missing-axis"
+    | "missing-segment"
+    | "prefix-registry-conflict";
+  readonly missingRecordKind?: "namespace" | "taxonomy" | "axis" | "segment";
+  readonly ontologyId?: string;
+  readonly taxonomyId?: string;
+  readonly axisId?: string;
+  readonly axisIds?: readonly string[];
   readonly prefix?: string;
   readonly versionId?: string;
   readonly status?: OntologyAddressAllocationRecord["status"];
@@ -173,11 +189,23 @@ export class OntologyRegistryServiceError extends Error {
   }
 }
 
+const deferredOntologyIndexMetaSyncAdapter: OntologyIndexMetaSyncAdapter<
+  OntologyIndexMetaSyncDeferredReport
+> = {
+  async sync(bundle) {
+    return buildDeferredOntologyIndexMetaSyncReport(bundle);
+  },
+};
+
 export class OntologyRegistryService {
   private readonly store: OntologyRegistryStore;
+  private readonly syncAdapter: OntologyIndexMetaSyncAdapter<
+    OntologyIndexMetaSyncDeferredReport
+  >;
 
   constructor(deps: OntologyRegistryServiceDeps) {
     this.store = deps.store;
+    this.syncAdapter = deps.syncAdapter ?? deferredOntologyIndexMetaSyncAdapter;
   }
 
   async registerOntologyPack(
@@ -315,23 +343,92 @@ export class OntologyRegistryService {
       typeof inputOrAllocationId === "string"
         ? inputOrAllocationId
         : inputOrAllocationId.allocationId;
+    const bundle = await this.collectActiveAllocationSyncBundle(allocationId);
+
+    return this.syncAdapter.sync(bundle);
+  }
+
+  private async collectActiveAllocationSyncBundle(
+    allocationId: string,
+  ): Promise<OntologyIndexMetaSyncBundle> {
     const allocation = await this.requireAllocation(allocationId);
     if (allocation.status !== "active") {
-      throw new OntologyRegistryServiceError({
-        code: "sync-precondition-failure",
-        message: `Cannot sync ontology allocation "${allocation.allocationId}" while status is "${allocation.status}"`,
-        allocationId: allocation.allocationId,
-        reason: "allocation-not-active",
-        prefix: allocation.prefix,
-        versionId: allocation.versionId,
-        status: allocation.status,
+      throw allocationNotActiveSyncPrecondition(allocation);
+    }
+
+    const activeAllocation = {
+      ...allocation,
+      status: "active",
+    } as const;
+    const [namespace, taxonomies, axes, segments] = await Promise.all([
+      this.store.getNamespace(activeAllocation.ontologyId),
+      this.store.listTaxonomies(
+        activeAllocation.ontologyId,
+        activeAllocation.versionId,
+      ),
+      this.store.listAxes(activeAllocation.ontologyId, activeAllocation.versionId),
+      this.store.listSegments(activeAllocation.allocationId),
+    ]);
+
+    if (!namespace) {
+      throw missingSyncBundleRecord({
+        allocation: activeAllocation,
+        missingRecordKind: "namespace",
+        reason: "missing-namespace",
+        message: `Cannot sync ontology allocation "${activeAllocation.allocationId}" because namespace "${activeAllocation.ontologyId}" is missing`,
       });
     }
 
-    return buildDeferredOntologyIndexMetaSyncReport({
-      ...allocation,
-      status: "active",
-    });
+    const taxonomy =
+      taxonomies.find(
+        (candidate) =>
+          candidate.ontologyId === activeAllocation.ontologyId &&
+          candidate.taxonomyId === activeAllocation.taxonomyId &&
+          candidate.versionId === activeAllocation.versionId,
+      ) ?? null;
+    if (!taxonomy) {
+      throw missingSyncBundleRecord({
+        allocation: activeAllocation,
+        missingRecordKind: "taxonomy",
+        reason: "missing-taxonomy",
+        taxonomyId: activeAllocation.taxonomyId,
+        message: `Cannot sync ontology allocation "${activeAllocation.allocationId}" because taxonomy "${activeAllocation.taxonomyId}" version "${activeAllocation.versionId}" is missing`,
+      });
+    }
+
+    const axesById = new Map(axes.map((axis) => [axis.axisId, axis]));
+    const missingAxisIds = taxonomy.axisIds.filter(
+      (axisId) => !axesById.has(axisId),
+    );
+    if (missingAxisIds.length > 0) {
+      throw missingSyncBundleRecord({
+        allocation: activeAllocation,
+        missingRecordKind: "axis",
+        reason: "missing-axis",
+        axisId: missingAxisIds[0],
+        axisIds: missingAxisIds,
+        taxonomyId: taxonomy.taxonomyId,
+        message: `Cannot sync ontology allocation "${activeAllocation.allocationId}" because taxonomy "${taxonomy.taxonomyId}" references missing axis "${missingAxisIds[0]}"`,
+      });
+    }
+
+    if (segments.length === 0) {
+      throw missingSyncBundleRecord({
+        allocation: activeAllocation,
+        missingRecordKind: "segment",
+        reason: "missing-segment",
+        taxonomyId: taxonomy.taxonomyId,
+        message: `Cannot sync ontology allocation "${activeAllocation.allocationId}" because no allocation segments were found`,
+      });
+    }
+
+    return {
+      allocation: activeAllocation,
+      namespace,
+      taxonomy,
+      axes: taxonomy.axisIds.map((axisId) => axesById.get(axisId)!),
+      segments,
+    };
   }
 
   private async requireAllocation(
@@ -580,6 +677,51 @@ function missingAllocation(allocationId: string): OntologyRegistryServiceError {
     code: "missing-allocation",
     message: `Missing ontology allocation "${allocationId}"`,
     allocationId,
+  });
+}
+
+function allocationNotActiveSyncPrecondition(
+  allocation: OntologyAddressAllocationRecord,
+): OntologyRegistryServiceError {
+  return new OntologyRegistryServiceError({
+    code: "sync-precondition-failure",
+    message: `Cannot sync ontology allocation "${allocation.allocationId}" while status is "${allocation.status}"`,
+    allocationId: allocation.allocationId,
+    reason: "allocation-not-active",
+    ontologyId: allocation.ontologyId,
+    taxonomyId: allocation.taxonomyId,
+    prefix: allocation.prefix,
+    versionId: allocation.versionId,
+    status: allocation.status,
+  });
+}
+
+function missingSyncBundleRecord(input: {
+  readonly allocation: OntologyIndexMetaSyncBundle["allocation"];
+  readonly missingRecordKind: "namespace" | "taxonomy" | "axis" | "segment";
+  readonly reason:
+    | "missing-namespace"
+    | "missing-taxonomy"
+    | "missing-axis"
+    | "missing-segment";
+  readonly message: string;
+  readonly taxonomyId?: string;
+  readonly axisId?: string;
+  readonly axisIds?: readonly string[];
+}): OntologyRegistryServiceError {
+  return new OntologyRegistryServiceError({
+    code: "sync-precondition-failure",
+    message: input.message,
+    allocationId: input.allocation.allocationId,
+    reason: input.reason,
+    missingRecordKind: input.missingRecordKind,
+    ontologyId: input.allocation.ontologyId,
+    taxonomyId: input.taxonomyId ?? input.allocation.taxonomyId,
+    axisId: input.axisId,
+    axisIds: input.axisIds,
+    prefix: input.allocation.prefix,
+    versionId: input.allocation.versionId,
+    status: input.allocation.status,
   });
 }
 

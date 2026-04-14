@@ -30,8 +30,10 @@ export interface OntologyIndexMetaSyncAdapterDeps {
   readonly schemaVersionStore: OntologyIndexMetaSchemaVersionStore;
 }
 
-export interface OntologyIndexMetaSyncAdapter {
-  sync(bundle: OntologyIndexMetaSyncBundle): Promise<OntologyIndexMetaSyncReport>;
+export interface OntologyIndexMetaSyncAdapter<
+  TReport extends OntologyIndexMetaSyncReport = OntologyIndexMetaSyncReport,
+> {
+  sync(bundle: OntologyIndexMetaSyncBundle): Promise<TReport>;
 }
 
 export interface OntologyIndexMetaSyncBundle {
@@ -127,8 +129,16 @@ export interface OntologyIndexMetaSyncSegmentSidecar {
 }
 
 export function buildDeferredOntologyIndexMetaSyncReport(
+  bundle: OntologyIndexMetaSyncBundle,
+): OntologyIndexMetaSyncDeferredReport;
+export function buildDeferredOntologyIndexMetaSyncReport(
   allocation: OntologyActiveAddressAllocationRecord,
+): OntologyIndexMetaSyncDeferredReport;
+export function buildDeferredOntologyIndexMetaSyncReport(
+  input: OntologyIndexMetaSyncBundle | OntologyActiveAddressAllocationRecord,
 ): OntologyIndexMetaSyncDeferredReport {
+  const allocation = "allocation" in input ? input.allocation : input;
+
   return {
     allocationId: allocation.allocationId,
     prefix: allocation.prefix,
@@ -139,4 +149,3 @@ export function buildDeferredOntologyIndexMetaSyncReport(
     deferredReason: "phase-4-index-meta-sync-not-implemented",
   };
 }
-
