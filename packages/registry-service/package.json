@@ -8,6 +8,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./ontology-local-runtime": {
+      "types": "./dist/ontology-local-runtime.d.ts",
+      "import": "./dist/ontology-local-runtime.js"
     }
   },
   "main": "./dist/index.js",

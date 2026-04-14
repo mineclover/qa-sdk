@@ -8,6 +8,7 @@ after each iteration and it's included in prompts for context.
 - CLI command discovery lives in `packages/cli/src/command-groups/*.commands.ts`; ontology descriptors are proxied by handler key into `cliOntology` in `packages/cli/src/commands/ontology.ts`.
 - Local ontology activation should use one SQLite driver for registry-service ontology rows and index-meta rows: apply registry-service/index-meta schema setup, then share the driver across `SqlOntologyRegistryStore`, `SqlPrefixRegistry`, and `SqlIndexMetaStore`.
 - CLI-local ontology pack sources should resolve through a pure result-union helper in `packages/cli/src/lib`, importing production pack exports only; SQLite/store activation wiring stays outside the resolver so unit tests remain store-free.
+- Local ontology activation runtime is exported from `@qa-sdk/registry-service/ontology-local-runtime`; it returns a closeable runtime over one SQLite driver and supports both `:memory:` and persistent `--store`-style paths.
 
 ---
 
@@ -36,4 +37,18 @@ after each iteration and it's included in prompts for context.
   - The resolver should stay independent from the future activation runtime: it only maps stable ids to `OperationalOntologyPack` values and returns a result union.
   - `programmingArtifactOntologyPack` and `authorizationOntologyPack` are production exports, so resolver tests can validate pack ids without fixture imports.
   - After US-001 added `authorization-ontology` as a CLI dependency, stale local workspace links can make Vitest unable to resolve it until `pnpm install --offline` refreshes node_modules.
+---
+
+## 2026-04-15 - US-003
+- Added a local ontology activation runtime that constructs `SqlOntologyRegistryStore`, `SqlPrefixRegistry`, `SqlIndexMetaStore`, sync adapter, registry service, and activation helper over a single registry-service SQLite driver.
+- Supported persistent local SQLite state by normalizing non-`:memory:` store paths to absolute paths and creating parent directories before opening SQLite.
+- Added an in-memory test runtime path via `:memory:` while still using the SQL-backed registry-service/index-meta APIs.
+- Exported the runtime through `@qa-sdk/registry-service/ontology-local-runtime` and included the subpath in the registry-service build output.
+- Added registry-service tests proving activation through the helper and persistence across reopening the same SQLite store.
+- Files changed: `packages/registry-service/src/modules/ontology/local-activation-runtime.ts`, `packages/registry-service/src/modules/ontology/local-activation-runtime.test.ts`, `packages/registry-service/src/ontology-local-runtime.ts`, `packages/registry-service/src/index.ts`, `packages/registry-service/package.json`, `packages/registry-service/tsup.config.ts`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter registry-service test`; `pnpm --filter registry-service typecheck`; `pnpm --filter registry-service build`; `pnpm --filter operational-ontology test -- allocation`; `pnpm --filter authorization-ontology test`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - `createRegistryStores(":memory:")` intentionally returns in-memory stores, so local activation uses `createRegistryDatabaseDriver()` directly to keep registry-service and index-meta rows on the same SQLite driver.
+  - The local runtime can stay below the CLI command layer: US-004 can pass `--store` into `createLocalOntologyActivationRuntime()` without duplicating store construction or starting Nest.
+  - `tsup` needed explicit `index` and `ontology-local-runtime` entries plus declarations so the package export subpath has concrete JS and type output.
 ---

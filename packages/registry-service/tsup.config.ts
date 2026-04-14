@@ -1,8 +1,13 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/main.ts"],
+  entry: {
+    main: "src/main.ts",
+    index: "src/index.ts",
+    "ontology-local-runtime": "src/ontology-local-runtime.ts",
+  },
   format: ["esm"],
+  dts: true,
   target: "es2023",
   platform: "node",
   splitting: false,

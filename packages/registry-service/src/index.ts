@@ -6,6 +6,13 @@ export {
   createRegistryDatabaseDriver,
   createRegistryStores,
 } from "./bootstrap/stores.js";
+export {
+  LOCAL_ONTOLOGY_ACTIVATION_MEMORY_STORE,
+  createLocalOntologyActivationRuntime,
+  resolveLocalOntologyActivationStorePath,
+  type LocalOntologyActivationRuntime,
+  type LocalOntologyActivationRuntimeOptions,
+} from "./ontology-local-runtime.js";
 
 // ── Service ─────────────────────────────────────────────
 export { RegistryService, type RegistryServiceDeps } from "./lib/registry-service.js";
