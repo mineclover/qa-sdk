@@ -9,6 +9,8 @@ after each iteration and it's included in prompts for context.
 - Registry-service store contracts live as narrow dependency-free interface files under `packages/registry-service/src/stores/`; adapter-specific imports such as SQL drivers stay in `in-memory-*`/`sql-*` implementations.
 - Ontology registry persistence validation should stay stores-local and dependency-free, returning the structured `OntologyRegistryStoreConflict` shapes before either SQL or in-memory adapters translate them into write failures.
 - Full ontology allocation plan writes should collect validation conflicts first and throw `partial-write-rejected` before mutating adapter state; exact same-key repeats are `duplicate-key`, while changed same-key records are `drift`.
+- SQL store adapters can keep raw `SqlDriver` queries while deriving table names from Drizzle schema exports via `getTableName()`, which keeps Phase table names tied to `db/schema.ts` without adopting Drizzle query builders.
+- SQL ontology writes should follow snapshot → shared validation → transaction insert, then revalidate/map SQLite unique constraint failures into `partial-write-rejected` conflicts for race/concurrent duplicate cases.
 
 ---
 
@@ -54,4 +56,19 @@ after each iteration and it's included in prompts for context.
   - `writeAllocationPlan()` can stay atomic in memory by validating against a cloned snapshot and only committing maps after every conflict check passes.
   - The Phase 2A handoff needs duplicate and drift to be separated: exact natural-key repeats are `duplicate-key`, while changed values on the same natural key remain `drift`.
   - Returning cloned array-backed records avoids mutable fixture/test code leaking into the in-memory store state.
+---
+
+## 2026-04-14 - US-004
+- Implemented `SqlOntologyRegistryStore` over the Phase 2A ontology tables with list/get/write support for namespaces, axes, taxonomies, allocations, active allocations, and segments.
+- Added explicit JSON serialization/deserialization for `values_json`, `applies_to_json`, `axis_ids_json`, `identity_axis_ids_json`, and `consumes_json`.
+- Applied shared ontology validation before SQL writes, wrapped writes in `SqlDriver.transaction()`, and mapped SQLite unique constraint failures into structured `partial-write-rejected` store conflicts.
+- Added SQL store tests for successful persistence, JSON text round-tripping, no-partial validation failure, and unique constraint conflict mapping.
+- Files changed:
+  - `packages/registry-service/src/stores/sql-ontology-registry-store.ts`
+  - `packages/registry-service/src/stores/sql-ontology-registry-store.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Registry-service SQL stores commonly use `index-meta`'s `SqlDriver` directly; table-name derivation from Drizzle schema exports can keep raw SQL aligned with the Phase 2A schema.
+  - Validation failures should happen before opening a write transaction, while SQL uniqueness races still need a catch-and-map path because the database is the final uniqueness boundary.
+  - The D1-style `SqlDriver.transaction()` contract may be sequential rather than atomic, so the SQL adapter can guarantee no partial rows on pre-write validation failure and use atomic rollback where the dialect supports transactions.
 ---
