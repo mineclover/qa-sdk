@@ -23,15 +23,15 @@ def:
 
 operational ontology schema를 registry-service의 ontology-aware registry/allocator로 승격하기 위한 구현 항목을 추적한다. 목표는 완료된 DB 독립 allocation model 다음에 registry-service persistence, service layer, index-meta sync, pack activation flow를 순서대로 닫는 것이다.
 
-완료된 local allocation model, validation issue target, validation boundary, matrix, graph requirement, Phase 2A persistence schema, Phase 2B store adapter, persistence/index-meta handoff, scoped prefix decision은 `operational-ontology-registry-allocation` spec에 반영됐다. 이 TODO는 Phase 3 이후의 미구현 service/sync/activation 작업을 추적한다.
+완료된 local allocation model, validation issue target, validation boundary, matrix, graph requirement, Phase 2A persistence schema, Phase 2B store adapter, Phase 3 service layer, persistence/index-meta handoff, scoped prefix decision은 `operational-ontology-registry-allocation` spec에 반영됐다. 이 TODO는 Phase 4 이후의 미구현 sync/activation 작업을 추적한다.
 
 ## 실행 dependency map
 
 - Phase 1은 완료된 local allocation contract이며 모든 후속 phase의 입력이다.
 - Phase 2A/2B persistence work는 Phase 1만 필요하다. Phase 2 persistence tasks는 Phase 4 index-meta sync 구현이나 index-meta schema 변경에 의존하지 않는다.
 - Phase 2B store adapter는 Phase 2A schema contract를 소비한다. SQL adapter는 migration/schema snapshot이 필요하지만 in-memory adapter는 schema 결정만으로 병렬 작성 가능하다.
-- Phase 3 service layer는 Phase 2B store contract와 Phase 1 allocation validator를 소비한다. `syncToPrefixRegistry()`는 Phase 4가 닫히기 전까지 active allocation 검증과 audit/report shell까지만 구현할 수 있다.
-- Phase 3은 pack validation, address reservation, allocation activation workflow를 하나의 service transaction boundary로 조율해야 한다. Phase 2B store transaction은 complete allocation plan write만 원자화하므로 lifecycle transition과 index-meta handoff까지 자동으로 닫지 않는다.
+- Phase 3 service layer는 Phase 2B store contract와 Phase 1 allocation validator를 소비해 완료됐다. `syncToPrefixRegistry()`는 Phase 4가 닫히기 전까지 active allocation 검증과 audit/report shell까지만 구현한다.
+- Phase 3은 pack validation, address reservation, allocation activation workflow를 service boundary로 조율한다. Phase 2B store transaction은 complete allocation plan write를 원자화하고, service layer는 local validation no-write, reserved-only activation, active prefix/version collision guard를 담당한다.
 - Phase 4 index-meta sync는 active allocation contract를 소비한다. Phase 4의 표현 방식 결정은 Phase 2A/2B persistence schema를 역으로 변경하지 않는다.
 - Phase 5 activation smoke는 Phase 3 service layer를 먼저 필요로 한다. full prefix registry resolve/decode smoke는 Phase 4 완료 후 실행한다.
 - Phase 6 prefix policy는 schema 변경 전 결정 gate다. prefix table schema 변경은 Phase 6 결정 전까지 금지하지만 Phase 2A/2B의 `ontology_address_allocation` collision guard는 진행 가능하다.
@@ -155,7 +155,7 @@ US-007 completion notes:
 - [x] table별 duplicate/collision 테스트 추가
 - [x] store-level list/get query 추가: namespace, taxonomy, allocation, active allocation
 
-## Phase 3: Registry-service service layer
+## Phase 3: Registry-service service layer — 완료
 
 Goal: pack validation, reservation, activation, and sync handoff를 service API로 묶어 invalid pack no-write와 active allocation lifecycle을 보장한다.
 
@@ -172,34 +172,44 @@ Validation commands:
 - `pnpm --filter registry-service test`
 - `pnpm --filter registry-service typecheck`
 - `pnpm --filter registry-service build`
-- `pnpm --filter operational-ontology typecheck`
+- `pnpm --filter operational-ontology test -- allocation`
 - `node packages/cli/dist/index.js def validate`
 
-- [ ] `OntologyRegistryService` 추가
-- [ ] `registerOntologyPack(pack, options)` 구현
-  - [ ] `validateOperationalOntologyPack(pack)` 선행
-  - [ ] invalid pack은 namespace/axis/taxonomy/allocation 저장 금지
-  - [ ] packId를 기본 `ontologyId`로 사용
-- [ ] `reserveAddressSpace(input)` 구현
-  - [ ] `allocateOntologyAddressSpace()` 호출
-  - [ ] allocation collision guard 적용
-  - [ ] status는 기본 `reserved`
-- [ ] `activateAllocation(allocationId)` 구현
-  - [ ] reserved → active만 허용
-  - [ ] deprecated allocation은 재활성화 금지
-  - [ ] active prefix/version 중복 방지
-- [ ] `syncToPrefixRegistry(allocationId)` 구현
-  - [ ] active allocation만 sync 허용
-  - [ ] sync 결과를 audit/report record로 반환
-- [ ] service-level rollback/partial failure 정책 결정
-  - [ ] store adapter transaction으로 닫히지 않는 pack validation/reservation/activation orchestration boundary 결정
-- [ ] registry-service module/controller 노출 여부 결정
-  - [ ] 내부 service only
-  - [ ] REST endpoint
-  - [ ] CLI-only adapter
-- [ ] service unit test 추가: valid pack → reserved allocation
-- [ ] service unit test 추가: invalid pack → no write
-- [ ] service unit test 추가: duplicate prefix/version → error
+US-008 completion notes:
+
+- `OntologyRegistryService`는 `OntologyRegistryStore`만 소비하고 raw SQL을 직접 접근하지 않는 internal service boundary로 고정됐다.
+- `OntologyModule`은 `DATABASE` 기반 `SqlOntologyRegistryStore` provider와 service provider를 export하지만 controller, REST route, CLI command를 추가하지 않는다.
+- `registerOntologyPack()`와 pack-based `reserveAddressSpace()`는 `validateOperationalOntologyPack()`을 먼저 실행하고, invalid pack이면 allocation projection/store write를 호출하지 않는다.
+- `reserveAddressSpace(schema, policy)`는 allocation projection과 plan validation을 실행한 뒤 `status: "reserved"`로 정규화해 store에 complete write set을 전달한다.
+- `activateAllocation()`은 `reserved -> active`만 허용하고, active/deprecated 재활성화와 active `(prefix, versionId)` collision을 service-level error로 막는다.
+- `syncToPrefixRegistry()`는 active allocation precondition과 deferred Phase 4 report shape만 반환하며 index-meta write를 수행하지 않는다.
+- Service error code는 `invalid-pack`, `invalid-allocation-plan`, `duplicate-allocation`, `invalid-transition`, `missing-allocation`, `sync-precondition-failure`로 고정됐다.
+
+- [x] `OntologyRegistryService` 추가
+- [x] `registerOntologyPack(pack, options)` 구현
+  - [x] `validateOperationalOntologyPack(pack)` 선행
+  - [x] invalid pack은 namespace/axis/taxonomy/allocation 저장 금지
+  - [x] packId를 기본 `ontologyId`로 사용
+- [x] `reserveAddressSpace(input)` 구현
+  - [x] `allocateOntologyAddressSpace()` 호출
+  - [x] allocation collision guard 적용
+  - [x] status는 기본 `reserved`
+- [x] `activateAllocation(allocationId)` 구현
+  - [x] reserved → active만 허용
+  - [x] deprecated allocation은 재활성화 금지
+  - [x] active prefix/version 중복 방지
+- [x] `syncToPrefixRegistry(allocationId)` 구현
+  - [x] active allocation만 sync 허용
+  - [x] sync 결과를 audit/report record로 반환
+- [x] service-level rollback/partial failure 정책 결정
+  - [x] store adapter transaction으로 닫히지 않는 pack validation/reservation/activation orchestration boundary 결정
+- [x] registry-service module/controller 노출 여부 결정
+  - [x] 내부 service only
+  - [x] REST endpoint 미노출
+  - [x] CLI-only adapter 미노출
+- [x] service unit test 추가: valid pack → reserved allocation
+- [x] service unit test 추가: invalid pack → no write
+- [x] service unit test 추가: duplicate prefix/version → error
 
 ## Phase 4: index-meta sync
 

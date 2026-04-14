@@ -33,6 +33,10 @@ sources:
   - packages/registry-service/src/stores/in-memory-ontology-registry-store.ts
   - packages/registry-service/src/stores/sql-ontology-registry-store.ts
   - packages/registry-service/src/stores/ontology-registry-store.test.ts
+  - packages/registry-service/src/modules/ontology/ontology-registry.service.ts
+  - packages/registry-service/src/modules/ontology/ontology-registry.service.test.ts
+  - packages/registry-service/src/modules/ontology/ontology.module.ts
+  - packages/registry-service/src/modules/ontology/ontology.module.test.ts
 ---
 
 # Operational Ontology Registry Persistence Handoff — registry-service row contract
@@ -50,7 +54,7 @@ registry-service가 ontology namespace, axis, taxonomy, address allocation, allo
 - **Collision rules** — store unique constraint 또는 service validation으로 막아야 하는 중복과 drift.
 - **Future tests** — registry-service persistence가 시작될 때 추가해야 하는 테스트 목록.
 
-Phase 2A는 실제 `registry-service/src/db/schema.ts` 변경, SQL migration, Drizzle snapshot, migration-backed SQL schema test를 추가했다. Phase 2B는 `OntologyRegistryStore`, in-memory/SQL adapters, shared store validation, adapter parity tests, bootstrap exposure를 추가했다. 이 문서는 아직 service/controller 구현, REST/CLI exposure 결정을 만들지 않는다. 그런 구현은 Phase 3 story에서 선택한다.
+Phase 2A는 실제 `registry-service/src/db/schema.ts` 변경, SQL migration, Drizzle snapshot, migration-backed SQL schema test를 추가했다. Phase 2B는 `OntologyRegistryStore`, in-memory/SQL adapters, shared store validation, adapter parity tests, bootstrap exposure를 추가했다. Phase 3은 `OntologyRegistryService`와 internal Nest provider wiring을 추가했으며 controller, REST route, CLI command는 추가하지 않는다.
 
 ## Persistence Records ^defines
 
@@ -148,7 +152,18 @@ The registry-service table implementation keeps these handoff refinements as par
 - `segment-overlap` — two segments overlap inside the same allocation range.
 - `partial-write-rejected` — top-level write rejection that wraps the underlying conflicts and requires no partial row persistence.
 
-Phase 3 service code should preserve this conflict shape or wrap it without losing the inner conflict list. Service-only errors, such as invalid pack, invalid lifecycle transition, inactive sync attempt, or service transaction failure, belong above this store conflict surface.
+Phase 3 service code preserves this conflict shape by carrying raw `storeConflicts` on service conflicts that wrap store validation. Service-only errors belong above this store conflict surface.
+
+## Phase 3 Service Conflict Naming ^service-conflicts
+
+`OntologyRegistryServiceError` is the service boundary error type. Its `conflict.code` values refine the handoff contract without replacing store conflict names:
+
+- `invalid-pack` — `validateOperationalOntologyPack()` failed before allocation projection or store write.
+- `invalid-allocation-plan` — `validateOntologyAddressAllocationPlan()` failed, or store validation rejected a non-duplicate plan. Store-derived failures preserve `storeConflicts`.
+- `duplicate-allocation` — reservation collided with allocation identity, `(prefix, versionId)`, or `(ontologyId, taxonomyId, versionId)`, or activation found another active allocation for the same `(prefix, versionId)`. The payload includes `allocationIds`, normalized `allocationKeys`, and raw `storeConflicts`.
+- `invalid-transition` — activation was requested from any status other than `reserved`.
+- `missing-allocation` — activation or sync referenced an unknown allocation id.
+- `sync-precondition-failure` — sync referenced an allocation that exists but is not active. Phase 3 uses reason `allocation-not-active`; `prefix-registry-conflict` is reserved for Phase 4 materialization.
 
 ## Store And Service Collision Rules
 
@@ -165,7 +180,15 @@ Registry-service persistence must enforce these rules either as table constraint
 - `(allocationId, segmentId)` is unique.
 - Segment rows must reference an existing allocation, consume at least one axis, have positive `addressSize`, stay inside the allocation range, and not overlap another segment in the same allocation; store adapters report `invalid-segment` or `segment-overlap`.
 
-Before persistence writes, the service should run `validateOperationalOntologyPack()` when a pack is supplied and `validateOntologyAddressAllocationPlan()` on the projected plan. Invalid local plans must be no-write failures.
+Before persistence writes, the service runs `validateOperationalOntologyPack()` when a pack is supplied and `validateOntologyAddressAllocationPlan()` on the projected plan. Invalid packs and invalid local plans are no-write failures before `OntologyRegistryStore.writeAllocationPlan()` is called.
+
+Activation is service-owned lifecycle state:
+
+- Reservation writes allocation rows as `reserved`; namespace, axis, and taxonomy lifecycle rows remain `draft`.
+- Only `reserved -> active` is accepted by `activateAllocation()`.
+- Active/deprecated activation attempts fail with `invalid-transition`.
+- A second active allocation with the same `(prefix, versionId)` fails with `duplicate-allocation` before `updateAllocationStatus()` mutates the store.
+- `syncToPrefixRegistry()` currently requires active status and returns a deferred Phase 4 report; it does not perform index-meta writes.
 
 ## Registry-Service Test Surface
 
@@ -173,8 +196,10 @@ Phase 2A added `packages/registry-service/src/ontology-persistence.schema.sql.te
 
 Phase 2B added `packages/registry-service/src/stores/ontology-registry-store.test.ts` as a shared in-memory/SQL adapter contract. It covers complete allocation plan persistence, namespace/axis/taxonomy/allocation/segment reads, active allocation reads, duplicate keys, same-key drift, missing taxonomy axes, invalid/out-of-range segments, segment overlap, and no-partial-write behavior. SQL-specific adapter tests cover JSON round-tripping and SQLite unique constraint mapping.
 
-Phase 3 still needs these tests before or with its implementation:
+Phase 3 added `packages/registry-service/src/modules/ontology/ontology-registry.service.test.ts` and `packages/registry-service/src/modules/ontology/ontology.module.test.ts`.
 
-- `src/modules/ontology/ontology-registry.service.test.ts` — valid plan persists namespace, axis, taxonomy, allocation, and segment rows in one transaction.
-- `src/modules/ontology/ontology-registry.service.test.ts` — invalid pack or invalid allocation plan leaves no partial rows.
-- `src/modules/ontology/ontology-registry.service.test.ts` — duplicate `(prefix, versionId)` and duplicate `(ontologyId, taxonomyId, versionId)` fail with structured conflict errors.
+- `src/modules/ontology/ontology-registry.service.test.ts` — valid pack registration persists namespace, axis, taxonomy, allocation, and segment rows through the store boundary.
+- `src/modules/ontology/ontology-registry.service.test.ts` — invalid pack or invalid allocation plan leaves no partial rows and does not call store write.
+- `src/modules/ontology/ontology-registry.service.test.ts` — duplicate `(prefix, versionId)` and duplicate `(ontologyId, taxonomyId, versionId)` fail with structured `duplicate-allocation` errors.
+- `src/modules/ontology/ontology-registry.service.test.ts` — activation transitions, duplicate-active collision, and deferred sync preconditions are fixed before index-meta sync begins.
+- `src/modules/ontology/ontology.module.test.ts` — Nest module wiring exposes the internal service/store provider and keeps `/ontology` unrouted.

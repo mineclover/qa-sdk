@@ -14,6 +14,7 @@ after each iteration and it's included in prompts for context.
 - Allocation activation should complete service-level lifecycle and active `(prefix, versionId)` collision checks before calling the store status mutation; duplicate-active failures can reuse the structured `duplicate-allocation` payload with allocation keys.
 - Deferred sync shells should validate service-owned lifecycle preconditions and return explicit report payloads, without accepting future adapter ports or writing external registries before the materialization phase.
 - Pack reservation persists namespace, axis, and taxonomy lifecycle as `draft`; activation currently mutates only allocation `status` from `reserved` to `active`.
+- Phase closeout docs should move implemented contracts from `.todo.md` into `.spec.md` current-state sections, keep later-phase TODO checklists open, and record service error names in handoff specs when they become caller-facing.
 
 ---
 
@@ -118,4 +119,20 @@ after each iteration and it's included in prompts for context.
   - Existing registry-service modules prefer explicit string store tokens plus `DATABASE`-injected SQL store factories, so ontology Nest wiring should follow that pattern instead of changing bootstrap store helpers.
   - A no-controller Nest module is enough to make the internal service available to future registry-service modules while keeping the HTTP and CLI surfaces unchanged.
   - Provider wiring tests are strongest when they assert shared behavior across the service provider and store token rather than only checking instance construction.
+---
+
+## 2026-04-14 - US-008
+- Reflected Phase 3 completion in the registry allocation TODO by marking service layer work complete while keeping Phase 4 index-meta sync items open.
+- Updated the allocation spec with the implemented service methods, internal Nest module boundary, service error codes, lifecycle rules, and verified service scenarios.
+- Refined the persistence handoff spec with Phase 3 service conflict names and completed service/module test coverage.
+- Verified no Phase 4 execution PRD exists yet, so the master roadmap did not need a Phase 4 path update.
+- Files changed:
+  - `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md`
+  - `docs/specs/operational-ontology/operational-ontology-registry-allocation.spec.md`
+  - `docs/specs/operational-ontology/operational-ontology-registry-persistence-handoff.spec.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Phase closeout should convert service-layer plans into stable spec/current-state language instead of leaving completed behavior under "remaining responsibilities".
+  - Service error names are part of the handoff contract once callers can catch `OntologyRegistryServiceError`, even when raw store conflicts are still preserved.
+  - Phase 4 is intentionally represented as open TODO work until a separate index-meta sync PRD is created.
 ---
