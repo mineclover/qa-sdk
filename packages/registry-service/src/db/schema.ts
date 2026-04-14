@@ -1,9 +1,9 @@
 /**
  * registry-service Drizzle ORM 스키마 정의
  *
- * 10개 테이블: prefix, draft_lock, axis_profile, catalogs,
- *             ontology_namespace, ontology_axis, service_endpoint, config,
- *             event_schema, service_component_version
+ * 11개 테이블: prefix, draft_lock, axis_profile, catalogs,
+ *             ontology_namespace, ontology_axis, ontology_taxonomy,
+ *             service_endpoint, config, event_schema, service_component_version
  *
  * NOTE: schema_version 테이블은 앱 레벨 마이그레이션 트래커로
  * Drizzle 관리 대상에서 제외한다 (__drizzle_migrations와 별개).
@@ -117,6 +117,32 @@ export const ontologyAxis = sqliteTable(
     }),
     check(
       "chk_ontology_axis_lifecycle",
+      sql`lifecycle IN ('draft', 'active', 'deprecated')`,
+    ),
+  ],
+);
+
+// ─── ontology_taxonomy ────────────────────────────────
+// axis_ids_json/identity_axis_ids_json 참조 무결성은 JSON 배열이라
+// DB FK 대신 registry store/service boundary에서 ontology_axis와 대조한다.
+export const ontologyTaxonomy = sqliteTable(
+  "ontology_taxonomy",
+  {
+    ontologyId: text("ontology_id").notNull(),
+    taxonomyId: text("taxonomy_id").notNull(),
+    versionId: text("version_id").notNull(),
+    appliesToJson: text("applies_to_json").notNull(),
+    axisIdsJson: text("axis_ids_json").notNull(),
+    identityAxisIdsJson: text("identity_axis_ids_json").notNull(),
+    space: text("space"),
+    lifecycle: text("lifecycle").notNull().default("draft"),
+  },
+  (t) => [
+    primaryKey({
+      columns: [t.ontologyId, t.taxonomyId, t.versionId],
+    }),
+    check(
+      "chk_ontology_taxonomy_lifecycle",
       sql`lifecycle IN ('draft', 'active', 'deprecated')`,
     ),
   ],

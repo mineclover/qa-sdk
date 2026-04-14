@@ -34,3 +34,21 @@ after each iteration and it's included in prompts for context.
   - Patterns discovered: ontology axis follows the natural composite identity pattern with `primaryKey({ columns: [ontology_id, axis_id, version_id] })` and stores ordered values as `values_json` text plus `values_hash`.
   - Gotchas encountered: migration generation is intentionally deferred to US-005, so this story only updates the Drizzle schema SSOT and does not add `drizzle/**` files.
 ---
+
+## 2026-04-14 - US-003
+- Added the `ontology_taxonomy` Drizzle table definition with composite primary key `(ontology_id, taxonomy_id, version_id)`.
+- Added taxonomy registration fields `applies_to_json`, `axis_ids_json`, `identity_axis_ids_json`, nullable `space`, and draft/active/deprecated lifecycle check constraint.
+- Updated the registry-service schema header comment from 10 to 11 documented tables.
+- Verified required gates:
+  - `pnpm --filter registry-service test`
+  - `pnpm --filter registry-service typecheck`
+  - `pnpm --filter registry-service build`
+  - `pnpm --filter operational-ontology test -- allocation`
+  - `node packages/cli/dist/index.js def validate`
+- Files changed:
+  - `packages/registry-service/src/db/schema.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered: taxonomy rows follow the same natural composite identity as ontology axes, while ordered array membership stays in text JSON columns named with the `*_json` DB convention and camelCase `*Json` Drizzle properties.
+  - Gotchas encountered: `axis_ids_json` and `identity_axis_ids_json` cannot practically use DB foreign keys because they are JSON arrays; the schema documents that registry store/service validation must compare those values against `ontology_axis`.
+---
