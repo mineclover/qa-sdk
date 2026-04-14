@@ -7,6 +7,7 @@ import {
   createOntologyIndexMetaSyncAdapter,
   type OntologyIndexMetaSyncAdapter,
 } from "./index-meta-sync.adapter.js";
+import { OntologyPackActivationHelper } from "./ontology-activation.helper.js";
 import { OntologyRegistryService } from "./ontology-registry.service.js";
 
 export const ONTOLOGY_REGISTRY_STORE = "ONTOLOGY_REGISTRY_STORE";
@@ -38,9 +39,16 @@ export const ONTOLOGY_INDEX_META_SYNC_ADAPTER =
       ) => new OntologyRegistryService({ store: ontologyStore, syncAdapter }),
       inject: [ONTOLOGY_REGISTRY_STORE, ONTOLOGY_INDEX_META_SYNC_ADAPTER],
     },
+    {
+      provide: OntologyPackActivationHelper,
+      useFactory: (registryService: OntologyRegistryService) =>
+        new OntologyPackActivationHelper(registryService),
+      inject: [OntologyRegistryService],
+    },
   ],
   exports: [
     OntologyRegistryService,
+    OntologyPackActivationHelper,
     ONTOLOGY_REGISTRY_STORE,
     ONTOLOGY_INDEX_META_SYNC_ADAPTER,
   ],

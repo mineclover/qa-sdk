@@ -5,6 +5,7 @@ import type { OperationalOntologySchema } from "operational-ontology/schema";
 import { DatabaseModule } from "../../database.module.js";
 import type { OntologyRegistryStore } from "../../stores/ontology-registry-store.js";
 import { createNestTestApp, request } from "../../test/nest-helpers.js";
+import { OntologyPackActivationHelper } from "./ontology-activation.helper.js";
 import { OntologyRegistryService } from "./ontology-registry.service.js";
 import { ONTOLOGY_REGISTRY_STORE, OntologyModule } from "./ontology.module.js";
 
@@ -40,7 +41,10 @@ describe("OntologyModule (Nest)", () => {
     apps.push(app);
 
     const service = app.get(OntologyRegistryService);
+    const activationHelper = app.get(OntologyPackActivationHelper);
     const ontologyStore = app.get<OntologyRegistryStore>(ONTOLOGY_REGISTRY_STORE);
+
+    expect(activationHelper).toBeInstanceOf(OntologyPackActivationHelper);
 
     await service.reserveAddressSpace(schema, {
       ontologyId: "authz-runtime",
