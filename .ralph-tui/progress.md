@@ -6,6 +6,7 @@ after each iteration and it's included in prompts for context.
 ## Codebase Patterns (Study These First)
 
 - Planning-only lifecycle boundary stories should close acceptance criteria in the execution PRD before implementation stories run: record the lifecycle boundary, selected vocabulary value, rejected alternatives, and 5Q rationale in the PRD itself.
+- CLI ontology tests consume exported workspace packages through their built `dist/` entrypoints; after changing exported operational-ontology vocabulary or pack code, run `pnpm --filter operational-ontology build` before CLI tests.
 
 ---
 
@@ -21,4 +22,17 @@ after each iteration and it's included in prompts for context.
   - `ArtifactRegistryPromptArtifactContextProvider` resolves records generically by artifact ref/output path, but `quality-status` is special-cased for governance closure, freshness, ledger, and prompt quality behavior.
   - Reusing `quality-status` for activation proof would make lifecycle evidence look like gate/audit evidence; a new `activation-evidence` kind keeps provider behavior explicit without changing the provider in this story.
   - The existing `programming_artifact_kind` capacity remains 16 after adding a sixth value because `nextPowerOf2(6 * 2) = 16`.
+---
+
+## 2026-04-15 - US-002
+- Added `activation-evidence` to the programming artifact kind vocabulary and kept `programming_artifact_kind` capacity at 16.
+- Added operational ontology coverage that models activation evidence through existing `produced_by`, `derived_from`, `verifies`, `owned_by_definition`, and `materializes_output` relations only.
+- Extended CLI registry append/list/validate coverage so `activation-evidence` is accepted by the shared programming artifact kind validation path.
+- Updated programming artifact specs for the 5Q result, artifact vocabulary definition, registry CLI contract, development guide, todo list, and context simulation review. The simulation matrix did not get a new activation evidence row because this story adds vocabulary only; the future append/consumption story owns that scenario.
+- Files changed: `packages/operational-ontology/src/internal/programming-artifact-core.ts`, `packages/operational-ontology/src/programming-artifacts.test.ts`, `packages/cli/src/commands/ontology.test.ts`, `docs/specs/operational-ontology/programming-artifact-ontology-system.spec.md`, `docs/specs/operational-ontology/programming-artifact-ontology-cli.spec.md`, `docs/specs/operational-ontology/programming-artifact-ontology-context-simulation.spec.md`, `docs/specs/operational-ontology/programming-artifact-ontology-development-guide.spec.md`, `docs/specs/operational-ontology/programming-artifact-ontology-todo.todo.md`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter operational-ontology test -- programming-artifacts`; `pnpm --filter operational-ontology typecheck`; `pnpm --filter operational-ontology build`; `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter @qa-sdk/cli build`; `pnpm --filter registry-service test -- ontology`; `pnpm --filter registry-service typecheck`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - `PROGRAMMING_ARTIFACT_KINDS` in `programming-artifact-core.ts` is the SSOT for the ontology pack axis, metadata vocabulary, TypeScript `ProgrammingArtifactKind`, and CLI registry kind validation.
+  - `activation-evidence` can be represented by the existing relation fields: command provenance via `produced_by`, pack/import source via `derived_from`, pack/allocation proof via `verifies`, activation CLI ownership via `owned_by_definition`, and sidecar/result refs via `materializes_output`.
+  - CLI ontology tests initially rejected `activation-evidence` until `operational-ontology` was rebuilt, because the CLI package imports `operational-ontology/programming-artifacts` from `dist/`.
 ---

@@ -18,6 +18,7 @@ export const PROGRAMMING_ARTIFACT_KINDS = [
   "quality-status",
   "deployment-output",
   "prompt-artifact",
+  "activation-evidence",
 ] as const;
 
 export type ProgrammingArtifactKind =

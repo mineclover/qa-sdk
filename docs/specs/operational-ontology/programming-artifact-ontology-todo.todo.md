@@ -25,7 +25,7 @@ def:
 - [x] `qa-sdk ontology prompt extract-artifact <artifact-ref>` fallback CLI 추가
 - [x] `--persist-governance`로 prompt extraction governance evidence 저장
 - [x] `programming-artifact-ontology` pack schema 초안 작성
-- [x] artifact kind vocabulary 정의: build, generated-source, quality-status, deployment-output, prompt-artifact
+- [x] artifact kind vocabulary 정의: build, generated-source, quality-status, deployment-output, prompt-artifact, activation-evidence
 - [x] artifact relation vocabulary 정의: produced_by, derived_from, verifies, owned_by_definition, materializes_output
 - [x] artifact registry store 인터페이스 정의
 - [x] artifact registry provider를 `PromptArtifactContextProvider`로 구현

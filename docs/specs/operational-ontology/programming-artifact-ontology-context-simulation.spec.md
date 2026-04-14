@@ -47,7 +47,7 @@ simulation은 local artifact registry JSON과 CLI fixture를 입력으로 사용
 | quality-ledger fallback | CLI spec, `resolveQualityStatusRecordGateDescriptors()`, `QualityLedger.resolveBundleVerification()` | quality-gate topology helper tests | implicit `.qa-sdk/quality-ledger.sqlite` lookup |
 | freshness SLA | CLI spec, freshness helper functions, snapshot/ledger timestamp fixture | quality-ledger docVersion stale tests | non-artifact prompt extraction |
 | registry allocation boundary | system spec, context simulation plan/todo, adjacent registry allocation plan/todo | registry-service/index-meta docs | implementation of registry-service persistence |
-| non-quality artifact sidecar | programming artifact registry record, build/generated/deploy/prompt kind vocabulary, related quality-status record | generated/deployment/prompt follow-up scenarios | 새 artifact kind 또는 relation kind 추가 |
+| non-quality artifact sidecar | programming artifact registry record, build/generated/deploy/prompt/activation-evidence kind vocabulary, related quality-status record | generated/deployment/prompt/activation evidence follow-up scenarios | 새 relation kind 추가 또는 activation append 구현 |
 
 ## Data Flow Contract
 
@@ -75,6 +75,8 @@ simulation은 local artifact registry JSON과 CLI fixture를 입력으로 사용
 | missing ledger timestamp | `ontology.test.ts`, missing timestamp test | freshness `incomplete`, not stale |
 | build artifact sidecar | `ontology.test.ts`, non-quality build sidecar test | build registry hit consumes quality-status sidecar |
 
+`activation-evidence` does not add a scenario row at vocabulary-definition time. It uses the same direct registry hit/provider projection as other non-quality artifacts, and the activation consumption row belongs with the future CLI persistence story that writes activation evidence records.
+
 ## Implementation Trace Convention
 
 새 simulation fixture는 아래 네 이름을 함께 맞춘다.
@@ -86,11 +88,12 @@ simulation은 local artifact registry JSON과 CLI fixture를 입력으로 사용
 
 ## Relation Vocabulary Review
 
-현재 simulation 결과로는 `verifies`가 quality-status evidence의 “target verification” 의미를 충분히 감당한다. 상태 보고는 relation이 아니라 evidence outcome과 `source.governanceClosure.status`가 담당하므로 새 relation은 추가하지 않는다. `build`, `generated-source`, `deployment-output`, `prompt-artifact`별 sidecar scenario가 모두 쌓인 뒤에도 target verification과 status reporting이 분리되지 않으면 그때 새 relation 후보를 5Q checklist로 분리한다.
+현재 simulation 결과로는 `verifies`가 quality-status evidence의 “target verification” 의미를 충분히 감당한다. 상태 보고는 relation이 아니라 evidence outcome과 `source.governanceClosure.status`가 담당하므로 새 relation은 추가하지 않는다. `activation-evidence`도 pack/ontology/allocation proof target을 `verifies`로 표현하고, command provenance와 sidecar materialization은 `produced_by`와 `materializes_output`으로 표현한다. `build`, `generated-source`, `deployment-output`, `prompt-artifact`, `activation-evidence`별 sidecar scenario가 모두 쌓인 뒤에도 target verification과 status reporting이 분리되지 않으면 그때 새 relation 후보를 5Q checklist로 분리한다.
 
 ## 비범위
 
 - registry-service/index-meta allocation lifecycle 구현.
-- 새 artifact kind, relation kind, axis 추가.
+- 새 relation kind 또는 추가 axis.
+- Activation evidence registry append/consumption scenario implementation.
 - implicit quality-ledger discovery.
 - production registry persistence 또는 artifact evidence provider 공통 interface 추출.

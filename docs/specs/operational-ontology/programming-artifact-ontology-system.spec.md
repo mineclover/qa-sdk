@@ -34,7 +34,7 @@ sources:
 
 ## 목적 ^purpose
 
-프로그래밍 산출물을 파일 경로나 자유 문자열이 아니라 operational ontology pack으로 관리되는 context target으로 정의한다. 목표는 build output, generated source, quality status, deployment output, prompt artifact를 닫힌 vocabulary와 registry provider로 묶어 `PromptArtifactContextProvider` 기반 prompt extraction에 먼저 연결하는 것이다.
+프로그래밍 산출물을 파일 경로나 자유 문자열이 아니라 operational ontology pack으로 관리되는 context target으로 정의한다. 목표는 build output, generated source, quality status, deployment output, prompt artifact, activation evidence를 닫힌 vocabulary와 registry provider로 묶어 `PromptArtifactContextProvider` 기반 prompt extraction에 먼저 연결하는 것이다.
 
 ## 구성 ^overview
 
@@ -78,7 +78,7 @@ sources:
 
 | axis | Q1 유한 | Q2 의사결정 | Q3 공유 | Q4 안정 | Q5 capacity |
 |------|---------|-------------|---------|---------|-------------|
-| `programming_artifact_kind` | 5개 값으로 열거 | provider fallback, quality gate, 출력 처리에 영향 | build/codegen/quality/deploy/prompt에서 공유 | 산출물 상위 종류라 안정 | 5 × 2 → 16 |
+| `programming_artifact_kind` | 6개 값으로 열거 | provider fallback, quality gate, activation proof 소비, 출력 처리에 영향 | build/codegen/quality/deploy/prompt/activation CLI와 artifact registry/provider flows에서 공유 | 산출물 상위 종류라 안정 | 6 × 2 = 12, nextPowerOf2(12) → 16 |
 | `programming_artifact_relation_kind` | 5개 값으로 열거 | context traversal과 ownership 판단에 영향 | registry/provider/CLI/gate에서 공유 | relation role이라 안정 | 5 × 2 → 16 |
 
 ## Artifact Kind Vocabulary
@@ -90,6 +90,11 @@ sources:
 | `quality-status` | test, lint, gate, audit 결과를 담은 machine-readable status artifact |
 | `deployment-output` | deployment URL, release bundle, infra output 같은 배포 결과 |
 | `prompt-artifact` | `self_reflection`, `code_editing_rules`처럼 model prompt에 삽입되는 산출물 |
+| `activation-evidence` | ontology pack activation 성공을 증명하는 local registry/index-meta activation result artifact |
+
+`activation-evidence`는 `deployment-output`, `quality-status`, `prompt-artifact`의 provider 의미를 빌리지 않는다. Activation proof는 deployment URL이나 release bundle이 아니고, quality-status governance closure/freshness/ledger 처리 대상도 아니며, model prompt에 삽입되는 prompt artifact도 아니다. Activation evidence record가 필요하면 기존 relation vocabulary인 `produced_by`, `derived_from`, `verifies`, `owned_by_definition`, `materializes_output`만 사용한다.
+
+`activation-evidence` 5Q 판정은 통과다. Q1 finite: 닫힌 artifact kind vocabulary에 1개 값 추가. Q2 decision-affecting: activation proof와 build/deploy/prompt/quality output을 구분해 provider와 후속 automation 판단을 바꾼다. Q3 shared: activation CLI output sidecar, artifact registry validate/list/filter, provider lookup 흐름에서 공유된다. Q4 stable: ontology pack activation proof라는 상위 artifact 종류라 자주 바뀌지 않는다. Q5 capacity: 전체 kind 수가 6개이므로 `nextPowerOf2(6 * 2) = 16` 안에 남는다.
 
 ## Artifact Relation Vocabulary
 
@@ -177,7 +182,7 @@ quality-status governance closure는 artifact extraction에 한정된 additive c
 - `source.governanceClosure`는 `quality-status-found`, `quality-status-missing`, `quality-status-invalid`, `quality-status-incomplete` 네 상태만 사용한다.
 - search fallback warning은 `source.qualitySignal.warning`에 남고, governance closure warning은 `source.governanceClosure.warning`에 남아 서로 섞이지 않는다.
 - freshness SLA는 structural snapshot/ledger authority가 정해진 뒤 적용되며, 오래된 generated timestamp가 ledger docVersion stale이나 snapshot-vs-ledger conflict로 취급되지 않는다.
-- 이 feature는 local artifact registry JSON과 prompt quality closure만 닫는다. Pack vocabulary activation은 `operational-ontology-registry-activation-cli`가 `programming-artifact-ontology` scenario proof로 다루며, activation output을 programming artifact registry record로 append하지는 않는다.
+- 이 feature는 local artifact registry JSON과 prompt quality closure만 닫는다. Pack vocabulary activation은 `operational-ontology-registry-activation-cli`가 `programming-artifact-ontology` scenario proof로 다룬다. Activation proof의 artifact kind는 `activation-evidence`로 예약됐지만, activation output을 programming artifact registry record로 append하는 CLI write path는 별도 follow-up이다.
 
 `extract-artifact --json`은 이 quality-status closure 판정을 `source.governanceClosure`로도 노출한다. 이 객체는 `quality-status-found`, `quality-status-missing`, `quality-status-invalid`, `quality-status-incomplete` 중 하나의 상태, matched quality-status artifact ref/id 목록, 그리고 closure가 닫히지 않았을 때의 governance warning/action을 포함한다. free-string search fallback 품질 경고는 계속 `source.qualitySignal.warning`에 남고, governance closure warning과 합쳐지지 않는다. 이 JSON surface는 provider/registry relation vocabulary나 registry-service/index-meta allocation lifecycle을 활성화하지 않는 additive contract다.
 

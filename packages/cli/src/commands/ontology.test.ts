@@ -3057,7 +3057,7 @@ describe("ontology CLI", () => {
     );
   }, 10_000);
 
-  it("artifact registry append/list/validate supports build records", async () => {
+  it("artifact registry append/list/validate supports build and activation-evidence records", async () => {
     const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-registry-cli-"));
     const registryPath = join(dir, "programming-artifacts.json");
 
@@ -3093,6 +3093,42 @@ describe("ontology CLI", () => {
     });
     expect(append.recordCount).toBe(1);
 
+    const activationAppendOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "artifact.registry.append",
+        "--output",
+        registryPath,
+        "--kind",
+        "activation-evidence",
+        "--artifact-ref",
+        "artifacts/activation/programming-artifact-ontology.json",
+        "--produced-by",
+        "qa-sdk ontology registry activate-pack programming-artifact-ontology",
+        "--derived-from",
+        "programming-artifact-ontology",
+        "--verifies",
+        "programming-artifact-ontology,operational-ontology-registry-allocation",
+        "--owner-definition",
+        "operational-ontology-registry-activation-cli",
+        "--materializes-output",
+        "artifacts/activation/programming-artifact-ontology.json",
+        "--output-path",
+        "artifacts/activation/programming-artifact-ontology.json",
+        "--json",
+      ]);
+    });
+    const activationAppend = JSON.parse(activationAppendOutput.stdout) as {
+      record: { kind: string; artifactRef: string; producedByRef?: string };
+      recordCount: number;
+    };
+
+    expect(activationAppend.record).toMatchObject({
+      kind: "activation-evidence",
+      artifactRef: "artifacts/activation/programming-artifact-ontology.json",
+      producedByRef: "qa-sdk ontology registry activate-pack programming-artifact-ontology",
+    });
+    expect(activationAppend.recordCount).toBe(2);
+
     const listOutput = await captureConsoleAsync(async () => {
       await cliOntology([
         "artifact.registry.list",
@@ -3113,6 +3149,26 @@ describe("ontology CLI", () => {
       }),
     ]);
 
+    const activationListOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "artifact.registry.list",
+        "--input",
+        registryPath,
+        "--kind",
+        "activation-evidence",
+        "--json",
+      ]);
+    });
+    const activationListed = JSON.parse(activationListOutput.stdout) as {
+      artifacts: Array<{ kind: string; artifactRef: string }>;
+    };
+    expect(activationListed.artifacts).toEqual([
+      expect.objectContaining({
+        kind: "activation-evidence",
+        artifactRef: "artifacts/activation/programming-artifact-ontology.json",
+      }),
+    ]);
+
     const validateOutput = await captureConsoleAsync(async () => {
       await cliOntology([
         "artifact.registry.validate",
@@ -3128,7 +3184,7 @@ describe("ontology CLI", () => {
     };
     expect(validation).toMatchObject({
       valid: true,
-      artifactCount: 1,
+      artifactCount: 2,
       errors: [],
     });
   });

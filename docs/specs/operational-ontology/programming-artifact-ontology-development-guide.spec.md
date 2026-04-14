@@ -96,18 +96,18 @@ artifact registry record를 생성할 때는 가능한 한 아래 필드를 채�
 
 - `artifactId` — stable kebab-case id. 파일명 변경과 독립되어야 한다.
 - `artifactRef` — 사용자가 CLI에 넣을 수 있는 대표 ref.
-- `kind` — `build`, `generated-source`, `quality-status`, `deployment-output`, `prompt-artifact` 중 하나.
+- `kind` — `build`, `generated-source`, `quality-status`, `deployment-output`, `prompt-artifact`, `activation-evidence` 중 하나.
 - `producedByRef` — 명령, gate, governance run ref. `produced_by` relation으로 변환된다.
 - `derivedFromRefs` — 입력 source/artifact refs. `derived_from` relation으로 변환된다.
 - `verifiesRefs` — 검증 대상 definition/gate/artifact. `verifies` relation으로 변환된다.
 - `ownerDefinitionId` — 변경 책임 definition. `owned_by_definition` relation으로 변환된다.
 - `materializesOutputRefs` — 구체화한 blueprint/output/release target. `materializes_output` relation으로 변환된다.
 - `sourceRefs`, `outputPath`, `verificationRefs` — prompt extraction 품질과 governance closure를 높이는 보조 surface다.
-- `metadata` — optional structured summary. `quality-status` record는 `rootId`, `generatedAt`, bundle별 state/gate/claim counts, aggregate totals를 담아야 한다.
+- `metadata` — optional structured summary. `quality-status` record는 `rootId`, `generatedAt`, bundle별 state/gate/claim counts, aggregate totals를 담아야 한다. `activation-evidence` record는 activation result status, ontology/pack identity, allocation/sync/smoke summary, warning/error counts, generated timestamp를 담을 수 있다.
 
 필드를 모르면 빈 문자열로 채우지 않는다. 모르는 값은 생략하고, todo에 relation 보강 항목을 남긴다.
 
-현재 concrete write path는 `qa-sdk codegen --artifact-registry <file>`, `qa-sdk quality export ... --artifact-registry=<file>`, `infra deploy ... --artifact-registry <file>`, `qa-sdk ontology prompt extract* --output <file|dir> --artifact-registry <file>`, `qa-sdk ontology artifact registry append --kind build ...`이다.
+현재 concrete write path는 `qa-sdk codegen --artifact-registry <file>`, `qa-sdk quality export ... --artifact-registry=<file>`, `infra deploy ... --artifact-registry <file>`, `qa-sdk ontology prompt extract* --output <file|dir> --artifact-registry <file>`, `qa-sdk ontology artifact registry append --kind build ...`이다. `activation-evidence`는 vocabulary와 registry validation/list 대상에 포함되지만, `qa-sdk ontology registry activate-pack --artifact-registry` append path는 activation evidence persistence follow-up에서 구현한다.
 
 ## Quality-status Discovery 검증
 

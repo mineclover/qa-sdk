@@ -29,6 +29,7 @@ describe("programming artifact ontology", () => {
       "quality-status",
       "deployment-output",
       "prompt-artifact",
+      "activation-evidence",
     ]);
     expect(axes.get("programming_artifact_kind")?.capacity).toBe(16);
     expect(axes.get("programming_artifact_relation_kind")?.values).toEqual([
@@ -38,7 +39,7 @@ describe("programming artifact ontology", () => {
       "owned_by_definition",
       "materializes_output",
     ]);
-    expect(PROGRAMMING_ARTIFACT_KINDS).toHaveLength(5);
+    expect(PROGRAMMING_ARTIFACT_KINDS).toHaveLength(6);
     expect(PROGRAMMING_ARTIFACT_RELATION_KINDS).toHaveLength(5);
   });
 
@@ -155,6 +156,45 @@ describe("programming artifact ontology", () => {
         toRef: "apm-codegen-system",
       },
     ]);
+  });
+
+  it("models activation evidence with the existing relation vocabulary", () => {
+    const record = createProgrammingArtifactRegistryRecord({
+      artifactId: "activation-evidence-programming-artifact-ontology",
+      kind: "activation-evidence",
+      artifactRef: "artifacts/activation/programming-artifact-ontology.json",
+      outputPath: "artifacts/activation/programming-artifact-ontology.json",
+      producedByRef: "qa-sdk ontology registry activate-pack programming-artifact-ontology",
+      derivedFromRefs: [
+        "programming-artifact-ontology",
+        "operational-ontology/programming-artifacts",
+      ],
+      verifiesRefs: [
+        "programming-artifact-ontology",
+        "operational-ontology-registry-allocation",
+      ],
+      ownerDefinitionId: "operational-ontology-registry-activation-cli",
+      materializesOutputRefs: [
+        "artifacts/activation/programming-artifact-ontology.json",
+        "activation-result:programming-artifact-ontology",
+      ],
+      createdAt: "2026-04-15T00:00:00.000Z",
+    });
+
+    expect(record.kind).toBe("activation-evidence");
+    expect(record.relations?.map((relation) => relation.kind)).toEqual([
+      "produced_by",
+      "derived_from",
+      "derived_from",
+      "verifies",
+      "verifies",
+      "owned_by_definition",
+      "materializes_output",
+      "materializes_output",
+    ]);
+    expect(new Set(record.relations?.map((relation) => relation.kind))).toEqual(
+      new Set(PROGRAMMING_ARTIFACT_RELATION_KINDS),
+    );
   });
 
   it("discovers related quality-status records through existing registry fields", () => {

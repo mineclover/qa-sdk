@@ -71,6 +71,8 @@ qa-sdk ontology artifact registry append --output <file> \
 - `--json` on registry `append` returns the append result from `appendProgrammingArtifactRegistryRecord()`, including the appended `record`, `registryPath`, and `recordCount`.
 - `append --input <record.json>` preserves the supplied record shape and upserts it by artifact identity.
 - `append --kind ... --artifact-ref ...` creates a record through `createProgrammingArtifactRegistryRecord()` and normalizes relation fields into the standard `relations[]` grammar.
+- registry `validate`, `list --kind`, and `append --kind` share `PROGRAMMING_ARTIFACT_KINDS`: `build`, `generated-source`, `quality-status`, `deployment-output`, `prompt-artifact`, `activation-evidence`.
+- `activation-evidence` records use the existing `produced_by`, `derived_from`, `verifies`, `owned_by_definition`, and `materializes_output` relation fields. Adding this kind does not add a relation kind or make activation proof behave like `quality-status` governance closure evidence.
 
 ## 처리 순서
 
@@ -150,6 +152,8 @@ related quality matching은 `kind === "quality-status"` record만 대상으로 �
   "artifacts": []
 }
 ```
+
+Activation proof can be represented as a managed record with `kind: "activation-evidence"` once an explicit activation registry append path is provided. Until that follow-up is implemented, `qa-sdk ontology registry activate-pack --output <file>` remains a JSON sidecar materialization only; the generic registry append/list/validate commands can still validate manually created activation-evidence records.
 
 ## Fallback 품질 신호
 
