@@ -1,8 +1,9 @@
 /**
  * registry-service Drizzle ORM 스키마 정의
  *
- * 11개 테이블: prefix, draft_lock, axis_profile, catalogs,
+ * 13개 테이블: prefix, draft_lock, axis_profile, catalogs,
  *             ontology_namespace, ontology_axis, ontology_taxonomy,
+ *             ontology_address_allocation, ontology_address_segment,
  *             service_endpoint, config, event_schema, service_component_version
  *
  * NOTE: schema_version 테이블은 앱 레벨 마이그레이션 트래커로
@@ -145,6 +146,59 @@ export const ontologyTaxonomy = sqliteTable(
       "chk_ontology_taxonomy_lifecycle",
       sql`lifecycle IN ('draft', 'active', 'deprecated')`,
     ),
+  ],
+);
+
+// ─── ontology_address_allocation ─────────────────────
+export const ontologyAddressAllocation = sqliteTable(
+  "ontology_address_allocation",
+  {
+    allocationId: text("allocation_id").primaryKey(),
+    ontologyId: text("ontology_id").notNull(),
+    taxonomyId: text("taxonomy_id").notNull(),
+    prefix: text("prefix").notNull(),
+    versionId: text("version_id").notNull(),
+    addressModel: text("address_model").notNull().default("product"),
+    capacity: integer("capacity").notNull(),
+    addressOffset: integer("address_offset").notNull(),
+    addressSize: integer("address_size").notNull(),
+    status: text("status").notNull().default("reserved"),
+  },
+  (t) => [
+    uniqueIndex("uq_ontology_address_allocation_prefix_version").on(
+      t.prefix,
+      t.versionId,
+    ),
+    uniqueIndex("uq_ontology_address_allocation_ontology_taxonomy_version").on(
+      t.ontologyId,
+      t.taxonomyId,
+      t.versionId,
+    ),
+    check(
+      "chk_ontology_address_allocation_address_model",
+      sql`address_model IN ('product', 'sum')`,
+    ),
+    check(
+      "chk_ontology_address_allocation_status",
+      sql`status IN ('reserved', 'active', 'deprecated')`,
+    ),
+  ],
+);
+
+// ─── ontology_address_segment ────────────────────────
+export const ontologyAddressSegment = sqliteTable(
+  "ontology_address_segment",
+  {
+    allocationId: text("allocation_id").notNull(),
+    segmentId: text("segment_id").notNull(),
+    consumesJson: text("consumes_json").notNull(),
+    addressOffset: integer("address_offset").notNull(),
+    addressSize: integer("address_size").notNull(),
+  },
+  (t) => [
+    primaryKey({
+      columns: [t.allocationId, t.segmentId],
+    }),
   ],
 );
 

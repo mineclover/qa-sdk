@@ -9,6 +9,7 @@ after each iteration and it's included in prompts for context.
 
 - Registry-service Drizzle persistence pattern: `packages/registry-service/src/db/schema.ts` is the table SSOT, `drizzle.config.ts` writes source migrations to `packages/registry-service/drizzle`, `src/bootstrap/stores.ts` applies those migrations for SQL drivers, and `tsup.config.ts` copies `drizzle` into `dist`. Existing schema uses snake_case DB names, camelCase TS properties, text `*_json` fields, text ISO timestamps, composite `primaryKey({ columns })` for natural multi-column identities, `idx_...` for non-unique lookup indexes, and `chk_<table>_<field>` for enum checks.
 - Operational ontology persistence lifecycle pattern: namespace, axis, and future taxonomy rows use plain text `lifecycle` values `draft | active | deprecated` with Drizzle `check(...)` constraints named `chk_<table>_lifecycle`; optional fields in the operational-ontology handoff model should stay nullable in the registry-service table until a service layer supplies a default.
+- Ontology address allocation schema pattern: allocation rows use `allocation_id` as the primary key, unique indexes for `(prefix, version_id)` and `(ontology_id, taxonomy_id, version_id)`, text enum checks for `address_model` (`product | sum`) and `status` (`reserved | active | deprecated`), and no index-meta/address cache behavior. Segment rows use composite `primaryKey({ columns: [allocation_id, segment_id] })` plus `consumes_json` text.
 
 ---
 
@@ -51,4 +52,23 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - Patterns discovered: taxonomy rows follow the same natural composite identity as ontology axes, while ordered array membership stays in text JSON columns named with the `*_json` DB convention and camelCase `*Json` Drizzle properties.
   - Gotchas encountered: `axis_ids_json` and `identity_axis_ids_json` cannot practically use DB foreign keys because they are JSON arrays; the schema documents that registry store/service validation must compare those values against `ontology_axis`.
+---
+
+## 2026-04-14 - US-004
+- Added `ontology_address_allocation` with `allocation_id` primary key, unique `(prefix, version_id)`, unique `(ontology_id, taxonomy_id, version_id)`, address model/capacity/range/status fields, and enum check constraints.
+- Added `ontology_address_segment` with composite primary key `(allocation_id, segment_id)`, `consumes_json`, and address range fields.
+- Updated the registry-service schema header comment from 11 to 13 documented tables.
+- Verified required gates:
+  - `pnpm --filter registry-service test`
+  - `pnpm --filter registry-service typecheck`
+  - `pnpm --filter registry-service build`
+  - `pnpm --filter operational-ontology test -- allocation`
+  - `node packages/cli/dist/index.js def validate`
+- Files changed:
+  - `packages/registry-service/src/db/schema.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered: allocation table collision guards are represented as explicit `uq_...` unique indexes, while segment identity follows the existing composite primary key pattern.
+  - Patterns discovered: allocation status is distinct from namespace/axis/taxonomy lifecycle and uses `reserved | active | deprecated`; `address_model` uses `product | sum` from `operational-ontology` instead of introducing registry-local values.
+  - Gotchas encountered: migration generation, SQL schema tests, store adapters, index-meta sync, and `address_state_cache` are intentionally deferred to later stories, so US-004 only changes the Drizzle schema SSOT.
 ---
