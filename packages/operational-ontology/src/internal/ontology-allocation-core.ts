@@ -79,6 +79,19 @@ export interface OntologyAddressAllocationIssue {
   code: string;
   message: string;
   path: string;
+  target?: OntologyAddressAllocationIssueTarget;
+}
+
+export interface OntologyAddressAllocationIssueTarget {
+  ontologyId?: string;
+  prefix?: string;
+  versionId?: string;
+  taxonomyId?: string;
+  axisId?: string;
+  allocationId?: string;
+  segmentId?: string;
+  taxonomyIds?: readonly string[];
+  allocationIds?: readonly string[];
 }
 
 export interface OntologyAddressAllocationValidationResult {
@@ -236,28 +249,75 @@ export function validateOntologyAddressAllocationPlan(input: {
   }
 
   for (const duplicate of duplicates(input.axes.map((axis) => `${axis.ontologyId}:${axis.axisId}:${axis.versionId}`))) {
-    issues.push(issue("error", "ontology-axis-registration-duplicate", `Duplicate axis registration "${duplicate}"`, "axes"));
+    const axis = input.axes.find((item) => `${item.ontologyId}:${item.axisId}:${item.versionId}` === duplicate);
+    issues.push(issue("error", "ontology-axis-registration-duplicate", `Duplicate axis registration "${duplicate}"`, "axes", axis
+      ? { ontologyId: axis.ontologyId, axisId: axis.axisId, versionId: axis.versionId }
+      : undefined));
   }
   for (const duplicate of duplicates(input.taxonomies.map((taxonomy) => `${taxonomy.ontologyId}:${taxonomy.taxonomyId}:${taxonomy.versionId}`))) {
-    issues.push(issue("error", "ontology-taxonomy-registration-duplicate", `Duplicate taxonomy registration "${duplicate}"`, "taxonomies"));
+    const taxonomy = input.taxonomies.find((item) => `${item.ontologyId}:${item.taxonomyId}:${item.versionId}` === duplicate);
+    issues.push(issue("error", "ontology-taxonomy-registration-duplicate", `Duplicate taxonomy registration "${duplicate}"`, "taxonomies", taxonomy
+      ? { ontologyId: taxonomy.ontologyId, taxonomyId: taxonomy.taxonomyId, versionId: taxonomy.versionId }
+      : undefined));
   }
   for (const duplicate of duplicates(input.allocations.map((allocation) => `${allocation.prefix}:${allocation.versionId}`))) {
-    issues.push(issue("error", "ontology-prefix-version-duplicate", `Duplicate prefix/version allocation "${duplicate}"`, "allocations"));
+    const allocations = input.allocations.filter((item) => `${item.prefix}:${item.versionId}` === duplicate);
+    const allocation = allocations[0];
+    issues.push(issue("error", "ontology-prefix-version-duplicate", `Duplicate prefix/version allocation "${duplicate}"`, "allocations", allocation
+      ? {
+        ontologyId: allocation.ontologyId,
+        prefix: allocation.prefix,
+        versionId: allocation.versionId,
+        taxonomyIds: allocations.map((item) => item.taxonomyId),
+        allocationIds: allocations.map((item) => item.allocationId),
+      }
+      : undefined));
   }
   for (const duplicate of duplicates(input.allocations.map((allocation) => `${allocation.ontologyId}:${allocation.taxonomyId}:${allocation.versionId}`))) {
-    issues.push(issue("error", "ontology-taxonomy-allocation-duplicate", `Duplicate taxonomy allocation "${duplicate}"`, "allocations"));
+    const allocations = input.allocations.filter((item) => `${item.ontologyId}:${item.taxonomyId}:${item.versionId}` === duplicate);
+    const allocation = allocations[0];
+    issues.push(issue("error", "ontology-taxonomy-allocation-duplicate", `Duplicate taxonomy allocation "${duplicate}"`, "allocations", allocation
+      ? {
+        ontologyId: allocation.ontologyId,
+        taxonomyId: allocation.taxonomyId,
+        versionId: allocation.versionId,
+        allocationIds: allocations.map((item) => item.allocationId),
+      }
+      : undefined));
   }
 
   const axisKeys = new Set(input.axes.map((axis) => `${axis.ontologyId}:${axis.axisId}:${axis.versionId}`));
   for (const taxonomy of input.taxonomies) {
     for (const axisId of taxonomy.axisIds) {
       if (!axisKeys.has(`${taxonomy.ontologyId}:${axisId}:${taxonomy.versionId}`)) {
-        issues.push(issue("error", "ontology-taxonomy-axis-missing", `Taxonomy "${taxonomy.taxonomyId}" references missing axis "${axisId}"`, `taxonomies.${taxonomy.taxonomyId}.axisIds`));
+        issues.push(issue(
+          "error",
+          "ontology-taxonomy-axis-missing",
+          `Taxonomy "${taxonomy.taxonomyId}" references missing axis "${axisId}"`,
+          `taxonomies.${taxonomy.taxonomyId}.axisIds`,
+          {
+            ontologyId: taxonomy.ontologyId,
+            taxonomyId: taxonomy.taxonomyId,
+            versionId: taxonomy.versionId,
+            axisId,
+          },
+        ));
       }
     }
     for (const axisId of taxonomy.identityAxisIds) {
       if (!taxonomy.axisIds.includes(axisId)) {
-        issues.push(issue("error", "ontology-taxonomy-identity-axis-missing", `identity axis "${axisId}" must also be listed in axisIds`, `taxonomies.${taxonomy.taxonomyId}.identityAxisIds`));
+        issues.push(issue(
+          "error",
+          "ontology-taxonomy-identity-axis-missing",
+          `identity axis "${axisId}" must also be listed in axisIds`,
+          `taxonomies.${taxonomy.taxonomyId}.identityAxisIds`,
+          {
+            ontologyId: taxonomy.ontologyId,
+            taxonomyId: taxonomy.taxonomyId,
+            versionId: taxonomy.versionId,
+            axisId,
+          },
+        ));
       }
     }
   }
@@ -265,25 +325,79 @@ export function validateOntologyAddressAllocationPlan(input: {
   const allocationIds = new Set(input.allocations.map((allocation) => allocation.allocationId));
   for (const allocation of input.allocations) {
     if (allocation.capacity <= 0 || allocation.addressSize <= 0) {
-      issues.push(issue("error", "ontology-allocation-size-invalid", `Allocation "${allocation.allocationId}" must have positive capacity and addressSize`, `allocations.${allocation.allocationId}`));
+      issues.push(issue(
+        "error",
+        "ontology-allocation-size-invalid",
+        `Allocation "${allocation.allocationId}" must have positive capacity and addressSize`,
+        `allocations.${allocation.allocationId}`,
+        {
+          ontologyId: allocation.ontologyId,
+          prefix: allocation.prefix,
+          versionId: allocation.versionId,
+          taxonomyId: allocation.taxonomyId,
+          allocationId: allocation.allocationId,
+        },
+      ));
     }
     if (allocation.addressOffset < 0) {
-      issues.push(issue("error", "ontology-allocation-offset-invalid", `Allocation "${allocation.allocationId}" must not have negative addressOffset`, `allocations.${allocation.allocationId}.addressOffset`));
+      issues.push(issue(
+        "error",
+        "ontology-allocation-offset-invalid",
+        `Allocation "${allocation.allocationId}" must not have negative addressOffset`,
+        `allocations.${allocation.allocationId}.addressOffset`,
+        {
+          ontologyId: allocation.ontologyId,
+          prefix: allocation.prefix,
+          versionId: allocation.versionId,
+          taxonomyId: allocation.taxonomyId,
+          allocationId: allocation.allocationId,
+        },
+      ));
     }
     if (allocation.capacity !== allocation.addressSize) {
-      issues.push(issue("warning", "ontology-allocation-capacity-size-drift", `Allocation "${allocation.allocationId}" capacity differs from addressSize`, `allocations.${allocation.allocationId}`));
+      issues.push(issue(
+        "warning",
+        "ontology-allocation-capacity-size-drift",
+        `Allocation "${allocation.allocationId}" capacity differs from addressSize`,
+        `allocations.${allocation.allocationId}`,
+        {
+          ontologyId: allocation.ontologyId,
+          prefix: allocation.prefix,
+          versionId: allocation.versionId,
+          taxonomyId: allocation.taxonomyId,
+          allocationId: allocation.allocationId,
+        },
+      ));
     }
   }
 
   for (const segment of input.segments ?? []) {
     if (!allocationIds.has(segment.allocationId)) {
-      issues.push(issue("error", "ontology-segment-allocation-missing", `Segment "${segment.segmentId}" references missing allocation "${segment.allocationId}"`, `segments.${segment.segmentId}`));
+      issues.push(issue(
+        "error",
+        "ontology-segment-allocation-missing",
+        `Segment "${segment.segmentId}" references missing allocation "${segment.allocationId}"`,
+        `segments.${segment.segmentId}`,
+        { allocationId: segment.allocationId, segmentId: segment.segmentId },
+      ));
     }
     if (segment.addressSize <= 0) {
-      issues.push(issue("error", "ontology-segment-size-invalid", `Segment "${segment.segmentId}" must have positive addressSize`, `segments.${segment.segmentId}.addressSize`));
+      issues.push(issue(
+        "error",
+        "ontology-segment-size-invalid",
+        `Segment "${segment.segmentId}" must have positive addressSize`,
+        `segments.${segment.segmentId}.addressSize`,
+        { allocationId: segment.allocationId, segmentId: segment.segmentId },
+      ));
     }
     if (segment.consumes.length === 0) {
-      issues.push(issue("error", "ontology-segment-consumes-empty", `Segment "${segment.segmentId}" must consume at least one axis`, `segments.${segment.segmentId}.consumes`));
+      issues.push(issue(
+        "error",
+        "ontology-segment-consumes-empty",
+        `Segment "${segment.segmentId}" must consume at least one axis`,
+        `segments.${segment.segmentId}.consumes`,
+        { allocationId: segment.allocationId, segmentId: segment.segmentId },
+      ));
     }
   }
 
@@ -298,8 +412,9 @@ function issue(
   code: string,
   message: string,
   path: string,
+  target?: OntologyAddressAllocationIssueTarget,
 ): OntologyAddressAllocationIssue {
-  return { level, code, message, path };
+  return target ? { level, code, message, path, target } : { level, code, message, path };
 }
 
 function nextPowerOf2(value: number): number {

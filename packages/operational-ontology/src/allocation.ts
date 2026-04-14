@@ -8,6 +8,7 @@ export {
   type OntologyAddressSegment,
   type OntologyAddressAllocationPolicy,
   type OntologyAddressAllocationIssue,
+  type OntologyAddressAllocationIssueTarget,
   type OntologyAddressAllocationValidationResult,
   type OntologyAddressAllocationPlan,
   allocateOntologyAddressSpace,

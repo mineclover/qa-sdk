@@ -157,6 +157,58 @@ describe("ontology address allocation", () => {
     );
   });
 
+  it("returns structured local allocation drift errors", () => {
+    const allocationDriftFixture = {
+      ...schema,
+      axes: schema.axes.filter((axis) => axis.id !== "decision_kind"),
+      taxonomies: [
+        schema.taxonomies[0],
+        {
+          id: "authorization-drift",
+          appliesTo: ["node"],
+          axisIds: ["decision_kind"],
+          identityAxisIds: ["decision_kind"],
+          space: "authorization",
+        },
+      ],
+    };
+    const plan = operationalOntologyAllocationPlane.allocateOntologyAddressSpace(allocationDriftFixture, {
+      ontologyId: "authorization-ontology",
+      namespace: "authz",
+      versionId: "v7",
+      prefixByTaxonomyId: {
+        "authorization-resource": "authz_collision",
+        "authorization-drift": "authz_collision",
+      },
+    });
+
+    expect(plan.validation.valid).toBe(false);
+    expect(plan.validation.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "ontology-prefix-version-duplicate",
+          target: expect.objectContaining({
+            prefix: "authz_collision",
+            versionId: "v7",
+            taxonomyIds: expect.arrayContaining(["authorization-resource", "authorization-drift"]),
+          }),
+        }),
+        expect.objectContaining({
+          code: "taxonomy-axis-missing",
+          path: "schema.authorization-drift.axisIds",
+        }),
+        expect.objectContaining({
+          code: "ontology-taxonomy-axis-missing",
+          target: expect.objectContaining({
+            taxonomyId: "authorization-drift",
+            axisId: "decision_kind",
+            versionId: "v7",
+          }),
+        }),
+      ]),
+    );
+  });
+
   it("reports missing taxonomy axes before registry-service persistence", () => {
     const broken = {
       ...schema,

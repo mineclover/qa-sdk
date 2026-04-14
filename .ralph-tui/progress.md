@@ -13,6 +13,7 @@ after each iteration and it's included in prompts for context.
 - Plan/todo sibling docs should use `traces_to` for cross-links. Mutual `refines` between contained plan/todo leaves can create definition graph cycles after `def sync`.
 - Allocation validation contract docs should name implementation, public facade, and test `sources`, then split local pure-function invariants from registry-service/index-meta persistence invariants. Keep existing tests as the executable SSOT rather than restating behavior as prose-only authority.
 - Large lifecycle TODOs can preserve legacy phase references by splitting a crowded phase into lettered subphases and adding a dependency map before the checklist. This keeps old acceptance criteria stable while making ralph-tui task boundaries executable.
+- Allocation drift fixtures should assert structured `target` data on validation issues, not only free-text messages. Prefix/version collisions should expose `prefix` and `versionId`; taxonomy-axis mismatches should expose `taxonomyId` and `axisId`.
 
 ---
 
@@ -101,4 +102,20 @@ after each iteration and it's included in prompts for context.
   - `def.type` only supports `spec` and `knowledge`; `.plan.md` and `.todo.md` are parsed from filename variant priority, so ontology docs should not invent plan/todo frontmatter types.
   - Module docs that mention child docs in `^overview` or `^delegates` need matching `contains` links, while leaf/plan/todo docs should avoid `contains` unless promoted into a real module boundary.
   - A practical split guard is to review ontology leaves around 120 lines and split before adding new sections near 140 lines, avoiding the 150-line `leaf-too-long` warning.
+---
+
+## 2026-04-14 - US-006
+- Added structured `target` data to local ontology allocation validation issues so drift errors identify the offending prefix/version, taxonomy, axis, allocation, or segment.
+- Extended the operational-ontology allocation test fixture with a combined allocation drift case covering a prefix/version collision and a taxonomy-axis mismatch before registry persistence exists.
+- Verified the required operational-ontology and definition validation gates.
+- Files changed:
+  - `packages/operational-ontology/src/internal/ontology-allocation-core.ts`
+  - `packages/operational-ontology/src/allocation.ts`
+  - `packages/operational-ontology/src/schema.ts`
+  - `packages/operational-ontology/src/allocation.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Allocation validation already projects a complete local plan before persistence, so one fixture can exercise schema validation drift and allocation validation drift without registry-service or index-meta.
+  - Prefix/version duplicate detection benefits from an explicit structured issue target because the duplicate key alone is not enough for downstream tooling to safely route fixes.
+  - `node packages/cli/dist/index.js def validate` should not run while an operational-ontology build is cleaning `dist`; rerun it after the build completes to avoid transient subpath resolution failures.
 ---
