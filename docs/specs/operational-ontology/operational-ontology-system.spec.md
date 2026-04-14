@@ -25,6 +25,8 @@ def:
       type: contains
     - target: operational-ontology-validation-boundary
       type: contains
+    - target: operational-ontology-design-change-validation-matrix
+      type: contains
     - target: operational-ontology-allocation-validation-contract
       type: contains
     - target: operational-ontology-pack-interface
@@ -101,6 +103,7 @@ taxonomy를 먼저 schema로 선언하고 검증한 뒤, 그 schema에서 node, 
 - **Validation plane**
   - schema 무결성, axis 중복, unknown reference, category overlap 검증
   - ontology design 변경 전 확인해야 하는 local/system validation boundary
+  - ontology design 변경 종류별 문서/소유 경계/테스트/명령 matrix
   - allocation plan projection/validation 불변조건을 고정하는 local contract
 - **Pack plane**
   - schema, governance taxonomy, blueprint를 도메인 pack 단위로 묶고 한 번에 검증
@@ -173,6 +176,7 @@ RDF bridge는 이 4층 전체에 대응되는 외부 의미 계층이다.
 - `operational-ontology-relation-category-schema` — relation type category schema 정의
 - `operational-ontology-schema-validation` — schema plane과 instance plane 사이의 검증 규칙
 - `operational-ontology-validation-boundary` — ontology design 변경의 문서/패키지/시뮬레이션/registry lifecycle 검증 경계
+- `operational-ontology-design-change-validation-matrix` — axis/taxonomy/relation/allocation/definition/pack activation 변경별 검증 경로
 - `operational-ontology-allocation-validation-contract` — registry persistence가 보존해야 하는 local allocation 불변조건
 - `operational-ontology-pack-interface` — schema/governance/blueprint를 pack 단위로 묶는 인터페이스
 - `operational-ontology-prompt-artifact-generation` — 작업영역별 prompt artifact 생성과 검증 규칙
