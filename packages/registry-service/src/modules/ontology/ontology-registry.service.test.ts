@@ -382,16 +382,36 @@ describe("OntologyRegistryService", () => {
     );
   });
 
-  it("activates reserved allocations and rejects invalid transitions", async () => {
-    const service = new OntologyRegistryService({
-      store: new InMemoryOntologyRegistryStore(),
-    });
+  it("activates reserved allocations through the store boundary without index-meta calls", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const service = new OntologyRegistryService({ store });
+    const prefixRegistry = new InMemoryPrefixRegistry();
+    const updateStatus = vi.spyOn(store, "updateAllocationStatus");
+    const indexMetaGet = vi.spyOn(prefixRegistry, "getRecord");
+    const indexMetaRegister = vi.spyOn(prefixRegistry, "register");
     await service.reserveAddressSpace({ pack: validPack });
 
-    const activated = await service.activateAllocation({
+    const activated = await service.activateAllocation(
+      "authorization-ontology:authorization-resource:v1",
+    );
+
+    expect(activated.allocation.status).toBe("active");
+    expect(updateStatus).toHaveBeenCalledWith(
+      "authorization-ontology:authorization-resource:v1",
+      "active",
+    );
+    expect(indexMetaGet).not.toHaveBeenCalled();
+    expect(indexMetaRegister).not.toHaveBeenCalled();
+  });
+
+  it("rejects missing, active-again, and deprecated activation paths", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const service = new OntologyRegistryService({ store });
+    await service.reserveAddressSpace({ pack: validPack });
+
+    await service.activateAllocation({
       allocationId: "authorization-ontology:authorization-resource:v1",
     });
-    expect(activated.allocation.status).toBe("active");
 
     const transitionError = await captureServiceError(
       service.activateAllocation({
@@ -406,12 +426,88 @@ describe("OntologyRegistryService", () => {
       }),
     );
 
+    await store.updateAllocationStatus(
+      "authorization-ontology:authorization-decision:v1",
+      "deprecated",
+    );
+    const deprecatedError = await captureServiceError(
+      service.activateAllocation("authorization-ontology:authorization-decision:v1"),
+    );
+    expect(deprecatedError.conflict).toEqual(
+      expect.objectContaining({
+        code: "invalid-transition",
+        from: "deprecated",
+        to: "active",
+      }),
+    );
+
     const missingError = await captureServiceError(
-      service.activateAllocation({ allocationId: "missing" }),
+      service.activateAllocation("missing"),
     );
     expect(missingError.conflict).toEqual(
-      expect.objectContaining({ code: "missing-allocation" }),
+      expect.objectContaining({
+        code: "missing-allocation",
+        allocationId: "missing",
+      }),
     );
+  });
+
+  it("blocks activation when another active allocation owns the prefix/version", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const service = new OntologyRegistryService({ store });
+    await service.reserveAddressSpace({ pack: validPack });
+    const allocation = await store.getAllocation(
+      "authorization-ontology:authorization-resource:v1",
+    );
+    if (!allocation) {
+      throw new Error("test fixture is missing the reserved allocation");
+    }
+    const activeAllocation = {
+      ...allocation,
+      allocationId: "legacy-ontology:authorization-resource:v1",
+      ontologyId: "legacy-ontology",
+      status: "active" as const,
+    };
+    const listActive = vi
+      .spyOn(store, "listActiveAllocations")
+      .mockResolvedValue([activeAllocation]);
+    const updateStatus = vi.spyOn(store, "updateAllocationStatus");
+
+    const duplicateError = await captureServiceError(
+      service.activateAllocation(allocation.allocationId),
+    );
+
+    expect(listActive).toHaveBeenCalled();
+    expect(updateStatus).not.toHaveBeenCalled();
+    expect(duplicateError.conflict).toEqual(
+      expect.objectContaining({
+        code: "duplicate-allocation",
+        allocationIds: [
+          "authorization-ontology:authorization-resource:v1",
+          "legacy-ontology:authorization-resource:v1",
+        ],
+        allocationKeys: expect.arrayContaining([
+          {
+            recordKind: "allocation",
+            prefix: "authorization_ontology_authorization_resource",
+            versionId: "v1",
+          },
+        ]),
+        storeConflicts: expect.arrayContaining([
+          expect.objectContaining({
+            code: "duplicate-key",
+            key: {
+              recordKind: "allocation",
+              prefix: "authorization_ontology_authorization_resource",
+              versionId: "v1",
+            },
+          }),
+        ]),
+      }),
+    );
+    expect(
+      await store.getAllocation("authorization-ontology:authorization-resource:v1"),
+    ).toEqual(expect.objectContaining({ status: "reserved" }));
   });
 
   it("syncs active allocations to PrefixRegistry with explicit preconditions", async () => {

@@ -10,7 +10,21 @@ after each iteration and it's included in prompts for context.
 - Ontology lifecycle orchestration belongs in an internal service that depends on `OntologyRegistryStore`; store adapters own persistence mutations, while sync to `PrefixRegistry` should use a narrow port and explicit service conflict types.
 - Ontology service methods should keep validation and projection in the service layer, then call store writes only after local validation passes; tests can spy on operational-ontology facades and `OntologyRegistryStore.writeAllocationPlan()` to lock no-write failures.
 - Reservation APIs over allocation policies should normalize `status: "reserved"` at the service boundary and keep raw `storeConflicts` while adding service-level allocation keys for callers.
+- Allocation activation should complete service-level lifecycle and active `(prefix, versionId)` collision checks before calling the store status mutation; duplicate-active failures can reuse the structured `duplicate-allocation` payload with allocation keys.
 
+---
+
+## 2026-04-14 - US-004
+- Implemented the remaining activation guard so `activateAllocation()` accepts object or allocation-id string input, requires `reserved`, checks for an existing active `(prefix, versionId)` owner, and only then updates status through `OntologyRegistryStore.updateAllocationStatus()`.
+- Added activation tests for store-boundary mutation, no index-meta calls, missing allocation, active-again rejection, deprecated rejection, and duplicate-active collision rejection.
+- Files changed:
+  - `packages/registry-service/src/modules/ontology/ontology-registry.service.ts`
+  - `packages/registry-service/src/modules/ontology/ontology-registry.service.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Active allocation uniqueness belongs in the service activation path even though current persistence keeps `(prefix, versionId)` globally unique for reservations.
+  - A duplicate-active activation failure should happen before `updateAllocationStatus()` so the reserved row remains unchanged.
+  - `activateAllocation()` does not need any `PrefixRegistry` dependency; index-meta remains isolated to the explicit sync method.
 ---
 
 ## 2026-04-14 - US-003

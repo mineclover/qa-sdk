@@ -273,8 +273,16 @@ export class OntologyRegistryService {
 
   async activateAllocation(
     input: ActivateAllocationInput,
+  ): Promise<ActivateAllocationResult>;
+  async activateAllocation(allocationId: string): Promise<ActivateAllocationResult>;
+  async activateAllocation(
+    inputOrAllocationId: ActivateAllocationInput | string,
   ): Promise<ActivateAllocationResult> {
-    const allocation = await this.requireAllocation(input.allocationId);
+    const allocationId =
+      typeof inputOrAllocationId === "string"
+        ? inputOrAllocationId
+        : inputOrAllocationId.allocationId;
+    const allocation = await this.requireAllocation(allocationId);
     if (allocation.status !== "reserved") {
       throw new OntologyRegistryServiceError({
         code: "invalid-transition",
@@ -283,6 +291,11 @@ export class OntologyRegistryService {
         from: allocation.status,
         to: "active",
       });
+    }
+
+    const activeConflict = await this.findActiveAllocationConflict(allocation);
+    if (activeConflict) {
+      throw duplicateActiveAllocation(allocation, activeConflict);
     }
 
     const updated = await this.store.updateAllocationStatus(
@@ -368,6 +381,20 @@ export class OntologyRegistryService {
       throw missingAllocation(allocationId);
     }
     return allocation;
+  }
+
+  private async findActiveAllocationConflict(
+    allocation: OntologyAddressAllocationRecord,
+  ): Promise<OntologyAddressAllocationRecord | null> {
+    const activeAllocations = await this.store.listActiveAllocations();
+    return (
+      activeAllocations.find(
+        (activeAllocation) =>
+          activeAllocation.allocationId !== allocation.allocationId &&
+          activeAllocation.prefix === allocation.prefix &&
+          activeAllocation.versionId === allocation.versionId,
+      ) ?? null
+    );
   }
 
   private async projectAndWriteReservation(input: {
@@ -615,6 +642,41 @@ function missingAllocation(allocationId: string): OntologyRegistryServiceError {
     code: "missing-allocation",
     message: `Missing ontology allocation "${allocationId}"`,
     allocationId,
+  });
+}
+
+function duplicateActiveAllocation(
+  allocation: OntologyAddressAllocationRecord,
+  activeAllocation: OntologyAddressAllocationRecord,
+): OntologyRegistryServiceError {
+  const prefixVersionKey: OntologyAddressAllocationRecordKey = {
+    recordKind: "allocation",
+    prefix: allocation.prefix,
+    versionId: allocation.versionId,
+  };
+
+  return new OntologyRegistryServiceError({
+    code: "duplicate-allocation",
+    message: `Cannot activate ontology allocation "${allocation.allocationId}" because active allocation "${activeAllocation.allocationId}" already uses prefix "${allocation.prefix}" version "${allocation.versionId}"`,
+    allocationIds: [allocation.allocationId, activeAllocation.allocationId],
+    allocationKeys: [
+      {
+        recordKind: "allocation",
+        allocationId: allocation.allocationId,
+      },
+      {
+        recordKind: "allocation",
+        allocationId: activeAllocation.allocationId,
+      },
+      prefixVersionKey,
+    ],
+    storeConflicts: [
+      {
+        code: "duplicate-key",
+        message: `Active allocation "${activeAllocation.allocationId}" already uses prefix "${allocation.prefix}" version "${allocation.versionId}"`,
+        key: prefixVersionKey,
+      },
+    ],
   });
 }
 
