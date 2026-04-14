@@ -67,11 +67,11 @@ sources:
 
 ## 목적 ^purpose
 
-operational ontology schema를 registry-service와 index-meta가 소비할 수 있는 allocation contract로 고정한다. 목표는 현재 구현된 DB 독립 allocation model, Phase 2A persistence table surface, Phase 2B store adapter surface, Phase 3 service lifecycle surface, Phase 4 index-meta sync surface, Phase 5 activation helper/smoke surface를 plan/todo가 아니라 현재 spec 표면으로 승격하는 것이다.
+operational ontology schema를 registry-service와 index-meta가 소비할 수 있는 allocation contract로 고정한다. 목표는 현재 구현된 DB 독립 allocation model, Phase 2A persistence table surface, Phase 2B store adapter surface, Phase 3 service lifecycle surface, Phase 4 index-meta sync surface, Phase 5 activation helper/smoke surface, public/local activation CLI surface를 plan/todo가 아니라 현재 spec 표면으로 승격하는 것이다.
 
 ## 구성 ^overview
 
-현재 완료된 범위는 local allocation contract, handoff 문서화, Phase 2A registry-service persistence table surface, Phase 2B registry-service store adapter surface, Phase 3 registry-service service layer surface, Phase 4 index-meta sync surface, Phase 5 activation helper/smoke surface다.
+현재 완료된 범위는 local allocation contract, handoff 문서화, Phase 2A registry-service persistence table surface, Phase 2B registry-service store adapter surface, Phase 3 registry-service service layer surface, Phase 4 index-meta sync surface, Phase 5 activation helper/smoke surface, local CLI activation execution surface다.
 
 - **Local allocation model** — `OperationalOntologySchema`를 namespace, axis registration, taxonomy registration, address allocation, segment record로 투영한다.
 - **Local validation** — 단일 allocation plan 안의 duplicate key, missing axis, invalid size/offset, segment drift를 structured issue로 판정한다.
@@ -80,6 +80,7 @@ operational ontology schema를 registry-service와 index-meta가 소비할 수 �
 - **Registry service layer** — registry-service가 pack validation, address reservation, activation transition, active allocation sync delegation을 internal service API로 제공한다.
 - **Index-meta sync adapter** — active allocation bundle을 index-meta prefix registry/schema version records로 materialize하고 idempotent/repaired/blocked report와 post-sync smoke readback을 반환한다.
 - **Activation helper** — ontology module helper가 pack registration, all-allocation activation, index-meta sync, activation-level smoke summary를 service method 호출만으로 조립한다.
+- **Activation CLI** — `qa-sdk ontology registry activate-pack <pack-id>`가 completed helper lifecycle을 local SQLite runtime으로 실행하고 stable JSON/text/sidecar output을 제공한다.
 - **Design validation boundary** — ontology design 변경 시 definition graph, operational-ontology allocation, programming-artifact simulation, registry-service/index-meta lifecycle gate를 분리한다.
 - **Handoff contracts** — registry-service persistence와 index-meta sync가 소비할 record shape, collision rule, activation smoke 기준을 문서화한다.
 - **Prefix policy gate** — scoped prefix 도입 전까지 global `(prefix, versionId)` uniqueness와 현재 registry/index-meta/decode key shape를 유지한다.
@@ -99,6 +100,8 @@ registry-service service layer SSOT는 `packages/registry-service/src/modules/on
 ontology index-meta sync adapter SSOT는 `packages/registry-service/src/modules/ontology/index-meta-sync.adapter.ts`다. Adapter tests는 product materialization, sum sidecar policy, idempotency, partial repair, collision/drift, and post-sync check report shape를 검증한다.
 
 ontology activation helper SSOT는 `packages/registry-service/src/modules/ontology/ontology-activation.helper.ts`다. Helper tests는 valid all-allocation activation, product/sum smoke checks, invalid no-write, duplicate/blocked sync behavior, memory/SQL backend matrix, and public result summary shape를 검증한다.
+
+activation CLI SSOT는 `packages/cli/src/command-groups/ontology.commands.ts`, `packages/cli/src/commands/ontology.ts`, `packages/cli/src/lib/known-ontology-packs.ts`, 그리고 `@qa-sdk/registry-service/ontology-local-runtime`이다. CLI tests는 public command path, known pack scenarios, structured failure output, raw SQL sanitization, text output, and `--output` JSON sidecar behavior를 검증한다.
 
 ## Projection Contract
 
@@ -307,6 +310,13 @@ Unexpected infrastructure errors are sanitized into `unexpected-error` issues wi
 - registry-service activation helper exposes raw detail plus `namespaceSummary`, `allocationSummaries`, `syncSummariesByAllocationId`, and `smokeCheckSummary` for API/CLI consumers.
 - registry-service Nest wiring exposes the internal service/store/sync adapter providers without adding `/ontology` routes.
 - registry-service Nest wiring exposes the activation helper provider without adding `/ontology` routes.
+- CLI command discovery routes `qa-sdk ontology registry activate-pack <pack-id>` through the ontology command group into `cliOntology(["registry.activate-pack", ...])`.
+- CLI activation of `programming-artifact-ontology` succeeds through an isolated SQLite store, reports `programming-artifact` and `programming-artifact-relation` allocation summaries, syncs both allocations, and returns passing smoke checks.
+- CLI duplicate activation of `programming-artifact-ontology` against the same store returns a structured `duplicate-allocation` helper failure without raw SQL leakage.
+- CLI activation of `authorization-ontology` succeeds through an isolated SQLite store, reports all eight authorization taxonomy allocation summaries, syncs every allocation, returns passing smoke checks, and exposes known authorization axes in `syncReports[*].materializedRecords[*].axisId`.
+- CLI-origin failures for unknown pack id, invalid flags, invalid address model, runtime storage setup, and output write failures return stable result-like JSON when `--json` or `--output` is used.
+- CLI text failures preserve the stable JSON error code as `<code>: <message>`, while helper lifecycle failures continue through activation summary `errors`.
+- CLI `--output <file>` writes the same pretty JSON payload as `--json` stdout and creates parent directories before writing.
 
 ## 완료된 Handoff Specs
 
@@ -322,25 +332,29 @@ ralph stabilization 작업으로 아래 plan/todo 항목은 spec 문서로 반�
 
 ## 구현 경계
 
-Phase 5 이후 아직 구현하지 않은 범위:
+Phase 5 및 local CLI exposure 이후 아직 구현하지 않은 범위:
 
+- registry-service REST activation endpoint.
+- remote activation service/deployment surface.
+- activation result persistence into the programming artifact registry.
 - scoped prefix schema/API migration.
 
-scoped prefix는 `operational-ontology-scoped-prefix-decision`의 concrete need gate와 별도 decision PRD/implementation ADR 없이는 구현하지 않는다. Activation smoke는 완료됐고 Phase 3 active allocation/service error contract와 Phase 4 sync report/post-sync check surface를 소비하며 table/store/service/sync shape를 역으로 변경하지 않는다.
+REST exposure and artifact registry persistence stay follow-up work. scoped prefix는 `operational-ontology-scoped-prefix-decision`의 concrete need gate와 별도 decision PRD/implementation ADR 없이는 구현하지 않는다. Activation smoke와 local CLI execution은 완료됐고 Phase 3 active allocation/service error contract와 Phase 4 sync report/post-sync check surface를 소비하며 table/store/service/sync shape를 역으로 변경하지 않는다.
 
-## Optional Public Execution Surface ^optional-public-surface
+## CLI Activation Surface ^cli-activation-surface
 
-Internal lifecycle completion does not create a public command by itself. The next optional surface is a local CLI proof that calls the completed activation helper without reopening lifecycle internals.
+The implemented public/local command calls the completed activation helper without reopening lifecycle internals.
 
 - PRD: `tasks/prd-ontology-registry-activation-cli.md`
 - JSON: `tasks/prd-ontology-registry-activation-cli.json`
-- command candidate: `qa-sdk ontology registry activate-pack <pack-id>`
-- scope: known pack resolver, local SQLite runtime, activation result JSON, programming-artifact and authorization ontology scenario proofs
+- CLI spec: `operational-ontology-registry-activation-cli`
+- command: `qa-sdk ontology registry activate-pack <pack-id>`
+- scope: known pack resolver, local SQLite runtime, activation result JSON, text output, `--output` JSON sidecar, programming-artifact and authorization ontology scenario proofs
 - non-goals: registry-service REST endpoint, scoped prefix support, artifact registry append, remote activation service
 
-## CLI Activation Boundary Discovery ^cli-activation-boundary
+## CLI Activation Boundary ^cli-activation-boundary
 
-Activation CLI US-001 is a discovery/contract story only. Phase 5 is the completed internal lifecycle surface: pack validation, reservation, allocation activation, index-meta sync, product/sum smoke checks, and structured activation result payloads. The CLI is an optional public/local execution surface over that lifecycle, not Phase 6 and not a new lifecycle phase.
+Phase 5 is the completed internal lifecycle surface: pack validation, reservation, allocation activation, index-meta sync, product/sum smoke checks, and structured activation result payloads. The CLI is a public/local execution surface over that lifecycle, not Phase 6 and not a new lifecycle phase.
 
 The initial known pack resolver must use these package exports, not test fixtures:
 
@@ -349,7 +363,7 @@ The initial known pack resolver must use these package exports, not test fixture
 | `programming-artifact-ontology` | `import { programmingArtifactOntologyPack } from "operational-ontology/programming-artifacts"` | `packages/operational-ontology/package.json` exposes `./programming-artifacts`; `packages/operational-ontology/src/programming-artifacts.ts` re-exports the pack | already covered by `@qa-sdk/cli` dependency on `operational-ontology` |
 | `authorization-ontology` | `import { authorizationOntologyPack } from "authorization-ontology"` | `packages/authorization-ontology/package.json` exposes the package root; `packages/authorization-ontology/src/index.ts` exports the pack | `@qa-sdk/cli` has a direct `authorization-ontology` workspace dependency |
 
-The resolved command surface for later implementation is `qa-sdk ontology registry activate-pack <pack-id>`. The descriptor belongs in `packages/cli/src/command-groups/ontology.commands.ts`, routed through the existing ontology handler proxy into `cliOntology` in `packages/cli/src/commands/ontology.ts`.
+The resolved command surface is `qa-sdk ontology registry activate-pack <pack-id>`. The descriptor lives in `packages/cli/src/command-groups/ontology.commands.ts`, routed through the existing ontology handler proxy into `cliOntology` in `packages/cli/src/commands/ontology.ts`.
 
 The confirmed flags are:
 
@@ -360,6 +374,7 @@ The confirmed flags are:
 - `--version <versionId>` to select allocation version id.
 - `--address-model product|sum` to select the allocation model.
 - `--prefix <taxonomyId>=<prefix>` as a repeatable deterministic taxonomy prefix override.
+- `--output <file>` to write the same pretty JSON payload emitted by `--json` as a sidecar materialization.
 - `--json` for machine-readable activation result output.
 
 The local runtime strategy is a single SQLite file per command invocation. The runtime must open the file through registry-service/index-meta SQL infrastructure, apply index-meta base DDL plus registry-service migrations, and construct all activation dependencies over the same driver: `SqlOntologyRegistryStore` for registry-service ontology rows, `SqlPrefixRegistry` for index-meta prefix records, and `SqlIndexMetaStore` for schema-version records. It then builds `OntologyIndexMetaSyncAdapter`, `OntologyRegistryService`, and `OntologyPackActivationHelper` and calls the helper/service port. It must not start a Nest HTTP server, call registry-service REST APIs, create new persistence abstractions, or reach into raw SQL from the CLI command.

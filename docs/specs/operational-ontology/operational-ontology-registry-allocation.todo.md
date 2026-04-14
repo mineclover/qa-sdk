@@ -23,7 +23,7 @@ def:
 
 operational ontology schema를 registry-service의 ontology-aware registry/allocator로 승격하기 위한 구현 항목을 추적한다. 목표는 완료된 DB 독립 allocation model 다음에 registry-service persistence, service layer, index-meta sync, pack activation flow를 순서대로 닫는 것이다.
 
-완료된 local allocation model, validation issue target, validation boundary, matrix, graph requirement, Phase 2A persistence schema, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, Phase 5 activation smoke, persistence/index-meta handoff, scoped prefix decision은 `operational-ontology-registry-allocation` spec에 반영됐다. 이 TODO는 scoped prefix가 별도 decision PRD로 재개되기 전까지 남은 정책-only 항목을 명시한다.
+완료된 local allocation model, validation issue target, validation boundary, matrix, graph requirement, Phase 2A persistence schema, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, Phase 5 activation smoke, public/local activation CLI, persistence/index-meta handoff, scoped prefix decision은 `operational-ontology-registry-allocation` spec에 반영됐다. 이 TODO는 REST activation exposure, activation evidence persistence, scoped prefix가 별도 PRD로 재개되기 전까지 남은 정책-only 항목을 명시한다.
 
 ## 실행 dependency map
 
@@ -360,14 +360,21 @@ Validation commands:
 - [x] `pnpm --filter operational-ontology test -- allocation`
 - [x] `node packages/cli/dist/index.js def validate`
 
-## Optional Public Surfaces
+## Public and Follow-up Surfaces
 
-- [ ] CLI activation surface: `qa-sdk ontology registry activate-pack <pack-id>`
+- [x] CLI activation surface: `qa-sdk ontology registry activate-pack <pack-id>`
   - PRD: `tasks/prd-ontology-registry-activation-cli.md`
   - JSON: `tasks/prd-ontology-registry-activation-cli.json`
-  - Scope: local SQLite activation runtime, known pack resolver, activation result JSON, programming-artifact/authorization scenario proof
-  - Non-goals: registry-service REST endpoint, scoped prefix support, artifact registry append, remote activation service
+  - Spec: `operational-ontology-registry-activation-cli`
+  - Scope: local SQLite activation runtime, known pack resolver, activation result JSON, concise text output, `--output` sidecar JSON, programming-artifact/authorization scenario proof
+  - Closed by CLI command-path tests for programming-artifact activation, authorization activation, unknown pack, invalid address model, duplicate helper failure, raw SQL sanitization, and output sidecar behavior
+- [ ] REST activation endpoint for registry-service
+  - Keep separate from local CLI because endpoint auth, remote store ownership, and deployment lifecycle need their own API contract.
+- [ ] Activation result persistence into programming artifact registry
+  - Keep separate from `--output`; sidecar JSON is evidence materialization, not a managed artifact registry append.
+- [ ] Remote activation service/deployment surface
+  - Keep separate from local SQLite runtime until a concrete service boundary and operator workflow exists.
 
 ## 다음 구현 기준
 
-Phase 5 activation smoke까지 완료됐다. Phase 2A schema/migration/snapshot, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, Phase 5 activation helper/smoke는 prefix global uniqueness를 깨지 않는다. 다음 lifecycle 구현은 현재 없다. Public/local execution surface가 필요하면 CLI activation PRD로 진행한다. scoped prefix는 `operational-ontology-scoped-prefix-decision`의 concrete need gate를 통과하고 새 decision PRD/implementation ADR이 생성되는 경우에만 별도 진행한다.
+Phase 5 activation smoke와 public/local CLI activation surface까지 완료됐다. Phase 2A schema/migration/snapshot, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, Phase 5 activation helper/smoke, CLI activation command는 prefix global uniqueness를 깨지 않는다. 다음 lifecycle 구현은 현재 없다. REST exposure, artifact registry persistence, remote activation service는 새 PRD/API contract가 생길 때만 진행한다. scoped prefix는 `operational-ontology-scoped-prefix-decision`의 concrete need gate를 통과하고 새 decision PRD/implementation ADR이 생성되는 경우에만 별도 진행한다.

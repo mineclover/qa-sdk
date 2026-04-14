@@ -13,6 +13,8 @@ def:
   links:
     - target: operational-ontology-system
       type: depends_on
+    - target: operational-ontology-registry-activation-cli
+      type: depends_on
     - target: permission-system
       type: depends_on
     - target: authorization-ontology-realm-model
@@ -71,6 +73,8 @@ authorization ontology는 Cerbos를 대체하지 않는다. Cerbos가 표현하�
   dataset/table/view/column과 column-level lineage
 - **observation realm**
   실제 authorization decision, checkpoint, diff
+
+`qa-sdk ontology registry activate-pack authorization-ontology`는 이 ontology pack을 registry-service/index-meta local lifecycle로 검증하는 public CLI scenario proof다. 현재 proof는 authorization node, principal, resource, action, policy, decision, enforcement, lineage taxonomy allocation과 known authorization axes materialization을 확인한다. REST activation endpoint와 activation evidence registry persistence는 operational ontology follow-up work로 남긴다.
 
 ## 정의 ^defines
 

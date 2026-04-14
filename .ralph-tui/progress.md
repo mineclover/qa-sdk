@@ -15,6 +15,7 @@ after each iteration and it's included in prompts for context.
 - Activation JSON represents ontology taxonomies in `allocationSummaries`; synced axis coverage is proven through `syncReports[*].materializedRecords[*].axisId` because `syncSummariesByAllocationId` intentionally stays count-only.
 - CLI-origin ontology activation text failures should preserve the stable JSON error code as a `<code>: <message>` prefix; helper-returned lifecycle failures should continue through the activation summary `errors` list.
 - Activation CLI `--output` should be a sidecar materialization of the same pretty JSON payload printed by `--json`; keep `--json` stdout unchanged, create parent directories before writing, and do not append programming artifact registry records unless a later story explicitly adds that registry integration.
+- New definition-catalog CLI surfaces should get a dedicated `aspect: cli_contract` leaf and be added to the owning `*-system` document with a `contains` link so command contracts do not get buried in lifecycle specs.
 
 ---
 
@@ -139,4 +140,17 @@ after each iteration and it's included in prompts for context.
   - Activation output persistence fits best as a sidecar JSON materialization, not as a second stdout mode, because existing automation already relies on `--json` being the canonical payload.
   - The activation handler has both pre-helper failure paths and helper result paths; output writing needs to sit on both surfaces if automation should retain failure evidence.
   - Output write failures should remain a CLI failure result instead of falling through the broad runtime catch as `activation-runtime-error`.
+---
+
+## 2026-04-15 - US-010
+- Added `operational-ontology-registry-activation-cli.spec.md` as the dedicated CLI contract for `qa-sdk ontology registry activate-pack <pack-id>`, including command flags, local SQLite runtime boundary, JSON/text failure contracts, `--output` sidecar behavior, proven scenarios, and follow-up scope.
+- Updated `operational-ontology-registry-allocation.spec.md` to reflect the implemented public/local activation CLI surface instead of a future command candidate.
+- Updated `operational-ontology-registry-allocation.todo.md` to mark the CLI activation surface complete and keep REST exposure, remote activation service, artifact registry persistence, and scoped prefix support as follow-up work.
+- Added the new CLI leaf to `operational-ontology-system` and reflected proven programming-artifact and authorization activation scenarios in their system docs.
+- Files changed: `docs/specs/operational-ontology/operational-ontology-registry-activation-cli.spec.md`, `docs/specs/operational-ontology/operational-ontology-registry-allocation.spec.md`, `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md`, `docs/specs/operational-ontology/operational-ontology-system.spec.md`, `docs/specs/operational-ontology/programming-artifact-ontology-system.spec.md`, `docs/specs/authorization-ontology/authorization-ontology-system.spec.md`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter registry-service test`; `pnpm --filter registry-service typecheck`; `pnpm --filter registry-service build`; `pnpm --filter operational-ontology test -- allocation`; `pnpm --filter authorization-ontology test`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - A new public CLI surface is easier to navigate as its own `cli_contract` leaf, while the lifecycle allocation spec should summarize the surface and point to follow-up boundaries.
+  - Scenario docs should cite the activation CLI only where command-path tests prove the scenario; handler-only tests would not be enough evidence for public docs.
+  - `--output` remains evidence sidecar materialization, not artifact registry persistence, so REST/API and registry append work should stay in separate follow-up stories.
 ---

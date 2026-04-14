@@ -23,6 +23,8 @@ def:
       type: contains
     - target: programming-artifact-ontology-context-simulation-todo
       type: contains
+    - target: operational-ontology-registry-activation-cli
+      type: depends_on
 sources:
   - packages/operational-ontology/src/internal/programming-artifact-core.ts
   - packages/operational-ontology/src/programming-artifacts.ts
@@ -45,6 +47,7 @@ sources:
 - `programming_artifact_relation` relation category — artifact relation edge grammar를 제공한다.
 - `artifact_prompt_context` traversal — artifact ref에서 prompt extraction context까지 가는 route family를 고정한다.
 - `ArtifactRegistryPromptArtifactContextProvider` — registry record를 `PromptArtifactDefinitionContextExtraction`으로 변환하고 관련 `quality-status` record를 sidecar governance evidence로 찾는다.
+- `qa-sdk ontology registry activate-pack programming-artifact-ontology` — pack vocabulary allocation을 registry-service/index-meta local lifecycle로 검증하는 scenario proof다.
 - `programming-artifact-ontology-development-guide` — 세션 시작 컨텍스트 확인 순서와 변경 유형별 개발 지침을 고정한다.
 - `programming-artifact-ontology-cli` — `extract-artifact` registry 우선 조회와 fallback 품질 신호를 고정한다.
 - `programming-artifact-ontology-context-simulation` — context selection, data flow, evidence interpretation, prompt consumption을 fixture simulation 계약으로 고정한다.
@@ -174,7 +177,7 @@ quality-status governance closure는 artifact extraction에 한정된 additive c
 - `source.governanceClosure`는 `quality-status-found`, `quality-status-missing`, `quality-status-invalid`, `quality-status-incomplete` 네 상태만 사용한다.
 - search fallback warning은 `source.qualitySignal.warning`에 남고, governance closure warning은 `source.governanceClosure.warning`에 남아 서로 섞이지 않는다.
 - freshness SLA는 structural snapshot/ledger authority가 정해진 뒤 적용되며, 오래된 generated timestamp가 ledger docVersion stale이나 snapshot-vs-ledger conflict로 취급되지 않는다.
-- 이 feature는 local artifact registry JSON과 prompt quality closure만 닫는다. `operational-ontology-registry-allocation.plan.md` / `.todo.md`가 다루는 registry-service, index-meta, ontology pack allocation lifecycle은 out of scope이며 해당 adjacent 문서는 변경하지 않는다.
+- 이 feature는 local artifact registry JSON과 prompt quality closure만 닫는다. Pack vocabulary activation은 `operational-ontology-registry-activation-cli`가 `programming-artifact-ontology` scenario proof로 다루며, activation output을 programming artifact registry record로 append하지는 않는다.
 
 `extract-artifact --json`은 이 quality-status closure 판정을 `source.governanceClosure`로도 노출한다. 이 객체는 `quality-status-found`, `quality-status-missing`, `quality-status-invalid`, `quality-status-incomplete` 중 하나의 상태, matched quality-status artifact ref/id 목록, 그리고 closure가 닫히지 않았을 때의 governance warning/action을 포함한다. free-string search fallback 품질 경고는 계속 `source.qualitySignal.warning`에 남고, governance closure warning과 합쳐지지 않는다. 이 JSON surface는 provider/registry relation vocabulary나 registry-service/index-meta allocation lifecycle을 활성화하지 않는 additive contract다.
 

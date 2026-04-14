@@ -25,6 +25,8 @@ def:
       type: contains
     - target: operational-ontology-registry-allocation
       type: contains
+    - target: operational-ontology-registry-activation-cli
+      type: contains
     - target: operational-ontology-validation-boundary
       type: contains
     - target: operational-ontology-design-change-validation-matrix
@@ -129,6 +131,7 @@ taxonomy를 먼저 schema로 선언하고 검증한 뒤, 그 schema에서 node, 
   - schema allocation plan을 namespace/axis/taxonomy/address allocation record로 투영하고 registry-service/index-meta 승격 경계를 준비
   - registry-service persistence가 시작할 때 소비할 namespace/axis/taxonomy/allocation/segment record handoff 계약
   - active allocation을 index-meta prefix registry/schema version record로 materialize할 sync handoff 계약
+  - completed activation lifecycle을 local CLI로 실행하는 public/local command contract
   - scoped prefix가 필요한 concrete evidence와 registry/index-meta/decode migration surface를 결정하는 prefix policy gate
 - **Instance plane**
   - `NodeCoord`
@@ -191,6 +194,7 @@ RDF bridge는 이 4층 전체에 대응되는 외부 의미 계층이다.
 - `operational-ontology-relation-category-schema` — relation type category schema 정의
 - `operational-ontology-schema-validation` — schema plane과 instance plane 사이의 검증 규칙
 - `operational-ontology-registry-allocation` — 현재 구현된 local allocation model, validation issue target, handoff spec 반영 상태
+- `operational-ontology-registry-activation-cli` — completed activation helper lifecycle을 `qa-sdk ontology registry activate-pack`로 실행하는 CLI 계약
 - `operational-ontology-validation-boundary` — ontology design 변경의 문서/패키지/시뮬레이션/registry lifecycle 검증 경계
 - `operational-ontology-design-change-validation-matrix` — axis/taxonomy/relation/allocation/definition/pack activation 변경별 검증 경로
 - `operational-ontology-definition-graph-requirements` — ontology module/leaf/plan/todo/knowledge 문서의 frontmatter, contains, split, sources 규칙
