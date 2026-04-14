@@ -1,14 +1,14 @@
 {
-  "id": "e0787afc-e19b-4624-bd12-65400945f0cb",
+  "id": "efd7bc22-8960-49b5-97cb-92e709468f87",
   "status": "running",
-  "startedAt": "2026-04-14T04:21:50.407Z",
-  "updatedAt": "2026-04-14T04:43:38.394Z",
+  "startedAt": "2026-04-14T06:48:15.720Z",
+  "updatedAt": "2026-04-14T06:48:15.720Z",
   "agentPlugin": "codex",
   "trackerPlugin": "json",
-  "prdPath": "tasks/prd-operational-ontology-registry-persistence-schema.json",
-  "currentIteration": 6,
+  "prdPath": "tasks/prd-ontology-registry-store-adapter.json",
+  "currentIteration": 0,
   "maxIterations": 0,
   "totalTasks": 0,
-  "tasksCompleted": 6,
+  "tasksCompleted": 0,
   "cwd": "/Users/junwoobang/workflow/qa-sdk"
 }
