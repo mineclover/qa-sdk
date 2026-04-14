@@ -9,6 +9,7 @@ after each iteration and it's included in prompts for context.
 
 - Ontology lifecycle orchestration belongs in an internal service that depends on `OntologyRegistryStore`; store adapters own persistence mutations, while sync to `PrefixRegistry` should use a narrow port and explicit service conflict types.
 - Ontology service methods should keep validation and projection in the service layer, then call store writes only after local validation passes; tests can spy on operational-ontology facades and `OntologyRegistryStore.writeAllocationPlan()` to lock no-write failures.
+- Internal Nest service boundaries can use a no-controller module with a store token factory from `DATABASE`; focused tests should resolve the service and the store token, write through the service, and read back through the store to prove shared provider wiring.
 - Reservation APIs over allocation policies should normalize `status: "reserved"` at the service boundary and keep raw `storeConflicts` while adding service-level allocation keys for callers.
 - Allocation activation should complete service-level lifecycle and active `(prefix, versionId)` collision checks before calling the store status mutation; duplicate-active failures can reuse the structured `duplicate-allocation` payload with allocation keys.
 - Deferred sync shells should validate service-owned lifecycle preconditions and return explicit report payloads, without accepting future adapter ports or writing external registries before the materialization phase.
@@ -102,4 +103,19 @@ after each iteration and it's included in prompts for context.
   - Service-level reservation tests should assert exact persisted record shape when they are intended to freeze lifecycle behavior before index-meta sync.
   - Namespace, axis, and taxonomy rows are persisted with `lifecycle: "draft"` during reservation; allocation activation only updates allocation status.
   - `pnpm --filter registry-service test -- <pattern>` can still execute the package test script broadly; `pnpm --filter registry-service exec vitest run <file>` is the precise targeted test path.
+---
+
+## 2026-04-14 - US-007
+- Added an internal `OntologyModule` that wires `OntologyRegistryService` through an `ONTOLOGY_REGISTRY_STORE` provider backed by `SqlOntologyRegistryStore` from the shared Nest `DATABASE` token.
+- Imported `OntologyModule` into `AppModule` without adding any controller, REST route, or CLI command.
+- Added a focused Nest module/provider test that writes a reservation through `OntologyRegistryService`, reads it back through the injected ontology store token, and confirms `/ontology` remains unrouted.
+- Files changed:
+  - `packages/registry-service/src/app.module.ts`
+  - `packages/registry-service/src/modules/ontology/ontology.module.ts`
+  - `packages/registry-service/src/modules/ontology/ontology.module.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Existing registry-service modules prefer explicit string store tokens plus `DATABASE`-injected SQL store factories, so ontology Nest wiring should follow that pattern instead of changing bootstrap store helpers.
+  - A no-controller Nest module is enough to make the internal service available to future registry-service modules while keeping the HTTP and CLI surfaces unchanged.
+  - Provider wiring tests are strongest when they assert shared behavior across the service provider and store token rather than only checking instance construction.
 ---

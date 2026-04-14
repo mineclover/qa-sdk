@@ -10,6 +10,7 @@ import { DagModule } from "./modules/dag/dag.module.js";
 import { DashboardModule } from "./modules/dashboard/dashboard.module.js";
 import { EventModule } from "./modules/events/event.module.js";
 import { MetricsModule } from "./modules/metrics/metrics.module.js";
+import { OntologyModule } from "./modules/ontology/ontology.module.js";
 import { PrefixModule } from "./modules/prefixes/prefix.module.js";
 import { ResolveModule } from "./modules/resolve/resolve.module.js";
 import { SchemaModule } from "./modules/schema/schema.module.js";
@@ -36,6 +37,7 @@ const definitionServiceBaseUrl = getServiceDevUrl("definition-service") ?? "http
     ResolveModule,
     SchemaModule,
     MetricsModule,
+    OntologyModule,
     ServiceModule,
     EventModule,
   ],
