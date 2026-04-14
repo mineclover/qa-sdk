@@ -9,7 +9,23 @@ after each iteration and it's included in prompts for context.
 
 - Ontology lifecycle orchestration belongs in an internal service that depends on `OntologyRegistryStore`; store adapters own persistence mutations, while sync to `PrefixRegistry` should use a narrow port and explicit service conflict types.
 - Ontology service methods should keep validation and projection in the service layer, then call store writes only after local validation passes; tests can spy on operational-ontology facades and `OntologyRegistryStore.writeAllocationPlan()` to lock no-write failures.
+- Reservation APIs over allocation policies should normalize `status: "reserved"` at the service boundary and keep raw `storeConflicts` while adding service-level allocation keys for callers.
 
+---
+
+## 2026-04-14 - US-003
+- Implemented `reserveAddressSpace()` schema/allocation-policy input support in addition to the existing pack input path.
+- Forced reservation writes to persist allocations with status `reserved`, even if an allocation policy supplies another status.
+- Added structured duplicate allocation conflict keys for prefix/version and ontology/taxonomy/version while preserving raw store conflict details.
+- Added service tests for schema-policy reservation, no index-meta writes during reservation, duplicate prefix/version conflict mapping, and duplicate ontology/taxonomy/version conflict mapping.
+- Files changed:
+  - `packages/registry-service/src/modules/ontology/ontology-registry.service.ts`
+  - `packages/registry-service/src/modules/ontology/ontology-registry.service.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - `allocateOntologyAddressSpace()` accepts policy `status`, so a reserve-specific service must override it to avoid bypassing the explicit activation API.
+  - Store conflict payloads already preserve the low-level collision reason; service callers also need normalized allocation keys to distinguish prefix/version from ontology/taxonomy/version conflicts without parsing messages.
+  - `reserveAddressSpace(schema, policy)` can reuse the same projection/write helper as pack registration without pack validation, leaving schema issues to allocation-plan validation.
 ---
 
 ## 2026-04-14 - US-002

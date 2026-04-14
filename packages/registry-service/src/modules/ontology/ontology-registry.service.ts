@@ -15,9 +15,11 @@ import {
   type OperationalOntologyPackValidationIssue,
   type OperationalOntologyPackValidationResult,
 } from "operational-ontology/pack";
+import type { OperationalOntologySchema } from "operational-ontology/schema";
 import {
   OntologyRegistryStoreError,
   type OntologyAddressAllocationRecord,
+  type OntologyAddressAllocationRecordKey,
   type OntologyAllocationPlanWriteSet,
   type OntologyRegistryStore,
   type OntologyRegistryStoreConflict,
@@ -54,9 +56,19 @@ export interface RegisterOntologyPackResult {
   readonly allocations: readonly OntologyAddressAllocationRecord[];
 }
 
-export interface ReserveAddressSpaceInput {
+export type ReserveAddressSpaceInput =
+  | ReserveAddressSpaceFromPackInput
+  | ReserveAddressSpaceFromSchemaInput;
+
+export interface ReserveAddressSpaceFromPackInput {
   readonly pack: OperationalOntologyPack;
   readonly policy?: RegisterOntologyPackOptions;
+}
+
+export interface ReserveAddressSpaceFromSchemaInput {
+  readonly schema: OperationalOntologySchema;
+  readonly policy: OntologyAddressAllocationPolicy;
+  readonly packId?: string;
 }
 
 export interface ReserveAddressSpaceResult {
@@ -129,6 +141,7 @@ export interface DuplicateOntologyAllocationConflict
   readonly code: "duplicate-allocation";
   readonly packId?: string;
   readonly allocationIds: readonly string[];
+  readonly allocationKeys: readonly OntologyAddressAllocationRecordKey[];
   readonly storeConflicts: readonly OntologyRegistryStoreConflict[];
 }
 
@@ -200,65 +213,61 @@ export class OntologyRegistryService {
       });
     }
 
-    const policy: OntologyAddressAllocationPolicy = {
+    const policy = toReservedAllocationPolicy({
       ...(input.options ?? {}),
       ontologyId: input.options?.ontologyId ?? input.pack.packId,
-    };
-    const plan = operationalOntologyAllocationPlane.allocateOntologyAddressSpace(
-      input.pack.schema,
+    });
+    const reservation = await this.projectAndWriteReservation({
+      packId: input.pack.packId,
+      schema: input.pack.schema,
       policy,
-    );
-    const allocationValidation =
-      operationalOntologyAllocationPlane.validateOntologyAddressAllocationPlan({
-        namespace: plan.namespace,
-        axes: plan.axes,
-        taxonomies: plan.taxonomies,
-        allocations: plan.allocations,
-        segments: plan.segments,
-        schema: input.pack.schema,
-      });
-    const validatedPlan: ProjectedOntologyAllocationPlan = {
-      ...plan,
-      validation: allocationValidation,
-    };
-
-    if (!allocationValidation.valid) {
-      throw new OntologyRegistryServiceError({
-        code: "invalid-allocation-plan",
-        message: `Invalid ontology allocation plan for pack "${input.pack.packId}"`,
-        packId: input.pack.packId,
-        validation: allocationValidation,
-        issues: allocationValidation.issues,
-      });
-    }
-
-    const writeSet = toWriteSet(validatedPlan);
-    try {
-      await this.store.writeAllocationPlan(writeSet);
-    } catch (error) {
-      throw mapStoreReservationError(error, input.pack.packId, validatedPlan);
-    }
+    });
 
     return {
       packId: input.pack.packId,
       ontologyId: policy.ontologyId,
       validation,
-      allocationValidation,
-      plan: validatedPlan,
-      allocations: [...writeSet.allocations],
+      allocationValidation: reservation.plan.validation,
+      plan: reservation.plan,
+      allocations: reservation.allocations,
     };
   }
 
   async reserveAddressSpace(
     input: ReserveAddressSpaceInput,
+  ): Promise<ReserveAddressSpaceResult>;
+  async reserveAddressSpace(
+    schema: OperationalOntologySchema,
+    policy: OntologyAddressAllocationPolicy,
+  ): Promise<ReserveAddressSpaceResult>;
+  async reserveAddressSpace(
+    inputOrSchema: ReserveAddressSpaceInput | OperationalOntologySchema,
+    policy?: OntologyAddressAllocationPolicy,
   ): Promise<ReserveAddressSpaceResult> {
-    const registration = await this.registerOntologyPack(input.pack, input.policy);
+    const input = normalizeReserveAddressSpaceInput(inputOrSchema, policy);
+    if ("pack" in input) {
+      const registration = await this.registerOntologyPack(input.pack, input.policy);
+
+      return {
+        packId: registration.packId,
+        ontologyId: registration.ontologyId,
+        plan: registration.plan,
+        allocations: registration.allocations,
+      };
+    }
+
+    const reservationPolicy = toReservedAllocationPolicy(input.policy);
+    const reservation = await this.projectAndWriteReservation({
+      packId: input.packId ?? reservationPolicy.ontologyId,
+      schema: input.schema,
+      policy: reservationPolicy,
+    });
 
     return {
-      packId: registration.packId,
-      ontologyId: registration.ontologyId,
-      plan: registration.plan,
-      allocations: registration.allocations,
+      packId: input.packId ?? reservationPolicy.ontologyId,
+      ontologyId: reservationPolicy.ontologyId,
+      plan: reservation.plan,
+      allocations: reservation.allocations,
     };
   }
 
@@ -360,6 +369,55 @@ export class OntologyRegistryService {
     }
     return allocation;
   }
+
+  private async projectAndWriteReservation(input: {
+    readonly packId: string;
+    readonly schema: OperationalOntologySchema;
+    readonly policy: OntologyAddressAllocationPolicy;
+  }): Promise<{
+    readonly plan: ProjectedOntologyAllocationPlan;
+    readonly allocations: readonly OntologyAddressAllocationRecord[];
+  }> {
+    const plan = operationalOntologyAllocationPlane.allocateOntologyAddressSpace(
+      input.schema,
+      input.policy,
+    );
+    const allocationValidation =
+      operationalOntologyAllocationPlane.validateOntologyAddressAllocationPlan({
+        namespace: plan.namespace,
+        axes: plan.axes,
+        taxonomies: plan.taxonomies,
+        allocations: plan.allocations,
+        segments: plan.segments,
+        schema: input.schema,
+      });
+    const validatedPlan: ProjectedOntologyAllocationPlan = {
+      ...plan,
+      validation: allocationValidation,
+    };
+
+    if (!allocationValidation.valid) {
+      throw new OntologyRegistryServiceError({
+        code: "invalid-allocation-plan",
+        message: `Invalid ontology allocation plan for pack "${input.packId}"`,
+        packId: input.packId,
+        validation: allocationValidation,
+        issues: allocationValidation.issues,
+      });
+    }
+
+    const writeSet = toWriteSet(validatedPlan);
+    try {
+      await this.store.writeAllocationPlan(writeSet);
+    } catch (error) {
+      throw mapStoreReservationError(error, input.packId, validatedPlan);
+    }
+
+    return {
+      plan: validatedPlan,
+      allocations: [...writeSet.allocations],
+    };
+  }
 }
 
 function normalizeRegisterOntologyPackInput(
@@ -377,6 +435,35 @@ function normalizeRegisterOntologyPackInput(
   return {
     pack: inputOrPack,
     options,
+  };
+}
+
+function normalizeReserveAddressSpaceInput(
+  inputOrSchema: ReserveAddressSpaceInput | OperationalOntologySchema,
+  policy?: OntologyAddressAllocationPolicy,
+): ReserveAddressSpaceInput {
+  if ("axes" in inputOrSchema) {
+    if (!policy) {
+      throw new TypeError(
+        "reserveAddressSpace(schema, policy) requires an allocation policy",
+      );
+    }
+    return {
+      schema: inputOrSchema,
+      policy,
+      packId: policy.ontologyId,
+    };
+  }
+
+  return inputOrSchema;
+}
+
+function toReservedAllocationPolicy(
+  policy: OntologyAddressAllocationPolicy,
+): OntologyAddressAllocationPolicy {
+  return {
+    ...policy,
+    status: "reserved",
   };
 }
 
@@ -418,6 +505,7 @@ function mapStoreReservationError(
       message: `Ontology allocation plan for pack "${packId}" conflicts with existing registry rows`,
       packId,
       allocationIds: plan.allocations.map((allocation) => allocation.allocationId),
+      allocationKeys: buildAllocationConflictKeys(plan.allocations, storeConflicts),
       storeConflicts,
     });
   }
@@ -445,12 +533,68 @@ function isDuplicateAllocationConflict(
   conflict: OntologyRegistryStoreConflict,
 ): boolean {
   if (conflict.code === "duplicate-key" || conflict.code === "drift") {
-    return true;
+    return conflict.key.recordKind === "allocation";
   }
   if (conflict.code !== "partial-write-rejected") {
     return false;
   }
   return conflict.conflicts.some(isDuplicateAllocationConflict);
+}
+
+function buildAllocationConflictKeys(
+  allocations: readonly OntologyAddressAllocationRecord[],
+  storeConflicts: readonly OntologyRegistryStoreConflict[],
+): OntologyAddressAllocationRecordKey[] {
+  const keys = new Map<string, OntologyAddressAllocationRecordKey>();
+  const addKey = (key: OntologyAddressAllocationRecordKey) => {
+    keys.set(JSON.stringify(key), key);
+  };
+  const addAllocationKeys = (allocation: OntologyAddressAllocationRecord) => {
+    addKey({
+      recordKind: "allocation",
+      allocationId: allocation.allocationId,
+    });
+    addKey({
+      recordKind: "allocation",
+      prefix: allocation.prefix,
+      versionId: allocation.versionId,
+    });
+    addKey({
+      recordKind: "allocation",
+      ontologyId: allocation.ontologyId,
+      taxonomyId: allocation.taxonomyId,
+      versionId: allocation.versionId,
+    });
+  };
+
+  for (const conflict of storeConflicts) {
+    if (
+      (conflict.code === "duplicate-key" || conflict.code === "drift") &&
+      conflict.key.recordKind === "allocation"
+    ) {
+      addKey(conflict.key);
+      for (const allocation of allocations) {
+        if (allocationMatchesKey(allocation, conflict.key)) {
+          addAllocationKeys(allocation);
+        }
+      }
+    }
+  }
+
+  return [...keys.values()];
+}
+
+function allocationMatchesKey(
+  allocation: OntologyAddressAllocationRecord,
+  key: OntologyAddressAllocationRecordKey,
+): boolean {
+  return (
+    (key.allocationId === undefined || key.allocationId === allocation.allocationId) &&
+    (key.ontologyId === undefined || key.ontologyId === allocation.ontologyId) &&
+    (key.taxonomyId === undefined || key.taxonomyId === allocation.taxonomyId) &&
+    (key.prefix === undefined || key.prefix === allocation.prefix) &&
+    (key.versionId === undefined || key.versionId === allocation.versionId)
+  );
 }
 
 function samePrefixRegistryRecord(
