@@ -28,6 +28,11 @@ sources:
   - packages/registry-service/src/ontology-persistence.schema.sql.test.ts
   - packages/registry-service/src/stores/in-memory-axis-profile-store.ts
   - packages/registry-service/src/stores/sql-axis-profile-store.ts
+  - packages/registry-service/src/stores/ontology-registry-store.ts
+  - packages/registry-service/src/stores/ontology-registry-validation.ts
+  - packages/registry-service/src/stores/in-memory-ontology-registry-store.ts
+  - packages/registry-service/src/stores/sql-ontology-registry-store.ts
+  - packages/registry-service/src/stores/ontology-registry-store.test.ts
 ---
 
 # Operational Ontology Registry Persistence Handoff — registry-service row contract
@@ -45,7 +50,7 @@ registry-service가 ontology namespace, axis, taxonomy, address allocation, allo
 - **Collision rules** — store unique constraint 또는 service validation으로 막아야 하는 중복과 drift.
 - **Future tests** — registry-service persistence가 시작될 때 추가해야 하는 테스트 목록.
 
-Phase 2A는 실제 `registry-service/src/db/schema.ts` 변경, SQL migration, Drizzle snapshot, migration-backed SQL schema test를 추가했다. 이 문서는 아직 store adapter, service/controller 구현, REST/CLI exposure 결정을 만들지 않는다. 그런 구현은 Phase 2B/3 story에서 선택한다.
+Phase 2A는 실제 `registry-service/src/db/schema.ts` 변경, SQL migration, Drizzle snapshot, migration-backed SQL schema test를 추가했다. Phase 2B는 `OntologyRegistryStore`, in-memory/SQL adapters, shared store validation, adapter parity tests, bootstrap exposure를 추가했다. 이 문서는 아직 service/controller 구현, REST/CLI exposure 결정을 만들지 않는다. 그런 구현은 Phase 3 story에서 선택한다.
 
 ## Persistence Records ^defines
 
@@ -130,6 +135,20 @@ The registry-service table implementation keeps these handoff refinements as par
 - Namespace, axis, and taxonomy lifecycle values are checked as `draft | active | deprecated`; allocation status is separately checked as `reserved | active | deprecated`.
 - `address_model` is checked as `product | sum`, matching `operational-ontology` allocation output.
 - Phase 2A does not add SQLite foreign keys. Taxonomy axis existence, segment range/overlap, lifecycle transition, and no-partial-write validation remain store/service responsibilities.
+- Phase 2B resolves the store side of those responsibilities for complete allocation plan writes: shared store validation enforces taxonomy axis existence, segment range/overlap, duplicate/drift, and no-partial-write rejection before service orchestration begins.
+
+## Phase 2B Store Conflict Naming ^store-conflicts
+
+`OntologyRegistryStoreError` is the store boundary error type. Its `conflict` field is one of these structured store conflicts:
+
+- `duplicate-key` — an exact same-key repeat or unique constraint collision for namespace, axis, taxonomy, allocation, or segment identity.
+- `drift` — an existing natural key is reused with changed record fields instead of an explicit update path.
+- `missing-taxonomy-axis` — a taxonomy references an axis absent for the same `ontologyId` and `versionId`.
+- `invalid-segment` — a segment has a missing allocation, empty consumes list, non-positive size, negative offset, or range outside its allocation.
+- `segment-overlap` — two segments overlap inside the same allocation range.
+- `partial-write-rejected` — top-level write rejection that wraps the underlying conflicts and requires no partial row persistence.
+
+Phase 3 service code should preserve this conflict shape or wrap it without losing the inner conflict list. Service-only errors, such as invalid pack, invalid lifecycle transition, inactive sync attempt, or service transaction failure, belong above this store conflict surface.
 
 ## Store And Service Collision Rules
 
@@ -139,12 +158,12 @@ Registry-service persistence must enforce these rules either as table constraint
 - `namespace` is globally unique. The same namespace cannot point to two different ontology ids.
 - `(ontologyId, axisId, versionId)` is unique. Same-key writes with a different `valuesHash` or `capacity` are drift, not an overwrite.
 - `(ontologyId, taxonomyId, versionId)` is unique. Same-key writes with different axis, identity axis, applies-to, or space data are drift.
-- Every taxonomy axis reference must resolve to an axis registration with the same `ontologyId` and `versionId`.
+- Every taxonomy axis reference must resolve to an axis registration with the same `ontologyId` and `versionId`; store adapters report `missing-taxonomy-axis`.
 - `allocationId` is unique.
 - `(prefix, versionId)` is globally unique while Phase 6 scoped-prefix policy is unresolved.
 - `(ontologyId, taxonomyId, versionId)` has at most one allocation.
 - `(allocationId, segmentId)` is unique.
-- Segment rows must reference an existing allocation, consume at least one axis, have positive `addressSize`, stay inside the allocation range, and not overlap another segment in the same allocation.
+- Segment rows must reference an existing allocation, consume at least one axis, have positive `addressSize`, stay inside the allocation range, and not overlap another segment in the same allocation; store adapters report `invalid-segment` or `segment-overlap`.
 
 Before persistence writes, the service should run `validateOperationalOntologyPack()` when a pack is supplied and `validateOntologyAddressAllocationPlan()` on the projected plan. Invalid local plans must be no-write failures.
 
@@ -152,9 +171,10 @@ Before persistence writes, the service should run `validateOperationalOntologyPa
 
 Phase 2A added `packages/registry-service/src/ontology-persistence.schema.sql.test.ts`. It initializes registry-service migrations with a SQL driver, verifies that the five ontology tables exist, and asserts duplicate-key rejection for namespace, axis, taxonomy, allocation, and segment identities.
 
-Phase 2B/3 still need these tests before or with their implementation:
+Phase 2B added `packages/registry-service/src/stores/ontology-registry-store.test.ts` as a shared in-memory/SQL adapter contract. It covers complete allocation plan persistence, namespace/axis/taxonomy/allocation/segment reads, active allocation reads, duplicate keys, same-key drift, missing taxonomy axes, invalid/out-of-range segments, segment overlap, and no-partial-write behavior. SQL-specific adapter tests cover JSON round-tripping and SQLite unique constraint mapping.
 
-- `src/stores/ontology-registry-store.test.ts` — shared store contract covering namespace uniqueness, axis/taxonomy duplicate keys, allocation duplicate keys, and segment duplicate/range checks for both in-memory and SQL adapters.
+Phase 3 still needs these tests before or with its implementation:
+
 - `src/modules/ontology/ontology-registry.service.test.ts` — valid plan persists namespace, axis, taxonomy, allocation, and segment rows in one transaction.
 - `src/modules/ontology/ontology-registry.service.test.ts` — invalid pack or invalid allocation plan leaves no partial rows.
 - `src/modules/ontology/ontology-registry.service.test.ts` — duplicate `(prefix, versionId)` and duplicate `(ontologyId, taxonomyId, versionId)` fail with structured conflict errors.

@@ -23,7 +23,7 @@ def:
 
 operational ontology schema를 registry-service의 ontology-aware registry/allocator로 승격하기 위한 구현 항목을 추적한다. 목표는 완료된 DB 독립 allocation model 다음에 registry-service persistence, service layer, index-meta sync, pack activation flow를 순서대로 닫는 것이다.
 
-완료된 local allocation model, validation issue target, validation boundary, matrix, graph requirement, persistence/index-meta handoff, scoped prefix decision은 `operational-ontology-registry-allocation` spec에 반영됐다. 이 TODO는 Phase 2B 이후의 미구현 store/service/sync/activation 작업을 추적한다.
+완료된 local allocation model, validation issue target, validation boundary, matrix, graph requirement, Phase 2A persistence schema, Phase 2B store adapter, persistence/index-meta handoff, scoped prefix decision은 `operational-ontology-registry-allocation` spec에 반영됐다. 이 TODO는 Phase 3 이후의 미구현 service/sync/activation 작업을 추적한다.
 
 ## 실행 dependency map
 
@@ -31,6 +31,7 @@ operational ontology schema를 registry-service의 ontology-aware registry/alloc
 - Phase 2A/2B persistence work는 Phase 1만 필요하다. Phase 2 persistence tasks는 Phase 4 index-meta sync 구현이나 index-meta schema 변경에 의존하지 않는다.
 - Phase 2B store adapter는 Phase 2A schema contract를 소비한다. SQL adapter는 migration/schema snapshot이 필요하지만 in-memory adapter는 schema 결정만으로 병렬 작성 가능하다.
 - Phase 3 service layer는 Phase 2B store contract와 Phase 1 allocation validator를 소비한다. `syncToPrefixRegistry()`는 Phase 4가 닫히기 전까지 active allocation 검증과 audit/report shell까지만 구현할 수 있다.
+- Phase 3은 pack validation, address reservation, allocation activation workflow를 하나의 service transaction boundary로 조율해야 한다. Phase 2B store transaction은 complete allocation plan write만 원자화하므로 lifecycle transition과 index-meta handoff까지 자동으로 닫지 않는다.
 - Phase 4 index-meta sync는 active allocation contract를 소비한다. Phase 4의 표현 방식 결정은 Phase 2A/2B persistence schema를 역으로 변경하지 않는다.
 - Phase 5 activation smoke는 Phase 3 service layer를 먼저 필요로 한다. full prefix registry resolve/decode smoke는 Phase 4 완료 후 실행한다.
 - Phase 6 prefix policy는 schema 변경 전 결정 gate다. prefix table schema 변경은 Phase 6 결정 전까지 금지하지만 Phase 2A/2B의 `ontology_address_allocation` collision guard는 진행 가능하다.
@@ -120,7 +121,7 @@ US-001 implementation notes:
 - [x] schema implementation 전에 `operational-ontology-registry-persistence-handoff`의 registry-service test list를 확인하고 migration-backed SQL schema test로 분리
 - [x] SQL migration/Drizzle schema snapshot 갱신
 
-## Phase 2B: Store adapter
+## Phase 2B: Store adapter — 완료
 
 Goal: persistence schema 위에 ontology registry read/write adapter를 추가하고 duplicate/collision invariant를 store boundary에서 검증한다.
 
@@ -139,11 +140,20 @@ Validation commands:
 - `pnpm --filter registry-service build`
 - `node packages/cli/dist/index.js def validate`
 
-- [ ] `OntologyRegistryStore` interface 추가
-- [ ] `InMemoryOntologyRegistryStore` 추가
-- [ ] `SqlOntologyRegistryStore` 추가
-- [ ] table별 duplicate/collision 테스트 추가
-- [ ] store-level list/get query 추가: namespace, taxonomy, allocation, active allocation
+US-007 completion notes:
+
+- `OntologyRegistryStore`는 dependency-free store contract와 structured conflict surface를 고정했다.
+- shared validation helper는 exact duplicate key, same-key drift, missing taxonomy axis, invalid segment, segment overlap을 in-memory/SQL adapter 공통으로 판정한다.
+- in-memory adapter는 cloned snapshot validation 뒤 maps를 교체해 no-partial-write를 보장한다.
+- SQL adapter는 migrated table snapshot을 읽고 shared validation을 실행한 뒤 `SqlDriver.transaction()`으로 insert하며, SQLite unique constraint race는 revalidation/fallback duplicate conflict로 매핑한다.
+- `createRegistryStores()`는 `:memory:`와 SQL path 모두에 `ontologyStore`를 노출한다.
+- shared store contract test, in-memory tests, SQL adapter tests, bootstrap parity tests가 Phase 2B adapter behavior를 검증한다.
+
+- [x] `OntologyRegistryStore` interface 추가
+- [x] `InMemoryOntologyRegistryStore` 추가
+- [x] `SqlOntologyRegistryStore` 추가
+- [x] table별 duplicate/collision 테스트 추가
+- [x] store-level list/get query 추가: namespace, taxonomy, allocation, active allocation
 
 ## Phase 3: Registry-service service layer
 
@@ -182,6 +192,7 @@ Validation commands:
   - [ ] active allocation만 sync 허용
   - [ ] sync 결과를 audit/report record로 반환
 - [ ] service-level rollback/partial failure 정책 결정
+  - [ ] store adapter transaction으로 닫히지 않는 pack validation/reservation/activation orchestration boundary 결정
 - [ ] registry-service module/controller 노출 여부 결정
   - [ ] 내부 service only
   - [ ] REST endpoint
@@ -317,4 +328,4 @@ Validation commands:
 
 ## 다음 구현 기준
 
-다음 단계는 Phase 2B registry-service store adapter부터 시작한다. Phase 2A schema/migration/snapshot은 완료됐지만 prefix global uniqueness는 깨지 않는다. `ontology_address_allocation`의 collision guard를 유지한 뒤, `operational-ontology-scoped-prefix-decision`의 concrete need gate를 통과하는 경우에만 scoped prefix implementation ADR을 작성한다.
+다음 단계는 Phase 3 registry-service service layer부터 시작한다. Phase 2A schema/migration/snapshot과 Phase 2B store adapter는 완료됐지만 prefix global uniqueness는 깨지지 않는다. `ontology_address_allocation`의 collision guard를 유지한 뒤, `operational-ontology-scoped-prefix-decision`의 concrete need gate를 통과하는 경우에만 scoped prefix implementation ADR을 작성한다.

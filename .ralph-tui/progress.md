@@ -7,6 +7,7 @@ after each iteration and it's included in prompts for context.
 
 *Add reusable patterns discovered during development here.*
 - Registry-service store contracts live as narrow dependency-free interface files under `packages/registry-service/src/stores/`; adapter-specific imports such as SQL drivers stay in `in-memory-*`/`sql-*` implementations.
+- Phase completion docs should close implemented items in the `.todo.md`, move the implemented source-backed surface into the sibling `.spec.md`, and leave downstream phase ownership explicit instead of marking future orchestration closed.
 - Ontology registry persistence validation should stay stores-local and dependency-free, returning the structured `OntologyRegistryStoreConflict` shapes before either SQL or in-memory adapters translate them into write failures.
 - Full ontology allocation plan writes should collect validation conflicts first and throw `partial-write-rejected` before mutating adapter state; exact same-key repeats are `duplicate-key`, while changed same-key records are `drift`.
 - SQL store adapters can keep raw `SqlDriver` queries while deriving table names from Drizzle schema exports via `getTableName()`, which keeps Phase table names tied to `db/schema.ts` without adopting Drizzle query builders.
@@ -100,4 +101,19 @@ after each iteration and it's included in prompts for context.
   - `createRegistryStores()` is currently the sole registry-service bootstrap surface for store bundles, so Phase 3 consumers can get new store dependencies by extending this return object.
   - SQL-backed bootstrap tests can use a temporary SQLite file path to exercise the non-`:memory:` branch while leaving schema migration behavior intact.
   - The ontology adapter wiring can remain bootstrap-local; existing modules/routes do not need dependency injection changes until service code begins consuming the store.
+---
+
+## 2026-04-14 - US-007
+- Reflected Phase 2B completion in the operational ontology registry allocation TODO by marking store adapter items complete and shifting next implementation guidance to Phase 3.
+- Updated the allocation spec with the completed store adapter surface, structured conflict list, bootstrap exposure, verified adapter scenarios, and remaining service-layer responsibilities.
+- Refined the persistence handoff spec with Phase 2B store conflict/error naming and clarified that Phase 3 owns service/controller decisions.
+- Files changed:
+  - `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md`
+  - `docs/specs/operational-ontology/operational-ontology-registry-allocation.spec.md`
+  - `docs/specs/operational-ontology/operational-ontology-registry-persistence-handoff.spec.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Completed implementation phases should be represented twice: checklist closure in the TODO and source-backed contract summary in the sibling spec.
+  - Store adapter transactions close complete allocation plan writes, but Phase 3 still needs an explicit service transaction boundary for pack validation, reservation, activation, and sync handoff.
+  - Store conflict names are now part of the handoff contract, so service errors should preserve the `OntologyRegistryStoreError.conflict` shape instead of flattening it.
 ---
