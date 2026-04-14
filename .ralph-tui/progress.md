@@ -7,6 +7,7 @@ after each iteration and it's included in prompts for context.
 
 - Planning-only lifecycle boundary stories should close acceptance criteria in the execution PRD before implementation stories run: record the lifecycle boundary, selected vocabulary value, rejected alternatives, and 5Q rationale in the PRD itself.
 - CLI ontology tests consume exported workspace packages through their built `dist/` entrypoints; after changing exported operational-ontology vocabulary or pack code, run `pnpm --filter operational-ontology build` before CLI tests.
+- `pnpm --filter @qa-sdk/cli test -- ontology` is a Vitest path/name filter; CLI-local helper tests that must run under this gate should live in `ontology.test.ts` or include `ontology` in the test file name.
 
 ---
 
@@ -35,4 +36,16 @@ after each iteration and it's included in prompts for context.
   - `PROGRAMMING_ARTIFACT_KINDS` in `programming-artifact-core.ts` is the SSOT for the ontology pack axis, metadata vocabulary, TypeScript `ProgrammingArtifactKind`, and CLI registry kind validation.
   - `activation-evidence` can be represented by the existing relation fields: command provenance via `produced_by`, pack/import source via `derived_from`, pack/allocation proof via `verifies`, activation CLI ownership via `owned_by_definition`, and sidecar/result refs via `materializes_output`.
   - CLI ontology tests initially rejected `activation-evidence` until `operational-ontology` was rebuilt, because the CLI package imports `operational-ontology/programming-artifacts` from `dist/`.
+---
+
+## 2026-04-15 - US-003
+- Added a pure CLI-local activation evidence mapper that converts an activation result plus resolved output sidecar path and command context into a programming artifact registry record.
+- The mapper rejects missing/blank output paths, creates deterministic `activation-evidence-<packId>-<ontologyId>` record ids, points `artifactRef`/`outputPath` at the sidecar, records command provenance, pack/import derivation, verification refs, activation CLI ownership, sidecar/result materialization refs, and activation summary metadata.
+- Added mapper unit coverage under the required ontology test filter for successful mapping, deterministic id generation, missing output path rejection, and metadata shape.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter @qa-sdk/cli build`; `pnpm --filter operational-ontology test -- programming-artifacts`; `pnpm --filter operational-ontology typecheck`; `pnpm --filter registry-service test -- ontology`; `pnpm --filter registry-service typecheck`; `node packages/cli/dist/index.js def validate`.
+- Files changed: `packages/cli/src/lib/activation-evidence-registry.ts`, `packages/cli/src/lib/activation-evidence-registry.ontology.test.ts`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - A CLI-local structural activation result type keeps the mapper independent of registry-service private module exports while remaining compatible with the helper result shape.
+  - Activation evidence should summarize sync and smoke state in `metadata` and keep `materializesOutputRefs` to the sidecar plus a stable activation-result ref, rather than listing every generated index-meta prefix.
+  - The CLI test wrapper forwards trailing args directly to Vitest, so new helper tests need an ontology-matching file path/name to be covered by the required `-- ontology` gate.
 ---
