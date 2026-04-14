@@ -12,6 +12,7 @@ after each iteration and it's included in prompts for context.
 - Sum activation smoke checks should assert leaf prefix/schema capacity and `postSyncChecks.sumAllocation` sidecar coverage only; do not reuse product shape/resolver checks for sum segments.
 - Activation no-write coverage should exercise `OntologyPackActivationHelper` through real `OntologyRegistryService` instances and a memory/SQL backend matrix, while asserting registry rows through store APIs and SQL index-meta rows through table counts.
 - Activation blocked-sync coverage should assert existing index-meta records remain unchanged through store readbacks and SQL table counts; composite prefix drift can legitimately return both capacity and refs drift, so tests should require the relevant collision with `arrayContaining` rather than exact singleton arrays.
+- Activation result payloads should keep raw registry/sync reports for internal detail while also exposing derived API/CLI summaries (`namespaceSummary`, `allocationSummaries`, `syncSummariesByAllocationId`, `smokeCheckSummary`) so public consumers do not need to infer grouping or counts.
 
 ---
 
@@ -96,4 +97,15 @@ after each iteration and it's included in prompts for context.
   - `OntologyRegistryService.activateAllocation` already owns the active allocation uniqueness gate through `listActiveAllocations()` before `updateAllocationStatus()`.
   - `OntologyIndexMetaSyncAdapter` preflights all target prefix/schema records before writing, so one drifted allocation prefix blocks axis leaf materialization and schema repair too.
   - Product prefix drift can emit both `prefix-capacity-drift` and `prefix-refs-drift` when the existing record is a leaf but the intended record is composite.
+---
+
+## 2026-04-14 - US-008
+- Added activation result summary payload fields for namespace records, allocation records plus activation/sync status, sync summaries grouped by allocation id, and aggregate smoke check counts.
+- Added payload-shape tests on the successful multi-allocation activation path so future API/CLI surfaces can expose activation without reconstructing shape from raw sync reports.
+- Added sanitized unexpected sync failure coverage proving the result preserves structured phase/allocation context while not exposing raw SQLite/SQL text.
+- Files changed: `packages/registry-service/src/modules/ontology/ontology-activation.helper.ts`, `packages/registry-service/src/modules/ontology/ontology-activation.helper.test.ts`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - The helper can add API-oriented summaries without weakening the existing detailed `namespaceRecord`, `allocations`, `activationStatuses`, `syncReports`, and `smokeChecks` payloads.
+  - Success payload assertions are most useful on the multi-allocation path because they prove `syncSummariesByAllocationId` grouping instead of just a single report mirror.
+  - Unknown infrastructure failures should be converted to generic activation issues with `phase`, code, allocation identifiers, and error name only; raw SQL strings stay out of the payload.
 ---

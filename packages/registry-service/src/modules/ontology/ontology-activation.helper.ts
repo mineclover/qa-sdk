@@ -51,6 +51,45 @@ export interface OntologyAllocationActivationStatus {
   readonly syncStatus?: OntologyIndexMetaSyncReport['syncStatus'] | 'skipped';
 }
 
+export interface OntologyNamespaceActivationSummary {
+  readonly ontologyId: string;
+  readonly namespace: string;
+  readonly owner?: string;
+  readonly lifecycle: OntologyNamespaceRecord['lifecycle'];
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface OntologyAllocationRecordActivationSummary {
+  readonly allocationId: string;
+  readonly ontologyId: string;
+  readonly taxonomyId: string;
+  readonly prefix: string;
+  readonly versionId: string;
+  readonly addressModel: OntologyAddressAllocationRecord['addressModel'];
+  readonly capacity: number;
+  readonly addressOffset: number;
+  readonly addressSize: number;
+  readonly status: OntologyAddressAllocationRecord['status'];
+  readonly activationStatus?: OntologyAllocationActivationState;
+  readonly syncStatus?: OntologyIndexMetaSyncReport['syncStatus'] | 'skipped';
+}
+
+export interface OntologyAllocationSyncSummary {
+  readonly allocationId: string;
+  readonly taxonomyId: string;
+  readonly prefix: string;
+  readonly versionId: string;
+  readonly syncStatus: OntologyIndexMetaSyncReport['syncStatus'];
+  readonly materializedRecordCount: number;
+  readonly idempotentRecordCount: number;
+  readonly repairedRecordCount: number;
+  readonly collisionCount: number;
+  readonly deferredSemanticCount: number;
+  readonly targetRecordCount: number;
+  readonly deferredReason?: OntologyIndexMetaSyncDeferredReport['deferredReason'];
+}
+
 export type OntologyActivationSmokeCheckName =
   | 'source-allocation-active'
   | 'product-prefix-record-matches'
@@ -81,6 +120,30 @@ export interface OntologyAllocationActivationSmokeChecks {
   readonly checks: readonly OntologyActivationSmokeCheckAssertion[];
 }
 
+export interface OntologyAllocationSmokeCheckSummary {
+  readonly allocationId: string;
+  readonly taxonomyId: string;
+  readonly prefix: string;
+  readonly versionId: string;
+  readonly addressModel: OntologyAddressAllocationRecord['addressModel'];
+  readonly kind: OntologyAllocationActivationSmokeChecks['kind'];
+  readonly syncStatus: OntologyIndexMetaSyncReport['syncStatus'];
+  readonly passed: boolean;
+  readonly checkCount: number;
+  readonly passedCheckCount: number;
+  readonly failedCheckCount: number;
+}
+
+export interface OntologyActivationSmokeCheckSummary {
+  readonly allocationCount: number;
+  readonly passedAllocationCount: number;
+  readonly failedAllocationCount: number;
+  readonly checkCount: number;
+  readonly passedCheckCount: number;
+  readonly failedCheckCount: number;
+  readonly byAllocationId: Readonly<Record<string, OntologyAllocationSmokeCheckSummary>>;
+}
+
 export interface OntologyPackActivationIssue {
   readonly level: 'warning' | 'error';
   readonly phase: OntologyPackActivationPhase;
@@ -98,10 +161,14 @@ export interface OntologyPackActivationResult {
   readonly packId: string;
   readonly ontologyId: string;
   readonly namespaceRecord: OntologyNamespaceRecord | null;
+  readonly namespaceSummary: OntologyNamespaceActivationSummary | null;
   readonly allocations: readonly OntologyAddressAllocationRecord[];
+  readonly allocationSummaries: readonly OntologyAllocationRecordActivationSummary[];
   readonly activationStatuses: readonly OntologyAllocationActivationStatus[];
   readonly syncReports: readonly SyncToPrefixRegistryResult[];
+  readonly syncSummariesByAllocationId: Readonly<Record<string, OntologyAllocationSyncSummary>>;
   readonly smokeChecks: readonly OntologyAllocationActivationSmokeChecks[];
+  readonly smokeCheckSummary: OntologyActivationSmokeCheckSummary;
   readonly warnings: readonly OntologyPackActivationIssue[];
   readonly errors: readonly OntologyPackActivationIssue[];
 }
@@ -285,12 +352,150 @@ function buildResult(input: {
     packId: input.registration?.packId ?? input.pack.packId,
     ontologyId: input.registration?.ontologyId ?? input.options.ontologyId ?? input.pack.packId,
     namespaceRecord: input.registration?.plan.namespace ?? null,
+    namespaceSummary: toNamespaceSummary(input.registration?.plan.namespace ?? null),
     allocations,
+    allocationSummaries: allocations.map((allocation) =>
+      toAllocationSummary(allocation, input.activationStatuses),
+    ),
     activationStatuses: input.activationStatuses,
     syncReports: input.syncReports,
+    syncSummariesByAllocationId: toSyncSummariesByAllocationId(input.syncReports),
     smokeChecks: input.smokeChecks,
+    smokeCheckSummary: toSmokeCheckSummary(input.smokeChecks),
     warnings: input.warnings,
     errors: input.errors,
+  };
+}
+
+function toNamespaceSummary(
+  namespaceRecord: OntologyNamespaceRecord | null,
+): OntologyNamespaceActivationSummary | null {
+  if (!namespaceRecord) {
+    return null;
+  }
+
+  return {
+    ontologyId: namespaceRecord.ontologyId,
+    namespace: namespaceRecord.namespace,
+    owner: namespaceRecord.owner,
+    lifecycle: namespaceRecord.lifecycle,
+    createdAt: namespaceRecord.createdAt,
+    updatedAt: namespaceRecord.updatedAt,
+  };
+}
+
+function toAllocationSummary(
+  allocation: OntologyAddressAllocationRecord,
+  activationStatuses: readonly OntologyAllocationActivationStatus[],
+): OntologyAllocationRecordActivationSummary {
+  const activationStatus = activationStatuses.find(
+    (status) => status.allocationId === allocation.allocationId,
+  );
+
+  return withoutUndefined({
+    allocationId: allocation.allocationId,
+    ontologyId: allocation.ontologyId,
+    taxonomyId: allocation.taxonomyId,
+    prefix: allocation.prefix,
+    versionId: allocation.versionId,
+    addressModel: allocation.addressModel,
+    capacity: allocation.capacity,
+    addressOffset: allocation.addressOffset,
+    addressSize: allocation.addressSize,
+    status: allocation.status,
+    activationStatus: activationStatus?.activationStatus,
+    syncStatus: activationStatus?.syncStatus,
+  });
+}
+
+function toSyncSummariesByAllocationId(
+  syncReports: readonly SyncToPrefixRegistryResult[],
+): Readonly<Record<string, OntologyAllocationSyncSummary>> {
+  return Object.fromEntries(
+    syncReports.map((report) => [report.allocationId, toSyncSummary(report)]),
+  );
+}
+
+function toSyncSummary(report: SyncToPrefixRegistryResult): OntologyAllocationSyncSummary {
+  if (isMaterializationReport(report)) {
+    return {
+      allocationId: report.allocationId,
+      taxonomyId: report.taxonomyId,
+      prefix: report.prefix,
+      versionId: report.versionId,
+      syncStatus: report.syncStatus,
+      materializedRecordCount: report.materializedRecords.length,
+      idempotentRecordCount: report.idempotentRecords.length,
+      repairedRecordCount: report.repairedRecords.length,
+      collisionCount: report.collisions.length,
+      deferredSemanticCount: report.deferredSemantics.length,
+      targetRecordCount: report.postSyncChecks.targetRecords.length,
+    };
+  }
+
+  return {
+    allocationId: report.allocationId,
+    taxonomyId: report.taxonomyId,
+    prefix: report.prefix,
+    versionId: report.versionId,
+    syncStatus: report.syncStatus,
+    materializedRecordCount: 0,
+    idempotentRecordCount: 0,
+    repairedRecordCount: 0,
+    collisionCount: 0,
+    deferredSemanticCount: 0,
+    targetRecordCount: 0,
+    deferredReason: report.deferredReason,
+  };
+}
+
+function toSmokeCheckSummary(
+  smokeChecks: readonly OntologyAllocationActivationSmokeChecks[],
+): OntologyActivationSmokeCheckSummary {
+  const byAllocationId = Object.fromEntries(
+    smokeChecks.map((smokeCheck) => [
+      smokeCheck.allocationId,
+      toAllocationSmokeCheckSummary(smokeCheck),
+    ]),
+  );
+  const checkCount = smokeChecks.reduce(
+    (total, smokeCheck) => total + smokeCheck.checks.length,
+    0,
+  );
+  const passedCheckCount = smokeChecks.reduce(
+    (total, smokeCheck) =>
+      total + smokeCheck.checks.filter((check) => check.passed).length,
+    0,
+  );
+
+  return {
+    allocationCount: smokeChecks.length,
+    passedAllocationCount: smokeChecks.filter((smokeCheck) => smokeCheck.passed).length,
+    failedAllocationCount: smokeChecks.filter((smokeCheck) => !smokeCheck.passed).length,
+    checkCount,
+    passedCheckCount,
+    failedCheckCount: checkCount - passedCheckCount,
+    byAllocationId,
+  };
+}
+
+function toAllocationSmokeCheckSummary(
+  smokeCheck: OntologyAllocationActivationSmokeChecks,
+): OntologyAllocationSmokeCheckSummary {
+  const passedCheckCount = smokeCheck.checks.filter((check) => check.passed).length;
+
+  return {
+    allocationId: smokeCheck.allocationId,
+    taxonomyId: smokeCheck.taxonomyId,
+    prefix: smokeCheck.prefix,
+    versionId: smokeCheck.versionId,
+    addressModel: smokeCheck.addressModel,
+    kind: smokeCheck.kind,
+    syncStatus: smokeCheck.syncStatus,
+    passed: smokeCheck.passed,
+    checkCount: smokeCheck.checks.length,
+    passedCheckCount,
+    failedCheckCount: smokeCheck.checks.length - passedCheckCount,
   };
 }
 
@@ -603,8 +808,9 @@ function toActivationErrorIssue(
       level: 'error',
       phase,
       code: 'unexpected-error',
-      message: error.message,
+      message: `Unexpected ontology activation error during ${phase} phase.`,
       ...allocationContext,
+      details: { errorName: error.name },
     };
   }
 

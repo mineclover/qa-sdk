@@ -298,6 +298,14 @@ describe('OntologyPackActivationHelper', () => {
       createdAt: '2026-04-14T00:00:00.000Z',
       updatedAt: '2026-04-14T00:00:00.000Z',
     });
+    expect(result.namespaceSummary).toEqual({
+      ontologyId: 'authz-runtime',
+      namespace: 'authz',
+      owner: 'registry-service',
+      lifecycle: 'draft',
+      createdAt: '2026-04-14T00:00:00.000Z',
+      updatedAt: '2026-04-14T00:00:00.000Z',
+    });
     expect(await store.listAxes('authz-runtime', 'v2')).toEqual([
       expect.objectContaining({
         axisId: 'decision_kind',
@@ -361,11 +369,68 @@ describe('OntologyPackActivationHelper', () => {
         syncStatus: 'synced',
       },
     ]);
+    expect(result.allocationSummaries).toEqual([
+      expect.objectContaining({
+        allocationId: 'authz-runtime:authorization-resource:v2',
+        ontologyId: 'authz-runtime',
+        taxonomyId: 'authorization-resource',
+        prefix: 'authz_authorization_resource',
+        versionId: 'v2',
+        addressModel: 'product',
+        capacity: 8,
+        status: 'active',
+        activationStatus: 'active',
+        syncStatus: 'synced',
+      }),
+      expect.objectContaining({
+        allocationId: 'authz-runtime:authorization-decision:v2',
+        ontologyId: 'authz-runtime',
+        taxonomyId: 'authorization-decision',
+        prefix: 'authz_authorization_decision',
+        versionId: 'v2',
+        addressModel: 'product',
+        capacity: 4,
+        status: 'active',
+        activationStatus: 'active',
+        syncStatus: 'synced',
+      }),
+    ]);
     expect(result.syncReports.map((report) => report.allocationId)).toEqual([
       'authz-runtime:authorization-resource:v2',
       'authz-runtime:authorization-decision:v2',
     ]);
     expect(result.syncReports.map((report) => report.syncStatus)).toEqual(['synced', 'synced']);
+    expect(Object.keys(result.syncSummariesByAllocationId).sort()).toEqual([
+      'authz-runtime:authorization-decision:v2',
+      'authz-runtime:authorization-resource:v2',
+    ]);
+    for (const report of result.syncReports) {
+      const summary = result.syncSummariesByAllocationId[report.allocationId];
+      if (!summary) {
+        throw new Error(`missing sync summary for ${report.allocationId}`);
+      }
+      expect(summary).toEqual(
+        expect.objectContaining({
+          allocationId: report.allocationId,
+          taxonomyId: report.taxonomyId,
+          prefix: report.prefix,
+          versionId: report.versionId,
+          syncStatus: report.syncStatus,
+        }),
+      );
+      if ('materializedRecords' in report) {
+        expect(summary).toEqual(
+          expect.objectContaining({
+            materializedRecordCount: report.materializedRecords.length,
+            idempotentRecordCount: report.idempotentRecords.length,
+            repairedRecordCount: report.repairedRecords.length,
+            collisionCount: report.collisions.length,
+            deferredSemanticCount: report.deferredSemantics.length,
+            targetRecordCount: report.postSyncChecks.targetRecords.length,
+          }),
+        );
+      }
+    }
     expect(result.smokeChecks).toEqual([
       expect.objectContaining({
         allocationId: 'authz-runtime:authorization-resource:v2',
@@ -415,6 +480,42 @@ describe('OntologyPackActivationHelper', () => {
       }),
     ]);
     expect(result.smokeChecks.flatMap((check) => check.checks)).toHaveLength(12);
+    expect(result.smokeCheckSummary).toEqual({
+      allocationCount: 2,
+      passedAllocationCount: 2,
+      failedAllocationCount: 0,
+      checkCount: 12,
+      passedCheckCount: 12,
+      failedCheckCount: 0,
+      byAllocationId: {
+        'authz-runtime:authorization-resource:v2': {
+          allocationId: 'authz-runtime:authorization-resource:v2',
+          taxonomyId: 'authorization-resource',
+          prefix: 'authz_authorization_resource',
+          versionId: 'v2',
+          addressModel: 'product',
+          kind: 'product',
+          syncStatus: 'synced',
+          passed: true,
+          checkCount: 6,
+          passedCheckCount: 6,
+          failedCheckCount: 0,
+        },
+        'authz-runtime:authorization-decision:v2': {
+          allocationId: 'authz-runtime:authorization-decision:v2',
+          taxonomyId: 'authorization-decision',
+          prefix: 'authz_authorization_decision',
+          versionId: 'v2',
+          addressModel: 'product',
+          kind: 'product',
+          syncStatus: 'synced',
+          passed: true,
+          checkCount: 6,
+          passedCheckCount: 6,
+          failedCheckCount: 0,
+        },
+      },
+    });
     expect(sync).toHaveBeenCalledTimes(2);
     expect(sync.mock.calls.map(([bundle]) => bundle.allocation.allocationId)).toEqual([
       'authz-runtime:authorization-resource:v2',
@@ -454,6 +555,82 @@ describe('OntologyPackActivationHelper', () => {
     );
     expect(result.warnings).toEqual([]);
     expect(result.errors).toEqual([]);
+  });
+
+  it('returns sanitized structured context when an unexpected sync failure occurs', async () => {
+    const namespace = namespaceRecord();
+    const reservedAllocation = allocationRecord({ status: 'reserved' });
+    const activeAllocation = allocationRecord({ status: 'active' });
+    const sqlError = new Error(
+      'SQLITE_CONSTRAINT: UNIQUE constraint failed: prefix_registry.prefix; INSERT INTO prefix_registry VALUES (...)',
+    );
+    sqlError.name = 'SqliteError';
+    const registryService = {
+      registerOntologyPack: vi.fn(async () => ({
+        packId: 'authorization-ontology',
+        ontologyId: 'authz-runtime',
+        validation: operationalOntologyPackPlane.validateOperationalOntologyPack(validPack),
+        allocationValidation: { valid: true, issues: [] },
+        plan: {
+          namespace,
+          axes: [],
+          taxonomies: [],
+          allocations: [reservedAllocation],
+          segments: [],
+          validation: { valid: true, issues: [] },
+        },
+        allocations: [reservedAllocation],
+      })),
+      activateAllocation: vi.fn(async () => ({
+        allocation: activeAllocation,
+      })),
+      syncToPrefixRegistry: vi.fn(async () => {
+        throw sqlError;
+      }),
+    } satisfies OntologyPackActivationRegistryServicePort;
+
+    const result = await activateOntologyPack(registryService, validPack, {
+      ontologyId: 'authz-runtime',
+      namespace: 'authz',
+      versionId: 'v2',
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.activationStatuses).toEqual([
+      {
+        allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+        taxonomyId: 'authorization-resource',
+        prefix: 'authz_runtime_resource',
+        versionId: 'v2',
+        status: 'active',
+        activationStatus: 'failed',
+      },
+    ]);
+    expect(result.syncReports).toEqual([]);
+    expect(result.syncSummariesByAllocationId).toEqual({});
+    expect(result.smokeCheckSummary).toEqual({
+      allocationCount: 0,
+      passedAllocationCount: 0,
+      failedAllocationCount: 0,
+      checkCount: 0,
+      passedCheckCount: 0,
+      failedCheckCount: 0,
+      byAllocationId: {},
+    });
+    expect(result.errors).toEqual([
+      {
+        level: 'error',
+        phase: 'sync',
+        code: 'unexpected-error',
+        message: 'Unexpected ontology activation error during sync phase.',
+        allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+        taxonomyId: 'authorization-resource',
+        prefix: 'authz_runtime_resource',
+        versionId: 'v2',
+        details: { errorName: 'SqliteError' },
+      },
+    ]);
+    expect(JSON.stringify(result)).not.toMatch(/SQLITE_CONSTRAINT|INSERT INTO|prefix_registry/);
   });
 
   it('activates a pack and returns namespace, allocation, sync, warning, and error payload fields', async () => {
