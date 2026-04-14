@@ -3,11 +3,11 @@
 
 ## Overview
 
-This master PRD tracks the remaining registry allocation lifecycle after the completed local allocation model and Phase 2A persistence schema work. It is not the direct ralph-tui execution file. Each phase gets its own execution PRD and JSON. When a phase PRD closes, review the completed implementation and adjust the next phase PRD before running it.
+This master PRD tracks the remaining registry allocation lifecycle after the completed local allocation model, Phase 2A persistence schema, Phase 2B store adapter, Phase 3 service layer, and Phase 4 index-meta sync work. It is not the direct ralph-tui execution file. Each phase gets its own execution PRD and JSON. When a phase PRD closes, review the completed implementation and adjust the next phase PRD before running it.
 
 ## Goals
 
-- Keep the full Phase 2B through Phase 5 roadmap visible in one place.
+- Keep the completed Phase 2B through Phase 4 history and remaining Phase 5 roadmap visible in one place.
 - Preserve phase boundaries so ralph-tui agents do not mix store, service, sync, and activation responsibilities.
 - Make every phase consume the contracts completed by the previous phase.
 - Require review and PRD adjustment between phases.
@@ -86,6 +86,8 @@ No browser verification is required.
 - `tasks/prd-ontology-registry-index-meta-sync.md`
 - `tasks/prd-ontology-registry-index-meta-sync.json`
 
+**Status:** Completed through US-009. The current behavior is documented in `operational-ontology-registry-allocation.spec.md`, `operational-ontology-index-meta-sync-handoff.spec.md`, and `operational-ontology-registry-allocation.todo.md`.
+
 **Inputs:**
 - Phase 3 active allocation contract
 - `operational-ontology-index-meta-sync-handoff.spec.md`
@@ -93,17 +95,22 @@ No browser verification is required.
 **Exit Criteria:**
 - Active allocations sync to index-meta.
 - Product allocation mapping is implemented.
-- Sum allocation behavior is explicitly implemented or deferred with a tested guard.
+- Sum allocation behavior is implemented as leaf prefix/schema materialization plus tested segment sidecar metadata.
 - Sync is idempotent.
 - Prefix/version collisions and capacity drift are reported.
+- Post-sync report readbacks expose Phase 5 smoke inputs without implementing the Phase 5 helper.
 
 ### Phase 5: Activation Smoke
 
 **Goal:** Prove the end-to-end activation lifecycle.
 
+**Execution PRD:**
+- Not created yet. Record the concrete `tasks/prd-ontology-registry-activation-smoke...` path here before converting or running Phase 5.
+
 **Inputs:**
 - Phase 3 service layer
 - Phase 4 sync behavior
+- `OntologyIndexMetaSyncMaterializationReport.postSyncChecks`
 
 **Next PRD Start Rule:**
 - The Phase 5 execution PRD must start with a review/adjustment story for the completed Phase 4 implementation.
@@ -146,7 +153,5 @@ After each execution PRD closes:
 
 ## Open Questions
 
-- Should Phase 3 expose a REST endpoint, CLI-only adapter, or internal service only?
-- Should Phase 4 implement sum allocation sync immediately or defer until index-meta has a segment model?
 - Should activation smoke use an existing registry-service module or a new ontology module boundary?
 [/PRD]

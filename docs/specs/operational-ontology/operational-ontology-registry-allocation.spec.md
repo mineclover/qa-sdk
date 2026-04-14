@@ -47,6 +47,8 @@ sources:
   - packages/registry-service/src/bootstrap/stores.test.ts
   - packages/registry-service/src/modules/ontology/ontology-registry.service.ts
   - packages/registry-service/src/modules/ontology/ontology-registry.service.test.ts
+  - packages/registry-service/src/modules/ontology/index-meta-sync.adapter.ts
+  - packages/registry-service/src/modules/ontology/index-meta-sync.adapter.test.ts
   - packages/registry-service/src/modules/ontology/ontology.module.ts
   - packages/registry-service/src/modules/ontology/ontology.module.test.ts
   - packages/registry-service/src/app.module.ts
@@ -57,17 +59,18 @@ sources:
 
 ## 목적 ^purpose
 
-operational ontology schema를 registry-service와 index-meta가 소비할 수 있는 allocation contract로 고정한다. 목표는 현재 구현된 DB 독립 allocation model, Phase 2A persistence table surface, Phase 2B store adapter surface, Phase 3 service lifecycle surface를 plan/todo가 아니라 현재 spec 표면으로 승격해, Phase 4 index-meta sync가 안정된 active allocation contract를 입력으로 삼게 만드는 것이다.
+operational ontology schema를 registry-service와 index-meta가 소비할 수 있는 allocation contract로 고정한다. 목표는 현재 구현된 DB 독립 allocation model, Phase 2A persistence table surface, Phase 2B store adapter surface, Phase 3 service lifecycle surface, Phase 4 index-meta sync surface를 plan/todo가 아니라 현재 spec 표면으로 승격해, Phase 5 activation smoke가 안정된 sync behavior를 입력으로 삼게 만드는 것이다.
 
 ## 구성 ^overview
 
-현재 완료된 범위는 local allocation contract, handoff 문서화, Phase 2A registry-service persistence table surface, Phase 2B registry-service store adapter surface, Phase 3 registry-service service layer surface다.
+현재 완료된 범위는 local allocation contract, handoff 문서화, Phase 2A registry-service persistence table surface, Phase 2B registry-service store adapter surface, Phase 3 registry-service service layer surface, Phase 4 index-meta sync surface다.
 
 - **Local allocation model** — `OperationalOntologySchema`를 namespace, axis registration, taxonomy registration, address allocation, segment record로 투영한다.
 - **Local validation** — 단일 allocation plan 안의 duplicate key, missing axis, invalid size/offset, segment drift를 structured issue로 판정한다.
 - **Registry persistence schema** — registry-service가 namespace, axis, taxonomy, allocation, segment rows를 저장할 다섯 개 Drizzle/SQLite table과 migration snapshot을 갖는다.
 - **Registry store adapter** — registry-service가 complete allocation plan write와 namespace/axis/taxonomy/allocation/segment read query를 in-memory/SQL adapter parity로 제공한다.
-- **Registry service layer** — registry-service가 pack validation, address reservation, activation transition, deferred sync report를 internal service API로 제공한다.
+- **Registry service layer** — registry-service가 pack validation, address reservation, activation transition, active allocation sync delegation을 internal service API로 제공한다.
+- **Index-meta sync adapter** — active allocation bundle을 index-meta prefix registry/schema version records로 materialize하고 idempotent/repaired/blocked report와 post-sync smoke readback을 반환한다.
 - **Design validation boundary** — ontology design 변경 시 definition graph, operational-ontology allocation, programming-artifact simulation, registry-service/index-meta lifecycle gate를 분리한다.
 - **Handoff contracts** — registry-service persistence와 index-meta sync가 소비할 record shape, collision rule, activation smoke 기준을 문서화한다.
 - **Prefix policy gate** — scoped prefix 도입 전까지 global `(prefix, versionId)` uniqueness와 현재 registry/index-meta/decode key shape를 유지한다.
@@ -83,6 +86,8 @@ registry-service persistence schema SSOT는 `packages/registry-service/src/db/sc
 registry-service store adapter SSOT는 `packages/registry-service/src/stores/ontology-registry-store.ts`다. Shared store validation은 `packages/registry-service/src/stores/ontology-registry-validation.ts`, concrete adapters는 `packages/registry-service/src/stores/in-memory-ontology-registry-store.ts`와 `packages/registry-service/src/stores/sql-ontology-registry-store.ts`, bootstrap exposure는 `packages/registry-service/src/bootstrap/stores.ts`다.
 
 registry-service service layer SSOT는 `packages/registry-service/src/modules/ontology/ontology-registry.service.ts`다. Nest provider wiring은 `packages/registry-service/src/modules/ontology/ontology.module.ts`가 담당하며, `packages/registry-service/src/app.module.ts`가 이 internal module을 import한다.
+
+ontology index-meta sync adapter SSOT는 `packages/registry-service/src/modules/ontology/index-meta-sync.adapter.ts`다. Adapter tests는 product materialization, sum sidecar policy, idempotency, partial repair, collision/drift, and post-sync check report shape를 검증한다.
 
 ## Projection Contract
 
@@ -144,8 +149,8 @@ Phase 3 adds `OntologyRegistryService` on top of the completed store contract.
 - `registerOntologyPack(pack, options)` and object-style `registerOntologyPack({ pack, options })` validate the pack first, derive default `ontologyId` from `pack.packId` unless options override it, project the pack schema into an allocation plan, validate that plan, normalize allocation status to `reserved`, and write the complete plan through `OntologyRegistryStore.writeAllocationPlan()`.
 - `reserveAddressSpace({ pack, policy })` delegates through pack registration, while `reserveAddressSpace(schema, policy)` and `reserveAddressSpace({ schema, policy, packId })` project an existing schema/policy pair without pack validation. The service still validates the allocation plan and writes only reserved allocations.
 - `activateAllocation(allocationId)` and object-style `activateAllocation({ allocationId })` require an existing allocation with `status: "reserved"`, reject active/deprecated transitions, check active `(prefix, versionId)` collisions via `listActiveAllocations()`, then call `updateAllocationStatus(allocationId, "active")`.
-- `syncToPrefixRegistry(allocationId)` and object-style `syncToPrefixRegistry({ allocationId })` require an active allocation and return a deferred Phase 4 report with `syncStatus: "deferred"` and `deferredReason: "phase-4-index-meta-sync-not-implemented"`. It does not write index-meta records.
-- `OntologyModule` exposes the service and `ONTOLOGY_REGISTRY_STORE` provider internally from the registry-service Nest graph. It uses `DATABASE` to construct `SqlOntologyRegistryStore` and adds no controller, REST route, or CLI command.
+- `syncToPrefixRegistry(allocationId)` and object-style `syncToPrefixRegistry({ allocationId })` require an active allocation, collect namespace/taxonomy/axes/segments from `OntologyRegistryStore`, reorder axes by `taxonomy.axisIds`, and delegate the bundle to `OntologyIndexMetaSyncAdapter`.
+- `OntologyModule` exposes the service, `ONTOLOGY_REGISTRY_STORE`, and `ONTOLOGY_INDEX_META_SYNC_ADAPTER` providers internally from the registry-service Nest graph. It uses `DATABASE` to construct `SqlOntologyRegistryStore`, `SqlPrefixRegistry`, and `SqlIndexMetaStore`, and adds no controller, REST route, or CLI command.
 
 Service error code names are part of the Phase 3 handoff contract:
 
@@ -164,7 +169,50 @@ Lifecycle rules are intentionally narrower than future activation smoke:
 - Reservation always persists allocation records with `status: "reserved"` even if caller policy supplies another status.
 - Activation mutates only allocation `status` from `reserved` to `active`; it does not change namespace, axis, taxonomy, segment, index-meta, or decode state.
 - Deprecated allocations cannot be reactivated because only `reserved -> active` is valid.
-- Phase 4 is responsible for replacing the deferred sync implementation with real index-meta materialization, idempotency, collision, and smoke checks.
+- Sync does not change allocation lifecycle. It materializes only already-active allocations and reports `synced` or `blocked` index-meta state.
+
+## Index-Meta Sync Surface ^index-meta-sync
+
+Phase 4 adds `OntologyIndexMetaSyncAdapter` under the ontology module boundary. The service-facing method remains `syncToPrefixRegistry()`, but the concrete adapter is now required at service construction and the production Nest module wires the real adapter. Deferred reports remain available only as explicit test fakes for non-sync service tests.
+
+Adapter dependencies are intentionally narrow:
+
+- `PrefixRegistry` for prefix DAG read/write and post-sync resolve/shape readbacks.
+- Schema-version store methods `getSchemaVersion(prefix, versionId)` and `insertSchemaVersion(record)`.
+- No raw index-meta table access, controller, REST route, or CLI command is part of the adapter contract.
+
+Sync input is an active allocation bundle containing allocation, namespace, taxonomy, ordered axes, and segments. `OntologyRegistryService` owns bundle collection and active-only preconditions; index-meta is not used to infer ontology state.
+
+Product materialization:
+
+- Axis rows are reordered by `taxonomy.axisIds`.
+- Each taxonomy axis is written as a deterministic namespace-scoped leaf prefix: `${normalizeIdentifier(namespace)}_axis_${normalizeIdentifier(axisId)}`.
+- The allocation prefix is written as a composite `PrefixRegistryRecord` with refs in taxonomy axis order.
+- Prefix registry and schema-version records are written for every axis leaf and the allocation parent.
+- Parent capacity must match allocation capacity, allocation address size, and the product of axis ref capacities.
+- The single product segment must consume exactly `taxonomy.axisIds` in order and match allocation range.
+- Axis-value entries and eager product-combination entries are deferred. Product combinations resolve lazily through prefix DAG refs.
+
+Sum materialization:
+
+- The allocation prefix is written as a leaf prefix with `capacity = allocation.capacity`.
+- A matching schema-version record is written for the allocation prefix.
+- Sum segments are not written as `prefix_ref` rows because index-meta does not own a segment model yet.
+- Segment ranges are preserved in `deferredSemantics` sidecar metadata with `coveragePolicy: "exact-allocation-range"`.
+- Sidecar coverage is validated before any prefix/schema write: positive integer ranges, non-empty consumes, no overlap, no gaps, no trailing gap, and total covered size equal to allocation address size.
+
+Sync report behavior:
+
+- `syncStatus: "synced"` means every intended prefix/schema target now exists and post-sync checks were collected.
+- `syncStatus: "blocked"` means shape/preflight/write drift blocked sync without authorized overwrite.
+- `materializedRecords` lists newly written prefix/schema targets.
+- `idempotentRecords` lists existing matching prefix/schema targets.
+- `repairedRecords` lists missing counterpart records filled only when all existing targets match intended shape.
+- `collisions` reports `allocation-shape-drift`, `sum-segment-coverage-drift`, `prefix-capacity-drift`, `prefix-refs-drift`, `schema-version-capacity-drift`, or `index-meta-write-conflict`.
+- `deferredSemantics` reports sum segment sidecar semantics until index-meta owns segment rows.
+- `postSyncChecks` reports target prefix/schema readbacks, product shape/resolver checks, or sum exact sidecar coverage checks.
+
+Sync is all-or-nothing at the preflight boundary. The adapter builds the full intended target set before writes, reads existing prefix/schema records for every target, and blocks the entire sync if any existing target has capacity/refs/schema drift. Matching subsets can be completed; mismatched subsets block every missing write.
 
 ## 검증된 시나리오
 
@@ -186,8 +234,12 @@ Lifecycle rules are intentionally narrower than future activation smoke:
 - registry-service service rejects invalid allocation plans before persistence.
 - registry-service service maps duplicate prefix/version and duplicate ontology/taxonomy/version reservations to `duplicate-allocation` conflicts with allocation keys and raw store conflicts preserved.
 - registry-service service activation allows only `reserved -> active`, rejects active/deprecated transitions, blocks active prefix/version collisions before store mutation, and leaves index-meta untouched.
-- registry-service deferred sync returns a stable active-allocation report and rejects missing or non-active allocations.
-- registry-service Nest wiring exposes the internal service/store provider without adding `/ontology` routes.
+- registry-service sync bundle collection preserves taxonomy axis order and segment `consumes`, `addressOffset`, and `addressSize`.
+- registry-service sync materializes product allocation axis leaf prefixes, allocation composite refs, and matching schema-version records.
+- registry-service sync materializes sum allocation as a leaf prefix/schema target and preserves segment ranges as exact-allocation-range sidecar metadata without `prefix_ref` rows.
+- registry-service sync treats matching existing prefix/schema rows as idempotent, repairs missing counterparts when safe, and blocks capacity/refs/schema/segment drift without overwrite.
+- registry-service sync post-checks read back target prefix/schema existence, product ordered shape/resolver bounds, and sum sidecar exact coverage.
+- registry-service Nest wiring exposes the internal service/store/sync adapter providers without adding `/ontology` routes.
 
 ## 완료된 Handoff Specs
 
@@ -198,18 +250,17 @@ ralph stabilization 작업으로 아래 plan/todo 항목은 spec 문서로 반�
 - `operational-ontology-definition-graph-requirements` — ontology module/leaf/plan/todo/knowledge 문서 graph 규칙.
 - `operational-ontology-allocation-validation-contract` — local allocation projection/validation 불변조건.
 - `operational-ontology-registry-persistence-handoff` — registry-service persistence record mapping과 future tests.
-- `operational-ontology-index-meta-sync-handoff` — active allocation의 index-meta sync input과 smoke checks.
+- `operational-ontology-index-meta-sync-handoff` — active allocation의 implemented index-meta sync input, materialization, report shape, idempotency/collision, smoke check 계약.
 - `operational-ontology-scoped-prefix-decision` — scoped prefix schema freeze와 decision criteria.
 
 ## 구현 경계
 
-Phase 3 이후 아직 구현하지 않은 범위:
+Phase 4 이후 아직 구현하지 않은 범위:
 
-- active allocation to index-meta sync.
 - pack activation helper and smoke decode.
 - scoped prefix schema/API migration.
 
-이 범위는 `operational-ontology-registry-allocation.todo.md`의 Phase 4 이후에 남긴다. Index-meta sync와 activation smoke 구현은 Phase 3 active allocation/service error contract를 소비해야 하며 table/store/service shape를 역으로 변경하지 않는다.
+이 범위는 `operational-ontology-registry-allocation.todo.md`의 Phase 5 이후에 남긴다. Activation smoke 구현은 Phase 3 active allocation/service error contract와 Phase 4 sync report/post-sync check surface를 소비해야 하며 table/store/service/sync shape를 역으로 변경하지 않는다.
 
 ## 검증 명령
 
@@ -219,6 +270,9 @@ Phase 3 이후 아직 구현하지 않은 범위:
 - `pnpm --filter registry-service test`
 - `pnpm --filter registry-service typecheck`
 - `pnpm --filter registry-service build`
+- `pnpm --filter index-meta test`
+- `pnpm --filter index-meta typecheck`
+- `pnpm --filter index-meta build`
 - `node packages/cli/dist/index.js def validate`
 
 registry-service phase 문서는 `pnpm --filter registry-service typecheck`를 사용할 수 있다. 이 명령은 `packages/registry-service/package.json`의 `typecheck` script가 SSOT다.

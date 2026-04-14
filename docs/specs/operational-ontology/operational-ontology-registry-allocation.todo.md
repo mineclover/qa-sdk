@@ -23,17 +23,17 @@ def:
 
 operational ontology schema를 registry-service의 ontology-aware registry/allocator로 승격하기 위한 구현 항목을 추적한다. 목표는 완료된 DB 독립 allocation model 다음에 registry-service persistence, service layer, index-meta sync, pack activation flow를 순서대로 닫는 것이다.
 
-완료된 local allocation model, validation issue target, validation boundary, matrix, graph requirement, Phase 2A persistence schema, Phase 2B store adapter, Phase 3 service layer, persistence/index-meta handoff, scoped prefix decision은 `operational-ontology-registry-allocation` spec에 반영됐다. 이 TODO는 Phase 4 이후의 미구현 sync/activation 작업을 추적한다.
+완료된 local allocation model, validation issue target, validation boundary, matrix, graph requirement, Phase 2A persistence schema, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, persistence/index-meta handoff, scoped prefix decision은 `operational-ontology-registry-allocation` spec에 반영됐다. 이 TODO는 Phase 5 이후의 미구현 activation 작업을 추적한다.
 
 ## 실행 dependency map
 
 - Phase 1은 완료된 local allocation contract이며 모든 후속 phase의 입력이다.
 - Phase 2A/2B persistence work는 Phase 1만 필요하다. Phase 2 persistence tasks는 Phase 4 index-meta sync 구현이나 index-meta schema 변경에 의존하지 않는다.
 - Phase 2B store adapter는 Phase 2A schema contract를 소비한다. SQL adapter는 migration/schema snapshot이 필요하지만 in-memory adapter는 schema 결정만으로 병렬 작성 가능하다.
-- Phase 3 service layer는 Phase 2B store contract와 Phase 1 allocation validator를 소비해 완료됐다. `syncToPrefixRegistry()`는 Phase 4가 닫히기 전까지 active allocation 검증과 audit/report shell까지만 구현한다.
+- Phase 3 service layer는 Phase 2B store contract와 Phase 1 allocation validator를 소비해 완료됐다. Phase 4 이후 `syncToPrefixRegistry()`는 active allocation bundle을 수집한 뒤 ontology index-meta sync adapter에 위임한다.
 - Phase 3은 pack validation, address reservation, allocation activation workflow를 service boundary로 조율한다. Phase 2B store transaction은 complete allocation plan write를 원자화하고, service layer는 local validation no-write, reserved-only activation, active prefix/version collision guard를 담당한다.
-- Phase 4 index-meta sync는 active allocation contract를 소비한다. Phase 4의 표현 방식 결정은 Phase 2A/2B persistence schema를 역으로 변경하지 않는다.
-- Phase 5 activation smoke는 Phase 3 service layer를 먼저 필요로 한다. full prefix registry resolve/decode smoke는 Phase 4 완료 후 실행한다.
+- Phase 4 index-meta sync는 active allocation contract를 소비해 완료됐다. Phase 4의 표현 방식 결정은 Phase 2A/2B persistence schema를 역으로 변경하지 않는다.
+- Phase 5 activation smoke는 Phase 3 service layer와 Phase 4 sync report/post-sync check surface를 먼저 필요로 한다. full prefix registry resolve/decode smoke는 Phase 4 완료 상태에서 실행한다.
 - Phase 6 prefix policy는 schema 변경 전 결정 gate다. prefix table schema 변경은 Phase 6 결정 전까지 금지하지만 Phase 2A/2B의 `ontology_address_allocation` collision guard는 진행 가능하다.
 
 ## Phase 1: Operational schema allocation model — 완료
@@ -211,7 +211,7 @@ US-008 completion notes:
 - [x] service unit test 추가: invalid pack → no write
 - [x] service unit test 추가: duplicate prefix/version → error
 
-## Phase 4: index-meta sync
+## Phase 4: index-meta sync — 완료
 
 Goal: active allocation을 index-meta prefix registry/schema version contract로 내리고 idempotency, collision, capacity drift 정책을 고정한다.
 
@@ -232,24 +232,34 @@ Validation commands:
 - `pnpm --filter registry-service test`
 - `node packages/cli/dist/index.js def validate`
 
+US-009 completion notes:
+
+- `OntologyIndexMetaSyncAdapter`는 `packages/registry-service/src/modules/ontology/` 안의 type-first adapter boundary로 고정됐다. Adapter dependency는 `PrefixRegistry`와 schema-version store의 `getSchemaVersion()`/`insertSchemaVersion()` method로 제한한다.
+- `OntologyRegistryService.syncToPrefixRegistry()`는 active allocation precondition을 유지하면서 namespace, taxonomy, taxonomy 순서의 axes, segments bundle을 수집해 adapter에 전달한다. Production service fallback은 없으며 deferred behavior는 테스트 fake에서만 명시적으로 사용한다.
+- Product allocation은 namespace/axis 기반 deterministic axis leaf prefix, taxonomy `axisIds` 순서의 composite allocation prefix refs, matching schema version records를 materialize한다. Product segment는 parent shape evidence로 검증하고 별도 segment row를 쓰지 않는다.
+- Sum allocation은 allocation prefix/schema만 leaf target으로 materialize하고 segment ranges는 `coveragePolicy: "exact-allocation-range"` sidecar report로 보존한다. `prefix_ref` rows는 index-meta segment model이 생길 때까지 deferred semantics로 남긴다.
+- Sync는 전체 intended prefix/schema target set을 먼저 preflight한다. Existing matching records는 idempotent, safe partial target은 repaired, capacity/refs/schema/segment coverage drift는 blocked report로 반환하며 missing write를 진행하지 않는다.
+- Phase 4 smoke-level readback은 report의 `postSyncChecks`로 제공한다. Product는 target prefix/schema 존재, ordered shape, last-valid/capacity resolver checks를 보고하고 sum은 sidecar exact coverage를 보고한다. Phase 5 activation helper는 아직 구현하지 않는다.
+
 - [x] `operational-ontology-index-meta-sync-handoff`로 handoff-only sync contract 작성
-- [ ] active allocation → `index-meta.prefix_registry` 등록
-- [ ] active allocation → `index-meta.schema_version` 등록
-- [ ] product allocation의 shape/refs 표현 방식 결정
-  - [ ] leaf prefix로 단일 capacity만 등록
-  - [ ] taxonomy axis를 child refs로 materialize
-  - [ ] 기존 `PrefixRegistryRecord.refs`와의 매핑 규칙 정의
-- [ ] sum allocation의 `ontology_address_segment` → index-meta segment/sum model 연결 방식 결정
-  - [ ] 현재 index-meta에는 segment table이 없으므로 별도 follow-up 필요 여부 판단
-- [ ] initial `entry` materialization 필요 조건 정의
-  - [ ] axis values를 entry로 내릴지
-  - [ ] taxonomy product 조합은 lazy decode로 둘지
-- [ ] sync idempotency 테스트 추가
-- [ ] `prefix_registry` already exists 처리 정책 결정
-  - [ ] same allocation이면 no-op
-  - [ ] other allocation이면 collision error
-- [ ] `schema_version` capacity drift 감지 테스트 추가
-- [ ] `address_state_cache` 계산은 후속 validation phase로 보류
+- [x] active allocation → `index-meta.prefix_registry` 등록
+- [x] active allocation → `index-meta.schema_version` 등록
+- [x] product allocation의 shape/refs 표현 방식 결정
+  - [x] axis는 leaf prefix로 단일 capacity 등록
+  - [x] taxonomy axis를 child refs로 materialize
+  - [x] 기존 `PrefixRegistryRecord.refs`와의 매핑 규칙 정의
+- [x] sum allocation의 `ontology_address_segment` → index-meta segment/sum model 연결 방식 결정
+  - [x] 현재 index-meta에는 segment table이 없으므로 segment ranges는 sidecar report로 defer
+  - [x] sum segment는 `prefix_ref` row로 쓰지 않고 `coveragePolicy: "exact-allocation-range"`로 검증
+- [x] initial `entry` materialization 필요 조건 정의
+  - [x] axis values entry materialization은 별도 explicit entry story까지 defer
+  - [x] taxonomy product 조합은 lazy decode로 유지
+- [x] sync idempotency 테스트 추가
+- [x] `prefix_registry` already exists 처리 정책 결정
+  - [x] same allocation shape이면 no-op
+  - [x] other allocation/drift shape이면 collision error
+- [x] `schema_version` capacity drift 감지 테스트 추가
+- [x] `address_state_cache` 계산은 후속 validation phase로 보류
 
 ## Phase 5: Activation smoke
 
@@ -338,4 +348,4 @@ Validation commands:
 
 ## 다음 구현 기준
 
-다음 단계는 Phase 3 registry-service service layer부터 시작한다. Phase 2A schema/migration/snapshot과 Phase 2B store adapter는 완료됐지만 prefix global uniqueness는 깨지지 않는다. `ontology_address_allocation`의 collision guard를 유지한 뒤, `operational-ontology-scoped-prefix-decision`의 concrete need gate를 통과하는 경우에만 scoped prefix implementation ADR을 작성한다.
+다음 단계는 Phase 5 activation smoke부터 시작한다. Phase 2A schema/migration/snapshot, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync는 완료됐지만 prefix global uniqueness는 깨지지 않는다. `ontology_address_allocation`의 collision guard와 Phase 4 post-sync check report를 유지한 뒤, Phase 5 activation helper/smoke를 구현한다. scoped prefix는 `operational-ontology-scoped-prefix-decision`의 concrete need gate를 통과하는 경우에만 별도 implementation ADR로 진행한다.

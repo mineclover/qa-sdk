@@ -105,3 +105,15 @@ after each iteration and it's included in prompts for context.
   - Product smoke checks should reuse `taxonomy.axisIds` to derive the expected shape so activation smoke follows the same axis order as materialization.
   - Sum smoke checks should evaluate the reported sidecar payload, not the original store rows, because the sidecar is the current handoff contract until index-meta owns segment rows.
 ---
+
+## 2026-04-14 - US-009
+- Reflected Phase 4 completion in the registry allocation TODO by closing sync/materialization/idempotency/drift items and marking entry materialization, sum segment rows, and `address_state_cache` as explicit deferrals.
+- Updated the current registry allocation spec to describe the real sync adapter boundary, product prefix DAG mapping, sum sidecar policy, idempotent/repair/block behavior, and post-sync report checks.
+- Updated the index-meta sync handoff spec from future contract to implemented Phase 4 contract with the real `synced`/`blocked` report shape and Phase 5 smoke inputs.
+- Updated the lifecycle master PRD to record Phase 4 as completed and note that the Phase 5 execution PRD has not been created yet.
+- Files changed: `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md`, `docs/specs/operational-ontology/operational-ontology-registry-allocation.spec.md`, `docs/specs/operational-ontology/operational-ontology-index-meta-sync-handoff.spec.md`, `tasks/prd-ontology-registry-allocation-lifecycle-master.md`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - Phase 4 docs should distinguish report-level smoke readbacks from the still-open Phase 5 activation helper; `postSyncChecks` are inputs, not completion of activation.
+  - The master lifecycle PRD has no Phase 5 execution artifact yet, so the stable state is to record that absence rather than invent a path.
+  - `def context` may report missing docs when the local definition datasource is stale, but file frontmatter plus `def validate` remains the acceptance gate for this story.
+---

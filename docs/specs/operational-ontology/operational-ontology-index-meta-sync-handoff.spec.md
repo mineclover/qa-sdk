@@ -29,28 +29,33 @@ sources:
   - packages/index-meta/src/schema-sync.ts
   - packages/index-meta/src/version-lifecycle.ts
   - packages/index-meta/src/db/schema.ts
+  - packages/registry-service/src/modules/ontology/index-meta-sync.adapter.ts
+  - packages/registry-service/src/modules/ontology/index-meta-sync.adapter.test.ts
+  - packages/registry-service/src/modules/ontology/ontology-registry.service.ts
+  - packages/registry-service/src/modules/ontology/ontology.module.ts
 ---
 
-# Operational Ontology Index-Meta Sync Handoff - active allocation materialization
+# Operational Ontology Index-Meta Sync Handoff - implemented active allocation materialization
 
 ## 목적 ^purpose
 
-Define the handoff contract a future registry-service sync adapter must use when an active ontology allocation is materialized into index-meta prefix registry and schema version records. The goal is to make the sync input, product/sum mapping, idempotency, collision behavior, and activation smoke checks explicit before any index-meta or registry-service implementation is selected.
+Define the implemented handoff contract `OntologyRegistryService.syncToPrefixRegistry()` uses when an active ontology allocation is materialized into index-meta prefix registry and schema version records. The goal is to keep the sync input, product/sum mapping, idempotency, collision behavior, report shape, and Phase 5 smoke check surface explicit now that Phase 4 sync is complete.
 
 ## 구성 ^overview
 
-This document is the Phase 4 handoff input for index-meta sync.
+This document is the Phase 4 implementation contract for index-meta sync and the Phase 5 input for activation smoke.
 
-- **Sync input** - the active allocation bundle registry-service must pass to index-meta.
-- **Materialization mapping** - how product allocation, sum allocation, and segment records map to current index-meta records.
-- **Idempotency and collisions** - retry, partial-write, and existing-prefix expectations.
-- **Activation smoke** - minimum checks after sync before activation is considered complete.
+- **Sync input** - the active allocation bundle registry-service passes to the ontology sync adapter.
+- **Materialization mapping** - how product allocation, sum allocation, and segment records map to current index-meta records and report sidecars.
+- **Report shape** - real `synced`/`blocked` reports plus explicit deferred fake shape for tests.
+- **Idempotency and collisions** - retry, partial repair, preflight, and existing-prefix behavior.
+- **Activation smoke surface** - post-sync readback fields Phase 5 can consume without reimplementing sync validation.
 
-This story does not add index-meta tables, registry-service services, DB migrations, CLI commands, or sync code. Those changes require a follow-up PRD or implementation story.
+This contract does not add REST routes, CLI commands, scoped prefix behavior, an index-meta segment table, eager product entries, or a Phase 5 activation helper.
 
 ## Active Allocation Sync Input ^defines
 
-Only active allocation may be sent to index-meta. The future sync adapter must receive one allocation at a time with enough context to reproduce the intended index-meta records deterministically.
+Only active allocation may be sent to index-meta. The sync adapter receives one allocation at a time with enough context to reproduce the intended index-meta records deterministically.
 
 | input group | required data |
 |-------------|---------------|
@@ -62,36 +67,61 @@ Only active allocation may be sent to index-meta. The future sync adapter must r
 | segments | every `OntologyAddressSegment` for the allocation, preserving `segmentId`, ordered `consumes`, `addressOffset`, and `addressSize` |
 | materialization policy | whether to write no entries, axis-value entries, or a later explicit segment model |
 
-The sync adapter must not infer this data from index-meta. Registry-service owns allocation lifecycle and must pass the validated active allocation bundle as the source of truth.
+The sync adapter must not infer this data from index-meta. Registry-service owns allocation lifecycle and passes the validated active allocation bundle as the source of truth. `OntologyRegistryService` also reorders store-loaded axes by `taxonomy.axisIds` because store adapters return stable storage order, not necessarily taxonomy order.
 
-## Phase 3 Deferred Sync Report Shape
+## Implemented Adapter Boundary
 
-Until Phase 4 implements real index-meta materialization, `OntologyRegistryService.syncToPrefixRegistry(allocationId)` is a precondition/report shell. It checks that the allocation exists and has `status: "active"`, but it does not write `prefix_registry`, `schema_version`, `prefix_ref`, entries, or segment materialization rows.
+`OntologyIndexMetaSyncAdapter` lives under `packages/registry-service/src/modules/ontology/` and keeps index-meta details inside the ontology module. Production `OntologyRegistryService` requires an injected adapter at construction; the Nest module wires the real adapter with `SqlPrefixRegistry` and `SqlIndexMetaStore`.
 
-The Phase 3 report payload is the stable handoff shell:
+Adapter dependencies are intentionally type-first and narrow:
+
+| dependency | used for |
+|------------|----------|
+| `PrefixRegistry` | read existing prefix records, register intended prefix records, collect shape/resolve post-sync checks |
+| schema-version store `getSchemaVersion()` | preflight existing schema capacity |
+| schema-version store `insertSchemaVersion()` | write missing schema capacity rows |
+
+The service-facing method remains `syncToPrefixRegistry(allocationId | { allocationId })`. It rejects missing allocations with `missing-allocation`, rejects reserved/deprecated allocations with `sync-precondition-failure`, collects namespace/taxonomy/axes/segments, and then returns the adapter report.
+
+## Report Shape
+
+The real Phase 4 report payload is:
 
 | field | value |
 |-------|-------|
 | `allocationId` | source `ontology_address_allocation.allocation_id` |
-| `prefix` | source allocation prefix intended for future `prefix_registry.prefix` |
-| `versionId` | source allocation version intended for future `prefix_registry.version_id` and `schema_version.version_id` |
+| `prefix` | source allocation prefix materialized into `prefix_registry.prefix` |
+| `versionId` | source allocation version materialized into `prefix_registry.version_id` and `schema_version.version_id` |
 | `taxonomyId` | source allocation taxonomy id |
 | `status` | always `"active"` for successful reports |
-| `syncStatus` | `"deferred"` to indicate real index-meta sync is intentionally not implemented in Phase 3 |
-| `deferredReason` | `"phase-4-index-meta-sync-not-implemented"` |
+| `syncStatus` | `"synced"` when intended targets exist after sync; `"blocked"` when validation/preflight/write drift prevented sync |
+| `materializedRecords` | newly written prefix/schema targets |
+| `idempotentRecords` | existing prefix/schema targets that already matched intended shape |
+| `repairedRecords` | missing prefix/schema counterparts written only when all existing counterparts matched |
+| `collisions` | structured drift/write blockers; empty on `synced` reports |
+| `deferredSemantics` | sum segment sidecar semantics until index-meta owns a segment model |
+| `postSyncChecks` | target prefix/schema readbacks plus product or sum smoke-level readbacks |
 
-Missing allocations return the registry-service `missing-allocation` error. Reserved or deprecated allocations return `sync-precondition-failure` with reason `allocation-not-active`. Phase 4 may replace the deferred implementation behind this same method only after adding the materialization, idempotency, collision, and smoke checks below.
+`buildDeferredOntologyIndexMetaSyncReport()` still exists for explicit tests that are not exercising sync. That report has `syncStatus: "deferred"` and `deferredReason: "phase-4-index-meta-sync-not-implemented"` or `"sum-segment-semantics-unsupported"`. Production service construction no longer falls back to this deferred shell.
+
+Record roles and kinds are intentionally small:
+
+- `kind`: `prefix-registry`, `schema-version`, or `segment-sidecar`.
+- `role`: `axis-leaf`, `allocation-prefix`, or `sum-segment-sidecar`.
+- Records include prefix, version, capacity, optional axis id, optional segment id/range/consumes, and optional refs.
+
+Collision codes are `prefix-capacity-drift`, `prefix-refs-drift`, `schema-version-capacity-drift`, `allocation-shape-drift`, `sum-segment-coverage-drift`, and `index-meta-write-conflict`.
 
 ## Product Allocation Mapping
 
 `addressModel: "product"` can be represented with the current index-meta prefix DAG.
 
 - Each consumed ontology axis is materialized as a leaf prefix record before the taxonomy prefix is registered.
-- The axis leaf prefix name must be deterministic and collision-checked by registry-service before sync. A follow-up implementation may use an explicit persisted `axisPrefix`; otherwise it must derive one from the allocation namespace and axis id using one documented rule.
+- The axis leaf prefix name is deterministic: `${normalizeIdentifier(namespace)}_axis_${normalizeIdentifier(axisId)}`.
 - The allocation prefix is materialized as a composite `PrefixRegistryRecord` with `refs` in taxonomy `axisIds` order.
 - Parent `PrefixRegistryRecord.capacity` must equal `OntologyAddressAllocation.capacity`, `addressSize`, and the product of ref capacities.
 - A matching `schema_version` record must exist for every axis leaf prefix and for the parent taxonomy prefix, with the same capacity as the prefix registry record.
-- If axis-value entry materialization is enabled, entries belong only to the axis leaf prefixes. The taxonomy product combinations are decoded lazily through `PrefixRegistryRecord.refs`; they are not eagerly written as one entry row per product combination.
+- Axis-value entry materialization is deferred. If it is enabled later, entries belong only to the axis leaf prefixes. The taxonomy product combinations are decoded lazily through `PrefixRegistryRecord.refs`; they are not eagerly written as one entry row per product combination.
 
 Product allocation segment handling:
 
@@ -103,22 +133,22 @@ Product allocation segment handling:
 
 `addressModel: "sum"` cannot be fully represented as an index-meta composite DAG today because `PrefixRegistryRecord.refs` encodes product shape, while sum segments encode disjoint ranges.
 
-Minimum Phase 4 mapping:
+Phase 4 mapping:
 
 - The allocation prefix is materialized as a leaf `PrefixRegistryRecord` with `capacity = allocation.capacity`.
 - A matching `schema_version` record is written for the same `(prefix, versionId, capacity)`.
-- Segment records are carried in the sync result or audit report as sidecar materialization metadata.
+- Segment records are carried in the sync result as sidecar materialization metadata.
 - `prefix_ref` rows are not written for sum segments unless index-meta adds an explicit segment/sum model in a follow-up story.
 - Entry rows are not generated for every address in the sum range. If a later product-like decode is needed for each segment, that is a separate index-meta model change.
 
-Sum allocation smoke must prove the segment sidecar covers the allocation range without overlap. It does not claim recursive prefix decode semantics for each segment until index-meta owns a segment table or equivalent resolver.
+Sum allocation smoke-level checks prove the reported segment sidecar covers the allocation range without overlap. They do not claim recursive prefix decode semantics for each segment until index-meta owns a segment table or equivalent resolver.
 
 ## Segment Materialization Boundary
 
 `OntologyAddressSegment` is currently a registry-service allocation artifact, not an index-meta table.
 
 - Product segment materialization means the single product segment is reflected by parent `refs` and capacity checks.
-- Sum segment materialization means segment ranges are preserved in audit/sync output but not inserted into `prefix_ref`.
+- Sum segment materialization means segment ranges are preserved in sync output but not inserted into `prefix_ref`.
 - Future dedicated segment materialization must define an index-meta-owned table or resolver contract before sync code writes segment records into index-meta storage.
 - `address_state_cache` and `address_range_cache` are not part of this handoff. They are computed in activation validation or analysis phases after prefix/schema records exist.
 
@@ -132,36 +162,42 @@ Sync is idempotent by intended target record shape, not by blind upsert.
 - Same `(prefix, versionId)` with different capacity, refs, address model, allocation id, ontology id, or taxonomy id is a collision and must fail without overwriting.
 - Same axis leaf prefix/version with different `valuesHash` or capacity is drift and must fail without overwriting.
 - Capacity expansion uses index-meta lifecycle tooling only when explicitly selected by a future implementation story. This handoff does not authorize implicit `updateCapacity()`.
+- The adapter builds and preflights the full intended prefix/schema target set before any write. Any mismatched existing target blocks every missing write.
 
 ## Collision Expectations
 
-Registry-service must block known collisions before calling index-meta sync, and index-meta sync must still verify existing records.
+Registry-service blocks known lifecycle collisions before calling index-meta sync, and index-meta sync still verifies existing records.
 
 - `(prefix, versionId)` remains globally unique until the Phase 6 scoped-prefix decision changes the policy.
 - Active allocation for the same `(ontologyId, taxonomyId, versionId)` must be unique before sync.
 - Product parent capacity drift is an error when `allocation.capacity`, `allocation.addressSize`, `schema_version.capacity`, `prefix_registry.capacity`, or product refs disagree.
 - Sum allocation capacity drift is an error when allocation capacity, allocation address size, schema version capacity, prefix registry capacity, or sum of segments disagree.
-- Segment overlap, gaps, negative offsets, zero sizes, or segment ranges outside the allocation range block activation smoke even if index-meta prefix records were written.
+- Segment overlap, gaps, negative offsets, zero sizes, or segment ranges outside the allocation range block sync before index-meta prefix records are written.
 
-## Minimum Activation Smoke Checks
+## Post-Sync Smoke-Level Checks
 
-After sync, activation is not complete until the future implementation proves:
+Phase 4 reports post-sync readbacks but does not implement the Phase 5 activation helper. A successful `synced` report provides:
 
-1. The source allocation status is `active` and the local allocation validation result has no errors.
-2. `PrefixRegistry.getRecord(prefix, versionId)` returns the intended allocation prefix record.
-3. `schema_version` contains the same `(prefix, versionId, capacity)` as the prefix registry record.
-4. For product allocation, `PrefixRegistry.getShape(prefix, versionId)` equals the ordered axis capacities and the parent capacity equals their product.
-5. For product allocation, resolving `prefix:versionId:0` and `prefix:versionId:{capacity - 1}` returns valid addresses.
-6. For sum allocation, `PrefixRegistry.getShape(prefix, versionId)` is `[capacity]`, and sidecar segments cover exactly the allocation range without overlap.
-7. If axis-value entries were requested, every axis leaf prefix has one-based entry positions matching ordered axis values and the stored values reproduce the handoff `valuesHash`.
-8. Address `prefix:versionId:{capacity}` resolves as out-of-range or invalid, never as a valid address.
-9. No `address_state_cache` assertion is required for this story.
+1. `targetRecords[]`: for every intended target, whether prefix registry record exists, whether prefix capacity matches, whether schema version exists, and whether schema capacity matches.
+2. Product allocation checks: expected ordered axis capacities, actual `PrefixRegistry.getShape(prefix, versionId)`, shape match flag, last-valid address resolver check at `capacity - 1`, and out-of-range resolver check at `capacity`.
+3. Sum allocation checks: sidecar `coveragePolicy`, allocation range, covered size, segment list, and exact allocation range coverage flag.
+
+Phase 5 activation smoke remains open and must still prove:
+
+1. The source allocation status is `active` and local allocation validation result has no errors.
+2. Valid pack activation produces active allocation plus sync success.
+3. Invalid pack leaves no partial registry rows.
+4. Duplicate prefix/version activation is blocked.
+5. Activation result payload includes namespace, allocation, sync, warning, and error summaries.
+6. If axis-value entries are requested by a future story, every axis leaf prefix has one-based entry positions matching ordered axis values and stored values reproduce the handoff `valuesHash`.
+7. No `address_state_cache` assertion is required for Phase 4.
 
 ## Non-Goals
 
-- No index-meta sync implementation.
-- No registry-service service, controller, or store implementation.
+- No Phase 5 activation helper.
+- No registry-service controller, REST route, or CLI command.
 - No new index-meta segment table, resolver, migration, or `prefix_ref` semantics.
 - No eager product-combination entry materialization.
+- No axis-value entry materialization.
 - No address state or range cache calculation.
 - No scoped-prefix policy change.
