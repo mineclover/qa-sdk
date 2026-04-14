@@ -11,6 +11,7 @@ after each iteration and it's included in prompts for context.
 - Ontology design-change validation matrices should put local `operational-ontology` gates in each scenario row and keep registry-service/index-meta activation commands in a separate boundary column; core gate rows should name impact analysis or escalation explicitly.
 - Plan/todo sibling docs should use `traces_to` for cross-links. Mutual `refines` between contained plan/todo leaves can create definition graph cycles after `def sync`.
 - Allocation validation contract docs should name implementation, public facade, and test `sources`, then split local pure-function invariants from registry-service/index-meta persistence invariants. Keep existing tests as the executable SSOT rather than restating behavior as prose-only authority.
+- Large lifecycle TODOs can preserve legacy phase references by splitting a crowded phase into lettered subphases and adding a dependency map before the checklist. This keeps old acceptance criteria stable while making ralph-tui task boundaries executable.
 
 ---
 
@@ -65,4 +66,22 @@ after each iteration and it's included in prompts for context.
   - Each scenario row needs its own command surface; using "same as above" weakens the acceptance criterion because future readers can miss the concrete gate.
   - Core ontology gate changes should route to `qa-sdk flow analyze <schema-id> --impact <gate-id>` or an escalation request before local docs/code edits.
   - Local validation is docs plus `operational-ontology` package gates; registry-service/index-meta persistence, activation audit, active sync, and smoke decode remain separate activation lifecycle work.
+---
+
+## 2026-04-14 - US-004
+- Reorganized `operational-ontology-registry-allocation-todo` into executable registry allocation phases: persistence schema, store adapter, service layer, index-meta sync, activation smoke, and prefix policy.
+- Added an explicit dependency map, including the Phase 2 persistence independence from Phase 4 index-meta sync.
+- Added goal, non-goals, prerequisites, and validation commands for each phase while preserving the existing open TODO items.
+- Verified required gates:
+  - `pnpm --filter operational-ontology test`
+  - `pnpm --filter operational-ontology typecheck`
+  - `pnpm --filter operational-ontology build`
+  - `node packages/cli/dist/index.js def validate`
+- Files changed:
+  - `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - When an acceptance criterion names a legacy phase number, keep that phase label stable and use subphase IDs for new task boundaries.
+  - Phase-level validation commands work better when separated into immediate local gates and future touched-package gates; this TODO now keeps both visible per phase.
+  - Vitest on Node 24 can abort after reporting all tests passed; rerunning the exact command completed cleanly, so this looked like a transient worker shutdown issue rather than a source regression.
 ---
