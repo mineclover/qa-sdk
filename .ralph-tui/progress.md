@@ -12,6 +12,7 @@ after each iteration and it's included in prompts for context.
 - Packaged registry-service runtime code must resolve Drizzle migrations from both source and bundled `dist` locations; bundled files run with `import.meta.url` under `dist`, so source-relative `../../drizzle` can accidentally select sibling workspace folders like `packages/drizzle`.
 - Activation CLI JSON should print helper results unwrapped; pre-helper CLI/runtime failures should use a result-like failed payload with sanitized errors so automation can parse one stable contract.
 - CLI tests that need to prove command discovery/dispatch should invoke `main(["ontology", ...])`; `cliOntology(["registry.activate-pack", ...])` only proves the handler surface after proxy resolution.
+- Activation JSON represents ontology taxonomies in `allocationSummaries`; synced axis coverage is proven through `syncReports[*].materializedRecords[*].axisId` because `syncSummariesByAllocationId` intentionally stays count-only.
 
 ---
 
@@ -96,4 +97,17 @@ after each iteration and it's included in prompts for context.
   - Real command-path acceptance criteria should go through `main()` with argv-style segments, because `cliOntology()` starts after the ontology command-group proxy has already resolved the descriptor.
   - Programming artifact ontology activation creates two taxonomy surfaces by default: node artifact kind and edge relation kind.
   - Re-running activation currently fails during register with helper-returned `duplicate-allocation`; sync itself remains idempotent below the activation helper, but pack reservation is intentionally not an upsert.
+---
+
+## 2026-04-15 - US-007
+- Added a public CLI scenario test that invokes `main(["ontology", "registry", "activate-pack", "authorization-ontology", "--store", <tmp sqlite>, "--json"])`.
+- The test uses an isolated temporary SQLite store and verifies `status: "succeeded"` with the default authorization ontology namespace.
+- The test asserts allocation summaries for all eight authorization taxonomies, successful sync summaries for each allocation, passing smoke checks for every allocation, and zero activation warnings/errors.
+- The test validates that known authorization ontology axes are represented in emitted sync materialization records.
+- Files changed: `packages/cli/src/commands/ontology.test.ts`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter registry-service test`; `pnpm --filter registry-service typecheck`; `pnpm --filter registry-service build`; `pnpm --filter operational-ontology test -- allocation`; `pnpm --filter authorization-ontology test`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - Authorization ontology activation currently materializes eight taxonomy allocation surfaces: node, principal, resource, action, policy, decision, enforcement, and lineage.
+  - `allocationSummaries` are the right assertion surface for taxonomy coverage, while axis coverage requires reading the full `syncReports` materialized records.
+  - Authorization activation uses product address-model smoke checks for every taxonomy by default, including lineage.
 ---

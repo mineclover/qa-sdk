@@ -332,6 +332,154 @@ describe("ontology CLI", () => {
     }
   });
 
+  it("registry activate-pack activates authorization ontology through the public command path", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-authorization-command-activate-"));
+    try {
+      const storePath = join(dir, "registry.sqlite");
+      const output = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "registry",
+          "activate-pack",
+          "authorization-ontology",
+          "--store",
+          storePath,
+          "--json",
+        ]);
+      });
+      const parsed = JSON.parse(output.stdout) as RegistryActivationJson;
+
+      expect(output.stderr).toBe("");
+      expect(output.exitCode).toBeUndefined();
+      expect(parsed).toMatchObject({
+        status: "succeeded",
+        packId: "authorization-ontology",
+        ontologyId: "authorization-ontology",
+        namespaceSummary: {
+          ontologyId: "authorization-ontology",
+          namespace: "authorization_ontology",
+        },
+        warnings: [],
+        errors: [],
+      });
+
+      const authorizationTaxonomyIds = [
+        "authorization-action",
+        "authorization-decision",
+        "authorization-enforcement",
+        "authorization-lineage",
+        "authorization-node",
+        "authorization-policy",
+        "authorization-principal",
+        "authorization-resource",
+      ];
+      expect(parsed.allocationSummaries.map((summary) => summary.taxonomyId).sort()).toEqual(
+        authorizationTaxonomyIds,
+      );
+      expect(parsed.allocationSummaries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            taxonomyId: "authorization-node",
+            prefix: "authorization_ontology_authorization_node",
+            capacity: 512,
+            activationStatus: "active",
+            syncStatus: "synced",
+          }),
+          expect.objectContaining({
+            taxonomyId: "authorization-lineage",
+            prefix: "authorization_ontology_authorization_lineage",
+            capacity: 256,
+            activationStatus: "active",
+            syncStatus: "synced",
+          }),
+        ]),
+      );
+
+      const allocationIds = parsed.allocationSummaries
+        .map((summary) => summary.allocationId)
+        .sort();
+      expect(Object.keys(parsed.syncSummariesByAllocationId).sort()).toEqual(
+        allocationIds,
+      );
+      expect(Object.keys(parsed.smokeCheckSummary.byAllocationId).sort()).toEqual(
+        allocationIds,
+      );
+
+      for (const allocation of parsed.allocationSummaries) {
+        expect(allocation).toEqual(
+          expect.objectContaining({
+            ontologyId: "authorization-ontology",
+            versionId: "v1",
+            addressModel: "product",
+            status: "active",
+            activationStatus: "active",
+            syncStatus: "synced",
+          }),
+        );
+
+        const syncSummary = parsed.syncSummariesByAllocationId[allocation.allocationId];
+        expect(syncSummary).toEqual(
+          expect.objectContaining({
+            allocationId: allocation.allocationId,
+            taxonomyId: allocation.taxonomyId,
+            prefix: allocation.prefix,
+            versionId: allocation.versionId,
+            syncStatus: "synced",
+            collisionCount: 0,
+          }),
+        );
+        expect(syncSummary?.materializedRecordCount).toBeGreaterThan(0);
+        expect(syncSummary?.targetRecordCount).toBeGreaterThan(0);
+
+        const smokeSummary = parsed.smokeCheckSummary.byAllocationId[allocation.allocationId];
+        expect(smokeSummary).toEqual(
+          expect.objectContaining({
+            allocationId: allocation.allocationId,
+            taxonomyId: allocation.taxonomyId,
+            prefix: allocation.prefix,
+            versionId: allocation.versionId,
+            addressModel: "product",
+            kind: "product",
+            syncStatus: "synced",
+            passed: true,
+            failedCheckCount: 0,
+          }),
+        );
+        expect(smokeSummary?.checkCount).toBeGreaterThan(0);
+      }
+      expect(parsed.smokeCheckSummary).toMatchObject({
+        allocationCount: 8,
+        passedAllocationCount: 8,
+        failedAllocationCount: 0,
+        failedCheckCount: 0,
+      });
+      expect(parsed.smokeCheckSummary.passedCheckCount).toBe(
+        parsed.smokeCheckSummary.checkCount,
+      );
+
+      const materializedAxisIds = new Set(
+        parsed.syncReports
+          .flatMap((report) => report.materializedRecords ?? [])
+          .map((record) => record.axisId)
+          .filter((axisId): axisId is string => typeof axisId === "string"),
+      );
+      expect([...materializedAxisIds].sort()).toEqual([
+        "authorization_action_kind",
+        "authorization_decision_effect",
+        "authorization_enforcement_kind",
+        "authorization_lineage_transform",
+        "authorization_node_kind",
+        "authorization_policy_kind",
+        "authorization_policy_propagation_mode",
+        "authorization_principal_kind",
+        "authorization_realm_kind",
+        "authorization_resource_kind",
+      ]);
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
   it("registry activate-pack --json reports CLI errors with the activation error contract", async () => {
     const output = await captureConsoleWithExitCode(async () => {
       await cliOntology([
@@ -3434,6 +3582,15 @@ interface RegistryActivationJson {
     activationStatus?: string;
     syncStatus?: string;
   }>;
+  syncReports: Array<{
+    allocationId: string;
+    taxonomyId: string;
+    syncStatus: string;
+    materializedRecords?: Array<{
+      role: string;
+      axisId?: string;
+    }>;
+  }>;
   syncSummariesByAllocationId: Record<string, {
     allocationId: string;
     taxonomyId: string;
@@ -3456,6 +3613,8 @@ interface RegistryActivationJson {
       taxonomyId: string;
       prefix: string;
       versionId: string;
+      addressModel?: string;
+      kind?: string;
       syncStatus: string;
       passed: boolean;
       checkCount: number;
