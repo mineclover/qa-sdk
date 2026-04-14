@@ -1,14 +1,14 @@
 {
-  "id": "499bd0c5-867f-4579-8f0d-f673411c2bd6",
+  "id": "bc789952-c23f-444a-9a42-c1e3eb027f70",
   "status": "running",
-  "startedAt": "2026-04-13T21:57:42.800Z",
-  "updatedAt": "2026-04-13T23:09:25.755Z",
+  "startedAt": "2026-04-14T00:36:12.926Z",
+  "updatedAt": "2026-04-14T00:36:12.926Z",
   "agentPlugin": "codex",
   "trackerPlugin": "json",
-  "prdPath": "./tasks/prd-quality-gate-closure-infrastructure.json",
-  "currentIteration": 8,
+  "prdPath": "tasks/prd-ontology-design-validation-stabilization.json",
+  "currentIteration": 0,
   "maxIterations": 0,
   "totalTasks": 0,
-  "tasksCompleted": 8,
+  "tasksCompleted": 0,
   "cwd": "/Users/junwoobang/workflow/qa-sdk"
 }

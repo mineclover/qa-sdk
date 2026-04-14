@@ -568,6 +568,151 @@ describe("ontology CLI", () => {
     );
   }, 10_000);
 
+  it("prompt extract-artifact simulates a non-quality build artifact with a quality-status sidecar", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-build-sidecar-"));
+    const registryPath = join(dir, "artifact-registry.json");
+    const snapshotPath = join(dir, "quality-status-build-artifact.json");
+    await writeFile(
+      snapshotPath,
+      JSON.stringify({
+        rootId: "quality-gates-system",
+        generatedAt: "2026-04-13T00:00:00.000Z",
+        bundles: [
+          {
+            bundleId: "work-domain-quality-bundle",
+            bundleState: "verified",
+            verifiedGates: 3,
+            totalGates: 3,
+            claimCount: 4,
+            verifiedClaimCount: 4,
+          },
+        ],
+      }),
+      "utf8",
+    );
+    await writeFile(
+      registryPath,
+      JSON.stringify({
+        artifacts: [
+          {
+            artifactId: "build-cli-dist-index",
+            artifactRef: "packages/cli/dist/index.js",
+            kind: "build",
+            producedByRef: "pnpm --filter @qa-sdk/cli build",
+            ownerDefinitionId: "programming-artifact-ontology-cli",
+            materializesOutputRefs: ["@qa-sdk/cli"],
+            outputPath: "packages/cli/dist/index.js",
+          },
+          {
+            artifactId: "quality-status-build-artifact",
+            artifactRef: "quality-status-build-artifact.json",
+            kind: "quality-status",
+            verifiesRefs: ["packages/cli/dist/index.js"],
+            materializesOutputRefs: ["artifact:packages/cli/dist/index.js"],
+            sourceRefs: ["packages/cli/src/commands/ontology.ts"],
+            outputPath: "quality-status-build-artifact.json",
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "prompt.extract-artifact",
+        "packages/cli/dist/index.js",
+        "--artifact-registry",
+        registryPath,
+        "--kind",
+        "self_reflection",
+        "--json",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      source: {
+        kind: string;
+        registry: { status: string; recordCount: number };
+        qualityStatusRecords: {
+          total: number;
+          records: Array<{
+            artifactId: string;
+            matchReasons: Array<{ field: string; ref: string }>;
+            gateDescriptors?: Array<{ gateDocId: string; bundleId: string | null }>;
+            qualityExportSnapshot?: {
+              rootId: string;
+              bundleIds: string[];
+              totals: { verifiedGates: number; totalGates: number };
+            };
+          }>;
+        };
+        governanceClosure: {
+          status: string;
+          recommendedManagementActions: Array<{ kind: string }>;
+        };
+      };
+      artifacts: Array<{
+        quality: {
+          metrics: Array<{ dimension: string; score: number }>;
+          issues: Array<{ code: string }>;
+        };
+      }>;
+    };
+    const record = parsed.source.qualityStatusRecords.records[0]!;
+    const governanceMetric = parsed.artifacts[0]!.quality.metrics.find(
+      (metric) => metric.dimension === "governance_closure",
+    );
+
+    expect(parsed.source).toMatchObject({
+      kind: "artifact-registry-hit",
+      registry: {
+        status: "hit",
+        recordCount: 2,
+      },
+      qualityStatusRecords: {
+        total: 1,
+      },
+      governanceClosure: {
+        status: "quality-status-found",
+        recommendedManagementActions: [],
+      },
+    });
+    expect(record).toMatchObject({
+      artifactId: "quality-status-build-artifact",
+      qualityExportSnapshot: {
+        rootId: "quality-gates-system",
+        bundleIds: ["work-domain-quality-bundle"],
+        totals: {
+          verifiedGates: 3,
+          totalGates: 3,
+        },
+      },
+    });
+    expect(record.matchReasons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "verifiesRefs",
+          ref: "packages/cli/dist/index.js",
+        }),
+      ]),
+    );
+    expect(record.gateDescriptors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          gateDocId: "gate-work-domain-typecheck",
+          bundleId: "work-domain-quality-bundle",
+        }),
+      ]),
+    );
+    expect(governanceMetric?.score).toBeGreaterThanOrEqual(85);
+    expect(parsed.artifacts[0]!.quality.issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "prompt-quality-status-evidence-incomplete",
+        }),
+      ]),
+    );
+  }, 10_000);
+
   it("prompt extract-artifact rejects invalid quality-status max-age values", async () => {
     const output = await captureConsoleAsync(async () => {
       await cliOntology([

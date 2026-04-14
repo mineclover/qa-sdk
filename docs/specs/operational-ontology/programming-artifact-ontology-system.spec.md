@@ -17,6 +17,8 @@ def:
       type: contains
     - target: programming-artifact-ontology-cli
       type: contains
+    - target: programming-artifact-ontology-context-simulation
+      type: contains
     - target: programming-artifact-ontology-context-simulation-plan
       type: contains
     - target: programming-artifact-ontology-context-simulation-todo
@@ -45,6 +47,7 @@ sources:
 - `ArtifactRegistryPromptArtifactContextProvider` — registry record를 `PromptArtifactDefinitionContextExtraction`으로 변환하고 관련 `quality-status` record를 sidecar governance evidence로 찾는다.
 - `programming-artifact-ontology-development-guide` — 세션 시작 컨텍스트 확인 순서와 변경 유형별 개발 지침을 고정한다.
 - `programming-artifact-ontology-cli` — `extract-artifact` registry 우선 조회와 fallback 품질 신호를 고정한다.
+- `programming-artifact-ontology-context-simulation` — context selection, data flow, evidence interpretation, prompt consumption을 fixture simulation 계약으로 고정한다.
 - `programming-artifact-ontology-context-simulation-plan` — context selection, data flow, implementation trace를 fixture simulation으로 검증하기 위한 후속 방향을 고정한다.
 - `programming-artifact-ontology-context-simulation-todo` — simulation matrix와 traceability convention 구현 항목을 추적한다.
 
