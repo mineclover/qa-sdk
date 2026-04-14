@@ -10,7 +10,7 @@ def:
   tags: [structural, testing, contract, observability]
   links:
     - target: programming-artifact-ontology-context-simulation-plan
-      type: refines
+      type: traces_to
     - target: programming-artifact-ontology-system
       type: refines
 ---

@@ -19,6 +19,15 @@ def:
       type: depends_on
     - target: index-meta-system
       type: depends_on
+sources:
+  - packages/operational-ontology/src/internal/ontology-allocation-core.ts
+  - packages/operational-ontology/src/allocation.ts
+  - packages/operational-ontology/src/allocation.test.ts
+  - packages/registry-service/src/lib/registry-service.ts
+  - packages/registry-service/src/db/schema.ts
+  - packages/index-meta/src/prefix-registry.ts
+  - packages/index-meta/src/schema-sync.ts
+  - packages/index-meta/src/db/schema.ts
 ---
 
 # Operational Ontology Registry Allocation — 방향 계획

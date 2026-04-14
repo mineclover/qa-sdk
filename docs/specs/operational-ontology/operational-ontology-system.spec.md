@@ -23,6 +23,8 @@ def:
       type: contains
     - target: operational-ontology-schema-validation
       type: contains
+    - target: operational-ontology-validation-boundary
+      type: contains
     - target: operational-ontology-pack-interface
       type: contains
     - target: operational-ontology-production-factory
@@ -96,6 +98,7 @@ taxonomy를 먼저 schema로 선언하고 검증한 뒤, 그 schema에서 node, 
   - `TraversalSchema` — purpose별 route family 정의
 - **Validation plane**
   - schema 무결성, axis 중복, unknown reference, category overlap 검증
+  - ontology design 변경 전 확인해야 하는 local/system validation boundary
 - **Pack plane**
   - schema, governance taxonomy, blueprint를 도메인 pack 단위로 묶고 한 번에 검증
 - **Implementation governance plane**
@@ -166,6 +169,7 @@ RDF bridge는 이 4층 전체에 대응되는 외부 의미 계층이다.
 - `operational-ontology-taxonomy-schema` — axis/taxonomy를 schema plane으로 선언하는 규칙
 - `operational-ontology-relation-category-schema` — relation type category schema 정의
 - `operational-ontology-schema-validation` — schema plane과 instance plane 사이의 검증 규칙
+- `operational-ontology-validation-boundary` — ontology design 변경의 문서/패키지/시뮬레이션/registry lifecycle 검증 경계
 - `operational-ontology-pack-interface` — schema/governance/blueprint를 pack 단위로 묶는 인터페이스
 - `operational-ontology-prompt-artifact-generation` — 작업영역별 prompt artifact 생성과 검증 규칙
 - `operational-ontology-persistence` — schema/registry/assertion/observation/projection 저장 모델

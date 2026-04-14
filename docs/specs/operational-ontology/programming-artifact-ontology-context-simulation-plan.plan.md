@@ -16,7 +16,7 @@ def:
     - target: operational-ontology-prompt-artifact-generation
       type: depends_on
     - target: programming-artifact-ontology-context-simulation-todo
-      type: refines
+      type: traces_to
 ---
 
 # Programming Artifact Ontology Context Simulation — 방향 계획
