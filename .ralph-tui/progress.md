@@ -14,6 +14,7 @@ after each iteration and it's included in prompts for context.
 - Allocation validation contract docs should name implementation, public facade, and test `sources`, then split local pure-function invariants from registry-service/index-meta persistence invariants. Keep existing tests as the executable SSOT rather than restating behavior as prose-only authority.
 - Large lifecycle TODOs can preserve legacy phase references by splitting a crowded phase into lettered subphases and adding a dependency map before the checklist. This keeps old acceptance criteria stable while making ralph-tui task boundaries executable.
 - Allocation drift fixtures should assert structured `target` data on validation issues, not only free-text messages. Prefix/version collisions should expose `prefix` and `versionId`; taxonomy-axis mismatches should expose `taxonomyId` and `axisId`.
+- Registry persistence handoff specs should define conceptual records, local model field mappings, collision rules, and future registry-service tests without adding Drizzle schema or migrations in the handoff story.
 
 ---
 
@@ -118,4 +119,27 @@ after each iteration and it's included in prompts for context.
   - Allocation validation already projects a complete local plan before persistence, so one fixture can exercise schema validation drift and allocation validation drift without registry-service or index-meta.
   - Prefix/version duplicate detection benefits from an explicit structured issue target because the duplicate key alone is not enough for downstream tooling to safely route fixes.
   - `node packages/cli/dist/index.js def validate` should not run while an operational-ontology build is cleaning `dist`; rerun it after the build completes to avoid transient subpath resolution failures.
+---
+
+## 2026-04-14 - US-007
+- Added `operational-ontology-registry-persistence-handoff` as a focused leaf spec for registry-service persistence record contracts.
+- Mapped namespace, axis, taxonomy, allocation, and segment records back to local allocation model fields.
+- Documented store/service collision rules and future registry-service tests while keeping DB schema implementation out of scope.
+- Linked the handoff from `operational-ontology-system`, the registry allocation roadmap/TODO, and the operational-ontology README.
+- Verified required gates:
+  - `pnpm --filter operational-ontology test`
+  - `pnpm --filter operational-ontology typecheck`
+  - `pnpm --filter operational-ontology build`
+  - `node packages/cli/dist/index.js def validate`
+- Files changed:
+  - `docs/specs/operational-ontology/operational-ontology-registry-persistence-handoff.spec.md`
+  - `docs/specs/operational-ontology/operational-ontology-system.spec.md`
+  - `docs/specs/operational-ontology/operational-ontology-registry-allocation.plan.md`
+  - `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md`
+  - `packages/operational-ontology/README.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Handoff specs work best as leaf docs under the system overview: they can name registry-service files as future boundary evidence without changing that package.
+  - Persistence record contracts should preserve ordered JSON fields from the local model, especially axis `values` and taxonomy axis lists, because local hashes and allocation offsets are order-sensitive.
+  - Future registry-service tests should be split into store contract tests, SQL schema/constraint tests, and service transaction/no-write tests so Phase 2A/2B/3 can progress independently.
 ---

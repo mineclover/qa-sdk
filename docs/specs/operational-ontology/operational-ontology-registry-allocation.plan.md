@@ -65,10 +65,13 @@ operational ontology schema를 registry-service와 index-meta가 소비할 수 �
 - `validateOntologyAddressAllocationPlan(plan)`
 
 이 단계는 DB 독립 순수 함수로 유지한다. registry-service는 이 타입을 그대로 persistence DTO로 받아도 되고, 별도 DB row mapper로 변환해도 된다.
+세부 persistence handoff는 `operational-ontology-registry-persistence-handoff`가 소유한다.
 
 ### Phase 2: Registry-service persistence
 
-registry-service DB에 아래 테이블을 추가한다.
+registry-service persistence 구현은 `operational-ontology-registry-persistence-handoff`의 record mapping과 collision rule을 입력으로 삼아 시작한다. 실제 DB schema와 migration은 이 로드맵이 아니라 후속 implementation story에서 추가한다.
+
+예상 record boundary:
 
 - `ontology_namespace`
 - `ontology_axis`

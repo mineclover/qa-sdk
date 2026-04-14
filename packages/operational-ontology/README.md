@@ -11,6 +11,7 @@
 - [operational-ontology-relation-category-schema.spec.md](../../docs/specs/operational-ontology/operational-ontology-relation-category-schema.spec.md) — relation type category schema 정의
 - [operational-ontology-schema-validation.spec.md](../../docs/specs/operational-ontology/operational-ontology-schema-validation.spec.md) — schema validation plane 정의
 - [operational-ontology-registry-allocation.plan.md](../../docs/specs/operational-ontology/operational-ontology-registry-allocation.plan.md) — registry-service/index-meta 승격용 address allocation 로드맵
+- [operational-ontology-registry-persistence-handoff.spec.md](../../docs/specs/operational-ontology/operational-ontology-registry-persistence-handoff.spec.md) — registry-service persistence record mapping과 future test 계약
 - [operational-ontology-design-change-validation-matrix.spec.md](../../docs/specs/operational-ontology/operational-ontology-design-change-validation-matrix.spec.md) — ontology design 변경별 validation path
 - [operational-ontology-ssot-navigation-guide.spec.md](../../docs/specs/operational-ontology/operational-ontology-ssot-navigation-guide.spec.md) — schema/registry/address/observation SSOT 탐색 순서
 - [operational-ontology-persistence.spec.md](../../docs/specs/operational-ontology/operational-ontology-persistence.spec.md) — facet bundle + append-only observation 저장 모델

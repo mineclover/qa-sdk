@@ -157,12 +157,13 @@
         "If registry-service code is changed, `pnpm --filter registry-service test` passes."
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-002",
         "US-004"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-008",
@@ -213,6 +214,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-14T01:07:29.722Z"
+    "updatedAt": "2026-04-14T01:13:07.477Z"
   }
 }

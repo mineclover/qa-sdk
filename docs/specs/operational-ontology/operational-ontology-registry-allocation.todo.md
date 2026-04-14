@@ -72,6 +72,7 @@ Prerequisites:
 
 - Phase 1 완료.
 - `operational-ontology-allocation-validation-contract`의 local allocation DTO와 deferred persistence invariants 확인.
+- `operational-ontology-registry-persistence-handoff`의 record mapping과 collision rule 확인.
 
 Validation commands:
 
@@ -100,6 +101,7 @@ Validation commands:
 - [ ] `ontology_address_segment` 테이블 추가
   - [ ] primary key `(allocation_id, segment_id)`
   - [ ] `consumes_json`, `address_offset`, `address_size`
+- [ ] schema implementation 전에 `operational-ontology-registry-persistence-handoff`의 registry-service test list를 implementation task로 복사
 - [ ] SQL migration/Drizzle schema snapshot 갱신
 
 ## Phase 2B: Store adapter
