@@ -207,6 +207,7 @@
         "Activation success result includes smoke check summary.",
         "Activation failure result or thrown error includes enough structured context to identify failed phase.",
         "Payload does not expose raw SQL errors.",
+        "Failed sync after activation is reported as structured failed activation result without attempting cross-boundary rollback.",
         "`pnpm --filter registry-service test` passes.",
         "`pnpm --filter registry-service typecheck` passes.",
         "`pnpm --filter registry-service build` passes.",
@@ -254,8 +255,5 @@
       ],
       "completionNotes": "Completed by agent"
     }
-  ],
-  "metadata": {
-    "updatedAt": "2026-04-14T13:30:54.052Z"
-  }
+  ]
 }

@@ -189,6 +189,7 @@ Activation is service-owned lifecycle state:
 - Active/deprecated activation attempts fail with `invalid-transition`.
 - A second active allocation with the same `(prefix, versionId)` fails with `duplicate-allocation` before `updateAllocationStatus()` mutates the store.
 - `syncToPrefixRegistry()` currently requires active status and returns a deferred Phase 4 report; it does not perform index-meta writes.
+- Phase 5 activation helper uses no cross-boundary rollback. Once an allocation is activated or synced, later failures are reported in a structured failed activation result instead of attempting registry/index-meta rollback.
 
 ## Registry-Service Test Surface
 

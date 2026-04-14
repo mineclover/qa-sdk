@@ -288,6 +288,7 @@ US-009 completion notes:
 
 - `OntologyPackActivationHelper`는 ontology module provider로 노출되며 `registerOntologyPack`, `activateAllocation`, `syncToPrefixRegistry` service port만 호출한다.
 - Valid pack activation은 `registerOntologyPack()`이 반환한 모든 allocation을 `reserved -> active`로 전이한 뒤 allocation별 index-meta sync와 smoke checks를 실행한다.
+- Activation failure policy는 rollback 없음 + structured failed activation result다. 이미 active/synced 된 allocation은 되돌리지 않고, 후속 allocation은 skipped로 표시하며, sync 실패는 `phase: "sync"` error로 반환한다.
 - Product smoke는 allocation active status, intended product prefix record readback, schema-version/prefix capacity agreement, ordered product shape, last-valid resolver, capacity out-of-range resolver를 검증한다.
 - Sum smoke는 allocation active status, sum leaf prefix/schema capacity, `postSyncChecks.sumAllocation` exact-allocation-range sidecar coverage만 검증한다. Product shape/resolver smoke는 sum segment에 재사용하지 않는다.
 - Invalid pack/invalid allocation-plan no-write와 blocked sync no-write는 real `OntologyRegistryService` + memory/SQL backend matrix로 검증하며, registry rows는 store APIs, SQL index-meta rows는 table counts로 확인한다.
@@ -359,6 +360,14 @@ Validation commands:
 - [x] `pnpm --filter operational-ontology test -- allocation`
 - [x] `node packages/cli/dist/index.js def validate`
 
+## Optional Public Surfaces
+
+- [ ] CLI activation surface: `qa-sdk ontology registry activate-pack <pack-id>`
+  - PRD: `tasks/prd-ontology-registry-activation-cli.md`
+  - JSON: `tasks/prd-ontology-registry-activation-cli.json`
+  - Scope: local SQLite activation runtime, known pack resolver, activation result JSON, programming-artifact/authorization scenario proof
+  - Non-goals: registry-service REST endpoint, scoped prefix support, artifact registry append, remote activation service
+
 ## 다음 구현 기준
 
-Phase 5 activation smoke까지 완료됐다. Phase 2A schema/migration/snapshot, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, Phase 5 activation helper/smoke는 prefix global uniqueness를 깨지 않는다. 다음 구현은 현재 없다. scoped prefix는 `operational-ontology-scoped-prefix-decision`의 concrete need gate를 통과하고 새 decision PRD/implementation ADR이 생성되는 경우에만 별도 진행한다.
+Phase 5 activation smoke까지 완료됐다. Phase 2A schema/migration/snapshot, Phase 2B store adapter, Phase 3 service layer, Phase 4 index-meta sync, Phase 5 activation helper/smoke는 prefix global uniqueness를 깨지 않는다. 다음 lifecycle 구현은 현재 없다. Public/local execution surface가 필요하면 CLI activation PRD로 진행한다. scoped prefix는 `operational-ontology-scoped-prefix-decision`의 concrete need gate를 통과하고 새 decision PRD/implementation ADR이 생성되는 경우에만 별도 진행한다.

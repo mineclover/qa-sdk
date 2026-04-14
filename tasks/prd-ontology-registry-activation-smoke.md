@@ -148,6 +148,7 @@ No browser verification is required.
 - FR-5: Sum activation must prove leaf prefix/schema version plus segment sidecar coverage.
 - FR-6: Activation must preserve global `(prefix, versionId)` uniqueness.
 - FR-7: Activation result payload must be structured and test-covered.
+- FR-8: Activation uses no cross-boundary rollback after an allocation has been activated or synced; later failures return a structured failed activation result.
 
 ## Non-Goals
 

@@ -54,6 +54,8 @@ operational ontology schema를 registry-service와 index-meta가 소비할 수 �
 
 장기 목표는 `OperationalOntologyPack`을 registry-service에 등록하면 pack schema validation, namespace registration, address reservation, allocation activation, index-meta sync가 하나의 lifecycle로 닫히는 것이다. 이때 registry-service는 ontology-aware allocator/registry 역할을 맡고, index-meta는 active allocation을 prefix registry와 schema version으로 받아 실제 address decode/capacity SSOT를 유지한다.
 
+Phase 5 internal lifecycle이 닫힌 뒤의 다음 선택지는 public/local execution surface다. CLI activation proof는 `tasks/prd-ontology-registry-activation-cli.md` / `.json`이 추적하며, 이는 lifecycle phase를 다시 여는 작업이 아니라 완료된 activation helper를 사람이 실행 가능한 command로 노출하는 작업이다.
+
 ## 단계
 
 ### Phase 1: Operational schema allocation model
@@ -139,3 +141,4 @@ Phase 6의 decision criteria와 schema freeze rule은 `operational-ontology-scop
 | ontology namespace와 catalog id 혼동 | namespace는 ontology ownership, catalog id는 배포/소비 채널로 분리한다. |
 | address offset이 기존 prefix와 충돌 | allocation table의 `(prefix, version_id)`와 address range validation을 먼저 통과시킨다. |
 | operational observation store와 registry state 혼동 | observation store에는 runtime fact만 두고, registry-service에는 allocation/lifecycle state만 둔다. |
+| CLI가 lifecycle logic을 재구현 | CLI는 `OntologyPackActivationHelper`를 호출하고 JSON 결과를 투영만 한다. |

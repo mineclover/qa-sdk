@@ -241,6 +241,13 @@ Activation flow:
 6. Convert `blocked` sync reports into activation errors, `deferred` sync reports into warnings, and `synced` reports into activation smoke checks.
 7. Return raw detail plus derived summary payloads.
 
+Activation failure policy:
+
+- The helper does not attempt cross-boundary rollback after an allocation has been activated or synced.
+- If a later allocation fails after earlier allocations were activated/synced, the result status is `failed`, earlier allocation states remain as recorded, and later allocations are marked `skipped`.
+- If sync fails after activation, the activated allocation remains active and the failed sync is reported with `phase: "sync"` in `errors`.
+- This policy avoids unsafe rollback across registry-service and index-meta persistence boundaries. Future compensating rollback requires a separate PRD with explicit transaction semantics.
+
 Activation smoke checks consume Phase 4 post-sync reports without reimplementing sync validation:
 
 - Product smoke checks assert source allocation active status, intended product prefix record readback, schema-version capacity matching prefix registry capacity, ordered product shape, last-valid resolver in range, and capacity-address resolver out of range.
@@ -314,6 +321,16 @@ Phase 5 이후 아직 구현하지 않은 범위:
 - scoped prefix schema/API migration.
 
 scoped prefix는 `operational-ontology-scoped-prefix-decision`의 concrete need gate와 별도 decision PRD/implementation ADR 없이는 구현하지 않는다. Activation smoke는 완료됐고 Phase 3 active allocation/service error contract와 Phase 4 sync report/post-sync check surface를 소비하며 table/store/service/sync shape를 역으로 변경하지 않는다.
+
+## Optional Public Execution Surface ^optional-public-surface
+
+Internal lifecycle completion does not create a public command by itself. The next optional surface is a local CLI proof that calls the completed activation helper without reopening lifecycle internals.
+
+- PRD: `tasks/prd-ontology-registry-activation-cli.md`
+- JSON: `tasks/prd-ontology-registry-activation-cli.json`
+- command candidate: `qa-sdk ontology registry activate-pack <pack-id>`
+- scope: known pack resolver, local SQLite runtime, activation result JSON, programming-artifact and authorization ontology scenario proofs
+- non-goals: registry-service REST endpoint, scoped prefix support, artifact registry append, remote activation service
 
 ## 검증 명령
 

@@ -1,0 +1,280 @@
+{
+  "name": "Ontology Registry Activation CLI & Scenario Proof",
+  "description": "Expose the internal ontology registry activation lifecycle via local qa-sdk CLI, resolve known packs, run local SQLite-backed activation, emit machine-readable JSON, and prove programming-artifact and authorization ontology scenarios.",
+  "branchName": "ralph/ontology-registry-activation-cli",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Discover Pack Sources and CLI Runtime Boundary",
+      "description": "As a CLI maintainer, I want known ontology pack sources and local runtime boundaries documented so the activation command does not guess imports or storage behavior.",
+      "acceptanceCriteria": [
+        "Confirm `operational-ontology-registry-allocation.spec.md` states Phase 5 internal lifecycle is complete and this CLI is an optional public/local execution surface, not a new lifecycle phase.",
+        "Identify known pack ids supported by the CLI: at least `programming-artifact-ontology` and `authorization-ontology`.",
+        "Confirm `programmingArtifactOntologyPack` is importable from `operational-ontology/programming-artifacts`.",
+        "Confirm `authorizationOntologyPack` is importable from `authorization-ontology`.",
+        "Add `authorization-ontology` as a CLI dependency if required.",
+        "Document the local SQLite runtime strategy for registry-service/index-meta stores.",
+        "Confirm command path and flags before implementation.",
+        "Do not implement the command in this story.",
+        "`pnpm --filter @qa-sdk/cli test -- ontology` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`pnpm --filter authorization-ontology test` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-002",
+      "title": "Add Known Pack Resolver",
+      "description": "As a CLI user, I want the activation command to resolve stable pack ids so I can activate known ontology packs without writing custom JSON fixtures.",
+      "acceptanceCriteria": [
+        "Add a CLI-local known pack resolver for `programming-artifact-ontology`.",
+        "Add a CLI-local known pack resolver for `authorization-ontology`.",
+        "Unknown pack id returns a structured error listing supported pack ids.",
+        "Resolver does not import test fixtures.",
+        "Resolver can be unit tested without creating SQLite stores.",
+        "`pnpm --filter @qa-sdk/cli test -- ontology` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`pnpm --filter authorization-ontology test` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Build Local Activation Runtime",
+      "description": "As a CLI maintainer, I want a local activation runtime so the CLI can call the internal activation helper without requiring a running registry-service server.",
+      "acceptanceCriteria": [
+        "Add helper code to construct registry-service ontology store, prefix registry, schema version store, sync adapter, service, and activation helper for a local SQLite path.",
+        "Support `--store <path>` for persistent local SQLite state.",
+        "Support an in-memory/test runtime if useful for tests.",
+        "Runtime reuses existing registry-service store and index-meta APIs.",
+        "Runtime does not start a Nest HTTP server.",
+        "Runtime does not add REST API calls.",
+        "`pnpm --filter @qa-sdk/cli test -- ontology` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`pnpm --filter authorization-ontology test` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001",
+        "US-002"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "Add ontology registry activate-pack Command",
+      "description": "As a CLI user, I want a command to activate a known ontology pack so I can run the internal lifecycle from the terminal.",
+      "acceptanceCriteria": [
+        "Add command descriptor for `qa-sdk ontology registry activate-pack <pack-id>`.",
+        "Wire handler through `cliOntology`.",
+        "Support flags: `--store <path>`, `--ontology-id <id>`, `--namespace <namespace>`, `--owner <owner>`, `--version <versionId>`, `--address-model product|sum`, and `--json`.",
+        "Support prefix overrides for taxonomy ids using a deterministic flag shape, for example `--prefix <taxonomyId>=<prefix>`.",
+        "Command calls `activateOntologyPack()` or `OntologyPackActivationHelper`.",
+        "Command does not reimplement activation lifecycle logic.",
+        "`pnpm --filter @qa-sdk/cli test -- ontology` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`pnpm --filter authorization-ontology test` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-003"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Define JSON Output and Error Contract",
+      "description": "As an automation user, I want stable JSON output so activation results can be consumed by agents, tests, and future artifact workflows.",
+      "acceptanceCriteria": [
+        "`--json` emits the activation result payload from the helper.",
+        "Successful output includes `status`, `packId`, `ontologyId`, `namespaceSummary`, `allocationSummaries`, `syncSummariesByAllocationId`, `smokeCheckSummary`, `warnings`, and `errors`.",
+        "Failure output includes structured failed activation result when helper returns one.",
+        "Unknown pack and invalid CLI flag errors produce JSON when `--json` is present.",
+        "Raw SQL errors are not exposed in JSON output.",
+        "Non-JSON output is concise and includes status, pack id, allocation count, smoke summary, and action hints.",
+        "`pnpm --filter @qa-sdk/cli test -- ontology` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`pnpm --filter authorization-ontology test` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-004"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Prove Programming Artifact Ontology Activation Scenario",
+      "description": "As an ontology maintainer, I want the CLI to activate programming-artifact ontology so that artifact vocabulary allocation is proven through the real command path.",
+      "acceptanceCriteria": [
+        "Add CLI test invoking `ontology registry activate-pack programming-artifact-ontology --json`.",
+        "Test uses isolated temporary SQLite store.",
+        "Output status is `succeeded`.",
+        "Output includes allocation summaries for programming artifact kind/relation taxonomy surfaces.",
+        "Output includes successful sync summaries and smoke checks.",
+        "Re-running the same command against the same store is idempotent or returns the documented structured failure if activation is not intended to be idempotent.",
+        "`pnpm --filter @qa-sdk/cli test -- ontology` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`pnpm --filter authorization-ontology test` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-005"
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "Prove Authorization Ontology Activation Scenario",
+      "description": "As an ontology maintainer, I want the CLI to activate authorization ontology so that a real domain ontology pack is proven through the activation lifecycle.",
+      "acceptanceCriteria": [
+        "Add CLI test invoking `ontology registry activate-pack authorization-ontology --json`.",
+        "Test uses isolated temporary SQLite store.",
+        "Output status is `succeeded`.",
+        "Output includes authorization ontology allocation summaries.",
+        "Output includes successful sync summaries and smoke checks.",
+        "The test validates that known authorization ontology axes/taxonomies are represented in activation output.",
+        "`pnpm --filter @qa-sdk/cli test -- ontology` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`pnpm --filter authorization-ontology test` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-005"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "Prove CLI Failure Scenarios",
+      "description": "As a CLI user, I want predictable failure output so automation can distinguish bad input, lifecycle conflicts, and drift.",
+      "acceptanceCriteria": [
+        "Unknown pack id returns a structured error and non-zero exit code.",
+        "Invalid `--address-model` returns a structured error and non-zero exit code.",
+        "Duplicate prefix/version or drift scenario returns activation result with `status: \"failed\"` and structured errors.",
+        "Failure output does not expose raw SQL.",
+        "Tests cover JSON and non-JSON failure output where practical.",
+        "`pnpm --filter @qa-sdk/cli test -- ontology` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`pnpm --filter authorization-ontology test` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-005",
+        "US-006",
+        "US-007"
+      ]
+    },
+    {
+      "id": "US-009",
+      "title": "Optionally Persist Activation Result Output",
+      "description": "As an automation user, I want to save activation results to a file so that later workflows can inspect activation evidence.",
+      "acceptanceCriteria": [
+        "Add `--output <file>` support if it fits existing CLI output conventions.",
+        "Saved output is the same JSON payload emitted by `--json`.",
+        "Parent directories are created as needed.",
+        "This story does not append to programming artifact registry yet.",
+        "If `--output` is deferred, document the reason and leave a follow-up TODO.",
+        "`pnpm --filter @qa-sdk/cli test -- ontology` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`pnpm --filter authorization-ontology test` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-005"
+      ]
+    },
+    {
+      "id": "US-010",
+      "title": "Reflect CLI Surface in Docs and TODO",
+      "description": "As an ontology documentation maintainer, I want the activation CLI reflected in specs and TODO so the next scenario-proof work starts from current behavior.",
+      "acceptanceCriteria": [
+        "Add or update CLI spec documentation for `ontology registry activate-pack`.",
+        "Update `operational-ontology-registry-allocation.spec.md` to mention CLI activation surface.",
+        "Update `operational-ontology-registry-allocation.todo.md` if public CLI exposure closes a tracked gap.",
+        "Update programming-artifact/authorization scenario docs only if tests prove those scenarios.",
+        "Keep REST API exposure and artifact registry persistence as follow-up work.",
+        "`pnpm --filter @qa-sdk/cli test -- ontology` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`pnpm --filter authorization-ontology test` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-008",
+        "US-009"
+      ]
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-14T16:07:15.219Z"
+  }
+}
