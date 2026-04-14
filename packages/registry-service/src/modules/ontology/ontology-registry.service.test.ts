@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { InMemoryPrefixRegistry } from "index-meta";
+import { operationalOntologyAllocationPlane } from "operational-ontology/allocation";
 import type { OperationalOntologyPack } from "operational-ontology/pack";
 
 import { InMemoryOntologyRegistryStore } from "../../stores/in-memory-ontology-registry-store.js";
@@ -36,25 +37,110 @@ const validPack = {
 } satisfies OperationalOntologyPack;
 
 describe("OntologyRegistryService", () => {
-  it("validates operational ontology packs without exposing transport handlers", async () => {
-    const service = new OntologyRegistryService({
-      store: new InMemoryOntologyRegistryStore(),
-    });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("registers valid packs by allocating, validating, and writing reserved rows", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const service = new OntologyRegistryService({ store });
+    const allocate = vi.spyOn(
+      operationalOntologyAllocationPlane,
+      "allocateOntologyAddressSpace",
+    );
+    const validatePlan = vi.spyOn(
+      operationalOntologyAllocationPlane,
+      "validateOntologyAddressAllocationPlan",
+    );
 
     await expect(
-      service.registerOntologyPack({ pack: validPack }),
+      service.registerOntologyPack(validPack, {
+        namespace: "authz",
+        owner: "registry-service",
+        versionId: "v1",
+        now: "2026-04-14T00:00:00.000Z",
+      }),
     ).resolves.toEqual(
       expect.objectContaining({
         packId: "authorization-ontology",
+        ontologyId: "authorization-ontology",
         validation: expect.objectContaining({ valid: true }),
+        allocationValidation: expect.objectContaining({ valid: true }),
+        allocations: expect.arrayContaining([
+          expect.objectContaining({
+            allocationId: "authorization-ontology:authorization-resource:v1",
+            status: "reserved",
+          }),
+          expect.objectContaining({
+            allocationId: "authorization-ontology:authorization-decision:v1",
+            status: "reserved",
+          }),
+        ]),
       }),
     );
+    expect(allocate).toHaveBeenCalledWith(
+      validPack.schema,
+      expect.objectContaining({ ontologyId: "authorization-ontology" }),
+    );
+    expect(validatePlan).toHaveBeenCalledWith(
+      expect.objectContaining({ schema: validPack.schema }),
+    );
+    expect(await store.listNamespaces()).toEqual([
+      expect.objectContaining({
+        ontologyId: "authorization-ontology",
+        namespace: "authz",
+      }),
+    ]);
+    expect(await store.listAxes("authorization-ontology", "v1")).toHaveLength(2);
+    expect(await store.listTaxonomies("authorization-ontology", "v1")).toHaveLength(
+      2,
+    );
+    expect(await store.listAllocations("authorization-ontology", "v1")).toHaveLength(
+      2,
+    );
+    expect(
+      await store.listSegments("authorization-ontology:authorization-resource:v1"),
+    ).toHaveLength(1);
   });
 
-  it("reports invalid pack validation as a service-level conflict", async () => {
-    const service = new OntologyRegistryService({
-      store: new InMemoryOntologyRegistryStore(),
+  it("uses pack id as default ontology id unless options override it", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const service = new OntologyRegistryService({ store });
+
+    const result = await service.registerOntologyPack({
+      pack: validPack,
+      options: {
+        ontologyId: "authz-runtime",
+        namespace: "authz",
+        versionId: "v2",
+      },
     });
+
+    expect(result.ontologyId).toBe("authz-runtime");
+    expect(await store.getNamespace("authz-runtime")).toEqual(
+      expect.objectContaining({
+        ontologyId: "authz-runtime",
+        namespace: "authz",
+      }),
+    );
+    expect(await store.listAllocations("authz-runtime", "v2")).toEqual([
+      expect.objectContaining({
+        allocationId: "authz-runtime:authorization-decision:v2",
+      }),
+      expect.objectContaining({
+        allocationId: "authz-runtime:authorization-resource:v2",
+      }),
+    ]);
+  });
+
+  it("reports invalid pack validation as a service-level no-write conflict", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const service = new OntologyRegistryService({ store });
+    const allocate = vi.spyOn(
+      operationalOntologyAllocationPlane,
+      "allocateOntologyAddressSpace",
+    );
+    const write = vi.spyOn(store, "writeAllocationPlan");
     const error = await captureServiceError(
       service.registerOntologyPack({
         pack: {
@@ -68,6 +154,8 @@ describe("OntologyRegistryService", () => {
       }),
     );
 
+    expect(allocate).not.toHaveBeenCalled();
+    expect(write).not.toHaveBeenCalled();
     expect(error.conflict).toEqual(
       expect.objectContaining({
         code: "invalid-pack",
@@ -77,6 +165,7 @@ describe("OntologyRegistryService", () => {
         ]),
       }),
     );
+    await expectOntologyStoreEmpty(store);
   });
 
   it("reserves allocation plans through OntologyRegistryStore only", async () => {
@@ -110,10 +199,10 @@ describe("OntologyRegistryService", () => {
     ).toEqual(["reserved", "reserved"]);
   });
 
-  it("maps invalid allocation plans and duplicate reservations to service conflicts", async () => {
-    const service = new OntologyRegistryService({
-      store: new InMemoryOntologyRegistryStore(),
-    });
+  it("rejects invalid allocation plans before persistence", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const service = new OntologyRegistryService({ store });
+    const write = vi.spyOn(store, "writeAllocationPlan");
     const invalidPlanError = await captureServiceError(
       service.reserveAddressSpace({
         pack: validPack,
@@ -126,6 +215,7 @@ describe("OntologyRegistryService", () => {
       }),
     );
 
+    expect(write).not.toHaveBeenCalled();
     expect(invalidPlanError.conflict).toEqual(
       expect.objectContaining({
         code: "invalid-allocation-plan",
@@ -134,6 +224,13 @@ describe("OntologyRegistryService", () => {
         ]),
       }),
     );
+    await expectOntologyStoreEmpty(store);
+  });
+
+  it("maps duplicate reservations to service conflicts", async () => {
+    const service = new OntologyRegistryService({
+      store: new InMemoryOntologyRegistryStore(),
+    });
 
     await service.reserveAddressSpace({ pack: validPack });
     const duplicateError = await captureServiceError(
@@ -248,4 +345,19 @@ async function captureServiceError(
 
   expect(thrown).toBeInstanceOf(OntologyRegistryServiceError);
   return thrown as OntologyRegistryServiceError;
+}
+
+async function expectOntologyStoreEmpty(
+  store: InMemoryOntologyRegistryStore,
+): Promise<void> {
+  expect(await store.listNamespaces()).toEqual([]);
+  expect(await store.listAxes("authorization-ontology", "v1")).toEqual([]);
+  expect(await store.listTaxonomies("authorization-ontology", "v1")).toEqual([]);
+  expect(await store.listAllocations("authorization-ontology", "v1")).toEqual([]);
+  expect(
+    await store.listSegments("authorization-ontology:authorization-resource:v1"),
+  ).toEqual([]);
+  expect(
+    await store.listSegments("authorization-ontology:authorization-decision:v1"),
+  ).toEqual([]);
 }

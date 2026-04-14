@@ -29,23 +29,40 @@ export interface OntologyRegistryServiceDeps {
 
 export interface RegisterOntologyPackInput {
   readonly pack: OperationalOntologyPack;
+  readonly options?: RegisterOntologyPackOptions;
+  readonly policy?: RegisterOntologyPackOptions;
+}
+
+export type RegisterOntologyPackOptions = Omit<
+  OntologyAddressAllocationPolicy,
+  "ontologyId"
+> & {
+  readonly ontologyId?: string;
+};
+
+export interface ProjectedOntologyAllocationPlan
+  extends OntologyAddressAllocationPlan {
+  readonly validation: OntologyAddressAllocationValidationResult;
 }
 
 export interface RegisterOntologyPackResult {
   readonly packId: string;
+  readonly ontologyId: string;
   readonly validation: OperationalOntologyPackValidationResult;
+  readonly allocationValidation: OntologyAddressAllocationValidationResult;
+  readonly plan: ProjectedOntologyAllocationPlan;
+  readonly allocations: readonly OntologyAddressAllocationRecord[];
 }
 
 export interface ReserveAddressSpaceInput {
   readonly pack: OperationalOntologyPack;
-  readonly policy?: Omit<OntologyAddressAllocationPolicy, "ontologyId"> & {
-    readonly ontologyId?: string;
-  };
+  readonly policy?: RegisterOntologyPackOptions;
 }
 
 export interface ReserveAddressSpaceResult {
   readonly packId: string;
-  readonly plan: OntologyAddressAllocationPlan;
+  readonly ontologyId: string;
+  readonly plan: ProjectedOntologyAllocationPlan;
   readonly allocations: readonly OntologyAddressAllocationRecord[];
 }
 
@@ -159,7 +176,17 @@ export class OntologyRegistryService {
 
   async registerOntologyPack(
     input: RegisterOntologyPackInput,
+    options?: RegisterOntologyPackOptions,
+  ): Promise<RegisterOntologyPackResult>;
+  async registerOntologyPack(
+    pack: OperationalOntologyPack,
+    options?: RegisterOntologyPackOptions,
+  ): Promise<RegisterOntologyPackResult>;
+  async registerOntologyPack(
+    inputOrPack: RegisterOntologyPackInput | OperationalOntologyPack,
+    options?: RegisterOntologyPackOptions,
   ): Promise<RegisterOntologyPackResult> {
+    const input = normalizeRegisterOntologyPackInput(inputOrPack, options);
     const validation = operationalOntologyPackPlane.validateOperationalOntologyPack(
       input.pack,
     );
@@ -173,46 +200,65 @@ export class OntologyRegistryService {
       });
     }
 
+    const policy: OntologyAddressAllocationPolicy = {
+      ...(input.options ?? {}),
+      ontologyId: input.options?.ontologyId ?? input.pack.packId,
+    };
+    const plan = operationalOntologyAllocationPlane.allocateOntologyAddressSpace(
+      input.pack.schema,
+      policy,
+    );
+    const allocationValidation =
+      operationalOntologyAllocationPlane.validateOntologyAddressAllocationPlan({
+        namespace: plan.namespace,
+        axes: plan.axes,
+        taxonomies: plan.taxonomies,
+        allocations: plan.allocations,
+        segments: plan.segments,
+        schema: input.pack.schema,
+      });
+    const validatedPlan: ProjectedOntologyAllocationPlan = {
+      ...plan,
+      validation: allocationValidation,
+    };
+
+    if (!allocationValidation.valid) {
+      throw new OntologyRegistryServiceError({
+        code: "invalid-allocation-plan",
+        message: `Invalid ontology allocation plan for pack "${input.pack.packId}"`,
+        packId: input.pack.packId,
+        validation: allocationValidation,
+        issues: allocationValidation.issues,
+      });
+    }
+
+    const writeSet = toWriteSet(validatedPlan);
+    try {
+      await this.store.writeAllocationPlan(writeSet);
+    } catch (error) {
+      throw mapStoreReservationError(error, input.pack.packId, validatedPlan);
+    }
+
     return {
       packId: input.pack.packId,
+      ontologyId: policy.ontologyId,
       validation,
+      allocationValidation,
+      plan: validatedPlan,
+      allocations: [...writeSet.allocations],
     };
   }
 
   async reserveAddressSpace(
     input: ReserveAddressSpaceInput,
   ): Promise<ReserveAddressSpaceResult> {
-    const registration = await this.registerOntologyPack({ pack: input.pack });
-    const policy: OntologyAddressAllocationPolicy = {
-      ...(input.policy ?? {}),
-      ontologyId: input.policy?.ontologyId ?? input.pack.packId,
-    };
-    const plan = operationalOntologyAllocationPlane.allocateOntologyAddressSpace(
-      input.pack.schema,
-      policy,
-    );
-
-    if (!plan.validation.valid) {
-      throw new OntologyRegistryServiceError({
-        code: "invalid-allocation-plan",
-        message: `Invalid ontology allocation plan for pack "${input.pack.packId}"`,
-        packId: input.pack.packId,
-        validation: plan.validation,
-        issues: plan.validation.issues,
-      });
-    }
-
-    const writeSet = toWriteSet(plan);
-    try {
-      await this.store.writeAllocationPlan(writeSet);
-    } catch (error) {
-      throw mapStoreReservationError(error, input.pack.packId, plan);
-    }
+    const registration = await this.registerOntologyPack(input.pack, input.policy);
 
     return {
       packId: registration.packId,
-      plan,
-      allocations: [...writeSet.allocations],
+      ontologyId: registration.ontologyId,
+      plan: registration.plan,
+      allocations: registration.allocations,
     };
   }
 
@@ -314,6 +360,24 @@ export class OntologyRegistryService {
     }
     return allocation;
   }
+}
+
+function normalizeRegisterOntologyPackInput(
+  inputOrPack: RegisterOntologyPackInput | OperationalOntologyPack,
+  options?: RegisterOntologyPackOptions,
+): Required<Pick<RegisterOntologyPackInput, "pack">> &
+  Pick<RegisterOntologyPackInput, "options"> {
+  if ("pack" in inputOrPack) {
+    return {
+      pack: inputOrPack.pack,
+      options: options ?? inputOrPack.options ?? inputOrPack.policy,
+    };
+  }
+
+  return {
+    pack: inputOrPack,
+    options,
+  };
 }
 
 function toWriteSet(
