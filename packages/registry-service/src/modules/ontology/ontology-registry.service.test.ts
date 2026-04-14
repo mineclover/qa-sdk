@@ -86,21 +86,92 @@ describe("OntologyRegistryService", () => {
       expect.objectContaining({ schema: validPack.schema }),
     );
     expect(await store.listNamespaces()).toEqual([
-      expect.objectContaining({
+      {
+        createdAt: "2026-04-14T00:00:00.000Z",
+        lifecycle: "draft",
         ontologyId: "authorization-ontology",
         namespace: "authz",
+        owner: "registry-service",
+        updatedAt: "2026-04-14T00:00:00.000Z",
+      },
+    ]);
+    expect(await store.listAxes("authorization-ontology", "v1")).toEqual([
+      expect.objectContaining({
+        ontologyId: "authorization-ontology",
+        axisId: "decision_kind",
+        versionId: "v1",
+        values: ["allow", "deny"],
+        capacity: 4,
+        lifecycle: "draft",
+      }),
+      expect.objectContaining({
+        ontologyId: "authorization-ontology",
+        axisId: "resource_kind",
+        versionId: "v1",
+        values: ["service", "route"],
+        capacity: 8,
+        lifecycle: "draft",
       }),
     ]);
-    expect(await store.listAxes("authorization-ontology", "v1")).toHaveLength(2);
-    expect(await store.listTaxonomies("authorization-ontology", "v1")).toHaveLength(
-      2,
-    );
-    expect(await store.listAllocations("authorization-ontology", "v1")).toHaveLength(
-      2,
-    );
+    expect(await store.listTaxonomies("authorization-ontology", "v1")).toEqual([
+      {
+        ontologyId: "authorization-ontology",
+        taxonomyId: "authorization-decision",
+        versionId: "v1",
+        appliesTo: ["node"],
+        axisIds: ["decision_kind"],
+        identityAxisIds: ["decision_kind"],
+        space: "authorization",
+        lifecycle: "draft",
+      },
+      {
+        ontologyId: "authorization-ontology",
+        taxonomyId: "authorization-resource",
+        versionId: "v1",
+        appliesTo: ["node"],
+        axisIds: ["resource_kind"],
+        identityAxisIds: ["resource_kind"],
+        space: "authorization",
+        lifecycle: "draft",
+      },
+    ]);
+    expect(await store.listAllocations("authorization-ontology", "v1")).toEqual([
+      {
+        allocationId: "authorization-ontology:authorization-decision:v1",
+        ontologyId: "authorization-ontology",
+        taxonomyId: "authorization-decision",
+        prefix: "authz_authorization_decision",
+        versionId: "v1",
+        addressModel: "product",
+        capacity: 4,
+        addressOffset: 8,
+        addressSize: 4,
+        status: "reserved",
+      },
+      {
+        allocationId: "authorization-ontology:authorization-resource:v1",
+        ontologyId: "authorization-ontology",
+        taxonomyId: "authorization-resource",
+        prefix: "authz_authorization_resource",
+        versionId: "v1",
+        addressModel: "product",
+        capacity: 8,
+        addressOffset: 0,
+        addressSize: 8,
+        status: "reserved",
+      },
+    ]);
     expect(
       await store.listSegments("authorization-ontology:authorization-resource:v1"),
-    ).toHaveLength(1);
+    ).toEqual([
+      {
+        allocationId: "authorization-ontology:authorization-resource:v1",
+        segmentId: "authorization-ontology:authorization-resource:v1:product",
+        consumes: ["resource_kind"],
+        addressOffset: 0,
+        addressSize: 8,
+      },
+    ]);
   });
 
   it("uses pack id as default ontology id unless options override it", async () => {

@@ -12,6 +12,7 @@ after each iteration and it's included in prompts for context.
 - Reservation APIs over allocation policies should normalize `status: "reserved"` at the service boundary and keep raw `storeConflicts` while adding service-level allocation keys for callers.
 - Allocation activation should complete service-level lifecycle and active `(prefix, versionId)` collision checks before calling the store status mutation; duplicate-active failures can reuse the structured `duplicate-allocation` payload with allocation keys.
 - Deferred sync shells should validate service-owned lifecycle preconditions and return explicit report payloads, without accepting future adapter ports or writing external registries before the materialization phase.
+- Pack reservation persists namespace, axis, and taxonomy lifecycle as `draft`; activation currently mutates only allocation `status` from `reserved` to `active`.
 
 ---
 
@@ -89,4 +90,16 @@ after each iteration and it's included in prompts for context.
   - `operational-ontology` already provides pack validation and allocation projection facades, so registry-service can stay orchestration-only.
   - Existing ontology store validation treats duplicate keys and drift as persistence-level conflicts; the service maps those into domain-level duplicate allocation conflicts.
   - `PrefixRegistry` sync should be idempotent for exact existing leaf records but fail with a sync precondition conflict when an existing prefix/version has different shape or capacity.
+---
+
+## 2026-04-14 - US-006
+- Verified the existing ontology registry service test suite covers pack registration, invalid pack no-write, invalid allocation-plan no-write, duplicate reservations, activation transitions, duplicate-active activation, and deferred sync preconditions.
+- Tightened valid pack registration coverage to assert persisted namespace, axis, taxonomy, allocation, and segment payloads instead of only row counts.
+- Files changed:
+  - `packages/registry-service/src/modules/ontology/ontology-registry.service.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Service-level reservation tests should assert exact persisted record shape when they are intended to freeze lifecycle behavior before index-meta sync.
+  - Namespace, axis, and taxonomy rows are persisted with `lifecycle: "draft"` during reservation; allocation activation only updates allocation status.
+  - `pnpm --filter registry-service test -- <pattern>` can still execute the package test script broadly; `pnpm --filter registry-service exec vitest run <file>` is the precise targeted test path.
 ---
