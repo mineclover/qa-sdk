@@ -37,6 +37,7 @@ operational ontology schema를 registry-service의 ontology-aware registry/alloc
 - [x] sum address segment allocation 테스트 추가
 - [x] duplicate prefix/version allocation 검증 추가
 - [x] missing taxonomy axis 검증 추가
+- [x] `operational-ontology-allocation-validation-contract`로 local allocation validation contract 문서화
 
 ## Phase 2: Registry-service persistence
 
