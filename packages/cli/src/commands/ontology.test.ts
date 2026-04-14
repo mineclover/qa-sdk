@@ -508,6 +508,215 @@ describe("ontology CLI", () => {
     }
   });
 
+  it("registry activation evidence is consumable end to end and upserts successful reruns", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activation-e2e-"));
+    try {
+      const storePath = join(dir, "state", "registry.sqlite");
+      const rerunStorePath = join(dir, "state-rerun", "registry.sqlite");
+      const outputPath = join(dir, "activation", "programming-artifact-ontology.json");
+      const duplicateOutputPath = join(dir, "activation", "duplicate-failed.json");
+      const registryPath = join(dir, "programming-artifacts.json");
+      const activationArgs = (store: string, output = outputPath) => [
+        "ontology",
+        "registry",
+        "activate-pack",
+        "programming-artifact-ontology",
+        "--store",
+        store,
+        "--output",
+        output,
+        "--artifact-registry",
+        registryPath,
+        "--json",
+      ];
+      const readActivationEvidenceRecords = async () => {
+        const registry = JSON.parse(await readFile(registryPath, "utf8")) as {
+          artifacts?: ActivationEvidenceRegistryRecordJson[];
+        };
+        return (registry.artifacts ?? []).filter(
+          (record) => record.kind === "activation-evidence",
+        );
+      };
+
+      const firstOutput = await captureConsoleWithExitCode(async () => {
+        await main(activationArgs(storePath));
+      });
+      const first = JSON.parse(firstOutput.stdout) as RegistryActivationJson;
+      const sidecar = JSON.parse(await readFile(outputPath, "utf8")) as RegistryActivationJson;
+
+      expect(firstOutput.stderr).toBe("");
+      expect(firstOutput.exitCode).toBeUndefined();
+      expect(first.status).toBe("succeeded");
+      expect(first.activationEvidence).toEqual({
+        appendStatus: "appended",
+        registryPath,
+        recordId:
+          "activation-evidence-programming-artifact-ontology-programming-artifact-ontology",
+        recordRef: outputPath,
+        recordCount: 1,
+      });
+      expect(sidecar.status).toBe("succeeded");
+
+      const firstRecords = await readActivationEvidenceRecords();
+      expect(firstRecords).toHaveLength(1);
+      expect(firstRecords[0]).toMatchObject({
+        artifactId:
+          "activation-evidence-programming-artifact-ontology-programming-artifact-ontology",
+        artifactRef: outputPath,
+        outputPath,
+        kind: "activation-evidence",
+        producedByRef:
+          "qa-sdk ontology registry activate-pack programming-artifact-ontology",
+        metadata: {
+          status: "succeeded",
+          packId: "programming-artifact-ontology",
+          ontologyId: "programming-artifact-ontology",
+        },
+      });
+
+      const validateOutput = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "artifact",
+          "registry",
+          "validate",
+          "--input",
+          registryPath,
+          "--json",
+        ]);
+      });
+      const validation = JSON.parse(validateOutput.stdout) as {
+        valid: boolean;
+        artifactCount: number;
+        errors: unknown[];
+      };
+      expect(validateOutput.stderr).toBe("");
+      expect(validateOutput.exitCode).toBeUndefined();
+      expect(validation).toMatchObject({
+        valid: true,
+        artifactCount: 1,
+        errors: [],
+      });
+
+      const listOutput = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "artifact",
+          "registry",
+          "list",
+          "--input",
+          registryPath,
+          "--kind",
+          "activation-evidence",
+          "--json",
+        ]);
+      });
+      const listed = JSON.parse(listOutput.stdout) as {
+        artifacts: ActivationEvidenceRegistryRecordJson[];
+      };
+      expect(listOutput.stderr).toBe("");
+      expect(listOutput.exitCode).toBeUndefined();
+      expect(listed.artifacts).toEqual([
+        expect.objectContaining({
+          kind: "activation-evidence",
+          artifactRef: outputPath,
+          outputPath,
+        }),
+      ]);
+
+      const extractOutput = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "prompt",
+          "extract-artifact",
+          outputPath,
+          "--artifact-registry",
+          registryPath,
+          "--kind",
+          "self_reflection",
+          "--json",
+        ]);
+      });
+      const extracted = JSON.parse(extractOutput.stdout) as {
+        source: {
+          kind: string;
+          registry: { status: string; providerId: string; recordCount: number };
+        };
+        workArea: {
+          rootRef: string;
+          paths?: string[];
+        };
+      };
+      expect(extractOutput.stderr).toBe("");
+      expect(extractOutput.exitCode).toBeUndefined();
+      expect(extracted.source).toMatchObject({
+        kind: "artifact-registry-hit",
+        registry: {
+          status: "hit",
+          providerId: "programming-artifact-registry",
+          recordCount: 1,
+        },
+      });
+      expect(extracted.workArea.rootRef).toBe(outputPath);
+      expect(extracted.workArea.paths).toContain(outputPath);
+
+      const rerunOutput = await captureConsoleWithExitCode(async () => {
+        await main(activationArgs(rerunStorePath));
+      });
+      const rerun = JSON.parse(rerunOutput.stdout) as RegistryActivationJson;
+      expect(rerunOutput.stderr).toBe("");
+      expect(rerunOutput.exitCode).toBeUndefined();
+      expect(rerun.status).toBe("succeeded");
+      expect(rerun.activationEvidence?.recordCount).toBe(1);
+
+      const rerunRecords = await readActivationEvidenceRecords();
+      expect(rerunRecords).toHaveLength(1);
+      expect(rerunRecords[0]).toMatchObject({
+        artifactId: firstRecords[0]!.artifactId,
+        artifactRef: outputPath,
+        outputPath,
+        metadata: {
+          status: "succeeded",
+        },
+      });
+
+      const duplicateOutput = await captureConsoleWithExitCode(async () => {
+        await main(activationArgs(storePath, duplicateOutputPath));
+      });
+      const duplicate = JSON.parse(duplicateOutput.stdout) as RegistryActivationJson;
+      expect(duplicateOutput.stderr).toBe("");
+      expect(duplicateOutput.exitCode).toBe(1);
+      expect(duplicate.status).toBe("failed");
+      expect(duplicate.activationEvidence).toBeUndefined();
+      expect(duplicate.errors).toEqual([
+        expect.objectContaining({
+          code: "duplicate-allocation",
+        }),
+      ]);
+
+      const afterFailedRecords = await readActivationEvidenceRecords();
+      expect(afterFailedRecords).toHaveLength(1);
+      expect(afterFailedRecords[0]).toMatchObject({
+        artifactId: firstRecords[0]!.artifactId,
+        artifactRef: outputPath,
+        outputPath,
+        metadata: {
+          status: "succeeded",
+        },
+      });
+      expect(afterFailedRecords).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            outputPath: duplicateOutputPath,
+            metadata: expect.objectContaining({ status: "failed" }),
+          }),
+        ]),
+      );
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  }, 20_000);
+
   it("registry activate-pack text output reports activation evidence append details", async () => {
     const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activation-registry-text-"));
     try {
@@ -4105,6 +4314,19 @@ interface RegistryActivationJson {
       code: string;
       message: string;
     };
+  };
+}
+
+interface ActivationEvidenceRegistryRecordJson {
+  artifactId: string;
+  artifactRef: string;
+  kind: string;
+  outputPath?: string;
+  producedByRef?: string;
+  metadata?: {
+    status?: string;
+    packId?: string;
+    ontologyId?: string;
   };
 }
 

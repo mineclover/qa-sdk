@@ -9,6 +9,7 @@ after each iteration and it's included in prompts for context.
 - CLI ontology tests consume exported workspace packages through their built `dist/` entrypoints; after changing exported operational-ontology vocabulary or pack code, run `pnpm --filter operational-ontology build` before CLI tests.
 - `pnpm --filter @qa-sdk/cli test -- ontology` is a Vitest path/name filter; CLI-local helper tests that must run under this gate should live in `ontology.test.ts` or include `ontology` in the test file name.
 - `activate-pack --artifact-registry` keeps `--output` as the raw activation result sidecar; append metadata is reported in stdout JSON under additive `activationEvidence`, so registry append failures do not rewrite the materialized proof.
+- Activation evidence upsert tests need a fresh SQLite activation store for the second succeeded run with the same registry/output identity; reusing the original store intentionally exercises `duplicate-allocation` failure and should assert no failed evidence append.
 
 ---
 
@@ -63,4 +64,16 @@ after each iteration and it's included in prompts for context.
   - The activation command has a custom parser (`parseRegistryActivatePackArgs`) rather than using the generic `parseFlags`; adding a command option requires updating the usage string, value flag set, command descriptor, and help text together.
   - The output sidecar writer is the sequencing boundary for managed evidence: build and append the registry record only after `writeJsonPayloadFile()` returns a resolved output path.
   - Append failure can be represented without leaking Node filesystem internals by returning a sanitized `activationEvidence.appendStatus: "failed"` block while leaving the raw activation sidecar intact.
+---
+
+## 2026-04-15 - US-005
+- Added an end-to-end CLI ontology test that runs `ontology registry activate-pack programming-artifact-ontology --output <file> --artifact-registry <registry> --json` against isolated temporary SQLite stores, a sidecar output file, and a JSON artifact registry.
+- Verified the generated activation evidence record is the only activation evidence entry, validates through `ontology artifact registry validate`, lists through `ontology artifact registry list --kind activation-evidence`, and resolves through `ontology prompt extract-artifact` as an `artifact-registry-hit` for the activation sidecar path.
+- Covered successful rerun upsert behavior with the same evidence identity and confirmed a duplicate failed activation against the original store does not append or replace successful registry evidence with failed evidence.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter @qa-sdk/cli build`; `pnpm --filter operational-ontology test -- programming-artifacts`; `pnpm --filter operational-ontology typecheck`; `pnpm --filter registry-service test -- ontology`; `pnpm --filter registry-service typecheck`; `node packages/cli/dist/index.js def validate`.
+- Files changed: `packages/cli/src/commands/ontology.test.ts`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - The registry evidence consumer path is fully generic for activation evidence: matching `artifactRef`/`outputPath` to the sidecar is enough for `prompt extract-artifact` to return `artifact-registry-hit`.
+  - Same-store activation reruns are intentionally failed by duplicate allocation checks, so registry upsert coverage for another successful activation needs a separate activation store while keeping the same output path and artifact registry.
+  - Failed activation results still materialize their own sidecar when `--output` is provided, but managed registry evidence is appended only for `status: "succeeded"`.
 ---
