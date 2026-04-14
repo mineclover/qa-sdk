@@ -26,9 +26,10 @@
         "`node packages/cli/dist/index.js def validate` passes."
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-002",
@@ -275,6 +276,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-14T16:07:15.219Z"
+    "updatedAt": "2026-04-14T16:12:18.524Z"
   }
 }

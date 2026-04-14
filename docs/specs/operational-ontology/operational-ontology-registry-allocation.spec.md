@@ -55,6 +55,12 @@ sources:
   - packages/registry-service/src/modules/ontology/ontology.module.test.ts
   - packages/registry-service/src/app.module.ts
   - packages/registry-service/package.json
+  - packages/cli/package.json
+  - packages/cli/src/commands/ontology.ts
+  - packages/cli/src/command-groups/ontology.commands.ts
+  - packages/operational-ontology/src/programming-artifacts.ts
+  - packages/authorization-ontology/src/index.ts
+  - tasks/prd-ontology-registry-activation-cli.md
 ---
 
 # Operational Ontology Registry Allocation — 현재 구현 및 검증 계약
@@ -331,6 +337,32 @@ Internal lifecycle completion does not create a public command by itself. The ne
 - command candidate: `qa-sdk ontology registry activate-pack <pack-id>`
 - scope: known pack resolver, local SQLite runtime, activation result JSON, programming-artifact and authorization ontology scenario proofs
 - non-goals: registry-service REST endpoint, scoped prefix support, artifact registry append, remote activation service
+
+## CLI Activation Boundary Discovery ^cli-activation-boundary
+
+Activation CLI US-001 is a discovery/contract story only. Phase 5 is the completed internal lifecycle surface: pack validation, reservation, allocation activation, index-meta sync, product/sum smoke checks, and structured activation result payloads. The CLI is an optional public/local execution surface over that lifecycle, not Phase 6 and not a new lifecycle phase.
+
+The initial known pack resolver must use these package exports, not test fixtures:
+
+| pack id | import contract | source evidence | CLI dependency |
+|---------|-----------------|-----------------|----------------|
+| `programming-artifact-ontology` | `import { programmingArtifactOntologyPack } from "operational-ontology/programming-artifacts"` | `packages/operational-ontology/package.json` exposes `./programming-artifacts`; `packages/operational-ontology/src/programming-artifacts.ts` re-exports the pack | already covered by `@qa-sdk/cli` dependency on `operational-ontology` |
+| `authorization-ontology` | `import { authorizationOntologyPack } from "authorization-ontology"` | `packages/authorization-ontology/package.json` exposes the package root; `packages/authorization-ontology/src/index.ts` exports the pack | `@qa-sdk/cli` has a direct `authorization-ontology` workspace dependency |
+
+The resolved command surface for later implementation is `qa-sdk ontology registry activate-pack <pack-id>`. The descriptor belongs in `packages/cli/src/command-groups/ontology.commands.ts`, routed through the existing ontology handler proxy into `cliOntology` in `packages/cli/src/commands/ontology.ts`.
+
+The confirmed flags are:
+
+- `--store <path>` for persistent local SQLite state.
+- `--ontology-id <id>` to override the ontology id passed to registration.
+- `--namespace <namespace>` to override the namespace passed to registration.
+- `--owner <owner>` to set namespace owner metadata.
+- `--version <versionId>` to select allocation version id.
+- `--address-model product|sum` to select the allocation model.
+- `--prefix <taxonomyId>=<prefix>` as a repeatable deterministic taxonomy prefix override.
+- `--json` for machine-readable activation result output.
+
+The local runtime strategy is a single SQLite file per command invocation. The runtime must open the file through registry-service/index-meta SQL infrastructure, apply index-meta base DDL plus registry-service migrations, and construct all activation dependencies over the same driver: `SqlOntologyRegistryStore` for registry-service ontology rows, `SqlPrefixRegistry` for index-meta prefix records, and `SqlIndexMetaStore` for schema-version records. It then builds `OntologyIndexMetaSyncAdapter`, `OntologyRegistryService`, and `OntologyPackActivationHelper` and calls the helper/service port. It must not start a Nest HTTP server, call registry-service REST APIs, create new persistence abstractions, or reach into raw SQL from the CLI command.
 
 ## 검증 명령
 

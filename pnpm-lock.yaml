@@ -185,6 +185,9 @@ importers:
       '@qa-sdk/spec-core':
         specifier: workspace:*
         version: link:../spec-core
+      authorization-ontology:
+        specifier: workspace:*
+        version: link:../authorization-ontology
       better-sqlite3:
         specifier: ^12.8.0
         version: 12.8.0
