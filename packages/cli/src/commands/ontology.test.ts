@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { SqliteQualityStore } from "quality-ledger";
 import { cliOntology } from "./ontology.js";
-import { USAGE, resolveSubcommand } from "../index.js";
+import { USAGE, main, resolveSubcommand } from "../index.js";
 import {
   KNOWN_ONTOLOGY_PACK_IDS,
   resolveKnownOntologyPack,
@@ -201,6 +201,132 @@ describe("ontology CLI", () => {
         failedCheckCount: 0,
       });
       expect(Object.keys(parsed.syncSummariesByAllocationId).length).toBeGreaterThan(0);
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("registry activate-pack activates programming artifact ontology through the public command path", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-command-activate-"));
+    try {
+      const storePath = join(dir, "registry.sqlite");
+      const commandArgs = [
+        "ontology",
+        "registry",
+        "activate-pack",
+        "programming-artifact-ontology",
+        "--store",
+        storePath,
+        "--json",
+      ];
+      const firstOutput = await captureConsoleWithExitCode(async () => {
+        await main(commandArgs);
+      });
+      const first = JSON.parse(firstOutput.stdout) as RegistryActivationJson;
+
+      expect(firstOutput.stderr).toBe("");
+      expect(firstOutput.exitCode).toBeUndefined();
+      expect(first).toMatchObject({
+        status: "succeeded",
+        packId: "programming-artifact-ontology",
+        ontologyId: "programming-artifact-ontology",
+        namespaceSummary: {
+          ontologyId: "programming-artifact-ontology",
+          namespace: "programming_artifact_ontology",
+        },
+        warnings: [],
+        errors: [],
+      });
+      expect(first.allocationSummaries.map((summary) => summary.taxonomyId).sort()).toEqual([
+        "programming-artifact",
+        "programming-artifact-relation",
+      ]);
+
+      const firstAllocationIds = first.allocationSummaries
+        .map((summary) => summary.allocationId)
+        .sort();
+      expect(Object.keys(first.syncSummariesByAllocationId).sort()).toEqual(
+        firstAllocationIds,
+      );
+      expect(Object.keys(first.smokeCheckSummary.byAllocationId).sort()).toEqual(
+        firstAllocationIds,
+      );
+
+      for (const allocation of first.allocationSummaries) {
+        expect(allocation).toEqual(
+          expect.objectContaining({
+            ontologyId: "programming-artifact-ontology",
+            versionId: "v1",
+            addressModel: "product",
+            status: "active",
+            activationStatus: "active",
+            syncStatus: "synced",
+          }),
+        );
+
+        const syncSummary = first.syncSummariesByAllocationId[allocation.allocationId];
+        expect(syncSummary).toEqual(
+          expect.objectContaining({
+            allocationId: allocation.allocationId,
+            taxonomyId: allocation.taxonomyId,
+            prefix: allocation.prefix,
+            versionId: allocation.versionId,
+            syncStatus: "synced",
+            collisionCount: 0,
+          }),
+        );
+        expect(syncSummary?.materializedRecordCount).toBeGreaterThan(0);
+        expect(syncSummary?.targetRecordCount).toBeGreaterThan(0);
+
+        const smokeSummary = first.smokeCheckSummary.byAllocationId[allocation.allocationId];
+        expect(smokeSummary).toEqual(
+          expect.objectContaining({
+            allocationId: allocation.allocationId,
+            taxonomyId: allocation.taxonomyId,
+            prefix: allocation.prefix,
+            versionId: allocation.versionId,
+            syncStatus: "synced",
+            passed: true,
+            failedCheckCount: 0,
+          }),
+        );
+        expect(smokeSummary?.checkCount).toBeGreaterThan(0);
+      }
+      expect(first.smokeCheckSummary).toMatchObject({
+        allocationCount: 2,
+        passedAllocationCount: 2,
+        failedAllocationCount: 0,
+        failedCheckCount: 0,
+      });
+      expect(first.smokeCheckSummary.passedCheckCount).toBe(
+        first.smokeCheckSummary.checkCount,
+      );
+
+      const secondOutput = await captureConsoleWithExitCode(async () => {
+        await main(commandArgs);
+      });
+      const second = JSON.parse(secondOutput.stdout) as RegistryActivationJson;
+
+      expect(secondOutput.stderr).toBe("");
+      expect(secondOutput.exitCode).toBe(1);
+      expect(second).toMatchObject({
+        status: "failed",
+        packId: "programming-artifact-ontology",
+        ontologyId: "programming-artifact-ontology",
+        namespaceSummary: null,
+        allocationSummaries: [],
+        syncSummariesByAllocationId: {},
+        smokeCheckSummary: { allocationCount: 0 },
+        warnings: [],
+        errors: [
+          expect.objectContaining({
+            level: "error",
+            phase: "register",
+            code: "duplicate-allocation",
+          }),
+        ],
+      });
+      expect(secondOutput.stdout).not.toMatch(/SQLITE|SqliteError|sqlite/i);
     } finally {
       await rm(dir, { force: true, recursive: true });
     }
@@ -3287,6 +3413,62 @@ describe("ontology CLI", () => {
     );
   });
 });
+
+interface RegistryActivationJson {
+  status: string;
+  packId: string | null;
+  ontologyId: string | null;
+  namespaceSummary: {
+    ontologyId: string;
+    namespace: string;
+    owner?: string;
+  } | null;
+  allocationSummaries: Array<{
+    allocationId: string;
+    ontologyId: string;
+    taxonomyId: string;
+    prefix: string;
+    versionId: string;
+    addressModel: string;
+    status: string;
+    activationStatus?: string;
+    syncStatus?: string;
+  }>;
+  syncSummariesByAllocationId: Record<string, {
+    allocationId: string;
+    taxonomyId: string;
+    prefix: string;
+    versionId: string;
+    syncStatus: string;
+    materializedRecordCount: number;
+    collisionCount: number;
+    targetRecordCount: number;
+  }>;
+  smokeCheckSummary: {
+    allocationCount: number;
+    passedAllocationCount: number;
+    failedAllocationCount: number;
+    checkCount: number;
+    passedCheckCount: number;
+    failedCheckCount: number;
+    byAllocationId: Record<string, {
+      allocationId: string;
+      taxonomyId: string;
+      prefix: string;
+      versionId: string;
+      syncStatus: string;
+      passed: boolean;
+      checkCount: number;
+      failedCheckCount: number;
+    }>;
+  };
+  warnings: unknown[];
+  errors: Array<{
+    level?: string;
+    phase?: string;
+    code?: string;
+  }>;
+}
 
 async function captureConsoleAsync(run: () => Promise<void>) {
   const stdout: string[] = [];

@@ -11,6 +11,7 @@ after each iteration and it's included in prompts for context.
 - Local ontology activation runtime is exported from `@qa-sdk/registry-service/ontology-local-runtime`; it returns a closeable runtime over one SQLite driver and supports both `:memory:` and persistent `--store`-style paths.
 - Packaged registry-service runtime code must resolve Drizzle migrations from both source and bundled `dist` locations; bundled files run with `import.meta.url` under `dist`, so source-relative `../../drizzle` can accidentally select sibling workspace folders like `packages/drizzle`.
 - Activation CLI JSON should print helper results unwrapped; pre-helper CLI/runtime failures should use a result-like failed payload with sanitized errors so automation can parse one stable contract.
+- CLI tests that need to prove command discovery/dispatch should invoke `main(["ontology", ...])`; `cliOntology(["registry.activate-pack", ...])` only proves the handler surface after proxy resolution.
 
 ---
 
@@ -82,4 +83,17 @@ after each iteration and it's included in prompts for context.
   - `activate-pack` needs command-specific flag validation because its descriptor still proxies raw rest args through `cliOntology`, so the shared command parser does not reject unknown flags for this handler.
   - Helper-returned failures are already safe to print as the canonical contract; wrapping them would make automation distinguish success and lifecycle failure unnecessarily.
   - Runtime creation can fail before the helper has a chance to sanitize errors, so the CLI boundary needs its own generic `activation-runtime-error` path for JSON output.
+---
+
+## 2026-04-15 - US-006
+- Added a CLI scenario test that invokes `main(["ontology", "registry", "activate-pack", "programming-artifact-ontology", "--store", <tmp sqlite>, "--json"])` to prove the real command discovery and dispatch path.
+- The test uses an isolated temporary SQLite store, verifies `status: "succeeded"`, and asserts allocation summaries for both `programming-artifact` and `programming-artifact-relation`.
+- The test verifies successful sync summaries and smoke check summaries for each allocation, including synced status, materialized/target counts, passing smoke checks, and zero failed checks.
+- The test re-runs the same public command against the same store and verifies the documented structured `duplicate-allocation` failure contract without leaking raw SQLite errors.
+- Files changed: `packages/cli/src/commands/ontology.test.ts`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter registry-service test`; `pnpm --filter registry-service typecheck`; `pnpm --filter registry-service build`; `pnpm --filter operational-ontology test -- allocation`; `pnpm --filter authorization-ontology test`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - Real command-path acceptance criteria should go through `main()` with argv-style segments, because `cliOntology()` starts after the ontology command-group proxy has already resolved the descriptor.
+  - Programming artifact ontology activation creates two taxonomy surfaces by default: node artifact kind and edge relation kind.
+  - Re-running activation currently fails during register with helper-returned `duplicate-allocation`; sync itself remains idempotent below the activation helper, but pack reservation is intentionally not an upsert.
 ---
