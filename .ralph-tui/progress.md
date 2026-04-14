@@ -7,6 +7,7 @@ after each iteration and it's included in prompts for context.
 
 - Phase 4 ontology/index-meta sync drift checks must be limited to the current persisted index-meta target surface: prefix capacity, ordered refs, schema-version capacity, and sum sidecar coverage. Axis `valuesHash` reproduction belongs to future axis-value entry materialization, not current prefix/schema sync.
 - Ontology activation orchestration should live as an ontology module helper/provider that calls `OntologyRegistryService` methods (`registerOntologyPack`, `activateAllocation`, `syncToPrefixRegistry`) and returns namespace/allocation/sync/warning/error payloads without reaching into stores or SQL.
+- Valid pack activation is an all-allocation path: `registerOntologyPack` validates before reservation, then the helper activates and syncs every returned allocation instead of selecting a subset.
 
 ---
 
@@ -32,4 +33,16 @@ after each iteration and it's included in prompts for context.
   - `registerOntologyPack` already validates the pack, reserves address space, and returns the namespace plus reserved allocation records needed by an activation helper.
   - A helper can keep the orchestration boundary narrow by treating `OntologyRegistryService` as a port with only `registerOntologyPack`, `activateAllocation`, and `syncToPrefixRegistry`.
   - Phase 4 sync reports already carry the post-sync surface the activation payload can forward; smoke-specific assertions can be layered onto this payload in later stories.
+---
+
+## 2026-04-14 - US-003
+- Added acceptance-level coverage for a valid multi-allocation pack activation path through `OntologyPackActivationHelper`.
+- Verified pack validation is called before address-space reservation/allocation planning, then namespace, axis, taxonomy, allocation, and segment rows are written.
+- Verified every intended allocation moves from `reserved` to `active`, every activated allocation calls index-meta sync, and the activation result reports allocation id, prefix, version id, active status, and synced status.
+- Verified synced allocation prefix registry records and schema version records exist for each activated allocation.
+- Files changed: `packages/registry-service/src/modules/ontology/ontology-activation.helper.test.ts`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - The existing helper already implements the deterministic all-allocation policy by iterating over `registration.allocations`; US-003 needed stronger evidence across more than one taxonomy.
+  - `OntologyRegistryService.registerOntologyPack` owns pack validation ordering, so helper-level tests can prove validation-before-reservation with spies on the operational ontology pack and allocation planes.
+  - Product allocation sync materializes both allocation prefix records and schema version records; future smoke stories can reuse the same stores to add resolver and sidecar assertions.
 ---
