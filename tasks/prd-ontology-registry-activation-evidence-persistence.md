@@ -37,14 +37,44 @@ No browser verification is required.
 **Description:** As an ontology maintainer, I want the next execution plan scoped outside the allocation lifecycle so that activation evidence persistence does not reopen Phase 6 or registry-service internals.
 
 **Acceptance Criteria:**
-- [ ] Confirm `tasks/prd-ontology-registry-allocation-lifecycle-master.md` says there is no next lifecycle implementation PRD after Phase 5.
-- [ ] Confirm this PRD is a public/follow-up surface over the completed activation CLI.
-- [ ] Confirm scoped prefix implementation remains frozen under `operational-ontology-scoped-prefix-decision`.
-- [ ] Confirm registry-service REST endpoint and remote activation service remain out of scope.
-- [ ] Define the managed evidence contract as `--output <file>` plus explicit artifact registry append, not implicit append from `--output` alone.
-- [ ] Compare reusing existing artifact kinds (`deployment-output`, `quality-status`, `prompt-artifact`) against adding `activation-evidence`, and record why the chosen kind does or does not confuse provider behavior.
-- [ ] Decide the artifact kind before implementation and document the 5Q rationale if a vocabulary value is added.
-- [ ] Do not implement persistence in this story.
+- [x] Confirm `tasks/prd-ontology-registry-allocation-lifecycle-master.md` says there is no next lifecycle implementation PRD after Phase 5.
+- [x] Confirm this PRD is a public/follow-up surface over the completed activation CLI.
+- [x] Confirm scoped prefix implementation remains frozen under `operational-ontology-scoped-prefix-decision`.
+- [x] Confirm registry-service REST endpoint and remote activation service remain out of scope.
+- [x] Define the managed evidence contract as `--output <file>` plus explicit artifact registry append, not implicit append from `--output` alone.
+- [x] Compare reusing existing artifact kinds (`deployment-output`, `quality-status`, `prompt-artifact`) against adding `activation-evidence`, and record why the chosen kind does or does not confuse provider behavior.
+- [x] Decide the artifact kind before implementation and document the 5Q rationale if a vocabulary value is added.
+- [x] Do not implement persistence in this story.
+
+#### US-001 Boundary Confirmation
+
+- The lifecycle master says Phase 5 is closed and: "After Phase 5, there is no next implementation PRD in this lifecycle." The activation evidence PRD is listed only as a post-lifecycle public/local follow-up.
+- This PRD layers managed evidence over the completed `qa-sdk ontology registry activate-pack <pack-id>` CLI and must not change Phase 3 service orchestration, Phase 4 index-meta sync, Phase 5 activation helper/smoke ordering, or registry allocation semantics.
+- Scoped prefix implementation remains frozen under `operational-ontology-scoped-prefix-decision`: global `(prefix, versionId)` uniqueness remains active until a separate decision PRD and implementation ADR reopen that policy.
+- Registry-service REST activation endpoint and remote activation service/deployment remain out of scope for this PRD. Later implementation stories may only use the local CLI/artifact registry boundary.
+- Managed evidence persistence requires both `--output <file>` and an explicit registry append flag such as `--artifact-registry <registry>`. `--output <file>` alone remains a JSON sidecar materialization and must not imply registry append.
+- US-001 makes no persistence code, vocabulary code, REST, remote service, or scoped-prefix implementation changes.
+
+#### US-001 Artifact Kind Decision
+
+Selected artifact kind: `activation-evidence`.
+
+| Candidate kind | Decision | Provider behavior risk |
+|----------------|----------|------------------------|
+| `deployment-output` | Reject | Activation evidence is local registry/index-meta proof, not an infra deployment URL, release bundle, or environment output. Reusing it would make activation proof look like deployment state and confuse deployment provider expectations. |
+| `quality-status` | Reject | `quality-status` has special governance-closure behavior in the artifact provider: related records are interpreted as test/gate/audit evidence and may trigger freshness, ledger, and prompt quality checks. Activation proof is lifecycle evidence, not quality status. |
+| `prompt-artifact` | Reject | `prompt-artifact` means generated prompt material intended for model context. Activation JSON is evidence consumed through registry lookup, not prompt text produced by `ontology prompt extract*`. |
+| `activation-evidence` | Choose | It names successful activation proof directly and remains a normal programming artifact registry record. Existing provider lookup can still resolve it by `artifactRef`/`outputPath`, while `artifact-kind:activation-evidence` keeps downstream behavior explicit instead of borrowing deployment, quality, or prompt semantics. |
+
+5Q rationale for adding `activation-evidence` to `programming_artifact_kind` in US-002:
+
+| Question | Result |
+|----------|--------|
+| Q1 finite? | Yes. It adds one closed vocabulary value to the existing finite artifact kind axis. |
+| Q2 decision-affecting? | Yes. Consumers can distinguish activation proof from build, deploy, prompt, and quality evidence before deciding whether an ontology pack is already locally activated. |
+| Q3 shared? | Yes. It is shared by the activation CLI append path, artifact registry validate/list/filter, provider lookup, and prompt artifact extraction hit path. |
+| Q4 stable? | Yes. Activation evidence is a stable artifact category, not a transient status detail or per-pack label. |
+| Q5 capacity? | Yes. Adding one value makes 6 values; `nextPowerOf2(6 * 2) = 16`, matching the current axis capacity. |
 
 ### US-002: Add Activation Evidence Artifact Vocabulary
 

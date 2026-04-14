@@ -26,9 +26,10 @@
         "`node packages/cli/dist/index.js def validate` passes."
       ],
       "priority": 1,
-      "passes": false,
-      "notes": "",
-      "dependsOn": []
+      "passes": true,
+      "notes": "Boundary confirmed as post-lifecycle follow-up over the completed activation CLI. Managed persistence requires --output plus explicit artifact registry append; --output alone remains sidecar-only. Chose activation-evidence over deployment-output, quality-status, and prompt-artifact to avoid provider semantic confusion; documented 5Q rationale. No persistence implemented in US-001.",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-002",
@@ -182,6 +183,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-14T17:29:33.937Z"
+    "updatedAt": "2026-04-14T17:33:49.904Z"
   }
 }
