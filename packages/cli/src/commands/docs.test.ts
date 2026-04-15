@@ -423,6 +423,46 @@ Track inventory scenario coverage.
     );
   });
 
+  it("prints JSON status for source paths without widening to workspace status", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs(["status", "packages/checkout/src/index.ts", "--root", workspace, "--json"]);
+
+    const result = parsedOutput<{
+      target: string;
+      sourceTarget: {
+        path: string;
+        matches: Array<{ document: { stableId: string; path: string }; source: { path?: string; label?: string } }>;
+        limitation: string;
+      };
+      counts: { documents: number; familyMembers: number; diagnostics: number };
+      diagnostics: Array<{ rawSource?: { path?: string } }>;
+    }>();
+    expect(result.target).toBe("packages/checkout/src/index.ts");
+    expect(result).not.toHaveProperty("document");
+    expect(result.sourceTarget).toMatchObject({
+      path: "packages/checkout/src/index.ts",
+      limitation: expect.stringContaining("limited to documents that declare this path"),
+    });
+    expect(result.sourceTarget.matches).toEqual([
+      expect.objectContaining({
+        document: expect.objectContaining({
+          stableId: "checkout-spec",
+          path: "docs/specs/checkout/checkout.spec.md",
+        }),
+        source: expect.objectContaining({
+          path: "packages/checkout/src/index.ts",
+          label: "Checkout",
+        }),
+      }),
+    ]);
+    expect(result.counts.documents).toBeGreaterThan(result.counts.familyMembers);
+    expect(result.counts.familyMembers).toBe(1);
+    expect(result.diagnostics.map((diagnostic) => diagnostic.rawSource?.path)).not.toContain(
+      "tasks/unrelated-prd.json",
+    );
+  });
+
   it("collects family members, metadata, links, sources, tasks, evidence, and diagnostics as JSON", async () => {
     const workspace = await createFixtureWorkspace();
 

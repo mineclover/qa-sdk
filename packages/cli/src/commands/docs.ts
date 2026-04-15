@@ -93,6 +93,14 @@ interface DocumentSummary {
 interface StatusResult {
   readonly target?: string;
   readonly document?: DocumentSummary;
+  readonly sourceTarget?: {
+    readonly path: string;
+    readonly matches: readonly {
+      readonly document: DocumentSummary;
+      readonly source: DocumentSource;
+    }[];
+    readonly limitation: string;
+  };
   readonly matchedTask?: {
     readonly id: string;
     readonly title: string;
@@ -818,14 +826,29 @@ function buildStatusResult(
   target: string | undefined,
 ): StatusResult {
   const resolved = target ? resolveDocument(documents, target) : undefined;
+  const resolvedSource = !resolved && target && isPathLikeTarget(target)
+    ? resolveSourceTarget(documents, target)
+    : undefined;
   const scopedDocuments = resolved
     ? collectRelatedDocuments(documents, resolved.document)
+    : resolvedSource
+      ? resolvedSource.documents
     : documents;
   const diagnostics = scopedDocuments.flatMap((document) => document.diagnostics);
 
   return {
     ...(target ? { target } : {}),
     ...(resolved ? { document: summarizeDocument(resolved.document) } : {}),
+    ...(resolvedSource ? {
+      sourceTarget: {
+        path: resolvedSource.path,
+        matches: resolvedSource.matches.map((match) => ({
+          document: summarizeDocument(match.document),
+          source: match.source,
+        })),
+        limitation: resolvedSource.limitation,
+      },
+    } : {}),
     ...(resolved?.matchedTask ? {
       matchedTask: {
         id: resolved.matchedTask.id,
@@ -846,8 +869,13 @@ function buildCollectResult(
 ): CollectResult {
   const status = buildStatusResult(documents, target);
   const resolved = resolveDocument(documents, target);
+  const resolvedSource = !resolved && isPathLikeTarget(target)
+    ? resolveSourceTarget(documents, target)
+    : undefined;
   const scopedDocuments = resolved
     ? collectRelatedDocuments(documents, resolved.document)
+    : resolvedSource
+      ? resolvedSource.documents
     : [];
 
   return {
@@ -1326,6 +1354,49 @@ function resolveDocument(
   return undefined;
 }
 
+interface ResolvedSourceTarget {
+  readonly path: string;
+  readonly documents: readonly DocumentEnvelope[];
+  readonly matches: readonly {
+    readonly document: DocumentEnvelope;
+    readonly source: DocumentSource;
+  }[];
+  readonly limitation: string;
+}
+
+function resolveSourceTarget(
+  documents: readonly DocumentEnvelope[],
+  target: string,
+): ResolvedSourceTarget {
+  const normalizedTarget = normalizePath(target);
+  const matches = documents.flatMap((document) =>
+    document.sources
+      .filter((source) => sourceMatchesPath(source, normalizedTarget))
+      .map((source) => ({ document, source }))
+  );
+  const matchedDocuments = uniqueDocuments(matches.map((match) => match.document))
+    .toSorted(compareDocuments);
+  return {
+    path: normalizedTarget,
+    documents: matchedDocuments,
+    matches: matches.toSorted((left, right) => compareDocuments(left.document, right.document)),
+    limitation: "Source-path status is limited to documents that declare this path in frontmatter or evidence sources; it does not scan the full repository.",
+  };
+}
+
+function sourceMatchesPath(source: DocumentSource, normalizedTarget: string): boolean {
+  const candidates = [
+    source.path,
+    normalizeOptionalPath(source.label),
+    normalizeOptionalPath(source.metadata.value),
+  ];
+  return candidates.some((candidate) => candidate === normalizedTarget);
+}
+
+function isPathLikeTarget(target: string): boolean {
+  return target.includes("/") || target.includes("\\") || /\.[A-Za-z0-9]+(?::|$)/.test(target);
+}
+
 function compareResolutionPriority(left: DocumentEnvelope, right: DocumentEnvelope): number {
   return (RESOLUTION_KIND_PRIORITY[left.kind] ?? 50) - (RESOLUTION_KIND_PRIORITY[right.kind] ?? 50)
     || compareDocuments(left, right);
@@ -1624,15 +1695,19 @@ function parseMetadataFilters(values: readonly string[]): DocumentMetadata {
 }
 
 function printStatus(result: StatusResult): void {
-  if (result.target && !result.document) {
+  if (result.target && !result.document && !result.sourceTarget) {
     console.log(`docs status: ${result.target} not found`);
     return;
   }
 
-  console.log(`docs status: ${result.document?.stableId ?? "workspace"}`);
+  console.log(`docs status: ${result.sourceTarget ? `source ${result.sourceTarget.path}` : result.document?.stableId ?? "workspace"}`);
   if (result.document) {
     console.log(`  kind: ${result.document.kind}`);
     console.log(`  path: ${result.document.path}`);
+  }
+  if (result.sourceTarget) {
+    console.log(`  source matches: ${result.sourceTarget.matches.length}`);
+    console.log(`  limitation: ${result.sourceTarget.limitation}`);
   }
   if (result.familyId) console.log(`  family: ${result.familyId}`);
   console.log(`  documents: ${result.counts.familyMembers} related / ${result.counts.documents} total`);

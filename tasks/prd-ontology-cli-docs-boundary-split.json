@@ -427,14 +427,15 @@
         "`node packages/cli/dist/index.js def validate` passes."
       ],
       "priority": 13,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Verified packages/cli/src/commands/ontology.ts is 879 lines and all extracted ontology command modules are below 1,500 lines. Activation scenario matrix references 13 ontology test titles and all still exist. Added source-path docs status handling so docs status for packages/cli/src/commands/ontology.ts reports direct source matches and a declared-source limitation instead of widening to full workspace status. Recorded remaining generic prompt extraction split debt in programming-artifact-ontology-todo.todo.md. Required US-013 gates passed.",
       "dependsOn": [
         "US-012"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T21:17:30.061Z"
+    "updatedAt": "2026-04-15T21:28:22.189Z"
   }
 }

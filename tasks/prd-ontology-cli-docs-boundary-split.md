@@ -162,88 +162,88 @@ Source-map coverage gaps are recorded as TODO items in `operational-ontology-reg
 **Description:** As a CLI maintainer, I want activation command parsing, errors, output, and evidence append orchestration extracted from `ontology.ts` so activation behavior has a dedicated implementation boundary.
 
 **Acceptance Criteria:**
-- [ ] Move registry activation value/boolean flag definitions, parser, prefix override parsing, address model parsing, activation CLI failure result construction, output sidecar writing, text summary printing, known pack import refs, and `cmdRegistryActivatePack` into a dedicated module such as `packages/cli/src/commands/ontology/activation.ts`.
-- [ ] Keep `qa-sdk ontology registry activate-pack <pack-id>` command path unchanged.
-- [ ] Keep JSON output shape unchanged for success, helper failure, command-level failure, output write failure, and append failure.
-- [ ] Keep `--output` sidecar raw helper payload behavior unchanged.
-- [ ] Keep `--artifact-registry` explicit append behavior unchanged.
-- [ ] Leave `packages/cli/src/commands/ontology.ts` as the router/import owner for this command.
-- [ ] Update tests only for import paths if required; do not rename existing activation scenario test titles.
+- [x] Move registry activation value/boolean flag definitions, parser, prefix override parsing, address model parsing, activation CLI failure result construction, output sidecar writing, text summary printing, known pack import refs, and `cmdRegistryActivatePack` into a dedicated module such as `packages/cli/src/commands/ontology/activation.ts`.
+- [x] Keep `qa-sdk ontology registry activate-pack <pack-id>` command path unchanged.
+- [x] Keep JSON output shape unchanged for success, helper failure, command-level failure, output write failure, and append failure.
+- [x] Keep `--output` sidecar raw helper payload behavior unchanged.
+- [x] Keep `--artifact-registry` explicit append behavior unchanged.
+- [x] Leave `packages/cli/src/commands/ontology.ts` as the router/import owner for this command.
+- [x] Update tests only for import paths if required; do not rename existing activation scenario test titles.
 
 ### US-006: Extract Programming Artifact Registry CLI Module
 
 **Description:** As a CLI maintainer, I want artifact registry validate/list/append behavior extracted from `ontology.ts` so registry management is a separate boundary from activation and prompt extraction.
 
 **Acceptance Criteria:**
-- [ ] Move programming artifact registry file shape, registry load/save helpers, registry validation, comma value parsing, optional metadata parsing, registry record creation from flags, and `artifact registry validate/list/append` command handlers into a dedicated module such as `packages/cli/src/commands/ontology/artifact-registry.ts`.
-- [ ] Keep `qa-sdk ontology artifact registry validate`, `list`, and `append` command paths unchanged.
-- [ ] Keep array and `{ artifacts: [...] }` registry input/output compatibility unchanged.
-- [ ] Keep activation-evidence records valid under registry validate/list behavior.
-- [ ] Preserve append/upsert behavior by artifact identity.
-- [ ] Update docs source references for artifact registry provider and activation evidence docs.
+- [x] Move programming artifact registry file shape, registry load/save helpers, registry validation, comma value parsing, optional metadata parsing, registry record creation from flags, and `artifact registry validate/list/append` command handlers into a dedicated module such as `packages/cli/src/commands/ontology/artifact-registry.ts`.
+- [x] Keep `qa-sdk ontology artifact registry validate`, `list`, and `append` command paths unchanged.
+- [x] Keep array and `{ artifacts: [...] }` registry input/output compatibility unchanged.
+- [x] Keep activation-evidence records valid under registry validate/list behavior.
+- [x] Preserve append/upsert behavior by artifact identity.
+- [x] Update docs source references for artifact registry provider and activation evidence docs.
 
 ### US-007: Extract Quality Status Matching And Snapshot Module
 
 **Description:** As a CLI maintainer, I want quality-status registry matching, snapshot loading, descriptor resolution, and snapshot warning code extracted so prompt artifact quality evidence has a dedicated source/snapshot boundary.
 
 **Acceptance Criteria:**
-- [ ] Move quality-status record summary, governance closure summary shell, quality-status matching, snapshot loading, descriptor resolution, snapshot candidate paths, snapshot summary, and snapshot warning helpers into a dedicated module such as `packages/cli/src/commands/ontology/quality-status-evidence.ts`.
-- [ ] Keep `extract-artifact --quality-ledger` and `--quality-status-max-age-days` behavior unchanged.
-- [ ] Keep snapshot-first authority unchanged.
-- [ ] Keep source JSON fields for `source.qualityStatusRecords`, `source.governanceClosure`, and prompt quality metrics unchanged.
-- [ ] Preserve existing quality-status snapshot/matching related tests and test titles.
-- [ ] Leave ledger fallback and freshness implementation in place until US-008 extracts it.
+- [x] Move quality-status record summary, governance closure summary shell, quality-status matching, snapshot loading, descriptor resolution, snapshot candidate paths, snapshot summary, and snapshot warning helpers into a dedicated module such as `packages/cli/src/commands/ontology/quality-status-evidence.ts`.
+- [x] Keep `extract-artifact --quality-ledger` and `--quality-status-max-age-days` behavior unchanged.
+- [x] Keep snapshot-first authority unchanged.
+- [x] Keep source JSON fields for `source.qualityStatusRecords`, `source.governanceClosure`, and prompt quality metrics unchanged.
+- [x] Preserve existing quality-status snapshot/matching related tests and test titles.
+- [x] Leave ledger fallback and freshness implementation in place until US-008 extracts it.
 
 ### US-008: Extract Quality Ledger, Freshness, And Governance Closure Module
 
 **Description:** As a CLI maintainer, I want quality-ledger fallback, freshness SLA, conflict warnings, and governance closure prompt evidence extracted so optional quality evidence policy is separate from command routing.
 
 **Acceptance Criteria:**
-- [ ] Move quality-ledger loading, ledger fallback decisions, freshness policy, snapshot/ledger conflict warning, prompt evidence outcome conversion, governance closure evaluation, and governance run helpers into a dedicated module such as `packages/cli/src/commands/ontology/quality-ledger-evidence.ts` or a submodule imported by `quality-status-evidence.ts`.
-- [ ] Keep `extract-artifact --quality-ledger` behavior unchanged.
-- [ ] Keep `--quality-status-max-age-days` behavior unchanged.
-- [ ] Keep ledger conflict warning policy unchanged.
-- [ ] Keep governance closure JSON output fields unchanged.
-- [ ] Preserve existing quality-ledger, freshness, and governance closure tests and test titles.
-- [ ] Update programming artifact quality evidence docs source references to the new module.
+- [x] Move quality-ledger loading, ledger fallback decisions, freshness policy, snapshot/ledger conflict warning, prompt evidence outcome conversion, governance closure evaluation, and governance run helpers into a dedicated module such as `packages/cli/src/commands/ontology/quality-ledger-evidence.ts` or a submodule imported by `quality-status-evidence.ts`.
+- [x] Keep `extract-artifact --quality-ledger` behavior unchanged.
+- [x] Keep `--quality-status-max-age-days` behavior unchanged.
+- [x] Keep ledger conflict warning policy unchanged.
+- [x] Keep governance closure JSON output fields unchanged.
+- [x] Preserve existing quality-ledger, freshness, and governance closure tests and test titles.
+- [x] Update programming artifact quality evidence docs source references to the new module.
 
 ### US-009: Extract Prompt Artifact Extraction Module
 
 **Description:** As a CLI maintainer, I want artifact prompt extraction separated from the monolithic ontology command file so registry lookup, file/doc/search fallback, and quality evidence integration have a clear boundary.
 
 **Acceptance Criteria:**
-- [ ] Move artifact extraction source types, registry hit/miss/fallback source helpers, artifact source flags, artifact type inference, `cmdPromptExtractArtifact`, and direct artifact registry provider loading into a dedicated module such as `packages/cli/src/commands/ontology/prompt-extract-artifact.ts`.
-- [ ] Keep `qa-sdk ontology prompt extract-artifact <artifact-ref>` command path unchanged.
-- [ ] Keep source JSON shape for `artifact-registry-hit`, `artifact-registry-miss`, file fallback, definition fallback, and search fallback unchanged.
-- [ ] Keep related quality-status evidence integration unchanged.
-- [ ] Preserve prompt artifact extraction tests and test titles.
-- [ ] Update programming artifact CLI and provider docs source references to the new module.
+- [x] Move artifact extraction source types, registry hit/miss/fallback source helpers, artifact source flags, artifact type inference, `cmdPromptExtractArtifact`, and direct artifact registry provider loading into a dedicated module such as `packages/cli/src/commands/ontology/prompt-extract-artifact.ts`.
+- [x] Keep `qa-sdk ontology prompt extract-artifact <artifact-ref>` command path unchanged.
+- [x] Keep source JSON shape for `artifact-registry-hit`, `artifact-registry-miss`, file fallback, definition fallback, and search fallback unchanged.
+- [x] Keep related quality-status evidence integration unchanged.
+- [x] Preserve prompt artifact extraction tests and test titles.
+- [x] Update programming artifact CLI and provider docs source references to the new module.
 
 ### US-010: Extract Ontology Ingest And Status Support Module
 
 **Description:** As a CLI maintainer, I want local store, ingest, status, and snapshot show/list behavior grouped into a support module so non-prompt ontology operations start leaving the monolith.
 
 **Acceptance Criteria:**
-- [ ] Move local store load/save helpers into a shared support module or the ingest/status module.
-- [ ] Move snapshot/event/pipe ingest handlers into a dedicated module such as `packages/cli/src/commands/ontology/ingest.ts`.
-- [ ] Move status, snapshot list, and snapshot show handlers into a dedicated module such as `packages/cli/src/commands/ontology/status.ts`.
-- [ ] Keep public command paths and text/JSON output stable.
-- [ ] Keep `packages/cli/src/commands/ontology.ts` responsible for routing and imports for these commands.
-- [ ] Avoid circular imports between extracted modules.
-- [ ] Update any tests that import helper internals to use the new paths or public command path.
+- [x] Move local store load/save helpers into a shared support module or the ingest/status module.
+- [x] Move snapshot/event/pipe ingest handlers into a dedicated module such as `packages/cli/src/commands/ontology/ingest.ts`.
+- [x] Move status, snapshot list, and snapshot show handlers into a dedicated module such as `packages/cli/src/commands/ontology/status.ts`.
+- [x] Keep public command paths and text/JSON output stable.
+- [x] Keep `packages/cli/src/commands/ontology.ts` responsible for routing and imports for these commands.
+- [x] Avoid circular imports between extracted modules.
+- [x] Update any tests that import helper internals to use the new paths or public command path.
 
 ### US-011: Extract Ontology Route, Corridor, Checkpoint, Junction, And Traversal Diff Module
 
 **Description:** As a CLI maintainer, I want route/corridor/checkpoint/junction/traversal list/show/diff handlers separated from ingest/status so graph navigation command surfaces have a clear module.
 
 **Acceptance Criteria:**
-- [ ] Move corridor, checkpoint, route, traversal, and junction list/show/diff/latest handlers into a dedicated module such as `packages/cli/src/commands/ontology/navigation-diff.ts`.
-- [ ] Keep public command paths and text/JSON output stable.
-- [ ] Keep snapshot diff in the ingest/status module or move it here only if the story documents the chosen boundary.
-- [ ] Keep `packages/cli/src/commands/ontology.ts` responsible for routing and imports for these commands.
-- [ ] Avoid circular imports between extracted modules.
-- [ ] Update any tests that import helper internals to use the new paths or public command path.
-- [ ] Record any remaining intentionally unextracted helper groups in a follow-up note.
+- [x] Move corridor, checkpoint, route, traversal, and junction list/show/diff/latest handlers into a dedicated module such as `packages/cli/src/commands/ontology/navigation-diff.ts`.
+- [x] Keep public command paths and text/JSON output stable.
+- [x] Keep snapshot diff in the ingest/status module or move it here only if the story documents the chosen boundary.
+- [x] Keep `packages/cli/src/commands/ontology.ts` responsible for routing and imports for these commands.
+- [x] Avoid circular imports between extracted modules.
+- [x] Update any tests that import helper internals to use the new paths or public command path.
+- [x] Record any remaining intentionally unextracted helper groups in a follow-up note.
 
 ### US-012: Update Ontology Docs, Sources, And Control-Plane Status After Code Split
 
@@ -277,13 +277,27 @@ Follow-ups remain unchanged for registry-service REST activation, remote activat
 **Description:** As a reviewer, I want proof that the split preserved behavior and made the code/docs easier to operate.
 
 **Acceptance Criteria:**
-- [ ] `packages/cli/src/commands/ontology.ts` is reduced to a thin router or at least below 1,500 lines after extraction.
-- [ ] No extracted module exceeds 1,500 lines unless the story documents why it remains a follow-up.
-- [ ] Existing ontology CLI tests pass without public command behavior changes.
-- [ ] Activation CLI scenario matrix still references valid test titles after the split.
-- [ ] `qa-sdk docs status packages/cli/src/commands/ontology.ts` or the closest supported bottom-up query reports a clear limitation or source mapping path instead of returning the full repository.
-- [ ] `node packages/cli/dist/index.js docs drift --prd tasks/prd-ontology-cli-docs-boundary-split.json --json` reports zero issues after this PRD is complete.
-- [ ] Record residual refactor debt in the appropriate TODO, not in implementation comments.
+- [x] `packages/cli/src/commands/ontology.ts` is reduced to a thin router or at least below 1,500 lines after extraction.
+- [x] No extracted module exceeds 1,500 lines unless the story documents why it remains a follow-up.
+- [x] Existing ontology CLI tests pass without public command behavior changes.
+- [x] Activation CLI scenario matrix still references valid test titles after the split.
+- [x] `qa-sdk docs status packages/cli/src/commands/ontology.ts` or the closest supported bottom-up query reports a clear limitation or source mapping path instead of returning the full repository.
+- [x] `node packages/cli/dist/index.js docs drift --prd tasks/prd-ontology-cli-docs-boundary-split.json --json` reports zero issues after this PRD is complete.
+- [x] Record residual refactor debt in the appropriate TODO, not in implementation comments.
+
+#### US-013 Verification Evidence
+
+Line counts:
+
+- `packages/cli/src/commands/ontology.ts`: 879 lines.
+- Extracted modules: `activation.ts` 594, `artifact-registry.ts` 261, `ingest.ts` 115, `navigation-diff.ts` 792, `prompt-extract-artifact.ts` 889, `quality-ledger-evidence.ts` 958, `quality-status-evidence.ts` 507, `status.ts` 261, `support.ts` 134. No extracted module exceeds 1,500 lines.
+
+Behavior/source-map checks:
+
+- Activation scenario matrix references 13 test titles, all present in `packages/cli/src/commands/ontology.test.ts`.
+- `qa-sdk docs status packages/cli/src/commands/ontology.ts --json` now resolves source-path status directly: 4 source matches, 3 related documents, and a limitation that source-path status is limited to declared frontmatter/evidence sources instead of scanning the full repository.
+- Residual generic prompt extraction debt is recorded in `docs/specs/operational-ontology/programming-artifact-ontology-todo.todo.md`; no implementation comments were added for that debt.
+- `node packages/cli/dist/index.js docs drift --prd tasks/prd-ontology-cli-docs-boundary-split.json --json`: 0 issues after US-013 tracker/session state is complete.
 
 ## Functional Requirements
 
