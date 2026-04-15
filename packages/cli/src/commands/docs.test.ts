@@ -78,6 +78,23 @@ Follow up on checkout implementation evidence.
 - [ ] Sync PRD completion ledger.
 `);
 
+    await writeFile(join(rootDir, "docs/specs/checkout/checkout.plan.md"), `---
+def:
+  id: checkout-plan
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+  tags: [checkout]
+---
+# Checkout Plan
+
+## 목적 ^purpose
+
+Plan checkout adapter follow-up work.
+`);
+
     await writeFile(join(rootDir, "docs/specs/checkout/checkout-group.spec.md"), `---
 def:
   id: checkout-group
@@ -465,6 +482,167 @@ Coordinate checkout adapters.
     expect(text).toContain("warnings (");
     expect(text).toContain("[document-source-reference-missing] docs/specs/checkout/checkout.spec.md");
     expect(text).toContain("hint:");
+  });
+
+  it("collects PRD authoring context from docs control-plane sources", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs(["prd", "context", "checkout", "--root", workspace, "--json"]);
+
+    const result = parsedOutput<{
+      counts: {
+        relatedSpecs: number;
+        openTodos: number;
+        plans: number;
+        priorPrds: number;
+        prdJsonCompletion: number;
+        ralphSessions: number;
+        scenarioMatrixRows: number;
+        sources: number;
+        evidence: number;
+      };
+      relatedSpecs: Array<{ stableId: string; path: string }>;
+      openTodos: Array<{ text: string; path: string }>;
+      plans: Array<{ stableId: string }>;
+      priorPrds: Array<{ stableId: string }>;
+      prdJsonCompletion: Array<{ path: string; storyCount: number; passedStoryCount: number; allStoriesPassing: boolean }>;
+      ralphSessionState: Array<{ status: string; prdPath: string }>;
+      scenarioMatrixRows: Array<{ evidenceIds: string[] }>;
+      sources: Array<{ path?: string; label?: string }>;
+      evidence: Array<{ id: string; kind?: string }>;
+      contextSources: Array<{ stableId: string; reason: string }>;
+    }>();
+
+    expect(result.counts.relatedSpecs).toBeGreaterThanOrEqual(2);
+    expect(result.counts.openTodos).toBe(2);
+    expect(result.counts.plans).toBeGreaterThanOrEqual(1);
+    expect(result.counts.priorPrds).toBeGreaterThanOrEqual(1);
+    expect(result.counts.prdJsonCompletion).toBeGreaterThanOrEqual(1);
+    expect(result.counts.ralphSessions).toBeGreaterThanOrEqual(1);
+    expect(result.counts.scenarioMatrixRows).toBeGreaterThanOrEqual(1);
+    expect(result.counts.sources).toBeGreaterThanOrEqual(1);
+    expect(result.counts.evidence).toBeGreaterThanOrEqual(1);
+    expect(result.relatedSpecs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stableId: "checkout-spec", path: "docs/specs/checkout/checkout.spec.md" }),
+      ]),
+    );
+    expect(result.openTodos.map((todo) => todo.text)).toEqual(
+      expect.arrayContaining([
+        "Remove obsolete checkout stub.",
+        "Sync PRD completion ledger.",
+      ]),
+    );
+    expect(result.plans).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stableId: "checkout-plan" }),
+      ]),
+    );
+    expect(result.priorPrds).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stableId: "tasks/checkout-prd" }),
+      ]),
+    );
+    expect(result.prdJsonCompletion).toEqual([
+      expect.objectContaining({
+        path: "tasks/checkout-prd.json",
+        storyCount: 1,
+        passedStoryCount: 1,
+        allStoriesPassing: true,
+      }),
+    ]);
+    expect(result.ralphSessionState).toEqual([
+      expect.objectContaining({
+        status: "running",
+        prdPath: "tasks/checkout-prd.json",
+      }),
+    ]);
+    expect(result.scenarioMatrixRows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ evidenceIds: ["E-CHECKOUT-DRIFT"] }),
+      ]),
+    );
+    expect(result.sources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "packages/checkout/src/index.ts" }),
+      ]),
+    );
+    expect(result.evidence).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "checkout-evidence", kind: "activation-evidence" }),
+      ]),
+    );
+    expect(result.contextSources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stableId: "checkout-spec" }),
+      ]),
+    );
+  });
+
+  it("writes a markdown PRD scaffold with control-plane context sources", async () => {
+    const workspace = await createFixtureWorkspace();
+    const outputPath = join(workspace, "tasks/generated-checkout-prd.md");
+
+    await cliDocs([
+      "prd",
+      "scaffold",
+      "checkout",
+      "--root",
+      workspace,
+      "--output",
+      "tasks/generated-checkout-prd.md",
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      output: string;
+      bytes: number;
+      context: { counts: { contextSources: number; openTodos: number; priorPrds: number } };
+    }>();
+    const content = await readFile(outputPath, "utf8");
+    expect(result.output).toBe("tasks/generated-checkout-prd.md");
+    expect(result.bytes).toBeGreaterThan(0);
+    expect(result.context.counts.contextSources).toBeGreaterThan(0);
+    expect(result.context.counts.openTodos).toBe(2);
+    expect(result.context.counts.priorPrds).toBeGreaterThanOrEqual(1);
+    expect(content).toContain("[PRD]");
+    expect(content).toContain("## Overview");
+    expect(content).toContain("## Goals");
+    expect(content).toContain("## Quality Gates");
+    expect(content).toContain("## User Stories");
+    expect(content).toContain("## Non-Goals");
+    expect(content).toContain("## Technical Considerations");
+    expect(content).toContain("## Success Metrics");
+    expect(content).toContain("## Open Questions");
+    expect(content).toContain("## Control-Plane Context Sources");
+    expect(content).toContain("[spec] `checkout-spec`");
+    expect(content).toContain("Creating PRD JSON from this scaffold");
+  });
+
+  it("refuses PRD scaffold JSON output files", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "prd",
+      "scaffold",
+      "checkout",
+      "--root",
+      workspace,
+      "--output",
+      "tasks/generated-checkout-prd.json",
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      error: { code: string; operation: string; remediation: string };
+    }>();
+    expect(result.error).toMatchObject({
+      code: "unsupported-output-format",
+      operation: "docs.prd.scaffold",
+    });
+    expect(result.error.remediation).toContain("explicit adapter command");
+    await expect(readFile(join(workspace, "tasks/generated-checkout-prd.json"), "utf8")).rejects.toThrow();
+    expect(process.exitCode).toBe(1);
   });
 
   it("previews metadata transform change sets without writing files by default", async () => {

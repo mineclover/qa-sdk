@@ -12,6 +12,8 @@ describe("top-level usage contracts", () => {
     expect(USAGE).toContain("qa-sdk docs collect <doc-id|path> [--json]");
     expect(USAGE).toContain("qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]");
     expect(USAGE).toContain("qa-sdk docs drift [--prd <file>] [--json]");
+    expect(USAGE).toContain("qa-sdk docs prd context <topic|doc-id> [--json]");
+    expect(USAGE).toContain("qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]");
     expect(USAGE).toContain("qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run]");
     expect(USAGE).toContain("[--dkg-target <nodeId>] [--decision-id <id>]");
     expect(USAGE).toContain("[--decision-type <type> --title <text> --rationale <text>]");
@@ -210,6 +212,14 @@ describe("top-level usage contracts", () => {
     expect(resolveSubcommand(["docs", "drift", "--prd", "tasks/checkout-prd.json"])).toEqual({
       name: "docs drift",
       rest: ["--prd", "tasks/checkout-prd.json"],
+    });
+    expect(resolveSubcommand(["docs", "prd", "context", "checkout"])).toEqual({
+      name: "docs prd context",
+      rest: ["checkout"],
+    });
+    expect(resolveSubcommand(["docs", "prd", "scaffold", "checkout", "--output", "tasks/checkout-prd.md"])).toEqual({
+      name: "docs prd scaffold",
+      rest: ["checkout", "--output", "tasks/checkout-prd.md"],
     });
     expect(resolveSubcommand(["docs", "transform", "metadata", "--rule", "{}"])).toEqual({
       name: "docs transform metadata",

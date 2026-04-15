@@ -13,6 +13,7 @@ after each iteration and it's included in prompts for context.
 - Docs CLI tests should pass `--root` to a temp workspace and exercise the real default adapters together; this keeps definition markdown, PRD markdown/JSON, session, and evidence aggregation hermetic while still testing command-level behavior.
 - Docs drift checks should correlate already-normalized envelopes in the command/control-plane layer and only read source file content for cross-document evidence; adapters stay read-only and source vocabulary stays source-owned.
 - Docs metadata transforms should stay as command-layer dry-run projections over parsed source files; adapters remain read-only, rule fields are allowlisted, and projected frontmatter lives in change-set metadata until a later apply story exists.
+- PRD authoring workflows should compose markdown from docs control-plane envelopes in the command layer; they must not call ralph-tui or create ralph PRD JSON unless a later explicit adapter command owns that conversion.
 
 ---
 
@@ -109,4 +110,19 @@ after each iteration and it's included in prompts for context.
   - Metadata transform planning belongs above the adapters: use neutral envelopes for target resolution, then read the source file only for the structured projected frontmatter.
   - Source references are top-level definition markdown metadata, not `def.*`; previews should report them alongside `def` metadata while keeping PRD JSON as a compatibility source that cannot be converted into definition frontmatter.
   - Multi-segment docs command descriptors need the proxy registry to split handler keys like `docs.transform.metadata` back into CLI path segments.
+---
+
+## 2026-04-15 - US-008
+- Implemented `qa-sdk docs prd context <topic|doc-id> [--json]` to collect PRD authoring context from existing docs control-plane adapters.
+- Context collection now surfaces related specs, open TODOs, plans, prior markdown PRDs, ralph PRD JSON completion state, ralph session state, scenario matrix rows, document sources, evidence, diagnostics, and context source reasons.
+- Implemented `qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]` to write a markdown PRD skeleton grounded in the collected context.
+- The scaffold includes overview, goals, quality gates, user story placeholders, non-goals, technical considerations, success metrics, open questions, and a Control-Plane Context Sources section.
+- Scaffold output refuses `.json` paths so PRD authoring does not create ralph PRD JSON, and it does not call `ralph-tui`.
+- Extended PRD markdown parsing metadata for technical considerations, success metrics, and control-plane context source sections.
+- Files changed: `packages/cli/src/commands/docs.ts`, `packages/cli/src/command-groups/docs.commands.ts`, `packages/cli/src/commands/docs.test.ts`, `packages/cli/src/commands/index-usage.test.ts`, `packages/cli/src/lib/docs-control-plane/adapters/prd-markdown.ts`, `packages/cli/src/lib/docs-control-plane/README.md`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- docs`; `pnpm --filter @qa-sdk/cli test -- index-usage`; `pnpm --filter @qa-sdk/cli test -- def`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter @qa-sdk/cli build`; `pnpm --filter definition-catalog test`; `pnpm --filter definition-catalog typecheck`; `pnpm --filter definition-data-source test`; `pnpm --filter definition-data-source typecheck`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - PRD context composition belongs above adapters because it correlates normalized envelopes, topic matches, markdown TODO rows, scenario matrix tables, evidence, and ralph state without changing source-owned schemas.
+  - Scaffold generation should be markdown-only at this layer; `.json` output would blur authoring with the ralph adapter conversion boundary.
+  - PRD markdown adapter parsing can safely recognize new scaffold sections as source-owned PRD markdown metadata while keeping the control plane read-only.
 ---

@@ -7,7 +7,8 @@
  */
 
 import { existsSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { basename, dirname, join, relative, resolve } from "node:path";
 
 import {
   createArtifactEvidenceAdapter,
@@ -39,7 +40,7 @@ import {
 } from "../lib/docs-control-plane/drift.js";
 import { formatHelpSections, type CommandHelpSectionSpec } from "../command-spec.js";
 
-type DocsCommand = "help" | "status" | "collect" | "search" | "drift" | "transform";
+type DocsCommand = "help" | "status" | "collect" | "search" | "drift" | "transform" | "prd";
 
 interface ParsedDocsArgs {
   readonly command: DocsCommand;
@@ -126,6 +127,116 @@ interface SearchResult {
   readonly results: readonly DocumentSummary[];
 }
 
+interface PrdContextSource {
+  readonly kind: string;
+  readonly stableId: string;
+  readonly path: string;
+  readonly title?: string;
+  readonly reason: string;
+}
+
+interface PrdContextDocumentSummary extends DocumentSummary {
+  readonly summary?: string;
+}
+
+interface PrdOpenTodo {
+  readonly documentId: string;
+  readonly path: string;
+  readonly pointer: string;
+  readonly text: string;
+}
+
+interface PrdJsonCompletionState {
+  readonly documentId: string;
+  readonly path: string;
+  readonly name?: string;
+  readonly storyCount: number;
+  readonly passedStoryCount: number;
+  readonly allStoriesPassing: boolean;
+  readonly tasks: readonly {
+    readonly id: string;
+    readonly title: string;
+    readonly passes: boolean;
+    readonly state: string;
+  }[];
+}
+
+interface RalphSessionContextState {
+  readonly documentId: string;
+  readonly path: string;
+  readonly id?: string;
+  readonly status?: string;
+  readonly prdPath?: string;
+  readonly totalTasks?: number;
+  readonly tasksCompleted?: number;
+  readonly diagnostics: readonly DocumentDiagnostic[];
+}
+
+interface ScenarioMatrixRow {
+  readonly documentId: string;
+  readonly path: string;
+  readonly rowIndex: number;
+  readonly cells: Readonly<Record<string, string>>;
+  readonly evidenceIds: readonly string[];
+}
+
+interface PrdContextDocumentSource {
+  readonly documentId: string;
+  readonly documentKind: string;
+  readonly documentPath: string;
+  readonly sourceId: string;
+  readonly path?: string;
+  readonly label?: string;
+  readonly metadata: DocumentMetadata;
+}
+
+interface PrdContextEvidence {
+  readonly documentId: string;
+  readonly documentKind: string;
+  readonly documentPath: string;
+  readonly id: string;
+  readonly kind?: string;
+  readonly summary?: string;
+  readonly metadata: DocumentMetadata;
+}
+
+interface PrdAuthoringContext {
+  readonly target: string;
+  readonly resolvedTarget?: DocumentSummary;
+  readonly topicTokens: readonly string[];
+  readonly counts: {
+    readonly contextSources: number;
+    readonly relatedSpecs: number;
+    readonly openTodos: number;
+    readonly plans: number;
+    readonly priorPrds: number;
+    readonly prdJsonCompletion: number;
+    readonly ralphSessions: number;
+    readonly scenarioMatrixRows: number;
+    readonly sources: number;
+    readonly evidence: number;
+    readonly diagnostics: number;
+  };
+  readonly contextSources: readonly PrdContextSource[];
+  readonly relatedSpecs: readonly PrdContextDocumentSummary[];
+  readonly openTodos: readonly PrdOpenTodo[];
+  readonly plans: readonly PrdContextDocumentSummary[];
+  readonly priorPrds: readonly PrdContextDocumentSummary[];
+  readonly prdJsonCompletion: readonly PrdJsonCompletionState[];
+  readonly ralphSessionState: readonly RalphSessionContextState[];
+  readonly scenarioMatrixRows: readonly ScenarioMatrixRow[];
+  readonly sources: readonly PrdContextDocumentSource[];
+  readonly evidence: readonly PrdContextEvidence[];
+  readonly diagnostics: readonly DocumentDiagnostic[];
+}
+
+interface PrdScaffoldResult {
+  readonly target: string;
+  readonly output: string;
+  readonly bytes: number;
+  readonly context: PrdAuthoringContext;
+}
+
 const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
   {
     title: "Usage",
@@ -134,6 +245,8 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "qa-sdk docs collect <doc-id|path> [--json]",
       "qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]",
       "qa-sdk docs drift [--prd <file>] [--json]",
+      "qa-sdk docs prd context <topic|doc-id> [--json]",
+      "qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]",
       "qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run] [--json]",
     ],
   },
@@ -146,6 +259,7 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "--session <file>             ralph session metadata path",
       "--prd-json <file>            PRD JSON path for session comparison",
       "--prd <file>                 scope drift checks to a PRD markdown/JSON family",
+      "--output <file>              PRD markdown scaffold output path",
       "--rule <json-file|inline-json> metadata transform rule for dry-run preview",
       "--dry-run                    preview only; this is the default",
       "--apply                      unsupported in this PRD; returns a structured error",
@@ -170,6 +284,23 @@ const CLOSED_TASK_STATES = new Set([
 const DEFAULT_DOCS_DIRS = ["docs"];
 const DEFAULT_PRD_DIRS = ["tasks"];
 const DEFAULT_ARTIFACT_REGISTRY_PATHS = ["artifacts/programming-artifacts.json"];
+const GENERIC_TOPIC_TOKENS = new Set([
+  "doc",
+  "docs",
+  "document",
+  "documents",
+  "json",
+  "markdown",
+  "memo",
+  "plan",
+  "prd",
+  "rule",
+  "spec",
+  "task",
+  "tasks",
+  "test",
+  "todo",
+]);
 const RESOLUTION_KIND_PRIORITY: Readonly<Record<string, number>> = {
   spec: 0,
   prd: 1,
@@ -210,6 +341,11 @@ export async function cliDocs(args: string[]): Promise<void> {
 
   if (parsed.command === "transform") {
     await cmdTransform(documents, options, parsed.positional, parsed.flags);
+    return;
+  }
+
+  if (parsed.command === "prd") {
+    await cmdPrd(documents, options, parsed.positional, parsed.flags);
     return;
   }
 
@@ -261,6 +397,7 @@ function normalizeCommand(value: string | undefined): DocsCommand {
     || value === "help"
     || value === "drift"
     || value === "transform"
+    || value === "prd"
   ) {
     return value;
   }
@@ -475,6 +612,86 @@ async function cmdTransform(
   printMetadataTransformPreview(result);
 }
 
+async function cmdPrd(
+  documents: readonly DocumentEnvelope[],
+  options: DocsRuntimeOptions,
+  positional: readonly string[],
+  flags: Readonly<Record<string, readonly string[]>>,
+): Promise<void> {
+  const json = hasFlag(flags, "json");
+  const action = positional[0];
+  const target = positional.slice(1).join(" ").trim();
+
+  if (action !== "context" && action !== "scaffold") {
+    console.error("Usage: qa-sdk docs prd context <topic|doc-id> [--json]");
+    console.error("Usage: qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]");
+    process.exitCode = 1;
+    return;
+  }
+
+  if (!target) {
+    console.error(`docs prd ${action} requires <topic|doc-id>`);
+    process.exitCode = 1;
+    return;
+  }
+
+  const context = await buildPrdAuthoringContext(documents, options.rootDir, target);
+
+  if (action === "context") {
+    if (json) {
+      printJson(context);
+      return;
+    }
+    printPrdAuthoringContext(context);
+    return;
+  }
+
+  const output = pickLast(flags, "output");
+  if (!output) {
+    printStructuredError({
+      error: {
+        code: "missing-required-option",
+        operation: "docs.prd.scaffold",
+        message: "docs prd scaffold requires --output <file>.",
+        remediation: "Pass a repository-relative markdown output path such as --output tasks/new-prd.md.",
+      },
+    }, json);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (output.toLowerCase().endsWith(".json")) {
+    printStructuredError({
+      error: {
+        code: "unsupported-output-format",
+        operation: "docs.prd.scaffold",
+        message: "docs prd scaffold writes markdown only and must not create ralph PRD JSON.",
+        remediation: "Use a .md output path. PRD JSON creation belongs to an explicit adapter command.",
+      },
+    }, json);
+    process.exitCode = 1;
+    return;
+  }
+
+  const markdown = buildPrdScaffoldMarkdown(context);
+  const outputPath = resolveOutputPath(options.rootDir, output);
+  await mkdir(dirname(outputPath), { recursive: true });
+  await writeFile(outputPath, markdown, "utf8");
+
+  const result: PrdScaffoldResult = {
+    target,
+    output: normalizePath(relative(options.rootDir, outputPath)),
+    bytes: Buffer.byteLength(markdown, "utf8"),
+    context,
+  };
+
+  if (json) {
+    printJson(result);
+    return;
+  }
+  printPrdScaffoldResult(result);
+}
+
 function buildStatusResult(
   documents: readonly DocumentEnvelope[],
   target: string | undefined,
@@ -524,6 +741,436 @@ function buildCollectResult(
     tasks: scopedDocuments.flatMap((document) => document.tasks),
     evidence: scopedDocuments.flatMap((document) => document.evidence),
   };
+}
+
+async function buildPrdAuthoringContext(
+  documents: readonly DocumentEnvelope[],
+  rootDir: string,
+  target: string,
+): Promise<PrdAuthoringContext> {
+  const resolved = resolveDocument(documents, target);
+  const relatedDocuments = resolved
+    ? collectRelatedDocuments(documents, resolved.document)
+    : [];
+  const topicTokens = prdTopicTokens(target, resolved?.document);
+  const topicDocuments = documents.filter((document) =>
+    matchesPrdTopic(document, target, topicTokens)
+  );
+  const scopedDocuments = uniqueDocuments([...relatedDocuments, ...topicDocuments])
+    .toSorted(compareDocuments);
+  const relatedKeys = new Set(relatedDocuments.map(documentKey));
+  const topicKeys = new Set(topicDocuments.map(documentKey));
+  const openTodos = await collectPrdOpenTodos(rootDir, scopedDocuments);
+  const scenarioMatrixRows = await collectScenarioMatrixRows(rootDir, scopedDocuments);
+  const sources = scopedDocuments.flatMap((document) => document.sources.map((source) =>
+    toPrdContextSourceRef(document, source)
+  ));
+  const evidence = scopedDocuments.flatMap((document) => document.evidence.map((item) =>
+    toPrdContextEvidence(document, item)
+  ));
+  const diagnostics = scopedDocuments.flatMap((document) => document.diagnostics);
+  const relatedSpecs = scopedDocuments
+    .filter((document) => document.kind === "spec")
+    .map(summarizePrdContextDocument);
+  const plans = scopedDocuments
+    .filter((document) => document.kind === "plan")
+    .map(summarizePrdContextDocument);
+  const priorPrds = scopedDocuments
+    .filter((document) => document.kind === "prd")
+    .map(summarizePrdContextDocument);
+  const prdJsonCompletion = scopedDocuments
+    .filter((document) => document.kind === "ralph-prd-json")
+    .map(toPrdJsonCompletionState);
+  const ralphSessionState = scopedDocuments
+    .filter((document) => document.kind === "ralph-session")
+    .map(toRalphSessionContextState);
+  const contextSources = scopedDocuments.map((document) =>
+    toPrdContextSource(document, resolved?.document, relatedKeys, topicKeys)
+  );
+
+  return {
+    target,
+    ...(resolved ? { resolvedTarget: summarizeDocument(resolved.document) } : {}),
+    topicTokens,
+    counts: {
+      contextSources: contextSources.length,
+      relatedSpecs: relatedSpecs.length,
+      openTodos: openTodos.length,
+      plans: plans.length,
+      priorPrds: priorPrds.length,
+      prdJsonCompletion: prdJsonCompletion.length,
+      ralphSessions: ralphSessionState.length,
+      scenarioMatrixRows: scenarioMatrixRows.length,
+      sources: sources.length,
+      evidence: evidence.length,
+      diagnostics: diagnostics.length,
+    },
+    contextSources,
+    relatedSpecs,
+    openTodos,
+    plans,
+    priorPrds,
+    prdJsonCompletion,
+    ralphSessionState,
+    scenarioMatrixRows,
+    sources,
+    evidence,
+    diagnostics,
+  };
+}
+
+function toPrdContextSource(
+  document: DocumentEnvelope,
+  resolvedTarget: DocumentEnvelope | undefined,
+  relatedKeys: ReadonlySet<string>,
+  topicKeys: ReadonlySet<string>,
+): PrdContextSource {
+  const summary = summarizeDocument(document);
+  return {
+    kind: document.kind,
+    stableId: document.stableId,
+    path: document.path,
+    ...(summary.title ? { title: summary.title } : {}),
+    reason: document === resolvedTarget
+      ? "target"
+      : relatedKeys.has(documentKey(document))
+        ? "related-family-or-link"
+        : topicKeys.has(documentKey(document))
+          ? "topic-match"
+          : "included",
+  };
+}
+
+function summarizePrdContextDocument(document: DocumentEnvelope): PrdContextDocumentSummary {
+  const summary = summarizeDocument(document);
+  const purpose = asString(document.metadata.purpose);
+  const overview = asString(document.metadata.overview);
+  return {
+    ...summary,
+    ...(purpose ? { summary: purpose } : overview ? { summary: overview } : {}),
+  };
+}
+
+async function collectPrdOpenTodos(
+  rootDir: string,
+  documents: readonly DocumentEnvelope[],
+): Promise<readonly PrdOpenTodo[]> {
+  const todos: PrdOpenTodo[] = [];
+  for (const document of documents) {
+    if (document.kind !== "todo") continue;
+    const content = await readRepoFile(rootDir, document.path);
+    if (content === null) continue;
+    for (const item of parseOpenTodoItems(content)) {
+      todos.push({
+        documentId: document.stableId,
+        path: document.path,
+        pointer: item.pointer,
+        text: item.text,
+      });
+    }
+  }
+  return todos;
+}
+
+async function collectScenarioMatrixRows(
+  rootDir: string,
+  documents: readonly DocumentEnvelope[],
+): Promise<readonly ScenarioMatrixRow[]> {
+  const rows: ScenarioMatrixRow[] = [];
+  for (const document of documents) {
+    const content = await readRepoFile(rootDir, document.path);
+    if (content === null || !/Scenario Matrix/i.test(content)) continue;
+    const section = extractMarkdownSection(content, "Scenario Matrix");
+    if (!section) continue;
+    const parsedRows = parseMarkdownTableRows(section);
+    parsedRows.forEach((cells, index) => {
+      rows.push({
+        documentId: document.stableId,
+        path: document.path,
+        rowIndex: index + 1,
+        cells,
+        evidenceIds: unique(Object.values(cells).flatMap((value) =>
+          value.match(/\bE-[A-Za-z0-9][A-Za-z0-9_-]*\b/g) ?? []
+        )),
+      });
+    });
+  }
+  return rows;
+}
+
+function toPrdContextSourceRef(
+  document: DocumentEnvelope,
+  source: DocumentSource,
+): PrdContextDocumentSource {
+  return {
+    documentId: document.stableId,
+    documentKind: document.kind,
+    documentPath: document.path,
+    sourceId: source.id,
+    ...(source.path ? { path: source.path } : {}),
+    ...(source.label ? { label: source.label } : {}),
+    metadata: source.metadata,
+  };
+}
+
+function toPrdContextEvidence(
+  document: DocumentEnvelope,
+  evidence: DocumentEvidence,
+): PrdContextEvidence {
+  return {
+    documentId: document.stableId,
+    documentKind: document.kind,
+    documentPath: document.path,
+    id: evidence.id,
+    ...(evidence.kind ? { kind: evidence.kind } : {}),
+    ...(evidence.summary ? { summary: evidence.summary } : {}),
+    metadata: evidence.metadata,
+  };
+}
+
+function toPrdJsonCompletionState(document: DocumentEnvelope): PrdJsonCompletionState {
+  const storyCount = asNumber(document.metadata.storyCount) ?? document.tasks.length;
+  const passedStoryCount = asNumber(document.metadata.passedStoryCount)
+    ?? document.tasks.filter((task) => task.metadata.passes === true).length;
+  const name = asString(document.metadata.name);
+  return {
+    documentId: document.stableId,
+    path: document.path,
+    ...(name ? { name } : {}),
+    storyCount,
+    passedStoryCount,
+    allStoriesPassing: storyCount > 0 && storyCount === passedStoryCount,
+    tasks: document.tasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      passes: task.metadata.passes === true,
+      state: taskState(task),
+    })),
+  };
+}
+
+function toRalphSessionContextState(document: DocumentEnvelope): RalphSessionContextState {
+  const id = asString(document.metadata.id);
+  const status = asString(document.metadata.status);
+  const prdPath = asString(document.metadata.prdPath);
+  const totalTasks = asNumber(document.metadata.totalTasks);
+  const tasksCompleted = asNumber(document.metadata.tasksCompleted);
+  return {
+    documentId: document.stableId,
+    path: document.path,
+    ...(id ? { id } : {}),
+    ...(status ? { status } : {}),
+    ...(prdPath ? { prdPath } : {}),
+    ...(totalTasks !== undefined ? { totalTasks } : {}),
+    ...(tasksCompleted !== undefined ? { tasksCompleted } : {}),
+    diagnostics: document.diagnostics,
+  };
+}
+
+function buildPrdScaffoldMarkdown(context: PrdAuthoringContext): string {
+  const title = prdScaffoldTitle(context);
+  const sourceLines = context.contextSources.length > 0
+    ? context.contextSources.map((source) =>
+      `- [${source.kind}] \`${source.stableId}\` (${source.path}) - ${source.reason}`
+    )
+    : ["- No matching control-plane sources were found; fill this PRD from planner input."];
+  const specLines = context.relatedSpecs.slice(0, 5).map((spec) =>
+    `- \`${spec.stableId}\`: ${spec.summary ?? spec.title ?? spec.path}`
+  );
+  const todoLines = context.openTodos.slice(0, 5).map((todo) =>
+    `- ${todo.text} (${todo.path} ${todo.pointer})`
+  );
+  const planLines = context.plans.slice(0, 5).map((plan) =>
+    `- \`${plan.stableId}\`: ${plan.summary ?? plan.title ?? plan.path}`
+  );
+  const qualityGates = scaffoldQualityGates(context);
+
+  return `[PRD]
+# PRD: ${title}
+
+## Overview
+
+Draft the product requirement for \`${context.target}\` using the docs control-plane context below.
+${specLines.length > 0 ? `\nRelated specs:\n${specLines.join("\n")}\n` : ""}
+
+## Goals
+
+- [ ] Define the planner-visible outcome for this PRD.
+- [ ] Ground implementation scope in existing specs, TODOs, plans, evidence, and ralph state.
+${todoLines.length > 0 ? `- [ ] Resolve or explicitly defer surfaced open TODOs.\n` : ""}
+
+## Quality Gates
+
+${qualityGates.map((gate) => `- [ ] ${gate}`).join("\n")}
+
+## User Stories
+
+### US-001: Primary outcome
+
+**Description:** As a planner, I want the implementation path to be explicit so that execution can proceed without guessing.
+
+**Acceptance Criteria:**
+- [ ] The story references the relevant specs, TODOs, evidence, and prior PRD state.
+- [ ] The story states validation commands or observable evidence.
+- [ ] The story avoids creating ralph PRD JSON unless an explicit adapter command is used.
+
+## Non-Goals
+
+- Calling \`ralph-tui\` directly from PRD authoring.
+- Creating PRD JSON from this scaffold.
+- Mutating definition docs, TODOs, plans, evidence registries, or ralph session state.
+
+## Technical Considerations
+
+${planLines.length > 0 ? `Existing plans:\n${planLines.join("\n")}\n` : "- TODO: Capture architectural constraints and source-owned vocabulary boundaries.\n"}
+- PRD authoring reads neutral control-plane envelopes; repository documents remain source of truth.
+- PRD JSON completion states surfaced: ${context.prdJsonCompletion.length}.
+- Ralph session states surfaced: ${context.ralphSessionState.length}.
+- Scenario matrix rows surfaced: ${context.scenarioMatrixRows.length}.
+
+## Success Metrics
+
+- [ ] The PRD can be reviewed without opening unrelated documents.
+- [ ] Each user story maps to at least one quality gate or evidence source.
+- [ ] Open questions are resolved or deliberately deferred before execution.
+
+## Open Questions
+
+- [ ] What is the smallest useful version of this PRD scope?
+- [ ] Which surfaced TODOs are in scope now versus deferred?
+- [ ] Which evidence or scenario matrix rows must be refreshed?
+
+## Control-Plane Context Sources
+
+${sourceLines.join("\n")}
+[/PRD]
+`;
+}
+
+function scaffoldQualityGates(context: PrdAuthoringContext): readonly string[] {
+  const fromPriorPrds = context.priorPrds.flatMap((prd) =>
+    Array.isArray(prd.metadata.qualityGates)
+      ? prd.metadata.qualityGates.filter((item): item is string => typeof item === "string")
+      : []
+  );
+  const fromJsonTasks = context.prdJsonCompletion.flatMap((prd) =>
+    prd.tasks.flatMap((task) => {
+      const source = context.contextSources.find((item) => item.stableId === prd.documentId);
+      return source ? [`Review \`${source.path}\` state for ${task.id}.`] : [];
+    })
+  );
+  return unique([
+    ...fromPriorPrds,
+    ...fromJsonTasks,
+    "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+    "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+  ]).slice(0, 8);
+}
+
+function prdScaffoldTitle(context: PrdAuthoringContext): string {
+  const sourceTitle = context.resolvedTarget?.title
+    ?? context.relatedSpecs[0]?.title
+    ?? context.priorPrds[0]?.title;
+  if (sourceTitle) return sourceTitle.replace(/^PRD:\s*/i, "").trim();
+  return titleizeTopic(context.target);
+}
+
+function prdTopicTokens(
+  target: string,
+  document: DocumentEnvelope | undefined,
+): readonly string[] {
+  const values = [
+    target,
+    document?.stableId,
+    document?.familyId,
+    asString(document?.metadata.defId),
+    asString(document?.metadata.title),
+    asString(document?.metadata.name),
+    ...asStringArray(document?.metadata.tags),
+  ];
+  const tokens = values.flatMap((value) => tokenizeTopic(value ?? ""))
+    .filter((token) => !GENERIC_TOPIC_TOKENS.has(token));
+  return unique(tokens.length > 0 ? tokens : tokenizeTopic(target));
+}
+
+function matchesPrdTopic(
+  document: DocumentEnvelope,
+  target: string,
+  tokens: readonly string[],
+): boolean {
+  const normalizedTarget = normalizeSearchText(target);
+  const text = normalizeSearchText(searchableText(document));
+  if (normalizedTarget.length >= 3 && text.includes(normalizedTarget)) return true;
+  return tokens.some((token) => text.includes(token));
+}
+
+function tokenizeTopic(value: string): readonly string[] {
+  return normalizeSearchText(value)
+    .split(" ")
+    .filter((token) => token.length >= 3);
+}
+
+function parseOpenTodoItems(content: string): readonly { readonly text: string; readonly pointer: string }[] {
+  return content
+    .split(/\r?\n/)
+    .map((line, index) => {
+      const match = line.match(/^\s*[-*]\s+\[ \]\s+(.+?)\s*$/);
+      if (!match) return null;
+      return {
+        text: match[1]?.trim() ?? "",
+        pointer: `line ${index + 1}`,
+      };
+    })
+    .filter((item): item is { readonly text: string; readonly pointer: string } =>
+      item !== null && item.text.length > 0
+    );
+}
+
+function extractMarkdownSection(content: string, title: string): string | null {
+  const headingRe = new RegExp(String.raw`^##\s+${escapeRegExp(title)}\s*$`, "im");
+  const match = content.match(headingRe);
+  if (!match || match.index === undefined) return null;
+  const start = match.index + match[0].length;
+  const rest = content.slice(start);
+  const nextHeading = rest.search(/^##\s+/m);
+  return (nextHeading >= 0 ? rest.slice(0, nextHeading) : rest).trim();
+}
+
+function parseMarkdownTableRows(section: string): readonly Readonly<Record<string, string>>[] {
+  const tableLines = section
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("|") && line.endsWith("|"));
+  if (tableLines.length < 2) return [];
+  const headers = splitMarkdownTableRow(tableLines[0]!);
+  return tableLines.slice(2).map((line) => {
+    const cells = splitMarkdownTableRow(line);
+    const row: Record<string, string> = {};
+    headers.forEach((header, index) => {
+      row[header || `column${index + 1}`] = cells[index] ?? "";
+    });
+    return row;
+  }).filter((row) => Object.values(row).some((value) => value.length > 0));
+}
+
+function splitMarkdownTableRow(line: string): readonly string[] {
+  return line
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => cell.trim());
+}
+
+async function readRepoFile(rootDir: string, path: string): Promise<string | null> {
+  try {
+    return await readFile(resolve(rootDir, normalizePath(path)), "utf8");
+  } catch {
+    return null;
+  }
+}
+
+function resolveOutputPath(rootDir: string, path: string): string {
+  return path.startsWith("/") ? resolve(path) : resolve(rootDir, path);
 }
 
 function countDocuments(
@@ -883,6 +1530,50 @@ function printMetadataTransformPreview(result: MetadataTransformPreview): void {
   printDiagnostics(result.diagnostics);
 }
 
+function printPrdAuthoringContext(context: PrdAuthoringContext): void {
+  console.log(`docs prd context: ${context.target}`);
+  if (context.resolvedTarget) {
+    console.log(`  target: [${context.resolvedTarget.kind}] ${context.resolvedTarget.stableId}`);
+    console.log(`  path: ${context.resolvedTarget.path}`);
+  }
+  console.log(`  context sources: ${context.counts.contextSources}`);
+  console.log(`  specs/todos/plans/prds: ${context.counts.relatedSpecs}/${context.counts.openTodos}/${context.counts.plans}/${context.counts.priorPrds}`);
+  console.log(`  prd-json/session/scenario rows: ${context.counts.prdJsonCompletion}/${context.counts.ralphSessions}/${context.counts.scenarioMatrixRows}`);
+  console.log(`  sources/evidence/diagnostics: ${context.counts.sources}/${context.counts.evidence}/${context.counts.diagnostics}`);
+  printNamedCollection("related specs", context.relatedSpecs.slice(0, 8), (spec) =>
+    `${spec.stableId} ${spec.path}${spec.summary ? ` - ${spec.summary}` : ""}`
+  );
+  printNamedCollection("open TODOs", context.openTodos.slice(0, 8), (todo) =>
+    `${todo.text} (${todo.path} ${todo.pointer})`
+  );
+  printNamedCollection("plans", context.plans.slice(0, 8), (plan) =>
+    `${plan.stableId} ${plan.path}${plan.summary ? ` - ${plan.summary}` : ""}`
+  );
+  printNamedCollection("prior PRDs", context.priorPrds.slice(0, 8), (prd) =>
+    `${prd.stableId} ${prd.path}${prd.title ? ` - ${prd.title}` : ""}`
+  );
+  printNamedCollection("PRD JSON completion", context.prdJsonCompletion, (state) =>
+    `${state.documentId} ${state.passedStoryCount}/${state.storyCount} passing (${state.path})`
+  );
+  printNamedCollection("ralph sessions", context.ralphSessionState, (state) =>
+    `${state.documentId} ${state.status ?? "unknown"}${state.prdPath ? ` prd=${state.prdPath}` : ""}`
+  );
+  printNamedCollection("scenario matrix rows", context.scenarioMatrixRows.slice(0, 8), (row) =>
+    `${row.path} row ${row.rowIndex}${row.evidenceIds.length > 0 ? ` evidence=${row.evidenceIds.join(",")}` : ""}`
+  );
+  printNamedCollection("context sources", context.contextSources.slice(0, 12), (source) =>
+    `[${source.kind}] ${source.stableId} ${source.path} (${source.reason})`
+  );
+}
+
+function printPrdScaffoldResult(result: PrdScaffoldResult): void {
+  console.log(`docs prd scaffold: wrote ${result.output}`);
+  console.log(`  bytes: ${result.bytes}`);
+  console.log(`  context sources: ${result.context.counts.contextSources}`);
+  console.log(`  open TODOs: ${result.context.counts.openTodos}`);
+  console.log(`  prior PRDs: ${result.context.counts.priorPrds}`);
+}
+
 function printDriftIssueGroup(
   severity: DocumentDriftSeverity,
   issues: readonly DocumentDriftIssue[],
@@ -1014,6 +1705,43 @@ function unique(values: readonly (string | undefined)[]): readonly string[] {
 
 function asString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+}
+
+function asNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function asStringArray(value: unknown): readonly string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function documentKey(document: DocumentEnvelope): string {
+  return `${document.adapterId}:${document.stableId}:${document.path}`;
+}
+
+function normalizeSearchText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function titleizeTopic(value: string): string {
+  const base = basename(value.replace(/[/\\]+$/, "")) || value;
+  const words = base
+    .replace(/\.(?:md|json)$/i, "")
+    .split(/[-_\s]+/)
+    .map((word) => word ? `${word[0]!.toUpperCase()}${word.slice(1)}` : "")
+    .filter(Boolean);
+  return words.length > 0 ? words.join(" ") : "New PRD";
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function normalizeOptionalPath(value: unknown): string | undefined {

@@ -53,7 +53,10 @@ const SECTION_TITLES = new Set([
   "user stories",
   "functional requirements",
   "non-goals",
+  "technical considerations",
+  "success metrics",
   "open questions",
+  "control-plane context sources",
 ]);
 
 export function createPrdMarkdownAdapter(
@@ -121,7 +124,10 @@ function buildPrdMarkdownEnvelope(
     qualityGates,
     functionalRequirements: parseList(sectionByTitle.get("functional requirements")?.content ?? ""),
     nonGoals: parseList(sectionByTitle.get("non-goals")?.content ?? ""),
+    technicalConsiderations: parseListOrParagraphs(sectionByTitle.get("technical considerations")?.content ?? ""),
+    successMetrics: parseList(sectionByTitle.get("success metrics")?.content ?? ""),
     openQuestions: parseListOrParagraphs(sectionByTitle.get("open questions")?.content ?? ""),
+    contextSources: parseList(sectionByTitle.get("control-plane context sources")?.content ?? ""),
   };
 
   return normalizeDocumentEnvelope({

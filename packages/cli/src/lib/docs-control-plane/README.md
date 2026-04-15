@@ -48,3 +48,12 @@ vocabulary를 추가하지 않는다.
 - `ralph-session`: `.ralph-tui/session-meta.json`을 session envelope로 읽고,
   연결된 PRD JSON의 story pass state와 session status/count 사이의 drift를
   diagnostics로 보고한다.
+
+## Command-layer workflows
+
+- `docs prd context`: adapter envelope를 조합해 PRD authoring context를 만든다.
+  스펙, 열린 TODO, 계획, 기존 PRD, PRD JSON completion state, ralph session
+  state, scenario matrix row, source, evidence를 조회하지만 source 파일은
+  변경하지 않는다.
+- `docs prd scaffold`: 수집한 context로 markdown PRD skeleton만 작성한다. 이
+  workflow는 `ralph-tui`를 호출하지 않고, ralph PRD JSON 생성도 수행하지 않는다.

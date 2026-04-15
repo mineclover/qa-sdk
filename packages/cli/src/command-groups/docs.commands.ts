@@ -59,6 +59,27 @@ export const DOCS_COMMAND_DESCRIPTORS = [
     ],
   },
   {
+    id: "docs.prd.context",
+    path: ["prd", "context"],
+    usage: "qa-sdk docs prd context <topic|doc-id> [--json]",
+    handlerKey: "docs.prd.context",
+    options: [
+      { flag: "--json", type: "boolean", description: "emit structured JSON" },
+      { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },
+    ],
+  },
+  {
+    id: "docs.prd.scaffold",
+    path: ["prd", "scaffold"],
+    usage: "qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]",
+    handlerKey: "docs.prd.scaffold",
+    options: [
+      { flag: "--output", valueHint: "<file>", type: "string", description: "markdown scaffold output path" },
+      { flag: "--json", type: "boolean", description: "emit structured JSON" },
+      { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },
+    ],
+  },
+  {
     id: "docs.transform.metadata",
     path: ["transform", "metadata"],
     usage: "qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run]",
