@@ -1,14 +1,15 @@
 {
   "id": "256d534f-c729-4f07-a4ed-192e25c5b800",
-  "status": "running",
+  "status": "completed",
   "startedAt": "2026-04-14T17:29:32.075Z",
-  "updatedAt": "2026-04-14T18:02:41.419Z",
+  "updatedAt": "2026-04-14T23:08:44.261Z",
   "agentPlugin": "codex",
   "trackerPlugin": "json",
   "prdPath": "tasks/prd-ontology-registry-activation-evidence-persistence.json",
-  "currentIteration": 5,
+  "currentIteration": 6,
   "maxIterations": 0,
   "totalTasks": 0,
-  "tasksCompleted": 5,
-  "cwd": "/Users/junwoobang/workflow/qa-sdk"
+  "tasksCompleted": 6,
+  "cwd": "/Users/junwoobang/workflow/qa-sdk",
+  "endedAt": "2026-04-14T23:08:44.261Z"
 }
