@@ -52,7 +52,7 @@ programming/artifact ontology는 별도 pack 또는 plugin으로 관리한다. �
 10. Freshness SLA와 mixed evidence closure
     `--quality-status-max-age-days`가 snapshot `generatedAt`과 ledger verified gate `lastRun.executedAt`에 opt-in freshness overlay를 적용하고, mixed incomplete/invalid/stale target evidence가 closure를 열어두도록 구현됐다.
 11. Governance closure 문서 closure
-    system/CLI/plan/todo/development guide/prompt artifact generation spec이 현재 구현된 quality-status governance closure contract를 설명한다. `quality-ledger.spec.md`와 `quality-gates-system.md`는 public ledger/API 또는 root lifecycle 변경이 없어 변경하지 않는다. `operational-ontology-registry-allocation.plan.md`와 `.todo.md`는 adjacent docs로 검토했지만, 이 feature가 registry-service, index-meta, ontology pack allocation lifecycle을 구현하지 않았으므로 out of scope로 남기고 변경하지 않는다.
+    system module overview, registry provider leaf, activation evidence leaf, quality evidence leaf, CLI leaf, plan/todo/development guide/prompt artifact generation spec이 현재 구현된 provider/evidence/CLI contract를 분리해 설명한다. `quality-ledger.spec.md`와 `quality-gates-system.md`는 public ledger/API 또는 root lifecycle 변경이 없어 변경하지 않는다. `operational-ontology-registry-allocation.plan.md`와 `.todo.md`는 adjacent docs로 검토했지만, 이 feature가 registry-service, index-meta, ontology pack allocation lifecycle을 구현하지 않았으므로 out of scope로 남기고 변경하지 않는다.
 
 ## 다음 세션 기준
 

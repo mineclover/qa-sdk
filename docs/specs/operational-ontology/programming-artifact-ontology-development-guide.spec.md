@@ -12,6 +12,9 @@ def:
   tags: [structural, contract, testing]
 sources:
   - docs/specs/operational-ontology/programming-artifact-ontology-system.spec.md
+  - docs/specs/operational-ontology/programming-artifact-ontology-registry-provider.spec.md
+  - docs/specs/operational-ontology/programming-artifact-ontology-activation-evidence.spec.md
+  - docs/specs/operational-ontology/programming-artifact-ontology-quality-evidence.spec.md
   - docs/specs/operational-ontology/programming-artifact-ontology-context-simulation.spec.md
   - packages/operational-ontology/src/internal/programming-artifact-core.ts
   - packages/cli/src/commands/ontology.ts
@@ -28,24 +31,28 @@ sources:
 작업 시작 전에는 아래 순서로 읽는다.
 
 1. `docs/specs/operational-ontology/programming-artifact-ontology-system.spec.md`
-   module entry다. 현재 vocabulary, pack schema, provider contract를 먼저 확인한다.
-2. `docs/specs/operational-ontology/programming-artifact-ontology-plan.plan.md`
+   module entry다. 현재 vocabulary, pack schema, child document coordinates를 먼저 확인한다.
+2. provider/evidence 작업이면 해당 leaf를 이어서 읽는다.
+   - `docs/specs/operational-ontology/programming-artifact-ontology-registry-provider.spec.md`
+   - `docs/specs/operational-ontology/programming-artifact-ontology-activation-evidence.spec.md`
+   - `docs/specs/operational-ontology/programming-artifact-ontology-quality-evidence.spec.md`
+3. `docs/specs/operational-ontology/programming-artifact-ontology-plan.plan.md`
    장기 단계와 이번 단계의 위치를 확인한다. 새 작업이 단계 밖이면 plan부터 갱신한다.
-3. `docs/specs/operational-ontology/programming-artifact-ontology-todo.todo.md`
+4. `docs/specs/operational-ontology/programming-artifact-ontology-todo.todo.md`
    이번 세션에서 완료할 체크박스를 고른다. 완료된 작업은 체크하고 남은 항목은 더 작게 쪼갠다.
-4. simulation 작업이면 아래 세 문서를 이어서 읽는다.
+5. simulation 작업이면 아래 세 문서를 이어서 읽는다.
    - `docs/specs/operational-ontology/programming-artifact-ontology-context-simulation-plan.plan.md`
    - `docs/specs/operational-ontology/programming-artifact-ontology-context-simulation-todo.todo.md`
    - `docs/specs/operational-ontology/programming-artifact-ontology-context-simulation.spec.md`
-5. `docs/specs/operational-ontology/programming-artifact-ontology-cli.spec.md`
+6. `docs/specs/operational-ontology/programming-artifact-ontology-cli.spec.md`
    CLI surface와 registry JSON shape를 확인한다. command나 flag를 바꾸면 이 문서를 먼저 갱신한다.
-6. `docs/specs/operational-ontology/operational-ontology-prompt-artifact-generation.spec.md`
+7. `docs/specs/operational-ontology/operational-ontology-prompt-artifact-generation.spec.md`
    artifact extraction이 prompt artifact plane에 어떻게 들어가는지 확인한다.
-7. `packages/operational-ontology/src/internal/programming-artifact-core.ts`
+8. `packages/operational-ontology/src/internal/programming-artifact-core.ts`
    vocabulary, pack, registry store, provider 구현의 SSOT다.
-8. `packages/operational-ontology/src/programming-artifacts.test.ts`
+9. `packages/operational-ontology/src/programming-artifacts.test.ts`
    pack validation과 provider behavior의 살아있는 예시다.
-9. `packages/cli/src/commands/ontology.ts`
+10. `packages/cli/src/commands/ontology.ts`
    `extract-artifact` CLI routing과 fallback 순서의 SSOT다.
 
 Adjacent review:
@@ -61,7 +68,10 @@ Adjacent review:
 
 | 문서 | 역할 | 갱신 조건 |
 |------|------|-----------|
-| `programming-artifact-ontology-system.spec.md` | module entry, pack/vocabulary/provider 핵심 정의 | 새 child 문서, 새 axis/relation, provider contract 변경 |
+| `programming-artifact-ontology-system.spec.md` | module entry, pack/vocabulary/child coordinate overview | 새 child 문서, 새 axis/relation |
+| `programming-artifact-ontology-registry-provider.spec.md` | provider lookup, registry store, relation projection | provider lookup이나 registry relation projection 변경 |
+| `programming-artifact-ontology-activation-evidence.spec.md` | activation-evidence kind, record mapping, provider consumption | activation proof registry semantics 변경 |
+| `programming-artifact-ontology-quality-evidence.spec.md` | quality-status matching, snapshot, ledger, freshness, governance closure | quality evidence interpretation 변경 |
 | `programming-artifact-ontology-development-guide.spec.md` | 세션 시작 컨텍스트 확인 순서와 개발 규칙 | 작업 순서, 검증 명령, handoff 규칙 변경 |
 | `programming-artifact-ontology-cli.spec.md` | CLI surface와 registry 파일 계약 | command, flag, JSON shape, fallback 규칙 변경 |
 | `programming-artifact-ontology-context-simulation.spec.md` | context/dataflow simulation matrix와 trace convention | fixture scenario, evidence interpretation, warning/action projection 변경 |
@@ -77,18 +87,19 @@ Adjacent review:
 | artifact kind 추가 | 5Q checklist, `PROGRAMMING_ARTIFACT_KINDS`, pack axis capacity, system spec vocabulary table, tests |
 | artifact relation 추가 | 5Q checklist, `PROGRAMMING_ARTIFACT_RELATION_KINDS`, relation category, provider relation mapping, CLI spec |
 | registry record field 추가 | `ProgrammingArtifactRegistryRecord`, CLI registry JSON contract, provider extraction, sample/test record |
-| provider behavior 변경 | `ArtifactRegistryPromptArtifactContextProvider`, prompt artifact generation spec, provider tests |
+| provider behavior 변경 | provider spec, `ArtifactRegistryPromptArtifactContextProvider`, prompt artifact generation spec, provider tests |
 | CLI flag 변경 | `programming-artifact-ontology-cli`, command descriptor, help text, CLI tests if command parsing changes |
 | export command integration | source command spec, produced_by/derived_from/verifies/owned_by_definition/materializes_output mapping, registry write test |
 | governance closure 변경 | production factory spec, quality status source, persisted governance evidence, release verification use case |
-| quality-status discovery 변경 | matcher target refs, JSON `qualityStatusRecords` summary, fallback source preservation, provider/CLI tests |
+| activation-evidence 변경 | activation evidence spec, activation mapper, activation CLI scenario tests, provider consumption proof |
+| quality-status discovery 변경 | quality evidence spec, matcher target refs, JSON `qualityStatusRecords` summary, fallback source preservation, provider/CLI tests |
 | quality export snapshot 로딩 변경 | `outputPath` path resolution, structured warning codes, governance run sourceRefs, valid/missing/invalid CLI tests |
 | quality export registry metadata 변경 | `buildQualityStatusArtifactRegistryRecord`, metadata summary shape, verifies/materializes/verification refs, quality CLI tests |
 | prompt quality closure 변경 | `PromptArtifactQualityStatusEvidence`, `governance_closure` score cap/bonus, ready/usable/degraded prompt quality tests |
 | extract-artifact closure JSON 변경 | `source.governanceClosure` status/warning/action shape, search fallback warning separation, ontology CLI tests |
 | quality-ledger fallback 변경 | `--quality-ledger` explicit input, descriptor resolution, snapshot-first authority, ledger warning codes, ontology CLI tests, quality-ledger tests |
 | quality-status freshness SLA 변경 | `--quality-status-max-age-days`, snapshot `generatedAt`, ledger oldest verified gate `lastRun.executedAt`, stale vs incomplete warning policy, prompt quality tests |
-| documentation closure 변경 | system/CLI/plan/todo/development guide/prompt artifact generation spec 동기화, adjacent registry allocation plan/todo out-of-scope 확인 |
+| documentation closure 변경 | system/provider/evidence/CLI/plan/todo/development guide/prompt artifact generation spec 동기화, adjacent registry allocation plan/todo out-of-scope 확인 |
 
 ## Registry Record 표준
 
@@ -147,13 +158,16 @@ programming-artifact-ontology 기준으로 계속 진행해줘.
 
 먼저 아래 순서로 context를 확인해:
 1. programming-artifact-ontology-system.spec.md
-2. programming-artifact-ontology-plan.plan.md
-3. programming-artifact-ontology-todo.todo.md
-4. programming-artifact-ontology-context-simulation-plan.plan.md
-5. programming-artifact-ontology-context-simulation-todo.todo.md
-6. programming-artifact-ontology-context-simulation.spec.md
-7. programming-artifact-ontology-cli.spec.md
-8. programming-artifact-ontology-development-guide.spec.md
+2. programming-artifact-ontology-registry-provider.spec.md
+3. programming-artifact-ontology-activation-evidence.spec.md
+4. programming-artifact-ontology-quality-evidence.spec.md
+5. programming-artifact-ontology-plan.plan.md
+6. programming-artifact-ontology-todo.todo.md
+7. programming-artifact-ontology-context-simulation-plan.plan.md
+8. programming-artifact-ontology-context-simulation-todo.todo.md
+9. programming-artifact-ontology-context-simulation.spec.md
+10. programming-artifact-ontology-cli.spec.md
+11. programming-artifact-ontology-development-guide.spec.md
 
 이번 세션 목표:
 - <todo 항목 1>

@@ -207,7 +207,7 @@ RDF bridge는 이 4층 전체에 대응되는 외부 의미 계층이다.
 - `operational-ontology-category-constraint` — category-constrained grammar와 운영 규칙
 - `operational-ontology-traversal-coordinate` — route identity와 purpose projection
 - `operational-ontology-rdf-bridge` — RDF와 operational coordinate의 대응 규칙
-- `programming-artifact-ontology-system` — build/generated/quality/deploy/prompt 산출물 vocabulary와 registry provider pack
+- `programming-artifact-ontology-system` — build/generated/quality/deploy/prompt/activation 산출물 vocabulary와 provider/evidence module
 - `operational-ontology-registry-allocation-plan` — ontology-aware registry/address allocation 로드맵
 - `operational-ontology-registry-allocation-todo` — registry allocation 구현 체크리스트
 - `operational-ontology-ssot-navigation-guide` — schema/registry/address/observation SSOT 탐색 순서

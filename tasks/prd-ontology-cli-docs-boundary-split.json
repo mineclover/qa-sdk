@@ -93,11 +93,12 @@
         "`node packages/cli/dist/index.js def validate` passes."
       ],
       "priority": 3,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Split programming-artifact ontology docs into a concise module overview plus registry provider, activation evidence, and quality evidence leaves. Kept CLI doc focused on public command/flag/JSON contracts, linked provider/evidence leaves with contains/back-links, kept current monolith source references until later extraction stories create split CLI modules, and passed all required US-003 gates.",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-004",
@@ -425,6 +426,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T19:25:01.429Z"
+    "updatedAt": "2026-04-15T19:40:56.839Z"
   }
 }

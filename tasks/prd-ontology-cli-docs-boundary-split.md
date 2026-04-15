@@ -122,13 +122,13 @@ Line counts are the current pre-split inventory from the working tree. Proposed 
 **Description:** As a programming artifact ontology maintainer, I want CLI, provider, activation evidence, and quality-status evidence concerns split so future artifact work has precise document coordinates.
 
 **Acceptance Criteria:**
-- [ ] Keep `programming-artifact-ontology-system` as a module or concise system overview.
-- [ ] Create or update `programming-artifact-ontology-registry-provider.spec.md` for `ArtifactRegistryPromptArtifactContextProvider` and generic registry lookup behavior.
-- [ ] Create or update `programming-artifact-ontology-activation-evidence.spec.md` for activation evidence artifact kind and provider consumption.
-- [ ] Create or update `programming-artifact-ontology-quality-evidence.spec.md` for quality-status, quality ledger fallback, freshness SLA, and governance closure behavior.
-- [ ] Keep `programming-artifact-ontology-cli.spec.md` focused on CLI command contracts and flag behavior.
-- [ ] Update contains/depends_on/refines links so top-down docs traversal can assemble the programming artifact ontology module without mixing implementation details into the overview.
-- [ ] Update source references to the split CLI modules created later in this PRD when applicable.
+- [x] Keep `programming-artifact-ontology-system` as a module or concise system overview.
+- [x] Create or update `programming-artifact-ontology-registry-provider.spec.md` for `ArtifactRegistryPromptArtifactContextProvider` and generic registry lookup behavior.
+- [x] Create or update `programming-artifact-ontology-activation-evidence.spec.md` for activation evidence artifact kind and provider consumption.
+- [x] Create or update `programming-artifact-ontology-quality-evidence.spec.md` for quality-status, quality ledger fallback, freshness SLA, and governance closure behavior.
+- [x] Keep `programming-artifact-ontology-cli.spec.md` focused on CLI command contracts and flag behavior.
+- [x] Update contains/depends_on/refines links so top-down docs traversal can assemble the programming artifact ontology module without mixing implementation details into the overview.
+- [x] Update source references to the split CLI modules created later in this PRD when applicable.
 
 ### US-004: Establish Source Reference And Docs Control-Plane Checks For Split Boundaries
 

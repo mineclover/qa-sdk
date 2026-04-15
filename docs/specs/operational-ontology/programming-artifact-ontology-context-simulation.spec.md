@@ -13,6 +13,12 @@ def:
       type: refines
     - target: programming-artifact-ontology-cli
       type: depends_on
+    - target: programming-artifact-ontology-registry-provider
+      type: depends_on
+    - target: programming-artifact-ontology-quality-evidence
+      type: depends_on
+    - target: programming-artifact-ontology-activation-evidence
+      type: depends_on
     - target: operational-ontology-prompt-artifact-generation
       type: depends_on
     - target: programming-artifact-ontology-context-simulation-plan
@@ -43,11 +49,11 @@ simulation은 local artifact registry JSON과 CLI fixture를 입력으로 사용
 
 | 작업 유형 | required context | optional context | excluded boundary |
 |-----------|------------------|------------------|-------------------|
-| quality-status discovery | system spec, CLI spec, `findRelatedQualityStatusRegistryRecords()`, `loadRelatedQualityStatusEvidence()` | prompt artifact generation spec | registry-service allocation lifecycle |
-| quality-ledger fallback | CLI spec, `resolveQualityStatusRecordGateDescriptors()`, `QualityLedger.resolveBundleVerification()` | quality-gate topology helper tests | implicit `.qa-sdk/quality-ledger.sqlite` lookup |
-| freshness SLA | CLI spec, freshness helper functions, snapshot/ledger timestamp fixture | quality-ledger docVersion stale tests | non-artifact prompt extraction |
+| quality-status discovery | quality evidence spec, provider spec, `findRelatedQualityStatusRegistryRecords()`, `loadRelatedQualityStatusEvidence()` | prompt artifact generation spec | registry-service allocation lifecycle |
+| quality-ledger fallback | quality evidence spec, `resolveQualityStatusRecordGateDescriptors()`, `QualityLedger.resolveBundleVerification()` | quality-gate topology helper tests | implicit `.qa-sdk/quality-ledger.sqlite` lookup |
+| freshness SLA | quality evidence spec, freshness helper functions, snapshot/ledger timestamp fixture | quality-ledger docVersion stale tests | non-artifact prompt extraction |
 | registry allocation boundary | system spec, context simulation plan/todo, adjacent registry allocation plan/todo | registry-service/index-meta docs | implementation of registry-service persistence |
-| non-quality artifact sidecar | programming artifact registry record, build/generated/deploy/prompt/activation-evidence kind vocabulary, related quality-status record | generated/deployment/prompt follow-up scenarios, activation evidence persistence e2e test | 새 relation kind 추가 또는 scoped-prefix/REST activation 구현 |
+| non-quality artifact sidecar | provider spec, activation evidence spec, build/generated/deploy/prompt/activation-evidence kind vocabulary, related quality-status record | generated/deployment/prompt follow-up scenarios, activation evidence persistence e2e test | 새 relation kind 추가 또는 scoped-prefix/REST activation 구현 |
 
 ## Data Flow Contract
 
@@ -84,7 +90,7 @@ simulation은 local artifact registry JSON과 CLI fixture를 입력으로 사용
 - 문서 `sources`에는 소비자 코드와 targeted test 파일을 모두 넣는다.
 - test title은 scenario 이름과 expected interpretation을 함께 포함한다.
 - warning/action code는 CLI JSON field명과 같은 문자열을 assert한다.
-- transform function을 바꾸면 이 문서의 Data Flow Contract와 `programming-artifact-ontology-cli`의 처리 순서를 함께 갱신한다.
+- transform function을 바꾸면 이 문서의 Data Flow Contract와 provider/quality evidence/CLI leaf 중 해당 소유 문서를 함께 갱신한다.
 
 ## Relation Vocabulary Review
 
@@ -94,6 +100,6 @@ simulation은 local artifact registry JSON과 CLI fixture를 입력으로 사용
 
 - registry-service/index-meta allocation lifecycle 구현.
 - 새 relation kind 또는 추가 axis.
-- Activation evidence registry append/consumption scenario implementation.
+- Additional activation evidence relation kinds or REST/scoped-prefix activation behavior.
 - implicit quality-ledger discovery.
 - production registry persistence 또는 artifact evidence provider 공통 interface 추출.

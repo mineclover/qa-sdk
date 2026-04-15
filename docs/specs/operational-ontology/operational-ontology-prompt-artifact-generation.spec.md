@@ -20,6 +20,8 @@ def:
       type: depends_on
     - target: operational-ontology-package-architecture
       type: implements
+    - target: programming-artifact-ontology-quality-evidence
+      type: depends_on
 sources:
   - packages/operational-ontology/src/internal/prompt-artifact-core.ts
   - packages/operational-ontology/src/prompt-artifacts.ts
