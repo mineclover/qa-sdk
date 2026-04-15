@@ -874,9 +874,9 @@ async function buildPrdAuthoringContext(
     ? collectRelatedDocuments(documents, resolved.document)
     : [];
   const topicTokens = prdTopicTokens(target, resolved?.document);
-  const topicDocuments = documents.filter((document) =>
-    matchesPrdTopic(document, target, topicTokens)
-  );
+  const topicDocuments = resolved
+    ? []
+    : documents.filter((document) => matchesPrdTopic(document, target, topicTokens));
   const scopedDocuments = uniqueDocuments([...relatedDocuments, ...topicDocuments])
     .toSorted(compareDocuments);
   const relatedKeys = new Set(relatedDocuments.map(documentKey));

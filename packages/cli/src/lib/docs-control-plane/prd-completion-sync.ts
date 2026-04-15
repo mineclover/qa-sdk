@@ -135,6 +135,7 @@ const GENERIC_TOKENS = new Set([
   "json",
   "markdown",
   "prd",
+  "ralph",
   "story",
   "sync",
   "task",
@@ -306,12 +307,20 @@ function collectAffectedDocuments(
   stories: readonly PrdCompletionStorySummary[],
 ): readonly AffectedDocumentEntry[] {
   const byKey = new Map<string, AffectedDocumentEntry>();
-  const tokens = topicTokens(prdDocument, stories);
+  const storyRefs = new Set(stories.flatMap((story) => story.evidenceRefs).map(normalizePath));
+  const tokens = topicTokens(prdDocument);
 
   for (const document of documents) {
     if (document.kind === "ralph-prd-json" && document.path !== prdDocument.path) continue;
     if (isPrdFamilyDocument(document, prdDocument)) {
       addAffected(byKey, document, "prd-family");
+      continue;
+    }
+    if (
+      storyRefs.size > 0 &&
+      documentReferences(document).some((ref) => storyRefs.has(normalizePath(ref)))
+    ) {
+      addAffected(byKey, document, "story-evidence-reference");
       continue;
     }
     if (matchesTopic(document, tokens)) {
@@ -557,33 +566,23 @@ function evidenceForDocument(
   return uniqueEvidenceRefs(refs);
 }
 
-function topicTokens(
-  prdDocument: DocumentEnvelope,
-  stories: readonly PrdCompletionStorySummary[],
-): readonly string[] {
+function topicTokens(prdDocument: DocumentEnvelope): readonly string[] {
   const values = [
     prdDocument.stableId,
     prdDocument.familyId,
     prdDocument.path,
     asString(prdDocument.metadata.name),
-    asString(prdDocument.metadata.description),
-    ...stories.flatMap((story) => [
-      story.id,
-      story.title,
-      story.notes,
-      story.completionNotes,
-      ...story.acceptanceCriteria,
-    ]),
+    asString(prdDocument.metadata.branchName),
   ];
-  const tokens = values
-    .flatMap((value) => tokenize(value ?? ""))
-    .filter((token) => !GENERIC_TOKENS.has(token));
-  return unique(tokens.length > 0 ? tokens : tokenize(prdDocument.path));
+  return unique(values.flatMap((value) => tokenize(value ?? "")))
+    .filter((token) => token.length >= 4 && !GENERIC_TOKENS.has(token));
 }
 
 function matchesTopic(document: DocumentEnvelope, tokens: readonly string[]): boolean {
+  if (tokens.length === 0) return false;
   const text = normalizeSearchText(searchableText(document));
-  return tokens.some((token) => text.includes(token));
+  const matched = tokens.filter((token) => text.includes(token)).length;
+  return matched >= Math.min(2, tokens.length);
 }
 
 function matchingStoriesForDocument(
