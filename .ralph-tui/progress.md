@@ -16,6 +16,7 @@ after each iteration and it's included in prompts for context.
 - PRD authoring workflows should compose markdown from docs control-plane envelopes in the command layer; they must not call ralph-tui or create ralph PRD JSON unless a later explicit adapter command owns that conversion.
 - PRD compatibility conversion should compose from source adapters and validate generated target content through the target adapter before writing; adapters remain read-only while the command owns explicit materialization.
 - PRD completion sync should remain a command-layer dry-run projection; `passes: true` can identify candidate docs, but TODO/spec promotion must require source/test/evidence links or be reported as a blocked promotion.
+- Docs control-plane documentation should split `qa-sdk def` primitives from `qa-sdk docs` cross-document workflows; only explicit `--output` materializers write, while transform/sync projections stay dry-run and PRD JSON stays a ralph compatibility format.
 
 ---
 
@@ -154,4 +155,17 @@ after each iteration and it's included in prompts for context.
   - Completion sync belongs above adapters: it correlates normalized envelopes, PRD story state, definition families, artifact evidence, scenario matrix rows, and session diagnostics without changing source schemas.
   - `passes: true` should be treated as a candidate signal, not a documentation authority; evidence-linked candidates and blocked promotions need separate states in the dry-run output.
   - Plan/roadmap and scenario matrix refreshes can be proposed from topic/family matches while still leaving all file writes to a future explicit apply story.
+---
+
+## 2026-04-15 - US-011
+- Added `docs-control-plane` as an approved definition-catalog spec that records the docs control-plane architecture, read-only adapter boundary, source-of-truth direction, PRD JSON compatibility role, dry-run-first policy, transform allowlist, PRD command selection, and explicit out-of-scope items.
+- Linked the new spec from `definition-catalog-spec` and added it to the parent module overview and operating entrypoints.
+- Updated the definition authoring guide to distinguish `qa-sdk def` primitives from `qa-sdk docs` cross-document workflows, including `docs prd context`, `docs prd scaffold`, `docs prd to-ralph-json`, metadata transform limits, and dry-run completion sync behavior.
+- Updated the ralph workflow guide and CLI docs-control-plane README so PRD JSON is documented as a ralph compatibility format rather than the core document model.
+- Files changed: `docs/specs/definition-catalog/docs-control-plane.spec.md`, `docs/specs/definition-catalog/definition-catalog.spec.md`, `docs/specs/guides-system/definition-authoring-guide.md`, `docs/skills/ralph-tui-workflows.md`, `packages/cli/src/lib/docs-control-plane/README.md`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- docs`; `pnpm --filter @qa-sdk/cli test -- def`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter @qa-sdk/cli build`; `pnpm --filter definition-catalog test`; `pnpm --filter definition-catalog typecheck`; `pnpm --filter definition-data-source test`; `pnpm --filter definition-data-source typecheck`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - Public docs need the same source boundary as the code: adapters read and preserve source-owned vocabulary, while command-layer workflows own correlation, dry-run projections, and explicit materialization.
+  - PRD JSON should be described as an execution compatibility artifact everywhere it appears; otherwise future agents may treat ralph state as the authoring model and reintroduce PRD-centric drift.
+  - `def validate --scan` and `def scan-audit` can surface existing broad graph cycles even when the required local `def validate` gate passes cleanly.
 ---

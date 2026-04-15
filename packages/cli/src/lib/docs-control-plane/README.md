@@ -57,3 +57,20 @@ vocabulary를 추가하지 않는다.
   변경하지 않는다.
 - `docs prd scaffold`: 수집한 context로 markdown PRD skeleton만 작성한다. 이
   workflow는 `ralph-tui`를 호출하지 않고, ralph PRD JSON 생성도 수행하지 않는다.
+- `docs prd to-ralph-json`: markdown PRD를 flat root ralph-compatible JSON으로
+  materialize한다. PRD JSON은 ralph-tui compatibility adapter target일 뿐 core
+  document model이 아니며, 작성 전 target adapter validation을 통과해야 한다.
+- `docs prd sync-completion`: completed ralph PRD JSON을 읽어 TODO/spec/roadmap/
+  scenario matrix 후보를 dry-run으로 계산한다. `passes: true`는 candidate signal이고
+  source/test/evidence가 없는 TODO/spec promotion은 blocked로 남긴다.
+- `docs transform metadata`: definition markdown frontmatter만 대상으로 dry-run
+  projection을 만든다. 지원 rule은 `select|match`, `set.lifecycle`, `set.level`,
+  `set.svc`, `set.sources`, `tags.add/remove`, `links.add/remove`,
+  `sources.set/add/remove`이며 `def.id` 변경과 `--apply`는 거부한다.
+
+## Out of scope
+
+- REST endpoint 또는 remote document service
+- persistent control-plane store/database migration
+- adapter write path
+- automatic unreviewed TODO/spec promotion

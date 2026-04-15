@@ -27,6 +27,8 @@ def:
       type: contains
     - target: definition-quality-gates
       type: contains
+    - target: docs-control-plane
+      type: contains
     - target: definition-harness
       type: contains
     - target: definition-management
@@ -57,11 +59,12 @@ def:
 - **contract** → 계약 조립
 - **state-model** → FSM 엔진 + 머신
 - **quality-gates** → 품질 게이트
+- **docs-control-plane** → cross-document adapter/control-plane 경계
 - **harness** → 상태 관리 자동화
 
 ## 구성 ^overview
 
-8개 하위 모듈:
+하위 구성:
 
 - **definition-taxonomy**: 분류 축(scope, aspect, depth, level, layer, link_type)
 - **definition-concern**: concern 전파 규칙 (7종 × link 그래프 BFS)
@@ -70,6 +73,7 @@ def:
 - **definition-contract**: 계약 조립 (8종 마커 + evidence 가역성 + 통계)
 - **definition-state-model**: FSM 엔진 + 11개 상태 머신 정의
 - **definition-quality-gates**: 품질 게이트 통합 (6단계 프로세스 + gate-fsm + gate-derivation)
+- **docs-control-plane**: definition/PRD/session/evidence source를 read-only adapter로 모아 보는 CLI control plane
 - **definition-harness**: 상태 모델 적용층 (의존/프로세스/SDK수집)
 
 ## 참조
@@ -127,6 +131,8 @@ docs/*.md frontmatter
   approved 문서의 purpose, 짧은 목적문, 고립, svc 부여 상태를 빠르게 점검한다.
 - address-first 조회
   `def get --address`, `def incoming|outgoing --address`, `def impact --address`로 canonical address 기준 탐색을 지원한다.
+- docs control plane
+  `qa-sdk docs`는 definition markdown, PRD markdown/JSON, ralph session, evidence registry를 neutral envelope로 모아 status/collect/search/drift/PRD authoring context를 제공한다. source 파일은 계속 SSOT이고 adapter는 read-only다.
 
 ### 문서 그래프 규칙
 
@@ -151,6 +157,8 @@ docs/*.md frontmatter
   좌표 부여, 링크, 상태, 피드백, 검증 루프
 - quality-gates
   contract marker 기반 품질 게이트와 claim verdict
+- docs-control-plane
+  definition/PRD/session/evidence를 함께 읽는 CLI control plane
 - harness
   문서 상태를 기계적으로 추적하는 실행 레이어
 

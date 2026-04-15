@@ -30,6 +30,8 @@ ralph-tui 계열 skill은 요구사항을 먼저 구조화하고, 그 결과를 
 - PRD 단계에서 quality gates를 반드시 묻는다.
 - story는 한 iteration 안에 끝낼 수 있을 만큼 작아야 한다.
 - tracker 선택은 PRD 작성 후가 아니라 변환 직전에 확정한다.
+- 문서 control-plane에서 PRD를 작성할 때는 먼저 `qa-sdk docs prd context <topic|doc-id>`로 관련 specs/TODO/evidence/session state를 모으고, `qa-sdk docs prd scaffold <topic|doc-id> --output <file.md>`로 markdown PRD를 만든다.
+- PRD JSON은 core 문서 모델이 아니라 ralph-tui 실행 호환 포맷이다. 이미 markdown PRD가 있으면 `qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json>`로 명시 변환하고, `passes: true`만으로 TODO/spec를 자동 승격하지 않는다.
 
 ## 빠른 링크
 

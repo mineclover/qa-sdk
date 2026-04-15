@@ -244,3 +244,28 @@ qa-sdk def validate           # 깨진 링크/순환/고아
 qa-sdk def list --depth=specification --svc=""  # svc 미지정 스펙 (위반 후보)
 qa-sdk def find-by-file <관련 코드 경로>         # explicit source-map 검증
 ```
+
+## 7. `qa-sdk def`와 `qa-sdk docs` 선택 기준
+
+`qa-sdk def`는 definition-catalog primitive다. 단일 definition 문서의 좌표, level, contains/link 그래프, code reference, boundary, context, validation을 볼 때 사용한다. 입력은 definition markdown frontmatter와 sync된 local/server/scan datasource다.
+
+`qa-sdk docs`는 cross-document control plane이다. definition markdown, PRD markdown, ralph PRD JSON, ralph session, artifact evidence를 read-only adapter로 모아 family status, drift, PRD authoring context, metadata transform preview를 계산한다. source file이 SSOT이고 adapter는 source-owned vocabulary를 plain string metadata로 보존한다.
+
+### PRD authoring 흐름
+
+| 필요 | 명령 | 비고 |
+|------|------|------|
+| 관련 specs/TODO/plans/evidence/session state를 모아 PRD 작성 전 맥락 확인 | `qa-sdk docs prd context <topic|doc-id>` | read-only |
+| 수집된 context로 markdown PRD skeleton 작성 | `qa-sdk docs prd scaffold <topic|doc-id> --output <file.md>` | markdown만 작성 |
+| markdown PRD를 ralph-tui 실행용 JSON으로 변환 | `qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json>` | compatibility JSON 작성 전 target adapter validation |
+
+PRD JSON은 ralph-tui compatibility adapter의 target format이다. Core document model은 definition markdown과 PRD markdown이며, JSON story의 `passes: true`는 completion candidate signal일 뿐 TODO 체크나 spec promotion 권한이 아니다.
+
+### Dry-run-first 정책
+
+- `docs status`, `docs collect`, `docs search`, `docs drift`, `docs prd context`는 read-only다.
+- `docs transform metadata`는 dry-run이 기본이며 `--apply`는 지원하지 않는다.
+- `docs prd sync-completion`은 dry-run only이며 source/test/evidence가 없는 TODO/spec promotion은 blocked로 보고한다.
+- 실제 write는 `docs prd scaffold --output <file.md>`와 `docs prd to-ralph-json --output <file.json>`처럼 명시된 materialization command만 수행한다.
+
+Metadata transform allowlist는 `select|match`, `set.lifecycle`, `set.level`, `set.svc`, `set.sources`, `tags.add/remove`, `links.add/remove`, `sources.set/add/remove`다. `def.id` 변경, PRD JSON frontmatter 변환, REST/remote document service, 자동 미검토 spec promotion은 범위 밖이다.
