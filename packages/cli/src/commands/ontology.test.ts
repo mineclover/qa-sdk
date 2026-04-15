@@ -1293,6 +1293,88 @@ describe("ontology CLI", () => {
     }
   }, 20_000);
 
+  it("registry authorization activation failure modes preserve operator evidence boundaries", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-authorization-activation-failures-"));
+    try {
+      const outputFailureStorePath = join(dir, "state-output-failure", "registry.sqlite");
+      const outputFailureRegistryPath = join(dir, "output-failure-registry.json");
+      const outputFailure = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "registry",
+          "activate-pack",
+          "authorization-ontology",
+          "--store",
+          outputFailureStorePath,
+          "--output",
+          dir,
+          "--artifact-registry",
+          outputFailureRegistryPath,
+          "--json",
+        ]);
+      });
+      const outputFailureJson = JSON.parse(outputFailure.stdout) as RegistryActivationJson;
+      expect(outputFailure.stderr).toBe("");
+      expect(outputFailure.exitCode).toBe(1);
+      expect(outputFailureJson.status).toBe("failed");
+      expect(outputFailureJson.errors).toEqual([
+        expect.objectContaining({
+          code: "activation-output-write-error",
+        }),
+      ]);
+      expect(outputFailureJson.activationEvidence).toBeUndefined();
+      await expect(readFile(outputFailureRegistryPath, "utf8")).rejects.toThrow();
+
+      const appendFailureStorePath = join(dir, "state-append-failure", "registry.sqlite");
+      const appendFailureOutputPath = join(dir, "activation", "authorization-ontology.json");
+      const appendFailureRegistryPath = join(dir, "registry-directory");
+      await mkdir(appendFailureRegistryPath, { recursive: true });
+
+      const appendFailure = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "registry",
+          "activate-pack",
+          "authorization-ontology",
+          "--store",
+          appendFailureStorePath,
+          "--output",
+          appendFailureOutputPath,
+          "--artifact-registry",
+          appendFailureRegistryPath,
+          "--json",
+        ]);
+      });
+      const appendFailureJson = JSON.parse(appendFailure.stdout) as RegistryActivationJson;
+      const appendFailureSidecar = JSON.parse(
+        await readFile(appendFailureOutputPath, "utf8"),
+      ) as RegistryActivationJson;
+
+      expect(appendFailure.stderr).toBe("");
+      expect(appendFailure.exitCode).toBe(1);
+      expect(appendFailureJson.status).toBe("succeeded");
+      expect(appendFailureJson.activationEvidence).toEqual({
+        appendStatus: "failed",
+        registryPath: appendFailureRegistryPath,
+        recordId:
+          "activation-evidence-authorization-ontology-authorization-ontology",
+        recordRef: appendFailureOutputPath,
+        recordCount: null,
+        error: {
+          code: "activation-evidence-registry-append-error",
+          message:
+            "Activation evidence could not be appended to the artifact registry.",
+        },
+      });
+      expect(appendFailureSidecar.status).toBe("succeeded");
+      expect(appendFailureSidecar.activationEvidence).toBeUndefined();
+      expectNoRawSql(appendFailure.stdout);
+      expect(appendFailure.stdout).not.toMatch(/EISDIR|ENOENT|ENOTDIR|stack|open '/i);
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  }, 20_000);
+
   it("registry activation evidence coexists across known packs in one artifact registry", async () => {
     const dir = await mkdtemp(join(tmpdir(), "qa-sdk-cross-pack-activation-evidence-"));
     try {

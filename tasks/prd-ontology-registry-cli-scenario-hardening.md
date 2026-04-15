@@ -140,12 +140,18 @@ No browser verification is required.
 **Description:** As an operator, I want CLI failures to have stable interpretation before REST error mapping is designed.
 
 **Acceptance Criteria:**
-- [ ] Document the current no-rollback policy and structured failed activation result policy in the CLI spec.
-- [ ] Document command-level failures separately from helper lifecycle failures.
-- [ ] Document that registry append failure makes the command fail while preserving the successful activation sidecar.
-- [ ] Document that duplicate same-store activation is a structured helper failure, not a successful idempotent activation.
-- [ ] Document that REST idempotency and remote store ownership are intentionally undecided.
-- [ ] Verify existing tests or add missing tests for sidecar preservation, append failure sanitization, and no failed-evidence append.
+- [x] Document the current no-rollback policy and structured failed activation result policy in the CLI spec.
+- [x] Document command-level failures separately from helper lifecycle failures.
+- [x] Document that registry append failure makes the command fail while preserving the successful activation sidecar.
+- [x] Document that duplicate same-store activation is a structured helper failure, not a successful idempotent activation.
+- [x] Document that REST idempotency and remote store ownership are intentionally undecided.
+- [x] Verify existing tests or add missing tests for sidecar preservation, append failure sanitization, and no failed-evidence append.
+
+**Confirmation Notes:**
+- Added an explicit operator interpretation block to `operational-ontology-registry-activation-cli.spec.md`, separating CLI-owned command failures from helper lifecycle failures.
+- Documented the local no-rollback policy, structured failed activation result policy, duplicate same-store non-idempotent helper failure, append-failure sidecar preservation, and intentionally undecided REST idempotency/remote store ownership.
+- Added authorization failure-mode CLI coverage for output write failure, sanitized registry append failure, successful sidecar preservation, and no failed-evidence append.
+- Updated the scenario matrix so no US-006 local CLI failure interpretation gaps remain.
 
 ### US-007: Reflect CLI Hardening Completion In Roadmap Docs
 

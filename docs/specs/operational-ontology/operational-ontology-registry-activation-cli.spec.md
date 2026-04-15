@@ -149,6 +149,13 @@ Pre-helper CLI/runtime failures use a result-like failed payload with `allocatio
 
 ## Failure Contract
 
+Operator interpretation is intentionally split by ownership boundary:
+
+- **Command-level failures** happen before or after the activation helper lifecycle. Unknown pack ids, invalid CLI flags, invalid address models, runtime setup failures, output sidecar write failures, missing `--output` for `--artifact-registry`, and activation evidence registry append failures are CLI-owned failures.
+- **Helper lifecycle failures** are returned by `OntologyPackActivationHelper.activateOntologyPack()`. The CLI does not wrap or reinterpret those payloads; it preserves their `status: "failed"`, phase-level `errors[]`, warnings, summaries, and raw detail fields.
+- **No rollback policy** remains the current local lifecycle policy. Once helper-owned registry-service or index-meta work has succeeded, the CLI does not attempt compensating rollback. Later helper failures are represented as structured failed activation results, and post-helper append failures are represented as command failures with the successful sidecar preserved.
+- **Structured failed activation results** are not activation evidence. Managed `activation-evidence` records are appended only when the helper result has `status: "succeeded"`.
+
 Known CLI-origin failure codes include:
 
 | code | condition |
@@ -168,6 +175,10 @@ Helper lifecycle failures continue through the activation summary `errors` list.
 
 `activation-evidence-registry-append-error` is reported through additive `activationEvidence.appendStatus: "failed"` instead of mutating the helper result or sidecar. It is a command failure for automation purposes, but the activation result itself remains successful.
 
+Duplicate same-store activation is intentionally not a successful idempotent activation. Idempotent evidence behavior is limited to successful reruns against an isolated activation store with the same pack, ontology id, output path, and artifact registry identity; those reruns upsert the same managed evidence record.
+
+REST activation idempotency, remote store ownership, tenancy/auth boundaries, and cross-boundary compensating rollback are intentionally undecided in this CLI contract. They require a separate REST/remote PRD and must not be inferred from local SQLite CLI behavior.
+
 ## Proven Scenarios
 
 The CLI test suite proves command discovery and dispatch through `main(["ontology", "registry", "activate-pack", ...])`, not only the handler proxy.
@@ -179,6 +190,7 @@ The CLI test suite proves command discovery and dispatch through `main(["ontolog
 - Duplicate/failed activation against the original store does not append or replace successful registry evidence with failed evidence.
 - `authorization-ontology` activates through an isolated SQLite store, returns all eight authorization taxonomy allocation summaries, syncs every allocation, returns passing smoke checks, and exposes known authorization axes in `syncReports[*].materializedRecords[*].axisId`.
 - `authorization-ontology --output <file> --artifact-registry <registry> --json` writes a raw sidecar, appends deterministic `activation-evidence-authorization-ontology-authorization-ontology` evidence with authorization namespace/allocation/sync/smoke/warning/error metadata, validates/lists the registry record, resolves the sidecar through `ontology prompt extract-artifact` as an `artifact-registry-hit`, upserts a successful rerun, and preserves the successful record after duplicate same-store failure.
+- `authorization-ontology` output write failure does not append managed evidence, and registry append failure returns sanitized command failure metadata while preserving the successful raw sidecar.
 - A single local programming artifact registry can hold activation evidence for both `programming-artifact-ontology` and `authorization-ontology` when each pack uses an isolated activation store and its own sidecar path. The combined registry validates, `list --kind activation-evidence` returns both records, `extract-artifact` resolves each sidecar to the matching pack record, and rerunning one pack upserts its record without mutating or duplicating the other pack record.
 - Unknown pack id, invalid address model, helper duplicate failure, runtime storage failure, JSON output, text output, and `--output` sidecar paths have CLI coverage.
 - Missing `--output` with `--artifact-registry`, output write failure, sanitized registry append failure, and text-mode activation evidence reporting have CLI coverage.

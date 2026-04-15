@@ -205,12 +205,13 @@
         "Manual build validation runs dependency builds before dependent builds and does not run `operational-ontology build` concurrently with `registry-service build`."
       ],
       "priority": 6,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Updated operational-ontology-registry-activation-cli.spec.md with an explicit operator interpretation block separating CLI-owned command failures from helper lifecycle failures. Documented the local no-rollback policy, structured failed activation result policy, append-failure sidecar preservation, duplicate same-store activation as structured helper failure rather than successful idempotency, and intentionally undecided REST idempotency/remote store ownership. Added packages/cli/src/commands/ontology.test.ts authorization failure-mode coverage for output write failure, sanitized registry append failure, successful sidecar preservation, and no failed-evidence append; updated the scenario matrix so no US-006 local CLI gaps remain.",
       "dependsOn": [
         "US-003",
         "US-004"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-007",
@@ -249,6 +250,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T04:14:57.440Z"
+    "updatedAt": "2026-04-15T04:20:54.598Z"
   }
 }

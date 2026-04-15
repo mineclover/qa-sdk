@@ -9,6 +9,7 @@ after each iteration and it's included in prompts for context.
 - Activation evidence replay hardening should prove sidecar-only output, sidecar-first append, registry validate/list, `extract-artifact` provider hit, rerun upsert, and failed duplicate non-replacement in one CLI scenario proof.
 - Activation evidence registry records normalize duplicate refs; when pack id, ontology id, or known import ref are the same value, assertions should expect deduplicated `derivedFromRefs`/`verifiesRefs`.
 - Cross-pack activation evidence coexistence should use one registry file with isolated activation stores and distinct sidecar paths; assertions should verify record id/ref/path-specific upsert so rerunning one pack leaves the other record unchanged.
+- Activation evidence failure interpretation should keep helper result status separate from command exit code; registry append failure can return exit code 1 while `result.status` remains `succeeded` and the raw sidecar remains unchanged.
 
 ---
 
@@ -74,4 +75,16 @@ after each iteration and it's included in prompts for context.
   - Cross-pack registry coexistence depends on distinct sidecar `artifactRef`/`outputPath` values; registry upsert matches by `artifactId`, `artifactRef`, or `outputPath`.
   - `extract-artifact` proves the correct activation evidence record through `workArea.workAreaId` and relation-derived constraints, while `source.registry.recordCount` reflects all registry records loaded from the shared file.
   - Rerun safety should snapshot the untouched pack record and compare it after the other pack upsert, because the rerun pack may legitimately refresh generated evidence metadata.
+---
+
+## 2026-04-15 - US-006
+- Documented operator failure interpretation in the activation CLI spec, including CLI-owned command failures versus helper lifecycle failures, current no-rollback policy, structured failed activation result policy, append-failure sidecar preservation, duplicate same-store non-idempotent helper failure, and undecided REST idempotency/remote store ownership.
+- Added authorization failure-mode CLI coverage proving output write failure does not append evidence, registry append failure is sanitized, command failure can preserve a successful helper result, and the raw activation sidecar is unchanged.
+- Updated the scenario matrix and CLI hardening PRD Markdown/JSON to close the US-006 local CLI gaps.
+- Files changed: `packages/cli/src/commands/ontology.test.ts`, `docs/specs/operational-ontology/operational-ontology-registry-activation-cli.spec.md`, `docs/specs/operational-ontology/operational-ontology-registry-activation-cli-scenario-matrix.spec.md`, `tasks/prd-ontology-registry-cli-scenario-hardening.md`, `tasks/prd-ontology-registry-cli-scenario-hardening.json`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter @qa-sdk/cli build`; `pnpm --filter operational-ontology test -- programming-artifacts`; `pnpm --filter operational-ontology typecheck`; `pnpm --filter operational-ontology build`; `pnpm --filter registry-service test -- ontology`; `pnpm --filter registry-service typecheck`; `pnpm --filter registry-service build`; `pnpm --filter authorization-ontology test`; `pnpm --filter authorization-ontology typecheck`; `pnpm --filter authorization-ontology build`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - Append failure is post-helper and command-owned: stdout may contain `activationEvidence.appendStatus: "failed"` with exit code 1 while the underlying helper result remains `succeeded`.
+  - Output write failure occurs after helper execution but before managed evidence append, so tests should prove no registry file is created or mutated.
+  - REST idempotency and remote store ownership must stay out of the local CLI matrix because local SQLite rerun/upsert evidence does not define service tenancy or API retry semantics.
 ---
