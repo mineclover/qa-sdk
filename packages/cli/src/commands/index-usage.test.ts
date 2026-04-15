@@ -8,6 +8,9 @@ describe("top-level usage contracts", () => {
     expect(USAGE).toContain("qa-sdk ingest insights [--limit N]");
     expect(USAGE).toContain("qa-sdk obs list [prefix] [--vault <name>]");
     expect(USAGE).toContain("qa-sdk obs stats [--vault <name>]");
+    expect(USAGE).toContain("qa-sdk docs status [doc-id|path] [--json]");
+    expect(USAGE).toContain("qa-sdk docs collect <doc-id|path> [--json]");
+    expect(USAGE).toContain("qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]");
     expect(USAGE).toContain("[--dkg-target <nodeId>] [--decision-id <id>]");
     expect(USAGE).toContain("[--decision-type <type> --title <text> --rationale <text>]");
   });
@@ -124,6 +127,14 @@ describe("top-level usage contracts", () => {
       expect(prefixHelp).toContain("qa-sdk prefix impact");
 
       stdout.length = 0;
+      await main(["docs", "--help"]);
+      const docsHelp = stdout.join("\n");
+      expect(docsHelp).toContain("qa-sdk docs");
+      expect(docsHelp).toContain("qa-sdk docs status");
+      expect(docsHelp).toContain("qa-sdk docs collect");
+      expect(docsHelp).toContain("qa-sdk docs search");
+
+      stdout.length = 0;
       await main(["scan", "--help"]);
       const scanHelp = stdout.join("\n");
       expect(scanHelp).toContain("qa-sdk scan");
@@ -179,6 +190,18 @@ describe("top-level usage contracts", () => {
     expect(resolveSubcommand(["prefix", "stamp", "a.ts", "--dry-run"])).toEqual({
       name: "prefix stamp",
       rest: ["a.ts", "--dry-run"],
+    });
+    expect(resolveSubcommand(["docs", "status", "checkout-spec", "--json"])).toEqual({
+      name: "docs status",
+      rest: ["checkout-spec", "--json"],
+    });
+    expect(resolveSubcommand(["docs", "collect", "docs/specs/checkout/checkout.spec.md"])).toEqual({
+      name: "docs collect",
+      rest: ["docs/specs/checkout/checkout.spec.md"],
+    });
+    expect(resolveSubcommand(["docs", "search", "checkout", "--kind", "prd"])).toEqual({
+      name: "docs search",
+      rest: ["checkout", "--kind", "prd"],
     });
     expect(resolveSubcommand(["scan", "git", "--root", "."])).toEqual({
       name: "scan git",

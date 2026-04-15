@@ -10,6 +10,7 @@ after each iteration and it's included in prompts for context.
 - CLI tests that touch optional `~/.qa-sdk` side stores should set `QA_SDK_HOME` to a temp directory so developer-local ledgers cannot affect hermetic assertions.
 - Definition markdown family grouping should use an explicit family id when present, otherwise the repo-relative basename with `.spec.md`/`.todo.md`/`.plan.md`/`.test.md`/`.memo.md`/`.rule.md` stripped; keep each file's `def.id` as metadata so source ownership is not blurred.
 - CLI Vitest suites that exercise native SQLite/better-sqlite3 should use the `forks` pool; the default worker pool can segfault during native teardown after assertions pass.
+- Docs CLI tests should pass `--root` to a temp workspace and exercise the real default adapters together; this keeps definition markdown, PRD markdown/JSON, session, and evidence aggregation hermetic while still testing command-level behavior.
 
 ---
 
@@ -67,4 +68,17 @@ after each iteration and it's included in prompts for context.
   - Artifact registry records already carry the right source-owned vocabulary, so the control-plane adapter can preserve field names in metadata and only use `DocumentLink` for existing relation edges.
   - `activation-evidence` should remain a programming artifact kind in `DocumentEvidence.kind`; the adapter does not need a new docs evidence taxonomy to make activation proof reviewable.
   - Default evidence registry paths should be safe to include in future docs status collection because missing files stay silent unless `warnOnMissing` is explicitly enabled.
+---
+
+## 2026-04-15 - US-005
+- Added the `qa-sdk docs` command group alongside the existing `qa-sdk def` surface and registered it through the shared command tree/handler registry in `packages/cli/src/index.ts`.
+- Implemented `qa-sdk docs status`, `qa-sdk docs collect`, and `qa-sdk docs search` over the docs control-plane adapters, including text/JSON output, kind and metadata search filters, related-family collection, artifact evidence association, and next follow-up detection from ralph session drift, PRD task state, and todo family members.
+- Added CLI tests for text and JSON output using temp-root fixtures that include definition markdown, PRD markdown, ralph PRD JSON, ralph session metadata, and artifact evidence.
+- Added root usage/help/dispatch tests proving `qa-sdk docs` routes through the same command registry pattern as other tree groups.
+- Files changed: `packages/cli/src/commands/docs.ts`, `packages/cli/src/command-groups/docs.commands.ts`, `packages/cli/src/index.ts`, `packages/cli/src/commands/docs.test.ts`, `packages/cli/src/commands/index-usage.test.ts`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- docs`; `pnpm --filter @qa-sdk/cli test -- index-usage`; `pnpm --filter @qa-sdk/cli test -- def`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter @qa-sdk/cli build`; `pnpm --filter definition-catalog test`; `pnpm --filter definition-catalog typecheck`; `pnpm --filter definition-data-source test`; `pnpm --filter definition-data-source typecheck`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - `docs` can reuse the same proxy-style handler registry as `def`, but command behavior belongs in a separate router because `docs` aggregates multiple adapters instead of delegating to one package-specific CLI.
+  - Family collection needs both family-id matching and identity/path relation matching so source-owned artifact evidence with `ownerDefinitionId` can appear beside a definition markdown family.
+  - For shared stable ids like `tasks/foo` across PRD markdown and ralph PRD JSON, CLI target resolution should prefer source authoring documents before compatibility/session/evidence adapters.
 ---
