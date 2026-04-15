@@ -359,6 +359,10 @@ describe("ontology CLI", () => {
     try {
       const storePath = join(dir, "state", "registry.sqlite");
       const outputPath = join(dir, "evidence", "activation", "result.json");
+      const unprovidedRegistryPath = join(dir, "programming-artifacts.json");
+      const existingRegistryPath = join(dir, "existing-programming-artifacts.json");
+      const existingRegistryContent = '{ "artifacts": [] }\n';
+      await writeFile(existingRegistryPath, existingRegistryContent, "utf8");
       const output = await captureConsoleWithExitCode(async () => {
         await main([
           "ontology",
@@ -396,6 +400,10 @@ describe("ontology CLI", () => {
       });
       expect(parsed.activationEvidence).toBeUndefined();
       expect(parsed.allocationSummaries.length).toBeGreaterThan(0);
+      await expect(readFile(unprovidedRegistryPath, "utf8")).rejects.toThrow();
+      await expect(readFile(existingRegistryPath, "utf8")).resolves.toBe(
+        existingRegistryContent,
+      );
     } finally {
       await rm(dir, { force: true, recursive: true });
     }

@@ -6,6 +6,7 @@ after each iteration and it's included in prompts for context.
 ## Codebase Patterns (Study These First)
 
 - Build validation for registry-service consumers should run dependency builds first; do not run `operational-ontology build` concurrently with `registry-service build` because registry-service DTS generation consumes operational-ontology declarations.
+- Activation evidence replay hardening should prove sidecar-only output, sidecar-first append, registry validate/list, `extract-artifact` provider hit, rerun upsert, and failed duplicate non-replacement in one CLI scenario proof.
 
 ---
 
@@ -35,4 +36,16 @@ after each iteration and it's included in prompts for context.
   - The authorization pack currently has CLI activation success coverage only; sidecar, evidence append, registry consumption, duplicate, and rerun/upsert proof are intentionally US-004 gaps.
   - CLI guardrail scenarios such as unknown pack, invalid flag, and invalid address model are command-surface proofs, not pack-specific activation rows.
   - The implemented invalid flag code is `invalid-cli-flag`; specs should not use the older `invalid-flag` label.
+---
+
+## 2026-04-15 - US-003
+- Hardened the `programming-artifact-ontology` activation evidence replay proof by tightening sidecar-only CLI coverage so `--output` without `--artifact-registry` proves no registry file is created and an unrelated existing registry file is unchanged.
+- Documented the exact local replay command sequence in `operational-ontology-registry-activation-cli.spec.md`, including sidecar-only output, sidecar-first append, validate/list, `extract-artifact` registry hit, successful rerun upsert, and duplicate same-store non-replacement expectations.
+- Marked US-003 complete in the CLI scenario hardening PRD Markdown/JSON.
+- Files changed: `packages/cli/src/commands/ontology.test.ts`, `docs/specs/operational-ontology/operational-ontology-registry-activation-cli.spec.md`, `tasks/prd-ontology-registry-cli-scenario-hardening.md`, `tasks/prd-ontology-registry-cli-scenario-hardening.json`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter operational-ontology test -- programming-artifacts`; `pnpm --filter operational-ontology typecheck`; `pnpm --filter operational-ontology build`; `pnpm --filter authorization-ontology test`; `pnpm --filter authorization-ontology typecheck`; `pnpm --filter authorization-ontology build`; `pnpm --filter registry-service test -- ontology`; `pnpm --filter registry-service typecheck`; `pnpm --filter registry-service build`; `pnpm --filter @qa-sdk/cli build`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - The existing `registry activation evidence is consumable end to end and upserts successful reruns` test already covers validate/list, provider hit, same-identity upsert, and duplicate failed activation non-replacement for programming artifacts.
+  - The sidecar-first ordering is proven both by the append success test and the append failure test because append failure still leaves a raw successful sidecar without `activationEvidence` metadata.
+  - For build validation, `operational-ontology build` must complete before `registry-service build`; CLI build can run after registry-service declarations are refreshed.
 ---

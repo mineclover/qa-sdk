@@ -97,11 +97,12 @@
         "Manual build validation runs dependency builds before dependent builds and does not run `operational-ontology build` concurrently with `registry-service build`."
       ],
       "priority": 3,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Tightened CLI sidecar-only coverage so `programming-artifact-ontology --output <file>` proves no registry file is created and an unrelated existing registry file is not mutated. Confirmed existing activation evidence replay tests cover sidecar-first append, registry validate/list with exactly one activation-evidence record, extract-artifact artifact-registry-hit resolution, same identity upsert on successful rerun, and failed duplicate non-replacement. Added the exact local replay command sequence and expected observations to operational-ontology-registry-activation-cli.spec.md. Required test/typecheck/build/def validate gates passed, with dependency builds run before registry-service build.",
       "dependsOn": [
         "US-002"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-004",
@@ -246,6 +247,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T03:50:42.954Z"
+    "updatedAt": "2026-04-15T03:56:30.657Z"
   }
 }

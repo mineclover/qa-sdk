@@ -82,13 +82,18 @@ No browser verification is required.
 **Description:** As a CLI automation user, I want `programming-artifact-ontology` activation evidence to be replayable and inspectable so the local CLI proof can support future API design.
 
 **Acceptance Criteria:**
-- [ ] Verify `programming-artifact-ontology --output <file>` remains sidecar-only and does not create or mutate an artifact registry.
-- [ ] Verify `programming-artifact-ontology --output <file> --artifact-registry <registry> --json` writes the sidecar before appending evidence.
-- [ ] Verify the registry validates and lists exactly one `activation-evidence` record for the command.
-- [ ] Verify `ontology prompt extract-artifact <output-file> --artifact-registry <registry> --json` resolves through `artifact-registry-hit`.
-- [ ] Verify successful rerun with the same pack/ontology/output identity upserts instead of duplicating evidence.
-- [ ] Verify duplicate/failed activation against the same store does not replace prior successful evidence.
-- [ ] Document the exact command sequence in `operational-ontology-registry-activation-cli.spec.md`.
+- [x] Verify `programming-artifact-ontology --output <file>` remains sidecar-only and does not create or mutate an artifact registry.
+- [x] Verify `programming-artifact-ontology --output <file> --artifact-registry <registry> --json` writes the sidecar before appending evidence.
+- [x] Verify the registry validates and lists exactly one `activation-evidence` record for the command.
+- [x] Verify `ontology prompt extract-artifact <output-file> --artifact-registry <registry> --json` resolves through `artifact-registry-hit`.
+- [x] Verify successful rerun with the same pack/ontology/output identity upserts instead of duplicating evidence.
+- [x] Verify duplicate/failed activation against the same store does not replace prior successful evidence.
+- [x] Document the exact command sequence in `operational-ontology-registry-activation-cli.spec.md`.
+
+**Confirmation Notes:**
+- Tightened `packages/cli/src/commands/ontology.test.ts` sidecar-only coverage so `--output` without `--artifact-registry` proves no registry file is created and an unrelated existing registry file remains unchanged.
+- Confirmed existing activation evidence tests cover sidecar-first append, registry validate/list with exactly one `activation-evidence` record, `extract-artifact` registry hit resolution, successful same-identity upsert, and failed duplicate non-replacement.
+- Added the exact local replay command sequence and expected observations to `docs/specs/operational-ontology/operational-ontology-registry-activation-cli.spec.md`.
 
 ### US-004: Add Authorization Pack Evidence Persistence Proof
 

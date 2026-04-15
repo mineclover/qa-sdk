@@ -181,6 +181,77 @@ The CLI test suite proves command discovery and dispatch through `main(["ontolog
 - Unknown pack id, invalid address model, helper duplicate failure, runtime storage failure, JSON output, text output, and `--output` sidecar paths have CLI coverage.
 - Missing `--output` with `--artifact-registry`, output write failure, sanitized registry append failure, and text-mode activation evidence reporting have CLI coverage.
 
+## Programming Artifact Evidence Replay Sequence
+
+The local replay proof for `programming-artifact-ontology` uses separate activation stores for sidecar-only, first evidence append, and successful rerun. Reusing the first evidence store is reserved for the duplicate/failed activation check.
+
+```bash
+WORKDIR="$(mktemp -d)"
+SIDECAR_ONLY_STORE="$WORKDIR/sidecar-only.sqlite"
+FIRST_STORE="$WORKDIR/first.sqlite"
+RERUN_STORE="$WORKDIR/rerun.sqlite"
+SIDECAR_ONLY_OUTPUT="$WORKDIR/activation/sidecar-only.json"
+OUTPUT="$WORKDIR/activation/programming-artifact-ontology.json"
+DUPLICATE_OUTPUT="$WORKDIR/activation/duplicate-failed.json"
+REGISTRY="$WORKDIR/programming-artifacts.json"
+
+qa-sdk ontology registry activate-pack programming-artifact-ontology \
+  --store "$SIDECAR_ONLY_STORE" \
+  --output "$SIDECAR_ONLY_OUTPUT" \
+  --json
+
+qa-sdk ontology registry activate-pack programming-artifact-ontology \
+  --store "$FIRST_STORE" \
+  --output "$OUTPUT" \
+  --artifact-registry "$REGISTRY" \
+  --json
+
+qa-sdk ontology artifact registry validate \
+  --input "$REGISTRY" \
+  --json
+
+qa-sdk ontology artifact registry list \
+  --input "$REGISTRY" \
+  --kind activation-evidence \
+  --json
+
+qa-sdk ontology prompt extract-artifact "$OUTPUT" \
+  --artifact-registry "$REGISTRY" \
+  --kind self_reflection \
+  --json
+
+qa-sdk ontology registry activate-pack programming-artifact-ontology \
+  --store "$RERUN_STORE" \
+  --output "$OUTPUT" \
+  --artifact-registry "$REGISTRY" \
+  --json
+
+qa-sdk ontology artifact registry list \
+  --input "$REGISTRY" \
+  --kind activation-evidence \
+  --json
+
+qa-sdk ontology registry activate-pack programming-artifact-ontology \
+  --store "$FIRST_STORE" \
+  --output "$DUPLICATE_OUTPUT" \
+  --artifact-registry "$REGISTRY" \
+  --json
+
+qa-sdk ontology artifact registry list \
+  --input "$REGISTRY" \
+  --kind activation-evidence \
+  --json
+```
+
+Expected replay observations:
+
+- The sidecar-only command writes `SIDECAR_ONLY_OUTPUT` without `activationEvidence` stdout/sidecar metadata and without creating or mutating a programming artifact registry.
+- The first explicit registry command writes `OUTPUT` before appending evidence; the sidecar remains the raw activation helper result and stdout carries additive `activationEvidence`.
+- `validate` returns a valid registry and `list --kind activation-evidence` returns exactly one record for the command.
+- `extract-artifact "$OUTPUT" --artifact-registry "$REGISTRY" --json` reports `source.kind: "artifact-registry-hit"` through the `programming-artifact-registry` provider.
+- The successful rerun with the same pack, ontology id, output path, and registry path upserts the deterministic `activation-evidence-<packId>-<ontologyId>` record; the filtered list still contains one record.
+- The duplicate activation against `FIRST_STORE` exits with a structured `duplicate-allocation` failed result and does not replace the prior successful record with `DUPLICATE_OUTPUT` or failed metadata.
+
 ## Follow-up Work
 
 Completed public/local follow-up:
@@ -200,6 +271,13 @@ Follow-up work remains:
 - `pnpm --filter @qa-sdk/cli build`
 - `pnpm --filter operational-ontology test -- programming-artifacts`
 - `pnpm --filter operational-ontology typecheck`
-- `pnpm --filter registry-service test`
+- `pnpm --filter operational-ontology build`
+- `pnpm --filter registry-service test -- ontology`
 - `pnpm --filter registry-service typecheck`
+- `pnpm --filter registry-service build`
+- `pnpm --filter authorization-ontology test`
+- `pnpm --filter authorization-ontology typecheck`
+- `pnpm --filter authorization-ontology build`
 - `node packages/cli/dist/index.js def validate`
+
+Build validation runs dependency builds before dependent builds. In particular, do not run `operational-ontology build` concurrently with `registry-service build`; `registry-service` declaration generation consumes built operational ontology declarations.
