@@ -44,12 +44,19 @@ No browser verification is required.
 **Description:** As an ontology maintainer, I want the roadmap to distinguish completed local CLI lifecycle work from future REST/remote work so the next PRD does not reopen completed phases.
 
 **Acceptance Criteria:**
-- [ ] Confirm the allocation lifecycle remains closed through Phase 5 plus activation CLI and activation evidence persistence.
-- [ ] Confirm `tasks/prd-ontology-registry-allocation-lifecycle-master.md` marks activation evidence persistence as completed.
-- [ ] Confirm this PRD is listed as the next pre-REST public/local follow-up.
-- [ ] Confirm `authorization-ontology-system.spec.md` no longer treats activation evidence persistence as pending.
-- [ ] Confirm REST activation endpoint, remote activation service, scoped prefix support, and production registry persistence remain out of scope.
-- [ ] Do not change runtime code in this story unless a doc reference points at a missing or renamed source.
+- [x] Confirm the allocation lifecycle remains closed through Phase 5 plus activation CLI and activation evidence persistence.
+- [x] Confirm `tasks/prd-ontology-registry-allocation-lifecycle-master.md` marks activation evidence persistence as completed.
+- [x] Confirm this PRD is listed as the next pre-REST public/local follow-up.
+- [x] Confirm `authorization-ontology-system.spec.md` no longer treats activation evidence persistence as pending.
+- [x] Confirm REST activation endpoint, remote activation service, scoped prefix support, and production registry persistence remain out of scope.
+- [x] Do not change runtime code in this story unless a doc reference points at a missing or renamed source.
+
+**Confirmation Notes:**
+- `tasks/prd-ontology-registry-allocation-lifecycle-master.md` keeps Phase 5 activation smoke completed, records activation CLI and activation evidence persistence as public/local post-lifecycle surfaces, and states there is no next allocation lifecycle implementation PRD.
+- The same master roadmap marks activation evidence persistence as completed and lists this CLI scenario hardening PRD as the planned next pre-REST public/local follow-up before registry-service REST activation endpoint design.
+- `docs/specs/authorization-ontology/authorization-ontology-system.spec.md` states activation evidence persistence is complete and keeps REST activation endpoint plus remote activation service as separate follow-up work.
+- REST activation endpoint, remote activation service/deployment, scoped prefix support, production registry persistence, new registry-service tables, and activation rollback semantics remain out of scope for this PRD.
+- No runtime code was changed for this closeout story.
 
 ### US-002: Add A CLI Scenario Matrix To The Specs
 

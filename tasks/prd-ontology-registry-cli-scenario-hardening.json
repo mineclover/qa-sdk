@@ -1,7 +1,7 @@
 {
   "name": "Ontology Registry CLI Scenario Hardening Before REST",
-  "branchName": "ralph/ontology-registry-cli-scenario-hardening",
   "description": "Before opening registry-service REST activation or a remote activation service, harden the local CLI proof for the completed ontology registry lifecycle across known packs, evidence persistence, registry consumption, rerun behavior, and operator failure interpretation.",
+  "branchName": "ralph/ontology-registry-cli-scenario-hardening",
   "userStories": [
     {
       "id": "US-001",
@@ -30,9 +30,10 @@
         "Manual build validation runs dependency builds before dependent builds and does not run `operational-ontology build` concurrently with `registry-service build`."
       ],
       "priority": 1,
-      "passes": false,
-      "notes": "",
-      "dependsOn": []
+      "passes": true,
+      "notes": "US-001 doc closeout confirmed the lifecycle remains closed through Phase 5, activation CLI, and activation evidence persistence; the lifecycle master marks evidence persistence completed and lists CLI scenario hardening as the next pre-REST public/local follow-up; authorization ontology system spec no longer treats evidence persistence as pending; REST activation endpoint, remote activation service, scoped prefix support, production registry persistence, new registry-service tables, and activation rollback semantics remain out of scope. No runtime code changed.",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-002",
@@ -242,5 +243,8 @@
         "US-006"
       ]
     }
-  ]
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-15T03:42:52.461Z"
+  }
 }

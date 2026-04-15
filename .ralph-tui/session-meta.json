@@ -1,15 +1,14 @@
 {
-  "id": "256d534f-c729-4f07-a4ed-192e25c5b800",
-  "status": "completed",
-  "startedAt": "2026-04-14T17:29:32.075Z",
-  "updatedAt": "2026-04-14T23:08:44.261Z",
+  "id": "9343e77f-4f34-4cc8-b3b0-8b10c3083b5a",
+  "status": "running",
+  "startedAt": "2026-04-15T03:38:38.778Z",
+  "updatedAt": "2026-04-15T03:38:38.778Z",
   "agentPlugin": "codex",
   "trackerPlugin": "json",
-  "prdPath": "tasks/prd-ontology-registry-activation-evidence-persistence.json",
-  "currentIteration": 6,
+  "prdPath": "tasks/prd-ontology-registry-cli-scenario-hardening.json",
+  "currentIteration": 0,
   "maxIterations": 0,
   "totalTasks": 0,
-  "tasksCompleted": 6,
-  "cwd": "/Users/junwoobang/workflow/qa-sdk",
-  "endedAt": "2026-04-14T23:08:44.261Z"
+  "tasksCompleted": 0,
+  "cwd": "/Users/junwoobang/workflow/qa-sdk"
 }
