@@ -619,6 +619,145 @@ Coordinate checkout adapters.
     expect(content).toContain("Creating PRD JSON from this scaffold");
   });
 
+  it("converts PRD markdown to ralph JSON through control-plane adapters", async () => {
+    const workspace = await createFixtureWorkspace();
+    const outputPath = join(workspace, "tasks/conversion-prd.json");
+    await writeFile(join(workspace, "tasks/conversion-prd.md"), `[PRD]
+# PRD: Conversion PRD
+
+## Overview
+
+Convert markdown PRD state into ralph JSON.
+
+## Quality Gates
+
+- \`pnpm --filter @qa-sdk/cli test -- docs\` passes.
+- \`pnpm --filter @qa-sdk/cli typecheck\` passes.
+
+## User Stories
+
+### US-001: Build source adapter path
+
+**Description:** As a maintainer, I want markdown parsing to stay adapter-owned.
+
+**Acceptance Criteria:**
+- [ ] PRD markdown is read through the adapter.
+
+### US-002: Write generated JSON
+
+**Description:** As a ralph user, I want a compatible JSON file.
+
+**Acceptance Criteria:**
+- [ ] The output is a flat ralph root.
+
+### US-003: Validate generated JSON
+
+**Description:** As a reviewer, I want schema anti-pattern validation before the file is written.
+
+**Depends on:** US-001
+
+**Acceptance Criteria:**
+- [ ] The generated JSON is validated by the ralph adapter.
+[/PRD]
+`);
+
+    await cliDocs([
+      "prd",
+      "to-ralph-json",
+      "tasks/conversion-prd.md",
+      "--root",
+      workspace,
+      "--output",
+      "tasks/conversion-prd.json",
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      input: string;
+      output: string;
+      storyCount: number;
+      diagnostics: unknown[];
+      root: {
+        name: string;
+        branchName: string;
+        description: string;
+        userStories: Array<{
+          id: string;
+          acceptanceCriteria: string[];
+          priority: number;
+          passes: boolean;
+          notes: string;
+          dependsOn: string[];
+          status?: string;
+        }>;
+      };
+    }>();
+    const content = await readFile(outputPath, "utf8");
+    const generated = JSON.parse(content) as typeof result.root;
+    expect(result.input).toBe("tasks/conversion-prd.md");
+    expect(result.output).toBe("tasks/conversion-prd.json");
+    expect(result.storyCount).toBe(3);
+    expect(result.diagnostics).toEqual([]);
+    expect(Object.keys(generated).sort()).toEqual(["branchName", "description", "name", "userStories"].sort());
+    expect(generated).toMatchObject({
+      name: "Conversion PRD",
+      branchName: "ralph/conversion",
+      description: "Convert markdown PRD state into ralph JSON.",
+    });
+    expect(generated.userStories).toHaveLength(3);
+    expect(generated.userStories[0]).toMatchObject({
+      id: "US-001",
+      priority: 1,
+      passes: false,
+      notes: "",
+      dependsOn: [],
+    });
+    expect(generated.userStories[1]).toMatchObject({
+      id: "US-002",
+      priority: 2,
+      passes: false,
+      notes: "",
+      dependsOn: ["US-001"],
+    });
+    expect(generated.userStories[2]).toMatchObject({
+      id: "US-003",
+      priority: 3,
+      passes: false,
+      notes: "",
+      dependsOn: ["US-001"],
+    });
+    for (const story of generated.userStories) {
+      expect(story).not.toHaveProperty("status");
+      expect(story.acceptanceCriteria).toEqual(
+        expect.arrayContaining([
+          "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+          "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        ]),
+      );
+    }
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["collect", "tasks/conversion-prd.json", "--root", workspace, "--json"]);
+    const collected = parsedOutput<{
+      familyMembers: Array<{ kind: string; stableId: string }>;
+      diagnostics: Array<{ code: string }>;
+    }>();
+    expect(collected.familyMembers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "prd", stableId: "tasks/conversion-prd" }),
+        expect.objectContaining({ kind: "ralph-prd-json", stableId: "tasks/conversion-prd" }),
+      ]),
+    );
+    expect(collected.diagnostics.map((diagnostic) => diagnostic.code)).not.toEqual(
+      expect.arrayContaining([
+        "ralph-prd-json-root-prd",
+        "ralph-prd-json-root-tasks",
+        "ralph-prd-json-story-status",
+        "ralph-prd-json-story-depends-on-missing",
+      ]),
+    );
+  });
+
   it("refuses PRD scaffold JSON output files", async () => {
     const workspace = await createFixtureWorkspace();
 

@@ -16,6 +16,7 @@ export {
   PRD_MARKDOWN_ADAPTER_ID,
 } from "./adapters/prd-markdown.js";
 export {
+  buildRalphPrdJsonEnvelopeFromContent,
   createRalphPrdJsonAdapter,
   readRalphPrdJsonSummary,
   RALPH_PRD_JSON_ADAPTER_ID,

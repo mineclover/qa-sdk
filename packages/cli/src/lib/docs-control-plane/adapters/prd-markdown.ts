@@ -34,6 +34,7 @@ interface PrdStory {
   readonly id: string;
   readonly title: string;
   readonly description?: string;
+  readonly prerequisites: readonly string[];
   readonly acceptanceCriteria: readonly PrdCriterion[];
   readonly order: number;
 }
@@ -206,10 +207,22 @@ function parseStories(content: string): readonly PrdStory[] {
       id: heading.id,
       title: heading.title,
       description: parseLabelBlock(block, "Description"),
+      prerequisites: parsePrerequisites(block),
       acceptanceCriteria: parseAcceptanceCriteria(block),
       order: index,
     };
   });
+}
+
+function parsePrerequisites(block: string): readonly string[] {
+  const labels = ["Depends on", "Dependencies", "Prerequisites", "Prerequisite"];
+  return labels
+    .flatMap((label) => [
+      parseLabelBlock(block, label),
+      parseLabeledSection(block, label),
+    ])
+    .flatMap((value) => parsePrerequisiteText(value ?? ""))
+    .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index);
 }
 
 function parseAcceptanceCriteria(block: string): readonly PrdCriterion[] {
@@ -283,6 +296,7 @@ function toDocumentTask(
     },
     metadata: {
       ...(story.description ? { description: story.description } : {}),
+      prerequisites: [...story.prerequisites],
       acceptanceCriteria: story.acceptanceCriteria.map((criterion) => ({ ...criterion })),
       qualityGates: [...qualityGates],
       passes: checkableCriteria > 0 && checkedCriteria === checkableCriteria,
@@ -303,6 +317,16 @@ function parseListOrParagraphs(content: string): readonly string[] {
   if (list.length > 0) return list;
   const block = normalizeBlock(content);
   return block ? [block] : [];
+}
+
+function parsePrerequisiteText(content: string): readonly string[] {
+  if (!content.trim()) return [];
+  const list = parseList(content);
+  if (list.length > 0) return list;
+  return content
+    .split(/[,;\n]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function normalizeBlock(content: string): string {

@@ -80,6 +80,17 @@ export const DOCS_COMMAND_DESCRIPTORS = [
     ],
   },
   {
+    id: "docs.prd.to-ralph-json",
+    path: ["prd", "to-ralph-json"],
+    usage: "qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]",
+    handlerKey: "docs.prd.to-ralph-json",
+    options: [
+      { flag: "--output", valueHint: "<prd.json>", type: "string", description: "ralph-compatible PRD JSON output path" },
+      { flag: "--json", type: "boolean", description: "emit structured JSON" },
+      { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },
+    ],
+  },
+  {
     id: "docs.transform.metadata",
     path: ["transform", "metadata"],
     usage: "qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run]",

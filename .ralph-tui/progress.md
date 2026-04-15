@@ -14,6 +14,7 @@ after each iteration and it's included in prompts for context.
 - Docs drift checks should correlate already-normalized envelopes in the command/control-plane layer and only read source file content for cross-document evidence; adapters stay read-only and source vocabulary stays source-owned.
 - Docs metadata transforms should stay as command-layer dry-run projections over parsed source files; adapters remain read-only, rule fields are allowlisted, and projected frontmatter lives in change-set metadata until a later apply story exists.
 - PRD authoring workflows should compose markdown from docs control-plane envelopes in the command layer; they must not call ralph-tui or create ralph PRD JSON unless a later explicit adapter command owns that conversion.
+- PRD compatibility conversion should compose from source adapters and validate generated target content through the target adapter before writing; adapters remain read-only while the command owns explicit materialization.
 
 ---
 
@@ -125,4 +126,17 @@ after each iteration and it's included in prompts for context.
   - PRD context composition belongs above adapters because it correlates normalized envelopes, topic matches, markdown TODO rows, scenario matrix tables, evidence, and ralph state without changing source-owned schemas.
   - Scaffold generation should be markdown-only at this layer; `.json` output would blur authoring with the ralph adapter conversion boundary.
   - PRD markdown adapter parsing can safely recognize new scaffold sections as source-owned PRD markdown metadata while keeping the control plane read-only.
+---
+
+## 2026-04-15 - US-009
+- Implemented `qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]`.
+- Conversion reads PRD markdown through the `prd-markdown` adapter, builds flat ralph-compatible root JSON with `name`, `branchName`, `description`, and `userStories`, appends PRD quality gates to every story, derives dependencies from story order or explicit prerequisite hints, sets generated stories to `passes: false`, keeps `notes` empty, and omits story `status`.
+- Generated content is validated through the ralph PRD JSON adapter before the command writes the output file.
+- Added CLI and adapter tests covering prerequisite metadata, conversion output shape, quality gate propagation, dependency derivation, no-status stories, and rereading the generated JSON through the ralph adapter.
+- Files changed: `packages/cli/src/lib/docs-control-plane/adapters/prd-markdown.ts`, `packages/cli/src/lib/docs-control-plane/adapters/ralph-prd-json.ts`, `packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts`, `packages/cli/src/lib/docs-control-plane/index.ts`, `packages/cli/src/commands/docs.ts`, `packages/cli/src/command-groups/docs.commands.ts`, `packages/cli/src/commands/docs.test.ts`, `packages/cli/src/commands/index-usage.test.ts`, `packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- docs`; `pnpm --filter @qa-sdk/cli test -- index-usage`; `pnpm --filter @qa-sdk/cli test -- def`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter @qa-sdk/cli build`; `pnpm --filter definition-catalog test`; `pnpm --filter definition-catalog typecheck`; `pnpm --filter definition-data-source test`; `pnpm --filter definition-data-source typecheck`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - PRD-to-ralph conversion belongs in the command layer: source adapters provide neutral envelopes, the command owns materialization, and the target adapter validates the generated compatibility shape before write.
+  - Explicit prerequisite hints should stay as PRD markdown task metadata; conversion can then preserve source-owned hints while using story order as the default dependency fallback.
+  - Validating generated JSON from content avoids a temp output write and keeps the ralph adapter read-only.
 ---

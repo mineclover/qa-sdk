@@ -38,6 +38,10 @@ import {
   type DocumentDriftResult,
   type DocumentDriftSeverity,
 } from "../lib/docs-control-plane/drift.js";
+import {
+  previewPrdToRalphJson,
+  type PrdToRalphJsonPreview,
+} from "../lib/docs-control-plane/prd-to-ralph-json.js";
 import { formatHelpSections, type CommandHelpSectionSpec } from "../command-spec.js";
 
 type DocsCommand = "help" | "status" | "collect" | "search" | "drift" | "transform" | "prd";
@@ -247,6 +251,7 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "qa-sdk docs drift [--prd <file>] [--json]",
       "qa-sdk docs prd context <topic|doc-id> [--json]",
       "qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]",
+      "qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]",
       "qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run] [--json]",
     ],
   },
@@ -259,7 +264,7 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "--session <file>             ralph session metadata path",
       "--prd-json <file>            PRD JSON path for session comparison",
       "--prd <file>                 scope drift checks to a PRD markdown/JSON family",
-      "--output <file>              PRD markdown scaffold output path",
+      "--output <file>              PRD markdown scaffold or PRD JSON conversion output path",
       "--rule <json-file|inline-json> metadata transform rule for dry-run preview",
       "--dry-run                    preview only; this is the default",
       "--apply                      unsupported in this PRD; returns a structured error",
@@ -622,9 +627,10 @@ async function cmdPrd(
   const action = positional[0];
   const target = positional.slice(1).join(" ").trim();
 
-  if (action !== "context" && action !== "scaffold") {
+  if (action !== "context" && action !== "scaffold" && action !== "to-ralph-json") {
     console.error("Usage: qa-sdk docs prd context <topic|doc-id> [--json]");
     console.error("Usage: qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]");
+    console.error("Usage: qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]");
     process.exitCode = 1;
     return;
   }
@@ -632,6 +638,60 @@ async function cmdPrd(
   if (!target) {
     console.error(`docs prd ${action} requires <topic|doc-id>`);
     process.exitCode = 1;
+    return;
+  }
+
+  if (action === "to-ralph-json") {
+    const output = pickLast(flags, "output");
+    if (!output) {
+      printStructuredError({
+        error: {
+          code: "missing-required-option",
+          operation: "docs.prd.to-ralph-json",
+          message: "docs prd to-ralph-json requires --output <prd.json>.",
+          remediation: "Pass a repository-relative JSON output path such as --output tasks/prd.json.",
+        },
+      }, json);
+      process.exitCode = 1;
+      return;
+    }
+
+    if (!output.toLowerCase().endsWith(".json")) {
+      printStructuredError({
+        error: {
+          code: "unsupported-output-format",
+          operation: "docs.prd.to-ralph-json",
+          message: "docs prd to-ralph-json writes ralph-compatible JSON.",
+          remediation: "Use a .json output path.",
+        },
+      }, json);
+      process.exitCode = 1;
+      return;
+    }
+
+    const outputPath = resolveOutputPath(options.rootDir, output);
+    const result = await previewPrdToRalphJson({
+      rootDir: options.rootDir,
+      inputPath: target,
+      outputPath,
+    });
+    if (hasErrorDiagnostic(result.diagnostics)) {
+      process.exitCode = 1;
+      if (json) {
+        printJson(toPrdToRalphJsonOutput(result));
+        return;
+      }
+      printPrdToRalphJsonResult(result, false);
+      return;
+    }
+
+    await mkdir(dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, result.content, "utf8");
+    if (json) {
+      printJson(toPrdToRalphJsonOutput(result));
+      return;
+    }
+    printPrdToRalphJsonResult(result, true);
     return;
   }
 
@@ -1574,6 +1634,25 @@ function printPrdScaffoldResult(result: PrdScaffoldResult): void {
   console.log(`  prior PRDs: ${result.context.counts.priorPrds}`);
 }
 
+function printPrdToRalphJsonResult(result: PrdToRalphJsonPreview, wrote: boolean): void {
+  console.log(`docs prd to-ralph-json: ${wrote ? "wrote" : "blocked"} ${result.output}`);
+  console.log(`  input: ${result.input}`);
+  console.log(`  stories: ${result.storyCount}`);
+  console.log(`  bytes: ${result.bytes}`);
+  printDiagnostics(result.diagnostics);
+}
+
+function toPrdToRalphJsonOutput(result: PrdToRalphJsonPreview): object {
+  return {
+    input: result.input,
+    output: result.output,
+    bytes: result.bytes,
+    storyCount: result.storyCount,
+    root: result.root,
+    diagnostics: result.diagnostics,
+  };
+}
+
 function printDriftIssueGroup(
   severity: DocumentDriftSeverity,
   issues: readonly DocumentDriftIssue[],
@@ -1610,6 +1689,10 @@ function printDiagnostics(diagnostics: readonly DocumentDiagnostic[]): void {
   if (diagnostics.length > 5) {
     console.log(`    ... ${diagnostics.length - 5} more`);
   }
+}
+
+function hasErrorDiagnostic(diagnostics: readonly DocumentDiagnostic[]): boolean {
+  return diagnostics.some((diagnostic) => diagnostic.severity === "error");
 }
 
 function printNamedCollection<T>(

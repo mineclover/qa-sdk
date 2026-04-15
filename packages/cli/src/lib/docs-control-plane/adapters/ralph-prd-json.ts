@@ -80,6 +80,16 @@ export async function readRalphPrdJsonSummary(
   };
 }
 
+export function buildRalphPrdJsonEnvelopeFromContent(
+  rootDir: string,
+  prdPath: string,
+  content: string,
+): DocumentEnvelope {
+  return buildRalphPrdJsonEnvelope(
+    parseRalphPrdJson(rootDir, resolvePath(rootDir, prdPath), content),
+  );
+}
+
 async function collectRalphPrdJsonEnvelopes(
   rootDir: string,
   dirs: readonly string[],

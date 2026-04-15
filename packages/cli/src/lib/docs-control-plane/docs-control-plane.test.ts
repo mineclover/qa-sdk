@@ -737,6 +737,8 @@ Coordinate documentation adapters.
 
 **Description:** As a maintainer, I want ralph execution JSON to remain an adapter.
 
+**Depends on:** US-001
+
 **Acceptance Criteria:**
 - [ ] JSON is not the core document model.
 
@@ -805,6 +807,7 @@ Coordinate documentation adapters.
         { text: "Overview is collected.", checked: true },
         { text: "Open criteria remain visible.", checked: false },
       ]);
+      expect(doc!.tasks[1]!.metadata.prerequisites).toEqual(["US-001"]);
     });
   });
 
