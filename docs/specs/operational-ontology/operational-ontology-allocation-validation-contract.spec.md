@@ -13,8 +13,6 @@ def:
       type: refines
     - target: operational-ontology-validation-boundary
       type: depends_on
-    - target: operational-ontology-registry-allocation-plan
-      type: depends_on
     - target: operational-ontology-registry-allocation-todo
       type: traces_to
 sources:

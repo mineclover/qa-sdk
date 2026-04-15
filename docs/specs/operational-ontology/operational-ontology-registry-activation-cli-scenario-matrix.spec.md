@@ -9,8 +9,12 @@ def:
   layer: operation
   tags: [structural, testing, contract, observability]
   links:
+    - target: operational-ontology-registry-allocation
+      type: refines
     - target: operational-ontology-registry-activation-cli
       type: refines
+    - target: operational-ontology-registry-activation-evidence
+      type: depends_on
     - target: operational-ontology-pack-interface
       type: depends_on
     - target: programming-artifact-ontology-system
@@ -28,18 +32,18 @@ sources:
 
 ## 목적 ^purpose
 
-Document the local `qa-sdk ontology registry activate-pack` scenario matrix before REST activation design begins. The matrix records which known pack scenarios are already proven by concrete tests and which local CLI rows remain gaps owned by later stories in the CLI scenario hardening PRD.
+Document the local `qa-sdk ontology registry activate-pack` scenario proof before REST activation design begins. The matrix records concrete test evidence for command dispatch, sidecar output, explicit activation evidence persistence, provider consumption, rerun/upsert behavior, duplicate/failure interpretation, and cross-pack coexistence.
 
 ## 구성 ^overview
 
-This matrix belongs to the local activation CLI surface defined by `operational-ontology-registry-activation-cli`. It evaluates only local command behavior, local SQLite activation stores, explicit sidecar output, and explicit programming artifact registry evidence append.
+This matrix belongs to the local activation CLI surface defined by `operational-ontology-registry-activation-cli`. It evaluates only local command behavior, local SQLite activation stores, explicit sidecar output, and explicit programming artifact registry evidence append. Command surface, result payload, and evidence persistence rules live in their own leaves; this document only records scenario proof and evidence references.
 
 This document does not define or imply registry-service REST activation, a remote activation service, scoped prefix support, production store ownership, API idempotency, or rollback/compensating rollback behavior.
 
 Legend:
 
 - `E-*` means the row is implemented and linked to a concrete test title below.
-- `Gap: US-*` means the row is not yet covered and is assigned to that later story in `tasks/prd-ontology-registry-cli-scenario-hardening.md`.
+- `Gap: US-*` means the row is not yet covered and must stay out of this proof until a later story closes it.
 - `N/A` means the column cannot apply to that row, usually because the row uses known pack ids and the scenario is the no-known-pack guardrail.
 
 ## Scenario Matrix

@@ -13,7 +13,7 @@ def:
   links:
     - target: operational-ontology-system
       type: refines
-    - target: operational-ontology-registry-allocation-plan
+    - target: operational-ontology-registry-lifecycle
       type: depends_on
     - target: registry-system
       type: depends_on

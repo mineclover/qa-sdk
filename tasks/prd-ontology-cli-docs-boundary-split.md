@@ -108,14 +108,14 @@ Line counts are the current pre-split inventory from the working tree. Proposed 
 **Description:** As a documentation maintainer, I want the registry allocation document family split into module and leaf specs so lifecycle, activation, evidence, and scenario concerns have stable coordinates.
 
 **Acceptance Criteria:**
-- [ ] Convert `operational-ontology-registry-allocation` into a module-level overview if it owns multiple leaf concerns.
-- [ ] Add or update contains links for lifecycle, activation CLI, activation result, activation evidence, and activation scenario matrix leaf docs.
-- [ ] Create or update `operational-ontology-registry-lifecycle.spec.md` for Phase 2A through Phase 5 lifecycle current state.
-- [ ] Create or update `operational-ontology-registry-activation-result.spec.md` for activation result payload, no-rollback policy, and structured failure semantics.
-- [ ] Create or update `operational-ontology-registry-activation-evidence.spec.md` for `--output`, `--artifact-registry`, `activation-evidence`, registry append/upsert, and provider consumption behavior.
-- [ ] Keep `operational-ontology-registry-activation-cli.spec.md` focused on command surface and local runtime boundary.
-- [ ] Keep `operational-ontology-registry-activation-cli-scenario-matrix.spec.md` focused on scenario proof and evidence references.
-- [ ] Update sources and links so `qa-sdk docs status operational-ontology-registry-allocation` shows the intended family without unrelated PRDs.
+- [x] Convert `operational-ontology-registry-allocation` into a module-level overview if it owns multiple leaf concerns.
+- [x] Add or update contains links for lifecycle, activation CLI, activation result, activation evidence, and activation scenario matrix leaf docs.
+- [x] Create or update `operational-ontology-registry-lifecycle.spec.md` for Phase 2A through Phase 5 lifecycle current state.
+- [x] Create or update `operational-ontology-registry-activation-result.spec.md` for activation result payload, no-rollback policy, and structured failure semantics.
+- [x] Create or update `operational-ontology-registry-activation-evidence.spec.md` for `--output`, `--artifact-registry`, `activation-evidence`, registry append/upsert, and provider consumption behavior.
+- [x] Keep `operational-ontology-registry-activation-cli.spec.md` focused on command surface and local runtime boundary.
+- [x] Keep `operational-ontology-registry-activation-cli-scenario-matrix.spec.md` focused on scenario proof and evidence references.
+- [x] Update sources and links so `qa-sdk docs status operational-ontology-registry-allocation` shows the intended family without unrelated PRDs.
 
 ### US-003: Split Programming Artifact Ontology Documentation By Provider And Evidence Concerns
 

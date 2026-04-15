@@ -17,8 +17,6 @@ def:
       type: depends_on
     - target: operational-ontology-schema-validation
       type: depends_on
-    - target: operational-ontology-registry-allocation-plan
-      type: depends_on
     - target: programming-artifact-ontology-context-simulation
       type: depends_on
     - target: registry-system

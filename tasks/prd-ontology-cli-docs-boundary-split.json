@@ -60,11 +60,12 @@
         "`node packages/cli/dist/index.js def validate` passes."
       ],
       "priority": 2,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Promoted operational-ontology-registry-allocation to a module overview and moved lifecycle, activation result, and activation evidence concerns into dedicated leaf specs. Updated contains/back-links so docs status for the registry allocation family includes lifecycle, activation CLI, activation result, activation evidence, and scenario matrix leaves without task PRD sources. Required US-002 gates passed.",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-003",
@@ -424,6 +425,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T19:09:48.362Z"
+    "updatedAt": "2026-04-15T19:25:01.429Z"
   }
 }

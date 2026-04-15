@@ -27,19 +27,17 @@ sources:
 
 ## 목적 ^purpose
 
-완료된 ontology registry activation lifecycle을 로컬 CLI에서 실행하는 계약을 정의한다. 목표는 `OntologyPackActivationHelper`가 소유한 pack validation, reservation, allocation activation, index-meta sync, smoke summary를 재구현하지 않고 `qa-sdk ontology registry activate-pack` 명령으로 호출하게 만드는 것이다.
+완료된 ontology registry activation lifecycle을 local CLI에서 실행하는 command surface와 runtime boundary를 정의한다. 목표는 `OntologyPackActivationHelper` lifecycle을 재구현하지 않고 `qa-sdk ontology registry activate-pack`로 호출하는 public/local operator contract를 고정하는 것이다.
 
 ## 구성 ^overview
 
-이 CLI surface는 public/local execution boundary다. 완료된 activation helper lifecycle을 실행하고, 명시적 `--artifact-registry`가 있을 때 성공한 activation result를 local programming artifact registry evidence로 append한다. registry-service REST endpoint, remote activation service, scoped prefix API는 포함하지 않는다.
+This leaf owns the command path, supported flags, known pack resolver, and local SQLite runtime boundary. Activation result payload semantics, activation evidence persistence, and scenario proof are separate leaves in the registry allocation module.
 
-- **Command descriptor**: `packages/cli/src/command-groups/ontology.commands.ts`의 `ontology.registry.activate-pack`.
-- **Handler proxy**: ontology command group이 `cliOntology(["registry.activate-pack", ...rest])`로 위임한다.
-- **Known pack resolver**: `packages/cli/src/lib/known-ontology-packs.ts`가 production pack exports만 매핑한다.
-- **Local runtime**: `@qa-sdk/registry-service/ontology-local-runtime`이 하나의 SQLite driver 위에 registry-service ontology rows와 index-meta rows를 함께 구성한다.
-- **Activation helper**: `OntologyPackActivationHelper.activateOntologyPack()`이 lifecycle ordering과 smoke checks의 SSOT다.
-- **Activation evidence mapper**: `packages/cli/src/lib/activation-evidence-registry.ts`가 successful activation result와 resolved sidecar path를 `kind: "activation-evidence"` programming artifact registry record로 변환한다.
-- **Scenario matrix**: `operational-ontology-registry-activation-cli-scenario-matrix`가 completed pre-REST local CLI proof의 validation SSOT다. 현재 local CLI matrix gap은 없으며 REST/remote/scoped-prefix semantics는 이 문서 밖 follow-up이다.
+- **Command descriptor** - `packages/cli/src/command-groups/ontology.commands.ts` exposes `ontology.registry.activate-pack`.
+- **Handler proxy** - the ontology command group routes to `cliOntology(["registry.activate-pack", ...rest])`.
+- **Known pack resolver** - production package exports provide the finite pack id set.
+- **Local runtime** - registry-service and index-meta SQL infrastructure are opened on one SQLite driver.
+- **Activation helper port** - the CLI calls `OntologyPackActivationHelper.activateOntologyPack()` and prints or writes the returned payload.
 
 ## Command Surface ^defines
 
@@ -57,7 +55,7 @@ qa-sdk ontology registry activate-pack <pack-id> \
   [--json]
 ```
 
-Supported pack ids are intentionally finite and resolved from production exports.
+Supported pack ids are intentionally finite:
 
 | pack id | import contract |
 |---------|-----------------|
@@ -66,238 +64,46 @@ Supported pack ids are intentionally finite and resolved from production exports
 
 Flag behavior:
 
-- `--store <path>` selects the local SQLite store. `:memory:` is supported by the local runtime and persistent paths create parent directories through the runtime path setup.
+- `--store <path>` selects the local SQLite store. `:memory:` is supported.
 - `--ontology-id`, `--namespace`, `--owner`, and `--version` pass metadata overrides into pack registration.
-- `--address-model product|sum` selects the allocation model. Other values fail before helper execution with `invalid-address-model`.
+- `--address-model product|sum` selects the allocation model; other values fail before helper execution.
 - `--prefix <taxonomyId>=<prefix>` is repeatable and provides deterministic taxonomy prefix overrides.
-- `--json` prints the unwrapped activation helper result on stdout.
-- `--output <file>` writes the same pretty JSON payload that `--json` prints. Parent directories are created before writing. Text mode still prints the concise activation summary and includes the resolved output path.
-- `--artifact-registry <file>` appends successful activation evidence to a local programming artifact registry. It requires `--output <file>` because the registry record must point at materialized sidecar evidence.
+- `--json` prints the activation helper result on stdout.
+- `--output <file>` writes the activation result payload as a pretty JSON sidecar.
+- `--artifact-registry <file>` requests explicit activation evidence persistence and requires `--output <file>`.
 
-Activation evidence append behavior:
-
-- `--output` alone remains sidecar-only JSON materialization and does not write a registry record.
-- With `--output` and `--artifact-registry`, the CLI writes the activation sidecar first, then builds and upserts an `activation-evidence` registry record only when `result.status === "succeeded"`.
-- Failed activation results and output-write failures do not append managed registry evidence.
-- The sidecar file remains the raw activation helper result. Registry append metadata is reported only in command stdout.
-- JSON stdout includes additive `activationEvidence` when append is attempted. Text stdout reports the registry path and record id on append success, and a sanitized append error on append failure.
-- Append failure sets process exit code 1 and does not rewrite the activation sidecar.
+Detailed result fields are owned by `operational-ontology-registry-activation-result`. Detailed evidence append/upsert and provider behavior are owned by `operational-ontology-registry-activation-evidence`.
 
 ## Runtime Boundary
 
-The local runtime opens registry-service/index-meta SQL infrastructure over one SQLite driver. It applies index-meta base DDL plus registry-service migrations, then shares that driver across `SqlOntologyRegistryStore`, `SqlPrefixRegistry`, and `SqlIndexMetaStore`.
+The local runtime opens one SQLite driver per command invocation. It applies index-meta base DDL plus registry-service ontology migrations, then constructs:
 
-The CLI command must not:
+- `SqlOntologyRegistryStore`
+- `SqlPrefixRegistry`
+- `SqlIndexMetaStore`
+- `OntologyIndexMetaSyncAdapter`
+- `OntologyRegistryService`
+- `OntologyPackActivationHelper`
 
-- start a Nest HTTP server,
-- call registry-service REST APIs,
-- create a second persistence abstraction,
-- reach into raw SQL from command code,
-- append activation output implicitly from `--output` alone,
-- append failed activation results as managed programming artifact evidence.
+The CLI command must not start a Nest HTTP server, call registry-service REST APIs, create a second persistence abstraction, reach into raw SQL from command code, or infer remote activation semantics from the local SQLite workflow.
 
-## JSON Contract
+## Failure Ownership
 
-`--output` always materializes the activation helper payload without wrapping successful or helper-returned failed results. `--json` prints that same payload, except successful `--artifact-registry` runs and sanitized append failures may add an `activationEvidence` object to stdout only.
+The CLI owns argument parsing, known pack resolution, local runtime setup, output sidecar writing, and explicit evidence append orchestration. Helper lifecycle failures remain helper results and are not wrapped into a different CLI schema.
 
-Required stable summary fields:
+Known CLI-origin failure codes are documented in `operational-ontology-registry-activation-result`; evidence-specific failures are documented in `operational-ontology-registry-activation-evidence`.
 
-- `status`
-- `packId`
-- `ontologyId`
-- `namespaceSummary`
-- `allocationSummaries`
-- `syncSummariesByAllocationId`
-- `smokeCheckSummary`
-- `warnings`
-- `errors`
+## Scenario Proof
 
-Raw detail fields such as `namespaceRecord`, `allocations`, `activationStatuses`, `syncReports`, and `smokeChecks` may also be present for debugging and future API surfaces.
+The local CLI scenario proof is not duplicated here. `operational-ontology-registry-activation-cli-scenario-matrix` records known pack activation, sidecar output, evidence append, registry consumption, rerun/upsert, duplicate/failure interpretation, and cross-pack coexistence evidence references.
 
-`activationEvidence` is additive stdout metadata and is intentionally absent from the sidecar file. Successful append shape:
+## Non-Goals
 
-```json
-{
-  "activationEvidence": {
-    "appendStatus": "appended",
-    "registryPath": "artifacts/programming-artifacts.json",
-    "recordId": "activation-evidence-programming-artifact-ontology-programming-artifact-ontology",
-    "recordRef": "artifacts/activation/programming-artifact-ontology.json",
-    "recordCount": 1
-  }
-}
-```
-
-Sanitized append failure shape:
-
-```json
-{
-  "activationEvidence": {
-    "appendStatus": "failed",
-    "registryPath": "artifacts/programming-artifacts.json",
-    "recordId": "activation-evidence-programming-artifact-ontology-programming-artifact-ontology",
-    "recordRef": "artifacts/activation/programming-artifact-ontology.json",
-    "recordCount": null,
-    "error": {
-      "code": "activation-evidence-registry-append-error",
-      "message": "Activation evidence could not be appended to the artifact registry."
-    }
-  }
-}
-```
-
-Pre-helper CLI/runtime failures use a result-like failed payload with `allocationSummaries: []`, empty sync/smoke summaries, and a structured `errors[]` entry. Helper lifecycle failures keep the helper result shape and set `status: "failed"`.
-
-## Failure Contract
-
-This is the final local operator interpretation for the completed pre-REST CLI hardening PRD.
-
-Operator interpretation is intentionally split by ownership boundary:
-
-- **Command-level failures** happen before or after the activation helper lifecycle. Unknown pack ids, invalid CLI flags, invalid address models, runtime setup failures, output sidecar write failures, missing `--output` for `--artifact-registry`, and activation evidence registry append failures are CLI-owned failures.
-- **Helper lifecycle failures** are returned by `OntologyPackActivationHelper.activateOntologyPack()`. The CLI does not wrap or reinterpret those payloads; it preserves their `status: "failed"`, phase-level `errors[]`, warnings, summaries, and raw detail fields.
-- **No rollback policy** remains the current local lifecycle policy. Once helper-owned registry-service or index-meta work has succeeded, the CLI does not attempt compensating rollback. Later helper failures are represented as structured failed activation results, and post-helper append failures are represented as command failures with the successful sidecar preserved.
-- **Structured failed activation results** are not activation evidence. Managed `activation-evidence` records are appended only when the helper result has `status: "succeeded"`.
-
-Known CLI-origin failure codes include:
-
-| code | condition |
-|------|-----------|
-| `unknown-ontology-pack` | `<pack-id>` is not in the known pack resolver |
-| `invalid-cli-flag` | command-specific flag validation rejects an unsupported flag |
-| `missing-flag-value` | a flag that requires a value has none |
-| `invalid-address-model` | `--address-model` is neither `product` nor `sum` |
-| `activation-runtime-error` | runtime setup fails before the helper returns a structured result |
-| `activation-output-write-error` | `--output` cannot write the JSON sidecar |
-| `activation-evidence-output-required` | `--artifact-registry` was provided without `--output` |
-| `activation-evidence-registry-append-error` | successful activation wrote the sidecar but could not append the programming artifact registry record |
-
-Non-JSON CLI-origin failures preserve the stable JSON error code as a `<code>: <message>` prefix. Runtime and storage errors are sanitized; raw SQLite/SQL statement details are not printed.
-
-Helper lifecycle failures continue through the activation summary `errors` list. Duplicate activation currently returns a structured `duplicate-allocation` helper failure instead of a CLI-level idempotent success.
-
-`activation-evidence-registry-append-error` is reported through additive `activationEvidence.appendStatus: "failed"` instead of mutating the helper result or sidecar. It is a command failure for automation purposes, but the activation result itself remains successful.
-
-Duplicate same-store activation is intentionally not a successful idempotent activation. Idempotent evidence behavior is limited to successful reruns against an isolated activation store with the same pack, ontology id, output path, and artifact registry identity; those reruns upsert the same managed evidence record.
-
-REST activation idempotency, remote store ownership, tenancy/auth boundaries, and cross-boundary compensating rollback are intentionally undecided in this CLI contract. They require a separate REST/remote PRD and must not be inferred from local SQLite CLI behavior.
-
-## Proven Scenarios
-
-The final scenario matrix lives in `operational-ontology-registry-activation-cli-scenario-matrix`; this section summarizes the same completed local CLI proof for the command contract.
-
-The CLI test suite proves command discovery and dispatch through `main(["ontology", "registry", "activate-pack", ...])`, not only the handler proxy.
-
-- `programming-artifact-ontology` activates through an isolated SQLite store, returns `programming-artifact` and `programming-artifact-relation` allocation summaries, syncs every allocation, and returns passing smoke checks.
-- Re-running `programming-artifact-ontology` against the same store returns a structured `duplicate-allocation` failed result without leaking raw SQL.
-- `programming-artifact-ontology --output <file> --artifact-registry <registry> --json` writes the raw activation sidecar, appends exactly one `activation-evidence` record, validates the registry, lists the record by kind, and resolves the sidecar through `ontology prompt extract-artifact` as an `artifact-registry-hit`.
-- Successful reruns with a fresh activation store and the same registry/output identity upsert the same activation evidence record instead of duplicating it.
-- Duplicate/failed activation against the original store does not append or replace successful registry evidence with failed evidence.
-- `authorization-ontology` activates through an isolated SQLite store, returns all eight authorization taxonomy allocation summaries, syncs every allocation, returns passing smoke checks, and exposes known authorization axes in `syncReports[*].materializedRecords[*].axisId`.
-- `authorization-ontology --output <file> --artifact-registry <registry> --json` writes a raw sidecar, appends deterministic `activation-evidence-authorization-ontology-authorization-ontology` evidence with authorization namespace/allocation/sync/smoke/warning/error metadata, validates/lists the registry record, resolves the sidecar through `ontology prompt extract-artifact` as an `artifact-registry-hit`, upserts a successful rerun, and preserves the successful record after duplicate same-store failure.
-- `authorization-ontology` output write failure does not append managed evidence, and registry append failure returns sanitized command failure metadata while preserving the successful raw sidecar.
-- A single local programming artifact registry can hold activation evidence for both `programming-artifact-ontology` and `authorization-ontology` when each pack uses an isolated activation store and its own sidecar path. The combined registry validates, `list --kind activation-evidence` returns both records, `extract-artifact` resolves each sidecar to the matching pack record, and rerunning one pack upserts its record without mutating or duplicating the other pack record.
-- Unknown pack id, invalid address model, helper duplicate failure, runtime storage failure, JSON output, text output, and `--output` sidecar paths have CLI coverage.
-- Missing `--output` with `--artifact-registry`, output write failure, sanitized registry append failure, and text-mode activation evidence reporting have CLI coverage.
-
-## Programming Artifact Evidence Replay Sequence
-
-The local replay proof for `programming-artifact-ontology` uses separate activation stores for sidecar-only, first evidence append, and successful rerun. Reusing the first evidence store is reserved for the duplicate/failed activation check.
-
-```bash
-WORKDIR="$(mktemp -d)"
-SIDECAR_ONLY_STORE="$WORKDIR/sidecar-only.sqlite"
-FIRST_STORE="$WORKDIR/first.sqlite"
-RERUN_STORE="$WORKDIR/rerun.sqlite"
-SIDECAR_ONLY_OUTPUT="$WORKDIR/activation/sidecar-only.json"
-OUTPUT="$WORKDIR/activation/programming-artifact-ontology.json"
-DUPLICATE_OUTPUT="$WORKDIR/activation/duplicate-failed.json"
-REGISTRY="$WORKDIR/programming-artifacts.json"
-
-qa-sdk ontology registry activate-pack programming-artifact-ontology \
-  --store "$SIDECAR_ONLY_STORE" \
-  --output "$SIDECAR_ONLY_OUTPUT" \
-  --json
-
-qa-sdk ontology registry activate-pack programming-artifact-ontology \
-  --store "$FIRST_STORE" \
-  --output "$OUTPUT" \
-  --artifact-registry "$REGISTRY" \
-  --json
-
-qa-sdk ontology artifact registry validate \
-  --input "$REGISTRY" \
-  --json
-
-qa-sdk ontology artifact registry list \
-  --input "$REGISTRY" \
-  --kind activation-evidence \
-  --json
-
-qa-sdk ontology prompt extract-artifact "$OUTPUT" \
-  --artifact-registry "$REGISTRY" \
-  --kind self_reflection \
-  --json
-
-qa-sdk ontology registry activate-pack programming-artifact-ontology \
-  --store "$RERUN_STORE" \
-  --output "$OUTPUT" \
-  --artifact-registry "$REGISTRY" \
-  --json
-
-qa-sdk ontology artifact registry list \
-  --input "$REGISTRY" \
-  --kind activation-evidence \
-  --json
-
-qa-sdk ontology registry activate-pack programming-artifact-ontology \
-  --store "$FIRST_STORE" \
-  --output "$DUPLICATE_OUTPUT" \
-  --artifact-registry "$REGISTRY" \
-  --json
-
-qa-sdk ontology artifact registry list \
-  --input "$REGISTRY" \
-  --kind activation-evidence \
-  --json
-```
-
-Expected replay observations:
-
-- The sidecar-only command writes `SIDECAR_ONLY_OUTPUT` without `activationEvidence` stdout/sidecar metadata and without creating or mutating a programming artifact registry.
-- The first explicit registry command writes `OUTPUT` before appending evidence; the sidecar remains the raw activation helper result and stdout carries additive `activationEvidence`.
-- `validate` returns a valid registry and `list --kind activation-evidence` returns exactly one record for the command.
-- `extract-artifact "$OUTPUT" --artifact-registry "$REGISTRY" --json` reports `source.kind: "artifact-registry-hit"` through the `programming-artifact-registry` provider.
-- The successful rerun with the same pack, ontology id, output path, and registry path upserts the deterministic `activation-evidence-<packId>-<ontologyId>` record; the filtered list still contains one record.
-- The duplicate activation against `FIRST_STORE` exits with a structured `duplicate-allocation` failed result and does not replace the prior successful record with `DUPLICATE_OUTPUT` or failed metadata.
-
-## Follow-up Work
-
-Completed public/local follow-up:
-
-- activation result persistence into the local programming artifact registry through `--artifact-registry`.
-- CLI scenario hardening before REST, including the final matrix, both known pack evidence proofs, cross-pack registry coexistence, rerun/upsert behavior, and operator failure interpretation.
-
-Follow-up work remains:
-
-- registry-service REST activation endpoint,
-- remote activation service/deployment surface,
-- scoped prefix support if `operational-ontology-scoped-prefix-decision` later approves it.
+This command does not define registry-service REST activation, remote activation service behavior, scoped prefix support, production store ownership, API idempotency, tenancy/auth policy, or compensating rollback semantics.
 
 ## 검증 명령
 
 - `pnpm --filter @qa-sdk/cli test -- ontology`
 - `pnpm --filter @qa-sdk/cli typecheck`
 - `pnpm --filter @qa-sdk/cli build`
-- `pnpm --filter operational-ontology test -- programming-artifacts`
-- `pnpm --filter operational-ontology typecheck`
-- `pnpm --filter operational-ontology build`
-- `pnpm --filter registry-service test -- ontology`
-- `pnpm --filter registry-service typecheck`
-- `pnpm --filter registry-service build`
-- `pnpm --filter authorization-ontology test`
-- `pnpm --filter authorization-ontology typecheck`
-- `pnpm --filter authorization-ontology build`
 - `node packages/cli/dist/index.js def validate`
-
-Build validation runs dependency builds before dependent builds. In particular, do not run `operational-ontology build` concurrently with `registry-service build`; `registry-service` declaration generation consumes built operational ontology declarations.

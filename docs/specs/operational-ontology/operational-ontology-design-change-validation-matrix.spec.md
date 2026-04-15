@@ -25,8 +25,6 @@ def:
       type: depends_on
     - target: operational-ontology-pack-interface
       type: depends_on
-    - target: operational-ontology-registry-allocation-plan
-      type: depends_on
     - target: definition-management
       type: depends_on
     - target: df-constraint
