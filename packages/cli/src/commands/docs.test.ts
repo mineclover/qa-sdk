@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -12,11 +12,13 @@ describe("docs commands", () => {
   beforeEach(() => {
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
+    process.exitCode = undefined;
     rootDir = "";
   });
 
   afterEach(async () => {
     vi.restoreAllMocks();
+    process.exitCode = undefined;
     if (rootDir) {
       await rm(rootDir, { recursive: true, force: true });
     }
@@ -226,6 +228,14 @@ Coordinate checkout adapters.
 
   function parsedOutput<T>(): T {
     return JSON.parse(output()) as T;
+  }
+
+  function errorOutput(): string {
+    return vi.mocked(console.error).mock.calls.map((call) => String(call[0])).join("\n");
+  }
+
+  function parsedError<T>(): T {
+    return JSON.parse(errorOutput()) as T;
   }
 
   it("prints text status and identifies todo follow-up state", async () => {
@@ -455,5 +465,214 @@ Coordinate checkout adapters.
     expect(text).toContain("warnings (");
     expect(text).toContain("[document-source-reference-missing] docs/specs/checkout/checkout.spec.md");
     expect(text).toContain("hint:");
+  });
+
+  it("previews metadata transform change sets without writing files by default", async () => {
+    const workspace = await createFixtureWorkspace();
+    const docPath = join(workspace, "docs/specs/checkout/checkout.spec.md");
+    const beforeContent = await readFile(docPath, "utf8");
+    const rule = {
+      select: { defIds: ["checkout-spec"] },
+      set: {
+        lifecycle: "review",
+        level: "module",
+        svc: "checkout-service",
+      },
+      tags: {
+        add: ["reviewed"],
+        remove: ["docs"],
+      },
+      links: {
+        add: [{ target: "checkout-todo", type: "contains" }],
+        remove: [{ target: "checkout-plan", type: "depends_on" }],
+      },
+      sources: {
+        add: ["packages/checkout/src/service.ts:CheckoutService"],
+        remove: ["packages/checkout/src/index.ts:Checkout"],
+      },
+    };
+
+    await cliDocs([
+      "transform",
+      "metadata",
+      "--root",
+      workspace,
+      "--rule",
+      JSON.stringify(rule),
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      mode: string;
+      dryRunDefaulted: boolean;
+      counts: { matched: number; affected: number; changes: number };
+      changeSets: Array<{
+        path: string;
+        before: {
+          lifecycle: string;
+          level: string;
+          tags: string[];
+          links: Array<{ target: string; type: string }>;
+          sources: string[];
+        };
+        after: {
+          lifecycle: string;
+          level: string;
+          svc: string;
+          tags: string[];
+          links: Array<{ target: string; type: string }>;
+          sources: string[];
+        };
+        changes: Array<{ description: string; metadata: { field: string } }>;
+      }>;
+    }>();
+
+    expect(result.mode).toBe("dry-run");
+    expect(result.dryRunDefaulted).toBe(true);
+    expect(result.counts).toMatchObject({ matched: 1, affected: 1 });
+    expect(result.counts.changes).toBeGreaterThanOrEqual(6);
+    expect(result.changeSets).toHaveLength(1);
+    expect(result.changeSets[0]).toMatchObject({
+      path: "docs/specs/checkout/checkout.spec.md",
+      before: {
+        lifecycle: "approved",
+        level: "leaf",
+      },
+      after: {
+        lifecycle: "review",
+        level: "module",
+        svc: "checkout-service",
+      },
+    });
+    expect(result.changeSets[0]!.after.tags).toEqual(["checkout", "reviewed"]);
+    expect(result.changeSets[0]!.after.links).toEqual([
+      { target: "checkout-todo", type: "contains" },
+    ]);
+    expect(result.changeSets[0]!.after.sources).toEqual([
+      "packages/checkout/src/service.ts:CheckoutService",
+    ]);
+    expect(result.changeSets[0]!.changes.map((change) => change.metadata.field)).toEqual(
+      expect.arrayContaining(["lifecycle", "level", "tags", "links", "svc", "sources"]),
+    );
+    await expect(readFile(docPath, "utf8")).resolves.toBe(beforeContent);
+  });
+
+  it("prints text metadata transform previews with explicit dry-run", async () => {
+    const workspace = await createFixtureWorkspace();
+    const rule = {
+      select: { paths: ["docs/specs/checkout/checkout.todo.md"] },
+      set: { lifecycle: "review" },
+    };
+
+    await cliDocs([
+      "transform",
+      "metadata",
+      "--root",
+      workspace,
+      "--rule",
+      JSON.stringify(rule),
+      "--dry-run",
+    ]);
+
+    const text = output();
+    expect(text).toContain("docs transform metadata: dry-run");
+    expect(text).toContain("dry-run defaulted: no");
+    expect(text).toContain("docs/specs/checkout/checkout.todo.md");
+    expect(text).toContain("lifecycle");
+  });
+
+  it("returns a structured unsupported-operation error for metadata --apply", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "transform",
+      "metadata",
+      "--root",
+      workspace,
+      "--rule",
+      "{}",
+      "--apply",
+    ]);
+
+    const result = parsedError<{
+      error: { code: string; operation: string; remediation: string };
+    }>();
+    expect(result.error).toMatchObject({
+      code: "unsupported-operation",
+      operation: "docs.transform.metadata.apply",
+    });
+    expect(result.error.remediation).toContain("later apply PRD");
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("refuses metadata transforms against PRD JSON adapters", async () => {
+    const workspace = await createFixtureWorkspace();
+    const prdJsonPath = join(workspace, "tasks/checkout-prd.json");
+    const beforeContent = await readFile(prdJsonPath, "utf8");
+
+    await cliDocs([
+      "transform",
+      "metadata",
+      "--root",
+      workspace,
+      "--rule",
+      JSON.stringify({
+        select: { paths: ["tasks/checkout-prd.json"] },
+        set: { lifecycle: "approved" },
+      }),
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      counts: { matched: number; affected: number };
+      diagnostics: Array<{ code: string; severity: string; rawSource?: { path: string } }>;
+    }>();
+    expect(result.counts).toMatchObject({ matched: 1, affected: 0 });
+    expect(result.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "metadata-transform-unsupported-source",
+          severity: "error",
+          rawSource: expect.objectContaining({ path: "tasks/checkout-prd.json" }),
+        }),
+      ]),
+    );
+    await expect(readFile(prdJsonPath, "utf8")).resolves.toBe(beforeContent);
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("refuses metadata transform rules that touch def.id", async () => {
+    const workspace = await createFixtureWorkspace();
+    const docPath = join(workspace, "docs/specs/checkout/checkout.spec.md");
+    const beforeContent = await readFile(docPath, "utf8");
+
+    await cliDocs([
+      "transform",
+      "metadata",
+      "--root",
+      workspace,
+      "--rule",
+      JSON.stringify({
+        select: { defIds: ["checkout-spec"] },
+        set: { id: null },
+      }),
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      counts: { matched: number; affected: number };
+      diagnostics: Array<{ code: string; message: string }>;
+    }>();
+    expect(result.counts).toMatchObject({ matched: 0, affected: 0 });
+    expect(result.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "metadata-transform-protected-field",
+          message: expect.stringContaining("def.id"),
+        }),
+      ]),
+    );
+    await expect(readFile(docPath, "utf8")).resolves.toBe(beforeContent);
+    expect(process.exitCode).toBe(1);
   });
 });

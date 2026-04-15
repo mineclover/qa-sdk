@@ -25,6 +25,13 @@ import {
   type DocumentTask,
 } from "../lib/docs-control-plane/index.js";
 import {
+  loadMetadataTransformRule,
+  previewMetadataTransform,
+  unsupportedMetadataTransformApplyError,
+  type MetadataTransformPreview,
+  type StructuredDocsError,
+} from "../lib/docs-control-plane/metadata-transform.js";
+import {
   detectDocumentDrift,
   type DocumentDriftIssue,
   type DocumentDriftResult,
@@ -32,7 +39,7 @@ import {
 } from "../lib/docs-control-plane/drift.js";
 import { formatHelpSections, type CommandHelpSectionSpec } from "../command-spec.js";
 
-type DocsCommand = "help" | "status" | "collect" | "search" | "drift";
+type DocsCommand = "help" | "status" | "collect" | "search" | "drift" | "transform";
 
 interface ParsedDocsArgs {
   readonly command: DocsCommand;
@@ -127,6 +134,7 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "qa-sdk docs collect <doc-id|path> [--json]",
       "qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]",
       "qa-sdk docs drift [--prd <file>] [--json]",
+      "qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run] [--json]",
     ],
   },
   {
@@ -138,6 +146,9 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "--session <file>             ralph session metadata path",
       "--prd-json <file>            PRD JSON path for session comparison",
       "--prd <file>                 scope drift checks to a PRD markdown/JSON family",
+      "--rule <json-file|inline-json> metadata transform rule for dry-run preview",
+      "--dry-run                    preview only; this is the default",
+      "--apply                      unsupported in this PRD; returns a structured error",
       "--artifact-registry <file>   artifact evidence registry path (repeatable)",
       "--json                       emit structured JSON",
     ],
@@ -197,6 +208,11 @@ export async function cliDocs(args: string[]): Promise<void> {
     return;
   }
 
+  if (parsed.command === "transform") {
+    await cmdTransform(documents, options, parsed.positional, parsed.flags);
+    return;
+  }
+
   await cmdSearch(documents, parsed.positional, parsed.flags, hasFlag(parsed.flags, "json"));
 }
 
@@ -238,7 +254,14 @@ function parseDocsArgs(args: readonly string[]): ParsedDocsArgs {
 }
 
 function normalizeCommand(value: string | undefined): DocsCommand {
-  if (value === "status" || value === "collect" || value === "search" || value === "help" || value === "drift") {
+  if (
+    value === "status"
+    || value === "collect"
+    || value === "search"
+    || value === "help"
+    || value === "drift"
+    || value === "transform"
+  ) {
     return value;
   }
   return "help";
@@ -382,6 +405,74 @@ async function cmdDrift(
     return;
   }
   printDrift(result);
+}
+
+async function cmdTransform(
+  documents: readonly DocumentEnvelope[],
+  options: DocsRuntimeOptions,
+  positional: readonly string[],
+  flags: Readonly<Record<string, readonly string[]>>,
+): Promise<void> {
+  const json = hasFlag(flags, "json");
+  if (positional[0] !== "metadata") {
+    console.error("Usage: qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run] [--json]");
+    process.exitCode = 1;
+    return;
+  }
+
+  if (hasFlag(flags, "apply")) {
+    printStructuredError(unsupportedMetadataTransformApplyError(), json);
+    process.exitCode = 1;
+    return;
+  }
+
+  const rawRule = pickLast(flags, "rule");
+  if (!rawRule) {
+    printStructuredError({
+      error: {
+        code: "missing-required-option",
+        operation: "docs.transform.metadata",
+        message: "docs transform metadata requires --rule <json-file|inline-json>",
+        remediation: "Pass a JSON rule file path or quoted inline JSON object with --rule.",
+      },
+    }, json);
+    process.exitCode = 1;
+    return;
+  }
+
+  let loadedRule;
+  try {
+    loadedRule = await loadMetadataTransformRule(options.rootDir, rawRule);
+  } catch (error) {
+    printStructuredError({
+      error: {
+        code: "invalid-transform-rule",
+        operation: "docs.transform.metadata",
+        message: error instanceof Error ? error.message : String(error),
+        remediation: "Pass a valid JSON object as inline JSON or a path to a JSON rule file.",
+      },
+    }, json);
+    process.exitCode = 1;
+    return;
+  }
+
+  const result = await previewMetadataTransform({
+    rootDir: options.rootDir,
+    documents,
+    rule: loadedRule.rule,
+    ruleSource: loadedRule.source,
+    dryRunDefaulted: !hasFlag(flags, "dry-run"),
+  });
+
+  if (result.diagnostics.some((diagnostic) => diagnostic.severity === "error")) {
+    process.exitCode = 1;
+  }
+
+  if (json) {
+    printJson(result);
+    return;
+  }
+  printMetadataTransformPreview(result);
 }
 
 function buildStatusResult(
@@ -776,6 +867,22 @@ function printDrift(result: DocumentDriftResult): void {
   }
 }
 
+function printMetadataTransformPreview(result: MetadataTransformPreview): void {
+  console.log(`docs transform metadata: ${result.mode}`);
+  console.log(`  rule: ${result.ruleSource}`);
+  console.log(`  dry-run defaulted: ${result.dryRunDefaulted ? "yes" : "no"}`);
+  console.log(`  affected paths: ${result.counts.affected} / ${result.counts.matched} matched`);
+  for (const changeSet of result.changeSets) {
+    console.log(`  - ${changeSet.path}`);
+    console.log(`    before: ${JSON.stringify(changeSet.before)}`);
+    console.log(`    after: ${JSON.stringify(changeSet.after)}`);
+    for (const change of changeSet.changes) {
+      console.log(`    change: ${change.description}`);
+    }
+  }
+  printDiagnostics(result.diagnostics);
+}
+
 function printDriftIssueGroup(
   severity: DocumentDriftSeverity,
   issues: readonly DocumentDriftIssue[],
@@ -832,6 +939,15 @@ function printDocsHelp(): void {
 
 function printJson(value: unknown): void {
   console.log(JSON.stringify(value, null, 2));
+}
+
+function printStructuredError(value: StructuredDocsError, json: boolean): void {
+  const text = JSON.stringify(value, null, 2);
+  if (json) {
+    console.log(text);
+    return;
+  }
+  console.error(text);
 }
 
 function getRootDir(): string {

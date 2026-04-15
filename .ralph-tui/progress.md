@@ -12,6 +12,7 @@ after each iteration and it's included in prompts for context.
 - CLI Vitest suites that exercise native SQLite/better-sqlite3 should use the `forks` pool; the default worker pool can segfault during native teardown after assertions pass.
 - Docs CLI tests should pass `--root` to a temp workspace and exercise the real default adapters together; this keeps definition markdown, PRD markdown/JSON, session, and evidence aggregation hermetic while still testing command-level behavior.
 - Docs drift checks should correlate already-normalized envelopes in the command/control-plane layer and only read source file content for cross-document evidence; adapters stay read-only and source vocabulary stays source-owned.
+- Docs metadata transforms should stay as command-layer dry-run projections over parsed source files; adapters remain read-only, rule fields are allowlisted, and projected frontmatter lives in change-set metadata until a later apply story exists.
 
 ---
 
@@ -94,4 +95,18 @@ after each iteration and it's included in prompts for context.
   - Drift belongs above the adapters: adapter diagnostics and metadata provide most signals, while command-layer correlation can compare PRD families, TODO language, scenario matrix evidence, and source file existence without changing source schemas.
   - Scenario matrix evidence is stable enough to validate by pairing each `E-*` marker with an Evidence References entry and exact test title lookup in the linked test file.
   - PRD-scoped drift should use the shared markdown/JSON basename family id so `tasks/foo.md`, `tasks/foo.json`, and `.ralph-tui/session-meta.json` can be checked together without scanning unrelated definition families.
+---
+
+## 2026-04-15 - US-007
+- Implemented `qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run] [--json]` with dry-run as the default and no write path.
+- Added a CLI-local metadata transform planner that reads definition markdown through structured frontmatter parsing, applies allowlisted lifecycle, level, tag, link, `svc`, and source-reference operations, and returns before/after change-set previews with affected paths.
+- Added structured unsupported-operation handling for `--apply`, with remediation pointing to a later apply PRD.
+- Added refusals for non-definition sources such as PRD JSON and for rules that attempt to touch `def.id`.
+- Added CLI tests for default dry-run no-write behavior, explicit dry-run text output, unsupported `--apply`, PRD JSON refusal, and protected `def.id` handling.
+- Files changed: `packages/cli/src/lib/docs-control-plane/metadata-transform.ts`, `packages/cli/src/commands/docs.ts`, `packages/cli/src/command-groups/docs.commands.ts`, `packages/cli/src/commands/docs.test.ts`, `packages/cli/src/commands/index-usage.test.ts`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- docs`; `pnpm --filter @qa-sdk/cli test -- index-usage`; `pnpm --filter @qa-sdk/cli test -- def`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter @qa-sdk/cli build`; `pnpm --filter definition-catalog test`; `pnpm --filter definition-catalog typecheck`; `pnpm --filter definition-data-source test`; `pnpm --filter definition-data-source typecheck`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - Metadata transform planning belongs above the adapters: use neutral envelopes for target resolution, then read the source file only for the structured projected frontmatter.
+  - Source references are top-level definition markdown metadata, not `def.*`; previews should report them alongside `def` metadata while keeping PRD JSON as a compatibility source that cannot be converted into definition frontmatter.
+  - Multi-segment docs command descriptors need the proxy registry to split handler keys like `docs.transform.metadata` back into CLI path segments.
 ---

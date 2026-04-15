@@ -12,6 +12,7 @@ describe("top-level usage contracts", () => {
     expect(USAGE).toContain("qa-sdk docs collect <doc-id|path> [--json]");
     expect(USAGE).toContain("qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]");
     expect(USAGE).toContain("qa-sdk docs drift [--prd <file>] [--json]");
+    expect(USAGE).toContain("qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run]");
     expect(USAGE).toContain("[--dkg-target <nodeId>] [--decision-id <id>]");
     expect(USAGE).toContain("[--decision-type <type> --title <text> --rationale <text>]");
   });
@@ -135,6 +136,7 @@ describe("top-level usage contracts", () => {
       expect(docsHelp).toContain("qa-sdk docs collect");
       expect(docsHelp).toContain("qa-sdk docs search");
       expect(docsHelp).toContain("qa-sdk docs drift");
+      expect(docsHelp).toContain("qa-sdk docs transform metadata");
 
       stdout.length = 0;
       await main(["scan", "--help"]);
@@ -208,6 +210,10 @@ describe("top-level usage contracts", () => {
     expect(resolveSubcommand(["docs", "drift", "--prd", "tasks/checkout-prd.json"])).toEqual({
       name: "docs drift",
       rest: ["--prd", "tasks/checkout-prd.json"],
+    });
+    expect(resolveSubcommand(["docs", "transform", "metadata", "--rule", "{}"])).toEqual({
+      name: "docs transform metadata",
+      rest: ["--rule", "{}"],
     });
     expect(resolveSubcommand(["scan", "git", "--root", "."])).toEqual({
       name: "scan git",

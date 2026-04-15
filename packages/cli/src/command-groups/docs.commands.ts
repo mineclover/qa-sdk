@@ -58,6 +58,19 @@ export const DOCS_COMMAND_DESCRIPTORS = [
       { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },
     ],
   },
+  {
+    id: "docs.transform.metadata",
+    path: ["transform", "metadata"],
+    usage: "qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run]",
+    handlerKey: "docs.transform.metadata",
+    options: [
+      { flag: "--rule", valueHint: "<json-file|inline-json>", type: "string", description: "metadata transform rule" },
+      { flag: "--dry-run", type: "boolean", description: "preview only; default behavior" },
+      { flag: "--apply", type: "boolean", description: "unsupported in this PRD; returns structured error" },
+      { flag: "--json", type: "boolean", description: "emit structured JSON" },
+      { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },
+    ],
+  },
 ] as const satisfies readonly CommandDescriptor[];
 
 export const DOCS_COMMAND_TREE =
@@ -70,8 +83,8 @@ export const DOCS_HANDLER_REGISTRY = new Proxy({} as Record<string, RestCommandH
   get(_target, prop) {
     if (typeof prop !== "string" || !prop.startsWith("docs.")) return undefined;
     return async (rest: string[]) => {
-      const subcommand = prop.slice(5);
-      await cliDocs([subcommand, ...rest]);
+      const subcommand = prop.slice(5).split(".");
+      await cliDocs([...subcommand, ...rest]);
     };
   },
 });
