@@ -31,7 +31,7 @@
       ],
       "priority": 1,
       "passes": true,
-      "notes": "US-001 doc closeout confirmed the lifecycle remains closed through Phase 5, activation CLI, and activation evidence persistence; the lifecycle master marks evidence persistence completed and lists CLI scenario hardening as the next pre-REST public/local follow-up; authorization ontology system spec no longer treats evidence persistence as pending; REST activation endpoint, remote activation service, scoped prefix support, production registry persistence, new registry-service tables, and activation rollback semantics remain out of scope. No runtime code changed.",
+      "notes": "US-001 doc closeout confirmed the lifecycle remains closed through Phase 5, activation CLI, and activation evidence persistence; the lifecycle master marks evidence persistence completed and, after US-007, marks CLI scenario hardening as completed pre-REST public/local evidence; authorization ontology system spec no longer treats evidence persistence as pending; REST activation endpoint, remote activation service, scoped prefix support, production registry persistence, new registry-service tables, and activation rollback semantics remain out of scope. No runtime code changed.",
       "dependsOn": [],
       "completionNotes": "Completed by agent"
     },
@@ -241,15 +241,16 @@
         "Manual build validation runs dependency builds before dependent builds and does not run `operational-ontology build` concurrently with `registry-service build`."
       ],
       "priority": 7,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Updated the lifecycle master roadmap to mark CLI scenario hardening as completed pre-REST public/local evidence work; updated operational-ontology-registry-allocation.spec.md to treat CLI scenario hardening as completed current-state surface; closed the CLI scenario hardening item in operational-ontology-registry-allocation.todo.md while keeping REST activation endpoint and remote activation service open; updated the activation CLI spec to point at the final matrix and operator interpretation; recorded additional programming artifact provider consumption evidence for cross-pack activation records; recorded final authorization failure-boundary and cross-pack coexistence proof; kept scoped prefix implementation frozen behind the scoped-prefix decision gate. No runtime code changed. Required test/typecheck/build/def validate gates passed, with operational-ontology build completed before registry-service build.",
       "dependsOn": [
         "US-005",
         "US-006"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T04:20:54.598Z"
+    "updatedAt": "2026-04-15T04:29:09.184Z"
   }
 }

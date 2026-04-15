@@ -10,6 +10,7 @@ after each iteration and it's included in prompts for context.
 - Activation evidence registry records normalize duplicate refs; when pack id, ontology id, or known import ref are the same value, assertions should expect deduplicated `derivedFromRefs`/`verifiesRefs`.
 - Cross-pack activation evidence coexistence should use one registry file with isolated activation stores and distinct sidecar paths; assertions should verify record id/ref/path-specific upsert so rerunning one pack leaves the other record unchanged.
 - Activation evidence failure interpretation should keep helper result status separate from command exit code; registry append failure can return exit code 1 while `result.status` remains `succeeded` and the raw sidecar remains unchanged.
+- Post-lifecycle CLI closeout should mark the master PRD, allocation spec, and allocation TODO as completed public/local evidence while keeping REST activation endpoint, remote activation service, production persistence, and scoped prefix support as separate follow-ups.
 
 ---
 
@@ -87,4 +88,16 @@ after each iteration and it's included in prompts for context.
   - Append failure is post-helper and command-owned: stdout may contain `activationEvidence.appendStatus: "failed"` with exit code 1 while the underlying helper result remains `succeeded`.
   - Output write failure occurs after helper execution but before managed evidence append, so tests should prove no registry file is created or mutated.
   - REST idempotency and remote store ownership must stay out of the local CLI matrix because local SQLite rerun/upsert evidence does not define service tenancy or API retry semantics.
+---
+
+## 2026-04-15 - US-007
+- Reflected completed CLI scenario hardening across the lifecycle master roadmap, allocation current-state spec, allocation TODO, activation CLI spec, programming artifact CLI spec, authorization ontology spec, and active hardening PRD Markdown/JSON.
+- Closed CLI scenario hardening as completed public/local evidence while keeping REST activation endpoint, remote activation service/deployment, production registry persistence, and scoped prefix implementation open as separate follow-ups.
+- Recorded final matrix/operator interpretation pointers and additional provider consumption evidence for shared cross-pack activation records.
+- Files changed: `tasks/prd-ontology-registry-allocation-lifecycle-master.md`, `tasks/prd-ontology-registry-cli-scenario-hardening.md`, `tasks/prd-ontology-registry-cli-scenario-hardening.json`, `docs/specs/operational-ontology/operational-ontology-registry-allocation.spec.md`, `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md`, `docs/specs/operational-ontology/operational-ontology-registry-activation-cli.spec.md`, `docs/specs/operational-ontology/programming-artifact-ontology-cli.spec.md`, `docs/specs/authorization-ontology/authorization-ontology-system.spec.md`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter operational-ontology test -- programming-artifacts`; `pnpm --filter registry-service test -- ontology`; `pnpm --filter authorization-ontology test`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter operational-ontology typecheck`; `pnpm --filter registry-service typecheck`; `pnpm --filter authorization-ontology typecheck`; `pnpm --filter operational-ontology build`; `pnpm --filter authorization-ontology build`; `pnpm --filter registry-service build`; `pnpm --filter @qa-sdk/cli build`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - Closing a post-lifecycle CLI PRD should update the allocation spec in addition to the master roadmap and TODO, because the master operating rule expects completed current-state behavior to move into the spec surface.
+  - REST/remote/scoped-prefix follow-ups must stay visibly open even when the local CLI matrix has no gaps, because local SQLite evidence does not define API tenancy, service ownership, or prefix namespace migration.
+  - Build validation stayed stable when dependency builds ran first: `operational-ontology build` completed before `registry-service build`, and `@qa-sdk/cli build` ran after both ontology pack builds and registry-service build.
 ---

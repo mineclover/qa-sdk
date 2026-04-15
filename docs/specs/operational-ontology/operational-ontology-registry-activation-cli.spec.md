@@ -39,6 +39,7 @@ sources:
 - **Local runtime**: `@qa-sdk/registry-service/ontology-local-runtime`이 하나의 SQLite driver 위에 registry-service ontology rows와 index-meta rows를 함께 구성한다.
 - **Activation helper**: `OntologyPackActivationHelper.activateOntologyPack()`이 lifecycle ordering과 smoke checks의 SSOT다.
 - **Activation evidence mapper**: `packages/cli/src/lib/activation-evidence-registry.ts`가 successful activation result와 resolved sidecar path를 `kind: "activation-evidence"` programming artifact registry record로 변환한다.
+- **Scenario matrix**: `operational-ontology-registry-activation-cli-scenario-matrix`가 completed pre-REST local CLI proof의 validation SSOT다. 현재 local CLI matrix gap은 없으며 REST/remote/scoped-prefix semantics는 이 문서 밖 follow-up이다.
 
 ## Command Surface ^defines
 
@@ -149,6 +150,8 @@ Pre-helper CLI/runtime failures use a result-like failed payload with `allocatio
 
 ## Failure Contract
 
+This is the final local operator interpretation for the completed pre-REST CLI hardening PRD.
+
 Operator interpretation is intentionally split by ownership boundary:
 
 - **Command-level failures** happen before or after the activation helper lifecycle. Unknown pack ids, invalid CLI flags, invalid address models, runtime setup failures, output sidecar write failures, missing `--output` for `--artifact-registry`, and activation evidence registry append failures are CLI-owned failures.
@@ -180,6 +183,8 @@ Duplicate same-store activation is intentionally not a successful idempotent act
 REST activation idempotency, remote store ownership, tenancy/auth boundaries, and cross-boundary compensating rollback are intentionally undecided in this CLI contract. They require a separate REST/remote PRD and must not be inferred from local SQLite CLI behavior.
 
 ## Proven Scenarios
+
+The final scenario matrix lives in `operational-ontology-registry-activation-cli-scenario-matrix`; this section summarizes the same completed local CLI proof for the command contract.
 
 The CLI test suite proves command discovery and dispatch through `main(["ontology", "registry", "activate-pack", ...])`, not only the handler proxy.
 
@@ -271,6 +276,7 @@ Expected replay observations:
 Completed public/local follow-up:
 
 - activation result persistence into the local programming artifact registry through `--artifact-registry`.
+- CLI scenario hardening before REST, including the final matrix, both known pack evidence proofs, cross-pack registry coexistence, rerun/upsert behavior, and operator failure interpretation.
 
 Follow-up work remains:
 

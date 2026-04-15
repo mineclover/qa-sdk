@@ -171,6 +171,8 @@ Activation proof is represented as a managed record with `kind: "activation-evid
 
 Existing generic registry commands can validate/list/filter these records, and `extract-artifact <activation-output-file> --artifact-registry <registry>` resolves them through the normal provider lookup as `artifact-registry-hit`.
 
+The completed pre-REST CLI hardening proof also confirms that one local registry can hold distinct activation evidence records for `programming-artifact-ontology` and `authorization-ontology`. Provider lookup continues to resolve by `artifactRef`, `artifactId`, or `outputPath`, so each sidecar resolves to the matching pack record and rerunning one pack does not mutate or duplicate the other pack's record. This adds consumption evidence only; it does not change the registry JSON shape or provider matching algorithm.
+
 ## Fallback 품질 신호
 
 `extract-artifact --json`은 registry/fallback 출처를 `source` 객체로 출력한다.

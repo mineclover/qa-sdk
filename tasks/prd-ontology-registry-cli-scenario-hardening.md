@@ -1,6 +1,8 @@
 [PRD]
 # PRD: Ontology Registry CLI Scenario Hardening Before REST
 
+**Status:** Completed through US-007. Local CLI scenario evidence is stable for REST planning; REST activation endpoint, remote activation service, production registry persistence, and scoped prefix implementation remain separate follow-ups.
+
 ## Overview
 
 Before opening registry-service REST activation or a remote activation service, harden the local CLI proof for the completed ontology registry lifecycle. The goal is to make `qa-sdk ontology registry activate-pack` demonstrate the full lifecycle for both known packs, prove activation evidence consumption through the programming artifact registry, and document exactly which operator scenarios are already safe to rely on.
@@ -53,7 +55,7 @@ No browser verification is required.
 
 **Confirmation Notes:**
 - `tasks/prd-ontology-registry-allocation-lifecycle-master.md` keeps Phase 5 activation smoke completed, records activation CLI and activation evidence persistence as public/local post-lifecycle surfaces, and states there is no next allocation lifecycle implementation PRD.
-- The same master roadmap marks activation evidence persistence as completed and lists this CLI scenario hardening PRD as the planned next pre-REST public/local follow-up before registry-service REST activation endpoint design.
+- The same master roadmap marks activation evidence persistence as completed and, after US-007, marks this CLI scenario hardening PRD as completed pre-REST public/local evidence before any registry-service REST activation endpoint design.
 - `docs/specs/authorization-ontology/authorization-ontology-system.spec.md` states activation evidence persistence is complete and keeps REST activation endpoint plus remote activation service as separate follow-up work.
 - REST activation endpoint, remote activation service/deployment, scoped prefix support, production registry persistence, new registry-service tables, and activation rollback semantics remain out of scope for this PRD.
 - No runtime code was changed for this closeout story.
@@ -158,13 +160,23 @@ No browser verification is required.
 **Description:** As a documentation maintainer, I want the completed CLI hardening result reflected in specs and TODOs so REST planning starts from stable evidence.
 
 **Acceptance Criteria:**
-- [ ] Update `tasks/prd-ontology-registry-allocation-lifecycle-master.md` with this PRD completion status.
-- [ ] Update `operational-ontology-registry-allocation.todo.md` to close CLI scenario hardening when complete.
-- [ ] Update `operational-ontology-registry-activation-cli.spec.md` with final scenario matrix and operator interpretation.
-- [ ] Update `programming-artifact-ontology-cli.spec.md` if registry provider behavior changed or additional consumption evidence was added.
-- [ ] Update `authorization-ontology-system.spec.md` if authorization evidence proof changed.
-- [ ] Keep REST activation endpoint and remote activation service open as separate follow-ups.
-- [ ] Keep scoped prefix implementation frozen.
+- [x] Update `tasks/prd-ontology-registry-allocation-lifecycle-master.md` with this PRD completion status.
+- [x] Update `operational-ontology-registry-allocation.todo.md` to close CLI scenario hardening when complete.
+- [x] Update `operational-ontology-registry-activation-cli.spec.md` with final scenario matrix and operator interpretation.
+- [x] Update `programming-artifact-ontology-cli.spec.md` if registry provider behavior changed or additional consumption evidence was added.
+- [x] Update `authorization-ontology-system.spec.md` if authorization evidence proof changed.
+- [x] Keep REST activation endpoint and remote activation service open as separate follow-ups.
+- [x] Keep scoped prefix implementation frozen.
+
+**Confirmation Notes:**
+- `tasks/prd-ontology-registry-allocation-lifecycle-master.md` now marks CLI scenario hardening as a completed pre-REST public/local follow-up and points at the final matrix and operator interpretation docs.
+- `docs/specs/operational-ontology/operational-ontology-registry-allocation.spec.md` now treats CLI scenario hardening as a completed public/local current-state surface rather than a future lifecycle phase.
+- `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md` closes the CLI scenario hardening item while leaving REST activation endpoint and remote activation service unchecked follow-ups.
+- `docs/specs/operational-ontology/operational-ontology-registry-activation-cli.spec.md` points at the final local matrix, records that no local CLI matrix gaps remain, and keeps operator failure interpretation as the local contract.
+- `docs/specs/operational-ontology/programming-artifact-ontology-cli.spec.md` records the additional cross-pack provider consumption evidence without changing registry JSON shape or provider matching semantics.
+- `docs/specs/authorization-ontology/authorization-ontology-system.spec.md` records final authorization failure-boundary and cross-pack coexistence proof.
+- Scoped prefix implementation remains frozen behind `operational-ontology-scoped-prefix-decision`; no runtime code was changed.
+- Required test/typecheck/build/def validate gates passed, with `operational-ontology build` completed before `registry-service build`.
 
 ## Functional Requirements
 

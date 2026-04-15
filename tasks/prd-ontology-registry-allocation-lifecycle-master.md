@@ -167,7 +167,13 @@ No browser verification is required.
 **Execution PRD:**
 - `tasks/prd-ontology-registry-cli-scenario-hardening.md`
 
-**Status:** Planned pre-REST follow-up. This is the next recommended work before opening registry-service REST activation endpoint design.
+**Status:** Completed pre-REST public/local follow-up outside the allocation lifecycle. This did not add REST routes, remote activation service, production registry persistence, scoped prefix support, or activation rollback semantics.
+
+**Completion Notes:**
+- Final local CLI scenario matrix: `docs/specs/operational-ontology/operational-ontology-registry-activation-cli-scenario-matrix.spec.md`.
+- Operator interpretation and replay contract: `docs/specs/operational-ontology/operational-ontology-registry-activation-cli.spec.md`.
+- The completed proof covers both `programming-artifact-ontology` and `authorization-ontology`, sidecar-only output, sidecar-first activation evidence append, registry validate/list, `extract-artifact` provider hits, successful rerun upsert, duplicate same-store non-replacement, output write failure, sanitized registry append failure, guardrail failures, and shared cross-pack registry coexistence.
+- REST activation endpoint idempotency/auth/tenancy, remote store ownership, production registry persistence, and scoped-prefix implementation remain separate follow-ups.
 
 **Inputs:**
 - Completed activation CLI: `tasks/prd-ontology-registry-activation-cli.md`

@@ -2,13 +2,13 @@
   "id": "9343e77f-4f34-4cc8-b3b0-8b10c3083b5a",
   "status": "running",
   "startedAt": "2026-04-15T03:38:38.778Z",
-  "updatedAt": "2026-04-15T04:14:57.574Z",
+  "updatedAt": "2026-04-15T04:20:54.846Z",
   "agentPlugin": "codex",
   "trackerPlugin": "json",
   "prdPath": "tasks/prd-ontology-registry-cli-scenario-hardening.json",
-  "currentIteration": 5,
+  "currentIteration": 6,
   "maxIterations": 0,
   "totalTasks": 0,
-  "tasksCompleted": 5,
+  "tasksCompleted": 6,
   "cwd": "/Users/junwoobang/workflow/qa-sdk"
 }
