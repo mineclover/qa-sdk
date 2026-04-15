@@ -23,6 +23,15 @@ vocabulary를 추가하지 않는다.
 
 ## Adapters
 
+- `artifact-evidence`: local programming artifact registry JSON files를 배열 또는
+  `{ artifacts: [...] }` envelope로 읽어 artifact registry record를 evidence
+  envelope로 수집한다. Artifact id/kind/ref/output path, produced-by,
+  derived-from, verifies, owner definition, materializes-output, source refs,
+  verification refs, source metadata, relation edges를 source-owned vocabulary로
+  보존한다. `activation-evidence`는 기존 programming artifact kind 값 그대로
+  `DocumentEvidence.kind`에 매핑하며 control-plane vocabulary를 추가하지 않는다.
+  기본 registry path가 없어도 정상 docs status 흐름은 실패하지 않고, caller가
+  `warnOnMissing`을 명시할 때만 missing source diagnostic을 반환한다.
 - `definition-markdown`: definition-catalog의 frontmatter scanner/parser와 graph
   validation을 재사용해 `.spec.md`, `.todo.md`, `.plan.md`, `.test.md`,
   `.memo.md`, `.rule.md` 파일을 read-only envelope로 수집한다. `def.*`

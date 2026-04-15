@@ -4,6 +4,10 @@ export {
   normalizeDocumentEnvelope,
 } from "./normalize.js";
 export {
+  ARTIFACT_EVIDENCE_ADAPTER_ID,
+  createArtifactEvidenceAdapter,
+} from "./adapters/artifact-evidence.js";
+export {
   createDefinitionMarkdownAdapter,
   DEFINITION_MARKDOWN_ADAPTER_ID,
 } from "./adapters/definition-markdown.js";
@@ -39,6 +43,10 @@ export type {
   DocumentSource,
   DocumentTask,
 } from "./types.js";
+export type {
+  ArtifactEvidenceAdapterOptions,
+  ArtifactEvidenceCollectionQuery,
+} from "./adapters/artifact-evidence.js";
 export type {
   DefinitionMarkdownAdapterOptions,
 } from "./adapters/definition-markdown.js";

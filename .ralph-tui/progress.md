@@ -6,6 +6,7 @@ after each iteration and it's included in prompts for context.
 ## Codebase Patterns (Study These First)
 
 - Neutral document control-plane adapters should preserve source-owned vocabulary in plain string fields and normalize only coordination concerns: identity, paths, metadata defaults, and collection defaults.
+- Evidence adapters should project source-owned relation fields into neutral metadata/links while keeping default sidecar/registry files optional; missing optional stores should only become diagnostics when the caller explicitly requests evidence-source warnings.
 - CLI tests that touch optional `~/.qa-sdk` side stores should set `QA_SDK_HOME` to a temp directory so developer-local ledgers cannot affect hermetic assertions.
 - Definition markdown family grouping should use an explicit family id when present, otherwise the repo-relative basename with `.spec.md`/`.todo.md`/`.plan.md`/`.test.md`/`.memo.md`/`.rule.md` stripped; keep each file's `def.id` as metadata so source ownership is not blurred.
 - CLI Vitest suites that exercise native SQLite/better-sqlite3 should use the `forks` pool; the default worker pool can segfault during native teardown after assertions pass.
@@ -53,4 +54,17 @@ after each iteration and it's included in prompts for context.
   - Ralph PRD JSON should treat `dependsOn: []` as meaningful explicit state; missing `dependsOn` is a schema-quality diagnostic because dependency absence and dependency omission are different coordination signals.
   - Session/PRD completion mismatch belongs in diagnostics on the session envelope, not in a cleanup mutation of `.ralph-tui/session-meta.json`.
   - `definition-data-source` currently has no `test` script; the requested pnpm test command exits successfully without package-local test output.
+---
+
+## 2026-04-15 - US-004
+- Implemented the read-only `artifact-evidence` docs control-plane adapter for local programming artifact registry JSON files in array and `{ artifacts: [...] }` forms.
+- The adapter maps each registry record into a neutral envelope with artifact id/kind/ref/output path, produced-by, derived-from, verifies, owner definition, materializes-output, source refs, verification refs, source metadata, relation links, and a `DocumentEvidence` entry that preserves `activation-evidence` as source-owned vocabulary.
+- Added adapter-level filtering for document id, artifact ref, output path, pack id, and artifact kind, plus opt-in missing registry source diagnostics via `warnOnMissing`.
+- Added tests covering activation-evidence records built by the ontology activation evidence mapper, filtering, array-form registries, and silent default missing registry behavior.
+- Files changed: `packages/cli/src/lib/docs-control-plane/adapters/artifact-evidence.ts`, `packages/cli/src/lib/docs-control-plane/index.ts`, `packages/cli/src/lib/docs-control-plane/README.md`, `packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- docs-control-plane`; `pnpm --filter @qa-sdk/cli test -- docs`; `pnpm --filter @qa-sdk/cli test -- def`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter @qa-sdk/cli build`; `pnpm --filter definition-catalog test`; `pnpm --filter definition-catalog typecheck`; `pnpm --filter definition-data-source test`; `pnpm --filter definition-data-source typecheck`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - Artifact registry records already carry the right source-owned vocabulary, so the control-plane adapter can preserve field names in metadata and only use `DocumentLink` for existing relation edges.
+  - `activation-evidence` should remain a programming artifact kind in `DocumentEvidence.kind`; the adapter does not need a new docs evidence taxonomy to make activation proof reviewable.
+  - Default evidence registry paths should be safe to include in future docs status collection because missing files stay silent unless `warnOnMissing` is explicitly enabled.
 ---

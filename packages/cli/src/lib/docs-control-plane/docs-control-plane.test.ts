@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  createArtifactEvidenceAdapter,
   createDefinitionMarkdownAdapter,
   createPrdMarkdownAdapter,
   createRalphPrdJsonAdapter,
@@ -12,7 +13,12 @@ import {
   declareDocumentAdapterCapabilities,
   defineDocumentAdapter,
   normalizeDocumentEnvelope,
+  type ArtifactEvidenceCollectionQuery,
 } from "./index.js";
+import {
+  buildActivationEvidenceRegistryRecord,
+  type ActivationEvidenceRegistryActivationResult,
+} from "../activation-evidence-registry.js";
 
 describe("docs-control-plane envelope normalization", () => {
   it("normalizes identifiers, paths, collection defaults, and raw source pointers", () => {
@@ -211,6 +217,248 @@ describe("docs-control-plane adapter capability declarations", () => {
     expect(adapter.capabilities).toEqual({
       write: true,
       transform: false,
+    });
+  });
+});
+
+describe("artifact-evidence adapter", () => {
+  async function withTempArtifactRegistry(
+    callback: (rootDir: string) => Promise<void>,
+  ): Promise<void> {
+    const rootDir = await mkdtemp(join(tmpdir(), "qa-sdk-artifact-evidence-"));
+    try {
+      await mkdir(join(rootDir, "artifacts/activation"), { recursive: true });
+      await callback(rootDir);
+    } finally {
+      await rm(rootDir, { recursive: true, force: true });
+    }
+  }
+
+  function activationResult(
+    overrides: Partial<ActivationEvidenceRegistryActivationResult> = {},
+  ): ActivationEvidenceRegistryActivationResult {
+    return {
+      status: "succeeded",
+      packId: "programming-artifact-ontology",
+      ontologyId: "workspace-programming-artifacts",
+      namespaceSummary: {
+        namespace: "qa-sdk",
+      },
+      allocationSummaries: [
+        {
+          activationStatus: "active",
+          syncStatus: "synced",
+        },
+      ],
+      smokeCheckSummary: {
+        allocationCount: 1,
+        passedAllocationCount: 1,
+        failedAllocationCount: 0,
+        checkCount: 2,
+        passedCheckCount: 2,
+        failedCheckCount: 0,
+      },
+      warnings: [],
+      errors: [],
+      ...overrides,
+    };
+  }
+
+  it("collects activation-evidence registry records as document evidence", async () => {
+    await withTempArtifactRegistry(async (rootDir) => {
+      const outputPath = join(rootDir, "artifacts/activation/programming-artifact-ontology.json");
+      const registryPath = join(rootDir, "artifacts/programming-artifacts.json");
+      const record = buildActivationEvidenceRegistryRecord({
+        activationResult: activationResult(),
+        resolvedOutputPath: outputPath,
+        commandContext: {
+          packId: "programming-artifact-ontology",
+          knownPackImportRef: "operational-ontology/programming-artifacts",
+        },
+        generatedAt: "2026-04-15T00:00:00.000Z",
+      });
+      await writeFile(
+        registryPath,
+        JSON.stringify({ artifacts: [record], registryVersion: 1 }, null, 2),
+      );
+
+      const adapter = createArtifactEvidenceAdapter({
+        rootDir,
+        registryPaths: ["artifacts/programming-artifacts.json"],
+      });
+      const [doc] = await adapter.listDocuments();
+
+      expect(doc).toMatchObject({
+        adapterId: "artifact-evidence",
+        kind: "activation-evidence",
+        stableId:
+          "activation-evidence-programming-artifact-ontology-workspace-programming-artifacts",
+        familyId: "operational-ontology-registry-activation-cli",
+        rawSource: {
+          path: "artifacts/programming-artifacts.json",
+          pointer: "/artifacts/0",
+          sourceSchema: "programming-artifact-registry",
+        },
+      });
+      expect(doc!.metadata).toMatchObject({
+        artifactId:
+          "activation-evidence-programming-artifact-ontology-workspace-programming-artifacts",
+        artifactKind: "activation-evidence",
+        artifactRef: outputPath,
+        outputPath,
+        producedByRef:
+          "qa-sdk ontology registry activate-pack programming-artifact-ontology",
+        ownerDefinitionId: "operational-ontology-registry-activation-cli",
+        registryPath: "artifacts/programming-artifacts.json",
+        packId: "programming-artifact-ontology",
+        ontologyId: "workspace-programming-artifacts",
+      });
+      expect(doc!.metadata.derivedFromRefs).toEqual([
+        "programming-artifact-ontology",
+        "operational-ontology/programming-artifacts",
+      ]);
+      expect(doc!.metadata.verifiesRefs).toEqual([
+        "programming-artifact-ontology",
+        "workspace-programming-artifacts",
+        "operational-ontology-registry-allocation",
+      ]);
+      expect(doc!.metadata.materializesOutputRefs).toEqual([
+        outputPath,
+        "activation-result:programming-artifact-ontology:workspace-programming-artifacts",
+      ]);
+      expect(doc!.metadata.artifactMetadata).toMatchObject({
+        status: "succeeded",
+        packId: "programming-artifact-ontology",
+      });
+      expect(doc!.evidence).toEqual([
+        expect.objectContaining({
+          id: record.artifactId,
+          kind: "activation-evidence",
+          rawSource: expect.objectContaining({
+            path: "artifacts/programming-artifacts.json",
+            pointer: "/artifacts/0",
+          }),
+        }),
+      ]);
+      expect(doc!.links.map((link) => link.type)).toEqual(
+        expect.arrayContaining([
+          "produced_by",
+          "derived_from",
+          "verifies",
+          "owned_by_definition",
+          "materializes_output",
+        ]),
+      );
+      expect(doc!.sources.map((source) => source.metadata.sourceKind)).toEqual([
+        "artifact_ref",
+        "output_path",
+      ]);
+    });
+  });
+
+  it("supports artifact evidence filters for document, ref, path, pack, and kind", async () => {
+    await withTempArtifactRegistry(async (rootDir) => {
+      const outputPath = join(rootDir, "artifacts/activation/programming-artifact-ontology.json");
+      const registryPath = join(rootDir, "artifacts/programming-artifacts.json");
+      const record = buildActivationEvidenceRegistryRecord({
+        activationResult: activationResult(),
+        resolvedOutputPath: outputPath,
+        commandContext: {
+          packId: "programming-artifact-ontology",
+          knownPackImportRef: "operational-ontology/programming-artifacts",
+        },
+        generatedAt: "2026-04-15T00:00:00.000Z",
+      });
+      await writeFile(registryPath, JSON.stringify({ artifacts: [record] }, null, 2));
+
+      const adapter = createArtifactEvidenceAdapter({
+        rootDir,
+        registryPaths: ["artifacts/programming-artifacts.json"],
+      });
+      const filters: ArtifactEvidenceCollectionQuery[] = [
+        { documentId: "operational-ontology-registry-activation-cli" },
+        { artifactRef: outputPath },
+        { outputPath },
+        { packId: "programming-artifact-ontology" },
+        { kind: "activation-evidence" },
+        { artifactKind: "activation-evidence" },
+      ];
+
+      for (const filter of filters) {
+        await expect(adapter.listDocuments(filter)).resolves.toHaveLength(1);
+      }
+      await expect(
+        adapter.listDocuments({ documentId: "unrelated-definition" } as ArtifactEvidenceCollectionQuery),
+      ).resolves.toHaveLength(0);
+    });
+  });
+
+  it("reads array-form registries without requiring an artifacts envelope", async () => {
+    await withTempArtifactRegistry(async (rootDir) => {
+      await writeFile(join(rootDir, "registry-array.json"), JSON.stringify([
+        {
+          artifactId: "build-cli",
+          kind: "build",
+          artifactRef: "packages/cli/dist/index.js",
+          outputPath: "packages/cli/dist/index.js",
+          producedByRef: "pnpm --filter @qa-sdk/cli build",
+          sourceRefs: ["packages/cli/src/index.ts"],
+          verificationRefs: ["packages/cli/src/index.test.ts"],
+          metadata: {
+            packId: "cli-build",
+          },
+        },
+      ], null, 2));
+
+      const adapter = createArtifactEvidenceAdapter({
+        rootDir,
+        registryPaths: ["registry-array.json"],
+      });
+      const [doc] = await adapter.listDocuments({ kind: "build" });
+
+      expect(doc).toMatchObject({
+        kind: "build",
+        stableId: "build-cli",
+        path: "packages/cli/dist/index.js",
+        rawSource: {
+          path: "registry-array.json",
+          pointer: "/0",
+        },
+      });
+      expect(doc!.metadata.sourceRefs).toEqual(["packages/cli/src/index.ts"]);
+      expect(doc!.metadata.verificationRefs).toEqual([
+        "packages/cli/src/index.test.ts",
+      ]);
+      expect(doc!.sources.map((source) => source.id)).toEqual([
+        "artifact-ref",
+        "output-path",
+        "source-ref:1",
+        "verification-ref:1",
+      ]);
+    });
+  });
+
+  it("does not surface missing registry warnings unless explicitly requested", async () => {
+    await withTempArtifactRegistry(async (rootDir) => {
+      const silentAdapter = createArtifactEvidenceAdapter({ rootDir });
+      await expect(silentAdapter.listDocuments()).resolves.toEqual([]);
+
+      const warningAdapter = createArtifactEvidenceAdapter({
+        rootDir,
+        registryPaths: ["artifacts/programming-artifacts.json"],
+        warnOnMissing: true,
+      });
+      const [doc] = await warningAdapter.listDocuments();
+
+      expect(doc).toMatchObject({
+        kind: "artifact-evidence-source",
+        diagnostics: [
+          expect.objectContaining({
+            code: "artifact-evidence-source-missing",
+            severity: "warning",
+          }),
+        ],
+      });
     });
   });
 });
