@@ -125,12 +125,13 @@
         "`node packages/cli/dist/index.js def validate` passes."
       ],
       "priority": 4,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Recorded conservative future source boundaries in the registry allocation and programming artifact ontology leaf docs while keeping frontmatter sources on existing files until split modules exist. docs status reported narrow scopes for operational-ontology-registry-allocation (13 related, 0 tasks/diagnostics) and programming-artifact-ontology-system (12 related, 0 tasks/diagnostics). docs collect for operational-ontology-registry-activation-evidence returned 3 related docs, 18 sources, 0 tasks/diagnostics, with no unrelated PRD family dominance. Source-map gaps were recorded as TODOs and no source comments or @def.doc annotations were added. Required US-004 gates passed.",
       "dependsOn": [
         "US-002",
         "US-003"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-005",
@@ -426,6 +427,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T19:40:56.839Z"
+    "updatedAt": "2026-04-15T19:51:43.497Z"
   }
 }

@@ -102,3 +102,17 @@ provider는 related quality record를 찾을 수 있지만, snapshot loading, qu
 - public export: `packages/operational-ontology/src/programming-artifacts.ts`
 - provider tests: `packages/operational-ontology/src/programming-artifacts.test.ts`
 - current CLI loader: `packages/cli/src/commands/ontology.ts`
+
+## Source Reference Boundary
+
+The provider implementation remains in `operational-ontology`; only the CLI loader and registry file handling are waiting for extraction. Frontmatter therefore keeps the current monolithic CLI source until real split modules exist.
+
+Expected future narrowing:
+
+| concern | future source boundary |
+|---------|------------------------|
+| registry validate/list/append and local JSON load/save | `packages/cli/src/commands/ontology/artifact-registry.ts` |
+| artifact source lookup and fallback integration | `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` |
+| generic provider implementation | `packages/operational-ontology/src/internal/programming-artifact-core.ts` |
+
+Do not add source comments for this leaf unless the extracted module cannot be found through frontmatter after US-006 or US-009.

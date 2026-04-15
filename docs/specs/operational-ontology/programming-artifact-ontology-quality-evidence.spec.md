@@ -133,3 +133,16 @@ prompt quality warning code:
 - quality export registry metadata: `packages/cli/src/commands/quality.ts`
 - provider sidecar merge: `packages/operational-ontology/src/internal/programming-artifact-core.ts`
 - prompt quality closure: `packages/operational-ontology/src/internal/prompt-artifact-core.ts`
+
+## Source Reference Boundary
+
+Quality evidence is still implemented inside the ontology command monolith, so frontmatter keeps `packages/cli/src/commands/ontology.ts` until extraction stories create narrower files. After US-007 and US-008, this leaf should point CLI evidence sources at:
+
+| concern | future source boundary |
+|---------|------------------------|
+| quality-status record matching, snapshot candidate loading, descriptor resolution, snapshot warnings | `packages/cli/src/commands/ontology/quality-status-evidence.ts` |
+| quality-ledger fallback, freshness SLA, conflict warnings, governance closure summary | `packages/cli/src/commands/ontology/quality-ledger-evidence.ts` |
+| artifact extraction source JSON integration | `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` |
+| quality export metadata production | `packages/cli/src/commands/quality.ts` |
+
+No source-map annotation is added here because current bottom-up lookup is file-level only and the future modules do not exist yet.

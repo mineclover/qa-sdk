@@ -36,6 +36,12 @@ operational ontology schema를 registry-service의 ontology-aware registry/alloc
 - Phase 5 activation smoke는 완료됐다. Helper는 Phase 3 service layer와 Phase 4 sync report/post-sync check surface만 소비하고, prefix registry store나 SQL에 직접 접근하지 않는다.
 - Phase 6 prefix policy는 schema 변경 전 결정 gate다. prefix table schema 변경은 Phase 6 결정 전까지 금지하지만 Phase 2A/2B의 `ontology_address_allocation` collision guard는 진행 가능하다.
 
+## Source-map follow-ups
+
+- [ ] After US-005 creates `packages/cli/src/commands/ontology/activation.ts`, narrow registry activation CLI/result/evidence doc frontmatter sources from `packages/cli/src/commands/ontology.ts` to the extracted activation module.
+- [ ] After US-006 and US-009 create `artifact-registry.ts` and `prompt-extract-artifact.ts`, add those real files to activation evidence source frontmatter where registry validate/list and sidecar provider consumption are the owned behavior.
+- [ ] Add `@def.doc` comments only if bottom-up lookup from the extracted source files still cannot reach the registry activation leaves through frontmatter sources.
+
 ## Phase 1: Operational schema allocation model — 완료
 
 Goal: DB 독립 allocation model과 validation contract를 고정한다.

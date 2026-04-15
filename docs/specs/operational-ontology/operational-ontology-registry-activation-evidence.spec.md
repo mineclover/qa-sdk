@@ -82,3 +82,15 @@ Existing artifact registry validate/list/provider behavior consumes activation e
 - `ontology prompt extract-artifact <output-file> --artifact-registry <registry>` resolves the sidecar as `source.kind: "artifact-registry-hit"` when the registry record points at that sidecar.
 
 Cross-pack evidence for `programming-artifact-ontology` and `authorization-ontology` may coexist in one local programming artifact registry when each activation uses its own isolated activation store and sidecar path.
+
+## Source Reference Boundary
+
+Current frontmatter sources stay on existing implementation files:
+
+- `packages/cli/src/lib/activation-evidence-registry.ts` for managed evidence record mapping.
+- `packages/cli/src/commands/ontology.ts` for current activation command orchestration and registry append call site.
+- package/test sources that prove activation evidence consumption.
+
+After the CLI split stories create real files, this leaf should narrow command sources to `packages/cli/src/commands/ontology/activation.ts` for producer orchestration, `packages/cli/src/commands/ontology/artifact-registry.ts` for registry validate/list/append behavior, and `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` for activation sidecar provider consumption when that extraction exists.
+
+No source comments or `@def.doc` annotations are added in this pre-extraction story. If future bottom-up lookup from the extracted files still misses this leaf, add the smallest file-level annotation in that extraction story.

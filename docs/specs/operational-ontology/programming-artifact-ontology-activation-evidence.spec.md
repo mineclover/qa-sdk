@@ -94,3 +94,18 @@ This leaf only defines local programming artifact registry evidence for successf
 - mapper tests: `packages/cli/src/lib/activation-evidence-registry.ontology.test.ts`
 - current CLI producer: `packages/cli/src/commands/ontology.ts`
 - CLI scenario tests: `packages/cli/src/commands/ontology.test.ts`
+
+## Source Reference Boundary
+
+The mapper source is already extracted and should remain in frontmatter. The CLI producer is still conservative because activation command extraction has not happened.
+
+Expected future narrowing:
+
+| concern | future source boundary |
+|---------|------------------------|
+| activation evidence record mapping | `packages/cli/src/lib/activation-evidence-registry.ts` |
+| activation command producer and `--artifact-registry` orchestration | `packages/cli/src/commands/ontology/activation.ts` |
+| registry validation/list consumption of `activation-evidence` kind | `packages/cli/src/commands/ontology/artifact-registry.ts` |
+| sidecar lookup through artifact extraction | `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` |
+
+These future paths must not move into frontmatter until the files exist.

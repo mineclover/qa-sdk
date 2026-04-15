@@ -73,3 +73,9 @@ Operator interpretation is split by owner:
 Known CLI-origin codes are `unknown-ontology-pack`, `invalid-cli-flag`, `missing-flag-value`, `invalid-address-model`, `activation-runtime-error`, `activation-output-write-error`, `activation-evidence-output-required`, and `activation-evidence-registry-append-error`.
 
 Structured failed activation results are not activation evidence. Managed activation evidence records are appended only when the helper result has `status: "succeeded"`.
+
+## Source Reference Boundary
+
+`OntologyPackActivationHelper` remains the source of truth for lifecycle result payloads, so registry-service helper source and tests stay in frontmatter. CLI-origin failure shaping, output sidecar write failures, and JSON printing currently live in `packages/cli/src/commands/ontology.ts`; after US-005 creates `packages/cli/src/commands/ontology/activation.ts`, this leaf should replace that CLI source with the extracted module path.
+
+The future split path is intentionally documented here instead of frontmatter because the module has not been extracted yet.

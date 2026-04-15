@@ -101,6 +101,12 @@ The local CLI scenario proof is not duplicated here. `operational-ontology-regis
 
 This command does not define registry-service REST activation, remote activation service behavior, scoped prefix support, production store ownership, API idempotency, tenancy/auth policy, or compensating rollback semantics.
 
+## Source Reference Boundary
+
+Current frontmatter sources point at the real command router and monolithic implementation because `packages/cli/src/commands/ontology/activation.ts` does not exist yet. After US-005 extracts the activation CLI module, this leaf should narrow the CLI implementation source from `packages/cli/src/commands/ontology.ts` to `packages/cli/src/commands/ontology/activation.ts` while keeping `packages/cli/src/command-groups/ontology.commands.ts`, local runtime files, helper source, and CLI tests as evidence.
+
+No `@def.doc` annotation is required before extraction because the file-level source map already reaches the current command implementation.
+
 ## 검증 명령
 
 - `pnpm --filter @qa-sdk/cli test -- ontology`

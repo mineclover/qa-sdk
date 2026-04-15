@@ -135,12 +135,27 @@ Line counts are the current pre-split inventory from the working tree. Proposed 
 **Description:** As a docs control-plane user, I want split docs to have source references and status checks so bottom-up code-to-doc lookup becomes practical.
 
 **Acceptance Criteria:**
-- [ ] Add source references for the new or updated ontology docs to the future split module paths where possible.
-- [ ] Keep source references conservative when a module has not yet been extracted.
-- [ ] Run `qa-sdk docs status` on the registry allocation family and programming artifact ontology family and record whether family scope is narrow enough.
-- [ ] Run `qa-sdk docs collect` for at least one new leaf doc and ensure unrelated PRD families do not dominate the result.
-- [ ] Do not add source comments or `@def.doc` annotations in this story unless needed for a concrete missing bottom-up lookup.
-- [ ] Record any source-map coverage gaps as follow-up TODOs instead of widening current scope.
+- [x] Add source references for the new or updated ontology docs to the future split module paths where possible.
+- [x] Keep source references conservative when a module has not yet been extracted.
+- [x] Run `qa-sdk docs status` on the registry allocation family and programming artifact ontology family and record whether family scope is narrow enough.
+- [x] Run `qa-sdk docs collect` for at least one new leaf doc and ensure unrelated PRD families do not dominate the result.
+- [x] Do not add source comments or `@def.doc` annotations in this story unless needed for a concrete missing bottom-up lookup.
+- [x] Record any source-map coverage gaps as follow-up TODOs instead of widening current scope.
+
+#### US-004 Control-Plane Evidence
+
+Future split module paths are recorded in the owning ontology leaf bodies as body-only source reference boundaries. Frontmatter `sources` stay on existing files such as `packages/cli/src/commands/ontology.ts` until US-005 through US-009 create the split modules, so no broken source paths are introduced.
+
+Status checks:
+
+- `qa-sdk docs status operational-ontology-registry-allocation --json`: 13 related family members, 81 sources, 0 tasks, 0 diagnostics. Scope is narrow enough: it resolves to the registry allocation module/leaf/todo/plan family and does not pull PRD task documents.
+- `qa-sdk docs status programming-artifact-ontology-system --json`: 12 related family members, 38 sources, 0 tasks, 0 diagnostics. Scope is narrow enough: it resolves to the programming artifact ontology module family and does not pull PRD task documents.
+
+Collect check:
+
+- `qa-sdk docs collect operational-ontology-registry-activation-evidence --json`: 3 related family members, 18 sources, 0 tasks, 0 diagnostics. The result contains the activation evidence leaf, its scenario matrix, and the registry allocation module; unrelated PRD families do not dominate the result.
+
+Source-map coverage gaps are recorded as TODO items in `operational-ontology-registry-allocation.todo.md` and `programming-artifact-ontology-todo.todo.md`. This story adds no source comments and no `@def.doc` annotations.
 
 ### US-005: Extract Ontology Activation CLI Module
 

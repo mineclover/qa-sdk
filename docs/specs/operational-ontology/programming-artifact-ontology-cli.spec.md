@@ -137,4 +137,16 @@ These commands manage local JSON only. They do not start registry-service/index-
 
 ## Source Reference Boundary
 
-Current implementation sources are `packages/cli/src/commands/ontology.ts` and `packages/cli/src/command-groups/ontology.commands.ts`. Later PRD stories will create split CLI modules such as `packages/cli/src/commands/ontology/prompt-extract-artifact.ts`, `artifact-registry.ts`, `quality-status-evidence.ts`, `quality-ledger-evidence.ts`, and `activation.ts`; when those files exist, this doc and the evidence/provider leaf `sources` should narrow to them.
+Current implementation sources are `packages/cli/src/commands/ontology.ts` and `packages/cli/src/command-groups/ontology.commands.ts`. The command group source stays stable because it owns public command descriptors. The command implementation source stays conservative until the split modules exist.
+
+Expected future narrowing:
+
+| command concern | future source boundary |
+|-----------------|------------------------|
+| `ontology artifact registry validate/list/append` | `packages/cli/src/commands/ontology/artifact-registry.ts` |
+| `ontology prompt extract-artifact` source resolution and fallback JSON | `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` |
+| related quality-status snapshot/matching | `packages/cli/src/commands/ontology/quality-status-evidence.ts` |
+| quality-ledger fallback, freshness, governance closure | `packages/cli/src/commands/ontology/quality-ledger-evidence.ts` |
+| `ontology registry activate-pack` production of activation evidence | `packages/cli/src/commands/ontology/activation.ts` |
+
+When those files exist, this doc and the evidence/provider leaf `sources` should narrow to them. Until then, future paths are body references only, not frontmatter `sources`.
