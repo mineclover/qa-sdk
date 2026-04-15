@@ -154,7 +154,7 @@ Known CLI-origin failure codes include:
 | code | condition |
 |------|-----------|
 | `unknown-ontology-pack` | `<pack-id>` is not in the known pack resolver |
-| `invalid-flag` | command-specific flag validation rejects an unsupported flag |
+| `invalid-cli-flag` | command-specific flag validation rejects an unsupported flag |
 | `missing-flag-value` | a flag that requires a value has none |
 | `invalid-address-model` | `--address-model` is neither `product` nor `sum` |
 | `activation-runtime-error` | runtime setup fails before the helper returns a structured result |

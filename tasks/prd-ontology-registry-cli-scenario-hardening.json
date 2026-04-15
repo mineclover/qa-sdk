@@ -62,11 +62,12 @@
         "Manual build validation runs dependency builds before dependent builds and does not run `operational-ontology build` concurrently with `registry-service build`."
       ],
       "priority": 2,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Added docs/specs/operational-ontology/operational-ontology-registry-activation-cli-scenario-matrix.spec.md as the adjacent activation CLI validation matrix. The matrix covers programming-artifact-ontology, authorization-ontology, and CLI guardrail rows across all required columns; implemented cells cite concrete packages/cli/src/commands/ontology.test.ts test titles; authorization evidence gaps are assigned to US-004, pack-independent failure interpretation gaps to US-006, and cross-pack coexistence to US-005. The matrix is explicitly local CLI only and does not imply REST, remote service, scoped prefix, idempotency, or rollback support. Also corrected the CLI failure contract to the implemented invalid-cli-flag code. Required test/typecheck/build/def validate gates passed, with builds run in dependency order before registry-service.",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-003",
@@ -245,6 +246,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T03:42:52.461Z"
+    "updatedAt": "2026-04-15T03:50:42.954Z"
   }
 }

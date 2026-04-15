@@ -63,12 +63,19 @@ No browser verification is required.
 **Description:** As a workflow reviewer, I want the CLI scenario matrix documented so pack activation proof is evaluated consistently before REST design begins.
 
 **Acceptance Criteria:**
-- [ ] Add a scenario matrix to `operational-ontology-registry-activation-cli.spec.md` or an adjacent spec section owned by that CLI surface.
-- [ ] Matrix rows include `programming-artifact-ontology` and `authorization-ontology`.
-- [ ] Matrix columns include activation success, sidecar-only output, activation evidence append, registry validate/list, artifact extraction registry hit, duplicate same-store failure, rerun/upsert same evidence identity, output write failure, registry append failure, unknown pack, invalid flag, and invalid address model.
-- [ ] Each implemented row links to a concrete test title or source reference.
-- [ ] Any uncovered row is explicitly marked as a gap and assigned to a later story in this PRD.
-- [ ] Matrix must not imply REST, remote service, scoped prefix, or rollback support.
+- [x] Add a scenario matrix to `operational-ontology-registry-activation-cli.spec.md` or an adjacent spec section owned by that CLI surface.
+- [x] Matrix rows include `programming-artifact-ontology` and `authorization-ontology`.
+- [x] Matrix columns include activation success, sidecar-only output, activation evidence append, registry validate/list, artifact extraction registry hit, duplicate same-store failure, rerun/upsert same evidence identity, output write failure, registry append failure, unknown pack, invalid flag, and invalid address model.
+- [x] Each implemented row links to a concrete test title or source reference.
+- [x] Any uncovered row is explicitly marked as a gap and assigned to a later story in this PRD.
+- [x] Matrix must not imply REST, remote service, scoped prefix, or rollback support.
+
+**Confirmation Notes:**
+- Added `docs/specs/operational-ontology/operational-ontology-registry-activation-cli-scenario-matrix.spec.md` as the adjacent validation spec owned by the activation CLI surface.
+- The matrix includes `programming-artifact-ontology`, `authorization-ontology`, and CLI guardrail rows, with columns for activation success, sidecar-only output, evidence append, registry validate/list, artifact extraction registry hit, duplicate same-store failure, rerun/upsert identity, output write failure, registry append failure, unknown pack, invalid flag, and invalid address model.
+- Implemented cells point at concrete `packages/cli/src/commands/ontology.test.ts` test titles. Authorization evidence gaps are assigned to US-004, pack-independent failure interpretation gaps to US-006, and cross-pack coexistence to US-005.
+- The matrix states it is local CLI only and does not define REST activation, remote activation service, scoped prefix support, API idempotency, or rollback behavior.
+- Corrected the activation CLI failure contract from `invalid-flag` to the implemented `invalid-cli-flag` code.
 
 ### US-003: Harden Programming Artifact Pack Evidence Replay
 

@@ -21,3 +21,18 @@ after each iteration and it's included in prompts for context.
   - `authorization-ontology-system.spec.md` lives under `docs/specs/authorization-ontology/`, not the operational ontology spec directory referenced by several nearby docs.
   - The manual build gate order matters because registry-service declaration generation reads built operational ontology outputs.
 ---
+
+## 2026-04-15 - US-002
+- Added an adjacent activation CLI scenario matrix spec that records proven local CLI behavior and explicit gaps before REST design begins.
+- Matrix rows cover `programming-artifact-ontology`, `authorization-ontology`, and CLI guardrails; required scenario columns are present with concrete CLI test title/source references.
+- Marked authorization evidence rows as US-004 gaps, pack-independent failure interpretation rows as US-006 gaps, and cross-pack coexistence as US-005 follow-up scope.
+- Corrected the activation CLI failure contract from `invalid-flag` to the implemented `invalid-cli-flag` code.
+- Marked US-002 complete in the CLI scenario hardening PRD JSON/Markdown.
+- Files changed: `docs/specs/operational-ontology/operational-ontology-registry-activation-cli-scenario-matrix.spec.md`, `docs/specs/operational-ontology/operational-ontology-registry-activation-cli.spec.md`, `tasks/prd-ontology-registry-cli-scenario-hardening.md`, `tasks/prd-ontology-registry-cli-scenario-hardening.json`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter @qa-sdk/cli build`; `pnpm --filter operational-ontology test -- programming-artifacts`; `pnpm --filter operational-ontology typecheck`; `pnpm --filter operational-ontology build`; `pnpm --filter registry-service test -- ontology`; `pnpm --filter registry-service typecheck`; `pnpm --filter registry-service build`; `pnpm --filter authorization-ontology test`; `pnpm --filter authorization-ontology typecheck`; `pnpm --filter authorization-ontology build`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - Existing CLI ontology tests already prove the programming-artifact activation evidence path end to end, including validate/list, extract-artifact registry hits, rerun upsert identity, and failed duplicate non-replacement.
+  - The authorization pack currently has CLI activation success coverage only; sidecar, evidence append, registry consumption, duplicate, and rerun/upsert proof are intentionally US-004 gaps.
+  - CLI guardrail scenarios such as unknown pack, invalid flag, and invalid address model are command-surface proofs, not pack-specific activation rows.
+  - The implemented invalid flag code is `invalid-cli-flag`; specs should not use the older `invalid-flag` label.
+---
