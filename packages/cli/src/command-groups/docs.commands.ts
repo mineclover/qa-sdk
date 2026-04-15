@@ -91,6 +91,18 @@ export const DOCS_COMMAND_DESCRIPTORS = [
     ],
   },
   {
+    id: "docs.prd.sync-completion",
+    path: ["prd", "sync-completion"],
+    usage: "qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--json]",
+    handlerKey: "docs.prd.sync-completion",
+    options: [
+      { flag: "--prd", valueHint: "<prd.json>", type: "string", description: "completed ralph PRD JSON path" },
+      { flag: "--dry-run", type: "boolean", description: "preview docs update plan without writing files" },
+      { flag: "--json", type: "boolean", description: "emit structured JSON" },
+      { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },
+    ],
+  },
+  {
     id: "docs.transform.metadata",
     path: ["transform", "metadata"],
     usage: "qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run]",

@@ -24,6 +24,8 @@ import {
   type DocumentMetadata,
   type DocumentSource,
   type DocumentTask,
+  previewPrdCompletionSync,
+  type PrdCompletionSyncPreview,
 } from "../lib/docs-control-plane/index.js";
 import {
   loadMetadataTransformRule,
@@ -252,6 +254,7 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "qa-sdk docs prd context <topic|doc-id> [--json]",
       "qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]",
       "qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]",
+      "qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--json]",
       "qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run] [--json]",
     ],
   },
@@ -627,17 +630,75 @@ async function cmdPrd(
   const action = positional[0];
   const target = positional.slice(1).join(" ").trim();
 
-  if (action !== "context" && action !== "scaffold" && action !== "to-ralph-json") {
+  if (action !== "context" && action !== "scaffold" && action !== "to-ralph-json" && action !== "sync-completion") {
     console.error("Usage: qa-sdk docs prd context <topic|doc-id> [--json]");
     console.error("Usage: qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]");
     console.error("Usage: qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]");
+    console.error("Usage: qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--json]");
     process.exitCode = 1;
     return;
   }
 
-  if (!target) {
+  if (action !== "sync-completion" && !target) {
     console.error(`docs prd ${action} requires <topic|doc-id>`);
     process.exitCode = 1;
+    return;
+  }
+
+  if (action === "sync-completion") {
+    if (hasFlag(flags, "apply")) {
+      printStructuredError({
+        error: {
+          code: "unsupported-operation",
+          operation: "docs.prd.sync-completion.apply",
+          message: "docs prd sync-completion is dry-run only in this PRD.",
+          remediation: "Run with --dry-run and review the proposed docs update plan.",
+        },
+      }, json);
+      process.exitCode = 1;
+      return;
+    }
+
+    const prdPath = pickLast(flags, "prd");
+    if (!prdPath) {
+      printStructuredError({
+        error: {
+          code: "missing-required-option",
+          operation: "docs.prd.sync-completion",
+          message: "docs prd sync-completion requires --prd <prd.json>.",
+          remediation: "Pass the completed ralph PRD JSON path with --prd tasks/example.json.",
+        },
+      }, json);
+      process.exitCode = 1;
+      return;
+    }
+    if (!prdPath.toLowerCase().endsWith(".json")) {
+      printStructuredError({
+        error: {
+          code: "unsupported-input-format",
+          operation: "docs.prd.sync-completion",
+          message: "docs prd sync-completion reads completed ralph PRD JSON.",
+          remediation: "Use --prd with a .json file produced for ralph execution.",
+        },
+      }, json);
+      process.exitCode = 1;
+      return;
+    }
+
+    const result = await previewPrdCompletionSync({
+      rootDir: options.rootDir,
+      documents,
+      prdPath,
+      dryRunDefaulted: !hasFlag(flags, "dry-run"),
+    });
+    if (hasErrorDiagnostic(result.diagnostics)) {
+      process.exitCode = 1;
+    }
+    if (json) {
+      printJson(result);
+      return;
+    }
+    printPrdCompletionSyncPreview(result);
     return;
   }
 
@@ -1640,6 +1701,41 @@ function printPrdToRalphJsonResult(result: PrdToRalphJsonPreview, wrote: boolean
   console.log(`  stories: ${result.storyCount}`);
   console.log(`  bytes: ${result.bytes}`);
   printDiagnostics(result.diagnostics);
+}
+
+function printPrdCompletionSyncPreview(result: PrdCompletionSyncPreview): void {
+  console.log(`docs prd sync-completion: ${result.mode}`);
+  if (result.prd) {
+    console.log(`  prd: ${result.prd.path}`);
+    console.log(`  completed stories: ${result.prd.completedStoryCount}/${result.prd.storyCount}`);
+  }
+  console.log(`  dry-run defaulted: ${result.dryRunDefaulted ? "yes" : "no"}`);
+  console.log(`  affected docs: ${result.counts.affectedDocs}`);
+  console.log(`  open TODO candidates: ${result.counts.openTodoCandidates}`);
+  console.log(`  spec update candidates: ${result.counts.specUpdateCandidates}`);
+  console.log(`  blocked promotions: ${result.counts.blockedPromotions}`);
+  console.log(`  roadmap update candidates: ${result.counts.roadmapUpdateCandidates}`);
+  console.log(`  scenario matrix update candidates: ${result.counts.scenarioMatrixUpdateCandidates}`);
+  console.log(`  session drift: ${result.counts.sessionDrift}`);
+  printNamedCollection("completed stories", result.completedStories, (story) =>
+    `${story.id}: ${story.title}${story.evidenceRefs.length > 0 ? ` evidence=${story.evidenceRefs.join(",")}` : ""}`
+  );
+  printNamedCollection("affected docs", result.affectedDocs.slice(0, 12), (document) =>
+    `[${document.kind}] ${document.stableId} ${document.path} (${document.reason})`
+  );
+  printNamedCollection("open TODO candidates", result.openTodoCandidates, (candidate) =>
+    `${candidate.promotionState} ${candidate.text} (${candidate.path} ${candidate.pointer})`
+  );
+  printNamedCollection("spec update candidates", result.specUpdateCandidates, (candidate) =>
+    `${candidate.promotionState} ${candidate.documentId} ${candidate.path}`
+  );
+  printNamedCollection("roadmap update candidates", result.roadmapUpdateCandidates, (candidate) =>
+    `${candidate.documentId} ${candidate.path}`
+  );
+  printNamedCollection("scenario matrix update candidates", result.scenarioMatrixUpdateCandidates, (candidate) =>
+    `${candidate.path}${candidate.rowIndex ? ` row ${candidate.rowIndex}` : ""}${candidate.evidenceIds.length > 0 ? ` evidence=${candidate.evidenceIds.join(",")}` : ""}`
+  );
+  printDiagnostics([...result.sessionDrift, ...result.diagnostics]);
 }
 
 function toPrdToRalphJsonOutput(result: PrdToRalphJsonPreview): object {

@@ -15,6 +15,7 @@ after each iteration and it's included in prompts for context.
 - Docs metadata transforms should stay as command-layer dry-run projections over parsed source files; adapters remain read-only, rule fields are allowlisted, and projected frontmatter lives in change-set metadata until a later apply story exists.
 - PRD authoring workflows should compose markdown from docs control-plane envelopes in the command layer; they must not call ralph-tui or create ralph PRD JSON unless a later explicit adapter command owns that conversion.
 - PRD compatibility conversion should compose from source adapters and validate generated target content through the target adapter before writing; adapters remain read-only while the command owns explicit materialization.
+- PRD completion sync should remain a command-layer dry-run projection; `passes: true` can identify candidate docs, but TODO/spec promotion must require source/test/evidence links or be reported as a blocked promotion.
 
 ---
 
@@ -139,4 +140,18 @@ after each iteration and it's included in prompts for context.
   - PRD-to-ralph conversion belongs in the command layer: source adapters provide neutral envelopes, the command owns materialization, and the target adapter validates the generated compatibility shape before write.
   - Explicit prerequisite hints should stay as PRD markdown task metadata; conversion can then preserve source-owned hints while using story order as the default dependency fallback.
   - Validating generated JSON from content avoids a temp output write and keeps the ralph adapter read-only.
+---
+
+## 2026-04-15 - US-010
+- Implemented `qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--json]`.
+- Added a read-only completion sync planner that summarizes completed PRD stories, affected docs, open TODO candidates, spec update candidates, roadmap/plan candidates, scenario matrix candidates, session drift, diagnostics, and blocked promotions.
+- Completion sync remains dry-run only, refuses `--apply`, and does not mutate PRD JSON or definition markdown files.
+- TODO/spec promotion candidates require source/test/evidence links from related docs, story references, or artifact evidence; candidates without evidence are surfaced as blocked instead of promoted from `passes: true` alone.
+- Added CLI/help tests with a completed ralph PRD JSON fixture and a mismatched TODO/spec fixture without evidence.
+- Files changed: `packages/cli/src/lib/docs-control-plane/prd-completion-sync.ts`, `packages/cli/src/lib/docs-control-plane/index.ts`, `packages/cli/src/commands/docs.ts`, `packages/cli/src/command-groups/docs.commands.ts`, `packages/cli/src/commands/docs.test.ts`, `packages/cli/src/commands/index-usage.test.ts`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- docs`; `pnpm --filter @qa-sdk/cli test -- index-usage`; `pnpm --filter @qa-sdk/cli test -- def`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter @qa-sdk/cli build`; `pnpm --filter definition-catalog test`; `pnpm --filter definition-catalog typecheck`; `pnpm --filter definition-data-source test`; `pnpm --filter definition-data-source typecheck`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - Completion sync belongs above adapters: it correlates normalized envelopes, PRD story state, definition families, artifact evidence, scenario matrix rows, and session diagnostics without changing source schemas.
+  - `passes: true` should be treated as a candidate signal, not a documentation authority; evidence-linked candidates and blocked promotions need separate states in the dry-run output.
+  - Plan/roadmap and scenario matrix refreshes can be proposed from topic/family matches while still leaving all file writes to a future explicit apply story.
 ---

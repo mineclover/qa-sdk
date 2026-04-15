@@ -239,6 +239,123 @@ Coordinate checkout adapters.
     return rootDir;
   }
 
+  async function createBlockedCompletionWorkspace(): Promise<string> {
+    rootDir = await mkdtemp(join(tmpdir(), "qa-sdk-docs-prd-sync-"));
+    await mkdir(join(rootDir, "docs/specs/inventory"), { recursive: true });
+    await mkdir(join(rootDir, "tasks"), { recursive: true });
+    await mkdir(join(rootDir, ".ralph-tui"), { recursive: true });
+
+    await writeFile(join(rootDir, "pnpm-workspace.yaml"), "packages: []\n");
+    await writeFile(join(rootDir, "docs/specs/inventory/inventory.spec.md"), `---
+def:
+  id: inventory-spec
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+  tags: [inventory]
+---
+# Inventory Spec
+
+## 목적 ^purpose
+
+Inventory completion behavior is still mismatched with TODO state.
+`);
+
+    await writeFile(join(rootDir, "docs/specs/inventory/inventory.todo.md"), `---
+def:
+  id: inventory-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+  tags: [inventory]
+---
+# Inventory Todo
+
+## 목적 ^purpose
+
+Track inventory completion follow-up.
+
+## Tasks
+
+- [ ] Document inventory completion evidence.
+`);
+
+    await writeFile(join(rootDir, "docs/specs/inventory/inventory-roadmap.plan.md"), `---
+def:
+  id: inventory-roadmap-plan
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+  tags: [inventory]
+---
+# Inventory Roadmap
+
+## 목적 ^purpose
+
+Track inventory roadmap state.
+`);
+
+    await writeFile(join(rootDir, "docs/specs/inventory/inventory-scenario-matrix.spec.md"), `---
+def:
+  id: inventory-scenario-matrix
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: validation
+  lifecycle: draft
+  tags: [inventory]
+---
+# Inventory Scenario Matrix
+
+## 목적 ^purpose
+
+Track inventory scenario coverage.
+
+## Scenario Matrix
+
+| row | evidence |
+|-----|----------|
+| inventory completion | Gap: evidence pending |
+`);
+
+    await writeFile(join(rootDir, "tasks/inventory-prd.json"), JSON.stringify({
+      name: "Inventory Completion PRD",
+      branchName: "ralph/inventory-completion",
+      description: "Document inventory completion evidence.",
+      userStories: [
+        {
+          id: "US-001",
+          title: "Document inventory completion evidence",
+          description: "As a docs operator, I want inventory completion docs synchronized.",
+          acceptanceCriteria: [
+            "Document inventory completion evidence.",
+          ],
+          priority: 1,
+          passes: true,
+          notes: "Completed by agent.",
+          dependsOn: [],
+          completionNotes: "Completed by agent.",
+        },
+      ],
+    }, null, 2));
+
+    await writeFile(join(rootDir, ".ralph-tui/session-meta.json"), JSON.stringify({
+      id: "inventory-session",
+      status: "completed",
+      prdPath: "tasks/inventory-prd.json",
+      totalTasks: 1,
+      tasksCompleted: 1,
+    }, null, 2));
+
+    return rootDir;
+  }
+
   function output(): string {
     return vi.mocked(console.log).mock.calls.map((call) => String(call[0])).join("\n");
   }
@@ -756,6 +873,199 @@ Convert markdown PRD state into ralph JSON.
         "ralph-prd-json-story-depends-on-missing",
       ]),
     );
+  });
+
+  it("previews PRD completion sync candidates without mutating docs", async () => {
+    const workspace = await createFixtureWorkspace();
+    const specPath = join(workspace, "docs/specs/checkout/checkout.spec.md");
+    const todoPath = join(workspace, "docs/specs/checkout/checkout.todo.md");
+    const planPath = join(workspace, "docs/specs/checkout/checkout.plan.md");
+    const prdPath = join(workspace, "tasks/checkout-prd.json");
+    const beforeSpec = await readFile(specPath, "utf8");
+    const beforeTodo = await readFile(todoPath, "utf8");
+    const beforePlan = await readFile(planPath, "utf8");
+    const beforePrd = await readFile(prdPath, "utf8");
+
+    await cliDocs([
+      "prd",
+      "sync-completion",
+      "--prd",
+      "tasks/checkout-prd.json",
+      "--root",
+      workspace,
+      "--dry-run",
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      mode: string;
+      dryRunDefaulted: boolean;
+      prd: { path: string; storyCount: number; completedStoryCount: number; allStoriesPassing: boolean };
+      counts: {
+        completedStories: number;
+        affectedDocs: number;
+        openTodoCandidates: number;
+        specUpdateCandidates: number;
+        roadmapUpdateCandidates: number;
+        scenarioMatrixUpdateCandidates: number;
+        sessionDrift: number;
+      };
+      completedStories: Array<{ id: string; title: string }>;
+      affectedDocs: Array<{ kind: string; stableId: string; path: string }>;
+      openTodoCandidates: Array<{ promotionState: string; text: string; evidence: unknown[] }>;
+      specUpdateCandidates: Array<{ documentId: string; promotionState: string; evidence: unknown[] }>;
+      roadmapUpdateCandidates: Array<{ documentId: string; path: string }>;
+      scenarioMatrixUpdateCandidates: Array<{ path: string; evidenceIds: string[] }>;
+      sessionDrift: Array<{ code: string }>;
+    }>();
+
+    expect(result.mode).toBe("dry-run");
+    expect(result.dryRunDefaulted).toBe(false);
+    expect(result.prd).toMatchObject({
+      path: "tasks/checkout-prd.json",
+      storyCount: 1,
+      completedStoryCount: 1,
+      allStoriesPassing: true,
+    });
+    expect(result.counts).toMatchObject({
+      completedStories: 1,
+      openTodoCandidates: 2,
+      specUpdateCandidates: expect.any(Number),
+      roadmapUpdateCandidates: expect.any(Number),
+      scenarioMatrixUpdateCandidates: expect.any(Number),
+      sessionDrift: 1,
+    });
+    expect(result.counts.affectedDocs).toBeGreaterThanOrEqual(6);
+    expect(result.completedStories).toEqual([
+      expect.objectContaining({ id: "US-001", title: "Complete checkout docs" }),
+    ]);
+    expect(result.affectedDocs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "spec", stableId: "checkout-spec" }),
+        expect.objectContaining({ kind: "todo", stableId: "checkout-todo" }),
+        expect.objectContaining({ kind: "plan", stableId: "checkout-plan" }),
+        expect.objectContaining({ kind: "ralph-session", path: ".ralph-tui/session-meta.json" }),
+      ]),
+    );
+    expect(result.openTodoCandidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          promotionState: "eligible",
+          text: "Sync PRD completion ledger.",
+          evidence: expect.arrayContaining([
+            expect.objectContaining({ kind: "source", path: "packages/checkout/src/index.ts" }),
+          ]),
+        }),
+      ]),
+    );
+    expect(result.specUpdateCandidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          documentId: "checkout-spec",
+          promotionState: "eligible",
+          evidence: expect.arrayContaining([
+            expect.objectContaining({ kind: "source", path: "packages/checkout/src/index.ts" }),
+          ]),
+        }),
+      ]),
+    );
+    expect(result.roadmapUpdateCandidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ documentId: "checkout-plan", path: "docs/specs/checkout/checkout.plan.md" }),
+      ]),
+    );
+    expect(result.scenarioMatrixUpdateCandidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: "docs/specs/checkout/checkout-scenario-matrix.spec.md",
+          evidenceIds: ["E-CHECKOUT-DRIFT"],
+        }),
+      ]),
+    );
+    expect(result.sessionDrift).toEqual([
+      expect.objectContaining({ code: "ralph-session-prd-complete-session-running" }),
+    ]);
+    await expect(readFile(specPath, "utf8")).resolves.toBe(beforeSpec);
+    await expect(readFile(todoPath, "utf8")).resolves.toBe(beforeTodo);
+    await expect(readFile(planPath, "utf8")).resolves.toBe(beforePlan);
+    await expect(readFile(prdPath, "utf8")).resolves.toBe(beforePrd);
+  });
+
+  it("blocks completion sync promotion when PRD passes lacks source, test, or evidence links", async () => {
+    const workspace = await createBlockedCompletionWorkspace();
+    const specPath = join(workspace, "docs/specs/inventory/inventory.spec.md");
+    const todoPath = join(workspace, "docs/specs/inventory/inventory.todo.md");
+    const beforeSpec = await readFile(specPath, "utf8");
+    const beforeTodo = await readFile(todoPath, "utf8");
+
+    await cliDocs([
+      "prd",
+      "sync-completion",
+      "--prd",
+      "tasks/inventory-prd.json",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      dryRunDefaulted: boolean;
+      counts: { blockedPromotions: number; sessionDrift: number };
+      openTodoCandidates: Array<{ promotionState: string; reason: string; evidence: unknown[] }>;
+      specUpdateCandidates: Array<{ documentId: string; promotionState: string; reason: string; evidence: unknown[] }>;
+      roadmapUpdateCandidates: unknown[];
+      scenarioMatrixUpdateCandidates: unknown[];
+    }>();
+    expect(result.dryRunDefaulted).toBe(true);
+    expect(result.counts.blockedPromotions).toBeGreaterThanOrEqual(2);
+    expect(result.counts.sessionDrift).toBe(0);
+    expect(result.openTodoCandidates).toEqual([
+      expect.objectContaining({
+        promotionState: "blocked",
+        reason: expect.stringContaining("passes=true is not enough"),
+        evidence: [],
+      }),
+    ]);
+    expect(result.specUpdateCandidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          documentId: "inventory-spec",
+          promotionState: "blocked",
+          reason: expect.stringContaining("source/test/evidence links"),
+          evidence: [],
+        }),
+      ]),
+    );
+    expect(result.roadmapUpdateCandidates).toHaveLength(1);
+    expect(result.scenarioMatrixUpdateCandidates).toHaveLength(1);
+    await expect(readFile(specPath, "utf8")).resolves.toBe(beforeSpec);
+    await expect(readFile(todoPath, "utf8")).resolves.toBe(beforeTodo);
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  it("refuses PRD completion sync apply mode", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "prd",
+      "sync-completion",
+      "--prd",
+      "tasks/checkout-prd.json",
+      "--root",
+      workspace,
+      "--apply",
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      error: { code: string; operation: string; remediation: string };
+    }>();
+    expect(result.error).toMatchObject({
+      code: "unsupported-operation",
+      operation: "docs.prd.sync-completion.apply",
+    });
+    expect(result.error.remediation).toContain("--dry-run");
+    expect(process.exitCode).toBe(1);
   });
 
   it("refuses PRD scaffold JSON output files", async () => {

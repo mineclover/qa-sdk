@@ -25,6 +25,9 @@ export {
   createRalphSessionAdapter,
   RALPH_SESSION_ADAPTER_ID,
 } from "./adapters/ralph-session.js";
+export {
+  previewPrdCompletionSync,
+} from "./prd-completion-sync.js";
 
 export type {
   DocumentAdapter,
@@ -54,6 +57,18 @@ export type {
 export type {
   PrdMarkdownAdapterOptions,
 } from "./adapters/prd-markdown.js";
+export type {
+  PrdCompletionAffectedDocument,
+  PrdCompletionEvidenceRef,
+  PrdCompletionOpenTodoCandidate,
+  PrdCompletionPromotionState,
+  PrdCompletionRoadmapUpdateCandidate,
+  PrdCompletionScenarioMatrixUpdateCandidate,
+  PrdCompletionSpecUpdateCandidate,
+  PrdCompletionStorySummary,
+  PrdCompletionSyncOptions,
+  PrdCompletionSyncPreview,
+} from "./prd-completion-sync.js";
 export type {
   RalphPrdJsonAdapterOptions,
   RalphPrdJsonSummary,
