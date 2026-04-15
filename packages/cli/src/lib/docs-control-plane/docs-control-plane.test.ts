@@ -711,7 +711,7 @@ describe("PRD and ralph compatibility adapters", () => {
 
 ## Overview
 
-Coordinate documentation adapters.
+Coordinate documentation adapters. Literal marker text like \`[PRD]...[/PRD]\` must not close the PRD block unless it appears on its own marker line.
 
 ## Goals
 
@@ -771,7 +771,7 @@ Coordinate documentation adapters.
       });
       expect(doc!.metadata).toMatchObject({
         title: "Sample Workflow",
-        overview: "Coordinate documentation adapters.",
+        overview: "Coordinate documentation adapters. Literal marker text like `[PRD]...[/PRD]` must not close the PRD block unless it appears on its own marker line.",
         goals: ["Preserve source documents.", "Expose workflow state."],
         qualityGates: [
           "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
@@ -821,6 +821,7 @@ Coordinate documentation adapters.
         tasks: [],
         metadata: {
           updatedAt: "2026-04-15T00:00:00.000Z",
+          custom: "domain metadata should stay out of the ralph JSON root",
         },
         userStories: [
           {

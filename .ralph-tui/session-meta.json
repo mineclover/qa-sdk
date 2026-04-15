@@ -1,14 +1,15 @@
 {
   "id": "239bc187-58ff-4fe8-8b17-44d38b2e476f",
-  "status": "running",
+  "status": "completed",
   "startedAt": "2026-04-15T06:20:34.680Z",
-  "updatedAt": "2026-04-15T08:16:14.721Z",
+  "updatedAt": "2026-04-15T09:48:14.295Z",
   "agentPlugin": "codex",
   "trackerPlugin": "json",
   "prdPath": "tasks/prd-docs-control-plane-adapters.json",
-  "currentIteration": 10,
+  "currentIteration": 11,
   "maxIterations": 0,
-  "totalTasks": 0,
-  "tasksCompleted": 10,
-  "cwd": "/Users/junwoobang/workflow/qa-sdk"
+  "totalTasks": 11,
+  "tasksCompleted": 11,
+  "cwd": "/Users/junwoobang/workflow/qa-sdk",
+  "endedAt": "2026-04-15T09:48:14.295Z"
 }

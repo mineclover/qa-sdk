@@ -46,7 +46,8 @@ interface PrdCriterion {
 
 const DEFAULT_PRD_DIRS = ["tasks"];
 const IGNORED_DIRS = new Set(["node_modules", "dist", ".git", ".next", ".turbo", "coverage"]);
-const PRD_BLOCK_RE = /\[PRD\]([\s\S]*?)\[\/PRD\]/i;
+const PRD_START_MARKER_RE = /^\[PRD\]\s*$/m;
+const PRD_END_MARKER_RE = /^\[\/PRD\]\s*$/gm;
 const SECTION_TITLES = new Set([
   "overview",
   "goals",
@@ -97,7 +98,7 @@ async function collectPrdMarkdownEnvelopes(
   for (const filePath of files) {
     const content = await safeRead(filePath);
     if (content === null) continue;
-    if (!PRD_BLOCK_RE.test(content) && !paths) continue;
+    if (!hasPrdBlock(content) && !paths) continue;
     envelopes.push(buildPrdMarkdownEnvelope(rootDir, filePath, content));
   }
   return envelopes;
@@ -153,8 +154,8 @@ function extractPrdBlock(
   content: string,
   diagnostics: DocumentDiagnosticInput[],
 ): string {
-  const match = content.match(PRD_BLOCK_RE);
-  if (!match) {
+  const start = content.match(PRD_START_MARKER_RE);
+  if (!start || start.index === undefined) {
     diagnostics.push({
       code: "prd-markdown-missing-prd-block",
       severity: "warning",
@@ -169,7 +170,46 @@ function extractPrdBlock(
     });
     return content;
   }
-  return match[1]?.trim() ?? "";
+
+  const startIndex = start.index + start[0].length;
+  const end = lastPrdEndMarkerAfter(content, startIndex);
+  if (!end) {
+    diagnostics.push({
+      code: "prd-markdown-missing-end-marker",
+      severity: "warning",
+      message: "PRD markdown should end with a line containing [/PRD].",
+      rawSource: {
+        path: sourcePath,
+        pointer: "[/PRD]",
+      },
+      metadata: {
+        source: PRD_MARKDOWN_ADAPTER_ID,
+      },
+    });
+    return content.slice(startIndex).trim();
+  }
+
+  return content.slice(startIndex, end.index).trim();
+}
+
+function hasPrdBlock(content: string): boolean {
+  const start = content.match(PRD_START_MARKER_RE);
+  if (!start || start.index === undefined) return false;
+  return lastPrdEndMarkerAfter(content, start.index + start[0].length) !== null;
+}
+
+function lastPrdEndMarkerAfter(
+  content: string,
+  startIndex: number,
+): { readonly index: number } | null {
+  let last: { index: number } | null = null;
+  PRD_END_MARKER_RE.lastIndex = 0;
+  for (const match of content.matchAll(PRD_END_MARKER_RE)) {
+    if ((match.index ?? -1) > startIndex) {
+      last = { index: match.index! };
+    }
+  }
+  return last;
 }
 
 function parseSections(content: string): readonly PrdSection[] {

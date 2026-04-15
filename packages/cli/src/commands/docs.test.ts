@@ -204,6 +204,16 @@ Coordinate checkout adapters.
       ],
     }, null, 2));
 
+    await writeFile(join(rootDir, "tasks/unrelated-prd.json"), JSON.stringify({
+      name: "Unrelated PRD",
+      branchName: "ralph/unrelated",
+      description: "Shares quality gate text but must not be related to the target status.",
+      metadata: {
+        owner: "unrelated-domain",
+      },
+      userStories: [],
+    }, null, 2));
+
     await writeFile(join(rootDir, ".ralph-tui/session-meta.json"), JSON.stringify({
       id: "session-1",
       status: "running",
@@ -392,7 +402,8 @@ Track inventory scenario coverage.
     const result = parsedOutput<{
       document: { stableId: string; kind: string };
       nextFollowUp: { source: string; kind: string; state: string; reason: string };
-      counts: { tasks: number; diagnostics: number };
+      counts: { familyMembers: number; tasks: number; diagnostics: number };
+      diagnostics: Array<{ rawSource?: { path?: string } }>;
     }>();
     expect(result.document).toMatchObject({
       stableId: "tasks/checkout-prd",
@@ -404,8 +415,12 @@ Track inventory scenario coverage.
       state: "running",
     });
     expect(result.nextFollowUp.reason).toContain("session is still running");
+    expect(result.counts.familyMembers).toBeLessThan(10);
     expect(result.counts.tasks).toBeGreaterThan(0);
     expect(result.counts.diagnostics).toBeGreaterThan(0);
+    expect(result.diagnostics.map((diagnostic) => diagnostic.rawSource?.path)).not.toContain(
+      "tasks/unrelated-prd.json",
+    );
   });
 
   it("collects family members, metadata, links, sources, tasks, evidence, and diagnostics as JSON", async () => {
@@ -744,7 +759,7 @@ Track inventory scenario coverage.
 
 ## Overview
 
-Convert markdown PRD state into ralph JSON.
+Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/PRD]\` is documentation content, not a block boundary.
 
 ## Quality Gates
 
@@ -819,7 +834,7 @@ Convert markdown PRD state into ralph JSON.
     expect(generated).toMatchObject({
       name: "Conversion PRD",
       branchName: "ralph/conversion",
-      description: "Convert markdown PRD state into ralph JSON.",
+      description: "Convert markdown PRD state into ralph JSON. Inline marker text like `[PRD]...[/PRD]` is documentation content, not a block boundary.",
     });
     expect(generated.userStories).toHaveLength(3);
     expect(generated.userStories[0]).toMatchObject({

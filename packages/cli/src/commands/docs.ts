@@ -1338,7 +1338,7 @@ function collectRelatedDocuments(
   const familyMembers = document.familyId
     ? documents.filter((candidate) => candidate.familyId === document.familyId)
     : [document];
-  const identities = new Set(familyMembers.flatMap(documentIdentityValues));
+  const identities = new Set(familyMembers.flatMap(documentRelationshipIdentityValues));
   const paths = new Set(familyMembers.flatMap(documentPathValues));
   const related = documents.filter((candidate) =>
     familyMembers.includes(candidate)
@@ -1352,7 +1352,7 @@ function candidateMatchesIdentities(
   identities: ReadonlySet<string>,
   paths: ReadonlySet<string>,
 ): boolean {
-  if (documentIdentityValues(candidate).some((value) => identities.has(value))) return true;
+  if (documentRelationshipIdentityValues(candidate).some((value) => identities.has(value))) return true;
   if (documentPathValues(candidate).some((value) => paths.has(value))) return true;
   if (candidate.links.some((link) =>
     identities.has(link.sourceId ?? "")
@@ -1363,7 +1363,7 @@ function candidateMatchesIdentities(
     || identities.has(source.label ?? "")
   )) return true;
 
-  const metadataRefs = metadataReferenceValues(candidate.metadata);
+  const metadataRefs = metadataRelationshipReferenceValues(candidate.metadata);
   return metadataRefs.some((value) => identities.has(value) || paths.has(normalizePath(value)));
 }
 
@@ -1537,12 +1537,64 @@ function documentPathValues(document: DocumentEnvelope): readonly string[] {
   ]);
 }
 
+function documentRelationshipIdentityValues(document: DocumentEnvelope): readonly string[] {
+  return unique([
+    document.stableId,
+    document.familyId,
+    document.path,
+    asString(document.metadata.defId),
+    asString(document.metadata.sourcePath),
+    asString(document.metadata.artifactId),
+    asString(document.metadata.artifactRef),
+    asString(document.metadata.outputPath),
+    asString(document.metadata.ownerDefinitionId),
+    asString(document.metadata.prdPath),
+  ].filter((value): value is string => Boolean(value)));
+}
+
 function metadataReferenceValues(metadata: DocumentMetadata): readonly string[] {
   const values: string[] = [];
   for (const value of Object.values(metadata)) {
     appendMetadataValue(values, value);
   }
   return values;
+}
+
+function metadataRelationshipReferenceValues(metadata: DocumentMetadata): readonly string[] {
+  const relationshipKeys = [
+    "artifactId",
+    "artifactRef",
+    "defId",
+    "derivedFromRefs",
+    "familyId",
+    "materializesOutputRefs",
+    "ontologyId",
+    "outputPath",
+    "ownerDefinitionId",
+    "packId",
+    "prdPath",
+    "sourcePath",
+    "sourceRefs",
+    "verificationRefs",
+    "verifiesRefs",
+  ];
+  const values: string[] = [];
+  for (const key of relationshipKeys) {
+    appendMetadataValue(values, metadata[key]);
+  }
+
+  const relations = metadata.relations;
+  if (Array.isArray(relations)) {
+    for (const relation of relations) {
+      if (!relation || typeof relation !== "object") continue;
+      const record = relation as Record<string, unknown>;
+      appendMetadataValue(values, record.fromRef);
+      appendMetadataValue(values, record.toRef);
+      appendMetadataValue(values, record.evidenceRef);
+    }
+  }
+
+  return unique(values);
 }
 
 function appendMetadataValue(values: string[], value: unknown): void {

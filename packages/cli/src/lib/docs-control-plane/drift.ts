@@ -98,7 +98,7 @@ export async function detectDocumentDrift(
     issues: [],
   };
 
-  detectSessionCompleteStillRunning(context);
+  detectRalphSessionDriftDiagnostics(context);
   detectPrdMarkdownUncheckedAfterJsonComplete(context);
   await detectOpenTodosDescribedAsComplete(context);
   await detectScenarioMatrixTitleDrift(context);
@@ -124,17 +124,17 @@ export async function detectDocumentDrift(
   };
 }
 
-function detectSessionCompleteStillRunning(context: DriftContext): void {
+function detectRalphSessionDriftDiagnostics(context: DriftContext): void {
   for (const document of context.scopedDocuments) {
     for (const diagnostic of document.diagnostics) {
-      if (diagnostic.code !== "ralph-session-prd-complete-session-running") continue;
+      if (!diagnostic.code.startsWith("ralph-session-")) continue;
       addIssue(context, {
         severity: toDriftSeverity(diagnostic.severity),
         code: diagnostic.code,
         message: diagnostic.message,
         path: diagnostic.rawSource?.path ?? document.path,
         ...(diagnostic.rawSource?.pointer ? { pointer: diagnostic.rawSource.pointer } : {}),
-        remediation: "Stop or archive the ralph session, or reopen the PRD JSON story state if work is still active.",
+        remediation: ralphSessionRemediation(diagnostic.code),
         metadata: {
           ...diagnostic.metadata,
           documentId: document.stableId,
@@ -142,6 +142,13 @@ function detectSessionCompleteStillRunning(context: DriftContext): void {
       });
     }
   }
+}
+
+function ralphSessionRemediation(code: string): string {
+  if (code === "ralph-session-prd-complete-session-running") {
+    return "Stop or archive the ralph session, or reopen the PRD JSON story state if work is still active.";
+  }
+  return "Update the ralph session metadata counts, or rerun the tracker sync so session state matches the PRD JSON story state.";
 }
 
 function detectPrdMarkdownUncheckedAfterJsonComplete(context: DriftContext): void {

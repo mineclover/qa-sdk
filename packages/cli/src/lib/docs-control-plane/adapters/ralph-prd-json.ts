@@ -208,7 +208,7 @@ function validateRalphPrdJson(
   if ("tasks" in root) {
     diagnostics.push(toDiagnostic(sourcePath, "/tasks", "ralph-prd-json-root-tasks", "error", "Ralph PRD JSON must use userStories, not root tasks."));
   }
-  if ("metadata" in root) {
+  if ("metadata" in root && !isAllowedTrackerMetadata(root.metadata)) {
     diagnostics.push(toDiagnostic(sourcePath, "/metadata", "ralph-prd-json-root-metadata", "warning", "Ralph PRD JSON metadata belongs in source-owned story fields or external session state, not root metadata."));
   }
 
@@ -350,4 +350,17 @@ function toStringList(value: unknown): readonly string[] {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isAllowedTrackerMetadata(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  const allowedKeys = new Set([
+    "agentPlugin",
+    "completedAt",
+    "createdAt",
+    "endedAt",
+    "trackerPlugin",
+    "updatedAt",
+  ]);
+  return Object.keys(value).every((key) => allowedKeys.has(key));
 }
