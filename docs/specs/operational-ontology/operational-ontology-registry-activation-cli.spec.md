@@ -178,6 +178,7 @@ The CLI test suite proves command discovery and dispatch through `main(["ontolog
 - Successful reruns with a fresh activation store and the same registry/output identity upsert the same activation evidence record instead of duplicating it.
 - Duplicate/failed activation against the original store does not append or replace successful registry evidence with failed evidence.
 - `authorization-ontology` activates through an isolated SQLite store, returns all eight authorization taxonomy allocation summaries, syncs every allocation, returns passing smoke checks, and exposes known authorization axes in `syncReports[*].materializedRecords[*].axisId`.
+- `authorization-ontology --output <file> --artifact-registry <registry> --json` writes a raw sidecar, appends deterministic `activation-evidence-authorization-ontology-authorization-ontology` evidence with authorization namespace/allocation/sync/smoke/warning/error metadata, validates/lists the registry record, resolves the sidecar through `ontology prompt extract-artifact` as an `artifact-registry-hit`, upserts a successful rerun, and preserves the successful record after duplicate same-store failure.
 - Unknown pack id, invalid address model, helper duplicate failure, runtime storage failure, JSON output, text output, and `--output` sidecar paths have CLI coverage.
 - Missing `--output` with `--artifact-registry`, output write failure, sanitized registry append failure, and text-mode activation evidence reporting have CLI coverage.
 

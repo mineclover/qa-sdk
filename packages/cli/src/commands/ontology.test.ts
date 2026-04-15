@@ -12,6 +12,17 @@ import {
   resolveKnownOntologyPack,
 } from "../lib/known-ontology-packs.js";
 
+const AUTHORIZATION_TAXONOMY_IDS = [
+  "authorization-action",
+  "authorization-decision",
+  "authorization-enforcement",
+  "authorization-lineage",
+  "authorization-node",
+  "authorization-policy",
+  "authorization-principal",
+  "authorization-resource",
+];
+
 describe("ontology CLI", () => {
   it("known pack resolver resolves activation pack ids without store setup", () => {
     expect(KNOWN_ONTOLOGY_PACK_IDS).toEqual([
@@ -887,18 +898,8 @@ describe("ontology CLI", () => {
         errors: [],
       });
 
-      const authorizationTaxonomyIds = [
-        "authorization-action",
-        "authorization-decision",
-        "authorization-enforcement",
-        "authorization-lineage",
-        "authorization-node",
-        "authorization-policy",
-        "authorization-principal",
-        "authorization-resource",
-      ];
       expect(parsed.allocationSummaries.map((summary) => summary.taxonomyId).sort()).toEqual(
-        authorizationTaxonomyIds,
+        AUTHORIZATION_TAXONOMY_IDS,
       );
       expect(parsed.allocationSummaries).toEqual(
         expect.arrayContaining([
@@ -1003,6 +1004,294 @@ describe("ontology CLI", () => {
       await rm(dir, { force: true, recursive: true });
     }
   });
+
+  it("registry authorization activation evidence is consumable end to end and preserves successful evidence", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-authorization-activation-e2e-"));
+    try {
+      const sidecarOnlyStorePath = join(dir, "state-sidecar", "registry.sqlite");
+      const storePath = join(dir, "state", "registry.sqlite");
+      const rerunStorePath = join(dir, "state-rerun", "registry.sqlite");
+      const sidecarOnlyOutputPath = join(dir, "activation", "authorization-sidecar-only.json");
+      const outputPath = join(dir, "activation", "authorization-ontology.json");
+      const duplicateOutputPath = join(dir, "activation", "authorization-duplicate-failed.json");
+      const registryPath = join(dir, "programming-artifacts.json");
+      const activationArgs = (store: string, output = outputPath) => [
+        "ontology",
+        "registry",
+        "activate-pack",
+        "authorization-ontology",
+        "--store",
+        store,
+        "--output",
+        output,
+        "--artifact-registry",
+        registryPath,
+        "--json",
+      ];
+      const readActivationEvidenceRecords = async () => {
+        const registry = JSON.parse(await readFile(registryPath, "utf8")) as {
+          artifacts?: ActivationEvidenceRegistryRecordJson[];
+        };
+        return (registry.artifacts ?? []).filter(
+          (record) => record.kind === "activation-evidence",
+        );
+      };
+
+      const sidecarOnlyOutput = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "registry",
+          "activate-pack",
+          "authorization-ontology",
+          "--store",
+          sidecarOnlyStorePath,
+          "--output",
+          sidecarOnlyOutputPath,
+          "--json",
+        ]);
+      });
+      const sidecarOnly = JSON.parse(sidecarOnlyOutput.stdout) as RegistryActivationJson;
+      const sidecarOnlyFile = JSON.parse(
+        await readFile(sidecarOnlyOutputPath, "utf8"),
+      ) as RegistryActivationJson;
+      expect(sidecarOnlyOutput.stderr).toBe("");
+      expect(sidecarOnlyOutput.exitCode).toBeUndefined();
+      expect(sidecarOnly.status).toBe("succeeded");
+      expect(sidecarOnly.activationEvidence).toBeUndefined();
+      expect(sidecarOnlyFile.status).toBe("succeeded");
+      expect(sidecarOnlyFile.activationEvidence).toBeUndefined();
+      await expect(readFile(registryPath, "utf8")).rejects.toThrow();
+
+      const firstOutput = await captureConsoleWithExitCode(async () => {
+        await main(activationArgs(storePath));
+      });
+      const first = JSON.parse(firstOutput.stdout) as RegistryActivationJson;
+      const sidecar = JSON.parse(await readFile(outputPath, "utf8")) as RegistryActivationJson;
+
+      expect(firstOutput.stderr).toBe("");
+      expect(firstOutput.exitCode).toBeUndefined();
+      expect(first.status).toBe("succeeded");
+      expect(first.activationEvidence).toEqual({
+        appendStatus: "appended",
+        registryPath,
+        recordId:
+          "activation-evidence-authorization-ontology-authorization-ontology",
+        recordRef: outputPath,
+        recordCount: 1,
+      });
+      expect(sidecar.status).toBe("succeeded");
+      expect(sidecar.activationEvidence).toBeUndefined();
+      expect(first.allocationSummaries.map((summary) => summary.taxonomyId).sort()).toEqual(
+        AUTHORIZATION_TAXONOMY_IDS,
+      );
+      expect(first.allocationSummaries).toHaveLength(8);
+      expect(first.namespaceSummary).toMatchObject({
+        ontologyId: "authorization-ontology",
+        namespace: "authorization_ontology",
+      });
+
+      const allocationIds = first.allocationSummaries
+        .map((summary) => summary.allocationId)
+        .sort();
+      expect(Object.keys(first.syncSummariesByAllocationId).sort()).toEqual(
+        allocationIds,
+      );
+      expect(Object.keys(first.smokeCheckSummary.byAllocationId).sort()).toEqual(
+        allocationIds,
+      );
+      expect(first.warnings).toEqual([]);
+      expect(first.errors).toEqual([]);
+
+      const firstRecords = await readActivationEvidenceRecords();
+      expect(firstRecords).toHaveLength(1);
+      expect(firstRecords[0]).toMatchObject({
+        artifactId:
+          "activation-evidence-authorization-ontology-authorization-ontology",
+        artifactRef: outputPath,
+        outputPath,
+        kind: "activation-evidence",
+        producedByRef:
+          "qa-sdk ontology registry activate-pack authorization-ontology",
+        derivedFromRefs: ["authorization-ontology"],
+        verifiesRefs: [
+          "authorization-ontology",
+          "operational-ontology-registry-allocation",
+        ],
+        metadata: {
+          status: "succeeded",
+          packId: "authorization-ontology",
+          ontologyId: "authorization-ontology",
+          namespace: "authorization_ontology",
+          allocationCount: 8,
+          activationStatusCounts: { active: 8 },
+          syncStatusCounts: { synced: 8 },
+          smokeCheckSummary: expect.objectContaining({
+            allocationCount: 8,
+            passedAllocationCount: 8,
+            failedAllocationCount: 0,
+            failedCheckCount: 0,
+          }),
+          warningCount: 0,
+          errorCount: 0,
+          generatedAt: expect.any(String),
+        },
+      });
+      expect(firstRecords[0]?.metadata?.smokeCheckSummary?.passedCheckCount).toBe(
+        firstRecords[0]?.metadata?.smokeCheckSummary?.checkCount,
+      );
+      expect(
+        Object.keys(firstRecords[0]?.metadata?.smokeCheckSummary?.byAllocationId ?? {}).sort(),
+      ).toEqual(allocationIds);
+
+      const validateOutput = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "artifact",
+          "registry",
+          "validate",
+          "--input",
+          registryPath,
+          "--json",
+        ]);
+      });
+      const validation = JSON.parse(validateOutput.stdout) as {
+        valid: boolean;
+        artifactCount: number;
+        errors: unknown[];
+      };
+      expect(validateOutput.stderr).toBe("");
+      expect(validateOutput.exitCode).toBeUndefined();
+      expect(validation).toMatchObject({
+        valid: true,
+        artifactCount: 1,
+        errors: [],
+      });
+
+      const listOutput = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "artifact",
+          "registry",
+          "list",
+          "--input",
+          registryPath,
+          "--kind",
+          "activation-evidence",
+          "--json",
+        ]);
+      });
+      const listed = JSON.parse(listOutput.stdout) as {
+        artifacts: ActivationEvidenceRegistryRecordJson[];
+      };
+      expect(listOutput.stderr).toBe("");
+      expect(listOutput.exitCode).toBeUndefined();
+      expect(listed.artifacts).toEqual([
+        expect.objectContaining({
+          artifactId:
+            "activation-evidence-authorization-ontology-authorization-ontology",
+          kind: "activation-evidence",
+          artifactRef: outputPath,
+          outputPath,
+        }),
+      ]);
+
+      const extractOutput = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "prompt",
+          "extract-artifact",
+          outputPath,
+          "--artifact-registry",
+          registryPath,
+          "--kind",
+          "self_reflection",
+          "--json",
+        ]);
+      });
+      const extracted = JSON.parse(extractOutput.stdout) as {
+        source: {
+          kind: string;
+          registry: { status: string; providerId: string; recordCount: number };
+        };
+        workArea: {
+          rootRef: string;
+          paths?: string[];
+        };
+      };
+      expect(extractOutput.stderr).toBe("");
+      expect(extractOutput.exitCode).toBeUndefined();
+      expect(extracted.source).toMatchObject({
+        kind: "artifact-registry-hit",
+        registry: {
+          status: "hit",
+          providerId: "programming-artifact-registry",
+          recordCount: 1,
+        },
+      });
+      expect(extracted.workArea.rootRef).toBe(outputPath);
+      expect(extracted.workArea.paths).toContain(outputPath);
+
+      const rerunOutput = await captureConsoleWithExitCode(async () => {
+        await main(activationArgs(rerunStorePath));
+      });
+      const rerun = JSON.parse(rerunOutput.stdout) as RegistryActivationJson;
+      expect(rerunOutput.stderr).toBe("");
+      expect(rerunOutput.exitCode).toBeUndefined();
+      expect(rerun.status).toBe("succeeded");
+      expect(rerun.activationEvidence?.recordCount).toBe(1);
+      expect(rerun.activationEvidence?.recordId).toBe(first.activationEvidence?.recordId);
+
+      const rerunRecords = await readActivationEvidenceRecords();
+      expect(rerunRecords).toHaveLength(1);
+      expect(rerunRecords[0]).toMatchObject({
+        artifactId: firstRecords[0]!.artifactId,
+        artifactRef: outputPath,
+        outputPath,
+        metadata: {
+          status: "succeeded",
+          packId: "authorization-ontology",
+          ontologyId: "authorization-ontology",
+        },
+      });
+
+      const duplicateOutput = await captureConsoleWithExitCode(async () => {
+        await main(activationArgs(storePath, duplicateOutputPath));
+      });
+      const duplicate = JSON.parse(duplicateOutput.stdout) as RegistryActivationJson;
+      expect(duplicateOutput.stderr).toBe("");
+      expect(duplicateOutput.exitCode).toBe(1);
+      expect(duplicate.status).toBe("failed");
+      expect(duplicate.activationEvidence).toBeUndefined();
+      expect(duplicate.errors).toEqual([
+        expect.objectContaining({
+          code: "duplicate-allocation",
+        }),
+      ]);
+
+      const afterFailedRecords = await readActivationEvidenceRecords();
+      expect(afterFailedRecords).toHaveLength(1);
+      expect(afterFailedRecords[0]).toMatchObject({
+        artifactId: firstRecords[0]!.artifactId,
+        artifactRef: outputPath,
+        outputPath,
+        metadata: {
+          status: "succeeded",
+          packId: "authorization-ontology",
+          ontologyId: "authorization-ontology",
+        },
+      });
+      expect(afterFailedRecords).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            outputPath: duplicateOutputPath,
+            metadata: expect.objectContaining({ status: "failed" }),
+          }),
+        ]),
+      );
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  }, 20_000);
 
   it("registry activate-pack reports unknown pack failures through the public command path", async () => {
     const output = await captureConsoleWithExitCode(async () => {
@@ -4335,6 +4624,14 @@ interface ActivationEvidenceRegistryRecordJson {
     status?: string;
     packId?: string;
     ontologyId?: string;
+    namespace?: string | null;
+    allocationCount?: number;
+    activationStatusCounts?: Record<string, number>;
+    syncStatusCounts?: Record<string, number>;
+    smokeCheckSummary?: RegistryActivationJson["smokeCheckSummary"];
+    warningCount?: number;
+    errorCount?: number;
+    generatedAt?: string;
   };
 }
 

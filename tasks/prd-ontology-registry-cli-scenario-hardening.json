@@ -135,11 +135,12 @@
         "Manual build validation runs dependency builds before dependent builds and does not run `operational-ontology build` concurrently with `registry-service build`."
       ],
       "priority": 4,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Added packages/cli/src/commands/ontology.test.ts coverage for authorization-ontology --output <file> --artifact-registry <registry> --json using isolated sidecar-only, first append, rerun, and duplicate activation stores. The scenario proves successful authorization activation, all eight taxonomy summaries, deterministic activation-evidence-authorization-ontology-authorization-ontology identity, authorization metadata summary, registry validate/list acceptance, extract-artifact artifact-registry-hit resolution, successful rerun upsert, and failed duplicate non-replacement. Updated authorization-ontology-system.spec.md, operational-ontology-registry-activation-cli.spec.md, and the scenario matrix to record the completed authorization evidence proof. Required test/typecheck/build/def validate gates passed, with dependency builds run before registry-service build.",
       "dependsOn": [
         "US-002"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-005",
@@ -247,6 +248,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T03:56:30.657Z"
+    "updatedAt": "2026-04-15T04:06:11.693Z"
   }
 }

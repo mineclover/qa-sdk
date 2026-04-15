@@ -100,16 +100,22 @@ No browser verification is required.
 **Description:** As an authorization ontology maintainer, I want `authorization-ontology` to use the same activation evidence path as programming artifacts so both primary packs prove the lifecycle consistently.
 
 **Acceptance Criteria:**
-- [ ] Add or confirm a CLI test invoking `ontology registry activate-pack authorization-ontology --output <file> --artifact-registry <registry> --json`.
-- [ ] Test uses an isolated SQLite activation store, sidecar output, and artifact registry JSON file.
-- [ ] Activation status is `succeeded`.
-- [ ] Output includes all expected authorization taxonomy allocation summaries.
-- [ ] Registry contains an `activation-evidence` record whose id is deterministic for `authorization-ontology`.
-- [ ] Evidence metadata summarizes authorization namespace, allocation count, sync statuses, smoke summary, warnings, and errors.
-- [ ] Registry validate/list accepts the authorization activation evidence.
-- [ ] `extract-artifact <authorization-output-file> --artifact-registry <registry> --json` resolves through `artifact-registry-hit`.
-- [ ] Duplicate same-store authorization activation does not append or replace successful evidence.
-- [ ] Update `authorization-ontology-system.spec.md` with the completed evidence proof when implemented.
+- [x] Add or confirm a CLI test invoking `ontology registry activate-pack authorization-ontology --output <file> --artifact-registry <registry> --json`.
+- [x] Test uses an isolated SQLite activation store, sidecar output, and artifact registry JSON file.
+- [x] Activation status is `succeeded`.
+- [x] Output includes all expected authorization taxonomy allocation summaries.
+- [x] Registry contains an `activation-evidence` record whose id is deterministic for `authorization-ontology`.
+- [x] Evidence metadata summarizes authorization namespace, allocation count, sync statuses, smoke summary, warnings, and errors.
+- [x] Registry validate/list accepts the authorization activation evidence.
+- [x] `extract-artifact <authorization-output-file> --artifact-registry <registry> --json` resolves through `artifact-registry-hit`.
+- [x] Duplicate same-store authorization activation does not append or replace successful evidence.
+- [x] Update `authorization-ontology-system.spec.md` with the completed evidence proof when implemented.
+
+**Confirmation Notes:**
+- Added `packages/cli/src/commands/ontology.test.ts` coverage for `authorization-ontology --output <file> --artifact-registry <registry> --json` using isolated sidecar-only, first append, rerun, and duplicate activation stores.
+- The scenario proves successful authorization activation, all eight taxonomy summaries, deterministic `activation-evidence-authorization-ontology-authorization-ontology` identity, authorization metadata summary, registry validate/list acceptance, `extract-artifact` `artifact-registry-hit`, successful rerun upsert, and failed duplicate non-replacement.
+- Updated `authorization-ontology-system.spec.md`, `operational-ontology-registry-activation-cli.spec.md`, and the scenario matrix to record the completed authorization evidence proof.
+- Required test/typecheck/build/def validate gates passed, with dependency builds run before `registry-service build`.
 
 ### US-005: Prove Cross-Pack Registry Coexistence
 
