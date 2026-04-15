@@ -1,0 +1,344 @@
+{
+  "name": "Docs Control Plane And Compatibility Adapters",
+  "description": "Unify document verification, document information collection, metadata transformation previews, search, and PRD workflow handling behind a CLI-first docs control plane. Repository documents remain the source of truth, while definition markdown, PRD markdown, ralph-tui PRD JSON, ralph session metadata, and artifact evidence are handled through compatibility adapters.",
+  "branchName": "ralph/docs-control-plane-adapters",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Define Docs Control Plane Boundary And Envelope Contract",
+      "description": "As a document system maintainer, I want a neutral control-plane contract so definition docs, PRDs, ralph JSON, sessions, and evidence can be queried consistently without merging their source schemas.",
+      "acceptanceCriteria": [
+        "Add a docs control-plane module boundary, for example `packages/cli/src/lib/docs-control-plane/` or a similarly local CLI support module.",
+        "Define `DocumentEnvelope` with adapter id, kind, stable id, optional family id, path, metadata, links, sources, sections, tasks, evidence, diagnostics, and raw source pointer.",
+        "Define `DocumentAdapter` with read-only collection methods and optional write/transform capability flags.",
+        "Define `DocumentTask`, `DocumentEvidence`, `DocumentDiagnostic`, and `DocumentChangeSet` types.",
+        "State in code comments and docs that repository files remain SSOT; the control plane is an index/coordination layer.",
+        "Do not add REST, remote services, database migrations, or new artifact vocabulary in this story.",
+        "Add unit tests for envelope normalization and adapter capability declarations.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+        "`pnpm --filter @qa-sdk/cli test -- def` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter @qa-sdk/cli build` passes.",
+        "`pnpm --filter definition-catalog test` passes.",
+        "`pnpm --filter definition-catalog typecheck` passes.",
+        "`pnpm --filter definition-data-source test` passes.",
+        "`pnpm --filter definition-data-source typecheck` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Implement Definition Markdown Adapter",
+      "description": "As a docs CLI user, I want definition markdown files to be collected through the control plane so existing definition-catalog metadata stays reusable.",
+      "acceptanceCriteria": [
+        "Add a `definition-markdown` adapter that uses existing `definition-catalog` scanning/parsing helpers instead of ad hoc parsing.",
+        "Collect `def.id`, type, knowledge kind, level, scope, aspect, depth, lifecycle, layer, tags, links, `svc`, sources, purpose, overview, and source path.",
+        "Preserve existing `qa-sdk def validate`, `def search`, `def sync`, and `def scan-audit` behavior.",
+        "Surface group/module/leaf diagnostics from existing validation where available.",
+        "Represent `.spec.md`, `.todo.md`, `.plan.md`, `.test.md`, `.memo.md`, and `.rule.md` as document family members when they share a family id or basename convention.",
+        "Add tests with temporary docs covering spec/todo/plan family detection and frontmatter extraction.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+        "`pnpm --filter @qa-sdk/cli test -- def` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter @qa-sdk/cli build` passes.",
+        "`pnpm --filter definition-catalog test` passes.",
+        "`pnpm --filter definition-catalog typecheck` passes.",
+        "`pnpm --filter definition-data-source test` passes.",
+        "`pnpm --filter definition-data-source typecheck` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Implement PRD Markdown, Ralph JSON, And Session Adapters",
+      "description": "As a workflow maintainer, I want PRD formats and ralph execution state to be compatible adapters so execution state can be compared against docs without becoming the core document model.",
+      "acceptanceCriteria": [
+        "Add a `prd-markdown` adapter that reads `[PRD]...[/PRD]`, overview, goals, quality gates, user stories, acceptance criteria, functional requirements, non-goals, and open questions.",
+        "Add a `ralph-prd-json` adapter that validates flat root `{ name, branchName, description, userStories }`.",
+        "Reject or warn on schema anti-patterns: root `prd`, root `tasks`, root `metadata`, story `status`, non-boolean `passes`, missing `dependsOn`.",
+        "Map `userStories[]` to control-plane tasks with `passes`, dependencies, notes, completion notes, and quality gates.",
+        "Add a `ralph-session` adapter for `.ralph-tui/session-meta.json`.",
+        "Detect drift when PRD JSON has all stories passing but session status is still `running`, or when session task counts disagree with PRD story state.",
+        "Add tests using `tasks/prd-ontology-registry-cli-scenario-hardening.json`-style fixtures.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+        "`pnpm --filter @qa-sdk/cli test -- def` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter @qa-sdk/cli build` passes.",
+        "`pnpm --filter definition-catalog test` passes.",
+        "`pnpm --filter definition-catalog typecheck` passes.",
+        "`pnpm --filter definition-data-source test` passes.",
+        "`pnpm --filter definition-data-source typecheck` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "Implement Artifact Evidence Adapter",
+      "description": "As a verification reviewer, I want artifact registry evidence to be collected into the docs control plane so documents can be reviewed with their execution proof.",
+      "acceptanceCriteria": [
+        "Add an `artifact-evidence` adapter that reads local programming artifact registry JSON files in array or `{ artifacts: [...] }` form.",
+        "Collect artifact id, kind, artifact ref, output path, produced-by, derived-from, verifies, owner definition, materializes-output, source refs, verification refs, metadata, and relation edges.",
+        "Map `activation-evidence` records to document evidence without adding new artifact kind vocabulary.",
+        "Support filtering evidence by document id, artifact ref, output path, pack id, and kind.",
+        "Do not require artifact registry files to exist for normal docs status commands; missing evidence sources should be warnings only when explicitly requested.",
+        "Add tests for activation-evidence records produced by the ontology activation CLI.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+        "`pnpm --filter @qa-sdk/cli test -- def` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter @qa-sdk/cli build` passes.",
+        "`pnpm --filter definition-catalog test` passes.",
+        "`pnpm --filter definition-catalog typecheck` passes.",
+        "`pnpm --filter definition-data-source test` passes.",
+        "`pnpm --filter definition-data-source typecheck` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Add qa-sdk docs status, collect, And search",
+      "description": "As a maintainer, I want one CLI surface to inspect a document family, collect related facts, and search across document systems.",
+      "acceptanceCriteria": [
+        "Add a `qa-sdk docs` command group without replacing `qa-sdk def`.",
+        "Register the docs command group in `packages/cli/src/index.ts` so dispatch and help routing work through the same command registry pattern as `qa-sdk def`.",
+        "Implement `qa-sdk docs status [doc-id|path] [--json]`.",
+        "Implement `qa-sdk docs collect <doc-id|path> [--json]` to show family members, metadata, links, sources, tasks, evidence, and diagnostics.",
+        "Implement `qa-sdk docs search <query> [--kind ...] [--metadata key=value] [--json]`.",
+        "Search must include definition markdown and PRD adapters at minimum.",
+        "Status output must identify next open follow-up state when PRD/session/todo evidence is available.",
+        "Add root dispatch/help tests proving `qa-sdk docs` routes through the command registry.",
+        "Add CLI tests for text and JSON output.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+        "`pnpm --filter @qa-sdk/cli test -- def` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter @qa-sdk/cli build` passes.",
+        "`pnpm --filter definition-catalog test` passes.",
+        "`pnpm --filter definition-catalog typecheck` passes.",
+        "`pnpm --filter definition-data-source test` passes.",
+        "`pnpm --filter definition-data-source typecheck` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-002",
+        "US-003",
+        "US-004"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Add qa-sdk docs drift",
+      "description": "As a document operator, I want drift detection across specs, todos, PRDs, ralph sessions, scenario matrices, and evidence so completion state can be trusted.",
+      "acceptanceCriteria": [
+        "Implement `qa-sdk docs drift [--prd <file>] [--json]`.",
+        "Detect PRD JSON complete but ralph session still `running`.",
+        "Detect PRD JSON complete but matching PRD markdown acceptance criteria remain unchecked.",
+        "Detect TODO open item that is described as completed in spec or PRD notes.",
+        "Detect scenario matrix `E-*` references whose test title no longer exists.",
+        "Detect document source references that point to missing files.",
+        "Detect group/module docs without `contains` links and leaf docs with `contains` links by reusing definition validation where possible.",
+        "Drift output must group issues by severity and include file paths plus remediation hints.",
+        "Add tests using the recently completed CLI scenario hardening PRD/session pattern.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+        "`pnpm --filter @qa-sdk/cli test -- def` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter @qa-sdk/cli build` passes.",
+        "`pnpm --filter definition-catalog test` passes.",
+        "`pnpm --filter definition-catalog typecheck` passes.",
+        "`pnpm --filter definition-data-source test` passes.",
+        "`pnpm --filter definition-data-source typecheck` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-002",
+        "US-003",
+        "US-005"
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "Add Metadata Transform Dry-Run",
+      "description": "As a documentation maintainer, I want safe batch metadata transform previews so lifecycle, level, tags, links, and source refs can be planned consistently before any file mutation exists.",
+      "acceptanceCriteria": [
+        "Implement `qa-sdk docs transform metadata --rule <json-file|inline-json> --dry-run`.",
+        "Make dry-run the default when `--dry-run` is omitted.",
+        "Do not implement `--apply` in this PRD.",
+        "If `--apply` is provided, return a structured unsupported-operation error that points to a later apply PRD.",
+        "Use structured frontmatter parsing/writing for definition markdown; do not use broad regex replacements.",
+        "Support allowlisted transforms for lifecycle, level, tags add/remove, links add/remove, `svc`, and sources.",
+        "Print a change-set preview with before/after metadata and affected paths.",
+        "Refuse transforms that would remove `def.id` or convert PRD JSON into definition frontmatter.",
+        "Add tests for dry-run no-write behavior on temporary docs.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+        "`pnpm --filter @qa-sdk/cli test -- def` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter @qa-sdk/cli build` passes.",
+        "`pnpm --filter definition-catalog test` passes.",
+        "`pnpm --filter definition-catalog typecheck` passes.",
+        "`pnpm --filter definition-data-source test` passes.",
+        "`pnpm --filter definition-data-source typecheck` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-002",
+        "US-005"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "Add Control-Plane PRD Authoring Workflow",
+      "description": "As a planner, I want PRD creation to consume docs control-plane context so new PRDs are grounded in existing specs, TODOs, evidence, and prior ralph state.",
+      "acceptanceCriteria": [
+        "Implement `qa-sdk docs prd context <topic|doc-id> [--json]` or equivalent command to collect PRD authoring context.",
+        "Context must include related specs, open TODOs, plans, prior PRDs, PRD JSON completion state, ralph session state, scenario matrix rows, sources, and evidence.",
+        "Implement `qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]` or equivalent command to create a PRD skeleton from collected context.",
+        "Generated PRD skeleton must include overview, goals, quality gates, user story placeholders, non-goals, technical considerations, success metrics, and open questions.",
+        "Generated PRD skeleton must state its control-plane context sources.",
+        "PRD authoring must not call ralph-tui directly and must not create PRD JSON unless an explicit adapter command is invoked.",
+        "Add tests for context collection and scaffold output on temporary fixtures.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+        "`pnpm --filter @qa-sdk/cli test -- def` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter @qa-sdk/cli build` passes.",
+        "`pnpm --filter definition-catalog test` passes.",
+        "`pnpm --filter definition-catalog typecheck` passes.",
+        "`pnpm --filter definition-data-source test` passes.",
+        "`pnpm --filter definition-data-source typecheck` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-003",
+        "US-004",
+        "US-005"
+      ]
+    },
+    {
+      "id": "US-009",
+      "title": "Add PRD JSON Compatibility Conversion Under Docs Control Plane",
+      "description": "As a ralph-tui user, I want PRD markdown to be converted into ralph-compatible JSON through the docs control plane so conversion follows the same validation and context rules.",
+      "acceptanceCriteria": [
+        "Implement `qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]` or equivalent command.",
+        "Conversion must use the PRD markdown adapter and ralph JSON adapter, not a standalone string parser.",
+        "Output JSON must be flat root with `name`, `branchName`, `description`, and `userStories`.",
+        "Quality gates from PRD markdown must be appended to every story.",
+        "Dependencies must be derived from story order and explicit prerequisite hints where present.",
+        "Output must set all incomplete stories to `passes: false`, empty notes, and no story `status`.",
+        "Conversion must run schema anti-pattern validation before writing.",
+        "Add tests that convert a fixture PRD and validate the resulting ralph JSON.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+        "`pnpm --filter @qa-sdk/cli test -- def` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter @qa-sdk/cli build` passes.",
+        "`pnpm --filter definition-catalog test` passes.",
+        "`pnpm --filter definition-catalog typecheck` passes.",
+        "`pnpm --filter definition-data-source test` passes.",
+        "`pnpm --filter definition-data-source typecheck` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-003",
+        "US-005"
+      ]
+    },
+    {
+      "id": "US-010",
+      "title": "Add PRD Completion Sync Dry-Run",
+      "description": "As a docs operator, I want completed PRD JSON to produce a proposed docs update plan so spec/todo/roadmap updates are systematic instead of manual.",
+      "acceptanceCriteria": [
+        "Implement `qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--json]`.",
+        "Dry-run output must summarize completed stories, affected docs, open TODO candidates, spec update candidates, roadmap update candidates, scenario matrix update candidates, and session drift.",
+        "Do not mutate files in the initial dry-run story.",
+        "Do not introduce `--apply` in this story; completion sync is dry-run only in this PRD.",
+        "Sync-completion must not promote a TODO to spec solely because PRD JSON says `passes: true`; it must require source/test/evidence links or report a blocked promotion.",
+        "Add tests using a completed ralph PRD JSON fixture and a mismatched todo/spec fixture.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+        "`pnpm --filter @qa-sdk/cli test -- def` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter @qa-sdk/cli build` passes.",
+        "`pnpm --filter definition-catalog test` passes.",
+        "`pnpm --filter definition-catalog typecheck` passes.",
+        "`pnpm --filter definition-data-source test` passes.",
+        "`pnpm --filter definition-data-source typecheck` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-003",
+        "US-005",
+        "US-006",
+        "US-008",
+        "US-009"
+      ]
+    },
+    {
+      "id": "US-011",
+      "title": "Reflect Docs Control Plane In Specs And Guides",
+      "description": "As a documentation maintainer, I want the docs control-plane architecture recorded so future agents use adapters and avoid PRD-centric drift.",
+      "acceptanceCriteria": [
+        "Add or update a spec under `docs/specs/definition-catalog/` or `docs/specs/system/` describing the docs control plane, adapter boundary, and SSOT direction.",
+        "Update relevant CLI/docs guide text to distinguish `qa-sdk def` primitives from `qa-sdk docs` cross-document control plane.",
+        "Document that PRD JSON is a ralph compatibility adapter, not the core document model.",
+        "Document dry-run-first write policy and supported transform allowlist.",
+        "Document when to use `docs prd context`, `docs prd scaffold`, and `docs prd to-ralph-json`.",
+        "Keep REST, remote document service, and automatic unreviewed spec promotion out of scope.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+        "`pnpm --filter @qa-sdk/cli test -- def` passes.",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        "`pnpm --filter @qa-sdk/cli build` passes.",
+        "`pnpm --filter definition-catalog test` passes.",
+        "`pnpm --filter definition-catalog typecheck` passes.",
+        "`pnpm --filter definition-data-source test` passes.",
+        "`pnpm --filter definition-data-source typecheck` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-007",
+        "US-010"
+      ]
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-15T06:34:19.076Z"
+  }
+}

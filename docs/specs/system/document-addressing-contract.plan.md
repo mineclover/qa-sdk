@@ -1,6 +1,6 @@
 ---
 def:
-  id: document-addressing-contract
+  id: document-addressing-contract-plan
   level: leaf
   scope: flow
   aspect: process_flow

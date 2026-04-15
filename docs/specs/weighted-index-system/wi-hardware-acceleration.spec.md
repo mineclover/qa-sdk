@@ -10,7 +10,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: [runtime]
+  tags: [runtime, performance]
   links:
     - target: wi-system
       type: depends_on

@@ -8,6 +8,7 @@ import { cliDef } from "./def.js";
 describe("def commands", () => {
   let tempRoot: string;
   let dbPath: string;
+  const originalQaSdkHome = process.env.QA_SDK_HOME;
 
   beforeEach(() => {
     tempRoot = "";
@@ -19,6 +20,11 @@ describe("def commands", () => {
 
   afterEach(async () => {
     vi.restoreAllMocks();
+    if (originalQaSdkHome === undefined) {
+      delete process.env.QA_SDK_HOME;
+    } else {
+      process.env.QA_SDK_HOME = originalQaSdkHome;
+    }
     if (tempRoot) {
       await rm(tempRoot, { recursive: true, force: true });
     }
@@ -37,6 +43,7 @@ describe("def commands", () => {
     if (!dbPath) {
       tempRoot = await mkdtemp(join(tmpdir(), "qa-sdk-def-cli-"));
       dbPath = join(tempRoot, "definition-service.sqlite");
+      process.env.QA_SDK_HOME = tempRoot;
     }
 
     await cliDef([...args, "--db", dbPath]);

@@ -2,10 +2,10 @@
 def:
   id: rlsc-text-occupancy-todo
   level: leaf
-  scope: flow
+  scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: in_progress
+  lifecycle: draft
   layer: mediation
   svc: rlsc
   tags: [text, measurement, pretext]

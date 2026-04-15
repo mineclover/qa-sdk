@@ -35,7 +35,11 @@ type StoredEvidenceBundle = {
 function openReviewLedger(): Database.Database | null {
   const dbPath = join(getQaSdkDir(), "review-ledger.sqlite");
   if (!existsSync(dbPath)) return null;
-  return new Database(dbPath, { readonly: true });
+  try {
+    return new Database(dbPath, { readonly: true });
+  } catch {
+    return null;
+  }
 }
 
 export function getSyntheticIncomingLinksForDoc(
@@ -56,6 +60,8 @@ export function getSyntheticIncomingLinksForDoc(
       createdAt: request.createdAt,
       targetModel: request.targetModel,
     }));
+  } catch {
+    return [];
   } finally {
     db.close();
   }
@@ -71,6 +77,8 @@ export function getFeedbackRequestSummariesForDoc(
 
   try {
     return loadRequestsByDocId(db, docId, limit).map(toSummary);
+  } catch {
+    return [];
   } finally {
     db.close();
   }
