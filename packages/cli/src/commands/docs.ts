@@ -24,9 +24,15 @@ import {
   type DocumentSource,
   type DocumentTask,
 } from "../lib/docs-control-plane/index.js";
+import {
+  detectDocumentDrift,
+  type DocumentDriftIssue,
+  type DocumentDriftResult,
+  type DocumentDriftSeverity,
+} from "../lib/docs-control-plane/drift.js";
 import { formatHelpSections, type CommandHelpSectionSpec } from "../command-spec.js";
 
-type DocsCommand = "help" | "status" | "collect" | "search";
+type DocsCommand = "help" | "status" | "collect" | "search" | "drift";
 
 interface ParsedDocsArgs {
   readonly command: DocsCommand;
@@ -41,6 +47,7 @@ interface DocsRuntimeOptions {
   readonly artifactRegistryPaths: readonly string[];
   readonly sessionPath?: string;
   readonly prdJsonPath?: string;
+  readonly prdPath?: string;
 }
 
 interface ResolvedDocument {
@@ -119,6 +126,7 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "qa-sdk docs status [doc-id|path] [--json]",
       "qa-sdk docs collect <doc-id|path> [--json]",
       "qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]",
+      "qa-sdk docs drift [--prd <file>] [--json]",
     ],
   },
   {
@@ -129,6 +137,7 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "--prd-dir <dir>              PRD markdown/JSON directory (repeatable)",
       "--session <file>             ralph session metadata path",
       "--prd-json <file>            PRD JSON path for session comparison",
+      "--prd <file>                 scope drift checks to a PRD markdown/JSON family",
       "--artifact-registry <file>   artifact evidence registry path (repeatable)",
       "--json                       emit structured JSON",
     ],
@@ -183,6 +192,11 @@ export async function cliDocs(args: string[]): Promise<void> {
     return;
   }
 
+  if (parsed.command === "drift") {
+    await cmdDrift(documents, options, hasFlag(parsed.flags, "json"));
+    return;
+  }
+
   await cmdSearch(documents, parsed.positional, parsed.flags, hasFlag(parsed.flags, "json"));
 }
 
@@ -224,7 +238,7 @@ function parseDocsArgs(args: readonly string[]): ParsedDocsArgs {
 }
 
 function normalizeCommand(value: string | undefined): DocsCommand {
-  if (value === "status" || value === "collect" || value === "search" || value === "help") {
+  if (value === "status" || value === "collect" || value === "search" || value === "help" || value === "drift") {
     return value;
   }
   return "help";
@@ -249,6 +263,7 @@ function runtimeOptions(flags: Readonly<Record<string, readonly string[]>>): Doc
     ),
     sessionPath: pickLast(flags, "session"),
     prdJsonPath: pickLast(flags, "prd-json"),
+    prdPath: pickLast(flags, "prd"),
   };
 }
 
@@ -269,7 +284,9 @@ function createDocsAdapters(options: DocsRuntimeOptions): readonly DocumentAdapt
     createRalphSessionAdapter({
       rootDir: options.rootDir,
       ...(options.sessionPath ? { path: options.sessionPath } : {}),
-      ...(options.prdJsonPath ? { prdJsonPath: options.prdJsonPath } : {}),
+      ...(options.prdJsonPath || options.prdPath?.endsWith(".json")
+        ? { prdJsonPath: options.prdJsonPath ?? options.prdPath }
+        : {}),
     }),
     createArtifactEvidenceAdapter({
       rootDir: options.rootDir,
@@ -348,6 +365,23 @@ async function cmdSearch(
     return;
   }
   printSearch(result);
+}
+
+async function cmdDrift(
+  documents: readonly DocumentEnvelope[],
+  options: DocsRuntimeOptions,
+  json: boolean,
+): Promise<void> {
+  const result = await detectDocumentDrift(documents, {
+    rootDir: options.rootDir,
+    ...(options.prdPath ? { prdPath: options.prdPath } : {}),
+  });
+
+  if (json) {
+    printJson(result);
+    return;
+  }
+  printDrift(result);
 }
 
 function buildStatusResult(
@@ -730,6 +764,30 @@ function printSearch(result: SearchResult): void {
     console.log(`  - [${item.kind}] ${item.stableId}`);
     console.log(`    path: ${item.path}`);
     if (item.title) console.log(`    title: ${item.title}`);
+  }
+}
+
+function printDrift(result: DocumentDriftResult): void {
+  console.log(`docs drift: ${result.counts.total} issue(s)`);
+  if (result.scope.prd) console.log(`  prd: ${result.scope.prd}`);
+  console.log(`  documents: ${result.scope.documents}`);
+  for (const severity of ["error", "warning", "info"] as const satisfies readonly DocumentDriftSeverity[]) {
+    printDriftIssueGroup(severity, result.issuesBySeverity[severity]);
+  }
+}
+
+function printDriftIssueGroup(
+  severity: DocumentDriftSeverity,
+  issues: readonly DocumentDriftIssue[],
+): void {
+  if (issues.length === 0) return;
+  console.log("");
+  console.log(`${severity}s (${issues.length}):`);
+  for (const issue of issues) {
+    const pointer = issue.pointer ? ` ${issue.pointer}` : "";
+    console.log(`  - [${issue.code}] ${issue.path}${pointer}`);
+    console.log(`    ${issue.message}`);
+    console.log(`    hint: ${issue.remediation}`);
   }
 }
 

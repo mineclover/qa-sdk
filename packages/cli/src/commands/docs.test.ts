@@ -25,6 +25,7 @@ describe("docs commands", () => {
   async function createFixtureWorkspace(): Promise<string> {
     rootDir = await mkdtemp(join(tmpdir(), "qa-sdk-docs-cli-"));
     await mkdir(join(rootDir, "docs/specs/checkout"), { recursive: true });
+    await mkdir(join(rootDir, "packages/cli/src/commands"), { recursive: true });
     await mkdir(join(rootDir, "tasks"), { recursive: true });
     await mkdir(join(rootDir, ".ralph-tui"), { recursive: true });
     await mkdir(join(rootDir, "artifacts"), { recursive: true });
@@ -49,6 +50,8 @@ source: packages/checkout/src/index.ts:Checkout
 ## 목적 ^purpose
 
 Coordinate checkout documentation state.
+
+Completed: remove obsolete checkout stub.
 `);
 
     await writeFile(join(rootDir, "docs/specs/checkout/checkout.todo.md"), `---
@@ -66,6 +69,59 @@ def:
 ## 목적 ^purpose
 
 Follow up on checkout implementation evidence.
+
+## Tasks
+
+- [ ] Remove obsolete checkout stub.
+- [ ] Sync PRD completion ledger.
+`);
+
+    await writeFile(join(rootDir, "docs/specs/checkout/checkout-group.spec.md"), `---
+def:
+  id: checkout-group
+  level: group
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+---
+# Checkout Group
+
+## 목적 ^purpose
+
+Groups checkout docs.
+`);
+
+    await writeFile(join(rootDir, "docs/specs/checkout/checkout-scenario-matrix.spec.md"), `---
+def:
+  id: checkout-scenario-matrix
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: validation
+  lifecycle: draft
+source: packages/cli/src/commands/docs.test.ts
+---
+# Checkout Scenario Matrix
+
+## 목적 ^purpose
+
+Document checkout drift evidence references.
+
+## Scenario Matrix
+
+| row | evidence |
+|-----|----------|
+| checkout drift | \`E-CHECKOUT-DRIFT\` |
+
+## Evidence References
+
+- \`E-CHECKOUT-DRIFT\`: [\`packages/cli/src/commands/docs.test.ts\`](../../../packages/cli/src/commands/docs.test.ts) test title \`stale checkout drift test title\`.
+`);
+
+    await writeFile(join(rootDir, "packages/cli/src/commands/docs.test.ts"), `import { it } from "vitest";
+
+it("current checkout drift test title", () => {});
 `);
 
     await writeFile(join(rootDir, "tasks/checkout-prd.md"), `[PRD]
@@ -91,7 +147,7 @@ Coordinate checkout adapters.
 
 **Acceptance Criteria:**
 - [x] Status output exists.
-- [x] JSON output exists.
+- [ ] JSON output exists.
 
 ## Functional Requirements
 
@@ -122,7 +178,7 @@ Coordinate checkout adapters.
           ],
           priority: 1,
           passes: true,
-          notes: "",
+          notes: "Completed: sync PRD completion ledger.",
           dependsOn: [],
           completionNotes: "Completed by agent",
         },
@@ -299,5 +355,105 @@ Coordinate checkout adapters.
     expect(text).toContain('docs search: "Coordinate checkout"');
     expect(text).toContain("[spec] checkout-spec");
     expect(text).toContain("[prd] tasks/checkout-prd");
+  });
+
+  it("reports docs drift grouped by severity with remediation hints", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs(["drift", "--root", workspace, "--json"]);
+
+    const result = parsedOutput<{
+      counts: { total: number; error: number; warning: number };
+      issuesBySeverity: {
+        error: Array<{ code: string; path: string; remediation: string }>;
+        warning: Array<{ code: string; path: string; remediation: string; metadata: Record<string, unknown> }>;
+      };
+    }>();
+    expect(result.counts.total).toBeGreaterThanOrEqual(6);
+    expect(result.counts.error).toBeGreaterThanOrEqual(2);
+    expect(result.counts.warning).toBeGreaterThanOrEqual(4);
+    expect(result.issuesBySeverity.error).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "document-source-reference-missing",
+          path: "docs/specs/checkout/checkout.spec.md",
+          remediation: expect.stringContaining("Create the referenced file"),
+        }),
+        expect.objectContaining({
+          code: "definition-level-violation",
+          path: "docs/specs/checkout/checkout-group.spec.md",
+          remediation: expect.stringContaining("Add a contains link"),
+        }),
+      ]),
+    );
+    expect(result.issuesBySeverity.warning).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "ralph-session-prd-complete-session-running",
+          path: ".ralph-tui/session-meta.json",
+          remediation: expect.stringContaining("Stop or archive"),
+        }),
+        expect.objectContaining({
+          code: "prd-markdown-unchecked-after-json-complete",
+          path: "tasks/checkout-prd.md",
+          metadata: expect.objectContaining({ storyId: "US-001" }),
+        }),
+        expect.objectContaining({
+          code: "todo-open-described-complete",
+          path: "docs/specs/checkout/checkout.todo.md",
+          remediation: expect.stringContaining("Check the TODO item"),
+        }),
+        expect.objectContaining({
+          code: "todo-open-described-complete",
+          path: "docs/specs/checkout/checkout.todo.md",
+          metadata: expect.objectContaining({ completedInPath: "tasks/checkout-prd.json" }),
+        }),
+        expect.objectContaining({
+          code: "scenario-matrix-test-title-missing",
+          path: "docs/specs/checkout/checkout-scenario-matrix.spec.md",
+          remediation: expect.stringContaining("Update the Evidence References test title"),
+        }),
+      ]),
+    );
+  });
+
+  it("scopes docs drift to a PRD family when --prd is provided", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs(["drift", "--root", workspace, "--prd", "tasks/checkout-prd.json", "--json"]);
+
+    const result = parsedOutput<{
+      scope: { prd: string; documents: number };
+      issues: Array<{ code: string; path: string }>;
+    }>();
+    expect(result.scope).toMatchObject({
+      prd: "tasks/checkout-prd.json",
+    });
+    expect(result.scope.documents).toBeGreaterThanOrEqual(3);
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "ralph-session-prd-complete-session-running" }),
+        expect.objectContaining({ code: "prd-markdown-unchecked-after-json-complete" }),
+      ]),
+    );
+    expect(result.issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "document-source-reference-missing" }),
+        expect.objectContaining({ code: "definition-level-violation" }),
+      ]),
+    );
+  });
+
+  it("prints text drift output with severity groups and hints", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs(["drift", "--root", workspace]);
+
+    const text = output();
+    expect(text).toContain("docs drift:");
+    expect(text).toContain("errors (");
+    expect(text).toContain("warnings (");
+    expect(text).toContain("[document-source-reference-missing] docs/specs/checkout/checkout.spec.md");
+    expect(text).toContain("hint:");
   });
 });

@@ -47,6 +47,17 @@ export const DOCS_COMMAND_DESCRIPTORS = [
       { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },
     ],
   },
+  {
+    id: "docs.drift",
+    path: ["drift"],
+    usage: "qa-sdk docs drift [--prd <file>] [--json]",
+    handlerKey: "docs.drift",
+    options: [
+      { flag: "--prd", valueHint: "<file>", type: "string", description: "scope drift checks to a PRD markdown/JSON family" },
+      { flag: "--json", type: "boolean", description: "emit structured JSON" },
+      { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },
+    ],
+  },
 ] as const satisfies readonly CommandDescriptor[];
 
 export const DOCS_COMMAND_TREE =

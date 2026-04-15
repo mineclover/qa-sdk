@@ -11,6 +11,7 @@ after each iteration and it's included in prompts for context.
 - Definition markdown family grouping should use an explicit family id when present, otherwise the repo-relative basename with `.spec.md`/`.todo.md`/`.plan.md`/`.test.md`/`.memo.md`/`.rule.md` stripped; keep each file's `def.id` as metadata so source ownership is not blurred.
 - CLI Vitest suites that exercise native SQLite/better-sqlite3 should use the `forks` pool; the default worker pool can segfault during native teardown after assertions pass.
 - Docs CLI tests should pass `--root` to a temp workspace and exercise the real default adapters together; this keeps definition markdown, PRD markdown/JSON, session, and evidence aggregation hermetic while still testing command-level behavior.
+- Docs drift checks should correlate already-normalized envelopes in the command/control-plane layer and only read source file content for cross-document evidence; adapters stay read-only and source vocabulary stays source-owned.
 
 ---
 
@@ -81,4 +82,16 @@ after each iteration and it's included in prompts for context.
   - `docs` can reuse the same proxy-style handler registry as `def`, but command behavior belongs in a separate router because `docs` aggregates multiple adapters instead of delegating to one package-specific CLI.
   - Family collection needs both family-id matching and identity/path relation matching so source-owned artifact evidence with `ownerDefinitionId` can appear beside a definition markdown family.
   - For shared stable ids like `tasks/foo` across PRD markdown and ralph PRD JSON, CLI target resolution should prefer source authoring documents before compatibility/session/evidence adapters.
+---
+
+## 2026-04-15 - US-006
+- Implemented `qa-sdk docs drift [--prd <file>] [--json]` in the docs command group with text and JSON outputs grouped by severity and remediation hints.
+- Added drift detection for completed PRD JSON with running ralph sessions, completed PRD JSON with unchecked PRD markdown criteria, open TODO checkboxes described as complete in related specs/PRD notes, scenario matrix `E-*` references with stale test titles, missing document source-reference files, and definition level/contains violations through existing definition validation diagnostics.
+- Added hermetic CLI fixtures using the docs control-plane PRD/session pattern, including temp-root PRD markdown/JSON, ralph session metadata, definition docs, scenario matrix evidence references, and source-reference drift.
+- Files changed: `packages/cli/src/lib/docs-control-plane/drift.ts`, `packages/cli/src/commands/docs.ts`, `packages/cli/src/command-groups/docs.commands.ts`, `packages/cli/src/commands/docs.test.ts`, `packages/cli/src/commands/index-usage.test.ts`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- docs`; `pnpm --filter @qa-sdk/cli test -- index-usage`; `pnpm --filter @qa-sdk/cli test -- def`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter @qa-sdk/cli build`; `pnpm --filter definition-catalog test`; `pnpm --filter definition-catalog typecheck`; `pnpm --filter definition-data-source test`; `pnpm --filter definition-data-source typecheck`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - Drift belongs above the adapters: adapter diagnostics and metadata provide most signals, while command-layer correlation can compare PRD families, TODO language, scenario matrix evidence, and source file existence without changing source schemas.
+  - Scenario matrix evidence is stable enough to validate by pairing each `E-*` marker with an Evidence References entry and exact test title lookup in the linked test file.
+  - PRD-scoped drift should use the shared markdown/JSON basename family id so `tasks/foo.md`, `tasks/foo.json`, and `.ralph-tui/session-meta.json` can be checked together without scanning unrelated definition families.
 ---
