@@ -15,6 +15,7 @@ sources:
   - packages/operational-ontology/src/internal/programming-artifact-core.ts
   - packages/operational-ontology/src/programming-artifacts.ts
   - packages/operational-ontology/src/programming-artifacts.test.ts
+  - packages/cli/src/commands/ontology/artifact-registry.ts
   - packages/cli/src/commands/ontology.ts
 ---
 
@@ -101,18 +102,19 @@ provider는 related quality record를 찾을 수 있지만, snapshot loading, qu
 - 구현: `packages/operational-ontology/src/internal/programming-artifact-core.ts`
 - public export: `packages/operational-ontology/src/programming-artifacts.ts`
 - provider tests: `packages/operational-ontology/src/programming-artifacts.test.ts`
-- current CLI loader: `packages/cli/src/commands/ontology.ts`
+- registry JSON loader and local registry commands: `packages/cli/src/commands/ontology/artifact-registry.ts`
+- current CLI provider orchestration: `packages/cli/src/commands/ontology.ts`
 
 ## Source Reference Boundary
 
-The provider implementation remains in `operational-ontology`; only the CLI loader and registry file handling are waiting for extraction. Frontmatter therefore keeps the current monolithic CLI source until real split modules exist.
+The provider implementation remains in `operational-ontology`; registry file handling now lives in the artifact registry command module. Frontmatter keeps the current monolithic CLI source only for prompt extraction provider orchestration until `prompt-extract-artifact.ts` exists.
 
-Expected future narrowing:
+Source boundaries:
 
-| concern | future source boundary |
+| concern | source boundary |
 |---------|------------------------|
 | registry validate/list/append and local JSON load/save | `packages/cli/src/commands/ontology/artifact-registry.ts` |
 | artifact source lookup and fallback integration | `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` |
 | generic provider implementation | `packages/operational-ontology/src/internal/programming-artifact-core.ts` |
 
-Do not add source comments for this leaf unless the extracted module cannot be found through frontmatter after US-006 or US-009.
+Only existing split modules appear in frontmatter. Do not add source comments for this leaf unless the extracted module cannot be found through frontmatter after US-006 or US-009.

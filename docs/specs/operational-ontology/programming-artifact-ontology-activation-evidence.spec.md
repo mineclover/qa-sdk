@@ -16,8 +16,10 @@ def:
 sources:
   - packages/cli/src/lib/activation-evidence-registry.ts
   - packages/cli/src/lib/activation-evidence-registry.ontology.test.ts
-  - packages/cli/src/commands/ontology.ts
+  - packages/cli/src/commands/ontology/activation.ts
+  - packages/cli/src/commands/ontology/artifact-registry.ts
   - packages/cli/src/commands/ontology.test.ts
+  - packages/cli/src/commands/ontology.ts
   - packages/operational-ontology/src/internal/programming-artifact-core.ts
 ---
 
@@ -92,20 +94,22 @@ This leaf only defines local programming artifact registry evidence for successf
 
 - mapper: `packages/cli/src/lib/activation-evidence-registry.ts`
 - mapper tests: `packages/cli/src/lib/activation-evidence-registry.ontology.test.ts`
-- current CLI producer: `packages/cli/src/commands/ontology.ts`
+- CLI producer: `packages/cli/src/commands/ontology/activation.ts`
+- registry validation/list consumption: `packages/cli/src/commands/ontology/artifact-registry.ts`
+- current artifact extraction provider consumption: `packages/cli/src/commands/ontology.ts`
 - CLI scenario tests: `packages/cli/src/commands/ontology.test.ts`
 
 ## Source Reference Boundary
 
-The mapper source is already extracted and should remain in frontmatter. The CLI producer is still conservative because activation command extraction has not happened.
+The mapper, activation producer, and registry validate/list consumption sources are extracted and should remain in frontmatter. The monolithic CLI source stays only for artifact extraction provider consumption until `prompt-extract-artifact.ts` exists.
 
-Expected future narrowing:
+Source boundaries:
 
-| concern | future source boundary |
+| concern | source boundary |
 |---------|------------------------|
 | activation evidence record mapping | `packages/cli/src/lib/activation-evidence-registry.ts` |
 | activation command producer and `--artifact-registry` orchestration | `packages/cli/src/commands/ontology/activation.ts` |
 | registry validation/list consumption of `activation-evidence` kind | `packages/cli/src/commands/ontology/artifact-registry.ts` |
 | sidecar lookup through artifact extraction | `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` |
 
-These future paths must not move into frontmatter until the files exist.
+Only `prompt-extract-artifact.ts` remains a future frontmatter source; the extracted activation and artifact registry modules are now listed above.

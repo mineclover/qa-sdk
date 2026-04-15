@@ -18,6 +18,7 @@ def:
     - target: programming-artifact-ontology-quality-evidence
       type: depends_on
 sources:
+  - packages/cli/src/commands/ontology/artifact-registry.ts
   - packages/cli/src/commands/ontology.ts
   - packages/cli/src/command-groups/ontology.commands.ts
 ---
@@ -137,9 +138,9 @@ These commands manage local JSON only. They do not start registry-service/index-
 
 ## Source Reference Boundary
 
-Current implementation sources are `packages/cli/src/commands/ontology.ts` and `packages/cli/src/command-groups/ontology.commands.ts`. The command group source stays stable because it owns public command descriptors. The command implementation source stays conservative until the split modules exist.
+Current implementation sources are `packages/cli/src/commands/ontology/artifact-registry.ts`, `packages/cli/src/commands/ontology.ts`, and `packages/cli/src/command-groups/ontology.commands.ts`. The command group source stays stable because it owns public command descriptors. The monolithic implementation source stays only for command families whose split modules do not exist yet.
 
-Expected future narrowing:
+Source boundaries:
 
 | command concern | future source boundary |
 |-----------------|------------------------|
@@ -149,4 +150,4 @@ Expected future narrowing:
 | quality-ledger fallback, freshness, governance closure | `packages/cli/src/commands/ontology/quality-ledger-evidence.ts` |
 | `ontology registry activate-pack` production of activation evidence | `packages/cli/src/commands/ontology/activation.ts` |
 
-When those files exist, this doc and the evidence/provider leaf `sources` should narrow to them. Until then, future paths are body references only, not frontmatter `sources`.
+Only existing split modules appear in frontmatter. Remaining future paths stay body references until their extraction stories create those files.
