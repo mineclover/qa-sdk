@@ -28,3 +28,14 @@ vocabulary를 추가하지 않는다.
   `.memo.md`, `.rule.md` 파일을 read-only envelope로 수집한다. `def.*`
   metadata, source refs, purpose/overview marker sections, links, source path,
   validation diagnostics를 source vocabulary 그대로 보존한다.
+- `prd-markdown`: `[PRD]...[/PRD]` markdown block을 읽어 overview, goals,
+  quality gates, user stories, acceptance criteria, functional requirements,
+  non-goals, open questions를 envelope section/task metadata로 보존한다.
+- `ralph-prd-json`: ralph-tui용 flat root PRD JSON을 compatibility surface로
+  읽는다. Root `prd`/`tasks`/`metadata`, story `status`, non-boolean
+  `passes`, missing `dependsOn` 같은 schema anti-pattern은 diagnostics로
+  드러내고, `userStories[]`는 `passes`, dependencies, notes,
+  completion notes, quality gates를 가진 control-plane tasks로 매핑한다.
+- `ralph-session`: `.ralph-tui/session-meta.json`을 session envelope로 읽고,
+  연결된 PRD JSON의 story pass state와 session status/count 사이의 drift를
+  diagnostics로 보고한다.

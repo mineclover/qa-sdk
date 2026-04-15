@@ -6,6 +6,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   createDefinitionMarkdownAdapter,
+  createPrdMarkdownAdapter,
+  createRalphPrdJsonAdapter,
+  createRalphSessionAdapter,
   declareDocumentAdapterCapabilities,
   defineDocumentAdapter,
   normalizeDocumentEnvelope,
@@ -433,6 +436,290 @@ Groups checkout docs without children.
             severity: "error",
             message: expect.stringContaining("level=group"),
           }),
+        ]),
+      );
+    });
+  });
+});
+
+describe("PRD and ralph compatibility adapters", () => {
+  async function withTempWorkflow(
+    callback: (rootDir: string) => Promise<void>,
+  ): Promise<void> {
+    const rootDir = await mkdtemp(join(tmpdir(), "qa-sdk-prd-adapters-"));
+    try {
+      await mkdir(join(rootDir, "tasks"), { recursive: true });
+      await mkdir(join(rootDir, ".ralph-tui"), { recursive: true });
+      await callback(rootDir);
+    } finally {
+      await rm(rootDir, { recursive: true, force: true });
+    }
+  }
+
+  it("collects PRD markdown sections and story acceptance criteria from a [PRD] block", async () => {
+    await withTempWorkflow(async (rootDir) => {
+      await writeFile(join(rootDir, "tasks/sample-prd.md"), `[PRD]
+# PRD: Sample Workflow
+
+## Overview
+
+Coordinate documentation adapters.
+
+## Goals
+
+- Preserve source documents.
+- Expose workflow state.
+
+## Quality Gates
+
+- \`pnpm --filter @qa-sdk/cli test -- docs\` passes.
+- \`pnpm --filter @qa-sdk/cli typecheck\` passes.
+
+## User Stories
+
+### US-001: Parse PRD Markdown
+
+**Description:** As a maintainer, I want PRD markdown available through the control plane.
+
+**Acceptance Criteria:**
+- [x] Overview is collected.
+- [ ] Open criteria remain visible.
+
+### US-002: Keep Ralph JSON Separate
+
+**Description:** As a maintainer, I want ralph execution JSON to remain an adapter.
+
+**Acceptance Criteria:**
+- [ ] JSON is not the core document model.
+
+## Functional Requirements
+
+- FR-1: PRD blocks are read without mutating files.
+
+## Non-Goals
+
+- Running ralph-tui.
+
+## Open Questions
+
+- Which CLI command should expose drift later?
+[/PRD]
+`);
+
+      const adapter = createPrdMarkdownAdapter({
+        rootDir,
+        paths: ["tasks/sample-prd.md"],
+      });
+      const [doc] = await adapter.listDocuments();
+
+      expect(doc).toMatchObject({
+        adapterId: "prd-markdown",
+        kind: "prd",
+        stableId: "tasks/sample-prd",
+        familyId: "tasks/sample-prd",
+        path: "tasks/sample-prd.md",
+      });
+      expect(doc!.metadata).toMatchObject({
+        title: "Sample Workflow",
+        overview: "Coordinate documentation adapters.",
+        goals: ["Preserve source documents.", "Expose workflow state."],
+        qualityGates: [
+          "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+          "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+        ],
+        functionalRequirements: ["FR-1: PRD blocks are read without mutating files."],
+        nonGoals: ["Running ralph-tui."],
+        openQuestions: ["Which CLI command should expose drift later?"],
+      });
+      expect(doc!.sections.map((section) => section.id)).toEqual([
+        "overview",
+        "goals",
+        "quality-gates",
+        "user-stories",
+        "functional-requirements",
+        "non-goals",
+        "open-questions",
+      ]);
+      expect(doc!.tasks).toHaveLength(2);
+      expect(doc!.tasks[0]).toMatchObject({
+        id: "US-001",
+        title: "Parse PRD Markdown",
+        metadata: {
+          description: "As a maintainer, I want PRD markdown available through the control plane.",
+          passes: false,
+          qualityGates: [
+            "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+            "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+          ],
+        },
+      });
+      expect(doc!.tasks[0]!.metadata.acceptanceCriteria).toEqual([
+        { text: "Overview is collected.", checked: true },
+        { text: "Open criteria remain visible.", checked: false },
+      ]);
+    });
+  });
+
+  it("maps flat ralph PRD JSON stories to tasks and reports schema anti-patterns", async () => {
+    await withTempWorkflow(async (rootDir) => {
+      await writeFile(join(rootDir, "tasks/sample-prd.json"), JSON.stringify({
+        name: "Sample Ralph PRD",
+        branchName: "ralph/sample",
+        description: "A tasks/prd-ontology-registry-cli-scenario-hardening.json-style fixture.",
+        prd: {},
+        tasks: [],
+        metadata: {
+          updatedAt: "2026-04-15T00:00:00.000Z",
+        },
+        userStories: [
+          {
+            id: "US-001",
+            title: "Completed Story",
+            description: "A completed story.",
+            acceptanceCriteria: [
+              "Feature works.",
+              "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+            ],
+            priority: 1,
+            passes: true,
+            notes: "Implementation notes",
+            dependsOn: [],
+            completionNotes: "Completed by agent",
+          },
+          {
+            id: "US-002",
+            title: "Invalid Story",
+            description: "A story with ralph JSON anti-patterns.",
+            acceptanceCriteria: [],
+            passes: "yes",
+            status: "completed",
+          },
+        ],
+      }, null, 2));
+
+      const adapter = createRalphPrdJsonAdapter({
+        rootDir,
+        paths: ["tasks/sample-prd.json"],
+      });
+      const [doc] = await adapter.listDocuments();
+
+      expect(doc).toMatchObject({
+        adapterId: "ralph-prd-json",
+        kind: "ralph-prd-json",
+        stableId: "tasks/sample-prd",
+        familyId: "tasks/sample-prd",
+      });
+      expect(doc!.metadata).toMatchObject({
+        name: "Sample Ralph PRD",
+        branchName: "ralph/sample",
+        storyCount: 2,
+        passedStoryCount: 1,
+      });
+      expect(doc!.tasks[0]).toMatchObject({
+        id: "US-001",
+        title: "Completed Story",
+        metadata: {
+          description: "A completed story.",
+          priority: 1,
+          passes: true,
+          dependsOn: [],
+          notes: "Implementation notes",
+          completionNotes: "Completed by agent",
+          acceptanceCriteria: [
+            "Feature works.",
+            "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+          ],
+          qualityGates: ["`pnpm --filter @qa-sdk/cli test -- docs` passes."],
+        },
+      });
+      expect(doc!.tasks[1]).toMatchObject({
+        id: "US-002",
+        metadata: {
+          passes: false,
+          dependsOn: [],
+          storyStatus: "completed",
+        },
+      });
+      expect(doc!.diagnostics.map((diagnostic) => diagnostic.code)).toEqual(
+        expect.arrayContaining([
+          "ralph-prd-json-root-prd",
+          "ralph-prd-json-root-tasks",
+          "ralph-prd-json-root-metadata",
+          "ralph-prd-json-story-status",
+          "ralph-prd-json-story-passes-non-boolean",
+          "ralph-prd-json-story-depends-on-missing",
+        ]),
+      );
+    });
+  });
+
+  it("reports ralph session drift against PRD JSON story state", async () => {
+    await withTempWorkflow(async (rootDir) => {
+      await writeFile(join(rootDir, "tasks/completed-prd.json"), JSON.stringify({
+        name: "Completed PRD",
+        branchName: "ralph/completed",
+        description: "Completed fixture.",
+        userStories: [
+          {
+            id: "US-001",
+            title: "One",
+            description: "First story.",
+            acceptanceCriteria: [],
+            passes: true,
+            notes: "",
+            dependsOn: [],
+            completionNotes: "Completed by agent",
+          },
+          {
+            id: "US-002",
+            title: "Two",
+            description: "Second story.",
+            acceptanceCriteria: [],
+            passes: true,
+            notes: "",
+            dependsOn: ["US-001"],
+            completionNotes: "Completed by agent",
+          },
+        ],
+      }, null, 2));
+      await writeFile(join(rootDir, ".ralph-tui/session-meta.json"), JSON.stringify({
+        id: "session-1",
+        status: "running",
+        startedAt: "2026-04-15T00:00:00.000Z",
+        updatedAt: "2026-04-15T00:10:00.000Z",
+        agentPlugin: "codex",
+        trackerPlugin: "json",
+        prdPath: "tasks/completed-prd.json",
+        currentIteration: 2,
+        maxIterations: 0,
+        totalTasks: 3,
+        tasksCompleted: 1,
+        cwd: rootDir,
+      }, null, 2));
+
+      const adapter = createRalphSessionAdapter({ rootDir });
+      const [doc] = await adapter.listDocuments();
+
+      expect(doc).toMatchObject({
+        adapterId: "ralph-session",
+        kind: "ralph-session",
+        stableId: "ralph-session:session-1",
+        familyId: "tasks/completed-prd",
+        path: ".ralph-tui/session-meta.json",
+        metadata: {
+          id: "session-1",
+          status: "running",
+          prdPath: "tasks/completed-prd.json",
+          prdStoryCount: 2,
+          prdPassedStoryCount: 2,
+          prdAllStoriesPassing: true,
+        },
+      });
+      expect(doc!.diagnostics.map((diagnostic) => diagnostic.code)).toEqual(
+        expect.arrayContaining([
+          "ralph-session-prd-complete-session-running",
+          "ralph-session-total-tasks-drift",
+          "ralph-session-completed-tasks-drift",
         ]),
       );
     });

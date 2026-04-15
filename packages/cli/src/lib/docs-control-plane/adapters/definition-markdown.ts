@@ -18,6 +18,7 @@ import {
   defineDocumentAdapter,
   normalizeDocumentEnvelope,
 } from "../normalize.js";
+import { matchesDocumentQuery } from "../query.js";
 import type {
   DocumentAdapter,
   DocumentCollectionQuery,
@@ -76,7 +77,7 @@ export function createDefinitionMarkdownAdapter(
     id: DEFINITION_MARKDOWN_ADAPTER_ID,
     async listDocuments(query?: DocumentCollectionQuery) {
       const envelopes = await collectDefinitionMarkdownEnvelopes(rootDir, docsDirs);
-      return envelopes.filter((envelope) => matchesQuery(envelope, query));
+      return envelopes.filter((envelope) => matchesDocumentQuery(envelope, query));
     },
     async getDocument(stableId: string) {
       const envelopes = await collectDefinitionMarkdownEnvelopes(rootDir, docsDirs);
@@ -360,31 +361,6 @@ function comparePathByFamilyPriority(left: string, right: string): number {
   const leftKind = detectKind(normalizePath(left));
   const rightKind = detectKind(normalizePath(right));
   return KIND_PRIORITY[leftKind] - KIND_PRIORITY[rightKind] || left.localeCompare(right);
-}
-
-function matchesQuery(
-  envelope: DocumentEnvelope,
-  query: DocumentCollectionQuery | undefined,
-): boolean {
-  if (!query) return true;
-  if (query.kind && envelope.kind !== query.kind) return false;
-  if (query.stableIds && !query.stableIds.includes(envelope.stableId)) return false;
-  if (query.familyId && envelope.familyId !== query.familyId) return false;
-  if (query.paths) {
-    const paths = new Set(query.paths.map(normalizePath));
-    if (!paths.has(envelope.path) && !paths.has(envelope.rawSource.path)) return false;
-  }
-  if (query.metadata) {
-    for (const [key, expected] of Object.entries(query.metadata)) {
-      const actual = envelope.metadata[key];
-      if (Array.isArray(actual)) {
-        if (!actual.includes(expected)) return false;
-        continue;
-      }
-      if (actual !== expected) return false;
-    }
-  }
-  return true;
 }
 
 function resolveByDefId(
