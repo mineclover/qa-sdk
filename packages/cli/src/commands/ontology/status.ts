@@ -1,4 +1,5 @@
 import {
+  diffOperationalOntologySnapshots,
   diffLatestOperationalOntologySnapshotsByScope,
   listOperationalOntologySnapshotProjections,
   loadLatestOperationalOntologySnapshotViewByScope,
@@ -188,4 +189,73 @@ export async function cmdSnapshotShow(rest: string[]): Promise<void> {
   console.log(`  corridors: ${view.corridors.length}`);
   console.log(`  checkpoint lattices: ${view.checkpointLattices.length}`);
   console.log(`  traversals: ${view.traversalBundles.length}`);
+}
+
+export async function cmdSnapshotDiff(rest: string[]): Promise<void> {
+  const { positional, flags } = parseFlags(rest);
+  const fromSnapshotId = positional[0];
+  const toSnapshotId = positional[1];
+  if (!fromSnapshotId || !toSnapshotId) {
+    console.error(
+      "Usage: qa-sdk ontology snapshot diff <from-snapshot-id> <to-snapshot-id> [--store <file>] [--json]",
+    );
+    return;
+  }
+
+  const store = await loadStore(getStorePath(flags));
+  const diff = await diffOperationalOntologySnapshots(
+    store,
+    fromSnapshotId,
+    toSnapshotId,
+  );
+  if (!diff) {
+    console.error(`Snapshot diff 실패: ${fromSnapshotId} -> ${toSnapshotId}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (flags["json"] === "true") {
+    printJson(diff);
+    return;
+  }
+
+  console.log(`Snapshot diff: ${fromSnapshotId} -> ${toSnapshotId}`);
+  console.log(
+    `  added=${diff.summary.added} removed=${diff.summary.removed} changed=${diff.summary.changed} unchanged=${diff.summary.unchanged}`,
+  );
+  console.log(
+    `  checkpoint lattices Δ=${diff.checkpointLatticeCountDelta}  route decisions Δ=${diff.routeDecisionCountDelta}  traversal bundles Δ=${diff.traversalBundleCountDelta}`,
+  );
+}
+
+export async function cmdSnapshotDiffLatest(rest: string[]): Promise<void> {
+  const { flags } = parseFlags(rest);
+  const scope = flags["scope"];
+  if (!scope) {
+    console.error(
+      "Usage: qa-sdk ontology snapshot diff-latest --scope <scope> [--store <file>] [--json]",
+    );
+    return;
+  }
+
+  const store = await loadStore(getStorePath(flags));
+  const diff = await diffLatestOperationalOntologySnapshotsByScope(store, scope);
+  if (!diff) {
+    console.error(`Snapshot diff-latest 실패: ${scope}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (flags["json"] === "true") {
+    printJson(diff);
+    return;
+  }
+
+  console.log(`Snapshot diff-latest: ${scope}`);
+  console.log(
+    `  ${diff.fromSnapshotId} -> ${diff.toSnapshotId}`,
+  );
+  console.log(
+    `  added=${diff.summary.added} removed=${diff.summary.removed} changed=${diff.summary.changed} unchanged=${diff.summary.unchanged}`,
+  );
 }
