@@ -26,7 +26,7 @@ def:
     - target: programming-artifact-ontology-context-simulation-todo
       type: traces_to
 sources:
-  - packages/cli/src/commands/ontology.ts
+  - packages/cli/src/commands/ontology/prompt-extract-artifact.ts
   - packages/cli/src/commands/ontology/quality-status-evidence.ts
   - packages/cli/src/commands/ontology/quality-ledger-evidence.ts
   - packages/cli/src/commands/ontology.test.ts

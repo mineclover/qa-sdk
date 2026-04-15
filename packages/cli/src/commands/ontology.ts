@@ -67,54 +67,38 @@ import {
   PROMPT_ARTIFACT_USE_CASES,
 } from "operational-ontology/prompt-artifacts";
 import {
-  ArtifactRegistryPromptArtifactContextProvider,
-  InMemoryProgrammingArtifactRegistryStore,
   appendQualityStatusEvidenceToPromptArtifactExtraction,
   createProgrammingArtifactRegistryRecord,
-  type ProgrammingArtifactRegistryRecord,
 } from "operational-ontology/programming-artifacts";
 import { getQaSdkDir } from "../lib/qa-dir.js";
 import { appendProgrammingArtifactRegistryRecords } from "../lib/programming-artifact-registry.js";
-import {
-  collectContainedQualityDocsFromDataSource,
-  toGateDescriptors,
-} from "../lib/quality-gate-topology.js";
 import { cmdRegistryActivatePack } from "./ontology/activation.js";
 import {
   cmdArtifactRegistryAppend,
   cmdArtifactRegistryList,
   cmdArtifactRegistryValidate,
-  loadProgrammingArtifactRegistryRecords,
 } from "./ontology/artifact-registry.js";
 import {
-  emptyQualityStatusSnapshotEvidence,
-  findRelatedQualityStatusMatches,
   qualityStatusRecords,
-  type LoadedQualityStatusRegistryProvider,
-  type RelatedQualityStatusEvidence,
 } from "./ontology/quality-status-evidence.js";
 import {
   appendQualityStatusSnapshotGovernanceEvidence,
-  artifactFallbackSource,
-  artifactRegistryHitSource,
-  loadQualityStatusSnapshotEvidence,
-  parseQualityStatusFreshnessPolicy,
   promptQualityStatusEvidenceFromArtifactExtraction,
-  withQualityStatusRecordsSummary,
-  type ArtifactExtractionSource,
-  type QualityStatusFreshnessPolicy,
 } from "./ontology/quality-ledger-evidence.js";
+import {
+  cmdPromptExtractArtifact,
+  expandQualityTopologyTargetRefs,
+  loadRelatedQualityStatusEvidenceFromFlags,
+  parseArtifactExtractionSource,
+  withQualityStatusRecordsSummary,
+  workAreaQualityTargetRefs,
+} from "./ontology/prompt-extract-artifact.js";
 
 interface PersistedOntologyStoreFile {
   objects: OperationalOntologyObjectRecord[];
   facets: OperationalOntologyFacetRecord[];
   observations: OperationalOntologyObservationRecord[];
   projections: OperationalOntologyProjectionRecord[];
-}
-
-interface LoadedArtifactRegistryProvider extends LoadedQualityStatusRegistryProvider {
-  provider: ArtifactRegistryPromptArtifactContextProvider;
-  store: InMemoryProgrammingArtifactRegistryStore;
 }
 
 interface PromptArtifactMaterialization {
@@ -180,23 +164,6 @@ async function loadStore(storePath: string): Promise<InMemoryOperationalOntology
     await store.putProjection(projection);
   }
   return store;
-}
-
-async function loadArtifactRegistryProvider(
-  flags: Record<string, string>,
-): Promise<LoadedArtifactRegistryProvider | undefined> {
-  const registryPath = flags["artifact-registry"] ?? flags["artifact-registry-file"];
-  if (!registryPath) return undefined;
-
-  const records = await loadProgrammingArtifactRegistryRecords(registryPath);
-  const store = new InMemoryProgrammingArtifactRegistryStore(records);
-  return {
-    provider: new ArtifactRegistryPromptArtifactContextProvider(store),
-    store,
-    records,
-    registryPath: resolve(registryPath),
-    recordCount: records.length,
-  };
 }
 
 async function saveStore(
@@ -296,152 +263,6 @@ function parsePromptArtifactUseCase(value: string | undefined): PromptArtifactUs
 
 function uniqueCliValues(values: readonly string[]): string[] {
   return [...new Set(values.filter((value) => value.trim().length > 0))];
-}
-
-function inferArtifactType(artifactRef: string): string | undefined {
-  if (artifactRef.endsWith(".json")) return "json";
-  if (artifactRef.endsWith(".ts")) return "typescript";
-  if (artifactRef.includes("quality")) return "quality-status";
-  if (artifactRef.includes("build")) return "build";
-  if (artifactRef.includes("schema")) return "schema";
-  return undefined;
-}
-
-function parseArtifactExtractionSource(
-  flags: Record<string, string>,
-): ArtifactExtractionSource | undefined {
-  const value = flags["artifact-source"];
-  if (!value) return undefined;
-  return JSON.parse(value) as ArtifactExtractionSource;
-}
-
-function withArtifactSourceFlag(
-  args: readonly string[],
-  source: ArtifactExtractionSource,
-): string[] {
-  return [...args, "--artifact-source", JSON.stringify(source)];
-}
-
-function withArtifactFallbackFlags(
-  args: readonly string[],
-  source: ArtifactExtractionSource,
-  useCase: PromptArtifactUseCase,
-  flags: Record<string, string>,
-): string[] {
-  const useCaseArgs = flags["use-case"] ? [...args] : [...args, "--use-case", useCase];
-  return withArtifactSourceFlag(useCaseArgs, source);
-}
-
-async function loadRelatedQualityStatusEvidenceFromFlags(
-  flags: Record<string, string>,
-  targetRefs: readonly (string | undefined)[],
-  source?: Pick<DefDataSource, "get" | "getChildren">,
-): Promise<RelatedQualityStatusEvidence> {
-  const loadedRegistry = await loadArtifactRegistryProvider(flags);
-  if (!loadedRegistry) {
-    return {
-      matches: [],
-      snapshotEvidence: emptyQualityStatusSnapshotEvidence(),
-    };
-  }
-  const artifactSource = parseArtifactExtractionSource(flags);
-  return loadRelatedQualityStatusEvidence(
-    loadedRegistry,
-    targetRefs,
-    source,
-    artifactSource ? flags["quality-ledger"] : undefined,
-    artifactSource ? parseQualityStatusFreshnessPolicy(flags).policy : undefined,
-  );
-}
-
-async function loadRelatedQualityStatusEvidence(
-  loadedRegistry: LoadedArtifactRegistryProvider | undefined,
-  targetRefs: readonly (string | undefined)[],
-  source?: Pick<DefDataSource, "get" | "getChildren">,
-  qualityLedgerPath?: string,
-  freshnessPolicy?: QualityStatusFreshnessPolicy,
-): Promise<RelatedQualityStatusEvidence> {
-  const matches = findRelatedQualityStatusMatches(loadedRegistry, targetRefs);
-  return {
-    matches,
-    snapshotEvidence: await loadQualityStatusSnapshotEvidence(
-      loadedRegistry,
-      matches,
-      source,
-      qualityLedgerPath,
-      freshnessPolicy,
-    ),
-  };
-}
-
-function workAreaQualityTargetRefs(
-  workArea: ReturnType<typeof extractPromptArtifactSourcesFromDefinitionContext>["workArea"],
-): string[] {
-  return uniqueCliValues([
-    workArea.workAreaId,
-    workArea.rootRef,
-    ...(workArea.paths ?? []),
-  ].filter((value): value is string => Boolean(value)));
-}
-
-function registryRecordQualityTargetRefs(
-  record: ProgrammingArtifactRegistryRecord | undefined,
-): string[] {
-  if (!record) return [];
-  return uniqueCliValues([
-    record.outputPath,
-    ...(record.verifiesRefs ?? []),
-    ...(record.materializesOutputRefs ?? []),
-    ...(record.sourceRefs ?? []),
-    ...(record.relations ?? []).flatMap((relation) => [relation.fromRef, relation.toRef]),
-  ].filter((value): value is string => Boolean(value)));
-}
-
-async function expandQualityTopologyTargetRefs(
-  source: DefDataSource,
-  refs: readonly (string | undefined)[],
-): Promise<string[]> {
-  const initialRefs = uniqueCliValues(refs.filter((ref): ref is string => Boolean(ref)));
-  const expanded = initialRefs.slice();
-  const visited = new Set<string>();
-
-  for (const ref of initialRefs) {
-    const docId = definitionDocRefCandidate(ref);
-    if (!docId || visited.has(docId)) continue;
-    visited.add(docId);
-
-    try {
-      const root = await source.get(docId);
-      if (!root) continue;
-      const containedDocs = await collectContainedQualityDocsFromDataSource(
-        source,
-        root.docId,
-      );
-      if (containedDocs.length === 0) continue;
-      expanded.push(
-        root.docId,
-        ...containedDocs.map((doc) => doc.id),
-        ...toGateDescriptors(root.docId, containedDocs).map((descriptor) => descriptor.gateDocId),
-      );
-    } catch {
-      // Quality topology expansion is sidecar evidence discovery; extraction can continue without it.
-    }
-  }
-
-  return uniqueCliValues(expanded);
-}
-
-function definitionDocRefCandidate(ref: string): string | undefined {
-  const strippedArtifact = ref.startsWith("artifact:")
-    ? ref.slice("artifact:".length)
-    : ref;
-  const strippedWorkArea = strippedArtifact.startsWith("work-area:")
-    ? strippedArtifact.slice("work-area:".length)
-    : strippedArtifact;
-  if (!strippedWorkArea || strippedWorkArea.includes("/") || strippedWorkArea.includes(":")) {
-    return undefined;
-  }
-  return strippedWorkArea;
 }
 
 async function materializePromptArtifacts(input: {
@@ -988,285 +809,6 @@ async function cmdPromptExtractPermission(rest: string[]): Promise<void> {
   }
 
   console.log(`permission: ${permissionRef}`);
-  for (const output of outputs) {
-    console.log(`output: ${output.outputPath}`);
-  }
-  for (const { artifact, quality } of evaluations) {
-    console.log(`--- ${artifact.kind} ---`);
-    console.log(`artifactId: ${artifact.artifactId}`);
-    console.log(`useCase: ${artifact.useCase ?? "(none)"}`);
-    console.log(`quality: ${quality.grade} (${quality.score})`);
-    console.log(`ontologyManagementRequired: ${quality.ontologyManagementRequired}`);
-    if (quality.recommendedManagementActions.length > 0) {
-      console.log(
-        `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(", ")}`,
-      );
-    }
-    if (flags["quality-only"] !== "true") {
-      console.log(artifact.content);
-    }
-  }
-}
-
-async function cmdPromptExtractArtifact(rest: string[]): Promise<void> {
-  const { positional, flags } = parseFlags(rest);
-  const artifactRef = positional[0];
-  if (!artifactRef) {
-    console.error(
-      "Usage: qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--quality-ledger <path>] [--quality-status-max-age-days <n>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--output <file|dir>] [--json] [--local|--server|--scan] [--db <path>]",
-    );
-    return;
-  }
-
-  const freshnessPolicy = parseQualityStatusFreshnessPolicy(flags);
-  if (freshnessPolicy.error) {
-    console.error(freshnessPolicy.error);
-    process.exitCode = 1;
-    return;
-  }
-
-  const kind = parsePromptArtifactKind(flags["kind"]);
-  const useCase = parsePromptArtifactUseCase(flags["use-case"] ?? "release_verification");
-  const artifactType = flags["artifact-type"] ?? inferArtifactType(artifactRef);
-  const loadedRegistry = await loadArtifactRegistryProvider(flags);
-  const registryExtraction = loadedRegistry?.provider.resolve({
-    targetKind: "artifact",
-    targetRef: artifactRef,
-    useCase,
-    now: new Date().toISOString(),
-    metadata: artifactType ? { artifactType } : undefined,
-  });
-  if (loadedRegistry && registryExtraction) {
-    const directRegistryRecord = loadedRegistry.store.getArtifactByRef(artifactRef);
-    const qualityDescriptorSource = await loadQualityStatusDescriptorSource(flags);
-    const qualityStatusEvidence = await loadRelatedQualityStatusEvidence(loadedRegistry, [
-      artifactRef,
-      ...registryRecordQualityTargetRefs(directRegistryRecord),
-      ...workAreaQualityTargetRefs(registryExtraction.workArea),
-    ], qualityDescriptorSource, flags["quality-ledger"], freshnessPolicy.policy);
-    const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
-      appendQualityStatusEvidenceToPromptArtifactExtraction(
-        registryExtraction,
-        qualityStatusRecords(qualityStatusEvidence.matches),
-        {
-          useCase,
-          now: new Date().toISOString(),
-        },
-      ),
-      qualityStatusEvidence.snapshotEvidence,
-    );
-    const promptQualityStatusEvidence =
-      promptQualityStatusEvidenceFromArtifactExtraction(qualityStatusEvidence);
-    await maybePersistGovernanceEvidence(flags, extractionWithQuality);
-    const artifacts = kind === "all"
-      ? generatePromptArtifacts({ ...extractionWithQuality, useCase })
-      : [generatePromptArtifact({ ...extractionWithQuality, kind, useCase })];
-    const evaluations = artifacts.map((artifact) => ({
-      artifact,
-      quality: evaluatePromptArtifactQuality({
-        artifact,
-        workArea: extractionWithQuality.workArea,
-        sources: extractionWithQuality.sources,
-        qualityStatusEvidence: promptQualityStatusEvidence,
-      }),
-    }));
-    const outputs = await materializePromptArtifacts({
-      flags,
-      artifacts,
-      producedByRef: `qa-sdk ontology prompt extract-artifact ${artifactRef}`,
-      materializesOutputRefs: [artifactRef],
-    });
-
-    if (flags["json"] === "true") {
-      printJson({
-        artifactRef,
-        artifactType,
-        providerId: loadedRegistry.provider.providerId,
-        source: artifactRegistryHitSource(
-          loadedRegistry,
-          qualityStatusEvidence.matches,
-          qualityStatusEvidence.snapshotEvidence,
-          [artifactRef],
-          promptQualityStatusEvidence,
-        ),
-        useCase,
-        outputs,
-        workArea: extractionWithQuality.workArea,
-        artifacts: evaluations,
-      });
-      return;
-    }
-
-    console.log(`artifact: ${artifactRef}`);
-    if (artifactType) console.log(`artifactType: ${artifactType}`);
-    console.log(`provider: ${loadedRegistry.provider.providerId}`);
-    for (const output of outputs) {
-      console.log(`output: ${output.outputPath}`);
-    }
-    for (const { artifact, quality } of evaluations) {
-      console.log(`--- ${artifact.kind} ---`);
-      console.log(`artifactId: ${artifact.artifactId}`);
-      console.log(`useCase: ${artifact.useCase ?? "(none)"}`);
-      console.log(`quality: ${quality.grade} (${quality.score})`);
-      console.log(`ontologyManagementRequired: ${quality.ontologyManagementRequired}`);
-      if (quality.recommendedManagementActions.length > 0) {
-        console.log(
-          `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(", ")}`,
-        );
-      }
-      if (flags["quality-only"] !== "true") {
-        console.log(artifact.content);
-      }
-    }
-    return;
-  }
-
-  if (artifactRef.startsWith("packages/") || artifactRef.startsWith("docs/")) {
-    await cmdPromptExtractFile(withArtifactFallbackFlags(
-      rest,
-      artifactFallbackSource({
-        kind: "artifact-file-fallback",
-        fallbackKind: "file",
-        target: artifactRef,
-        loadedRegistry,
-      }),
-      useCase,
-      flags,
-    ));
-    return;
-  }
-
-  const source = await createDataSource(toDefinitionDataSourceOptions(flags));
-  const directDoc = await source.get(artifactRef);
-  if (directDoc) {
-    await cmdPromptExtract(withArtifactFallbackFlags(
-      [artifactRef, ...rest.slice(1)],
-      artifactFallbackSource({
-        kind: "artifact-definition-fallback",
-        fallbackKind: "definition",
-        target: artifactRef,
-        loadedRegistry,
-      }),
-      useCase,
-      flags,
-    ));
-    return;
-  }
-
-  const query = flags["q"] ?? artifactRef.split(/[/:#]/).filter(Boolean).at(-1) ?? artifactRef;
-  const candidates = await source.list({ q: query, limit: 8 });
-  const rootDoc = {
-    docId: `artifact:${artifactRef}`,
-    title: `Artifact context: ${artifactRef}`,
-    purpose: `Manage context for artifact ${artifactRef}${artifactType ? ` (${artifactType})` : ""}.`,
-    tags: ["artifact", ...(artifactType ? [`artifact-type:${artifactType}`] : [])],
-    sourcePath: artifactRef.startsWith("artifacts/") ? artifactRef : undefined,
-    lifecycle: "draft",
-  };
-  const childDocs = await Promise.all(candidates.map((doc) => defDocWithBody(source, doc)));
-  const extraction = extractPromptArtifactSourcesFromDefinitionContext({
-    root: rootDoc,
-    children: childDocs,
-    useCase,
-    verificationRefs: candidates
-      .filter((doc) => doc.tags.some((tag) => tag.startsWith("quality-gate") || tag === "testing"))
-      .map((doc) => doc.docId),
-    now: new Date().toISOString(),
-  });
-  const qualityStatusTargetRefs = await expandQualityTopologyTargetRefs(source, [
-    artifactRef,
-    query,
-    ...candidates.map((doc) => doc.docId),
-    ...workAreaQualityTargetRefs(extraction.workArea),
-  ]);
-  const qualityStatusEvidence = await loadRelatedQualityStatusEvidence(
-    loadedRegistry,
-    qualityStatusTargetRefs,
-    source,
-    flags["quality-ledger"],
-    freshnessPolicy.policy,
-  );
-  const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
-    appendQualityStatusEvidenceToPromptArtifactExtraction(
-      extraction,
-      qualityStatusRecords(qualityStatusEvidence.matches),
-      {
-        useCase,
-        now: new Date().toISOString(),
-      },
-    ),
-    qualityStatusEvidence.snapshotEvidence,
-  );
-  const promptQualityStatusEvidence =
-    promptQualityStatusEvidenceFromArtifactExtraction(qualityStatusEvidence);
-  const workArea = {
-    ...extractionWithQuality.workArea,
-    workAreaId: `artifact:${artifactRef}`,
-    displayName: `Artifact context: ${artifactRef}`,
-    constraints: uniqueCliValues([
-      `artifact:${artifactRef}`,
-      ...(artifactType ? [`artifact-type:${artifactType}`] : []),
-      ...(extractionWithQuality.workArea.constraints ?? []),
-    ]),
-    localInstructions: [
-      "Treat artifact refs as deliverable evidence, not as source code ownership by themselves.",
-      "Resolve artifact context through matching definition docs, quality gates, and source maps before editing.",
-      ...(extractionWithQuality.workArea.localInstructions ?? []),
-    ],
-  };
-  await maybePersistGovernanceEvidence(flags, extractionWithQuality);
-  const artifacts = kind === "all"
-    ? generatePromptArtifacts({ workArea, sources: extractionWithQuality.sources, useCase })
-    : [generatePromptArtifact({ workArea, sources: extractionWithQuality.sources, kind, useCase })];
-  const evaluations = artifacts.map((artifact) => ({
-    artifact,
-    quality: evaluatePromptArtifactQuality({
-      artifact,
-      workArea,
-      sources: extractionWithQuality.sources,
-      qualityStatusEvidence: promptQualityStatusEvidence,
-    }),
-  }));
-  const fallbackSource = artifactFallbackSource({
-    kind: "artifact-search-fallback",
-    fallbackKind: "search",
-    target: query,
-    loadedRegistry,
-    matchedDocs: candidates.map((doc) => doc.docId),
-    qualityStatusMatches: qualityStatusEvidence.matches,
-    qualityStatusSnapshotEvidence: qualityStatusEvidence.snapshotEvidence,
-    qualityStatusPromptEvidence: promptQualityStatusEvidence,
-  });
-  const outputs = await materializePromptArtifacts({
-    flags,
-    artifacts,
-    producedByRef: `qa-sdk ontology prompt extract-artifact ${artifactRef}`,
-    materializesOutputRefs: [artifactRef],
-  });
-
-  if (flags["json"] === "true") {
-    printJson({
-      artifactRef,
-      artifactType,
-      source: fallbackSource,
-      matchedDocs: candidates.map((doc) => doc.docId),
-      useCase,
-      outputs,
-      workArea,
-      artifacts: evaluations,
-    });
-    return;
-  }
-
-  console.log(`artifact: ${artifactRef}`);
-  if (artifactType) console.log(`artifactType: ${artifactType}`);
-  if (candidates.length > 0) {
-    console.log(`matchedDocs: ${candidates.map((doc) => doc.docId).join(", ")}`);
-  }
-  if (fallbackSource.qualitySignal.warning) {
-    console.log(`warning: ${fallbackSource.qualitySignal.code} (${fallbackSource.qualitySignal.grade})`);
-    console.log(`action: ${fallbackSource.qualitySignal.recommendedManagementActions.join(", ")}`);
-  }
   for (const output of outputs) {
     console.log(`output: ${output.outputPath}`);
   }
@@ -2435,7 +1977,19 @@ export async function cliOntology(args: string[]): Promise<void> {
       await cmdPromptExtractPermission(rest);
       return;
     case "prompt.extract-artifact":
-      await cmdPromptExtractArtifact(rest);
+      await cmdPromptExtractArtifact(rest, {
+        parseFlags,
+        parsePromptArtifactKind,
+        parsePromptArtifactUseCase,
+        toDefinitionDataSourceOptions,
+        loadQualityStatusDescriptorSource,
+        defDocWithBody,
+        maybePersistGovernanceEvidence,
+        materializePromptArtifacts,
+        cmdPromptExtract,
+        cmdPromptExtractFile,
+        printJson,
+      });
       return;
     case "artifact.registry.validate":
       await cmdArtifactRegistryValidate(rest);

@@ -18,8 +18,8 @@ sources:
   - packages/cli/src/lib/activation-evidence-registry.ontology.test.ts
   - packages/cli/src/commands/ontology/activation.ts
   - packages/cli/src/commands/ontology/artifact-registry.ts
+  - packages/cli/src/commands/ontology/prompt-extract-artifact.ts
   - packages/cli/src/commands/ontology.test.ts
-  - packages/cli/src/commands/ontology.ts
   - packages/operational-ontology/src/internal/programming-artifact-core.ts
 ---
 
@@ -96,12 +96,12 @@ This leaf only defines local programming artifact registry evidence for successf
 - mapper tests: `packages/cli/src/lib/activation-evidence-registry.ontology.test.ts`
 - CLI producer: `packages/cli/src/commands/ontology/activation.ts`
 - registry validation/list consumption: `packages/cli/src/commands/ontology/artifact-registry.ts`
-- current artifact extraction provider consumption: `packages/cli/src/commands/ontology.ts`
+- artifact extraction provider consumption: `packages/cli/src/commands/ontology/prompt-extract-artifact.ts`
 - CLI scenario tests: `packages/cli/src/commands/ontology.test.ts`
 
 ## Source Reference Boundary
 
-The mapper, activation producer, and registry validate/list consumption sources are extracted and should remain in frontmatter. The monolithic CLI source stays only for artifact extraction provider consumption until `prompt-extract-artifact.ts` exists.
+The mapper, activation producer, registry validate/list consumption, and artifact extraction provider consumption sources are extracted and should remain in frontmatter.
 
 Source boundaries:
 
@@ -112,4 +112,4 @@ Source boundaries:
 | registry validation/list consumption of `activation-evidence` kind | `packages/cli/src/commands/ontology/artifact-registry.ts` |
 | sidecar lookup through artifact extraction | `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` |
 
-Only `prompt-extract-artifact.ts` remains a future frontmatter source; the extracted activation and artifact registry modules are now listed above.
+All current activation evidence CLI consumption sources are now listed above.

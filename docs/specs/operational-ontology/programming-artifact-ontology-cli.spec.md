@@ -19,6 +19,7 @@ def:
       type: depends_on
 sources:
   - packages/cli/src/commands/ontology/artifact-registry.ts
+  - packages/cli/src/commands/ontology/prompt-extract-artifact.ts
   - packages/cli/src/commands/ontology/quality-status-evidence.ts
   - packages/cli/src/commands/ontology/quality-ledger-evidence.ts
   - packages/cli/src/commands/ontology.ts
@@ -140,11 +141,11 @@ These commands manage local JSON only. They do not start registry-service/index-
 
 ## Source Reference Boundary
 
-Current implementation sources are `packages/cli/src/commands/ontology/artifact-registry.ts`, `packages/cli/src/commands/ontology/quality-status-evidence.ts`, `packages/cli/src/commands/ontology/quality-ledger-evidence.ts`, `packages/cli/src/commands/ontology.ts`, and `packages/cli/src/command-groups/ontology.commands.ts`. The command group source stays stable because it owns public command descriptors. The monolithic implementation source stays only for command families whose split modules do not exist yet.
+Current implementation sources are `packages/cli/src/commands/ontology/artifact-registry.ts`, `packages/cli/src/commands/ontology/prompt-extract-artifact.ts`, `packages/cli/src/commands/ontology/quality-status-evidence.ts`, `packages/cli/src/commands/ontology/quality-ledger-evidence.ts`, `packages/cli/src/commands/ontology.ts`, and `packages/cli/src/command-groups/ontology.commands.ts`. The command group source stays stable because it owns public command descriptors. The monolithic ontology command source remains the static router and dependency handoff point for split command modules.
 
 Source boundaries:
 
-| command concern | future source boundary |
+| command concern | source boundary |
 |-----------------|------------------------|
 | `ontology artifact registry validate/list/append` | `packages/cli/src/commands/ontology/artifact-registry.ts` |
 | `ontology prompt extract-artifact` source resolution and fallback JSON | `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` |
@@ -152,4 +153,4 @@ Source boundaries:
 | quality-ledger fallback, freshness, governance closure | `packages/cli/src/commands/ontology/quality-ledger-evidence.ts` |
 | `ontology registry activate-pack` production of activation evidence | `packages/cli/src/commands/ontology/activation.ts` |
 
-Only existing split modules appear in frontmatter. Remaining future paths stay body references until their extraction stories create those files.
+Existing split modules appear in frontmatter; `packages/cli/src/commands/ontology.ts` stays there only for stable router dispatch.

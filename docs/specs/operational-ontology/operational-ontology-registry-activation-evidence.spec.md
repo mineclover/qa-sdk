@@ -24,8 +24,8 @@ sources:
   - packages/cli/src/lib/activation-evidence-registry.ontology.test.ts
   - packages/cli/src/commands/ontology/activation.ts
   - packages/cli/src/commands/ontology/artifact-registry.ts
+  - packages/cli/src/commands/ontology/prompt-extract-artifact.ts
   - packages/cli/src/commands/ontology.test.ts
-  - packages/cli/src/commands/ontology.ts
   - packages/operational-ontology/src/programming-artifacts.ts
   - packages/operational-ontology/src/programming-artifacts.test.ts
 ---
@@ -92,9 +92,7 @@ Current frontmatter sources follow the extracted implementation files where they
 - `packages/cli/src/lib/activation-evidence-registry.ts` for managed evidence record mapping.
 - `packages/cli/src/commands/ontology/activation.ts` for activation command orchestration and registry append call site.
 - `packages/cli/src/commands/ontology/artifact-registry.ts` for registry validate/list/append behavior.
-- `packages/cli/src/commands/ontology.ts` for activation sidecar provider consumption until artifact extraction is split.
+- `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` for activation sidecar provider consumption.
 - package/test sources that prove activation evidence consumption.
 
-After the prompt artifact extraction story creates `packages/cli/src/commands/ontology/prompt-extract-artifact.ts`, this leaf should replace the monolithic CLI source with that file for activation sidecar provider consumption.
-
-No source comments or `@def.doc` annotations are added in this pre-extraction story. If future bottom-up lookup from the extracted files still misses this leaf, add the smallest file-level annotation in that extraction story.
+No source comments or `@def.doc` annotations are added. If future bottom-up lookup from the extracted files still misses this leaf, add the smallest file-level annotation in the affected source file.

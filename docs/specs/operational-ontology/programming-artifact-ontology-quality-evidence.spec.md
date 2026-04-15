@@ -14,6 +14,7 @@ def:
     - target: programming-artifact-ontology-registry-provider
       type: depends_on
 sources:
+  - packages/cli/src/commands/ontology/prompt-extract-artifact.ts
   - packages/cli/src/commands/ontology/quality-status-evidence.ts
   - packages/cli/src/commands/ontology/quality-ledger-evidence.ts
   - packages/cli/src/commands/ontology.test.ts
@@ -131,20 +132,21 @@ prompt quality warning code:
 ## 구현 참조
 
 - quality-status source/snapshot evidence: `packages/cli/src/commands/ontology/quality-status-evidence.ts`
-- quality-ledger fallback, freshness, prompt evidence conversion, governance run helpers, and closure summary: `packages/cli/src/commands/ontology/quality-ledger-evidence.ts`
+- artifact extraction source JSON and closure summary integration: `packages/cli/src/commands/ontology/prompt-extract-artifact.ts`
+- quality-ledger fallback, freshness, prompt evidence conversion, and governance run helpers: `packages/cli/src/commands/ontology/quality-ledger-evidence.ts`
 - quality export registry metadata: `packages/cli/src/commands/quality.ts`
 - provider sidecar merge: `packages/operational-ontology/src/internal/programming-artifact-core.ts`
 - prompt quality closure: `packages/operational-ontology/src/internal/prompt-artifact-core.ts`
 
 ## Source Reference Boundary
 
-Quality-status matching, snapshot candidate loading, descriptor resolution, snapshot summaries, and snapshot warnings live in `packages/cli/src/commands/ontology/quality-status-evidence.ts`. Quality-ledger loading, snapshot-first fallback decisions, freshness SLA, conflict warnings, prompt evidence conversion, governance run helpers, and source-level governance closure live in `packages/cli/src/commands/ontology/quality-ledger-evidence.ts`.
+Quality-status matching, snapshot candidate loading, descriptor resolution, snapshot summaries, and snapshot warnings live in `packages/cli/src/commands/ontology/quality-status-evidence.ts`. Quality-ledger loading, snapshot-first fallback decisions, freshness SLA, conflict warnings, prompt evidence conversion, and governance run helpers live in `packages/cli/src/commands/ontology/quality-ledger-evidence.ts`. Artifact extraction source JSON and source-level governance closure live in `packages/cli/src/commands/ontology/prompt-extract-artifact.ts`.
 
 | concern | source boundary |
 |---------|------------------------|
 | quality-status record matching, snapshot candidate loading, descriptor resolution, snapshot warnings | `packages/cli/src/commands/ontology/quality-status-evidence.ts` |
-| quality-ledger fallback, freshness SLA, conflict warnings, governance closure summary | `packages/cli/src/commands/ontology/quality-ledger-evidence.ts` |
-| artifact extraction source JSON integration | `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` |
+| quality-ledger fallback, freshness SLA, conflict warnings, prompt evidence conversion | `packages/cli/src/commands/ontology/quality-ledger-evidence.ts` |
+| artifact extraction source JSON and governance closure summary integration | `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` |
 | quality export metadata production | `packages/cli/src/commands/quality.ts` |
 
-No source-map annotation is added here because current bottom-up lookup is file-level only.
+No source-map annotation is added here because frontmatter now points at the split source files.

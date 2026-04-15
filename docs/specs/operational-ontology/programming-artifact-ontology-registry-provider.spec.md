@@ -16,7 +16,7 @@ sources:
   - packages/operational-ontology/src/programming-artifacts.ts
   - packages/operational-ontology/src/programming-artifacts.test.ts
   - packages/cli/src/commands/ontology/artifact-registry.ts
-  - packages/cli/src/commands/ontology.ts
+  - packages/cli/src/commands/ontology/prompt-extract-artifact.ts
 ---
 
 # Programming Artifact Ontology Registry Provider — provider lookup contract
@@ -103,11 +103,11 @@ provider는 related quality record를 찾을 수 있지만, snapshot loading, qu
 - public export: `packages/operational-ontology/src/programming-artifacts.ts`
 - provider tests: `packages/operational-ontology/src/programming-artifacts.test.ts`
 - registry JSON loader and local registry commands: `packages/cli/src/commands/ontology/artifact-registry.ts`
-- current CLI provider orchestration: `packages/cli/src/commands/ontology.ts`
+- CLI artifact provider orchestration: `packages/cli/src/commands/ontology/prompt-extract-artifact.ts`
 
 ## Source Reference Boundary
 
-The provider implementation remains in `operational-ontology`; registry file handling now lives in the artifact registry command module. Frontmatter keeps the current monolithic CLI source only for prompt extraction provider orchestration until `prompt-extract-artifact.ts` exists.
+The provider implementation remains in `operational-ontology`; registry file handling lives in the artifact registry command module, and prompt extraction provider orchestration lives in the artifact extraction command module.
 
 Source boundaries:
 
@@ -117,4 +117,4 @@ Source boundaries:
 | artifact source lookup and fallback integration | `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` |
 | generic provider implementation | `packages/operational-ontology/src/internal/programming-artifact-core.ts` |
 
-Only existing split modules appear in frontmatter. Do not add source comments for this leaf unless the extracted module cannot be found through frontmatter after US-006 or US-009.
+Existing split modules appear in frontmatter. Add source comments only if future bottom-up lookup from those files misses this leaf.
