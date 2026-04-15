@@ -240,6 +240,7 @@ export type {
 export {
   collectCodeReferences,
   collectCodeLinkCoverage,
+  extractSourceEntriesFromYaml,
   parseCodeReferenceTarget,
   formatCodeReferenceTarget,
   makeCodeReferenceScopeKey,

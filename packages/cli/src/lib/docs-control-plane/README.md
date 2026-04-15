@@ -20,3 +20,11 @@ vocabulary를 추가하지 않는다.
   Control plane 자체는 write path를 만들지 않는다.
 - `DocumentChangeSet`은 future adapter가 write/transform을 명시적으로 opt in할 때
   사용할 neutral proposed-change container다.
+
+## Adapters
+
+- `definition-markdown`: definition-catalog의 frontmatter scanner/parser와 graph
+  validation을 재사용해 `.spec.md`, `.todo.md`, `.plan.md`, `.test.md`,
+  `.memo.md`, `.rule.md` 파일을 read-only envelope로 수집한다. `def.*`
+  metadata, source refs, purpose/overview marker sections, links, source path,
+  validation diagnostics를 source vocabulary 그대로 보존한다.

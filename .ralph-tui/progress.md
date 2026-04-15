@@ -7,6 +7,7 @@ after each iteration and it's included in prompts for context.
 
 - Neutral document control-plane adapters should preserve source-owned vocabulary in plain string fields and normalize only coordination concerns: identity, paths, metadata defaults, and collection defaults.
 - CLI tests that touch optional `~/.qa-sdk` side stores should set `QA_SDK_HOME` to a temp directory so developer-local ledgers cannot affect hermetic assertions.
+- Definition markdown family grouping should use an explicit family id when present, otherwise the repo-relative basename with `.spec.md`/`.todo.md`/`.plan.md`/`.test.md`/`.memo.md`/`.rule.md` stripped; keep each file's `def.id` as metadata so source ownership is not blurred.
 
 ---
 
@@ -23,4 +24,17 @@ after each iteration and it's included in prompts for context.
   - CLI support modules can live cleanly under `packages/cli/src/lib/<feature>/` with local `index.ts`, focused tests, and a README when the feature is a boundary contract rather than a CLI command.
   - `@qa-sdk/cli` tests resolve workspace library packages through built package output in some paths, so source-only dependency changes may need dependency rebuilds before a CLI bundle reflects them.
   - Definition real-doc gates are strict about unique `def.id`, allowed scope/aspect pairs, valid lifecycle values, and concern tags inferred from filenames.
+---
+
+## 2026-04-15 - US-002
+- Implemented a read-only `definition-markdown` docs control-plane adapter that reuses `definition-catalog` frontmatter scanning/parsing, marker summary extraction, source reference parsing, and graph validation.
+- The adapter collects definition frontmatter metadata, source paths, source refs, links, purpose/overview sections, and validation diagnostics into neutral `DocumentEnvelope`s while preserving source vocabulary.
+- Added basename family grouping for `.spec.md`, `.todo.md`, `.plan.md`, `.test.md`, `.memo.md`, and `.rule.md`; explicit family ids are honored when present.
+- Added temporary-doc tests for frontmatter extraction, spec/todo/plan family detection, and group/module/leaf level diagnostics.
+- Files changed: `packages/cli/src/lib/docs-control-plane/adapters/definition-markdown.ts`, `packages/cli/src/lib/docs-control-plane/index.ts`, `packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts`, `packages/cli/src/lib/docs-control-plane/README.md`, `packages/definition-catalog/src/code-references.ts`, `packages/definition-catalog/src/index.ts`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter definition-catalog build`; `pnpm --filter @qa-sdk/cli test -- docs-control-plane`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter definition-catalog typecheck`; `pnpm --filter definition-catalog test`; `pnpm --filter definition-data-source typecheck`; `pnpm --filter definition-data-source test`; `pnpm --filter @qa-sdk/cli test -- docs`; `pnpm --filter @qa-sdk/cli test -- def`; `pnpm --filter @qa-sdk/cli build`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - `definition-catalog` already had a source/sources frontmatter extractor for code-link coverage; exporting it avoids a second parser in the control-plane adapter.
+  - `scanAndBuild` remains the compatibility source for registry ordering, duplicate spec/todo coexistence, and validation, but family-member envelopes need a second parse pass so skipped TODO/plan companion files are still visible to docs control-plane consumers.
+  - The `def` CLI suite can occasionally segfault after all assertions pass due to native teardown; rerunning the exact command produced the normal passing summary.
 ---

@@ -63,7 +63,7 @@ function extractDocIdFromYaml(yaml: string): string | null {
   return match ? match[1]!.trim() : null;
 }
 
-function extractSourceEntriesFromYaml(yaml: string): string[] {
+export function extractSourceEntriesFromYaml(yaml: string): string[] {
   const values: string[] = [];
   const single = yaml.match(/^source:\s*(.+)$/m);
   if (single) values.push(single[1]!.trim());
