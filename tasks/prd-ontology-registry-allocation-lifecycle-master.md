@@ -160,6 +160,27 @@ No browser verification is required.
 - Existing artifact registry validate/list/provider lookup can consume the activation evidence record.
 - REST activation endpoint, remote activation service, and scoped prefix support remain separate follow-ups.
 
+### Post-Lifecycle Follow-up: CLI Scenario Hardening Before REST
+
+**Goal:** Keep REST and remote activation deferred while strengthening local CLI scenario evidence across known ontology packs, output/evidence modes, failure modes, and rerun/idempotency behavior.
+
+**Execution PRD:**
+- `tasks/prd-ontology-registry-cli-scenario-hardening.md`
+
+**Status:** Planned pre-REST follow-up. This is the next recommended work before opening registry-service REST activation endpoint design.
+
+**Inputs:**
+- Completed activation CLI: `tasks/prd-ontology-registry-activation-cli.md`
+- Completed activation evidence persistence: `tasks/prd-ontology-registry-activation-evidence-persistence.md`
+- `operational-ontology-registry-activation-cli.spec.md`
+- `authorization-ontology-system.spec.md`
+- `programming-artifact-ontology-cli.spec.md`
+
+**Exit Criteria:**
+- CLI scenario matrix documents pack coverage for `programming-artifact-ontology` and `authorization-ontology`.
+- Scenario proof covers sidecar-only output, explicit activation evidence append, registry validate/list/extract consumption, duplicate/rerun behavior, and structured failure surfaces.
+- Any remaining REST, remote activation, scoped-prefix, or production registry persistence work stays outside this PRD.
+
 ## Operating Rule
 
 After each execution PRD closes:

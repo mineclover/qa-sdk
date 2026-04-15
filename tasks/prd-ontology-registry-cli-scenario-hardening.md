@@ -1,0 +1,184 @@
+[PRD]
+# PRD: Ontology Registry CLI Scenario Hardening Before REST
+
+## Overview
+
+Before opening registry-service REST activation or a remote activation service, harden the local CLI proof for the completed ontology registry lifecycle. The goal is to make `qa-sdk ontology registry activate-pack` demonstrate the full lifecycle for both known packs, prove activation evidence consumption through the programming artifact registry, and document exactly which operator scenarios are already safe to rely on.
+
+This is a pre-REST public/local follow-up. It must not add REST routes, remote service deployment, scoped prefix support, new registry-service tables, or new activation rollback semantics.
+
+## Goals
+
+- Convert the current implicit CLI coverage into an explicit scenario matrix.
+- Prove `programming-artifact-ontology` and `authorization-ontology` activation through the same local CLI evidence path.
+- Verify sidecar-only output, explicit activation evidence append, registry validate/list/extract consumption, rerun/upsert behavior, and duplicate/failure behavior.
+- Keep REST activation endpoint and remote activation service out of scope until the local CLI lifecycle is stable enough to define API semantics.
+- Update specs and roadmap docs so the next REST decision starts from completed local CLI evidence, not assumptions.
+
+## Quality Gates
+
+These commands must pass for every user story:
+
+- `pnpm --filter @qa-sdk/cli test -- ontology` - CLI ontology, activation, evidence, and artifact registry tests
+- `pnpm --filter @qa-sdk/cli typecheck` - CLI type checking
+- `pnpm --filter @qa-sdk/cli build` - CLI bundle validation
+- `pnpm --filter operational-ontology test -- programming-artifacts` - programming artifact vocabulary/provider tests
+- `pnpm --filter operational-ontology typecheck` - operational ontology type checking
+- `pnpm --filter operational-ontology build` - operational ontology package build
+- `pnpm --filter registry-service test -- ontology` - registry-service ontology lifecycle regression
+- `pnpm --filter registry-service typecheck` - registry-service type checking
+- `pnpm --filter registry-service build` - registry-service package build
+- `pnpm --filter authorization-ontology test` - authorization pack regression
+- `pnpm --filter authorization-ontology typecheck` - authorization pack type checking
+- `pnpm --filter authorization-ontology build` - authorization pack build
+- `node packages/cli/dist/index.js def validate` - definition-catalog validation
+
+Build order note: run dependency builds before dependent builds when executing manually. Do not run `operational-ontology build` concurrently with `registry-service build`, because `registry-service` DTS generation consumes `operational-ontology/dist` declarations.
+
+No browser verification is required.
+
+## User Stories
+
+### US-001: Close The Completed Local Lifecycle State
+
+**Description:** As an ontology maintainer, I want the roadmap to distinguish completed local CLI lifecycle work from future REST/remote work so the next PRD does not reopen completed phases.
+
+**Acceptance Criteria:**
+- [ ] Confirm the allocation lifecycle remains closed through Phase 5 plus activation CLI and activation evidence persistence.
+- [ ] Confirm `tasks/prd-ontology-registry-allocation-lifecycle-master.md` marks activation evidence persistence as completed.
+- [ ] Confirm this PRD is listed as the next pre-REST public/local follow-up.
+- [ ] Confirm `authorization-ontology-system.spec.md` no longer treats activation evidence persistence as pending.
+- [ ] Confirm REST activation endpoint, remote activation service, scoped prefix support, and production registry persistence remain out of scope.
+- [ ] Do not change runtime code in this story unless a doc reference points at a missing or renamed source.
+
+### US-002: Add A CLI Scenario Matrix To The Specs
+
+**Description:** As a workflow reviewer, I want the CLI scenario matrix documented so pack activation proof is evaluated consistently before REST design begins.
+
+**Acceptance Criteria:**
+- [ ] Add a scenario matrix to `operational-ontology-registry-activation-cli.spec.md` or an adjacent spec section owned by that CLI surface.
+- [ ] Matrix rows include `programming-artifact-ontology` and `authorization-ontology`.
+- [ ] Matrix columns include activation success, sidecar-only output, activation evidence append, registry validate/list, artifact extraction registry hit, duplicate same-store failure, rerun/upsert same evidence identity, output write failure, registry append failure, unknown pack, invalid flag, and invalid address model.
+- [ ] Each implemented row links to a concrete test title or source reference.
+- [ ] Any uncovered row is explicitly marked as a gap and assigned to a later story in this PRD.
+- [ ] Matrix must not imply REST, remote service, scoped prefix, or rollback support.
+
+### US-003: Harden Programming Artifact Pack Evidence Replay
+
+**Description:** As a CLI automation user, I want `programming-artifact-ontology` activation evidence to be replayable and inspectable so the local CLI proof can support future API design.
+
+**Acceptance Criteria:**
+- [ ] Verify `programming-artifact-ontology --output <file>` remains sidecar-only and does not create or mutate an artifact registry.
+- [ ] Verify `programming-artifact-ontology --output <file> --artifact-registry <registry> --json` writes the sidecar before appending evidence.
+- [ ] Verify the registry validates and lists exactly one `activation-evidence` record for the command.
+- [ ] Verify `ontology prompt extract-artifact <output-file> --artifact-registry <registry> --json` resolves through `artifact-registry-hit`.
+- [ ] Verify successful rerun with the same pack/ontology/output identity upserts instead of duplicating evidence.
+- [ ] Verify duplicate/failed activation against the same store does not replace prior successful evidence.
+- [ ] Document the exact command sequence in `operational-ontology-registry-activation-cli.spec.md`.
+
+### US-004: Add Authorization Pack Evidence Persistence Proof
+
+**Description:** As an authorization ontology maintainer, I want `authorization-ontology` to use the same activation evidence path as programming artifacts so both primary packs prove the lifecycle consistently.
+
+**Acceptance Criteria:**
+- [ ] Add or confirm a CLI test invoking `ontology registry activate-pack authorization-ontology --output <file> --artifact-registry <registry> --json`.
+- [ ] Test uses an isolated SQLite activation store, sidecar output, and artifact registry JSON file.
+- [ ] Activation status is `succeeded`.
+- [ ] Output includes all expected authorization taxonomy allocation summaries.
+- [ ] Registry contains an `activation-evidence` record whose id is deterministic for `authorization-ontology`.
+- [ ] Evidence metadata summarizes authorization namespace, allocation count, sync statuses, smoke summary, warnings, and errors.
+- [ ] Registry validate/list accepts the authorization activation evidence.
+- [ ] `extract-artifact <authorization-output-file> --artifact-registry <registry> --json` resolves through `artifact-registry-hit`.
+- [ ] Duplicate same-store authorization activation does not append or replace successful evidence.
+- [ ] Update `authorization-ontology-system.spec.md` with the completed evidence proof when implemented.
+
+### US-005: Prove Cross-Pack Registry Coexistence
+
+**Description:** As an operator, I want one local programming artifact registry to hold activation evidence for multiple ontology packs so pack proofs do not collide.
+
+**Acceptance Criteria:**
+- [ ] Add a CLI scenario using one artifact registry file and separate isolated activation stores for `programming-artifact-ontology` and `authorization-ontology`.
+- [ ] Both successful activations append/upsert distinct `activation-evidence` records.
+- [ ] `ontology artifact registry list --kind activation-evidence --json` returns both records.
+- [ ] `ontology artifact registry validate --input <registry> --json` accepts the combined registry.
+- [ ] `extract-artifact` resolves each sidecar path to the correct pack evidence record.
+- [ ] Record ids, `producedByRef`, `derivedFromRefs`, `verifiesRefs`, and metadata remain pack-specific.
+- [ ] Re-running one pack does not mutate or duplicate the other pack's record.
+
+### US-006: Document Operator Failure Interpretation
+
+**Description:** As an operator, I want CLI failures to have stable interpretation before REST error mapping is designed.
+
+**Acceptance Criteria:**
+- [ ] Document the current no-rollback policy and structured failed activation result policy in the CLI spec.
+- [ ] Document command-level failures separately from helper lifecycle failures.
+- [ ] Document that registry append failure makes the command fail while preserving the successful activation sidecar.
+- [ ] Document that duplicate same-store activation is a structured helper failure, not a successful idempotent activation.
+- [ ] Document that REST idempotency and remote store ownership are intentionally undecided.
+- [ ] Verify existing tests or add missing tests for sidecar preservation, append failure sanitization, and no failed-evidence append.
+
+### US-007: Reflect CLI Hardening Completion In Roadmap Docs
+
+**Description:** As a documentation maintainer, I want the completed CLI hardening result reflected in specs and TODOs so REST planning starts from stable evidence.
+
+**Acceptance Criteria:**
+- [ ] Update `tasks/prd-ontology-registry-allocation-lifecycle-master.md` with this PRD completion status.
+- [ ] Update `operational-ontology-registry-allocation.todo.md` to close CLI scenario hardening when complete.
+- [ ] Update `operational-ontology-registry-activation-cli.spec.md` with final scenario matrix and operator interpretation.
+- [ ] Update `programming-artifact-ontology-cli.spec.md` if registry provider behavior changed or additional consumption evidence was added.
+- [ ] Update `authorization-ontology-system.spec.md` if authorization evidence proof changed.
+- [ ] Keep REST activation endpoint and remote activation service open as separate follow-ups.
+- [ ] Keep scoped prefix implementation frozen.
+
+## Functional Requirements
+
+- FR-1: CLI scenario hardening must use the existing local activation runtime and must not start a registry-service HTTP server.
+- FR-2: Evidence persistence must remain explicit: `--artifact-registry` requires `--output`.
+- FR-3: `--output` alone must remain sidecar-only.
+- FR-4: Failed activation results must not be appended as managed activation evidence.
+- FR-5: Registry append failure must not rewrite the successful activation sidecar.
+- FR-6: Pack evidence identities must remain deterministic and pack-specific.
+- FR-7: Existing artifact registry validate/list/provider lookup must consume the records without new provider schema.
+- FR-8: REST/remote/scoped-prefix behavior must remain documented as non-goal follow-up work.
+
+## Non-Goals
+
+- Registry-service REST activation endpoint.
+- Remote activation service or deployment workflow.
+- Scoped prefix schema/API/index-meta/decode migration.
+- Cross-boundary rollback or compensating rollback.
+- New registry-service persistence tables.
+- New artifact relation vocabulary.
+- Changing activation helper lifecycle ordering.
+- Making duplicate same-store activation a successful idempotent operation.
+
+## Technical Considerations
+
+- Main CLI sources:
+  - `packages/cli/src/commands/ontology.ts`
+  - `packages/cli/src/commands/ontology.test.ts`
+  - `packages/cli/src/lib/activation-evidence-registry.ts`
+  - `packages/cli/src/lib/known-ontology-packs.ts`
+- Registry-service lifecycle sources:
+  - `packages/registry-service/src/modules/ontology/ontology-activation.helper.ts`
+  - `packages/registry-service/src/modules/ontology/local-activation-runtime.ts`
+  - `packages/registry-service/src/modules/ontology/ontology-registry.service.ts`
+  - `packages/registry-service/src/modules/ontology/index-meta-sync.adapter.ts`
+- Pack sources:
+  - `packages/operational-ontology/src/programming-artifacts.ts`
+  - `packages/authorization-ontology/src/index.ts`
+- Existing evidence mapper already uses `activation-evidence` and deterministic `activation-evidence-<packId>-<ontologyId>` identity.
+- Prefer adding missing tests to existing CLI ontology tests before introducing a new test file, unless the scenario matrix makes the current file too hard to maintain.
+
+## Success Metrics
+
+- A maintainer can point to a single CLI scenario matrix and see which local activation behaviors are proven.
+- Both known packs prove successful activation evidence persistence and provider consumption.
+- Combined registry evidence for multiple packs validates and resolves without collisions.
+- REST planning can reuse CLI result semantics without guessing about local lifecycle behavior.
+- `node packages/cli/dist/index.js def validate` reports zero warnings.
+
+## Open Questions
+
+- None for this PRD. REST endpoint auth, tenancy, remote store ownership, API idempotency, and deployment lifecycle are intentionally deferred to a separate REST/remote PRD.
+[/PRD]
