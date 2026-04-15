@@ -147,7 +147,7 @@ No browser verification is required.
 - `tasks/prd-ontology-registry-activation-evidence-persistence.md`
 - `tasks/prd-ontology-registry-activation-evidence-persistence.json`
 
-**Status:** Planned follow-up outside the allocation lifecycle. This does not create Phase 6 implementation work and does not change scoped prefix policy.
+**Status:** Completed public/local follow-up outside the allocation lifecycle. This did not create Phase 6 implementation work and did not change scoped prefix policy.
 
 **Inputs:**
 - Completed activation CLI: `tasks/prd-ontology-registry-activation-cli.md`

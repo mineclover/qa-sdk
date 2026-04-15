@@ -81,75 +81,75 @@ Selected artifact kind: `activation-evidence`.
 **Description:** As a programming artifact ontology maintainer, I want activation proof to have an explicit artifact kind so it is not mislabeled as build, prompt, deployment, or quality-status output.
 
 **Acceptance Criteria:**
-- [ ] Add `activation-evidence` to the programming artifact kind vocabulary if no existing kind fits without confusing provider behavior.
-- [ ] Document the 5Q result for `activation-evidence`: finite, decision-affecting, shared by activation CLI and artifact registry/provider flows, stable, and still within capacity 16.
-- [ ] Do not add a new relation kind; reuse `produced_by`, `derived_from`, `verifies`, `owned_by_definition`, and `materializes_output`.
-- [ ] Update `programmingArtifactOntologyPack` and related tests so the pack remains valid.
-- [ ] Update programming artifact specs to describe `activation-evidence`.
-- [ ] Review whether `programming-artifact-ontology-context-simulation.spec.md` needs a new row for activation evidence consumption; update it only if the new kind changes scenario matrix behavior.
-- [ ] Ensure activation of `programming-artifact-ontology` still succeeds with the expanded vocabulary.
+- [x] Add `activation-evidence` to the programming artifact kind vocabulary if no existing kind fits without confusing provider behavior.
+- [x] Document the 5Q result for `activation-evidence`: finite, decision-affecting, shared by activation CLI and artifact registry/provider flows, stable, and still within capacity 16.
+- [x] Do not add a new relation kind; reuse `produced_by`, `derived_from`, `verifies`, `owned_by_definition`, and `materializes_output`.
+- [x] Update `programmingArtifactOntologyPack` and related tests so the pack remains valid.
+- [x] Update programming artifact specs to describe `activation-evidence`.
+- [x] Review whether `programming-artifact-ontology-context-simulation.spec.md` needs a new row for activation evidence consumption; update it only if the new kind changes scenario matrix behavior.
+- [x] Ensure activation of `programming-artifact-ontology` still succeeds with the expanded vocabulary.
 
 ### US-003: Build Activation Result To Registry Record Mapping
 
 **Description:** As a CLI maintainer, I want a deterministic mapper from activation result plus output path to a programming artifact registry record so CLI code does not hand-build ad hoc JSON.
 
 **Acceptance Criteria:**
-- [ ] Add a pure mapper in `packages/cli/src/lib/activation-evidence-registry.ts` unless an existing CLI-local helper is clearly a better fit.
-- [ ] Mapper input includes activation result, resolved output path, registry command context, and optional timestamp injection for tests.
-- [ ] Mapper rejects missing output path because registry persistence must point at materialized evidence.
-- [ ] Record uses deterministic identity, for example `activation-evidence-<packId>-<ontologyId>`.
-- [ ] Record `artifactRef` and `outputPath` point to the activation output sidecar.
-- [ ] Record `kind` is the selected activation evidence artifact kind.
-- [ ] Record `producedByRef` records the `qa-sdk ontology registry activate-pack <pack-id>` command surface.
-- [ ] Record `derivedFromRefs` includes the pack id and, when stable, the known pack import ref.
-- [ ] Record `verifiesRefs` includes the pack id, ontology id, and `operational-ontology-registry-allocation`.
-- [ ] Record `ownerDefinitionId` is `operational-ontology-registry-activation-cli`.
-- [ ] Record `materializesOutputRefs` includes the activation output sidecar path and a stable activation result ref; avoid enumerating every generated index-meta prefix unless a future story needs that granularity.
-- [ ] Record metadata summarizes status, namespace, allocation count, sync status counts, smoke check summary, warnings/errors counts, and generated timestamp.
-- [ ] Unit tests cover successful mapping, deterministic id generation, missing output path rejection, and metadata shape.
+- [x] Add a pure mapper in `packages/cli/src/lib/activation-evidence-registry.ts` unless an existing CLI-local helper is clearly a better fit.
+- [x] Mapper input includes activation result, resolved output path, registry command context, and optional timestamp injection for tests.
+- [x] Mapper rejects missing output path because registry persistence must point at materialized evidence.
+- [x] Record uses deterministic identity, for example `activation-evidence-<packId>-<ontologyId>`.
+- [x] Record `artifactRef` and `outputPath` point to the activation output sidecar.
+- [x] Record `kind` is the selected activation evidence artifact kind.
+- [x] Record `producedByRef` records the `qa-sdk ontology registry activate-pack <pack-id>` command surface.
+- [x] Record `derivedFromRefs` includes the pack id and, when stable, the known pack import ref.
+- [x] Record `verifiesRefs` includes the pack id, ontology id, and `operational-ontology-registry-allocation`.
+- [x] Record `ownerDefinitionId` is `operational-ontology-registry-activation-cli`.
+- [x] Record `materializesOutputRefs` includes the activation output sidecar path and a stable activation result ref; avoid enumerating every generated index-meta prefix unless a future story needs that granularity.
+- [x] Record metadata summarizes status, namespace, allocation count, sync status counts, smoke check summary, warnings/errors counts, and generated timestamp.
+- [x] Unit tests cover successful mapping, deterministic id generation, missing output path rejection, and metadata shape.
 
 ### US-004: Append Activation Evidence From The CLI
 
 **Description:** As an automation user, I want `activate-pack` to append successful activation evidence to a programming artifact registry when I explicitly provide a registry path.
 
 **Acceptance Criteria:**
-- [ ] Add `--artifact-registry <file>` to `qa-sdk ontology registry activate-pack`.
-- [ ] `--artifact-registry` requires `--output <file>` and returns a structured CLI error if the output sidecar path is missing.
-- [ ] `--output` alone continues to write the activation result sidecar without appending to the artifact registry.
-- [ ] Successful activation writes the output sidecar first, then appends the activation evidence record to the registry.
-- [ ] Failed activation does not append a managed artifact registry record.
-- [ ] Output write failure does not append a managed artifact registry record.
-- [ ] Artifact registry append failure is sanitized and does not expose raw filesystem or SQL internals.
-- [ ] Text output reports the registry append path and record id when append succeeds.
-- [ ] JSON output remains backward-compatible with the activation result payload; append details are added under an additive `activationEvidence` field containing registry path, record id/ref, record count, and append status.
-- [ ] Command usage/help and invalid flag validation include `--artifact-registry`.
+- [x] Add `--artifact-registry <file>` to `qa-sdk ontology registry activate-pack`.
+- [x] `--artifact-registry` requires `--output <file>` and returns a structured CLI error if the output sidecar path is missing.
+- [x] `--output` alone continues to write the activation result sidecar without appending to the artifact registry.
+- [x] Successful activation writes the output sidecar first, then appends the activation evidence record to the registry.
+- [x] Failed activation does not append a managed artifact registry record.
+- [x] Output write failure does not append a managed artifact registry record.
+- [x] Artifact registry append failure is sanitized and does not expose raw filesystem or SQL internals.
+- [x] Text output reports the registry append path and record id when append succeeds.
+- [x] JSON output remains backward-compatible with the activation result payload; append details are added under an additive `activationEvidence` field containing registry path, record id/ref, record count, and append status.
+- [x] Command usage/help and invalid flag validation include `--artifact-registry`.
 
 ### US-005: Prove Registry Evidence End To End
 
 **Description:** As a workflow maintainer, I want a real activation command to create registry evidence that existing artifact registry commands can list, validate, and resolve.
 
 **Acceptance Criteria:**
-- [ ] Add CLI test invoking `ontology registry activate-pack programming-artifact-ontology --output <file> --artifact-registry <registry> --json`.
-- [ ] Test uses isolated temporary SQLite store, output sidecar, and artifact registry JSON file.
-- [ ] Activation status is `succeeded`.
-- [ ] Registry file contains exactly one activation evidence record for the activation output.
-- [ ] `ontology artifact registry validate --input <registry> --json` accepts the registry.
-- [ ] `ontology artifact registry list --input <registry> --kind activation-evidence --json` returns the activation evidence record.
-- [ ] `ontology prompt extract-artifact <output-file> --artifact-registry <registry> --json` resolves through `artifact-registry-hit` by matching the evidence record `artifactRef` or `outputPath` to the activation sidecar path.
-- [ ] Re-running the same successful command upserts the same activation evidence record instead of duplicating it.
-- [ ] A duplicate/failed activation against the same store does not replace the successful evidence record with failed evidence.
+- [x] Add CLI test invoking `ontology registry activate-pack programming-artifact-ontology --output <file> --artifact-registry <registry> --json`.
+- [x] Test uses isolated temporary SQLite store, output sidecar, and artifact registry JSON file.
+- [x] Activation status is `succeeded`.
+- [x] Registry file contains exactly one activation evidence record for the activation output.
+- [x] `ontology artifact registry validate --input <registry> --json` accepts the registry.
+- [x] `ontology artifact registry list --input <registry> --kind activation-evidence --json` returns the activation evidence record.
+- [x] `ontology prompt extract-artifact <output-file> --artifact-registry <registry> --json` resolves through `artifact-registry-hit` by matching the evidence record `artifactRef` or `outputPath` to the activation sidecar path.
+- [x] Re-running the same successful command upserts the same activation evidence record instead of duplicating it.
+- [x] A duplicate/failed activation against the same store does not replace the successful evidence record with failed evidence.
 
 ### US-006: Reflect Evidence Persistence In Docs And TODO
 
 **Description:** As a documentation maintainer, I want specs and roadmap docs to state that activation evidence persistence is complete and still separate from REST and scoped-prefix work.
 
 **Acceptance Criteria:**
-- [ ] Update `operational-ontology-registry-activation-cli.spec.md` with `--artifact-registry` behavior and failure contract.
-- [ ] Update `operational-ontology-registry-allocation.spec.md` to mention activation evidence persistence as a public/local follow-up surface, not a lifecycle phase.
-- [ ] Update `operational-ontology-registry-allocation.todo.md` to close the activation evidence persistence follow-up when implemented.
-- [ ] Update `programming-artifact-ontology-cli.spec.md` and `programming-artifact-ontology-system.spec.md` for activation evidence kind and registry behavior.
-- [ ] Keep REST activation endpoint and remote activation service follow-ups open.
-- [ ] Keep scoped prefix implementation frozen unless a separate decision PRD/implementation ADR reopens it.
+- [x] Update `operational-ontology-registry-activation-cli.spec.md` with `--artifact-registry` behavior and failure contract.
+- [x] Update `operational-ontology-registry-allocation.spec.md` to mention activation evidence persistence as a public/local follow-up surface, not a lifecycle phase.
+- [x] Update `operational-ontology-registry-allocation.todo.md` to close the activation evidence persistence follow-up when implemented.
+- [x] Update `programming-artifact-ontology-cli.spec.md` and `programming-artifact-ontology-system.spec.md` for activation evidence kind and registry behavior.
+- [x] Keep REST activation endpoint and remote activation service follow-ups open.
+- [x] Keep scoped prefix implementation frozen unless a separate decision PRD/implementation ADR reopens it.
 
 ## Functional Requirements
 

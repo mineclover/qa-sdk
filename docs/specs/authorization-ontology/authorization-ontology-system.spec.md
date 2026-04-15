@@ -74,7 +74,7 @@ authorization ontology는 Cerbos를 대체하지 않는다. Cerbos가 표현하�
 - **observation realm**
   실제 authorization decision, checkpoint, diff
 
-`qa-sdk ontology registry activate-pack authorization-ontology`는 이 ontology pack을 registry-service/index-meta local lifecycle로 검증하는 public CLI scenario proof다. 현재 proof는 authorization node, principal, resource, action, policy, decision, enforcement, lineage taxonomy allocation과 known authorization axes materialization을 확인한다. REST activation endpoint와 activation evidence registry persistence는 operational ontology follow-up work로 남긴다.
+`qa-sdk ontology registry activate-pack authorization-ontology`는 이 ontology pack을 registry-service/index-meta local lifecycle로 검증하는 public CLI scenario proof다. 현재 proof는 authorization node, principal, resource, action, policy, decision, enforcement, lineage taxonomy allocation과 known authorization axes materialization을 확인한다. Activation evidence persistence는 operational ontology CLI follow-up으로 완료됐고, REST activation endpoint와 remote activation service는 별도 follow-up work로 남긴다.
 
 ## 정의 ^defines
 
