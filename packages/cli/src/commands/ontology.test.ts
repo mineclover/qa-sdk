@@ -1293,6 +1293,332 @@ describe("ontology CLI", () => {
     }
   }, 20_000);
 
+  it("registry activation evidence coexists across known packs in one artifact registry", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-cross-pack-activation-evidence-"));
+    try {
+      const registryPath = join(dir, "programming-artifacts.json");
+      const programmingStorePath = join(dir, "state", "programming.sqlite");
+      const authorizationStorePath = join(dir, "state", "authorization.sqlite");
+      const programmingRerunStorePath = join(dir, "state-rerun", "programming.sqlite");
+      const programmingOutputPath = join(dir, "activation", "programming-artifact-ontology.json");
+      const authorizationOutputPath = join(dir, "activation", "authorization-ontology.json");
+      const programmingRecordId =
+        "activation-evidence-programming-artifact-ontology-programming-artifact-ontology";
+      const authorizationRecordId =
+        "activation-evidence-authorization-ontology-authorization-ontology";
+      const activationArgs = (packId: string, store: string, output: string) => [
+        "ontology",
+        "registry",
+        "activate-pack",
+        packId,
+        "--store",
+        store,
+        "--output",
+        output,
+        "--artifact-registry",
+        registryPath,
+        "--json",
+      ];
+      const readActivationEvidenceRecords = async () => {
+        const registry = JSON.parse(await readFile(registryPath, "utf8")) as {
+          artifacts?: ActivationEvidenceRegistryRecordJson[];
+        };
+        return (registry.artifacts ?? []).filter(
+          (record) => record.kind === "activation-evidence",
+        );
+      };
+      const recordsById = (records: ActivationEvidenceRegistryRecordJson[]) =>
+        new Map(records.map((record) => [record.artifactId, record]));
+      const expectRegistryRecord = (
+        records: ActivationEvidenceRegistryRecordJson[],
+        recordId: string,
+      ) => {
+        const record = recordsById(records).get(recordId);
+        expect(record).toBeDefined();
+        return record!;
+      };
+
+      const programmingOutput = await captureConsoleWithExitCode(async () => {
+        await main(
+          activationArgs(
+            "programming-artifact-ontology",
+            programmingStorePath,
+            programmingOutputPath,
+          ),
+        );
+      });
+      const programming = JSON.parse(programmingOutput.stdout) as RegistryActivationJson;
+
+      expect(programmingOutput.stderr).toBe("");
+      expect(programmingOutput.exitCode).toBeUndefined();
+      expect(programming.status).toBe("succeeded");
+      expect(programming.activationEvidence).toEqual({
+        appendStatus: "appended",
+        registryPath,
+        recordId: programmingRecordId,
+        recordRef: programmingOutputPath,
+        recordCount: 1,
+      });
+
+      const authorizationOutput = await captureConsoleWithExitCode(async () => {
+        await main(
+          activationArgs(
+            "authorization-ontology",
+            authorizationStorePath,
+            authorizationOutputPath,
+          ),
+        );
+      });
+      const authorization = JSON.parse(authorizationOutput.stdout) as RegistryActivationJson;
+
+      expect(authorizationOutput.stderr).toBe("");
+      expect(authorizationOutput.exitCode).toBeUndefined();
+      expect(authorization.status).toBe("succeeded");
+      expect(authorization.activationEvidence).toEqual({
+        appendStatus: "appended",
+        registryPath,
+        recordId: authorizationRecordId,
+        recordRef: authorizationOutputPath,
+        recordCount: 2,
+      });
+
+      const firstRecords = await readActivationEvidenceRecords();
+      expect(firstRecords).toHaveLength(2);
+      expect(expectRegistryRecord(firstRecords, programmingRecordId)).toMatchObject({
+        artifactId: programmingRecordId,
+        artifactRef: programmingOutputPath,
+        outputPath: programmingOutputPath,
+        kind: "activation-evidence",
+        producedByRef:
+          "qa-sdk ontology registry activate-pack programming-artifact-ontology",
+        derivedFromRefs: [
+          "programming-artifact-ontology",
+          "operational-ontology/programming-artifacts",
+        ],
+        verifiesRefs: [
+          "programming-artifact-ontology",
+          "operational-ontology-registry-allocation",
+        ],
+        metadata: {
+          status: "succeeded",
+          packId: "programming-artifact-ontology",
+          ontologyId: "programming-artifact-ontology",
+          namespace: "programming_artifact_ontology",
+          allocationCount: 2,
+          activationStatusCounts: { active: 2 },
+          syncStatusCounts: { synced: 2 },
+          smokeCheckSummary: expect.objectContaining({
+            allocationCount: 2,
+            passedAllocationCount: 2,
+            failedAllocationCount: 0,
+            failedCheckCount: 0,
+          }),
+          warningCount: 0,
+          errorCount: 0,
+          generatedAt: expect.any(String),
+        },
+      });
+      expect(expectRegistryRecord(firstRecords, authorizationRecordId)).toMatchObject({
+        artifactId: authorizationRecordId,
+        artifactRef: authorizationOutputPath,
+        outputPath: authorizationOutputPath,
+        kind: "activation-evidence",
+        producedByRef:
+          "qa-sdk ontology registry activate-pack authorization-ontology",
+        derivedFromRefs: ["authorization-ontology"],
+        verifiesRefs: [
+          "authorization-ontology",
+          "operational-ontology-registry-allocation",
+        ],
+        metadata: {
+          status: "succeeded",
+          packId: "authorization-ontology",
+          ontologyId: "authorization-ontology",
+          namespace: "authorization_ontology",
+          allocationCount: 8,
+          activationStatusCounts: { active: 8 },
+          syncStatusCounts: { synced: 8 },
+          smokeCheckSummary: expect.objectContaining({
+            allocationCount: 8,
+            passedAllocationCount: 8,
+            failedAllocationCount: 0,
+            failedCheckCount: 0,
+          }),
+          warningCount: 0,
+          errorCount: 0,
+          generatedAt: expect.any(String),
+        },
+      });
+
+      const listOutput = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "artifact",
+          "registry",
+          "list",
+          "--input",
+          registryPath,
+          "--kind",
+          "activation-evidence",
+          "--json",
+        ]);
+      });
+      const listed = JSON.parse(listOutput.stdout) as {
+        artifacts: ActivationEvidenceRegistryRecordJson[];
+      };
+      expect(listOutput.stderr).toBe("");
+      expect(listOutput.exitCode).toBeUndefined();
+      expect(listed.artifacts).toEqual([
+        expect.objectContaining({
+          artifactId: programmingRecordId,
+          artifactRef: programmingOutputPath,
+          outputPath: programmingOutputPath,
+        }),
+        expect.objectContaining({
+          artifactId: authorizationRecordId,
+          artifactRef: authorizationOutputPath,
+          outputPath: authorizationOutputPath,
+        }),
+      ]);
+
+      const validateOutput = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "artifact",
+          "registry",
+          "validate",
+          "--input",
+          registryPath,
+          "--json",
+        ]);
+      });
+      const validation = JSON.parse(validateOutput.stdout) as {
+        valid: boolean;
+        artifactCount: number;
+        errors: unknown[];
+      };
+      expect(validateOutput.stderr).toBe("");
+      expect(validateOutput.exitCode).toBeUndefined();
+      expect(validation).toMatchObject({
+        valid: true,
+        artifactCount: 2,
+        errors: [],
+      });
+
+      const extractActivationEvidence = async (outputPath: string) => {
+        const extractOutput = await captureConsoleWithExitCode(async () => {
+          await main([
+            "ontology",
+            "prompt",
+            "extract-artifact",
+            outputPath,
+            "--artifact-registry",
+            registryPath,
+            "--kind",
+            "self_reflection",
+            "--json",
+          ]);
+        });
+        const extracted = JSON.parse(extractOutput.stdout) as {
+          source: {
+            kind: string;
+            registry: { status: string; providerId: string; recordCount: number };
+          };
+          workArea: {
+            workAreaId: string;
+            rootRef: string;
+            paths?: string[];
+            constraints?: string[];
+          };
+        };
+        expect(extractOutput.stderr).toBe("");
+        expect(extractOutput.exitCode).toBeUndefined();
+        expect(extracted.source).toMatchObject({
+          kind: "artifact-registry-hit",
+          registry: {
+            status: "hit",
+            providerId: "programming-artifact-registry",
+            recordCount: 2,
+          },
+        });
+        expect(extracted.workArea.rootRef).toBe(outputPath);
+        expect(extracted.workArea.paths).toContain(outputPath);
+        return extracted;
+      };
+
+      const extractedProgramming = await extractActivationEvidence(programmingOutputPath);
+      expect(extractedProgramming.workArea).toMatchObject({
+        workAreaId: `artifact:${programmingRecordId}`,
+      });
+      expect(extractedProgramming.workArea.constraints).toEqual(
+        expect.arrayContaining([
+          "artifact-kind:activation-evidence",
+          "produced_by:qa-sdk ontology registry activate-pack programming-artifact-ontology",
+          "derived_from:operational-ontology/programming-artifacts",
+          "verifies:programming-artifact-ontology",
+        ]),
+      );
+
+      const extractedAuthorization = await extractActivationEvidence(authorizationOutputPath);
+      expect(extractedAuthorization.workArea).toMatchObject({
+        workAreaId: `artifact:${authorizationRecordId}`,
+      });
+      expect(extractedAuthorization.workArea.constraints).toEqual(
+        expect.arrayContaining([
+          "artifact-kind:activation-evidence",
+          "produced_by:qa-sdk ontology registry activate-pack authorization-ontology",
+          "derived_from:authorization-ontology",
+          "verifies:authorization-ontology",
+        ]),
+      );
+
+      const authorizationRecordBeforeRerun = structuredClone(
+        expectRegistryRecord(firstRecords, authorizationRecordId),
+      );
+      const programmingRerunOutput = await captureConsoleWithExitCode(async () => {
+        await main(
+          activationArgs(
+            "programming-artifact-ontology",
+            programmingRerunStorePath,
+            programmingOutputPath,
+          ),
+        );
+      });
+      const programmingRerun = JSON.parse(
+        programmingRerunOutput.stdout,
+      ) as RegistryActivationJson;
+
+      expect(programmingRerunOutput.stderr).toBe("");
+      expect(programmingRerunOutput.exitCode).toBeUndefined();
+      expect(programmingRerun.status).toBe("succeeded");
+      expect(programmingRerun.activationEvidence).toEqual({
+        appendStatus: "appended",
+        registryPath,
+        recordId: programmingRecordId,
+        recordRef: programmingOutputPath,
+        recordCount: 2,
+      });
+
+      const afterRerunRecords = await readActivationEvidenceRecords();
+      expect(afterRerunRecords).toHaveLength(2);
+      expect(expectRegistryRecord(afterRerunRecords, programmingRecordId)).toMatchObject({
+        artifactId: programmingRecordId,
+        artifactRef: programmingOutputPath,
+        outputPath: programmingOutputPath,
+        metadata: {
+          status: "succeeded",
+          packId: "programming-artifact-ontology",
+          ontologyId: "programming-artifact-ontology",
+        },
+      });
+      expect(expectRegistryRecord(afterRerunRecords, authorizationRecordId)).toEqual(
+        authorizationRecordBeforeRerun,
+      );
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  }, 30_000);
+
   it("registry activate-pack reports unknown pack failures through the public command path", async () => {
     const output = await captureConsoleWithExitCode(async () => {
       await main([
@@ -4620,6 +4946,8 @@ interface ActivationEvidenceRegistryRecordJson {
   kind: string;
   outputPath?: string;
   producedByRef?: string;
+  derivedFromRefs?: string[];
+  verifiesRefs?: string[];
   metadata?: {
     status?: string;
     packId?: string;

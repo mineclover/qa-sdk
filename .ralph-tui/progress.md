@@ -8,6 +8,7 @@ after each iteration and it's included in prompts for context.
 - Build validation for registry-service consumers should run dependency builds first; do not run `operational-ontology build` concurrently with `registry-service build` because registry-service DTS generation consumes operational-ontology declarations.
 - Activation evidence replay hardening should prove sidecar-only output, sidecar-first append, registry validate/list, `extract-artifact` provider hit, rerun upsert, and failed duplicate non-replacement in one CLI scenario proof.
 - Activation evidence registry records normalize duplicate refs; when pack id, ontology id, or known import ref are the same value, assertions should expect deduplicated `derivedFromRefs`/`verifiesRefs`.
+- Cross-pack activation evidence coexistence should use one registry file with isolated activation stores and distinct sidecar paths; assertions should verify record id/ref/path-specific upsert so rerunning one pack leaves the other record unchanged.
 
 ---
 
@@ -61,4 +62,16 @@ after each iteration and it's included in prompts for context.
   - The activation evidence path is pack-independent once `knownOntologyPackImportRef()` resolves the pack source ref; authorization uses the same programming artifact registry provider as programming artifacts.
   - Registry record creation deduplicates repeated refs, so authorization evidence has a single `authorization-ontology` `derivedFromRefs` entry even though pack id and import ref are identical.
   - A single CLI scenario can cover sidecar-only output, sidecar-first append, registry consumption, successful rerun upsert, and duplicate failed non-replacement for authorization without adding pack-specific runtime code.
+---
+
+## 2026-04-15 - US-005
+- Added a cross-pack CLI scenario proving one programming artifact registry can hold activation evidence for `programming-artifact-ontology` and `authorization-ontology` from separate isolated SQLite activation stores and distinct sidecar paths.
+- Proved both successful activations append distinct `activation-evidence` records, combined registry validate/list accepts both, `extract-artifact` resolves each sidecar to the matching pack record, and rerunning programming-artifact evidence does not mutate or duplicate the authorization record.
+- Updated the activation CLI spec, scenario matrix, and CLI hardening PRD Markdown/JSON to mark US-005 complete.
+- Files changed: `packages/cli/src/commands/ontology.test.ts`, `docs/specs/operational-ontology/operational-ontology-registry-activation-cli.spec.md`, `docs/specs/operational-ontology/operational-ontology-registry-activation-cli-scenario-matrix.spec.md`, `tasks/prd-ontology-registry-cli-scenario-hardening.md`, `tasks/prd-ontology-registry-cli-scenario-hardening.json`, `.ralph-tui/progress.md`.
+- Verification: `pnpm --filter @qa-sdk/cli test -- ontology`; `pnpm --filter @qa-sdk/cli typecheck`; `pnpm --filter @qa-sdk/cli build`; `pnpm --filter operational-ontology test -- programming-artifacts`; `pnpm --filter operational-ontology typecheck`; `pnpm --filter operational-ontology build`; `pnpm --filter registry-service test -- ontology`; `pnpm --filter registry-service typecheck`; `pnpm --filter registry-service build`; `pnpm --filter authorization-ontology test`; `pnpm --filter authorization-ontology typecheck`; `pnpm --filter authorization-ontology build`; `node packages/cli/dist/index.js def validate`.
+- **Learnings:**
+  - Cross-pack registry coexistence depends on distinct sidecar `artifactRef`/`outputPath` values; registry upsert matches by `artifactId`, `artifactRef`, or `outputPath`.
+  - `extract-artifact` proves the correct activation evidence record through `workArea.workAreaId` and relation-derived constraints, while `source.registry.recordCount` reflects all registry records loaded from the shared file.
+  - Rerun safety should snapshot the untouched pack record and compare it after the other pack upsert, because the rerun pack may legitimately refresh generated evidence metadata.
 ---

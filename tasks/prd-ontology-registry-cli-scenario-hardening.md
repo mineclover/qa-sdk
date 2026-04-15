@@ -122,13 +122,18 @@ No browser verification is required.
 **Description:** As an operator, I want one local programming artifact registry to hold activation evidence for multiple ontology packs so pack proofs do not collide.
 
 **Acceptance Criteria:**
-- [ ] Add a CLI scenario using one artifact registry file and separate isolated activation stores for `programming-artifact-ontology` and `authorization-ontology`.
-- [ ] Both successful activations append/upsert distinct `activation-evidence` records.
-- [ ] `ontology artifact registry list --kind activation-evidence --json` returns both records.
-- [ ] `ontology artifact registry validate --input <registry> --json` accepts the combined registry.
-- [ ] `extract-artifact` resolves each sidecar path to the correct pack evidence record.
-- [ ] Record ids, `producedByRef`, `derivedFromRefs`, `verifiesRefs`, and metadata remain pack-specific.
-- [ ] Re-running one pack does not mutate or duplicate the other pack's record.
+- [x] Add a CLI scenario using one artifact registry file and separate isolated activation stores for `programming-artifact-ontology` and `authorization-ontology`.
+- [x] Both successful activations append/upsert distinct `activation-evidence` records.
+- [x] `ontology artifact registry list --kind activation-evidence --json` returns both records.
+- [x] `ontology artifact registry validate --input <registry> --json` accepts the combined registry.
+- [x] `extract-artifact` resolves each sidecar path to the correct pack evidence record.
+- [x] Record ids, `producedByRef`, `derivedFromRefs`, `verifiesRefs`, and metadata remain pack-specific.
+- [x] Re-running one pack does not mutate or duplicate the other pack's record.
+
+**Confirmation Notes:**
+- Added `packages/cli/src/commands/ontology.test.ts` coverage for one shared programming artifact registry populated by successful `programming-artifact-ontology` and `authorization-ontology` activations from separate SQLite stores and separate sidecar paths.
+- The scenario proves two distinct activation evidence records, combined registry validate/list acceptance, per-sidecar `extract-artifact` `artifact-registry-hit` resolution, pack-specific ids/provenance/ref arrays/metadata, and programming rerun upsert without mutating or duplicating the authorization record.
+- Updated `operational-ontology-registry-activation-cli.spec.md` and the scenario matrix to record the completed cross-pack coexistence proof.
 
 ### US-006: Document Operator Failure Interpretation
 

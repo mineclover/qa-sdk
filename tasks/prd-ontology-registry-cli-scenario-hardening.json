@@ -170,12 +170,13 @@
         "Manual build validation runs dependency builds before dependent builds and does not run `operational-ontology build` concurrently with `registry-service build`."
       ],
       "priority": 5,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Added packages/cli/src/commands/ontology.test.ts coverage for one shared programming artifact registry populated by successful programming-artifact-ontology and authorization-ontology activations from separate SQLite stores and separate sidecar paths. The scenario proves two distinct activation-evidence records, combined registry validate/list acceptance, per-sidecar extract-artifact artifact-registry-hit resolution, pack-specific ids/provenance/derivedFromRefs/verifiesRefs/metadata, and programming rerun upsert without mutating or duplicating the authorization record. Updated operational-ontology-registry-activation-cli.spec.md and the scenario matrix to record the completed cross-pack coexistence proof. Required test/typecheck/build/def validate gates passed, with operational-ontology build completed before registry-service build.",
       "dependsOn": [
         "US-003",
         "US-004"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-006",
@@ -248,6 +249,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T04:06:11.693Z"
+    "updatedAt": "2026-04-15T04:14:57.440Z"
   }
 }
