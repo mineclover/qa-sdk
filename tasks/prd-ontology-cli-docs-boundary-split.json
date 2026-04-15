@@ -224,11 +224,12 @@
         "`node packages/cli/dist/index.js def validate` passes."
       ],
       "priority": 7,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Extracted quality-status source/snapshot helpers into packages/cli/src/commands/ontology/quality-status-evidence.ts while keeping quality-ledger loading, fallback, freshness, conflict, and governance run policy in ontology.ts for US-008. Source JSON qualityStatusRecords/governanceClosure fields and prompt quality metrics are behavior-preserving; all required US-007 gates passed.",
       "dependsOn": [
         "US-004"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-008",
@@ -429,6 +430,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T20:07:18.292Z"
+    "updatedAt": "2026-04-15T20:24:54.733Z"
   }
 }

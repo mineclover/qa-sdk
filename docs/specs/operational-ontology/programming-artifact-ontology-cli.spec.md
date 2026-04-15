@@ -19,6 +19,7 @@ def:
       type: depends_on
 sources:
   - packages/cli/src/commands/ontology/artifact-registry.ts
+  - packages/cli/src/commands/ontology/quality-status-evidence.ts
   - packages/cli/src/commands/ontology.ts
   - packages/cli/src/command-groups/ontology.commands.ts
 ---
@@ -138,7 +139,7 @@ These commands manage local JSON only. They do not start registry-service/index-
 
 ## Source Reference Boundary
 
-Current implementation sources are `packages/cli/src/commands/ontology/artifact-registry.ts`, `packages/cli/src/commands/ontology.ts`, and `packages/cli/src/command-groups/ontology.commands.ts`. The command group source stays stable because it owns public command descriptors. The monolithic implementation source stays only for command families whose split modules do not exist yet.
+Current implementation sources are `packages/cli/src/commands/ontology/artifact-registry.ts`, `packages/cli/src/commands/ontology/quality-status-evidence.ts`, `packages/cli/src/commands/ontology.ts`, and `packages/cli/src/command-groups/ontology.commands.ts`. The command group source stays stable because it owns public command descriptors. The monolithic implementation source stays only for command families whose split modules do not exist yet.
 
 Source boundaries:
 

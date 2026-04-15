@@ -14,6 +14,7 @@ def:
     - target: programming-artifact-ontology-registry-provider
       type: depends_on
 sources:
+  - packages/cli/src/commands/ontology/quality-status-evidence.ts
   - packages/cli/src/commands/ontology.ts
   - packages/cli/src/commands/ontology.test.ts
   - packages/cli/src/commands/quality.ts
@@ -129,20 +130,21 @@ prompt quality warning code:
 
 ## 구현 참조
 
-- current CLI evidence implementation: `packages/cli/src/commands/ontology.ts`
+- quality-status source/snapshot evidence: `packages/cli/src/commands/ontology/quality-status-evidence.ts`
+- current CLI ledger/freshness orchestration: `packages/cli/src/commands/ontology.ts`
 - quality export registry metadata: `packages/cli/src/commands/quality.ts`
 - provider sidecar merge: `packages/operational-ontology/src/internal/programming-artifact-core.ts`
 - prompt quality closure: `packages/operational-ontology/src/internal/prompt-artifact-core.ts`
 
 ## Source Reference Boundary
 
-Quality evidence is still implemented inside the ontology command monolith, so frontmatter keeps `packages/cli/src/commands/ontology.ts` until extraction stories create narrower files. After US-007 and US-008, this leaf should point CLI evidence sources at:
+Quality-status matching, snapshot candidate loading, descriptor resolution, snapshot summaries, and snapshot warnings now live in `packages/cli/src/commands/ontology/quality-status-evidence.ts`. Frontmatter keeps `packages/cli/src/commands/ontology.ts` until US-008 extracts quality-ledger fallback, freshness SLA, conflict warnings, and governance closure policy.
 
-| concern | future source boundary |
+| concern | source boundary |
 |---------|------------------------|
 | quality-status record matching, snapshot candidate loading, descriptor resolution, snapshot warnings | `packages/cli/src/commands/ontology/quality-status-evidence.ts` |
 | quality-ledger fallback, freshness SLA, conflict warnings, governance closure summary | `packages/cli/src/commands/ontology/quality-ledger-evidence.ts` |
 | artifact extraction source JSON integration | `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` |
 | quality export metadata production | `packages/cli/src/commands/quality.ts` |
 
-No source-map annotation is added here because current bottom-up lookup is file-level only and the future modules do not exist yet.
+No source-map annotation is added here because current bottom-up lookup is file-level only.
