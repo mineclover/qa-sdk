@@ -388,8 +388,8 @@
         "`node packages/cli/dist/index.js def validate` passes."
       ],
       "priority": 12,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Updated registry activation CLI/result/allocation source references to extracted activation modules, added activation source coverage to programming artifact CLI/development docs, and closed the registry/programming artifact source-map TODOs without adding @def.doc comments. Required docs status checks reported 0 diagnostics for registry allocation, activation CLI, activation evidence, programming artifact system, and programming artifact CLI targets. docs drift ran with 0 errors and 2 Ralph session metadata count warnings unrelated to ontology document/source drift. Required US-012 gates passed.",
       "dependsOn": [
         "US-005",
         "US-006",
@@ -398,7 +398,8 @@
         "US-009",
         "US-010",
         "US-011"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-013",
@@ -434,6 +435,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T21:07:55.047Z"
+    "updatedAt": "2026-04-15T21:17:30.061Z"
   }
 }

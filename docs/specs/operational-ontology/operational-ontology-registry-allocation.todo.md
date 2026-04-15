@@ -38,9 +38,9 @@ operational ontology schema를 registry-service의 ontology-aware registry/alloc
 
 ## Source-map follow-ups
 
-- [ ] After US-005 creates `packages/cli/src/commands/ontology/activation.ts`, narrow registry activation CLI/result/evidence doc frontmatter sources from `packages/cli/src/commands/ontology.ts` to the extracted activation module.
-- [ ] After US-006 and US-009 create `artifact-registry.ts` and `prompt-extract-artifact.ts`, add those real files to activation evidence source frontmatter where registry validate/list and sidecar provider consumption are the owned behavior.
-- [ ] Add `@def.doc` comments only if bottom-up lookup from the extracted source files still cannot reach the registry activation leaves through frontmatter sources.
+- [x] After US-005 creates `packages/cli/src/commands/ontology/activation.ts`, narrow registry activation CLI/result/evidence doc frontmatter sources from `packages/cli/src/commands/ontology.ts` to the extracted activation module.
+- [x] After US-006 and US-009 create `artifact-registry.ts` and `prompt-extract-artifact.ts`, add those real files to activation evidence source frontmatter where registry validate/list and sidecar provider consumption are the owned behavior.
+- [x] Do not add `@def.doc` comments for the split; frontmatter source narrowing reaches the registry activation leaves through the extracted modules.
 
 ## Phase 1: Operational schema allocation model — 완료
 

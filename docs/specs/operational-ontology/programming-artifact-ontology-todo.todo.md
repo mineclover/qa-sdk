@@ -53,7 +53,7 @@ def:
 - [x] quality export JSON snapshot evidence가 부족한 경우 explicit `--quality-ledger` fallback으로 resolved gate descriptor surface를 검증
 - [x] quality-status `generatedAt` 기반 stale SLA가 필요해지면 freshness threshold와 warning policy를 별도 story로 추가
 - [x] snapshot-first authority, ledger conflict warning, descriptor priority, freshness SLA를 system/CLI/development guide/prompt artifact generation docs에 반영
-- [ ] After US-006 through US-009 create real split CLI modules, narrow provider/activation-evidence/quality-evidence/CLI doc frontmatter sources from `packages/cli/src/commands/ontology.ts` to `artifact-registry.ts`, `prompt-extract-artifact.ts`, `quality-status-evidence.ts`, `quality-ledger-evidence.ts`, and `activation.ts` as applicable.
-- [ ] Add `@def.doc` comments only if bottom-up lookup from those extracted modules still misses the precise programming artifact leaf after frontmatter source narrowing.
+- [x] After US-006 through US-009 create real split CLI modules, narrow provider/activation-evidence/quality-evidence/CLI doc frontmatter sources from `packages/cli/src/commands/ontology.ts` to `artifact-registry.ts`, `prompt-extract-artifact.ts`, `quality-status-evidence.ts`, `quality-ledger-evidence.ts`, and `activation.ts` as applicable.
+- [x] Do not add `@def.doc` comments for the split; frontmatter source narrowing reaches the precise programming artifact leaves through the extracted modules.
 - [ ] local registry JSON을 registry-service/index-meta allocation lifecycle로 승격할 실제 운영 요구가 생기면 `operational-ontology-registry-allocation.plan.md` scope에서 새 story로 진행
 - [ ] quality-status closure가 registry JSON/ledger 외 원격 quality service를 읽어야 하는 요구가 생기면 별도 provider boundary와 failure policy를 설계

@@ -250,12 +250,27 @@ Source-map coverage gaps are recorded as TODO items in `operational-ontology-reg
 **Description:** As a documentation maintainer, I want all split docs to reference the new code modules so docs control plane status and drift checks remain useful.
 
 **Acceptance Criteria:**
-- [ ] Update `sources` or top-level `source:` entries for affected ontology specs to point at extracted modules where appropriate.
-- [ ] Update `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md` to record this boundary split as complete when implemented.
-- [ ] Update `docs/specs/operational-ontology/programming-artifact-ontology-todo.todo.md` if provider or quality evidence follow-ups change.
-- [ ] Run `qa-sdk docs status` for the registry allocation family, activation CLI leaf, activation evidence leaf, programming artifact system family, and programming artifact CLI leaf.
-- [ ] Run `qa-sdk docs drift --prd <converted-prd-json>` after this PRD is converted and completed.
-- [ ] Keep REST activation endpoint, remote activation service, pack authoring CLI, dynamic pack loading, and traversal mode implementation as follow-ups.
+- [x] Update `sources` or top-level `source:` entries for affected ontology specs to point at extracted modules where appropriate.
+- [x] Update `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md` to record this boundary split as complete when implemented.
+- [x] Update `docs/specs/operational-ontology/programming-artifact-ontology-todo.todo.md` if provider or quality evidence follow-ups change.
+- [x] Run `qa-sdk docs status` for the registry allocation family, activation CLI leaf, activation evidence leaf, programming artifact system family, and programming artifact CLI leaf.
+- [x] Run `qa-sdk docs drift --prd <converted-prd-json>` after this PRD is converted and completed.
+- [x] Keep REST activation endpoint, remote activation service, pack authoring CLI, dynamic pack loading, and traversal mode implementation as follow-ups.
+
+#### US-012 Control-Plane Evidence
+
+Updated activation and programming artifact source references now point at extracted modules where they own behavior. `packages/cli/src/commands/ontology.ts` remains only where docs explicitly describe stable router dispatch or generic prompt dependency handoff.
+
+Status checks:
+
+- `qa-sdk docs status operational-ontology-registry-allocation --json`: 13 family members, 83 sources, 0 tasks, 0 diagnostics.
+- `qa-sdk docs status operational-ontology-registry-activation-cli --json`: 7 family members, 33 sources, 0 tasks, 0 diagnostics.
+- `qa-sdk docs status operational-ontology-registry-activation-evidence --json`: 3 family members, 20 sources, 0 tasks, 0 diagnostics.
+- `qa-sdk docs status programming-artifact-ontology-system --json`: 12 family members, 57 sources, 0 tasks, 0 diagnostics.
+- `qa-sdk docs status programming-artifact-ontology-cli --json`: 4 family members, 13 sources, 0 tasks, 0 diagnostics.
+- `qa-sdk docs drift --prd tasks/prd-ontology-cli-docs-boundary-split.json --json`: 0 errors, 2 warnings. Both warnings are Ralph session metadata count drift in `.ralph-tui/session-meta.json` (`totalTasks` and `tasksCompleted`), not ontology document/source drift.
+
+Follow-ups remain unchanged for registry-service REST activation, remote activation service behavior, pack authoring CLI, dynamic external pack loading, and traversal mode implementation.
 
 ### US-013: Verify Behavior Preservation And File Size Reduction
 

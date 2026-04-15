@@ -18,7 +18,7 @@ def:
 sources:
   - packages/registry-service/src/modules/ontology/ontology-activation.helper.ts
   - packages/registry-service/src/modules/ontology/ontology-activation.helper.test.ts
-  - packages/cli/src/commands/ontology.ts
+  - packages/cli/src/commands/ontology/activation.ts
   - packages/cli/src/commands/ontology.test.ts
 ---
 
@@ -76,6 +76,4 @@ Structured failed activation results are not activation evidence. Managed activa
 
 ## Source Reference Boundary
 
-`OntologyPackActivationHelper` remains the source of truth for lifecycle result payloads, so registry-service helper source and tests stay in frontmatter. CLI-origin failure shaping, output sidecar write failures, and JSON printing currently live in `packages/cli/src/commands/ontology.ts`; after US-005 creates `packages/cli/src/commands/ontology/activation.ts`, this leaf should replace that CLI source with the extracted module path.
-
-The future split path is intentionally documented here instead of frontmatter because the module has not been extracted yet.
+`OntologyPackActivationHelper` remains the source of truth for lifecycle result payloads, so registry-service helper source and tests stay in frontmatter. CLI-origin failure shaping, output sidecar write failures, and JSON printing live in `packages/cli/src/commands/ontology/activation.ts`.

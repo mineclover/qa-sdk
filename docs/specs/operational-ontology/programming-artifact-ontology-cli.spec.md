@@ -22,6 +22,7 @@ sources:
   - packages/cli/src/commands/ontology/prompt-extract-artifact.ts
   - packages/cli/src/commands/ontology/quality-status-evidence.ts
   - packages/cli/src/commands/ontology/quality-ledger-evidence.ts
+  - packages/cli/src/commands/ontology/activation.ts
   - packages/cli/src/commands/ontology.ts
   - packages/cli/src/command-groups/ontology.commands.ts
 ---
@@ -141,7 +142,7 @@ These commands manage local JSON only. They do not start registry-service/index-
 
 ## Source Reference Boundary
 
-Current implementation sources are `packages/cli/src/commands/ontology/artifact-registry.ts`, `packages/cli/src/commands/ontology/prompt-extract-artifact.ts`, `packages/cli/src/commands/ontology/quality-status-evidence.ts`, `packages/cli/src/commands/ontology/quality-ledger-evidence.ts`, `packages/cli/src/commands/ontology.ts`, and `packages/cli/src/command-groups/ontology.commands.ts`. The command group source stays stable because it owns public command descriptors. The monolithic ontology command source remains the static router and dependency handoff point for split command modules.
+Current implementation sources are `packages/cli/src/commands/ontology/artifact-registry.ts`, `packages/cli/src/commands/ontology/prompt-extract-artifact.ts`, `packages/cli/src/commands/ontology/quality-status-evidence.ts`, `packages/cli/src/commands/ontology/quality-ledger-evidence.ts`, `packages/cli/src/commands/ontology/activation.ts`, `packages/cli/src/commands/ontology.ts`, and `packages/cli/src/command-groups/ontology.commands.ts`. The command group source stays stable because it owns public command descriptors. The monolithic ontology command source remains the static router and dependency handoff point for split command modules.
 
 Source boundaries:
 
@@ -153,4 +154,4 @@ Source boundaries:
 | quality-ledger fallback, freshness, governance closure | `packages/cli/src/commands/ontology/quality-ledger-evidence.ts` |
 | `ontology registry activate-pack` production of activation evidence | `packages/cli/src/commands/ontology/activation.ts` |
 
-Existing split modules appear in frontmatter; `packages/cli/src/commands/ontology.ts` stays there only for stable router dispatch.
+Existing split modules appear in frontmatter; `packages/cli/src/commands/ontology.ts` stays there only for stable router dispatch and generic prompt dependency handoff.

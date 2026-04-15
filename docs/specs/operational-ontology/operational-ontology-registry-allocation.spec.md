@@ -92,14 +92,14 @@ This module does not add registry-service REST activation, a remote activation s
 
 Module sources stay conservative and point at the stable implementation boundaries that define allocation, store/service lifecycle, sync, and helper activation. PRD files are not frontmatter sources for this module; historical PRDs remain traces in task files or leaf narrative only, so docs status for this family is not widened by unrelated PRD documents.
 
-Future CLI split module paths are recorded in the owning leaf bodies, not in frontmatter, until extraction stories create those files. After extraction, the expected narrowing is:
+Post-split CLI source boundaries are owned by the activation leaves:
 
-| leaf | current conservative source | future source boundary |
-|------|-----------------------------|------------------------|
-| `operational-ontology-registry-activation-cli` | `packages/cli/src/commands/ontology.ts` | `packages/cli/src/commands/ontology/activation.ts` |
-| `operational-ontology-registry-activation-result` | `packages/cli/src/commands/ontology.ts` plus registry-service helper | `packages/cli/src/commands/ontology/activation.ts` plus registry-service helper |
-| `operational-ontology-registry-activation-evidence` | `packages/cli/src/commands/ontology.ts` plus activation evidence registry helper | `packages/cli/src/commands/ontology/activation.ts`, `packages/cli/src/commands/ontology/artifact-registry.ts`, and the activation evidence registry helper |
-| `operational-ontology-registry-activation-cli-scenario-matrix` | current ontology CLI and ontology package tests | split module tests only if later stories move the scenario coverage |
+| leaf | source boundary |
+|------|-----------------|
+| `operational-ontology-registry-activation-cli` | `packages/cli/src/commands/ontology/activation.ts` plus command descriptor, local runtime, helper, and CLI tests |
+| `operational-ontology-registry-activation-result` | `packages/cli/src/commands/ontology/activation.ts` plus registry-service helper |
+| `operational-ontology-registry-activation-evidence` | `packages/cli/src/commands/ontology/activation.ts`, `packages/cli/src/commands/ontology/artifact-registry.ts`, `packages/cli/src/commands/ontology/prompt-extract-artifact.ts`, and the activation evidence registry helper |
+| `operational-ontology-registry-activation-cli-scenario-matrix` | CLI and package tests that prove local activation scenarios |
 
 ## 검증 명령
 

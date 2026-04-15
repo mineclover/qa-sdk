@@ -15,7 +15,7 @@ def:
       type: depends_on
 sources:
   - packages/cli/src/command-groups/ontology.commands.ts
-  - packages/cli/src/commands/ontology.ts
+  - packages/cli/src/commands/ontology/activation.ts
   - packages/cli/src/commands/ontology.test.ts
   - packages/cli/src/lib/known-ontology-packs.ts
   - packages/registry-service/src/ontology-local-runtime.ts
@@ -103,9 +103,9 @@ This command does not define registry-service REST activation, remote activation
 
 ## Source Reference Boundary
 
-Current frontmatter sources point at the real command router and monolithic implementation because `packages/cli/src/commands/ontology/activation.ts` does not exist yet. After US-005 extracts the activation CLI module, this leaf should narrow the CLI implementation source from `packages/cli/src/commands/ontology.ts` to `packages/cli/src/commands/ontology/activation.ts` while keeping `packages/cli/src/command-groups/ontology.commands.ts`, local runtime files, helper source, and CLI tests as evidence.
+Current frontmatter sources point at the extracted activation implementation module, command descriptor source, local runtime files, helper source, and CLI tests. `packages/cli/src/commands/ontology.ts` remains the public router, but it is no longer the implementation source for activation parsing, output handling, structured command failures, known pack imports, or explicit evidence append orchestration.
 
-No `@def.doc` annotation is required before extraction because the file-level source map already reaches the current command implementation.
+No `@def.doc` annotation is required because the file-level source map reaches the extracted activation command implementation.
 
 ## 검증 명령
 
