@@ -27,6 +27,8 @@ def:
       type: traces_to
 sources:
   - packages/cli/src/commands/ontology.ts
+  - packages/cli/src/commands/ontology/quality-status-evidence.ts
+  - packages/cli/src/commands/ontology/quality-ledger-evidence.ts
   - packages/cli/src/commands/ontology.test.ts
 ---
 

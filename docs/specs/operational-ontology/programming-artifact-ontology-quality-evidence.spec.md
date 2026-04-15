@@ -15,7 +15,7 @@ def:
       type: depends_on
 sources:
   - packages/cli/src/commands/ontology/quality-status-evidence.ts
-  - packages/cli/src/commands/ontology.ts
+  - packages/cli/src/commands/ontology/quality-ledger-evidence.ts
   - packages/cli/src/commands/ontology.test.ts
   - packages/cli/src/commands/quality.ts
   - packages/operational-ontology/src/internal/programming-artifact-core.ts
@@ -131,14 +131,14 @@ prompt quality warning code:
 ## 구현 참조
 
 - quality-status source/snapshot evidence: `packages/cli/src/commands/ontology/quality-status-evidence.ts`
-- current CLI ledger/freshness orchestration: `packages/cli/src/commands/ontology.ts`
+- quality-ledger fallback, freshness, prompt evidence conversion, governance run helpers, and closure summary: `packages/cli/src/commands/ontology/quality-ledger-evidence.ts`
 - quality export registry metadata: `packages/cli/src/commands/quality.ts`
 - provider sidecar merge: `packages/operational-ontology/src/internal/programming-artifact-core.ts`
 - prompt quality closure: `packages/operational-ontology/src/internal/prompt-artifact-core.ts`
 
 ## Source Reference Boundary
 
-Quality-status matching, snapshot candidate loading, descriptor resolution, snapshot summaries, and snapshot warnings now live in `packages/cli/src/commands/ontology/quality-status-evidence.ts`. Frontmatter keeps `packages/cli/src/commands/ontology.ts` until US-008 extracts quality-ledger fallback, freshness SLA, conflict warnings, and governance closure policy.
+Quality-status matching, snapshot candidate loading, descriptor resolution, snapshot summaries, and snapshot warnings live in `packages/cli/src/commands/ontology/quality-status-evidence.ts`. Quality-ledger loading, snapshot-first fallback decisions, freshness SLA, conflict warnings, prompt evidence conversion, governance run helpers, and source-level governance closure live in `packages/cli/src/commands/ontology/quality-ledger-evidence.ts`.
 
 | concern | source boundary |
 |---------|------------------------|

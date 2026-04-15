@@ -18,6 +18,7 @@ sources:
   - docs/specs/operational-ontology/programming-artifact-ontology-context-simulation.spec.md
   - packages/operational-ontology/src/internal/programming-artifact-core.ts
   - packages/cli/src/commands/ontology/quality-status-evidence.ts
+  - packages/cli/src/commands/ontology/quality-ledger-evidence.ts
   - packages/cli/src/commands/ontology.ts
 ---
 
@@ -53,8 +54,8 @@ sources:
    vocabulary, pack, registry store, provider 구현의 SSOT다.
 9. `packages/operational-ontology/src/programming-artifacts.test.ts`
    pack validation과 provider behavior의 살아있는 예시다.
-10. `packages/cli/src/commands/ontology/quality-status-evidence.ts`, `packages/cli/src/commands/ontology.ts`
-   quality-status source/snapshot boundary와 `extract-artifact` CLI routing/fallback 순서의 SSOT다.
+10. `packages/cli/src/commands/ontology/quality-status-evidence.ts`, `packages/cli/src/commands/ontology/quality-ledger-evidence.ts`, `packages/cli/src/commands/ontology.ts`
+   quality-status source/snapshot boundary, quality-ledger/freshness/closure policy, and `extract-artifact` CLI routing/fallback 순서의 SSOT다.
 
 Adjacent review:
 
