@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildDocumentGraphIndex,
+  BROAD_DOCUMENT_GRAPH_TRAVERSAL_WARNING,
   CANONICAL_TRAVERSAL_AXES,
   DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
   DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
   DOCUMENT_GRAPH_FAMILY_ROLE_TYPES,
   formatDocumentGraphTraversalRoleGroups,
   MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
+  MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
   normalizeDocumentEnvelope,
   normalizeDocumentGraphTraversalInput,
   traverseDocumentGraph,
@@ -49,6 +51,21 @@ describe("docs-control-plane graph traversal", () => {
     expect(capped.diagnostics).toEqual([
       expect.stringContaining("depth capped"),
     ]);
+
+    const limitCapped = normalizeDocumentGraphTraversalInput({
+      target: "root",
+      limit: MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT + 10,
+    });
+    expect(limitCapped.limit).toBe(MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT);
+    expect(limitCapped.diagnostics).toEqual([
+      expect.stringContaining("limit capped"),
+    ]);
+
+    expect(normalizeDocumentGraphTraversalInput({
+      target: "root",
+      axes: ["context"],
+      includeContext: true,
+    }).diagnostics).toContain(BROAD_DOCUMENT_GRAPH_TRAVERSAL_WARNING);
   });
 
   it("expands each traversal preset to its canonical axes, direction, and default depth", () => {
@@ -187,6 +204,10 @@ describe("docs-control-plane graph traversal", () => {
     });
     expect(defaultDepth.nodes.map((node) => node.id)).toContain("document:composition-out");
     expect(defaultDepth.nodes.map((node) => node.id)).not.toContain("document:composition-depth-2");
+    expect(defaultDepth.truncated).toBe(true);
+    expect(defaultDepth.omittedCounts).toMatchObject({
+      depth: 1,
+    });
 
     const depthTwo = traverseDocumentGraph(index, {
       target: "root",
@@ -205,6 +226,40 @@ describe("docs-control-plane graph traversal", () => {
     });
   });
 
+  it("uses the default node limit and lets --limit lower or raise it within the safe maximum", () => {
+    const childCount = DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT + 5;
+    const index = wideFixtureIndex(childCount);
+
+    const defaultLimit = traverseDocumentGraph(index, {
+      target: "wide-root",
+      axes: ["dependency"],
+    });
+    expect(defaultLimit.input.limit).toBe(DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT);
+    expect(defaultLimit.nodes).toHaveLength(DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT);
+    expect(defaultLimit.truncated).toBe(true);
+    expect(defaultLimit.omittedCount).toBe(childCount + 1 - DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT);
+    expect(defaultLimit.omittedCounts).toMatchObject({
+      nodes: childCount + 1 - DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
+    });
+
+    const lowered = traverseDocumentGraph(index, {
+      target: "wide-root",
+      axes: ["dependency"],
+      limit: 3,
+    });
+    expect(lowered.nodes).toHaveLength(3);
+    expect(lowered.omittedCounts.nodes).toBe(childCount - 2);
+
+    const raisedLimit = DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT + 3;
+    const raised = traverseDocumentGraph(index, {
+      target: "wide-root",
+      axes: ["dependency"],
+      limit: raisedLimit,
+    });
+    expect(raised.input.limit).toBe(raisedLimit);
+    expect(raised.nodes).toHaveLength(raisedLimit);
+  });
+
   it("caps returned nodes with truncation and omitted counts", () => {
     const index = fixtureIndex();
 
@@ -220,8 +275,38 @@ describe("docs-control-plane graph traversal", () => {
     ]);
     expect(result.truncated).toBe(true);
     expect(result.omittedCount).toBe(2);
+    expect(result.omittedCounts).toMatchObject({
+      nodes: 2,
+      depth: 1,
+    });
     expect(result.nodeCount).toBe(2);
     expect(result.edges).toHaveLength(1);
+  });
+
+  it("enforces the maximum depth and reports depth-frontier omissions", () => {
+    const index = chainFixtureIndex(MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH + 2);
+
+    const result = traverseDocumentGraph(index, {
+      target: "chain-0",
+      axes: ["dependency"],
+      depth: MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH + 10,
+      limit: MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH + 10,
+    });
+
+    expect(result.input.depth).toBe(MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH);
+    expect(result.diagnostics).toEqual([
+      expect.stringContaining("depth capped"),
+    ]);
+    expect(result.nodes.map((node) => node.id)).toContain(
+      `document:chain-${MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH}`,
+    );
+    expect(result.nodes.map((node) => node.id)).not.toContain(
+      `document:chain-${MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH + 1}`,
+    );
+    expect(result.truncated).toBe(true);
+    expect(result.omittedCounts).toMatchObject({
+      depth: 1,
+    });
   });
 
   it("does not revisit nodes indefinitely across cycles", () => {
@@ -527,6 +612,27 @@ function fixtureIndex() {
       graphEdge("role", "document:root", "document:role-out"),
       graphEdge("context", "document:root", "context:tag:root"),
     ],
+  });
+}
+
+function wideFixtureIndex(childCount: number) {
+  const ids = [
+    "wide-root",
+    ...Array.from({ length: childCount }, (_, index) => `wide-${index}`),
+  ];
+  return buildDocumentGraphIndex(ids.map((stableId) => envelope(stableId)), {
+    edges: Array.from({ length: childCount }, (_, index) =>
+      graphEdge("dependency", "document:wide-root", `document:wide-${index}`)
+    ),
+  });
+}
+
+function chainFixtureIndex(nodeCount: number) {
+  const ids = Array.from({ length: nodeCount }, (_, index) => `chain-${index}`);
+  return buildDocumentGraphIndex(ids.map((stableId) => envelope(stableId)), {
+    edges: Array.from({ length: Math.max(0, nodeCount - 1) }, (_, index) =>
+      graphEdge("dependency", `document:chain-${index}`, `document:chain-${index + 1}`)
+    ),
   });
 }
 

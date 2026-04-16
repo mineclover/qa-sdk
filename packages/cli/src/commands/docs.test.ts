@@ -540,6 +540,13 @@ Track inventory scenario coverage.
       reasons: Array<{ reason: string }>;
     }>;
     readonly roleGroups: Array<{ roleType: string }>;
+    readonly truncated: boolean;
+    readonly omittedCount: number;
+    readonly omittedCounts: {
+      readonly nodes: number;
+      readonly edges: number;
+      readonly depth: number;
+    };
   }
 
   it("prints text status and identifies todo follow-up state", async () => {
@@ -778,9 +785,45 @@ Track inventory scenario coverage.
     expect(text).toContain("direction: out");
     expect(text).toContain("node count:");
     expect(text).toContain("edge count:");
-    expect(text).toContain("truncated: no");
+    expect(text).toContain("truncated: yes");
     expect(text).toContain("edge reasons");
     expect(text).toContain("reason: link:contains");
+  });
+
+  it("prints graph guardrail truncation and broad context warnings", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "graph",
+      "checkout-spec",
+      "--axis",
+      "role",
+      "--direction",
+      "out",
+      "--limit",
+      "2",
+      "--root",
+      workspace,
+    ]);
+
+    const limitedText = output();
+    expect(limitedText).toContain("limit: 2");
+    expect(limitedText).toContain("truncated: yes (omitted");
+    expect(limitedText).toContain("node(s)");
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs([
+      "graph",
+      "checkout-spec",
+      "--axis",
+      "context",
+      "--root",
+      workspace,
+    ]);
+
+    const contextText = output();
+    expect(contextText).toContain("axes: context");
+    expect(contextText).toContain("warning: context/search traversal is broad");
   });
 
   it("traverses composition, role, source, evidence, trace, and preset graph paths", async () => {
@@ -1031,6 +1074,7 @@ Track inventory scenario coverage.
 
     const text = output();
     expect(text).toContain('docs search: "Coordinate checkout"');
+    expect(text).toContain("warning: text search is broad");
     expect(text).toContain("[spec] checkout-spec");
     expect(text).toContain("[prd] tasks/checkout-prd");
   });

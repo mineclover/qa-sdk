@@ -54,9 +54,11 @@ export {
   buildDocumentGraphIndex,
 } from "./graph-index.js";
 export {
+  BROAD_DOCUMENT_GRAPH_TRAVERSAL_WARNING,
   DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
   DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
   formatDocumentGraphTraversalRoleGroups,
+  MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
   MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
   normalizeDocumentGraphTraversalInput,
   traverseDocumentGraph,
@@ -78,6 +80,7 @@ export type {
   TraversalAxis,
   TraversalDirection,
   TraversalInputSummary,
+  TraversalOmittedCounts,
   TraversalPresetDefinition,
   TraversalPresetId,
   TraversalResultSummary,

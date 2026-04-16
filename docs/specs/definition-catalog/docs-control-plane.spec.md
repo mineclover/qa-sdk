@@ -66,6 +66,9 @@ Docs graph traversal은 authored vocabulary를 대체하지 않고 내부 분류
 - presets: `family`, `implementation`, `review`, `impact`, `prd-completion`은 편의 view이며 canonical axis가 아니다. 각 preset은 기존 axis와 direction/depth 기본값만 확장한다.
   `family`=`role+composition`, `implementation`/`prd-completion`=`trace+source+evidence`, `review`=`dependency+constraint+evidence+role`, `impact`=역방향 `dependency+trace+source+evidence`.
 - source traversal은 docs control-plane adapters가 만든 `DocumentEnvelope.sources`, metadata source refs, PRD/session path, artifact evidence refs를 읽는다. `qa-sdk def find-by-file`의 DB-owned `code_references` explicit source-map 조회와 별도 표면이다.
+- traversal guardrail: 기본 depth는 `1`, 최대 depth는 `6`; 기본 limit는 `100`, 최대 limit는 `500`이다. 초과 요청은 capped diagnostic을 남긴다.
+- cap에 걸린 결과는 `truncated: true`, legacy `omittedCount`, 세부 `omittedCounts.nodes|edges|depth`를 노출한다.
+- `context` axis와 free-text search는 broad traversal로 취급하고 text output에서 warning을 표시한다.
 
 ## `qa-sdk def`와 `qa-sdk docs`
 

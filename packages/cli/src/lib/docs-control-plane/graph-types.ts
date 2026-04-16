@@ -137,12 +137,22 @@ export interface TraversalInputSummary {
   readonly preset?: TraversalPresetId;
 }
 
+export interface TraversalOmittedCounts {
+  /** Returned node cap omissions after traversal ordering is applied. */
+  readonly nodes: number;
+  /** Traversed or frontier edges hidden because node/depth caps were hit. */
+  readonly edges: number;
+  /** Unique frontier nodes reachable beyond the enforced depth cap. */
+  readonly depth: number;
+}
+
 export interface TraversalResultSummary {
   readonly input: TraversalInputSummary;
   readonly targetNodeId?: string;
   readonly nodeCount: number;
   readonly edgeCount: number;
   readonly truncated: boolean;
+  readonly omittedCounts: TraversalOmittedCounts;
   readonly omittedCount: number;
   readonly diagnostics: readonly string[];
 }

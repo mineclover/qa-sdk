@@ -7,6 +7,12 @@ import {
   type RestCommandHandler,
 } from "../command-spec.js";
 import { cliDocs } from "../commands/docs.js";
+import {
+  DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
+  DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
+  MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
+  MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
+} from "../lib/docs-control-plane/index.js";
 
 export const DOCS_COMMAND_DESCRIPTORS = [
   {
@@ -34,8 +40,8 @@ export const DOCS_COMMAND_DESCRIPTORS = [
       { flag: "--graph", type: "boolean", description: "use graph traversal; defaults to the family preset" },
       { flag: "--axis", valueHint: "<csv>", type: "string", description: "traversal axes, repeatable or comma-separated" },
       { flag: "--direction", valueHint: "out|in|both", type: "string", description: "traversal direction" },
-      { flag: "--depth", valueHint: "<n>", type: "string", description: "non-negative traversal depth" },
-      { flag: "--limit", valueHint: "<n>", type: "string", description: "maximum returned nodes" },
+      { flag: "--depth", valueHint: "<n>", type: "string", description: `non-negative traversal depth (default ${DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH}, max ${MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH})` },
+      { flag: "--limit", valueHint: "<n>", type: "string", description: `maximum returned nodes (default ${DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT}, max ${MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT})` },
       { flag: "--preset", valueHint: "<name>", type: "string", description: "traversal preset" },
       { flag: "--json", type: "boolean", description: "emit structured JSON" },
       { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },
@@ -49,8 +55,8 @@ export const DOCS_COMMAND_DESCRIPTORS = [
     options: [
       { flag: "--axis", valueHint: "<csv>", type: "string", description: "traversal axes, repeatable or comma-separated" },
       { flag: "--direction", valueHint: "out|in|both", type: "string", description: "traversal direction" },
-      { flag: "--depth", valueHint: "<n>", type: "string", description: "non-negative traversal depth" },
-      { flag: "--limit", valueHint: "<n>", type: "string", description: "maximum returned nodes" },
+      { flag: "--depth", valueHint: "<n>", type: "string", description: `non-negative traversal depth (default ${DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH}, max ${MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH})` },
+      { flag: "--limit", valueHint: "<n>", type: "string", description: `maximum returned nodes (default ${DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT}, max ${MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT})` },
       { flag: "--preset", valueHint: "<name>", type: "string", description: "traversal preset" },
       { flag: "--json", type: "boolean", description: "emit structured JSON" },
       { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },

@@ -13,6 +13,7 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import {
   createArtifactEvidenceAdapter,
   buildDocumentGraphIndex,
+  BROAD_DOCUMENT_GRAPH_TRAVERSAL_WARNING,
   CANONICAL_TRAVERSAL_AXES,
   collectDocumentGraphTraversalDocuments,
   createDefinitionMarkdownAdapter,
@@ -38,7 +39,11 @@ import {
   traverseDocumentGraph,
   type DocumentGraphTraversalInput,
   type DocumentGraphTraversalResult,
+  DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
+  DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
   type PrdCompletionSyncPreview,
+  MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
+  MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
   type TraversalAxis,
   type TraversalDirection,
   type TraversalPresetId,
@@ -176,6 +181,7 @@ interface DocsGraphCliResult {
     readonly missingRoles: number;
   };
   readonly truncated: boolean;
+  readonly omittedCounts: DocumentGraphTraversalResult["omittedCounts"];
   readonly omittedCount: number;
   readonly diagnostics: readonly string[];
 }
@@ -323,8 +329,8 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "--prd <file>                 scope drift checks to a PRD markdown/JSON family",
       "--axis <csv>                 graph traversal axes: composition, refinement, dependency, constraint, trace, source, evidence, role, context",
       "--direction out|in|both      graph traversal direction",
-      "--depth <n>                  graph traversal depth",
-      "--limit <n>                  maximum graph nodes to return",
+      `--depth <n>                  graph traversal depth (default ${DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH}, max ${MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH})`,
+      `--limit <n>                  maximum graph nodes to return (default ${DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT}, max ${MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT})`,
       "--preset <name>              graph traversal preset: family, implementation, review, impact, prd-completion",
       "--graph                      use graph traversal for docs collect; defaults to the family preset",
       "--output <file>              PRD markdown scaffold or PRD JSON conversion output path",
@@ -807,6 +813,7 @@ function toDocsGraphCliResult(
       missingRoles: result.missingRoles.length,
     },
     truncated: result.truncated,
+    omittedCounts: result.omittedCounts,
     omittedCount: result.omittedCount,
     diagnostics: result.diagnostics,
   };
@@ -2007,6 +2014,7 @@ function printCollect(result: CollectResult): void {
 
 function printSearch(result: SearchResult): void {
   console.log(`docs search: "${result.query}" -> ${result.results.length} result(s)`);
+  console.log("  warning: text search is broad; prefer metadata filters or docs graph with explicit axes for bounded traversal");
   for (const item of result.results) {
     console.log(`  - [${item.kind}] ${item.stableId}`);
     console.log(`    path: ${item.path}`);
@@ -2023,9 +2031,12 @@ function printGraph(result: DocsGraphCliResult): void {
   console.log(`  depth: ${result.input.depth}`);
   console.log(`  limit: ${result.input.limit}`);
   if (result.input.preset) console.log(`  preset: ${result.input.preset}`);
+  for (const warning of graphTextWarnings(result)) {
+    console.log(`  ${warning}`);
+  }
   console.log(`  node count: ${result.counts.nodes}`);
   console.log(`  edge count: ${result.counts.edges}`);
-  console.log(`  truncated: ${result.truncated ? "yes" : "no"}${result.omittedCount > 0 ? ` (omitted ${result.omittedCount})` : ""}`);
+  console.log(`  truncated: ${result.truncated ? "yes" : "no"}${formatOmittedCounts(result)}`);
 
   console.log("");
   console.log(`nodes (${result.nodes.length}):`);
@@ -2052,16 +2063,39 @@ function printGraph(result: DocsGraphCliResult): void {
     console.log(line);
   }
 
-  if (result.diagnostics.length > 0) {
+  const diagnostics = result.diagnostics.filter((diagnostic) => !isGraphWarningDiagnostic(diagnostic));
+  if (diagnostics.length > 0) {
     console.log("");
-    console.log(`diagnostics (${result.diagnostics.length}):`);
-    for (const diagnostic of result.diagnostics.slice(0, 5)) {
+    console.log(`diagnostics (${diagnostics.length}):`);
+    for (const diagnostic of diagnostics.slice(0, 5)) {
       console.log(`  - ${diagnostic}`);
     }
-    if (result.diagnostics.length > 5) {
-      console.log(`  ... ${result.diagnostics.length - 5} more`);
+    if (diagnostics.length > 5) {
+      console.log(`  ... ${diagnostics.length - 5} more`);
     }
   }
+}
+
+function graphTextWarnings(result: DocsGraphCliResult): readonly string[] {
+  const warnings = result.diagnostics.filter(isGraphWarningDiagnostic);
+  if (warnings.length > 0) return warnings;
+  if (result.input.axes.includes("context")) return [BROAD_DOCUMENT_GRAPH_TRAVERSAL_WARNING];
+  return [];
+}
+
+function isGraphWarningDiagnostic(diagnostic: string): boolean {
+  return diagnostic.startsWith("warning:");
+}
+
+function formatOmittedCounts(result: DocsGraphCliResult): string {
+  if (!result.truncated) return "";
+  const parts = [];
+  if (result.omittedCounts.nodes > 0) parts.push(`${result.omittedCounts.nodes} node(s)`);
+  if (result.omittedCounts.edges > 0) parts.push(`${result.omittedCounts.edges} edge(s)`);
+  if (result.omittedCounts.depth > 0) {
+    parts.push(`${result.omittedCounts.depth} depth-frontier node(s)`);
+  }
+  return parts.length > 0 ? ` (omitted ${parts.join(", ")})` : "";
 }
 
 function formatRawSource(rawSource: DocumentRawSourcePointer): string {

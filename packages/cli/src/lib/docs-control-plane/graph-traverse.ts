@@ -9,6 +9,7 @@ import {
   type TraversalAxis,
   type TraversalDirection,
   type TraversalInputSummary,
+  type TraversalOmittedCounts,
   type TraversalPresetId,
   type TraversalResultSummary,
 } from "./graph-types.js";
@@ -24,6 +25,9 @@ import type { DocumentMetadata } from "./types.js";
 export const DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH = 1;
 export const MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH = 6;
 export const DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT = 100;
+export const MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT = 500;
+export const BROAD_DOCUMENT_GRAPH_TRAVERSAL_WARNING =
+  "warning: context/search traversal is broad; keep --depth and --limit tight or choose a stricter preset";
 
 export interface DocumentGraphTraversalInput {
   readonly target: string;
@@ -166,7 +170,20 @@ export function normalizeDocumentGraphTraversalInput(
   }
 
   const rawLimit = input.limit ?? DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT;
-  const limit = normalizeNonNegativeInteger(rawLimit, DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT);
+  const normalizedLimit = normalizeNonNegativeInteger(
+    rawLimit,
+    DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
+  );
+  const limit = Math.min(normalizedLimit, MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT);
+  if (normalizedLimit > MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT) {
+    diagnostics.push(
+      `limit capped at ${MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT} from requested ${normalizedLimit}`,
+    );
+  }
+
+  if (axes.includes("context")) {
+    diagnostics.push(BROAD_DOCUMENT_GRAPH_TRAVERSAL_WARNING);
+  }
 
   return {
     target: input.target,
@@ -205,6 +222,7 @@ export function traverseDocumentGraph(
       nodeCount: 0,
       edgeCount: 0,
       truncated: false,
+      omittedCounts: emptyOmittedCounts(),
       omittedCount: 0,
       diagnostics: resultDiagnostics,
       nodes: [],
@@ -228,10 +246,24 @@ export function traverseDocumentGraph(
   }
 
   const traversedEdges = new Map<string, EdgeVisit>();
+  const depthOmittedNodeIds = new Set<string>();
+  const depthOmittedEdgeIds = new Set<string>();
 
   for (let cursor = 0; cursor < queue.length; cursor += 1) {
-    const current = queue[cursor]!;
-    if (current.depth >= normalizedInput.depth) continue;
+    const current = queue[cursor];
+    if (!current) continue;
+    if (current.depth >= normalizedInput.depth) {
+      recordDepthOmissions(
+        index,
+        current.node.id,
+        normalizedInput.direction,
+        axes,
+        visits,
+        depthOmittedNodeIds,
+        depthOmittedEdgeIds,
+      );
+      continue;
+    }
 
     for (const candidate of traversalCandidates(index, current.node.id, normalizedInput.direction)) {
       if (!axes.has(candidate.edge.axis)) continue;
@@ -262,14 +294,21 @@ export function traverseDocumentGraph(
 
   const allVisited = [...visits.values()];
   const included = allVisited.slice(0, normalizedInput.limit);
-  const omittedCount = Math.max(0, allVisited.length - included.length);
+  const omittedNodeCount = Math.max(0, allVisited.length - included.length);
   const includedNodeIds = new Set(included.map((visit) => visit.node.id));
-  const edges = [...traversedEdges.values()]
+  const allTraversedEdges = [...traversedEdges.values()];
+  const includedEdgeVisits = allTraversedEdges
     .filter((visit) =>
       includedNodeIds.has(visit.step.fromNodeId) &&
       includedNodeIds.has(visit.step.toNodeId)
-    )
-    .map(toTraversalEdge);
+    );
+  const edges = includedEdgeVisits.map(toTraversalEdge);
+  const omittedCounts: TraversalOmittedCounts = {
+    nodes: omittedNodeCount,
+    edges: Math.max(0, allTraversedEdges.length - includedEdgeVisits.length) +
+      depthOmittedEdgeIds.size,
+    depth: depthOmittedNodeIds.size,
+  };
   const paths = included.map((visit) => visit.path);
   const nodes = included.map(toTraversalNode);
   const roleSummary = buildTraversalRoleSummary(
@@ -284,8 +323,9 @@ export function traverseDocumentGraph(
     targetNodeId: rootNodes[0]?.id,
     nodeCount: nodes.length,
     edgeCount: edges.length,
-    truncated: omittedCount > 0,
-    omittedCount,
+    truncated: isTraversalTruncated(omittedCounts),
+    omittedCounts,
+    omittedCount: omittedCounts.nodes,
     diagnostics,
     nodes,
     edges,
@@ -293,6 +333,39 @@ export function traverseDocumentGraph(
     roleGroups: roleSummary.roleGroups,
     missingRoles: roleSummary.missingRoles,
   };
+}
+
+function recordDepthOmissions(
+  index: DocumentGraphIndex,
+  nodeId: string,
+  direction: TraversalDirection,
+  axes: ReadonlySet<TraversalAxis>,
+  visits: ReadonlyMap<string, VisitState>,
+  depthOmittedNodeIds: Set<string>,
+  depthOmittedEdgeIds: Set<string>,
+): void {
+  for (const candidate of traversalCandidates(index, nodeId, direction)) {
+    if (!axes.has(candidate.edge.axis)) continue;
+    if (!index.nodesById.has(candidate.nextNodeId)) continue;
+    if (!visits.has(candidate.nextNodeId)) {
+      depthOmittedNodeIds.add(candidate.nextNodeId);
+    }
+    depthOmittedEdgeIds.add(candidate.edge.id);
+  }
+}
+
+function emptyOmittedCounts(): TraversalOmittedCounts {
+  return {
+    nodes: 0,
+    edges: 0,
+    depth: 0,
+  };
+}
+
+function isTraversalTruncated(omittedCounts: TraversalOmittedCounts): boolean {
+  return omittedCounts.nodes > 0 ||
+    omittedCounts.edges > 0 ||
+    omittedCounts.depth > 0;
 }
 
 export function formatDocumentGraphTraversalRoleGroups(

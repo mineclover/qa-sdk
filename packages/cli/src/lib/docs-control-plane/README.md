@@ -33,6 +33,21 @@ canonical axes only for traversal. Presets such as `family`, `impact`, and
 | `impact` | `dependency`, `trace`, `source`, `evidence` | `in` | 2 | excluded |
 | `prd-completion` | `trace`, `source`, `evidence` | `both` | 2 | excluded |
 
+## Traversal guardrails
+
+Graph traversal is bounded by default so a large repository does not produce a
+full graph dump by accident. The default depth is `1` and the maximum enforced
+depth is `6`; preset defaults may be lower but explicit `--depth` values above
+the maximum are capped with a diagnostic. The default returned-node limit is
+`100` and explicit `--limit` may lower or raise it up to the enforced maximum of
+`500`.
+
+Traversal results expose `truncated`, legacy `omittedCount` for node-limit
+omissions, and detailed `omittedCounts` for nodes, edges, and depth-frontier
+nodes hidden by caps. Text output prints the same truncation detail. The
+`context` axis and free-text search are intentionally broad, so text output
+warns operators to keep `--depth` and `--limit` tight or choose stricter axes.
+
 Source traversal is powered by docs control-plane adapters (`DocumentEnvelope`
 sources, metadata source refs, PRD/session paths, and artifact evidence refs).
 It is intentionally broader than, and distinct from, `qa-sdk def find-by-file`,
