@@ -59,9 +59,9 @@ def:
 - [ ] PRD Completion Sync Precision
   - [x] `docs status` follows module composition so contained TODO docs can surface as follow-up even when they do not share the same filename family
   - [x] `docs prd sync-completion` excludes archived PRD documents from affected docs unless the archived PRD is the explicit target
+  - [x] `docs prd sync-completion --family-only` limits affected docs to explicit PRD family, directly linked role-matrix docs, and active same-family role context
   - [ ] graph-axis based candidate scoring
   - [ ] `--strict`
-  - [ ] `--family-only`
   - [ ] `--evidence-only`
   - [ ] blocked promotion explanation improvements
 
@@ -75,3 +75,7 @@ def:
   - [ ] purpose/overview/constraint/scenario matrix section nodes
   - [ ] section-level evidence mapping
   - [ ] section-level traversal presets if needed
+
+### Parking Lot — 후보 보관
+
+현재 보관 후보 없음. 새 아이디어성 작업은 실행 조건이나 owner가 정해질 때까지 Actionable로 승격하지 않는다.

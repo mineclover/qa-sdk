@@ -24,7 +24,7 @@ def:
 
 ## 구성 ^overview
 
-현재 완료된 기반은 docs control plane adapters, status/collect/search/drift, PRD authoring/conversion/sync dry-run, metadata transform dry-run, document coordinate graph traversal, family-only inventory scope, and topdown lifecycle inventory policy이다.
+현재 완료된 기반은 docs control plane adapters, status/collect/search/drift, PRD authoring/conversion/sync dry-run, metadata transform dry-run, document coordinate graph traversal, family-only inventory scope, topdown lifecycle inventory policy, and the first docs-control-plane family alignment pass이다.
 
 ## Topdown Lifecycle Inventory Policy
 
@@ -55,6 +55,24 @@ Traversal order for lifecycle inventory:
 4. Inspect direct leaf documents and source/evidence references last as proof, not as inventory roots.
 
 Operationally, use `docs status <root> --json` or `docs collect <root> --family-only --json` for the active family first. Use broad graph traversal only after the family boundary is understood, and never promote archive/session results into active scope without an explicit target or opt-in flag.
+
+## First Topdown Family Alignment — docs-control-plane
+
+This pass used `qa-sdk def topdown docs-control-plane`, `qa-sdk def context docs-control-plane`, `docs collect docs-control-plane --family-only --json`, and `docs status docs-control-plane --json`.
+
+| field | value |
+|-------|-------|
+| existing same-family roles | `spec`, `plan`, `todo` |
+| linked context roles | `spec` via `definition-catalog-spec` refinement |
+| missing same-family roles | `rule`, `cases`, `test`, `memo`, `knowledge`, `prd`, `ralph-prd-json` |
+| actionable TODO count | 16 open checklist rows |
+| deferred TODO count | 7 open checklist rows |
+| parking-lot TODO count | 0 open checklist rows |
+| completed record candidates | 0 (`completedRecords: []`) |
+| source refs | 12 frontmatter source refs |
+| diagnostics | 0 |
+
+No role document is created by this pass. Missing roles remain absence metadata until a concrete rule, cases, test, memo, knowledge note, PRD markdown, or ralph PRD JSON artifact exists.
 
 다음 작업은 실행 효과와 의존성 기준으로 정렬한다.
 
