@@ -18,6 +18,16 @@ def:
       type: contains
     - target: docs-control-plane-todo
       type: contains
+sources:
+  - packages/cli/src/commands/docs.ts
+  - packages/cli/src/command-groups/docs.commands.ts
+  - packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts
+  - packages/cli/src/lib/docs-control-plane/graph-types.ts
+  - packages/cli/src/lib/docs-control-plane/graph-index.ts
+  - packages/cli/src/lib/docs-control-plane/graph-normalize.ts
+  - packages/cli/src/lib/docs-control-plane/graph-traverse.ts
+  - packages/cli/src/lib/docs-control-plane/graph-presets.ts
+  - packages/cli/src/lib/docs-control-plane/graph-scope.ts
 ---
 
 # Docs Control Plane
