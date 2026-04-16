@@ -49,6 +49,9 @@ export {
 export {
   normalizeDocumentGraphEdges,
 } from "./graph-normalize.js";
+export {
+  buildDocumentGraphIndex,
+} from "./graph-index.js";
 
 export type {
   AuthoredLinkType,
@@ -68,6 +71,16 @@ export type {
 export type {
   NormalizeDocumentGraphEdgesOptions,
 } from "./graph-normalize.js";
+export type {
+  BuildDocumentGraphIndexOptions,
+  DocumentGraphIndex,
+  DocumentGraphIndexNode,
+  DocumentGraphIndexNodeKind,
+  DocumentGraphLookupIndexes,
+  DocumentGraphNodeReason,
+  DocumentGraphTargetLookupKind,
+  DocumentGraphTargetResolution,
+} from "./graph-index.js";
 export type {
   DocumentAdapter,
   DocumentAdapterCapabilities,

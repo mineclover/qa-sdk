@@ -10,6 +10,7 @@ import type {
   DocumentEnvelope,
   DocumentMetadata,
   DocumentRawSourcePointer,
+  DocumentSection,
   DocumentSource,
   DocumentTask,
 } from "./types.js";
@@ -64,6 +65,7 @@ export function normalizeDocumentGraphEdges(
     addDocumentEvidenceEdges(builder, index, document);
     addTaskTraceEdges(builder, index, document);
     addTaskEvidenceEdges(builder, index, document);
+    addSectionMembershipEdges(builder, document);
     if (includeContext) addContextEdges(builder, document);
   }
 
@@ -476,6 +478,37 @@ function addTaskEvidenceEdges(
   }
 }
 
+function addSectionMembershipEdges(
+  builder: EdgeBuilder,
+  document: DocumentEnvelope,
+): void {
+  for (const section of document.sections) {
+    const target = sectionNodeTarget(document, section);
+    builder.add({
+      kind: "section-membership",
+      axis: "composition",
+      fromNodeId: documentNodeId(document),
+      toNodeId: target.nodeId,
+      authoredType: "section",
+      reason: reasonFor(document, {
+        reason: "document-section membership",
+        rawSource: section.rawSource ?? rawSourceFor(document, `sections.${section.id}`),
+        target,
+        metadata: {
+          sectionId: section.id,
+          title: section.title,
+          anchor: section.anchor,
+          order: section.order,
+        },
+      }),
+      metadata: {
+        source: "DocumentEnvelope.sections",
+        sectionId: section.id,
+      },
+    });
+  }
+}
+
 function addContextEdges(
   builder: EdgeBuilder,
   document: DocumentEnvelope,
@@ -684,12 +717,23 @@ function taskNodeTarget(document: DocumentEnvelope, task: DocumentTask): Resolve
   };
 }
 
+function sectionNodeTarget(document: DocumentEnvelope, section: DocumentSection): ResolvedTarget {
+  return {
+    nodeId: sectionNodeId(document, section),
+    path: `${document.path}#${section.anchor ?? section.id}`,
+  };
+}
+
 function documentNodeId(document: DocumentEnvelope): string {
   return `document:${document.stableId}`;
 }
 
 function taskNodeId(document: DocumentEnvelope, task: DocumentTask): string {
   return `task:${document.stableId}:${task.id}`;
+}
+
+function sectionNodeId(document: DocumentEnvelope, section: DocumentSection): string {
+  return `section:${document.stableId}:${section.id}`;
 }
 
 function reasonFor(
