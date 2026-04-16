@@ -21,6 +21,11 @@ import {
   appendQualityStatusEvidenceToPromptArtifactExtraction,
   createProgrammingArtifactRegistryRecord,
 } from "operational-ontology/programming-artifacts";
+import {
+  createOntologyPackScaffoldPlanFromCliArgs,
+  hasOntologyPackScaffoldErrors,
+  type OntologyPackScaffoldPlan,
+} from "../lib/ontology-pack-scaffold-plan.js";
 import { appendProgrammingArtifactRegistryRecords } from "../lib/programming-artifact-registry.js";
 import { cmdRegistryActivatePack } from "./ontology/activation.js";
 import {
@@ -93,7 +98,7 @@ interface PromptArtifactMaterialization {
 }
 
 const PACK_SCAFFOLD_USAGE =
-  "Usage: qa-sdk ontology pack scaffold <pack-id> [--package-root <path>] [--docs-dir <path>] [--test <path>] [--write] [--json]";
+  "Usage: qa-sdk ontology pack scaffold <pack-id> [--implementation-package <name>] [--package-root <path>] [--docs-dir <path>] [--test <path>] [--dry-run] [--write] [--json]";
 
 const PACK_VALIDATE_USAGE =
   "Usage: qa-sdk ontology pack validate <pack-ref> [--json]";
@@ -120,6 +125,37 @@ function printPlannedPackCommand(usage: string): void {
     "Pack authoring implementation is deferred beyond the US-001 command contract story.",
   );
   process.exitCode = 1;
+}
+
+function printPackScaffoldPlanSummary(plan: OntologyPackScaffoldPlan): void {
+  if (plan.diagnostics.length > 0) {
+    console.error(`diagnostics: ${plan.diagnostics.length}`);
+    for (const diagnostic of plan.diagnostics) {
+      const path = diagnostic.path ? ` ${diagnostic.path}` : "";
+      console.error(`  - ${diagnostic.severity} ${diagnostic.code}:${path} ${diagnostic.message}`);
+    }
+  }
+
+  console.log(`pack: ${plan.identity.packId || "(missing)"}`);
+  console.log(`mode: ${plan.mode}`);
+  console.log(`implementation package: ${plan.identity.package.implementationPackage}`);
+  console.log(`package root: ${plan.identity.package.packageRoot}`);
+  console.log(`component schema files: ${plan.componentSchemaFiles.length}`);
+  for (const file of plan.componentSchemaFiles) {
+    console.log(`  - ${file.path}`);
+  }
+  console.log(`system binding files: ${plan.systemBindingFiles.length}`);
+  for (const file of plan.systemBindingFiles) {
+    console.log(`  - ${file.path}`);
+  }
+  console.log(`test files: ${plan.testFiles.length}`);
+  for (const file of plan.testFiles) {
+    console.log(`  - ${file.path}`);
+  }
+  console.log(`docs family: ${plan.docs.familyId}`);
+  console.log(`source-map candidates: ${plan.sourceMapCandidates.length}`);
+  console.log(`known-pack candidate: ${plan.knownPackCandidate.targetPath}`);
+  console.log("files written: 0");
 }
 
 function toDefinitionDataSourceOptions(flags: Record<string, string>): DataSourceOptions {
@@ -740,7 +776,7 @@ export async function cliOntology(args: string[]): Promise<void> {
           "qa-sdk ontology",
           "",
           "  qa-sdk ontology status [--scope <scope> | --snapshot <id>] [--store <file>] [--json] [--table]",
-          "  qa-sdk ontology pack scaffold <pack-id> [--package-root <path>] [--docs-dir <path>] [--test <path>] [--write] [--json]",
+          "  qa-sdk ontology pack scaffold <pack-id> [--implementation-package <name>] [--package-root <path>] [--docs-dir <path>] [--test <path>] [--dry-run] [--write] [--json]",
           "  qa-sdk ontology pack validate <pack-ref> [--json]",
           "",
           "Pack authoring contract:",
@@ -797,7 +833,17 @@ export async function cliOntology(args: string[]): Promise<void> {
         printPackAuthoringContract();
         return;
       }
-      printPlannedPackCommand(PACK_SCAFFOLD_USAGE);
+      {
+        const plan = createOntologyPackScaffoldPlanFromCliArgs(rest);
+        if (plan.cli.json) {
+          printJson(plan);
+        } else {
+          printPackScaffoldPlanSummary(plan);
+        }
+        if (hasOntologyPackScaffoldErrors(plan.diagnostics)) {
+          process.exitCode = 1;
+        }
+      }
       return;
     case "pack.validate":
       if (rest.includes("--help") || rest.includes("-h")) {
