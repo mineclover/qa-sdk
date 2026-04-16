@@ -21,6 +21,7 @@ def:
 sources:
   - packages/cli/src/commands/docs.ts
   - packages/cli/src/command-groups/docs.commands.ts
+  - packages/cli/src/lib/docs-control-plane/prd-completion-sync.ts
   - packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts
   - packages/cli/src/lib/docs-control-plane/graph-types.ts
   - packages/cli/src/lib/docs-control-plane/graph-index.ts
@@ -135,6 +136,7 @@ PRD markdown이 authoring source다. Ralph PRD JSON은 ralph-tui 실행 호환 a
 - `docs drift`와 `docs prd sync-completion`의 기본값은 repo-tracked SSOT만 검사한다. ignored local runtime state인 `.ralph-tui/session-meta.json`은 `--include-session`이 있을 때만 포함한다.
 - `docs transform metadata`는 dry-run이 기본이고 현재 `--apply`를 지원하지 않는다. 결과는 projected frontmatter와 `DocumentChangeSet` preview이며 source 파일은 바꾸지 않는다.
 - `docs prd sync-completion`은 dry-run only다. `passes: true` story는 후보 문서와 blocked/eligible promotion state를 계산하지만, TODO 체크나 spec promotion을 자동 반영하지 않는다.
+- `docs prd sync-completion --family-only`은 입력 PRD markdown/JSON family에서 시작해 직접 연결된 role-matrix 문서와 그 active family role context만 affected docs로 확장한다. Candidate reason은 `target`, `role`, `composition`, `trace`, `source`, `evidence`로 축을 구분하고, transient session은 `--include-session`일 때만 `session`으로 보고한다.
 - `docs prd scaffold`는 explicit `--output <file>`이 있을 때 markdown skeleton만 작성한다. ralph PRD JSON은 만들지 않는다.
 - `docs prd to-ralph-json`은 explicit `--output <prd.json>`이 있을 때만 ralph-compatible JSON을 쓰고, 쓰기 전 target adapter validation을 통과해야 한다.
 

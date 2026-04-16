@@ -17,6 +17,11 @@ import {
   traverseDocumentGraph,
   type DocumentGraphTraversalResult,
 } from "./graph-traverse.js";
+import {
+  buildDocumentRoleMatrix,
+  type DocumentRoleMatrixDocument,
+  type DocumentRoleMatrixLinkedDocument,
+} from "./role-matrix.js";
 
 export interface PrdCompletionSyncOptions {
   readonly rootDir: string;
@@ -364,7 +369,11 @@ function collectAffectedDocuments(
     for (const document of scope.documents) {
       if (document.kind === "ralph-prd-json" && document.path !== prdDocument.path) continue;
       if (isArchivedPrdDocument(document) && document.path !== prdDocument.path) continue;
-      addAffected(byKey, document, scope.reasonByDocumentKey.get(documentKey(document)) ?? "graph:prd-completion");
+      addAffected(
+        byKey,
+        document,
+        canonicalCompletionReason(scope.reasonByDocumentKey.get(documentKey(document)) ?? "trace"),
+      );
     }
   }
 
@@ -377,16 +386,84 @@ function collectFamilyOnlyAffectedDocuments(
   includeSession: boolean,
 ): readonly AffectedDocumentEntry[] {
   const byKey = new Map<string, AffectedDocumentEntry>();
-  const scope = collectDocumentFamilyOnlyScope(documents, {
+  const prdFamilyScope = collectDocumentFamilyOnlyScope(documents, {
     target: prdDocument,
     includeSession,
   });
 
-  for (const document of scope.documents) {
-    addAffected(byKey, document, scope.reasonByDocumentKey.get(documentKey(document)) ?? "family-only");
+  for (const document of prdFamilyScope.documents) {
+    addAffected(
+      byKey,
+      document,
+      canonicalCompletionReason(prdFamilyScope.reasonByDocumentKey.get(documentKey(document)) ?? "role"),
+    );
+  }
+
+  const linkedDocuments = directCompletionRoleLinks(documents, prdDocument);
+  for (const linked of linkedDocuments) {
+    const document = resolveRoleMatrixDocument(documents, linked);
+    if (!document || isArchivedPrdDocument(document)) continue;
+    addAffected(byKey, document, canonicalCompletionReason(linked.reason));
+  }
+
+  for (const linked of linkedDocuments) {
+    const linkedDocument = resolveRoleMatrixDocument(documents, linked);
+    if (!linkedDocument || isArchivedPrdDocument(linkedDocument)) continue;
+    addLinkedFamilyRoleContext(byKey, documents, linkedDocument);
   }
 
   return [...byKey.values()].toSorted((left, right) => compareDocuments(left.document, right.document));
+}
+
+function directCompletionRoleLinks(
+  documents: readonly DocumentEnvelope[],
+  target: DocumentEnvelope,
+): readonly DocumentRoleMatrixLinkedDocument[] {
+  const matrix = buildDocumentRoleMatrix(documents, { target });
+  if (!matrix) return [];
+  return matrix.roles
+    .flatMap((role) => role.linked)
+    .filter((document) => document.relation === "composition" || document.relation === "trace");
+}
+
+function addLinkedFamilyRoleContext(
+  byKey: Map<string, AffectedDocumentEntry>,
+  documents: readonly DocumentEnvelope[],
+  linkedDocument: DocumentEnvelope,
+): void {
+  const familyScope = collectDocumentFamilyOnlyScope(documents, {
+    target: linkedDocument,
+    includeSession: false,
+  });
+
+  for (const document of familyScope.documents) {
+    if (isArchivedPrdDocument(document)) continue;
+    addAffected(
+      byKey,
+      document,
+      canonicalCompletionReason(familyScope.reasonByDocumentKey.get(documentKey(document)) ?? "role"),
+    );
+  }
+
+  const linkedMatrix = buildDocumentRoleMatrix(documents, { target: linkedDocument });
+  if (!linkedMatrix) return;
+  for (const linked of linkedMatrix.roles.flatMap((role) => role.linked)) {
+    if (linked.relation !== "composition") continue;
+    const document = resolveRoleMatrixDocument(documents, linked);
+    if (!document || isArchivedPrdDocument(document)) continue;
+    addAffected(byKey, document, "composition");
+  }
+}
+
+function resolveRoleMatrixDocument(
+  documents: readonly DocumentEnvelope[],
+  summary: DocumentRoleMatrixDocument,
+): DocumentEnvelope | undefined {
+  return documents.find((document) =>
+    document.adapterId === summary.adapterId
+    && document.stableId === summary.stableId
+    && document.path === summary.path
+  );
 }
 
 function addAffected(
@@ -402,9 +479,27 @@ function addAffected(
 function prdCompletionGraphReasonForNode(
   node: DocumentGraphTraversalResult["nodes"][number],
 ): string {
-  if (node.depth === 0) return "prd-completion-target";
+  if (node.depth === 0) {
+    if (node.kind === "source") return "source";
+    if (node.kind === "evidence") return "evidence";
+    return "target";
+  }
   const axis = node.pathFromTarget.steps[node.pathFromTarget.steps.length - 1]?.axis;
-  return axis ? `graph:${axis}` : "graph:prd-completion";
+  return axis ? canonicalCompletionReason(axis) : "trace";
+}
+
+function canonicalCompletionReason(reason: string): string {
+  if (reason === "prd-completion-target") return "target";
+  if (reason === "family-only" || reason === "family-only:role") return "role";
+  if (reason === "family-only:contains") return "composition";
+  if (reason === "family-only:session") return "session";
+  if (reason.startsWith("graph:")) return canonicalCompletionReason(reason.slice("graph:".length));
+  if (reason === "dependency" || reason === "refinement") return "composition";
+  if (reason === "role" || reason === "composition" || reason === "trace"
+    || reason === "source" || reason === "evidence" || reason === "target") {
+    return reason;
+  }
+  return reason;
 }
 
 function toAffectedDocument(entry: AffectedDocumentEntry): PrdCompletionAffectedDocument {

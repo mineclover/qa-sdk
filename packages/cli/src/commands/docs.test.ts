@@ -2336,6 +2336,69 @@ Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/
     const todoPath = join(workspace, "docs/specs/checkout/checkout.todo.md");
     const planPath = join(workspace, "docs/specs/checkout/checkout.plan.md");
     const prdPath = join(workspace, "tasks/checkout-prd.json");
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-source-only.spec.md"), `---
+def:
+  id: checkout-source-only
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: approved
+source: packages/checkout/src/completion.ts
+---
+# Checkout Source Only
+
+## 목적 ^purpose
+
+Provide source-only completion proof for PRD sync reason classification.
+`);
+    const prdJson = JSON.parse(await readFile(prdPath, "utf8")) as {
+      userStories: Array<{ completionNotes?: string }>;
+    };
+    prdJson.userStories[0]!.completionNotes = "Completed by agent. See packages/checkout/src/completion.ts, E-CHECKOUT-COMPLETION, and E-CHECKOUT-DRIFT.";
+    await writeFile(prdPath, JSON.stringify(prdJson, null, 2));
+    await writeFile(join(workspace, "artifacts/programming-artifacts.json"), JSON.stringify({
+      artifacts: [
+        {
+          artifactId: "checkout-evidence",
+          kind: "activation-evidence",
+          artifactRef: "artifacts/checkout-evidence.json",
+          outputPath: "artifacts/checkout-evidence.json",
+          ownerDefinitionId: "checkout-spec",
+          sourceRefs: ["docs/specs/checkout/checkout.spec.md"],
+          verificationRefs: ["packages/cli/src/commands/docs.test.ts"],
+          relations: [
+            {
+              kind: "verifies",
+              fromRef: "checkout-evidence",
+              toRef: "checkout-spec",
+            },
+          ],
+          metadata: {
+            packId: "checkout-pack",
+          },
+        },
+        {
+          artifactId: "E-CHECKOUT-COMPLETION",
+          kind: "activation-evidence",
+          artifactRef: "artifacts/checkout-completion.json",
+          outputPath: "artifacts/checkout-completion.json",
+          ownerDefinitionId: "checkout-source-only",
+          sourceRefs: ["packages/checkout/src/completion.ts"],
+          verificationRefs: [],
+          relations: [
+            {
+              kind: "verifies",
+              fromRef: "E-CHECKOUT-COMPLETION",
+              toRef: "checkout-source-only",
+            },
+          ],
+          metadata: {
+            packId: "checkout-pack",
+          },
+        },
+      ],
+    }, null, 2));
     const beforeSpec = await readFile(specPath, "utf8");
     const beforeTodo = await readFile(todoPath, "utf8");
     const beforePlan = await readFile(planPath, "utf8");
@@ -2396,9 +2459,9 @@ Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/
     ]);
     expect(result.affectedDocs).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ kind: "spec", stableId: "checkout-spec", reason: "graph:trace" }),
-        expect.objectContaining({ kind: "todo", stableId: "checkout-todo", reason: "graph:trace" }),
-        expect.objectContaining({ kind: "plan", stableId: "checkout-plan", reason: "graph:trace" }),
+        expect.objectContaining({ kind: "spec", stableId: "checkout-spec", reason: "trace" }),
+        expect.objectContaining({ kind: "todo", stableId: "checkout-todo", reason: "trace" }),
+        expect.objectContaining({ kind: "plan", stableId: "checkout-plan", reason: "trace" }),
       ]),
     );
     expect(result.affectedDocs).not.toEqual(
@@ -2408,6 +2471,9 @@ Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/
     );
     expect(result.affectedDocs.map((document) => document.reason)).not.toEqual(
       expect.arrayContaining(["topic-match", "definition-family", "prd-family"]),
+    );
+    expect([...new Set(result.affectedDocs.map((document) => document.reason))]).toEqual(
+      expect.arrayContaining(["target", "trace", "source", "evidence"]),
     );
     expect(result.openTodoCandidates).toEqual(
       expect.arrayContaining([
@@ -2449,6 +2515,64 @@ Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/
     await expect(readFile(todoPath, "utf8")).resolves.toBe(beforeTodo);
     await expect(readFile(planPath, "utf8")).resolves.toBe(beforePlan);
     await expect(readFile(prdPath, "utf8")).resolves.toBe(beforePrd);
+  });
+
+  it("excludes archive PRD documents from completion sync affected docs by default", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "tasks/archive"), { recursive: true });
+    await writeFile(join(workspace, "tasks/archive/checkout-archive-prd.md"), `[PRD]
+# PRD: Archived Checkout PRD
+
+## Overview
+
+Archived checkout work.
+
+## User Stories
+
+### US-001: Archived checkout story
+
+**Description:** Archived story.
+
+**Acceptance Criteria:**
+- [x] Archived criterion.
+[/PRD]
+`);
+    await writeFile(join(workspace, "tasks/archive/checkout-archive-prd.json"), JSON.stringify({
+      name: "Archived Checkout PRD",
+      branchName: "ralph/checkout-archive",
+      description: "Archived checkout work.",
+      userStories: [
+        {
+          id: "US-001",
+          title: "Archived checkout story",
+          description: "Archived story.",
+          acceptanceCriteria: ["Archived criterion."],
+          priority: 1,
+          passes: true,
+          dependsOn: [],
+        },
+      ],
+    }, null, 2));
+
+    await cliDocs([
+      "prd",
+      "sync-completion",
+      "--prd",
+      "tasks/checkout-prd.json",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      affectedDocs: Array<{ kind: string; path: string; reason: string }>;
+    }>();
+    expect(result.affectedDocs.map((document) => document.path)).not.toEqual(
+      expect.arrayContaining([
+        "tasks/archive/checkout-archive-prd.md",
+        "tasks/archive/checkout-archive-prd.json",
+      ]),
+    );
   });
 
   it("blocks completion sync promotion when PRD passes lacks source, test, or evidence links", async () => {
@@ -2533,8 +2657,26 @@ Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/
     ]);
   });
 
-  it("limits PRD completion sync to the PRD family with --family-only", async () => {
+  it("limits PRD completion sync to the PRD family and directly linked docs with --family-only", async () => {
     const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/unrelated"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/unrelated/unrelated.todo.md"), `---
+def:
+  id: unrelated-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Unrelated Todo
+
+## 목적 ^purpose
+
+Mentions checkout without being linked to the active PRD family.
+
+- [ ] This checkout-looking item must stay out of family-only sync.
+`);
 
     await cliDocs([
       "prd",
@@ -2550,19 +2692,27 @@ Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/
     const result = parsedOutput<{
       affectedDocs: Array<{ kind: string; stableId: string; path: string; reason: string }>;
       counts: { sessionDrift: number };
+      openTodoCandidates: Array<{ documentId: string; path: string }>;
     }>();
     expect(result.affectedDocs).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ kind: "prd", stableId: "tasks/checkout-prd", reason: "family-only:role" }),
+        expect.objectContaining({ kind: "prd", stableId: "tasks/checkout-prd", reason: "role" }),
         expect.objectContaining({ kind: "ralph-prd-json", stableId: "tasks/checkout-prd", reason: "target" }),
+        expect.objectContaining({ kind: "spec", stableId: "checkout-spec", reason: "trace" }),
+        expect.objectContaining({ kind: "todo", stableId: "checkout-todo", reason: "trace" }),
+        expect.objectContaining({ kind: "plan", stableId: "checkout-plan", reason: "trace" }),
+        expect.objectContaining({ kind: "rule", stableId: "checkout-rule", reason: "role" }),
+        expect.objectContaining({ kind: "spec", stableId: "checkout-child", reason: "composition" }),
       ]),
     );
     expect(result.affectedDocs).not.toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ stableId: "checkout-spec" }),
+        expect.objectContaining({ stableId: "unrelated-todo" }),
         expect.objectContaining({ kind: "ralph-session" }),
       ]),
     );
+    expect(result.openTodoCandidates.map((candidate) => candidate.path)).not.toContain("tasks/checkout-prd.md");
+    expect(result.openTodoCandidates.map((candidate) => candidate.documentId)).not.toContain("unrelated-todo");
     expect(result.counts.sessionDrift).toBe(0);
 
     vi.mocked(console.log).mockClear();
@@ -2586,7 +2736,7 @@ Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/
         expect.objectContaining({
           kind: "ralph-session",
           path: ".ralph-tui/session-meta.json",
-          reason: "family-only:session",
+          reason: "session",
         }),
       ]),
     );

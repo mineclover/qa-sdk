@@ -49,13 +49,16 @@ nodes hidden by caps. Text output prints the same truncation detail. The
 warns operators to keep `--depth` and `--limit` tight or choose stricter axes.
 
 `--family-only` is an inventory scope, not a graph preset. On `docs status`,
-`docs collect`, `docs prd context`, and `docs prd sync-completion`, it limits
-the document set to same-family role documents plus direct `contains` children
-when the target document is a module. Archive PRDs are excluded from this active
-family scope unless explicitly targeted, and `.ralph-tui` session state remains
-out of scope unless `--include-session` is also passed. `docs collect --graph
---family-only` returns a compact graph summary for the family-only document set;
-omitting `--family-only` keeps the normal graph traversal behavior.
+`docs collect`, and `docs prd context`, it limits the document set to
+same-family role documents plus direct `contains` children when the target
+document is a module. On `docs prd sync-completion`, it starts with the explicit
+PRD markdown/JSON family, adds directly linked role-matrix documents, and then
+adds same-family role context for those linked active families. Archive PRDs are
+excluded from this active family scope unless explicitly targeted, and
+`.ralph-tui` session state remains out of scope unless `--include-session` is
+also passed. `docs collect --graph --family-only` returns a compact graph
+summary for the family-only document set; omitting `--family-only` keeps the
+normal graph traversal behavior.
 
 `docs status <doc-id> --json` also emits `roleCoverage` for the target family.
 It reports the active matrix roles `spec`, `plan`, `todo`, `rule`, `cases`,
@@ -124,7 +127,9 @@ vocabulary를 추가하지 않는다.
   scenario matrix 후보를 dry-run으로 계산한다. 기본값은 repo-tracked 문서/PRD
   state만 보며, `.ralph-tui` session state는 `--include-session`일 때만 포함한다.
   `passes: true`는 candidate signal이고 source/test/evidence가 없는 TODO/spec
-  promotion은 blocked로 남긴다.
+  promotion은 blocked로 남긴다. Affected document reasons are canonical
+  `target`, `role`, `composition`, `trace`, `source`, or `evidence`; transient
+  session state uses `session` only when explicitly included.
 - `docs transform metadata`: definition markdown frontmatter만 대상으로 dry-run
   projection을 만든다. 지원 rule은 `select|match`, `set.lifecycle`, `set.level`,
   `set.svc`, `set.sources`, `tags.add/remove`, `links.add/remove`,
