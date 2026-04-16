@@ -105,10 +105,25 @@ interface FollowUpState {
   readonly depth?: number;
   readonly parentTitle?: string;
   readonly headingPath?: readonly string[];
-  readonly category?: "actionable" | "deferred" | "parking-lot" | "uncategorized";
+  readonly category?: TodoFollowUpCategory;
   readonly categoryLabel?: string;
   readonly reason: string;
 }
+
+type TodoFollowUpCategory = "completed" | "actionable" | "deferred" | "parking-lot" | "uncategorized";
+
+interface TodoHeadingCategory {
+  readonly category: TodoFollowUpCategory;
+  readonly label: string;
+}
+
+const CANONICAL_TODO_CATEGORY_LABELS = {
+  completed: "Completed — 완료 기록",
+  actionable: "Actionable — 실행 가능",
+  deferred: "Deferred — 조건부 대기",
+  "parking-lot": "Parking Lot — 후보 보관",
+  uncategorized: "Uncategorized",
+} as const satisfies Record<TodoFollowUpCategory, string>;
 
 interface DocumentSummary {
   readonly adapterId: string;
@@ -1972,7 +1987,7 @@ async function findNextFollowUps(
       state: String(sessionFollowUp.document.metadata.status ?? "running"),
       title: "Ralph session follow-up",
       category: "actionable",
-      categoryLabel: "Actionable",
+      categoryLabel: CANONICAL_TODO_CATEGORY_LABELS.actionable,
       reason: sessionFollowUp.diagnostic.message,
     });
   }
@@ -1988,7 +2003,7 @@ async function findNextFollowUps(
         state: taskState(openTask),
         title: openTask.title,
         category: "actionable",
-        categoryLabel: "Actionable",
+        categoryLabel: CANONICAL_TODO_CATEGORY_LABELS.actionable,
         reason: "open task state",
       });
     }
@@ -2006,7 +2021,7 @@ async function findNextFollowUps(
         state: String(todo.metadata.lifecycle ?? "todo"),
         title: titleOf(todo),
         category: "uncategorized" as const,
-        categoryLabel: "Uncategorized",
+        categoryLabel: CANONICAL_TODO_CATEGORY_LABELS.uncategorized,
         reason: "todo family member present",
       }];
     followUps.push(...todoFollowUps);
@@ -2029,7 +2044,7 @@ function parseTodoFollowUps(
 ): readonly FollowUpState[] {
   const followUps: FollowUpState[] = [];
   let currentCategory = classifyTodoHeading("");
-  const headingStack: { level: number; title: string }[] = [];
+  const headingStack: { level: number; title: string; category: TodoHeadingCategory }[] = [];
   const checklistStack: { indent: number; title: string }[] = [];
 
   const lines = content.split(/\r?\n/);
@@ -2041,9 +2056,12 @@ function parseTodoFollowUps(
       while (headingStack.length > 0 && headingStack[headingStack.length - 1]!.level >= level) {
         headingStack.pop();
       }
-      headingStack.push({ level, title });
       checklistStack.length = 0;
-      currentCategory = classifyTodoHeading(title);
+      const classifiedCategory = classifyTodoHeading(title);
+      currentCategory = classifiedCategory.category === "uncategorized"
+        ? (headingStack[headingStack.length - 1]?.category ?? classifiedCategory)
+        : classifiedCategory;
+      headingStack.push({ level, title, category: currentCategory });
       return;
     }
 
@@ -2088,18 +2106,21 @@ function indentationWidth(value: string): number {
 
 function classifyTodoHeading(
   heading: string,
-): { readonly category: NonNullable<FollowUpState["category"]>; readonly label: string } {
+): TodoHeadingCategory {
   const normalized = heading.toLowerCase();
+  if (/\bcompleted\b|완료 기록/.test(normalized)) {
+    return { category: "completed", label: CANONICAL_TODO_CATEGORY_LABELS.completed };
+  }
   if (/\bactionable\b|실행 가능|바로\s*prd|바로 실행/.test(normalized)) {
-    return { category: "actionable", label: heading.trim() || "Actionable" };
+    return { category: "actionable", label: CANONICAL_TODO_CATEGORY_LABELS.actionable };
   }
   if (/\bdeferred\b|조건부|대기|보류|trigger|blocked/.test(normalized)) {
-    return { category: "deferred", label: heading.trim() || "Deferred" };
+    return { category: "deferred", label: CANONICAL_TODO_CATEGORY_LABELS.deferred };
   }
   if (/parking\s*lot|후보 보관|아이디어|보관/.test(normalized)) {
-    return { category: "parking-lot", label: heading.trim() || "Parking Lot" };
+    return { category: "parking-lot", label: CANONICAL_TODO_CATEGORY_LABELS["parking-lot"] };
   }
-  return { category: "uncategorized", label: heading.trim() || "Uncategorized" };
+  return { category: "uncategorized", label: heading.trim() || CANONICAL_TODO_CATEGORY_LABELS.uncategorized };
 }
 
 function compareFollowUps(left: FollowUpState, right: FollowUpState): number {
@@ -2116,6 +2137,7 @@ function followUpRank(followUp: FollowUpState): number {
     case "uncategorized": return 2;
     case "deferred": return 3;
     case "parking-lot": return 4;
+    case "completed": return 5;
     default: return 5;
   }
 }

@@ -21,6 +21,8 @@ def:
 
 ## 구현 항목
 
+### Completed — 완료 기록
+
 - [x] `PromptArtifactContextProvider` / registry 인터페이스 추가
 - [x] `qa-sdk ontology prompt extract-artifact <artifact-ref>` fallback CLI 추가
 - [x] `--persist-governance`로 prompt extraction governance evidence 저장

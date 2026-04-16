@@ -82,7 +82,7 @@ def:
 
 Follow up on checkout implementation evidence.
 
-## Tasks
+## Actionable — 실행 가능
 
 - [ ] Remove obsolete checkout stub.
 - [ ] Sync PRD completion ledger.
@@ -558,7 +558,7 @@ Track inventory scenario coverage.
     expect(text).toContain("docs status: checkout-spec");
     expect(text).toContain("kind: spec");
     expect(text).toContain("next follow-up: open todo - Remove obsolete checkout stub.");
-    expect(text).toContain("category: Tasks");
+    expect(text).toContain("category: Actionable — 실행 가능");
     expect(text).toContain("docs/specs/checkout/checkout.todo.md");
   });
 
@@ -635,6 +635,89 @@ Track parent and child follow-up context.
     expect(text).toContain("additional follow-ups (7):");
     expect(text).toContain("... 2 more");
     expect(text).not.toContain("Child checklist item 7.");
+  });
+
+  it("inherits canonical todo categories through nested headings", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/categories"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/categories/categories.todo.md"), `---
+def:
+  id: categories-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Category Todo
+
+## 목적 ^purpose
+
+Track categorized follow-up state.
+
+## 구현 항목
+
+### Completed — 완료 기록
+
+#### Closed Group
+
+- [x] Completed item.
+
+### Actionable — 실행 가능
+
+#### Policy Source Adapter
+
+- [ ] Implement adapter.
+
+### Deferred — 조건부 대기
+
+#### Remote Activation
+
+- [ ] Wait for API contract.
+
+### Parking Lot — 후보 보관
+
+#### Candidate Ideas
+
+- [ ] Evaluate optional dashboard.
+`);
+
+    await cliDocs(["status", "categories-todo", "--root", workspace, "--json"]);
+
+    const result = parsedOutput<{
+      nextFollowUps: Array<{
+        title: string;
+        category?: string;
+        categoryLabel?: string;
+        headingPath?: string[];
+      }>;
+    }>();
+
+    expect(result.nextFollowUps.map((followUp) => followUp.title)).toEqual([
+      "Implement adapter.",
+      "Wait for API contract.",
+      "Evaluate optional dashboard.",
+    ]);
+    expect(result.nextFollowUps).toEqual([
+      expect.objectContaining({
+        title: "Implement adapter.",
+        category: "actionable",
+        categoryLabel: "Actionable — 실행 가능",
+        headingPath: ["구현 항목", "Actionable — 실행 가능", "Policy Source Adapter"],
+      }),
+      expect.objectContaining({
+        title: "Wait for API contract.",
+        category: "deferred",
+        categoryLabel: "Deferred — 조건부 대기",
+        headingPath: ["구현 항목", "Deferred — 조건부 대기", "Remote Activation"],
+      }),
+      expect.objectContaining({
+        title: "Evaluate optional dashboard.",
+        category: "parking-lot",
+        categoryLabel: "Parking Lot — 후보 보관",
+        headingPath: ["구현 항목", "Parking Lot — 후보 보관", "Candidate Ideas"],
+      }),
+    ]);
   });
 
   it("exposes docs graph through root usage, dispatch, and command help", async () => {
