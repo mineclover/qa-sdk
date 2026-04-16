@@ -102,7 +102,7 @@ interface PromptArtifactMaterialization {
 }
 
 const PACK_SCAFFOLD_USAGE =
-  "Usage: qa-sdk ontology pack scaffold <pack-id> [--implementation-package <name>] [--package-root <path>] [--docs-dir <path>] [--test <path>] [--dry-run] [--write] [--json]";
+  "Usage: qa-sdk ontology pack scaffold <pack-id> [--implementation-package <name>] [--package-root <path>] [--docs-dir <path>] [--test <path>] [--include-docs <rule,cases,test|all>] [--dry-run] [--write] [--json]";
 
 const PACK_VALIDATE_USAGE =
   "Usage: qa-sdk ontology pack validate <pack-ref> [--json]";
@@ -118,6 +118,7 @@ function printPackAuthoringContract(): void {
       "- Scaffold is dry-run by default; file writes require explicit --write.",
       "- Write mode creates parent directories and refuses to overwrite existing files.",
       "- Scaffold preserves architecture-neutral identity/data/system separation; ECS can be modeled but is not required.",
+      "- Required definition docs are spec/todo/plan; optional rule/cases/test docs require --include-docs.",
       "- Known-pack registration is reported as a candidate and is not applied automatically.",
       "- Registry activation is out of scope for scaffold; use qa-sdk ontology registry activate-pack separately.",
     ].join("\n"),
@@ -820,7 +821,7 @@ export async function cliOntology(args: string[]): Promise<void> {
           "qa-sdk ontology",
           "",
           "  qa-sdk ontology status [--scope <scope> | --snapshot <id>] [--store <file>] [--json] [--table]",
-          "  qa-sdk ontology pack scaffold <pack-id> [--implementation-package <name>] [--package-root <path>] [--docs-dir <path>] [--test <path>] [--dry-run] [--write] [--json]",
+          "  qa-sdk ontology pack scaffold <pack-id> [--implementation-package <name>] [--package-root <path>] [--docs-dir <path>] [--test <path>] [--include-docs <rule,cases,test|all>] [--dry-run] [--write] [--json]",
           "  qa-sdk ontology pack validate <pack-ref> [--json]",
           "",
           "Pack authoring contract:",

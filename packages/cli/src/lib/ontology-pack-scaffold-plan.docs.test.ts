@@ -1,5 +1,6 @@
 import { posix as pathPosix } from "node:path";
 
+import { parseDocument } from "definition-catalog";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
@@ -81,14 +82,15 @@ describe("ontology pack scaffold plan", () => {
     );
     expect(plan.docs).toEqual({
       directory: "docs/specs/operational-ontology",
-      familyId: "risk-model-ontology-system",
+      familyId: "risk-model-ontology",
       spec: "docs/specs/operational-ontology/risk-model-ontology-system.spec.md",
-      plan: "docs/specs/operational-ontology/risk-model-ontology-system.plan.md",
-      todo: "docs/specs/operational-ontology/risk-model-ontology-system.todo.md",
-      rule: "docs/specs/operational-ontology/risk-model-ontology-system.rule.md",
-      cases: "docs/specs/operational-ontology/risk-model-ontology-system.cases.md",
-      test: "docs/specs/operational-ontology/risk-model-ontology-system.test.md",
+      plan: "docs/specs/operational-ontology/risk-model-ontology-plan.plan.md",
+      todo: "docs/specs/operational-ontology/risk-model-ontology-todo.todo.md",
+      rule: "docs/specs/operational-ontology/risk-model-ontology.rule.md",
+      cases: "docs/specs/operational-ontology/risk-model-ontology.cases.md",
+      test: "docs/specs/operational-ontology/risk-model-ontology.test.md",
     });
+    expect(plan.requestedOptionalDefinitionDocs).toEqual([]);
     expect(plan.definitionDocFiles.map((file) => ({
       docType: file.docType,
       required: file.required,
@@ -102,35 +104,54 @@ describe("ontology pack scaffold plan", () => {
       {
         docType: "todo",
         required: true,
-        path: "docs/specs/operational-ontology/risk-model-ontology-system.todo.md",
+        path: "docs/specs/operational-ontology/risk-model-ontology-todo.todo.md",
       },
       {
         docType: "plan",
         required: true,
-        path: "docs/specs/operational-ontology/risk-model-ontology-system.plan.md",
+        path: "docs/specs/operational-ontology/risk-model-ontology-plan.plan.md",
       },
+    ]);
+    expect(plan.optionalDefinitionDocFiles.map((file) => ({
+      docType: file.docType,
+      required: file.required,
+      path: file.path,
+    }))).toEqual([
       {
         docType: "rule",
         required: false,
-        path: "docs/specs/operational-ontology/risk-model-ontology-system.rule.md",
+        path: "docs/specs/operational-ontology/risk-model-ontology.rule.md",
       },
       {
         docType: "cases",
         required: false,
-        path: "docs/specs/operational-ontology/risk-model-ontology-system.cases.md",
+        path: "docs/specs/operational-ontology/risk-model-ontology.cases.md",
       },
       {
         docType: "test",
         required: false,
-        path: "docs/specs/operational-ontology/risk-model-ontology-system.test.md",
+        path: "docs/specs/operational-ontology/risk-model-ontology.test.md",
       },
     ]);
-    expect(plan.definitionDocFiles.find((file) => file.docType === "spec")?.content).toContain(
-      "operational-ontology-pack-interface",
+    const specContent = plan.definitionDocFiles.find((file) => file.docType === "spec")?.content;
+    const todoContent = plan.definitionDocFiles.find((file) => file.docType === "todo")?.content;
+    expect(specContent).toContain("operational-ontology-pack-interface");
+    expect(specContent).toContain("## Architecture-Neutral Separation");
+    expect(specContent).toContain(
+      "ECS is one possible modeled architecture, but it is not the only supported architecture.",
     );
-    expect(plan.definitionDocFiles.find((file) => file.docType === "todo")?.content).toContain(
-      "## Actionable",
+    expect(specContent).toContain("### Identity declarations");
+    expect(specContent).toContain("### Component schema");
+    expect(specContent).toContain("### System bindings");
+    expect(specContent).toContain("packages/operational-ontology/src/internal/risk-model-ontology-schema.ts");
+    expect(specContent).toContain("packages/operational-ontology/src/internal/risk-model-ontology-pack.ts");
+    expect(specContent).toContain("packages/operational-ontology/src/risk-model-ontology.test.ts");
+    expect(todoContent).toContain("## Actionable");
+    expect(todoContent).toBeDefined();
+    expect(todoContent!.indexOf("## Actionable")).toBeLessThan(
+      todoContent!.indexOf("## Completed"),
     );
+    expect(todoContent).toContain("No completed work recorded yet.");
     expect(plan.sourceMapCandidates).toEqual([
       {
         docId: "risk-model-ontology-system",
@@ -148,7 +169,7 @@ describe("ontology pack scaffold plan", () => {
       },
       {
         docId: "risk-model-ontology-system",
-        docPath: "docs/specs/operational-ontology/risk-model-ontology-system.test.md",
+        docPath: "docs/specs/operational-ontology/risk-model-ontology-system.spec.md",
         sourcePath: "packages/operational-ontology/src/risk-model-ontology.test.ts",
         sourceRole: "test",
         frontmatterKey: "sources",
@@ -162,20 +183,12 @@ describe("ontology pack scaffold plan", () => {
         sources: [
           "packages/operational-ontology/src/internal/risk-model-ontology-schema.ts",
           "packages/operational-ontology/src/internal/risk-model-ontology-pack.ts",
+          "packages/operational-ontology/src/risk-model-ontology.test.ts",
         ],
         yaml: [
           "sources:",
           "  - packages/operational-ontology/src/internal/risk-model-ontology-schema.ts",
           "  - packages/operational-ontology/src/internal/risk-model-ontology-pack.ts",
-        ].join("\n"),
-      },
-      {
-        docId: "risk-model-ontology-system-test",
-        docPath: "docs/specs/operational-ontology/risk-model-ontology-system.test.md",
-        frontmatterKey: "sources",
-        sources: ["packages/operational-ontology/src/risk-model-ontology.test.ts"],
-        yaml: [
-          "sources:",
           "  - packages/operational-ontology/src/risk-model-ontology.test.ts",
         ].join("\n"),
       },
@@ -229,6 +242,132 @@ describe("ontology pack scaffold plan", () => {
       "cases",
       "test",
     ]);
+    expect(plan.preview.definitionDocs.selectedOptional).toEqual([]);
+    expect(plan.preview.definitionDocs.files.map((file) => file.docType)).toEqual([
+      "spec",
+      "todo",
+      "plan",
+    ]);
+  });
+
+  it("generates optional definition docs only when requested", () => {
+    const defaultPlan = createOntologyPackScaffoldPlan({
+      packId: "risk-model-ontology",
+      rootDir: "/repo",
+    });
+    const expandedPlan = createOntologyPackScaffoldPlan({
+      packId: "risk-model-ontology",
+      rootDir: "/repo",
+      includeOptionalDocs: ["rule", "cases", "test"],
+    });
+
+    expect(defaultPlan.definitionDocFiles.map((file) => file.docType)).toEqual([
+      "spec",
+      "todo",
+      "plan",
+    ]);
+    expect(defaultPlan.preview.files.map((file) => file.path)).not.toContain(
+      "docs/specs/operational-ontology/risk-model-ontology.rule.md",
+    );
+    expect(expandedPlan.requestedOptionalDefinitionDocs).toEqual(["rule", "cases", "test"]);
+    expect(expandedPlan.definitionDocFiles.map((file) => file.docType)).toEqual([
+      "spec",
+      "todo",
+      "plan",
+      "rule",
+      "cases",
+      "test",
+    ]);
+    expect(expandedPlan.preview.definitionDocs.selectedOptional.map((file) => file.docType))
+      .toEqual(["rule", "cases", "test"]);
+    expect(expandedPlan.preview.files.map((file) => file.path)).toEqual(
+      expect.arrayContaining([
+        "docs/specs/operational-ontology/risk-model-ontology.rule.md",
+        "docs/specs/operational-ontology/risk-model-ontology.cases.md",
+        "docs/specs/operational-ontology/risk-model-ontology.test.md",
+      ]),
+    );
+    expect(expandedPlan.sourceMapCandidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          docId: "risk-model-ontology-test",
+          docPath: "docs/specs/operational-ontology/risk-model-ontology.test.md",
+          sourcePath: "packages/operational-ontology/src/risk-model-ontology.test.ts",
+        }),
+      ]),
+    );
+    expect(expandedPlan.sourceMapFrontmatterCandidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          docId: "risk-model-ontology-test",
+          docPath: "docs/specs/operational-ontology/risk-model-ontology.test.md",
+        }),
+      ]),
+    );
+  });
+
+  it("emits valid definition frontmatter for required and requested optional docs", () => {
+    const plan = createOntologyPackScaffoldPlan({
+      packId: "risk-model-ontology",
+      rootDir: "/repo",
+      includeOptionalDocs: ["test", "rule", "cases"],
+    });
+
+    const expected = new Map([
+      ["spec", {
+        id: "risk-model-ontology-system",
+        level: "leaf",
+        scope: "interface",
+        aspect: "api_contract",
+        depth: "specification",
+        lifecycle: "draft",
+      }],
+      ["todo", {
+        id: "risk-model-ontology-todo",
+        level: "leaf",
+        scope: "flow",
+        aspect: "process_flow",
+        depth: "specification",
+        lifecycle: "draft",
+      }],
+      ["plan", {
+        id: "risk-model-ontology-plan",
+        level: "leaf",
+        scope: "flow",
+        aspect: "process_flow",
+        depth: "specification",
+        lifecycle: "draft",
+      }],
+      ["rule", {
+        id: "risk-model-ontology-rule",
+        level: "leaf",
+        scope: "constraint",
+        aspect: "tech_constraint",
+        depth: "validation",
+        lifecycle: "draft",
+      }],
+      ["cases", {
+        id: "risk-model-ontology-cases",
+        level: "leaf",
+        scope: "flow",
+        aspect: "user_scenario",
+        depth: "validation",
+        lifecycle: "draft",
+      }],
+      ["test", {
+        id: "risk-model-ontology-test",
+        level: "leaf",
+        scope: "flow",
+        aspect: "user_scenario",
+        depth: "validation",
+        lifecycle: "draft",
+      }],
+    ]);
+
+    for (const file of plan.definitionDocFiles) {
+      const parsed = parseDocument(file.content, file.path);
+      expect(parsed.def).toMatchObject(expected.get(file.docType)!);
+    }
   });
 
   it("keeps component-like schema content separate from system-like bindings", () => {
@@ -325,6 +464,8 @@ describe("ontology pack scaffold plan", () => {
         "docs/specs/risk",
         "--test",
         "packages/custom-risk/src/risk-model-ontology.test.ts",
+        "--include-docs",
+        "rule,test",
         "--write",
         "--json",
       ],
@@ -340,6 +481,14 @@ describe("ontology pack scaffold plan", () => {
       sourceDir: "packages/custom-risk/src/internal",
     });
     expect(plan.docs.directory).toBe("docs/specs/risk");
+    expect(plan.requestedOptionalDefinitionDocs).toEqual(["rule", "test"]);
+    expect(plan.definitionDocFiles.map((file) => file.docType)).toEqual([
+      "spec",
+      "todo",
+      "plan",
+      "rule",
+      "test",
+    ]);
     expect(plan.testFiles[0]!.path).toBe(
       "packages/custom-risk/src/risk-model-ontology.test.ts",
     );
@@ -384,6 +533,8 @@ describe("ontology pack scaffold plan", () => {
         "/tmp/outside-docs",
         "--test",
         "",
+        "--include-docs",
+        "memo",
       ],
       { rootDir: "/repo" },
     );
@@ -419,6 +570,12 @@ describe("ontology pack scaffold plan", () => {
           code: "unsafe-path",
           field: "testFilePath",
           value: "",
+        }),
+        expect.objectContaining({
+          severity: "error",
+          code: "invalid-optional-docs",
+          field: "includeDocs",
+          value: "memo",
         }),
       ]),
     );

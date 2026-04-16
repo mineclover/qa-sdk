@@ -12,6 +12,7 @@ export interface OntologyPackScaffoldDiagnostic {
     | "invalid-cli-flag"
     | "invalid-cli-mode"
     | "invalid-implementation-package"
+    | "invalid-optional-docs"
     | "invalid-pack-id"
     | "missing-cli-value"
     | "missing-pack-id"
@@ -110,6 +111,11 @@ export type OntologyPackScaffoldDefinitionDocType =
   | "test"
   | "todo";
 
+export type OntologyPackScaffoldOptionalDefinitionDocType =
+  | "cases"
+  | "rule"
+  | "test";
+
 export interface OntologyPackScaffoldDefinitionDocFile
   extends OntologyPackScaffoldPlannedFile {
   readonly docId: string;
@@ -154,6 +160,7 @@ export interface OntologyPackScaffoldPreview {
   readonly definitionDocs: {
     readonly required: readonly OntologyPackScaffoldDefinitionDocFile[];
     readonly optional: readonly OntologyPackScaffoldDefinitionDocFile[];
+    readonly selectedOptional: readonly OntologyPackScaffoldDefinitionDocFile[];
     readonly files: readonly OntologyPackScaffoldDefinitionDocFile[];
   };
   readonly sourceMapFrontmatterCandidates: readonly OntologyPackSourceMapFrontmatterCandidate[];
@@ -176,6 +183,8 @@ export interface OntologyPackScaffoldPlan {
   readonly testFiles: readonly OntologyPackScaffoldPlannedFile[];
   readonly docs: OntologyPackScaffoldDocsPaths;
   readonly definitionDocFiles: readonly OntologyPackScaffoldDefinitionDocFile[];
+  readonly optionalDefinitionDocFiles: readonly OntologyPackScaffoldDefinitionDocFile[];
+  readonly requestedOptionalDefinitionDocs: readonly OntologyPackScaffoldOptionalDefinitionDocType[];
   readonly sourceMapCandidates: readonly OntologyPackSourceMapCandidate[];
   readonly sourceMapFrontmatterCandidates: readonly OntologyPackSourceMapFrontmatterCandidate[];
   readonly knownPackCandidate: OntologyPackKnownPackCandidate;
@@ -193,6 +202,7 @@ export interface CreateOntologyPackScaffoldPlanInput {
   readonly implementationRoot?: string;
   readonly docsDir?: string;
   readonly testFilePath?: string;
+  readonly includeOptionalDocs?: readonly OntologyPackScaffoldOptionalDefinitionDocType[];
 }
 
 export interface OntologyPackScaffoldCliPlan extends OntologyPackScaffoldPlan {
@@ -209,12 +219,15 @@ const VALUE_FLAGS = new Set([
   "docs-dir",
   "implementation-package",
   "implementation-root",
+  "include-docs",
   "package-root",
   "test",
   "test-file",
 ]);
 const BOOLEAN_FLAGS = new Set(["dry-run", "json", "write"]);
 const ALLOWED_FLAGS = new Set([...VALUE_FLAGS, ...BOOLEAN_FLAGS]);
+const OPTIONAL_DEFINITION_DOC_TYPES = ["rule", "cases", "test"] as const satisfies
+  readonly OntologyPackScaffoldOptionalDefinitionDocType[];
 
 export function createOntologyPackScaffoldPlan(
   input: CreateOntologyPackScaffoldPlanInput,
@@ -275,6 +288,11 @@ export function createOntologyPackScaffoldPlan(
   const componentSchemaPath = `${sourceDir}/${fileBase}-schema.ts`;
   const systemBindingPath = `${sourceDir}/${fileBase}-pack.ts`;
   const definitionId = `${safePackId}-system`;
+  const todoDocId = `${safePackId}-todo`;
+  const planDocId = `${safePackId}-plan`;
+  const ruleDocId = `${safePackId}-rule`;
+  const casesDocId = `${safePackId}-cases`;
+  const testDocId = `${safePackId}-test`;
   const defaultAxisId = `${safePackId.replaceAll("-", "_")}_kind`;
   const defaultTaxonomyId = safePackId;
   const defaultRelationCategory = `${safePackId.replaceAll("-", "_")}_relation`;
@@ -404,30 +422,33 @@ export function createOntologyPackScaffoldPlan(
   ];
   const docs: OntologyPackScaffoldDocsPaths = {
     directory: docsDir,
-    familyId: definitionId,
+    familyId: safePackId,
     spec: `${docsDir}/${definitionId}.spec.md`,
-    plan: `${docsDir}/${definitionId}.plan.md`,
-    todo: `${docsDir}/${definitionId}.todo.md`,
-    rule: `${docsDir}/${definitionId}.rule.md`,
-    cases: `${docsDir}/${definitionId}.cases.md`,
-    test: `${docsDir}/${definitionId}.test.md`,
+    plan: `${docsDir}/${planDocId}.plan.md`,
+    todo: `${docsDir}/${todoDocId}.todo.md`,
+    rule: `${docsDir}/${safePackId}.rule.md`,
+    cases: `${docsDir}/${safePackId}.cases.md`,
+    test: `${docsDir}/${safePackId}.test.md`,
   };
-  const definitionDocFiles: OntologyPackScaffoldDefinitionDocFile[] = [
+  const requiredDefinitionDocFiles: OntologyPackScaffoldDefinitionDocFile[] = [
     {
       role: "docs-spec",
       path: docs.spec,
       docId: definitionId,
       docType: "spec",
       required: true,
-      content: renderSpecDoc(identity, componentLikeDeclarations, systemLikeBindings, [
-        componentSchemaPath,
-        systemBindingPath,
-      ]),
+      content: renderSpecDoc(
+        identity,
+        componentLikeDeclarations,
+        systemLikeBindings,
+        [componentSchemaPath, systemBindingPath, testPath],
+        testPath,
+      ),
     },
     {
       role: "docs-todo",
       path: docs.todo,
-      docId: `${definitionId}-todo`,
+      docId: todoDocId,
       docType: "todo",
       required: true,
       content: renderTodoDoc(identity),
@@ -435,15 +456,17 @@ export function createOntologyPackScaffoldPlan(
     {
       role: "docs-plan",
       path: docs.plan,
-      docId: `${definitionId}-plan`,
+      docId: planDocId,
       docType: "plan",
       required: true,
       content: renderPlanDoc(identity),
     },
+  ];
+  const optionalDefinitionDocFiles: OntologyPackScaffoldDefinitionDocFile[] = [
     {
       role: "docs-rule",
       path: docs.rule,
-      docId: `${definitionId}-rule`,
+      docId: ruleDocId,
       docType: "rule",
       required: false,
       content: renderRuleDoc(identity),
@@ -451,7 +474,7 @@ export function createOntologyPackScaffoldPlan(
     {
       role: "docs-cases",
       path: docs.cases,
-      docId: `${definitionId}-cases`,
+      docId: casesDocId,
       docType: "cases",
       required: false,
       content: renderCasesDoc(identity),
@@ -459,11 +482,24 @@ export function createOntologyPackScaffoldPlan(
     {
       role: "docs-test",
       path: docs.test,
-      docId: `${definitionId}-test`,
+      docId: testDocId,
       docType: "test",
       required: false,
       content: renderTestDoc(identity, testPath),
     },
+  ];
+  const requestedOptionalDefinitionDocs = normalizeOptionalDocSelection(
+    input.includeOptionalDocs ?? [],
+  );
+  const requestedOptionalDocSet = new Set<OntologyPackScaffoldDefinitionDocType>(
+    requestedOptionalDefinitionDocs,
+  );
+  const selectedOptionalDefinitionDocFiles = optionalDefinitionDocFiles.filter((file) =>
+    requestedOptionalDocSet.has(file.docType)
+  );
+  const definitionDocFiles = [
+    ...requiredDefinitionDocFiles,
+    ...selectedOptionalDefinitionDocFiles,
   ];
   const sourceMapCandidates: OntologyPackSourceMapCandidate[] = [
     {
@@ -482,27 +518,38 @@ export function createOntologyPackScaffoldPlan(
     },
     {
       docId: definitionId,
-      docPath: docs.test,
+      docPath: docs.spec,
       sourcePath: testPath,
       sourceRole: "test",
       frontmatterKey: "sources",
     },
+    ...(requestedOptionalDocSet.has("test")
+      ? [{
+        docId: testDocId,
+        docPath: docs.test,
+        sourcePath: testPath,
+        sourceRole: "test" as const,
+        frontmatterKey: "sources" as const,
+      }]
+      : []),
   ];
   const sourceMapFrontmatterCandidates: OntologyPackSourceMapFrontmatterCandidate[] = [
     {
       docId: definitionId,
       docPath: docs.spec,
       frontmatterKey: "sources",
-      sources: [componentSchemaPath, systemBindingPath],
-      yaml: renderSourcesYaml([componentSchemaPath, systemBindingPath]),
+      sources: [componentSchemaPath, systemBindingPath, testPath],
+      yaml: renderSourcesYaml([componentSchemaPath, systemBindingPath, testPath]),
     },
-    {
-      docId: `${definitionId}-test`,
-      docPath: docs.test,
-      frontmatterKey: "sources",
-      sources: [testPath],
-      yaml: renderSourcesYaml([testPath]),
-    },
+    ...(requestedOptionalDocSet.has("test")
+      ? [{
+        docId: testDocId,
+        docPath: docs.test,
+        frontmatterKey: "sources" as const,
+        sources: [testPath],
+        yaml: renderSourcesYaml([testPath]),
+      }]
+      : []),
   ];
   const knownPackCandidate: OntologyPackKnownPackCandidate = {
     targetPath: KNOWN_PACKS_TARGET_PATH,
@@ -540,8 +587,9 @@ export function createOntologyPackScaffoldPlan(
       files: testFiles,
     },
     definitionDocs: {
-      required: definitionDocFiles.filter((file) => file.required),
-      optional: definitionDocFiles.filter((file) => !file.required),
+      required: requiredDefinitionDocFiles,
+      optional: optionalDefinitionDocFiles,
+      selectedOptional: selectedOptionalDefinitionDocFiles,
       files: definitionDocFiles,
     },
     sourceMapFrontmatterCandidates,
@@ -564,6 +612,8 @@ export function createOntologyPackScaffoldPlan(
     testFiles,
     docs,
     definitionDocFiles,
+    optionalDefinitionDocFiles,
+    requestedOptionalDefinitionDocs,
     sourceMapCandidates,
     sourceMapFrontmatterCandidates,
     knownPackCandidate,
@@ -636,6 +686,7 @@ export function createOntologyPackScaffoldPlanFromCliArgs(
     });
   }
 
+  const includeOptionalDocs = parseOptionalDocsFlag(flags["include-docs"], diagnostics);
   const plan = createOntologyPackScaffoldPlan({
     packId: positional[0] ?? "",
     rootDir: options.rootDir,
@@ -645,6 +696,7 @@ export function createOntologyPackScaffoldPlanFromCliArgs(
     implementationRoot: flags["implementation-root"],
     docsDir: flags["docs-dir"],
     testFilePath: flags["test-file"] ?? flags["test"],
+    includeOptionalDocs,
   });
 
   return {
@@ -705,6 +757,51 @@ function normalizeImplementationPackage(
     return DEFAULT_IMPLEMENTATION_PACKAGE;
   }
   return implementationPackage;
+}
+
+function parseOptionalDocsFlag(
+  value: string | undefined,
+  diagnostics: OntologyPackScaffoldDiagnostic[],
+): OntologyPackScaffoldOptionalDefinitionDocType[] {
+  if (value === undefined || value.trim().length === 0 || value.trim() === "none") {
+    return [];
+  }
+
+  const requested = value.split(",").map((item) => item.trim()).filter(Boolean);
+  if (requested.includes("all")) {
+    return [...OPTIONAL_DEFINITION_DOC_TYPES];
+  }
+
+  const invalid = requested.filter((item) =>
+    !OPTIONAL_DEFINITION_DOC_TYPES.includes(
+      item as OntologyPackScaffoldOptionalDefinitionDocType,
+    )
+  );
+  if (invalid.length > 0) {
+    diagnostics.push({
+      severity: "error",
+      code: "invalid-optional-docs",
+      message:
+        `Optional definition docs must be one of rule, cases, test, all, or none. Received: ${invalid.join(", ")}.`,
+      field: "includeDocs",
+      value,
+    });
+  }
+
+  return normalizeOptionalDocSelection(
+    requested.filter((item): item is OntologyPackScaffoldOptionalDefinitionDocType =>
+      OPTIONAL_DEFINITION_DOC_TYPES.includes(
+        item as OntologyPackScaffoldOptionalDefinitionDocType,
+      )
+    ),
+  );
+}
+
+function normalizeOptionalDocSelection(
+  values: readonly OntologyPackScaffoldOptionalDefinitionDocType[],
+): OntologyPackScaffoldOptionalDefinitionDocType[] {
+  const requested = new Set(values);
+  return OPTIONAL_DEFINITION_DOC_TYPES.filter((docType) => requested.has(docType));
 }
 
 function resolveSafeRepoPath(input: {
@@ -816,6 +913,7 @@ function renderSpecDoc(
   componentLikeDeclarations: readonly OntologyPackScaffoldComponentLikeDeclaration[],
   systemLikeBindings: readonly OntologyPackScaffoldSystemLikeBinding[],
   sources: readonly string[],
+  testPath: string,
 ): string {
   const displayName = toDisplayName(identity);
   return `---
@@ -846,26 +944,37 @@ ${identity.packId} pack의 identity, component-like schema vocabulary, system-li
 - Implementation package: \`${identity.package.implementationPackage}\`
 - Component schema: \`${identity.package.sourceDir}/${identity.safePackId}-schema.ts\`
 - System binding: \`${identity.package.sourceDir}/${identity.safePackId}-pack.ts\`
+- Test candidate: \`${testPath}\`
 
-## Identity / Data / System Separation
+## Architecture-Neutral Separation
 
-Operational ontology pack authoring is architecture-neutral. Runtime architecture labels belong to the pack domain and are not emitted by default; this scaffold only uses the identity/data/system separation discipline.
+Operational ontology pack authoring is architecture-neutral. ECS is one possible modeled architecture, but it is not the only supported architecture. Runtime architecture labels belong to the pack domain and are not emitted by default; this scaffold only uses the identity/component schema/system binding separation discipline.
 
 ### Identity declarations
 
+Identity declarations are stable names only; they do not own schema records or runtime behavior.
+
 ${identity.declarations.map((declaration) => `- \`${declaration.symbolName}\` = \`${declaration.value}\` (${declaration.kind})`).join("\n")}
 
-### Component-like declarations
+### Component schema
+
+Source: \`${identity.package.sourceDir}/${identity.safePackId}-schema.ts\`
 
 ${componentLikeDeclarations.map((declaration) => `- \`${declaration.symbolName}\` = \`${declaration.value}\` (${declaration.kind})`).join("\n")}
 
-### System-like bindings
+### System bindings
+
+Source: \`${identity.package.sourceDir}/${identity.safePackId}-pack.ts\`
 
 ${systemLikeBindings.map((binding) => `- \`${binding.symbolName}\` (${binding.kind}): ${binding.description}`).join("\n")}
 
+## Source References
+
+${sources.map((source) => `- \`${source}\``).join("\n")}
+
 ## 검증 참조
 
-- Test skeleton: \`${identity.package.packageRoot}/src/${identity.safePackId}.test.ts\`
+- Test skeleton: \`${testPath}\`
 - Known-pack registration remains a manual candidate for \`packages/cli/src/lib/known-ontology-packs.ts\`.
 `;
 }
@@ -874,7 +983,7 @@ function renderTodoDoc(identity: OntologyPackScaffoldIdentity): string {
   const displayName = toDisplayName(identity);
   return `---
 def:
-  id: ${identity.definitionId}-todo
+  id: ${identity.safePackId}-todo
   level: leaf
   scope: flow
   aspect: process_flow
@@ -893,10 +1002,6 @@ def:
 
 ${identity.packId} pack scaffold 이후 실제 도메인 vocabulary, tests, docs, source-map, known-pack registration을 닫기 위한 작업을 추적한다.
 
-## Completed — 완료 기록
-
-아직 완료 항목 없음. 구현 완료 사실만 여기에 추가한다.
-
 ## Actionable — 실행 가능
 
 - [ ] Replace the example axis value with domain vocabulary.
@@ -905,6 +1010,10 @@ ${identity.packId} pack scaffold 이후 실제 도메인 vocabulary, tests, docs
 - [ ] Add domain-specific test expectations.
 - [ ] Apply source-map frontmatter after files are written.
 - [ ] Review the known-pack registration candidate before editing the resolver manually.
+
+## Completed — 완료 기록
+
+No completed work recorded yet.
 
 ## Deferred — 조건부 대기
 
@@ -920,7 +1029,7 @@ function renderPlanDoc(identity: OntologyPackScaffoldIdentity): string {
   const displayName = toDisplayName(identity);
   return `---
 def:
-  id: ${identity.definitionId}-plan
+  id: ${identity.safePackId}-plan
   level: leaf
   scope: flow
   aspect: process_flow
@@ -956,7 +1065,7 @@ function renderRuleDoc(identity: OntologyPackScaffoldIdentity): string {
   const displayName = toDisplayName(identity);
   return `---
 def:
-  id: ${identity.definitionId}-rule
+  id: ${identity.safePackId}-rule
   level: leaf
   scope: constraint
   aspect: tech_constraint
@@ -988,7 +1097,7 @@ function renderCasesDoc(identity: OntologyPackScaffoldIdentity): string {
   const displayName = toDisplayName(identity);
   return `---
 def:
-  id: ${identity.definitionId}-cases
+  id: ${identity.safePackId}-cases
   level: leaf
   scope: flow
   aspect: user_scenario
@@ -1026,10 +1135,10 @@ function renderTestDoc(
   const displayName = toDisplayName(identity);
   return `---
 def:
-  id: ${identity.definitionId}-test
+  id: ${identity.safePackId}-test
   level: leaf
   scope: flow
-  aspect: test_strategy
+  aspect: user_scenario
   depth: validation
   lifecycle: draft
   layer: operation

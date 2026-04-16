@@ -68,7 +68,7 @@ describe("ontology CLI", () => {
     expect(USAGE).toContain("qa-sdk ontology pack scaffold <pack-id>");
     expect(USAGE).toContain("dry-run by default; file writes require --write");
     expect(USAGE).toContain("registry activation is out of scope");
-    expect(USAGE).toContain("[--write] [--json]");
+    expect(USAGE).toContain("[--include-docs <rule,cases,test|all>] [--dry-run] [--write] [--json]");
     expect(USAGE).toContain("qa-sdk ontology pack validate <pack-ref>");
     expect(USAGE).toContain("qa-sdk ontology registry activate-pack <pack-id>");
     expect(USAGE).toContain("[--prefix <taxonomyId>=<prefix>] [--output <file>] [--artifact-registry <file>] [--json]");
@@ -181,6 +181,7 @@ describe("ontology CLI", () => {
     expect(output.stdout).toContain("Known-pack registration is reported as a candidate");
     expect(output.stdout).toContain("Registry activation is out of scope for scaffold");
     expect(output.stdout).toContain("ECS can be modeled but is not required");
+    expect(output.stdout).toContain("optional rule/cases/test docs require --include-docs");
   });
 
   it("pack scaffold json returns a dry-run preview without creating files", async () => {
@@ -225,6 +226,7 @@ describe("ontology CLI", () => {
           definitionDocs: {
             required: Array<{ docType: string; content: string }>;
             optional: Array<{ docType: string; content: string }>;
+            selectedOptional: Array<{ docType: string; content: string }>;
           };
           declarations: {
             identity: unknown[];
@@ -261,9 +263,6 @@ describe("ontology CLI", () => {
         "spec",
         "todo",
         "plan",
-        "rule",
-        "cases",
-        "test",
       ]);
       expect(parsed.preview.definitionDocs.required.map((file) => file.docType)).toEqual([
         "spec",
@@ -275,9 +274,17 @@ describe("ontology CLI", () => {
         "cases",
         "test",
       ]);
+      expect(parsed.preview.definitionDocs.selectedOptional).toEqual([]);
       expect(parsed.definitionDocFiles.find((file) => file.docType === "spec")?.content)
-        .toContain("Component-like declarations");
+        .toContain("Architecture-Neutral Separation");
+      expect(parsed.definitionDocFiles.find((file) => file.docType === "spec")?.content)
+        .toContain("ECS is one possible modeled architecture");
+      expect(parsed.definitionDocFiles.find((file) => file.docType === "todo")?.content)
+        .toContain("## Actionable");
       expect(parsed.sourceMapFrontmatterCandidates[0]?.yaml).toContain("sources:");
+      expect(parsed.sourceMapFrontmatterCandidates[0]?.yaml).toContain(
+        "packages/operational-ontology/src/risk-model-ontology.test.ts",
+      );
       expect(parsed.knownPackCandidate).toMatchObject({
         targetPath: "packages/cli/src/lib/known-ontology-packs.ts",
         registryEntry: "\"risk-model-ontology\": riskModelOntologyPack",
@@ -407,6 +414,8 @@ describe("ontology CLI", () => {
           "packages/generated-quality-ontology",
           "--docs-dir",
           "docs/specs/generated-quality-ontology",
+          "--include-docs",
+          "all",
           "--write",
         ]);
       });
