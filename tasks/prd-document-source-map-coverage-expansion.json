@@ -1,0 +1,211 @@
+{
+  "name": "Document Source Map Coverage Expansion",
+  "branchName": "ralph/document-source-map-coverage-expansion",
+  "description": "The docs coordinate graph can now resolve source paths as graph nodes and avoids falling back to full-repository collection when coverage is missing. The next step is to expand explicit source-map coverage for the docs control plane, ontology CLI split modules, and ontology pack sources so bottom-up source traversal and `qa-sdk def find-by-file` become useful operational tools instead of mostly reporting `source-map-missing`.\n\nThis PRD improves source-map coverage through conservative frontmatter `sources:` / `source:` updates and targeted fixtures. It does not add REST, remote indexing, automatic source annotation, or broad source-map rewriting.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Define Source Map Coverage Targets",
+      "description": "As a docs control-plane maintainer, I want source-map coverage targets listed before editing docs so coverage expansion is deliberate and scoped.",
+      "acceptanceCriteria": [
+        "Create a source-map coverage target list in this PRD or an adjacent note.",
+        "Include docs-control-plane source files such as `docs.ts`, `graph-index.ts`, `graph-normalize.ts`, `graph-traverse.ts`, `graph-presets.ts`, `prd-to-ralph-json.ts`, and adapters.",
+        "Include ontology CLI split modules such as `activation.ts`, `artifact-registry.ts`, `prompt-extract-artifact.ts`, `quality-status-evidence.ts`, `quality-ledger-evidence.ts`, `ingest.ts`, `status.ts`, and `navigation-diff.ts`.",
+        "Include pack implementation sources such as `pack-core.ts`, `programming-artifact-core.ts`, and `authorization-ontology/src/index.ts`.",
+        "Classify each target as `frontmatter-source`, `def-code-reference`, or `gap`.",
+        "Do not modify source code comments in this story.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs graph/source traversal regression",
+        "`pnpm --filter @qa-sdk/cli test -- def` - definition CLI source-map regression",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter definition-catalog test` - definition-catalog source/reference regression",
+        "`pnpm --filter definition-catalog typecheck` - definition-catalog type checking",
+        "`node packages/cli/dist/index.js def validate` - repository definition validation"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-002",
+      "title": "Add Docs Control Plane Source References",
+      "description": "As a docs operator, I want docs-control-plane specs to point at the actual control-plane implementation files so graph source traversal works for the docs command family.",
+      "acceptanceCriteria": [
+        "Update `docs/specs/definition-catalog/docs-control-plane.spec.md` with source references for docs command and graph implementation files.",
+        "Include source refs for graph type/index/normalize/traverse/preset modules.",
+        "Include source refs for docs command and command-group files.",
+        "Keep references conservative and avoid listing unrelated CLI files.",
+        "`qa-sdk docs graph packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts --axis source --direction in --json` returns at least `docs-control-plane`.",
+        "`qa-sdk docs status docs-control-plane --json` remains narrow and diagnostic-free.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs graph/source traversal regression",
+        "`pnpm --filter @qa-sdk/cli test -- def` - definition CLI source-map regression",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter definition-catalog test` - definition-catalog source/reference regression",
+        "`pnpm --filter definition-catalog typecheck` - definition-catalog type checking",
+        "`node packages/cli/dist/index.js def validate` - repository definition validation"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Add Ontology CLI Split Module Source References",
+      "description": "As an ontology maintainer, I want split ontology CLI docs to reference their extracted modules so source traversal reaches the correct activation, registry, prompt, quality, ingest, and navigation boundaries.",
+      "acceptanceCriteria": [
+        "Ensure registry activation docs reference `packages/cli/src/commands/ontology/activation.ts`.",
+        "Ensure activation evidence docs reference `activation.ts`, `artifact-registry.ts`, and `prompt-extract-artifact.ts` where applicable.",
+        "Ensure programming artifact registry provider docs reference `artifact-registry.ts` and `prompt-extract-artifact.ts`.",
+        "Ensure quality evidence docs reference `quality-status-evidence.ts` and `quality-ledger-evidence.ts`.",
+        "Ensure CLI docs reference prompt extraction and support modules only where they own behavior.",
+        "`qa-sdk docs graph packages/cli/src/commands/ontology/activation.ts --axis source --direction in --json` returns activation docs and no full-repository fallback.",
+        "`qa-sdk docs graph packages/cli/src/commands/ontology/quality-ledger-evidence.ts --axis source --direction in --json` returns quality evidence docs or a documented source-map gap.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs graph/source traversal regression",
+        "`pnpm --filter @qa-sdk/cli test -- def` - definition CLI source-map regression",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter definition-catalog test` - definition-catalog source/reference regression",
+        "`pnpm --filter definition-catalog typecheck` - definition-catalog type checking",
+        "`node packages/cli/dist/index.js def validate` - repository definition validation"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "Add Pack Implementation Source References",
+      "description": "As an ontology pack author, I want pack implementation docs to reference pack source files so source traversal can connect pack code to pack schema and validation docs.",
+      "acceptanceCriteria": [
+        "Ensure `operational-ontology-pack-interface` references `packages/operational-ontology/src/internal/pack-core.ts` and the public pack facade where appropriate.",
+        "Ensure `programming-artifact-ontology-system` and provider/evidence leaves reference `programming-artifact-core.ts` and public exports where appropriate.",
+        "Ensure `authorization-ontology-system` or package architecture docs reference `packages/authorization-ontology/src/index.ts`.",
+        "Avoid duplicating the same source path across unrelated docs unless each doc owns distinct behavior.",
+        "`qa-sdk docs graph packages/operational-ontology/src/internal/pack-core.ts --axis source --direction in --json` returns pack interface docs.",
+        "`qa-sdk docs graph packages/authorization-ontology/src/index.ts --axis source --direction in --json` returns authorization ontology docs.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs graph/source traversal regression",
+        "`pnpm --filter @qa-sdk/cli test -- def` - definition CLI source-map regression",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter definition-catalog test` - definition-catalog source/reference regression",
+        "`pnpm --filter definition-catalog typecheck` - definition-catalog type checking",
+        "`node packages/cli/dist/index.js def validate` - repository definition validation"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-003"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Add Source Map Coverage Tests",
+      "description": "As a CLI maintainer, I want regression tests proving selected source paths resolve to targeted documents so future refactors do not break bottom-up traversal.",
+      "acceptanceCriteria": [
+        "Add CLI or docs-control-plane tests for docs-control-plane source path traversal.",
+        "Add tests for ontology activation source path traversal.",
+        "Add tests for pack-core source path traversal.",
+        "Add tests for a missing source-map path returning bounded `source-map-missing` diagnostics.",
+        "Tests assert source path traversal does not return full-repository status or collect results.",
+        "Existing docs graph tests remain green.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs graph/source traversal regression",
+        "`pnpm --filter @qa-sdk/cli test -- def` - definition CLI source-map regression",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter definition-catalog test` - definition-catalog source/reference regression",
+        "`pnpm --filter definition-catalog typecheck` - definition-catalog type checking",
+        "`node packages/cli/dist/index.js def validate` - repository definition validation"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-004"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Improve `def find-by-file` Coverage Where Appropriate",
+      "description": "As a definition-catalog user, I want explicit source-map coverage to improve `qa-sdk def find-by-file` where definition-catalog conventions can authoritatively map code to docs.",
+      "acceptanceCriteria": [
+        "Identify which new or existing frontmatter `source:` entries are compatible with `def sync` / `find-by-file`.",
+        "Run `qa-sdk def find-by-file` for at least one docs-control-plane implementation file after sync or scan-equivalent setup if supported.",
+        "Run `qa-sdk def find-by-file` for at least one ontology CLI split module after sync or scan-equivalent setup if supported.",
+        "If `def find-by-file` cannot be improved without code annotations, record the gap in docs-control-plane TODO instead of adding broad mappings.",
+        "Do not change `def find-by-file` implementation in this PRD.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs graph/source traversal regression",
+        "`pnpm --filter @qa-sdk/cli test -- def` - definition CLI source-map regression",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter definition-catalog test` - definition-catalog source/reference regression",
+        "`pnpm --filter definition-catalog typecheck` - definition-catalog type checking",
+        "`node packages/cli/dist/index.js def validate` - repository definition validation"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-005"
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "Update Docs Control Plane TODO And Plan",
+      "description": "As a documentation maintainer, I want the roadmap and TODOs to reflect completed source-map coverage work and remaining gaps.",
+      "acceptanceCriteria": [
+        "Update `docs/specs/definition-catalog/docs-control-plane.todo.md` to close completed source-map coverage targets.",
+        "Keep remaining source-map gaps open and scoped.",
+        "Update `docs/specs/definition-catalog/docs-control-plane.plan.md` only if priority order changes.",
+        "Do not move pack authoring, graph ranking/filtering, PRD sync precision, or section-level graph work into this PRD.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs graph/source traversal regression",
+        "`pnpm --filter @qa-sdk/cli test -- def` - definition CLI source-map regression",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter definition-catalog test` - definition-catalog source/reference regression",
+        "`pnpm --filter definition-catalog typecheck` - definition-catalog type checking",
+        "`node packages/cli/dist/index.js def validate` - repository definition validation"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-006"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "Verify Source Map Coverage Operationally",
+      "description": "As a reviewer, I want operational CLI proof that selected source paths now resolve through docs graph and that remaining gaps are explicit.",
+      "acceptanceCriteria": [
+        "Run `qa-sdk docs graph packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts --axis source --direction in --json`.",
+        "Run `qa-sdk docs graph packages/cli/src/commands/ontology/activation.ts --axis source --direction in --json`.",
+        "Run `qa-sdk docs graph packages/operational-ontology/src/internal/pack-core.ts --axis source --direction in --json`.",
+        "Run at least one missing-source-path graph query and confirm it returns bounded `source-map-missing`.",
+        "Run `qa-sdk docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json` after completion.",
+        "Record residual coverage gaps in the TODO document.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs graph/source traversal regression",
+        "`pnpm --filter @qa-sdk/cli test -- def` - definition CLI source-map regression",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter definition-catalog test` - definition-catalog source/reference regression",
+        "`pnpm --filter definition-catalog typecheck` - definition-catalog type checking",
+        "`node packages/cli/dist/index.js def validate` - repository definition validation"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-007"
+      ]
+    }
+  ]
+}

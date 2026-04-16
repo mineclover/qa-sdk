@@ -10,6 +10,8 @@ def:
   links:
     - target: definition-catalog-spec
       type: depends_on
+    - target: doc-type-convention-cases
+      type: contains
     - target: drizzle-orm-convention
       type: traces_to
 ---
@@ -144,6 +146,10 @@ docs/specs/meta-semantic/meta-semantic-ir/
 - 현재 목표 → 장기 목표 구분
 - 구체적 체크박스 없음 — 방향과 단계만
 - 실행 가능해지면 todo로 추출
+
+### topic/cases 분리
+
+새 이슈, 미확정 토론, 실행 후보, 확정된 구조, 사용 규칙, 검증 문서로 전이되는 실제 흐름은 `doc-type-convention-cases`가 사용 시나리오로 소유한다. 이 문서는 확장자별 역할과 전이 원칙만 소유한다.
 
 ## 정합성 검증 ^constraint
 

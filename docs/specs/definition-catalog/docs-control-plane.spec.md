@@ -1,7 +1,7 @@
 ---
 def:
   id: docs-control-plane
-  level: leaf
+  level: module
   scope: interface
   aspect: cli_contract
   depth: specification
@@ -14,6 +14,10 @@ def:
       type: refines
     - target: cli-command-spec
       type: depends_on
+    - target: docs-control-plane-plan
+      type: contains
+    - target: docs-control-plane-todo
+      type: contains
 ---
 
 # Docs Control Plane
@@ -30,11 +34,14 @@ def:
 - ralph PRD JSON compatibility adapter
 - dry-run metadata transform policy
 - PRD authoring command 선택 기준
+- canonical document coordinate graph traversal
 
 ## 소비 ^consumes
 
 - `definition-catalog-spec` — definition markdown의 좌표, frontmatter, contains/link 규칙
 - `cli-command-spec` — command descriptor, help, dispatch 표면
+- `docs-control-plane-plan` — control-plane 후속 roadmap
+- `docs-control-plane-todo` — 실행 가능한 후속 작업 항목
 - repository files — definition markdown, PRD markdown, ralph JSON, session metadata, artifact registry
 
 ## SSOT 방향
