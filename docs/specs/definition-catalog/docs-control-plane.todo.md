@@ -25,17 +25,19 @@ def:
 ## 구현 항목
 
 - [ ] Document Source Map Coverage Expansion
-  - [ ] docs-control-plane source files coverage
-  - [ ] ontology CLI split module coverage
-  - [ ] operational/authorization pack source coverage
-  - [ ] `qa-sdk docs graph <source-path> --axis source --direction in` returns related docs/evidence for selected targets
-  - [ ] `qa-sdk def find-by-file <source-path>` returns explicit mappings where authoritative source-map is available
+  - [x] docs-control-plane command, graph, adapter, and PRD conversion source files have conservative frontmatter source coverage
+  - [x] ontology CLI split modules with authoritative file-level owners have source graph coverage
+  - [x] operational/authorization pack source files have pack-family source coverage
+  - [x] `qa-sdk docs graph <source-path> --axis source --direction in` returns related docs/evidence for selected covered targets without full-repository fallback
+  - [x] `qa-sdk def find-by-file <source-path>` returns explicit mappings where authoritative source-map is available
     - [x] compatible entries are top-level `source:` / `sources:` values that parse as `packages/...` file refs and whose supporting docs collapse to one boundary anchor after `qa-sdk def sync`
     - [x] after `qa-sdk def sync`, `packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts` resolves to `docs-control-plane`
     - [x] after `qa-sdk def sync`, `packages/cli/src/commands/ontology/quality-ledger-evidence.ts` resolves to `programming-artifact-ontology-system`
-    - [ ] `activation.ts`, `artifact-registry.ts`, and `prompt-extract-artifact.ts` remain ambiguous between `operational-ontology-registry-allocation` and `programming-artifact-ontology-system`; close with symbol-level `@def.boundary` / `@def.doc` only when an authoritative boundary is chosen
-    - [ ] `ingest.ts`, `status.ts`, and `navigation-diff.ts` still have no authoritative file-level source-map owner
-  - [ ] source-map gaps remain explicit TODOs instead of broad graph fallback
+  - [x] source-map gaps remain explicit TODOs instead of broad graph fallback
+  - [ ] Remaining source-map gaps
+    - [ ] `packages/cli/src/lib/docs-control-plane/index.ts` remains a barrel-only facade gap; add source coverage only if facade-level lookup becomes an operational requirement
+    - [ ] `activation.ts`, `artifact-registry.ts`, and `prompt-extract-artifact.ts` remain ambiguous for `def find-by-file` between `operational-ontology-registry-allocation` and `programming-artifact-ontology-system`; close with symbol-level `@def.boundary` / `@def.doc` only when an authoritative boundary is chosen
+    - [ ] `ingest.ts`, `status.ts`, and `navigation-diff.ts` still have no authoritative file-level source-map owner; keep `docs graph` traversal bounded with `source-map-missing` until ownership is documented
 
 - [ ] Ontology Pack Authoring Control Plane
   - [ ] pack scaffold command
