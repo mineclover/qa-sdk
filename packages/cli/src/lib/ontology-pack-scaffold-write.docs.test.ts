@@ -44,10 +44,20 @@ describe("ontology pack scaffold write mode", () => {
         const writtenContent = await readFile(join(dir, file.path), "utf8");
         expect(writtenContent).toBe(file.content);
       }
-      expect(await readFile(
+      const systemContent = await readFile(
         join(dir, "packages/generated-risk-ontology/src/internal/risk-model-ontology-pack.ts"),
         "utf8",
-      )).toContain("validateRiskModelOntologyPack");
+      );
+      const testContent = await readFile(
+        join(dir, "packages/generated-risk-ontology/src/risk-model-ontology.test.ts"),
+        "utf8",
+      );
+      expect(systemContent).toContain("validateRiskModelOntologyPack");
+      expect(systemContent).toContain(
+        'ref: "packages/generated-risk-ontology/src/risk-model-ontology.test.ts"',
+      );
+      expect(testContent).toContain("expect(validateRiskModelOntologyPack().valid).toBe(true);");
+      expect(testContent).toContain("domain-specific blueprint and system binding invariants");
       expect(await readFile(
         join(dir, "docs/specs/generated-risk-ontology/risk-model-ontology-system.spec.md"),
         "utf8",

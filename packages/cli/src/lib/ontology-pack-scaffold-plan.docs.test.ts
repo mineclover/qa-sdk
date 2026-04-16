@@ -204,8 +204,20 @@ describe("ontology pack scaffold plan", () => {
       "packages/operational-ontology/src/internal/risk-model-ontology-schema.ts",
       "packages/operational-ontology/src/internal/risk-model-ontology-pack.ts",
     ]);
+    expect(plan.preview.testSkeleton.files.map((file) => file.path)).toEqual([
+      "packages/operational-ontology/src/risk-model-ontology.test.ts",
+    ]);
     expect(plan.preview.testSkeleton.files[0]?.content).toContain(
       "validates the pack contract",
+    );
+    expect(plan.preview.testSkeleton.files[0]?.content).toContain(
+      "expect(validateRiskModelOntologyPack().valid).toBe(true);",
+    );
+    expect(plan.preview.testSkeleton.files[0]?.content).toContain(
+      "TODO(pack-author): Replace scaffold expectations with domain-specific axis and taxonomy invariants.",
+    );
+    expect(plan.preview.testSkeleton.files[0]?.content).toContain(
+      "TODO(pack-author): Replace scaffold expectations with domain-specific blueprint and system binding invariants.",
     );
     expect(plan.preview.definitionDocs.required.map((file) => file.docType)).toEqual([
       "spec",
@@ -247,6 +259,7 @@ describe("ontology pack scaffold plan", () => {
     expect(systemContent).toContain("// System-like bindings: pack contract");
     expect(systemContent).toContain("// System-like bindings: validation helper");
     expect(systemContent).toContain("verificationBinding");
+    expect(systemContent).toContain('ref: "packages/operational-ontology/src/risk-model-ontology.test.ts"');
     expect(systemContent).toContain("riskModelOntologyBlueprints");
     expect(systemContent).toContain("riskModelOntologyPack");
     expect(componentContent.toLowerCase()).not.toContain("ecs");
@@ -266,7 +279,38 @@ describe("ontology pack scaffold plan", () => {
     expect(first.preview.files.map((file) => [file.path, file.content])).toEqual(
       second.preview.files.map((file) => [file.path, file.content]),
     );
+    expect(first.testFiles).toEqual(second.testFiles);
     expect(typecheckGeneratedTypeScriptSkeleton(first)).toEqual([]);
+  });
+
+  it("renders a deterministic pack validation test skeleton", () => {
+    const first = createOntologyPackScaffoldPlan({
+      packId: "risk-model-ontology",
+      rootDir: "/repo",
+    });
+    const second = createOntologyPackScaffoldPlan({
+      packId: "risk-model-ontology",
+      rootDir: "/repo",
+    });
+    const testFile = first.testFiles[0]!;
+
+    expect(testFile).toEqual(second.testFiles[0]);
+    expect(testFile).toMatchObject({
+      role: "pack-validation-test",
+      path: "packages/operational-ontology/src/risk-model-ontology.test.ts",
+    });
+    expect(testFile.content).toContain(
+      'import {\n  riskModelOntologyPack,\n  validateRiskModelOntologyPack,\n} from "./internal/risk-model-ontology-pack.js";',
+    );
+    expect(testFile.content).toContain("expect(validateRiskModelOntologyPack().valid).toBe(true);");
+    expect(testFile.content).toContain("riskModelOntologyPack.schema.axes.map((axis) => axis.id)");
+    expect(testFile.content).toContain(
+      "riskModelOntologyPack.schema.taxonomies.map((taxonomy) => taxonomy.id)",
+    );
+    expect(testFile.content).toContain(
+      "riskModelOntologyPack.blueprints?.map((blueprint) => blueprint.blueprintId)",
+    );
+    expect(testFile.content).toContain("blueprint.verificationBinding?.verificationRefs");
   });
 
   it("derives package, docs, test, and write-mode options from CLI args", () => {
@@ -299,10 +343,33 @@ describe("ontology pack scaffold plan", () => {
     expect(plan.testFiles[0]!.path).toBe(
       "packages/custom-risk/src/risk-model-ontology.test.ts",
     );
+    expect(plan.testFiles[0]!.content).toContain(
+      'from "./internal/risk-model-ontology-pack.js"',
+    );
     expect(plan.componentSchemaFiles[0]!.path).toBe(
       "packages/custom-risk/src/internal/risk-model-ontology-schema.ts",
     );
+    expect(plan.systemBindingFiles[0]!.content).toContain(
+      'ref: "packages/custom-risk/src/risk-model-ontology.test.ts"',
+    );
     expect(plan.knownPackCandidate.moduleSpecifier).toBe("risk-ontology");
+  });
+
+  it("computes generated test imports relative to custom package test paths", () => {
+    const plan = createOntologyPackScaffoldPlan({
+      packId: "risk-model-ontology",
+      rootDir: "/repo",
+      implementationPackage: "risk-ontology",
+      packageRoot: "packages/custom-risk",
+      testFilePath: "packages/custom-risk/test/risk-model-ontology.test.ts",
+    });
+
+    expect(plan.testFiles[0]!.content).toContain(
+      'from "../src/internal/risk-model-ontology-pack.js"',
+    );
+    expect(plan.systemBindingFiles[0]!.content).toContain(
+      'ref: "packages/custom-risk/test/risk-model-ontology.test.ts"',
+    );
   });
 
   it("reports structured diagnostics for invalid ids and unsafe paths", () => {
@@ -497,6 +564,7 @@ declare module "vitest" {
   export function it(name: string, fn: () => void): void;
   export function expect(value: unknown): {
     toBe(expected: unknown): void;
+    toContain(expected: unknown): void;
     toBeGreaterThan(expected: number): void;
   };
 }

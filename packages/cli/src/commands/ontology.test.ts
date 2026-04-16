@@ -245,6 +245,18 @@ describe("ontology CLI", () => {
       expect(parsed.componentSchemaFiles[0]?.content).toContain("OperationalOntologySchema");
       expect(parsed.systemBindingFiles[0]?.content).toContain("OperationalOntologyPack");
       expect(parsed.testFiles[0]?.content).toContain("validates the pack contract");
+      expect(parsed.testFiles[0]?.content).toContain(
+        "expect(validateRiskModelOntologyPack().valid).toBe(true);",
+      );
+      expect(parsed.preview.testSkeleton.files[0]?.path).toBe(
+        "packages/operational-ontology/src/risk-model-ontology.test.ts",
+      );
+      expect(parsed.preview.testSkeleton.files[0]?.content).toContain(
+        "TODO(pack-author): Replace scaffold expectations with domain-specific axis and taxonomy invariants.",
+      );
+      expect(parsed.preview.testSkeleton.files[0]?.content).toContain(
+        "TODO(pack-author): Replace scaffold expectations with domain-specific blueprint and system binding invariants.",
+      );
       expect(parsed.definitionDocFiles.map((file) => file.docType)).toEqual([
         "spec",
         "todo",
@@ -313,6 +325,7 @@ describe("ontology CLI", () => {
         preview: {
           writesApplied: boolean;
           files: Array<{ path: string }>;
+          testSkeleton: { files: Array<{ path: string; content: string }> };
           knownPackRegistrationCandidate: { targetPath: string };
         };
         writeSummary: {
@@ -342,6 +355,9 @@ describe("ontology CLI", () => {
         parsed.preview.files.map((file) => file.path),
       );
       expect(parsed.writeSummary.files.every((file) => file.status === "written")).toBe(true);
+      expect(parsed.preview.testSkeleton.files.map((file) => file.path)).toEqual([
+        "packages/generated-risk-ontology/src/risk-model-ontology.test.ts",
+      ]);
       expect(parsed.writeSummary.knownPackRegistrationCandidate).toMatchObject({
         targetPath: "packages/cli/src/lib/known-ontology-packs.ts",
         applyMode: "candidate-only",
@@ -353,12 +369,16 @@ describe("ontology CLI", () => {
         "packages/generated-risk-ontology/src/internal/risk-model-ontology-pack.ts";
       const specPath =
         "docs/specs/generated-risk-ontology/risk-model-ontology-system.spec.md";
+      const testPath =
+        "packages/generated-risk-ontology/src/risk-model-ontology.test.ts";
       expect(await readFile(join(dir, componentPath), "utf8")).toContain(
         "OperationalOntologySchema",
       );
-      expect(await readFile(join(dir, systemPath), "utf8")).toContain(
-        "validateRiskModelOntologyPack",
-      );
+      const systemContent = await readFile(join(dir, systemPath), "utf8");
+      const testContent = await readFile(join(dir, testPath), "utf8");
+      expect(systemContent).toContain("validateRiskModelOntologyPack");
+      expect(systemContent).toContain(`ref: "${testPath}"`);
+      expect(testContent).toContain("expect(validateRiskModelOntologyPack().valid).toBe(true);");
       expect(await readFile(join(dir, specPath), "utf8")).toContain(
         "operational-ontology-pack-interface",
       );

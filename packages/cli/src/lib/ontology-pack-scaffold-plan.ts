@@ -1,4 +1,4 @@
-import { isAbsolute, relative, resolve } from "node:path";
+import { isAbsolute, posix as pathPosix, relative, resolve } from "node:path";
 
 export type OntologyPackScaffoldMode = "dry-run" | "write";
 
@@ -392,14 +392,14 @@ export function createOntologyPackScaffoldPlan(
     {
       role: "system-binding",
       path: systemBindingPath,
-      content: renderSystemBindingFile(identity, componentSchemaPath),
+      content: renderSystemBindingFile(identity, componentSchemaPath, testPath),
     },
   ];
   const testFiles = [
     {
       role: "pack-validation-test",
       path: testPath,
-      content: renderPackTestFile(identity, systemBindingPath),
+      content: renderPackTestFile(identity, testPath, systemBindingPath),
     },
   ];
   const docs: OntologyPackScaffoldDocsPaths = {
@@ -752,6 +752,13 @@ function unsafePathDiagnostic(
 
 function normalizeRepoPath(value: string): string {
   return value.replaceAll("\\", "/").replace(/\/+/g, "/").replace(/\/$/, "");
+}
+
+function toRelativeJsModuleSpecifier(fromFilePath: string, toFilePath: string): string {
+  const fromDir = pathPosix.dirname(normalizeRepoPath(fromFilePath));
+  const toJsPath = normalizeRepoPath(toFilePath).replace(/\.ts$/, ".js");
+  const relativePath = pathPosix.relative(fromDir, toJsPath);
+  return relativePath.startsWith(".") ? relativePath : `./${relativePath}`;
 }
 
 function detectConflictingOutputPaths(
@@ -1117,6 +1124,7 @@ export const ${symbols.schemaConstantName} = {
 function renderSystemBindingFile(
   identity: OntologyPackScaffoldIdentity,
   componentSchemaPath: string,
+  testPath: string,
 ): string {
   const { symbols } = identity;
   const schemaImportPath = `./${componentSchemaPath.split("/").pop()?.replace(/\.ts$/, ".js") ?? `${identity.safePackId}-schema.js`}`;
@@ -1160,7 +1168,7 @@ export const ${symbols.blueprintsConstantName} = [
       verificationRefs: [
         {
           kind: "test",
-          ref: "${identity.package.packageRoot}/src/${identity.safePackId}.test.ts",
+          ref: "${testPath}",
         },
       ],
     },
@@ -1188,10 +1196,11 @@ export function ${symbols.validateFunctionName}(): OperationalOntologyPackValida
 
 function renderPackTestFile(
   identity: OntologyPackScaffoldIdentity,
+  testPath: string,
   systemBindingPath: string,
 ): string {
   const { symbols } = identity;
-  const importPath = `./internal/${systemBindingPath.split("/").pop()?.replace(/\.ts$/, ".js") ?? `${identity.safePackId}-pack.js`}`;
+  const importPath = toRelativeJsModuleSpecifier(testPath, systemBindingPath);
   return `import { describe, expect, it } from "vitest";
 
 import {
@@ -1201,15 +1210,22 @@ import {
 
 describe("${identity.packId} ontology pack", () => {
   it("validates the pack contract", () => {
-    const result = ${symbols.validateFunctionName}();
-
-    expect(result.valid).toBe(true);
+    expect(${symbols.validateFunctionName}().valid).toBe(true);
     expect(${symbols.packConstantName}.packId).toBe("${identity.packId}");
   });
 
-  it("keeps domain schema and system binding expectations explicit", () => {
-    expect(${symbols.packConstantName}.schema.axes.length).toBeGreaterThan(0);
-    expect(${symbols.packConstantName}.blueprints?.length ?? 0).toBeGreaterThan(0);
+  it("documents domain axis and taxonomy expectations", () => {
+    // TODO(pack-author): Replace scaffold expectations with domain-specific axis and taxonomy invariants.
+    expect(${symbols.packConstantName}.schema.axes.map((axis) => axis.id)).toContain("${identity.defaultAxisId}");
+    expect(${symbols.packConstantName}.schema.taxonomies.map((taxonomy) => taxonomy.id)).toContain("${identity.defaultTaxonomyId}");
+  });
+
+  it("documents blueprint and system binding expectations", () => {
+    // TODO(pack-author): Replace scaffold expectations with domain-specific blueprint and system binding invariants.
+    expect(${symbols.packConstantName}.blueprints?.map((blueprint) => blueprint.blueprintId)).toContain("${identity.safePackId}-binding");
+    expect(${symbols.packConstantName}.blueprints?.some((blueprint) =>
+      blueprint.verificationBinding?.verificationRefs.some((ref) => ref.kind === "test"),
+    )).toBe(true);
   });
 });
 `;
