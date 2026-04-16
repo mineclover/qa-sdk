@@ -10,6 +10,10 @@ import {
   deriveOntologyPackScaffoldSymbols,
   isSafeKebabEntityId,
 } from "./ontology-pack-scaffold-plan.js";
+import {
+  KNOWN_ONTOLOGY_PACK_IDS,
+  resolveKnownOntologyPack,
+} from "./known-ontology-packs.js";
 
 describe("ontology pack scaffold plan", () => {
   it("derives a dry-run plan from a safe pack id without writing files", () => {
@@ -208,9 +212,12 @@ describe("ontology pack scaffold plan", () => {
     expect(plan.knownPackCandidate).toEqual({
       targetPath: "packages/cli/src/lib/known-ontology-packs.ts",
       packId: "risk-model-ontology",
+      importPath: "operational-ontology",
+      exportSymbolName: "riskModelOntologyPack",
       importName: "riskModelOntologyPack",
       moduleSpecifier: "operational-ontology",
       registryEntry: "\"risk-model-ontology\": riskModelOntologyPack",
+      registrationMode: "manual",
       applyMode: "candidate-only",
     });
     expect(plan.preview).toMatchObject({
@@ -335,6 +342,38 @@ describe("ontology pack scaffold plan", () => {
         }),
       ]),
     );
+  });
+
+  it("generates manual known-pack candidates for kebab-case pack ids without registering them", () => {
+    const supportedBefore = [...KNOWN_ONTOLOGY_PACK_IDS];
+    const cases = [
+      ["quality-signal-ontology", "qualitySignalOntologyPack"],
+      ["risk2-model-ontology", "risk2ModelOntologyPack"],
+    ] as const;
+
+    for (const [packId, exportSymbolName] of cases) {
+      const plan = createOntologyPackScaffoldPlan({
+        packId,
+        rootDir: "/repo",
+      });
+
+      expect(plan.diagnostics).toEqual([]);
+      expect(plan.knownPackCandidate).toMatchObject({
+        targetPath: "packages/cli/src/lib/known-ontology-packs.ts",
+        packId,
+        importPath: "operational-ontology",
+        exportSymbolName,
+        importName: exportSymbolName,
+        moduleSpecifier: "operational-ontology",
+        registryEntry: `"${packId}": ${exportSymbolName}`,
+        registrationMode: "manual",
+        applyMode: "candidate-only",
+      });
+      expect(plan.preview.knownPackRegistrationCandidate).toEqual(plan.knownPackCandidate);
+      expect(resolveKnownOntologyPack(packId).ok).toBe(false);
+    }
+
+    expect(KNOWN_ONTOLOGY_PACK_IDS).toEqual(supportedBefore);
   });
 
   it("emits valid definition frontmatter for required and requested optional docs", () => {
@@ -585,6 +624,9 @@ describe("ontology pack scaffold plan", () => {
       'ref: "packages/custom-risk/src/risk-model-ontology.test.ts"',
     );
     expect(plan.knownPackCandidate.moduleSpecifier).toBe("risk-ontology");
+    expect(plan.knownPackCandidate.importPath).toBe("risk-ontology");
+    expect(plan.knownPackCandidate.exportSymbolName).toBe("riskModelOntologyPack");
+    expect(plan.knownPackCandidate.registrationMode).toBe("manual");
   });
 
   it("computes generated test imports relative to custom package test paths", () => {

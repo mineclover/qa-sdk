@@ -155,9 +155,12 @@ export interface OntologyPackSourceMapGuidance {
 export interface OntologyPackKnownPackCandidate {
   readonly targetPath: string;
   readonly packId: string;
+  readonly importPath: string;
+  readonly exportSymbolName: string;
   readonly importName: string;
   readonly moduleSpecifier: string;
   readonly registryEntry: string;
+  readonly registrationMode: "manual";
   readonly applyMode: "candidate-only";
 }
 
@@ -576,9 +579,12 @@ export function createOntologyPackScaffoldPlan(
   const knownPackCandidate: OntologyPackKnownPackCandidate = {
     targetPath: KNOWN_PACKS_TARGET_PATH,
     packId: rawPackId,
+    importPath: implementationPackage,
+    exportSymbolName: symbols.packConstantName,
     importName: symbols.packConstantName,
     moduleSpecifier: implementationPackage,
     registryEntry: `"${rawPackId}": ${symbols.packConstantName}`,
+    registrationMode: "manual",
     applyMode: "candidate-only",
   };
   const outputPaths = [

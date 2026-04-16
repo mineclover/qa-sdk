@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import { createOntologyPackScaffoldPlan } from "./ontology-pack-scaffold-plan.js";
 import { writeOntologyPackScaffoldPlan } from "./ontology-pack-scaffold-write.js";
+import { resolveKnownOntologyPack } from "./known-ontology-packs.js";
 
 describe("ontology pack scaffold write mode", () => {
   it("writes the dry-run preview file list into a temporary workspace", async () => {
@@ -33,6 +34,9 @@ describe("ontology pack scaffold write mode", () => {
         diagnostics: [],
         knownPackRegistrationCandidate: {
           targetPath: "packages/cli/src/lib/known-ontology-packs.ts",
+          importPath: "generated-risk-ontology",
+          exportSymbolName: "riskModelOntologyPack",
+          registrationMode: "manual",
           applyMode: "candidate-only",
         },
       });
@@ -63,6 +67,7 @@ describe("ontology pack scaffold write mode", () => {
         "utf8",
       )).toContain("operational-ontology-pack-interface");
       expect(existsSync(join(dir, "packages/cli/src/lib/known-ontology-packs.ts"))).toBe(false);
+      expect(resolveKnownOntologyPack("risk-model-ontology").ok).toBe(false);
     } finally {
       await rm(dir, { force: true, recursive: true });
     }

@@ -190,7 +190,13 @@ function printPackScaffoldPlanSummary(
   for (const command of plan.sourceMapGuidance.docsGraphCommands) {
     console.log(`  - ${command}`);
   }
-  console.log(`known-pack candidate: ${plan.knownPackCandidate.targetPath} (candidate only; not written)`);
+  console.log(
+    `known-pack candidate: ${plan.knownPackCandidate.targetPath} (manual; candidate only; not written)`,
+  );
+  console.log(
+    `  - import { ${plan.knownPackCandidate.exportSymbolName} } from "${plan.knownPackCandidate.importPath}";`,
+  );
+  console.log(`  - registry entry: ${plan.knownPackCandidate.registryEntry}`);
   if (writeSummary) {
     console.log(`write status: ${writeSummary.status}`);
     console.log(`files written: ${writeSummary.writtenCount}`);

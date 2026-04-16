@@ -236,7 +236,12 @@ describe("ontology CLI", () => {
         };
         knownPackCandidate: {
           targetPath: string;
+          packId: string;
+          importPath: string;
+          exportSymbolName: string;
           registryEntry: string;
+          registrationMode: string;
+          applyMode: string;
         };
         preview: {
           mode: string;
@@ -353,7 +358,12 @@ describe("ontology CLI", () => {
       );
       expect(parsed.knownPackCandidate).toMatchObject({
         targetPath: "packages/cli/src/lib/known-ontology-packs.ts",
+        packId: "risk-model-ontology",
+        importPath: "operational-ontology",
+        exportSymbolName: "riskModelOntologyPack",
         registryEntry: "\"risk-model-ontology\": riskModelOntologyPack",
+        registrationMode: "manual",
+        applyMode: "candidate-only",
       });
       expect(parsed.preview.knownPackRegistrationCandidate.targetPath).toBe(
         "packages/cli/src/lib/known-ontology-packs.ts",
@@ -409,6 +419,9 @@ describe("ontology CLI", () => {
           files: Array<{ path: string; status: string }>;
           knownPackRegistrationCandidate: {
             targetPath: string;
+            importPath: string;
+            exportSymbolName: string;
+            registrationMode: string;
             applyMode: string;
           };
         };
@@ -433,6 +446,9 @@ describe("ontology CLI", () => {
       ]);
       expect(parsed.writeSummary.knownPackRegistrationCandidate).toMatchObject({
         targetPath: "packages/cli/src/lib/known-ontology-packs.ts",
+        importPath: "generated-risk-ontology",
+        exportSymbolName: "riskModelOntologyPack",
+        registrationMode: "manual",
         applyMode: "candidate-only",
       });
 
@@ -508,7 +524,13 @@ describe("ontology CLI", () => {
         "qa-sdk docs graph quality-signal-ontology-system --axis source",
       );
       expect(output.stdout).toContain(
-        "known-pack candidate: packages/cli/src/lib/known-ontology-packs.ts (candidate only; not written)",
+        "known-pack candidate: packages/cli/src/lib/known-ontology-packs.ts (manual; candidate only; not written)",
+      );
+      expect(output.stdout).toContain(
+        'import { qualitySignalOntologyPack } from "generated-quality-ontology";',
+      );
+      expect(output.stdout).toContain(
+        'registry entry: "quality-signal-ontology": qualitySignalOntologyPack',
       );
       expect(await readFile(
         join(dir, "packages/generated-quality-ontology/src/internal/quality-signal-ontology-pack.ts"),
