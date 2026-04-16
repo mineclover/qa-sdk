@@ -57,27 +57,33 @@ Adapter는 source vocabulary를 소유하지 않는다. `kind`, `status`, relati
 
 ## Traversal taxonomy
 
-Docs graph traversal은 authored vocabulary를 대체하지 않고 내부 분류 축만 추가한다.
+Docs graph traversal은 authored vocabulary를 대체하지 않고 `DocumentEnvelope[]`에서 만든 sidecar projection에 내부 분류 축만 추가한다. Canonical axes는 `composition`(contains/section), `refinement`(refines), `dependency`(depends_on), `constraint`(constrains/rule), `trace`(PRD/story/TODO/session lineage), `source`(code/file path), `evidence`(proof/artifact/verification), `role`(family document role), `context`(tags/coordinates)이다.
 
-- canonical axis: `composition`, `refinement`, `dependency`, `constraint`, `trace`, `source`, `evidence`, `role`, `context`
-- direction: `out`, `in`, `both`이며 axis 이름에 역방향 의미를 섞지 않는다.
-- node role: `spec`, `todo`, `plan`, `rule`, `test`, `memo`, `knowledge`, `prd`, `ralph-prd-json`, `ralph-session`, `source`, `evidence`, 필요한 경우 `section`
-- authored links: `contains`, `depends_on`, `implements`, `refines`, `constrains`, `traces_to`, `evolves_from`, `supersedes`는 source-owned 값으로 보존하고 traversal index에서만 canonical axis로 매핑한다.
-- presets: `family`, `implementation`, `review`, `impact`, `prd-completion`은 편의 view이며 canonical axis가 아니다. 각 preset은 기존 axis와 direction/depth 기본값만 확장한다.
-  `family`=`role+composition`, `implementation`/`prd-completion`=`trace+source+evidence`, `review`=`dependency+constraint+evidence+role`, `impact`=역방향 `dependency+trace+source+evidence`.
-- source traversal은 docs control-plane adapters가 만든 `DocumentEnvelope.sources`, metadata source refs, PRD/session path, artifact evidence refs를 읽는다. `qa-sdk def find-by-file`의 DB-owned `code_references` explicit source-map 조회와 별도 표면이다.
-- traversal guardrail: 기본 depth는 `1`, 최대 depth는 `6`; 기본 limit는 `100`, 최대 limit는 `500`이다. 초과 요청은 capped diagnostic을 남긴다.
-- cap에 걸린 결과는 `truncated: true`, legacy `omittedCount`, 세부 `omittedCounts.nodes|edges|depth`를 노출한다.
-- `context` axis와 free-text search는 broad traversal로 취급하고 text output에서 warning을 표시한다.
+Direction은 `out`, `in`, `both`이고 axis 이름에 역방향 의미를 섞지 않는다. Edge는 항상 canonical `fromNodeId -> toNodeId`를 보존하며 traversal step만 역방향일 수 있다. `trace`, `source`, `evidence`는 별도 system axis다. PRD lineage가 코드 파일이나 proof artifact를 가리켜도 trace edge를 source/evidence로 합치지 않고, source refs와 evidence refs도 각각 자기 축으로 남긴다.
+
+Node role은 `spec`, `todo`, `plan`, `rule`, `test`, `memo`, `knowledge`, `prd`, `ralph-prd-json`, `ralph-session`, `source`, `evidence`, 필요한 경우 `section`이다. `rule`은 문서 역할이므로 role traversal에 포함되고, `.rule.md`는 같은 family spec을 향한 implicit `constraint` edge도 만든다.
+
+Authored links는 source-owned 값으로 보존한다. Normalizer만 `contains→composition`, `refines→refinement`, `depends_on→dependency`, `constrains→constraint`, `traces_to|implements|evolves_from|supersedes→trace`, `verifies|materializes_output→evidence`로 매핑한다. `role`, `source`, `evidence`, `context` 중 상당수는 authored link가 아니라 envelope field와 adapter metadata에서 온 system axis다.
+
+Presets `family`, `implementation`, `review`, `impact`, `prd-completion`은 convenience view이며 canonical axis가 아니다. 각 preset은 기존 axis와 direction/depth/context 기본값만 확장한다: `family=role+composition`, `implementation=trace+source+evidence`, `review=dependency+constraint+evidence+role`, `impact=in dependency+trace+source+evidence`, `prd-completion=trace+source+evidence`.
+
+Source path target은 repository root 기준 relative path로 canonicalize한 뒤 indexed `source` node를 찾는다. Coverage가 없으면 broad repository fallback을 하지 않고 synthetic `source` node와 `source-map-missing` diagnostic만 반환한다. 이는 `qa-sdk def find-by-file`과 다르다. `find-by-file`은 `def sync`가 만든 DB-owned `code_references` explicit source-map만 읽고, mapping이 없거나 ambiguous하면 authoritative boundary를 확정하지 않는다.
+
+Traversal guardrail: 기본 depth는 `1`, 최대 depth는 `6`; 기본 limit는 `100`, 최대 limit는 `500`이다. 초과 요청은 capped diagnostic을 남기며, cap에 걸린 결과는 `truncated: true`, legacy `omittedCount`, 세부 `omittedCounts.nodes|edges|depth`를 노출한다. `context` axis와 free-text search는 broad traversal로 취급하고 text output에서 warning을 표시한다.
 
 ## `qa-sdk def`와 `qa-sdk docs`
 
-| 표면 | 역할 | 입력 | 출력 |
-|------|------|------|------|
-| `qa-sdk def` | definition-catalog primitive | definition markdown frontmatter + synced/local/server datasource | 단일 definition 문서, graph, boundary, context, validation |
-| `qa-sdk docs` | cross-document control plane | definition markdown + PRD markdown/JSON + session + evidence adapters | family status, drift, PRD context, scaffold, compatibility conversion, dry-run transforms |
+`qa-sdk def`는 definition markdown frontmatter와 synced/local/server datasource를 대상으로 단일 definition 문서, graph, boundary, context, validation을 다루는 primitive surface다. `qa-sdk def graph/context/boundary/find-by-file`는 단일 definition catalog datasource 안에서 좌표, 링크, contains 계층, code reference boundary를 묻는다. `qa-sdk docs graph`는 definition markdown, PRD markdown/JSON, ralph session, evidence registry를 함께 읽고 canonical traversal axis로 cross-document 좌표를 걷는다. `docs` command가 definition metadata를 해석할 때도 authoritative validation은 definition-catalog parser와 graph rules를 재사용한다.
 
-`qa-sdk def`는 definition 문서 자체의 좌표, 링크, 계층, code reference를 다룬다. `qa-sdk docs`는 여러 문서 family와 실행 sidecar를 함께 읽어 PRD 중심 drift를 줄이고, 필요한 후속 작업을 제안한다. `docs` command가 definition metadata를 해석할 때도 authoritative validation은 definition-catalog parser와 graph rules를 재사용한다.
+Examples:
+
+```bash
+qa-sdk docs graph docs-control-plane --axis composition --direction out --depth 2
+qa-sdk docs graph packages/cli/src/commands/docs.ts --axis source --direction both --json
+qa-sdk docs graph checkout-evidence --axis evidence --direction both
+qa-sdk docs graph checkout-spec --axis role --direction both
+qa-sdk docs graph US-011 --axis trace --direction both --depth 3
+```
 
 ## Adapter boundary
 
