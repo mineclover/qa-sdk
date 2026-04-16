@@ -1,7 +1,7 @@
 {
   "name": "Document Source Map Coverage Expansion",
-  "branchName": "ralph/document-source-map-coverage-expansion",
   "description": "The docs coordinate graph can now resolve source paths as graph nodes and avoids falling back to full-repository collection when coverage is missing. The next step is to expand explicit source-map coverage for the docs control plane, ontology CLI split modules, and ontology pack sources so bottom-up source traversal and `qa-sdk def find-by-file` become useful operational tools instead of mostly reporting `source-map-missing`.\n\nThis PRD improves source-map coverage through conservative frontmatter `sources:` / `source:` updates and targeted fixtures. It does not add REST, remote indexing, automatic source annotation, or broad source-map rewriting.",
+  "branchName": "ralph/document-source-map-coverage-expansion",
   "userStories": [
     {
       "id": "US-001",
@@ -23,9 +23,10 @@
         "`node packages/cli/dist/index.js def validate` - repository definition validation"
       ],
       "priority": 1,
-      "passes": false,
-      "notes": "",
-      "dependsOn": []
+      "passes": true,
+      "notes": "Added the US-001 source-map coverage target list to tasks/prd-document-source-map-coverage-expansion.md. The list covers docs-control-plane command/graph/adapter sources, ontology CLI split modules, and pack implementation sources, classifying each as frontmatter-source, def-code-reference, or gap without source comment edits.",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-002",
@@ -207,5 +208,8 @@
         "US-007"
       ]
     }
-  ]
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-16T06:24:59.635Z"
+  }
 }

@@ -3,7 +3,7 @@ def:
   id: doc-type-convention-cases
   level: leaf
   scope: flow
-  aspect: scenario
+  aspect: user_scenario
   depth: validation
   lifecycle: approved
   layer: operation

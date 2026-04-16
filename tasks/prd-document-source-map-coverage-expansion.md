@@ -44,6 +44,66 @@ No browser verification is required.
 - [ ] Classify each target as `frontmatter-source`, `def-code-reference`, or `gap`.
 - [ ] Do not modify source code comments in this story.
 
+#### Source-map coverage target list
+
+This list is the US-001 scoping artifact. It does not apply source-map edits by itself.
+
+Classification:
+
+- `frontmatter-source`: add or keep a definition markdown top-level `source:` / `sources:` entry. This is the preferred path for this PRD because it can feed docs graph coverage and, after `def sync`, DB-owned `code_references`.
+- `def-code-reference`: reserve for future minimal `@def.doc` / `@def.boundary` annotations when file-level frontmatter is too broad or a symbol-level owner is required. No source comments are changed in US-001.
+- `gap`: keep missing coverage explicit until an authoritative owning doc exists. Do not hide it through broad fallback or unrelated frontmatter.
+
+Docs control-plane targets:
+
+| source path | owning doc/family | classification | scope note |
+|-------------|-------------------|----------------|------------|
+| `packages/cli/src/commands/docs.ts` | `docs-control-plane` | `frontmatter-source` | Public docs command handler. |
+| `packages/cli/src/command-groups/docs.commands.ts` | `docs-control-plane` | `frontmatter-source` | Public docs command descriptors. |
+| `packages/cli/src/lib/docs-control-plane/types.ts` | `docs-control-plane` | `frontmatter-source` | Neutral envelope/read-model contracts. |
+| `packages/cli/src/lib/docs-control-plane/normalize.ts` | `docs-control-plane` | `frontmatter-source` | Envelope normalization helpers. |
+| `packages/cli/src/lib/docs-control-plane/query.ts` | `docs-control-plane` | `frontmatter-source` | Status/search/collection query helpers. |
+| `packages/cli/src/lib/docs-control-plane/drift.ts` | `docs-control-plane` | `frontmatter-source` | PRD/session drift calculation. |
+| `packages/cli/src/lib/docs-control-plane/metadata-transform.ts` | `docs-control-plane` | `frontmatter-source` | Dry-run metadata transform surface. |
+| `packages/cli/src/lib/docs-control-plane/prd-completion-sync.ts` | `docs-control-plane` | `frontmatter-source` | PRD completion candidate analysis. |
+| `packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts` | `docs-control-plane` | `frontmatter-source` | Ralph-compatible PRD JSON conversion. |
+| `packages/cli/src/lib/docs-control-plane/graph-types.ts` | `docs-control-plane` | `frontmatter-source` | Graph taxonomy and axis contracts. |
+| `packages/cli/src/lib/docs-control-plane/graph-index.ts` | `docs-control-plane` | `frontmatter-source` | Source/evidence/role graph indexing. |
+| `packages/cli/src/lib/docs-control-plane/graph-normalize.ts` | `docs-control-plane` | `frontmatter-source` | Authored relation to canonical axis normalization. |
+| `packages/cli/src/lib/docs-control-plane/graph-traverse.ts` | `docs-control-plane` | `frontmatter-source` | Traversal execution and bounded diagnostics. |
+| `packages/cli/src/lib/docs-control-plane/graph-presets.ts` | `docs-control-plane` | `frontmatter-source` | Preset expansion for graph views. |
+| `packages/cli/src/lib/docs-control-plane/graph-scope.ts` | `docs-control-plane` | `frontmatter-source` | Scope and repository path handling. |
+| `packages/cli/src/lib/docs-control-plane/adapters/definition-markdown.ts` | `docs-control-plane` | `frontmatter-source` | Definition markdown adapter. |
+| `packages/cli/src/lib/docs-control-plane/adapters/prd-markdown.ts` | `docs-control-plane` | `frontmatter-source` | PRD markdown adapter. |
+| `packages/cli/src/lib/docs-control-plane/adapters/ralph-prd-json.ts` | `docs-control-plane` | `frontmatter-source` | Ralph PRD JSON adapter. |
+| `packages/cli/src/lib/docs-control-plane/adapters/ralph-session.ts` | `docs-control-plane` | `frontmatter-source` | Ralph session adapter. |
+| `packages/cli/src/lib/docs-control-plane/adapters/artifact-evidence.ts` | `docs-control-plane` | `frontmatter-source` | Artifact evidence adapter. |
+| `packages/cli/src/lib/docs-control-plane/index.ts` | `docs-control-plane` | `gap` | Barrel-only facade; cover behavior through constituent modules unless a facade-level lookup becomes required. |
+
+Ontology CLI split-module targets:
+
+| source path | owning doc/family | classification | scope note |
+|-------------|-------------------|----------------|------------|
+| `packages/cli/src/commands/ontology/activation.ts` | `operational-ontology-registry-activation-*` and `programming-artifact-ontology-activation-evidence` | `frontmatter-source` | Activation command orchestration and activation evidence production. |
+| `packages/cli/src/commands/ontology/artifact-registry.ts` | `programming-artifact-ontology-registry-provider` and activation evidence docs | `frontmatter-source` | Registry validate/list/append behavior. |
+| `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` | `programming-artifact-ontology-*` provider/quality/evidence docs | `frontmatter-source` | Artifact source lookup, fallback JSON, and provider merge. |
+| `packages/cli/src/commands/ontology/quality-status-evidence.ts` | `programming-artifact-ontology-quality-evidence` | `frontmatter-source` | Quality-status record and snapshot evidence. |
+| `packages/cli/src/commands/ontology/quality-ledger-evidence.ts` | `programming-artifact-ontology-quality-evidence` | `frontmatter-source` | Ledger fallback, freshness, and governance closure evidence. |
+| `packages/cli/src/commands/ontology/ingest.ts` | ontology CLI docs | `gap` | No authoritative owning doc identified yet; keep source-map miss explicit until ownership is documented. |
+| `packages/cli/src/commands/ontology/status.ts` | ontology CLI docs | `gap` | No authoritative owning doc identified yet; keep source-map miss explicit until ownership is documented. |
+| `packages/cli/src/commands/ontology/navigation-diff.ts` | ontology CLI docs | `gap` | No authoritative owning doc identified yet; keep source-map miss explicit until ownership is documented. |
+| `packages/cli/src/commands/ontology/support.ts` | ontology CLI support helpers | `def-code-reference` | Shared helper module; prefer future symbol-level references only if a specific helper becomes an owned boundary. |
+
+Pack implementation targets:
+
+| source path | owning doc/family | classification | scope note |
+|-------------|-------------------|----------------|------------|
+| `packages/operational-ontology/src/internal/pack-core.ts` | `operational-ontology-pack-interface` | `frontmatter-source` | Core pack interface implementation. |
+| `packages/operational-ontology/src/pack.ts` | `operational-ontology-pack-interface` | `frontmatter-source` | Public pack facade, if US-004 keeps it in scope. |
+| `packages/operational-ontology/src/internal/programming-artifact-core.ts` | `programming-artifact-ontology-system` and provider/evidence leaves | `frontmatter-source` | Programming artifact pack implementation. |
+| `packages/operational-ontology/src/programming-artifacts.ts` | `programming-artifact-ontology-system` and provider/evidence leaves | `frontmatter-source` | Public programming artifact facade, if US-004 keeps it in scope. |
+| `packages/authorization-ontology/src/index.ts` | `authorization-ontology-package-architecture` | `frontmatter-source` | Authorization ontology public pack implementation. |
+
 ### US-002: Add Docs Control Plane Source References
 
 **Description:** As a docs operator, I want docs-control-plane specs to point at the actual control-plane implementation files so graph source traversal works for the docs command family.
