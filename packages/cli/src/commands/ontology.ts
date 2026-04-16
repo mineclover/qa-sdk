@@ -119,6 +119,7 @@ function printPackAuthoringContract(): void {
       "- Write mode creates parent directories and refuses to overwrite existing files.",
       "- Scaffold preserves architecture-neutral identity/data/system separation; ECS can be modeled but is not required.",
       "- Required definition docs are spec/todo/plan; optional rule/cases/test docs require --include-docs.",
+      "- Source-map candidates report generated implementation/test paths with def find-by-file guidance; no source comments are added by default.",
       "- Known-pack registration is reported as a candidate and is not applied automatically.",
       "- Registry activation is out of scope for scaffold; use qa-sdk ontology registry activate-pack separately.",
     ].join("\n"),
@@ -169,7 +170,26 @@ function printPackScaffoldPlanSummary(
     console.log(`  - ${file.path} (${required})`);
   }
   console.log(`source-map candidates: ${plan.sourceMapCandidates.length}`);
+  for (const candidate of plan.sourceMapCandidates) {
+    console.log(
+      `  - ${candidate.sourcePath} -> ${candidate.docPath} (${candidate.sourceRole}; ${candidate.sourceFileKind}; ${candidate.candidateKind}; ${candidate.applyMode})`,
+    );
+  }
   console.log(`source-map frontmatter candidates: ${plan.sourceMapFrontmatterCandidates.length}`);
+  for (const candidate of plan.sourceMapFrontmatterCandidates) {
+    console.log(
+      `  - ${candidate.docPath} (${candidate.targetKind}; ${candidate.candidateKind}; ${candidate.applyMode})`,
+    );
+  }
+  console.log("def find-by-file guidance:");
+  console.log(`  ${plan.sourceMapGuidance.summary}`);
+  for (const command of plan.sourceMapGuidance.findByFileCommands) {
+    console.log(`  - ${command}`);
+  }
+  console.log("docs graph guidance:");
+  for (const command of plan.sourceMapGuidance.docsGraphCommands) {
+    console.log(`  - ${command}`);
+  }
   console.log(`known-pack candidate: ${plan.knownPackCandidate.targetPath} (candidate only; not written)`);
   if (writeSummary) {
     console.log(`write status: ${writeSummary.status}`);

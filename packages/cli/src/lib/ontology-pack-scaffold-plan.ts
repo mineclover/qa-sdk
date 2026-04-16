@@ -129,14 +129,27 @@ export interface OntologyPackSourceMapCandidate {
   readonly sourcePath: string;
   readonly sourceRole: "component-schema" | "system-binding" | "test";
   readonly frontmatterKey: "sources";
+  readonly sourceFileKind: "generated-file";
+  readonly candidateKind: "suggested-doc-edit";
+  readonly applyMode: "candidate-only";
 }
 
 export interface OntologyPackSourceMapFrontmatterCandidate {
   readonly docId: string;
   readonly docPath: string;
   readonly frontmatterKey: "sources";
+  readonly candidateKind: "suggested-doc-edit";
+  readonly targetKind: "definition-doc-frontmatter";
+  readonly applyMode: "candidate-only";
   readonly sources: readonly string[];
   readonly yaml: string;
+}
+
+export interface OntologyPackSourceMapGuidance {
+  readonly summary: string;
+  readonly findByFileCommands: readonly string[];
+  readonly docsGraphCommands: readonly string[];
+  readonly notes: readonly string[];
 }
 
 export interface OntologyPackKnownPackCandidate {
@@ -163,7 +176,9 @@ export interface OntologyPackScaffoldPreview {
     readonly selectedOptional: readonly OntologyPackScaffoldDefinitionDocFile[];
     readonly files: readonly OntologyPackScaffoldDefinitionDocFile[];
   };
+  readonly sourceMapCandidates: readonly OntologyPackSourceMapCandidate[];
   readonly sourceMapFrontmatterCandidates: readonly OntologyPackSourceMapFrontmatterCandidate[];
+  readonly sourceMapGuidance: OntologyPackSourceMapGuidance;
   readonly knownPackRegistrationCandidate: OntologyPackKnownPackCandidate;
   readonly declarations: {
     readonly identity: readonly OntologyPackScaffoldIdentityDeclaration[];
@@ -187,6 +202,7 @@ export interface OntologyPackScaffoldPlan {
   readonly requestedOptionalDefinitionDocs: readonly OntologyPackScaffoldOptionalDefinitionDocType[];
   readonly sourceMapCandidates: readonly OntologyPackSourceMapCandidate[];
   readonly sourceMapFrontmatterCandidates: readonly OntologyPackSourceMapFrontmatterCandidate[];
+  readonly sourceMapGuidance: OntologyPackSourceMapGuidance;
   readonly knownPackCandidate: OntologyPackKnownPackCandidate;
   readonly preview: OntologyPackScaffoldPreview;
   readonly outputPaths: readonly string[];
@@ -502,35 +518,31 @@ export function createOntologyPackScaffoldPlan(
     ...selectedOptionalDefinitionDocFiles,
   ];
   const sourceMapCandidates: OntologyPackSourceMapCandidate[] = [
-    {
+    sourceMapCandidate({
       docId: definitionId,
       docPath: docs.spec,
       sourcePath: componentSchemaPath,
       sourceRole: "component-schema",
-      frontmatterKey: "sources",
-    },
-    {
+    }),
+    sourceMapCandidate({
       docId: definitionId,
       docPath: docs.spec,
       sourcePath: systemBindingPath,
       sourceRole: "system-binding",
-      frontmatterKey: "sources",
-    },
-    {
+    }),
+    sourceMapCandidate({
       docId: definitionId,
       docPath: docs.spec,
       sourcePath: testPath,
       sourceRole: "test",
-      frontmatterKey: "sources",
-    },
+    }),
     ...(requestedOptionalDocSet.has("test")
-      ? [{
+      ? [sourceMapCandidate({
         docId: testDocId,
         docPath: docs.test,
         sourcePath: testPath,
-        sourceRole: "test" as const,
-        frontmatterKey: "sources" as const,
-      }]
+        sourceRole: "test",
+      })]
       : []),
   ];
   const sourceMapFrontmatterCandidates: OntologyPackSourceMapFrontmatterCandidate[] = [
@@ -538,6 +550,9 @@ export function createOntologyPackScaffoldPlan(
       docId: definitionId,
       docPath: docs.spec,
       frontmatterKey: "sources",
+      candidateKind: "suggested-doc-edit",
+      targetKind: "definition-doc-frontmatter",
+      applyMode: "candidate-only",
       sources: [componentSchemaPath, systemBindingPath, testPath],
       yaml: renderSourcesYaml([componentSchemaPath, systemBindingPath, testPath]),
     },
@@ -546,11 +561,18 @@ export function createOntologyPackScaffoldPlan(
         docId: testDocId,
         docPath: docs.test,
         frontmatterKey: "sources" as const,
+        candidateKind: "suggested-doc-edit" as const,
+        targetKind: "definition-doc-frontmatter" as const,
+        applyMode: "candidate-only" as const,
         sources: [testPath],
         yaml: renderSourcesYaml([testPath]),
       }]
       : []),
   ];
+  const sourceMapGuidance = createSourceMapGuidance(
+    definitionId,
+    sourceMapCandidates.map((candidate) => candidate.sourcePath),
+  );
   const knownPackCandidate: OntologyPackKnownPackCandidate = {
     targetPath: KNOWN_PACKS_TARGET_PATH,
     packId: rawPackId,
@@ -592,7 +614,9 @@ export function createOntologyPackScaffoldPlan(
       selectedOptional: selectedOptionalDefinitionDocFiles,
       files: definitionDocFiles,
     },
+    sourceMapCandidates,
     sourceMapFrontmatterCandidates,
+    sourceMapGuidance,
     knownPackRegistrationCandidate: knownPackCandidate,
     declarations: {
       identity: identity.declarations,
@@ -616,6 +640,7 @@ export function createOntologyPackScaffoldPlan(
     requestedOptionalDefinitionDocs,
     sourceMapCandidates,
     sourceMapFrontmatterCandidates,
+    sourceMapGuidance,
     knownPackCandidate,
     preview,
     outputPaths,
@@ -811,7 +836,7 @@ function resolveSafeRepoPath(input: {
   readonly fallbackPath: string;
   readonly diagnostics: OntologyPackScaffoldDiagnostic[];
 }): string {
-  const value = input.inputPath.trim();
+  const value = input.inputPath.trim().replaceAll("\\", "/");
   if (value.length === 0 || value.includes("\0")) {
     input.diagnostics.push(unsafePathDiagnostic(input.field, input.inputPath));
     return normalizeRepoPath(input.fallbackPath);
@@ -906,6 +931,45 @@ function renderSourcesYaml(sources: readonly string[]): string {
     "sources:",
     ...sources.map((source) => `  - ${source}`),
   ].join("\n");
+}
+
+function sourceMapCandidate(
+  input: Omit<
+    OntologyPackSourceMapCandidate,
+    "applyMode" | "candidateKind" | "frontmatterKey" | "sourceFileKind"
+  >,
+): OntologyPackSourceMapCandidate {
+  return {
+    ...input,
+    frontmatterKey: "sources",
+    sourceFileKind: "generated-file",
+    candidateKind: "suggested-doc-edit",
+    applyMode: "candidate-only",
+  };
+}
+
+function createSourceMapGuidance(
+  definitionId: string,
+  sourcePaths: readonly string[],
+): OntologyPackSourceMapGuidance {
+  const uniqueSourcePaths = [...new Set(sourcePaths)];
+  return {
+    summary:
+      "Review the sources frontmatter candidates, run qa-sdk def sync, then verify source coverage with def find-by-file and docs graph.",
+    findByFileCommands: uniqueSourcePaths.map((sourcePath) =>
+      `qa-sdk def find-by-file ${sourcePath}`
+    ),
+    docsGraphCommands: [
+      `qa-sdk docs graph ${definitionId} --axis source`,
+      ...uniqueSourcePaths.map((sourcePath) =>
+        `qa-sdk docs graph ${sourcePath} --axis source`
+      ),
+    ],
+    notes: [
+      "Source-map candidates use repository-relative normalized paths.",
+      "Generated TypeScript files do not receive @def.boundary or @def.doc source comments by default.",
+    ],
+  };
 }
 
 function renderSpecDoc(

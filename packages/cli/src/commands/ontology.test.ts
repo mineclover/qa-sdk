@@ -67,6 +67,7 @@ describe("ontology CLI", () => {
     expect(USAGE).toContain("qa-sdk ontology status");
     expect(USAGE).toContain("qa-sdk ontology pack scaffold <pack-id>");
     expect(USAGE).toContain("dry-run by default; file writes require --write");
+    expect(USAGE).toContain("source-map candidates include def find-by-file guidance");
     expect(USAGE).toContain("registry activation is out of scope");
     expect(USAGE).toContain("[--include-docs <rule,cases,test|all>] [--dry-run] [--write] [--json]");
     expect(USAGE).toContain("qa-sdk ontology pack validate <pack-ref>");
@@ -179,6 +180,8 @@ describe("ontology CLI", () => {
     expect(output.stdout).toContain("Scaffold is dry-run by default");
     expect(output.stdout).toContain("file writes require explicit --write");
     expect(output.stdout).toContain("Known-pack registration is reported as a candidate");
+    expect(output.stdout).toContain("def find-by-file guidance");
+    expect(output.stdout).toContain("no source comments are added by default");
     expect(output.stdout).toContain("Registry activation is out of scope for scaffold");
     expect(output.stdout).toContain("ECS can be modeled but is not required");
     expect(output.stdout).toContain("optional rule/cases/test docs require --include-docs");
@@ -213,7 +216,24 @@ describe("ontology CLI", () => {
           docPath: string;
           sources: string[];
           yaml: string;
+          candidateKind: string;
+          targetKind: string;
+          applyMode: string;
         }>;
+        sourceMapCandidates: Array<{
+          docPath: string;
+          sourcePath: string;
+          sourceRole: string;
+          sourceFileKind: string;
+          candidateKind: string;
+          applyMode: string;
+        }>;
+        sourceMapGuidance: {
+          summary: string;
+          findByFileCommands: string[];
+          docsGraphCommands: string[];
+          notes: string[];
+        };
         knownPackCandidate: {
           targetPath: string;
           registryEntry: string;
@@ -233,7 +253,24 @@ describe("ontology CLI", () => {
             componentLike: unknown[];
             systemLike: unknown[];
           };
-          sourceMapFrontmatterCandidates: Array<{ yaml: string }>;
+          sourceMapCandidates: Array<{
+            docPath: string;
+            sourcePath: string;
+            sourceFileKind: string;
+            candidateKind: string;
+            applyMode: string;
+          }>;
+          sourceMapFrontmatterCandidates: Array<{
+            yaml: string;
+            candidateKind: string;
+            targetKind: string;
+            applyMode: string;
+          }>;
+          sourceMapGuidance: {
+            findByFileCommands: string[];
+            docsGraphCommands: string[];
+            notes: string[];
+          };
           knownPackRegistrationCandidate: { targetPath: string };
           files: Array<{ path: string }>;
         };
@@ -284,6 +321,35 @@ describe("ontology CLI", () => {
       expect(parsed.sourceMapFrontmatterCandidates[0]?.yaml).toContain("sources:");
       expect(parsed.sourceMapFrontmatterCandidates[0]?.yaml).toContain(
         "packages/operational-ontology/src/risk-model-ontology.test.ts",
+      );
+      expect(parsed.sourceMapFrontmatterCandidates[0]).toMatchObject({
+        candidateKind: "suggested-doc-edit",
+        targetKind: "definition-doc-frontmatter",
+        applyMode: "candidate-only",
+      });
+      expect(parsed.sourceMapCandidates.map((candidate) => candidate.sourcePath)).toEqual([
+        "packages/operational-ontology/src/internal/risk-model-ontology-schema.ts",
+        "packages/operational-ontology/src/internal/risk-model-ontology-pack.ts",
+        "packages/operational-ontology/src/risk-model-ontology.test.ts",
+      ]);
+      expect(parsed.sourceMapCandidates.every((candidate) =>
+        candidate.sourceFileKind === "generated-file"
+        && candidate.candidateKind === "suggested-doc-edit"
+        && candidate.applyMode === "candidate-only"
+      )).toBe(true);
+      expect(parsed.preview.sourceMapCandidates.map((candidate) => candidate.sourcePath)).toEqual(
+        parsed.sourceMapCandidates.map((candidate) => candidate.sourcePath),
+      );
+      expect(parsed.preview.sourceMapGuidance.findByFileCommands).toEqual([
+        "qa-sdk def find-by-file packages/operational-ontology/src/internal/risk-model-ontology-schema.ts",
+        "qa-sdk def find-by-file packages/operational-ontology/src/internal/risk-model-ontology-pack.ts",
+        "qa-sdk def find-by-file packages/operational-ontology/src/risk-model-ontology.test.ts",
+      ]);
+      expect(parsed.preview.sourceMapGuidance.docsGraphCommands).toContain(
+        "qa-sdk docs graph risk-model-ontology-system --axis source",
+      );
+      expect(parsed.preview.sourceMapGuidance.notes.join("\n")).toContain(
+        "do not receive @def.boundary or @def.doc source comments",
       );
       expect(parsed.knownPackCandidate).toMatchObject({
         targetPath: "packages/cli/src/lib/known-ontology-packs.ts",
@@ -425,6 +491,22 @@ describe("ontology CLI", () => {
       expect(output.stdout).toContain("mode: write");
       expect(output.stdout).toContain("write status: written");
       expect(output.stdout).toContain("files written: 9");
+      expect(output.stdout).toContain("source-map candidates: 4");
+      expect(output.stdout).toContain(
+        "packages/generated-quality-ontology/src/internal/quality-signal-ontology-schema.ts -> docs/specs/generated-quality-ontology/quality-signal-ontology-system.spec.md",
+      );
+      expect(output.stdout).toContain(
+        "packages/generated-quality-ontology/src/quality-signal-ontology.test.ts -> docs/specs/generated-quality-ontology/quality-signal-ontology.test.md",
+      );
+      expect(output.stdout).toContain("suggested-doc-edit; candidate-only");
+      expect(output.stdout).toContain("def find-by-file guidance:");
+      expect(output.stdout).toContain(
+        "qa-sdk def find-by-file packages/generated-quality-ontology/src/internal/quality-signal-ontology-pack.ts",
+      );
+      expect(output.stdout).toContain("docs graph guidance:");
+      expect(output.stdout).toContain(
+        "qa-sdk docs graph quality-signal-ontology-system --axis source",
+      );
       expect(output.stdout).toContain(
         "known-pack candidate: packages/cli/src/lib/known-ontology-packs.ts (candidate only; not written)",
       );

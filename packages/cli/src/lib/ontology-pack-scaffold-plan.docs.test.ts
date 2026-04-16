@@ -159,6 +159,9 @@ describe("ontology pack scaffold plan", () => {
         sourcePath: "packages/operational-ontology/src/internal/risk-model-ontology-schema.ts",
         sourceRole: "component-schema",
         frontmatterKey: "sources",
+        sourceFileKind: "generated-file",
+        candidateKind: "suggested-doc-edit",
+        applyMode: "candidate-only",
       },
       {
         docId: "risk-model-ontology-system",
@@ -166,6 +169,9 @@ describe("ontology pack scaffold plan", () => {
         sourcePath: "packages/operational-ontology/src/internal/risk-model-ontology-pack.ts",
         sourceRole: "system-binding",
         frontmatterKey: "sources",
+        sourceFileKind: "generated-file",
+        candidateKind: "suggested-doc-edit",
+        applyMode: "candidate-only",
       },
       {
         docId: "risk-model-ontology-system",
@@ -173,6 +179,9 @@ describe("ontology pack scaffold plan", () => {
         sourcePath: "packages/operational-ontology/src/risk-model-ontology.test.ts",
         sourceRole: "test",
         frontmatterKey: "sources",
+        sourceFileKind: "generated-file",
+        candidateKind: "suggested-doc-edit",
+        applyMode: "candidate-only",
       },
     ]);
     expect(plan.sourceMapFrontmatterCandidates).toEqual([
@@ -180,6 +189,9 @@ describe("ontology pack scaffold plan", () => {
         docId: "risk-model-ontology-system",
         docPath: "docs/specs/operational-ontology/risk-model-ontology-system.spec.md",
         frontmatterKey: "sources",
+        candidateKind: "suggested-doc-edit",
+        targetKind: "definition-doc-frontmatter",
+        applyMode: "candidate-only",
         sources: [
           "packages/operational-ontology/src/internal/risk-model-ontology-schema.ts",
           "packages/operational-ontology/src/internal/risk-model-ontology-pack.ts",
@@ -248,6 +260,25 @@ describe("ontology pack scaffold plan", () => {
       "todo",
       "plan",
     ]);
+    expect(plan.preview.sourceMapCandidates.map((candidate) => candidate.sourcePath)).toEqual([
+      "packages/operational-ontology/src/internal/risk-model-ontology-schema.ts",
+      "packages/operational-ontology/src/internal/risk-model-ontology-pack.ts",
+      "packages/operational-ontology/src/risk-model-ontology.test.ts",
+    ]);
+    expect(plan.preview.sourceMapFrontmatterCandidates[0]).toMatchObject({
+      docPath: "docs/specs/operational-ontology/risk-model-ontology-system.spec.md",
+      candidateKind: "suggested-doc-edit",
+      targetKind: "definition-doc-frontmatter",
+      applyMode: "candidate-only",
+    });
+    expect(plan.preview.sourceMapGuidance.findByFileCommands).toEqual([
+      "qa-sdk def find-by-file packages/operational-ontology/src/internal/risk-model-ontology-schema.ts",
+      "qa-sdk def find-by-file packages/operational-ontology/src/internal/risk-model-ontology-pack.ts",
+      "qa-sdk def find-by-file packages/operational-ontology/src/risk-model-ontology.test.ts",
+    ]);
+    expect(plan.preview.sourceMapGuidance.docsGraphCommands).toContain(
+      "qa-sdk docs graph risk-model-ontology-system --axis source",
+    );
   });
 
   it("generates optional definition docs only when requested", () => {
@@ -419,7 +450,59 @@ describe("ontology pack scaffold plan", () => {
       second.preview.files.map((file) => [file.path, file.content]),
     );
     expect(first.testFiles).toEqual(second.testFiles);
+    const generatedSourceContent = [
+      ...first.componentSchemaFiles,
+      ...first.systemBindingFiles,
+      ...first.testFiles,
+    ].map((file) => file.content).join("\n");
+    expect(generatedSourceContent).not.toMatch(/\/\/\s*@def\.(?:boundary|doc)/);
+    expect(generatedSourceContent).not.toMatch(/\/\*\s*@def\.(?:boundary|doc)/);
+    expect(generatedSourceContent).not.toMatch(/\/\/\s*source:/i);
     expect(typecheckGeneratedTypeScriptSkeleton(first)).toEqual([]);
+  });
+
+  it("normalizes source-map candidate paths as repository-relative paths", () => {
+    const plan = createOntologyPackScaffoldPlan({
+      packId: "risk-model-ontology",
+      rootDir: "/repo",
+      implementationPackage: "risk-ontology",
+      packageRoot: "packages/generated-risk/../custom-risk",
+      docsDir: "docs/specs/generated-risk/../custom-risk",
+      testFilePath: "packages/custom-risk/tests/../src/./risk-model-ontology.test.ts",
+    });
+
+    expect(plan.diagnostics).toEqual([]);
+    expect(plan.componentSchemaFiles[0]?.path).toBe(
+      "packages/custom-risk/src/internal/risk-model-ontology-schema.ts",
+    );
+    expect(plan.systemBindingFiles[0]?.path).toBe(
+      "packages/custom-risk/src/internal/risk-model-ontology-pack.ts",
+    );
+    expect(plan.testFiles[0]?.path).toBe(
+      "packages/custom-risk/src/risk-model-ontology.test.ts",
+    );
+    expect(plan.docs.spec).toBe("docs/specs/custom-risk/risk-model-ontology-system.spec.md");
+
+    const candidatePaths = [
+      ...plan.preview.sourceMapCandidates.map((candidate) => candidate.sourcePath),
+      ...plan.preview.sourceMapCandidates.map((candidate) => candidate.docPath),
+      ...plan.preview.sourceMapFrontmatterCandidates.flatMap((candidate) => [
+        candidate.docPath,
+        ...candidate.sources,
+      ]),
+    ];
+    for (const path of candidatePaths) {
+      expect(path.startsWith("/")).toBe(false);
+      expect(path).not.toContain("\\");
+      expect(path.split("/")).not.toContain("..");
+      expect(path.split("/")).not.toContain(".");
+      expect(path).not.toContain("//");
+    }
+    expect(plan.preview.sourceMapGuidance.findByFileCommands).toEqual([
+      "qa-sdk def find-by-file packages/custom-risk/src/internal/risk-model-ontology-schema.ts",
+      "qa-sdk def find-by-file packages/custom-risk/src/internal/risk-model-ontology-pack.ts",
+      "qa-sdk def find-by-file packages/custom-risk/src/risk-model-ontology.test.ts",
+    ]);
   });
 
   it("renders a deterministic pack validation test skeleton", () => {
