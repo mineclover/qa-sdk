@@ -86,3 +86,11 @@ def:
 - [ ] PII column lineage graph 공개 범위 정책 정의
 - [ ] decision reason에 민감한 condition 값이 노출되지 않게 redaction rule 추가
 - [ ] graph export 권한 정책 추가
+
+### Deferred — 조건부 대기
+
+현재 조건부 대기 항목은 없다. 실행 계획이 별도 조건이나 외부 의존성을 확정하기 전까지 남은 미완료 항목은 `Actionable — 실행 가능`에 둔다.
+
+### Parking Lot — 후보 보관
+
+현재 후보 보관 항목은 없다. 새 구현 범위나 아이디어성 후보는 별도 결정 없이 이 문서에 추가하지 않는다.

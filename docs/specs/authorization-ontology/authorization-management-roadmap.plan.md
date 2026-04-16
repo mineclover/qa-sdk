@@ -33,6 +33,26 @@ proxy, application, Cerbos, permission-engine, lineage, decision observation을 
 - permission-engine은 bitmask 기반 O(1) check 커널로 남긴다.
 - authorization-ontology는 선언/적용/판정/피드백을 graph로 관측한다.
 
+## Topdown Family Alignment — authorization-ontology-system
+
+This pass used `qa-sdk def topdown authorization-ontology-system`, `docs collect authorization-ontology-system --family-only --json`, and `docs status authorization-ontology-system --json`.
+
+| field | value |
+|-------|-------|
+| existing roles | `spec`, `plan`, `todo`, `rule`, `knowledge` |
+| existing same-family roles | `knowledge` via the `authorization-ontology-system` root knowledge document |
+| linked context roles | `spec` via graph store and usecase leaves; `plan` via roadmap and operational pack plans; `todo` via hardening TODO; `rule` via usage rule; `knowledge` via contained ontology concept leaves |
+| missing roles | `cases`, `test`, `memo`, `prd`, `ralph-prd-json` |
+| missing same-family roles | `spec`, `plan`, `todo`, `rule`, `cases`, `test`, `memo`, `prd`, `ralph-prd-json` |
+| actionable TODO count | 17 open checklist rows |
+| deferred TODO count | 0 open checklist rows |
+| parking-lot TODO count | 0 open checklist rows |
+| completed record candidates | 0 (`completedRecords: []`) |
+| source refs | 31 frontmatter source refs |
+| diagnostics | 0 |
+
+No role document is created by this pass. Missing roles remain absence metadata until a concrete cases, test, memo, PRD markdown, or ralph PRD JSON artifact exists. All open hardening follow-ups remain `Actionable`; this pass does not select a Caddy/AuthentiK/Pulumi adapter, token remediation workflow, audit gate, monitor panel, regression test, masking rule, or graph export policy for implementation.
+
 ## Phase 1 — 구현된 capability 안정화
 
 현재 완료된 projector와 audit surface를 유지 가능한 계약으로 고정한다.
