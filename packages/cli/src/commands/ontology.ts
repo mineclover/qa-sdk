@@ -26,6 +26,10 @@ import {
   hasOntologyPackScaffoldErrors,
   type OntologyPackScaffoldPlan,
 } from "../lib/ontology-pack-scaffold-plan.js";
+import {
+  writeOntologyPackScaffoldPlan,
+  type OntologyPackScaffoldWriteSummary,
+} from "../lib/ontology-pack-scaffold-write.js";
 import { appendProgrammingArtifactRegistryRecords } from "../lib/programming-artifact-registry.js";
 import { cmdRegistryActivatePack } from "./ontology/activation.js";
 import {
@@ -112,6 +116,7 @@ function printPackAuthoringContract(): void {
       "Pack authoring contract:",
       "- OperationalOntologyPack is the canonical pack contract.",
       "- Scaffold is dry-run by default; file writes require explicit --write.",
+      "- Write mode creates parent directories and refuses to overwrite existing files.",
       "- Scaffold preserves architecture-neutral identity/data/system separation; ECS can be modeled but is not required.",
       "- Known-pack registration is reported as a candidate and is not applied automatically.",
       "- Registry activation is out of scope for scaffold; use qa-sdk ontology registry activate-pack separately.",
@@ -127,10 +132,14 @@ function printPlannedPackCommand(usage: string): void {
   process.exitCode = 1;
 }
 
-function printPackScaffoldPlanSummary(plan: OntologyPackScaffoldPlan): void {
-  if (plan.diagnostics.length > 0) {
-    console.error(`diagnostics: ${plan.diagnostics.length}`);
-    for (const diagnostic of plan.diagnostics) {
+function printPackScaffoldPlanSummary(
+  plan: OntologyPackScaffoldPlan,
+  writeSummary?: OntologyPackScaffoldWriteSummary,
+): void {
+  const diagnostics = writeSummary?.diagnostics ?? plan.diagnostics;
+  if (diagnostics.length > 0) {
+    console.error(`diagnostics: ${diagnostics.length}`);
+    for (const diagnostic of diagnostics) {
       const path = diagnostic.path ? ` ${diagnostic.path}` : "";
       console.error(`  - ${diagnostic.severity} ${diagnostic.code}:${path} ${diagnostic.message}`);
     }
@@ -160,8 +169,37 @@ function printPackScaffoldPlanSummary(plan: OntologyPackScaffoldPlan): void {
   }
   console.log(`source-map candidates: ${plan.sourceMapCandidates.length}`);
   console.log(`source-map frontmatter candidates: ${plan.sourceMapFrontmatterCandidates.length}`);
-  console.log(`known-pack candidate: ${plan.knownPackCandidate.targetPath}`);
-  console.log("files written: 0");
+  console.log(`known-pack candidate: ${plan.knownPackCandidate.targetPath} (candidate only; not written)`);
+  if (writeSummary) {
+    console.log(`write status: ${writeSummary.status}`);
+    console.log(`files written: ${writeSummary.writtenCount}`);
+    if (writeSummary.blockedFiles.length > 0) {
+      console.log("blocked existing files:");
+      for (const file of writeSummary.blockedFiles) {
+        console.log(`  - ${file.path}`);
+      }
+    }
+  } else {
+    console.log("files written: 0");
+  }
+}
+
+function toPackScaffoldJsonOutput(
+  plan: OntologyPackScaffoldPlan,
+  writeSummary?: OntologyPackScaffoldWriteSummary,
+): unknown {
+  if (!writeSummary) return plan;
+  return {
+    ...plan,
+    preview: {
+      ...plan.preview,
+      writesApplied: writeSummary.writesApplied,
+    },
+    writeSummary,
+    diagnostics: writeSummary.diagnostics.length > 0
+      ? writeSummary.diagnostics
+      : plan.diagnostics,
+  };
 }
 
 function toDefinitionDataSourceOptions(flags: Record<string, string>): DataSourceOptions {
@@ -841,12 +879,16 @@ export async function cliOntology(args: string[]): Promise<void> {
       }
       {
         const plan = createOntologyPackScaffoldPlanFromCliArgs(rest);
+        const writeSummary = plan.mode === "write"
+          ? await writeOntologyPackScaffoldPlan(plan)
+          : undefined;
         if (plan.cli.json) {
-          printJson(plan);
+          printJson(toPackScaffoldJsonOutput(plan, writeSummary));
         } else {
-          printPackScaffoldPlanSummary(plan);
+          printPackScaffoldPlanSummary(plan, writeSummary);
         }
-        if (hasOntologyPackScaffoldErrors(plan.diagnostics)) {
+        const diagnostics = writeSummary?.diagnostics ?? plan.diagnostics;
+        if (hasOntologyPackScaffoldErrors(diagnostics)) {
           process.exitCode = 1;
         }
       }

@@ -17,6 +17,7 @@ export const ONTOLOGY_COMMAND_DESCRIPTORS = [
     usage: "qa-sdk ontology pack scaffold <pack-id> [--implementation-package <name>] [--package-root <path>] [--docs-dir <path>] [--test <path>] [--dry-run] [--write] [--json]",
     continuation: [
       "dry-run by default; file writes require --write",
+      "write mode creates parent directories and refuses to overwrite existing files",
       "plans implementation package/root, docs directory, test path, and source-map candidates",
       "known-pack registration is reported as a candidate; registry activation is out of scope",
       "preserves architecture-neutral identity/data/system separation; ECS is supported but not required",

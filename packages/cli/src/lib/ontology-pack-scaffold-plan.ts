@@ -8,12 +8,14 @@ export interface OntologyPackScaffoldDiagnostic {
   readonly severity: OntologyPackScaffoldDiagnosticSeverity;
   readonly code:
     | "conflicting-output-path"
+    | "existing-output-file"
     | "invalid-cli-flag"
     | "invalid-cli-mode"
     | "invalid-implementation-package"
     | "invalid-pack-id"
     | "missing-cli-value"
     | "missing-pack-id"
+    | "scaffold-write-failed"
     | "unsafe-path";
   readonly message: string;
   readonly path?: string;

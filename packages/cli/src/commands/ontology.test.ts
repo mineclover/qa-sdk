@@ -287,6 +287,129 @@ describe("ontology CLI", () => {
     }
   });
 
+  it("pack scaffold write json materializes files and reports the same preview list", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-pack-scaffold-write-json-"));
+    const previousCwd = process.cwd();
+    try {
+      process.chdir(dir);
+      const output = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "pack",
+          "scaffold",
+          "risk-model-ontology",
+          "--implementation-package",
+          "generated-risk-ontology",
+          "--package-root",
+          "packages/generated-risk-ontology",
+          "--docs-dir",
+          "docs/specs/generated-risk-ontology",
+          "--write",
+          "--json",
+        ]);
+      });
+      const parsed = JSON.parse(output.stdout) as {
+        mode: string;
+        preview: {
+          writesApplied: boolean;
+          files: Array<{ path: string }>;
+          knownPackRegistrationCandidate: { targetPath: string };
+        };
+        writeSummary: {
+          status: string;
+          writesApplied: boolean;
+          fileCount: number;
+          writtenCount: number;
+          files: Array<{ path: string; status: string }>;
+          knownPackRegistrationCandidate: {
+            targetPath: string;
+            applyMode: string;
+          };
+        };
+      };
+
+      expect(output.stderr).toBe("");
+      expect(output.exitCode).toBeUndefined();
+      expect(parsed.mode).toBe("write");
+      expect(parsed.preview.writesApplied).toBe(true);
+      expect(parsed.writeSummary).toMatchObject({
+        status: "written",
+        writesApplied: true,
+        fileCount: parsed.preview.files.length,
+        writtenCount: parsed.preview.files.length,
+      });
+      expect(parsed.writeSummary.files.map((file) => file.path)).toEqual(
+        parsed.preview.files.map((file) => file.path),
+      );
+      expect(parsed.writeSummary.files.every((file) => file.status === "written")).toBe(true);
+      expect(parsed.writeSummary.knownPackRegistrationCandidate).toMatchObject({
+        targetPath: "packages/cli/src/lib/known-ontology-packs.ts",
+        applyMode: "candidate-only",
+      });
+
+      const componentPath =
+        "packages/generated-risk-ontology/src/internal/risk-model-ontology-schema.ts";
+      const systemPath =
+        "packages/generated-risk-ontology/src/internal/risk-model-ontology-pack.ts";
+      const specPath =
+        "docs/specs/generated-risk-ontology/risk-model-ontology-system.spec.md";
+      expect(await readFile(join(dir, componentPath), "utf8")).toContain(
+        "OperationalOntologySchema",
+      );
+      expect(await readFile(join(dir, systemPath), "utf8")).toContain(
+        "validateRiskModelOntologyPack",
+      );
+      expect(await readFile(join(dir, specPath), "utf8")).toContain(
+        "operational-ontology-pack-interface",
+      );
+      expect(existsSync(join(dir, parsed.preview.knownPackRegistrationCandidate.targetPath)))
+        .toBe(false);
+    } finally {
+      process.chdir(previousCwd);
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("pack scaffold write text reports write status and candidate-only registration", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-pack-scaffold-write-text-"));
+    const previousCwd = process.cwd();
+    try {
+      process.chdir(dir);
+      const output = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "pack",
+          "scaffold",
+          "quality-signal-ontology",
+          "--implementation-package",
+          "generated-quality-ontology",
+          "--package-root",
+          "packages/generated-quality-ontology",
+          "--docs-dir",
+          "docs/specs/generated-quality-ontology",
+          "--write",
+        ]);
+      });
+
+      expect(output.stderr).toBe("");
+      expect(output.exitCode).toBeUndefined();
+      expect(output.stdout).toContain("mode: write");
+      expect(output.stdout).toContain("write status: written");
+      expect(output.stdout).toContain("files written: 9");
+      expect(output.stdout).toContain(
+        "known-pack candidate: packages/cli/src/lib/known-ontology-packs.ts (candidate only; not written)",
+      );
+      expect(await readFile(
+        join(dir, "packages/generated-quality-ontology/src/internal/quality-signal-ontology-pack.ts"),
+        "utf8",
+      )).toContain("qualitySignalOntologyPack");
+      expect(existsSync(join(dir, "packages/cli/src/lib/known-ontology-packs.ts"))).toBe(false);
+    } finally {
+      process.chdir(previousCwd);
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
   it("registry activate-pack activates a known pack through the local runtime", async () => {
     const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activate-"));
     try {
