@@ -23,6 +23,8 @@ def:
 
 ## 구현 항목
 
+### Completed — 완료 기록
+
 - [x] `programming-artifact-ontology-context-simulation.spec.md` 생성
 - [x] system spec의 contains/overview에 simulation spec 연결
 - [x] simulation spec에 Registry -> Topology -> Evidence -> Interpretation -> Governance Action -> Prompt Consumption 계층 정의
@@ -52,8 +54,16 @@ def:
 - [x] `qa-sdk def validate` 통과 확인
 - [x] 관련 targeted test 통과 확인: `pnpm --filter @qa-sdk/cli test -- --run src/commands/ontology.test.ts`
 
-## 보류 항목
+### Actionable — 실행 가능
+
+현재 topdown alignment 기준으로 즉시 실행할 open checklist row는 없다.
+
+### Deferred — 조건부 대기
 
 - [ ] registry-service/index-meta allocation lifecycle simulation은 별도 boundary-crossing PRD로 분리
 - [ ] production registry persistence 연동은 local simulation matrix가 안정된 뒤 별도 판단
 - [ ] artifact evidence provider 공통 interface 추출은 build/generated/deploy scenario가 최소 1회씩 검증된 뒤 판단
+
+### Parking Lot — 후보 보관
+
+현재 보관 후보 open checklist row는 없다.

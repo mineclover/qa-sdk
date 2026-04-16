@@ -23,6 +23,26 @@ def:
 
 현재 구현은 `programming-artifact-ontology` pack schema, artifact kind/relation vocabulary, in-memory registry store, `ArtifactRegistryPromptArtifactContextProvider`, `extract-artifact --artifact-registry` 우선 조회, 관련 `quality-status` record sidecar discovery, quality export JSON snapshot 로딩, descriptor resolution, snapshot-first explicit quality-ledger fallback, prompt quality `governance_closure` evidence 반영, opt-in freshness SLA, `extract-artifact --json` fallback source 구조화와 `source.governanceClosure` 상태 요약, codegen/quality export/deployment output/prompt artifact/build output registry append, quality export registry metadata closure 요약, governance closure 문서 동기화까지 닫힌 단계다. 다음 목표는 local registry JSON이 충분하지 않은 운영 환경에서 registry-service/index-meta allocation lifecycle로 승격할지 별도 scope에서 판단하는 것이다.
 
+## Topdown Family Alignment — programming-artifact-ontology-system
+
+This pass used `qa-sdk def topdown programming-artifact-ontology-system --overview`, `docs collect programming-artifact-ontology-system --family-only --json`, and `docs status programming-artifact-ontology-system --json`.
+
+| field | value |
+|-------|-------|
+| existing roles | `spec`, `plan`, `todo`, `knowledge` |
+| existing same-family roles | `spec` |
+| linked context roles | `spec` via contained provider/evidence/CLI/simulation leaves; `plan` via programming artifact and simulation plans; `todo` via programming artifact and simulation TODOs; `knowledge` via development guide and operational ontology system context |
+| missing roles | `rule`, `cases`, `test`, `memo`, `prd`, `ralph-prd-json` |
+| missing same-family roles | `plan`, `todo`, `rule`, `cases`, `test`, `memo`, `knowledge`, `prd`, `ralph-prd-json` |
+| actionable TODO count | 0 open checklist rows |
+| deferred TODO count | 6 open checklist rows: conditional prompt provider split, registry lifecycle escalation, remote quality provider boundary, registry allocation lifecycle simulation, production persistence, shared evidence provider interface |
+| parking-lot TODO count | 0 open checklist rows |
+| completed record candidates | 0 (`completedRecords: []`) |
+| source refs | 15 frontmatter source refs |
+| diagnostics | 0 |
+
+No role document is created by this pass. Missing roles remain absence metadata until a concrete rule, cases, test, memo, PRD markdown, or ralph PRD JSON artifact exists. Conditional provider extraction, remote quality service integration, production persistence, and registry-service/index-meta lifecycle simulation remain `Deferred`; this pass does not select a remote provider boundary, production registry lifecycle, or new simulation implementation scope.
+
 ## 장기 목표
 
 programming/artifact ontology는 별도 pack 또는 plugin으로 관리한다. 이 pack은 `artifactRef -> producing command/gate -> output path -> owning definition -> verification refs -> governance run` 경로를 제공한다.

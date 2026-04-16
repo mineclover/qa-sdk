@@ -58,8 +58,16 @@ def:
 - [x] After US-006 through US-009 create real split CLI modules, narrow provider/activation-evidence/quality-evidence/CLI doc frontmatter sources from `packages/cli/src/commands/ontology.ts` to `artifact-registry.ts`, `prompt-extract-artifact.ts`, `quality-status-evidence.ts`, `quality-ledger-evidence.ts`, and `activation.ts` as applicable.
 - [x] Do not add `@def.doc` comments for the split; frontmatter source narrowing reaches the precise programming artifact leaves through the extracted modules.
 
+### Actionable — 실행 가능
+
+현재 topdown alignment 기준으로 즉시 실행할 open checklist row는 없다.
+
 ### Deferred — 조건부 대기
 
 - [ ] If generic `qa-sdk ontology prompt extract`, `extract-file`, and `extract-permission` need their own implementation boundary, split their shared materialization/governance helpers into `packages/cli/src/commands/ontology/prompt-extract.ts`; US-013 leaves them in `ontology.ts` only as router/dependency handoff debt because the file is under the verified line-count ceiling.
 - [ ] local registry JSON을 registry-service/index-meta allocation lifecycle로 승격할 실제 운영 요구가 생기면 `operational-ontology-registry-allocation.plan.md` scope에서 새 story로 진행
 - [ ] quality-status closure가 registry JSON/ledger 외 원격 quality service를 읽어야 하는 요구가 생기면 별도 provider boundary와 failure policy를 설계
+
+### Parking Lot — 후보 보관
+
+현재 보관 후보 open checklist row는 없다.
