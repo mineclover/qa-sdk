@@ -30,6 +30,10 @@ import {
   writeOntologyPackScaffoldPlan,
   type OntologyPackScaffoldWriteSummary,
 } from "../lib/ontology-pack-scaffold-write.js";
+import {
+  validateOntologyPackFromRef,
+  type OntologyPackValidateResult,
+} from "../lib/ontology-pack-validate.js";
 import { appendProgrammingArtifactRegistryRecords } from "../lib/programming-artifact-registry.js";
 import { cmdRegistryActivatePack } from "./ontology/activation.js";
 import {
@@ -121,17 +125,11 @@ function printPackAuthoringContract(): void {
       "- Required definition docs are spec/todo/plan; optional rule/cases/test docs require --include-docs.",
       "- Source-map candidates report generated implementation/test paths with def find-by-file guidance; no source comments are added by default.",
       "- Known-pack registration is reported as a candidate and is not applied automatically.",
+      "- Validate resolves known pack ids through the known-pack resolver.",
+      "- Validate file refs support .json pack objects or built .js/.mjs/.cjs modules exporting default or named pack.",
       "- Registry activation is out of scope for scaffold; use qa-sdk ontology registry activate-pack separately.",
     ].join("\n"),
   );
-}
-
-function printPlannedPackCommand(usage: string): void {
-  console.error(usage);
-  console.error(
-    "Pack authoring implementation is deferred beyond the US-001 command contract story.",
-  );
-  process.exitCode = 1;
 }
 
 function printPackScaffoldPlanSummary(
@@ -227,6 +225,53 @@ function toPackScaffoldJsonOutput(
       ? writeSummary.diagnostics
       : plan.diagnostics,
   };
+}
+
+function printPackValidateSummary(result: OntologyPackValidateResult): void {
+  console.log(`pack: ${result.packId ?? "(unresolved)"}`);
+  console.log(`valid: ${result.valid ? "yes" : "no"}`);
+  console.log(`resolution: ${result.resolution.kind}`);
+  if (result.resolution.filePath) {
+    console.log(`file: ${result.resolution.filePath}`);
+  }
+  if (result.resolution.knownPackId) {
+    console.log(`known-pack id: ${result.resolution.knownPackId}`);
+  }
+  console.log(`runtime issues: ${result.runtime.issueCount}`);
+  console.log(
+    `component schema: ${result.componentSchema.counts.axes} axes, ` +
+      `${result.componentSchema.counts.taxonomies} taxonomies, ` +
+      `${result.componentSchema.counts.relationCategories} relation categories, ` +
+      `${result.componentSchema.counts.traversals} traversals`,
+  );
+  console.log(
+    `system bindings: ${result.systemBindings.counts.blueprints} blueprints, ` +
+      `${result.systemBindings.counts.implementationRefs} implementation refs, ` +
+      `${result.systemBindings.counts.verificationRefs} verification refs`,
+  );
+  console.log(
+    `implementation files: ${result.readiness.implementationFiles.status} ` +
+      `(${result.readiness.implementationFiles.checked.length} checked, ` +
+      `${result.readiness.implementationFiles.missing.length} missing)`,
+  );
+  console.log(
+    `test files: ${result.readiness.testFiles.status} ` +
+      `(${result.readiness.testFiles.checked.length} checked, ` +
+      `${result.readiness.testFiles.missing.length} missing)`,
+  );
+  console.log(
+    `docs/source-map: ${result.readiness.docs.status}; ` +
+      `${result.readiness.docs.matchingDocs.length} docs, ` +
+      `${result.readiness.sourceMap.coveredRefs.length}/${result.readiness.sourceMap.checkedRefs.length} refs covered`,
+  );
+
+  if (result.issues.length === 0) return;
+  console.log("issues:");
+  for (const issue of result.issues) {
+    console.log(
+      `  - ${issue.level} ${issue.source} ${issue.code} ${issue.path}: ${issue.message}`,
+    );
+  }
 }
 
 function toDefinitionDataSourceOptions(flags: Record<string, string>): DataSourceOptions {
@@ -854,6 +899,8 @@ export async function cliOntology(args: string[]): Promise<void> {
           "  OperationalOntologyPack remains the canonical pack contract.",
           "  Scaffold is dry-run by default; file writes require explicit --write.",
           "  Known-pack registration is reported as a candidate, not applied automatically.",
+          "  Validate resolves known pack ids through the known-pack resolver.",
+          "  Validate file refs support .json pack objects or built .js/.mjs/.cjs modules exporting default or named pack.",
           "  Registry activation is out of scope for scaffold.",
           "  Identity ids, component data, and system transforms stay architecture-neutral; ECS is one model, not a limit.",
           "",
@@ -925,7 +972,24 @@ export async function cliOntology(args: string[]): Promise<void> {
         printPackAuthoringContract();
         return;
       }
-      printPlannedPackCommand(PACK_VALIDATE_USAGE);
+      {
+        const { positional, flags } = parseFlags(rest);
+        const packRef = positional[0];
+        if (!packRef) {
+          console.error(PACK_VALIDATE_USAGE);
+          process.exitCode = 1;
+          return;
+        }
+        const result = await validateOntologyPackFromRef({ packRef });
+        if (flags["json"] === "true") {
+          printJson(result);
+        } else {
+          printPackValidateSummary(result);
+        }
+        if (!result.valid) {
+          process.exitCode = 1;
+        }
+      }
       return;
     case "registry.activate-pack":
       await cmdRegistryActivatePack(rest);

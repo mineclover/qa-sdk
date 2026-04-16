@@ -185,6 +185,289 @@ describe("ontology CLI", () => {
     expect(output.stdout).toContain("Registry activation is out of scope for scaffold");
     expect(output.stdout).toContain("ECS can be modeled but is not required");
     expect(output.stdout).toContain("optional rule/cases/test docs require --include-docs");
+    expect(output.stdout).toContain("Validate resolves known pack ids through the known-pack resolver.");
+    expect(output.stdout).toContain(".json pack objects or built .js/.mjs/.cjs modules");
+  });
+
+  it("pack validate json checks known pack runtime shape and readiness", async () => {
+    const output = await captureConsoleWithExitCode(async () => {
+      await main([
+        "ontology",
+        "pack",
+        "validate",
+        "programming-artifact-ontology",
+        "--json",
+      ]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      valid: boolean;
+      packId: string;
+      resolution: { kind: string; knownPackId: string };
+      issues: Array<{
+        level: string;
+        source: string;
+        path: string;
+        code: string;
+        message: string;
+      }>;
+      identity: { packId: string; schemaPresent: boolean };
+      componentSchema: {
+        axes: string[];
+        taxonomies: string[];
+        counts: { axes: number; taxonomies: number };
+      };
+      systemBindings: {
+        counts: {
+          blueprints: number;
+          implementationRefs: number;
+          verificationRefs: number;
+        };
+      };
+      readiness: {
+        implementationFiles: { status: string; checked: unknown[]; missing: unknown[] };
+        testFiles: { status: string; checked: unknown[]; missing: unknown[] };
+        docs: { status: string; matchingDocs: unknown[] };
+        sourceMap: { status: string; checkedRefs: string[]; coveredRefs: string[] };
+      };
+      runtime: { valid: boolean; issueCount: number };
+    };
+
+    expect(output.stderr).toBe("");
+    expect(output.exitCode).toBeUndefined();
+    expect(parsed).toMatchObject({
+      valid: true,
+      packId: "programming-artifact-ontology",
+      resolution: {
+        kind: "known-pack",
+        knownPackId: "programming-artifact-ontology",
+      },
+      identity: {
+        packId: "programming-artifact-ontology",
+        schemaPresent: true,
+      },
+      runtime: {
+        valid: true,
+        issueCount: 0,
+      },
+    });
+    expect(parsed.componentSchema.axes).toContain("programming_artifact_kind");
+    expect(parsed.componentSchema.taxonomies).toContain("programming-artifact");
+    expect(parsed.systemBindings.counts).toMatchObject({
+      blueprints: 1,
+      implementationRefs: 1,
+      verificationRefs: 1,
+    });
+    expect(parsed.readiness.implementationFiles.status).toBe("ready");
+    expect(parsed.readiness.testFiles.status).toBe("ready");
+    expect(parsed.readiness.docs.matchingDocs.length).toBeGreaterThan(0);
+    expect(parsed.readiness.sourceMap.checkedRefs).toContain(
+      "packages/operational-ontology/src/internal/programming-artifact-core.ts",
+    );
+    expect(parsed.readiness.sourceMap.coveredRefs).toContain(
+      "packages/operational-ontology/src/internal/programming-artifact-core.ts",
+    );
+    for (const issue of parsed.issues) {
+      expect(issue).toEqual(expect.objectContaining({
+        source: expect.any(String),
+        path: expect.any(String),
+        code: expect.any(String),
+        message: expect.any(String),
+      }));
+    }
+  });
+
+  it("pack validate text output is concise and actionable", async () => {
+    const output = await captureConsoleWithExitCode(async () => {
+      await main([
+        "ontology",
+        "pack",
+        "validate",
+        "programming-artifact-ontology",
+      ]);
+    });
+
+    expect(output.stderr).toBe("");
+    expect(output.exitCode).toBeUndefined();
+    expect(output.stdout).toContain("pack: programming-artifact-ontology");
+    expect(output.stdout).toContain("valid: yes");
+    expect(output.stdout).toContain("resolution: known-pack");
+    expect(output.stdout).toContain("component schema:");
+    expect(output.stdout).toContain("system bindings:");
+    expect(output.stdout).toContain("implementation files: ready");
+    expect(output.stdout).toContain("test files: ready");
+    expect(output.stdout).toContain("docs/source-map:");
+  });
+
+  it("pack validate loads supported json file refs", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-pack-validate-json-"));
+    const previousCwd = process.cwd();
+    try {
+      const packPath = join(dir, "file-pack.json");
+      await writeFile(packPath, JSON.stringify(validFilePack(), null, 2));
+      process.chdir(dir);
+
+      const output = await captureConsoleWithExitCode(async () => {
+        await main(["ontology", "pack", "validate", "file-pack.json", "--json"]);
+      });
+      const parsed = JSON.parse(output.stdout) as {
+        valid: boolean;
+        packId: string;
+        resolution: { kind: string; filePath: string; supportedFilePath: string };
+        readiness: {
+          implementationFiles: { status: string };
+          testFiles: { status: string };
+          docs: { status: string };
+        };
+      };
+
+      expect(output.stderr).toBe("");
+      expect(output.exitCode).toBeUndefined();
+      expect(parsed.valid).toBe(true);
+      expect(parsed.packId).toBe("file-pack-ontology");
+      expect(parsed.resolution.kind).toBe("file-path");
+      expect(parsed.resolution.filePath).toBe("file-pack.json");
+      expect(parsed.resolution.supportedFilePath).toContain(".json pack objects");
+      expect(parsed.readiness.implementationFiles.status).toBe("skipped");
+      expect(parsed.readiness.testFiles.status).toBe("skipped");
+      expect(parsed.readiness.docs.status).toBe("skipped");
+    } finally {
+      process.chdir(previousCwd);
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("pack validate imports supported module file refs", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-pack-validate-module-"));
+    try {
+      const packPath = join(dir, "file-pack.mjs");
+      await writeFile(
+        packPath,
+        `export const pack = ${JSON.stringify(validFilePack(), null, 2)};\n`,
+      );
+
+      const output = await captureConsoleWithExitCode(async () => {
+        await main(["ontology", "pack", "validate", packPath, "--json"]);
+      });
+      const parsed = JSON.parse(output.stdout) as {
+        valid: boolean;
+        packId: string;
+        resolution: { kind: string; filePath: string };
+      };
+
+      expect(output.stderr).toBe("");
+      expect(output.exitCode).toBeUndefined();
+      expect(parsed).toMatchObject({
+        valid: true,
+        packId: "file-pack-ontology",
+        resolution: {
+          kind: "file-path",
+          filePath: packPath,
+        },
+      });
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("pack validate reports missing static implementation and test refs", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-pack-validate-missing-files-"));
+    try {
+      const packPath = join(dir, "missing-files-pack.json");
+      await writeFile(
+        packPath,
+        JSON.stringify({
+          ...validFilePack(),
+          blueprints: [
+            {
+              blueprintId: "missing-files-binding",
+              coordinateRef: "corridor:missing-files-binding",
+              unitKind: "corridor_bundle",
+              requiredSchemas: ["file-pack"],
+              implementationBinding: {
+                coordinateRef: "corridor:missing-files-binding",
+                implementationRefs: [
+                  { kind: "code", ref: "packages/missing/src/file-pack.ts" },
+                ],
+              },
+              verificationBinding: {
+                coordinateRef: "corridor:missing-files-binding",
+                verificationRefs: [
+                  { kind: "test", ref: "packages/missing/src/file-pack.test.ts" },
+                ],
+              },
+            },
+          ],
+        }, null, 2),
+      );
+
+      const output = await captureConsoleWithExitCode(async () => {
+        await main(["ontology", "pack", "validate", packPath, "--json"]);
+      });
+      const parsed = JSON.parse(output.stdout) as {
+        valid: boolean;
+        issues: Array<{ source: string; code: string; path: string; message: string }>;
+        readiness: {
+          implementationFiles: { status: string; missing: unknown[] };
+          testFiles: { status: string; missing: unknown[] };
+        };
+      };
+
+      expect(output.stderr).toBe("");
+      expect(output.exitCode).toBe(1);
+      expect(parsed.valid).toBe(false);
+      expect(parsed.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            source: "file",
+            code: "implementation-file-missing",
+            path: "readiness.implementationFiles.packages/missing/src/file-pack.ts",
+          }),
+          expect.objectContaining({
+            source: "file",
+            code: "test-file-missing",
+            path: "readiness.testFiles.packages/missing/src/file-pack.test.ts",
+          }),
+        ]),
+      );
+      expect(parsed.readiness.implementationFiles.status).toBe("missing");
+      expect(parsed.readiness.testFiles.status).toBe("missing");
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("pack validate reports unknown pack refs as structured errors", async () => {
+    const output = await captureConsoleWithExitCode(async () => {
+      await main(["ontology", "pack", "validate", "missing-pack", "--json"]);
+    });
+    const parsed = JSON.parse(output.stdout) as {
+      valid: boolean;
+      packId: null;
+      resolution: { kind: string };
+      issues: Array<{
+        source: string;
+        path: string;
+        code: string;
+        message: string;
+        details: { supportedPackIds: string[] };
+      }>;
+    };
+
+    expect(output.stderr).toBe("");
+    expect(output.exitCode).toBe(1);
+    expect(parsed).toMatchObject({
+      valid: false,
+      packId: null,
+      resolution: { kind: "unresolved" },
+      issues: [
+        {
+          source: "resolver",
+          path: "packRef",
+          code: "unknown-ontology-pack",
+          details: { supportedPackIds: KNOWN_ONTOLOGY_PACK_IDS },
+        },
+      ],
+    });
   });
 
   it("pack scaffold json returns a dry-run preview without creating files", async () => {
@@ -5448,6 +5731,34 @@ interface ActivationEvidenceRegistryRecordJson {
     warningCount?: number;
     errorCount?: number;
     generatedAt?: string;
+  };
+}
+
+function validFilePack() {
+  return {
+    packId: "file-pack-ontology",
+    schema: {
+      axes: [
+        {
+          id: "file_pack_kind",
+          values: ["example"],
+          stable: true,
+          capacity: 4,
+        },
+      ],
+      taxonomies: [
+        {
+          id: "file-pack",
+          appliesTo: ["node"],
+          axisIds: ["file_pack_kind"],
+          identityAxisIds: ["file_pack_kind"],
+          space: "file-pack-ontology",
+        },
+      ],
+      relationCategories: [],
+      traversals: [],
+    },
+    blueprints: [],
   };
 }
 

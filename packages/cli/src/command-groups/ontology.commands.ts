@@ -32,6 +32,9 @@ export const ONTOLOGY_COMMAND_DESCRIPTORS = [
     usage: "qa-sdk ontology pack validate <pack-ref> [--json]",
     continuation: [
       "validates against OperationalOntologyPack",
+      "known pack ids resolve through the known-pack resolver",
+      "file refs support .json pack objects or built .js/.mjs/.cjs modules exporting default or named pack",
+      "reports runtime issues plus implementation, test, docs, and source-map readiness",
     ],
     handlerKey: "ontology.pack.validate",
   },
