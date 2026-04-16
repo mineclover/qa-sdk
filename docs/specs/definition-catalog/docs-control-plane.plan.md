@@ -24,7 +24,37 @@ def:
 
 ## 구성 ^overview
 
-현재 완료된 기반은 docs control plane adapters, status/collect/search/drift, PRD authoring/conversion/sync dry-run, metadata transform dry-run, and document coordinate graph traversal이다.
+현재 완료된 기반은 docs control plane adapters, status/collect/search/drift, PRD authoring/conversion/sync dry-run, metadata transform dry-run, document coordinate graph traversal, family-only inventory scope, and topdown lifecycle inventory policy이다.
+
+## Topdown Lifecycle Inventory Policy
+
+Active inventory is intentionally scoped to repository-owned documentation and active PRD execution records:
+
+- `docs/specs/**` definition markdown is active inventory unless the document is explicitly archived.
+- `tasks/**/prd-*.md` and `tasks/**/prd-*.json` are active PRD inventory.
+- `tasks/archive/**` is excluded by default.
+- Archived documents, including any future document with `lifecycle: archived` or under a docs archive directory, are excluded by default.
+- Archive PRDs or archived docs may enter an inventory only when the operator targets that exact path or id.
+
+Inventory cleanup starts from stable system/module boundaries, not stale leaf files. The active roots for this lifecycle pass are:
+
+| boundary | root id | level | path | role |
+|----------|---------|-------|------|------|
+| definition-catalog | `definition-catalog-spec` | module | `docs/specs/definition-catalog/definition-catalog.spec.md` | entry module for definition-catalog and docs-control-plane concerns |
+| docs-control-plane | `docs-control-plane` | module | `docs/specs/definition-catalog/docs-control-plane.spec.md` | module root for docs CLI control-plane role alignment |
+| operational-ontology-system | `operational-ontology-system` | group | `docs/specs/operational-ontology/operational-ontology-system.spec.md` | entry group for operational ontology modules |
+| operational-ontology-registry-allocation | `operational-ontology-registry-allocation` | module | `docs/specs/operational-ontology/operational-ontology-registry-allocation.spec.md` | module root for registry allocation lifecycle alignment |
+| programming-artifact-ontology-system | `programming-artifact-ontology-system` | module | `docs/specs/operational-ontology/programming-artifact-ontology-system.spec.md` | module root for programming artifact pack/provider alignment |
+| authorization-ontology-system | `authorization-ontology-system` | group | `docs/specs/authorization-ontology/authorization-ontology-system.spec.md` | entry group for authorization ontology and hardening alignment |
+
+Traversal order for lifecycle inventory:
+
+1. Start at the entry group or module root.
+2. Expand contained modules before leaves.
+3. Read same-family role documents next: spec, plan, todo, rule, test, memo, knowledge, active PRD markdown, and active ralph PRD JSON.
+4. Inspect direct leaf documents and source/evidence references last as proof, not as inventory roots.
+
+Operationally, use `docs status <root> --json` or `docs collect <root> --family-only --json` for the active family first. Use broad graph traversal only after the family boundary is understood, and never promote archive/session results into active scope without an explicit target or opt-in flag.
 
 다음 작업은 실행 효과와 의존성 기준으로 정렬한다.
 
