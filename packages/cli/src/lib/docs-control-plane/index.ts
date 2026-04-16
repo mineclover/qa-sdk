@@ -28,7 +28,39 @@ export {
 export {
   previewPrdCompletionSync,
 } from "./prd-completion-sync.js";
+export {
+  AUTHORED_LINK_AXIS_MAP,
+  CANONICAL_TRAVERSAL_AXES,
+  DOCUMENT_GRAPH_EDGE_KINDS,
+  DOCUMENT_GRAPH_NODE_KINDS,
+  ENVELOPE_FIELD_AXIS_MAP,
+  isDocumentGraphNodeKind,
+  isTraversalAxis,
+  isTraversalDirection,
+  isTraversalPresetId,
+  TRAVERSAL_DIRECTIONS,
+  TRAVERSAL_PRESET_IDS,
+} from "./graph-types.js";
+export {
+  getTraversalPreset,
+  TRAVERSAL_PRESETS,
+} from "./graph-presets.js";
 
+export type {
+  AuthoredLinkType,
+  DocumentGraphEdgeKind,
+  DocumentGraphEdgeReason,
+  DocumentGraphEdgeSummary,
+  DocumentGraphNodeKind,
+  DocumentGraphNodeSummary,
+  EnvelopeFieldAxisKey,
+  TraversalAxis,
+  TraversalDirection,
+  TraversalInputSummary,
+  TraversalPresetDefinition,
+  TraversalPresetId,
+  TraversalResultSummary,
+} from "./graph-types.js";
 export type {
   DocumentAdapter,
   DocumentAdapterCapabilities,

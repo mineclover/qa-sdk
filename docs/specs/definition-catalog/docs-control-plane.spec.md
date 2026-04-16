@@ -55,6 +55,16 @@ qa-sdk docs status / collect / search / drift / prd / transform
 
 Adapter는 source vocabulary를 소유하지 않는다. `kind`, `status`, relation `type`, diagnostic `severity`, PRD story fields, artifact relation fields 같은 값은 plain string metadata로 보존하고, control plane은 identity, path, family, default collection, command-level correlation만 정규화한다.
 
+## Traversal taxonomy
+
+Docs graph traversal은 authored vocabulary를 대체하지 않고 내부 분류 축만 추가한다.
+
+- canonical axis: `composition`, `refinement`, `dependency`, `constraint`, `trace`, `source`, `evidence`, `role`, `context`
+- direction: `out`, `in`, `both`이며 axis 이름에 역방향 의미를 섞지 않는다.
+- node role: `spec`, `todo`, `plan`, `rule`, `test`, `memo`, `knowledge`, `prd`, `ralph-prd-json`, `ralph-session`, `source`, `evidence`, 필요한 경우 `section`
+- authored links: `contains`, `depends_on`, `implements`, `refines`, `constrains`, `traces_to`, `evolves_from`, `supersedes`는 source-owned 값으로 보존하고 traversal index에서만 canonical axis로 매핑한다.
+- presets: `family`, `implementation`, `review`, `impact`, `prd-completion`은 편의 view이며 canonical axis가 아니다.
+
 ## `qa-sdk def`와 `qa-sdk docs`
 
 | 표면 | 역할 | 입력 | 출력 |

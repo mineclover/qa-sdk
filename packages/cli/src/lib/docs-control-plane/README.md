@@ -9,6 +9,22 @@ Repository 파일이 source of truth다. Control plane은 index/coordination lay
 `kind`, `status`, relation `type`, diagnostic `severity` 같은 source-owned
 vocabulary를 plain string field로 보존한다.
 
+## Traversal taxonomy
+
+Graph traversal uses canonical axes only inside the control plane:
+`composition`, `refinement`, `dependency`, `constraint`, `trace`, `source`,
+`evidence`, `role`, and `context`. Direction is separate and limited to
+`out`, `in`, or `both`; axis names never encode reverse traversal.
+
+Document roles are node kinds, not edge labels: `spec`, `todo`, `plan`,
+`rule`, `test`, `memo`, `knowledge`, `prd`, `ralph-prd-json`,
+`ralph-session`, `source`, `evidence`, and optional `section` nodes.
+Authored link vocabulary remains source-owned. Values like `contains`,
+`depends_on`, `implements`, `refines`, `constrains`, `traces_to`,
+`evolves_from`, and `supersedes` are preserved on edges and mapped to
+canonical axes only for traversal. Presets such as `family`, `impact`, and
+`prd-completion` are convenience views over those axes, not new axes.
+
 이 story는 REST endpoint, remote service, database migration, 새 artifact
 vocabulary를 추가하지 않는다.
 
