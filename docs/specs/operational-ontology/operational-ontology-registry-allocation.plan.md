@@ -47,6 +47,24 @@ operational ontology schema를 registry-service와 index-meta가 소비할 수 �
 
 Phase 5 internal lifecycle이 닫힌 뒤의 다음 선택지는 public/local execution surface다. CLI activation proof는 `tasks/prd-ontology-registry-activation-cli.md` / `.json`이 추적하며, 이는 lifecycle phase를 다시 여는 작업이 아니라 완료된 activation helper를 사람이 실행 가능한 command로 노출하는 작업이다.
 
+## Topdown Family Alignment — operational-ontology-registry-allocation
+
+This pass used `qa-sdk def topdown operational-ontology-registry-allocation --overview`, `docs collect operational-ontology-registry-allocation --family-only --json`, and `docs status operational-ontology-registry-allocation --json`.
+
+| field | value |
+|-------|-------|
+| existing same-family roles | `spec`, `plan`, `todo` |
+| linked context roles | `spec` via contained allocation lifecycle leaves; `knowledge` via scoped-prefix decision and operational ontology system refinement |
+| missing same-family roles | `rule`, `cases`, `test`, `memo`, `knowledge`, `prd`, `ralph-prd-json` |
+| actionable TODO count | 0 open checklist rows |
+| deferred TODO count | 2 open checklist rows: REST activation endpoint, remote activation service/deployment surface |
+| parking-lot TODO count | 0 open checklist rows |
+| completed record candidates | 0 (`completedRecords: []`) |
+| source refs | 57 frontmatter source refs |
+| diagnostics | 0 |
+
+No role document is created by this pass. Missing roles remain absence metadata until a concrete rule, cases, test, memo, knowledge note, PRD markdown, or ralph PRD JSON artifact exists. REST activation and remote activation remain `Deferred`; this pass does not select REST routes, a remote activation service, scoped-prefix implementation, or new registry lifecycle work.
+
 ## 단계
 
 ### Phase 1: Operational schema allocation model

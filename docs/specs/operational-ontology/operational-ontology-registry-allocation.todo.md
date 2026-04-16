@@ -387,12 +387,20 @@ Validation commands:
   - Final matrix: `operational-ontology-registry-activation-cli-scenario-matrix`.
   - Operator interpretation: `operational-ontology-registry-activation-cli` failure contract and proven scenarios.
 
+### Actionable — 실행 가능
+
+현재 open 실행 항목 없음.
+
 ### Deferred — 조건부 대기
 
 - [ ] REST activation endpoint for registry-service
   - Keep separate from local CLI because endpoint auth, remote store ownership, and deployment lifecycle need their own API contract.
 - [ ] Remote activation service/deployment surface
   - Keep separate from local SQLite runtime until a concrete service boundary and operator workflow exists.
+
+### Parking Lot — 후보 보관
+
+현재 parking-lot 후보 없음.
 
 ## 다음 구현 기준
 
