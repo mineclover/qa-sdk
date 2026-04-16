@@ -720,6 +720,128 @@ Track categorized follow-up state.
     ]);
   });
 
+  it("reports completed TODO records separately from follow-up candidates", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/event-vocab-system"), { recursive: true });
+    await mkdir(join(workspace, "docs/specs/rlsc"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/event-vocab-system/event-taxonomy-rollout.todo.md"), `---
+def:
+  id: event-taxonomy-rollout-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: draft
+---
+# Event Taxonomy Rollout
+
+## 목적 ^purpose
+
+Track completed event taxonomy rollout work.
+
+## Completed — 완료 기록
+
+- [x] Seed events no longer hardcode service id.
+- [x] Event adoption read model exists.
+`);
+    await writeFile(join(workspace, "docs/specs/rlsc/rlsc-text-occupancy.todo.md"), `---
+def:
+  id: rlsc-text-occupancy-todo
+  level: leaf
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: draft
+---
+# RLSC Text Occupancy
+
+## 목적 ^purpose
+
+Track completed RLSC text occupancy work.
+
+## Completed — 완료 기록
+
+- [x] Text occupancy metrics are implemented.
+`);
+
+    await cliDocs(["status", "--root", workspace, "--json"]);
+
+    const result = parsedOutput<{
+      completedRecords: Array<{
+        state: string;
+        kind: string;
+        documentId: string;
+        path: string;
+        completedCount?: number;
+        openCount?: number;
+      }>;
+      nextFollowUps: Array<{ documentId: string; path: string; state: string }>;
+    }>();
+
+    expect(result.completedRecords).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          state: "completed-record",
+          kind: "todo",
+          documentId: "event-taxonomy-rollout-todo",
+          path: "docs/specs/event-vocab-system/event-taxonomy-rollout.todo.md",
+          completedCount: 2,
+          openCount: 0,
+        }),
+        expect.objectContaining({
+          state: "completed-record",
+          kind: "todo",
+          documentId: "rlsc-text-occupancy-todo",
+          path: "docs/specs/rlsc/rlsc-text-occupancy.todo.md",
+          completedCount: 1,
+          openCount: 0,
+        }),
+      ]),
+    );
+    expect(result.nextFollowUps).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ documentId: "event-taxonomy-rollout-todo" }),
+        expect.objectContaining({ documentId: "rlsc-text-occupancy-todo" }),
+      ]),
+    );
+  });
+
+  it("reports completed PRD markdown records without treating markdown checkboxes as follow-ups", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs(["status", "tasks/checkout-prd", "--root", workspace, "--family-only", "--json"]);
+
+    const result = parsedOutput<{
+      completedRecords: Array<{
+        state: string;
+        kind: string;
+        documentId: string;
+        path: string;
+        pairedPath?: string;
+      }>;
+      nextFollowUps: Array<{ kind: string; title: string; path: string }>;
+    }>();
+
+    expect(result.completedRecords).toEqual([
+      expect.objectContaining({
+        state: "completed-record",
+        kind: "prd",
+        documentId: "tasks/checkout-prd",
+        path: "tasks/checkout-prd.md",
+        pairedPath: "tasks/checkout-prd.json",
+      }),
+    ]);
+    expect(result.nextFollowUps).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "prd",
+          title: "Complete checkout docs",
+          path: "tasks/checkout-prd.md",
+        }),
+      ]),
+    );
+  });
+
   it("exposes docs graph through root usage, dispatch, and command help", async () => {
     expect(USAGE).toContain("qa-sdk docs graph <target>");
     expect(resolveSubcommand(["docs", "graph", "checkout-spec", "--axis", "source,evidence"])).toEqual({
