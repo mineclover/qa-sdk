@@ -18,22 +18,11 @@ def:
     - target: operational-ontology-schema-validation
       type: depends_on
     - target: programming-artifact-ontology-context-simulation
-      type: depends_on
+      type: traces_to
     - target: registry-system
       type: depends_on
     - target: index-meta-system
       type: depends_on
-sources:
-  - packages/cli/src/commands/def.ts
-  - packages/definition-catalog/src/validate.ts
-  - packages/definition-catalog/src/validate-semantic.test.ts
-  - packages/operational-ontology/src/internal/ontology-allocation-core.ts
-  - packages/operational-ontology/src/allocation.test.ts
-  - packages/registry-service/src/lib/registry-service.ts
-  - packages/registry-service/src/db/schema.ts
-  - packages/index-meta/src/prefix-registry.ts
-  - packages/index-meta/src/schema-sync.ts
-  - packages/index-meta/src/db/schema.ts
 ---
 
 # Operational Ontology Validation Boundary — ontology design 변경 검증 범위

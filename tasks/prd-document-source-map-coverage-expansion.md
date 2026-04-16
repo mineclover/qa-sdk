@@ -37,12 +37,12 @@ No browser verification is required.
 **Description:** As a docs control-plane maintainer, I want source-map coverage targets listed before editing docs so coverage expansion is deliberate and scoped.
 
 **Acceptance Criteria:**
-- [ ] Create a source-map coverage target list in this PRD or an adjacent note.
-- [ ] Include docs-control-plane source files such as `docs.ts`, `graph-index.ts`, `graph-normalize.ts`, `graph-traverse.ts`, `graph-presets.ts`, `prd-to-ralph-json.ts`, and adapters.
-- [ ] Include ontology CLI split modules such as `activation.ts`, `artifact-registry.ts`, `prompt-extract-artifact.ts`, `quality-status-evidence.ts`, `quality-ledger-evidence.ts`, `ingest.ts`, `status.ts`, and `navigation-diff.ts`.
-- [ ] Include pack implementation sources such as `pack-core.ts`, `programming-artifact-core.ts`, and `authorization-ontology/src/index.ts`.
-- [ ] Classify each target as `frontmatter-source`, `def-code-reference`, or `gap`.
-- [ ] Do not modify source code comments in this story.
+- [x] Create a source-map coverage target list in this PRD or an adjacent note.
+- [x] Include docs-control-plane source files such as `docs.ts`, `graph-index.ts`, `graph-normalize.ts`, `graph-traverse.ts`, `graph-presets.ts`, `prd-to-ralph-json.ts`, and adapters.
+- [x] Include ontology CLI split modules such as `activation.ts`, `artifact-registry.ts`, `prompt-extract-artifact.ts`, `quality-status-evidence.ts`, `quality-ledger-evidence.ts`, `ingest.ts`, `status.ts`, and `navigation-diff.ts`.
+- [x] Include pack implementation sources such as `pack-core.ts`, `programming-artifact-core.ts`, and `authorization-ontology/src/index.ts`.
+- [x] Classify each target as `frontmatter-source`, `def-code-reference`, or `gap`.
+- [x] Do not modify source code comments in this story.
 
 #### Source-map coverage target list
 
@@ -84,9 +84,9 @@ Ontology CLI split-module targets:
 
 | source path | owning doc/family | classification | scope note |
 |-------------|-------------------|----------------|------------|
-| `packages/cli/src/commands/ontology/activation.ts` | `operational-ontology-registry-activation-*` and `programming-artifact-ontology-activation-evidence` | `frontmatter-source` | Activation command orchestration and activation evidence production. |
-| `packages/cli/src/commands/ontology/artifact-registry.ts` | `programming-artifact-ontology-registry-provider` and activation evidence docs | `frontmatter-source` | Registry validate/list/append behavior. |
-| `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` | `programming-artifact-ontology-*` provider/quality/evidence docs | `frontmatter-source` | Artifact source lookup, fallback JSON, and provider merge. |
+| `packages/cli/src/commands/ontology/activation.ts` | `operational-ontology-registry-activation-cli` | `frontmatter-source` | Activation command orchestration. Related result/evidence docs keep body trace refs, not duplicate frontmatter source ownership. |
+| `packages/cli/src/commands/ontology/artifact-registry.ts` | `programming-artifact-ontology-registry-provider` | `frontmatter-source` | Registry validate/list/append behavior. Related evidence docs keep body trace refs. |
+| `packages/cli/src/commands/ontology/prompt-extract-artifact.ts` | `programming-artifact-ontology-registry-provider` | `frontmatter-source` | Artifact source lookup, fallback JSON, and provider merge. Quality/evidence docs keep body trace refs. |
 | `packages/cli/src/commands/ontology/quality-status-evidence.ts` | `programming-artifact-ontology-quality-evidence` | `frontmatter-source` | Quality-status record and snapshot evidence. |
 | `packages/cli/src/commands/ontology/quality-ledger-evidence.ts` | `programming-artifact-ontology-quality-evidence` | `frontmatter-source` | Ledger fallback, freshness, and governance closure evidence. |
 | `packages/cli/src/commands/ontology/ingest.ts` | ontology CLI docs | `gap` | No authoritative owning doc identified yet; keep source-map miss explicit until ownership is documented. |
@@ -100,8 +100,8 @@ Pack implementation targets:
 |-------------|-------------------|----------------|------------|
 | `packages/operational-ontology/src/internal/pack-core.ts` | `operational-ontology-pack-interface` | `frontmatter-source` | Core pack interface implementation. |
 | `packages/operational-ontology/src/pack.ts` | `operational-ontology-pack-interface` | `frontmatter-source` | Public pack facade, if US-004 keeps it in scope. |
-| `packages/operational-ontology/src/internal/programming-artifact-core.ts` | `programming-artifact-ontology-system` and provider/evidence leaves | `frontmatter-source` | Programming artifact pack implementation. |
-| `packages/operational-ontology/src/programming-artifacts.ts` | `programming-artifact-ontology-system` and provider/evidence leaves | `frontmatter-source` | Public programming artifact facade, if US-004 keeps it in scope. |
+| `packages/operational-ontology/src/internal/programming-artifact-core.ts` | `programming-artifact-ontology-system` | `frontmatter-source` | Programming artifact pack implementation. Provider/evidence leaves keep body trace refs only. |
+| `packages/operational-ontology/src/programming-artifacts.ts` | `programming-artifact-ontology-system` | `frontmatter-source` | Public programming artifact facade. Provider/evidence leaves keep body trace refs only. |
 | `packages/authorization-ontology/src/index.ts` | `authorization-ontology-package-architecture` | `frontmatter-source` | Authorization ontology public pack implementation. |
 
 ### US-002: Add Docs Control Plane Source References
@@ -109,70 +109,70 @@ Pack implementation targets:
 **Description:** As a docs operator, I want docs-control-plane specs to point at the actual control-plane implementation files so graph source traversal works for the docs command family.
 
 **Acceptance Criteria:**
-- [ ] Update `docs/specs/definition-catalog/docs-control-plane.spec.md` with source references for docs command and graph implementation files.
-- [ ] Include source refs for graph type/index/normalize/traverse/preset modules.
-- [ ] Include source refs for docs command and command-group files.
-- [ ] Keep references conservative and avoid listing unrelated CLI files.
-- [ ] `qa-sdk docs graph packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts --axis source --direction in --json` returns at least `docs-control-plane`.
-- [ ] `qa-sdk docs status docs-control-plane --json` remains narrow and diagnostic-free.
+- [x] Update `docs/specs/definition-catalog/docs-control-plane.spec.md` with source references for docs command and graph implementation files.
+- [x] Include source refs for graph type/index/normalize/traverse/preset modules.
+- [x] Include source refs for docs command and command-group files.
+- [x] Keep references conservative and avoid listing unrelated CLI files.
+- [x] `qa-sdk docs graph packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts --axis source --direction in --json` returns at least `docs-control-plane`.
+- [x] `qa-sdk docs status docs-control-plane --json` remains narrow and diagnostic-free.
 
 ### US-003: Add Ontology CLI Split Module Source References
 
 **Description:** As an ontology maintainer, I want split ontology CLI docs to reference their extracted modules so source traversal reaches the correct activation, registry, prompt, quality, ingest, and navigation boundaries.
 
 **Acceptance Criteria:**
-- [ ] Ensure registry activation docs reference `packages/cli/src/commands/ontology/activation.ts`.
-- [ ] Ensure activation evidence docs reference `activation.ts`, `artifact-registry.ts`, and `prompt-extract-artifact.ts` where applicable.
-- [ ] Ensure programming artifact registry provider docs reference `artifact-registry.ts` and `prompt-extract-artifact.ts`.
-- [ ] Ensure quality evidence docs reference `quality-status-evidence.ts` and `quality-ledger-evidence.ts`.
-- [ ] Ensure CLI docs reference prompt extraction and support modules only where they own behavior.
-- [ ] `qa-sdk docs graph packages/cli/src/commands/ontology/activation.ts --axis source --direction in --json` returns activation docs and no full-repository fallback.
-- [ ] `qa-sdk docs graph packages/cli/src/commands/ontology/quality-ledger-evidence.ts --axis source --direction in --json` returns quality evidence docs or a documented source-map gap.
+- [x] Ensure registry activation docs reference `packages/cli/src/commands/ontology/activation.ts`.
+- [x] Ensure activation evidence docs reference `activation.ts`, `artifact-registry.ts`, and `prompt-extract-artifact.ts` where applicable.
+- [x] Ensure programming artifact registry provider docs reference `artifact-registry.ts` and `prompt-extract-artifact.ts`.
+- [x] Ensure quality evidence docs reference `quality-status-evidence.ts` and `quality-ledger-evidence.ts`.
+- [x] Ensure CLI docs reference prompt extraction and support modules only where they own behavior.
+- [x] `qa-sdk docs graph packages/cli/src/commands/ontology/activation.ts --axis source --direction in --json` returns activation docs and no full-repository fallback.
+- [x] `qa-sdk docs graph packages/cli/src/commands/ontology/quality-ledger-evidence.ts --axis source --direction in --json` returns quality evidence docs or a documented source-map gap.
 
 ### US-004: Add Pack Implementation Source References
 
 **Description:** As an ontology pack author, I want pack implementation docs to reference pack source files so source traversal can connect pack code to pack schema and validation docs.
 
 **Acceptance Criteria:**
-- [ ] Ensure `operational-ontology-pack-interface` references `packages/operational-ontology/src/internal/pack-core.ts` and the public pack facade where appropriate.
-- [ ] Ensure `programming-artifact-ontology-system` and provider/evidence leaves reference `programming-artifact-core.ts` and public exports where appropriate.
-- [ ] Ensure `authorization-ontology-system` or package architecture docs reference `packages/authorization-ontology/src/index.ts`.
-- [ ] Avoid duplicating the same source path across unrelated docs unless each doc owns distinct behavior.
-- [ ] `qa-sdk docs graph packages/operational-ontology/src/internal/pack-core.ts --axis source --direction in --json` returns pack interface docs.
-- [ ] `qa-sdk docs graph packages/authorization-ontology/src/index.ts --axis source --direction in --json` returns authorization ontology docs.
+- [x] Ensure `operational-ontology-pack-interface` references `packages/operational-ontology/src/internal/pack-core.ts` and the public pack facade where appropriate.
+- [x] Ensure `programming-artifact-ontology-system` and provider/evidence leaves reference `programming-artifact-core.ts` and public exports where appropriate.
+- [x] Ensure `authorization-ontology-system` or package architecture docs reference `packages/authorization-ontology/src/index.ts`.
+- [x] Avoid duplicating the same source path across unrelated docs unless each doc owns distinct behavior.
+- [x] `qa-sdk docs graph packages/operational-ontology/src/internal/pack-core.ts --axis source --direction in --json` returns pack interface docs.
+- [x] `qa-sdk docs graph packages/authorization-ontology/src/index.ts --axis source --direction in --json` returns authorization ontology docs.
 
 ### US-005: Add Source Map Coverage Tests
 
 **Description:** As a CLI maintainer, I want regression tests proving selected source paths resolve to targeted documents so future refactors do not break bottom-up traversal.
 
 **Acceptance Criteria:**
-- [ ] Add CLI or docs-control-plane tests for docs-control-plane source path traversal.
-- [ ] Add tests for ontology activation source path traversal.
-- [ ] Add tests for pack-core source path traversal.
-- [ ] Add tests for a missing source-map path returning bounded `source-map-missing` diagnostics.
-- [ ] Tests assert source path traversal does not return full-repository status or collect results.
-- [ ] Existing docs graph tests remain green.
+- [x] Add CLI or docs-control-plane tests for docs-control-plane source path traversal.
+- [x] Add tests for ontology activation source path traversal.
+- [x] Add tests for pack-core source path traversal.
+- [x] Add tests for a missing source-map path returning bounded `source-map-missing` diagnostics.
+- [x] Tests assert source path traversal does not return full-repository status or collect results.
+- [x] Existing docs graph tests remain green.
 
 ### US-006: Improve `def find-by-file` Coverage Where Appropriate
 
 **Description:** As a definition-catalog user, I want explicit source-map coverage to improve `qa-sdk def find-by-file` where definition-catalog conventions can authoritatively map code to docs.
 
 **Acceptance Criteria:**
-- [ ] Identify which new or existing frontmatter `source:` entries are compatible with `def sync` / `find-by-file`.
-- [ ] Run `qa-sdk def find-by-file` for at least one docs-control-plane implementation file after sync or scan-equivalent setup if supported.
-- [ ] Run `qa-sdk def find-by-file` for at least one ontology CLI split module after sync or scan-equivalent setup if supported.
-- [ ] If `def find-by-file` cannot be improved without code annotations, record the gap in docs-control-plane TODO instead of adding broad mappings.
-- [ ] Do not change `def find-by-file` implementation in this PRD.
+- [x] Identify which new or existing frontmatter `source:` entries are compatible with `def sync` / `find-by-file`.
+- [x] Run `qa-sdk def find-by-file` for at least one docs-control-plane implementation file after sync or scan-equivalent setup if supported.
+- [x] Run `qa-sdk def find-by-file` for at least one ontology CLI split module after sync or scan-equivalent setup if supported.
+- [x] If `def find-by-file` cannot be improved without code annotations, record the gap in docs-control-plane TODO instead of adding broad mappings.
+- [x] Do not change `def find-by-file` implementation in this PRD.
 
 ### US-007: Update Docs Control Plane TODO And Plan
 
 **Description:** As a documentation maintainer, I want the roadmap and TODOs to reflect completed source-map coverage work and remaining gaps.
 
 **Acceptance Criteria:**
-- [ ] Update `docs/specs/definition-catalog/docs-control-plane.todo.md` to close completed source-map coverage targets.
-- [ ] Keep remaining source-map gaps open and scoped.
-- [ ] Update `docs/specs/definition-catalog/docs-control-plane.plan.md` only if priority order changes.
-- [ ] Do not move pack authoring, graph ranking/filtering, PRD sync precision, or section-level graph work into this PRD.
+- [x] Update `docs/specs/definition-catalog/docs-control-plane.todo.md` to close completed source-map coverage targets.
+- [x] Keep remaining source-map gaps open and scoped.
+- [x] Update `docs/specs/definition-catalog/docs-control-plane.plan.md` only if priority order changes.
+- [x] Do not move pack authoring, graph ranking/filtering, PRD sync precision, or section-level graph work into this PRD.
 
 ### US-008: Verify Source Map Coverage Operationally
 

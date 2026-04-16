@@ -12,9 +12,6 @@ def:
     - target: programming-artifact-ontology-system
       type: refines
 sources:
-  - packages/operational-ontology/src/internal/programming-artifact-core.ts
-  - packages/operational-ontology/src/programming-artifacts.ts
-  - packages/operational-ontology/src/programming-artifacts.test.ts
   - packages/cli/src/commands/ontology/artifact-registry.ts
   - packages/cli/src/commands/ontology/prompt-extract-artifact.ts
 ---

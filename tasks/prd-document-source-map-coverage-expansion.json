@@ -77,7 +77,7 @@
       ],
       "priority": 3,
       "passes": true,
-      "notes": "Verified existing ontology split-module frontmatter source references already cover activation, activation evidence, programming artifact registry provider, quality evidence, and CLI-owned prompt extraction boundaries. Source traversal for packages/cli/src/commands/ontology/activation.ts returns activation CLI/evidence/result docs with zero diagnostics, and source traversal for packages/cli/src/commands/ontology/quality-ledger-evidence.ts returns quality evidence docs with zero diagnostics. No documentation source references needed widening.",
+      "notes": "Final review narrowed ontology split-module frontmatter source ownership to one authoritative boundary per source path. packages/cli/src/commands/ontology/activation.ts maps to operational-ontology-registry-activation-cli; artifact-registry.ts and prompt-extract-artifact.ts map to programming-artifact-ontology-registry-provider; quality-status-evidence.ts and quality-ledger-evidence.ts map to programming-artifact-ontology-quality-evidence. Related activation/result/evidence docs keep implementation traceability in body text without duplicating frontmatter source ownership.",
       "dependsOn": [
         "US-002"
       ],
@@ -104,7 +104,7 @@
       ],
       "priority": 4,
       "passes": true,
-      "notes": "Verified existing pack implementation source references satisfy the story. operational-ontology-pack-interface points at packages/operational-ontology/src/internal/pack-core.ts and the public packages/operational-ontology/src/pack.ts facade. programming-artifact-ontology-system and owned provider/evidence leaves point at packages/operational-ontology/src/internal/programming-artifact-core.ts, with public packages/operational-ontology/src/programming-artifacts.ts references kept on docs that own the public artifact facade. authorization-ontology-package-architecture points at packages/authorization-ontology/src/index.ts. Source graph queries for pack-core and authorization index return the expected ontology docs with zero diagnostics.",
+      "notes": "Verified pack implementation source references with singular frontmatter ownership. operational-ontology-pack-interface points at packages/operational-ontology/src/internal/pack-core.ts and the public packages/operational-ontology/src/pack.ts facade. programming-artifact-ontology-system owns packages/operational-ontology/src/internal/programming-artifact-core.ts and packages/operational-ontology/src/programming-artifacts.ts, while provider/evidence leaves keep body trace refs only. authorization-ontology-package-architecture points at packages/authorization-ontology/src/index.ts. Source graph queries for pack-core and authorization index return expected ontology docs with zero diagnostics.",
       "dependsOn": [
         "US-003"
       ],
@@ -209,7 +209,7 @@
       ],
       "priority": 8,
       "passes": true,
-      "notes": "Operational source-map verification completed. docs graph source traversal resolves packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts to docs-control-plane, packages/cli/src/commands/ontology/activation.ts to activation/evidence/programming-artifact docs, and packages/operational-ontology/src/internal/pack-core.ts to pack interface plus validation matrix with zero diagnostics. The known missing source packages/cli/src/commands/ontology/navigation-diff.ts returns a bounded source-map-missing result: one synthetic source node, zero edges, one path, and one diagnostic. Residual gaps are recorded in docs/specs/definition-catalog/docs-control-plane.todo.md.",
+      "notes": "Operational source-map verification completed after source ownership cleanup. docs graph source traversal resolves packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts to docs-control-plane, packages/cli/src/commands/ontology/activation.ts to operational-ontology-registry-activation-cli, and packages/operational-ontology/src/internal/pack-core.ts to operational-ontology-pack-interface with zero diagnostics. The known missing source packages/cli/src/commands/ontology/navigation-diff.ts returns a bounded source-map-missing result: one synthetic source node, zero edges, one path, and one diagnostic. def validate and docs drift both pass after sync; residual gaps are recorded in docs/specs/definition-catalog/docs-control-plane.todo.md.",
       "dependsOn": [
         "US-007"
       ],

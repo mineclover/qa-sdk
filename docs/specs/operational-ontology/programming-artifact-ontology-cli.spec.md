@@ -18,11 +18,6 @@ def:
     - target: programming-artifact-ontology-quality-evidence
       type: depends_on
 sources:
-  - packages/cli/src/commands/ontology/artifact-registry.ts
-  - packages/cli/src/commands/ontology/prompt-extract-artifact.ts
-  - packages/cli/src/commands/ontology/quality-status-evidence.ts
-  - packages/cli/src/commands/ontology/quality-ledger-evidence.ts
-  - packages/cli/src/commands/ontology/activation.ts
   - packages/cli/src/commands/ontology.ts
   - packages/cli/src/command-groups/ontology.commands.ts
 ---

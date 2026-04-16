@@ -16,7 +16,7 @@ def:
     - target: operational-ontology-validation-boundary
       type: depends_on
     - target: operational-ontology-design-change-validation-matrix
-      type: depends_on
+      type: traces_to
     - target: definition-management
       type: depends_on
     - target: definition-mgmt-graph-links

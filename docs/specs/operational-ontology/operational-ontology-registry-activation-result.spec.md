@@ -18,8 +18,6 @@ def:
 sources:
   - packages/registry-service/src/modules/ontology/ontology-activation.helper.ts
   - packages/registry-service/src/modules/ontology/ontology-activation.helper.test.ts
-  - packages/cli/src/commands/ontology/activation.ts
-  - packages/cli/src/commands/ontology.test.ts
 ---
 
 # Operational Ontology Registry Activation Result

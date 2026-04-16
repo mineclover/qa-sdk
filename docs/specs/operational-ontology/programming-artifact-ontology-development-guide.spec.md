@@ -16,13 +16,6 @@ sources:
   - docs/specs/operational-ontology/programming-artifact-ontology-activation-evidence.spec.md
   - docs/specs/operational-ontology/programming-artifact-ontology-quality-evidence.spec.md
   - docs/specs/operational-ontology/programming-artifact-ontology-context-simulation.spec.md
-  - packages/operational-ontology/src/internal/programming-artifact-core.ts
-  - packages/cli/src/commands/ontology/artifact-registry.ts
-  - packages/cli/src/commands/ontology/prompt-extract-artifact.ts
-  - packages/cli/src/commands/ontology/quality-status-evidence.ts
-  - packages/cli/src/commands/ontology/quality-ledger-evidence.ts
-  - packages/cli/src/commands/ontology/activation.ts
-  - packages/cli/src/commands/ontology.ts
 ---
 
 # Programming Artifact Ontology Development Guide — 지속 개발 컨텍스트 확인

@@ -16,7 +16,6 @@ def:
       type: depends_on
 sources:
   - packages/operational-ontology/src/index.ts
-  - packages/operational-ontology/src/allocation.ts
   - packages/operational-ontology/src/checkpoint.ts
   - packages/operational-ontology/src/corridor.ts
   - packages/operational-ontology/src/junction.ts

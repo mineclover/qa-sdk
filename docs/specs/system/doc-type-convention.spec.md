@@ -1,7 +1,7 @@
 ---
 def:
   id: doc-type-convention
-  level: leaf
+  level: module
   scope: constraint
   aspect: tech_constraint
   depth: specification

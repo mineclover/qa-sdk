@@ -14,9 +14,7 @@ def:
     - target: operational-ontology-pack-interface
       type: depends_on
 sources:
-  - packages/cli/src/command-groups/ontology.commands.ts
   - packages/cli/src/commands/ontology/activation.ts
-  - packages/cli/src/commands/ontology.test.ts
   - packages/cli/src/lib/known-ontology-packs.ts
   - packages/registry-service/src/ontology-local-runtime.ts
   - packages/registry-service/src/modules/ontology/local-activation-runtime.ts

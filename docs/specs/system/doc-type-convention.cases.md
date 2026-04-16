@@ -13,7 +13,7 @@ def:
       type: refines
     - target: docs-control-plane
       type: depends_on
-    - target: decision-flow
+    - target: df-system
       type: depends_on
 ---
 

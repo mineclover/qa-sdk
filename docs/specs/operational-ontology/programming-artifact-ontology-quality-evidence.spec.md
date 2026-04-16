@@ -14,14 +14,9 @@ def:
     - target: programming-artifact-ontology-registry-provider
       type: depends_on
 sources:
-  - packages/cli/src/commands/ontology/prompt-extract-artifact.ts
   - packages/cli/src/commands/ontology/quality-status-evidence.ts
   - packages/cli/src/commands/ontology/quality-ledger-evidence.ts
-  - packages/cli/src/commands/ontology.test.ts
   - packages/cli/src/commands/quality.ts
-  - packages/operational-ontology/src/internal/programming-artifact-core.ts
-  - packages/operational-ontology/src/internal/prompt-artifact-core.ts
-  - packages/operational-ontology/src/prompt-artifacts.test.ts
 ---
 
 # Programming Artifact Ontology Quality Evidence — quality-status closure contract

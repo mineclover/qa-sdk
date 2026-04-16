@@ -16,7 +16,7 @@ def:
     - target: operational-ontology-validation-boundary
       type: depends_on
     - target: operational-ontology-definition-graph-requirements
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-taxonomy-schema
       type: depends_on
     - target: operational-ontology-relation-category-schema
@@ -33,18 +33,6 @@ def:
       type: depends_on
     - target: index-meta-system
       type: depends_on
-sources:
-  - packages/operational-ontology/src/internal/schema-core.ts
-  - packages/operational-ontology/src/internal/runtime-core.ts
-  - packages/operational-ontology/src/internal/ontology-allocation-core.ts
-  - packages/operational-ontology/src/internal/pack-core.ts
-  - packages/operational-ontology/src/allocation.test.ts
-  - packages/operational-ontology/src/pack.test.ts
-  - packages/operational-ontology/src/persistence.test.ts
-  - packages/cli/src/commands/def.ts
-  - packages/definition-catalog/src/validate.ts
-  - packages/registry-service/src/lib/registry-service.ts
-  - packages/index-meta/src/schema-sync.ts
 ---
 
 # Operational Ontology Design Change Validation Matrix — ontology 변경 시나리오별 검증 경로

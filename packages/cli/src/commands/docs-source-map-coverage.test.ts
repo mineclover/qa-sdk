@@ -26,19 +26,9 @@ const SOURCE_PATH_CASES = [
   {
     label: "ontology activation",
     sourcePath: "packages/cli/src/commands/ontology/activation.ts",
-    expectedDocumentIds: [
-      "document:operational-ontology-registry-activation-cli",
-      "document:operational-ontology-registry-activation-evidence",
-      "document:operational-ontology-registry-activation-result",
-      "document:programming-artifact-ontology-activation-evidence",
-    ],
-    expectedStableIds: [
-      "operational-ontology-registry-activation-cli",
-      "operational-ontology-registry-activation-evidence",
-      "operational-ontology-registry-activation-result",
-      "programming-artifact-ontology-activation-evidence",
-    ],
-    maxDocumentCount: 6,
+    expectedDocumentIds: ["document:operational-ontology-registry-activation-cli"],
+    expectedStableIds: ["operational-ontology-registry-activation-cli"],
+    maxDocumentCount: 1,
   },
   {
     label: "pack-core",

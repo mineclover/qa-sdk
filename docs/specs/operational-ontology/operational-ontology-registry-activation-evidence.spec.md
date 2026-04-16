@@ -19,15 +19,6 @@ def:
       type: depends_on
     - target: operational-ontology-registry-activation-cli-scenario-matrix
       type: traces_to
-sources:
-  - packages/cli/src/lib/activation-evidence-registry.ts
-  - packages/cli/src/lib/activation-evidence-registry.ontology.test.ts
-  - packages/cli/src/commands/ontology/activation.ts
-  - packages/cli/src/commands/ontology/artifact-registry.ts
-  - packages/cli/src/commands/ontology/prompt-extract-artifact.ts
-  - packages/cli/src/commands/ontology.test.ts
-  - packages/operational-ontology/src/programming-artifacts.ts
-  - packages/operational-ontology/src/programming-artifacts.test.ts
 ---
 
 # Operational Ontology Registry Activation Evidence

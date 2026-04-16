@@ -25,13 +25,6 @@ def:
       type: constrains
     - target: index-meta-system
       type: constrains
-sources:
-  - packages/registry-service/src/db/schema.ts
-  - packages/registry-service/src/modules/prefixes/prefix.controller.ts
-  - packages/index-meta/src/db/schema.ts
-  - packages/index-meta/src/prefix-registry.ts
-  - packages/decode-service/src/lib/decoder-pool.ts
-  - packages/decode-service/src/routes/decode.ts
 ---
 
 # Operational Ontology Scoped Prefix Decision - namespace change criteria

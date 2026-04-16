@@ -15,12 +15,6 @@ def:
       type: depends_on
 sources:
   - packages/cli/src/lib/activation-evidence-registry.ts
-  - packages/cli/src/lib/activation-evidence-registry.ontology.test.ts
-  - packages/cli/src/commands/ontology/activation.ts
-  - packages/cli/src/commands/ontology/artifact-registry.ts
-  - packages/cli/src/commands/ontology/prompt-extract-artifact.ts
-  - packages/cli/src/commands/ontology.test.ts
-  - packages/operational-ontology/src/internal/programming-artifact-core.ts
 ---
 
 # Programming Artifact Ontology Activation Evidence — activation proof artifact kind
