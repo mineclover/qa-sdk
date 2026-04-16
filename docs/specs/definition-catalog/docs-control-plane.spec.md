@@ -93,6 +93,41 @@ Source path target은 repository root 기준 relative path로 canonicalize한 �
 
 Traversal guardrail: 기본 depth는 `1`, 최대 depth는 `6`; 기본 limit는 `100`, 최대 limit는 `500`이다. 초과 요청은 capped diagnostic을 남기며, cap에 걸린 결과는 `truncated: true`, legacy `omittedCount`, 세부 `omittedCounts.nodes|edges|depth`를 노출한다. `context` axis와 free-text search는 broad traversal로 취급하고 text output에서 warning을 표시한다.
 
+## Topdown lifecycle inventory
+
+Topdown lifecycle inventory는 future cleanup PRD를 안정적으로 고르기 위한 반복 가능한 운영 pass다. 구현이나 아카이브를 직접 수행하는 command가 아니라, active 문서 family를 위에서 아래로 읽어 role coverage, TODO operational bucket, completed-record candidate, source/evidence proof, drift 상태를 같은 순서로 기록하는 control-plane 사용법이다.
+
+Active scope는 repository-owned documentation과 active PRD execution record로 한정한다.
+
+- `docs/specs/**` definition markdown은 active inventory다. `lifecycle: archived` 문서와 docs archive directory 아래 문서는 기본 제외한다.
+- `tasks/**/prd-*.md`와 `tasks/**/prd-*.json`은 active PRD inventory다.
+- `tasks/archive/**` PRD markdown/JSON은 기본 제외한다.
+- `.ralph-tui/session-meta.json` 같은 transient session state는 기본 제외하고, `--include-session`이 있을 때만 drift/completion 운영 신호로 포함한다.
+- Archive PRD, archived doc, transient session은 정확한 path/id target이나 opt-in flag 없이는 active inventory, role coverage, drift/completion 판단으로 승격하지 않는다.
+
+Traversal order는 leaf 파일 검색에서 시작하지 않는다. Entry group 또는 module root에서 시작하고, contained module을 먼저 읽은 뒤, 같은 family role docs(`spec`, `plan`, `todo`, `rule`, `cases`, `test`, `memo`, `knowledge`, active PRD markdown, active ralph PRD JSON)를 읽는다. Direct leaf docs와 source/evidence reference는 마지막에 proof로 확인하며 inventory root로 쓰지 않는다.
+
+Operational TODO state는 checkbox marker가 아니라 heading category에서 온다. Checkbox state는 binary다: `[ ]`는 open, `[x]`/`[X]`는 completed이다. `docs status`는 heading stack의 canonical categories(`Completed — 완료 기록`, `Actionable — 실행 가능`, `Deferred — 조건부 대기`, `Parking Lot — 후보 보관`)를 `nextFollowUps[].category`로 투영하고, checkbox 자체에 deferred/parking/archived/promotion state를 넣지 않는다. `completedRecords[]`도 read-model candidate다. 전체 `.todo.md`가 checked-only이거나 paired PRD JSON stories가 모두 passing이면 candidate로 보고하지만, 파일 이동, archive 전환, TODO 체크, spec promotion을 자동 수행하지 않는다.
+
+Repeatable inventory and validation commands:
+
+```bash
+pnpm --filter @qa-sdk/cli test -- docs
+pnpm --filter @qa-sdk/cli typecheck
+pnpm --filter @qa-sdk/cli build
+node packages/cli/dist/index.js def validate
+
+node packages/cli/dist/index.js docs status docs-control-plane --json
+node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json
+node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json
+node packages/cli/dist/index.js docs status authorization-ontology-system --json
+
+node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json
+node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json
+```
+
+Inventory results may be recorded in a maintained memo, such as `topdown-lifecycle-inventory-report`, or in the owning plan. They remain documentation evidence for a later human-reviewed cleanup PRD; they are not automatic archival authority and not automatic TODO/spec promotion authority.
+
 ## `qa-sdk def`와 `qa-sdk docs`
 
 `qa-sdk def`는 definition markdown frontmatter와 synced/local/server datasource를 대상으로 단일 definition 문서, graph, boundary, context, validation을 다루는 primitive surface다. `qa-sdk def graph/context/boundary/find-by-file`는 단일 definition catalog datasource 안에서 좌표, 링크, contains 계층, code reference boundary를 묻는다. `qa-sdk docs graph`는 definition markdown, PRD markdown/JSON, ralph session, evidence registry를 함께 읽고 canonical traversal axis로 cross-document 좌표를 걷는다. `docs` command가 definition metadata를 해석할 때도 authoritative validation은 definition-catalog parser와 graph rules를 재사용한다.

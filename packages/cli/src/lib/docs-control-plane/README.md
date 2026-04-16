@@ -74,6 +74,50 @@ which reads DB-owned `code_references` explicit source maps only.
 이 story는 REST endpoint, remote service, database migration, 새 artifact
 vocabulary를 추가하지 않는다.
 
+## Topdown lifecycle inventory
+
+Topdown lifecycle inventory is the repeatable operating pass for choosing later
+cleanup PRDs. It starts from stable entry group or module roots, records the
+family role matrix, TODO operational buckets, completed-record candidates,
+source/evidence proof, and drift state, then stores the result in a maintained
+memo or owning plan. It is a read-model workflow; it does not archive documents,
+check TODO boxes, or promote TODO/spec content.
+
+Active scope is intentionally narrow:
+
+- `docs/specs/**` definition markdown is active unless the document is archived.
+- `tasks/**/prd-*.md` and `tasks/**/prd-*.json` are active PRD records.
+- `tasks/archive/**` and archived documents are excluded by default.
+- `.ralph-tui/session-meta.json` and other transient session state are excluded
+  unless the command has `--include-session`.
+- Archive or session records enter the inventory only through an explicit
+  path/id target or opt-in flag.
+
+TODO checkbox state stays binary. `[ ]` means open, and `[x]`/`[X]` means
+completed. Operational state comes from section headings: `Completed — 완료 기록`,
+`Actionable — 실행 가능`, `Deferred — 조건부 대기`, and
+`Parking Lot — 후보 보관`. `docs status --json` projects those headings into
+`nextFollowUps[].category`; checkbox syntax does not encode deferred,
+parking-lot, archive, or promotion state. `completedRecords[]` is also only a
+candidate read model for human review.
+
+Inventory and validation commands:
+
+```bash
+pnpm --filter @qa-sdk/cli test -- docs
+pnpm --filter @qa-sdk/cli typecheck
+pnpm --filter @qa-sdk/cli build
+node packages/cli/dist/index.js def validate
+
+node packages/cli/dist/index.js docs status docs-control-plane --json
+node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json
+node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json
+node packages/cli/dist/index.js docs status authorization-ontology-system --json
+
+node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json
+node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json
+```
+
 ## Boundary
 
 - `DocumentEnvelope`는 normalized read model이다.
