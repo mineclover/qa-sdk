@@ -562,6 +562,81 @@ Track inventory scenario coverage.
     expect(text).toContain("docs/specs/checkout/checkout.todo.md");
   });
 
+  it("preserves todo hierarchy in JSON status follow-up candidates", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/hierarchy"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/hierarchy/hierarchy.todo.md"), `---
+def:
+  id: hierarchy-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Hierarchy Todo
+
+## 목적 ^purpose
+
+Track parent and child follow-up context.
+
+## Actionable — 실행 가능
+
+- [ ] Parent work item.
+  - [ ] Child checklist item 1.
+  - [ ] Child checklist item 2.
+  - [ ] Child checklist item 3.
+  - [ ] Child checklist item 4.
+  - [ ] Child checklist item 5.
+  - [ ] Child checklist item 6.
+  - [ ] Child checklist item 7.
+`);
+
+    await cliDocs(["status", "hierarchy-todo", "--root", workspace, "--json"]);
+
+    const result = parsedOutput<{
+      nextFollowUps: Array<{
+        title: string;
+        pointer?: string;
+        depth?: number;
+        parentTitle?: string;
+        headingPath?: string[];
+        category?: string;
+        categoryLabel?: string;
+      }>;
+    }>();
+    const parent = result.nextFollowUps.find((followUp) => followUp.title === "Parent work item.");
+    const child = result.nextFollowUps.find((followUp) => followUp.title === "Child checklist item 1.");
+
+    expect(parent).toMatchObject({
+      pointer: expect.stringMatching(/^line \d+$/),
+      depth: 0,
+      headingPath: ["Actionable — 실행 가능"],
+      category: "actionable",
+      categoryLabel: "Actionable — 실행 가능",
+    });
+    expect(parent).not.toHaveProperty("parentTitle");
+    expect(child).toMatchObject({
+      pointer: expect.stringMatching(/^line \d+$/),
+      depth: 1,
+      parentTitle: "Parent work item.",
+      headingPath: ["Actionable — 실행 가능"],
+      category: "actionable",
+      categoryLabel: "Actionable — 실행 가능",
+    });
+    expect(parent?.pointer).not.toBe(child?.pointer);
+    expect(parent?.depth).not.toBe(child?.depth);
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["status", "hierarchy-todo", "--root", workspace]);
+
+    const text = output();
+    expect(text).toContain("next follow-up: open todo - Parent work item.");
+    expect(text).toContain("additional follow-ups (7):");
+    expect(text).toContain("... 2 more");
+    expect(text).not.toContain("Child checklist item 7.");
+  });
+
   it("exposes docs graph through root usage, dispatch, and command help", async () => {
     expect(USAGE).toContain("qa-sdk docs graph <target>");
     expect(resolveSubcommand(["docs", "graph", "checkout-spec", "--axis", "source,evidence"])).toEqual({

@@ -100,6 +100,9 @@ interface FollowUpState {
   readonly title: string;
   readonly taskId?: string;
   readonly pointer?: string;
+  readonly depth?: number;
+  readonly parentTitle?: string;
+  readonly headingPath?: readonly string[];
   readonly category?: "actionable" | "deferred" | "parking-lot" | "uncategorized";
   readonly categoryLabel?: string;
   readonly reason: string;
@@ -2009,33 +2012,61 @@ function parseTodoFollowUps(
 ): readonly FollowUpState[] {
   const followUps: FollowUpState[] = [];
   let currentCategory = classifyTodoHeading("");
+  const headingStack: { level: number; title: string }[] = [];
+  const checklistStack: { indent: number; title: string }[] = [];
 
   const lines = content.split(/\r?\n/);
   lines.forEach((line, index) => {
     const heading = line.match(/^(#{2,6})\s+(.+?)\s*$/);
     if (heading) {
-      currentCategory = classifyTodoHeading(heading[2] ?? "");
+      const level = heading[1]?.length ?? 2;
+      const title = heading[2]?.trim() ?? "";
+      while (headingStack.length > 0 && headingStack[headingStack.length - 1]!.level >= level) {
+        headingStack.pop();
+      }
+      headingStack.push({ level, title });
+      checklistStack.length = 0;
+      currentCategory = classifyTodoHeading(title);
       return;
     }
 
-    const checkbox = line.match(/^\s*[-*]\s+\[ \]\s+(.+?)\s*$/);
+    const checkbox = line.match(/^(\s*)[-*]\s+\[([ xX])\]\s+(.+?)\s*$/);
     if (!checkbox) return;
-    const title = checkbox[1]?.trim() ?? "";
-    followUps.push({
-      source: document.adapterId,
-      kind: document.kind,
-      documentId: document.stableId,
-      path: document.path,
-      state: "open",
-      title,
-      pointer: `line ${index + 1}`,
-      category: currentCategory.category,
-      categoryLabel: currentCategory.label,
-      reason: `${currentCategory.label} TODO item`,
-    });
+    const indent = indentationWidth(checkbox[1] ?? "");
+    while (checklistStack.length > 0 && checklistStack[checklistStack.length - 1]!.indent >= indent) {
+      checklistStack.pop();
+    }
+    const title = checkbox[3]?.trim() ?? "";
+    const parentTitle = checklistStack[checklistStack.length - 1]?.title;
+    const depth = checklistStack.length;
+    const headingPath = headingStack.map((headingItem) => headingItem.title);
+
+    if ((checkbox[2] ?? "").trim() === "") {
+      followUps.push({
+        source: document.adapterId,
+        kind: document.kind,
+        documentId: document.stableId,
+        path: document.path,
+        state: "open",
+        title,
+        pointer: `line ${index + 1}`,
+        depth,
+        ...(parentTitle ? { parentTitle } : {}),
+        ...(headingPath.length > 0 ? { headingPath } : {}),
+        category: currentCategory.category,
+        categoryLabel: currentCategory.label,
+        reason: `${currentCategory.label} TODO item`,
+      });
+    }
+
+    checklistStack.push({ indent, title });
   });
 
   return followUps;
+}
+
+function indentationWidth(value: string): number {
+  return [...value].reduce((width, character) => width + (character === "\t" ? 4 : 1), 0);
 }
 
 function classifyTodoHeading(
