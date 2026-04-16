@@ -208,14 +208,15 @@
         "`node packages/cli/dist/index.js def validate` - repository definition validation"
       ],
       "priority": 8,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Operational source-map verification completed. docs graph source traversal resolves packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts to docs-control-plane, packages/cli/src/commands/ontology/activation.ts to activation/evidence/programming-artifact docs, and packages/operational-ontology/src/internal/pack-core.ts to pack interface plus validation matrix with zero diagnostics. The known missing source packages/cli/src/commands/ontology/navigation-diff.ts returns a bounded source-map-missing result: one synthetic source node, zero edges, one path, and one diagnostic. Residual gaps are recorded in docs/specs/definition-catalog/docs-control-plane.todo.md.",
       "dependsOn": [
         "US-007"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-16T06:58:20.471Z"
+    "updatedAt": "2026-04-16T07:03:23.273Z"
   }
 }

@@ -34,6 +34,7 @@ def:
     - [x] after `qa-sdk def sync`, `packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts` resolves to `docs-control-plane`
     - [x] after `qa-sdk def sync`, `packages/cli/src/commands/ontology/quality-ledger-evidence.ts` resolves to `programming-artifact-ontology-system`
   - [x] source-map gaps remain explicit TODOs instead of broad graph fallback
+  - [x] US-008 operational graph verification recorded: selected covered source paths resolve through `source` inbound traversal, and `packages/cli/src/commands/ontology/navigation-diff.ts` stays bounded at one synthetic source node, zero edges, one path, and one `source-map-missing` diagnostic
   - [ ] Remaining source-map gaps
     - [ ] `packages/cli/src/lib/docs-control-plane/index.ts` remains a barrel-only facade gap; add source coverage only if facade-level lookup becomes an operational requirement
     - [ ] `activation.ts`, `artifact-registry.ts`, and `prompt-extract-artifact.ts` remain ambiguous for `def find-by-file` between `operational-ontology-registry-allocation` and `programming-artifact-ontology-system`; close with symbol-level `@def.boundary` / `@def.doc` only when an authoritative boundary is chosen

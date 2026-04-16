@@ -179,12 +179,12 @@ Pack implementation targets:
 **Description:** As a reviewer, I want operational CLI proof that selected source paths now resolve through docs graph and that remaining gaps are explicit.
 
 **Acceptance Criteria:**
-- [ ] Run `qa-sdk docs graph packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts --axis source --direction in --json`.
-- [ ] Run `qa-sdk docs graph packages/cli/src/commands/ontology/activation.ts --axis source --direction in --json`.
-- [ ] Run `qa-sdk docs graph packages/operational-ontology/src/internal/pack-core.ts --axis source --direction in --json`.
-- [ ] Run at least one missing-source-path graph query and confirm it returns bounded `source-map-missing`.
-- [ ] Run `qa-sdk docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json` after completion.
-- [ ] Record residual coverage gaps in the TODO document.
+- [x] Run `qa-sdk docs graph packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts --axis source --direction in --json`.
+- [x] Run `qa-sdk docs graph packages/cli/src/commands/ontology/activation.ts --axis source --direction in --json`.
+- [x] Run `qa-sdk docs graph packages/operational-ontology/src/internal/pack-core.ts --axis source --direction in --json`.
+- [x] Run at least one missing-source-path graph query and confirm it returns bounded `source-map-missing`.
+- [x] Run `qa-sdk docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json` after completion.
+- [x] Record residual coverage gaps in the TODO document.
 
 ## Functional Requirements
 
