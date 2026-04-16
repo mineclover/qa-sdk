@@ -40,150 +40,150 @@ No browser verification is required.
 **Description:** As a docs control-plane maintainer, I want canonical traversal axes defined separately from authored link vocabulary so the system can classify relationships precisely without changing source document schemas.
 
 **Acceptance Criteria:**
-- [ ] Define canonical axes: `composition`, `refinement`, `dependency`, `constraint`, `trace`, `source`, `evidence`, `role`, and `context`.
-- [ ] Define traversal direction as `out`, `in`, and `both`, separate from axis names.
-- [ ] Define node roles separately from edges: `spec`, `todo`, `plan`, `rule`, `test`, `memo`, `knowledge`, `prd`, `ralph-prd-json`, `ralph-session`, `source`, `evidence`, and `section` where needed.
-- [ ] Document that authored link vocabulary remains source-owned and is not replaced by canonical axes.
-- [ ] Add TypeScript types for axes, directions, graph node kinds, graph edge kinds, traversal presets, and traversal result summaries.
-- [ ] Add tests verifying canonical axis constants, preset definitions, and authored-to-axis mapping tables.
+- [x] Define canonical axes: `composition`, `refinement`, `dependency`, `constraint`, `trace`, `source`, `evidence`, `role`, and `context`.
+- [x] Define traversal direction as `out`, `in`, and `both`, separate from axis names.
+- [x] Define node roles separately from edges: `spec`, `todo`, `plan`, `rule`, `test`, `memo`, `knowledge`, `prd`, `ralph-prd-json`, `ralph-session`, `source`, `evidence`, and `section` where needed.
+- [x] Document that authored link vocabulary remains source-owned and is not replaced by canonical axes.
+- [x] Add TypeScript types for axes, directions, graph node kinds, graph edge kinds, traversal presets, and traversal result summaries.
+- [x] Add tests verifying canonical axis constants, preset definitions, and authored-to-axis mapping tables.
 
 ### US-002: Normalize Existing Links, Sources, Tasks, And Evidence Into Graph Edges
 
 **Description:** As a graph traversal implementer, I want existing `DocumentEnvelope` data normalized into typed graph edges so traversal can use precise axes without requiring authors to rewrite links.
 
 **Acceptance Criteria:**
-- [ ] Map `contains` links to `composition`.
-- [ ] Map `refines` links to `refinement`.
-- [ ] Map `depends_on` links to `dependency`.
-- [ ] Map `constrains` links and `.rule.md` relationships to `constraint`.
-- [ ] Map `traces_to`, PRD story relationships, and ralph session-to-PRD relationships to `trace`.
-- [ ] Map document `sources`, code references, source paths, and verification source paths to `source`.
-- [ ] Map artifact evidence `verifies`, `materializes_output`, `verificationRefs`, and quality/activation evidence references to `evidence`.
-- [ ] Map same-family role relationships between spec/todo/plan/rule/test/memo/knowledge/PRD/session documents to `role`.
-- [ ] Map tags, scope/aspect/layer, and knowledge/memo context only to `context`; context must be lowest priority and excluded from strict implementation presets.
-- [ ] Preserve edge reason, adapter id, raw source pointer, source document id/path, and target node id/path on every normalized edge.
+- [x] Map `contains` links to `composition`.
+- [x] Map `refines` links to `refinement`.
+- [x] Map `depends_on` links to `dependency`.
+- [x] Map `constrains` links and `.rule.md` relationships to `constraint`.
+- [x] Map `traces_to`, PRD story relationships, and ralph session-to-PRD relationships to `trace`.
+- [x] Map document `sources`, code references, source paths, and verification source paths to `source`.
+- [x] Map artifact evidence `verifies`, `materializes_output`, `verificationRefs`, and quality/activation evidence references to `evidence`.
+- [x] Map same-family role relationships between spec/todo/plan/rule/test/memo/knowledge/PRD/session documents to `role`.
+- [x] Map tags, scope/aspect/layer, and knowledge/memo context only to `context`; context must be lowest priority and excluded from strict implementation presets.
+- [x] Preserve edge reason, adapter id, raw source pointer, source document id/path, and target node id/path on every normalized edge.
 
 ### US-003: Build Document Coordinate Graph Index
 
 **Description:** As a docs CLI user, I want the control plane to build a stable graph index from document envelopes so graph traversal can be fast, deduplicated, and explainable.
 
 **Acceptance Criteria:**
-- [ ] Add a graph index module under `packages/cli/src/lib/docs-control-plane/`.
-- [ ] Build graph nodes for documents, tasks, source paths, evidence records, and optional sections when needed.
-- [ ] Build graph edges from normalized relationship projections.
-- [ ] Dedupe equivalent nodes and edges while preserving multiple reasons when more than one source relation supports an edge.
-- [ ] Provide lookup by stable id, family id, path, source path, task id, artifact id, and evidence ref.
-- [ ] If the target is a repository-relative or absolute source path, resolve it to a `source` graph node even when no document id matches that path.
-- [ ] Source path target resolution must not return the full repository when there is no source-map coverage.
-- [ ] Add cycle-safe adjacency indexes for outgoing and incoming traversal.
-- [ ] Add unit tests with mixed definition markdown, PRD JSON, ralph session, source path, rule, and evidence fixtures.
+- [x] Add a graph index module under `packages/cli/src/lib/docs-control-plane/`.
+- [x] Build graph nodes for documents, tasks, source paths, evidence records, and optional sections when needed.
+- [x] Build graph edges from normalized relationship projections.
+- [x] Dedupe equivalent nodes and edges while preserving multiple reasons when more than one source relation supports an edge.
+- [x] Provide lookup by stable id, family id, path, source path, task id, artifact id, and evidence ref.
+- [x] If the target is a repository-relative or absolute source path, resolve it to a `source` graph node even when no document id matches that path.
+- [x] Source path target resolution must not return the full repository when there is no source-map coverage.
+- [x] Add cycle-safe adjacency indexes for outgoing and incoming traversal.
+- [x] Add unit tests with mixed definition markdown, PRD JSON, ralph session, source path, rule, and evidence fixtures.
 
 ### US-004: Implement Axis Traversal Engine
 
 **Description:** As a traversal user, I want graph traversal to follow explicit axes, direction, depth, and limits so broad graph searches are deliberate and bounded.
 
 **Acceptance Criteria:**
-- [ ] Implement traversal input with target, axes, direction, depth, limit, includeContext flag, and preset.
-- [ ] Traverse only selected axes unless a preset expands them.
-- [ ] Support `out`, `in`, and `both` directions.
-- [ ] Support `depth` with default `1` and a safe maximum.
-- [ ] Support `limit` with default cap and `truncated` plus omitted count when capped.
-- [ ] Return visited nodes, traversed edges, paths from target, depth for each node, and edge reasons.
-- [ ] Prevent infinite loops on cycles.
-- [ ] Add tests for each axis, direction, depth, limit, and truncation behavior.
+- [x] Implement traversal input with target, axes, direction, depth, limit, includeContext flag, and preset.
+- [x] Traverse only selected axes unless a preset expands them.
+- [x] Support `out`, `in`, and `both` directions.
+- [x] Support `depth` with default `1` and a safe maximum.
+- [x] Support `limit` with default cap and `truncated` plus omitted count when capped.
+- [x] Return visited nodes, traversed edges, paths from target, depth for each node, and edge reasons.
+- [x] Prevent infinite loops on cycles.
+- [x] Add tests for each axis, direction, depth, limit, and truncation behavior.
 
 ### US-005: Add Role Traversal Including Rule/Test/Memo/Knowledge
 
 **Description:** As a documentation maintainer, I want role traversal to expose spec/todo/plan/rule/test/memo/knowledge family members without treating role as an authored link type.
 
 **Acceptance Criteria:**
-- [ ] `role` traversal shows same-family role members by document kind and extension.
-- [ ] `.rule.md` appears as a role node and also contributes to `constraint` axis where it constrains a spec family.
-- [ ] `.test.md`, `.memo.md`, and `knowledge` documents appear in role traversal when in the same family or linked as family context.
-- [ ] Missing expected roles can be reported as optional absence metadata without becoming errors.
-- [ ] Text and JSON output group role nodes by role type.
-- [ ] Add tests for a family containing spec, todo, plan, rule, test, memo, and knowledge fixtures.
+- [x] `role` traversal shows same-family role members by document kind and extension.
+- [x] `.rule.md` appears as a role node and also contributes to `constraint` axis where it constrains a spec family.
+- [x] `.test.md`, `.memo.md`, and `knowledge` documents appear in role traversal when in the same family or linked as family context.
+- [x] Missing expected roles can be reported as optional absence metadata without becoming errors.
+- [x] Text and JSON output group role nodes by role type.
+- [x] Add tests for a family containing spec, todo, plan, rule, test, memo, and knowledge fixtures.
 
 ### US-006: Add Source, Evidence, And Trace Traversal
 
 **Description:** As an impact-analysis user, I want source, evidence, and trace axes to remain separate so the system can distinguish implementation location, verification proof, and work history.
 
 **Acceptance Criteria:**
-- [ ] Source traversal can start from a source path and find documents/evidence that reference that path.
-- [ ] Source traversal can start from a document and find implementation and test paths it declares.
-- [ ] Source traversal with no matching source-map coverage returns a bounded result with `source-map-missing` diagnostic or limitation metadata.
-- [ ] Source traversal documents that it is powered by docs control-plane adapters and is distinct from `qa-sdk def find-by-file`.
-- [ ] Evidence traversal can start from an artifact/evidence record and find verified docs, materialized outputs, source refs, and verification refs.
-- [ ] Evidence traversal can start from a document and find related evidence records.
-- [ ] Trace traversal can connect PRD markdown, ralph PRD JSON, ralph session, PRD stories, TODO items, and traced docs without collapsing them into source or evidence.
-- [ ] Add tests proving `trace`, `source`, and `evidence` return different edge sets for the same target when applicable.
+- [x] Source traversal can start from a source path and find documents/evidence that reference that path.
+- [x] Source traversal can start from a document and find implementation and test paths it declares.
+- [x] Source traversal with no matching source-map coverage returns a bounded result with `source-map-missing` diagnostic or limitation metadata.
+- [x] Source traversal documents that it is powered by docs control-plane adapters and is distinct from `qa-sdk def find-by-file`.
+- [x] Evidence traversal can start from an artifact/evidence record and find verified docs, materialized outputs, source refs, and verification refs.
+- [x] Evidence traversal can start from a document and find related evidence records.
+- [x] Trace traversal can connect PRD markdown, ralph PRD JSON, ralph session, PRD stories, TODO items, and traced docs without collapsing them into source or evidence.
+- [x] Add tests proving `trace`, `source`, and `evidence` return different edge sets for the same target when applicable.
 
 ### US-007: Add `qa-sdk docs graph` CLI
 
 **Description:** As a maintainer, I want a CLI graph command so I can inspect document coordinate graph traversal directly before using it in higher-level commands.
 
 **Acceptance Criteria:**
-- [ ] Add `qa-sdk docs graph <target>` to the docs command group.
-- [ ] Support `--axis <csv>`, `--direction out|in|both`, `--depth <n>`, `--limit <n>`, `--preset <name>`, and `--json`.
-- [ ] Text output includes target, axes, direction, node count, edge count, truncated state, and edge reasons.
-- [ ] JSON output includes traversal input, nodes, edges, paths, counts, `truncated`, and `omittedCount`.
-- [ ] Unknown axis, direction, or preset returns structured CLI errors.
-- [ ] Add root dispatch/help tests for `qa-sdk docs graph`.
-- [ ] Add command tests for composition, role, source, evidence, trace, and preset traversal.
-- [ ] Add command tests proving source path targets do not return full-repository status or collect results.
+- [x] Add `qa-sdk docs graph <target>` to the docs command group.
+- [x] Support `--axis <csv>`, `--direction out|in|both`, `--depth <n>`, `--limit <n>`, `--preset <name>`, and `--json`.
+- [x] Text output includes target, axes, direction, node count, edge count, truncated state, and edge reasons.
+- [x] JSON output includes traversal input, nodes, edges, paths, counts, `truncated`, and `omittedCount`.
+- [x] Unknown axis, direction, or preset returns structured CLI errors.
+- [x] Add root dispatch/help tests for `qa-sdk docs graph`.
+- [x] Add command tests for composition, role, source, evidence, trace, and preset traversal.
+- [x] Add command tests proving source path targets do not return full-repository status or collect results.
 
 ### US-008: Define And Implement Traversal Presets
 
 **Description:** As an operator, I want convenience presets for common workflows without losing access to precise canonical axes.
 
 **Acceptance Criteria:**
-- [ ] Define `family`, `implementation`, `review`, `impact`, and `prd-completion` presets.
-- [ ] `family` expands to role plus composition within safe depth.
-- [ ] `implementation` expands to trace, source, and evidence.
-- [ ] `review` expands to dependency, constraint, evidence, and role.
-- [ ] `impact` uses reverse dependency, reverse trace, reverse source, and reverse evidence as applicable.
-- [ ] `prd-completion` uses trace/source/evidence only and excludes context by default.
-- [ ] Presets must be documented as convenience views, not internal canonical axes.
-- [ ] Add tests confirming each preset expands to the expected axes/direction/default depth.
+- [x] Define `family`, `implementation`, `review`, `impact`, and `prd-completion` presets.
+- [x] `family` expands to role plus composition within safe depth.
+- [x] `implementation` expands to trace, source, and evidence.
+- [x] `review` expands to dependency, constraint, evidence, and role.
+- [x] `impact` uses reverse dependency, reverse trace, reverse source, and reverse evidence as applicable.
+- [x] `prd-completion` uses trace/source/evidence only and excludes context by default.
+- [x] Presets must be documented as convenience views, not internal canonical axes.
+- [x] Add tests confirming each preset expands to the expected axes/direction/default depth.
 
 ### US-009: Integrate Graph Traversal With Existing Docs Commands
 
 **Description:** As a docs control-plane maintainer, I want status, collect, PRD context, and PRD completion sync to use traversal semantics consistently so they stop duplicating ad hoc related-document logic.
 
 **Acceptance Criteria:**
-- [ ] `docs status` keeps family/role-limited behavior and does not broaden into context search by default.
-- [ ] `docs collect` accepts a graph mode or traversal options while preserving current family default.
-- [ ] `docs prd context <exact-doc-or-path>` uses graph traversal with bounded role, dependency, source, and evidence axes.
-- [ ] `docs prd context <free text>` remains search-first and must not silently traverse the full graph.
-- [ ] `docs prd sync-completion` uses trace/source/evidence axes only and excludes broad context/topic traversal.
-- [ ] Existing status/collect/drift/PRD tests remain green or are updated to assert the new traversal-backed behavior.
-- [ ] Existing `qa-sdk def topdown`, `qa-sdk def bottomup`, and `qa-sdk def find-by-file` behavior remains unchanged and is not routed through docs graph.
+- [x] `docs status` keeps family/role-limited behavior and does not broaden into context search by default.
+- [x] `docs collect` accepts a graph mode or traversal options while preserving current family default.
+- [x] `docs prd context <exact-doc-or-path>` uses graph traversal with bounded role, dependency, source, and evidence axes.
+- [x] `docs prd context <free text>` remains search-first and must not silently traverse the full graph.
+- [x] `docs prd sync-completion` uses trace/source/evidence axes only and excludes broad context/topic traversal.
+- [x] Existing status/collect/drift/PRD tests remain green or are updated to assert the new traversal-backed behavior.
+- [x] Existing `qa-sdk def topdown`, `qa-sdk def bottomup`, and `qa-sdk def find-by-file` behavior remains unchanged and is not routed through docs graph.
 
 ### US-010: Add Guardrails For Large Graph Traversals
 
 **Description:** As an operator, I want traversal results to be bounded and explain truncation so a 1000-document repository stays usable.
 
 **Acceptance Criteria:**
-- [ ] Default traversal limit prevents accidental full-repository dumps.
-- [ ] `--limit` can lower or raise the cap within a safe maximum.
-- [ ] `--depth` default and maximum are documented and enforced.
-- [ ] Results include `truncated: true` and omitted counts when caps are hit.
-- [ ] Text output warns when context/search axes cause broad traversal.
-- [ ] Add tests for limit, depth, truncation, and broad-context warnings.
+- [x] Default traversal limit prevents accidental full-repository dumps.
+- [x] `--limit` can lower or raise the cap within a safe maximum.
+- [x] `--depth` default and maximum are documented and enforced.
+- [x] Results include `truncated: true` and omitted counts when caps are hit.
+- [x] Text output warns when context/search axes cause broad traversal.
+- [x] Add tests for limit, depth, truncation, and broad-context warnings.
 
 ### US-011: Document Coordinate Graph Traversal Semantics
 
 **Description:** As a documentation author, I want the traversal model documented so authors understand source-owned links while the system handles precise canonical classification.
 
 **Acceptance Criteria:**
-- [ ] Update `docs-control-plane.spec.md` with canonical axes and direction semantics.
-- [ ] Document that `trace`, `source`, and `evidence` remain separate system axes.
-- [ ] Document that `rule` is a document role and contributes to the `constraint` axis.
-- [ ] Document authored link vocabulary versus normalized traversal axes.
-- [ ] Document the distinction between `qa-sdk def` primitive graph queries and `qa-sdk docs graph` cross-document coordinate traversal.
-- [ ] Document source path target resolution and the difference from `qa-sdk def find-by-file`.
-- [ ] Document presets as convenience views only.
-- [ ] Add usage examples for `docs graph` with composition, source, evidence, role, and PRD trace traversal.
+- [x] Update `docs-control-plane.spec.md` with canonical axes and direction semantics.
+- [x] Document that `trace`, `source`, and `evidence` remain separate system axes.
+- [x] Document that `rule` is a document role and contributes to the `constraint` axis.
+- [x] Document authored link vocabulary versus normalized traversal axes.
+- [x] Document the distinction between `qa-sdk def` primitive graph queries and `qa-sdk docs graph` cross-document coordinate traversal.
+- [x] Document source path target resolution and the difference from `qa-sdk def find-by-file`.
+- [x] Document presets as convenience views only.
+- [x] Add usage examples for `docs graph` with composition, source, evidence, role, and PRD trace traversal.
 
 ## Functional Requirements
 

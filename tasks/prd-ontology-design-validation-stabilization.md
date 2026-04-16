@@ -51,99 +51,99 @@ No browser verification is required for this PRD.
 **Description:** As an ontology maintainer, I want a clear validation scope map so that agents know which documents, packages, and gates must be checked before changing ontology design.
 
 **Acceptance Criteria:**
-- [ ] Add or update a spec/guide section that names the validation boundary for ontology design changes.
-- [ ] The boundary distinguishes definition-catalog validation, operational-ontology allocation validation, programming-artifact simulation validation, and registry-service/index-meta lifecycle validation.
-- [ ] The boundary states that registry-service/index-meta implementation is not required for local validation stories.
-- [ ] Relevant docs include `sources` pointing to implementation/test files where applicable.
-- [ ] `node packages/cli/dist/index.js def validate` passes.
+- [x] Add or update a spec/guide section that names the validation boundary for ontology design changes.
+- [x] The boundary distinguishes definition-catalog validation, operational-ontology allocation validation, programming-artifact simulation validation, and registry-service/index-meta lifecycle validation.
+- [x] The boundary states that registry-service/index-meta implementation is not required for local validation stories.
+- [x] Relevant docs include `sources` pointing to implementation/test files where applicable.
+- [x] `node packages/cli/dist/index.js def validate` passes.
 
 ### US-002: Define Allocation Validation Contract
 
 **Description:** As an ontology maintainer, I want allocation validation requirements written as a contract so that future registry persistence work preserves the current local allocation invariants.
 
 **Acceptance Criteria:**
-- [ ] Document the current `allocateOntologyAddressSpace()` and `validateOntologyAddressAllocationPlan()` invariants.
-- [ ] Cover duplicate prefix/version allocation, missing taxonomy axis, product allocation, and sum segment allocation.
-- [ ] State which invariants belong to `operational-ontology` and which are deferred to registry-service persistence.
-- [ ] Link the contract to `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md`.
-- [ ] Existing allocation tests remain the executable source of truth.
+- [x] Document the current `allocateOntologyAddressSpace()` and `validateOntologyAddressAllocationPlan()` invariants.
+- [x] Cover duplicate prefix/version allocation, missing taxonomy axis, product allocation, and sum segment allocation.
+- [x] State which invariants belong to `operational-ontology` and which are deferred to registry-service persistence.
+- [x] Link the contract to `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md`.
+- [x] Existing allocation tests remain the executable source of truth.
 
 ### US-003: Add Validation Matrix for Ontology Design Changes
 
 **Description:** As an ontology maintainer, I want a scenario matrix for ontology design changes so that each kind of change has a known validation path.
 
 **Acceptance Criteria:**
-- [ ] Add a matrix covering axis changes, taxonomy changes, relation/category changes, allocation policy changes, definition graph changes, and pack activation changes.
-- [ ] Each matrix row lists required docs, code owners, tests, and commands.
-- [ ] Core gate changes require impact analysis or escalation guidance rather than silent local edits.
-- [ ] The matrix references the 5Q checklist for new axes.
-- [ ] The matrix explicitly separates local validation from registry-service/index-meta activation.
+- [x] Add a matrix covering axis changes, taxonomy changes, relation/category changes, allocation policy changes, definition graph changes, and pack activation changes.
+- [x] Each matrix row lists required docs, code owners, tests, and commands.
+- [x] Core gate changes require impact analysis or escalation guidance rather than silent local edits.
+- [x] The matrix references the 5Q checklist for new axes.
+- [x] The matrix explicitly separates local validation from registry-service/index-meta activation.
 
 ### US-004: Reorganize Registry Allocation TODO into Executable Phases
 
 **Description:** As a ralph-tui planner, I want the large registry allocation TODO split into execution phases so that each phase can become a small agent task.
 
 **Acceptance Criteria:**
-- [ ] Group open TODO items into persistence schema, store adapter, service layer, index-meta sync, activation smoke, and prefix policy phases.
-- [ ] Each phase has a short goal, non-goals, prerequisites, and validation commands.
-- [ ] Cross-phase dependencies are explicit.
-- [ ] Phase 2 persistence tasks do not depend on implementing Phase 4 index-meta sync.
-- [ ] The original TODO intent is preserved; no open item is silently removed.
+- [x] Group open TODO items into persistence schema, store adapter, service layer, index-meta sync, activation smoke, and prefix policy phases.
+- [x] Each phase has a short goal, non-goals, prerequisites, and validation commands.
+- [x] Cross-phase dependencies are explicit.
+- [x] Phase 2 persistence tasks do not depend on implementing Phase 4 index-meta sync.
+- [x] The original TODO intent is preserved; no open item is silently removed.
 
 ### US-005: Stabilize Definition Graph Requirements for Ontology Modules
 
 **Description:** As a documentation maintainer, I want ontology module docs to have explicit graph requirements so that contains/link drift is caught before implementation starts.
 
 **Acceptance Criteria:**
-- [ ] Define required frontmatter fields for ontology module, leaf, plan, todo, and knowledge docs.
-- [ ] Define when module docs must include `contains` links.
-- [ ] Define when leaf docs should split before exceeding 150 lines.
-- [ ] Document how `sources` should point from specs to implementation and tests.
-- [ ] `def validate` reports no warnings after the documentation updates.
+- [x] Define required frontmatter fields for ontology module, leaf, plan, todo, and knowledge docs.
+- [x] Define when module docs must include `contains` links.
+- [x] Define when leaf docs should split before exceeding 150 lines.
+- [x] Document how `sources` should point from specs to implementation and tests.
+- [x] `def validate` reports no warnings after the documentation updates.
 
 ### US-006: Add Local Validation Fixture for Allocation Drift
 
 **Description:** As an ontology implementer, I want a targeted local fixture for allocation drift so that invalid allocation plans fail before registry persistence exists.
 
 **Acceptance Criteria:**
-- [ ] Add or extend an operational-ontology test fixture for allocation drift.
-- [ ] The fixture covers at least one prefix/version collision.
-- [ ] The fixture covers at least one taxonomy-axis mismatch.
-- [ ] The fixture returns structured validation errors that identify the offending prefix, taxonomy, or axis.
-- [ ] The fixture does not require registry-service or index-meta.
+- [x] Add or extend an operational-ontology test fixture for allocation drift.
+- [x] The fixture covers at least one prefix/version collision.
+- [x] The fixture covers at least one taxonomy-axis mismatch.
+- [x] The fixture returns structured validation errors that identify the offending prefix, taxonomy, or axis.
+- [x] The fixture does not require registry-service or index-meta.
 
 ### US-007: Specify Registry-Service Persistence Handoff
 
 **Description:** As a future registry-service implementer, I want a handoff spec for ontology persistence so that DB schema work starts from stable local contracts.
 
 **Acceptance Criteria:**
-- [ ] Define the persistence records expected for namespace, axis, taxonomy, allocation, and allocation segment.
-- [ ] Map each persistence record back to local allocation model fields.
-- [ ] State duplicate/collision rules that must be enforced at store or service level.
-- [ ] Identify which tests should be added under `registry-service` when persistence begins.
-- [ ] Keep actual DB schema implementation out of this story unless explicitly selected in a follow-up PRD.
+- [x] Define the persistence records expected for namespace, axis, taxonomy, allocation, and allocation segment.
+- [x] Map each persistence record back to local allocation model fields.
+- [x] State duplicate/collision rules that must be enforced at store or service level.
+- [x] Identify which tests should be added under `registry-service` when persistence begins.
+- [x] Keep actual DB schema implementation out of this story unless explicitly selected in a follow-up PRD.
 
 ### US-008: Specify Index-Meta Sync Handoff
 
 **Description:** As a future index-meta implementer, I want a sync handoff spec so that active ontology allocations can later materialize into prefix registry and schema version records.
 
 **Acceptance Criteria:**
-- [ ] Define what data active allocation must send to index-meta.
-- [ ] Distinguish product allocation, sum allocation, and segment materialization.
-- [ ] State idempotency and collision expectations for sync.
-- [ ] Define minimum activation smoke checks.
-- [ ] Keep actual index-meta sync implementation out of this story unless explicitly selected in a follow-up PRD.
+- [x] Define what data active allocation must send to index-meta.
+- [x] Distinguish product allocation, sum allocation, and segment materialization.
+- [x] State idempotency and collision expectations for sync.
+- [x] Define minimum activation smoke checks.
+- [x] Keep actual index-meta sync implementation out of this story unless explicitly selected in a follow-up PRD.
 
 ### US-009: Define Catalog Scoped Prefix Decision Criteria
 
 **Description:** As an ontology architect, I want scoped prefix decision criteria so that prefix namespace changes are not made before there is a concrete need.
 
 **Acceptance Criteria:**
-- [ ] Write decision criteria for retaining global prefix uniqueness versus introducing scoped prefixes.
-- [ ] Include scenarios involving catalog id, ontology id, tenant boundary, and pack collisions.
-- [ ] List affected surfaces: `/prefixes/:prefix`, index-meta key shape, decode-service/cache keys, and migration plan.
-- [ ] State that registry-service prefix table schema must not change until this decision is resolved.
-- [ ] If a new decision doc is created, it links back to the registry allocation TODO.
+- [x] Write decision criteria for retaining global prefix uniqueness versus introducing scoped prefixes.
+- [x] Include scenarios involving catalog id, ontology id, tenant boundary, and pack collisions.
+- [x] List affected surfaces: `/prefixes/:prefix`, index-meta key shape, decode-service/cache keys, and migration plan.
+- [x] State that registry-service prefix table schema must not change until this decision is resolved.
+- [x] If a new decision doc is created, it links back to the registry allocation TODO.
 
 ## Functional Requirements
 

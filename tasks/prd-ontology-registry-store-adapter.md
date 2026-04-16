@@ -36,89 +36,89 @@ No browser verification is required.
 **Description:** As a registry-service developer, I want a typed ontology registry store contract so that in-memory and SQL adapters expose the same persistence boundary.
 
 **Acceptance Criteria:**
-- [ ] Add `packages/registry-service/src/stores/ontology-registry-store.ts`.
-- [ ] Define record types for namespace, axis, taxonomy, address allocation, and address segment using camelCase property names.
-- [ ] Define write input types that can represent a complete allocation plan write set.
-- [ ] Keep the API minimal for Phase 2B: write a complete allocation plan, list namespaces, get namespace, list axes by ontology/version, list taxonomies by ontology/version, list allocations by ontology/version, get allocation, list segments for allocation, and list active allocations.
-- [ ] Do not add granular repair/update/delete methods unless a contract test requires them.
-- [ ] Define structured conflict/error types for duplicate keys, drift, missing taxonomy axis, invalid segment, segment overlap, and partial write rejection.
-- [ ] The contract does not import Nest service classes and does not call index-meta.
+- [x] Add `packages/registry-service/src/stores/ontology-registry-store.ts`.
+- [x] Define record types for namespace, axis, taxonomy, address allocation, and address segment using camelCase property names.
+- [x] Define write input types that can represent a complete allocation plan write set.
+- [x] Keep the API minimal for Phase 2B: write a complete allocation plan, list namespaces, get namespace, list axes by ontology/version, list taxonomies by ontology/version, list allocations by ontology/version, get allocation, list segments for allocation, and list active allocations.
+- [x] Do not add granular repair/update/delete methods unless a contract test requires them.
+- [x] Define structured conflict/error types for duplicate keys, drift, missing taxonomy axis, invalid segment, segment overlap, and partial write rejection.
+- [x] The contract does not import Nest service classes and does not call index-meta.
 
 ### US-002: Add Shared Store Fixtures and Validation Helpers
 
 **Description:** As a registry-service developer, I want shared fixtures and validation helpers so that both stores validate ontology rows the same way.
 
 **Acceptance Criteria:**
-- [ ] Add helper code under `packages/registry-service/src/stores/ontology-registry-validation.ts` or a similarly narrow stores-local module.
-- [ ] Add reusable fixture builders for namespace, axis, taxonomy, allocation, and segment records.
-- [ ] Add helper logic that validates taxonomy axis references against same `ontologyId` and `versionId` axis records.
-- [ ] Add helper logic that validates segment `consumes`, positive size, allocation range containment, and segment overlap per allocation.
-- [ ] Add helper logic that detects same-key drift for namespace, axis, taxonomy, allocation, and segment records.
-- [ ] Helpers are unit tested without requiring SQL.
-- [ ] Helpers do not mutate input records.
+- [x] Add helper code under `packages/registry-service/src/stores/ontology-registry-validation.ts` or a similarly narrow stores-local module.
+- [x] Add reusable fixture builders for namespace, axis, taxonomy, allocation, and segment records.
+- [x] Add helper logic that validates taxonomy axis references against same `ontologyId` and `versionId` axis records.
+- [x] Add helper logic that validates segment `consumes`, positive size, allocation range containment, and segment overlap per allocation.
+- [x] Add helper logic that detects same-key drift for namespace, axis, taxonomy, allocation, and segment records.
+- [x] Helpers are unit tested without requiring SQL.
+- [x] Helpers do not mutate input records.
 
 ### US-003: Implement InMemoryOntologyRegistryStore
 
 **Description:** As a registry-service developer, I want an in-memory ontology registry store so that service-layer tests can run without SQL.
 
 **Acceptance Criteria:**
-- [ ] Add `packages/registry-service/src/stores/in-memory-ontology-registry-store.ts`.
-- [ ] Store supports list/get/write for namespace, axes, taxonomies, allocations, active allocations, and segments.
-- [ ] Store enforces namespace uniqueness and all natural key duplicate/drift rules from the handoff spec.
-- [ ] Store rejects taxonomy records whose axis references are missing.
-- [ ] Store rejects invalid, out-of-range, or overlapping segments.
-- [ ] Store write operations are no-op on validation failure; no partial state is retained.
-- [ ] Add in-memory store tests for all accepted and rejected cases.
+- [x] Add `packages/registry-service/src/stores/in-memory-ontology-registry-store.ts`.
+- [x] Store supports list/get/write for namespace, axes, taxonomies, allocations, active allocations, and segments.
+- [x] Store enforces namespace uniqueness and all natural key duplicate/drift rules from the handoff spec.
+- [x] Store rejects taxonomy records whose axis references are missing.
+- [x] Store rejects invalid, out-of-range, or overlapping segments.
+- [x] Store write operations are no-op on validation failure; no partial state is retained.
+- [x] Add in-memory store tests for all accepted and rejected cases.
 
 ### US-004: Implement SqlOntologyRegistryStore
 
 **Description:** As a registry-service developer, I want a SQL ontology registry store so that ontology allocation records can be persisted through the Phase 2A tables.
 
 **Acceptance Criteria:**
-- [ ] Add `packages/registry-service/src/stores/sql-ontology-registry-store.ts`.
-- [ ] Store uses the Phase 2A tables from `packages/registry-service/src/db/schema.ts`.
-- [ ] Store serializes/deserializes `*_json` text fields explicitly.
-- [ ] Store supports list/get/write for namespace, axes, taxonomies, allocations, active allocations, and segments.
-- [ ] Store maps SQLite unique constraint failures to structured store conflicts.
-- [ ] Store applies the same taxonomy axis and segment validation helpers as the in-memory store before writes.
-- [ ] Store write operations use a SQL transaction where possible and leave no partial ontology rows on validation failure.
+- [x] Add `packages/registry-service/src/stores/sql-ontology-registry-store.ts`.
+- [x] Store uses the Phase 2A tables from `packages/registry-service/src/db/schema.ts`.
+- [x] Store serializes/deserializes `*_json` text fields explicitly.
+- [x] Store supports list/get/write for namespace, axes, taxonomies, allocations, active allocations, and segments.
+- [x] Store maps SQLite unique constraint failures to structured store conflicts.
+- [x] Store applies the same taxonomy axis and segment validation helpers as the in-memory store before writes.
+- [x] Store write operations use a SQL transaction where possible and leave no partial ontology rows on validation failure.
 
 ### US-005: Add Shared Store Contract Tests
 
 **Description:** As a registry-service maintainer, I want one store contract test suite to run against both in-memory and SQL adapters so that behavior cannot drift.
 
 **Acceptance Criteria:**
-- [ ] Add `packages/registry-service/src/stores/ontology-registry-store.test.ts` or equivalent contract test file.
-- [ ] Test suite runs against `InMemoryOntologyRegistryStore`.
-- [ ] Test suite runs against `SqlOntologyRegistryStore` using a migrated SQL driver.
-- [ ] Tests cover successful full allocation plan persistence.
-- [ ] Tests cover namespace uniqueness and axis/taxonomy/allocation/segment duplicate conflicts.
-- [ ] Tests cover same-key drift detection for changed hash/capacity/axis list/prefix/segment shape.
-- [ ] Tests cover missing taxonomy axis rejection.
-- [ ] Tests cover segment out-of-range and overlap rejection.
-- [ ] Tests prove failed writes leave no partial rows.
+- [x] Add `packages/registry-service/src/stores/ontology-registry-store.test.ts` or equivalent contract test file.
+- [x] Test suite runs against `InMemoryOntologyRegistryStore`.
+- [x] Test suite runs against `SqlOntologyRegistryStore` using a migrated SQL driver.
+- [x] Tests cover successful full allocation plan persistence.
+- [x] Tests cover namespace uniqueness and axis/taxonomy/allocation/segment duplicate conflicts.
+- [x] Tests cover same-key drift detection for changed hash/capacity/axis list/prefix/segment shape.
+- [x] Tests cover missing taxonomy axis rejection.
+- [x] Tests cover segment out-of-range and overlap rejection.
+- [x] Tests prove failed writes leave no partial rows.
 
 ### US-006: Wire Ontology Store into Registry Store Bootstrap
 
 **Description:** As a registry-service integrator, I want the ontology store available from registry-service bootstrap so that Phase 3 service code can consume it.
 
 **Acceptance Criteria:**
-- [ ] Update `packages/registry-service/src/bootstrap/stores.ts` to return `ontologyStore` for `:memory:` stores.
-- [ ] Update `packages/registry-service/src/bootstrap/stores.ts` to return `ontologyStore` for SQL-backed stores.
-- [ ] The bootstrap change does not expose REST routes, CLI commands, or service orchestration.
-- [ ] Existing store bootstrap tests or startup smoke tests continue to pass.
-- [ ] Add a focused test if no existing test verifies that `ontologyStore` is present for both modes.
+- [x] Update `packages/registry-service/src/bootstrap/stores.ts` to return `ontologyStore` for `:memory:` stores.
+- [x] Update `packages/registry-service/src/bootstrap/stores.ts` to return `ontologyStore` for SQL-backed stores.
+- [x] The bootstrap change does not expose REST routes, CLI commands, or service orchestration.
+- [x] Existing store bootstrap tests or startup smoke tests continue to pass.
+- [x] Add a focused test if no existing test verifies that `ontologyStore` is present for both modes.
 
 ### US-007: Reflect Phase 2B Completion in Docs and TODO
 
 **Description:** As an ontology documentation maintainer, I want Phase 2B completion reflected in specs and TODO so that Phase 3 can start from a stable store contract.
 
 **Acceptance Criteria:**
-- [ ] Update `operational-ontology-registry-allocation.todo.md` to mark Phase 2B store adapter items complete.
-- [ ] Update `operational-ontology-registry-allocation.spec.md` to summarize the store adapter surface and remaining service-layer responsibilities.
-- [ ] Update `operational-ontology-registry-persistence-handoff.spec.md` if store conflict/error naming refines the handoff contract.
-- [ ] Keep Phase 3 service layer items open.
-- [ ] Add a short note that Phase 3 owns transaction orchestration across pack validation/reservation/activation workflows if not fully closed by store adapter transactions.
+- [x] Update `operational-ontology-registry-allocation.todo.md` to mark Phase 2B store adapter items complete.
+- [x] Update `operational-ontology-registry-allocation.spec.md` to summarize the store adapter surface and remaining service-layer responsibilities.
+- [x] Update `operational-ontology-registry-persistence-handoff.spec.md` if store conflict/error naming refines the handoff contract.
+- [x] Keep Phase 3 service layer items open.
+- [x] Add a short note that Phase 3 owns transaction orchestration across pack validation/reservation/activation workflows if not fully closed by store adapter transactions.
 
 ## Functional Requirements
 

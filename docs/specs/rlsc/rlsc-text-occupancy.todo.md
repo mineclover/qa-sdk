@@ -20,6 +20,8 @@ def:
 
 `@chenglou/pretext` 통합으로 RLSC에 텍스트 시각적 공간 점유 측정을 추가한다. 설계 상세: `docs/superpowers/specs/2026-04-06-rlsc-pretext-integration-design.md`
 
+상태: 완료. 열린 실행 항목은 없으며, 이 문서는 RLSC 텍스트 점유 기능의 완료 기록으로 유지한다.
+
 ---
 
 ## Phase 0: 의존성 + 환경 ✅

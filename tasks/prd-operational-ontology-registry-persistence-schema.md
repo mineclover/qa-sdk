@@ -46,98 +46,98 @@ No browser verification is required.
 **Description:** As a registry-service implementer, I want to document existing Drizzle schema and test patterns so that ontology persistence tables follow the repo's current conventions.
 
 **Acceptance Criteria:**
-- [ ] Inspect `packages/registry-service/src/db/schema.ts`, `packages/registry-service/drizzle.config.ts`, `packages/registry-service/tsup.config.ts`, and `packages/registry-service/src/bootstrap/stores.ts`.
-- [ ] Identify naming conventions for table names, primary keys, unique indexes, JSON fields, timestamps, lifecycle/status fields, and check constraints.
-- [ ] Identify whether the implementation should use composite primary keys or unique indexes for each ontology table.
-- [ ] Identify existing SQL/schema tests or migration snapshot patterns.
-- [ ] Add brief implementation notes to the ontology registry allocation TODO or a new memo/spec section.
-- [ ] Do not add ontology tables in this story.
+- [x] Inspect `packages/registry-service/src/db/schema.ts`, `packages/registry-service/drizzle.config.ts`, `packages/registry-service/tsup.config.ts`, and `packages/registry-service/src/bootstrap/stores.ts`.
+- [x] Identify naming conventions for table names, primary keys, unique indexes, JSON fields, timestamps, lifecycle/status fields, and check constraints.
+- [x] Identify whether the implementation should use composite primary keys or unique indexes for each ontology table.
+- [x] Identify existing SQL/schema tests or migration snapshot patterns.
+- [x] Add brief implementation notes to the ontology registry allocation TODO or a new memo/spec section.
+- [x] Do not add ontology tables in this story.
 
 ### US-002: Add Namespace and Axis Tables
 
 **Description:** As a registry-service implementer, I want ontology namespace and axis tables so that registry-service can persist ontology identity and axis registrations.
 
 **Acceptance Criteria:**
-- [ ] Add `ontology_namespace` table to `packages/registry-service/src/db/schema.ts`.
-- [ ] `ontology_namespace` includes `ontology_id` primary key.
-- [ ] `ontology_namespace.namespace` is unique.
-- [ ] `ontology_namespace` includes `owner`, `lifecycle`, `created_at`, `updated_at` fields following existing registry-service conventions.
-- [ ] Add lifecycle check constraint for allowed namespace lifecycle values.
-- [ ] Add `ontology_axis` table.
-- [ ] `ontology_axis` has primary key or unique key equivalent to `(ontology_id, axis_id, version_id)`.
-- [ ] `ontology_axis` includes `values_json`, `values_hash`, `capacity`, and `lifecycle`.
-- [ ] Add lifecycle check constraint for allowed axis lifecycle values.
-- [ ] Update the schema file header comment so the documented table count/list includes the new ontology tables.
-- [ ] No scoped-prefix fields are added.
+- [x] Add `ontology_namespace` table to `packages/registry-service/src/db/schema.ts`.
+- [x] `ontology_namespace` includes `ontology_id` primary key.
+- [x] `ontology_namespace.namespace` is unique.
+- [x] `ontology_namespace` includes `owner`, `lifecycle`, `created_at`, `updated_at` fields following existing registry-service conventions.
+- [x] Add lifecycle check constraint for allowed namespace lifecycle values.
+- [x] Add `ontology_axis` table.
+- [x] `ontology_axis` has primary key or unique key equivalent to `(ontology_id, axis_id, version_id)`.
+- [x] `ontology_axis` includes `values_json`, `values_hash`, `capacity`, and `lifecycle`.
+- [x] Add lifecycle check constraint for allowed axis lifecycle values.
+- [x] Update the schema file header comment so the documented table count/list includes the new ontology tables.
+- [x] No scoped-prefix fields are added.
 
 ### US-003: Add Taxonomy Table
 
 **Description:** As a registry-service implementer, I want an ontology taxonomy table so that taxonomy registration can persist axis composition and identity-axis information.
 
 **Acceptance Criteria:**
-- [ ] Add `ontology_taxonomy` table to `packages/registry-service/src/db/schema.ts`.
-- [ ] `ontology_taxonomy` has primary key or unique key equivalent to `(ontology_id, taxonomy_id, version_id)`.
-- [ ] Table includes `applies_to_json`, `axis_ids_json`, `identity_axis_ids_json`, `space`, and `lifecycle`.
-- [ ] Add lifecycle check constraint for allowed taxonomy lifecycle values.
-- [ ] Schema leaves referenced-axis existence validation to a documented store/service-level check if DB foreign keys are not practical.
-- [ ] JSON field names follow the convention established in US-001.
-- [ ] Update the schema file header comment if table count/list changed in this story.
+- [x] Add `ontology_taxonomy` table to `packages/registry-service/src/db/schema.ts`.
+- [x] `ontology_taxonomy` has primary key or unique key equivalent to `(ontology_id, taxonomy_id, version_id)`.
+- [x] Table includes `applies_to_json`, `axis_ids_json`, `identity_axis_ids_json`, `space`, and `lifecycle`.
+- [x] Add lifecycle check constraint for allowed taxonomy lifecycle values.
+- [x] Schema leaves referenced-axis existence validation to a documented store/service-level check if DB foreign keys are not practical.
+- [x] JSON field names follow the convention established in US-001.
+- [x] Update the schema file header comment if table count/list changed in this story.
 
 ### US-004: Add Allocation and Segment Tables
 
 **Description:** As a registry-service implementer, I want ontology allocation and segment tables so that reserved/active/deprecated address allocation state can be persisted.
 
 **Acceptance Criteria:**
-- [ ] Add `ontology_address_allocation` table.
-- [ ] `allocation_id` is the primary key.
-- [ ] `(prefix, version_id)` is unique.
-- [ ] `(ontology_id, taxonomy_id, version_id)` is unique.
-- [ ] Table includes `address_model`, `capacity`, `address_offset`, `address_size`, and `status`.
-- [ ] Add check constraints for allowed `address_model` and `status` values.
-- [ ] Add `ontology_address_segment` table.
-- [ ] Segment primary key or unique key is equivalent to `(allocation_id, segment_id)`.
-- [ ] Segment includes `consumes_json`, `address_offset`, and `address_size`.
-- [ ] Update the schema file header comment so the final table list/count is correct.
-- [ ] No index-meta sync or `address_state_cache` behavior is implemented.
+- [x] Add `ontology_address_allocation` table.
+- [x] `allocation_id` is the primary key.
+- [x] `(prefix, version_id)` is unique.
+- [x] `(ontology_id, taxonomy_id, version_id)` is unique.
+- [x] Table includes `address_model`, `capacity`, `address_offset`, `address_size`, and `status`.
+- [x] Add check constraints for allowed `address_model` and `status` values.
+- [x] Add `ontology_address_segment` table.
+- [x] Segment primary key or unique key is equivalent to `(allocation_id, segment_id)`.
+- [x] Segment includes `consumes_json`, `address_offset`, and `address_size`.
+- [x] Update the schema file header comment so the final table list/count is correct.
+- [x] No index-meta sync or `address_state_cache` behavior is implemented.
 
 ### US-005: Generate Migration or Schema Snapshot
 
 **Description:** As a registry-service maintainer, I want the schema migration/snapshot updated before SQL tests run so that the ontology persistence tables are reproducible in local and CI environments.
 
 **Acceptance Criteria:**
-- [ ] Run `pnpm --filter registry-service db:generate` or the repo-approved registry-service Drizzle generation command.
-- [ ] Generated migration files are placed under `packages/registry-service/drizzle/**`.
-- [ ] Commit only source migration files under `packages/registry-service/drizzle/**`; do not commit `packages/registry-service/dist/**` generated output.
-- [ ] Generated migration output includes all five ontology persistence tables.
-- [ ] Generated output preserves global `(prefix, version_id)` uniqueness.
-- [ ] Generated output includes lifecycle/status/address-model check constraints when supported by the existing Drizzle pattern.
-- [ ] No unrelated migration churn is introduced.
+- [x] Run `pnpm --filter registry-service db:generate` or the repo-approved registry-service Drizzle generation command.
+- [x] Generated migration files are placed under `packages/registry-service/drizzle/**`.
+- [x] Commit only source migration files under `packages/registry-service/drizzle/**`; do not commit `packages/registry-service/dist/**` generated output.
+- [x] Generated migration output includes all five ontology persistence tables.
+- [x] Generated output preserves global `(prefix, version_id)` uniqueness.
+- [x] Generated output includes lifecycle/status/address-model check constraints when supported by the existing Drizzle pattern.
+- [x] No unrelated migration churn is introduced.
 
 ### US-006: Add Schema-Level Persistence Tests
 
 **Description:** As a registry-service maintainer, I want schema-level tests for ontology persistence so that table creation and uniqueness constraints are verified after migration generation.
 
 **Acceptance Criteria:**
-- [ ] Add or extend registry-service schema/SQL tests for the five ontology persistence tables.
-- [ ] Tests run against a DB initialized from registry-service migrations, not only `schema.ts` metadata.
-- [ ] Test namespace uniqueness.
-- [ ] Test axis duplicate key rejection for `(ontology_id, axis_id, version_id)`.
-- [ ] Test taxonomy duplicate key rejection for `(ontology_id, taxonomy_id, version_id)`.
-- [ ] Test allocation duplicate key rejection for `(prefix, version_id)`.
-- [ ] Test allocation duplicate key rejection for `(ontology_id, taxonomy_id, version_id)`.
-- [ ] Test segment duplicate key rejection for `(allocation_id, segment_id)`.
-- [ ] Tests do not require `OntologyRegistryStore` or `OntologyRegistryService`.
+- [x] Add or extend registry-service schema/SQL tests for the five ontology persistence tables.
+- [x] Tests run against a DB initialized from registry-service migrations, not only `schema.ts` metadata.
+- [x] Test namespace uniqueness.
+- [x] Test axis duplicate key rejection for `(ontology_id, axis_id, version_id)`.
+- [x] Test taxonomy duplicate key rejection for `(ontology_id, taxonomy_id, version_id)`.
+- [x] Test allocation duplicate key rejection for `(prefix, version_id)`.
+- [x] Test allocation duplicate key rejection for `(ontology_id, taxonomy_id, version_id)`.
+- [x] Test segment duplicate key rejection for `(allocation_id, segment_id)`.
+- [x] Tests do not require `OntologyRegistryStore` or `OntologyRegistryService`.
 
 ### US-007: Reflect Phase 2A Completion in Docs and TODO
 
 **Description:** As an ontology documentation maintainer, I want Phase 2A completion reflected in spec/todo docs so that the next PRD can start at store adapter work.
 
 **Acceptance Criteria:**
-- [ ] Update `operational-ontology-registry-allocation.todo.md` to mark Phase 2A schema and migration/snapshot items complete.
-- [ ] Update `operational-ontology-registry-allocation.spec.md` to summarize the persisted table surface.
-- [ ] Update `operational-ontology-registry-persistence-handoff.spec.md` only if implementation choices refine the handoff contract.
-- [ ] Keep Phase 2B store adapter items open.
-- [ ] `node packages/cli/dist/index.js def validate` passes.
+- [x] Update `operational-ontology-registry-allocation.todo.md` to mark Phase 2A schema and migration/snapshot items complete.
+- [x] Update `operational-ontology-registry-allocation.spec.md` to summarize the persisted table surface.
+- [x] Update `operational-ontology-registry-persistence-handoff.spec.md` only if implementation choices refine the handoff contract.
+- [x] Keep Phase 2B store adapter items open.
+- [x] `node packages/cli/dist/index.js def validate` passes.
 
 ## Functional Requirements
 

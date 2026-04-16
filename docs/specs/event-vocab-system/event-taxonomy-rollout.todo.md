@@ -32,6 +32,8 @@ event taxonomy 3층 분리 설계를 실제 구조와 도구에 반영하기 위
 
 ## 구현 항목
 
+상태: 완료. 열린 실행 항목은 없으며, 이 문서는 `event-vocab-system`과 event taxonomy roadmap에서 rollout 완료 기록으로 유지한다.
+
 ### Phase 0 — 하드코딩 제거
 
 - [x] `seed-events.ts`의 `serviceId: "shopping-web"` 하드코딩 제거

@@ -39,109 +39,109 @@ No browser verification is required.
 **Description:** As a registry-service developer, I want a sync adapter boundary so that `OntologyRegistryService` can materialize active allocations without embedding index-meta details in unrelated service logic.
 
 **Acceptance Criteria:**
-- [ ] Add a sync adapter interface or internal helper under `packages/registry-service/src/modules/ontology/` or a similarly scoped module.
-- [ ] Define sync input bundle shape containing allocation, namespace, taxonomy, axes, and segments.
-- [ ] Define sync report shape for materialized records, no-op idempotent records, repaired records, collisions, and deferred/unsupported sum segment semantics.
-- [ ] Adapter depends on index-meta `PrefixRegistry` and schema version store APIs, not raw index-meta tables.
-- [ ] Adapter does not add REST routes or CLI commands.
-- [ ] Existing deferred report shape from Phase 3 remains source-compatible where possible.
+- [x] Add a sync adapter interface or internal helper under `packages/registry-service/src/modules/ontology/` or a similarly scoped module.
+- [x] Define sync input bundle shape containing allocation, namespace, taxonomy, axes, and segments.
+- [x] Define sync report shape for materialized records, no-op idempotent records, repaired records, collisions, and deferred/unsupported sum segment semantics.
+- [x] Adapter depends on index-meta `PrefixRegistry` and schema version store APIs, not raw index-meta tables.
+- [x] Adapter does not add REST routes or CLI commands.
+- [x] Existing deferred report shape from Phase 3 remains source-compatible where possible.
 
 ### US-002: Collect Active Allocation Sync Bundle
 
 **Description:** As a registry-service developer, I want the service to collect a complete active allocation bundle so that sync does not infer ontology state from index-meta.
 
 **Acceptance Criteria:**
-- [ ] `syncToPrefixRegistry(allocationId)` loads the active allocation from `OntologyRegistryStore`.
-- [ ] Method rejects missing allocation and non-active allocation as before.
-- [ ] Method loads the allocation namespace, taxonomy, required axes, and segments from the store.
-- [ ] Missing namespace, taxonomy, axis, or segment data returns structured sync precondition errors.
-- [ ] Bundle preserves taxonomy `axisIds` order.
-- [ ] Bundle preserves segment `addressOffset`, `addressSize`, and `consumes`.
+- [x] `syncToPrefixRegistry(allocationId)` loads the active allocation from `OntologyRegistryStore`.
+- [x] Method rejects missing allocation and non-active allocation as before.
+- [x] Method loads the allocation namespace, taxonomy, required axes, and segments from the store.
+- [x] Missing namespace, taxonomy, axis, or segment data returns structured sync precondition errors.
+- [x] Bundle preserves taxonomy `axisIds` order.
+- [x] Bundle preserves segment `addressOffset`, `addressSize`, and `consumes`.
 
 ### US-003: Materialize Product Allocation Prefixes
 
 **Description:** As an ontology registry operator, I want product allocations materialized into index-meta prefix records so that composite decode can use existing prefix DAG behavior.
 
 **Acceptance Criteria:**
-- [ ] For each taxonomy axis, derive a deterministic axis leaf prefix name.
-- [ ] Register each axis leaf prefix/version with capacity matching the axis registration.
-- [ ] Register the allocation prefix/version as a composite prefix with refs in taxonomy `axisIds` order.
-- [ ] Parent capacity equals allocation capacity, allocation address size, and product of ref capacities.
-- [ ] Product segment shape is checked before writing the parent record.
-- [ ] Re-running the same sync is idempotent.
-- [ ] Existing same prefix/version with different capacity or refs fails without overwriting.
+- [x] For each taxonomy axis, derive a deterministic axis leaf prefix name.
+- [x] Register each axis leaf prefix/version with capacity matching the axis registration.
+- [x] Register the allocation prefix/version as a composite prefix with refs in taxonomy `axisIds` order.
+- [x] Parent capacity equals allocation capacity, allocation address size, and product of ref capacities.
+- [x] Product segment shape is checked before writing the parent record.
+- [x] Re-running the same sync is idempotent.
+- [x] Existing same prefix/version with different capacity or refs fails without overwriting.
 
 ### US-004: Write Schema Version Records
 
 **Description:** As an index-meta consumer, I want schema version rows created alongside prefix registry rows so that prefix registry and schema version capacity stay aligned.
 
 **Acceptance Criteria:**
-- [ ] Sync writes schema version records for every materialized axis leaf prefix.
-- [ ] Sync writes a schema version record for the allocation prefix.
-- [ ] Schema version capacity matches prefix registry capacity for every written prefix.
-- [ ] Existing matching schema version is treated as idempotent no-op.
-- [ ] Existing mismatched schema version capacity is reported as capacity drift and not overwritten.
-- [ ] Partial prefix/schema records are repaired only if existing records match intended allocation shape.
+- [x] Sync writes schema version records for every materialized axis leaf prefix.
+- [x] Sync writes a schema version record for the allocation prefix.
+- [x] Schema version capacity matches prefix registry capacity for every written prefix.
+- [x] Existing matching schema version is treated as idempotent no-op.
+- [x] Existing mismatched schema version capacity is reported as capacity drift and not overwritten.
+- [x] Partial prefix/schema records are repaired only if existing records match intended allocation shape.
 
 ### US-005: Materialize Sum Allocation as Leaf with Segment Sidecar
 
 **Description:** As an ontology registry operator, I want sum allocations handled safely even though index-meta has no segment model yet.
 
 **Acceptance Criteria:**
-- [ ] Sum allocation sync registers allocation prefix/version as a leaf prefix with capacity equal to allocation capacity.
-- [ ] Sync writes matching schema version record for the sum allocation prefix.
-- [ ] Sync does not write `prefix_ref` rows for sum segments.
-- [ ] Sync report includes segment sidecar metadata with range and consumes data.
-- [ ] Segment sidecar coverage is validated for range containment, no overlap, and total coverage policy chosen by the handoff spec.
-- [ ] Re-running the same sum allocation sync is idempotent.
+- [x] Sum allocation sync registers allocation prefix/version as a leaf prefix with capacity equal to allocation capacity.
+- [x] Sync writes matching schema version record for the sum allocation prefix.
+- [x] Sync does not write `prefix_ref` rows for sum segments.
+- [x] Sync report includes segment sidecar metadata with range and consumes data.
+- [x] Segment sidecar coverage is validated for range containment, no overlap, and total coverage policy chosen by the handoff spec.
+- [x] Re-running the same sum allocation sync is idempotent.
 
 ### US-006: Add Sync Collision and Drift Tests
 
 **Description:** As a registry-service maintainer, I want tests for sync collisions and drift so that index-meta records are not silently overwritten.
 
 **Acceptance Criteria:**
-- [ ] Test idempotent product sync retry.
-- [ ] Test idempotent sum sync retry.
-- [ ] Test product prefix capacity drift fails without overwrite.
-- [ ] Test product refs drift fails without overwrite.
-- [ ] Test schema version capacity drift fails without overwrite.
-- [ ] Test partial matching records can be completed when safe.
-- [ ] Test partial mismatched records fail without overwrite.
+- [x] Test idempotent product sync retry.
+- [x] Test idempotent sum sync retry.
+- [x] Test product prefix capacity drift fails without overwrite.
+- [x] Test product refs drift fails without overwrite.
+- [x] Test schema version capacity drift fails without overwrite.
+- [x] Test partial matching records can be completed when safe.
+- [x] Test partial mismatched records fail without overwrite.
 
 ### US-007: Replace Deferred Sync Report in Service
 
 **Description:** As a registry-service consumer, I want `syncToPrefixRegistry()` to perform real sync while preserving Phase 3 preconditions.
 
 **Acceptance Criteria:**
-- [ ] `OntologyRegistryService.syncToPrefixRegistry()` calls the sync adapter for active allocations.
-- [ ] Missing and non-active allocation errors remain compatible with Phase 3.
-- [ ] Successful report has `syncStatus` representing real sync result, not only `"deferred"`.
-- [ ] Report includes written/no-op/repaired/collision summaries.
-- [ ] Method does not activate allocations; it only syncs already-active allocations.
-- [ ] Existing Phase 3 service tests are updated without weakening precondition coverage.
+- [x] `OntologyRegistryService.syncToPrefixRegistry()` calls the sync adapter for active allocations.
+- [x] Missing and non-active allocation errors remain compatible with Phase 3.
+- [x] Successful report has `syncStatus` representing real sync result, not only `"deferred"`.
+- [x] Report includes written/no-op/repaired/collision summaries.
+- [x] Method does not activate allocations; it only syncs already-active allocations.
+- [x] Existing Phase 3 service tests are updated without weakening precondition coverage.
 
 ### US-008: Add Activation Smoke-Level Sync Checks
 
 **Description:** As a future activation smoke implementer, I want minimum post-sync checks available so Phase 5 can prove end-to-end activation without reimplementing sync validation.
 
 **Acceptance Criteria:**
-- [ ] Add helper or report fields that confirm prefix registry record exists after sync.
-- [ ] Add helper or report fields that confirm schema version capacity exists after sync.
-- [ ] For product allocations, verify `getShape(prefix, versionId)` equals ordered axis capacities.
-- [ ] For product allocations, verify last valid address index is in range and capacity index is out of range if a resolver helper exists.
-- [ ] For sum allocations, verify reported segment sidecar covers the allocation according to the selected sum policy.
-- [ ] These checks do not implement full Phase 5 activation helper.
+- [x] Add helper or report fields that confirm prefix registry record exists after sync.
+- [x] Add helper or report fields that confirm schema version capacity exists after sync.
+- [x] For product allocations, verify `getShape(prefix, versionId)` equals ordered axis capacities.
+- [x] For product allocations, verify last valid address index is in range and capacity index is out of range if a resolver helper exists.
+- [x] For sum allocations, verify reported segment sidecar covers the allocation according to the selected sum policy.
+- [x] These checks do not implement full Phase 5 activation helper.
 
 ### US-009: Reflect Phase 4 Completion in Docs and TODO
 
 **Description:** As an ontology documentation maintainer, I want Phase 4 completion reflected in specs and TODO so Phase 5 activation smoke starts from stable sync behavior.
 
 **Acceptance Criteria:**
-- [ ] Update `operational-ontology-registry-allocation.todo.md` to mark Phase 4 index-meta sync items complete or explicitly deferred.
-- [ ] Update `operational-ontology-registry-allocation.spec.md` to summarize sync adapter, product mapping, sum sidecar policy, idempotency, and drift behavior.
-- [ ] Update `operational-ontology-index-meta-sync-handoff.spec.md` with implementation refinements and real report shape.
-- [ ] Keep Phase 5 activation smoke items open.
-- [ ] Update `tasks/prd-ontology-registry-allocation-lifecycle-master.md` with the Phase 5 execution PRD path if it is created.
+- [x] Update `operational-ontology-registry-allocation.todo.md` to mark Phase 4 index-meta sync items complete or explicitly deferred.
+- [x] Update `operational-ontology-registry-allocation.spec.md` to summarize sync adapter, product mapping, sum sidecar policy, idempotency, and drift behavior.
+- [x] Update `operational-ontology-index-meta-sync-handoff.spec.md` with implementation refinements and real report shape.
+- [x] Keep Phase 5 activation smoke items open.
+- [x] Update `tasks/prd-ontology-registry-allocation-lifecycle-master.md` with the Phase 5 execution PRD path if it is created.
 
 ## Functional Requirements
 
