@@ -51,7 +51,7 @@ Traversal order for lifecycle inventory:
 
 1. Start at the entry group or module root.
 2. Expand contained modules before leaves.
-3. Read same-family role documents next: spec, plan, todo, rule, test, memo, knowledge, active PRD markdown, and active ralph PRD JSON.
+3. Read same-family role documents next: spec, plan, todo, rule, cases, test, memo, knowledge, active PRD markdown, and active ralph PRD JSON.
 4. Inspect direct leaf documents and source/evidence references last as proof, not as inventory roots.
 
 Operationally, use `docs status <root> --json` or `docs collect <root> --family-only --json` for the active family first. Use broad graph traversal only after the family boundary is understood, and never promote archive/session results into active scope without an explicit target or opt-in flag.

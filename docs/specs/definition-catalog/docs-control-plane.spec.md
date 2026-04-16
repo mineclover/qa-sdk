@@ -29,6 +29,7 @@ sources:
   - packages/cli/src/lib/docs-control-plane/graph-presets.ts
   - packages/cli/src/lib/docs-control-plane/graph-scope.ts
   - packages/cli/src/lib/docs-control-plane/family-scope.ts
+  - packages/cli/src/lib/docs-control-plane/role-matrix.ts
 ---
 
 # Docs Control Plane
@@ -79,7 +80,9 @@ Docs graph traversal은 authored vocabulary를 대체하지 않고 `DocumentEnve
 
 Direction은 `out`, `in`, `both`이고 axis 이름에 역방향 의미를 섞지 않는다. Edge는 항상 canonical `fromNodeId -> toNodeId`를 보존하며 traversal step만 역방향일 수 있다. `trace`, `source`, `evidence`는 별도 system axis다. PRD lineage가 코드 파일이나 proof artifact를 가리켜도 trace edge를 source/evidence로 합치지 않고, source refs와 evidence refs도 각각 자기 축으로 남긴다.
 
-Node role은 `spec`, `todo`, `plan`, `rule`, `test`, `memo`, `knowledge`, `prd`, `ralph-prd-json`, `ralph-session`, `source`, `evidence`, 필요한 경우 `section`이다. `rule`은 문서 역할이므로 role traversal에 포함되고, `.rule.md`는 같은 family spec을 향한 implicit `constraint` edge도 만든다.
+Node role은 `spec`, `todo`, `plan`, `rule`, `cases`, `test`, `memo`, `knowledge`, `prd`, `ralph-prd-json`, `ralph-session`, `source`, `evidence`, 필요한 경우 `section`이다. `rule`은 문서 역할이므로 role traversal에 포함되고, `.rule.md`는 같은 family spec을 향한 implicit `constraint` edge도 만든다.
+
+`docs status <doc-id> --json`은 scoped family의 role matrix를 `roleCoverage`로 노출한다. Matrix role은 `spec`, `plan`, `todo`, `rule`, `cases`, `test`, `memo`, `knowledge`, `prd`, `ralph-prd-json`이고, 같은 `familyId`의 파일은 `sameFamily`, 직접 `contains/refines/traces_to`로 닿는 문서는 `linked`로 분리한다. Archive PRD markdown/JSON과 transient session state는 active role coverage에서 기본 제외한다.
 
 Authored links는 source-owned 값으로 보존한다. Normalizer만 `contains→composition`, `refines→refinement`, `depends_on→dependency`, `constrains→constraint`, `traces_to|implements|evolves_from|supersedes→trace`, `verifies|materializes_output→evidence`로 매핑한다. `role`, `source`, `evidence`, `context` 중 상당수는 authored link가 아니라 envelope field와 adapter metadata에서 온 system axis다.
 
@@ -107,7 +110,7 @@ qa-sdk docs graph US-011 --axis trace --direction both --depth 3
 
 Supported adapters:
 
-- `definition-markdown`: `.spec.md`, `.todo.md`, `.plan.md`, `.test.md`, `.memo.md`, `.rule.md`를 읽어 `def.*`, source refs, marker sections, links, diagnostics를 envelope로 투영한다.
+- `definition-markdown`: `.spec.md`, `.todo.md`, `.plan.md`, `.rule.md`, `.cases.md`, `.test.md`, `.memo.md`를 읽어 `def.*`, source refs, marker sections, links, diagnostics를 envelope로 투영한다.
 - `prd-markdown`: `[PRD]...[/PRD]` markdown block의 overview, goals, quality gates, user stories, acceptance criteria, requirements, non-goals, open questions를 source-owned metadata/task로 보존한다.
 - `ralph-prd-json`: ralph-tui가 소비하는 flat root JSON을 compatibility surface로 읽고 `userStories[]`를 tasks로 투영한다.
 - `ralph-session`: `.ralph-tui/session-meta.json`을 transient local session envelope로 읽을 수 있다. 기본 drift/completion 검사는 repo-tracked SSOT만 대상으로 하며, session status/count drift는 `--include-session`이 명시될 때만 운영 신호로 포함한다.

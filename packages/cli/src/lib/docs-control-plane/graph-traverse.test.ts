@@ -333,7 +333,7 @@ describe("docs-control-plane graph traversal", () => {
     });
   });
 
-  it("groups role traversal for spec, todo, plan, rule, test, memo, and knowledge family members", () => {
+  it("groups role traversal for spec, todo, plan, rule, cases, test, memo, and knowledge family members", () => {
     const index = buildDocumentGraphIndex(roleFixtureDocuments());
 
     const result = traverseDocumentGraph(index, {
@@ -351,6 +351,7 @@ describe("docs-control-plane graph traversal", () => {
     expect(roleGroupStableIds(result, "todo")).toEqual(["checkout-todo"]);
     expect(roleGroupStableIds(result, "plan")).toEqual(["checkout-plan"]);
     expect(roleGroupStableIds(result, "rule")).toEqual(["checkout-rule"]);
+    expect(roleGroupStableIds(result, "cases")).toEqual(["checkout-cases"]);
     expect(roleGroupStableIds(result, "test")).toEqual(["checkout-test"]);
     expect(roleGroupStableIds(result, "memo")).toEqual(["checkout-memo"]);
     expect(roleGroupStableIds(result, "knowledge")).toEqual([
@@ -427,6 +428,12 @@ describe("docs-control-plane graph traversal", () => {
         {
           familyId: "docs/specs/checkout/checkout",
           roleType: "plan",
+          optional: true,
+          reason: "optional-absence",
+        },
+        {
+          familyId: "docs/specs/checkout/checkout",
+          roleType: "cases",
           optional: true,
           reason: "optional-absence",
         },
@@ -734,6 +741,7 @@ function roleFixtureDocuments(): readonly DocumentEnvelope[] {
     roleDocument("checkout-todo", "todo", "checkout.todo.md"),
     roleDocument("checkout-plan", "plan", "checkout.plan.md"),
     roleDocument("checkout-rule", "rule", "checkout.rule.md"),
+    roleDocument("checkout-cases", "cases", "checkout.cases.md"),
     roleDocument("checkout-test", "test", "checkout.test.md"),
     roleDocument("checkout-memo", "memo", "checkout.memo.md"),
     roleDocument("checkout-knowledge", "spec", "checkout-knowledge.spec.md", {

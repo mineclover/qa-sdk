@@ -638,6 +638,22 @@ def:
 Test member.
 `);
 
+      await writeFile(join(rootDir, "docs/specs/checkout/checkout.cases.md"), `---
+def:
+  id: checkout-cases
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: validation
+  lifecycle: approved
+---
+# Checkout Cases
+
+## 목적 ^purpose
+
+Cases member.
+`);
+
       await writeFile(join(rootDir, "docs/specs/checkout/checkout.memo.md"), `---
 def:
   id: checkout-memo
@@ -714,6 +730,7 @@ Knowledge member.
         "spec",
         "spec",
         "rule",
+        "cases",
         "test",
         "memo",
         "plan",
@@ -723,6 +740,7 @@ Knowledge member.
         "checkout-knowledge",
         "checkout-spec",
         "checkout-rule",
+        "checkout-cases",
         "checkout-test",
         "checkout-memo",
         "checkout-plan",

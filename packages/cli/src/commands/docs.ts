@@ -12,6 +12,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve } from "node:pat
 
 import {
   createArtifactEvidenceAdapter,
+  buildDocumentRoleMatrix,
   buildDocumentGraphIndex,
   BROAD_DOCUMENT_GRAPH_TRAVERSAL_WARNING,
   CANONICAL_TRAVERSAL_AXES,
@@ -40,6 +41,7 @@ import {
   traverseDocumentGraph,
   type DocumentGraphTraversalInput,
   type DocumentGraphTraversalResult,
+  type DocumentRoleMatrix,
   DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
   DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
   type PrdCompletionSyncPreview,
@@ -147,6 +149,7 @@ interface StatusResult {
   readonly nextFollowUp: FollowUpState | null;
   readonly nextFollowUps: readonly FollowUpState[];
   readonly diagnostics: readonly DocumentDiagnostic[];
+  readonly roleCoverage?: DocumentRoleMatrix;
 }
 
 interface CollectResult extends StatusResult {
@@ -1168,6 +1171,9 @@ async function buildStatusResult(
       : documents;
   const diagnostics = scopedDocuments.flatMap((document) => document.diagnostics);
   const nextFollowUps = await findNextFollowUps(rootDir, scopedDocuments);
+  const roleCoverage = resolved
+    ? buildDocumentRoleMatrix(documents, { target: resolved.document })
+    : undefined;
 
   return {
     ...(target ? { target } : {}),
@@ -1194,6 +1200,7 @@ async function buildStatusResult(
     nextFollowUp: nextFollowUps[0] ?? null,
     nextFollowUps,
     diagnostics,
+    ...(roleCoverage ? { roleCoverage } : {}),
   };
 }
 
@@ -1850,6 +1857,7 @@ function familyOnlyGraphNodeKind(
     case "todo":
     case "plan":
     case "rule":
+    case "cases":
     case "test":
     case "memo":
     case "prd":

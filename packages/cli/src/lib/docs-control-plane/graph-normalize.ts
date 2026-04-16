@@ -806,7 +806,7 @@ function dedupeRoleMemberships(
 
 function isFamilyContextRoleDocument(document: DocumentEnvelope): boolean {
   const roleType = roleTypeForDocument(document);
-  return roleType === "test" || roleType === "memo" || roleType === "knowledge";
+  return roleType === "cases" || roleType === "test" || roleType === "memo" || roleType === "knowledge";
 }
 
 function roleTypeForDocument(
@@ -823,7 +823,7 @@ function roleTypeForDocument(
 }
 
 function familyRoleTypeFromPath(path: string): DocumentGraphFamilyRoleType | undefined {
-  const match = path.match(/\.(spec|todo|plan|rule|test|memo)\.md$/);
+  const match = path.match(/\.(spec|todo|plan|rule|cases|test|memo)\.md$/);
   return match && isFamilyRoleType(match[1]) ? match[1] : undefined;
 }
 

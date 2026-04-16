@@ -15,6 +15,7 @@ const FAMILY_ONLY_ROLE_KINDS = new Set([
   "todo",
   "plan",
   "rule",
+  "cases",
   "test",
   "memo",
   "knowledge",

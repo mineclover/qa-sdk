@@ -17,7 +17,7 @@ Graph traversal uses canonical axes only inside the control plane:
 `out`, `in`, or `both`; axis names never encode reverse traversal.
 
 Document roles are node kinds, not edge labels: `spec`, `todo`, `plan`,
-`rule`, `test`, `memo`, `knowledge`, `prd`, `ralph-prd-json`,
+`rule`, `cases`, `test`, `memo`, `knowledge`, `prd`, `ralph-prd-json`,
 `ralph-session`, `source`, `evidence`, and optional `section` nodes.
 Authored link vocabulary remains source-owned. Values like `contains`,
 `depends_on`, `implements`, `refines`, `constrains`, `traces_to`,
@@ -57,6 +57,12 @@ out of scope unless `--include-session` is also passed. `docs collect --graph
 --family-only` returns a compact graph summary for the family-only document set;
 omitting `--family-only` keeps the normal graph traversal behavior.
 
+`docs status <doc-id> --json` also emits `roleCoverage` for the target family.
+It reports the active matrix roles `spec`, `plan`, `todo`, `rule`, `cases`,
+`test`, `memo`, `knowledge`, `prd`, and `ralph-prd-json`, separating
+same-family files from directly linked `composition`, `refinement`, and `trace`
+documents. Archive PRDs are excluded from active coverage by default.
+
 Source traversal is powered by docs control-plane adapters (`DocumentEnvelope`
 sources, metadata source refs, PRD/session paths, and artifact evidence refs).
 It is intentionally broader than, and distinct from, `qa-sdk def find-by-file`,
@@ -86,8 +92,8 @@ vocabulary를 추가하지 않는다.
   기본 registry path가 없어도 정상 docs status 흐름은 실패하지 않고, caller가
   `warnOnMissing`을 명시할 때만 missing source diagnostic을 반환한다.
 - `definition-markdown`: definition-catalog의 frontmatter scanner/parser와 graph
-  validation을 재사용해 `.spec.md`, `.todo.md`, `.plan.md`, `.test.md`,
-  `.memo.md`, `.rule.md` 파일을 read-only envelope로 수집한다. `def.*`
+  validation을 재사용해 `.spec.md`, `.todo.md`, `.plan.md`, `.rule.md`,
+  `.cases.md`, `.test.md`, `.memo.md` 파일을 read-only envelope로 수집한다. `def.*`
   metadata, source refs, purpose/overview marker sections, links, source path,
   validation diagnostics를 source vocabulary 그대로 보존한다.
 - `prd-markdown`: `[PRD]...[/PRD]` markdown block을 읽어 overview, goals,

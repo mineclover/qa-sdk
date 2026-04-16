@@ -72,6 +72,11 @@ export {
   isArchivedPrdDocument,
   isTransientSessionDocument,
 } from "./family-scope.js";
+export {
+  buildDocumentRoleMatrix,
+  DOCUMENT_ROLE_MATRIX_ROLES,
+  roleOfDocument,
+} from "./role-matrix.js";
 
 export type {
   AuthoredLinkType,
@@ -122,6 +127,15 @@ export type {
   DocumentFamilyOnlyScope,
   DocumentFamilyOnlyScopeOptions,
 } from "./family-scope.js";
+export type {
+  BuildDocumentRoleMatrixOptions,
+  DocumentRoleMatrix,
+  DocumentRoleMatrixDocument,
+  DocumentRoleMatrixLinkedDocument,
+  DocumentRoleMatrixRelation,
+  DocumentRoleMatrixRole,
+  DocumentRoleMatrixRoleCoverage,
+} from "./role-matrix.js";
 export type {
   DocumentAdapter,
   DocumentAdapterCapabilities,

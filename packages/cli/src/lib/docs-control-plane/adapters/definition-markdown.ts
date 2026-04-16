@@ -42,6 +42,7 @@ type DefinitionMarkdownKind =
   | "todo"
   | "plan"
   | "test"
+  | "cases"
   | "memo"
   | "rule"
   | "definition";
@@ -55,16 +56,17 @@ interface ParsedDefinitionMarkdown {
   readonly sourceEntries: readonly string[];
 }
 
-const FAMILY_EXTENSION_RE = /\.(spec|todo|plan|test|memo|rule)\.md$/;
+const FAMILY_EXTENSION_RE = /\.(spec|todo|plan|test|cases|memo|rule)\.md$/;
 const IGNORED_DIRS = new Set(["node_modules", "dist", ".git", ".next", ".turbo", "coverage"]);
 const KIND_PRIORITY: Record<DefinitionMarkdownKind, number> = {
   spec: 0,
   rule: 1,
-  test: 2,
-  memo: 3,
-  plan: 4,
-  todo: 5,
-  definition: 6,
+  cases: 2,
+  test: 3,
+  memo: 4,
+  plan: 5,
+  todo: 6,
+  definition: 7,
 };
 
 export function createDefinitionMarkdownAdapter(

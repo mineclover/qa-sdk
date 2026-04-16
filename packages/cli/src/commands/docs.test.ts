@@ -144,8 +144,8 @@ Refines the checkout specification.
 def:
   id: checkout-rule
   level: leaf
-  scope: constraint
-  aspect: policy
+  scope: flow
+  aspect: process_flow
   depth: specification
   lifecycle: approved
 ---
@@ -1031,6 +1031,213 @@ Define the direct module child.
     );
   });
 
+  it("exposes a role matrix that separates same-family and linked role documents", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "tasks/archive"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/checkout/checkout.cases.md"), `---
+def:
+  id: checkout-cases
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: validation
+  lifecycle: approved
+---
+# Checkout Cases
+
+## 목적 ^purpose
+
+Capture checkout user flows.
+`);
+    await writeFile(join(workspace, "tasks/archive/checkout-archive-prd.md"), `[PRD]
+# PRD: Archived Checkout PRD
+
+## Overview
+
+Archived checkout work.
+
+## User Stories
+
+### US-001: Archived checkout story
+
+**Description:** Archived story.
+
+**Acceptance Criteria:**
+- [x] Archived criterion.
+[/PRD]
+`);
+    await writeFile(join(workspace, "tasks/archive/checkout-archive-prd.json"), JSON.stringify({
+      name: "Archived Checkout PRD",
+      branchName: "ralph/checkout-archive",
+      description: "Archived checkout work.",
+      userStories: [
+        {
+          id: "US-001",
+          title: "Archived checkout story",
+          description: "Archived story.",
+          acceptanceCriteria: ["Archived criterion."],
+          priority: 1,
+          passes: true,
+          dependsOn: [],
+        },
+      ],
+    }, null, 2));
+
+    await cliDocs(["status", "checkout-spec", "--root", workspace, "--json"]);
+
+    const result = parsedOutput<{
+      roleCoverage: {
+        familyId: string;
+        roles: Array<{
+          role: string;
+          present: boolean;
+          sameFamilyPresent: boolean;
+          linkedPresent: boolean;
+          sameFamily: Array<{ stableId: string; kind: string; path: string }>;
+          linked: Array<{
+            stableId: string;
+            kind: string;
+            path: string;
+            relation: string;
+            linkType: string;
+            direction: string;
+          }>;
+        }>;
+        missingRoles: string[];
+        missingSameFamilyRoles: string[];
+      };
+    }>();
+    const role = (name: string) => result.roleCoverage.roles.find((item) => item.role === name)!;
+
+    expect(result.roleCoverage.familyId).toBe("docs/specs/checkout/checkout");
+    expect(result.roleCoverage.roles.map((item) => item.role)).toEqual([
+      "spec",
+      "plan",
+      "todo",
+      "rule",
+      "cases",
+      "test",
+      "memo",
+      "knowledge",
+      "prd",
+      "ralph-prd-json",
+    ]);
+    expect(role("cases")).toMatchObject({
+      present: true,
+      sameFamilyPresent: true,
+      linkedPresent: false,
+    });
+    expect(role("cases").sameFamily).toEqual([
+      expect.objectContaining({ stableId: "checkout-cases", kind: "cases" }),
+    ]);
+    expect(role("spec").sameFamily).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stableId: "checkout-spec", path: "docs/specs/checkout/checkout.spec.md" }),
+      ]),
+    );
+    expect(role("spec").linked).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stableId: "checkout-child", relation: "composition", linkType: "contains" }),
+        expect.objectContaining({ stableId: "checkout-refinement", relation: "refinement", linkType: "refines" }),
+      ]),
+    );
+    expect(role("knowledge").sameFamily).toEqual([
+      expect.objectContaining({ stableId: "checkout-knowledge", kind: "spec" }),
+    ]);
+    expect(role("prd").sameFamily).toEqual([]);
+    expect(role("prd").linked).toEqual([
+      expect.objectContaining({ stableId: "tasks/checkout-prd", relation: "trace", linkType: "traces_to" }),
+    ]);
+    expect(role("ralph-prd-json").linked).toEqual([
+      expect.objectContaining({ stableId: "tasks/checkout-prd", relation: "trace", linkType: "traces_to" }),
+    ]);
+    expect(role("prd").linked.map((document) => document.path)).not.toContain(
+      "tasks/archive/checkout-archive-prd.md",
+    );
+    expect(role("ralph-prd-json").linked.map((document) => document.path)).not.toContain(
+      "tasks/archive/checkout-archive-prd.json",
+    );
+    expect(result.roleCoverage.missingRoles).toEqual([]);
+    expect(result.roleCoverage.missingSameFamilyRoles).toEqual([
+      "prd",
+      "ralph-prd-json",
+    ]);
+  });
+
+  it("reports missing role documents for sparse active families", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/matrix"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/matrix/matrix.spec.md"), `---
+def:
+  id: matrix-spec
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+# Matrix Spec
+
+## 목적 ^purpose
+
+Define sparse role coverage.
+`);
+    await writeFile(join(workspace, "docs/specs/matrix/matrix.todo.md"), `---
+def:
+  id: matrix-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Matrix Todo
+
+## 목적 ^purpose
+
+Track sparse role follow-up.
+
+- [ ] Add missing role documents.
+`);
+
+    await cliDocs(["status", "matrix-spec", "--root", workspace, "--json"]);
+
+    const result = parsedOutput<{
+      roleCoverage: {
+        roles: Array<{
+          role: string;
+          sameFamilyPresent: boolean;
+          linkedPresent: boolean;
+          sameFamily: Array<{ stableId: string }>;
+        }>;
+        missingRoles: string[];
+        missingSameFamilyRoles: string[];
+      };
+    }>();
+    const role = (name: string) => result.roleCoverage.roles.find((item) => item.role === name)!;
+
+    expect(role("spec")).toMatchObject({
+      sameFamilyPresent: true,
+      linkedPresent: false,
+    });
+    expect(role("todo").sameFamily).toEqual([
+      expect.objectContaining({ stableId: "matrix-todo" }),
+    ]);
+    expect(role("plan").sameFamilyPresent).toBe(false);
+    expect(role("cases").sameFamilyPresent).toBe(false);
+    expect(result.roleCoverage.missingRoles).toEqual([
+      "plan",
+      "rule",
+      "cases",
+      "test",
+      "memo",
+      "knowledge",
+      "prd",
+      "ralph-prd-json",
+    ]);
+    expect(result.roleCoverage.missingSameFamilyRoles).toEqual(result.roleCoverage.missingRoles);
+  });
+
   it("excludes archive PRDs and ralph sessions from family-only PRD context by default", async () => {
     const workspace = await createFixtureWorkspace();
     await mkdir(join(workspace, "tasks/archive"), { recursive: true });
@@ -1214,6 +1421,7 @@ Archived checkout work.
         expect.objectContaining({ roleType: "todo" }),
         expect.objectContaining({ roleType: "plan" }),
         expect.objectContaining({ roleType: "rule" }),
+        expect.objectContaining({ roleType: "cases" }),
         expect.objectContaining({ roleType: "test" }),
         expect.objectContaining({ roleType: "memo" }),
         expect.objectContaining({ roleType: "knowledge" }),

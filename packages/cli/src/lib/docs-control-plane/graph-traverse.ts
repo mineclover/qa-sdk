@@ -622,12 +622,12 @@ function roleTypeForNode(
 
 function roleTypeFromPath(path: string | undefined): DocumentGraphFamilyRoleType | undefined {
   if (!path) return undefined;
-  const match = path.match(/\.(spec|todo|plan|rule|test|memo)\.md$/);
+  const match = path.match(/\.(spec|todo|plan|rule|cases|test|memo)\.md$/);
   return match && isFamilyRoleType(match[1]) ? match[1] : undefined;
 }
 
 function roleExtensionForPath(path: string | undefined): string | undefined {
-  return path?.match(/\.(spec|todo|plan|rule|test|memo)\.md$/)?.[0];
+  return path?.match(/\.(spec|todo|plan|rule|cases|test|memo)\.md$/)?.[0];
 }
 
 function roleEdgeFamilyId(edge: DocumentGraphTraversalEdge): string | undefined {
