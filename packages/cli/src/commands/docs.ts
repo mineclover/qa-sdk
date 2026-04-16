@@ -12,6 +12,8 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 
 import {
   createArtifactEvidenceAdapter,
+  buildDocumentGraphIndex,
+  CANONICAL_TRAVERSAL_AXES,
   createDefinitionMarkdownAdapter,
   createPrdMarkdownAdapter,
   createRalphPrdJsonAdapter,
@@ -22,10 +24,23 @@ import {
   type DocumentEvidence,
   type DocumentLink,
   type DocumentMetadata,
+  type DocumentRawSourcePointer,
   type DocumentSource,
   type DocumentTask,
+  formatDocumentGraphTraversalRoleGroups,
+  isTraversalAxis,
+  isTraversalDirection,
+  isTraversalPresetId,
   previewPrdCompletionSync,
+  TRAVERSAL_DIRECTIONS,
+  TRAVERSAL_PRESET_IDS,
+  traverseDocumentGraph,
+  type DocumentGraphTraversalInput,
+  type DocumentGraphTraversalResult,
   type PrdCompletionSyncPreview,
+  type TraversalAxis,
+  type TraversalDirection,
+  type TraversalPresetId,
 } from "../lib/docs-control-plane/index.js";
 import {
   loadMetadataTransformRule,
@@ -46,7 +61,7 @@ import {
 } from "../lib/docs-control-plane/prd-to-ralph-json.js";
 import { formatHelpSections, type CommandHelpSectionSpec } from "../command-spec.js";
 
-type DocsCommand = "help" | "status" | "collect" | "search" | "drift" | "transform" | "prd";
+type DocsCommand = "help" | "status" | "collect" | "search" | "drift" | "transform" | "prd" | "graph";
 
 interface ParsedDocsArgs {
   readonly command: DocsCommand;
@@ -139,6 +154,28 @@ interface SearchResult {
     readonly metadata: DocumentMetadata;
   };
   readonly results: readonly DocumentSummary[];
+}
+
+interface DocsGraphCliResult {
+  readonly input: DocumentGraphTraversalResult["input"];
+  readonly targetResolution: DocumentGraphTraversalResult["targetResolution"];
+  readonly targetNodeId?: string;
+  readonly nodes: DocumentGraphTraversalResult["nodes"];
+  readonly edges: DocumentGraphTraversalResult["edges"];
+  readonly paths: DocumentGraphTraversalResult["paths"];
+  readonly roleGroups: DocumentGraphTraversalResult["roleGroups"];
+  readonly missingRoles: DocumentGraphTraversalResult["missingRoles"];
+  readonly counts: {
+    readonly nodes: number;
+    readonly edges: number;
+    readonly paths: number;
+    readonly diagnostics: number;
+    readonly roleGroups: number;
+    readonly missingRoles: number;
+  };
+  readonly truncated: boolean;
+  readonly omittedCount: number;
+  readonly diagnostics: readonly string[];
 }
 
 interface PrdContextSource {
@@ -257,6 +294,7 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
     lines: [
       "qa-sdk docs status [doc-id|path] [--json]",
       "qa-sdk docs collect <doc-id|path> [--json]",
+      "qa-sdk docs graph <target> [--axis <csv>] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
       "qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]",
       "qa-sdk docs drift [--prd <file>] [--json]",
       "qa-sdk docs prd context <topic|doc-id> [--json]",
@@ -275,6 +313,11 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "--session <file>             ralph session metadata path",
       "--prd-json <file>            PRD JSON path for session comparison",
       "--prd <file>                 scope drift checks to a PRD markdown/JSON family",
+      "--axis <csv>                 graph traversal axes: composition, refinement, dependency, constraint, trace, source, evidence, role, context",
+      "--direction out|in|both      graph traversal direction",
+      "--depth <n>                  graph traversal depth",
+      "--limit <n>                  maximum graph nodes to return",
+      "--preset <name>              graph traversal preset: family, implementation, review, impact, prd-completion",
       "--output <file>              PRD markdown scaffold or PRD JSON conversion output path",
       "--rule <json-file|inline-json> metadata transform rule for dry-run preview",
       "--dry-run                    preview only; this is the default",
@@ -350,6 +393,11 @@ export async function cliDocs(args: string[]): Promise<void> {
     return;
   }
 
+  if (parsed.command === "graph") {
+    await cmdGraph(documents, options, parsed.positional[0], parsed.flags);
+    return;
+  }
+
   if (parsed.command === "drift") {
     await cmdDrift(documents, options, hasFlag(parsed.flags, "json"));
     return;
@@ -414,6 +462,7 @@ function normalizeCommand(value: string | undefined): DocsCommand {
     || value === "drift"
     || value === "transform"
     || value === "prd"
+    || value === "graph"
   ) {
     return value;
   }
@@ -541,6 +590,168 @@ async function cmdSearch(
     return;
   }
   printSearch(result);
+}
+
+async function cmdGraph(
+  documents: readonly DocumentEnvelope[],
+  options: DocsRuntimeOptions,
+  target: string | undefined,
+  flags: Readonly<Record<string, readonly string[]>>,
+): Promise<void> {
+  const json = hasFlag(flags, "json");
+  const parsed = parseDocsGraphInput(target, flags);
+  if ("error" in parsed) {
+    printStructuredError(parsed, json);
+    process.exitCode = 1;
+    return;
+  }
+
+  const index = buildDocumentGraphIndex(documents, {
+    rootDir: options.rootDir,
+    includeContext: parsed.includeContext,
+  });
+  const traversal = traverseDocumentGraph(index, parsed);
+  const result = toDocsGraphCliResult(traversal);
+
+  if (json) {
+    printJson(result);
+    return;
+  }
+  printGraph(result);
+}
+
+function parseDocsGraphInput(
+  target: string | undefined,
+  flags: Readonly<Record<string, readonly string[]>>,
+): DocumentGraphTraversalInput | StructuredDocsError {
+  if (!target) {
+    return docsGraphError(
+      "missing-required-argument",
+      "docs graph requires <target>.",
+      "Pass a document id, family id, task id, evidence id, graph node id, or source path.",
+    );
+  }
+
+  const axes = pickAll(flags, "axis", []);
+  const parsedAxes: TraversalAxis[] = [];
+  for (const axis of axes) {
+    if (!isTraversalAxis(axis)) {
+      return docsGraphError(
+        "unknown-docs-graph-axis",
+        `Unknown docs graph axis: ${axis}.`,
+        `Use one of: ${CANONICAL_TRAVERSAL_AXES.join(", ")}.`,
+      );
+    }
+    parsedAxes.push(axis);
+  }
+
+  const rawDirection = pickLast(flags, "direction");
+  let direction: TraversalDirection | undefined;
+  if (rawDirection) {
+    if (!isTraversalDirection(rawDirection)) {
+      return docsGraphError(
+        "unknown-docs-graph-direction",
+        `Unknown docs graph direction: ${rawDirection}.`,
+        `Use one of: ${TRAVERSAL_DIRECTIONS.join(", ")}.`,
+      );
+    }
+    direction = rawDirection;
+  }
+
+  const rawPreset = pickLast(flags, "preset");
+  let preset: TraversalPresetId | undefined;
+  if (rawPreset) {
+    if (!isTraversalPresetId(rawPreset)) {
+      return docsGraphError(
+        "unknown-docs-graph-preset",
+        `Unknown docs graph preset: ${rawPreset}.`,
+        `Use one of: ${TRAVERSAL_PRESET_IDS.join(", ")}.`,
+      );
+    }
+    preset = rawPreset;
+  }
+
+  const depth = parseDocsGraphIntegerFlag(flags, "depth");
+  if (isStructuredDocsError(depth)) return depth;
+
+  const limit = parseDocsGraphIntegerFlag(flags, "limit");
+  if (isStructuredDocsError(limit)) return limit;
+
+  return {
+    target,
+    ...(parsedAxes.length > 0 ? { axes: parsedAxes } : {}),
+    ...(direction ? { direction } : {}),
+    ...(depth !== undefined ? { depth } : {}),
+    ...(limit !== undefined ? { limit } : {}),
+    ...(preset ? { preset } : {}),
+    includeContext: parsedAxes.includes("context"),
+  };
+}
+
+function parseDocsGraphIntegerFlag(
+  flags: Readonly<Record<string, readonly string[]>>,
+  name: "depth" | "limit",
+): number | StructuredDocsError | undefined {
+  const raw = pickLast(flags, name);
+  if (!raw) return undefined;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 0) {
+    return docsGraphError(
+      `invalid-docs-graph-${name}`,
+      `docs graph --${name} expects a non-negative integer.`,
+      `Pass --${name} 0 or a positive integer value.`,
+    );
+  }
+  return value;
+}
+
+function docsGraphError(
+  code: string,
+  message: string,
+  remediation: string,
+): StructuredDocsError {
+  return {
+    error: {
+      code,
+      operation: "docs.graph",
+      message,
+      remediation,
+    },
+  };
+}
+
+function isStructuredDocsError(value: unknown): value is StructuredDocsError {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    "error" in value,
+  );
+}
+
+function toDocsGraphCliResult(
+  result: DocumentGraphTraversalResult,
+): DocsGraphCliResult {
+  return {
+    input: result.input,
+    targetResolution: result.targetResolution,
+    ...(result.targetNodeId ? { targetNodeId: result.targetNodeId } : {}),
+    nodes: result.nodes,
+    edges: result.edges,
+    paths: result.paths,
+    roleGroups: result.roleGroups,
+    missingRoles: result.missingRoles,
+    counts: {
+      nodes: result.nodeCount,
+      edges: result.edgeCount,
+      paths: result.paths.length,
+      diagnostics: result.diagnostics.length,
+      roleGroups: result.roleGroups.length,
+      missingRoles: result.missingRoles.length,
+    },
+    truncated: result.truncated,
+    omittedCount: result.omittedCount,
+    diagnostics: result.diagnostics,
+  };
 }
 
 async function cmdDrift(
@@ -1717,7 +1928,7 @@ function printStatus(result: StatusResult): void {
 }
 
 function printCollect(result: CollectResult): void {
-  if (result.target && !result.document) {
+  if (result.target && !result.document && !result.sourceTarget) {
     console.log(`docs collect: ${result.target} not found`);
     return;
   }
@@ -1751,6 +1962,60 @@ function printSearch(result: SearchResult): void {
     console.log(`    path: ${item.path}`);
     if (item.title) console.log(`    title: ${item.title}`);
   }
+}
+
+function printGraph(result: DocsGraphCliResult): void {
+  console.log(`docs graph: ${result.input.target}`);
+  console.log(`  target: ${result.targetNodeId ?? "(not found)"}`);
+  console.log(`  lookup: ${result.targetResolution.lookupKind}${result.targetResolution.indexed ? " indexed" : " unindexed"}`);
+  console.log(`  axes: ${result.input.axes.join(", ") || "(none)"}`);
+  console.log(`  direction: ${result.input.direction}`);
+  console.log(`  depth: ${result.input.depth}`);
+  console.log(`  limit: ${result.input.limit}`);
+  if (result.input.preset) console.log(`  preset: ${result.input.preset}`);
+  console.log(`  node count: ${result.counts.nodes}`);
+  console.log(`  edge count: ${result.counts.edges}`);
+  console.log(`  truncated: ${result.truncated ? "yes" : "no"}${result.omittedCount > 0 ? ` (omitted ${result.omittedCount})` : ""}`);
+
+  console.log("");
+  console.log(`nodes (${result.nodes.length}):`);
+  for (const node of result.nodes) {
+    const path = node.path ? ` ${node.path}` : "";
+    console.log(`  - [${node.kind}] ${node.id}${path}`);
+  }
+
+  console.log("");
+  console.log(`edge reasons (${result.edges.length}):`);
+  for (const edge of result.edges) {
+    const authored = edge.authoredType ? ` ${edge.authoredType}` : "";
+    console.log(`  - [${edge.axis}] ${edge.fromNodeId} -> ${edge.toNodeId} (${edge.kind}${authored})`);
+    console.log(`    traversal: ${edge.traversal.direction} from ${edge.traversal.fromNodeId} to ${edge.traversal.toNodeId}`);
+    for (const reason of edge.reasons) {
+      console.log(`    reason: ${reason.reason}`);
+      if (reason.rawSource) {
+        console.log(`      source: ${formatRawSource(reason.rawSource)}`);
+      }
+    }
+  }
+
+  for (const line of formatDocumentGraphTraversalRoleGroups(result)) {
+    console.log(line);
+  }
+
+  if (result.diagnostics.length > 0) {
+    console.log("");
+    console.log(`diagnostics (${result.diagnostics.length}):`);
+    for (const diagnostic of result.diagnostics.slice(0, 5)) {
+      console.log(`  - ${diagnostic}`);
+    }
+    if (result.diagnostics.length > 5) {
+      console.log(`  ... ${result.diagnostics.length - 5} more`);
+    }
+  }
+}
+
+function formatRawSource(rawSource: DocumentRawSourcePointer): string {
+  return `${rawSource.path}${rawSource.pointer ? `#${rawSource.pointer}` : ""}`;
 }
 
 function printDrift(result: DocumentDriftResult): void {

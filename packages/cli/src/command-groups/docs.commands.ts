@@ -36,6 +36,21 @@ export const DOCS_COMMAND_DESCRIPTORS = [
     ],
   },
   {
+    id: "docs.graph",
+    path: ["graph"],
+    usage: "qa-sdk docs graph <target> [--axis <csv>] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
+    handlerKey: "docs.graph",
+    options: [
+      { flag: "--axis", valueHint: "<csv>", type: "string", description: "traversal axes, repeatable or comma-separated" },
+      { flag: "--direction", valueHint: "out|in|both", type: "string", description: "traversal direction" },
+      { flag: "--depth", valueHint: "<n>", type: "string", description: "non-negative traversal depth" },
+      { flag: "--limit", valueHint: "<n>", type: "string", description: "maximum returned nodes" },
+      { flag: "--preset", valueHint: "<name>", type: "string", description: "traversal preset" },
+      { flag: "--json", type: "boolean", description: "emit structured JSON" },
+      { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },
+    ],
+  },
+  {
     id: "docs.search",
     path: ["search"],
     usage: "qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]",

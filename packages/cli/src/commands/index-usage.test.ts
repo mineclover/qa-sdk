@@ -10,6 +10,7 @@ describe("top-level usage contracts", () => {
     expect(USAGE).toContain("qa-sdk obs stats [--vault <name>]");
     expect(USAGE).toContain("qa-sdk docs status [doc-id|path] [--json]");
     expect(USAGE).toContain("qa-sdk docs collect <doc-id|path> [--json]");
+    expect(USAGE).toContain("qa-sdk docs graph <target> [--axis <csv>] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]");
     expect(USAGE).toContain("qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]");
     expect(USAGE).toContain("qa-sdk docs drift [--prd <file>] [--json]");
     expect(USAGE).toContain("qa-sdk docs prd context <topic|doc-id> [--json]");
@@ -138,11 +139,19 @@ describe("top-level usage contracts", () => {
       expect(docsHelp).toContain("qa-sdk docs");
       expect(docsHelp).toContain("qa-sdk docs status");
       expect(docsHelp).toContain("qa-sdk docs collect");
+      expect(docsHelp).toContain("qa-sdk docs graph");
       expect(docsHelp).toContain("qa-sdk docs search");
       expect(docsHelp).toContain("qa-sdk docs drift");
       expect(docsHelp).toContain("qa-sdk docs transform metadata");
       expect(docsHelp).toContain("qa-sdk docs prd to-ralph-json");
       expect(docsHelp).toContain("qa-sdk docs prd sync-completion");
+
+      stdout.length = 0;
+      await main(["docs", "graph", "--help"]);
+      const docsGraphHelp = stdout.join("\n");
+      expect(docsGraphHelp).toContain("qa-sdk docs graph");
+      expect(docsGraphHelp).toContain("--axis");
+      expect(docsGraphHelp).toContain("--preset");
 
       stdout.length = 0;
       await main(["scan", "--help"]);
@@ -208,6 +217,10 @@ describe("top-level usage contracts", () => {
     expect(resolveSubcommand(["docs", "collect", "docs/specs/checkout/checkout.spec.md"])).toEqual({
       name: "docs collect",
       rest: ["docs/specs/checkout/checkout.spec.md"],
+    });
+    expect(resolveSubcommand(["docs", "graph", "checkout-spec", "--axis", "source,evidence"])).toEqual({
+      name: "docs graph",
+      rest: ["checkout-spec", "--axis", "source,evidence"],
     });
     expect(resolveSubcommand(["docs", "search", "checkout", "--kind", "prd"])).toEqual({
       name: "docs search",

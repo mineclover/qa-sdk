@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { main, resolveSubcommand, USAGE } from "../index.js";
 import { cliDocs } from "./docs.js";
 
 describe("docs commands", () => {
@@ -45,6 +46,12 @@ def:
   links:
     - target: checkout-plan
       type: depends_on
+    - target: checkout-child
+      type: contains
+    - target: checkout-refinement
+      type: refines
+    - target: US-001
+      type: traces_to
 source: packages/checkout/src/index.ts:Checkout
 ---
 # Checkout Spec
@@ -93,6 +100,108 @@ def:
 ## 목적 ^purpose
 
 Plan checkout adapter follow-up work.
+`);
+
+    await writeFile(join(rootDir, "docs/specs/checkout/checkout-child.spec.md"), `---
+def:
+  id: checkout-child
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Checkout Child Spec
+
+## 목적 ^purpose
+
+Defines the contained checkout child behavior.
+`);
+
+    await writeFile(join(rootDir, "docs/specs/checkout/checkout-refinement.spec.md"), `---
+def:
+  id: checkout-refinement
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Checkout Refinement Spec
+
+## 목적 ^purpose
+
+Refines the checkout specification.
+`);
+
+    await writeFile(join(rootDir, "docs/specs/checkout/checkout.rule.md"), `---
+def:
+  id: checkout-rule
+  level: leaf
+  scope: constraint
+  aspect: policy
+  depth: specification
+  lifecycle: approved
+---
+# Checkout Rule
+
+## 목적 ^purpose
+
+Constrain checkout implementation changes.
+`);
+
+    await writeFile(join(rootDir, "docs/specs/checkout/checkout.test.md"), `---
+def:
+  id: checkout-test
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: validation
+  lifecycle: approved
+---
+# Checkout Test
+
+## 목적 ^purpose
+
+Validate checkout behavior.
+`);
+
+    await writeFile(join(rootDir, "docs/specs/checkout/checkout.memo.md"), `---
+def:
+  id: checkout-memo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: draft
+---
+# Checkout Memo
+
+## 목적 ^purpose
+
+Record checkout implementation notes.
+`);
+
+    await writeFile(join(rootDir, "docs/specs/checkout/checkout-knowledge.spec.md"), `---
+def:
+  id: checkout-knowledge
+  type: knowledge
+  knowledge_kind: guide
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+  links:
+    - target: checkout-spec
+      type: depends_on
+familyId: docs/specs/checkout/checkout
+---
+# Checkout Knowledge
+
+## 목적 ^purpose
+
+Explain why checkout docs stay grouped.
 `);
 
     await writeFile(join(rootDir, "docs/specs/checkout/checkout-group.spec.md"), `---
@@ -382,6 +491,36 @@ Track inventory scenario coverage.
     return JSON.parse(errorOutput()) as T;
   }
 
+  interface GraphOutput {
+    readonly input: {
+      readonly target: string;
+      readonly axes: string[];
+      readonly direction: string;
+      readonly depth: number;
+      readonly limit: number;
+      readonly preset?: string;
+    };
+    readonly targetResolution: {
+      readonly lookupKind: string;
+      readonly indexed: boolean;
+    };
+    readonly counts: {
+      readonly nodes: number;
+      readonly edges: number;
+      readonly paths: number;
+      readonly diagnostics: number;
+    };
+    readonly nodes: Array<{ id: string; kind: string; path?: string }>;
+    readonly edges: Array<{
+      axis: string;
+      authoredType?: string;
+      fromNodeId: string;
+      toNodeId: string;
+      reasons: Array<{ reason: string }>;
+    }>;
+    readonly roleGroups: Array<{ roleType: string }>;
+  }
+
   it("prints text status and identifies todo follow-up state", async () => {
     const workspace = await createFixtureWorkspace();
 
@@ -392,6 +531,21 @@ Track inventory scenario coverage.
     expect(text).toContain("kind: spec");
     expect(text).toContain("next follow-up: draft todo");
     expect(text).toContain("docs/specs/checkout/checkout.todo.md");
+  });
+
+  it("exposes docs graph through root usage, dispatch, and command help", async () => {
+    expect(USAGE).toContain("qa-sdk docs graph <target>");
+    expect(resolveSubcommand(["docs", "graph", "checkout-spec", "--axis", "source,evidence"])).toEqual({
+      name: "docs graph",
+      rest: ["checkout-spec", "--axis", "source,evidence"],
+    });
+
+    await main(["docs", "graph", "--help"]);
+
+    const text = output();
+    expect(text).toContain("qa-sdk docs graph");
+    expect(text).toContain("--axis");
+    expect(text).toContain("--preset");
   });
 
   it("prints JSON status with session follow-up state for PRD families", async () => {
@@ -463,6 +617,42 @@ Track inventory scenario coverage.
     );
   });
 
+  it("collects source paths without widening to full-repository results", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs(["collect", "packages/checkout/src/index.ts", "--root", workspace, "--json"]);
+
+    const result = parsedOutput<{
+      sourceTarget: {
+        path: string;
+        matches: Array<{ document: { stableId: string; path: string } }>;
+      };
+      familyMembers: Array<{ stableId: string; path: string }>;
+      counts: { documents: number; familyMembers: number };
+      diagnostics: Array<{ rawSource?: { path?: string } }>;
+    }>();
+    expect(result.sourceTarget.path).toBe("packages/checkout/src/index.ts");
+    expect(result.sourceTarget.matches).toEqual([
+      expect.objectContaining({
+        document: expect.objectContaining({
+          stableId: "checkout-spec",
+          path: "docs/specs/checkout/checkout.spec.md",
+        }),
+      }),
+    ]);
+    expect(result.familyMembers).toEqual([
+      expect.objectContaining({
+        stableId: "checkout-spec",
+        path: "docs/specs/checkout/checkout.spec.md",
+      }),
+    ]);
+    expect(result.counts.documents).toBeGreaterThan(result.counts.familyMembers);
+    expect(result.counts.familyMembers).toBe(1);
+    expect(result.diagnostics.map((diagnostic) => diagnostic.rawSource?.path)).not.toContain(
+      "tasks/unrelated-prd.json",
+    );
+  });
+
   it("collects family members, metadata, links, sources, tasks, evidence, and diagnostics as JSON", async () => {
     const workspace = await createFixtureWorkspace();
 
@@ -504,6 +694,235 @@ Track inventory scenario coverage.
       ]),
     );
     expect(Array.isArray(result.diagnostics)).toBe(true);
+  });
+
+  it("prints text graph traversal with counts, truncation state, and edge reasons", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "graph",
+      "checkout-spec",
+      "--axis",
+      "composition",
+      "--direction",
+      "out",
+      "--depth",
+      "1",
+      "--root",
+      workspace,
+    ]);
+
+    const text = output();
+    expect(text).toContain("docs graph: checkout-spec");
+    expect(text).toContain("axes: composition");
+    expect(text).toContain("direction: out");
+    expect(text).toContain("node count:");
+    expect(text).toContain("edge count:");
+    expect(text).toContain("truncated: no");
+    expect(text).toContain("edge reasons");
+    expect(text).toContain("reason: link:contains");
+  });
+
+  it("traverses composition, role, source, evidence, trace, and preset graph paths", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "graph",
+      "checkout-spec",
+      "--axis",
+      "composition",
+      "--direction",
+      "out",
+      "--depth",
+      "1",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+    const composition = parsedOutput<GraphOutput>();
+    expect(composition.input.axes).toEqual(["composition"]);
+    expect(composition.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          axis: "composition",
+          authoredType: "contains",
+          fromNodeId: "document:checkout-spec",
+          toNodeId: "document:checkout-child",
+          reasons: expect.arrayContaining([
+            expect.objectContaining({ reason: "link:contains" }),
+          ]),
+        }),
+      ]),
+    );
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs([
+      "graph",
+      "checkout-spec",
+      "--axis",
+      "role",
+      "--direction",
+      "out",
+      "--depth",
+      "1",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+    const role = parsedOutput<GraphOutput>();
+    expect(role.edges.every((edge) => edge.axis === "role")).toBe(true);
+    expect(role.roleGroups).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ roleType: "spec" }),
+        expect.objectContaining({ roleType: "todo" }),
+        expect.objectContaining({ roleType: "plan" }),
+        expect.objectContaining({ roleType: "rule" }),
+        expect.objectContaining({ roleType: "test" }),
+        expect.objectContaining({ roleType: "memo" }),
+        expect.objectContaining({ roleType: "knowledge" }),
+      ]),
+    );
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs([
+      "graph",
+      "packages/checkout/src/index.ts",
+      "--axis",
+      "source",
+      "--direction",
+      "in",
+      "--depth",
+      "1",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+    const source = parsedOutput<GraphOutput>();
+    expect(source.targetResolution.lookupKind).toBe("source-path");
+    expect(source.counts.nodes).toBe(2);
+    expect(source.nodes.map((node) => node.id)).toEqual(
+      expect.arrayContaining(["source:packages/checkout/src/index.ts", "document:checkout-spec"]),
+    );
+    expect(source.nodes.map((node) => node.id)).not.toContain("document:tasks/unrelated-prd");
+    expect(source.edges.every((edge) => edge.axis === "source")).toBe(true);
+    expect(source.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          axis: "source",
+          fromNodeId: "document:checkout-spec",
+          toNodeId: "source:packages/checkout/src/index.ts",
+        }),
+      ]),
+    );
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs([
+      "graph",
+      "checkout-evidence",
+      "--axis",
+      "evidence",
+      "--direction",
+      "out",
+      "--depth",
+      "1",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+    const evidence = parsedOutput<GraphOutput>();
+    expect(evidence.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          axis: "evidence",
+          authoredType: "verifies",
+          fromNodeId: "document:checkout-evidence",
+          toNodeId: "document:checkout-evidence",
+          reasons: expect.arrayContaining([
+            expect.objectContaining({ reason: "link:verifies" }),
+          ]),
+        }),
+      ]),
+    );
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs([
+      "graph",
+      "checkout-spec",
+      "--axis",
+      "trace",
+      "--direction",
+      "out",
+      "--depth",
+      "1",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+    const trace = parsedOutput<GraphOutput>();
+    expect(trace.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          axis: "trace",
+          authoredType: "traces_to",
+          fromNodeId: "document:checkout-spec",
+          toNodeId: "task:tasks/checkout-prd:US-001",
+        }),
+      ]),
+    );
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs([
+      "graph",
+      "checkout-spec",
+      "--preset",
+      "implementation",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+    const preset = parsedOutput<GraphOutput>();
+    expect(preset.input).toMatchObject({
+      preset: "implementation",
+      axes: ["trace", "source", "evidence"],
+      direction: "both",
+      depth: 2,
+    });
+    expect(preset.counts.nodes).toBeGreaterThan(1);
+    expect(preset.edges.map((edge) => edge.axis)).toEqual(
+      expect.arrayContaining(["trace", "source"]),
+    );
+  });
+
+  it("returns structured errors for unknown graph axis, direction, and preset", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs(["graph", "checkout-spec", "--axis", "unknown", "--root", workspace, "--json"]);
+    expect(parsedOutput<{ error: { code: string; operation: string; remediation: string } }>().error).toMatchObject({
+      code: "unknown-docs-graph-axis",
+      operation: "docs.graph",
+      remediation: expect.stringContaining("composition"),
+    });
+    expect(process.exitCode).toBe(1);
+
+    vi.mocked(console.log).mockClear();
+    process.exitCode = undefined;
+    await cliDocs(["graph", "checkout-spec", "--direction", "sideways", "--root", workspace, "--json"]);
+    expect(parsedOutput<{ error: { code: string; operation: string; remediation: string } }>().error).toMatchObject({
+      code: "unknown-docs-graph-direction",
+      operation: "docs.graph",
+      remediation: expect.stringContaining("out"),
+    });
+    expect(process.exitCode).toBe(1);
+
+    vi.mocked(console.log).mockClear();
+    process.exitCode = undefined;
+    await cliDocs(["graph", "checkout-spec", "--preset", "everything", "--root", workspace, "--json"]);
+    expect(parsedOutput<{ error: { code: string; operation: string; remediation: string } }>().error).toMatchObject({
+      code: "unknown-docs-graph-preset",
+      operation: "docs.graph",
+      remediation: expect.stringContaining("implementation"),
+    });
+    expect(process.exitCode).toBe(1);
   });
 
   it("searches definition markdown and PRD adapters with kind and metadata filters", async () => {
@@ -1227,9 +1646,19 @@ Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/
       },
     });
     expect(result.changeSets[0]!.after.tags).toEqual(["checkout", "reviewed"]);
-    expect(result.changeSets[0]!.after.links).toEqual([
-      { target: "checkout-todo", type: "contains" },
-    ]);
+    expect(result.changeSets[0]!.after.links).toEqual(
+      expect.arrayContaining([
+        { target: "checkout-child", type: "contains" },
+        { target: "checkout-refinement", type: "refines" },
+        { target: "US-001", type: "traces_to" },
+        { target: "checkout-todo", type: "contains" },
+      ]),
+    );
+    expect(result.changeSets[0]!.after.links).not.toEqual(
+      expect.arrayContaining([
+        { target: "checkout-plan", type: "depends_on" },
+      ]),
+    );
     expect(result.changeSets[0]!.after.sources).toEqual([
       "packages/checkout/src/service.ts:CheckoutService",
     ]);
