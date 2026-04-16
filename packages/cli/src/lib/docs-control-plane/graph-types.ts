@@ -38,8 +38,10 @@ export type DocumentGraphNodeKind = (typeof DOCUMENT_GRAPH_NODE_KINDS)[number];
 
 export const DOCUMENT_GRAPH_EDGE_KINDS = [
   "authored-link",
+  "document-constraint",
   "document-source",
   "document-evidence",
+  "task-trace",
   "task-evidence",
   "section-membership",
   "role-membership",
@@ -67,6 +69,18 @@ export interface TraversalPresetDefinition {
   readonly includeContext: boolean;
   readonly description: string;
 }
+
+export const TRAVERSAL_AXIS_PRIORITY = {
+  composition: 0,
+  refinement: 1,
+  dependency: 2,
+  constraint: 3,
+  trace: 4,
+  source: 5,
+  evidence: 6,
+  role: 7,
+  context: 8,
+} as const satisfies Readonly<Record<TraversalAxis, number>>;
 
 export interface DocumentGraphNodeSummary {
   readonly id: string;
@@ -129,6 +143,8 @@ export const AUTHORED_LINK_AXIS_MAP = {
   implements: "trace",
   evolves_from: "trace",
   supersedes: "trace",
+  verifies: "evidence",
+  materializes_output: "evidence",
 } as const satisfies Readonly<Record<string, TraversalAxis>>;
 
 export type AuthoredLinkType = keyof typeof AUTHORED_LINK_AXIS_MAP;

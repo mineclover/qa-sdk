@@ -11,6 +11,7 @@ import {
   isTraversalAxis,
   isTraversalDirection,
   isTraversalPresetId,
+  TRAVERSAL_AXIS_PRIORITY,
   TRAVERSAL_DIRECTIONS,
   TRAVERSAL_PRESET_IDS,
   TRAVERSAL_PRESETS,
@@ -57,8 +58,10 @@ describe("docs-control-plane graph taxonomy", () => {
     ]);
     expect(DOCUMENT_GRAPH_EDGE_KINDS).toEqual([
       "authored-link",
+      "document-constraint",
       "document-source",
       "document-evidence",
+      "task-trace",
       "task-evidence",
       "section-membership",
       "role-membership",
@@ -80,6 +83,8 @@ describe("docs-control-plane graph taxonomy", () => {
       implements: "trace",
       evolves_from: "trace",
       supersedes: "trace",
+      verifies: "evidence",
+      materializes_output: "evidence",
     });
 
     expect(ENVELOPE_FIELD_AXIS_MAP).toMatchObject({
@@ -144,5 +149,14 @@ describe("docs-control-plane graph taxonomy", () => {
         expect(isTraversalAxis(axis)).toBe(true);
       }
     }
+  });
+
+  it("keeps context as the lowest-priority axis", () => {
+    const priorities = CANONICAL_TRAVERSAL_AXES.map((axis) => TRAVERSAL_AXIS_PRIORITY[axis]);
+
+    expect(TRAVERSAL_AXIS_PRIORITY.context).toBe(Math.max(...priorities));
+    expect(getTraversalPreset("implementation").axes).not.toContain("context");
+    expect(getTraversalPreset("review").axes).not.toContain("context");
+    expect(getTraversalPreset("prd-completion").axes).not.toContain("context");
   });
 });

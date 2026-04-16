@@ -38,6 +38,7 @@ export {
   isTraversalAxis,
   isTraversalDirection,
   isTraversalPresetId,
+  TRAVERSAL_AXIS_PRIORITY,
   TRAVERSAL_DIRECTIONS,
   TRAVERSAL_PRESET_IDS,
 } from "./graph-types.js";
@@ -45,6 +46,9 @@ export {
   getTraversalPreset,
   TRAVERSAL_PRESETS,
 } from "./graph-presets.js";
+export {
+  normalizeDocumentGraphEdges,
+} from "./graph-normalize.js";
 
 export type {
   AuthoredLinkType,
@@ -61,6 +65,9 @@ export type {
   TraversalPresetId,
   TraversalResultSummary,
 } from "./graph-types.js";
+export type {
+  NormalizeDocumentGraphEdgesOptions,
+} from "./graph-normalize.js";
 export type {
   DocumentAdapter,
   DocumentAdapterCapabilities,
