@@ -894,16 +894,17 @@ function resolveDocumentOrReference(
 }
 
 function documentIdentityValues(document: DocumentEnvelope): readonly string[] {
+  const isSession = document.kind === "ralph-session";
   return unique([
     document.stableId,
     document.path,
-    document.familyId,
+    isSession ? undefined : document.familyId,
     asString(document.metadata.defId),
     asString(document.metadata.artifactId),
     asString(document.metadata.artifactRef),
     asString(document.metadata.outputPath),
     asString(document.metadata.sourcePath),
-    asString(document.metadata.prdPath),
+    isSession ? undefined : asString(document.metadata.prdPath),
   ]);
 }
 

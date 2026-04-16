@@ -7,6 +7,12 @@ import type {
   DocumentMetadata,
   DocumentTask,
 } from "./types.js";
+import { buildDocumentGraphIndex } from "./graph-index.js";
+import { collectDocumentGraphTraversalDocuments } from "./graph-scope.js";
+import {
+  traverseDocumentGraph,
+  type DocumentGraphTraversalResult,
+} from "./graph-traverse.js";
 
 export interface PrdCompletionSyncOptions {
   readonly rootDir: string;
@@ -175,7 +181,12 @@ export async function previewPrdCompletionSync(
     ));
   }
 
-  const affectedEntries = collectAffectedDocuments(options.documents, prdDocument, completedStories);
+  const affectedEntries = collectAffectedDocuments(
+    options.documents,
+    options.rootDir,
+    prdDocument,
+    completedStories,
+  );
   const affectedDocuments = affectedEntries.map(toAffectedDocument);
   const affectedDocs = affectedEntries.map((entry) => entry.document);
   const openTodoCandidates = await collectOpenTodoCandidates(
@@ -303,43 +314,43 @@ function toCompletedStorySummary(task: DocumentTask): PrdCompletionStorySummary 
 
 function collectAffectedDocuments(
   documents: readonly DocumentEnvelope[],
+  rootDir: string,
   prdDocument: DocumentEnvelope,
   stories: readonly PrdCompletionStorySummary[],
 ): readonly AffectedDocumentEntry[] {
   const byKey = new Map<string, AffectedDocumentEntry>();
-  const storyRefs = new Set(stories.flatMap((story) => story.evidenceRefs).map(normalizePath));
-  const tokens = topicTokens(prdDocument);
+  const index = buildDocumentGraphIndex(documents, {
+    rootDir,
+    includeContext: false,
+  });
+  const traversals = [
+    traverseDocumentGraph(index, {
+      target: prdDocument.path,
+      preset: "prd-completion",
+      includeContext: false,
+    }),
+    ...stories.flatMap((story) =>
+      story.evidenceRefs.map((ref) =>
+        traverseDocumentGraph(index, {
+          target: ref,
+          axes: ref.startsWith("E-") ? ["evidence"] : ["source", "evidence"],
+          direction: "both",
+          depth: 1,
+          includeContext: false,
+        })
+      )
+    ),
+  ];
 
-  for (const document of documents) {
-    if (document.kind === "ralph-prd-json" && document.path !== prdDocument.path) continue;
-    if (isPrdFamilyDocument(document, prdDocument)) {
-      addAffected(byKey, document, "prd-family");
-      continue;
-    }
-    if (
-      storyRefs.size > 0 &&
-      documentReferences(document).some((ref) => storyRefs.has(normalizePath(ref)))
-    ) {
-      addAffected(byKey, document, "story-evidence-reference");
-      continue;
-    }
-    if (matchesTopic(document, tokens)) {
-      addAffected(byKey, document, "topic-match");
-    }
-  }
-
-  const firstPass = [...byKey.values()].map((entry) => entry.document);
-  const familyIds = new Set(firstPass.map((document) => document.familyId).filter(isString));
-  const identities = new Set(firstPass.flatMap(documentIdentityValues));
-  const paths = new Set(firstPass.flatMap(documentPathValues));
-
-  for (const document of documents) {
-    if (document.familyId && familyIds.has(document.familyId)) {
-      addAffected(byKey, document, "definition-family");
-      continue;
-    }
-    if (documentReferences(document).some((ref) => identities.has(ref) || paths.has(normalizePath(ref)))) {
-      addAffected(byKey, document, "evidence-or-link-reference");
+  for (const traversal of traversals) {
+    const scope = collectDocumentGraphTraversalDocuments(
+      documents,
+      traversal,
+      prdCompletionGraphReasonForNode,
+    );
+    for (const document of scope.documents) {
+      if (document.kind === "ralph-prd-json" && document.path !== prdDocument.path) continue;
+      addAffected(byKey, document, scope.reasonByDocumentKey.get(documentKey(document)) ?? "graph:prd-completion");
     }
   }
 
@@ -356,11 +367,12 @@ function addAffected(
   byKey.set(key, { document, reason });
 }
 
-function isPrdFamilyDocument(document: DocumentEnvelope, prdDocument: DocumentEnvelope): boolean {
-  if (document.familyId && prdDocument.familyId && document.familyId === prdDocument.familyId) return true;
-  if (stripKnownExtension(document.path) === stripKnownExtension(prdDocument.path)) return true;
-  const prdPath = asString(document.metadata.prdPath);
-  return Boolean(prdPath && stripKnownExtension(prdPath) === stripKnownExtension(prdDocument.path));
+function prdCompletionGraphReasonForNode(
+  node: DocumentGraphTraversalResult["nodes"][number],
+): string {
+  if (node.depth === 0) return "prd-completion-target";
+  const axis = node.pathFromTarget.steps[node.pathFromTarget.steps.length - 1]?.axis;
+  return axis ? `graph:${axis}` : "graph:prd-completion";
 }
 
 function toAffectedDocument(entry: AffectedDocumentEntry): PrdCompletionAffectedDocument {
@@ -564,25 +576,6 @@ function evidenceForDocument(
   }
 
   return uniqueEvidenceRefs(refs);
-}
-
-function topicTokens(prdDocument: DocumentEnvelope): readonly string[] {
-  const values = [
-    prdDocument.stableId,
-    prdDocument.familyId,
-    prdDocument.path,
-    asString(prdDocument.metadata.name),
-    asString(prdDocument.metadata.branchName),
-  ];
-  return unique(values.flatMap((value) => tokenize(value ?? "")))
-    .filter((token) => token.length >= 4 && !GENERIC_TOKENS.has(token));
-}
-
-function matchesTopic(document: DocumentEnvelope, tokens: readonly string[]): boolean {
-  if (tokens.length === 0) return false;
-  const text = normalizeSearchText(searchableText(document));
-  const matched = tokens.filter((token) => text.includes(token)).length;
-  return matched >= Math.min(2, tokens.length);
 }
 
 function matchingStoriesForDocument(

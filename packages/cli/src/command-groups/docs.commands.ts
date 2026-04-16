@@ -28,9 +28,15 @@ export const DOCS_COMMAND_DESCRIPTORS = [
   {
     id: "docs.collect",
     path: ["collect"],
-    usage: "qa-sdk docs collect <doc-id|path> [--json]",
+    usage: "qa-sdk docs collect <doc-id|path> [--graph] [--axis <csv>] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
     handlerKey: "docs.collect",
     options: [
+      { flag: "--graph", type: "boolean", description: "use graph traversal; defaults to the family preset" },
+      { flag: "--axis", valueHint: "<csv>", type: "string", description: "traversal axes, repeatable or comma-separated" },
+      { flag: "--direction", valueHint: "out|in|both", type: "string", description: "traversal direction" },
+      { flag: "--depth", valueHint: "<n>", type: "string", description: "non-negative traversal depth" },
+      { flag: "--limit", valueHint: "<n>", type: "string", description: "maximum returned nodes" },
+      { flag: "--preset", valueHint: "<name>", type: "string", description: "traversal preset" },
       { flag: "--json", type: "boolean", description: "emit structured JSON" },
       { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },
     ],

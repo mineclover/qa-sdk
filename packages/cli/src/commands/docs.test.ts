@@ -72,6 +72,9 @@ def:
   depth: implementation
   lifecycle: draft
   tags: [checkout]
+  links:
+    - target: US-001
+      type: traces_to
 ---
 # Checkout Todo
 
@@ -94,6 +97,9 @@ def:
   depth: implementation
   lifecycle: draft
   tags: [checkout]
+  links:
+    - target: US-001
+      type: traces_to
 ---
 # Checkout Plan
 
@@ -228,6 +234,9 @@ def:
   aspect: process_flow
   depth: validation
   lifecycle: draft
+  links:
+    - target: US-001
+      type: traces_to
 source: packages/cli/src/commands/docs.test.ts
 ---
 # Checkout Scenario Matrix
@@ -374,6 +383,9 @@ def:
   depth: specification
   lifecycle: approved
   tags: [inventory]
+  links:
+    - target: US-001
+      type: traces_to
 ---
 # Inventory Spec
 
@@ -391,6 +403,9 @@ def:
   depth: implementation
   lifecycle: draft
   tags: [inventory]
+  links:
+    - target: US-001
+      type: traces_to
 ---
 # Inventory Todo
 
@@ -412,6 +427,9 @@ def:
   depth: implementation
   lifecycle: draft
   tags: [inventory]
+  links:
+    - target: US-001
+      type: traces_to
 ---
 # Inventory Roadmap
 
@@ -429,6 +447,9 @@ def:
   depth: validation
   lifecycle: draft
   tags: [inventory]
+  links:
+    - target: US-001
+      type: traces_to
 ---
 # Inventory Scenario Matrix
 
@@ -694,6 +715,45 @@ Track inventory scenario coverage.
       ]),
     );
     expect(Array.isArray(result.diagnostics)).toBe(true);
+  });
+
+  it("collects explicit graph traversal results without changing the default family mode", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "collect",
+      "checkout-spec",
+      "--root",
+      workspace,
+      "--graph",
+      "--preset",
+      "implementation",
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      graph: {
+        input: { axes: string[]; direction: string; depth: number; includeContext: boolean; preset?: string };
+        edges: Array<{ axis: string }>;
+      };
+      familyMembers: Array<{ stableId: string; kind: string }>;
+    }>();
+    expect(result.graph.input).toMatchObject({
+      axes: ["trace", "source", "evidence"],
+      direction: "both",
+      depth: 2,
+      includeContext: false,
+      preset: "implementation",
+    });
+    expect(result.graph.edges.map((edge) => edge.axis)).toEqual(
+      expect.arrayContaining(["source"]),
+    );
+    expect(result.familyMembers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stableId: "checkout-spec", kind: "spec" }),
+        expect.objectContaining({ stableId: "checkout-evidence", kind: "activation-evidence" }),
+      ]),
+    );
   });
 
   it("prints text graph traversal with counts, truncation state, and edge reasons", async () => {
@@ -1165,7 +1225,51 @@ Track inventory scenario coverage.
     );
     expect(result.contextSources).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({ stableId: "checkout-spec", reason: "topic-match" }),
+      ]),
+    );
+    expect(result.contextSources.map((source) => source.reason)).not.toEqual(
+      expect.arrayContaining(["graph:role", "graph:dependency", "graph:source", "graph:evidence"]),
+    );
+  });
+
+  it("uses bounded graph traversal for exact PRD context targets", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs(["prd", "context", "checkout-spec", "--root", workspace, "--json"]);
+
+    const result = parsedOutput<{
+      resolvedTarget: { stableId: string; kind: string };
+      contextSources: Array<{ stableId: string; kind: string; reason: string }>;
+      relatedSpecs: Array<{ stableId: string }>;
+      plans: Array<{ stableId: string }>;
+      evidence: Array<{ id: string }>;
+    }>();
+    expect(result.resolvedTarget).toMatchObject({
+      stableId: "checkout-spec",
+      kind: "spec",
+    });
+    expect(result.contextSources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stableId: "checkout-spec", reason: "target" }),
+        expect.objectContaining({ stableId: "checkout-plan", reason: "graph:dependency" }),
+        expect.objectContaining({ stableId: "checkout-evidence", reason: "graph:source" }),
+      ]),
+    );
+    expect(result.contextSources.map((source) => source.reason)).not.toContain("topic-match");
+    expect(result.relatedSpecs).toEqual(
+      expect.arrayContaining([
         expect.objectContaining({ stableId: "checkout-spec" }),
+      ]),
+    );
+    expect(result.plans).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stableId: "checkout-plan" }),
+      ]),
+    );
+    expect(result.evidence).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "checkout-evidence" }),
       ]),
     );
   });
@@ -1385,7 +1489,7 @@ Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/
         sessionDrift: number;
       };
       completedStories: Array<{ id: string; title: string }>;
-      affectedDocs: Array<{ kind: string; stableId: string; path: string }>;
+      affectedDocs: Array<{ kind: string; stableId: string; path: string; reason: string }>;
       openTodoCandidates: Array<{ promotionState: string; text: string; evidence: unknown[] }>;
       specUpdateCandidates: Array<{ documentId: string; promotionState: string; evidence: unknown[] }>;
       roadmapUpdateCandidates: Array<{ documentId: string; path: string }>;
@@ -1415,11 +1519,14 @@ Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/
     ]);
     expect(result.affectedDocs).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ kind: "spec", stableId: "checkout-spec" }),
-        expect.objectContaining({ kind: "todo", stableId: "checkout-todo" }),
-        expect.objectContaining({ kind: "plan", stableId: "checkout-plan" }),
-        expect.objectContaining({ kind: "ralph-session", path: ".ralph-tui/session-meta.json" }),
+        expect.objectContaining({ kind: "spec", stableId: "checkout-spec", reason: "graph:trace" }),
+        expect.objectContaining({ kind: "todo", stableId: "checkout-todo", reason: "graph:trace" }),
+        expect.objectContaining({ kind: "plan", stableId: "checkout-plan", reason: "graph:trace" }),
+        expect.objectContaining({ kind: "ralph-session", path: ".ralph-tui/session-meta.json", reason: "graph:trace" }),
       ]),
+    );
+    expect(result.affectedDocs.map((document) => document.reason)).not.toEqual(
+      expect.arrayContaining(["topic-match", "definition-family", "prd-family"]),
     );
     expect(result.openTodoCandidates).toEqual(
       expect.arrayContaining([

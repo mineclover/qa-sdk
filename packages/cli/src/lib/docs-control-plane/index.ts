@@ -61,6 +61,10 @@ export {
   normalizeDocumentGraphTraversalInput,
   traverseDocumentGraph,
 } from "./graph-traverse.js";
+export {
+  collectDocumentGraphTraversalDocuments,
+  defaultDocumentGraphTraversalNodeReason,
+} from "./graph-scope.js";
 
 export type {
   AuthoredLinkType,
@@ -103,6 +107,9 @@ export type {
   DocumentGraphTraversalResult,
   NormalizedDocumentGraphTraversalInput,
 } from "./graph-traverse.js";
+export type {
+  DocumentGraphTraversalDocumentScope,
+} from "./graph-scope.js";
 export type {
   DocumentAdapter,
   DocumentAdapterCapabilities,

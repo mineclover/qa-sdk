@@ -14,6 +14,7 @@ import {
   createArtifactEvidenceAdapter,
   buildDocumentGraphIndex,
   CANONICAL_TRAVERSAL_AXES,
+  collectDocumentGraphTraversalDocuments,
   createDefinitionMarkdownAdapter,
   createPrdMarkdownAdapter,
   createRalphPrdJsonAdapter,
@@ -145,6 +146,7 @@ interface CollectResult extends StatusResult {
   readonly sources: readonly DocumentSource[];
   readonly tasks: readonly DocumentTask[];
   readonly evidence: readonly DocumentEvidence[];
+  readonly graph?: DocsGraphCliResult;
 }
 
 interface SearchResult {
@@ -176,6 +178,12 @@ interface DocsGraphCliResult {
   readonly truncated: boolean;
   readonly omittedCount: number;
   readonly diagnostics: readonly string[];
+}
+
+interface GraphDocumentScope {
+  readonly traversal: DocumentGraphTraversalResult;
+  readonly documents: readonly DocumentEnvelope[];
+  readonly reasonByDocumentKey: ReadonlyMap<string, string>;
 }
 
 interface PrdContextSource {
@@ -293,7 +301,7 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
     title: "Usage",
     lines: [
       "qa-sdk docs status [doc-id|path] [--json]",
-      "qa-sdk docs collect <doc-id|path> [--json]",
+      "qa-sdk docs collect <doc-id|path> [--graph] [--axis <csv>] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
       "qa-sdk docs graph <target> [--axis <csv>] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
       "qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]",
       "qa-sdk docs drift [--prd <file>] [--json]",
@@ -318,6 +326,7 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "--depth <n>                  graph traversal depth",
       "--limit <n>                  maximum graph nodes to return",
       "--preset <name>              graph traversal preset: family, implementation, review, impact, prd-completion",
+      "--graph                      use graph traversal for docs collect; defaults to the family preset",
       "--output <file>              PRD markdown scaffold or PRD JSON conversion output path",
       "--rule <json-file|inline-json> metadata transform rule for dry-run preview",
       "--dry-run                    preview only; this is the default",
@@ -372,6 +381,14 @@ const RESOLUTION_KIND_PRIORITY: Readonly<Record<string, number>> = {
   "ralph-session": 8,
   "activation-evidence": 9,
 };
+const COLLECT_GRAPH_FLAG_NAMES = new Set(["axis", "direction", "depth", "limit", "preset"]);
+const STATUS_TRAVERSAL_AXES = ["role"] as const satisfies readonly TraversalAxis[];
+const PRD_CONTEXT_TRAVERSAL_AXES = [
+  "role",
+  "dependency",
+  "source",
+  "evidence",
+] as const satisfies readonly TraversalAxis[];
 
 export async function cliDocs(args: string[]): Promise<void> {
   const parsed = parseDocsArgs(args);
@@ -384,12 +401,12 @@ export async function cliDocs(args: string[]): Promise<void> {
   const documents = await collectAllDocuments(createDocsAdapters(options));
 
   if (parsed.command === "status") {
-    await cmdStatus(documents, parsed.positional[0], hasFlag(parsed.flags, "json"));
+    await cmdStatus(documents, options, parsed.positional[0], hasFlag(parsed.flags, "json"));
     return;
   }
 
   if (parsed.command === "collect") {
-    await cmdCollect(documents, parsed.positional[0], hasFlag(parsed.flags, "json"));
+    await cmdCollect(documents, options, parsed.positional[0], parsed.flags);
     return;
   }
 
@@ -529,10 +546,11 @@ async function collectAllDocuments(
 
 async function cmdStatus(
   documents: readonly DocumentEnvelope[],
+  options: DocsRuntimeOptions,
   target: string | undefined,
   json: boolean,
 ): Promise<void> {
-  const result = buildStatusResult(documents, target);
+  const result = buildStatusResult(documents, options.rootDir, target);
   if (json) {
     printJson(result);
     return;
@@ -542,16 +560,25 @@ async function cmdStatus(
 
 async function cmdCollect(
   documents: readonly DocumentEnvelope[],
+  options: DocsRuntimeOptions,
   target: string | undefined,
-  json: boolean,
+  flags: Readonly<Record<string, readonly string[]>>,
 ): Promise<void> {
+  const json = hasFlag(flags, "json");
   if (!target) {
     console.error("docs collect requires <doc-id|path>");
     process.exitCode = 1;
     return;
   }
 
-  const result = buildCollectResult(documents, target);
+  const graphInput = parseDocsCollectGraphInput(target, flags);
+  if (graphInput && isStructuredDocsError(graphInput)) {
+    printStructuredError(graphInput, json);
+    process.exitCode = 1;
+    return;
+  }
+
+  const result = buildCollectResult(documents, options.rootDir, target, graphInput);
   if (json) {
     printJson(result);
     return;
@@ -623,11 +650,13 @@ async function cmdGraph(
 function parseDocsGraphInput(
   target: string | undefined,
   flags: Readonly<Record<string, readonly string[]>>,
+  operation = "docs.graph",
 ): DocumentGraphTraversalInput | StructuredDocsError {
   if (!target) {
     return docsGraphError(
+      operation,
       "missing-required-argument",
-      "docs graph requires <target>.",
+      `${operation} requires <target>.`,
       "Pass a document id, family id, task id, evidence id, graph node id, or source path.",
     );
   }
@@ -637,6 +666,7 @@ function parseDocsGraphInput(
   for (const axis of axes) {
     if (!isTraversalAxis(axis)) {
       return docsGraphError(
+        operation,
         "unknown-docs-graph-axis",
         `Unknown docs graph axis: ${axis}.`,
         `Use one of: ${CANONICAL_TRAVERSAL_AXES.join(", ")}.`,
@@ -650,6 +680,7 @@ function parseDocsGraphInput(
   if (rawDirection) {
     if (!isTraversalDirection(rawDirection)) {
       return docsGraphError(
+        operation,
         "unknown-docs-graph-direction",
         `Unknown docs graph direction: ${rawDirection}.`,
         `Use one of: ${TRAVERSAL_DIRECTIONS.join(", ")}.`,
@@ -663,6 +694,7 @@ function parseDocsGraphInput(
   if (rawPreset) {
     if (!isTraversalPresetId(rawPreset)) {
       return docsGraphError(
+        operation,
         "unknown-docs-graph-preset",
         `Unknown docs graph preset: ${rawPreset}.`,
         `Use one of: ${TRAVERSAL_PRESET_IDS.join(", ")}.`,
@@ -671,10 +703,10 @@ function parseDocsGraphInput(
     preset = rawPreset;
   }
 
-  const depth = parseDocsGraphIntegerFlag(flags, "depth");
+  const depth = parseDocsGraphIntegerFlag(flags, "depth", operation);
   if (isStructuredDocsError(depth)) return depth;
 
-  const limit = parseDocsGraphIntegerFlag(flags, "limit");
+  const limit = parseDocsGraphIntegerFlag(flags, "limit", operation);
   if (isStructuredDocsError(limit)) return limit;
 
   return {
@@ -691,14 +723,16 @@ function parseDocsGraphInput(
 function parseDocsGraphIntegerFlag(
   flags: Readonly<Record<string, readonly string[]>>,
   name: "depth" | "limit",
+  operation = "docs.graph",
 ): number | StructuredDocsError | undefined {
   const raw = pickLast(flags, name);
   if (!raw) return undefined;
   const value = Number(raw);
   if (!Number.isInteger(value) || value < 0) {
     return docsGraphError(
+      operation,
       `invalid-docs-graph-${name}`,
-      `docs graph --${name} expects a non-negative integer.`,
+      `${operation} --${name} expects a non-negative integer.`,
       `Pass --${name} 0 or a positive integer value.`,
     );
   }
@@ -706,6 +740,7 @@ function parseDocsGraphIntegerFlag(
 }
 
 function docsGraphError(
+  operation: string,
   code: string,
   message: string,
   remediation: string,
@@ -713,11 +748,34 @@ function docsGraphError(
   return {
     error: {
       code,
-      operation: "docs.graph",
+      operation,
       message,
       remediation,
     },
   };
+}
+
+function parseDocsCollectGraphInput(
+  target: string,
+  flags: Readonly<Record<string, readonly string[]>>,
+): DocumentGraphTraversalInput | StructuredDocsError | undefined {
+  if (!hasFlag(flags, "graph") && !hasDocsGraphTraversalFlags(flags)) return undefined;
+
+  const parsed = parseDocsGraphInput(target, flags, "docs.collect");
+  if (isStructuredDocsError(parsed)) return parsed;
+  if (!parsed.preset && !parsed.axes) {
+    return {
+      ...parsed,
+      preset: "family",
+    };
+  }
+  return parsed;
+}
+
+function hasDocsGraphTraversalFlags(
+  flags: Readonly<Record<string, readonly string[]>>,
+): boolean {
+  return [...COLLECT_GRAPH_FLAG_NAMES].some((name) => (flags[name]?.length ?? 0) > 0);
 }
 
 function isStructuredDocsError(value: unknown): value is StructuredDocsError {
@@ -1034,17 +1092,27 @@ async function cmdPrd(
 
 function buildStatusResult(
   documents: readonly DocumentEnvelope[],
+  rootDir: string,
   target: string | undefined,
 ): StatusResult {
   const resolved = target ? resolveDocument(documents, target) : undefined;
   const resolvedSource = !resolved && target && isPathLikeTarget(target)
     ? resolveSourceTarget(documents, target)
     : undefined;
-  const scopedDocuments = resolved
-    ? collectRelatedDocuments(documents, resolved.document)
+  const graphScope = resolved
+    ? collectGraphScopedDocuments(documents, rootDir, {
+      target: statusTraversalTarget(target ?? resolved.document.stableId, resolved),
+      axes: STATUS_TRAVERSAL_AXES,
+      direction: "both",
+      depth: 1,
+      includeContext: false,
+    })
+    : undefined;
+  const scopedDocuments = graphScope
+    ? graphScope.documents
     : resolvedSource
       ? resolvedSource.documents
-    : documents;
+      : documents;
   const diagnostics = scopedDocuments.flatMap((document) => document.diagnostics);
 
   return {
@@ -1076,18 +1144,29 @@ function buildStatusResult(
 
 function buildCollectResult(
   documents: readonly DocumentEnvelope[],
+  rootDir: string,
   target: string,
+  graphInput: DocumentGraphTraversalInput | undefined,
 ): CollectResult {
-  const status = buildStatusResult(documents, target);
+  const status = buildStatusResult(documents, rootDir, target);
   const resolved = resolveDocument(documents, target);
   const resolvedSource = !resolved && isPathLikeTarget(target)
     ? resolveSourceTarget(documents, target)
     : undefined;
-  const scopedDocuments = resolved
-    ? collectRelatedDocuments(documents, resolved.document)
+  const graphScope = graphInput
+    ? collectGraphScopedDocuments(documents, rootDir, graphInput)
+    : resolved
+      ? collectGraphScopedDocuments(documents, rootDir, {
+        target: collectTraversalTarget(target, resolved),
+        preset: "family",
+        includeContext: false,
+      })
+      : undefined;
+  const scopedDocuments = graphScope
+    ? graphScope.documents
     : resolvedSource
       ? resolvedSource.documents
-    : [];
+      : [];
 
   return {
     ...status,
@@ -1100,6 +1179,7 @@ function buildCollectResult(
     sources: scopedDocuments.flatMap((document) => document.sources),
     tasks: scopedDocuments.flatMap((document) => document.tasks),
     evidence: scopedDocuments.flatMap((document) => document.evidence),
+    ...(graphScope && graphInput ? { graph: toDocsGraphCliResult(graphScope.traversal) } : {}),
   };
 }
 
@@ -1109,8 +1189,17 @@ async function buildPrdAuthoringContext(
   target: string,
 ): Promise<PrdAuthoringContext> {
   const resolved = resolveDocument(documents, target);
-  const relatedDocuments = resolved
-    ? collectRelatedDocuments(documents, resolved.document)
+  const graphScope = resolved
+    ? collectGraphScopedDocuments(documents, rootDir, {
+      target: prdContextTraversalTarget(target, resolved),
+      axes: PRD_CONTEXT_TRAVERSAL_AXES,
+      direction: "both",
+      depth: 2,
+      includeContext: false,
+    })
+    : undefined;
+  const relatedDocuments = graphScope
+    ? graphScope.documents
     : [];
   const topicTokens = prdTopicTokens(target, resolved?.document);
   const topicDocuments = resolved
@@ -1145,7 +1234,13 @@ async function buildPrdAuthoringContext(
     .filter((document) => document.kind === "ralph-session")
     .map(toRalphSessionContextState);
   const contextSources = scopedDocuments.map((document) =>
-    toPrdContextSource(document, resolved?.document, relatedKeys, topicKeys)
+    toPrdContextSource(
+      document,
+      resolved?.document,
+      relatedKeys,
+      topicKeys,
+      graphScope?.reasonByDocumentKey,
+    )
   );
 
   return {
@@ -1184,8 +1279,10 @@ function toPrdContextSource(
   resolvedTarget: DocumentEnvelope | undefined,
   relatedKeys: ReadonlySet<string>,
   topicKeys: ReadonlySet<string>,
+  graphReasons: ReadonlyMap<string, string> | undefined,
 ): PrdContextSource {
   const summary = summarizeDocument(document);
+  const key = documentKey(document);
   return {
     kind: document.kind,
     stableId: document.stableId,
@@ -1193,11 +1290,12 @@ function toPrdContextSource(
     ...(summary.title ? { title: summary.title } : {}),
     reason: document === resolvedTarget
       ? "target"
-      : relatedKeys.has(documentKey(document))
-        ? "related-family-or-link"
-        : topicKeys.has(documentKey(document))
+      : graphReasons?.get(key)
+        ?? (relatedKeys.has(key)
+          ? "graph-related"
+          : topicKeys.has(key)
           ? "topic-match"
-          : "included",
+          : "included"),
   };
 }
 
@@ -1548,6 +1646,46 @@ function countDocuments(
   };
 }
 
+function collectGraphScopedDocuments(
+  documents: readonly DocumentEnvelope[],
+  rootDir: string,
+  input: DocumentGraphTraversalInput,
+): GraphDocumentScope {
+  const index = buildDocumentGraphIndex(documents, {
+    rootDir,
+    includeContext: input.includeContext,
+  });
+  const traversal = traverseDocumentGraph(index, input);
+  const scope = collectDocumentGraphTraversalDocuments(documents, traversal);
+
+  return {
+    traversal,
+    documents: scope.documents,
+    reasonByDocumentKey: scope.reasonByDocumentKey,
+  };
+}
+
+function statusTraversalTarget(
+  target: string,
+  resolved: ResolvedDocument,
+): string {
+  return resolved.matchedTask ? resolved.document.stableId : target;
+}
+
+function collectTraversalTarget(
+  target: string,
+  resolved: ResolvedDocument,
+): string {
+  return resolved.matchedTask ? resolved.document.stableId : target;
+}
+
+function prdContextTraversalTarget(
+  target: string,
+  resolved: ResolvedDocument,
+): string {
+  return resolved.matchedTask ? resolved.document.stableId : target;
+}
+
 function resolveDocument(
   documents: readonly DocumentEnvelope[],
   target: string,
@@ -1611,42 +1749,6 @@ function isPathLikeTarget(target: string): boolean {
 function compareResolutionPriority(left: DocumentEnvelope, right: DocumentEnvelope): number {
   return (RESOLUTION_KIND_PRIORITY[left.kind] ?? 50) - (RESOLUTION_KIND_PRIORITY[right.kind] ?? 50)
     || compareDocuments(left, right);
-}
-
-function collectRelatedDocuments(
-  documents: readonly DocumentEnvelope[],
-  document: DocumentEnvelope,
-): readonly DocumentEnvelope[] {
-  const familyMembers = document.familyId
-    ? documents.filter((candidate) => candidate.familyId === document.familyId)
-    : [document];
-  const identities = new Set(familyMembers.flatMap(documentRelationshipIdentityValues));
-  const paths = new Set(familyMembers.flatMap(documentPathValues));
-  const related = documents.filter((candidate) =>
-    familyMembers.includes(candidate)
-    || candidateMatchesIdentities(candidate, identities, paths)
-  );
-  return uniqueDocuments(related).toSorted(compareDocuments);
-}
-
-function candidateMatchesIdentities(
-  candidate: DocumentEnvelope,
-  identities: ReadonlySet<string>,
-  paths: ReadonlySet<string>,
-): boolean {
-  if (documentRelationshipIdentityValues(candidate).some((value) => identities.has(value))) return true;
-  if (documentPathValues(candidate).some((value) => paths.has(value))) return true;
-  if (candidate.links.some((link) =>
-    identities.has(link.sourceId ?? "")
-    || identities.has(link.targetId)
-  )) return true;
-  if (candidate.sources.some((source) =>
-    Boolean(source.path && paths.has(normalizePath(source.path)))
-    || identities.has(source.label ?? "")
-  )) return true;
-
-  const metadataRefs = metadataRelationshipReferenceValues(candidate.metadata);
-  return metadataRefs.some((value) => identities.has(value) || paths.has(normalizePath(value)));
 }
 
 function findNextFollowUp(
@@ -1819,64 +1921,12 @@ function documentPathValues(document: DocumentEnvelope): readonly string[] {
   ]);
 }
 
-function documentRelationshipIdentityValues(document: DocumentEnvelope): readonly string[] {
-  return unique([
-    document.stableId,
-    document.familyId,
-    document.path,
-    asString(document.metadata.defId),
-    asString(document.metadata.sourcePath),
-    asString(document.metadata.artifactId),
-    asString(document.metadata.artifactRef),
-    asString(document.metadata.outputPath),
-    asString(document.metadata.ownerDefinitionId),
-    asString(document.metadata.prdPath),
-  ].filter((value): value is string => Boolean(value)));
-}
-
 function metadataReferenceValues(metadata: DocumentMetadata): readonly string[] {
   const values: string[] = [];
   for (const value of Object.values(metadata)) {
     appendMetadataValue(values, value);
   }
   return values;
-}
-
-function metadataRelationshipReferenceValues(metadata: DocumentMetadata): readonly string[] {
-  const relationshipKeys = [
-    "artifactId",
-    "artifactRef",
-    "defId",
-    "derivedFromRefs",
-    "familyId",
-    "materializesOutputRefs",
-    "ontologyId",
-    "outputPath",
-    "ownerDefinitionId",
-    "packId",
-    "prdPath",
-    "sourcePath",
-    "sourceRefs",
-    "verificationRefs",
-    "verifiesRefs",
-  ];
-  const values: string[] = [];
-  for (const key of relationshipKeys) {
-    appendMetadataValue(values, metadata[key]);
-  }
-
-  const relations = metadata.relations;
-  if (Array.isArray(relations)) {
-    for (const relation of relations) {
-      if (!relation || typeof relation !== "object") continue;
-      const record = relation as Record<string, unknown>;
-      appendMetadataValue(values, record.fromRef);
-      appendMetadataValue(values, record.toRef);
-      appendMetadataValue(values, record.evidenceRef);
-    }
-  }
-
-  return unique(values);
 }
 
 function appendMetadataValue(values: string[], value: unknown): void {
