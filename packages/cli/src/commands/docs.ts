@@ -8,7 +8,7 @@
 
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { basename, dirname, join, relative, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 
 import {
   createArtifactEvidenceAdapter,
@@ -1125,7 +1125,7 @@ async function cmdPrd(
 
   const result: PrdScaffoldResult = {
     target,
-    output: normalizePath(relative(options.rootDir, outputPath)),
+    output: formatMaterializedOutputPath(options.rootDir, outputPath),
     bytes: Buffer.byteLength(markdown, "utf8"),
     context,
   };
@@ -1713,6 +1713,15 @@ async function readRepoFile(rootDir: string, path: string): Promise<string | nul
 
 function resolveOutputPath(rootDir: string, path: string): string {
   return path.startsWith("/") ? resolve(path) : resolve(rootDir, path);
+}
+
+function formatMaterializedOutputPath(rootDir: string, outputPath: string): string {
+  const resolved = resolve(outputPath);
+  const relativePath = relative(rootDir, resolved).replaceAll("\\", "/");
+  if (relativePath && relativePath !== ".." && !relativePath.startsWith("../") && !isAbsolute(relativePath)) {
+    return relativePath;
+  }
+  return resolved.replaceAll("\\", "/");
 }
 
 function countDocuments(

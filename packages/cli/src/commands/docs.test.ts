@@ -1717,6 +1717,65 @@ Archived checkout work.
     expect(content).toContain("## Control-Plane Context Sources");
     expect(content).toContain("[spec] `checkout-spec`");
     expect(content).toContain("Creating PRD JSON from this scaffold");
+
+    vi.mocked(console.log).mockClear();
+    const textOutputPath = join(workspace, "tasks/generated-checkout-prd-text.md");
+    await cliDocs([
+      "prd",
+      "scaffold",
+      "checkout",
+      "--root",
+      workspace,
+      "--output",
+      "tasks/generated-checkout-prd-text.md",
+    ]);
+
+    await expect(readFile(textOutputPath, "utf8")).resolves.toContain("[PRD]");
+    expect(output().split("\n")[0]).toBe("docs prd scaffold: wrote tasks/generated-checkout-prd-text.md");
+  });
+
+  it("reports absolute PRD scaffold output paths outside the repository", async () => {
+    const workspace = await createFixtureWorkspace();
+    const externalDir = await mkdtemp(join(tmpdir(), "qa-sdk-docs-cli-output-"));
+    const externalPath = join(externalDir, "generated-external-prd.md");
+    const expectedExternalPath = externalPath.replaceAll("\\", "/");
+
+    try {
+      await cliDocs([
+        "prd",
+        "scaffold",
+        "checkout",
+        "--root",
+        workspace,
+        "--output",
+        externalPath,
+        "--json",
+      ]);
+
+      const result = parsedOutput<{
+        output: string;
+        bytes: number;
+      }>();
+      expect(result.output).toBe(expectedExternalPath);
+      expect(result.bytes).toBeGreaterThan(0);
+      await expect(readFile(externalPath, "utf8")).resolves.toContain("[PRD]");
+
+      vi.mocked(console.log).mockClear();
+      await cliDocs([
+        "prd",
+        "scaffold",
+        "checkout",
+        "--root",
+        workspace,
+        "--output",
+        externalPath,
+      ]);
+
+      expect(output().split("\n")[0]).toBe(`docs prd scaffold: wrote ${expectedExternalPath}`);
+      await expect(readFile(externalPath, "utf8")).resolves.toContain("[PRD]");
+    } finally {
+      await rm(externalDir, { recursive: true, force: true });
+    }
   });
 
   it("converts PRD markdown to ralph JSON through control-plane adapters", async () => {
