@@ -30,6 +30,11 @@ def:
   - [ ] operational/authorization pack source coverage
   - [ ] `qa-sdk docs graph <source-path> --axis source --direction in` returns related docs/evidence for selected targets
   - [ ] `qa-sdk def find-by-file <source-path>` returns explicit mappings where authoritative source-map is available
+    - [x] compatible entries are top-level `source:` / `sources:` values that parse as `packages/...` file refs and whose supporting docs collapse to one boundary anchor after `qa-sdk def sync`
+    - [x] after `qa-sdk def sync`, `packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts` resolves to `docs-control-plane`
+    - [x] after `qa-sdk def sync`, `packages/cli/src/commands/ontology/quality-ledger-evidence.ts` resolves to `programming-artifact-ontology-system`
+    - [ ] `activation.ts`, `artifact-registry.ts`, and `prompt-extract-artifact.ts` remain ambiguous between `operational-ontology-registry-allocation` and `programming-artifact-ontology-system`; close with symbol-level `@def.boundary` / `@def.doc` only when an authoritative boundary is chosen
+    - [ ] `ingest.ts`, `status.ts`, and `navigation-diff.ts` still have no authoritative file-level source-map owner
   - [ ] source-map gaps remain explicit TODOs instead of broad graph fallback
 
 - [ ] Ontology Pack Authoring Control Plane

@@ -156,11 +156,12 @@
         "`node packages/cli/dist/index.js def validate` - repository definition validation"
       ],
       "priority": 6,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Verified `def sync` converts compatible top-level `source:` and `sources:` frontmatter entries into local DB `code_references`. After sync, `qa-sdk def find-by-file packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts --local` resolves to `docs-control-plane`, and `qa-sdk def find-by-file packages/cli/src/commands/ontology/quality-ledger-evidence.ts --local` resolves to `programming-artifact-ontology-system`. Recorded remaining docs-control-plane TODO gaps instead of broad mappings: activation/artifact/prompt split modules are ambiguous across operational registry allocation and programming artifact anchors, while ingest/status/navigation-diff remain unmapped. The required pnpm gates passed; `node packages/cli/dist/index.js def validate` was run after sync and reported existing graph/code-reference errors rather than a clean validation.",
       "dependsOn": [
         "US-005"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-007",
@@ -214,6 +215,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-16T06:44:42.387Z"
+    "updatedAt": "2026-04-16T06:53:30.686Z"
   }
 }
