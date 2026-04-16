@@ -606,6 +606,50 @@ Track inventory scenario coverage.
     );
   });
 
+  it("keeps transient session state out of family-only status unless requested", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs(["status", "tasks/checkout-prd", "--root", workspace, "--family-only", "--json"]);
+
+    const result = parsedOutput<{
+      counts: { familyMembers: number; diagnostics: number };
+      nextFollowUps: Array<{ kind: string; path: string }>;
+      diagnostics: Array<{ rawSource?: { path?: string } }>;
+    }>();
+    expect(result.counts.familyMembers).toBe(2);
+    expect(result.nextFollowUps).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "ralph-session", path: ".ralph-tui/session-meta.json" }),
+      ]),
+    );
+    expect(result.diagnostics.map((diagnostic) => diagnostic.rawSource?.path)).not.toContain(
+      ".ralph-tui/session-meta.json",
+    );
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs([
+      "status",
+      "tasks/checkout-prd",
+      "--root",
+      workspace,
+      "--family-only",
+      "--include-session",
+      "--json",
+    ]);
+    const withSession = parsedOutput<{
+      nextFollowUps: Array<{ kind: string; path: string }>;
+      diagnostics: Array<{ rawSource?: { path?: string } }>;
+    }>();
+    expect(withSession.nextFollowUps).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "ralph-session", path: ".ralph-tui/session-meta.json" }),
+      ]),
+    );
+    expect(withSession.diagnostics.map((diagnostic) => diagnostic.rawSource?.path)).toContain(
+      ".ralph-tui/session-meta.json",
+    );
+  });
+
   it("uses composition traversal to find module follow-up TODOs outside the same filename family", async () => {
     const workspace = await createFixtureWorkspace();
     await mkdir(join(workspace, "docs/specs/module"), { recursive: true });
@@ -824,6 +868,158 @@ Track module follow-up work.
         expect.objectContaining({ stableId: "checkout-evidence", kind: "activation-evidence" }),
       ]),
     );
+  });
+
+  it("limits collect inventory to same-family roles and direct module children with --family-only", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/module"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/module/module.spec.md"), `---
+def:
+  id: module-spec
+  level: module
+  scope: interface
+  aspect: api_contract
+  depth: overview
+  lifecycle: approved
+  links:
+    - target: module-child
+      type: contains
+    - target: checkout-spec
+      type: depends_on
+---
+# Module Spec
+
+## 목적 ^purpose
+
+Coordinate module inventory.
+`);
+    await writeFile(join(workspace, "docs/specs/module/module.plan.md"), `---
+def:
+  id: module-plan
+  level: leaf
+  scope: interface
+  aspect: api_contract
+  depth: implementation
+  lifecycle: draft
+---
+# Module Plan
+
+## 목적 ^purpose
+
+Plan module inventory.
+`);
+    await writeFile(join(workspace, "docs/specs/module/module-child.spec.md"), `---
+def:
+  id: module-child
+  level: leaf
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: draft
+---
+# Module Child
+
+## 목적 ^purpose
+
+Define the direct module child.
+`);
+
+    await cliDocs([
+      "collect",
+      "module-spec",
+      "--root",
+      workspace,
+      "--graph",
+      "--preset",
+      "family",
+      "--family-only",
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      familyMembers: Array<{ stableId: string; kind: string; path: string }>;
+      graph: { input: { preset?: string } };
+    }>();
+    expect(result.graph.input.preset).toBe("family");
+    expect(result.familyMembers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stableId: "module-spec", kind: "spec" }),
+        expect.objectContaining({ stableId: "module-plan", kind: "plan" }),
+        expect.objectContaining({ stableId: "module-child", kind: "spec" }),
+      ]),
+    );
+    expect(result.familyMembers).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stableId: "checkout-spec" }),
+        expect.objectContaining({ stableId: "checkout-evidence" }),
+      ]),
+    );
+  });
+
+  it("excludes archive PRDs and ralph sessions from family-only PRD context by default", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "tasks/archive"), { recursive: true });
+    await writeFile(join(workspace, "tasks/archive/checkout-archive-prd.md"), `[PRD]
+# PRD: Archived Checkout PRD
+
+## Overview
+
+Archived checkout work.
+
+## User Stories
+
+### US-ARCHIVE: Archived checkout story
+
+**Description:** Archived story.
+
+**Acceptance Criteria:**
+- [x] Archived criterion.
+[/PRD]
+`);
+    await writeFile(join(workspace, "tasks/archive/checkout-archive-prd.json"), JSON.stringify({
+      name: "Archived Checkout PRD",
+      branchName: "ralph/checkout-archive",
+      description: "Archived checkout work.",
+      userStories: [
+        {
+          id: "US-ARCHIVE",
+          title: "Archived checkout story",
+          description: "Archived story.",
+          acceptanceCriteria: ["Archived criterion."],
+          priority: 1,
+          passes: true,
+          dependsOn: [],
+        },
+      ],
+    }, null, 2));
+
+    await cliDocs(["prd", "context", "checkout", "--root", workspace, "--family-only", "--json"]);
+    const result = parsedOutput<{
+      priorPrds: Array<{ path: string }>;
+      prdJsonCompletion: Array<{ path: string }>;
+      ralphSessionState: Array<{ path: string }>;
+    }>();
+    expect(result.priorPrds.map((prd) => prd.path)).not.toContain("tasks/archive/checkout-archive-prd.md");
+    expect(result.prdJsonCompletion.map((prd) => prd.path)).not.toContain("tasks/archive/checkout-archive-prd.json");
+    expect(result.ralphSessionState).toEqual([]);
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs([
+      "prd",
+      "context",
+      "checkout",
+      "--root",
+      workspace,
+      "--family-only",
+      "--include-session",
+      "--json",
+    ]);
+    const withSession = parsedOutput<{
+      ralphSessionState: Array<{ path: string; status?: string }>;
+    }>();
+    expect(withSession.ralphSessionState).toEqual([
+      expect.objectContaining({ path: ".ralph-tui/session-meta.json", status: "running" }),
+    ]);
   });
 
   it("prints text graph traversal with counts, truncation state, and edge reasons", async () => {
@@ -1788,6 +1984,66 @@ Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/
     expect(result.sessionDrift).toEqual([
       expect.objectContaining({ code: "ralph-session-prd-complete-session-running" }),
     ]);
+  });
+
+  it("limits PRD completion sync to the PRD family with --family-only", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "prd",
+      "sync-completion",
+      "--prd",
+      "tasks/checkout-prd.json",
+      "--root",
+      workspace,
+      "--family-only",
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      affectedDocs: Array<{ kind: string; stableId: string; path: string; reason: string }>;
+      counts: { sessionDrift: number };
+    }>();
+    expect(result.affectedDocs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "prd", stableId: "tasks/checkout-prd", reason: "family-only:role" }),
+        expect.objectContaining({ kind: "ralph-prd-json", stableId: "tasks/checkout-prd", reason: "target" }),
+      ]),
+    );
+    expect(result.affectedDocs).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stableId: "checkout-spec" }),
+        expect.objectContaining({ kind: "ralph-session" }),
+      ]),
+    );
+    expect(result.counts.sessionDrift).toBe(0);
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs([
+      "prd",
+      "sync-completion",
+      "--prd",
+      "tasks/checkout-prd.json",
+      "--root",
+      workspace,
+      "--family-only",
+      "--include-session",
+      "--json",
+    ]);
+    const withSession = parsedOutput<{
+      affectedDocs: Array<{ kind: string; path: string; reason: string }>;
+      counts: { sessionDrift: number };
+    }>();
+    expect(withSession.affectedDocs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "ralph-session",
+          path: ".ralph-tui/session-meta.json",
+          reason: "family-only:session",
+        }),
+      ]),
+    );
+    expect(withSession.counts.sessionDrift).toBe(1);
   });
 
   it("refuses PRD completion sync apply mode", async () => {

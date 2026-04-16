@@ -7,6 +7,10 @@ import type {
   DocumentMetadata,
   DocumentTask,
 } from "./types.js";
+import {
+  collectDocumentFamilyOnlyScope,
+  isArchivedPrdDocument,
+} from "./family-scope.js";
 import { buildDocumentGraphIndex } from "./graph-index.js";
 import { collectDocumentGraphTraversalDocuments } from "./graph-scope.js";
 import {
@@ -19,6 +23,7 @@ export interface PrdCompletionSyncOptions {
   readonly documents: readonly DocumentEnvelope[];
   readonly prdPath: string;
   readonly dryRunDefaulted: boolean;
+  readonly familyOnly?: boolean;
   readonly includeSession?: boolean;
 }
 
@@ -182,12 +187,14 @@ export async function previewPrdCompletionSync(
     ));
   }
 
-  const affectedEntries = collectAffectedDocuments(
-    options.documents,
-    options.rootDir,
-    prdDocument,
-    completedStories,
-  );
+  const affectedEntries = options.familyOnly === true
+    ? collectFamilyOnlyAffectedDocuments(options.documents, prdDocument, options.includeSession === true)
+    : collectAffectedDocuments(
+      options.documents,
+      options.rootDir,
+      prdDocument,
+      completedStories,
+    );
   const trackedAffectedEntries = options.includeSession === true
     ? affectedEntries
     : affectedEntries.filter((entry) => entry.document.kind !== "ralph-session");
@@ -364,6 +371,24 @@ function collectAffectedDocuments(
   return [...byKey.values()].toSorted((left, right) => compareDocuments(left.document, right.document));
 }
 
+function collectFamilyOnlyAffectedDocuments(
+  documents: readonly DocumentEnvelope[],
+  prdDocument: DocumentEnvelope,
+  includeSession: boolean,
+): readonly AffectedDocumentEntry[] {
+  const byKey = new Map<string, AffectedDocumentEntry>();
+  const scope = collectDocumentFamilyOnlyScope(documents, {
+    target: prdDocument,
+    includeSession,
+  });
+
+  for (const document of scope.documents) {
+    addAffected(byKey, document, scope.reasonByDocumentKey.get(documentKey(document)) ?? "family-only");
+  }
+
+  return [...byKey.values()].toSorted((left, right) => compareDocuments(left.document, right.document));
+}
+
 function addAffected(
   byKey: Map<string, AffectedDocumentEntry>,
   document: DocumentEnvelope,
@@ -392,11 +417,6 @@ function toAffectedDocument(entry: AffectedDocumentEntry): PrdCompletionAffected
     reason: entry.reason,
     metadata: entry.document.metadata,
   };
-}
-
-function isArchivedPrdDocument(document: DocumentEnvelope): boolean {
-  if (document.kind !== "prd" && document.kind !== "ralph-prd-json") return false;
-  return normalizePath(document.path).split("/").includes("archive");
 }
 
 async function collectOpenTodoCandidates(

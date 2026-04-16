@@ -28,6 +28,7 @@ sources:
   - packages/cli/src/lib/docs-control-plane/graph-traverse.ts
   - packages/cli/src/lib/docs-control-plane/graph-presets.ts
   - packages/cli/src/lib/docs-control-plane/graph-scope.ts
+  - packages/cli/src/lib/docs-control-plane/family-scope.ts
 ---
 
 # Docs Control Plane

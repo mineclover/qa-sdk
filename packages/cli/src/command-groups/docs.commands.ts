@@ -24,9 +24,11 @@ export const DOCS_COMMAND_DESCRIPTORS = [
   {
     id: "docs.status",
     path: ["status"],
-    usage: "qa-sdk docs status [doc-id|path] [--json]",
+    usage: "qa-sdk docs status [doc-id|path] [--family-only] [--include-session] [--json]",
     handlerKey: "docs.status",
     options: [
+      { flag: "--family-only", type: "boolean", description: "limit inventory scope to same-family role docs and direct module children" },
+      { flag: "--include-session", type: "boolean", description: "include transient .ralph-tui session state with --family-only" },
       { flag: "--json", type: "boolean", description: "emit structured JSON" },
       { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },
     ],
@@ -34,10 +36,12 @@ export const DOCS_COMMAND_DESCRIPTORS = [
   {
     id: "docs.collect",
     path: ["collect"],
-    usage: "qa-sdk docs collect <doc-id|path> [--graph] [--axis <csv>] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
+    usage: "qa-sdk docs collect <doc-id|path> [--graph] [--family-only] [--include-session] [--axis <csv>] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
     handlerKey: "docs.collect",
     options: [
       { flag: "--graph", type: "boolean", description: "use graph traversal; defaults to the family preset" },
+      { flag: "--family-only", type: "boolean", description: "limit inventory scope to same-family role docs and direct module children" },
+      { flag: "--include-session", type: "boolean", description: "include transient .ralph-tui session state with --family-only" },
       { flag: "--axis", valueHint: "<csv>", type: "string", description: "traversal axes, repeatable or comma-separated" },
       { flag: "--direction", valueHint: "out|in|both", type: "string", description: "traversal direction" },
       { flag: "--depth", valueHint: "<n>", type: "string", description: `non-negative traversal depth (default ${DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH}, max ${MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH})` },
@@ -89,9 +93,11 @@ export const DOCS_COMMAND_DESCRIPTORS = [
   {
     id: "docs.prd.context",
     path: ["prd", "context"],
-    usage: "qa-sdk docs prd context <topic|doc-id> [--json]",
+    usage: "qa-sdk docs prd context <topic|doc-id> [--family-only] [--include-session] [--json]",
     handlerKey: "docs.prd.context",
     options: [
+      { flag: "--family-only", type: "boolean", description: "limit authoring context to active family documents" },
+      { flag: "--include-session", type: "boolean", description: "include transient .ralph-tui session state with --family-only" },
       { flag: "--json", type: "boolean", description: "emit structured JSON" },
       { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },
     ],
@@ -121,11 +127,12 @@ export const DOCS_COMMAND_DESCRIPTORS = [
   {
     id: "docs.prd.sync-completion",
     path: ["prd", "sync-completion"],
-    usage: "qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--include-session] [--json]",
+    usage: "qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--family-only] [--include-session] [--json]",
     handlerKey: "docs.prd.sync-completion",
     options: [
       { flag: "--prd", valueHint: "<prd.json>", type: "string", description: "completed ralph PRD JSON path" },
       { flag: "--dry-run", type: "boolean", description: "preview docs update plan without writing files" },
+      { flag: "--family-only", type: "boolean", description: "limit completion candidates to active family documents" },
       { flag: "--include-session", type: "boolean", description: "include transient .ralph-tui session state in completion preview" },
       { flag: "--json", type: "boolean", description: "emit structured JSON" },
       { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },

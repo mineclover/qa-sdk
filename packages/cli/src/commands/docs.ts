@@ -15,6 +15,7 @@ import {
   buildDocumentGraphIndex,
   BROAD_DOCUMENT_GRAPH_TRAVERSAL_WARNING,
   CANONICAL_TRAVERSAL_AXES,
+  collectDocumentFamilyOnlyScope,
   collectDocumentGraphTraversalDocuments,
   createDefinitionMarkdownAdapter,
   createPrdMarkdownAdapter,
@@ -196,6 +197,11 @@ interface GraphDocumentScope {
   readonly reasonByDocumentKey: ReadonlyMap<string, string>;
 }
 
+interface DocumentCommandScopeOptions {
+  readonly familyOnly?: boolean;
+  readonly includeSession?: boolean;
+}
+
 interface PrdContextSource {
   readonly kind: string;
   readonly stableId: string;
@@ -310,15 +316,15 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
   {
     title: "Usage",
     lines: [
-      "qa-sdk docs status [doc-id|path] [--json]",
-      "qa-sdk docs collect <doc-id|path> [--graph] [--axis <csv>] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
+      "qa-sdk docs status [doc-id|path] [--family-only] [--include-session] [--json]",
+      "qa-sdk docs collect <doc-id|path> [--graph] [--family-only] [--include-session] [--axis <csv>] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
       "qa-sdk docs graph <target> [--axis <csv>] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
       "qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]",
       "qa-sdk docs drift [--prd <file>] [--include-session] [--json]",
-      "qa-sdk docs prd context <topic|doc-id> [--json]",
+      "qa-sdk docs prd context <topic|doc-id> [--family-only] [--include-session] [--json]",
       "qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]",
       "qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]",
-      "qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--include-session] [--json]",
+      "qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--family-only] [--include-session] [--json]",
       "qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run] [--json]",
     ],
   },
@@ -331,7 +337,8 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "--session <file>             ralph session metadata path",
       "--prd-json <file>            PRD JSON path for session comparison",
       "--prd <file>                 scope drift checks to a PRD markdown/JSON family",
-      "--include-session            include transient .ralph-tui session state in drift/completion checks",
+      "--family-only                limit inventory commands to same-family role docs and direct module children",
+      "--include-session            include transient .ralph-tui session state in family/drift/completion checks",
       "--axis <csv>                 graph traversal axes: composition, refinement, dependency, constraint, trace, source, evidence, role, context",
       "--direction out|in|both      graph traversal direction",
       `--depth <n>                  graph traversal depth (default ${DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH}, max ${MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH})`,
@@ -412,7 +419,7 @@ export async function cliDocs(args: string[]): Promise<void> {
   const documents = await collectAllDocuments(createDocsAdapters(options));
 
   if (parsed.command === "status") {
-    await cmdStatus(documents, options, parsed.positional[0], hasFlag(parsed.flags, "json"));
+    await cmdStatus(documents, options, parsed.positional[0], parsed.flags);
     return;
   }
 
@@ -559,9 +566,10 @@ async function cmdStatus(
   documents: readonly DocumentEnvelope[],
   options: DocsRuntimeOptions,
   target: string | undefined,
-  json: boolean,
+  flags: Readonly<Record<string, readonly string[]>>,
 ): Promise<void> {
-  const result = await buildStatusResult(documents, options.rootDir, target);
+  const json = hasFlag(flags, "json");
+  const result = await buildStatusResult(documents, options.rootDir, target, scopeOptionsFromFlags(flags));
   if (json) {
     printJson(result);
     return;
@@ -589,7 +597,13 @@ async function cmdCollect(
     return;
   }
 
-  const result = await buildCollectResult(documents, options.rootDir, target, graphInput);
+  const result = await buildCollectResult(
+    documents,
+    options.rootDir,
+    target,
+    graphInput,
+    scopeOptionsFromFlags(flags),
+  );
   if (json) {
     printJson(result);
     return;
@@ -789,6 +803,15 @@ function hasDocsGraphTraversalFlags(
   return [...COLLECT_GRAPH_FLAG_NAMES].some((name) => (flags[name]?.length ?? 0) > 0);
 }
 
+function scopeOptionsFromFlags(
+  flags: Readonly<Record<string, readonly string[]>>,
+): DocumentCommandScopeOptions {
+  return {
+    familyOnly: hasFlag(flags, "family-only"),
+    includeSession: hasFlag(flags, "include-session"),
+  };
+}
+
 function isStructuredDocsError(value: unknown): value is StructuredDocsError {
   return Boolean(
     value &&
@@ -922,10 +945,10 @@ async function cmdPrd(
   const target = positional.slice(1).join(" ").trim();
 
   if (action !== "context" && action !== "scaffold" && action !== "to-ralph-json" && action !== "sync-completion") {
-    console.error("Usage: qa-sdk docs prd context <topic|doc-id> [--json]");
+    console.error("Usage: qa-sdk docs prd context <topic|doc-id> [--family-only] [--include-session] [--json]");
     console.error("Usage: qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]");
     console.error("Usage: qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]");
-    console.error("Usage: qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--json]");
+    console.error("Usage: qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--family-only] [--include-session] [--json]");
     process.exitCode = 1;
     return;
   }
@@ -981,6 +1004,7 @@ async function cmdPrd(
       documents,
       prdPath,
       dryRunDefaulted: !hasFlag(flags, "dry-run"),
+      familyOnly: hasFlag(flags, "family-only"),
       includeSession: hasFlag(flags, "include-session"),
     });
     if (hasErrorDiagnostic(result.diagnostics)) {
@@ -1048,7 +1072,12 @@ async function cmdPrd(
     return;
   }
 
-  const context = await buildPrdAuthoringContext(documents, options.rootDir, target);
+  const context = await buildPrdAuthoringContext(
+    documents,
+    options.rootDir,
+    target,
+    scopeOptionsFromFlags(flags),
+  );
 
   if (action === "context") {
     if (json) {
@@ -1109,12 +1138,16 @@ async function buildStatusResult(
   documents: readonly DocumentEnvelope[],
   rootDir: string,
   target: string | undefined,
+  scopeOptions: DocumentCommandScopeOptions = {},
 ): Promise<StatusResult> {
   const resolved = target ? resolveDocument(documents, target) : undefined;
   const resolvedSource = !resolved && target && isPathLikeTarget(target)
     ? resolveSourceTarget(documents, target)
     : undefined;
-  const graphScope = resolved
+  const familyOnlyScope = resolved && scopeOptions.familyOnly === true
+    ? collectFamilyOnlyScope(documents, resolved, scopeOptions)
+    : undefined;
+  const graphScope = resolved && !familyOnlyScope
     ? collectGraphScopedDocuments(documents, rootDir, {
       target: statusTraversalTarget(target ?? resolved.document.stableId, resolved),
       axes: STATUS_TRAVERSAL_AXES,
@@ -1123,7 +1156,9 @@ async function buildStatusResult(
       includeContext: false,
     })
     : undefined;
-  const scopedDocuments = graphScope
+  const scopedDocuments = familyOnlyScope
+    ? familyOnlyScope.documents
+    : graphScope
     ? graphScope.documents
     : resolvedSource
       ? resolvedSource.documents
@@ -1164,22 +1199,28 @@ async function buildCollectResult(
   rootDir: string,
   target: string,
   graphInput: DocumentGraphTraversalInput | undefined,
+  scopeOptions: DocumentCommandScopeOptions = {},
 ): Promise<CollectResult> {
-  const status = await buildStatusResult(documents, rootDir, target);
+  const status = await buildStatusResult(documents, rootDir, target, scopeOptions);
   const resolved = resolveDocument(documents, target);
   const resolvedSource = !resolved && isPathLikeTarget(target)
     ? resolveSourceTarget(documents, target)
     : undefined;
-  const graphScope = graphInput
+  const familyOnlyScope = resolved && scopeOptions.familyOnly === true
+    ? collectFamilyOnlyScope(documents, resolved, scopeOptions, graphInput)
+    : undefined;
+  const graphScope = graphInput && !familyOnlyScope
     ? collectGraphScopedDocuments(documents, rootDir, graphInput)
-    : resolved
+    : resolved && !familyOnlyScope
       ? collectGraphScopedDocuments(documents, rootDir, {
         target: collectTraversalTarget(target, resolved),
         preset: "family",
         includeContext: false,
       })
       : undefined;
-  const scopedDocuments = graphScope
+  const scopedDocuments = familyOnlyScope
+    ? familyOnlyScope.documents
+    : graphScope
     ? graphScope.documents
     : resolvedSource
       ? resolvedSource.documents
@@ -1196,7 +1237,9 @@ async function buildCollectResult(
     sources: scopedDocuments.flatMap((document) => document.sources),
     tasks: scopedDocuments.flatMap((document) => document.tasks),
     evidence: scopedDocuments.flatMap((document) => document.evidence),
-    ...(graphScope && graphInput ? { graph: toDocsGraphCliResult(graphScope.traversal) } : {}),
+    ...(graphInput && (familyOnlyScope ?? graphScope)
+      ? { graph: toDocsGraphCliResult((familyOnlyScope ?? graphScope)!.traversal) }
+      : {}),
   };
 }
 
@@ -1204,9 +1247,13 @@ async function buildPrdAuthoringContext(
   documents: readonly DocumentEnvelope[],
   rootDir: string,
   target: string,
+  scopeOptions: DocumentCommandScopeOptions = {},
 ): Promise<PrdAuthoringContext> {
   const resolved = resolveDocument(documents, target);
-  const graphScope = resolved
+  const familyOnlyScope = resolved && scopeOptions.familyOnly === true
+    ? collectFamilyOnlyScope(documents, resolved, scopeOptions)
+    : undefined;
+  const graphScope = resolved && !familyOnlyScope
     ? collectGraphScopedDocuments(documents, rootDir, {
       target: prdContextTraversalTarget(target, resolved),
       axes: PRD_CONTEXT_TRAVERSAL_AXES,
@@ -1215,13 +1262,17 @@ async function buildPrdAuthoringContext(
       includeContext: false,
     })
     : undefined;
-  const relatedDocuments = graphScope
-    ? graphScope.documents
+  const relatedScope = familyOnlyScope ?? graphScope;
+  const relatedDocuments = relatedScope
+    ? relatedScope.documents
     : [];
   const topicTokens = prdTopicTokens(target, resolved?.document);
   const topicDocuments = resolved
     ? []
-    : documents.filter((document) => matchesPrdTopic(document, target, topicTokens));
+    : documents.filter((document) =>
+      matchesPrdTopic(document, target, topicTokens)
+      && prdTopicDocumentAllowed(document, scopeOptions)
+    );
   const scopedDocuments = uniqueDocuments([...relatedDocuments, ...topicDocuments])
     .toSorted(compareDocuments);
   const relatedKeys = new Set(relatedDocuments.map(documentKey));
@@ -1256,7 +1307,7 @@ async function buildPrdAuthoringContext(
       resolved?.document,
       relatedKeys,
       topicKeys,
-      graphScope?.reasonByDocumentKey,
+      relatedScope?.reasonByDocumentKey,
     )
   );
 
@@ -1289,6 +1340,19 @@ async function buildPrdAuthoringContext(
     evidence,
     diagnostics,
   };
+}
+
+function prdTopicDocumentAllowed(
+  document: DocumentEnvelope,
+  scopeOptions: DocumentCommandScopeOptions,
+): boolean {
+  if (scopeOptions.familyOnly !== true) return true;
+  if (document.kind === "ralph-session") return scopeOptions.includeSession === true;
+  if (document.kind === "prd" || document.kind === "ralph-prd-json") {
+    return !normalizePath(document.path).split("/").includes("archive")
+      && document.metadata.lifecycle !== "archived";
+  }
+  return true;
 }
 
 function toPrdContextSource(
@@ -1680,6 +1744,109 @@ function collectGraphScopedDocuments(
     documents: scope.documents,
     reasonByDocumentKey: scope.reasonByDocumentKey,
   };
+}
+
+function collectFamilyOnlyScope(
+  documents: readonly DocumentEnvelope[],
+  resolved: ResolvedDocument,
+  options: DocumentCommandScopeOptions,
+  graphInput?: DocumentGraphTraversalInput,
+): GraphDocumentScope {
+  const scope = collectDocumentFamilyOnlyScope(documents, {
+    target: resolved.document,
+    includeSession: options.includeSession === true,
+  });
+  return {
+    traversal: toFamilyOnlyTraversal(resolved.document, scope.documents, graphInput),
+    documents: scope.documents,
+    reasonByDocumentKey: scope.reasonByDocumentKey,
+  };
+}
+
+function toFamilyOnlyTraversal(
+  target: DocumentEnvelope,
+  documents: readonly DocumentEnvelope[],
+  graphInput: DocumentGraphTraversalInput | undefined,
+): DocumentGraphTraversalResult {
+  const targetNodeId = `document:${target.stableId}`;
+  const nodes = documents.map((document) => {
+    const nodeId = `document:${document.stableId}`;
+    const isTarget = documentKey(document) === documentKey(target);
+    return {
+      id: nodeId,
+      kind: familyOnlyGraphNodeKind(document),
+      label: titleOf(document),
+      stableId: document.stableId,
+      ...(document.familyId ? { familyId: document.familyId } : {}),
+      path: document.path,
+      metadata: document.metadata,
+      reasons: [],
+      depth: isTarget ? 0 : 1,
+      pathFromTarget: {
+        targetNodeId,
+        nodeId,
+        depth: isTarget ? 0 : 1,
+        nodeIds: isTarget ? [targetNodeId] : [targetNodeId, nodeId],
+        edgeIds: [],
+        steps: [],
+      },
+    };
+  });
+
+  return {
+    input: {
+      target: graphInput?.target ?? target.stableId,
+      axes: graphInput?.axes ?? ["role", "composition"],
+      direction: graphInput?.direction ?? "both",
+      depth: graphInput?.depth ?? 1,
+      limit: graphInput?.limit ?? documents.length,
+      includeContext: graphInput?.includeContext ?? false,
+      ...(graphInput?.preset ? { preset: graphInput.preset } : {}),
+    },
+    targetResolution: {
+      target: graphInput?.target ?? target.stableId,
+      lookupKind: "stable-id",
+      indexed: true,
+      nodes: [],
+      diagnostics: [],
+    },
+    targetNodeId,
+    nodes,
+    edges: [],
+    paths: [],
+    roleGroups: [],
+    missingRoles: [],
+    nodeCount: nodes.length,
+    edgeCount: 0,
+    truncated: false,
+    omittedCounts: {
+      nodes: 0,
+      edges: 0,
+      depth: 0,
+    },
+    omittedCount: 0,
+    diagnostics: [],
+  };
+}
+
+function familyOnlyGraphNodeKind(
+  document: DocumentEnvelope,
+): DocumentGraphTraversalResult["nodes"][number]["kind"] {
+  if (document.kind === "knowledge" || document.metadata.type === "knowledge") return "knowledge";
+  switch (document.kind) {
+    case "spec":
+    case "todo":
+    case "plan":
+    case "rule":
+    case "test":
+    case "memo":
+    case "prd":
+    case "ralph-prd-json":
+    case "ralph-session":
+      return document.kind;
+    default:
+      return "document";
+  }
 }
 
 function statusTraversalTarget(

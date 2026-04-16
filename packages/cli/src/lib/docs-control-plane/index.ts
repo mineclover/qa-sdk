@@ -67,6 +67,11 @@ export {
   collectDocumentGraphTraversalDocuments,
   defaultDocumentGraphTraversalNodeReason,
 } from "./graph-scope.js";
+export {
+  collectDocumentFamilyOnlyScope,
+  isArchivedPrdDocument,
+  isTransientSessionDocument,
+} from "./family-scope.js";
 
 export type {
   AuthoredLinkType,
@@ -113,6 +118,10 @@ export type {
 export type {
   DocumentGraphTraversalDocumentScope,
 } from "./graph-scope.js";
+export type {
+  DocumentFamilyOnlyScope,
+  DocumentFamilyOnlyScopeOptions,
+} from "./family-scope.js";
 export type {
   DocumentAdapter,
   DocumentAdapterCapabilities,

@@ -48,6 +48,15 @@ nodes hidden by caps. Text output prints the same truncation detail. The
 `context` axis and free-text search are intentionally broad, so text output
 warns operators to keep `--depth` and `--limit` tight or choose stricter axes.
 
+`--family-only` is an inventory scope, not a graph preset. On `docs status`,
+`docs collect`, `docs prd context`, and `docs prd sync-completion`, it limits
+the document set to same-family role documents plus direct `contains` children
+when the target document is a module. Archive PRDs are excluded from this active
+family scope unless explicitly targeted, and `.ralph-tui` session state remains
+out of scope unless `--include-session` is also passed. `docs collect --graph
+--family-only` returns a compact graph summary for the family-only document set;
+omitting `--family-only` keeps the normal graph traversal behavior.
+
 Source traversal is powered by docs control-plane adapters (`DocumentEnvelope`
 sources, metadata source refs, PRD/session paths, and artifact evidence refs).
 It is intentionally broader than, and distinct from, `qa-sdk def find-by-file`,

@@ -1,0 +1,451 @@
+{
+  "name": "Docs Topdown Lifecycle Inventory And Alignment",
+  "description": "This PRD prepares a topdown lifecycle alignment pass for the qa-sdk document system. The goal is to make `qa-sdk docs` reliable enough for repository-wide spec/plan/todo/rule/cases/test/memo alignment by removing known command noise first, then inventorying active document families from system/module entry points.\n\nThe first phase focuses on noise discovered during real command use:\n\n- `docs collect ... --graph --preset family` can become too broad for inventory work.\n- TODO follow-up output lacks parent/depth information for nested checklist items.\n- `docs prd scaffold` displays repo-external output paths as awkward relative paths.\n\nAfter those are stabilized, the PRD builds a topdown role matrix for active families and applies the alignment to the core families: `docs-control-plane`, `operational-ontology-registry-allocation`, `programming-artifact-ontology-system`, and `authorization-ontology-system`.",
+  "branchName": "ralph/docs-topdown-lifecycle-inventory-and-alignment",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add Family-Only Scope For Inventory Commands",
+      "description": "As a docs operator, I want a narrow family-only mode so that inventory commands do not pull broad graph neighbors when I only need the active document family.",
+      "acceptanceCriteria": [
+        "Add a `--family-only` option to the docs command surface where it is relevant for `status`, `collect`, `prd context`, or `prd sync-completion`.",
+        "Family-only mode includes same-family role documents and directly contained module/leaf docs when the target is a module.",
+        "Family-only mode excludes archive PRDs by default.",
+        "Family-only mode excludes transient `.ralph-tui` session state unless `--include-session` is also provided.",
+        "`docs collect programming-artifact-ontology-system --graph --preset family --family-only --json` returns a bounded inventory-oriented scope.",
+        "Existing broad graph traversal remains available without `--family-only`.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs status authorization-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Expose TODO Hierarchy In Follow-Up Candidates",
+      "description": "As a maintainer, I want TODO follow-up candidates to preserve parent/child context so that parent work items and child checklist items are not indistinguishable.",
+      "acceptanceCriteria": [
+        "`docs status ... --json` exposes `nextFollowUps[].pointer`.",
+        "`docs status ... --json` exposes a stable hierarchy field such as `depth`, `parentTitle`, or `headingPath`.",
+        "Parent checklist items and nested child checklist items can be distinguished in JSON output.",
+        "Text status output remains concise and does not dump every child item by default.",
+        "Tests cover a TODO document with parent and child checklist items under an `Actionable` heading.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs status authorization-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-003",
+      "title": "Improve Repo-External PRD Scaffold Output Paths",
+      "description": "As a planner, I want PRD scaffold output paths outside the repository to display clearly so that smoke tests and temporary output paths are not confusing.",
+      "acceptanceCriteria": [
+        "`docs prd scaffold --output <repo-relative-path>` continues to report a repository-relative path.",
+        "`docs prd scaffold --output <absolute-path-outside-repo>` reports an absolute path rather than a `../../..` relative path.",
+        "JSON output and text output use the same path normalization rule.",
+        "Existing write behavior remains unchanged.",
+        "Tests cover both repo-relative and repo-external output paths.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs status authorization-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-004",
+      "title": "Define Topdown Inventory Scope And Entry Points",
+      "description": "As a documentation operator, I want the topdown inventory scope and entry points fixed so that cleanup starts from system/module boundaries instead of stale leaf files.",
+      "acceptanceCriteria": [
+        "Define active inventory scope as `docs/specs` plus `tasks` PRD markdown/JSON.",
+        "Exclude `tasks/archive/**` and archived docs from active inventory unless explicitly targeted.",
+        "Identify active entry/group/module roots for at least `definition-catalog`, `docs-control-plane`, `operational-ontology-system`, `operational-ontology-registry-allocation`, `programming-artifact-ontology-system`, and `authorization-ontology-system`.",
+        "Document the traversal order: entry/group -> module -> role documents -> leaf/source evidence.",
+        "Record the scope and ordering policy in `docs/specs/definition-catalog/docs-control-plane.plan.md` or an adjacent lifecycle inventory memo.",
+        "Do not move files to archive or memo in this story.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs status authorization-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001",
+        "US-002",
+        "US-003"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Build Document Role Matrix Inventory",
+      "description": "As a maintainer, I want each active family to show which role documents exist so that missing `todo`, `plan`, `rule`, `cases`, `test`, or `memo` files are visible.",
+      "acceptanceCriteria": [
+        "Add or extend docs control-plane logic to compute a role matrix per family.",
+        "Role matrix includes at least `spec`, `plan`, `todo`, `rule`, `cases`, `test`, `memo`, `knowledge`, `prd`, and `ralph-prd-json`.",
+        "Role matrix distinguishes same-family files from graph-linked composition/refinement/trace documents.",
+        "Role matrix excludes archive PRDs from active role coverage by default.",
+        "`docs status <doc-id> --json` exposes role coverage or a role summary for the scoped family.",
+        "Add tests covering a family with present and missing role documents.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs status authorization-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-004"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Standardize TODO Heading Categories",
+      "description": "As a documentation maintainer, I want open TODO items categorized by section heading so that `[ ]` can remain a checkbox while the heading expresses operational state.",
+      "acceptanceCriteria": [
+        "Standardize canonical TODO headings:",
+        "`Completed — 완료 기록`",
+        "`Actionable — 실행 가능`",
+        "`Deferred — 조건부 대기`",
+        "`Parking Lot — 후보 보관`",
+        "Update `docs-control-plane.todo.md` to use the canonical headings consistently.",
+        "Update `programming-artifact-ontology-todo.todo.md` to categorize remaining open items.",
+        "Update `operational-ontology-registry-allocation.todo.md` to categorize REST/remote activation as `Deferred`.",
+        "Review `authorization-management-hardening.todo.md` and categorize at least the top-level groups without changing the technical meaning of items.",
+        "`docs status ... --json` continues to expose `nextFollowUps[].category` for categorized TODO items.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs status authorization-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "Detect Completed TODO And PRD Record Candidates",
+      "description": "As a documentation operator, I want completed TODO and PRD markdown records identified without automatically moving them so that archival decisions remain explicit.",
+      "acceptanceCriteria": [
+        "Inventory detects `.todo.md` files with zero open checkboxes and at least one completed checkbox.",
+        "Inventory detects PRD markdown files whose paired PRD JSON has all stories passing.",
+        "Completed records are reported as `completed-record` or an equivalent non-actionable status.",
+        "No files are moved to archive or converted to `.memo.md`.",
+        "Existing completed TODO records such as event taxonomy rollout and RLSC text occupancy are listed in the report.",
+        "Tests or fixture coverage verify completed records do not become actionable follow-ups.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs status authorization-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-005",
+        "US-006"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "Improve PRD Completion Sync Scope Precision",
+      "description": "As a planner, I want PRD completion sync to use topdown family and role context so that completion candidates are relevant to the active family rather than broad trace matches.",
+      "acceptanceCriteria": [
+        "`docs prd sync-completion` excludes archive PRD documents from active affected docs by default.",
+        "`--family-only` limits completion candidates to the explicit PRD family and directly linked docs.",
+        "Candidate reasons distinguish `target`, `role`, `composition`, `trace`, `source`, and `evidence`.",
+        "Completed markdown PRDs paired with complete JSON do not become open work.",
+        "Add tests for archive exclusion and role/family scoping.",
+        "Existing `--include-session` behavior remains opt-in for transient `.ralph-tui` state.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs status authorization-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001",
+        "US-005",
+        "US-007"
+      ]
+    },
+    {
+      "id": "US-009",
+      "title": "Align Docs Control Plane Family",
+      "description": "As a maintainer, I want the first topdown pass applied to `docs-control-plane` so that the inventory starts with the control-plane family that owns this workflow.",
+      "acceptanceCriteria": [
+        "Review and align `docs-control-plane` role documents.",
+        "Record existing roles, missing roles, actionable TODO count, deferred TODO count, parking-lot TODO count, and completed record candidates.",
+        "Make only conservative document updates that clarify state.",
+        "Do not invent new implementation scope.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs status authorization-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-004",
+        "US-005",
+        "US-006",
+        "US-007",
+        "US-008"
+      ]
+    },
+    {
+      "id": "US-010",
+      "title": "Align Operational Ontology Registry Allocation Family",
+      "description": "As a maintainer, I want the topdown pass applied to `operational-ontology-registry-allocation` so that registry lifecycle follow-ups are separated from completed local CLI work.",
+      "acceptanceCriteria": [
+        "Review and align `operational-ontology-registry-allocation` role documents.",
+        "Confirm REST activation and remote activation service remain `Deferred`.",
+        "Record existing roles, missing roles, actionable TODO count, deferred TODO count, parking-lot TODO count, and completed record candidates.",
+        "Make only conservative document updates that clarify state.",
+        "Do not invent new implementation scope.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs status authorization-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-009"
+      ]
+    },
+    {
+      "id": "US-011",
+      "title": "Align Programming Artifact Ontology Family",
+      "description": "As a maintainer, I want the topdown pass applied to `programming-artifact-ontology-system` so that conditional provider and simulation follow-ups are correctly classified.",
+      "acceptanceCriteria": [
+        "Review and align `programming-artifact-ontology-system` role documents.",
+        "Confirm conditional provider, remote quality, and registry lifecycle items are not categorized as immediate actionable work unless their trigger condition is met.",
+        "Record existing roles, missing roles, actionable TODO count, deferred TODO count, parking-lot TODO count, and completed record candidates.",
+        "Make only conservative document updates that clarify state.",
+        "Do not invent new implementation scope.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs status authorization-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-009"
+      ]
+    },
+    {
+      "id": "US-012",
+      "title": "Align Authorization Ontology Family",
+      "description": "As a maintainer, I want the topdown pass applied to `authorization-ontology-system` so that hardening follow-ups are visible and categorized before execution planning.",
+      "acceptanceCriteria": [
+        "Review and align `authorization-ontology-system` role documents.",
+        "Categorize `authorization-management-hardening.todo.md` top-level groups without changing their technical meaning.",
+        "Record existing roles, missing roles, actionable TODO count, deferred TODO count, parking-lot TODO count, and completed record candidates.",
+        "Make only conservative document updates that clarify state.",
+        "Do not invent new implementation scope.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs status authorization-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-009"
+      ]
+    },
+    {
+      "id": "US-013",
+      "title": "Add Topdown Lifecycle Inventory Report",
+      "description": "As a documentation operator, I want a generated or maintained inventory report so that future cleanup PRDs can be prioritized from a stable source.",
+      "acceptanceCriteria": [
+        "Create an inventory report under `docs/specs/definition-catalog/` or `tasks/`.",
+        "Report includes role matrix summary for each prioritized family.",
+        "Report includes open TODO category counts.",
+        "Report includes completed record candidates.",
+        "Report includes source-map gap count where available.",
+        "Report recommends next PRD candidates in priority order.",
+        "The report is generated or manually reproducible from documented CLI commands.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs status authorization-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-009",
+        "US-010",
+        "US-011",
+        "US-012"
+      ]
+    },
+    {
+      "id": "US-014",
+      "title": "Update Docs Control Plane Spec And README",
+      "description": "As a future maintainer, I want the docs control-plane spec and README to explain topdown lifecycle inventory so that this process is repeatable.",
+      "acceptanceCriteria": [
+        "Update `docs/specs/definition-catalog/docs-control-plane.spec.md` with the topdown inventory concept.",
+        "Update `packages/cli/src/lib/docs-control-plane/README.md` if command behavior or JSON output changes.",
+        "Document that checkbox state remains binary and operational state comes from section headings.",
+        "Document default exclusion of archive and transient session state.",
+        "Document how to run the inventory and validation commands.",
+        "Documentation does not claim automatic archival or automatic TODO promotion.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs status authorization-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-013"
+      ]
+    },
+    {
+      "id": "US-015",
+      "title": "Verify Topdown Inventory Operationally",
+      "description": "As a reviewer, I want command evidence showing the topdown lifecycle inventory works on real repository data.",
+      "acceptanceCriteria": [
+        "Run `docs status docs-control-plane --json` and confirm `nextFollowUps` includes categorized actionable candidates.",
+        "Run `docs status operational-ontology-registry-allocation --json` and confirm REST/remote activation are categorized as deferred.",
+        "Run `docs status programming-artifact-ontology-system --json` and confirm conditional open items are not treated as actionable unless under an actionable heading.",
+        "Run `docs status authorization-ontology-system --json` and confirm hardening follow-ups are visible.",
+        "Run at least two `docs drift --prd ... --json` checks and confirm no default transient session drift.",
+        "Run `def validate` after `def sync`.",
+        "Record verification results in the PRD notes or the inventory report.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs status authorization-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-014"
+      ]
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-16T13:35:53.584Z"
+  }
+}
