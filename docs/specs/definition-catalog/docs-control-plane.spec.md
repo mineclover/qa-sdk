@@ -109,7 +109,7 @@ Supported adapters:
 - `definition-markdown`: `.spec.md`, `.todo.md`, `.plan.md`, `.test.md`, `.memo.md`, `.rule.md`를 읽어 `def.*`, source refs, marker sections, links, diagnostics를 envelope로 투영한다.
 - `prd-markdown`: `[PRD]...[/PRD]` markdown block의 overview, goals, quality gates, user stories, acceptance criteria, requirements, non-goals, open questions를 source-owned metadata/task로 보존한다.
 - `ralph-prd-json`: ralph-tui가 소비하는 flat root JSON을 compatibility surface로 읽고 `userStories[]`를 tasks로 투영한다.
-- `ralph-session`: `.ralph-tui/session-meta.json`을 읽어 PRD JSON story state와 session status/count drift를 diagnostic으로 낸다.
+- `ralph-session`: `.ralph-tui/session-meta.json`을 transient local session envelope로 읽을 수 있다. 기본 drift/completion 검사는 repo-tracked SSOT만 대상으로 하며, session status/count drift는 `--include-session`이 명시될 때만 운영 신호로 포함한다.
 - `artifact-evidence`: local artifact registry JSON을 evidence envelope로 읽고 source/test/evidence relation을 보존한다.
 
 Adapters are read-only. Adapter가 source markdown, PRD JSON, session file, artifact registry를 수정하거나, 다른 source schema로 변환하거나, source vocabulary를 neutral enum으로 치환하지 않는다.
@@ -128,6 +128,7 @@ PRD markdown이 authoring source다. Ralph PRD JSON은 ralph-tui 실행 호환 a
 기본 정책은 no hidden write다.
 
 - `docs status`, `docs collect`, `docs search`, `docs drift`, `docs prd context`는 read-only다.
+- `docs drift`와 `docs prd sync-completion`의 기본값은 repo-tracked SSOT만 검사한다. ignored local runtime state인 `.ralph-tui/session-meta.json`은 `--include-session`이 있을 때만 포함한다.
 - `docs transform metadata`는 dry-run이 기본이고 현재 `--apply`를 지원하지 않는다. 결과는 projected frontmatter와 `DocumentChangeSet` preview이며 source 파일은 바꾸지 않는다.
 - `docs prd sync-completion`은 dry-run only다. `passes: true` story는 후보 문서와 blocked/eligible promotion state를 계산하지만, TODO 체크나 spec promotion을 자동 반영하지 않는다.
 - `docs prd scaffold`는 explicit `--output <file>`이 있을 때 markdown skeleton만 작성한다. ralph PRD JSON은 만들지 않는다.

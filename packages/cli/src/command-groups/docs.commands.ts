@@ -77,10 +77,11 @@ export const DOCS_COMMAND_DESCRIPTORS = [
   {
     id: "docs.drift",
     path: ["drift"],
-    usage: "qa-sdk docs drift [--prd <file>] [--json]",
+    usage: "qa-sdk docs drift [--prd <file>] [--include-session] [--json]",
     handlerKey: "docs.drift",
     options: [
       { flag: "--prd", valueHint: "<file>", type: "string", description: "scope drift checks to a PRD markdown/JSON family" },
+      { flag: "--include-session", type: "boolean", description: "include transient .ralph-tui session state in drift checks" },
       { flag: "--json", type: "boolean", description: "emit structured JSON" },
       { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },
     ],
@@ -120,11 +121,12 @@ export const DOCS_COMMAND_DESCRIPTORS = [
   {
     id: "docs.prd.sync-completion",
     path: ["prd", "sync-completion"],
-    usage: "qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--json]",
+    usage: "qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--include-session] [--json]",
     handlerKey: "docs.prd.sync-completion",
     options: [
       { flag: "--prd", valueHint: "<prd.json>", type: "string", description: "completed ralph PRD JSON path" },
       { flag: "--dry-run", type: "boolean", description: "preview docs update plan without writing files" },
+      { flag: "--include-session", type: "boolean", description: "include transient .ralph-tui session state in completion preview" },
       { flag: "--json", type: "boolean", description: "emit structured JSON" },
       { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },
     ],

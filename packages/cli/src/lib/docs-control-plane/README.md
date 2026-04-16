@@ -89,9 +89,10 @@ vocabulary를 추가하지 않는다.
   `passes`, missing `dependsOn` 같은 schema anti-pattern은 diagnostics로
   드러내고, `userStories[]`는 `passes`, dependencies, notes,
   completion notes, quality gates를 가진 control-plane tasks로 매핑한다.
-- `ralph-session`: `.ralph-tui/session-meta.json`을 session envelope로 읽고,
-  연결된 PRD JSON의 story pass state와 session status/count 사이의 drift를
-  diagnostics로 보고한다.
+- `ralph-session`: `.ralph-tui/session-meta.json`을 transient session envelope로
+  읽을 수 있다. 연결된 PRD JSON의 story pass state와 session status/count
+  drift diagnostics는 `docs drift --include-session` 또는
+  `docs prd sync-completion --include-session`에서만 운영 신호로 포함한다.
 
 ## Command-layer workflows
 
@@ -105,8 +106,10 @@ vocabulary를 추가하지 않는다.
   materialize한다. PRD JSON은 ralph-tui compatibility adapter target일 뿐 core
   document model이 아니며, 작성 전 target adapter validation을 통과해야 한다.
 - `docs prd sync-completion`: completed ralph PRD JSON을 읽어 TODO/spec/roadmap/
-  scenario matrix 후보를 dry-run으로 계산한다. `passes: true`는 candidate signal이고
-  source/test/evidence가 없는 TODO/spec promotion은 blocked로 남긴다.
+  scenario matrix 후보를 dry-run으로 계산한다. 기본값은 repo-tracked 문서/PRD
+  state만 보며, `.ralph-tui` session state는 `--include-session`일 때만 포함한다.
+  `passes: true`는 candidate signal이고 source/test/evidence가 없는 TODO/spec
+  promotion은 blocked로 남긴다.
 - `docs transform metadata`: definition markdown frontmatter만 대상으로 dry-run
   projection을 만든다. 지원 rule은 `select|match`, `set.lifecycle`, `set.level`,
   `set.svc`, `set.sources`, `tags.add/remove`, `links.add/remove`,

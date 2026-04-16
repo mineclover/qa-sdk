@@ -19,6 +19,7 @@ export interface PrdCompletionSyncOptions {
   readonly documents: readonly DocumentEnvelope[];
   readonly prdPath: string;
   readonly dryRunDefaulted: boolean;
+  readonly includeSession?: boolean;
 }
 
 export interface PrdCompletionStorySummary {
@@ -187,8 +188,11 @@ export async function previewPrdCompletionSync(
     prdDocument,
     completedStories,
   );
-  const affectedDocuments = affectedEntries.map(toAffectedDocument);
-  const affectedDocs = affectedEntries.map((entry) => entry.document);
+  const trackedAffectedEntries = options.includeSession === true
+    ? affectedEntries
+    : affectedEntries.filter((entry) => entry.document.kind !== "ralph-session");
+  const affectedDocuments = trackedAffectedEntries.map(toAffectedDocument);
+  const affectedDocs = trackedAffectedEntries.map((entry) => entry.document);
   const openTodoCandidates = await collectOpenTodoCandidates(
     options.rootDir,
     affectedDocs,
@@ -206,10 +210,12 @@ export async function previewPrdCompletionSync(
     affectedDocs,
     completedStories,
   );
-  const sessionDrift = affectedDocs
-    .filter((document) => document.kind === "ralph-session")
-    .flatMap((document) => document.diagnostics)
-    .filter((item) => item.code.startsWith("ralph-session-"));
+  const sessionDrift = options.includeSession === true
+    ? affectedDocs
+      .filter((document) => document.kind === "ralph-session")
+      .flatMap((document) => document.diagnostics)
+      .filter((item) => item.code.startsWith("ralph-session-"))
+    : [];
   const blockedPromotions = openTodoCandidates
     .filter((candidate) => candidate.promotionState === "blocked").length
     + specUpdateCandidates.filter((candidate) => candidate.promotionState === "blocked").length;

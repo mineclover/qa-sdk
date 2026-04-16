@@ -310,11 +310,11 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "qa-sdk docs collect <doc-id|path> [--graph] [--axis <csv>] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
       "qa-sdk docs graph <target> [--axis <csv>] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
       "qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]",
-      "qa-sdk docs drift [--prd <file>] [--json]",
+      "qa-sdk docs drift [--prd <file>] [--include-session] [--json]",
       "qa-sdk docs prd context <topic|doc-id> [--json]",
       "qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]",
       "qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]",
-      "qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--json]",
+      "qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--include-session] [--json]",
       "qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run] [--json]",
     ],
   },
@@ -327,6 +327,7 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "--session <file>             ralph session metadata path",
       "--prd-json <file>            PRD JSON path for session comparison",
       "--prd <file>                 scope drift checks to a PRD markdown/JSON family",
+      "--include-session            include transient .ralph-tui session state in drift/completion checks",
       "--axis <csv>                 graph traversal axes: composition, refinement, dependency, constraint, trace, source, evidence, role, context",
       "--direction out|in|both      graph traversal direction",
       `--depth <n>                  graph traversal depth (default ${DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH}, max ${MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH})`,
@@ -422,7 +423,7 @@ export async function cliDocs(args: string[]): Promise<void> {
   }
 
   if (parsed.command === "drift") {
-    await cmdDrift(documents, options, hasFlag(parsed.flags, "json"));
+    await cmdDrift(documents, options, parsed.flags);
     return;
   }
 
@@ -822,13 +823,15 @@ function toDocsGraphCliResult(
 async function cmdDrift(
   documents: readonly DocumentEnvelope[],
   options: DocsRuntimeOptions,
-  json: boolean,
+  flags: Readonly<Record<string, readonly string[]>>,
 ): Promise<void> {
   const result = await detectDocumentDrift(documents, {
     rootDir: options.rootDir,
     ...(options.prdPath ? { prdPath: options.prdPath } : {}),
+    includeSession: hasFlag(flags, "include-session"),
   });
 
+  const json = hasFlag(flags, "json");
   if (json) {
     printJson(result);
     return;
@@ -974,6 +977,7 @@ async function cmdPrd(
       documents,
       prdPath,
       dryRunDefaulted: !hasFlag(flags, "dry-run"),
+      includeSession: hasFlag(flags, "include-session"),
     });
     if (hasErrorDiagnostic(result.diagnostics)) {
       process.exitCode = 1;

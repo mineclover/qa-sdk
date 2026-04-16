@@ -39,6 +39,7 @@ export interface DocumentDriftResult {
 export interface DetectDocumentDriftOptions {
   readonly rootDir: string;
   readonly prdPath?: string;
+  readonly includeSession?: boolean;
 }
 
 interface DriftContext {
@@ -98,7 +99,9 @@ export async function detectDocumentDrift(
     issues: [],
   };
 
-  detectRalphSessionDriftDiagnostics(context);
+  if (options.includeSession === true) {
+    detectRalphSessionDriftDiagnostics(context);
+  }
   detectPrdMarkdownUncheckedAfterJsonComplete(context);
   await detectOpenTodosDescribedAsComplete(context);
   await detectScenarioMatrixTitleDrift(context);

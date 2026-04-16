@@ -1091,9 +1091,9 @@ Track inventory scenario coverage.
         warning: Array<{ code: string; path: string; remediation: string; metadata: Record<string, unknown> }>;
       };
     }>();
-    expect(result.counts.total).toBeGreaterThanOrEqual(6);
+    expect(result.counts.total).toBeGreaterThanOrEqual(5);
     expect(result.counts.error).toBeGreaterThanOrEqual(2);
-    expect(result.counts.warning).toBeGreaterThanOrEqual(4);
+    expect(result.counts.warning).toBeGreaterThanOrEqual(3);
     expect(result.issuesBySeverity.error).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -1110,11 +1110,6 @@ Track inventory scenario coverage.
     );
     expect(result.issuesBySeverity.warning).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          code: "ralph-session-prd-complete-session-running",
-          path: ".ralph-tui/session-meta.json",
-          remediation: expect.stringContaining("Stop or archive"),
-        }),
         expect.objectContaining({
           code: "prd-markdown-unchecked-after-json-complete",
           path: "tasks/checkout-prd.md",
@@ -1137,6 +1132,34 @@ Track inventory scenario coverage.
         }),
       ]),
     );
+    expect(result.issuesBySeverity.warning).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "ralph-session-prd-complete-session-running",
+        }),
+      ]),
+    );
+  });
+
+  it("includes transient ralph session drift only when requested", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs(["drift", "--root", workspace, "--include-session", "--json"]);
+
+    const result = parsedOutput<{
+      issuesBySeverity: {
+        warning: Array<{ code: string; path: string; remediation: string }>;
+      };
+    }>();
+    expect(result.issuesBySeverity.warning).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "ralph-session-prd-complete-session-running",
+          path: ".ralph-tui/session-meta.json",
+          remediation: expect.stringContaining("Stop or archive"),
+        }),
+      ]),
+    );
   });
 
   it("scopes docs drift to a PRD family when --prd is provided", async () => {
@@ -1154,8 +1177,12 @@ Track inventory scenario coverage.
     expect(result.scope.documents).toBeGreaterThanOrEqual(3);
     expect(result.issues).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ code: "ralph-session-prd-complete-session-running" }),
         expect.objectContaining({ code: "prd-markdown-unchecked-after-json-complete" }),
+      ]),
+    );
+    expect(result.issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "ralph-session-prd-complete-session-running" }),
       ]),
     );
     expect(result.issues).not.toEqual(
@@ -1555,9 +1582,9 @@ Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/
       specUpdateCandidates: expect.any(Number),
       roadmapUpdateCandidates: expect.any(Number),
       scenarioMatrixUpdateCandidates: expect.any(Number),
-      sessionDrift: 1,
+      sessionDrift: 0,
     });
-    expect(result.counts.affectedDocs).toBeGreaterThanOrEqual(6);
+    expect(result.counts.affectedDocs).toBeGreaterThanOrEqual(5);
     expect(result.completedStories).toEqual([
       expect.objectContaining({ id: "US-001", title: "Complete checkout docs" }),
     ]);
@@ -1566,7 +1593,11 @@ Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/
         expect.objectContaining({ kind: "spec", stableId: "checkout-spec", reason: "graph:trace" }),
         expect.objectContaining({ kind: "todo", stableId: "checkout-todo", reason: "graph:trace" }),
         expect.objectContaining({ kind: "plan", stableId: "checkout-plan", reason: "graph:trace" }),
-        expect.objectContaining({ kind: "ralph-session", path: ".ralph-tui/session-meta.json", reason: "graph:trace" }),
+      ]),
+    );
+    expect(result.affectedDocs).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "ralph-session", path: ".ralph-tui/session-meta.json" }),
       ]),
     );
     expect(result.affectedDocs.map((document) => document.reason)).not.toEqual(
@@ -1607,9 +1638,7 @@ Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/
         }),
       ]),
     );
-    expect(result.sessionDrift).toEqual([
-      expect.objectContaining({ code: "ralph-session-prd-complete-session-running" }),
-    ]);
+    expect(result.sessionDrift).toEqual([]);
     await expect(readFile(specPath, "utf8")).resolves.toBe(beforeSpec);
     await expect(readFile(todoPath, "utf8")).resolves.toBe(beforeTodo);
     await expect(readFile(planPath, "utf8")).resolves.toBe(beforePlan);
@@ -1666,6 +1695,36 @@ Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/
     await expect(readFile(specPath, "utf8")).resolves.toBe(beforeSpec);
     await expect(readFile(todoPath, "utf8")).resolves.toBe(beforeTodo);
     expect(process.exitCode).toBeUndefined();
+  });
+
+  it("includes ralph session state in completion sync only when requested", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "prd",
+      "sync-completion",
+      "--prd",
+      "tasks/checkout-prd.json",
+      "--root",
+      workspace,
+      "--include-session",
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      counts: { sessionDrift: number };
+      affectedDocs: Array<{ kind: string; path: string }>;
+      sessionDrift: Array<{ code: string }>;
+    }>();
+    expect(result.counts.sessionDrift).toBe(1);
+    expect(result.affectedDocs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "ralph-session", path: ".ralph-tui/session-meta.json" }),
+      ]),
+    );
+    expect(result.sessionDrift).toEqual([
+      expect.objectContaining({ code: "ralph-session-prd-complete-session-running" }),
+    ]);
   });
 
   it("refuses PRD completion sync apply mode", async () => {
