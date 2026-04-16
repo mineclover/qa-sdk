@@ -25,6 +25,14 @@ Authored link vocabulary remains source-owned. Values like `contains`,
 canonical axes only for traversal. Presets such as `family`, `impact`, and
 `prd-completion` are convenience views over those axes, not new axes.
 
+| Preset | Axes | Direction | Depth | Context |
+|--------|------|-----------|-------|---------|
+| `family` | `role`, `composition` | `both` | 2 | excluded |
+| `implementation` | `trace`, `source`, `evidence` | `both` | 2 | excluded |
+| `review` | `dependency`, `constraint`, `evidence`, `role` | `both` | 2 | excluded |
+| `impact` | `dependency`, `trace`, `source`, `evidence` | `in` | 2 | excluded |
+| `prd-completion` | `trace`, `source`, `evidence` | `both` | 2 | excluded |
+
 Source traversal is powered by docs control-plane adapters (`DocumentEnvelope`
 sources, metadata source refs, PRD/session paths, and artifact evidence refs).
 It is intentionally broader than, and distinct from, `qa-sdk def find-by-file`,

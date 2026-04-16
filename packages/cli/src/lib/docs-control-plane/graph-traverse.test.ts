@@ -51,6 +51,66 @@ describe("docs-control-plane graph traversal", () => {
     ]);
   });
 
+  it("expands each traversal preset to its canonical axes, direction, and default depth", () => {
+    const expectedPresets = [
+      {
+        preset: "family",
+        axes: ["composition", "role"],
+        direction: "both",
+        depth: 2,
+      },
+      {
+        preset: "implementation",
+        axes: ["trace", "source", "evidence"],
+        direction: "both",
+        depth: 2,
+      },
+      {
+        preset: "review",
+        axes: ["dependency", "constraint", "evidence", "role"],
+        direction: "both",
+        depth: 2,
+      },
+      {
+        preset: "impact",
+        axes: ["dependency", "trace", "source", "evidence"],
+        direction: "in",
+        depth: 2,
+      },
+      {
+        preset: "prd-completion",
+        axes: ["trace", "source", "evidence"],
+        direction: "both",
+        depth: 2,
+      },
+    ] as const;
+
+    for (const expected of expectedPresets) {
+      expect(normalizeDocumentGraphTraversalInput({
+        target: "root",
+        preset: expected.preset,
+      })).toMatchObject({
+        target: "root",
+        preset: expected.preset,
+        axes: expected.axes,
+        direction: expected.direction,
+        depth: expected.depth,
+        limit: DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
+        includeContext: false,
+      });
+    }
+
+    expect(normalizeDocumentGraphTraversalInput({
+      target: "root",
+      axes: ["context"],
+      preset: "prd-completion",
+    })).toMatchObject({
+      axes: ["trace", "source", "evidence"],
+      includeContext: false,
+      diagnostics: ["context axis omitted because includeContext is false"],
+    });
+  });
+
   it("traverses each selected axis and omits context unless requested", () => {
     const index = fixtureIndex();
 

@@ -120,35 +120,58 @@ describe("docs-control-plane graph taxonomy", () => {
   });
 
   it("defines traversal presets as convenience views over canonical axes", () => {
+    const expectedPresets = [
+      {
+        id: "family",
+        axes: ["role", "composition"],
+        direction: "both",
+        defaultDepth: 2,
+        includeContext: false,
+      },
+      {
+        id: "implementation",
+        axes: ["trace", "source", "evidence"],
+        direction: "both",
+        defaultDepth: 2,
+        includeContext: false,
+      },
+      {
+        id: "review",
+        axes: ["dependency", "constraint", "evidence", "role"],
+        direction: "both",
+        defaultDepth: 2,
+        includeContext: false,
+      },
+      {
+        id: "impact",
+        axes: ["dependency", "trace", "source", "evidence"],
+        direction: "in",
+        defaultDepth: 2,
+        includeContext: false,
+      },
+      {
+        id: "prd-completion",
+        axes: ["trace", "source", "evidence"],
+        direction: "both",
+        defaultDepth: 2,
+        includeContext: false,
+      },
+    ] as const;
+
     expect(TRAVERSAL_PRESETS.map((preset) => preset.id)).toEqual([
       ...TRAVERSAL_PRESET_IDS,
     ]);
+    expect(TRAVERSAL_PRESETS.map((preset) => ({
+      id: preset.id,
+      axes: preset.axes,
+      direction: preset.direction,
+      defaultDepth: preset.defaultDepth,
+      includeContext: preset.includeContext,
+    }))).toEqual(expectedPresets);
 
-    expect(getTraversalPreset("family")).toMatchObject({
-      axes: ["role", "composition"],
-      direction: "both",
-      defaultDepth: 2,
-      includeContext: false,
-    });
-    expect(getTraversalPreset("implementation")).toMatchObject({
-      axes: ["trace", "source", "evidence"],
-      direction: "both",
-      includeContext: false,
-    });
-    expect(getTraversalPreset("review")).toMatchObject({
-      axes: ["dependency", "constraint", "evidence", "role"],
-      direction: "both",
-      includeContext: false,
-    });
-    expect(getTraversalPreset("impact")).toMatchObject({
-      axes: ["dependency", "trace", "source", "evidence"],
-      direction: "in",
-      includeContext: false,
-    });
-    expect(getTraversalPreset("prd-completion")).toMatchObject({
-      axes: ["trace", "source", "evidence"],
-      includeContext: false,
-    });
+    for (const expected of expectedPresets) {
+      expect(getTraversalPreset(expected.id)).toMatchObject(expected);
+    }
 
     for (const preset of TRAVERSAL_PRESETS) {
       expect(isTraversalPresetId(preset.id)).toBe(true);
