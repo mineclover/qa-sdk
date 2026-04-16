@@ -31,6 +31,7 @@ export {
 export {
   AUTHORED_LINK_AXIS_MAP,
   CANONICAL_TRAVERSAL_AXES,
+  DOCUMENT_GRAPH_FAMILY_ROLE_TYPES,
   DOCUMENT_GRAPH_EDGE_KINDS,
   DOCUMENT_GRAPH_NODE_KINDS,
   ENVELOPE_FIELD_AXIS_MAP,
@@ -55,6 +56,7 @@ export {
 export {
   DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
   DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
+  formatDocumentGraphTraversalRoleGroups,
   MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
   normalizeDocumentGraphTraversalInput,
   traverseDocumentGraph,
@@ -65,6 +67,7 @@ export type {
   DocumentGraphEdgeKind,
   DocumentGraphEdgeReason,
   DocumentGraphEdgeSummary,
+  DocumentGraphFamilyRoleType,
   DocumentGraphNodeKind,
   DocumentGraphNodeSummary,
   EnvelopeFieldAxisKey,
@@ -91,9 +94,12 @@ export type {
 export type {
   DocumentGraphTraversalEdge,
   DocumentGraphTraversalInput,
+  DocumentGraphTraversalMissingRole,
   DocumentGraphTraversalNode,
   DocumentGraphTraversalPath,
   DocumentGraphTraversalPathStep,
+  DocumentGraphTraversalRoleGroup,
+  DocumentGraphTraversalRoleNode,
   DocumentGraphTraversalResult,
   NormalizedDocumentGraphTraversalInput,
 } from "./graph-traverse.js";

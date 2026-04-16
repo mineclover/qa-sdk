@@ -4,6 +4,7 @@ import {
   AUTHORED_LINK_AXIS_MAP,
   CANONICAL_TRAVERSAL_AXES,
   DOCUMENT_GRAPH_EDGE_KINDS,
+  DOCUMENT_GRAPH_FAMILY_ROLE_TYPES,
   DOCUMENT_GRAPH_NODE_KINDS,
   ENVELOPE_FIELD_AXIS_MAP,
   getTraversalPreset,
@@ -69,6 +70,15 @@ describe("docs-control-plane graph taxonomy", () => {
     ]);
     expect(DOCUMENT_GRAPH_EDGE_KINDS).not.toContain("spec");
     expect(DOCUMENT_GRAPH_EDGE_KINDS).not.toContain("rule");
+    expect(DOCUMENT_GRAPH_FAMILY_ROLE_TYPES).toEqual([
+      "spec",
+      "todo",
+      "plan",
+      "rule",
+      "test",
+      "memo",
+      "knowledge",
+    ]);
     expect(isDocumentGraphNodeKind("ralph-session")).toBe(true);
     expect(isDocumentGraphNodeKind("authored-link")).toBe(false);
   });

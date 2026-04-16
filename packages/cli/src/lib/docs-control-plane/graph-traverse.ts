@@ -1,9 +1,11 @@
 import { getTraversalPreset } from "./graph-presets.js";
 import {
   CANONICAL_TRAVERSAL_AXES,
+  DOCUMENT_GRAPH_FAMILY_ROLE_TYPES,
   TRAVERSAL_AXIS_PRIORITY,
   type DocumentGraphEdgeReason,
   type DocumentGraphEdgeSummary,
+  type DocumentGraphFamilyRoleType,
   type TraversalAxis,
   type TraversalDirection,
   type TraversalInputSummary,
@@ -81,11 +83,40 @@ export interface DocumentGraphTraversalEdge {
   readonly traversal: DocumentGraphTraversalPathStep;
 }
 
+export interface DocumentGraphTraversalRoleNode {
+  readonly id: string;
+  readonly roleType: DocumentGraphFamilyRoleType;
+  readonly kind: DocumentGraphIndexNodeKind;
+  readonly label?: string;
+  readonly stableId?: string;
+  readonly familyId?: string;
+  readonly familyIds: readonly string[];
+  readonly path?: string;
+  readonly documentKind?: string;
+  readonly extension?: string;
+  readonly depth: number;
+}
+
+export interface DocumentGraphTraversalMissingRole {
+  readonly familyId: string;
+  readonly roleType: DocumentGraphFamilyRoleType;
+  readonly optional: true;
+  readonly reason: "optional-absence";
+}
+
+export interface DocumentGraphTraversalRoleGroup {
+  readonly roleType: DocumentGraphFamilyRoleType;
+  readonly nodes: readonly DocumentGraphTraversalRoleNode[];
+  readonly missing: readonly DocumentGraphTraversalMissingRole[];
+}
+
 export interface DocumentGraphTraversalResult extends TraversalResultSummary {
   readonly targetResolution: DocumentGraphTargetResolution;
   readonly nodes: readonly DocumentGraphTraversalNode[];
   readonly edges: readonly DocumentGraphTraversalEdge[];
   readonly paths: readonly DocumentGraphTraversalPath[];
+  readonly roleGroups: readonly DocumentGraphTraversalRoleGroup[];
+  readonly missingRoles: readonly DocumentGraphTraversalMissingRole[];
 }
 
 interface VisitState {
@@ -179,6 +210,8 @@ export function traverseDocumentGraph(
       nodes: [],
       edges: [],
       paths: [],
+      roleGroups: [],
+      missingRoles: [],
     };
   }
 
@@ -239,6 +272,11 @@ export function traverseDocumentGraph(
     .map(toTraversalEdge);
   const paths = included.map((visit) => visit.path);
   const nodes = included.map(toTraversalNode);
+  const roleSummary = buildTraversalRoleSummary(
+    nodes,
+    edges,
+    withoutInputDiagnostics(normalizedInput),
+  );
 
   return {
     input: withoutInputDiagnostics(normalizedInput),
@@ -252,7 +290,32 @@ export function traverseDocumentGraph(
     nodes,
     edges,
     paths,
+    roleGroups: roleSummary.roleGroups,
+    missingRoles: roleSummary.missingRoles,
   };
+}
+
+export function formatDocumentGraphTraversalRoleGroups(
+  result: Pick<DocumentGraphTraversalResult, "roleGroups" | "missingRoles">,
+): readonly string[] {
+  if (result.roleGroups.length === 0 && result.missingRoles.length === 0) return [];
+
+  const lines = ["role groups:"];
+  for (const group of result.roleGroups) {
+    lines.push(`  ${group.roleType} (${group.nodes.length}):`);
+    for (const node of group.nodes) {
+      const extension = node.extension ? ` ${node.extension}` : "";
+      const documentKind = node.documentKind && node.documentKind !== node.roleType
+        ? ` documentKind=${node.documentKind}`
+        : "";
+      const familyIds = node.familyIds.length > 0 ? ` family=${node.familyIds.join(",")}` : "";
+      lines.push(`    - ${node.stableId ?? node.id}${extension}${documentKind}${familyIds}`);
+    }
+    for (const missing of group.missing) {
+      lines.push(`    - optional missing in ${missing.familyId}`);
+    }
+  }
+  return lines;
 }
 
 function traversalCandidates(
@@ -350,6 +413,205 @@ function toTraversalEdge(visit: EdgeVisit): DocumentGraphTraversalEdge {
     metadata: visit.edge.metadata,
     traversal: visit.step,
   };
+}
+
+function buildTraversalRoleSummary(
+  nodes: readonly DocumentGraphTraversalNode[],
+  edges: readonly DocumentGraphTraversalEdge[],
+  input: TraversalInputSummary,
+): {
+  readonly roleGroups: readonly DocumentGraphTraversalRoleGroup[];
+  readonly missingRoles: readonly DocumentGraphTraversalMissingRole[];
+} {
+  if (!input.axes.includes("role")) {
+    return {
+      roleGroups: [],
+      missingRoles: [],
+    };
+  }
+
+  const roleFamilyIdsByNodeId = roleFamilyIdsByNodeIdFromEdges(edges);
+  const roleNodes = nodes
+    .map((node) => toRoleNode(node, roleFamilyIdsByNodeId.get(node.id) ?? []))
+    .filter((node): node is DocumentGraphTraversalRoleNode => node !== null);
+  const familyIds = traversalRoleFamilyIds(roleNodes, edges);
+  const missingRoles = missingFamilyRoles(roleNodes, familyIds);
+  const roleTypes = uniqueRoleTypes([
+    ...roleNodes.map((node) => node.roleType),
+    ...missingRoles.map((missing) => missing.roleType),
+  ]);
+
+  return {
+    roleGroups: roleTypes.map((roleType) => ({
+      roleType,
+      nodes: roleNodes
+        .filter((node) => node.roleType === roleType)
+        .toSorted(compareRoleNodes),
+      missing: missingRoles
+        .filter((missing) => missing.roleType === roleType)
+        .toSorted(compareMissingRoles),
+    })),
+    missingRoles,
+  };
+}
+
+function roleFamilyIdsByNodeIdFromEdges(
+  edges: readonly DocumentGraphTraversalEdge[],
+): ReadonlyMap<string, readonly string[]> {
+  const byNodeId = new Map<string, Set<string>>();
+  for (const edge of edges) {
+    if (edge.axis !== "role") continue;
+    const familyId = roleEdgeFamilyId(edge);
+    if (!familyId) continue;
+    addRoleFamilyId(byNodeId, edge.fromNodeId, familyId);
+    addRoleFamilyId(byNodeId, edge.toNodeId, familyId);
+  }
+  return new Map(
+    [...byNodeId.entries()].map(([nodeId, familyIds]) =>
+      [nodeId, [...familyIds].toSorted()] as const
+    ),
+  );
+}
+
+function toRoleNode(
+  node: DocumentGraphTraversalNode,
+  edgeFamilyIds: readonly string[],
+): DocumentGraphTraversalRoleNode | null {
+  const roleType = roleTypeForNode(node);
+  if (!roleType) return null;
+  const familyIds = uniqueStrings([
+    node.familyId,
+    ...edgeFamilyIds,
+  ]);
+  const documentKind = asString(node.metadata.documentKind);
+  const extension = roleExtensionForPath(node.path);
+  return {
+    id: node.id,
+    roleType,
+    kind: node.kind,
+    ...(node.label ? { label: node.label } : {}),
+    ...(node.stableId ? { stableId: node.stableId } : {}),
+    ...(node.familyId ? { familyId: node.familyId } : {}),
+    familyIds,
+    ...(node.path ? { path: node.path } : {}),
+    ...(documentKind ? { documentKind } : {}),
+    ...(extension ? { extension } : {}),
+    depth: node.depth,
+  };
+}
+
+function traversalRoleFamilyIds(
+  roleNodes: readonly DocumentGraphTraversalRoleNode[],
+  edges: readonly DocumentGraphTraversalEdge[],
+): readonly string[] {
+  return uniqueStrings([
+    ...roleNodes.flatMap((node) => node.familyIds),
+    ...edges.map(roleEdgeFamilyId),
+  ]);
+}
+
+function missingFamilyRoles(
+  roleNodes: readonly DocumentGraphTraversalRoleNode[],
+  familyIds: readonly string[],
+): readonly DocumentGraphTraversalMissingRole[] {
+  const missing: DocumentGraphTraversalMissingRole[] = [];
+  for (const familyId of familyIds) {
+    const present = new Set(
+      roleNodes
+        .filter((node) => node.familyIds.includes(familyId))
+        .map((node) => node.roleType),
+    );
+    for (const roleType of DOCUMENT_GRAPH_FAMILY_ROLE_TYPES) {
+      if (present.has(roleType)) continue;
+      missing.push({
+        familyId,
+        roleType,
+        optional: true,
+        reason: "optional-absence",
+      });
+    }
+  }
+  return missing.toSorted(compareMissingRoles);
+}
+
+function roleTypeForNode(
+  node: DocumentGraphTraversalNode,
+): DocumentGraphFamilyRoleType | undefined {
+  if (node.kind === "knowledge" || node.metadata.type === "knowledge") return "knowledge";
+  if (isFamilyRoleType(node.kind)) return node.kind;
+
+  const documentKind = asString(node.metadata.documentKind);
+  if (documentKind && isFamilyRoleType(documentKind)) return documentKind;
+
+  const extensionRole = roleTypeFromPath(node.path);
+  return extensionRole;
+}
+
+function roleTypeFromPath(path: string | undefined): DocumentGraphFamilyRoleType | undefined {
+  if (!path) return undefined;
+  const match = path.match(/\.(spec|todo|plan|rule|test|memo)\.md$/);
+  return match && isFamilyRoleType(match[1]) ? match[1] : undefined;
+}
+
+function roleExtensionForPath(path: string | undefined): string | undefined {
+  return path?.match(/\.(spec|todo|plan|rule|test|memo)\.md$/)?.[0];
+}
+
+function roleEdgeFamilyId(edge: DocumentGraphTraversalEdge): string | undefined {
+  return asString(edge.metadata.familyId)
+    ?? edge.reasons.map((reason) => asString(reason.metadata.familyId)).find(Boolean);
+}
+
+function addRoleFamilyId(
+  byNodeId: Map<string, Set<string>>,
+  nodeId: string,
+  familyId: string,
+): void {
+  const familyIds = byNodeId.get(nodeId) ?? new Set<string>();
+  familyIds.add(familyId);
+  byNodeId.set(nodeId, familyIds);
+}
+
+function isFamilyRoleType(value: string): value is DocumentGraphFamilyRoleType {
+  return (DOCUMENT_GRAPH_FAMILY_ROLE_TYPES as readonly string[]).includes(value);
+}
+
+function uniqueRoleTypes(
+  values: readonly DocumentGraphFamilyRoleType[],
+): readonly DocumentGraphFamilyRoleType[] {
+  return [...new Set(values)].toSorted((left, right) =>
+    roleTypePriority(left) - roleTypePriority(right)
+  );
+}
+
+function uniqueStrings(values: readonly (string | undefined)[]): readonly string[] {
+  return [...new Set(values.filter((value): value is string => Boolean(value)))].toSorted();
+}
+
+function compareRoleNodes(
+  left: DocumentGraphTraversalRoleNode,
+  right: DocumentGraphTraversalRoleNode,
+): number {
+  return (left.familyIds[0] ?? "").localeCompare(right.familyIds[0] ?? "")
+    || left.depth - right.depth
+    || (left.stableId ?? left.id).localeCompare(right.stableId ?? right.id)
+    || left.id.localeCompare(right.id);
+}
+
+function compareMissingRoles(
+  left: DocumentGraphTraversalMissingRole,
+  right: DocumentGraphTraversalMissingRole,
+): number {
+  return left.familyId.localeCompare(right.familyId)
+    || roleTypePriority(left.roleType) - roleTypePriority(right.roleType);
+}
+
+function roleTypePriority(roleType: DocumentGraphFamilyRoleType): number {
+  return DOCUMENT_GRAPH_FAMILY_ROLE_TYPES.indexOf(roleType);
+}
+
+function asString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
 }
 
 function withoutInputDiagnostics(

@@ -1,9 +1,11 @@
 import {
   AUTHORED_LINK_AXIS_MAP,
+  DOCUMENT_GRAPH_FAMILY_ROLE_TYPES,
   TRAVERSAL_AXIS_PRIORITY,
   type DocumentGraphEdgeKind,
   type DocumentGraphEdgeReason,
   type DocumentGraphEdgeSummary,
+  type DocumentGraphFamilyRoleType,
   type TraversalAxis,
 } from "./graph-types.js";
 import type {
@@ -43,6 +45,24 @@ interface AddEdgeInput {
   readonly authoredType?: string;
   readonly reason: DocumentGraphEdgeReason;
   readonly metadata?: DocumentMetadata;
+}
+
+interface RoleMembership {
+  readonly familyId: string;
+  readonly source: string;
+  readonly reason: string;
+  readonly rawSource: DocumentRawSourcePointer;
+  readonly metadata: DocumentMetadata;
+}
+
+interface RoleFamilyMember {
+  readonly document: DocumentEnvelope;
+  readonly membership: RoleMembership;
+}
+
+interface FamilyReferenceIndex {
+  readonly familyIds: ReadonlySet<string>;
+  readonly familyIdsByIdentity: ReadonlyMap<string, readonly string[]>;
 }
 
 /**
@@ -128,8 +148,8 @@ function addRuleConstraintEdges(
   const sameFamily = index.documents.filter((candidate) =>
     candidate !== document && candidate.familyId === document.familyId
   );
-  const targets = sameFamily.some((candidate) => candidate.kind === "spec")
-    ? sameFamily.filter((candidate) => candidate.kind === "spec")
+  const targets = sameFamily.some(isSpecConstraintTarget)
+    ? sameFamily.filter(isSpecConstraintTarget)
     : sameFamily;
 
   for (const targetDocument of targets) {
@@ -562,49 +582,257 @@ function addRoleEdges(
   builder: EdgeBuilder,
   documents: readonly DocumentEnvelope[],
 ): void {
-  const byFamily = new Map<string, DocumentEnvelope[]>();
+  const byFamily = new Map<string, RoleFamilyMember[]>();
   for (const document of documents) {
     if (!document.familyId) continue;
-    const members = byFamily.get(document.familyId) ?? [];
-    members.push(document);
-    byFamily.set(document.familyId, members);
+    addRoleFamilyMember(byFamily, {
+      document,
+      membership: sameFamilyRoleMembership(document, document.familyId),
+    });
+  }
+
+  const familyReferenceIndex = buildFamilyReferenceIndex(documents);
+  for (const document of documents) {
+    if (!isFamilyContextRoleDocument(document)) continue;
+    for (const membership of linkedFamilyContextMemberships(document, familyReferenceIndex)) {
+      if (membership.familyId === document.familyId) continue;
+      addRoleFamilyMember(byFamily, {
+        document,
+        membership,
+      });
+    }
   }
 
   for (const [familyId, members] of byFamily.entries()) {
     if (members.length < 2) continue;
     for (const from of members) {
       for (const to of members) {
-        if (from === to) continue;
-        const target = documentTarget(to);
+        if (from.document === to.document) continue;
+        const target = documentTarget(to.document);
         builder.add({
           kind: "role-membership",
           axis: "role",
-          fromNodeId: documentNodeId(from),
+          fromNodeId: documentNodeId(from.document),
           toNodeId: target.nodeId,
-          authoredType: "family",
-          reason: reasonFor(from, {
-            reason: "same-family role relationship",
-            rawSource: rawSourceFor(from, "familyId", {
-              familyId,
-              targetKind: to.kind,
-            }),
+          authoredType: from.membership.source === "DocumentEnvelope.familyId"
+            ? "family"
+            : "family-context",
+          reason: reasonFor(from.document, {
+            reason: from.membership.reason,
+            rawSource: from.membership.rawSource,
             target,
             metadata: {
+              ...from.membership.metadata,
               familyId,
-              sourceKind: from.kind,
-              targetKind: to.kind,
+              sourceKind: from.document.kind,
+              sourceRoleType: roleTypeForDocument(from.document),
+              targetKind: to.document.kind,
+              targetRoleType: roleTypeForDocument(to.document),
             },
           }),
           metadata: {
-            source: "DocumentEnvelope.familyId",
+            source: from.membership.source,
             familyId,
-            sourceKind: from.kind,
-            targetKind: to.kind,
+            sourceKind: from.document.kind,
+            sourceRoleType: roleTypeForDocument(from.document),
+            targetKind: to.document.kind,
+            targetRoleType: roleTypeForDocument(to.document),
           },
         });
       }
     }
   }
+}
+
+function addRoleFamilyMember(
+  byFamily: Map<string, RoleFamilyMember[]>,
+  member: RoleFamilyMember,
+): void {
+  const members = byFamily.get(member.membership.familyId) ?? [];
+  const existingIndex = members.findIndex((candidate) =>
+    candidate.document.stableId === member.document.stableId &&
+    candidate.document.path === member.document.path
+  );
+  if (existingIndex >= 0) {
+    if (members[existingIndex]!.membership.source !== "DocumentEnvelope.familyId") {
+      members[existingIndex] = member;
+    }
+    byFamily.set(member.membership.familyId, members);
+    return;
+  }
+  members.push(member);
+  byFamily.set(member.membership.familyId, members);
+}
+
+function sameFamilyRoleMembership(
+  document: DocumentEnvelope,
+  familyId: string,
+): RoleMembership {
+  return {
+    familyId,
+    source: "DocumentEnvelope.familyId",
+    reason: "same-family role relationship",
+    rawSource: rawSourceFor(document, "familyId", {
+      familyId,
+    }),
+    metadata: {
+      familyId,
+      roleMembership: "same-family",
+    },
+  };
+}
+
+function linkedFamilyContextMemberships(
+  document: DocumentEnvelope,
+  index: FamilyReferenceIndex,
+): readonly RoleMembership[] {
+  const memberships: RoleMembership[] = [];
+
+  const addMemberships = (
+    value: string | undefined,
+    source: string,
+    pointer: string,
+    metadata: DocumentMetadata = {},
+  ): void => {
+    if (!value) return;
+    for (const familyId of resolveFamilyReference(index, value)) {
+      memberships.push({
+        familyId,
+        source,
+        reason: "linked family context role relationship",
+        rawSource: rawSourceFor(document, pointer, {
+          familyId,
+          value,
+        }),
+        metadata: {
+          ...metadata,
+          familyId,
+          value,
+          roleMembership: "family-context",
+        },
+      });
+    }
+  };
+
+  const metadataFields = [
+    "familyContext",
+    "familyContextId",
+    "familyContextIds",
+    "contextFamily",
+    "contextFamilyId",
+    "contextFamilyIds",
+    "familyIds",
+    "relatedFamilyIds",
+  ] as const;
+
+  for (const field of metadataFields) {
+    for (const value of metadataStringValues(document.metadata[field])) {
+      addMemberships(value, `DocumentEnvelope.metadata.${field}`, `metadata.${field}`, { field });
+    }
+  }
+
+  document.links.forEach((link, indexInLinks) => {
+    addMemberships(link.targetId, "DocumentEnvelope.links", `links[${indexInLinks}]`, {
+      field: "links",
+      linkType: link.type,
+      linkDirection: "target",
+    });
+    addMemberships(link.sourceId, "DocumentEnvelope.links", `links[${indexInLinks}]`, {
+      field: "links",
+      linkType: link.type,
+      linkDirection: "source",
+    });
+  });
+
+  return dedupeRoleMemberships(memberships);
+}
+
+function buildFamilyReferenceIndex(
+  documents: readonly DocumentEnvelope[],
+): FamilyReferenceIndex {
+  const familyIds = new Set<string>();
+  const familyIdsByIdentity = new Map<string, Set<string>>();
+
+  for (const document of documents) {
+    if (!document.familyId) continue;
+    familyIds.add(document.familyId);
+    for (const identity of documentIdentityValues(document)) {
+      addFamilyIdentity(familyIdsByIdentity, identity, document.familyId);
+      addFamilyIdentity(familyIdsByIdentity, normalizePath(identity), document.familyId);
+    }
+  }
+
+  return {
+    familyIds,
+    familyIdsByIdentity: new Map(
+      [...familyIdsByIdentity.entries()].map(([key, values]) =>
+        [key, [...values].toSorted()] as const
+      ),
+    ),
+  };
+}
+
+function resolveFamilyReference(
+  index: FamilyReferenceIndex,
+  value: string,
+): readonly string[] {
+  const normalizedValue = normalizePath(value);
+  return unique([
+    index.familyIds.has(value) ? value : undefined,
+    index.familyIds.has(normalizedValue) ? normalizedValue : undefined,
+    ...(index.familyIdsByIdentity.get(value) ?? []),
+    ...(index.familyIdsByIdentity.get(normalizedValue) ?? []),
+  ]);
+}
+
+function addFamilyIdentity(
+  familyIdsByIdentity: Map<string, Set<string>>,
+  identity: string | undefined,
+  familyId: string,
+): void {
+  if (!identity) return;
+  const values = familyIdsByIdentity.get(identity) ?? new Set<string>();
+  values.add(familyId);
+  familyIdsByIdentity.set(identity, values);
+}
+
+function dedupeRoleMemberships(
+  memberships: readonly RoleMembership[],
+): readonly RoleMembership[] {
+  const byFamilyId = new Map<string, RoleMembership>();
+  for (const membership of memberships) {
+    if (!byFamilyId.has(membership.familyId)) byFamilyId.set(membership.familyId, membership);
+  }
+  return [...byFamilyId.values()].toSorted((left, right) =>
+    left.familyId.localeCompare(right.familyId)
+  );
+}
+
+function isFamilyContextRoleDocument(document: DocumentEnvelope): boolean {
+  const roleType = roleTypeForDocument(document);
+  return roleType === "test" || roleType === "memo" || roleType === "knowledge";
+}
+
+function roleTypeForDocument(
+  document: DocumentEnvelope,
+): DocumentGraphFamilyRoleType | undefined {
+  if (document.metadata.type === "knowledge" || document.kind === "knowledge") return "knowledge";
+  if (isFamilyRoleType(document.kind)) return document.kind;
+
+  const documentKind = asString(document.metadata.documentKind);
+  if (documentKind && isFamilyRoleType(documentKind)) return documentKind;
+
+  const pathRoleType = familyRoleTypeFromPath(document.path);
+  return pathRoleType;
+}
+
+function familyRoleTypeFromPath(path: string): DocumentGraphFamilyRoleType | undefined {
+  const match = path.match(/\.(spec|todo|plan|rule|test|memo)\.md$/);
+  return match && isFamilyRoleType(match[1]) ? match[1] : undefined;
+}
+
+function isFamilyRoleType(value: string): value is DocumentGraphFamilyRoleType {
+  return (DOCUMENT_GRAPH_FAMILY_ROLE_TYPES as readonly string[]).includes(value);
 }
 
 function buildResolutionIndex(documents: readonly DocumentEnvelope[]): ResolutionIndex {
@@ -793,6 +1021,10 @@ function taskTraceDependencies(task: DocumentTask): readonly string[] {
 
 function isRuleDocument(document: DocumentEnvelope): boolean {
   return document.kind === "rule" || document.path.endsWith(".rule.md");
+}
+
+function isSpecConstraintTarget(document: DocumentEnvelope): boolean {
+  return document.kind === "spec" && document.metadata.type !== "knowledge";
 }
 
 function metadataStringValues(value: unknown): readonly string[] {

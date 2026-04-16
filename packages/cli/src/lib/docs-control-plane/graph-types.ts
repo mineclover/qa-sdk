@@ -36,6 +36,19 @@ export const DOCUMENT_GRAPH_NODE_KINDS = [
 
 export type DocumentGraphNodeKind = (typeof DOCUMENT_GRAPH_NODE_KINDS)[number];
 
+export const DOCUMENT_GRAPH_FAMILY_ROLE_TYPES = [
+  "spec",
+  "todo",
+  "plan",
+  "rule",
+  "test",
+  "memo",
+  "knowledge",
+] as const;
+
+export type DocumentGraphFamilyRoleType =
+  (typeof DOCUMENT_GRAPH_FAMILY_ROLE_TYPES)[number];
+
 export const DOCUMENT_GRAPH_EDGE_KINDS = [
   "authored-link",
   "document-constraint",

@@ -588,7 +588,7 @@ Define one checkout step.
     });
   });
 
-  it("groups spec, todo, and plan markdown by basename family convention", async () => {
+  it("groups role markdown by extension and explicit family context", async () => {
     await withTempDocs(async (rootDir) => {
       await writeFile(join(rootDir, "docs/specs/checkout/checkout.spec.md"), `---
 def:
@@ -604,6 +604,54 @@ def:
 ## 목적 ^purpose
 
 Spec member.
+`);
+
+      await writeFile(join(rootDir, "docs/specs/checkout/checkout.rule.md"), `---
+def:
+  id: checkout-rule
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+# Checkout Rule
+
+## 목적 ^purpose
+
+Rule member.
+`);
+
+      await writeFile(join(rootDir, "docs/specs/checkout/checkout.test.md"), `---
+def:
+  id: checkout-test
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+# Checkout Test
+
+## 목적 ^purpose
+
+Test member.
+`);
+
+      await writeFile(join(rootDir, "docs/specs/checkout/checkout.memo.md"), `---
+def:
+  id: checkout-memo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+---
+# Checkout Memo
+
+## 목적 ^purpose
+
+Memo member.
 `);
 
       await writeFile(join(rootDir, "docs/specs/checkout/checkout.todo.md"), `---
@@ -638,17 +686,56 @@ def:
 Plan member.
 `);
 
+      await writeFile(join(rootDir, "docs/specs/checkout/checkout-knowledge.spec.md"), `---
+def:
+  id: checkout-knowledge
+  type: knowledge
+  knowledge_kind: guide
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+familyId: docs/specs/checkout/checkout
+---
+# Checkout Knowledge
+
+## 목적 ^purpose
+
+Knowledge member.
+`);
+
       const adapter = createDefinitionMarkdownAdapter({ rootDir });
       const family = await adapter.listDocuments({
         familyId: "docs/specs/checkout/checkout",
       });
 
-      expect(family.map((doc) => doc.kind)).toEqual(["spec", "plan", "todo"]);
+      expect(family.map((doc) => doc.kind)).toEqual([
+        "spec",
+        "spec",
+        "rule",
+        "test",
+        "memo",
+        "plan",
+        "todo",
+      ]);
       expect(family.map((doc) => doc.metadata.defId)).toEqual([
+        "checkout-knowledge",
         "checkout-spec",
+        "checkout-rule",
+        "checkout-test",
+        "checkout-memo",
         "checkout-plan",
         "checkout-todo",
       ]);
+      expect(family.find((doc) => doc.metadata.defId === "checkout-knowledge")).toMatchObject({
+        kind: "spec",
+        metadata: {
+          type: "knowledge",
+          knowledgeKind: "guide",
+          documentKind: "spec",
+        },
+      });
       expect(new Set(family.map((doc) => doc.familyId))).toEqual(
         new Set(["docs/specs/checkout/checkout"]),
       );

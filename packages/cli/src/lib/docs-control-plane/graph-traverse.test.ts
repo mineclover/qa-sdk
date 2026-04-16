@@ -5,6 +5,8 @@ import {
   CANONICAL_TRAVERSAL_AXES,
   DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
   DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
+  DOCUMENT_GRAPH_FAMILY_ROLE_TYPES,
+  formatDocumentGraphTraversalRoleGroups,
   MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
   normalizeDocumentEnvelope,
   normalizeDocumentGraphTraversalInput,
@@ -185,6 +187,116 @@ describe("docs-control-plane graph traversal", () => {
       nodeIds: ["document:cycle-a", "document:cycle-b", "document:cycle-c"],
     });
   });
+
+  it("groups role traversal for spec, todo, plan, rule, test, memo, and knowledge family members", () => {
+    const index = buildDocumentGraphIndex(roleFixtureDocuments());
+
+    const result = traverseDocumentGraph(index, {
+      target: "checkout-spec",
+      axes: ["role"],
+      direction: "out",
+    });
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.missingRoles).toEqual([]);
+    expect(result.roleGroups.map((group) => group.roleType)).toEqual(
+      DOCUMENT_GRAPH_FAMILY_ROLE_TYPES,
+    );
+    expect(roleGroupStableIds(result, "spec")).toEqual(["checkout-spec"]);
+    expect(roleGroupStableIds(result, "todo")).toEqual(["checkout-todo"]);
+    expect(roleGroupStableIds(result, "plan")).toEqual(["checkout-plan"]);
+    expect(roleGroupStableIds(result, "rule")).toEqual(["checkout-rule"]);
+    expect(roleGroupStableIds(result, "test")).toEqual(["checkout-test"]);
+    expect(roleGroupStableIds(result, "memo")).toEqual(["checkout-memo"]);
+    expect(roleGroupStableIds(result, "knowledge")).toEqual([
+      "checkout-context-guide",
+      "checkout-knowledge",
+    ]);
+    expect(result.roleGroups.find((group) => group.roleType === "knowledge")?.nodes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          stableId: "checkout-knowledge",
+          documentKind: "spec",
+          extension: ".spec.md",
+          familyIds: ["docs/specs/checkout/checkout"],
+        }),
+        expect.objectContaining({
+          stableId: "checkout-context-guide",
+          documentKind: "spec",
+          extension: ".spec.md",
+          familyIds: ["docs/specs/checkout/checkout"],
+        }),
+      ]),
+    );
+
+    const lines = formatDocumentGraphTraversalRoleGroups(result);
+    expect(lines.join("\n")).toContain("knowledge (2):");
+    expect(lines.join("\n")).toContain(
+      "checkout-knowledge .spec.md documentKind=spec family=docs/specs/checkout/checkout",
+    );
+
+    expect(index.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "role-membership",
+          axis: "role",
+          fromNodeId: "document:checkout-context-guide",
+          toNodeId: "document:checkout-spec",
+          authoredType: "family-context",
+        }),
+        expect.objectContaining({
+          kind: "document-constraint",
+          axis: "constraint",
+          fromNodeId: "document:checkout-rule",
+          toNodeId: "document:checkout-spec",
+        }),
+      ]),
+    );
+
+    const constraintResult = traverseDocumentGraph(index, {
+      target: "checkout-rule",
+      axes: ["constraint"],
+      direction: "out",
+    });
+    expect(constraintResult.nodes.map((node) => node.id)).toEqual([
+      "document:checkout-rule",
+      "document:checkout-spec",
+    ]);
+  });
+
+  it("reports absent family roles as optional metadata instead of diagnostics", () => {
+    const index = buildDocumentGraphIndex([
+      roleDocument("checkout-spec", "spec", "checkout.spec.md"),
+      roleDocument("checkout-todo", "todo", "checkout.todo.md"),
+    ]);
+
+    const result = traverseDocumentGraph(index, {
+      target: "checkout-spec",
+      axes: ["role"],
+      direction: "out",
+    });
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.missingRoles).toEqual(
+      expect.arrayContaining([
+        {
+          familyId: "docs/specs/checkout/checkout",
+          roleType: "plan",
+          optional: true,
+          reason: "optional-absence",
+        },
+        {
+          familyId: "docs/specs/checkout/checkout",
+          roleType: "knowledge",
+          optional: true,
+          reason: "optional-absence",
+        },
+      ]),
+    );
+    expect(formatDocumentGraphTraversalRoleGroups(result).join("\n")).toContain(
+      "optional missing in docs/specs/checkout/checkout",
+    );
+  });
 });
 
 function fixtureIndex() {
@@ -299,6 +411,82 @@ function envelope(stableId: string): DocumentEnvelope {
     rawSource: {
       path: `${stableId}.md`,
       sourceSchema: "fixture",
+    },
+  } satisfies DocumentEnvelopeInput);
+}
+
+function roleFixtureDocuments(): readonly DocumentEnvelope[] {
+  return [
+    roleDocument("checkout-spec", "spec", "checkout.spec.md"),
+    roleDocument("checkout-todo", "todo", "checkout.todo.md"),
+    roleDocument("checkout-plan", "plan", "checkout.plan.md"),
+    roleDocument("checkout-rule", "rule", "checkout.rule.md"),
+    roleDocument("checkout-test", "test", "checkout.test.md"),
+    roleDocument("checkout-memo", "memo", "checkout.memo.md"),
+    roleDocument("checkout-knowledge", "spec", "checkout-knowledge.spec.md", {
+      type: "knowledge",
+      knowledgeKind: "guide",
+      documentKind: "spec",
+    }),
+    roleDocument("checkout-context-guide", "spec", "checkout-context-guide.spec.md", {
+      type: "knowledge",
+      knowledgeKind: "guide",
+      documentKind: "spec",
+      noFamilyId: true,
+      links: [
+        { targetId: "checkout-spec", type: "refines" },
+      ],
+    }),
+  ];
+}
+
+function roleGroupStableIds(
+  result: ReturnType<typeof traverseDocumentGraph>,
+  roleType: (typeof DOCUMENT_GRAPH_FAMILY_ROLE_TYPES)[number],
+): readonly string[] {
+  return result.roleGroups.find((group) => group.roleType === roleType)
+    ?.nodes.map((node) => node.stableId ?? node.id)
+    ?? [];
+}
+
+function roleDocument(
+  stableId: string,
+  kind: string,
+  fileName: string,
+  options: {
+    readonly type?: string;
+    readonly knowledgeKind?: string;
+    readonly documentKind?: string;
+    readonly noFamilyId?: boolean;
+    readonly links?: DocumentEnvelopeInput["links"];
+  } = {},
+): DocumentEnvelope {
+  const path = `docs/specs/checkout/${fileName}`;
+  return normalizeDocumentEnvelope({
+    adapterId: "definition-markdown",
+    kind,
+    stableId,
+    ...(options.noFamilyId ? {} : { familyId: "docs/specs/checkout/checkout" }),
+    path,
+    metadata: {
+      defId: stableId,
+      sourcePath: path,
+      ...(options.type ? { type: options.type } : {}),
+      ...(options.knowledgeKind ? { knowledgeKind: options.knowledgeKind } : {}),
+      ...(options.documentKind ? { documentKind: options.documentKind } : {}),
+    },
+    links: options.links ?? [],
+    sources: [],
+    sections: [],
+    tasks: [],
+    evidence: [],
+    diagnostics: [],
+    rawSource: {
+      path,
+      sourceSchema: "definition-frontmatter",
+      metadata: {
+        defId: stableId,
+      },
     },
   } satisfies DocumentEnvelopeInput);
 }
