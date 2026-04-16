@@ -52,6 +52,13 @@ export {
 export {
   buildDocumentGraphIndex,
 } from "./graph-index.js";
+export {
+  DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
+  DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
+  MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
+  normalizeDocumentGraphTraversalInput,
+  traverseDocumentGraph,
+} from "./graph-traverse.js";
 
 export type {
   AuthoredLinkType,
@@ -81,6 +88,15 @@ export type {
   DocumentGraphTargetLookupKind,
   DocumentGraphTargetResolution,
 } from "./graph-index.js";
+export type {
+  DocumentGraphTraversalEdge,
+  DocumentGraphTraversalInput,
+  DocumentGraphTraversalNode,
+  DocumentGraphTraversalPath,
+  DocumentGraphTraversalPathStep,
+  DocumentGraphTraversalResult,
+  NormalizedDocumentGraphTraversalInput,
+} from "./graph-traverse.js";
 export type {
   DocumentAdapter,
   DocumentAdapterCapabilities,
