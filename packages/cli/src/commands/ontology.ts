@@ -92,6 +92,36 @@ interface PromptArtifactMaterialization {
   outputPath: string;
 }
 
+const PACK_SCAFFOLD_USAGE =
+  "Usage: qa-sdk ontology pack scaffold <pack-id> [--package-root <path>] [--docs-dir <path>] [--test <path>] [--write] [--json]";
+
+const PACK_VALIDATE_USAGE =
+  "Usage: qa-sdk ontology pack validate <pack-ref> [--json]";
+
+function printPackAuthoringContract(): void {
+  console.log(
+    [
+      PACK_SCAFFOLD_USAGE,
+      PACK_VALIDATE_USAGE,
+      "",
+      "Pack authoring contract:",
+      "- OperationalOntologyPack is the canonical pack contract.",
+      "- Scaffold is dry-run by default; file writes require explicit --write.",
+      "- Scaffold preserves architecture-neutral identity/data/system separation; ECS can be modeled but is not required.",
+      "- Known-pack registration is reported as a candidate and is not applied automatically.",
+      "- Registry activation is out of scope for scaffold; use qa-sdk ontology registry activate-pack separately.",
+    ].join("\n"),
+  );
+}
+
+function printPlannedPackCommand(usage: string): void {
+  console.error(usage);
+  console.error(
+    "Pack authoring implementation is deferred beyond the US-001 command contract story.",
+  );
+  process.exitCode = 1;
+}
+
 function toDefinitionDataSourceOptions(flags: Record<string, string>): DataSourceOptions {
   return {
     mode: flags["local"] === "true"
@@ -710,6 +740,16 @@ export async function cliOntology(args: string[]): Promise<void> {
           "qa-sdk ontology",
           "",
           "  qa-sdk ontology status [--scope <scope> | --snapshot <id>] [--store <file>] [--json] [--table]",
+          "  qa-sdk ontology pack scaffold <pack-id> [--package-root <path>] [--docs-dir <path>] [--test <path>] [--write] [--json]",
+          "  qa-sdk ontology pack validate <pack-ref> [--json]",
+          "",
+          "Pack authoring contract:",
+          "  OperationalOntologyPack remains the canonical pack contract.",
+          "  Scaffold is dry-run by default; file writes require explicit --write.",
+          "  Known-pack registration is reported as a candidate, not applied automatically.",
+          "  Registry activation is out of scope for scaffold.",
+          "  Identity ids, component data, and system transforms stay architecture-neutral; ECS is one model, not a limit.",
+          "",
           "  qa-sdk ontology registry activate-pack <pack-id> [--store <path>] [--ontology-id <id>] [--namespace <namespace>] [--owner <owner>] [--version <versionId>] [--address-model product|sum] [--prefix <taxonomyId>=<prefix>] [--output <file>] [--artifact-registry <file>] [--json]",
           "  qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
           "  qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
@@ -751,6 +791,20 @@ export async function cliOntology(args: string[]): Promise<void> {
       return;
     case "status":
       await cmdStatus(rest);
+      return;
+    case "pack.scaffold":
+      if (rest.includes("--help") || rest.includes("-h")) {
+        printPackAuthoringContract();
+        return;
+      }
+      printPlannedPackCommand(PACK_SCAFFOLD_USAGE);
+      return;
+    case "pack.validate":
+      if (rest.includes("--help") || rest.includes("-h")) {
+        printPackAuthoringContract();
+        return;
+      }
+      printPlannedPackCommand(PACK_VALIDATE_USAGE);
       return;
     case "registry.activate-pack":
       await cmdRegistryActivatePack(rest);

@@ -11,6 +11,26 @@ import { cliOntology } from "../commands/ontology.js";
 export const ONTOLOGY_COMMAND_DESCRIPTORS = [
   { id: "ontology.help", path: ["help"], usage: "qa-sdk ontology help                              operational-ontology 도움말", handlerKey: "ontology.help" },
   { id: "ontology.status", path: ["status"], usage: "qa-sdk ontology status [--scope <scope> | --snapshot <id>] [--store <file>] [--json] [--table]", handlerKey: "ontology.status" },
+  {
+    id: "ontology.pack.scaffold",
+    path: ["pack", "scaffold"],
+    usage: "qa-sdk ontology pack scaffold <pack-id> [--package-root <path>] [--docs-dir <path>] [--test <path>] [--write] [--json]",
+    continuation: [
+      "dry-run by default; file writes require --write",
+      "known-pack registration is reported as a candidate; registry activation is out of scope",
+      "preserves architecture-neutral identity/data/system separation; ECS is supported but not required",
+    ],
+    handlerKey: "ontology.pack.scaffold",
+  },
+  {
+    id: "ontology.pack.validate",
+    path: ["pack", "validate"],
+    usage: "qa-sdk ontology pack validate <pack-ref> [--json]",
+    continuation: [
+      "validates against OperationalOntologyPack",
+    ],
+    handlerKey: "ontology.pack.validate",
+  },
   { id: "ontology.registry.activate-pack", path: ["registry", "activate-pack"], usage: "qa-sdk ontology registry activate-pack <pack-id> [--store <path>] [--ontology-id <id>] [--namespace <namespace>] [--owner <owner>] [--version <versionId>] [--address-model product|sum] [--prefix <taxonomyId>=<prefix>] [--output <file>] [--artifact-registry <file>] [--json]", handlerKey: "ontology.registry.activate-pack" },
   { id: "ontology.prompt.extract", path: ["prompt", "extract"], usage: "qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]", handlerKey: "ontology.prompt.extract" },
   { id: "ontology.prompt.extract-file", path: ["prompt", "extract-file"], usage: "qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]", handlerKey: "ontology.prompt.extract-file" },

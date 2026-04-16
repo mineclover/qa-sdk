@@ -5,11 +5,11 @@
 
 This PRD adds an authoring control plane for creating and validating `OperationalOntologyPack` based domain ontology packs. The current system has a solid runtime contract: packs can be declared as `OperationalOntologyPack`, validated with `validateOperationalOntologyPack()`, resolved as known packs, and activated through the registry/index-meta lifecycle. What is missing is a maintainer-facing scaffold and validation workflow that helps authors create a new pack consistently with code, tests, definition docs, source-map references, and known-pack registration candidates.
 
-The feature centers on `operational-ontology-pack-interface` as the canonical pack contract. Pack authoring must follow an ECS-like separation philosophy:
+The feature centers on `operational-ontology-pack-interface` as the canonical pack contract. Pack authoring should preserve an architecture-neutral Entity/Component/System-informed separation. ECS is one concrete architecture that demonstrates this separation, and operational ontology can model ECS, but scaffolded packs must not become ECS-specific unless the requested domain is explicitly an ECS pack.
 
-- Entity: stable identifiers only, such as `packId`, axis ids, taxonomy ids, artifact ids, and definition ids.
-- Component: data-only schemas and records, such as axes, taxonomies, relation categories, traversals, registry records, and artifact records.
-- System: explicit transformation or validation logic, such as validators, allocators, projectors, activation helpers, sync adapters, and docs graph traversal.
+- Entity-like identity: stable identifiers only, such as `packId`, axis ids, taxonomy ids, artifact ids, and definition ids.
+- Component-like data: data-only schemas and records, such as axes, taxonomies, relation categories, traversals, registry records, and artifact records.
+- System-like transform: explicit transformation or validation logic, such as validators, allocators, projectors, activation helpers, sync adapters, and docs graph traversal.
 
 The scaffold workflow must keep these concerns separate. It must not hide behavior inside schema declarations, and it must not mutate known-pack registries or activate packs implicitly.
 
@@ -20,7 +20,7 @@ The scaffold workflow must keep these concerns separate. It must not hide behavi
 - Generate pack implementation, test, and definition document scaffold candidates.
 - Generate source-map and known-pack registration candidates.
 - Add pack validation that checks runtime pack shape plus source/test/docs/known-pack readiness.
-- Encode the ECS-like separation principle in generated templates and docs.
+- Encode architecture-neutral identity/data/system separation in generated templates and docs, using ECS only as a reference model.
 - Keep generated output conservative and reversible.
 - Preserve existing pack activation/runtime behavior.
 
@@ -52,7 +52,8 @@ No browser verification is required.
 - [ ] Define `qa-sdk ontology pack scaffold <pack-id>` as the primary CLI surface.
 - [ ] Define `qa-sdk ontology pack validate <pack-ref>` as the validation surface.
 - [ ] Document that `OperationalOntologyPack` remains the canonical pack contract.
-- [ ] Document that pack authoring follows ECS-like separation of entity ids, data-only components, and explicit systems.
+- [ ] Document that pack authoring preserves architecture-neutral separation of entity-like ids, component-like data, and system-like transforms.
+- [ ] Document that operational ontology can model ECS but is not limited to ECS.
 - [ ] Document that scaffold is dry-run by default.
 - [ ] Document that file writes require explicit `--write`.
 - [ ] Document that known-pack registration is reported as a candidate, not applied automatically.
@@ -64,11 +65,11 @@ No browser verification is required.
 **Description:** As a CLI maintainer, I want a structured scaffold plan model so dry-run and write modes share one source of truth.
 
 **Acceptance Criteria:**
-- [ ] Add a scaffold plan type that includes entity identity, component schema files, system binding files, docs paths, source-map candidates, and known-pack candidate.
+- [ ] Add a scaffold plan type that includes identity declarations, component schema files, system binding files, docs paths, source-map candidates, and known-pack candidate.
 - [ ] Validate pack id format as a safe kebab-case entity id.
 - [ ] Derive default symbol names from the pack id.
 - [ ] Derive default package path from options or safe defaults.
-- [ ] Separate generated component schema content from generated system binding/blueprint content.
+- [ ] Separate generated component-like schema content from generated system-like binding/blueprint content.
 - [ ] Support CLI options for implementation package/root, docs directory, test file path, and dry-run/write mode.
 - [ ] Return structured diagnostics for invalid ids, unsafe paths, and conflicting output paths.
 - [ ] Add unit tests for plan generation without writing files.
@@ -84,7 +85,7 @@ No browser verification is required.
 - [ ] Preview includes definition docs skeletons for spec, todo, plan, and optional rule/cases/test docs.
 - [ ] Preview includes source-map frontmatter candidates.
 - [ ] Preview includes known-pack registration candidate for `packages/cli/src/lib/known-ontology-packs.ts`.
-- [ ] Preview identifies entity ids, component declarations, and system bindings separately.
+- [ ] Preview identifies identity declarations, component-like declarations, and system-like bindings separately.
 - [ ] Preview does not modify the filesystem.
 - [ ] Tests prove dry-run leaves no generated files behind.
 
@@ -103,14 +104,15 @@ No browser verification is required.
 
 ### US-005: Add Pack Implementation Skeleton Template
 
-**Description:** As a pack author, I want generated TypeScript pack skeletons that satisfy the `OperationalOntologyPack` contract and preserve ECS-like separation.
+**Description:** As a pack author, I want generated TypeScript pack skeletons that satisfy the `OperationalOntologyPack` contract and preserve architecture-neutral identity/data/system separation.
 
 **Acceptance Criteria:**
 - [ ] Generated implementation imports or references `OperationalOntologyPack`.
 - [ ] Generated implementation exports a named pack constant satisfying `OperationalOntologyPack`.
-- [ ] Skeleton includes a dedicated entity/id constants section.
-- [ ] Skeleton includes a dedicated component schema section for axes, taxonomies, relation categories, and traversals.
-- [ ] Skeleton includes a dedicated system binding section for blueprints.
+- [ ] Skeleton includes a dedicated identity constants section.
+- [ ] Skeleton includes a dedicated component-like schema section for axes, taxonomies, relation categories, and traversals.
+- [ ] Skeleton includes a dedicated system-like binding section for blueprints.
+- [ ] Generated template avoids ECS-specific naming unless the requested pack itself is an ECS pack.
 - [ ] Skeleton includes at least one example axis with stable capacity.
 - [ ] Skeleton includes at least one taxonomy using the axis.
 - [ ] Skeleton includes empty or minimal relation categories and traversals.
@@ -141,7 +143,8 @@ No browser verification is required.
 - [ ] Generate a `<pack-id>-plan.plan.md` skeleton.
 - [ ] Optionally generate `<pack-id>.rule.md`, `<pack-id>.cases.md`, and `<pack-id>.test.md` when requested.
 - [ ] Spec skeleton links to `operational-ontology-pack-interface`.
-- [ ] Spec skeleton includes an ECS-like separation section mapping entity ids, component schema, and system bindings for the new pack.
+- [ ] Spec skeleton includes an architecture-neutral separation section mapping identity declarations, component schema, and system bindings for the new pack.
+- [ ] Spec skeleton states that ECS is a possible modeled architecture, not the only supported architecture.
 - [ ] Spec skeleton includes source references for implementation and test candidates.
 - [ ] TODO skeleton starts with actionable authoring checklist and no fake completed work.
 - [ ] Tests verify frontmatter contains valid `def.id`, `level`, `scope`, `aspect`, `depth`, and lifecycle values.
@@ -182,7 +185,7 @@ No browser verification is required.
 - [ ] When pack-ref is a file path, load or import it using a documented supported path.
 - [ ] Validate referenced implementation/test files where paths are statically available from blueprints or scaffold metadata.
 - [ ] Validate docs/source-map readiness when a matching docs family exists.
-- [ ] JSON output includes `valid`, `issues`, `packId`, `componentSchema`, `systemBindings`, and readiness sections.
+- [ ] JSON output includes `valid`, `issues`, `packId`, `identity`, `componentSchema`, `systemBindings`, and readiness sections.
 - [ ] Text output is concise and actionable.
 
 ### US-011: Add Pack Authoring Docs And Rules
@@ -196,7 +199,8 @@ No browser verification is required.
 - [ ] Document scaffold dry-run/write policy.
 - [ ] Document known-pack registration candidate policy.
 - [ ] Document source-map candidate policy.
-- [ ] Document ECS-like separation as the authoring philosophy.
+- [ ] Document identity/data/system separation as the authoring philosophy.
+- [ ] Document ECS as a useful reference model, not as the only supported architecture.
 - [ ] Documentation explicitly says scaffold does not activate packs.
 - [ ] Documentation references existing programming-artifact and authorization packs as examples.
 
@@ -217,16 +221,17 @@ No browser verification is required.
 ## Functional Requirements
 
 - FR-1: Pack authoring must use `OperationalOntologyPack` as the canonical contract.
-- FR-2: Pack authoring must preserve ECS-like separation of entity ids, data-only component schema, and explicit system bindings.
-- FR-3: Scaffold must be dry-run by default.
-- FR-4: Write mode must require explicit `--write`.
-- FR-5: Scaffold must not mutate known-pack resolver automatically.
-- FR-6: Scaffold must not activate packs.
-- FR-7: Generated paths must be safe and repository-relative unless explicitly output to a temporary or external directory.
-- FR-8: Generated docs must use valid definition-catalog frontmatter.
-- FR-9: Validation must surface runtime pack issues and authoring readiness issues separately.
-- FR-10: Existing known pack activation behavior must remain unchanged.
-- FR-11: All output must be deterministic for the same input/options.
+- FR-2: Pack authoring must preserve architecture-neutral separation of identity declarations, data-only component schema, and explicit system bindings.
+- FR-3: Operational ontology may model ECS, but pack scaffold templates must not be ECS-specific unless explicitly requested.
+- FR-4: Scaffold must be dry-run by default.
+- FR-5: Write mode must require explicit `--write`.
+- FR-6: Scaffold must not mutate known-pack resolver automatically.
+- FR-7: Scaffold must not activate packs.
+- FR-8: Generated paths must be safe and repository-relative unless explicitly output to a temporary or external directory.
+- FR-9: Generated docs must use valid definition-catalog frontmatter.
+- FR-10: Validation must surface runtime pack issues and authoring readiness issues separately.
+- FR-11: Existing known pack activation behavior must remain unchanged.
+- FR-12: All output must be deterministic for the same input/options.
 
 ## Non-Goals
 
@@ -238,7 +243,7 @@ No browser verification is required.
 - Rewriting authorization ontology into sub-packs.
 - Adding a UI for pack authoring.
 - Automatic archive/memo conversion for docs.
-- Implementing SoA storage optimization as part of this scaffold PRD.
+- Implementing ECS-specific runtime scheduling, archetypes, or SoA storage optimization as part of this scaffold PRD.
 
 ## Technical Considerations
 
@@ -268,7 +273,7 @@ No browser verification is required.
 - A maintainer can write scaffold files into a temp package without overwriting existing files.
 - A maintainer can validate existing known packs from CLI.
 - New pack docs start with valid frontmatter and source-map candidates.
-- Generated templates visibly separate entity ids, component schema, and system bindings.
+- Generated templates visibly separate identity declarations, component schema, and system bindings.
 - Existing known pack activation tests remain unaffected.
 - All quality gates pass.
 

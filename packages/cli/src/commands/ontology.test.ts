@@ -64,6 +64,11 @@ describe("ontology CLI", () => {
 
   it("usage와 subcommand 해석에 ontology 루트를 노출한다", () => {
     expect(USAGE).toContain("qa-sdk ontology status");
+    expect(USAGE).toContain("qa-sdk ontology pack scaffold <pack-id>");
+    expect(USAGE).toContain("dry-run by default; file writes require --write");
+    expect(USAGE).toContain("registry activation is out of scope");
+    expect(USAGE).toContain("[--write] [--json]");
+    expect(USAGE).toContain("qa-sdk ontology pack validate <pack-ref>");
     expect(USAGE).toContain("qa-sdk ontology registry activate-pack <pack-id>");
     expect(USAGE).toContain("[--prefix <taxonomyId>=<prefix>] [--output <file>] [--artifact-registry <file>] [--json]");
     expect(USAGE).toContain("qa-sdk ontology prompt extract");
@@ -113,6 +118,30 @@ describe("ontology CLI", () => {
     expect(
       resolveSubcommand([
         "ontology",
+        "pack",
+        "scaffold",
+        "risk-model-ontology",
+        "--write",
+      ]),
+    ).toEqual({
+      name: "ontology pack scaffold",
+      rest: ["risk-model-ontology", "--write"],
+    });
+    expect(
+      resolveSubcommand([
+        "ontology",
+        "pack",
+        "validate",
+        "programming-artifact-ontology",
+        "--json",
+      ]),
+    ).toEqual({
+      name: "ontology pack validate",
+      rest: ["programming-artifact-ontology", "--json"],
+    });
+    expect(
+      resolveSubcommand([
+        "ontology",
         "snapshot",
         "ingest",
         "--input",
@@ -135,6 +164,22 @@ describe("ontology CLI", () => {
       name: "ontology corridor show-latest",
       rest: ["pipe-cli", "--scope", "pipe-scope"],
     });
+  });
+
+  it("pack authoring help documents dry-run and scaffold boundaries", async () => {
+    const output = await captureConsoleAsync(async () => {
+      await cliOntology(["pack.scaffold", "--help"]);
+    });
+
+    expect(output.stderr).toBe("");
+    expect(output.stdout).toContain("qa-sdk ontology pack scaffold <pack-id>");
+    expect(output.stdout).toContain("qa-sdk ontology pack validate <pack-ref>");
+    expect(output.stdout).toContain("OperationalOntologyPack is the canonical pack contract.");
+    expect(output.stdout).toContain("Scaffold is dry-run by default");
+    expect(output.stdout).toContain("file writes require explicit --write");
+    expect(output.stdout).toContain("Known-pack registration is reported as a candidate");
+    expect(output.stdout).toContain("Registry activation is out of scope for scaffold");
+    expect(output.stdout).toContain("ECS can be modeled but is not required");
   });
 
   it("registry activate-pack activates a known pack through the local runtime", async () => {
