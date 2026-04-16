@@ -840,9 +840,9 @@ ${identity.packId} pack의 identity, component-like schema vocabulary, system-li
 - Component schema: \`${identity.package.sourceDir}/${identity.safePackId}-schema.ts\`
 - System binding: \`${identity.package.sourceDir}/${identity.safePackId}-pack.ts\`
 
-## Entity / Component / System-Informed Separation
+## Identity / Data / System Separation
 
-Operational ontology pack authoring is architecture-neutral. ECS can be modeled by a pack when the domain requires it, but this scaffold only uses the identity/data/system separation discipline.
+Operational ontology pack authoring is architecture-neutral. Runtime architecture labels belong to the pack domain and are not emitted by default; this scaffold only uses the identity/data/system separation discipline.
 
 ### Identity declarations
 
@@ -1048,45 +1048,68 @@ ${identity.packId} pack의 generated test skeleton과 추가할 domain-specific 
 
 function renderComponentSchemaFile(identity: OntologyPackScaffoldIdentity): string {
   const { symbols } = identity;
-  return `import type { OperationalOntologySchema } from "operational-ontology/schema";
+  const axisDeclarationsName = `${symbols.camelName}Axes`;
+  const taxonomyDeclarationsName = `${symbols.camelName}Taxonomies`;
+  const relationCategoryDeclarationsName = `${symbols.camelName}RelationCategories`;
+  const traversalDeclarationsName = `${symbols.camelName}Traversals`;
+  return `import type {
+  AxisSchema,
+  OperationalOntologySchema,
+  RelationCategorySchema,
+  TaxonomySchema,
+  TraversalSchema,
+} from "operational-ontology/schema";
 
+// Identity constants
 export const ${symbols.packIdConstantName} = "${identity.packId}" as const;
 export const ${symbols.axisIdConstantName} = "${identity.defaultAxisId}" as const;
 export const ${symbols.taxonomyIdConstantName} = "${identity.defaultTaxonomyId}" as const;
 export const ${symbols.relationCategoryConstantName} = "${identity.defaultRelationCategory}" as const;
 export const ${symbols.traversalPurposeConstantName} = "${identity.defaultTraversalPurpose}" as const;
 
+// Component-like schema: axes
+export const ${axisDeclarationsName} = [
+  {
+    id: ${symbols.axisIdConstantName},
+    values: ["example"],
+    stable: true,
+    capacity: 4,
+  },
+] satisfies AxisSchema[];
+
+// Component-like schema: taxonomies
+export const ${taxonomyDeclarationsName} = [
+  {
+    id: ${symbols.taxonomyIdConstantName},
+    appliesTo: ["node"],
+    axisIds: [${symbols.axisIdConstantName}],
+    identityAxisIds: [${symbols.axisIdConstantName}],
+    space: ${symbols.packIdConstantName},
+  },
+] satisfies TaxonomySchema[];
+
+// Component-like schema: relation categories
+export const ${relationCategoryDeclarationsName} = [
+  {
+    category: ${symbols.relationCategoryConstantName},
+    requiredAxes: [${symbols.axisIdConstantName}],
+  },
+] satisfies RelationCategorySchema[];
+
+// Component-like schema: traversals
+export const ${traversalDeclarationsName} = [
+  {
+    purpose: ${symbols.traversalPurposeConstantName},
+    allowedRelationCategories: [${symbols.relationCategoryConstantName}],
+    canonicalizable: true,
+  },
+] satisfies TraversalSchema[];
+
 export const ${symbols.schemaConstantName} = {
-  axes: [
-    {
-      id: ${symbols.axisIdConstantName},
-      values: ["example"],
-      stable: true,
-      capacity: 4,
-    },
-  ],
-  taxonomies: [
-    {
-      id: ${symbols.taxonomyIdConstantName},
-      appliesTo: ["node"],
-      axisIds: [${symbols.axisIdConstantName}],
-      identityAxisIds: [${symbols.axisIdConstantName}],
-      space: ${symbols.packIdConstantName},
-    },
-  ],
-  relationCategories: [
-    {
-      category: ${symbols.relationCategoryConstantName},
-      requiredAxes: [${symbols.axisIdConstantName}],
-    },
-  ],
-  traversals: [
-    {
-      purpose: ${symbols.traversalPurposeConstantName},
-      allowedRelationCategories: [${symbols.relationCategoryConstantName}],
-      canonicalizable: true,
-    },
-  ],
+  axes: ${axisDeclarationsName},
+  taxonomies: ${taxonomyDeclarationsName},
+  relationCategories: ${relationCategoryDeclarationsName},
+  traversals: ${traversalDeclarationsName},
 } satisfies OperationalOntologySchema;
 `;
 }
@@ -1111,6 +1134,7 @@ import {
   ${symbols.traversalPurposeConstantName},
 } from "${schemaImportPath}";
 
+// System-like bindings: blueprints
 export const ${symbols.blueprintsConstantName} = [
   {
     blueprintId: "${identity.safePackId}-binding",
@@ -1131,6 +1155,15 @@ export const ${symbols.blueprintsConstantName} = [
       ],
       relationCategories: [${symbols.relationCategoryConstantName}],
     },
+    verificationBinding: {
+      coordinateRef: "corridor:${identity.safePackId}-binding",
+      verificationRefs: [
+        {
+          kind: "test",
+          ref: "${identity.package.packageRoot}/src/${identity.safePackId}.test.ts",
+        },
+      ],
+    },
     constraints: [
       { kind: "unit_boundary", severity: "core" },
       { kind: "validation_surface", requiredRefs: ["test"] },
@@ -1139,12 +1172,14 @@ export const ${symbols.blueprintsConstantName} = [
   },
 ] satisfies readonly ImplementationBlueprint[];
 
+// System-like bindings: pack contract
 export const ${symbols.packConstantName} = {
   packId: ${symbols.packIdConstantName},
   schema: ${symbols.schemaConstantName},
   blueprints: ${symbols.blueprintsConstantName},
 } satisfies OperationalOntologyPack;
 
+// System-like bindings: validation helper
 export function ${symbols.validateFunctionName}(): OperationalOntologyPackValidationResult {
   return validateOperationalOntologyPack(${symbols.packConstantName});
 }
