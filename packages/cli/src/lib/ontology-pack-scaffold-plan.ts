@@ -54,6 +54,22 @@ export interface OntologyPackScaffoldIdentityDeclaration {
   readonly value: string;
 }
 
+export interface OntologyPackScaffoldComponentLikeDeclaration {
+  readonly kind: "axis" | "relation-category" | "taxonomy" | "traversal";
+  readonly symbolName: string;
+  readonly value: string;
+  readonly filePath: string;
+  readonly description: string;
+}
+
+export interface OntologyPackScaffoldSystemLikeBinding {
+  readonly kind: "blueprint" | "pack-binding" | "validation-helper";
+  readonly symbolName: string;
+  readonly value: string;
+  readonly filePath: string;
+  readonly description: string;
+}
+
 export interface OntologyPackScaffoldIdentity {
   readonly packId: string;
   readonly safePackId: string;
@@ -79,8 +95,24 @@ export interface OntologyPackScaffoldDocsPaths {
   readonly spec: string;
   readonly plan: string;
   readonly todo: string;
+  readonly rule: string;
   readonly cases: string;
   readonly test: string;
+}
+
+export type OntologyPackScaffoldDefinitionDocType =
+  | "cases"
+  | "plan"
+  | "rule"
+  | "spec"
+  | "test"
+  | "todo";
+
+export interface OntologyPackScaffoldDefinitionDocFile
+  extends OntologyPackScaffoldPlannedFile {
+  readonly docId: string;
+  readonly docType: OntologyPackScaffoldDefinitionDocType;
+  readonly required: boolean;
 }
 
 export interface OntologyPackSourceMapCandidate {
@@ -89,6 +121,14 @@ export interface OntologyPackSourceMapCandidate {
   readonly sourcePath: string;
   readonly sourceRole: "component-schema" | "system-binding" | "test";
   readonly frontmatterKey: "sources";
+}
+
+export interface OntologyPackSourceMapFrontmatterCandidate {
+  readonly docId: string;
+  readonly docPath: string;
+  readonly frontmatterKey: "sources";
+  readonly sources: readonly string[];
+  readonly yaml: string;
 }
 
 export interface OntologyPackKnownPackCandidate {
@@ -100,15 +140,44 @@ export interface OntologyPackKnownPackCandidate {
   readonly applyMode: "candidate-only";
 }
 
+export interface OntologyPackScaffoldPreview {
+  readonly mode: OntologyPackScaffoldMode;
+  readonly writesApplied: false;
+  readonly implementationSkeleton: {
+    readonly files: readonly OntologyPackScaffoldPlannedFile[];
+  };
+  readonly testSkeleton: {
+    readonly files: readonly OntologyPackScaffoldPlannedFile[];
+  };
+  readonly definitionDocs: {
+    readonly required: readonly OntologyPackScaffoldDefinitionDocFile[];
+    readonly optional: readonly OntologyPackScaffoldDefinitionDocFile[];
+    readonly files: readonly OntologyPackScaffoldDefinitionDocFile[];
+  };
+  readonly sourceMapFrontmatterCandidates: readonly OntologyPackSourceMapFrontmatterCandidate[];
+  readonly knownPackRegistrationCandidate: OntologyPackKnownPackCandidate;
+  readonly declarations: {
+    readonly identity: readonly OntologyPackScaffoldIdentityDeclaration[];
+    readonly componentLike: readonly OntologyPackScaffoldComponentLikeDeclaration[];
+    readonly systemLike: readonly OntologyPackScaffoldSystemLikeBinding[];
+  };
+  readonly files: readonly OntologyPackScaffoldPlannedFile[];
+}
+
 export interface OntologyPackScaffoldPlan {
   readonly mode: OntologyPackScaffoldMode;
   readonly identity: OntologyPackScaffoldIdentity;
+  readonly componentLikeDeclarations: readonly OntologyPackScaffoldComponentLikeDeclaration[];
+  readonly systemLikeBindings: readonly OntologyPackScaffoldSystemLikeBinding[];
   readonly componentSchemaFiles: readonly OntologyPackScaffoldPlannedFile[];
   readonly systemBindingFiles: readonly OntologyPackScaffoldPlannedFile[];
   readonly testFiles: readonly OntologyPackScaffoldPlannedFile[];
   readonly docs: OntologyPackScaffoldDocsPaths;
+  readonly definitionDocFiles: readonly OntologyPackScaffoldDefinitionDocFile[];
   readonly sourceMapCandidates: readonly OntologyPackSourceMapCandidate[];
+  readonly sourceMapFrontmatterCandidates: readonly OntologyPackSourceMapFrontmatterCandidate[];
   readonly knownPackCandidate: OntologyPackKnownPackCandidate;
+  readonly preview: OntologyPackScaffoldPreview;
   readonly outputPaths: readonly string[];
   readonly diagnostics: readonly OntologyPackScaffoldDiagnostic[];
 }
@@ -256,6 +325,59 @@ export function createOntologyPackScaffoldPlan(
       },
     ],
   };
+  const componentLikeDeclarations: OntologyPackScaffoldComponentLikeDeclaration[] = [
+    {
+      kind: "axis",
+      symbolName: symbols.axisIdConstantName,
+      value: defaultAxisId,
+      filePath: componentSchemaPath,
+      description: "Data-only axis vocabulary for the pack's first stable dimension.",
+    },
+    {
+      kind: "taxonomy",
+      symbolName: symbols.taxonomyIdConstantName,
+      value: defaultTaxonomyId,
+      filePath: componentSchemaPath,
+      description: "Data-only taxonomy declaration that applies the axis to ontology nodes.",
+    },
+    {
+      kind: "relation-category",
+      symbolName: symbols.relationCategoryConstantName,
+      value: defaultRelationCategory,
+      filePath: componentSchemaPath,
+      description: "Data-only relation category declaration for graph edges in this pack.",
+    },
+    {
+      kind: "traversal",
+      symbolName: symbols.traversalPurposeConstantName,
+      value: defaultTraversalPurpose,
+      filePath: componentSchemaPath,
+      description: "Data-only traversal purpose declaration for context graph navigation.",
+    },
+  ];
+  const systemLikeBindings: OntologyPackScaffoldSystemLikeBinding[] = [
+    {
+      kind: "blueprint",
+      symbolName: symbols.blueprintsConstantName,
+      value: `${safePackId}-binding`,
+      filePath: systemBindingPath,
+      description: "System-like implementation binding that connects schema vocabulary to runtime refs.",
+    },
+    {
+      kind: "pack-binding",
+      symbolName: symbols.packConstantName,
+      value: rawPackId,
+      filePath: systemBindingPath,
+      description: "System-like OperationalOntologyPack object that combines schema and blueprints.",
+    },
+    {
+      kind: "validation-helper",
+      symbolName: symbols.validateFunctionName,
+      value: `validateOperationalOntologyPack(${symbols.packConstantName})`,
+      filePath: systemBindingPath,
+      description: "System-like validation helper for pack contract checks before activation.",
+    },
+  ];
 
   const componentSchemaFiles = [
     {
@@ -284,9 +406,63 @@ export function createOntologyPackScaffoldPlan(
     spec: `${docsDir}/${definitionId}.spec.md`,
     plan: `${docsDir}/${definitionId}.plan.md`,
     todo: `${docsDir}/${definitionId}.todo.md`,
+    rule: `${docsDir}/${definitionId}.rule.md`,
     cases: `${docsDir}/${definitionId}.cases.md`,
     test: `${docsDir}/${definitionId}.test.md`,
   };
+  const definitionDocFiles: OntologyPackScaffoldDefinitionDocFile[] = [
+    {
+      role: "docs-spec",
+      path: docs.spec,
+      docId: definitionId,
+      docType: "spec",
+      required: true,
+      content: renderSpecDoc(identity, componentLikeDeclarations, systemLikeBindings, [
+        componentSchemaPath,
+        systemBindingPath,
+      ]),
+    },
+    {
+      role: "docs-todo",
+      path: docs.todo,
+      docId: `${definitionId}-todo`,
+      docType: "todo",
+      required: true,
+      content: renderTodoDoc(identity),
+    },
+    {
+      role: "docs-plan",
+      path: docs.plan,
+      docId: `${definitionId}-plan`,
+      docType: "plan",
+      required: true,
+      content: renderPlanDoc(identity),
+    },
+    {
+      role: "docs-rule",
+      path: docs.rule,
+      docId: `${definitionId}-rule`,
+      docType: "rule",
+      required: false,
+      content: renderRuleDoc(identity),
+    },
+    {
+      role: "docs-cases",
+      path: docs.cases,
+      docId: `${definitionId}-cases`,
+      docType: "cases",
+      required: false,
+      content: renderCasesDoc(identity),
+    },
+    {
+      role: "docs-test",
+      path: docs.test,
+      docId: `${definitionId}-test`,
+      docType: "test",
+      required: false,
+      content: renderTestDoc(identity, testPath),
+    },
+  ];
   const sourceMapCandidates: OntologyPackSourceMapCandidate[] = [
     {
       docId: definitionId,
@@ -310,6 +486,22 @@ export function createOntologyPackScaffoldPlan(
       frontmatterKey: "sources",
     },
   ];
+  const sourceMapFrontmatterCandidates: OntologyPackSourceMapFrontmatterCandidate[] = [
+    {
+      docId: definitionId,
+      docPath: docs.spec,
+      frontmatterKey: "sources",
+      sources: [componentSchemaPath, systemBindingPath],
+      yaml: renderSourcesYaml([componentSchemaPath, systemBindingPath]),
+    },
+    {
+      docId: `${definitionId}-test`,
+      docPath: docs.test,
+      frontmatterKey: "sources",
+      sources: [testPath],
+      yaml: renderSourcesYaml([testPath]),
+    },
+  ];
   const knownPackCandidate: OntologyPackKnownPackCandidate = {
     targetPath: KNOWN_PACKS_TARGET_PATH,
     packId: rawPackId,
@@ -322,32 +514,58 @@ export function createOntologyPackScaffoldPlan(
     ...componentSchemaFiles.map((file) => file.path),
     ...systemBindingFiles.map((file) => file.path),
     ...testFiles.map((file) => file.path),
-    docs.spec,
-    docs.plan,
-    docs.todo,
-    docs.cases,
-    docs.test,
+    ...definitionDocFiles.map((file) => file.path),
   ];
   diagnostics.push(...detectConflictingOutputPaths([
     ...componentSchemaFiles,
     ...systemBindingFiles,
     ...testFiles,
-    { role: "docs-spec", path: docs.spec, content: "" },
-    { role: "docs-plan", path: docs.plan, content: "" },
-    { role: "docs-todo", path: docs.todo, content: "" },
-    { role: "docs-cases", path: docs.cases, content: "" },
-    { role: "docs-test", path: docs.test, content: "" },
+    ...definitionDocFiles,
   ]));
+  const previewFiles = [
+    ...componentSchemaFiles,
+    ...systemBindingFiles,
+    ...testFiles,
+    ...definitionDocFiles,
+  ];
+  const preview: OntologyPackScaffoldPreview = {
+    mode: input.mode ?? "dry-run",
+    writesApplied: false,
+    implementationSkeleton: {
+      files: [...componentSchemaFiles, ...systemBindingFiles],
+    },
+    testSkeleton: {
+      files: testFiles,
+    },
+    definitionDocs: {
+      required: definitionDocFiles.filter((file) => file.required),
+      optional: definitionDocFiles.filter((file) => !file.required),
+      files: definitionDocFiles,
+    },
+    sourceMapFrontmatterCandidates,
+    knownPackRegistrationCandidate: knownPackCandidate,
+    declarations: {
+      identity: identity.declarations,
+      componentLike: componentLikeDeclarations,
+      systemLike: systemLikeBindings,
+    },
+    files: previewFiles,
+  };
 
   return {
     mode: input.mode ?? "dry-run",
     identity,
+    componentLikeDeclarations,
+    systemLikeBindings,
     componentSchemaFiles,
     systemBindingFiles,
     testFiles,
     docs,
+    definitionDocFiles,
     sourceMapCandidates,
+    sourceMapFrontmatterCandidates,
     knownPackCandidate,
+    preview,
     outputPaths,
     diagnostics,
   };
@@ -567,6 +785,263 @@ function toSafeKebabFallback(value: string): string {
 
 function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function toDisplayName(identity: OntologyPackScaffoldIdentity): string {
+  return identity.safePackId
+    .split("-")
+    .filter(Boolean)
+    .map(capitalize)
+    .join(" ");
+}
+
+function renderSourcesYaml(sources: readonly string[]): string {
+  return [
+    "sources:",
+    ...sources.map((source) => `  - ${source}`),
+  ].join("\n");
+}
+
+function renderSpecDoc(
+  identity: OntologyPackScaffoldIdentity,
+  componentLikeDeclarations: readonly OntologyPackScaffoldComponentLikeDeclaration[],
+  systemLikeBindings: readonly OntologyPackScaffoldSystemLikeBinding[],
+  sources: readonly string[],
+): string {
+  const displayName = toDisplayName(identity);
+  return `---
+def:
+  id: ${identity.definitionId}
+  level: leaf
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: draft
+  layer: domain
+  tags: [structural, contract]
+  links:
+    - target: operational-ontology-pack-interface
+      type: refines
+${renderSourcesYaml(sources)}
+---
+
+# ${displayName} — Operational Ontology Pack
+
+## 목적 ^purpose
+
+${identity.packId} pack의 identity, component-like schema vocabulary, system-like binding을 같은 authoring family에서 추적한다. 이 문서는 pack scaffold 이후 도메인별 온톨로지 의미와 검증 경계를 채우기 위한 시작점이다.
+
+## 구성 ^overview
+
+- Pack id: \`${identity.packId}\`
+- Implementation package: \`${identity.package.implementationPackage}\`
+- Component schema: \`${identity.package.sourceDir}/${identity.safePackId}-schema.ts\`
+- System binding: \`${identity.package.sourceDir}/${identity.safePackId}-pack.ts\`
+
+## Entity / Component / System-Informed Separation
+
+Operational ontology pack authoring is architecture-neutral. ECS can be modeled by a pack when the domain requires it, but this scaffold only uses the identity/data/system separation discipline.
+
+### Identity declarations
+
+${identity.declarations.map((declaration) => `- \`${declaration.symbolName}\` = \`${declaration.value}\` (${declaration.kind})`).join("\n")}
+
+### Component-like declarations
+
+${componentLikeDeclarations.map((declaration) => `- \`${declaration.symbolName}\` = \`${declaration.value}\` (${declaration.kind})`).join("\n")}
+
+### System-like bindings
+
+${systemLikeBindings.map((binding) => `- \`${binding.symbolName}\` (${binding.kind}): ${binding.description}`).join("\n")}
+
+## 검증 참조
+
+- Test skeleton: \`${identity.package.packageRoot}/src/${identity.safePackId}.test.ts\`
+- Known-pack registration remains a manual candidate for \`packages/cli/src/lib/known-ontology-packs.ts\`.
+`;
+}
+
+function renderTodoDoc(identity: OntologyPackScaffoldIdentity): string {
+  const displayName = toDisplayName(identity);
+  return `---
+def:
+  id: ${identity.definitionId}-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: draft
+  layer: operation
+  tags: [structural, testing, contract]
+  links:
+    - target: ${identity.definitionId}
+      type: refines
+---
+
+# ${displayName} — Pack Authoring TODO
+
+## 목적 ^purpose
+
+${identity.packId} pack scaffold 이후 실제 도메인 vocabulary, tests, docs, source-map, known-pack registration을 닫기 위한 작업을 추적한다.
+
+## Completed — 완료 기록
+
+아직 완료 항목 없음. 구현 완료 사실만 여기에 추가한다.
+
+## Actionable — 실행 가능
+
+- [ ] Replace the example axis value with domain vocabulary.
+- [ ] Fill taxonomy, relation category, and traversal declarations.
+- [ ] Validate the pack skeleton with \`${identity.symbols.validateFunctionName}()\`.
+- [ ] Add domain-specific test expectations.
+- [ ] Apply source-map frontmatter after files are written.
+- [ ] Review the known-pack registration candidate before editing the resolver manually.
+
+## Deferred — 조건부 대기
+
+- [ ] Registry activation remains separate from scaffold output.
+
+## Parking Lot — 후보 보관
+
+- [ ] Add optional rule/cases/test docs when the pack has concrete consumer rules or scenarios.
+`;
+}
+
+function renderPlanDoc(identity: OntologyPackScaffoldIdentity): string {
+  const displayName = toDisplayName(identity);
+  return `---
+def:
+  id: ${identity.definitionId}-plan
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: draft
+  layer: operation
+  tags: [structural, contract]
+  links:
+    - target: ${identity.definitionId}
+      type: refines
+    - target: operational-ontology-pack-interface
+      type: depends_on
+---
+
+# ${displayName} — Pack Authoring Plan
+
+## 목적 ^purpose
+
+${identity.packId} pack을 scaffold 후보에서 검증 가능한 operational ontology pack으로 승격하는 순서를 기록한다.
+
+## 단계
+
+1. Keep identity constants stable before expanding schema content.
+2. Replace placeholder component-like declarations with finite, decision-relevant domain vocabulary.
+3. Add system-like blueprint bindings only after schema declarations are explicit.
+4. Run the generated test skeleton and pack validation.
+5. Add source-map frontmatter and known-pack resolver edits manually after review.
+6. Activate through \`qa-sdk ontology registry activate-pack\` only after scaffold output is written and validated.
+`;
+}
+
+function renderRuleDoc(identity: OntologyPackScaffoldIdentity): string {
+  const displayName = toDisplayName(identity);
+  return `---
+def:
+  id: ${identity.definitionId}-rule
+  level: leaf
+  scope: constraint
+  aspect: tech_constraint
+  depth: validation
+  lifecycle: draft
+  layer: operation
+  tags: [structural, contract]
+  links:
+    - target: ${identity.definitionId}
+      type: refines
+---
+
+# ${displayName} — Pack Authoring Rules
+
+## 목적 ^purpose
+
+${identity.packId} pack을 소비하거나 확장할 때 반복 확인해야 하는 authoring rule 후보를 기록한다.
+
+## 규칙 후보
+
+- Identity declarations stay stable and data-free.
+- Component-like schema declarations remain data-only.
+- System-like bindings own validation, blueprint refs, and runtime integration.
+- Known-pack registration is manual until explicitly reviewed.
+`;
+}
+
+function renderCasesDoc(identity: OntologyPackScaffoldIdentity): string {
+  const displayName = toDisplayName(identity);
+  return `---
+def:
+  id: ${identity.definitionId}-cases
+  level: leaf
+  scope: flow
+  aspect: user_scenario
+  depth: validation
+  lifecycle: draft
+  layer: operation
+  tags: [structural, scenario, contract]
+  links:
+    - target: ${identity.definitionId}
+      type: refines
+---
+
+# ${displayName} — Pack Authoring Cases
+
+## 목적 ^purpose
+
+${identity.packId} pack을 작성, 검증, 등록 후보로 검토하는 사용 시나리오를 기록한다.
+
+## UC-001: Pack author previews scaffold output
+
+### 상황
+
+Pack author runs \`qa-sdk ontology pack scaffold ${identity.packId} --json\`.
+
+### 기대 결과
+
+Preview separates identity declarations, component-like schema declarations, system-like bindings, generated docs, source-map candidates, and known-pack registration candidates without writing files.
+`;
+}
+
+function renderTestDoc(
+  identity: OntologyPackScaffoldIdentity,
+  testPath: string,
+): string {
+  const displayName = toDisplayName(identity);
+  return `---
+def:
+  id: ${identity.definitionId}-test
+  level: leaf
+  scope: flow
+  aspect: test_strategy
+  depth: validation
+  lifecycle: draft
+  layer: operation
+  tags: [structural, testing, contract]
+  links:
+    - target: ${identity.definitionId}
+      type: refines
+${renderSourcesYaml([testPath])}
+---
+
+# ${displayName} — Pack Validation Tests
+
+## 목적 ^purpose
+
+${identity.packId} pack의 generated test skeleton과 추가할 domain-specific 검증 항목을 매핑한다.
+
+## 검증 매핑
+
+- \`${testPath}\` verifies \`${identity.symbols.validateFunctionName}()\`.
+- Add domain-specific axis, taxonomy, relation, traversal, and blueprint expectations before activation.
+`;
 }
 
 function renderComponentSchemaFile(identity: OntologyPackScaffoldIdentity): string {

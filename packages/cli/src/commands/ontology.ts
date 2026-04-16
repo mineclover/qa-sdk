@@ -153,7 +153,13 @@ function printPackScaffoldPlanSummary(plan: OntologyPackScaffoldPlan): void {
     console.log(`  - ${file.path}`);
   }
   console.log(`docs family: ${plan.docs.familyId}`);
+  console.log(`definition doc files: ${plan.definitionDocFiles.length}`);
+  for (const file of plan.definitionDocFiles) {
+    const required = file.required ? "required" : "optional";
+    console.log(`  - ${file.path} (${required})`);
+  }
   console.log(`source-map candidates: ${plan.sourceMapCandidates.length}`);
+  console.log(`source-map frontmatter candidates: ${plan.sourceMapFrontmatterCandidates.length}`);
   console.log(`known-pack candidate: ${plan.knownPackCandidate.targetPath}`);
   console.log("files written: 0");
 }

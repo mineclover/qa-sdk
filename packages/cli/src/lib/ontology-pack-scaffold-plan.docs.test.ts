@@ -51,6 +51,17 @@ describe("ontology pack scaffold plan", () => {
       "relation-category",
       "traversal-purpose",
     ]);
+    expect(plan.componentLikeDeclarations.map((declaration) => declaration.kind)).toEqual([
+      "axis",
+      "taxonomy",
+      "relation-category",
+      "traversal",
+    ]);
+    expect(plan.systemLikeBindings.map((binding) => binding.kind)).toEqual([
+      "blueprint",
+      "pack-binding",
+      "validation-helper",
+    ]);
     expect(plan.componentSchemaFiles).toHaveLength(1);
     expect(plan.componentSchemaFiles[0]).toMatchObject({
       role: "component-schema",
@@ -71,9 +82,52 @@ describe("ontology pack scaffold plan", () => {
       spec: "docs/specs/operational-ontology/risk-model-ontology-system.spec.md",
       plan: "docs/specs/operational-ontology/risk-model-ontology-system.plan.md",
       todo: "docs/specs/operational-ontology/risk-model-ontology-system.todo.md",
+      rule: "docs/specs/operational-ontology/risk-model-ontology-system.rule.md",
       cases: "docs/specs/operational-ontology/risk-model-ontology-system.cases.md",
       test: "docs/specs/operational-ontology/risk-model-ontology-system.test.md",
     });
+    expect(plan.definitionDocFiles.map((file) => ({
+      docType: file.docType,
+      required: file.required,
+      path: file.path,
+    }))).toEqual([
+      {
+        docType: "spec",
+        required: true,
+        path: "docs/specs/operational-ontology/risk-model-ontology-system.spec.md",
+      },
+      {
+        docType: "todo",
+        required: true,
+        path: "docs/specs/operational-ontology/risk-model-ontology-system.todo.md",
+      },
+      {
+        docType: "plan",
+        required: true,
+        path: "docs/specs/operational-ontology/risk-model-ontology-system.plan.md",
+      },
+      {
+        docType: "rule",
+        required: false,
+        path: "docs/specs/operational-ontology/risk-model-ontology-system.rule.md",
+      },
+      {
+        docType: "cases",
+        required: false,
+        path: "docs/specs/operational-ontology/risk-model-ontology-system.cases.md",
+      },
+      {
+        docType: "test",
+        required: false,
+        path: "docs/specs/operational-ontology/risk-model-ontology-system.test.md",
+      },
+    ]);
+    expect(plan.definitionDocFiles.find((file) => file.docType === "spec")?.content).toContain(
+      "operational-ontology-pack-interface",
+    );
+    expect(plan.definitionDocFiles.find((file) => file.docType === "todo")?.content).toContain(
+      "## Actionable",
+    );
     expect(plan.sourceMapCandidates).toEqual([
       {
         docId: "risk-model-ontology-system",
@@ -97,6 +151,32 @@ describe("ontology pack scaffold plan", () => {
         frontmatterKey: "sources",
       },
     ]);
+    expect(plan.sourceMapFrontmatterCandidates).toEqual([
+      {
+        docId: "risk-model-ontology-system",
+        docPath: "docs/specs/operational-ontology/risk-model-ontology-system.spec.md",
+        frontmatterKey: "sources",
+        sources: [
+          "packages/operational-ontology/src/internal/risk-model-ontology-schema.ts",
+          "packages/operational-ontology/src/internal/risk-model-ontology-pack.ts",
+        ],
+        yaml: [
+          "sources:",
+          "  - packages/operational-ontology/src/internal/risk-model-ontology-schema.ts",
+          "  - packages/operational-ontology/src/internal/risk-model-ontology-pack.ts",
+        ].join("\n"),
+      },
+      {
+        docId: "risk-model-ontology-system-test",
+        docPath: "docs/specs/operational-ontology/risk-model-ontology-system.test.md",
+        frontmatterKey: "sources",
+        sources: ["packages/operational-ontology/src/risk-model-ontology.test.ts"],
+        yaml: [
+          "sources:",
+          "  - packages/operational-ontology/src/risk-model-ontology.test.ts",
+        ].join("\n"),
+      },
+    ]);
     expect(plan.knownPackCandidate).toEqual({
       targetPath: "packages/cli/src/lib/known-ontology-packs.ts",
       packId: "risk-model-ontology",
@@ -105,6 +185,35 @@ describe("ontology pack scaffold plan", () => {
       registryEntry: "\"risk-model-ontology\": riskModelOntologyPack",
       applyMode: "candidate-only",
     });
+    expect(plan.preview).toMatchObject({
+      mode: "dry-run",
+      writesApplied: false,
+      knownPackRegistrationCandidate: {
+        targetPath: "packages/cli/src/lib/known-ontology-packs.ts",
+      },
+      declarations: {
+        identity: expect.any(Array),
+        componentLike: expect.any(Array),
+        systemLike: expect.any(Array),
+      },
+    });
+    expect(plan.preview.implementationSkeleton.files.map((file) => file.path)).toEqual([
+      "packages/operational-ontology/src/internal/risk-model-ontology-schema.ts",
+      "packages/operational-ontology/src/internal/risk-model-ontology-pack.ts",
+    ]);
+    expect(plan.preview.testSkeleton.files[0]?.content).toContain(
+      "validates the pack contract",
+    );
+    expect(plan.preview.definitionDocs.required.map((file) => file.docType)).toEqual([
+      "spec",
+      "todo",
+      "plan",
+    ]);
+    expect(plan.preview.definitionDocs.optional.map((file) => file.docType)).toEqual([
+      "rule",
+      "cases",
+      "test",
+    ]);
   });
 
   it("keeps component-like schema content separate from system-like bindings", () => {

@@ -1,4 +1,5 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -180,6 +181,110 @@ describe("ontology CLI", () => {
     expect(output.stdout).toContain("Known-pack registration is reported as a candidate");
     expect(output.stdout).toContain("Registry activation is out of scope for scaffold");
     expect(output.stdout).toContain("ECS can be modeled but is not required");
+  });
+
+  it("pack scaffold json returns a dry-run preview without creating files", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-pack-scaffold-preview-"));
+    const previousCwd = process.cwd();
+    try {
+      process.chdir(dir);
+      const output = await captureConsoleWithExitCode(async () => {
+        await main([
+          "ontology",
+          "pack",
+          "scaffold",
+          "risk-model-ontology",
+          "--json",
+        ]);
+      });
+      const parsed = JSON.parse(output.stdout) as {
+        mode: string;
+        componentSchemaFiles: Array<{ path: string; content: string }>;
+        systemBindingFiles: Array<{ path: string; content: string }>;
+        testFiles: Array<{ path: string; content: string }>;
+        definitionDocFiles: Array<{
+          docType: string;
+          required: boolean;
+          path: string;
+          content: string;
+        }>;
+        sourceMapFrontmatterCandidates: Array<{
+          docPath: string;
+          sources: string[];
+          yaml: string;
+        }>;
+        knownPackCandidate: {
+          targetPath: string;
+          registryEntry: string;
+        };
+        preview: {
+          mode: string;
+          writesApplied: boolean;
+          implementationSkeleton: { files: Array<{ path: string; content: string }> };
+          testSkeleton: { files: Array<{ path: string; content: string }> };
+          definitionDocs: {
+            required: Array<{ docType: string; content: string }>;
+            optional: Array<{ docType: string; content: string }>;
+          };
+          declarations: {
+            identity: unknown[];
+            componentLike: unknown[];
+            systemLike: unknown[];
+          };
+          sourceMapFrontmatterCandidates: Array<{ yaml: string }>;
+          knownPackRegistrationCandidate: { targetPath: string };
+          files: Array<{ path: string }>;
+        };
+      };
+
+      expect(output.stderr).toBe("");
+      expect(output.exitCode).toBeUndefined();
+      expect(parsed.mode).toBe("dry-run");
+      expect(parsed.preview.mode).toBe("dry-run");
+      expect(parsed.preview.writesApplied).toBe(false);
+      expect(parsed.componentSchemaFiles[0]?.content).toContain("OperationalOntologySchema");
+      expect(parsed.systemBindingFiles[0]?.content).toContain("OperationalOntologyPack");
+      expect(parsed.testFiles[0]?.content).toContain("validates the pack contract");
+      expect(parsed.definitionDocFiles.map((file) => file.docType)).toEqual([
+        "spec",
+        "todo",
+        "plan",
+        "rule",
+        "cases",
+        "test",
+      ]);
+      expect(parsed.preview.definitionDocs.required.map((file) => file.docType)).toEqual([
+        "spec",
+        "todo",
+        "plan",
+      ]);
+      expect(parsed.preview.definitionDocs.optional.map((file) => file.docType)).toEqual([
+        "rule",
+        "cases",
+        "test",
+      ]);
+      expect(parsed.definitionDocFiles.find((file) => file.docType === "spec")?.content)
+        .toContain("Component-like declarations");
+      expect(parsed.sourceMapFrontmatterCandidates[0]?.yaml).toContain("sources:");
+      expect(parsed.knownPackCandidate).toMatchObject({
+        targetPath: "packages/cli/src/lib/known-ontology-packs.ts",
+        registryEntry: "\"risk-model-ontology\": riskModelOntologyPack",
+      });
+      expect(parsed.preview.knownPackRegistrationCandidate.targetPath).toBe(
+        "packages/cli/src/lib/known-ontology-packs.ts",
+      );
+      expect(parsed.preview.declarations.identity.length).toBeGreaterThan(0);
+      expect(parsed.preview.declarations.componentLike.length).toBeGreaterThan(0);
+      expect(parsed.preview.declarations.systemLike.length).toBeGreaterThan(0);
+      for (const file of parsed.preview.files) {
+        expect(existsSync(join(dir, file.path))).toBe(false);
+      }
+      expect(existsSync(join(dir, "packages"))).toBe(false);
+      expect(existsSync(join(dir, "docs"))).toBe(false);
+    } finally {
+      process.chdir(previousCwd);
+      await rm(dir, { force: true, recursive: true });
+    }
   });
 
   it("registry activate-pack activates a known pack through the local runtime", async () => {
