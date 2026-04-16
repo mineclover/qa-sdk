@@ -451,14 +451,15 @@
         "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
       ],
       "priority": 15,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "US-015 operational verification recorded in docs/specs/definition-catalog/topdown-lifecycle-inventory-report.memo.md. Evidence: docs-control-plane 16 actionable/7 deferred; registry allocation REST/remote rows deferred; programming artifact 0 actionable/6 deferred; authorization 17 actionable hardening rows; two PRD drift checks total=0 with no .ralph-tui paths; def sync loaded 1040 docs/2827 links and def validate passed with 0 warnings; docs tests, typecheck, and build passed.",
       "dependsOn": [
         "US-014"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-16T15:02:28.280Z"
+    "updatedAt": "2026-04-16T15:06:36.164Z"
   }
 }

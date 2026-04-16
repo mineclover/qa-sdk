@@ -108,12 +108,32 @@ The four prioritized families each report `completedRecords: []`. Workspace stat
 | 6 | Programming artifact operationalization boundary | 6 deferred rows across provider split, production persistence, remote quality provider, and allocation simulation | Promote only when the registry-service/index-meta boundary is opened. |
 | 7 | Section-level graph nodes | 3 deferred rows under docs control plane | Defer until document-level ranking/filtering is stable. |
 
+## Operational Verification - US-015
+
+Verification date: 2026-04-17.
+
+The commands below were run against a freshly built CLI bundle after `pnpm --filter @qa-sdk/cli build`.
+
+| check | evidence | result |
+|-------|----------|--------|
+| CLI docs regressions | `pnpm --filter @qa-sdk/cli test -- docs` | Passed: 8 test files, 88 tests. |
+| CLI typecheck | `pnpm --filter @qa-sdk/cli typecheck` | Passed. |
+| CLI bundle | `pnpm --filter @qa-sdk/cli build` | Passed; `packages/cli/dist/index.js` rebuilt. |
+| Definition sync/validate | `node packages/cli/dist/index.js def sync` then `node packages/cli/dist/index.js def validate` | Sync loaded 1040 documents and 2827 links; validate passed with 0 warnings. |
+| `docs-control-plane` status | `node packages/cli/dist/index.js docs status docs-control-plane --json` | `nextFollowUps` returned 23 rows: 16 `actionable` and 7 `deferred`; actionable samples include `Ontology Pack Authoring Control Plane`, `pack scaffold command`, and `pack validate command`. |
+| Registry allocation status | `node packages/cli/dist/index.js docs status operational-ontology-registry-allocation --json` | Returned exactly 2 deferred rows: `REST activation endpoint for registry-service` and `Remote activation service/deployment surface`. |
+| Programming artifact status | `node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json` | Returned 6 `deferred` rows and 0 `actionable` rows, so conditional open items remain non-actionable unless placed under an actionable heading. |
+| Authorization status | `node packages/cli/dist/index.js docs status authorization-ontology-system --json` | Returned 17 `actionable` hardening rows; visible groups include policy source adapters, remediation workflow, audit gates, monitor/export surfaces, regression tests, masking, and graph export policy. |
+| Coordinate graph drift | `node packages/cli/dist/index.js docs drift --prd tasks/prd-document-coordinate-graph-traversal.json --json` | `counts.total` was 0; JSON contained no `.ralph-tui` session paths. |
+| Source map drift | `node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json` | `counts.total` was 0; JSON contained no `.ralph-tui` session paths. |
+
 ## Reproduction Commands
 
 ```bash
 pnpm --filter @qa-sdk/cli test -- docs
 pnpm --filter @qa-sdk/cli typecheck
 pnpm --filter @qa-sdk/cli build
+node packages/cli/dist/index.js def sync
 node packages/cli/dist/index.js def validate
 
 node packages/cli/dist/index.js docs status docs-control-plane --json
