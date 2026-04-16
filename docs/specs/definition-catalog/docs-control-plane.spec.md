@@ -64,6 +64,7 @@ Docs graph traversal은 authored vocabulary를 대체하지 않고 내부 분류
 - node role: `spec`, `todo`, `plan`, `rule`, `test`, `memo`, `knowledge`, `prd`, `ralph-prd-json`, `ralph-session`, `source`, `evidence`, 필요한 경우 `section`
 - authored links: `contains`, `depends_on`, `implements`, `refines`, `constrains`, `traces_to`, `evolves_from`, `supersedes`는 source-owned 값으로 보존하고 traversal index에서만 canonical axis로 매핑한다.
 - presets: `family`, `implementation`, `review`, `impact`, `prd-completion`은 편의 view이며 canonical axis가 아니다.
+- source traversal은 docs control-plane adapters가 만든 `DocumentEnvelope.sources`, metadata source refs, PRD/session path, artifact evidence refs를 읽는다. `qa-sdk def find-by-file`의 DB-owned `code_references` explicit source-map 조회와 별도 표면이다.
 
 ## `qa-sdk def`와 `qa-sdk docs`
 

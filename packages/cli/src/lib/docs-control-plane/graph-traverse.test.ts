@@ -297,6 +297,153 @@ describe("docs-control-plane graph traversal", () => {
       "optional missing in docs/specs/checkout/checkout",
     );
   });
+
+  it("traverses source paths from either side and bounds uncovered source targets", () => {
+    const index = buildDocumentGraphIndex(sourceEvidenceTraceDocuments(), {
+      rootDir: "/repo",
+    });
+
+    const fromSourcePath = traverseDocumentGraph(index, {
+      target: "/repo/packages/checkout/src/index.ts",
+      axes: ["source"],
+      direction: "in",
+      depth: 1,
+    });
+
+    expect(fromSourcePath.targetResolution.lookupKind).toBe("source-path");
+    expect(traversalNodeIds(fromSourcePath)).toEqual(expect.arrayContaining([
+      "source:packages/checkout/src/index.ts",
+      "document:checkout-spec",
+      "document:checkout-proof",
+    ]));
+    expect(uniqueEdgeAxes(fromSourcePath)).toEqual(["source"]);
+
+    const fromDocument = traverseDocumentGraph(index, {
+      target: "checkout-spec",
+      axes: ["source"],
+      direction: "out",
+      depth: 1,
+    });
+    expect(traversalNodeIds(fromDocument)).toEqual(expect.arrayContaining([
+      "source:packages/checkout/src/index.ts",
+      "source:packages/checkout/src/index.test.ts",
+    ]));
+    expect(fromDocument.edges.map((edge) => edge.authoredType)).toEqual(
+      expect.arrayContaining(["implementation", "test"]),
+    );
+
+    const missing = traverseDocumentGraph(index, {
+      target: "/repo/packages/missing/src/nope.ts",
+      axes: ["source"],
+      direction: "both",
+    });
+    expect(missing.targetResolution.lookupKind).toBe("source-path-missing");
+    expect(missing.nodeCount).toBe(1);
+    expect(missing.edgeCount).toBe(0);
+    expect(missing.truncated).toBe(false);
+    expect(missing.diagnostics.join("\n")).toContain("source-map-missing");
+  });
+
+  it("traverses evidence records to proof, outputs, and verification refs", () => {
+    const index = buildDocumentGraphIndex(sourceEvidenceTraceDocuments(), {
+      rootDir: "/repo",
+    });
+
+    const fromEvidence = traverseDocumentGraph(index, {
+      target: "checkout-proof",
+      axes: ["evidence", "source"],
+      direction: "both",
+      depth: 2,
+    });
+
+    expect(traversalNodeIds(fromEvidence)).toEqual(expect.arrayContaining([
+      "document:checkout-spec",
+      "document:checkout-proof",
+      "evidence:checkout-proof",
+      "source:artifacts/checkout-output.json",
+      "source:packages/checkout/src/index.ts",
+      "source:packages/checkout/src/index.test.ts",
+    ]));
+    expect(fromEvidence.edges.filter((edge) => edge.axis === "evidence").map((edge) => edge.authoredType)).toEqual(
+      expect.arrayContaining(["verifies", "materializes_output", "verificationRefs"]),
+    );
+    expect(fromEvidence.edges.filter((edge) => edge.axis === "source").map((edge) => edge.authoredType)).toEqual(
+      expect.arrayContaining(["source_ref", "verification_ref"]),
+    );
+
+    const fromDocument = traverseDocumentGraph(index, {
+      target: "checkout-spec",
+      axes: ["evidence"],
+      direction: "both",
+      depth: 2,
+    });
+    expect(traversalNodeIds(fromDocument)).toEqual(expect.arrayContaining([
+      "document:checkout-proof",
+      "evidence:checkout-proof",
+    ]));
+    expect(uniqueEdgeAxes(fromDocument)).toEqual(["evidence"]);
+  });
+
+  it("traverses PRD trace history without collapsing it into source or evidence", () => {
+    const index = buildDocumentGraphIndex(sourceEvidenceTraceDocuments(), {
+      rootDir: "/repo",
+    });
+
+    const result = traverseDocumentGraph(index, {
+      target: "checkout-spec",
+      axes: ["trace"],
+      direction: "both",
+      depth: 3,
+    });
+
+    expect(uniqueEdgeAxes(result)).toEqual(["trace"]);
+    expect(traversalNodeIds(result)).toEqual(expect.arrayContaining([
+      "document:tasks/checkout-prd",
+      "task:tasks/checkout-prd:US-006",
+      "document:checkout-todo",
+      "document:ralph-session:session-1",
+    ]));
+    expect(result.nodes.map((node) => node.kind)).not.toContain("source");
+    expect(result.nodes.map((node) => node.kind)).not.toContain("evidence");
+    expect(adapterIdsForNode(result, "document:tasks/checkout-prd")).toEqual(
+      expect.arrayContaining(["prd-markdown", "ralph-prd-json"]),
+    );
+    expect(adapterIdsForNode(result, "task:tasks/checkout-prd:US-006")).toEqual(
+      expect.arrayContaining(["prd-markdown", "ralph-prd-json"]),
+    );
+  });
+
+  it("keeps trace, source, and evidence as distinct edge sets for the same target", () => {
+    const index = buildDocumentGraphIndex(sourceEvidenceTraceDocuments(), {
+      rootDir: "/repo",
+    });
+
+    const trace = traverseDocumentGraph(index, {
+      target: "checkout-spec",
+      axes: ["trace"],
+      direction: "both",
+      depth: 1,
+    });
+    const source = traverseDocumentGraph(index, {
+      target: "checkout-spec",
+      axes: ["source"],
+      direction: "both",
+      depth: 1,
+    });
+    const evidence = traverseDocumentGraph(index, {
+      target: "checkout-spec",
+      axes: ["evidence"],
+      direction: "both",
+      depth: 1,
+    });
+
+    expect(uniqueEdgeAxes(trace)).toEqual(["trace"]);
+    expect(uniqueEdgeAxes(source)).toEqual(["source"]);
+    expect(uniqueEdgeAxes(evidence)).toEqual(["evidence"]);
+    expect(edgeIds(trace)).not.toEqual(edgeIds(source));
+    expect(edgeIds(trace)).not.toEqual(edgeIds(evidence));
+    expect(edgeIds(source)).not.toEqual(edgeIds(evidence));
+  });
 });
 
 function fixtureIndex() {
@@ -489,4 +636,189 @@ function roleDocument(
       },
     },
   } satisfies DocumentEnvelopeInput);
+}
+
+function sourceEvidenceTraceDocuments(): readonly DocumentEnvelope[] {
+  return [
+    graphDocument({
+      adapterId: "definition-markdown",
+      kind: "spec",
+      stableId: "checkout-spec",
+      familyId: "docs/specs/checkout/checkout",
+      path: "docs/specs/checkout/checkout.spec.md",
+      metadata: {
+        defId: "checkout-spec",
+        sourcePath: "docs/specs/checkout/checkout.spec.md",
+      },
+      links: [
+        { targetId: "tasks/checkout-prd", type: "traces_to" },
+      ],
+      sources: [
+        {
+          id: "implementation",
+          path: "/repo/packages/checkout/src/index.ts",
+          metadata: { sourceKind: "implementation" },
+        },
+        {
+          id: "test",
+          path: "packages/checkout/src/index.test.ts",
+          metadata: { sourceKind: "test" },
+        },
+      ],
+    }),
+    graphDocument({
+      adapterId: "definition-markdown",
+      kind: "todo",
+      stableId: "checkout-todo",
+      familyId: "docs/specs/checkout/checkout",
+      path: "docs/specs/checkout/checkout.todo.md",
+      metadata: {
+        defId: "checkout-todo",
+        sourcePath: "docs/specs/checkout/checkout.todo.md",
+      },
+      links: [
+        { targetId: "US-006", type: "traces_to" },
+      ],
+    }),
+    graphDocument({
+      adapterId: "prd-markdown",
+      kind: "prd",
+      stableId: "tasks/checkout-prd",
+      familyId: "tasks/checkout-prd",
+      path: "tasks/checkout-prd.md",
+      metadata: {
+        title: "Checkout PRD",
+        sourcePath: "tasks/checkout-prd.md",
+      },
+      tasks: [
+        {
+          id: "US-006",
+          title: "Add source, evidence, and trace traversal",
+        },
+      ],
+    }),
+    graphDocument({
+      adapterId: "ralph-prd-json",
+      kind: "ralph-prd-json",
+      stableId: "tasks/checkout-prd",
+      familyId: "tasks/checkout-prd",
+      path: "tasks/checkout-prd.json",
+      metadata: {
+        sourcePath: "tasks/checkout-prd.json",
+      },
+      tasks: [
+        {
+          id: "US-006",
+          title: "Add source, evidence, and trace traversal",
+          metadata: {
+            dependsOn: [],
+            passes: true,
+          },
+        },
+      ],
+    }),
+    graphDocument({
+      adapterId: "ralph-session",
+      kind: "ralph-session",
+      stableId: "ralph-session:session-1",
+      familyId: "tasks/checkout-prd",
+      path: ".ralph-tui/session-meta.json",
+      metadata: {
+        id: "session-1",
+        sourcePath: ".ralph-tui/session-meta.json",
+        prdPath: "tasks/checkout-prd.json",
+      },
+    }),
+    graphDocument({
+      adapterId: "artifact-evidence",
+      kind: "activation-evidence",
+      stableId: "checkout-proof",
+      familyId: "checkout-spec",
+      path: "artifacts/checkout-proof.json",
+      metadata: {
+        artifactId: "checkout-proof",
+        artifactRef: "artifacts/checkout-proof.json",
+        outputPath: "artifacts/checkout-output.json",
+        verifiesRefs: ["checkout-spec"],
+        materializesOutputRefs: ["artifacts/checkout-output.json"],
+        sourceRefs: ["/repo/packages/checkout/src/index.ts"],
+        verificationRefs: ["packages/checkout/src/index.test.ts"],
+      },
+      links: [
+        { targetId: "checkout-spec", type: "verifies" },
+        { targetId: "artifacts/checkout-output.json", type: "materializes_output" },
+      ],
+      sources: [
+        {
+          id: "source-ref:1",
+          path: "/repo/packages/checkout/src/index.ts",
+          metadata: { sourceKind: "source_ref" },
+        },
+        {
+          id: "verification-ref:1",
+          path: "packages/checkout/src/index.test.ts",
+          metadata: { sourceKind: "verification_ref" },
+        },
+      ],
+      evidence: [
+        {
+          id: "checkout-proof",
+          kind: "activation-evidence",
+          summary: "Checkout traversal proof",
+          metadata: {
+            artifactId: "checkout-proof",
+          },
+        },
+      ],
+    }),
+  ];
+}
+
+function graphDocument(
+  input: Omit<DocumentEnvelopeInput, "rawSource"> & {
+    readonly rawSource?: DocumentEnvelopeInput["rawSource"];
+  },
+): DocumentEnvelope {
+  return normalizeDocumentEnvelope({
+    links: [],
+    sources: [],
+    sections: [],
+    tasks: [],
+    evidence: [],
+    diagnostics: [],
+    ...input,
+    rawSource: input.rawSource ?? {
+      path: input.path,
+      sourceSchema: input.adapterId,
+    },
+  });
+}
+
+function traversalNodeIds(
+  result: ReturnType<typeof traverseDocumentGraph>,
+): readonly string[] {
+  return result.nodes.map((node) => node.id);
+}
+
+function uniqueEdgeAxes(
+  result: ReturnType<typeof traverseDocumentGraph>,
+): readonly TraversalAxis[] {
+  return [...new Set(result.edges.map((edge) => edge.axis))];
+}
+
+function edgeIds(
+  result: ReturnType<typeof traverseDocumentGraph>,
+): readonly string[] {
+  return result.edges.map((edge) => edge.id).toSorted();
+}
+
+function adapterIdsForNode(
+  result: ReturnType<typeof traverseDocumentGraph>,
+  nodeId: string,
+): readonly string[] {
+  return result.nodes
+    .find((node) => node.id === nodeId)
+    ?.reasons.map((reason) => reason.adapterId)
+    .filter((adapterId): adapterId is string => Boolean(adapterId))
+    ?? [];
 }

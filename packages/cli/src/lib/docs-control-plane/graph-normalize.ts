@@ -103,11 +103,7 @@ function addAuthoredLinkEdges(
     const axis = AUTHORED_LINK_AXIS_MAP[link.type as keyof typeof AUTHORED_LINK_AXIS_MAP];
     if (!axis) return;
 
-    const target = resolveDocumentOrReference(
-      index,
-      link.targetId,
-      axis === "evidence" ? "evidence" : "document",
-    );
+    const target = resolveAuthoredLinkTarget(index, document, link.targetId, axis);
     const kind: DocumentGraphEdgeKind = axis === "evidence" ? "document-evidence" : "authored-link";
     builder.add({
       kind,
@@ -872,6 +868,16 @@ function resolveTaskOrReference(
   const task = index.taskById.get(value) ?? index.taskById.get(`${document.stableId}:${value}`);
   if (task) return taskNodeTarget(task.document, task.task);
   return resolveDocumentOrReference(index, value, "document");
+}
+
+function resolveAuthoredLinkTarget(
+  index: ResolutionIndex,
+  document: DocumentEnvelope,
+  value: string,
+  axis: TraversalAxis,
+): ResolvedTarget {
+  if (axis === "trace") return resolveTaskOrReference(index, document, value);
+  return resolveDocumentOrReference(index, value, axis === "evidence" ? "evidence" : "document");
 }
 
 function resolveDocumentOrReference(

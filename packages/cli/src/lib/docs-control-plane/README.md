@@ -25,6 +25,11 @@ Authored link vocabulary remains source-owned. Values like `contains`,
 canonical axes only for traversal. Presets such as `family`, `impact`, and
 `prd-completion` are convenience views over those axes, not new axes.
 
+Source traversal is powered by docs control-plane adapters (`DocumentEnvelope`
+sources, metadata source refs, PRD/session paths, and artifact evidence refs).
+It is intentionally broader than, and distinct from, `qa-sdk def find-by-file`,
+which reads DB-owned `code_references` explicit source maps only.
+
 이 story는 REST endpoint, remote service, database migration, 새 artifact
 vocabulary를 추가하지 않는다.
 
