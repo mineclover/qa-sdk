@@ -24,6 +24,8 @@ def:
 
 ## 구현 항목
 
+### Completed — 완료 기록
+
 - [x] Document Source Map Coverage Expansion
   - [x] docs-control-plane command, graph, adapter, and PRD conversion source files have conservative frontmatter source coverage
   - [x] ontology CLI split modules with authoritative file-level owners have source graph coverage
@@ -39,9 +41,7 @@ def:
   - [x] source-map gaps remain explicit TODOs instead of broad graph fallback
   - [x] US-008 operational graph verification recorded: selected covered source paths resolve through `source` inbound traversal, and `packages/cli/src/commands/ontology/navigation-diff.ts` stays bounded at one synthetic source node, zero edges, one path, and one `source-map-missing` diagnostic
 
-- [ ] Remaining source-map gaps
-  - [ ] `packages/cli/src/lib/docs-control-plane/index.ts` remains a barrel-only facade gap; add source coverage only if facade-level lookup becomes an operational requirement
-  - [ ] `packages/cli/src/commands/ontology/ingest.ts`, `status.ts`, and `navigation-diff.ts` still have no authoritative file-level source-map owner; keep `docs graph` traversal bounded with `source-map-missing` until ownership is documented
+### Actionable — 실행 가능
 
 - [ ] Ontology Pack Authoring Control Plane
   - [ ] pack scaffold command
@@ -64,6 +64,12 @@ def:
   - [ ] `--family-only`
   - [ ] `--evidence-only`
   - [ ] blocked promotion explanation improvements
+
+### Deferred — 조건부 대기
+
+- [ ] Remaining source-map gaps
+  - [ ] `packages/cli/src/lib/docs-control-plane/index.ts` remains a barrel-only facade gap; add source coverage only if facade-level lookup becomes an operational requirement
+  - [ ] `packages/cli/src/commands/ontology/ingest.ts`, `status.ts`, and `navigation-diff.ts` still have no authoritative file-level source-map owner; keep `docs graph` traversal bounded with `source-map-missing` until ownership is documented
 
 - [ ] Section-Level Graph Nodes
   - [ ] purpose/overview/constraint/scenario matrix section nodes

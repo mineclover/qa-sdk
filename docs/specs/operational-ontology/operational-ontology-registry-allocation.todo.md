@@ -368,14 +368,14 @@ Validation commands:
 
 ## Public and Follow-up Surfaces
 
+### Completed — 완료 기록
+
 - [x] CLI activation surface: `qa-sdk ontology registry activate-pack <pack-id>`
   - PRD: `tasks/prd-ontology-registry-activation-cli.md`
   - JSON: `tasks/prd-ontology-registry-activation-cli.json`
   - Spec: `operational-ontology-registry-activation-cli`
   - Scope: local SQLite activation runtime, known pack resolver, activation result JSON, concise text output, `--output` sidecar JSON, programming-artifact/authorization scenario proof
   - Closed by CLI command-path tests for programming-artifact activation, authorization activation, unknown pack, invalid address model, duplicate helper failure, raw SQL sanitization, and output sidecar behavior
-- [ ] REST activation endpoint for registry-service
-  - Keep separate from local CLI because endpoint auth, remote store ownership, and deployment lifecycle need their own API contract.
 - [x] Activation result persistence into programming artifact registry
   - Closed as a public/local CLI follow-up by `qa-sdk ontology registry activate-pack <pack-id> --output <file> --artifact-registry <registry>`.
   - `--output` alone remains sidecar-only. Managed persistence requires the explicit registry flag, appends only `status: "succeeded"` activation evidence, and reports append metadata in stdout `activationEvidence`.
@@ -386,6 +386,11 @@ Validation commands:
   - Closed as public/local CLI evidence work only. No REST routes, remote activation service, scoped prefix support, production registry persistence, new registry-service tables, or activation rollback semantics were added.
   - Final matrix: `operational-ontology-registry-activation-cli-scenario-matrix`.
   - Operator interpretation: `operational-ontology-registry-activation-cli` failure contract and proven scenarios.
+
+### Deferred — 조건부 대기
+
+- [ ] REST activation endpoint for registry-service
+  - Keep separate from local CLI because endpoint auth, remote store ownership, and deployment lifecycle need their own API contract.
 - [ ] Remote activation service/deployment surface
   - Keep separate from local SQLite runtime until a concrete service boundary and operator workflow exists.
 

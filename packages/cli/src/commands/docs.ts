@@ -98,6 +98,9 @@ interface FollowUpState {
   readonly state: string;
   readonly title: string;
   readonly taskId?: string;
+  readonly pointer?: string;
+  readonly category?: "actionable" | "deferred" | "parking-lot" | "uncategorized";
+  readonly categoryLabel?: string;
   readonly reason: string;
 }
 
@@ -138,6 +141,7 @@ interface StatusResult {
     readonly diagnostics: number;
   };
   readonly nextFollowUp: FollowUpState | null;
+  readonly nextFollowUps: readonly FollowUpState[];
   readonly diagnostics: readonly DocumentDiagnostic[];
 }
 
@@ -557,7 +561,7 @@ async function cmdStatus(
   target: string | undefined,
   json: boolean,
 ): Promise<void> {
-  const result = buildStatusResult(documents, options.rootDir, target);
+  const result = await buildStatusResult(documents, options.rootDir, target);
   if (json) {
     printJson(result);
     return;
@@ -585,7 +589,7 @@ async function cmdCollect(
     return;
   }
 
-  const result = buildCollectResult(documents, options.rootDir, target, graphInput);
+  const result = await buildCollectResult(documents, options.rootDir, target, graphInput);
   if (json) {
     printJson(result);
     return;
@@ -1101,11 +1105,11 @@ async function cmdPrd(
   printPrdScaffoldResult(result);
 }
 
-function buildStatusResult(
+async function buildStatusResult(
   documents: readonly DocumentEnvelope[],
   rootDir: string,
   target: string | undefined,
-): StatusResult {
+): Promise<StatusResult> {
   const resolved = target ? resolveDocument(documents, target) : undefined;
   const resolvedSource = !resolved && target && isPathLikeTarget(target)
     ? resolveSourceTarget(documents, target)
@@ -1125,6 +1129,7 @@ function buildStatusResult(
       ? resolvedSource.documents
       : documents;
   const diagnostics = scopedDocuments.flatMap((document) => document.diagnostics);
+  const nextFollowUps = await findNextFollowUps(rootDir, scopedDocuments);
 
   return {
     ...(target ? { target } : {}),
@@ -1148,18 +1153,19 @@ function buildStatusResult(
     } : {}),
     ...(resolved?.document.familyId ? { familyId: resolved.document.familyId } : {}),
     counts: countDocuments(documents, scopedDocuments),
-    nextFollowUp: findNextFollowUp(scopedDocuments),
+    nextFollowUp: nextFollowUps[0] ?? null,
+    nextFollowUps,
     diagnostics,
   };
 }
 
-function buildCollectResult(
+async function buildCollectResult(
   documents: readonly DocumentEnvelope[],
   rootDir: string,
   target: string,
   graphInput: DocumentGraphTraversalInput | undefined,
-): CollectResult {
-  const status = buildStatusResult(documents, rootDir, target);
+): Promise<CollectResult> {
+  const status = await buildStatusResult(documents, rootDir, target);
   const resolved = resolveDocument(documents, target);
   const resolvedSource = !resolved && isPathLikeTarget(target)
     ? resolveSourceTarget(documents, target)
@@ -1762,53 +1768,141 @@ function compareResolutionPriority(left: DocumentEnvelope, right: DocumentEnvelo
     || compareDocuments(left, right);
 }
 
-function findNextFollowUp(
+async function findNextFollowUps(
+  rootDir: string,
   documents: readonly DocumentEnvelope[],
-): FollowUpState | null {
+): Promise<readonly FollowUpState[]> {
+  const followUps: FollowUpState[] = [];
   const sessionFollowUp = documents
     .flatMap((document) => document.diagnostics.map((diagnostic) => ({ document, diagnostic })))
     .find(({ diagnostic }) => diagnostic.code === "ralph-session-prd-complete-session-running");
   if (sessionFollowUp) {
-    return {
+    followUps.push({
       source: sessionFollowUp.document.adapterId,
       kind: sessionFollowUp.document.kind,
       documentId: sessionFollowUp.document.stableId,
       path: sessionFollowUp.document.path,
       state: String(sessionFollowUp.document.metadata.status ?? "running"),
       title: "Ralph session follow-up",
+      category: "actionable",
+      categoryLabel: "Actionable",
       reason: sessionFollowUp.diagnostic.message,
-    };
+    });
   }
 
   for (const document of documents) {
-    const openTask = document.tasks.find(isOpenTask);
-    if (!openTask) continue;
-    return {
+    for (const openTask of document.tasks.filter(isOpenTask)) {
+      followUps.push({
+        source: document.adapterId,
+        kind: document.kind,
+        documentId: document.stableId,
+        path: document.path,
+        taskId: openTask.id,
+        state: taskState(openTask),
+        title: openTask.title,
+        category: "actionable",
+        categoryLabel: "Actionable",
+        reason: "open task state",
+      });
+    }
+  }
+
+  for (const todo of documents.filter((document) => document.kind === "todo")) {
+    const content = await readRepoFile(rootDir, todo.path);
+    const todoFollowUps = content
+      ? parseTodoFollowUps(todo, content)
+      : [{
+        source: todo.adapterId,
+        kind: todo.kind,
+        documentId: todo.stableId,
+        path: todo.path,
+        state: String(todo.metadata.lifecycle ?? "todo"),
+        title: titleOf(todo),
+        category: "uncategorized" as const,
+        categoryLabel: "Uncategorized",
+        reason: "todo family member present",
+      }];
+    followUps.push(...todoFollowUps);
+  }
+
+  return followUps
+    .toSorted(compareFollowUps)
+    .filter((item, index, items) => index === items.findIndex((candidate) =>
+      candidate.documentId === item.documentId
+      && candidate.path === item.path
+      && candidate.taskId === item.taskId
+      && candidate.pointer === item.pointer
+      && candidate.title === item.title
+    ));
+}
+
+function parseTodoFollowUps(
+  document: DocumentEnvelope,
+  content: string,
+): readonly FollowUpState[] {
+  const followUps: FollowUpState[] = [];
+  let currentCategory = classifyTodoHeading("");
+
+  const lines = content.split(/\r?\n/);
+  lines.forEach((line, index) => {
+    const heading = line.match(/^(#{2,6})\s+(.+?)\s*$/);
+    if (heading) {
+      currentCategory = classifyTodoHeading(heading[2] ?? "");
+      return;
+    }
+
+    const checkbox = line.match(/^\s*[-*]\s+\[ \]\s+(.+?)\s*$/);
+    if (!checkbox) return;
+    const title = checkbox[1]?.trim() ?? "";
+    followUps.push({
       source: document.adapterId,
       kind: document.kind,
       documentId: document.stableId,
       path: document.path,
-      taskId: openTask.id,
-      state: taskState(openTask),
-      title: openTask.title,
-      reason: "open task state",
-    };
-  }
+      state: "open",
+      title,
+      pointer: `line ${index + 1}`,
+      category: currentCategory.category,
+      categoryLabel: currentCategory.label,
+      reason: `${currentCategory.label} TODO item`,
+    });
+  });
 
-  const todo = documents.find((document) => document.kind === "todo");
-  if (todo) {
-    return {
-      source: todo.adapterId,
-      kind: todo.kind,
-      documentId: todo.stableId,
-      path: todo.path,
-      state: String(todo.metadata.lifecycle ?? "todo"),
-      title: titleOf(todo),
-      reason: "todo family member present",
-    };
-  }
+  return followUps;
+}
 
-  return null;
+function classifyTodoHeading(
+  heading: string,
+): { readonly category: NonNullable<FollowUpState["category"]>; readonly label: string } {
+  const normalized = heading.toLowerCase();
+  if (/\bactionable\b|실행 가능|바로\s*prd|바로 실행/.test(normalized)) {
+    return { category: "actionable", label: heading.trim() || "Actionable" };
+  }
+  if (/\bdeferred\b|조건부|대기|보류|trigger|blocked/.test(normalized)) {
+    return { category: "deferred", label: heading.trim() || "Deferred" };
+  }
+  if (/parking\s*lot|후보 보관|아이디어|보관/.test(normalized)) {
+    return { category: "parking-lot", label: heading.trim() || "Parking Lot" };
+  }
+  return { category: "uncategorized", label: heading.trim() || "Uncategorized" };
+}
+
+function compareFollowUps(left: FollowUpState, right: FollowUpState): number {
+  return followUpRank(left) - followUpRank(right)
+    || left.path.localeCompare(right.path)
+    || (left.pointer ?? "").localeCompare(right.pointer ?? "")
+    || left.title.localeCompare(right.title);
+}
+
+function followUpRank(followUp: FollowUpState): number {
+  if (followUp.kind === "ralph-session") return 0;
+  switch (followUp.category) {
+    case "actionable": return 1;
+    case "uncategorized": return 2;
+    case "deferred": return 3;
+    case "parking-lot": return 4;
+    default: return 5;
+  }
 }
 
 function isOpenTask(task: DocumentTask): boolean {
@@ -1985,6 +2079,7 @@ function printStatus(result: StatusResult): void {
   console.log(`  documents: ${result.counts.familyMembers} related / ${result.counts.documents} total`);
   console.log(`  links/sources/tasks/evidence/diagnostics: ${result.counts.links}/${result.counts.sources}/${result.counts.tasks}/${result.counts.evidence}/${result.counts.diagnostics}`);
   printFollowUp(result.nextFollowUp);
+  printAdditionalFollowUps(result.nextFollowUps);
   printDiagnostics(result.diagnostics);
 }
 
@@ -2251,8 +2346,22 @@ function printFollowUp(followUp: FollowUpState | null): void {
   }
   const task = followUp.taskId ? ` ${followUp.taskId}` : "";
   console.log(`  next follow-up: ${followUp.state} ${followUp.kind}${task} - ${followUp.title}`);
+  if (followUp.category) console.log(`    category: ${followUp.categoryLabel ?? followUp.category}`);
   console.log(`    source: ${followUp.source} ${followUp.path}`);
   console.log(`    reason: ${followUp.reason}`);
+}
+
+function printAdditionalFollowUps(followUps: readonly FollowUpState[]): void {
+  const additional = followUps.slice(1, 6);
+  if (additional.length === 0) return;
+  console.log(`  additional follow-ups (${followUps.length - 1}):`);
+  for (const followUp of additional) {
+    const category = followUp.categoryLabel ?? followUp.category ?? "uncategorized";
+    console.log(`    - [${category}] ${followUp.title} (${followUp.path}${followUp.pointer ? ` ${followUp.pointer}` : ""})`);
+  }
+  if (followUps.length > 6) {
+    console.log(`    ... ${followUps.length - 6} more`);
+  }
 }
 
 function printDiagnostics(diagnostics: readonly DocumentDiagnostic[]): void {

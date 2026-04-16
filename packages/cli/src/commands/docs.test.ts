@@ -557,7 +557,8 @@ Track inventory scenario coverage.
     const text = output();
     expect(text).toContain("docs status: checkout-spec");
     expect(text).toContain("kind: spec");
-    expect(text).toContain("next follow-up: draft todo");
+    expect(text).toContain("next follow-up: open todo - Remove obsolete checkout stub.");
+    expect(text).toContain("category: Tasks");
     expect(text).toContain("docs/specs/checkout/checkout.todo.md");
   });
 
@@ -650,14 +651,20 @@ Track module follow-up work.
     await cliDocs(["status", "module-spec", "--root", workspace, "--json"]);
 
     const result = parsedOutput<{
-      nextFollowUp: { kind: string; documentId: string; path: string };
+      nextFollowUp: { kind: string; documentId: string; path: string; title: string; category: string };
+      nextFollowUps: Array<{ kind: string; documentId: string; path: string; title: string; category: string }>;
       counts: { familyMembers: number };
     }>();
     expect(result.nextFollowUp).toMatchObject({
       kind: "todo",
       documentId: "module-follow-up",
       path: "docs/specs/module/module-follow-up.todo.md",
+      title: "Close module follow-up.",
+      category: "uncategorized",
     });
+    expect(result.nextFollowUps).toEqual([
+      expect.objectContaining({ title: "Close module follow-up.", category: "uncategorized" }),
+    ]);
     expect(result.counts.familyMembers).toBeGreaterThanOrEqual(2);
   });
 
