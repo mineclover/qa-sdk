@@ -605,6 +605,62 @@ Track inventory scenario coverage.
     );
   });
 
+  it("uses composition traversal to find module follow-up TODOs outside the same filename family", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/module"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/module/module.spec.md"), `---
+def:
+  id: module-spec
+  level: module
+  scope: interface
+  aspect: api_contract
+  depth: overview
+  lifecycle: approved
+  links:
+    - target: module-follow-up
+      type: contains
+---
+# Module Spec
+
+## 목적 ^purpose
+
+Coordinate module follow-up state.
+`);
+    await writeFile(join(workspace, "docs/specs/module/module-follow-up.todo.md"), `---
+def:
+  id: module-follow-up
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: draft
+  links:
+    - target: module-spec
+      type: refines
+---
+# Module Follow Up
+
+## 목적 ^purpose
+
+Track module follow-up work.
+
+- [ ] Close module follow-up.
+`);
+
+    await cliDocs(["status", "module-spec", "--root", workspace, "--json"]);
+
+    const result = parsedOutput<{
+      nextFollowUp: { kind: string; documentId: string; path: string };
+      counts: { familyMembers: number };
+    }>();
+    expect(result.nextFollowUp).toMatchObject({
+      kind: "todo",
+      documentId: "module-follow-up",
+      path: "docs/specs/module/module-follow-up.todo.md",
+    });
+    expect(result.counts.familyMembers).toBeGreaterThanOrEqual(2);
+  });
+
   it("prints JSON status for source paths without widening to workspace status", async () => {
     const workspace = await createFixtureWorkspace();
 

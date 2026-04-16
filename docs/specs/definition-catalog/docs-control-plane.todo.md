@@ -57,6 +57,8 @@ def:
   - [ ] graph output summarization for large results
 
 - [ ] PRD Completion Sync Precision
+  - [x] `docs status` follows module composition so contained TODO docs can surface as follow-up even when they do not share the same filename family
+  - [x] `docs prd sync-completion` excludes archived PRD documents from affected docs unless the archived PRD is the explicit target
   - [ ] graph-axis based candidate scoring
   - [ ] `--strict`
   - [ ] `--family-only`

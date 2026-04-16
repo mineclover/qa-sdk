@@ -356,6 +356,7 @@ function collectAffectedDocuments(
     );
     for (const document of scope.documents) {
       if (document.kind === "ralph-prd-json" && document.path !== prdDocument.path) continue;
+      if (isArchivedPrdDocument(document) && document.path !== prdDocument.path) continue;
       addAffected(byKey, document, scope.reasonByDocumentKey.get(documentKey(document)) ?? "graph:prd-completion");
     }
   }
@@ -391,6 +392,11 @@ function toAffectedDocument(entry: AffectedDocumentEntry): PrdCompletionAffected
     reason: entry.reason,
     metadata: entry.document.metadata,
   };
+}
+
+function isArchivedPrdDocument(document: DocumentEnvelope): boolean {
+  if (document.kind !== "prd" && document.kind !== "ralph-prd-json") return false;
+  return normalizePath(document.path).split("/").includes("archive");
 }
 
 async function collectOpenTodoCandidates(

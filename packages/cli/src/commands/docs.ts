@@ -389,7 +389,7 @@ const RESOLUTION_KIND_PRIORITY: Readonly<Record<string, number>> = {
   "activation-evidence": 9,
 };
 const COLLECT_GRAPH_FLAG_NAMES = new Set(["axis", "direction", "depth", "limit", "preset"]);
-const STATUS_TRAVERSAL_AXES = ["role"] as const satisfies readonly TraversalAxis[];
+const STATUS_TRAVERSAL_AXES = ["role", "composition"] as const satisfies readonly TraversalAxis[];
 const PRD_CONTEXT_TRAVERSAL_AXES = [
   "role",
   "dependency",
