@@ -387,14 +387,15 @@
         "`node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-coverage-expansion.json --json`"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-009",
         "US-010",
         "US-011",
         "US-012"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-014",
@@ -457,6 +458,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-16T14:50:21.636Z"
+    "updatedAt": "2026-04-16T14:57:48.296Z"
   }
 }
