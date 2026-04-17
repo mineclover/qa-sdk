@@ -43,6 +43,16 @@ Canonical examples:
 Diagnostics cover missing kind, unsupported kind, invalid version, ambiguous
 primary physical refs, and collision candidates.
 
+`collectSemanticCoordinateCandidatesFromDocuments()` maps current
+`DocumentEnvelope` identities into candidates without migrating source-owned
+ids. It reads `def.id`, `stableId`, `familyId`, `sourcePath`, `packId`,
+`artifactId`, document source paths, evidence ids, and PRD story ids. Markdown
+paths, source paths, PRD paths, artifact refs, and artifact output paths remain
+as `physicalRefs[]`. Duplicate labels are left as candidates and reported as
+collision diagnostics when they come from distinct physical records. Archive
+PRDs and transient `.ralph-tui` session state are skipped by default; callers
+must pass an exact target or `includeArchive`/`includeSession` to include them.
+
 ## Traversal taxonomy
 
 Graph traversal uses canonical axes only inside the control plane:

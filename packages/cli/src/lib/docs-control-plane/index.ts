@@ -104,13 +104,16 @@ export {
   findNextFollowUps,
 } from "./follow-ups.js";
 export {
+  buildSemanticCoordinateCandidatesFromDocument,
   buildSemanticCoordinateCandidate,
+  collectSemanticCoordinateCandidatesFromDocuments,
   detectSemanticCoordinateCandidateCollisions,
   isSemanticCoordinateLabelKind,
   SEMANTIC_COORDINATE_CANONICAL_EXAMPLES,
   SEMANTIC_COORDINATE_DIAGNOSTIC_CODES,
   SEMANTIC_COORDINATE_DOMAINS,
   SEMANTIC_COORDINATE_LABEL_KINDS,
+  SEMANTIC_EXISTING_ID_SOURCES,
   SEMANTIC_PHYSICAL_REF_KINDS,
 } from "./deterministic-labels.js";
 
@@ -207,11 +210,15 @@ export type {
 export type {
   SemanticCoordinate,
   SemanticCoordinateCandidate,
+  SemanticCoordinateCandidateInventory,
+  SemanticCoordinateCandidateInventoryOptions,
   SemanticCoordinateCandidateInput,
   SemanticCoordinateCandidateResult,
   SemanticCoordinateDiagnostic,
   SemanticCoordinateDiagnosticCode,
   SemanticCoordinateDomain,
+  SemanticCoordinateSkippedDocument,
+  SemanticExistingIdSource,
   SemanticCoordinateLabelKind,
   SemanticPhysicalRef,
   SemanticPhysicalRefInput,

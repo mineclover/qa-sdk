@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildSemanticCoordinateCandidate,
+  collectSemanticCoordinateCandidatesFromDocuments,
   detectSemanticCoordinateCandidateCollisions,
+  normalizeDocumentEnvelope,
   SEMANTIC_COORDINATE_CANONICAL_EXAMPLES,
   SEMANTIC_COORDINATE_LABEL_KINDS,
   type SemanticCoordinateCandidate,
   type SemanticCoordinateCandidateInput,
+  type DocumentEnvelope,
 } from "./index.js";
 
 describe("semantic coordinate candidates", () => {
@@ -263,6 +266,153 @@ describe("semantic coordinate candidates", () => {
       }),
     ]);
   });
+
+  it("maps existing document ids and physical refs into inventory candidates", () => {
+    const docs = [
+      definitionDoc(),
+      prdMarkdownDoc(),
+      ralphPrdJsonDoc(),
+      artifactEvidenceDoc(),
+    ];
+
+    const inventory = collectSemanticCoordinateCandidatesFromDocuments(docs);
+    const labels = inventory.candidates.map((item) => item.label);
+
+    expect(labels).toEqual(expect.arrayContaining([
+      "urn:def:spec:docs-control-plane-def:v1",
+      "urn:def:spec:docs-control-plane-stable:v1",
+      "urn:def:family:docs/specs/definition-catalog/docs-control-plane:v1",
+      "urn:source:markdown:docs/specs/definition-catalog/docs-control-plane.spec.md",
+      "urn:source:typescript:packages/cli/src/commands/docs.ts",
+      "urn:pack:ontology:programming-artifact-ontology:v1",
+      "urn:artifact:activation-evidence:activation-evidence-programming-artifact-ontology:v1",
+      "urn:artifact:activation-evidence:activation-evidence-proof:v1",
+      "urn:prd:markdown:tasks/prd-deterministic-label-registry-fsm-read-model:v1",
+      "urn:prd:ralph-json:tasks/prd-deterministic-label-registry-fsm-read-model:v1",
+      "urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-002",
+    ]));
+
+    expect(candidateByLabel(
+      inventory.candidates,
+      "urn:def:spec:docs-control-plane-def:v1",
+    )?.metadata).toMatchObject({
+      idSource: "def.id",
+      documentStableId: "docs-control-plane-stable",
+    });
+    expect(candidateByLabel(
+      inventory.candidates,
+      "urn:source:typescript:packages/cli/src/commands/docs.ts",
+    )?.physicalRefs).toEqual([
+      expect.objectContaining({
+        kind: "source-path",
+        ref: "packages/cli/src/commands/docs.ts",
+        role: "primary",
+      }),
+    ]);
+    expect(candidateByLabel(
+      inventory.candidates,
+      "urn:artifact:activation-evidence:activation-evidence-programming-artifact-ontology:v1",
+    )?.physicalRefs).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: "artifact-output-path",
+        ref: "artifacts/activation/programming-artifact-ontology.json",
+        role: "primary",
+      }),
+      expect.objectContaining({
+        kind: "artifact-ref",
+        ref: "artifacts/programming-artifacts.json#/artifacts/0",
+      }),
+    ]));
+    expect(inventory.diagnostics).toEqual([
+      expect.objectContaining({
+        code: "semantic-coordinate-collision-candidate",
+        label: "urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-002",
+      }),
+    ]);
+  });
+
+  it("keeps duplicate labels as candidates and reports diagnostics", () => {
+    const first = definitionDoc({
+      stableId: "checkout-spec",
+      familyId: "docs/specs/checkout/checkout",
+      path: "docs/specs/checkout/checkout.spec.md",
+      metadata: {
+        defId: "checkout",
+        sourcePath: "docs/specs/checkout/checkout.spec.md",
+        documentKind: "spec",
+      },
+    });
+    const second = definitionDoc({
+      stableId: "checkout-spec-copy",
+      familyId: "docs/specs/checkout-copy/checkout",
+      path: "docs/specs/checkout-copy/checkout.spec.md",
+      metadata: {
+        defId: "checkout",
+        sourcePath: "docs/specs/checkout-copy/checkout.spec.md",
+        documentKind: "spec",
+      },
+    });
+
+    const inventory = collectSemanticCoordinateCandidatesFromDocuments([first, second]);
+    const duplicateLabel = "urn:def:spec:checkout:v1";
+
+    expect(inventory.candidates.filter((item) => item.label === duplicateLabel)).toHaveLength(2);
+    expect(inventory.diagnostics).toEqual([
+      expect.objectContaining({
+        code: "semantic-coordinate-collision-candidate",
+        label: duplicateLabel,
+      }),
+    ]);
+  });
+
+  it("excludes archive PRDs and transient session documents unless targeted or opted in", () => {
+    const archived = prdMarkdownDoc({
+      stableId: "tasks/archive/archived-prd",
+      familyId: "tasks/archive/archived-prd",
+      path: "tasks/archive/archived-prd.md",
+      metadata: {
+        title: "Archived PRD",
+        sourcePath: "tasks/archive/archived-prd.md",
+      },
+    });
+    const session = normalizeDocumentEnvelope({
+      adapterId: "ralph-session",
+      kind: "ralph-session",
+      stableId: "ralph-session:current",
+      familyId: "tasks/prd-deterministic-label-registry-fsm-read-model",
+      path: ".ralph-tui/session-meta.json",
+      metadata: {
+        sourcePath: ".ralph-tui/session-meta.json",
+      },
+      rawSource: {
+        path: ".ralph-tui/session-meta.json",
+        sourceSchema: "ralph-session",
+      },
+    });
+
+    const defaultInventory = collectSemanticCoordinateCandidatesFromDocuments([archived, session]);
+    expect(defaultInventory.candidates).toEqual([]);
+    expect(defaultInventory.skippedDocuments).toEqual([
+      expect.objectContaining({ path: "tasks/archive/archived-prd.md", reason: "archive" }),
+      expect.objectContaining({ path: ".ralph-tui/session-meta.json", reason: "session" }),
+    ]);
+
+    expect(collectSemanticCoordinateCandidatesFromDocuments([archived], {
+      exactTarget: "tasks/archive/archived-prd.md",
+    }).candidates.map((item) => item.label)).toContain(
+      "urn:prd:markdown:tasks/archive/archived-prd:v1",
+    );
+    expect(collectSemanticCoordinateCandidatesFromDocuments([archived], {
+      includeArchive: true,
+    }).candidates.map((item) => item.label)).toContain(
+      "urn:prd:markdown:tasks/archive/archived-prd:v1",
+    );
+    expect(collectSemanticCoordinateCandidatesFromDocuments([session], {
+      includeSession: true,
+    }).candidates.map((item) => item.label)).toContain(
+      "urn:source:json:.ralph-tui/session-meta.json",
+    );
+  });
 });
 
 function candidate(
@@ -271,4 +421,165 @@ function candidate(
   const result = buildSemanticCoordinateCandidate(input);
   expect(result.candidate).toBeDefined();
   return result.candidate!;
+}
+
+function candidateByLabel(
+  candidates: readonly SemanticCoordinateCandidate[],
+  label: string,
+): SemanticCoordinateCandidate | undefined {
+  return candidates.find((candidate) => candidate.label === label);
+}
+
+function definitionDoc(
+  overrides: Partial<Parameters<typeof normalizeDocumentEnvelope>[0]> = {},
+): DocumentEnvelope {
+  return normalizeDocumentEnvelope({
+    adapterId: "definition-markdown",
+    kind: "spec",
+    stableId: "docs-control-plane-stable",
+    familyId: "docs/specs/definition-catalog/docs-control-plane",
+    path: "docs/specs/definition-catalog/docs-control-plane.spec.md",
+    metadata: {
+      defId: "docs-control-plane-def",
+      sourcePath: "docs/specs/definition-catalog/docs-control-plane.spec.md",
+      documentKind: "spec",
+      ...(overrides.metadata ?? {}),
+    },
+    sources: [
+      {
+        id: "docs-command",
+        path: "packages/cli/src/commands/docs.ts",
+        metadata: {
+          sourceKind: "doc_frontmatter",
+        },
+      },
+      ...(overrides.sources ?? []),
+    ],
+    rawSource: {
+      path: "docs/specs/definition-catalog/docs-control-plane.spec.md",
+      sourceSchema: "definition-frontmatter",
+      ...(overrides.rawSource ?? {}),
+    },
+    ...withoutEnvelopeNested(overrides),
+  });
+}
+
+function prdMarkdownDoc(
+  overrides: Partial<Parameters<typeof normalizeDocumentEnvelope>[0]> = {},
+): DocumentEnvelope {
+  return normalizeDocumentEnvelope({
+    adapterId: "prd-markdown",
+    kind: "prd",
+    stableId: "tasks/prd-deterministic-label-registry-fsm-read-model",
+    familyId: "tasks/prd-deterministic-label-registry-fsm-read-model",
+    path: "tasks/prd-deterministic-label-registry-fsm-read-model.md",
+    metadata: {
+      title: "Deterministic Label Registry FSM Read Model",
+      sourcePath: "tasks/prd-deterministic-label-registry-fsm-read-model.md",
+      ...(overrides.metadata ?? {}),
+    },
+    tasks: [
+      {
+        id: "US-002",
+        title: "Map Existing IDs To Label Candidates",
+        rawSource: {
+          path: "tasks/prd-deterministic-label-registry-fsm-read-model.md",
+          pointer: "### US-002",
+        },
+      },
+      ...(overrides.tasks ?? []),
+    ],
+    rawSource: {
+      path: "tasks/prd-deterministic-label-registry-fsm-read-model.md",
+      sourceSchema: "prd-markdown",
+      ...(overrides.rawSource ?? {}),
+    },
+    ...withoutEnvelopeNested(overrides),
+  });
+}
+
+function ralphPrdJsonDoc(
+  overrides: Partial<Parameters<typeof normalizeDocumentEnvelope>[0]> = {},
+): DocumentEnvelope {
+  return normalizeDocumentEnvelope({
+    adapterId: "ralph-prd-json",
+    kind: "ralph-prd-json",
+    stableId: "tasks/prd-deterministic-label-registry-fsm-read-model",
+    familyId: "tasks/prd-deterministic-label-registry-fsm-read-model",
+    path: "tasks/prd-deterministic-label-registry-fsm-read-model.json",
+    metadata: {
+      name: "Deterministic Label Registry FSM Read Model",
+      sourcePath: "tasks/prd-deterministic-label-registry-fsm-read-model.json",
+      ...(overrides.metadata ?? {}),
+    },
+    tasks: [
+      {
+        id: "US-002",
+        title: "Map Existing IDs To Label Candidates",
+        rawSource: {
+          path: "tasks/prd-deterministic-label-registry-fsm-read-model.json",
+          pointer: "/userStories/1",
+        },
+      },
+      ...(overrides.tasks ?? []),
+    ],
+    rawSource: {
+      path: "tasks/prd-deterministic-label-registry-fsm-read-model.json",
+      sourceSchema: "ralph-prd-json",
+      ...(overrides.rawSource ?? {}),
+    },
+    ...withoutEnvelopeNested(overrides),
+  });
+}
+
+function artifactEvidenceDoc(
+  overrides: Partial<Parameters<typeof normalizeDocumentEnvelope>[0]> = {},
+): DocumentEnvelope {
+  return normalizeDocumentEnvelope({
+    adapterId: "artifact-evidence",
+    kind: "activation-evidence",
+    stableId: "activation-evidence-programming-artifact-ontology",
+    familyId: "docs-control-plane-def",
+    path: "artifacts/activation/programming-artifact-ontology.json",
+    metadata: {
+      artifactId: "activation-evidence-programming-artifact-ontology",
+      artifactKind: "activation-evidence",
+      artifactRef: "artifacts/programming-artifacts.json#/artifacts/0",
+      outputPath: "artifacts/activation/programming-artifact-ontology.json",
+      packId: "programming-artifact-ontology",
+      sourcePath: "artifacts/programming-artifacts.json",
+      ...(overrides.metadata ?? {}),
+    },
+    evidence: [
+      {
+        id: "activation-evidence-proof",
+        kind: "activation-evidence",
+        rawSource: {
+          path: "artifacts/programming-artifacts.json",
+          pointer: "/artifacts/0",
+        },
+      },
+      ...(overrides.evidence ?? []),
+    ],
+    rawSource: {
+      path: "artifacts/programming-artifacts.json",
+      sourceSchema: "programming-artifact-registry",
+      ...(overrides.rawSource ?? {}),
+    },
+    ...withoutEnvelopeNested(overrides),
+  });
+}
+
+function withoutEnvelopeNested(
+  input: Partial<Parameters<typeof normalizeDocumentEnvelope>[0]>,
+): Partial<Parameters<typeof normalizeDocumentEnvelope>[0]> {
+  const {
+    metadata: _metadata,
+    sources: _sources,
+    tasks: _tasks,
+    evidence: _evidence,
+    rawSource: _rawSource,
+    ...rest
+  } = input;
+  return rest;
 }

@@ -87,6 +87,8 @@ Semantic coordinate candidate는 기존 repository id와 path 위에 얹는 read
 
 지원 label kind는 `definition-doc`, `source-file`, `ontology-pack`, `artifact`, `prd-markdown`, `ralph-prd-json`, `prd-story`, `evidence`이다. Candidate는 `originalId`와 `physicalRefs[]`를 함께 보존해야 하며, 같은 label이 서로 다른 physical record에서 나오면 collision diagnostic으로 보고한다. Missing kind, unsupported kind, invalid version, multiple primary physical refs도 diagnostic으로 남기고 source 파일을 수정하지 않는다.
 
+Existing-id inventory는 `DocumentEnvelope`의 현재 필드를 migration 없이 투영한다. `def.id`, `stableId`, `familyId`, `sourcePath`, `packId`, `artifactId`, `sources[].path`, `evidence[].id`, PRD `tasks[].id`는 label candidate input이 되고, markdown path, source path, PRD path, artifact ref, artifact output path는 `physicalRefs[]`로 남는다. 같은 label이 여러 physical record에서 나오면 overwrite하지 않고 collision diagnostic으로 보고한다. Archive PRD와 transient `.ralph-tui` session state는 기본 inventory에서 제외하며, 정확한 path/id target이나 `includeArchive`/`includeSession` 같은 opt-in policy가 있을 때만 포함한다.
+
 Canonical format examples:
 
 | 형상 단위 | 후보 label |
