@@ -103,6 +103,16 @@ export {
 export {
   findNextFollowUps,
 } from "./follow-ups.js";
+export {
+  buildSemanticCoordinateCandidate,
+  detectSemanticCoordinateCandidateCollisions,
+  isSemanticCoordinateLabelKind,
+  SEMANTIC_COORDINATE_CANONICAL_EXAMPLES,
+  SEMANTIC_COORDINATE_DIAGNOSTIC_CODES,
+  SEMANTIC_COORDINATE_DOMAINS,
+  SEMANTIC_COORDINATE_LABEL_KINDS,
+  SEMANTIC_PHYSICAL_REF_KINDS,
+} from "./deterministic-labels.js";
 
 export type {
   AuthoredLinkType,
@@ -194,6 +204,19 @@ export type {
   FollowUpDetectionOptions,
   FollowUpState,
 } from "./follow-ups.js";
+export type {
+  SemanticCoordinate,
+  SemanticCoordinateCandidate,
+  SemanticCoordinateCandidateInput,
+  SemanticCoordinateCandidateResult,
+  SemanticCoordinateDiagnostic,
+  SemanticCoordinateDiagnosticCode,
+  SemanticCoordinateDomain,
+  SemanticCoordinateLabelKind,
+  SemanticPhysicalRef,
+  SemanticPhysicalRefInput,
+  SemanticPhysicalRefKind,
+} from "./deterministic-labels.js";
 export type {
   DocumentAdapter,
   DocumentAdapterCapabilities,

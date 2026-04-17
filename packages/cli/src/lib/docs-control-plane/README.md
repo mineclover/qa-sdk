@@ -9,6 +9,40 @@ Repository 파일이 source of truth다. Control plane은 index/coordination lay
 `kind`, `status`, relation `type`, diagnostic `severity` 같은 source-owned
 vocabulary를 plain string field로 보존한다.
 
+## Semantic coordinate candidates
+
+Semantic coordinate candidates are read-only labels for repository
+configuration units. They do not replace `def.id`, `stableId`, source paths,
+pack ids, artifact ids, PRD paths, or story ids; the original id and physical
+refs stay on each candidate.
+
+Supported label kinds:
+
+- `definition-doc`
+- `source-file`
+- `ontology-pack`
+- `artifact`
+- `prd-markdown`
+- `ralph-prd-json`
+- `prd-story`
+- `evidence`
+
+Canonical examples:
+
+| Unit | Candidate |
+|------|-----------|
+| Definition doc | `urn:def:spec:docs-control-plane:v1` |
+| Source file | `urn:source:typescript:packages/cli/src/commands/docs.ts` |
+| Ontology pack | `urn:pack:ontology:programming-artifact-ontology:v1` |
+| Artifact | `urn:artifact:activation-evidence:programming-artifact-ontology:v1` |
+| PRD markdown | `urn:prd:markdown:tasks/prd-deterministic-label-registry-fsm-read-model:v1` |
+| Ralph PRD JSON | `urn:prd:ralph-json:tasks/prd-deterministic-label-registry-fsm-read-model:v1` |
+| PRD story | `urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-001` |
+| Evidence | `urn:artifact:evidence:checkout-proof:v1` |
+
+Diagnostics cover missing kind, unsupported kind, invalid version, ambiguous
+primary physical refs, and collision candidates.
+
 ## Traversal taxonomy
 
 Graph traversal uses canonical axes only inside the control plane:

@@ -34,6 +34,7 @@ sources:
   - packages/cli/src/lib/docs-control-plane/graph-rank.ts
   - packages/cli/src/lib/docs-control-plane/graph-filter.ts
   - packages/cli/src/lib/docs-control-plane/graph-summary.ts
+  - packages/cli/src/lib/docs-control-plane/deterministic-labels.ts
   - packages/cli/src/lib/docs-control-plane/family-scope.ts
   - packages/cli/src/lib/docs-control-plane/role-matrix.ts
 ---
@@ -79,6 +80,25 @@ qa-sdk docs status / collect / search / drift / prd / transform
 ```
 
 Adapter는 source vocabulary를 소유하지 않는다. `kind`, `status`, relation `type`, diagnostic `severity`, PRD story fields, artifact relation fields 같은 값은 plain string metadata로 보존하고, control plane은 identity, path, family, default collection, command-level correlation만 정규화한다.
+
+## Semantic coordinate candidates
+
+Semantic coordinate candidate는 기존 repository id와 path 위에 얹는 read-only label projection이다. 후보 label은 configuration unit을 physical path와 독립적으로 가리키기 위한 값이며, 기존 `def.id`, `stableId`, `familyId`, source path, pack id, artifact id, PRD path, story id를 대체하거나 migration하지 않는다.
+
+지원 label kind는 `definition-doc`, `source-file`, `ontology-pack`, `artifact`, `prd-markdown`, `ralph-prd-json`, `prd-story`, `evidence`이다. Candidate는 `originalId`와 `physicalRefs[]`를 함께 보존해야 하며, 같은 label이 서로 다른 physical record에서 나오면 collision diagnostic으로 보고한다. Missing kind, unsupported kind, invalid version, multiple primary physical refs도 diagnostic으로 남기고 source 파일을 수정하지 않는다.
+
+Canonical format examples:
+
+| 형상 단위 | 후보 label |
+|-----------|------------|
+| Definition doc | `urn:def:spec:docs-control-plane:v1` |
+| Source file | `urn:source:typescript:packages/cli/src/commands/docs.ts` |
+| Ontology pack | `urn:pack:ontology:programming-artifact-ontology:v1` |
+| Artifact | `urn:artifact:activation-evidence:programming-artifact-ontology:v1` |
+| PRD markdown | `urn:prd:markdown:tasks/prd-deterministic-label-registry-fsm-read-model:v1` |
+| Ralph PRD JSON | `urn:prd:ralph-json:tasks/prd-deterministic-label-registry-fsm-read-model:v1` |
+| PRD story | `urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-001` |
+| Evidence | `urn:artifact:evidence:checkout-proof:v1` |
 
 ## Document Boundary Rules
 
