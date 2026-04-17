@@ -166,6 +166,16 @@ node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-c
 
 Inventory results may be recorded in a maintained memo, such as `topdown-lifecycle-inventory-report`, or in the owning plan. They remain documentation evidence for a later human-reviewed cleanup PRD; they are not automatic archival authority and not automatic TODO/spec promotion authority.
 
+## Completed record lifecycle policy
+
+`completedRecords[]` is a read-only lifecycle candidate projection. It identifies records that appear complete enough for human review, such as a checked-only `.todo.md` or PRD markdown paired with ralph PRD JSON whose stories all pass. The projection does not mutate the repository and does not own lifecycle transition authority.
+
+Completed records are not active follow-up work. `docs status` and `docs collect` may surface them for review, but they must not be promoted into `nextFollowUps[]`, affect `nextFollowUp` priority, or imply that a maintainer should continue implementation from that record.
+
+Completed records are not automatically moved, archived, converted to `.memo.md`, checked, unchecked, or promoted into spec content. `passes: true` in ralph PRD JSON is only a completion signal for the compatibility read model; it is not authority to promote TODOs, convert PRDs, rewrite definition documents, or perform archive/memo lifecycle changes.
+
+Archive and memo conversion require a separate explicit PRD, command, or reviewed write workflow that names the target records and owns the mutation. Until such authority exists, completed records stay in place as review candidates and documentation evidence.
+
 ## `qa-sdk def`와 `qa-sdk docs`
 
 `qa-sdk def`는 definition markdown frontmatter와 synced/local/server datasource를 대상으로 단일 definition 문서, graph, boundary, context, validation을 다루는 primitive surface다. `qa-sdk def graph/context/boundary/find-by-file`는 단일 definition catalog datasource 안에서 좌표, 링크, contains 계층, code reference boundary를 묻는다. `qa-sdk docs graph`는 definition markdown, PRD markdown/JSON, ralph session, evidence registry를 함께 읽고 canonical traversal axis로 cross-document 좌표를 걷는다. `docs` command가 definition metadata를 해석할 때도 authoritative validation은 definition-catalog parser와 graph rules를 재사용한다.
