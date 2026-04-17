@@ -23,6 +23,7 @@ import {
   createRalphPrdJsonAdapter,
   createRalphSessionAdapter,
   detectCompletedRecords,
+  findNextFollowUps,
   type DocumentAdapter,
   type DocumentDiagnostic,
   type DocumentEnvelope,
@@ -33,6 +34,7 @@ import {
   type DocumentSource,
   type DocumentTask,
   formatDocumentGraphTraversalRoleGroups,
+  type FollowUpState,
   isTraversalAxis,
   isTraversalDirection,
   isTraversalPresetId,
@@ -53,11 +55,6 @@ import {
   type TraversalDirection,
   type TraversalPresetId,
 } from "../lib/docs-control-plane/index.js";
-import {
-  CANONICAL_TODO_CATEGORY_LABELS,
-  parseTodoFollowUps,
-  type TodoFollowUpCategory,
-} from "../lib/docs-control-plane/todo-lifecycle.js";
 import {
   loadMetadataTransformRule,
   previewMetadataTransform,
@@ -98,23 +95,6 @@ interface DocsRuntimeOptions {
 interface ResolvedDocument {
   readonly document: DocumentEnvelope;
   readonly matchedTask?: DocumentTask;
-}
-
-interface FollowUpState {
-  readonly source: string;
-  readonly kind: string;
-  readonly documentId: string;
-  readonly path: string;
-  readonly state: string;
-  readonly title: string;
-  readonly taskId?: string;
-  readonly pointer?: string;
-  readonly depth?: number;
-  readonly parentTitle?: string;
-  readonly headingPath?: readonly string[];
-  readonly category?: TodoFollowUpCategory;
-  readonly categoryLabel?: string;
-  readonly reason: string;
 }
 
 interface DocumentSummary {
@@ -368,18 +348,6 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
     ],
   },
 ];
-
-const CLOSED_TASK_STATES = new Set([
-  "done",
-  "closed",
-  "complete",
-  "completed",
-  "pass",
-  "passed",
-  "passing",
-  "true",
-  "yes",
-]);
 
 const DEFAULT_DOCS_DIRS = ["docs"];
 const DEFAULT_PRD_DIRS = ["tasks"];
@@ -1179,7 +1147,11 @@ async function buildStatusResult(
       : documents;
   const diagnostics = scopedDocuments.flatMap((document) => document.diagnostics);
   const completedRecords = await detectCompletedRecords({ rootDir, documents: scopedDocuments });
-  const nextFollowUps = await findNextFollowUps(rootDir, scopedDocuments, completedRecords);
+  const nextFollowUps = await findNextFollowUps({
+    rootDir,
+    documents: scopedDocuments,
+    completedRecords,
+  });
   const roleCoverage = resolved
     ? buildDocumentRoleMatrix(documents, { target: resolved.document })
     : undefined;
@@ -1963,102 +1935,6 @@ function isPathLikeTarget(target: string): boolean {
 function compareResolutionPriority(left: DocumentEnvelope, right: DocumentEnvelope): number {
   return (RESOLUTION_KIND_PRIORITY[left.kind] ?? 50) - (RESOLUTION_KIND_PRIORITY[right.kind] ?? 50)
     || compareDocuments(left, right);
-}
-
-async function findNextFollowUps(
-  rootDir: string,
-  documents: readonly DocumentEnvelope[],
-  completedRecords: readonly CompletedRecordState[],
-): Promise<readonly FollowUpState[]> {
-  const followUps: FollowUpState[] = [];
-  const completedRecordPaths = new Set(completedRecords.map((record) => record.path));
-  const sessionFollowUp = documents
-    .flatMap((document) => document.diagnostics.map((diagnostic) => ({ document, diagnostic })))
-    .find(({ diagnostic }) => diagnostic.code === "ralph-session-prd-complete-session-running");
-  if (sessionFollowUp) {
-    followUps.push({
-      source: sessionFollowUp.document.adapterId,
-      kind: sessionFollowUp.document.kind,
-      documentId: sessionFollowUp.document.stableId,
-      path: sessionFollowUp.document.path,
-      state: String(sessionFollowUp.document.metadata.status ?? "running"),
-      title: "Ralph session follow-up",
-      category: "actionable",
-      categoryLabel: CANONICAL_TODO_CATEGORY_LABELS.actionable,
-      reason: sessionFollowUp.diagnostic.message,
-    });
-  }
-
-  for (const document of documents) {
-    if (completedRecordPaths.has(document.path)) continue;
-    for (const openTask of document.tasks.filter(isOpenTask)) {
-      followUps.push({
-        source: document.adapterId,
-        kind: document.kind,
-        documentId: document.stableId,
-        path: document.path,
-        taskId: openTask.id,
-        state: taskState(openTask),
-        title: openTask.title,
-        category: "actionable",
-        categoryLabel: CANONICAL_TODO_CATEGORY_LABELS.actionable,
-        reason: "open task state",
-      });
-    }
-  }
-
-  for (const todo of documents.filter((document) => document.kind === "todo")) {
-    if (completedRecordPaths.has(todo.path)) continue;
-    const content = await readRepoFile(rootDir, todo.path);
-    const todoFollowUps = content
-      ? parseTodoFollowUps(todo, content)
-      : [{
-        source: todo.adapterId,
-        kind: todo.kind,
-        documentId: todo.stableId,
-        path: todo.path,
-        state: String(todo.metadata.lifecycle ?? "todo"),
-        title: titleOf(todo),
-        category: "uncategorized" as const,
-        categoryLabel: CANONICAL_TODO_CATEGORY_LABELS.uncategorized,
-        reason: "todo family member present",
-      }];
-    followUps.push(...todoFollowUps);
-  }
-
-  return followUps
-    .toSorted(compareFollowUps)
-    .filter((item, index, items) => index === items.findIndex((candidate) =>
-      candidate.documentId === item.documentId
-      && candidate.path === item.path
-      && candidate.taskId === item.taskId
-      && candidate.pointer === item.pointer
-      && candidate.title === item.title
-    ));
-}
-
-function compareFollowUps(left: FollowUpState, right: FollowUpState): number {
-  return followUpRank(left) - followUpRank(right)
-    || left.path.localeCompare(right.path)
-    || (left.pointer ?? "").localeCompare(right.pointer ?? "")
-    || left.title.localeCompare(right.title);
-}
-
-function followUpRank(followUp: FollowUpState): number {
-  if (followUp.kind === "ralph-session") return 0;
-  switch (followUp.category) {
-    case "actionable": return 1;
-    case "uncategorized": return 2;
-    case "deferred": return 3;
-    case "parking-lot": return 4;
-    case "completed": return 5;
-    default: return 5;
-  }
-}
-
-function isOpenTask(task: DocumentTask): boolean {
-  const state = taskState(task);
-  return !CLOSED_TASK_STATES.has(state.toLowerCase());
 }
 
 function taskState(task: DocumentTask): string {

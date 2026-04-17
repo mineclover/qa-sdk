@@ -86,6 +86,9 @@ export {
 export {
   detectCompletedRecords,
 } from "./completed-records.js";
+export {
+  findNextFollowUps,
+} from "./follow-ups.js";
 
 export type {
   AuthoredLinkType,
@@ -154,6 +157,10 @@ export type {
   CompletedRecordDetectionOptions,
   CompletedRecordState,
 } from "./completed-records.js";
+export type {
+  FollowUpDetectionOptions,
+  FollowUpState,
+} from "./follow-ups.js";
 export type {
   DocumentAdapter,
   DocumentAdapterCapabilities,

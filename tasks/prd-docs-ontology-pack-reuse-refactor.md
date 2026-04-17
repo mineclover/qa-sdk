@@ -134,13 +134,13 @@ Compatibility contract:
 **Description:** As a maintainer, I want next follow-up candidate construction and ranking extracted so future commands can reuse the same priority semantics.
 
 **Acceptance Criteria:**
-- [ ] Create a focused module for follow-up candidate construction.
-- [ ] Move session follow-up, task follow-up, TODO follow-up, and completed-record exclusion logic into the module.
-- [ ] Move follow-up ranking into the module.
-- [ ] Preserve ordering: session, actionable, uncategorized, deferred, parking-lot.
-- [ ] Preserve `nextFollowUp` and `nextFollowUps` JSON behavior.
-- [ ] Add focused tests for ranking across categories.
-- [ ] Command-layer `docs.ts` only calls the extracted function.
+- [x] Create a focused module for follow-up candidate construction.
+- [x] Move session follow-up, task follow-up, TODO follow-up, and completed-record exclusion logic into the module.
+- [x] Move follow-up ranking into the module.
+- [x] Preserve ordering: session, actionable, uncategorized, deferred, parking-lot.
+- [x] Preserve `nextFollowUp` and `nextFollowUps` JSON behavior.
+- [x] Add focused tests for ranking across categories.
+- [x] Command-layer `docs.ts` only calls the extracted function.
 
 ### US-005: Extract Docs Role Matrix And Family Scope Read Models
 
