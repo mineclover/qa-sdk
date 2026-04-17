@@ -47,6 +47,8 @@ def:
 
 하지만 이들은 아직 하나의 deterministic label registry/FSM control plane으로 닫혀 있지 않다. 여러 read-model은 존재하지만, 모든 형상 단위가 공통 semantic coordinate와 공통 state transition rule을 공유하지는 않는다.
 
+US-001~US-008 구현은 이 계획의 1차 범위를 read-only internal API로 고정했다. `buildDeterministicLabelInventory()`가 docs-control-plane adapters, completed-record detection, ontology pack projection, optional FSM readiness, summary counts를 한 번에 조립하고, command layer는 아직 새 `docs label *` surface를 갖지 않는다. 따라서 현재 operator surface는 기존 `docs status`, `docs graph`, `docs drift`, `docs prd *`, `def validate`, `ontology pack validate`이고, deterministic label/FSM은 이 surface들이 소비할 수 있는 공통 read model이다.
+
 ## 목표 아키텍처
 
 ```text
@@ -61,7 +63,8 @@ Layer 2: FSM State Model
   + DEPRECATED / ARCHIVED / BLOCKED 같은 terminal 또는 exceptional states
 
 Layer 3: Transition Controller
-  lint / resolve / activate / archive 전이를 dry-run으로 평가하고, 나중에 explicit write workflow로 승격
+  lint / resolve / activate / archive 전이를 dry-run으로만 평가
+  explicit write workflow는 별도 persistence/controller PRD까지 out of scope
 
 Layer 4: Operator Views
   docs status / graph / reranking / completedRecords / PRD context
@@ -70,7 +73,7 @@ Layer 5: Execution Artifacts
   PRD markdown / ralph JSON / TODO checklist
 ```
 
-이 계층에서 PRD는 상태 전이의 원천이 아니다. PRD는 transition request 또는 transition evidence로 취급한다. 최종 authority는 semantic coordinate, label registry, FSM transition controller가 가져야 한다.
+이 계층에서 PRD/TODO는 상태 전이의 원천이 아니다. PRD markdown, ralph JSON, TODO checklist는 execution/review artifact이며 transition request 또는 transition evidence로만 취급한다. 최종 authority는 semantic coordinate, label registry, FSM transition controller가 가져야 한다.
 
 ## Entity / Component / System 적용
 
@@ -110,17 +113,34 @@ Label record 후보:
 ```ts
 interface DeterministicLabelRecord {
   label: string;
-  kind: "definition" | "source" | "pack" | "artifact" | "prd" | "evidence";
-  currentState: "DRAFT" | "LINTED" | "RESOLVED" | "ACTIVE" | "DEPRECATED" | "ARCHIVED" | "BLOCKED";
-  physicalRefs: string[];
+  kind:
+    | "definition-doc"
+    | "source-file"
+    | "ontology-pack"
+    | "artifact"
+    | "prd-markdown"
+    | "ralph-prd-json"
+    | "prd-story"
+    | "evidence";
+  currentState:
+    | "DRAFT"
+    | "LINTED"
+    | "RESOLVED"
+    | "ACTIVE"
+    | "DEPRECATED"
+    | "ARCHIVED"
+    | "BLOCKED";
+  physicalRefs: SemanticPhysicalRef[];
   dependencyLabels: string[];
   sourceRefs: string[];
   evidenceRefs: string[];
   diagnostics: Diagnostic[];
+  candidate: SemanticCoordinateCandidate;
+  metadata: Record<string, unknown>;
 }
 ```
 
-현재 `definition-catalog` DB, docs adapters, artifact registry, known pack resolver, registry-service/index-meta stores는 label 후보의 입력 source다. 1차 PRD는 이들을 하나로 복사하지 않고, read-only projection으로 조립한다.
+현재 `definition-catalog` DB, docs adapters, artifact registry, known pack resolver, registry-service/index-meta stores는 label 후보의 입력 source다. 1차 PRD는 이들을 하나로 복사하지 않고, read-only projection으로 조립한다. Label projection은 `def.id`, `stableId`, source path, pack id, artifact id, PRD story id를 재작성하지 않으며, append-only label registry persistence는 Phase 4 이후 별도 판단으로 남긴다.
 
 ## FSM 방향
 
@@ -141,16 +161,16 @@ interface DeterministicLabelRecord {
 ```text
 DRAFT -> LINTED -> RESOLVED -> ACTIVE
 ACTIVE -> DEPRECATED -> ARCHIVED
-any -> BLOCKED (dry-run result only, persisted transition은 별도 정책 필요)
+any -> BLOCKED (controller-owned state로 예약, read-only readiness는 diagnostic만 추가)
 ```
 
-허용되지 않은 전이는 현재 상태를 유지해야 한다. 예를 들어 dependency가 unresolved이면 `RESOLVED`로 전이하지 않는다.
+허용되지 않은 전이는 현재 상태를 유지해야 한다. 예를 들어 dependency가 unresolved이면 `RESOLVED`로 전이하지 않는다. Read-only readiness 구현은 실패한 gate를 `deterministic-label-readiness-blocked` diagnostic으로 남기고 마지막 valid state를 유지한다. `BLOCKED` currentState persistence는 future write-mode transition controller가 소유한다.
 
 ## Transition Controller 방향
 
-1차 controller는 dry-run만 한다.
+1차 controller는 dry-run만 한다. 현재 구현은 `dryRunDeterministicLabelTransition()` internal API로 transition request를 평가하고, 요청 evidence refs를 transient record copy에만 합친다. Label record, definition markdown, PRD/TODO, ontology pack registry, append-only registry는 수정하지 않는다.
 
-예상 command 후보:
+미래 command 후보:
 
 ```bash
 qa-sdk docs label inventory --json
@@ -158,12 +178,12 @@ qa-sdk docs label status <label-or-doc-id> --json
 qa-sdk docs label transition <label-or-doc-id> <state> --dry-run --json
 ```
 
-단, 실제 command 이름은 구현 PRD에서 확정한다. 이 plan은 command surface를 확정하지 않고 방향만 정의한다.
+단, 실제 command 이름은 구현 PRD에서 확정한다. 이 plan은 command surface를 확정하지 않고 방향만 정의한다. Future write-mode transition controller는 actor/sequence/committedAt/registryRevision 같은 persistence-owned field와 append-only write authority를 별도 PRD에서 정의해야 하며, 현재 read-model PRD의 범위가 아니다.
 
 Controller gate 후보:
 
 | transition | gate |
-------------|------|
+|------------|------|
 | `DRAFT -> LINTED` | frontmatter/schema/markdown/JSON syntax, doc type convention |
 | `LINTED -> RESOLVED` | links/source-map/dependency/evidence labels resolve |
 | `RESOLVED -> ACTIVE` | role quality, pack/runtime validation, drift-free, required evidence present |
@@ -174,7 +194,7 @@ Controller gate 후보:
 
 ### Phase 1: Read-only label model
 
-상태: planned.
+상태: implemented as read-only internal model.
 
 - semantic coordinate candidate type 정의
 - label record projection type 정의
@@ -184,7 +204,7 @@ Controller gate 후보:
 
 ### Phase 2: FSM readiness calculation
 
-상태: planned.
+상태: implemented as read-only readiness projection.
 
 - DRAFT/LINTED/RESOLVED/ACTIVE readiness rules
 - existing `def validate`, `docs drift`, `docs graph`, `pack validate` 결과를 gate input으로 연결
@@ -192,10 +212,10 @@ Controller gate 후보:
 
 ### Phase 3: Transition controller dry-run
 
-상태: planned.
+상태: partially implemented.
 
-- label status command 후보
-- transition dry-run command 후보
+- internal transition dry-run request/result shape 구현
+- command 후보는 미구현, future command surface로 유지
 - no hidden writes
 - append-only event schema 후보만 정의
 
@@ -210,6 +230,7 @@ Controller gate 후보:
 ## 비목표
 
 - 1차 작업에서 실제 append-only registry persistence를 구현하지 않는다.
+- future write-mode transition controller를 구현하지 않는다.
 - 문서/PRD/TODO/archive를 자동으로 이동하거나 변경하지 않는다.
 - 기존 `def.id`와 file path를 즉시 URN으로 migration하지 않는다.
 - ECS runtime, scheduling, archetypes, SoA storage를 구현하지 않는다.

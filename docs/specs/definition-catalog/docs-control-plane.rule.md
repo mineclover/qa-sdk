@@ -51,6 +51,18 @@ Docs control plane의 문서 모듈화는 architecture-neutral한 Entity / Compo
 - TODO와 PRD는 System-like boundary를 기준으로 작성한다. 단순 파일 오래됨, 검색 결과, 임의 주제 묶음은 우선순위 기준이 아니다.
 - Read-only command output(`roleCoverage`, `nextFollowUps`, `completedRecords`, graph ranking/filtered views)은 후보와 projection이며, 원본 문서를 자동 변경하는 authority가 아니다.
 
+## Deterministic Label/FSM Consumption Rules ^consumes
+
+Deterministic label과 FSM readiness는 기존 docs-control-plane command를 대체하는 새 authority가 아니라, 같은 입력을 반복 가능하게 읽기 위한 read model이다. `docs status`, `docs graph`, `docs drift`, `docs prd sync-completion`, `def validate`, `ontology pack validate` 결과를 label/FSM gate evidence로 소비할 수 있지만, 이 projection이 source 문서나 registry state를 직접 소유하지 않는다.
+
+- Label projection은 read-only다. `def.id`, `stableId`, `familyId`, source path, pack id, artifact id, PRD path, story id를 URN으로 migration하지 않고, append-only label registry persistence는 별도 persistence PRD까지 deferred 상태로 둔다.
+- FSM readiness는 deterministic label record list 위의 System-like transform이다. 통과한 gate의 마지막 valid state를 계산하고, 실패한 gate는 diagnostic으로 남긴다. Read-only 단계는 `BLOCKED`를 persisted currentState로 설정하거나 transition event를 write하지 않는다.
+- Transition dry-run은 preview다. 요청 evidence refs는 transient evaluation copy에만 합치고, label records, definition markdown, PRD/TODO, ontology pack registry, registry-service/index-meta store를 수정하지 않는다.
+- PRD markdown, ralph PRD JSON, TODO checklist는 execution/review artifact다. 이들은 transition request나 evidence를 제공할 수 있지만 activation, archive, TODO/spec promotion, deterministic FSM transition의 authority가 아니다.
+- `passes: true`, completed checkbox, `completedRecords[]`, `nextFollowUps[]`는 review signal이다. Operator가 사용할 수 있는 evidence이지, write-mode transition approval이나 lifecycle mutation approval이 아니다.
+- Future write-mode transition controller는 out of scope다. 이를 추가하려면 append-only persistence, actor/sequence/committedAt/registryRevision, rollback/visibility policy, validation commands를 명시하는 별도 PRD가 필요하다.
+- ECS는 Entity-like identity / Component-like data / System-like transform 분리를 설명하는 reference model이다. Docs-control-plane은 ECS runtime, scheduling, archetype, SoA storage를 전제하지 않으며, 다른 아키텍처도 같은 boundary rule로 문서화한다.
+
 ## TODO Heading Rules
 
 - Checkbox state는 binary다. `[ ]`는 open, `[x]`/`[X]`는 completed이다.

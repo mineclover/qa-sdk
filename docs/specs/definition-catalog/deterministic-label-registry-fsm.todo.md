@@ -28,7 +28,7 @@ semantic coordinate, label registry, FSM state, transition controller를 `qa-sdk
 
 ## Completed — 완료 기록
 
-현재 완료 기록 없음.
+- [x] US-009 Operating Documentation — `docs-control-plane.rule.md`와 plan에 read-only label projection, FSM readiness, transition dry-run, PRD/TODO evidence-only role, ECS reference model, persistence deferral, future write-mode controller boundary를 기록했다.
 
 ## Actionable — 실행 가능
 
@@ -59,11 +59,11 @@ semantic coordinate, label registry, FSM state, transition controller를 `qa-sdk
   - [ ] append-only transition event schema 후보 작성
   - [ ] write/persistence는 별도 PRD로 deferred 처리
 
-- [ ] Operating Documentation
-  - [ ] `docs-control-plane.rule.md`에서 Entity-like identity / Component-like label data / System-like transition controller 규칙 참조
-  - [ ] `definition-state-model`과 deterministic FSM state의 관계 정리
-  - [ ] `definition-harness`와 transition controller gate의 관계 정리
-  - [ ] `registry-system`/`index-meta-system`과 label registry persistence decision boundary 정리
+- [x] Operating Documentation
+  - [x] `docs-control-plane.rule.md`에서 Entity-like identity / Component-like label data / System-like transition controller 규칙 참조
+  - [x] `definition-state-model`과 deterministic FSM state의 관계 정리
+  - [x] `definition-harness`와 transition controller gate의 관계 정리
+  - [x] `registry-system`/`index-meta-system`과 label registry persistence decision boundary 정리
 
 ## Deferred — 조건부 대기
 
