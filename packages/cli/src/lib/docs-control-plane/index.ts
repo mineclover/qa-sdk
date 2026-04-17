@@ -74,6 +74,10 @@ export {
   normalizeDocumentGraphViewFilters,
 } from "./graph-filter.js";
 export {
+  DOCUMENT_GRAPH_SUMMARY_ALGORITHM,
+  summarizeDocumentGraphResult,
+} from "./graph-summary.js";
+export {
   collectDocumentGraphTraversalDocuments,
   defaultDocumentGraphTraversalNodeReason,
 } from "./graph-scope.js";
@@ -156,6 +160,11 @@ export type {
   FilteredDocumentGraphRanking,
   NormalizedDocumentGraphViewFilters,
 } from "./graph-filter.js";
+export type {
+  DocumentGraphResultSummary,
+  DocumentGraphSummaryArchiveCounts,
+  DocumentGraphSummaryDiagnosticCounts,
+} from "./graph-summary.js";
 export type {
   DocumentGraphTraversalDocumentScope,
 } from "./graph-scope.js";

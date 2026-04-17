@@ -21,7 +21,6 @@ sources:
   - packages/cli/src/lib/ontology-pack-scaffold-plan.ts
   - packages/cli/src/lib/ontology-pack-scaffold-write.ts
   - packages/cli/src/lib/ontology-pack-validate.ts
-  - packages/cli/src/lib/known-ontology-packs.ts
 ---
 
 # Operational Ontology Pack Interface — Authoring Rules

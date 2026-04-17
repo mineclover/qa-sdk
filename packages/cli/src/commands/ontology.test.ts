@@ -637,7 +637,7 @@ describe("ontology CLI", () => {
         "qa-sdk docs graph risk-model-ontology-system --axis source",
       );
       expect(parsed.preview.sourceMapGuidance.notes.join("\n")).toContain(
-        "do not receive @def.boundary or @def.doc source comments",
+        "do not receive @def.boundary/<doc-id> or @def.doc/<doc-id> source comments",
       );
       expect(parsed.knownPackCandidate).toMatchObject({
         targetPath: "packages/cli/src/lib/known-ontology-packs.ts",

@@ -97,7 +97,7 @@ function createSourceMapGuidance(
     ],
     notes: [
       "Source-map candidates use repository-relative normalized paths.",
-      "Generated TypeScript files do not receive @def.boundary or @def.doc source comments by default.",
+      "Generated TypeScript files do not receive @def.boundary/<doc-id> or @def.doc/<doc-id> source comments by default.",
     ],
   };
 }

@@ -42,6 +42,7 @@ import {
   isTraversalPresetId,
   previewPrdCompletionSync,
   rankDocumentGraphTraversal,
+  summarizeDocumentGraphResult,
   TRAVERSAL_DIRECTIONS,
   TRAVERSAL_PRESET_IDS,
   traverseDocumentGraph,
@@ -50,6 +51,7 @@ import {
   type DocumentGraphFilterResult,
   type DocumentGraphViewFilterInput,
   type DocumentGraphRankingResult,
+  type DocumentGraphResultSummary,
   type NormalizedDocumentGraphViewFilters,
   type DocumentRoleMatrix,
   type CompletedRecordState,
@@ -181,6 +183,7 @@ interface DocsGraphCliResult {
   readonly filters: DocumentGraphFilterResult["filters"];
   readonly filtering: DocumentGraphFilterResult;
   readonly ranking: DocumentGraphRankingResult;
+  readonly summary: DocumentGraphResultSummary;
   readonly rankedNodes: DocumentGraphRankingResult["rankedNodes"];
   readonly filteredNodes: DocumentGraphRankingResult["rankedNodes"];
   readonly counts: {
@@ -875,6 +878,7 @@ function toDocsGraphCliResult(
 ): DocsGraphCliResult {
   const ranked = rankDocumentGraphTraversal(result);
   const { ranking, filtering } = filterDocumentGraphRanking(ranked, filters);
+  const summary = summarizeDocumentGraphResult(result, filtering);
   return {
     input: result.input,
     targetResolution: result.targetResolution,
@@ -887,6 +891,7 @@ function toDocsGraphCliResult(
     filters: filtering.filters,
     filtering,
     ranking,
+    summary,
     rankedNodes: ranking.rankedNodes,
     filteredNodes: filtering.filteredNodes,
     counts: {
@@ -2380,6 +2385,8 @@ function printGraph(result: DocsGraphCliResult): void {
     console.log(`  active ranked view: ${result.filtering.counts.filteredNodes}/${result.filtering.counts.rawRankedNodes} node(s)`);
   }
 
+  printGraphSummary(result);
+
   console.log("");
   console.log(`nodes (${result.nodes.length}):`);
   for (const node of result.nodes) {
@@ -2416,6 +2423,34 @@ function printGraph(result: DocsGraphCliResult): void {
       console.log(`  ... ${diagnostics.length - 5} more`);
     }
   }
+}
+
+function printGraphSummary(result: DocsGraphCliResult): void {
+  const summary = result.summary;
+  console.log("  summary:");
+  console.log(`    view nodes/edges/paths: ${summary.nodes}/${summary.edges}/${summary.paths}`);
+  console.log(`    kinds: ${formatGraphSummaryCounts(summary.counts.byNodeKind)}`);
+  console.log(`    axes: ${formatGraphSummaryCounts(summary.counts.byTraversalAxis)}`);
+  if (Object.keys(summary.counts.byDocumentRole).length > 0) {
+    console.log(`    roles: ${formatGraphSummaryCounts(summary.counts.byDocumentRole)}`);
+  }
+  if (Object.keys(summary.counts.byFollowUpCategory).length > 0) {
+    console.log(`    follow-ups: ${formatGraphSummaryCounts(summary.counts.byFollowUpCategory)}`);
+  }
+  if (
+    summary.archive.included > 0 ||
+    summary.archive.excluded > 0 ||
+    result.filters.includeArchive
+  ) {
+    console.log(`    archive: included ${summary.archive.included}, excluded ${summary.archive.excluded}`);
+  }
+  console.log(`    diagnostics: ${summary.diagnostics}`);
+}
+
+function formatGraphSummaryCounts(counts: Readonly<Record<string, number>>): string {
+  const entries = Object.entries(counts);
+  if (entries.length === 0) return "(none)";
+  return entries.map(([name, count]) => `${name}=${count}`).join(", ");
 }
 
 function graphTextWarnings(result: DocsGraphCliResult): readonly string[] {

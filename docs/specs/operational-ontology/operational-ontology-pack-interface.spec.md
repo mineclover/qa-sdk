@@ -47,35 +47,9 @@ pack 검증은 세 결과를 조합한다.
 
 pack은 새로운 schema 문법을 만들지 않는다. 기존 schema plane과 governance plane을 도메인 단위로 묶는 composition surface다.
 
-## Entity / Component / System-Informed Separation
+## Authoring Rules
 
-Operational ontology pack authoring is architecture-neutral. It can model ECS as one possible architecture, but it does not only support ECS. The pack interface borrows the useful separation discipline made explicit by ECS: stable identifiers, data-only component declarations, and explicit systems that transform those declarations.
-
-This is a design and validation aid, not a game-runtime dependency and not a requirement to implement ECS scheduling, archetypes, or SoA storage.
-
-| Separation role | Pack system 대응 | 규칙 |
-|-----------------|------------------|------|
-| Entity-like identity | `packId`, `axis.id`, `taxonomy.id`, `allocationId`, `artifactId`, `def.id` | 순수 식별자다. 상태와 행위를 넣지 않는다. |
-| Component-like data | `AxisSchema`, `TaxonomySchema`, `RelationCategorySchema`, `TraversalSchema`, registry/artifact records | 순수 데이터다. 숨은 로직을 넣지 않는다. |
-| System-like transform | validator, allocator, projector, sync adapter, activation helper, docs graph traversal | 데이터를 읽고 변환하는 명시적 로직이다. 상태를 암묵적으로 소유하지 않는다. |
-
-따라서 `OperationalOntologyPack`은 객체 상속 계층이나 ECS 전용 런타임을 만들지 않는다. pack은 도메인 component vocabulary와 system binding을 조합하는 architecture-neutral 단위다.
-
-pack authoring 원칙:
-
-1. Entity-like id는 stable label이어야 하며 행위나 상태를 내포하지 않는다.
-2. Component-like schema는 data-only 선언이어야 한다. 계산, I/O, registry mutation은 schema에 넣지 않는다.
-3. System-like binding은 `blueprints`로 분리한다. implementation/test ref는 pack schema와 섞지 않는다.
-4. pack validation은 선언된 component vocabulary와 system binding이 activation 전에 해석 가능한지 검증한다.
-5. ECS의 SoA 저장 구조는 registry/index-meta storage 최적화의 참고 원칙일 뿐, pack interface의 즉시 구현 요구사항은 아니다.
-
-문서 바운더리 적용:
-
-1. Pack family의 module/spec은 identity declarations, component schema, system bindings를 분리해 설명한다.
-2. Pack component schema 문서는 axes, taxonomies, relation categories, traversals 같은 data-only 선언을 소유한다.
-3. Pack system binding 문서는 blueprint, implementation refs, verification refs, validation helper 같은 변환/검증 연결을 소유한다.
-4. Registry activation, index-meta sync, CLI execution은 pack interface 문서가 아니라 각 System-like lifecycle 문서가 소유한다.
-5. Pack scaffold/validate PRD와 TODO는 `OperationalOntologyPack` interface를 중심 contract로 삼되, 새 pack이 ECS pack이라고 가정하지 않는다.
+Pack authoring 소비 규칙은 `operational-ontology-pack-interface-rule`이 소유한다. 이 spec은 `OperationalOntologyPack`의 현재 contract와 검증 표면을 정의하고, rule 문서는 architecture-neutral Entity / Component / System-informed separation, scaffold/validate policy, known-pack candidate, source-map candidate 같은 반복 적용 규칙을 고정한다.
 
 검증 규칙:
 

@@ -528,6 +528,30 @@ Track inventory scenario coverage.
     readonly reasonSummary: readonly string[];
   }
 
+  interface GraphSummary {
+    readonly algorithm: string;
+    readonly scope: string;
+    readonly nodes: number;
+    readonly edges: number;
+    readonly paths: number;
+    readonly diagnostics: number;
+    readonly diagnosticCounts: {
+      readonly traversal: number;
+      readonly node: number;
+      readonly bySeverity: Record<string, number>;
+    };
+    readonly archive: {
+      readonly included: number;
+      readonly excluded: number;
+    };
+    readonly counts: {
+      readonly byNodeKind: Record<string, number>;
+      readonly byTraversalAxis: Record<string, number>;
+      readonly byDocumentRole: Record<string, number>;
+      readonly byFollowUpCategory: Record<string, number>;
+    };
+  }
+
   interface GraphOutput {
     readonly input: {
       readonly target: string;
@@ -552,6 +576,7 @@ Track inventory scenario coverage.
       readonly rankedNodes: readonly GraphRankedNode[];
       readonly counts: Record<string, number>;
     };
+    readonly summary: GraphSummary;
     readonly filters: {
       readonly kinds: readonly string[];
       readonly roles: readonly string[];
@@ -1611,6 +1636,10 @@ Archived checkout work.
     expect(text).toContain("node count:");
     expect(text).toContain("edge count:");
     expect(text).toContain("truncated: yes");
+    expect(text).toContain("summary:");
+    expect(text).toContain("kinds:");
+    expect(text).toContain("axes:");
+    expect(text.indexOf("summary:")).toBeLessThan(text.indexOf("nodes ("));
     expect(text).toContain("edge reasons");
     expect(text).toContain("reason: link:contains");
   });
@@ -1695,6 +1724,43 @@ Archived checkout work.
         weak: expect.any(Number),
         penalized: expect.any(Number),
       }),
+    });
+    expect(first.summary).toMatchObject({
+      algorithm: "docs-graph-result-summary-v1",
+      scope: "filtered",
+      nodes: first.rankedNodes.length,
+      edges: expect.any(Number),
+      paths: expect.any(Number),
+      diagnostics: expect.any(Number),
+      diagnosticCounts: {
+        traversal: expect.any(Number),
+        node: expect.any(Number),
+        bySeverity: expect.objectContaining({
+          error: expect.any(Number),
+          warning: expect.any(Number),
+          info: expect.any(Number),
+        }),
+      },
+      archive: {
+        included: expect.any(Number),
+        excluded: expect.any(Number),
+      },
+      counts: {
+        byNodeKind: expect.objectContaining({
+          spec: expect.any(Number),
+          todo: expect.any(Number),
+        }),
+        byTraversalAxis: expect.objectContaining({
+          role: expect.any(Number),
+        }),
+        byDocumentRole: expect.objectContaining({
+          spec: expect.any(Number),
+          todo: expect.any(Number),
+        }),
+        byFollowUpCategory: expect.objectContaining({
+          actionable: expect.any(Number),
+        }),
+      },
     });
     expect(first.ranking.rankedNodes).toEqual(first.rankedNodes);
     expect(rankedNodeIds).toHaveLength(rawNodeIds.length);
@@ -1792,6 +1858,15 @@ Archived checkout work.
     expect(result.filtering.filteredNodeIds).toEqual(["document:checkout-todo"]);
     expect(result.filtering.counts.rawRankedNodes).toBe(result.nodes.length);
     expect(result.filtering.counts.excludedByFilters).toBeGreaterThan(0);
+    expect(result.summary).toMatchObject({
+      nodes: 1,
+      counts: {
+        byNodeKind: { todo: 1 },
+        byTraversalAxis: { role: 1 },
+        byDocumentRole: { todo: 1 },
+        byFollowUpCategory: { actionable: 1 },
+      },
+    });
   });
 
   it("excludes archived documents from active graph views unless requested", async () => {
@@ -1835,6 +1910,8 @@ Archived checkout follow-up.
     expect(active.nodes.map((node) => node.id)).toContain("document:checkout-archive-todo");
     expect(active.rankedNodes.map((node) => node.nodeId)).not.toContain("document:checkout-archive-todo");
     expect(active.filtering.counts.excludedByArchive).toBeGreaterThan(0);
+    expect(active.summary.archive.included).toBe(0);
+    expect(active.summary.archive.excluded).toBeGreaterThan(0);
 
     vi.mocked(console.log).mockClear();
     await cliDocs([
@@ -1854,6 +1931,8 @@ Archived checkout follow-up.
     const withArchive = parsedOutput<GraphOutput>();
     expect(withArchive.rankedNodes.map((node) => node.nodeId)).toContain("document:checkout-archive-todo");
     expect(withArchive.filtering.counts.excludedByArchive).toBe(0);
+    expect(withArchive.summary.archive.included).toBeGreaterThan(0);
+    expect(withArchive.summary.archive.excluded).toBe(0);
   });
 
   it("traverses composition, role, source, evidence, trace, and preset graph paths", async () => {
