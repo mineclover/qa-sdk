@@ -49,15 +49,58 @@ No browser verification is required.
 **Description:** As a maintainer, I want the refactor boundaries documented before moving code so that agents preserve behavior while improving structure.
 
 **Acceptance Criteria:**
-- [ ] Document the refactor boundary in a PRD note or implementation note.
-- [ ] Identify modules to extract from `docs.ts`: TODO lifecycle parser, completed records, follow-up ranking, role matrix, family-only scope usage, and status read-model assembly.
-- [ ] Identify modules to extract from `ontology.ts`: pack scaffold command handler and pack validate command handler.
-- [ ] Identify modules to split from `ontology-pack-scaffold-plan.ts`: plan, paths, diagnostics, docs renderers, code renderers, test renderers, known-pack candidate.
-- [ ] Identify modules to split from `ontology-pack-validate.ts`: loader, runtime validation, file readiness, docs/source-map readiness, summary.
-- [ ] State that JSON shape must remain backward-compatible; object field order is not a compatibility requirement.
-- [ ] State that text output should preserve important wording and command meaning, but exact line ordering is not a compatibility requirement.
-- [ ] State that docs lifecycle extraction and ontology pack extraction should be reviewable as separate commit groups where practical.
-- [ ] Do not move code in this story.
+- [x] Document the refactor boundary in a PRD note or implementation note.
+- [x] Identify modules to extract from `docs.ts`: TODO lifecycle parser, completed records, follow-up ranking, role matrix, family-only scope usage, and status read-model assembly.
+- [x] Identify modules to extract from `ontology.ts`: pack scaffold command handler and pack validate command handler.
+- [x] Identify modules to split from `ontology-pack-scaffold-plan.ts`: plan, paths, diagnostics, docs renderers, code renderers, test renderers, known-pack candidate.
+- [x] Identify modules to split from `ontology-pack-validate.ts`: loader, runtime validation, file readiness, docs/source-map readiness, summary.
+- [x] State that JSON shape must remain backward-compatible; object field order is not a compatibility requirement.
+- [x] State that text output should preserve important wording and command meaning, but exact line ordering is not a compatibility requirement.
+- [x] State that docs lifecycle extraction and ontology pack extraction should be reviewable as separate commit groups where practical.
+- [x] Do not move code in this story.
+
+#### US-001 Implementation Note: Refactor Boundary And Compatibility Contract
+
+US-001 is a documentation-only story. It records the extraction boundary before later stories move code. No command source, library source, import path, runtime behavior, JSON schema, text output, tests, or generated artifacts are intentionally changed in this story.
+
+Future docs lifecycle extraction should make `packages/cli/src/commands/docs.ts` a command assembly and output-formatting surface while moving reusable read-model logic under `packages/cli/src/lib/docs-control-plane/`:
+
+- `todo-lifecycle.ts`: TODO heading/category/hierarchy parsing, including `parseTodoFollowUps`, `classifyTodoHeading`, checkbox hierarchy helpers, TODO category labels, heading path, parent title, pointer, and depth handling.
+- `completed-records.ts`: completed TODO and PRD record detection, including checked-only `.todo.md` detection, paired PRD markdown and ralph PRD JSON completion detection, archive/transient exclusion, checkbox counting, and completed-record ordering.
+- `follow-ups.ts`: session follow-up, task follow-up, TODO follow-up, completed-record exclusion, `findNextFollowUps`, `compareFollowUps`, and `followUpRank`.
+- `role-matrix.ts`: role coverage and role matrix read-model assembly for same-family and linked-role coverage.
+- `family-scope.ts`: family-only scope usage shared by `docs status`, `docs collect --family-only`, and `docs prd sync-completion --family-only`.
+- `status-read-model.ts`: status read-model assembly around counts, resolved target state, scoped documents, completed records, follow-ups, role coverage, source maps, and diagnostics.
+
+Future ontology command extraction should keep `packages/cli/src/commands/ontology.ts` responsible for top-level command routing, shared help text, shared error printing, prompt extraction, artifact registry, and activation dispatch. Pack authoring handlers should move into command-handler modules:
+
+- `packages/cli/src/commands/ontology/pack-scaffold.ts`: parse and execute `ontology pack scaffold`, delegate plan creation and optional write mode, preserve dry-run/write/json semantics, and return/print the existing scaffold preview shape.
+- `packages/cli/src/commands/ontology/pack-validate.ts`: parse and execute `ontology pack validate`, delegate validation, preserve known-pack and file-ref behavior, and return/print the existing validation shape.
+
+Future scaffold planning extraction should split `packages/cli/src/lib/ontology-pack-scaffold-plan.ts` into focused internal modules while preserving the public behavior of `createOntologyPackScaffoldPlan()` and `createOntologyPackScaffoldPlanFromCliArgs()`:
+
+- `ontology-pack-scaffold/plan.ts`: plan orchestration, identity derivation, source-map candidate assembly, output file list assembly, and stable result shape.
+- `ontology-pack-scaffold/paths.ts`: safe repo path resolution, default docs/package/test paths, file-base/source-dir derivation, and display path helpers.
+- `ontology-pack-scaffold/diagnostics.ts`: flag diagnostics, safe-id diagnostics, conflict diagnostics, and `hasOntologyPackScaffoldErrors`.
+- `ontology-pack-scaffold/render-docs.ts`: `renderSpecDoc`, `renderTodoDoc`, `renderPlanDoc`, `renderRuleDoc`, `renderCasesDoc`, and `renderTestDoc`.
+- `ontology-pack-scaffold/render-code.ts`: `renderComponentSchemaFile` and `renderSystemBindingFile`.
+- `ontology-pack-scaffold/render-tests.ts`: `renderPackTestFile`.
+- `ontology-pack-scaffold/known-pack-candidate.ts`: known-pack registration candidate construction, target path, import path, and export name calculation.
+
+Future pack validation extraction should split `packages/cli/src/lib/ontology-pack-validate.ts` into focused internal modules while preserving the public behavior of `validateOntologyPackFromRef()`:
+
+- `ontology-pack-validate/load-pack.ts`: known-pack resolution, file-path resolution, supported extension checks, dynamic import/JSON loading, payload extraction, and unresolved-pack errors.
+- `ontology-pack-validate/runtime-validation.ts`: runtime `validateOperationalOntologyPack()` issue mapping and pack identity/component/system binding summaries that depend on runtime validation results.
+- `ontology-pack-validate/file-readiness.ts`: blueprint and scaffold-metadata static file reference collection, file existence checks, duplicate ref handling, and missing-file readiness issues.
+- `ontology-pack-validate/docs-readiness.ts`: definition doc matching, source-map matching, docs readiness, source-map readiness, and readiness warnings that must remain warnings.
+- `ontology-pack-validate/summary.ts`: final validation result assembly, readiness summaries, identity summary, component schema summary, system binding summary, and issue ordering.
+
+Compatibility contract:
+
+- JSON output must remain backward-compatible in field names, nesting, value meaning, and required/optional field presence. Object field order is not a compatibility requirement.
+- Text output should preserve important wording, command names, option meaning, diagnostics meaning, and operator guidance. Exact line ordering is not a compatibility requirement unless an existing test already asserts it.
+- Docs lifecycle extraction and ontology pack extraction should be reviewable as separate commit groups where practical. Docs lifecycle work should avoid changing ontology pack internals, and ontology pack work should avoid changing docs lifecycle internals except where shared tests require coordination.
+- Extracted modules are internal CLI libraries for this PRD. They should not become package-level public exports unless a later PRD explicitly promotes them.
 
 ### US-002: Extract Docs TODO Lifecycle Parser
 
