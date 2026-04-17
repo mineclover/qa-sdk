@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildDeterministicLabelRecord,
   buildSemanticCoordinateCandidate,
   collectSemanticCoordinateCandidatesFromDocuments,
+  DETERMINISTIC_LABEL_RECORD_STATES,
   detectSemanticCoordinateCandidateCollisions,
   normalizeDocumentEnvelope,
   SEMANTIC_COORDINATE_CANONICAL_EXAMPLES,
@@ -37,6 +39,18 @@ describe("semantic coordinate candidates", () => {
       prdStory: "urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-001",
       evidence: "urn:artifact:evidence:checkout-proof:v1",
     });
+  });
+
+  it("defines deterministic label record states for the future FSM projection", () => {
+    expect(DETERMINISTIC_LABEL_RECORD_STATES).toEqual([
+      "DRAFT",
+      "LINTED",
+      "RESOLVED",
+      "ACTIVE",
+      "DEPRECATED",
+      "ARCHIVED",
+      "BLOCKED",
+    ]);
   });
 
   it("generates coordinates from representative ids without replacing source ids or paths", () => {
@@ -412,6 +426,111 @@ describe("semantic coordinate candidates", () => {
     }).candidates.map((item) => item.label)).toContain(
       "urn:source:json:.ralph-tui/session-meta.json",
     );
+  });
+
+  it("constructs a read-only deterministic label record with empty relationship refs", () => {
+    const source = candidate({
+      kind: "definition-doc",
+      id: "docs-control-plane",
+      subtype: "spec",
+      version: "v1",
+      physicalRefs: [
+        {
+          kind: "definition-path",
+          ref: "docs/specs/definition-catalog/docs-control-plane.spec.md",
+          role: "primary",
+        },
+      ],
+    });
+
+    const record = buildDeterministicLabelRecord({ candidate: source });
+
+    expect(record).toMatchObject({
+      label: "urn:def:spec:docs-control-plane:v1",
+      kind: "definition-doc",
+      currentState: "DRAFT",
+      dependencyLabels: [],
+      sourceRefs: [],
+      evidenceRefs: [],
+      diagnostics: [],
+      candidate: source,
+    });
+    expect(record.physicalRefs).toEqual([
+      expect.objectContaining({
+        kind: "definition-path",
+        ref: "docs/specs/definition-catalog/docs-control-plane.spec.md",
+        role: "primary",
+      }),
+    ]);
+  });
+
+  it("constructs a deterministic label record with populated dependency, source, and evidence refs", () => {
+    const source = candidate({
+      kind: "prd-story",
+      parentId: "tasks/prd-deterministic-label-registry-fsm-read-model",
+      id: "US-003",
+      physicalRefs: [
+        {
+          kind: "ralph-prd-json-path",
+          ref: "tasks\\prd-deterministic-label-registry-fsm-read-model.json#/userStories/2",
+          role: "primary",
+        },
+      ],
+      metadata: {
+        documentStableId: "tasks/prd-deterministic-label-registry-fsm-read-model",
+      },
+    });
+
+    const record = buildDeterministicLabelRecord({
+      candidate: source,
+      currentState: "LINTED",
+      dependencyLabels: [
+        "urn:def:spec:docs-control-plane:v1",
+        " ",
+        "urn:def:spec:definition-catalog:v1",
+        "urn:def:spec:docs-control-plane:v1",
+      ],
+      sourceRefs: [
+        "packages\\cli\\src\\lib\\docs-control-plane\\deterministic-labels.ts",
+        "packages/cli/src/lib/docs-control-plane/deterministic-labels.test.ts",
+      ],
+      evidenceRefs: [
+        "urn:artifact:evidence:us-003-proof:v1",
+        "urn:artifact:evidence:us-003-proof:v1",
+      ],
+      metadata: {
+        projection: "record-shape",
+      },
+    });
+
+    expect(record).toMatchObject({
+      label: "urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-003",
+      kind: "prd-story",
+      currentState: "LINTED",
+      dependencyLabels: [
+        "urn:def:spec:definition-catalog:v1",
+        "urn:def:spec:docs-control-plane:v1",
+      ],
+      sourceRefs: [
+        "packages/cli/src/lib/docs-control-plane/deterministic-labels.test.ts",
+        "packages/cli/src/lib/docs-control-plane/deterministic-labels.ts",
+      ],
+      evidenceRefs: [
+        "urn:artifact:evidence:us-003-proof:v1",
+      ],
+      metadata: {
+        documentStableId: "tasks/prd-deterministic-label-registry-fsm-read-model",
+        projection: "record-shape",
+      },
+      candidate: source,
+    });
+    expect(record.physicalRefs).toEqual([
+      expect.objectContaining({
+        kind: "ralph-prd-json-path",
+        ref: "tasks/prd-deterministic-label-registry-fsm-read-model.json#/userStories/2",
+        role: "primary",
+      }),
+    ]);
   });
 });
 

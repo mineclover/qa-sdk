@@ -53,6 +53,19 @@ collision diagnostics when they come from distinct physical records. Archive
 PRDs and transient `.ralph-tui` session state are skipped by default; callers
 must pass an exact target or `includeArchive`/`includeSession` to include them.
 
+## Deterministic label records
+
+`buildDeterministicLabelRecord()` wraps a semantic coordinate candidate in a
+read-only record shape for the future label registry. The projection keeps the
+candidate label and kind, defaults `currentState` to `DRAFT`, preserves
+`physicalRefs[]`, and carries sorted, de-duplicated `dependencyLabels[]`,
+`sourceRefs[]`, and `evidenceRefs[]` arrays. Candidate diagnostics remain on
+the record, with optional projection diagnostics appended by the caller.
+
+This shape is intentionally data-only. It does not append to a registry, write
+transition events, persist state, or promote PRD/TODO/checklist signals into
+authority.
+
 ## Traversal taxonomy
 
 Graph traversal uses canonical axes only inside the control plane:

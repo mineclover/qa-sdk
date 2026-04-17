@@ -106,8 +106,10 @@ export {
 export {
   buildSemanticCoordinateCandidatesFromDocument,
   buildSemanticCoordinateCandidate,
+  buildDeterministicLabelRecord,
   collectSemanticCoordinateCandidatesFromDocuments,
   detectSemanticCoordinateCandidateCollisions,
+  DETERMINISTIC_LABEL_RECORD_STATES,
   isSemanticCoordinateLabelKind,
   SEMANTIC_COORDINATE_CANONICAL_EXAMPLES,
   SEMANTIC_COORDINATE_DIAGNOSTIC_CODES,
@@ -208,6 +210,9 @@ export type {
   FollowUpState,
 } from "./follow-ups.js";
 export type {
+  DeterministicLabelRecord,
+  DeterministicLabelRecordInput,
+  DeterministicLabelRecordState,
   SemanticCoordinate,
   SemanticCoordinateCandidate,
   SemanticCoordinateCandidateInventory,

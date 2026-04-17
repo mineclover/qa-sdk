@@ -157,6 +157,42 @@ export interface SemanticCoordinateCandidateInventory {
   readonly skippedDocuments: readonly SemanticCoordinateSkippedDocument[];
 }
 
+export const DETERMINISTIC_LABEL_RECORD_STATES = [
+  "DRAFT",
+  "LINTED",
+  "RESOLVED",
+  "ACTIVE",
+  "DEPRECATED",
+  "ARCHIVED",
+  "BLOCKED",
+] as const;
+
+export type DeterministicLabelRecordState =
+  (typeof DETERMINISTIC_LABEL_RECORD_STATES)[number];
+
+export interface DeterministicLabelRecord {
+  readonly label: string;
+  readonly kind: SemanticCoordinateLabelKind;
+  readonly currentState: DeterministicLabelRecordState;
+  readonly physicalRefs: readonly SemanticPhysicalRef[];
+  readonly dependencyLabels: readonly string[];
+  readonly sourceRefs: readonly string[];
+  readonly evidenceRefs: readonly string[];
+  readonly diagnostics: readonly SemanticCoordinateDiagnostic[];
+  readonly candidate: SemanticCoordinateCandidate;
+  readonly metadata: DocumentMetadata;
+}
+
+export interface DeterministicLabelRecordInput {
+  readonly candidate: SemanticCoordinateCandidate;
+  readonly currentState?: DeterministicLabelRecordState | null;
+  readonly dependencyLabels?: readonly string[] | null;
+  readonly sourceRefs?: readonly string[] | null;
+  readonly evidenceRefs?: readonly string[] | null;
+  readonly diagnostics?: readonly SemanticCoordinateDiagnostic[] | null;
+  readonly metadata?: DocumentMetadata | null;
+}
+
 export const SEMANTIC_COORDINATE_CANONICAL_EXAMPLES = {
   definitionDoc: "urn:def:spec:docs-control-plane:v1",
   sourceFile: "urn:source:typescript:packages/cli/src/commands/docs.ts",
@@ -281,6 +317,34 @@ export function collectSemanticCoordinateCandidatesFromDocuments(
     candidates,
     diagnostics,
     skippedDocuments,
+  };
+}
+
+export function buildDeterministicLabelRecord(
+  input: DeterministicLabelRecordInput,
+): DeterministicLabelRecord {
+  const candidate = input.candidate;
+
+  return {
+    label: candidate.label,
+    kind: candidate.kind,
+    currentState: input.currentState ?? "DRAFT",
+    physicalRefs: candidate.physicalRefs.map((ref) => ({
+      ...ref,
+      metadata: normalizeMetadata(ref.metadata),
+    })),
+    dependencyLabels: normalizeRecordRefs(input.dependencyLabels),
+    sourceRefs: normalizeRecordRefs(input.sourceRefs),
+    evidenceRefs: normalizeRecordRefs(input.evidenceRefs),
+    diagnostics: [
+      ...candidate.diagnostics,
+      ...(input.diagnostics ?? []),
+    ],
+    candidate,
+    metadata: {
+      ...candidate.metadata,
+      ...normalizeMetadata(input.metadata),
+    },
   };
 }
 
@@ -818,6 +882,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function uniqueStrings(values: readonly (string | undefined)[]): readonly string[] {
   return [...new Set(values.filter((value): value is string => Boolean(value)))];
+}
+
+function normalizeRecordRefs(
+  refs: readonly string[] | null | undefined,
+): readonly string[] {
+  return uniqueStrings((refs ?? []).map(normalizeCoordinatePart))
+    .toSorted((left, right) => left.localeCompare(right));
 }
 
 function buildSemanticCoordinate(input: {

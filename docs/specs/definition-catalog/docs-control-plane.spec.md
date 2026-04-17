@@ -89,6 +89,8 @@ Semantic coordinate candidate는 기존 repository id와 path 위에 얹는 read
 
 Existing-id inventory는 `DocumentEnvelope`의 현재 필드를 migration 없이 투영한다. `def.id`, `stableId`, `familyId`, `sourcePath`, `packId`, `artifactId`, `sources[].path`, `evidence[].id`, PRD `tasks[].id`는 label candidate input이 되고, markdown path, source path, PRD path, artifact ref, artifact output path는 `physicalRefs[]`로 남는다. 같은 label이 여러 physical record에서 나오면 overwrite하지 않고 collision diagnostic으로 보고한다. Archive PRD와 transient `.ralph-tui` session state는 기본 inventory에서 제외하며, 정확한 path/id target이나 `includeArchive`/`includeSession` 같은 opt-in policy가 있을 때만 포함한다.
 
+Deterministic label record는 semantic coordinate candidate를 감싼 read-only projection이다. Record는 `label`, candidate `kind`, `currentState`, `physicalRefs[]`, `dependencyLabels[]`, `sourceRefs[]`, `evidenceRefs[]`, `diagnostics[]`를 포함한다. 현재 record construction은 candidate-only 상태를 `DRAFT`로 기본화하고, dependency/source/evidence ref 배열은 정규화, 중복 제거, 정렬만 수행한다. 이 단계는 append-only registry 저장, transition event write, PRD/TODO promotion, archive 이동을 수행하지 않는다.
+
 Canonical format examples:
 
 | 형상 단위 | 후보 label |
