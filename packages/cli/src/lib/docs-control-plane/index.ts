@@ -77,6 +77,12 @@ export {
   DOCUMENT_ROLE_MATRIX_ROLES,
   roleOfDocument,
 } from "./role-matrix.js";
+export {
+  CANONICAL_TODO_CATEGORY_LABELS,
+  classifyTodoHeading,
+  countMarkdownCheckboxes,
+  parseTodoFollowUps,
+} from "./todo-lifecycle.js";
 
 export type {
   AuthoredLinkType,
@@ -136,6 +142,11 @@ export type {
   DocumentRoleMatrixRole,
   DocumentRoleMatrixRoleCoverage,
 } from "./role-matrix.js";
+export type {
+  TodoFollowUpCategory,
+  TodoHeadingCategory,
+  TodoLifecycleFollowUp,
+} from "./todo-lifecycle.js";
 export type {
   DocumentAdapter,
   DocumentAdapterCapabilities,

@@ -63,11 +63,12 @@
         "`node packages/cli/dist/index.js ontology pack validate programming-artifact-ontology --json`"
       ],
       "priority": 2,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "US-002 extracted TODO lifecycle parsing into packages/cli/src/lib/docs-control-plane/todo-lifecycle.ts and exports it from docs-control-plane. docs.ts now imports canonical category labels, checkbox counting, and parseTodoFollowUps instead of owning parser internals. Added focused hierarchy and category inference coverage in todo-lifecycle.test.ts. Required US-002 gates passed.",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-003",
@@ -466,6 +467,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-17T02:03:19.098Z"
+    "updatedAt": "2026-04-17T02:11:00.439Z"
   }
 }

@@ -107,14 +107,14 @@ Compatibility contract:
 **Description:** As a docs control-plane maintainer, I want TODO heading/category/hierarchy parsing extracted from `docs.ts` so it can be reused by status, inventory, drift, and future lifecycle commands.
 
 **Acceptance Criteria:**
-- [ ] Create a focused docs-control-plane module for TODO lifecycle parsing.
-- [ ] Move canonical category labels and heading classification into the module.
-- [ ] Move checkbox hierarchy parsing into the module.
-- [ ] Preserve support for `Completed`, `Actionable`, `Deferred`, `Parking Lot`, Korean equivalents, and uncategorized headings.
-- [ ] Preserve `depth`, `parentTitle`, `headingPath`, `pointer`, and category output.
-- [ ] Add focused unit tests for parent/child TODO hierarchy and category inference.
-- [ ] Do not introduce a general Markdown AST parser in this story.
-- [ ] `docs status ... --json` output remains behaviorally equivalent.
+- [x] Create a focused docs-control-plane module for TODO lifecycle parsing.
+- [x] Move canonical category labels and heading classification into the module.
+- [x] Move checkbox hierarchy parsing into the module.
+- [x] Preserve support for `Completed`, `Actionable`, `Deferred`, `Parking Lot`, Korean equivalents, and uncategorized headings.
+- [x] Preserve `depth`, `parentTitle`, `headingPath`, `pointer`, and category output.
+- [x] Add focused unit tests for parent/child TODO hierarchy and category inference.
+- [x] Do not introduce a general Markdown AST parser in this story.
+- [x] `docs status ... --json` output remains behaviorally equivalent.
 
 ### US-003: Extract Docs Completed Record Detection
 
