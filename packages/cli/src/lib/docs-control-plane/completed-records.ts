@@ -11,6 +11,7 @@ export interface CompletedRecordState {
   readonly path: string;
   readonly state: "completed-record";
   readonly title: string;
+  readonly lifecycle?: string;
   readonly completedCount?: number;
   readonly openCount?: number;
   readonly pairedDocumentId?: string;
@@ -48,6 +49,7 @@ export async function detectCompletedRecords(
         path: document.path,
         state: "completed-record",
         title: titleOf(document),
+        ...lifecycleOf(document),
         completedCount: checkboxState.completed,
         openCount: checkboxState.open,
         reason: ".todo.md has completed checkboxes and no open checkboxes",
@@ -65,6 +67,7 @@ export async function detectCompletedRecords(
         path: document.path,
         state: "completed-record",
         title: titleOf(document),
+        ...lifecycleOf(document),
         pairedDocumentId: paired.stableId,
         pairedPath: paired.path,
         reason: "paired PRD JSON has all stories passing",
@@ -129,6 +132,13 @@ function titleOf(document: DocumentEnvelope): string {
     if (typeof value === "string" && value.trim().length > 0) return value;
   }
   return document.stableId;
+}
+
+function lifecycleOf(document: DocumentEnvelope): { readonly lifecycle?: string } {
+  const lifecycle = document.metadata.lifecycle;
+  return typeof lifecycle === "string" && lifecycle.trim().length > 0
+    ? { lifecycle: lifecycle.trim() }
+    : {};
 }
 
 function asNumber(value: unknown): number | undefined {

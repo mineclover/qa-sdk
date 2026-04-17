@@ -843,6 +843,7 @@ Track completed RLSC text occupancy work.
         path: string;
         completedCount?: number;
         openCount?: number;
+        lifecycle?: string;
       }>;
       nextFollowUps: Array<{ documentId: string; path: string; state: string }>;
     }>();
@@ -856,6 +857,7 @@ Track completed RLSC text occupancy work.
           path: "docs/specs/event-vocab-system/event-taxonomy-rollout.todo.md",
           completedCount: 2,
           openCount: 0,
+          lifecycle: "draft",
         }),
         expect.objectContaining({
           state: "completed-record",
@@ -864,6 +866,7 @@ Track completed RLSC text occupancy work.
           path: "docs/specs/rlsc/rlsc-text-occupancy.todo.md",
           completedCount: 1,
           openCount: 0,
+          lifecycle: "draft",
         }),
       ]),
     );

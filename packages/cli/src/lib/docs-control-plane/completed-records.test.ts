@@ -13,6 +13,7 @@ describe("docs-control-plane completed record detection", () => {
       path: "docs/specs/event-vocab/event-taxonomy-rollout.todo.md",
       metadata: {
         title: "Event Taxonomy Rollout",
+        lifecycle: "draft",
       },
     });
     const openTodo = document({
@@ -22,6 +23,15 @@ describe("docs-control-plane completed record detection", () => {
       path: "docs/specs/event-vocab/open-rollout.todo.md",
       metadata: {
         title: "Open Rollout",
+      },
+    });
+    const emptyTodo = document({
+      adapterId: "definition-markdown",
+      kind: "todo",
+      stableId: "empty-rollout-todo",
+      path: "docs/specs/event-vocab/empty-rollout.todo.md",
+      metadata: {
+        title: "Empty Rollout",
       },
     });
     const archivedTodo = document({
@@ -36,10 +46,11 @@ describe("docs-control-plane completed record detection", () => {
 
     const records = await detectCompletedRecords({
       rootDir: "/repo",
-      documents: [completedTodo, openTodo, archivedTodo],
+      documents: [completedTodo, openTodo, emptyTodo, archivedTodo],
       readDocument: async (item) => ({
         [completedTodo.path]: "- [x] Seed events no longer hardcode service id.\n- [X] Event adoption read model exists.\n",
         [openTodo.path]: "- [x] Completed setup.\n- [ ] Publish follow-up.\n",
+        [emptyTodo.path]: "# Empty Rollout\n\nNo checklist items yet.\n",
         [archivedTodo.path]: "- [x] Archived work.\n",
       }[item.path] ?? null),
     });
@@ -52,6 +63,7 @@ describe("docs-control-plane completed record detection", () => {
         path: "docs/specs/event-vocab/event-taxonomy-rollout.todo.md",
         state: "completed-record",
         title: "Event Taxonomy Rollout",
+        lifecycle: "draft",
         completedCount: 2,
         openCount: 0,
         reason: ".todo.md has completed checkboxes and no open checkboxes",
