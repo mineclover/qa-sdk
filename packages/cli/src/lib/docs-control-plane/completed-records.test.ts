@@ -128,6 +128,16 @@ describe("docs-control-plane completed record detection", () => {
         passedStoryCount: 1,
       },
     });
+    const missingJsonPrd = document({
+      adapterId: "prd-markdown",
+      kind: "prd",
+      stableId: "tasks/billing-prd",
+      familyId: "tasks/billing-prd",
+      path: "tasks/billing-prd.md",
+      metadata: {
+        title: "Billing PRD",
+      },
+    });
     const archivedPrd = document({
       adapterId: "prd-markdown",
       kind: "prd",
@@ -153,7 +163,7 @@ describe("docs-control-plane completed record detection", () => {
 
     const records = await detectCompletedRecords({
       rootDir: "/repo",
-      documents: [prd, passingJson, incompletePrd, incompleteJson, archivedPrd, archivedJson],
+      documents: [prd, passingJson, incompletePrd, incompleteJson, missingJsonPrd, archivedPrd, archivedJson],
     });
 
     expect(records).toEqual([
@@ -166,6 +176,8 @@ describe("docs-control-plane completed record detection", () => {
         title: "Checkout PRD",
         pairedDocumentId: "tasks/checkout-prd",
         pairedPath: "tasks/checkout-prd.json",
+        storyCount: 2,
+        passedStoryCount: 2,
         reason: "paired PRD JSON has all stories passing",
       },
     ]);

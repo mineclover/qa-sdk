@@ -82,12 +82,13 @@
         "`node packages/cli/dist/index.js docs collect docs-control-plane --family-only --json`"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-001",
         "US-002"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-004",
@@ -210,6 +211,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-17T13:10:55.651Z"
+    "updatedAt": "2026-04-17T13:15:18.889Z"
   }
 }

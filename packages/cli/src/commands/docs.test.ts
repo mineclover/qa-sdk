@@ -890,6 +890,8 @@ Track completed RLSC text occupancy work.
         documentId: string;
         path: string;
         pairedPath?: string;
+        storyCount?: number;
+        passedStoryCount?: number;
       }>;
       nextFollowUps: Array<{ kind: string; title: string; path: string }>;
     }>();
@@ -901,6 +903,8 @@ Track completed RLSC text occupancy work.
         documentId: "tasks/checkout-prd",
         path: "tasks/checkout-prd.md",
         pairedPath: "tasks/checkout-prd.json",
+        storyCount: 1,
+        passedStoryCount: 1,
       }),
     ]);
     expect(result.nextFollowUps).not.toEqual(

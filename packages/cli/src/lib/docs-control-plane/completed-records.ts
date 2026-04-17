@@ -14,6 +14,8 @@ export interface CompletedRecordState {
   readonly lifecycle?: string;
   readonly completedCount?: number;
   readonly openCount?: number;
+  readonly storyCount?: number;
+  readonly passedStoryCount?: number;
   readonly pairedDocumentId?: string;
   readonly pairedPath?: string;
   readonly reason: string;
@@ -32,7 +34,7 @@ export async function detectCompletedRecords(
   const activeDocuments = options.documents.filter(isActiveCompletedRecordDocument);
   const ralphPrdByFamilyId = new Map(
     activeDocuments
-      .filter((document) => document.kind === "ralph-prd-json" && isAllStoriesPassing(document))
+      .filter((document) => document.kind === "ralph-prd-json" && storyCompletionOf(document).allStoriesPassing)
       .map((document) => [document.familyId ?? document.stableId, document]),
   );
 
@@ -60,6 +62,7 @@ export async function detectCompletedRecords(
     if (document.kind === "prd") {
       const paired = ralphPrdByFamilyId.get(document.familyId ?? document.stableId);
       if (!paired) continue;
+      const completion = storyCompletionOf(paired);
       records.push({
         source: document.adapterId,
         kind: document.kind,
@@ -68,6 +71,8 @@ export async function detectCompletedRecords(
         state: "completed-record",
         title: titleOf(document),
         ...lifecycleOf(document),
+        storyCount: completion.storyCount,
+        passedStoryCount: completion.passedStoryCount,
         pairedDocumentId: paired.stableId,
         pairedPath: paired.path,
         reason: "paired PRD JSON has all stories passing",
@@ -118,12 +123,19 @@ function isTransientSessionDocument(document: DocumentEnvelope): boolean {
     || normalizePath(document.path).startsWith(".ralph-tui/");
 }
 
-function isAllStoriesPassing(document: DocumentEnvelope): boolean {
-  if (document.kind !== "ralph-prd-json") return false;
+function storyCompletionOf(document: DocumentEnvelope): {
+  readonly storyCount: number;
+  readonly passedStoryCount: number;
+  readonly allStoriesPassing: boolean;
+} {
   const storyCount = asNumber(document.metadata.storyCount) ?? document.tasks.length;
   const passedStoryCount = asNumber(document.metadata.passedStoryCount)
     ?? document.tasks.filter((task) => task.metadata.passes === true).length;
-  return storyCount > 0 && passedStoryCount === storyCount;
+  return {
+    storyCount,
+    passedStoryCount,
+    allStoriesPassing: document.kind === "ralph-prd-json" && storyCount > 0 && passedStoryCount === storyCount,
+  };
 }
 
 function titleOf(document: DocumentEnvelope): string {
