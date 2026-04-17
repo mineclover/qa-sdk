@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 
+import { detectCompletedRecords, type CompletedRecordState } from "./completed-records.js";
 import type {
   DocumentEnvelope,
   DocumentMetadata,
@@ -102,6 +103,7 @@ export async function detectDocumentDrift(
   if (options.includeSession === true) {
     detectRalphSessionDriftDiagnostics(context);
   }
+  await detectCompletedRecordCandidates(context);
   detectPrdMarkdownUncheckedAfterJsonComplete(context);
   await detectOpenTodosDescribedAsComplete(context);
   await detectScenarioMatrixTitleDrift(context);
@@ -152,6 +154,69 @@ function ralphSessionRemediation(code: string): string {
     return "Stop or archive the ralph session, or reopen the PRD JSON story state if work is still active.";
   }
   return "Update the ralph session metadata counts, or rerun the tracker sync so session state matches the PRD JSON story state.";
+}
+
+async function detectCompletedRecordCandidates(context: DriftContext): Promise<void> {
+  const completedRecords = await detectCompletedRecords({
+    rootDir: context.rootDir,
+    documents: context.scopedDocuments,
+    readDocument: (document) => readRepoFile(context, document.path),
+  });
+
+  for (const record of completedRecords) {
+    addIssue(context, {
+      severity: "info",
+      code: completedRecordDriftCode(record),
+      message: completedRecordDriftMessage(record),
+      path: record.path,
+      remediation: completedRecordRemediation(record),
+      metadata: completedRecordMetadata(record),
+    });
+  }
+}
+
+function completedRecordDriftCode(record: CompletedRecordState): string {
+  if (record.kind === "todo") return "completed-todo-record-candidate";
+  if (record.kind === "prd") return "completed-prd-record-candidate";
+  return "completed-record-candidate";
+}
+
+function completedRecordDriftMessage(record: CompletedRecordState): string {
+  if (record.kind === "todo") {
+    return `Completed TODO record candidate: ${record.title}`;
+  }
+  if (record.kind === "prd") {
+    return `Completed PRD markdown record candidate: ${record.title}`;
+  }
+  return `Completed record candidate: ${record.title}`;
+}
+
+function completedRecordRemediation(record: CompletedRecordState): string {
+  if (record.kind === "todo") {
+    return "Review whether the checked-only TODO should stay as evidence, move to archive, convert to memo, or be promoted through an explicit lifecycle workflow.";
+  }
+  if (record.kind === "prd") {
+    return "Review whether the completed PRD markdown should stay as evidence, move to archive, or feed a separate explicit lifecycle cleanup workflow.";
+  }
+  return "Review whether the completed record should stay as evidence or be handled by an explicit lifecycle cleanup workflow.";
+}
+
+function completedRecordMetadata(record: CompletedRecordState): DocumentMetadata {
+  return {
+    source: record.source,
+    kind: record.kind,
+    documentId: record.documentId,
+    state: record.state,
+    title: record.title,
+    reason: record.reason,
+    ...(record.lifecycle ? { lifecycle: record.lifecycle } : {}),
+    ...(record.completedCount !== undefined ? { completedCount: record.completedCount } : {}),
+    ...(record.openCount !== undefined ? { openCount: record.openCount } : {}),
+    ...(record.storyCount !== undefined ? { storyCount: record.storyCount } : {}),
+    ...(record.passedStoryCount !== undefined ? { passedStoryCount: record.passedStoryCount } : {}),
+    ...(record.pairedDocumentId ? { pairedDocumentId: record.pairedDocumentId } : {}),
+    ...(record.pairedPath ? { pairedPath: record.pairedPath } : {}),
+  };
 }
 
 function detectPrdMarkdownUncheckedAfterJsonComplete(context: DriftContext): void {

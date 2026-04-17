@@ -1,6 +1,6 @@
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -365,6 +365,53 @@ Coordinate checkout adapters.
     }, null, 2));
 
     return rootDir;
+  }
+
+  async function writePrdPair(
+    workspace: string,
+    relativeBase: string,
+    title: string,
+  ): Promise<void> {
+    const markdownPath = join(workspace, "tasks", `${relativeBase}.md`);
+    const jsonPath = join(workspace, "tasks", `${relativeBase}.json`);
+    await mkdir(dirname(markdownPath), { recursive: true });
+    await writeFile(markdownPath, `[PRD]
+# PRD: ${title}
+
+## Overview
+
+Track completed PRD lifecycle state.
+
+## User Stories
+
+### US-001: Complete lifecycle state
+
+**Description:** As a docs operator, I want completed lifecycle state.
+
+**Acceptance Criteria:**
+- [x] Completed lifecycle state is recorded.
+[/PRD]
+`);
+    await writeFile(jsonPath, JSON.stringify({
+      name: title,
+      branchName: `ralph/${relativeBase.replaceAll("/", "-")}`,
+      description: "Track completed PRD lifecycle state.",
+      userStories: [
+        {
+          id: "US-001",
+          title: "Complete lifecycle state",
+          description: "As a docs operator, I want completed lifecycle state.",
+          acceptanceCriteria: [
+            "Completed lifecycle state is recorded.",
+          ],
+          priority: 1,
+          passes: true,
+          dependsOn: [],
+          notes: "Completed by agent.",
+          completionNotes: "Completed by agent.",
+        },
+      ],
+    }, null, 2));
   }
 
   async function createBlockedCompletionWorkspace(): Promise<string> {
@@ -2390,6 +2437,143 @@ Archived checkout follow-up.
     expect(text).toContain("warning: text search is broad");
     expect(text).toContain("[spec] checkout-spec");
     expect(text).toContain("[prd] tasks/checkout-prd");
+  });
+
+  it("reports completed TODO drift candidates as info without failing", async () => {
+    rootDir = await mkdtemp(join(tmpdir(), "qa-sdk-docs-completed-todo-"));
+    await mkdir(join(rootDir, "docs/specs/completed"), { recursive: true });
+    await writeFile(join(rootDir, "pnpm-workspace.yaml"), "packages: []\n");
+    await writeFile(join(rootDir, "docs/specs/completed/completed-rollout.todo.md"), `---
+def:
+  id: completed-rollout-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Completed Rollout
+
+## 목적 ^purpose
+
+Track completed rollout work.
+
+## Completed — 완료 기록
+
+- [x] Publish rollout docs.
+- [x] Verify lifecycle inventory.
+`);
+
+    await cliDocs(["drift", "--root", rootDir, "--json"]);
+
+    const result = parsedOutput<{
+      counts: { total: number; error: number; warning: number; info: number };
+      issuesBySeverity: {
+        error: Array<{ code: string; path: string }>;
+        warning: Array<{ code: string; path: string }>;
+        info: Array<{ code: string; path: string; metadata: Record<string, unknown> }>;
+      };
+    }>();
+
+    expect(process.exitCode).toBeUndefined();
+    expect(result.counts).toEqual({
+      total: 1,
+      error: 0,
+      warning: 0,
+      info: 1,
+    });
+    expect(result.issuesBySeverity.error).toEqual([]);
+    expect(result.issuesBySeverity.warning).toEqual([]);
+    expect(result.issuesBySeverity.info).toEqual([
+      expect.objectContaining({
+        code: "completed-todo-record-candidate",
+        path: "docs/specs/completed/completed-rollout.todo.md",
+        metadata: expect.objectContaining({
+          kind: "todo",
+          documentId: "completed-rollout-todo",
+          completedCount: 2,
+          openCount: 0,
+        }),
+      }),
+    ]);
+  });
+
+  it("reports completed PRD markdown drift candidates by PRD scope and excludes archive/session state", async () => {
+    rootDir = await mkdtemp(join(tmpdir(), "qa-sdk-docs-completed-prd-"));
+    await mkdir(join(rootDir, "docs"), { recursive: true });
+    await mkdir(join(rootDir, "tasks/archive"), { recursive: true });
+    await mkdir(join(rootDir, ".ralph-tui"), { recursive: true });
+    await writeFile(join(rootDir, "pnpm-workspace.yaml"), "packages: []\n");
+    await writePrdPair(rootDir, "active-prd", "Active PRD");
+    await writePrdPair(rootDir, "other-prd", "Other PRD");
+    await writePrdPair(rootDir, "archive/archived-prd", "Archived PRD");
+    await writeFile(join(rootDir, ".ralph-tui/session-meta.json"), JSON.stringify({
+      id: "active-session",
+      status: "completed",
+      prdPath: "tasks/active-prd.json",
+      totalTasks: 1,
+      tasksCompleted: 1,
+    }, null, 2));
+
+    await cliDocs(["drift", "--root", rootDir, "--json"]);
+
+    const broad = parsedOutput<{
+      counts: { error: number; warning: number; info: number };
+      issuesBySeverity: {
+        info: Array<{ code: string; path: string; metadata: Record<string, unknown> }>;
+      };
+    }>();
+    expect(process.exitCode).toBeUndefined();
+    expect(broad.counts).toMatchObject({
+      error: 0,
+      warning: 0,
+      info: 2,
+    });
+    expect(broad.issuesBySeverity.info.map((issue) => issue.path)).toEqual([
+      "tasks/active-prd.md",
+      "tasks/other-prd.md",
+    ]);
+    expect(broad.issuesBySeverity.info).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "tasks/archive/archived-prd.md" }),
+        expect.objectContaining({ path: ".ralph-tui/session-meta.json" }),
+      ]),
+    );
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["drift", "--root", rootDir, "--prd", "tasks/active-prd.json", "--json"]);
+
+    const scoped = parsedOutput<{
+      scope: { prd: string; documents: number };
+      counts: { error: number; warning: number; info: number };
+      issues: Array<{ code: string; path: string; metadata: Record<string, unknown> }>;
+    }>();
+    expect(process.exitCode).toBeUndefined();
+    expect(scoped.scope.prd).toBe("tasks/active-prd.json");
+    expect(scoped.counts).toMatchObject({
+      error: 0,
+      warning: 0,
+      info: 1,
+    });
+    expect(scoped.issues).toEqual([
+      expect.objectContaining({
+        code: "completed-prd-record-candidate",
+        path: "tasks/active-prd.md",
+        metadata: expect.objectContaining({
+          kind: "prd",
+          pairedPath: "tasks/active-prd.json",
+          storyCount: 1,
+          passedStoryCount: 1,
+        }),
+      }),
+    ]);
+    expect(scoped.issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "tasks/other-prd.md" }),
+        expect.objectContaining({ path: "tasks/archive/archived-prd.md" }),
+        expect.objectContaining({ path: ".ralph-tui/session-meta.json" }),
+      ]),
+    );
   });
 
   it("reports docs drift grouped by severity with remediation hints", async () => {

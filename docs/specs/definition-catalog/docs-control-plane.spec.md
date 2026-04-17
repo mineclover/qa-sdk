@@ -174,6 +174,10 @@ Completed records are not active follow-up work. `docs status` and `docs collect
 
 Completed records are not automatically moved, archived, converted to `.memo.md`, checked, unchecked, or promoted into spec content. `passes: true` in ralph PRD JSON is only a completion signal for the compatibility read model; it is not authority to promote TODOs, convert PRDs, rewrite definition documents, or perform archive/memo lifecycle changes.
 
+`docs drift` reports completed-record lifecycle candidates as `info`, not as `warning` or `error`. The current policy is that checked-only `.todo.md` records and PRD markdown paired with all-passing ralph PRD JSON are cleanup-review signals: they should be visible to operators, but they must not fail drift checks or change existing drift warning/error behavior. Future policies may introduce warnings only for contradictory source state; the base completed-record candidate remains informational.
+
+Completed-record drift reporting uses the same active-scope defaults as `completedRecords[]`: archive PRDs and `archive/` paths are excluded by default, transient `.ralph-tui` session state is excluded unless explicitly opted in by session-aware workflows, and `--prd <file>` limits completed-record candidates to that PRD family.
+
 Archive and memo conversion require a separate explicit PRD, command, or reviewed write workflow that names the target records and owns the mutation. Until such authority exists, completed records stay in place as review candidates and documentation evidence.
 
 ## `qa-sdk def`와 `qa-sdk docs`

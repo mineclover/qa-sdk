@@ -179,6 +179,14 @@ completed. Operational state comes from section headings: `Completed — 완료 
 parking-lot, archive, or promotion state. `completedRecords[]` is also only a
 candidate read model for human review.
 
+`docs drift` reports completed-record candidates as `info` issues. Checked-only
+`.todo.md` records and PRD markdown paired with all-passing ralph PRD JSON are
+operator cleanup signals, not validation failures; they must not affect command
+exit status or existing warning/error drift behavior. The same default active
+scope applies: archive PRDs and `archive/` paths are excluded, transient
+`.ralph-tui` state stays out unless a session-aware flag opts in, and `--prd`
+limits reporting to the selected PRD family.
+
 Inventory and validation commands:
 
 ```bash
