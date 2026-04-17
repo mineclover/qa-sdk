@@ -187,6 +187,45 @@ scope applies: archive PRDs and `archive/` paths are excluded, transient
 `.ralph-tui` state stays out unless a session-aware flag opts in, and `--prd`
 limits reporting to the selected PRD family.
 
+## Completed record manual review
+
+Completed-record review is a human workflow. The docs control-plane commands
+find candidates and assemble evidence, but they do not move files, archive
+records, convert records to `.memo.md`, or promote TODO content into specs.
+
+Review flow:
+
+1. Inspect the owning family with
+   `node packages/cli/dist/index.js docs status <target> --json`. Read
+   `completedRecords[]` beside `roleCoverage`, `nextFollowUp`, and
+   `nextFollowUps[]` so completed records stay visible but non-actionable.
+2. Inspect local context with
+   `node packages/cli/dist/index.js docs collect <target> --family-only --json`.
+   Use the family-only view to check same-family role docs, direct module
+   children, source refs, and evidence refs.
+3. Verify the source-owned completion signal. A completed TODO must still be
+   checked-only with zero open checkboxes and at least one checked checkbox. A
+   completed PRD markdown record must still have paired ralph PRD JSON with all
+   stories passing. For PRD-scoped candidates, run
+   `node packages/cli/dist/index.js docs drift --prd <prd-file> --json` and
+   treat completed-record `info` issues as review evidence, not failures.
+4. Decide whether to keep, archive, or convert. Keep a completed TODO in place
+   when it is still the clearest audit trail, carries useful implementation
+   evidence not represented elsewhere, remains part of an active family review,
+   or has not been named by an approved cleanup PRD. Archive only stale
+   execution records whose value is historical. Convert to memo/knowledge only
+   when the record contains durable rationale, review notes, or decision
+   context that should live outside TODO syntax.
+5. Create a future archive/memo conversion PRD when the cleanup would affect
+   multiple records, define archive or memo naming rules, change links or
+   frontmatter, change role-coverage expectations, or introduce any reusable
+   write command. That PRD must name target records, own the write authority,
+   preserve source/evidence links, and list the validation commands.
+6. Commit only the reviewed documentation edits, archive moves, or memo
+   conversions from the explicit cleanup scope. `docs status`,
+   `docs collect --family-only`, and `docs drift` are command evidence; they are
+   not automatic archive or memo commands.
+
 Inventory and validation commands:
 
 ```bash
