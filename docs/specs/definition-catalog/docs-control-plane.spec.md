@@ -31,6 +31,9 @@ sources:
   - packages/cli/src/lib/docs-control-plane/graph-traverse.ts
   - packages/cli/src/lib/docs-control-plane/graph-presets.ts
   - packages/cli/src/lib/docs-control-plane/graph-scope.ts
+  - packages/cli/src/lib/docs-control-plane/graph-rank.ts
+  - packages/cli/src/lib/docs-control-plane/graph-filter.ts
+  - packages/cli/src/lib/docs-control-plane/graph-summary.ts
   - packages/cli/src/lib/docs-control-plane/family-scope.ts
   - packages/cli/src/lib/docs-control-plane/role-matrix.ts
 ---
@@ -98,6 +101,35 @@ Presets `family`, `implementation`, `review`, `impact`, `prd-completion`은 conv
 Source path target은 repository root 기준 relative path로 canonicalize한 뒤 indexed `source` node를 찾는다. Coverage가 없으면 broad repository fallback을 하지 않고 synthetic `source` node와 `source-map-missing` diagnostic만 반환한다. 이는 `qa-sdk def find-by-file`과 다르다. `find-by-file`은 `def sync`가 만든 DB-owned `code_references` explicit source-map만 읽고, mapping이 없거나 ambiguous하면 authoritative boundary를 확정하지 않는다.
 
 Traversal guardrail: 기본 depth는 `1`, 최대 depth는 `6`; 기본 limit는 `100`, 최대 limit는 `500`이다. 초과 요청은 capped diagnostic을 남기며, cap에 걸린 결과는 `truncated: true`, legacy `omittedCount`, 세부 `omittedCounts.nodes|edges|depth`를 노출한다. `context` axis와 free-text search는 broad traversal로 취급하고 text output에서 warning을 표시한다.
+
+## Graph result ranking and filtering
+
+Docs graph ranking is a post-traversal result consumption model. `traverseDocumentGraph()` first resolves the target, walks the requested canonical axes, and returns raw `nodes`, `edges`, `paths`, role groups, counts, truncation fields, and diagnostics. Only after that raw traversal exists does `rankDocumentGraphTraversal()` score nodes and `filterDocumentGraphRanking()` build an active view. Ranking and filtering do not rewrite authored links, canonical axes, graph edges, paths, or graph truth.
+
+The ranking algorithm is deterministic rule-based rescoring (`docs-graph-rule-rank-v1`). It is not semantic reranking, vector search, embedding search, or LLM judgment. Score factors are fixed data already present in the traversal result: target match, path distance, strongest path axis, node kind, same-family role metadata, archive state, diagnostics, and follow-up category. Ranking emits `rank`, `score`, `strength`, `factors`, and `reasonSummary` so operators can inspect why a node moved up or down. The output order is for consumption only; the raw traversal remains the audit source.
+
+The JSON compatibility contract is additive. `nodes`, `edges`, `paths`, traversal `counts`, `truncated`, `omittedCount`, `omittedCounts`, `diagnostics`, `roleGroups`, and `missingRoles` remain available even when ranked or filtered views are present. View fields are `ranking`, top-level `rankedNodes`, `filtering`, `filteredNodes`, and `summary`.
+
+Post-traversal view filters apply to ranked/filtered result views and graph-derived command output. `--axis` selects which axes traversal may walk. `--filter-axis` filters already traversed ranked nodes by path axis and cannot discover new nodes. `--kind` matches node/document kind, `--role` matches family role metadata or role-like file suffixes, and `--follow-up-category` matches TODO/follow-up category metadata. `--include-archive` opts archived or historical nodes back into the active view; without it, ranked/filtered views exclude documents whose lifecycle/status/path marks them archived or historical.
+
+Active inventory defaults use the same principle at the document-set layer. `docs/specs/**` and active `tasks/**/prd-*` files are active by default, while `tasks/archive/**`, archived lifecycle records, and transient `.ralph-tui` session state are excluded unless an explicit target or opt-in flag brings them in. In normal graph traversal, an archived node may still appear in raw `nodes` if traversal found it; the default active ranked view filters it out for consumption.
+
+Examples:
+
+```bash
+# Source ranking: retrieve source edges, then rank source-backed docs above broad context.
+qa-sdk docs graph packages/cli/src/commands/docs.ts --axis source --direction in --json
+
+# Role ranking: family role docs score strongly, especially same-family TODO/plan/rule docs.
+qa-sdk docs graph docs-control-plane --preset family --filter-axis role --role spec,todo,plan --json
+
+# Evidence ranking: evidence-linked proof ranks above weak trace/context matches.
+qa-sdk docs graph programming-artifact-ontology-system --axis evidence --direction both --json
+
+# PRD context ranking: exact-doc authoring context consumes the ranked graph view
+# before flattening specs, TODOs, plans, source refs, and evidence refs.
+qa-sdk docs prd context docs-control-plane --filter-axis role,source,evidence --json
+```
 
 ## Topdown lifecycle inventory
 

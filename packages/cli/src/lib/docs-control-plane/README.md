@@ -77,7 +77,8 @@ Graph traversal is the retrieval phase. Ranking, filtering, and summaries run
 only after `traverseDocumentGraph()` has returned its raw result. These result
 views do not rewrite `DocumentEnvelope.links`, change
 `CANONICAL_TRAVERSAL_AXES`, or rebuild graph edges; they consume the traversal
-result and add JSON fields beside it.
+result and add JSON fields beside it. Ranking changes result consumption order,
+not graph truth.
 
 The JSON compatibility contract is that raw traversal fields (`nodes`, `edges`,
 `paths`, traversal `counts`, truncation fields, diagnostics, role groups, and
@@ -85,11 +86,19 @@ missing roles) remain the full unfiltered traversal output. Ranked and filtered
 views are additive fields: `ranking`, `rankedNodes`, `filtering`,
 `filteredNodes`, and `summary`.
 
-Reranking is deterministic and rule-based. It uses fixed factors from the
-traversal result, such as target node, distance, axis, node kind, role, archive
-state, diagnostics, and follow-up category. It does not use LLM, vector, or
-semantic ranking, so the same graph result and filter options produce the same
-ranked view.
+Reranking is deterministic, post-traversal, and rule-based
+(`docs-graph-rule-rank-v1`). It uses fixed factors from the traversal result:
+target node, path distance, strongest path axis, node kind, same-family role
+metadata, archive state, diagnostics, and follow-up category. It emits `rank`,
+`score`, `strength`, `factors`, and `reasonSummary` for each ranked node. It
+does not use LLM, vector, embedding, or semantic ranking, so the same raw graph
+result and filter options produce the same ranked view.
+
+Ranking strengths are labels for consumption priority: target and strong
+same-family/source/evidence matches generally rise; broad context-only,
+archived, historical, deprecated, diagnostic-heavy, deferred, parking-lot, or
+completed follow-up records are penalized. These labels are not validation
+truth and must not be used to mutate source documents automatically.
 
 ## Result view filters
 
@@ -102,6 +111,43 @@ unchanged so operators can audit the full retrieval set.
 `--kind`, `--role`, `--filter-axis`, and `--follow-up-category` as comma
 separated filters. Active ranked/filtered views exclude archive documents by
 default; pass `--include-archive` to include archived documents explicitly.
+
+Filter scope:
+
+| Option | Scope | Notes |
+|--------|-------|-------|
+| `--axis` | traversal input | Selects which canonical axes may be walked; can change raw `nodes`, `edges`, and `paths`. |
+| `--filter-axis` | result view | Keeps ranked nodes whose path contains the listed axes; cannot discover new nodes. |
+| `--kind` | result view | Matches graph node kind and document kind metadata. |
+| `--role` | result view | Matches family role metadata, role-like document kinds, or role-like file suffixes. |
+| `--follow-up-category` | result view | Matches TODO/follow-up metadata such as `actionable`, `deferred`, or `parking-lot`. |
+| `--include-archive` | result view | Includes archived/historical/deprecated records in ranked/filtered views. |
+
+Archive behavior has two layers. Active inventory commands exclude archived
+definition docs, `tasks/archive/**` PRDs, and transient `.ralph-tui` session
+state by default unless an explicit target or opt-in flag brings them in.
+Graph traversal may still find an archived node in raw traversal fields; the
+default active ranked/filtered view excludes that node until `--include-archive`
+is passed.
+
+Examples:
+
+```bash
+# Source ranking: retrieve source edges, then rank source-backed docs above
+# broad context-only matches while keeping raw traversal nodes/edges/paths.
+qa-sdk docs graph packages/cli/src/commands/docs.ts --axis source --direction in --json
+
+# Role ranking: consume the family graph as same-family role context.
+qa-sdk docs graph docs-control-plane --preset family --filter-axis role --role spec,todo,plan --json
+
+# Evidence ranking: proof/evidence nodes and evidence-linked docs outrank weak
+# trace/context matches in the ranked view.
+qa-sdk docs graph programming-artifact-ontology-system --axis evidence --direction both --json
+
+# PRD context ranking: exact-doc authoring context consumes the ranked graph
+# before flattening related specs, TODOs, plans, source refs, and evidence refs.
+qa-sdk docs prd context docs-control-plane --filter-axis role,source,evidence --json
+```
 
 이 story는 REST endpoint, remote service, database migration, 새 artifact
 vocabulary를 추가하지 않는다.
