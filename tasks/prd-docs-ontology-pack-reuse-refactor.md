@@ -159,13 +159,13 @@ Compatibility contract:
 **Description:** As a CLI maintainer, I want `docs.ts` to become a command assembly surface that delegates lifecycle read-model work to library modules.
 
 **Acceptance Criteria:**
-- [ ] `docs.ts` no longer defines TODO parsing internals such as `parseTodoFollowUps`, `classifyTodoHeading`, or checkbox hierarchy helpers.
-- [ ] `docs.ts` no longer defines completed record detection internals such as `findCompletedRecords` or checkbox counting for completed records.
-- [ ] `docs.ts` no longer defines follow-up ranking internals such as `findNextFollowUps`, `compareFollowUps`, or `followUpRank`.
-- [ ] `docs.ts` no longer defines role matrix construction internals.
-- [ ] `docs.ts` remains the command assembly and output formatting surface.
-- [ ] Text and JSON output remain equivalent.
-- [ ] Existing docs command tests pass without changing command behavior.
+- [x] `docs.ts` no longer defines TODO parsing internals such as `parseTodoFollowUps`, `classifyTodoHeading`, or checkbox hierarchy helpers.
+- [x] `docs.ts` no longer defines completed record detection internals such as `findCompletedRecords` or checkbox counting for completed records.
+- [x] `docs.ts` no longer defines follow-up ranking internals such as `findNextFollowUps`, `compareFollowUps`, or `followUpRank`.
+- [x] `docs.ts` no longer defines role matrix construction internals.
+- [x] `docs.ts` remains the command assembly and output formatting surface.
+- [x] Text and JSON output remain equivalent.
+- [x] Existing docs command tests pass without changing command behavior.
 
 ### US-007: Extract Ontology Pack Docs Renderers
 
