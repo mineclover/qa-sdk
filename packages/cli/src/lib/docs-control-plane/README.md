@@ -127,6 +127,50 @@ node packages/cli/dist/index.js docs drift --prd tasks/prd-document-source-map-c
 - `DocumentChangeSet`은 future adapter가 write/transform을 명시적으로 opt in할 때
   사용할 neutral proposed-change container다.
 
+## Command Assembly Convention
+
+CLI command files are assembly and presentation surfaces. They parse arguments,
+dispatch to focused handlers or library functions, print text/JSON output, and
+set command exit codes. Reusable read-model construction, parsing, ranking,
+readiness checks, rendering, path policy, and transformation logic belong in
+internal modules under `packages/cli/src/lib/**` or focused command-handler
+modules under `packages/cli/src/commands/**`.
+
+Docs command features should follow the current split: `docs.ts` owns command
+flow and output formatting, while docs-control-plane modules own adapters,
+family scope, role matrix, TODO lifecycle parsing, completed-record detection,
+follow-up ranking, graph traversal, drift, metadata transform previews, and PRD
+compatibility transforms. Ontology pack authoring follows the same convention:
+`ontology.ts` remains the router, `commands/ontology/pack-authoring.ts` owns
+pack command printing/exit-code policy, and `lib/ontology-pack-*` modules own
+scaffold planning, rendering, writing, loading, runtime validation, and
+readiness checks.
+
+Extracted modules from this refactor are internal CLI libraries. They may be
+imported by CLI command code and focused CLI tests, but no package-level public
+exports are required unless a later PRD explicitly promotes them.
+
+For scaffold-like commands, the default mode is dry-run. A dry-run returns the
+same planned file/candidate/readiness shape that write mode uses, with no file
+system mutation. Write mode must require an explicit flag such as `--write`,
+materialize only planned files, refuse unsafe paths or existing outputs, and
+leave resolver, source-map, activation, and registry mutations as separate
+manual or explicit command steps.
+
+Readiness-oriented JSON results should keep the top-level contract stable:
+`valid` is the command gate, `issues` is the flat ordered diagnostic list,
+`runtime` summarizes runtime contract validation, and `readiness` summarizes
+implementation/test/docs/source-map preparedness. Warning-level readiness issues
+can keep `valid: true`; error-level issues make the command invalid.
+
+Identity/data/system separation is an implementation organization guideline, not
+an ECS-only architecture. Identity modules define stable ids and symbols, data
+modules define read models or schema declarations, and system modules perform
+explicit transformations such as parsers, renderers, validators, projectors,
+readiness collectors, or writers. ECS can be modeled by ontology packs, but this
+module separation applies to docs and ontology CLI code without requiring ECS
+scheduling, archetypes, or storage layout.
+
 ## Adapters
 
 - `artifact-evidence`: local programming artifact registry JSON files를 배열 또는

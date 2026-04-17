@@ -46,6 +46,7 @@ sources:
 - write mode는 기존 파일을 overwrite하지 않는다.
 - write mode는 known-pack resolver와 기존 definition frontmatter를 수정하지 않는다.
 - scaffold는 pack을 activate하지 않는다. Activation은 항상 `qa-sdk ontology registry activate-pack <pack-id>`의 별도 lifecycle이다.
+- scaffold-like command를 새로 만들 때도 dry-run이 기본이다. Dry-run은 write mode가 소비하는 plan/readiness/candidate shape를 그대로 보여주고, write mode는 명시적 `--write`와 안전한 output path 검증을 통과한 planned files만 만든다.
 
 ## Candidate Decisions
 
@@ -71,6 +72,22 @@ sources:
 - System-like bindings own behavior: validators, blueprints, projectors, allocation helpers, activation helpers, sync adapters, docs graph traversal.
 - Schema declarations must not hide I/O, registry mutation, activation behavior, or validation side effects.
 - ECS is a useful reference model for separating identity, data, and systems. It is not the only supported architecture and it does not require ECS scheduling, archetypes, or SoA storage in a pack.
+- The same separation is an implementation organization guideline for CLI modules. Identity modules own stable ids/symbols, data modules own read-model or schema declarations, and system modules own explicit parser, renderer, writer, validator, projector, loader, and readiness transformations.
+
+## Validation Result Convention
+
+- `valid` is the command gate. It is false only when at least one issue has error severity.
+- `issues` is the flat, ordered diagnostic list for loader, runtime, file readiness, docs readiness, and source-map readiness findings.
+- `runtime` summarizes `OperationalOntologyPack` contract validation separately from authoring preparedness.
+- `readiness` summarizes implementation files, test files, docs family coverage, and source-map coverage.
+- Warning-level readiness issues may leave `valid: true`; strict failure policy can be introduced later without changing the base result shape.
+
+## Internal CLI Library Boundary
+
+- `packages/cli/src/commands/ontology.ts` remains the ontology router and shared dependency handoff point.
+- Focused command modules such as `packages/cli/src/commands/ontology/pack-authoring.ts` own argument handling, text/JSON printing, and exit-code policy for their command family.
+- Reusable pack logic lives under `packages/cli/src/lib/ontology-pack-*`: scaffold plan/render/write modules and validate loader/runtime/file/docs readiness modules.
+- These modules are internal CLI libraries for this refactor. No package-level public exports are required unless a later PRD promotes a stable API.
 
 ## Validate Workflow
 
@@ -88,4 +105,3 @@ sources:
 |------|--------------|--------------------------|
 | `programming-artifact-ontology` | operational pack shape, artifact vocabulary, provider blueprint, activation evidence source/test refs | artifact-specific taxonomy names |
 | `authorization-ontology` | cross-package pack export, known-pack resolver import, authorization graph/audit blueprint refs | Cerbos-specific realm vocabulary unless the new domain is authorization |
-

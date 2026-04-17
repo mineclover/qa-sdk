@@ -154,6 +154,20 @@ Supported adapters:
 
 Adapters are read-only. Adapter가 source markdown, PRD JSON, session file, artifact registry를 수정하거나, 다른 source schema로 변환하거나, source vocabulary를 neutral enum으로 치환하지 않는다.
 
+## Command assembly convention
+
+`packages/cli/src/commands/*.ts` files are command assembly and presentation surfaces. They parse CLI arguments, dispatch to focused handlers or library functions, print text/JSON output, and set exit codes. Reusable read-model construction, parser/ranking logic, transformation previews, renderer logic, path policy, readiness checks, and validation summaries belong in internal CLI modules under `packages/cli/src/lib/**` or focused command-handler modules under `packages/cli/src/commands/**`.
+
+Current docs-control-plane extraction follows this rule: `packages/cli/src/commands/docs.ts` owns command flow and output formatting, while `packages/cli/src/lib/docs-control-plane/` owns adapters, family scope, role matrix assembly, TODO lifecycle parsing, completed-record detection, follow-up ranking, graph traversal, drift checks, metadata transform previews, and PRD compatibility transforms. Ontology pack authoring follows the same rule: `packages/cli/src/commands/ontology.ts` remains the router, `packages/cli/src/commands/ontology/pack-authoring.ts` owns pack command printing and exit-code policy, and `packages/cli/src/lib/ontology-pack-*` owns scaffold planning/rendering/writing and pack loading/runtime/readiness validation.
+
+Extracted modules in this refactor are internal CLI libraries. They may be imported by CLI command code and focused CLI tests, but this refactor does not require package-level public exports. Promotion to a public package API requires a separate PRD or explicit interface spec.
+
+Readiness-style JSON results use a stable top-level convention: `valid` is the command gate, `issues` is the flat ordered diagnostic list, `runtime` summarizes runtime contract validation, and `readiness` summarizes implementation/test/docs/source-map preparedness. Warning-level readiness issues can leave `valid: true`; error-level issues make the command invalid.
+
+Scaffold-like commands are dry-run first. Dry-run returns the same planned file/candidate/readiness shape that write mode consumes and does not mutate the filesystem. Write mode requires an explicit flag such as `--write`, materializes only planned files, refuses unsafe paths and existing outputs, and leaves resolver/source-map/activation/registry mutation as candidate output or separate explicit commands.
+
+Identity/data/system separation is an implementation organization guideline, not an ECS-only architecture. Identity modules define stable ids and symbols, data modules define read models or schema declarations, and system modules perform explicit transforms such as parsers, renderers, validators, projectors, readiness collectors, or writers. ECS is only one architecture that can be modeled by operational ontology packs; docs and ontology CLI modules use the separation without requiring ECS scheduling, archetypes, or storage layout.
+
 ## PRD JSON의 위치
 
 PRD markdown이 authoring source다. Ralph PRD JSON은 ralph-tui 실행 호환 adapter의 target format이며 core document model이 아니다.
