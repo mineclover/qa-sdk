@@ -362,11 +362,12 @@
         "`node packages/cli/dist/index.js ontology pack validate programming-artifact-ontology --json`"
       ],
       "priority": 11,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "US-011 extracted ontology pack validate file readiness into packages/cli/src/lib/ontology-pack-validate/file-readiness.ts and docs/source-map readiness into packages/cli/src/lib/ontology-pack-validate/docs-readiness.ts. The validator now assembles readiness from those read models while preserving implementationFiles/testFiles/docs/sourceMap JSON shapes, warning-level source-map missing diagnostics, and valid=true when readiness only has warnings. Added focused file readiness, docs/source-map partial coverage, and top-level readiness assembly tests; existing ontology pack validate command coverage passes.",
       "dependsOn": [
         "US-010"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-012",
@@ -473,6 +474,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-17T03:51:27.919Z"
+    "updatedAt": "2026-04-17T04:03:28.996Z"
   }
 }

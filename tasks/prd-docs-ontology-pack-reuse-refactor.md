@@ -224,13 +224,13 @@ Compatibility contract:
 **Description:** As a pack authoring maintainer, I want file/docs/source-map readiness checks separated so readiness policy can later support strict mode without changing runtime validation.
 
 **Acceptance Criteria:**
-- [ ] Create a file readiness module for implementation/test refs.
-- [ ] Create a docs/source-map readiness module for matching docs family coverage.
-- [ ] Preserve `readiness.implementationFiles`, `readiness.testFiles`, `readiness.docs`, and `readiness.sourceMap` JSON shapes.
-- [ ] Preserve warning-level source-map missing behavior.
-- [ ] Preserve `valid: true` when readiness has warnings but no errors.
-- [ ] Add focused tests around partial readiness.
-- [ ] Existing pack validate command tests pass.
+- [x] Create a file readiness module for implementation/test refs.
+- [x] Create a docs/source-map readiness module for matching docs family coverage.
+- [x] Preserve `readiness.implementationFiles`, `readiness.testFiles`, `readiness.docs`, and `readiness.sourceMap` JSON shapes.
+- [x] Preserve warning-level source-map missing behavior.
+- [x] Preserve `valid: true` when readiness has warnings but no errors.
+- [x] Add focused tests around partial readiness.
+- [x] Existing pack validate command tests pass.
 
 ### US-012: Slim Ontology Command Assembly
 
