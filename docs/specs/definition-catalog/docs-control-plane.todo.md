@@ -54,13 +54,14 @@ def:
   - [x] `docs.ts` and `ontology.ts` remain command assembly surfaces for the refactored behavior
   - [x] command assembly, readiness result, and dry-run/write conventions are documented
 
-### Actionable — 실행 가능
+- [x] Graph Result Ranking And Filtering
+  - [x] rank by axis, edge reason, role, and path distance
+  - [x] filter by role/kind/axis/diagnostic and follow-up category
+  - [x] context axis ranking for exact-target PRD authoring context
+  - [x] graph output summarization for large results
+  - [x] US-010 operational verification recorded ranked/summary graph output, collect graph output, family-only bounds, source-map bounds, PRD context ranking, drift output, and quality gates on real repository data
 
-- [ ] Graph Result Ranking And Filtering
-  - [ ] rank by axis, edge reason, role, and path distance
-  - [ ] filter by role/kind/axis/diagnostic
-  - [ ] context axis ranking
-  - [ ] graph output summarization for large results
+### Actionable — 실행 가능
 
 - [ ] PRD Completion Sync Precision
   - [x] `docs status` follows module composition so contained TODO docs can surface as follow-up even when they do not share the same filename family
@@ -76,6 +77,10 @@ def:
 - [ ] Remaining source-map gaps
   - [ ] `packages/cli/src/lib/docs-control-plane/index.ts` remains a barrel-only facade gap; add source coverage only if facade-level lookup becomes an operational requirement
   - [ ] `packages/cli/src/commands/ontology/ingest.ts`, `status.ts`, and `navigation-diff.ts` still have no authoritative file-level source-map owner; keep `docs graph` traversal bounded with `source-map-missing` until ownership is documented
+
+- [ ] Graph result operational noise follow-ups
+  - [ ] Bounded `source-map-missing` graph output reports `summary.diagnosticCounts.traversal=1`, but `summary.diagnosticCounts.bySeverity.info` remains `0`; decide whether traversal diagnostics should populate severity buckets in summaries
+  - [ ] Broad family graphs still expose high raw `missingRoles` counts even when ranked/summary views are readable; consider a quieter missing-role report if reviewer noise persists
 
 - [ ] Section-Level Graph Nodes
   - [ ] purpose/overview/constraint/scenario matrix section nodes
