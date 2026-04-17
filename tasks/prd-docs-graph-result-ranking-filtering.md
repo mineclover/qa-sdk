@@ -46,137 +46,137 @@ No browser verification is required.
 **Description:** As a docs operator, I want a clear ranking model for graph results so that stronger document relationships appear before weak or broad matches.
 
 **Acceptance Criteria:**
-- [ ] Add a graph result ranking module that runs after traversal.
-- [ ] Ranking follows a retrieval/rescore pattern: traversal first, post-traversal reranking second.
-- [ ] Ranking does not modify traversal paths or edge discovery.
-- [ ] Rank factors include target node, path distance, axis, node kind, role, archive state, diagnostics, and follow-up category where available.
-- [ ] Same-family role docs rank above weak trace/context results.
-- [ ] Source/evidence-linked docs rank above broad context-only docs.
-- [ ] Archive/historical docs rank lower by default.
-- [ ] Ranking result includes `rank`, `score`, and `strength` or equivalent fields.
-- [ ] Ranking explanation includes factor-level reason metadata sufficient to debug score decisions.
-- [ ] Unit tests cover rank ordering for role, source, evidence, trace, context, and archive examples.
+- [x] Add a graph result ranking module that runs after traversal.
+- [x] Ranking follows a retrieval/rescore pattern: traversal first, post-traversal reranking second.
+- [x] Ranking does not modify traversal paths or edge discovery.
+- [x] Rank factors include target node, path distance, axis, node kind, role, archive state, diagnostics, and follow-up category where available.
+- [x] Same-family role docs rank above weak trace/context results.
+- [x] Source/evidence-linked docs rank above broad context-only docs.
+- [x] Archive/historical docs rank lower by default.
+- [x] Ranking result includes `rank`, `score`, and `strength` or equivalent fields.
+- [x] Ranking explanation includes factor-level reason metadata sufficient to debug score decisions.
+- [x] Unit tests cover rank ordering for role, source, evidence, trace, context, and archive examples.
 
 ### US-002: Add Ranked Graph Result Shape
 
 **Description:** As a CLI consumer, I want graph JSON output to expose ranking metadata without breaking existing fields.
 
 **Acceptance Criteria:**
-- [ ] `docs graph --json` keeps existing `nodes`, `edges`, `paths`, `counts`, `diagnostics`, and truncation fields.
-- [ ] Additive ranking metadata is exposed under a new field such as `rankedNodes` or `ranking`.
-- [ ] Ranking metadata includes node id, rank, score, strength, and reason summary.
-- [ ] Ranked output includes factor/explanation metadata sufficient to debug score decisions.
-- [ ] Raw `nodes` ordering and membership remain available for compatibility.
-- [ ] Existing tests expecting current graph fields remain valid.
-- [ ] Tests verify ranked output is deterministic.
+- [x] `docs graph --json` keeps existing `nodes`, `edges`, `paths`, `counts`, `diagnostics`, and truncation fields.
+- [x] Additive ranking metadata is exposed under a new field such as `rankedNodes` or `ranking`.
+- [x] Ranking metadata includes node id, rank, score, strength, and reason summary.
+- [x] Ranked output includes factor/explanation metadata sufficient to debug score decisions.
+- [x] Raw `nodes` ordering and membership remain available for compatibility.
+- [x] Existing tests expecting current graph fields remain valid.
+- [x] Tests verify ranked output is deterministic.
 
 ### US-003: Add Graph Result Filters
 
 **Description:** As a docs operator, I want to filter graph result views so that I can inspect only the roles, kinds, axes, or follow-up categories relevant to a review.
 
 **Acceptance Criteria:**
-- [ ] Add filter parsing for relevant docs graph commands.
-- [ ] Support filtering by document kind, for example `--kind spec,todo,plan`.
-- [ ] Support filtering by role where role metadata exists, for example `--role spec,todo,plan`.
-- [ ] Support filtering by axis after traversal, for example `--filter-axis source,evidence`.
-- [ ] Document that `--axis` selects traversal axes, while `--filter-axis` filters the post-traversal result view.
-- [ ] Support active-view archive exclusion through ranked/filtered views without removing raw traversal nodes.
-- [ ] Support including archive documents explicitly, for example `--include-archive`.
-- [ ] Support filtering follow-up category where available, for example `--follow-up-category actionable,deferred`.
-- [ ] Filtering does not change traversal; it only changes additive returned/ranked/filtered views.
+- [x] Add filter parsing for relevant docs graph commands.
+- [x] Support filtering by document kind, for example `--kind spec,todo,plan`.
+- [x] Support filtering by role where role metadata exists, for example `--role spec,todo,plan`.
+- [x] Support filtering by axis after traversal, for example `--filter-axis source,evidence`.
+- [x] Document that `--axis` selects traversal axes, while `--filter-axis` filters the post-traversal result view.
+- [x] Support active-view archive exclusion through ranked/filtered views without removing raw traversal nodes.
+- [x] Support including archive documents explicitly, for example `--include-archive`.
+- [x] Support filtering follow-up category where available, for example `--follow-up-category actionable,deferred`.
+- [x] Filtering does not change traversal; it only changes additive returned/ranked/filtered views.
 
 ### US-004: Add Graph Result Summary
 
 **Description:** As a reviewer, I want large graph results summarized by role, axis, kind, and follow-up category so I can understand the graph without reading every node.
 
 **Acceptance Criteria:**
-- [ ] Add graph result summary generation after traversal and filtering.
-- [ ] Summary includes counts by node kind.
-- [ ] Summary includes counts by traversal axis.
-- [ ] Summary includes counts by document role where available.
-- [ ] Summary includes counts by follow-up category where available.
-- [ ] Summary includes archive excluded/included counts when applicable.
-- [ ] Summary includes diagnostics count.
-- [ ] Text output shows compact summary before listing nodes.
-- [ ] JSON output exposes summary under an additive field.
+- [x] Add graph result summary generation after traversal and filtering.
+- [x] Summary includes counts by node kind.
+- [x] Summary includes counts by traversal axis.
+- [x] Summary includes counts by document role where available.
+- [x] Summary includes counts by follow-up category where available.
+- [x] Summary includes archive excluded/included counts when applicable.
+- [x] Summary includes diagnostics count.
+- [x] Text output shows compact summary before listing nodes.
+- [x] JSON output exposes summary under an additive field.
 
 ### US-005: Apply Ranking And Filtering To `docs graph`
 
 **Description:** As a docs graph user, I want `docs graph` to show ranked and optionally filtered views while preserving full traversal semantics.
 
 **Acceptance Criteria:**
-- [ ] `docs graph` supports ranking by default.
-- [ ] `docs graph --json` includes ranking and summary fields.
-- [ ] `docs graph` text output shows top ranked nodes first or clearly labels ranked view output.
-- [ ] Raw node/edge/path traversal information remains available in JSON.
-- [ ] Existing graph traversal diagnostics remain visible.
-- [ ] Existing source-map-missing bounded behavior remains unchanged.
-- [ ] Tests cover ranked source-path graph output and missing source-path output.
+- [x] `docs graph` supports ranking by default.
+- [x] `docs graph --json` includes ranking and summary fields.
+- [x] `docs graph` text output shows top ranked nodes first or clearly labels ranked view output.
+- [x] Raw node/edge/path traversal information remains available in JSON.
+- [x] Existing graph traversal diagnostics remain visible.
+- [x] Existing source-map-missing bounded behavior remains unchanged.
+- [x] Tests cover ranked source-path graph output and missing source-path output.
 
 ### US-006: Apply Ranking And Filtering To `docs collect --graph`
 
 **Description:** As a docs collect user, I want graph collection output to be ranked and summarized so broad graph collection is easier to review.
 
 **Acceptance Criteria:**
-- [ ] `docs collect --graph` includes graph ranking metadata in JSON output.
-- [ ] `docs collect --graph` text output remains concise.
-- [ ] `docs collect --graph --family-only` remains bounded and unchanged except for additive summary/ranking metadata.
-- [ ] Filtering options work with collect graph mode.
-- [ ] Tests cover broad graph collect and family-only collect behavior.
+- [x] `docs collect --graph` includes graph ranking metadata in JSON output.
+- [x] `docs collect --graph` text output remains concise.
+- [x] `docs collect --graph --family-only` remains bounded and unchanged except for additive summary/ranking metadata.
+- [x] Filtering options work with collect graph mode.
+- [x] Tests cover broad graph collect and family-only collect behavior.
 
 ### US-007: Apply Ranking To PRD Authoring Context
 
 **Description:** As a planner, I want `docs prd context` to present stronger context sources first so new PRDs are grounded in the most relevant specs, TODOs, plans, sources, and evidence.
 
 **Acceptance Criteria:**
-- [ ] `docs prd context <exact-doc>` uses ranked graph context for related documents.
-- [ ] Same-family and direct dependency/role documents appear before broad trace/context documents.
-- [ ] Actionable TODO context appears before deferred/parking-lot context where applicable.
-- [ ] Archive PRDs remain excluded by default.
-- [ ] JSON `contextSources` includes ranking reason or score if available.
-- [ ] Existing PRD context tests pass or are updated for ranking order.
+- [x] `docs prd context <exact-doc>` uses ranked graph context for related documents.
+- [x] Same-family and direct dependency/role documents appear before broad trace/context documents.
+- [x] Actionable TODO context appears before deferred/parking-lot context where applicable.
+- [x] Archive PRDs remain excluded by default.
+- [x] JSON `contextSources` includes ranking reason or score if available.
+- [x] Existing PRD context tests pass or are updated for ranking order.
 
 ### US-008: Preserve Traversal Semantics And Backward Compatibility
 
 **Description:** As a maintainer, I want ranking/filtering to be a consumption layer only so existing graph traversal behavior remains stable.
 
 **Acceptance Criteria:**
-- [ ] No changes to authored link normalization semantics.
-- [ ] No changes to canonical traversal axis definitions.
-- [ ] No changes to graph edge construction except additive metadata if required.
-- [ ] Existing graph traversal unit tests continue to pass.
-- [ ] Full unfiltered traversal remains accessible in JSON output.
-- [ ] Reranking is rule-based and deterministic for the same graph result and options.
-- [ ] Document that ranking/filtering happens after traversal.
+- [x] No changes to authored link normalization semantics.
+- [x] No changes to canonical traversal axis definitions.
+- [x] No changes to graph edge construction except additive metadata if required.
+- [x] Existing graph traversal unit tests continue to pass.
+- [x] Full unfiltered traversal remains accessible in JSON output.
+- [x] Reranking is rule-based and deterministic for the same graph result and options.
+- [x] Document that ranking/filtering happens after traversal.
 
 ### US-009: Document Graph Ranking And Filtering
 
 **Description:** As a future maintainer, I want docs explaining ranking and filtering semantics so graph output remains predictable.
 
 **Acceptance Criteria:**
-- [ ] Update docs-control-plane spec or README with ranking model.
-- [ ] Document filter options and their scope.
-- [ ] Document that traversal and ranking are separate phases.
-- [ ] Document that raw traversal fields remain available even when filtered/ranked views are present.
-- [ ] Document that reranking is rule-based post-traversal rescore, not semantic/vector/LLM reranking.
-- [ ] Document the distinction between `--axis` traversal selection and `--filter-axis` view filtering.
-- [ ] Document archive/default active inventory behavior.
-- [ ] Document examples for source, role, evidence, and PRD context ranking.
-- [ ] Do not claim ranking changes graph truth; it only changes result consumption.
+- [x] Update docs-control-plane spec or README with ranking model.
+- [x] Document filter options and their scope.
+- [x] Document that traversal and ranking are separate phases.
+- [x] Document that raw traversal fields remain available even when filtered/ranked views are present.
+- [x] Document that reranking is rule-based post-traversal rescore, not semantic/vector/LLM reranking.
+- [x] Document the distinction between `--axis` traversal selection and `--filter-axis` view filtering.
+- [x] Document archive/default active inventory behavior.
+- [x] Document examples for source, role, evidence, and PRD context ranking.
+- [x] Do not claim ranking changes graph truth; it only changes result consumption.
 
 ### US-010: Verify Ranking And Filtering Operationally
 
 **Description:** As a reviewer, I want command evidence that ranking/filtering works on real repository data.
 
 **Acceptance Criteria:**
-- [ ] Run `docs graph docs-control-plane --preset family --json` and verify ranking/summary exist.
-- [ ] Run `docs graph programming-artifact-ontology-system --preset family --json` and verify broad results are summarized.
-- [ ] Run `docs collect programming-artifact-ontology-system --graph --preset family --json`.
-- [ ] Run `docs collect programming-artifact-ontology-system --graph --preset family --family-only --json`.
-- [ ] Run at least one source path graph query and verify source-map behavior remains bounded.
-- [ ] Run `docs prd context docs-control-plane --json` and verify ranked context ordering.
-- [ ] Run all quality gates.
-- [ ] Record any residual noise or follow-up candidates in docs-control-plane TODO.
+- [x] Run `docs graph docs-control-plane --preset family --json` and verify ranking/summary exist.
+- [x] Run `docs graph programming-artifact-ontology-system --preset family --json` and verify broad results are summarized.
+- [x] Run `docs collect programming-artifact-ontology-system --graph --preset family --json`.
+- [x] Run `docs collect programming-artifact-ontology-system --graph --preset family --family-only --json`.
+- [x] Run at least one source path graph query and verify source-map behavior remains bounded.
+- [x] Run `docs prd context docs-control-plane --json` and verify ranked context ordering.
+- [x] Run all quality gates.
+- [x] Record any residual noise or follow-up candidates in docs-control-plane TODO.
 
 ## Functional Requirements
 
