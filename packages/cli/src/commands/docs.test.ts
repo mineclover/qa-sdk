@@ -512,6 +512,22 @@ Track inventory scenario coverage.
     return JSON.parse(errorOutput()) as T;
   }
 
+  interface GraphRankFactor {
+    readonly factor: string;
+    readonly score: number;
+    readonly reason: string;
+    readonly metadata: Record<string, unknown>;
+  }
+
+  interface GraphRankedNode {
+    readonly nodeId: string;
+    readonly rank: number;
+    readonly score: number;
+    readonly strength: string;
+    readonly factors: readonly GraphRankFactor[];
+    readonly reasonSummary: readonly string[];
+  }
+
   interface GraphOutput {
     readonly input: {
       readonly target: string;
@@ -531,6 +547,12 @@ Track inventory scenario coverage.
       readonly paths: number;
       readonly diagnostics: number;
     };
+    readonly ranking: {
+      readonly algorithm: string;
+      readonly rankedNodes: readonly GraphRankedNode[];
+      readonly counts: Record<string, number>;
+    };
+    readonly rankedNodes: readonly GraphRankedNode[];
     readonly nodes: Array<{ id: string; kind: string; path?: string }>;
     readonly edges: Array<{
       axis: string;
@@ -539,6 +561,7 @@ Track inventory scenario coverage.
       toNodeId: string;
       reasons: Array<{ reason: string }>;
     }>;
+    readonly paths: unknown[];
     readonly roleGroups: Array<{ roleType: string }>;
     readonly truncated: boolean;
     readonly omittedCount: number;
@@ -547,6 +570,7 @@ Track inventory scenario coverage.
       readonly edges: number;
       readonly depth: number;
     };
+    readonly diagnostics: string[];
   }
 
   it("prints text status and identifies todo follow-up state", async () => {
@@ -1570,6 +1594,100 @@ Archived checkout work.
     const contextText = output();
     expect(contextText).toContain("axes: context");
     expect(contextText).toContain("warning: context/search traversal is broad");
+  });
+
+  it("adds deterministic ranked graph metadata without changing raw graph fields", async () => {
+    const workspace = await createFixtureWorkspace();
+    const args = [
+      "graph",
+      "checkout-spec",
+      "--preset",
+      "family",
+      "--root",
+      workspace,
+      "--json",
+    ];
+
+    await cliDocs(args);
+    const first = parsedOutput<GraphOutput>();
+    const rawNodeIds = first.nodes.map((node) => node.id);
+    const rankedNodeIds = first.rankedNodes.map((node) => node.nodeId);
+
+    expect(first).toMatchObject({
+      counts: expect.objectContaining({
+        nodes: expect.any(Number),
+        edges: expect.any(Number),
+        paths: expect.any(Number),
+        diagnostics: expect.any(Number),
+      }),
+      truncated: expect.any(Boolean),
+      omittedCount: expect.any(Number),
+      omittedCounts: expect.objectContaining({
+        nodes: expect.any(Number),
+        edges: expect.any(Number),
+        depth: expect.any(Number),
+      }),
+    });
+    expect(Array.isArray(first.nodes)).toBe(true);
+    expect(Array.isArray(first.edges)).toBe(true);
+    expect(Array.isArray(first.paths)).toBe(true);
+    expect(Array.isArray(first.diagnostics)).toBe(true);
+    expect(first.ranking).toMatchObject({
+      algorithm: "docs-graph-rule-rank-v1",
+      counts: expect.objectContaining({
+        strong: expect.any(Number),
+        medium: expect.any(Number),
+        weak: expect.any(Number),
+        penalized: expect.any(Number),
+      }),
+    });
+    expect(first.ranking.rankedNodes).toEqual(first.rankedNodes);
+    expect(rankedNodeIds).toHaveLength(rawNodeIds.length);
+    expect(new Set(rankedNodeIds)).toEqual(new Set(rawNodeIds));
+    expect(first.rankedNodes.map((node) => node.rank)).toEqual(
+      first.rankedNodes.map((_, index) => index + 1),
+    );
+
+    const targetRank = first.rankedNodes.find((node) => node.nodeId === "document:checkout-spec");
+    expect(targetRank).toMatchObject({
+      nodeId: "document:checkout-spec",
+      rank: 1,
+      score: expect.any(Number),
+      strength: "strong",
+      reasonSummary: expect.arrayContaining([
+        expect.stringContaining("target"),
+      ]),
+    });
+    expect(targetRank?.factors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          factor: "target",
+          score: expect.any(Number),
+          reason: "target node",
+          metadata: expect.objectContaining({
+            nodeId: "document:checkout-spec",
+            target: true,
+          }),
+        }),
+        expect.objectContaining({
+          factor: "distance",
+          score: expect.any(Number),
+          reason: "path distance 0",
+          metadata: expect.objectContaining({
+            depth: 0,
+            pathLength: 0,
+          }),
+        }),
+      ]),
+    );
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(args);
+    const second = parsedOutput<GraphOutput>();
+
+    expect(second.nodes.map((node) => node.id)).toEqual(rawNodeIds);
+    expect(second.ranking).toEqual(first.ranking);
+    expect(second.rankedNodes).toEqual(first.rankedNodes);
   });
 
   it("traverses composition, role, source, evidence, trace, and preset graph paths", async () => {
