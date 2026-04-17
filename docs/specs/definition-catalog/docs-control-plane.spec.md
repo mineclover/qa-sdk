@@ -97,6 +97,10 @@ Ontology pack/artifact projection은 같은 record shape에 `ontology pack valid
 
 FSM readiness projection은 deterministic label record list 위에서만 동작하는 read-only system transform이다. `computeDeterministicLabelReadiness()`는 `DRAFT -> LINTED -> RESOLVED -> ACTIVE` 순서로 gate를 평가하고, lint gate는 candidate/document validation diagnostic과 syntax/frontmatter/schema/doc-type metadata signal을, resolve gate는 dependency/source/evidence label resolution과 pack docs/source-map readiness를, activate gate는 drift-free status, required evidence, role quality placeholder, ontology pack runtime validity를 사용한다. `DEPRECATED`와 `ARCHIVED`는 metadata/currentState에서 terminal state로 계산한다. 실패한 gate는 `deterministic-label-readiness-blocked` diagnostic으로 남기고 마지막 valid state를 유지하며, read-only 단계에서는 `BLOCKED` state로 currentState를 바꾸거나 transition event를 write하지 않는다.
 
+Transition dry-run은 같은 label record list와 gate evaluator 위에서 동작하는 read-only preview다. 요청 shape는 `targetLabel`, `requestedState`, `reason`, `evidenceRefs[]`를 가진다. 결과 shape는 `mode: "dry-run"`, `accepted`, `decision: "accepted" | "rejected"`, `currentState`, `nextState`, `blockers[]`, `gateEvidence[]`, `evidenceRefs[]`, `metadata`를 가진다. 요청 evidence refs는 평가용 record copy에만 합쳐지며 label record, definition markdown, PRD, TODO, ontology pack registry, append-only registry를 수정하지 않는다. 결과 metadata에는 `mutationTargets: { labels: false, documents: false, prds: false, registries: false }`와 append-only event schema 후보가 포함된다.
+
+Append-only transition event schema 후보는 `deterministic-label-transition-event:candidate-v1`이다. 필드 후보는 `eventId`, `targetLabel`, `requestedState`, `currentState`, `nextState`, `decision`, `reason`, `evidenceRefs`, `gateEvidence`, `blockers`이며, `actor`, `sequence`, `committedAt`, `registryRevision`은 persistence/controller PRD가 생길 때까지 deferred field로 둔다.
+
 Canonical format examples:
 
 | 형상 단위 | 후보 label |

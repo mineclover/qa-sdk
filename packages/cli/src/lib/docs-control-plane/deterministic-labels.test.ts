@@ -8,7 +8,9 @@ import {
   computeDeterministicLabelReadiness,
   computeDeterministicLabelRecordReadiness,
   DETERMINISTIC_LABEL_RECORD_STATES,
+  DETERMINISTIC_LABEL_TRANSITION_EVENT_SCHEMA_CANDIDATE,
   detectSemanticCoordinateCandidateCollisions,
+  dryRunDeterministicLabelTransition,
   normalizeDocumentEnvelope,
   projectOntologyPackAndArtifactLabelRecords,
   projectDeterministicLabelRecordsFromDocuments,
@@ -1076,6 +1078,138 @@ describe("deterministic label FSM readiness", () => {
       code: "deterministic-label-readiness-blocked",
       label: linted.label,
     }));
+  });
+
+  it("accepts dry-run transitions with request evidence without mutating records", () => {
+    const evidence = readinessEvidenceRecord("transition-proof");
+    const record = readinessRecord("transition-active-ready", {
+      currentState: "RESOLVED",
+      metadata: {
+        driftFree: true,
+        requiresEvidence: true,
+        roleQualityStatus: "placeholder",
+      },
+    });
+    const beforeRecord = JSON.parse(JSON.stringify(record));
+
+    const result = dryRunDeterministicLabelTransition({
+      targetLabel: record.label,
+      requestedState: "ACTIVE",
+      reason: "activation proof is available",
+      evidenceRefs: [evidence.label],
+      metadata: {
+        requestedBy: "deterministic-label-test",
+      },
+    }, [record, evidence]);
+
+    expect(result).toMatchObject({
+      mode: "dry-run",
+      targetLabel: record.label,
+      requestedState: "ACTIVE",
+      accepted: true,
+      decision: "accepted",
+      currentState: "RESOLVED",
+      nextState: "ACTIVE",
+      blockers: [],
+      evidenceRefs: [evidence.label],
+      gateEvidence: [
+        {
+          gate: "activate",
+          fromState: "RESOLVED",
+          toState: "ACTIVE",
+          ready: true,
+        },
+      ],
+      metadata: {
+        requestedBy: "deterministic-label-test",
+        dryRun: true,
+        readOnly: true,
+        writes: false,
+        mutationTargets: {
+          labels: false,
+          documents: false,
+          prds: false,
+          registries: false,
+        },
+        appendOnlyTransitionEventSchema:
+          DETERMINISTIC_LABEL_TRANSITION_EVENT_SCHEMA_CANDIDATE,
+        appendOnlyTransitionEventCandidate: {
+          schemaId: "deterministic-label-transition-event",
+          schemaVersion: "candidate-v1",
+          targetLabel: record.label,
+          requestedState: "ACTIVE",
+          currentState: "RESOLVED",
+          nextState: "ACTIVE",
+          decision: "accepted",
+          reason: "activation proof is available",
+          evidenceRefs: [evidence.label],
+          blockerCount: 0,
+        },
+      },
+    });
+    expect(record).toEqual(beforeRecord);
+    expect(record.currentState).toBe("RESOLVED");
+    expect(record.evidenceRefs).toEqual([]);
+  });
+
+  it("rejects dry-run transitions with blockers and keeps the current state", () => {
+    const record = readinessRecord("transition-rejected", {
+      currentState: "LINTED",
+      sourceRefs: ["urn:source:typescript:packages/cli/src/missing-transition.ts"],
+    });
+    const beforeRecord = JSON.parse(JSON.stringify(record));
+
+    const result = dryRunDeterministicLabelTransition({
+      targetLabel: record.label,
+      requestedState: "RESOLVED",
+      reason: "source map should resolve first",
+      evidenceRefs: [],
+    }, [record]);
+
+    expect(result.accepted).toBe(false);
+    expect(result.decision).toBe("rejected");
+    expect(result.currentState).toBe("LINTED");
+    expect(result.nextState).toBe("LINTED");
+    expect(result.gateEvidence).toEqual([
+      expect.objectContaining({
+        gate: "resolve",
+        fromState: "LINTED",
+        toState: "RESOLVED",
+        ready: false,
+        blockers: [
+          expect.objectContaining({
+            metadata: expect.objectContaining({
+              blockerCode: "source-ref-unresolved",
+            }),
+          }),
+        ],
+      }),
+    ]);
+    expect(result.blockers).toEqual([
+      expect.objectContaining({
+        code: "deterministic-label-readiness-blocked",
+        label: record.label,
+        metadata: expect.objectContaining({
+          gate: "resolve",
+          fromState: "LINTED",
+          toState: "RESOLVED",
+          blockerMetadata: expect.objectContaining({
+            blockerCode: "source-ref-unresolved",
+          }),
+        }),
+      }),
+    ]);
+    expect(result.metadata).toMatchObject({
+      dryRun: true,
+      readOnly: true,
+      writes: false,
+      appendOnlyTransitionEventCandidate: {
+        decision: "rejected",
+        nextState: "LINTED",
+        blockerCount: 1,
+      },
+    });
+    expect(record).toEqual(beforeRecord);
   });
 });
 

@@ -55,6 +55,7 @@ export const SEMANTIC_COORDINATE_DIAGNOSTIC_CODES = [
   "semantic-coordinate-collision-candidate",
   "document-validation-signal",
   "deterministic-label-readiness-blocked",
+  "deterministic-label-transition-blocked",
   "ontology-pack-validate-issue",
   "ontology-pack-readiness-warning",
 ] as const;

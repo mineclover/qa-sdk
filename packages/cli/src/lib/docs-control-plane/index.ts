@@ -107,6 +107,8 @@ export {
   computeDeterministicLabelReadiness,
   computeDeterministicLabelRecordReadiness,
   DETERMINISTIC_LABEL_READINESS_GATES,
+  DETERMINISTIC_LABEL_TRANSITION_EVENT_SCHEMA_CANDIDATE,
+  dryRunDeterministicLabelTransition,
 } from "./deterministic-label-fsm.js";
 export {
   buildSemanticCoordinateCandidatesFromDocument,
@@ -221,6 +223,11 @@ export type {
   DeterministicLabelReadinessGate,
   DeterministicLabelReadinessGateResult,
   DeterministicLabelReadinessProjection,
+  DeterministicLabelAppendOnlyTransitionEventSchemaCandidate,
+  DeterministicLabelTransitionDecision,
+  DeterministicLabelTransitionDryRunEventCandidate,
+  DeterministicLabelTransitionDryRunResult,
+  DeterministicLabelTransitionRequest,
 } from "./deterministic-label-fsm.js";
 export type {
   DeterministicLabelRecord,

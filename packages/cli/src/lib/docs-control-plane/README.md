@@ -95,6 +95,20 @@ not set `currentState` to `BLOCKED`; `BLOCKED` remains available for future
 controller-owned state while this layer reports blocked transitions as review
 evidence.
 
+`dryRunDeterministicLabelTransition()` accepts a transition request with
+`targetLabel`, `requestedState`, `reason`, and request `evidenceRefs[]`. It
+returns a data-only result containing `accepted`/`decision`, `currentState`,
+`nextState`, `blockers[]`, and `gateEvidence[]`. Request evidence refs are
+merged only into a transient evaluation copy, so the source label records,
+documents, PRDs, known-pack data, and future registries are not mutated.
+
+Dry-run result metadata carries the append-only transition event schema
+candidate `deterministic-label-transition-event:candidate-v1`. The candidate
+event fields are `eventId`, `targetLabel`, `requestedState`, `currentState`,
+`nextState`, `decision`, `reason`, `evidenceRefs`, `gateEvidence`, and
+`blockers`; controller-owned fields such as `actor`, `sequence`, `committedAt`,
+and `registryRevision` are intentionally deferred until persistence exists.
+
 This shape is intentionally data-only. It does not append to a registry, write
 transition events, persist state, or promote PRD/TODO/checklist signals into
 authority. Pack projection also does not activate packs or mutate the known-pack

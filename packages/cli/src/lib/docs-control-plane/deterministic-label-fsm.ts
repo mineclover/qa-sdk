@@ -28,6 +28,75 @@ export interface DeterministicLabelReadinessProjection {
   readonly diagnostics: readonly SemanticCoordinateDiagnostic[];
 }
 
+export type DeterministicLabelTransitionDecision = "accepted" | "rejected";
+
+export interface DeterministicLabelTransitionRequest {
+  readonly targetLabel: string;
+  readonly requestedState: DeterministicLabelRecordState;
+  readonly reason: string;
+  readonly evidenceRefs: readonly string[];
+  readonly metadata?: DocumentMetadata | null;
+}
+
+export interface DeterministicLabelAppendOnlyTransitionEventSchemaCandidate {
+  readonly schemaId: "deterministic-label-transition-event";
+  readonly version: "candidate-v1";
+  readonly appendOnly: true;
+  readonly fields: readonly string[];
+  readonly deferredFields: readonly string[];
+}
+
+export interface DeterministicLabelTransitionDryRunEventCandidate {
+  readonly schemaId: "deterministic-label-transition-event";
+  readonly schemaVersion: "candidate-v1";
+  readonly targetLabel: string;
+  readonly requestedState: DeterministicLabelRecordState;
+  readonly currentState: DeterministicLabelRecordState | null;
+  readonly nextState: DeterministicLabelRecordState | null;
+  readonly decision: DeterministicLabelTransitionDecision;
+  readonly reason: string;
+  readonly evidenceRefs: readonly string[];
+  readonly blockerCount: number;
+}
+
+export interface DeterministicLabelTransitionDryRunResult {
+  readonly mode: "dry-run";
+  readonly targetLabel: string;
+  readonly requestedState: DeterministicLabelRecordState;
+  readonly accepted: boolean;
+  readonly decision: DeterministicLabelTransitionDecision;
+  readonly currentState: DeterministicLabelRecordState | null;
+  readonly nextState: DeterministicLabelRecordState | null;
+  readonly blockers: readonly SemanticCoordinateDiagnostic[];
+  readonly gateEvidence: readonly DeterministicLabelReadinessGateResult[];
+  readonly evidenceRefs: readonly string[];
+  readonly metadata: DocumentMetadata;
+}
+
+export const DETERMINISTIC_LABEL_TRANSITION_EVENT_SCHEMA_CANDIDATE = {
+  schemaId: "deterministic-label-transition-event",
+  version: "candidate-v1",
+  appendOnly: true,
+  fields: [
+    "eventId",
+    "targetLabel",
+    "requestedState",
+    "currentState",
+    "nextState",
+    "decision",
+    "reason",
+    "evidenceRefs",
+    "gateEvidence",
+    "blockers",
+  ],
+  deferredFields: [
+    "actor",
+    "sequence",
+    "committedAt",
+    "registryRevision",
+  ],
+} as const satisfies DeterministicLabelAppendOnlyTransitionEventSchemaCandidate;
+
 interface GateEvaluation {
   readonly gate: DeterministicLabelReadinessGate;
   readonly fromState: DeterministicLabelRecordState;
@@ -103,6 +172,86 @@ export function computeDeterministicLabelRecordReadiness(
   return withReadiness(record, state, blockedDiagnostics, gateResults);
 }
 
+export function dryRunDeterministicLabelTransition(
+  request: DeterministicLabelTransitionRequest,
+  records: readonly DeterministicLabelRecord[],
+): DeterministicLabelTransitionDryRunResult {
+  const evidenceRefs = normalizeEvidenceRefs(request.evidenceRefs);
+  const target = records.find((record) => record.label === request.targetLabel);
+  if (!target) {
+    return transitionDryRunResult({
+      request,
+      evidenceRefs,
+      currentState: null,
+      nextState: null,
+      decision: "rejected",
+      blockers: [
+        transitionBlocker(request.targetLabel, "target label is not projected.", {
+          blockerCode: "target-label-missing",
+          targetLabel: request.targetLabel,
+        }),
+      ],
+      gateEvidence: [],
+    });
+  }
+
+  const evaluationRecord = {
+    ...target,
+    evidenceRefs: normalizeEvidenceRefs([...target.evidenceRefs, ...evidenceRefs]),
+  };
+  const evaluationRecords = records.map((record) =>
+    record.label === target.label ? evaluationRecord : record
+  );
+  const labels = new Set(evaluationRecords.map((record) => record.label));
+  const requestBlockers = transitionRequestBlockers(request, target);
+  const route = transitionRoute(target.currentState, request.requestedState);
+  const routeBlockers = route
+    ? []
+    : [transitionBlocker(target.label, "requested transition route is not supported by the read-only FSM.", {
+      blockerCode: "transition-route-unsupported",
+      currentState: target.currentState,
+      requestedState: request.requestedState,
+    })];
+  const gateResults: DeterministicLabelReadinessGateResult[] = [];
+  const gateBlockers: SemanticCoordinateDiagnostic[] = [];
+
+  if (route) {
+    for (const transition of route) {
+      const evaluation = evaluateGate(evaluationRecord, labels, transition);
+      gateResults.push({
+        gate: evaluation.gate,
+        fromState: evaluation.fromState,
+        toState: evaluation.toState,
+        ready: evaluation.blockers.length === 0,
+        blockers: evaluation.blockers,
+        evidence: evaluation.evidence,
+      });
+      if (evaluation.blockers.length > 0) {
+        gateBlockers.push(...blockedTransitionDiagnostics(evaluationRecord, evaluation));
+        break;
+      }
+    }
+  }
+
+  const blockers = [
+    ...requestBlockers,
+    ...routeBlockers,
+    ...gateBlockers,
+  ];
+  const decision: DeterministicLabelTransitionDecision =
+    blockers.length === 0 ? "accepted" : "rejected";
+
+  return transitionDryRunResult({
+    request,
+    evidenceRefs,
+    currentState: target.currentState,
+    nextState: decision === "accepted" ? request.requestedState : target.currentState,
+    decision,
+    blockers,
+    gateEvidence: gateResults,
+  });
+}
+
 function nextGate(
   state: DeterministicLabelRecordState,
 ): {
@@ -120,6 +269,32 @@ function nextGate(
     return { gate: "activate", fromState: "RESOLVED", toState: "ACTIVE" };
   }
   return undefined;
+}
+
+function transitionRoute(
+  currentState: DeterministicLabelRecordState,
+  requestedState: DeterministicLabelRecordState,
+): readonly {
+  readonly gate: DeterministicLabelReadinessGate;
+  readonly fromState: DeterministicLabelRecordState;
+  readonly toState: DeterministicLabelRecordState;
+}[] | undefined {
+  if (currentState === requestedState) return [];
+  if (requestedState === "BLOCKED") return undefined;
+
+  const route: Array<{
+    readonly gate: DeterministicLabelReadinessGate;
+    readonly fromState: DeterministicLabelRecordState;
+    readonly toState: DeterministicLabelRecordState;
+  }> = [];
+  let state = currentState;
+  while (state !== requestedState) {
+    const transition = nextGate(state);
+    if (!transition) return undefined;
+    route.push(transition);
+    state = transition.toState;
+  }
+  return route;
 }
 
 function evaluateGate(
@@ -417,6 +592,91 @@ function withReadiness(
       },
     },
   };
+}
+
+function transitionDryRunResult(input: {
+  readonly request: DeterministicLabelTransitionRequest;
+  readonly evidenceRefs: readonly string[];
+  readonly currentState: DeterministicLabelRecordState | null;
+  readonly nextState: DeterministicLabelRecordState | null;
+  readonly decision: DeterministicLabelTransitionDecision;
+  readonly blockers: readonly SemanticCoordinateDiagnostic[];
+  readonly gateEvidence: readonly DeterministicLabelReadinessGateResult[];
+}): DeterministicLabelTransitionDryRunResult {
+  const accepted = input.decision === "accepted";
+  const eventCandidate: DeterministicLabelTransitionDryRunEventCandidate = {
+    schemaId: DETERMINISTIC_LABEL_TRANSITION_EVENT_SCHEMA_CANDIDATE.schemaId,
+    schemaVersion: DETERMINISTIC_LABEL_TRANSITION_EVENT_SCHEMA_CANDIDATE.version,
+    targetLabel: input.request.targetLabel,
+    requestedState: input.request.requestedState,
+    currentState: input.currentState,
+    nextState: input.nextState,
+    decision: input.decision,
+    reason: input.request.reason,
+    evidenceRefs: input.evidenceRefs,
+    blockerCount: input.blockers.length,
+  };
+
+  return {
+    mode: "dry-run",
+    targetLabel: input.request.targetLabel,
+    requestedState: input.request.requestedState,
+    accepted,
+    decision: input.decision,
+    currentState: input.currentState,
+    nextState: input.nextState,
+    blockers: input.blockers,
+    gateEvidence: input.gateEvidence,
+    evidenceRefs: input.evidenceRefs,
+    metadata: {
+      ...(input.request.metadata ?? {}),
+      dryRun: true,
+      readOnly: true,
+      writes: false,
+      mutationTargets: {
+        labels: false,
+        documents: false,
+        prds: false,
+        registries: false,
+      },
+      appendOnlyTransitionEventSchema:
+        DETERMINISTIC_LABEL_TRANSITION_EVENT_SCHEMA_CANDIDATE,
+      appendOnlyTransitionEventCandidate: eventCandidate,
+    },
+  };
+}
+
+function transitionRequestBlockers(
+  request: DeterministicLabelTransitionRequest,
+  target: DeterministicLabelRecord,
+): readonly SemanticCoordinateDiagnostic[] {
+  const blockers: SemanticCoordinateDiagnostic[] = [];
+  if (!asString(request.reason)) {
+    blockers.push(transitionBlocker(target.label, "transition reason is required.", {
+      blockerCode: "transition-reason-missing",
+      requestedState: request.requestedState,
+    }));
+  }
+  return blockers;
+}
+
+function transitionBlocker(
+  label: string,
+  message: string,
+  metadata: DocumentMetadata,
+): SemanticCoordinateDiagnostic {
+  return {
+    code: "deterministic-label-transition-blocked",
+    severity: "error",
+    label,
+    message,
+    metadata,
+  };
+}
+
+function normalizeEvidenceRefs(refs: readonly string[]): readonly string[] {
+  return [...new Set(refs.map(asString).filter((ref): ref is string => ref !== undefined))]
+    .toSorted((left, right) => left.localeCompare(right));
 }
 
 function terminalStateForRecord(
