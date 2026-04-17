@@ -217,6 +217,14 @@ interface PrdContextSource {
   readonly path: string;
   readonly title?: string;
   readonly reason: string;
+  readonly ranking?: PrdContextSourceRanking;
+}
+
+interface PrdContextSourceRanking {
+  readonly rank: number;
+  readonly score: number;
+  readonly strength: DocumentGraphRankingResult["rankedNodes"][number]["strength"];
+  readonly reasons: readonly string[];
 }
 
 interface PrdContextDocumentSummary extends DocumentSummary {
@@ -1388,39 +1396,48 @@ async function buildPrdAuthoringContext(
     );
   const scopedDocuments = uniqueDocuments([...relatedDocuments, ...topicDocuments])
     .toSorted(compareDocuments);
+  const rankingByDocumentKey = graphResult && relatedScope
+    ? buildPrdContextRankingByDocumentKey(
+      documents,
+      relatedScope.traversal,
+      graphResult.rankedNodes,
+    )
+    : new Map<string, PrdContextSourceRanking>();
+  const rankedScopedDocuments = orderPrdContextDocuments(scopedDocuments, rankingByDocumentKey);
   const relatedKeys = new Set(relatedDocuments.map(documentKey));
   const topicKeys = new Set(topicDocuments.map(documentKey));
-  const openTodos = await collectPrdOpenTodos(rootDir, scopedDocuments);
-  const scenarioMatrixRows = await collectScenarioMatrixRows(rootDir, scopedDocuments);
-  const sources = scopedDocuments.flatMap((document) => document.sources.map((source) =>
+  const openTodos = await collectPrdOpenTodos(rootDir, rankedScopedDocuments);
+  const scenarioMatrixRows = await collectScenarioMatrixRows(rootDir, rankedScopedDocuments);
+  const sources = rankedScopedDocuments.flatMap((document) => document.sources.map((source) =>
     toPrdContextSourceRef(document, source)
   ));
-  const evidence = scopedDocuments.flatMap((document) => document.evidence.map((item) =>
+  const evidence = rankedScopedDocuments.flatMap((document) => document.evidence.map((item) =>
     toPrdContextEvidence(document, item)
   ));
-  const diagnostics = scopedDocuments.flatMap((document) => document.diagnostics);
-  const relatedSpecs = scopedDocuments
+  const diagnostics = rankedScopedDocuments.flatMap((document) => document.diagnostics);
+  const relatedSpecs = rankedScopedDocuments
     .filter((document) => document.kind === "spec")
     .map(summarizePrdContextDocument);
-  const plans = scopedDocuments
+  const plans = rankedScopedDocuments
     .filter((document) => document.kind === "plan")
     .map(summarizePrdContextDocument);
-  const priorPrds = scopedDocuments
+  const priorPrds = rankedScopedDocuments
     .filter((document) => document.kind === "prd")
     .map(summarizePrdContextDocument);
-  const prdJsonCompletion = scopedDocuments
+  const prdJsonCompletion = rankedScopedDocuments
     .filter((document) => document.kind === "ralph-prd-json")
     .map(toPrdJsonCompletionState);
-  const ralphSessionState = scopedDocuments
+  const ralphSessionState = rankedScopedDocuments
     .filter((document) => document.kind === "ralph-session")
     .map(toRalphSessionContextState);
-  const contextSources = scopedDocuments.map((document) =>
+  const contextSources = rankedScopedDocuments.map((document) =>
     toPrdContextSource(
       document,
       resolved?.document,
       relatedKeys,
       topicKeys,
       relatedViewScope?.reasonByDocumentKey,
+      rankingByDocumentKey,
     )
   );
 
@@ -1559,9 +1576,11 @@ function toPrdContextSource(
   relatedKeys: ReadonlySet<string>,
   topicKeys: ReadonlySet<string>,
   graphReasons: ReadonlyMap<string, string> | undefined,
+  rankingByDocumentKey: ReadonlyMap<string, PrdContextSourceRanking>,
 ): PrdContextSource {
   const summary = summarizeDocument(document);
   const key = documentKey(document);
+  const ranking = rankingByDocumentKey.get(key);
   return {
     kind: document.kind,
     stableId: document.stableId,
@@ -1575,7 +1594,58 @@ function toPrdContextSource(
           : topicKeys.has(key)
           ? "topic-match"
           : "included"),
+    ...(ranking ? { ranking } : {}),
   };
+}
+
+function buildPrdContextRankingByDocumentKey(
+  documents: readonly DocumentEnvelope[],
+  traversal: DocumentGraphTraversalResult,
+  rankedNodes: DocumentGraphRankingResult["rankedNodes"],
+): ReadonlyMap<string, PrdContextSourceRanking> {
+  const rankingByDocumentKey = new Map<string, PrdContextSourceRanking>();
+  const traversalNodeById = new Map(traversal.nodes.map((node) => [node.id, node]));
+
+  for (const rankedNode of rankedNodes) {
+    const traversalNode = traversalNodeById.get(rankedNode.nodeId);
+    if (!traversalNode) continue;
+
+    const nodeScope = collectDocumentGraphTraversalDocuments(documents, {
+      ...traversal,
+      nodes: [traversalNode],
+    });
+    const ranking: PrdContextSourceRanking = {
+      rank: rankedNode.rank,
+      score: rankedNode.score,
+      strength: rankedNode.strength,
+      reasons: rankedNode.reasonSummary,
+    };
+
+    for (const document of nodeScope.documents) {
+      const key = documentKey(document);
+      const existing = rankingByDocumentKey.get(key);
+      if (existing && existing.rank < ranking.rank) continue;
+      rankingByDocumentKey.set(key, ranking);
+    }
+  }
+
+  return rankingByDocumentKey;
+}
+
+function orderPrdContextDocuments(
+  documents: readonly DocumentEnvelope[],
+  rankingByDocumentKey: ReadonlyMap<string, PrdContextSourceRanking>,
+): readonly DocumentEnvelope[] {
+  return [...documents].toSorted((left, right) => {
+    const leftRanking = rankingByDocumentKey.get(documentKey(left));
+    const rightRanking = rankingByDocumentKey.get(documentKey(right));
+    if (leftRanking && rightRanking) {
+      return leftRanking.rank - rightRanking.rank || compareDocuments(left, right);
+    }
+    if (leftRanking) return -1;
+    if (rightRanking) return 1;
+    return compareDocuments(left, right);
+  });
 }
 
 function summarizePrdContextDocument(document: DocumentEnvelope): PrdContextDocumentSummary {

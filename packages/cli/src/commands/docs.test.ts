@@ -2514,6 +2514,24 @@ Archived checkout follow-up.
 
   it("collects PRD authoring context from docs control-plane sources", async () => {
     const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "tasks/archive"), { recursive: true });
+    await writeFile(join(workspace, "tasks/archive/checkout-archive-prd.md"), `[PRD]
+# PRD: Archived Checkout PRD
+
+## Overview
+
+Archived checkout context should stay out of active authoring context.
+
+## User Stories
+
+### US-001: Archived work
+
+**Description:** As a maintainer, I want archived work ignored by default.
+
+**Acceptance Criteria:**
+- [ ] Archive remains opt-in.
+[/PRD]
+`);
 
     await cliDocs(["prd", "context", "checkout", "--root", workspace, "--json"]);
 
@@ -2605,6 +2623,9 @@ Archived checkout follow-up.
         expect.objectContaining({ stableId: "checkout-spec", reason: "topic-match" }),
       ]),
     );
+    expect(result.contextSources.map((source) => source.stableId)).not.toContain(
+      "tasks/archive/checkout-archive-prd",
+    );
     expect(result.contextSources.map((source) => source.reason)).not.toEqual(
       expect.arrayContaining(["graph:role", "graph:dependency", "graph:source", "graph:evidence"]),
     );
@@ -2617,7 +2638,17 @@ Archived checkout follow-up.
 
     const result = parsedOutput<{
       resolvedTarget: { stableId: string; kind: string };
-      contextSources: Array<{ stableId: string; kind: string; reason: string }>;
+      contextSources: Array<{
+        stableId: string;
+        kind: string;
+        reason: string;
+        ranking?: {
+          rank: number;
+          score: number;
+          strength: string;
+          reasons: string[];
+        };
+      }>;
       relatedSpecs: Array<{ stableId: string }>;
       plans: Array<{ stableId: string }>;
       evidence: Array<{ id: string }>;
@@ -2633,6 +2664,21 @@ Archived checkout follow-up.
         expect.objectContaining({ stableId: "checkout-evidence", reason: "graph:source" }),
       ]),
     );
+    const contextSourceIds = result.contextSources.map((source) => source.stableId);
+    const contextIndex = (stableId: string) => contextSourceIds.indexOf(stableId);
+    expect(contextIndex("checkout-spec")).toBe(0);
+    expect(contextIndex("checkout-todo")).toBeGreaterThanOrEqual(0);
+    expect(contextIndex("checkout-todo")).toBeLessThan(contextIndex("checkout-evidence"));
+    expect(contextIndex("checkout-plan")).toBeLessThan(contextIndex("checkout-evidence"));
+    expect(result.contextSources.find((source) => source.stableId === "checkout-spec")?.ranking).toMatchObject({
+      rank: 1,
+      score: expect.any(Number),
+      reasons: expect.arrayContaining([expect.stringContaining("target")]),
+    });
+    expect(result.contextSources.find((source) => source.stableId === "checkout-plan")?.ranking).toMatchObject({
+      score: expect.any(Number),
+      reasons: expect.arrayContaining([expect.stringContaining("dependency")]),
+    });
     expect(result.contextSources.map((source) => source.reason)).not.toContain("topic-match");
     expect(result.relatedSpecs).toEqual(
       expect.arrayContaining([
@@ -2649,6 +2695,98 @@ Archived checkout follow-up.
         expect.objectContaining({ id: "checkout-evidence" }),
       ]),
     );
+  });
+
+  it("ranks actionable PRD TODO context before deferred and parking-lot TODOs", async () => {
+    const workspace = await createFixtureWorkspace();
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-deferred.todo.md"), `---
+def:
+  id: checkout-deferred-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+familyId: docs/specs/checkout/checkout
+---
+# Checkout Deferred Todo
+
+## 목적 ^purpose
+
+Track deferred checkout work.
+
+## Deferred — 조건부 대기
+
+- [ ] Wait for partner API confirmation.
+`);
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-parking.todo.md"), `---
+def:
+  id: checkout-parking-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+familyId: docs/specs/checkout/checkout
+---
+# Checkout Parking Todo
+
+## 목적 ^purpose
+
+Track optional checkout ideas.
+
+## Parking Lot — 후보 보관
+
+- [ ] Evaluate optional checkout dashboard.
+`);
+
+    await cliDocs([
+      "prd",
+      "context",
+      "checkout-spec",
+      "--kind",
+      "todo",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      contextSources: Array<{
+        stableId: string;
+        reason: string;
+        ranking?: {
+          score: number;
+          reasons: string[];
+        };
+      }>;
+      openTodos: Array<{ documentId: string; text: string }>;
+    }>();
+    const contextSourceIds = result.contextSources.map((source) => source.stableId);
+    const actionableIndex = contextSourceIds.indexOf("checkout-todo");
+    const deferredIndex = contextSourceIds.indexOf("checkout-deferred-todo");
+    const parkingIndex = contextSourceIds.indexOf("checkout-parking-todo");
+
+    expect(actionableIndex).toBeGreaterThanOrEqual(0);
+    expect(deferredIndex).toBeGreaterThanOrEqual(0);
+    expect(parkingIndex).toBeGreaterThanOrEqual(0);
+    expect(actionableIndex).toBeLessThan(deferredIndex);
+    expect(deferredIndex).toBeLessThan(parkingIndex);
+    expect(result.contextSources.find((source) => source.stableId === "checkout-todo")?.ranking?.reasons).toEqual(
+      expect.arrayContaining([expect.stringContaining("follow-up category actionable")]),
+    );
+    expect(result.contextSources.find((source) => source.stableId === "checkout-deferred-todo")?.ranking?.reasons).toEqual(
+      expect.arrayContaining([expect.stringContaining("follow-up category deferred")]),
+    );
+    expect(result.contextSources.find((source) => source.stableId === "checkout-parking-todo")?.ranking?.reasons).toEqual(
+      expect.arrayContaining([expect.stringContaining("follow-up category parking-lot")]),
+    );
+    expect(result.openTodos.map((todo) => todo.documentId)).toEqual([
+      "checkout-todo",
+      "checkout-todo",
+      "checkout-deferred-todo",
+      "checkout-parking-todo",
+    ]);
   });
 
   it("applies graph filters to exact PRD context related sources", async () => {
