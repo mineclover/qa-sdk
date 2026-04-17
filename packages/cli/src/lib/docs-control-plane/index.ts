@@ -111,6 +111,7 @@ export {
   detectSemanticCoordinateCandidateCollisions,
   DETERMINISTIC_LABEL_RECORD_STATES,
   isSemanticCoordinateLabelKind,
+  projectDeterministicLabelRecordsFromDocuments,
   SEMANTIC_COORDINATE_CANONICAL_EXAMPLES,
   SEMANTIC_COORDINATE_DIAGNOSTIC_CODES,
   SEMANTIC_COORDINATE_DOMAINS,
@@ -212,6 +213,8 @@ export type {
 export type {
   DeterministicLabelRecord,
   DeterministicLabelRecordInput,
+  DeterministicLabelRecordProjection,
+  DeterministicLabelRecordProjectionOptions,
   DeterministicLabelRecordState,
   SemanticCoordinate,
   SemanticCoordinateCandidate,

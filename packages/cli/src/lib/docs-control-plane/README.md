@@ -62,6 +62,15 @@ candidate label and kind, defaults `currentState` to `DRAFT`, preserves
 `sourceRefs[]`, and `evidenceRefs[]` arrays. Candidate diagnostics remain on
 the record, with optional projection diagnostics appended by the caller.
 
+`projectDeterministicLabelRecordsFromDocuments()` is the envelope projection
+step for definition markdown, PRD markdown, and ralph PRD JSON records. It
+starts with semantic coordinate candidates, then maps `DocumentEnvelope.links`
+to dependency label refs, `DocumentEnvelope.sources` and PRD context sources to
+source refs, and `DocumentEnvelope.evidence` plus task evidence ids to evidence
+refs. The record metadata keeps active/archive/session scope and optional
+completed-record context so later FSM readiness checks can consume the same
+facts without re-reading source files.
+
 This shape is intentionally data-only. It does not append to a registry, write
 transition events, persist state, or promote PRD/TODO/checklist signals into
 authority.

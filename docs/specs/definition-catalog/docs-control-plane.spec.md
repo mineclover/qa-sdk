@@ -91,6 +91,8 @@ Existing-id inventory는 `DocumentEnvelope`의 현재 필드를 migration 없이
 
 Deterministic label record는 semantic coordinate candidate를 감싼 read-only projection이다. Record는 `label`, candidate `kind`, `currentState`, `physicalRefs[]`, `dependencyLabels[]`, `sourceRefs[]`, `evidenceRefs[]`, `diagnostics[]`를 포함한다. 현재 record construction은 candidate-only 상태를 `DRAFT`로 기본화하고, dependency/source/evidence ref 배열은 정규화, 중복 제거, 정렬만 수행한다. 이 단계는 append-only registry 저장, transition event write, PRD/TODO promotion, archive 이동을 수행하지 않는다.
 
+`DocumentEnvelope` → deterministic label record projection은 candidate projection 위에 관계 ref를 얹는 system transform이다. Definition markdown, PRD markdown, ralph PRD JSON envelope에서 생성된 candidate를 record로 감싸고, authored `links[]`는 dependency label ref 후보, `sources[]`와 PRD context source는 source label ref 후보, `evidence[]`와 task evidence id는 evidence label ref 후보로 투영한다. Record metadata에는 source-owned document id/path와 함께 active/archive/session scope, completed-record context를 보존한다. 이 projection도 read-only이며 FSM readiness 입력만 준비하고 상태 전이 authority를 갖지 않는다.
+
 Canonical format examples:
 
 | 형상 단위 | 후보 label |

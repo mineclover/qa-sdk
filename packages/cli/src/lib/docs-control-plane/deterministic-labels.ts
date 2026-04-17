@@ -3,7 +3,11 @@ import {
   isTransientSessionDocument,
 } from "./family-scope.js";
 import type {
+  CompletedRecordState,
+} from "./completed-records.js";
+import type {
   DocumentEnvelope,
+  DocumentLink,
   DocumentMetadata,
   DocumentSource,
   DocumentTask,
@@ -193,6 +197,18 @@ export interface DeterministicLabelRecordInput {
   readonly metadata?: DocumentMetadata | null;
 }
 
+export interface DeterministicLabelRecordProjectionOptions
+  extends SemanticCoordinateCandidateInventoryOptions {
+  readonly completedRecords?: readonly CompletedRecordState[] | null;
+}
+
+export interface DeterministicLabelRecordProjection {
+  readonly records: readonly DeterministicLabelRecord[];
+  readonly candidates: readonly SemanticCoordinateCandidate[];
+  readonly diagnostics: readonly SemanticCoordinateDiagnostic[];
+  readonly skippedDocuments: readonly SemanticCoordinateSkippedDocument[];
+}
+
 export const SEMANTIC_COORDINATE_CANONICAL_EXAMPLES = {
   definitionDoc: "urn:def:spec:docs-control-plane:v1",
   sourceFile: "urn:source:typescript:packages/cli/src/commands/docs.ts",
@@ -348,6 +364,46 @@ export function buildDeterministicLabelRecord(
   };
 }
 
+export function projectDeterministicLabelRecordsFromDocuments(
+  documents: readonly DocumentEnvelope[],
+  options: DeterministicLabelRecordProjectionOptions = {},
+): DeterministicLabelRecordProjection {
+  const candidateInventory = collectSemanticCoordinateCandidatesFromDocuments(documents, options);
+  const index = buildProjectionIndex(documents, candidateInventory.candidates);
+  const completedRecords = buildCompletedRecordIndex(options.completedRecords);
+  const records = candidateInventory.candidates.map((candidate) => {
+    const document = index.documentByCandidate.get(candidate);
+    const task = document ? taskForCandidate(document, candidate) : undefined;
+
+    return buildDeterministicLabelRecord({
+      candidate,
+      dependencyLabels: document
+        ? dependencyLabelsForCandidate(index, document, candidate, task)
+        : [],
+      sourceRefs: document ? sourceRefsForCandidate(index, document, candidate) : [],
+      evidenceRefs: document
+        ? evidenceRefsForCandidate(index, document, candidate, task)
+        : [],
+      metadata: document
+        ? projectionRecordMetadata(
+          document,
+          completedRecords.get(documentKey(document)),
+        )
+        : {
+          projection: "document-envelope",
+          documentScope: "unknown",
+        },
+    });
+  }).toSorted(compareDeterministicLabelRecords);
+
+  return {
+    records,
+    candidates: candidateInventory.candidates,
+    diagnostics: candidateInventory.diagnostics,
+    skippedDocuments: candidateInventory.skippedDocuments,
+  };
+}
+
 export function buildSemanticCoordinateCandidatesFromDocument(
   document: DocumentEnvelope,
 ): SemanticCoordinateCandidateInventory {
@@ -356,8 +412,12 @@ export function buildSemanticCoordinateCandidatesFromDocument(
 
   const add = (input: SemanticCoordinateCandidateInput): void => {
     const result = buildSemanticCoordinateCandidate(input);
-    diagnostics.push(...result.diagnostics);
-    if (result.candidate) candidates.push(result.candidate);
+    if (result.candidate) {
+      candidates.push(result.candidate);
+    } else {
+      // candidate 생성 실패(kind 누락/무효 등) 시에만 inventory 레벨로 surfacing
+      diagnostics.push(...result.diagnostics);
+    }
   };
 
   const documentRefs = documentPhysicalRefs(document);
@@ -475,6 +535,11 @@ export function buildSemanticCoordinateCandidatesFromDocument(
   for (const source of document.sources) {
     addDocumentSourceCandidate(add, document, source);
   }
+  for (const source of metadataStringArray(document.metadata.contextSources)) {
+    addSourcePathCandidate(add, document, source, "document.source.path", {
+      sourceKind: "context_source",
+    });
+  }
   for (const evidence of document.evidence) {
     add({
       kind: "evidence",
@@ -529,6 +594,384 @@ export function detectSemanticCoordinateCandidateCollisions(
     });
 }
 
+interface ProjectionIndex {
+  readonly documentByCandidate: ReadonlyMap<SemanticCoordinateCandidate, DocumentEnvelope>;
+  readonly candidatesByDocumentKey: ReadonlyMap<string, readonly SemanticCoordinateCandidate[]>;
+  readonly candidatesByReference: ReadonlyMap<string, readonly SemanticCoordinateCandidate[]>;
+}
+
+function buildProjectionIndex(
+  documents: readonly DocumentEnvelope[],
+  candidates: readonly SemanticCoordinateCandidate[],
+): ProjectionIndex {
+  const documentByKey = new Map(documents.map((document) => [documentKey(document), document]));
+  const candidatesByDocumentKey = new Map<string, SemanticCoordinateCandidate[]>();
+  const documentByCandidate = new Map<SemanticCoordinateCandidate, DocumentEnvelope>();
+  const candidatesByReference = new Map<string, SemanticCoordinateCandidate[]>();
+
+  for (const candidate of candidates) {
+    const key = candidateDocumentKey(candidate);
+    if (!key) continue;
+    const document = documentByKey.get(key);
+    if (!document) continue;
+
+    documentByCandidate.set(candidate, document);
+    addMapValue(candidatesByDocumentKey, key, candidate);
+  }
+
+  for (const [key, documentCandidates] of candidatesByDocumentKey.entries()) {
+    const document = documentByKey.get(key);
+    if (!document) continue;
+    const preferred = preferredDocumentCandidates(documentCandidates);
+
+    for (const value of documentIdentityValues(document)) {
+      for (const candidate of preferred) {
+        addCandidateReference(candidatesByReference, value, candidate);
+      }
+    }
+  }
+
+  for (const candidate of candidates) {
+    addCandidateReference(candidatesByReference, candidate.label, candidate);
+    addCandidateReference(candidatesByReference, candidate.id, candidate);
+    addCandidateReference(candidatesByReference, candidate.originalId, candidate);
+    for (const ref of candidate.physicalRefs) {
+      addCandidateReference(candidatesByReference, ref.ref, candidate);
+      addCandidateReference(candidatesByReference, ref.ref.split("#")[0], candidate);
+    }
+  }
+
+  return {
+    documentByCandidate,
+    candidatesByDocumentKey,
+    candidatesByReference,
+  };
+}
+
+function dependencyLabelsForCandidate(
+  index: ProjectionIndex,
+  document: DocumentEnvelope,
+  candidate: SemanticCoordinateCandidate,
+  task: DocumentTask | undefined,
+): readonly string[] {
+  if (candidate.kind === "source-file" || candidate.kind === "evidence") {
+    return [];
+  }
+
+  return normalizeRecordRefs([
+    ...document.links.flatMap((link) => dependencyLabelsForLink(index, link)),
+    ...(task ? taskDependencyLabels(index, document, task) : []),
+  ]);
+}
+
+function sourceRefsForCandidate(
+  index: ProjectionIndex,
+  document: DocumentEnvelope,
+  candidate: SemanticCoordinateCandidate,
+): readonly string[] {
+  if (candidate.kind === "source-file" || candidate.kind === "evidence") {
+    return [];
+  }
+
+  return normalizeRecordRefs(
+    candidatesForDocument(document, index)
+      .filter((item) =>
+        item.kind === "source-file"
+        && item.metadata.idSource === "document.source.path"
+      )
+      .map((item) => item.label),
+  );
+}
+
+function evidenceRefsForCandidate(
+  index: ProjectionIndex,
+  document: DocumentEnvelope,
+  candidate: SemanticCoordinateCandidate,
+  task: DocumentTask | undefined,
+): readonly string[] {
+  if (candidate.kind === "source-file" || candidate.kind === "evidence") {
+    return [];
+  }
+
+  return normalizeRecordRefs([
+    ...candidatesForDocument(document, index)
+      .filter((item) =>
+        item.kind === "evidence"
+        && item.metadata.idSource === "document.evidence.id"
+      )
+      .map((item) => item.label),
+    ...(task ? task.evidenceIds.flatMap((id) => evidenceLabelsForId(index, id)) : []),
+  ]);
+}
+
+function dependencyLabelsForLink(
+  index: ProjectionIndex,
+  link: DocumentLink,
+): readonly string[] {
+  return labelsForReference(index, link.targetId, {
+    fallbackKind: "definition-doc",
+    fallbackSubtype: "spec",
+  });
+}
+
+function taskDependencyLabels(
+  index: ProjectionIndex,
+  document: DocumentEnvelope,
+  task: DocumentTask,
+): readonly string[] {
+  return taskDependencyIds(task).flatMap((dependencyId) => {
+    if (isPrdStoryId(dependencyId)) {
+      const label = buildSemanticCoordinateCandidate({
+        kind: "prd-story",
+        parentId: prdDocumentIdFromPath(task.rawSource?.path ?? document.path)
+          ?? document.familyId
+          ?? document.stableId,
+        id: dependencyId,
+      }).candidate?.label;
+      return label ? [label] : [];
+    }
+    return labelsForReference(index, dependencyId, {
+      fallbackKind: "definition-doc",
+      fallbackSubtype: "spec",
+    });
+  });
+}
+
+function evidenceLabelsForId(
+  index: ProjectionIndex,
+  evidenceId: string,
+): readonly string[] {
+  return labelsForReference(index, evidenceId, {
+    fallbackKind: "evidence",
+    fallbackSubtype: "evidence",
+  });
+}
+
+function labelsForReference(
+  index: ProjectionIndex,
+  reference: string,
+  fallback: {
+    readonly fallbackKind: SemanticCoordinateLabelKind;
+    readonly fallbackSubtype: string;
+  },
+): readonly string[] {
+  const normalized = normalizeCoordinatePart(reference);
+  if (!normalized) return [];
+  if (normalized.startsWith("urn:")) return [normalized];
+
+  const existing = index.candidatesByReference.get(normalized)
+    ?? index.candidatesByReference.get(normalized.replace(/\.(?:md|json)$/i, ""));
+  if (existing && existing.length > 0) {
+    return preferredDocumentCandidates(existing).map((candidate) => candidate.label);
+  }
+
+  const result = buildSemanticCoordinateCandidate(
+    inferReferenceCandidateInput(normalized, fallback),
+  );
+  return result.candidate ? [result.candidate.label] : [];
+}
+
+function inferReferenceCandidateInput(
+  reference: string,
+  fallback: {
+    readonly fallbackKind: SemanticCoordinateLabelKind;
+    readonly fallbackSubtype: string;
+  },
+): SemanticCoordinateCandidateInput {
+  const id = reference.replace(/\.(?:md|json)$/i, "");
+  if (reference.endsWith(".json") && reference.startsWith("tasks/")) {
+    return {
+      kind: "ralph-prd-json",
+      id,
+      version: "v1",
+    };
+  }
+  if (reference.endsWith(".md") && reference.startsWith("tasks/")) {
+    return {
+      kind: "prd-markdown",
+      id,
+      version: "v1",
+    };
+  }
+  const sourcePath = pathLikeReference(reference);
+  if (sourcePath) {
+    return {
+      kind: "source-file",
+      id: sourcePath,
+      subtype: sourceSubtype(sourcePath),
+    };
+  }
+  return {
+    kind: fallback.fallbackKind,
+    id: reference,
+    subtype: fallback.fallbackSubtype,
+    version: "v1",
+  };
+}
+
+function projectionRecordMetadata(
+  document: DocumentEnvelope,
+  completedRecord: CompletedRecordState | undefined,
+): DocumentMetadata {
+  const scope = documentInventoryScope(document);
+  return {
+    projection: "document-envelope",
+    documentScope: scope,
+    activeScope: scope === "active",
+    archiveScope: scope === "archive",
+    sessionScope: scope === "session",
+    documentAdapterId: document.adapterId,
+    documentKind: document.kind,
+    documentStableId: document.stableId,
+    ...(document.familyId ? { documentFamilyId: document.familyId } : {}),
+    documentPath: document.path,
+    ...(completedRecord
+      ? {
+        completedRecord: {
+          source: completedRecord.source,
+          kind: completedRecord.kind,
+          documentId: completedRecord.documentId,
+          path: completedRecord.path,
+          state: completedRecord.state,
+          title: completedRecord.title,
+          ...(completedRecord.lifecycle ? { lifecycle: completedRecord.lifecycle } : {}),
+          ...(completedRecord.completedCount !== undefined
+            ? { completedCount: completedRecord.completedCount }
+            : {}),
+          ...(completedRecord.openCount !== undefined
+            ? { openCount: completedRecord.openCount }
+            : {}),
+          ...(completedRecord.storyCount !== undefined
+            ? { storyCount: completedRecord.storyCount }
+            : {}),
+          ...(completedRecord.passedStoryCount !== undefined
+            ? { passedStoryCount: completedRecord.passedStoryCount }
+            : {}),
+          ...(completedRecord.pairedDocumentId
+            ? { pairedDocumentId: completedRecord.pairedDocumentId }
+            : {}),
+          ...(completedRecord.pairedPath ? { pairedPath: completedRecord.pairedPath } : {}),
+          reason: completedRecord.reason,
+        },
+      }
+      : {}),
+  };
+}
+
+function documentInventoryScope(document: DocumentEnvelope): "active" | "archive" | "session" {
+  if (isTransientSessionDocument(document)) return "session";
+  if (isCandidateArchiveDocument(document)) return "archive";
+  return "active";
+}
+
+function buildCompletedRecordIndex(
+  records: readonly CompletedRecordState[] | null | undefined,
+): ReadonlyMap<string, CompletedRecordState> {
+  const index = new Map<string, CompletedRecordState>();
+  for (const record of records ?? []) {
+    index.set(
+      [
+        record.source,
+        record.documentId,
+        normalizeCoordinatePart(record.path) ?? record.path,
+      ].join("\u001f"),
+      record,
+    );
+  }
+  return index;
+}
+
+function candidatesForDocument(
+  document: DocumentEnvelope,
+  index: ProjectionIndex,
+): readonly SemanticCoordinateCandidate[] {
+  return index.candidatesByDocumentKey.get(documentKey(document)) ?? [];
+}
+
+function taskForCandidate(
+  document: DocumentEnvelope,
+  candidate: SemanticCoordinateCandidate,
+): DocumentTask | undefined {
+  if (candidate.kind !== "prd-story") return undefined;
+  const storyId = asString(candidate.metadata.storyId) ?? candidate.originalId;
+  return document.tasks.find((task) => task.id === storyId);
+}
+
+function taskDependencyIds(task: DocumentTask): readonly string[] {
+  return uniqueStrings([
+    ...metadataStringArray(task.metadata.dependsOn),
+    ...metadataStringArray(task.metadata.prerequisites),
+  ]);
+}
+
+function isPrdStoryId(value: string): boolean {
+  return /^US-[A-Za-z0-9_-]+$/.test(value);
+}
+
+function preferredDocumentCandidates(
+  candidates: readonly SemanticCoordinateCandidate[],
+): readonly SemanticCoordinateCandidate[] {
+  if (candidates.length <= 1) return candidates;
+  const documentLike = candidates.filter((candidate) =>
+    candidate.kind !== "source-file" && candidate.kind !== "evidence"
+  );
+  const pool = documentLike.length > 0 ? documentLike : candidates;
+  const preferred = pool.find((candidate) => candidate.metadata.idSource === "def.id")
+    ?? pool.find((candidate) => candidate.metadata.idSource === "artifactId")
+    ?? pool.find((candidate) => candidate.metadata.idSource === "packId")
+    ?? pool.find((candidate) => candidate.metadata.idSource === "sourcePath")
+    ?? pool.find((candidate) => candidate.metadata.idSource === "stableId")
+    ?? pool[0];
+  return preferred ? [preferred] : [];
+}
+
+function addCandidateReference(
+  map: Map<string, SemanticCoordinateCandidate[]>,
+  value: string | undefined,
+  candidate: SemanticCoordinateCandidate,
+): void {
+  const normalized = normalizeCoordinatePart(value);
+  if (!normalized) return;
+  addMapValue(map, normalized, candidate);
+}
+
+function addMapValue<K, V>(map: Map<K, V[]>, key: K, value: V): void {
+  const existing = map.get(key) ?? [];
+  if (!existing.includes(value)) {
+    existing.push(value);
+    map.set(key, existing);
+  }
+}
+
+function candidateDocumentKey(candidate: SemanticCoordinateCandidate): string | undefined {
+  const adapterId = asString(candidate.metadata.documentAdapterId);
+  const stableId = asString(candidate.metadata.documentStableId);
+  const path = asString(candidate.metadata.documentPath);
+  if (!adapterId || !stableId || !path) return undefined;
+  return [adapterId, stableId, normalizeCoordinatePart(path) ?? path].join("\u001f");
+}
+
+function documentKey(document: DocumentEnvelope): string {
+  return [
+    document.adapterId,
+    document.stableId,
+    normalizeCoordinatePart(document.path) ?? document.path,
+  ].join("\u001f");
+}
+
+function compareDeterministicLabelRecords(
+  left: DeterministicLabelRecord,
+  right: DeterministicLabelRecord,
+): number {
+  return left.label.localeCompare(right.label)
+    || left.kind.localeCompare(right.kind)
+    || firstPhysicalRef(left).localeCompare(firstPhysicalRef(right));
+}
+
+function firstPhysicalRef(record: DeterministicLabelRecord): string {
+  return record.physicalRefs[0]?.ref ?? "";
+}
+
 function addPrdStoryCandidate(
   add: (input: SemanticCoordinateCandidateInput) => void,
   document: DocumentEnvelope,
@@ -561,6 +1004,7 @@ function addSourcePathCandidate(
   document: DocumentEnvelope,
   path: string,
   idSource: SemanticExistingIdSource,
+  extra: DocumentMetadata = {},
 ): void {
   add({
     kind: "source-file",
@@ -573,7 +1017,7 @@ function addSourcePathCandidate(
         role: "primary",
       },
     ],
-    metadata: candidateMetadata(document, idSource),
+    metadata: candidateMetadata(document, idSource, extra),
   });
 }
 
@@ -731,7 +1175,11 @@ function inactiveDocumentReason(
 function isCandidateArchiveDocument(document: DocumentEnvelope): boolean {
   if (isArchivedPrdDocument(document)) return true;
   if (document.metadata.lifecycle === "archived") return true;
-  return normalizeCoordinatePart(document.path)?.split("/").includes("archive") === true;
+  // 경로 기반 휴리스틱은 PRD kind에만 적용 — 비-PRD 문서는 lifecycle 메타데이터로 명시
+  if (document.kind === "prd" || document.kind === "ralph-prd-json") {
+    return normalizeCoordinatePart(document.path)?.split("/").includes("archive") === true;
+  }
+  return false;
 }
 
 function isExactTargetDocument(
@@ -759,6 +1207,7 @@ function documentIdentityValues(document: DocumentEnvelope): readonly string[] {
     asString(document.metadata.artifactId),
     asString(document.metadata.artifactRef),
     asString(document.metadata.outputPath),
+    asString(document.metadata.ownerDefinitionId),
     ...document.tasks.map((task) => task.id),
   ]);
 }
@@ -822,7 +1271,11 @@ function candidateMetadata(
 
 function prdDocumentIdFromPath(path: string | undefined): string | undefined {
   if (!path) return undefined;
-  return normalizeCoordinatePart(path)?.replace(/\.(?:md|json)$/i, "");
+  const normalized = normalizeCoordinatePart(path);
+  if (!normalized) return undefined;
+  // PRD 문서 확장자(.md/.json)만 허용 — 미인식 확장자는 undefined로 처리
+  if (!/\.(?:md|json)$/i.test(normalized)) return undefined;
+  return normalized.replace(/\.(?:md|json)$/i, "");
 }
 
 function sourceSubtype(path: string): string {
@@ -874,6 +1327,12 @@ function nestedMetadataString(value: unknown, key: string): string | undefined {
 
 function asString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function metadataStringArray(value: unknown): readonly string[] {
+  return Array.isArray(value)
+    ? uniqueStrings(value.map((item) => asString(item)))
+    : [];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

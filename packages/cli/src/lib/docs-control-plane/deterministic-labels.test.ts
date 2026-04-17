@@ -7,8 +7,11 @@ import {
   DETERMINISTIC_LABEL_RECORD_STATES,
   detectSemanticCoordinateCandidateCollisions,
   normalizeDocumentEnvelope,
+  projectDeterministicLabelRecordsFromDocuments,
   SEMANTIC_COORDINATE_CANONICAL_EXAMPLES,
   SEMANTIC_COORDINATE_LABEL_KINDS,
+  type CompletedRecordState,
+  type DeterministicLabelRecord,
   type SemanticCoordinateCandidate,
   type SemanticCoordinateCandidateInput,
   type DocumentEnvelope,
@@ -532,6 +535,185 @@ describe("semantic coordinate candidates", () => {
       }),
     ]);
   });
+
+  it("projects definition markdown envelopes into records with dependency, source, and evidence refs", () => {
+    const target = definitionDoc({
+      stableId: "definition-catalog-spec",
+      familyId: "docs/specs/definition-catalog/definition-catalog",
+      path: "docs/specs/definition-catalog/definition-catalog.spec.md",
+      metadata: {
+        defId: "definition-catalog-spec",
+        sourcePath: "docs/specs/definition-catalog/definition-catalog.spec.md",
+        documentKind: "spec",
+      },
+    });
+    const source = definitionDoc({
+      links: [
+        {
+          type: "depends_on",
+          sourceId: "docs-control-plane-def",
+          targetId: "definition-catalog-spec",
+        },
+      ],
+      evidence: [
+        {
+          id: "docs-control-plane-proof",
+          kind: "validation-evidence",
+          rawSource: {
+            path: "artifacts/docs-control-plane-proof.json",
+          },
+        },
+      ],
+    });
+
+    const projection = projectDeterministicLabelRecordsFromDocuments([source, target]);
+    const record = recordByLabel(
+      projection.records,
+      "urn:def:spec:docs-control-plane-def:v1",
+    );
+
+    expect(record).toMatchObject({
+      dependencyLabels: ["urn:def:spec:definition-catalog-spec:v1"],
+      sourceRefs: ["urn:source:typescript:packages/cli/src/commands/docs.ts"],
+      evidenceRefs: ["urn:artifact:validation-evidence:docs-control-plane-proof:v1"],
+      metadata: {
+        projection: "document-envelope",
+        documentScope: "active",
+        activeScope: true,
+        archiveScope: false,
+      },
+    });
+    expect(projection.records.map((item) => item.label)).toEqual(expect.arrayContaining([
+      "urn:source:typescript:packages/cli/src/commands/docs.ts",
+      "urn:artifact:validation-evidence:docs-control-plane-proof:v1",
+    ]));
+  });
+
+  it("projects PRD markdown and ralph PRD JSON envelopes into document and story records", () => {
+    const prd = prdMarkdownDoc({
+      metadata: {
+        contextSources: [
+          "packages/cli/src/lib/docs-control-plane/deterministic-labels.ts",
+        ],
+      },
+      tasks: [
+        {
+          id: "US-004",
+          title: "Project DocumentEnvelope Inputs Into Label Records",
+          evidenceIds: ["prd-projection-proof"],
+          rawSource: {
+            path: "tasks/prd-deterministic-label-registry-fsm-read-model.md",
+            pointer: "### US-004",
+          },
+          metadata: {
+            prerequisites: ["US-003"],
+          },
+        },
+      ],
+    });
+    const ralph = ralphPrdJsonDoc({
+      tasks: [
+        {
+          id: "US-004",
+          title: "Project DocumentEnvelope Inputs Into Label Records",
+          evidenceIds: ["ralph-projection-proof"],
+          rawSource: {
+            path: "tasks/prd-deterministic-label-registry-fsm-read-model.json",
+            pointer: "/userStories/3",
+          },
+          metadata: {
+            dependsOn: ["US-003"],
+            passes: false,
+          },
+        },
+      ],
+    });
+
+    const projection = projectDeterministicLabelRecordsFromDocuments([prd, ralph]);
+    const labels = projection.records.map((item) => item.label);
+    const ralphStory = projection.records.find((item) =>
+      item.label === "urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-004"
+      && item.physicalRefs.some((ref) => ref.kind === "ralph-prd-json-path")
+    );
+
+    expect(labels).toEqual(expect.arrayContaining([
+      "urn:prd:markdown:tasks/prd-deterministic-label-registry-fsm-read-model:v1",
+      "urn:prd:ralph-json:tasks/prd-deterministic-label-registry-fsm-read-model:v1",
+      "urn:source:typescript:packages/cli/src/lib/docs-control-plane/deterministic-labels.ts",
+    ]));
+    expect(recordByLabel(
+      projection.records,
+      "urn:prd:markdown:tasks/prd-deterministic-label-registry-fsm-read-model:v1",
+    ).sourceRefs).toContain(
+      "urn:source:typescript:packages/cli/src/lib/docs-control-plane/deterministic-labels.ts",
+    );
+    expect(ralphStory).toMatchObject({
+      dependencyLabels: [
+        "urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-003",
+      ],
+      evidenceRefs: [
+        "urn:artifact:evidence:ralph-projection-proof:v1",
+      ],
+    });
+  });
+
+  it("preserves active/archive scope and completed-record metadata on projected records", () => {
+    const archived = prdMarkdownDoc({
+      stableId: "tasks/archive/prd-completed",
+      familyId: "tasks/archive/prd-completed",
+      path: "tasks/archive/prd-completed.md",
+      metadata: {
+        title: "Completed PRD",
+        sourcePath: "tasks/archive/prd-completed.md",
+        lifecycle: "archived",
+      },
+    });
+    const completedRecord: CompletedRecordState = {
+      source: "prd-markdown",
+      kind: "prd",
+      documentId: "tasks/archive/prd-completed",
+      path: "tasks/archive/prd-completed.md",
+      state: "completed-record",
+      title: "Completed PRD",
+      lifecycle: "archived",
+      storyCount: 2,
+      passedStoryCount: 2,
+      pairedDocumentId: "tasks/archive/prd-completed",
+      pairedPath: "tasks/archive/prd-completed.json",
+      reason: "paired PRD JSON has all stories passing",
+    };
+
+    const skipped = projectDeterministicLabelRecordsFromDocuments([archived]);
+    expect(skipped.records).toEqual([]);
+    expect(skipped.skippedDocuments).toEqual([
+      expect.objectContaining({
+        path: "tasks/archive/prd-completed.md",
+        reason: "archive",
+      }),
+    ]);
+
+    const included = projectDeterministicLabelRecordsFromDocuments([archived], {
+      includeArchive: true,
+      completedRecords: [completedRecord],
+    });
+    const record = recordByLabel(
+      included.records,
+      "urn:prd:markdown:tasks/archive/prd-completed:v1",
+    );
+
+    expect(record.metadata).toMatchObject({
+      documentScope: "archive",
+      activeScope: false,
+      archiveScope: true,
+      completedRecord: {
+        state: "completed-record",
+        lifecycle: "archived",
+        storyCount: 2,
+        passedStoryCount: 2,
+        reason: "paired PRD JSON has all stories passing",
+      },
+    });
+  });
 });
 
 function candidate(
@@ -547,6 +729,15 @@ function candidateByLabel(
   label: string,
 ): SemanticCoordinateCandidate | undefined {
   return candidates.find((candidate) => candidate.label === label);
+}
+
+function recordByLabel(
+  records: readonly DeterministicLabelRecord[],
+  label: string,
+): DeterministicLabelRecord {
+  const record = records.find((candidate) => candidate.label === label);
+  expect(record).toBeDefined();
+  return record!;
 }
 
 function definitionDoc(
@@ -573,6 +764,9 @@ function definitionDoc(
         },
       },
       ...(overrides.sources ?? []),
+    ],
+    evidence: [
+      ...(overrides.evidence ?? []),
     ],
     rawSource: {
       path: "docs/specs/definition-catalog/docs-control-plane.spec.md",
