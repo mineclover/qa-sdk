@@ -1195,11 +1195,9 @@ Track module follow-up work.
     ]);
 
     const result = parsedOutput<{
-      graph: {
-        input: { axes: string[]; direction: string; depth: number; includeContext: boolean; preset?: string };
-        edges: Array<{ axis: string }>;
-      };
+      graph: GraphOutput;
       familyMembers: Array<{ stableId: string; kind: string }>;
+      counts: { familyMembers: number };
     }>();
     expect(result.graph.input).toMatchObject({
       axes: ["trace", "source", "evidence"],
@@ -1211,12 +1209,53 @@ Track module follow-up work.
     expect(result.graph.edges.map((edge) => edge.axis)).toEqual(
       expect.arrayContaining(["source"]),
     );
+    expect(result.graph.ranking).toMatchObject({
+      algorithm: "docs-graph-rule-rank-v1",
+      rankedNodes: result.graph.rankedNodes,
+    });
+    expect(result.graph.summary).toMatchObject({
+      algorithm: "docs-graph-result-summary-v1",
+      scope: "filtered",
+      nodes: result.graph.rankedNodes.length,
+    });
+    expect(result.graph.rankedNodes.map((node) => node.rank)).toEqual(
+      result.graph.rankedNodes.map((_, index) => index + 1),
+    );
+    expect(new Set(result.graph.rankedNodes.map((node) => node.nodeId))).toEqual(
+      new Set(result.graph.nodes.map((node) => node.id)),
+    );
     expect(result.familyMembers).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ stableId: "checkout-spec", kind: "spec" }),
         expect.objectContaining({ stableId: "checkout-evidence", kind: "activation-evidence" }),
       ]),
     );
+    expect(result.counts.familyMembers).toBe(result.familyMembers.length);
+  });
+
+  it("keeps collect graph text concise while surfacing a ranked summary", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "collect",
+      "checkout-spec",
+      "--graph",
+      "--preset",
+      "family",
+      "--root",
+      workspace,
+    ]);
+
+    const text = output();
+    expect(text).toContain("docs status: checkout-spec");
+    expect(text).toContain("graph view:");
+    expect(text).toContain("active ranked nodes:");
+    expect(text).toContain("view nodes/edges/paths:");
+    expect(text).toContain("top ranked:");
+    expect(text).toContain("family members (");
+    expect(text).not.toContain("ranked view (");
+    expect(text).not.toContain("raw traversal");
+    expect(text).not.toContain("edge reasons");
   });
 
   it("applies graph filters to collect returned views while preserving raw graph traversal", async () => {
@@ -1242,6 +1281,7 @@ Track module follow-up work.
     const result = parsedOutput<{
       familyMembers: Array<{ stableId: string; kind: string }>;
       graph: GraphOutput;
+      counts: { familyMembers: number };
     }>();
     expect(result.graph.nodes.map((node) => node.id)).toEqual(
       expect.arrayContaining(["document:checkout-spec", "document:checkout-todo"]),
@@ -1249,9 +1289,19 @@ Track module follow-up work.
     expect(result.graph.rankedNodes.map((node) => node.nodeId)).toEqual([
       "document:checkout-todo",
     ]);
+    expect(result.graph.ranking.rankedNodes).toEqual(result.graph.rankedNodes);
+    expect(result.graph.summary).toMatchObject({
+      nodes: 1,
+      counts: {
+        byNodeKind: { todo: 1 },
+        byDocumentRole: { todo: 1 },
+        byFollowUpCategory: { actionable: 1 },
+      },
+    });
     expect(result.familyMembers).toEqual([
       expect.objectContaining({ stableId: "checkout-todo", kind: "todo" }),
     ]);
+    expect(result.counts.familyMembers).toBe(result.familyMembers.length);
   });
 
   it("limits collect inventory to same-family roles and direct module children with --family-only", async () => {
@@ -1322,9 +1372,29 @@ Define the direct module child.
 
     const result = parsedOutput<{
       familyMembers: Array<{ stableId: string; kind: string; path: string }>;
-      graph: { input: { preset?: string } };
+      graph: GraphOutput;
+      counts: { familyMembers: number };
     }>();
     expect(result.graph.input.preset).toBe("family");
+    expect(result.graph.ranking).toMatchObject({
+      algorithm: "docs-graph-rule-rank-v1",
+      rankedNodes: result.graph.rankedNodes,
+    });
+    expect(result.graph.summary).toMatchObject({
+      algorithm: "docs-graph-result-summary-v1",
+      scope: "filtered",
+      edges: 0,
+      paths: 0,
+    });
+    expect(result.graph.nodes.map((node) => node.id)).toEqual(
+      expect.arrayContaining([
+        "document:module-spec",
+        "document:module-plan",
+        "document:module-child",
+      ]),
+    );
+    expect(result.graph.nodes.map((node) => node.id)).not.toContain("document:checkout-spec");
+    expect(result.graph.rankedNodes.map((node) => node.nodeId)).not.toContain("document:checkout-spec");
     expect(result.familyMembers).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ stableId: "module-spec", kind: "spec" }),
@@ -1338,6 +1408,7 @@ Define the direct module child.
         expect.objectContaining({ stableId: "checkout-evidence" }),
       ]),
     );
+    expect(result.counts.familyMembers).toBe(result.familyMembers.length);
   });
 
   it("exposes a role matrix that separates same-family and linked role documents", async () => {

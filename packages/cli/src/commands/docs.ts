@@ -1316,9 +1316,20 @@ async function buildCollectResult(
       graphResult.filtering.filteredNodeIds,
     ).documents
     : scopedDocuments;
+  const completedRecords = graphResult
+    ? await detectCompletedRecords({ rootDir, documents: viewDocuments })
+    : status.completedRecords;
+  const nextFollowUps = graphResult
+    ? await findNextFollowUps({ rootDir, documents: viewDocuments, completedRecords })
+    : status.nextFollowUps;
 
   return {
     ...status,
+    counts: countDocuments(documents, viewDocuments),
+    nextFollowUp: nextFollowUps[0] ?? null,
+    nextFollowUps,
+    completedRecords,
+    diagnostics: viewDocuments.flatMap((document) => document.diagnostics),
     familyMembers: viewDocuments.map(summarizeDocument),
     metadata: viewDocuments.map((document) => ({
       stableId: document.stableId,
@@ -2332,6 +2343,9 @@ function printCollect(result: CollectResult): void {
   }
 
   printStatus(result);
+  if (result.graph) {
+    printCollectGraphView(result.graph);
+  }
   console.log("");
   console.log(`family members (${result.familyMembers.length}):`);
   for (const member of result.familyMembers) {
@@ -2351,6 +2365,22 @@ function printCollect(result: CollectResult): void {
   printNamedCollection("evidence", result.evidence, (evidence) =>
     `${evidence.id}${evidence.kind ? ` [${evidence.kind}]` : ""}${evidence.summary ? ` ${evidence.summary}` : ""}`
   );
+}
+
+function printCollectGraphView(result: DocsGraphCliResult): void {
+  console.log("");
+  console.log("graph view:");
+  console.log(`  active ranked nodes: ${result.filtering.counts.filteredNodes}/${result.filtering.counts.rawRankedNodes}`);
+  console.log(`  view nodes/edges/paths: ${result.summary.nodes}/${result.summary.edges}/${result.summary.paths}`);
+  console.log(`  kinds: ${formatGraphSummaryCounts(result.summary.counts.byNodeKind)}`);
+  console.log(`  axes: ${formatGraphSummaryCounts(result.summary.counts.byTraversalAxis)}`);
+  const topRanked = result.rankedNodes.slice(0, 3).map((node) =>
+    `#${node.rank} [${node.kind}] ${node.stableId ?? node.nodeId}`
+  );
+  console.log(`  top ranked: ${topRanked.length > 0 ? topRanked.join("; ") : "(none)"}`);
+  for (const line of graphFilterText(result)) {
+    console.log(`  ${line}`);
+  }
 }
 
 function printSearch(result: SearchResult): void {
