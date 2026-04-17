@@ -89,4 +89,8 @@ def:
 
 ### Parking Lot — 후보 보관
 
-현재 보관 후보 없음. 새 아이디어성 작업은 실행 조건이나 owner가 정해질 때까지 Actionable로 승격하지 않는다.
+- [ ] Completed-record cleanup review candidates
+  - [ ] `tasks/prd-docs-topdown-lifecycle-inventory-alignment.md` — `docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json` reports `completed-prd-record-candidate`; paired JSON has 15/15 stories passing. Decide keep-as-evidence, archive, or memo conversion only through a separate explicit cleanup workflow.
+  - [ ] `tasks/prd-docs-graph-result-ranking-filtering.md` — `docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json` reports `completed-prd-record-candidate`; paired JSON has 10/10 stories passing. Decide keep-as-evidence, archive, or memo conversion only through a separate explicit cleanup workflow.
+
+새 아이디어성 작업은 실행 조건이나 owner가 정해질 때까지 Actionable로 승격하지 않는다.
