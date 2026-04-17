@@ -111,6 +111,9 @@ export {
   dryRunDeterministicLabelTransition,
 } from "./deterministic-label-fsm.js";
 export {
+  buildDeterministicLabelInventory,
+} from "./deterministic-label-inventory.js";
+export {
   buildSemanticCoordinateCandidatesFromDocument,
   buildSemanticCoordinateCandidate,
   buildDeterministicLabelRecord,
@@ -229,6 +232,11 @@ export type {
   DeterministicLabelTransitionDryRunResult,
   DeterministicLabelTransitionRequest,
 } from "./deterministic-label-fsm.js";
+export type {
+  DeterministicLabelInventory,
+  DeterministicLabelInventoryOptions,
+  DeterministicLabelInventorySummary,
+} from "./deterministic-label-inventory.js";
 export type {
   DeterministicLabelRecord,
   DeterministicLabelRecordInput,

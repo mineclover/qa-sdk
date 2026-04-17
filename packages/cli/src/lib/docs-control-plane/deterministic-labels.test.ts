@@ -1,7 +1,12 @@
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import {
   buildDeterministicLabelRecord,
+  buildDeterministicLabelInventory,
   buildOntologyPackLabelRecordFromValidateResult,
   buildSemanticCoordinateCandidate,
   collectSemanticCoordinateCandidatesFromDocuments,
@@ -855,6 +860,126 @@ describe("semantic coordinate candidates", () => {
   });
 });
 
+describe("deterministic label inventory", () => {
+  it("returns summary counts for prebuilt document envelopes", async () => {
+    const documents = [
+      ralphPrdJsonDoc(),
+      definitionDoc(),
+      prdMarkdownDoc(),
+    ];
+
+    const inventory = await buildDeterministicLabelInventory({
+      rootDir: process.cwd(),
+      documents,
+      includeOntologyPacks: false,
+      computeReadiness: false,
+    });
+
+    expect(inventory.summary).toMatchObject({
+      documents: 3,
+      records: 11,
+      candidates: 11,
+      diagnostics: 1,
+      skippedDocuments: 0,
+      completedRecords: 0,
+      packValidations: 0,
+      readinessComputed: false,
+      byKind: {
+        "definition-doc": 3,
+        "source-file": 4,
+        "ontology-pack": 0,
+        artifact: 0,
+        "prd-markdown": 1,
+        "ralph-prd-json": 1,
+        "prd-story": 2,
+        evidence: 0,
+      },
+      byState: {
+        DRAFT: 11,
+        LINTED: 0,
+        RESOLVED: 0,
+        ACTIVE: 0,
+        DEPRECATED: 0,
+        ARCHIVED: 0,
+        BLOCKED: 0,
+      },
+      byDiagnosticSeverity: {
+        error: 1,
+        warning: 0,
+      },
+      byDiagnosticCode: {
+        "semantic-coordinate-collision-candidate": 1,
+      },
+    });
+  });
+
+  it("keeps deterministic record ordering independent of envelope input order", async () => {
+    const definition = definitionDoc();
+    const prd = prdMarkdownDoc();
+    const ralph = ralphPrdJsonDoc();
+    const first = await buildDeterministicLabelInventory({
+      rootDir: process.cwd(),
+      documents: [ralph, definition, prd],
+      includeOntologyPacks: false,
+      computeReadiness: false,
+    });
+    const second = await buildDeterministicLabelInventory({
+      rootDir: process.cwd(),
+      documents: [prd, ralph, definition],
+      includeOntologyPacks: false,
+      computeReadiness: false,
+    });
+
+    expect(recordOrder(first.records)).toEqual(recordOrder(second.records));
+    expect(recordOrder(first.records)).toEqual(
+      recordOrder(first.records).toSorted((left, right) => left.localeCompare(right)),
+    );
+  });
+
+  it("builds document envelopes through the existing adapters when documents are omitted", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "qa-sdk-label-inventory-"));
+    await mkdir(join(rootDir, "docs"), { recursive: true });
+    await writeFile(
+      join(rootDir, "docs", "adapter-inventory.spec.md"),
+      [
+        "---",
+        "def:",
+        "  id: adapter-inventory",
+        "  level: leaf",
+        "  scope: interface",
+        "  aspect: cli_contract",
+        "  depth: specification",
+        "  lifecycle: approved",
+        "sources:",
+        "  - packages/cli/src/lib/docs-control-plane/deterministic-label-inventory.ts",
+        "---",
+        "",
+        "# Adapter Inventory",
+        "",
+        "## 목적 ^purpose",
+        "",
+        "Adapter-built inventory fixture.",
+        "",
+      ].join("\n"),
+    );
+
+    const inventory = await buildDeterministicLabelInventory({
+      rootDir,
+      includeOntologyPacks: false,
+      computeReadiness: false,
+    });
+
+    expect(inventory.documents.map((document) => document.path)).toEqual([
+      "docs/adapter-inventory.spec.md",
+    ]);
+    expect(inventory.summary.documents).toBe(1);
+    expect(inventory.records.map((record) => record.label)).toEqual(expect.arrayContaining([
+      "urn:def:spec:adapter-inventory:v1",
+      "urn:source:typescript:packages/cli/src/lib/docs-control-plane/deterministic-label-inventory.ts",
+    ]));
+  });
+});
+
 describe("deterministic label FSM readiness", () => {
   it("computes a linted state when lint passes and the next resolution gate is blocked", () => {
     const record = readinessRecord("linted-example", {
@@ -1235,6 +1360,16 @@ function recordByLabel(
   const record = records.find((candidate) => candidate.label === label);
   expect(record).toBeDefined();
   return record!;
+}
+
+function recordOrder(records: readonly DeterministicLabelRecord[]): readonly string[] {
+  return records.map((record) =>
+    [
+      record.label,
+      record.kind,
+      record.physicalRefs[0]?.ref ?? "",
+    ].join("\u001f")
+  );
 }
 
 function definitionDoc(

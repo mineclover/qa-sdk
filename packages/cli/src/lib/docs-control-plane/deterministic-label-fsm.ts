@@ -157,7 +157,8 @@ export function computeDeterministicLabelRecordReadiness(
     state = evaluation.toState;
   }
 
-  if (state === "ACTIVE") {
+  // ACTIVE 도달 후 health re-check — 루프에서 이미 평가했으면 중복 삽입 방지
+  if (state === "ACTIVE" && !gateResults.some((g) => g.gate === "activate")) {
     const activeHealth = evaluateGate(record, labels, {
       gate: "activate",
       fromState: "RESOLVED",
@@ -207,11 +208,19 @@ export function dryRunDeterministicLabelTransition(
   const route = transitionRoute(target.currentState, request.requestedState);
   const routeBlockers = route
     ? []
-    : [transitionBlocker(target.label, "requested transition route is not supported by the read-only FSM.", {
-      blockerCode: "transition-route-unsupported",
-      currentState: target.currentState,
-      requestedState: request.requestedState,
-    })];
+    : [transitionBlocker(
+      target.label,
+      isTerminalState(request.requestedState)
+        ? `transition to terminal state ${request.requestedState} is not supported via the read-only FSM.`
+        : "requested transition route is not supported by the read-only FSM.",
+      {
+        blockerCode: isTerminalState(request.requestedState)
+          ? "transition-to-terminal-state-unsupported"
+          : "transition-route-unsupported",
+        currentState: target.currentState,
+        requestedState: request.requestedState,
+      },
+    )];
   const gateResults: DeterministicLabelReadinessGateResult[] = [];
   const gateBlockers: SemanticCoordinateDiagnostic[] = [];
 
@@ -280,7 +289,10 @@ function transitionRoute(
   readonly toState: DeterministicLabelRecordState;
 }[] | undefined {
   if (currentState === requestedState) return [];
-  if (requestedState === "BLOCKED") return undefined;
+  if (requestedState === "BLOCKED"
+    || requestedState === "DEPRECATED"
+    || requestedState === "ARCHIVED"
+  ) return undefined;
 
   const route: Array<{
     readonly gate: DeterministicLabelReadinessGate;
@@ -679,6 +691,10 @@ function normalizeEvidenceRefs(refs: readonly string[]): readonly string[] {
     .toSorted((left, right) => left.localeCompare(right));
 }
 
+function isTerminalState(state: DeterministicLabelRecordState): boolean {
+  return state === "DEPRECATED" || state === "ARCHIVED" || state === "BLOCKED";
+}
+
 function terminalStateForRecord(
   record: DeterministicLabelRecord,
 ): DeterministicLabelRecordState | undefined {
@@ -697,8 +713,7 @@ function isArchivedRecord(record: DeterministicLabelRecord): boolean {
 
 function isDeprecatedRecord(record: DeterministicLabelRecord): boolean {
   return record.metadata.deprecated === true
-    || record.metadata.lifecycle === "deprecated"
-    || asString(record.metadata.lifecycle) === "deprecated";
+    || record.metadata.lifecycle === "deprecated";
 }
 
 function driftFreeStatus(record: DeterministicLabelRecord): boolean | undefined {
