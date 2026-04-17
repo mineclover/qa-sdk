@@ -64,6 +64,11 @@ export {
   traverseDocumentGraph,
 } from "./graph-traverse.js";
 export {
+  DOCUMENT_GRAPH_RANK_ALGORITHM,
+  DOCUMENT_GRAPH_RANK_FACTORS,
+  rankDocumentGraphTraversal,
+} from "./graph-rank.js";
+export {
   collectDocumentGraphTraversalDocuments,
   defaultDocumentGraphTraversalNodeReason,
 } from "./graph-scope.js";
@@ -132,6 +137,13 @@ export type {
   DocumentGraphTraversalResult,
   NormalizedDocumentGraphTraversalInput,
 } from "./graph-traverse.js";
+export type {
+  DocumentGraphRankedNode,
+  DocumentGraphRankFactor,
+  DocumentGraphRankFactorName,
+  DocumentGraphRankStrength,
+  DocumentGraphRankingResult,
+} from "./graph-rank.js";
 export type {
   DocumentGraphTraversalDocumentScope,
 } from "./graph-scope.js";

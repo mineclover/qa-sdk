@@ -39,11 +39,13 @@ import {
   isTraversalDirection,
   isTraversalPresetId,
   previewPrdCompletionSync,
+  rankDocumentGraphTraversal,
   TRAVERSAL_DIRECTIONS,
   TRAVERSAL_PRESET_IDS,
   traverseDocumentGraph,
   type DocumentGraphTraversalInput,
   type DocumentGraphTraversalResult,
+  type DocumentGraphRankingResult,
   type DocumentRoleMatrix,
   type CompletedRecordState,
   DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
@@ -171,6 +173,8 @@ interface DocsGraphCliResult {
   readonly paths: DocumentGraphTraversalResult["paths"];
   readonly roleGroups: DocumentGraphTraversalResult["roleGroups"];
   readonly missingRoles: DocumentGraphTraversalResult["missingRoles"];
+  readonly ranking: DocumentGraphRankingResult;
+  readonly rankedNodes: DocumentGraphRankingResult["rankedNodes"];
   readonly counts: {
     readonly nodes: number;
     readonly edges: number;
@@ -805,6 +809,7 @@ function isStructuredDocsError(value: unknown): value is StructuredDocsError {
 function toDocsGraphCliResult(
   result: DocumentGraphTraversalResult,
 ): DocsGraphCliResult {
+  const ranking = rankDocumentGraphTraversal(result);
   return {
     input: result.input,
     targetResolution: result.targetResolution,
@@ -814,6 +819,8 @@ function toDocsGraphCliResult(
     paths: result.paths,
     roleGroups: result.roleGroups,
     missingRoles: result.missingRoles,
+    ranking,
+    rankedNodes: ranking.rankedNodes,
     counts: {
       nodes: result.nodeCount,
       edges: result.edgeCount,
