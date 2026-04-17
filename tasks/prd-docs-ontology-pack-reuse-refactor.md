@@ -185,26 +185,26 @@ Compatibility contract:
 **Description:** As a pack authoring maintainer, I want TypeScript scaffold rendering separated from scaffold planning so code and test templates can evolve independently.
 
 **Acceptance Criteria:**
-- [ ] Create focused code and test renderer modules for pack scaffolding.
-- [ ] Move `renderComponentSchemaFile`, `renderSystemBindingFile`, and `renderPackTestFile` out of `ontology-pack-scaffold-plan.ts`.
-- [ ] Preserve deterministic TypeScript skeleton output.
-- [ ] Preserve generated identity constants, component-like schema declarations, and system-like binding sections.
-- [ ] Preserve generated test skeleton expectations.
-- [ ] Existing scaffold plan/write tests pass.
-- [ ] Add or adjust focused code/test renderer tests if needed.
+- [x] Create focused code and test renderer modules for pack scaffolding.
+- [x] Move `renderComponentSchemaFile`, `renderSystemBindingFile`, and `renderPackTestFile` out of `ontology-pack-scaffold-plan.ts`.
+- [x] Preserve deterministic TypeScript skeleton output.
+- [x] Preserve generated identity constants, component-like schema declarations, and system-like binding sections.
+- [x] Preserve generated test skeleton expectations.
+- [x] Existing scaffold plan/write tests pass.
+- [x] Add or adjust focused code/test renderer tests if needed.
 
 ### US-009: Extract Ontology Pack Scaffold Planning Utilities
 
 **Description:** As a CLI maintainer, I want scaffold path, diagnostics, and known-pack candidate helpers separated so pack scaffold planning is easier to reason about.
 
 **Acceptance Criteria:**
-- [ ] Split safe path resolution and output conflict detection from plan assembly.
-- [ ] Split known-pack candidate generation from plan assembly.
-- [ ] Split source-map candidate generation from plan assembly if practical.
-- [ ] Preserve CLI flag parsing behavior.
-- [ ] Preserve invalid id, unsafe path, and conflicting output diagnostics.
-- [ ] Existing scaffold tests pass.
-- [ ] Plan assembly remains the orchestrator of identity, files, docs, source-map, and known-pack candidate sections.
+- [x] Split safe path resolution and output conflict detection from plan assembly.
+- [x] Split known-pack candidate generation from plan assembly.
+- [x] Split source-map candidate generation from plan assembly if practical.
+- [x] Preserve CLI flag parsing behavior.
+- [x] Preserve invalid id, unsafe path, and conflicting output diagnostics.
+- [x] Existing scaffold tests pass.
+- [x] Plan assembly remains the orchestrator of identity, files, docs, source-map, and known-pack candidate sections.
 
 ### US-010: Extract Ontology Pack Validate Loader And Runtime Validation
 
@@ -237,41 +237,41 @@ Compatibility contract:
 **Description:** As a CLI maintainer, I want `ontology.ts` to dispatch pack authoring commands through focused handlers so prompt/artifact/activation logic stays separate from pack authoring.
 
 **Acceptance Criteria:**
-- [ ] Create `commands/ontology/pack-authoring.ts` or equivalent focused command handler.
-- [ ] Move pack scaffold command handling and text/json output into the focused handler.
-- [ ] Move pack validate command handling and text/json output into the focused handler.
-- [ ] `ontology.ts` no longer defines pack scaffold/validate print helpers or command handling internals.
-- [ ] Preserve root `qa-sdk ontology` help output.
-- [ ] Preserve `qa-sdk ontology pack --help`, `pack scaffold`, and `pack validate` behavior.
-- [ ] `ontology.ts` remains the dispatch surface.
-- [ ] Existing ontology command tests pass.
+- [x] Create `commands/ontology/pack-authoring.ts` or equivalent focused command handler.
+- [x] Move pack scaffold command handling and text/json output into the focused handler.
+- [x] Move pack validate command handling and text/json output into the focused handler.
+- [x] `ontology.ts` no longer defines pack scaffold/validate print helpers or command handling internals.
+- [x] Preserve root `qa-sdk ontology` help output.
+- [x] Preserve `qa-sdk ontology pack --help`, `pack scaffold`, and `pack validate` behavior.
+- [x] `ontology.ts` remains the dispatch surface.
+- [x] Existing ontology command tests pass.
 
 ### US-013: Document Refactor Convention
 
 **Description:** As a future contributor, I want the refactor convention documented so new docs and ontology command features do not re-grow the command files.
 
 **Acceptance Criteria:**
-- [ ] Update docs-control-plane README or related spec with command assembly convention.
-- [ ] Document that command files should dispatch/print while library modules own reusable read-model and transformation logic.
-- [ ] Document readiness result convention: `valid`, `issues`, `runtime`, and `readiness`.
-- [ ] Document dry-run/write convention for scaffold-like commands.
-- [ ] Document identity/data/system module separation as an implementation organization guideline, not an ECS-only architecture.
-- [ ] Document extracted modules as internal CLI libraries; no package-level public exports are required by this refactor.
-- [ ] Do not introduce new behavior in this story.
+- [x] Update docs-control-plane README or related spec with command assembly convention.
+- [x] Document that command files should dispatch/print while library modules own reusable read-model and transformation logic.
+- [x] Document readiness result convention: `valid`, `issues`, `runtime`, and `readiness`.
+- [x] Document dry-run/write convention for scaffold-like commands.
+- [x] Document identity/data/system module separation as an implementation organization guideline, not an ECS-only architecture.
+- [x] Document extracted modules as internal CLI libraries; no package-level public exports are required by this refactor.
+- [x] Do not introduce new behavior in this story.
 
 ### US-014: Verify Refactor Operationally
 
 **Description:** As a reviewer, I want operational evidence that the refactor preserved command behavior and improved structure.
 
 **Acceptance Criteria:**
-- [ ] Run `docs status docs-control-plane --json` and compare key fields: `nextFollowUps`, `completedRecords`, `roleCoverage`, diagnostics.
-- [ ] Run `docs status programming-artifact-ontology-system --json` and confirm deferred follow-ups remain categorized.
-- [ ] Run `docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`.
-- [ ] Run `docs drift --prd tasks/prd-ontology-pack-authoring-control-plane.json --json`.
-- [ ] Run `ontology pack scaffold sample-domain-ontology --json`.
-- [ ] Run `ontology pack validate programming-artifact-ontology --json`.
-- [ ] Run all quality gates.
-- [ ] Record any remaining warnings, especially pack readiness partial source-map warnings.
+- [x] Run `docs status docs-control-plane --json` and compare key fields: `nextFollowUps`, `completedRecords`, `roleCoverage`, diagnostics.
+- [x] Run `docs status programming-artifact-ontology-system --json` and confirm deferred follow-ups remain categorized.
+- [x] Run `docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`.
+- [x] Run `docs drift --prd tasks/prd-ontology-pack-authoring-control-plane.json --json`.
+- [x] Run `ontology pack scaffold sample-domain-ontology --json`.
+- [x] Run `ontology pack validate programming-artifact-ontology --json`.
+- [x] Run all quality gates.
+- [x] Record any remaining warnings, especially pack readiness partial source-map warnings.
 
 ## Functional Requirements
 

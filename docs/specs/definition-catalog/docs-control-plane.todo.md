@@ -41,14 +41,20 @@ def:
   - [x] source-map gaps remain explicit TODOs instead of broad graph fallback
   - [x] US-008 operational graph verification recorded: selected covered source paths resolve through `source` inbound traversal, and `packages/cli/src/commands/ontology/navigation-diff.ts` stays bounded at one synthetic source node, zero edges, one path, and one `source-map-missing` diagnostic
 
-### Actionable — 실행 가능
+- [x] Ontology Pack Authoring Control Plane
+  - [x] pack scaffold command
+  - [x] pack validate command
+  - [x] docs family scaffold: spec/todo/plan/rule/test/memo
+  - [x] known pack registration candidate generation
+  - [x] source-map candidate generation for generated pack files
 
-- [ ] Ontology Pack Authoring Control Plane
-  - [ ] pack scaffold command
-  - [ ] pack validate command
-  - [ ] docs family scaffold: spec/todo/plan/rule/test/memo
-  - [ ] known pack registration candidate generation
-  - [ ] source-map candidate generation for generated pack files
+- [x] Docs And Ontology Pack Reuse Refactor
+  - [x] docs lifecycle parser, completed record detection, follow-up ranking, role matrix, and family scope logic are reusable library modules
+  - [x] ontology pack scaffold renderers, planning helpers, validate loader, runtime validation, and readiness checks are split into focused modules
+  - [x] `docs.ts` and `ontology.ts` remain command assembly surfaces for the refactored behavior
+  - [x] command assembly, readiness result, and dry-run/write conventions are documented
+
+### Actionable — 실행 가능
 
 - [ ] Graph Result Ranking And Filtering
   - [ ] rank by axis, edge reason, role, and path distance
