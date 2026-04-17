@@ -1,44 +1,26 @@
 import { existsSync } from "node:fs";
-import { readFile, stat } from "node:fs/promises";
-import { basename, dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { stat } from "node:fs/promises";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 
 import { parseCodeReferenceTarget } from "definition-catalog";
-import {
-  validateOperationalOntologyPack,
-  type OperationalOntologyPack,
-  type OperationalOntologyPackValidationIssue,
-} from "operational-ontology/pack";
+import type { OperationalOntologyPack } from "operational-ontology/pack";
 
 import { createDefinitionMarkdownAdapter } from "./docs-control-plane/adapters/definition-markdown.js";
 import type { DocumentEnvelope, DocumentSource } from "./docs-control-plane/types.js";
-import {
-  resolveKnownOntologyPack,
-  type KnownOntologyPackId,
-} from "./known-ontology-packs.js";
-
-export type OntologyPackValidateIssueLevel = "error" | "warning";
-
-export type OntologyPackValidateIssueSource =
-  | "blueprint"
-  | "docs"
-  | "file"
-  | "governance_taxonomy"
-  | "loader"
-  | "pack"
-  | "resolver"
-  | "schema"
-  | "source-map";
-
-export interface OntologyPackValidateIssue {
-  readonly level: OntologyPackValidateIssueLevel;
-  readonly source: OntologyPackValidateIssueSource;
-  readonly path: string;
-  readonly code: string;
-  readonly message: string;
-  readonly blueprintId?: string;
-  readonly details?: Record<string, unknown>;
-}
+import { loadOntologyPack } from "./ontology-pack-validate/load-pack.js";
+import { validateOntologyPackRuntime } from "./ontology-pack-validate/runtime-validation.js";
+import type {
+  OntologyPackValidateIssue,
+  OntologyPackValidateResolution,
+  OntologyPackValidateRuntimeSummary,
+} from "./ontology-pack-validate/types.js";
+export type {
+  OntologyPackValidateIssue,
+  OntologyPackValidateIssueLevel,
+  OntologyPackValidateIssueSource,
+  OntologyPackValidateResolution,
+  OntologyPackValidateRuntimeSummary,
+} from "./ontology-pack-validate/types.js";
 
 export interface OntologyPackValidateFileRef {
   readonly kind: "implementation" | "test";
@@ -124,14 +106,6 @@ export interface OntologyPackValidateReadiness {
   readonly sourceMap: OntologyPackValidateSourceMapReadiness;
 }
 
-export interface OntologyPackValidateResolution {
-  readonly kind: "file-path" | "known-pack" | "unresolved";
-  readonly packRef: string;
-  readonly knownPackId?: KnownOntologyPackId;
-  readonly filePath?: string;
-  readonly supportedFilePath?: string;
-}
-
 export interface OntologyPackValidateResult {
   readonly valid: boolean;
   readonly packRef: string;
@@ -142,10 +116,7 @@ export interface OntologyPackValidateResult {
   readonly componentSchema: OntologyPackValidateComponentSchemaSummary;
   readonly systemBindings: OntologyPackValidateSystemBindingSummary;
   readonly readiness: OntologyPackValidateReadiness;
-  readonly runtime: {
-    readonly valid: boolean;
-    readonly issueCount: number;
-  };
+  readonly runtime: OntologyPackValidateRuntimeSummary;
 }
 
 export interface ValidateOntologyPackInput {
@@ -153,15 +124,7 @@ export interface ValidateOntologyPackInput {
   readonly rootDir?: string;
 }
 
-interface LoadedPack {
-  readonly pack: OperationalOntologyPack | null;
-  readonly resolution: OntologyPackValidateResolution;
-  readonly issues: readonly OntologyPackValidateIssue[];
-}
-
 type RecordLike = Record<string, unknown>;
-
-const SUPPORTED_PACK_FILE_EXTENSIONS = new Set([".cjs", ".js", ".json", ".mjs"]);
 
 export async function validateOntologyPackFromRef(
   input: ValidateOntologyPackInput,
@@ -170,7 +133,9 @@ export async function validateOntologyPackFromRef(
   const rootDir = findWorkspaceRoot(invocationDir);
   const loaded = await loadOntologyPack(input.packRef, rootDir, invocationDir);
   const pack = loaded.pack;
-  const runtimeIssues = pack ? runtimeIssuesForPack(pack) : [];
+  const runtimeValidation = pack
+    ? validateOntologyPackRuntime(pack)
+    : { issues: [], summary: { valid: true, issueCount: 0 } };
   const fileRefs = pack ? await collectStaticFileRefs(pack, rootDir) : [];
   const fileIssues = fileReadinessIssues(fileRefs);
   const docsReadiness = pack
@@ -178,7 +143,7 @@ export async function validateOntologyPackFromRef(
     : emptyDocsReadiness(null);
   const issues = [
     ...loaded.issues,
-    ...runtimeIssues,
+    ...runtimeValidation.issues,
     ...fileIssues,
     ...docsReadiness.issues,
   ];
@@ -198,199 +163,7 @@ export async function validateOntologyPackFromRef(
       docs: docsReadiness.docs,
       sourceMap: docsReadiness.sourceMap,
     },
-    runtime: {
-      valid: runtimeIssues.every((issue) => issue.level !== "error"),
-      issueCount: runtimeIssues.length,
-    },
-  };
-}
-
-async function loadOntologyPack(
-  packRef: string,
-  rootDir: string,
-  invocationDir: string,
-): Promise<LoadedPack> {
-  const known = resolveKnownOntologyPack(packRef);
-  if (known.ok) {
-    return {
-      pack: known.pack,
-      resolution: {
-        kind: "known-pack",
-        packRef,
-        knownPackId: known.packId,
-      },
-      issues: [],
-    };
-  }
-
-  const resolvedPath = resolve(invocationDir, packRef);
-  const looksLikePath = isPathLikePackRef(packRef);
-  if (!looksLikePath && !existsSync(resolvedPath)) {
-    return {
-      pack: null,
-      resolution: { kind: "unresolved", packRef },
-      issues: [{
-        level: "error",
-        source: "resolver",
-        path: "packRef",
-        code: known.error.code,
-        message: known.error.message,
-        details: {
-          supportedPackIds: known.error.supportedPackIds,
-        },
-      }],
-    };
-  }
-
-  return loadPackFromFile(packRef, resolvedPath, rootDir);
-}
-
-async function loadPackFromFile(
-  packRef: string,
-  resolvedPath: string,
-  rootDir: string,
-): Promise<LoadedPack> {
-  const filePath = toDisplayPath(rootDir, resolvedPath);
-  const resolution: OntologyPackValidateResolution = {
-    kind: "file-path",
-    packRef,
-    filePath,
-    supportedFilePath:
-      "Supported file refs are .json pack objects or built .js/.mjs/.cjs modules exporting default or named pack.",
-  };
-
-  let fileStat;
-  try {
-    fileStat = await stat(resolvedPath);
-  } catch {
-    return {
-      pack: null,
-      resolution,
-      issues: [{
-        level: "error",
-        source: "loader",
-        path: filePath,
-        code: "pack-file-not-found",
-        message: `Pack file "${filePath}" does not exist.`,
-      }],
-    };
-  }
-
-  if (!fileStat.isFile()) {
-    return {
-      pack: null,
-      resolution,
-      issues: [{
-        level: "error",
-        source: "loader",
-        path: filePath,
-        code: "pack-ref-not-file",
-        message: `Pack file ref "${filePath}" must point to a file.`,
-      }],
-    };
-  }
-
-  const extension = extname(resolvedPath);
-  if (!SUPPORTED_PACK_FILE_EXTENSIONS.has(extension)) {
-    return {
-      pack: null,
-      resolution,
-      issues: [{
-        level: "error",
-        source: "loader",
-        path: filePath,
-        code: "unsupported-pack-file",
-        message:
-          `Unsupported pack file "${filePath}". Use .json, .js, .mjs, or .cjs; build TypeScript before validating by file path.`,
-      }],
-    };
-  }
-
-  try {
-    const payload = extension === ".json"
-      ? JSON.parse(await readFile(resolvedPath, "utf8")) as unknown
-      : await import(pathToFileURL(resolvedPath).href) as unknown;
-    const extracted = extractOperationalOntologyPack(payload);
-    if (extracted.pack) {
-      return { pack: extracted.pack, resolution, issues: extracted.issues };
-    }
-    return {
-      pack: null,
-      resolution,
-      issues: [{
-        level: "error",
-        source: "loader",
-        path: filePath,
-        code: "pack-export-missing",
-        message:
-          "Pack file must contain a pack object, a { pack } object, or a module default/named pack export.",
-      }],
-    };
-  } catch (error) {
-    return {
-      pack: null,
-      resolution,
-      issues: [{
-        level: "error",
-        source: "loader",
-        path: filePath,
-        code: "pack-file-load-failed",
-        message: error instanceof Error ? error.message : String(error),
-      }],
-    };
-  }
-}
-
-function extractOperationalOntologyPack(payload: unknown): {
-  readonly pack: OperationalOntologyPack | null;
-  readonly issues: readonly OntologyPackValidateIssue[];
-} {
-  if (isPackCandidate(payload)) {
-    return { pack: payload as OperationalOntologyPack, issues: [] };
-  }
-  if (!isRecord(payload)) return { pack: null, issues: [] };
-
-  const preferred = [payload["default"], payload["pack"], payload["ontologyPack"]];
-  for (const candidate of preferred) {
-    if (isPackCandidate(candidate)) {
-      return { pack: candidate as OperationalOntologyPack, issues: [] };
-    }
-  }
-
-  const candidates = Object.values(payload).filter(isPackCandidate);
-  if (candidates.length === 1) {
-    return { pack: candidates[0] as OperationalOntologyPack, issues: [] };
-  }
-  if (candidates.length > 1) {
-    return {
-      pack: null,
-      issues: [{
-        level: "error",
-        source: "loader",
-        path: "module.exports",
-        code: "pack-export-ambiguous",
-        message:
-          "Pack module exports multiple pack-like objects; export the target as default or named pack.",
-      }],
-    };
-  }
-  return { pack: null, issues: [] };
-}
-
-function runtimeIssuesForPack(pack: OperationalOntologyPack): readonly OntologyPackValidateIssue[] {
-  return validateOperationalOntologyPack(pack).issues.map(runtimeIssueToCliIssue);
-}
-
-function runtimeIssueToCliIssue(
-  issue: OperationalOntologyPackValidationIssue,
-): OntologyPackValidateIssue {
-  return {
-    level: issue.level,
-    source: issue.source,
-    path: issue.path,
-    code: issue.code,
-    message: issue.message,
-    ...(issue.blueprintId ? { blueprintId: issue.blueprintId } : {}),
+    runtime: runtimeValidation.summary,
   };
 }
 
@@ -728,22 +501,6 @@ function staticFilePathFromRef(ref: string): string | null {
   const parsed = parseCodeReferenceTarget(ref.replaceAll("\\", "/"));
   if (!parsed) return null;
   return parsed.codePath;
-}
-
-function isPathLikePackRef(packRef: string): boolean {
-  return packRef.includes("/")
-    || packRef.includes("\\")
-    || packRef.startsWith(".")
-    || SUPPORTED_PACK_FILE_EXTENSIONS.has(extname(packRef));
-}
-
-function isPackCandidate(value: unknown): value is OperationalOntologyPack {
-  return isRecord(value)
-    && typeof value["packId"] === "string"
-    && isRecord(value["schema"])
-    && Array.isArray(value["schema"]["axes"])
-    && Array.isArray(value["schema"]["taxonomies"])
-    && Array.isArray(value["schema"]["relationCategories"]);
 }
 
 function isRecord(value: unknown): value is RecordLike {

@@ -211,13 +211,13 @@ Compatibility contract:
 **Description:** As a pack authoring maintainer, I want pack reference loading and runtime validation separated from readiness checks so pack validate can be extended safely.
 
 **Acceptance Criteria:**
-- [ ] Create a loader module for known pack id, JSON file, and built JS/MJS/CJS module loading.
-- [ ] Preserve default/named pack export detection.
-- [ ] Preserve ambiguous export diagnostics.
-- [ ] Create a runtime validation module wrapping `validateOperationalOntologyPack()`.
-- [ ] Preserve issue shape and runtime summary.
-- [ ] Add focused tests for loader behavior if not already covered by command tests.
-- [ ] `ontology pack validate <pack-ref>` behavior remains equivalent.
+- [x] Create a loader module for known pack id, JSON file, and built JS/MJS/CJS module loading.
+- [x] Preserve default/named pack export detection.
+- [x] Preserve ambiguous export diagnostics.
+- [x] Create a runtime validation module wrapping `validateOperationalOntologyPack()`.
+- [x] Preserve issue shape and runtime summary.
+- [x] Add focused tests for loader behavior if not already covered by command tests.
+- [x] `ontology pack validate <pack-ref>` behavior remains equivalent.
 
 ### US-011: Extract Ontology Pack Readiness Checks
 
