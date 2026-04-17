@@ -1,5 +1,10 @@
-import { isAbsolute, relative, resolve } from "node:path";
+import { resolve } from "node:path";
 
+import { createKnownPackCandidate } from "./ontology-pack-scaffold/known-pack-candidate.js";
+import {
+  detectConflictingOutputPaths,
+  resolveSafeRepoPath,
+} from "./ontology-pack-scaffold/paths.js";
 import {
   renderComponentSchemaFile,
   renderSystemBindingFile,
@@ -13,6 +18,7 @@ import {
   renderTodoDoc,
 } from "./ontology-pack-scaffold/render-docs.js";
 import { renderPackTestFile } from "./ontology-pack-scaffold/render-tests.js";
+import { createOntologyPackSourceMapPlan } from "./ontology-pack-scaffold/source-map-candidates.js";
 
 export type OntologyPackScaffoldMode = "dry-run" | "write";
 
@@ -246,7 +252,6 @@ export interface OntologyPackScaffoldCliPlan extends OntologyPackScaffoldPlan {
 
 const DEFAULT_IMPLEMENTATION_PACKAGE = "operational-ontology";
 const DEFAULT_DOCS_DIR = "docs/specs/operational-ontology";
-const KNOWN_PACKS_TARGET_PATH = "packages/cli/src/lib/known-ontology-packs.ts";
 const SAFE_ENTITY_ID_RE = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const VALUE_FLAGS = new Set([
   "docs-dir",
@@ -534,73 +539,44 @@ export function createOntologyPackScaffoldPlan(
     ...requiredDefinitionDocFiles,
     ...selectedOptionalDefinitionDocFiles,
   ];
-  const sourceMapCandidates: OntologyPackSourceMapCandidate[] = [
-    sourceMapCandidate({
+  const sourceMapPlan = createOntologyPackSourceMapPlan({
+    primaryDoc: {
       docId: definitionId,
       docPath: docs.spec,
-      sourcePath: componentSchemaPath,
-      sourceRole: "component-schema",
-    }),
-    sourceMapCandidate({
-      docId: definitionId,
-      docPath: docs.spec,
-      sourcePath: systemBindingPath,
-      sourceRole: "system-binding",
-    }),
-    sourceMapCandidate({
-      docId: definitionId,
-      docPath: docs.spec,
-      sourcePath: testPath,
-      sourceRole: "test",
-    }),
-    ...(requestedOptionalDocSet.has("test")
-      ? [sourceMapCandidate({
-        docId: testDocId,
-        docPath: docs.test,
-        sourcePath: testPath,
-        sourceRole: "test",
-      })]
-      : []),
-  ];
-  const sourceMapFrontmatterCandidates: OntologyPackSourceMapFrontmatterCandidate[] = [
-    {
-      docId: definitionId,
-      docPath: docs.spec,
-      frontmatterKey: "sources",
-      candidateKind: "suggested-doc-edit",
-      targetKind: "definition-doc-frontmatter",
-      applyMode: "candidate-only",
-      sources: [componentSchemaPath, systemBindingPath, testPath],
-      yaml: renderSourcesYaml([componentSchemaPath, systemBindingPath, testPath]),
+      sources: [
+        {
+          sourcePath: componentSchemaPath,
+          sourceRole: "component-schema",
+        },
+        {
+          sourcePath: systemBindingPath,
+          sourceRole: "system-binding",
+        },
+        {
+          sourcePath: testPath,
+          sourceRole: "test",
+        },
+      ],
     },
-    ...(requestedOptionalDocSet.has("test")
+    additionalDocs: requestedOptionalDocSet.has("test")
       ? [{
         docId: testDocId,
         docPath: docs.test,
-        frontmatterKey: "sources" as const,
-        candidateKind: "suggested-doc-edit" as const,
-        targetKind: "definition-doc-frontmatter" as const,
-        applyMode: "candidate-only" as const,
-        sources: [testPath],
-        yaml: renderSourcesYaml([testPath]),
+        sources: [{
+          sourcePath: testPath,
+          sourceRole: "test",
+        }],
       }]
-      : []),
-  ];
-  const sourceMapGuidance = createSourceMapGuidance(
-    definitionId,
-    sourceMapCandidates.map((candidate) => candidate.sourcePath),
-  );
-  const knownPackCandidate: OntologyPackKnownPackCandidate = {
-    targetPath: KNOWN_PACKS_TARGET_PATH,
+      : [],
+  });
+  const sourceMapCandidates = sourceMapPlan.candidates;
+  const sourceMapFrontmatterCandidates = sourceMapPlan.frontmatterCandidates;
+  const sourceMapGuidance = sourceMapPlan.guidance;
+  const knownPackCandidate = createKnownPackCandidate({
     packId: rawPackId,
-    importPath: implementationPackage,
-    exportSymbolName: symbols.packConstantName,
-    importName: symbols.packConstantName,
-    moduleSpecifier: implementationPackage,
-    registryEntry: `"${rawPackId}": ${symbols.packConstantName}`,
-    registrationMode: "manual",
-    applyMode: "candidate-only",
-  };
+    implementationPackage,
+    symbols,
+  });
   const outputPaths = [
     ...componentSchemaFiles.map((file) => file.path),
     ...systemBindingFiles.map((file) => file.path),
@@ -849,73 +825,6 @@ function normalizeOptionalDocSelection(
   return OPTIONAL_DEFINITION_DOC_TYPES.filter((docType) => requested.has(docType));
 }
 
-function resolveSafeRepoPath(input: {
-  readonly rootDir: string;
-  readonly field: string;
-  readonly inputPath: string;
-  readonly fallbackPath: string;
-  readonly diagnostics: OntologyPackScaffoldDiagnostic[];
-}): string {
-  const value = input.inputPath.trim().replaceAll("\\", "/");
-  if (value.length === 0 || value.includes("\0")) {
-    input.diagnostics.push(unsafePathDiagnostic(input.field, input.inputPath));
-    return normalizeRepoPath(input.fallbackPath);
-  }
-
-  const resolved = resolve(input.rootDir, value);
-  const repoRelativePath = relative(input.rootDir, resolved);
-  if (
-    repoRelativePath.length === 0
-    || repoRelativePath === ".."
-    || repoRelativePath.startsWith(`..${"/"}`)
-    || repoRelativePath.startsWith(`..${"\\"}`)
-    || isAbsolute(repoRelativePath)
-  ) {
-    input.diagnostics.push(unsafePathDiagnostic(input.field, input.inputPath));
-    return normalizeRepoPath(input.fallbackPath);
-  }
-
-  return normalizeRepoPath(repoRelativePath);
-}
-
-function unsafePathDiagnostic(
-  field: string,
-  value: string,
-): OntologyPackScaffoldDiagnostic {
-  return {
-    severity: "error",
-    code: "unsafe-path",
-    message:
-      `Path option "${field}" must resolve inside the repository and must not be empty.`,
-    field,
-    value,
-  };
-}
-
-function normalizeRepoPath(value: string): string {
-  return value.replaceAll("\\", "/").replace(/\/+/g, "/").replace(/\/$/, "");
-}
-
-function detectConflictingOutputPaths(
-  files: readonly Pick<OntologyPackScaffoldPlannedFile, "path" | "role">[],
-): OntologyPackScaffoldDiagnostic[] {
-  const byPath = new Map<string, string[]>();
-  for (const file of files) {
-    const roles = byPath.get(file.path) ?? [];
-    roles.push(file.role);
-    byPath.set(file.path, roles);
-  }
-  return [...byPath.entries()]
-    .filter(([, roles]) => roles.length > 1)
-    .map(([path, roles]) => ({
-      severity: "error" as const,
-      code: "conflicting-output-path" as const,
-      message: `Output path "${path}" is planned for multiple scaffold artifacts.`,
-      path,
-      details: { roles },
-    }));
-}
-
 function toSafeKebabFallback(value: string): string {
   const safe = value
     .trim()
@@ -930,50 +839,3 @@ function toSafeKebabFallback(value: string): string {
 function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
-
-function renderSourcesYaml(sources: readonly string[]): string {
-  return [
-    "sources:",
-    ...sources.map((source) => `  - ${source}`),
-  ].join("\n");
-}
-
-function sourceMapCandidate(
-  input: Omit<
-    OntologyPackSourceMapCandidate,
-    "applyMode" | "candidateKind" | "frontmatterKey" | "sourceFileKind"
-  >,
-): OntologyPackSourceMapCandidate {
-  return {
-    ...input,
-    frontmatterKey: "sources",
-    sourceFileKind: "generated-file",
-    candidateKind: "suggested-doc-edit",
-    applyMode: "candidate-only",
-  };
-}
-
-function createSourceMapGuidance(
-  definitionId: string,
-  sourcePaths: readonly string[],
-): OntologyPackSourceMapGuidance {
-  const uniqueSourcePaths = [...new Set(sourcePaths)];
-  return {
-    summary:
-      "Review the sources frontmatter candidates, run qa-sdk def sync, then verify source coverage with def find-by-file and docs graph.",
-    findByFileCommands: uniqueSourcePaths.map((sourcePath) =>
-      `qa-sdk def find-by-file ${sourcePath}`
-    ),
-    docsGraphCommands: [
-      `qa-sdk docs graph ${definitionId} --axis source`,
-      ...uniqueSourcePaths.map((sourcePath) =>
-        `qa-sdk docs graph ${sourcePath} --axis source`
-      ),
-    ],
-    notes: [
-      "Source-map candidates use repository-relative normalized paths.",
-      "Generated TypeScript files do not receive @def.boundary or @def.doc source comments by default.",
-    ],
-  };
-}
-
