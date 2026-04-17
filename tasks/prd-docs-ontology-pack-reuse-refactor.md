@@ -147,12 +147,12 @@ Compatibility contract:
 **Description:** As a docs control-plane maintainer, I want role coverage and family-only scope logic reusable outside command assembly so future lifecycle inventory commands do not duplicate status behavior.
 
 **Acceptance Criteria:**
-- [ ] Keep or move family-only scope logic into a focused reusable module if not already isolated.
-- [ ] Extract role matrix read-model assembly from command-layer code.
-- [ ] Preserve active archive/session exclusion defaults.
-- [ ] Preserve `roleCoverage` JSON shape.
-- [ ] Add focused tests for same-family role coverage and linked role coverage.
-- [ ] `docs status`, `docs collect --family-only`, and `docs prd sync-completion --family-only` continue to pass existing tests.
+- [x] Keep or move family-only scope logic into a focused reusable module if not already isolated.
+- [x] Extract role matrix read-model assembly from command-layer code.
+- [x] Preserve active archive/session exclusion defaults.
+- [x] Preserve `roleCoverage` JSON shape.
+- [x] Add focused tests for same-family role coverage and linked role coverage.
+- [x] `docs status`, `docs collect --family-only`, and `docs prd sync-completion --family-only` continue to pass existing tests.
 
 ### US-006: Slim Docs Command Assembly
 

@@ -162,11 +162,12 @@
         "`node packages/cli/dist/index.js ontology pack validate programming-artifact-ontology --json`"
       ],
       "priority": 5,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "US-005 verified family-only scope is already isolated in packages/cli/src/lib/docs-control-plane/family-scope.ts and role matrix assembly is delegated to packages/cli/src/lib/docs-control-plane/role-matrix.ts from docs.ts. Added focused role-matrix.test.ts coverage for same-family role coverage, linked composition/refinement/trace role coverage, and active archive/session exclusions, plus family-scope.test.ts coverage for active family scope defaults and includeSession behavior. Required US-005 gates passed; the topdown lifecycle drift command still reports existing markdown unchecked-after-json-complete warnings while exiting 0, and programming-artifact pack validate still reports its existing source-map-missing warning.",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-006",
@@ -469,6 +470,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-17T02:25:55.466Z"
+    "updatedAt": "2026-04-17T02:32:44.981Z"
   }
 }
