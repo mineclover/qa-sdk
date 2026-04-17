@@ -931,6 +931,7 @@ Track completed RLSC text occupancy work.
     await cliDocs(["status", "tasks/checkout-prd", "--root", workspace, "--family-only", "--json"]);
 
     const result = parsedOutput<{
+      nextFollowUp: null | { kind: string; title: string; path: string };
       completedRecords: Array<{
         state: string;
         kind: string;
@@ -954,6 +955,7 @@ Track completed RLSC text occupancy work.
         passedStoryCount: 1,
       }),
     ]);
+    expect(result.nextFollowUp).toBeNull();
     expect(result.nextFollowUps).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -963,6 +965,60 @@ Track completed RLSC text occupancy work.
         }),
       ]),
     );
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["status", "tasks/checkout-prd", "--root", workspace, "--family-only"]);
+
+    const text = output();
+    expect(text).toContain("next follow-up: none");
+    expect(text).toContain("completed records (1):");
+    expect(text).toContain("[completed-record] Checkout PRD (tasks/checkout-prd.md paired=tasks/checkout-prd.json)");
+    expect(text).not.toContain("additional follow-ups");
+  });
+
+  it("includes completed records in family-only collect without promoting them to active work", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs(["collect", "tasks/checkout-prd", "--root", workspace, "--family-only", "--json"]);
+
+    const result = parsedOutput<{
+      nextFollowUp: null | { kind: string; title: string; path: string };
+      nextFollowUps: Array<{ kind: string; title: string; path: string }>;
+      completedRecords: Array<{
+        state: string;
+        kind: string;
+        documentId: string;
+        path: string;
+        pairedPath?: string;
+      }>;
+      familyMembers: Array<{ stableId: string; kind: string; path: string }>;
+    }>();
+
+    expect(result.familyMembers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          stableId: "tasks/checkout-prd",
+          kind: "prd",
+          path: "tasks/checkout-prd.md",
+        }),
+        expect.objectContaining({
+          stableId: "tasks/checkout-prd",
+          kind: "ralph-prd-json",
+          path: "tasks/checkout-prd.json",
+        }),
+      ]),
+    );
+    expect(result.completedRecords).toEqual([
+      expect.objectContaining({
+        state: "completed-record",
+        kind: "prd",
+        documentId: "tasks/checkout-prd",
+        path: "tasks/checkout-prd.md",
+        pairedPath: "tasks/checkout-prd.json",
+      }),
+    ]);
+    expect(result.nextFollowUp).toBeNull();
+    expect(result.nextFollowUps).toEqual([]);
   });
 
   it("exposes docs graph through root usage, dispatch, and command help", async () => {

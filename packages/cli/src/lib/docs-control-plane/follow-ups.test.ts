@@ -143,6 +143,53 @@ describe("docs-control-plane follow-up candidates", () => {
     expect(followUps.map((followUp) => followUp.title)).not.toContain("Completed-record open story.");
     expect(followUps.map((followUp) => followUp.title)).not.toContain("Completed-record open item.");
   });
+
+  it("does not let completed records affect next follow-up priority", async () => {
+    const completedPrd = document({
+      adapterId: "ralph-prd-json",
+      kind: "ralph-prd-json",
+      stableId: "tasks/a-completed-prd",
+      path: "tasks/a-completed-prd.json",
+      metadata: { name: "Completed PRD" },
+      tasks: [
+        {
+          id: "US-COMPLETE",
+          title: "Completed-record open story.",
+          status: "pending",
+          metadata: {},
+        },
+      ],
+    });
+    const activePrd = document({
+      adapterId: "ralph-prd-json",
+      kind: "ralph-prd-json",
+      stableId: "tasks/z-active-prd",
+      path: "tasks/z-active-prd.json",
+      metadata: { name: "Active PRD" },
+      tasks: [
+        {
+          id: "US-ACTIVE",
+          title: "Active story.",
+          status: "pending",
+          metadata: {},
+        },
+      ],
+    });
+
+    const followUps = await findNextFollowUps({
+      rootDir: "/repo",
+      documents: [completedPrd, activePrd],
+      completedRecords: [completedRecord(completedPrd)],
+    });
+
+    expect(followUps[0]).toMatchObject({
+      documentId: "tasks/z-active-prd",
+      title: "Active story.",
+    });
+    expect(followUps.map((followUp) => followUp.title)).toEqual([
+      "Active story.",
+    ]);
+  });
 });
 
 function document(input: Omit<DocumentEnvelopeInput, "rawSource">): DocumentEnvelope {
