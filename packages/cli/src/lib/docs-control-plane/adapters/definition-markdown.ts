@@ -19,6 +19,7 @@ import {
   normalizeDocumentEnvelope,
 } from "../normalize.js";
 import { matchesDocumentQuery } from "../query.js";
+import { classifyTodoHeading, type TodoFollowUpCategory } from "../todo-lifecycle.js";
 import type {
   DocumentAdapter,
   DocumentCollectionQuery,
@@ -186,6 +187,7 @@ function buildEnvelope(
     body,
   );
   const overview = summary.overview.join("\n\n");
+  const todoCategories = parsed.kind === "todo" ? todoFollowUpCategories(body) : [];
   const metadata: DocumentMetadata = {
     defId: def.id,
     title: parsed.title,
@@ -204,6 +206,12 @@ function buildEnvelope(
     ...(def.revision !== undefined ? { revision: def.revision } : {}),
     sourcePath: parsed.relativePath,
     documentKind: parsed.kind,
+    ...(todoCategories.length > 0
+      ? {
+        followUpCategory: todoCategories[0],
+        followUpCategories: todoCategories,
+      }
+      : {}),
     ...(summary.purpose ? { purpose: summary.purpose } : {}),
     ...(overview ? { overview } : {}),
   };
@@ -288,6 +296,25 @@ function toDocumentSections(
     });
   });
   return sections;
+}
+
+function todoFollowUpCategories(body: string): readonly TodoFollowUpCategory[] {
+  const categories = new Set<TodoFollowUpCategory>();
+  let currentCategory = classifyTodoHeading("").category;
+  for (const line of body.split(/\r?\n/)) {
+    const heading = line.match(/^(#{2,6})\s+(.+?)\s*$/);
+    if (heading) {
+      const classified = classifyTodoHeading(heading[2]?.trim() ?? "");
+      if (classified.category !== "uncategorized") {
+        currentCategory = classified.category;
+      }
+      continue;
+    }
+    if (/^\s*[-*]\s+\[\s\]\s+/.test(line)) {
+      categories.add(currentCategory);
+    }
+  }
+  return [...categories];
 }
 
 function toDocumentDiagnostic(

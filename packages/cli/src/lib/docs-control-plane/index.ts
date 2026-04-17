@@ -69,6 +69,11 @@ export {
   rankDocumentGraphTraversal,
 } from "./graph-rank.js";
 export {
+  DOCUMENT_GRAPH_FILTER_ALGORITHM,
+  filterDocumentGraphRanking,
+  normalizeDocumentGraphViewFilters,
+} from "./graph-filter.js";
+export {
   collectDocumentGraphTraversalDocuments,
   defaultDocumentGraphTraversalNodeReason,
 } from "./graph-scope.js";
@@ -144,6 +149,13 @@ export type {
   DocumentGraphRankStrength,
   DocumentGraphRankingResult,
 } from "./graph-rank.js";
+export type {
+  DocumentGraphFilterCounts,
+  DocumentGraphFilterResult,
+  DocumentGraphViewFilterInput,
+  FilteredDocumentGraphRanking,
+  NormalizedDocumentGraphViewFilters,
+} from "./graph-filter.js";
 export type {
   DocumentGraphTraversalDocumentScope,
 } from "./graph-scope.js";

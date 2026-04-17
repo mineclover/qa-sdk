@@ -10,10 +10,10 @@ describe("top-level usage contracts", () => {
     expect(USAGE).toContain("qa-sdk obs stats [--vault <name>]");
     expect(USAGE).toContain("qa-sdk docs status [doc-id|path] [--family-only] [--include-session] [--json]");
     expect(USAGE).toContain("qa-sdk docs collect <doc-id|path> [--graph] [--family-only] [--include-session]");
-    expect(USAGE).toContain("qa-sdk docs graph <target> [--axis <csv>] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]");
+    expect(USAGE).toContain("qa-sdk docs graph <target> [--axis <csv>] [--filter-axis <csv>]");
     expect(USAGE).toContain("qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]");
     expect(USAGE).toContain("qa-sdk docs drift [--prd <file>] [--include-session] [--json]");
-    expect(USAGE).toContain("qa-sdk docs prd context <topic|doc-id> [--family-only] [--include-session] [--json]");
+    expect(USAGE).toContain("qa-sdk docs prd context <topic|doc-id> [--family-only] [--include-session] [--kind <csv>]");
     expect(USAGE).toContain("qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]");
     expect(USAGE).toContain("qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]");
     expect(USAGE).toContain("qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--family-only] [--include-session] [--json]");
@@ -151,6 +151,7 @@ describe("top-level usage contracts", () => {
       const docsGraphHelp = stdout.join("\n");
       expect(docsGraphHelp).toContain("qa-sdk docs graph");
       expect(docsGraphHelp).toContain("--axis");
+      expect(docsGraphHelp).toContain("--filter-axis");
       expect(docsGraphHelp).toContain("--preset");
 
       stdout.length = 0;

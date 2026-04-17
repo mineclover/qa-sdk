@@ -71,6 +71,19 @@ sources, metadata source refs, PRD/session paths, and artifact evidence refs).
 It is intentionally broader than, and distinct from, `qa-sdk def find-by-file`,
 which reads DB-owned `code_references` explicit source maps only.
 
+## Result view filters
+
+Graph filters are post-traversal view filters. `--axis` selects the axes used
+while traversing the graph; `--filter-axis` filters the ranked/filtered result
+view after traversal has already completed. The raw traversal fields (`nodes`,
+`edges`, and `paths`) stay unchanged so operators can audit the full retrieval
+set.
+
+`docs graph`, `docs collect --graph`, and `docs prd context` support
+`--kind`, `--role`, `--filter-axis`, and `--follow-up-category` as comma
+separated filters. Active ranked/filtered views exclude archive documents by
+default; pass `--include-archive` to include archived documents explicitly.
+
 이 story는 REST endpoint, remote service, database migration, 새 artifact
 vocabulary를 추가하지 않는다.
 

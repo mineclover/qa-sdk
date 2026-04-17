@@ -23,7 +23,9 @@ import {
   createRalphPrdJsonAdapter,
   createRalphSessionAdapter,
   detectCompletedRecords,
+  filterDocumentGraphRanking,
   findNextFollowUps,
+  normalizeDocumentGraphViewFilters,
   type DocumentAdapter,
   type DocumentDiagnostic,
   type DocumentEnvelope,
@@ -45,7 +47,10 @@ import {
   traverseDocumentGraph,
   type DocumentGraphTraversalInput,
   type DocumentGraphTraversalResult,
+  type DocumentGraphFilterResult,
+  type DocumentGraphViewFilterInput,
   type DocumentGraphRankingResult,
+  type NormalizedDocumentGraphViewFilters,
   type DocumentRoleMatrix,
   type CompletedRecordState,
   DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
@@ -173,8 +178,11 @@ interface DocsGraphCliResult {
   readonly paths: DocumentGraphTraversalResult["paths"];
   readonly roleGroups: DocumentGraphTraversalResult["roleGroups"];
   readonly missingRoles: DocumentGraphTraversalResult["missingRoles"];
+  readonly filters: DocumentGraphFilterResult["filters"];
+  readonly filtering: DocumentGraphFilterResult;
   readonly ranking: DocumentGraphRankingResult;
   readonly rankedNodes: DocumentGraphRankingResult["rankedNodes"];
+  readonly filteredNodes: DocumentGraphRankingResult["rankedNodes"];
   readonly counts: {
     readonly nodes: number;
     readonly edges: number;
@@ -315,11 +323,11 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
     title: "Usage",
     lines: [
       "qa-sdk docs status [doc-id|path] [--family-only] [--include-session] [--json]",
-      "qa-sdk docs collect <doc-id|path> [--graph] [--family-only] [--include-session] [--axis <csv>] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
-      "qa-sdk docs graph <target> [--axis <csv>] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
+      "qa-sdk docs collect <doc-id|path> [--graph] [--family-only] [--include-session] [--axis <csv>] [--filter-axis <csv>] [--kind <csv>] [--role <csv>] [--follow-up-category <csv>] [--include-archive] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
+      "qa-sdk docs graph <target> [--axis <csv>] [--filter-axis <csv>] [--kind <csv>] [--role <csv>] [--follow-up-category <csv>] [--include-archive] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
       "qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]",
       "qa-sdk docs drift [--prd <file>] [--include-session] [--json]",
-      "qa-sdk docs prd context <topic|doc-id> [--family-only] [--include-session] [--json]",
+      "qa-sdk docs prd context <topic|doc-id> [--family-only] [--include-session] [--kind <csv>] [--role <csv>] [--filter-axis <csv>] [--follow-up-category <csv>] [--include-archive] [--json]",
       "qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]",
       "qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]",
       "qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--family-only] [--include-session] [--json]",
@@ -338,6 +346,11 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "--family-only                limit inventory commands to same-family role docs and direct module children",
       "--include-session            include transient .ralph-tui session state in family/drift/completion checks",
       "--axis <csv>                 graph traversal axes: composition, refinement, dependency, constraint, trace, source, evidence, role, context",
+      "--filter-axis <csv>          filter post-traversal ranked/filtered views by traversal axis; does not change traversal",
+      "--kind <csv>                 filter post-traversal graph views by document/node kind",
+      "--role <csv>                 filter post-traversal graph views by document role metadata",
+      "--follow-up-category <csv>   filter post-traversal graph views by follow-up category metadata",
+      "--include-archive            include archived documents in post-traversal graph views",
       "--direction out|in|both      graph traversal direction",
       `--depth <n>                  graph traversal depth (default ${DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH}, max ${MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH})`,
       `--limit <n>                  maximum graph nodes to return (default ${DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT}, max ${MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT})`,
@@ -385,7 +398,18 @@ const RESOLUTION_KIND_PRIORITY: Readonly<Record<string, number>> = {
   "ralph-session": 8,
   "activation-evidence": 9,
 };
-const COLLECT_GRAPH_FLAG_NAMES = new Set(["axis", "direction", "depth", "limit", "preset"]);
+const COLLECT_GRAPH_FLAG_NAMES = new Set([
+  "axis",
+  "filter-axis",
+  "kind",
+  "role",
+  "follow-up-category",
+  "include-archive",
+  "direction",
+  "depth",
+  "limit",
+  "preset",
+]);
 const STATUS_TRAVERSAL_AXES = ["role", "composition"] as const satisfies readonly TraversalAxis[];
 const PRD_CONTEXT_TRAVERSAL_AXES = [
   "role",
@@ -582,12 +606,19 @@ async function cmdCollect(
     process.exitCode = 1;
     return;
   }
+  const graphFilters = graphInput ? parseDocsGraphViewFilters(flags, "docs.collect") : {};
+  if (isStructuredDocsError(graphFilters)) {
+    printStructuredError(graphFilters, json);
+    process.exitCode = 1;
+    return;
+  }
 
   const result = await buildCollectResult(
     documents,
     options.rootDir,
     target,
     graphInput,
+    graphFilters,
     scopeOptionsFromFlags(flags),
   );
   if (json) {
@@ -649,7 +680,13 @@ async function cmdGraph(
     includeContext: parsed.includeContext,
   });
   const traversal = traverseDocumentGraph(index, parsed);
-  const result = toDocsGraphCliResult(traversal);
+  const filters = parseDocsGraphViewFilters(flags, "docs.graph");
+  if (isStructuredDocsError(filters)) {
+    printStructuredError(filters, json);
+    process.exitCode = 1;
+    return;
+  }
+  const result = toDocsGraphCliResult(traversal, filters);
 
   if (json) {
     printJson(result);
@@ -750,6 +787,32 @@ function parseDocsGraphIntegerFlag(
   return value;
 }
 
+function parseDocsGraphViewFilters(
+  flags: Readonly<Record<string, readonly string[]>>,
+  operation = "docs.graph",
+): DocumentGraphViewFilterInput | StructuredDocsError {
+  const filterAxes: TraversalAxis[] = [];
+  for (const axis of pickAll(flags, "filter-axis", [])) {
+    if (!isTraversalAxis(axis)) {
+      return docsGraphError(
+        operation,
+        "unknown-docs-graph-filter-axis",
+        `Unknown docs graph filter axis: ${axis}.`,
+        `Use one of: ${CANONICAL_TRAVERSAL_AXES.join(", ")}. --axis selects traversal axes; --filter-axis filters the post-traversal result view.`,
+      );
+    }
+    filterAxes.push(axis);
+  }
+
+  return {
+    kinds: pickAll(flags, "kind", []),
+    roles: pickAll(flags, "role", []),
+    axes: filterAxes,
+    followUpCategories: pickAll(flags, "follow-up-category", []),
+    includeArchive: hasFlag(flags, "include-archive"),
+  };
+}
+
 function docsGraphError(
   operation: string,
   code: string,
@@ -808,8 +871,10 @@ function isStructuredDocsError(value: unknown): value is StructuredDocsError {
 
 function toDocsGraphCliResult(
   result: DocumentGraphTraversalResult,
+  filters: DocumentGraphViewFilterInput = {},
 ): DocsGraphCliResult {
-  const ranking = rankDocumentGraphTraversal(result);
+  const ranked = rankDocumentGraphTraversal(result);
+  const { ranking, filtering } = filterDocumentGraphRanking(ranked, filters);
   return {
     input: result.input,
     targetResolution: result.targetResolution,
@@ -819,8 +884,11 @@ function toDocsGraphCliResult(
     paths: result.paths,
     roleGroups: result.roleGroups,
     missingRoles: result.missingRoles,
+    filters: filtering.filters,
+    filtering,
     ranking,
     rankedNodes: ranking.rankedNodes,
+    filteredNodes: filtering.filteredNodes,
     counts: {
       nodes: result.nodeCount,
       edges: result.edgeCount,
@@ -934,7 +1002,7 @@ async function cmdPrd(
   const target = positional.slice(1).join(" ").trim();
 
   if (action !== "context" && action !== "scaffold" && action !== "to-ralph-json" && action !== "sync-completion") {
-    console.error("Usage: qa-sdk docs prd context <topic|doc-id> [--family-only] [--include-session] [--json]");
+    console.error("Usage: qa-sdk docs prd context <topic|doc-id> [--family-only] [--include-session] [--kind <csv>] [--role <csv>] [--filter-axis <csv>] [--follow-up-category <csv>] [--include-archive] [--json]");
     console.error("Usage: qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]");
     console.error("Usage: qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]");
     console.error("Usage: qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--family-only] [--include-session] [--json]");
@@ -1061,10 +1129,18 @@ async function cmdPrd(
     return;
   }
 
+  const graphFilters = parseDocsGraphViewFilters(flags, `docs.prd.${action}`);
+  if (isStructuredDocsError(graphFilters)) {
+    printStructuredError(graphFilters, json);
+    process.exitCode = 1;
+    return;
+  }
+
   const context = await buildPrdAuthoringContext(
     documents,
     options.rootDir,
     target,
+    graphFilters,
     scopeOptionsFromFlags(flags),
   );
 
@@ -1198,6 +1274,7 @@ async function buildCollectResult(
   rootDir: string,
   target: string,
   graphInput: DocumentGraphTraversalInput | undefined,
+  graphFilters: DocumentGraphViewFilterInput = {},
   scopeOptions: DocumentCommandScopeOptions = {},
 ): Promise<CollectResult> {
   const status = await buildStatusResult(documents, rootDir, target, scopeOptions);
@@ -1224,21 +1301,29 @@ async function buildCollectResult(
     : resolvedSource
       ? resolvedSource.documents
       : [];
+  const graphResult = graphInput && (familyOnlyScope ?? graphScope)
+    ? toDocsGraphCliResult((familyOnlyScope ?? graphScope)!.traversal, graphFilters)
+    : undefined;
+  const viewDocuments = graphResult && (familyOnlyScope ?? graphScope)
+    ? collectDocumentsForGraphView(
+      documents,
+      (familyOnlyScope ?? graphScope)!.traversal,
+      graphResult.filtering.filteredNodeIds,
+    ).documents
+    : scopedDocuments;
 
   return {
     ...status,
-    familyMembers: scopedDocuments.map(summarizeDocument),
-    metadata: scopedDocuments.map((document) => ({
+    familyMembers: viewDocuments.map(summarizeDocument),
+    metadata: viewDocuments.map((document) => ({
       stableId: document.stableId,
       metadata: document.metadata,
     })),
-    links: scopedDocuments.flatMap((document) => document.links),
-    sources: scopedDocuments.flatMap((document) => document.sources),
-    tasks: scopedDocuments.flatMap((document) => document.tasks),
-    evidence: scopedDocuments.flatMap((document) => document.evidence),
-    ...(graphInput && (familyOnlyScope ?? graphScope)
-      ? { graph: toDocsGraphCliResult((familyOnlyScope ?? graphScope)!.traversal) }
-      : {}),
+    links: viewDocuments.flatMap((document) => document.links),
+    sources: viewDocuments.flatMap((document) => document.sources),
+    tasks: viewDocuments.flatMap((document) => document.tasks),
+    evidence: viewDocuments.flatMap((document) => document.evidence),
+    ...(graphResult ? { graph: graphResult } : {}),
   };
 }
 
@@ -1246,6 +1331,7 @@ async function buildPrdAuthoringContext(
   documents: readonly DocumentEnvelope[],
   rootDir: string,
   target: string,
+  graphFilters: DocumentGraphViewFilterInput = {},
   scopeOptions: DocumentCommandScopeOptions = {},
 ): Promise<PrdAuthoringContext> {
   const resolved = resolveDocument(documents, target);
@@ -1262,15 +1348,27 @@ async function buildPrdAuthoringContext(
     })
     : undefined;
   const relatedScope = familyOnlyScope ?? graphScope;
-  const relatedDocuments = relatedScope
-    ? relatedScope.documents
+  const graphResult = relatedScope
+    ? toDocsGraphCliResult(relatedScope.traversal, graphFilters)
+    : undefined;
+  const relatedViewScope = graphResult && relatedScope
+    ? collectDocumentsForGraphView(
+      documents,
+      relatedScope.traversal,
+      graphResult.filtering.filteredNodeIds,
+    )
+    : relatedScope;
+  const relatedDocuments = relatedViewScope
+    ? relatedViewScope.documents
     : [];
   const topicTokens = prdTopicTokens(target, resolved?.document);
+  const normalizedFilters = normalizeDocumentGraphViewFilters(graphFilters);
   const topicDocuments = resolved
     ? []
     : documents.filter((document) =>
       matchesPrdTopic(document, target, topicTokens)
       && prdTopicDocumentAllowed(document, scopeOptions)
+      && documentMatchesGraphViewFilters(document, normalizedFilters, false)
     );
   const scopedDocuments = uniqueDocuments([...relatedDocuments, ...topicDocuments])
     .toSorted(compareDocuments);
@@ -1306,7 +1404,7 @@ async function buildPrdAuthoringContext(
       resolved?.document,
       relatedKeys,
       topicKeys,
-      relatedScope?.reasonByDocumentKey,
+      relatedViewScope?.reasonByDocumentKey,
     )
   );
 
@@ -1352,6 +1450,91 @@ function prdTopicDocumentAllowed(
       && document.metadata.lifecycle !== "archived";
   }
   return true;
+}
+
+function documentMatchesGraphViewFilters(
+  document: DocumentEnvelope,
+  filters: NormalizedDocumentGraphViewFilters,
+  hasTraversalAxis: boolean,
+): boolean {
+  if (!filters.includeArchive && isArchiveViewDocument(document)) return false;
+  if (filters.axes.length > 0 && !hasTraversalAxis) return false;
+  if (filters.kinds.length > 0 && !matchesAnyFilter(documentKindValues(document), filters.kinds)) {
+    return false;
+  }
+  if (filters.roles.length > 0 && !matchesAnyFilter(documentRoleValues(document), filters.roles)) {
+    return false;
+  }
+  if (
+    filters.followUpCategories.length > 0 &&
+    !matchesAnyFilter(documentFollowUpCategoryValues(document), filters.followUpCategories)
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function isArchiveViewDocument(document: DocumentEnvelope): boolean {
+  const lifecycle = asString(document.metadata.lifecycle)?.toLowerCase();
+  if (lifecycle === "archived" || lifecycle === "historical") return true;
+  const status = asString(document.metadata.status)?.toLowerCase();
+  if (status === "archived" || status === "historical") return true;
+  return normalizePath(document.path).split("/").includes("archive");
+}
+
+function documentKindValues(document: DocumentEnvelope): readonly string[] {
+  return unique([
+    document.kind,
+    asString(document.metadata.documentKind),
+  ]);
+}
+
+function documentRoleValues(document: DocumentEnvelope): readonly string[] {
+  const values = [
+    document.metadata.type === "knowledge" || document.kind === "knowledge" ? "knowledge" : undefined,
+    isRoleLikeDocumentKind(document.kind) ? document.kind : undefined,
+    roleFromPath(document.path),
+  ];
+  return unique(values);
+}
+
+function documentFollowUpCategoryValues(document: DocumentEnvelope): readonly string[] {
+  return unique([
+    asString(document.metadata.followUpCategory),
+    asString(document.metadata.nextFollowUpCategory),
+    asString(document.metadata.todoCategory),
+    asString(document.metadata.category),
+    ...asStringArray(document.metadata.followUpCategories),
+    ...asStringArray(document.metadata.todoCategories),
+  ]);
+}
+
+function isRoleLikeDocumentKind(kind: string): boolean {
+  return [
+    "spec",
+    "todo",
+    "plan",
+    "rule",
+    "cases",
+    "test",
+    "memo",
+    "knowledge",
+    "prd",
+    "ralph-prd-json",
+  ].includes(kind);
+}
+
+function roleFromPath(path: string): string | undefined {
+  return path.match(/\.(spec|todo|plan|rule|cases|test|memo)\.md$/)?.[1];
+}
+
+function matchesAnyFilter(values: readonly string[], filters: readonly string[]): boolean {
+  const normalizedValues = new Set(values.map(normalizeFilterValue));
+  return filters.some((filter) => normalizedValues.has(normalizeFilterValue(filter)));
+}
+
+function normalizeFilterValue(value: string): string {
+  return value.trim().toLowerCase();
 }
 
 function toPrdContextSource(
@@ -1746,6 +1929,25 @@ function collectGraphScopedDocuments(
   });
   const traversal = traverseDocumentGraph(index, input);
   const scope = collectDocumentGraphTraversalDocuments(documents, traversal);
+
+  return {
+    traversal,
+    documents: scope.documents,
+    reasonByDocumentKey: scope.reasonByDocumentKey,
+  };
+}
+
+function collectDocumentsForGraphView(
+  documents: readonly DocumentEnvelope[],
+  traversal: DocumentGraphTraversalResult,
+  nodeIds: readonly string[],
+): GraphDocumentScope {
+  const includedNodeIds = new Set(nodeIds);
+  const viewTraversal: DocumentGraphTraversalResult = {
+    ...traversal,
+    nodes: traversal.nodes.filter((node) => includedNodeIds.has(node.id)),
+  };
+  const scope = collectDocumentGraphTraversalDocuments(documents, viewTraversal);
 
   return {
     traversal,
@@ -2165,12 +2367,18 @@ function printGraph(result: DocsGraphCliResult): void {
   console.log(`  depth: ${result.input.depth}`);
   console.log(`  limit: ${result.input.limit}`);
   if (result.input.preset) console.log(`  preset: ${result.input.preset}`);
+  for (const line of graphFilterText(result)) {
+    console.log(`  ${line}`);
+  }
   for (const warning of graphTextWarnings(result)) {
     console.log(`  ${warning}`);
   }
   console.log(`  node count: ${result.counts.nodes}`);
   console.log(`  edge count: ${result.counts.edges}`);
   console.log(`  truncated: ${result.truncated ? "yes" : "no"}${formatOmittedCounts(result)}`);
+  if (result.filtering.counts.filteredNodes !== result.filtering.counts.rawRankedNodes) {
+    console.log(`  active ranked view: ${result.filtering.counts.filteredNodes}/${result.filtering.counts.rawRankedNodes} node(s)`);
+  }
 
   console.log("");
   console.log(`nodes (${result.nodes.length}):`);
@@ -2215,6 +2423,22 @@ function graphTextWarnings(result: DocsGraphCliResult): readonly string[] {
   if (warnings.length > 0) return warnings;
   if (result.input.axes.includes("context")) return [BROAD_DOCUMENT_GRAPH_TRAVERSAL_WARNING];
   return [];
+}
+
+function graphFilterText(result: DocsGraphCliResult): readonly string[] {
+  const lines: string[] = [];
+  if (result.filters.kinds.length > 0) lines.push(`kind filter: ${result.filters.kinds.join(", ")}`);
+  if (result.filters.roles.length > 0) lines.push(`role filter: ${result.filters.roles.join(", ")}`);
+  if (result.filters.axes.length > 0) lines.push(`post-traversal axis filter: ${result.filters.axes.join(", ")}`);
+  if (result.filters.followUpCategories.length > 0) {
+    lines.push(`follow-up category filter: ${result.filters.followUpCategories.join(", ")}`);
+  }
+  if (result.filters.includeArchive) {
+    lines.push("archive view: included");
+  } else if (result.filtering.counts.excludedByArchive > 0) {
+    lines.push(`archive view: excluded ${result.filtering.counts.excludedByArchive} archived node(s)`);
+  }
+  return lines;
 }
 
 function isGraphWarningDiagnostic(diagnostic: string): boolean {

@@ -69,6 +69,14 @@ pack authoring 원칙:
 4. pack validation은 선언된 component vocabulary와 system binding이 activation 전에 해석 가능한지 검증한다.
 5. ECS의 SoA 저장 구조는 registry/index-meta storage 최적화의 참고 원칙일 뿐, pack interface의 즉시 구현 요구사항은 아니다.
 
+문서 바운더리 적용:
+
+1. Pack family의 module/spec은 identity declarations, component schema, system bindings를 분리해 설명한다.
+2. Pack component schema 문서는 axes, taxonomies, relation categories, traversals 같은 data-only 선언을 소유한다.
+3. Pack system binding 문서는 blueprint, implementation refs, verification refs, validation helper 같은 변환/검증 연결을 소유한다.
+4. Registry activation, index-meta sync, CLI execution은 pack interface 문서가 아니라 각 System-like lifecycle 문서가 소유한다.
+5. Pack scaffold/validate PRD와 TODO는 `OperationalOntologyPack` interface를 중심 contract로 삼되, 새 pack이 ECS pack이라고 가정하지 않는다.
+
 검증 규칙:
 
 1. `packId`는 비어 있으면 안 된다.

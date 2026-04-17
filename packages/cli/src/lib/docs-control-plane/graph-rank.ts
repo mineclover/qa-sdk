@@ -321,7 +321,8 @@ function diagnosticsFactor(node: TraversalNode): DocumentGraphRankFactor {
 }
 
 function followUpCategoryFactor(node: TraversalNode): DocumentGraphRankFactor {
-  const category = followUpCategoryForNode(node);
+  const categories = followUpCategoriesForNode(node);
+  const category = categories[0];
   const score = category ? followUpCategoryScore(category) : 0;
   return {
     factor: "follow-up-category",
@@ -329,6 +330,7 @@ function followUpCategoryFactor(node: TraversalNode): DocumentGraphRankFactor {
     reason: category ? `follow-up category ${category}` : "no follow-up category metadata",
     metadata: {
       category,
+      categories,
     },
   };
 }
@@ -501,7 +503,8 @@ function diagnosticSeveritiesFromList(value: unknown): readonly string[] {
   });
 }
 
-function followUpCategoryForNode(node: TraversalNode): string | undefined {
+function followUpCategoriesForNode(node: TraversalNode): readonly string[] {
+  const categories: string[] = [];
   for (const key of [
     "followUpCategory",
     "nextFollowUpCategory",
@@ -509,9 +512,17 @@ function followUpCategoryForNode(node: TraversalNode): string | undefined {
     "category",
   ] as const) {
     const value = asString(node.metadata[key]);
-    if (value) return value;
+    if (value) categories.push(value);
   }
-  return undefined;
+  for (const key of ["followUpCategories", "todoCategories"] as const) {
+    const value = node.metadata[key];
+    if (!Array.isArray(value)) continue;
+    for (const item of value) {
+      const category = asString(item);
+      if (category) categories.push(category);
+    }
+  }
+  return [...new Set(categories)];
 }
 
 function formatSignedScore(score: number): string {

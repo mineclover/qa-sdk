@@ -75,6 +75,25 @@ qa-sdk docs status / collect / search / drift / prd / transform
 
 Adapter는 source vocabulary를 소유하지 않는다. `kind`, `status`, relation `type`, diagnostic `severity`, PRD story fields, artifact relation fields 같은 값은 plain string metadata로 보존하고, control plane은 identity, path, family, default collection, command-level correlation만 정규화한다.
 
+## Entity / Component / System-Informed Document Boundaries
+
+Docs control plane의 문서 모듈화는 architecture-neutral한 Entity / Component / System 분리 원칙을 기준점으로 삼는다. 이는 ECS 전용 문서 구조가 아니다. ECS는 이 분리 원칙을 잘 보여주는 하나의 아키텍처일 뿐이며, docs control plane은 임의의 도메인 문서와 운영 command를 같은 방식으로 모델링할 수 있어야 한다.
+
+| Separation role | Docs control-plane 대응 | 문서화 규칙 |
+|-----------------|-------------------------|-------------|
+| Entity-like identity | `def.id`, `stableId`, `familyId`, source path, PRD story id, artifact id | 안정 식별자다. 상태와 행위를 넣지 않는다. |
+| Component-like data | frontmatter, `DocumentEnvelope`, links, sources, tasks, evidence, role coverage, follow-up records, completed-record candidates | data-only read model이다. 숨은 mutation이나 실행 로직을 넣지 않는다. |
+| System-like transform | `def validate`, `docs status`, `docs graph`, `docs drift`, `docs prd context`, `docs prd sync-completion`, graph reranking/filtering/summary | Component-like data를 읽고 변환하는 명시적 로직이다. 원본 문서 상태를 암묵적으로 소유하지 않는다. |
+
+문서 바운더리 규칙:
+
+1. 새 module/family는 가능하면 System-like transform boundary를 기준으로 잡는다. 예: graph traversal, graph reranking, PRD completion sync, pack scaffold, pack validate.
+2. System-like 문서는 자신이 소비하는 Component-like data와 산출하는 read model을 명시해야 한다.
+3. Component-like 문서는 data shape와 lifecycle만 정의하고, 검증/투영/동기화/CLI 실행 로직을 소유하지 않는다.
+4. Entity-like id는 문서, source-map, PRD, artifact 전반에서 stable coordinate로 유지한다.
+5. TODO와 PRD는 System-like boundary를 기준으로 작성한다. 단순 파일 오래됨, 검색 결과, 임의 주제 묶음은 우선순위 기준이 아니다.
+6. Read-only command output(`roleCoverage`, `nextFollowUps`, `completedRecords`, graph ranking/filtered views)은 후보와 projection이며, 원본 문서를 자동 변경하는 authority가 아니다.
+
 ## Traversal taxonomy
 
 Docs graph traversal은 authored vocabulary를 대체하지 않고 `DocumentEnvelope[]`에서 만든 sidecar projection에 내부 분류 축만 추가한다. Canonical axes는 `composition`(contains/section), `refinement`(refines), `dependency`(depends_on), `constraint`(constrains/rule), `trace`(PRD/story/TODO/session lineage), `source`(code/file path), `evidence`(proof/artifact/verification), `role`(family document role), `context`(tags/coordinates)이다.

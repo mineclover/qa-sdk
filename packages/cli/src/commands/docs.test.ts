@@ -552,7 +552,27 @@ Track inventory scenario coverage.
       readonly rankedNodes: readonly GraphRankedNode[];
       readonly counts: Record<string, number>;
     };
+    readonly filters: {
+      readonly kinds: readonly string[];
+      readonly roles: readonly string[];
+      readonly axes: readonly string[];
+      readonly followUpCategories: readonly string[];
+      readonly includeArchive: boolean;
+    };
+    readonly filtering: {
+      readonly algorithm: string;
+      readonly filters: GraphOutput["filters"];
+      readonly filteredNodeIds: readonly string[];
+      readonly filteredNodes: readonly GraphRankedNode[];
+      readonly counts: {
+        readonly rawRankedNodes: number;
+        readonly filteredNodes: number;
+        readonly excludedByArchive: number;
+        readonly excludedByFilters: number;
+      };
+    };
     readonly rankedNodes: readonly GraphRankedNode[];
+    readonly filteredNodes: readonly GraphRankedNode[];
     readonly nodes: Array<{ id: string; kind: string; path?: string }>;
     readonly edges: Array<{
       axis: string;
@@ -1174,6 +1194,41 @@ Track module follow-up work.
     );
   });
 
+  it("applies graph filters to collect returned views while preserving raw graph traversal", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "collect",
+      "checkout-spec",
+      "--graph",
+      "--preset",
+      "family",
+      "--kind",
+      "todo",
+      "--role",
+      "todo",
+      "--follow-up-category",
+      "actionable",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      familyMembers: Array<{ stableId: string; kind: string }>;
+      graph: GraphOutput;
+    }>();
+    expect(result.graph.nodes.map((node) => node.id)).toEqual(
+      expect.arrayContaining(["document:checkout-spec", "document:checkout-todo"]),
+    );
+    expect(result.graph.rankedNodes.map((node) => node.nodeId)).toEqual([
+      "document:checkout-todo",
+    ]);
+    expect(result.familyMembers).toEqual([
+      expect.objectContaining({ stableId: "checkout-todo", kind: "todo" }),
+    ]);
+  });
+
   it("limits collect inventory to same-family roles and direct module children with --family-only", async () => {
     const workspace = await createFixtureWorkspace();
     await mkdir(join(workspace, "docs/specs/module"), { recursive: true });
@@ -1690,6 +1745,117 @@ Archived checkout work.
     expect(second.rankedNodes).toEqual(first.rankedNodes);
   });
 
+  it("filters graph ranked views without changing raw traversal nodes", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "graph",
+      "checkout-spec",
+      "--preset",
+      "family",
+      "--kind",
+      "todo,plan",
+      "--role",
+      "todo",
+      "--filter-axis",
+      "role",
+      "--follow-up-category",
+      "actionable",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<GraphOutput>();
+    expect(result.input).toMatchObject({
+      axes: ["composition", "role"],
+      preset: "family",
+    });
+    expect(result.filters).toEqual({
+      kinds: ["todo", "plan"],
+      roles: ["todo"],
+      axes: ["role"],
+      followUpCategories: ["actionable"],
+      includeArchive: false,
+    });
+    expect(result.nodes.map((node) => node.id)).toEqual(
+      expect.arrayContaining([
+        "document:checkout-spec",
+        "document:checkout-plan",
+        "document:checkout-todo",
+      ]),
+    );
+    expect(result.rankedNodes.map((node) => node.nodeId)).toEqual([
+      "document:checkout-todo",
+    ]);
+    expect(result.filteredNodes).toEqual(result.rankedNodes);
+    expect(result.filtering.filteredNodeIds).toEqual(["document:checkout-todo"]);
+    expect(result.filtering.counts.rawRankedNodes).toBe(result.nodes.length);
+    expect(result.filtering.counts.excludedByFilters).toBeGreaterThan(0);
+  });
+
+  it("excludes archived documents from active graph views unless requested", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/checkout/archive"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/checkout/archive/checkout-archive.todo.md"), `---
+def:
+  id: checkout-archive-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: archived
+familyId: docs/specs/checkout/checkout
+---
+# Checkout Archive Todo
+
+## 목적 ^purpose
+
+Archived checkout follow-up.
+
+## Actionable
+
+- [ ] Archived action.
+`);
+
+    await cliDocs([
+      "graph",
+      "checkout-spec",
+      "--axis",
+      "role",
+      "--direction",
+      "out",
+      "--depth",
+      "1",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+    const active = parsedOutput<GraphOutput>();
+    expect(active.nodes.map((node) => node.id)).toContain("document:checkout-archive-todo");
+    expect(active.rankedNodes.map((node) => node.nodeId)).not.toContain("document:checkout-archive-todo");
+    expect(active.filtering.counts.excludedByArchive).toBeGreaterThan(0);
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs([
+      "graph",
+      "checkout-spec",
+      "--axis",
+      "role",
+      "--direction",
+      "out",
+      "--depth",
+      "1",
+      "--include-archive",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+    const withArchive = parsedOutput<GraphOutput>();
+    expect(withArchive.rankedNodes.map((node) => node.nodeId)).toContain("document:checkout-archive-todo");
+    expect(withArchive.filtering.counts.excludedByArchive).toBe(0);
+  });
+
   it("traverses composition, role, source, evidence, trace, and preset graph paths", async () => {
     const workspace = await createFixtureWorkspace();
 
@@ -1889,6 +2055,16 @@ Archived checkout work.
       code: "unknown-docs-graph-preset",
       operation: "docs.graph",
       remediation: expect.stringContaining("implementation"),
+    });
+    expect(process.exitCode).toBe(1);
+
+    vi.mocked(console.log).mockClear();
+    process.exitCode = undefined;
+    await cliDocs(["graph", "checkout-spec", "--filter-axis", "unknown", "--root", workspace, "--json"]);
+    expect(parsedOutput<{ error: { code: string; operation: string; remediation: string } }>().error).toMatchObject({
+      code: "unknown-docs-graph-filter-axis",
+      operation: "docs.graph",
+      remediation: expect.stringContaining("--axis selects traversal axes"),
     });
     expect(process.exitCode).toBe(1);
   });
@@ -2208,6 +2384,43 @@ Archived checkout work.
         expect.objectContaining({ id: "checkout-evidence" }),
       ]),
     );
+  });
+
+  it("applies graph filters to exact PRD context related sources", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "prd",
+      "context",
+      "checkout-spec",
+      "--kind",
+      "plan",
+      "--filter-axis",
+      "dependency",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      resolvedTarget: { stableId: string; kind: string };
+      contextSources: Array<{ stableId: string; kind: string; reason: string }>;
+      relatedSpecs: Array<{ stableId: string }>;
+      plans: Array<{ stableId: string }>;
+      evidence: Array<{ id: string }>;
+    }>();
+    expect(result.resolvedTarget).toMatchObject({
+      stableId: "checkout-spec",
+      kind: "spec",
+    });
+    expect(result.contextSources).toEqual([
+      expect.objectContaining({ stableId: "checkout-plan", kind: "plan", reason: "graph:dependency" }),
+    ]);
+    expect(result.relatedSpecs).toEqual([]);
+    expect(result.plans).toEqual([
+      expect.objectContaining({ stableId: "checkout-plan" }),
+    ]);
+    expect(result.evidence).toEqual([]);
   });
 
   it("writes a markdown PRD scaffold with control-plane context sources", async () => {
