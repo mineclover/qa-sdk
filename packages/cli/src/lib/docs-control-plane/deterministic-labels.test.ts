@@ -5,6 +5,8 @@ import {
   buildOntologyPackLabelRecordFromValidateResult,
   buildSemanticCoordinateCandidate,
   collectSemanticCoordinateCandidatesFromDocuments,
+  computeDeterministicLabelReadiness,
+  computeDeterministicLabelRecordReadiness,
   DETERMINISTIC_LABEL_RECORD_STATES,
   detectSemanticCoordinateCandidateCollisions,
   normalizeDocumentEnvelope,
@@ -851,6 +853,232 @@ describe("semantic coordinate candidates", () => {
   });
 });
 
+describe("deterministic label FSM readiness", () => {
+  it("computes a linted state when lint passes and the next resolution gate is blocked", () => {
+    const record = readinessRecord("linted-example", {
+      dependencyLabels: ["urn:def:spec:missing-dependency:v1"],
+    });
+
+    const computed = computeDeterministicLabelRecordReadiness(record, [record]);
+
+    expect(computed.currentState).toBe("LINTED");
+    expect(computed.diagnostics).toEqual([
+      expect.objectContaining({
+        code: "deterministic-label-readiness-blocked",
+        severity: "error",
+        metadata: expect.objectContaining({
+          gate: "resolve",
+          fromState: "LINTED",
+          toState: "RESOLVED",
+          blockerMetadata: expect.objectContaining({
+            blockerCode: "dependency-ref-unresolved",
+          }),
+        }),
+      }),
+    ]);
+    expect(computed.metadata.deterministicLabelReadiness).toMatchObject({
+      computedState: "LINTED",
+      blocked: true,
+      gates: [
+        {
+          gate: "lint",
+          ready: true,
+        },
+        {
+          gate: "resolve",
+          ready: false,
+        },
+      ],
+    });
+  });
+
+  it("keeps unresolved records at LINTED with blocked diagnostics", () => {
+    const record = readinessRecord("unresolved-example", {
+      currentState: "LINTED",
+      sourceRefs: ["urn:source:typescript:packages/cli/src/missing.ts"],
+      evidenceRefs: ["urn:artifact:evidence:missing-proof:v1"],
+    });
+
+    const computed = computeDeterministicLabelRecordReadiness(record, [record]);
+
+    expect(computed.currentState).toBe("LINTED");
+    expect(computed.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "deterministic-label-readiness-blocked",
+        metadata: expect.objectContaining({
+          gate: "resolve",
+          blockerMetadata: expect.objectContaining({
+            blockerCode: "source-ref-unresolved",
+          }),
+        }),
+      }),
+      expect.objectContaining({
+        code: "deterministic-label-readiness-blocked",
+        metadata: expect.objectContaining({
+          gate: "resolve",
+          blockerMetadata: expect.objectContaining({
+            blockerCode: "evidence-ref-unresolved",
+          }),
+        }),
+      }),
+    ]));
+  });
+
+  it("computes RESOLVED once dependency refs resolve but ACTIVE evidence is incomplete", () => {
+    const dependency = readinessRecord("resolved-dependency");
+    const record = readinessRecord("resolved-example", {
+      currentState: "LINTED",
+      dependencyLabels: [dependency.label],
+    });
+
+    const computed = computeDeterministicLabelRecordReadiness(record, [
+      record,
+      dependency,
+    ]);
+
+    expect(computed.currentState).toBe("RESOLVED");
+    expect(computed.diagnostics).toEqual([
+      expect.objectContaining({
+        code: "deterministic-label-readiness-blocked",
+        metadata: expect.objectContaining({
+          gate: "activate",
+          fromState: "RESOLVED",
+          toState: "ACTIVE",
+          blockerMetadata: expect.objectContaining({
+            blockerCode: "drift-status-missing",
+          }),
+        }),
+      }),
+    ]);
+  });
+
+  it("computes ACTIVE when drift, evidence, and role-quality placeholders are satisfied", () => {
+    const evidence = readinessEvidenceRecord("active-proof");
+    const record = readinessRecord("active-ready-example", {
+      currentState: "RESOLVED",
+      evidenceRefs: [evidence.label],
+      metadata: {
+        driftFree: true,
+        requiresEvidence: true,
+        roleQualityStatus: "placeholder",
+      },
+    });
+
+    const computed = computeDeterministicLabelRecordReadiness(record, [
+      record,
+      evidence,
+    ]);
+
+    expect(computed.currentState).toBe("ACTIVE");
+    expect(computed.diagnostics.filter((diagnostic) =>
+      diagnostic.code === "deterministic-label-readiness-blocked"
+    )).toEqual([]);
+    expect(computed.metadata.deterministicLabelReadiness).toMatchObject({
+      computedState: "ACTIVE",
+      blocked: false,
+      gates: [
+        {
+          gate: "activate",
+          ready: true,
+          evidence: {
+            driftFree: true,
+            requiredEvidence: true,
+            roleQualityStatus: "placeholder",
+          },
+        },
+      ],
+    });
+  });
+
+  it("computes DEPRECATED and ARCHIVED terminal readiness states from metadata", () => {
+    const deprecated = computeDeterministicLabelRecordReadiness(
+      readinessRecord("deprecated-example", {
+        currentState: "ACTIVE",
+        metadata: {
+          lifecycle: "deprecated",
+        },
+      }),
+    );
+    const archived = computeDeterministicLabelRecordReadiness(
+      readinessRecord("archived-example", {
+        metadata: {
+          archiveScope: true,
+        },
+      }),
+    );
+
+    expect(deprecated.currentState).toBe("DEPRECATED");
+    expect(archived.currentState).toBe("ARCHIVED");
+  });
+
+  it("represents blocked ACTIVE transitions as diagnostics without using BLOCKED state", () => {
+    const pack = buildDeterministicLabelRecord({
+      candidate: candidate({
+        kind: "ontology-pack",
+        id: "blocked-pack",
+        version: "v1",
+        physicalRefs: [
+          {
+            kind: "pack-id",
+            ref: "blocked-pack",
+            role: "primary",
+          },
+        ],
+      }),
+      currentState: "RESOLVED",
+      metadata: {
+        driftFree: true,
+        ontologyPackValidate: {
+          runtime: {
+            valid: false,
+            issueCount: 1,
+          },
+        },
+      },
+    });
+
+    const computed = computeDeterministicLabelRecordReadiness(pack, [pack]);
+
+    expect(computed.currentState).toBe("RESOLVED");
+    expect(computed.currentState).not.toBe("BLOCKED");
+    expect(computed.diagnostics).toEqual([
+      expect.objectContaining({
+        code: "deterministic-label-readiness-blocked",
+        metadata: expect.objectContaining({
+          gate: "activate",
+          blockerMetadata: expect.objectContaining({
+            blockerCode: "ontology-pack-runtime-invalid",
+          }),
+        }),
+      }),
+    ]);
+  });
+
+  it("computes readiness for a record list and returns only blocked readiness diagnostics", () => {
+    const linted = readinessRecord("projection-linted", {
+      dependencyLabels: ["urn:def:spec:projection-missing:v1"],
+    });
+    const active = readinessRecord("projection-active", {
+      currentState: "RESOLVED",
+      metadata: {
+        driftFree: true,
+      },
+    });
+
+    const projection = computeDeterministicLabelReadiness([linted, active]);
+
+    expect(projection.records.map((record) => [record.label, record.currentState])).toEqual([
+      [linted.label, "LINTED"],
+      [active.label, "ACTIVE"],
+    ]);
+    expect(projection.diagnostics).toHaveLength(1);
+    expect(projection.diagnostics[0]).toEqual(expect.objectContaining({
+      code: "deterministic-label-readiness-blocked",
+      label: linted.label,
+    }));
+  });
+});
+
 function candidate(
   input: SemanticCoordinateCandidateInput,
 ): SemanticCoordinateCandidate {
@@ -1015,6 +1243,55 @@ function artifactEvidenceDoc(
       ...(overrides.rawSource ?? {}),
     },
     ...withoutEnvelopeNested(overrides),
+  });
+}
+
+function readinessRecord(
+  id: string,
+  overrides: Partial<{
+    readonly currentState: DeterministicLabelRecord["currentState"];
+    readonly dependencyLabels: readonly string[];
+    readonly sourceRefs: readonly string[];
+    readonly evidenceRefs: readonly string[];
+    readonly metadata: Record<string, unknown>;
+  }> = {},
+): DeterministicLabelRecord {
+  return buildDeterministicLabelRecord({
+    candidate: candidate({
+      kind: "definition-doc",
+      id,
+      subtype: "spec",
+      version: "v1",
+      physicalRefs: [
+        {
+          kind: "definition-path",
+          ref: `docs/specs/${id}.spec.md`,
+          role: "primary",
+        },
+      ],
+    }),
+    currentState: overrides.currentState,
+    dependencyLabels: overrides.dependencyLabels,
+    sourceRefs: overrides.sourceRefs,
+    evidenceRefs: overrides.evidenceRefs,
+    metadata: overrides.metadata,
+  });
+}
+
+function readinessEvidenceRecord(id: string): DeterministicLabelRecord {
+  return buildDeterministicLabelRecord({
+    candidate: candidate({
+      kind: "evidence",
+      id,
+      version: "v1",
+      physicalRefs: [
+        {
+          kind: "evidence-ref",
+          ref: `artifacts/${id}.json`,
+          role: "primary",
+        },
+      ],
+    }),
   });
 }
 

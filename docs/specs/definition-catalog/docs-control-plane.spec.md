@@ -95,6 +95,8 @@ Deterministic label record는 semantic coordinate candidate를 감싼 read-only 
 
 Ontology pack/artifact projection은 같은 record shape에 `ontology pack validate` 결과를 얹는다. 기본 입력은 CLI known-pack id 목록이며, 각 pack record는 validate 결과의 identity, component schema, system bindings, runtime summary, readiness status를 metadata로 보존한다. Validate issue는 record diagnostic으로 투영하고, source-map/docs readiness warning은 warning diagnostic으로 유지한다. Artifact evidence `DocumentEnvelope`가 함께 주어지면 artifact/evidence record를 생성하고 matching `packId`/`ontologyId`를 가진 pack record의 `evidenceRefs[]`에 연결한다. 이 projection은 pack activation, registry allocation, known-pack registry 수정을 수행하지 않는다.
 
+FSM readiness projection은 deterministic label record list 위에서만 동작하는 read-only system transform이다. `computeDeterministicLabelReadiness()`는 `DRAFT -> LINTED -> RESOLVED -> ACTIVE` 순서로 gate를 평가하고, lint gate는 candidate/document validation diagnostic과 syntax/frontmatter/schema/doc-type metadata signal을, resolve gate는 dependency/source/evidence label resolution과 pack docs/source-map readiness를, activate gate는 drift-free status, required evidence, role quality placeholder, ontology pack runtime validity를 사용한다. `DEPRECATED`와 `ARCHIVED`는 metadata/currentState에서 terminal state로 계산한다. 실패한 gate는 `deterministic-label-readiness-blocked` diagnostic으로 남기고 마지막 valid state를 유지하며, read-only 단계에서는 `BLOCKED` state로 currentState를 바꾸거나 transition event를 write하지 않는다.
+
 Canonical format examples:
 
 | 형상 단위 | 후보 label |

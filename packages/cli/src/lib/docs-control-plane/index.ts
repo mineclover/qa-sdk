@@ -104,6 +104,11 @@ export {
   findNextFollowUps,
 } from "./follow-ups.js";
 export {
+  computeDeterministicLabelReadiness,
+  computeDeterministicLabelRecordReadiness,
+  DETERMINISTIC_LABEL_READINESS_GATES,
+} from "./deterministic-label-fsm.js";
+export {
   buildSemanticCoordinateCandidatesFromDocument,
   buildSemanticCoordinateCandidate,
   buildDeterministicLabelRecord,
@@ -212,6 +217,11 @@ export type {
   FollowUpDetectionOptions,
   FollowUpState,
 } from "./follow-ups.js";
+export type {
+  DeterministicLabelReadinessGate,
+  DeterministicLabelReadinessGateResult,
+  DeterministicLabelReadinessProjection,
+} from "./deterministic-label-fsm.js";
 export type {
   DeterministicLabelRecord,
   DeterministicLabelRecordInput,

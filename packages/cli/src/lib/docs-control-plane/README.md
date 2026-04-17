@@ -80,6 +80,21 @@ block pack record creation. Optional artifact evidence envelopes are projected
 as artifact/evidence records and linked back to matching pack records through
 `evidenceRefs[]`.
 
+`computeDeterministicLabelReadiness()` evaluates the record list as a read-only
+FSM projection. It advances through `DRAFT -> LINTED -> RESOLVED -> ACTIVE` only
+when each gate's existing signals pass: lint uses source/candidate validation
+diagnostics plus syntax/frontmatter/schema/doc-type metadata flags; resolution
+checks dependency/source/evidence refs against the projected labels plus pack
+docs/source-map status; activation checks drift-free status, required evidence,
+role-quality placeholders, and ontology pack runtime validity. Deprecated and
+archived metadata become terminal `DEPRECATED`/`ARCHIVED` read states.
+
+Failed gates append `deterministic-label-readiness-blocked` diagnostics and keep
+the last valid state. The read model does not write transition events and does
+not set `currentState` to `BLOCKED`; `BLOCKED` remains available for future
+controller-owned state while this layer reports blocked transitions as review
+evidence.
+
 This shape is intentionally data-only. It does not append to a registry, write
 transition events, persist state, or promote PRD/TODO/checklist signals into
 authority. Pack projection also does not activate packs or mutate the known-pack

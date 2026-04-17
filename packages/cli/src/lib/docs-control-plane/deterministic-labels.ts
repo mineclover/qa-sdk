@@ -53,6 +53,8 @@ export const SEMANTIC_COORDINATE_DIAGNOSTIC_CODES = [
   "semantic-coordinate-invalid-version",
   "semantic-coordinate-ambiguous-physical-ref",
   "semantic-coordinate-collision-candidate",
+  "document-validation-signal",
+  "deterministic-label-readiness-blocked",
   "ontology-pack-validate-issue",
   "ontology-pack-readiness-warning",
 ] as const;
@@ -414,6 +416,9 @@ export function projectDeterministicLabelRecordsFromDocuments(
       evidenceRefs: document
         ? evidenceRefsForCandidate(index, document, candidate, task)
         : [],
+      diagnostics: document
+        ? documentValidationDiagnosticsForCandidate(document, candidate)
+        : [],
       metadata: document
         ? projectionRecordMetadata(
           document,
@@ -432,6 +437,35 @@ export function projectDeterministicLabelRecordsFromDocuments(
     diagnostics: candidateInventory.diagnostics,
     skippedDocuments: candidateInventory.skippedDocuments,
   };
+}
+
+function documentValidationDiagnosticsForCandidate(
+  document: DocumentEnvelope,
+  candidate: SemanticCoordinateCandidate,
+): readonly SemanticCoordinateDiagnostic[] {
+  if (candidate.kind === "source-file" || candidate.kind === "evidence") {
+    return [];
+  }
+
+  return document.diagnostics.map((diagnostic) =>
+    semanticCoordinateDiagnostic({
+      code: "document-validation-signal",
+      severity: diagnostic.severity === "error" ? "error" : "warning",
+      label: candidate.label,
+      id: candidate.id,
+      message: diagnostic.message,
+      metadata: {
+        projection: "document-envelope",
+        sourceCode: diagnostic.code,
+        sourceSeverity: diagnostic.severity,
+        ...(diagnostic.rawSource?.path ? { sourcePath: diagnostic.rawSource.path } : {}),
+        ...(diagnostic.rawSource?.pointer
+          ? { sourcePointer: diagnostic.rawSource.pointer }
+          : {}),
+        ...diagnostic.metadata,
+      },
+    }),
+  );
 }
 
 export async function projectOntologyPackAndArtifactLabelRecords(
