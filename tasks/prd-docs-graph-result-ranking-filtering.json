@@ -1,0 +1,322 @@
+{
+  "name": "Docs Graph Result Ranking And Filtering",
+  "description": "The docs control plane can already traverse document graphs through axes such as `role`, `composition`, `trace`, `source`, and `evidence`. However, broad graph results can still be noisy: relevant documents are found, but the system does not consistently rank stronger results ahead of weaker ones, filter result views by role/kind/axis/actionability, or summarize large result sets for review and PRD authoring.\n\nThis PRD adds a rule-based graph result reranking layer on top of existing graph traversal. It follows the standard retrieval/rescore pattern: traversal is the retrieval phase, and ranking/filtering is a post-traversal rescore/view phase. It must not change traversal semantics. It ranks, filters, and summarizes graph results after traversal so `docs graph`, `docs collect --graph`, and `docs prd context` can surface the most useful documents first while keeping the full raw traversal output available.\n\nFor backward compatibility, filters must not remove existing raw traversal fields such as `nodes`, `edges`, and `paths` from JSON output. Filtering and ranking are exposed through additive views such as `rankedNodes`, `filteredNodes`, `ranking`, or `summary`.",
+  "branchName": "ralph/docs-graph-result-ranking-and-filtering",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Define Graph Result Ranking Model",
+      "description": "As a docs operator, I want a clear ranking model for graph results so that stronger document relationships appear before weak or broad matches.",
+      "acceptanceCriteria": [
+        "Add a graph result ranking module that runs after traversal.",
+        "Ranking follows a retrieval/rescore pattern: traversal first, post-traversal reranking second.",
+        "Ranking does not modify traversal paths or edge discovery.",
+        "Rank factors include target node, path distance, axis, node kind, role, archive state, diagnostics, and follow-up category where available.",
+        "Same-family role docs rank above weak trace/context results.",
+        "Source/evidence-linked docs rank above broad context-only docs.",
+        "Archive/historical docs rank lower by default.",
+        "Ranking result includes `rank`, `score`, and `strength` or equivalent fields.",
+        "Ranking explanation includes factor-level reason metadata sufficient to debug score decisions.",
+        "Unit tests cover rank ordering for role, source, evidence, trace, context, and archive examples.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and graph CLI tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs graph docs-control-plane --preset family --json`",
+        "`node packages/cli/dist/index.js docs graph programming-artifact-ontology-system --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --family-only --json`",
+        "`node packages/cli/dist/index.js docs prd context docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-002",
+      "title": "Add Ranked Graph Result Shape",
+      "description": "As a CLI consumer, I want graph JSON output to expose ranking metadata without breaking existing fields.",
+      "acceptanceCriteria": [
+        "`docs graph --json` keeps existing `nodes`, `edges`, `paths`, `counts`, `diagnostics`, and truncation fields.",
+        "Additive ranking metadata is exposed under a new field such as `rankedNodes` or `ranking`.",
+        "Ranking metadata includes node id, rank, score, strength, and reason summary.",
+        "Ranked output includes factor/explanation metadata sufficient to debug score decisions.",
+        "Raw `nodes` ordering and membership remain available for compatibility.",
+        "Existing tests expecting current graph fields remain valid.",
+        "Tests verify ranked output is deterministic.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and graph CLI tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs graph docs-control-plane --preset family --json`",
+        "`node packages/cli/dist/index.js docs graph programming-artifact-ontology-system --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --family-only --json`",
+        "`node packages/cli/dist/index.js docs prd context docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Add Graph Result Filters",
+      "description": "As a docs operator, I want to filter graph result views so that I can inspect only the roles, kinds, axes, or follow-up categories relevant to a review.",
+      "acceptanceCriteria": [
+        "Add filter parsing for relevant docs graph commands.",
+        "Support filtering by document kind, for example `--kind spec,todo,plan`.",
+        "Support filtering by role where role metadata exists, for example `--role spec,todo,plan`.",
+        "Support filtering by axis after traversal, for example `--filter-axis source,evidence`.",
+        "Document that `--axis` selects traversal axes, while `--filter-axis` filters the post-traversal result view.",
+        "Support active-view archive exclusion through ranked/filtered views without removing raw traversal nodes.",
+        "Support including archive documents explicitly, for example `--include-archive`.",
+        "Support filtering follow-up category where available, for example `--follow-up-category actionable,deferred`.",
+        "Filtering does not change traversal; it only changes additive returned/ranked/filtered views.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and graph CLI tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs graph docs-control-plane --preset family --json`",
+        "`node packages/cli/dist/index.js docs graph programming-artifact-ontology-system --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --family-only --json`",
+        "`node packages/cli/dist/index.js docs prd context docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001",
+        "US-002"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "Add Graph Result Summary",
+      "description": "As a reviewer, I want large graph results summarized by role, axis, kind, and follow-up category so I can understand the graph without reading every node.",
+      "acceptanceCriteria": [
+        "Add graph result summary generation after traversal and filtering.",
+        "Summary includes counts by node kind.",
+        "Summary includes counts by traversal axis.",
+        "Summary includes counts by document role where available.",
+        "Summary includes counts by follow-up category where available.",
+        "Summary includes archive excluded/included counts when applicable.",
+        "Summary includes diagnostics count.",
+        "Text output shows compact summary before listing nodes.",
+        "JSON output exposes summary under an additive field.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and graph CLI tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs graph docs-control-plane --preset family --json`",
+        "`node packages/cli/dist/index.js docs graph programming-artifact-ontology-system --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --family-only --json`",
+        "`node packages/cli/dist/index.js docs prd context docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001",
+        "US-003"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Apply Ranking And Filtering To `docs graph`",
+      "description": "As a docs graph user, I want `docs graph` to show ranked and optionally filtered views while preserving full traversal semantics.",
+      "acceptanceCriteria": [
+        "`docs graph` supports ranking by default.",
+        "`docs graph --json` includes ranking and summary fields.",
+        "`docs graph` text output shows top ranked nodes first or clearly labels ranked view output.",
+        "Raw node/edge/path traversal information remains available in JSON.",
+        "Existing graph traversal diagnostics remain visible.",
+        "Existing source-map-missing bounded behavior remains unchanged.",
+        "Tests cover ranked source-path graph output and missing source-path output.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and graph CLI tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs graph docs-control-plane --preset family --json`",
+        "`node packages/cli/dist/index.js docs graph programming-artifact-ontology-system --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --family-only --json`",
+        "`node packages/cli/dist/index.js docs prd context docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-002",
+        "US-003",
+        "US-004"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Apply Ranking And Filtering To `docs collect --graph`",
+      "description": "As a docs collect user, I want graph collection output to be ranked and summarized so broad graph collection is easier to review.",
+      "acceptanceCriteria": [
+        "`docs collect --graph` includes graph ranking metadata in JSON output.",
+        "`docs collect --graph` text output remains concise.",
+        "`docs collect --graph --family-only` remains bounded and unchanged except for additive summary/ranking metadata.",
+        "Filtering options work with collect graph mode.",
+        "Tests cover broad graph collect and family-only collect behavior.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and graph CLI tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs graph docs-control-plane --preset family --json`",
+        "`node packages/cli/dist/index.js docs graph programming-artifact-ontology-system --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --family-only --json`",
+        "`node packages/cli/dist/index.js docs prd context docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-005"
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "Apply Ranking To PRD Authoring Context",
+      "description": "As a planner, I want `docs prd context` to present stronger context sources first so new PRDs are grounded in the most relevant specs, TODOs, plans, sources, and evidence.",
+      "acceptanceCriteria": [
+        "`docs prd context <exact-doc>` uses ranked graph context for related documents.",
+        "Same-family and direct dependency/role documents appear before broad trace/context documents.",
+        "Actionable TODO context appears before deferred/parking-lot context where applicable.",
+        "Archive PRDs remain excluded by default.",
+        "JSON `contextSources` includes ranking reason or score if available.",
+        "Existing PRD context tests pass or are updated for ranking order.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and graph CLI tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs graph docs-control-plane --preset family --json`",
+        "`node packages/cli/dist/index.js docs graph programming-artifact-ontology-system --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --family-only --json`",
+        "`node packages/cli/dist/index.js docs prd context docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-005",
+        "US-006"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "Preserve Traversal Semantics And Backward Compatibility",
+      "description": "As a maintainer, I want ranking/filtering to be a consumption layer only so existing graph traversal behavior remains stable.",
+      "acceptanceCriteria": [
+        "No changes to authored link normalization semantics.",
+        "No changes to canonical traversal axis definitions.",
+        "No changes to graph edge construction except additive metadata if required.",
+        "Existing graph traversal unit tests continue to pass.",
+        "Full unfiltered traversal remains accessible in JSON output.",
+        "Reranking is rule-based and deterministic for the same graph result and options.",
+        "Document that ranking/filtering happens after traversal.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and graph CLI tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs graph docs-control-plane --preset family --json`",
+        "`node packages/cli/dist/index.js docs graph programming-artifact-ontology-system --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --family-only --json`",
+        "`node packages/cli/dist/index.js docs prd context docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-005",
+        "US-006",
+        "US-007"
+      ]
+    },
+    {
+      "id": "US-009",
+      "title": "Document Graph Ranking And Filtering",
+      "description": "As a future maintainer, I want docs explaining ranking and filtering semantics so graph output remains predictable.",
+      "acceptanceCriteria": [
+        "Update docs-control-plane spec or README with ranking model.",
+        "Document filter options and their scope.",
+        "Document that traversal and ranking are separate phases.",
+        "Document that raw traversal fields remain available even when filtered/ranked views are present.",
+        "Document that reranking is rule-based post-traversal rescore, not semantic/vector/LLM reranking.",
+        "Document the distinction between `--axis` traversal selection and `--filter-axis` view filtering.",
+        "Document archive/default active inventory behavior.",
+        "Document examples for source, role, evidence, and PRD context ranking.",
+        "Do not claim ranking changes graph truth; it only changes result consumption.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and graph CLI tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs graph docs-control-plane --preset family --json`",
+        "`node packages/cli/dist/index.js docs graph programming-artifact-ontology-system --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --family-only --json`",
+        "`node packages/cli/dist/index.js docs prd context docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-008"
+      ]
+    },
+    {
+      "id": "US-010",
+      "title": "Verify Ranking And Filtering Operationally",
+      "description": "As a reviewer, I want command evidence that ranking/filtering works on real repository data.",
+      "acceptanceCriteria": [
+        "Run `docs graph docs-control-plane --preset family --json` and verify ranking/summary exist.",
+        "Run `docs graph programming-artifact-ontology-system --preset family --json` and verify broad results are summarized.",
+        "Run `docs collect programming-artifact-ontology-system --graph --preset family --json`.",
+        "Run `docs collect programming-artifact-ontology-system --graph --preset family --family-only --json`.",
+        "Run at least one source path graph query and verify source-map behavior remains bounded.",
+        "Run `docs prd context docs-control-plane --json` and verify ranked context ordering.",
+        "Run all quality gates.",
+        "Record any residual noise or follow-up candidates in docs-control-plane TODO.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and graph CLI tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs graph docs-control-plane --preset family --json`",
+        "`node packages/cli/dist/index.js docs graph programming-artifact-ontology-system --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --json`",
+        "`node packages/cli/dist/index.js docs collect programming-artifact-ontology-system --graph --preset family --family-only --json`",
+        "`node packages/cli/dist/index.js docs prd context docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-009"
+      ]
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-17T06:28:48.640Z"
+  }
+}
