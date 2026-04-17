@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildDeterministicLabelRecord,
+  buildOntologyPackLabelRecordFromValidateResult,
   buildSemanticCoordinateCandidate,
   collectSemanticCoordinateCandidatesFromDocuments,
   DETERMINISTIC_LABEL_RECORD_STATES,
   detectSemanticCoordinateCandidateCollisions,
   normalizeDocumentEnvelope,
+  projectOntologyPackAndArtifactLabelRecords,
   projectDeterministicLabelRecordsFromDocuments,
   SEMANTIC_COORDINATE_CANONICAL_EXAMPLES,
   SEMANTIC_COORDINATE_LABEL_KINDS,
@@ -16,6 +18,7 @@ import {
   type SemanticCoordinateCandidateInput,
   type DocumentEnvelope,
 } from "./index.js";
+import type { OntologyPackValidateResult } from "../ontology-pack-validate.js";
 
 describe("semantic coordinate candidates", () => {
   it("supports the canonical deterministic label kinds", () => {
@@ -657,6 +660,138 @@ describe("semantic coordinate candidates", () => {
     });
   });
 
+  it("projects known ontology packs and available artifact evidence into label records", async () => {
+    const projection = await projectOntologyPackAndArtifactLabelRecords({
+      documents: [artifactEvidenceDoc()],
+    });
+    const programmingPack = recordByLabel(
+      projection.records,
+      "urn:pack:ontology:programming-artifact-ontology:v1",
+    );
+    const authorizationPack = recordByLabel(
+      projection.records,
+      "urn:pack:ontology:authorization-ontology:v1",
+    );
+
+    expect(projection.records.filter((record) =>
+      record.label === "urn:pack:ontology:programming-artifact-ontology:v1"
+    )).toHaveLength(1);
+    expect(programmingPack).toMatchObject({
+      kind: "ontology-pack",
+      currentState: "DRAFT",
+      metadata: {
+        projection: "ontology-pack-validate",
+        packRef: "programming-artifact-ontology",
+        valid: true,
+        ontologyPackValidate: {
+          identity: {
+            packId: "programming-artifact-ontology",
+            schemaPresent: true,
+          },
+          componentSchema: {
+            axes: expect.arrayContaining(["programming_artifact_kind"]),
+            taxonomies: expect.arrayContaining(["programming-artifact"]),
+          },
+          systemBindings: {
+            counts: {
+              blueprints: 1,
+              implementationRefs: 1,
+              verificationRefs: 1,
+            },
+          },
+          runtime: {
+            valid: true,
+          },
+          readiness: {
+            implementationFiles: {
+              status: "ready",
+            },
+            testFiles: {
+              status: "ready",
+            },
+          },
+          readinessStatus: {
+            implementationFiles: "ready",
+            testFiles: "ready",
+          },
+        },
+      },
+    });
+    expect(programmingPack.sourceRefs).toEqual(expect.arrayContaining([
+      "urn:source:json:artifacts/programming-artifacts.json",
+      "urn:source:typescript:packages/operational-ontology/src/internal/programming-artifact-core.ts",
+      "urn:source:typescript:packages/operational-ontology/src/programming-artifacts.test.ts",
+    ]));
+    expect(programmingPack.evidenceRefs).toEqual(expect.arrayContaining([
+      "urn:artifact:activation-evidence:activation-evidence-programming-artifact-ontology:v1",
+      "urn:artifact:activation-evidence:activation-evidence-proof:v1",
+    ]));
+    expect(projection.records.map((record) => record.label)).toEqual(expect.arrayContaining([
+      "urn:artifact:activation-evidence:activation-evidence-programming-artifact-ontology:v1",
+      "urn:artifact:activation-evidence:activation-evidence-proof:v1",
+    ]));
+
+    expect(authorizationPack).toMatchObject({
+      kind: "ontology-pack",
+      currentState: "DRAFT",
+      metadata: {
+        projection: "ontology-pack-validate",
+        packRef: "authorization-ontology",
+        valid: true,
+        ontologyPackValidate: {
+          identity: {
+            packId: "authorization-ontology",
+            schemaPresent: true,
+          },
+          componentSchema: {
+            axes: expect.arrayContaining(["authorization_node_kind"]),
+            taxonomies: expect.arrayContaining(["authorization-node"]),
+          },
+          runtime: {
+            valid: true,
+          },
+        },
+      },
+    });
+    expect(authorizationPack.sourceRefs).toEqual(expect.arrayContaining([
+      "urn:source:typescript:packages/authorization-ontology/src/index.ts",
+      "urn:source:typescript:packages/authorization-ontology/src/index.test.ts",
+      "urn:source:typescript:packages/authorization-ontology/src/permission-engine-bridge.test.ts",
+    ]));
+  });
+
+  it("preserves ontology pack readiness warnings as diagnostics", () => {
+    const record = buildOntologyPackLabelRecordFromValidateResult(
+      warningPackValidateResult(),
+    );
+
+    expect(record.label).toBe("urn:pack:ontology:warning-pack-ontology:v1");
+    expect(record.metadata).toMatchObject({
+      projection: "ontology-pack-validate",
+      valid: true,
+      ontologyPackValidate: {
+        readinessStatus: {
+          implementationFiles: "ready",
+          testFiles: "ready",
+          docs: "partial",
+          sourceMap: "partial",
+        },
+      },
+    });
+    expect(record.diagnostics).toEqual([
+      expect.objectContaining({
+        code: "ontology-pack-readiness-warning",
+        severity: "warning",
+        label: "urn:pack:ontology:warning-pack-ontology:v1",
+        metadata: expect.objectContaining({
+          issueCode: "source-map-missing",
+          issueSource: "source-map",
+          issuePath: "readiness.sourceMap.pack.ts",
+        }),
+      }),
+    ]);
+  });
+
   it("preserves active/archive scope and completed-record metadata on projected records", () => {
     const archived = prdMarkdownDoc({
       stableId: "tasks/archive/prd-completed",
@@ -881,6 +1016,94 @@ function artifactEvidenceDoc(
     },
     ...withoutEnvelopeNested(overrides),
   });
+}
+
+function warningPackValidateResult(): OntologyPackValidateResult {
+  return {
+    valid: true,
+    packRef: "warning-pack-ontology",
+    packId: "warning-pack-ontology",
+    resolution: {
+      kind: "file-path",
+      packRef: "warning-pack-ontology",
+      filePath: "fixtures/warning-pack-ontology.json",
+    },
+    issues: [
+      {
+        level: "warning",
+        source: "source-map",
+        path: "readiness.sourceMap.pack.ts",
+        code: "source-map-missing",
+        message: "Matching docs family does not declare source-map coverage for pack.ts.",
+      },
+    ],
+    identity: {
+      packId: "warning-pack-ontology",
+      schemaPresent: true,
+      metadataKeys: [],
+    },
+    componentSchema: {
+      axes: ["warning_axis"],
+      taxonomies: ["warning-taxonomy"],
+      relationCategories: [],
+      traversals: [],
+      counts: {
+        axes: 1,
+        taxonomies: 1,
+        relationCategories: 0,
+        traversals: 0,
+      },
+    },
+    systemBindings: {
+      blueprints: [],
+      counts: {
+        blueprints: 0,
+        implementationRefs: 0,
+        verificationRefs: 0,
+      },
+    },
+    readiness: {
+      implementationFiles: {
+        status: "ready",
+        checked: [],
+        missing: [],
+      },
+      testFiles: {
+        status: "ready",
+        checked: [],
+        missing: [],
+      },
+      docs: {
+        status: "partial",
+        familyId: "warning-pack-ontology-system",
+        matchingDocs: [
+          {
+            docId: "warning-pack-ontology-system",
+            kind: "spec",
+            path: "docs/specs/warning-pack-ontology-system.spec.md",
+            sourceCount: 0,
+          },
+        ],
+      },
+      sourceMap: {
+        status: "partial",
+        checkedRefs: ["pack.ts"],
+        coveredRefs: [],
+        missingRefs: ["pack.ts"],
+        coverage: [
+          {
+            path: "pack.ts",
+            covered: false,
+            docIds: [],
+          },
+        ],
+      },
+    },
+    runtime: {
+      valid: true,
+      issueCount: 0,
+    },
+  };
 }
 
 function withoutEnvelopeNested(

@@ -93,6 +93,8 @@ Deterministic label record는 semantic coordinate candidate를 감싼 read-only 
 
 `DocumentEnvelope` → deterministic label record projection은 candidate projection 위에 관계 ref를 얹는 system transform이다. Definition markdown, PRD markdown, ralph PRD JSON envelope에서 생성된 candidate를 record로 감싸고, authored `links[]`는 dependency label ref 후보, `sources[]`와 PRD context source는 source label ref 후보, `evidence[]`와 task evidence id는 evidence label ref 후보로 투영한다. Record metadata에는 source-owned document id/path와 함께 active/archive/session scope, completed-record context를 보존한다. 이 projection도 read-only이며 FSM readiness 입력만 준비하고 상태 전이 authority를 갖지 않는다.
 
+Ontology pack/artifact projection은 같은 record shape에 `ontology pack validate` 결과를 얹는다. 기본 입력은 CLI known-pack id 목록이며, 각 pack record는 validate 결과의 identity, component schema, system bindings, runtime summary, readiness status를 metadata로 보존한다. Validate issue는 record diagnostic으로 투영하고, source-map/docs readiness warning은 warning diagnostic으로 유지한다. Artifact evidence `DocumentEnvelope`가 함께 주어지면 artifact/evidence record를 생성하고 matching `packId`/`ontologyId`를 가진 pack record의 `evidenceRefs[]`에 연결한다. 이 projection은 pack activation, registry allocation, known-pack registry 수정을 수행하지 않는다.
+
 Canonical format examples:
 
 | 형상 단위 | 후보 label |

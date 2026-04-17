@@ -2,6 +2,15 @@ import {
   isArchivedPrdDocument,
   isTransientSessionDocument,
 } from "./family-scope.js";
+import {
+  KNOWN_ONTOLOGY_PACK_IDS,
+} from "../known-ontology-packs.js";
+import {
+  validateOntologyPackFromRef,
+  type OntologyPackValidateFileReadiness,
+  type OntologyPackValidateIssue,
+  type OntologyPackValidateResult,
+} from "../ontology-pack-validate.js";
 import type {
   CompletedRecordState,
 } from "./completed-records.js";
@@ -44,6 +53,8 @@ export const SEMANTIC_COORDINATE_DIAGNOSTIC_CODES = [
   "semantic-coordinate-invalid-version",
   "semantic-coordinate-ambiguous-physical-ref",
   "semantic-coordinate-collision-candidate",
+  "ontology-pack-validate-issue",
+  "ontology-pack-readiness-warning",
 ] as const;
 
 export type SemanticCoordinateDiagnosticCode =
@@ -207,6 +218,25 @@ export interface DeterministicLabelRecordProjection {
   readonly candidates: readonly SemanticCoordinateCandidate[];
   readonly diagnostics: readonly SemanticCoordinateDiagnostic[];
   readonly skippedDocuments: readonly SemanticCoordinateSkippedDocument[];
+}
+
+export interface OntologyPackAndArtifactLabelRecordProjectionOptions
+  extends DeterministicLabelRecordProjectionOptions {
+  readonly rootDir?: string;
+  readonly packRefs?: readonly string[] | null;
+  readonly packValidateResults?: readonly OntologyPackValidateResult[] | null;
+  readonly documents?: readonly DocumentEnvelope[] | null;
+}
+
+export interface OntologyPackAndArtifactLabelRecordProjection
+  extends DeterministicLabelRecordProjection {
+  readonly packValidations: readonly OntologyPackValidateResult[];
+}
+
+export interface OntologyPackLabelRecordOptions {
+  readonly sourceRefs?: readonly string[] | null;
+  readonly evidenceRefs?: readonly string[] | null;
+  readonly diagnostics?: readonly SemanticCoordinateDiagnostic[] | null;
 }
 
 export const SEMANTIC_COORDINATE_CANONICAL_EXAMPLES = {
@@ -402,6 +432,293 @@ export function projectDeterministicLabelRecordsFromDocuments(
     diagnostics: candidateInventory.diagnostics,
     skippedDocuments: candidateInventory.skippedDocuments,
   };
+}
+
+export async function projectOntologyPackAndArtifactLabelRecords(
+  options: OntologyPackAndArtifactLabelRecordProjectionOptions = {},
+): Promise<OntologyPackAndArtifactLabelRecordProjection> {
+  const packValidations = options.packValidateResults
+    ? [...options.packValidateResults]
+    : await Promise.all(
+        (options.packRefs ?? KNOWN_ONTOLOGY_PACK_IDS).map((packRef) =>
+          validateOntologyPackFromRef({
+            packRef,
+            ...(options.rootDir ? { rootDir: options.rootDir } : {}),
+          }),
+        ),
+      );
+  const documents = options.documents ?? [];
+  const documentProjection = projectDeterministicLabelRecordsFromDocuments(
+    documents,
+    options,
+  );
+  const packRecords = packValidations.map((result) => {
+    const packId = result.packId ?? result.resolution.knownPackId ?? result.packRef;
+    const documentPackRefs = documentLabelRefsForPack(
+      packId,
+      documents,
+      documentProjection.records,
+    );
+    return buildOntologyPackLabelRecordFromValidateResult(result, {
+      sourceRefs: documentPackRefs.sourceRefs,
+      evidenceRefs: documentPackRefs.evidenceRefs,
+    });
+  });
+  const packRecordLabels = new Set(packRecords.map((record) => record.label));
+  const documentRecords = documentProjection.records.filter((record) =>
+    !packRecordLabels.has(record.label)
+  );
+  const records = [...packRecords, ...documentRecords]
+    .toSorted(compareDeterministicLabelRecords);
+
+  return {
+    records,
+    candidates: records.map((record) => record.candidate),
+    diagnostics: [
+      ...documentProjection.diagnostics,
+      ...packRecords.flatMap((record) => record.diagnostics),
+    ],
+    skippedDocuments: documentProjection.skippedDocuments,
+    packValidations,
+  };
+}
+
+export function buildOntologyPackLabelRecordFromValidateResult(
+  result: OntologyPackValidateResult,
+  options: OntologyPackLabelRecordOptions = {},
+): DeterministicLabelRecord {
+  const packId = result.packId ?? result.resolution.knownPackId ?? result.packRef;
+  const candidateResult = buildSemanticCoordinateCandidate({
+    kind: "ontology-pack",
+    id: packId,
+    version: "v1",
+    physicalRefs: ontologyPackValidationPhysicalRefs(result),
+    metadata: {
+      idSource: result.resolution.kind === "known-pack" ? "knownPackId" : "packRef",
+      projection: "ontology-pack-validate",
+      packRef: result.packRef,
+      packId,
+      resolutionKind: result.resolution.kind,
+      ...(result.resolution.knownPackId
+        ? { knownPackId: result.resolution.knownPackId }
+        : {}),
+      ...(result.resolution.filePath ? { filePath: result.resolution.filePath } : {}),
+    },
+  });
+
+  const candidate = candidateResult.candidate;
+  if (!candidate) {
+    throw new Error(`Unable to build ontology pack label record for ${packId}`);
+  }
+
+  return buildDeterministicLabelRecord({
+    candidate,
+    sourceRefs: [
+      ...sourceRefsForOntologyPackValidation(result),
+      ...(options.sourceRefs ?? []),
+    ],
+    evidenceRefs: options.evidenceRefs,
+    diagnostics: [
+      ...ontologyPackValidationDiagnostics(result, candidate.label),
+      ...(options.diagnostics ?? []),
+    ],
+    metadata: ontologyPackValidationMetadata(result),
+  });
+}
+
+function ontologyPackValidationPhysicalRefs(
+  result: OntologyPackValidateResult,
+): readonly SemanticPhysicalRefInput[] {
+  const packId = result.packId ?? result.resolution.knownPackId ?? result.packRef;
+  const refs: SemanticPhysicalRefInput[] = [];
+
+  if (result.resolution.filePath) {
+    refs.push({
+      kind: "source-path",
+      ref: result.resolution.filePath,
+      role: "primary",
+      metadata: {
+        resolutionKind: result.resolution.kind,
+      },
+    });
+  }
+
+  refs.push({
+    kind: "pack-id",
+    ref: packId,
+    role: result.resolution.filePath ? "related" : "primary",
+    metadata: {
+      resolutionKind: result.resolution.kind,
+      ...(result.resolution.knownPackId
+        ? { knownPackId: result.resolution.knownPackId }
+        : {}),
+    },
+  });
+
+  return refs;
+}
+
+function ontologyPackValidationMetadata(
+  result: OntologyPackValidateResult,
+): DocumentMetadata {
+  return {
+    projection: "ontology-pack-validate",
+    packRef: result.packRef,
+    packId: result.packId,
+    valid: result.valid,
+    resolution: {
+      kind: result.resolution.kind,
+      packRef: result.resolution.packRef,
+      ...(result.resolution.knownPackId
+        ? { knownPackId: result.resolution.knownPackId }
+        : {}),
+      ...(result.resolution.filePath ? { filePath: result.resolution.filePath } : {}),
+      ...(result.resolution.supportedFilePath
+        ? { supportedFilePath: result.resolution.supportedFilePath }
+        : {}),
+    },
+    ontologyPackValidate: {
+      valid: result.valid,
+      identity: result.identity,
+      componentSchema: result.componentSchema,
+      systemBindings: result.systemBindings,
+      runtime: result.runtime,
+      readiness: {
+        implementationFiles: packFileReadinessMetadata(
+          result.readiness.implementationFiles,
+        ),
+        testFiles: packFileReadinessMetadata(result.readiness.testFiles),
+        docs: result.readiness.docs,
+        sourceMap: result.readiness.sourceMap,
+      },
+      readinessStatus: {
+        implementationFiles: result.readiness.implementationFiles.status,
+        testFiles: result.readiness.testFiles.status,
+        docs: result.readiness.docs.status,
+        sourceMap: result.readiness.sourceMap.status,
+      },
+    },
+  };
+}
+
+function packFileReadinessMetadata(
+  readiness: OntologyPackValidateFileReadiness,
+): DocumentMetadata {
+  return {
+    status: readiness.status,
+    checked: readiness.checked.map(packFileRefMetadata),
+    missing: readiness.missing.map(packFileRefMetadata),
+    counts: {
+      checked: readiness.checked.length,
+      missing: readiness.missing.length,
+    },
+  };
+}
+
+function packFileRefMetadata(
+  ref: OntologyPackValidateFileReadiness["checked"][number],
+): DocumentMetadata {
+  const { absolutePath: _absolutePath, ...metadata } = ref;
+  return metadata;
+}
+
+function sourceRefsForOntologyPackValidation(
+  result: OntologyPackValidateResult,
+): readonly string[] {
+  return normalizeRecordRefs([
+    ...result.readiness.implementationFiles.checked.map((ref) =>
+      sourceLabelForPath(ref.path)
+    ),
+    ...result.readiness.testFiles.checked.map((ref) =>
+      sourceLabelForPath(ref.path)
+    ),
+  ]);
+}
+
+function sourceLabelForPath(path: string): string | undefined {
+  return buildSemanticCoordinateCandidate({
+    kind: "source-file",
+    id: path,
+    subtype: sourceSubtype(path),
+  }).candidate?.label;
+}
+
+function documentLabelRefsForPack(
+  packId: string,
+  documents: readonly DocumentEnvelope[],
+  records: readonly DeterministicLabelRecord[],
+): {
+  readonly sourceRefs: readonly string[];
+  readonly evidenceRefs: readonly string[];
+} {
+  const documentKeys = new Set(
+    documents
+      .filter((document) => documentPackId(document) === packId)
+      .map(documentKey),
+  );
+  if (documentKeys.size === 0) {
+    return {
+      sourceRefs: [],
+      evidenceRefs: [],
+    };
+  }
+
+  const relatedRecords = records.filter((record) => {
+    const key = candidateDocumentKey(record.candidate);
+    return key ? documentKeys.has(key) : false;
+  });
+
+  return {
+    sourceRefs: normalizeRecordRefs(
+      relatedRecords
+        .filter((record) => record.kind === "source-file")
+        .map((record) => record.label),
+    ),
+    evidenceRefs: normalizeRecordRefs(
+      relatedRecords
+        .filter((record) => record.kind === "artifact" || record.kind === "evidence")
+        .map((record) => record.label),
+    ),
+  };
+}
+
+function ontologyPackValidationDiagnostics(
+  result: OntologyPackValidateResult,
+  label: string,
+): readonly SemanticCoordinateDiagnostic[] {
+  return result.issues.map((issue) =>
+    semanticCoordinateDiagnostic({
+      code: ontologyPackValidationDiagnosticCode(issue),
+      severity: issue.level,
+      label,
+      id: result.packId ?? result.packRef,
+      message: issue.message,
+      metadata: {
+        projection: "ontology-pack-validate",
+        packRef: result.packRef,
+        packId: result.packId,
+        issueCode: issue.code,
+        issueSource: issue.source,
+        issuePath: issue.path,
+        ...(issue.blueprintId ? { blueprintId: issue.blueprintId } : {}),
+        ...(issue.details ? { details: issue.details } : {}),
+      },
+    }),
+  );
+}
+
+function ontologyPackValidationDiagnosticCode(
+  issue: OntologyPackValidateIssue,
+): SemanticCoordinateDiagnosticCode {
+  if (
+    issue.level === "warning"
+    && (issue.path.startsWith("readiness.")
+      || issue.source === "docs"
+      || issue.source === "source-map")
+  ) {
+    return "ontology-pack-readiness-warning";
+  }
+  return "ontology-pack-validate-issue";
 }
 
 export function buildSemanticCoordinateCandidatesFromDocument(
@@ -1250,7 +1567,9 @@ function documentVersion(document: DocumentEnvelope): string {
 
 function documentPackId(document: DocumentEnvelope): string | undefined {
   return asString(document.metadata.packId)
-    ?? nestedMetadataString(document.metadata.artifactMetadata, "packId");
+    ?? asString(document.metadata.ontologyId)
+    ?? nestedMetadataString(document.metadata.artifactMetadata, "packId")
+    ?? nestedMetadataString(document.metadata.artifactMetadata, "ontologyId");
 }
 
 function candidateMetadata(
@@ -1344,7 +1663,7 @@ function uniqueStrings(values: readonly (string | undefined)[]): readonly string
 }
 
 function normalizeRecordRefs(
-  refs: readonly string[] | null | undefined,
+  refs: readonly (string | undefined)[] | null | undefined,
 ): readonly string[] {
   return uniqueStrings((refs ?? []).map(normalizeCoordinatePart))
     .toSorted((left, right) => left.localeCompare(right));

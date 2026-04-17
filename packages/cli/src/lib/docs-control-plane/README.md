@@ -71,9 +71,19 @@ refs. The record metadata keeps active/archive/session scope and optional
 completed-record context so later FSM readiness checks can consume the same
 facts without re-reading source files.
 
+`projectOntologyPackAndArtifactLabelRecords()` adds ontology pack validation
+inputs to the same read model. By default it resolves the known pack ids,
+projects `ontology pack validate` identity, component schema, system bindings,
+runtime, and readiness status into pack record metadata, and maps validation
+issues into record diagnostics. Readiness warnings stay warnings; they do not
+block pack record creation. Optional artifact evidence envelopes are projected
+as artifact/evidence records and linked back to matching pack records through
+`evidenceRefs[]`.
+
 This shape is intentionally data-only. It does not append to a registry, write
 transition events, persist state, or promote PRD/TODO/checklist signals into
-authority.
+authority. Pack projection also does not activate packs or mutate the known-pack
+registry.
 
 ## Traversal taxonomy
 
