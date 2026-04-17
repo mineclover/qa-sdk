@@ -133,7 +133,98 @@ def:
 | `viz-3d` | 3D 모니터링과 좌표 시각화 앱 | 구현 | README |
 | `viz-core` | 시각화 primitive, token, renderer 코어 | 구현 | README |
 
-## 4. 이번 리뷰의 결론
+## 4. ECS 역할 매핑
+
+ECS(Entity-Component-System)는 이 시스템의 구조를 설명하는 **참조 모델**이다. ECS 전용 runtime, scheduling, archetype, SoA storage를 전제하지 않는다. 대신 세 분리 원칙으로 패키지 역할의 경계를 정한다.
+
+| 역할 | 정의 | 대응 |
+|------|------|------|
+| **Entity** | 안정 식별자를 가진 도메인 객체 | 불변 ID가 있는 타입/모델 SSOT |
+| **Component** | Entity에 붙는 data-only 구조 | 숨은 실행 로직 없는 순수 데이터 |
+| **System** | Component를 읽어 변환·판정·전파하는 명시적 로직 | 서비스, 엔진, CLI, SDK |
+
+### 4.1 Entity — 안정 식별자 + 도메인 모델
+
+| 패키지 | 소유 Entity 타입 | 택소노미 (enum/union) |
+|--------|-----------------|---------------------|
+| `@qa-sdk/core` | `EventRecord` (logId), `TransmissionEnvelope` (transmissionId), `ScenarioSpec` (scenarioId), `VerdictReport`, `SpecGraph`, `RuntimeGraph`, `QaSession` | `RecordKind`, `Verdict`, `StepKind`, `PayloadFormat` |
+| `spec-schema` | `SchemaAxis`, `SchemaDef`, `SchemaFragment` | `SchemaCategory` (6종) |
+| `test-types` | `TestCase`, `TestSuite` | `TestPhase`, `TestKind`, `TestScope`, `TestLifecycle` |
+| `demo-types` | 카탈로그 파생 prefix/axis 타입 | SSOT: `demo-snapshot` |
+| `definition-catalog` | `DefDocument` (address), `DefLink` | `DefLevel` (group/module/leaf), `DefLayer` (domain/operation/mediation/experience), `LinkType` (6종), `DefScope` |
+
+### 4.2 Component — 데이터 변환 / 순수 계산
+
+이 계층의 패키지는 Entity를 받아 계산하거나 새 데이터 구조를 생성한다. 서비스나 외부 I/O를 직접 소유하지 않는다.
+
+| 패키지 | 변환 대상 | 산출 데이터 |
+|--------|----------|-----------|
+| `weighted-index` | dim 값 배열 | mixed-radix 1D 정수 (`Coord`, `Strides`, `Shape`) |
+| `bit-index` | Coord | bit-packing 추출 (O(1)) |
+| `address-index` | prefix×address | 역색인 범위 조회 |
+| `permission-engine` | RBAC role/action/resource | bitmask encode/grant/check |
+| `@qa-sdk/codec` | dim 값 | DimWire 직렬화/역직렬화 |
+| `@qa-sdk/engine` | `EventRecord[]` + `ScenarioSpec` | `RuntimeGraph`, `StepMatch[]`, `VerdictReport` |
+| `convergence` | usage snapshot | 구조 수렴 분석 리포트 |
+| `spec-core` | `SpecDocument`, `PrefixSpec` | DKG bridge, codegen, propagation |
+| `codegen-core` | `Catalog` snapshot | TypeScript/Proto 코드 |
+| `decision-flow` | `FlowSchema`, gate/branch | `FlowInstance`, path trace |
+
+### 4.3 System — 비즈니스 로직 + 외부 인터페이스
+
+System은 Component 계산 결과를 영속하거나 외부와 통신한다. 원본 Entity 상태를 암묵적으로 소유하지 않는다.
+
+**인프라 서비스**
+
+| 패키지 | 포트 | 소유 데이터 | 저장소 |
+|--------|------|-----------|-------|
+| `@qa-sdk/ingest-server` | 3200 | `EventRecord`, `Trace`, `VerdictReport`, `DLQ` | PostgreSQL + Redis |
+| `@qa-sdk/registry-service` | 3300 | `Catalog`, `Prefix`, `Version`, `ServiceEntry` | SQLite/Mem |
+| `gate-service` | 3400 | `AddressState` (reserved/inactive/open) | SQLite |
+| `query-service` | 3500 | `PolicyRule` 질의 결과 | SQLite |
+| `@qa-sdk/decode-service` | 3600 | `DecodeMap` 캐시 | In-memory TTL |
+| `definition-service` | 3700 | `DefDocument` 메타데이터 | SQLite |
+| `decision-service` | 3800 | `FlowInstance` 이력 | SQLite |
+
+**SDK / 클라이언트**
+
+| 패키지 | 대상 | System 역할 |
+|--------|------|------------|
+| `@qa-sdk/sdk` | Node.js 서버 | `qa.track()` → `TransmissionEnvelope` 생성 + ingest 전송 |
+| `@qa-sdk/browser-sdk` | 브라우저 | `QaMonitor` auto-capture + session 관리 |
+| `@qa-sdk/browser-codec` | 브라우저 | 브라우저 전용 address encode/decode (core 미의존) |
+| `@qa-sdk/registry-client` | 서버 내부 | registry-service HTTP client |
+| `definition-client` | CLI/서비스 | definition-service HTTP client |
+
+**운영 도구**
+
+| 패키지 | System 역할 |
+|--------|------------|
+| `@qa-sdk/cli` | `def validate`, `docs status`, `docs graph`, `docs drift`, `docs label inventory`, `dkg self-check`, `encode`/`decode`, `flow start/select` |
+| `infra-engine` | 멀티 프로바이더 배포/디스커버리/익스포트 |
+| `@qa-sdk/otel` | OpenTelemetry 초기화 + Drizzle 계측 |
+| `@qa-sdk/gateway` | 인증 + 내부 서비스 라우팅 |
+
+### 4.4 Taxonomy — 시스템 공용 분류 어휘
+
+아래 enum/union은 Entity·Component·System 전반에서 공유된다. 새 분류가 필요할 때는 소유 패키지를 확인하고 확장한다.
+
+| 분류 이름 | 소유 패키지 | 값 (요약) |
+|---------|-----------|---------|
+| `RecordKind` | `@qa-sdk/core` | `"log"` \| `"span"` \| `"metric"` |
+| `Verdict` | `@qa-sdk/core` | `"pass"` \| `"fail"` \| `"warn"` \| `"degraded"` \| `"unknown"` \| `"skipped"` |
+| `DefLayer` | `definition-catalog` | `"domain"` \| `"operation"` \| `"mediation"` \| `"experience"` |
+| `DefLevel` | `definition-catalog` | `"group"` \| `"module"` \| `"leaf"` |
+| `LinkType` | `definition-catalog` | `"contains"` \| `"depends_on"` \| `"implements"` \| `"refines"` \| `"constrains"` \| `"traces_to"` |
+| `SemanticCoordinateLabelKind` | `@qa-sdk/cli` (docs-control-plane) | `"definition-doc"` \| `"source-file"` \| `"ontology-pack"` \| `"artifact"` \| `"prd-markdown"` \| `"ralph-prd-json"` \| `"prd-story"` \| `"evidence"` |
+| `DeterministicLabelRecordState` | `@qa-sdk/cli` (docs-control-plane) | `"DRAFT"` \| `"LINTED"` \| `"RESOLVED"` \| `"ACTIVE"` \| `"DEPRECATED"` \| `"ARCHIVED"` \| `"BLOCKED"` |
+| `TestPhase` | `test-types` | `"unit"` \| `"integration"` \| `"e2e"` \| `"simulation"` \| `"bench"` |
+| `StoreDriver` | `@qa-sdk/ingest-server` | `"memory"` \| `"pg"` \| `"d1"` \| `"clickhouse"` |
+| `DeterministicLabelReadinessGate` | `@qa-sdk/cli` | `"lint"` \| `"resolve"` \| `"activate"` |
+
+---
+
+## 5. 이번 리뷰의 결론
 
 - 패키지 구현 자체는 넓게 진행돼 있지만, 패키지 단위 목표를 빠르게 읽는 문서 surface는 약하다.
 - 특히 `service/app` 계열의 `README` 공백이 커서 구현 목표와 실행 진입점이 코드 안에만 숨어 있다.

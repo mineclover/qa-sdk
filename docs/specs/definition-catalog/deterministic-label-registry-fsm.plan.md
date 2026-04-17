@@ -212,12 +212,14 @@ Controller gate 후보:
 
 ### Phase 3: Transition controller dry-run
 
-상태: partially implemented.
+상태: implemented (internal API, command surface deferred).
 
-- internal transition dry-run request/result shape 구현
-- command 후보는 미구현, future command surface로 유지
-- no hidden writes
-- append-only event schema 후보만 정의
+- `DeterministicLabelTransitionRequest` / `DeterministicLabelTransitionDryRunResult` 구현 완료
+- `dryRunDeterministicLabelTransition()` internal API 구현 완료
+- `DETERMINISTIC_LABEL_TRANSITION_EVENT_SCHEMA_CANDIDATE` append-only schema candidate 정의 완료
+- command 후보(`docs label transition`)는 미구현, future command surface로 유지
+- no hidden writes: `dryRun: true, readOnly: true, writes: false, mutationTargets: { labels: false, documents: false, prds: false, registries: false }` 명시
+- append-only event schema 후보: `schemaId: "deterministic-label-transition-event", version: "candidate-v1"`, deferred fields `[actor, sequence, committedAt, registryRevision]`
 
 ### Phase 4: Registry persistence decision
 

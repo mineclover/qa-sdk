@@ -61,14 +61,14 @@ def:
   - [x] graph output summarization for large results
   - [x] US-010 operational verification recorded ranked/summary graph output, collect graph output, family-only bounds, source-map bounds, PRD context ranking, drift output, and quality gates on real repository data
 
-### Actionable — 실행 가능
+- [x] Deterministic Label Registry And FSM Control Plane
+  - [x] semantic coordinate read model
+  - [x] append-only label registry projection remains read-only; persistence is deferred
+  - [x] DRAFT/LINTED/RESOLVED/ACTIVE readiness calculation
+  - [x] transition controller dry-run shape
+  - [x] no hidden write policy and persistence deferral
 
-- [ ] Deterministic Label Registry And FSM Control Plane
-  - [ ] semantic coordinate read model
-  - [ ] append-only label registry projection
-  - [ ] DRAFT/LINTED/RESOLVED/ACTIVE readiness calculation
-  - [ ] transition controller dry-run shape
-  - [ ] no hidden write policy and persistence deferral
+### Actionable — 실행 가능
 
 - [ ] PRD Completion Sync Precision
   - [x] `docs status` follows module composition so contained TODO docs can surface as follow-up even when they do not share the same filename family
