@@ -231,11 +231,12 @@
         "`node packages/cli/dist/index.js ontology pack validate programming-artifact-ontology --json`"
       ],
       "priority": 7,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "US-007 extracted pack definition document scaffold rendering into packages/cli/src/lib/ontology-pack-scaffold/render-docs.ts while preserving the existing scaffold plan output contract. Focused renderer tests now assert deterministic doc skeletons, valid definition-catalog frontmatter, and the architecture-neutral identity/component schema/system binding separation text. Required docs, ontology, typecheck, build, operational ontology pack, definition validation, and dist-based operational CLI gates passed; the topdown lifecycle drift command still reports existing markdown unchecked-after-json-complete warnings while exiting 0, and programming-artifact pack validate still reports its existing source-map-missing warning.",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-008",
@@ -471,6 +472,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-17T02:36:47.942Z"
+    "updatedAt": "2026-04-17T02:44:42.617Z"
   }
 }

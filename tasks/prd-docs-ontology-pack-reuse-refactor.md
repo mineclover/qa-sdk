@@ -172,13 +172,13 @@ Compatibility contract:
 **Description:** As a pack authoring maintainer, I want definition doc scaffold rendering separated from scaffold planning so docs templates can evolve independently from path and diagnostics policy.
 
 **Acceptance Criteria:**
-- [ ] Create a focused docs renderer module for pack definition documents.
-- [ ] Move `renderSpecDoc`, `renderTodoDoc`, `renderPlanDoc`, `renderRuleDoc`, `renderCasesDoc`, and `renderTestDoc` out of `ontology-pack-scaffold-plan.ts`.
-- [ ] Preserve deterministic docs skeleton output.
-- [ ] Preserve valid definition-catalog frontmatter.
-- [ ] Preserve architecture-neutral identity/data/system separation text in generated spec skeletons.
-- [ ] Existing scaffold plan/write tests pass.
-- [ ] Add or adjust focused docs renderer tests if needed.
+- [x] Create a focused docs renderer module for pack definition documents.
+- [x] Move `renderSpecDoc`, `renderTodoDoc`, `renderPlanDoc`, `renderRuleDoc`, `renderCasesDoc`, and `renderTestDoc` out of `ontology-pack-scaffold-plan.ts`.
+- [x] Preserve deterministic docs skeleton output.
+- [x] Preserve valid definition-catalog frontmatter.
+- [x] Preserve architecture-neutral identity/data/system separation text in generated spec skeletons.
+- [x] Existing scaffold plan/write tests pass.
+- [x] Add or adjust focused docs renderer tests if needed.
 
 ### US-008: Extract Ontology Pack Code And Test Renderers
 
