@@ -1640,6 +1640,10 @@ Archived checkout work.
     expect(text).toContain("kinds:");
     expect(text).toContain("axes:");
     expect(text.indexOf("summary:")).toBeLessThan(text.indexOf("nodes ("));
+    expect(text).toContain("ranked view");
+    expect(text).toContain("#1 [spec] document:checkout-spec");
+    expect(text.indexOf("ranked view")).toBeLessThan(text.indexOf("nodes ("));
+    expect(text).toContain("raw traversal");
     expect(text).toContain("edge reasons");
     expect(text).toContain("reason: link:contains");
   });
@@ -1809,6 +1813,117 @@ Archived checkout work.
     expect(second.nodes.map((node) => node.id)).toEqual(rawNodeIds);
     expect(second.ranking).toEqual(first.ranking);
     expect(second.rankedNodes).toEqual(first.rankedNodes);
+  });
+
+  it("ranks source-path graph output while preserving bounded raw traversal", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "graph",
+      "packages/checkout/src/index.ts",
+      "--axis",
+      "source",
+      "--direction",
+      "in",
+      "--depth",
+      "1",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<GraphOutput>();
+    const rawNodeIds = result.nodes.map((node) => node.id);
+    const rankedNodeIds = result.rankedNodes.map((node) => node.nodeId);
+
+    expect(result.targetResolution.lookupKind).toBe("source-path");
+    expect(result.ranking.algorithm).toBe("docs-graph-rule-rank-v1");
+    expect(result.summary.algorithm).toBe("docs-graph-result-summary-v1");
+    expect(rawNodeIds).toEqual([
+      "source:packages/checkout/src/index.ts",
+      "document:checkout-spec",
+    ]);
+    expect(rankedNodeIds).toEqual([
+      "source:packages/checkout/src/index.ts",
+      "document:checkout-spec",
+    ]);
+    expect(result.rankedNodes[0]).toMatchObject({
+      nodeId: "source:packages/checkout/src/index.ts",
+      rank: 1,
+      strength: "strong",
+    });
+    expect(result.rankedNodes[0]?.reasonSummary).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("target"),
+        expect.stringContaining("source"),
+      ]),
+    );
+    expect(new Set(rankedNodeIds)).toEqual(new Set(rawNodeIds));
+    expect(rawNodeIds).not.toContain("document:tasks/unrelated-prd");
+    expect(result.edges).toEqual([
+      expect.objectContaining({
+        axis: "source",
+        fromNodeId: "document:checkout-spec",
+        toNodeId: "source:packages/checkout/src/index.ts",
+      }),
+    ]);
+  });
+
+  it("keeps missing source-path graph output bounded with ranked diagnostic views", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "graph",
+      "packages/missing/src/nope.ts",
+      "--axis",
+      "source",
+      "--direction",
+      "both",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<GraphOutput>();
+
+    expect(result.targetResolution.lookupKind).toBe("source-path-missing");
+    expect(result.targetResolution.indexed).toBe(false);
+    expect(result.counts).toMatchObject({
+      nodes: 1,
+      edges: 0,
+      paths: 1,
+      diagnostics: 1,
+    });
+    expect(result.nodes).toEqual([
+      expect.objectContaining({
+        id: "source:packages/missing/src/nope.ts",
+        kind: "source",
+      }),
+    ]);
+    expect(result.edges).toEqual([]);
+    expect(result.paths).toHaveLength(1);
+    expect(result.rankedNodes).toEqual([
+      expect.objectContaining({
+        nodeId: "source:packages/missing/src/nope.ts",
+        rank: 1,
+        strength: "strong",
+      }),
+    ]);
+    expect(result.filtering.filteredNodeIds).toEqual([
+      "source:packages/missing/src/nope.ts",
+    ]);
+    expect(result.summary).toMatchObject({
+      nodes: 1,
+      edges: 0,
+      paths: 1,
+      diagnostics: 1,
+      counts: {
+        byNodeKind: { source: 1 },
+        byTraversalAxis: {},
+      },
+    });
+    expect(result.diagnostics.join("\n")).toContain("source-map-missing");
+    expect(result.nodes.map((node) => node.id)).not.toContain("document:checkout-spec");
   });
 
   it("filters graph ranked views without changing raw traversal nodes", async () => {

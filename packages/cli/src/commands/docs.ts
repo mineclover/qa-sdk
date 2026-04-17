@@ -2388,7 +2388,16 @@ function printGraph(result: DocsGraphCliResult): void {
   printGraphSummary(result);
 
   console.log("");
-  console.log(`nodes (${result.nodes.length}):`);
+  console.log(`ranked view (${result.rankedNodes.length}):`);
+  for (const node of result.rankedNodes) {
+    const path = node.path ? ` ${node.path}` : "";
+    console.log(
+      `  - #${node.rank} [${node.kind}] ${node.nodeId} score=${node.score} strength=${node.strength}${path}`,
+    );
+  }
+
+  console.log("");
+  console.log(`nodes (${result.nodes.length} raw traversal):`);
   for (const node of result.nodes) {
     const path = node.path ? ` ${node.path}` : "";
     console.log(`  - [${node.kind}] ${node.id}${path}`);
