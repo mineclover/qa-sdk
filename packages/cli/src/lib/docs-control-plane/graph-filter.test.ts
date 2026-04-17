@@ -31,7 +31,15 @@ describe("docs-control-plane graph result filters", () => {
       limit: 20,
     });
     const rawNodeIds = traversal.nodes.map((node) => node.id);
+    const rawEdgeIds = traversal.edges.map((edge) => edge.id);
+    const rawPaths = traversal.paths;
     const ranking = rankDocumentGraphTraversal(traversal);
+    const unfilteredRanking = ranking.rankedNodes.map((node) => ({
+      nodeId: node.nodeId,
+      rank: node.rank,
+      score: node.score,
+      strength: node.strength,
+    }));
 
     const filtered = filterDocumentGraphRanking(ranking, {
       kinds: ["todo", "plan"],
@@ -41,6 +49,14 @@ describe("docs-control-plane graph result filters", () => {
     });
 
     expect(traversal.nodes.map((node) => node.id)).toEqual(rawNodeIds);
+    expect(traversal.edges.map((edge) => edge.id)).toEqual(rawEdgeIds);
+    expect(traversal.paths).toBe(rawPaths);
+    expect(ranking.rankedNodes.map((node) => ({
+      nodeId: node.nodeId,
+      rank: node.rank,
+      score: node.score,
+      strength: node.strength,
+    }))).toEqual(unfilteredRanking);
     expect(filtered.filtering.filters).toMatchObject({
       kinds: ["todo", "plan"],
       roles: ["todo"],

@@ -71,13 +71,32 @@ sources, metadata source refs, PRD/session paths, and artifact evidence refs).
 It is intentionally broader than, and distinct from, `qa-sdk def find-by-file`,
 which reads DB-owned `code_references` explicit source maps only.
 
+## Post-traversal result views
+
+Graph traversal is the retrieval phase. Ranking, filtering, and summaries run
+only after `traverseDocumentGraph()` has returned its raw result. These result
+views do not rewrite `DocumentEnvelope.links`, change
+`CANONICAL_TRAVERSAL_AXES`, or rebuild graph edges; they consume the traversal
+result and add JSON fields beside it.
+
+The JSON compatibility contract is that raw traversal fields (`nodes`, `edges`,
+`paths`, traversal `counts`, truncation fields, diagnostics, role groups, and
+missing roles) remain the full unfiltered traversal output. Ranked and filtered
+views are additive fields: `ranking`, `rankedNodes`, `filtering`,
+`filteredNodes`, and `summary`.
+
+Reranking is deterministic and rule-based. It uses fixed factors from the
+traversal result, such as target node, distance, axis, node kind, role, archive
+state, diagnostics, and follow-up category. It does not use LLM, vector, or
+semantic ranking, so the same graph result and filter options produce the same
+ranked view.
+
 ## Result view filters
 
 Graph filters are post-traversal view filters. `--axis` selects the axes used
 while traversing the graph; `--filter-axis` filters the ranked/filtered result
-view after traversal has already completed. The raw traversal fields (`nodes`,
-`edges`, and `paths`) stay unchanged so operators can audit the full retrieval
-set.
+view after traversal has already completed. The raw traversal fields stay
+unchanged so operators can audit the full retrieval set.
 
 `docs graph`, `docs collect --graph`, and `docs prd context` support
 `--kind`, `--role`, `--filter-axis`, and `--follow-up-category` as comma
