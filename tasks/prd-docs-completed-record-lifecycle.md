@@ -42,87 +42,87 @@ No browser verification is required.
 **Description:** As a docs maintainer, I want completed record lifecycle semantics documented so completed records are not confused with active work or automatic archive operations.
 
 **Acceptance Criteria:**
-- [ ] Define completed records as read-only lifecycle candidates.
-- [ ] Document that completed records are not automatically moved, archived, or converted to memo.
-- [ ] Document that completed records are not active follow-up work.
-- [ ] Document that `passes: true` in PRD JSON is a completion signal, not promotion authority.
-- [ ] Document that archive/memo conversion requires a separate explicit PRD or command.
-- [ ] Update `docs-control-plane.spec.md` or `docs-control-plane.rule.md` with this policy.
-- [ ] Do not change runtime behavior in this story.
+- [x] Define completed records as read-only lifecycle candidates.
+- [x] Document that completed records are not automatically moved, archived, or converted to memo.
+- [x] Document that completed records are not active follow-up work.
+- [x] Document that `passes: true` in PRD JSON is a completion signal, not promotion authority.
+- [x] Document that archive/memo conversion requires a separate explicit PRD or command.
+- [x] Update `docs-control-plane.spec.md` or `docs-control-plane.rule.md` with this policy.
+- [x] Do not change runtime behavior in this story.
 
 ### US-002: Improve Completed TODO Detection
 
 **Description:** As a documentation operator, I want checked-only `.todo.md` files to be identified as completed records with enough metadata to decide whether to archive, memo, or keep them.
 
 **Acceptance Criteria:**
-- [ ] Completed TODO detection still requires zero open checkboxes and at least one checked checkbox.
-- [ ] Completed TODO record includes path, document id, completed count, open count, and reason.
-- [ ] Completed TODO record includes lifecycle and title metadata where available.
-- [ ] Completed TODO record does not appear in `nextFollowUps`.
-- [ ] Tests cover checked-only TODO, mixed TODO, and empty TODO cases.
-- [ ] Existing `docs status` JSON shape remains backward compatible.
+- [x] Completed TODO detection still requires zero open checkboxes and at least one checked checkbox.
+- [x] Completed TODO record includes path, document id, completed count, open count, and reason.
+- [x] Completed TODO record includes lifecycle and title metadata where available.
+- [x] Completed TODO record does not appear in `nextFollowUps`.
+- [x] Tests cover checked-only TODO, mixed TODO, and empty TODO cases.
+- [x] Existing `docs status` JSON shape remains backward compatible.
 
 ### US-003: Improve Completed PRD Markdown Detection
 
 **Description:** As a planner, I want PRD markdown paired with all-passing PRD JSON to be identified as a completed record without being treated as active planning work.
 
 **Acceptance Criteria:**
-- [ ] Completed PRD markdown detection still requires a paired ralph PRD JSON with all stories passing.
-- [ ] Completed PRD record includes PRD markdown path and paired JSON path.
-- [ ] Completed PRD record includes story count and passed story count where available.
-- [ ] Completed PRD markdown does not appear as active follow-up work.
-- [ ] Tests cover paired complete JSON, paired incomplete JSON, and missing JSON.
-- [ ] Existing PRD JSON adapter behavior remains unchanged.
+- [x] Completed PRD markdown detection still requires a paired ralph PRD JSON with all stories passing.
+- [x] Completed PRD record includes PRD markdown path and paired JSON path.
+- [x] Completed PRD record includes story count and passed story count where available.
+- [x] Completed PRD markdown does not appear as active follow-up work.
+- [x] Tests cover paired complete JSON, paired incomplete JSON, and missing JSON.
+- [x] Existing PRD JSON adapter behavior remains unchanged.
 
 ### US-004: Add Completed Record Drift Reporting
 
 **Description:** As a docs operator, I want `docs drift` to report completed record lifecycle candidates without treating them as errors.
 
 **Acceptance Criteria:**
-- [ ] `docs drift` can report completed record candidates as info or warning according to a documented policy.
-- [ ] Completed record drift output does not fail the command.
-- [ ] Completed record reporting is scoped by `--prd` when a PRD is provided.
-- [ ] Completed record reporting excludes archive PRDs by default.
-- [ ] Completed record reporting excludes transient `.ralph-tui` session state by default.
-- [ ] Tests cover completed TODO and completed PRD markdown drift reporting.
-- [ ] Existing drift error/warning behavior remains unchanged.
+- [x] `docs drift` can report completed record candidates as info or warning according to a documented policy.
+- [x] Completed record drift output does not fail the command.
+- [x] Completed record reporting is scoped by `--prd` when a PRD is provided.
+- [x] Completed record reporting excludes archive PRDs by default.
+- [x] Completed record reporting excludes transient `.ralph-tui` session state by default.
+- [x] Tests cover completed TODO and completed PRD markdown drift reporting.
+- [x] Existing drift error/warning behavior remains unchanged.
 
 ### US-005: Keep Completed Records Out Of Active Inventory
 
 **Description:** As a docs control-plane user, I want completed records visible but not promoted into active next work so status and collect outputs stay focused.
 
 **Acceptance Criteria:**
-- [ ] `docs status <target> --json` includes `completedRecords[]` where applicable.
-- [ ] `docs status <target> --json` excludes completed records from `nextFollowUps[]`.
-- [ ] `docs collect <target> --family-only --json` includes completed record data without making it active follow-up work.
-- [ ] Completed records do not affect `nextFollowUp` priority.
-- [ ] Tests verify completed records are visible and non-actionable.
-- [ ] Text output stays concise and labels completed records as completed records.
+- [x] `docs status <target> --json` includes `completedRecords[]` where applicable.
+- [x] `docs status <target> --json` excludes completed records from `nextFollowUps[]`.
+- [x] `docs collect <target> --family-only --json` includes completed record data without making it active follow-up work.
+- [x] Completed records do not affect `nextFollowUp` priority.
+- [x] Tests verify completed records are visible and non-actionable.
+- [x] Text output stays concise and labels completed records as completed records.
 
 ### US-006: Document Completed Record Review Workflow
 
 **Description:** As a maintainer, I want a clear manual workflow for reviewing completed records so future archive/memo conversion can be done intentionally.
 
 **Acceptance Criteria:**
-- [ ] Document a manual review workflow for completed records.
-- [ ] Workflow includes inspect, verify, decide keep/archive/memo, and commit steps.
-- [ ] Workflow references `docs status`, `docs collect --family-only`, and `docs drift`.
-- [ ] Workflow explains when to leave a completed TODO in place.
-- [ ] Workflow explains when to create a future archive/memo conversion PRD.
-- [ ] No automatic archive/memo command is introduced.
+- [x] Document a manual review workflow for completed records.
+- [x] Workflow includes inspect, verify, decide keep/archive/memo, and commit steps.
+- [x] Workflow references `docs status`, `docs collect --family-only`, and `docs drift`.
+- [x] Workflow explains when to leave a completed TODO in place.
+- [x] Workflow explains when to create a future archive/memo conversion PRD.
+- [x] No automatic archive/memo command is introduced.
 
 ### US-007: Verify Completed Record Lifecycle Operationally
 
 **Description:** As a reviewer, I want command evidence proving completed record lifecycle reporting works without hidden writes.
 
 **Acceptance Criteria:**
-- [ ] Run `docs status docs-control-plane --json` and inspect `completedRecords`.
-- [ ] Run `docs collect docs-control-plane --family-only --json` and inspect completed record behavior.
-- [ ] Run `docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`.
-- [ ] Run `docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`.
-- [ ] Run all quality gates.
-- [ ] Verify no files are moved, archived, or converted automatically.
-- [ ] Record residual completed-record cleanup candidates in docs-control-plane TODO if needed.
+- [x] Run `docs status docs-control-plane --json` and inspect `completedRecords`.
+- [x] Run `docs collect docs-control-plane --family-only --json` and inspect completed record behavior.
+- [x] Run `docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`.
+- [x] Run `docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`.
+- [x] Run all quality gates.
+- [x] Verify no files are moved, archived, or converted automatically.
+- [x] Record residual completed-record cleanup candidates in docs-control-plane TODO if needed.
 
 ## Functional Requirements
 
