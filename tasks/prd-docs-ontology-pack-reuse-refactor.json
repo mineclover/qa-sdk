@@ -96,11 +96,12 @@
         "`node packages/cli/dist/index.js ontology pack validate programming-artifact-ontology --json`"
       ],
       "priority": 3,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "US-003 extracted completed record detection into packages/cli/src/lib/docs-control-plane/completed-records.ts and exports it from docs-control-plane. docs.ts now delegates completedRecords assembly to detectCompletedRecords while preserving the existing completedRecords[] JSON shape. Added focused completed TODO and paired PRD markdown/ralph PRD JSON tests in completed-records.test.ts, including archive exclusion coverage. Required US-003 gates passed.",
       "dependsOn": [
         "US-002"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-004",
@@ -467,6 +468,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-17T02:11:00.439Z"
+    "updatedAt": "2026-04-17T02:17:39.100Z"
   }
 }

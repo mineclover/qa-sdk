@@ -83,6 +83,9 @@ export {
   countMarkdownCheckboxes,
   parseTodoFollowUps,
 } from "./todo-lifecycle.js";
+export {
+  detectCompletedRecords,
+} from "./completed-records.js";
 
 export type {
   AuthoredLinkType,
@@ -147,6 +150,10 @@ export type {
   TodoHeadingCategory,
   TodoLifecycleFollowUp,
 } from "./todo-lifecycle.js";
+export type {
+  CompletedRecordDetectionOptions,
+  CompletedRecordState,
+} from "./completed-records.js";
 export type {
   DocumentAdapter,
   DocumentAdapterCapabilities,

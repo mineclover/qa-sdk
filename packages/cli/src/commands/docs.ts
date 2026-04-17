@@ -22,6 +22,7 @@ import {
   createPrdMarkdownAdapter,
   createRalphPrdJsonAdapter,
   createRalphSessionAdapter,
+  detectCompletedRecords,
   type DocumentAdapter,
   type DocumentDiagnostic,
   type DocumentEnvelope,
@@ -42,6 +43,7 @@ import {
   type DocumentGraphTraversalInput,
   type DocumentGraphTraversalResult,
   type DocumentRoleMatrix,
+  type CompletedRecordState,
   DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
   DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
   type PrdCompletionSyncPreview,
@@ -53,7 +55,6 @@ import {
 } from "../lib/docs-control-plane/index.js";
 import {
   CANONICAL_TODO_CATEGORY_LABELS,
-  countMarkdownCheckboxes,
   parseTodoFollowUps,
   type TodoFollowUpCategory,
 } from "../lib/docs-control-plane/todo-lifecycle.js";
@@ -113,20 +114,6 @@ interface FollowUpState {
   readonly headingPath?: readonly string[];
   readonly category?: TodoFollowUpCategory;
   readonly categoryLabel?: string;
-  readonly reason: string;
-}
-
-interface CompletedRecordState {
-  readonly source: string;
-  readonly kind: string;
-  readonly documentId: string;
-  readonly path: string;
-  readonly state: "completed-record";
-  readonly title: string;
-  readonly completedCount?: number;
-  readonly openCount?: number;
-  readonly pairedDocumentId?: string;
-  readonly pairedPath?: string;
   readonly reason: string;
 }
 
@@ -1191,7 +1178,7 @@ async function buildStatusResult(
       ? resolvedSource.documents
       : documents;
   const diagnostics = scopedDocuments.flatMap((document) => document.diagnostics);
-  const completedRecords = await findCompletedRecords(rootDir, scopedDocuments);
+  const completedRecords = await detectCompletedRecords({ rootDir, documents: scopedDocuments });
   const nextFollowUps = await findNextFollowUps(rootDir, scopedDocuments, completedRecords);
   const roleCoverage = resolved
     ? buildDocumentRoleMatrix(documents, { target: resolved.document })
@@ -1978,64 +1965,6 @@ function compareResolutionPriority(left: DocumentEnvelope, right: DocumentEnvelo
     || compareDocuments(left, right);
 }
 
-async function findCompletedRecords(
-  rootDir: string,
-  documents: readonly DocumentEnvelope[],
-): Promise<readonly CompletedRecordState[]> {
-  const records: CompletedRecordState[] = [];
-  const activeDocuments = documents.filter(isActiveCompletedRecordDocument);
-  const ralphPrdByFamilyId = new Map(
-    activeDocuments
-      .filter((document) => document.kind === "ralph-prd-json" && isAllStoriesPassing(document))
-      .map((document) => [document.familyId ?? document.stableId, document]),
-  );
-
-  for (const document of activeDocuments) {
-    if (document.kind === "todo" && document.path.endsWith(".todo.md")) {
-      const content = await readRepoFile(rootDir, document.path);
-      if (!content) continue;
-      const checkboxState = countMarkdownCheckboxes(content);
-      if (checkboxState.open > 0 || checkboxState.completed === 0) continue;
-      records.push({
-        source: document.adapterId,
-        kind: document.kind,
-        documentId: document.stableId,
-        path: document.path,
-        state: "completed-record",
-        title: titleOf(document),
-        completedCount: checkboxState.completed,
-        openCount: checkboxState.open,
-        reason: ".todo.md has completed checkboxes and no open checkboxes",
-      });
-      continue;
-    }
-
-    if (document.kind === "prd") {
-      const paired = ralphPrdByFamilyId.get(document.familyId ?? document.stableId);
-      if (!paired) continue;
-      records.push({
-        source: document.adapterId,
-        kind: document.kind,
-        documentId: document.stableId,
-        path: document.path,
-        state: "completed-record",
-        title: titleOf(document),
-        pairedDocumentId: paired.stableId,
-        pairedPath: paired.path,
-        reason: "paired PRD JSON has all stories passing",
-      });
-    }
-  }
-
-  return records
-    .toSorted(compareCompletedRecords)
-    .filter((item, index, items) => index === items.findIndex((candidate) =>
-      candidate.documentId === item.documentId
-      && candidate.path === item.path
-      && candidate.kind === item.kind
-    ));
-}
-
 async function findNextFollowUps(
   rootDir: string,
   documents: readonly DocumentEnvelope[],
@@ -2115,12 +2044,6 @@ function compareFollowUps(left: FollowUpState, right: FollowUpState): number {
     || left.title.localeCompare(right.title);
 }
 
-function compareCompletedRecords(left: CompletedRecordState, right: CompletedRecordState): number {
-  return left.path.localeCompare(right.path)
-    || left.kind.localeCompare(right.kind)
-    || left.documentId.localeCompare(right.documentId);
-}
-
 function followUpRank(followUp: FollowUpState): number {
   if (followUp.kind === "ralph-session") return 0;
   switch (followUp.category) {
@@ -2131,20 +2054,6 @@ function followUpRank(followUp: FollowUpState): number {
     case "completed": return 5;
     default: return 5;
   }
-}
-
-function isActiveCompletedRecordDocument(document: DocumentEnvelope): boolean {
-  if (document.metadata.lifecycle === "archived") return false;
-  if (normalizePath(document.path).split("/").includes("archive")) return false;
-  return true;
-}
-
-function isAllStoriesPassing(document: DocumentEnvelope): boolean {
-  if (document.kind !== "ralph-prd-json") return false;
-  const storyCount = asNumber(document.metadata.storyCount) ?? document.tasks.length;
-  const passedStoryCount = asNumber(document.metadata.passedStoryCount)
-    ?? document.tasks.filter((task) => task.metadata.passes === true).length;
-  return storyCount > 0 && passedStoryCount === storyCount;
 }
 
 function isOpenTask(task: DocumentTask): boolean {

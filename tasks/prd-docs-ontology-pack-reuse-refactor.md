@@ -121,13 +121,13 @@ Compatibility contract:
 **Description:** As a docs operator, I want completed record detection extracted from `docs.ts` so completed TODO/PRD record candidates can be reused by inventory and drift tools.
 
 **Acceptance Criteria:**
-- [ ] Create a focused module for completed record detection.
-- [ ] Move `.todo.md` checked-only detection into the module.
-- [ ] Move paired PRD markdown/ralph PRD JSON completion detection into the module.
-- [ ] Preserve archive/transient exclusion behavior.
-- [ ] Preserve `completedRecords[]` JSON shape.
-- [ ] Add focused tests for completed TODO and completed PRD markdown detection.
-- [ ] `docs status ... --json` still returns the same completed record candidates.
+- [x] Create a focused module for completed record detection.
+- [x] Move `.todo.md` checked-only detection into the module.
+- [x] Move paired PRD markdown/ralph PRD JSON completion detection into the module.
+- [x] Preserve archive/transient exclusion behavior.
+- [x] Preserve `completedRecords[]` JSON shape.
+- [x] Add focused tests for completed TODO and completed PRD markdown detection.
+- [x] `docs status ... --json` still returns the same completed record candidates.
 
 ### US-004: Extract Docs Follow-Up Candidate Ranking
 
