@@ -63,6 +63,13 @@ def:
 
 ### Actionable — 실행 가능
 
+- [ ] Deterministic Label Registry And FSM Control Plane
+  - [ ] semantic coordinate read model
+  - [ ] append-only label registry projection
+  - [ ] DRAFT/LINTED/RESOLVED/ACTIVE readiness calculation
+  - [ ] transition controller dry-run shape
+  - [ ] no hidden write policy and persistence deferral
+
 - [ ] PRD Completion Sync Precision
   - [x] `docs status` follows module composition so contained TODO docs can surface as follow-up even when they do not share the same filename family
   - [x] `docs prd sync-completion` excludes archived PRD documents from affected docs unless the archived PRD is the explicit target

@@ -76,18 +76,18 @@ No role document is created by this pass. Missing roles remain absence metadata 
 
 다음 작업은 실행 효과와 의존성 기준으로 정렬한다.
 
-1. **Document Source Map Coverage Expansion**
-   - Graph traversal can resolve source paths, but many source paths still report `source-map-missing`.
-   - Increase frontmatter `source:` and optional `@def.doc` coverage only where it improves bottom-up impact analysis.
-2. **Ontology Pack Authoring Control Plane**
-   - New packs should create code skeletons and docs family skeletons together.
-   - Depends on source-map conventions so generated packs are immediately discoverable by docs graph.
-3. **Graph Result Ranking And Filtering**
-   - Once graph edges are richer, operators need ranking and filters by axis, role, kind, reason, and diagnostics.
-4. **PRD Completion Sync Precision**
-   - Improve `sync-completion` scoring after source/evidence coverage and graph ranking are stronger.
-5. **Section-Level Graph Nodes**
-   - Add section-level traversal only after document-level source/evidence/role traversal is stable.
+1. **Deterministic Label Registry And FSM Control Plane**
+   - Move the control-plane center below PRD/TODO convenience artifacts into semantic coordinates, label records, FSM readiness, and transition-controller dry-runs.
+   - Depends on completed docs graph, source-map, topdown lifecycle inventory, pack authoring, completed-record lifecycle, and graph reranking read models.
+   - Plan: `deterministic-label-registry-fsm-plan`; TODO: `deterministic-label-registry-fsm-todo`.
+2. **PRD Completion Sync Precision**
+   - Improve `sync-completion` scoring after deterministic labels/FSM readiness can distinguish transition evidence from execution artifacts.
+3. **Section-Level Graph Nodes**
+   - Add section-level traversal only after document-level source/evidence/role traversal and deterministic label boundaries are stable.
+4. **Completed Record Cleanup Workflow**
+   - Decide whether completed TODO/PRD records stay as evidence, move to archive, or convert to memo through an explicit write workflow.
+5. **Pack Validate Strict Readiness**
+   - Promote readiness warnings to strict-mode failures only after label/FSM readiness rules define which gates are required for ACTIVE state.
 
 ## 운영 기준 ^constraint
 
