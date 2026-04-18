@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 소프트웨어 정의 카탈로그 — 핵심 타입
  *
@@ -36,7 +38,7 @@ export type DefLevel =
  * spec: 현재 시스템이 무엇으로 구성되어 있는가 (코드에서 파생 가능)
  * knowledge: 왜 이렇게 설계했는가 (사람만이 기록할 수 있는 정보)
  */
-export type DefDocType = "spec" | "knowledge";
+export type DefDocType = "design" | "spec" | "knowledge";
 
 /**
  * 지식 문서 종류
@@ -48,6 +50,7 @@ export type DefDocType = "spec" | "knowledge";
  * convention: 합의된 규칙 ("에러 코드 컨벤션")
  * pattern: 반복되는 설계 패턴 ("이벤트 수집 패턴")
  * concept: 개념 자체의 정의 ("좌표란 무엇인가", "taxonomy란 무엇인가")
+ * proposal: 아직 확정되지 않은 제안/RFC
  */
 export type KnowledgeKind =
   | "philosophy"
@@ -56,7 +59,8 @@ export type KnowledgeKind =
   | "narrative"
   | "convention"
   | "pattern"
-  | "concept";
+  | "concept"
+  | "proposal";
 
 /** 대분류 — 무엇에 대한 정의인가 */
 export type DefScope =

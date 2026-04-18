@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * Frontmatter 파서 + 스캐너
  *
@@ -241,13 +243,34 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
       ? Number(d.revision)
       : undefined;
 
-  // type (문서 유형 — spec | knowledge, 기본: spec)
-  const VALID_DOC_TYPES = new Set(["spec", "knowledge"]);
-  const docType = typeof d.type === "string" && VALID_DOC_TYPES.has(d.type) ? d.type as DefDocType : undefined;
+  // type (문서 유형 — design | spec | knowledge)
+  const VALID_DOC_TYPES = new Set(["design", "spec", "knowledge"]);
+  let docType = typeof d.type === "string" && VALID_DOC_TYPES.has(d.type) ? d.type as DefDocType : undefined;
 
   // knowledge_kind (knowledge 문서 세부 종류)
-  const VALID_KNOWLEDGE_KINDS = new Set(["philosophy", "adr", "guide", "narrative", "convention", "pattern", "concept"]);
+  const VALID_KNOWLEDGE_KINDS = new Set(["philosophy", "adr", "guide", "narrative", "convention", "pattern", "concept", "proposal"]);
   const knowledgeKind = typeof d.knowledge_kind === "string" && VALID_KNOWLEDGE_KINDS.has(d.knowledge_kind) ? d.knowledge_kind as KnowledgeKind : undefined;
+
+  // D-19 Type 추론 로직: type이 명시되지 않은 경우 knowledge_kind 존재 여부로 추론, 그 외는 "spec"(또는 "design")
+  if (!docType) {
+    if (knowledgeKind) {
+      docType = "knowledge";
+    } else {
+      // 레거시 호환 및 기본 동작
+      docType = "spec";
+    }
+  }
+
+  // D-19 상호 배제 검증
+  if (docType === "design" || docType === "spec") {
+    if (knowledgeKind) {
+      throw new Error(`${filePath}: Design/Spec 문서(type: ${docType})는 knowledge_kind를 가질 수 없습니다.`);
+    }
+  } else if (docType === "knowledge") {
+    if (!knowledgeKind) {
+      throw new Error(`${filePath}: Knowledge 문서는 knowledge_kind 필드가 필수입니다.`);
+    }
+  }
 
   return {
     id: id as string,
