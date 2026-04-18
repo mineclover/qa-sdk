@@ -35,6 +35,8 @@ import {
 } from "work-domain";
 import type {
   DefLevel,
+  DefTier,
+  LifecycleRef,
   DefScope,
   DefAspect,
   DefDocType,
@@ -71,11 +73,15 @@ export interface FrontmatterDef {
   /** knowledge 문서의 세부 종류 */
   readonly knowledge_kind?: KnowledgeKind;
   /** 분해 레벨 — 전체-부분 구조에서의 위치 (기본: leaf) */
-  readonly level: DefLevel;
+  readonly level?: DefLevel;
+  /** STC 구조 축 — 문서의 물리적/구조적 역할 (4 tier + exempt) */
+  readonly tier?: DefTier;
   readonly scope: DefScope;
   readonly aspect: DefAspect;
   readonly depth: DefDepth;
   readonly lifecycle: DefLifecycle;
+  /** 상태 관리 위임 참조 (D-17) */
+  readonly lifecycle_ref?: LifecycleRef;
   /** 존재론적 계층 — business / interaction / binding (선택, 기본: business) */
   readonly layer?: DefLayer;
   readonly tags?: readonly string[];
@@ -272,6 +278,22 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
     }
   }
 
+  const VALID_TIERS = new Set(["component", "entry", "system", "layout", "exempt"]);
+  const tier = typeof d.tier === "string" && VALID_TIERS.has(d.tier) ? d.tier as DefTier : undefined;
+
+  let lifecycleRef: LifecycleRef | undefined = undefined;
+  if (typeof d.lifecycle_ref === "object" && d.lifecycle_ref !== null && !Array.isArray(d.lifecycle_ref)) {
+    const lr = d.lifecycle_ref as Record<string, unknown>;
+    if (typeof lr.state_component === "string") {
+      lifecycleRef = {
+        stateComponent: lr.state_component,
+        ...(Array.isArray(lr.pipe_refs) ? { pipeRefs: lr.pipe_refs.filter((r): r is string => typeof r === "string") } : {}),
+        ...(typeof lr.read_only_projection === "boolean" ? { readOnlyProjection: lr.read_only_projection } : {}),
+        ...(typeof lr.notes === "string" ? { notes: lr.notes } : {}),
+      };
+    }
+  }
+
   return {
     id: id as string,
     ...(address ? { address } : {}),
@@ -280,6 +302,8 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
     ...(docType ? { type: docType } : {}),
     ...(knowledgeKind ? { knowledge_kind: knowledgeKind } : {}),
     level: level as DefLevel,
+    ...(tier ? { tier } : {}),
+    ...(lifecycleRef ? { lifecycle_ref: lifecycleRef } : {}),
     scope: scope as DefScope,
     aspect: aspect as DefAspect,
     depth: depth as DefDepth,

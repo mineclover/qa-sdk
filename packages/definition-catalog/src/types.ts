@@ -33,6 +33,17 @@ export type DefLevel =
   | "leaf";      // 구성 요소의 최종 명세 (자식 없음, 기본값)
 
 /**
+ * STC (Semantic Topological Coordinate) 구조 축 — 문서의 물리적/구조적 역할 (4 tier)
+ * 기존 `level`을 대체하며, System 독립성과 Layout 분리를 달성한다.
+ */
+export type DefTier =
+  | "component"  // 데이터 진입점 (shape, enum, 등)
+  | "entry"      // 구체화 인스턴스 (canonical singleton)
+  | "system"     // 기능 집합 (operations + 상태 관리 위임)
+  | "layout"     // 시스템의 조직적 배치 (refs)
+  | "exempt";    // 운영 메타-문서 면제 처리용
+
+/**
  * 문서 유형 — spec(무엇) vs knowledge(왜)
  *
  * spec: 현재 시스템이 무엇으로 구성되어 있는가 (코드에서 파생 가능)
@@ -149,7 +160,8 @@ export type LinkType =
   | "traces_to"    // 추적
   | "contains"     // 포함 — 그룹이 멤버를 포함
   | "evolves_from" // 개정/버전 진화
-  | "supersedes";  // 이전 개정 대체
+  | "supersedes"   // 이전 개정 대체
+  | "refs";        // 조직적 배치 — Layout이 System을 카탈로그로 참조할 때 사용 (STC D-4)
 
 // ─── Meta-Taxonomy — taxonomy 분류군 ────────────────────
 
@@ -279,6 +291,18 @@ export interface EffectiveConcerns {
 
 // ─── 문서 메타데이터 ─────────────────────────────────────
 
+/** 상태 관리 위임 참조 (D-17) */
+export interface LifecycleRef {
+  /** 상태 목록을 정의한 Component 문서 ID */
+  readonly stateComponent: string;
+  /** meta-semantic pipe 문서 참조 (transitionId 포함) */
+  readonly pipeRefs?: readonly string[];
+  /** 읽기 전용 여부 (write-mode가 없으면 true) */
+  readonly readOnlyProjection?: boolean;
+  /** 추가 설명 */
+  readonly notes?: string;
+}
+
 /** decision-flow 연결 참조 */
 export interface DecisionRef {
   /** FlowInstance.id */
@@ -312,11 +336,16 @@ export interface DefinitionEntry {
   readonly scope: DefScope;
   // 분해 레벨 (메타데이터 — 좌표에 인코딩하지 않음. 변할 수 있으므로)
   readonly level?: DefLevel;
+  // STC 구조 축 (D-17, 메타데이터)
+  readonly tier?: DefTier;
   readonly aspect: DefAspect;
   readonly depth: DefDepth;
   readonly lifecycle: DefLifecycle;
   /** 존재론적 계층 — business / interaction / binding (선택, 기본: business) */
   readonly layer?: DefLayer;
+
+  // 상태 관리 위임 (선택)
+  readonly lifecycleRef?: LifecycleRef;
 
   // 좌표 (인코딩 결과 — register 시 자동 계산)
   readonly address?: number;
@@ -387,5 +416,5 @@ export type DefinitionEntryInput =
 /** 수정 가능한 필드 */
 export type DefinitionEntryPatch = Partial<Pick<
   DefinitionEntry,
-  "title" | "description" | "version" | "revision" | "depth" | "lifecycle" | "ref" | "tags" | "decisionRef"
+  "title" | "description" | "version" | "revision" | "depth" | "lifecycle" | "ref" | "tags" | "decisionRef" | "tier" | "lifecycleRef"
 >>;

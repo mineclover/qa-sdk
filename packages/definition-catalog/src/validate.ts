@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 문서 그래프 검증 (Validation)
  *
@@ -25,7 +27,11 @@ export interface ValidationIssue {
     | "broken-code-reference"
     | "invalid-code-boundary"
     | "ambiguous-code-boundary"
-    | "inconsistent-code-boundary";
+    | "inconsistent-code-boundary"
+    | "duplicate-coordinate"
+    | "system-contains-system"
+    | "invalid-lifecycle-ref"
+    | "invalid-type-classification";
   readonly docId: string;
   readonly message: string;
 }
@@ -225,6 +231,101 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
         docId: entry.id,
         message: "어디에서도 참조되지 않는 고아 문서",
       });
+    }
+  }
+
+  // D-19 최상위 분류 및 확장자 검증
+  const DESIGN_EXTS = new Set([".spec.md", ".rule.md", ".test.md", ".plan.md", ".cases.md"]);
+  const KNOWLEDGE_EXTS = new Set([".md", ".memo.md", ".todo.md"]);
+
+  for (const entry of allEntries) {
+    if (entry.lifecycle === "deprecated") continue;
+
+    const ref = entry.ref || "";
+    let ext = ".md";
+    const extMatch = ref.match(/\.[a-z]+\.md$/);
+    if (extMatch) {
+      ext = extMatch[0];
+    }
+
+    if (entry.type === "design" || entry.type === "spec") {
+      if (!DESIGN_EXTS.has(ext)) {
+        issues.push({
+          severity: "warning",
+          type: "invalid-type-classification",
+          docId: entry.id,
+          message: `Design/Spec 문서(type: ${entry.type})는 설계 확장자(${[...DESIGN_EXTS].join(", ")})를 가져야 합니다. 현재: ${ext}`,
+        });
+      }
+    } else if (entry.type === "knowledge") {
+      if (!KNOWLEDGE_EXTS.has(ext)) {
+        issues.push({
+          severity: "warning",
+          type: "invalid-type-classification",
+          docId: entry.id,
+          message: `Knowledge 문서(type: ${entry.type})는 지식 확장자(${[...KNOWLEDGE_EXTS].join(", ")})를 가져야 합니다. 현재: ${ext}`,
+        });
+      }
+    }
+  }
+
+  // 중복 좌표 감지 (tier, scope, layer, aspect)
+  const coords = new Map<string, string[]>();
+  for (const entry of allEntries) {
+    if (entry.lifecycle === "deprecated") continue;
+    const key = `${entry.tier || "none"}:${entry.scope}:${entry.layer || "none"}:${entry.aspect}`;
+    const docs = coords.get(key) ?? [];
+    docs.push(entry.id);
+    coords.set(key, docs);
+  }
+  for (const [key, docs] of coords.entries()) {
+    if (docs.length > 1) {
+      issues.push({
+        severity: "warning",
+        type: "duplicate-coordinate",
+        docId: docs[0], // Arbitrary
+        message: `중복 좌표 (tier:scope:layer:aspect = ${key})를 공유하는 문서들: [${docs.join(", ")}]`,
+      });
+    }
+  }
+
+  // System-contains-System (module -> module contains)
+  // STC 도입으로 tier: system 기반으로도 체크
+  for (const entry of allEntries) {
+    if (entry.lifecycle === "deprecated") continue;
+    const isSystem = entry.tier === "system" || entry.level === "module";
+    if (!isSystem) continue;
+
+    const containsLinks = registry.getLinks(entry.id, "outgoing").filter(l => l.linkType === "contains");
+    for (const link of containsLinks) {
+      const target = registry.get(link.targetId);
+      if (target && (target.tier === "system" || target.level === "module")) {
+        issues.push({
+          severity: "warning", // Phase 4B에서 error로 승격 예정
+          type: "system-contains-system",
+          docId: entry.id,
+          message: `System이 System을 contains: ${entry.id} -> ${target.id}. depends_on이나 refs로 전환하세요.`,
+        });
+      }
+    }
+  }
+
+  // lifecycle_ref 유효성 검증
+  for (const entry of allEntries) {
+    if (entry.lifecycle === "deprecated") continue;
+    if (!entry.lifecycleRef) continue;
+
+    const lr = entry.lifecycleRef;
+    if (lr.stateComponent) {
+      const stateComp = registry.get(lr.stateComponent);
+      if (!stateComp) {
+        issues.push({
+          severity: "warning", // 나중에 error로 승격
+          type: "invalid-lifecycle-ref",
+          docId: entry.id,
+          message: `lifecycle_ref.state_component 타겟 "${lr.stateComponent}"이(가) 존재하지 않습니다.`,
+        });
+      }
     }
   }
 
