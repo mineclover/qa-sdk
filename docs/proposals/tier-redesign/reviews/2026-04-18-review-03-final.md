@@ -1,7 +1,7 @@
 ---
 status: superseded-by-d17
 superseded_note: "D-16 관련 내용은 D-17 Pivot(FSM tier 제거)으로 무효화됨. 본 리뷰의 D-16 검증 항목은 역사 기록으로만 보관. 4층 정합 / Hybrid absorb / Form 1/2 개념은 D-17 이후 소멸."
-date: 2026-04-18
+date: 2026-04-19
 reviewer: subagent (3rd / final)
 target: STC proposal post-D-16 (superseded by D-17)
 focus: [d-16-integration, cross-file-consistency, new-tensions, under-review-readiness]

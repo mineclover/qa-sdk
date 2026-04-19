@@ -47,4 +47,4 @@
 
 | 제안 | 상태 | 요약 |
 |------|------|------|
-| [tier-redesign](./tier-redesign/) | draft | 5-tier(Component/Entry/FSM/System/Layout) 좌표계 재설계 |
+| [tier-redesign](./tier-redesign/) | `under-review` | 4-tier(Component/Entry/System/Layout) 좌표계 및 이중 평면(Intent/Execution) 거버넌스 재설계 |

@@ -1,6 +1,6 @@
 ---
-status: draft
-date: 2026-04-18
+status: under-review
+date: 2026-04-19
 part_of: tier-redesign
 role: phase-1a-evidence
 phase: 1.A

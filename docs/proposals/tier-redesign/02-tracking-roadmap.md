@@ -1,5 +1,5 @@
 ---
-status: draft
+status: under-review
 date: 2026-04-19
 part_of: tier-redesign
 role: roadmap

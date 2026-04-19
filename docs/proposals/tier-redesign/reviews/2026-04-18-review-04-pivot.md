@@ -1,6 +1,6 @@
 ---
 status: review
-date: 2026-04-18
+date: 2026-04-19
 reviewer: subagent (4th / post-D-17)
 target: STC proposal post-D-17 Pivot
 focus: [pivot-completeness, cross-file-consistency, new-tensions, regression-check, value-validation]

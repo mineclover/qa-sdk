@@ -1,6 +1,6 @@
 # STC — Semantic Topological Coordinate 제안
 
-> **Status**: `under-review` · **Started**: 2026-04-18 · **Promoted**: 2026-04-18 · **Reviewer**: subagent review 1~6차 (독립 에이전트 피드백 루프)
+> **Status**: `under-review` · **Started**: 2026-04-18 · **Promoted**: 2026-04-19 · **Reviewer**: subagent review 1~6차 (독립 에이전트 피드백 루프)
 
 ## 제안 요약
 
@@ -28,7 +28,8 @@
 | [mental-models.md](./mental-models.md) | **읽기 지도** | 3 taxonomy 모델 (ECS/doc-type/교차 단위) + 관점(질의 조합) 정의 |
 | [00-design.md](./00-design.md) | 개요 허브 | 목적, 4가지 원칙, 좌표 공식, 재해석 예시, 미결 사항 |
 | [01-migration.md](./01-migration.md) | 마이그레이션 가이드 | Phase 0~5 단계 + Phase 1.A/1.B 의존 순서 |
-| [03-decisions.md](./03-decisions.md) | Phase 0 결정 | D-1~D-17 (일부 superseded) + R-1~R-7 + Exit Criteria + Sanity Check |
+| [02-tracking-roadmap.md](./02-tracking-roadmap.md) | **추적 로드맵** | 이중 평면(Intent/Execution) 거버넌스 + 자동화 5단계 계획 |
+| [03-decisions.md](./03-decisions.md) | Phase 0 결정 | D-1~D-19 + R-1~R-7 + Exit Criteria + Sanity Check |
 
 ### Tier별 정의 (시스템 단위 분할)
 
@@ -48,25 +49,15 @@
 | [rules/system-independence.md](./rules/system-independence.md) | System 독립성 + meta-semantic 위임 + Inline 정의 금지 |
 | [rules/state-machine-delegation.md](./rules/state-machine-delegation.md) | 상태 관리 규칙 (D-17) — State Component + meta-semantic 참조 |
 
-### Phase 1.A 조사 산출물 (2026-04-18 완료)
+### 통합 및 거버넌스 (2026-04-19)
 
-[phase-1a/](./phase-1a/) — Phase 1.B 도구 구현 전 선행 조사 리포트 4종
-
-| 파일 | 주제 | 핵심 결론 |
-|------|------|---------|
-| [phase-1a/phase-1a-depth-usage-report.md](./phase-1a/phase-1a-depth-usage-report.md) | `depth` 필드 사용처 | 1,056 전수 사용. 4값 enum(overview/spec/impl/validation). **유지 확정** |
-| [phase-1a/phase-1a-layout-contains-report.md](./phase-1a/phase-1a-layout-contains-report.md) | Layout-like contains | 995 contains 중 **117 System-contains-System 위반**, 9 group이 Layout 전환 후보 |
-| [phase-1a/phase-1a-meta-operational-policy.md](./phase-1a/phase-1a-meta-operational-policy.md) | Meta-operational 정책 | 116 경계 문서. D-2-Extended "exempt by design" 선언 권고 |
-| [phase-1a/phase-1a-classifier-ruleset.md](./phase-1a/phase-1a-classifier-ruleset.md) | 자동 분류 룰 초안 | 6-step 의사결정 트리 + confidence 할당. `def tier classify` 명령 구현 사양 |
-
-### 기존 시스템 연계 조사 (2026-04-19)
-
-[integration/](./integration/) — Taxonomy / Doc-Structure / Test / Rule 4 시스템 실태 + STC 연결 Gap 분석
+[integration/](./integration/) — 기존 시스템 연계 + Taxonomy 통합 명세
 
 | 파일 | 주제 | 핵심 결론 |
 |------|------|---------|
-| [integration/system-linkage-map.md](./integration/system-linkage-map.md) | 4 시스템 연계 맵 | **7 연결 Gap** 식별 (P0 3건 Phase 1.B 선행 필수) + 설계 원칙 5건 + 실행 우선순위 |
-| [integration/scope-and-legacy.md](./integration/scope-and-legacy.md) | 제안 범위·목적 + 레거시 처리 매트릭스 | **주 목적**: `level` → `tier` 교체. **부차**: Layout `refs` 신설 + LinkType↔DKG 정합. **공존**: scope/aspect/layer/depth/doc-type-ext 등 11축 불변 |
+| [integration/system-linkage-map.md](./integration/system-linkage-map.md) | 4 시스템 연계 맵 | **7 연결 Gap** 식별 (P0 3건 Phase 1.B 선행 필수) + 설계 원칙 5건 |
+| [integration/taxonomy-catalog.spec.md](./integration/taxonomy-catalog.spec.md) | **Taxonomy Catalog** | **L0~L3 지식 위계** + 14개 축 명세 + 오원적 분석 매트릭스 + 계획/현재/현실 거버넌스 |
+| [integration/scope-and-legacy.md](./integration/scope-and-legacy.md) | 제안 범위·목적 | **D-19 통합**: design/knowledge 텍소노미 분리 + 11축 정합 |
 
 ### Pilot 예시
 
@@ -239,5 +230,7 @@
 | 2026-04-18 | **Status: `draft` → `under-review` 승격**. 승격 기준 전 항목 만족, subagent review 1~6차 피드백 루프 완료, 블록커 0건. 다음 액션: 리뷰어 승인 + Phase 1.A 조사 GO 신호 → accepted 전환 |
 | 2026-04-18 | **Phase 1.A 조사 4건 완료** ([phase-1a/](./phase-1a/)) — (1) `depth` 필드 유지 확정 (4값 enum, 1,056 전수 사용) (2) contains 995 중 117 System-contains-System 위반 + 9 group이 Layout 전환 후보 (3) 116 경계 문서 **D-2-Extended "exempt by design"** 선언 권고 (4) 자동 분류 6-step 의사결정 트리 + confidence 할당 + CON-004 80% 초과 커버리지 예상 (85%). Phase 1.B `def tier classify` 구현 사양 완결 |
 | 2026-04-18 | **ECS 적응 정렬 (경량 Option 1)** — (1) `tiers/component.md`의 OOP "class/instance" 비유 제거 → Entity는 Component를 **aggregates**하는 ID로 재서술 (2) `tiers/entry.md` 재정의 — "projection/instance" 표현 제거, "고유 ID + Component 참조 집합" ECS 본의 기반 (3) `mental-models.md`에 **"ECS 정석 vs STC 적응" 비교 표** 추가 — 변형 4건 공식 박제 (Entity 문서화 축소 / Component sub-type / System state 외부 위임 / Layout 확장) (4) "ECS 원칙 기반" → "ECS 적응 기반" 표현 통일 (README + 00-design) (5) `tiers/layout.md` 시작부에 "ECS 외 확장 축" 배너 명시 |
-| 2026-04-19 | **기존 시스템 연계 조사 4건 완료** ([integration/system-linkage-map.md](./integration/system-linkage-map.md)) — 독립 에이전트 병렬 조사: (1) Taxonomy (12축, 직교성 5건 확정) (2) Doc-Structure (frontmatter + LinkType 6/8 + SQLite + validate 6 diagnostic) (3) Test (.test.md 27개, 코드 SSOT, testName 토큰 자동화는 설계만) (4) Rule (7계층: 문서/zod/validate/DKG/code/skill/convention). **7 연결 Gap** 식별: P0 3건(Taxonomy catalog 중앙화, SSOT direction, LinkType↔DKG edge 매트릭스) Phase 1.B 선행 필수. P1 2건(runtime/metadata 경유, DKG↔tier 매핑), P2 2건(.test.md 양방향 추적, CON-002/CON-005 집행 위치). 문서 관리 체계 5 설계 원칙 수립 |
+| 2026-04-19 | **기존 시스템 연계 조사 4건 완료** ([integration/system-linkage-map.md](./integration/system-linkage-map.md)) — 독립 에이전트 병렬 조사: (1) Taxonomy (12축, 직교성 5건 확정) (2) Doc-Structure (3) Test (4) Rule. 문서 관리 체계 5 설계 원칙 수립 |
+| 2026-04-19 | **Taxonomy Catalog 통합 명세 수립** ([taxonomy-catalog.spec.md](./integration/taxonomy-catalog.spec.md)) — L0~L3 지식 위계 공식화, D-19 이분법적 거버넌스(Design/Knowledge), 오원적 분석 매트릭스(Intent/Impl/Lineage/Verification/Impact), 계획/현재/현실(Plan/Current/Reality) 관리 평면 확립 |
+| 2026-04-19 | **이중 평면 추적 로드맵 수립** ([02-tracking-roadmap.md](./02-tracking-roadmap.md)) — 설계 의도와 구현 사실의 괴리(Drift) 자동 감지 및 지능형 정제(Refining)를 위한 5단계 실행 계획 수립 |
 | 2026-04-19 | **제안 범위·목적 재정의** ([integration/scope-and-legacy.md](./integration/scope-and-legacy.md)) — 주 목적: `level` → `tier` 교체(모호성 해소). 부차: Layout `refs` 신설 + LinkType↔DKG 정합 규칙(중복 5건 해소). 공존 11축(scope/aspect/layer/depth/doc-type-ext/knowledge_kind/lifecycle/axis/prefix/DKG 노드/meta-semantic) 불변 명시. 레거시 판정 매트릭스: `level` 필드 / System-contains-System 117건 / Layout-like group 9건 / FSM(완료) / 동명 LinkType-DKG edge 5쌍(LinkType을 SSOT로 projection). Non-Goals 11건 재확인 |
