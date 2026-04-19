@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * ViewEngine — 뷰 모드 전환 + lerp 위치 전이.
  *

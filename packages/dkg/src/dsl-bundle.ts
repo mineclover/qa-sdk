@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * DslBundle — prefix 묶음 + 서비스 바인딩 + 사용 패턴 정의.
  *

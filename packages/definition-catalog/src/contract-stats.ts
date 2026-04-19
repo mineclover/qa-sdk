@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 계약 통계 + 렌더링 — 순수 계산 + 텍스트 생성.
  *

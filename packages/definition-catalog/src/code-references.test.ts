@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";

@@ -1,3 +1,6 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
 import { Hono } from "hono";
 import type { GateLookupService } from "../lib/gate-service.js";
 import {

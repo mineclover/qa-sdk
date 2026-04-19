@@ -8,7 +8,7 @@ def:
   depth: overview
   lifecycle: approved
   layer: experience
-  svc: platform-demo
+  svc: roleplay-web
   tags: [structural]
   links:
     - target: form-builder-structure

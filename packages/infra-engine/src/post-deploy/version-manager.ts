@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 import { readFile, writeFile, mkdir, rename } from "node:fs/promises";
 import { resolve } from "node:path";
 import { homedir } from "node:os";

@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * invariants.test.ts — 변환 불변조건 갭 보강 테스트
  *

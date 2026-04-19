@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 /**
  * @qa-sdk/pino — zero-dependency pino 호환 구조화 JSON 로거.
  *

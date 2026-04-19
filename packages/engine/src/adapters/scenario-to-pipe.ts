@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-engine-system
+// @def.doc qa-sdk-engine-system
+
 /**
  * ScenarioSpec → PipeGraph 변환기
  *

@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * B-3: MetaCodecBig.matchRanges 대형 shape 테스트
  *

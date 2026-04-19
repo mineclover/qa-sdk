@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 export { createIndexSDK } from "./typed-sdk.js";
 export type {
   SdkSchema,

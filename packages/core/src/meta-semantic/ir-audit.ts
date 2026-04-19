@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * IR 감사 — rule.md의 체크리스트와 분할 판별을 자동 실행.
  *

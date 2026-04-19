@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 export { QaLogger } from "./logger.js";
 export type { SpanHandle } from "./logger.js";
 export type { QaLoggerConfig } from "./config.js";

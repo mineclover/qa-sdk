@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 export * from "./types.js";
 export { SpecCollector, type RecordInput } from "./collector.js";
 export { generateReport } from "./reporter.js";

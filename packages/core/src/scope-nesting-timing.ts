@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * Contract Timing — 계약 위임 시점 분석
  *

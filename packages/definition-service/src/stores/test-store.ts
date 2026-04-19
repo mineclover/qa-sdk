@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import type { DefinitionServiceDatabase } from "../database.module.js";
 import { testRegistry, testResults } from "../db/schema.js";
 import { eq, and, desc, asc, sql, count, isNull } from "drizzle-orm";

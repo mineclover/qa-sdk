@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * D1용 DDL — PG schema.ts의 SQLite 호환 버전.
  *

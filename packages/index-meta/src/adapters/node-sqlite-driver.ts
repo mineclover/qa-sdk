@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * NodeSqliteDriver — Node 내장 node:sqlite 기반 SqlDriver 구현
  *

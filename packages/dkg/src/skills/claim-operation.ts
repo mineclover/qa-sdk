@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * claim-operation — 작업 선점/해제 skill.
  *

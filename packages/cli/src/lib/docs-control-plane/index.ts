@@ -1,8 +1,11 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 export {
   declareDocumentAdapterCapabilities,
   defineDocumentAdapter,
   normalizeDocumentEnvelope,
-} from "./normalize.js";
+} from "doc-envelope";
 export {
   ARTIFACT_EVIDENCE_ADAPTER_ID,
   createArtifactEvidenceAdapter,
@@ -20,11 +23,9 @@ export {
   createRalphPrdJsonAdapter,
   readRalphPrdJsonSummary,
   RALPH_PRD_JSON_ADAPTER_ID,
-} from "./adapters/ralph-prd-json.js";
-export {
   createRalphSessionAdapter,
   RALPH_SESSION_ADAPTER_ID,
-} from "./adapters/ralph-session.js";
+} from "ralph-tui-integration";
 export {
   previewPrdCompletionSync,
 } from "./prd-completion-sync.js";
@@ -84,8 +85,8 @@ export {
 export {
   collectDocumentFamilyOnlyScope,
   isArchivedPrdDocument,
-  isTransientSessionDocument,
-} from "./family-scope.js";
+  isTransientDocument,
+} from "doc-envelope";
 export {
   buildDocumentRoleMatrix,
   DOCUMENT_ROLE_MATRIX_ROLES,
@@ -96,33 +97,23 @@ export {
   classifyTodoHeading,
   countMarkdownCheckboxes,
   parseTodoFollowUps,
-} from "./todo-lifecycle.js";
+} from "doc-envelope";
 export {
   detectCompletedRecords,
-} from "./completed-records.js";
+} from "doc-envelope";
 export {
   findNextFollowUps,
 } from "./follow-ups.js";
 export {
-  computeDeterministicLabelReadiness,
-  computeDeterministicLabelRecordReadiness,
-  DETERMINISTIC_LABEL_READINESS_GATES,
-  DETERMINISTIC_LABEL_TRANSITION_EVENT_SCHEMA_CANDIDATE,
-  dryRunDeterministicLabelTransition,
-} from "./deterministic-label-fsm.js";
-export {
   buildDeterministicLabelInventory,
-} from "./deterministic-label-inventory.js";
+} from "deterministic-label-registry";
 export {
   buildSemanticCoordinateCandidatesFromDocument,
   buildSemanticCoordinateCandidate,
   buildDeterministicLabelRecord,
-  buildOntologyPackLabelRecordFromValidateResult,
   collectSemanticCoordinateCandidatesFromDocuments,
   detectSemanticCoordinateCandidateCollisions,
-  DETERMINISTIC_LABEL_RECORD_STATES,
   isSemanticCoordinateLabelKind,
-  projectOntologyPackAndArtifactLabelRecords,
   projectDeterministicLabelRecordsFromDocuments,
   SEMANTIC_COORDINATE_CANONICAL_EXAMPLES,
   SEMANTIC_COORDINATE_DIAGNOSTIC_CODES,
@@ -130,7 +121,7 @@ export {
   SEMANTIC_COORDINATE_LABEL_KINDS,
   SEMANTIC_EXISTING_ID_SOURCES,
   SEMANTIC_PHYSICAL_REF_KINDS,
-} from "./deterministic-labels.js";
+} from "deterministic-label-registry";
 
 export type {
   AuthoredLinkType,
@@ -199,7 +190,7 @@ export type {
 export type {
   DocumentFamilyOnlyScope,
   DocumentFamilyOnlyScopeOptions,
-} from "./family-scope.js";
+} from "doc-envelope";
 export type {
   BuildDocumentRoleMatrixOptions,
   DocumentRoleMatrix,
@@ -213,39 +204,25 @@ export type {
   TodoFollowUpCategory,
   TodoHeadingCategory,
   TodoLifecycleFollowUp,
-} from "./todo-lifecycle.js";
+} from "doc-envelope";
 export type {
   CompletedRecordDetectionOptions,
   CompletedRecordState,
-} from "./completed-records.js";
+} from "doc-envelope";
 export type {
   FollowUpDetectionOptions,
   FollowUpState,
 } from "./follow-ups.js";
 export type {
-  DeterministicLabelReadinessGate,
-  DeterministicLabelReadinessGateResult,
-  DeterministicLabelReadinessProjection,
-  DeterministicLabelAppendOnlyTransitionEventSchemaCandidate,
-  DeterministicLabelTransitionDecision,
-  DeterministicLabelTransitionDryRunEventCandidate,
-  DeterministicLabelTransitionDryRunResult,
-  DeterministicLabelTransitionRequest,
-} from "./deterministic-label-fsm.js";
-export type {
   DeterministicLabelInventory,
   DeterministicLabelInventoryOptions,
   DeterministicLabelInventorySummary,
-} from "./deterministic-label-inventory.js";
+} from "deterministic-label-registry";
 export type {
   DeterministicLabelRecord,
   DeterministicLabelRecordInput,
   DeterministicLabelRecordProjection,
   DeterministicLabelRecordProjectionOptions,
-  DeterministicLabelRecordState,
-  OntologyPackAndArtifactLabelRecordProjection,
-  OntologyPackAndArtifactLabelRecordProjectionOptions,
-  OntologyPackLabelRecordOptions,
   SemanticCoordinate,
   SemanticCoordinateCandidate,
   SemanticCoordinateCandidateInventory,
@@ -261,7 +238,7 @@ export type {
   SemanticPhysicalRef,
   SemanticPhysicalRefInput,
   SemanticPhysicalRefKind,
-} from "./deterministic-labels.js";
+} from "deterministic-label-registry";
 export type {
   DocumentAdapter,
   DocumentAdapterCapabilities,
@@ -279,7 +256,7 @@ export type {
   DocumentSection,
   DocumentSource,
   DocumentTask,
-} from "./types.js";
+} from "doc-envelope";
 export type {
   ArtifactEvidenceAdapterOptions,
   ArtifactEvidenceCollectionQuery,
@@ -305,7 +282,5 @@ export type {
 export type {
   RalphPrdJsonAdapterOptions,
   RalphPrdJsonSummary,
-} from "./adapters/ralph-prd-json.js";
-export type {
   RalphSessionAdapterOptions,
-} from "./adapters/ralph-session.js";
+} from "ralph-tui-integration";

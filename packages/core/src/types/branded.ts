@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * Branded type helper — 구조적으로 동일하지만 의미적으로 구분되는 타입.
  *

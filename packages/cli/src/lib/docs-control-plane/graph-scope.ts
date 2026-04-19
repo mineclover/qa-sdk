@@ -1,5 +1,8 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import type { DocumentGraphTraversalResult } from "./graph-traverse.js";
-import type { DocumentEnvelope } from "./types.js";
+import type { DocumentEnvelope } from "doc-envelope";
 
 export interface DocumentGraphTraversalDocumentScope {
   readonly documents: readonly DocumentEnvelope[];

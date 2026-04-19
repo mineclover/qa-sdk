@@ -23,6 +23,12 @@ def:
       type: contains
     - target: platform-sdk-user-scenarios
       type: contains
+    - target: demo-snapshot
+      type: contains
+    - target: demo-types
+      type: contains
+    - target: demo-tests
+      type: contains
 ---
 
 # 플랫폼 의존 체인 — core → logger → codec → context → sdk

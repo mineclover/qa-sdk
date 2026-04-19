@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * 유저 시나리오 E2E 테스트
  *

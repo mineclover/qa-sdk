@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * convergence-scheduler — 주기적 convergence flush.
  *

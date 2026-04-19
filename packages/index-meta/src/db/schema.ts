@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * index-meta Drizzle 스키마 정의
  *

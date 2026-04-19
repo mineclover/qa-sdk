@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import type { Db } from "../../db/client.js";
 import { traces } from "../../db/schema.js";
 

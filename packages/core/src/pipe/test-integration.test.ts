@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 실전 시나리오 — 주문 시스템 테스트 추적 통합 테스트
  */

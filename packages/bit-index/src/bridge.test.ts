@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { describe, it, expect } from "vitest";
 import { IndexBridge } from "./bridge.js";
 import { WeightedIndex, calcAddressRanges } from "weighted-index";

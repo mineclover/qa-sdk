@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * EntryFlagStore — entry 수준 활성화 상태 영속 레이어
  *

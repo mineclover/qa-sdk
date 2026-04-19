@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import { computeVerdictV2 } from "./verdict-v2.js";
 import type { VerdictReportV2 } from "./verdict-v2.js";

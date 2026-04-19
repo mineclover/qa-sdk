@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * SqlPrefixRegistry — 범용 SQLite/PostgreSQL 호환 PrefixRegistry 구현
  *

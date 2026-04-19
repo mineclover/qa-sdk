@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { eq } from "drizzle-orm";
 import type { GraphStore } from "@qa-sdk/core";
 import type { RuntimeGraph } from "@qa-sdk/core";

@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 import type { ResolvedConfig } from "../core/types.js";
 
 export interface CascadeTarget {

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * 즉시 마이그레이션 유틸 테스트
  *

@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * CatalogLoader — CLI에서 카탈로그를 로드하는 유틸리티.
  *

@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * permission-change-notifier.ts — 권한 변경의 단일 진입점.
  *

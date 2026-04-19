@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 /**
  * 분기 충돌 분석 + worktree + 순수 파서 — 임시 repo 시나리오 테스트
  */

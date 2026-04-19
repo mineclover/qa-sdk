@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 import {
   RESOURCES, ACTIONS, ROLES, ENVS, WI4, WEIGHTS4,
   RESOURCE_KO, ACTION_KO,

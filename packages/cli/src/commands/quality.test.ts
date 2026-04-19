@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { existsSync } from "node:fs";
 import { mkdir, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";

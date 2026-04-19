@@ -8,7 +8,7 @@ def:
   depth: overview
   lifecycle: approved
   layer: domain
-  svc: weighted-index
+  svc: bench
   tags: [structural, performance, testing]
   links:
     - target: bench-encode-decode

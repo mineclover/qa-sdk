@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 서비스 포트 레지스트리 — 포트 할당 SSOT + 충돌 감지.
  *
@@ -14,7 +17,11 @@ export interface ServicePortEntry {
 
 /** 서비스별 기본 포트 할당 (SSOT) */
 export const SERVICE_PORTS: readonly ServicePortEntry[] = [
-  // ── 인프라 서비스 (3xxx) ──
+  // ── 인프라 레이어 (기본 도구) ──
+  { name: "grafana",            defaultPort: 3000, description: "대시보드 시각화" },
+  { name: "loki",               defaultPort: 3100, description: "로그 집계 서비스" },
+  { name: "prometheus",         defaultPort: 9090, description: "메트릭 수집 서비스" },
+  // ── QA-SDK 엔진 서비스 (3xxx) ──
   { name: "ingest-server",      defaultPort: 3200, description: "이벤트 수집 + Phase-2 (PostgreSQL/In-memory)" },
   { name: "registry-service",   defaultPort: 3300, description: "카탈로그/주소 스키마 관리 (SQLite) + Dev Dashboard" },
   { name: "gate-service",       defaultPort: 3400, description: "주소 상태 게이트 (SQLite)" },
@@ -34,7 +41,19 @@ export const SERVICE_PORTS: readonly ServicePortEntry[] = [
   { name: "platform-demo",      defaultPort: 5176, description: "3D 모니터 + 다이어그램 뷰어" },
 ] as const;
 
-/** 이름으로 포트 조회 */
+/** 이름으로 포트 조회 (인프라 레지스트리에 반드시 존재해야 함) */
+export function getRequiredServicePort(name: string): number {
+  const port = SERVICE_PORTS.find(e => e.name === name)?.defaultPort;
+  if (port === undefined) {
+    throw new Error(
+      `[Infrastructure] Service '${name}' is not registered in central SERVICE_PORTS. ` +
+      `Check packages/core/src/lib/service-ports.ts to register it before starting.`
+    );
+  }
+  return port;
+}
+
+/** 이름으로 포트 조회 (선택적) */
 export function getServicePort(name: string): number | undefined {
   return SERVICE_PORTS.find(e => e.name === name)?.defaultPort;
 }

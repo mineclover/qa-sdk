@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { InMemoryKeyCache } from "./key-cache.adapter.js";
 

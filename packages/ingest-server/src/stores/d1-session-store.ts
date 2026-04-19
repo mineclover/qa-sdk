@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * D1SessionStore — SessionStore의 D1/SQLite drizzle ORM 구현.
  * ON CONFLICT (session_id) DO NOTHING — 이미 존재하면 무시.

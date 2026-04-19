@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { trace, context, SpanStatusCode } from "@opentelemetry/api";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";

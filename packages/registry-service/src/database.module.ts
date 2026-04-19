@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Global, Module } from "@nestjs/common";
 import type { SqlDriver } from "index-meta";
 import { env } from "./config/env.js";

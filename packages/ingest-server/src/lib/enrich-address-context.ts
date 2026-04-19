@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { TransmissionEnvelope, EventRecord } from "@qa-sdk/core";
 import { parseSerializedAddress } from "@qa-sdk/core";
 

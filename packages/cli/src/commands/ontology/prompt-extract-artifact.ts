@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { resolve } from "node:path";
 
 import type { DefDataSource, DefDoc } from "definition-catalog";

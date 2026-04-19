@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import {
   createProgrammingArtifactRegistryRecord,
   type ProgrammingArtifactRegistryRecord,

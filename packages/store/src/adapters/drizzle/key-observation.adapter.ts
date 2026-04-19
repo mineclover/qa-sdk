@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { count as countFn, desc, eq, lt, sql, sum, asc } from "drizzle-orm";
 import type {
   KeyObservationStore,

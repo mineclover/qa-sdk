@@ -1,7 +1,9 @@
+// @def.doc definition-service
+
 import { z } from "zod";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { getServicePort, getServiceDevUrl } from "@qa-sdk/core";
+import { getRequiredServicePort, getServiceDevUrl } from "@qa-sdk/core";
 
 /** 모노레포 루트 자동 탐지 — pnpm-workspace.yaml 기준 */
 function detectRoot(from: string): string {
@@ -16,7 +18,7 @@ function detectRoot(from: string): string {
 }
 
 /** SERVICE_PORTS SSOT에서 기본 포트 파생 */
-const DEFAULT_PORT = getServicePort("definition-service") ?? 3700;
+const DEFAULT_PORT = getRequiredServicePort("definition-service");
 const DEFAULT_REGISTRY_URL = getServiceDevUrl("registry-service") ?? "http://localhost:3300";
 
 export const envSchema = z.object({

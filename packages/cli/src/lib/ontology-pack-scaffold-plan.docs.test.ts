@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { posix as pathPosix } from "node:path";
 
 import { parseDocument } from "definition-catalog";
@@ -13,7 +16,7 @@ import {
 import {
   KNOWN_ONTOLOGY_PACK_IDS,
   resolveKnownOntologyPack,
-} from "./known-ontology-packs.js";
+} from "ontology-pack-validate";
 
 describe("ontology pack scaffold plan", () => {
   it("derives a dry-run plan from a safe pack id without writing files", () => {

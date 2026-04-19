@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 export { seedDemoCatalog } from "./seed-catalog.js";
 export { seedDefinitionCatalog } from "./seed-definition-catalog.js";
 export { seedConfigs } from "./seed-config.js";

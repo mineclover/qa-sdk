@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * prefix-stamp 테스트 — 패싯별 분리.
  *

@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * DEMO_CATALOG → PrefixSpec[] 변환 브릿지.
  *

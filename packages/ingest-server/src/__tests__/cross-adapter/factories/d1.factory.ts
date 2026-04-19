@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * D1 (SQLite) 팩토리 — NodeSqliteDriver(:memory:) 기반.
  * 각 호출마다 독립적인 in-memory DB를 생성한다.

@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { SqlDriver } from "index-meta";
 import type { DraftLock } from "../types/index.js";
 import type { DraftLockStore } from "./draft-lock-store.js";

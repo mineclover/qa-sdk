@@ -1,0 +1,15 @@
+---
+def:
+  id: viz-system-root
+  type: spec
+  level: module
+  scope: ui
+  aspect: layout
+  depth: specification
+  lifecycle: approved
+  layer: experience
+  svc: viz
+---
+# Visualization System Root
+## 목적 ^purpose
+QA-SDK의 지식 그래프와 데이터를 2D/3D로 시각화하는 전체 시스템을 관장한다.

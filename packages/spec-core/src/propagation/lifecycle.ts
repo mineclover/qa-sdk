@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * 라이프사이클 전이 — seal + activate + 종단 파이프라인.
  *

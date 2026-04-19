@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 테스트 공유 fixture — step(), simplePipe, branchPipe, simpleGraph
  *

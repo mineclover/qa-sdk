@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * Source Annotations — 소스 코드 JSDoc에서 prefix 메타데이터 추출
  *

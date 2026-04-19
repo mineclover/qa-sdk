@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { mkdtemp, writeFile, rm, mkdir } from "node:fs/promises";
 import { join } from "node:path";

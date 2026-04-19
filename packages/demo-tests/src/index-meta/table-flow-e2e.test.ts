@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * E2E: 테이블 정의 → 데이터 적재 → 전체 1D 엔트리 조회 → 서비스 활용
  *

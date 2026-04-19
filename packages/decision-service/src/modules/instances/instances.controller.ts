@@ -1,3 +1,6 @@
+// @def.boundary decision-service-spec
+// @def.doc decision-service-spec
+
 import { Body, Controller, Get, Inject, Param, Post, Query, NotFoundException } from "@nestjs/common";
 import { InstancesService, type FlowInstanceRecord } from "./instances.service.js";
 

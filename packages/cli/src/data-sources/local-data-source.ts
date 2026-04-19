@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * LocalDataSource — SQLite 직접 접근으로 definition 데이터 조회
  *

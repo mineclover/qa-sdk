@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 테스트 토큰 파생 — spec 문서 또는 소스 모듈에서 testName 토큰 추출.
  *

@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * Scope Nesting 통합 타임라인
  *

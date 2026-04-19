@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // monitor/sla.ts — SLA 보고서 계산
 import type { InfraProfileAdapter } from "../adapters/adapter.js";
 

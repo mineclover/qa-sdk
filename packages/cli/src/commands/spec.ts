@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk spec — spec-core CLI 명령어.
  *

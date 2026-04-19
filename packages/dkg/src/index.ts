@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * dkg — Design Knowledge Graph.
  *

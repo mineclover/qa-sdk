@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import type { DefinitionServiceDatabase } from "../database.module.js";
 import { prefixRegistry } from "../db/schema.js";
 import { eq, asc, type SQL } from "drizzle-orm";

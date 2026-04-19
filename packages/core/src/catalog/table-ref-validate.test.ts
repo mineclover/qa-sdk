@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import { validateTableRefs } from "./table-ref-validate.js";
 import type { Catalog } from "./catalog.types.js";

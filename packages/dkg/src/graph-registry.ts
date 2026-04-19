@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * DKG GraphRegistry — 노드/엣지 저장소 + 질의 API.
  *

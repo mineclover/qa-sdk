@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import type {
   LayoutMetrics,
   LayoutPattern,

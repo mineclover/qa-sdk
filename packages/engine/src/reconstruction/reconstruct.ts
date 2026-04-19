@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-engine-system
+// @def.doc qa-sdk-engine-system
+
 import type { EventRecord, RuntimeGraph, RuntimeNode } from "@qa-sdk/core";
 import { sortByTimestamp } from "./timestamp-sorter.js";
 import { buildSpanTree } from "./span-tree-builder.js";

@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * StaticCatalogProvider — 단일 Catalog를 래핑하는 간단한 구현.
  */

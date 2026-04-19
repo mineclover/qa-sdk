@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * Scope Nesting — contract descent 기반 스코프 중첩 검증
  *

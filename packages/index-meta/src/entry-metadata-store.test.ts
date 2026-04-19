@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * PositionEngine — EntryMetadataStore 테스트
  * position 기반 관계형 메타데이터 CRUD

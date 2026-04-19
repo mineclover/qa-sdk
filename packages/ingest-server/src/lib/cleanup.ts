@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { Logger } from "pino";
 import type { RuntimeGraph, StoredRecord, StoredSession, StoredTrace, StoredVerdict } from "@qa-sdk/core";
 import {

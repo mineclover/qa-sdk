@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * schema-validation-codec — 스키마 검증 결과를 prefix 좌표로 인코딩.
  *

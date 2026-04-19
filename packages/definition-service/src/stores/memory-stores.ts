@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import type {
   CodeReferenceRecord,
   DocRecord,

@@ -1,3 +1,6 @@
+// @def.boundary decision-service-spec
+// @def.doc decision-service-spec
+
 import { Inject, Injectable } from "@nestjs/common";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { DATABASE, type DecisionServiceDatabase } from "../../database.module.js";

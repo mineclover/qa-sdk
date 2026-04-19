@@ -17,6 +17,8 @@ def:
       type: contains
     - target: gate-work-domain-test
       type: contains
+    - target: work-domain
+      type: contains
 ---
 # Work Domain Quality Bundle
 

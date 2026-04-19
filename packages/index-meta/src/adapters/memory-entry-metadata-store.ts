@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import type { EntryMetadataStore, MetadataEntry } from "../entry-metadata-store.js";
 
 export class InMemoryEntryMetadataStore implements EntryMetadataStore {

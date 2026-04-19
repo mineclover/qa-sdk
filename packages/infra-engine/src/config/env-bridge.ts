@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // config/env-bridge.ts — 설정에서 환경변수 추출
 import type { ResolvedConfig } from "../core/types.js";
 

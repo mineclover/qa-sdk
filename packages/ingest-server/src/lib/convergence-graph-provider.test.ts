@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * convergence-graph-provider 통합 테스트.
  *

@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * DefDataSource 팩토리 — 서버/로컬 자동 감지
  *

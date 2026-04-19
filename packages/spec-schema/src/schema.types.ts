@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Layer 2 스키마 시스템 타입 정의.
  *

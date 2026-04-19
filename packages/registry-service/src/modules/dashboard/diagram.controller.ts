@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Controller, Get, Inject, Param, Query, UseFilters } from "@nestjs/common";
 import { DiagramService } from "./diagram.service.js";
 import { DashboardExceptionFilter } from "./dashboard.exception-filter.js";

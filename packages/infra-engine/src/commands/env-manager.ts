@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // commands/env-manager.ts — 로컬 인프라 환경 관리 (MinIO S3 + K8s)
 
 import { resolve } from "node:path";

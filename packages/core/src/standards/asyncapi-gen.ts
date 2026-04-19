@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * AsyncAPI 명세 생성기 — PipeGraph + ManifestRef → AsyncAPI YAML 문자열
  *

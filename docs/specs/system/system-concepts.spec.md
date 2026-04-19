@@ -33,3 +33,14 @@ def:
 축: 유한한 분류 차원(7값 role, 5값 env 등).
 Prefix: 축의 조합으로 구성된 독립 주소 공간.
 prefix_ref: prefix 간 참조(디코딩 시 참조된 차원이 펼쳐짐).
+
+## 좌표 표현과 개념 계층
+
+**Axis와 Prefix는 계층이 아닌 좌표 표현 수단이다.**
+
+- `Axis` = 1D 좌표 표현. position이 곧 entry 식별자.
+- `Prefix` = nD 좌표 표현. 여러 Axis의 곱 공간을 1D 정수로 압축. Axis는 Prefix의 1차원 특수 케이스.
+
+개념 계층(Entry → Taxonomy → System)의 각 단위에 Prefix가 부여되면 `Prefix:Axis` 형태로 주소를 가진다.
+
+계층 원칙 전체: [composition-hierarchy.spec.md](composition-hierarchy.spec.md)

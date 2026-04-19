@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * ColorTokens — 시각화 색상 토큰 시스템.
  *

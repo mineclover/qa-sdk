@@ -1,3 +1,5 @@
+// @def.doc definition-data-source
+
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";

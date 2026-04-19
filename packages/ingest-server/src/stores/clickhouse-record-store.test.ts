@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * ClickhouseRecordStore 단위 테스트.
  *

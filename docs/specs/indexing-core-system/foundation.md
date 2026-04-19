@@ -31,6 +31,8 @@ def:
 유한한 개념 조합에 정수 주소를 부여하고, 주소를 해석하고, 주소 공간을 버전 관리한다.
 **데이터를 저장하지 않는다.** 저장은 이 좌표 위에 구축되는 별도 계층의 책임이다.
 
+Axis와 Prefix는 개념 계층(Entry → Taxonomy → System)에 적용되는 **좌표 표현 수단**이다. 계층 자체가 아니라, 각 계층 단위에 주소를 부여하는 방법이다. Axis = 1D 표현, Prefix = nD 표현. 계층 원칙: [composition-hierarchy.spec.md](../system/composition-hierarchy.spec.md)
+
 사용 패턴: [`patterns.md`](patterns.md) · 프로젝트 관례: [`../indexing-core-system/conventions-system.md`](../indexing-core-system/conventions-system.md) · 설계 구조: [`data-design.md`](data-design.md)
 
 - [`weighted-index/`](weighted-index/README.md)

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * AddressProtocolManager — 독립 주소 직렬화 게이트웨이
  *

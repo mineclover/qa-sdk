@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * layout-fit.ts — N-dimensional UUID layout simulator calculations.
  *

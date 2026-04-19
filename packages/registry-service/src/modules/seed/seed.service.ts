@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Inject, Injectable, OnModuleInit } from "@nestjs/common";
 import { DefinitionClient } from "@qa-sdk/definition-client";
 import { seedDemoCatalog, seedDefinitionCatalog, seedConfigs, seedEndpoints, seedEventSchemas } from "../../core/index.js";

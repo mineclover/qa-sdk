@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * Ingest 시스템 기능 분할 검증
  *

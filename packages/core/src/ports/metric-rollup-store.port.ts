@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * MetricRollupStore — 메트릭 집계 저장 포트.
  *

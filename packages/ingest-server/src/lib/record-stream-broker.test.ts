@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { describe, expect, it, vi, afterEach } from "vitest";
 import type { StoredRecord } from "@qa-sdk/core";
 import {

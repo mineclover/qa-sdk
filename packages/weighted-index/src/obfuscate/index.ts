@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 export { calcBitWidth } from "./bit-width.js";
 export { xorObfuscate } from "./xor.js";
 export { rotateLeft, rotateRight } from "./rotate.js";

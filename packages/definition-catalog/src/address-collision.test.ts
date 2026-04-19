@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 주소 충돌 진단 → 해결 검증 테스트
  *

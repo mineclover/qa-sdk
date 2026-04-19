@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 정적 계보 ↔ 시뮬레이션 계보 교차 일관성 검증.
  *

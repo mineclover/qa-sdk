@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import {
   createOntologyPackScaffoldPlanFromCliArgs,
   hasOntologyPackScaffoldErrors,
@@ -10,7 +13,8 @@ import {
 import {
   validateOntologyPackFromRef,
   type OntologyPackValidateResult,
-} from "../../lib/ontology-pack-validate.js";
+} from "ontology-pack-validate";
+import { readDocsFamilyFromDefinitionMarkdown } from "../../lib/ontology-pack-docs-reader.js";
 import { parseFlags, printJson } from "./support.js";
 
 const PACK_SCAFFOLD_USAGE =
@@ -54,7 +58,10 @@ export async function cmdPackValidate(rest: string[]): Promise<void> {
     return;
   }
 
-  const result = await validateOntologyPackFromRef({ packRef });
+  const result = await validateOntologyPackFromRef({
+    packRef,
+    readDocsFamily: readDocsFamilyFromDefinitionMarkdown,
+  });
   if (flags["json"] === "true") {
     printJson(result);
   } else {

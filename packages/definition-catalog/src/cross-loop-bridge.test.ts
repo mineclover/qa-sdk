@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * Cross-Loop Bridge 통합 테스트
  *

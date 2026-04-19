@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 /**
  * Gate FSM — 품질 게이트 상태 머신 + 번들 파생.
  *

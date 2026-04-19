@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 /**
  * Contract → Gates — 계약 문서에서 GateKind를 도출.
  *

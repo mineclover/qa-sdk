@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { describe, it, expect } from "vitest";
 import { MetaCodec, validateDecodeMap } from "./meta-codec.js";
 import { MetaRegistry } from "./meta-registry.js";

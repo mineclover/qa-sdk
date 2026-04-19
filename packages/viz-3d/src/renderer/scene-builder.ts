@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * SceneBuilder — Three.js 씬을 선언적 config에서 자동 구성.
  *

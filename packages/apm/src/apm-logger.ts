@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 /**
  * apm-logger.ts — QaLogger + PartialBinder 브릿지.
  *

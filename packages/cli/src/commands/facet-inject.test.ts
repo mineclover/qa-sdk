@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { injectFacetExports } from "./facet-inject.js";
 import { writeFileSync, readFileSync, mkdirSync, rmSync } from "node:fs";

@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * resource.ts — resource 정규화 + 검증 + 패턴 타입별 규칙.
  *

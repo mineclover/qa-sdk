@@ -7,14 +7,14 @@
 #   2. 이 스크립트 실행: bash scripts/verify-convergence.sh
 #
 # 전제:
-#   - ingest-server가 localhost:3100에서 실행 중
+#   - ingest-server가 localhost:3200에서 실행 중
 #   - CONVERGENCE_ENABLED=true 설정됨
 #   - PostgreSQL + Redis 실행 중 (또는 인라인 모드)
 #
 
 set -euo pipefail
 
-INGEST_URL="${INGEST_URL:-http://localhost:3100}"
+INGEST_URL="${INGEST_URL:-http://localhost:3200}"
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 SESSION_ID="ses_verify_$(date +%s)"
 TRACE_ID="trc_verify_$(date +%s)"

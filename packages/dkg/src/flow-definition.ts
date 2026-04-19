@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * FlowDefinition — 비즈니스 흐름 관측 포인트 DSL.
  *

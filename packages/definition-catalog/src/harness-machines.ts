@@ -1,3 +1,5 @@
+// @def.doc definition-harness
+
 /**
  * 하네스 시스템 머신 선언 — 7개 시스템 개념의 상태 머신 정의.
  *

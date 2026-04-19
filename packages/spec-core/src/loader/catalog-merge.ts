@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Catalog Merge — 서비스별 분리된 카탈로그를 합치는 유틸.
  *

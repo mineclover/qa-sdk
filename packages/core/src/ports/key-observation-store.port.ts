@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /** payload 필드별 빈도 + 샘플 값 */
 export interface PayloadSummary {
   fieldFrequency: Record<string, number>;

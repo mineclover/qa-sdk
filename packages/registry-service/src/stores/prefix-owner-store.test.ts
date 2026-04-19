@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { describe, it, expect, beforeEach } from "vitest";
 import { InMemoryPrefixOwnerStore } from "./in-memory-prefix-owner-store.js";
 import type { PrefixOwnerStore } from "./prefix-owner-store.js";

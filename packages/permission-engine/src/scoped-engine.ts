@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * scoped-engine.ts — 컨텍스트 스코프 권한 엔진.
  *

@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 export type OntologyLane =
   | 'snapshot'
   | 'corridor'

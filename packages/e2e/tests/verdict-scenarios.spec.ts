@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * verdict 시나리오 E2E 테스트
  *

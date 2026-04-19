@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * spec-core Port Interfaces — ingest-server가 spec-core를 동적 import할 때 사용하는 타입.
  *

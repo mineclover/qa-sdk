@@ -1,69 +1,38 @@
-import {
-  createArtifactEvidenceAdapter,
-  type ArtifactEvidenceAdapterOptions,
-} from "./adapters/artifact-evidence.js";
-import {
-  createDefinitionMarkdownAdapter,
-  type DefinitionMarkdownAdapterOptions,
-} from "./adapters/definition-markdown.js";
-import {
-  createPrdMarkdownAdapter,
-  type PrdMarkdownAdapterOptions,
-} from "./adapters/prd-markdown.js";
-import {
-  createRalphPrdJsonAdapter,
-  type RalphPrdJsonAdapterOptions,
-} from "./adapters/ralph-prd-json.js";
-import {
-  createRalphSessionAdapter,
-  type RalphSessionAdapterOptions,
-} from "./adapters/ralph-session.js";
+// @def.doc deterministic-label-architecture
 import {
   detectCompletedRecords,
   type CompletedRecordState,
-} from "./completed-records.js";
+} from "doc-envelope";
 import {
-  computeDeterministicLabelReadiness,
-} from "./deterministic-label-fsm.js";
-import {
-  DETERMINISTIC_LABEL_RECORD_STATES,
   projectDeterministicLabelRecordsFromDocuments,
-  projectOntologyPackAndArtifactLabelRecords,
   SEMANTIC_COORDINATE_LABEL_KINDS,
   type DeterministicLabelRecord,
-  type DeterministicLabelRecordState,
   type SemanticCoordinateCandidate,
   type SemanticCoordinateCandidateInventoryOptions,
   type SemanticCoordinateDiagnostic,
   type SemanticCoordinateDiagnosticCode,
   type SemanticCoordinateLabelKind,
   type SemanticCoordinateSkippedDocument,
-} from "./deterministic-labels.js";
-import type {
-  OntologyPackValidateResult,
-} from "../ontology-pack-validate.js";
+} from "./index.js";
 import type {
   DocumentAdapter,
   DocumentEnvelope,
-} from "./types.js";
+} from "doc-envelope";
 
 export interface DeterministicLabelInventoryOptions
   extends SemanticCoordinateCandidateInventoryOptions {
   readonly rootDir: string;
   readonly documents?: readonly DocumentEnvelope[] | null;
   readonly adapters?: readonly DocumentAdapter[] | null;
-  readonly docsDirs?: readonly string[] | null;
-  readonly prdDirs?: readonly string[] | null;
-  readonly artifactRegistryPaths?: readonly string[] | null;
-  readonly sessionPath?: string | null;
-  readonly prdJsonPath?: string | null;
-  readonly prdPath?: string | null;
+  /**
+   * Caller가 사전에 구성한 pack/artifact label record들을 document-projected
+   * records와 병합한다. Label registry 자체는 pack validation 로직을 갖지 않는다
+   * (purpose unit isolation). cli/ontology-pack-validate 쪽에서 원하는 형태로
+   * 조립해 넘긴다.
+   */
+  readonly extraRecords?: readonly DeterministicLabelRecord[] | null;
   readonly completedRecords?: readonly CompletedRecordState[] | null;
   readonly detectCompletedRecords?: boolean;
-  readonly includeOntologyPacks?: boolean;
-  readonly packRefs?: readonly string[] | null;
-  readonly packValidateResults?: readonly OntologyPackValidateResult[] | null;
-  readonly computeReadiness?: boolean;
 }
 
 export interface DeterministicLabelInventorySummary {
@@ -73,10 +42,7 @@ export interface DeterministicLabelInventorySummary {
   readonly diagnostics: number;
   readonly skippedDocuments: number;
   readonly completedRecords: number;
-  readonly packValidations: number;
-  readonly readinessComputed: boolean;
   readonly byKind: Readonly<Record<SemanticCoordinateLabelKind, number>>;
-  readonly byState: Readonly<Record<DeterministicLabelRecordState, number>>;
   readonly byDiagnosticSeverity: Readonly<Record<"error" | "warning", number>>;
   readonly byDiagnosticCode: Readonly<Partial<Record<SemanticCoordinateDiagnosticCode, number>>>;
 }
@@ -88,7 +54,6 @@ export interface DeterministicLabelInventory {
   readonly diagnostics: readonly SemanticCoordinateDiagnostic[];
   readonly skippedDocuments: readonly SemanticCoordinateSkippedDocument[];
   readonly completedRecords: readonly CompletedRecordState[];
-  readonly packValidations: readonly OntologyPackValidateResult[];
   readonly summary: DeterministicLabelInventorySummary;
 }
 
@@ -97,52 +62,36 @@ export async function buildDeterministicLabelInventory(
 ): Promise<DeterministicLabelInventory> {
   const documents = await resolveInventoryDocuments(options);
   const completedRecords = await resolveCompletedRecords(options, documents);
-  const includeOntologyPacks = options.includeOntologyPacks !== false;
-  const projection = includeOntologyPacks
-    ? await projectOntologyPackAndArtifactLabelRecords({
-        ...projectionOptions(options, completedRecords),
-        rootDir: options.rootDir,
-        documents,
-        packRefs: options.packRefs,
-        packValidateResults: options.packValidateResults,
-      })
-    : {
-        ...projectDeterministicLabelRecordsFromDocuments(
-          documents,
-          projectionOptions(options, completedRecords),
-        ),
-        packValidations: [],
-      };
-  const readinessComputed = options.computeReadiness !== false;
-  const readiness = readinessComputed
-    ? computeDeterministicLabelReadiness(projection.records)
-    : {
-        records: projection.records,
-        diagnostics: [],
-      };
+  const documentProjection = projectDeterministicLabelRecordsFromDocuments(
+    documents,
+    projectionOptions(options, completedRecords),
+  );
+  const extraRecords = options.extraRecords ?? [];
+  const mergedRecords = [...documentProjection.records, ...extraRecords];
+  const mergedCandidates = [
+    ...documentProjection.candidates,
+    ...extraRecords.map((record) => record.candidate),
+  ];
   const diagnostics = [
-    ...projection.diagnostics,
-    ...readiness.diagnostics,
+    ...documentProjection.diagnostics,
+    ...extraRecords.flatMap((record) => record.diagnostics),
   ].toSorted(compareDiagnostics);
-  const records = readiness.records.toSorted(compareRecords);
+  const records = mergedRecords.toSorted(compareRecords);
 
   return {
     documents,
     records,
-    candidates: projection.candidates,
+    candidates: mergedCandidates,
     diagnostics,
-    skippedDocuments: projection.skippedDocuments,
+    skippedDocuments: documentProjection.skippedDocuments,
     completedRecords,
-    packValidations: projection.packValidations,
     summary: summarizeDeterministicLabelInventory({
       documents,
       records,
-      candidates: projection.candidates,
+      candidates: mergedCandidates,
       diagnostics,
-      skippedDocuments: projection.skippedDocuments,
+      skippedDocuments: documentProjection.skippedDocuments,
       completedRecords,
-      packValidations: projection.packValidations,
-      readinessComputed,
     }),
   };
 }
@@ -154,53 +103,12 @@ async function resolveInventoryDocuments(
     return options.documents.toSorted(compareDocuments);
   }
 
-  const adapters = options.adapters ?? createDeterministicLabelInventoryAdapters(options);
-  const groups = await Promise.all(adapters.map((adapter) => adapter.listDocuments()));
+  if (!options.adapters || options.adapters.length === 0) {
+    return [];
+  }
+
+  const groups = await Promise.all(options.adapters.map((adapter) => adapter.listDocuments()));
   return groups.flat().toSorted(compareDocuments);
-}
-
-function createDeterministicLabelInventoryAdapters(
-  options: DeterministicLabelInventoryOptions,
-): readonly DocumentAdapter[] {
-  const definitionOptions: DefinitionMarkdownAdapterOptions = {
-    rootDir: options.rootDir,
-    ...(options.docsDirs ? { docsDirs: options.docsDirs } : {}),
-  };
-  const prdMarkdownOptions: PrdMarkdownAdapterOptions = {
-    rootDir: options.rootDir,
-    ...(options.prdDirs ? { dirs: options.prdDirs } : {}),
-  };
-  const ralphPrdOptions: RalphPrdJsonAdapterOptions = {
-    rootDir: options.rootDir,
-    ...(options.prdDirs ? { dirs: options.prdDirs } : {}),
-  };
-  const sessionOptions: RalphSessionAdapterOptions = {
-    rootDir: options.rootDir,
-    ...(options.sessionPath ? { path: options.sessionPath } : {}),
-    ...(inventoryPrdJsonPath(options) ? { prdJsonPath: inventoryPrdJsonPath(options) } : {}),
-  };
-  const artifactOptions: ArtifactEvidenceAdapterOptions = {
-    rootDir: options.rootDir,
-    ...(options.artifactRegistryPaths
-      ? { registryPaths: options.artifactRegistryPaths }
-      : {}),
-  };
-
-  return [
-    createDefinitionMarkdownAdapter(definitionOptions),
-    createPrdMarkdownAdapter(prdMarkdownOptions),
-    createRalphPrdJsonAdapter(ralphPrdOptions),
-    createRalphSessionAdapter(sessionOptions),
-    createArtifactEvidenceAdapter(artifactOptions),
-  ];
-}
-
-function inventoryPrdJsonPath(
-  options: DeterministicLabelInventoryOptions,
-): string | undefined {
-  return options.prdJsonPath
-    ?? (options.prdPath?.endsWith(".json") ? options.prdPath : undefined)
-    ?? undefined;
 }
 
 async function resolveCompletedRecords(
@@ -224,13 +132,13 @@ function projectionOptions(
   completedRecords: readonly CompletedRecordState[],
 ): {
   readonly includeArchive?: boolean;
-  readonly includeSession?: boolean;
+  readonly includeTransient?: boolean;
   readonly exactTarget?: string | readonly string[] | null;
   readonly completedRecords: readonly CompletedRecordState[];
 } {
   return {
     includeArchive: options.includeArchive,
-    includeSession: options.includeSession,
+    includeTransient: options.includeTransient,
     exactTarget: options.exactTarget,
     completedRecords,
   };
@@ -243,8 +151,6 @@ function summarizeDeterministicLabelInventory(input: {
   readonly diagnostics: readonly SemanticCoordinateDiagnostic[];
   readonly skippedDocuments: readonly SemanticCoordinateSkippedDocument[];
   readonly completedRecords: readonly CompletedRecordState[];
-  readonly packValidations: readonly OntologyPackValidateResult[];
-  readonly readinessComputed: boolean;
 }): DeterministicLabelInventorySummary {
   return {
     documents: input.documents.length,
@@ -253,10 +159,7 @@ function summarizeDeterministicLabelInventory(input: {
     diagnostics: input.diagnostics.length,
     skippedDocuments: input.skippedDocuments.length,
     completedRecords: input.completedRecords.length,
-    packValidations: input.packValidations.length,
-    readinessComputed: input.readinessComputed,
     byKind: countRecordsByKind(input.records),
-    byState: countRecordsByState(input.records),
     byDiagnosticSeverity: countDiagnosticsBySeverity(input.diagnostics),
     byDiagnosticCode: countDiagnosticsByCode(input.diagnostics),
   };
@@ -270,18 +173,6 @@ function countRecordsByKind(
   ) as Record<SemanticCoordinateLabelKind, number>;
   for (const record of records) {
     counts[record.kind] += 1;
-  }
-  return counts;
-}
-
-function countRecordsByState(
-  records: readonly DeterministicLabelRecord[],
-): Readonly<Record<DeterministicLabelRecordState, number>> {
-  const counts = Object.fromEntries(
-    DETERMINISTIC_LABEL_RECORD_STATES.map((state) => [state, 0]),
-  ) as Record<DeterministicLabelRecordState, number>;
-  for (const record of records) {
-    counts[record.currentState] += 1;
   }
   return counts;
 }

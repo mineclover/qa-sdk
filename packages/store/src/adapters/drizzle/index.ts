@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 export { DrizzleRecordStore } from "./record.adapter.js";
 export { DrizzleTraceStore } from "./trace.adapter.js";
 export { DrizzleSessionStore } from "./session.adapter.js";

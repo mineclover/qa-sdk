@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 import { describe, it, expect } from "vitest";
 import { SpecCollector } from "./collector.js";
 import { generateReport } from "./reporter.js";

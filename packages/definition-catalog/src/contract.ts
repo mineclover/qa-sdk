@@ -1,3 +1,5 @@
+// @def.doc definition-contract
+
 /**
  * 계약 조립 (Contract Assembly)
  *

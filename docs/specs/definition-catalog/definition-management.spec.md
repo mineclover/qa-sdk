@@ -7,6 +7,7 @@ def:
   depth: overview
   lifecycle: approved
   layer: operation
+  svc: definition-service
   tags: [structural, entry-point]
   links:
     - target: definition-taxonomy

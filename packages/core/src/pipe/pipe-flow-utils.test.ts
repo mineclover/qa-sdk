@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import { getChildFlows } from "./pipe-flow-utils.js";
 import type { PipeFlow } from "../types/pipe-spec.js";

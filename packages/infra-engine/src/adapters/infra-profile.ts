@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // adapters/infra-profile.ts — 인프라 프로필 JSON 파일 기반 어댑터
 import { readFile, writeFile, mkdir, rename } from "node:fs/promises";
 import { join } from "node:path";

@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import { annotateSimPhases, FACET_PHASE_DEFAULTS } from "./sim-phase-bridge.js";
 import type { SimulationResult } from "./pipe-simulate.js";

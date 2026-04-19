@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import "reflect-metadata";
 import { FastifyAdapter, type NestFastifyApplication } from "@nestjs/platform-fastify";
 import { WsAdapter } from "@nestjs/platform-ws";

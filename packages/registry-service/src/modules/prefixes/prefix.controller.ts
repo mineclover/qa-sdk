@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, UseFilters } from "@nestjs/common";
 import type { PrefixProfilePatch } from "../../stores/prefix-owner-store.js";
 import { badRequest } from "../../lib/errors.js";

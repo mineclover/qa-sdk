@@ -8,7 +8,7 @@ def:
   depth: overview
   lifecycle: approved
   layer: domain
-  svc: spec-core
+  svc: convergence
   tags: [structural]
   links:
     - target: convergence-comparators

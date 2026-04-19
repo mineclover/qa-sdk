@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import type { OntologyPackScaffoldIdentity } from '../ontology-pack-scaffold-plan.js';
 
 export function renderComponentSchemaFile(identity: OntologyPackScaffoldIdentity): string {

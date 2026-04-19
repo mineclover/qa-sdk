@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk flow — 의사결정 분기 관리 CLI
  *

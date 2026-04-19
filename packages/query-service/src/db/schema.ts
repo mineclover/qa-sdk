@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 /**
  * query-service PolicyRule Drizzle 스키마 정의
  *

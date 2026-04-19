@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import { describe, expect, it } from "vitest";
 import { buildConceptHierarchyGrid } from "./concept-grid.js";
 

@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // providers/registry.ts — 프로바이더 레지스트리
 import type { DeployProvider } from "../adapters/adapter.js";
 

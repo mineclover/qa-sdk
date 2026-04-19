@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // stages/observe-stage.ts — deploy_event emit + 모니터링 등록 (fail-open)
 import type { Stage, DeployContext, ObserveResult, StageResult } from "../core/types.js";
 import type { IngestAdapter, CoordinateAdapter, InfraProfileAdapter } from "../adapters/adapter.js";

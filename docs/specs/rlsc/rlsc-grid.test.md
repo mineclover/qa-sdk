@@ -11,6 +11,7 @@ def:
   links:
     - target: rlsc-grid
       type: refines
+  source: packages/rlsc/src/grid.test.ts
 ---
 
 ## 목적 ^purpose

@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Global, Module } from "@nestjs/common";
 import { createLogger } from "../../lib/logger.js";
 import { DEV_DKG_PROVIDER } from "../catalog/catalog.change-notifier.js";

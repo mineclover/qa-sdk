@@ -1,3 +1,5 @@
+// @def.doc definition-harness
+
 /**
  * 하네스 가드/캐스케이드 — 머신 간 의존 관계 검증.
  *

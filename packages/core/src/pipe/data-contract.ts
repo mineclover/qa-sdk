@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 데이터 계약 — 스키마 호환 검증 + 계보 수집 + 버전 수집
  */

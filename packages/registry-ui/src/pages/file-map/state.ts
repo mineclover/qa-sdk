@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 import { filterTreeByMode, findNodeById, normalizeReport } from "./normalize.js";
 import { SAMPLE_REPORT } from "./sample-report.js";
 import type { FileTreeNode, JsonRecord, RenderState } from "./types.js";

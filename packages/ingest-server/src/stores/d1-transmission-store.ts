@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { TransmissionStore, TransmissionInsert } from "@qa-sdk/core";
 import { transmissions } from "../db/schema.js";
 import type { D1Db } from "./d1-db-type.js";

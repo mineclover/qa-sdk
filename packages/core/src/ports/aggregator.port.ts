@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 집계 포트 — packed_key 기반 그룹핑과 축 프로젝션 추상화.
  *

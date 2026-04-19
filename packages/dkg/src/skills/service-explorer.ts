@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * service-explorer — 서비스/prefix/DSL/시스템 전체 탐색 skill.
  *

@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { asc, eq } from "drizzle-orm";
 import type { TraceStore, TraceUpsert, StoredTrace } from "@qa-sdk/core";
 import type { DbExecutor } from "../../db/client.js";

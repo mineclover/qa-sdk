@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { bootstrapDkg } from "../bootstrap.js";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";

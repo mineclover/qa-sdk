@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * D-4 계약: stride 공식 일치.
  *

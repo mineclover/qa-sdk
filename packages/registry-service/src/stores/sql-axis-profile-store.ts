@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { SqlDriver } from "index-meta";
 import type { AxisProfileRecord, AxisProfilePatch, AxisProfileStore } from "./axis-profile-store.js";
 import { parseJsonColumn } from "../lib/typed-json.js";

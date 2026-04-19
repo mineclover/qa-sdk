@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 import type { SpecDocument, SpecId, SpecRelation, SpecLifecycle } from "./spec.types.js";
 import { DuplicateRegistrationError, NotFoundError } from "spec-schema";
 

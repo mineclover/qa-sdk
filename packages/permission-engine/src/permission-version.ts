@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * permission-version.ts — 유저별 권한 버전 카운터.
  *

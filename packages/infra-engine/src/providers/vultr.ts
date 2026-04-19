@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // providers/vultr.ts — Vultr 프로바이더 (골격)
 import type { DeployProvider, ValidationResult } from "../adapters/adapter.js";
 import type { ResolvedConfig } from "../core/types.js";

@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 // packages/ingest-server/src/lib/extract-key-observations.test.ts
 
 import { describe, expect, it } from "vitest";

@@ -6,6 +6,7 @@ def:
   aspect: domain_data
   depth: overview
   lifecycle: approved
+  svc: address-index
   tags: [domain, coordinate, indexing]
   links:
     - target: index-meta-system

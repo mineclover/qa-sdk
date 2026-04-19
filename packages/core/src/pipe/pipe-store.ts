@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * PipeGraphStore — PipeGraph CRUD 포트 + 인메모리 어댑터
  *

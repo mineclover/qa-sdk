@@ -56,11 +56,11 @@ must pass an exact target or `includeArchive`/`includeSession` to include them.
 ## Deterministic label records
 
 `buildDeterministicLabelRecord()` wraps a semantic coordinate candidate in a
-read-only record shape for the future label registry. The projection keeps the
-candidate label and kind, defaults `currentState` to `DRAFT`, preserves
+read-only record shape. It keeps the candidate label/kind, preserves
 `physicalRefs[]`, and carries sorted, de-duplicated `dependencyLabels[]`,
-`sourceRefs[]`, and `evidenceRefs[]` arrays. Candidate diagnostics remain on
-the record, with optional projection diagnostics appended by the caller.
+`sourceRefs[]`, and `evidenceRefs[]` arrays. Records are stateless projections
+— no `currentState`, no FSM — and candidate diagnostics remain on the record
+with optional projection diagnostics appended by the caller.
 
 `projectDeterministicLabelRecordsFromDocuments()` is the envelope projection
 step for definition markdown, PRD markdown, and ralph PRD JSON records. It
@@ -68,51 +68,56 @@ starts with semantic coordinate candidates, then maps `DocumentEnvelope.links`
 to dependency label refs, `DocumentEnvelope.sources` and PRD context sources to
 source refs, and `DocumentEnvelope.evidence` plus task evidence ids to evidence
 refs. The record metadata keeps active/archive/session scope and optional
-completed-record context so later FSM readiness checks can consume the same
-facts without re-reading source files.
+completed-record context for consumers reading the labels back out.
 
-`projectOntologyPackAndArtifactLabelRecords()` adds ontology pack validation
-inputs to the same read model. By default it resolves the known pack ids,
-projects `ontology pack validate` identity, component schema, system bindings,
-runtime, and readiness status into pack record metadata, and maps validation
-issues into record diagnostics. Readiness warnings stay warnings; they do not
-block pack record creation. Optional artifact evidence envelopes are projected
-as artifact/evidence records and linked back to matching pack records through
-`evidenceRefs[]`.
+Pack/artifact label records are not projected by `deterministic-label-registry`
+— pack validation belongs to `ontology-pack-validate` (purpose unit isolation,
+2026-04-18). Callers (cli) run `ontology-pack-validate`, shape the results into
+`DeterministicLabelRecord[]`, and inject them via
+`DeterministicLabelInventoryOptions.extraRecords`.
 
-`computeDeterministicLabelReadiness()` evaluates the record list as a read-only
-FSM projection. It advances through `DRAFT -> LINTED -> RESOLVED -> ACTIVE` only
-when each gate's existing signals pass: lint uses source/candidate validation
-diagnostics plus syntax/frontmatter/schema/doc-type metadata flags; resolution
-checks dependency/source/evidence refs against the projected labels plus pack
-docs/source-map status; activation checks drift-free status, required evidence,
-role-quality placeholders, and ontology pack runtime validity. Deprecated and
-archived metadata become terminal `DEPRECATED`/`ARCHIVED` read states.
-
-Failed gates append `deterministic-label-readiness-blocked` diagnostics and keep
-the last valid state. The read model does not write transition events and does
-not set `currentState` to `BLOCKED`; `BLOCKED` remains available for future
-controller-owned state while this layer reports blocked transitions as review
-evidence.
-
-`dryRunDeterministicLabelTransition()` accepts a transition request with
-`targetLabel`, `requestedState`, `reason`, and request `evidenceRefs[]`. It
-returns a data-only result containing `accepted`/`decision`, `currentState`,
-`nextState`, `blockers[]`, and `gateEvidence[]`. Request evidence refs are
-merged only into a transient evaluation copy, so the source label records,
-documents, PRDs, known-pack data, and future registries are not mutated.
-
-Dry-run result metadata carries the append-only transition event schema
-candidate `deterministic-label-transition-event:candidate-v1`. The candidate
-event fields are `eventId`, `targetLabel`, `requestedState`, `currentState`,
-`nextState`, `decision`, `reason`, `evidenceRefs`, `gateEvidence`, and
-`blockers`; controller-owned fields such as `actor`, `sequence`, `committedAt`,
-and `registryRevision` are intentionally deferred until persistence exists.
+FSM readiness and transition dry-run were removed (2026-04-18). The read model
+is intentionally state-free: no `currentState`, no `DRAFT -> LINTED -> RESOLVED
+-> ACTIVE` progression, no transition event schema candidate. Rationale in
+`docs/specs/definition-catalog/deterministic-label-stability-boundary.memo.md`.
 
 This shape is intentionally data-only. It does not append to a registry, write
 transition events, persist state, or promote PRD/TODO/checklist signals into
-authority. Pack projection also does not activate packs or mutate the known-pack
-registry.
+authority.
+
+## Deterministic label layer (extracted)
+
+The deterministic label read model is no longer part of `docs-control-plane`
+directly. It now lives in the unscoped library `deterministic-label-registry`
+(depends on `doc-envelope` only; FSM readiness removed 2026-04-18).
+
+| 계층 | 패키지 | 역할 |
+|------|--------|------|
+| 수집 (collection, Layer 1) | `doc-envelope` | envelope 타입, family/scope 판정(metadata.transient 플래그), `.todo.md` completed 감지, TODO 파싱 |
+| 도구 통합 (integration, Layer 2) | `ralph-tui-integration` | `.ralph-tui/` 세션 adapter, ralph PRD JSON adapter, ralph PRD completed 감지 |
+| 도구 통합 (integration, Layer 2) | `ontology-pack-validate` | pack load/validate + docs reader DI (Layer 2에서 ralph-tui-integration과 병렬, 서로 모름) |
+| 해석 (interpretation, Layer 3) | `deterministic-label-registry` | semantic coordinate + label record + inventory (상태 없는 순수 투영) |
+| CLI 조립 (composition, Layer 5) | `@qa-sdk/cli` (본 디렉토리) | adapter 구성, completed record 병합, docs reader 주입, pack record → `extraRecords` 주입, 명령 표면 |
+
+SSOT: `docs/specs/definition-catalog/deterministic-label-architecture.spec.md`.
+경계 위반은 `packages/cli/src/lib/deterministic-label-boundary.test.ts`가
+`package.json` dependency 스캔으로 기계적으로 강제한다.
+
+CLI 고유 인접 모듈 (환경 조립):
+- `packages/cli/src/lib/deterministic-label-inventory-adapters.ts` — 5 adapter
+  factory를 구성해 `deterministic-label-registry`에 주입. cli 소유 3종
+  (definition-markdown / prd-markdown / artifact-evidence) + `ralph-tui-integration`
+  재수출 2종 (ralph-prd-json / ralph-session). 소유권 맵과 경계 근거는
+  파일 상단 JSDoc에 명시.
+- `packages/cli/src/lib/ontology-pack-docs-reader.ts` —
+  `ontology-pack-validate`가 요구하는 docs family reader를
+  definition-markdown adapter로 구현 (DI 주입 지점).
+- `packages/cli/src/lib/completed-records-combined.ts` — `doc-envelope`의 범용
+  `.todo.md` 감지와 `ralph-tui-integration`의 ralph PRD 감지 결과를 병합해
+  operator에게 단일 리포트 제공.
+- Pack label records는 cli 호출부에서 `ontology-pack-validate` 결과를
+  `DeterministicLabelRecord[]`로 조립해 `buildDeterministicLabelInventory`의
+  `extraRecords`로 주입 (purpose unit isolation).
 
 ## Traversal taxonomy
 

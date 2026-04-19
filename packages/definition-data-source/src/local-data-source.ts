@@ -1,3 +1,5 @@
+// @def.doc definition-data-source
+
 /**
  * LocalDataSource — SQLite 직접 접근으로 definition 데이터 조회
  *

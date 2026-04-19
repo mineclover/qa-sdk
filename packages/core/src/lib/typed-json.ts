@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * DB JSON 컬럼의 타입-안전 파싱 유틸.
  *

@@ -9,6 +9,7 @@ def:
   depth: overview
   lifecycle: draft
   layer: domain
+  svc: authorization-ontology
   tags: [security, structural, cross-scope, entry-point]
   links:
     - target: operational-ontology-system
@@ -48,6 +49,8 @@ def:
     - target: authorization-management-hardening-todo
       type: contains
     - target: authorization-management-roadmap-plan
+      type: contains
+    - target: authorization-monitor-web
       type: contains
 ---
 

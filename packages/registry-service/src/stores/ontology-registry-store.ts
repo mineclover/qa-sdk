@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 export type OntologyRegistryLifecycle = "draft" | "active" | "deprecated";
 export type OntologyAddressModel = "product" | "sum";
 export type OntologyAddressAllocationStatus =

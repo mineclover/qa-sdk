@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import { describe, it, expect } from "vitest";
 import { transitionGate, deriveBundleState } from "./gate-fsm.js";
 import type { GateState } from "./gate-fsm.js";

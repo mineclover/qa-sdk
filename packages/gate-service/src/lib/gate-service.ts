@@ -1,3 +1,6 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
 import {
   InMemoryAddressStateStore,
   checkGate as resolveGateResult,

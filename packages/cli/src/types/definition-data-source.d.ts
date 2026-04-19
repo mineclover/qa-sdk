@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 declare module "definition-data-source" {
   import type { DefDataSource } from "definition-catalog";
 

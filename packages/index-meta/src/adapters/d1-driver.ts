@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * D1SqlDriver — Cloudflare D1 바인딩을 SqlDriver 인터페이스로 래핑
  *

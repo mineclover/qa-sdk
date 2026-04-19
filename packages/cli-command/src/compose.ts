@@ -1,3 +1,6 @@
+// @def.boundary cli-command-spec
+// @def.doc cli-command-spec
+
 import type { CliCommandNode, CommandDescriptor } from "./types.js";
 
 /**

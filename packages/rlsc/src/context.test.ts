@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import { describe, it, expect } from "vitest";
 import { generateDesignContext } from "./context.js";
 import type { RLSCDocument, RLSCNode, TextOccupancy } from "./types.js";

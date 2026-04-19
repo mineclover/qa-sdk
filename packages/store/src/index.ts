@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 // ── DB ──────────────────────────────────────────────────
 
 export { closeClient, createDb, getClient, withTransaction } from "./db/client.js";

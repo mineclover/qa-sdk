@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Bind Extractor — raw event에서 identity 추출.
  *

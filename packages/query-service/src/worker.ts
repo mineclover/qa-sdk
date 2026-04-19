@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 /**
  * worker.ts — query-service Cloudflare Workers 진입점.
  * D1SqlDriver → SqlPolicyRuleStore + InMemoryPrefixRegistry → createApp.

@@ -1,3 +1,6 @@
+// @def.boundary platform-demo-system
+// @def.doc platform-demo-system
+
 import {
   collectLayout,
   prepareTextMap,

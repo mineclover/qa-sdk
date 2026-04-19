@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * 동기화 엔진 — 해시 + 마커 추출 + DocRecord 조립
  *

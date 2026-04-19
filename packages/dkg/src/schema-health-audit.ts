@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * schema-health-audit — 전체 prefix의 스키마 건전성 감사.
  *

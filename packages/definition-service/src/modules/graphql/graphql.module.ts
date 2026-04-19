@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import { Module } from "@nestjs/common";
 import { DocsModule } from "../docs/docs.module.js";
 import { GraphModule } from "../graph/graph.module.js";

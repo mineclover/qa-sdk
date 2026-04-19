@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 /**
  * 전역 상태 — Prefix 제작에서 만든 축/composite를 DSL 빌더에서 참조
  *

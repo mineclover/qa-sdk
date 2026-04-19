@@ -7,6 +7,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: operation
+  svc: data-object-codegen
   links:
     - target: data-object-binding
       type: depends_on

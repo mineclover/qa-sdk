@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk register — SchemaSnapshot을 Registry에 등록.
  *

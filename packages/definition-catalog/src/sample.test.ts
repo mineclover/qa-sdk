@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 샘플 문서 구성 + 좌표 추적 + concern 전파 검증
  *

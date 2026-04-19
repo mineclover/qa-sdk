@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * IR 유저 시나리오 — 실제 비즈니스 흐름으로 cross-IR 정합성 검증.
  *

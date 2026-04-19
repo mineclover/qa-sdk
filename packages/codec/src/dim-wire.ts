@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 /**
  * Dim-level wire format — 차원별 인덱스만 전송하는 경량 포맷.
  *

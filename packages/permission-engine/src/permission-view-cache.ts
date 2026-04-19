@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * permission-view-cache.ts — PermissionView 캐시 매니저
  *

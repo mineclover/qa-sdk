@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import type { PathObservation, RuntimeGraph } from "@qa-sdk/core";
 import {
   pgTable,

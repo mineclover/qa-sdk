@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * legend-builder — Signal Role / Category 범례 DOM 생성.
  *

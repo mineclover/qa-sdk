@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 /**
  * activation-gate-adapter — spec-core의 checkActivationReadiness를 RegistryService에 연결.
  *

@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * CrossView — 임의의 축을 교차하여 시각화 뷰를 구성.
  *

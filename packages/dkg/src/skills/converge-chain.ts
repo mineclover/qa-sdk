@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * converge-chain — 수렴/분기정리/선택지정리/관측 4가지 행위 체인.
  *

@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * 종단 라이프사이클 시나리오 테스트.
  *

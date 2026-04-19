@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * service-identity.ts — 서비스 정체성 canonical 타입.
  *

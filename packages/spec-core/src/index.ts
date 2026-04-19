@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 // ── Shared (from spec-schema) ──────────────────────
 export { ok, err } from "spec-schema";
 export type { Result } from "spec-schema";

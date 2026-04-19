@@ -25,6 +25,8 @@ def:
       type: contains
     - target: metrics-spec
       type: contains
+    - target: apm-sdk
+      type: contains
 ---
 
 ## 목적 ^purpose

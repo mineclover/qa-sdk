@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import type { DocumentGraphFilterResult } from "./graph-filter.js";
 import type { DocumentGraphRankedNode } from "./graph-rank.js";
 import type { DocumentGraphTraversalResult } from "./graph-traverse.js";

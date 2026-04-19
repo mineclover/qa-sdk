@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { homedir } from "node:os";
 import { join } from "node:path";
 

@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import type { ModuleIR, DataIR } from "./ir-types.js";
 import { computeSchemaHash } from "./ir-types.js";

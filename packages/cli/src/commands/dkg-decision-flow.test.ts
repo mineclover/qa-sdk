@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { describe, expect, it, vi } from "vitest";
 import { FlowEngine, getAnnotatedDesignFlow } from "decision-flow";
 

@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * DkgConfig — DKG 부트스트랩 설정의 선언적 표현.
  *

@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * 서비스 종속 skill — prod API를 호출하여 시스템 상태를 관측.
  *

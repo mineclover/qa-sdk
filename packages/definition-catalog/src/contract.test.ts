@@ -1,3 +1,5 @@
+// @def.doc definition-contract
+
 /**
  * 계약 조립 검증 — assembleContract으로 계약 constellation을 조립할 수 있는가
  */

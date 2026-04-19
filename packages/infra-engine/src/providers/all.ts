@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // providers/all.ts — 전체 프로바이더 일괄 등록
 import { registerProvider } from "./registry.js";
 import { createLocalProvider, type LocalProviderOptions } from "./local.js";

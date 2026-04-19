@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 import { describe, it, expect } from "vitest";
 import { OrgRoleRegistry } from "./org-role-registry.js";
 

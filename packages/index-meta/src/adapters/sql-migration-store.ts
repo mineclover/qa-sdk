@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * SqlMigrationStore — MigrationStore의 SQL 구현
  *

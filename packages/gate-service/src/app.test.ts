@@ -1,3 +1,6 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   GateEngine,

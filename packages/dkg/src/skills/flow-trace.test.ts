@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * flow-trace 단위 테스트 — IntentLink invariant 위반 감지.
  */

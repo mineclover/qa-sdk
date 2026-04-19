@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 /**
  * IngestForwarder 통합 테스트.
  *

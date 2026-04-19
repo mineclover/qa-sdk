@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * platform-page-e2e.test.ts — 플랫폼 데모 페이지별 API 호출 e2e 검증
  *

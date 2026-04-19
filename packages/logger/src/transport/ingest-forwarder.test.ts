@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { IngestForwarder, createIngestForwarder } from "./ingest-forwarder.js";
 import type { LogIngestBridgeConfig } from "./ingest-forwarder.js";

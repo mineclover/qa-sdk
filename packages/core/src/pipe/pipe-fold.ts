@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * PipeGraph Semantic Folding — 서브그래프 접기/펼치기 + 경계 계약 도출
  *

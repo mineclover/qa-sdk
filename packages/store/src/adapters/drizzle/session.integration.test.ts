@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { DrizzleSessionStore } from "../../index.js";
 import { qaSessions } from "../../db/schema.js";

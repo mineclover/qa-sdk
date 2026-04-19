@@ -1,3 +1,5 @@
+// @def.doc definition-assembly
+
 /**
  * 조립 기능 검증 — assembleFeature로 gate 시스템을 설명할 수 있는가
  */

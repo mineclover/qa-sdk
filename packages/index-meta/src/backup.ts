@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import type { PrefixRegistry, PrefixRegistryRecord } from "./prefix-registry.js";
 import type { IndexMetaStore } from "./index-meta-store.js";
 import { ValidationError } from "./errors.js";

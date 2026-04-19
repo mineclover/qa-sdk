@@ -23,6 +23,7 @@
 - 의존 방향: QA 플랫폼 → 인코딩 라이브러리만 허용 (역방향 금지)
 - 인코딩 의존 체인: `weighted-index → bit-index → permission-engine`
 - 플랫폼 의존 체인: `@qa-sdk/core → logger → codec → context → sdk`
+- 문서 control-plane 체인: `doc-envelope → (ralph-tui-integration | ontology-pack-validate | deterministic-label-registry) → @qa-sdk/cli` (상세: `docs/specs/definition-catalog/deterministic-label-architecture.spec.md`)
 
 ## 빌드
 

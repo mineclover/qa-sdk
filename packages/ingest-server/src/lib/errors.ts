@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 export { AppError } from "@qa-sdk/core";
 import { AppError } from "@qa-sdk/core";
 

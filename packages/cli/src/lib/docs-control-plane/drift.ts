@@ -1,14 +1,18 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 
-import { detectCompletedRecords, type CompletedRecordState } from "./completed-records.js";
+import { type CompletedRecordState } from "doc-envelope";
+import { detectCompletedRecordsWithRalphIntegration } from "../completed-records-combined.js";
 import type {
   DocumentEnvelope,
   DocumentMetadata,
   DocumentSource,
   DocumentTask,
-} from "./types.js";
+} from "doc-envelope";
 
 export type DocumentDriftSeverity = "error" | "warning" | "info";
 
@@ -40,7 +44,7 @@ export interface DocumentDriftResult {
 export interface DetectDocumentDriftOptions {
   readonly rootDir: string;
   readonly prdPath?: string;
-  readonly includeSession?: boolean;
+  readonly includeTransient?: boolean;
 }
 
 interface DriftContext {
@@ -100,7 +104,7 @@ export async function detectDocumentDrift(
     issues: [],
   };
 
-  if (options.includeSession === true) {
+  if (options.includeTransient === true) {
     detectRalphSessionDriftDiagnostics(context);
   }
   await detectCompletedRecordCandidates(context);
@@ -157,7 +161,7 @@ function ralphSessionRemediation(code: string): string {
 }
 
 async function detectCompletedRecordCandidates(context: DriftContext): Promise<void> {
-  const completedRecords = await detectCompletedRecords({
+  const completedRecords = await detectCompletedRecordsWithRalphIntegration({
     rootDir: context.rootDir,
     documents: context.scopedDocuments,
     readDocument: (document) => readRepoFile(context, document.path),

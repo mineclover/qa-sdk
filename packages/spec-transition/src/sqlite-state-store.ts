@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * SqliteStateStore — SQLite 기반 영속 상태 저장소.
  *

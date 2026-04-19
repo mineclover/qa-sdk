@@ -10,6 +10,7 @@ def:
   links:
     - target: pipeline-aggregator
       type: depends_on
+  source: packages/store/src/adapters/memory/aggregator.adapter.test.ts
 ---
 
 # Aggregator 테스트 명세

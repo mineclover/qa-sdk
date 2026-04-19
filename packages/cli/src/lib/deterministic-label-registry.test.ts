@@ -1,33 +1,32 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { createDeterministicLabelInventoryAdapters } from "./deterministic-label-inventory-adapters.js";
+
 import {
   buildDeterministicLabelRecord,
   buildDeterministicLabelInventory,
-  buildOntologyPackLabelRecordFromValidateResult,
   buildSemanticCoordinateCandidate,
   collectSemanticCoordinateCandidatesFromDocuments,
-  computeDeterministicLabelReadiness,
-  computeDeterministicLabelRecordReadiness,
-  DETERMINISTIC_LABEL_RECORD_STATES,
-  DETERMINISTIC_LABEL_TRANSITION_EVENT_SCHEMA_CANDIDATE,
   detectSemanticCoordinateCandidateCollisions,
-  dryRunDeterministicLabelTransition,
-  normalizeDocumentEnvelope,
-  projectOntologyPackAndArtifactLabelRecords,
   projectDeterministicLabelRecordsFromDocuments,
   SEMANTIC_COORDINATE_CANONICAL_EXAMPLES,
   SEMANTIC_COORDINATE_LABEL_KINDS,
-  type CompletedRecordState,
   type DeterministicLabelRecord,
   type SemanticCoordinateCandidate,
   type SemanticCoordinateCandidateInput,
+} from "deterministic-label-registry";
+import {
+  normalizeDocumentEnvelope,
+  type CompletedRecordState,
   type DocumentEnvelope,
-} from "./index.js";
-import type { OntologyPackValidateResult } from "../ontology-pack-validate.js";
+} from "doc-envelope";
 
 describe("semantic coordinate candidates", () => {
   it("supports the canonical deterministic label kinds", () => {
@@ -54,18 +53,6 @@ describe("semantic coordinate candidates", () => {
       prdStory: "urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-001",
       evidence: "urn:artifact:evidence:checkout-proof:v1",
     });
-  });
-
-  it("defines deterministic label record states for the future FSM projection", () => {
-    expect(DETERMINISTIC_LABEL_RECORD_STATES).toEqual([
-      "DRAFT",
-      "LINTED",
-      "RESOLVED",
-      "ACTIVE",
-      "DEPRECATED",
-      "ARCHIVED",
-      "BLOCKED",
-    ]);
   });
 
   it("generates coordinates from representative ids without replacing source ids or paths", () => {
@@ -261,6 +248,115 @@ describe("semantic coordinate candidates", () => {
     ]);
   });
 
+  // ─── Stability PRD US-001 — coordinate edge case regression lock ───────
+  // 본 테스트들은 `deterministic-label-coordinate-stability.spec.md`의 v1 URN
+  // 계약을 기계적으로 잠근다. 추가 시 해당 spec도 함께 갱신.
+
+  it("preserves unicode (Korean) id characters verbatim in URN", () => {
+    const result = buildSemanticCoordinateCandidate({
+      kind: "definition-doc",
+      id: "한글-문서-사양",
+      subtype: "spec",
+      version: "v1",
+    });
+    expect(result.candidate?.label).toBe("urn:def:spec:한글-문서-사양:v1");
+    expect(result.candidate?.originalId).toBe("한글-문서-사양");
+  });
+
+  it("normalizes Windows backslash path separators to forward slash", () => {
+    const result = buildSemanticCoordinateCandidate({
+      kind: "source-file",
+      id: "packages\\cli\\src\\commands\\docs.ts",
+      subtype: "typescript",
+    });
+    expect(result.candidate?.label).toBe(
+      "urn:source:typescript:packages/cli/src/commands/docs.ts",
+    );
+    expect(result.candidate?.id).toBe("packages/cli/src/commands/docs.ts");
+  });
+
+  it("collapses duplicate forward slashes to single slash", () => {
+    const result = buildSemanticCoordinateCandidate({
+      kind: "source-file",
+      id: "a//b///c/d",
+      subtype: "file",
+    });
+    expect(result.candidate?.label).toBe("urn:source:file:a/b/c/d");
+  });
+
+  it("omits version part from URN when version is undefined", () => {
+    const result = buildSemanticCoordinateCandidate({
+      kind: "source-file",
+      id: "src/lib.ts",
+      subtype: "typescript",
+    });
+    expect(result.candidate?.label).toBe("urn:source:typescript:src/lib.ts");
+    expect(result.candidate?.version).toBeUndefined();
+  });
+
+  it("rejects invalid version formats with invalid-version diagnostic", () => {
+    const invalidVersions = ["v0", "1.0", "v1.0", "latest", "V1", "v1a"];
+    for (const version of invalidVersions) {
+      const result = buildSemanticCoordinateCandidate({
+        kind: "definition-doc",
+        id: "test",
+        subtype: "spec",
+        version,
+      });
+      expect(result.diagnostics).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: "semantic-coordinate-invalid-version",
+            severity: "error",
+          }),
+        ]),
+      );
+    }
+  });
+
+  it("accepts multi-digit versions (v10, v99) that match the frozen pattern", () => {
+    for (const version of ["v10", "v99", "v100"]) {
+      const result = buildSemanticCoordinateCandidate({
+        kind: "definition-doc",
+        id: "test",
+        subtype: "spec",
+        version,
+      });
+      expect(result.candidate?.version).toBe(version);
+      expect(result.diagnostics).toEqual([]);
+    }
+  });
+
+  it("falls back to subtype 'file' for unknown source-file extensions", () => {
+    const result = buildSemanticCoordinateCandidate({
+      kind: "source-file",
+      id: "data/archive.bin",
+    });
+    expect(result.candidate?.subtype).toBe("file");
+    expect(result.candidate?.label).toBe("urn:source:file:data/archive.bin");
+  });
+
+  it("applies DEFAULT_SUBTYPE_BY_KIND when input subtype is omitted", () => {
+    const kinds: Array<{ kind: Parameters<typeof buildSemanticCoordinateCandidate>[0]["kind"]; expectedSubtype: string }> = [
+      { kind: "definition-doc", expectedSubtype: "spec" },
+      { kind: "ontology-pack", expectedSubtype: "ontology" },
+      { kind: "artifact", expectedSubtype: "artifact" },
+      { kind: "prd-markdown", expectedSubtype: "markdown" },
+      { kind: "ralph-prd-json", expectedSubtype: "ralph-json" },
+      { kind: "evidence", expectedSubtype: "evidence" },
+    ];
+    for (const { kind, expectedSubtype } of kinds) {
+      const result = buildSemanticCoordinateCandidate({
+        kind,
+        id: "test",
+        version: "v1",
+      });
+      expect(result.candidate?.subtype).toBe(expectedSubtype);
+    }
+  });
+
+  // ─── /Stability PRD US-001 ────────────────────────────────────────────────
+
   it("reports collision candidates when one label maps to distinct physical records", () => {
     const first = candidate({
       kind: "definition-doc",
@@ -290,7 +386,7 @@ describe("semantic coordinate candidates", () => {
     expect(detectSemanticCoordinateCandidateCollisions([first, second])).toEqual([
       expect.objectContaining({
         code: "semantic-coordinate-collision-candidate",
-        severity: "error",
+        severity: "warning",
         label: "urn:def:spec:docs-control-plane:v1",
       }),
     ]);
@@ -412,6 +508,7 @@ describe("semantic coordinate candidates", () => {
       path: ".ralph-tui/session-meta.json",
       metadata: {
         sourcePath: ".ralph-tui/session-meta.json",
+        transient: true,
       },
       rawSource: {
         path: ".ralph-tui/session-meta.json",
@@ -423,7 +520,7 @@ describe("semantic coordinate candidates", () => {
     expect(defaultInventory.candidates).toEqual([]);
     expect(defaultInventory.skippedDocuments).toEqual([
       expect.objectContaining({ path: "tasks/archive/archived-prd.md", reason: "archive" }),
-      expect.objectContaining({ path: ".ralph-tui/session-meta.json", reason: "session" }),
+      expect.objectContaining({ path: ".ralph-tui/session-meta.json", reason: "transient" }),
     ]);
 
     expect(collectSemanticCoordinateCandidatesFromDocuments([archived], {
@@ -437,7 +534,7 @@ describe("semantic coordinate candidates", () => {
       "urn:prd:markdown:tasks/archive/archived-prd:v1",
     );
     expect(collectSemanticCoordinateCandidatesFromDocuments([session], {
-      includeSession: true,
+      includeTransient: true,
     }).candidates.map((item) => item.label)).toContain(
       "urn:source:json:.ralph-tui/session-meta.json",
     );
@@ -463,7 +560,6 @@ describe("semantic coordinate candidates", () => {
     expect(record).toMatchObject({
       label: "urn:def:spec:docs-control-plane:v1",
       kind: "definition-doc",
-      currentState: "DRAFT",
       dependencyLabels: [],
       sourceRefs: [],
       evidenceRefs: [],
@@ -498,7 +594,6 @@ describe("semantic coordinate candidates", () => {
 
     const record = buildDeterministicLabelRecord({
       candidate: source,
-      currentState: "LINTED",
       dependencyLabels: [
         "urn:def:spec:docs-control-plane:v1",
         " ",
@@ -521,7 +616,6 @@ describe("semantic coordinate candidates", () => {
     expect(record).toMatchObject({
       label: "urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-003",
       kind: "prd-story",
-      currentState: "LINTED",
       dependencyLabels: [
         "urn:def:spec:definition-catalog:v1",
         "urn:def:spec:docs-control-plane:v1",
@@ -669,137 +763,6 @@ describe("semantic coordinate candidates", () => {
     });
   });
 
-  it("projects known ontology packs and available artifact evidence into label records", async () => {
-    const projection = await projectOntologyPackAndArtifactLabelRecords({
-      documents: [artifactEvidenceDoc()],
-    });
-    const programmingPack = recordByLabel(
-      projection.records,
-      "urn:pack:ontology:programming-artifact-ontology:v1",
-    );
-    const authorizationPack = recordByLabel(
-      projection.records,
-      "urn:pack:ontology:authorization-ontology:v1",
-    );
-
-    expect(projection.records.filter((record) =>
-      record.label === "urn:pack:ontology:programming-artifact-ontology:v1"
-    )).toHaveLength(1);
-    expect(programmingPack).toMatchObject({
-      kind: "ontology-pack",
-      currentState: "DRAFT",
-      metadata: {
-        projection: "ontology-pack-validate",
-        packRef: "programming-artifact-ontology",
-        valid: true,
-        ontologyPackValidate: {
-          identity: {
-            packId: "programming-artifact-ontology",
-            schemaPresent: true,
-          },
-          componentSchema: {
-            axes: expect.arrayContaining(["programming_artifact_kind"]),
-            taxonomies: expect.arrayContaining(["programming-artifact"]),
-          },
-          systemBindings: {
-            counts: {
-              blueprints: 1,
-              implementationRefs: 1,
-              verificationRefs: 1,
-            },
-          },
-          runtime: {
-            valid: true,
-          },
-          readiness: {
-            implementationFiles: {
-              status: "ready",
-            },
-            testFiles: {
-              status: "ready",
-            },
-          },
-          readinessStatus: {
-            implementationFiles: "ready",
-            testFiles: "ready",
-          },
-        },
-      },
-    });
-    expect(programmingPack.sourceRefs).toEqual(expect.arrayContaining([
-      "urn:source:json:artifacts/programming-artifacts.json",
-      "urn:source:typescript:packages/operational-ontology/src/internal/programming-artifact-core.ts",
-      "urn:source:typescript:packages/operational-ontology/src/programming-artifacts.test.ts",
-    ]));
-    expect(programmingPack.evidenceRefs).toEqual(expect.arrayContaining([
-      "urn:artifact:activation-evidence:activation-evidence-programming-artifact-ontology:v1",
-      "urn:artifact:activation-evidence:activation-evidence-proof:v1",
-    ]));
-    expect(projection.records.map((record) => record.label)).toEqual(expect.arrayContaining([
-      "urn:artifact:activation-evidence:activation-evidence-programming-artifact-ontology:v1",
-      "urn:artifact:activation-evidence:activation-evidence-proof:v1",
-    ]));
-
-    expect(authorizationPack).toMatchObject({
-      kind: "ontology-pack",
-      currentState: "DRAFT",
-      metadata: {
-        projection: "ontology-pack-validate",
-        packRef: "authorization-ontology",
-        valid: true,
-        ontologyPackValidate: {
-          identity: {
-            packId: "authorization-ontology",
-            schemaPresent: true,
-          },
-          componentSchema: {
-            axes: expect.arrayContaining(["authorization_node_kind"]),
-            taxonomies: expect.arrayContaining(["authorization-node"]),
-          },
-          runtime: {
-            valid: true,
-          },
-        },
-      },
-    });
-    expect(authorizationPack.sourceRefs).toEqual(expect.arrayContaining([
-      "urn:source:typescript:packages/authorization-ontology/src/index.ts",
-      "urn:source:typescript:packages/authorization-ontology/src/index.test.ts",
-      "urn:source:typescript:packages/authorization-ontology/src/permission-engine-bridge.test.ts",
-    ]));
-  });
-
-  it("preserves ontology pack readiness warnings as diagnostics", () => {
-    const record = buildOntologyPackLabelRecordFromValidateResult(
-      warningPackValidateResult(),
-    );
-
-    expect(record.label).toBe("urn:pack:ontology:warning-pack-ontology:v1");
-    expect(record.metadata).toMatchObject({
-      projection: "ontology-pack-validate",
-      valid: true,
-      ontologyPackValidate: {
-        readinessStatus: {
-          implementationFiles: "ready",
-          testFiles: "ready",
-          docs: "partial",
-          sourceMap: "partial",
-        },
-      },
-    });
-    expect(record.diagnostics).toEqual([
-      expect.objectContaining({
-        code: "ontology-pack-readiness-warning",
-        severity: "warning",
-        label: "urn:pack:ontology:warning-pack-ontology:v1",
-        metadata: expect.objectContaining({
-          issueCode: "source-map-missing",
-          issueSource: "source-map",
-          issuePath: "readiness.sourceMap.pack.ts",
-        }),
-      }),
-    ]);
-  });
 
   it("preserves active/archive scope and completed-record metadata on projected records", () => {
     const archived = prdMarkdownDoc({
@@ -871,7 +834,6 @@ describe("deterministic label inventory", () => {
     const inventory = await buildDeterministicLabelInventory({
       rootDir: process.cwd(),
       documents,
-      includeOntologyPacks: false,
       computeReadiness: false,
     });
 
@@ -882,8 +844,6 @@ describe("deterministic label inventory", () => {
       diagnostics: 1,
       skippedDocuments: 0,
       completedRecords: 0,
-      packValidations: 0,
-      readinessComputed: false,
       byKind: {
         "definition-doc": 3,
         "source-file": 4,
@@ -894,18 +854,9 @@ describe("deterministic label inventory", () => {
         "prd-story": 2,
         evidence: 0,
       },
-      byState: {
-        DRAFT: 11,
-        LINTED: 0,
-        RESOLVED: 0,
-        ACTIVE: 0,
-        DEPRECATED: 0,
-        ARCHIVED: 0,
-        BLOCKED: 0,
-      },
       byDiagnosticSeverity: {
-        error: 1,
-        warning: 0,
+        error: 0,
+        warning: 1,
       },
       byDiagnosticCode: {
         "semantic-coordinate-collision-candidate": 1,
@@ -920,13 +871,11 @@ describe("deterministic label inventory", () => {
     const first = await buildDeterministicLabelInventory({
       rootDir: process.cwd(),
       documents: [ralph, definition, prd],
-      includeOntologyPacks: false,
       computeReadiness: false,
     });
     const second = await buildDeterministicLabelInventory({
       rootDir: process.cwd(),
       documents: [prd, ralph, definition],
-      includeOntologyPacks: false,
       computeReadiness: false,
     });
 
@@ -965,7 +914,7 @@ describe("deterministic label inventory", () => {
 
     const inventory = await buildDeterministicLabelInventory({
       rootDir,
-      includeOntologyPacks: false,
+      adapters: createDeterministicLabelInventoryAdapters({ rootDir }),
       computeReadiness: false,
     });
 
@@ -980,363 +929,6 @@ describe("deterministic label inventory", () => {
   });
 });
 
-describe("deterministic label FSM readiness", () => {
-  it("computes a linted state when lint passes and the next resolution gate is blocked", () => {
-    const record = readinessRecord("linted-example", {
-      dependencyLabels: ["urn:def:spec:missing-dependency:v1"],
-    });
-
-    const computed = computeDeterministicLabelRecordReadiness(record, [record]);
-
-    expect(computed.currentState).toBe("LINTED");
-    expect(computed.diagnostics).toEqual([
-      expect.objectContaining({
-        code: "deterministic-label-readiness-blocked",
-        severity: "error",
-        metadata: expect.objectContaining({
-          gate: "resolve",
-          fromState: "LINTED",
-          toState: "RESOLVED",
-          blockerMetadata: expect.objectContaining({
-            blockerCode: "dependency-ref-unresolved",
-          }),
-        }),
-      }),
-    ]);
-    expect(computed.metadata.deterministicLabelReadiness).toMatchObject({
-      computedState: "LINTED",
-      blocked: true,
-      gates: [
-        {
-          gate: "lint",
-          ready: true,
-        },
-        {
-          gate: "resolve",
-          ready: false,
-        },
-      ],
-    });
-  });
-
-  it("keeps unresolved records at LINTED with blocked diagnostics", () => {
-    const record = readinessRecord("unresolved-example", {
-      currentState: "LINTED",
-      sourceRefs: ["urn:source:typescript:packages/cli/src/missing.ts"],
-      evidenceRefs: ["urn:artifact:evidence:missing-proof:v1"],
-    });
-
-    const computed = computeDeterministicLabelRecordReadiness(record, [record]);
-
-    expect(computed.currentState).toBe("LINTED");
-    expect(computed.diagnostics).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        code: "deterministic-label-readiness-blocked",
-        metadata: expect.objectContaining({
-          gate: "resolve",
-          blockerMetadata: expect.objectContaining({
-            blockerCode: "source-ref-unresolved",
-          }),
-        }),
-      }),
-      expect.objectContaining({
-        code: "deterministic-label-readiness-blocked",
-        metadata: expect.objectContaining({
-          gate: "resolve",
-          blockerMetadata: expect.objectContaining({
-            blockerCode: "evidence-ref-unresolved",
-          }),
-        }),
-      }),
-    ]));
-  });
-
-  it("computes RESOLVED once dependency refs resolve but ACTIVE evidence is incomplete", () => {
-    const dependency = readinessRecord("resolved-dependency");
-    const record = readinessRecord("resolved-example", {
-      currentState: "LINTED",
-      dependencyLabels: [dependency.label],
-    });
-
-    const computed = computeDeterministicLabelRecordReadiness(record, [
-      record,
-      dependency,
-    ]);
-
-    expect(computed.currentState).toBe("RESOLVED");
-    expect(computed.diagnostics).toEqual([
-      expect.objectContaining({
-        code: "deterministic-label-readiness-blocked",
-        metadata: expect.objectContaining({
-          gate: "activate",
-          fromState: "RESOLVED",
-          toState: "ACTIVE",
-          blockerMetadata: expect.objectContaining({
-            blockerCode: "drift-status-missing",
-          }),
-        }),
-      }),
-    ]);
-  });
-
-  it("computes ACTIVE when drift, evidence, and role-quality placeholders are satisfied", () => {
-    const evidence = readinessEvidenceRecord("active-proof");
-    const record = readinessRecord("active-ready-example", {
-      currentState: "RESOLVED",
-      evidenceRefs: [evidence.label],
-      metadata: {
-        driftFree: true,
-        requiresEvidence: true,
-        roleQualityStatus: "placeholder",
-      },
-    });
-
-    const computed = computeDeterministicLabelRecordReadiness(record, [
-      record,
-      evidence,
-    ]);
-
-    expect(computed.currentState).toBe("ACTIVE");
-    expect(computed.diagnostics.filter((diagnostic) =>
-      diagnostic.code === "deterministic-label-readiness-blocked"
-    )).toEqual([]);
-    expect(computed.metadata.deterministicLabelReadiness).toMatchObject({
-      computedState: "ACTIVE",
-      blocked: false,
-      gates: [
-        {
-          gate: "activate",
-          ready: true,
-          evidence: {
-            driftFree: true,
-            requiredEvidence: true,
-            roleQualityStatus: "placeholder",
-          },
-        },
-      ],
-    });
-  });
-
-  it("computes DEPRECATED and ARCHIVED terminal readiness states from metadata", () => {
-    const deprecated = computeDeterministicLabelRecordReadiness(
-      readinessRecord("deprecated-example", {
-        currentState: "ACTIVE",
-        metadata: {
-          lifecycle: "deprecated",
-        },
-      }),
-    );
-    const archived = computeDeterministicLabelRecordReadiness(
-      readinessRecord("archived-example", {
-        metadata: {
-          archiveScope: true,
-        },
-      }),
-    );
-
-    expect(deprecated.currentState).toBe("DEPRECATED");
-    expect(archived.currentState).toBe("ARCHIVED");
-  });
-
-  it("represents blocked ACTIVE transitions as diagnostics without using BLOCKED state", () => {
-    const pack = buildDeterministicLabelRecord({
-      candidate: candidate({
-        kind: "ontology-pack",
-        id: "blocked-pack",
-        version: "v1",
-        physicalRefs: [
-          {
-            kind: "pack-id",
-            ref: "blocked-pack",
-            role: "primary",
-          },
-        ],
-      }),
-      currentState: "RESOLVED",
-      metadata: {
-        driftFree: true,
-        ontologyPackValidate: {
-          runtime: {
-            valid: false,
-            issueCount: 1,
-          },
-        },
-      },
-    });
-
-    const computed = computeDeterministicLabelRecordReadiness(pack, [pack]);
-
-    expect(computed.currentState).toBe("RESOLVED");
-    expect(computed.currentState).not.toBe("BLOCKED");
-    expect(computed.diagnostics).toEqual([
-      expect.objectContaining({
-        code: "deterministic-label-readiness-blocked",
-        metadata: expect.objectContaining({
-          gate: "activate",
-          blockerMetadata: expect.objectContaining({
-            blockerCode: "ontology-pack-runtime-invalid",
-          }),
-        }),
-      }),
-    ]);
-  });
-
-  it("computes readiness for a record list and returns only blocked readiness diagnostics", () => {
-    const linted = readinessRecord("projection-linted", {
-      dependencyLabels: ["urn:def:spec:projection-missing:v1"],
-    });
-    const active = readinessRecord("projection-active", {
-      currentState: "RESOLVED",
-      metadata: {
-        driftFree: true,
-      },
-    });
-
-    const projection = computeDeterministicLabelReadiness([linted, active]);
-
-    expect(projection.records.map((record) => [record.label, record.currentState])).toEqual([
-      [linted.label, "LINTED"],
-      [active.label, "ACTIVE"],
-    ]);
-    expect(projection.diagnostics).toHaveLength(1);
-    expect(projection.diagnostics[0]).toEqual(expect.objectContaining({
-      code: "deterministic-label-readiness-blocked",
-      label: linted.label,
-    }));
-  });
-
-  it("accepts dry-run transitions with request evidence without mutating records", () => {
-    const evidence = readinessEvidenceRecord("transition-proof");
-    const record = readinessRecord("transition-active-ready", {
-      currentState: "RESOLVED",
-      metadata: {
-        driftFree: true,
-        requiresEvidence: true,
-        roleQualityStatus: "placeholder",
-      },
-    });
-    const beforeRecord = JSON.parse(JSON.stringify(record));
-
-    const result = dryRunDeterministicLabelTransition({
-      targetLabel: record.label,
-      requestedState: "ACTIVE",
-      reason: "activation proof is available",
-      evidenceRefs: [evidence.label],
-      metadata: {
-        requestedBy: "deterministic-label-test",
-      },
-    }, [record, evidence]);
-
-    expect(result).toMatchObject({
-      mode: "dry-run",
-      targetLabel: record.label,
-      requestedState: "ACTIVE",
-      accepted: true,
-      decision: "accepted",
-      currentState: "RESOLVED",
-      nextState: "ACTIVE",
-      blockers: [],
-      evidenceRefs: [evidence.label],
-      gateEvidence: [
-        {
-          gate: "activate",
-          fromState: "RESOLVED",
-          toState: "ACTIVE",
-          ready: true,
-        },
-      ],
-      metadata: {
-        requestedBy: "deterministic-label-test",
-        dryRun: true,
-        readOnly: true,
-        writes: false,
-        mutationTargets: {
-          labels: false,
-          documents: false,
-          prds: false,
-          registries: false,
-        },
-        appendOnlyTransitionEventSchema:
-          DETERMINISTIC_LABEL_TRANSITION_EVENT_SCHEMA_CANDIDATE,
-        appendOnlyTransitionEventCandidate: {
-          schemaId: "deterministic-label-transition-event",
-          schemaVersion: "candidate-v1",
-          targetLabel: record.label,
-          requestedState: "ACTIVE",
-          currentState: "RESOLVED",
-          nextState: "ACTIVE",
-          decision: "accepted",
-          reason: "activation proof is available",
-          evidenceRefs: [evidence.label],
-          blockerCount: 0,
-        },
-      },
-    });
-    expect(record).toEqual(beforeRecord);
-    expect(record.currentState).toBe("RESOLVED");
-    expect(record.evidenceRefs).toEqual([]);
-  });
-
-  it("rejects dry-run transitions with blockers and keeps the current state", () => {
-    const record = readinessRecord("transition-rejected", {
-      currentState: "LINTED",
-      sourceRefs: ["urn:source:typescript:packages/cli/src/missing-transition.ts"],
-    });
-    const beforeRecord = JSON.parse(JSON.stringify(record));
-
-    const result = dryRunDeterministicLabelTransition({
-      targetLabel: record.label,
-      requestedState: "RESOLVED",
-      reason: "source map should resolve first",
-      evidenceRefs: [],
-    }, [record]);
-
-    expect(result.accepted).toBe(false);
-    expect(result.decision).toBe("rejected");
-    expect(result.currentState).toBe("LINTED");
-    expect(result.nextState).toBe("LINTED");
-    expect(result.gateEvidence).toEqual([
-      expect.objectContaining({
-        gate: "resolve",
-        fromState: "LINTED",
-        toState: "RESOLVED",
-        ready: false,
-        blockers: [
-          expect.objectContaining({
-            metadata: expect.objectContaining({
-              blockerCode: "source-ref-unresolved",
-            }),
-          }),
-        ],
-      }),
-    ]);
-    expect(result.blockers).toEqual([
-      expect.objectContaining({
-        code: "deterministic-label-readiness-blocked",
-        label: record.label,
-        metadata: expect.objectContaining({
-          gate: "resolve",
-          fromState: "LINTED",
-          toState: "RESOLVED",
-          blockerMetadata: expect.objectContaining({
-            blockerCode: "source-ref-unresolved",
-          }),
-        }),
-      }),
-    ]);
-    expect(result.metadata).toMatchObject({
-      dryRun: true,
-      readOnly: true,
-      writes: false,
-      appendOnlyTransitionEventCandidate: {
-        decision: "rejected",
-        nextState: "LINTED",
-        blockerCount: 1,
-      },
-    });
-    expect(record).toEqual(beforeRecord);
-  });
-});
 
 function candidate(
   input: SemanticCoordinateCandidateInput,
@@ -1515,142 +1107,6 @@ function artifactEvidenceDoc(
   });
 }
 
-function readinessRecord(
-  id: string,
-  overrides: Partial<{
-    readonly currentState: DeterministicLabelRecord["currentState"];
-    readonly dependencyLabels: readonly string[];
-    readonly sourceRefs: readonly string[];
-    readonly evidenceRefs: readonly string[];
-    readonly metadata: Record<string, unknown>;
-  }> = {},
-): DeterministicLabelRecord {
-  return buildDeterministicLabelRecord({
-    candidate: candidate({
-      kind: "definition-doc",
-      id,
-      subtype: "spec",
-      version: "v1",
-      physicalRefs: [
-        {
-          kind: "definition-path",
-          ref: `docs/specs/${id}.spec.md`,
-          role: "primary",
-        },
-      ],
-    }),
-    currentState: overrides.currentState,
-    dependencyLabels: overrides.dependencyLabels,
-    sourceRefs: overrides.sourceRefs,
-    evidenceRefs: overrides.evidenceRefs,
-    metadata: overrides.metadata,
-  });
-}
-
-function readinessEvidenceRecord(id: string): DeterministicLabelRecord {
-  return buildDeterministicLabelRecord({
-    candidate: candidate({
-      kind: "evidence",
-      id,
-      version: "v1",
-      physicalRefs: [
-        {
-          kind: "evidence-ref",
-          ref: `artifacts/${id}.json`,
-          role: "primary",
-        },
-      ],
-    }),
-  });
-}
-
-function warningPackValidateResult(): OntologyPackValidateResult {
-  return {
-    valid: true,
-    packRef: "warning-pack-ontology",
-    packId: "warning-pack-ontology",
-    resolution: {
-      kind: "file-path",
-      packRef: "warning-pack-ontology",
-      filePath: "fixtures/warning-pack-ontology.json",
-    },
-    issues: [
-      {
-        level: "warning",
-        source: "source-map",
-        path: "readiness.sourceMap.pack.ts",
-        code: "source-map-missing",
-        message: "Matching docs family does not declare source-map coverage for pack.ts.",
-      },
-    ],
-    identity: {
-      packId: "warning-pack-ontology",
-      schemaPresent: true,
-      metadataKeys: [],
-    },
-    componentSchema: {
-      axes: ["warning_axis"],
-      taxonomies: ["warning-taxonomy"],
-      relationCategories: [],
-      traversals: [],
-      counts: {
-        axes: 1,
-        taxonomies: 1,
-        relationCategories: 0,
-        traversals: 0,
-      },
-    },
-    systemBindings: {
-      blueprints: [],
-      counts: {
-        blueprints: 0,
-        implementationRefs: 0,
-        verificationRefs: 0,
-      },
-    },
-    readiness: {
-      implementationFiles: {
-        status: "ready",
-        checked: [],
-        missing: [],
-      },
-      testFiles: {
-        status: "ready",
-        checked: [],
-        missing: [],
-      },
-      docs: {
-        status: "partial",
-        familyId: "warning-pack-ontology-system",
-        matchingDocs: [
-          {
-            docId: "warning-pack-ontology-system",
-            kind: "spec",
-            path: "docs/specs/warning-pack-ontology-system.spec.md",
-            sourceCount: 0,
-          },
-        ],
-      },
-      sourceMap: {
-        status: "partial",
-        checkedRefs: ["pack.ts"],
-        coveredRefs: [],
-        missingRefs: ["pack.ts"],
-        coverage: [
-          {
-            path: "pack.ts",
-            covered: false,
-            docIds: [],
-          },
-        ],
-      },
-    },
-    runtime: {
-      valid: true,
-      issueCount: 0,
-    },
-  };
-}
 
 function withoutEnvelopeNested(
   input: Partial<Parameters<typeof normalizeDocumentEnvelope>[0]>,

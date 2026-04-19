@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * AppHubInsightsStore — Google App Hub 기반 InsightsStore 구현.
  *

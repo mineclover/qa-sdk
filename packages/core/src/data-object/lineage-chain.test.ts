@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import { buildFullLineageChain } from "./lineage-chain.js";
 import { FacetCodeRegistry } from "./facet-code-registry.js";

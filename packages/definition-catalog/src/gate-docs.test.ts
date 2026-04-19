@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * Gate 시스템 문서 분리 작성 + 조회 검증
  *

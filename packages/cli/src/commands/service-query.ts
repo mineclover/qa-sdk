@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk gate / query — gate-service + query-service CLI 접근.
  *

@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 서비스 공용 graceful shutdown 핸들러 (단순 버전).
  *

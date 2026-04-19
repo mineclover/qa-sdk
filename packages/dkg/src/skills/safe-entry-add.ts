@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * safe-entry-add — headroom 확인 + entry 추가 안전성 판정 + chain 연결.
  *

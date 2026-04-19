@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 import type { QaBridge } from './qa-bridge.js';
 import type { ChildBridge } from '../iframe/child-bridge.js';
 

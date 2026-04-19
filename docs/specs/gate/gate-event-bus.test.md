@@ -11,6 +11,7 @@ def:
   links:
     - target: gate-event-bus
       type: refines
+  source: packages/gate-service/src/adapters/memory-event-bus.test.ts
 ---
 
 ## 목적 ^purpose

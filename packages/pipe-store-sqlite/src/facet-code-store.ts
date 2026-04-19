@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { eq, like } from "drizzle-orm";
 
 import { createDb, type DrizzleDb } from "./db/connection.js";

@@ -1,3 +1,5 @@
+// @def.doc doc-envelope-test
+
 import { describe, expect, it } from "vitest";
 
 import { normalizeDocumentEnvelope } from "./normalize.js";

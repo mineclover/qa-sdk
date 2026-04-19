@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * 간단한 인메모리 메트릭 카운터/게이지 레지스트리.
  * Prometheus text format 출력을 지원한다.

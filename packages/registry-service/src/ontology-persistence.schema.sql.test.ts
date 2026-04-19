@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 /**
  * Ontology persistence SQL schema tests.
  *

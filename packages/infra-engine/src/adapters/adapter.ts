@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // adapters/adapter.ts — 6개 포트 인터페이스 + DeployProvider
 import type {
   DeployHistoryEntry,

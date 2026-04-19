@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
 import { bootstrapDkg } from "./bootstrap.js";

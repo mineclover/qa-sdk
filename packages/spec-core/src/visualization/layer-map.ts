@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * LayerMap — prefix를 3D 시각화 계층에 배치하는 매핑.
  *

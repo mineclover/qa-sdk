@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Drift 분석기 — 선언 vs 구현 gap 분석.
  */

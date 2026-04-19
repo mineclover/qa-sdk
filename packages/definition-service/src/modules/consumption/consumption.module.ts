@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import { Module } from "@nestjs/common";
 import { ConsumptionController } from "./consumption.controller.js";
 import { ConsumptionService } from "./consumption.service.js";

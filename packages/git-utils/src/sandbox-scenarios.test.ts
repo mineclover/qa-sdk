@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 /**
  * 샌드박스 기반 시나리오 테스트 — 실제 프로젝트 구조를 복제하여 검증.
  *

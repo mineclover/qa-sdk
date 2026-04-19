@@ -1,3 +1,6 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
 // @facet
 /**
  * InMemory EventBus 어댑터.

@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { initTelemetry, withQueryTracing } from "@qa-sdk/otel";
 import "dotenv/config";
 import { serve } from "@hono/node-server";
@@ -130,7 +133,7 @@ async function startServer() {
       });
 
       // spec-core convergence 함수 동적 import
-      const specConvergence = await import("@qa-sdk/spec-core/convergence");
+      const specConvergence = await import("@qa-sdk/convergence");
       const specDkg = await import("@qa-sdk/spec-core/dkg");
       const convergenceFns = {
         aggregateUsageData: specConvergence.aggregateUsageData,

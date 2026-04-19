@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import { SqliteManifestRegistry } from "pipe-store-sqlite";
 import type { PrefixLifecycleState, ManifestLifecycleState, ServiceVersionManifest } from "pipe-store-sqlite";

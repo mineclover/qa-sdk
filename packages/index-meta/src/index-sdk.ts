@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * IndexSDK — index-meta 경량 소비 레이어
  *

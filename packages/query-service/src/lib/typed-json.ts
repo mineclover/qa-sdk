@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 /**
  * DB JSON 컬럼의 타입-안전 파싱 유틸.
  */

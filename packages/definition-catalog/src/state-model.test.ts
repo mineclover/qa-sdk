@@ -1,3 +1,5 @@
+// @def.doc definition-state-model
+
 import { describe, it, expect } from "vitest";
 import {
   createInstance,

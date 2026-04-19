@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { and, asc, eq, gt, gte, lte, or, type SQL } from "drizzle-orm";
 import type {
   RecordStore,

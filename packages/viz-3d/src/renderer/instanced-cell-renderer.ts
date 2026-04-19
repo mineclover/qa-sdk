@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * updateInstancedColors — InstancedMesh per-cell glow/role 색상 업데이트.
  *

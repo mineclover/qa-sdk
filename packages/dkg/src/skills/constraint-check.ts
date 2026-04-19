@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * constraint-check — 독립 constraint 위반 검사.
  *

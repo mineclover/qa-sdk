@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * 문서 버전 관리 — 변경 감지 + 버전 증가 + changeType 판별
  *

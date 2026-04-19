@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 /**
  * JSON TransmissionEnvelope ↔ Protobuf 바이너리 변환.
  *

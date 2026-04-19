@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -5,7 +8,9 @@ import { join } from "node:path";
 import type { OperationalOntologyPack } from "operational-ontology/pack";
 import { describe, expect, it } from "vitest";
 
-import { validateOntologyPackFromRef } from "./ontology-pack-validate.js";
+import { validateOntologyPackFromRef } from "ontology-pack-validate";
+
+import { readDocsFamilyFromDefinitionMarkdown } from "./ontology-pack-docs-reader.js";
 
 describe("ontology pack validate readiness assembly", () => {
   it("keeps validation successful when partial source-map readiness only emits warnings", async () => {
@@ -45,6 +50,7 @@ describe("ontology pack validate readiness assembly", () => {
       const result = await validateOntologyPackFromRef({
         packRef: "sample-pack.json",
         rootDir: dir,
+        readDocsFamily: readDocsFamilyFromDefinitionMarkdown,
       });
 
       expect(result.valid).toBe(true);

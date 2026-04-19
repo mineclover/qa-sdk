@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 import { newTraceId, newSpanId } from "@qa-sdk/core";
 
 /**

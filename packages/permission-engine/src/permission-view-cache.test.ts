@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * permission-view-cache.test.ts — PermissionViewCache 시나리오 검증
  *

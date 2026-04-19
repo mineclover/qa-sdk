@@ -1,3 +1,6 @@
+// @def.boundary decode-service-spec
+// @def.doc decode-service-spec
+
 import type { MiddlewareHandler } from "hono";
 import { randomUUID } from "node:crypto";
 

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import type { PackFormat, ShardingStrategy, EntityId, VersionedValue } from "weighted-index";
 
 /**

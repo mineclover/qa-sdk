@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { asc, eq, isNull, sql } from "drizzle-orm";
 import type { DlqInsert, DlqPhase, DlqStore, StoredDlqItem } from "@qa-sdk/core";
 import type { DbExecutor } from "../../db/client.js";

@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 export interface ServiceRecord {
   readonly serviceId: string;
   readonly name: string;

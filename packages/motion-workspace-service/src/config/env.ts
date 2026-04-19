@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { getServicePort } from "@qa-sdk/core";
+import { getRequiredServicePort } from "@qa-sdk/core";
 
-const DEFAULT_PORT = getServicePort("motion-workspace-service") ?? 3710;
+const DEFAULT_PORT = getRequiredServicePort("motion-workspace-service");
 
 export const envSchema = z.object({
   PORT: z.coerce.number().int().default(DEFAULT_PORT),

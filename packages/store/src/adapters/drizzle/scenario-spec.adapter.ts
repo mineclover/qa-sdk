@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { eq } from "drizzle-orm";
 import type { ScenarioSpecStore } from "@qa-sdk/core";
 import type { ScenarioSpec } from "@qa-sdk/core";

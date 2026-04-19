@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Module } from "@nestjs/common";
 import { DagController } from "./dag.controller.js";
 import { DagService } from "./dag.service.js";

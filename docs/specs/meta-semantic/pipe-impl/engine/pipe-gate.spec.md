@@ -20,6 +20,7 @@ def:
       type: contains
     - target: pipe-gate-review
       type: contains
+  source: packages/core/src/pipe/pipe-gate.ts
 ---
 
 # PipeGraph 퀄리티 게이트

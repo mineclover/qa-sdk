@@ -4,7 +4,7 @@ import type { ServiceBootConfig } from "@qa-sdk/core";
 export type MonitorStatus = "active" | "stopped";
 
 export interface QaMonitorConfig {
-  /** ingest-server URL (e.g. "http://localhost:3100") */
+  /** ingest-server URL (e.g. "http://localhost:3200") */
   ingestUrl: string;
   /** 통합 서비스 설정. meta보다 우선. */
   serviceConfig?: ServiceBootConfig;

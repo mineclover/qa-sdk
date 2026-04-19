@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import type { ScenarioSpecStore, ScenarioSpec } from "@qa-sdk/core";
 
 /** ScenarioSpecStore의 in-memory 구현 */

@@ -1,3 +1,5 @@
+// @def.doc definition-harness
+
 import { describe, it, expect } from "vitest";
 import { checkGuards, collectCascades } from "./harness-guards.js";
 import { createHarnessRegistry, createCompositeInstance } from "./harness-state-model.js";

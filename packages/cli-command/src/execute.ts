@@ -1,3 +1,6 @@
+// @def.boundary cli-command-spec
+// @def.doc cli-command-spec
+
 import type { CliCommandNode, CommandContext } from "./types.js";
 import { resolveCommand } from "./resolve.js";
 import { parseCommandArgs } from "./parse.js";

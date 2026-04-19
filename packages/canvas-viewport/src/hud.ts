@@ -1,3 +1,6 @@
+// @def.boundary canvas-viewport-spec
+// @def.doc canvas-viewport-spec
+
 export interface CanvasHudAction {
   id: string;
   label: string;

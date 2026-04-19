@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk dry-run — 변경 시뮬레이션.
  *

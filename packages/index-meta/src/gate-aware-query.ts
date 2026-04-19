@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * gate-aware-query.ts — RelationalEngine(의미적) + GateEngine(물리적) 합성 유틸리티
  *

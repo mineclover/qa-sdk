@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk DX 명령어 — 개발자용 encode/decode/resolve/find/derive.
  *

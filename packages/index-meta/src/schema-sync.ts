@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * schema-sync — compileSchema 결과를 PrefixRegistry에 동기화
  *

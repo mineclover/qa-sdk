@@ -12,6 +12,7 @@ def:
       type: refines
     - target: service-manifest-cleanup-lane
       type: refines
+  source: packages/cli/src/commands/service.test.ts
 ---
 # Service Control Plane Cleanup — 검증 기준
 

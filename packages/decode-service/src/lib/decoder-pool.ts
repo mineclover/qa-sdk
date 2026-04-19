@@ -1,3 +1,6 @@
+// @def.boundary decode-service-spec
+// @def.doc decode-service-spec
+
 import { PrefixDecoder, PrefixDecoderBig } from "index-meta-workers";
 import type { PrefixDecoderConfig, PrefixDecoderBigConfig, DecodeMap } from "index-meta-workers";
 

@@ -1,3 +1,7 @@
+// @def.doc definition-data-source
+
+// @def.boundary definition-data-source
+
 export { LocalDataSource } from "./local-data-source.js";
 export { ScanDataSource } from "./scan-data-source.js";
 export { ServerDataSource } from "./server-data-source.js";

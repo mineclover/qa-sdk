@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * AST 파서 포트 — 코드에서 구조적 사실을 추출하는 추상 계층.
  *

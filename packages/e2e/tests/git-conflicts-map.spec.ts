@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 import { test, expect } from "@playwright/test";
 
 const REGISTRY_UI_URL = "http://localhost:5230/#file-map";

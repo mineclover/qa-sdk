@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * E2E용 인메모리 ingest-server (DB 불필요).
  * playwright.config.ts의 webServer에서 사용.

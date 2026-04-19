@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { Hono } from "hono";
 import type { DlqStore } from "@qa-sdk/core";
 import type { StreamConnectionRegistry } from "../lib/stream-connection-registry.js";

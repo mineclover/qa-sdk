@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DefinitionClient } from "@qa-sdk/definition-client";
 import { InMemoryAxisProfileStore } from "../../stores/in-memory-axis-profile-store.js";

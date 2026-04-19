@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * DKG 초기 부트스트랩 — 카탈로그 파생 + 설정 기반 메타데이터 등록.
  *

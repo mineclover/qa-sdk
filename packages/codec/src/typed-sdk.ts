@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 /**
  * typed-sdk.ts — 제네릭 기반 타입 안전 인덱스 SDK 팩토리.
  *

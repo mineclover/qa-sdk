@@ -11,6 +11,7 @@ def:
   links:
     - target: rlsc-metrics
       type: refines
+  source: packages/rlsc/src/metrics.test.ts
 ---
 
 ## 목적 ^purpose

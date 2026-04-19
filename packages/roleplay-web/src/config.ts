@@ -1,5 +1,8 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 /// <reference types="vite/client" />
 
-export const INGEST_SERVER_URL = import.meta.env.VITE_INGEST_SERVER_URL ?? 'http://localhost:3100';
+export const INGEST_SERVER_URL = import.meta.env.VITE_INGEST_SERVER_URL ?? 'http://localhost:3200';
 
 export const VIZ_WEB_ORIGIN = import.meta.env.VITE_VIZ_WEB_ORIGIN ?? 'http://localhost:5200';

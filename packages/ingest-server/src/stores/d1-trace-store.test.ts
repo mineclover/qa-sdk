@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 // ── d1-trace-store.test.ts 분리 from d1-stores.test.ts ───
 
 import { describe, expect, it, beforeEach } from "vitest";

@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { IndexMetaError, ValidationError } from "index-meta";
 export { AppError } from "@qa-sdk/core";
 import { AppError } from "@qa-sdk/core";

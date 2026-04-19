@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import { computeFoldedContract, foldSubgraph, unfoldNode, restoreLineageFromFold, validateFoldCheckpoint, detectFoldRegions, normalize as normalizeEndpoint, collectFlowSteps } from "./pipe-fold.js";
 import { countGraphPaths } from "./pipe-path.js";

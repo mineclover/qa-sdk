@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * Indexing Core 시스템 문서 링크 검증
  *

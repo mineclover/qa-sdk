@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import { describe, it, expect } from "vitest";
 import { classifyLayout } from "./pattern.js";
 import type { LayoutMetrics, ProximityGroup } from "./types.js";

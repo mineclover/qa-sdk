@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { SqlDriver } from "index-meta";
 import type { PrefixOwnerRecord, PrefixProfileMeta } from "../types/index.js";
 import type { PrefixOwnerStore, PrefixProfilePatch } from "./prefix-owner-store.js";

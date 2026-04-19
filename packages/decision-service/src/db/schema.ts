@@ -1,3 +1,6 @@
+// @def.boundary decision-service-spec
+// @def.doc decision-service-spec
+
 /**
  * decision-service Drizzle 스키마 정의
  *

@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { createLayoutMonitor } from "./monitor.js";
 import { collectLayout, collectLayoutWithText } from "./collector.js";

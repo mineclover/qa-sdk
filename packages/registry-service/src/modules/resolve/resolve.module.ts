@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Module } from "@nestjs/common";
 import { ManifestModule } from "../manifests/manifest.module.js";
 import { ServiceModule } from "../services/service.module.js";

@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import { FacetCodeRegistry, resolveFacetMappings } from "./facet-code-registry.js";
 import type { FacetCodeMapping } from "./types.js";

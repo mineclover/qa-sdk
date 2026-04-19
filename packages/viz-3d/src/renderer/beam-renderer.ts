@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * ThreeBeamRenderer — Three.js Line 기반 beam 풀.
  *

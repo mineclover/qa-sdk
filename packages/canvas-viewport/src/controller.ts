@@ -1,3 +1,6 @@
+// @def.boundary canvas-viewport-spec
+// @def.doc canvas-viewport-spec
+
 import {
   DEFAULT_CANVAS_VIEWPORT_PRESET,
   clampScale,

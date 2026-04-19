@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import { countPipePaths, countGraphPaths } from "./pipe-path.js";
 import type { PipeFlow, PipeGraph } from "../types/pipe-spec.js";

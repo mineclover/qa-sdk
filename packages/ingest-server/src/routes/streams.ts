@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { Hono, type Context } from "hono";
 import { streamSSE, type SSEStreamingApi } from "hono/streaming";
 import type { StoredRecord } from "@qa-sdk/core";

@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Registry 포트 — propagation이 사용하는 registry 인터페이스.
  *

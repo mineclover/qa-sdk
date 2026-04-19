@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 /**
  * CatalogProvider — catalog 소비 경로 추상화.
  *

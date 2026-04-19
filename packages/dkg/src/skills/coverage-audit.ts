@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * coverage-audit — entry 관측 커버리지 감사 + 자동 Observation/Decision 생성.
  *

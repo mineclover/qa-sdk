@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * schema-observation-bridge — 검증 결과를 DKG ObservationNode로 변환.
  *

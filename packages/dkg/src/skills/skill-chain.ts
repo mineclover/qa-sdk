@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * skill chain — 여러 skill을 순차 실행하는 체인.
  *

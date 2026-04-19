@@ -12,6 +12,7 @@ def:
   links:
     - target: motion-editor-component
       type: depends_on
+  source: packages/motion-content-editor-demo/src/inspector-engine.ts
 ---
 # Inspector Engine
 

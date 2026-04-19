@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * permission-set.ts — 비트마스크 기반 권한 관리 엔진.
  *

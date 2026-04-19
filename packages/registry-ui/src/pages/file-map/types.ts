@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 import type {
   BranchChangeCommit as GitConflictCommit,
   BranchChangeFile as GitConflictFileChange,

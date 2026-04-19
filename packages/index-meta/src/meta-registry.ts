@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * MetaRegistry — 닫힌 패턴의 주소 게이트웨이
  *

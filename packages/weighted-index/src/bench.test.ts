@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * WeightedIndex 차원 수 확장 벤치마크
  *

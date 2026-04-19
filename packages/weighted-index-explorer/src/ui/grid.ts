@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 import {
   buildSliceGrid, type CellData, type DimKey, type SliceSpec, type VersionDef,
 } from "../data.js";

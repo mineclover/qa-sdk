@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * facet-scan — @facet 마커 파싱 + import 의존 분석.
  *

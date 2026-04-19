@@ -1,3 +1,6 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
 /**
  * CacheInvalidation 서비스 — E-3.
  *

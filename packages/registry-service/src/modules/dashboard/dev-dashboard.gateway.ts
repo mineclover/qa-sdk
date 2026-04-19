@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Inject, type OnApplicationShutdown } from "@nestjs/common";
 import {
   type OnGatewayConnection,

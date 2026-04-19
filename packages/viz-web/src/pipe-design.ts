@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * Pipe Design Catalog
  * Role / Certainty / Flow 29종 / Edge 8종 / Concern 8종 / 줌 비교 / 실전 패턴

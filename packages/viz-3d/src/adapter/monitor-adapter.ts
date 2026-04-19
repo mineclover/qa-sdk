@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * MonitorAdapter — ingest-server WebSocket/HTTP 연결 + decode → 셀 키 매핑.
  *

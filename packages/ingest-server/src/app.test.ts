@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   DlqStore,

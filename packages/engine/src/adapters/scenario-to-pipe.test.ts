@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-engine-system
+// @def.doc qa-sdk-engine-system
+
 // @def.doc meta-semantic-v2-migration
 import { describe, it, expect } from "vitest";
 import { convertScenarioToPipeGraph } from "./scenario-to-pipe.js";

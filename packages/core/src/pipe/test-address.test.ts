@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 테스트 주소 인코딩/디코딩 — buildTestAddress, parseTestAddress
  */

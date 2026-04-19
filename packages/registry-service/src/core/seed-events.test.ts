@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { describe, expect, it } from "vitest";
 import { InMemoryConfigStore } from "../stores/in-memory-config-store.js";
 import { InMemoryEventSchemaStore } from "../stores/in-memory-event-schema-store.js";

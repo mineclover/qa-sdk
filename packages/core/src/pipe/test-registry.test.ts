@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * TestRegistry — 케이스/스위트/결과 관리 + 전체 현황
  */

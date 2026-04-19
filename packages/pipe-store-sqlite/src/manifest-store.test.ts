@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 // @def.doc pipe-store-sqlite
 import { describe, it, expect, beforeEach } from "vitest";
 import { SqliteManifestRegistry } from "./manifest-store.js";

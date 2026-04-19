@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * transition-bridge — 좌표 ↔ 제어 흐름 ↔ 이벤트 3층 정합성 검증.
  *

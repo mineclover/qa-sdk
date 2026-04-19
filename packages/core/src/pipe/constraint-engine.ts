@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * Constraint 검증 엔진 — constraint 평가 + 결과 수집 + 오류 추적
  */

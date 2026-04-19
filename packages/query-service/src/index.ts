@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 export { createApp, type AppDeps } from "./app.js";
 export {
   createQueryService,

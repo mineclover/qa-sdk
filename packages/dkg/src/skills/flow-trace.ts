@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * flow-trace — 분기 흐름 순서 검증.
  *

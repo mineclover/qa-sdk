@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 // ── DataSchema — 컬럼 정의 + 패싯 역할 ───────────────
 
 export interface DataSchema {

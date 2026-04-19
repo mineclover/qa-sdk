@@ -1,3 +1,5 @@
+// @def.doc definition-assembly
+
 /**
  * 문서 조립 (Assembly)
  *

@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * DkgConfigLoader — CLI에서 DkgConfig를 로드하는 유틸리티.
  *

@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 브릿지 — 시뮬레이션↔계보, Constraint↔이벤트 연결
  */

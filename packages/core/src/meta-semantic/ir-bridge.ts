@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * IR ↔ PipeSpec 브릿지 — 기존 파이프 모델과 IR 3종 간 변환.
  *

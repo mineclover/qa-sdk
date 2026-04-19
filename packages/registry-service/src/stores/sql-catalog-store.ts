@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { SqlDriver } from "index-meta";
 import type { CatalogRecord, CatalogStore } from "./catalog-store.js";
 

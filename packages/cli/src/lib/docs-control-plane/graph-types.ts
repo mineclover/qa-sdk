@@ -1,4 +1,7 @@
-import type { DocumentMetadata, DocumentRawSourcePointer } from "./types.js";
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
+import type { DocumentMetadata, DocumentRawSourcePointer } from "doc-envelope";
 
 export const CANONICAL_TRAVERSAL_AXES = [
   "composition",

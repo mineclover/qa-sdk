@@ -31,6 +31,8 @@ def:
       type: contains
     - target: df-taxonomy
       type: contains
+    - target: decision-flow-store
+      type: contains
 ---
 
 # Decision Flow 시스템

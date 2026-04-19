@@ -1,4 +1,8 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // export/env-file.ts — .env 파일 생성기
+import { getRequiredServicePort } from "@qa-sdk/core";
 import type { DiscoveryClient } from "../discovery/client.js";
 
 /** 모든 서비스가 기본으로 필요로 하는 core 서비스 */
@@ -60,7 +64,7 @@ export async function generateEnvFile(
   if (configVars.PORT) {
     lines.push(`PORT=${configVars.PORT}`);
   } else if (svc) {
-    const port = extractPort(svc.url);
+    const port = extractPort(svc.url) || String(getRequiredServicePort(options.serviceId));
     lines.push(`PORT=${port}`);
   }
 
@@ -123,7 +127,7 @@ function toEnvKey(serviceId: string): string {
   return serviceId.replace(/-/g, "_").toUpperCase() + "_URL";
 }
 
-function extractPort(url: string): string {
+function extractPort(url: string): string | null {
   const match = url.match(/:(\d+)$/);
-  return match?.[1] ?? "3200";
+  return match ? match[1] : null;
 }

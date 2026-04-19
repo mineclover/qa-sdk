@@ -11,6 +11,7 @@ def:
   links:
     - target: rlsc-intent
       type: refines
+  source: packages/rlsc/src/intent.test.ts
 ---
 
 ## 목적 ^purpose

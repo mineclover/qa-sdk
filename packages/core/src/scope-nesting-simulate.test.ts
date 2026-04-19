@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * Scope Nesting + PipeSpec 시뮬레이션 통합 테스트
  *

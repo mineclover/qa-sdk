@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * GridBuilder — CellGridDef[] → 3D 셀 위치 계산.
  *

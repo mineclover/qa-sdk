@@ -1,3 +1,6 @@
+// @def.boundary cli-command-spec
+// @def.doc cli-command-spec
+
 // 타입
 export type {
   CliCommandNode,

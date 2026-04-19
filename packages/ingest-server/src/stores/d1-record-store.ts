@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * D1RecordStore — RecordStore의 D1/SQLite drizzle ORM 구현.
  * text 컬럼 → ISO-8601 문자열로 저장, 조회 시 Date로 변환.

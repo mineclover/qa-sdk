@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 /**
  * SqliteManifestRegistry — ManifestRegistry의 SQLite 영속 구현
  *

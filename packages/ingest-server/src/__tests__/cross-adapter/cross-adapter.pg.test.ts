@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { afterAll, describe } from "vitest";
 import { recordStoreTests } from "./shared/record-store.shared.js";
 import { traceStoreTests } from "./shared/trace-store.shared.js";

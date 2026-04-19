@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 시뮬레이션 시나리오 — PipeFlow vs ConnectionKind 차이 + 실전 패턴
  */

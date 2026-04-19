@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import type { StepConstraint } from "./scenario.js";
 import type { PathObservation } from "./path-observation.js";
 

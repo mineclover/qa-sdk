@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * PipeGraph 해석 — 관심사 추출/전파 + 영향 분석 + 역할 분류
  *

@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 import { BROWSER_CATALOG, decode, withServiceOverlay } from '@qa-sdk/browser-codec';
 import { NoopTransport } from '@qa-sdk/sdk';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -123,12 +126,12 @@ describe('QaBridge — emitEvent', () => {
 
   it('emit한 이벤트가 올바른 엔드포인트로 전송된다', async () => {
     const fetchMock = setupFetch();
-    const bridge = createQaBridge({ ingestUrl: 'http://ingest-server:3100' });
+    const bridge = createQaBridge({ ingestUrl: 'http://ingest-server:3200' });
     bridge.startSession();
     bridge.emitEvent('page_view', { page: '/home' });
     await bridge.flush();
 
-    expect(fetchMock.mock.calls[0][0]).toBe('http://ingest-server:3100/v1/ingest');
+    expect(fetchMock.mock.calls[0][0]).toBe('http://ingest-server:3200/v1/ingest');
   });
 
   it('startSession으로 설정된 sessionId가 각 레코드의 qa_session_id에 포함된다', async () => {

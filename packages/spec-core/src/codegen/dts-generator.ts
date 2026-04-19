@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * IR → TypeScript Declaration (.d.ts) 코드 생성.
  *

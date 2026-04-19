@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-engine-system
+// @def.doc qa-sdk-engine-system
+
 import { describe, expect, it } from "vitest";
 import type { MatchResult, SpecGraph, RuntimeGraph, StepMatch } from "@qa-sdk/core";
 import { derivePathObservation } from "./observe-path.js";

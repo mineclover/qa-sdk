@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { mkdir } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { readFile } from "node:fs/promises";

@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * Mount Flow 테스트 — scope↔pipe 브릿지 검증
  */

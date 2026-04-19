@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * flow-timeline — 타임라인 링 버퍼 + DOM 렌더링.
  *

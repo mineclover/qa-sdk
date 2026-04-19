@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { describe, it, expect } from "vitest";
 import { enrichAddressContext } from "./enrich-address-context.js";
 import type { TransmissionEnvelope, EventRecord } from "@qa-sdk/core";

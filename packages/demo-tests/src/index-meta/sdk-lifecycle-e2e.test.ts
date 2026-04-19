@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * SDK 라이프사이클 운영 시나리오 E2E 테스트
  *

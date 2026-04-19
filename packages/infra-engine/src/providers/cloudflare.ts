@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // providers/cloudflare.ts — Cloudflare Workers/Pages 프로바이더
 // wrangler CLI를 래핑하여 기존 wrangler.toml과 호환
 import type { DeployProvider, ValidationResult } from "../adapters/adapter.js";

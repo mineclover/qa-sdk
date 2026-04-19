@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 // ─── R.L.S.C.™ — Relative Layout Structured Content ─────────────────
 //
 // 디자인의 시각적 구조(레이아웃, 계층, Role)를 좌표계 DSL로 표현하고,

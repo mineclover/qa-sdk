@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import { SqliteQualityStore } from "./store.js";
 import type {
   BundleVerification,

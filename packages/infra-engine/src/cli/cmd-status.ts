@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 import type { CommandHandler } from "cli-command";
 
 /** status 명령 — export status에 위임 */

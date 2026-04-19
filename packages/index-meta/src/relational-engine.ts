@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * relational-engine.ts — 관계형 엔진 facade
  *

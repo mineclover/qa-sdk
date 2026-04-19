@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import type { RLSCNode, LayoutGrid, GridCell, LayoutRect } from "./types.js";
 import { flattenTree } from "./tree-utils.js";
 

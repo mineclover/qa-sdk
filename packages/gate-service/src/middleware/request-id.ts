@@ -1,3 +1,6 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
 import type { MiddlewareHandler } from "hono";
 import { randomUUID } from "node:crypto";
 

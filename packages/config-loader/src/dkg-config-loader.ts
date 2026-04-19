@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 /**
  * DkgConfigLoader — CLI에서 DkgConfig를 로드하는 유틸리티.
  *

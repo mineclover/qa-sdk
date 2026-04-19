@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Catalog Validator — catalog 기반 축/entry 유효성 2단계 검증.
  *

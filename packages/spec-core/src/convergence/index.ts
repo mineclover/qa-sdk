@@ -1,7 +1,10 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * convergence — @qa-sdk/convergence 패키지의 re-export barrel.
  *
- * 물리 분리 후 하위 호환을 위해 유지.
+ * @deprecated 물리 분리 후 하위 호환을 위해 유지.
  * 새 코드는 `@qa-sdk/convergence`를 직접 import할 것.
  *
  * NOTE: GraphPort, DKG 타입 (DecisionNode 등), scaffoldDecision은

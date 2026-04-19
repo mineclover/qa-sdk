@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * dkg — Design Knowledge Graph sub-path barrel.
  *

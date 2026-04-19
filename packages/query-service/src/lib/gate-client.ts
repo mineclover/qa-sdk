@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 import type { AddressStateCacheRecord } from "index-meta-workers";
 import { ServiceClientError } from "@qa-sdk/core";
 import { z } from "zod";

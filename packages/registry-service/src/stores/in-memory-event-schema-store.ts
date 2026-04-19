@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { EventSchemaRecord, EventSchemaStore } from "./event-schema-store.js";
 
 export class InMemoryEventSchemaStore implements EventSchemaStore {

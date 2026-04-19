@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * Spacetime UID — 분기 경로 기반 시공간 주소 체계.
  *

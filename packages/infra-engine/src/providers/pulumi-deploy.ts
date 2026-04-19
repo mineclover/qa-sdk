@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // providers/pulumi-deploy.ts — Pulumi Automation API 기반 배포 함수
 import { LocalWorkspace } from "@pulumi/pulumi/automation/index.js";
 import type { DeployProvider } from "../adapters/adapter.js";

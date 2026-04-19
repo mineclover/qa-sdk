@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * 실제 개발 시나리오 데모 — DSL DB 활용.
  * 시나리오: "결제 API에 환불 엔드포인트를 추가해야 한다"

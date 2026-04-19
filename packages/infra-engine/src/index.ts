@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // index.ts — public API
 export * from "./core/types.js";
 export { createPipeline } from "./core/pipeline.js";

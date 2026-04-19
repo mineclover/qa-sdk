@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { describe, it, expect } from "vitest";
 import { MetaCodecBig } from "./meta-codec-big.js";
 import { EntryNotFoundError, ValidationError } from "./errors.js";

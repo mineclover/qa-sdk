@@ -1,8 +1,11 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { describe, expect, it } from "vitest";
 
 import { buildDocumentRoleMatrix } from "./role-matrix.js";
-import { normalizeDocumentEnvelope } from "./normalize.js";
-import type { DocumentEnvelope, DocumentEnvelopeInput } from "./types.js";
+import { normalizeDocumentEnvelope } from "doc-envelope";
+import type { DocumentEnvelope, DocumentEnvelopeInput } from "doc-envelope";
 
 describe("docs-control-plane role matrix", () => {
   it("assembles same-family role coverage while excluding inactive PRDs and sessions", () => {

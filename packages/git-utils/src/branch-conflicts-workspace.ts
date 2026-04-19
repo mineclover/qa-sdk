@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import { readFileSync } from "node:fs";
 import { execaSync } from "execa";
 import type { BranchChangeFile, BranchChangeStats, WorkspaceChangeSet } from "./branch-conflicts-types.js";

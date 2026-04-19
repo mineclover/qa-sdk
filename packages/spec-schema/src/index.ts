@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * spec-schema — Layer 2 스키마 시스템.
  *

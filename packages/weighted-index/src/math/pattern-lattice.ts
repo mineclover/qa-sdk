@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * pattern-lattice.ts — Pattern lattice operations for CoordConstraint arrays.
  *

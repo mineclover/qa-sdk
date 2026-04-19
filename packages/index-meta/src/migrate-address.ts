@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * migrate-address.ts — read-repair 기반 즉시 마이그레이션
  *

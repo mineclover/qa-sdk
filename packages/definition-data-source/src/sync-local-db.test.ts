@@ -1,3 +1,5 @@
+// @def.doc definition-data-source
+
 import { afterEach, describe, expect, it } from "vitest";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

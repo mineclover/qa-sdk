@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, expect, it } from "vitest";
 import { drawEdgePath, drawPortDots, standaloneEdgeSvg, standaloneNodeSvg } from "viz-core";
 import type { PipePort } from "../types/pipe-spec.js";

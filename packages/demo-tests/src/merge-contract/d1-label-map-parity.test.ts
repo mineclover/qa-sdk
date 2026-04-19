@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * D-1 계약: PermissionCodec._buildMap()과 LabelRegistry._buildCache()의 동등성.
  *

@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * ServiceTopology — 마이크로서비스 아키텍처의 prefix 소유권, 공유 계약, lifecycle 관리.
  *

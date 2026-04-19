@@ -1,3 +1,5 @@
+// @def.doc definition-state-model
+
 /**
  * 유한 상태 모델 — 문서/시스템 상태 관리 일반화.
  *

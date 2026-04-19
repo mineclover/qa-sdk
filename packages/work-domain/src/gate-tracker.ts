@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 /**
  * 게이트 트래커 — 품질 게이트 FSM 전이를 SDK 이벤트로 수집.
  *

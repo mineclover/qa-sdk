@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk dkg — DKG 조회 + 자가 진단 CLI 명령어.
  *
@@ -4266,7 +4269,7 @@ export function dkgPatternStats(): void {
 
 export async function dkgPublish(opts: { registry?: string; versionId?: string }): Promise<void> {
   const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
-  const registryUrl = opts.registry ?? process.env.QA_REGISTRY_URL ?? "http://localhost:3100";
+  const registryUrl = opts.registry ?? process.env.QA_REGISTRY_URL ?? "http://localhost:3300";
   const versionId = opts.versionId ?? "v1";
 
   console.log(`\n══ Publish to Registry ══`);
@@ -4325,7 +4328,7 @@ export async function dkgPublish(opts: { registry?: string; versionId?: string }
 // ── dkg version ─────────────────────────────────────
 
 export async function dkgVersion(action: string, prefix: string, versionId: string, opts: { registry?: string }): Promise<void> {
-  const registryUrl = opts.registry ?? process.env.QA_REGISTRY_URL ?? "http://localhost:3100";
+  const registryUrl = opts.registry ?? process.env.QA_REGISTRY_URL ?? "http://localhost:3300";
 
   if (action === "list") {
     try {

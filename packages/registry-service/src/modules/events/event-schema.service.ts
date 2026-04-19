@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Inject, Injectable } from "@nestjs/common";
 import { AppError } from "@qa-sdk/core";
 import type { EventSchemaRecord, EventSchemaStore } from "../../stores/event-schema-store.js";

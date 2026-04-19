@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 /**
  * git.ts 기본 메타데이터 — 임시 repo fixture 기반 시나리오 테스트
  */

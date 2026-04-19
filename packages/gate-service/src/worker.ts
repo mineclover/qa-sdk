@@ -1,3 +1,6 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
 /**
  * worker.ts — gate-service Cloudflare Workers 진입점.
  * D1SqlDriver → SqlAddressStateStore → createApp.

@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * @qa-sdk/viz-3d — 3D 큐브 매트릭스 시각화 패키지.
  *

@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 import { describe, it, expect, beforeEach } from "vitest";
 import { SchemaRegistry } from "./schema.registry.js";
 import { SchemaValidator } from "./schema.validator.js";

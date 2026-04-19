@@ -9,6 +9,7 @@ def:
   depth: overview
   lifecycle: draft
   layer: domain
+  svc: operational-ontology
   tags: [entry-point, structural, cross-scope]
   links:
     - target: taxonomy-boundaries
@@ -84,6 +85,8 @@ def:
     - target: operational-ontology-registry-allocation-todo
       type: contains
     - target: operational-ontology-ssot-navigation-guide
+      type: contains
+    - target: operational-ontology-web
       type: contains
 ---
 

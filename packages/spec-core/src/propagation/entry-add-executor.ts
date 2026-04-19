@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * entry-add-executor — 축 entry 추가 실행기.
  *

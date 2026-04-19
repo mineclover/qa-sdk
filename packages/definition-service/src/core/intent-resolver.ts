@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * 의도 해석 — 슬라이스 매칭 + 의도 체인 조립
  *

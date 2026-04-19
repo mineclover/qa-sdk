@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -11,7 +14,7 @@ import { USAGE, main, resolveSubcommand } from "../index.js";
 import {
   KNOWN_ONTOLOGY_PACK_IDS,
   resolveKnownOntologyPack,
-} from "../lib/known-ontology-packs.js";
+} from "ontology-pack-validate";
 
 const AUTHORIZATION_TAXONOMY_IDS = [
   "authorization-action",

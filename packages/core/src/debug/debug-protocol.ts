@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * Debug Protocol — 개발환경 실시간 로깅/디버깅 바이너리 프로토콜.
  *

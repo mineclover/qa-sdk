@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 // packages/ingest-server/src/stores/d1-key-observation-store.ts
 
 import { count as countFn, desc, eq, lt, sql, sum, asc } from "drizzle-orm";

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * PositionEngine — MigrationStore 계약 테스트
  * 버전 간 변경 이력 (EntityId 수정, 비활성화) + 체이닝

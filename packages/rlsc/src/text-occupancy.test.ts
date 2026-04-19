@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import { describe, it, expect, vi } from "vitest";
 import type { RLSCNode, RLSCDocument } from "./types.js";
 import { analyzeGrid } from "./grid.js";

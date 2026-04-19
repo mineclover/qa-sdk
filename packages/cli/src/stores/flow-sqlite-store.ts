@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * SqliteInstanceStore — decision-flow InstanceStore의 SQLite 구현.
  *

@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * core-bundle — Three.js 무의존 순수 모듈 번들 진입점.
  *

@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import type { DefinitionServiceDatabase } from "../database.module.js";
 import type { SliceIntentRecord } from "../core/types.js";
 import type { IntentStore } from "../core/interfaces.js";

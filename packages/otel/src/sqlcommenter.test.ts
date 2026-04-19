@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 import { describe, it, expect } from "vitest";
 import { buildSqlComment, buildSqlCommentWithTrace, sqlComment } from "./sqlcommenter.js";
 

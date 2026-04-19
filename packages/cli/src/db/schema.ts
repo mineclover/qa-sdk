@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * CLI decision-flow Drizzle 스키마 정의
  *

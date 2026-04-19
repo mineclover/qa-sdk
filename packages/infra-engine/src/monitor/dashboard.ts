@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // monitor/dashboard.ts — 인프라 대시보드 데이터 API
 import type { InfraProfileAdapter } from "../adapters/adapter.js";
 import type { DeployHistoryEntry, SyncStatus } from "../core/types.js";

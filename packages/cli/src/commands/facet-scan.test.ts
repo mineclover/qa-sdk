@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { parseFacetMarker, scanFacetFiles, resolveImportDeps, generateIncludeList } from "./facet-scan.js";
 import type { FacetFile, DepFile } from "./facet-scan.js";

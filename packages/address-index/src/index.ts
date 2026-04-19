@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 /* address-index — 좌표 주소 기반 역색인 */
 
 export {

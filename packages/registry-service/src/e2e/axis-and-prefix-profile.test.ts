@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AppModule } from "../app.module.js";
 import { createNestTestApp, wrapNestApp, type CompatApp } from "../test/nest-helpers.js";

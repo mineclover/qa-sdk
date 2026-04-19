@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * PositionEngine — VersionLifecycleStore 계약 테스트
  * 버전 상태 전이 (draft→released→active→deprecated)

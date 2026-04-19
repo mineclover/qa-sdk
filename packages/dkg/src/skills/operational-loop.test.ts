@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * Operational Loop — 실제 운영 시뮬레이션.
  *

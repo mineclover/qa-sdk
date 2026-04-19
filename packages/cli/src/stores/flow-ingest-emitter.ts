@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * Flow Ingest Emitter — 의사결정 이벤트를 ingest-server로 전송.
  *

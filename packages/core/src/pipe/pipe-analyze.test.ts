@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import { analyzePipeComplexity, findBottlenecks, analyzeCoverage, collectGraphEvents } from "./pipe-analyze.js";
 import type { PipeGraph } from "../types/pipe-spec.js";

@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * AxisRegistry — registry-service에서 definition 축 값을 가져와 캐싱
  *

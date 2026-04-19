@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 서비스 버전 매니페스트 — prefix 관리 및 공급 라이프사이클
  *

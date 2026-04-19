@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * PrefixDecoderBig — BigInt index용 decode 전용 unified facade
  *

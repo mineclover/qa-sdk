@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 정적 계보 추적 — 시뮬레이션 없이 PipeFlow 구조에서 데이터 계보 파생.
  *

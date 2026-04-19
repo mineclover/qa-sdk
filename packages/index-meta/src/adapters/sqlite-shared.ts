@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * SQLite 드라이버 공용 상수 및 헬퍼.
  *

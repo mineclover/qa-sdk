@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * capacity-planner.ts — Pure geometry/capacity algorithms.
  *

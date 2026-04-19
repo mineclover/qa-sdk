@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // commands/audit.ts — 레지스트리 감사
 import type { DiscoveryClient, ServiceInfo } from "../discovery/client.js";
 

@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 /**
  * dev-dkg-provider — 개발 대시보드용 DKG 데이터 프로바이더.
  *

@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // monitor/auto-recovery.ts — 자동 복구 + 에스컬레이션
 import type { SyncCheckResult } from "./sync-loop.js";
 

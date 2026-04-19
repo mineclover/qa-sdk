@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // stages/provision-stage.ts — 프로바이더 검증 + 배포 스테이지
 import type { Stage, DeployContext, ProvisionResult, ResolvedConfig } from "../core/types.js";
 import type { DeployProvider } from "../adapters/adapter.js";

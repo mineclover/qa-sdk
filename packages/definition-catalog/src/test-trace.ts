@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 테스트 추적 (Test Trace)
  *

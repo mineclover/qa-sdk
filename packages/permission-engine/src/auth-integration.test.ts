@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * auth-integration.test.ts — Auth × Permission 통합 시나리오
  *

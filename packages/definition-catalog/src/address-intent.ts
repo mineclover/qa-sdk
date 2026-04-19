@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 주소 의도 + 소비율 (Address Intent & Consumption)
  *

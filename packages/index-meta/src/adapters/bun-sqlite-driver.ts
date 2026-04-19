@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * BunSqliteDriver — Bun 내장 bun:sqlite 기반 SqlDriver 구현.
  *

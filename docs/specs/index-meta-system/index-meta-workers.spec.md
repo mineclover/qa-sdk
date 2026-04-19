@@ -7,6 +7,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: operation
+  svc: index-meta-workers
   tags: [workers, edge, cloudflare]
   links:
     - target: index-meta-system

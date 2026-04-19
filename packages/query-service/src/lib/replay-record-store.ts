@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 /**
  * Replay 전용 RecordStore — query-service 내부 구현.
  *

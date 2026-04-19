@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 /**
  * ServiceEndpointStore — 서비스 URL 관리.
  *

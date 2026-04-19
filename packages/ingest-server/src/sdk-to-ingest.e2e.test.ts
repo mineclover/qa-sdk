@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { EventRecord, ScenarioSpec } from "@qa-sdk/core";
 import {
   InMemoryDlqStore,

@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * IR Rule 유효성 검증 — rule.md의 체크리스트와 분할 규칙을 실제 코드로 검증.
  *

@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * E2E: 주소 조회 경로 vs 정보 조회 경로 분리
  *

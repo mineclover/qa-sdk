@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * 리포터 — 수집된 증거를 specId별로 집계.
  */

@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 /** 이벤트 스키마 저장소 — 서비스별 이벤트 키/버전 관리 */
 
 export interface EventSchemaRecord {

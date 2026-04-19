@@ -1,3 +1,5 @@
+// @def.doc doc-envelope
+
 import type { DocumentEnvelope } from "./types.js";
 
 export type TodoFollowUpCategory =

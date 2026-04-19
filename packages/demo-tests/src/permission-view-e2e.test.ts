@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * permission-view-e2e.test.ts — PermissionView + PermissionViewCache E2E 시나리오
  *

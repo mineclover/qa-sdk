@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * ClickHouse DDL — ReplacingMergeTree 기반 이벤트 저장.
  *

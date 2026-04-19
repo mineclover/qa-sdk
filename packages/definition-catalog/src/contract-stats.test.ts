@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 import { describe, it, expect } from "vitest";
 import { computeStats, extractPurpose, renderContract } from "./contract-stats.js";
 import type { DefinitionEntry } from "./types.js";

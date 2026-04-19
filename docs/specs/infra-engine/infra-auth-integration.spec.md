@@ -7,6 +7,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: mediation
+  svc: gateway
   links:
     - target: infra-engine-pipeline
       type: depends_on

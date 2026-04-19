@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * /v1/labels — 인사이트 라벨링 API.
  *

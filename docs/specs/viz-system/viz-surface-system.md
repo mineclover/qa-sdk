@@ -19,6 +19,8 @@ def:
       type: contains
     - target: concept-hierarchy-grid
       type: contains
+    - target: viz-core
+      type: contains
 ---
 
 # Viz 표면 구성 그룹

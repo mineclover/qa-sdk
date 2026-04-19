@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 export class IndexMetaError extends Error {
   constructor(message: string) {
     super(message);

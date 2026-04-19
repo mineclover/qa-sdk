@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { describe, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
 import { main } from "../index.js";

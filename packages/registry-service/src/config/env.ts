@@ -1,10 +1,13 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { z } from "zod";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
-import { booleanWithDefaultFalse, getServicePort } from "@qa-sdk/core";
+import { booleanWithDefaultFalse, getRequiredServicePort } from "@qa-sdk/core";
 import { otelEnvSchema } from "@qa-sdk/otel";
 
-const DEFAULT_PORT = getServicePort("registry-service") ?? 3300;
+const DEFAULT_PORT = getRequiredServicePort("registry-service");
 
 /** ~/.qa-sdk/state.sqlite 기본 DKG 경로 */
 function defaultDkgPath(): string | undefined {

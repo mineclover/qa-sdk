@@ -11,6 +11,7 @@ def:
   links:
     - target: auth-permission-integration
       type: refines
+  source: packages/permission-engine/src/permission-change-notifier.ts
 ---
 
 # PermissionChangeNotifier

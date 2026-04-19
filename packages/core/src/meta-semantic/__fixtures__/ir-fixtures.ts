@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * IR 테스트 공용 fixture — 모듈/데이터/파이프 팩토리
  */

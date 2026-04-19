@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * DKG Bridge — TransitionSpec → TransitionSpecNode 자동 변환.
  *

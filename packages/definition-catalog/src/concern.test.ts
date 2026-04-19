@@ -1,3 +1,5 @@
+// @def.doc definition-concern
+
 import { describe, it, expect, beforeEach } from "vitest";
 import { MemoryDefinitionRegistry } from "./registry.js";
 import {

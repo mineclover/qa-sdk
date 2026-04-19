@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import { describe, it, expect } from "vitest";
 import {
   scalar, row, grid, cube, spine, shelf, nested,

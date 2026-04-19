@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import { Module, Global } from "@nestjs/common";
 import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";

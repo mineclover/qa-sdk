@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * named-policy.test.ts — entity name 기반 정책 규칙 테스트
  *

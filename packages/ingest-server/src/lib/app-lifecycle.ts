@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 type DrainWaiter = () => void;
 
 export interface AppLifecycle {

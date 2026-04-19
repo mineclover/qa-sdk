@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * auth-request.test.ts — 권한 인증 요청 시나리오
  *

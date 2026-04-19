@@ -1,7 +1,10 @@
-import { z } from "zod";
-import { getServicePort, getServiceDevUrl } from "@qa-sdk/core";
+// @def.boundary decision-service-spec
+// @def.doc decision-service-spec
 
-const DEFAULT_PORT = getServicePort("decision-service") ?? 3800;
+import { z } from "zod";
+import { getRequiredServicePort, getServiceDevUrl } from "@qa-sdk/core";
+
+const DEFAULT_PORT = getRequiredServicePort("decision-service");
 const DEFAULT_DEFINITION_URL = getServiceDevUrl("definition-service") ?? "http://localhost:3700";
 
 export const envSchema = z.object({

@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Inject, Injectable } from "@nestjs/common";
 import type { Catalog, PrefixDef } from "@qa-sdk/core";
 import { AppError } from "@qa-sdk/core";

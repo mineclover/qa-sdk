@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { z } from "zod";
 import { eventRecordSchema } from "./record.schema.js";
 

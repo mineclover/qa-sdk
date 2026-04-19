@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 import type { ContractEvidence, ContractMarkerKind } from "./types.js";
 
 /**

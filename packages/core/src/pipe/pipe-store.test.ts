@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import { MemoryPipeGraphStore, MemoryPipeSpecStore } from "./pipe-store.js";
 import { step, simplePipe, branchPipe, simpleGraph } from "./__fixtures__/pipe-fixtures.js";

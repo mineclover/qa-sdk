@@ -1,13 +1,13 @@
 ---
 def:
   id: cli-command-spec
-  level: leaf
+  level: module
   scope: feature
   aspect: func_def
   depth: specification
   lifecycle: approved
   layer: operation
-  svc: cli
+  svc: cli-command
   tags: [structural]
   links:
     - target: cli-command-group

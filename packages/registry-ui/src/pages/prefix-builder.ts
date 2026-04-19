@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 /**
  * Prefix 제작 — 축 정의 + composite 생성 (인라인 폼)
  *

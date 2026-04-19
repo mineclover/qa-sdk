@@ -34,9 +34,9 @@ sources:
   - packages/cli/src/lib/docs-control-plane/graph-rank.ts
   - packages/cli/src/lib/docs-control-plane/graph-filter.ts
   - packages/cli/src/lib/docs-control-plane/graph-summary.ts
-  - packages/cli/src/lib/docs-control-plane/deterministic-labels.ts
-  - packages/cli/src/lib/docs-control-plane/family-scope.ts
   - packages/cli/src/lib/docs-control-plane/role-matrix.ts
+  - packages/cli/src/lib/deterministic-label-inventory-adapters.ts
+  - packages/cli/src/lib/ontology-pack-docs-reader.ts
 ---
 
 # Docs Control Plane

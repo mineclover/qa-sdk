@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 export { createDb } from "./db/connection.js";
 export { createStores, SqlitePipeGraphStore, SqlitePipeSpecStore } from "./store.js";
 export {

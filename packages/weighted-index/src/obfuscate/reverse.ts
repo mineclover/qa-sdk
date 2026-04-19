@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * reverse.ts — Bit-order reversal (self-inverse bijection).
  *

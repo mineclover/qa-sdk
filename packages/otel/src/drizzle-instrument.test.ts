@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 import { describe, it, expect, vi } from "vitest";
 import { withQueryTracing } from "./drizzle-instrument.js";
 

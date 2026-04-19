@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * UI 데이터 흐름 시뮬레이션 — 프론트엔드 패턴을 PipeFlow로 표현
  *

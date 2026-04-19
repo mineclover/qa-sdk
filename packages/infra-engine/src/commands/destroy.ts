@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // commands/destroy.ts — 서비스 리소스 삭제 (Pulumi stack + port-forward + 프로필 정리)
 import { LocalWorkspace } from "@pulumi/pulumi/automation/index.js";
 import { createInfraProfileAdapter } from "../adapters/infra-profile.js";

@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 소프트웨어 정의 도메인 축 정의 (Vocabulary)
  *

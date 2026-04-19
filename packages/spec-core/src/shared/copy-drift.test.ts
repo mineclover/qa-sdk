@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * 복사본 드리프트 방지 — 물리 분할로 인한 복사본이 원본과 동기화되는지 검증.
  *

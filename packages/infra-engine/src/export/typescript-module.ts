@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // export/typescript-module.ts — TypeScript 서비스 연결 모듈 생성기
 import type { DiscoveryClient } from "../discovery/client.js";
 

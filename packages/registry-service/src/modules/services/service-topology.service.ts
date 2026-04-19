@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import { AppError } from "@qa-sdk/core";
 import { DefinitionClient } from "@qa-sdk/definition-client";

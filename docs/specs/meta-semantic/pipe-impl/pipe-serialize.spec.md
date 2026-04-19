@@ -14,6 +14,7 @@ def:
       type: depends_on
     - target: pipe-validate
       type: depends_on
+  source: packages/core/src/pipe/pipe-serialize.ts
 ---
 
 # PipeSpec / PipeGraph 직렬화

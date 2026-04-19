@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * Decision-Flow 연결 브릿지
  *

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * SqlAddressRangeCache — 범용 SQLite 호환 AddressRangeCache 구현
  *

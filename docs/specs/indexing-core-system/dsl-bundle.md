@@ -310,6 +310,30 @@ interface ExecutionContext {
 | `packages/spec-core/src/dkg/bootstrap.ts` | 4개 DSL 번들 등록 (observation, infra, checkout, auth) |
 | `packages/spec-core/src/dkg/flow-definition.ts` | FlowDefinition (DSL과 조합 가능한 흐름 정의) |
 
+## 10. DSL Bundle과 Taxonomy의 관계
+
+DSL Bundle과 Taxonomy는 **동일 단위를 다른 관점에서 부른 이름**이다.
+
+| 관점 | 이름 | 강조점 |
+|------|------|--------|
+| 구현/사용 | DSL Bundle | 공통 서비스 바인딩 + 사용 패턴 + 불변조건 |
+| 개념/도메인 | Taxonomy | 이름 붙일 수 있는 도메인 경계 |
+
+### Taxonomy 확정 기준
+
+DSL Bundle이 다음 조건을 모두 만족하면 Taxonomy(개념 단위)로 확정한다.
+
+- [ ] 공통 서비스 컨텍스트에서 함께 사용되는가?
+- [ ] 불변조건을 공유하는가?
+- [ ] 도메인 이름을 붙일 수 있는가?
+- [ ] 경계 밖의 단위와 명확히 구분되는가?
+
+### System 경계
+
+Taxonomy 수준부터 System이 된다. DSL Bundle 하나가 독립 운용 + 복합 데이터 관리를 갖추면 단독 System이고, 그렇지 않으면 상위 System의 Taxonomy로 포함된다.
+
+계층 원칙 전체: [composition-hierarchy.spec.md](../system/composition-hierarchy.spec.md)
+
 ## 참조
 
 - [dimension-operations.md](dimension-operations.md) — 축 교차 선택, 환경 주입, 배포 시점 해석, 인프라 계측

@@ -7,6 +7,7 @@ def:
   aspect: domain_data
   depth: overview
   lifecycle: deprecated
+  svc: tag-search
   tags: [domain, tagging, search]
   links:
     - target: tag-management-spec

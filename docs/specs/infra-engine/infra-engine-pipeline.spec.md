@@ -7,6 +7,7 @@ def:
   level: module
   lifecycle: approved
   layer: operation
+  svc: infra-engine
   tags: [infra, devops, gitops]
   links:
     - target: infra-config-stage

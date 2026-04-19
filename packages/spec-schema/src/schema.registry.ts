@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 import type { SchemaDef, SchemaFragment, SchemaCategory, SchemaAxis } from "./schema.types.js";
 import { DuplicateRegistrationError, NotFoundError } from "./shared/errors.js";
 

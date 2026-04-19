@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 /**
  * SQL 통합 테스트 — NodeSqliteDriver(:memory:) 기반.
  *

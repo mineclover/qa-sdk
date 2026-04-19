@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // core/pipeline.ts — 순차 실행 + 역순 rollback 파이프라인
 import type { DeployContext, DeployPipeline, DeployResult, Stage, StageResult } from "./types.js";
 

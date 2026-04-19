@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * DKG State Store — Drizzle ORM 스키마.
  *

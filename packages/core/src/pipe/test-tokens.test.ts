@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import { deriveTestTokens } from "./test-tokens.js";
 import { testName } from "./test-name.js";

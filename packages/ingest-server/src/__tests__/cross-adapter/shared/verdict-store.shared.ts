@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { VerdictStore, VerdictInsert } from "@qa-sdk/core";
 import type { VerdictReport } from "@qa-sdk/core";
 import { expect, it, beforeEach, afterEach } from "vitest";

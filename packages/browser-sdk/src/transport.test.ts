@@ -14,7 +14,7 @@ function makeEnvelope(): TransmissionEnvelope {
   };
 }
 
-const ENDPOINT = "http://localhost:3100/v1/ingest";
+const ENDPOINT = "http://localhost:3200/v1/ingest";
 
 describe("BeaconTransport", () => {
   let transport: BeaconTransport;

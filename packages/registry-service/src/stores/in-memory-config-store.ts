@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { ConfigRecord, ConfigStore } from "./config-store.js";
 
 export class InMemoryConfigStore implements ConfigStore {

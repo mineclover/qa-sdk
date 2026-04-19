@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * permission-codec.ts — text ↔ integer ↔ bitmask 3-tier 코덱.
  *

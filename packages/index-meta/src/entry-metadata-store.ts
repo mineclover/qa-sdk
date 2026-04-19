@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * EntryMetadataStore — position 기반 관계형 메타데이터 (PositionEngine)
  *

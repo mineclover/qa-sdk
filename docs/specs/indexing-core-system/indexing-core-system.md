@@ -59,6 +59,8 @@ def:
       type: contains
     - target: version-operations
       type: contains
+    - target: bit-index
+      type: contains
     - target: wi-system
       type: depends_on
 ---

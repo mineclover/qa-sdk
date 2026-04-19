@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * CloudEvents 호환 — EventRecord ↔ CloudEvents 변환
  *

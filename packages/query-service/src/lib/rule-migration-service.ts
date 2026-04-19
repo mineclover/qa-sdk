@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 /**
  * rule-migration-service.ts — index version 변경 시 규칙 자동 변환.
  *

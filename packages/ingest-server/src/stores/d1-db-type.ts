@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * D1 stores 공용 drizzle DB 타입.
  *

@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { Logger } from "pino";
 import { describe, expect, it, vi } from "vitest";
 import { reconstruct } from "@qa-sdk/engine";

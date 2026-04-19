@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 /**
  * CatalogLoader — CLI에서 카탈로그를 로드하는 유틸리티.
  *

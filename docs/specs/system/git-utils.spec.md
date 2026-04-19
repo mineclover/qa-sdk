@@ -7,6 +7,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: operation
+  svc: git-utils
   tags: [structural]
   links:
     - target: cli-command-group

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * codegen.ts — MetaRegistryInput에서 TypeScript 타입 코드를 생성
  *

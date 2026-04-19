@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * yaml-lite — 경량 YAML 파서 (zero-dependency).
  *

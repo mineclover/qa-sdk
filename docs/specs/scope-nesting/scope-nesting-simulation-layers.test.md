@@ -10,6 +10,7 @@ def:
   links:
     - target: scope-nesting-simulation-layers
       type: depends_on
+  source: packages/core/src/scope-nesting-simulate.test.ts
 ---
 
 # 시뮬레이션 계층 테스트 명세

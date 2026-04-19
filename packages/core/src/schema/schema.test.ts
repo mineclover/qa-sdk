@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import { transmissionEnvelopeSchema } from "./envelope.schema.js";
 import { eventRecordSchema } from "./record.schema.js";

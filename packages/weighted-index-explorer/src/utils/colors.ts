@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 import type { DimKey } from "../data.js";
 
 // ── Resource — blue spectrum (8 values) ───────────────────────────────────

@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { Hono } from "hono";
 import { z } from "zod";
 import type { SessionStore } from "@qa-sdk/core";

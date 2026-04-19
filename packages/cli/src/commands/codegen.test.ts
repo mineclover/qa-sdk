@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { describe, it, expect } from "vitest";
 import { readFile, rm, mkdir } from "node:fs/promises";
 import { join } from "node:path";

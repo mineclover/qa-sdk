@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createUpdater } from "./updater.js";
 import type { SpecGraph, StoredRecord } from "@qa-sdk/core";

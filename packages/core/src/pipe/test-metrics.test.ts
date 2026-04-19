@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * TestRegistry 품질 지표 — 패싯/단계/파이프 메트릭
  */

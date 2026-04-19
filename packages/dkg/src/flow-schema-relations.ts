@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * FlowSchemaNode 관계 파생 유틸.
  *

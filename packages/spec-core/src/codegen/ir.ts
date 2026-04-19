@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Codegen 중간 표현(IR) — 언어 중립적 데이터 모델.
  *

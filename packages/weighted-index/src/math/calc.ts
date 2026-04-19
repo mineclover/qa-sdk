@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * calc.ts — Standalone calculation utilities for weighted positional notation.
  *

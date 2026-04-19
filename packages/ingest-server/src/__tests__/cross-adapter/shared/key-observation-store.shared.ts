@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { KeyObservationStore } from "@qa-sdk/core";
 import { expect, it, beforeEach, afterEach } from "vitest";
 

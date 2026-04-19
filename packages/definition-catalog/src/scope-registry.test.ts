@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 import { describe, it, expect } from "vitest";
 import { ScopeRegistry } from "./scope-registry.js";
 import { DEF_SCOPE, DEF_ASPECT, DEF_DEPTH } from "./vocabulary.js";

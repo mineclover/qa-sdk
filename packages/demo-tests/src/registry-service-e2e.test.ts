@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 // DEPRECATED: Hono createApp → NestJS 전환으로 비활성화. registry-service 자체 테스트(25파일, 212건)로 대체.
 
 /**

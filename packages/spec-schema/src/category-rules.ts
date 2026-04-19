@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Category Rules — 카테고리별 prefix 타입 규칙.
  *

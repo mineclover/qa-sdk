@@ -1,3 +1,6 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
 import { z } from "zod";
 
 const prefixVersionRequestSchema = z.object({

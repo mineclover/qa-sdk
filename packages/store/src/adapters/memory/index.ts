@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 export { InMemoryRecordStore } from "./record.adapter.js";
 export { InMemoryTraceStore } from "./trace.adapter.js";
 export { InMemorySessionStore } from "./session.adapter.js";

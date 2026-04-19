@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 import type { SchemaDef, SchemaAxis, SchemaConstraint } from "./schema.types.js";
 import type { SchemaRegistry } from "./schema.registry.js";
 import type { ValidationErrorDetail } from "./shared/errors.js";

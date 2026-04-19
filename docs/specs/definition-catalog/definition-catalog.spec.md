@@ -8,7 +8,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: domain
-  svc: definition-service
+  svc: definition-catalog
   tags: [structural, entry-point]
   links:
     - target: system-concepts
@@ -34,6 +34,8 @@ def:
     - target: definition-management
       type: contains
     - target: definition-cross-loop-bridge
+      type: contains
+    - target: definition-data-source
       type: contains
 ---
 

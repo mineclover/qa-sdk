@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import type { DeltaType } from "es-git";
 
 export interface BranchChangeFile {

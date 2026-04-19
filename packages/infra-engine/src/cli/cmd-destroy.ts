@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 import type { CommandHandler } from "cli-command";
 
 /** destroy 명령 — 배포 리소스 삭제 */

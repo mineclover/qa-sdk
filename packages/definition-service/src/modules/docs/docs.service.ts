@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import { Injectable, Inject, Optional } from "@nestjs/common";
 import { isAbsolute, relative } from "node:path";
 import { DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";

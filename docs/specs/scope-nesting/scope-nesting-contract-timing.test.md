@@ -10,6 +10,7 @@ def:
   links:
     - target: scope-nesting-contract-timing
       type: depends_on
+  source: packages/core/src/scope-nesting-timing.test.ts
 ---
 
 # Contract Timing 테스트 명세

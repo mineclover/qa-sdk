@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import { execaSync } from "execa";
 import type { BranchChangeCommit, BranchSplitPoint } from "./branch-conflicts-types.js";
 

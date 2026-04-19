@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import type { CatalogStore } from "../../stores/catalog-store.js";
 import type { AxisProfileStore } from "../../stores/axis-profile-store.js";

@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * mermaid-gen — DKG 그래프에서 Mermaid sequenceDiagram 텍스트를 생성.
  *

@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import { openRepository, type Repository } from "es-git";
 import { collectBranchCommits, collectCommitSummary } from "./branch-conflicts-commits.js";
 import { collectChangedFiles } from "./branch-conflicts-diff.js";

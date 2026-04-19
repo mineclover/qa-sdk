@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import {
   AUTHORED_LINK_AXIS_MAP,
   DOCUMENT_GRAPH_FAMILY_ROLE_TYPES,
@@ -15,7 +18,7 @@ import type {
   DocumentSection,
   DocumentSource,
   DocumentTask,
-} from "./types.js";
+} from "doc-envelope";
 
 export interface NormalizeDocumentGraphEdgesOptions {
   readonly includeContext?: boolean;

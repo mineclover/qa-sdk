@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { extractFrontmatter } from "./frontmatter.js";

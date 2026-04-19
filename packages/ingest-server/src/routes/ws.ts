@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { Context } from "hono";
 import type { WSContext, WSEvents } from "hono/ws";
 import type { RecordStreamBroker } from "../lib/record-stream-broker.js";

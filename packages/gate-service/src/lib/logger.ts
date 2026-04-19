@@ -1,3 +1,6 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
 import { createLogger as _createLogger, type Logger } from "@qa-sdk/core";
 import { createIngestForwarder } from "@qa-sdk/logger";
 

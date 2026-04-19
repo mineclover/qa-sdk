@@ -1,7 +1,10 @@
-import { z } from "zod";
-import { getServicePort, getServiceDevUrl, emptyStringToUndefined } from "@qa-sdk/core";
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
 
-const DEFAULT_PORT = getServicePort("query-service") ?? 3500;
+import { z } from "zod";
+import { getRequiredServicePort, getServiceDevUrl, emptyStringToUndefined } from "@qa-sdk/core";
+
+const DEFAULT_PORT = getRequiredServicePort("query-service");
 
 export const envSchema = z.object({
   PORT: z.coerce.number().int().default(DEFAULT_PORT),

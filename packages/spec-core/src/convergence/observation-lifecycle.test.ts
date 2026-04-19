@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * observation lifecycle 테스트 — 결정적 ID + auto-resolve + store 영속화.
  *

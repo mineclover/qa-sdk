@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * review 서브커맨드 — 파일 리뷰 완료 기록/조회.
  *

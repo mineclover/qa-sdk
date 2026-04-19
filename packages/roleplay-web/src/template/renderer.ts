@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 import Handlebars from 'handlebars';
 
 export function renderTemplate(template: string, variables: Record<string, unknown>): string {

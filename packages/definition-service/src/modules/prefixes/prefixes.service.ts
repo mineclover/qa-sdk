@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import { Injectable, Inject, OnModuleInit } from "@nestjs/common";
 import { eq, and } from "drizzle-orm";
 import { createLogger } from "../../lib/logger.js";

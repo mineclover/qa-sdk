@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 import { resolve } from "node:path";
 import { homedir } from "node:os";
 

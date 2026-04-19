@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * invalid-ranges.ts — composite 주소별 encode/decode 게이트 제어
  *

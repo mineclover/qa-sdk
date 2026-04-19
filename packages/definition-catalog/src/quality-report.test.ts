@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 import { describe, expect, it } from "vitest";
 import { join } from "node:path";
 import { collectQualityStats, formatQualityReport } from "../scripts/quality-report.mjs";

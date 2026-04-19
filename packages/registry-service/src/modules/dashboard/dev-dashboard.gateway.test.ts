@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { EventEmitter } from "node:events";
 import { describe, expect, it } from "vitest";
 import { DashboardService } from "./dashboard.service.js";

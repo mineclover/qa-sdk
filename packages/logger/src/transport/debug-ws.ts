@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 /**
  * DebugWebSocketTransport — 개발환경 실시간 디버깅용 WebSocket Transport.
  *

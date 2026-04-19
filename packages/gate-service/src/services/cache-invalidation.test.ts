@@ -1,3 +1,6 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
 import { beforeEach, describe, it, expect, vi } from "vitest";
 import { MemoryEventBus } from "../adapters/memory-event-bus.js";
 import {

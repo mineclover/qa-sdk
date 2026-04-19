@@ -10,6 +10,7 @@ def:
   links:
     - target: pipeline-cache
       type: depends_on
+  source: packages/store/src/adapters/memory/key-cache.adapter.test.ts
 ---
 
 # KeyCache 테스트 명세

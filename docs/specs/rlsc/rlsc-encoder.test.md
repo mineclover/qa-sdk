@@ -11,6 +11,7 @@ def:
   links:
     - target: rlsc-encoder
       type: refines
+  source: packages/rlsc/src/encoder.test.ts
 ---
 
 ## 목적 ^purpose

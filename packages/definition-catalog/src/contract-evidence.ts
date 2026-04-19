@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 계약 증거 파싱 — [reversible]/[irreversible] 어노테이션 추출.
  *

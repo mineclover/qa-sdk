@@ -7,6 +7,7 @@ def:
   depth: implementation
   lifecycle: approved
   layer: operation
+  svc: pipe-store-sqlite
   links:
     - target: pipe-store
       type: depends_on

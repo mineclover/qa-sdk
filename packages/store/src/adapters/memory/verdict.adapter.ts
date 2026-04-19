@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import type { StoredVerdict, VerdictInsert, VerdictStore } from "@qa-sdk/core";
 
 /** VerdictStore의 in-memory 구현 */

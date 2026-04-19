@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 import { relativeToNode, summarizeNodeSources } from "./normalize.js";
 import type { FileTreeNode, NodeSourceSummary, NormalizedReport, RenderState } from "./types.js";
 import { isCanvasDisclosureOpen } from "canvas-viewport";

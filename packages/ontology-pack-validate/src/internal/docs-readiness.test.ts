@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeDocumentEnvelope } from "../docs-control-plane/normalize.js";
-import type { DocumentEnvelope, DocumentEnvelopeInput } from "../docs-control-plane/types.js";
+import { normalizeDocumentEnvelope } from "doc-envelope";
+import type { DocumentEnvelope, DocumentEnvelopeInput } from "doc-envelope";
 import { collectDocsReadiness, filterMatchingDocsForPack } from "./docs-readiness.js";
 import type { OntologyPackValidateFileRef } from "./types.js";
 

@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * qa-sdk 실제 문서 등록 + 조회 검증
  *

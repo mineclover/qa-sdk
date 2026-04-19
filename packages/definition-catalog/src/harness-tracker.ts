@@ -1,3 +1,5 @@
+// @def.doc definition-harness
+
 /**
  * 하네스 트래커 — 상태 머신 전이를 SDK 이벤트로 수집.
  *

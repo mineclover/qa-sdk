@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * facet-inject — synced/ 복사본에 @facet export 기반 export 주입.
  *

@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { ServiceEndpointStore } from "../stores/service-endpoint-store.js";
 import type { SeedLogger } from "./types.js";
 

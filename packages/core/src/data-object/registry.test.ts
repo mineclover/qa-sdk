@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { beforeEach, describe, expect, it } from "vitest";
 import { BindingRegistry } from "./registry.js";
 import type { DataObjectBinding } from "./types.js";

@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG, encodePrefixByValue } from "demo-snapshot";
 import { deriveFromCatalog, bootstrapDkg } from "dkg";

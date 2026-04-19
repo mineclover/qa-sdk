@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 import { beforeAll, describe, expect, it } from "vitest";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, join } from "node:path";

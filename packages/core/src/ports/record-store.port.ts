@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /** 시간 범위 쿼리 파라미터 */
 export interface TimeRangeParams {
   /** 시작 시각 (inclusive) */

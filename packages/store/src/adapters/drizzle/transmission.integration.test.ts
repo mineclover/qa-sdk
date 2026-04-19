@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { DrizzleTransmissionStore } from "../../index.js";
 import { transmissions } from "../../db/schema.js";

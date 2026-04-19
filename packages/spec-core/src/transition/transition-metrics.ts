@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Transition Metrics — Phase 2.5 결과에서 수렴 metric 값을 계산하는 순수 함수.
  *

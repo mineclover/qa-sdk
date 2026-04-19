@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * GraphPort — DKG 그래프의 추상 인터페이스 (의존성 역전).
  *

@@ -27,6 +27,8 @@ def:
       type: contains
     - target: redis-cache-adapter
       type: contains
+    - target: ingest-engine
+      type: contains
     - target: ingest-system
       type: depends_on
 ---

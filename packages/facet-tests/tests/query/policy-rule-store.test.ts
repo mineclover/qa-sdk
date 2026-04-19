@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * query-service InMemoryPolicyRuleStore — facet 격리 테스트.
  *

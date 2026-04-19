@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * sync-obsidian — DEMO_CATALOG + DKG → Obsidian 볼트 단방향 동기화.
  *

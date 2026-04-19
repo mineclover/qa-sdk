@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * scenario.test.ts — 실제 사용 시나리오 기반 실효성 검증.
  *

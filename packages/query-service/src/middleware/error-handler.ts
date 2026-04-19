@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 import type { ErrorHandler } from "hono";
 import type { Logger } from "pino";
 import { ZodError } from "zod";

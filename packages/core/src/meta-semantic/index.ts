@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 export type {
   ModuleRef, DataRef, PipeRef, RuleRef,
   SourceLocation, ModuleInterface, ModuleRelations, ModuleMeta,

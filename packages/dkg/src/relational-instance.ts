@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * Relational Instance — relational prefix로 관계 인스턴스를 인코딩/조회.
  *

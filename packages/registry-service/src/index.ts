@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 // ── Runtime ─────────────────────────────────────────────
 export { AppModule } from "./app.module.js";
 export { RuntimeModule } from "./runtime.module.js";

@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * migration.ts — PermissionSet 마스크 마이그레이션.
  *

@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 export type {
   CliCommandNode,
   CommandDescriptor,

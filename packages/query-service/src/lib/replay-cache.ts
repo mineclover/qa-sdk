@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 /**
  * Replay LRU 캐시 — 시점 replay 결과를 메모리에 캐시.
  */

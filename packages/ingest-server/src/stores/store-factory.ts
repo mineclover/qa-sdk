@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * Store Factory — STORE_DRIVER 환경변수로 백엔드 선택.
  *

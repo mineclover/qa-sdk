@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 // ── TestPhase — 인라인 정의 (Docker 빌드 호환) ──────
 
 /** SSOT: demo-catalog test_phase axis entries */

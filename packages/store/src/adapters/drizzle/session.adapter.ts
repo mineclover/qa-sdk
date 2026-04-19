@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { desc, eq } from "drizzle-orm";
 import type { SessionStore, SessionUpsert, StoredSession } from "@qa-sdk/core";
 import type { DbExecutor } from "../../db/client.js";

@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * Violation Bridge — 전이 위반 → DKG Observation 변환.
  *

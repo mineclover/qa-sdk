@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * Extraction LLM 프롬프트 — 4종 판단 템플릿.
  *

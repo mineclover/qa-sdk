@@ -90,7 +90,7 @@ Scaffold and write policy:
 
 Candidate policy:
 
-1. Known-pack registration is reported as a manual candidate for `packages/cli/src/lib/known-ontology-packs.ts`; scaffold must not mutate the resolver automatically.
+1. Known-pack registration is reported as a manual candidate for `packages/ontology-pack-validate/src/known-ontology-packs.ts`; scaffold must not mutate the resolver automatically.
 2. Source-map output is a candidate-only frontmatter edit. It points generated implementation and test paths at the new definition docs, adds no source comments, and should be applied only after file writes are reviewed.
 3. Candidate output should be concrete enough to support `def find-by-file` and `docs graph --axis source` verification after the operator applies the source-map frontmatter.
 

@@ -11,6 +11,7 @@ def:
   links:
     - target: query-rule-migration
       type: refines
+  source: packages/query-service/src/lib/rule-migration-service.test.ts
 ---
 
 # 규칙 버전 마이그레이션 테스트 명세

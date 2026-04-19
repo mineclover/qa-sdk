@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { desc, eq } from "drizzle-orm";
 import type { ScenarioSpecStore } from "@qa-sdk/core";
 import type { ScenarioSpec } from "@qa-sdk/core";

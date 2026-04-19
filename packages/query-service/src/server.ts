@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 import "dotenv/config";
 import { createSqliteDriver } from "index-meta";
 import { InMemoryPrefixRegistry, MetaRegistry } from "index-meta-workers";

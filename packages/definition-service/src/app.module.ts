@@ -1,3 +1,6 @@
+// @def.boundary definition-service
+// @def.doc definition-service
+
 import { Module } from "@nestjs/common";
 import { GraphQLModule } from "@nestjs/graphql";
 import { MercuriusDriver, type MercuriusDriverConfig } from "@nestjs/mercurius";

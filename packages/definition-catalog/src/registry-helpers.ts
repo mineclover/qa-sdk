@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * DB row → DefinitionEntryInput 변환 헬퍼.
  *

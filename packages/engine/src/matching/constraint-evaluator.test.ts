@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-engine-system
+// @def.doc qa-sdk-engine-system
+
 import { describe, expect, it } from "vitest";
 import { evaluateConstraint, evaluateConstraints } from "./constraint-evaluator.js";
 import type { RuntimeNode, StepConstraint } from "@qa-sdk/core";

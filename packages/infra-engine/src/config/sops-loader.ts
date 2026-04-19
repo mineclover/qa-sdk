@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // config/sops-loader.ts — SOPS CLI 래퍼 + 평문 JSON 로더
 import { readFile } from "node:fs/promises";
 

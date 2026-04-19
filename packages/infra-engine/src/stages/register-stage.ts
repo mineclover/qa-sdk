@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // stages/register-stage.ts — 레지스트리 동기화 + 프로필 갱신 스테이지
 import type { Stage, DeployContext, RegistrationResult, ConnectionCheck } from "../core/types.js";
 import type { RegistryAdapter, ServiceProfileAdapter, InfraProfileAdapter } from "../adapters/adapter.js";

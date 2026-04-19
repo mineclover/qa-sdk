@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { readFile } from "node:fs/promises";
 import { basename, isAbsolute, relative, resolve } from "node:path";
 
@@ -6,11 +9,11 @@ import type {
   DocumentEnvelope,
   DocumentMetadata,
   DocumentTask,
-} from "./types.js";
+} from "doc-envelope";
 import {
   collectDocumentFamilyOnlyScope,
   isArchivedPrdDocument,
-} from "./family-scope.js";
+} from "doc-envelope";
 import { buildDocumentGraphIndex } from "./graph-index.js";
 import { collectDocumentGraphTraversalDocuments } from "./graph-scope.js";
 import {
@@ -29,7 +32,7 @@ export interface PrdCompletionSyncOptions {
   readonly prdPath: string;
   readonly dryRunDefaulted: boolean;
   readonly familyOnly?: boolean;
-  readonly includeSession?: boolean;
+  readonly includeTransient?: boolean;
 }
 
 export interface PrdCompletionStorySummary {
@@ -193,14 +196,14 @@ export async function previewPrdCompletionSync(
   }
 
   const affectedEntries = options.familyOnly === true
-    ? collectFamilyOnlyAffectedDocuments(options.documents, prdDocument, options.includeSession === true)
+    ? collectFamilyOnlyAffectedDocuments(options.documents, prdDocument, options.includeTransient === true)
     : collectAffectedDocuments(
       options.documents,
       options.rootDir,
       prdDocument,
       completedStories,
     );
-  const trackedAffectedEntries = options.includeSession === true
+  const trackedAffectedEntries = options.includeTransient === true
     ? affectedEntries
     : affectedEntries.filter((entry) => entry.document.kind !== "ralph-session");
   const affectedDocuments = trackedAffectedEntries.map(toAffectedDocument);
@@ -222,7 +225,7 @@ export async function previewPrdCompletionSync(
     affectedDocs,
     completedStories,
   );
-  const sessionDrift = options.includeSession === true
+  const sessionDrift = options.includeTransient === true
     ? affectedDocs
       .filter((document) => document.kind === "ralph-session")
       .flatMap((document) => document.diagnostics)
@@ -383,12 +386,12 @@ function collectAffectedDocuments(
 function collectFamilyOnlyAffectedDocuments(
   documents: readonly DocumentEnvelope[],
   prdDocument: DocumentEnvelope,
-  includeSession: boolean,
+  includeTransient: boolean,
 ): readonly AffectedDocumentEntry[] {
   const byKey = new Map<string, AffectedDocumentEntry>();
   const prdFamilyScope = collectDocumentFamilyOnlyScope(documents, {
     target: prdDocument,
-    includeSession,
+    includeTransient,
   });
 
   for (const document of prdFamilyScope.documents) {
@@ -433,7 +436,7 @@ function addLinkedFamilyRoleContext(
 ): void {
   const familyScope = collectDocumentFamilyOnlyScope(documents, {
     target: linkedDocument,
-    includeSession: false,
+    includeTransient: false,
   });
 
   for (const document of familyScope.documents) {
@@ -492,7 +495,7 @@ function canonicalCompletionReason(reason: string): string {
   if (reason === "prd-completion-target") return "target";
   if (reason === "family-only" || reason === "family-only:role") return "role";
   if (reason === "family-only:contains") return "composition";
-  if (reason === "family-only:session") return "session";
+  if (reason === "family-only:transient") return "transient";
   if (reason.startsWith("graph:")) return canonicalCompletionReason(reason.slice("graph:".length));
   if (reason === "dependency" || reason === "refinement") return "composition";
   if (reason === "role" || reason === "composition" || reason === "trace"

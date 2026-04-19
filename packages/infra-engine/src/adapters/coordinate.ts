@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // adapters/coordinate.ts — CoordinateAdapter Catalog 기반 실인코딩
 import type { Catalog } from "@qa-sdk/core";
 import { latestPrefixVersion, encodePrefix } from "@qa-sdk/core";

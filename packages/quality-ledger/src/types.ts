@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 export type GateRunOutcome = "pass" | "fail";
 export type GateFailureClass =
   | "command-not-found"

@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import type { RLSCNode, RLSCRelation, LayoutRect } from "./types.js";
 
 /** 인접 판정 임계값 (px) */

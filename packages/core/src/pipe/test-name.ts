@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 테스트 이름 생성 — 구조화된 메타데이터에서 describe/it 문자열 파생.
  *

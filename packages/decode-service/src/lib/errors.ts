@@ -1,3 +1,6 @@
+// @def.boundary decode-service-spec
+// @def.doc decode-service-spec
+
 import {
   EntryNotFoundError,
   IndexNotFoundError,

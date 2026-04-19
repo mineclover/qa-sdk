@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 /**
  * registry-service Drizzle ORM 스키마 정의
  *

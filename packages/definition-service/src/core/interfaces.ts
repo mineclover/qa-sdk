@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * 저장소 인터페이스 — core가 의존하는 포트 (영속화 어댑터가 구현)
  */

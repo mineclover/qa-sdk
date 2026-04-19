@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 import type { DefinitionEntry } from "./types.js";
 import type { MemoryDefinitionRegistry } from "./registry.js";
 import {

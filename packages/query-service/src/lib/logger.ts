@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 import { createLogger as _createLogger, type Logger } from "@qa-sdk/core";
 import { createIngestForwarder } from "@qa-sdk/logger";
 

@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 import { now } from '@qa-sdk/core';
 import type { ContextMessage, EventEmittedMessage, ReadyMessage } from './message-protocol.js';
 import { isContextMessage } from './message-protocol.js';

@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 3단 계보 체인 조립 — 코드 → 패싯 → 데이터 → 좌표
  *

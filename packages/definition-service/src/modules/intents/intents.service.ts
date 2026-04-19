@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import { Injectable, Inject } from "@nestjs/common";
 import { sliceDepth } from "definition-catalog";
 import { DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";

@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * DB JSON 컬럼의 내부 타입 선언.
  * drizzle text() 컬럼에 저장된 JSON의 실제 구조를 TypeScript로 표현.

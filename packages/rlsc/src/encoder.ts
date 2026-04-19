@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import type { RLSCNode, RLSCDocument } from "./types.js";
 import { gridToText } from "./grid.js";
 import { layersToText } from "./layers.js";

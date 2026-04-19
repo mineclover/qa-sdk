@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * Decision Flow 시스템 문서 링크 검증
  *

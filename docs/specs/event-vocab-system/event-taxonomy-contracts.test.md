@@ -16,6 +16,7 @@ def:
       type: depends_on
     - target: service-event-adoption-spec
       type: depends_on
+  source: packages/registry-service/src/core/seed-events.test.ts
 ---
 
 # Event Taxonomy Contracts — 검증 기준

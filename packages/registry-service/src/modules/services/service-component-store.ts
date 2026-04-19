@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { AppError } from "@qa-sdk/core";
 import type {
   ServiceComponentLifecycleState,

@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * catalog-mutator — 카탈로그 불변 변이.
  *

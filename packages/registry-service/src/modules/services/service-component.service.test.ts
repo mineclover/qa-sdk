@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { describe, expect, it } from "vitest";
 import { InMemoryServiceComponentVersionStore } from "../../stores/in-memory-service-component-version-store.js";
 import type { ManifestService } from "../manifests/manifest.service.js";

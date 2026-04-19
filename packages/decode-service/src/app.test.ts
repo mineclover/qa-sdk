@@ -1,3 +1,6 @@
+// @def.boundary decode-service-spec
+// @def.doc decode-service-spec
+
 import { describe, it, expect, beforeAll } from "vitest";
 import { createApp } from "./app.js";
 import { DecoderPool } from "./lib/decoder-pool.js";

@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { isAbsolute, relative as relativePath } from "node:path";
 
 import {
@@ -20,7 +23,7 @@ import type {
   DocumentRawSourcePointer,
   DocumentSection,
   DocumentTask,
-} from "./types.js";
+} from "doc-envelope";
 
 export type DocumentGraphIndexNodeKind =
   | DocumentGraphNodeKind

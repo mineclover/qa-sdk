@@ -1,3 +1,6 @@
+// @def.boundary decode-service-spec
+// @def.doc decode-service-spec
+
 import type { ErrorHandler } from "hono";
 import type { Logger } from "pino";
 import { ZodError } from "zod";

@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 import { describe, it, expect } from "vitest";
 import { parseYaml, parseScalar } from "./yaml-lite.js";
 

@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { getTraversalPreset } from "./graph-presets.js";
 import {
   CANONICAL_TRAVERSAL_AXES,
@@ -20,7 +23,7 @@ import type {
   DocumentGraphNodeReason,
   DocumentGraphTargetResolution,
 } from "./graph-index.js";
-import type { DocumentMetadata } from "./types.js";
+import type { DocumentMetadata } from "doc-envelope";
 
 export const DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH = 1;
 export const MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH = 6;

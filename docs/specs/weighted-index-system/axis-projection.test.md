@@ -12,6 +12,7 @@ def:
   links:
     - target: axis-projection
       type: traces_to
+  source: packages/weighted-index/src/math/calc.test.ts
 ---
 
 # Axis Projection — 테스트 시나리오

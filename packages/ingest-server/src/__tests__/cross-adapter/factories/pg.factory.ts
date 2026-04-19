@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * PG (PostgreSQL) 팩토리 — DATABASE_URL 환경변수 필요.
  * PG 미설정 시 테스트 자동 skip.

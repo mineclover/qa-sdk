@@ -15,7 +15,7 @@ def:
       type: depends_on
 sources:
   - packages/cli/src/commands/ontology/activation.ts
-  - packages/cli/src/lib/known-ontology-packs.ts
+  - packages/ontology-pack-validate/src/known-ontology-packs.ts
   - packages/registry-service/src/ontology-local-runtime.ts
   - packages/registry-service/src/modules/ontology/local-activation-runtime.ts
   - packages/registry-service/src/modules/ontology/ontology-activation.helper.ts

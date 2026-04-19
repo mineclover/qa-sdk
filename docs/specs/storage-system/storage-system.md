@@ -25,6 +25,8 @@ def:
       type: contains
     - target: verdict-spec
       type: contains
+    - target: test-scenario-store
+      type: contains
 ---
 
 ## 목적 ^purpose

@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 /**
  * activation gate + post-activation hook 동적 import 통합 테스트.
  *

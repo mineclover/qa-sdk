@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * GraphQL Object Types — 문서, 링크, 검증 결과
  *

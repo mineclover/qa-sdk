@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { DashboardService } from "./dashboard.service.js";
 
 export interface DevDashboardSocketClient {

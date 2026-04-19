@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // core/types.ts — qa-sdk 무의존 범용 타입
 
 export type ProviderId = "cloudflare" | "aws" | "gcp" | "railway" | "vultr" | "local";

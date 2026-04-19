@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 워크플로우 합성 검증 — compileWorkflow로 계약을 실행 가능한 DAG로 변환할 수 있는가
  */

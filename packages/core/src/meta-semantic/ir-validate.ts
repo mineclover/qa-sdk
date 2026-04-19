@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * IR 그래프 검증 — 참조 무결성, 순환 탐지, 고아 감지.
  *

@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 /**
  * Vite Dev Server ↔ infra pf-registry 자동 연동 플러그인.
  *

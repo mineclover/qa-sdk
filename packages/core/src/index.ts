@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * @qa-sdk/core — 기반 인프라 + Pipe Engine + 표준 호환
  *

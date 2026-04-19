@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * Extraction Pipeline 테스트 — 패싯별 분리.
  *

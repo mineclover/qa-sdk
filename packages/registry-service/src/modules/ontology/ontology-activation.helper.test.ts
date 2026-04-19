@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   InMemoryIndexMetaStore,

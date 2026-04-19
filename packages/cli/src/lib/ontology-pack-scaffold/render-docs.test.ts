@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { parseDocument } from "definition-catalog";
 import { describe, expect, it } from "vitest";
 

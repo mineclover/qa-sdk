@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * E2E: PrefixRegistry + 백업/복원 + API 전송
  *

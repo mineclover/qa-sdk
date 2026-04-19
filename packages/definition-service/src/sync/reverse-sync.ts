@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * Reverse Sync — DB 메타데이터를 마크다운 frontmatter에 기록
  *

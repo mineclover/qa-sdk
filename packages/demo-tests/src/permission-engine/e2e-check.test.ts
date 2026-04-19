@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * e2e-check.test.ts — 실제 권한 체크 시나리오 E2E 검증.
  *

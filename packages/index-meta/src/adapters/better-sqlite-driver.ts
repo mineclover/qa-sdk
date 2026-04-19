@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * BetterSqliteDriver — better-sqlite3 기반 SqlDriver 구현
  *

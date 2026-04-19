@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * collectAxisUsage — 카탈로그 전체에서 축이 사용되는 경로를 수집한다.
  *

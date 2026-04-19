@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 import type { InfraProfileAdapter } from "../adapters/adapter.js";
 
 export interface DeployVersion {

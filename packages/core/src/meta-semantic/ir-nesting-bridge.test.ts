@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import type { ScopeNesting } from "../scope-nesting.js";
 import type { IRGraph } from "./ir-validate.js";

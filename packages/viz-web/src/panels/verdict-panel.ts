@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import type { VerdictReport, Verdict, StepMatch } from "@qa-sdk/core";
 
 export interface VerdictPanel {

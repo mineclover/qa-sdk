@@ -23,7 +23,7 @@ SOPS로 암호화된 YAML 설정을 복호화하고, zod 스키마로 검증하�
 - SOPS YAML = 시크릿 + 일반설정 + 서비스 연결정보의 SSOT
 - KMS를 통한 봉투 암호화(Envelope Encryption)
 - 복호화는 메모리 상에서만 — 디스크에 평문 잔류 금지
-- zod 스키마로 런타임 검증 — env.ts의 역할을 통합
+- zod 스키마로 런타임 검증 — 각 서비스의 `env.ts`와 통합 완료 (중앙 포트 할당표 참조)
 - 환경별 설정 파일: `config/{env}.yaml`
 
 ---
@@ -217,12 +217,11 @@ function resolveConnectionEnv(
 PORT=3200
 STORE_DRIVER=d1
 INSIGHTS_DRIVER=local
-
-# 서비스 연결 (depends_on + connections에서 해석)
-REGISTRY_SERVICE_URL=http://localhost:3300
-INGEST_SERVER_URL=http://localhost:3200
 ```
 
+- **PORT 결정**: 
+  1. `config/{env}.yaml`에 정의된 값이 최우선
+  2. 미정의 시 `@qa-sdk/core`의 `SERVICE_PORTS` (SSOT) 값을 사용하여 주입
 - **서비스 설정**: `configToEnvVars(serviceConfig)` — SKIP_KEYS 제외 후 UPPER_SNAKE_CASE
 - **연결 URL**: `resolveConnectionEnv(config, serviceId)` — depends_on 의존 서비스의 endpoint를 `{SERVICE_ID}_URL` 형식으로
 - **config 우선**: 같은 키가 config와 연결 URL에 모두 있으면 config 값 우선

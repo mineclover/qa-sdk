@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 export type { CatalogStore } from "../stores/catalog-store.js";
 export type { ConfigStore } from "../stores/config-store.js";
 export type { AxisProfileStore } from "../stores/axis-profile-store.js";

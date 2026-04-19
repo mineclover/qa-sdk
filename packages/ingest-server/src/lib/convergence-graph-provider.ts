@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * convergence-graph-provider — DKG graph + catalog의 lazy 초기화.
  *

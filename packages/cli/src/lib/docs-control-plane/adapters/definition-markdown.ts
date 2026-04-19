@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
 
@@ -17,9 +20,9 @@ import {
 import {
   defineDocumentAdapter,
   normalizeDocumentEnvelope,
-} from "../normalize.js";
-import { matchesDocumentQuery } from "../query.js";
-import { classifyTodoHeading, type TodoFollowUpCategory } from "../todo-lifecycle.js";
+} from "doc-envelope";
+import { matchesDocumentQuery } from "doc-envelope";
+import { classifyTodoHeading, type TodoFollowUpCategory } from "doc-envelope";
 import type {
   DocumentAdapter,
   DocumentCollectionQuery,
@@ -29,7 +32,7 @@ import type {
   DocumentMetadata,
   DocumentSectionInput,
   DocumentSourceInput,
-} from "../types.js";
+} from "doc-envelope";
 
 export const DEFINITION_MARKDOWN_ADAPTER_ID = "definition-markdown";
 
@@ -188,6 +191,10 @@ function buildEnvelope(
   );
   const overview = summary.overview.join("\n\n");
   const todoCategories = parsed.kind === "todo" ? todoFollowUpCategories(body) : [];
+  // 필드 소유권은 `docs/specs/definition-catalog/doc-metadata-field-ownership.rule.md` 참조.
+  // scope/aspect/depth/layer/svc/address/version/revision은 현재 decision 비소비 —
+  // frontmatter round-trip writer + docs status --json API surface 유지를 위해 passthrough.
+  // 새 해석자는 def.* 네임스페이스에 직접 추가 금지. 해석자 namespace(B단계) 경로 사용.
   const metadata: DocumentMetadata = {
     defId: def.id,
     title: parsed.title,

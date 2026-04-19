@@ -1,13 +1,16 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import type { CompletedRecordState } from "./completed-records.js";
+import type { CompletedRecordState } from "doc-envelope";
 import {
   CANONICAL_TODO_CATEGORY_LABELS,
   parseTodoFollowUps,
   type TodoFollowUpCategory,
-} from "./todo-lifecycle.js";
-import type { DocumentEnvelope, DocumentTask } from "./types.js";
+} from "doc-envelope";
+import type { DocumentEnvelope, DocumentTask } from "doc-envelope";
 
 export interface FollowUpState {
   readonly source: string;

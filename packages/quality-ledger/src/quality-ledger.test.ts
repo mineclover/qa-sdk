@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import { beforeEach, describe, expect, it } from "vitest";
 import { QualityLedger } from "./ledger.js";
 import { SqliteQualityStore } from "./store.js";

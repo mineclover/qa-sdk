@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 import type { DiscoveryClient } from "../discovery/client.js";
 import { generateTypescriptModule } from "../export/typescript-module.js";
 import { generateEnvFile } from "../export/env-file.js";

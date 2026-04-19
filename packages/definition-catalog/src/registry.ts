@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 정의 레지스트리 (Definition Registry)
  *

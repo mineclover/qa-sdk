@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Module } from "@nestjs/common";
 import { ActivationGateService } from "./activation-gate.service.js";
 import { PostActivationHookService } from "./post-activation-hook.service.js";

@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * /v1/insights — InsightsStore 기반 인사이트 API.
  *

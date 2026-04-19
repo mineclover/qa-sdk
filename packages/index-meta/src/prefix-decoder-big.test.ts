@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { describe, it, expect } from "vitest";
 import { PrefixDecoderBig } from "./prefix-decoder-big.js";
 import type { PrefixDecoderBigConfig } from "./prefix-decoder-big.js";

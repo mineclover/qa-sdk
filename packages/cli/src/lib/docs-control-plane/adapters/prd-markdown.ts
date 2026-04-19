@@ -1,11 +1,14 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { readdir, readFile, stat } from "node:fs/promises";
 import { basename, join, relative } from "node:path";
 
 import {
   defineDocumentAdapter,
   normalizeDocumentEnvelope,
-} from "../normalize.js";
-import { matchesDocumentQuery } from "../query.js";
+} from "doc-envelope";
+import { matchesDocumentQuery } from "doc-envelope";
 import type {
   DocumentAdapter,
   DocumentCollectionQuery,
@@ -14,7 +17,7 @@ import type {
   DocumentMetadata,
   DocumentSectionInput,
   DocumentTaskInput,
-} from "../types.js";
+} from "doc-envelope";
 
 export const PRD_MARKDOWN_ADAPTER_ID = "prd-markdown";
 

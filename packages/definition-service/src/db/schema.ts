@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * definition-service Drizzle ORM 스키마
  *

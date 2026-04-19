@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import type { StoredRecord } from "@qa-sdk/core";
 
 export interface EventLog {

@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * GateEngine SQL 통합 E2E — NodeSqliteDriver 기반
  *

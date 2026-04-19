@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 import type { CommandHandler } from "cli-command";
 import { resolve } from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";

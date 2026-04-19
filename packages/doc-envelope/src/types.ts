@@ -1,3 +1,5 @@
+// @def.doc doc-envelope
+
 /**
  * Docs control-plane 계약.
  *

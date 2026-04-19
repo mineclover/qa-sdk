@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { resolve } from "node:path";
 

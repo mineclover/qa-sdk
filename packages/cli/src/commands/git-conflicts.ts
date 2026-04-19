@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { mkdir, readdir, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import {

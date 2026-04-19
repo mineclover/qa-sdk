@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 import { describe, it, expect } from 'vitest';
 import { isContextMessage, isEventEmittedMessage } from './message-protocol.js';
 

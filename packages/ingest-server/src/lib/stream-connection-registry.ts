@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 type CloseReason = string;
 
 export interface ManagedStreamConnection {

@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * E2E: 저장소 생명주기 — SQL 기반 운영 시나리오
  *

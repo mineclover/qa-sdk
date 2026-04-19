@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * /v1/debug-ws — 개발환경 실시간 디버깅 WebSocket.
  *

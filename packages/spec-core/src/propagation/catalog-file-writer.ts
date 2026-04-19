@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * catalog-file-writer — Catalog 객체 → TypeScript 파일 기록.
  *

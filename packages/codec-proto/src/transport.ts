@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 /**
  * ProtoTransport — 진짜 Protobuf 바이너리 전송.
  *

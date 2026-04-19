@@ -1,3 +1,5 @@
+// @def.doc definition-harness
+
 import { describe, it, expect } from "vitest";
 import { transition, createInstance, availableTransitions } from "./state-model.js";
 import {

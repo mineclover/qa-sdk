@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 const DEFAULT_HOSTED_REPORT_PATH = import.meta.env.VITE_GIT_CONFLICTS_REPORT_PATH ?? "/git-conflicts.json";
 
 export async function loadHostedReportText(

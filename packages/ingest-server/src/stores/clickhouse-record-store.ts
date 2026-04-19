@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * ClickhouseRecordStore — RecordStore의 ClickHouse 구현.
  *

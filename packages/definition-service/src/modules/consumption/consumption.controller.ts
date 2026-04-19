@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import { Controller, Get, Post, Inject, Param, Query, Body, NotFoundException } from "@nestjs/common";
 import { ConsumptionService } from "./consumption.service.js";
 

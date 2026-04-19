@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * DEMO_CATALOG의 refEntries 의미 정의 (SSOT).
  *

@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import type { RLSCNode } from "./types.js";
 
 /** 트리를 평면 배열로 변환 */

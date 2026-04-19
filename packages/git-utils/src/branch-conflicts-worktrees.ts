@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import { realpathSync } from "node:fs";
 import { basename, resolve as resolvePath } from "node:path";
 import { execaSync } from "execa";

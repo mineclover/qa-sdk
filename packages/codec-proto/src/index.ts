@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 /**
  * @qa-sdk/codec-proto — Protobuf 인코딩/디코딩 + Transport.
  *

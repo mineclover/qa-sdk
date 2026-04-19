@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import 'reflect-metadata';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';

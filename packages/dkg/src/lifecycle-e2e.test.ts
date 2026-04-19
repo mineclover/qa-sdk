@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * 종단 라이프사이클 E2E — DSL DB 전체 증명.
  *

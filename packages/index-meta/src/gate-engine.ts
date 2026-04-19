@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * GateEngine — release / flag 변경 시 AddressStateStore 자동 재계산 (PositionEngine Phase 3)
  *

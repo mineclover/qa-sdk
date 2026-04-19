@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // providers/local.ts — 로컬 K3s (k3d) 프로바이더
 import * as k8s from "@pulumi/kubernetes";
 import type { DeployProvider, ValidationResult } from "../adapters/adapter.js";

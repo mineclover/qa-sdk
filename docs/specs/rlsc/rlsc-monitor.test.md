@@ -11,6 +11,7 @@ def:
   links:
     - target: rlsc-monitor
       type: refines
+  source: packages/rlsc/src/monitor.test.ts
 ---
 
 ## 목적 ^purpose

@@ -1,10 +1,13 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 
 import type { OntologyAddressModel } from "operational-ontology/allocation";
 
 import { buildActivationEvidenceRegistryRecord } from "../../lib/activation-evidence-registry.js";
-import { resolveKnownOntologyPack } from "../../lib/known-ontology-packs.js";
+import { resolveKnownOntologyPack } from "ontology-pack-validate";
 import { appendProgrammingArtifactRegistryRecord } from "../../lib/programming-artifact-registry.js";
 import { getQaSdkDir } from "../../lib/qa-dir.js";
 

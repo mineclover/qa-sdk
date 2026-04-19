@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * Design Knowledge Graph — 노드 16종 + 엣지 18종 타입 정의.
  *

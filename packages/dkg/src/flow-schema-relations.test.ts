@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 import { describe, expect, it } from "vitest";
 import { GraphRegistry } from "./graph-registry.js";
 import { attachFlowSchemaEdges, deriveFlowSchemaEdges } from "./flow-schema-relations.js";

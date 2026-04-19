@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import type { PipeConnection, PortRef } from "../types/pipe-spec.js";
 
 type PipeEndpoint = PipeConnection["from"] | PipeConnection["to"];

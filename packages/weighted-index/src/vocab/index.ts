@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * vocab/ — 문자열 ↔ 정수 매핑 모듈.
  *

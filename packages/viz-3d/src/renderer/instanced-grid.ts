@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * InstancedGrid — prefix당 하나의 InstancedMesh로 셀을 렌더링.
  *

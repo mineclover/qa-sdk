@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * CLI 조회 기능 테스트 — prefix 식별자로 조회.
  *

@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * DefDataSource — definition 데이터 접근 추상화
  *

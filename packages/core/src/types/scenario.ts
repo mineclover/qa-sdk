@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 // ── Scenario Spec DSL ───────────────────────────────────
 
 export interface ScenarioSpec {

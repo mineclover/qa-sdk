@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * Definition Runtime — 좌표 체계 전체 초기화 진입점.
  *

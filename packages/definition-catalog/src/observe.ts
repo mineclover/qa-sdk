@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 관찰 레이어 — 좌표 인코딩/디코딩
  *

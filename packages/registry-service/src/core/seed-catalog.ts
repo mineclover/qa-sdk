@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { createHash } from "node:crypto";
 import type { AxisProfileStore } from "../stores/axis-profile-store.js";
 import type { CatalogStore } from "../stores/catalog-store.js";

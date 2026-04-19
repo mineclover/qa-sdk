@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * EventPattern — 이벤트 시퀀스의 의미적 패턴 분류.
  *

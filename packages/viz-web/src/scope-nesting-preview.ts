@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * Scope Nesting 프리뷰 페이지
  * Timeline SVG / Mermaid (3종) / D3 데이터 탭으로 출력 확인

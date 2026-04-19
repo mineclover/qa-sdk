@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * prefix-stamp.ts — prefix 표식 자동 생성·검증·탐색.
  *

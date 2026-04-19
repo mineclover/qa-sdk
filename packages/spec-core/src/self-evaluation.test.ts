@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * 자가 진단 — 시스템이 자기 자신을 분석한다.
  *

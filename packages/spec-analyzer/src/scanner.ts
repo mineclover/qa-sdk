@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * TypeScript 소스에서 export된 심볼을 수집한다.
  *

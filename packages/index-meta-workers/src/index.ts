@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * index-meta-workers — Cloudflare Workers / Edge 런타임 전용 패키지
  *

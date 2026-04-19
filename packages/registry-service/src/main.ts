@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { initTelemetry } from "@qa-sdk/otel";
 import "dotenv/config";
 import "reflect-metadata";

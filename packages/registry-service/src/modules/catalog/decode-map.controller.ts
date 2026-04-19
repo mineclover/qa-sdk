@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Controller, Get, Inject, Param, Query, UseFilters } from "@nestjs/common";
 import { CatalogExceptionFilter } from "./catalog.exception-filter.js";
 import { DecodeMapService } from "./decode-map.service.js";

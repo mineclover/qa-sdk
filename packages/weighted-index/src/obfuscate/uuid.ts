@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * uuid.ts — UUID-like string serialization (encode/decode pair).
  *

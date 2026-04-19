@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { createHash } from "node:crypto";
 import { AppError } from "../../lib/errors.js";
 import type { RuntimeServiceAddress } from "../services/service.types.js";

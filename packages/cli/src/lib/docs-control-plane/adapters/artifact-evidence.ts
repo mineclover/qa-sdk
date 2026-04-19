@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { readFile, stat } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 
@@ -9,8 +12,8 @@ import type {
 import {
   defineDocumentAdapter,
   normalizeDocumentEnvelope,
-} from "../normalize.js";
-import { matchesDocumentQuery } from "../query.js";
+} from "doc-envelope";
+import { matchesDocumentQuery } from "doc-envelope";
 import type {
   DocumentAdapter,
   DocumentCollectionQuery,
@@ -20,7 +23,7 @@ import type {
   DocumentLinkInput,
   DocumentMetadata,
   DocumentSourceInput,
-} from "../types.js";
+} from "doc-envelope";
 
 export const ARTIFACT_EVIDENCE_ADAPTER_ID = "artifact-evidence";
 

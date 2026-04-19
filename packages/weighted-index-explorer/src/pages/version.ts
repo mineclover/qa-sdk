@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  버전 관리 페이지 — schema evolution, weight analysis, recalculation demo,
 //  cross-index migration, address state gate, sparse migration warning

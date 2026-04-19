@@ -52,7 +52,7 @@ describe('QaMonitor — 전송 envelope 구조', () => {
   it('envelope에 올바른 owner / source / runtime / build 필드가 포함된다', async () => {
     const { calls } = setupCaptureFetch();
     const monitor = new QaMonitor({
-      ingestUrl: 'http://localhost:3100',
+      ingestUrl: 'http://localhost:3200',
       scenarioId: 'test_scenario',
       meta: { serviceName: 'my-app', env: 'staging' },
     });
@@ -74,7 +74,7 @@ describe('QaMonitor — 전송 envelope 구조', () => {
   it('레코드에 sessionId (qa_session_id)와 traceId가 포함된다', async () => {
     const { calls } = setupCaptureFetch();
     const monitor = new QaMonitor({
-      ingestUrl: 'http://localhost:3100',
+      ingestUrl: 'http://localhost:3200',
       scenarioId: 'test',
     });
     const { sessionId, traceId } = monitor.getSession();
@@ -100,7 +100,7 @@ describe('QaMonitor — event-catalog 버전 해석', () => {
 
   it("'click' (등록 이벤트)는 event_version '001'로 전송된다", async () => {
     const { calls } = setupCaptureFetch();
-    const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3100' });
+    const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3200' });
     monitor.emit('click', { target: 'btn' });
     await monitor.flush();
     await monitor.shutdown();
@@ -110,7 +110,7 @@ describe('QaMonitor — event-catalog 버전 해석', () => {
 
   it("등록되지 않은 custom 이벤트도 '001'로 fallback된다", async () => {
     const { calls } = setupCaptureFetch();
-    const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3100' });
+    const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3200' });
     monitor.emit('my_custom_event_xyz');
     await monitor.flush();
     await monitor.shutdown();
@@ -121,7 +121,7 @@ describe('QaMonitor — event-catalog 버전 해석', () => {
 
   it("'form_submit' (등록 이벤트)는 event_version '001'로 전송된다", async () => {
     const { calls } = setupCaptureFetch();
-    const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3100' });
+    const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3200' });
     monitor.emit('form_submit');
     await monitor.flush();
     await monitor.shutdown();
@@ -181,7 +181,7 @@ describe('QaMonitorAsync — registry + service overlay', () => {
     } as const;
 
     const monitor = await createQaMonitorAsync({
-      ingestUrl: 'http://localhost:3100',
+      ingestUrl: 'http://localhost:3200',
       registry: 'http://registry.test',
       serviceConfig,
     });
@@ -216,7 +216,7 @@ describe('QaMonitor — 배치 처리', () => {
 
   it('여러 emit이 하나의 envelope에 배치된다', async () => {
     const { calls } = setupCaptureFetch();
-    const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3100' });
+    const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3200' });
 
     monitor.emit('click', { id: 'btn_1' });
     monitor.emit('input_change', { field: 'email' });
@@ -235,7 +235,7 @@ describe('QaMonitor — 배치 처리', () => {
 
   it('flush 후 버퍼가 비워져 두 번째 flush는 HTTP 호출 없음', async () => {
     const { calls } = setupCaptureFetch();
-    const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3100' });
+    const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3200' });
 
     monitor.emit('click');
     await monitor.flush();
@@ -260,7 +260,7 @@ describe('QaMonitor — autoCapture 통합', () => {
   it("버튼 클릭이 'click' 이벤트로 전송된다", async () => {
     const { calls } = setupCaptureFetch();
     const monitor = new QaMonitor({
-      ingestUrl: 'http://localhost:3100',
+      ingestUrl: 'http://localhost:3200',
       autoCapture: { clicks: true },
     });
 
@@ -280,7 +280,7 @@ describe('QaMonitor — autoCapture 통합', () => {
   it("form submit이 'form_submit' 이벤트로 전송된다", async () => {
     const { calls } = setupCaptureFetch();
     const monitor = new QaMonitor({
-      ingestUrl: 'http://localhost:3100',
+      ingestUrl: 'http://localhost:3200',
       autoCapture: { forms: true },
     });
 
@@ -300,7 +300,7 @@ describe('QaMonitor — autoCapture 통합', () => {
   it('shutdown 후 autoCapture 리스너가 제거된다', async () => {
     const { calls } = setupCaptureFetch();
     const monitor = new QaMonitor({
-      ingestUrl: 'http://localhost:3100',
+      ingestUrl: 'http://localhost:3200',
       autoCapture: { clicks: true },
     });
     await monitor.shutdown();
@@ -333,7 +333,7 @@ describe('QaMonitor — sendBeacon 경로', () => {
       sendBeacon: vi.fn().mockReturnValue(true),
     });
 
-    const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3100', scenarioId: 's1' });
+    const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3200', scenarioId: 's1' });
     await monitor.flush();
     await monitor.shutdown();
 
@@ -352,7 +352,7 @@ describe('QaMonitor — pagehide 자동 flush', () => {
 
   it('pagehide 이벤트 발생 시 버퍼의 이벤트가 전송된다', async () => {
     const { calls } = setupCaptureFetch();
-    const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3100' });
+    const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3200' });
     monitor.emit('click', { source: 'pagehide_test' });
 
     window.dispatchEvent(new Event('pagehide'));
@@ -367,7 +367,7 @@ describe('QaMonitor — pagehide 자동 flush', () => {
 
   it('shutdown 후 pagehide는 추가 flush를 유발하지 않는다', async () => {
     const { calls } = setupCaptureFetch();
-    const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3100', scenarioId: 's1' });
+    const monitor = new QaMonitor({ ingestUrl: 'http://localhost:3200', scenarioId: 's1' });
 
     await monitor.flush(); // session_start 전송
     await monitor.shutdown(); // 리스너 제거
@@ -393,8 +393,8 @@ describe('QaMonitor — storageKey 격리', () => {
 
   it('서로 다른 storageKey를 가진 두 모니터는 독립적인 세션을 갖는다', () => {
     setupCaptureFetch();
-    const m1 = new QaMonitor({ ingestUrl: 'http://localhost:3100', storageKey: 'app_a' });
-    const m2 = new QaMonitor({ ingestUrl: 'http://localhost:3100', storageKey: 'app_b' });
+    const m1 = new QaMonitor({ ingestUrl: 'http://localhost:3200', storageKey: 'app_a' });
+    const m2 = new QaMonitor({ ingestUrl: 'http://localhost:3200', storageKey: 'app_b' });
 
     expect(m1.getSession().sessionId).not.toBe(m2.getSession().sessionId);
     expect(m1.getSession().traceId).not.toBe(m2.getSession().traceId);
@@ -405,12 +405,12 @@ describe('QaMonitor — storageKey 격리', () => {
 
   it('newSession() 후 새 QaMonitor 인스턴스가 새 세션을 복원한다', () => {
     setupCaptureFetch();
-    const m1 = new QaMonitor({ ingestUrl: 'http://localhost:3100' });
+    const m1 = new QaMonitor({ ingestUrl: 'http://localhost:3200' });
     const fresh = m1.newSession();
     void m1.shutdown();
 
     setupCaptureFetch();
-    const m2 = new QaMonitor({ ingestUrl: 'http://localhost:3100' });
+    const m2 = new QaMonitor({ ingestUrl: 'http://localhost:3200' });
     expect(m2.getSession().sessionId).toBe(fresh.sessionId);
     void m2.shutdown();
   });

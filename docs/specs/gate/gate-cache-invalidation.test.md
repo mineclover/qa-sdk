@@ -11,6 +11,7 @@ def:
   links:
     - target: gate-cache-invalidation
       type: refines
+  source: packages/gate-service/src/services/cache-invalidation.test.ts
 ---
 
 ## 목적 ^purpose

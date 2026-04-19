@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // verify/verify-stage.ts — 헬스체크 + 품질 게이트 검증 스테이지
 import type { Stage, DeployContext, VerifyResult, GateCheckResult } from "../core/types.js";
 import type { GateAdapter, ServiceProfileAdapter } from "../adapters/adapter.js";

@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { afterEach, describe, expect, it } from "vitest";
 import type { ExecuteResult, SqlDialect, SqlDriver } from "index-meta";
 

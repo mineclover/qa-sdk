@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 테스트 추적 — 패싯별 수집 + 검증 루프 + 품질 지표 + drift 감지
  */

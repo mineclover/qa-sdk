@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import {
   buildConceptHierarchyGrid,
   type ConceptGridCell,

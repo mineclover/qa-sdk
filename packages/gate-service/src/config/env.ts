@@ -1,7 +1,10 @@
-import { z } from "zod";
-import { getServicePort } from "@qa-sdk/core";
+// @def.boundary gate-system
+// @def.doc gate-system
 
-const DEFAULT_PORT = getServicePort("gate-service") ?? 3400;
+import { z } from "zod";
+import { getRequiredServicePort } from "@qa-sdk/core";
+
+const DEFAULT_PORT = getRequiredServicePort("gate-service");
 
 export const envSchema = z.object({
   PORT: z.coerce.number().int().default(DEFAULT_PORT),

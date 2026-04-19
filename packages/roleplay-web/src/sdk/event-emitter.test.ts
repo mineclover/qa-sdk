@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createEventEmitter } from './event-emitter.js';
 import type { QaBridge } from './qa-bridge.js';

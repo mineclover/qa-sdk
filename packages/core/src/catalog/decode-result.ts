@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * decode-result.ts — 통일 디코딩 결과 타입.
  *

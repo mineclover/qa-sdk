@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * 행위 체인 리뷰 — 현재 시스템에서 결정이 필요한 것을 판별한다.
  *

@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 /**
  * DEFINITION_CATALOG seed — definition-catalog의 축/prefix를 registry에 등록
  *

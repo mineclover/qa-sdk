@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 import { describe, it, expect } from "vitest";
 import { assignUniqueAddresses, buildIdToAddressMap } from "./address-assign.js";
 import { decodeUniqueDocument, serializeUniqueDocumentAddress } from "./observe.js";

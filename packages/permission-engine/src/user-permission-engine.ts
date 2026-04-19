@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * user-permission-engine.ts — 최종 권한 결정 Facade.
  *

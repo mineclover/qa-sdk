@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 import type { RegistryAdapter, DeploymentSyncParams, DeploymentSyncResult } from "./adapter.js";
 
 export function createRegistryAdapter(baseUrl: string): RegistryAdapter {

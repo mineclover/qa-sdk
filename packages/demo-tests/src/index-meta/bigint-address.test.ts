@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * B-1: SemanticAddressBig 프로토콜 테스트
  *

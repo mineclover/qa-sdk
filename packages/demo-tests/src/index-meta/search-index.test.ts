@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * 검색 인덱스 데모 — 콘텐츠 플랫폼 다차원 필터링
  *

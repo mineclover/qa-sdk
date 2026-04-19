@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * StateStore — 축(axis) 기반 상태 저장소.
  *

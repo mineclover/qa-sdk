@@ -20,7 +20,7 @@ def:
 sources:
   - packages/cli/src/lib/ontology-pack-scaffold-plan.ts
   - packages/cli/src/lib/ontology-pack-scaffold-write.ts
-  - packages/cli/src/lib/ontology-pack-validate.ts
+  - packages/ontology-pack-validate/src/index.ts
 ---
 
 # Operational Ontology Pack Interface — Authoring Rules
@@ -51,7 +51,7 @@ sources:
 
 ### Known-Pack Registration
 
-- scaffold는 `packages/cli/src/lib/known-ontology-packs.ts` 수정안을 candidate로만 출력한다.
+- scaffold는 `packages/ontology-pack-validate/src/known-ontology-packs.ts` 수정안을 candidate로만 출력한다.
 - candidate에는 `packId`, import path, export symbol name, registry entry가 포함되어야 한다.
 - candidate의 `registrationMode`는 manual이고 `applyMode`는 candidate-only다.
 - operator가 resolver를 직접 고친 뒤에야 known pack id validation과 activation command가 해당 pack을 찾을 수 있다.

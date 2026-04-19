@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * PipeGraph 시뮬레이션 — dry-run, step-by-step 실행, 경로 추적
  *

@@ -1,3 +1,6 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
 // @facet
 import { Hono } from "hono";
 import type { Logger } from "pino";

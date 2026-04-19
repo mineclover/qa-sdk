@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // commands/config-manager.ts — 인프라 설정 프로필 관리
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { resolve } from "node:path";

@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * TestRegistry 시뮬레이션 비교 — compareWithSimulation + drift 감지
  */

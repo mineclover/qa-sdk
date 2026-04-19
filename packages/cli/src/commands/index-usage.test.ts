@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { describe, expect, it } from "vitest";
 import { USAGE, main, resolveSubcommand } from "../index.js";
 

@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { join } from "node:path";
 import { mkdirSync, rmSync } from "node:fs";

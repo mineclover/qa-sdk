@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /** spec-core 도메인 에러 기반 클래스 */
 export class SpecError extends Error {
   constructor(

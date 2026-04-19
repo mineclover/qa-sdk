@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { posix as pathPosix } from 'node:path';
 
 import type { OntologyPackScaffoldIdentity } from '../ontology-pack-scaffold-plan.js';

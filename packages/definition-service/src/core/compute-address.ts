@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * 문서 좌표 주소 계산 — legacy fallback.
  *

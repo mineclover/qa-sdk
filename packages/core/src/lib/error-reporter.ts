@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 에러 리포터 — 서비스 에러를 이벤트로 수집.
  *

@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 import { describe, it, expect } from "vitest";
 import { InMemoryRegistry } from "./registry-port.js";
 import { publishSpec } from "./publish.js";

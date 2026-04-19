@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * binary-axis.ts — ArrayBuffer 기반 축 데이터 직렬화.
  *

@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * G-6: GPU vs CPU 실측 벤치마크.
  *

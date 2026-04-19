@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * PipeGraph 줌 레벨 시각화 — 접기/펼치기의 다중 해상도 뷰 계산
  *

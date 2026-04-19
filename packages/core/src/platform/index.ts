@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * @qa-sdk/core/platform — QA 플랫폼 전용 타입 및 유틸리티.
  *

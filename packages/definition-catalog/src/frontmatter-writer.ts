@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * Frontmatter Writer — DB 메타데이터를 마크다운 frontmatter로 직렬화
  *

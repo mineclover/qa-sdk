@@ -12,6 +12,7 @@ def:
       type: depends_on
     - target: pipe-path
       type: depends_on
+  source: packages/core/src/pipe/pipe-analyze.ts
 ---
 
 # PipeGraph 분석 — 복잡도, 병목, 커버리지

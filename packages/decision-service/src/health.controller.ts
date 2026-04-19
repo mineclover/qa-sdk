@@ -1,3 +1,6 @@
+// @def.boundary decision-service-spec
+// @def.doc decision-service-spec
+
 import { Controller, Get } from "@nestjs/common";
 
 @Controller()

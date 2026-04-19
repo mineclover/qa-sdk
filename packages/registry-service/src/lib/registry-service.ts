@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { PrefixRegistry, DimRef, VersionLifecycleStore, VersionRecord } from "index-meta";
 import { calcWeights } from "weighted-index";
 import type { PrefixOwnerStore } from "../stores/prefix-owner-store.js";

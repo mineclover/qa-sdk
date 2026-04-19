@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Vitest 어댑터 — 테스트↔스펙 문서 연결.
  *

@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * DrizzleInsightsStore — SQLite 기반 InsightsStore 구현.
  *

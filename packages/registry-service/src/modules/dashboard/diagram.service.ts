@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { AppError } from "@qa-sdk/core";
 import type { DevDkgProvider } from "../../lib/dev-dkg-provider.js";
 import type { GraphRegistryPort } from "../../types/spec-core-ports.js";

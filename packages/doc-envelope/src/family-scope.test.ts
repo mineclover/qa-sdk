@@ -1,3 +1,5 @@
+// @def.doc doc-envelope-test
+
 import { describe, expect, it } from "vitest";
 
 import { collectDocumentFamilyOnlyScope } from "./family-scope.js";
@@ -49,7 +51,7 @@ describe("docs-control-plane family-only scope", () => {
       stableId: "ralph-session:module",
       familyId: "docs/specs/module/module",
       path: ".ralph-tui/session-meta.json",
-      metadata: { status: "running" },
+      metadata: { status: "running", transient: true },
     });
 
     const scope = collectDocumentFamilyOnlyScope([
@@ -77,9 +79,9 @@ describe("docs-control-plane family-only scope", () => {
       sameFamilyTodo,
       directChild,
       session,
-    ], { target, includeSession: true });
+    ], { target, includeTransient: true });
     expect(sessionScope.documents.map((item) => item.stableId)).toContain("ralph-session:module");
-    expect(sessionScope.reasonByDocumentKey.get(key(session))).toBe("family-only:session");
+    expect(sessionScope.reasonByDocumentKey.get(key(session))).toBe("family-only:transient");
   });
 });
 

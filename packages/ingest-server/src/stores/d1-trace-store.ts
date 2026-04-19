@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * D1TraceStore — TraceStore의 D1/SQLite drizzle ORM 구현.
  * upsert: 없으면 insert, 있으면 recordCount 누적 + timestamp MIN/MAX 갱신.

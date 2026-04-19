@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 인증 미들웨어 — 게이트웨이 레벨 인증 (ADR-001).
  *

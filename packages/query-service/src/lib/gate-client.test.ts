@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 import { describe, expect, it, vi } from "vitest";
 import type { AddressStateCacheRecord } from "index-meta";
 import {

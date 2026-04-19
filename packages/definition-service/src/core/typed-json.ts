@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * 타입 안전 JSON 컬럼 파싱 헬퍼
  *

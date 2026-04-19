@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { ServiceEndpointRecord, ServiceEndpointStore } from "./service-endpoint-store.js";
 
 export class InMemoryServiceEndpointStore implements ServiceEndpointStore {

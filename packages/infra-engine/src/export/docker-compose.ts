@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // export/docker-compose.ts — docker-compose override 생성기
 import type { DiscoveryClient } from "../discovery/client.js";
 

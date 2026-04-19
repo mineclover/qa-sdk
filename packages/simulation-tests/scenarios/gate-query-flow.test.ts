@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * 시뮬레이션: gate-service + query-service 통합 흐름.
  *

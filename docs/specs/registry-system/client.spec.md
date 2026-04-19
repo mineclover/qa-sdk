@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: mediation
-  svc: registry-service
+  svc: registry-client
   tags: [contract, runtime, performance]
   links:
     - target: registry-events-spec

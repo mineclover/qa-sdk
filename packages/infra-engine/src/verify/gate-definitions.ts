@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // verify/gate-definitions.ts — 내장 게이트 정의
 import type { GateCheckResult, DeployContext } from "../core/types.js";
 import type { ServiceProfileAdapter } from "../adapters/adapter.js";

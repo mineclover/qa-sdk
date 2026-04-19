@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * MigrationStore — 버전 간 변경 이력 저장소 (PositionEngine)
  *

@@ -1,3 +1,5 @@
+// @def.doc definition-extraction
+
 import { describe, it, expect } from "vitest";
 import { findMarkedSections, findMarkers, extractByLevel, extractByMarker, summarizeDocument } from "./extract.js";
 

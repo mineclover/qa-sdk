@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import { describe, it, expect } from "vitest";
 import { isContractDoc, deriveGateKinds, GATE_KIND_SCOPE_MAP } from "./contract-to-gates.js";
 

@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 export { analyzeRemoteBranchConflicts } from "./branch-conflicts-analysis.js";
 export {
   listGitWorktrees,

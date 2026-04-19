@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import type { ScenarioSpec } from "../types/scenario.js";
 
 /** ScenarioSpec 저장소 계약 */

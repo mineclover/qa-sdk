@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * stores/ 타입 — core/에서 re-export
  *

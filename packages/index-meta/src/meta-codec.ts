@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * MetaCodec — entries 기반 독립 encode/decode 모듈
  *

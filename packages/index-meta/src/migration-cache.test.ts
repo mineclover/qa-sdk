@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * PositionEngine — MigrationCache (L2) 테스트
  * 불변 마이그레이션 매핑 캐시 + 무효화

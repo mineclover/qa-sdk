@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 import { sep } from "node:path";
 
 /** serviceId/env 검증 — alphanumeric + hyphens */

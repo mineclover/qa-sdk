@@ -8,7 +8,7 @@ def:
   depth: overview
   lifecycle: approved
   layer: domain
-  svc: dkg-engine
+  svc: dkg
   tags: [external, external, structural, observability, entry-point]
   links:
     - target: dkg-node-types

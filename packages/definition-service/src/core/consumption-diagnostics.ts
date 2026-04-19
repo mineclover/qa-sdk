@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * 소비율 진단 — 스냅샷에서 PrefixConsumption 변환 + 진단 실행
  *

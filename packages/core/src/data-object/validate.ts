@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import type { Catalog, PathSegment, PrefixDef, PrefixVersionDef, TableSchema } from "../catalog/catalog.types.js";
 import type { FieldLineage, FieldRef } from "../types/data-schema.js";
 import { BindingRegistry } from "./registry.js";

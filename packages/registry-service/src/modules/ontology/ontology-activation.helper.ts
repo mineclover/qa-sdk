@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { OntologyAddressModel } from 'operational-ontology/allocation';
 import type { OperationalOntologyPack } from 'operational-ontology/pack';
 import type {

@@ -1,3 +1,5 @@
+// @def.doc definition-data-source
+
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type {

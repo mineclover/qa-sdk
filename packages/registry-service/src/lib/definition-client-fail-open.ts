@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { createLogger } from "./logger.js";
 
 const logger = createLogger("registry-service");

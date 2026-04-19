@@ -1,3 +1,6 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
 // @facet
 /**
  * EventBus 포트 — fan-out publish/subscribe 패턴.

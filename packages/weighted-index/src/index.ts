@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * weighted-index — 닫힌 패턴의 좌표 압축 라이브러리.
  *

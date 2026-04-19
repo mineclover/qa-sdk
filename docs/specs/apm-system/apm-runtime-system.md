@@ -21,6 +21,8 @@ def:
       type: contains
     - target: log-ingest-bridge
       type: contains
+    - target: pino-logger
+      type: contains
 ---
 
 # APM 런타임 그룹

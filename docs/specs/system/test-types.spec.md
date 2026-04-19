@@ -7,6 +7,7 @@ def:
   depth: specification
   lifecycle: review
   layer: domain
+  svc: test-types
   tags: [structural, testing]
 ---
 

@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 /**
  * 확장 디스커버리 클라이언트
  *

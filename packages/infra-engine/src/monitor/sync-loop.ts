@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // monitor/sync-loop.ts — 서비스 헬스 체크 주기 실행
 import type { InfraProfileAdapter, IngestAdapter } from "../adapters/adapter.js";
 import type { MonitorTarget, SyncStatus } from "../core/types.js";

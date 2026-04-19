@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Injectable } from "@nestjs/common";
 import type { Logger } from "pino";
 import { env } from "../../config/env.js";

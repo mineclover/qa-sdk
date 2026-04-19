@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { basename, relative, resolve } from "node:path";
 
 import {
@@ -8,7 +11,7 @@ import type {
   DocumentDiagnostic,
   DocumentEnvelope,
   DocumentTask,
-} from "./types.js";
+} from "doc-envelope";
 
 export interface PrdToRalphJsonOptions {
   readonly rootDir: string;

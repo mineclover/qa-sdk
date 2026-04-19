@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 /**
  * 공유 DB 연결 — 단일 인스턴스에서 마이그레이션 1회 실행
  */

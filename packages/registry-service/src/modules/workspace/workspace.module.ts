@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Module } from "@nestjs/common";
 import { WorkspaceController } from "./workspace.controller.js";
 import { WorkspaceService } from "./workspace.service.js";

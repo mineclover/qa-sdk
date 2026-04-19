@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * Shop-Web → Ingest-Server 통합 테스트.
  *

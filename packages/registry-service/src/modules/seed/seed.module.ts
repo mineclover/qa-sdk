@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Module } from "@nestjs/common";
 import { AxisModule } from "../axes/axis.module.js";
 import { CatalogModule } from "../catalog/catalog.module.js";

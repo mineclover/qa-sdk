@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * calc-big.ts — BigInt 기반 순수 계산 함수.
  *

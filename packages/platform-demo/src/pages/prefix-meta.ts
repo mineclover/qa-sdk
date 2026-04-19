@@ -1,3 +1,6 @@
+// @def.boundary platform-demo-system
+// @def.doc platform-demo-system
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  Prefix 메타 — 축(dim) + 합성(index) prefix의 capacity/version 조회
 // ═══════════════════════════════════════════════════════════════════════════

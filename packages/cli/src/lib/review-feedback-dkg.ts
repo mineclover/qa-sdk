@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";

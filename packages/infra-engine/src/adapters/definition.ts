@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 /**
  * Definition-service HTTP 어댑터
  *

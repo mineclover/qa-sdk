@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Controller, Get, Inject, Param, UseFilters } from "@nestjs/common";
 import { PrefixExceptionFilter } from "../prefixes/prefix.exception-filter.js";
 import { DagService } from "./dag.service.js";

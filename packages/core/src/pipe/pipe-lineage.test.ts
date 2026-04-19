@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import { deriveStaticLineage, deriveStaticLineageWithDiagnostics, summarizeFlowLineage, validateStaticLineage, findFieldOrigin, deriveGraphLineage, summarizeGraphLineage, findFieldOriginInGraph, lineageId, serializeLineage, deserializeLineage, diffLineage } from "./pipe-lineage.js";
 import type { PipeFlow, PipeStep, PipeSpec, PipeGraph } from "../types/pipe-spec.js";

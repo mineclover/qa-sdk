@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * record-operation — DKG에 의사결정/관측을 기록하는 skill.
  *

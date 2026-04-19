@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * PipeGraph 분석 — 복잡도 메트릭, 커버리지, 병목 감지
  */

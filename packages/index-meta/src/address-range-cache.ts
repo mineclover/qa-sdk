@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * AddressRangeCache — calcAddressRanges 결과의 범용 사전 계산 캐시
  *

@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * PathMatcher — 실행 결과 ↔ PipeGraph 매칭
  *

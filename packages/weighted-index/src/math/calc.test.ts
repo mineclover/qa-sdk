@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 import { describe, it, expect } from "vitest";
 import { calcWeights, partialQueryBase, partialDecode, describeRangeFormula, mergeRanges, intersectRanges, subtractRanges, complementRanges, containsAddress, positionsToConstraint, calcAddressRanges, expandRanges } from "./calc.js";
 import { WeightedIndex } from "./weighted-index.js";

@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * DEMO_CATALOG 기반 예시 Transition Spec 3종.
  *

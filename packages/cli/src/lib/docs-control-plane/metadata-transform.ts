@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -15,7 +18,7 @@ import type {
   DocumentDiagnostic,
   DocumentEnvelope,
   DocumentMetadata,
-} from "./types.js";
+} from "doc-envelope";
 
 export interface LoadedMetadataTransformRule {
   readonly source: string;

@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import type { TraversalPresetDefinition } from "./graph-types.js";
 
 export const TRAVERSAL_PRESETS = [

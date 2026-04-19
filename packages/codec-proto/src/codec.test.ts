@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import { describe, expect, it } from "vitest";
 import type { TransmissionEnvelope } from "@qa-sdk/core";
 import { decodeEnvelope, encodeEnvelope } from "./codec.js";

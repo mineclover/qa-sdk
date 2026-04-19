@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * MetadataCache — 메타데이터 캐싱 + Active 수렴 테스트
  *

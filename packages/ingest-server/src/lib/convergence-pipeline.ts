@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * ConvergencePipelineRunner — Phase 2 완료 후 convergence 분석 파이프라인.
  *

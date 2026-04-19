@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 // ── DataObject Binding — DataSchema ↔ prefix 바인딩 ───────────
 
 export interface ColumnAxisMapping {

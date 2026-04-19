@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 시뮬레이션 커버리지 + 직렬화 + 성능 벤치마크
  */

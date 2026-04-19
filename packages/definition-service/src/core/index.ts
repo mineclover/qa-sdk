@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * core/ 배럴 — 순수 도메인 로직
  *

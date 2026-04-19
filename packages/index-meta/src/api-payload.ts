@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import type { PrefixRegistry } from "./prefix-registry.js";
 import type { IndexMetaStore } from "./index-meta-store.js";
 import type { CrossVersionEntrySync } from "./cross-version-entry-sync.js";

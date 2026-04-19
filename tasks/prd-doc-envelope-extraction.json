@@ -1,0 +1,151 @@
+{
+  "name": "Doc Envelope Package Extraction",
+  "description": "Extract the DocumentEnvelope type model and its pure utility functions from @qa-sdk/cli's docs-control-plane internal module into a standalone unscoped library package `doc-envelope`. This is the first of three stages (C-1 → C-2 → C-3) in the deterministic-label-registry extraction plan, enabling later extraction of `ontology-pack-validate` and `deterministic-label-registry` packages as libraries that depend on `doc-envelope`.\n\nThe work is a mechanical move with zero behavior change. No new features. No renamed APIs. All existing consumers (cli commands, tests) continue to work via updated import paths. Backward compatibility is preserved via a re-export barrel in `docs-control-plane/index.ts`.",
+  "branchName": "ralph/doc-envelope-extraction",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create Doc-Envelope Package Scaffolding",
+      "description": "As a platform maintainer, I want a new `doc-envelope` package directory with the repo's standard library build configuration so that source files can be moved in without build errors.",
+      "acceptanceCriteria": [
+        "`packages/doc-envelope/package.json` exists with name `doc-envelope` (unscoped), type module, tsup dual format (ESM + CJS)",
+        "`packages/doc-envelope/tsup.config.ts` mirrors repo library convention (ES2023 target, d.ts output, dual format)",
+        "`packages/doc-envelope/tsconfig.json` extends root or matches existing library tsconfig pattern",
+        "`packages/doc-envelope/src/` directory created (empty for now)",
+        "`pnpm install` completes without error",
+        "Package appears in workspace listings",
+        "`pnpm --filter doc-envelope build` - new package build check",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Move Envelope Type Model Normalizer And Query",
+      "description": "As a library maintainer, I want `types.ts`, `normalize.ts`, and `query.ts` moved from `docs-control-plane` to `doc-envelope` so envelope data model lives in the shared library.",
+      "acceptanceCriteria": [
+        "`packages/doc-envelope/src/types.ts` contains the full contents of the original",
+        "`packages/doc-envelope/src/normalize.ts` contains the full contents with internal import `./types.js` preserved",
+        "`packages/doc-envelope/src/query.ts` contains the full contents with import adjusted",
+        "Original files at `packages/cli/src/lib/docs-control-plane/types.ts|normalize.ts|query.ts` removed via git mv",
+        "`pnpm --filter doc-envelope build` - new package build",
+        "`pnpm --filter doc-envelope test` - new package tests if applicable",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane tests",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Move Envelope Scope Utilities",
+      "description": "As a library maintainer, I want `family-scope.ts` and `completed-records.ts` moved to `doc-envelope` together with their tests, so pure envelope-scope utilities live alongside the envelope model.",
+      "acceptanceCriteria": [
+        "`packages/doc-envelope/src/family-scope.ts` contains original contents with import paths adjusted",
+        "`packages/doc-envelope/src/family-scope.test.ts` moved and passing",
+        "`packages/doc-envelope/src/completed-records.ts` moved with imports adjusted",
+        "`packages/doc-envelope/src/completed-records.test.ts` moved and passing",
+        "Original files removed via git mv",
+        "`pnpm --filter doc-envelope test` passes for moved tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane tests",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Define Doc-Envelope Public Barrel",
+      "description": "As a consumer, I want `doc-envelope`'s public API defined in its `src/index.ts` so I can import from the package name without reaching into internal paths.",
+      "acceptanceCriteria": [
+        "`packages/doc-envelope/src/index.ts` exports all previously-exposed envelope-related symbols from the 5 moved files",
+        "Exports include DocumentEnvelope, DocumentMetadata, DocumentLink, DocumentSource, DocumentTask, DocumentEnvelopeInput, DocumentAdapter, DocumentAdapterCapabilities, DocumentDiagnostic, DocumentEvidence, DocumentSection, DocumentCollectionQuery, DocumentChange, DocumentChangeSet, DocumentRawSourcePointer",
+        "Functions exported: normalizeDocumentEnvelope, defineDocumentAdapter, declareDocumentAdapterCapabilities, matchesDocumentQuery, collectDocumentFamilyOnlyScope, isArchivedPrdDocument, isTransientSessionDocument, detectCompletedRecords",
+        "Types exported: DocumentFamilyOnlyScope, DocumentFamilyOnlyScopeOptions, CompletedRecordState, CompletedRecordDetectionOptions",
+        "No internal helpers leaked",
+        "`pnpm --filter doc-envelope build` produces dist files with declared public API",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Switch Cli Imports To Doc-Envelope",
+      "description": "As a cli maintainer, I want `@qa-sdk/cli` to depend on `doc-envelope` and all internal import paths switched so behavior is preserved through the new package boundary.",
+      "acceptanceCriteria": [
+        "`packages/cli/package.json` adds `doc-envelope: workspace:*` in dependencies",
+        "All cli files that previously imported from relative paths inside docs-control-plane for moved modules now import from `doc-envelope`",
+        "`packages/cli/src/lib/docs-control-plane/index.ts` re-exports same symbols from `doc-envelope` (backward-compat barrel)",
+        "No cli file references moved file paths directly",
+        "~48 DocumentEnvelope-touching files across packages/cli/src/ compile without error",
+        "`pnpm --filter @qa-sdk/cli typecheck` passes",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane tests",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json` - operational smoke check"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-004"
+      ],
+      "completionNotes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Verify Doc-Envelope Extraction Operationally",
+      "description": "As a reviewer, I want command evidence that the extraction preserves behavior without regression.",
+      "acceptanceCriteria": [
+        "`pnpm --filter @qa-sdk/cli test -- docs` all 160+ tests pass (no delta from pre-extraction baseline)",
+        "`pnpm --filter @qa-sdk/cli typecheck` clean",
+        "`pnpm --filter @qa-sdk/cli build` produces valid bundle",
+        "`node packages/cli/dist/index.js def validate` - 경고 0건",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json` returns same shape",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-plan --json` returns same shape",
+        "`docs/specs/definition-catalog/doc-metadata-field-ownership.rule.md` still accurate",
+        "Git diff shows only mechanical moves + import path updates; no logic changes",
+        "`pnpm --filter doc-envelope build` - new package build",
+        "`pnpm --filter doc-envelope test` - new package tests"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-005"
+      ],
+      "completionNotes": ""
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-18T00:00:00.000Z"
+  }
+}

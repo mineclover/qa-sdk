@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 declare module "@hono/node-ws" {
   import type { UpgradeWebSocket } from "hono/ws";
   import type { Server } from "node:http";

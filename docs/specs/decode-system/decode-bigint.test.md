@@ -10,6 +10,7 @@ def:
   links:
     - target: decode-bigint
       type: depends_on
+  source: packages/index-meta/src/prefix-decoder-big.test.ts
 ---
 
 # PrefixDecoderBig 테스트 명세

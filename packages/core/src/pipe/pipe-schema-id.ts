@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * step schemaId 해석 — 정적 계보와 시뮬레이션 계보가 동일한 전략 사용.
  *

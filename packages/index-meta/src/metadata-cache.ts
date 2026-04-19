@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * MetadataCache — position 기반 메타데이터 캐시 (PositionEngine Phase 4)
  *

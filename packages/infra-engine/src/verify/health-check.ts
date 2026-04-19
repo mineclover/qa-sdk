@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // verify/health-check.ts — HTTP 헬스체크 프로브
 import type { GateCheckResult } from "../core/types.js";
 

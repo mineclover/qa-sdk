@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * 카탈로그 기반 데이터 추적성 검증.
  *

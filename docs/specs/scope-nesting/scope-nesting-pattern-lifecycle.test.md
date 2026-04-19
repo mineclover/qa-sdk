@@ -10,6 +10,7 @@ def:
   links:
     - target: scope-nesting-pattern-lifecycle
       type: depends_on
+  source: packages/core/src/scope-nesting-lifecycle.test.ts
 ---
 
 # Scope Lifecycle 패턴 테스트 명세

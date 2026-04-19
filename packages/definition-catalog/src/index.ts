@@ -1,3 +1,6 @@
+// @def.boundary definition-catalog-spec
+// @def.doc definition-catalog-spec
+
 /**
  * definition-catalog — 소프트웨어 정의 메타데이터를 좌표계로 관리하는 카탈로그
  *

@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Body, Controller, Delete, Get, Inject, Param, Post, Put, UseFilters } from "@nestjs/common";
 import { CatalogExceptionFilter } from "./catalog.exception-filter.js";
 import { CatalogService } from "./catalog.service.js";

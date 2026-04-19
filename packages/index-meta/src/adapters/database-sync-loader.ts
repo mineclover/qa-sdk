@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * node:sqlite DatabaseSync의 lazy-loader.
  *

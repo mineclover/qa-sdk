@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // config/config-stage.ts — 설정 복호화 + 검증 스테이지
 import type { Stage, DeployContext, ResolvedConfig } from "../core/types.js";
 import type { SopsLoader } from "./sops-loader.js";

@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { randomUUID } from "node:crypto";
 
 import type { DataObjectBinding, FieldRef } from "@qa-sdk/core";

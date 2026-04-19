@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 import pino, { type Destination, type Logger } from "./index.js";
 

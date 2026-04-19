@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * token-enrichment.ts — JWT 토큰에 permission bitmask를 임베드.
  *

@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 export interface AxisProfileRecord {
   readonly id: string;
   readonly catalogId: string;

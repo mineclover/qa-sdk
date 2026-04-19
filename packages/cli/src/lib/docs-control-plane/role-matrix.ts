@@ -1,6 +1,9 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { AUTHORED_LINK_AXIS_MAP, type TraversalAxis } from "./graph-types.js";
-import { isArchivedPrdDocument, isTransientSessionDocument } from "./family-scope.js";
-import type { DocumentEnvelope, DocumentLink, DocumentMetadata } from "./types.js";
+import { isArchivedPrdDocument, isTransientDocument } from "doc-envelope";
+import type { DocumentEnvelope, DocumentLink, DocumentMetadata } from "doc-envelope";
 
 export const DOCUMENT_ROLE_MATRIX_ROLES = [
   "spec",
@@ -272,7 +275,7 @@ function isRoleMatrixLinkedAxis(axis: TraversalAxis): axis is DocumentRoleMatrix
 }
 
 function isActiveRoleMatrixDocument(document: DocumentEnvelope): boolean {
-  if (isTransientSessionDocument(document)) return false;
+  if (isTransientDocument(document)) return false;
   if (isArchivedPrdDocument(document)) return false;
   return true;
 }

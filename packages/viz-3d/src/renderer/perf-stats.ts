@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * PerfStats — 프레임 성능 측정 + draw call 추적.
  */

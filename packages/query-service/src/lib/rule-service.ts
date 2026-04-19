@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import {

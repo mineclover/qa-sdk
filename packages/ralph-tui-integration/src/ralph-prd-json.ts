@@ -1,11 +1,12 @@
+// @def.doc ralph-tui-integration#ralph-prd-json
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
 
 import {
   defineDocumentAdapter,
   normalizeDocumentEnvelope,
-} from "../normalize.js";
-import { matchesDocumentQuery } from "../query.js";
+} from "doc-envelope";
+import { matchesDocumentQuery } from "doc-envelope";
 import type {
   DocumentAdapter,
   DocumentCollectionQuery,
@@ -13,7 +14,7 @@ import type {
   DocumentEnvelope,
   DocumentMetadata,
   DocumentTaskInput,
-} from "../types.js";
+} from "doc-envelope";
 
 export const RALPH_PRD_JSON_ADAPTER_ID = "ralph-prd-json";
 

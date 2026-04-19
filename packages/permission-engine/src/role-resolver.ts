@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * role-resolver.ts — 사용자 권한 Resolution.
  *

@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * math/types.ts — 수학 레이어 공유 타입.
  *

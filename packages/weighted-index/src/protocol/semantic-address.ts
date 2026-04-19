@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * semantic-address.ts — 닫힌 패턴 주소의 외부 표현 및 직렬화
  *

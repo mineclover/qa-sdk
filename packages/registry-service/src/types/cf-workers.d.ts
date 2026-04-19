@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 /** CF Workers Fetcher 타입 (Service Bindings) — tsc 빌드 호환용 */
 declare interface Fetcher {
   fetch(input: RequestInfo, init?: RequestInit): Promise<Response>;

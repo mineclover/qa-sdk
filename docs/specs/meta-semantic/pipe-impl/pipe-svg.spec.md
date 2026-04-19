@@ -14,6 +14,7 @@ def:
       type: depends_on
     - target: pipe-flow-catalog
       type: depends_on
+  source: packages/viz-core/src/pipe-svg.ts
 ---
 
 # PipeGraph → SVG / D3 렌더링

@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 /**
  * QaContext — DSL DB 앱 코드 진입점.
  *

@@ -240,6 +240,18 @@ Controller gate 후보:
 
 ## 다음 PRD 후보
 
-1. `tasks/prd-deterministic-label-registry-fsm-read-model.json`
-2. `tasks/prd-deterministic-label-registry-fsm-transition-dry-run.json`
-3. `tasks/prd-deterministic-label-registry-persistence-decision.json`
+1. ~~`prd-deterministic-label-registry-fsm-read-model`~~ — 완료, archive. 구현은 `packages/deterministic-label-registry/`.
+2. ~~`prd-deterministic-label-stability`~~ — 완료, archive. US-004 취소 (snapshot 기록 과다), 나머지 7개 완결.
+3. ~~`prd-deterministic-label-registry-fsm-transition-dry-run`~~ — **드롭됨 (2026-04-18)**. `dryRunDeterministicLabelTransition()` internal API는 이미 존재하고 `deterministic-label-registry` 내부에 격리됨. operator CLI surface 추가 요구가 실제로 제기될 때 별도 PRD로 재개. write-mode transition controller는 **구상 자체 제거**.
+4. ~~`prd-deterministic-label-registry-persistence-decision`~~ — **무기한 보류 (2026-04-18)**. append-only 영속화는 "라벨을 axis entry로 승격" 설계 결정과 얽혀 있으나 현 시점 실제 use case 없음. 필요성 데이터(persistence가 해결하는 구체적 운영 문제)가 확보되면 plan부터 재개.
+
+## 현재 경계 (2026-04-18)
+
+deterministic label은 **read-only inventory + diagnostic** 계층에서 완결. 다음 확장은 실제 소비자 요구가 나올 때까지 대기:
+- operator-facing CLI surface
+- axis entry 승격
+- persistence/registry store
+- write-mode controller
+- snapshot 기반 regression gate
+
+기록 근거는 `deterministic-label-stability-boundary.memo.md`.

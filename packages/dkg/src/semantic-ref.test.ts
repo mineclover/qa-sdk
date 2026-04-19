@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
 import {

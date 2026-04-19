@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 import { describe, it, expect } from "vitest";
 import * as fc from "fast-check";
 import { WeightedIndex } from "./weighted-index.js";

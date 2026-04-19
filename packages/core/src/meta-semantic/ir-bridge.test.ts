@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import { pipeSpecToIR, pipeGraphToModuleIR, stepContractToDataIR } from "./ir-bridge.js";
 import type { PipeSpec, PipeGraph } from "../types/pipe-spec.js";

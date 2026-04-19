@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { describe, it, expect } from "vitest";
 import { MetaRegistry, computeActiveIndices } from "./meta-registry.js";
 import { MetaCodec } from "./meta-codec.js";

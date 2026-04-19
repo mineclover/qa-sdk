@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -7,7 +10,7 @@ import { describe, expect, it } from "vitest";
 
 import { createOntologyPackScaffoldPlan } from "./ontology-pack-scaffold-plan.js";
 import { writeOntologyPackScaffoldPlan } from "./ontology-pack-scaffold-write.js";
-import { resolveKnownOntologyPack } from "./known-ontology-packs.js";
+import { resolveKnownOntologyPack } from "ontology-pack-validate";
 
 describe("ontology pack scaffold write mode", () => {
   it("writes the dry-run preview file list into a temporary workspace", async () => {

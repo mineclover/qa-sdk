@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 /**
  * CLI decision-flow Drizzle 스키마 정의
  *

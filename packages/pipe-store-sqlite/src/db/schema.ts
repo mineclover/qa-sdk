@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 /**
  * Meta-Semantic SQLite 스키마
  *

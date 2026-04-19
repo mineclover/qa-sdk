@@ -12,6 +12,7 @@ def:
       type: depends_on
     - target: pipe-types
       type: depends_on
+  source: packages/core/src/pipe/pipe-validate.ts
 ---
 
 # PipeSpec / PipeGraph 구조 검증

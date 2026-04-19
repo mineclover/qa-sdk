@@ -17,6 +17,8 @@ def:
       type: contains
     - target: motion-content-contract
       type: contains
+    - target: motion-content-editor-demo
+      type: contains
 ---
 
 # Viz 언어 계약 그룹

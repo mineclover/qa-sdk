@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * ScopeRegistry — scope별 aspect 소비 관계 + 버전 관리
  *

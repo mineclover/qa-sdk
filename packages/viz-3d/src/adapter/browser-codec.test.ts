@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import { describe, it, expect } from "vitest";
 import { encode, decode, track, decodeContext, trackWithSignal } from "./browser-codec.js";
 import { BROWSER_CATALOG } from "./demo-catalog-browser.js";

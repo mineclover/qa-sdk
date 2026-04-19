@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * role-registry.ts — Domain Role 계보 정의 및 feature 집합 사전 계산.
  *

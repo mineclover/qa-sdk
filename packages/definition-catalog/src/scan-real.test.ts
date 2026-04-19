@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 실제 docs/ 디렉토리 스캔 통합 테스트
  *

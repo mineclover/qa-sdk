@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { PrefixOwnerRecord } from "../types/index.js";
 import type { PrefixOwnerStore, PrefixProfilePatch } from "./prefix-owner-store.js";
 

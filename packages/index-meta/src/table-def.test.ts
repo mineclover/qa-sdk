@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { describe, it, expect } from "vitest";
 import { defineTable } from "./table-def.js";
 import { ValidationError } from "./errors.js";

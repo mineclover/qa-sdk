@@ -1,18 +1,19 @@
+// @def.doc ralph-tui-integration#ralph-session
 import { readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 
 import {
   defineDocumentAdapter,
   normalizeDocumentEnvelope,
-} from "../normalize.js";
-import { matchesDocumentQuery } from "../query.js";
+} from "doc-envelope";
+import { matchesDocumentQuery } from "doc-envelope";
 import type {
   DocumentAdapter,
   DocumentCollectionQuery,
   DocumentDiagnosticInput,
   DocumentEnvelope,
   DocumentMetadata,
-} from "../types.js";
+} from "doc-envelope";
 import {
   readRalphPrdJsonSummary,
   type RalphPrdJsonSummary,
@@ -111,6 +112,10 @@ async function buildRalphSessionEnvelope(
   const metadata: DocumentMetadata = {
     ...root,
     sourcePath: relativePath,
+    // `doc-envelope`의 family-scope 일반화 계약에 맞춰, ralph-tui 세션 문서는
+    // 수집 시점에 `metadata.transient: true`를 스탬프한다. `.ralph-tui/` 경로
+    // 하드코딩은 ralph-tui-integration 내부에만 존재한다.
+    transient: true,
     ...(prdSummary ? {
       prdStoryCount: prdSummary.storyCount,
       prdPassedStoryCount: prdSummary.passedStoryCount,

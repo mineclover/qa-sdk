@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * InsightsStore 포트 — 인사이트 수집/조회 추상화.
  *

@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import { describe, it, expect } from "vitest";
 import { renderToSVG, assignColors } from "./canvas.js";
 import { analyzeGrid } from "./grid.js";

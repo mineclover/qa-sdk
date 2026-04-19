@@ -1,8 +1,17 @@
+// @def.doc doc-envelope
+
 import type { DocumentEnvelope } from "./types.js";
 
 export interface DocumentFamilyOnlyScopeOptions {
   readonly target: DocumentEnvelope;
-  readonly includeSession?: boolean;
+  /**
+   * Envelope 생성 시 adapter가 `metadata.transient = true`로 표시한 문서를
+   * family-only scope에 포함할지 여부. 플래그의 의미는 adapter 소유다 (예:
+   * `ralph-tui-integration`의 ralph-session adapter가 `.ralph-tui/` 세션 문서에
+   * 이 플래그를 스탬프한다). `doc-envelope`은 특정 도구의 경로나 kind를 알지
+   * 못한다.
+   */
+  readonly includeTransient?: boolean;
 }
 
 export interface DocumentFamilyOnlyScope {
@@ -36,13 +45,13 @@ export function collectDocumentFamilyOnlyScope(
   if (target.familyId) {
     for (const document of documents) {
       if (document.familyId !== target.familyId) continue;
-      if (!isFamilyOnlyRoleDocument(document, options.includeSession === true)) continue;
+      if (!isFamilyOnlyRoleDocument(document, options.includeTransient === true)) continue;
       if (!isActiveFamilyOnlyDocument(document, options)) continue;
       addFamilyScopedDocument(
         selected,
         reasonByDocumentKey,
         document,
-        document.kind === "ralph-session" ? "family-only:session" : "family-only:role",
+        isTransientDocument(document) ? "family-only:transient" : "family-only:role",
       );
     }
   }
@@ -70,18 +79,22 @@ export function isArchivedPrdDocument(document: DocumentEnvelope): boolean {
   return normalizePath(document.path).split("/").includes("archive");
 }
 
-export function isTransientSessionDocument(document: DocumentEnvelope): boolean {
-  return document.kind === "ralph-session"
-    || normalizePath(document.path).startsWith(".ralph-tui/");
+/**
+ * Adapter가 envelope 생성 시 `metadata.transient = true`로 스탬프한 문서인지
+ * 판별한다. 구체적인 transient 소스(예: `.ralph-tui/` 세션)의 정의는 adapter
+ * 소유이며, `doc-envelope`은 플래그만 본다.
+ */
+export function isTransientDocument(document: DocumentEnvelope): boolean {
+  return document.metadata.transient === true;
 }
 
 function isFamilyOnlyRoleDocument(
   document: DocumentEnvelope,
-  includeSession: boolean,
+  includeTransient: boolean,
 ): boolean {
   if (document.metadata.type === "knowledge") return true;
   if (FAMILY_ONLY_ROLE_KINDS.has(document.kind)) return true;
-  return includeSession && isTransientSessionDocument(document);
+  return includeTransient && isTransientDocument(document);
 }
 
 function isDirectContainedModuleOrLeaf(document: DocumentEnvelope): boolean {
@@ -94,7 +107,7 @@ function isActiveFamilyOnlyDocument(
 ): boolean {
   if (document === options.target) return true;
   if (isArchivedPrdDocument(document)) return false;
-  if (isTransientSessionDocument(document)) return options.includeSession === true;
+  if (isTransientDocument(document)) return options.includeTransient === true;
   return true;
 }
 

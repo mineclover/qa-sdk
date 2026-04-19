@@ -1,3 +1,6 @@
+// @def.boundary platform-demo-system
+// @def.doc platform-demo-system
+
 /**
  * Drizzle ORM schema definitions for D1 (SQLite).
  * migrations/0001_create_grants.sql, 0002_create_logs.sql 과 1:1 대응.

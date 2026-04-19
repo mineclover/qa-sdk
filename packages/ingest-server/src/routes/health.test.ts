@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
 import { createHealthRoutes } from "./health.js";

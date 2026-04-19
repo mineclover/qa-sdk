@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 import { describe, expect, it } from "vitest";
 
 import { MemoryDefinitionRegistry } from "./registry.js";

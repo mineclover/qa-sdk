@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /** Messages sent from viz-web (parent) to roleplay-web (child iframe). */
 export interface ContextMessage {
   type: "context";

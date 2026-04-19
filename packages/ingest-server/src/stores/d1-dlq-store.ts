@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { asc, eq, isNull, sql } from "drizzle-orm";
 import type { DlqInsert, DlqPhase, DlqStore, StoredDlqItem } from "@qa-sdk/core";
 import { deadLetterQueue } from "../db/schema.js";

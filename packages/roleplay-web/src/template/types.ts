@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 export interface ResolvedRunSpec {
   scenario_id: string;
   template: string;

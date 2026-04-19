@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * org-role-registry.ts — Org Role 정의 및 Domain Role 배정 집합 관리.
  *

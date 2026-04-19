@@ -8,6 +8,7 @@ def:
   depth: overview
   lifecycle: approved
   layer: experience
+  svc: cli
   tags: [structural, entry-point, generated]
   links:
     - target: skill-cli-def-commands

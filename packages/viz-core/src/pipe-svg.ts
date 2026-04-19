@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * PipeGraph → SVG / D3 데이터 변환 (그래프 레벨 렌더러)
  *

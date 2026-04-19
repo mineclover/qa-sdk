@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * SqlAddressStateStore — 범용 SQLite 호환 AddressStateStore 구현
  *

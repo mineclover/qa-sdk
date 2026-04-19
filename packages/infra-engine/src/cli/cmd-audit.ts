@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 import type { CommandHandler } from "cli-command";
 import { createDiscoveryClient } from "../discovery/client.js";
 import type { AuditIssue } from "../commands/audit.js";

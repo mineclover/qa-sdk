@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import type { TransmissionInsert, TransmissionStore } from "@qa-sdk/core";
 
 /** TransmissionStore의 in-memory 구현 */

@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * encoding-bridge.test.ts — IndexBridge E2E 증명
  *

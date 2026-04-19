@@ -11,6 +11,7 @@ def:
   links:
     - target: rlsc-pattern
       type: refines
+  source: packages/rlsc/src/pattern.test.ts
 ---
 
 ## 목적 ^purpose

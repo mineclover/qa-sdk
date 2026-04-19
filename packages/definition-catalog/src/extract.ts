@@ -1,3 +1,5 @@
+// @def.doc definition-extraction
+
 /**
  * 문서 본문에서 마커 기반 요약 추출
  *

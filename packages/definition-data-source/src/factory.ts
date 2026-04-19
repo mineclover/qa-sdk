@@ -1,3 +1,5 @@
+// @def.doc definition-data-source
+
 /**
  * DefDataSource 팩토리 — 서버/로컬 자동 감지
  *

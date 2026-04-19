@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import type { PipeGraph } from "../types/pipe-spec.js";
 import type { FacetCodeMapping } from "./types.js";
 import { collectFlowSteps } from "../pipe/pipe-fold.js";

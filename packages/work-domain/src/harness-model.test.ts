@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import { describe, expect, it } from "vitest";
 import {
   classifyHarnessDocRole,

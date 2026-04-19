@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 import type { ContractEvidence, ContractMarkerKind } from "./types.js";
 import type { ClaimSectionInput, ExtractedClaim } from "./claim-extractor.js";
 import { extractClaimsFromSections } from "./claim-extractor.js";

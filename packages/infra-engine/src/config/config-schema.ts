@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // config/config-schema.ts — ResolvedConfig zod 스키마
 import { z } from "zod";
 

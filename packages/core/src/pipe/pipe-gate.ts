@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * PipeGraph 퀄리티 게이트 — 스펙 정의 + 자동 평가
  *

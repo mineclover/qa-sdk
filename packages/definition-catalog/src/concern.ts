@@ -1,3 +1,5 @@
+// @def.doc definition-concern
+
 /**
  * Concern 전파 엔진 (Structural Constraint Propagation)
  *

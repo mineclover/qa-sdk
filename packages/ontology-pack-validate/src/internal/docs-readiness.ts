@@ -1,8 +1,6 @@
-import { existsSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename } from "node:path";
 
-import { createDefinitionMarkdownAdapter } from "../docs-control-plane/adapters/definition-markdown.js";
-import type { DocumentEnvelope, DocumentSource } from "../docs-control-plane/types.js";
+import type { DocumentEnvelope, DocumentSource } from "doc-envelope";
 import type {
   OntologyPackValidateDocsReadiness,
   OntologyPackValidateFileRef,
@@ -29,7 +27,7 @@ export async function collectDocsReadiness(input: {
 }): Promise<OntologyPackDocsReadiness> {
   const docs = input.readDocsFamily
     ? await input.readDocsFamily({ packId: input.packId, rootDir: input.rootDir })
-    : await matchingDocsForPack(input.packId, input.rootDir);
+    : [];
   if (docs.length === 0) {
     return emptyDocsReadiness(input.packId);
   }
@@ -115,15 +113,6 @@ export function emptyDocsReadiness(packId: string | null): OntologyPackDocsReadi
     },
     issues: [],
   };
-}
-
-async function matchingDocsForPack(
-  packId: string,
-  rootDir: string,
-): Promise<readonly DocumentEnvelope[]> {
-  if (!existsSync(join(rootDir, "docs"))) return [];
-  const adapter = createDefinitionMarkdownAdapter({ rootDir, docsDirs: ["docs"] });
-  return filterMatchingDocsForPack(packId, await adapter.listDocuments());
 }
 
 export function filterMatchingDocsForPack(

@@ -1,3 +1,6 @@
+// @def.boundary cli-command-spec
+// @def.doc cli-command-spec
+
 /** 옵션 정의 */
 export interface OptionDef {
   flag: string;           // "--dry-run" | "--provider"

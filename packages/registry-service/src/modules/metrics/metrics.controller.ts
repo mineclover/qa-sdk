@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Controller, Get, Header, Inject } from "@nestjs/common";
 import { MetricsService } from "./metrics.service.js";
 

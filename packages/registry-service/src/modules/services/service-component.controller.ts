@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Body, Controller, Get, Inject, Param, Post, Put, Query, UseFilters } from "@nestjs/common";
 import { ServiceExceptionFilter } from "./service.exception-filter.js";
 import { ServiceComponentService } from "./service-component.service.js";

@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * pack-format.ts — Named ID container formats, registry, and hex utilities.
  *

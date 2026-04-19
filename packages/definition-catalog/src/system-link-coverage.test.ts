@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 남은 시스템 링크 일괄 연결 회귀 테스트
  *

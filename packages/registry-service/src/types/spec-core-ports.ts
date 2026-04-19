@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 /**
  * spec-core Port Interfaces — registry-service가 spec-core를 소비할 때 사용하는 인터페이스.
  *

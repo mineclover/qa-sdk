@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 import type { CommandHandler } from "cli-command";
 import { createInfraProfileAdapter } from "../adapters/infra-profile.js";
 import { PROFILE_DIR } from "./context.js";

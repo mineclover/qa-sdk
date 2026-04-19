@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 // ─── R.L.S.C.™ Core Types ───────────────────────────────────────────
 
 /** 뷰포트 기준 물리적 위치와 크기 */

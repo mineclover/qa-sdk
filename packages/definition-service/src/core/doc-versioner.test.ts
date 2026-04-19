@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import { describe, expect, it } from "vitest";
 import { decideVersion } from "./doc-versioner.js";
 import type { DocRecord } from "./types.js";

@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { Logger } from "pino";
 
 export interface ValidationResult {

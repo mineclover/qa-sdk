@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * Cross-Loop 브릿지 — 6개 피드백 루프 간 연결 조직.
  *

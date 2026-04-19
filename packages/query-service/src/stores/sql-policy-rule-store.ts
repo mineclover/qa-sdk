@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 import type { SqlDriver } from "index-meta-workers";
 import { parseJsonColumn } from "../lib/typed-json.js";
 import {

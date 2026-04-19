@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * DKG 역추적 데모 — 임의 이벤트(order_event)에서 출발하여
  * 의사결정, 스펙, 제약, 관측, 의도 링크, 서비스 토폴로지를 역추적한다.

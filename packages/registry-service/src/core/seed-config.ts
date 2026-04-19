@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { ConfigStore } from "../stores/config-store.js";
 import type { SeedLogger } from "./types.js";
 

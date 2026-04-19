@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import { afterEach, describe, expect, it } from "vitest";
 import { mkdtempSync, mkdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

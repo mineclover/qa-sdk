@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Module } from "@nestjs/common";
 import { getServiceDevUrl } from "@qa-sdk/core";
 import { DefinitionModule } from "@qa-sdk/definition-client/nestjs";

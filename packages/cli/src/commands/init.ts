@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk init — 새 카탈로그 프로젝트 스캐폴딩.
  *
@@ -370,7 +373,7 @@ function printViteConsumerNextSteps(input: {
 
   1. 앱 코드에서 bridge 연결
      import { createQaBridge } from "./src/sdk/qa-bridge";
-     const bridge = createQaBridge({ ingestUrl: "http://localhost:3100" });
+     const bridge = createQaBridge({ ingestUrl: "http://localhost:3200" });
 
   2. smoke 검증
      - NoopTransport로 startSession → emitEvent → shutdown 연결

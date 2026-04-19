@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * Definition Config — 루트 설정 파일 관리.
  *

@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 분기 경로 수 계산 — PipeFlow에서 도달 가능한 경로 수를 계산한다.
  *

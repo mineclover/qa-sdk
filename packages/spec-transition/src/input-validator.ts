@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Input Validator — 축 entry 기준 상태 조건 검증.
  *

@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * MonitorQueries — 3D 시각화 뷰어가 사용하는 쿼리 API.
  *

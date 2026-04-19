@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * CLI 도구 — 탑다운 조립, 바텀업 역추적, 컨텍스트 조회
  *

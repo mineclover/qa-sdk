@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { z } from "zod";
 
 export const axisSchema = z.object({

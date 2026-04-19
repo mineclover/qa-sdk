@@ -1,3 +1,6 @@
+// @def.boundary canvas-viewport-spec
+// @def.doc canvas-viewport-spec
+
 import { describe, expect, it } from "vitest";
 import {
   createMinimapLayout,

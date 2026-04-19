@@ -1,3 +1,6 @@
+// @def.boundary decode-service-spec
+// @def.doc decode-service-spec
+
 import { Hono } from "hono";
 import type { KeyCache } from "@qa-sdk/core";
 import { PrefixDecoder, PrefixDecoderBig } from "index-meta-workers";

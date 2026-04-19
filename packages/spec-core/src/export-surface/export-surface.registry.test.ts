@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 import { describe, it, expect, beforeEach } from "vitest";
 import { ExportSurfaceRegistry } from "./export-surface.registry.js";
 import { DuplicateRegistrationError, NotFoundError } from "spec-schema";

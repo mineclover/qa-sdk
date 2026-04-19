@@ -14,6 +14,7 @@ def:
       type: depends_on
     - target: ms-concept-branch-path
       type: implements
+  source: packages/core/src/pipe/pipe-path.ts
 ---
 
 # 분기 경로 수 계산

@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * Registry DSL — Git 버전 관리 체계 표현
  *

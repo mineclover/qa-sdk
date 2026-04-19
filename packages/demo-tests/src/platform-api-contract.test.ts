@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * platform-api-contract.test.ts — platform-demo-api 응답 contract 검증
  *

@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 // ── viz-web -> roleplay-web ──────────────────────────────
 
 export interface ContextMessage {

@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * /v1/traces/diagrams — TracePath 기반 Mermaid 시퀀스 다이어그램 API.
  */

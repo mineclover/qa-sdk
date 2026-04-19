@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 import { loadFileText, loadHostedReportText } from "./io.js";
 import { renderFileMapLayout, renderTreeCanvas } from "./render.js";
 import { SAMPLE_REPORT } from "./sample-report.js";

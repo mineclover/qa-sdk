@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import type { KeyCache, CacheStats } from "@qa-sdk/core";
 import type { Redis } from "ioredis";
 

@@ -14,6 +14,7 @@ def:
       type: depends_on
     - target: definition-state-model
       type: depends_on
+  source: packages/definition-catalog/src/harness-state-model.ts
 ---
 # Harness State Model
 

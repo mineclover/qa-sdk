@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 import type { MaskingMode, MaskedFieldMarker } from "@qa-sdk/core";
 
 export interface MaskingRule {

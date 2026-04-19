@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 import type { ExportSurface } from "./export-surface.types.js";
 import { DuplicateRegistrationError, NotFoundError } from "spec-schema";
 

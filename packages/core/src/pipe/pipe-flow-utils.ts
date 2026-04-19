@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * PipeFlow 순회 유틸 — 타입만 의존, 다른 pipe 모듈 의존 없음.
  * catalog 레이어에서도 순환 없이 import 가능.

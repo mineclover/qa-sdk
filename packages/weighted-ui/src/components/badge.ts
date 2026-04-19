@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * badge.ts — 도메인 독립 인라인 배지/태그 유틸리티.
  *

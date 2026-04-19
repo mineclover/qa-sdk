@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { installConvergenceScheduler, type ConvergenceSchedulerDeps } from "./convergence-scheduler.js";
 import type { ConvergencePipelineRunner } from "./convergence-pipeline.js";

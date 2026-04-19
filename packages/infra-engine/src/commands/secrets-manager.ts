@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // commands/secrets-manager.ts — 인프라 시크릿 자동 관리
 import { randomBytes } from "node:crypto";
 import { readFile, writeFile, mkdir, rename } from "node:fs/promises";

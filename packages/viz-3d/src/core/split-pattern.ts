@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * SplitPattern — 좌표계 데이터의 차원별 표현 패턴 정형화.
  *

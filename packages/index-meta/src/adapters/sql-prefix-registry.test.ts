@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { describe, it, expect, beforeEach } from "vitest";
 import { NodeSqliteDriver } from "./node-sqlite-driver.js";
 import { SqlPrefixRegistry } from "./sql-prefix-registry.js";

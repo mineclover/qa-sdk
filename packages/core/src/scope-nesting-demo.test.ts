@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * Scope Nesting 시각화 데모 — Mermaid 출력 확인용
  *

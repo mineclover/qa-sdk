@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk scan git — 모노레포의 git 상태를 SchemaSnapshot으로 추출.
  *

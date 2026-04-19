@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * Scope Nesting → Mermaid 다이어그램 변환
  *

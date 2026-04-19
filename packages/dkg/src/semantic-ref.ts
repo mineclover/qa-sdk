@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * SemanticRefEntries — 의미값 기반 refEntries 정의 + 파생.
  *

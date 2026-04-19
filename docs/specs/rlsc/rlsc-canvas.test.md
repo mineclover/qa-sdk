@@ -11,6 +11,7 @@ def:
   links:
     - target: rlsc-canvas
       type: refines
+  source: packages/rlsc/src/canvas.test.ts
 ---
 
 ## 목적 ^purpose

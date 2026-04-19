@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * Drizzle ORM schema definitions for D1 (SQLite).
  * d1-schema.sql.ts DDL과 1:1 대응.

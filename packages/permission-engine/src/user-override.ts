@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * user-override.ts — 유저 단위 권한 비활성화 레이어.
  *

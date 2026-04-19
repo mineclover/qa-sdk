@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * createSqliteDriver — 런타임 환경에 맞는 SQLite 드라이버 팩토리
  *

@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * PrefixMeta — prefix 유형별 의미 메타데이터.
  *

@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { parseArgs } from "node:util";
 import type { Catalog } from "@qa-sdk/core";
 import {

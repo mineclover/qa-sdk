@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import type { EntryFlagStore, EntryFlagRecord } from "../entry-flag-store.js";
 
 export class InMemoryEntryFlagStore implements EntryFlagStore {

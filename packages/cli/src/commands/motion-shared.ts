@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import type { MotionWorkspaceSnapshot } from "motion-workspace";
 
 export interface MotionCompositionSummary {

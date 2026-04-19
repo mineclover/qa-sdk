@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * transition — Transition Spec DSL sub-path barrel.
  *

@@ -7,6 +7,7 @@ def:
   level: leaf
   lifecycle: approved
   layer: operation
+  svc: codec-proto
   tags: [infra, protobuf, codec, transport]
   links:
     - target: infra-service-operations

@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * ServerDataSource — definition-service HTTP API로 데이터 접근
  *

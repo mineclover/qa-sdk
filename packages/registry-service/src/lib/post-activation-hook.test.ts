@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { describe, it, expect, vi } from "vitest";
 import { runPostActivationHook, createPostActivationHook, type PostActivationHookConfig } from "./post-activation-hook.js";
 

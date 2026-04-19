@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createChildBridge } from './child-bridge.js';
 import type { ContextMessage } from './message-protocol.js';

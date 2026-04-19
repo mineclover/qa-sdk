@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, expect, it } from "vitest";
 import type { Catalog } from "../catalog/catalog.types.js";
 import { chainSegments } from "../catalog/path-summation.js";

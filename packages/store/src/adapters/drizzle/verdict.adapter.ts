@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { eq, and } from "drizzle-orm";
 import type { VerdictStore, VerdictInsert, StoredVerdict } from "@qa-sdk/core";
 import type { VerdictReport } from "@qa-sdk/core";

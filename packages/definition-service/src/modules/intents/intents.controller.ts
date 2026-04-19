@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import { Controller, Get, Post, Put, Delete, Inject, Param, Query, Body, NotFoundException } from "@nestjs/common";
 import { IntentsService } from "./intents.service.js";
 

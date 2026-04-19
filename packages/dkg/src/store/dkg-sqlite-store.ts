@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * DKG SQLite Store — GraphRegistry + UsageData 영속화.
  *

@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 /**
  * 작업 도메인 분류 체계 — 핵심 타입
  *

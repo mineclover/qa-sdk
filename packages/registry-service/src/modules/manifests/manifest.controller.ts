@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query, UseFilters } from "@nestjs/common";
 import type { PrefixLifecycleState, ManifestLifecycleState } from "pipe-store-sqlite";
 import { PrefixExceptionFilter } from "../prefixes/prefix.exception-filter.js";

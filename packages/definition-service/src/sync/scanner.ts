@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import { collectCodeReferences, parseDocument, scanAndBuild } from "definition-catalog";
 import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";

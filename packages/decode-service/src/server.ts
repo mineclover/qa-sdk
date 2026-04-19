@@ -1,3 +1,6 @@
+// @def.boundary decode-service-spec
+// @def.doc decode-service-spec
+
 import "dotenv/config";
 import { serve } from "@hono/node-server";
 import { warnPortConflict, installSimpleShutdown, createServiceBootConfig } from "@qa-sdk/core";

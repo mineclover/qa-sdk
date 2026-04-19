@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: domain
-  svc: platform-demo
+  svc: motion-content
   tags: [contract, frontend, runtime]
   links:
     - target: viz-language-system

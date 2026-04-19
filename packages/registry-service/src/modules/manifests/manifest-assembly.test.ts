@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { describe, expect, it, vi } from "vitest";
 import { AppError } from "../../lib/errors.js";
 import { InMemoryServiceComponentVersionStore } from "../../stores/in-memory-service-component-version-store.js";

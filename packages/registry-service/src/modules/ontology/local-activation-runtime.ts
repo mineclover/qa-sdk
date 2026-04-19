@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { mkdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { ValidationError } from "../errors.js";
 import type { PrefixRegistry, PrefixRegistryRecord, DimRef } from "../prefix-registry.js";
 

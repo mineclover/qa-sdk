@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 // ── Service Registry ────────────────────────────────────
 
 export type ServiceStatus = "active" | "deprecated" | "retired";

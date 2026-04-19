@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk docs - cross-document control-plane CLI.
  *
@@ -22,7 +25,6 @@ import {
   createPrdMarkdownAdapter,
   createRalphPrdJsonAdapter,
   createRalphSessionAdapter,
-  detectCompletedRecords,
   filterDocumentGraphRanking,
   findNextFollowUps,
   normalizeDocumentGraphViewFilters,
@@ -37,6 +39,7 @@ import {
   type DocumentTask,
   formatDocumentGraphTraversalRoleGroups,
   type FollowUpState,
+  isTransientDocument,
   isTraversalAxis,
   isTraversalDirection,
   isTraversalPresetId,
@@ -77,6 +80,7 @@ import {
   type DocumentDriftResult,
   type DocumentDriftSeverity,
 } from "../lib/docs-control-plane/drift.js";
+import { detectCompletedRecordsWithRalphIntegration } from "../lib/completed-records-combined.js";
 import {
   previewPrdToRalphJson,
   type PrdToRalphJsonPreview,
@@ -208,7 +212,7 @@ interface GraphDocumentScope {
 
 interface DocumentCommandScopeOptions {
   readonly familyOnly?: boolean;
-  readonly includeSession?: boolean;
+  readonly includeTransient?: boolean;
 }
 
 interface PrdContextSource {
@@ -868,7 +872,7 @@ function scopeOptionsFromFlags(
 ): DocumentCommandScopeOptions {
   return {
     familyOnly: hasFlag(flags, "family-only"),
-    includeSession: hasFlag(flags, "include-session"),
+    includeTransient: hasFlag(flags, "include-session"),
   };
 }
 
@@ -925,7 +929,7 @@ async function cmdDrift(
   const result = await detectDocumentDrift(documents, {
     rootDir: options.rootDir,
     ...(options.prdPath ? { prdPath: options.prdPath } : {}),
-    includeSession: hasFlag(flags, "include-session"),
+    includeTransient: hasFlag(flags, "include-session"),
   });
 
   const json = hasFlag(flags, "json");
@@ -1075,7 +1079,7 @@ async function cmdPrd(
       prdPath,
       dryRunDefaulted: !hasFlag(flags, "dry-run"),
       familyOnly: hasFlag(flags, "family-only"),
-      includeSession: hasFlag(flags, "include-session"),
+      includeTransient: hasFlag(flags, "include-session"),
     });
     if (hasErrorDiagnostic(result.diagnostics)) {
       process.exitCode = 1;
@@ -1242,7 +1246,7 @@ async function buildStatusResult(
       ? resolvedSource.documents
       : documents;
   const diagnostics = scopedDocuments.flatMap((document) => document.diagnostics);
-  const completedRecords = await detectCompletedRecords({ rootDir, documents: scopedDocuments });
+  const completedRecords = await detectCompletedRecordsWithRalphIntegration({ rootDir, documents: scopedDocuments });
   const nextFollowUps = await findNextFollowUps({
     rootDir,
     documents: scopedDocuments,
@@ -1325,7 +1329,7 @@ async function buildCollectResult(
     ).documents
     : scopedDocuments;
   const completedRecords = graphResult
-    ? await detectCompletedRecords({ rootDir, documents: viewDocuments })
+    ? await detectCompletedRecordsWithRalphIntegration({ rootDir, documents: viewDocuments })
     : status.completedRecords;
   const nextFollowUps = graphResult
     ? await findNextFollowUps({ rootDir, documents: viewDocuments, completedRecords })
@@ -1477,7 +1481,7 @@ function prdTopicDocumentAllowed(
   scopeOptions: DocumentCommandScopeOptions,
 ): boolean {
   if (scopeOptions.familyOnly !== true) return true;
-  if (document.kind === "ralph-session") return scopeOptions.includeSession === true;
+  if (isTransientDocument(document)) return scopeOptions.includeTransient === true;
   if (document.kind === "prd" || document.kind === "ralph-prd-json") {
     return !normalizePath(document.path).split("/").includes("archive")
       && document.metadata.lifecycle !== "archived";
@@ -2050,7 +2054,7 @@ function collectFamilyOnlyScope(
 ): GraphDocumentScope {
   const scope = collectDocumentFamilyOnlyScope(documents, {
     target: resolved.document,
-    includeSession: options.includeSession === true,
+    includeTransient: options.includeTransient === true,
   });
   return {
     traversal: toFamilyOnlyTraversal(resolved.document, scope.documents, graphInput),

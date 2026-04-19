@@ -17,6 +17,10 @@ def:
       type: contains
     - target: spec-temporal-infra
       type: contains
+    - target: spec-schema
+      type: contains
+    - target: spec-transition
+      type: contains
 ---
 
 # Spec Architecture 그룹

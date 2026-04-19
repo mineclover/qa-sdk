@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // fleet/manager.ts — 중앙 배포 관리 (Fleet Manager)
 import type { DiscoveryClient, ServiceInfo } from "../discovery/client.js";
 import type { InfraProfileAdapter } from "../adapters/adapter.js";

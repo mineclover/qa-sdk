@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 영향 분석 테스트 — 바텀업 역추적
  *

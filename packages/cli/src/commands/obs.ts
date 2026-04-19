@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * obs — Obsidian spec-prefix 볼트 조회/수정 CLI.
  *

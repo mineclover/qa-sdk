@@ -1,11 +1,14 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { z } from "zod";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { emptyStringToUndefined, optionalUrl, booleanWithDefaultFalse, getServicePort, getServiceDevUrl } from "@qa-sdk/core";
+import { emptyStringToUndefined, optionalUrl, booleanWithDefaultFalse, getRequiredServicePort, getServiceDevUrl } from "@qa-sdk/core";
 import { otelEnvSchema } from "@qa-sdk/otel";
 
-const DEFAULT_PORT = getServicePort("ingest-server") ?? 3200;
+const DEFAULT_PORT = getRequiredServicePort("ingest-server");
 
 /**
  * ~/.qa-sdk/ingest-profile.json에서 프로필 설정을 읽어

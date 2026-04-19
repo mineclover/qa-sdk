@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * SignalModel — 트래킹의 상위 개념 구조.
  *

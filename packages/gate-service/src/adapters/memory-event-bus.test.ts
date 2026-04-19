@@ -1,3 +1,6 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
 import { describe, it, expect, vi } from "vitest";
 import { MemoryEventBus } from "./memory-event-bus.js";
 import type { FlagChangeEvent, GateEvent, ReleaseEvent, RecomputeCompleteEvent } from "../ports/event-bus.port.js";

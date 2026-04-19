@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 // ── Bootstrap ──────────────────────────────────────────
 export { initTelemetry, type InitTelemetryOptions } from "./init.js";
 

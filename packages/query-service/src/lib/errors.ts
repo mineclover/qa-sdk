@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 import {
   EntryNotFoundError,
   IndexMetaError,

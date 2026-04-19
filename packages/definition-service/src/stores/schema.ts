@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * definition-service DB 스키마 re-export
  *

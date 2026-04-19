@@ -16,6 +16,7 @@ def:
       type: contains
     - target: pipe-store-sqlite
       type: contains
+  source: packages/core/src/pipe/pipe-store.ts
 ---
 
 # PipeGraph / PipeSpec 저장소

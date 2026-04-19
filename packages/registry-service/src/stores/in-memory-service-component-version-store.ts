@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { ComponentVersionKind } from "../modules/services/service.types.js";
 import type {
   ServiceComponentVersionRecord,

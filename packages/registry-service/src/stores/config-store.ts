@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 /**
  * ConfigStore — DkgConfig + PatternRules 등 카탈로그별 설정 저장.
  *

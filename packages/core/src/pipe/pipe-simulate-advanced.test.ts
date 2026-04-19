@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 시뮬레이션 고급 시나리오 — 29종 PipeFlow + 8종 ConnectionKind 커버리지
  */

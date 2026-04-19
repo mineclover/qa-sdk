@@ -1,3 +1,6 @@
+// @def.boundary decode-service-spec
+// @def.doc decode-service-spec
+
 import { Hono } from "hono";
 import type { DecoderPool } from "../lib/decoder-pool.js";
 

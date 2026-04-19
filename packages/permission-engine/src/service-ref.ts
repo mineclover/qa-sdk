@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * service-ref.ts — 서비스 참조 + SDK 글로벌 컨텍스트.
  *

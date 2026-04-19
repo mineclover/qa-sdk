@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Decode Adapter — 인코딩된 address_context → 디코딩된 축:entry flat map.
  *

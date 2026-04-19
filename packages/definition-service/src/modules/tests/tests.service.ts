@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import { Injectable, Inject } from "@nestjs/common";
 import { DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";
 import { SqlTestStore, type TestStore, type TestRegistration, type TestResult, type TestStatus } from "../../stores/test-store.js";

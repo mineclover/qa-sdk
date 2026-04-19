@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { describe, expect, it } from "vitest";
 import { InMemoryIndexMetaStore, InMemoryPrefixRegistry } from "index-meta";
 import type {

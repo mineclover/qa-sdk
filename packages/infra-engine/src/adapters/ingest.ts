@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 // adapters/ingest.ts — IngestAdapter 실구현
 import { createRequire } from "node:module";
 import type { IngestAdapter } from "./adapter.js";

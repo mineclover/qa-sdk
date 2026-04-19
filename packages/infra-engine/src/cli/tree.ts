@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 import type { CliCommandNode } from "cli-command";
 import { discoverHandler } from "./cmd-discover.js";
 import { deployHandler } from "./cmd-deploy.js";

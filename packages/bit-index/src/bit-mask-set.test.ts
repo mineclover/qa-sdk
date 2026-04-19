@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { describe, it, expect } from "vitest";
 import { BitMaskSet, uint8ToBase64, base64ToUint8 } from "./bit-mask-set.js";
 import { BitIndex } from "./bit-index.js";

@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * gRPC Debug Server — proto/debug.proto 기반.
  *

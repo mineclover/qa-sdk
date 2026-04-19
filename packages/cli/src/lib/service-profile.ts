@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * service-profile — 서비스 URL 중앙 관리.
  *

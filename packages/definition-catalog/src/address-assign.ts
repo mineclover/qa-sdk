@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 유일 주소 할당.
  *

@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ConvergencePipelineRunner, type ConvergencePipelineDeps, type ConvergenceFunctions, type PatternFunctions, type DkgStorePort } from "./convergence-pipeline.js";
 

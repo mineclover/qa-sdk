@@ -1,3 +1,6 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
 import { describe, it, expect } from "vitest";
 import { createGateOpenAPIApp } from "./gate-openapi.js";
 import type { GateLookupService } from "../lib/gate-service.js";

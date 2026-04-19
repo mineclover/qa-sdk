@@ -22,6 +22,7 @@ def:
       type: contains
     - target: pipe-zoom-style
       type: contains
+  source: packages/core/src/pipe/pipe-zoom.ts
 ---
 
 # PipeGraph 줌 레벨 시각화 데이터 모델

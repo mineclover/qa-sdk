@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 /**
  * bit-mask-set.ts — BitIndex 기반 권한/상태 관리 Set
  *

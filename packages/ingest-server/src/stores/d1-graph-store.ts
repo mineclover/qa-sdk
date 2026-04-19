@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { eq } from "drizzle-orm";
 import type { GraphStore } from "@qa-sdk/core";
 import type { RuntimeGraph } from "@qa-sdk/core";

@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 /**
  * SqliteInstanceStore — decision-flow InstanceStore의 SQLite 구현.
  *

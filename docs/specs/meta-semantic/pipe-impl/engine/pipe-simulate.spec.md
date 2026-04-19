@@ -16,6 +16,7 @@ def:
       type: depends_on
     - target: ms-concept-event
       type: implements
+  source: packages/core/src/pipe/pipe-simulate.ts
 ---
 
 # PipeGraph 시뮬레이션 엔진

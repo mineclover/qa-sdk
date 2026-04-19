@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { ServerType } from "@hono/node-server";
 import type { Logger } from "pino";
 import type { AppLifecycle } from "./app-lifecycle.js";

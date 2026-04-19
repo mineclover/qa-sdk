@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import { describe, it, expect } from "vitest";
 import { computeStackLayout, computeAllStacks, STACK_CHECKOUT, STACK_INFRA } from "./matrix-stack.js";
 import type { GridLayout } from "../core/grid-builder.js";

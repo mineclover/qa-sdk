@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import { Injectable, Inject, OnModuleInit } from "@nestjs/common";
 import { createLogger } from "../../lib/logger.js";
 import { DocsService } from "../docs/docs.service.js";

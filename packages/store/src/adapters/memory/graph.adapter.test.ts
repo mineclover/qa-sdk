@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { describe, expect, it } from "vitest";
 import type { RuntimeGraph } from "@qa-sdk/core";
 import { InMemoryGraphStore } from "./graph.adapter.js";

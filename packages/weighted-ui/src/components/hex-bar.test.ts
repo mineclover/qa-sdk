@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 import { describe, expect, it } from "vitest";
 import { renderHexBar } from "./hex-bar.js";
 

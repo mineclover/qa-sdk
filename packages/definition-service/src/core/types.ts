@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * 도메인 타입 — HTTP/DB 무관한 순수 데이터 구조
  */

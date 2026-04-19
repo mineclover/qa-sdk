@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * mode-toggle.ts — 상호 배타적 모드 선택 버튼 그룹.
  *

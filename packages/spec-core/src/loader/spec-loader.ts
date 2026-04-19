@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * 파일 시스템에서 spec 정의를 로딩하는 순수 TS 로더.
  *

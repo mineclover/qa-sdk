@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-engine-system
+// @def.doc qa-sdk-engine-system
+
 import { describe, expect, it } from "vitest";
 import { computeVerdict } from "./compute.js";
 import type { MatchResult, SpecGraph, SpecNode, RuntimeGraph, RuntimeNode } from "@qa-sdk/core";

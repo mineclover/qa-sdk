@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 // ── Constraint — 정형화된 검증 규칙 정의 ────────────────
 
 /**

@@ -1,3 +1,6 @@
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
+
 import type { DiffDelta, DiffFile, Repository } from "es-git";
 import type { BranchChangeFile, BranchChangeStats } from "./branch-conflicts-types.js";
 

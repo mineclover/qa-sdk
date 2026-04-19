@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { now, normalizeTimestamp, compareTimestamps } from "./clock.js";
 

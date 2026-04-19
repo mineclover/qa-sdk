@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import { detectPathSegments } from "./pipe-segment.js";
 import { validatePrefixSegments, validateManifestSegments, chainSegments } from "../catalog/path-summation.js";

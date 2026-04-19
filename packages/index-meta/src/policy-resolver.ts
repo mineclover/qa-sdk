@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * policy-resolver.ts — 좌표 공간 위의 규칙 매칭과 충돌 해소.
  *

@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 /**
  * IngestForwarder — pino destination → ingest 파이프라인 브릿지.
  *

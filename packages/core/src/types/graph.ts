@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import type { EntryCondition, StepConstraint, StepKind } from "./scenario.js";
 
 // ── Spec Graph (Expected Behavior Graph) ────────────────

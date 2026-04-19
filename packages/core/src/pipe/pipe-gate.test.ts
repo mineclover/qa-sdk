@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * pipe-gate 퀄리티 게이트 평가 테스트.
  *

@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { StoredRecord } from "@qa-sdk/core";
 import {
   DEFAULT_DEBUG_STORE_MAX_ENTRIES,

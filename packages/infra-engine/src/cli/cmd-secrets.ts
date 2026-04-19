@@ -1,3 +1,6 @@
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
+
 import type { CommandHandler } from "cli-command";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";

@@ -11,6 +11,7 @@ def:
   links:
     - target: rlsc-relations
       type: refines
+  source: packages/rlsc/src/relations.test.ts
 ---
 
 ## 목적 ^purpose

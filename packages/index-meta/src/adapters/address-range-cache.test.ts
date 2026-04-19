@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { describe, it, expect, beforeEach } from "vitest";
 import { InMemoryAddressRangeCache } from "./memory-address-range-cache.js";
 import { SqlAddressRangeCache } from "./sql-address-range-cache.js";

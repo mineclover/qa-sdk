@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * activation-gate — 활성화 전 DKG constraint/domain-health 검사.
  *

@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * GraphQL Resolver — 문서 조회/탐색 (읽기 전용)
  *

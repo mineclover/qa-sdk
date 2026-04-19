@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * Meta-Semantic Extraction — 검증 단위 식별 + 분기 경로 계산
  *

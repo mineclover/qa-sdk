@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { describe, it, expect } from "vitest";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { eq } from "drizzle-orm";

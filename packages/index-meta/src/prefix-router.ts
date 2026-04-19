@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * PrefixRouter — prefix → D1 database 라우팅
  *

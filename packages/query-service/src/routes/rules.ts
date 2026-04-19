@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 import { Hono } from "hono";
 import { AppError } from "../lib/errors.js";
 import type { RuleService } from "../lib/rule-service.js";

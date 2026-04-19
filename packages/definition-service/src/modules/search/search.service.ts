@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 /**
  * SearchService — FTS5 전문 검색 엔진
  *

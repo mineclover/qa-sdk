@@ -1,3 +1,5 @@
+// @def.doc definition-harness
+
 /**
  * 하네스 상태 모델 — 시스템 전체 개념을 유한 상태로 통합 관리.
  *

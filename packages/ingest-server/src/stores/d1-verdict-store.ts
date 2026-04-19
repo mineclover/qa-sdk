@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * D1VerdictStore — VerdictStore의 D1/SQLite drizzle ORM 구현.
  * ON CONFLICT (scenario_id, trace_id) → 기존 verdict 업데이트.

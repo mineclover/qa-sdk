@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: domain
-  svc: shopping-web
+  svc: viz-web
   tags: [data, contract, runtime]
   links:
     - target: ingest-api-system

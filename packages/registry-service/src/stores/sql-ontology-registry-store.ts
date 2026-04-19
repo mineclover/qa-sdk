@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { getTableName } from "drizzle-orm";
 import type { SqlDriver } from "index-meta";
 import {

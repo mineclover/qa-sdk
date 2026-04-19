@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 import { describe, it, expect } from "vitest";
 import { catalogToPrefixSpecs, prefixToPrefixSpec } from "./catalog-bridge.js";
 import { ExportSurfaceRegistry } from "../export-surface/export-surface.registry.js";

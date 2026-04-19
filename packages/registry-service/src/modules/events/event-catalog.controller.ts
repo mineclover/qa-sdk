@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Post, Put, Query, UseFilters } from "@nestjs/common";
 import { EventCatalogService } from "./event-catalog.service.js";
 import { EventExceptionFilter } from "./event.exception-filter.js";

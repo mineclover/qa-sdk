@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * PipeGraph 프리뷰 페이지
  * SVG / Mermaid / D3 데이터 세 가지 탭으로 출력 확인

@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { Db } from "@qa-sdk/store";
 import { readFileSync } from "node:fs";
 import { Hono, type Context } from "hono";

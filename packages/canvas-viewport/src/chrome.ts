@@ -1,3 +1,6 @@
+// @def.boundary canvas-viewport-spec
+// @def.doc canvas-viewport-spec
+
 export interface CanvasChromeElements {
   shell: HTMLDivElement;
   surfaceHost: HTMLDivElement;

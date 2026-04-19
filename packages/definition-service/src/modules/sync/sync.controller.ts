@@ -1,3 +1,5 @@
+// @def.doc definition-service
+
 import { Controller, Get, Post, Inject, NotFoundException } from "@nestjs/common";
 import { SyncService } from "./sync.service.js";
 

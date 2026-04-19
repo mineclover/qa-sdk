@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 /**
  * DSL 빌더 — store의 축/composite를 선택하여 인코딩/디코딩 테스트
  */

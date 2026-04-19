@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * GateEngine — release / flag 변경 시 AddressStateStore 자동 재계산 테스트
  *

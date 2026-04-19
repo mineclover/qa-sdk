@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import type { CacheEntry, CacheStats, KeyCache } from "@qa-sdk/core";
 
 /**

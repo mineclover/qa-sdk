@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * lifecycle-transition — 노드 상태 전이 + 이력 기록.
  *

@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 워크플로우 합성 (Workflow Synthesis)
  *

@@ -1,9 +1,12 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { describe, expect, it } from "vitest";
 
-import type { CompletedRecordState } from "./completed-records.js";
+import type { CompletedRecordState } from "doc-envelope";
 import { findNextFollowUps } from "./follow-ups.js";
-import { normalizeDocumentEnvelope } from "./normalize.js";
-import type { DocumentEnvelope, DocumentEnvelopeInput } from "./types.js";
+import { normalizeDocumentEnvelope } from "doc-envelope";
+import type { DocumentEnvelope, DocumentEnvelopeInput } from "doc-envelope";
 
 describe("docs-control-plane follow-up candidates", () => {
   it("ranks session, actionable, uncategorized, deferred, and parking-lot candidates", async () => {

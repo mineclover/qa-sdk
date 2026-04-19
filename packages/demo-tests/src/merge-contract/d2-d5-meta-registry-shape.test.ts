@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * D-2/D-5 계약: meta-registry shape 경로 일관성 + PrefixDecoder unresolved 수집.
  *

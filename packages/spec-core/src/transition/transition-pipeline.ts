@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Transition Pipeline — convergence pipeline에 주입되는 전이 함수 번들.
  *

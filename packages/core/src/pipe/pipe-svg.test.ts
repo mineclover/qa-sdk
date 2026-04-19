@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, it, expect } from "vitest";
 import { pipeGraphToSvg, zoomViewToSvg, pipeGraphToD3, zoomViewToD3 } from "viz-core";
 import { computeZoomView, computeLayout } from "./pipe-zoom.js";

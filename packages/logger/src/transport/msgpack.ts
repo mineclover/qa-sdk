@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 import { encode } from "@msgpack/msgpack";
 import type { TransmissionEnvelope } from "@qa-sdk/core";
 import type { Transport } from "./transport.js";

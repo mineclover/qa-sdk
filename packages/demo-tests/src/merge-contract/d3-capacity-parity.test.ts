@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * D-3 계약: capacity 곱셈 경로 간 일치.
  *

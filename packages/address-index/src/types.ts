@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 /* ------------------------------------------------------------------ */
 /*  address-index 핵심 타입                                             */
 /*                                                                      */

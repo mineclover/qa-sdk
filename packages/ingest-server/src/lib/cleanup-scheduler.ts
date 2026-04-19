@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { Logger } from "pino";
 
 export const CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1_000;

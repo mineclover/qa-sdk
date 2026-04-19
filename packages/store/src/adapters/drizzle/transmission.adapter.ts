@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import type { TransmissionStore, TransmissionInsert } from "@qa-sdk/core";
 import type { DbExecutor } from "../../db/client.js";
 import { transmissions } from "../../db/schema.js";

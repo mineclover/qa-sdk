@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk service — 서비스 토폴로지 조회 + 환경 프로필 관리 CLI.
  *

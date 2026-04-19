@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { Logger } from "pino";
 import { env } from "../../config/env.js";
 import type { DevDkgProvider } from "../../lib/dev-dkg-provider.js";

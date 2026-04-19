@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * VersionLifecycleStore — 버전 상태 관리 (PositionEngine)
  *

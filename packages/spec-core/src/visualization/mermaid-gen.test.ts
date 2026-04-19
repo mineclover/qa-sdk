@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * mermaid-gen 테스트 — DKG 그래프 기반 다이어그램 생성 검증.
  *

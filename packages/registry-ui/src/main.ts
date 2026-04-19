@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 import { renderGlossaryPage } from "./pages/glossary.js";
 import { renderPrefixBuilderPage } from "./pages/prefix-builder.js";
 import { renderDslBuilderPage } from "./pages/dsl-builder.js";

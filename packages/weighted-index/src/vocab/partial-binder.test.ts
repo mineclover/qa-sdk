@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * partial-binder.test.ts — 차원 부분 바인딩 테스트.
  *

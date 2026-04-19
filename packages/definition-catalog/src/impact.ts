@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 영향 분석 (Impact Analysis)
  *

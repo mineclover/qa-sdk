@@ -36,6 +36,7 @@ def:
       type: contains
     - target: rlsc-test
       type: contains
+  source: packages/rlsc/src/index.ts
 ---
 
 # R.L.S.C.™ — Relative Layout Structured Content

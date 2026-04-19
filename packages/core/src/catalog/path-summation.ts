@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * 경로 합산 인코딩/디코딩 — 이벤트 분기의 명시적 주소 체계
  *

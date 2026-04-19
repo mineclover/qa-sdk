@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-engine-system
+// @def.doc qa-sdk-engine-system
+
 // @def.doc path-matcher-migration
 import { describe, expect, it } from "vitest";
 import { matchViaPathMatcher } from "./path-matcher-adapter.js";

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { beforeEach, describe, expect, it } from "vitest";
 import { InMemoryPrefixRouter } from "./adapters/memory-prefix-router.js";
 import { NodeSqliteDriver } from "./adapters/node-sqlite-driver.js";

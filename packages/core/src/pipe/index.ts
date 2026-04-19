@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 // ── Pipe Types ────────────────────────────────────────
 export type {
   PipePort, PortRef, PipeSpec, PipeGraph, PipeConnection, ConnectionKind,

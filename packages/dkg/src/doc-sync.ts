@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * Doc Sync — 문서가 코드 상태와 일치하는지 검증하고, 최신 값을 생성한다.
  *

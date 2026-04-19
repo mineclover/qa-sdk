@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 소프트웨어 정의 카탈로그 (Definition Catalog)
  *

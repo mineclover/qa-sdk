@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { InMemoryPolicyRuleStore } from "./in-memory-policy-rule-store.js";
 import { NodeSqliteDriver } from "index-meta";

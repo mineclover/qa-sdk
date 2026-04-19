@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * Scope Lifecycle 패턴 — 비활성화 영향 분석 파이프라인
  *

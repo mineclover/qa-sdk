@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import type { DataObjectBinding } from "./types.js";
 
 export class BindingRegistry {

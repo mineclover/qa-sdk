@@ -11,6 +11,7 @@ def:
   links:
     - target: rlsc-query
       type: refines
+  source: packages/rlsc/src/query.test.ts
 ---
 
 ## 목적 ^purpose

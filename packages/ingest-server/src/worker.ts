@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * worker.ts — ingest-server Cloudflare Workers 진입점.
  *

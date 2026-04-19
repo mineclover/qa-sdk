@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 import { trace, type Tracer } from "@opentelemetry/api";
 
 /**

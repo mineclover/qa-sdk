@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 export {
   LOCAL_ONTOLOGY_ACTIVATION_MEMORY_STORE,
   createLocalOntologyActivationRuntime,

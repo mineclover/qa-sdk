@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * /v1/patterns — 패턴 분류 상태/통계 API.
  *

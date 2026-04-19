@@ -1,3 +1,6 @@
+// @def.boundary dkg-system-root
+// @def.doc dkg-system-root
+
 /**
  * Doc Sync Marker — md 파일의 마커를 최신 값으로 자동 교체.
  *

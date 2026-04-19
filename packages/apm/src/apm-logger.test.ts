@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createLabelRegistry, PrefixCodec } from "weighted-index";
 import { NoopTransport } from "@qa-sdk/sdk";

@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import {
   DOCUMENT_GRAPH_FAMILY_ROLE_TYPES,
   TRAVERSAL_AXIS_PRIORITY,
@@ -5,7 +8,7 @@ import {
   type TraversalAxis,
 } from "./graph-types.js";
 import type { DocumentGraphTraversalResult } from "./graph-traverse.js";
-import type { DocumentMetadata } from "./types.js";
+import type { DocumentMetadata } from "doc-envelope";
 
 export const DOCUMENT_GRAPH_RANK_ALGORITHM = "docs-graph-rule-rank-v1";
 

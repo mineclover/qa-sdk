@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Transition Spec 검증 — JSON Schema 수준 구조 검증.
  *

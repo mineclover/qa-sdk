@@ -1,3 +1,5 @@
+// @def.doc definition-catalog-spec
+
 /**
  * 계층 구조 테스트 — contains 기반 묶음 + 교집합 + 상속
  *

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * named-policy.ts — entity name 기반 정책 규칙 인터페이스.
  *
