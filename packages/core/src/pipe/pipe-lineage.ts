@@ -145,6 +145,9 @@ function extractStepLineage(
         pipeId,
         stepPath: path,
         facet: step.facet || undefined,
+        // ─── 추적 정보 주입 ───
+        lineageFacet: "transform", // 생산/변환 단계
+        intentHierarchy: "core",    // 기본값. 향후 step.meta 등에서 오버라이드 가능
       });
     }
     // hints 없는 이름 매칭 pass-through는 chain lineage에서 처리 (step-internal에서 생성하면 self-reference BFS 문제)

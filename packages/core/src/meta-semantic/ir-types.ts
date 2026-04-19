@@ -14,6 +14,12 @@
  */
 
 import type { FoldLevel } from "../pipe/pipe-fold.js";
+import type {
+  ProjectionPlane,
+  IntentHierarchy,
+  LineageFacet,
+  LineageKind,
+} from "definition-catalog";
 
 // ── 참조 타입 ─────────────────────────────────────────
 
@@ -69,6 +75,8 @@ export interface ModuleMeta {
   readonly level: FoldLevel;
   readonly layer?: "domain" | "operation" | "mediation" | "experience";
   readonly defDocRef?: string;
+  readonly projectionPlane?: ProjectionPlane;
+  readonly intentHierarchy?: IntentHierarchy;
 }
 
 /**
@@ -115,12 +123,16 @@ export interface DataLifecycle {
   readonly producedBy: readonly ModuleRef[];
   readonly consumedBy: readonly ModuleRef[];
   readonly transformedBy: readonly ModuleRef[];
+  readonly lineageFacet?: LineageFacet;
+  readonly lineageKind?: LineageKind;
 }
 
 /** 데이터 저장 — UID 할당 체계 */
 export interface DataStorage {
   readonly uid: string;
   readonly uidScheme: string;
+  readonly axisType?: "finite" | "structural";
+  readonly stableAnchor?: string; // UID or Axis ID
   readonly storageType: "memory" | "db" | "event-stream";
   readonly retention: "ephemeral" | "session" | "persistent";
 }

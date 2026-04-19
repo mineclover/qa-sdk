@@ -59,7 +59,11 @@ export function pipeGraphToModuleIR(graph: PipeGraph): ModuleIR[] {
       internal: [],
       external: [],
     },
-    meta: { level: inferModuleLevel({ parent: null, children: childRefs, internal: [], external: [] }) },
+    meta: {
+      level: inferModuleLevel({ parent: null, children: childRefs, internal: [], external: [] }),
+      projectionPlane: "execution",
+      intentHierarchy: "core",
+    },
   };
 
   // 각 파이프 = leaf 모듈
@@ -85,7 +89,11 @@ export function pipeGraphToModuleIR(graph: PipeGraph): ModuleIR[] {
         internal: [],
         external: outgoing.map(id => ({ moduleId: id })),
       },
-      meta: { level: "leaf" as const },
+      meta: {
+        level: "leaf" as const,
+        projectionPlane: "execution",
+        intentHierarchy: "core", // TODO: spec에서 보조 로직 여부 감지 로직 추가 가능
+      },
     };
   });
 
@@ -132,10 +140,13 @@ export function stepContractToDataIR(
       producedBy: [managedBy],
       consumedBy: [],
       transformedBy: [],
+      lineageFacet: "transform",
+      lineageKind: "mapping",
     },
     storage: {
       uid: "",
       uidScheme: "intent:v1",
+      axisType: "finite",
       storageType: "memory",
       retention: "ephemeral",
     },

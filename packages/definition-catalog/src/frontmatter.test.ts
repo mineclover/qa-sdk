@@ -148,9 +148,51 @@ describe("extractDef", () => {
   depth: overview`);
     const def = extractDef(parsed, "test.md");
     expect(def.lifecycle).toBe("draft");
+    });
+
+  it("신규 추적 및 소유권 필드를 파싱한다", () => {
+    const yaml = `
+def:
+  id: tracking-test
+  scope: feature
+  aspect: func_def
+  depth: specification
+  owner_system: my-service
+  projection_plane: intent
+  intent_hierarchy: core
+  lineage_facet: transform
+  lineage_kind: mapping
+`;
+    const parsed = parseYaml(yaml);
+    const result = extractDef(parsed, "docs/specs/test.spec.md");
+    expect(result.owner_system).toBe("my-service");
+    expect(result.projection_plane).toBe("intent");
+    expect(result.intent_hierarchy).toBe("core");
+    expect(result.lineage_facet).toBe("transform");
+    expect(result.lineage_kind).toBe("mapping");
   });
 
-  it("links를 파싱한다", () => {
+  it("파일 경로에 따라 projection_plane을 자동 추론한다", () => {
+    const yaml = `
+def:
+  id: inference-test
+  scope: feature
+  aspect: func_def
+  depth: specification
+`;
+    const parsed = parseYaml(yaml);
+
+    // docs 경로는 intent
+    const intentRes = extractDef(parsed, "docs/specs/my.spec.md");
+    expect(intentRes.projection_plane).toBe("intent");
+
+    // packages 경로는 execution
+    const execRes = extractDef(parsed, "packages/service/src/main.ts");
+    expect(execRes.projection_plane).toBe("execution");
+  });
+
+    it("필수 필드 누락 시 에러", () => {
+
     const parsed = parseYaml(`def:
   id: api
   scope: interface

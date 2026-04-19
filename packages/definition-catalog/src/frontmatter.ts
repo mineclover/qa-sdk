@@ -305,9 +305,10 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
 
   // 6.1 추론 우선의 법칙: projection_plane 자동 추론
   if (!projectionPlane) {
-    if (filePath.includes("/docs/specs/") || filePath.includes("/docs/proposals/")) {
+    const p = filePath.replace(/\\/g, "/"); // 윈도우 경로 호환
+    if (p.includes("docs/specs/") || p.includes("docs/proposals/")) {
       projectionPlane = "intent";
-    } else if (filePath.includes("/packages/") || filePath.includes("/src/")) {
+    } else if (p.includes("packages/") || p.includes("src/")) {
       projectionPlane = "execution";
     }
   }

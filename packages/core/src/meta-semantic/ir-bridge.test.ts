@@ -74,6 +74,11 @@ describe("pipeGraphToModuleIR", () => {
     expect(child.id).toBe("process-order");
     expect(child.meta.level).toBe("leaf");
     expect(child.relations.parent?.moduleId).toBe("order-flow");
+
+    // 추적 정보 검증
+    expect(root.meta.projectionPlane).toBe("execution");
+    expect(root.meta.intentHierarchy).toBe("core");
+    expect(child.meta.projectionPlane).toBe("execution");
   });
 
   it("그래프 입력 = 엔트리 파이프의 trigger eventKey", () => {
@@ -114,6 +119,11 @@ describe("stepContractToDataIR", () => {
     expect(dataIR.definition.certainty).toBe("strict");
     expect(dataIR.management.managedBy.moduleId).toBe("order-service");
     expect(dataIR.lifecycle.producedBy[0].moduleId).toBe("order-service");
+
+    // 추적 정보 검증
+    expect(dataIR.lifecycle.lineageFacet).toBe("transform");
+    expect(dataIR.lifecycle.lineageKind).toBe("mapping");
+    expect(dataIR.storage.axisType).toBe("finite");
   });
 
   it("any 필드 포함 → certainty flexible", () => {

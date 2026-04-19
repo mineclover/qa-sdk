@@ -13,12 +13,16 @@ import type { ExtractionPort, LlmJudgmentRequest, LlmJudgmentResponse } from "./
 // ── 프롬프트 템플릿 ───────────────────────────────────
 
 export const PROMPT_TEMPLATES = {
-  testability: `다음 함수가 독립적으로 테스트 가능한 실행 단위인지 판단하세요.
+  testability: `다음 함수가 독립적으로 테스트 가능한 실행 단위인지 판단하고, 시스템에서의 위계를 결정하세요.
 
-판단 기준:
-- 명확한 입력/출력 타입이 있는가
-- 부수효과가 식별 가능한가 (또는 없는가)
-- 다른 함수와 독립적으로 테스트할 수 있는가
+판단 및 분류 기준:
+1. 테스트 가능성:
+   - 명확한 입력/출력 타입이 있는가
+   - 부수효과가 식별 가능한가 (또는 없는가)
+   - 다른 함수와 독립적으로 테스트할 수 있는가
+2. 의도 위계 (Intent Hierarchy):
+   - core: 시스템의 존재 이유인 본질적 비즈니스 로직
+   - auxiliary: 로깅, 보안(암호화), 캐싱, 리트라이 등 코어를 지탱하는 보조 로직
 
 제외 기준:
 - 내부 헬퍼로만 사용되고 외부 계약이 없는 함수
@@ -31,7 +35,15 @@ export const PROMPT_TEMPLATES = {
 {markers}
 
 JSON으로 응답:
-{ "verdict": boolean, "confidence": 0~1, "reasoning": "판단 근거", "extracted": { "sideEffects": ["목록"] } }`,
+{ 
+  "verdict": boolean, 
+  "confidence": 0~1, 
+  "reasoning": "판단 근거", 
+  "extracted": { 
+    "intentHierarchy": "core" | "auxiliary",
+    "sideEffects": ["목록"] 
+  } 
+}`,
 
   "branch-significance": `다음 분기가 비즈니스적으로 의미 있는 경우의 수인지 판단하세요.
 
@@ -51,20 +63,31 @@ JSON으로 응답:
 JSON으로 응답:
 { "verdict": boolean, "confidence": 0~1, "reasoning": "판단 근거" }`,
 
-  "side-effects": `다음 코드에서 외부 상태를 변경하는 부수효과를 식별하세요.
+  "side-effects": `다음 코드에서 외부 상태를 변경하는 부수효과를 식별하고, 계보 패싯(Lineage Facet) 역할을 분류하세요.
 
 부수효과 예시:
-- DB 쓰기/삭제
-- HTTP 요청 전송
-- 파일 시스템 변경
-- 이벤트 발행
-- 전역 상태 변경
+- DB 쓰기/삭제, HTTP 요청, 파일 변경, 이벤트 발행
+
+계보 패싯 분류:
+- ingress: 외부 데이터 유입 (Consume)
+- checkpoint: 정합성 검증 (Manage)
+- transform: 데이터 형상 변환 (Produce)
+- egress: 최종 안착 및 신호 방출 (Store)
 
 코드:
 {codeSnippet}
 
 JSON으로 응답:
-{ "verdict": true, "confidence": 0~1, "reasoning": "", "extracted": { "sideEffects": ["목록"] } }`,
+{ 
+  "verdict": true, 
+  "confidence": 0~1, 
+  "reasoning": "", 
+  "extracted": { 
+    "sideEffects": ["목록"],
+    "lineageFacet": "ingress" | "checkpoint" | "transform" | "egress",
+    "lineageKind": "interaction" | "call" | "validation" | "settlement" | "emission" | "response" | "suspension" 
+  } 
+}`,
 
   "dependency-importance": `다음 의존이 이 함수의 핵심 의존인지 판단하세요.
 
