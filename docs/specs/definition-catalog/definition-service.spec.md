@@ -1,7 +1,8 @@
 ---
 def:
   id: definition-service
-  type: spec
+  type: design
+  tier: system
   level: module
   scope: interface
   aspect: api_contract
@@ -9,9 +10,13 @@ def:
   lifecycle: approved
   layer: operation
   svc: definition-service
+  owner_system: definition-service
+  projection_plane: intent
   links:
     - target: definition-catalog-spec
       type: depends_on
+    - target: definition-service-sync
+      type: contains
 ---
 
 # Definition Service — 문서 카탈로그 API 서비스

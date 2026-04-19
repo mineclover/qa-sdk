@@ -1,6 +1,8 @@
 ---
 def:
   id: definition-catalog-spec
+  type: design
+  tier: system
   level: module
   address: def_document:v2:342162
   scope: data
@@ -9,6 +11,8 @@ def:
   lifecycle: approved
   layer: domain
   svc: definition-catalog
+  owner_system: definition-service
+  projection_plane: intent
   tags: [structural, entry-point]
   links:
     - target: system-concepts

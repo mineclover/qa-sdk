@@ -33,13 +33,20 @@ export class SyncService implements OnModuleInit {
     }
   }
 
+  /**
+   * @def.doc definition-service-sync
+   * @facet.intent transform
+   * @facet.hierarchy core
+   */
   async run(): Promise<SyncResult> {
+    logger.info("동기화 프로세스 시작"); // @facet.hierarchy auxiliary
     const result = await syncDocsToDb(env.DOCS_DIR, env.ROOT_DIR, this.docs.getStore());
     this.lastResult = { ...result, timestamp: new Date().toISOString() };
 
     // sync 완료 후 검색 인덱스 재구축
-    this.rebuildSearchIndex();
+    this.rebuildSearchIndex(); // @facet.hierarchy core
 
+    logger.info({ synced: result.synced }, "동기화 완료"); // @facet.hierarchy auxiliary
     return result;
   }
 

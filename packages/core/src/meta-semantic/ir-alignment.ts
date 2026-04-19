@@ -8,8 +8,8 @@
  * 아키텍처 정합성을 증명하고 스코어링한다.
  */
 
-import type { DefinitionEntry, LineageFacet, IntentHierarchy } from "definition-catalog";
-import type { ModuleIR, DataIR } from "./ir-types.js";
+import type { DefinitionEntry } from "definition-catalog";
+import type { ModuleIR } from "./ir-types.js";
 
 // ── 핵심 타입 ─────────────────────────────────────────
 
@@ -73,12 +73,19 @@ export function compareIntentWithExecution(
 
   let matchedScore = 0;
   let shadowCount = 0;
+  let scoredUnits = 0;
 
   for (const unit of matched) {
     let unitScore = 100;
 
     // 2. 의도 위계(Core/Auxiliary) 대조
     if (intent.intent_hierarchy && unit.meta.intentHierarchy) {
+      if (intent.intent_hierarchy === "core" && unit.meta.intentHierarchy === "auxiliary") {
+        // 코어 의도에 보조 구현이 매칭된 경우: 페널티 없이 사이드카로 간주
+        shadowCount++; // 사이드카 발견으로 카운트
+        continue; 
+      }
+      
       if (intent.intent_hierarchy !== unit.meta.intentHierarchy) {
         issues.push({
           type: "hierarchy-mismatch",
@@ -103,12 +110,13 @@ export function compareIntentWithExecution(
       unitScore -= 10;
     }
 
-    // TODO: 상세 패싯(Ingress/Egress) 및 계보 흐름 대조 로직 추가 가능
-
     matchedScore += unitScore;
+    scoredUnits++;
   }
 
-  const averageScore = Math.max(0, Math.min(100, matchedScore / matched.length));
+  const averageScore = scoredUnits > 0 
+    ? Math.max(0, Math.min(100, matchedScore / scoredUnits))
+    : 0;
 
   return {
     score: averageScore,
