@@ -62,6 +62,7 @@ export type DefDocType = "design" | "spec" | "knowledge";
  * pattern: 반복되는 설계 패턴 ("이벤트 수집 패턴")
  * concept: 개념 자체의 정의 ("좌표란 무엇인가", "taxonomy란 무엇인가")
  * proposal: 아직 확정되지 않은 제안/RFC
+ * template: 문서 생성을 위한 뼈대 및 표준 양식
  */
 export type KnowledgeKind =
   | "philosophy"
@@ -71,7 +72,8 @@ export type KnowledgeKind =
   | "convention"
   | "pattern"
   | "concept"
-  | "proposal";
+  | "proposal"
+  | "template";
 
 /** 대분류 — 무엇에 대한 정의인가 */
 export type DefScope =

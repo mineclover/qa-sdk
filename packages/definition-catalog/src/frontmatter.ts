@@ -254,7 +254,7 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
   let docType = typeof d.type === "string" && VALID_DOC_TYPES.has(d.type) ? d.type as DefDocType : undefined;
 
   // knowledge_kind (knowledge 문서 세부 종류)
-  const VALID_KNOWLEDGE_KINDS = new Set(["philosophy", "adr", "guide", "narrative", "convention", "pattern", "concept", "proposal"]);
+  const VALID_KNOWLEDGE_KINDS = new Set(["philosophy", "adr", "guide", "narrative", "convention", "pattern", "concept", "proposal", "template"]);
   const knowledgeKind = typeof d.knowledge_kind === "string" && VALID_KNOWLEDGE_KINDS.has(d.knowledge_kind) ? d.knowledge_kind as KnowledgeKind : undefined;
 
   // D-19 Type 추론 로직: type이 명시되지 않은 경우 knowledge_kind 존재 여부로 추론, 그 외는 "spec"(또는 "design")
