@@ -3,7 +3,6 @@ def:
   id: ms-concept-folding
   type: knowledge
   knowledge_kind: concept
-  level: leaf
   scope: data
   aspect: domain_data
   depth: specification

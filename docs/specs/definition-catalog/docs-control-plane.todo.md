@@ -1,7 +1,8 @@
 ---
 def:
   id: docs-control-plane-todo
-  level: leaf
+  type: knowledge
+  knowledge_kind: proposal
   scope: flow
   aspect: process_flow
   depth: specification

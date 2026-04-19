@@ -1,9 +1,9 @@
 ---
 def:
   id: definition-service
+  intent_hierarchy: core
   type: design
   tier: system
-  level: module
   scope: interface
   aspect: api_contract
   depth: specification

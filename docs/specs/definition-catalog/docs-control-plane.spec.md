@@ -1,7 +1,8 @@
 ---
 def:
   id: docs-control-plane
-  level: module
+  type: knowledge
+  knowledge_kind: proposal
   scope: interface
   aspect: cli_contract
   depth: specification

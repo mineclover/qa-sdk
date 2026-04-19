@@ -3,7 +3,6 @@ def:
   id: meta-semantic-philosophy
   type: knowledge
   knowledge_kind: philosophy
-  level: leaf
   scope: data
   aspect: system_data
   depth: overview

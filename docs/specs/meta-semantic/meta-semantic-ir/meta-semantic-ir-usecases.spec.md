@@ -1,7 +1,11 @@
 ---
 def:
   id: meta-semantic-ir-usecases
-  level: leaf
+  type: design
+  tier: component
+  owner_system: meta-semantic-system
+  projection_plane: intent
+  intent_hierarchy: core
   scope: flow
   aspect: user_scenario
   depth: specification

@@ -3,7 +3,6 @@ def:
   id: ms-concept-contract-descent
   type: knowledge
   knowledge_kind: concept
-  level: leaf
   scope: data
   aspect: domain_data
   depth: specification

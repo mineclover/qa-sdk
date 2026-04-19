@@ -1,9 +1,12 @@
 ---
 def:
   id: pc-event
+  tier: component
+  owner_system: meta-semantic-system
+  projection_plane: intent
+  intent_hierarchy: core
   type: knowledge
   knowledge_kind: concept
-  level: leaf
   scope: flow
   aspect: relation
   depth: specification

@@ -1,7 +1,11 @@
 ---
 def:
   id: meta-semantic-pipe-catalog
-  level: module
+  type: design
+  tier: system
+  owner_system: meta-semantic-system
+  projection_plane: intent
+  intent_hierarchy: core
   scope: flow
   aspect: process_flow
   depth: overview

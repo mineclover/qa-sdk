@@ -1,7 +1,11 @@
 ---
 def:
   id: definition-quality-gates
-  level: module
+  type: design
+  tier: system
+  owner_system: definition-service
+  projection_plane: intent
+  intent_hierarchy: core
   scope: feature
   aspect: func_def
   depth: specification

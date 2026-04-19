@@ -1,7 +1,11 @@
 ---
 def:
   id: pipe-store-sqlite
-  level: leaf
+  type: design
+  tier: component
+  owner_system: meta-semantic-system
+  projection_plane: intent
+  intent_hierarchy: core
   scope: data
   aspect: system_data
   depth: implementation

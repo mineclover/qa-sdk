@@ -1,7 +1,8 @@
 ---
 def:
   id: meta-semantic-v2-migration
-  level: leaf
+  type: knowledge
+  knowledge_kind: proposal
   scope: flow
   aspect: process_flow
   depth: overview

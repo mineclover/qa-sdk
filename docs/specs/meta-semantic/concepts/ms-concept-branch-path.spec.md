@@ -3,7 +3,6 @@ def:
   id: ms-concept-branch-path
   type: knowledge
   knowledge_kind: concept
-  level: leaf
   scope: data
   aspect: domain_data
   depth: specification

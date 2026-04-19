@@ -1,7 +1,11 @@
 ---
 def:
   id: definition-mgmt-state-tracking
-  level: leaf
+  type: design
+  tier: component
+  owner_system: definition-service
+  projection_plane: intent
+  intent_hierarchy: core
   scope: state
   aspect: system_state
   depth: specification

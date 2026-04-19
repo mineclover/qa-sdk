@@ -1,7 +1,11 @@
 ---
 def:
   id: cloud-event-bridge
-  level: leaf
+  type: design
+  tier: component
+  owner_system: meta-semantic-system
+  projection_plane: intent
+  intent_hierarchy: core
   scope: interface
   aspect: event_contract
   depth: specification

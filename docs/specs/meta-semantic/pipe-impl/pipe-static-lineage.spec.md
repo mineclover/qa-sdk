@@ -1,7 +1,11 @@
 ---
 def:
   id: pipe-static-lineage
-  level: module
+  type: design
+  tier: system
+  owner_system: meta-semantic-system
+  projection_plane: intent
+  intent_hierarchy: core
   scope: feature
   aspect: func_def
   depth: specification

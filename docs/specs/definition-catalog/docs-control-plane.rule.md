@@ -1,7 +1,8 @@
 ---
 def:
   id: docs-control-plane-rule
-  level: leaf
+  type: knowledge
+  knowledge_kind: proposal
   scope: constraint
   aspect: tech_constraint
   depth: specification

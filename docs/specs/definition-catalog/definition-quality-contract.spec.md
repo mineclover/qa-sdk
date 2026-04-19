@@ -1,6 +1,11 @@
 ---
 def:
   id: definition-quality-contract
+  type: design
+  tier: component
+  owner_system: definition-service
+  projection_plane: intent
+  intent_hierarchy: core
   scope: interface
   aspect: api_contract
   depth: specification

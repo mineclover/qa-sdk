@@ -1,7 +1,8 @@
 ---
 def:
   id: path-matcher-migration
-  level: leaf
+  type: knowledge
+  knowledge_kind: proposal
   scope: flow
   aspect: process_flow
   depth: specification

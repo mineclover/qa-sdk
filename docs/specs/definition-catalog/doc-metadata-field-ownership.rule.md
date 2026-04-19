@@ -1,8 +1,11 @@
 ---
 def:
   id: doc-metadata-field-ownership
+  tier: component
+  owner_system: definition-service
+  projection_plane: intent
+  intent_hierarchy: core
   type: spec
-  level: leaf
   scope: interface
   aspect: api_contract
   depth: specification

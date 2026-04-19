@@ -1,8 +1,11 @@
 ---
 def:
   id: definition-data-source
+  tier: system
+  owner_system: definition-service
+  projection_plane: intent
+  intent_hierarchy: core
   type: spec
-  level: module
   scope: interface
   aspect: api_contract
   depth: specification

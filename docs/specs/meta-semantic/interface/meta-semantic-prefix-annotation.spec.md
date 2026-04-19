@@ -1,7 +1,11 @@
 ---
 def:
   id: meta-semantic-prefix-annotation
-  level: leaf
+  type: design
+  tier: component
+  owner_system: meta-semantic-system
+  projection_plane: intent
+  intent_hierarchy: core
   scope: interface
   aspect: api_contract
   depth: specification

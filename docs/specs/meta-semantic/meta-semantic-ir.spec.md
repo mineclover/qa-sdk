@@ -1,7 +1,11 @@
 ---
 def:
   id: meta-semantic-ir
-  level: module
+  type: design
+  tier: system
+  owner_system: meta-semantic-system
+  projection_plane: intent
+  intent_hierarchy: core
   scope: data
   aspect: system_data
   depth: specification

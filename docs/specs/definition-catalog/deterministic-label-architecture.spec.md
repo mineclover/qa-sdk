@@ -1,8 +1,11 @@
 ---
 def:
   id: deterministic-label-architecture
+  tier: system
+  owner_system: definition-service
+  projection_plane: intent
+  intent_hierarchy: core
   type: spec
-  level: module
   scope: flow
   aspect: process_flow
   depth: specification

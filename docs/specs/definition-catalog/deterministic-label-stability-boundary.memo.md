@@ -1,9 +1,12 @@
 ---
 def:
   id: deterministic-label-stability-boundary
+  tier: component
+  owner_system: definition-service
+  projection_plane: intent
+  intent_hierarchy: core
   type: knowledge
   knowledge_kind: adr
-  level: leaf
   scope: flow
   aspect: process_flow
   depth: specification

@@ -1,7 +1,8 @@
 ---
 def:
   id: deterministic-label-stability-plan
-  level: leaf
+  type: knowledge
+  knowledge_kind: proposal
   scope: flow
   aspect: process_flow
   depth: specification

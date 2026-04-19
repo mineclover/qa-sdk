@@ -1,9 +1,12 @@
 ---
 def:
   id: pf-throttle
+  tier: component
+  owner_system: meta-semantic-system
+  projection_plane: intent
+  intent_hierarchy: core
   type: knowledge
   knowledge_kind: concept
-  level: leaf
   scope: feature
   aspect: func_def
   depth: specification

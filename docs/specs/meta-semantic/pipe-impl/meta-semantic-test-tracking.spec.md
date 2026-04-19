@@ -1,7 +1,11 @@
 ---
 def:
   id: meta-semantic-test-tracking
-  level: leaf
+  type: design
+  tier: component
+  owner_system: meta-semantic-system
+  projection_plane: intent
+  intent_hierarchy: core
   scope: feature
   aspect: scenario
   depth: specification

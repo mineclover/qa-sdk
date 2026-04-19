@@ -1,9 +1,12 @@
 ---
 def:
   id: topdown-lifecycle-inventory-report
+  tier: component
+  owner_system: definition-service
+  projection_plane: intent
+  intent_hierarchy: core
   type: knowledge
   knowledge_kind: guide
-  level: leaf
   scope: flow
   aspect: process_flow
   depth: validation

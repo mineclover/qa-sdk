@@ -3,7 +3,6 @@ def:
   id: meta-semantic-concepts
   type: knowledge
   knowledge_kind: concept
-  level: module
   scope: data
   aspect: domain_data
   depth: overview

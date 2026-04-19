@@ -1,7 +1,8 @@
 ---
 def:
   id: definition-addressing-plan
-  level: leaf
+  type: knowledge
+  knowledge_kind: proposal
   scope: data
   aspect: domain_data
   depth: specification

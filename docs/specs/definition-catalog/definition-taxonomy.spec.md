@@ -1,9 +1,12 @@
 ---
 def:
   id: definition-taxonomy
+  tier: system
+  owner_system: definition-service
+  projection_plane: intent
+  intent_hierarchy: core
   type: knowledge
   knowledge_kind: concept
-  level: module
   address: def_document:v2:342164
   scope: data
   aspect: domain_data

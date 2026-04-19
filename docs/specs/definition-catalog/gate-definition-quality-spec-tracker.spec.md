@@ -1,6 +1,11 @@
 ---
 def:
   id: gate-definition-quality-spec-tracker
+  type: design
+  tier: component
+  owner_system: definition-service
+  projection_plane: intent
+  intent_hierarchy: core
   scope: constraint
   aspect: tech_constraint
   depth: validation

@@ -1,9 +1,9 @@
 ---
 def:
   id: definition-catalog-spec
+  intent_hierarchy: core
   type: design
   tier: system
-  level: module
   address: def_document:v2:342162
   scope: data
   aspect: domain_data
