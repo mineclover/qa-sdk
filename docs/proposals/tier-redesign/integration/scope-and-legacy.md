@@ -37,15 +37,20 @@ topic: primary-goal-and-legacy-deprecation
 
 ### 1.3 범위 외 (Out of Scope — 공존)
 
-기존 체계 중 **tier와 직교하거나 층위가 달라 공존 가능한 것**은 건드리지 않음:
+기존 체계 중 **tier와 직교하거나 층위가 달라 공존 가능한 것**은 건드리지 않는다. 단, **D-19 결정(최상위 분류 체계 도입)**에 따라 이 축들의 필수 적용 여부가 `type` 필드에 의해 제어된다.
 
-- `scope` (7값) — 관심사 축, tier와 직교
-- `aspect` (22값) — scope 내 세분화, tier와 직교
-- `layer` (4값, domain/operation/mediation/experience) — 존재 이유 축, tier와 직교
-- `depth` (4값 enum, overview/specification/implementation/validation) — 상세도 축, tier와 직교 (D-6 유지 확정)
-- `doc-type-ext` (7값, .spec/.rule/.todo/...) — 역할 축, tier와 직교 (R-1)
-- `knowledge_kind` — knowledge 문서 전용, tier 적용 제외 (D-2)
-- `lifecycle` (draft/approved) — 상태 축, 좌표 밖
+| 축 (Axis) | 설명 | `type: design` (설계) | `type: knowledge` (지식) |
+|---|---|---|---|
+| `scope` (7값) | 관심사 축 | **필수** (정밀 좌표) | 선택 (포괄적 부여 가능) |
+| `aspect` (22값) | scope 내 세분화 | **필수** (정밀 좌표) | 선택 |
+| `depth` (4값 enum) | 상세도 축 | **필수** (D-6 유지 확정) | 선택 |
+| `layer` (4값) | 존재 이유 축 | 선택 | 선택 |
+| `doc-type-ext` (7값+) | 파일 확장자 역할 축 | **`.spec`, `.rule` 등 필수** | `.md`, `.memo` 등 사용 |
+| `knowledge_kind` | 지식의 성격 | **사용 금지** | **필수** |
+| `tier` (4값) | STC 구조 축 (본 제안 신설) | **필수** | **면제** |
+| `lifecycle` | 상태 축 (draft/approved) | 적용 | 적용 |
+
+그 외 다음의 런타임 및 그래프 요소들도 본 제안의 범위 밖이며 그대로 유지된다:
 - `axis` / `prefix` — 런타임 카탈로그, 메타데이터와 다른 층위
 - DKG 16 노드 — 설계 그래프, tier보다 상위 추상화
 
