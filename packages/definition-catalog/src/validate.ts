@@ -31,7 +31,9 @@ export interface ValidationIssue {
     | "duplicate-coordinate"
     | "system-contains-system"
     | "invalid-lifecycle-ref"
-    | "invalid-type-classification";
+    | "invalid-type-classification"
+    | "missing-owner-system"
+    | "invalid-hierarchy-classification";
   readonly docId: string;
   readonly message: string;
 }
@@ -326,6 +328,26 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
           message: `lifecycle_ref.state_component 타겟 "${lr.stateComponent}"이(가) 존재하지 않습니다.`,
         });
       }
+    }
+  }
+
+  // D-20 소유권 및 추적 체계 검증
+  for (const entry of allEntries) {
+    if (entry.lifecycle === "deprecated") continue;
+
+    // type: design인데 owner_system 누락 (Warning 후 Error 승격)
+    if (entry.type === "design" && !entry.ownerSystem) {
+      issues.push({
+        severity: "warning", // Phase 4B에서 error 승격
+        type: "missing-owner-system",
+        docId: entry.id,
+        message: `Design 문서("${entry.id}")는 소유권 체인 구축을 위한 owner_system 필드가 필수입니다.`,
+      });
+    }
+
+    // auxiliary인 경우 core와 분리되어 관찰 가능한지 (간단한 정합성 체크)
+    if (entry.intentHierarchy === "auxiliary" && entry.projectionPlane === "intent") {
+      // 보조 의도인데 코어 시스템 문서에 직접 inline 되어있는지 등 체크 (추후 정교화)
     }
   }
 

@@ -88,6 +88,16 @@ export interface FrontmatterDef {
   readonly links?: readonly FrontmatterLink[];
   /** 서비스 레지스트리 연결 (serviceId) */
   readonly svc?: string;
+  /** 최상위 소유 시스템 ID */
+  readonly owner_system?: string;
+  /** 투영 평면 */
+  readonly projection_plane?: string;
+  /** 의도 위계 */
+  readonly intent_hierarchy?: string;
+  /** 계보 패싯 */
+  readonly lineage_facet?: string;
+  /** 계보 상세 유형 */
+  readonly lineage_kind?: string;
 }
 
 /** frontmatter에서 파싱된 gate 블록 */
@@ -281,6 +291,32 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
   const VALID_TIERS = new Set(["component", "entry", "system", "layout", "exempt"]);
   const tier = typeof d.tier === "string" && VALID_TIERS.has(d.tier) ? d.tier as DefTier : undefined;
 
+  // ─── 추적 및 소유권 (D-19/20) ───
+  const VALID_PROJECTION_PLANES = new Set(["intent", "execution"]);
+  const VALID_INTENT_HIERARCHIES = new Set(["core", "auxiliary"]);
+  const VALID_LINEAGE_FACETS = new Set(["ingress", "checkpoint", "transform", "egress"]);
+  const VALID_LINEAGE_KINDS = new Set(["interaction", "call", "subscription", "load", "validation", "mapping", "enrichment", "branching", "settlement", "emission", "response", "suspension"]);
+
+  let projectionPlane = typeof d.projection_plane === "string" && VALID_PROJECTION_PLANES.has(d.projection_plane) ? d.projection_plane : undefined;
+  const intentHierarchy = typeof d.intent_hierarchy === "string" && VALID_INTENT_HIERARCHIES.has(d.intent_hierarchy) ? d.intent_hierarchy : undefined;
+  const lineageFacet = typeof d.lineage_facet === "string" && VALID_LINEAGE_FACETS.has(d.lineage_facet) ? d.lineage_facet : undefined;
+  const lineageKind = typeof d.lineage_kind === "string" && VALID_LINEAGE_KINDS.has(d.lineage_kind) ? d.lineage_kind : undefined;
+  const ownerSystem = typeof d.owner_system === "string" ? d.owner_system : undefined;
+
+  // 6.1 추론 우선의 법칙: projection_plane 자동 추론
+  if (!projectionPlane) {
+    if (filePath.includes("/docs/specs/") || filePath.includes("/docs/proposals/")) {
+      projectionPlane = "intent";
+    } else if (filePath.includes("/packages/") || filePath.includes("/src/")) {
+      projectionPlane = "execution";
+    }
+  }
+
+  // D-20 소유권 강제: type: design인 경우 owner_system 필수 (구현 단계에서는 warning 처리 후 차후 error 승격 가능)
+  if (docType === "design" && !ownerSystem) {
+    // TODO: Phase 4B에서 error로 승격. 현재는 pass 하거나 warning 로그
+  }
+
   let lifecycleRef: LifecycleRef | undefined = undefined;
   if (typeof d.lifecycle_ref === "object" && d.lifecycle_ref !== null && !Array.isArray(d.lifecycle_ref)) {
     const lr = d.lifecycle_ref as Record<string, unknown>;
@@ -304,6 +340,11 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
     level: level as DefLevel,
     ...(tier ? { tier } : {}),
     ...(lifecycleRef ? { lifecycle_ref: lifecycleRef } : {}),
+    ...(ownerSystem ? { owner_system: ownerSystem } : {}),
+    ...(projectionPlane ? { projection_plane: projectionPlane } : {}),
+    ...(intentHierarchy ? { intent_hierarchy: intentHierarchy } : {}),
+    ...(lineageFacet ? { lineage_facet: lineageFacet } : {}),
+    ...(lineageKind ? { lineage_kind: lineageKind } : {}),
     scope: scope as DefScope,
     aspect: aspect as DefAspect,
     depth: depth as DefDepth,
@@ -553,6 +594,11 @@ export async function scanAndBuild(
         depth: def.depth,
         lifecycle: def.lifecycle,
         layer: def.layer,
+        ownerSystem: def.owner_system,
+        projectionPlane: def.projection_plane as any,
+        intentHierarchy: def.intent_hierarchy as any,
+        lineageFacet: def.lineage_facet as any,
+        lineageKind: def.lineage_kind as any,
         tags: def.tags ? [...def.tags] : undefined,
         ref: relPath,
         serviceId: def.svc,

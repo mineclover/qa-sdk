@@ -153,6 +153,32 @@ export type DefLifecycle =
   | "deprecated"  // 폐기예정
   | "archived";   // 보관
 
+/** 투영 평면 — 지식의 출처와 주권 */
+export type ProjectionPlane =
+  | "intent"      // 설계자의 규범적 의도
+  | "execution";  // 코드의 실증적 사실
+
+/** 의도 위계 — 시스템 내 역할 비중 */
+export type IntentHierarchy =
+  | "core"        // 도메인 본질 로직
+  | "auxiliary";  // 인프라/지원 로직 (Sidecar)
+
+/** 계보 패싯 — 혈통 상의 상태 전이 */
+export type LineageFacet =
+  | "ingress"     // 유입
+  | "checkpoint"  // 검문 (Manage)
+  | "transform"   // 변환 (Produce)
+  | "egress";      // 안착/유출 (Store)
+
+/** 계보 상세 유형 */
+export type LineageKind =
+  // Ingress
+  | "interaction" | "call" | "subscription" | "load"
+  // Traversal
+  | "validation" | "mapping" | "enrichment" | "branching"
+  // Egress
+  | "settlement" | "emission" | "response" | "suspension";
+
 /** 정의 간 관계 유형 */
 export type LinkType =
   | "depends_on"   // 의존
@@ -345,6 +371,18 @@ export interface DefinitionEntry {
   readonly lifecycle: DefLifecycle;
   /** 존재론적 계층 — business / interaction / binding (선택, 기본: business) */
   readonly layer?: DefLayer;
+
+  // ─── 추적 및 소유권 (D-19/20) ───
+  /** 최상위 소유 시스템 ID */
+  readonly owner_system?: string;
+  /** 투영 평면 */
+  readonly projection_plane?: ProjectionPlane;
+  /** 의도 위계 */
+  readonly intent_hierarchy?: IntentHierarchy;
+  /** 계보 패싯 */
+  readonly lineage_facet?: LineageFacet;
+  /** 계보 상세 유형 */
+  readonly lineage_kind?: LineageKind;
 
   // 상태 관리 위임 (선택)
   readonly lifecycleRef?: LifecycleRef;
