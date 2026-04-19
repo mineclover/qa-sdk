@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk def — definition-catalog 문서 관리 CLI.
  *
@@ -38,6 +41,7 @@ import {
 } from "definition-catalog";
 import { createDataSource, syncDocsToLocalDb, type DataSourceOptions } from "definition-data-source";
 import { formatHelpSections, type CommandHelpSectionSpec } from "../command-spec.js";
+import { cmdTierClassify } from "../lib/def-tier-classify.cmd.js";
 
 // ── 유틸 ──────────────────────────────────────────────
 
@@ -1247,6 +1251,14 @@ const DEF_HELP_SECTIONS = [
       "state --deps        머신 간 의존 관계",
     ],
   },
+  {
+    title: "유틸",
+    lines: [
+      "audit-db            DB 검증/정리",
+      "overview            전체 그룹 구조 조회",
+      "tier classify       Phase 1.B 자동 분류 실행기",
+    ],
+  },
 ] as const satisfies readonly CommandHelpSectionSpec[];
 
 function printDefHelp() {
@@ -1276,7 +1288,7 @@ export async function cliDef(args: string[]): Promise<void> {
   // DefDataSource 기반 커맨드 (전체 통합)
   const dsCommands = new Set([
     "list", "get", "body", "read", "children", "parent", "incoming", "outgoing", "validate", "search", "stats",
-    "impact", "check", "audit", "audit-db", "overview", "find-by-file", "guide", "concepts",
+    "impact", "check", "audit", "audit-db", "overview", "tier", "find-by-file", "guide", "concepts",
     "topdown", "bottomup", "context", "boundary", "boundary-context",
   ]);
   if (dsCommands.has(sub)) {
@@ -1309,6 +1321,12 @@ export async function cliDef(args: string[]): Promise<void> {
         case "audit": return await cmdAudit(source);
         case "audit-db": return await cmdAuditDb(source);
         case "overview": return await cmdOverview(source);
+        case "tier":
+          if (rest[0] === "classify") {
+            return await cmdTierClassify(source, rest.slice(1), flags);
+          }
+          console.log("Usage: qa-sdk def tier classify");
+          return;
         case "find-by-file": return await cmdFindByFile(source, rest[0] ?? "");
         case "guide": return await cmdGuide(source, rest[0]);
         case "topdown":

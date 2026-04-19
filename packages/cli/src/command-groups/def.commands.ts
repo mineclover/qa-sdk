@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import {
   collectCommandUsageSpecs,
   descriptorsToTree,
@@ -36,6 +39,7 @@ export const DEF_COMMAND_DESCRIPTORS = [
   { id: "def.check", path: ["check"], handlerKey: "def.check" },
   { id: "def.audit-db", path: ["audit-db"], handlerKey: "def.audit-db" },
   { id: "def.overview", path: ["overview"], handlerKey: "def.overview" },
+  { id: "def.tier.classify", path: ["tier", "classify"], handlerKey: "def.tier.classify" },
   { id: "def.link-rules", path: ["link-rules"], handlerKey: "def.link-rules" },
   { id: "def.find-by-file", path: ["find-by-file"], handlerKey: "def.find-by-file" },
   { id: "def.guide", path: ["guide"], handlerKey: "def.guide" },
@@ -62,7 +66,8 @@ export const DEF_HANDLER_REGISTRY = new Proxy({} as Record<string, RestCommandHa
     if (typeof prop !== "string" || !prop.startsWith("def.")) return undefined;
     return async (rest: string[]) => {
       const subcommand = prop.slice(4); // remove 'def.'
-      await cliDef([subcommand, ...rest]);
+      // split dots to support nested commands like def.tier.classify
+      await cliDef([...subcommand.split("."), ...rest]);
     };
   },
 });
