@@ -341,10 +341,12 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
 
   // 중복 좌표 감지 (tier, scope, layer, aspect, domain_root)
   // Phase 2: domain_root를 키에 포함해 서로 다른 도메인의 같은 좌표는 중복으로 보지 않는다
+  // Phase 5d: knowledge_kind=proposal 문서는 설계 반복 중 공유 좌표가 의도적 co-location이므로 검사 제외
   const coords = new Map<string, string[]>();
   for (const entry of allEntries) {
     if (entry.lifecycle === "deprecated") continue;
     if (entry.tier === "component") continue; // component는 수동 참조 대상으로 좌표 유일성 불필요
+    if (entry.knowledgeKind === "proposal") continue;
     const domainRoot = domainRoots.get(entry.id) ?? entry.id;
     const key = `${entry.tier || "none"}:${entry.scope}:${entry.layer || "none"}:${entry.aspect}:${domainRoot}`;
     const docs = coords.get(key) ?? [];
