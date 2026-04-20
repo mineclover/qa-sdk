@@ -17,6 +17,8 @@ def:
       type: contains
     - target: df-ingest-emission
       type: contains
+    - target: df-system
+      type: depends_on
 ---
 # Decision Flow 외부 인터페이스
 

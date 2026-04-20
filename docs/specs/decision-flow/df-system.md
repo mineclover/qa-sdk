@@ -11,17 +11,9 @@ def:
   svc: decision-flow
   tags: [structural, decision, entry-point]
   links:
-    - target: df-model-group
-      type: depends_on
-    - target: df-analysis-group
-      type: depends_on
-    - target: df-interface-group
-      type: depends_on
     - target: df-constraint
       type: contains
     - target: decision-standard-group
-      type: depends_on
-    - target: df-narrative-group
       type: depends_on
     - target: axis-decision-guide
       type: contains
@@ -29,8 +21,6 @@ def:
       type: contains
     - target: df-gate-integration
       type: contains
-    - target: df-taxonomy
-      type: depends_on
     - target: decision-flow-store
       type: contains
 ---

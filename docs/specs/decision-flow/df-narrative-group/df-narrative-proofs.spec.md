@@ -1,8 +1,7 @@
 ---
 def:
   id: df-narrative-proofs
-  type: knowledge
-  knowledge_kind: narrative
+  type: spec
   tier: system
   address: def_document:v2:70020
   scope: feature
@@ -25,6 +24,8 @@ def:
       type: contains
     - target: df-narrative-proof-operational-cases
       type: contains
+    - target: df-system
+      type: depends_on
 ---
 # Decision Flow — 서사 증명
 

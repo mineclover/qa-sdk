@@ -16,9 +16,11 @@ def:
     - target: df-narrative-structure
       type: contains
     - target: df-narrative-proofs
-      type: depends_on
+      type: traces_to
     - target: df-narrative-context
       type: contains
+    - target: df-system
+      type: depends_on
 ---
 
 # Decision Flow — 서사 그룹

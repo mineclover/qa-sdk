@@ -17,6 +17,8 @@ def:
       type: contains
     - target: df-causal-mapping
       type: contains
+    - target: df-system
+      type: depends_on
 ---
 # Decision Flow 분석 기능
 

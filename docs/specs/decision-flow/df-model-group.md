@@ -19,6 +19,8 @@ def:
       type: contains
     - target: df-serialization
       type: contains
+    - target: df-system
+      type: depends_on
 ---
 # Decision Flow 핵심 모델
 

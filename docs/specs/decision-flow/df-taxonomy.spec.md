@@ -1,8 +1,7 @@
 ---
 def:
   id: df-taxonomy
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   tier: system
   scope: data
   aspect: domain_data
@@ -25,7 +24,9 @@ def:
     - target: axis-decision-guide
       type: contains
     - target: taxonomy-boundaries
-      type: refines
+      type: traces_to
+    - target: df-system
+      type: depends_on
 ---
 
 # Decision Flow Taxonomy — 판단 추적 분류 체계
