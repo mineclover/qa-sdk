@@ -2,7 +2,7 @@
 def:
   id: viz-system-root
   type: spec
-  tier: system
+  tier: layout
   scope: ui
   aspect: layout
   depth: specification
@@ -12,6 +12,14 @@ def:
   links:
     - target: viz-system
       type: depends_on
+    - target: viz-system
+      type: refs
+    - target: viz-language-system
+      type: refs
+    - target: viz-surface-system
+      type: refs
+    - target: viz-roleplay-system
+      type: refs
 ---
 # Visualization System Root
 ## 목적 ^purpose

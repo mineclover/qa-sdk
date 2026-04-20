@@ -1,7 +1,7 @@
 ---
 def:
   id: gate-system
-  tier: system
+  tier: layout
   address: def_document:v2:68631
   scope: feature
   aspect: func_def
@@ -12,17 +12,17 @@ def:
   tags: [structural, security, entry-point]
   links:
     - target: gate-state-model
-      type: contains
+      type: refs
     - target: gate-state-model-rule
       type: traces_to
     - target: gate-engine-func
-      type: contains
+      type: refs
     - target: gate-flow
-      type: contains
+      type: refs
     - target: gate-constraint
-      type: contains
+      type: refs
     - target: gate-scenario
-      type: contains
+      type: refs
 ---
 
 # Gate 시스템

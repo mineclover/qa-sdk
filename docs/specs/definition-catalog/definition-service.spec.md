@@ -3,7 +3,7 @@ def:
   id: definition-service
   intent_hierarchy: core
   type: design
-  tier: system
+  tier: layout
   scope: interface
   aspect: api_contract
   depth: specification
@@ -14,9 +14,11 @@ def:
   projection_plane: intent
   links:
     - target: definition-catalog-spec
-      type: contains
+      type: depends_on
     - target: definition-service-sync
       type: depends_on
+    - target: definition-service-sync
+      type: refs
 ---
 
 # Definition Service — 문서 카탈로그 API 서비스
