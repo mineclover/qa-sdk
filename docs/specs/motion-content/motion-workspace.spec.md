@@ -15,6 +15,8 @@ def:
       type: refines
     - target: motion-workspace-client-spec
       type: contains
+    - target: motion-workspace-system
+      type: depends_on
 ---
 # Motion Workspace
 

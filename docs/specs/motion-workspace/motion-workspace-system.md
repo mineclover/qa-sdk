@@ -14,8 +14,6 @@ def:
       type: contains
     - target: motion-workspace-client
       type: contains
-    - target: motion-workspace-service
-      type: depends_on
 ---
 # motion-workspace-system
 

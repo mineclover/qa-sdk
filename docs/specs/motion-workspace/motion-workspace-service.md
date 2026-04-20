@@ -12,6 +12,8 @@ def:
   links:
     - target: motion-workspace
       type: contains
+    - target: motion-workspace-system
+      type: depends_on
 ---
 # motion-workspace-service
 
