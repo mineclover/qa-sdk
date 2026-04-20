@@ -1,4 +1,5 @@
 // @def.doc definition-catalog-spec
+// @def.boundary definition-catalog-spec
 
 /**
  * 문서 그래프 검증 (Validation)
@@ -15,10 +16,11 @@ import {
   allowsSemanticMultiParent,
   semanticContainsDepthLimit,
 } from "./semantic-lint.js";
+import { deriveAllDomainRoots, detectOwnerRootMismatch } from "./domain-root.js";
 
 /** 검증 이슈 1건 */
 export interface ValidationIssue {
-  readonly severity: "error" | "warning";
+  readonly severity: "error" | "warning" | "info";
   readonly type:
     | "broken-link" | "circular-ref" | "self-ref" | "orphan"
     | "missing-purpose" | "short-purpose"
@@ -33,7 +35,8 @@ export interface ValidationIssue {
     | "invalid-lifecycle-ref"
     | "invalid-type-classification"
     | "missing-owner-system"
-    | "invalid-hierarchy-classification";
+    | "invalid-hierarchy-classification"
+    | "owner-root-mismatch";
   readonly docId: string;
   readonly message: string;
 }
@@ -61,6 +64,15 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
   const allEntries = registry.all();
   const allIds = new Set(allEntries.map(e => e.id));
   const semanticSignalCache = new Map<string, readonly string[]>();
+
+  // domain_root 파생: 중복 좌표 판정 확장 및 owner-root-mismatch 진단에 사용
+  // fail-open — 파생 실패 시 빈 Map으로 대체하고 기존 키로 fallback
+  let domainRoots: Map<string, string>;
+  try {
+    domainRoots = deriveAllDomainRoots(registry);
+  } catch {
+    domainRoots = new Map();
+  }
 
   // 참조되는 ID 수집 (고아 판별용)
   const referenced = new Set<string>();
@@ -199,10 +211,10 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
       const refsChildren = outgoingLinks.filter(l => l.linkType === "refs");
 
       if (entry.tier === "layout") {
-        // Layout은 refs를 주력으로 써야 함
+        // Layout은 refs를 주력으로 써야 함 — contains 사용 금지
         if (containsChildren.length > 0) {
           issues.push({
-            severity: "error", // Phase 4B: Error 승격
+            severity: "error",
             type: "level-violation" as ValidationIssue["type"],
             docId: entry.id,
             message: `tier: layout은 contains 대신 refs 사용이 강제됩니다 (${containsChildren.length}건 감지)`,
@@ -217,13 +229,28 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
           });
         }
       } else if (entry.tier === "system") {
-        // System은 leaf 성격이므로 contains를 가지면 안 됨 (독립성 원칙)
+        // System이 다른 System을 contains하면 독립성 위반
+        // (System→Component/Entry/non-tier contains는 허용)
+        const systemContainsSystem = containsChildren.filter(link => {
+          const target = registry.get(link.targetId);
+          return target?.tier === "system";
+        });
+        if (systemContainsSystem.length > 0) {
+          issues.push({
+            severity: "error",
+            type: "system-contains-system" as ValidationIssue["type"],
+            docId: entry.id,
+            message: `System이 다른 System을 contains할 수 없음 (${systemContainsSystem.map(l => l.targetId).join(", ")}) — depends_on 전환 필요`,
+          });
+        }
+      } else if (entry.tier === "component") {
+        // Component는 수동적(링크 대상) — contains 자식을 가지면 구조 이상
         if (containsChildren.length > 0) {
           issues.push({
-            severity: "error", // Phase 4B: Error 승격
+            severity: "warning",
             type: "level-violation" as ValidationIssue["type"],
             docId: entry.id,
-            message: `tier: system은 독립적이어야 하며 contains 자식을 가질 수 없음 (depends_on 전환 필요: ${containsChildren.length}건 감지)`,
+            message: `tier: component는 링크 대상이며 contains 자식을 권장하지 않음 (${containsChildren.length}건) — data-shape 분리 권장`,
           });
         }
       }
@@ -290,7 +317,9 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
     }
 
     if (entry.type === "design" || entry.type === "spec") {
-      if (!DESIGN_EXTS.has(ext)) {
+      // 베어 .md, .todo.md, .memo.md는 레거시/혼용 확장자 — 타입 불일치 경고 제외
+      const LEGACY_SAFE_EXTS = new Set([".md", ".todo.md", ".memo.md"]);
+      if (!DESIGN_EXTS.has(ext) && !LEGACY_SAFE_EXTS.has(ext)) {
         issues.push({
           severity: "warning",
           type: "invalid-type-classification",
@@ -310,22 +339,46 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
     }
   }
 
-  // 중복 좌표 감지 (tier, scope, layer, aspect)
+  // 중복 좌표 감지 (tier, scope, layer, aspect, domain_root)
+  // Phase 2: domain_root를 키에 포함해 서로 다른 도메인의 같은 좌표는 중복으로 보지 않는다
   const coords = new Map<string, string[]>();
   for (const entry of allEntries) {
     if (entry.lifecycle === "deprecated") continue;
-    const key = `${entry.tier || "none"}:${entry.scope}:${entry.layer || "none"}:${entry.aspect}`;
+    if (entry.tier === "component") continue; // component는 수동 참조 대상으로 좌표 유일성 불필요
+    const domainRoot = domainRoots.get(entry.id) ?? entry.id;
+    const key = `${entry.tier || "none"}:${entry.scope}:${entry.layer || "none"}:${entry.aspect}:${domainRoot}`;
     const docs = coords.get(key) ?? [];
     docs.push(entry.id);
     coords.set(key, docs);
   }
   for (const [key, docs] of coords.entries()) {
     if (docs.length > 1) {
+      // key 포맷: tier:scope:layer:aspect:domain_root — 마지막 콜론 이후가 domain_root
+      const lastColon = key.lastIndexOf(":");
+      const coordPart = key.slice(0, lastColon);
+      const rootPart = key.slice(lastColon + 1);
       issues.push({
         severity: "warning",
         type: "duplicate-coordinate",
         docId: docs[0], // Arbitrary
-        message: `중복 좌표 (tier:scope:layer:aspect = ${key})를 공유하는 문서들: [${docs.join(", ")}]`,
+        message: `중복 좌표 (tier:scope:layer:aspect = ${coordPart}) + 도메인 루트 ${rootPart}: [${docs.join(", ")}]`,
+      });
+    }
+  }
+
+  // owner_system과 파생 domain_root 사이의 정합성 진단 (info)
+  // 의도적 cross-domain 소비는 info로만 기록, 차단하지 않음
+  for (const entry of allEntries) {
+    if (entry.lifecycle === "deprecated") continue;
+    const derivedRoot = domainRoots.get(entry.id);
+    if (!derivedRoot) continue;
+    const verdict = detectOwnerRootMismatch(entry, derivedRoot, registry);
+    if (verdict === "mismatch") {
+      issues.push({
+        severity: "info",
+        type: "owner-root-mismatch",
+        docId: entry.id,
+        message: `owner_system=${entry.owner_system} 과 파생 domain_root=${derivedRoot} 불일치 — 링크 보완 또는 owner_system 재정의 검토`,
       });
     }
   }

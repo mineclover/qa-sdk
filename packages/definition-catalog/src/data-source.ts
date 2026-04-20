@@ -233,7 +233,7 @@ export interface DefListFilter {
 
 /** 검증 이슈 */
 export interface DefValidationIssue {
-  severity: "error" | "warning";
+  severity: "error" | "warning" | "info";
   type: string;
   docId: string;
   message: string;
