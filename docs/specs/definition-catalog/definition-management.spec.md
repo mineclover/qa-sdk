@@ -7,7 +7,7 @@ def:
   projection_plane: intent
   intent_hierarchy: core
   scope: flow
-  aspect: process_flow
+  aspect: definition_mgmt_flow
   depth: overview
   lifecycle: approved
   layer: operation
@@ -15,7 +15,7 @@ def:
   tags: [structural, entry-point]
   links:
     - target: definition-taxonomy
-      type: contains
+      type: depends_on
     - target: definition-level
       type: contains
     - target: definition-concern
@@ -27,10 +27,6 @@ def:
     - target: definition-mgmt-coordinates
       type: contains
     - target: definition-mgmt-graph-links
-      type: contains
-    - target: definition-mgmt-state-tracking
-      type: contains
-    - target: definition-mgmt-feedback-loop
       type: contains
     - target: definition-mgmt-observability-model
       type: depends_on

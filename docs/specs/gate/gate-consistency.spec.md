@@ -3,7 +3,7 @@ def:
   id: gate-consistency
   tier: system
   scope: flow
-  aspect: process_flow
+  aspect: gate_flow
   depth: specification
   lifecycle: approved
   layer: operation

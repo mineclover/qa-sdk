@@ -3,7 +3,7 @@ def:
   id: definition-service-quality-bundle
   tier: system
   scope: flow
-  aspect: process_flow
+  aspect: definition_mgmt_flow
   depth: overview
   lifecycle: approved
   layer: operation

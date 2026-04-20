@@ -7,14 +7,12 @@ def:
   projection_plane: intent
   intent_hierarchy: core
   scope: flow
-  aspect: process_flow
+  aspect: definition_mgmt_flow
   depth: specification
   lifecycle: approved
   layer: operation
   tags: [observability, decision]
   links:
-    - target: definition-management
-      type: refines
     - target: definition-mgmt-feedback-loop
       type: contains
     - target: definition-mgmt-state-tracking

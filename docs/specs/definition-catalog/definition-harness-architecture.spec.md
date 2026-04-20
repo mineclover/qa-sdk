@@ -7,7 +7,7 @@ def:
   projection_plane: intent
   intent_hierarchy: core
   scope: flow
-  aspect: process_flow
+  aspect: definition_mgmt_flow
   depth: overview
   lifecycle: approved
   layer: operation

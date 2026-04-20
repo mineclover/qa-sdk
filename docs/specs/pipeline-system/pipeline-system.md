@@ -4,7 +4,7 @@ def:
   tier: system
   address: def_document:v2:137222
   scope: flow
-  aspect: process_flow
+  aspect: pipeline_flow
   depth: overview
   lifecycle: approved
   layer: operation

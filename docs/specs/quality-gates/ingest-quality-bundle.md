@@ -3,7 +3,7 @@ def:
   id: ingest-quality-bundle
   tier: system
   scope: flow
-  aspect: process_flow
+  aspect: ingest_flow
   depth: overview
   lifecycle: approved
   layer: operation
