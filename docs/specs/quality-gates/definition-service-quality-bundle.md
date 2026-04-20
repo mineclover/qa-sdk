@@ -17,6 +17,8 @@ def:
       type: contains
     - target: gate-definition-service-context
       type: contains
+    - target: definition-service-system
+      type: depends_on
 ---
 # Definition Service Quality Bundle
 
