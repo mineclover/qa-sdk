@@ -3,7 +3,7 @@ def:
   id: df-taxonomy-cases
   type: spec
   tier: component
-  scope: data
+  scope: flow
   aspect: user_scenario
   depth: validation
   lifecycle: approved

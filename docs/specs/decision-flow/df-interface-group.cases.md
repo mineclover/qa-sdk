@@ -3,7 +3,7 @@ def:
   id: df-interface-group-cases
   type: spec
   tier: component
-  scope: interface
+  scope: flow
   aspect: user_scenario
   depth: validation
   lifecycle: approved

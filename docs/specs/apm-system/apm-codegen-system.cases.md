@@ -3,7 +3,7 @@ def:
   id: apm-codegen-system-cases
   type: spec
   tier: component
-  scope: feature
+  scope: flow
   aspect: user_scenario
   depth: validation
   lifecycle: approved
