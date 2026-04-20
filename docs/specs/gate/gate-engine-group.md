@@ -19,6 +19,8 @@ def:
       type: contains
     - target: gate-state-model
       type: contains
+    - target: gate-system
+      type: depends_on
   contains: [gate-engine-core, gate-engine-decorator, gate-engine-aware-query]
 ---
 

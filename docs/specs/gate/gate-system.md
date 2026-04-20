@@ -11,8 +11,6 @@ def:
   svc: gate-service
   tags: [structural, security, entry-point]
   links:
-    - target: gate-api
-      type: depends_on
     - target: gate-state-model
       type: contains
     - target: gate-state-model-rule
@@ -25,8 +23,6 @@ def:
       type: contains
     - target: gate-scenario
       type: contains
-    - target: gate-engine-group
-      type: depends_on
 ---
 
 # Gate 시스템

@@ -10,9 +10,11 @@ def:
   svc: gate-service
   links:
     - target: gate-api
-      type: refines
+      type: traces_to
     - target: gate-event-bus-test
       type: contains
+    - target: gate-system
+      type: depends_on
 contains:
   - gate-event-bus-test
 ---
