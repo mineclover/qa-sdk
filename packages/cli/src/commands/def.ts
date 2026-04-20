@@ -34,10 +34,16 @@ import {
   extractFrontmatter,
   validateGraph,
   collectCodeLinkCoverage,
+  deriveAllDomainRoots,
+  deriveDomainRoot,
+  detectOwnerRootMismatch,
   type DefDataSource,
   type DefDoc,
   type DefFeedbackRequestSummary,
   type StateMachineInstance,
+  type DomainRootRegistry,
+  type DefinitionEntry,
+  type DefinitionLink,
 } from "definition-catalog";
 import { createDataSource, syncDocsToLocalDb, type DataSourceOptions } from "definition-data-source";
 import { formatHelpSections, type CommandHelpSectionSpec } from "../command-spec.js";
@@ -154,6 +160,8 @@ async function getSource(options: DataSourceOptions): Promise<DefDataSource> {
 async function cmdList(source: DefDataSource, flags: Record<string, string>) {
   const limit = flags["limit"] ? Number(flags["limit"]) : 50;
   const offset = flags["offset"] ? Number(flags["offset"]) : 0;
+  const domainRootFilter = flags["domain-root"];
+
   const filter = {
     type: flags["type"],
     knowledgeKind: flags["knowledge-kind"],
@@ -169,6 +177,11 @@ async function cmdList(source: DefDataSource, flags: Record<string, string>) {
     limit,
     offset,
   };
+
+  // --domain-root 필터는 파생 결과 기반이므로 server list에서 처리 불가 → 클라이언트 측 필터링
+  if (domainRootFilter) {
+    return await cmdListByDomainRoot(source, filter, domainRootFilter, limit, offset);
+  }
 
   // 전체 건수 조회 (같은 필터, limit 없이)
   const total = (await source.list({ ...filter, limit: 100000, offset: 0 })).length;
@@ -190,6 +203,78 @@ async function cmdList(source: DefDataSource, flags: Record<string, string>) {
 
   if (remaining > 0) {
     console.log(`\n  다음 페이지: --offset=${to} --limit=${limit}`);
+  }
+}
+
+/** Levenshtein 거리(간소화) — 비슷한 root id 추천용 */
+function simpleDistance(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length || !b.length) return Math.max(a.length, b.length);
+  const m = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
+  for (let i = 0; i <= a.length; i++) m[i][0] = i;
+  for (let j = 0; j <= b.length; j++) m[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + cost);
+    }
+  }
+  return m[a.length][b.length];
+}
+
+async function cmdListByDomainRoot(
+  source: DefDataSource,
+  baseFilter: Record<string, unknown>,
+  rootId: string,
+  limit: number,
+  offset: number,
+): Promise<void> {
+  const registry = await buildDomainRootRegistry(source);
+  const allRoots = deriveAllDomainRoots(registry);
+
+  // root 존재 여부 검사: 실제 파생 결과에 rootId가 한 번이라도 등장해야 valid
+  const rootSet = new Set(allRoots.values());
+  if (!rootSet.has(rootId)) {
+    const suggestions = [...rootSet]
+      .map(id => ({ id, dist: simpleDistance(rootId, id) }))
+      .toSorted((a, b) => a.dist - b.dist)
+      .slice(0, 5)
+      .map(s => s.id);
+    console.log(`[${source.mode}] 도메인 루트 "${rootId}" 를 찾을 수 없습니다.`);
+    if (suggestions.length > 0) {
+      console.log(`  비슷한 루트 후보: ${suggestions.join(", ")}`);
+    }
+    console.log(`  전체 루트 목록: qa-sdk def audit --by-domain`);
+    return;
+  }
+
+  // 기존 필터를 서버에 먼저 적용 (limit 없이 전체)
+  const { limit: _l, offset: _o, ...filterRest } = baseFilter;
+  const candidates = await source.list({ ...filterRest, limit: 100000, offset: 0 });
+
+  // domain_root 일치 필터 + id 정렬
+  const filtered = candidates
+    .filter(d => (allRoots.get(d.docId) ?? d.docId) === rootId)
+    .toSorted((a, b) => a.docId.localeCompare(b.docId));
+
+  const total = filtered.length;
+  const page = filtered.slice(offset, offset + limit);
+  const from = total === 0 ? 0 : offset + 1;
+  const to = offset + page.length;
+  const remaining = total - to;
+
+  console.log(`[${source.mode}] domain-root=${rootId}  ${from}-${to} / ${total}건${remaining > 0 ? ` (미표시 ${remaining}건)` : ""}`);
+  for (const d of page) {
+    const levelBadge = d.level && d.level !== "leaf" ? `[${d.level}] ` : "";
+    const tags = d.tags.length > 0 ? ` [${d.tags.join(",")}]` : "";
+    console.log(`  ${levelBadge}${d.docId}  ${d.scope}/${d.aspect}  ${d.lifecycle}${tags}`);
+    if (d.purpose) {
+      console.log(`    ${d.purpose.slice(0, 100)}`);
+    }
+  }
+
+  if (remaining > 0) {
+    console.log(`\n  다음 페이지: --offset=${to} --limit=${limit} --domain-root=${rootId}`);
   }
 }
 
@@ -760,6 +845,26 @@ async function cmdContext(source: DefDataSource, docId: string) {
   if (doc.svc) console.log(`svc: ${doc.svc}`);
   if (doc.address) console.log(`address: ${doc.address}`);
 
+  // domain_root 파생 — fail-open
+  try {
+    const registry = await buildDomainRootRegistry(source);
+    const entry = registry.get(docId);
+    if (entry) {
+      const derivedRoot = deriveDomainRoot(entry, registry);
+      if (derivedRoot === docId) {
+        console.log(`도메인 루트: self`);
+      } else {
+        console.log(`도메인 루트: ${derivedRoot}`);
+      }
+      const mismatch = detectOwnerRootMismatch(entry, derivedRoot, registry);
+      if (mismatch === "mismatch" && entry.owner_system) {
+        console.log(`⚠ owner_system (${entry.owner_system}) 과 파생 root (${derivedRoot}) 불일치`);
+      }
+    }
+  } catch {
+    // 파생 실패 시 조용히 스킵 (context의 나머지 출력은 계속)
+  }
+
   // 목적
   if (doc.purpose) {
     console.log(`\n## 이 문서의 목적`);
@@ -988,7 +1093,94 @@ async function cmdBoundaryContext(source: DefDataSource, docId: string | undefin
 
 // ── audit (DefDataSource 기반, 레거시 통합) ───────────
 
-async function cmdAudit(source: DefDataSource) {
+/** DefDataSource의 문서를 DomainRootRegistry로 변환한다 (domain_root 파생용). */
+async function buildDomainRootRegistry(source: DefDataSource): Promise<DomainRootRegistry> {
+  const docs = await source.list({ limit: 10000 });
+  const entries = new Map<string, DefinitionEntry>();
+  const outgoingLinks = new Map<string, DefinitionLink[]>();
+  const incomingLinks = new Map<string, DefinitionLink[]>();
+
+  for (const d of docs) {
+    const entry: DefinitionEntry = {
+      id: d.docId,
+      title: d.title ?? d.docId,
+      tier: d.tier as DefinitionEntry["tier"],
+      scope: d.scope as DefinitionEntry["scope"],
+      aspect: d.aspect as DefinitionEntry["aspect"],
+      depth: d.depth as DefinitionEntry["depth"],
+      layer: d.layer as DefinitionEntry["layer"],
+      lifecycle: d.lifecycle as DefinitionEntry["lifecycle"],
+      owner_system: d.ownerSystem,
+      createdAt: "",
+      updatedAt: "",
+    };
+    entries.set(d.docId, entry);
+  }
+
+  for (const d of docs) {
+    for (const link of d.links) {
+      const l: DefinitionLink = {
+        sourceId: d.docId,
+        targetId: link.target,
+        linkType: link.type as DefinitionLink["linkType"],
+      };
+      const out = outgoingLinks.get(d.docId) ?? [];
+      out.push(l);
+      outgoingLinks.set(d.docId, out);
+      const inc = incomingLinks.get(link.target) ?? [];
+      inc.push(l);
+      incomingLinks.set(link.target, inc);
+    }
+  }
+
+  return {
+    all: () => [...entries.values()],
+    get: (id: string) => entries.get(id),
+    getLinks: (id: string, direction: "outgoing" | "incoming" | "both" = "both") => {
+      if (direction === "outgoing") return outgoingLinks.get(id) ?? [];
+      if (direction === "incoming") return incomingLinks.get(id) ?? [];
+      return [...(outgoingLinks.get(id) ?? []), ...(incomingLinks.get(id) ?? [])];
+    },
+  };
+}
+
+async function cmdAuditByDomain(source: DefDataSource) {
+  const registry = await buildDomainRootRegistry(source);
+  const roots = deriveAllDomainRoots(registry);
+  const all = registry.all();
+  const active = all.filter(d => d.lifecycle !== "deprecated" && d.lifecycle !== "archived");
+
+  // domain_root별 문서 집계
+  const byRoot = new Map<string, DefinitionEntry[]>();
+  for (const d of active) {
+    const root = roots.get(d.id) ?? d.id;
+    const list = byRoot.get(root) ?? [];
+    list.push(d);
+    byRoot.set(root, list);
+  }
+
+  const sortedRoots = [...byRoot.entries()].toSorted((a, b) => b[1].length - a[1].length);
+
+  console.log(`=== 도메인 루트별 리포트 (${byRoot.size}개 루트, 문서 ${active.length}건) ===`);
+  for (const [rootId, docs] of sortedRoots) {
+    const coordCounts = new Map<string, number>();
+    for (const d of docs) {
+      const key = `${d.tier || "none"}:${d.scope}:${d.layer || "none"}:${d.aspect}`;
+      coordCounts.set(key, (coordCounts.get(key) ?? 0) + 1);
+    }
+    const topCoords = [...coordCounts.entries()].toSorted((a, b) => b[1] - a[1]).slice(0, 3);
+    console.log(`\n[${rootId}]  ${docs.length}건`);
+    for (const [coord, count] of topCoords) {
+      console.log(`  ${coord}: ${count}건`);
+    }
+  }
+}
+
+async function cmdAudit(source: DefDataSource, flags: Record<string, string> = {}) {
+  if (flags["by-domain"] === "true" || flags["by-domain"] === "") {
+    return cmdAuditByDomain(source);
+  }
+
   const all = await source.list({ limit: 2000 });
   const active = all.filter(d => d.lifecycle !== "deprecated" && d.lifecycle !== "archived");
 
@@ -1205,7 +1397,7 @@ const DEF_HELP_SECTIONS = [
   {
     title: "조회",
     lines: [
-      "list [--scope=X] [--level=Z] [--layer=Y] [--tag=T] [--q=검색어]",
+      "list [--scope=X] [--level=Z] [--layer=Y] [--tag=T] [--q=검색어] [--domain-root=<rootId>]",
       "get <ID> | --address=<ADDR>  단건 조회",
       "body <ID>           최신 본문 조회 (--json 가능)",
       "read <ID>           body의 별칭",
@@ -1318,7 +1510,7 @@ export async function cliDef(args: string[]): Promise<void> {
         case "stats": return await cmdStats(source);
         case "impact": return await cmdImpact(source, rest[0], flags["address"]);
         case "check": return await cmdCheck(source, rest[0]);
-        case "audit": return await cmdAudit(source);
+        case "audit": return await cmdAudit(source, flags);
         case "audit-db": return await cmdAuditDb(source);
         case "overview": return await cmdOverview(source);
         case "tier":
