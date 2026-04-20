@@ -11,6 +11,8 @@ def:
   links:
     - target: pipeline-aggregator-test
       type: contains
+    - target: pipeline-system
+      type: depends_on
 contains:
   - pipeline-aggregator-test
 ---

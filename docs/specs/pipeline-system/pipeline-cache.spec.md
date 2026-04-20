@@ -11,6 +11,8 @@ def:
   links:
     - target: pipeline-cache-test
       type: contains
+    - target: pipeline-system
+      type: depends_on
 contains:
   - pipeline-cache-test
 ---
