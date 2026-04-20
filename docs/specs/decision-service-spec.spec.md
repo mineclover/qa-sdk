@@ -2,7 +2,6 @@
 def:
   id: decision-service-spec
   type: spec
-  level: module
   tier: system
   scope: state
   aspect: domain_state

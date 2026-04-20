@@ -1,7 +1,6 @@
 ---
 def:
   id: harness-state-model
-  level: leaf
   tier: component
   scope: state
   aspect: system_state

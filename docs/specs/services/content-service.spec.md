@@ -1,7 +1,6 @@
 ---
 def:
   id: content-service-spec
-  level: module
   tier: system
   address: def_document:v2:68616
   scope: feature

@@ -1,7 +1,6 @@
 ---
 def:
   id: operational-ontology-pack-interface-rule
-  level: leaf
   tier: component
   scope: constraint
   aspect: tech_constraint

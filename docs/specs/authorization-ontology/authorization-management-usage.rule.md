@@ -1,7 +1,6 @@
 ---
 def:
   id: authorization-management-usage-rule
-  level: leaf
   tier: component
   scope: constraint
   aspect: tech_constraint

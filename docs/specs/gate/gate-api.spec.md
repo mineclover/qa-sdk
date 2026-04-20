@@ -1,7 +1,6 @@
 ---
 def:
   id: gate-api
-  level: module
   tier: system
   address: def_document:v2:412810
   scope: interface

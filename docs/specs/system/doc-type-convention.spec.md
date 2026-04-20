@@ -1,7 +1,6 @@
 ---
 def:
   id: doc-type-convention
-  level: module
   tier: system
   scope: constraint
   aspect: tech_constraint

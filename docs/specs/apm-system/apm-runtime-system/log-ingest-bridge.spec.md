@@ -4,7 +4,6 @@ def:
   scope: constraint
   aspect: infra_constraint
   depth: specification
-  level: module
   tier: system
   lifecycle: approved
   layer: operation

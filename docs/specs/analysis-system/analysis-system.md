@@ -1,7 +1,6 @@
 ---
 def:
   id: analysis-system
-  level: module
   tier: system
   address: def_document:v2:68609
   scope: feature

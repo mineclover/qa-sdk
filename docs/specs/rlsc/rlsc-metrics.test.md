@@ -1,7 +1,6 @@
 ---
 def:
   id: rlsc-metrics-test
-  level: leaf
   tier: component
   scope: flow
   aspect: user_scenario

@@ -3,7 +3,6 @@ def:
   id: df-narrative-group
   type: knowledge
   knowledge_kind: narrative
-  level: module
   tier: system
   address: def_document:v2:68624
   scope: feature

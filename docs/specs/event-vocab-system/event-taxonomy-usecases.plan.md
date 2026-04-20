@@ -1,7 +1,6 @@
 ---
 def:
   id: event-taxonomy-usecases-plan
-  level: leaf
   tier: component
   scope: flow
   aspect: user_scenario

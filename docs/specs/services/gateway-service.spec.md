@@ -1,7 +1,6 @@
 ---
 def:
   id: gateway-service-spec
-  level: module
   tier: system
   address: def_document:v2:412678
   scope: interface

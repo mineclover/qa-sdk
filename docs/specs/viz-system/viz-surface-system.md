@@ -1,7 +1,6 @@
 ---
 def:
   id: viz-surface-system
-  level: module
   tier: system
   address: def_document:v2:1029
   scope: ui

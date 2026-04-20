@@ -1,7 +1,6 @@
 ---
 def:
   id: rlsc-pattern-test
-  level: leaf
   tier: component
   scope: flow
   aspect: user_scenario

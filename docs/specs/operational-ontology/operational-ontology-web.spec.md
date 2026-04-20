@@ -2,7 +2,6 @@
 def:
   id: operational-ontology-web
   type: spec
-  level: leaf
   tier: component
   scope: ui
   aspect: component

@@ -1,7 +1,6 @@
 ---
 def:
   id: apm-schema-system
-  level: module
   tier: system
   address: def_document:v2:342017
   scope: data

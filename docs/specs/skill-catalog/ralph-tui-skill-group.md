@@ -1,7 +1,6 @@
 ---
 def:
   id: ralph-tui-skill-group
-  level: module
   tier: system
   scope: feature
   aspect: func_def

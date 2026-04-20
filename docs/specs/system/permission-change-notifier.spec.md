@@ -1,7 +1,6 @@
 ---
 def:
   id: permission-change-notifier
-  level: leaf
   tier: component
   scope: flow
   aspect: process_flow

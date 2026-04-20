@@ -1,7 +1,6 @@
 ---
 def:
   id: operational-ontology-registry-activation-cli
-  level: leaf
   tier: component
   scope: interface
   aspect: cli_contract

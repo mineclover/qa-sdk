@@ -2,7 +2,6 @@
 def:
   id: test-scenario-store
   type: spec
-  level: leaf
   tier: component
   scope: data
   aspect: system_data

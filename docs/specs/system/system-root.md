@@ -1,7 +1,6 @@
 ---
 def:
   id: system-root
-  level: group
   tier: layout
   address: def_document:v2:137234
   scope: flow

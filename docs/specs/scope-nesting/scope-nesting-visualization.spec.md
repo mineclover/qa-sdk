@@ -1,7 +1,6 @@
 ---
 def:
   id: scope-nesting-visualization
-  level: module
   tier: system
   scope: ui
   aspect: component

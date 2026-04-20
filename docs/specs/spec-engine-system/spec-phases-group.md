@@ -1,7 +1,6 @@
 ---
 def:
   id: spec-phases-group
-  level: module
   tier: system
   address: def_document:v2:137226
   scope: flow

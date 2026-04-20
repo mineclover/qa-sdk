@@ -1,7 +1,6 @@
 ---
 def:
   id: programming-artifact-ontology-context-simulation
-  level: leaf
   tier: component
   scope: flow
   aspect: process_flow

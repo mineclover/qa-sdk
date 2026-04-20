@@ -1,7 +1,6 @@
 ---
 def:
   id: sdk-scenario-inactive-entries
-  level: leaf
   tier: component
   scope: feature
   aspect: scenario

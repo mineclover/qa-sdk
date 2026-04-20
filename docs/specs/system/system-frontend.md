@@ -1,7 +1,6 @@
 ---
 def:
   id: system-frontend
-  level: group
   tier: layout
   address: def_document:v2:137229
   scope: flow

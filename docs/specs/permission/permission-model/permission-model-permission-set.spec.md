@@ -1,7 +1,6 @@
 ---
 def:
   id: permission-model-permission-set
-  level: leaf
   tier: component
   scope: state
   aspect: domain_state

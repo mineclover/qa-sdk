@@ -1,7 +1,6 @@
 ---
 def:
   id: permission-model-scoped-engine
-  level: leaf
   tier: component
   scope: state
   aspect: domain_state

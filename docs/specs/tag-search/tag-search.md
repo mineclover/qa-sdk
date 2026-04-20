@@ -1,7 +1,6 @@
 ---
 def:
   id: tag-search
-  level: leaf
   tier: component
   address: def_document:v2:342035
   scope: data

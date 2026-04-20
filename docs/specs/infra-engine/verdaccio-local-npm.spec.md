@@ -4,7 +4,6 @@ def:
   scope: flow
   aspect: user_scenario
   depth: specification
-  level: leaf
   tier: component
   lifecycle: approved
   layer: operation

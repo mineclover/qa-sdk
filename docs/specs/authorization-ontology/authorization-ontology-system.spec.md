@@ -3,7 +3,6 @@ def:
   id: authorization-ontology-system
   type: knowledge
   knowledge_kind: concept
-  level: group
   tier: layout
   scope: constraint
   aspect: biz_constraint

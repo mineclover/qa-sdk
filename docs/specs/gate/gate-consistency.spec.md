@@ -1,7 +1,6 @@
 ---
 def:
   id: gate-consistency
-  level: module
   tier: system
   scope: flow
   aspect: process_flow

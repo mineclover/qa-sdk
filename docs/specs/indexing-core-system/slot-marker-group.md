@@ -1,7 +1,6 @@
 ---
 def:
   id: slot-marker-group
-  level: module
   tier: system
   address: def_document:v2:342031
   scope: data

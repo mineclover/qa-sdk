@@ -1,7 +1,6 @@
 ---
 def:
   id: permission-model
-  level: module
   tier: system
   scope: state
   aspect: domain_state

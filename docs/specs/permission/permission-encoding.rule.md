@@ -1,7 +1,6 @@
 ---
 def:
   id: permission-encoding-rule
-  level: leaf
   tier: component
   scope: data
   aspect: domain_data

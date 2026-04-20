@@ -1,7 +1,6 @@
 ---
 def:
   id: query-rules
-  level: module
   tier: system
   address: def_document:v2:342189
   scope: data

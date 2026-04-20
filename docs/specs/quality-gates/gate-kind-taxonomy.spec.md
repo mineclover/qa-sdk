@@ -1,7 +1,6 @@
 ---
 def:
   id: gate-kind-taxonomy
-  level: leaf
   tier: component
   scope: data
   aspect: domain_data

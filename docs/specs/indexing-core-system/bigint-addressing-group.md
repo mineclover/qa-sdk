@@ -1,7 +1,6 @@
 ---
 def:
   id: bigint-addressing-group
-  level: module
   tier: system
   address: def_document:v2:342018
   scope: data

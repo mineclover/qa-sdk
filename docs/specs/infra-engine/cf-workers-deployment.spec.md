@@ -4,7 +4,6 @@ def:
   scope: flow
   aspect: process_flow
   depth: specification
-  level: leaf
   tier: component
   lifecycle: approved
   layer: operation

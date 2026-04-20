@@ -1,7 +1,6 @@
 ---
 def:
   id: spec-core-types-group
-  level: module
   tier: system
   address: def_document:v2:342032
   scope: data

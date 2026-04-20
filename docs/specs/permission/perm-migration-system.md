@@ -1,7 +1,6 @@
 ---
 def:
   id: perm-migration-system
-  level: module
   tier: system
   address: def_document:v2:68641
   scope: feature

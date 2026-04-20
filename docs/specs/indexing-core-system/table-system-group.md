@@ -1,7 +1,6 @@
 ---
 def:
   id: table-system-group
-  level: module
   tier: system
   address: def_document:v2:342034
   scope: data

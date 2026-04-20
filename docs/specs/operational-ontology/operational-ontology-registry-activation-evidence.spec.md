@@ -1,7 +1,6 @@
 ---
 def:
   id: operational-ontology-registry-activation-evidence
-  level: leaf
   tier: component
   scope: data
   aspect: system_data

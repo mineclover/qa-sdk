@@ -3,7 +3,6 @@ def:
   id: df-narrative-proof-core-gates
   type: knowledge
   knowledge_kind: narrative
-  level: leaf
   tier: component
   scope: feature
   aspect: scenario

@@ -1,7 +1,6 @@
 ---
 def:
   id: permission-model-ternary-mask
-  level: leaf
   tier: component
   scope: state
   aspect: domain_state

@@ -1,7 +1,6 @@
 ---
 def:
   id: runtime-service-address
-  level: leaf
   tier: component
   scope: data
   aspect: system_data

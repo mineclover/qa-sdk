@@ -1,7 +1,6 @@
 ---
 def:
   id: definition-service-system
-  level: module
   tier: system
   address: def_document:v2:68622
   scope: feature

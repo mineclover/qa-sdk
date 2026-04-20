@@ -1,7 +1,6 @@
 ---
 def:
   id: system-infra
-  level: group
   tier: layout
   address: def_document:v2:137230
   scope: flow

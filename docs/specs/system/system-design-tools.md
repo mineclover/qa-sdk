@@ -1,7 +1,6 @@
 ---
 def:
   id: system-design-tools
-  level: group
   tier: layout
   address: def_document:v2:137228
   scope: flow

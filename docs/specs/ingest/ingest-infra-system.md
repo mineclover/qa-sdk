@@ -1,7 +1,6 @@
 ---
 def:
   id: ingest-infra-system
-  level: module
   tier: system
   address: def_document:v2:275457
   scope: constraint

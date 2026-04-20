@@ -1,7 +1,6 @@
 ---
 def:
   id: system-data-flow
-  level: leaf
   tier: component
   address: def_document:v2:137371
   scope: flow

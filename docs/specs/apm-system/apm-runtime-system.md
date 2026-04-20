@@ -1,7 +1,6 @@
 ---
 def:
   id: apm-runtime-system
-  level: module
   tier: system
   address: def_document:v2:275456
   scope: constraint

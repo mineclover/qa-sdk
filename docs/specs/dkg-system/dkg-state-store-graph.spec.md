@@ -1,7 +1,6 @@
 ---
 def:
   id: dkg-state-store-graph
-  level: leaf
   tier: component
   scope: data
   aspect: domain_data

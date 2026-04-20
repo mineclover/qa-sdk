@@ -1,7 +1,6 @@
 ---
 def:
   id: authorization-management-hardening-todo
-  level: leaf
   tier: component
   scope: flow
   aspect: process_flow

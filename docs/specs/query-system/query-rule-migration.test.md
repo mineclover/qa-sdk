@@ -1,7 +1,6 @@
 ---
 def:
   id: query-rule-migration-test
-  level: leaf
   tier: component
   scope: flow
   aspect: user_scenario

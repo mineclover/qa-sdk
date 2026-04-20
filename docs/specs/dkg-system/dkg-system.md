@@ -1,7 +1,6 @@
 ---
 def:
   id: dkg-system
-  level: module
   tier: system
   address: def_document:v2:342022
   scope: data

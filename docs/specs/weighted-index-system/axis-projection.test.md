@@ -1,7 +1,6 @@
 ---
 def:
   id: axis-projection-test
-  level: leaf
   tier: component
   scope: feature
   aspect: scenario

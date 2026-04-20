@@ -2,7 +2,6 @@
 def:
   id: viz-system-root
   type: spec
-  level: module
   tier: system
   scope: ui
   aspect: layout

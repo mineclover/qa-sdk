@@ -1,7 +1,6 @@
 ---
 def:
   id: weighted-index-explorer-spec
-  level: leaf
   tier: component
   scope: ui
   aspect: component

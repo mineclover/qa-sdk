@@ -1,7 +1,6 @@
 ---
 def:
   id: def-svc-sync-module
-  level: leaf
   tier: component
   address: def_document:v2:137472
   scope: flow

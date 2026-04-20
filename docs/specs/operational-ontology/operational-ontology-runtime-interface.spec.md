@@ -3,7 +3,6 @@ def:
   id: operational-ontology-runtime-interface
   type: knowledge
   knowledge_kind: concept
-  level: module
   tier: system
   scope: interface
   aspect: api_contract

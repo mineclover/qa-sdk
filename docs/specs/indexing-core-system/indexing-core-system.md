@@ -1,7 +1,6 @@
 ---
 def:
   id: indexing-core-system
-  level: module
   tier: system
   address: def_document:v2:342026
   scope: data

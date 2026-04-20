@@ -1,7 +1,6 @@
 ---
 def:
   id: def-svc-search-module
-  level: leaf
   tier: component
   address: def_document:v2:68869
   scope: feature

@@ -2,7 +2,6 @@
 def:
   id: persistence-system-root
   type: spec
-  level: module
   tier: system
   scope: data
   aspect: system_data

@@ -1,7 +1,6 @@
 ---
 def:
   id: package-classifier-spec
-  level: leaf
   tier: component
   scope: data
   aspect: domain_data

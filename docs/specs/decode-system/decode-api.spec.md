@@ -1,7 +1,6 @@
 ---
 def:
   id: decode-api
-  level: module
   tier: system
   address: def_document:v2:412805
   scope: interface

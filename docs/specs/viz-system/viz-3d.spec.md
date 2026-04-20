@@ -1,7 +1,6 @@
 ---
 def:
   id: viz-3d-spec
-  level: leaf
   tier: component
   scope: ui
   aspect: component

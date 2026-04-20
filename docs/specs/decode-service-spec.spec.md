@@ -2,7 +2,6 @@
 def:
   id: decode-service-spec
   type: spec
-  level: leaf
   tier: component
   scope: interface
   aspect: api_contract

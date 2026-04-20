@@ -1,7 +1,6 @@
 ---
 def:
   id: def-svc-docs-module
-  level: leaf
   tier: component
   address: def_document:v2:68867
   scope: feature

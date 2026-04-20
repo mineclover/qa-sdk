@@ -1,7 +1,6 @@
 ---
 def:
   id: perm-codec-system
-  level: module
   tier: system
   address: def_document:v2:68640
   scope: feature

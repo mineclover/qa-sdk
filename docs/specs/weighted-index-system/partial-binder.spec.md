@@ -1,7 +1,6 @@
 ---
 def:
   id: partial-binder-spec
-  level: module
   tier: system
   address: def_document:v2:68779
   scope: feature

@@ -1,7 +1,6 @@
 ---
 def:
   id: wi-trace-group
-  level: module
   tier: system
   address: def_document:v2:342037
   scope: data

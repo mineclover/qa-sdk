@@ -1,7 +1,6 @@
 ---
 def:
   id: composition-hierarchy
-  level: leaf
   tier: component
   scope: data
   aspect: domain_data

@@ -3,7 +3,6 @@ def:
   id: viteplus-playbook-user-scenarios
   type: knowledge
   knowledge_kind: guide
-  level: leaf
   tier: component
   scope: flow
   aspect: user_scenario

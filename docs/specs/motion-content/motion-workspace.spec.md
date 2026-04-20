@@ -1,7 +1,6 @@
 ---
 def:
   id: motion-workspace-spec
-  level: module
   tier: system
   address: def_document:v2:68777
   scope: feature

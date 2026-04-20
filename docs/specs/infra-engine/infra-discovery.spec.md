@@ -4,7 +4,6 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  level: leaf
   tier: component
   lifecycle: approved
   layer: mediation

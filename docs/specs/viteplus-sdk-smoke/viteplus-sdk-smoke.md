@@ -1,7 +1,6 @@
 ---
 def:
   id: viteplus-sdk-smoke-system
-  level: module
   tier: system
   scope: feature
   aspect: func_def

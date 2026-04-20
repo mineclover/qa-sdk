@@ -1,7 +1,6 @@
 ---
 def:
   id: dkg-state-store-observability
-  level: leaf
   tier: component
   scope: data
   aspect: domain_data

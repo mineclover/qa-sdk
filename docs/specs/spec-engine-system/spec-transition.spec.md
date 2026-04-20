@@ -2,7 +2,6 @@
 def:
   id: spec-transition
   type: spec
-  level: leaf
   tier: component
   scope: flow
   aspect: process_flow

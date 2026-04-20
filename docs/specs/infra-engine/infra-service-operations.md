@@ -3,7 +3,6 @@ def:
   id: infra-service-operations
   type: knowledge
   knowledge_kind: guide
-  level: module
   tier: system
   scope: flow
   aspect: user_scenario

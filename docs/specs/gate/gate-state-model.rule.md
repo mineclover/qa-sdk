@@ -1,7 +1,6 @@
 ---
 def:
   id: gate-state-model-rule
-  level: leaf
   tier: component
   scope: state
   aspect: domain_state

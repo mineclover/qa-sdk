@@ -1,7 +1,6 @@
 ---
 def:
   id: scope-nesting-timeline-renderer
-  level: leaf
   tier: component
   scope: feature
   aspect: func_def

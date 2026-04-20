@@ -1,7 +1,6 @@
 ---
 def:
   id: perm-constraint-resource-format
-  level: leaf
   tier: component
   scope: constraint
   aspect: biz_constraint

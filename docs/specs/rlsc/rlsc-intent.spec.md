@@ -1,7 +1,6 @@
 ---
 def:
   id: rlsc-intent
-  level: leaf
   tier: component
   scope: feature
   aspect: func_def

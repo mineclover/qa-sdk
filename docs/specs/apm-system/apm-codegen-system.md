@@ -1,7 +1,6 @@
 ---
 def:
   id: apm-codegen-system
-  level: module
   tier: system
   address: def_document:v2:68610
   scope: feature

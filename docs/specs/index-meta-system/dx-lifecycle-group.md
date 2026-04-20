@@ -1,7 +1,6 @@
 ---
 def:
   id: dx-lifecycle-group
-  level: module
   tier: system
   address: def_document:v2:137218
   scope: flow

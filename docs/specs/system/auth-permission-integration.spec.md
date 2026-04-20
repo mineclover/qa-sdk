@@ -1,7 +1,6 @@
 ---
 def:
   id: auth-permission-integration
-  level: module
   tier: system
   scope: flow
   aspect: relation

@@ -1,7 +1,6 @@
 ---
 def:
   id: entity-prefix-group
-  level: module
   tier: system
   scope: data
   aspect: prefix_schema

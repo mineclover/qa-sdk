@@ -1,7 +1,6 @@
 ---
 def:
   id: table-schema-spec
-  level: module
   tier: system
   address: def_document:v2:342206
   scope: data

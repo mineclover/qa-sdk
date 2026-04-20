@@ -3,7 +3,6 @@ def:
   id: operational-ontology-definition-graph-requirements
   type: knowledge
   knowledge_kind: guide
-  level: leaf
   tier: component
   scope: constraint
   aspect: tech_constraint

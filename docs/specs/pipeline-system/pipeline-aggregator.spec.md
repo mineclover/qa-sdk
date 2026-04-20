@@ -1,7 +1,6 @@
 ---
 def:
   id: pipeline-aggregator
-  level: module
   tier: system
   scope: interface
   aspect: api_contract

@@ -1,7 +1,6 @@
 ---
 def:
   id: dkg-skills-system
-  level: module
   tier: system
   address: def_document:v2:68628
   scope: feature

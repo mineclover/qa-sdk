@@ -1,7 +1,6 @@
 ---
 def:
   id: rlsc-relations-test
-  level: leaf
   tier: component
   scope: flow
   aspect: user_scenario

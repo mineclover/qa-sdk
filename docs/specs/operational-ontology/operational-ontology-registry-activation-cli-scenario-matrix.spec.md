@@ -1,7 +1,6 @@
 ---
 def:
   id: operational-ontology-registry-activation-cli-scenario-matrix
-  level: leaf
   tier: component
   scope: interface
   aspect: cli_contract

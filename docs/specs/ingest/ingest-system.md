@@ -1,7 +1,6 @@
 ---
 def:
   id: ingest-system
-  level: module
   tier: system
   address: def_document:v2:137221
   scope: flow

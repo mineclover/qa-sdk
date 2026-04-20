@@ -2,7 +2,6 @@
 def:
   id: platform-demo-system
   type: spec
-  level: module
   tier: system
   scope: flow
   aspect: user_scenario

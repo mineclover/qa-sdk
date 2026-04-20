@@ -5,7 +5,6 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
-  level: module
   tier: system
   layer: mediation
   svc: rlsc

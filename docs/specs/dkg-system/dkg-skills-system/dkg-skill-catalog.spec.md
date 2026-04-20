@@ -1,7 +1,6 @@
 ---
 def:
   id: dkg-skill-catalog
-  level: module
   tier: system
   address: def_document:v2:342171
   scope: data

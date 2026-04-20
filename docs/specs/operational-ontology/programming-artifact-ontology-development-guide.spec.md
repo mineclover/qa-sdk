@@ -3,7 +3,6 @@ def:
   id: programming-artifact-ontology-development-guide
   type: knowledge
   knowledge_kind: guide
-  level: leaf
   tier: component
   scope: constraint
   aspect: tech_constraint

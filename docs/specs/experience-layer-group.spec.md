@@ -2,7 +2,6 @@
 def:
   id: experience-layer-group
   type: spec
-  level: group
   tier: layout
   scope: ui
   aspect: layout

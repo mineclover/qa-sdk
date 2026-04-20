@@ -4,7 +4,6 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  level: module
   tier: system
   lifecycle: approved
   layer: operation

@@ -1,7 +1,6 @@
 ---
 def:
   id: perm-constraint-permission-code
-  level: leaf
   tier: component
   scope: constraint
   aspect: biz_constraint

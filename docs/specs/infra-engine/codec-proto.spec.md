@@ -4,7 +4,6 @@ def:
   scope: interface
   aspect: api_contract
   depth: specification
-  level: leaf
   tier: component
   lifecycle: approved
   layer: operation

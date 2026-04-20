@@ -3,7 +3,6 @@ def:
   id: operational-ontology-ssot-navigation-guide
   type: knowledge
   knowledge_kind: guide
-  level: leaf
   tier: component
   scope: constraint
   aspect: tech_constraint

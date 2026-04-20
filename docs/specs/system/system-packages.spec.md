@@ -1,7 +1,6 @@
 ---
 def:
   id: system-packages
-  level: leaf
   tier: component
   address: def_document:v2:138240
   scope: flow

@@ -1,7 +1,6 @@
 ---
 def:
   id: registry-service-modules
-  level: module
   tier: system
   address: def_document:v2:68642
   scope: feature

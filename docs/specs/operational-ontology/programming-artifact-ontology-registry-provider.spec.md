@@ -1,7 +1,6 @@
 ---
 def:
   id: programming-artifact-ontology-registry-provider
-  level: leaf
   tier: component
   scope: interface
   aspect: api_contract

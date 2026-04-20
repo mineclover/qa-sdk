@@ -1,7 +1,6 @@
 ---
 def:
   id: event-taxonomy-roadmap-plan
-  level: module
   tier: system
   scope: flow
   aspect: process_flow

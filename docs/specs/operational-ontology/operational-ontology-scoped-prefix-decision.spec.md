@@ -3,7 +3,6 @@ def:
   id: operational-ontology-scoped-prefix-decision
   type: knowledge
   knowledge_kind: adr
-  level: leaf
   tier: component
   scope: constraint
   aspect: tech_constraint

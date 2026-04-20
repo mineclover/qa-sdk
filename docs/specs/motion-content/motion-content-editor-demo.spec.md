@@ -2,7 +2,6 @@
 def:
   id: motion-content-editor-demo
   type: spec
-  level: leaf
   tier: component
   scope: ui
   aspect: component

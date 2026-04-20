@@ -202,10 +202,10 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
         // Layout은 refs를 주력으로 써야 함
         if (containsChildren.length > 0) {
           issues.push({
-            severity: "warning",
+            severity: "error", // Phase 4B: Error 승격
             type: "level-violation" as ValidationIssue["type"],
             docId: entry.id,
-            message: `tier: layout은 contains 대신 refs 사용 권장 (${containsChildren.length}건 감지)`,
+            message: `tier: layout은 contains 대신 refs 사용이 강제됩니다 (${containsChildren.length}건 감지)`,
           });
         }
         if (refsChildren.length === 0 && containsChildren.length === 0) {
@@ -220,7 +220,7 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
         // System은 leaf 성격이므로 contains를 가지면 안 됨 (독립성 원칙)
         if (containsChildren.length > 0) {
           issues.push({
-            severity: "warning", // Phase 4B에서 error로 승격 예정
+            severity: "error", // Phase 4B: Error 승격
             type: "level-violation" as ValidationIssue["type"],
             docId: entry.id,
             message: `tier: system은 독립적이어야 하며 contains 자식을 가질 수 없음 (depends_on 전환 필요: ${containsChildren.length}건 감지)`,
@@ -377,7 +377,7 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
     // type: design인데 owner_system 누락 (Warning 후 Error 승격)
     if (entry.type === "design" && !entry.owner_system) {
       issues.push({
-        severity: "warning", // Phase 4B에서 error 승격
+        severity: "error", // Phase 4B: Error 승격
         type: "missing-owner-system",
         docId: entry.id,
         message: `Design 문서("${entry.id}")는 소유권 체인 구축을 위한 owner_system 필드가 필수입니다.`,

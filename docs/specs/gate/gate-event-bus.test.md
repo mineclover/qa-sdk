@@ -1,7 +1,6 @@
 ---
 def:
   id: gate-event-bus-test
-  level: leaf
   tier: component
   scope: flow
   aspect: user_scenario

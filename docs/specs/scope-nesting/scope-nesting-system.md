@@ -1,7 +1,6 @@
 ---
 def:
   id: scope-nesting-system
-  level: module
   tier: system
   scope: feature
   aspect: func_def

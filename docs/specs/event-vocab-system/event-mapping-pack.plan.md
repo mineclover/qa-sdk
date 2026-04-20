@@ -1,7 +1,6 @@
 ---
 def:
   id: event-mapping-pack-plan
-  level: leaf
   tier: component
   scope: flow
   aspect: process_flow

@@ -1,7 +1,6 @@
 ---
 def:
   id: address-scenarios-group
-  level: module
   tier: system
   address: def_document:v2:68608
   scope: feature

@@ -2,7 +2,6 @@
 address: 9001
 def:
   id: harness-model-spec
-  level: leaf
   tier: component
   scope: state
   aspect: system_state

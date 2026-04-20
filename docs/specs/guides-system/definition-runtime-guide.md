@@ -3,7 +3,6 @@ def:
   id: definition-runtime-guide
   type: knowledge
   knowledge_kind: guide
-  level: leaf
   tier: component
   scope: flow
   aspect: process_flow

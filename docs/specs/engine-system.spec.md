@@ -2,7 +2,6 @@
 def:
   id: qa-sdk-engine-system
   type: spec
-  level: module
   tier: system
   scope: feature
   aspect: func_def

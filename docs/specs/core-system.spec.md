@@ -2,7 +2,6 @@
 def:
   id: qa-sdk-core-system
   type: spec
-  level: module
   tier: system
   scope: data
   aspect: domain_data

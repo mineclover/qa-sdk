@@ -1,7 +1,6 @@
 ---
 def:
   id: sdk-scenario-entry-modes
-  level: leaf
   tier: component
   scope: feature
   aspect: scenario

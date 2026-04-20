@@ -1,7 +1,6 @@
 ---
 def:
   id: gate-engine-group
-  level: module
   tier: system
   address: def_document:v2:68630
   scope: feature

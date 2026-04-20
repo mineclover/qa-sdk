@@ -1,7 +1,6 @@
 ---
 def:
   id: dkg-state-store
-  level: module
   tier: system
   scope: data
   aspect: domain_data

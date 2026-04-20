@@ -1,7 +1,6 @@
 ---
 def:
   id: spec-prop-system
-  level: module
   tier: system
   address: def_document:v2:137227
   scope: flow

@@ -1,7 +1,6 @@
 ---
 def:
   id: snapshot-io-spec
-  level: leaf
   tier: component
   scope: data
   aspect: domain_data

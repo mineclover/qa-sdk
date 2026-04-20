@@ -1,7 +1,6 @@
 ---
 def:
   id: payment-service-spec
-  level: module
   tier: system
   address: def_document:v2:68639
   scope: feature

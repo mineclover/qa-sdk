@@ -1,7 +1,6 @@
 ---
 def:
   id: test-types
-  level: leaf
   tier: component
   scope: data
   aspect: system_data

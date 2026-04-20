@@ -1,7 +1,6 @@
 ---
 def:
   id: ingest-store-drivers-todo
-  level: leaf
   tier: component
   scope: feature
   aspect: func_def

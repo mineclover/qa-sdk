@@ -1,7 +1,6 @@
 ---
 def:
   id: system-libraries
-  level: group
   tier: layout
   address: def_document:v2:137231
   scope: flow

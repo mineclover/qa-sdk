@@ -3,7 +3,6 @@ def:
   id: observability-taxonomy
   type: knowledge
   knowledge_kind: concept
-  level: module
   tier: system
   scope: data
   aspect: system_data

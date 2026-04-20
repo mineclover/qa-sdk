@@ -1,7 +1,6 @@
 ---
 def:
   id: infra-auth-integration
-  level: module
   tier: system
   scope: feature
   aspect: func_def

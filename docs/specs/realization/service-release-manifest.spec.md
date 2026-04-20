@@ -1,7 +1,6 @@
 ---
 def:
   id: service-release-manifest
-  level: leaf
   tier: component
   scope: data
   aspect: system_data

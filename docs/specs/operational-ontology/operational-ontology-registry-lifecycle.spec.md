@@ -1,7 +1,6 @@
 ---
 def:
   id: operational-ontology-registry-lifecycle
-  level: leaf
   tier: component
   scope: flow
   aspect: process_flow

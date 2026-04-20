@@ -1,7 +1,6 @@
 ---
 def:
   id: df-system
-  level: module
   tier: system
   address: def_document:v2:68625
   scope: feature

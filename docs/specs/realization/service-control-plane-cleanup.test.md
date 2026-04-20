@@ -1,7 +1,6 @@
 ---
 def:
   id: service-control-plane-cleanup-test
-  level: leaf
   tier: component
   scope: flow
   aspect: user_scenario

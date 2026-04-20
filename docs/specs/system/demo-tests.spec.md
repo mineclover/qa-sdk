@@ -2,7 +2,6 @@
 def:
   id: demo-tests
   type: spec
-  level: leaf
   tier: component
   scope: data
   aspect: system_data

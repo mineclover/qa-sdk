@@ -3,7 +3,6 @@ def:
   id: prefix-guide
   type: knowledge
   knowledge_kind: guide
-  level: module
   tier: system
   address: def_document:v2:136195
   scope: flow

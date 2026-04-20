@@ -1,7 +1,6 @@
 ---
 def:
   id: address-separation-group
-  level: module
   tier: system
   address: def_document:v2:273408
   scope: constraint

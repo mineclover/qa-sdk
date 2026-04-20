@@ -3,7 +3,6 @@ def:
   id: pm-taxonomy
   type: knowledge
   knowledge_kind: concept
-  level: leaf
   tier: component
   scope: data
   aspect: domain_data

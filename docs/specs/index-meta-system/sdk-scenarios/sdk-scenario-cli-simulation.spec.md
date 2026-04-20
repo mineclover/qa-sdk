@@ -1,7 +1,6 @@
 ---
 def:
   id: sdk-scenario-cli-simulation
-  level: leaf
   tier: component
   scope: feature
   aspect: scenario

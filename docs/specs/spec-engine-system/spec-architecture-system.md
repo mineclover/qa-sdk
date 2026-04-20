@@ -1,7 +1,6 @@
 ---
 def:
   id: spec-architecture-system
-  level: module
   tier: system
   address: def_document:v2:137223
   scope: flow

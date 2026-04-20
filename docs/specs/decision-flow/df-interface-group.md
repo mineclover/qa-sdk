@@ -1,7 +1,6 @@
 ---
 def:
   id: df-interface-group
-  level: module
   tier: system
   address: def_document:v2:412677
   scope: interface

@@ -1,7 +1,6 @@
 ---
 def:
   id: document-addressing-contract
-  level: leaf
   tier: component
   scope: data
   aspect: domain_data

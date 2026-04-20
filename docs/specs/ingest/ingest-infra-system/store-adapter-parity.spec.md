@@ -1,7 +1,6 @@
 ---
 def:
   id: store-adapter-parity
-  level: module
   tier: system
   scope: data
   aspect: system_data

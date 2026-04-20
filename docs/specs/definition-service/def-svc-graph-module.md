@@ -1,7 +1,6 @@
 ---
 def:
   id: def-svc-graph-module
-  level: leaf
   tier: component
   address: def_document:v2:68868
   scope: feature

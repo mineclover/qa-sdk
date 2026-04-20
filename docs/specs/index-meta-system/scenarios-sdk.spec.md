@@ -1,7 +1,6 @@
 ---
 def:
   id: sdk-scenarios
-  level: module
   tier: system
   scope: feature
   aspect: scenario

@@ -1,7 +1,6 @@
 ---
 def:
   id: perm-external-system
-  level: module
   tier: system
   address: def_document:v2:342029
   scope: data

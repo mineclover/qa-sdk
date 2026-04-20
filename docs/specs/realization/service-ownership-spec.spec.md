@@ -1,7 +1,6 @@
 ---
 def:
   id: service-ownership-spec
-  level: leaf
   tier: component
   scope: data
   aspect: domain_data

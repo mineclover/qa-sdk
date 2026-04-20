@@ -1,7 +1,6 @@
 ---
 def:
   id: db-traffic-control-spec
-  level: leaf
   tier: component
   scope: constraint
   aspect: tech_constraint

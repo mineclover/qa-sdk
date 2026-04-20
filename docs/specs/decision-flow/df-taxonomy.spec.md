@@ -3,7 +3,6 @@ def:
   id: df-taxonomy
   type: knowledge
   knowledge_kind: concept
-  level: module
   tier: system
   scope: data
   aspect: domain_data

@@ -1,7 +1,6 @@
 ---
 def:
   id: permission-constraint
-  level: module
   tier: system
   address: def_document:v2:274563
   scope: constraint

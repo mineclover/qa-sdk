@@ -1,7 +1,6 @@
 ---
 def:
   id: skill-catalog-system
-  level: module
   tier: system
   address: def_document:v2:68645
   scope: feature

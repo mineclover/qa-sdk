@@ -1,7 +1,6 @@
 ---
 def:
   id: cli-command-spec
-  level: module
   tier: system
   scope: feature
   aspect: func_def

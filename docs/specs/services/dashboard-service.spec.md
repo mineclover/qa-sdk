@@ -1,7 +1,6 @@
 ---
 def:
   id: dashboard-service-spec
-  level: module
   tier: system
   address: def_document:v2:1024
   scope: ui
