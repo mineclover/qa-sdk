@@ -3,6 +3,7 @@ def:
   id: work-domain
   type: spec
   level: leaf
+  tier: component
   scope: data
   aspect: domain_data
   depth: specification

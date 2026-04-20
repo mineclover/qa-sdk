@@ -4,6 +4,7 @@ def:
   type: knowledge
   knowledge_kind: concept
   level: leaf
+  tier: component
   address: def_document:v2:342033
   scope: data
   aspect: domain_data

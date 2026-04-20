@@ -5,15 +5,16 @@ def:
   aspect: infra_constraint
   depth: specification
   level: module
+  tier: system
   lifecycle: approved
   layer: operation
   svc: logger
   tags: [logging, ingest, transport]
   links:
     - target: logger-contract
-      type: depends_on
+      type: contains
     - target: runtime-flow-paths
-      type: depends_on
+      type: contains
     - target: log-ingest-forwarder
       type: contains
     - target: log-ingest-wiring

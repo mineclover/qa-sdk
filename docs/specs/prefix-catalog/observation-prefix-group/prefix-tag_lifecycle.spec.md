@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-tag_lifecycle
   scope: data
   aspect: prefix_schema

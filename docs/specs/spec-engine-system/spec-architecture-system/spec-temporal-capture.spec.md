@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-temporal-capture
   address: def_document:v2:137370
   scope: flow

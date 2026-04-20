@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: perm-resource-model
   address: def_document:v2:342185
   scope: data

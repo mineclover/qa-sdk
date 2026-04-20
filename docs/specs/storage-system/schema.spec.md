@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: storage-schema-spec
   address: def_document:v2:343182
   scope: data

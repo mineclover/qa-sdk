@@ -2,6 +2,7 @@
 def:
   id: analysis-system
   level: module
+  tier: system
   address: def_document:v2:68609
   scope: feature
   aspect: func_def
@@ -26,7 +27,7 @@ def:
     - target: analysis-path-observation
       type: contains
     - target: tracking-three-axes
-      type: depends_on
+      type: contains
 ---
 
 # 분석 시스템

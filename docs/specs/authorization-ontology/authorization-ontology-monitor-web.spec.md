@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: authorization-ontology-monitor-web
   type: knowledge
   knowledge_kind: concept

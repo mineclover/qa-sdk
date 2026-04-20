@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: cli-flow-store
   scope: data
   aspect: domain_data

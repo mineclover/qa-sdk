@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: index-meta-store-resolution
   address: def_document:v2:343175
   scope: data

@@ -2,6 +2,7 @@
 def:
   id: event-seed-materialization-phase0-plan
   level: leaf
+  tier: component
   scope: flow
   aspect: process_flow
   depth: specification

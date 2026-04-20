@@ -2,6 +2,7 @@
 def:
   id: system-frontend
   level: group
+  tier: layout
   address: def_document:v2:137229
   scope: flow
   aspect: process_flow
@@ -11,9 +12,9 @@ def:
   tags: [structural]
   links:
     - target: browser-system
-      type: contains
+      type: refs
     - target: viz-system
-      type: contains
+      type: refs
 ---
 # 프론트엔드 계층
 

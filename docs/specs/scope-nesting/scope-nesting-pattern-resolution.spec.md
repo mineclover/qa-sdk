@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: scope-nesting-pattern-resolution
   scope: feature
   aspect: func_def

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-schema_validation
   scope: data
   aspect: prefix_schema

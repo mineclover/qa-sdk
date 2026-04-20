@@ -2,6 +2,7 @@
 def:
   id: benchmark-system
   level: module
+  tier: system
   address: def_document:v2:343040
   scope: data
   aspect: system_data

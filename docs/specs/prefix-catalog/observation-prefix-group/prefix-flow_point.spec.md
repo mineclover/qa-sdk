@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-flow_point
   scope: data
   aspect: prefix_schema

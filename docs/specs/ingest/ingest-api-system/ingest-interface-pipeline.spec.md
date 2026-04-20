@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: ingest-interface-pipeline
   address: def_document:v2:137354
   scope: flow

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: authorization-ontology-column-lineage-policy
   type: knowledge
   knowledge_kind: concept

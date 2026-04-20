@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-endpoint
   scope: data
   aspect: prefix_schema

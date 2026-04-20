@@ -17,9 +17,9 @@ def:
     - target: definition-catalog-spec
       type: refines
     - target: definition-state-model
-      type: depends_on
+      type: contains
     - target: definition-taxonomy
-      type: depends_on
+      type: contains
     - target: spec-verification-system
       type: depends_on
     - target: definition-harness-cli

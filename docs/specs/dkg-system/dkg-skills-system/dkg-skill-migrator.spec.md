@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dkg-skill-migrator
   address: def_document:v2:68767
   scope: feature

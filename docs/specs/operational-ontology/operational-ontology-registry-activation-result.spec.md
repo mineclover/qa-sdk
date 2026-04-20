@@ -2,6 +2,7 @@
 def:
   id: operational-ontology-registry-activation-result
   level: leaf
+  tier: component
   scope: data
   aspect: system_data
   depth: specification

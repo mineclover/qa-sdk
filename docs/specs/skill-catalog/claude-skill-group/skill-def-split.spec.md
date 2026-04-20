@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-def-split
   address: def_document:v2:68799
   scope: feature

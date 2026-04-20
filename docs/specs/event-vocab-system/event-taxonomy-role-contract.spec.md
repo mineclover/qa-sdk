@@ -2,6 +2,7 @@
 def:
   id: event-taxonomy-role-contract
   level: leaf
+  tier: component
   scope: flow
   aspect: process_flow
   depth: specification

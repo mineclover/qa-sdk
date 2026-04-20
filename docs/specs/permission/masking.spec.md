@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: masking-spec
   address: def_document:v2:274562
   scope: constraint

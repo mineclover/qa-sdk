@@ -3,6 +3,7 @@ def:
   id: shared-utility-group
   type: spec
   level: group
+  tier: layout
   scope: data
   aspect: system_data
   depth: overview

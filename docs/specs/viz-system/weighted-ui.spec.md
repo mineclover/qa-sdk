@@ -2,6 +2,7 @@
 def:
   id: weighted-ui-spec
   level: leaf
+  tier: component
   scope: ui
   aspect: component
   depth: specification

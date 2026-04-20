@@ -2,6 +2,7 @@
 def:
   id: spec-engine-system
   level: module
+  tier: system
   address: def_document:v2:137224
   scope: flow
   aspect: process_flow
@@ -12,23 +13,23 @@ def:
   tags: [structural, entry-point]
   links:
     - target: spec-arch-group
-      type: contains
+      type: depends_on
     - target: spec-reference-system
-      type: contains
+      type: depends_on
     - target: spec-phases-group
-      type: contains
+      type: depends_on
     - target: spec-architecture-system
-      type: contains
+      type: depends_on
     - target: prefix-guide
-      type: contains
+      type: depends_on
     - target: spec-next-phase
       type: contains
     - target: spec-core-types-group
-      type: contains
+      type: depends_on
     - target: convergence-layer-group
-      type: contains
+      type: depends_on
     - target: spec-prop-system
-      type: contains
+      type: depends_on
 ---
 
 ## 목적 ^purpose

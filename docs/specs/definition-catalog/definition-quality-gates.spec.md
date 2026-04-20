@@ -17,7 +17,7 @@ def:
     - target: definition-catalog-spec
       type: refines
     - target: definition-state-model
-      type: depends_on
+      type: contains
     - target: definition-harness
       type: depends_on
     - target: definition-quality-contract

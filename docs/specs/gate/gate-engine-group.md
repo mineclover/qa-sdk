@@ -2,6 +2,7 @@
 def:
   id: gate-engine-group
   level: module
+  tier: system
   address: def_document:v2:68630
   scope: feature
   aspect: func_def
@@ -18,7 +19,7 @@ def:
     - target: gate-engine-decorator
       type: contains
     - target: gate-state-model
-      type: depends_on
+      type: contains
   contains: [gate-engine-core, gate-engine-decorator, gate-engine-aware-query]
 ---
 

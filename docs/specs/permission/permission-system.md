@@ -2,6 +2,7 @@
 def:
   id: permission-system
   level: module
+  tier: system
   address: def_document:v2:274433
   scope: constraint
   aspect: biz_constraint
@@ -12,23 +13,23 @@ def:
   tags: [external, structural, security, entry-point]
   links:
     - target: permission-model
-      type: contains
+      type: depends_on
     - target: permission-encoding
       type: contains
     - target: permission-encoding-rule
       type: traces_to
     - target: permission-constraint
-      type: contains
+      type: depends_on
     - target: masking-spec
       type: contains
     - target: perm-external-system
-      type: contains
+      type: depends_on
     - target: perm-codec-system
-      type: contains
+      type: depends_on
     - target: perm-migration-system
-      type: contains
+      type: depends_on
     - target: auth-permission-integration
-      type: contains
+      type: depends_on
 ---
 
 # 권한 엔진 시스템

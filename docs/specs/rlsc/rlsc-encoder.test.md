@@ -2,6 +2,7 @@
 def:
   id: rlsc-encoder-test
   level: leaf
+  tier: component
   scope: flow
   aspect: user_scenario
   depth: validation

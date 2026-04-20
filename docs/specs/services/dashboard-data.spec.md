@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dashboard-data
   address: def_document:v2:343041
   scope: data

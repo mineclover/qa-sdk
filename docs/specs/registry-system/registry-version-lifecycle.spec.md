@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: registry-version-lifecycle
   address: def_document:v2:205962
   scope: state

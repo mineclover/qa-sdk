@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: compat-removal
   type: knowledge
   knowledge_kind: proposal

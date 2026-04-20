@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: registry-client-spec
   address: def_document:v2:412827
   scope: interface

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-phases-roadmap
   address: def_document:v2:137365
   scope: flow

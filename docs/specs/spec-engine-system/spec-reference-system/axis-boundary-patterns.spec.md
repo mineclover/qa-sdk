@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: axis-boundary-patterns
   type: knowledge
   knowledge_kind: pattern

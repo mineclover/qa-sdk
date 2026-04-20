@@ -1,5 +1,6 @@
 ---
 def:
+  tier: system
   id: dual-coordinate-system
   address: def_document:v2:342175
   scope: data
@@ -12,7 +13,7 @@ def:
     - target: definition-system-philosophy
       type: refines
     - target: definition-catalog-spec
-      type: depends_on
+      type: contains
 ---
 # 이중 좌표 시스템 — Prefix(이벤트) × Scope(문서)
 

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-analyzer-drift
   address: def_document:v2:68879
   scope: feature

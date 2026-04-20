@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: scope-classification-guide
   type: knowledge
   knowledge_kind: guide

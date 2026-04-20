@@ -2,6 +2,7 @@
 def:
   id: operational-ontology-allocation-validation-contract
   level: leaf
+  tier: component
   scope: constraint
   aspect: tech_constraint
   depth: validation

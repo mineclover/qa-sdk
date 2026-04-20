@@ -2,6 +2,7 @@
 def:
   id: git-utils
   level: leaf
+  tier: component
   scope: interface
   aspect: cli_contract
   depth: specification

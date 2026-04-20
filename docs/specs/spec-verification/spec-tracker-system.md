@@ -2,6 +2,7 @@
 def:
   id: spec-tracker-system
   level: module
+  tier: system
   address: def_document:v2:68810
   scope: feature
   aspect: func_def

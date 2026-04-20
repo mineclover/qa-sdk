@@ -2,6 +2,7 @@
 def:
   id: data-design-group
   level: module
+  tier: system
   address: def_document:v2:342020
   scope: data
   aspect: domain_data

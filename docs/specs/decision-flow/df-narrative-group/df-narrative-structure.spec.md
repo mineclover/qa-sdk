@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: df-narrative-structure
   type: knowledge
   knowledge_kind: narrative

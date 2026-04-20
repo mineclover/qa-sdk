@@ -2,6 +2,7 @@
 def:
   id: gate-tracker-spec
   level: leaf
+  tier: component
   scope: feature
   aspect: func_def
   depth: specification

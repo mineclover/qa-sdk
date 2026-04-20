@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: wi-capacity-planning
   address: def_document:v2:68811
   scope: feature

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: mws-data
   address: def_document:v2:342027
   scope: data

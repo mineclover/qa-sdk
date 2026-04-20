@@ -2,6 +2,7 @@
 def:
   id: cq-system
   level: module
+  tier: system
   address: def_document:v2:68618
   scope: feature
   aspect: func_def

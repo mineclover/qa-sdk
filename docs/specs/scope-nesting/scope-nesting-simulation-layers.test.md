@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: scope-nesting-simulation-layers-test
   scope: flow
   aspect: user_scenario

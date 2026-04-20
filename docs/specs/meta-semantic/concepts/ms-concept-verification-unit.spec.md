@@ -1,5 +1,6 @@
 ---
 def:
+  tier: exempt
   id: ms-concept-verification-unit
   type: knowledge
   knowledge_kind: concept

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: docs-explorer-spec
   address: def_document:v2:1025
   scope: ui

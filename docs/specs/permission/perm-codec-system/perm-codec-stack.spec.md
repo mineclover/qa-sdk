@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: perm-codec-stack
   address: def_document:v2:68781
   scope: feature

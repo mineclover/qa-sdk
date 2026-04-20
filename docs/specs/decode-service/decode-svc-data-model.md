@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: decode-svc-data-model
   address: def_document:v2:342159
   scope: data

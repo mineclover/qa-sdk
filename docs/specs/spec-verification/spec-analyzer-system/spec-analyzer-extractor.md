@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-analyzer-extractor
   address: def_document:v2:68880
   scope: feature

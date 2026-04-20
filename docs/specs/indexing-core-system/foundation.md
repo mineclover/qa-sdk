@@ -6,6 +6,7 @@ def:
   aspect: domain_data
   depth: overview
   level: module
+  tier: system
   svc: weighted-index
   lifecycle: approved
   layer: domain

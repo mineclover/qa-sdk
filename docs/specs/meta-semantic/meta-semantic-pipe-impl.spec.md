@@ -13,7 +13,7 @@ def:
   layer: domain
   links:
     - target: meta-semantic-v2-migration
-      type: depends_on
+      type: contains
     - target: meta-semantic-pipe-catalog
       type: depends_on
     - target: ms-concept-pipe
@@ -29,7 +29,7 @@ def:
     - target: pipe-serialize
       type: contains
     - target: pipe-store
-      type: contains
+      type: depends_on
     - target: pipe-analyze
       type: contains
     - target: pipe-simulate
@@ -37,9 +37,9 @@ def:
     - target: pipe-interpret
       type: contains
     - target: pipe-gate
-      type: contains
+      type: depends_on
     - target: pipe-zoom
-      type: contains
+      type: depends_on
     - target: verdict-v2
       type: contains
     - target: path-matcher-migration
@@ -57,11 +57,11 @@ def:
     - target: pipe-svg
       type: contains
     - target: data-object-binding
-      type: contains
+      type: depends_on
     - target: pipe-transition-scope
       type: contains
     - target: pipe-static-lineage
-      type: contains
+      type: depends_on
 ---
 
 # PipeSpec + PipeGraph 구현

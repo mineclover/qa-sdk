@@ -6,6 +6,7 @@ def:
   aspect: domain_data
   depth: overview
   level: module
+  tier: system
   svc: weighted-index
   lifecycle: approved
   layer: domain
@@ -14,7 +15,7 @@ def:
     - target: coord-states-group
       type: depends_on
     - target: event-schema-spec
-      type: depends_on
+      type: contains
     - target: schema-layer-architecture-spec
       type: contains
     - target: schema-layer-categories-spec

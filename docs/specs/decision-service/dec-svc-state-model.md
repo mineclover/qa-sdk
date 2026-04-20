@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dec-svc-state-model
   address: def_document:v2:205953
   scope: state

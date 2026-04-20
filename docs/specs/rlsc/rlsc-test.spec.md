@@ -2,6 +2,7 @@
 def:
   id: rlsc-test
   level: module
+  tier: system
   scope: flow
   aspect: user_scenario
   depth: validation

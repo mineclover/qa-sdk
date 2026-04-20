@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: wi-pack-format-def
   address: def_document:v2:342215
   scope: data

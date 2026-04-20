@@ -2,6 +2,7 @@
 def:
   id: permission-version-store
   level: leaf
+  tier: component
   scope: state
   aspect: system_state
   depth: specification

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: infra-logger-spec
   address: def_document:v2:343176
   scope: data

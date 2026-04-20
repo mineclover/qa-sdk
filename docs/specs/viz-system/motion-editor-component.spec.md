@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: motion-editor-component
   address: def_document:v2:1159
   scope: ui

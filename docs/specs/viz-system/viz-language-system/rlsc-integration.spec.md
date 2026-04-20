@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: rlsc-integration
   address: def_document:v2:137358
   scope: flow

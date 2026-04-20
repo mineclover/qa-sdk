@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: df-observation-space
   address: def_document:v2:342166
   scope: data

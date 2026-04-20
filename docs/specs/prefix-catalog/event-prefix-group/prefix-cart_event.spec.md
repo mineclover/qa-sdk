@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-cart_event
   scope: data
   aspect: prefix_schema

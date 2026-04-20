@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: scenario-api-spec
   address: def_document:v2:412830
   scope: interface

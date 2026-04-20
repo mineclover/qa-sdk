@@ -2,6 +2,7 @@
 def:
   id: table-schema-spec
   level: module
+  tier: system
   address: def_document:v2:342206
   scope: data
   aspect: domain_data
@@ -12,9 +13,9 @@ def:
   tags: [data, structural, entry-point]
   links:
     - target: address-spec
-      type: depends_on
+      type: contains
     - target: canonical-format-spec
-      type: depends_on
+      type: contains
     - target: table-schema-types-spec
       type: contains
     - target: table-schema-api-spec

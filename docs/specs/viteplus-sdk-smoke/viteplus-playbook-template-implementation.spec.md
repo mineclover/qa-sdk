@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: viteplus-playbook-template-implementation
   scope: feature
   aspect: func_def

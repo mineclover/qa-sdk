@@ -2,6 +2,7 @@
 def:
   id: tracking-three-axes
   level: leaf
+  tier: component
   scope: data
   aspect: system_data
   depth: specification

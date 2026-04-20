@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: partial-binder-api
   scope: interface
   aspect: api_contract

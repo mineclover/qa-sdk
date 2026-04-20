@@ -2,6 +2,7 @@
 def:
   id: ingest-infra-system
   level: module
+  tier: system
   address: def_document:v2:275457
   scope: constraint
   aspect: infra_constraint
@@ -18,7 +19,7 @@ def:
     - target: key-observation-store
       type: contains
     - target: store-adapter-parity
-      type: contains
+      type: depends_on
 ---
 
 # Ingest 인프라 그룹

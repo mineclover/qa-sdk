@@ -2,6 +2,7 @@
 def:
   id: shopping-backend-spec
   level: module
+  tier: system
   address: def_document:v2:68644
   scope: feature
   aspect: func_def

@@ -15,9 +15,9 @@ def:
     - target: meta-semantic-pipe-impl
       type: depends_on
     - target: pipe-interpret
-      type: depends_on
+      type: contains
     - target: pipe-analyze
-      type: depends_on
+      type: contains
     - target: pipe-gate-model
       type: contains
     - target: pipe-gate-evaluation

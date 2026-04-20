@@ -2,6 +2,7 @@
 def:
   id: monitor-service-spec
   level: module
+  tier: system
   address: def_document:v2:1026
   scope: ui
   aspect: component

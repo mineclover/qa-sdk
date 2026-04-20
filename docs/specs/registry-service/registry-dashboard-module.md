@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: registry-dashboard-module
   address: def_document:v2:68872
   scope: feature

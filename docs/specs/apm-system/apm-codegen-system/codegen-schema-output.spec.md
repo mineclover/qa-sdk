@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: codegen-schema-output
   address: def_document:v2:342152
   scope: data

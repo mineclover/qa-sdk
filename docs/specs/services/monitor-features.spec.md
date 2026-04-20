@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: monitor-features
   address: def_document:v2:68635
   scope: feature

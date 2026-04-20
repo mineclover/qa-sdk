@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: gateway-routing
   address: def_document:v2:68632
   scope: feature

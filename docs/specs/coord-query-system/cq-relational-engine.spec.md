@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: cq-relational-engine
   address: def_document:v2:68753
   scope: feature

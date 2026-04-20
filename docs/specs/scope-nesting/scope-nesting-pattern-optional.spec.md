@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: scope-nesting-pattern-optional
   scope: feature
   aspect: func_def

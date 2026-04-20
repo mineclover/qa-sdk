@@ -2,6 +2,7 @@
 def:
   id: decision-standard-group
   level: module
+  tier: system
   address: def_document:v2:274432
   scope: constraint
   aspect: biz_constraint

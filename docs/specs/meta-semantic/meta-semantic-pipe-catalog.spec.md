@@ -16,9 +16,9 @@ def:
     - target: meta-semantic-system
       type: refines
     - target: pipe-flow-catalog
-      type: contains
+      type: depends_on
     - target: pipe-connection-catalog
-      type: contains
+      type: depends_on
     - target: prefix-colocation
       type: contains
     - target: test-name-tokens

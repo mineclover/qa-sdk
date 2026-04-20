@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: runtime-flow-rollout
   address: def_document:v2:273559
   scope: constraint

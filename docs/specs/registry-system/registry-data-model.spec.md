@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: registry-data-model
   address: def_document:v2:342191
   scope: data

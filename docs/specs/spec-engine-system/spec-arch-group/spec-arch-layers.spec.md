@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-arch-layers
   address: def_document:v2:273561
   scope: constraint

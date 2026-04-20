@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: viteplus-canonical-review-implementation
   scope: feature
   aspect: func_def

@@ -3,6 +3,7 @@ def:
   id: permission-engine-spec
   type: spec
   level: module
+  tier: system
   scope: constraint
   aspect: tech_constraint
   depth: specification

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-prop-dkg-record
   address: def_document:v2:342202
   scope: data

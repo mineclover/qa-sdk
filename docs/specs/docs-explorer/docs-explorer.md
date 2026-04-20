@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: docs-explorer
   address: def_document:v2:68629
   scope: feature

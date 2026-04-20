@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: decode-svc-core-logic
   address: def_document:v2:68866
   scope: feature

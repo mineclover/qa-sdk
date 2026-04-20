@@ -4,6 +4,7 @@ def:
   type: knowledge
   knowledge_kind: narrative
   level: module
+  tier: system
   address: def_document:v2:70020
   scope: feature
   aspect: scenario
@@ -14,9 +15,9 @@ def:
   tags: [decision, testing]
   links:
     - target: df-narrative-context
-      type: depends_on
+      type: contains
     - target: df-narrative-structure
-      type: depends_on
+      type: contains
     - target: df-narrative-proof-coordinate-space
       type: contains
     - target: df-narrative-proof-core-gates

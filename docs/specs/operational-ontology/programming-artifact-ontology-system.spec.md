@@ -2,6 +2,7 @@
 def:
   id: programming-artifact-ontology-system
   level: module
+  tier: system
   scope: interface
   aspect: api_contract
   depth: specification
@@ -30,7 +31,7 @@ def:
     - target: programming-artifact-ontology-context-simulation-todo
       type: contains
     - target: operational-ontology-registry-activation-cli
-      type: depends_on
+      type: contains
 sources:
   - packages/operational-ontology/src/internal/programming-artifact-core.ts
   - packages/operational-ontology/src/programming-artifacts.ts

@@ -2,6 +2,7 @@
 def:
   id: scope-nesting-system
   level: module
+  tier: system
   scope: feature
   aspect: func_def
   depth: overview
@@ -16,7 +17,7 @@ def:
     - target: scope-nesting-procedure
       type: contains
     - target: scope-nesting-provider-patterns
-      type: contains
+      type: depends_on
     - target: scope-nesting-mount-flow
       type: contains
     - target: scope-nesting-contract-timing
@@ -24,7 +25,7 @@ def:
     - target: scope-nesting-simulation-layers
       type: contains
     - target: scope-nesting-visualization
-      type: contains
+      type: depends_on
     - target: scope-nesting-procedure-test
       type: contains
     - target: scope-nesting-contract-timing-test

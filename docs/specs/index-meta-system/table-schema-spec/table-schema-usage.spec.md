@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: table-schema-usage-spec
   address: def_document:v2:342210
   scope: feature

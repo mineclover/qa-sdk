@@ -2,6 +2,7 @@
 def:
   id: drizzle-orm-convention
   level: leaf
+  tier: component
   scope: constraint
   aspect: tech_constraint
   depth: specification

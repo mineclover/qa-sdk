@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: address-separation-decision
   address: def_document:v2:273536
   scope: constraint

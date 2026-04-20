@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: df-time-analysis
   address: def_document:v2:68758
   scope: feature

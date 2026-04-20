@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: registry-axes-module
   address: def_document:v2:68870
   scope: feature

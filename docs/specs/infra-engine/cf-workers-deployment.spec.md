@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: specification
   level: leaf
+  tier: component
   lifecycle: approved
   layer: operation
   tags: [infra, cloudflare, workers, deployment]

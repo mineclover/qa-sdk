@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: wi-semantic-address
   address: def_document:v2:342216
   scope: data

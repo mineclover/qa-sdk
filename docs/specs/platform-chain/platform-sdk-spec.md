@@ -2,6 +2,7 @@
 def:
   id: platform-sdk-spec
   level: leaf
+  tier: component
   scope: interface
   aspect: api_contract
   depth: specification

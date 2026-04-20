@@ -2,6 +2,7 @@
 def:
   id: def-svc-api-contract
   level: leaf
+  tier: component
   address: def_document:v2:412808
   scope: interface
   aspect: api_contract

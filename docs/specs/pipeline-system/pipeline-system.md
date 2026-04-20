@@ -2,6 +2,7 @@
 def:
   id: pipeline-system
   level: module
+  tier: system
   address: def_document:v2:137222
   scope: flow
   aspect: process_flow

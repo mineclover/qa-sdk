@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: conv-naming
   address: def_document:v2:273544
   scope: constraint

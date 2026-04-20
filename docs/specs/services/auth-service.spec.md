@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: auth-service-spec
   address: def_document:v2:68612
   scope: feature

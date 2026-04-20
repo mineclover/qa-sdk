@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: behavior-traversal-axis
   address: def_document:v2:68741
   scope: feature

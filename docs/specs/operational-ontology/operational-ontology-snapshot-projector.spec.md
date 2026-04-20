@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: operational-ontology-snapshot-projector
   type: knowledge
   knowledge_kind: concept

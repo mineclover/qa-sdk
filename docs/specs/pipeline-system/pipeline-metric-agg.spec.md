@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: pipeline-metric-agg
   address: def_document:v2:68786
   scope: feature

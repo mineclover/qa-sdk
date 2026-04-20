@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: query-gate-integration
   address: def_document:v2:138370
   scope: flow

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: gate-query-gate-integration
   scope: constraint
   aspect: tech_constraint

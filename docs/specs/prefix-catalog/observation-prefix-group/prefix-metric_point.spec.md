@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-metric_point
   scope: data
   aspect: prefix_schema

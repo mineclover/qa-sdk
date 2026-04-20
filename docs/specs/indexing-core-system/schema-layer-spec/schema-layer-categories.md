@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: schema-layer-categories-spec
   scope: data
   aspect: domain_data

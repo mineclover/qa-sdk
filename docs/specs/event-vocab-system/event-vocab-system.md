@@ -2,6 +2,7 @@
 def:
   id: event-vocab-system
   level: module
+  tier: system
   address: def_document:v2:342023
   scope: data
   aspect: domain_data
@@ -18,11 +19,11 @@ def:
     - target: payload-guide
       type: contains
     - target: event-taxonomy-layering-plan
-      type: contains
+      type: depends_on
     - target: event-taxonomy-role-contract
       type: contains
     - target: event-taxonomy-roadmap-plan
-      type: contains
+      type: depends_on
     - target: event-mapping-pack-spec
       type: contains
     - target: service-event-adoption-spec
@@ -42,7 +43,7 @@ def:
     - target: storage-system
       type: depends_on
     - target: registry-events-spec
-      type: depends_on
+      type: contains
 ---
 
 ## 목적 ^purpose

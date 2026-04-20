@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: verdict-api-spec
   address: def_document:v2:412834
   scope: interface

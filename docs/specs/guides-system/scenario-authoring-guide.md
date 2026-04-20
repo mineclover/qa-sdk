@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: scenario-authoring-guide
   type: knowledge
   knowledge_kind: guide

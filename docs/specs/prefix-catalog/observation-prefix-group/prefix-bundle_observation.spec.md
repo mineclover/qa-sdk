@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-bundle_observation
   scope: data
   aspect: prefix_schema

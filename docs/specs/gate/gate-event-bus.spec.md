@@ -2,6 +2,7 @@
 def:
   id: gate-event-bus
   level: module
+  tier: system
   scope: interface
   aspect: api_contract
   depth: specification

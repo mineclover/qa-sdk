@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dim-ops-patterns
   type: knowledge
   knowledge_kind: pattern

@@ -2,6 +2,7 @@
 def:
   id: authorization-management-roadmap-plan
   level: leaf
+  tier: component
   scope: flow
   aspect: process_flow
   depth: overview

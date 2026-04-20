@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: ms-concept-data-facets
   type: knowledge
   knowledge_kind: concept

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: range-query-spec
   address: def_document:v2:68787
   scope: feature

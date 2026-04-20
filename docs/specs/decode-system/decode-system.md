@@ -2,6 +2,7 @@
 def:
   id: decode-system
   level: module
+  tier: system
   address: def_document:v2:412676
   scope: interface
   aspect: api_contract
@@ -12,7 +13,7 @@ def:
   tags: [structural, entry-point]
   links:
     - target: decode-api
-      type: contains
+      type: depends_on
     - target: decode-bundle
       type: contains
     - target: decode-deploy

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-type-guide
   type: knowledge
   knowledge_kind: guide

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: event-core-pattern
   type: knowledge
   knowledge_kind: pattern

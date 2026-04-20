@@ -2,6 +2,7 @@
 def:
   id: analysis-path-observation
   level: leaf
+  tier: component
   scope: feature
   aspect: func_def
   depth: specification

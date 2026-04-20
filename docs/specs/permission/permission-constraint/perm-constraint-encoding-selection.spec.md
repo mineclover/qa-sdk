@@ -2,6 +2,7 @@
 def:
   id: perm-constraint-encoding-selection
   level: leaf
+  tier: component
   scope: constraint
   aspect: biz_constraint
   depth: specification

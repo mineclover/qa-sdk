@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-prop-notify
   address: def_document:v2:137367
   scope: flow

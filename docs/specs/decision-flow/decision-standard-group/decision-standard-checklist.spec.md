@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: decision-standard-checklist
   address: def_document:v2:274561
   scope: constraint

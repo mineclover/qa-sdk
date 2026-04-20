@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: viteplus-playbook-boundary-coupling
   scope: constraint
   aspect: tech_constraint

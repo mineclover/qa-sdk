@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   level: module
+  tier: system
   lifecycle: approved
   layer: operation
   tags: [infra, quality-gate, health-check]
@@ -14,7 +15,7 @@ def:
     - target: endpoint-resolution-chain
       type: contains
     - target: infra-register-stage
-      type: depends_on
+      type: contains
 ---
 # VerifyStage — 헬스체크 + 품질 게이트
 

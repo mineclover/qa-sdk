@@ -2,6 +2,7 @@
 def:
   id: sdk-scenario-schema-evolution
   level: leaf
+  tier: component
   scope: feature
   aspect: scenario
   depth: validation

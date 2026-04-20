@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dkg-constraint
   address: def_document:v2:273550
   scope: constraint

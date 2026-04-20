@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: perm-migration-algorithm
   address: def_document:v2:68782
   scope: feature

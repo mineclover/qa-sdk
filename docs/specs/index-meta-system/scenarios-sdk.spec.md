@@ -2,6 +2,7 @@
 def:
   id: sdk-scenarios
   level: module
+  tier: system
   scope: feature
   aspect: scenario
   depth: overview
@@ -21,7 +22,7 @@ def:
     - target: sdk-scenario-schema-evolution
       type: contains
     - target: sdk-scenario-multi-service
-      type: contains
+      type: depends_on
     - target: sdk-scenario-cli-simulation
       type: contains
     - target: sdk-scenario-inactive-entries

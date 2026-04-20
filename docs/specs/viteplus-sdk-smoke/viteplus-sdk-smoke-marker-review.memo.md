@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: viteplus-sdk-smoke-marker-review
   type: knowledge
   knowledge_kind: narrative

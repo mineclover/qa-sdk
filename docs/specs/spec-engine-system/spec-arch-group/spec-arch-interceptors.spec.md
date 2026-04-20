@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-arch-interceptors
   address: def_document:v2:68808
   scope: feature

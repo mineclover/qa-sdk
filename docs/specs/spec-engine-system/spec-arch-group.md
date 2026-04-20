@@ -2,6 +2,7 @@
 def:
   id: spec-arch-group
   level: module
+  tier: system
   address: def_document:v2:273410
   scope: constraint
   aspect: tech_constraint

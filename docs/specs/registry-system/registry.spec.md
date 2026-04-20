@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: meta-registry-spec
   address: def_document:v2:342182
   scope: data

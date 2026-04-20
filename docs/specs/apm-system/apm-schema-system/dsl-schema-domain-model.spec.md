@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dsl-schema-domain-model
   address: def_document:v2:342173
   scope: data

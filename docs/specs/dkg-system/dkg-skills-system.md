@@ -2,6 +2,7 @@
 def:
   id: dkg-skills-system
   level: module
+  tier: system
   address: def_document:v2:68628
   scope: feature
   aspect: func_def
@@ -20,7 +21,7 @@ def:
     - target: dkg-skill-decision
       type: contains
     - target: dkg-skill-catalog
-      type: contains
+      type: depends_on
 ---
 
 # DKG Skills 시스템

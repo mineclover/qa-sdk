@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: motion-workspace
   address: def_document:v2:68636
   scope: feature

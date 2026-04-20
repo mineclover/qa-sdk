@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: partial-binder-math
   scope: data
   aspect: domain_data

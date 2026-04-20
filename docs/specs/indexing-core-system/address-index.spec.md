@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: address-index-spec
   address: def_document:v2:342146
   scope: data

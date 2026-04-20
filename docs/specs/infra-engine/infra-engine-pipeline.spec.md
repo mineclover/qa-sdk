@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   level: module
+  tier: system
   lifecycle: approved
   layer: operation
   svc: infra-engine
@@ -17,7 +18,7 @@ def:
     - target: infra-register-stage
       type: contains
     - target: infra-verify-stage
-      type: contains
+      type: depends_on
     - target: infra-observe-stage
       type: contains
     - target: infra-providers

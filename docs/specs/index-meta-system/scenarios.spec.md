@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: user-scenarios
   address: def_document:v2:70023
   scope: feature

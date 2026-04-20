@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: browser-lifecycle-states
   address: def_document:v2:137344
   scope: flow

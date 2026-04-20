@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dim-ops-deploy-resolve
   address: def_document:v2:68761
   scope: feature

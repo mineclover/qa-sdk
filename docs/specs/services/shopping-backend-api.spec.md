@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: shopping-backend-api
   address: def_document:v2:412689
   scope: interface

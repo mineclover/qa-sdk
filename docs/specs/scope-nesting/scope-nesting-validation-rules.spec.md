@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: scope-nesting-validation-rules
   scope: constraint
   aspect: tech_constraint

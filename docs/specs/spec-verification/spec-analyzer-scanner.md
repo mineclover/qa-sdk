@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-analyzer-scanner
   address: def_document:v2:68881
   scope: feature

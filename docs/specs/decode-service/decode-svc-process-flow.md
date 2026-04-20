@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: decode-svc-process-flow
   address: def_document:v2:137347
   scope: flow

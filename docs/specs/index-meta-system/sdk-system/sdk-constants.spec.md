@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: sdk-constants
   address: def_document:v2:68789
   scope: feature

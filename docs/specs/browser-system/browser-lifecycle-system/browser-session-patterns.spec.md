@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: browser-session-patterns
   type: knowledge
   knowledge_kind: pattern

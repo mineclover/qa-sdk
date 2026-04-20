@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: df-cli-query
   address: def_document:v2:413827
   scope: interface

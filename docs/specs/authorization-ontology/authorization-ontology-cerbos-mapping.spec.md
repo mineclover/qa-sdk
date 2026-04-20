@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: authorization-ontology-cerbos-mapping
   type: knowledge
   knowledge_kind: concept

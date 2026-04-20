@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: mermaid-gen-spec
   address: def_document:v2:1158
   scope: ui

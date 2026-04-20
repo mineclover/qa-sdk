@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: gate-ingest-build
   scope: constraint
   aspect: tech_constraint

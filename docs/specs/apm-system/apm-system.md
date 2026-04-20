@@ -2,6 +2,7 @@
 def:
   id: apm-system
   level: module
+  tier: system
   address: def_document:v2:68611
   scope: feature
   aspect: func_def
@@ -12,11 +13,11 @@ def:
   tags: [structural, entry-point]
   links:
     - target: apm-codegen-system
-      type: contains
+      type: depends_on
     - target: apm-schema-system
-      type: contains
+      type: depends_on
     - target: apm-runtime-system
-      type: contains
+      type: depends_on
     - target: collection-transport-spec
       type: contains
     - target: infra-logger-spec

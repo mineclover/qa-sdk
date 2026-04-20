@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dim-ops-env-inject
   address: def_document:v2:68762
   scope: feature

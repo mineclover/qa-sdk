@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-prop-publish
   address: def_document:v2:412832
   scope: interface

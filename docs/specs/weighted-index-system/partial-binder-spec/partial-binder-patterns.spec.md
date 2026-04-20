@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: partial-binder-patterns
   scope: flow
   aspect: user_scenario

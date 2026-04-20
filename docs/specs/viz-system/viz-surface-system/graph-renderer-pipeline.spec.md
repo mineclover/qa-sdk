@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: graph-renderer-pipeline
   address: def_document:v2:1155
   scope: ui

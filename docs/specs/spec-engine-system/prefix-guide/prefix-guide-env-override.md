@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-guide-env-override
   type: knowledge
   knowledge_kind: guide

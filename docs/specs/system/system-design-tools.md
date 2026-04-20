@@ -2,6 +2,7 @@
 def:
   id: system-design-tools
   level: group
+  tier: layout
   address: def_document:v2:137228
   scope: flow
   aspect: process_flow
@@ -11,19 +12,19 @@ def:
   tags: [structural, entry-point]
   links:
     - target: dkg-system
-      type: contains
+      type: refs
     - target: df-system
-      type: contains
+      type: refs
     - target: taxonomy-boundaries
-      type: contains
+      type: refs
     - target: spec-engine-system
-      type: contains
+      type: refs
     - target: analysis-system
-      type: contains
+      type: refs
     - target: definition-catalog-spec
-      type: contains
+      type: refs
     - target: prefix-catalog-system
-      type: contains
+      type: refs
 ---
 # 설계 도구 계층
 

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: registry-api
   address: def_document:v2:412826
   scope: interface

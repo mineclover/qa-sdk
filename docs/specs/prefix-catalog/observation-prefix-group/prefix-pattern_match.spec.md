@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-pattern_match
   scope: data
   aspect: prefix_schema

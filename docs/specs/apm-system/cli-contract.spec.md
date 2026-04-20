@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: cli-contract-spec
   address: def_document:v2:413824
   scope: interface

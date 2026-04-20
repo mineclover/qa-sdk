@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-order_event
   scope: data
   aspect: prefix_schema

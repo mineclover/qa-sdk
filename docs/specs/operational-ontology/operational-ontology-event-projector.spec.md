@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: operational-ontology-event-projector
   type: knowledge
   knowledge_kind: concept

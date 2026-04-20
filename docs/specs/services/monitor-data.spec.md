@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: monitor-data
   address: def_document:v2:343043
   scope: data

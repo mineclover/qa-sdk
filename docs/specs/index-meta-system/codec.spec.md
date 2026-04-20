@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: index-codec-spec
   address: def_document:v2:68775
   scope: feature

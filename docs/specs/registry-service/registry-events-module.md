@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: registry-events-module
   address: def_document:v2:68873
   scope: feature

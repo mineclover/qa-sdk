@@ -4,6 +4,7 @@ def:
   type: knowledge
   knowledge_kind: adr
   level: leaf
+  tier: component
   scope: constraint
   aspect: tech_constraint
   depth: specification

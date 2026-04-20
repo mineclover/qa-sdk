@@ -2,6 +2,7 @@
 def:
   id: decode-quality-bundle
   level: module
+  tier: system
   scope: flow
   aspect: process_flow
   depth: overview

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: invariants-spec
   address: def_document:v2:273555
   scope: constraint

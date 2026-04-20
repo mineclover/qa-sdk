@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: signal-model-spec
   address: def_document:v2:342196
   scope: data

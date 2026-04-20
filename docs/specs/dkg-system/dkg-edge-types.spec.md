@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dkg-edge-types
   address: def_document:v2:342167
   scope: data

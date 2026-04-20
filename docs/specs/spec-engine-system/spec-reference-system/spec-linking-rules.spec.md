@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-linking-rules
   address: def_document:v2:273562
   scope: constraint

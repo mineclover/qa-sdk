@@ -2,6 +2,7 @@
 def:
   id: scope-nesting-preview-surface
   level: leaf
+  tier: component
   scope: ui
   aspect: component
   depth: specification

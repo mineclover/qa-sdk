@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dec-svc-api-contract
   address: def_document:v2:412804
   scope: interface

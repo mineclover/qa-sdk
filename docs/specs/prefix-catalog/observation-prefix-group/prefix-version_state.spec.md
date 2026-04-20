@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-version_state
   scope: data
   aspect: prefix_schema

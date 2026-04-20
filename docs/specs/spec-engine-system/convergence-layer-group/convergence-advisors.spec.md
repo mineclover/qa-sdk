@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: convergence-advisors
   address: def_document:v2:68747
   scope: feature

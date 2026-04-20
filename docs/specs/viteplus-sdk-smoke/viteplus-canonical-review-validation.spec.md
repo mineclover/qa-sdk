@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: viteplus-canonical-review-validation
   scope: feature
   aspect: scenario

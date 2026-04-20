@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: storage-adapters-spec
   address: def_document:v2:343181
   scope: data

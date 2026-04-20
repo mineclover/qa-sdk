@@ -4,6 +4,7 @@ def:
   type: knowledge
   knowledge_kind: convention
   level: module
+  tier: system
   address: def_document:v2:273409
   scope: constraint
   aspect: tech_constraint

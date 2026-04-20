@@ -2,6 +2,7 @@
 def:
   id: dkg-skill-catalog
   level: module
+  tier: system
   address: def_document:v2:342171
   scope: data
   aspect: domain_data
@@ -12,9 +13,9 @@ def:
   tags: [structural, decision, entry-point]
   links:
     - target: dkg-node-types
-      type: depends_on
+      type: contains
     - target: dkg-edge-types
-      type: depends_on
+      type: contains
     - target: dkg-skill-catalog-types
       type: contains
     - target: dkg-skill-catalog-registry

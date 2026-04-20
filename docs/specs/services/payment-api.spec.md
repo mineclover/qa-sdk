@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: payment-api
   address: def_document:v2:412683
   scope: interface

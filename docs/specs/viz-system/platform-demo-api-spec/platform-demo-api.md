@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: platform-demo-api
   address: def_document:v2:412684
   scope: interface

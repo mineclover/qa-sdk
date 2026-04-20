@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-guide-deploy-pattern
   type: knowledge
   knowledge_kind: guide

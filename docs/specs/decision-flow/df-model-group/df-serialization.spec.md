@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: df-serialization
   address: def_document:v2:412809
   scope: interface

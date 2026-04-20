@@ -3,6 +3,7 @@ def:
   id: validation-layer-group
   type: spec
   level: group
+  tier: layout
   scope: feature
   aspect: scenario
   depth: validation

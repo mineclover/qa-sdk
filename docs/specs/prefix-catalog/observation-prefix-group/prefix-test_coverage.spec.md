@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-test_coverage
   scope: data
   aspect: prefix_schema

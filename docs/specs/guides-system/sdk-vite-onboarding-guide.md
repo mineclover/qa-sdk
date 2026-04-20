@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: sdk-vite-onboarding-guide
   scope: flow
   aspect: user_scenario

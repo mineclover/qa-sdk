@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: df-state-model
   address: def_document:v2:205959
   scope: state

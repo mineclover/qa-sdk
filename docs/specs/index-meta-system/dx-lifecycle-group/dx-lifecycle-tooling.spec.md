@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dx-lifecycle-tooling
   address: def_document:v2:136324
   scope: flow

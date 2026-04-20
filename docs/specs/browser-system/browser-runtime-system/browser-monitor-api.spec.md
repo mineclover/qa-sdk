@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: browser-monitor-api
   address: def_document:v2:412803
   scope: interface

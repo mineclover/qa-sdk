@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-tracker-reporter
   address: def_document:v2:68883
   scope: feature

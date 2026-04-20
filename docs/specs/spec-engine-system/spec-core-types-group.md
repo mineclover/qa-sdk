@@ -2,6 +2,7 @@
 def:
   id: spec-core-types-group
   level: module
+  tier: system
   address: def_document:v2:342032
   scope: data
   aspect: domain_data
@@ -16,7 +17,7 @@ def:
     - target: spec-core-registry
       type: contains
     - target: system-design-tools
-      type: depends_on
+      type: contains
 ---
 
 # Spec Core Types 그룹

@@ -2,6 +2,7 @@
 def:
   id: realization-service-control-plane
   level: module
+  tier: system
   scope: flow
   aspect: process_flow
   depth: overview
@@ -10,11 +11,11 @@ def:
   tags: [structural, runtime, deployment, planned]
   links:
     - target: realization-registry
-      type: depends_on
+      type: contains
     - target: registry-services-module
-      type: depends_on
+      type: contains
     - target: dkg-service-topology
-      type: depends_on
+      type: contains
     - target: meta-semantic-event-standard
       type: refines
     - target: service-unit-spec
@@ -34,7 +35,7 @@ def:
     - target: service-release-manifest
       type: contains
     - target: service-manifest-assembly
-      type: contains
+      type: depends_on
     - target: service-control-plane-cleanup-test
       type: contains
 contains:

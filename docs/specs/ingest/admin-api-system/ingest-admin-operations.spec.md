@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: ingest-admin-operations
   address: def_document:v2:275585
   scope: constraint

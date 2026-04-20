@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dkg-service-topology
   address: def_document:v2:342170
   scope: data

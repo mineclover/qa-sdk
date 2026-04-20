@@ -2,6 +2,7 @@
 def:
   id: infra-auth-usecases
   level: leaf
+  tier: component
   scope: flow
   aspect: user_scenario
   depth: specification

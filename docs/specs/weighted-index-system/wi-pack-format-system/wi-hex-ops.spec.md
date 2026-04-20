@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: wi-hex-ops
   address: def_document:v2:68814
   scope: feature

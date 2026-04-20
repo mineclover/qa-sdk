@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: tag-management-spec
   address: def_document:v2:343183
   scope: data

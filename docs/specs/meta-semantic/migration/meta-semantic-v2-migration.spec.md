@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: meta-semantic-v2-migration
   type: knowledge
   knowledge_kind: proposal

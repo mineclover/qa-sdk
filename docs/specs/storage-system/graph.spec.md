@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: graph-spec
   address: def_document:v2:342179
   scope: data

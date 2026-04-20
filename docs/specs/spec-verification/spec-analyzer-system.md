@@ -2,6 +2,7 @@
 def:
   id: spec-analyzer-system
   level: module
+  tier: system
   address: def_document:v2:68807
   scope: feature
   aspect: func_def
@@ -14,7 +15,7 @@ def:
     - target: spec-verification-system
       type: refines
     - target: definition-catalog-spec
-      type: depends_on
+      type: contains
     - target: spec-analyzer-drift
       type: contains
     - target: spec-analyzer-types

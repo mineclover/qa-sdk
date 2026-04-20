@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-contract_check
   scope: data
   aspect: prefix_schema

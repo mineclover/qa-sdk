@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-next-phase
   address: def_document:v2:137225
   scope: flow

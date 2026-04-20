@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: df-axis-model
   address: def_document:v2:342165
   scope: data

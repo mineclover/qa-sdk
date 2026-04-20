@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-core-registry
   address: def_document:v2:342200
   scope: data

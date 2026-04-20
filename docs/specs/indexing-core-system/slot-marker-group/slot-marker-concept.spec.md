@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: slot-marker-concept
   address: def_document:v2:342197
   scope: data

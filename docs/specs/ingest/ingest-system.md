@@ -2,6 +2,7 @@
 def:
   id: ingest-system
   level: module
+  tier: system
   address: def_document:v2:137221
   scope: flow
   aspect: process_flow
@@ -12,7 +13,7 @@ def:
   tags: [structural, performance, observability, entry-point]
   links:
     - target: ingest-api-system
-      type: contains
+      type: depends_on
     - target: query-api-spec
       type: contains
     - target: scenario-api-spec
@@ -22,7 +23,7 @@ def:
     - target: verdict-api-spec
       type: contains
     - target: admin-api-system
-      type: contains
+      type: depends_on
     - target: record-spec
       type: contains
     - target: trace-spec
@@ -30,9 +31,9 @@ def:
     - target: session-spec
       type: contains
     - target: pipeline-phase-flow
-      type: depends_on
-    - target: ingest-infra-system
       type: contains
+    - target: ingest-infra-system
+      type: depends_on
     - target: browser-session-spec
       type: contains
     - target: dlq-store-spec

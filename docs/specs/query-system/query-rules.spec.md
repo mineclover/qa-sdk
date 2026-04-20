@@ -2,6 +2,7 @@
 def:
   id: query-rules
   level: module
+  tier: system
   address: def_document:v2:342189
   scope: data
   aspect: domain_data
@@ -12,9 +13,9 @@ def:
   tags: [data, persistence, runtime]
   links:
     - target: registry-data-model
-      type: depends_on
-    - target: query-rule-migration
       type: contains
+    - target: query-rule-migration
+      type: depends_on
 contains:
   - query-rule-migration
 ---

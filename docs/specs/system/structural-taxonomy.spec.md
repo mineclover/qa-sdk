@@ -4,6 +4,7 @@ def:
   type: knowledge
   knowledge_kind: concept
   level: module
+  tier: system
   scope: data
   aspect: domain_data
   depth: overview
@@ -14,11 +15,11 @@ def:
     - target: meta-semantic-concepts
       type: contains
     - target: scope-nesting-system
-      type: contains
+      type: depends_on
     - target: concept-hierarchy-grid
       type: refines
     - target: definition-taxonomy
-      type: depends_on
+      type: contains
 ---
 
 # Structural Taxonomy — 실제 단위와 배열의 분류 체계

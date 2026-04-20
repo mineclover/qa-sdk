@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: pipeline-enrichment
   address: def_document:v2:68785
   scope: feature

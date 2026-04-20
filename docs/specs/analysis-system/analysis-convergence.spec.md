@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: analysis-convergence
   address: def_document:v2:68737
   scope: feature

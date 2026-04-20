@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: operational-ontology-control-flow
   type: knowledge
   knowledge_kind: concept

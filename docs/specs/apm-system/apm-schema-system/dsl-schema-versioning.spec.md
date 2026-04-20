@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dsl-schema-versioning
   address: def_document:v2:273551
   scope: constraint

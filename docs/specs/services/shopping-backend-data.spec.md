@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: shopping-backend-data
   address: def_document:v2:342030
   scope: data

@@ -2,6 +2,7 @@
 def:
   id: wi-system
   level: module
+  tier: system
   address: def_document:v2:68648
   scope: feature
   aspect: func_def
@@ -20,11 +21,11 @@ def:
     - target: wi-constraint
       type: contains
     - target: wi-trace-group
-      type: contains
+      type: depends_on
     - target: partial-binder-spec
-      type: contains
+      type: depends_on
     - target: wi-pack-format-system
-      type: contains
+      type: depends_on
     - target: range-query-spec
       type: contains
     - target: axis-projection

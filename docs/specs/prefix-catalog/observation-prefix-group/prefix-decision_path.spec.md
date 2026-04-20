@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-decision_path
   scope: data
   aspect: prefix_schema

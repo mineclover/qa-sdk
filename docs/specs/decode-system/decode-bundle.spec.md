@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: decode-bundle
   address: def_document:v2:342158
   scope: data

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: operational-ontology-traversal-coordinate
   type: knowledge
   knowledge_kind: concept

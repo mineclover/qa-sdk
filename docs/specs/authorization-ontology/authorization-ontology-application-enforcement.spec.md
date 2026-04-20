@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: authorization-ontology-application-enforcement
   type: knowledge
   knowledge_kind: concept

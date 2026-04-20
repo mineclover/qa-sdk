@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: partial-binder-validation
   scope: constraint
   aspect: tech_constraint

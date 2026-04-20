@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-def-boundary
   scope: feature
   aspect: func_def

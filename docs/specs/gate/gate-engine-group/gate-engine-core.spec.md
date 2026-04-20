@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: gate-engine-core
   address: def_document:v2:68771
   scope: feature

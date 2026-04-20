@@ -2,6 +2,7 @@
 def:
   id: gate-cache-invalidation-test
   level: leaf
+  tier: component
   scope: flow
   aspect: user_scenario
   depth: validation

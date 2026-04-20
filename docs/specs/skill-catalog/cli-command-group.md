@@ -2,6 +2,7 @@
 def:
   id: cli-command-group
   level: module
+  tier: system
   address: def_document:v2:68615
   scope: feature
   aspect: func_def

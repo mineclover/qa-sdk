@@ -2,6 +2,7 @@
 def:
   id: gate-consistency-test
   level: leaf
+  tier: component
   scope: flow
   aspect: user_scenario
   depth: validation

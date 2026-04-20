@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: bench-encode-decode
   address: def_document:v2:343170
   scope: data

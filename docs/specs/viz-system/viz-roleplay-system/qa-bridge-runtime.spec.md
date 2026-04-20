@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: qa-bridge-runtime
   address: def_document:v2:412821
   scope: interface

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: browser-transport-spec
   address: def_document:v2:414848
   scope: interface

@@ -13,9 +13,9 @@ def:
   layer: domain
   links:
     - target: meta-semantic-data-contract
-      type: depends_on
+      type: contains
     - target: prefix-path-summation
-      type: depends_on
+      type: contains
     - target: pipe-static-lineage
       type: depends_on
     - target: data-object-codegen

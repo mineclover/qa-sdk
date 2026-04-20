@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: gate-flow
   address: def_document:v2:137349
   scope: flow

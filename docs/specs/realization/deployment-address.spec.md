@@ -2,6 +2,7 @@
 def:
   id: deployment-address
   level: leaf
+  tier: component
   scope: data
   aspect: system_data
   depth: specification

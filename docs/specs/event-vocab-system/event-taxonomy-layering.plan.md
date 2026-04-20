@@ -2,6 +2,7 @@
 def:
   id: event-taxonomy-layering-plan
   level: module
+  tier: system
   scope: flow
   aspect: process_flow
   depth: specification
@@ -13,13 +14,13 @@ def:
     - target: event-vocab-system
       type: refines
     - target: event-core-pattern
-      type: depends_on
+      type: contains
     - target: event-mapping-pack-plan
       type: contains
     - target: service-event-adoption-plan
       type: contains
     - target: service-ownership-spec
-      type: depends_on
+      type: contains
 ---
 
 # Event Taxonomy Layering — 설계 계획

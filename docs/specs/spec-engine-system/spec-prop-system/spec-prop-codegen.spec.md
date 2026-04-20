@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-prop-codegen
   address: def_document:v2:68809
   scope: feature

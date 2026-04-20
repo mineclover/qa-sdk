@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-gform-parser
   scope: feature
   aspect: func_def

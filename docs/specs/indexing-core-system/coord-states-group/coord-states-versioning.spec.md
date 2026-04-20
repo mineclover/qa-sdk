@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: coord-states-versioning
   address: def_document:v2:206978
   scope: state

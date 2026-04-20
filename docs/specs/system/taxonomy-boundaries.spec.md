@@ -4,6 +4,7 @@ def:
   type: knowledge
   knowledge_kind: concept
   level: module
+  tier: system
   scope: data
   aspect: domain_data
   depth: overview
@@ -14,11 +15,11 @@ def:
     - target: definition-taxonomy
       type: contains
     - target: structural-taxonomy
-      type: contains
+      type: depends_on
     - target: observability-taxonomy
-      type: contains
+      type: depends_on
     - target: df-taxonomy
-      type: contains
+      type: depends_on
     - target: pm-taxonomy
       type: contains
     - target: decision-definition-bridge

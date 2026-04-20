@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: table-schema-api-spec
   address: def_document:v2:342208
   scope: interface

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-cli-flow-commands
   address: def_document:v2:68793
   scope: feature

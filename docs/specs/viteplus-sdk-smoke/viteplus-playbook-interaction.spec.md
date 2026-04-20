@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: viteplus-playbook-interaction
   scope: ui
   aspect: interaction

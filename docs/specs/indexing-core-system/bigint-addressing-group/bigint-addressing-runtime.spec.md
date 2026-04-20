@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: bigint-addressing-runtime
   address: def_document:v2:343172
   scope: data

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: coord-acceleration-design
   address: def_document:v2:414857
   scope: constraint

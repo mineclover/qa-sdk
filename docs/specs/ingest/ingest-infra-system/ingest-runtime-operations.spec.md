@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: ingest-runtime-operations
   address: def_document:v2:275588
   scope: constraint

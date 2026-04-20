@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: coord-states-taxonomy
   address: def_document:v2:206977
   scope: state

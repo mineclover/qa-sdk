@@ -2,6 +2,7 @@
 def:
   id: cli-command-registry-plan
   level: leaf
+  tier: component
   scope: flow
   aspect: process_flow
   depth: specification

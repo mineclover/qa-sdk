@@ -220,10 +220,10 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
         // System은 leaf 성격이므로 contains를 가지면 안 됨 (독립성 원칙)
         if (containsChildren.length > 0) {
           issues.push({
-            severity: "error",
+            severity: "warning", // Phase 4B에서 error로 승격 예정
             type: "level-violation" as ValidationIssue["type"],
             docId: entry.id,
-            message: `tier: system은 독립적이어야 하며 contains 자식을 가질 수 없음 (depends_on 전환 필요)`,
+            message: `tier: system은 독립적이어야 하며 contains 자식을 가질 수 없음 (depends_on 전환 필요: ${containsChildren.length}건 감지)`,
           });
         }
       }

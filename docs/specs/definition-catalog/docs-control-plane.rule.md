@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: docs-control-plane-rule
   type: knowledge
   knowledge_kind: proposal

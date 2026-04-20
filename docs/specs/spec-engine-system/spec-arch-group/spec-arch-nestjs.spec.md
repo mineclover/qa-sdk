@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-arch-nestjs
   address: def_document:v2:137361
   scope: flow

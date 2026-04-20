@@ -1,5 +1,6 @@
 ---
 def:
+  tier: exempt
   id: ms-concept-contract-descent
   type: knowledge
   knowledge_kind: concept

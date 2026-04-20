@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   level: leaf
+  tier: component
   lifecycle: approved
   layer: operation
   tags: [infra, pulumi, deploy]

@@ -3,6 +3,7 @@ def:
   id: browser-codec
   type: spec
   level: leaf
+  tier: component
   scope: interface
   aspect: api_contract
   depth: specification

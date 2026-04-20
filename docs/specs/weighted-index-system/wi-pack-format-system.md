@@ -2,6 +2,7 @@
 def:
   id: wi-pack-format-system
   level: module
+  tier: system
   address: def_document:v2:68647
   scope: feature
   aspect: func_def

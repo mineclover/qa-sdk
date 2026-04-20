@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: wi-format-registry
   address: def_document:v2:68813
   scope: feature

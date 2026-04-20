@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: mws-api
   address: def_document:v2:412682
   scope: interface

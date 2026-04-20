@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: schema-layer-implementation-spec
   scope: feature
   aspect: func_def

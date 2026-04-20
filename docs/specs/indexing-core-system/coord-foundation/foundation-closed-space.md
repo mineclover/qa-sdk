@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: coord-closed-space
   address: def_document:v2:414853
   scope: data

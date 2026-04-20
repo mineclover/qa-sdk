@@ -2,6 +2,7 @@
 def:
   id: prefix-catalog-system
   level: module
+  tier: system
   scope: data
   aspect: prefix_schema
   depth: overview
@@ -9,15 +10,15 @@ def:
   tags: [structural, entry-point, generated]
   links:
     - target: entity-prefix-group
-      type: contains
+      type: depends_on
     - target: policy-prefix-group
-      type: contains
+      type: depends_on
     - target: event-prefix-group
-      type: contains
+      type: depends_on
     - target: relation-prefix-group
-      type: contains
+      type: depends_on
     - target: observation-prefix-group
-      type: contains
+      type: depends_on
 ---
 
 ## 목적 ^purpose

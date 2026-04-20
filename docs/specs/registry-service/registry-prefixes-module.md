@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: registry-prefixes-module
   address: def_document:v2:68874
   scope: feature

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: viteplus-playbook-app-state
   scope: state
   aspect: app_state

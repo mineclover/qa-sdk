@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: operational-ontology-observation-topology
   type: knowledge
   knowledge_kind: concept

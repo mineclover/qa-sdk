@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: gate-decode-route
   scope: constraint
   aspect: tech_constraint

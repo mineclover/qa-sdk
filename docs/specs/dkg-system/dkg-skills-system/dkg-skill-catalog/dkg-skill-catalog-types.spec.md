@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dkg-skill-catalog-types
   scope: data
   aspect: domain_data

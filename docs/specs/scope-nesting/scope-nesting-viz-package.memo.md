@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: scope-nesting-viz-package
   type: knowledge
   knowledge_kind: narrative

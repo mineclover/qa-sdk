@@ -2,6 +2,7 @@
 def:
   id: index-meta-system
   level: module
+  tier: system
   address: def_document:v2:68633
   scope: feature
   aspect: func_def
@@ -12,25 +13,25 @@ def:
   tags: [structural, entry-point]
   links:
     - target: table-schema-spec
-      type: contains
+      type: depends_on
     - target: resolver-spec
       type: contains
     - target: index-codec-spec
       type: contains
     - target: index-meta-store-group
-      type: contains
+      type: depends_on
     - target: address-spec
       type: contains
     - target: address-separation-group
-      type: contains
+      type: depends_on
     - target: sdk-scenarios
-      type: contains
+      type: depends_on
     - target: sdk-system
-      type: contains
+      type: depends_on
     - target: invariants-spec
       type: contains
     - target: address-scenarios-group
-      type: contains
+      type: depends_on
     - target: index-meta-workers
       type: contains
     - target: user-scenarios
@@ -38,7 +39,7 @@ def:
     - target: canonical-format-spec
       type: contains
     - target: dx-lifecycle-group
-      type: contains
+      type: depends_on
     - target: benchmark-system
       type: depends_on
     - target: registry-system

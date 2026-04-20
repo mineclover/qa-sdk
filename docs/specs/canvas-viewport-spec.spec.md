@@ -3,6 +3,7 @@ def:
   id: canvas-viewport-spec
   type: spec
   level: leaf
+  tier: component
   scope: ui
   aspect: layout
   depth: specification

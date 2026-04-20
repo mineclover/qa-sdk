@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-page_view
   scope: data
   aspect: prefix_schema

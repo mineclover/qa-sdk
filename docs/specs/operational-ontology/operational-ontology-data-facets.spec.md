@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: operational-ontology-data-facets
   type: knowledge
   knowledge_kind: concept

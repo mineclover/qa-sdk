@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: event-schema-spec
   address: def_document:v2:342177
   scope: data

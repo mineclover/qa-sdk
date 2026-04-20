@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: cq-version-query
   address: def_document:v2:68754
   scope: feature

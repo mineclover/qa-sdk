@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: ms-concept-branch-path
   type: knowledge
   knowledge_kind: concept

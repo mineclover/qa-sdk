@@ -16,11 +16,11 @@ def:
     - target: definition-management
       type: refines
     - target: definition-mgmt-feedback-loop
-      type: depends_on
+      type: contains
     - target: definition-mgmt-state-tracking
-      type: depends_on
+      type: contains
     - target: definition-mgmt-verification-loop
-      type: depends_on
+      type: contains
     - target: harness-architecture
       type: depends_on
     - target: definition-mgmt-observability-planes

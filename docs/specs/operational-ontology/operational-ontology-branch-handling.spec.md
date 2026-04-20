@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: operational-ontology-branch-handling
   type: knowledge
   knowledge_kind: concept

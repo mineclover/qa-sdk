@@ -2,6 +2,7 @@
 def:
   id: viz-system
   level: module
+  tier: system
   address: def_document:v2:1030
   scope: ui
   aspect: component
@@ -26,17 +27,17 @@ def:
     - target: inspector-engine
       type: contains
     - target: platform-demo-api-spec
-      type: contains
+      type: depends_on
     - target: registry-ui-spec
       type: contains
     - target: viz-3d-spec
       type: contains
     - target: viz-language-system
-      type: contains
+      type: depends_on
     - target: viz-roleplay-system
-      type: contains
+      type: depends_on
     - target: viz-surface-system
-      type: contains
+      type: depends_on
     - target: weighted-ui-spec
       type: contains
 ---

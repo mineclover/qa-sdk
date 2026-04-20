@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: adr-merge-dedup
   type: knowledge
   knowledge_kind: adr

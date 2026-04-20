@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: viz-panel-layout
   address: def_document:v2:129
   scope: ui

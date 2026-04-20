@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: viteplus-playbook-template-flow
   scope: flow
   aspect: process_flow

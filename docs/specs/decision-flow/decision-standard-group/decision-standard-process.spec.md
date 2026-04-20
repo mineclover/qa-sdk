@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: decision-standard-process
   address: def_document:v2:137346
   scope: flow

@@ -2,6 +2,7 @@
 def:
   id: def-svc-data-model
   level: leaf
+  tier: component
   address: def_document:v2:342160
   scope: data
   aspect: domain_data

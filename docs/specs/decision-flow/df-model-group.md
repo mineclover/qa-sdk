@@ -2,6 +2,7 @@
 def:
   id: df-model-group
   level: module
+  tier: system
   address: def_document:v2:342021
   scope: data
   aspect: domain_data

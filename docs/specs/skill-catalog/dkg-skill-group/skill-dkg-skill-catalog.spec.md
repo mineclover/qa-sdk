@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-dkg-skill-catalog
   address: def_document:v2:68802
   scope: feature

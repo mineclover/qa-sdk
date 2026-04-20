@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: operational-ontology-information-transmission
   type: knowledge
   knowledge_kind: concept

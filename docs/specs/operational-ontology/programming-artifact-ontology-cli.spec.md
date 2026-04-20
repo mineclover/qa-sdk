@@ -2,6 +2,7 @@
 def:
   id: programming-artifact-ontology-cli
   level: leaf
+  tier: component
   scope: interface
   aspect: cli_contract
   depth: specification

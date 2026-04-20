@@ -2,6 +2,7 @@
 def:
   id: doc-type-convention
   level: module
+  tier: system
   scope: constraint
   aspect: tech_constraint
   depth: specification
@@ -9,7 +10,7 @@ def:
   layer: operation
   links:
     - target: definition-catalog-spec
-      type: depends_on
+      type: contains
     - target: doc-type-convention-cases
       type: contains
     - target: drizzle-orm-convention

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dkg-node-types
   address: def_document:v2:342168
   scope: data

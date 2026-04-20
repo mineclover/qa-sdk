@@ -4,6 +4,7 @@ def:
   type: knowledge
   knowledge_kind: concept
   level: group
+  tier: component
   scope: data
   aspect: system_data
   depth: overview

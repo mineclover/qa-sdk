@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-def-context
   address: def_document:v2:68796
   scope: feature

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-tracker-vitest-adapter
   address: def_document:v2:412928
   scope: interface

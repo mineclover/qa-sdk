@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: canonical-format-spec
   address: def_document:v2:342151
   scope: data

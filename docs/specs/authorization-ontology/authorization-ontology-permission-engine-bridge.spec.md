@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: authorization-ontology-permission-engine-bridge
   type: knowledge
   knowledge_kind: concept

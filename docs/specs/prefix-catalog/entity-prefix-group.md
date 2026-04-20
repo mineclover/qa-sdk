@@ -2,6 +2,7 @@
 def:
   id: entity-prefix-group
   level: module
+  tier: system
   scope: data
   aspect: prefix_schema
   depth: overview
@@ -9,7 +10,7 @@ def:
   tags: [structural, entry-point, generated]
   links:
     - target: prefix-service
-      type: contains
+      type: depends_on
     - target: prefix-content
       type: contains
     - target: prefix-tracking

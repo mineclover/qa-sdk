@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dsl-bundle-spec
   address: def_document:v2:342172
   scope: data

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: browser-capture-contract
   address: def_document:v2:412802
   scope: interface

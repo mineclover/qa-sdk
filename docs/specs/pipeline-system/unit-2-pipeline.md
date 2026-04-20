@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: task-pipeline-unit
   address: def_document:v2:137473
   scope: flow

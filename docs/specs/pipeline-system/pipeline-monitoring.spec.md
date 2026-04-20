@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: pipeline-monitoring
   address: def_document:v2:343179
   scope: data

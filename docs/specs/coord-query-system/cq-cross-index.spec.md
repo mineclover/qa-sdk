@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: cq-cross-index
   address: def_document:v2:68750
   scope: feature

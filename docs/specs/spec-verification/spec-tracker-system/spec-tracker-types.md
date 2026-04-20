@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-tracker-types
   address: def_document:v2:342203
   scope: data

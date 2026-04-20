@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: viteplus-incident-escalation-validation
   scope: feature
   aspect: scenario

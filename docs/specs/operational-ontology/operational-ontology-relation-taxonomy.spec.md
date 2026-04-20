@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: operational-ontology-relation-taxonomy
   type: knowledge
   knowledge_kind: concept

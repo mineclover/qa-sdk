@@ -3,6 +3,7 @@ def:
   id: infra-engine-system
   type: spec
   level: module
+  tier: system
   scope: constraint
   aspect: infra_constraint
   depth: specification

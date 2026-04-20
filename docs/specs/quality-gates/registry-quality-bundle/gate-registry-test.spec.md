@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: gate-registry-test
   scope: constraint
   aspect: tech_constraint

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-pattern_anomaly
   scope: data
   aspect: prefix_schema

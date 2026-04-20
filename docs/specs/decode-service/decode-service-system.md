@@ -2,6 +2,7 @@
 def:
   id: decode-service-system
   level: module
+  tier: system
   address: def_document:v2:68621
   scope: feature
   aspect: func_def

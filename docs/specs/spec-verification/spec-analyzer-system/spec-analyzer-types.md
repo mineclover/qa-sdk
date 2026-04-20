@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-analyzer-types
   address: def_document:v2:342198
   scope: data

@@ -2,6 +2,7 @@
 def:
   id: skill-catalog-system
   level: module
+  tier: system
   address: def_document:v2:68645
   scope: feature
   aspect: func_def
@@ -11,15 +12,15 @@ def:
   tags: [structural, entry-point, generated]
   links:
     - target: claude-skill-group
-      type: contains
+      type: depends_on
     - target: automation-skill-group
-      type: contains
+      type: depends_on
     - target: ralph-tui-skill-group
-      type: contains
+      type: depends_on
     - target: dkg-skill-group
-      type: contains
+      type: depends_on
     - target: cli-command-group
-      type: contains
+      type: depends_on
 ---
 
 ## 목적 ^purpose

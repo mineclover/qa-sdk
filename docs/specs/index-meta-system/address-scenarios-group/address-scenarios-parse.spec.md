@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: address-scenarios-parse
   address: def_document:v2:70017
   scope: feature

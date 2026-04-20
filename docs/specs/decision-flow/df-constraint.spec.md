@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: df-constraint
   address: def_document:v2:273549
   scope: constraint

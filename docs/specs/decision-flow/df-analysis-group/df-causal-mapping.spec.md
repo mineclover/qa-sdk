@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: df-causal-mapping
   address: def_document:v2:138369
   scope: flow

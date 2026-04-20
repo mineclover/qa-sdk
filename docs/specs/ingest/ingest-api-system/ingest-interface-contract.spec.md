@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: ingest-interface-contract
   address: def_document:v2:412816
   scope: interface

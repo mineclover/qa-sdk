@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-skill_execution
   scope: data
   aspect: prefix_schema

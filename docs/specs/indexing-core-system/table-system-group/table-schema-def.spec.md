@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: table-schema-def
   address: def_document:v2:342205
   scope: data

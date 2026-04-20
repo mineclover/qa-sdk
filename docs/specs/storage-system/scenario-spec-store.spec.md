@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: scenario-store-spec
   address: def_document:v2:343180
   scope: data

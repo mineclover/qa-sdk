@@ -2,6 +2,7 @@
 def:
   id: browser-runtime-system
   level: module
+  tier: system
   address: def_document:v2:412673
   scope: interface
   aspect: api_contract

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: insights-api-spec
   scope: interface
   aspect: api_contract

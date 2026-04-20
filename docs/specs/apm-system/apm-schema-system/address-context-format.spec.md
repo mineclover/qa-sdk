@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: address-context-format
   address: def_document:v2:412800
   scope: interface

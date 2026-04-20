@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: decode-quality-contract
   scope: interface
   aspect: api_contract

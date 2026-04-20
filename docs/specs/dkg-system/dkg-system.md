@@ -2,6 +2,7 @@
 def:
   id: dkg-system
   level: module
+  tier: system
   address: def_document:v2:342022
   scope: data
   aspect: domain_data
@@ -22,11 +23,11 @@ def:
     - target: dkg-growth-spiral
       type: contains
     - target: dkg-skills-system
-      type: contains
+      type: depends_on
     - target: dkg-service-topology
       type: contains
     - target: dkg-state-store
-      type: contains
+      type: depends_on
 ---
 
 # DKG (Design Knowledge Graph) 시스템

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-dkg_observation_event
   scope: data
   aspect: prefix_schema

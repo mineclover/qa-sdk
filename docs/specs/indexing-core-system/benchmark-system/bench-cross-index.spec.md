@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: bench-cross-index
   address: def_document:v2:343169
   scope: data

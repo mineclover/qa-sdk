@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: operational-ontology-rdf-bridge
   type: knowledge
   knowledge_kind: concept

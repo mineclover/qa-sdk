@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: analysis-intent-link
   address: def_document:v2:68739
   scope: feature

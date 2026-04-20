@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: viteplus-playbook-state-transition
   scope: state
   aspect: domain_state

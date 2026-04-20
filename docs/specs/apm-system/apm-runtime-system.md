@@ -2,6 +2,7 @@
 def:
   id: apm-runtime-system
   level: module
+  tier: system
   address: def_document:v2:275456
   scope: constraint
   aspect: infra_constraint
@@ -20,7 +21,7 @@ def:
     - target: logger-runtime-rules
       type: contains
     - target: log-ingest-bridge
-      type: contains
+      type: depends_on
     - target: pino-logger
       type: contains
 ---

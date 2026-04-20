@@ -1,5 +1,6 @@
 ---
 def:
+  tier: system
   id: prefix-service
   scope: data
   aspect: prefix_schema

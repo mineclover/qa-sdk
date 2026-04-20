@@ -2,6 +2,7 @@
 def:
   id: permission-model
   level: module
+  tier: system
   scope: state
   aspect: domain_state
   depth: overview
@@ -11,9 +12,9 @@ def:
   tags: [security, structural]
   links:
     - target: perm-resource-model
-      type: depends_on
+      type: contains
     - target: perm-service-ref
-      type: depends_on
+      type: contains
     - target: permission-model-permission-set
       type: contains
     - target: permission-model-ternary-mask

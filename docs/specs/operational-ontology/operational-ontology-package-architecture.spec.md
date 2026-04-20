@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: operational-ontology-package-architecture
   type: knowledge
   knowledge_kind: concept

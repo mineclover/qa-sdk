@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: session-spec
   address: def_document:v2:342195
   scope: data

@@ -6,6 +6,7 @@ def:
   depth: specification
   lifecycle: approved
   level: module
+  tier: system
   layer: mediation
   svc: rlsc
   tags: [runtime, structural, observability]
@@ -35,7 +36,7 @@ def:
     - target: rlsc-monitor
       type: contains
     - target: rlsc-test
-      type: contains
+      type: depends_on
   source: packages/rlsc/src/index.ts
 ---
 

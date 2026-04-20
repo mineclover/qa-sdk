@@ -2,6 +2,7 @@
 def:
   id: service-manifest-assembly
   level: module
+  tier: system
   scope: flow
   aspect: process_flow
   depth: overview
@@ -11,7 +12,7 @@ def:
     - target: realization-service-control-plane
       type: refines
     - target: service-release-manifest
-      type: depends_on
+      type: contains
     - target: service-manifest-validation
       type: contains
     - target: service-manifest-cleanup-lane

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-ralph-tui-prd
   scope: feature
   aspect: func_def

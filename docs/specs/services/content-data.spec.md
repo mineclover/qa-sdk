@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: content-data
   address: def_document:v2:342019
   scope: data

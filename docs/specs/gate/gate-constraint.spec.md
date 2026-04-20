@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: gate-constraint
   address: def_document:v2:273552
   scope: constraint

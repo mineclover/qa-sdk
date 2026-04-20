@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: payload-guide
   type: knowledge
   knowledge_kind: guide

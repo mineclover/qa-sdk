@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: resolver-spec
   address: def_document:v2:68788
   scope: feature

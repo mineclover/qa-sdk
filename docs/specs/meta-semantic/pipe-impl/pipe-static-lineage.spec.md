@@ -15,7 +15,7 @@ def:
     - target: meta-semantic-pipe-impl
       type: depends_on
     - target: pipe-transition-scope
-      type: depends_on
+      type: contains
     - target: pipe-fold-lineage
       type: contains
     - target: pipe-graph-lineage-precision

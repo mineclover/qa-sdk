@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: scope-nesting-pattern-lifecycle-test
   scope: flow
   aspect: user_scenario

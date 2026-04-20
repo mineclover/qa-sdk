@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: codegen-cli-contract
   address: def_document:v2:413825
   scope: interface

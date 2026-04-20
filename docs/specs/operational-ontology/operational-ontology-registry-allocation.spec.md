@@ -2,6 +2,7 @@
 def:
   id: operational-ontology-registry-allocation
   level: module
+  tier: system
   scope: interface
   aspect: api_contract
   depth: overview

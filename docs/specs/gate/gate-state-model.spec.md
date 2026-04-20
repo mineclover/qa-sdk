@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: gate-state-model
   address: def_document:v2:205960
   scope: state

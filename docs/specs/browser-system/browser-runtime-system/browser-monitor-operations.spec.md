@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: browser-monitor-operations
   address: def_document:v2:273542
   scope: constraint

@@ -3,6 +3,7 @@ def:
   id: bit-index
   type: spec
   level: leaf
+  tier: component
   scope: data
   aspect: domain_data
   depth: specification

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-harness_process_step
   scope: data
   aspect: prefix_schema

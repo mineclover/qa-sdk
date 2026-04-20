@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: registry-workspace-module
   address: def_document:v2:68878
   scope: feature

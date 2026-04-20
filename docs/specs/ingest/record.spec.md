@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: record-spec
   address: def_document:v2:342190
   scope: data

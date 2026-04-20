@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dkg-skill-cascade
   address: def_document:v2:68765
   scope: feature

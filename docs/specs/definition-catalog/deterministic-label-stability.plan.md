@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: deterministic-label-stability-plan
   type: knowledge
   knowledge_kind: proposal

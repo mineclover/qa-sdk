@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-rbac
   scope: data
   aspect: prefix_schema

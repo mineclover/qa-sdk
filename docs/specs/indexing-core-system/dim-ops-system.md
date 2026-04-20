@@ -2,6 +2,7 @@
 def:
   id: dim-ops-system
   level: module
+  tier: system
   address: def_document:v2:68626
   scope: feature
   aspect: func_def

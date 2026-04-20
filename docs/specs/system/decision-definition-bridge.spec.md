@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: decision-definition-bridge
   address: def_document:v2:138368
   scope: flow

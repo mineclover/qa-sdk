@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: operational-ontology-prompt-artifact-generation
   type: knowledge
   knowledge_kind: concept

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: index-meta-store-contract
   address: def_document:v2:343174
   scope: data

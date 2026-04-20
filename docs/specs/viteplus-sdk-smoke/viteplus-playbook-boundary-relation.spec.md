@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: viteplus-playbook-boundary-relation
   scope: flow
   aspect: relation

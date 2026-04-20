@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: decode-svc-constraints
   address: def_document:v2:273547
   scope: constraint

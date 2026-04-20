@@ -2,6 +2,7 @@
 def:
   id: service-manifest-cleanup-lane
   level: leaf
+  tier: component
   scope: flow
   aspect: process_flow
   depth: specification

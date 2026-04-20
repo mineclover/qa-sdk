@@ -2,6 +2,7 @@
 def:
   id: query-system
   level: module
+  tier: system
   address: def_document:v2:412686
   scope: interface
   aspect: api_contract
@@ -14,7 +15,7 @@ def:
     - target: query-api
       type: contains
     - target: query-rules
-      type: contains
+      type: depends_on
     - target: query-gate-integration
       type: contains
     - target: gate-system

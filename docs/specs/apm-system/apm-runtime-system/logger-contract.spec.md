@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: logger-contract
   address: def_document:v2:412817
   scope: interface

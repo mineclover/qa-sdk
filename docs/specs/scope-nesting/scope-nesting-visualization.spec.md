@@ -2,6 +2,7 @@
 def:
   id: scope-nesting-visualization
   level: module
+  tier: system
   scope: ui
   aspect: component
   depth: overview
@@ -16,11 +17,11 @@ def:
     - target: scope-nesting-preview-surface
       type: contains
     - target: scope-nesting-simulation-layers
-      type: depends_on
+      type: contains
     - target: scope-nesting-mount-flow
-      type: depends_on
+      type: contains
     - target: scope-nesting-contract-timing
-      type: depends_on
+      type: contains
     - target: scope-nesting-viz-package
       type: traces_to
 contains:

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: metrics-spec
   address: def_document:v2:343178
   scope: data

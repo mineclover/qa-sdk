@@ -1,5 +1,6 @@
 ---
 def:
+  tier: system
   id: motion-workspace-service
   address: def_document:v2:68637
   scope: feature
@@ -10,7 +11,7 @@ def:
   tags: [operation, motion, service]
   links:
     - target: motion-workspace
-      type: depends_on
+      type: contains
 ---
 # motion-workspace-service
 

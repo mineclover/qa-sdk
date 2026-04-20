@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: wi-codec
   address: def_document:v2:68812
   scope: feature

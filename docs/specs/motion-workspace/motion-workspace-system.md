@@ -2,6 +2,7 @@
 def:
   id: motion-workspace-system
   level: module
+  tier: system
   address: def_document:v2:68638
   scope: feature
   aspect: func_def
@@ -15,7 +16,7 @@ def:
     - target: motion-workspace-client
       type: contains
     - target: motion-workspace-service
-      type: contains
+      type: depends_on
 ---
 # motion-workspace-system
 

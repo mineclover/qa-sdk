@@ -4,6 +4,7 @@ def:
   type: knowledge
   knowledge_kind: narrative
   level: module
+  tier: system
   address: def_document:v2:68624
   scope: feature
   aspect: func_def
@@ -16,7 +17,7 @@ def:
     - target: df-narrative-structure
       type: contains
     - target: df-narrative-proofs
-      type: contains
+      type: depends_on
     - target: df-narrative-context
       type: contains
 ---

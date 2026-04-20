@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: index-arch-traceability
   address: def_document:v2:137351
   scope: flow

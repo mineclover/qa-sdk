@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: coord-version-series
   address: def_document:v2:414855
   scope: flow

@@ -2,6 +2,7 @@
 def:
   id: doc-type-convention-cases
   level: leaf
+  tier: component
   scope: flow
   aspect: user_scenario
   depth: validation

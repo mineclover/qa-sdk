@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: analysis-prefix
   address: def_document:v2:342148
   scope: data

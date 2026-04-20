@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: sdk-api-surface
   address: def_document:v2:412831
   scope: interface

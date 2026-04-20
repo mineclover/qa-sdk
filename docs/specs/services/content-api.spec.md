@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: content-api
   address: def_document:v2:412675
   scope: interface

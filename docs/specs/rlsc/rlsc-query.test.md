@@ -2,6 +2,7 @@
 def:
   id: rlsc-query-test
   level: leaf
+  tier: component
   scope: flow
   aspect: user_scenario
   depth: validation

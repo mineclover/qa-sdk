@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: inspector-engine
   address: def_document:v2:1157
   svc: motion-content-editor

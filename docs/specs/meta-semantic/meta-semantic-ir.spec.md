@@ -14,9 +14,9 @@ def:
   tags: [structural]
   links:
     - target: meta-semantic-system
-      type: depends_on
+      type: contains
     - target: system-concepts
-      type: depends_on
+      type: contains
     - target: meta-semantic-ir-module
       type: contains
     - target: meta-semantic-ir-data

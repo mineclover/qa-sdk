@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: stream-api-spec
   address: def_document:v2:414852
   scope: interface

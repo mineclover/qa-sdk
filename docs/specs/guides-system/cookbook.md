@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: cookbook-guide
   type: knowledge
   knowledge_kind: guide

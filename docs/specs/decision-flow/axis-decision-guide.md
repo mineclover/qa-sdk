@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: axis-decision-guide
   type: knowledge
   knowledge_kind: guide

@@ -2,6 +2,7 @@
 def:
   id: admin-api-system
   level: module
+  tier: system
   address: def_document:v2:412672
   scope: interface
   aspect: api_contract

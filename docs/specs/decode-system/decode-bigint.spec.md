@@ -2,6 +2,7 @@
 def:
   id: decode-bigint
   level: module
+  tier: system
   scope: feature
   aspect: func_def
   depth: specification

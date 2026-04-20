@@ -2,6 +2,7 @@
 def:
   id: decode-api
   level: module
+  tier: system
   address: def_document:v2:412805
   scope: interface
   aspect: api_contract
@@ -12,9 +13,9 @@ def:
   tags: [entry-point, contract, runtime]
   links:
     - target: decode-bundle
-      type: depends_on
-    - target: decode-bigint
       type: contains
+    - target: decode-bigint
+      type: depends_on
 contains:
   - decode-bigint
 ---

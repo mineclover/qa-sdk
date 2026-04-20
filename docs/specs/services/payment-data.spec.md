@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: payment-data
   address: def_document:v2:342028
   scope: data

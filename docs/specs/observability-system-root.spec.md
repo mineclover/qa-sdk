@@ -3,6 +3,7 @@ def:
   id: observability-system-root
   type: spec
   level: module
+  tier: system
   scope: constraint
   aspect: tech_constraint
   depth: specification

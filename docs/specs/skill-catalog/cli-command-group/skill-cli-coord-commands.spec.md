@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-cli-coord-commands
   address: def_document:v2:68790
   scope: feature

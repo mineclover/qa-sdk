@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: wi-trace-propagation
   address: def_document:v2:137373
   scope: flow

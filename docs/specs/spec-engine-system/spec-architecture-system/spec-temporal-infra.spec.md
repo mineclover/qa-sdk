@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-temporal-infra
   address: def_document:v2:275590
   scope: constraint

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: definition-mgmt-observability-planes
   type: knowledge
   knowledge_kind: proposal

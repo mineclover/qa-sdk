@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: authorization-ontology-realm-model
   type: knowledge
   knowledge_kind: concept

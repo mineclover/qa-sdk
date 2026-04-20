@@ -2,6 +2,7 @@
 def:
   id: programming-artifact-ontology-activation-evidence
   level: leaf
+  tier: component
   scope: interface
   aspect: api_contract
   depth: specification

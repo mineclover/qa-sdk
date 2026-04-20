@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: gate-decision-flow-test
   scope: constraint
   aspect: tech_constraint

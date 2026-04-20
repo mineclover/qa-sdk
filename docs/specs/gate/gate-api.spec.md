@@ -2,6 +2,7 @@
 def:
   id: gate-api
   level: module
+  tier: system
   address: def_document:v2:412810
   scope: interface
   aspect: api_contract
@@ -12,15 +13,15 @@ def:
   tags: [security]
   links:
     - target: gate-state-model
-      type: depends_on
+      type: contains
     - target: gate-engine-func
       type: implements
     - target: gate-event-bus
-      type: contains
+      type: depends_on
     - target: gate-cache-invalidation
-      type: contains
+      type: depends_on
     - target: gate-consistency
-      type: contains
+      type: depends_on
 contains:
   - gate-event-bus
   - gate-cache-invalidation

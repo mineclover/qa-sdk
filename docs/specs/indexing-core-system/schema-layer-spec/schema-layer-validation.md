@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: schema-layer-validation-spec
   scope: constraint
   aspect: tech_constraint

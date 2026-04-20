@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: coord-stride-stability
   address: def_document:v2:414854
   scope: data

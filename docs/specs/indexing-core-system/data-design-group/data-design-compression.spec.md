@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: data-design-compression
   address: def_document:v2:342155
   scope: data

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: df-ingest-emission
   address: def_document:v2:414850
   scope: interface

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: cq-policy-resolver
   address: def_document:v2:68752
   scope: feature

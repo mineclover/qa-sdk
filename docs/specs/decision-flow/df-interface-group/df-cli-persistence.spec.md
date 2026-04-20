@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: df-cli-persistence
   address: def_document:v2:413826
   scope: interface

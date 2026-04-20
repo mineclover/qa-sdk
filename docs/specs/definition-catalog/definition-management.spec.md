@@ -15,13 +15,13 @@ def:
   tags: [structural, entry-point]
   links:
     - target: definition-taxonomy
-      type: depends_on
+      type: contains
     - target: definition-level
-      type: depends_on
+      type: contains
     - target: definition-concern
-      type: depends_on
+      type: contains
     - target: definition-assembly
-      type: depends_on
+      type: contains
     - target: harness-architecture
       type: depends_on
     - target: definition-mgmt-coordinates
@@ -33,7 +33,7 @@ def:
     - target: definition-mgmt-feedback-loop
       type: contains
     - target: definition-mgmt-observability-model
-      type: contains
+      type: depends_on
     - target: definition-mgmt-semantic-lint
       type: contains
     - target: definition-mgmt-verification-loop

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: authorization-ontology-decision-observation
   type: knowledge
   knowledge_kind: concept

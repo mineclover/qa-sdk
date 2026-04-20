@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: gate-scenario
   address: def_document:v2:70021
   scope: feature

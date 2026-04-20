@@ -2,6 +2,7 @@
 def:
   id: df-system
   level: module
+  tier: system
   address: def_document:v2:68625
   scope: feature
   aspect: func_def
@@ -12,17 +13,17 @@ def:
   tags: [structural, decision, entry-point]
   links:
     - target: df-model-group
-      type: contains
+      type: depends_on
     - target: df-analysis-group
-      type: contains
+      type: depends_on
     - target: df-interface-group
-      type: contains
+      type: depends_on
     - target: df-constraint
       type: contains
     - target: decision-standard-group
-      type: contains
+      type: depends_on
     - target: df-narrative-group
-      type: contains
+      type: depends_on
     - target: axis-decision-guide
       type: contains
     - target: df-dev-decisions
@@ -30,7 +31,7 @@ def:
     - target: df-gate-integration
       type: contains
     - target: df-taxonomy
-      type: contains
+      type: depends_on
     - target: decision-flow-store
       type: contains
 ---

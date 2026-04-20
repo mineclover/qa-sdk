@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: utils-spec
   address: def_document:v2:343184
   scope: data

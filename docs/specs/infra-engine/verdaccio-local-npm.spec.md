@@ -5,6 +5,7 @@ def:
   aspect: user_scenario
   depth: specification
   level: leaf
+  tier: component
   lifecycle: approved
   layer: operation
   tags: [infra, verdaccio, npm, local]

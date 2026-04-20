@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-core-identifiers
   address: def_document:v2:342199
   scope: data

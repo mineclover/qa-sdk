@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-execution_context
   scope: data
   aspect: prefix_schema

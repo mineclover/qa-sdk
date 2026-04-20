@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dim-ops-cross-select
   address: def_document:v2:68760
   scope: feature

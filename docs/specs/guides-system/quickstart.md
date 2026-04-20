@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: quickstart-guide
   type: knowledge
   knowledge_kind: guide

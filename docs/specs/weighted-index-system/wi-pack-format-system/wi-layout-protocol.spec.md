@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: wi-layout-protocol
   address: def_document:v2:412836
   scope: interface

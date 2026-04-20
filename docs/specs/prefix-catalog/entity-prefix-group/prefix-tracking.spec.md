@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-tracking
   scope: data
   aspect: prefix_schema

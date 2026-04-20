@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: analysis-cooccurrence
   address: def_document:v2:68738
   scope: feature

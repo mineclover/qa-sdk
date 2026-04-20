@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: meta-semantic-philosophy
   type: knowledge
   knowledge_kind: philosophy

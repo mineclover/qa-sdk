@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: coord-patterns
   type: knowledge
   knowledge_kind: pattern

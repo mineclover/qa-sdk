@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: gate-engine-aware-query
   address: def_document:v2:68770
   scope: feature

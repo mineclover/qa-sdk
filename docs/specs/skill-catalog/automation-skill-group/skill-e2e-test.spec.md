@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-e2e-test
   scope: feature
   aspect: func_def

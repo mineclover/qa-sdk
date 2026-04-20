@@ -2,6 +2,7 @@
 def:
   id: index-arch-group
   level: module
+  tier: system
   address: def_document:v2:137220
   scope: flow
   aspect: process_flow

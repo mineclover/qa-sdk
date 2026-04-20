@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: ontology-eval
   address: def_document:v2:68778
   scope: feature

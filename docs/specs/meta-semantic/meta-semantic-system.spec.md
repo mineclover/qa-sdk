@@ -18,37 +18,37 @@ def:
     - target: definition-catalog-spec
       type: depends_on
     - target: meta-semantic-concepts
-      type: contains
+      type: refs
     - target: meta-semantic-ir
-      type: contains
+      type: refs
     - target: meta-semantic-pipe-impl
-      type: contains
+      type: refs
     - target: meta-semantic-pipe-catalog
-      type: contains
+      type: refs
     - target: meta-semantic-folding
-      type: contains
+      type: refs
     - target: meta-semantic-extraction
-      type: contains
+      type: refs
     - target: meta-semantic-execution-semantics
-      type: contains
+      type: refs
     - target: meta-semantic-spacetime-uid
-      type: contains
+      type: refs
     - target: meta-semantic-scope
-      type: contains
+      type: refs
     - target: meta-semantic-event-standard
-      type: contains
+      type: refs
     - target: meta-semantic-prefix-annotation
-      type: contains
+      type: refs
     - target: cloud-event-bridge
-      type: contains
+      type: refs
     - target: event-track-codegen
-      type: contains
+      type: refs
     - target: meta-semantic-v2-migration
       type: traces_to
     - target: compat-removal
       type: traces_to
     - target: meta-semantic-philosophy
-      type: contains
+      type: refs
 ---
 
 # Meta-Semantic Architecture — 시공간 좌표 기반 의도 컴파일러

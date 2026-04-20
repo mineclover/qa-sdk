@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: viteplus-incident-escalation-implementation
   scope: feature
   aspect: func_def

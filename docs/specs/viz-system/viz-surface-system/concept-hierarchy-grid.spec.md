@@ -2,6 +2,7 @@
 def:
   id: concept-hierarchy-grid
   level: leaf
+  tier: component
   scope: ui
   aspect: component
   depth: specification

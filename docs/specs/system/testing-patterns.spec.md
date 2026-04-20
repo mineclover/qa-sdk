@@ -4,6 +4,7 @@ def:
   type: knowledge
   knowledge_kind: pattern
   level: leaf
+  tier: component
   scope: flow
   aspect: process_flow
   depth: specification

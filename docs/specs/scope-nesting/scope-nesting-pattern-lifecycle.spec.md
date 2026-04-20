@@ -2,6 +2,7 @@
 def:
   id: scope-nesting-pattern-lifecycle
   level: module
+  tier: system
   scope: feature
   aspect: func_def
   depth: specification
@@ -12,7 +13,7 @@ def:
     - target: scope-nesting-provider-patterns
       type: refines
     - target: scope-nesting-guide
-      type: depends_on
+      type: contains
     - target: scope-nesting-pattern-lifecycle-test
       type: contains
 ---

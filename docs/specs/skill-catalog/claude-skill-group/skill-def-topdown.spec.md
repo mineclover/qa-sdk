@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-def-topdown
   address: def_document:v2:68800
   scope: feature

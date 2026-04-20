@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: df-gate-integration
   address: def_document:v2:68756
   scope: feature

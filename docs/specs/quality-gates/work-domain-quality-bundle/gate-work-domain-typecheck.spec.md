@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: gate-work-domain-typecheck
   scope: constraint
   aspect: tech_constraint

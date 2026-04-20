@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-escalation_event
   scope: data
   aspect: prefix_schema

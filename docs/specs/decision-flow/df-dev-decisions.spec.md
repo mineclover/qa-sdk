@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: df-dev-decisions
   address: def_document:v2:68755
   scope: feature

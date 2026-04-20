@@ -2,6 +2,7 @@
 def:
   id: document-addressing-contract-plan
   level: leaf
+  tier: component
   scope: flow
   aspect: process_flow
   depth: specification

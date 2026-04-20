@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: meta-semantic-concepts
   type: knowledge
   knowledge_kind: concept

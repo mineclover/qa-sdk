@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dkg-skill-decision
   address: def_document:v2:68766
   scope: feature

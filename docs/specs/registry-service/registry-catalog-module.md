@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: registry-catalog-module
   address: def_document:v2:68871
   scope: feature

@@ -2,6 +2,7 @@
 def:
   id: storage-system
   level: module
+  tier: system
   address: def_document:v2:343044
   scope: data
   aspect: system_data

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: data-design-catalog
   address: def_document:v2:342154
   scope: data

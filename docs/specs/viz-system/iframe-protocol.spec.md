@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: iframe-protocol-spec
   address: def_document:v2:412812
   scope: interface

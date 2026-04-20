@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: definition-addressing-plan
   type: knowledge
   knowledge_kind: proposal

@@ -2,6 +2,7 @@
 def:
   id: index-meta-store-group
   level: module
+  tier: system
   address: def_document:v2:342025
   scope: data
   aspect: domain_data

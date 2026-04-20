@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: analysis-self-check
   address: def_document:v2:68740
   scope: feature

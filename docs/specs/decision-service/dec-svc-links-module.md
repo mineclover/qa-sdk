@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dec-svc-links-module
   address: def_document:v2:138496
   scope: flow

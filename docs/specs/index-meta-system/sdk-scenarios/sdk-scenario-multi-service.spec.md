@@ -2,6 +2,7 @@
 def:
   id: sdk-scenario-multi-service
   level: leaf
+  tier: system
   scope: feature
   aspect: scenario
   depth: validation

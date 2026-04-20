@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: form-builder-structure
   address: def_document:v2:1154
   scope: ui

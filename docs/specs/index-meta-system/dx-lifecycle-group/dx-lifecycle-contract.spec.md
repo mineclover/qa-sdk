@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dx-lifecycle-contract
   address: def_document:v2:136322
   scope: flow

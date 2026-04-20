@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: df-vector-analysis
   address: def_document:v2:68759
   scope: feature

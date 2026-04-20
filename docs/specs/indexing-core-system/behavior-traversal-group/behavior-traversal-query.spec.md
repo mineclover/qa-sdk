@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: behavior-traversal-query
   address: def_document:v2:68742
   scope: feature

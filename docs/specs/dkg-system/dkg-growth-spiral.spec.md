@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dkg-growth-spiral
   address: def_document:v2:137348
   scope: flow

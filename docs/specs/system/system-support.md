@@ -2,6 +2,7 @@
 def:
   id: system-support
   level: group
+  tier: layout
   address: def_document:v2:137235
   scope: flow
   aspect: process_flow
@@ -11,37 +12,37 @@ def:
   tags: [structural, entry-point]
   links:
     - target: permission-system
-      type: contains
+      type: refs
     - target: apm-system
-      type: contains
+      type: refs
     - target: event-vocab-system
-      type: contains
+      type: refs
     - target: guides-system
-      type: contains
+      type: refs
     - target: skill-catalog-system
-      type: contains
+      type: refs
     - target: auth-service-spec
-      type: contains
+      type: refs
     - target: e2e-suite-spec
-      type: contains
+      type: refs
     - target: facet-tests-spec
-      type: contains
+      type: refs
     - target: simulation-tests-spec
-      type: contains
+      type: refs
     - target: config-loader-spec
-      type: contains
+      type: refs
     - target: package-classifier-spec
-      type: contains
+      type: refs
     - target: db-traffic-control-spec
-      type: contains
+      type: refs
     - target: otel-package-spec
-      type: contains
+      type: refs
     - target: error-handling-convention
-      type: contains
+      type: refs
     - target: review-ledger-spec
-      type: contains
+      type: refs
     - target: tag-search
-      type: contains
+      type: refs
 ---
 # 지원 계층
 

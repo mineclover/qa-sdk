@@ -5,6 +5,7 @@ def:
   aspect: infra_constraint
   depth: specification
   level: leaf
+  tier: component
   lifecycle: approved
   layer: operation
   svc: logger

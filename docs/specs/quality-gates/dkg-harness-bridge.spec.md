@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dkg-harness-bridge
   scope: flow
   aspect: relation

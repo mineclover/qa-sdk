@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: pipeline-cache-test
   scope: flow
   aspect: user_scenario

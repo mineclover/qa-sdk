@@ -2,6 +2,7 @@
 def:
   id: dkg-state-store
   level: module
+  tier: system
   scope: data
   aspect: domain_data
   depth: specification
@@ -11,9 +12,9 @@ def:
   tags: [observability, persistence, data]
   links:
     - target: dkg-node-types
-      type: depends_on
+      type: contains
     - target: dkg-edge-types
-      type: depends_on
+      type: contains
     - target: dkg-skill-catalog
       type: depends_on
     - target: dkg-state-store-graph

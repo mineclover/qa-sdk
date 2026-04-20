@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: slot-marker-patterns
   type: knowledge
   knowledge_kind: pattern

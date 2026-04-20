@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: scope-nesting-mount-flow
   scope: flow
   aspect: process_flow

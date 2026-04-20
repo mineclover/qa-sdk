@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: trace-spec
   address: def_document:v2:342209
   scope: data

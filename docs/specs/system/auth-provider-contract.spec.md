@@ -2,6 +2,7 @@
 def:
   id: auth-provider-contract
   level: leaf
+  tier: component
   scope: interface
   aspect: api_contract
   depth: specification

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: query-api
   address: def_document:v2:412823
   scope: interface

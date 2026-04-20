@@ -4,6 +4,7 @@ def:
   type: knowledge
   knowledge_kind: narrative
   level: leaf
+  tier: component
   scope: feature
   aspect: scenario
   depth: validation

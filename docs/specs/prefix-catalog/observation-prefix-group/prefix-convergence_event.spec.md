@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-convergence_event
   scope: data
   aspect: prefix_schema

@@ -2,6 +2,7 @@
 def:
   id: service-unit-spec
   level: leaf
+  tier: component
   scope: data
   aspect: domain_data
   depth: specification

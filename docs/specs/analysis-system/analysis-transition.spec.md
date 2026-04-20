@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: analysis-transition
   address: def_document:v2:205952
   scope: state

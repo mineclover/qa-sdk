@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: perm-codec-interop
   address: def_document:v2:412819
   scope: interface

@@ -2,6 +2,7 @@
 def:
   id: definition-service-system
   level: module
+  tier: system
   address: def_document:v2:68622
   scope: feature
   aspect: func_def
@@ -12,7 +13,7 @@ def:
   tags: [structural, entry-point]
   links:
     - target: definition-catalog-spec
-      type: depends_on
+      type: contains
     - target: def-svc-data-model
       type: contains
     - target: def-svc-docs-module

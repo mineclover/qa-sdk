@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-resource_lifecycle
   scope: data
   aspect: prefix_schema

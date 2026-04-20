@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: wi-math
   address: def_document:v2:342212
   scope: data

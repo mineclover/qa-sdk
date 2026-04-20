@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: operational-ontology-production-factory
   type: knowledge
   knowledge_kind: concept

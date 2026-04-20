@@ -4,6 +4,7 @@ def:
   type: knowledge
   knowledge_kind: guide
   level: leaf
+  tier: component
   scope: flow
   aspect: user_scenario
   depth: overview

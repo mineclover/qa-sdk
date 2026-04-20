@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: schema-layer-fragments-spec
   scope: data
   aspect: domain_data

@@ -4,6 +4,7 @@ def:
   type: knowledge
   knowledge_kind: concept
   level: group
+  tier: layout
   scope: constraint
   aspect: biz_constraint
   depth: overview
@@ -19,39 +20,39 @@ def:
     - target: permission-system
       type: depends_on
     - target: authorization-ontology-realm-model
-      type: contains
+      type: refs
     - target: authorization-ontology-cerbos-mapping
-      type: contains
+      type: refs
     - target: authorization-ontology-auth-chain
-      type: contains
+      type: refs
     - target: authorization-ontology-application-enforcement
-      type: contains
+      type: refs
     - target: authorization-ontology-column-lineage-policy
-      type: contains
+      type: refs
     - target: authorization-ontology-permission-engine-bridge
-      type: contains
+      type: refs
     - target: authorization-ontology-decision-observation
-      type: contains
+      type: refs
     - target: authorization-ontology-audit-layer
-      type: contains
+      type: refs
     - target: authorization-graph-store
-      type: contains
+      type: refs
     - target: authorization-ontology-monitor-web
-      type: contains
+      type: refs
     - target: authorization-ontology-package-architecture
-      type: contains
+      type: refs
     - target: authorization-ontology-operational-pack-plan
-      type: contains
+      type: refs
     - target: authorization-management-usecases
-      type: contains
+      type: refs
     - target: authorization-management-usage-rule
-      type: contains
+      type: refs
     - target: authorization-management-hardening-todo
-      type: contains
+      type: refs
     - target: authorization-management-roadmap-plan
-      type: contains
+      type: refs
     - target: authorization-monitor-web
-      type: contains
+      type: refs
 ---
 
 # Authorization Ontology System — Cerbos 중심 권한 관리 온톨로지

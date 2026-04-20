@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-ralph-tui-create-json
   scope: feature
   aspect: func_def

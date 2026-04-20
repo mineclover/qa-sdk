@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: graph-renderer-live
   address: def_document:v2:273553
   scope: constraint

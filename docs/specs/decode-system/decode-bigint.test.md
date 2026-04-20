@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: decode-bigint-test
   scope: flow
   aspect: user_scenario

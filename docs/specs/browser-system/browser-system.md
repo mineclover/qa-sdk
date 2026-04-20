@@ -2,6 +2,7 @@
 def:
   id: browser-system
   level: module
+  tier: system
   address: def_document:v2:412674
   scope: interface
   aspect: api_contract
@@ -12,11 +13,11 @@ def:
   tags: [structural, entry-point]
   links:
     - target: browser-runtime-system
-      type: contains
+      type: depends_on
     - target: browser-transport-spec
       type: contains
     - target: browser-lifecycle-system
-      type: contains
+      type: depends_on
     - target: trace-context-spec
       type: contains
     - target: shop-web-spec

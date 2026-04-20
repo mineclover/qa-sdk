@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-pipeline_point
   scope: data
   aspect: prefix_schema

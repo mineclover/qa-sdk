@@ -2,6 +2,7 @@
 def:
   id: system-root
   level: group
+  tier: layout
   address: def_document:v2:137234
   scope: flow
   aspect: process_flow
@@ -11,21 +12,21 @@ def:
   tags: [structural, cross-scope, entry-point]
   links:
     - target: system-overview
-      type: contains
+      type: refs
     - target: system-design-tools
-      type: contains
+      type: refs
     - target: system-frontend
-      type: contains
+      type: refs
     - target: system-infra
-      type: contains
+      type: refs
     - target: system-libraries
-      type: contains
+      type: refs
     - target: system-narrative
-      type: contains
+      type: refs
     - target: system-packages
-      type: contains
+      type: refs
     - target: system-support
-      type: contains
+      type: refs
 ---
 
 # QA-SDK 시스템

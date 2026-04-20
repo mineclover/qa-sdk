@@ -4,6 +4,7 @@ def:
   type: knowledge
   knowledge_kind: guide
   level: module
+  tier: system
   address: def_document:v2:137219
   scope: flow
   aspect: process_flow

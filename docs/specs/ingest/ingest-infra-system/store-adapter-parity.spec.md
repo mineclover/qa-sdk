@@ -2,6 +2,7 @@
 def:
   id: store-adapter-parity
   level: module
+  tier: system
   scope: data
   aspect: system_data
   depth: specification
@@ -13,7 +14,7 @@ def:
     - target: ingest-infra-system
       type: refines
     - target: ingest-runtime-operations
-      type: depends_on
+      type: contains
     - target: key-observation-store
       type: contains
 ---

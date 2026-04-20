@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: ingest-admin-endpoints
   address: def_document:v2:412814
   scope: interface

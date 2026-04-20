@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: perm-service-ref
   address: def_document:v2:342187
   scope: data

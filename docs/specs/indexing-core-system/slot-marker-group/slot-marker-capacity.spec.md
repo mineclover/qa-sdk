@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: slot-marker-capacity
   address: def_document:v2:273560
   scope: constraint

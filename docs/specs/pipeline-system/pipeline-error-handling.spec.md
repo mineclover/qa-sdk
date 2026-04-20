@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: pipeline-error-handling
   address: def_document:v2:273557
   scope: constraint

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: registry-constraint
   address: def_document:v2:273558
   scope: constraint

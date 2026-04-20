@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-architecture-stack
   address: def_document:v2:137362
   scope: flow

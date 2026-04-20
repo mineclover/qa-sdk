@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: layout-sim-formats
   address: def_document:v2:342181
   scope: data

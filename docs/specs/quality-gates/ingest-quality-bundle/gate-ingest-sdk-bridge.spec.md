@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: gate-ingest-sdk-bridge
   scope: constraint
   aspect: tech_constraint

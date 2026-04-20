@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: operational-ontology-visualization-web
   type: knowledge
   knowledge_kind: concept

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dkg-queries
   address: def_document:v2:68764
   scope: feature

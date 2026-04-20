@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: decode-deploy
   address: def_document:v2:275584
   scope: constraint

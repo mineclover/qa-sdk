@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: transmission-spec
   address: def_document:v2:342210
   scope: data

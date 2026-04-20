@@ -2,6 +2,7 @@
 def:
   id: claude-skill-group
   level: module
+  tier: system
   address: def_document:v2:68614
   scope: feature
   aspect: func_def

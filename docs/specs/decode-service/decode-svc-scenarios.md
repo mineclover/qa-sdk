@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: decode-svc-scenarios
   address: def_document:v2:70019
   scope: feature

@@ -2,6 +2,7 @@
 def:
   id: service-exposure-spec
   level: leaf
+  tier: component
   scope: interface
   aspect: api_contract
   depth: specification

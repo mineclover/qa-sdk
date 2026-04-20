@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: scope-nesting-contract-timing
   scope: feature
   aspect: func_def

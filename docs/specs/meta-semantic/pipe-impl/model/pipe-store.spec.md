@@ -15,7 +15,7 @@ def:
     - target: meta-semantic-pipe-impl
       type: depends_on
     - target: pipe-types
-      type: depends_on
+      type: contains
     - target: pipe-store-memory
       type: contains
     - target: pipe-store-sqlite

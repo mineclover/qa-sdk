@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: wi-trace-protocol
   address: def_document:v2:273564
   scope: constraint

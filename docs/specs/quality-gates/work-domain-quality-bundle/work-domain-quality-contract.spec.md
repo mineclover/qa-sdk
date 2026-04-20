@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: work-domain-quality-contract
   scope: interface
   aspect: api_contract

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: table-accessor-api
   address: def_document:v2:412833
   scope: interface

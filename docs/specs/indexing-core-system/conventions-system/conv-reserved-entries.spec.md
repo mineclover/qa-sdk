@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: conv-reserved-entries
   address: def_document:v2:273545
   scope: constraint

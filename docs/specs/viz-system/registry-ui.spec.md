@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: registry-ui-spec
   address: def_document:v2:1027
   scope: ui

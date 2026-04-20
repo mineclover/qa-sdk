@@ -2,6 +2,7 @@
 def:
   id: event-taxonomy-roadmap-plan
   level: module
+  tier: system
   scope: flow
   aspect: process_flow
   depth: specification
@@ -15,11 +16,11 @@ def:
     - target: event-seed-materialization-phase0-plan
       type: contains
     - target: event-taxonomy-usecases-plan
-      type: depends_on
+      type: contains
     - target: event-taxonomy-rollout-todo
-      type: depends_on
+      type: contains
     - target: service-ownership-spec
-      type: depends_on
+      type: contains
 ---
 
 # Event Taxonomy Roadmap — 구현 진행 상태

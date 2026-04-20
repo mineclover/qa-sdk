@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: gateway-config
   address: def_document:v2:342024
   scope: data

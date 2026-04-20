@@ -2,6 +2,7 @@
 def:
   id: system-infra
   level: group
+  tier: layout
   address: def_document:v2:137230
   scope: flow
   aspect: process_flow
@@ -11,17 +12,17 @@ def:
   tags: [structural]
   links:
     - target: ingest-system
-      type: contains
+      type: refs
     - target: gate-system
-      type: contains
+      type: refs
     - target: decode-system
-      type: contains
+      type: refs
     - target: query-system
-      type: contains
+      type: refs
     - target: registry-system
-      type: contains
+      type: refs
     - target: pipeline-system
-      type: contains
+      type: refs
     - target: system-libraries
       type: depends_on
 ---

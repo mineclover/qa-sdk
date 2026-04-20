@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: permission-encoding
   address: def_document:v2:342188
   scope: data

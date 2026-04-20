@@ -2,6 +2,7 @@
 def:
   id: gate-system
   level: module
+  tier: system
   address: def_document:v2:68631
   scope: feature
   aspect: func_def
@@ -12,7 +13,7 @@ def:
   tags: [structural, security, entry-point]
   links:
     - target: gate-api
-      type: contains
+      type: depends_on
     - target: gate-state-model
       type: contains
     - target: gate-state-model-rule
@@ -26,7 +27,7 @@ def:
     - target: gate-scenario
       type: contains
     - target: gate-engine-group
-      type: contains
+      type: depends_on
 ---
 
 # Gate 시스템

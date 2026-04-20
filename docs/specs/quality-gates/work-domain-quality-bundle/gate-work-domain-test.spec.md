@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: gate-work-domain-test
   scope: constraint
   aspect: tech_constraint

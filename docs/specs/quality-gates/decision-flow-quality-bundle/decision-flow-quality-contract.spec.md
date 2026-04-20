@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: decision-flow-quality-contract
   scope: interface
   aspect: api_contract

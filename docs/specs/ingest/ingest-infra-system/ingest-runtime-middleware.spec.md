@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: ingest-runtime-middleware
   address: def_document:v2:275587
   scope: constraint

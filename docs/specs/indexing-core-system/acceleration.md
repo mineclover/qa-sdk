@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: acceleration-spec
   address: def_document:v2:68736
   scope: feature

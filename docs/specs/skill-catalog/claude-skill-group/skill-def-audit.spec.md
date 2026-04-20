@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-def-audit
   address: def_document:v2:68794
   scope: feature

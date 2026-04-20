@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: pipeline-phase-flow
   address: def_document:v2:137356
   scope: flow

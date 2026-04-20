@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: version-operations
   address: def_document:v2:137372
   scope: flow

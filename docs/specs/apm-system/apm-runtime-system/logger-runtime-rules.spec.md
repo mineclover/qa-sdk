@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: logger-runtime-rules
   address: def_document:v2:275589
   scope: constraint

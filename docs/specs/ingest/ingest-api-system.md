@@ -2,6 +2,7 @@
 def:
   id: ingest-api-system
   level: module
+  tier: system
   address: def_document:v2:412680
   scope: interface
   aspect: api_contract

@@ -2,6 +2,7 @@
 def:
   id: token-enrichment-handler
   level: leaf
+  tier: component
   scope: flow
   aspect: process_flow
   depth: specification

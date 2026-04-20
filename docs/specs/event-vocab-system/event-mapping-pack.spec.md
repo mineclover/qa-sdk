@@ -2,6 +2,7 @@
 def:
   id: event-mapping-pack-spec
   level: leaf
+  tier: component
   scope: data
   aspect: domain_data
   depth: specification

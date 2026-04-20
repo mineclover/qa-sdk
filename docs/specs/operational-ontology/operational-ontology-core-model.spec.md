@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: operational-ontology-core-model
   type: knowledge
   knowledge_kind: concept

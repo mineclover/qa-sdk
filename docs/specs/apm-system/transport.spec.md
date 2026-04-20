@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: collection-transport-spec
   address: def_document:v2:414849
   scope: interface

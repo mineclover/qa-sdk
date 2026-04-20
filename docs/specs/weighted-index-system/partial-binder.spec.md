@@ -2,6 +2,7 @@
 def:
   id: partial-binder-spec
   level: module
+  tier: system
   address: def_document:v2:68779
   scope: feature
   aspect: func_def
@@ -12,9 +13,9 @@ def:
   tags: [runtime, structural, entry-point]
   links:
     - target: wi-api
-      type: depends_on
+      type: contains
     - target: wi-math
-      type: depends_on
+      type: contains
     - target: partial-binder-api
       type: contains
     - target: partial-binder-math

@@ -2,6 +2,7 @@
 def:
   id: automation-skill-group
   level: module
+  tier: system
   scope: feature
   aspect: func_def
   depth: overview

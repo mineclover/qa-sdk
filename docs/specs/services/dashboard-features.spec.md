@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dashboard-features
   address: def_document:v2:68619
   scope: feature

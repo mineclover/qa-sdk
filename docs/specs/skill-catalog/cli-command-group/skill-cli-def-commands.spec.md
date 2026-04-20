@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-cli-def-commands
   address: def_document:v2:68791
   scope: feature

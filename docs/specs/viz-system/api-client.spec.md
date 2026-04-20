@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: api-client-spec
   address: def_document:v2:344192
   scope: data

@@ -2,6 +2,7 @@
 def:
   id: definition-client-spec
   level: leaf
+  tier: component
   scope: interface
   aspect: api_contract
   depth: specification

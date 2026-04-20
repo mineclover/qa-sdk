@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: sdk-usage-guide
   type: knowledge
   knowledge_kind: guide

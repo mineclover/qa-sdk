@@ -2,6 +2,7 @@
 def:
   id: programming-artifact-ontology-todo
   level: leaf
+  tier: component
   scope: flow
   aspect: process_flow
   depth: specification

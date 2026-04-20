@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: axis-boundary-criteria
   address: def_document:v2:273540
   scope: constraint

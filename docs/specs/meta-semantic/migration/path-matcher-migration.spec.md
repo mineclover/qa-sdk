@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: path-matcher-migration
   type: knowledge
   knowledge_kind: proposal

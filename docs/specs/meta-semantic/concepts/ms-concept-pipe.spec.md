@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: ms-concept-pipe
   type: knowledge
   knowledge_kind: concept

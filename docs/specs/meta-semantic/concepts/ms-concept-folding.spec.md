@@ -1,5 +1,6 @@
 ---
 def:
+  tier: exempt
   id: ms-concept-folding
   type: knowledge
   knowledge_kind: concept

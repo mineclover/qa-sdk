@@ -4,6 +4,7 @@ def:
   type: knowledge
   knowledge_kind: concept
   level: module
+  tier: system
   scope: interface
   aspect: api_contract
   depth: specification
@@ -14,17 +15,17 @@ def:
     - target: operational-ontology-system
       type: refines
     - target: operational-ontology-data-facets
-      type: depends_on
+      type: contains
     - target: operational-ontology-information-transmission
-      type: depends_on
+      type: contains
     - target: operational-ontology-lineage
-      type: depends_on
+      type: contains
     - target: operational-ontology-branch-handling
-      type: depends_on
+      type: contains
     - target: operational-ontology-control-flow
-      type: depends_on
+      type: contains
     - target: operational-ontology-simulation
-      type: depends_on
+      type: contains
     - target: operational-ontology-event-projector
       type: contains
     - target: operational-ontology-pipe-projector

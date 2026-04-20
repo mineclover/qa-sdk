@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: wi-constraint
   address: def_document:v2:273563
   scope: constraint

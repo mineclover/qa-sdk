@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-spec-lifecycle
   scope: feature
   aspect: func_def

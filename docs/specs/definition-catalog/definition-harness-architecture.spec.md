@@ -15,7 +15,7 @@ def:
   tags: [structural, entry-point]
   links:
     - target: definition-harness
-      type: contains
+      type: depends_on
     - target: definition-harness-derive
       type: contains
     - target: definition-harness-persistence

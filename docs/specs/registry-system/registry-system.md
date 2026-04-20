@@ -2,6 +2,7 @@
 def:
   id: registry-system
   level: module
+  tier: system
   address: def_document:v2:412687
   scope: interface
   aspect: api_contract

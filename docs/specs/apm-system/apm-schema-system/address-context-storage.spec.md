@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: address-context-storage
   address: def_document:v2:342145
   scope: data

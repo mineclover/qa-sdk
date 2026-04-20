@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dec-svc-instances-module
   address: def_document:v2:68864
   scope: feature

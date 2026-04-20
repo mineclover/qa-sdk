@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: trace-context-spec
   address: def_document:v2:204928
   scope: state

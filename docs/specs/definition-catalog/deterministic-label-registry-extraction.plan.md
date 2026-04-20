@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: deterministic-label-registry-extraction-plan
   type: knowledge
   knowledge_kind: proposal

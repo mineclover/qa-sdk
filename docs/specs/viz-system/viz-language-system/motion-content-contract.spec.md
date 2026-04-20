@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: motion-content-contract
   address: def_document:v2:273556
   scope: constraint

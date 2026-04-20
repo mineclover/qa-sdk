@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: runtime-flow-paths
   address: def_document:v2:137359
   scope: flow

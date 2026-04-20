@@ -2,6 +2,7 @@
 def:
   id: rlsc-collector
   level: leaf
+  tier: component
   scope: feature
   aspect: func_def
   depth: specification

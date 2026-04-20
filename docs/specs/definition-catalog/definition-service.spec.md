@@ -14,7 +14,7 @@ def:
   projection_plane: intent
   links:
     - target: definition-catalog-spec
-      type: depends_on
+      type: contains
     - target: definition-service-sync
       type: depends_on
 ---

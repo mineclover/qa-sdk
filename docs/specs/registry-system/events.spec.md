@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: registry-events-spec
   address: def_document:v2:414851
   scope: interface

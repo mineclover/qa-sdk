@@ -2,6 +2,7 @@
 def:
   id: scope-nesting-provider-patterns
   level: module
+  tier: system
   scope: feature
   aspect: func_def
   depth: specification
@@ -18,9 +19,9 @@ def:
     - target: scope-nesting-pattern-resolution
       type: contains
     - target: scope-nesting-pattern-lifecycle
-      type: contains
-    - target: scope-nesting-guide
       type: depends_on
+    - target: scope-nesting-guide
+      type: contains
     - target: ms-concept-contract-descent
       type: implements
 ---

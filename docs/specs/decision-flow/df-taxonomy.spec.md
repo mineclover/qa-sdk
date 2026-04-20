@@ -4,6 +4,7 @@ def:
   type: knowledge
   knowledge_kind: concept
   level: module
+  tier: system
   scope: data
   aspect: domain_data
   depth: overview
@@ -23,7 +24,7 @@ def:
     - target: df-dev-decisions
       type: contains
     - target: axis-decision-guide
-      type: depends_on
+      type: contains
     - target: taxonomy-boundaries
       type: refines
 ---

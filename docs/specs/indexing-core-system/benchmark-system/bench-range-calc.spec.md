@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: bench-range-calc
   address: def_document:v2:343171
   scope: data

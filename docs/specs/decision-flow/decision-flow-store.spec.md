@@ -3,6 +3,7 @@ def:
   id: decision-flow-store
   type: spec
   level: leaf
+  tier: component
   scope: data
   aspect: system_data
   depth: specification

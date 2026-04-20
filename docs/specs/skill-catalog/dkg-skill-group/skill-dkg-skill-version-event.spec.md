@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-dkg-skill-version-event
   address: def_document:v2:68805
   scope: feature

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: rlsc-core-model
   address: def_document:v2:342192
   scope: data

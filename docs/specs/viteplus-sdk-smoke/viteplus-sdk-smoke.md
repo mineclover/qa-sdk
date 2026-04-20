@@ -2,6 +2,7 @@
 def:
   id: viteplus-sdk-smoke-system
   level: module
+  tier: system
   scope: feature
   aspect: func_def
   depth: overview
@@ -39,11 +40,11 @@ def:
     - target: scope-nesting-system
       type: depends_on
     - target: platform-sdk-user-scenarios
-      type: depends_on
+      type: contains
     - target: sdk-vite-onboarding-guide
-      type: depends_on
+      type: contains
     - target: sdk-usage-guide
-      type: depends_on
+      type: contains
     - target: viteplus-sdk-smoke-marker-review
       type: traces_to
 ---

@@ -2,6 +2,7 @@
 def:
   id: facet-test-isolation
   level: leaf
+  tier: component
   scope: feature
   aspect: func_def
   depth: specification

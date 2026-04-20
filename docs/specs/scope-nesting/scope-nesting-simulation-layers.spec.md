@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: scope-nesting-simulation-layers
   scope: feature
   aspect: scenario

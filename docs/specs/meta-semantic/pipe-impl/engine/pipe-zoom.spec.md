@@ -15,11 +15,11 @@ def:
     - target: meta-semantic-pipe-impl
       type: depends_on
     - target: meta-semantic-folding
-      type: depends_on
+      type: contains
     - target: pipe-analyze
-      type: depends_on
+      type: contains
     - target: pipe-interpret
-      type: depends_on
+      type: contains
     - target: pipe-zoom-view
       type: contains
     - target: pipe-zoom-layout

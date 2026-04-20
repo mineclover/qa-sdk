@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: bigint-addressing-rollout
   address: def_document:v2:342150
   scope: data

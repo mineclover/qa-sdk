@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-sdk_lifecycle
   scope: data
   aspect: prefix_schema

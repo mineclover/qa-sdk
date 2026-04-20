@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: perm-permission-code
   address: def_document:v2:412820
   scope: interface

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dlq-store-spec
   address: def_document:v2:343173
   scope: data

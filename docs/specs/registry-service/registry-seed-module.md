@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: registry-seed-module
   address: def_document:v2:68875
   scope: feature

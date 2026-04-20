@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: bench-browser
   address: def_document:v2:343168
   scope: data

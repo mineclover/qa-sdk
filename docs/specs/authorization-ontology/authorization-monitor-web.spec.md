@@ -3,6 +3,7 @@ def:
   id: authorization-monitor-web
   type: spec
   level: leaf
+  tier: component
   scope: ui
   aspect: component
   depth: specification

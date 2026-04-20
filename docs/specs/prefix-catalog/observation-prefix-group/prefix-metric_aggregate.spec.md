@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-metric_aggregate
   scope: data
   aspect: prefix_schema

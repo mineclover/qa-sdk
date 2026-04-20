@@ -2,6 +2,7 @@
 def:
   id: platform-demo-api-spec
   level: module
+  tier: system
   address: def_document:v2:412685
   scope: interface
   aspect: api_contract

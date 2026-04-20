@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: sdk-dim-views
   address: def_document:v2:342194
   scope: data

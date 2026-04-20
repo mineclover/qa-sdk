@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: indexing-pipeline
   address: def_document:v2:137353
   scope: flow

@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: address-scenarios-runtime
   address: def_document:v2:70018
   scope: feature

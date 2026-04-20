@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: quality-ledger
   scope: data
   aspect: domain_data

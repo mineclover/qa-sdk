@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: definition-service-quality-contract
   scope: interface
   aspect: api_contract

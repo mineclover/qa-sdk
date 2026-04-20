@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-guide-observation-point
   type: knowledge
   knowledge_kind: guide

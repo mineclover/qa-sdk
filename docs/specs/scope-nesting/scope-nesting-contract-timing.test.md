@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: scope-nesting-contract-timing-test
   scope: flow
   aspect: user_scenario

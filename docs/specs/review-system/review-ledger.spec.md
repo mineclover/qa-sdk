@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: review-ledger-spec
   scope: feature
   aspect: func_def

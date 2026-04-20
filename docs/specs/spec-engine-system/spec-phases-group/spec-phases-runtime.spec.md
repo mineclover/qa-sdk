@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: spec-phases-runtime
   address: def_document:v2:137366
   scope: flow

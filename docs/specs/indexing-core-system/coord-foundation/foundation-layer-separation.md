@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: coord-layer-separation
   address: def_document:v2:414856
   scope: feature

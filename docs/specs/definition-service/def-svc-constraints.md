@@ -2,6 +2,7 @@
 def:
   id: def-svc-constraints
   level: leaf
+  tier: component
   address: def_document:v2:273548
   scope: constraint
   aspect: tech_constraint

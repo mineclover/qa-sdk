@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: authorization-ontology-package-architecture
   type: knowledge
   knowledge_kind: concept

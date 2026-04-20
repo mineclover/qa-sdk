@@ -2,6 +2,7 @@
 def:
   id: sdk-scenario-lifecycle
   level: leaf
+  tier: component
   scope: feature
   aspect: scenario
   depth: validation

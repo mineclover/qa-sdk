@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: index-arch-layers
   address: def_document:v2:137350
   scope: flow

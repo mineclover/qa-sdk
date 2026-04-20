@@ -2,6 +2,7 @@
 def:
   id: operational-ontology-index-meta-sync-handoff
   level: leaf
+  tier: component
   scope: interface
   aspect: api_contract
   depth: specification

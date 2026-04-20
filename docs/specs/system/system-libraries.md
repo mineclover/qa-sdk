@@ -2,6 +2,7 @@
 def:
   id: system-libraries
   level: group
+  tier: layout
   address: def_document:v2:137231
   scope: flow
   aspect: process_flow
@@ -11,17 +12,17 @@ def:
   tags: [structural, entry-point]
   links:
     - target: wi-system
-      type: contains
+      type: refs
     - target: cq-system
-      type: contains
+      type: refs
     - target: indexing-core-system
-      type: contains
+      type: refs
     - target: index-meta-system
-      type: contains
+      type: refs
     - target: storage-system
-      type: contains
+      type: refs
     - target: platform-chain-system
-      type: contains
+      type: refs
 ---
 # 좌표 라이브러리 계층
 

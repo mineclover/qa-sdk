@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-def-state
   scope: feature
   aspect: scenario

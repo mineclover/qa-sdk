@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: skill-event-taxonomy-gate
   scope: feature
   aspect: func_def

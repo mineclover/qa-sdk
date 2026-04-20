@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: convergence-comparators
   address: def_document:v2:68748
   scope: feature

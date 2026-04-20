@@ -2,6 +2,7 @@
 def:
   id: quality-gates-system
   level: module
+  tier: system
   scope: flow
   aspect: process_flow
   depth: overview
@@ -19,21 +20,21 @@ def:
     - target: harness-state-model
       type: contains
     - target: work-domain-quality-bundle
-      type: contains
+      type: depends_on
     - target: definition-quality-gates
-      type: contains
+      type: depends_on
     - target: decision-flow-quality-bundle
-      type: contains
+      type: depends_on
     - target: ingest-quality-bundle
-      type: contains
+      type: depends_on
     - target: query-quality-bundle
-      type: contains
+      type: depends_on
     - target: definition-service-quality-bundle
-      type: contains
+      type: depends_on
     - target: decode-quality-bundle
-      type: contains
+      type: depends_on
     - target: registry-quality-bundle
-      type: contains
+      type: depends_on
     - target: quality-ledger
       type: contains
     - target: dkg-harness-bridge

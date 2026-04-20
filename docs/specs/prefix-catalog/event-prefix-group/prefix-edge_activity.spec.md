@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-edge_activity
   scope: data
   aspect: prefix_schema

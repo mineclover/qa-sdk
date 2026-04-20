@@ -3,6 +3,7 @@ def:
   id: dkg-system-root
   type: spec
   level: module
+  tier: system
   scope: flow
   aspect: process_flow
   depth: specification

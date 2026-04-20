@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: prefix-model_apply
   scope: data
   aspect: prefix_schema

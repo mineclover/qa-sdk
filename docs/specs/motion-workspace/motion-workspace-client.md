@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: motion-workspace-client
   address: def_document:v2:412681
   scope: interface

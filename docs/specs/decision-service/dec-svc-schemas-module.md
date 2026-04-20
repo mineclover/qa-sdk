@@ -1,5 +1,6 @@
 ---
 def:
+  tier: component
   id: dec-svc-schemas-module
   address: def_document:v2:68865
   scope: feature
