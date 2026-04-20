@@ -7,7 +7,7 @@ def:
   projection_plane: intent
   intent_hierarchy: core
   scope: feature
-  aspect: func_def
+  aspect: gate_func
   depth: specification
   lifecycle: approved
   layer: operation

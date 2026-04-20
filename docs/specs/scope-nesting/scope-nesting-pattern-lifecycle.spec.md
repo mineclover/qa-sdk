@@ -3,7 +3,7 @@ def:
   id: scope-nesting-pattern-lifecycle
   tier: system
   scope: feature
-  aspect: func_def
+  aspect: nesting_func
   depth: specification
   lifecycle: approved
   layer: domain

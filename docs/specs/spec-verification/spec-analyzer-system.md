@@ -4,17 +4,15 @@ def:
   tier: system
   address: def_document:v2:68807
   scope: feature
-  aspect: func_def
+  aspect: analyzer_func
   depth: specification
   lifecycle: approved
   layer: operation
   svc: spec-analyzer
   tags: [testing]
   links:
-    - target: spec-verification-system
-      type: refines
     - target: definition-catalog-spec
-      type: contains
+      type: depends_on
     - target: spec-analyzer-drift
       type: contains
     - target: spec-analyzer-types

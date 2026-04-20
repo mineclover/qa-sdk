@@ -4,7 +4,7 @@ def:
   tier: system
   address: def_document:v2:68647
   scope: feature
-  aspect: func_def
+  aspect: encoding_func
   depth: overview
   lifecycle: approved
   layer: domain

@@ -7,7 +7,7 @@ def:
   projection_plane: intent
   intent_hierarchy: core
   scope: feature
-  aspect: func_def
+  aspect: harness_func
   depth: specification
   lifecycle: approved
   layer: operation
@@ -19,7 +19,7 @@ def:
     - target: definition-state-model
       type: contains
     - target: definition-taxonomy
-      type: contains
+      type: depends_on
     - target: spec-verification-system
       type: depends_on
     - target: definition-harness-cli

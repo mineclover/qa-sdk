@@ -3,14 +3,12 @@ def:
   id: scope-nesting-provider-patterns
   tier: system
   scope: feature
-  aspect: func_def
+  aspect: nesting_func
   depth: specification
   lifecycle: approved
   layer: domain
   tags: [structural]
   links:
-    - target: scope-nesting-system
-      type: refines
     - target: scope-nesting-pattern-override
       type: contains
     - target: scope-nesting-pattern-optional

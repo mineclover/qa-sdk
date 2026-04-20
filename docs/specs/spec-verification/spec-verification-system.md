@@ -4,7 +4,7 @@ def:
   tier: system
   address: def_document:v2:68646
   scope: feature
-  aspect: func_def
+  aspect: analyzer_func
   depth: overview
   lifecycle: approved
   layer: operation

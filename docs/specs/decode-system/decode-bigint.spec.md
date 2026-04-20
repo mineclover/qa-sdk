@@ -3,7 +3,7 @@ def:
   id: decode-bigint
   tier: system
   scope: feature
-  aspect: func_def
+  aspect: encoding_func
   depth: specification
   lifecycle: approved
   layer: mediation

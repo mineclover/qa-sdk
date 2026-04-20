@@ -4,15 +4,13 @@ def:
   tier: system
   address: def_document:v2:68810
   scope: feature
-  aspect: func_def
+  aspect: analyzer_func
   depth: specification
   lifecycle: approved
   layer: operation
   svc: spec-tracker
   tags: [testing, observability]
   links:
-    - target: spec-verification-system
-      type: refines
     - target: definition-service-system
       type: depends_on
     - target: spec-tracker-types
