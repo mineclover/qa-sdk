@@ -11,22 +11,12 @@ def:
   svc: auth
   tags: [external, structural, security, entry-point]
   links:
-    - target: permission-model
-      type: depends_on
     - target: permission-encoding
       type: contains
     - target: permission-encoding-rule
       type: traces_to
-    - target: permission-constraint
-      type: depends_on
     - target: masking-spec
       type: contains
-    - target: perm-external-system
-      type: depends_on
-    - target: perm-codec-system
-      type: depends_on
-    - target: perm-migration-system
-      type: depends_on
     - target: auth-permission-integration
       type: depends_on
 ---

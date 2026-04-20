@@ -9,6 +9,9 @@ def:
   lifecycle: approved
   layer: domain
   svc: permission-engine
+  links:
+    - target: permission-system
+      type: depends_on
 ---
 # Permission Engine Spec
 ## 목적 ^purpose

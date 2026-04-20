@@ -27,6 +27,8 @@ def:
       type: contains
     - target: perm-constraint-dkg
       type: contains
+    - target: permission-system
+      type: depends_on
 ---
 # 권한 비즈니스 제약
 

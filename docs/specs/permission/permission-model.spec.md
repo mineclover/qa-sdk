@@ -22,6 +22,8 @@ def:
       type: contains
     - target: permission-model-composition
       type: contains
+    - target: permission-system
+      type: depends_on
 ---
 # 권한 모델
 
