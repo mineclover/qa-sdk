@@ -27,6 +27,8 @@ def:
       type: contains
     - target: meta-semantic-ir-usecases
       type: contains
+    - target: meta-semantic-system
+      type: depends_on
 ---
 
 # Meta-Semantic IR — 3종 중간 표현 모델

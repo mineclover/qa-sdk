@@ -1,9 +1,8 @@
 ---
 def:
-  tier: component
+  tier: system
   id: meta-semantic-concepts
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: data
   aspect: domain_data
   depth: overview
@@ -12,9 +11,9 @@ def:
   tags: [entry-point]
   links:
     - target: meta-semantic-system
-      type: depends_on
+      type: traces_to
     - target: system-concepts
-      type: refines
+      type: traces_to
     - target: ms-concept-data-facets
       type: contains
     - target: ms-concept-boundary
@@ -33,6 +32,8 @@ def:
       type: contains
     - target: ms-concept-event
       type: contains
+    - target: meta-semantic-system
+      type: depends_on
 ---
 
 # 핵심 개념
