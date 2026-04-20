@@ -9,6 +9,9 @@ def:
   lifecycle: approved
   layer: domain
   svc: decision-service
+  links:
+    - target: decision-service-system
+      type: depends_on
 ---
 # Decision Service Spec
 ## 목적 ^purpose
