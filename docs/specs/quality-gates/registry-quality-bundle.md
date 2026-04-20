@@ -17,6 +17,8 @@ def:
       type: contains
     - target: gate-registry-service-flow
       type: contains
+    - target: registry-system
+      type: depends_on
 ---
 # Registry Quality Bundle
 
