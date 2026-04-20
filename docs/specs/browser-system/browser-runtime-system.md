@@ -4,7 +4,7 @@ def:
   tier: system
   address: def_document:v2:412673
   scope: interface
-  aspect: api_contract
+  aspect: browser_contract
   depth: overview
   lifecycle: approved
   layer: operation

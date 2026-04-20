@@ -4,7 +4,7 @@ def:
   type: spec
   tier: system
   scope: interface
-  aspect: api_contract
+  aspect: decode_contract
   depth: specification
   lifecycle: approved
   layer: mediation

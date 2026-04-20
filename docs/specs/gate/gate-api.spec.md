@@ -4,7 +4,7 @@ def:
   tier: system
   address: def_document:v2:412810
   scope: interface
-  aspect: api_contract
+  aspect: gate_contract
   depth: specification
   lifecycle: approved
   layer: mediation
@@ -21,10 +21,6 @@ def:
       type: depends_on
     - target: gate-consistency
       type: depends_on
-contains:
-  - gate-event-bus
-  - gate-cache-invalidation
-  - gate-consistency
 ---
 # Gate Service API 계약
 

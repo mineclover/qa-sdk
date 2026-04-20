@@ -3,7 +3,7 @@ def:
   id: gate-event-bus
   tier: system
   scope: interface
-  aspect: api_contract
+  aspect: gate_contract
   depth: specification
   lifecycle: approved
   layer: mediation

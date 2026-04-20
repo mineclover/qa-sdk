@@ -4,7 +4,7 @@ def:
   tier: system
   address: def_document:v2:412805
   scope: interface
-  aspect: api_contract
+  aspect: decode_contract
   depth: specification
   lifecycle: approved
   layer: mediation

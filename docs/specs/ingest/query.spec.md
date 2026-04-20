@@ -4,7 +4,7 @@ def:
   id: query-api-spec
   address: def_document:v2:412824
   scope: interface
-  aspect: api_contract
+  aspect: query_contract
   depth: specification
   lifecycle: approved
   layer: mediation

@@ -3,7 +3,7 @@ def:
   id: pipeline-aggregator
   tier: system
   scope: interface
-  aspect: api_contract
+  aspect: pipeline_contract
   depth: specification
   lifecycle: approved
   layer: operation
