@@ -1,4 +1,5 @@
 // @def.doc definition-service
+// @def.boundary definition-service-system
 
 /**
  * SearchService — FTS5 전문 검색 엔진

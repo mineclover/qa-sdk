@@ -1,4 +1,5 @@
 // @def.doc definition-service
+// @def.boundary definition-service-system
 
 import { Injectable, Inject, OnModuleInit } from "@nestjs/common";
 import { createLogger } from "../../lib/logger.js";

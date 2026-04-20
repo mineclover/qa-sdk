@@ -1,4 +1,4 @@
-// @def.boundary definition-service
+// @def.boundary definition-service-system
 // @def.doc definition-service
 
 import "reflect-metadata";
