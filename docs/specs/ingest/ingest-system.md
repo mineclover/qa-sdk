@@ -11,18 +11,14 @@ def:
   svc: ingest-server
   tags: [structural, performance, observability, entry-point]
   links:
-    - target: ingest-api-system
-      type: depends_on
     - target: query-api-spec
-      type: contains
+      type: depends_on
     - target: scenario-api-spec
       type: contains
     - target: stream-api-spec
       type: contains
     - target: verdict-api-spec
       type: contains
-    - target: admin-api-system
-      type: depends_on
     - target: record-spec
       type: contains
     - target: trace-spec
@@ -31,8 +27,6 @@ def:
       type: contains
     - target: pipeline-phase-flow
       type: contains
-    - target: ingest-infra-system
-      type: depends_on
     - target: browser-session-spec
       type: contains
     - target: dlq-store-spec

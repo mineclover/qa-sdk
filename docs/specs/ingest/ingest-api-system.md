@@ -15,6 +15,8 @@ def:
       type: contains
     - target: ingest-interface-pipeline
       type: contains
+    - target: ingest-system
+      type: depends_on
 ---
 
 # Ingest API 그룹

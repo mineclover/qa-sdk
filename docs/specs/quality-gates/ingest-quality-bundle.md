@@ -17,6 +17,8 @@ def:
       type: contains
     - target: gate-ingest-sdk-bridge
       type: contains
+    - target: ingest-system
+      type: depends_on
 ---
 # Ingest Quality Bundle
 
