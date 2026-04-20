@@ -17,6 +17,8 @@ def:
       type: contains
     - target: gate-decode-route
       type: contains
+    - target: decode-system
+      type: depends_on
 ---
 # Decode Quality Bundle
 

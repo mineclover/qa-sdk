@@ -11,8 +11,6 @@ def:
   svc: decode-service
   tags: [structural, entry-point]
   links:
-    - target: decode-api
-      type: depends_on
     - target: decode-bundle
       type: contains
     - target: decode-deploy

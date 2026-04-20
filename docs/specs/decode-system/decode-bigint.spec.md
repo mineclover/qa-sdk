@@ -11,9 +11,11 @@ def:
   tags: [bigint, runtime]
   links:
     - target: decode-api
-      type: refines
+      type: traces_to
     - target: decode-bigint-test
       type: contains
+    - target: decode-system
+      type: depends_on
 contains:
   - decode-bigint-test
 ---

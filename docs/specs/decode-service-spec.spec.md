@@ -2,12 +2,15 @@
 def:
   id: decode-service-spec
   type: spec
-  tier: component
+  tier: system
   scope: interface
   aspect: api_contract
   depth: specification
   lifecycle: approved
   layer: mediation
+  links:
+    - target: decode-service-system
+      type: depends_on
 ---
 # Decode Service Spec
 ## 목적 ^purpose

@@ -25,6 +25,8 @@ def:
       type: contains
     - target: decode-svc-scenarios
       type: contains
+    - target: decode-system
+      type: depends_on
 ---
 # Decode Service — 시스템 개요
 
