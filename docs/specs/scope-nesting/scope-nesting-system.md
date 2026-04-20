@@ -15,16 +15,12 @@ def:
       type: contains
     - target: scope-nesting-procedure
       type: contains
-    - target: scope-nesting-provider-patterns
-      type: depends_on
     - target: scope-nesting-mount-flow
       type: contains
     - target: scope-nesting-contract-timing
       type: contains
     - target: scope-nesting-simulation-layers
       type: contains
-    - target: scope-nesting-visualization
-      type: depends_on
     - target: scope-nesting-procedure-test
       type: contains
     - target: scope-nesting-contract-timing-test

@@ -9,12 +9,12 @@ def:
   layer: domain
   tags: [structural]
   links:
-    - target: scope-nesting-provider-patterns
-      type: refines
     - target: scope-nesting-guide
       type: contains
     - target: scope-nesting-pattern-lifecycle-test
       type: contains
+    - target: scope-nesting-system
+      type: depends_on
 ---
 
 # Scope Lifecycle 패턴 — 비활성화 영향 분석 파이프라인

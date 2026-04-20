@@ -9,20 +9,14 @@ def:
   layer: domain
   tags: [visualization, testing]
   links:
-    - target: scope-nesting-system
-      type: refines
     - target: scope-nesting-timeline-renderer
       type: contains
     - target: scope-nesting-preview-surface
       type: contains
-    - target: scope-nesting-simulation-layers
-      type: contains
-    - target: scope-nesting-mount-flow
-      type: contains
-    - target: scope-nesting-contract-timing
-      type: contains
     - target: scope-nesting-viz-package
       type: traces_to
+    - target: scope-nesting-system
+      type: depends_on
 contains:
   - scope-nesting-timeline-renderer
   - scope-nesting-preview-surface
