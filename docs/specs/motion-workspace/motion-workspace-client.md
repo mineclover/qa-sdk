@@ -10,7 +10,7 @@ def:
   svc: motion-workspace-client
   tags: [mediation, motion, client]
   links:
-    - target: motion-workspace-service
+    - target: motion-workspace-system
       type: depends_on
     - target: motion-workspace
       type: depends_on

@@ -6,33 +6,21 @@ def:
   scope: feature
   aspect: func_def
   depth: overview
-  lifecycle: approved
+  lifecycle: deprecated
   svc: motion-workspace-service
+  superseded_by: motion-workspace-system
   tags: [operation, motion, service]
   links:
-    - target: motion-workspace
-      type: contains
     - target: motion-workspace-system
-      type: depends_on
+      type: traces_to
 ---
-# motion-workspace-service
+# motion-workspace-service (deprecated)
 
 ## 목적 ^purpose
 
-Workspace API 서비스. Hono 기반 HTTP + WebSocket 서버로, workspace의 CRUD와 실시간 동기화를 제공한다.
+~~Workspace API 서비스. Hono 기반 HTTP + WebSocket 서버로, workspace의 CRUD와 실시간 동기화를 제공한다.~~
 
-## 구성 ^overview
+이 문서는 `motion-workspace-system` 과 좌표·범위가 중복되어 Phase 5a(2026-04-20) 에서 병합되었다. 서비스 런타임 구성과 설계 결정은 상위 시스템 문서로 흡수되었다.
 
-- **createApp()**: Hono 앱 팩토리 — controller + repository + WebSocket hub 조립
-- **MotionWorkspaceController**: 비즈니스 로직 레이어 — list / get / create / save / delete
-- **MotionWorkspaceRepository** (port): 영속 추상 인터페이스
-- **SQLiteRepository**: SQLite 기반 구현체 (drizzle schema)
-- **WorkspaceWsHub**: WebSocket 연결 관리 + workspace 단위 브로드캐스트
-- **Health / Workspace routes**: REST 엔드포인트
-- **ErrorHandler**: 일관된 에러 응답 형식
-
-## 설계 결정 ^intent
-
-- Controller + Repository 패턴 — 영속 계층 교체 가능 (SQLite → PostgreSQL 등)
-- WebSocket hub은 인메모리 — 단일 인스턴스 기준, 스케일아웃 시 Redis pub/sub 전환
-- Hono 선택: 경량, Edge 런타임 호환, middleware 체인
+- 신규 참조: [`motion-workspace-system`](./motion-workspace-system.md) — 시스템 overview + 서비스 런타임 구성
+- 서비스 구현 스펙: [`motion-workspace-service-spec`](../motion-content/motion-workspace-service.spec.md) — controller / repository / error / health 등 세부 사양
