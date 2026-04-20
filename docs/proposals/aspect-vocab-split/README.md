@@ -51,6 +51,22 @@ Phase 5d/5e 완료 시점(2026-04-20) 검증 상태: `errors=0`, `warnings=73`, 
 2. 해상도 증가는 값 치환이 아니라 **값 추가** 로 한다. 기존 값은 "fallback" 으로 잔존시켜 migration 가역성을 보장한다.
 3. 기존 17 dup-coord 그룹의 멤버를 근거로 **필요한 만큼만** 쪼갠다. 투기적인 분할은 피한다.
 4. 분할 자체는 **비파괴적** 이다. Phase B-0 은 vocabulary 확장만 수행하고 기존 문서에 손대지 않는다. 실제 문서 마이그레이션(Phase B-1~B-3) 은 선택 사항이며 단계적이다.
+5. 신규 값은 `{role}_{parent-stem}` **명명 컨벤션** 을 준수한다 (예: `codegen_func` = role `codegen` × parent-stem `func` → parent `func_def`). 이 규율은 지금은 저자의 discipline 이지만, 향후 Phase C (schema 기반 hierarchy) 전환 시 **기계적 migration** 의 기반이 된다. 상세: [00-design.md §명명 컨벤션](./00-design.md).
+
+## 단계적 접근 (A → B-0 → C)
+
+본 RFC 는 **즉시 가치 실현 + 미래 유연성** 의 균형을 위해 다음 단계로 나뉜다.
+
+| Phase | 본 RFC 범위? | 작업 | 목표 |
+|---|---|---|---|
+| **A. Flat addition** | ✅ | vocabulary 에 17 개 신규 aspect 추가 | non-breaking, 즉시 실행, dup-coord 해소 |
+| **B-0. Parent map** | ✅ | `ASPECT_PARENTS` map + `deriveAspectParent` helper 추가 | 부모 조회 가능 + Phase C 준비 완료 |
+| **B-1~B-4. Migration** | ✅ | HIGH/MED/LOW 문서 마이그레이션 + (선택) 레거시 deprecation | dup-coord 17 → ≤ 5 |
+| **C. Schema hierarchy** | ❌ 별도 RFC | `aspects.parent_id` 컬럼 + bulk populate | native rollup 쿼리 |
+
+Phase C 는 aspect 수 ≥ 40 + rollup 요구 ≥ 5회 발생 시 개시. 상세: [01-migration.md §Phase C](./01-migration.md).
+
+대안 비교 (Flat vs Explicit Map vs Schema vs New Axis) 는 [00-design.md §대안 검토](./00-design.md) 표 참조.
 
 ## 제안 요약
 

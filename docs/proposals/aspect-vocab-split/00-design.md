@@ -131,12 +131,145 @@ Phase 5 redesign 은 두 가지 해소 축을 제시했다.
 
 `system:ui:experience:component @ canvas-viewport-spec` (viz-roleplay-system, viz-surface-system, viz-system) 1 그룹은 `component` aspect 다. 해결책은 viz 도메인 내부의 계층화이며 (viz-system 을 `contains` parent 로, roleplay/surface 를 자식으로), tier 승격 후에는 aspect 분할이 필요 없다. 본 제안에서 다루지 않는다(`docs/proposals/domain-hierarchy/reviews/2026-04-20-phase5c-abstract.md` §"Class A 3+ 멤버" 로 재분류 권장).
 
-## 명명 컨벤션
+## 명명 컨벤션 — `{role}_{parent-stem}` 규율
 
-- 모든 신규 값은 `snake_case`, 2 단어 결합.
-- 첫 단어 = **도메인 식별자** (소속 시스템/영역), 두 번째 단어 = **기존 aspect 의 개념 부류** (func/flow/contract/data).
-- 예: `codegen_func` = `codegen` + `func`.
-- 기존 coarse 값은 **fallback** 으로 유지하여 하위 분류로 귀속되지 않는 경우를 허용. 제거는 B-4 단계에서만 검토.
+### 규칙
+
+모든 신규 aspect 값은 `snake_case` 2 단어 결합이며, 다음 구성을 따른다.
+
+- **role** (첫 단어): 부모 aspect 의 관심사 내에서 이 값이 담당하는 **하위 역할/도메인 식별자**.
+- **parent-stem** (두 번째 단어): 부모 aspect 이름의 **마지막 underscore-separated segment**.
+
+예시:
+
+| 신규 값 | role | parent-stem | 부모 aspect |
+|---|---|---|---|
+| `codegen_func` | `codegen` | `func` | `func_def` (stem = `def`가 아니라 `func`) |
+| `ingest_flow` | `ingest` | `flow` | `process_flow` |
+| `decode_contract` | `decode` | `contract` | `api_contract` |
+| `taxonomy_data` | `taxonomy` | `data` | `domain_data` |
+
+### `func_def` 계열의 특례
+
+기존 `func_def` 는 "기능(func) 의 정의(def)" 를 의미하며, parent-stem 관점에서 마지막 단어 `def` 가 아니라 **부모 축의 stem 으로 `func` 를 채택** 한다. 이유:
+
+- `def` 는 "정의" 라는 메타 접미사 — 타 aspect (`prefix_schema`, `axis_catalog`) 는 `_def` 를 붙이지 않는다.
+- 의미상 분류 대상은 "func" (기능) 이며, `codegen_func` / `harness_func` 는 "기능의 하위 유형" 이다.
+- 따라서 `func_def` 는 **예외적으로 parent-stem = `func`** 로 취급한다. 향후 Phase C 에서 이 예외를 명시 map 으로 등록한다 (§Helper: deriveAspectParent).
+
+### 기존 aspect 의 네이밍 적합성 분석
+
+기존 23 값을 `{role}_{stem}` 관점에서 점검한 결과:
+
+| 패턴 | 기존 값 | 해설 |
+|---|---|---|
+| `{role}_{stem}` 준수 | `user_scenario`, `process_flow`, `app_state`, `domain_state`, `system_state`, `tech_constraint`, `biz_constraint`, `infra_constraint`, `domain_data`, `system_data`, `external_data`, `api_contract`, `cli_contract`, `event_contract`, `func_def` (func=stem 특례), `proposal_design` | 대부분 이 패턴 |
+| 단일 단어 (패턴 벗어남) | `layout`, `component`, `interaction`, `scenario`, `relation` | UI/flow scope 의 최상위 분류 — 하위 분할 필요 없음 |
+| 단일 단어 + 복합명사 | `prefix_schema`, `axis_catalog` | `Prefix`/`Axis` 가 고유 명칭 (대문자 개념어) — 이 자체로 최상위 stem |
+
+결론: 본 RFC 의 신규 값은 **이미 컨벤션 준수 형태로 제안되어 있다**. 추가 조정 불필요. 단일 단어 aspect 는 stem 이 고유하므로 자식 분할 시 `{role}_{기존이름}` 패턴을 적용하면 된다 (예: 가상 `tab_layout` = tab 역할 × layout stem, 본 RFC 범위 외).
+
+### Stem 중복 및 disambiguation
+
+`func_def` 를 제외한 모든 `{stem}` 은 부모 aspect 와 일대일 매핑되어 중복이 없다 (`flow` → `process_flow`, `contract` → `api_contract`, `data` → `domain_data`). 단, `data` 의 경우 `domain_data`, `system_data`, `external_data` 3 형제가 모두 stem `data` 를 공유한다. 이 경우:
+
+- 기본 부모는 가장 일반적인 값인 `domain_data` 로 규정.
+- 예외 필요 시 `{role}_{parent-prefix}_{stem}` 3-segment 로 확장 허용 (예: 가상 `ext_api_data` vs `dom_api_data`, 본 RFC 범위 외).
+
+현재 제안된 2 개 신규 값 (`taxonomy_data`, `coordinate_model_data`) 은 모두 domain_data 자식으로 해석되므로 3-segment 불필요.
+
+### 규율의 목적 (Phase C 를 위한 준비)
+
+본 명명 컨벤션은 **Phase C (schema 기반 hierarchy) 로의 전환을 기계적으로 가능하게** 하기 위한 규율이다.
+
+- Phase A (본 RFC) 에서는 vocabulary flat 확장만 수행 — aspect 간 부모-자식 관계는 **이름으로만 암시**.
+- Phase B-0 에서 `ASPECT_PARENTS: Record<string, string>` map 을 추가 — 이름에서 파생되지 않고 **명시적으로 선언**.
+- Phase C 에서 이 map 을 schema column (`aspects.parent_id`) 으로 승격 — migration 은 map bulk populate 로 완료.
+
+핵심: **네이밍은 저자가 값을 "선택하는" 규율** 이며, 런타임 "부모 추론" 은 명시 map 이 담당한다. 이름만으로 부모를 역산 시도하지 않는다 (stem 중복/예외로 불안정).
+
+## 대안 검토 (Flat vs Hierarchy vs New Axis)
+
+| 옵션 | 장점 | 단점 | 비용 | 본 RFC 채택 |
+|---|---|---|---|---|
+| **A — Flat addition** (vocabulary 확장) | non-breaking · 즉시 실행 · 기존 문서 무변경 · validator 로직 변경 최소 | vocabulary 비대화 · 부모-자식 관계 implicit · rollup 쿼리 불가능 | 낮음 (파일 2개 수정) | ✅ Phase A (본 RFC) |
+| **B — Explicit parent map** (ASPECT_PARENTS runtime map) | flat 의 장점 유지 + 부모 조회 가능 · rollup helper 구현 가능 · Phase C 준비 완료 | 여전히 schema 가 아님 — DB query 에서는 직접 활용 불가 | 낮음 (map + helper 추가) | ✅ Phase B-0 (본 RFC) |
+| **C — Schema hierarchy** (aspects table + parent_id column) | rollup 쿼리 native · 명시적 부모 · semantic 일관성 최고 | 스키마 변경 · migration 전면 · 외부 도구 호환 파괴 · 배포 중단 위험 | 높음 (4-6 일) | Phase C (향후 별도 RFC) |
+| **D — New axis (role)** | aspect 축 보존 · orthogonal 분류 · 기존 값 재사용 | 전 문서 frontmatter field 추가 필수 · capacity 축 재산정 · 기존 스펙/테스트 일괄 업데이트 · def validate cascade | 매우 높음 (전 문서 touch) | 미채택 |
+
+**Reasoning**:
+
+- **단계적 접근** (A → B-0 → C) 으로 각 단계가 독립 가치를 전달한다. A 만으로 dup-coord 해소 효과가 즉시 발생하고, B-0 의 map 은 Phase C 전환을 기계적으로 만든다.
+- **C 를 지금 하지 않는 이유**: dup-coord 17 건은 schema 변경 없이도 해소 가능하며, schema migration 은 외부 도구 (CLI, dashboard, DKG audit, ingest) 전면 재검증을 요구한다. 위험-이득 비율이 불리하다. 단 aspect 수 ≥ 40 + rollup 요구 ≥ 5회 발생 시 Phase C 재개 (§01-migration Phase C 트리거).
+- **D 를 채택하지 않는 이유**: aspect 는 현재 주요 좌표 축이며, `role` 을 신규 축으로 추가하면 capacity 재계산 + 좌표 키 확장 + 전 문서 frontmatter touch 가 필요하다. 비용 대비 이득이 aspect 분할에 비해 명백히 나쁘다.
+
+## Helper: deriveAspectParent (Phase B-0 에서 추가)
+
+### 목적
+
+명명 컨벤션 `{role}_{parent-stem}` 을 준수하는 자식 aspect 에 대해 **부모 aspect id 를 조회** 하는 순수 함수. 이름에서 파생하지 않고 명시 map 을 lookup 한다.
+
+### Signature
+
+```
+deriveAspectParent(aspect: string): string | null
+```
+
+- 입력이 최상위 (부모 없음) → `null`
+- 입력이 등록된 자식 → 부모 aspect id (string)
+- 입력이 unknown → `null` (방어적 — 경고 로그 권장)
+
+### Behavior
+
+1. `ASPECT_PARENTS[aspect]` lookup.
+2. 존재 시 반환, 미존재 시 `null`.
+
+### Phase B-0 에서 추가되는 데이터
+
+`packages/definition-catalog/src/vocabulary.ts` 에 다음 map 을 추가한다.
+
+```
+export const ASPECT_PARENTS: Record<string, string> = {
+  // func_def 계열
+  codegen_func: "func_def",
+  harness_func: "func_def",
+  gate_func: "func_def",
+  analyzer_func: "func_def",
+  encoding_func: "func_def",
+  domain_service_func: "func_def",
+  nesting_func: "func_def",
+  // process_flow 계열
+  lifecycle_flow: "process_flow",
+  ingest_flow: "process_flow",
+  pipeline_flow: "process_flow",
+  gate_flow: "process_flow",
+  definition_mgmt_flow: "process_flow",
+  // api_contract 계열
+  decode_contract: "api_contract",
+  gate_contract: "api_contract",
+  query_contract: "api_contract",
+  browser_contract: "api_contract",
+  pipeline_contract: "api_contract",
+  // domain_data 계열
+  taxonomy_data: "domain_data",
+  coordinate_model_data: "domain_data",
+};
+```
+
+최상위 aspect (`func_def`, `process_flow`, `api_contract`, `domain_data`, 기타 23 기존 값) 는 map 에 등록하지 않는다 → `deriveAspectParent()` = `null`.
+
+### 사용 사례 (Phase A 런타임)
+
+- **Rollup audit**: `def audit --rollup-aspect func_def` → map 을 역방향 traverse 하여 `*_func` 자식 전원의 dup-coord 상태를 한 번에 출력.
+- **Validator 규칙**: 동일 문서가 부모(`func_def`) 와 자식(`codegen_func`) 을 동시 참조하면 semantic overlap warning 생성 (권장 — 자식 값이 더 구체적이므로 자식을 선택).
+- **CLI filter**: `def list --aspect func_def` 호출 시 부모 aspect 문서 + 모든 자식 aspect 문서를 포괄 반환 (`--no-rollup` 옵션으로 순수 부모만 선택 가능).
+- **DKG 브릿지**: `getAspectFamily(root)` = `[root, ...children]` 로 노드 그룹핑.
+
+### 의도적 제약
+
+- Helper 는 순수 함수 — SQLite/fetch 없음. Phase C 에서 schema 승격 후에도 동일 signature 로 대체 가능.
+- 역방향 조회 (`getChildren(parent)`) 는 map filter 로 O(N) — N ≤ 100 가정 하 문제없음. 향후 memoize 가능.
+- 본 helper 는 Phase B-0 에서 **코드로 추가** 되지만, 본 RFC 는 drafting 단계이므로 **vocabulary.ts 수정 금지**. 구현은 RFC 승인 후.
 
 ## 유효 scope-aspect 조합 (VALID_SCOPE_ASPECTS)
 

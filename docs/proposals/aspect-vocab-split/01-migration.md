@@ -208,6 +208,54 @@ LOW 2 건(decision-service-system, definition-service-system) 및 특수 케이�
 - B-2 완료.
 - 사람 승인 — 본 단계는 **실행하지 않을 수 있다**.
 
+## Phase C — Schema Hierarchy 전환 (향후 별도 RFC)
+
+### 목적
+
+Phase A (flat 확장) / B-0~B-4 (migration) 완료 후, vocabulary 의 flat aspect 집합이 안정화되면 **schema 기반 계층** 으로 전환한다. 본 Phase 5b RFC 는 Phase C 를 **예고만** 하며, 실제 실행은 별도 RFC 에서 다룬다.
+
+### Phase C 개시 트리거
+
+다음 조건이 **모두** 만족될 때 Phase C 를 개시한다.
+
+- **aspect 수 ≥ 40** — 현재 23 + 본 RFC 제안 17 = 40 (Phase B-0 완료 시 이미 달성 예정)
+- **rollup 쿼리 요구 ≥ 5회** — CLI (`def audit --rollup-aspect X`), dashboard filter, DKG 브릿지 등에서 flat 열거로 해결 불가능한 요구가 5회 이상 누적
+- **UX 한계 도달** — `def list --aspect` 자동완성에서 40+ flat 값 열거가 사용자 피드백상 실용 한계로 판명
+
+세 조건이 모두 충족되기 전에는 Phase C 를 개시하지 않는다 — YAGNI.
+
+### 전환 순서 (예정)
+
+1. **Schema 확장** — `aspects` 테이블에 `parent_id` 컬럼 추가 (nullable).
+2. **Migration 스크립트** — Phase B-0 에서 선언한 `ASPECT_PARENTS` map 을 SQL INSERT 로 bulk populate. 이 단계의 **전면 성공** 이 Phase C 의 핵심. map 선언이 B-0 에 있으므로 migration 은 코드 추출 + SQL generation 으로 기계적.
+3. **Validator 규칙 확장** — aspect 조회 시 parent chain traversal 지원. `validateScopeAspect` 가 부모 체인에서도 유효 조합 검증 가능.
+4. **Frontmatter 문법** (선택) — 기본 표기는 불변 (`aspect: codegen_func`). 컴포지트 표기 (`aspect: func_def > codegen`) 는 대안으로만 검토 — 미채택 시 유저-facing 변경 없음.
+5. **Rollup API 공식화** — `getAspectFamily(aspect): string[]` 가 `[aspect, ...descendants]` 반환. Phase B-0 의 `deriveAspectParent` helper 는 역방향 (자식→부모) 이므로 정방향 helper 를 Phase C 에서 추가.
+6. **레거시 deprecation 정책 확정** — Phase B-4 의 deprecation 정책 계승. 부모 이름 (`func_def`, `process_flow`, `api_contract`, `domain_data`) 은 **영구 유지** — rollup 루트로 사용되므로 제거 불가.
+
+### Reversibility
+
+Phase C 는 역행 가능:
+
+- `parent_id` 컬럼 제거 + `ASPECT_PARENTS` map 복원 (원본은 vocabulary.ts 에 영속 유지).
+- 유저 입력 형식 (frontmatter `aspect: codegen_func`) 은 변하지 않으므로 **유저-facing breaking change 없음**.
+- validator 는 map fallback 으로 롤백.
+
+### 비용 추정
+
+| 항목 | 작업 | 예상 공수 |
+|---|---|---:|
+| Schema migration | parent_id 추가 + bulk populate SQL | 1-2 일 |
+| Validator/CLI 업데이트 | parent chain traversal, rollup API | 2-3 일 |
+| 문서/테스트 | 회귀 테스트, spec 동기화 | 1 일 |
+| **합계** | | **4-6 일** |
+
+### 본 RFC (Phase 5b) 와의 관계
+
+- **Phase 5b RFC 범위** — Phase A (flat 확장) + Phase B-0~B-4 (migration). **ASPECT_PARENTS map 을 Phase B-0 에 포함** 시켜 Phase C 준비를 완료한다.
+- **Phase C 는 별도 RFC** — Phase C 개시 시점이 도래하면 `docs/proposals/aspect-hierarchy-schema/` (가칭) 에서 schema migration 을 다룬다. Phase C RFC 는 본 RFC 의 map 을 입력으로 받아 SQL 을 생성한다.
+- **A→B-0→C 체인 보장** — 본 RFC 의 명명 컨벤션 (00-design §"명명 컨벤션") 이 Phase C 전환의 기계적 기반이다. 명명 컨벤션 위반 값이 Phase B 이후 추가되면 Phase C migration 이 수동 개입을 요구한다.
+
 ## 검증 체크리스트 (모든 단계 공통)
 
 각 단계 완료 후 실행:
