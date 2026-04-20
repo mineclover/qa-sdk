@@ -233,6 +233,16 @@ export {
 export type { ValidationIssue, ValidationResult } from "./validate.js";
 export { validateGraph } from "./validate.js";
 
+// ─── 도메인 루트 파생 (domain_root) ─────────────────────
+export type { DomainRootRegistry } from "./domain-root.js";
+export {
+  isDomainTier,
+  selectPrimaryParent,
+  deriveDomainRoot,
+  deriveAllDomainRoots,
+  detectOwnerRootMismatch,
+} from "./domain-root.js";
+
 // ─── 코드 참조 스캔 ─────────────────────────────────────
 export type {
   CodeReferenceInput,
