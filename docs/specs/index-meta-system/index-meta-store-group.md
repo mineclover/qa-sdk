@@ -15,6 +15,8 @@ def:
       type: contains
     - target: index-meta-store-resolution
       type: contains
+    - target: index-meta-system
+      type: depends_on
 ---
 
 # Index Meta Store 그룹

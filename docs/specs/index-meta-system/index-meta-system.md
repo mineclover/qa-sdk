@@ -11,34 +11,20 @@ def:
   svc: index-meta
   tags: [structural, entry-point]
   links:
-    - target: table-schema-spec
-      type: depends_on
     - target: resolver-spec
       type: contains
     - target: index-codec-spec
       type: contains
-    - target: index-meta-store-group
-      type: depends_on
     - target: address-spec
       type: contains
-    - target: address-separation-group
-      type: depends_on
-    - target: sdk-scenarios
-      type: depends_on
-    - target: sdk-system
-      type: depends_on
     - target: invariants-spec
       type: contains
-    - target: address-scenarios-group
-      type: depends_on
     - target: index-meta-workers
       type: contains
     - target: user-scenarios
       type: contains
     - target: canonical-format-spec
       type: contains
-    - target: dx-lifecycle-group
-      type: depends_on
     - target: benchmark-system
       type: depends_on
     - target: registry-system

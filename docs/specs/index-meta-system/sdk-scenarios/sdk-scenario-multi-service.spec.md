@@ -10,10 +10,10 @@ def:
   layer: domain
   tags: [testing]
   links:
-    - target: sdk-scenarios
-      type: refines
     - target: resolver-spec
       type: traces_to
+    - target: sdk-system
+      type: depends_on
 ---
 # SDK 시나리오 — 멀티 서비스 스키마 공유
 
