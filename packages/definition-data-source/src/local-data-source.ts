@@ -616,12 +616,17 @@ export class LocalDataSource implements DefDataSource {
         });
         continue;
       }
-      if (ref.relationType === "boundary" && doc.level !== "group" && doc.level !== "module") {
+      const isBoundaryEligible =
+        doc.level === "group" ||
+        doc.level === "module" ||
+        doc.tier === "system" ||
+        doc.tier === "layout";
+      if (ref.relationType === "boundary" && !isBoundaryEligible) {
         issues.push({
           severity: "error",
           type: "invalid-code-boundary",
           docId: ref.docId,
-          message: `boundary reference "${ref.codePath}"는 group/module 문서를 가리켜야 함`,
+          message: `boundary reference "${ref.codePath}"는 group/module 또는 tier:system/layout 문서를 가리켜야 함`,
         });
       }
       const scopeKey = makeCodeReferenceScopeKey(ref.codePath, ref.symbol);
@@ -658,14 +663,6 @@ export class LocalDataSource implements DefDataSource {
         if (!doc) continue;
         const anchor = await this.resolveBoundaryAnchor(doc);
         inferredAnchorIds.add(anchor.docId);
-        if (explicitBoundaryId && anchor.docId !== explicitBoundaryId) {
-          issues.push({
-            severity: "error",
-            type: "inconsistent-code-boundary",
-            docId: ref.docId,
-            message: `code reference "${targetLabel}"의 explicit boundary "${explicitBoundaryId}"와 문서 "${ref.docId}"의 anchor "${anchor.docId}"가 다름`,
-          });
-        }
       }
 
       if (!explicitBoundaryId && inferredAnchorIds.size > 1) {
@@ -720,13 +717,18 @@ export class LocalDataSource implements DefDataSource {
   }
 
   private async resolveBoundaryAnchor(doc: DefDoc): Promise<DefDoc> {
-    if (doc.level === "group" || doc.level === "module") return doc;
+    const isBoundaryDoc = (d: DefDoc) =>
+      d.level === "group" ||
+      d.level === "module" ||
+      d.tier === "system" ||
+      d.tier === "layout";
+    if (isBoundaryDoc(doc)) return doc;
     let current = doc;
     const visited = new Set<string>([doc.docId]);
     while (true) {
       const parent = await this.getParent(current.docId);
       if (!parent || visited.has(parent.docId)) return current;
-      if (parent.level === "group" || parent.level === "module") return parent;
+      if (isBoundaryDoc(parent)) return parent;
       visited.add(parent.docId);
       current = parent;
     }
