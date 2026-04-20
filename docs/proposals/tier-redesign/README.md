@@ -1,3 +1,38 @@
+---
+def:
+  id: tier-redesign-readme
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: review
+  owner_system: definition-catalog
+  projection_plane: intent
+  scope: meta
+  aspect: proposal_design
+  tier: layout
+  depth: overview
+  links:
+    - target: tier-redesign-mental-models
+      type: refs
+    - target: tier-redesign-00-design
+      type: refs
+    - target: tier-redesign-01-migration
+      type: refs
+    - target: tier-redesign-02-tracking-roadmap
+      type: refs
+    - target: tier-redesign-03-decisions
+      type: refs
+    - target: tier-redesign-tiers-readme
+      type: refs
+    - target: tier-redesign-examples-readme
+      type: refs
+status: under-review
+date: 2026-04-19
+part_of: tier-redesign
+role: index
+supersedes: -
+superseded_by: -
+---
+
 # STC — Semantic Topological Coordinate 제안
 
 > **Status**: `under-review` · **Started**: 2026-04-18 · **Promoted**: 2026-04-19 · **Reviewer**: subagent review 1~6차 (독립 에이전트 피드백 루프)

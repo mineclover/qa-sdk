@@ -6,6 +6,13 @@ def:
   lifecycle: review
   owner_system: definition-catalog
   projection_plane: intent
+  scope: meta
+  aspect: proposal_design
+  tier: system
+  depth: specification
+  links:
+    - target: tier-redesign-readme
+      type: depends_on
 status: under-review
 date: 2026-04-19
 part_of: tier-redesign

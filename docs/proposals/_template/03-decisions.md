@@ -1,4 +1,19 @@
 ---
+# 신규 proposal 작성 시 아래 def 블록의 <topic-name>을 실제 이름으로 치환하세요.
+# def:
+#   id: <topic-name>-03-decisions
+#   type: knowledge
+#   knowledge_kind: proposal
+#   lifecycle: draft
+#   owner_system: definition-catalog
+#   projection_plane: intent
+#   scope: meta
+#   aspect: proposal_design
+#   tier: system
+#   depth: specification
+#   links:
+#     - target: <topic-name>-readme
+#       type: depends_on
 status: draft
 date: YYYY-MM-DD
 part_of: <topic-name>

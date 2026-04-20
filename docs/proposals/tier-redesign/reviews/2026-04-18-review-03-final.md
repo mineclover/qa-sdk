@@ -3,9 +3,16 @@ def:
   id: tier-redesign-reviews-2026-04-18-review-03-final
   type: knowledge
   knowledge_kind: proposal
-  lifecycle: superseded-by-d17
+  lifecycle: deprecated
   owner_system: definition-catalog
   projection_plane: intent
+  scope: meta
+  aspect: proposal_design
+  tier: system
+  depth: specification
+  links:
+    - target: tier-redesign-readme
+      type: depends_on
 status: superseded-by-d17
 date: 2026-04-19
 part_of: tier-redesign

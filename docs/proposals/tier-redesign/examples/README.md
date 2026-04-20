@@ -1,4 +1,30 @@
 ---
+def:
+  id: tier-redesign-examples-readme
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: draft
+  owner_system: definition-catalog
+  projection_plane: intent
+  scope: meta
+  aspect: proposal_design
+  tier: layout
+  depth: overview
+  links:
+    - target: tier-redesign-readme
+      type: depends_on
+    - target: tier-redesign-examples-deterministic-label-record
+      type: refs
+    - target: tier-redesign-examples-deterministic-label-record-state
+      type: refs
+    - target: tier-redesign-examples-deterministic-label-system
+      type: refs
+    - target: tier-redesign-examples-approval-request-state
+      type: refs
+    - target: tier-redesign-examples-approval-system
+      type: refs
+    - target: tier-redesign-examples-docs-control-plane-layout
+      type: refs
 status: draft
 date: 2026-04-18
 part_of: tier-redesign

@@ -1,4 +1,26 @@
 ---
+def:
+  id: tier-redesign-tiers-readme
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: review
+  owner_system: definition-catalog
+  projection_plane: intent
+  scope: meta
+  aspect: proposal_design
+  tier: layout
+  depth: overview
+  links:
+    - target: tier-redesign-readme
+      type: depends_on
+    - target: tier-redesign-tiers-component
+      type: refs
+    - target: tier-redesign-tiers-entry
+      type: refs
+    - target: tier-redesign-tiers-system
+      type: refs
+    - target: tier-redesign-tiers-layout
+      type: refs
 status: under-review
 date: 2026-04-19
 part_of: tier-redesign

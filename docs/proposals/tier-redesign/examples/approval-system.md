@@ -3,9 +3,16 @@ def:
   id: tier-redesign-examples-approval-system
   type: knowledge
   knowledge_kind: proposal
-  lifecycle: pilot-draft
+  lifecycle: draft
   owner_system: definition-catalog
   projection_plane: intent
+  scope: meta
+  aspect: proposal_design
+  tier: component
+  depth: specification
+  links:
+    - target: tier-redesign-readme
+      type: depends_on
 status: pilot-draft
 date: 2026-04-18
 part_of: tier-redesign
