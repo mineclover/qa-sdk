@@ -9,6 +9,9 @@ def:
   lifecycle: approved
   layer: domain
   svc: dkg
+  links:
+    - target: dkg-system
+      type: depends_on
 ---
 
 # DKG System Root

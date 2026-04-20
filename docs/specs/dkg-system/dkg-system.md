@@ -21,12 +21,8 @@ def:
       type: contains
     - target: dkg-growth-spiral
       type: contains
-    - target: dkg-skills-system
-      type: depends_on
     - target: dkg-service-topology
       type: contains
-    - target: dkg-state-store
-      type: depends_on
 ---
 
 # DKG (Design Knowledge Graph) 시스템

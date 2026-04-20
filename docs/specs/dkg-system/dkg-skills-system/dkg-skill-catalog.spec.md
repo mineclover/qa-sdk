@@ -19,6 +19,8 @@ def:
       type: contains
     - target: dkg-skill-catalog-registry
       type: contains
+    - target: dkg-system
+      type: depends_on
 ---
 # Skill 카탈로그
 
