@@ -1,7 +1,7 @@
 ---
 def:
   id: permission-system
-  tier: system
+  tier: layout
   address: def_document:v2:274433
   scope: constraint
   aspect: biz_constraint
@@ -12,11 +12,11 @@ def:
   tags: [external, structural, security, entry-point]
   links:
     - target: permission-encoding
-      type: contains
+      type: refs
     - target: permission-encoding-rule
       type: traces_to
     - target: masking-spec
-      type: contains
+      type: refs
     - target: auth-permission-integration
       type: depends_on
 ---

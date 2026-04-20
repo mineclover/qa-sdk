@@ -1,12 +1,15 @@
 ---
 def:
-  tier: system
+  tier: layout
   id: prefix-service
   scope: data
   aspect: prefix_schema
   depth: specification
   lifecycle: approved
   tags: [generated]
+  links:
+    - target: entity-prefix-group
+      type: refs
 source: packages/demo-snapshot/src/demo-catalog.ts:DEMO_CATALOG.prefixes.service
 ---
 

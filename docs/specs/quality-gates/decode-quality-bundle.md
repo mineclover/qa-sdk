@@ -1,7 +1,7 @@
 ---
 def:
   id: decode-quality-bundle
-  tier: system
+  tier: layout
   scope: flow
   aspect: process_flow
   depth: overview
@@ -10,13 +10,13 @@ def:
   tags: [testing, quality-bundle, work-domain:productivity]
   links:
     - target: decode-quality-contract
-      type: contains
+      type: refs
     - target: gate-decode-build
-      type: contains
+      type: refs
     - target: gate-decode-test
-      type: contains
+      type: refs
     - target: gate-decode-route
-      type: contains
+      type: refs
     - target: decode-system
       type: depends_on
 ---

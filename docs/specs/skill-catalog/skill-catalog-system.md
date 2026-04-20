@@ -1,7 +1,7 @@
 ---
 def:
   id: skill-catalog-system
-  tier: system
+  tier: layout
   address: def_document:v2:68645
   scope: feature
   aspect: func_def
@@ -20,6 +20,16 @@ def:
       type: depends_on
     - target: cli-command-group
       type: depends_on
+    - target: claude-skill-group
+      type: refs
+    - target: automation-skill-group
+      type: refs
+    - target: ralph-tui-skill-group
+      type: refs
+    - target: dkg-skill-group
+      type: refs
+    - target: cli-command-group
+      type: refs
 ---
 
 ## 목적 ^purpose

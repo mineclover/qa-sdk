@@ -2,7 +2,7 @@
 def:
   id: pipe-gate
   type: design
-  tier: system
+  tier: layout
   owner_system: meta-semantic-system
   projection_plane: intent
   intent_hierarchy: core
@@ -12,18 +12,12 @@ def:
   lifecycle: approved
   layer: domain
   links:
-    - target: meta-semantic-pipe-impl
-      type: depends_on
-    - target: pipe-interpret
-      type: contains
-    - target: pipe-analyze
-      type: contains
     - target: pipe-gate-model
-      type: contains
+      type: refs
     - target: pipe-gate-evaluation
-      type: contains
+      type: refs
     - target: pipe-gate-review
-      type: contains
+      type: refs
   source: packages/core/src/pipe/pipe-gate.ts
 ---
 

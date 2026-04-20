@@ -1,7 +1,7 @@
 ---
 def:
   id: sdk-scenarios
-  tier: system
+  tier: layout
   scope: feature
   aspect: scenario
   depth: overview
@@ -15,19 +15,19 @@ def:
     - target: sdk-system
       type: traces_to
     - target: sdk-scenario-lifecycle
-      type: contains
+      type: refs
     - target: sdk-scenario-entry-modes
-      type: contains
+      type: refs
     - target: sdk-scenario-schema-evolution
-      type: contains
+      type: refs
     - target: sdk-scenario-multi-service
       type: depends_on
     - target: sdk-scenario-cli-simulation
-      type: contains
+      type: refs
     - target: sdk-scenario-inactive-entries
-      type: contains
+      type: refs
     - target: sdk-scenario-reserved-tokens
-      type: contains
+      type: refs
 ---
 
 # SDK 라이프사이클 유저 시나리오

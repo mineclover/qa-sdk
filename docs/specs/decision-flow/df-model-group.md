@@ -1,7 +1,7 @@
 ---
 def:
   id: df-model-group
-  tier: system
+  tier: layout
   address: def_document:v2:342021
   scope: data
   aspect: domain_data
@@ -12,13 +12,13 @@ def:
   tags: [structural, decision]
   links:
     - target: df-axis-model
-      type: contains
+      type: refs
     - target: df-observation-space
-      type: contains
+      type: refs
     - target: df-state-model
-      type: contains
+      type: refs
     - target: df-serialization
-      type: contains
+      type: refs
     - target: df-system
       type: depends_on
 ---

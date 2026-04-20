@@ -1,7 +1,7 @@
 ---
 def:
   id: prefix-catalog-system
-  tier: system
+  tier: layout
   scope: data
   aspect: prefix_schema
   depth: overview
@@ -18,6 +18,16 @@ def:
       type: depends_on
     - target: observation-prefix-group
       type: depends_on
+    - target: entity-prefix-group
+      type: refs
+    - target: policy-prefix-group
+      type: refs
+    - target: event-prefix-group
+      type: refs
+    - target: relation-prefix-group
+      type: refs
+    - target: observation-prefix-group
+      type: refs
 ---
 
 ## 목적 ^purpose

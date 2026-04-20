@@ -4,36 +4,36 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  tier: system
+  tier: layout
   lifecycle: approved
   layer: operation
   svc: infra-engine
   tags: [infra, devops, gitops]
   links:
     - target: infra-config-stage
-      type: contains
+      type: refs
     - target: infra-provision-stage
-      type: contains
+      type: refs
     - target: infra-register-stage
-      type: contains
+      type: refs
     - target: infra-verify-stage
       type: depends_on
     - target: infra-observe-stage
-      type: contains
+      type: refs
     - target: infra-providers
-      type: contains
+      type: refs
     - target: infra-adapters
-      type: contains
+      type: refs
     - target: infra-monitoring
-      type: contains
+      type: refs
     - target: infra-discovery
-      type: contains
+      type: refs
     - target: infra-service-operations
       type: traces_to
     - target: infra-engine-todo
       type: traces_to
     - target: infra-auth-integration-todo
-      type: contains
+      type: refs
 ---
 # 인프라 엔진 배포 파이프라인
 

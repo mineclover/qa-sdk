@@ -1,7 +1,7 @@
 ---
 def:
   id: decision-flow-quality-bundle
-  tier: system
+  tier: layout
   scope: flow
   aspect: process_flow
   depth: overview
@@ -10,13 +10,13 @@ def:
   tags: [testing, quality-bundle, work-domain:productivity]
   links:
     - target: decision-flow-quality-contract
-      type: contains
+      type: refs
     - target: gate-decision-flow-typecheck
-      type: contains
+      type: refs
     - target: gate-decision-flow-build
-      type: contains
+      type: refs
     - target: gate-decision-flow-test
-      type: contains
+      type: refs
 ---
 # Decision Flow Quality Bundle
 

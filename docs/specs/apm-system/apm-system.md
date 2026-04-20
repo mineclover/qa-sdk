@@ -1,7 +1,7 @@
 ---
 def:
   id: apm-system
-  tier: system
+  tier: layout
   address: def_document:v2:68611
   scope: feature
   aspect: func_def
@@ -12,15 +12,15 @@ def:
   tags: [structural, entry-point]
   links:
     - target: collection-transport-spec
-      type: contains
+      type: refs
     - target: infra-logger-spec
-      type: contains
+      type: refs
     - target: cli-contract-spec
-      type: contains
+      type: refs
     - target: metrics-spec
-      type: contains
+      type: refs
     - target: apm-sdk
-      type: contains
+      type: refs
 ---
 
 ## 목적 ^purpose
