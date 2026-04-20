@@ -1,4 +1,5 @@
 // @def.doc definition-catalog-spec
+// @def.boundary definition-catalog-spec
 
 /**
  * Frontmatter 파서 + 스캐너
@@ -178,7 +179,7 @@ import { parseDocumentAddress, parseUniqueDocumentAddress } from "./observe.js";
 // ─── Frontmatter → DefinitionEntryInput 변환 ────────────
 
 const VALID_LEVELS = new Set(["group", "module", "leaf"]);
-const VALID_SCOPES = new Set(["ui", "feature", "flow", "state", "constraint", "data", "interface"]);
+const VALID_SCOPES = new Set(["ui", "feature", "flow", "state", "constraint", "data", "interface", "meta"]);
 const VALID_DEPTHS = new Set(["overview", "specification", "implementation", "validation"]);
 const VALID_LIFECYCLES = new Set(["draft", "review", "approved", "deprecated", "archived"]);
 const VALID_LAYERS = new Set(["domain", "operation", "mediation", "experience"]);

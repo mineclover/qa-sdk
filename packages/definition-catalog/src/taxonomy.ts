@@ -111,6 +111,14 @@ export const DEFINITION_TAXONOMY: DefinitionTaxonomy = {
         { id: "event_contract", name: "이벤트계약", description: "이벤트 스키마, 메시지 포맷, 발행/구독 규약" },
       ],
     },
+    {
+      id: "meta",
+      name: "메타-설계",
+      description: "정규 스펙의 규칙 자체를 재정의 대상으로 삼는 메타 설계 제안(RFC)의 정의",
+      aspects: [
+        { id: "proposal_design", name: "제안 설계", description: "제안 문서 분류자 — RFC/proposal 단계의 메타 설계 문서" },
+      ],
+    },
   ],
 };
 
@@ -120,7 +128,7 @@ export const DEFINITION_TAXONOMY: DefinitionTaxonomy = {
  * scope별 유효한 aspect 목록.
  *
  * def_scope × def_aspect 좌표 공간에서 유효한 조합만 허용한다.
- * 16 × 64 = 1,024 가능한 조합 중 20개만 유효.
+ * 16 × 64 = 1,024 가능한 조합 중 23개만 유효.
  */
 export const VALID_SCOPE_ASPECTS: Record<DefScope, readonly DefAspect[]> = {
   ui: ["layout", "component", "interaction"],
@@ -130,6 +138,7 @@ export const VALID_SCOPE_ASPECTS: Record<DefScope, readonly DefAspect[]> = {
   constraint: ["tech_constraint", "biz_constraint", "infra_constraint"],
   data: ["domain_data", "system_data", "external_data", "prefix_schema", "axis_catalog"],
   interface: ["api_contract", "cli_contract", "event_contract"],
+  meta: ["proposal_design"],
 } as const;
 
 /**
@@ -359,7 +368,7 @@ export function detectCrossScope(tags: readonly string[]): {
   scopeRefs: readonly DefScope[];
   shouldSplit: boolean;
 } {
-  const allScopes: DefScope[] = ["ui", "feature", "flow", "state", "constraint", "data", "interface"];
+  const allScopes: DefScope[] = ["ui", "feature", "flow", "state", "constraint", "data", "interface", "meta"];
   const scopeRefs = allScopes.filter(s => tags.includes(s));
   return {
     isCrossScope: tags.includes("cross-scope") || scopeRefs.length >= 2,

@@ -43,9 +43,12 @@ describe("DEFINITION_TAXONOMY", () => {
     expect(new Set(allAspects).size).toBe(allAspects.length);
   });
 
-  it("각 scope에 최소 2개 이상의 aspect가 있다", () => {
+  it("각 scope에 최소 1개 이상의 aspect가 있다", () => {
+    // meta scope은 단일 aspect(proposal_design)를 갖는 설계적 예외.
+    // 나머지 도메인 scope은 일반적으로 2개 이상을 권장하지만,
+    // 분류 기준(최소 aspect 1개)만 강제한다.
     for (const scope of DEFINITION_TAXONOMY.scopes) {
-      expect(scope.aspects.length).toBeGreaterThanOrEqual(2);
+      expect(scope.aspects.length).toBeGreaterThanOrEqual(1);
     }
   });
 });

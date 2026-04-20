@@ -21,6 +21,7 @@ describe("ScopeRegistry", () => {
     expect(reg.getScopeIndex("ui")).toBe(1);
     expect(reg.getScopeIndex("feature")).toBe(2);
     expect(reg.getScopeIndex("interface")).toBe(7);
+    expect(reg.getScopeIndex("meta")).toBe(8);
   });
 
   describe("경로 모델 인코딩", () => {
@@ -28,8 +29,9 @@ describe("ScopeRegistry", () => {
       const reg = new ScopeRegistry();
       const stats = reg.stats();
 
-      // 경로 모델: 22 aspect × 4 depth = 88
-      expect(stats.totalAddressSpace).toBe(88);
+      // 경로 모델: N aspect × 4 depth (SSOT에서 파생)
+      const expectedTotal = DEF_ASPECT.entries.length * DEF_DEPTH.entries.length;
+      expect(stats.totalAddressSpace).toBe(expectedTotal);
       // 전곱: 16 × 64 × 8 = 8,192
       expect(stats.crossProductSpace).toBe(8192);
       // 효율: 88/8192 ≈ 1%

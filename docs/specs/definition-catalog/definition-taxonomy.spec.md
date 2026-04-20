@@ -2,7 +2,7 @@
 def:
   id: definition-taxonomy
   type: design
-  tier: component
+  tier: system
   component_subtype: data-shape
   owner_system: definition-service
   projection_plane: intent
@@ -33,7 +33,7 @@ def:
 
 ## 정의 ^defines
 
-- scope 7종, aspect 22종, depth 4종, lifecycle 5종, level 3종, layer 4종, link_type 8종
+- scope 8종, aspect 23종, depth 4종, lifecycle 5종, level 3종, layer 4종, link_type 8종
 - 문서 태그는 좌표 축이 아니라 보조 taxonomy이며 `tag-management-spec`에서 관리
 - VALID_SCOPE_ASPECTS 유효 조합 제약
 - v1/v2 주소 공간 개요
@@ -47,7 +47,7 @@ def:
 
 7개 축이 문서의 정체성을 결정한다:
 
-- **좌표 축** (주소에 인코딩 — 불변): scope(7) × aspect(22) × depth(4) × seq(128)
+- **좌표 축** (주소에 인코딩 — 불변): scope(8) × aspect(23) × depth(4) × seq(128)
 - **메타데이터** (변할 수 있음): level(3), lifecycle(5), layer(4)
 - **관계**: link_type(8)
 - **이중 관리**: address(불변 식별자) + id(표시 라벨)
@@ -55,7 +55,7 @@ def:
 
 ## 좌표 축
 
-### scope (7종) — "무엇에 대한 정의인가"
+### scope (8종) — "무엇에 대한 정의인가"
 
 참조: `definition-catalog/src/vocabulary.ts:DEF_SCOPE`
 
@@ -68,8 +68,9 @@ def:
 | constraint | 규칙을 확인하려는 개발자 | "무엇을 제한하는가?" |
 | data | 데이터 구조를 파악하려는 개발자 | "어떤 데이터를 다루는가?" |
 | interface | API를 호출하는 소비자 | "어떻게 접근하는가?" |
+| meta | 메타 설계 제안의 독자 | "정규 스펙의 규칙을 어떻게 재정의하는가?" |
 
-### aspect (22종) — "어떤 측면을 정의하는가"
+### aspect (23종) — "어떤 측면을 정의하는가"
 
 참조: `definition-catalog/src/vocabulary.ts:DEF_ASPECT`
 
@@ -106,13 +107,16 @@ def:
 │   ├── Prefix스키마 (prefix_schema)  좌표 prefix의 차원 구성, 버전, capacity 정의
 │   └── Axis카탈로그 (axis_catalog)   좌표 축의 entries, capacity, headroom 정의
 │
-└── 인터페이스 (interface)
-    ├── API계약 (api_contract)       REST/gRPC 엔드포인트, 요청/응답 스키마
-    ├── CLI계약 (cli_contract)       커맨드, 플래그, 옵션, 출력 형식
-    └── 이벤트계약 (event_contract)  이벤트 스키마, 메시지 포맷, 발행/구독 규약
+├── 인터페이스 (interface)
+│   ├── API계약 (api_contract)       REST/gRPC 엔드포인트, 요청/응답 스키마
+│   ├── CLI계약 (cli_contract)       커맨드, 플래그, 옵션, 출력 형식
+│   └── 이벤트계약 (event_contract)  이벤트 스키마, 메시지 포맷, 발행/구독 규약
+│
+└── 메타-설계 (meta)
+    └── 제안설계 (proposal_design)   메타 설계 제안 / 정규 스펙 규칙을 재정의 대상으로 삼는 문서
 ```
 
-scope-aspect 유효 조합: 22개. `VALID_SCOPE_ASPECTS`가 제약, `validateScopeAspect()`가 검증.
+scope-aspect 유효 조합: 23개. `VALID_SCOPE_ASPECTS`가 제약, `validateScopeAspect()`가 검증.
 
 ### depth (4종) — "얼마나 상세한가"
 

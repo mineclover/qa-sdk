@@ -75,14 +75,15 @@ export const DEF_LEVEL = {
 } as const;
 
 /**
- * def_scope — 정의 대분류 (7 entries, capacity 16)
+ * def_scope — 정의 대분류 (8 entries, capacity 16)
  *
- * 5Q: ✓유한(7) ✓분류 관련(문서 종류 결정) ✓공유(전 prefix) ✓안정(SW 정의 기본 분류) ✓capacity
+ * 5Q: ✓유한(8) ✓분류 관련(문서 종류 결정) ✓공유(전 prefix) ✓안정(SW 정의 기본 분류) ✓capacity
  * 설명력: 소프트웨어 정의의 최상위 분류. 이 축이 다르면 문서의 성격이 근본적으로 달라진다.
+ * meta: 메타-설계 제안 (정규 스펙의 규칙 자체를 재정의 대상으로 삼는 RFC/proposal 문서).
  */
 export const DEF_SCOPE = {
-  entries: ["ui", "feature", "flow", "state", "constraint", "data", "interface"] as const,
-  capacity: 16,  // nextPowerOf2(7 * 2 = 14) = 16
+  entries: ["ui", "feature", "flow", "state", "constraint", "data", "interface", "meta"] as const,
+  capacity: 16,  // nextPowerOf2(8 * 2 = 16) = 16
   ko: {
     ui: "화면/UI",
     feature: "기능",
@@ -91,13 +92,14 @@ export const DEF_SCOPE = {
     constraint: "제약조건",
     data: "데이터",
     interface: "인터페이스",
+    meta: "메타-설계",
   } as Record<string, string>,
 } as const;
 
 /**
- * def_aspect — 세부 측면 (22 entries, capacity 64)
+ * def_aspect — 세부 측면 (23 entries, capacity 64)
  *
- * 5Q: ✓유한(22) ✓분류 관련(세부 유형 결정) ✓공유(전 prefix) ✓안정(느린 변화) ✓capacity
+ * 5Q: ✓유한(23) ✓분류 관련(세부 유형 결정) ✓공유(전 prefix) ✓안정(느린 변화) ✓capacity
  * 설명력: 대분류 내 세부 유형. scope와 함께 문서의 정확한 주제를 결정한다.
  * 주의: scope-aspect 간 유효 조합 제약 있음 (taxonomy.ts VALID_SCOPE_ASPECTS 참조).
  */
@@ -117,8 +119,10 @@ export const DEF_ASPECT = {
     "domain_data", "system_data", "external_data", "prefix_schema", "axis_catalog",
     // interface (3)
     "api_contract", "cli_contract", "event_contract",
+    // meta (1)
+    "proposal_design",
   ] as const,
-  capacity: 64,  // nextPowerOf2(22 * 2 = 44) = 64
+  capacity: 64,  // nextPowerOf2(23 * 2 = 46) = 64
   ko: {
     layout: "레이아웃",
     component: "컴포넌트",
@@ -142,6 +146,7 @@ export const DEF_ASPECT = {
     api_contract: "API계약",
     cli_contract: "CLI계약",
     event_contract: "이벤트계약",
+    proposal_design: "제안 설계",
   } as Record<string, string>,
 } as const;
 

@@ -83,9 +83,10 @@ export type DefScope =
   | "state"
   | "constraint"
   | "data"
-  | "interface";
+  | "interface"
+  | "meta";
 
-/** 세부 측면 — 어떤 측면을 정의하는가 (22종, flat) */
+/** 세부 측면 — 어떤 측면을 정의하는가 (23종, flat) */
 export type DefAspect =
   // ui
   | "layout"
@@ -115,7 +116,9 @@ export type DefAspect =
   // interface
   | "api_contract"
   | "cli_contract"
-  | "event_contract";
+  | "event_contract"
+  // meta
+  | "proposal_design";
 
 /** 정의의 깊이 — 얼마나 상세한가 */
 export type DefDepth =
