@@ -20,7 +20,7 @@ def:
     - target: meta-semantic-extraction
       type: depends_on
     - target: coord-foundation
-      type: depends_on
+      type: refs
 ---
 
 # Spacetime UID — 분기 경로 기반 시공간 주소 체계

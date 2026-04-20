@@ -16,7 +16,7 @@ def:
     - target: system-concepts
       type: depends_on
     - target: definition-catalog-spec
-      type: depends_on
+      type: refs
     - target: meta-semantic-concepts
       type: refs
     - target: meta-semantic-ir
@@ -414,7 +414,7 @@ Folding이 선행되지 않으면 좌표 체계가 성립하지 않는다.
 ```
 meta-semantic-system
   ├── depends_on → weighted-index          (좌표 수학)
-  ├── depends_on → definition-catalog      (문서 좌표계 동형)
+  ├── refs       → definition-catalog      (문서 좌표계 동형 — peer system, 의존 아님)
   ├── depends_on → system-concepts         (Event, Coordinate, Axis 개념)
   └── uses       → code-references.ts      (기존 코드↔문서 참조)
 ```

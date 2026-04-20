@@ -16,7 +16,7 @@ def:
     - target: meta-semantic-ir
       type: refines
     - target: scope-nesting-system
-      type: depends_on
+      type: refs
 ---
 
 # Meta-Semantic IR — 소비 규칙
