@@ -12,6 +12,10 @@ def:
   links:
     - target: wi-system
       type: refs
+    - target: weighted-index-system
+      type: refs
+    - target: wi-trace-group
+      type: refs
     - target: cq-system
       type: refs
     - target: indexing-core-system
@@ -22,13 +26,17 @@ def:
       type: refs
     - target: platform-chain-system
       type: refs
+    - target: qa-sdk-core-system
+      type: refs
 ---
 # 좌표 라이브러리 계층
 
 ## 목적 ^purpose
 
-좌표 인코딩, 질의 연산, 기반 원리, 메타데이터 관리, 저장소 — 서비스가 공유하는 핵심 라이브러리.
+좌표 인코딩, 질의 연산, 기반 원리, 메타데이터 관리, 저장소 — 서비스가 공유하는 핵심 라이브러리와 추적성 그룹, 공통 core.
 
 ## 구성 ^overview
 
-5개 라이브러리: weighted-index(인코딩), coordinate-query(질의), indexing-core(기반 원리), index-meta(메타데이터), storage(저장소).
+핵심 라이브러리: weighted-index(인코딩), coordinate-query(질의), indexing-core(기반 원리), index-meta(메타데이터), storage(저장소), platform-chain(플랫폼 체인).
+
+부속: weighted-index-system/wi-trace-group(WI 도메인 루트 + 추적성), qa-sdk-core-system(공통 타입/상수/유틸).
