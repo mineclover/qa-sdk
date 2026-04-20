@@ -19,11 +19,7 @@ def:
       type: contains
     - target: wi-constraint
       type: contains
-    - target: wi-trace-group
-      type: depends_on
     - target: partial-binder-spec
-      type: depends_on
-    - target: wi-pack-format-system
       type: depends_on
     - target: range-query-spec
       type: contains

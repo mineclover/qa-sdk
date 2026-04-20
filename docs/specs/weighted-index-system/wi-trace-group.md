@@ -17,6 +17,8 @@ def:
       type: contains
     - target: wi-trace-protocol
       type: contains
+    - target: wi-system
+      type: depends_on
 ---
 
 # weighted-index 추적성 그룹

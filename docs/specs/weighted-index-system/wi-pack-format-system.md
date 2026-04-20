@@ -23,6 +23,8 @@ def:
       type: contains
     - target: wi-layout-protocol
       type: contains
+    - target: wi-system
+      type: depends_on
 ---
 
 # Pack Format 시스템
