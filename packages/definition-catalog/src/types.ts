@@ -86,7 +86,7 @@ export type DefScope =
   | "interface"
   | "meta";
 
-/** 세부 측면 — 어떤 측면을 정의하는가 (23종, flat) */
+/** 세부 측면 — 어떤 측면을 정의하는가 (40종, flat) */
 export type DefAspect =
   // ui
   | "layout"
@@ -95,10 +95,24 @@ export type DefAspect =
   // feature
   | "func_def"
   | "scenario"
+  // feature — func_def 하위 세분화 (Phase 5b)
+  | "codegen_func"
+  | "harness_func"
+  | "gate_func"
+  | "analyzer_func"
+  | "encoding_func"
+  | "domain_service_func"
+  | "nesting_func"
   // flow
   | "user_scenario"
   | "process_flow"
   | "relation"
+  // flow — process_flow 하위 세분화 (Phase 5b)
+  | "lifecycle_flow"
+  | "ingest_flow"
+  | "pipeline_flow"
+  | "gate_flow"
+  | "definition_mgmt_flow"
   // state
   | "app_state"
   | "domain_state"
@@ -113,10 +127,19 @@ export type DefAspect =
   | "external_data"
   | "prefix_schema"
   | "axis_catalog"
+  // data — domain_data 하위 세분화 (Phase 5b)
+  | "taxonomy_data"
+  | "coordinate_model_data"
   // interface
   | "api_contract"
   | "cli_contract"
   | "event_contract"
+  // interface — api_contract 하위 세분화 (Phase 5b)
+  | "decode_contract"
+  | "gate_contract"
+  | "query_contract"
+  | "browser_contract"
+  | "pipeline_contract"
   // meta
   | "proposal_design";
 

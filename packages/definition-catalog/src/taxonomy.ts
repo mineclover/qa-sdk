@@ -55,8 +55,16 @@ export const DEFINITION_TAXONOMY: DefinitionTaxonomy = {
       name: "기능",
       description: "시스템이 제공하는 기능과 시나리오의 정의",
       aspects: [
-        { id: "func_def", name: "기능정의", description: "기능의 명세와 동작 규칙" },
+        { id: "func_def", name: "기능정의", description: "기능의 명세와 동작 규칙 (fallback, func_def 하위 값이 맞지 않을 때)" },
         { id: "scenario", name: "시나리오", description: "기능의 사용 시나리오와 기대 결과" },
+        // Phase 5b func_def 하위 세분화
+        { id: "codegen_func", name: "코드생성기능", description: "카탈로그/스키마를 TypeScript/Proto 소스 코드로 생성" },
+        { id: "harness_func", name: "하네스기능", description: "테스트 하네스/FSM/문서-코드 1:1 분해 실행 기능" },
+        { id: "gate_func", name: "게이트기능", description: "품질 게이트·정합성 검증 엔진 기능" },
+        { id: "analyzer_func", name: "분석기능", description: "수집된 이벤트/문서에 대한 분석·drift·tracker 기능" },
+        { id: "encoding_func", name: "인코딩기능", description: "좌표/값 인코딩·디코딩·pack-format 기능 (weighted-index/partial-binder/cq)" },
+        { id: "domain_service_func", name: "도메인서비스기능", description: "도메인 비즈니스 서비스 기능 (e-commerce, 결제, 콘텐츠)" },
+        { id: "nesting_func", name: "스코프중첩기능", description: "Provider/scope nesting pattern 의 lifecycle/resolution 기능" },
       ],
     },
     {
@@ -65,8 +73,14 @@ export const DEFINITION_TAXONOMY: DefinitionTaxonomy = {
       description: "사용자와 시스템 간 흐름의 정의",
       aspects: [
         { id: "user_scenario", name: "사용자시나리오", description: "사용자 관점의 작업 흐름" },
-        { id: "process_flow", name: "프로세스흐름", description: "시스템 내부 처리 순서" },
+        { id: "process_flow", name: "프로세스흐름", description: "시스템 내부 처리 순서 (fallback, process_flow 하위 값이 맞지 않을 때)" },
         { id: "relation", name: "연관관계", description: "엔티티/기능 간 연결과 의존성" },
+        // Phase 5b process_flow 하위 세분화
+        { id: "lifecycle_flow", name: "라이프사이클흐름", description: "브라우저/프로세스/세션 lifecycle 상태 전이 흐름" },
+        { id: "ingest_flow", name: "수집흐름", description: "이벤트/로그 ingest 파이프라인 흐름" },
+        { id: "pipeline_flow", name: "파이프라인흐름", description: "일반 파이프라인 처리 단계 흐름 (realization/enrichment)" },
+        { id: "gate_flow", name: "게이트흐름", description: "gate 캐시 무효화·consistency·query quality 흐름" },
+        { id: "definition_mgmt_flow", name: "정의관리흐름", description: "definition-catalog 관리(harness/observability/quality) 흐름" },
       ],
     },
     {
@@ -94,11 +108,14 @@ export const DEFINITION_TAXONOMY: DefinitionTaxonomy = {
       name: "데이터",
       description: "시스템이 다루는 데이터의 구조와 출처 정의",
       aspects: [
-        { id: "domain_data", name: "도메인데이터", description: "비즈니스 도메인 엔티티와 스키마" },
+        { id: "domain_data", name: "도메인데이터", description: "비즈니스 도메인 엔티티와 스키마 (fallback, domain_data 하위 값이 맞지 않을 때)" },
         { id: "system_data", name: "시스템데이터", description: "설정, 로그, 메트릭 등 시스템 데이터" },
         { id: "external_data", name: "외부데이터", description: "외부 API, 서드파티 데이터 연동" },
         { id: "prefix_schema", name: "Prefix스키마", description: "좌표 prefix의 차원 구성, 버전, capacity 정의" },
         { id: "axis_catalog", name: "Axis카탈로그", description: "좌표 축의 entries, capacity, headroom 정의" },
+        // Phase 5b domain_data 하위 세분화
+        { id: "taxonomy_data", name: "분류체계데이터", description: "분류 체계(taxonomy) 데이터 — meta-taxonomy 포함" },
+        { id: "coordinate_model_data", name: "좌표모델데이터", description: "좌표·주소·차원 데이터 모델" },
       ],
     },
     {
@@ -106,9 +123,15 @@ export const DEFINITION_TAXONOMY: DefinitionTaxonomy = {
       name: "인터페이스",
       description: "시스템에 접근하는 계약(contract)의 정의 — 기능이 아니라 접근 방식",
       aspects: [
-        { id: "api_contract", name: "API계약", description: "REST/gRPC 엔드포인트, 요청/응답 스키마, 인증" },
+        { id: "api_contract", name: "API계약", description: "REST/gRPC 엔드포인트, 요청/응답 스키마, 인증 (fallback, api_contract 하위 값이 맞지 않을 때)" },
         { id: "cli_contract", name: "CLI계약", description: "커맨드, 플래그, 옵션, 출력 형식 정의" },
         { id: "event_contract", name: "이벤트계약", description: "이벤트 스키마, 메시지 포맷, 발행/구독 규약" },
+        // Phase 5b api_contract 하위 세분화
+        { id: "decode_contract", name: "디코드계약", description: "decode 서비스·API·스펙 계약" },
+        { id: "gate_contract", name: "게이트계약", description: "gate 서비스·이벤트 버스 API 계약" },
+        { id: "query_contract", name: "쿼리계약", description: "query 서비스 API 계약" },
+        { id: "browser_contract", name: "브라우저계약", description: "브라우저 런타임/프로토콜 계약" },
+        { id: "pipeline_contract", name: "파이프라인계약", description: "파이프라인 aggregator·cache 계약" },
       ],
     },
     {
@@ -128,16 +151,38 @@ export const DEFINITION_TAXONOMY: DefinitionTaxonomy = {
  * scope별 유효한 aspect 목록.
  *
  * def_scope × def_aspect 좌표 공간에서 유효한 조합만 허용한다.
- * 16 × 64 = 1,024 가능한 조합 중 23개만 유효.
+ * 16 × 128 = 2,048 가능한 조합 중 40개만 유효.
+ *
+ * Phase 5b (aspect-vocab-split RFC): 4 상위 aspect (func_def/process_flow/api_contract/domain_data)
+ * 에 17 개 자식 aspect 추가. 부모-자식 관계는 vocabulary.ts ASPECT_PARENTS 참조.
  */
 export const VALID_SCOPE_ASPECTS: Record<DefScope, readonly DefAspect[]> = {
   ui: ["layout", "component", "interaction"],
-  feature: ["func_def", "scenario"],
-  flow: ["user_scenario", "process_flow", "relation"],
+  feature: [
+    "func_def", "scenario",
+    // func_def 하위
+    "codegen_func", "harness_func", "gate_func", "analyzer_func",
+    "encoding_func", "domain_service_func", "nesting_func",
+  ],
+  flow: [
+    "user_scenario", "process_flow", "relation",
+    // process_flow 하위
+    "lifecycle_flow", "ingest_flow", "pipeline_flow",
+    "gate_flow", "definition_mgmt_flow",
+  ],
   state: ["app_state", "domain_state", "system_state"],
   constraint: ["tech_constraint", "biz_constraint", "infra_constraint"],
-  data: ["domain_data", "system_data", "external_data", "prefix_schema", "axis_catalog"],
-  interface: ["api_contract", "cli_contract", "event_contract"],
+  data: [
+    "domain_data", "system_data", "external_data", "prefix_schema", "axis_catalog",
+    // domain_data 하위
+    "taxonomy_data", "coordinate_model_data",
+  ],
+  interface: [
+    "api_contract", "cli_contract", "event_contract",
+    // api_contract 하위
+    "decode_contract", "gate_contract", "query_contract",
+    "browser_contract", "pipeline_contract",
+  ],
   meta: ["proposal_design"],
 } as const;
 

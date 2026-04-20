@@ -67,6 +67,8 @@ export {
   TAXONOMY_REGISTRY,
   DEFINITION_AXES,
   AXIS_META,
+  ASPECT_PARENTS,
+  deriveAspectParent,
 } from "./vocabulary.js";
 
 // ─── 분류 체계 ──────────────────────────────────────────

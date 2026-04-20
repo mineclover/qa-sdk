@@ -97,41 +97,63 @@ export const DEF_SCOPE = {
 } as const;
 
 /**
- * def_aspect — 세부 측면 (23 entries, capacity 64)
+ * def_aspect — 세부 측면 (40 entries, capacity 128)
  *
- * 5Q: ✓유한(23) ✓분류 관련(세부 유형 결정) ✓공유(전 prefix) ✓안정(느린 변화) ✓capacity
+ * 5Q: ✓유한(40) ✓분류 관련(세부 유형 결정) ✓공유(전 prefix) ✓안정(느린 변화) ✓capacity
  * 설명력: 대분류 내 세부 유형. scope와 함께 문서의 정확한 주제를 결정한다.
  * 주의: scope-aspect 간 유효 조합 제약 있음 (taxonomy.ts VALID_SCOPE_ASPECTS 참조).
+ *
+ * Phase 5b (aspect-vocab-split RFC): 17 신규 값을 4 개 상위 aspect 의 자식으로 추가.
+ * 부모 관계는 ASPECT_PARENTS map 으로 명시. 이름에서 역산 금지.
  */
 export const DEF_ASPECT = {
   entries: [
     // ui (3)
     "layout", "component", "interaction",
-    // feature (2)
+    // feature (2 + 7 = 9)
     "func_def", "scenario",
-    // flow (3)
+    "codegen_func", "harness_func", "gate_func", "analyzer_func",
+    "encoding_func", "domain_service_func", "nesting_func",
+    // flow (3 + 5 = 8)
     "user_scenario", "process_flow", "relation",
+    "lifecycle_flow", "ingest_flow", "pipeline_flow",
+    "gate_flow", "definition_mgmt_flow",
     // state (3)
     "app_state", "domain_state", "system_state",
     // constraint (3)
     "tech_constraint", "biz_constraint", "infra_constraint",
-    // data (5)
+    // data (5 + 2 = 7)
     "domain_data", "system_data", "external_data", "prefix_schema", "axis_catalog",
-    // interface (3)
+    "taxonomy_data", "coordinate_model_data",
+    // interface (3 + 5 = 8)
     "api_contract", "cli_contract", "event_contract",
+    "decode_contract", "gate_contract", "query_contract",
+    "browser_contract", "pipeline_contract",
     // meta (1)
     "proposal_design",
   ] as const,
-  capacity: 64,  // nextPowerOf2(23 * 2 = 46) = 64
+  capacity: 128,  // nextPowerOf2(40 * 2 = 80) = 128
   ko: {
     layout: "레이아웃",
     component: "컴포넌트",
     interaction: "인터랙션",
     func_def: "기능정의",
     scenario: "시나리오",
+    codegen_func: "코드생성기능",
+    harness_func: "하네스기능",
+    gate_func: "게이트기능",
+    analyzer_func: "분석기능",
+    encoding_func: "인코딩기능",
+    domain_service_func: "도메인서비스기능",
+    nesting_func: "스코프중첩기능",
     user_scenario: "사용자시나리오",
     process_flow: "프로세스흐름",
     relation: "연관관계",
+    lifecycle_flow: "라이프사이클흐름",
+    ingest_flow: "수집흐름",
+    pipeline_flow: "파이프라인흐름",
+    gate_flow: "게이트흐름",
+    definition_mgmt_flow: "정의관리흐름",
     app_state: "앱상태",
     domain_state: "도메인상태",
     system_state: "시스템상태",
@@ -143,12 +165,62 @@ export const DEF_ASPECT = {
     external_data: "외부데이터",
     prefix_schema: "Prefix스키마",
     axis_catalog: "Axis카탈로그",
+    taxonomy_data: "분류체계데이터",
+    coordinate_model_data: "좌표모델데이터",
     api_contract: "API계약",
     cli_contract: "CLI계약",
     event_contract: "이벤트계약",
+    decode_contract: "디코드계약",
+    gate_contract: "게이트계약",
+    query_contract: "쿼리계약",
+    browser_contract: "브라우저계약",
+    pipeline_contract: "파이프라인계약",
     proposal_design: "제안 설계",
   } as Record<string, string>,
 } as const;
+
+/**
+ * ASPECT_PARENTS — 자식 aspect → 부모 aspect 명시 map (Phase 5b B-0)
+ *
+ * 00-design.md §"Helper: deriveAspectParent" 의 규율에 따라,
+ * 명명 컨벤션 `{role}_{parent-stem}` 은 저자 규율이며 런타임 부모 추론은 이 map 이 담당한다.
+ * 이름만으로 부모를 역산 시도하지 않는다 (stem 중복/예외로 불안정).
+ *
+ * 최상위 aspect(부모 없음) 는 map 에 등록하지 않음 → deriveAspectParent() = null.
+ */
+export const ASPECT_PARENTS: Record<string, string> = {
+  // func_def 계열
+  codegen_func: "func_def",
+  harness_func: "func_def",
+  gate_func: "func_def",
+  analyzer_func: "func_def",
+  encoding_func: "func_def",
+  domain_service_func: "func_def",
+  nesting_func: "func_def",
+  // process_flow 계열
+  lifecycle_flow: "process_flow",
+  ingest_flow: "process_flow",
+  pipeline_flow: "process_flow",
+  gate_flow: "process_flow",
+  definition_mgmt_flow: "process_flow",
+  // api_contract 계열
+  decode_contract: "api_contract",
+  gate_contract: "api_contract",
+  query_contract: "api_contract",
+  browser_contract: "api_contract",
+  pipeline_contract: "api_contract",
+  // domain_data 계열
+  taxonomy_data: "domain_data",
+  coordinate_model_data: "domain_data",
+};
+
+/**
+ * 자식 aspect 에 대해 부모 aspect id 를 반환. 최상위/미등록 값 → null.
+ * Phase C (schema hierarchy) 에서 parent_id 컬럼으로 승격 예정.
+ */
+export function deriveAspectParent(aspect: string): string | null {
+  return ASPECT_PARENTS[aspect] ?? null;
+}
 
 /**
  * def_depth — 정의의 깊이 (4 entries, capacity 8)
