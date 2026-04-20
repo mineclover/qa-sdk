@@ -13,10 +13,8 @@ def:
   links:
     - target: registry-data-model
       type: contains
-    - target: query-rule-migration
+    - target: query-system
       type: depends_on
-contains:
-  - query-rule-migration
 ---
 # 규칙 영속화 (PolicyRule Store)
 

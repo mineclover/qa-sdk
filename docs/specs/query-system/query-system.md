@@ -13,8 +13,6 @@ def:
   links:
     - target: query-api
       type: contains
-    - target: query-rules
-      type: depends_on
     - target: query-gate-integration
       type: contains
     - target: gate-system

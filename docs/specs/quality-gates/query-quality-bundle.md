@@ -17,6 +17,8 @@ def:
       type: contains
     - target: gate-query-gate-integration
       type: contains
+    - target: query-system
+      type: depends_on
 ---
 # Query Quality Bundle
 

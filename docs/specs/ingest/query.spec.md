@@ -1,6 +1,6 @@
 ---
 def:
-  tier: component
+  tier: system
   id: query-api-spec
   address: def_document:v2:412824
   scope: interface
@@ -16,6 +16,8 @@ def:
     - target: trace-spec
       type: depends_on
     - target: session-spec
+      type: depends_on
+    - target: query-system
       type: depends_on
 ---
 # Query API
