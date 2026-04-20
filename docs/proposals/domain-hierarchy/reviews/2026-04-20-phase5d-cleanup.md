@@ -132,3 +132,20 @@ sync + audit 결과 owner-root-mismatch info 15건 → 2건. 나머지 2건은 m
 - [2026-04-20-phase5c-abstract.md](./2026-04-20-phase5c-abstract.md) — Phase 5d 진입 직전 상태
 - `packages/definition-catalog/src/validate.ts` §"중복 좌표 감지" (line 342-370) — 적용 지점
 - `packages/definition-catalog/src/domain-root.ts` §`DOMAIN_LINK_TYPES` — refines/depends_on 만 domain candidate 로 간주
+
+## 후속: Class C #35 adr/convention 면제 (2026-04-20)
+
+Phase 5d 진입 시 미면제로 남긴 Class C #35 그룹(`architecture-decisions` / `coding-conventions` / `spec-convention`, 모두 `scope: constraint` + `aspect: tech_constraint`) 을 동일 exemption 패턴으로 처리한다. 세 문서의 `knowledge_kind` 는 각각 `adr` / `convention` / `convention` 으로 확인되어, validator 중복 좌표 감지 루프의 `knowledgeKind === "proposal"` 단일 조건을 `Set(["proposal", "adr", "convention"])` 기반 멤버십 체크로 확장한다. 두 kind 모두 "의사결정/컨벤션 묶음" 이라는 의도적 co-location 성격이며 production 좌표 충돌이 아님.
+
+| 지표 | Phase 5d 완료 시 | 후속 조치 후 | Δ |
+|---|---|---|---|
+| errors | 0 | 0 | 0 |
+| warnings | 42 | 41 | -1 |
+| duplicate-coordinate | 18 | 17 | -1 |
+
+잔여 dup-coord 17 건은 전부 production 스펙 cluster 로, aspect 어휘 RFC(`q-aspect-vocabulary.md`) 또는 Phase 5b (Class D Diversify) 에서 다룬다.
+
+### 산출물 (후속)
+
+- `packages/definition-catalog/src/validate.ts` 중복 좌표 감지 루프 (Set 멤버십 + 주석 1행 갱신)
+- 검증 로그: `/tmp/class-c35-after.txt`
