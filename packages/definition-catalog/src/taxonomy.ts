@@ -190,7 +190,8 @@ export const SEMANTIC_LINT_FAMILIES: readonly SemanticLintFamilyRule[] = [
  * scope-aspect 조합이 유효한지 검증한다.
  * @throws Error 무효 조합 시
  */
-export function validateScopeAspect(scope: DefScope, aspect: DefAspect): void {
+export function validateScopeAspect(scope?: DefScope, aspect?: DefAspect): void {
+  if (!scope || !aspect) return;
   const valid = VALID_SCOPE_ASPECTS[scope];
   if (!valid) {
     throw new Error(`유효하지 않은 scope: "${scope}"`);

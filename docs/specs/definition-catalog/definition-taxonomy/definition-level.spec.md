@@ -1,12 +1,12 @@
 ---
 def:
   id: definition-level
+  type: design
   tier: component
+  component_subtype: state-enum
   owner_system: definition-service
   projection_plane: intent
   intent_hierarchy: core
-  type: knowledge
-  knowledge_kind: concept
   address: def_document:v2:342163
   scope: data
   aspect: domain_data

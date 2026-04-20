@@ -1,9 +1,17 @@
 ---
+def:
+  id: tier-redesign-integration-taxonomy-catalog
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: review
+  owner_system: definition-catalog
+  projection_plane: intent
 status: under-review
 date: 2026-04-19
 part_of: tier-redesign
 role: integration-spec
-topic: taxonomy-catalog-definition
+supersedes: -
+superseded_by: -
 ---
 
 # Taxonomy Catalog — 문서 분류 텍소노미 및 상위 개념 명세

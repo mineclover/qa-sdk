@@ -1,18 +1,17 @@
 ---
+def:
+  id: tier-redesign-examples-deterministic-label-record-state
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: pilot-draft
+  owner_system: definition-catalog
+  projection_plane: intent
 status: pilot-draft
 date: 2026-04-18
 part_of: tier-redesign
 role: component-example
 supersedes: -
 superseded_by: -
-
-# STC frontmatter (예시용)
-tier: component
-component_subtype: state-enum
-id: deterministic-label-record-state
-scope: state
-aspect: domain_state
-layer: mediation
 ---
 
 > **Pilot Draft — STC Component (state-enum sub-type) 예시.** D-18 반영: Component의 sub-type 체계 실증.

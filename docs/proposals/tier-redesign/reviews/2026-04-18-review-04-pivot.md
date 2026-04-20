@@ -1,10 +1,17 @@
 ---
+def:
+  id: tier-redesign-reviews-2026-04-18-review-04-pivot
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: review
+  owner_system: definition-catalog
+  projection_plane: intent
 status: review
 date: 2026-04-19
-reviewer: subagent (4th / post-D-17)
-target: STC proposal post-D-17 Pivot
-focus: [pivot-completeness, cross-file-consistency, new-tensions, regression-check, value-validation]
-previous_reviews: [review-01.md, facet-flow-simulation-review.md, review-03-final.md (superseded-by-d17)]
+part_of: tier-redesign
+role: proposal
+supersedes: -
+superseded_by: -
 ---
 
 # STC Proposal — 4차 리뷰 (D-17 Pivot 검증)

@@ -22,9 +22,9 @@ import { extractByLevel, type ExtractLevel } from "./extract.js";
 export interface MemberSummary {
   readonly id: string;
   readonly title: string;
-  readonly scope: DefScope;
-  readonly aspect: string;
-  readonly depth: string;
+  readonly scope?: DefScope;
+  readonly aspect?: string;
+  readonly depth?: string;
   readonly purpose: string | null;
   readonly overview: readonly string[];
 }
@@ -50,9 +50,9 @@ export interface AssembledFeature {
 export interface BoundarySummary {
   readonly id: string;
   readonly title: string;
-  readonly scope: DefScope;
-  readonly aspect: string;
-  readonly depth: string;
+  readonly scope?: DefScope;
+  readonly aspect?: string;
+  readonly depth?: string;
   readonly purpose: string | null;
   readonly overview: readonly string[];
 }
@@ -80,7 +80,8 @@ const SCOPE_ORDER: readonly DefScope[] = [
   "constraint", "state", "data", "feature", "flow", "interface", "ui",
 ];
 
-function scopeIndex(scope: DefScope): number {
+function scopeIndex(scope?: DefScope): number {
+  if (!scope) return 999;
   const idx = SCOPE_ORDER.indexOf(scope);
   return idx === -1 ? 999 : idx;
 }
@@ -107,9 +108,9 @@ function linkIndex(
 function extractSummary(
   id: string,
   title: string,
-  scope: DefScope,
-  aspect: string,
-  depth: string,
+  scope: DefScope | undefined,
+  aspect: string | undefined,
+  depth: string | undefined,
   body: string | undefined,
   level: ExtractLevel = "overview",
 ): BoundarySummary {

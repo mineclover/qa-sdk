@@ -1,12 +1,12 @@
 ---
 def:
   id: definition-taxonomy
-  tier: system
+  type: design
+  tier: component
+  component_subtype: data-shape
   owner_system: definition-service
   projection_plane: intent
   intent_hierarchy: core
-  type: knowledge
-  knowledge_kind: concept
   address: def_document:v2:342164
   scope: data
   aspect: domain_data

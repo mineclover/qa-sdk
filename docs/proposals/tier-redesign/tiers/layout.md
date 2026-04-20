@@ -1,9 +1,17 @@
 ---
+def:
+  id: tier-redesign-tiers-layout
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: review
+  owner_system: definition-catalog
+  projection_plane: intent
 status: under-review
 date: 2026-04-19
 part_of: tier-redesign
 role: tier-definition
-tier-name: layout
+supersedes: -
+superseded_by: -
 ---
 
 # STC Tier — Layout (ECS 외 확장 축)

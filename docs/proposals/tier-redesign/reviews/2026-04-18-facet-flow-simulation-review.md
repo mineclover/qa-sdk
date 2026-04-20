@@ -1,11 +1,17 @@
 ---
+def:
+  id: tier-redesign-reviews-2026-04-18-facet-flow-simulation-review
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: review
+  owner_system: definition-catalog
+  projection_plane: intent
 status: review
 date: 2026-04-19
 part_of: tier-redesign
 role: review
-reviewer: opus-4.7
-reviewed_system: meta-semantic (data facets + pipe-impl + simulation)
-compared_against: STC tier-redesign proposal
+supersedes: -
+superseded_by: -
 ---
 
 # Data Facet + Flow + Simulation 체계 리뷰

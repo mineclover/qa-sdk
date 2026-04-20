@@ -1,8 +1,11 @@
 ---
 def:
   id: docs-control-plane
-  type: knowledge
-  knowledge_kind: proposal
+  type: design
+  tier: layout
+  owner_system: definition-service
+  projection_plane: intent
+  intent_hierarchy: core
   scope: interface
   aspect: cli_contract
   depth: specification
@@ -15,12 +18,12 @@ def:
       type: refines
     - target: cli-command-spec
       type: depends_on
-    - target: docs-control-plane-plan
-      type: contains
-    - target: docs-control-plane-todo
-      type: contains
-    - target: docs-control-plane-rule
-      type: contains
+    - target: doc-envelope
+      type: refs
+    - target: deterministic-label-architecture
+      type: refs
+    - target: ontology-pack-validate
+      type: refs
 sources:
   - packages/cli/src/commands/docs.ts
   - packages/cli/src/command-groups/docs.commands.ts

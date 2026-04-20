@@ -49,11 +49,17 @@ function rowToDoc(row: Record<string, unknown>): DefDoc {
     type: (row["doc_type"] as string) || undefined,
     knowledgeKind: (row["knowledge_kind"] as string) || undefined,
     level: (row["level"] as string) || undefined,
-    scope: row["scope"] as string,
-    aspect: row["aspect"] as string,
-    depth: row["depth"] as string,
+    tier: (row["tier"] as string) || undefined,
+    scope: (row["scope"] as string) || undefined,
+    aspect: (row["aspect"] as string) || undefined,
+    depth: (row["depth"] as string) || undefined,
     lifecycle: row["lifecycle"] as string,
     layer: (row["layer"] as string) || undefined,
+    ownerSystem: (row["owner_system"] as string) || undefined,
+    projectionPlane: (row["projection_plane"] as string) || undefined,
+    intentHierarchy: (row["intent_hierarchy"] as string) || undefined,
+    lineageFacet: (row["lineage_facet"] as string) || undefined,
+    lineageKind: (row["lineage_kind"] as string) || undefined,
     tags: JSON.parse((row["tags_json"] as string) || "[]"),
     links: JSON.parse((row["links_json"] as string) || "[]"),
     svc: (row["svc"] as string) || undefined,
@@ -374,7 +380,8 @@ export class LocalDataSource implements DefDataSource {
       (level === "purpose" ? purpose : (purpose ?? overview))
         ?.split("\n")[0]
         ?.trim() || "(요약 없음)";
-    const scopeIndex = (scope: string) => {
+    const scopeIndex = (scope?: string) => {
+      if (!scope) return 999;
       const idx = scopeOrder.indexOf(scope);
       return idx === -1 ? 999 : idx;
     };
@@ -390,9 +397,9 @@ export class LocalDataSource implements DefDataSource {
       .map((child) => ({
         docId: child.docId,
         title: child.title ?? child.docId,
-        scope: child.scope,
-        aspect: child.aspect,
-        depth: child.depth,
+        scope: child.scope ?? undefined,
+        aspect: child.aspect ?? undefined,
+        depth: child.depth ?? undefined,
         summary: summary(child.purpose, child.context),
       }));
 

@@ -14,7 +14,7 @@ def:
   lineage_facet: egress
   lineage_kind: settlement
   links:
-    - target: definition-service
+    - target: definition-catalog-spec
       type: depends_on
 ---
 

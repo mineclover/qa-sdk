@@ -188,8 +188,8 @@ export const DEF_LIFECYCLE = {
  * contains는 그룹→멤버 포함 관계로, 계층 구조와 concern 전파의 경로가 된다.
  */
 export const LINK_TYPE = {
-  entries: ["depends_on", "implements", "refines", "constrains", "traces_to", "contains", "evolves_from", "supersedes"] as const,
-  capacity: 16,  // nextPowerOf2(8 * 2 = 16) = 16
+  entries: ["depends_on", "implements", "refines", "constrains", "traces_to", "contains", "evolves_from", "supersedes", "refs"] as const,
+  capacity: 32,  // nextPowerOf2(9 * 2 = 18) = 32
   ko: {
     depends_on: "의존",
     implements: "구현",
@@ -199,6 +199,7 @@ export const LINK_TYPE = {
     contains: "포함",
     evolves_from: "진화원본",
     supersedes: "대체",
+    refs: "배치",
   } as Record<string, string>,
 } as const;
 

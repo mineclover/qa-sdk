@@ -16,7 +16,7 @@ import type { EvidenceItem } from "./contract-evidence.js";
 interface StatsSection {
   readonly marker: ContractMarkerKind;
   readonly markerDef: { readonly modeHint: "code" | "llm" | "mixed" };
-  readonly sourceScope: string;
+  readonly sourceScope?: string;
   readonly sourceId: string;
   readonly body: string;
 }

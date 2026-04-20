@@ -361,13 +361,13 @@ export interface DefinitionEntry {
   readonly knowledgeKind?: KnowledgeKind;
 
   // 좌표 차원 (인코딩 입력 — scope × aspect × depth)
-  readonly scope: DefScope;
+  readonly scope?: DefScope;
   // 분해 레벨 (메타데이터 — 좌표에 인코딩하지 않음. 변할 수 있으므로)
   readonly level?: DefLevel;
   // STC 구조 축 (D-17, 메타데이터)
   readonly tier?: DefTier;
-  readonly aspect: DefAspect;
-  readonly depth: DefDepth;
+  readonly aspect?: DefAspect;
+  readonly depth?: DefDepth;
   readonly lifecycle: DefLifecycle;
   /** 존재론적 계층 — business / interaction / binding (선택, 기본: business) */
   readonly layer?: DefLayer;

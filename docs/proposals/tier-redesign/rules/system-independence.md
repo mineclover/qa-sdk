@@ -1,8 +1,17 @@
 ---
+def:
+  id: tier-redesign-rules-system-independence
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: review
+  owner_system: definition-catalog
+  projection_plane: intent
 status: under-review
 date: 2026-04-19
 part_of: tier-redesign
 role: independence-rules
+supersedes: -
+superseded_by: -
 ---
 
 # System 독립성 + meta-semantic 상태 위임 + Inline 정의 금지

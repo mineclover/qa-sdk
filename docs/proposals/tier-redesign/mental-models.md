@@ -1,4 +1,11 @@
 ---
+def:
+  id: tier-redesign-mental-models
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: review
+  owner_system: definition-catalog
+  projection_plane: intent
 status: under-review
 date: 2026-04-19
 part_of: tier-redesign

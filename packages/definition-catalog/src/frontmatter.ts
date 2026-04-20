@@ -76,9 +76,9 @@ export interface FrontmatterDef {
   readonly level?: DefLevel;
   /** STC 구조 축 — 문서의 물리적/구조적 역할 (4 tier + exempt) */
   readonly tier?: DefTier;
-  readonly scope: DefScope;
-  readonly aspect: DefAspect;
-  readonly depth: DefDepth;
+  readonly scope?: DefScope;
+  readonly aspect?: DefAspect;
+  readonly depth?: DefDepth;
   readonly lifecycle: DefLifecycle;
   /** 상태 관리 위임 참조 (D-17) */
   readonly lifecycle_ref?: LifecycleRef;
@@ -182,7 +182,7 @@ const VALID_SCOPES = new Set(["ui", "feature", "flow", "state", "constraint", "d
 const VALID_DEPTHS = new Set(["overview", "specification", "implementation", "validation"]);
 const VALID_LIFECYCLES = new Set(["draft", "review", "approved", "deprecated", "archived"]);
 const VALID_LAYERS = new Set(["domain", "operation", "mediation", "experience"]);
-const VALID_LINK_TYPES = new Set(["depends_on", "implements", "refines", "constrains", "traces_to", "contains", "evolves_from", "supersedes"]);
+const VALID_LINK_TYPES = new Set(["depends_on", "implements", "refines", "constrains", "traces_to", "contains", "evolves_from", "supersedes", "refs"]);
 const VALID_WORK_DOMAINS = new Set<string>(ALL_DOMAIN_IDS);
 const VALID_GATE_KINDS = new Set<string>(ALL_GATE_KIND_IDS);
 
@@ -201,22 +201,25 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
   const id = d.id;
   if (typeof id !== "string" || id.length === 0) throw new Error(`${filePath}: def.id 필수`);
 
+  const type = d.type as DefDocType | undefined;
+  const isKnowledge = type === "knowledge";
+
   const scope = d.scope;
-  if (typeof scope !== "string" || !VALID_SCOPES.has(scope)) {
+  if (!isKnowledge && (typeof scope !== "string" || !VALID_SCOPES.has(scope))) {
     throw new Error(`${filePath}: def.scope 유효하지 않음: "${scope}"`);
   }
 
   const aspect = d.aspect;
-  if (typeof aspect !== "string") {
+  if (!isKnowledge && typeof aspect !== "string") {
     throw new Error(`${filePath}: def.aspect 필수`);
   }
 
-  if (!isValidScopeAspect(scope as DefScope, aspect as DefAspect)) {
+  if (!isKnowledge && !isValidScopeAspect(scope as DefScope, aspect as DefAspect)) {
     throw new Error(`${filePath}: scope "${scope}" + aspect "${aspect}" 조합 유효하지 않음`);
   }
 
   const depth = d.depth;
-  if (typeof depth !== "string" || !VALID_DEPTHS.has(depth)) {
+  if (!isKnowledge && (typeof depth !== "string" || !VALID_DEPTHS.has(depth))) {
     throw new Error(`${filePath}: def.depth 유효하지 않음: "${depth}"`);
   }
 
@@ -595,11 +598,12 @@ export async function scanAndBuild(
         depth: def.depth,
         lifecycle: def.lifecycle,
         layer: def.layer,
-        ownerSystem: def.owner_system,
-        projectionPlane: def.projection_plane as any,
-        intentHierarchy: def.intent_hierarchy as any,
-        lineageFacet: def.lineage_facet as any,
-        lineageKind: def.lineage_kind as any,
+        tier: def.tier,
+        owner_system: def.owner_system,
+        projection_plane: def.projection_plane as any,
+        intent_hierarchy: def.intent_hierarchy as any,
+        lineage_facet: def.lineage_facet as any,
+        lineage_kind: def.lineage_kind as any,
         tags: def.tags ? [...def.tags] : undefined,
         ref: relPath,
         serviceId: def.svc,

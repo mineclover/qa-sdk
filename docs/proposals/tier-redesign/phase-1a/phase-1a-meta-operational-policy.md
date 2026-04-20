@@ -1,10 +1,17 @@
 ---
+def:
+  id: tier-redesign-phase-1a-phase-1a-meta-operational-policy
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: review
+  owner_system: definition-catalog
+  projection_plane: intent
 status: under-review
 date: 2026-04-19
 part_of: tier-redesign
 role: phase-1a-evidence
-phase: 1.A
-topic: meta-operational-policy
+supersedes: -
+superseded_by: -
 ---
 
 # Phase 1.A — Meta-operational 문서 정책 조사

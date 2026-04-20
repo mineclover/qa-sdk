@@ -1,18 +1,17 @@
 ---
+def:
+  id: tier-redesign-examples-deterministic-label-record
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: pilot-draft
+  owner_system: definition-catalog
+  projection_plane: intent
 status: pilot-draft
 date: 2026-04-18
 part_of: tier-redesign
 role: component-example
 supersedes: -
 superseded_by: -
-
-# STC frontmatter (예시용)
-tier: component
-component_subtype: data-shape
-id: deterministic-label-record
-scope: data
-aspect: domain_data
-layer: mediation
 ---
 
 > **Pilot Draft — STC Component (data-shape sub-type) 예시.** D-18 반영: Component의 6 sub-type 중 가장 빈도 높은 `data-shape` 실증.

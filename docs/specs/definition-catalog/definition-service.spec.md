@@ -16,7 +16,7 @@ def:
     - target: definition-catalog-spec
       type: depends_on
     - target: definition-service-sync
-      type: contains
+      type: depends_on
 ---
 
 # Definition Service — 문서 카탈로그 API 서비스

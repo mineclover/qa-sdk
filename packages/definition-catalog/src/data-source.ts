@@ -16,11 +16,18 @@ export interface DefDoc {
   type?: string;
   knowledgeKind?: string;
   level?: string;
-  scope: string;
-  aspect: string;
-  depth: string;
+  tier?: string;
+  scope?: string;
+  aspect?: string;
+  depth?: string;
   lifecycle: string;
   layer?: string;
+  targetPrefix?: string;
+  ownerSystem?: string;
+  projectionPlane?: string;
+  intentHierarchy?: string;
+  lineageFacet?: string;
+  lineageKind?: string;
   tags: string[];
   links: { target: string; type: string }[];
   svc?: string;
@@ -118,9 +125,9 @@ export interface DefFeedbackRequestSummary {
 export interface DefBoundaryDoc {
   docId: string;
   title: string;
-  scope: string;
-  aspect: string;
-  depth: string;
+  scope?: string;
+  aspect?: string;
+  depth?: string;
   lifecycle: string;
   layer?: string;
   svc?: string;
@@ -131,9 +138,9 @@ export interface DefBoundaryDoc {
 export interface DefBoundaryMember {
   docId: string;
   title: string;
-  scope: string;
-  aspect: string;
-  depth: string;
+  scope?: string;
+  aspect?: string;
+  depth?: string;
   summary: string;
 }
 

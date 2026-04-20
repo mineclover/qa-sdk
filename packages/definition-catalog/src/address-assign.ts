@@ -15,9 +15,9 @@ export interface AddressAssignment {
   readonly label: string;
   readonly address: number;
   readonly serialized: string;
-  readonly scope: DefScope;
-  readonly aspect: DefAspect;
-  readonly depth: DefDepth;
+  readonly scope?: DefScope;
+  readonly aspect?: DefAspect;
+  readonly depth?: DefDepth;
   readonly seq: number;
 }
 
@@ -31,6 +31,7 @@ export function assignUniqueAddresses(entries: readonly DefinitionEntry[]): read
   // scope×aspect×depth별 그룹핑
   const groups = new Map<string, DefinitionEntry[]>();
   for (const entry of entries) {
+    if (!entry.scope || !entry.aspect || !entry.depth) continue;
     const key = `${entry.scope}/${entry.aspect}/${entry.depth}`;
     const group = groups.get(key) ?? [];
     group.push(entry);
@@ -48,9 +49,9 @@ export function assignUniqueAddresses(entries: readonly DefinitionEntry[]): read
       if (!entry) continue;
       const seq = i + 1;  // 1-based
       const address = encodeUniqueDocument({
-        scope: entry.scope,
-        aspect: entry.aspect,
-        depth: entry.depth,
+        scope: entry.scope!,
+        aspect: entry.aspect!,
+        depth: entry.depth!,
         seq,
       });
 

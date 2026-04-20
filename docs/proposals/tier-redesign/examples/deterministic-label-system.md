@@ -1,33 +1,17 @@
 ---
+def:
+  id: tier-redesign-examples-deterministic-label-system
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: pilot-draft
+  owner_system: definition-catalog
+  projection_plane: intent
 status: pilot-draft
 date: 2026-04-18
 part_of: tier-redesign
 role: system-example
 supersedes: -
 superseded_by: -
-
-# STC frontmatter (예시용)
-tier: system
-id: deterministic-label-system
-scope: feature
-aspect: func_def
-layer: mediation
-
-lifecycle_ref:
-  state_component: deterministic-label-record-state   # Component (state-enum sub-type, D-18)
-  pipe_refs: []                                        # read-only projection — meta-semantic pipe 불필요
-  read_only_projection: true
-
-depends_on:
-  - doc-envelope
-  - ontology-pack-validate
-
-sources:
-  - packages/deterministic-label-registry/src/candidates.ts
-  - packages/deterministic-label-registry/src/records.ts
-  - packages/deterministic-label-registry/src/packs.ts
-  - packages/deterministic-label-registry/src/fsm.ts
-  - packages/deterministic-label-registry/src/inventory.ts
 ---
 
 > **Pilot Draft — STC System tier 예시.** D-17 Pivot 반영: FSM implements 관계 제거, `lifecycle_ref`로 State Component + meta-semantic 참조.

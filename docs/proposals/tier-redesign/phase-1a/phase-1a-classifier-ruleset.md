@@ -1,10 +1,17 @@
 ---
+def:
+  id: tier-redesign-phase-1a-phase-1a-classifier-ruleset
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: review
+  owner_system: definition-catalog
+  projection_plane: intent
 status: under-review
 date: 2026-04-19
 part_of: tier-redesign
 role: phase-1a-evidence
-phase: 1.A
-topic: auto-classifier-ruleset
+supersedes: -
+superseded_by: -
 ---
 
 # Phase 1.A — 자동 분류 룰 초안 (`def tier classify`)

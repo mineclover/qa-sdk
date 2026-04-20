@@ -1,9 +1,17 @@
 ---
+def:
+  id: tier-redesign-integration-scope-and-legacy
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: review
+  owner_system: definition-catalog
+  projection_plane: intent
 status: under-review
 date: 2026-04-19
 part_of: tier-redesign
 role: scope-clarification
-topic: primary-goal-and-legacy-deprecation
+supersedes: -
+superseded_by: -
 ---
 
 # STC 제안 — 범위·목적 재정의 + 레거시 처리 매트릭스

@@ -19,11 +19,17 @@ export interface DocRow {
   docType?: string | null;
   knowledgeKind?: string | null;
   level?: string | null;
-  scope: string;
-  aspect: string;
-  depth: string;
+  tier?: string | null;
+  scope?: string | null;
+  aspect?: string | null;
+  depth?: string | null;
   lifecycle: string;
   layer?: string | null;
+  owner_system?: string | null;
+  projection_plane?: string | null;
+  intent_hierarchy?: string | null;
+  lineage_facet?: string | null;
+  lineage_kind?: string | null;
   tags: readonly string[];
   svc?: string | null;
   gate?: QualityGateSpec | null;
@@ -39,11 +45,17 @@ export function docRowToRegistryInput(doc: DocRow): DefinitionEntryInput {
     ...(docType ? { type: docType as DefinitionEntry["type"] } : {}),
     ...(doc.knowledgeKind ? { knowledgeKind: doc.knowledgeKind as DefinitionEntry["knowledgeKind"] } : {}),
     ...(doc.level ? { level: doc.level as DefinitionEntry["level"] } : {}),
+    ...(doc.tier ? { tier: doc.tier as DefinitionEntry["tier"] } : {}),
     scope: doc.scope as DefinitionEntry["scope"],
     aspect: doc.aspect as DefinitionEntry["aspect"],
     depth: doc.depth as DefinitionEntry["depth"],
     lifecycle: doc.lifecycle as DefinitionEntry["lifecycle"],
     ...(doc.layer ? { layer: doc.layer as DefinitionEntry["layer"] } : {}),
+    ...(doc.owner_system ? { owner_system: doc.owner_system } : {}),
+    ...(doc.projection_plane ? { projection_plane: doc.projection_plane as any } : {}),
+    ...(doc.intent_hierarchy ? { intent_hierarchy: doc.intent_hierarchy as any } : {}),
+    ...(doc.lineage_facet ? { lineage_facet: doc.lineage_facet as any } : {}),
+    ...(doc.lineage_kind ? { lineage_kind: doc.lineage_kind as any } : {}),
     ...(doc.tags.length > 0 ? { tags: [...doc.tags] } : {}),
     ...(doc.svc ? { serviceId: doc.svc } : {}),
     ...(doc.gate ? { gate: doc.gate } : {}),

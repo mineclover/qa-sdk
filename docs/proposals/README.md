@@ -10,9 +10,9 @@
 
 ## 규칙
 
-- 본 디렉토리의 모든 문서는 `def:` frontmatter를 **쓰지 않는다**. `def sync` 그래프에 포함되지 않는다.
-- 단, 최상위 문서 분류(D-19) 관점에서는 본 디렉토리의 모든 제안 문서를 암묵적으로 `type: knowledge` 및 `knowledge_kind: proposal` (또는 `adr_candidate`)로 간주하여 설계 자산과 분리한다.
-- Frontmatter는 간단한 메타데이터만: `status`, `date`, `part_of`, `role`, `supersedes`, `superseded_by`
+- 본 디렉토리의 모든 문서는 `def:` frontmatter를 **사용한다**. `def sync` 그래프에 포함되어 시스템적으로 관리된다.
+- 최상위 문서 분류(D-19) 관점에서는 본 디렉토리의 모든 제안 문서는 `type: knowledge` 및 `knowledge_kind: proposal`로 분류된다.
+- Frontmatter는 `def:` 블록과 함께 기존 메타데이터(`status`, `date` 등)를 유지한다.
 - 내부 cross-ref는 **상대 경로 prose 링크**로 표기 (`[document](./01-doc.md)`)
 - 정규 docs(`docs/specs/**`, `docs/plan/**`)에서 제안을 참조할 때도 **prose 링크만** 사용, `depends_on` 등 구조 링크 금지
 - **실증 의무 (Empirical Validation):** 제안이 `accepted`로 넘어가기 전 (또는 Phase 3 Pilot 단계에서), 반드시 기존 시스템의 코드를 최소 1건 이상 섀도우(Shadow) 리팩토링하여 실제 적용 가능성을 증명해야 한다. (가상 예시만으로 검증 종료 금지)

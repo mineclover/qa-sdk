@@ -1,11 +1,12 @@
 ---
 def:
   id: doc-envelope
+  type: design
   tier: component
+  component_subtype: data-shape
   owner_system: definition-service
   projection_plane: intent
   intent_hierarchy: core
-  type: spec
   scope: data
   aspect: domain_data
   depth: specification

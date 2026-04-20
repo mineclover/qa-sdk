@@ -188,9 +188,48 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
     }
   }
 
-  // level 행동 검증 (group/module/leaf)
+  // level 및 tier 기반 구조 검증
   for (const entry of allEntries) {
     if (entry.lifecycle === "deprecated") continue;
+    
+    // STC 티어가 있으면 레거시 level 검증 생략
+    if (entry.tier) {
+      const outgoingLinks = registry.getLinks(entry.id, "outgoing");
+      const containsChildren = outgoingLinks.filter(l => l.linkType === "contains");
+      const refsChildren = outgoingLinks.filter(l => l.linkType === "refs");
+
+      if (entry.tier === "layout") {
+        // Layout은 refs를 주력으로 써야 함
+        if (containsChildren.length > 0) {
+          issues.push({
+            severity: "warning",
+            type: "level-violation" as ValidationIssue["type"],
+            docId: entry.id,
+            message: `tier: layout은 contains 대신 refs 사용 권장 (${containsChildren.length}건 감지)`,
+          });
+        }
+        if (refsChildren.length === 0 && containsChildren.length === 0) {
+          issues.push({
+            severity: "error",
+            type: "level-violation" as ValidationIssue["type"],
+            docId: entry.id,
+            message: `tier: layout인데 배치된 시스템(refs)이 없음`,
+          });
+        }
+      } else if (entry.tier === "system") {
+        // System은 leaf 성격이므로 contains를 가지면 안 됨 (독립성 원칙)
+        if (containsChildren.length > 0) {
+          issues.push({
+            severity: "error",
+            type: "level-violation" as ValidationIssue["type"],
+            docId: entry.id,
+            message: `tier: system은 독립적이어야 하며 contains 자식을 가질 수 없음 (depends_on 전환 필요)`,
+          });
+        }
+      }
+      continue;
+    }
+
     const level = entry.level ?? "leaf";
     const containsChildren = registry.getLinks(entry.id, "outgoing")
       .filter(l => l.linkType === "contains");
@@ -336,7 +375,7 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
     if (entry.lifecycle === "deprecated") continue;
 
     // type: design인데 owner_system 누락 (Warning 후 Error 승격)
-    if (entry.type === "design" && !entry.ownerSystem) {
+    if (entry.type === "design" && !entry.owner_system) {
       issues.push({
         severity: "warning", // Phase 4B에서 error 승격
         type: "missing-owner-system",
@@ -346,7 +385,7 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
     }
 
     // auxiliary인 경우 core와 분리되어 관찰 가능한지 (간단한 정합성 체크)
-    if (entry.intentHierarchy === "auxiliary" && entry.projectionPlane === "intent") {
+    if (entry.intent_hierarchy === "auxiliary" && entry.projection_plane === "intent") {
       // 보조 의도인데 코어 시스템 문서에 직접 inline 되어있는지 등 체크 (추후 정교화)
     }
   }

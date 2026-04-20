@@ -88,7 +88,7 @@ function linkKey(sourceId: string, targetId: string, linkType: LinkType): string
   return `${sourceId}|${targetId}|${linkType}`;
 }
 
-function resolveDocumentAddress(input: DefinitionEntryInput): { address: number; serialized: string } {
+function resolveDocumentAddress(input: DefinitionEntryInput): { address?: number; serialized?: string } {
   if (input.serialized) {
     const parsedV2 = parseUniqueDocumentAddress(input.serialized);
     if (parsedV2 !== null) return { address: parsedV2, serialized: input.serialized };
@@ -101,12 +101,16 @@ function resolveDocumentAddress(input: DefinitionEntryInput): { address: number;
     return { address: input.address, serialized };
   }
 
-  const address = encodeDocument({
-    scope: input.scope,
-    aspect: input.aspect,
-    depth: input.depth,
-  });
-  return { address, serialized: serializeDocumentAddress(address) };
+  if (input.scope && input.aspect && input.depth) {
+    const address = encodeDocument({
+      scope: input.scope!,
+      aspect: input.aspect!,
+      depth: input.depth!,
+    });
+    return { address, serialized: serializeDocumentAddress(address) };
+  }
+
+  return {};
 }
 
 /**
@@ -142,13 +146,17 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
     }
 
     // scope-aspect 유효성 검증
-    validateScopeAspect(input.scope, input.aspect);
+    if (input.scope && input.aspect) {
+      validateScopeAspect(input.scope, input.aspect);
+    }
 
     const { address, serialized } = resolveDocumentAddress(input);
 
     const entry: DefinitionEntry = { ...input, address, serialized };
     this.entries.set(entry.id, entry);
-    this.addToAddressIndex(address, entry.id);
+    if (address !== undefined) {
+      this.addToAddressIndex(address, entry.id);
+    }
 
     return entry;
   }
@@ -169,15 +177,15 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
     let address = existing.address;
     let serialized = existing.serialized;
 
-    if (needsReencode) {
+    if (needsReencode && existing.scope && existing.aspect && depth) {
       if (existing.address !== undefined) {
         this.removeFromAddressIndex(existing.address, id);
       }
 
       address = encodeDocument({
-        scope: existing.scope,
-        aspect: existing.aspect,
-        depth,
+        scope: existing.scope!,
+        aspect: existing.aspect!,
+        depth: depth!,
       });
       serialized = serializeDocumentAddress(address);
       this.addToAddressIndex(address, id);
@@ -186,7 +194,6 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
     const updated: DefinitionEntry = {
       ...existing,
       ...patch,
-      depth,
       lifecycle,
       address,
       serialized,
@@ -234,11 +241,14 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
     }
 
     // def_link 좌표: 출발 문서의 scope × aspect × link_type
-    const address = encodeLink({
-      scope: source.scope,
-      aspect: source.aspect,
-      linkType: lt,
-    });
+    let address: number | undefined;
+    if (source.scope && source.aspect) {
+      address = encodeLink({
+        scope: source.scope!,
+        aspect: source.aspect!,
+        linkType: lt,
+      });
+    }
 
     const defLink: DefinitionLink = { sourceId, targetId, linkType: lt, address };
     this.links.set(key, defLink);
@@ -350,9 +360,9 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
     const byDepth = { overview: 0, specification: 0, implementation: 0, validation: 0 } as Record<DefDepth, number>;
 
     for (const e of this.entries.values()) {
-      byScope[e.scope]++;
+      if (e.scope) byScope[e.scope as DefScope]++;
       byLifecycle[e.lifecycle]++;
-      byDepth[e.depth]++;
+      if (e.depth) byDepth[e.depth as DefDepth]++;
     }
 
     return {

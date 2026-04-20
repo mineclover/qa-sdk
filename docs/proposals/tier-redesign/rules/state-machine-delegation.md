@@ -1,8 +1,17 @@
 ---
+def:
+  id: tier-redesign-rules-state-machine-delegation
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: review
+  owner_system: definition-catalog
+  projection_plane: intent
 status: under-review
 date: 2026-04-19
 part_of: tier-redesign
 role: delegation-rules
+supersedes: -
+superseded_by: -
 ---
 
 # State Machine Delegation — 상태 관리는 meta-semantic에 위임

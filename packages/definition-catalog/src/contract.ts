@@ -40,9 +40,9 @@ export interface ContractSection {
   /** 원본 문서 ID */
   readonly sourceId: string;
   /** 원본 문서 scope */
-  readonly sourceScope: DefScope;
+  readonly sourceScope?: DefScope;
   /** 원본 문서 depth */
-  readonly sourceDepth: string;
+  readonly sourceDepth?: string;
   /** 마커 정의 (modeHint, contractRole 포함) */
   readonly markerDef: ContractMarkerDef;
 }

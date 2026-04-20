@@ -1,9 +1,17 @@
 ---
+def:
+  id: tier-redesign-integration-system-linkage-map
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: review
+  owner_system: definition-catalog
+  projection_plane: intent
 status: under-review
 date: 2026-04-19
 part_of: tier-redesign
 role: integration-map
-topic: document-management-system-linkage
+supersedes: -
+superseded_by: -
 ---
 
 # 문서 관리 체계 — 기존 시스템 연계 맵

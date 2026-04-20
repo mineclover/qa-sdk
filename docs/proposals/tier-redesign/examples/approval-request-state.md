@@ -1,18 +1,17 @@
 ---
+def:
+  id: tier-redesign-examples-approval-request-state
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: pilot-draft
+  owner_system: definition-catalog
+  projection_plane: intent
 status: pilot-draft
 date: 2026-04-18
 part_of: tier-redesign
 role: component-example
 supersedes: -
 superseded_by: -
-
-# STC frontmatter (예시용)
-tier: component
-component_subtype: state-enum
-id: approval-request-state
-scope: state
-aspect: domain_state
-layer: domain
 ---
 
 > **⚠️ 가상 Write-mode Pilot (pair with [approval-system](./approval-system.md))**

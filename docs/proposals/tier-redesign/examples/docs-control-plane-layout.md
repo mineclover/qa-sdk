@@ -1,24 +1,17 @@
 ---
+def:
+  id: tier-redesign-examples-docs-control-plane-layout
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: pilot-draft
+  owner_system: definition-catalog
+  projection_plane: intent
 status: pilot-draft
 date: 2026-04-18
 part_of: tier-redesign
 role: layout-example
 supersedes: -
 superseded_by: -
-
-# STC frontmatter (예시용)
-tier: layout
-id: docs-control-plane-layout
-scope: flow
-aspect: relation
-layer: mediation
-
-refs:
-  - deterministic-label-system
-  - doc-envelope-system
-  - ontology-pack-validate-system
-  - docs-graph-system
-  - prd-completion-sync-system
 ---
 
 > **Pilot Draft — STC Layout tier 예시.**

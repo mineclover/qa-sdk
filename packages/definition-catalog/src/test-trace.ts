@@ -22,7 +22,7 @@ export interface TestRef {
   /** 검증 대상 문서 ID (traces_to의 target) */
   readonly verifiedDocId: string;
   /** validation 문서의 scope */
-  readonly scope: string;
+  readonly scope?: string;
   /** validation 문서의 layer */
   readonly layer?: string;
 }

@@ -1,8 +1,17 @@
 ---
+def:
+  id: tier-redesign-rules-classification
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: review
+  owner_system: definition-catalog
+  projection_plane: intent
 status: under-review
 date: 2026-04-19
 part_of: tier-redesign
 role: classification-rules
+supersedes: -
+superseded_by: -
 ---
 
 # Classification — level → tier 전환 기준 + 판단 우선순위

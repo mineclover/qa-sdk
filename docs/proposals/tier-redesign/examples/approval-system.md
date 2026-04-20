@@ -1,29 +1,17 @@
 ---
+def:
+  id: tier-redesign-examples-approval-system
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: pilot-draft
+  owner_system: definition-catalog
+  projection_plane: intent
 status: pilot-draft
 date: 2026-04-18
 part_of: tier-redesign
 role: system-example
 supersedes: -
 superseded_by: -
-
-# STC frontmatter (예시용)
-tier: system
-id: approval-system
-scope: feature
-aspect: func_def
-layer: domain
-
-lifecycle_ref:
-  state_component: approval-request-state                          # Component (state-enum, D-18)
-  pipe_refs:
-    - meta-semantic/pipe-impl/approval-pipe#approve-transition     # 가상 pipe 경로 (Phase 1.B 작성 예정)
-    - meta-semantic/pipe-impl/approval-pipe#reject-transition
-    - meta-semantic/pipe-impl/approval-pipe#cancel-transition
-  read_only_projection: false
-
-depends_on:
-  - notification-system                                            # 가상
-  - audit-log-system                                               # 가상
 ---
 
 > **⚠️ 가상 Write-mode Pilot — 참조 3건 모두 가상**

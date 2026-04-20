@@ -3,7 +3,7 @@ def:
   id: definition-catalog-spec
   intent_hierarchy: core
   type: design
-  tier: system
+  tier: layout
   address: def_document:v2:342162
   scope: data
   aspect: domain_data
@@ -18,29 +18,31 @@ def:
     - target: system-concepts
       type: depends_on
     - target: definition-taxonomy
-      type: contains
+      type: refs
     - target: definition-concern
-      type: contains
+      type: refs
     - target: definition-extraction
-      type: contains
+      type: refs
     - target: definition-assembly
-      type: contains
+      type: refs
     - target: definition-contract
-      type: contains
+      type: refs
     - target: definition-state-model
-      type: contains
+      type: refs
     - target: definition-quality-gates
-      type: contains
+      type: refs
     - target: docs-control-plane
-      type: contains
+      type: refs
     - target: definition-harness
-      type: contains
+      type: refs
     - target: definition-management
-      type: contains
+      type: refs
     - target: definition-cross-loop-bridge
-      type: contains
+      type: refs
     - target: definition-data-source
-      type: contains
+      type: refs
+    - target: definition-service
+      type: refs
 ---
 
 # Definition Catalog — 소프트웨어 정의 좌표계

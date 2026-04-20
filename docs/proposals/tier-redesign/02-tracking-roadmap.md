@@ -1,9 +1,17 @@
 ---
+def:
+  id: tier-redesign-02-tracking-roadmap
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: review
+  owner_system: definition-catalog
+  projection_plane: intent
 status: under-review
 date: 2026-04-19
 part_of: tier-redesign
 role: roadmap
-topic: tracking-and-alignment-automation
+supersedes: -
+superseded_by: -
 ---
 
 # 로드맵: 이중 평면 거버넌스 및 추적 자동화
