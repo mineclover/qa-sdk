@@ -19,6 +19,8 @@ def:
       type: contains
     - target: codegen-core
       type: contains
+    - target: apm-system
+      type: depends_on
 ---
 
 # APM 코드젠 그룹

@@ -19,6 +19,8 @@ def:
       type: contains
     - target: address-context-storage
       type: contains
+    - target: apm-system
+      type: depends_on
 ---
 
 # APM 스키마 그룹

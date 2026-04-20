@@ -11,12 +11,6 @@ def:
   svc: cli
   tags: [structural, entry-point]
   links:
-    - target: apm-codegen-system
-      type: depends_on
-    - target: apm-schema-system
-      type: depends_on
-    - target: apm-runtime-system
-      type: depends_on
     - target: collection-transport-spec
       type: contains
     - target: infra-logger-spec
