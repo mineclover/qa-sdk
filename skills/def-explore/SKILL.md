@@ -99,6 +99,23 @@ def stats                     # scope/layer/level 분포
 def link-rules                # LinkType 사용 규칙
 ```
 
+### 8. 도메인 기준 필터
+
+링크 그래프 기반으로 파생된 `domain_root`를 필터로 삼아 도메인 단위 탐색을 수행한다.
+
+```bash
+# 도메인 루트 식별
+def audit --by-domain
+
+# 특정 도메인의 모든 문서 (id 정렬)
+def list --domain-root <rootId>
+
+# 특정 문서의 파생 root + owner_system 정합성
+def context <docId>
+```
+
+권장 진입 패턴: `def audit --by-domain`에서 상위 루트 → `def list --domain-root <rootId>`로 멤버 훑기 → `def context <docId>`로 개별 문서 컨텍스트. owner_system과 파생 root가 어긋나면 컨텍스트 출력 끝에 `⚠ owner_system ... 과 파생 root ... 불일치` 경고가 붙는다.
+
 ## 핵심 개념 요약
 
 ### 분해 레벨 (level)

@@ -41,6 +41,36 @@ qa-sdk def audit-db
 level: leaf(...) module(...) group(...)
 ```
 
+## 도메인별 리포트 (`--by-domain`)
+
+`domain_root` 파생 결과로 그룹핑하고 루트별 top 좌표 3개를 출력한다.
+
+```bash
+qa-sdk def audit --by-domain
+```
+
+출력 예:
+
+```
+=== 도메인 루트별 리포트 (524개 루트, 문서 1139건) ===
+
+[definition-catalog-spec]  86건
+  component:feature:operation:func_def: 13건
+  component:interface:mediation:api_contract: 9건
+  system:feature:operation:func_def: 7건
+
+[prefix-service]  43건
+  component:data:none:prefix_schema: 41건
+  system:data:none:prefix_schema: 2건
+```
+
+용도:
+- 실제 도메인 경계 확인 (owner_system 선언과 링크 그래프가 일치하는가)
+- `missing-domain-root` 후보 식별 (루트 카운트 1건짜리가 대량이면 상위 귀속이 필요)
+- 후속 드릴다운: `qa-sdk def list --domain-root <rootId>`
+
+`def validate`의 info 진단 중 `owner-root-mismatch`는 이 리포트와 짝으로 본다 — frontmatter의 `owner_system`과 링크 그래프 기반 파생 루트가 어긋나는 경우를 표면화한다. 무시하지 말고 링크/owner 선언 중 어느 쪽이 정답인지 판단한다.
+
 ## 품질 기준
 
 ### ^purpose
@@ -159,6 +189,7 @@ leaf 문서는 자기 존재를 증명할 수 있어야 한다:
 | leaf-has-children | error | leaf인데 contains 자식 있음 |
 | leaf-too-long | warning | leaf 150줄 초과 → 분할 검토 |
 | leaf-no-impl-ref | warning | leaf에 구현/테스트 코드 참조 없음 → 자기 증명 부재 |
+| owner-root-mismatch | info | frontmatter `owner_system`과 링크 기반 파생 `domain_root`가 불일치 |
 
 ## 판단 원칙 (meta-semantic 기반)
 
