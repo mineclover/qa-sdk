@@ -15,6 +15,8 @@ def:
       type: contains
     - target: browser-session-patterns
       type: contains
+    - target: browser-system
+      type: depends_on
 ---
 
 # 브라우저 생명주기 그룹

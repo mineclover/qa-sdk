@@ -19,6 +19,8 @@ def:
       type: contains
     - target: browser-codec
       type: contains
+    - target: browser-system
+      type: depends_on
 ---
 
 # 브라우저 런타임 그룹

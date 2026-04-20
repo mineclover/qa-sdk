@@ -11,12 +11,8 @@ def:
   svc: shopping-web
   tags: [structural, entry-point]
   links:
-    - target: browser-runtime-system
-      type: depends_on
     - target: browser-transport-spec
       type: contains
-    - target: browser-lifecycle-system
-      type: depends_on
     - target: trace-context-spec
       type: contains
     - target: shop-web-spec
