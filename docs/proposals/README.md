@@ -47,6 +47,8 @@
 
 | 제안 | 상태 | 요약 |
 |------|------|------|
+| [bdd-contract-system](./bdd-contract-system/) | `draft` | BDD Given/When/Then을 AI-DLC 행동 계약으로 정의하고 test unit / implementation unit / ScenarioSpec / PipeGraph / docs CLI 소비 표면을 기계화 |
 | [ai-dlc-dspy-harness](./ai-dlc-dspy-harness/) | `draft` | DSPy를 시스템 단위로 탈부착 가능한 sidecar harness로 도입하고, 계약/증거/게이트만 기존 문서 시스템에 편입 |
 | [tier-redesign](./tier-redesign/) | `under-review` | 4-tier(Component/Entry/System/Layout) 좌표계 및 이중 평면(Intent/Execution) 거버넌스 재설계 |
 | [domain-hierarchy](./domain-hierarchy/) | `under-review` | 시스템의 도메인 소속을 링크 그래프에서 파생해 duplicate-coordinate 경고 해소 + proposals 문서 관리체계 편입 |
+| [aspect-vocab-split](./aspect-vocab-split/) | `under-review` | aspect 어휘 분할 RFC — 잔여 Class D duplicate-coordinate 그룹 해소 (func_def / process_flow / api_contract / domain_data 세분화) |
