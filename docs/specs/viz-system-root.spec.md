@@ -9,6 +9,9 @@ def:
   lifecycle: approved
   layer: experience
   svc: viz
+  links:
+    - target: viz-system
+      type: depends_on
 ---
 # Visualization System Root
 ## 목적 ^purpose

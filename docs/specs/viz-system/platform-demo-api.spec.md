@@ -15,6 +15,8 @@ def:
       type: refines
     - target: platform-demo-api
       type: contains
+    - target: platform-demo-system
+      type: depends_on
 ---
 # Platform Demo API
 

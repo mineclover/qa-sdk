@@ -17,6 +17,8 @@ def:
       type: contains
     - target: qa-bridge-runtime
       type: contains
+    - target: viz-system
+      type: depends_on
 ---
 
 # Viz 역할놀이 그룹

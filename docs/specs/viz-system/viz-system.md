@@ -14,7 +14,7 @@ def:
     - target: api-client-spec
       type: contains
     - target: canvas-viewport-spec
-      type: contains
+      type: depends_on
     - target: docs-explorer-spec
       type: contains
     - target: iframe-protocol-spec
@@ -31,12 +31,6 @@ def:
       type: contains
     - target: viz-3d-spec
       type: contains
-    - target: viz-language-system
-      type: depends_on
-    - target: viz-roleplay-system
-      type: depends_on
-    - target: viz-surface-system
-      type: depends_on
     - target: weighted-ui-spec
       type: contains
 ---
