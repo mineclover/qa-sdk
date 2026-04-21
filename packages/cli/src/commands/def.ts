@@ -406,8 +406,10 @@ async function cmdValidate(source: DefDataSource) {
   }
   if (warnings.length > 0) {
     console.log(`\n[warning]`);
-    warnings.slice(0, 5).forEach(i => console.log(`  ${i.docId}: ${i.message}`));
-    if (warnings.length > 5) console.log(`  ... 외 ${warnings.length - 5}건`);
+    const warningLimit = process.env.QA_DEF_VALIDATE_VERBOSE ? warnings.length : 5;
+    const tag = process.env.QA_DEF_VALIDATE_VERBOSE ? (i: { type: string; docId: string; message: string }) => `  [${i.type}] ${i.docId}: ${i.message}` : (i: { type: string; docId: string; message: string }) => `  ${i.docId}: ${i.message}`;
+    warnings.slice(0, warningLimit).forEach(i => console.log(tag(i)));
+    if (warnings.length > warningLimit) console.log(`  ... 외 ${warnings.length - warningLimit}건`);
   }
 }
 

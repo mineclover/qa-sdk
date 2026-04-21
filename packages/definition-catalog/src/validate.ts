@@ -287,11 +287,19 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
     }
   }
 
-  // 고아 문서 (system-root, draft/review 제외)
+  // 고아 문서 (system-root, draft/review/archived 제외)
+  // 설계상 고아 허용 케이스:
+  //   - orphan-expected 태그 (명시적 opt-out)
+  //   - .cases.md (소비자 기대 시나리오, 외부 참조 없이 독립)
+  //   - .test.md (테스트 문서, 대상 스펙을 verify하지만 incoming link 불필요)
   for (const entry of allEntries) {
     if (entry.lifecycle === "deprecated") continue;
     if (entry.lifecycle === "draft" || entry.lifecycle === "review") continue;
+    if (entry.lifecycle === "archived") continue;
     if (entry.id === "system-root") continue;
+    if (entry.tags?.includes("orphan-expected")) continue;
+    if (entry.ref?.endsWith(".cases.md")) continue;
+    if (entry.ref?.endsWith(".test.md")) continue;
     if (!referenced.has(entry.id)) {
       issues.push({
         severity: "warning",
