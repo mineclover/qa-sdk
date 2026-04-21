@@ -100,3 +100,18 @@ warnings-only 를 2 로 둔 이유: CI 에서 warnings 를 soft-fail (별도 gat
 - `def-audit` — 품질 감사 (purpose/links/tags/level)
 - `def-boundary` — 코드 ↔ 문서 경계 정리
 - `def-entry-sync` — 기능 추가 후 root entry + skill index 갱신
+
+## 계층 맥락
+
+`def doctor` 는 **L1-L4 통합 헬스체크** — 한 화면에 모든 계층의 상태를 드러내는 유일한 명령.
+
+| Doctor 섹션 | 대응 계층 | 책임 |
+|-----------|---------|------|
+| **Core** (`validate`, `sync`) | L1 data + L2 validator | frontmatter schema + validateGraph 규칙 |
+| **Domains** (`by-domain`, `coverage`) | L3 workflow | `deriveAllDomainRoots` 파생 + 소스 파일 커버리지 |
+| **Aspects** (`hierarchy`, `ROOT_ASPECTS`) | L2 validator + L3 workflow | `aspect-parents` 불변식 + rollup 가시성 |
+| **Annotations** (`deprecated`, `@def.boundary`) | L4 tooling | 코드 주석 round-trip 검증 |
+
+어느 섹션의 경고든 단독으로 발생할 수 있으므로 **섹션별 follow-up** 이 계층 진입점이다. 예: Core 만 green + Domains 붕괴 → L3 workflow 가정 깨짐 (Option B 패턴).
+
+계층 분리 규칙: `docs/specs/system/layer-separation.rule.md`. Semantic 변경 후 doctor 만으로 부족하면 `skills/semantic-change/SKILL.md` Step 3 체크리스트를 추가 실행.

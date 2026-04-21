@@ -23,6 +23,21 @@ qa-sdk def validate       # 이슈 목록 출력
 
 계층 분리 원칙 상세: `docs/specs/system/layer-separation.rule.md` (L1 data / L2 validator / L3 workflow / L4 tooling).
 
+## 계층 맥락
+
+본 skill 은 **L2 validator layer** 를 다룬다. 핵심 원칙: **errors=0 은 필요 조건일 뿐 충분 조건이 아니다 — L3 workflow-smoke 는 별도 게이트**.
+
+| 계층 | 본 skill 관계 |
+|------|-------------|
+| L1 (data) | 검증 대상 — frontmatter schema + 링크 그래프를 입력으로 받는다 |
+| **L2 (validator)** | **본 skill 담당** — validateGraph 규칙, taxonomy 불변식, code-boundary 검증 |
+| L3 (workflow) | 본 skill 이 보증하지 않음 — `def topdown` silent empty, `def list --type=rule` 누락 등은 잡지 못한다 |
+| L4 (tooling) | 본 skill 이 일부 다룸 — `invalid-code-boundary` / `ambiguous-code-boundary` 는 L4 round-trip 규율 |
+
+Semantic 변경 (링크 방향, aspect 분할 등) 을 수반한다면 `def validate` 통과 후에도 반드시 `skills/semantic-change/SKILL.md` Step 3 체크리스트를 돌린다. Option B 사건 재발 방지.
+
+관련 rule: `docs/specs/system/layer-separation.rule.md` §1.2 (L2 정의), `docs/specs/system/validator-suppression-tags.rule.md` (억제 수단).
+
 ## 에러 우선순위 (순서대로 해소)
 
 ### 1. `circular-ref` — 순환 참조

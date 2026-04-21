@@ -119,3 +119,19 @@ qa-sdk def body gate-consistency
 ```
 
 도메인 루트가 아직 파생되지 않는 시스템(자기 자신이 root 인 경우)은 `def audit --by-domain` 의 top 리스트에 다수 1~2건 루트로 노출된다.
+
+## 계층 맥락
+
+본 skill 은 **L3 workflow navigation skill**. `collectDomainMembers` 의 Union 패턴 (contains ∪ depends_on← ∪ refines←) 을 시연한다.
+
+| 요소 | 계층 |
+|------|------|
+| 링크 그래프 (contains / depends_on / refines) | L1 data |
+| `collectDomainMembers` 구현 | L2 validator/파생 헬퍼 |
+| `def topdown`, `def children` CLI | **L3 workflow (본 skill)** |
+
+**Phase 3b Option B 주의담**: 초기 topdown 은 contains 순방향만 walk 했다. Phase 3b 에서 parent→child `depends_on` 이 제거되자 `def topdown gate-system` 이 silent 0 member 를 반환 — 80+ commits 동안 신규 contributor entry-point 가 침묵. 복구: `collectDomainMembers` 를 3 경로 union 으로 확장 + silent empty 에 warning hint + workflow-smoke non-empty assertion. 이 사건이 L3 의 Union > single path 원칙의 근거.
+
+근거: `docs/proposals/domain-hierarchy/reviews/2026-04-21-selector-review.md` Gap #1, `-selector-fixes.md` §1.
+
+계층 분리 규칙: `docs/specs/system/layer-separation.rule.md` §2.2 (Union > single path). Semantic 변경 시 topdown smoke 재실행 필수 — `skills/semantic-change/SKILL.md` Step 3 L3.

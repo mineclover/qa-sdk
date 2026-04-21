@@ -244,6 +244,20 @@ leaf 문서는 자기 존재를 증명할 수 있어야 한다:
 기존 품질 기준(purpose 30자+, links, tags, level 규칙)은 그대로 유지.
 위 원칙은 **심화 감사** 시 추가 적용한다.
 
+## 계층 맥락
+
+본 skill 은 **L3 workflow skill** — L1 frontmatter + L2 validator 결과를 소비하여 사용자 대상 품질 리포트를 생성한다.
+
+| 흐름 | 계층 |
+|------|------|
+| frontmatter / links | L1 data (입력) |
+| `validateGraph`, `deriveDomainRoot`, `deriveAspectParent` | L2 validator (파생) |
+| `def audit`, `--by-domain`, `--rollup-aspect` 리포트 | **L3 workflow (본 skill)** |
+
+`--by-domain` 은 L2 의 `deriveDomainRoot` 를 집계한다. 파생 경로가 단절되면 본 리포트에서 핵심 루트가 사라지거나 sub-doc 이 self-rooted 로 몰리는 증상이 나타난다. Sub-doc rollup (Phase 0 pattern, Hybrid strategy) 은 이 L3 rollup 품질을 개선하기 위한 L2 알고리즘 extension.
+
+계층 분리 규칙: `docs/specs/system/layer-separation.rule.md` §1.3 (L3 workflow). Semantic 변경 시 본 리포트의 Before/After 비교를 PR 에 첨부 — `skills/semantic-change/SKILL.md` Step 2/3.
+
 ## LinkType 사용 규칙 (taxonomy.ts LINK_TYPE_RULES)
 
 | 유형 | 읽는 법 | 순환 | 다중부모 | 사용 기준 |

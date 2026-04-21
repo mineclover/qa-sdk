@@ -99,6 +99,19 @@ qa-sdk def topdown <rootId>                # 도메인 전체 purpose 조립 (co
 **모르는 건 자유이지만 아는 건 의무다.**
 컨텍스트가 과하면: "이 정보를 내가 소비하는가?"로 필터링.
 
+## 계층 맥락
+
+본 skill 은 **L3 focused-view workflow**. 개별 문서 관점으로 L1 data + L2 파생 값을 조립한다.
+
+출력에는 L2 파생 값이 포함된다:
+- `도메인 루트` = `deriveDomainRoot` 결과 (L2 파생)
+- `aspect family` = `deriveAspectParent` 체인 상위 (L2 파생, Phase C-2)
+- `owner_system` vs 파생 root 불일치 경고 = L2 `owner-root-mismatch` info 진단의 workflow 표현
+
+L1 frontmatter (선언값) 와 L2 파생값이 어긋나면 경고가 붙는다 — 어느 쪽을 정답으로 볼지 판단하는 것은 본 skill 사용자 책임. 단순 조회 도구가 아니라 "정합성 체크포인트" 로 활용하라.
+
+계층 분리 규칙: `docs/specs/system/layer-separation.rule.md` §1.3. Semantic 변경 후 특정 문서의 컨텍스트 변화 확인 — `skills/semantic-change/SKILL.md` Step 3.
+
 ## tags 해석 요령
 
 `def context`의 `concerns` 섹션은 문서 tags를 그대로 늘어놓는 용도가 아니다.

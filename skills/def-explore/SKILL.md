@@ -165,3 +165,18 @@ contains(소속), depends_on(의존), implements(구현), refines(구체화), co
 - CLI 도구 사용법을 물을 때
 
 항상 CLI 커맨드를 실행하여 **실제 데이터 기반**으로 답한다. 문서 내용을 암기에서 답하지 않는다.
+
+## 계층 맥락
+
+본 skill 은 **L3 orienting skill** — 처음 시작하는 사용자를 전체 지도에 놓는 역할.
+
+권장 진입 시퀀스:
+
+1. `qa-sdk def doctor` — L1-L4 통합 헬스체크 (한 화면 overview)
+2. `qa-sdk def audit --by-domain` — L3 도메인 루트 인벤토리 (작업 대상 선정)
+3. `qa-sdk def topdown <rootId>` — L3 드릴다운 (멤버 purpose 조립)
+4. `qa-sdk def context <docId>` — 특정 문서의 상위/의존/제약 확인
+
+이 순서는 "overview → pick service → drill → context" 로 **좁혀가는 탐색** 이다. `def guide` 하위 명령은 개념/철학 문서 조회 (읽기 중심) 이며, 실제 시스템 상태 질의는 위 4-step 으로 수행한다.
+
+계층 모델: `docs/specs/system/layer-separation.rule.md`. Semantic 변경을 계획한다면 탐색 후 `skills/semantic-change/SKILL.md` 를 참조.
