@@ -49,6 +49,8 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
   boundary/context 요약만으로 부족할 때 최신 본문 전체 확인
 - `docs/specs/definition-catalog/definition-mgmt-verification-loop.spec.md`
   build / sync / validate / audit / quality / vitest 회귀의 표준 검증 루프
+- `skills/def-doctor/SKILL.md`
+  definition-catalog 통합 헬스체크 — onboarding 및 pre-commit 시 가장 먼저 실행하는 진입점 (`qa-sdk def doctor`)
 - `docs/specs/system/layer-separation.rule.md`
   L1 data / L2 validator / L3 workflow / L4 tooling 4 계층 책임 + workflow smoke 원칙 (Phase 3b Option B 재발 방지)
 - `docs/skills/decide.md`
