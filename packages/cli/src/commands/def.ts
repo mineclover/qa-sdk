@@ -1535,9 +1535,7 @@ async function cmdCodeLinkGaps(flags: Record<string, string>) {
 
   const listedFiles = result.files.slice(0, limit);
   const truncated = result.files.length > listedFiles.length ? result.files.length - listedFiles.length : 0;
-  const coverageRate = result.totalFiles === 0
-    ? 100
-    : Math.round((result.linkedFiles / result.totalFiles) * 1000) / 10;
+  const coverageRate = result.adjusted.percentage;
 
   if (flags["json"] === "true") {
     console.log(JSON.stringify({
@@ -1546,12 +1544,17 @@ async function cmdCodeLinkGaps(flags: Record<string, string>) {
       linkedFiles: result.linkedFiles,
       unlinkedFiles: result.unlinkedFiles,
       coverageRate,
+      raw: result.raw,
+      adjusted: result.adjusted,
+      excludedPackages: result.excludedPackages,
       listedFiles,
       truncated,
     }, null, 2));
   } else {
     console.log("=== code link gaps ===");
-    console.log(`total: ${result.totalFiles} | linked: ${result.linkedFiles} | unlinked: ${result.unlinkedFiles} | coverage: ${coverageRate}%`);
+    console.log(
+      `total: ${result.totalFiles} | linked: ${result.linkedFiles} | unlinked: ${result.unlinkedFiles} | coverage: ${coverageRate}% (raw ${result.raw.percentage}%, ${result.adjusted.excluded} infra excluded)`,
+    );
     console.log(`scopes: ${result.scopes.length > 0 ? result.scopes.join(", ") : "(전체 packages/*/src)"}`);
 
     if (listedFiles.length === 0) {
@@ -1668,16 +1671,16 @@ async function runDoctorByDomain(
 function runDoctorCoverage(): DoctorCheck {
   const root = getRootDir();
   const result = collectCodeLinkCoverage(root, { docsDir: "docs" });
-  const coverage = result.totalFiles === 0
-    ? 100
-    : Math.round((result.linkedFiles / result.totalFiles) * 1000) / 10;
-  // 80% 미만은 warning — CON-004 참고
-  const status: DoctorCheck["status"] = coverage < 80 ? "warn" : "ok";
+  const adjusted = result.adjusted.percentage;
+  const raw = result.raw.percentage;
+  // 80% 미만은 warning — CON-004 참고 (adjusted 기준, infra 제외)
+  const status: DoctorCheck["status"] = adjusted < 80 ? "warn" : "ok";
   return {
     category: "Domains",
     label: "coverage",
     status,
-    metric: `${coverage}% (${result.linkedFiles}/${result.totalFiles} source files linked)`,
+    metric:
+      `${adjusted}% adjusted (${result.adjusted.linked}/${result.adjusted.total}) — raw ${raw}% (${result.raw.linked}/${result.raw.total}), ${result.adjusted.excluded} infra excluded`,
     errors: 0,
     warnings: status === "warn" ? 1 : 0,
   };
