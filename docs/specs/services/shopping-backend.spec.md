@@ -1,7 +1,7 @@
 ---
 def:
   id: shopping-backend-spec
-  tier: system
+  tier: layout
   address: def_document:v2:68644
   scope: feature
   aspect: domain_service_func
@@ -14,9 +14,9 @@ def:
     - target: system-infra
       type: refines
     - target: shopping-backend-api
-      type: contains
+      type: refs
     - target: shopping-backend-data
-      type: contains
+      type: refs
 ---
 # Shopping Backend
 

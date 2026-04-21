@@ -1,7 +1,7 @@
 ---
 def:
   id: decision-service-system
-  tier: system
+  tier: layout
   address: def_document:v2:68620
   scope: feature
   aspect: func_def
@@ -18,19 +18,19 @@ def:
     - target: decision-definition-bridge
       type: implements
     - target: dec-svc-data-model
-      type: contains
+      type: refs
     - target: dec-svc-schemas-module
-      type: contains
+      type: refs
     - target: dec-svc-instances-module
-      type: contains
+      type: refs
     - target: dec-svc-links-module
-      type: contains
+      type: refs
     - target: dec-svc-api-contract
-      type: contains
+      type: refs
     - target: dec-svc-state-model
-      type: contains
+      type: refs
     - target: dec-svc-constraints
-      type: contains
+      type: refs
 ---
 # Decision Service — 시스템 개요
 
