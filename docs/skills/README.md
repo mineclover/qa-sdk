@@ -51,8 +51,14 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
   build / sync / validate / audit / quality / vitest 회귀의 표준 검증 루프
 - `skills/def-doctor/SKILL.md`
   definition-catalog 통합 헬스체크 — onboarding 및 pre-commit 시 가장 먼저 실행하는 진입점 (`qa-sdk def doctor`)
+- `skills/semantic-change/SKILL.md`
+  좌표/링크 semantic 변경 체크리스트 — Option B 사례를 재사용 가능한 4-계층 검증 절차로 고정
 - `docs/specs/system/layer-separation.rule.md`
   L1 data / L2 validator / L3 workflow / L4 tooling 4 계층 책임 + workflow smoke 원칙 (Phase 3b Option B 재발 방지)
+- `docs/specs/system/change-simulation-precedence.rule.md`
+  구조 변경 시 Phase 0 시뮬레이션 선행 규율 — semantic-change Step 2 의 근거
+- `docs/specs/system/validator-suppression-tags.rule.md`
+  validator 경고 억제 수단 전수 목록 — def-validate / def-audit 의 suppression 판단 근거
 - `docs/skills/decide.md`
   decision-flow 실행 절차
 
