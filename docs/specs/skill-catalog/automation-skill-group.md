@@ -17,6 +17,8 @@ def:
       type: contains
     - target: skill-event-taxonomy-gate
       type: contains
+    - target: skill-catalog-system
+      type: depends_on
 ---
 
 

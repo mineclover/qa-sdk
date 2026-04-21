@@ -34,6 +34,8 @@ def:
       type: contains
     - target: skill-def-state
       type: contains
+    - target: skill-catalog-system
+      type: depends_on
 ---
 
 

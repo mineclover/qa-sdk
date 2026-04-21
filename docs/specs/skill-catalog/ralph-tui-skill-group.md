@@ -17,6 +17,8 @@ def:
       type: contains
     - target: skill-ralph-tui-create-beads-rust
       type: contains
+    - target: skill-catalog-system
+      type: depends_on
 ---
 
 

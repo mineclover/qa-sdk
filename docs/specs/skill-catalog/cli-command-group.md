@@ -21,6 +21,8 @@ def:
       type: contains
     - target: cli-command-registry-plan
       type: traces_to
+    - target: skill-catalog-system
+      type: depends_on
 ---
 
 

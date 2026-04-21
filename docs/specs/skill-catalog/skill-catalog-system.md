@@ -10,15 +10,7 @@ def:
   layer: experience
   tags: [structural, entry-point, generated]
   links:
-    - target: claude-skill-group
-      type: depends_on
-    - target: automation-skill-group
-      type: depends_on
-    - target: ralph-tui-skill-group
-      type: depends_on
     - target: dkg-skill-group
-      type: depends_on
-    - target: cli-command-group
       type: depends_on
     - target: claude-skill-group
       type: refs
