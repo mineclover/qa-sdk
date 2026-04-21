@@ -13,7 +13,11 @@
  * Catalog 패키지 순수성 유지 (의존 방향: service → catalog, 역방향 금지).
  */
 
-import { ASPECT_PARENTS, deriveAspectParent } from "definition-catalog";
+import {
+  ASPECT_PARENTS,
+  deriveAspectParent,
+  getAspectFamily as getAspectFamilyFromMap,
+} from "definition-catalog";
 import { eq } from "drizzle-orm";
 import type { DefinitionServiceDatabase } from "../database.module.js";
 import { aspectParents } from "../db/schema.js";
@@ -31,6 +35,17 @@ export interface AspectRegistry {
 
   /** 부모 aspect id 로 자식 목록을 조회. */
   getChildrenOf(parentId: string): string[];
+
+  /**
+   * aspect 와 모든 후손 (BFS) 을 반환. 입력 aspect 가 결과의 첫 원소.
+   * 자식이 없는 aspect 는 `[aspect]` 단독을 반환한다 (2-level 전제, RFC 00-design Q5).
+   *
+   * DB 우선 (aspect_parents 반복 조회) → runtime map fallback. 정렬은 알파벳 오름차순으로
+   * 안정적 결정론을 보장한다. cycle 방어는 visited set 으로 수행.
+   *
+   * Phase C-2 — CLI `--include-children`, `--rollup-aspect` 의 기반 API.
+   */
+  getAspectFamily(aspect: string): string[];
 }
 
 /**
@@ -69,7 +84,9 @@ export function createAspectRegistry(
           .from(aspectParents)
           .where(eq(aspectParents.parentId, parentId))
           .all();
-        if (rows.length > 0) return rows.map((row) => row.childId);
+        if (rows.length > 0) {
+          return rows.map((row) => row.childId).toSorted((a, b) => a.localeCompare(b));
+        }
       } catch (err) {
         logger.warn(
           { err, parentId },
@@ -78,11 +95,49 @@ export function createAspectRegistry(
       }
       return childrenFromRuntimeMap(parentId);
     },
+
+    getAspectFamily(aspect: string): string[] {
+      if (!db) return getAspectFamilyFromMap(aspect);
+
+      // DB 우선 BFS — getChildrenOf 는 이미 DB → runtime map fallback 을 내장하므로
+      // 본 method 는 단순히 그걸 반복 호출하면 된다. visited set 으로 cycle 방어.
+      const visited = new Set<string>([aspect]);
+      const family: string[] = [aspect];
+      const queue: string[] = [aspect];
+      try {
+        while (queue.length > 0) {
+          const current = queue.shift()!;
+          const rows = db
+            .select()
+            .from(aspectParents)
+            .where(eq(aspectParents.parentId, current))
+            .all();
+          const children =
+            rows.length > 0
+              ? rows.map((row) => row.childId).toSorted((a, b) => a.localeCompare(b))
+              : childrenFromRuntimeMap(current);
+          for (const child of children) {
+            if (visited.has(child)) continue;
+            visited.add(child);
+            family.push(child);
+            queue.push(child);
+          }
+        }
+      } catch (err) {
+        logger.warn(
+          { err, aspect },
+          "aspect_parents family BFS 실패 — runtime map fallback 적용",
+        );
+        return getAspectFamilyFromMap(aspect);
+      }
+      return family;
+    },
   };
 }
 
 function childrenFromRuntimeMap(parentId: string): string[] {
   return Object.entries(ASPECT_PARENTS)
     .filter(([, parent]) => parent === parentId)
-    .map(([child]) => child);
+    .map(([child]) => child)
+    .toSorted((a, b) => a.localeCompare(b));
 }

@@ -69,6 +69,8 @@ export {
   AXIS_META,
   ASPECT_PARENTS,
   deriveAspectParent,
+  getAspectChildren,
+  getAspectFamily,
 } from "./vocabulary.js";
 
 // ─── 분류 체계 ──────────────────────────────────────────

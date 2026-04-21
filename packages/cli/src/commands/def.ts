@@ -37,6 +37,8 @@ import {
   deriveAllDomainRoots,
   deriveDomainRoot,
   detectOwnerRootMismatch,
+  deriveAspectParent,
+  getAspectFamily,
   type DefDataSource,
   type DefDoc,
   type DefFeedbackRequestSummary,
@@ -161,6 +163,7 @@ async function cmdList(source: DefDataSource, flags: Record<string, string>) {
   const limit = flags["limit"] ? Number(flags["limit"]) : 50;
   const offset = flags["offset"] ? Number(flags["offset"]) : 0;
   const domainRootFilter = flags["domain-root"];
+  const includeChildren = flags["include-children"] === "true";
 
   const filter = {
     type: flags["type"],
@@ -183,6 +186,17 @@ async function cmdList(source: DefDataSource, flags: Record<string, string>) {
     return await cmdListByDomainRoot(source, filter, domainRootFilter, limit, offset);
   }
 
+  // --include-children: aspect family (self + descendants) 전체 문서 집계.
+  // DefListFilter 는 단일 aspect 만 받으므로 client 측에서 family 기반으로 필터링한다.
+  // Phase C-2 (aspect-schema-hierarchy RFC).
+  if (includeChildren) {
+    if (!filter.aspect) {
+      console.log(`[${source.mode}] --include-children 은 --aspect 가 함께 지정되어야 합니다.`);
+      return;
+    }
+    return await cmdListWithAspectFamily(source, filter, limit, offset);
+  }
+
   // 전체 건수 조회 (같은 필터, limit 없이)
   const total = (await source.list({ ...filter, limit: 100000, offset: 0 })).length;
   const docs = await source.list(filter);
@@ -203,6 +217,64 @@ async function cmdList(source: DefDataSource, flags: Record<string, string>) {
 
   if (remaining > 0) {
     console.log(`\n  다음 페이지: --offset=${to} --limit=${limit}`);
+  }
+}
+
+async function cmdListWithAspectFamily(
+  source: DefDataSource,
+  baseFilter: Record<string, unknown>,
+  limit: number,
+  offset: number,
+): Promise<void> {
+  const parentAspect = baseFilter["aspect"] as string;
+  const family = getAspectFamily(parentAspect);
+
+  // aspect 1 개씩 server/local 조회 후 merge. 서버 API 가 아직 multi-aspect 필터를 지원하지 않으므로
+  // 클라이언트 측 집계로 구현한다. 조회 비용은 family 크기 (최대 8) 이므로 경미하다.
+  const { aspect: _aspect, limit: _l, offset: _o, ...rest } = baseFilter;
+  const seen = new Set<string>();
+  const all: DefDoc[] = [];
+  for (const aspect of family) {
+    const docs = await source.list({ ...rest, aspect, limit: 100000, offset: 0 });
+    for (const doc of docs) {
+      if (seen.has(doc.docId)) continue;
+      seen.add(doc.docId);
+      all.push(doc);
+    }
+  }
+
+  // 안정 정렬: aspect (family 순서) → docId
+  const familyOrder = new Map(family.map((a, idx) => [a, idx]));
+  all.sort((a, b) => {
+    const ai = familyOrder.get(a.aspect ?? "") ?? Number.MAX_SAFE_INTEGER;
+    const bi = familyOrder.get(b.aspect ?? "") ?? Number.MAX_SAFE_INTEGER;
+    if (ai !== bi) return ai - bi;
+    return a.docId.localeCompare(b.docId);
+  });
+
+  const total = all.length;
+  const page = all.slice(offset, offset + limit);
+  const from = total === 0 ? 0 : offset + 1;
+  const to = offset + page.length;
+  const remaining = total - to;
+
+  console.log(
+    `[${source.mode}] aspect=${parentAspect} (+${family.length - 1} children: ${family.slice(1).join(", ") || "없음"})`,
+  );
+  console.log(`  ${from}-${to} / ${total}건${remaining > 0 ? ` (미표시 ${remaining}건)` : ""}`);
+  for (const d of page) {
+    const levelBadge = d.level && d.level !== "leaf" ? `[${d.level}] ` : "";
+    const tags = d.tags.length > 0 ? ` [${d.tags.join(",")}]` : "";
+    console.log(`  ${levelBadge}${d.docId}  ${d.scope}/${d.aspect}  ${d.lifecycle}${tags}`);
+    if (d.purpose) {
+      console.log(`    ${d.purpose.slice(0, 100)}`);
+    }
+  }
+
+  if (remaining > 0) {
+    console.log(
+      `\n  다음 페이지: --offset=${to} --limit=${limit} --aspect=${parentAspect} --include-children`,
+    );
   }
 }
 
@@ -1178,9 +1250,65 @@ async function cmdAuditByDomain(source: DefDataSource) {
   }
 }
 
+/**
+ * aspect hierarchy 기반 rollup audit (Phase C-2, aspect-schema-hierarchy RFC).
+ *
+ * 모든 문서를 aspect 기준으로 그룹핑하되, 자식 aspect 의 문서는 부모 aspect 의 bucket 으로 집계.
+ * 출력: root aspect (부모 없는 aspect) 별 문서 수 + 직속/후손 aspect breakdown.
+ *
+ * 용도: aspect family 별 문서 분포 (어떤 family 에 문서가 많이 쌓여있는가, rollup 대상 후보) 를 한눈에 본다.
+ */
+async function cmdAuditRollupAspect(source: DefDataSource): Promise<void> {
+  const all = await source.list({ limit: 100000 });
+  const active = all.filter((d) => d.lifecycle !== "deprecated" && d.lifecycle !== "archived");
+
+  // 각 문서의 root aspect = parent chain 상단 (최상위 aspect). parent 없으면 자기 자신.
+  function resolveRoot(aspect: string | undefined): string {
+    if (!aspect) return "(unknown)";
+    const visited = new Set<string>();
+    let current = aspect;
+    while (!visited.has(current)) {
+      visited.add(current);
+      const parent = deriveAspectParent(current);
+      if (!parent) return current;
+      current = parent;
+    }
+    return current; // cycle 방어
+  }
+
+  const byRoot = new Map<string, { total: number; byAspect: Map<string, number> }>();
+  for (const doc of active) {
+    const aspect = doc.aspect ?? "(none)";
+    const root = resolveRoot(doc.aspect);
+    const bucket = byRoot.get(root) ?? { total: 0, byAspect: new Map<string, number>() };
+    bucket.total += 1;
+    bucket.byAspect.set(aspect, (bucket.byAspect.get(aspect) ?? 0) + 1);
+    byRoot.set(root, bucket);
+  }
+
+  const sorted = [...byRoot.entries()].toSorted((a, b) => b[1].total - a[1].total);
+
+  console.log(`[${source.mode}] === aspect rollup 리포트 (${byRoot.size}개 root, ${active.length}건) ===`);
+  for (const [root, bucket] of sorted) {
+    const family = getAspectFamily(root);
+    const descendantCount = family.length - 1;
+    console.log(
+      `\n[${root}]  ${bucket.total}건  (family ${family.length}개: self + ${descendantCount} 후손)`,
+    );
+    const breakdown = [...bucket.byAspect.entries()].toSorted((a, b) => b[1] - a[1]);
+    for (const [aspect, count] of breakdown) {
+      const marker = aspect === root ? "■" : "└";
+      console.log(`  ${marker} ${aspect}: ${count}건`);
+    }
+  }
+}
+
 async function cmdAudit(source: DefDataSource, flags: Record<string, string> = {}) {
   if (flags["by-domain"] === "true" || flags["by-domain"] === "") {
     return cmdAuditByDomain(source);
+  }
+  if (flags["rollup-aspect"] === "true" || flags["rollup-aspect"] === "") {
+    return cmdAuditRollupAspect(source);
   }
 
   const all = await source.list({ limit: 2000 });
@@ -1399,7 +1527,7 @@ const DEF_HELP_SECTIONS = [
   {
     title: "조회",
     lines: [
-      "list [--scope=X] [--level=Z] [--layer=Y] [--tag=T] [--q=검색어] [--domain-root=<rootId>]",
+      "list [--scope=X] [--aspect=A] [--level=Z] [--layer=Y] [--tag=T] [--q=검색어] [--domain-root=<rootId>] [--include-children]",
       "get <ID> | --address=<ADDR>  단건 조회",
       "body <ID>           최신 본문 조회 (--json 가능)",
       "read <ID>           body의 별칭",
@@ -1429,6 +1557,8 @@ const DEF_HELP_SECTIONS = [
     lines: [
       "sync                docs → local DB 동기화",
       "audit               품질 리포트 + 그래프 검증",
+      "audit --rollup-aspect  aspect family 별 문서 rollup 집계",
+      "audit --by-domain   도메인 루트 기준 리포트",
       "validate            DB 기준 그래프 + code reference 검증",
       "code-link-gaps      explicit 문서 연결 없는 코드 목록",
       "stats               분포 통계",

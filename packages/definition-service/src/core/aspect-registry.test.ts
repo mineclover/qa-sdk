@@ -96,4 +96,73 @@ describe("createAspectRegistry", () => {
       }
     });
   });
+
+  describe("getAspectFamily (Phase C-2)", () => {
+    describe("DB 경로", () => {
+      let ctx: ReturnType<typeof createInMemoryDb>;
+
+      beforeEach(() => {
+        ctx = createInMemoryDb();
+        const rows = Object.entries(ASPECT_PARENTS).map(([childId, parentId]) => ({
+          childId,
+          parentId,
+          description: null,
+        }));
+        if (rows.length > 0) {
+          ctx.db.insert(aspectParents).values(rows).run();
+        }
+      });
+
+      it("부모 aspect 는 self + 모든 자식을 포함", () => {
+        const registry = createAspectRegistry(ctx.db);
+        const family = registry.getAspectFamily("func_def");
+        expect(family[0]).toBe("func_def");
+        const expectedChildren = Object.entries(ASPECT_PARENTS)
+          .filter(([, parent]) => parent === "func_def")
+          .map(([child]) => child);
+        for (const c of expectedChildren) {
+          expect(family).toContain(c);
+        }
+        expect(family.length).toBe(1 + expectedChildren.length);
+      });
+
+      it("leaf aspect 는 자기 자신만 반환", () => {
+        const registry = createAspectRegistry(ctx.db);
+        expect(registry.getAspectFamily("codegen_func")).toEqual(["codegen_func"]);
+      });
+
+      it("결과에 중복 없음 (cycle 방어)", () => {
+        const registry = createAspectRegistry(ctx.db);
+        const family = registry.getAspectFamily("process_flow");
+        expect(new Set(family).size).toBe(family.length);
+      });
+    });
+
+    describe("Fallback 경로 (빈 DB)", () => {
+      let ctx: ReturnType<typeof createInMemoryDb>;
+
+      beforeEach(() => {
+        ctx = createInMemoryDb();
+      });
+
+      it("빈 DB → runtime map 기반 family 와 동일", () => {
+        const registry = createAspectRegistry(ctx.db);
+        const family = registry.getAspectFamily("func_def");
+        expect(family[0]).toBe("func_def");
+        const expected = Object.entries(ASPECT_PARENTS)
+          .filter(([, p]) => p === "func_def")
+          .map(([c]) => c);
+        for (const c of expected) expect(family).toContain(c);
+      });
+    });
+
+    describe("DB 미전달", () => {
+      it("db 없이도 runtime map 기반으로 작동", () => {
+        const registry = createAspectRegistry();
+        const family = registry.getAspectFamily("func_def");
+        expect(family[0]).toBe("func_def");
+        expect(family.length).toBeGreaterThan(1);
+      });
+    });
+  });
 });
