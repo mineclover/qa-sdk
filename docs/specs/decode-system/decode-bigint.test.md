@@ -2,15 +2,15 @@
 def:
   tier: component
   id: decode-bigint-test
-  scope: flow
-  aspect: user_scenario
+  scope: feature
+  aspect: scenario
   depth: validation
   lifecycle: approved
   layer: mediation
   tags: [testing, bigint]
   links:
     - target: decode-bigint
-      type: depends_on
+      type: verifies
   source: packages/index-meta/src/prefix-decoder-big.test.ts
 ---
 

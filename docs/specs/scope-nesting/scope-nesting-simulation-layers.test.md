@@ -2,15 +2,15 @@
 def:
   tier: component
   id: scope-nesting-simulation-layers-test
-  scope: flow
-  aspect: user_scenario
+  scope: feature
+  aspect: scenario
   depth: validation
   lifecycle: approved
   layer: domain
   tags: [testing]
   links:
     - target: scope-nesting-simulation-layers
-      type: depends_on
+      type: verifies
   source: packages/core/src/scope-nesting-simulate.test.ts
 ---
 

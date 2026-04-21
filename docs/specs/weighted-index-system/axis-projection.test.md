@@ -4,14 +4,14 @@ def:
   tier: component
   scope: feature
   aspect: scenario
-  depth: specification
+  depth: validation
   lifecycle: approved
   layer: domain
   svc: weighted-index
   tags: [testing, optimization]
   links:
     - target: axis-projection
-      type: traces_to
+      type: verifies
   source: packages/weighted-index/src/math/calc.test.ts
 ---
 

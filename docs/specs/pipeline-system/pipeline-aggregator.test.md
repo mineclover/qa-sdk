@@ -2,15 +2,15 @@
 def:
   tier: component
   id: pipeline-aggregator-test
-  scope: flow
-  aspect: user_scenario
+  scope: feature
+  aspect: scenario
   depth: validation
   lifecycle: approved
   layer: operation
   tags: [testing, aggregation]
   links:
     - target: pipeline-aggregator
-      type: depends_on
+      type: verifies
   source: packages/store/src/adapters/memory/aggregator.adapter.test.ts
 ---
 

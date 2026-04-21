@@ -2,15 +2,15 @@
 def:
   id: gate-cache-invalidation-test
   tier: component
-  scope: flow
-  aspect: user_scenario
+  scope: feature
+  aspect: scenario
   depth: validation
   lifecycle: approved
   layer: operation
   svc: gate-service
   links:
     - target: gate-cache-invalidation
-      type: refines
+      type: verifies
   source: packages/gate-service/src/services/cache-invalidation.test.ts
 ---
 

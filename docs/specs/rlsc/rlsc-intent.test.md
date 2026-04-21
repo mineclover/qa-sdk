@@ -2,15 +2,15 @@
 def:
   id: rlsc-intent-test
   tier: component
-  scope: flow
-  aspect: user_scenario
+  scope: feature
+  aspect: scenario
   depth: validation
   lifecycle: approved
   layer: domain
   svc: rlsc
   links:
     - target: rlsc-intent
-      type: refines
+      type: verifies
   source: packages/rlsc/src/intent.test.ts
 ---
 

@@ -2,15 +2,15 @@
 def:
   id: rlsc-relations-test
   tier: component
-  scope: flow
-  aspect: user_scenario
+  scope: feature
+  aspect: scenario
   depth: validation
   lifecycle: approved
   layer: domain
   svc: rlsc
   links:
     - target: rlsc-relations
-      type: refines
+      type: verifies
   source: packages/rlsc/src/relations.test.ts
 ---
 

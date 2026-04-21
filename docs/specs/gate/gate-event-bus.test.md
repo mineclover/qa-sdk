@@ -2,15 +2,15 @@
 def:
   id: gate-event-bus-test
   tier: component
-  scope: flow
-  aspect: user_scenario
+  scope: feature
+  aspect: scenario
   depth: validation
   lifecycle: approved
   layer: mediation
   svc: gate-service
   links:
     - target: gate-event-bus
-      type: refines
+      type: verifies
   source: packages/gate-service/src/adapters/memory-event-bus.test.ts
 ---
 

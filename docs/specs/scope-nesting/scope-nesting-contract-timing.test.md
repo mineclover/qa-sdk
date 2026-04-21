@@ -2,15 +2,15 @@
 def:
   tier: component
   id: scope-nesting-contract-timing-test
-  scope: flow
-  aspect: user_scenario
+  scope: feature
+  aspect: scenario
   depth: validation
   lifecycle: approved
   layer: domain
   tags: [testing]
   links:
     - target: scope-nesting-contract-timing
-      type: depends_on
+      type: verifies
   source: packages/core/src/scope-nesting-timing.test.ts
 ---
 

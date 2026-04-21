@@ -2,15 +2,15 @@
 def:
   tier: component
   id: pipeline-cache-test
-  scope: flow
-  aspect: user_scenario
+  scope: feature
+  aspect: scenario
   depth: validation
   lifecycle: approved
   layer: operation
   tags: [testing, cache]
   links:
     - target: pipeline-cache
-      type: depends_on
+      type: verifies
   source: packages/store/src/adapters/memory/key-cache.adapter.test.ts
 ---
 

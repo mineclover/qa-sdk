@@ -2,16 +2,16 @@
 def:
   id: service-control-plane-cleanup-test
   tier: component
-  scope: flow
-  aspect: user_scenario
+  scope: feature
+  aspect: scenario
   depth: validation
   lifecycle: approved
   layer: operation
   links:
     - target: realization-service-control-plane
-      type: refines
+      type: verifies
     - target: service-manifest-cleanup-lane
-      type: refines
+      type: verifies
   source: packages/cli/src/commands/service.test.ts
 ---
 # Service Control Plane Cleanup — 검증 기준

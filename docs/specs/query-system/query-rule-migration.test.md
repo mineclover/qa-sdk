@@ -2,15 +2,15 @@
 def:
   id: query-rule-migration-test
   tier: component
-  scope: flow
-  aspect: user_scenario
+  scope: feature
+  aspect: scenario
   depth: validation
   lifecycle: approved
   layer: mediation
   svc: query-service
   links:
     - target: query-rule-migration
-      type: refines
+      type: verifies
   source: packages/query-service/src/lib/rule-migration-service.test.ts
 ---
 

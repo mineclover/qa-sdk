@@ -2,8 +2,8 @@
 def:
   id: event-taxonomy-contracts-test
   tier: component
-  scope: flow
-  aspect: user_scenario
+  scope: feature
+  aspect: scenario
   depth: validation
   lifecycle: approved
   layer: operation
@@ -11,7 +11,7 @@ def:
   tags: [testing, observability]
   links:
     - target: event-taxonomy-role-contract
-      type: refines
+      type: verifies
     - target: event-mapping-pack-spec
       type: depends_on
     - target: service-event-adoption-spec

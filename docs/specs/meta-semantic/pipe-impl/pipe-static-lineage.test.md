@@ -13,7 +13,7 @@ def:
   layer: domain
   links:
     - target: pipe-static-lineage
-      type: refines
+      type: verifies
     - target: test-name-tokens
       type: depends_on
   source: packages/core/src/pipe/pipe-lineage-consistency.test.ts
