@@ -48,7 +48,8 @@ def:
 catalog 의 모든 export 는 **pure function** 또는 **pure data structure**:
 
 - `DEF_ASPECT`, `DEF_SCOPE`, `DEF_LEVEL`, `DEF_LIFECYCLE` — 상수 데이터
-- `ASPECT_PARENTS` — runtime map
+- `ASPECT_PARENTS` — runtime map (aspect hierarchy SSoT)
+- `ROOT_ASPECTS` — 최상위 aspect 권위 set (completeness 불변식 짝)
 - `deriveAspectParent`, `getAspectChildren`, `getAspectFamily`, `deriveDomainRoot` — pure function
 - `validateGraph` — in-memory registry 입력 → issue 배열 출력
 
@@ -91,9 +92,13 @@ Bridge 패턴 3원칙:
 
 동일 정보가 catalog runtime map 과 DB 양쪽에 있을 때 **catalog 가 SSoT**, DB 는 파생 복제본:
 
-- `ASPECT_PARENTS` map (catalog) = SSoT
-- `aspect_parents` 테이블 (service) = 파생 복제 — `def sync` 시 map 기준으로 upsert
+- `ASPECT_PARENTS` map (catalog) = **SSoT** — DB 의존 없는 runtime constant
+- `aspect_parents` 테이블 (service) = 파생 복제 (**service-side replica**) — `def sync` 시 map 기준으로 upsert
 - Drift 발생 시 map 기준으로 치유 (DB-only orphan 은 warning 만, 자동 삭제 금지)
+
+`ASPECT_PARENTS` map 은 catalog SSoT, `aspect_parents` DB 테이블은 service-side replica. Bridge 의 역할은 DB-first 쿼리 + runtime map fallback 이며, 역방향 (DB → catalog 치유) 은 금지.
+
+완결성 불변식 (Phase C-3): 모든 aspect 는 `ROOT_ASPECTS` 또는 `ASPECT_PARENTS` 중 정확히 하나에 등록되어야 한다. 상세: [aspect-naming-convention.rule.md §1.6](./aspect-naming-convention.rule.md#completeness-invariant)
 
 ### 1.4 CLI 호출 경로 선택
 

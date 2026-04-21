@@ -73,7 +73,31 @@ def:
 
 fallback 부모 aspect (`func_def`, `process_flow`, `api_contract`, `domain_data`) 는 **영구 유지** 한다. 하위 분화되지 않은 기타 문서의 귀속처가 사라지면 `VALID_SCOPE_ASPECTS` 검증이 실패하므로 `B-4` (레거시 제거) 는 실행하지 않는다.
 
-### 1.6 Capacity 관리
+### 1.6 Completeness 불변식 (Phase C-3) ^completeness-invariant
+
+모든 `DEF_ASPECT.entries` 원소는 다음 두 레지스트리 중 **정확히 하나** 에 등록되어야 한다.
+
+- `ROOT_ASPECTS` (`ReadonlySet<string>`) — 부모 없는 최상위 aspect 의 권위적 목록
+- `ASPECT_PARENTS` (`Record<string, string>`) — 자식 → 부모 명시 map
+
+Both 금지, neither 금지. 이 불변식은 `packages/definition-catalog/src/aspect-parents.test.ts` 의 5 경로 검증이 기계적으로 강제한다.
+
+불변식 선언:
+
+```
+∀ a ∈ DEF_ASPECT.entries :  (a ∈ ROOT_ASPECTS) ⊕ (a ∈ keys(ASPECT_PARENTS))
+```
+
+신규 aspect 를 추가할 때 §1.4 체크리스트에 다음 행을 반드시 적용:
+
+| 시나리오 | 등록 위치 |
+|---|---|
+| 신규 값이 계열 부모 (stem 없이 단독 개념) | `ROOT_ASPECTS` set |
+| 신규 값이 기존 부모의 하위 역할 (`{role}_{parent-stem}`) | `ASPECT_PARENTS` map |
+
+`ROOT_ASPECTS` 는 `packages/definition-catalog/src/vocabulary.ts` 에서 export 되며 23 개의 현재 roots 를 포함한다 (Phase C-3 기준).
+
+### 1.7 Capacity 관리
 
 `DEF_ASPECT.capacity` 는 항상 `nextPowerOf2(entries.length * 2)` 이상이어야 한다. headroom ≤ 1 은 warning, = 0 은 critical.
 
@@ -97,15 +121,15 @@ pnpm --filter definition-catalog test vocabulary taxonomy aspect-family
 pnpm exec qa-sdk def validate
 ```
 
-### 2.2 Delta 정합성 체크
+### 2.2 Delta 정합성 체크 (Completeness 불변식)
 
 신규 aspect 추가 PR 리뷰 시 아래 등식을 확인:
 
 ```
-|ASPECT_PARENTS| + |최상위 aspect 목록| == |DEF_ASPECT.entries|
+|ASPECT_PARENTS| + |ROOT_ASPECTS| == |DEF_ASPECT.entries|
 ```
 
-최상위 aspect 는 map 에 등록하지 않으므로 `ASPECT_PARENTS` 에는 존재하지 않고 entries 에는 존재한다. 이 delta 가 깨지면 누락이 있다.
+`ROOT_ASPECTS` 는 Phase C-3 에서 도입된 최상위 aspect 의 권위적 레지스트리다. delta 가 깨지면 §1.6 completeness 불변식 위반으로 CI 가 실패한다. 구체적 검증 로직은 `packages/definition-catalog/src/aspect-parents.test.ts` 의 `ASPECT_PARENTS 완결성 불변식` suite 참조.
 
 ### 2.3 Rollup 정합성
 
@@ -144,5 +168,6 @@ sqlite3 data/definition-service.sqlite \
 - [aspect-schema-hierarchy RFC](../../proposals/aspect-schema-hierarchy/README.md) — 본 규율이 schema 승격의 기반
 - [domain-hierarchy/reviews/2026-04-21-final-cleanup.md](../../proposals/domain-hierarchy/reviews/2026-04-21-final-cleanup.md) §"Part C — Aspect split deferred" — 세분화가 미완이면 dup-coord 가 재발한다는 경험적 근거
 - [aspect-evolution-index.md](../../proposals/aspect-evolution-index.md) — 3-RFC 통합 서사
-- `packages/definition-catalog/src/vocabulary.ts` — 구현 지점 (`DEF_ASPECT`, `ASPECT_PARENTS`, `deriveAspectParent`, `getAspectFamily`)
+- `packages/definition-catalog/src/vocabulary.ts` — 구현 지점 (`DEF_ASPECT`, `ASPECT_PARENTS`, `ROOT_ASPECTS`, `deriveAspectParent`, `getAspectFamily`)
+- `packages/definition-catalog/src/aspect-parents.test.ts` — §1.6 completeness 불변식 강제 테스트 (Phase C-3)
 - `packages/definition-catalog/src/taxonomy.ts` — `VALID_SCOPE_ASPECTS` 동시 수정 지점

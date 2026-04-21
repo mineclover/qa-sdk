@@ -198,6 +198,20 @@ export const DEF_ASPECT = {
  * 이름만으로 부모를 역산 시도하지 않는다 (stem 중복/예외로 불안정).
  *
  * 최상위 aspect(부모 없음) 는 map 에 등록하지 않음 → deriveAspectParent() = null.
+ * 최상위 aspect 는 별도로 `ROOT_ASPECTS` set 에 명시 등록하여 완결성 불변식을 강제한다.
+ *
+ * SSoT 정책 (Phase C-3, catalog-purity-bridge.rule.md §1.3):
+ *   - 본 map 이 catalog 패키지의 aspect hierarchy **SSoT** — DB 의존 없음
+ *   - `aspect_parents` DB table (service 측) 은 본 map 을 기반으로 populate 되는 파생 복제본
+ *   - pure catalog code 는 본 map 을 직접 참조 가능, service code 는 bridge 를 사용한다
+ *
+ * @deprecated 직접 참조는 catalog 내부 pure 코드로 한정한다. Service/CLI code 는
+ *   `packages/definition-service/src/core/aspect-registry.ts` 의 `createAspectRegistry()`
+ *   bridge 또는 본 모듈이 제공하는 pure helper (`deriveAspectParent`, `getAspectChildren`,
+ *   `getAspectFamily`) 를 사용하라. Bridge 는 DB-first 의미론 + runtime fallback 을 제공한다.
+ *   본 export 는 Phase C-1 fallback 경로를 위해 유지되며 제거되지 않는다.
+ *
+ *   Rationale: aspect-schema-hierarchy RFC Phase C-3 (2026-04-21).
  */
 export const ASPECT_PARENTS: Record<string, string> = {
   // func_def 계열
@@ -232,6 +246,59 @@ export const ASPECT_PARENTS: Record<string, string> = {
   taxonomy_data: "domain_data",
   coordinate_model_data: "domain_data",
 };
+
+/**
+ * ROOT_ASPECTS — 계층 최상위 aspect 집합 (부모 없음).
+ *
+ * `ASPECT_PARENTS` 에 등록하지 않은 aspect 가 "의도된 최상위" 인지
+ * "누락된 자식" 인지 구분하기 위한 명시 레지스트리. Phase C-3 (aspect-schema-hierarchy
+ * RFC) 완결성 불변식의 핵심:
+ *
+ *   모든 `DEF_ASPECT.entries` 원소는 `ROOT_ASPECTS` 또는 `ASPECT_PARENTS` 중
+ *   **정확히 하나** 에 속해야 한다 (both 금지, neither 금지).
+ *
+ * 이 불변식은 `aspect-parents.test.ts` 의 4 경로 테스트가 기계적으로 강제한다.
+ * 신규 aspect 추가 시 본 set 또는 `ASPECT_PARENTS` 중 하나에 등록하지 않으면 CI 실패.
+ *
+ * 포함 범위:
+ *   - 레거시 generic roots (`func_def`, `process_flow`, `api_contract`, `domain_data`)
+ *     — fallback 부모로 영구 유지 (aspect-naming-convention.rule.md §1.5)
+ *   - 계열 분화되지 않은 specialty aspects (`scenario`, `relation`, `layout` 등)
+ *   - meta-scope 전용 (`proposal_design`)
+ */
+export const ROOT_ASPECTS: ReadonlySet<string> = new Set([
+  // ui family roots
+  "layout",
+  "component",
+  "interaction",
+  // feature family roots
+  "func_def",
+  "scenario",
+  // flow family roots
+  "user_scenario",
+  "process_flow",
+  "relation",
+  // state family roots
+  "app_state",
+  "domain_state",
+  "system_state",
+  // constraint family roots
+  "tech_constraint",
+  "biz_constraint",
+  "infra_constraint",
+  // data family roots
+  "domain_data",
+  "system_data",
+  "external_data",
+  "prefix_schema",
+  "axis_catalog",
+  // interface family roots
+  "api_contract",
+  "cli_contract",
+  "event_contract",
+  // meta family roots
+  "proposal_design",
+]);
 
 /**
  * 자식 aspect 에 대해 부모 aspect id 를 반환. 최상위/미등록 값 → null.

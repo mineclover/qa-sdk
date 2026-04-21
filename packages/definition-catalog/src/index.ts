@@ -68,6 +68,7 @@ export {
   DEFINITION_AXES,
   AXIS_META,
   ASPECT_PARENTS,
+  ROOT_ASPECTS,
   deriveAspectParent,
   getAspectChildren,
   getAspectFamily,
