@@ -179,6 +179,16 @@ broken-link(error), circular-ref(error), self-ref(error), orphan(warning), multi
 - **Protobuf**: 로컬→JSON, 원격→Proto. `@qa-sdk/codec-proto`
 - **Verdaccio**: `pnpm registry` + `pnpm publish:local`
 
+## CI gates
+
+`.github/workflows/def-gate.yml` — `docs/specs/**`, `docs/proposals/**`, `packages/definition-*/**`, `packages/cli/**`, `packages/cli-command/**`, `skills/**` 경로 touch 시 자동 실행.
+
+- `def sync` + `def validate` — L2 structural gate (errors=0 강제)
+- `aspect-parents` invariants — L2 vocabulary drift gate (5건)
+- `workflow-smoke` — L3 silent-empty CLI regression gate (12건)
+
+근거: `docs/specs/system/layer-separation.rule.md` §2 (Workflow Smoke 원칙).
+
 ## DKG Constraints
 
 - CON-001: rbac_role과 role 동시 사용 금지

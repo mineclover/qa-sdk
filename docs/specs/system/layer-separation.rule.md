@@ -119,6 +119,8 @@ Phase 3b Option B 사건의 근본 교훈 3가지를 구속력 있는 원칙으�
 
 ## 3. 검증
 
+> 자동화: `.github/workflows/def-gate.yml` 이 PR 에서 §3.1 (`def sync` + `def validate`), §3.2 의 `aspect-parents` + `workflow-smoke` 를 강제한다. 실패 시 merge 차단.
+
 ### 3.1 L2 validator (structural)
 
 ```bash

@@ -1,0 +1,91 @@
+name: def gate
+
+# 목적: docs/specs/** 의 semantic change 나 CLI workflow 회귀를 CI 로 차단한다.
+# 근거: docs/specs/system/layer-separation.rule.md §2 (Workflow Smoke 원칙).
+#   - L2 validator(`def validate`) = 구조적 불변식 gate
+#   - L2 invariants(`aspect-parents`) = vocabulary drift gate
+#   - L3 workflow smoke(`workflow-smoke`) = silent-empty CLI 회귀 gate
+
+on:
+  pull_request:
+    paths:
+      - 'docs/specs/**'
+      - 'docs/proposals/**'
+      - 'packages/definition-catalog/**'
+      - 'packages/definition-data-source/**'
+      - 'packages/definition-client/**'
+      - 'packages/definition-service/**'
+      - 'packages/cli/**'
+      - 'packages/cli-command/**'
+      - 'skills/**'
+      - '.github/workflows/def-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/specs/**'
+      - 'docs/proposals/**'
+      - 'packages/definition-catalog/**'
+      - 'packages/definition-data-source/**'
+      - 'packages/definition-client/**'
+      - 'packages/definition-service/**'
+      - 'packages/cli/**'
+      - 'packages/cli-command/**'
+      - 'skills/**'
+      - '.github/workflows/def-gate.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: def-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  def-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable Corepack (pnpm 10.30.3)
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.30.3 --activate
+
+      - name: Resolve pnpm store path
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-node-22-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node-22-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # CLI 는 workspace 전체 의존을 번들하므로 -r 빌드가 단순/안전하다.
+      - name: Build workspace
+        run: pnpm -r run build
+
+      - name: def sync (local definition SQLite populate)
+        run: node packages/cli/dist/index.js def sync
+
+      - name: def validate (L2 structural gate — errors=0)
+        run: node packages/cli/dist/index.js def validate
+
+      - name: aspect-parents invariants (L2 vocabulary gate)
+        working-directory: packages/definition-catalog
+        run: pnpm exec vitest run aspect-parents
+
+      - name: workflow smoke (L3 silent-empty regression gate)
+        working-directory: packages/cli
+        run: pnpm exec vitest run workflow-smoke
