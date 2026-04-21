@@ -19,6 +19,8 @@ def:
       type: contains
     - target: motion-content-editor-demo
       type: contains
+    - target: canvas-viewport-spec
+      type: depends_on
 ---
 
 # Viz 언어 계약 그룹
