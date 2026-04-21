@@ -29,6 +29,8 @@ def:
       type: refs
     - target: change-simulation-precedence
       type: refs
+    - target: system-specs-rules-index
+      type: refs
 status: accepted
 date: 2026-04-21
 part_of: aspect-evolution
