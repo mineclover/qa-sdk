@@ -18,6 +18,8 @@ def:
       type: contains
     - target: log-ingest-wiring
       type: contains
+    - target: apm-system
+      type: depends_on
 defines:
   - IngestForwarder
   - createIngestForwarder
