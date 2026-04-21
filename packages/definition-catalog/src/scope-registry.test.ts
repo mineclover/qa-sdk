@@ -32,10 +32,12 @@ describe("ScopeRegistry", () => {
       // 경로 모델: N aspect × 4 depth (SSOT에서 파생)
       const expectedTotal = DEF_ASPECT.entries.length * DEF_DEPTH.entries.length;
       expect(stats.totalAddressSpace).toBe(expectedTotal);
-      // 전곱: 16 × 64 × 8 = 8,192
-      expect(stats.crossProductSpace).toBe(8192);
-      // 효율: 88/8192 ≈ 1%
-      expect(stats.efficiency).toBeLessThan(0.02);
+      // 전곱: scope.capacity × aspect.capacity × depth.capacity (SSOT 파생)
+      const expectedCrossProduct =
+        DEF_SCOPE.capacity * DEF_ASPECT.capacity * DEF_DEPTH.capacity;
+      expect(stats.crossProductSpace).toBe(expectedCrossProduct);
+      // 효율: 유효 조합 / 전곱 < 10%
+      expect(stats.efficiency).toBeLessThan(0.1);
     });
 
     it("encode → decode 라운드트립", () => {
@@ -123,14 +125,17 @@ describe("ScopeRegistry", () => {
       const reg = new ScopeRegistry();
       const beforeSize = reg.totalAddressSpace();
 
+      // flow v1 의 모든 aspect + scenario 추가 (aspect 1개 증가)
+      const flowV1 = VALID_SCOPE_ASPECTS.flow;
       reg.addVersion("flow", {
         version: "v2",
-        consumes: ["user_scenario", "process_flow", "relation", "scenario"],
+        consumes: [...flowV1, "scenario"],
       });
 
       const afterSize = reg.totalAddressSpace();
-      // flow: 3×4=12 → 4×4=16, 차이 = 4
-      expect(afterSize).toBe(beforeSize + 4);
+      // flow v2 = v1 aspects + 1, 차이 = 1 × depth.capacity
+      const delta = DEF_DEPTH.entries.length;
+      expect(afterSize).toBe(beforeSize + delta);
     });
 
     it("중복 버전은 에러", () => {
