@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: draft
   layer: operation
-  tags: [clickhouse, analytics, olap]
+  tags: [clickhouse, analytics, olap, cross-scope]
   links:
     - target: ingest-infra-system
       type: refines

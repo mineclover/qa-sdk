@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: draft
   layer: operation
-  tags: [cache, redis, pipeline]
+  tags: [cache, redis, pipeline, cross-scope]
   links:
     - target: ingest-infra-system
       type: depends_on
