@@ -8,6 +8,8 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import { sql } from "drizzle-orm";
 import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core";
 import {
+  ASPECT_PARENTS,
+  DEFINITION_TAXONOMY,
   collectCodeReferences,
   extractByMarker,
   extractFrontmatter,
@@ -30,6 +32,8 @@ export interface SyncLocalDbResult {
 }
 
 const DEFAULT_DB_PATH = "data/definition-service.sqlite";
+
+// ─── Drizzle 스키마 정의 (SSOT) ──────────────────────────
 
 const documents = sqliteTable("documents", {
   docId: text("doc_id").primaryKey(),
@@ -106,7 +110,19 @@ const codeReferences = sqliteTable(
   }),
 );
 
-type DrizzleDb = ReturnType<typeof drizzle>;
+// Phase C-0 (aspect-schema-hierarchy RFC): aspect 계층 metadata.
+// Source of truth: definition-catalog/src/vocabulary.ts §ASPECT_PARENTS (build-time).
+// 본 테이블은 파생 복제본 — CLI 로컬 DB 에서도 외부 도구 접근을 위해 유지.
+const aspectParents = sqliteTable("aspect_parents", {
+  childId: text("child_id").primaryKey(),
+  parentId: text("parent_id").notNull(),
+  description: text("description"),
+  registeredAt: text("registered_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+// ─── 동기화 로직 ──────────────────────────────────────────
 
 export async function syncDocsToLocalDb(
   options: SyncLocalDbOptions,
@@ -114,23 +130,27 @@ export async function syncDocsToLocalDb(
   const rootDir = options.rootDir;
   const docsDir = options.docsDir ?? "docs";
   const dbPath = resolve(rootDir, options.dbPath ?? DEFAULT_DB_PATH);
+  
+  // 1. 문서 스캔
   const scan = await scanAndBuild(rootDir, [join(rootDir, docsDir)]);
 
   const sqlite = new Database(dbPath);
   const db = drizzle({
     client: sqlite,
-    schema: { documents, documentLinks, codeReferences },
+    schema: { documents, documentLinks, codeReferences, aspectParents },
   });
 
   try {
+    // 2. 테이블 초기화 (Drizzle 스키마 기준)
     resetTables(sqlite);
 
     const entries = scan.registry.all();
     let linkCount = 0;
-    let codeReferenceCount = 0;
 
+    // 3. 일괄 재적재 (단일 트랜잭션)
     db.transaction((tx) => {
       const addressById = new Map(entries.map((entry) => [entry.id, entry.serialized ?? null] as const));
+      
       for (const entry of entries) {
         const sourcePath = entry.ref ? join(rootDir, entry.ref) : null;
         const body = sourcePath ? extractMarkdownBody(sourcePath) : "";
@@ -141,6 +161,8 @@ export async function syncDocsToLocalDb(
         const row = toDocumentRow(rootDir, entry, body, links);
 
         tx.insert(documents).values(row).run();
+        
+        // FTS 가상 테이블 인덱싱
         tx.run(sql.raw(
           `INSERT INTO documents_fts (doc_id, purpose, intent, context, caveat)
            VALUES (${quote(row.docId)}, ${quote(row.purpose ?? "")}, ${quote(row.intent ?? "")}, ${quote(row.context ?? "")}, ${quote(row.caveat ?? "")})`,
@@ -151,7 +173,7 @@ export async function syncDocsToLocalDb(
             links.map((link) => ({
               sourceId: entry.id,
               targetId: link.target,
-              sourceAddress: addressById.get(entry.id) ?? null,
+              sourceAddress: entry.serialized ?? null,
               targetAddress: addressById.get(link.target) ?? null,
               linkType: link.type,
             })),
@@ -160,7 +182,8 @@ export async function syncDocsToLocalDb(
         }
       }
 
-      const refs = collectCodeReferences(rootDir, { docsDir, codeDirs: ["packages"] });
+      // 4. 코드 참조 일괄 수집 및 적재
+      const refs = collectCodeReferences(rootDir, { docsDir });
       if (refs.length > 0) {
         tx.insert(codeReferences).values(
           refs.map((ref) => ({
@@ -168,13 +191,26 @@ export async function syncDocsToLocalDb(
             docId: ref.docId,
             relationType: ref.relationType,
             sourceKind: ref.sourceKind,
-            symbol: ref.symbol ?? "",
-            line: ref.line ?? null,
+            symbol: ref.symbol ?? "", // NOT NULL 제약 준수
+            line: ref.line,
           })),
         ).run();
       }
-      codeReferenceCount = refs.length;
+
+      // 5. aspect_parents 동기화 (Phase C-0 populate + C-1 insert-on-discovery).
+      // Source of truth: ASPECT_PARENTS map. resetTables 후 테이블은 비어있으므로 전량 INSERT.
+      const descriptionByAspect = buildAspectDescriptionMap();
+      const aspectRows = Object.entries(ASPECT_PARENTS).map(([childId, parentId]) => ({
+        childId,
+        parentId,
+        description: descriptionByAspect.get(childId) ?? null,
+      }));
+      if (aspectRows.length > 0) {
+        tx.insert(aspectParents).values(aspectRows).run();
+      }
     });
+
+    const codeReferenceCount = db.select().from(codeReferences).all().length;
 
     return {
       synced: entries.length,
@@ -187,13 +223,15 @@ export async function syncDocsToLocalDb(
   }
 }
 
-function resetTables(db: Database.Database): void {
-  db.exec(`
-    DROP TABLE IF EXISTS document_links;
-    DROP TABLE IF EXISTS code_references;
-    DROP TABLE IF EXISTS documents;
+function resetTables(sqlite: Database.Database): void {
+  sqlite.exec(`
     DROP TABLE IF EXISTS documents_fts;
-    CREATE TABLE IF NOT EXISTS documents (
+    DROP TABLE IF EXISTS code_references;
+    DROP TABLE IF EXISTS document_links;
+    DROP TABLE IF EXISTS documents;
+    DROP TABLE IF EXISTS aspect_parents;
+
+    CREATE TABLE documents (
       doc_id TEXT PRIMARY KEY,
       title TEXT,
       doc_type TEXT,
@@ -217,7 +255,7 @@ function resetTables(db: Database.Database): void {
       doc_version TEXT,
       revision INTEGER,
       address TEXT,
-      version INTEGER NOT NULL DEFAULT 1,
+      version INTEGER NOT NULL,
       body_hash TEXT NOT NULL,
       body TEXT NOT NULL,
       purpose TEXT,
@@ -228,7 +266,8 @@ function resetTables(db: Database.Database): void {
       synced_at TEXT NOT NULL,
       source_path TEXT
     );
-    CREATE TABLE IF NOT EXISTS document_links (
+
+    CREATE TABLE document_links (
       source_id TEXT NOT NULL,
       target_id TEXT NOT NULL,
       source_address TEXT,
@@ -236,7 +275,8 @@ function resetTables(db: Database.Database): void {
       link_type TEXT NOT NULL,
       PRIMARY KEY (source_id, target_id, link_type)
     );
-    CREATE TABLE IF NOT EXISTS code_references (
+
+    CREATE TABLE code_references (
       code_path TEXT NOT NULL,
       doc_id TEXT NOT NULL,
       relation_type TEXT NOT NULL,
@@ -245,14 +285,35 @@ function resetTables(db: Database.Database): void {
       line INTEGER,
       PRIMARY KEY (code_path, doc_id, relation_type, source_kind, symbol)
     );
-    CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
+
+    CREATE VIRTUAL TABLE documents_fts USING fts5(
       doc_id,
       purpose,
       intent,
       context,
       caveat
     );
+
+    CREATE TABLE aspect_parents (
+      child_id TEXT PRIMARY KEY,
+      parent_id TEXT NOT NULL,
+      description TEXT,
+      registered_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX idx_ap_parent ON aspect_parents (parent_id);
   `);
+}
+
+/** DEFINITION_TAXONOMY 를 평탄화해 aspect id → description 매핑. */
+function buildAspectDescriptionMap(): Map<string, string> {
+  const result = new Map<string, string>();
+  for (const scope of DEFINITION_TAXONOMY.scopes) {
+    for (const aspect of scope.aspects) {
+      result.set(aspect.id, aspect.description);
+    }
+  }
+  return result;
 }
 
 function extractMarkdownBody(filePath: string): string {
