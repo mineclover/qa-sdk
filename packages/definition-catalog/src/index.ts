@@ -254,6 +254,8 @@ export type {
   CodeReferenceTarget,
   CodeLinkCoverageOptions,
   CodeLinkCoverageResult,
+  CoverageMetrics,
+  AdjustedCoverageMetrics,
 } from "./code-references.js";
 export {
   collectCodeReferences,
@@ -262,6 +264,7 @@ export {
   parseCodeReferenceTarget,
   formatCodeReferenceTarget,
   makeCodeReferenceScopeKey,
+  DEFAULT_EXCLUDE_PACKAGES,
 } from "./code-references.js";
 
 // ─── 영향 분석 (바텀업 역추적) ───────────────────────────

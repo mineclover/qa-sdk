@@ -1,4 +1,5 @@
 // @def.doc definition-catalog-spec
+// @def.boundary definition-catalog-spec
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -24,20 +25,78 @@ export interface CodeLinkCoverageOptions {
   scopes?: readonly string[];
   includeTests?: boolean;
   includeNonSrc?: boolean;
+  /**
+   * 분모에서 제외할 패키지 이름 목록. `packages/<excluded>/` 경로의 파일은
+   * 분모(total)와 분자(linked/unlinked) 모두에서 빠진다. harness/smoke/bench 처럼
+   * `@def.boundary` 부여 대상이 아닌 인프라 패키지를 걸러내기 위한 기본 제외 목록을
+   * caller 가 주입하거나 `[]` 로 덮어써 비활성화할 수 있다.
+   *
+   * 기본값 (옵션 미지정시): {@link DEFAULT_EXCLUDE_PACKAGES}
+   */
+  excludePackages?: readonly string[];
+}
+
+/**
+ * adjusted coverage 계산의 기본 제외 패키지.
+ *
+ * 2026-04-21 orphan audit (`docs/proposals/domain-hierarchy/reviews/2026-04-21-orphan-source-audit.md`)
+ * 에서 category A(Infrastructure / harness) 로 분류된 패키지 4 종을 반영한다.
+ */
+export const DEFAULT_EXCLUDE_PACKAGES: readonly string[] = [
+  "simulation-tests",
+  "facet-tests",
+  "viteplus-sdk-smoke",
+  "bench",
+];
+
+export interface CoverageMetrics {
+  readonly linked: number;
+  readonly total: number;
+  readonly percentage: number;
+}
+
+export interface AdjustedCoverageMetrics extends CoverageMetrics {
+  readonly excluded: number;
 }
 
 export interface CodeLinkCoverageResult {
-  scopes: readonly string[];
-  totalFiles: number;
-  linkedFiles: number;
-  unlinkedFiles: number;
-  files: readonly string[];
+  readonly scopes: readonly string[];
+  readonly totalFiles: number;
+  readonly linkedFiles: number;
+  readonly unlinkedFiles: number;
+  readonly files: readonly string[];
+  readonly raw: CoverageMetrics;
+  readonly adjusted: AdjustedCoverageMetrics;
+  readonly excludedPackages: readonly string[];
 }
 
 const CODE_TARGET_RE = /^(.+?\.(?:ts|tsx|js|jsx|mjs|cjs|json|sh))(?:(?::|#)(.+))?$/;
 const CODE_FILE_RE = /\.(ts|tsx|js|jsx|mjs|cjs)$/;
 const TEST_FILE_RE = /\.(test|spec)\.[cm]?[jt]sx?$/;
-const IGNORED_DIRS = new Set(["node_modules", "dist", ".git", ".next", ".turbo", "coverage"]);
+const IGNORED_DIRS = new Set([
+  "node_modules",
+  "dist",
+  ".git",
+  ".next",
+  ".turbo",
+  "coverage",
+  "synced",
+  "__mocks__",
+]);
+
+function computePercentage(linked: number, total: number): number {
+  if (total === 0) return 100;
+  return Math.round((linked / total) * 1000) / 10;
+}
+
+function isExcludedByPackage(relPath: string, excludedPackages: readonly string[]): boolean {
+  if (excludedPackages.length === 0) return false;
+  for (const pkg of excludedPackages) {
+    if (!pkg) continue;
+    if (relPath.includes(`packages/${pkg}/`)) return true;
+  }
+  return false;
+}
 
 function walkFiles(startPath: string, predicate: (file: string) => boolean): string[] {
   if (!existsSync(startPath)) return [];
@@ -206,6 +265,8 @@ export function collectCodeLinkCoverage(
   const scopes = (options.scopes ?? []).map((scope) => scope.replaceAll("\\", "/"));
   const includeTests = options.includeTests ?? false;
   const includeNonSrc = options.includeNonSrc ?? false;
+  // caller 가 명시적으로 `excludePackages: []` 를 주입하면 default 를 비활성화한다.
+  const excludePackages = options.excludePackages ?? DEFAULT_EXCLUDE_PACKAGES;
 
   const linkedFiles = new Set(
     collectCodeReferences(rootDir, { docsDir, codeDirs }).map((ref) => ref.codePath.replaceAll("\\", "/")),
@@ -225,13 +286,38 @@ export function collectCodeLinkCoverage(
   }
 
   const sortedCandidates = [...candidateFiles].toSorted();
-  const unlinked = sortedCandidates.filter((filePath) => !linkedFiles.has(filePath));
+
+  // raw: 제외 없이 모든 후보를 포함한 원시 수치
+  const rawLinked = sortedCandidates.filter((filePath) => linkedFiles.has(filePath)).length;
+  const rawTotal = sortedCandidates.length;
+
+  // adjusted: excludePackages 에 해당하는 파일을 분모와 분자 모두에서 제거
+  const adjustedCandidates = sortedCandidates.filter(
+    (filePath) => !isExcludedByPackage(filePath, excludePackages),
+  );
+  const adjustedLinked = adjustedCandidates.filter((filePath) => linkedFiles.has(filePath)).length;
+  const adjustedTotal = adjustedCandidates.length;
+  const adjustedExcluded = rawTotal - adjustedTotal;
+
+  const unlinked = adjustedCandidates.filter((filePath) => !linkedFiles.has(filePath));
 
   return {
     scopes,
-    totalFiles: sortedCandidates.length,
-    linkedFiles: sortedCandidates.length - unlinked.length,
+    totalFiles: adjustedTotal,
+    linkedFiles: adjustedLinked,
     unlinkedFiles: unlinked.length,
     files: unlinked,
+    raw: {
+      linked: rawLinked,
+      total: rawTotal,
+      percentage: computePercentage(rawLinked, rawTotal),
+    },
+    adjusted: {
+      linked: adjustedLinked,
+      total: adjustedTotal,
+      percentage: computePercentage(adjustedLinked, adjustedTotal),
+      excluded: adjustedExcluded,
+    },
+    excludedPackages: [...excludePackages],
   };
 }
