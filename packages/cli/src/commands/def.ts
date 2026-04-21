@@ -406,11 +406,14 @@ async function cmdBody(source: DefDataSource, docId: string, flags: Record<strin
 }
 
 async function cmdChildren(source: DefDataSource, docId: string) {
-  const children = await source.getChildren(docId);
-  console.log(`[${source.mode}] ${docId} → ${children.length} children`);
-  for (const c of children) {
+  // contains 순방향 + depends_on/refines 역방향 union (Phase 3b Option B).
+  const members = await collectDomainMembers(source, docId);
+  const contains = new Set((await source.getChildren(docId)).map(c => c.docId));
+  console.log(`[${source.mode}] ${docId} → ${members.length} children`);
+  for (const c of members) {
     const levelBadge = c.level && c.level !== "leaf" ? `[${c.level}] ` : "";
-    console.log(`  ${levelBadge}${c.docId}  ${c.scope}/${c.aspect}  ${c.lifecycle}`);
+    const via = contains.has(c.docId) ? "contains" : "depends_on←";
+    console.log(`  ${levelBadge}${c.docId}  ${c.scope ?? "?"}/${c.aspect ?? "?"}  ${c.lifecycle}  (${via})`);
     if (c.purpose) console.log(`    ${c.purpose.slice(0, 90)}`);
   }
 }
@@ -804,6 +807,49 @@ async function cmdAuditDb(source: DefDataSource) {
 
 // ── topdown (DefDataSource 기반) ──────────────────────
 
+/**
+ * 도메인 멤버 조회 — Phase 3b Option B 데이터 모델을 반영한 union 탐색.
+ *
+ * - contains 순방향: 전통적인 group → member 선언 (system-infra 등 레거시 레이아웃).
+ * - depends_on 역방향: 자식이 부모를 "나는 X 에 속한다" 로 선언하는 신규 모델.
+ * - refines 역방향: 추상 → 구체 관계로 파생 문서를 포함.
+ *
+ * 세 경로의 union 을 반환하여 구형/신형 레이아웃을 모두 커버한다.
+ */
+async function collectDomainMembers(
+  source: DefDataSource,
+  parentId: string,
+): Promise<DefDoc[]> {
+  const seen = new Set<string>();
+  const members: DefDoc[] = [];
+
+  const appendDoc = (doc: DefDoc | null | undefined) => {
+    if (!doc) return;
+    if (doc.docId === parentId) return;
+    if (seen.has(doc.docId)) return;
+    seen.add(doc.docId);
+    members.push(doc);
+  };
+
+  // 1. contains 순방향 — 전통적 group 선언
+  for (const child of await source.getChildren(parentId)) {
+    appendDoc(child);
+  }
+
+  // 2. depends_on / refines 역방향 — 자식이 부모를 지정
+  const incoming = await source.getIncomingLinks(parentId);
+  for (const link of incoming) {
+    if (link.type !== "depends_on" && link.type !== "refines") continue;
+    appendDoc(await source.get(link.source));
+  }
+
+  return members.toSorted(
+    (a, b) =>
+      (a.scope ?? "").localeCompare(b.scope ?? "") ||
+      a.docId.localeCompare(b.docId),
+  );
+}
+
 async function cmdTopdown(source: DefDataSource, groupId: string, level: "purpose" | "overview" = "purpose") {
   const group = await source.get(groupId);
   if (!group) { console.log(`문서 "${groupId}" 없음`); return; }
@@ -813,20 +859,23 @@ async function cmdTopdown(source: DefDataSource, groupId: string, level: "purpos
   const tags = group.tags.length > 0 ? `concerns: ${group.tags.filter(t => t !== "structural" && t !== "entry-point" && t !== "generated").join(", ")}` : "";
   if (tags) console.log(`${tags}\n`);
 
-  const children = await source.getChildren(groupId);
-  // scope 순서: constraint → data → feature → flow → interface → state → ui
-  const sorted = children.toSorted((a, b) => a.scope.localeCompare(b.scope) || a.docId.localeCompare(b.docId));
+  const members = await collectDomainMembers(source, groupId);
 
-  for (const child of sorted) {
+  if (members.length === 0) {
+    console.log("(멤버 없음 — contains/depends_on/refines 링크 부재)");
+    return;
+  }
+
+  for (const child of members) {
     const prefix = child.level && BOUNDARY_LEVELS.has(child.level) ? `[${child.level}] ` : "";
-    const scopeTag = `[${child.scope.split("/")[0]}]`;
+    const scopeTag = `[${(child.scope ?? "?").split("/")[0]}]`;
     console.log(`## ${scopeTag} ${prefix}${child.title ?? child.docId}`);
     if (level === "purpose" && child.purpose) {
       console.log(child.purpose);
     } else if (level === "overview") {
       if (child.purpose) console.log(child.purpose);
-      // overview 레벨에서는 하위 children도 간략히 표시
-      const grandchildren = await source.getChildren(child.docId);
+      // overview 레벨에서는 하위 members 도 간략히 표시
+      const grandchildren = await collectDomainMembers(source, child.docId);
       if (grandchildren.length > 0) {
         for (const gc of grandchildren) {
           console.log(`  - ${gc.docId}: ${gc.purpose?.slice(0, 100) ?? "(purpose 없음)"}`);
@@ -1531,7 +1580,7 @@ const DEF_HELP_SECTIONS = [
       "get <ID> | --address=<ADDR>  단건 조회",
       "body <ID>           최신 본문 조회 (--json 가능)",
       "read <ID>           body의 별칭",
-      "children <ID>       자식 문서",
+      "children <ID>       자식 문서 (contains + depends_on/refines 역방향 union)",
       "parent <ID>         부모 문서",
       "incoming <ID> | --address=<ADDR>  역링크",
       "outgoing <ID> | --address=<ADDR>  순방향 링크",
@@ -1548,7 +1597,7 @@ const DEF_HELP_SECTIONS = [
       "boundary <ID> | --address=<ADDR>       바운더리 구조 + direct coupling (--level, --json 가능)",
       "boundary-context <ID> | --address=<ADDR> 바운더리 + concerns + impact + feedback (--level, --mode, --json 가능)",
       "impact <ID> | --address=<ADDR>  변경 영향 분석",
-      "topdown <ID>        탑다운 조립",
+      "topdown <ID>        탑다운 조립 (contains + depends_on/refines 역방향 union)",
       "bottomup <ID>       영향 역추적",
     ],
   },
