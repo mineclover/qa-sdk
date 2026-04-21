@@ -244,8 +244,10 @@ export {
   isDomainTier,
   selectPrimaryParent,
   deriveDomainRoot,
+  deriveSubDocRoot,
   deriveAllDomainRoots,
   detectOwnerRootMismatch,
+  SUB_DOC_EXTENSIONS,
 } from "./domain-root.js";
 
 // ─── 코드 참조 스캔 ─────────────────────────────────────
