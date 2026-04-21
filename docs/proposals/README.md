@@ -43,6 +43,14 @@
                        - 본문 수정 금지 (역사 기록 고정)
 ```
 
+## 통합 스토리 — Aspect Evolution (3-RFC)
+
+2026-04-20 ~ 2026-04-21 세션에서 `domain-hierarchy`, `aspect-vocab-split`, `aspect-schema-hierarchy` 3개 RFC 가 duplicate-coordinate 문제를 **WHY → WHAT → HOW** 의 수순으로 단계적으로 해소했다. 전체 서사 / 실행 타임라인 / 최종 상태 지표는 다음 인덱스 참조:
+
+- **[aspect-evolution-index.md](./aspect-evolution-index.md)** — 3-RFC 통합 서사 + 실행 타임라인 + 최종 지표 (errors=0 / warnings=0 / dup-coord 36→0)
+
+세션 중 암묵적으로 확립된 규율은 정규 rule 문서로 성문화되어 `docs/specs/system/` 아래에 배치된다 (인덱스 말미 "부산물 — 규칙 성문화" 섹션 참조).
+
 ## 현재 열린 제안
 
 | 제안 | 상태 | 요약 |
@@ -50,6 +58,6 @@
 | [bdd-contract-system](./bdd-contract-system/) | `draft` | BDD Given/When/Then을 AI-DLC 행동 계약으로 정의하고 test unit / implementation unit / ScenarioSpec / PipeGraph / docs CLI 소비 표면을 기계화 |
 | [ai-dlc-dspy-harness](./ai-dlc-dspy-harness/) | `draft` | DSPy를 시스템 단위로 탈부착 가능한 sidecar harness로 도입하고, 계약/증거/게이트만 기존 문서 시스템에 편입 |
 | [tier-redesign](./tier-redesign/) | `under-review` | 4-tier(Component/Entry/System/Layout) 좌표계 및 이중 평면(Intent/Execution) 거버넌스 재설계 |
-| [domain-hierarchy](./domain-hierarchy/) | `under-review` | 시스템의 도메인 소속을 링크 그래프에서 파생해 duplicate-coordinate 경고 해소 + proposals 문서 관리체계 편입 |
-| [aspect-vocab-split](./aspect-vocab-split/) | `under-review` | aspect 어휘 분할 RFC — 잔여 Class D duplicate-coordinate 그룹 해소 (func_def / process_flow / api_contract / domain_data 세분화) |
-| [aspect-schema-hierarchy](./aspect-schema-hierarchy/) | `under-review` | aspect 계층 schema 전환 RFC — Phase A/B 기반 flat → DB-level hierarchy (Option C-1 aspect_parents 테이블) |
+| [domain-hierarchy](./domain-hierarchy/) | `implemented` | 시스템의 도메인 소속을 링크 그래프에서 파생해 duplicate-coordinate 경고 해소. 실행 기록은 [aspect-evolution-index.md](./aspect-evolution-index.md) 참조 |
+| [aspect-vocab-split](./aspect-vocab-split/) | `implemented` | aspect 어휘 분할 (func_def / process_flow / api_contract / domain_data 세분화). Phase B-0 ~ B-3 완료 |
+| [aspect-schema-hierarchy](./aspect-schema-hierarchy/) | `implemented` | aspect 계층 schema 전환. Phase C-0/C-1/C-2 완료, C-3 은 1 릴리즈 관찰 후 |
