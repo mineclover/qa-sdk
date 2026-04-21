@@ -26,6 +26,8 @@ def:
       type: contains
     - target: pipe-zoom-style
       type: contains
+    - target: meta-semantic-system
+      type: depends_on
   source: packages/core/src/pipe/pipe-zoom.ts
 ---
 

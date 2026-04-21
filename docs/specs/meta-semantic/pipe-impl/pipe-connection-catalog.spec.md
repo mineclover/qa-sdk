@@ -33,6 +33,8 @@ def:
       type: contains
     - target: pc-feedback
       type: contains
+    - target: meta-semantic-system
+      type: depends_on
 ---
 
 # ConnectionKind 카탈로그 — 8종 파이프 간 연결

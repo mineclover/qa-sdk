@@ -26,6 +26,8 @@ def:
       type: contains
     - target: pipe-static-lineage-test
       type: contains
+    - target: meta-semantic-system
+      type: depends_on
 ---
 
 # 정적 계보 추적 — PipeFlow에서 데이터 계보 파생

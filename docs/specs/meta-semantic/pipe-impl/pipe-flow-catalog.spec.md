@@ -81,6 +81,8 @@ def:
       type: contains
     - target: pf-correlation
       type: contains
+    - target: meta-semantic-system
+      type: depends_on
 ---
 
 # PipeFlow 카탈로그 — 30종 표현·정의·검증·시각 방식

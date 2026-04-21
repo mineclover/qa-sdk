@@ -20,6 +20,8 @@ def:
       type: contains
     - target: pipe-store-sqlite
       type: contains
+    - target: meta-semantic-system
+      type: depends_on
   source: packages/core/src/pipe/pipe-store.ts
 ---
 

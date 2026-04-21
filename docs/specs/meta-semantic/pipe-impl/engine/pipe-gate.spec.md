@@ -18,6 +18,8 @@ def:
       type: refs
     - target: pipe-gate-review
       type: refs
+    - target: meta-semantic-system
+      type: depends_on
   source: packages/core/src/pipe/pipe-gate.ts
 ---
 
