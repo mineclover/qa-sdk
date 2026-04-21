@@ -293,3 +293,25 @@ export const testResults = sqliteTable(
   },
   (table) => [index("idx_tres_doc").on(table.docId, table.runAt)],
 );
+
+// ── aspect_parents ───────────────────────────────────────────────
+// Phase C-0 (aspect-schema-hierarchy RFC): Aspect 계층 구조 metadata.
+// Source of truth: definition-catalog/src/vocabulary.ts §ASPECT_PARENTS (build-time).
+// 본 테이블은 파생 복제본 — registry-service / 외부 도구 접근용.
+//
+// Populate 는 sync/aspect-parents-sync.ts 의 syncAspectParents() 가 담당.
+// Validator 경로는 core/aspect-registry.ts 의 getAspectParent() 가 담당 (DB 우선 → runtime map fallback).
+export const aspectParents = sqliteTable(
+  "aspect_parents",
+  {
+    childId: text("child_id").primaryKey(),
+    parentId: text("parent_id").notNull(),
+    description: text("description"),
+    registeredAt: text("registered_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (table) => [index("idx_ap_parent").on(table.parentId)],
+);
+
+export type AspectParentRow = typeof aspectParents.$inferSelect;
