@@ -5,7 +5,7 @@ description: "definition-catalog 탑다운 조회. 시스템/그룹에서 시작
 
 # Definition Catalog — 탑다운 조회
 
-group/module 문서에서 시작하여 contains 멤버의 purpose/overview를 scope 순서로 조립한다.
+시스템/도메인 루트에서 출발해 멤버 문서를 하위로 훑어 내려간다. Phase 3b Option B 이후 멤버십은 `contains` 순방향과 자식이 부모를 지정하는 `depends_on` 역방향 두 경로로 선언되며, `def topdown`/`def children` 은 두 경로의 **union** 을 반환한다.
 
 ## 실행
 
@@ -17,9 +17,17 @@ qa-sdk def topdown <그룹ID> --overview
 예:
 ```bash
 qa-sdk def topdown gate-system
+qa-sdk def topdown apm-system
 qa-sdk def topdown ingest-system
-qa-sdk def topdown system-root
 ```
+
+## 멤버 탐색 규칙
+
+`collectDomainMembers(groupId)` 는 다음 union 을 반환한다 (중복 제거, scope 정렬).
+
+1. **contains 순방향** — `getChildren(groupId)` 결과. 레거시 system-infra / system-root 계열.
+2. **depends_on 역방향** — `getIncomingLinks(groupId).filter(l => l.type === "depends_on")`. Phase 3b 이후 표준.
+3. **refines 역방향** — 추상 → 구체 파생 문서 포함.
 
 ## 출력
 
@@ -31,36 +39,83 @@ concerns: <tags>
 ## [constraint] <제목>
 <purpose>
 
-## [state] <제목>
+## [flow] <제목>
 <purpose>
-
-## [feature] <제목>
 ...
 ```
 
-scope 정렬: constraint → state → data → feature → flow → interface → ui
+scope 정렬: constraint → data → feature → flow → interface → state → ui
+
+### 실제 출력 예 — `gate-system`
+
+```
+# Gate 시스템
+주소 공간의 물리적 유효성을 관리하여 encode/decode 가능 여부를 결정하는 시스템.
+
+## [feature] GateEngine 그룹
+index-meta 패키지의 GateEngine 라이브러리. 주소 상태 자동 재계산 + Decorator 패턴 + gate-aware-query.
+
+## [flow] Consistency 서비스
+gate-service의 일관성 모델을 구현한다. shouldVerify 재확인 흐름 ...
+
+## [flow] Gate Event Bus — 소비자 기대 시나리오
+...
+
+## [interface] EventBus 이벤트 전파 계약
+...
+
+## [interface] Query 시스템
+관계형 질의, 정책 해소, gate 통합을 제공하는 중앙 질의 서비스.
+```
+
+(7 members: gate-engine-group, gate-consistency, gate-consistency-cases, gate-engine-group-cases, gate-event-bus-cases, gate-event-bus, query-system)
+
+## 자식 재확인
+
+`def children` 도 동일한 union 을 사용하며, 각 멤버의 via 가 `contains` 인지 `depends_on←` 인지 표시한다.
+
+```bash
+qa-sdk def children gate-system
+# [local] gate-system → 7 children
+#   gate-engine-group  feature/func_def  approved  (depends_on←)
+#   ...
+```
+
+## Rule 문서 발견하기
+
+`*.rule.md` 규약 문서는 별도 확장자로 분류된다. CLI 필터로 단번에 조회한다.
+
+```bash
+qa-sdk def list --type=rule          # *.rule.md 만 나열 (19건)
+qa-sdk def list --ext=rule           # 동일 — 일반 ext 필터
+qa-sdk def list --ext=cases          # *.cases.md — consumer-driven 기대 시나리오
+qa-sdk def list --ext=test           # *.test.md — provider 테스트 문서
+```
+
+system-wide rule 8건은 [`docs/specs/system/README.md`](../../docs/specs/system/README.md) 인덱스에서 개요 조회 가능하다.
 
 ## 사용 가능한 그룹
 
 ```bash
-qa-sdk def stats
+qa-sdk def audit --by-domain      # 도메인 루트 후보 + 멤버 수
+qa-sdk def list --domain-root <rootId>  # 도메인 전체 나열
+qa-sdk def stats                  # level/scope 분포
 ```
 
-그룹 목록이 하단에 출력된다.
-
-## 도메인 루트에서 드릴다운
-
-`tier: system` 좌표의 `domain_root` 파생 결과를 출발점으로 사용할 수 있다. 먼저 루트를 확인한 뒤 한 번에 멤버를 훑는다.
+## 도메인 루트에서 드릴다운 — 4-step
 
 ```bash
 # 1. 루트 후보 확인
 qa-sdk def audit --by-domain
 
 # 2. 특정 도메인 전체 나열
-qa-sdk def list --domain-root <rootId>
+qa-sdk def list --domain-root gate-system
 
-# 3. APM 도메인 전체 드릴다운 예시
-qa-sdk def list --domain-root apm-system | awk '{print $1}' | xargs -I{} qa-sdk def context {}
+# 3. topdown 으로 멤버 purpose 한 번에 훑기
+qa-sdk def topdown gate-system
+
+# 4. 특정 멤버 구현 경로
+qa-sdk def body gate-consistency
 ```
 
-도메인 루트가 아직 파생되지 않는 시스템(자기 자신이 root인 경우)은 `def audit --by-domain`의 top 리스트에 다수 1~2건 루트로 노출되며, Phase 3 마이그레이션 후에만 상위 도메인에 귀속된다.
+도메인 루트가 아직 파생되지 않는 시스템(자기 자신이 root 인 경우)은 `def audit --by-domain` 의 top 리스트에 다수 1~2건 루트로 노출된다.
