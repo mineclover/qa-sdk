@@ -16,6 +16,8 @@ def:
       type: contains
     - target: key-observation-store
       type: contains
+    - target: ingest-system
+      type: depends_on
 ---
 
 # Store Adapter Parity
