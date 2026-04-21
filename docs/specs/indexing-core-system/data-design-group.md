@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: [structural]
+  tags: [structural, cross-scope]
   links:
     - target: data-design-compression
       type: contains

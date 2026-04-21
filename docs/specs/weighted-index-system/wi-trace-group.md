@@ -1,7 +1,7 @@
 ---
 def:
   id: wi-trace-group
-  tier: system
+  tier: layout
   address: def_document:v2:342037
   scope: data
   aspect: domain_data
@@ -12,11 +12,11 @@ def:
   tags: [structural, testing]
   links:
     - target: wi-trace-axes
-      type: contains
+      type: refs
     - target: wi-trace-propagation
-      type: contains
+      type: refs
     - target: wi-trace-protocol
-      type: contains
+      type: refs
     - target: wi-system
       type: depends_on
 ---

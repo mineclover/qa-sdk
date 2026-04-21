@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: [structural, entry-point]
+  tags: [structural, entry-point, cross-scope]
   links:
     - target: acceleration-spec
       type: contains
@@ -47,6 +47,8 @@ def:
       type: contains
     - target: bit-index
       type: contains
+    - target: slot-marker-group
+      type: refs
     - target: wi-system
       type: depends_on
 ---

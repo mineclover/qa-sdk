@@ -1,7 +1,7 @@
 ---
 def:
   id: perm-codec-system
-  tier: system
+  tier: layout
   address: def_document:v2:68640
   scope: feature
   aspect: func_def
@@ -12,9 +12,9 @@ def:
   tags: [structural, security]
   links:
     - target: perm-codec-stack
-      type: contains
+      type: refs
     - target: perm-codec-interop
-      type: contains
+      type: refs
     - target: permission-system
       type: depends_on
 ---

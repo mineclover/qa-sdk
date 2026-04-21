@@ -1,7 +1,7 @@
 ---
 def:
   id: address-scenarios-group
-  tier: system
+  tier: layout
   address: def_document:v2:68608
   scope: feature
   aspect: func_def
@@ -12,9 +12,9 @@ def:
   tags: [structural, testing]
   links:
     - target: address-scenarios-parse
-      type: contains
+      type: refs
     - target: address-scenarios-runtime
-      type: contains
+      type: refs
     - target: index-meta-system
       type: depends_on
 ---

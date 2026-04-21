@@ -1,7 +1,7 @@
 ---
 def:
   id: index-meta-store-group
-  tier: system
+  tier: layout
   address: def_document:v2:342025
   scope: data
   aspect: domain_data
@@ -12,9 +12,9 @@ def:
   tags: [structural]
   links:
     - target: index-meta-store-contract
-      type: contains
+      type: refs
     - target: index-meta-store-resolution
-      type: contains
+      type: refs
     - target: index-meta-system
       type: depends_on
 ---
