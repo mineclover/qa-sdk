@@ -17,6 +17,8 @@ def:
       type: contains
     - target: system-design-tools
       type: contains
+    - target: spec-architecture-system
+      type: depends_on
 ---
 
 # Spec Core Types 그룹

@@ -15,6 +15,8 @@ def:
       type: contains
     - target: convergence-advisors
       type: contains
+    - target: spec-architecture-system
+      type: depends_on
 ---
 
 # Convergence Layer 그룹

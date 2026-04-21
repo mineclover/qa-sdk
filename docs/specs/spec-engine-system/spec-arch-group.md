@@ -17,6 +17,8 @@ def:
       type: contains
     - target: spec-arch-interceptors
       type: contains
+    - target: spec-architecture-system
+      type: depends_on
 ---
 
 # Spec Engine 아키텍처

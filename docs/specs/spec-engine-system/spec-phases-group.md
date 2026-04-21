@@ -15,6 +15,8 @@ def:
       type: contains
     - target: spec-phases-runtime
       type: contains
+    - target: spec-architecture-system
+      type: depends_on
 ---
 
 # Spec Engine 단계 그룹
