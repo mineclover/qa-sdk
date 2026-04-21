@@ -20,6 +20,8 @@ def:
       type: contains
     - target: service-ownership-spec
       type: contains
+    - target: event-vocab-system
+      type: depends_on
 ---
 
 # Event Taxonomy Roadmap — 구현 진행 상태
