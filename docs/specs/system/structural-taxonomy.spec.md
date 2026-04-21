@@ -1,24 +1,23 @@
 ---
 def:
   id: structural-taxonomy
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   tier: system
   scope: data
-  aspect: domain_data
+  aspect: taxonomy_data
   depth: overview
   lifecycle: approved
   layer: domain
   tags: [cross-scope, structural, entry-point]
   links:
     - target: meta-semantic-concepts
-      type: contains
-    - target: scope-nesting-system
       type: depends_on
+    - target: scope-nesting-system
+      type: traces_to
     - target: concept-hierarchy-grid
-      type: refines
+      type: traces_to
     - target: definition-taxonomy
-      type: contains
+      type: depends_on
 ---
 
 # Structural Taxonomy — 실제 단위와 배열의 분류 체계

@@ -9,7 +9,7 @@ def:
   intent_hierarchy: core
   address: def_document:v2:342164
   scope: data
-  aspect: domain_data
+  aspect: taxonomy_data
   depth: specification
   lifecycle: approved
   layer: domain

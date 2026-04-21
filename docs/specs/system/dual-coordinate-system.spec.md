@@ -4,7 +4,7 @@ def:
   id: dual-coordinate-system
   address: def_document:v2:342175
   scope: data
-  aspect: domain_data
+  aspect: coordinate_model_data
   depth: specification
   lifecycle: approved
   layer: domain
@@ -13,7 +13,7 @@ def:
     - target: definition-system-philosophy
       type: refines
     - target: definition-catalog-spec
-      type: contains
+      type: depends_on
 ---
 # 이중 좌표 시스템 — Prefix(이벤트) × Scope(문서)
 

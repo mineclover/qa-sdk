@@ -1,24 +1,23 @@
 ---
 def:
   id: taxonomy-boundaries
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   tier: system
   scope: data
-  aspect: domain_data
+  aspect: taxonomy_data
   depth: overview
   lifecycle: approved
   layer: domain
   tags: [cross-scope, structural, entry-point]
   links:
     - target: definition-taxonomy
-      type: contains
+      type: depends_on
     - target: structural-taxonomy
-      type: depends_on
+      type: traces_to
     - target: observability-taxonomy
-      type: depends_on
+      type: traces_to
     - target: df-taxonomy
-      type: depends_on
+      type: traces_to
     - target: pm-taxonomy
       type: contains
     - target: decision-definition-bridge
