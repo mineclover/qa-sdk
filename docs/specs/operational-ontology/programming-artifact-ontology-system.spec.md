@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: draft
   layer: operation
-  tags: [structural, contract, observability]
+  tags: [structural, contract, observability, cross-scope]
   links:
     - target: programming-artifact-ontology-registry-provider
       type: contains

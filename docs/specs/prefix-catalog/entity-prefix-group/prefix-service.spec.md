@@ -6,7 +6,7 @@ def:
   aspect: prefix_schema
   depth: specification
   lifecycle: approved
-  tags: [generated]
+  tags: [generated, cross-scope]
   links:
     - target: entity-prefix-group
       type: refs

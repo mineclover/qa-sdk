@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: experience
   svc: cli
-  tags: [structural, entry-point, generated]
+  tags: [structural, entry-point, generated, cross-scope]
   links:
     - target: skill-cli-def-commands
       type: contains

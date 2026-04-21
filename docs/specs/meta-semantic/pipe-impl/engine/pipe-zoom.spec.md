@@ -11,14 +11,9 @@ def:
   depth: overview
   lifecycle: approved
   layer: domain
+  tags: [cross-scope]
   links:
-    - target: meta-semantic-pipe-impl
-      type: depends_on
     - target: meta-semantic-folding
-      type: contains
-    - target: pipe-analyze
-      type: contains
-    - target: pipe-interpret
       type: contains
     - target: pipe-zoom-view
       type: contains

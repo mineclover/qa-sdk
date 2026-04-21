@@ -6,7 +6,7 @@ def:
   aspect: prefix_schema
   depth: overview
   lifecycle: approved
-  tags: [structural, entry-point, generated]
+  tags: [structural, entry-point, generated, cross-scope]
   links:
     - target: prefix-event
       type: contains

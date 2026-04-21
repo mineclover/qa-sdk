@@ -7,7 +7,7 @@ def:
   depth: overview
   lifecycle: draft
   layer: operation
-  tags: [structural, testing, contract, persistence]
+  tags: [structural, testing, contract, persistence, cross-scope]
   links:
     - target: operational-ontology-system
       type: refines

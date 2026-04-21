@@ -11,6 +11,7 @@ def:
   depth: implementation
   lifecycle: approved
   layer: domain
+  tags: [cross-scope]
   links:
     - target: meta-semantic-v2-migration
       type: contains

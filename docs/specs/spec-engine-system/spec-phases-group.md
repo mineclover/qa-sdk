@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: [structural]
+  tags: [structural, cross-scope]
   links:
     - target: spec-phases-roadmap
       type: contains

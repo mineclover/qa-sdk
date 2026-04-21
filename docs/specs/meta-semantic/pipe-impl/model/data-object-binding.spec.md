@@ -11,6 +11,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: domain
+  tags: [cross-scope]
   links:
     - target: meta-semantic-data-contract
       type: contains

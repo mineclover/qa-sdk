@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: [structural, entry-point]
+  tags: [structural, entry-point, cross-scope]
   links:
     - target: spec-architecture-stack
       type: contains

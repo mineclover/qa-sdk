@@ -7,7 +7,7 @@ def:
   depth: overview
   lifecycle: approved
   layer: experience
-  tags: [entry-point]
+  tags: [entry-point, cross-scope]
   links:
     - target: skill-ralph-tui-prd
       type: contains

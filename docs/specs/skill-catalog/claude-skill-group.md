@@ -8,7 +8,7 @@ def:
   depth: overview
   lifecycle: approved
   layer: experience
-  tags: [structural, entry-point, generated]
+  tags: [structural, entry-point, generated, cross-scope]
   links:
     - target: skill-def-boundary
       type: contains

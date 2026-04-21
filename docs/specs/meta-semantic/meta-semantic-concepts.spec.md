@@ -8,7 +8,7 @@ def:
   depth: overview
   lifecycle: approved
   layer: domain
-  tags: [entry-point]
+  tags: [entry-point, cross-scope]
   links:
     - target: meta-semantic-system
       type: traces_to

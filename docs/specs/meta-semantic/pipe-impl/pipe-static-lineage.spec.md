@@ -11,9 +11,8 @@ def:
   depth: specification
   lifecycle: approved
   layer: domain
+  tags: [cross-scope]
   links:
-    - target: meta-semantic-pipe-impl
-      type: depends_on
     - target: pipe-transition-scope
       type: contains
     - target: pipe-fold-lineage
