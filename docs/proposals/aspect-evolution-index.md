@@ -21,6 +21,8 @@ def:
       type: refs
     - target: cases-md-convention
       type: refs
+    - target: test-md-convention
+      type: refs
     - target: validator-suppression-tags
       type: refs
     - target: catalog-purity-bridge
@@ -131,12 +133,13 @@ role: index
 
 ## 부산물 — 규칙 성문화
 
-세션 중 암묵적으로 확립된 규율을 성문화한 rule 문서 5종:
+세션 중 암묵적으로 확립된 규율을 성문화한 rule 문서 6종:
 
 | 규칙 | 파일 |
 |---|---|
 | aspect 네이밍 컨벤션 `{role}_{parent-stem}` | [`docs/specs/system/aspect-naming-convention.rule.md`](../specs/system/aspect-naming-convention.rule.md) |
 | `.cases.md` 파일 구조 및 frontmatter 표준 | [`docs/specs/system/cases-md-convention.rule.md`](../specs/system/cases-md-convention.rule.md) |
+| `.test.md` 파일 구조 및 provider 시나리오 표준 | [`docs/specs/system/test-md-convention.rule.md`](../specs/system/test-md-convention.rule.md) |
 | Validator 경고 억제 태그/필드 목록 | [`docs/specs/system/validator-suppression-tags.rule.md`](../specs/system/validator-suppression-tags.rule.md) |
 | catalog 패키지 순수성 + service bridge 패턴 | [`docs/specs/system/catalog-purity-bridge.rule.md`](../specs/system/catalog-purity-bridge.rule.md) |
 | 구조 변경 전 시뮬레이션 선행 원칙 | [`docs/specs/system/change-simulation-precedence.rule.md`](../specs/system/change-simulation-precedence.rule.md) |
