@@ -302,4 +302,55 @@ describe("workflow smoke — L3 layer regression sentinels", () => {
       },
     );
   });
+
+  /**
+   * Scenario F — `def doctor` 가 통합 헬스체크 구조화 출력을 반환한다.
+   *
+   * Onboarding 진입점 역할을 하는 `doctor` 명령이 항상 동일한 섹션 헤더를 갖고
+   * 각 카테고리별 메트릭을 내보내는지 확인한다. 개별 체크 값 (coverage %, 문서 수)
+   * 은 자연스럽게 변하므로 **존재와 shape** 만 검증한다.
+   */
+  describe("Scenario F — doctor 명령이 구조화된 헬스 요약을 낸다", () => {
+    it("Core/Domains/Aspects/Annotations/Summary 섹션 + errors 집계 포함", async () => {
+      const { cliDef } = await import("./commands/def.js");
+
+      const originalLog = console.log;
+      const captured: string[] = [];
+      console.log = (...args: unknown[]) => {
+        captured.push(args.map((arg) => String(arg)).join(" "));
+      };
+
+      const originalExitCode = process.exitCode;
+      try {
+        await cliDef(["doctor"]);
+      } finally {
+        console.log = originalLog;
+      }
+
+      const output = captured.join("\n");
+      for (const section of ["Core", "Domains", "Aspects", "Annotations", "Summary"]) {
+        expect(
+          output,
+          `doctor 출력에 "${section}" 섹션 헤더가 없음. Scenario F 는 onboarding 명령의 ` +
+            `구조 regression sentinel 이다.`,
+        ).toContain(section);
+      }
+      expect(
+        output,
+        `doctor 출력에 "errors" 집계가 없음. Summary 섹션이 누락되었거나 포맷 변경.`,
+      ).toMatch(/\d+ errors/);
+      expect(
+        output,
+        `doctor 출력에 validate 체크가 없음.`,
+      ).toMatch(/validate\s/);
+
+      // exit code 는 warnings-only 면 2, errors 있으면 1, 없으면 0.
+      const exit = process.exitCode ?? 0;
+      expect(
+        [0, 1, 2],
+        `doctor exit code 가 예상 범위(0/1/2)를 벗어남: ${exit}`,
+      ).toContain(exit);
+      process.exitCode = originalExitCode;
+    }, 30_000);
+  });
 });
