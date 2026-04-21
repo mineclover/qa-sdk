@@ -52,3 +52,4 @@
 | [tier-redesign](./tier-redesign/) | `under-review` | 4-tier(Component/Entry/System/Layout) 좌표계 및 이중 평면(Intent/Execution) 거버넌스 재설계 |
 | [domain-hierarchy](./domain-hierarchy/) | `under-review` | 시스템의 도메인 소속을 링크 그래프에서 파생해 duplicate-coordinate 경고 해소 + proposals 문서 관리체계 편입 |
 | [aspect-vocab-split](./aspect-vocab-split/) | `under-review` | aspect 어휘 분할 RFC — 잔여 Class D duplicate-coordinate 그룹 해소 (func_def / process_flow / api_contract / domain_data 세분화) |
+| [aspect-schema-hierarchy](./aspect-schema-hierarchy/) | `under-review` | aspect 계층 schema 전환 RFC — Phase A/B 기반 flat → DB-level hierarchy (Option C-1 aspect_parents 테이블) |
