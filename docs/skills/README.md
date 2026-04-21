@@ -30,7 +30,7 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
 ### 운영 플레이북
 
 - `docs/skills/automation-workflows.md`
-  `e2e-test`, `gform-parser`, `spec-lifecycle` 사용 순서
+  `bdd-contract`, `e2e-test`, `gform-parser`, `spec-lifecycle` 사용 순서
 - `skills/event-taxonomy-gate/SKILL.md`
   registry event taxonomy의 migrate/check/assert 운영 게이트
 - `skills/dkg-audit/SKILL.md`
@@ -49,6 +49,8 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
   boundary/context 요약만으로 부족할 때 최신 본문 전체 확인
 - `docs/specs/definition-catalog/definition-mgmt-verification-loop.spec.md`
   build / sync / validate / audit / quality / vitest 회귀의 표준 검증 루프
+- `docs/specs/system/layer-separation.rule.md`
+  L1 data / L2 validator / L3 workflow / L4 tooling 4 계층 책임 + workflow smoke 원칙 (Phase 3b Option B 재발 방지)
 - `docs/skills/decide.md`
   decision-flow 실행 절차
 

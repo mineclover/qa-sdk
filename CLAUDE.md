@@ -13,6 +13,8 @@
 | `docs/msa-architecture.md` | 서비스 토폴로지, 패턴 분류, 전이 엔진 |
 | `docs/data-model.md` | 데이터 모델, 테이블 스키마 |
 | `docs/specs/` | 모듈/서비스별 상세 스펙 — 진입점: `docs/specs/README.md` |
+| `docs/specs/system/README.md` | System-level rule/convention 인덱스 (9 `*.rule.md`) |
+| `docs/specs/system/layer-separation.rule.md` | 4-layer 책임 모델 (data / validator / workflow / tooling) + workflow smoke 원칙 |
 | `docs/skills/` | 운영 플레이북 + DKG skill 사용 가이드 — 진입점: `docs/skills/README.md` |
 | `docs/definition-system-philosophy.md` | Definition 시스템 철학 — 좌표 기반 문서화 원리 |
 
