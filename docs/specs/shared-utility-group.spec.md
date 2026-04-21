@@ -8,6 +8,9 @@ def:
   depth: overview
   lifecycle: approved
   layer: domain
+  links:
+    - target: system-libraries
+      type: depends_on
 ---
 # Shared Utility Group
 ## 목적 ^purpose

@@ -10,6 +10,9 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  links:
+    - target: system-support
+      type: depends_on
 ---
 
 # 문서 거버넌스 가이드라인 — 일관된 지식 관리 체계

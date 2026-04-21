@@ -19,6 +19,8 @@ def:
       type: contains
     - target: permission-middleware
       type: contains
+    - target: system-support
+      type: depends_on
 ---
 
 # Auth × Permission 통합
