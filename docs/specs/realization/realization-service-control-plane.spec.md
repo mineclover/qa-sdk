@@ -33,8 +33,6 @@ def:
       type: contains
     - target: service-release-manifest
       type: contains
-    - target: service-manifest-assembly
-      type: depends_on
     - target: service-control-plane-cleanup-test
       type: contains
 contains:

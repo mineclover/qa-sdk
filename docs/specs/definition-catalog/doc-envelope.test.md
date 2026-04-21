@@ -6,7 +6,7 @@ def:
   projection_plane: intent
   intent_hierarchy: core
   type: spec
-  scope: data
+  scope: feature
   aspect: scenario
   depth: validation
   lifecycle: approved
