@@ -4,7 +4,7 @@ def:
   tier: system
   address: def_document:v2:68779
   scope: feature
-  aspect: encoding_func
+  aspect: binder_func
   depth: overview
   svc: weighted-index
   lifecycle: approved
