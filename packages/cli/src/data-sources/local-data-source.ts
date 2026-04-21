@@ -213,6 +213,10 @@ export class LocalDataSource implements DefDataSource {
     if (filter?.svc) { conditions.push("svc = ?"); params.push(filter.svc); }
     if (filter?.address) { conditions.push("address = ?"); params.push(filter.address); }
     if (filter?.tag) { conditions.push("tags_json LIKE ?"); params.push(`%"${filter.tag}"%`); }
+    if (filter?.ext) {
+      conditions.push("source_path LIKE ?");
+      params.push(`%.${filter.ext}.md`);
+    }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
     const limit = filter?.limit ?? 500;

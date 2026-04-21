@@ -159,14 +159,23 @@ async function getSource(options: DataSourceOptions): Promise<DefDataSource> {
 
 // ── DataSource 기반 커맨드 ────────────────────────────
 
+// 소스 파일 확장자로 구분되는 문서 유형. 예: `--type=rule` → `*.rule.md` 필터.
+// frontmatter `doc.type` 이 "spec" 으로 통일되어 있으므로 CLI 측에서 ext 필터로 매핑한다.
+const EXT_TYPE_FLAGS = new Set(["rule", "cases", "test", "todo", "plan", "memo"]);
+
 async function cmdList(source: DefDataSource, flags: Record<string, string>) {
   const limit = flags["limit"] ? Number(flags["limit"]) : 50;
   const offset = flags["offset"] ? Number(flags["offset"]) : 0;
   const domainRootFilter = flags["domain-root"];
   const includeChildren = flags["include-children"] === "true";
 
+  // --type 이 확장자 패턴이면 ext 필터로 매핑. 그 외에는 기존 doc_type 필터 유지.
+  const typeFlag = flags["type"];
+  const extFromType = typeFlag && EXT_TYPE_FLAGS.has(typeFlag) ? typeFlag : undefined;
+  const ext = flags["ext"] ?? extFromType;
+
   const filter = {
-    type: flags["type"],
+    ...(typeFlag && !extFromType ? { type: typeFlag } : {}),
     knowledgeKind: flags["knowledge-kind"],
     scope: flags["scope"],
     aspect: flags["aspect"],
@@ -176,6 +185,7 @@ async function cmdList(source: DefDataSource, flags: Record<string, string>) {
     level: flags["level"],
     svc: flags["svc"],
     tag: flags["tag"],
+    ...(ext ? { ext } : {}),
     q: flags["q"],
     limit,
     offset,
@@ -1576,7 +1586,7 @@ const DEF_HELP_SECTIONS = [
   {
     title: "조회",
     lines: [
-      "list [--scope=X] [--aspect=A] [--level=Z] [--layer=Y] [--tag=T] [--q=검색어] [--domain-root=<rootId>] [--include-children]",
+      "list [--scope=X] [--aspect=A] [--level=Z] [--layer=Y] [--tag=T] [--q=검색어] [--domain-root=<rootId>] [--include-children] [--type=rule|cases|test|...] [--ext=rule]",
       "get <ID> | --address=<ADDR>  단건 조회",
       "body <ID>           최신 본문 조회 (--json 가능)",
       "read <ID>           body의 별칭",

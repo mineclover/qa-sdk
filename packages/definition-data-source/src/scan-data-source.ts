@@ -165,6 +165,10 @@ function applyFilters(docs: readonly DefDoc[], filter?: DefListFilter): DefDoc[]
     if (filter.svc && doc.svc !== filter.svc) return false;
     if (filter.address && doc.address !== filter.address) return false;
     if (filter.tag && !doc.tags.includes(filter.tag)) return false;
+    if (filter.ext) {
+      const suffix = `.${filter.ext}.md`;
+      if (!doc.sourcePath?.endsWith(suffix)) return false;
+    }
     return true;
   });
 }

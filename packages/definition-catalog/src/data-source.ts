@@ -226,6 +226,11 @@ export interface DefListFilter {
   svc?: string;
   tag?: string;
   address?: string;
+  /**
+   * 소스 파일 확장자 필터 — `.rule.md`, `.cases.md`, `.test.md` 등 문서 유형을 파일명 기준으로 구분한다.
+   * 예: `ext: "rule"` → source_path 가 `*.rule.md` 로 끝나는 문서만 반환.
+   */
+  ext?: string;
   q?: string;
   limit?: number;
   offset?: number;
