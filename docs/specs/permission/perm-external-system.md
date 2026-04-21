@@ -17,6 +17,8 @@ def:
       type: contains
     - target: perm-permission-code
       type: contains
+    - target: permission-system
+      type: depends_on
 ---
 
 # perm-external-system

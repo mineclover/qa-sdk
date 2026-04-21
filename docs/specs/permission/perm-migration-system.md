@@ -15,6 +15,8 @@ def:
       type: contains
     - target: perm-migration-mapper
       type: contains
+    - target: permission-system
+      type: depends_on
 ---
 
 # Permission Migration 시스템

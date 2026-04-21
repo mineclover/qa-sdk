@@ -15,6 +15,8 @@ def:
       type: contains
     - target: perm-codec-interop
       type: contains
+    - target: permission-system
+      type: depends_on
 ---
 
 # Permission Codec 시스템
