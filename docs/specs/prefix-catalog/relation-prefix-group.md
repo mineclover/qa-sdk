@@ -10,6 +10,8 @@ def:
   links:
     - target: prefix-relational
       type: contains
+    - target: prefix-service
+      type: depends_on
 ---
 
 ## 목적 ^purpose
