@@ -25,6 +25,33 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
 - 먼저 `qa-sdk` 명령 진입점 또는 `cli-command-group` 문서를 통해 어떤 표면을 써야 하는지 찾는다.
 - `SKILL.md`는 실행 정의 SSOT이지만, 운영/탐색의 1차 진입점은 아니다.
 
+## 계층(L1-L4) 관점 skill navigation
+
+계층 모델 SSoT: `docs/specs/system/layer-separation.rule.md` (L1 data / L2 validator / L3 workflow / L4 tooling).
+
+### 처음 시작 (onboarding)
+
+1. `qa-sdk def doctor` — 통합 진단. 모든 layer 한번에 확인 (Core/Domains/Aspects/Annotations 4 섹션 = 계층 4개 대응).
+2. `qa-sdk def audit --by-domain` — 서비스 도메인 인벤토리 (L3).
+3. `qa-sdk def topdown <root>` — 도메인 드릴다운 (L3).
+4. `qa-sdk def context <doc>` — 개별 문서 정합성 확인 (L3 + L2 파생).
+
+### Layer 별 작업
+
+- **L1 Data** — frontmatter + 링크: `def-new`, `def-link`, `def-tier`, `def-split`, `def-level`
+- **L2 Validator** — validateGraph + 불변식: `def-validate`, `aspect-parents` invariant tests
+- **L3 Workflow** — CLI + 사용자 경험: `def-explore`, `def-topdown`, `def-audit`, `def-context`, `def-doctor`, `def-boundary`, `def-bottomup`
+- **L4 Tooling** — `@def.boundary` 주석 + 외부 도구: 전용 skill 없음 (`link-type-usage.rule.md` 와 `def-validate` 의 `invalid-code-boundary` / `ambiguous-code-boundary` 진단 참조)
+
+### Structural change
+
+- `semantic-change` (필수) — L1/L2/L3/L4 cascade 체크리스트. 좌표/링크 semantic 변경 시 Option B 재발 방지.
+- 관련 rule:
+  - `docs/specs/system/layer-separation.rule.md` — 4-layer 책임 모델
+  - `docs/specs/system/change-simulation-precedence.rule.md` — Phase 0 시뮬레이션 선행
+  - `docs/specs/system/link-type-usage.rule.md` — 9 종 linkType 결정 매트릭스
+  - `docs/specs/system/validator-suppression-tags.rule.md` — 억제 수단 전수
+
 ## 주요 진입점
 
 ### 운영 플레이북
