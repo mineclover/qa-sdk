@@ -13,8 +13,6 @@ def:
   links:
     - target: df-constraint
       type: refs
-    - target: decision-standard-group
-      type: depends_on
     - target: axis-decision-guide
       type: refs
     - target: df-dev-decisions

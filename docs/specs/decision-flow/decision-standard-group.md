@@ -15,6 +15,8 @@ def:
       type: contains
     - target: decision-standard-checklist
       type: contains
+    - target: df-system
+      type: depends_on
 ---
 
 # Decision Standard 그룹
