@@ -6,8 +6,10 @@ import {
   isDomainTier,
   selectPrimaryParent,
   deriveDomainRoot,
+  deriveSubDocRoot,
   deriveAllDomainRoots,
   detectOwnerRootMismatch,
+  SUB_DOC_EXTENSIONS,
 } from "./domain-root.js";
 import type { DefinitionEntry, DefinitionEntryInput, DefTier } from "./types.js";
 
@@ -327,5 +329,314 @@ describe("Phase 0b 통합 fixture — 알려진 케이스 재현", () => {
     r.link("spec-core-identifiers", "spec-core-types-group", "refines");
     r.link("spec-core-identifiers", "definition-catalog-spec", "depends_on");
     expect(deriveDomainRoot(r.get("spec-core-identifiers")!, r)).toBe("spec-core-types-group");
+  });
+});
+
+// ───────────────────────────────────────────────────────────────
+// Phase 1 확장 — sub-doc rollup (Hybrid D > A > C)
+// 시뮬레이션 근거: 2026-04-21-subdoc-rollup-simulation.md
+// ───────────────────────────────────────────────────────────────
+
+describe("SUB_DOC_EXTENSIONS", () => {
+  it("6종 확장자 (.todo, .plan, .memo, .test, .cases, .rule)", () => {
+    expect([...SUB_DOC_EXTENSIONS].sort()).toEqual(
+      [".cases.md", ".memo.md", ".plan.md", ".rule.md", ".test.md", ".todo.md"].sort(),
+    );
+  });
+});
+
+describe("deriveDomainRoot — sub-doc rollup Strategy D (id-prefix)", () => {
+  it("foo-todo 가 registry 에 있고 foo 가 있으면 foo 로 rollup", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      { id: "foo", tier: "system" },
+      {
+        id: "foo-todo",
+        tier: "component",
+        ref: "docs/foo.todo.md",
+      },
+    ]);
+    expect(deriveDomainRoot(r.get("foo-todo")!, r)).toBe("foo");
+  });
+
+  it("foo-todo 가 있지만 foo 가 없으면 -system/-spec fallback", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      { id: "foo-system", tier: "system" },
+      {
+        id: "foo-todo",
+        tier: "component",
+        ref: "docs/foo.todo.md",
+      },
+    ]);
+    expect(deriveDomainRoot(r.get("foo-todo")!, r)).toBe("foo-system");
+  });
+
+  it("-spec fallback 이 작동", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      { id: "foo-spec", tier: "system" },
+      {
+        id: "foo-plan",
+        tier: "component",
+        ref: "docs/foo.plan.md",
+      },
+    ]);
+    expect(deriveDomainRoot(r.get("foo-plan")!, r)).toBe("foo-spec");
+  });
+
+  it("base/-system/-spec 모두 없으면 D 에서는 포기 (다음 전략으로 fallthrough)", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      {
+        id: "ghost-todo",
+        tier: "component",
+        ref: "docs/ghost.todo.md",
+      },
+    ]);
+    // A, C 모두 실패 → self
+    expect(deriveDomainRoot(r.get("ghost-todo")!, r)).toBe("ghost-todo");
+  });
+
+  it("D 가 self 로 귀결해도 다음 전략으로 이어짐 (parent 가 존재하지만 domain root 를 못 찾는 경우 self 반환)", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      // foo 가 component 인데 부모가 없어 self → D 시도해도 foo 자신이 root
+      { id: "foo", tier: "component" },
+      {
+        id: "foo-todo",
+        tier: "component",
+        ref: "docs/foo.todo.md",
+      },
+    ]);
+    // D 의 foo 도 self 로 귀결 → 다음 전략 없으니 최종 self (foo-todo)
+    expect(deriveDomainRoot(r.get("foo-todo")!, r)).toBe("foo");
+  });
+});
+
+describe("deriveDomainRoot — sub-doc rollup Strategy A (contains-inverse)", () => {
+  it("Y contains X → X 는 Y 의 rollup 을 상속", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      { id: "domain-group", tier: "system" },
+      {
+        id: "alpha-todo",
+        tier: "component",
+        ref: "docs/alpha.todo.md",
+      },
+    ]);
+    r.link("domain-group", "alpha-todo", "contains");
+    expect(deriveDomainRoot(r.get("alpha-todo")!, r)).toBe("domain-group");
+  });
+
+  it("다중 parent: system tier 우선, 동률이면 id 오름차순", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      { id: "p-layout", tier: "layout" },
+      { id: "p-zebra", tier: "system" },
+      { id: "p-apple", tier: "system" },
+      {
+        id: "orphan-todo",
+        tier: "component",
+        ref: "docs/orphan.todo.md",
+      },
+    ]);
+    r.link("p-layout", "orphan-todo", "contains");
+    r.link("p-zebra", "orphan-todo", "contains");
+    r.link("p-apple", "orphan-todo", "contains");
+    // system 이 layout 보다 우선, system 들 중 apple 이 localeCompare 에서 앞.
+    expect(deriveDomainRoot(r.get("orphan-todo")!, r)).toBe("p-apple");
+  });
+
+  it("D 가 실패하고 A 가 성공하면 A 가 결정", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      { id: "group", tier: "system" },
+      // stripSubDocIdSuffix("weird-todo") → "weird" 가 없고 -system/-spec 도 없음.
+      {
+        id: "weird-todo",
+        tier: "component",
+        ref: "docs/weird.todo.md",
+      },
+    ]);
+    r.link("group", "weird-todo", "contains");
+    expect(deriveDomainRoot(r.get("weird-todo")!, r)).toBe("group");
+  });
+});
+
+describe("deriveDomainRoot — sub-doc rollup Strategy C (file co-location)", () => {
+  it("foo.todo.md + foo.spec.md 같은 디렉토리 → spec 으로 rollup", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      { id: "foo-spec", tier: "system", ref: "docs/specs/foo.spec.md" },
+      {
+        id: "unrelated-id",
+        tier: "component",
+        ref: "docs/specs/foo.todo.md",
+      },
+    ]);
+    // id 접미(D)도 contains(A)도 없는 상황에서 ref 위치로만 결정.
+    expect(deriveDomainRoot(r.get("unrelated-id")!, r)).toBe("foo-spec");
+  });
+
+  it("foo.todo.md + foo.md (non-spec) 도 sibling 으로 인정", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      { id: "bar-plain", tier: "system", ref: "docs/notes/bar.md" },
+      {
+        id: "bar-note-todo",
+        tier: "component",
+        ref: "docs/notes/bar.todo.md",
+      },
+    ]);
+    expect(deriveDomainRoot(r.get("bar-note-todo")!, r)).toBe("bar-plain");
+  });
+
+  it("sibling 이 없으면 self", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      {
+        id: "lonely-todo",
+        tier: "component",
+        ref: "docs/lonely.todo.md",
+      },
+    ]);
+    expect(deriveDomainRoot(r.get("lonely-todo")!, r)).toBe("lonely-todo");
+  });
+});
+
+describe("deriveDomainRoot — sub-doc rollup 우선순위 D > A > C", () => {
+  it("D/A/C 모두 적용 가능하면 D 가 승리", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      { id: "foo", tier: "system" }, // D 가 찾을 parent
+      { id: "other-group", tier: "system" }, // A 가 찾을 parent
+      { id: "foo-spec", tier: "system", ref: "docs/foo.spec.md" }, // C 가 찾을 sibling
+      {
+        id: "foo-todo",
+        tier: "component",
+        ref: "docs/foo.todo.md",
+      },
+    ]);
+    r.link("other-group", "foo-todo", "contains");
+    expect(deriveDomainRoot(r.get("foo-todo")!, r)).toBe("foo");
+  });
+
+  it("D 실패 + A 성공 + C 성공 → A 가 승리", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      { id: "a-group", tier: "system" },
+      { id: "c-spec", tier: "system", ref: "docs/mystery.spec.md" },
+      {
+        id: "mystery-todo",
+        tier: "component",
+        ref: "docs/mystery.todo.md",
+      },
+    ]);
+    // id 는 "mystery-todo" — base "mystery" 는 없으니 D 실패.
+    r.link("a-group", "mystery-todo", "contains");
+    expect(deriveDomainRoot(r.get("mystery-todo")!, r)).toBe("a-group");
+  });
+
+  it("D/A 실패 + C 성공 → C 가 결정", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      { id: "co-located-spec", tier: "system", ref: "docs/co-located.spec.md" },
+      {
+        id: "orphan-id",
+        tier: "component",
+        ref: "docs/co-located.todo.md",
+      },
+    ]);
+    expect(deriveDomainRoot(r.get("orphan-id")!, r)).toBe("co-located-spec");
+  });
+
+  it("D/A/C 전부 실패 → self", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      {
+        id: "no-match",
+        tier: "component",
+        ref: "docs/no-match.todo.md",
+      },
+    ]);
+    expect(deriveDomainRoot(r.get("no-match")!, r)).toBe("no-match");
+  });
+});
+
+describe("deriveDomainRoot — sub-doc rollup backward compat", () => {
+  it("tier=system 은 sub-doc 로직이 작동하지 않음 (walk 기본 규칙 유지)", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      { id: "parent", tier: "system" },
+      // tier=system + ref=*.todo.md 인 예외적 케이스: sub-doc 분기가 발동하지 않아야 함.
+      {
+        id: "solo-system-todo",
+        tier: "system",
+        ref: "docs/solo-system.todo.md",
+      },
+    ]);
+    // refines/depends_on 부모 없음 → self (기존 동작).
+    expect(deriveDomainRoot(r.get("solo-system-todo")!, r)).toBe("solo-system-todo");
+  });
+
+  it("tier=component 인데 sub-doc 확장자가 아니면 기존 동작 유지 (self)", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      { id: "parent", tier: "system" },
+      {
+        id: "regular-component",
+        tier: "component",
+        ref: "packages/foo/src/bar.ts", // md 아님
+      },
+    ]);
+    // ref 가 sub-doc 확장자가 아니므로 rollup 시도 없이 self.
+    expect(deriveDomainRoot(r.get("regular-component")!, r)).toBe("regular-component");
+  });
+
+  it("component 에 refines 부모가 있으면 기존 walk 가 우선 (sub-doc 분기 도달 안 함)", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      { id: "explicit-parent", tier: "system" },
+      { id: "co-located-spec", tier: "system", ref: "docs/alpha.spec.md" },
+      // 명시적 refines 가 있으므로 기본 walk 가 성공.
+      {
+        id: "alpha-todo",
+        tier: "component",
+        ref: "docs/alpha.todo.md",
+      },
+    ]);
+    r.link("alpha-todo", "explicit-parent", "refines");
+    // 기본 walk 로 바로 explicit-parent → sub-doc rollup 로직 진입 안 함.
+    expect(deriveDomainRoot(r.get("alpha-todo")!, r)).toBe("explicit-parent");
+  });
+});
+
+describe("deriveSubDocRoot — 직접 호출 계약", () => {
+  it("전략 하나도 성공 못하면 null", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      {
+        id: "lonely-todo",
+        tier: "component",
+        ref: "docs/lonely.todo.md",
+      },
+    ]);
+    expect(deriveSubDocRoot(r.get("lonely-todo")!, r)).toBeNull();
+  });
+
+  it("depth-cap: 부모 체인이 너무 깊어도 안전 반환", () => {
+    const r = new MemoryDefinitionRegistry();
+    registerDocs(r, [
+      { id: "deep-root", tier: "system" },
+      {
+        id: "deep-todo",
+        tier: "component",
+        ref: "docs/deep.todo.md",
+      },
+    ]);
+    r.link("deep-root", "deep-todo", "contains");
+    // depth=8 로 호출 → deriveDomainRoot depth+1 로 부모 탐색해도 MAX_DEPTH 이내.
+    expect(deriveSubDocRoot(r.get("deep-todo")!, r, new Set(["deep-todo"]), 8)).toBe("deep-root");
   });
 });
