@@ -223,7 +223,8 @@ export type LinkType =
   | "contains"     // 포함 — 그룹이 멤버를 포함
   | "evolves_from" // 개정/버전 진화
   | "supersedes"   // 이전 개정 대체
-  | "refs";        // 조직적 배치 — Layout이 System을 카탈로그로 참조할 때 사용 (STC D-4)
+  | "refs"         // 조직적 배치 — Layout이 System을 카탈로그로 참조할 때 사용 (STC D-4)
+  | "verifies";    // 검증 — .test.md가 대상 spec을 검증 (test-md-convention §1.5)
 
 // ─── Meta-Taxonomy — taxonomy 분류군 ────────────────────
 

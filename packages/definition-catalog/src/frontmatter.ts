@@ -183,7 +183,7 @@ const VALID_SCOPES = new Set(["ui", "feature", "flow", "state", "constraint", "d
 const VALID_DEPTHS = new Set(["overview", "specification", "implementation", "validation"]);
 const VALID_LIFECYCLES = new Set(["draft", "review", "approved", "deprecated", "archived"]);
 const VALID_LAYERS = new Set(["domain", "operation", "mediation", "experience"]);
-const VALID_LINK_TYPES = new Set(["depends_on", "implements", "refines", "constrains", "traces_to", "contains", "evolves_from", "supersedes", "refs"]);
+const VALID_LINK_TYPES = new Set(["depends_on", "implements", "refines", "constrains", "traces_to", "contains", "evolves_from", "supersedes", "refs", "verifies"]);
 const VALID_WORK_DOMAINS = new Set<string>(ALL_DOMAIN_IDS);
 const VALID_GATE_KINDS = new Set<string>(ALL_GATE_KIND_IDS);
 
