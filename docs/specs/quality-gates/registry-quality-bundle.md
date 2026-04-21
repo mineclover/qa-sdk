@@ -7,7 +7,7 @@ def:
   depth: overview
   lifecycle: approved
   layer: operation
-  tags: [testing, quality-bundle, work-domain:productivity]
+  tags: [testing, quality-bundle, work-domain:productivity, cross-scope]
   links:
     - target: registry-quality-contract
       type: contains
