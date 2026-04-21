@@ -44,7 +44,7 @@
     "@qa-sdk/logger": "workspace:*",
     "definition-catalog": "workspace:*",
     "dotenv": "^17.3.1",
-    "drizzle-orm": "1.0.0-beta.20",
+    "drizzle-orm": "catalog:",
     "index-meta": "workspace:*",
     "operational-ontology": "workspace:*",
     "pino": "workspace:@qa-sdk/pino@*",
@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "@nestjs/testing": "^11.0.0",
-    "drizzle-kit": "1.0.0-beta.20",
+    "drizzle-kit": "catalog:",
     "tsup": "^8.5.1",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/sdk-trace-base": "^1.30.0",

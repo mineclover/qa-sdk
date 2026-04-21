@@ -25,8 +25,8 @@
     "@nestjs/platform-fastify": "^11.0.0",
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/logger": "workspace:*",
-    "better-sqlite3": "^12.8.0",
-    "drizzle-orm": "1.0.0-beta.20",
+    "better-sqlite3": "catalog:",
+    "drizzle-orm": "catalog:",
     "decision-flow": "workspace:*",
     "dotenv": "^16.0.0",
     "reflect-metadata": "^0.2.0",
@@ -34,8 +34,8 @@
     "zod": "^3.22.0"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
-    "drizzle-kit": "1.0.0-beta.20",
+    "@types/better-sqlite3": "catalog:",
+    "drizzle-kit": "catalog:",
     "tsup": "^8.5.1",
     "typescript": "^5.4.0"
   }

@@ -26,13 +26,13 @@
   },
   "dependencies": {
     "@qa-sdk/core": "workspace:*",
-    "drizzle-orm": "1.0.0-beta.20",
+    "drizzle-orm": "catalog:",
     "execa": "^9.6.1",
     "index-meta": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "drizzle-kit": "1.0.0-beta.20",
+    "drizzle-kit": "catalog:",
     "tsup": "^8.5.1",
     "typescript": "^5.8.2",
     "vitest": "^1.6.1"

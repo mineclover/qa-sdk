@@ -14,12 +14,12 @@
     "demo-snapshot": "workspace:*",
     "hono": "^4.7.5",
     "index-meta": "workspace:*",
-    "drizzle-orm": "1.0.0-beta.20",
+    "drizzle-orm": "catalog:",
     "permission-engine": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250430.0",
-    "drizzle-kit": "1.0.0-beta.20",
+    "drizzle-kit": "catalog:",
     "typescript": "^5.8.2",
     "wrangler": "^4.0.0"
   }

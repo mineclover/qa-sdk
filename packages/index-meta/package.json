@@ -47,13 +47,13 @@
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
-    "drizzle-orm": "1.0.0-beta.20",
+    "drizzle-orm": "catalog:",
     "weighted-index": "workspace:*"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
-    "better-sqlite3": "^12.8.0",
-    "drizzle-kit": "1.0.0-beta.20",
+    "@types/better-sqlite3": "catalog:",
+    "better-sqlite3": "catalog:",
+    "drizzle-kit": "catalog:",
     "tsup": "^8.5.1",
     "typescript": "^5.8.2",
     "vitest": "^1.6.1"

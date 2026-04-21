@@ -8,6 +8,6 @@
   "main": "./dist/index.cjs", "module": "./dist/index.js", "types": "./dist/index.d.ts",
   "files": ["dist", "drizzle"],
   "scripts": { "build": "tsup", "test": "vitest run", "typecheck": "tsc --noEmit", "clean": "rm -rf dist", "db:generate": "drizzle-kit generate" },
-  "dependencies": { "@qa-sdk/core": "workspace:*", "decision-flow": "workspace:*", "drizzle-orm": "1.0.0-beta.20", "index-meta": "workspace:*" },
-  "devDependencies": { "@types/node": "^22.0.0", "drizzle-kit": "1.0.0-beta.20", "tsup": "^8.5.1", "typescript": "^5.8.2", "vitest": "^1.6.1" }
+  "dependencies": { "@qa-sdk/core": "workspace:*", "decision-flow": "workspace:*", "drizzle-orm": "catalog:", "index-meta": "workspace:*" },
+  "devDependencies": { "@types/node": "^22.0.0", "drizzle-kit": "catalog:", "tsup": "^8.5.1", "typescript": "^5.8.2", "vitest": "^1.6.1" }
 }

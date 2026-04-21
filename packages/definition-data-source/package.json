@@ -8,6 +8,6 @@
   "main": "./dist/index.cjs", "module": "./dist/index.js", "types": "./dist/index.d.ts",
   "files": ["dist"],
   "scripts": { "build": "tsup", "typecheck": "tsc --noEmit", "clean": "rm -rf dist" },
-  "dependencies": { "better-sqlite3": "^12.8.0", "definition-catalog": "workspace:*", "drizzle-orm": "1.0.0-beta.20" },
-  "devDependencies": { "@types/better-sqlite3": "^7.6.13", "@types/node": "^22.0.0", "tsup": "^8.5.1", "typescript": "^5.8.2" }
+  "dependencies": { "better-sqlite3": "catalog:", "definition-catalog": "workspace:*", "drizzle-orm": "catalog:" },
+  "devDependencies": { "@types/better-sqlite3": "catalog:", "@types/node": "^22.0.0", "tsup": "^8.5.1", "typescript": "^5.8.2" }
 }

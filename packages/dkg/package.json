@@ -37,13 +37,13 @@
     "decision-flow": "workspace:*",
     "weighted-index": "workspace:*",
     "index-meta": "workspace:*",
-    "drizzle-orm": "1.0.0-beta.20"
+    "drizzle-orm": "catalog:"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@qa-sdk/spec-core": "workspace:*",
     "demo-snapshot": "workspace:*",
-    "drizzle-kit": "1.0.0-beta.20",
+    "drizzle-kit": "catalog:",
     "tsup": "^8.5.1",
     "typescript": "^5.8.2",
     "vitest": "^1.6.1"

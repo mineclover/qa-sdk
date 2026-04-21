@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@qa-sdk/core": "workspace:*",
-    "drizzle-orm": "1.0.0-beta.20",
+    "drizzle-orm": "catalog:",
     "postgres": "^3.4.5"
   },
   "optionalDependencies": {
@@ -35,7 +35,7 @@
     "@opentelemetry/sdk-trace-node": "^1.30.0",
     "@qa-sdk/otel": "workspace:*",
     "@types/node": "^22.13.10",
-    "drizzle-kit": "1.0.0-beta.20",
+    "drizzle-kit": "catalog:",
     "typescript": "^5.8.2"
   }
 }

@@ -4,6 +4,21 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@types/better-sqlite3':
+      specifier: ^7.6.13
+      version: 7.6.13
+    better-sqlite3:
+      specifier: ^12.8.0
+      version: 12.8.0
+    drizzle-kit:
+      specifier: 1.0.0-beta.22
+      version: 1.0.0-beta.22
+    drizzle-orm:
+      specifier: 1.0.0-beta.22
+      version: 1.0.0-beta.22
+
 importers:
 
   .:
@@ -192,7 +207,7 @@ importers:
         specifier: workspace:*
         version: link:../authorization-ontology
       better-sqlite3:
-        specifier: ^12.8.0
+        specifier: 'catalog:'
         version: 12.8.0
       cli-command:
         specifier: workspace:*
@@ -228,8 +243,8 @@ importers:
         specifier: workspace:*
         version: link:../doc-envelope
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       execa:
         specifier: ^9.6.1
         version: 9.6.1
@@ -292,14 +307,14 @@ importers:
         specifier: workspace:*
         version: link:../motion-workspace-service
       '@types/better-sqlite3':
-        specifier: ^7.6.13
+        specifier: 'catalog:'
         version: 7.6.13
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.15
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
@@ -514,8 +529,8 @@ importers:
         specifier: workspace:*
         version: link:../decision-flow
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       index-meta:
         specifier: workspace:*
         version: link:../index-meta
@@ -524,8 +539,8 @@ importers:
         specifier: ^22.0.0
         version: 22.19.15
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
@@ -554,7 +569,7 @@ importers:
         specifier: workspace:*
         version: link:../logger
       better-sqlite3:
-        specifier: ^12.8.0
+        specifier: 'catalog:'
         version: 12.8.0
       decision-flow:
         specifier: workspace:*
@@ -563,8 +578,8 @@ importers:
         specifier: ^16.0.0
         version: 16.6.1
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       reflect-metadata:
         specifier: ^0.2.0
         version: 0.2.2
@@ -576,11 +591,11 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/better-sqlite3':
-        specifier: ^7.6.13
+        specifier: 'catalog:'
         version: 7.6.13
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
@@ -693,17 +708,17 @@ importers:
   packages/definition-data-source:
     dependencies:
       better-sqlite3:
-        specifier: ^12.8.0
+        specifier: 'catalog:'
         version: 12.8.0
       definition-catalog:
         specifier: workspace:*
         version: link:../definition-catalog
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
     devDependencies:
       '@types/better-sqlite3':
-        specifier: ^7.6.13
+        specifier: 'catalog:'
         version: 7.6.13
       '@types/node':
         specifier: ^22.0.0
@@ -739,14 +754,14 @@ importers:
         specifier: workspace:*
         version: link:../logger
       better-sqlite3:
-        specifier: ^12.8.0
+        specifier: 'catalog:'
         version: 12.8.0
       definition-catalog:
         specifier: workspace:*
         version: link:../definition-catalog
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       graphql:
         specifier: ^16.13.2
         version: 16.13.2
@@ -767,11 +782,11 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/better-sqlite3':
-        specifier: ^7.6.13
+        specifier: 'catalog:'
         version: 7.6.13
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
@@ -891,8 +906,8 @@ importers:
         specifier: workspace:*
         version: link:../decision-flow
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       index-meta:
         specifier: workspace:*
         version: link:../index-meta
@@ -916,8 +931,8 @@ importers:
         specifier: workspace:*
         version: link:../demo-snapshot
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
@@ -1084,21 +1099,21 @@ importers:
   packages/index-meta:
     dependencies:
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       weighted-index:
         specifier: workspace:*
         version: link:../weighted-index
     devDependencies:
       '@types/better-sqlite3':
-        specifier: ^7.6.13
+        specifier: 'catalog:'
         version: 7.6.13
       better-sqlite3:
-        specifier: ^12.8.0
+        specifier: 'catalog:'
         version: 12.8.0
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
@@ -1228,8 +1243,8 @@ importers:
         specifier: ^17.3.1
         version: 17.3.1
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       hono:
         specifier: ^4.7.5
         version: 4.12.7
@@ -1253,8 +1268,8 @@ importers:
         specifier: ^8.18.1
         version: 8.18.1
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
@@ -1391,8 +1406,8 @@ importers:
         specifier: workspace:*
         version: link:../logger
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       hono:
         specifier: ^4.7.5
         version: 4.12.7
@@ -1410,8 +1425,8 @@ importers:
         specifier: ^22.13.10
         version: 22.19.15
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       motion-content:
         specifier: workspace:*
         version: link:../motion-content
@@ -1583,8 +1598,8 @@ importers:
         specifier: workspace:*
         version: link:../core
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       index-meta:
         specifier: workspace:*
         version: link:../index-meta
@@ -1593,8 +1608,8 @@ importers:
         specifier: ^22.0.0
         version: 22.19.15
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
@@ -1654,8 +1669,8 @@ importers:
         specifier: workspace:*
         version: link:../demo-snapshot
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       hono:
         specifier: ^4.7.5
         version: 4.12.7
@@ -1670,8 +1685,8 @@ importers:
         specifier: ^4.20250430.0
         version: 4.20260313.1
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
@@ -1682,8 +1697,8 @@ importers:
   packages/quality-ledger:
     dependencies:
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       index-meta:
         specifier: workspace:*
         version: link:../index-meta
@@ -1692,8 +1707,8 @@ importers:
         specifier: ^22.0.0
         version: 22.19.15
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
@@ -1719,8 +1734,8 @@ importers:
         specifier: ^17.3.1
         version: 17.3.1
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       hono:
         specifier: ^4.7.5
         version: 4.12.7
@@ -1741,8 +1756,8 @@ importers:
         specifier: ^22.13.10
         version: 22.19.15
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
@@ -1830,8 +1845,8 @@ importers:
         specifier: ^17.3.1
         version: 17.3.1
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       index-meta:
         specifier: workspace:*
         version: link:../index-meta
@@ -1882,8 +1897,8 @@ importers:
         specifier: workspace:*
         version: link:../demo-snapshot
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
@@ -1931,8 +1946,8 @@ importers:
         specifier: workspace:*
         version: link:../core
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       execa:
         specifier: ^9.6.1
         version: 9.6.1
@@ -1944,8 +1959,8 @@ importers:
         specifier: ^22.0.0
         version: 22.19.15
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
@@ -2108,8 +2123,8 @@ importers:
         specifier: workspace:*
         version: link:../dkg
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       index-meta:
         specifier: workspace:*
         version: link:../index-meta
@@ -2130,8 +2145,8 @@ importers:
         specifier: workspace:*
         version: link:../demo-snapshot
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -2194,8 +2209,8 @@ importers:
         specifier: workspace:*
         version: link:../core
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       postgres:
         specifier: ^3.4.5
         version: 3.4.8
@@ -2216,8 +2231,8 @@ importers:
         specifier: ^22.13.10
         version: 22.19.15
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
@@ -2241,8 +2256,8 @@ importers:
   packages/test-scenario-store:
     dependencies:
       drizzle-orm:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       index-meta:
         specifier: workspace:*
         version: link:../index-meta
@@ -2254,8 +2269,8 @@ importers:
         specifier: ^22.0.0
         version: 22.19.15
       drizzle-kit:
-        specifier: 1.0.0-beta.20
-        version: 1.0.0-beta.20
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
@@ -2386,6 +2401,12 @@ importers:
 
   packages/weighted-index:
     devDependencies:
+      better-sqlite3:
+        specifier: 'catalog:'
+        version: 12.8.0
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       fast-check:
         specifier: ^4.6.0
         version: 4.6.0
@@ -5611,12 +5632,12 @@ packages:
     resolution: {integrity: sha512-IO8C/dzEb6O3F9/twg6ZLXz164a2fhTnEWb95H23Dm4OuN+92NmEAlTrupP9VW6Jm3sO26tQlqyvyi4CsnY9GA==}
     engines: {node: '>=12'}
 
-  drizzle-kit@1.0.0-beta.20:
-    resolution: {integrity: sha512-qMUBnrOQIU+H32aF80BSn7lT1IQuKmofCypmkrKMuOMqvM0bhz5hjCHim1bLcXUzXYRtTSr6U2pe0MSV79WbAg==}
+  drizzle-kit@1.0.0-beta.22:
+    resolution: {integrity: sha512-9HTZuQRljQKTgCx4UhiGn8KYYfHGk4+B/bRR1714W67kz0qgJvdrG527i8rQD8uUyET9UTGR1u8syySJD4znGw==}
     hasBin: true
 
-  drizzle-orm@1.0.0-beta.20:
-    resolution: {integrity: sha512-7qiuw+Z6yGr+ywt3PS5dP6UCfdymIuFT/ni6GnPGzLhkBIolNBTo4ByMBWTxJ7dW/Ya6d73GtkeuKfcVcriVHA==}
+  drizzle-orm@1.0.0-beta.22:
+    resolution: {integrity: sha512-F+DZyVIvH0oVKa/w08Cle1xfoH+pc+htIXHG/frnMLG72aby9NYYr9oc+9XvghnoO4umxFItduz0OMmQJMnenw==}
     peerDependencies:
       '@aws-sdk/client-rds-data': '>=3'
       '@cloudflare/workers-types': '>=4'
@@ -5693,6 +5714,8 @@ packages:
         optional: true
       '@types/better-sqlite3':
         optional: true
+      '@types/mssql':
+        optional: true
       '@types/pg':
         optional: true
       '@types/sql.js':
@@ -5712,6 +5735,8 @@ packages:
       expo-sqlite:
         optional: true
       gel:
+        optional: true
+      mssql:
         optional: true
       mysql2:
         optional: true
@@ -8617,10 +8642,12 @@ snapshots:
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   '@azure/abort-controller@2.1.2':
     dependencies:
       tslib: 2.8.1
+    optional: true
 
   '@azure/core-auth@1.10.1':
     dependencies:
@@ -8629,6 +8656,7 @@ snapshots:
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   '@azure/core-client@1.10.1':
     dependencies:
@@ -8641,12 +8669,14 @@ snapshots:
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   '@azure/core-http-compat@2.3.2(@azure/core-client@1.10.1)(@azure/core-rest-pipeline@1.23.0)':
     dependencies:
       '@azure/abort-controller': 2.1.2
       '@azure/core-client': 1.10.1
       '@azure/core-rest-pipeline': 1.23.0
+    optional: true
 
   '@azure/core-lro@2.7.2':
     dependencies:
@@ -8656,10 +8686,12 @@ snapshots:
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   '@azure/core-paging@1.6.2':
     dependencies:
       tslib: 2.8.1
+    optional: true
 
   '@azure/core-rest-pipeline@1.23.0':
     dependencies:
@@ -8672,10 +8704,12 @@ snapshots:
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   '@azure/core-tracing@1.3.1':
     dependencies:
       tslib: 2.8.1
+    optional: true
 
   '@azure/core-util@1.13.1':
     dependencies:
@@ -8684,6 +8718,7 @@ snapshots:
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   '@azure/identity@4.13.1':
     dependencies:
@@ -8700,6 +8735,7 @@ snapshots:
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   '@azure/keyvault-common@2.0.0':
     dependencies:
@@ -8713,6 +8749,7 @@ snapshots:
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   '@azure/keyvault-keys@4.10.0(@azure/core-client@1.10.1)':
     dependencies:
@@ -8731,6 +8768,7 @@ snapshots:
     transitivePeerDependencies:
       - '@azure/core-client'
       - supports-color
+    optional: true
 
   '@azure/logger@1.3.0':
     dependencies:
@@ -8738,18 +8776,22 @@ snapshots:
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   '@azure/msal-browser@5.6.1':
     dependencies:
       '@azure/msal-common': 16.4.0
+    optional: true
 
-  '@azure/msal-common@16.4.0': {}
+  '@azure/msal-common@16.4.0':
+    optional: true
 
   '@azure/msal-node@5.1.1':
     dependencies:
       '@azure/msal-common': 16.4.0
       jsonwebtoken: 9.0.3
       uuid: 8.3.2
+    optional: true
 
   '@babel/helper-string-parser@7.27.1': {}
 
@@ -9355,7 +9397,8 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@js-joda/core@5.7.0': {}
+  '@js-joda/core@5.7.0':
+    optional: true
 
   '@js-sdsl/ordered-map@4.4.2': {}
 
@@ -10257,7 +10300,8 @@ snapshots:
     dependencies:
       defer-to-connect: 2.0.1
 
-  '@tediousjs/connection-string@0.5.0': {}
+  '@tediousjs/connection-string@0.5.0':
+    optional: true
 
   '@tokenizer/inflate@0.4.1':
     dependencies:
@@ -10443,6 +10487,7 @@ snapshots:
     transitivePeerDependencies:
       - '@azure/core-client'
       - supports-color
+    optional: true
 
   '@types/node@20.19.39':
     dependencies:
@@ -10459,6 +10504,7 @@ snapshots:
   '@types/readable-stream@4.0.23':
     dependencies:
       '@types/node': 22.19.15
+    optional: true
 
   '@types/responselike@1.0.0':
     dependencies:
@@ -10485,6 +10531,7 @@ snapshots:
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   '@vercel/blob@2.3.1':
     dependencies:
@@ -10992,6 +11039,7 @@ snapshots:
       buffer: 6.0.3
       inherits: 2.0.4
       readable-stream: 4.7.0
+    optional: true
 
   blake3-wasm@2.1.5: {}
 
@@ -11064,6 +11112,7 @@ snapshots:
   bundle-name@4.1.0:
     dependencies:
       run-applescript: 7.1.0
+    optional: true
 
   bundle-require@5.1.0(esbuild@0.27.3):
     dependencies:
@@ -11209,7 +11258,8 @@ snapshots:
     dependencies:
       delayed-stream: 1.0.0
 
-  commander@11.1.0: {}
+  commander@11.1.0:
+    optional: true
 
   commander@12.1.0: {}
 
@@ -11496,12 +11546,14 @@ snapshots:
 
   deep-is@0.1.4: {}
 
-  default-browser-id@5.0.1: {}
+  default-browser-id@5.0.1:
+    optional: true
 
   default-browser@5.5.0:
     dependencies:
       bundle-name: 4.1.0
       default-browser-id: 5.0.1
+    optional: true
 
   defer-to-connect@2.0.1: {}
 
@@ -11511,7 +11563,8 @@ snapshots:
       es-errors: 1.3.0
       gopd: 1.2.0
 
-  define-lazy-prop@3.0.0: {}
+  define-lazy-prop@3.0.0:
+    optional: true
 
   define-properties@1.2.1:
     dependencies:
@@ -11545,7 +11598,7 @@ snapshots:
 
   dotenv@17.3.1: {}
 
-  drizzle-kit@1.0.0-beta.20:
+  drizzle-kit@1.0.0-beta.22:
     dependencies:
       '@drizzle-team/brocli': 0.11.0
       '@js-temporal/polyfill': 0.5.1
@@ -11553,16 +11606,15 @@ snapshots:
       get-tsconfig: 4.13.6
       jiti: 2.6.1
 
-  drizzle-orm@1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76):
-    dependencies:
-      '@types/mssql': 9.1.11(@azure/core-client@1.10.1)
-      mssql: 11.0.1(@azure/core-client@1.10.1)
+  drizzle-orm@1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76):
     optionalDependencies:
       '@cloudflare/workers-types': 4.20260313.1
       '@opentelemetry/api': 1.9.1
       '@types/better-sqlite3': 7.6.13
+      '@types/mssql': 9.1.11(@azure/core-client@1.10.1)
       better-sqlite3: 12.8.0
       gel: 2.2.0
+      mssql: 11.0.1(@azure/core-client@1.10.1)
       postgres: 3.4.8
       zod: 3.25.76
 
@@ -12371,6 +12423,7 @@ snapshots:
   iconv-lite@0.7.2:
     dependencies:
       safer-buffer: 2.1.2
+    optional: true
 
   ieee754@1.2.1: {}
 
@@ -12460,7 +12513,8 @@ snapshots:
 
   is-deflate@1.0.0: {}
 
-  is-docker@3.0.0: {}
+  is-docker@3.0.0:
+    optional: true
 
   is-extglob@2.1.1: {}
 
@@ -12483,6 +12537,7 @@ snapshots:
   is-inside-container@1.0.0:
     dependencies:
       is-docker: 3.0.0
+    optional: true
 
   is-nan@1.3.2:
     dependencies:
@@ -12523,6 +12578,7 @@ snapshots:
   is-wsl@3.1.1:
     dependencies:
       is-inside-container: 1.0.0
+    optional: true
 
   isarray@1.0.0: {}
 
@@ -12574,7 +12630,8 @@ snapshots:
 
   joycon@3.1.1: {}
 
-  js-md4@0.3.2: {}
+  js-md4@0.3.2:
+    optional: true
 
   js-string-escape@1.0.1: {}
 
@@ -13061,6 +13118,7 @@ snapshots:
     transitivePeerDependencies:
       - '@azure/core-client'
       - supports-color
+    optional: true
 
   multimatch@5.0.0:
     dependencies:
@@ -13080,7 +13138,8 @@ snapshots:
 
   napi-build-utils@2.0.0: {}
 
-  native-duplexpair@1.0.0: {}
+  native-duplexpair@1.0.0:
+    optional: true
 
   negotiator@0.6.3: {}
 
@@ -13239,6 +13298,7 @@ snapshots:
       define-lazy-prop: 3.0.0
       is-inside-container: 1.0.0
       wsl-utils: 0.1.0
+    optional: true
 
   openapi3-ts@4.5.0:
     dependencies:
@@ -13721,7 +13781,8 @@ snapshots:
       '@rollup/rollup-win32-x64-msvc': 4.59.0
       fsevents: 2.3.3
 
-  run-applescript@7.1.0: {}
+  run-applescript@7.1.0:
+    optional: true
 
   run-parallel@1.2.0:
     dependencies:
@@ -13958,7 +14019,8 @@ snapshots:
 
   sprintf-js@1.0.3: {}
 
-  sprintf-js@1.1.3: {}
+  sprintf-js@1.1.3:
+    optional: true
 
   sshpk@1.18.0:
     dependencies:
@@ -14125,7 +14187,8 @@ snapshots:
       minizlib: 3.1.0
       yallist: 5.0.0
 
-  tarn@3.0.2: {}
+  tarn@3.0.2:
+    optional: true
 
   tedious@18.6.2(@azure/core-client@1.10.1):
     dependencies:
@@ -14142,6 +14205,7 @@ snapshots:
     transitivePeerDependencies:
       - '@azure/core-client'
       - supports-color
+    optional: true
 
   tedious@19.2.1(@azure/core-client@1.10.1):
     dependencies:
@@ -14158,6 +14222,7 @@ snapshots:
     transitivePeerDependencies:
       - '@azure/core-client'
       - supports-color
+    optional: true
 
   text-decoder@1.2.7:
     dependencies:
@@ -14936,6 +15001,7 @@ snapshots:
   wsl-utils@0.1.0:
     dependencies:
       is-wsl: 3.1.1
+    optional: true
 
   xmlcreate@2.0.4: {}
 

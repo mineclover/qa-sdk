@@ -20,13 +20,13 @@
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
-    "drizzle-orm": "1.0.0-beta.20",
+    "drizzle-orm": "catalog:",
     "index-meta": "workspace:*",
     "test-types": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "drizzle-kit": "1.0.0-beta.20",
+    "drizzle-kit": "catalog:",
     "tsup": "^8.5.1",
     "typescript": "*",
     "vitest": "*"

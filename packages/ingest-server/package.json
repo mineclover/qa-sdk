@@ -30,7 +30,7 @@
     "@qa-sdk/store": "workspace:*",
     "bullmq": "^5.0.0",
     "dotenv": "^17.3.1",
-    "drizzle-orm": "1.0.0-beta.20",
+    "drizzle-orm": "catalog:",
     "hono": "^4.7.5",
     "index-meta": "workspace:*",
     "pino": "workspace:@qa-sdk/pino@*",
@@ -60,7 +60,7 @@
   "devDependencies": {
     "@types/node": "^22.13.10",
     "@types/ws": "^8.18.1",
-    "drizzle-kit": "1.0.0-beta.20",
+    "drizzle-kit": "catalog:",
     "tsup": "^8.5.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
