@@ -31,6 +31,8 @@ def:
       type: contains
     - target: operational-ontology-registry-activation-cli
       type: refs
+    - target: operational-ontology-system
+      type: depends_on
 sources:
   - packages/operational-ontology/src/internal/programming-artifact-core.ts
   - packages/operational-ontology/src/programming-artifacts.ts

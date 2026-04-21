@@ -33,6 +33,8 @@ def:
       type: contains
     - target: operational-ontology-snapshot-projector
       type: contains
+    - target: operational-ontology-system
+      type: depends_on
 sources:
   - packages/operational-ontology/src/internal/runtime-core.ts
   - packages/operational-ontology/src/internal/projector-core.ts
