@@ -1,7 +1,7 @@
 ---
 def:
   id: wi-system
-  tier: system
+  tier: layout
   address: def_document:v2:68648
   scope: feature
   aspect: encoding_func
@@ -12,29 +12,29 @@ def:
   tags: [structural, entry-point]
   links:
     - target: wi-math
-      type: contains
+      type: refs
     - target: wi-api
-      type: contains
+      type: refs
     - target: wi-codec
-      type: contains
+      type: refs
     - target: wi-constraint
-      type: contains
+      type: refs
     - target: partial-binder-spec
       type: depends_on
     - target: range-query-spec
-      type: contains
+      type: refs
     - target: axis-projection
-      type: contains
+      type: refs
     - target: axis-projection-test
-      type: contains
+      type: refs
     - target: wi-hardware-acceleration
-      type: contains
+      type: refs
     - target: weighted-index-explorer-spec
-      type: contains
+      type: refs
     - target: weighted-gpu-spec
-      type: contains
+      type: refs
     - target: weighted-wasm-spec
-      type: contains
+      type: refs
 ---
 
 # Weighted-Index 시스템

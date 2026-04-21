@@ -1,7 +1,7 @@
 ---
 def:
   id: dkg-system
-  tier: system
+  tier: layout
   address: def_document:v2:342022
   scope: data
   aspect: domain_data
@@ -12,17 +12,17 @@ def:
   tags: [external, external, structural, observability, entry-point]
   links:
     - target: dkg-node-types
-      type: contains
+      type: refs
     - target: dkg-edge-types
-      type: contains
+      type: refs
     - target: dkg-queries
-      type: contains
+      type: refs
     - target: dkg-constraint
-      type: contains
+      type: refs
     - target: dkg-growth-spiral
-      type: contains
+      type: refs
     - target: dkg-service-topology
-      type: contains
+      type: refs
 ---
 
 # DKG (Design Knowledge Graph) 시스템

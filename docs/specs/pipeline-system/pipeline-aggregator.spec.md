@@ -1,7 +1,7 @@
 ---
 def:
   id: pipeline-aggregator
-  tier: system
+  tier: layout
   scope: interface
   aspect: pipeline_contract
   depth: specification
@@ -10,7 +10,7 @@ def:
   tags: [aggregation, port]
   links:
     - target: pipeline-aggregator-test
-      type: contains
+      type: refs
     - target: pipeline-system
       type: depends_on
 contains:

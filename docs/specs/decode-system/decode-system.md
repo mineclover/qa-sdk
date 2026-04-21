@@ -1,7 +1,7 @@
 ---
 def:
   id: decode-system
-  tier: system
+  tier: layout
   address: def_document:v2:412676
   scope: interface
   aspect: decode_contract
@@ -12,9 +12,9 @@ def:
   tags: [structural, entry-point]
   links:
     - target: decode-bundle
-      type: contains
+      type: refs
     - target: decode-deploy
-      type: contains
+      type: refs
     - target: registry-system
       type: depends_on
 ---

@@ -1,7 +1,7 @@
 ---
 def:
   id: browser-system
-  tier: system
+  tier: layout
   address: def_document:v2:412674
   scope: interface
   aspect: browser_contract
@@ -12,11 +12,11 @@ def:
   tags: [structural, entry-point]
   links:
     - target: browser-transport-spec
-      type: contains
+      type: refs
     - target: trace-context-spec
-      type: contains
+      type: refs
     - target: shop-web-spec
-      type: contains
+      type: refs
     - target: ingest-system
       type: depends_on
 ---

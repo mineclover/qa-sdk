@@ -1,7 +1,7 @@
 ---
 def:
   id: viz-system
-  tier: system
+  tier: layout
   address: def_document:v2:1030
   scope: ui
   aspect: component
@@ -12,27 +12,27 @@ def:
   tags: [structural, entry-point]
   links:
     - target: api-client-spec
-      type: contains
+      type: refs
     - target: canvas-viewport-spec
       type: depends_on
     - target: docs-explorer-spec
-      type: contains
+      type: refs
     - target: iframe-protocol-spec
-      type: contains
+      type: refs
     - target: mermaid-gen-spec
-      type: contains
+      type: refs
     - target: motion-editor-component
-      type: contains
+      type: refs
     - target: inspector-engine
-      type: contains
+      type: refs
     - target: platform-demo-api-spec
       type: depends_on
     - target: registry-ui-spec
-      type: contains
+      type: refs
     - target: viz-3d-spec
-      type: contains
+      type: refs
     - target: weighted-ui-spec
-      type: contains
+      type: refs
 ---
 
 ## 목적 ^purpose

@@ -1,7 +1,7 @@
 ---
 def:
   id: df-system
-  tier: system
+  tier: layout
   address: def_document:v2:68625
   scope: feature
   aspect: func_def
@@ -12,17 +12,17 @@ def:
   tags: [structural, decision, entry-point]
   links:
     - target: df-constraint
-      type: contains
+      type: refs
     - target: decision-standard-group
       type: depends_on
     - target: axis-decision-guide
-      type: contains
+      type: refs
     - target: df-dev-decisions
-      type: contains
+      type: refs
     - target: df-gate-integration
-      type: contains
+      type: refs
     - target: decision-flow-store
-      type: contains
+      type: refs
 ---
 
 # Decision Flow 시스템

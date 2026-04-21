@@ -1,7 +1,7 @@
 ---
 def:
   id: gate-api
-  tier: system
+  tier: layout
   address: def_document:v2:412810
   scope: interface
   aspect: gate_contract
@@ -12,7 +12,7 @@ def:
   tags: [security]
   links:
     - target: gate-state-model
-      type: contains
+      type: refs
     - target: gate-engine-func
       type: implements
     - target: gate-event-bus

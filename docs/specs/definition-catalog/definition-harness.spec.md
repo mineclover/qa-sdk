@@ -2,7 +2,7 @@
 def:
   id: definition-harness
   type: design
-  tier: system
+  tier: layout
   owner_system: definition-service
   projection_plane: intent
   intent_hierarchy: core
@@ -17,17 +17,17 @@ def:
     - target: definition-catalog-spec
       type: refines
     - target: definition-state-model
-      type: contains
+      type: refs
     - target: definition-taxonomy
       type: depends_on
     - target: spec-verification-system
       type: depends_on
     - target: definition-harness-cli
-      type: contains
+      type: refs
     - target: definition-harness-persistence
-      type: contains
+      type: refs
     - target: definition-harness-derive
-      type: contains
+      type: refs
 ---
 # Definition Harness — 상태 기반 시스템 관리 자동화
 

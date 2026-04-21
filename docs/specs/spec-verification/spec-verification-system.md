@@ -1,7 +1,7 @@
 ---
 def:
   id: spec-verification-system
-  tier: system
+  tier: layout
   address: def_document:v2:68646
   scope: feature
   aspect: analyzer_func
@@ -15,9 +15,9 @@ def:
     - target: spec-engine-system
       type: depends_on
     - target: spec-tracker-system
-      type: depends_on
+      type: refs
     - target: spec-analyzer-system
-      type: depends_on
+      type: refs
 ---
 # Spec Verification 시스템
 

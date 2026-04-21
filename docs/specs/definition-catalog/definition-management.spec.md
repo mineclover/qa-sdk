@@ -2,7 +2,7 @@
 def:
   id: definition-management
   type: design
-  tier: system
+  tier: layout
   owner_system: definition-service
   projection_plane: intent
   intent_hierarchy: core
@@ -17,25 +17,25 @@ def:
     - target: definition-taxonomy
       type: depends_on
     - target: definition-level
-      type: contains
+      type: refs
     - target: definition-concern
-      type: contains
+      type: refs
     - target: definition-assembly
-      type: contains
+      type: refs
     - target: harness-architecture
       type: depends_on
     - target: definition-mgmt-coordinates
-      type: contains
+      type: refs
     - target: definition-mgmt-graph-links
-      type: contains
+      type: refs
     - target: definition-mgmt-observability-model
       type: depends_on
     - target: definition-mgmt-semantic-lint
-      type: contains
+      type: refs
     - target: definition-mgmt-verification-loop
-      type: contains
+      type: refs
     - target: definition-mgmt-consistency-rules
-      type: contains
+      type: refs
 ---
 
 # Definition Management — 좌표 기반 운영

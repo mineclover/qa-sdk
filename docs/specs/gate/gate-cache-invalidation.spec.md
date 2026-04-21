@@ -1,7 +1,7 @@
 ---
 def:
   id: gate-cache-invalidation
-  tier: system
+  tier: layout
   scope: flow
   aspect: gate_flow
   depth: specification
@@ -12,7 +12,7 @@ def:
     - target: gate-event-bus
       type: depends_on
     - target: gate-cache-invalidation-test
-      type: contains
+      type: refs
 contains:
   - gate-cache-invalidation-test
 ---

@@ -1,7 +1,7 @@
 ---
 def:
   id: scope-nesting-system
-  tier: system
+  tier: layout
   scope: feature
   aspect: nesting_func
   depth: overview
@@ -10,23 +10,23 @@ def:
   tags: [structural, testing]
   links:
     - target: scope-nesting-guide
-      type: contains
+      type: refs
     - target: scope-nesting-validation-rules
-      type: contains
+      type: refs
     - target: scope-nesting-procedure
-      type: contains
+      type: refs
     - target: scope-nesting-mount-flow
-      type: contains
+      type: refs
     - target: scope-nesting-contract-timing
-      type: contains
+      type: refs
     - target: scope-nesting-simulation-layers
-      type: contains
+      type: refs
     - target: scope-nesting-procedure-test
-      type: contains
+      type: refs
     - target: scope-nesting-contract-timing-test
-      type: contains
+      type: refs
     - target: scope-nesting-simulation-layers-test
-      type: contains
+      type: refs
     - target: ms-concept-contract-descent
       type: implements
     - target: ms-concept-boundary

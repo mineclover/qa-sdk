@@ -1,7 +1,7 @@
 ---
 def:
   id: decode-service-system
-  tier: system
+  tier: layout
   address: def_document:v2:68621
   scope: feature
   aspect: encoding_func
@@ -12,19 +12,19 @@ def:
   tags: [structural, entry-point]
   links:
     - target: decode-svc-data-model
-      type: contains
+      type: refs
     - target: decode-svc-core-logic
-      type: contains
+      type: refs
     - target: decode-svc-process-flow
-      type: contains
+      type: refs
     - target: decode-svc-state-model
-      type: contains
+      type: refs
     - target: decode-svc-constraints
-      type: contains
+      type: refs
     - target: decode-svc-api-contract
-      type: contains
+      type: refs
     - target: decode-svc-scenarios
-      type: contains
+      type: refs
     - target: decode-system
       type: depends_on
 ---

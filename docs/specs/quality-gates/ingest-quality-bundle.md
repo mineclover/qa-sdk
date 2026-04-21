@@ -1,7 +1,7 @@
 ---
 def:
   id: ingest-quality-bundle
-  tier: system
+  tier: layout
   scope: flow
   aspect: ingest_flow
   depth: overview
@@ -10,13 +10,13 @@ def:
   tags: [testing, quality-bundle, work-domain:productivity]
   links:
     - target: ingest-quality-contract
-      type: contains
+      type: refs
     - target: gate-ingest-build
-      type: contains
+      type: refs
     - target: gate-ingest-test
-      type: contains
+      type: refs
     - target: gate-ingest-sdk-bridge
-      type: contains
+      type: refs
     - target: ingest-system
       type: depends_on
 ---

@@ -2,7 +2,7 @@
 def:
   id: definition-taxonomy
   type: design
-  tier: system
+  tier: layout
   component_subtype: data-shape
   owner_system: definition-service
   projection_plane: intent
@@ -19,9 +19,9 @@ def:
     - target: definition-catalog-spec
       type: refines
     - target: definition-level
-      type: contains
+      type: refs
     - target: definition-addressing
-      type: contains
+      type: refs
     - target: tag-management-spec
       type: depends_on
 ---

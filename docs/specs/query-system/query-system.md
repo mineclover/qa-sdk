@@ -1,7 +1,7 @@
 ---
 def:
   id: query-system
-  tier: system
+  tier: layout
   address: def_document:v2:412686
   scope: interface
   aspect: query_contract
@@ -12,9 +12,9 @@ def:
   tags: [structural, entry-point]
   links:
     - target: query-api
-      type: contains
+      type: refs
     - target: query-gate-integration
-      type: contains
+      type: refs
     - target: gate-system
       type: depends_on
 ---
