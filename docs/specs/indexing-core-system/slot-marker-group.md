@@ -17,6 +17,8 @@ def:
       type: contains
     - target: slot-marker-capacity
       type: contains
+    - target: indexing-core-system
+      type: depends_on
 ---
 
 # 슬롯 마커 시스템

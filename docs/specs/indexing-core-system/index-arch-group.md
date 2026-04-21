@@ -15,6 +15,8 @@ def:
       type: contains
     - target: index-arch-traceability
       type: contains
+    - target: indexing-core-system
+      type: depends_on
 ---
 
 # 인덱싱 아키텍처 그룹

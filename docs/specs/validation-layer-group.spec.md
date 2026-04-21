@@ -8,6 +8,9 @@ def:
   depth: validation
   lifecycle: approved
   layer: domain
+  links:
+    - target: indexing-core-system
+      type: depends_on
 ---
 # Validation Layer Group
 ## 목적 ^purpose

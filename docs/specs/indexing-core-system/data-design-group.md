@@ -15,6 +15,8 @@ def:
       type: contains
     - target: data-design-catalog
       type: contains
+    - target: indexing-core-system
+      type: depends_on
 ---
 
 # 좌표 시스템 데이터 설계 그룹

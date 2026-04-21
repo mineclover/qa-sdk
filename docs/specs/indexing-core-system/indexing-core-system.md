@@ -17,11 +17,7 @@ def:
       type: contains
     - target: adr-merge-dedup
       type: contains
-    - target: behavior-traversal-group
-      type: depends_on
     - target: benchmark-system
-      type: depends_on
-    - target: bigint-addressing-group
       type: depends_on
     - target: conventions-system
       type: depends_on
@@ -29,18 +25,12 @@ def:
       type: depends_on
     - target: coord-patterns
       type: contains
-    - target: coord-states-group
-      type: depends_on
-    - target: data-design-group
-      type: depends_on
     - target: dim-ops-system
       type: depends_on
     - target: dsl-bundle-spec
       type: contains
     - target: event-schema-spec
       type: contains
-    - target: index-arch-group
-      type: depends_on
     - target: layout-sim-formats
       type: contains
     - target: ontology-eval
@@ -51,10 +41,6 @@ def:
       type: depends_on
     - target: signal-model-spec
       type: contains
-    - target: slot-marker-group
-      type: depends_on
-    - target: table-system-group
-      type: depends_on
     - target: tag-search-spec
       type: contains
     - target: version-operations

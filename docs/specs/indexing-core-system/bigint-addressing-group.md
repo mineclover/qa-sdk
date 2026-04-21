@@ -15,6 +15,8 @@ def:
       type: contains
     - target: bigint-addressing-rollout
       type: contains
+    - target: indexing-core-system
+      type: depends_on
 ---
 
 # BigInt 주소 체계 그룹

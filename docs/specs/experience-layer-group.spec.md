@@ -8,6 +8,9 @@ def:
   depth: overview
   lifecycle: approved
   layer: experience
+  links:
+    - target: indexing-core-system
+      type: depends_on
 ---
 # Experience Layer Group
 ## 목적 ^purpose

@@ -15,6 +15,8 @@ def:
       type: contains
     - target: behavior-traversal-query
       type: contains
+    - target: indexing-core-system
+      type: depends_on
 ---
 
 # 행위 축 탐색 그룹
