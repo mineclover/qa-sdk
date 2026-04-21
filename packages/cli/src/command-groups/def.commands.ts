@@ -16,6 +16,7 @@ export const DEF_COMMAND_DESCRIPTORS = [
   { id: "def.scan", path: ["scan"], handlerKey: "def.sync" },
   { id: "def.scan-audit", path: ["scan-audit"], handlerKey: "def.scan-audit" },
   { id: "def.code-link-gaps", path: ["code-link-gaps"], handlerKey: "def.code-link-gaps" },
+  { id: "def.doctor", path: ["doctor"], handlerKey: "def.doctor" },
   { id: "def.topdown", path: ["topdown"], handlerKey: "def.topdown" },
   { id: "def.bottomup", path: ["bottomup"], handlerKey: "def.bottomup" },
   { id: "def.context", path: ["context"], handlerKey: "def.context" },
