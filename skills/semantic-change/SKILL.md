@@ -105,7 +105,34 @@ description: "qa-sdk 좌표계/링크 구조 semantic 변경 시 따라야 할 �
 | warning 증가 + **unexpected** category | 실제 drift — rollback 후 가설 재검토 | 시뮬 재실행, 규칙 재설계 |
 | `def doctor` Annotations `deprecated` > 0 | `@def.boundary` 가 폐기 스펙 가리킴 | 주석 수정 또는 타깃 lifecycle 복구 |
 | `def audit --by-domain` 에서 핵심 루트 사라짐 | `deriveDomainRoot` 파생 경로 단절 | 시뮬로 path 재확인 |
+| `def audit --by-domain` 에서 sub-docs 대부분 self-rooted | L3 rollup 구멍 — 알고리즘 extension 필요 | Phase 0 pattern 로 4 strategy 시뮬 → Hybrid 도입 |
 | dup-coord 증가 but aspect 분할 intent | 재수렴 중간 상태 (의도적) | `knowledge_kind` / `cross-scope` / aspect 추가 분할로 해소 |
+
+---
+
+## Cascade 사례 매트릭스
+
+변경 시작점이 L1/L2/L3/L4 중 어디이든, 다른 layer 까지 파급된다. 아래는 본 레포의 실 사례:
+
+| 변경 시작점 | Layer cascade | 발견 방식 | 발견 지연 |
+|-----------|-------------|---------|---------|
+| Phase 3b Option B — parent→child `depends_on` 제거 (L1) | L3 workflow silent-fail | workflow-smoke test 추가 후 표면화 | 80+ commits |
+| Phase 5e `@def.boundary` 재배선 (L4) | L1 data + L2 validator | validator 즉시 catch | 0 commits |
+| Sub-doc rollup 확장 (L2 알고리즘) | L3 doctor 메트릭 변화 | `def doctor` + smoke 즉시 확인 | 0 commits |
+| Phase 5b aspect split (L1 vocab) | L2 dup-coord 증가 | correctness signal (정예측) | N/A — RFC 에 사전 문서화 |
+
+**교훈**:
+- 시작점 = L1/L4 → 즉각 L2 catch (schema/validation)
+- 시작점 = L1/L2 → L3 workflow 는 **지연 발견** (smoke 없으면 침묵)
+- **workflow-smoke + CI def-gate** 가 유일한 L3 보호 장치
+
+본 skill 의 Step 3 계층별 검증이 모든 layer 통과를 강제하는 이유.
+
+근거:
+- Option B: `docs/proposals/domain-hierarchy/reviews/2026-04-21-selector-review.md`, `-selector-fixes.md`
+- Phase 5e boundary: `docs/proposals/domain-hierarchy/reviews/2026-04-20-phase5e-boundary.md`
+- Sub-doc rollup: `docs/proposals/domain-hierarchy/reviews/2026-04-21-subdoc-rollup-impl.md`, `-subdoc-rollup-simulation.md`
+- Phase 5b aspect split: `docs/proposals/domain-hierarchy/reviews/2026-04-21-phase5b-exec.md`
 
 ---
 
