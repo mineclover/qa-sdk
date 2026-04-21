@@ -31,6 +31,8 @@ def:
       type: contains
     - target: rlsc-canvas-test
       type: contains
+    - target: rlsc
+      type: depends_on
 ---
 
 ## 목적 ^purpose
