@@ -15,6 +15,8 @@ def:
       type: contains
     - target: dx-lifecycle-contract
       type: contains
+    - target: index-meta-system
+      type: depends_on
 ---
 
 # Index Meta DX 라이프사이클 그룹

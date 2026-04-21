@@ -23,6 +23,8 @@ def:
       type: contains
     - target: table-schema-usage-spec
       type: contains
+    - target: index-meta-system
+      type: depends_on
 ---
 
 # TableDef / compileSchema 스펙

@@ -15,6 +15,8 @@ def:
       type: contains
     - target: address-scenarios-runtime
       type: contains
+    - target: index-meta-system
+      type: depends_on
 ---
 
 # Address 시나리오 그룹

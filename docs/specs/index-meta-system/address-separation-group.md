@@ -15,6 +15,8 @@ def:
       type: contains
     - target: address-separation-rollout
       type: contains
+    - target: index-meta-system
+      type: depends_on
 ---
 
 # Address Separation ADR 그룹
