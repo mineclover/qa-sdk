@@ -1,5 +1,5 @@
 // @def.boundary decode-service-system
-// @def.doc decode-service-spec
+// @def.doc decode-service-system
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { createApp } from "./app.js";

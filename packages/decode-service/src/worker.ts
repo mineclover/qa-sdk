@@ -1,5 +1,5 @@
 // @def.boundary decode-service-system
-// @def.doc decode-service-spec
+// @def.doc decode-service-system
 
 /**
  * worker.ts — decode-service Cloudflare Workers 진입점.

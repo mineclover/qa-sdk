@@ -1,5 +1,5 @@
 // @def.boundary decode-service-system
-// @def.doc decode-service-spec
+// @def.doc decode-service-system
 
 import "dotenv/config";
 import { serve } from "@hono/node-server";

@@ -1,5 +1,5 @@
 // @def.boundary decode-service-system
-// @def.doc decode-service-spec
+// @def.doc decode-service-system
 
 import type { ErrorHandler } from "hono";
 import type { Logger } from "pino";

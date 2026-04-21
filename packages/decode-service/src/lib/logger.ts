@@ -1,5 +1,5 @@
 // @def.boundary decode-service-system
-// @def.doc decode-service-spec
+// @def.doc decode-service-system
 
 import { createLogger as _createLogger, type Logger } from "@qa-sdk/core";
 import { createIngestForwarder } from "@qa-sdk/logger";

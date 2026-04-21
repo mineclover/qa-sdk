@@ -1,5 +1,5 @@
 // @def.boundary decode-service-system
-// @def.doc decode-service-spec
+// @def.doc decode-service-system
 
 import type { MiddlewareHandler } from "hono";
 import { randomUUID } from "node:crypto";
