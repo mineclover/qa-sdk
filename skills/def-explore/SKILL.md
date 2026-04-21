@@ -110,11 +110,32 @@ def audit --by-domain
 # 특정 도메인의 모든 문서 (id 정렬)
 def list --domain-root <rootId>
 
+# 특정 도메인의 일부만 (include-children 없이 상위 aspect 한정)
+def list --domain-root <rootId> --aspect <aspect>
+
 # 특정 문서의 파생 root + owner_system 정합성
 def context <docId>
 ```
 
 권장 진입 패턴: `def audit --by-domain`에서 상위 루트 → `def list --domain-root <rootId>`로 멤버 훑기 → `def context <docId>`로 개별 문서 컨텍스트. owner_system과 파생 root가 어긋나면 컨텍스트 출력 끝에 `⚠ owner_system ... 과 파생 root ... 불일치` 경고가 붙는다.
+
+### 9. Aspect family + 소스 확장자 필터 (Phase C-2, Gap 3)
+
+```bash
+# aspect family rollup (self + 하위 descendants 자동 전개)
+def list --aspect func_def --include-children   # func_def + 10 후손 aspect 통합 조회
+def audit --rollup-aspect                       # root aspect 별 전체 rollup
+
+# 소스 확장자 필터 — `.rule.md`, `.cases.md`, `.test.md`
+def list --type=rule                            # *.rule.md 만 (현재 19건)
+def list --type=cases                           # *.cases.md — consumer 기대 시나리오
+def list --type=test                            # *.test.md — provider 계약 문서
+def list --ext=rule                             # --type=rule 과 동치 (명시형)
+```
+
+`--type={rule|cases|test|todo|plan|memo}` 는 `source_path` 기반 파일 확장자 필터다 (doc_type 컬럼이 아님). `--type={spec|knowledge|design}` 은 기존 `doc_type` 컬럼 필터 — backcompat 유지.
+
+system-wide rule 인덱스: `docs/specs/system/README.md` — 9 건의 rule.md 가 테이블로 정리되어 있다.
 
 ## 핵심 개념 요약
 

@@ -15,6 +15,14 @@ qa-sdk def validate       # 이슈 목록 출력
 출력은 최대 10건 + "외 N건" 형태로 잘린다.
 전체 목록이 필요하면 `validateGraph`를 직접 호출하거나 `def audit`으로 타입별 집계를 확인한다.
 
+### `def doctor` 와의 관계
+
+`def validate` 는 **L2 (validator)** 레이어만 본다. workflow 가정 (도메인 루트가 멤버를 드러내는가, rule 문서가 발견 가능한가) 은 검증하지 않는다.
+
+`def doctor` 는 L2 + L3 (workflow smoke) + L4 (annotation round-trip) 을 한 번에 돌리는 통합 헬스체크다. 신규 기여자/에이전트는 `def validate` 대신 `def doctor` 를 먼저 실행하고, Core 섹션의 `validate` 경고/에러가 잡히면 본 skill 로 내려와 유형별로 해소한다.
+
+계층 분리 원칙 상세: `docs/specs/system/layer-separation.rule.md` (L1 data / L2 validator / L3 workflow / L4 tooling).
+
 ## 에러 우선순위 (순서대로 해소)
 
 ### 1. `circular-ref` — 순환 참조
@@ -223,6 +231,31 @@ qa-sdk def validate
 ```
 
 **주의**: sync 없이 validate 하면 이전 상태 기준으로 검증됨.
+
+### Suppression 태그 (경고 억제)
+
+특정 경고는 의도적 억제 수단으로 해소할 수 있다. 단 **억제 ≠ 해결** — 구조적 수정이 더 적절한 경우가 많다.
+
+- `lifecycle: deprecated` — 거의 모든 검사 skip (폐기 예정 문서)
+- `tier: component` — `duplicate-coordinate` skip (수동 참조 대상 data-shape)
+- `knowledge_kind: proposal|adr|convention` — `duplicate-coordinate` skip (문서 묶음)
+- `tags: [cross-scope]` — `multi-parent` / `duplicate-coordinate` skip (의도적 공유, 그룹 전원 요구)
+- `tags: [orphan-expected]` — `orphan` skip (독립 유효 문서)
+- `.cases.md` / `.test.md` 확장자 — `orphan` 자동 skip
+
+전수 목록 + 오용 금지선: `docs/specs/system/validator-suppression-tags.rule.md`.
+신규 suppression 도입 시 반드시 해당 rule 문서를 **먼저 갱신** 후 `validate.ts` 수정.
+
+### 계층 구분 — validate 통과 ≠ 시스템 healthy
+
+`def validate` 는 L2 구조 검증만 본다. L3 (workflow) 이상은 통과시키지 못한다:
+- "도메인 루트에서 `def topdown` 이 ≥1 member 반환" — L3 smoke 책임
+- "rule 문서 ≥8 건 발견" — L3 smoke 책임
+- "`@def.boundary` 타깃이 deprecated 아님" — L4 책임
+
+Semantic 변경 (링크 방향 재정의, aspect 분할 등) 을 했다면 `def validate` 통과 후에도 `skills/semantic-change/SKILL.md` 체크리스트를 돌려야 한다. Phase 3b Option B 사건 (validator green + def topdown silent 0) 을 재발하지 않는 것이 목적.
+
+---
 
 패키지 코드(`packages/definition-catalog/src/validate.ts` 등) 수정 시:
 ```bash

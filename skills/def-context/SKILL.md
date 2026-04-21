@@ -33,9 +33,11 @@ qa-sdk def context record-spec
 ```
 # 컨텍스트: <제목>
 scope: <scope>/<aspect>  depth: <depth>  lifecycle: <lifecycle>
-layer: <layer>
+layer: <layer>  tier: <tier>
 svc: <serviceId>
 address: <address>
+도메인 루트: <domain_root>            # 파생 결과 (Phase 2)
+aspect family: <parent-aspect>        # deriveAspectParent 체인 상위 (Phase C-2)
 
 ## 이 문서의 목적
 <purpose>
@@ -59,6 +61,21 @@ blast radius: N건
 
 ## 최근 Feedback Requests
 - frq_xxx [gpt-5.4]: <purpose>
+
+## 경고 (조건부)
+⚠ owner_system <선언값> 과 파생 root <파생값> 불일치
+```
+
+owner_system과 파생 root가 어긋나면 하단에 경고가 붙는다 — `def validate` 에서 `owner-root-mismatch` info 진단과 짝이다. 링크 그래프와 frontmatter 중 어느 쪽이 정답인지 판단한다.
+
+## 도메인 컨텍스트 확장
+
+문서의 소속 도메인 전체를 함께 보고 싶으면:
+
+```bash
+qa-sdk def context <docId>                 # 개별 컨텍스트
+qa-sdk def list --domain-root <rootId>     # 같은 도메인의 형제들
+qa-sdk def topdown <rootId>                # 도메인 전체 purpose 조립 (contains ∪ depends_on← ∪ refines←)
 ```
 
 ## 활용

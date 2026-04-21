@@ -224,6 +224,15 @@ qa-sdk def context <docId>       # 하단에 "도메인 루트: <rootId>" 표시
 
 전체 설계 및 Phase 계획: `docs/proposals/domain-hierarchy/` 참조.
 
+### 관련 규칙
+
+tier / link type / suppression 이 교차하는 지점은 별도 rule 문서가 있다. tier 변경 전 필수 확인:
+
+- `docs/specs/system/link-type-usage.rule.md` — 9종 linkType 방향/사이클 매트릭스 + tier 별 제약 (system→system contains 금지, layout→refs 전용)
+- `docs/specs/system/validator-suppression-tags.rule.md` — dup-coord 가 component/knowledge_kind/cross-scope 로 억제되는 조건
+- `docs/specs/system/layer-separation.rule.md` — tier 재정의는 L1 semantic change → L3 workflow smoke 재실행 필수
+- `skills/semantic-change/SKILL.md` — tier 재분류 / aspect 분할 시 공통 체크리스트
+
 ## 검증
 
 ```bash

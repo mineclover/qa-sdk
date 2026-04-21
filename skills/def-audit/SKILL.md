@@ -10,22 +10,29 @@ description: "definition-catalog 문서 품질 감사. purpose 품질, 링크 �
 ## 실행
 
 ```bash
-qa-sdk def sync        # 최근 docs 변경을 local datasource에 반영
-qa-sdk def audit       # 전체 품질 리포트 (level 분포 포함)
-qa-sdk def audit-db    # approved 문서의 purpose/고립/svc 누락 빠른 점검
-qa-sdk def validate    # synced graph + code reference boundary 검증
-qa-sdk def stats       # 분포 통계
-qa-sdk def link-rules  # LinkType 사용 규칙 조회
+qa-sdk def sync                 # 최근 docs 변경을 local datasource에 반영
+qa-sdk def doctor               # 통합 헬스체크 — 전체 스모크 1커맨드 (Core/Domains/Aspects/Annotations)
+qa-sdk def audit                # 전체 품질 리포트 (level 분포 포함)
+qa-sdk def audit --by-domain    # 도메인 루트별 리포트 (Phase 2)
+qa-sdk def audit --rollup-aspect  # aspect family 기준 rollup 리포트 (Phase C-2)
+qa-sdk def audit-db             # approved 문서의 purpose/고립/svc 누락 빠른 점검
+qa-sdk def validate             # synced graph + code reference boundary 검증
+qa-sdk def stats                # 분포 통계
+qa-sdk def link-rules           # LinkType 사용 규칙 조회
 ```
 
-권장 순서:
+권장 순서 (onboarding / pre-commit):
 
 ```bash
 qa-sdk def sync
-qa-sdk def validate
-qa-sdk def audit
-qa-sdk def audit-db
+qa-sdk def doctor               # 1-커맨드 종합 스모크 — 먼저 실행하여 이상 섹션 식별
+qa-sdk def validate             # errors/warnings 세부
+qa-sdk def audit                # 품질 세부
+qa-sdk def audit --by-domain    # 도메인 윤곽
+qa-sdk def audit-db             # 빠른 집계
 ```
+
+`def doctor` 가 Core/Domains/Aspects/Annotations 4 섹션으로 한 화면에 요약하므로, 이상이 없으면 뒤쪽 명령을 생략해도 된다. 상세는 `skills/def-doctor/SKILL.md`.
 
 실행 위치:
 
@@ -70,6 +77,37 @@ qa-sdk def audit --by-domain
 - 후속 드릴다운: `qa-sdk def list --domain-root <rootId>`
 
 `def validate`의 info 진단 중 `owner-root-mismatch`는 이 리포트와 짝으로 본다 — frontmatter의 `owner_system`과 링크 그래프 기반 파생 루트가 어긋나는 경우를 표면화한다. 무시하지 말고 링크/owner 선언 중 어느 쪽이 정답인지 판단한다.
+
+## aspect family rollup (`--rollup-aspect`)
+
+`ASPECT_PARENTS` (Phase B-0 ~ C-2) 파생 트리를 기반으로 root aspect 별로 문서를 집계한다. `deriveAspectParent` 체인을 따라 최상위까지 올라간 aspect 가 root 가 된다.
+
+```bash
+qa-sdk def audit --rollup-aspect
+```
+
+출력 예:
+
+```
+=== aspect rollup 리포트 (24개 root, 1228건) ===
+
+[func_def]  287건  (family 11개: self + 10 후손)
+  ■ func_def: 268건
+  └ analyzer_func: 4건
+  └ encoding_func: 3건
+  └ harness_func: 2건
+  ...
+
+[process_flow]  142건  (family 9개: self + 8 후손)
+[api_contract]  100건  (family 6개: self + 5 후손)
+...
+```
+
+용도:
+- Phase B-0 ~ B-3 의 aspect 분할 효과 시각화 (root 4종이 전체 문서의 절반 이상을 흡수하는지)
+- 새 aspect 가 특정 family 로 귀속되어야 하는지 판단 (capacity 64→128 사용률)
+- Phase C-3 `@deprecated` 판단 근거 — `--rollup-aspect` 사용 빈도와 family 크기 관찰
+- 후속 드릴다운: `qa-sdk def list --aspect <parent> --include-children` (family 전체 문서 나열)
 
 ## 품질 기준
 
