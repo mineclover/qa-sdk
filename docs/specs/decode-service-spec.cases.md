@@ -11,7 +11,7 @@ def:
   svc: decode-service
   tags: [scenario, decode-service, api]
   links:
-    - target: decode-service-spec
+    - target: decode-service-system
       type: refines
     - target: decode-service-system
       type: depends_on
