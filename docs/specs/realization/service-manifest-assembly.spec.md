@@ -11,7 +11,7 @@ def:
     - target: realization-service-control-plane
       type: refines
     - target: service-release-manifest
-      type: contains
+      type: refs
     - target: service-manifest-validation
       type: contains
     - target: service-manifest-cleanup-lane

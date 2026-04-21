@@ -26,7 +26,7 @@ def:
     - target: session-spec
       type: contains
     - target: pipeline-phase-flow
-      type: contains
+      type: refs
     - target: browser-session-spec
       type: contains
     - target: dlq-store-spec

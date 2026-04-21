@@ -30,7 +30,7 @@ def:
     - target: programming-artifact-ontology-context-simulation-todo
       type: contains
     - target: operational-ontology-registry-activation-cli
-      type: contains
+      type: refs
 sources:
   - packages/operational-ontology/src/internal/programming-artifact-core.ts
   - packages/operational-ontology/src/programming-artifacts.ts

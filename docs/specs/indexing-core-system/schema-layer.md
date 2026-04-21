@@ -14,7 +14,7 @@ def:
     - target: coord-states-group
       type: depends_on
     - target: event-schema-spec
-      type: contains
+      type: refs
     - target: schema-layer-architecture-spec
       type: contains
     - target: schema-layer-categories-spec

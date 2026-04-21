@@ -13,9 +13,9 @@ def:
   tags: [decision, testing]
   links:
     - target: df-narrative-context
-      type: contains
+      type: refs
     - target: df-narrative-structure
-      type: contains
+      type: refs
     - target: df-narrative-proof-coordinate-space
       type: contains
     - target: df-narrative-proof-core-gates

@@ -11,9 +11,9 @@ def:
   tags: [logging, ingest, transport]
   links:
     - target: logger-contract
-      type: contains
+      type: refs
     - target: runtime-flow-paths
-      type: contains
+      type: refs
     - target: log-ingest-forwarder
       type: contains
     - target: log-ingest-wiring

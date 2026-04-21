@@ -12,9 +12,9 @@ def:
   tags: [structural, decision, entry-point]
   links:
     - target: dkg-node-types
-      type: contains
+      type: refs
     - target: dkg-edge-types
-      type: contains
+      type: refs
     - target: dkg-skill-catalog-types
       type: contains
     - target: dkg-skill-catalog-registry

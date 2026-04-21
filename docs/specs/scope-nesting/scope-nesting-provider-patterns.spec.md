@@ -18,7 +18,7 @@ def:
     - target: scope-nesting-pattern-lifecycle
       type: depends_on
     - target: scope-nesting-guide
-      type: contains
+      type: refs
     - target: ms-concept-contract-descent
       type: implements
 ---
