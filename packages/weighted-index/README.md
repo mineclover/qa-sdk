@@ -528,6 +528,14 @@ import {
 
 ---
 
+## 관련 문서
+
+- [`docs/module-structure.md`](docs/module-structure.md) — 내부 모듈 구성과 의존 방향
+- [`docs/partial-binder.md`](docs/partial-binder.md) — 차원 부분 바인딩
+- [`docs/rdbms-equivalence/`](docs/rdbms-equivalence/README.md) — RDBMS materialization과의 등가성 + 인덱스 전략 7종 + 보완 전략 4종
+
+---
+
 ## 설계 철학: 의미 보존 (Semantic Integrity)
 
 이 시스템의 목적은 **정보 보호(information protection)가 아니라 정보의 의미를 잃지 않는 것(semantic integrity)**이다.
