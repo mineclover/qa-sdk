@@ -103,6 +103,10 @@ export type DefAspect =
   | "encoding_func"
   | "domain_service_func"
   | "nesting_func"
+  // feature — encoding 계열 하위 세분화 (Mini-5b)
+  | "codec_func"
+  | "binder_func"
+  | "format_func"
   // flow
   | "user_scenario"
   | "process_flow"
@@ -113,6 +117,10 @@ export type DefAspect =
   | "pipeline_flow"
   | "gate_flow"
   | "definition_mgmt_flow"
+  // flow — definition-management 하위 세분화 (Mini-5b)
+  | "mgmt_flow"
+  | "quality_flow"
+  | "harness_flow"
   // state
   | "app_state"
   | "domain_state"

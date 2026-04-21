@@ -62,9 +62,13 @@ export const DEFINITION_TAXONOMY: DefinitionTaxonomy = {
         { id: "harness_func", name: "하네스기능", description: "테스트 하네스/FSM/문서-코드 1:1 분해 실행 기능" },
         { id: "gate_func", name: "게이트기능", description: "품질 게이트·정합성 검증 엔진 기능" },
         { id: "analyzer_func", name: "분석기능", description: "수집된 이벤트/문서에 대한 분석·drift·tracker 기능" },
-        { id: "encoding_func", name: "인코딩기능", description: "좌표/값 인코딩·디코딩·pack-format 기능 (weighted-index/partial-binder/cq)" },
+        { id: "encoding_func", name: "인코딩기능", description: "좌표/값 인코딩·디코딩·pack-format 기능 (weighted-index/partial-binder/cq) — umbrella fallback" },
         { id: "domain_service_func", name: "도메인서비스기능", description: "도메인 비즈니스 서비스 기능 (e-commerce, 결제, 콘텐츠)" },
         { id: "nesting_func", name: "스코프중첩기능", description: "Provider/scope nesting pattern 의 lifecycle/resolution 기능" },
+        // Mini-5b: encoding 하위 세분화 (sibling of encoding_func)
+        { id: "codec_func", name: "코덱기능", description: "조합형 encoding/decoding 통합 기능 (coord-query 등 binder + format 결합)" },
+        { id: "binder_func", name: "바인더기능", description: "partial-binder 등 인코딩 입력 바인딩 기능" },
+        { id: "format_func", name: "포맷기능", description: "pack-format 등 인코딩 결과 포맷 정의 기능" },
       ],
     },
     {
@@ -80,7 +84,11 @@ export const DEFINITION_TAXONOMY: DefinitionTaxonomy = {
         { id: "ingest_flow", name: "수집흐름", description: "이벤트/로그 ingest 파이프라인 흐름" },
         { id: "pipeline_flow", name: "파이프라인흐름", description: "일반 파이프라인 처리 단계 흐름 (realization/enrichment)" },
         { id: "gate_flow", name: "게이트흐름", description: "gate 캐시 무효화·consistency·query quality 흐름" },
-        { id: "definition_mgmt_flow", name: "정의관리흐름", description: "definition-catalog 관리(harness/observability/quality) 흐름" },
+        { id: "definition_mgmt_flow", name: "정의관리흐름", description: "definition-catalog 관리(harness/observability/quality) 흐름 — umbrella fallback" },
+        // Mini-5b: definition_mgmt_flow 하위 세분화 (sibling of definition_mgmt_flow)
+        { id: "mgmt_flow", name: "관리흐름", description: "definition 관리/관측 모델 흐름 (mgmt-observability-model)" },
+        { id: "quality_flow", name: "품질흐름", description: "definition 서비스 품질 번들 흐름 (service-quality-bundle)" },
+        { id: "harness_flow", name: "하네스흐름", description: "definition 하네스 아키텍처 흐름 (harness-architecture)" },
       ],
     },
     {
@@ -163,12 +171,16 @@ export const VALID_SCOPE_ASPECTS: Record<DefScope, readonly DefAspect[]> = {
     // func_def 하위
     "codegen_func", "harness_func", "gate_func", "analyzer_func",
     "encoding_func", "domain_service_func", "nesting_func",
+    // Mini-5b: encoding 하위 세분화 (sibling of encoding_func, child of func_def)
+    "codec_func", "binder_func", "format_func",
   ],
   flow: [
     "user_scenario", "process_flow", "relation",
     // process_flow 하위
     "lifecycle_flow", "ingest_flow", "pipeline_flow",
     "gate_flow", "definition_mgmt_flow",
+    // Mini-5b: definition_mgmt_flow 하위 세분화 (sibling of definition_mgmt_flow, child of process_flow)
+    "mgmt_flow", "quality_flow", "harness_flow",
   ],
   state: ["app_state", "domain_state", "system_state"],
   constraint: ["tech_constraint", "biz_constraint", "infra_constraint"],

@@ -97,27 +97,32 @@ export const DEF_SCOPE = {
 } as const;
 
 /**
- * def_aspect — 세부 측면 (40 entries, capacity 128)
+ * def_aspect — 세부 측면 (46 entries, capacity 128)
  *
- * 5Q: ✓유한(40) ✓분류 관련(세부 유형 결정) ✓공유(전 prefix) ✓안정(느린 변화) ✓capacity
+ * 5Q: ✓유한(46) ✓분류 관련(세부 유형 결정) ✓공유(전 prefix) ✓안정(느린 변화) ✓capacity
  * 설명력: 대분류 내 세부 유형. scope와 함께 문서의 정확한 주제를 결정한다.
  * 주의: scope-aspect 간 유효 조합 제약 있음 (taxonomy.ts VALID_SCOPE_ASPECTS 참조).
  *
  * Phase 5b (aspect-vocab-split RFC): 17 신규 값을 4 개 상위 aspect 의 자식으로 추가.
+ * Mini-5b (2026-04-21): 2 개 재수렴 그룹 해소 — encoding_func 하위 3 개, definition_mgmt_flow 하위 3 개 추가.
  * 부모 관계는 ASPECT_PARENTS map 으로 명시. 이름에서 역산 금지.
  */
 export const DEF_ASPECT = {
   entries: [
     // ui (3)
     "layout", "component", "interaction",
-    // feature (2 + 7 = 9)
+    // feature (2 + 7 + 3 = 12)
     "func_def", "scenario",
     "codegen_func", "harness_func", "gate_func", "analyzer_func",
     "encoding_func", "domain_service_func", "nesting_func",
-    // flow (3 + 5 = 8)
+    // Mini-5b: encoding 계열 sub-roles (sibling of encoding_func, child of func_def)
+    "codec_func", "binder_func", "format_func",
+    // flow (3 + 5 + 3 = 11)
     "user_scenario", "process_flow", "relation",
     "lifecycle_flow", "ingest_flow", "pipeline_flow",
     "gate_flow", "definition_mgmt_flow",
+    // Mini-5b: definition-management 계열 sub-roles (sibling of definition_mgmt_flow, child of process_flow)
+    "mgmt_flow", "quality_flow", "harness_flow",
     // state (3)
     "app_state", "domain_state", "system_state",
     // constraint (3)
@@ -132,7 +137,7 @@ export const DEF_ASPECT = {
     // meta (1)
     "proposal_design",
   ] as const,
-  capacity: 128,  // nextPowerOf2(40 * 2 = 80) = 128
+  capacity: 128,  // nextPowerOf2(46 * 2 = 92) = 128
   ko: {
     layout: "레이아웃",
     component: "컴포넌트",
@@ -146,6 +151,9 @@ export const DEF_ASPECT = {
     encoding_func: "인코딩기능",
     domain_service_func: "도메인서비스기능",
     nesting_func: "스코프중첩기능",
+    codec_func: "코덱기능",
+    binder_func: "바인더기능",
+    format_func: "포맷기능",
     user_scenario: "사용자시나리오",
     process_flow: "프로세스흐름",
     relation: "연관관계",
@@ -154,6 +162,9 @@ export const DEF_ASPECT = {
     pipeline_flow: "파이프라인흐름",
     gate_flow: "게이트흐름",
     definition_mgmt_flow: "정의관리흐름",
+    mgmt_flow: "관리흐름",
+    quality_flow: "품질흐름",
+    harness_flow: "하네스흐름",
     app_state: "앱상태",
     domain_state: "도메인상태",
     system_state: "시스템상태",
@@ -197,12 +208,20 @@ export const ASPECT_PARENTS: Record<string, string> = {
   encoding_func: "func_def",
   domain_service_func: "func_def",
   nesting_func: "func_def",
+  // Mini-5b: encoding 계열 sub-roles (sibling of encoding_func, child of func_def)
+  codec_func: "func_def",
+  binder_func: "func_def",
+  format_func: "func_def",
   // process_flow 계열
   lifecycle_flow: "process_flow",
   ingest_flow: "process_flow",
   pipeline_flow: "process_flow",
   gate_flow: "process_flow",
   definition_mgmt_flow: "process_flow",
+  // Mini-5b: definition-management 계열 sub-roles (sibling of definition_mgmt_flow, child of process_flow)
+  mgmt_flow: "process_flow",
+  quality_flow: "process_flow",
+  harness_flow: "process_flow",
   // api_contract 계열
   decode_contract: "api_contract",
   gate_contract: "api_contract",
@@ -220,6 +239,50 @@ export const ASPECT_PARENTS: Record<string, string> = {
  */
 export function deriveAspectParent(aspect: string): string | null {
   return ASPECT_PARENTS[aspect] ?? null;
+}
+
+/**
+ * 부모 aspect 의 직속 자식 목록을 반환 (runtime map 역산).
+ *
+ * `ASPECT_PARENTS` 는 child → parent 단방향 map 이므로 children 조회는
+ * 역 inversion 이 필요. 결과는 자식 id 오름차순으로 정렬되어 안정적 순서를 보장한다.
+ *
+ * 자식이 없거나 미등록 aspect → 빈 배열.
+ * Phase C-2 (rollup API) 에서 `getAspectFamily` 의 BFS 경로에 쓰인다.
+ */
+export function getAspectChildren(parent: string): string[] {
+  return Object.entries(ASPECT_PARENTS)
+    .filter(([, p]) => p === parent)
+    .map(([child]) => child)
+    .toSorted((a, b) => a.localeCompare(b));
+}
+
+/**
+ * aspect 와 모든 후손 (BFS) 을 포함하는 family 배열을 반환.
+ *
+ * - 입력 aspect 자체가 결과의 첫 원소 (index 0)
+ * - 이후는 BFS 순서 + 같은 레벨 내 알파벳 오름차순 (deterministic)
+ * - cycle 방어: visited set 으로 중복 제거 (RFC 기준 2-level 전제상 순환 없어야 하지만 방어 코드)
+ * - 미등록 / leaf aspect → `[aspect]` 단독
+ *
+ * Phase C-2 (aspect-schema-hierarchy RFC) — CLI `--include-children`,
+ * `--rollup-aspect` 플래그의 기반 helper.
+ */
+export function getAspectFamily(aspect: string): string[] {
+  const visited = new Set<string>([aspect]);
+  const family: string[] = [aspect];
+  const queue: string[] = [aspect];
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    const children = getAspectChildren(current);
+    for (const child of children) {
+      if (visited.has(child)) continue;
+      visited.add(child);
+      family.push(child);
+      queue.push(child);
+    }
+  }
+  return family;
 }
 
 /**
