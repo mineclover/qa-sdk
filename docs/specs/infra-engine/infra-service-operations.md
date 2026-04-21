@@ -25,6 +25,8 @@ def:
       type: contains
     - target: verdaccio-local-npm
       type: contains
+    - target: infra-engine-system
+      type: depends_on
 ---
 
 # 서비스 운영 참조

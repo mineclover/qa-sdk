@@ -15,6 +15,8 @@ def:
       type: contains
     - target: infra-register-stage
       type: contains
+    - target: infra-engine-system
+      type: depends_on
 ---
 # VerifyStage — 헬스체크 + 품질 게이트
 
