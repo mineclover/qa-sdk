@@ -16,7 +16,7 @@ def:
     - target: ralph-tui-integration
       type: verifies
     - target: deterministic-label-architecture
-      type: contains
+      type: traces_to
 ---
 
 # ralph-tui-integration — 테스트 명세

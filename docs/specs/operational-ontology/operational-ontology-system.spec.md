@@ -1,9 +1,8 @@
 ---
 def:
   id: operational-ontology-system
-  type: knowledge
-  knowledge_kind: concept
-  tier: component
+  type: spec
+  tier: system
   scope: data
   aspect: system_data
   depth: overview
@@ -13,11 +12,11 @@ def:
   tags: [entry-point, structural, cross-scope]
   links:
     - target: taxonomy-boundaries
-      type: depends_on
+      type: traces_to
     - target: meta-taxonomy
-      type: depends_on
+      type: traces_to
     - target: dual-coordinate-system
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-taxonomy-schema
       type: contains
     - target: operational-ontology-relation-category-schema
@@ -25,7 +24,7 @@ def:
     - target: operational-ontology-schema-validation
       type: contains
     - target: operational-ontology-registry-allocation
-      type: contains
+      type: refs
     - target: operational-ontology-validation-boundary
       type: contains
     - target: operational-ontology-design-change-validation-matrix
@@ -61,7 +60,7 @@ def:
     - target: operational-ontology-simulation
       type: contains
     - target: operational-ontology-runtime-interface
-      type: contains
+      type: refs
     - target: operational-ontology-package-architecture
       type: contains
     - target: operational-ontology-visualization-web
@@ -79,7 +78,7 @@ def:
     - target: operational-ontology-rdf-bridge
       type: contains
     - target: programming-artifact-ontology-system
-      type: contains
+      type: refs
     - target: operational-ontology-registry-allocation-plan
       type: contains
     - target: operational-ontology-registry-allocation-todo

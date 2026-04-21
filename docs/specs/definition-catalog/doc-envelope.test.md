@@ -16,7 +16,7 @@ def:
     - target: doc-envelope
       type: verifies
     - target: deterministic-label-architecture
-      type: contains
+      type: traces_to
 ---
 
 # doc-envelope — 테스트 명세
