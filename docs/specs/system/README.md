@@ -29,6 +29,8 @@ def:
       type: refs
     - target: layer-separation
       type: refs
+    - target: coordinate-storage
+      type: refs
     - target: aspect-evolution-index
       type: refs
 ---
@@ -37,11 +39,11 @@ def:
 
 ## 목적 ^purpose
 
-`docs/specs/system/` 는 qa-sdk 의 system-wide rule / convention 문서를 수집한다. 본 인덱스는 `*.rule.md` 확장자를 가진 규약 문서 9건과 관련 proposal 을 한 화면으로 묶어 발견성을 제공한다. `qa-sdk def list --type=rule` 로도 동일 목록에 접근할 수 있다.
+`docs/specs/system/` 는 qa-sdk 의 system-wide rule / convention 문서를 수집한다. 본 인덱스는 `*.rule.md` 확장자를 가진 규약 문서 10건과 관련 proposal 을 한 화면으로 묶어 발견성을 제공한다. `qa-sdk def list --type=rule` 로도 동일 목록에 접근할 수 있다.
 
 ---
 
-## Rules (`*.rule.md` 9건)
+## Rules (`*.rule.md` 10건)
 
 | 문서 | 요지 |
 |---|---|
@@ -54,6 +56,7 @@ def:
 | [link-type-usage](./link-type-usage.rule.md) | LinkType 6종 사용 규칙 (contains / depends_on / implements / refines / constrains / traces_to) |
 | [facet-test-isolation](./facet-test-isolation.rule.md) | 격리 테스트 패키지 운영 규칙 + 서비스 온보딩 절차 |
 | [layer-separation](./layer-separation.rule.md) | data / validator / workflow / tooling 4 계층 책임 모델 + workflow smoke 원칙 |
+| [coordinate-storage](./coordinate-storage.rule.md) | weighted-index 좌표를 저장할 때 `(prefix_id, version, address)` VersionedIndex 패턴 필수 |
 
 ---
 

@@ -72,6 +72,7 @@
 - **Prefix Version**: `latestPrefixVersion(catalog, prefixId)`로 동적 조회. `"v1"` 하드코딩 금지
 - **Axis Capacity**: `nextPowerOf2(entries.length * 2)` 이상. headroom ≤ 1 → warning, 0 → critical
 - **DecodeResult**: 새 코드는 `DecodeResult` 사용. `dim.kind` 분기 없이 value 타입 가정 금지
+- **좌표 저장**: 정수 address 저장 시 `(prefix_id, version, address)` VersionedIndex 패턴 필수. 상세: `docs/specs/system/coordinate-storage.rule.md`
 
 ## 코딩 컨벤션
 
