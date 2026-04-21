@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: spec-tracker
-  tags: [testing, observability]
+  tags: [testing, observability, cross-scope]
   links:
     - target: definition-service-system
       type: depends_on

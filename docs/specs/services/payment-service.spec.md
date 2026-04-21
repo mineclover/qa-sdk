@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: payment
-  tags: [external]
+  tags: [external, cross-scope]
   links:
     - target: shopping-backend-spec
       type: depends_on

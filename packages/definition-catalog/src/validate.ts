@@ -350,6 +350,10 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
   // 중복 좌표 감지 (tier, scope, layer, aspect, domain_root)
   // Phase 2: domain_root를 키에 포함해 서로 다른 도메인의 같은 좌표는 중복으로 보지 않는다
   // Phase 5d: knowledge_kind=proposal|adr|convention 문서는 의도적 co-location(제안/결정/컨벤션 묶음)이므로 검사 제외
+  // Phase 5f: cross-scope 태그가 그룹 전원에 부여된 경우 의도적 공유 좌표로 보고 검사 제외
+  //   근거: cross-scope = "다중 scope에 의도적으로 걸친다"는 명시적 opt-out 선언.
+  //   multi-parent (line 148-169) 와 동일한 opt-out 메커니즘을 dup-coord에도 적용.
+  //   그룹 전원에 태그가 있어야 함 — 일부만 태그시 의도성이 불명확하므로 경고 유지.
   const DUP_COORD_EXEMPT_KNOWLEDGE_KINDS = new Set(["proposal", "adr", "convention"]);
   const coords = new Map<string, string[]>();
   for (const entry of allEntries) {
@@ -364,6 +368,13 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
   }
   for (const [key, docs] of coords.entries()) {
     if (docs.length > 1) {
+      // cross-scope 태그가 그룹 전원에 있으면 의도적 공유로 보고 skip
+      const allCrossScope = docs.every(id => {
+        const entry = registry.get(id);
+        return entry?.tags?.includes("cross-scope") ?? false;
+      });
+      if (allCrossScope) continue;
+
       // key 포맷: tier:scope:layer:aspect:domain_root — 마지막 콜론 이후가 domain_root
       const lastColon = key.lastIndexOf(":");
       const coordPart = key.slice(0, lastColon);

@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: domain
-  tags: [structural]
+  tags: [structural, cross-scope]
   links:
     - target: scope-nesting-guide
       type: contains

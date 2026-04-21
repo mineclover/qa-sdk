@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: [observability, persistence, data]
+  tags: [observability, persistence, data, cross-scope]
   links:
     - target: dkg-node-types
       type: contains

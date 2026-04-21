@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: content-service
-  tags: [external]
+  tags: [external, cross-scope]
   links:
     - target: system-infra
       type: refines

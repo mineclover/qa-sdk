@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: spec-analyzer
-  tags: [testing]
+  tags: [testing, cross-scope]
   links:
     - target: definition-catalog-spec
       type: depends_on

@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: experience
   svc: platform-demo
-  tags: [structural]
+  tags: [structural, cross-scope]
   links:
     - target: viz-panel-layout
       type: contains

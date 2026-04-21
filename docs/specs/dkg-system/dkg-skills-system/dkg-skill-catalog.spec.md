@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: [structural, decision, entry-point]
+  tags: [structural, decision, entry-point, cross-scope]
   links:
     - target: dkg-node-types
       type: refs

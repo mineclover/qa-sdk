@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: experience
   svc: roleplay-web
-  tags: [structural]
+  tags: [structural, cross-scope]
   links:
     - target: form-builder-structure
       type: contains
