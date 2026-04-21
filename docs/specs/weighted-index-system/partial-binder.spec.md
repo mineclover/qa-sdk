@@ -23,6 +23,8 @@ def:
       type: contains
     - target: partial-binder-validation
       type: contains
+    - target: weighted-index-system
+      type: depends_on
 ---
 
 # weighted-index partial-binder
