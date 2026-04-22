@@ -90,7 +90,7 @@ export class DisjointUnionIndex {
           `Duplicate union kind: "${v.kind}"`,
         );
       }
-      const wi = new WeightedIndex(v.shape, v.labels);
+      const wi = new WeightedIndex(v.shape, v.labels ? [...v.labels] : undefined);
       const range: Range = { kind: v.kind, wi, offset, size: wi.size };
       map.set(v.kind, range);
       ordered.push(range);
