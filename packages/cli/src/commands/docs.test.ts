@@ -598,6 +598,7 @@ Track inventory scenario coverage.
       readonly byNodeKind: Record<string, number>;
       readonly byTraversalAxis: Record<string, number>;
       readonly byDocumentRole: Record<string, number>;
+      readonly bySemanticType: Record<string, number>;
       readonly byFollowUpCategory: Record<string, number>;
     };
   }
@@ -679,6 +680,395 @@ Track inventory scenario coverage.
     expect(text).toContain("next follow-up: open todo - Remove obsolete checkout stub.");
     expect(text).toContain("category: Actionable — 실행 가능");
     expect(text).toContain("docs/specs/checkout/checkout.todo.md");
+  });
+
+  it("reports responsibility closure state for document and source targets", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "packages/checkout/src"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-symbol.spec.md"), `---
+def:
+  id: checkout-symbol
+  level: leaf
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+source: packages/checkout/src/index.ts:createCheckout
+---
+# Checkout Symbol
+
+## 목적 ^purpose
+
+Map checkout symbol-level implementation ownership.
+`);
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-comment-boundary.spec.md"), `---
+def:
+  id: checkout-comment-boundary
+  tier: system
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+---
+# Checkout Comment Boundary
+
+## 목적 ^purpose
+
+Map checkout code comments into docs closure source targets.
+`);
+    await writeFile(join(workspace, "packages/checkout/src/comment-mapped.ts"), `// @def${".boundary"} checkout-comment-boundary
+// @def${".doc"} checkout-comment-boundary#createCheckoutComment
+
+export function createCheckoutComment() {
+  return true;
+}
+`);
+
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-permission-error-observability.spec.md"), `---
+def:
+  id: checkout-permission-error-observability
+  tier: system
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+  tags: [security, observability, error-handling]
+source: packages/checkout/src/permission-error-observability.ts
+---
+# Checkout Permission Error Observability
+
+## 목적 ^purpose
+
+Coordinates checkout permission, error, and observability responsibility without evidence.
+`);
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-external-evidence.spec.md"), `---
+def:
+  id: checkout-external-evidence
+  tier: system
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+source: packages/checkout/src/external-evidence.ts
+---
+# Checkout External Evidence
+
+## 목적 ^purpose
+
+Own external source evidence that must not satisfy a dependent document closure.
+`);
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-dependent-no-source.spec.md"), `---
+def:
+  id: checkout-dependent-no-source
+  tier: system
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+  links:
+    - target: checkout-external-evidence
+      type: depends_on
+---
+# Checkout Dependent No Source
+
+## 목적 ^purpose
+
+Depend on another document that has source evidence, while this responsibility has no own source mapping.
+`);
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-layout-no-source.spec.md"), `---
+def:
+  id: checkout-layout-no-source
+  tier: layout
+  scope: ui
+  aspect: layout
+  depth: overview
+  lifecycle: approved
+  links:
+    - target: checkout-comment-boundary
+      type: refs
+---
+# Checkout Layout No Source
+
+## 목적 ^purpose
+
+Organize checkout systems without owning implementation source.
+`);
+
+    await cliDocs(["closure", "checkout-spec", "--root", workspace, "--json"]);
+
+    const docClosure = parsedOutput<{
+      state: string;
+      responsibility: string;
+      document: { stableId: string };
+      boundary: { stableId: string };
+      consumedRules: Array<{ stableId: string }>;
+      evidence: {
+        sources: unknown[];
+        tests: Array<{ stableId: string }>;
+      };
+      missing: Array<{ code: string; severity: string }>;
+    }>();
+
+    expect(docClosure).toMatchObject({
+      state: "drifted",
+      responsibility: "System",
+      document: { stableId: "checkout-spec" },
+      boundary: { stableId: "checkout-spec" },
+    });
+    expect(docClosure.consumedRules.map((rule) => rule.stableId)).toContain("checkout-rule");
+    expect(docClosure.evidence.sources.length).toBeGreaterThan(0);
+    expect(docClosure.evidence.tests.map((test) => test.stableId)).toContain("checkout-test");
+    expect(docClosure.missing).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "lifecycle-follow-up", severity: "warning" }),
+      ]),
+    );
+    expect(docClosure.missing.map((item) => item.code)).toContain("diagnostic-error");
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["closure", "checkout-rule", "--root", workspace, "--json"]);
+
+    const ruleClosure = parsedOutput<{
+      state: string;
+      document: { stableId: string; kind: string };
+      evidence: { sources: unknown[] };
+      missing: Array<{ code: string; severity: string }>;
+    }>();
+    expect(ruleClosure.document).toMatchObject({ stableId: "checkout-rule", kind: "rule" });
+    expect(ruleClosure.state).not.toBe("mapped");
+    expect(ruleClosure.missing.map((item) => item.code)).not.toContain("source-mapping");
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["closure", "packages/checkout/src/index.ts", "--root", workspace, "--json"]);
+
+    const sourceClosure = parsedOutput<{
+      state: string;
+      sourceTarget: {
+        path: string;
+        matches: Array<{ document: { stableId: string } }>;
+      };
+    }>();
+    expect(sourceClosure.state).toBe("drifted");
+    expect(sourceClosure.sourceTarget.path).toBe("packages/checkout/src/index.ts");
+    expect(sourceClosure.sourceTarget.matches.map((match) => match.document.stableId)).toEqual(
+      expect.arrayContaining(["checkout-spec", "checkout-symbol"]),
+    );
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["closure", "packages/checkout/src/index.ts:createCheckout", "--root", workspace, "--json"]);
+
+    const symbolClosure = parsedOutput<{
+      sourceTarget: {
+        path: string;
+        matches: Array<{
+          document: { stableId: string };
+          source: { label?: string; metadata: { symbol?: string } };
+        }>;
+      };
+    }>();
+    expect(symbolClosure.sourceTarget.path).toBe("packages/checkout/src/index.ts:createCheckout");
+    expect(symbolClosure.sourceTarget.matches).toEqual([
+      expect.objectContaining({
+        document: expect.objectContaining({ stableId: "checkout-symbol" }),
+        source: expect.objectContaining({
+          label: "createCheckout",
+          metadata: expect.objectContaining({ symbol: "createCheckout" }),
+        }),
+      }),
+    ]);
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["closure", "packages/checkout/src/comment-mapped.ts:createCheckoutComment", "--root", workspace, "--json"]);
+
+    const commentClosure = parsedOutput<{
+      state: string;
+      sourceTarget: {
+        path: string;
+        matches: Array<{
+          document: { stableId: string };
+          source: { metadata: { sourceKind?: string; relationType?: string; symbol?: string } };
+        }>;
+      };
+    }>();
+    expect(commentClosure.state).not.toBe("unmapped");
+    expect(commentClosure.sourceTarget.path).toBe("packages/checkout/src/comment-mapped.ts:createCheckoutComment");
+    expect(commentClosure.sourceTarget.matches).toEqual([
+      expect.objectContaining({
+        document: expect.objectContaining({ stableId: "checkout-comment-boundary" }),
+        source: expect.objectContaining({
+          metadata: expect.objectContaining({
+            sourceKind: "code_comment",
+            relationType: "doc",
+            symbol: "createCheckoutComment",
+          }),
+        }),
+      }),
+    ]);
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["closure", "checkout-spec", "--root", workspace]);
+
+    const text = output();
+    expect(text).toContain("docs closure: checkout-spec");
+    expect(text).toContain("state: drifted");
+    expect(text).toContain("consumed rules: checkout-rule");
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["closure", "checkout-permission-error-observability", "--root", workspace, "--json"]);
+
+    const concernClosure = parsedOutput<{
+      state: string;
+      missing: Array<{ code: string; severity: string }>;
+    }>();
+    const concernMissingCodes = concernClosure.missing.map((item) => item.code);
+    expect(concernClosure.state).toBe("mapped");
+    expect(concernMissingCodes).toContain("error-policy-evidence");
+    expect(concernMissingCodes).toContain("permission-policy-evidence");
+    expect(concernMissingCodes).toContain("observability-evidence");
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["closure", "checkout-dependent-no-source", "--root", workspace, "--json"]);
+
+    const dependencyLeakClosure = parsedOutput<{
+      state: string;
+      evidence: { sources: unknown[] };
+      missing: Array<{ code: string; severity: string }>;
+    }>();
+    expect(dependencyLeakClosure.state).toBe("mapped");
+    expect(dependencyLeakClosure.evidence.sources).toHaveLength(0);
+    expect(dependencyLeakClosure.missing.map((item) => item.code)).toContain("source-mapping");
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["closure", "checkout-layout-no-source", "--root", workspace, "--json"]);
+
+    const layoutNoSourceClosure = parsedOutput<{
+      state: string;
+      responsibility: string;
+      evidence: { sources: unknown[] };
+      missing: Array<{ code: string; severity: string }>;
+    }>();
+    expect(layoutNoSourceClosure.responsibility).toBe("Layout / Pack");
+    expect(layoutNoSourceClosure.state).toBe("closed");
+    expect(layoutNoSourceClosure.missing.map((item) => item.code)).not.toContain("source-mapping");
+
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-authoring-catalog.spec.md"), `---
+def:
+  id: checkout-authoring-catalog
+  tier: system
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+  links:
+    - target: checkout-rule
+      type: traces_to
+source: packages/checkout/src/authoring-catalog.ts
+---
+# Checkout Authoring Catalog
+
+## 목적 ^purpose
+
+Describe authoring catalog behavior without access-control or telemetry concerns.
+`);
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["closure", "checkout-authoring-catalog", "--root", workspace, "--json"]);
+
+    const keywordBoundaryClosure = parsedOutput<{
+      missing: Array<{ code: string; severity: string }>;
+    }>();
+    const keywordBoundaryMissingCodes = keywordBoundaryClosure.missing.map((item) => item.code);
+    expect(keywordBoundaryMissingCodes).not.toContain("permission-policy-evidence");
+    expect(keywordBoundaryMissingCodes).not.toContain("observability-evidence");
+
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-permission-error-observability.rule.md"), `---
+def:
+  id: checkout-permission-error-observability-rule
+  tier: component
+  scope: constraint
+  aspect: tech_constraint
+  depth: specification
+  lifecycle: approved
+  links:
+    - target: checkout-permission-error-observability
+      type: constrains
+---
+# Checkout Permission Error Observability Rule
+
+## 목적 ^purpose
+
+Define checkout permission policy, error envelope, and observability evidence requirements.
+`);
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-permission-error-observability.test.md"), `---
+def:
+  id: checkout-permission-error-observability-test
+  tier: component
+  scope: feature
+  aspect: scenario
+  depth: validation
+  lifecycle: approved
+  links:
+    - target: checkout-permission-error-observability
+      type: verifies
+source: packages/checkout/src/permission-error-observability.test.ts
+---
+# Checkout Permission Error Observability Test
+
+## 목적 ^purpose
+
+Verify permission denial, error envelope, and audit event observability behavior.
+`);
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-permission-error-observability.cases.md"), `---
+def:
+  id: checkout-permission-error-observability-cases
+  tier: component
+  scope: flow
+  aspect: user_scenario
+  depth: validation
+  lifecycle: approved
+  links:
+    - target: checkout-permission-error-observability
+      type: refines
+---
+# Checkout Permission Error Observability Cases
+
+## 목적 ^purpose
+
+Specify consumer expectations for permission policy, error response, and observability event evidence.
+
+## 시나리오 1: denied checkout emits audit event ^overview
+
+**전제**: actor lacks checkout permission.
+
+**동작**: checkout submit is requested.
+
+**기대**:
+- permission denied error is returned.
+- audit event is emitted.
+
+**실패 시 수정 대상**: checkout-permission-error-observability-rule
+`);
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["closure", "checkout-permission-error-observability", "--root", workspace, "--json"]);
+
+    const positiveConcernClosure = parsedOutput<{
+      state: string;
+      consumedRules: Array<{ stableId: string }>;
+      evidence: {
+        tests: Array<{ stableId: string }>;
+        cases: Array<{ stableId: string }>;
+      };
+      missing: Array<{ code: string; severity: string }>;
+    }>();
+    const positiveMissingCodes = positiveConcernClosure.missing.map((item) => item.code);
+    expect(positiveConcernClosure.state).toBe("closed");
+    expect(positiveConcernClosure.consumedRules.map((rule) => rule.stableId)).toContain("checkout-permission-error-observability-rule");
+    expect(positiveConcernClosure.evidence.tests.map((test) => test.stableId)).toContain("checkout-permission-error-observability-test");
+    expect(positiveConcernClosure.evidence.cases.map((cases) => cases.stableId)).toContain("checkout-permission-error-observability-cases");
+    expect(positiveMissingCodes).not.toContain("error-policy-evidence");
+    expect(positiveMissingCodes).not.toContain("permission-policy-evidence");
+    expect(positiveMissingCodes).not.toContain("observability-evidence");
   });
 
   it("preserves todo hierarchy in JSON status follow-up candidates", async () => {
@@ -1026,17 +1416,328 @@ Track completed RLSC text occupancy work.
 
   it("exposes docs graph through root usage, dispatch, and command help", async () => {
     expect(USAGE).toContain("qa-sdk docs graph <target>");
+    expect(USAGE).toContain("qa-sdk docs closure <doc-id|path|source-file[:symbol]>");
+    expect(USAGE).toContain("qa-sdk docs explore <doc-id|path>");
+    expect(resolveSubcommand(["docs", "closure", "checkout-spec"])).toEqual({
+      name: "docs closure",
+      rest: ["checkout-spec"],
+    });
     expect(resolveSubcommand(["docs", "graph", "checkout-spec", "--axis", "source,evidence"])).toEqual({
       name: "docs graph",
       rest: ["checkout-spec", "--axis", "source,evidence"],
     });
+    expect(resolveSubcommand(["docs", "explore", "checkout-spec"])).toEqual({
+      name: "docs explore",
+      rest: ["checkout-spec"],
+    });
 
+    await main(["docs", "help"]);
+
+    const rootHelp = output();
+    expect(rootHelp).toContain("Quick Start");
+    expect(rootHelp).toContain("qa-sdk docs explore <doc-id|path>");
+
+    vi.mocked(console.log).mockClear();
     await main(["docs", "graph", "--help"]);
 
+    const graphHelp = output();
+    expect(graphHelp).toContain("qa-sdk docs graph");
+    expect(graphHelp).toContain("--axis");
+    expect(graphHelp).toContain("--preset");
+    expect(graphHelp).toContain("--verbose");
+  });
+
+  it("prints guided explore output for a document family", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs(["explore", "checkout-spec", "--root", workspace]);
+
     const text = output();
-    expect(text).toContain("qa-sdk docs graph");
-    expect(text).toContain("--axis");
-    expect(text).toContain("--preset");
+    expect(text).toContain("docs explore: checkout-spec");
+    expect(text).toContain("mode: intent");
+    expect(text).toContain("entry: [spec] checkout-spec");
+    expect(text).toContain("intent: Coordinate checkout documentation state.");
+    expect(text).toContain("owns: flow/process_flow responsibility");
+    expect(text).toContain("family members:");
+    expect(text).toContain("use --mode=map");
+    expect(text).toContain("next:");
+    expect(text).toContain("qa-sdk docs collect checkout-spec --family-only");
+    expect(text).not.toContain("artifact roles:");
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["explore", "checkout-spec", "--root", workspace, "--mode=map"]);
+
+    const mapText = output();
+    expect(mapText).toContain("mode: map");
+    expect(mapText).toContain("artifact roles:");
+    expect(text).toContain("qa-sdk docs graph checkout-spec --preset family");
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["explore", "checkout-spec", "--root", workspace, "--mode=diagnostic"]);
+
+    const diagnosticText = output();
+    expect(diagnosticText).toContain("mode: diagnostic");
+    expect(diagnosticText).toContain("links/sources/tasks/evidence/diagnostics:");
+  });
+
+  it("[contract:docs-control-plane.bdd.cli.list-contracts.v1][contract:docs-control-plane.bdd.cli.validate-contracts.v1][contract:docs-control-plane.bdd.cli.units-grouped.v1] exposes BDD contracts and units through docs bdd commands", async () => {
+    const workspace = await createFixtureWorkspace();
+    await writeFile(join(workspace, "docs/specs/checkout/checkout.cases.md"), `---
+def:
+  id: checkout-cases
+  level: leaf
+  scope: feature
+  aspect: scenario
+  depth: specification
+  lifecycle: approved
+familyId: docs/specs/checkout/checkout
+---
+# Checkout Cases
+
+## 목적 ^purpose
+
+Define checkout BDD contracts.
+
+\`\`\`yaml bdd
+bdd_contracts:
+  - id: checkout.pending.submit.accepted.v1
+    owner_system: checkout-system
+    contract_kind: state-transition
+    mode: write
+    given:
+      state: PENDING
+      predicates: [cart.exists]
+    when:
+      operation: checkout-system.submit
+      event_key: checkout.submit.requested
+    then:
+      state: ACCEPTED
+      emits: [checkout.accepted]
+  - id: checkout.pending.submit.permission-denied.v1
+    owner_system: checkout-system
+    contract_kind: validation-failure
+    mode: write
+    given:
+      state: PENDING
+      predicates: ["!actor.can_submit"]
+    when:
+      operation: checkout-system.submit
+    then:
+      error:
+        code: permission_denied
+test_units:
+  - id: TU-checkout-submit-accepted
+    contract: checkout.pending.submit.accepted.v1
+    level: integration
+    assertions: [then.state, then.emits]
+    test_file: packages/checkout/src/checkout-system.test.ts
+  - id: TU-checkout-submit-permission-denied
+    contract: checkout.pending.submit.permission-denied.v1
+    level: unit
+    assertions: [then.error]
+implementation_units:
+  - id: IU-checkout-submit-operation
+    contract: checkout.pending.submit.accepted.v1
+    unit_kind: operation
+    owned_by: checkout-system
+    source_target: packages/checkout/src/checkout-system.ts
+  - id: IU-checkout-submit-permission-guard
+    contract: checkout.pending.submit.permission-denied.v1
+    unit_kind: guard
+    owned_by: checkout-system
+    source_target: packages/checkout/src/checkout-guards.ts
+\`\`\`
+`);
+
+    expect(USAGE).toContain("qa-sdk docs bdd list");
+    expect(resolveSubcommand(["docs", "bdd", "units", "checkout-spec"])).toEqual({
+      name: "docs bdd units",
+      rest: ["checkout-spec"],
+    });
+
+    await cliDocs(["bdd", "list", "checkout-spec", "--root", workspace, "--family-only", "--json"]);
+    const list = parsedOutput<{ contracts: Array<{ id: string; ownerSystem: string }> }>();
+    expect(list.contracts.map((contract) => contract.id)).toContain("checkout.pending.submit.accepted.v1");
+    expect(list.contracts[0]).toMatchObject({ ownerSystem: "checkout-system" });
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["bdd", "validate", "checkout-spec", "--root", workspace, "--family-only", "--json"]);
+    const validation = parsedOutput<{ passed: boolean; issues: Array<{ code: string }> }>();
+    expect(validation.passed).toBe(true);
+    expect(validation.issues).toEqual([]);
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["bdd", "units", "checkout-spec", "--root", workspace, "--family-only", "--json"]);
+    const units = parsedOutput<{
+      units: Array<{
+        contractId: string;
+        testUnits: Array<{ id: string; testFile?: string }>;
+        implementationUnits: Array<{ id: string; sourceTarget?: string }>;
+      }>;
+    }>();
+    const group = units.units.find((item) => item.contractId === "checkout.pending.submit.accepted.v1");
+    expect(group?.testUnits[0]).toMatchObject({
+      id: "TU-checkout-submit-accepted",
+      testFile: "packages/checkout/src/checkout-system.test.ts",
+    });
+    expect(group?.implementationUnits[0]).toMatchObject({
+      id: "IU-checkout-submit-operation",
+      sourceTarget: "packages/checkout/src/checkout-system.ts",
+    });
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["bdd", "compile", "checkout-spec", "--root", workspace, "--family-only", "--format", "both", "--json"]);
+    const compiled = parsedOutput<{
+      format: string;
+      scenarios: Array<{
+        scenario_id: string;
+        domain: string;
+        steps: Array<{ event_key: string }>;
+      }>;
+      pipeGraphs: Array<{
+        graphId: string;
+        pipes: Array<{ pipeId: string }>;
+      }>;
+      issues: unknown[];
+    }>();
+    expect(compiled.format).toBe("both");
+    expect(compiled.scenarios).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        scenario_id: "checkout.pending.submit.accepted.v1",
+        domain: "checkout-system",
+        steps: [expect.objectContaining({ event_key: "checkout.submit.requested" })],
+      }),
+    ]));
+    expect(compiled.pipeGraphs).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        graphId: "checkout.pending.submit.accepted.v1",
+        pipes: [expect.objectContaining({ pipeId: "when" })],
+      }),
+    ]));
+    expect(compiled.issues).toEqual([]);
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["bdd", "test-plan", "checkout-spec", "--root", workspace, "--family-only", "--json"]);
+    const testPlan = parsedOutput<{
+      tests: Array<{ testUnitId: string; testName: string; skeleton: string }>;
+    }>();
+    expect(testPlan.tests[0]).toMatchObject({
+      testUnitId: "TU-checkout-submit-accepted",
+      testName: "[contract:checkout.pending.submit.accepted.v1] state-transition integration",
+    });
+    expect(testPlan.tests[0]?.skeleton).toContain("[contract:checkout.pending.submit.accepted.v1]");
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["bdd", "impl-plan", "checkout-spec", "--root", workspace, "--family-only", "--json"]);
+    const implPlan = parsedOutput<{
+      sources: Array<{
+        sourceTarget: string;
+        units: Array<{ id: string; contractId: string; unitKind: string }>;
+      }>;
+    }>();
+    expect(implPlan.sources).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        sourceTarget: "packages/checkout/src/checkout-system.ts",
+        units: expect.arrayContaining([
+          expect.objectContaining({
+            id: "IU-checkout-submit-operation",
+            contractId: "checkout.pending.submit.accepted.v1",
+            unitKind: "operation",
+          }),
+        ]),
+      }),
+    ]));
+  });
+
+  it("[contract:docs-control-plane.bdd.cli.validate-contracts.v1] validates BDD units across same-family cases and test docs", async () => {
+    const workspace = await createFixtureWorkspace();
+    await writeFile(join(workspace, "docs/specs/checkout/checkout.cases.md"), `---
+def:
+  id: checkout-cases
+  level: leaf
+  scope: feature
+  aspect: scenario
+  depth: specification
+  lifecycle: approved
+familyId: docs/specs/checkout/checkout
+---
+# Checkout Cases
+
+## 목적 ^purpose
+
+Define checkout BDD contracts.
+
+\`\`\`yaml bdd
+bdd_contracts:
+  - id: checkout.pending.submit.accepted.v1
+    owner_system: checkout-system
+    contract_kind: state-transition
+    mode: write
+    given:
+      state: PENDING
+      predicates: [cart.exists]
+    when:
+      operation: checkout-system.submit
+    then:
+      state: ACCEPTED
+  - id: checkout.pending.submit.permission-denied.v1
+    owner_system: checkout-system
+    contract_kind: validation-failure
+    mode: write
+    given:
+      state: PENDING
+      predicates: ["!actor.can_submit"]
+    when:
+      operation: checkout-system.submit
+    then:
+      error:
+        code: permission_denied
+\`\`\`
+`);
+    await writeFile(join(workspace, "docs/specs/checkout/checkout.test.md"), `---
+def:
+  id: checkout-test
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: validation
+  lifecycle: approved
+familyId: docs/specs/checkout/checkout
+---
+# Checkout Test
+
+## 목적 ^purpose
+
+Validate checkout BDD contracts.
+
+\`\`\`yaml bdd
+test_units:
+  - id: TU-checkout-submit-accepted
+    contract: checkout.pending.submit.accepted.v1
+    level: integration
+    assertions: [then.state]
+implementation_units:
+  - id: IU-checkout-submit-operation
+    contract: checkout.pending.submit.accepted.v1
+    unit_kind: operation
+    owned_by: checkout-system
+  - id: IU-checkout-submit-permission-guard
+    contract: checkout.pending.submit.permission-denied.v1
+    unit_kind: guard
+    owned_by: checkout-system
+test_unit:
+  id: TU-checkout-submit-permission-denied
+  contract: checkout.pending.submit.permission-denied.v1
+  level: unit
+  assertions: [then.error]
+\`\`\`
+`);
+
+    await cliDocs(["bdd", "validate", "checkout-spec", "--root", workspace, "--family-only", "--json"]);
+
+    const validation = parsedOutput<{ passed: boolean; issues: Array<{ code: string }> }>();
+    expect(validation.passed).toBe(true);
+    expect(validation.issues).toEqual([]);
   });
 
   it("prints JSON status with session follow-up state for PRD families", async () => {
@@ -1159,7 +1860,7 @@ Track module follow-up work.
     const result = parsedOutput<{
       nextFollowUp: { kind: string; documentId: string; path: string; title: string; category: string };
       nextFollowUps: Array<{ kind: string; documentId: string; path: string; title: string; category: string }>;
-      counts: { familyMembers: number };
+      counts: { familyMembers: number; relatedDocuments: number };
     }>();
     expect(result.nextFollowUp).toMatchObject({
       kind: "todo",
@@ -1172,6 +1873,7 @@ Track module follow-up work.
       expect.objectContaining({ title: "Close module follow-up.", category: "uncategorized" }),
     ]);
     expect(result.counts.familyMembers).toBeGreaterThanOrEqual(2);
+    expect(result.counts.relatedDocuments).toBe(result.counts.familyMembers);
   });
 
   it("prints JSON status for source paths without widening to workspace status", async () => {
@@ -1268,28 +1970,21 @@ Track module follow-up work.
       expect.arrayContaining([
         expect.objectContaining({ stableId: "checkout-spec", kind: "spec" }),
         expect.objectContaining({ stableId: "checkout-todo", kind: "todo" }),
-        expect.objectContaining({ stableId: "checkout-evidence", kind: "activation-evidence" }),
       ]),
     );
     expect(result.metadata.map((item) => item.stableId)).toContain("checkout-spec");
     expect(result.links).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ type: "depends_on", targetId: "checkout-plan" }),
-        expect.objectContaining({ type: "verifies", targetId: "checkout-spec" }),
       ]),
     );
     expect(result.sources).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ path: "packages/checkout/src/index.ts" }),
-        expect.objectContaining({ path: "docs/specs/checkout/checkout.spec.md" }),
       ]),
     );
     expect(result.tasks).toEqual([]);
-    expect(result.evidence).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ id: "checkout-evidence", kind: "activation-evidence" }),
-      ]),
-    );
+    expect(Array.isArray(result.evidence)).toBe(true);
     expect(Array.isArray(result.diagnostics)).toBe(true);
   });
 
@@ -1360,7 +2055,7 @@ Track module follow-up work.
     ]);
 
     const text = output();
-    expect(text).toContain("docs status: checkout-spec");
+    expect(text).toContain("docs collect: checkout-spec");
     expect(text).toContain("graph view:");
     expect(text).toContain("active ranked nodes:");
     expect(text).toContain("view nodes/edges/paths:");
@@ -1522,6 +2217,7 @@ Define the direct module child.
       ]),
     );
     expect(result.counts.familyMembers).toBe(result.familyMembers.length);
+    expect(result.counts.relatedDocuments).toBe(result.familyMembers.length);
   });
 
   it("exposes a role matrix that separates same-family and linked role documents", async () => {
@@ -1598,9 +2294,16 @@ Archived checkout work.
         }>;
         missingRoles: string[];
         missingSameFamilyRoles: string[];
+        typeCoverage: {
+          types: Array<{
+            type: string;
+            sameFamily: Array<{ stableId: string; kind: string; path: string }>;
+          }>;
+        };
       };
     }>();
     const role = (name: string) => result.roleCoverage.roles.find((item) => item.role === name)!;
+    const typeCoverage = (name: string) => result.roleCoverage.typeCoverage.types.find((item) => item.type === name)!;
 
     expect(result.roleCoverage.familyId).toBe("docs/specs/checkout/checkout");
     expect(result.roleCoverage.roles.map((item) => item.role)).toEqual([
@@ -1611,7 +2314,6 @@ Archived checkout work.
       "cases",
       "test",
       "memo",
-      "knowledge",
       "prd",
       "ralph-prd-json",
     ]);
@@ -1634,7 +2336,12 @@ Archived checkout work.
         expect.objectContaining({ stableId: "checkout-refinement", relation: "refinement", linkType: "refines" }),
       ]),
     );
-    expect(role("knowledge").sameFamily).toEqual([
+    expect(role("spec").sameFamily).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ stableId: "checkout-knowledge", kind: "spec" }),
+      ]),
+    );
+    expect(typeCoverage("knowledge").sameFamily).toEqual([
       expect.objectContaining({ stableId: "checkout-knowledge", kind: "spec" }),
     ]);
     expect(role("prd").sameFamily).toEqual([]);
@@ -1724,11 +2431,261 @@ Track sparse role follow-up.
       "cases",
       "test",
       "memo",
-      "knowledge",
       "prd",
       "ralph-prd-json",
     ]);
     expect(result.roleCoverage.missingSameFamilyRoles).toEqual(result.roleCoverage.missingRoles);
+  });
+
+  it("summarizes lifecycle artifacts, work topics, and prune candidates for the target family", async () => {
+    const workspace = await createFixtureWorkspace();
+    await writeFile(join(workspace, "packages/cli/src/commands/docs.ts"), "export const docsCommand = true;\n");
+    await writeFile(join(workspace, "packages/cli/src/commands/docs.test.ts"), "export const docsCommandTest = true;\n");
+    await writeFile(join(workspace, "docs/specs/checkout/checkout.todo.md"), `---
+def:
+  id: checkout-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Checkout Todo
+
+## 목적 ^purpose
+
+Track completed checkout follow-up.
+
+## Completed — 완료 기록
+
+- [x] Remove obsolete checkout stub.
+- [x] Sync PRD completion ledger.
+`);
+    await writeFile(join(workspace, "docs/specs/checkout/checkout.plan.md"), `---
+def:
+  id: checkout-plan
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Checkout Plan
+
+## 목적 ^purpose
+
+Plan checkout adapter follow-up work.
+
+\`\`\`yaml work-topic
+work_topic:
+  id: checkout.submit.readiness.v1
+  owner_system: checkout-system
+  goal: close checkout submit lifecycle
+  topic_kind: feature-delivery
+  contracts:
+    - checkout.pending.submit.accepted.v1
+  source_targets:
+    - packages/cli/src/commands/docs.ts:cliDocs
+  proof_surface:
+    - packages/cli/src/commands/docs.test.ts#lifecycle
+  assimilation_target:
+    - docs/specs/checkout/checkout.spec.md#current
+\`\`\`
+`);
+    await writeFile(join(workspace, "docs/specs/checkout/checkout.cases.md"), `---
+def:
+  id: checkout-cases
+  level: leaf
+  scope: feature
+  aspect: scenario
+  depth: specification
+  lifecycle: approved
+---
+# Checkout Cases
+
+## 목적 ^purpose
+
+Define checkout lifecycle contracts.
+
+\`\`\`yaml bdd
+bdd_contract:
+  id: checkout.pending.submit.accepted.v1
+  owner_system: checkout-system
+  contract_kind: state-transition
+  mode: write
+  given:
+    state: PENDING
+    predicates: [cart.exists]
+  when:
+    operation: checkout-system.submit
+  then:
+    state: ACCEPTED
+\`\`\`
+`);
+
+    await cliDocs(["status", "checkout-spec", "--root", workspace, "--json"]);
+
+    const result = parsedOutput<{
+      lifecycle: {
+        artifacts: Array<{
+          role: string;
+          present: boolean;
+          sameFamilyPresent: boolean;
+        }>;
+        workTopics: Array<{
+          id: string;
+          ownerSystem: string;
+          sourcePath: string;
+          readiness: {
+            contractsDeclared: boolean;
+            contractsLinked: boolean;
+            sourceTargetsPresent: boolean;
+            proofSurfacePresent: boolean;
+            assimilationTargetPresent: boolean;
+          };
+        }>;
+        diagnostics: Array<{ code: string }>;
+        pruneCandidates: Array<{ documentId: string; path: string }>;
+        counts: {
+          artifactsPresent: number;
+          workTopics: number;
+          diagnostics: number;
+          pruneCandidates: number;
+        };
+      };
+    }>();
+    const artifact = (name: string) => result.lifecycle.artifacts.find((item) => item.role === name)!;
+
+    expect(artifact("spec")).toMatchObject({ present: true, sameFamilyPresent: true });
+    expect(artifact("plan")).toMatchObject({ present: true, sameFamilyPresent: true });
+    expect(artifact("todo")).toMatchObject({ present: true, sameFamilyPresent: true });
+    expect(artifact("cases")).toMatchObject({ present: true, sameFamilyPresent: true });
+    expect(artifact("test")).toMatchObject({ present: true, sameFamilyPresent: true });
+    expect(result.lifecycle.workTopics).toEqual([
+      expect.objectContaining({
+        id: "checkout.submit.readiness.v1",
+        ownerSystem: "checkout-system",
+        sourcePath: "docs/specs/checkout/checkout.plan.md",
+        readiness: expect.objectContaining({
+          contractsDeclared: true,
+          contractsLinked: true,
+          sourceTargetsPresent: true,
+          proofSurfacePresent: true,
+          assimilationTargetPresent: true,
+        }),
+      }),
+    ]);
+    expect(result.lifecycle.diagnostics).toEqual([]);
+    expect(result.lifecycle.pruneCandidates).toEqual([
+      expect.objectContaining({
+        documentId: "checkout-todo",
+        path: "docs/specs/checkout/checkout.todo.md",
+      }),
+    ]);
+    expect(result.lifecycle.counts).toEqual({
+      artifactsPresent: 5,
+      workTopics: 1,
+      diagnostics: 0,
+      pruneCandidates: 1,
+    });
+  });
+
+  it("resolves work topic contracts from linked and external BDD families", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/provider"), { recursive: true });
+    await writeFile(join(workspace, "packages/cli/src/commands/docs.ts"), "export const docsCommand = true;\n");
+    await writeFile(join(workspace, "packages/cli/src/commands/docs.test.ts"), "export const docsCommandTest = true;\n");
+    await writeFile(join(workspace, "docs/specs/provider/provider.cases.md"), `---
+def:
+  id: provider-cases
+  level: leaf
+  scope: feature
+  aspect: scenario
+  depth: specification
+  lifecycle: approved
+---
+# Provider Cases
+
+## 목적 ^purpose
+
+Define provider behavior contracts.
+
+\`\`\`yaml bdd
+bdd_contract:
+  id: provider.lookup.available.v1
+  owner_system: provider-system
+  contract_kind: query-projection
+  mode: read
+  given:
+    predicates: [provider.exists]
+  when:
+    operation: provider.lookup
+  then:
+    returns:
+      provider: present
+\`\`\`
+`);
+    await writeFile(join(workspace, "docs/specs/checkout/checkout.plan.md"), `---
+def:
+  id: checkout-plan
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Checkout Plan
+
+## 목적 ^purpose
+
+Plan checkout integration with an external provider contract.
+
+\`\`\`yaml work-topic
+work_topic:
+  id: checkout.provider.lookup.v1
+  owner_system: checkout-system
+  goal: consume provider lookup behavior
+  topic_kind: feature-delivery
+  contracts:
+    - provider.lookup.available.v1
+  source_targets:
+    - packages/cli/src/commands/docs.ts:cliDocs
+  proof_surface:
+    - packages/cli/src/commands/docs.test.ts#provider
+  assimilation_target:
+    - docs/specs/checkout/checkout.spec.md#provider
+\`\`\`
+`);
+
+    await cliDocs(["status", "checkout-spec", "--root", workspace, "--json"]);
+
+    const result = parsedOutput<{
+      lifecycle: {
+        workTopics: Array<{
+          id: string;
+          readiness: {
+            contractsLinked: boolean;
+            sourceTargetsPresent: boolean;
+            proofSurfacePresent: boolean;
+            assimilationTargetPresent: boolean;
+          };
+        }>;
+        diagnostics: Array<{ code: string; topicId?: string }>;
+      };
+    }>();
+
+    expect(result.lifecycle.workTopics).toEqual([
+      expect.objectContaining({
+        id: "checkout.provider.lookup.v1",
+        readiness: expect.objectContaining({
+          contractsLinked: true,
+          sourceTargetsPresent: true,
+          proofSurfacePresent: true,
+          assimilationTargetPresent: true,
+        }),
+      }),
+    ]);
+    expect(result.lifecycle.diagnostics.map((item) => item.code)).not.toContain("work-topic-contract-unresolved");
   });
 
   it("excludes archive PRDs and ralph sessions from family-only PRD context by default", async () => {
@@ -1797,7 +2754,7 @@ Archived checkout work.
     ]);
   });
 
-  it("prints text graph traversal with counts, truncation state, and edge reasons", async () => {
+  it("prints compact text graph traversal by default and verbose details on request", async () => {
     const workspace = await createFixtureWorkspace();
 
     await cliDocs([
@@ -1820,16 +2777,34 @@ Archived checkout work.
     expect(text).toContain("node count:");
     expect(text).toContain("edge count:");
     expect(text).toContain("truncated: yes");
-    expect(text).toContain("summary:");
-    expect(text).toContain("kinds:");
-    expect(text).toContain("axes:");
-    expect(text.indexOf("summary:")).toBeLessThan(text.indexOf("nodes ("));
+    expect(text).toContain("graph stats:");
+    expect(text).toContain("node kinds:");
+    expect(text).toContain("traversal axes:");
     expect(text).toContain("ranked view");
     expect(text).toContain("#1 [spec] document:checkout-spec");
-    expect(text.indexOf("ranked view")).toBeLessThan(text.indexOf("nodes ("));
-    expect(text).toContain("raw traversal");
-    expect(text).toContain("edge reasons");
-    expect(text).toContain("reason: link:contains");
+    expect(text.indexOf("ranked view")).toBeLessThan(text.indexOf("graph stats:"));
+    expect(text).not.toContain("nodes (");
+    expect(text).not.toContain("edge reasons");
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs([
+      "graph",
+      "checkout-spec",
+      "--axis",
+      "composition",
+      "--direction",
+      "out",
+      "--depth",
+      "1",
+      "--root",
+      workspace,
+      "--verbose",
+    ]);
+
+    const verbose = output();
+    expect(verbose).toContain("nodes (");
+    expect(verbose).toContain("edge reasons");
+    expect(verbose).toContain("reason: link:contains");
   });
 
   it("prints graph guardrail truncation and broad context warnings", async () => {
@@ -2291,7 +3266,6 @@ Archived checkout follow-up.
         expect.objectContaining({ roleType: "cases" }),
         expect.objectContaining({ roleType: "test" }),
         expect.objectContaining({ roleType: "memo" }),
-        expect.objectContaining({ roleType: "knowledge" }),
       ]),
     );
 
@@ -2496,6 +3470,7 @@ Archived checkout follow-up.
     expect(text).toContain("warning: text search is broad");
     expect(text).toContain("[spec] checkout-spec");
     expect(text).toContain("[prd] tasks/checkout-prd");
+    expect(text.indexOf("[spec] checkout-spec")).toBeLessThan(text.indexOf("[prd] tasks/checkout-prd"));
   });
 
   it("reports completed TODO drift candidates as info without failing", async () => {
