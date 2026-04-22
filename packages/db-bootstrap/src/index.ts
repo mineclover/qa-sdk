@@ -29,9 +29,12 @@ export {
 export {
   type RlsSessionContext,
   type RlsTxRunner,
+  type RlsTxSql,
   EMPTY_RLS_CONTEXT,
   MAX_BITMAP_BYTES,
   BitmapTooLargeError,
   encodeBitmapHex,
   createRlsTxRunner,
 } from "./rls-session.js";
+
+export { withRlsContext, getCurrentRlsContext } from "./rls-context-storage.js";
