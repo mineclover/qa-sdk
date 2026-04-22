@@ -39,10 +39,15 @@ function loadProfileDefaults(): Record<string, string> {
 }
 
 export const envSchema = z.object({
-  /** Store 드라이버: memory(기본) | pg | d1 | clickhouse */
-  STORE_DRIVER: z.enum(["memory", "pg", "d1", "clickhouse"]).default("memory"),
+  /**
+   * Store 드라이버: memory(기본) | sqlite | pg | clickhouse.
+   * d1은 Plan 07a 결정(옵션 A)에 따라 sqlite의 deprecation alias — resolveStoreDriver가 매핑.
+   */
+  STORE_DRIVER: z.enum(["memory", "sqlite", "pg", "clickhouse", "d1"]).default("memory"),
   /** PostgreSQL URL (STORE_DRIVER=pg 시 필수). 미설정 + STORE_DRIVER=memory 시 InMemory 사용. */
   TRACE_DATABASE_URL: z.preprocess(emptyStringToUndefined, z.string().url().optional()),
+  /** PG schema (STORE_DRIVER=pg 시). default "ingest". */
+  QA_PG_SCHEMA: z.string().default("ingest"),
   /** SQLite 경로 (STORE_DRIVER=d1 시 Node.js 로컬용). CF Workers에서는 D1 바인딩 사용. */
   SQLITE_PATH: z.preprocess(emptyStringToUndefined, z.string().optional()),
   REDIS_URL: optionalUrl,
@@ -116,6 +121,24 @@ export function parseEnv(source: NodeJS.ProcessEnv) {
   if (!_profileDefaults) _profileDefaults = loadProfileDefaults();
   const merged = { ..._profileDefaults, ...source };
   return envSchema.parse(merged);
+}
+
+export type Env = z.infer<typeof envSchema>;
+
+/**
+ * STORE_DRIVER=d1 → sqlite 매핑 (Plan 07a 옵션 A 결정).
+ *
+ * D1(Cloudflare Workers의 SQLite-호환)과 자체 SQLite(node-sqlite)는
+ * 동일 dialect이므로 단일 sqlite 어댑터로 통합. d1은 1 release cycle 간 alias.
+ */
+export function resolveStoreDriver(
+  env: Pick<Env, "STORE_DRIVER">,
+): "memory" | "sqlite" | "pg" | "clickhouse" {
+  if (env.STORE_DRIVER === "d1") {
+    // deprecation: 호출자가 logger로 warning 출력 (본 모듈은 pure).
+    return "sqlite";
+  }
+  return env.STORE_DRIVER;
 }
 
 export const env = parseEnv(process.env);

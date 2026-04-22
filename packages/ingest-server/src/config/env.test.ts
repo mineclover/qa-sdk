@@ -2,6 +2,7 @@
 // @def.doc ingest-system
 
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { envSchema, resolveStoreDriver } from "./env.js";
 
 describe("parseEnv", { timeout: 15_000 }, () => {
   afterEach(() => {
@@ -82,5 +83,27 @@ describe("parseEnv", { timeout: 15_000 }, () => {
         TRACE_DATABASE_URL: "postgres://postgres:postgres@localhost:5432/qa_sdk",
       }).REDIS_URL,
     ).toBe("redis://localhost:6379/0");
+  });
+});
+
+describe("STORE_DRIVER alias — d1 → sqlite (Plan 07a 옵션 A)", () => {
+  it("d1은 sqlite로 매핑", () => {
+    const env = envSchema.parse({ STORE_DRIVER: "d1" });
+    expect(resolveStoreDriver(env)).toBe("sqlite");
+  });
+
+  it("sqlite는 그대로", () => {
+    const env = envSchema.parse({ STORE_DRIVER: "sqlite" });
+    expect(resolveStoreDriver(env)).toBe("sqlite");
+  });
+
+  it("pg는 그대로", () => {
+    const env = envSchema.parse({ STORE_DRIVER: "pg" });
+    expect(resolveStoreDriver(env)).toBe("pg");
+  });
+
+  it("QA_PG_SCHEMA default", () => {
+    const env = envSchema.parse({});
+    expect(env.QA_PG_SCHEMA).toBe("ingest");
   });
 });
