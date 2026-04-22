@@ -2,14 +2,18 @@ import { describe, expect, it } from "vitest";
 import { ALL_SCENARIOS, buildCli } from "./cli.js";
 
 describe("sim-scenarios CLI", () => {
-  it("ALL_SCENARIOS — Plan 13c 시점에 6건 (1~6)", () => {
-    expect(ALL_SCENARIOS).toHaveLength(6);
-    expect(ALL_SCENARIOS.map((s) => s.name)).toContain(
+  it("ALL_SCENARIOS — Plan 13d 시점에 8건 (전체)", () => {
+    expect(ALL_SCENARIOS).toHaveLength(8);
+    expect(ALL_SCENARIOS.map((s) => s.name)).toEqual([
+      "scenario-1-login",
+      "scenario-2-project-create",
+      "scenario-3-self-dept-approval",
+      "scenario-4-cross-dept-deny",
       "scenario-5-three-stage-approval",
-    );
-    expect(ALL_SCENARIOS.map((s) => s.name)).toContain(
       "scenario-6-delegated-resource",
-    );
+      "scenario-7-bitmap-refresh",
+      "scenario-8-pubsub-invalidation",
+    ]);
   });
 
   it("buildCli — list / run 명령어 등록", () => {

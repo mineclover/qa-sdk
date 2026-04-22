@@ -10,6 +10,8 @@ import { scenario3SelfDeptApproval } from "./scenarios/scenario-3-self-dept-appr
 import { scenario4CrossDeptDeny } from "./scenarios/scenario-4-cross-dept-deny.js";
 import { scenario5ThreeStageApproval } from "./scenarios/scenario-5-three-stage-approval.js";
 import { scenario6DelegatedResource } from "./scenarios/scenario-6-delegated-resource.js";
+import { scenario7BitmapRefresh } from "./scenarios/scenario-7-bitmap-refresh.js";
+import { scenario8PubsubInvalidation } from "./scenarios/scenario-8-pubsub-invalidation.js";
 import type { Scenario, ScenarioResult } from "./runner/types.js";
 
 export const ALL_SCENARIOS: readonly Scenario[] = [
@@ -19,7 +21,8 @@ export const ALL_SCENARIOS: readonly Scenario[] = [
   scenario4CrossDeptDeny,
   scenario5ThreeStageApproval,
   scenario6DelegatedResource,
-  // Plan 13d 가 추가
+  scenario7BitmapRefresh,
+  scenario8PubsubInvalidation,
 ];
 
 export function buildCli(): Command {
