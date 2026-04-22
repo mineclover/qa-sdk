@@ -27,7 +27,10 @@
     "monitoring:down": "docker compose -f monitoring/docker-compose.monitoring.yml down",
     "registry": "npx verdaccio --config verdaccio/config.yml",
     "publish:local": "bash scripts/publish-local.sh",
-    "test:e2e": "pnpm --filter @qa-sdk/e2e test"
+    "test:e2e": "pnpm --filter @qa-sdk/e2e test",
+    "sim:smoke": "./simulations/enterprise-pm/scripts/smoke.sh",
+    "sim:smoke:keep": "./simulations/enterprise-pm/scripts/smoke.sh --keep-up",
+    "sim:scenarios": "node ./simulations/enterprise-pm/scenarios/dist/cli.js"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
