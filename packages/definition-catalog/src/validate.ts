@@ -17,6 +17,7 @@ import {
   semanticContainsDepthLimit,
 } from "./semantic-lint.js";
 import { deriveAllDomainRoots, detectOwnerRootMismatch } from "./domain-root.js";
+import { scanCoordinateStorage } from "./coordinate-storage-check.js";
 
 /** 검증 이슈 1건 */
 export interface ValidationIssue {
@@ -36,9 +37,20 @@ export interface ValidationIssue {
     | "invalid-type-classification"
     | "missing-owner-system"
     | "invalid-hierarchy-classification"
-    | "owner-root-mismatch";
+    | "owner-root-mismatch"
+    | "coordinate-storage-violation";
   readonly docId: string;
   readonly message: string;
+}
+
+/**
+ * `validateGraph` 옵션
+ */
+export interface ValidateGraphOptions {
+  /** true면 packages/ 스캔으로 coordinate-storage.rule 위반 검사 */
+  readonly includeCoordStorageCheck?: boolean;
+  /** scan 루트 (기본 process.cwd()/packages) */
+  readonly repoRoot?: string;
 }
 
 /** 검증 결과 */
@@ -59,7 +71,10 @@ const CONTAINS_DEPTH_EXEMPT = new Set([
 /**
  * 문서 그래프 전체를 검증한다.
  */
-export function validateGraph(registry: MemoryDefinitionRegistry): ValidationResult {
+export function validateGraph(
+  registry: MemoryDefinitionRegistry,
+  options: ValidateGraphOptions = {},
+): ValidationResult {
   const issues: ValidationIssue[] = [];
   const allEntries = registry.all();
   const allIds = new Set(allEntries.map(e => e.id));
@@ -274,7 +289,7 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
         severity: "error",
         type: "level-violation" as ValidationIssue["type"],
         docId: entry.id,
-        message: `level=module인데 contains 자식이 없음 — 개념 정의에는 구성 요소(leaf)가 필요`,
+        message: `level=module인데 contains 자식이 없음 — contains parent 메타데이터에는 자식 문서가 필요`,
       });
     }
     if (level === "leaf" && containsChildren.length > 0) {
@@ -282,7 +297,7 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
         severity: "error",
         type: "level-violation" as ValidationIssue["type"],
         docId: entry.id,
-        message: `level=leaf인데 contains 자식 ${containsChildren.length}건 — module 또는 group으로 변경 필요`,
+        message: `level=leaf인데 contains 자식 ${containsChildren.length}건 — contains 방향을 고치거나 level 메타데이터를 group/module로 변경 필요`,
       });
     }
   }
@@ -462,6 +477,33 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
     // auxiliary인 경우 core와 분리되어 관찰 가능한지 (간단한 정합성 체크)
     if (entry.intent_hierarchy === "auxiliary" && entry.projection_plane === "intent") {
       // 보조 의도인데 코어 시스템 문서에 직접 inline 되어있는지 등 체크 (추후 정교화)
+    }
+  }
+
+  // ── coordinate-storage.rule 자동 검출 (opt-in) ──
+  // 문서 그래프 외에 코드(Drizzle 스키마)에 대한 정적 검사. CLI에서 includeCoordStorageCheck=true.
+  if (options.includeCoordStorageCheck) {
+    try {
+      const repoRootOpt = options.repoRoot;
+      const coordViolations = scanCoordinateStorage(
+        repoRootOpt ? { repoRoot: repoRootOpt } : {},
+      );
+      for (const v of coordViolations) {
+        issues.push({
+          severity: "error",
+          type: "coordinate-storage-violation",
+          docId: `${v.filePath}:${v.lineNumber}`,
+          message: `[${v.tableName}] ${v.message}`,
+        });
+      }
+    } catch (err) {
+      // fail-open — 스캐너 자체 오류는 검증 전체를 막지 않는다
+      issues.push({
+        severity: "warning",
+        type: "coordinate-storage-violation",
+        docId: "coordinate-storage-check",
+        message: `coord-storage 스캔 실패 (warning으로 강등): ${err instanceof Error ? err.message : String(err)}`,
+      });
     }
   }
 

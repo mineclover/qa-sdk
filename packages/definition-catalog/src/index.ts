@@ -239,7 +239,7 @@ export {
 } from "./concern.js";
 
 // ─── 검증 ───────────────────────────────────────────────
-export type { ValidationIssue, ValidationResult } from "./validate.js";
+export type { ValidationIssue, ValidationResult, ValidateGraphOptions } from "./validate.js";
 export { validateGraph } from "./validate.js";
 
 // ─── 도메인 루트 파생 (domain_root) ─────────────────────
