@@ -8,3 +8,7 @@ export { auditEntries, AUDIT_ENTRIES_DDL } from "./sqlite/schema.js";
 // Backward-compat alias — 기존 외부 호출자 영향 회피.
 // Plan 06c(factory) 도입 후 deprecation 마킹.
 export { SqliteAuditRecorder as DrizzleAuditRecorder } from "./sqlite/adapter.js";
+
+// PG 어댑터 (Plan 06b)
+export { PgAuditRecorder } from "./pg/adapter.js";
+export { auditEntries as auditEntriesPg, AUDIT_ENTRIES_PG_DDL } from "./pg/schema.js";
