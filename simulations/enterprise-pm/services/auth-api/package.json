@@ -4,6 +4,23 @@
   "description": "\uc2dc\ubbac \u2014 \uc0ac\uc6a9\uc790/role/department + bitmap \ubc1c\ud589 NestJS \uc11c\ube44\uc2a4",
   "private": true,
   "type": "module",
+  "main": "dist/main.js",
+  "exports": {
+    ".": {
+      "import": "./dist/main.js",
+      "types": "./dist/main.d.ts"
+    },
+    "./test-bootstrap": {
+      "import": "./dist/test-bootstrap.js",
+      "types": "./dist/test-bootstrap.d.ts"
+    },
+    "./auth-codec": {
+      "import": "./dist/auth/shared/auth-codec.js",
+      "types": "./dist/auth/shared/auth-codec.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "README.md"],
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsc",
@@ -44,6 +61,7 @@
     }
   },
   "devDependencies": {
+    "@nestjs/testing": "^11.0.0",
     "@types/better-sqlite3": "catalog:",
     "@types/node": "^22.0.0",
     "better-sqlite3": "catalog:",
