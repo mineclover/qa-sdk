@@ -1,6 +1,3 @@
-// @def.boundary event-catalog
-// @def.doc event-catalog
-
 /**
  * Contract test — auto-track의 emit 결과가 AddressContextV1Schema에 부합하는지 검증.
  *
