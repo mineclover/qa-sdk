@@ -426,3 +426,35 @@ coordinate-storage.rule 자동화 ── [트리거: def validate 확장 세션]
 - Pass 2 역전이 금지 (접근 축소는 policy 변경)
 - Hybrid 동기화 (생성 시 UNREGISTERED flag)
 - OTEL span_id 재사용 (별도 ID 체계 없음)
+
+---
+
+## Plan 진행 (Phase 2 ~ Phase 4)
+
+| Plan | 책임 | 상태 |
+|---|---|---|
+| 04a~d | infra-engine PG container + db-bootstrap | ✓ |
+| 05a~d | resource-policy-store dual-target | ✓ |
+| 06a~c | audit-recorder-store dual-target | ✓ |
+| 07a~d | ingest-server key_observations PG | ✓ |
+| 09a~d | sim 인프라 부트스트랩 | ✓ |
+| 10a~c | sim 9 서비스 스캐폴딩 | ✓ |
+| 11a~c | sim 도메인 모델 | ✓ |
+| 11a-1/11b-1/11b-2/11d | Phase 4 인프라 gap 해소 | ✓ |
+| 12a~c | sim cross-service 통신 + 권한 통합 | ✓ |
+| 12a-1/12c-1 | Phase 4 통합 gap 해소 | ✓ |
+| 13a~d | sim 8 시나리오 구현 | ✓ |
+| 14a | sim §5 marginal density 측정 | ✓ |
+| 14b | sim 통합 회귀 + 문서 | ✓ |
+| 15a~e | Phase 3 RLS FORCE | ✓ |
+
+Phase 4 (sim Enterprise PM) 종료. 다음 Phase 5는 별도 backlog로 분리하여 다룰 예정:
+
+- registry-service `/api/event-catalog/taxonomy/marginal-density` endpoint
+- HMAC secret rotation, RS256 KID
+- OTel collector (Tempo/Jaeger) + Grafana 통합
+- 부하 시나리오 (100+ user 동시)
+- Density gating (§5 §4 Phase 3)
+- CI matrix 통합 (sim:smoke → GitHub Actions)
+
+`simulations/enterprise-pm`이 qa-sdk 5축의 회귀 게이트 — 상세: [`/docs/specs/sim-erp-pm-coverage.spec.md`](../../specs/sim-erp-pm-coverage.spec.md).
