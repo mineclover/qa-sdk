@@ -11,6 +11,10 @@ export interface PayloadSummary {
 export interface KeyObservationEntry {
   packedKey: string;
   prefixId: string;
+  /** packed_key에서 parse된 version. 신규 코드에서 명시 권장. */
+  version?: string;
+  /** packed_key에서 parse된 정수 address. 신규 코드에서 명시 권장. */
+  address?: number;
   registered: boolean;
   timestamp: string; // ISO-8601
   payloadFields?: string[];
@@ -21,6 +25,10 @@ export interface KeyObservationEntry {
 export interface KeyObservation {
   packedKey: string;
   prefixId: string;
+  /** 저장 시 항상 채움 (DB 컬럼화 — coordinate-storage.rule §1.1) */
+  version: string;
+  /** 저장 시 항상 채움 (DB 컬럼화) */
+  address: number;
   registered: boolean;
   count: number;
   firstSeen: string;
@@ -37,9 +45,10 @@ export interface KeyObservationSummary {
   prefixBreakdown: Record<string, number>;
 }
 
-/** prefix 레벨 집계 */
+/** prefix 레벨 집계 — version별 분리 (coordinate-storage.rule §1.1: P3) */
 export interface PrefixObservationSummary {
   prefixId: string;
+  version: string;
   distinctKeys: number;
   totalCount: number;
   firstSeen: string;

@@ -10,6 +10,7 @@ import type {
   PrefixObservationSummary,
   PayloadSummary,
 } from "@qa-sdk/core";
+import { parsePackedAddress } from "@qa-sdk/core/coordinates/address-context-schema";
 import type { DbExecutor } from "../../db/client.js";
 import { keyObservations, keyObservationPrefixes } from "../../db/schema.js";
 
@@ -163,6 +164,9 @@ export class DrizzleKeyObservationStore implements KeyObservationStore {
 
     return rows.map((r) => ({
       prefixId: r.prefixId,
+      // PG 스키마는 아직 version 컬럼 미포함 — D1 P3 적용 후 PG도 동기 예정.
+      // 임시: 단일 version "v1"로 보고 (호출부 호환). 실제 분리는 PG 마이그레이션 후.
+      version: "v1",
       distinctKeys: r.distinctKeys,
       totalCount: r.totalCount,
       firstSeen: r.firstSeen.toISOString(),
@@ -172,9 +176,20 @@ export class DrizzleKeyObservationStore implements KeyObservationStore {
 }
 
 function toKeyObservation(row: typeof keyObservations.$inferSelect): KeyObservation {
+  // PG 스키마는 아직 version/address 컬럼 미포함 — D1 P1 적용 후 PG도 동기 예정.
+  // 임시 브릿지: packed_key parse로 도출. 포맷 위반은 ingest invariant 위반 (정상 흐름에서 발생 불가).
+  const parsed = parsePackedAddress(row.packedKey);
+  if (!parsed) {
+    throw new Error(
+      `key_observations row has invalid packed_key format: ${row.packedKey} ` +
+        `(prefix=${row.prefixId}). Expected 'prefix:version:address'.`,
+    );
+  }
   return {
     packedKey: row.packedKey,
     prefixId: row.prefixId,
+    version: parsed.version,
+    address: parsed.address,
     registered: row.registered,
     count: row.count,
     firstSeen: row.firstSeen.toISOString(),
