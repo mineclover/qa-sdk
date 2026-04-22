@@ -13,7 +13,8 @@ import type {
 } from "@qa-sdk/core";
 import { parsePackedAddress } from "@qa-sdk/core/coordinates/address-context-schema";
 import { keyObservations, keyObservationPrefixes } from "../db/schema.js";
-import { parseJsonColumn, type PayloadSummaryJson, EMPTY_PAYLOAD_SUMMARY } from "../db/json-types.js";
+import { parseJsonColumn, type PayloadSummaryJson } from "../db/json-types.js";
+import { EMPTY_PAYLOAD_SUMMARY, mergePayloadSummary } from "./shared/payload-summary.js";
 import type { D1Db } from "./d1-db-type.js";
 
 export class D1KeyObservationStore implements KeyObservationStore {
@@ -212,24 +213,3 @@ function toKeyObservation(row: typeof keyObservations.$inferSelect): KeyObservat
   };
 }
 
-/** 기존 summary에 새 관측 데이터를 누적 merge */
-function mergePayloadSummary(prev: PayloadSummaryJson, entry: KeyObservationEntry): PayloadSummaryJson {
-  const fieldFrequency = { ...prev.fieldFrequency };
-  const sampleValues = { ...prev.sampleValues };
-
-  if (entry.payloadFields) {
-    for (const field of entry.payloadFields) {
-      fieldFrequency[field] = (fieldFrequency[field] ?? 0) + 1;
-    }
-  }
-
-  // sampleValues는 최신 값으로 갱신 (최대 5 필드)
-  if (entry.samplePayload) {
-    const keys = Object.keys(entry.samplePayload).slice(0, 5);
-    for (const key of keys) {
-      sampleValues[key] = entry.samplePayload[key];
-    }
-  }
-
-  return { fieldFrequency, sampleValues };
-}
