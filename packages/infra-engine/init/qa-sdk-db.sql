@@ -75,3 +75,20 @@ CREATE SCHEMA sim;
 -- 테스트 DB는 qa_admin이 모든 권한 (random schema 생성·drop)
 GRANT ALL ON SCHEMA auth, audit, ingest, decision, definition, sim TO qa_admin;
 GRANT CREATE ON DATABASE qa_sdk_test TO qa_admin;
+
+-- 도메인 app role에 qa_sdk_test 의 도메인 schema USAGE 부여
+-- (RLS 정책 테스트가 저권한 role 로 연결 후 정책 적용 효과 검증해야 함 — Plan 15b)
+GRANT USAGE ON SCHEMA auth       TO auth_app;
+GRANT USAGE ON SCHEMA audit      TO audit_app;
+GRANT USAGE ON SCHEMA ingest     TO ingest_app;
+GRANT USAGE ON SCHEMA decision   TO decision_app;
+GRANT USAGE ON SCHEMA definition TO definition_app;
+GRANT USAGE ON SCHEMA sim        TO sim_app;
+
+-- qa_admin 이 만든 테이블에 대해 도메인 app role 에 자동 DML 부여
+ALTER DEFAULT PRIVILEGES FOR ROLE qa_admin IN SCHEMA auth       GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO auth_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE qa_admin IN SCHEMA audit      GRANT SELECT, INSERT                 ON TABLES TO audit_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE qa_admin IN SCHEMA ingest     GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ingest_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE qa_admin IN SCHEMA decision   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO decision_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE qa_admin IN SCHEMA definition GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO definition_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE qa_admin IN SCHEMA sim        GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO sim_app;
