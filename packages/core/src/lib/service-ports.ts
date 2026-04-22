@@ -39,6 +39,16 @@ export const SERVICE_PORTS: readonly ServicePortEntry[] = [
   { name: "payment",            defaultPort: 4300, description: "결제 서비스" },
   // ── 게이트웨이 (8xxx) ──
   { name: "gateway",            defaultPort: 8787, description: "API 게이트웨이 (Hono + Tailscale/CF Workers)" },
+  // ── 시뮬레이션 — Enterprise PM (Phase 4) ──
+  { name: "sim-auth-api",            defaultPort: 4400, description: "시뮬: 사용자/role/department + bitmap 발행" },
+  { name: "sim-pm-api",              defaultPort: 4500, description: "시뮬: Project/Task/Member" },
+  { name: "sim-approval-api",        defaultPort: 4600, description: "시뮬: Budget/Resource/Time-off/Expense workflow" },
+  { name: "sim-notification-api",    defaultPort: 4700, description: "시뮬: 알림·구독" },
+  { name: "sim-reporting-api",       defaultPort: 4800, description: "시뮬: 분석·대시보드 (marginal density 측정)" },
+  { name: "sim-document-api",        defaultPort: 4900, description: "시뮬: 첨부파일·코멘트·버전" },
+  { name: "sim-audit-browser-api",   defaultPort: 5100, description: "시뮬: audit trace explorer API" },
+  { name: "sim-metrics-collector",   defaultPort: 5200, description: "시뮬: Prometheus exporter" },
+  { name: "sim-gateway",             defaultPort: 8888, description: "시뮬: Hono gateway (JWT + traceparent)" },
   // ── 프론트엔드 (5xxx) ──
   { name: "shopping-web",       defaultPort: 5220, description: "쇼핑 데모 사이트" },
   { name: "platform-demo",      defaultPort: 5176, description: "3D 모니터 + 다이어그램 뷰어" },
