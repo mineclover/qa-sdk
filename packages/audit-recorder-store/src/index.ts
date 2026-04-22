@@ -12,3 +12,10 @@ export { SqliteAuditRecorder as DrizzleAuditRecorder } from "./sqlite/adapter.js
 // PG 어댑터 (Plan 06b)
 export { PgAuditRecorder } from "./pg/adapter.js";
 export { auditEntries as auditEntriesPg, AUDIT_ENTRIES_PG_DDL } from "./pg/schema.js";
+
+// Factory (Plan 06c)
+export {
+  createAuditRecorder,
+  type AuditRecorderDialect,
+  type CreateAuditRecorderArgs,
+} from "./factory.js";
