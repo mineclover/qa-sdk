@@ -38,3 +38,10 @@ export {
 } from "./rls-session.js";
 
 export { withRlsContext, getCurrentRlsContext } from "./rls-context-storage.js";
+
+export {
+  RlsContextInterceptor,
+  claimsToRlsContext,
+  decodeBitmapHex,
+  type RlsJwtClaims,
+} from "./rls-nest-interceptor.js";
