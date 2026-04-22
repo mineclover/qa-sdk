@@ -24,12 +24,26 @@
     "@qa-sdk/sim-otel-utils": "workspace:*",
     "audit-recorder-store": "workspace:*",
     "db-bootstrap": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "permission-engine": "workspace:*",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "zod": "^3.24.2"
   },
+  "peerDependencies": {
+    "better-sqlite3": "catalog:",
+    "postgres": "^3.4.0"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": { "optional": true },
+    "postgres": { "optional": true }
+  },
   "devDependencies": {
+    "@nestjs/testing": "^11.0.0",
+    "@types/better-sqlite3": "catalog:",
     "@types/node": "^22.0.0",
+    "better-sqlite3": "catalog:",
+    "postgres": "^3.4.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "vitest": "^1.6.1"

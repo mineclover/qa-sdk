@@ -7,6 +7,7 @@ import { BitmapCacheModule } from "@qa-sdk/sim-bitmap-cache";
 import { env } from "./config/env.js";
 import { createLogger } from "./lib/logger.js";
 import { createSubscriberLogger } from "./lib/bitmap-cache-logger.js";
+import { AuditExplorerModule } from "./audit-explorer/audit-explorer.module.js";
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { createSubscriberLogger } from "./lib/bitmap-cache-logger.js";
       lruMax: 10_000,
       logger: createSubscriberLogger(createLogger("sim-audit-browser-api.bitmap-cache")),
     }),
+    AuditExplorerModule,
   ],
 })
 export class AppModule {}
