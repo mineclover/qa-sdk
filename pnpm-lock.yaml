@@ -478,6 +478,9 @@ importers:
 
   packages/core:
     dependencies:
+      definition-catalog:
+        specifier: workspace:*
+        version: link:../definition-catalog
       pino:
         specifier: workspace:@qa-sdk/pino@*
         version: link:../pino

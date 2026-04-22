@@ -27,6 +27,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "definition-catalog": "workspace:*",
     "pino": "workspace:@qa-sdk/pino@*",
     "test-types": "workspace:*",
     "ulid": "^2.3.0",
