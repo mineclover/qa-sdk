@@ -129,6 +129,7 @@ services:
     volumes:
       - qa-sdk-db-data:/var/lib/postgresql/data
       - ./init/qa-sdk-db.sql:/docker-entrypoint-initdb.d/00-qa-sdk-db.sql:ro
+      - ./init/qa-sdk-db-helpers.sql:/docker-entrypoint-initdb.d/10-qa-sdk-db-helpers.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d qa_sdk"]
       interval: 5s
