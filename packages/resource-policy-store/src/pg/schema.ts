@@ -11,7 +11,8 @@ import { index, pgSchema, text, varchar } from "drizzle-orm/pg-core";
  *     (SQLite와 동일 패턴, drizzle pg enum은 별도 마이그레이션 필요해 회피)
  *   - text 컬럼은 PG에서도 text (둘 다 unbounded)
  *
- * RLS는 본 schema에 enable만, 정책 정의는 Phase 3 RLS plan.
+ * RLS 정책: Plan 15b (Phase 3) 로 rp_select/insert/update/delete/admin_bypass 5 정책 배포 완료.
+ * FORCE 활성화는 Plan 15e 에서 토글.
  */
 const authSchema = pgSchema("auth");
 
@@ -57,11 +58,57 @@ CREATE INDEX IF NOT EXISTS idx_rp_owner_pg ON auth.resource_policies(owner_id);
 CREATE INDEX IF NOT EXISTS idx_rp_state_pg ON auth.resource_policies(state);
 CREATE INDEX IF NOT EXISTS idx_rp_type_pg ON auth.resource_policies(resource_type);
 
--- RLS placeholder — Phase 3 RLS plan에서 정책 추가
+-- RLS — Phase 3 Plan 15b 실제 정책
+-- helper: auth.has_bit / auth.current_user_id / auth.resource_state / auth.current_role_tag (Plan 15a)
+-- bit 상수: packages/resource-policy-store/src/pg/rls-bits.ts (RP_READ_BIT=10 / WRITE=11 / DELETE=12)
+
 ALTER TABLE auth.resource_policies ENABLE ROW LEVEL SECURITY;
--- 현재는 정책 없음 → 모든 row invisible. Phase 3 전까지는 owner role bypass 필수.
--- 임시 fallback 정책 (Phase 3에서 더 정교한 정책으로 교체):
-CREATE POLICY rp_temp_allow_all ON auth.resource_policies
-  USING (true)
-  WITH CHECK (true);
+
+-- 0. admin bypass — qa_admin role 이면서 session 에 app.role='admin' 주입된 경우에만
+CREATE POLICY rp_admin_bypass ON auth.resource_policies
+  FOR ALL
+  USING (auth.current_role_tag() = 'admin')
+  WITH CHECK (auth.current_role_tag() = 'admin');
+
+-- 1. SELECT — Pass 1: RP_READ_BIT(10) set AND Pass 2: UNREGISTERED & owner 본인
+CREATE POLICY rp_select_policy ON auth.resource_policies
+  FOR SELECT
+  USING (
+    auth.has_bit(10)
+    AND state = 'UNREGISTERED'
+    AND owner_id = auth.current_user_id()
+  );
+
+-- 2. INSERT — owner_id 가 현재 세션과 일치 + RP_WRITE_BIT(11)
+CREATE POLICY rp_insert_policy ON auth.resource_policies
+  FOR INSERT
+  WITH CHECK (
+    auth.has_bit(11)
+    AND owner_id = auth.current_user_id()
+  );
+
+-- 3. UPDATE — 기존 row 가 UNREGISTERED & owner + 변경 후에도 owner 유지
+CREATE POLICY rp_update_policy ON auth.resource_policies
+  FOR UPDATE
+  USING (
+    auth.has_bit(11)
+    AND state = 'UNREGISTERED'
+    AND owner_id = auth.current_user_id()
+  )
+  WITH CHECK (
+    owner_id = auth.current_user_id()
+  );
+
+-- 4. DELETE — UNREGISTERED & owner + RP_DELETE_BIT(12)
+CREATE POLICY rp_delete_policy ON auth.resource_policies
+  FOR DELETE
+  USING (
+    auth.has_bit(12)
+    AND state = 'UNREGISTERED'
+    AND owner_id = auth.current_user_id()
+  );
+
+-- REGISTERED/DELEGATED 리소스 DB 직접 접근 의도적 차단 (spec §정의 3 핵심 결정).
+-- 해당 상태의 row 는 모든 non-admin 정책이 false 반환 → invisible.
+-- 관리 CLI 등은 admin bypass(app.role='admin') 경로로만 접근 가능.
 `;
