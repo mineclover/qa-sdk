@@ -6,7 +6,7 @@ def:
   scope: interface
   aspect: api_contract
   depth: specification
-  lifecycle: draft
+  lifecycle: implemented
   layer: operation
   svc: authorization-ontology
   tags: [security, observability, audit, tracing]
@@ -204,6 +204,8 @@ check entry는 양이 많으므로(API 1회 = 1~3 check) 조기 축약.
 4. **Phase 4 — 보관 정책**
    - 축약·archive 배치
    - retention compliance 감사 스크립트
+
+> **구현 상태**: Phase 1 (DrizzleAuditRecorder, audit-recorder-store)·Phase 2 (OtelAuditRecorder wrapper) 완료. Phase 3 (retention 배치, monitor-web trace explorer) 및 Phase 4 (보관 정책) 미구현 — 시뮬 프로젝트 Phase 4 데이터 확보 후 별도 plan으로 추진.
 
 ### 테스트 전략
 
