@@ -1,6 +1,10 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
+// TODO(audit-versioning): D1 스키마는 (prefix_id, version, address)로 분리 완료(0001/0002 마이그레이션).
+//   ClickHouse는 운영 도입 시점에 동일 패턴 적용 — version LowCardinality(String) + ORDER BY (prefix_id, version, packed_key).
+//   현재는 실 운영 적용 전이라 D1과 동기 보류. coordinate-storage.rule §1.1 참조.
+
 /**
  * ClickHouse DDL — ReplacingMergeTree 기반 이벤트 저장.
  *
