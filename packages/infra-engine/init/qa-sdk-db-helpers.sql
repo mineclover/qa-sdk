@@ -40,9 +40,21 @@ $$;
 
 -- 3. auth.resource_state — 특정 resource_id 의 state 조회.
 --    미존재 리소스는 NULL (정책 조건식에서 NULL은 false로 취급 → default deny).
+--    plpgsql + EXECUTE 로 late-binding — auth.resource_policies 테이블이
+--    helper 정의 시점에 없어도 생성 가능 (Plan 05b PG adapter 미배포 시 대비).
 CREATE OR REPLACE FUNCTION auth.resource_state(rid TEXT) RETURNS TEXT
-  LANGUAGE sql STABLE
-  AS $$ SELECT state FROM auth.resource_policies WHERE resource_id = rid $$;
+  LANGUAGE plpgsql STABLE AS $$
+DECLARE
+  result TEXT;
+BEGIN
+  EXECUTE 'SELECT state FROM auth.resource_policies WHERE resource_id = $1'
+    INTO result USING rid;
+  RETURN result;
+EXCEPTION WHEN undefined_table OR invalid_schema_name THEN
+  -- 테이블 미존재 시 NULL — default deny 유도.
+  RETURN NULL;
+END;
+$$;
 
 -- 4. auth.current_role_tag — session의 app.role 값 (admin bypass 식별 용).
 --    'admin' 일 때만 bypass 정책 매칭, 그 외엔 NULL.
@@ -85,8 +97,17 @@ END;
 $$;
 
 CREATE OR REPLACE FUNCTION auth.resource_state(rid TEXT) RETURNS TEXT
-  LANGUAGE sql STABLE
-  AS $$ SELECT state FROM auth.resource_policies WHERE resource_id = rid $$;
+  LANGUAGE plpgsql STABLE AS $$
+DECLARE
+  result TEXT;
+BEGIN
+  EXECUTE 'SELECT state FROM auth.resource_policies WHERE resource_id = $1'
+    INTO result USING rid;
+  RETURN result;
+EXCEPTION WHEN undefined_table OR invalid_schema_name THEN
+  RETURN NULL;
+END;
+$$;
 
 CREATE OR REPLACE FUNCTION auth.current_role_tag() RETURNS TEXT
   LANGUAGE sql STABLE
