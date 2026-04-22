@@ -1,31 +1,91 @@
 // @def.boundary sim-pm-api
-// @def.doc sim-erp-pm-design
+// @def.doc authorization-ontology-resource-lifecycle
 
-import { Body, Controller, Delete, Get, NotFoundException, Param, Post, Put, Query } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import { z } from "zod";
 import { ProjectService } from "./project.service.js";
+import { ProjectAccessService } from "./project-access.service.js";
+import { CurrentUser, type CurrentUserContext } from "../../auth-deps/current-user.decorator.js";
+import { CurrentUserGuard } from "../../auth-deps/current-user.guard.js";
 
 const createSchema = z.object({
   name: z.string().min(1),
-  ownerId: z.string().min(1),
   departmentId: z.string().min(1),
   status: z.enum(["draft", "active", "archived"]).optional(),
 });
 
+const updateSchema = createSchema.partial();
+
 @Controller("projects")
+@UseGuards(CurrentUserGuard)
 export class ProjectController {
-  constructor(private readonly svc: ProjectService) {}
+  constructor(
+    private readonly svc: ProjectService,
+    private readonly access: ProjectAccessService,
+  ) {}
 
   @Post()
-  async create(@Body() body: unknown) {
-    return this.svc.create(createSchema.parse(body));
+  async create(@Body() body: unknown, @CurrentUser() user: CurrentUserContext) {
+    const parsed = createSchema.parse(body);
+
+    // Pass 1/2 사전 체크 — 생성 시점은 targetId=null, transaction kind 로 평가
+    const pre = await this.access.check({
+      apiId: "project.create",
+      user,
+      targetId: null,
+      departmentId: parsed.departmentId,
+    });
+    if (!pre.allow) {
+      throw new ForbiddenException({
+        error: "access_denied",
+        denyReason: pre.denyReason,
+        rootSpanId: pre.rootSpanId,
+      });
+    }
+
+    // ownerId 는 JWT sub 에서 도출 (body 에 없음)
+    const project = await this.svc.create({
+      name: parsed.name,
+      ownerId: user.userId,
+      departmentId: parsed.departmentId,
+      status: parsed.status,
+    });
+
+    return { ...project, rootSpanId: pre.rootSpanId };
   }
 
   @Get(":id")
-  async get(@Param("id") id: string) {
+  async get(@Param("id") id: string, @CurrentUser() user: CurrentUserContext) {
     const p = await this.svc.find(id);
     if (!p) throw new NotFoundException(`Project not found: ${id}`);
-    return p;
+
+    const check = await this.access.check({
+      apiId: "project.read",
+      user,
+      targetId: id,
+      resourceOwnerId: p.ownerId,
+      departmentId: p.departmentId,
+    });
+    if (!check.allow) {
+      throw new ForbiddenException({
+        error: "access_denied",
+        denyReason: check.denyReason,
+        rootSpanId: check.rootSpanId,
+      });
+    }
+    return { ...p, rootSpanId: check.rootSpanId };
   }
 
   @Get()
@@ -36,13 +96,53 @@ export class ProjectController {
   }
 
   @Put(":id")
-  async update(@Param("id") id: string, @Body() body: unknown) {
-    return this.svc.update(id, createSchema.partial().parse(body));
+  async update(
+    @Param("id") id: string,
+    @Body() body: unknown,
+    @CurrentUser() user: CurrentUserContext,
+  ) {
+    const parsed = updateSchema.parse(body);
+    const p = await this.svc.find(id);
+    if (!p) throw new NotFoundException(`Project not found: ${id}`);
+
+    const check = await this.access.check({
+      apiId: "project.update",
+      user,
+      targetId: id,
+      resourceOwnerId: p.ownerId,
+      departmentId: p.departmentId,
+    });
+    if (!check.allow) {
+      throw new ForbiddenException({
+        error: "access_denied",
+        denyReason: check.denyReason,
+        rootSpanId: check.rootSpanId,
+      });
+    }
+    const updated = await this.svc.update(id, parsed);
+    return { ...updated, rootSpanId: check.rootSpanId };
   }
 
   @Delete(":id")
-  async remove(@Param("id") id: string) {
+  async remove(@Param("id") id: string, @CurrentUser() user: CurrentUserContext) {
+    const p = await this.svc.find(id);
+    if (!p) throw new NotFoundException(`Project not found: ${id}`);
+
+    const check = await this.access.check({
+      apiId: "project.delete",
+      user,
+      targetId: id,
+      resourceOwnerId: p.ownerId,
+      departmentId: p.departmentId,
+    });
+    if (!check.allow) {
+      throw new ForbiddenException({
+        error: "access_denied",
+        denyReason: check.denyReason,
+        rootSpanId: check.rootSpanId,
+      });
+    }
     await this.svc.delete(id);
-    return { status: "deleted" };
+    return { status: "deleted", rootSpanId: check.rootSpanId };
   }
 }
