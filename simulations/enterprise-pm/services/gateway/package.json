@@ -14,14 +14,19 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.14.1",
+    "@opentelemetry/api": "^1.9.0",
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/logger": "workspace:*",
     "@qa-sdk/otel": "workspace:*",
     "hono": "^4.7.5",
     "jose": "^5.9.0",
+    "permission-engine": "workspace:*",
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@opentelemetry/context-async-hooks": "^1.30.1",
+    "@opentelemetry/core": "^1.30.1",
+    "@opentelemetry/sdk-trace-base": "^1.30.1",
     "@types/node": "^22.0.0",
     "tsup": "^8.5.1",
     "tsx": "^4.19.3",
