@@ -6,6 +6,7 @@ import { sqliteTable, text, integer, real, primaryKey, index } from "drizzle-orm
 export const budgetRequests = sqliteTable("budget_requests", {
   id: text("id").primaryKey(),
   projectId: text("project_id").notNull(),
+  projectDepartmentId: text("project_department_id").notNull().default(""),
   amount: real("amount").notNull(),
   requesterId: text("requester_id").notNull(),
   status: text("status", {
@@ -70,7 +71,9 @@ export const expenseReports = sqliteTable("expense_reports", {
 
 export const SIM_APPROVAL_SQLITE_DDL = `
 CREATE TABLE IF NOT EXISTS budget_requests (
-  id TEXT PRIMARY KEY, project_id TEXT NOT NULL, amount REAL NOT NULL,
+  id TEXT PRIMARY KEY, project_id TEXT NOT NULL,
+  project_department_id TEXT NOT NULL DEFAULT '',
+  amount REAL NOT NULL,
   requester_id TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('draft','submitted','in_review','approved','rejected','revision_requested')),
   current_stage INTEGER NOT NULL, total_stages INTEGER NOT NULL,

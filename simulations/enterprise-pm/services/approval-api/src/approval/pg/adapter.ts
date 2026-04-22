@@ -39,6 +39,7 @@ export class PgApprovalRepository implements ApprovalRepository {
     const request: BudgetRequest = {
       id: randomUUID(),
       projectId: args.projectId,
+      projectDepartmentId: args.projectDepartmentId ?? "",
       amount: args.amount,
       requesterId: args.requesterId,
       status: "draft",

@@ -10,6 +10,8 @@ export type StepDecision = "approved" | "rejected" | "pending";
 export interface BudgetRequest {
   id: string;
   projectId: string;
+  /** project 의 departmentId 를 denormalize. cross-dept 검증 입력 (Plan 11b-2). */
+  projectDepartmentId: string;
   amount: number;          // 원 단위
   requesterId: string;
   status: RequestStatus;
@@ -63,6 +65,8 @@ export interface ExpenseReport {
 
 export interface BudgetRequestCreate {
   projectId: string;
+  /** Plan 11b-2 — cross-dept 검증용 denormalize. 기본 빈 문자열 허용. */
+  projectDepartmentId?: string;
   amount: number;
   requesterId: string;
 }

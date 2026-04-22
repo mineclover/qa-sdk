@@ -15,6 +15,7 @@ const sim = pgSchema("sim");
 export const budgetRequests = sim.table("approval_budget_requests", {
   id: text("id").primaryKey(),
   projectId: text("project_id").notNull(),
+  projectDepartmentId: text("project_department_id").notNull().default(""),
   amount: doublePrecision("amount").notNull(),
   requesterId: text("requester_id").notNull(),
   status: text("status", {
@@ -81,7 +82,9 @@ export const SIM_APPROVAL_PG_DDL = `
 CREATE SCHEMA IF NOT EXISTS sim;
 
 CREATE TABLE IF NOT EXISTS sim.approval_budget_requests (
-  id TEXT PRIMARY KEY, project_id TEXT NOT NULL, amount DOUBLE PRECISION NOT NULL,
+  id TEXT PRIMARY KEY, project_id TEXT NOT NULL,
+  project_department_id TEXT NOT NULL DEFAULT '',
+  amount DOUBLE PRECISION NOT NULL,
   requester_id TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('draft','submitted','in_review','approved','rejected','revision_requested')),
   current_stage INTEGER NOT NULL, total_stages INTEGER NOT NULL,
@@ -128,7 +131,9 @@ DROP TABLE IF EXISTS sim.approval_time_off_requests CASCADE;
 DROP TABLE IF EXISTS sim.approval_expense_reports CASCADE;
 
 CREATE TABLE sim.approval_budget_requests (
-  id TEXT PRIMARY KEY, project_id TEXT NOT NULL, amount DOUBLE PRECISION NOT NULL,
+  id TEXT PRIMARY KEY, project_id TEXT NOT NULL,
+  project_department_id TEXT NOT NULL DEFAULT '',
+  amount DOUBLE PRECISION NOT NULL,
   requester_id TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('draft','submitted','in_review','approved','rejected','revision_requested')),
   current_stage INTEGER NOT NULL, total_stages INTEGER NOT NULL,
