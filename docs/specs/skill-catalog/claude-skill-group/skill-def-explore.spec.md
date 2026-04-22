@@ -13,6 +13,8 @@ def:
       type: refines
     - target: definition-catalog-spec
       type: depends_on
+    - target: definition-frontmatter-metadata-system
+      type: depends_on
 ---
 # /def-explore — 시스템 구조 탐색
 
@@ -25,17 +27,19 @@ skill-catalog-system > claude-skill-group > **skill-def-explore**
 
 ## 목적 ^purpose
 
-qa-sdk 시스템의 문서 체계를 탐색하고 이해하는 가이드. 시스템 철학, 분해 레벨, 분류 체계, 서비스 구조를 안내한다.
+qa-sdk 시스템의 문서 체계를 탐색하고 이해하는 가이드. 시스템 철학, E/C/I/S + L/P 책임, frontmatter metadata option system, 분류 체계, 서비스 구조를 안내한다.
 
 ## 정의 ^defines
 
 - 탐색 진입점 (guide, topdown, search, context)
 - 시스템 영역별 규모 요약
+- frontmatter option catalog 진입점 (`definition-frontmatter-metadata-system`, `definition-metadata-*`)
 
 ## 소비 ^consumes
 
 - definition-catalog (문서 체계)
 - definition-taxonomy (분류 축)
+- definition-frontmatter-metadata-system (metadata option catalog)
 - CLI def 서브커맨드 (guide, topdown, search, context)
 
 ## 관련 소스

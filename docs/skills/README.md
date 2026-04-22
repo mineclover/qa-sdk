@@ -57,7 +57,7 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
 ### 운영 플레이북
 
 - `docs/skills/automation-workflows.md`
-  `bdd-contract`, `e2e-test`, `gform-parser`, `spec-lifecycle` 사용 순서
+  `bdd-contract`, `e2e-test`, `gform-parser`, `spec-lifecycle`, `event-taxonomy-gate` 사용 순서
 - `skills/event-taxonomy-gate/SKILL.md`
   registry event taxonomy의 migrate/check/assert 운영 게이트
 - `skills/dkg-audit/SKILL.md`
@@ -86,6 +86,8 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
   구조 변경 시 Phase 0 시뮬레이션 선행 규율 — semantic-change Step 2 의 근거
 - `docs/specs/system/validator-suppression-tags.rule.md`
   validator 경고 억제 수단 전수 목록 — def-validate / def-audit 의 suppression 판단 근거
+- `docs/specs/definition-catalog/definition-frontmatter-metadata-system.spec.md`
+  frontmatter metadata option catalog — `tier/type/owner_system/scope/aspect/depth/lifecycle/links/source` 같은 option 하나하나의 의미와 검증 소유자
 - `docs/skills/decide.md`
   decision-flow 실행 절차
 
@@ -97,6 +99,10 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
   definition-catalog 계열
 - `docs/specs/skill-catalog/automation-skill-group.md`
   테스트/파서/문서 전환 자동화
+- `docs/specs/skill-catalog/infra-skill-group.md`
+  로컬 인프라 배포/조회/export/status
+- `docs/specs/skill-catalog/governance-skill-group.md`
+  semantic-change와 DKG audit 같은 구조 거버넌스
 - `docs/specs/skill-catalog/ralph-tui-skill-group.md`
   ralph-tui PRD/작업 생성
 

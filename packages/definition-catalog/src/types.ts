@@ -294,6 +294,7 @@ export type ConcernTag =
  */
 export type StructuralTag =
   | "cross-scope"    // 여러 scope에 걸치는 통합 문서
+  | "coordinate-cluster" // 동일 high-level coordinate를 의도적으로 공유하는 peer system 묶음
   | "entry-point"    // 진입점 — 이 주제의 시작 문서
   | "decision"       // 의사결정 기록이 포함됨
   | "generated";     // codegen 등으로 자동 생성된 문서

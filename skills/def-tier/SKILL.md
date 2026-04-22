@@ -10,12 +10,19 @@ level(분해 위치)과 직교하며, 구조 검증의 핵심 축이다.
 
 STC (Semantic Topological Coordinate) 체계: `tier × scope × layer` 좌표의 `tier` 축.
 
+`tier` option 자체의 canonical 정의는 `definition-metadata-tier`가 소유한다. 이 skill은 그 option을 실제 문서에 적용하는 판단 절차다.
+
+```bash
+qa-sdk def get definition-metadata-tier
+qa-sdk def get definition-frontmatter-metadata-system
+```
+
 ## 4종 티어
 
 | tier | 질문 | 본질 |
 |------|------|------|
 | `system` | "이것은 독립적으로 동작하는 연산 집합인가?" | 코드 패키지·서비스 경계를 대표하는 스펙 |
-| `layout` | "이것은 여러 시스템을 조망하는 뷰인가?" | 조직화된 읽기 뷰. 코드 경계 없음 |
+| `layout` | "이것은 여러 시스템/팩을 조망하는 뷰인가?" | 조직화된 읽기/배치 뷰. 코드 경계 없음 |
 | `component` | "이것은 수동적으로 참조되는 데이터 형태인가?" | 링크 대상 전용. 독립 동작 없음. 6 sub-type |
 | `entry` | "이것은 ID로 컴포넌트들을 묶는 정체성인가?" | ECS entity 유사. R-2 조건부 존재 |
 
@@ -45,11 +52,11 @@ STC (Semantic Topological Coordinate) 체계: `tier × scope × layer` 좌표의
 
 depth만으로 확정 불가 — 다음 step 계속.
 
-### Step 2 — Layout 감지
+### Step 2 — Layout / Pack 감지
 
-**Layout 확정 (A ∧ B ∧ ¬C)**:
+**Layout / Pack 확정 (A ∧ B ∧ ¬C)**:
 - A: `level === "group"` 또는 `depth === "overview"`
-- B: `contains` 자식 ≥ 2 + 그 중 `module` 레벨 2건 이상
+- B: `refs` 대상 ≥ 1 또는 여러 System/Interface를 조망/배치/배포 묶음으로 조직
 - C: operations(함수/메서드 블록) 없음
 
 → `tier: layout`
@@ -104,6 +111,16 @@ frontmatter: `component_subtype: data-shape` (6 값 중 하나)
   - 대신: `depends_on` (의존), `refs` (참조), `traces_to` (추적)
 - **코드 경계 가능** — `@def.boundary <id>` 소유 가능
 - **상태 관리 시 meta-semantic 위임** — State enum은 Component로 분리, 전이 규칙은 `lifecycle_ref`로 참조
+- **문서 분할 기준점** — E/C/I/S + L/P 분할은 먼저 어떤 system이 책임지는지 정한 뒤 그 내부에서 수행
+
+### Interface / DSL 평면 (I)
+
+`interface`는 현재 별도 tier 값이 아니라 소비 계약 평면이다. 보통 `scope: interface` + `aspect: api_contract|cli_contract|event_contract` 또는 rule/spec 문서로 표현한다.
+
+- System을 어떻게 소비할지 정의한다.
+- Component의 data/state/evidence vocabulary를 참조한다.
+- Runtime behavior, validator, projector, writer를 소유하지 않는다. 그런 behavior는 System 문서로 분리한다.
+- 여러 Interface 문법 조각을 조망하거나 배포/문서 묶음으로 조직하는 문서는 Layout/Pack으로 둔다.
 
 ```yaml
 def:
@@ -133,6 +150,7 @@ def:
 - **refs 필수** — 최소 1개 이상의 `refs` 링크
 - **코드 경계 없음**
 - **생성적 소비 컨텍스트** — 안에서 새 System/Component 발견 가능 (단, inline 정의 아닌 독립 문서로 promote)
+- **Pack 표현 가능** — 배포/문서 묶음이 behavior/data ownership 없이 여러 System/Interface를 조직하면 layout-like pack으로 본다.
 
 ```yaml
 def:
@@ -184,6 +202,7 @@ def:
 |------|------|------|
 | `system`인데 다른 `system`을 `contains` | System 독립성 위반 | `contains → depends_on` |
 | `layout`인데 `refs`가 없음 | 뷰가 비어있음 | refs 추가 또는 `tier: system` 변경 |
+| `layout`인데 `contains`로 세부 문서를 소유 | Layout/Pack이 ownership을 가짐 | `contains → refs` 또는 owner System으로 이동 |
 | `component`인데 `contains` 자식 다수 | 실제로는 system | `tier: system`으로 변경 |
 | 상태 전이 로직이 System 내부에 직접 있음 | D-17 위반 | State enum → Component, 전이 → `lifecycle_ref` |
 | 코드 경계(`@def.boundary`)가 있는데 `layout` | 경계 소유는 system만 | `tier: system`으로 변경 |
@@ -197,6 +216,7 @@ def:
 |------|----------|----------|
 | `level: group` + 코드 패키지 소유 | `system` | 코드 경계 소유 여부 |
 | `level: group` + 조망 뷰 | `layout` | refs 링크만 가지는지 |
+| `level: group` + 여러 System/Interface 묶음 | `layout` | Pack/Layout 역할인지 |
 | `level: module` + 독립 동작 | `system` | 독립 실행 가능 여부 |
 | `level: leaf` + 데이터 형태 | `component` | 수동 참조 여부 |
 | `level: leaf` + 코드 경계 소유 | `system` | `@def.boundary` 존재 여부 |

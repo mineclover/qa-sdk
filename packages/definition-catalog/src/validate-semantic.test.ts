@@ -278,4 +278,81 @@ describe("validateGraph semantic overrides", () => {
     const result = validateGraph(reg);
     expect(result.issues.filter((issue) => issue.type === "contains-depth-violation")).toHaveLength(1);
   });
+
+  it("coordinate-cluster 태그가 그룹 전원에 있으면 duplicate-coordinate을 허용한다", () => {
+    const reg = new MemoryDefinitionRegistry();
+
+    reg.register(doc({
+      id: "metadata-root",
+      title: "Metadata Root",
+      tier: "layout",
+      scope: "data",
+      aspect: "system_data",
+      depth: "overview",
+      layer: "operation",
+    }));
+    reg.register(doc({
+      id: "metadata-option-a",
+      title: "Metadata Option A",
+      tier: "system",
+      scope: "data",
+      aspect: "system_data",
+      depth: "specification",
+      layer: "operation",
+      tags: ["coordinate-cluster"],
+    }));
+    reg.register(doc({
+      id: "metadata-option-b",
+      title: "Metadata Option B",
+      tier: "system",
+      scope: "data",
+      aspect: "system_data",
+      depth: "specification",
+      layer: "operation",
+      tags: ["coordinate-cluster"],
+    }));
+    reg.link("metadata-option-a", "metadata-root", "refines");
+    reg.link("metadata-option-b", "metadata-root", "refines");
+
+    const result = validateGraph(reg);
+    expect(result.issues.filter((issue) => issue.type === "duplicate-coordinate")).toHaveLength(0);
+  });
+
+  it("coordinate-cluster 태그가 일부 문서에만 있으면 duplicate-coordinate을 계속 경고한다", () => {
+    const reg = new MemoryDefinitionRegistry();
+
+    reg.register(doc({
+      id: "metadata-root",
+      title: "Metadata Root",
+      tier: "layout",
+      scope: "data",
+      aspect: "system_data",
+      depth: "overview",
+      layer: "operation",
+    }));
+    reg.register(doc({
+      id: "metadata-option-a",
+      title: "Metadata Option A",
+      tier: "system",
+      scope: "data",
+      aspect: "system_data",
+      depth: "specification",
+      layer: "operation",
+      tags: ["coordinate-cluster"],
+    }));
+    reg.register(doc({
+      id: "metadata-option-b",
+      title: "Metadata Option B",
+      tier: "system",
+      scope: "data",
+      aspect: "system_data",
+      depth: "specification",
+      layer: "operation",
+    }));
+    reg.link("metadata-option-a", "metadata-root", "refines");
+    reg.link("metadata-option-b", "metadata-root", "refines");
+
+    const result = validateGraph(reg);
+    expect(result.issues.filter((issue) => issue.type === "duplicate-coordinate")).toHaveLength(1);
+  });
 });

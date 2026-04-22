@@ -56,7 +56,17 @@ def:
 | 권장 사용 | `docs/proposals/**` 의 모든 문서, `docs/specs/**/*.adr.md`, convention 문서 |
 | 오용 금지 | 정규 spec 을 knowledge 로 표기하여 dup-coord 회피 금지 — type 은 문서 역할의 1급 선언 |
 
-### 1.4 `tags: [cross-scope]`
+### 1.4 `tags: [coordinate-cluster]`
+
+| 항목 | 값 |
+|---|---|
+| 발동 지점 | `validate.ts` duplicate-coordinate 검사 (그룹 전원 요구) |
+| 억제 대상 | `duplicate-coordinate` |
+| 의미 | 같은 layout 아래의 peer system 들이 동일 high-level coordinate 를 의도적으로 공유한다는 선언 |
+| 권장 사용 | metadata option system 묶음처럼 같은 vocabulary 안에서 `id`별 독립 책임을 표현하는 경우 (`definition-metadata-*`) |
+| 오용 금지 | multi-parent 억제에는 쓰지 않는다. 실제 cross-scope 문서에는 `cross-scope`, 같은 좌표 co-location 에는 `coordinate-cluster`를 사용한다. 그룹 전원에 태그가 있어야 한다. |
+
+### 1.5 `tags: [cross-scope]`
 
 | 항목 | 값 |
 |---|---|
@@ -66,7 +76,7 @@ def:
 | 권장 사용 | peer service 묶음 (content/payment/shopping-backend), sibling subsystem (dkg-skill-catalog vs dkg-state-store), cross-domain tool (spec-analyzer vs spec-tracker) |
 | 오용 금지 | dup-coord 에서는 **그룹 전원** 에 태그가 있어야 함 — 일부만 태그 시 의도성이 불명확하므로 validator 는 여전히 경고. 일부만 태그 부여로 회피 시도 금지 |
 
-### 1.5 `tags: [orphan-expected]`
+### 1.6 `tags: [orphan-expected]`
 
 | 항목 | 값 |
 |---|---|
@@ -156,7 +166,8 @@ validator 에 새 억제 메커니즘을 추가할 때:
 1. `lifecycle: deprecated` (최상위) — 거의 모든 검사 skip
 2. `knowledgeKind: proposal|adr|convention` — dup-coord skip
 3. `tier: component` — dup-coord skip
-4. `tags: [cross-scope]` — multi-parent / dup-coord skip (그룹 전원 요구)
+4. `tags: [coordinate-cluster]` — duplicate-coordinate skip (그룹 전원 요구)
+5. `tags: [cross-scope]` — multi-parent / dup-coord skip (그룹 전원 요구)
 5. `tags: [orphan-expected]` / `.cases.md` / `.test.md` — orphan skip
 
 ### 2.3 그룹 전원 요구 — cross-scope 의 엄격성

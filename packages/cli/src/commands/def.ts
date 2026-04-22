@@ -420,14 +420,19 @@ async function cmdBody(source: DefDataSource, docId: string, flags: Record<strin
 }
 
 async function cmdChildren(source: DefDataSource, docId: string) {
-  // contains 순방향 + depends_on/refines 역방향 union (Phase 3b Option B).
-  const members = await collectDomainMembers(source, docId);
-  const contains = new Set((await source.getChildren(docId)).map(c => c.docId));
-  console.log(`[${source.mode}] ${docId} → ${members.length} children`);
-  for (const c of members) {
+  const relations = await collectDomainRelations(source, docId);
+  console.log(`[${source.mode}] ${docId} → ${relations.members.length} members, ${relations.consumers.length} consumers`);
+  if (relations.members.length > 0) console.log(`  members:`);
+  for (const relation of relations.members) {
+    const c = relation.doc;
     const levelBadge = c.level && c.level !== "leaf" ? `[${c.level}] ` : "";
-    const via = contains.has(c.docId) ? "contains" : "depends_on←";
-    console.log(`  ${levelBadge}${c.docId}  ${c.scope ?? "?"}/${c.aspect ?? "?"}  ${c.lifecycle}  (${via})`);
+    console.log(`    ${levelBadge}${c.docId}  ${c.scope ?? "?"}/${c.aspect ?? "?"}  ${c.lifecycle}  (${relation.via})`);
+    if (c.purpose) console.log(`    ${c.purpose.slice(0, 90)}`);
+  }
+  if (relations.consumers.length > 0) console.log(`  consumers (incoming depends_on):`);
+  for (const relation of relations.consumers) {
+    const c = relation.doc;
+    console.log(`    ${c.docId}  ${c.scope ?? "?"}/${c.aspect ?? "?"}  ${c.lifecycle}  (${relation.via})`);
     if (c.purpose) console.log(`    ${c.purpose.slice(0, 90)}`);
   }
 }
@@ -831,43 +836,90 @@ async function cmdAuditDb(source: DefDataSource) {
 
 // ── topdown (DefDataSource 기반) ──────────────────────
 
+type DomainRelationVia = "contains" | "refs" | "refines←" | "depends_on←";
+
+interface DomainRelation {
+  readonly doc: DefDoc;
+  readonly via: DomainRelationVia;
+}
+
+interface DomainRelations {
+  readonly members: readonly DomainRelation[];
+  readonly consumers: readonly DomainRelation[];
+}
+
 /**
- * 도메인 멤버 조회 — Phase 3b Option B 데이터 모델을 반영한 union 탐색.
+ * 도메인 관계 조회 — Phase 3b Option B 데이터 모델을 반영하되,
+ * 구조 멤버와 소비자를 분리한다.
  *
  * - contains 순방향: 전통적인 group → member 선언 (system-infra 등 레거시 레이아웃).
- * - depends_on 역방향: 자식이 부모를 "나는 X 에 속한다" 로 선언하는 신규 모델.
+ * - refs 순방향: Layout/Pack 이 독립 System/Interface 를 조망.
  * - refines 역방향: 추상 → 구체 관계로 파생 문서를 포함.
+ * - depends_on 역방향: 이 문서를 소비하는 dependents. 구조 멤버처럼 출력하지 않는다.
  *
- * 세 경로의 union 을 반환하여 구형/신형 레이아웃을 모두 커버한다.
+ * Option B 이후 incoming depends_on 이 membership 처럼 쓰인 케이스가 있었지만,
+ * 일반 의존자도 같은 경로에 걸리므로 UX 에서는 별도 consumer 섹션으로 분리한다.
  */
-async function collectDomainMembers(
+async function collectDomainRelations(
   source: DefDataSource,
   parentId: string,
-): Promise<DefDoc[]> {
-  const seen = new Set<string>();
-  const members: DefDoc[] = [];
+): Promise<DomainRelations> {
+  const seenMembers = new Set<string>();
+  const seenConsumers = new Set<string>();
+  const members: DomainRelation[] = [];
+  const consumers: DomainRelation[] = [];
 
-  const appendDoc = (doc: DefDoc | null | undefined) => {
+  const appendMember = (doc: DefDoc | null | undefined, via: DomainRelationVia) => {
     if (!doc) return;
     if (doc.docId === parentId) return;
-    if (seen.has(doc.docId)) return;
-    seen.add(doc.docId);
-    members.push(doc);
+    if (seenMembers.has(doc.docId)) return;
+    seenMembers.add(doc.docId);
+    members.push({ doc, via });
+  };
+
+  const appendConsumer = (doc: DefDoc | null | undefined, via: DomainRelationVia) => {
+    if (!doc) return;
+    if (doc.docId === parentId) return;
+    if (seenMembers.has(doc.docId) || seenConsumers.has(doc.docId)) return;
+    seenConsumers.add(doc.docId);
+    consumers.push({ doc, via });
   };
 
   // 1. contains 순방향 — 전통적 group 선언
   for (const child of await source.getChildren(parentId)) {
-    appendDoc(child);
+    appendMember(child, "contains");
   }
 
-  // 2. depends_on / refines 역방향 — 자식이 부모를 지정
+  // 2. refs 순방향 — Layout/Pack 조망
+  const parent = await source.get(parentId);
+  for (const link of parent?.links ?? []) {
+    if (link.type !== "refs") continue;
+    appendMember(await source.get(link.target), "refs");
+  }
+
+  // 3. refines 역방향은 구조적 상세화, depends_on 역방향은 소비자로 분리
   const incoming = await source.getIncomingLinks(parentId);
   for (const link of incoming) {
-    if (link.type !== "depends_on" && link.type !== "refines") continue;
-    appendDoc(await source.get(link.source));
+    if (link.type === "refines") appendMember(await source.get(link.source), "refines←");
+    if (link.type === "depends_on") appendConsumer(await source.get(link.source), "depends_on←");
   }
 
-  return members.toSorted(
+  const compare = (a: DomainRelation, b: DomainRelation) =>
+    (a.doc.scope ?? "").localeCompare(b.doc.scope ?? "") ||
+    a.doc.docId.localeCompare(b.doc.docId);
+
+  return {
+    members: members.toSorted(compare),
+    consumers: consumers.toSorted(compare),
+  };
+}
+
+async function collectDomainMembers(
+  source: DefDataSource,
+  parentId: string,
+): Promise<DefDoc[]> {
+  const relations = await collectDomainRelations(source, parentId);
+  return relations.members.map((relation) => relation.doc).toSorted(
     (a, b) =>
       (a.scope ?? "").localeCompare(b.scope ?? "") ||
       a.docId.localeCompare(b.docId),
@@ -883,17 +935,25 @@ async function cmdTopdown(source: DefDataSource, groupId: string, level: "purpos
   const tags = group.tags.length > 0 ? `concerns: ${group.tags.filter(t => t !== "structural" && t !== "entry-point" && t !== "generated").join(", ")}` : "";
   if (tags) console.log(`${tags}\n`);
 
-  const members = await collectDomainMembers(source, groupId);
+  const relations = await collectDomainRelations(source, groupId);
+  const members = relations.members;
+  const consumers = relations.consumers;
 
-  if (members.length === 0) {
-    console.log("(멤버 없음 — contains/depends_on/refines 링크 부재)");
+  if (members.length === 0 && consumers.length === 0) {
+    console.log("(멤버 없음 — contains/refs/refines 링크 부재)");
     return;
   }
 
-  for (const child of members) {
+  if (members.length === 0) {
+    console.log("(구조 멤버 없음 — 아래는 이 문서를 소비하는 incoming depends_on 문서)");
+  }
+
+  for (const relation of members) {
+    const child = relation.doc;
     const prefix = child.level && BOUNDARY_LEVELS.has(child.level) ? `[${child.level}] ` : "";
     const scopeTag = `[${(child.scope ?? "?").split("/")[0]}]`;
     console.log(`## ${scopeTag} ${prefix}${child.title ?? child.docId}`);
+    console.log(`via: ${relation.via}`);
     if (level === "purpose" && child.purpose) {
       console.log(child.purpose);
     } else if (level === "overview") {
@@ -905,6 +965,16 @@ async function cmdTopdown(source: DefDataSource, groupId: string, level: "purpos
           console.log(`  - ${gc.docId}: ${gc.purpose?.slice(0, 100) ?? "(purpose 없음)"}`);
         }
       }
+    }
+    console.log();
+  }
+
+  if (consumers.length > 0) {
+    console.log("## 관련 소비자/의존자 (incoming depends_on)");
+    for (const relation of consumers) {
+      const doc = relation.doc;
+      console.log(`- [${relation.via}] ${doc.docId}  ${doc.scope ?? "?"}/${doc.aspect ?? "?"}  ${doc.lifecycle}`);
+      if (doc.purpose) console.log(`  ${doc.purpose.slice(0, 120)}`);
     }
     console.log();
   }
@@ -1941,7 +2011,7 @@ const DEF_HELP_SECTIONS = [
       "get <ID> | --address=<ADDR>  단건 조회",
       "body <ID>           최신 본문 조회 (--json 가능)",
       "read <ID>           body의 별칭",
-      "children <ID>       자식 문서 (contains + depends_on/refines 역방향 union)",
+      "children <ID>       구조 멤버(contains/refs/refines←)와 소비자(depends_on←) 분리 조회",
       "parent <ID>         부모 문서",
       "incoming <ID> | --address=<ADDR>  역링크",
       "outgoing <ID> | --address=<ADDR>  순방향 링크",
@@ -1958,7 +2028,7 @@ const DEF_HELP_SECTIONS = [
       "boundary <ID> | --address=<ADDR>       바운더리 구조 + direct coupling (--level, --json 가능)",
       "boundary-context <ID> | --address=<ADDR> 바운더리 + concerns + impact + feedback (--level, --mode, --json 가능)",
       "impact <ID> | --address=<ADDR>  변경 영향 분석",
-      "topdown <ID>        탑다운 조립 (contains + depends_on/refines 역방향 union)",
+      "topdown <ID>        탑다운 조립 (구조 멤버와 incoming depends_on 소비자 분리)",
       "bottomup <ID>       영향 역추적",
     ],
   },

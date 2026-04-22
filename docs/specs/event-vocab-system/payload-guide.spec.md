@@ -2,8 +2,7 @@
 def:
   tier: component
   id: payload-guide
-  type: knowledge
-  knowledge_kind: guide
+  type: spec
   address: def_document:v2:342184
   scope: data
   aspect: domain_data
@@ -14,7 +13,9 @@ def:
   tags: [data, contract, entry-point]
   links:
     - target: event-core-pattern
-      type: depends_on
+      type: traces_to
+    - target: event-intent-definition-rule
+      type: traces_to
 ---
 
 # Payload Field Guide
@@ -56,6 +57,7 @@ interface PayloadFieldDef {
 - **필수 필드**는 최소화 — 이벤트 의미를 식별하는 핵심만
 - **권장 필드**는 공통 비교 축 제공 — DSL constraint에서 자주 사용될 것
 - **확장 필드**는 서비스별 자유 허용 — 가이드에 없는 필드도 payload에 포함 가능
+- **request/data-effect event**는 `event-intent-definition-rule`의 requester, behavior_unit, request route, subject, effect_kind, outcome 필드를 우선 고려
 
 ## 가이드 제공 이벤트 (20개, v1 최소 핵심 세트)
 
@@ -100,3 +102,4 @@ interface PayloadFieldDef {
 - 가이드에 없는 core event도 payload 자유 확장 가능
 - required 필드 누락은 SDK/엔진에서 경고하되 거부하지 않음 (warn 정책)
 - 민감값은 값 자체보다 `_present`, `_masked` 검증 우선
+- alert 대상 event는 raw delta만 기록하지 말고 requester-aware semantic payload를 포함한다.

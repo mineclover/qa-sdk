@@ -13,6 +13,10 @@ def:
   links:
     - target: system-support
       type: depends_on
+    - target: service-definition-standard
+      type: depends_on
+    - target: architecture-revealing-code-convention
+      type: depends_on
 ---
 
 # 문서 거버넌스 가이드라인 — 일관된 지식 관리 체계
@@ -40,15 +44,29 @@ def:
 
 ---
 
-## 2. STC 4-Tier 아키텍처 ^defines
-설계 자산(`type: design`)은 ECS 패턴을 기반으로 한 4단계 계층으로 조직된다.
+## 2. E/C/I/S + L/P 아키텍처 ^defines
 
-| Tier | 역할 | 핵심 규칙 |
-|:---:|:---|:---|
-| **Layout** | 도메인 조직 및 배치 | `refs`를 통해 System을 조직하며, 내부 인라인 정의를 금지한다. |
-| **System** | 기능 및 로직 집합 | 독립 운용 가능한 단위로, 상태 관리 시 meta-semantic에 위임한다. |
-| **Component** | 데이터 진입점 | 공유되는 데이터의 Shape, Enum, 역할을 정의하며 Breaking Change를 관리한다. |
-| **Entry** | 고유 식별 인스턴스 | 유일한 싱글톤 ID나 고정된 좌표의 인스턴스를 서술한다. (희소 사례) |
+설계 자산(`type: design`)은 Entry, Component, Interface/DSL, System, Layout/Pack 책임을 분리한다. frontmatter `tier` 값은 `layout`, `system`, `component`, `entry` 4종이며, Interface는 별도 tier가 아니라 `scope: interface`와 rule/spec 계약 평면으로 표현한다. Pack은 배포/문서 묶음 이름이며 보통 Layout과 같은 조직 평면이다.
+
+서비스 하나를 실제로 정의할 때의 표준 슬롯은 `service-definition-standard` rule이 소유한다. 이 문서는 governance 관점에서 그 표준을 소비한다.
+
+| 구분 | frontmatter 표현 | 역할 | 핵심 규칙 |
+|:---:|:---|:---|:---|
+| **Layout / Pack** | `tier: layout` | 도메인 조직 및 배치 | `refs`를 통해 System을 조직하며, 내부 인라인 정의를 금지한다. |
+| **System (S)** | `tier: system` | 기능 및 로직 집합 | 독립 운용 가능한 단위로, 상태 관리 시 meta-semantic에 위임한다. |
+| **Interface / DSL (I)** | `scope: interface`, rule/spec contract | 소비 계약 평면 | System을 어떻게 호출/소비할지 정의하며 runtime behavior와 data shape를 소유하지 않는다. |
+| **Component (C)** | `tier: component` | 데이터/상태/증거 vocabulary | 공유되는 데이터의 Shape, Enum, 역할을 정의하며 Breaking Change를 관리한다. |
+| **Entry / Identity (E)** | `tier: entry` | 고유 식별 인스턴스 | 유일한 싱글톤 ID나 고정된 좌표의 인스턴스를 서술한다. (희소 사례) |
+
+### 2.1 행동과 이벤트 정의
+
+| 대상 | 소유 위치 | 설명 |
+|------|-----------|------|
+| operation | Interface / DSL | public command/query/event input |
+| behavior | BDD contract + System | Given/When/Then으로 검증 가능한 결정론적 결과 |
+| event | Event vocabulary / mapping pack | 발생/관측 fact key와 taxonomy |
+| state/data | Component | 상태 enum, data shape, evidence shape |
+| id/value | Entry / Identity | 안정 식별자와 유한 값 |
 
 ---
 
@@ -81,3 +99,8 @@ def:
 
 ### 4.3 계보 압축
 - 계보는 모든 지엽적 변수를 기록하지 않으며, 의미 있는 전이 지점(Transformation)과 안착지(`egress`)만을 압축하여 기록한다.
+
+### 4.4 코드 구조 컨벤션
+- 설계 문서는 코드 구조와 따로 존재하지 않는다. 코드는 E/C/I/S + L/P 책임이 드러나게 작성하고, 문서는 그 책임을 좌표화한다.
+- `architecture-revealing-code-convention`이 코드 작성 규칙의 owner다. 이 문서는 governance 관점에서 해당 규칙을 소비한다.
+- code split은 문서 분할의 자동 결과가 아니라 책임 경계가 코드에서 숨을 때 수행한다.

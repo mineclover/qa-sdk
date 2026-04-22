@@ -38,6 +38,8 @@ def:
       type: refs
     - target: db-traffic-control-spec
       type: refs
+    - target: db-bootstrap
+      type: refs
     - target: otel-package-spec
       type: refs
     - target: error-handling-convention
@@ -61,4 +63,4 @@ def:
 
 테스트 환경: e2e/facet/simulation 스펙 + validation-layer-group(통합).
 
-인프라 보조: auth/config/db-traffic/otel/package-classifier/review-ledger/tag-search/error-handling-convention + shared-utility-group(공통 유틸).
+인프라 보조: auth/config/db-traffic/db-bootstrap/otel/package-classifier/review-ledger/tag-search/error-handling-convention + shared-utility-group(공통 유틸).

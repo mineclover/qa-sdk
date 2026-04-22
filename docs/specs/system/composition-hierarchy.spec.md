@@ -11,30 +11,38 @@ def:
   links:
     - target: system-concepts
       type: depends_on
+    - target: architecture-revealing-code-convention
+      type: traces_to
+    - target: service-definition-standard
+      type: traces_to
     - target: coord-foundation
       type: depends_on
     - target: dsl-bundle-spec
       type: depends_on
 ---
 
-# 조립 계층 원칙 — Entry · Taxonomy · System
+# 조립 계층 원칙 — E/C/I/S + L/P
 
 ## 목적 ^purpose
 
-이 시스템의 개념 계층(Entry → DSL Bundle = Taxonomy → System)과 좌표 표현 수단(Axis, Prefix)이 어떻게 분리되어 적용되는지를 정의한다. 각 계층의 상세는 전문 문서로 위임하고, 이 문서는 연결 고리 역할만 한다.
+이 시스템의 개념 계층(Entry, Component, Interface/DSL, System, Layout/Pack)과 좌표 표현 수단(Axis, Prefix)이 어떻게 분리되어 적용되는지를 정의한다. 각 계층의 상세는 전문 문서로 위임하고, 이 문서는 연결 고리 역할만 한다.
 
 ---
 
 ## 1. 개념 계층 ^defines
 
-이 시스템의 구성 단위는 세 계층으로 이루어진다.
+이 시스템의 구성 단위는 네 책임 평면으로 이루어진다.
 
 ```
-Entry
-  ↓  (공통 경계 확정)
-DSL Bundle = Taxonomy
-  ↓  (독립 운용 + 복합 데이터 관리)
+Entry / Identity
+  ↓
+Component / Axis vocabulary
+  ↓
+Interface / DSL Bundle = Taxonomy
+  ↓
 System
+  ↓
+Layout / Pack
 ```
 
 ### Entry
@@ -45,9 +53,13 @@ System
 - 독립 주소가 필요하면 Prefix가 부여된다
 - 상세: [system-concepts.spec.md](system-concepts.spec.md)
 
-### DSL Bundle = Taxonomy
+### Component
 
-Entry들이 공통 경계를 형성하면 DSL Bundle이자 Taxonomy가 된다. 두 이름은 같은 단위를 다른 관점에서 부른 것이다.
+Entry들이 공통 데이터 경계를 형성하면 Component가 된다. Component는 Axis, schema, state enum, evidence shape처럼 수동 참조되는 데이터 vocabulary를 소유한다.
+
+### Interface / DSL Bundle = Taxonomy
+
+Component들이 소비 가능한 문법을 형성하면 DSL Bundle이자 Taxonomy가 된다. 두 이름은 같은 단위를 다른 관점에서 부른 것이다.
 
 | 관점 | 이름 | 강조점 |
 |------|------|--------|
@@ -60,7 +72,25 @@ Entry들이 공통 경계를 형성하면 DSL Bundle이자 Taxonomy가 된다. �
 
 ### System
 
-DSL Bundle / Taxonomy 수준부터 System이 된다. 독립 운용되고 복합 데이터를 관리하는 단위.
+Interface / DSL Bundle / Taxonomy가 독립 운용과 behavior ownership을 갖추면 System이 된다. System은 변환, 검증, 저장, 배포, projector/writer 같은 runtime 책임을 소유한다.
+
+### Layout / Pack
+
+여러 System 또는 Interface 문법 조각을 조망/배치/배포 묶음으로 조직하면 Layout 또는 Pack이 된다. Layout은 `tier: layout`로 표현하고, Pack은 배포/문서 묶음 이름으로서 layout-like 조직 평면을 뜻한다. 둘 다 세부 behavior/data ownership을 직접 갖지 않는다.
+
+---
+
+## 1.5 행동과 이벤트의 위치
+
+| 대상 | 위치 | 설명 |
+|------|------|------|
+| operation | Interface / DSL | System의 public 소비 표면 |
+| behavior | BDD contract + System | operation/event input에 대한 결정론적 결과 |
+| event | Event vocabulary / mapping pack | 발생하거나 관측된 fact key |
+| state/data | Component | behavior가 읽고 쓰는 shape |
+| id/value | Entry / Identity | 안정 식별자와 유한 값 |
+
+행동을 event로 정의하지 않는다. Event는 behavior 중 발생하거나 관측되는 fact이고, behavior 자체는 BDD contract가 정의한다.
 
 - 최소 단위: 하나의 완전한 DSL Bundle 또는 Taxonomy
 - 여러 Taxonomy를 포함할 수 있다
@@ -154,3 +184,4 @@ Taxonomy가 다음 조건을 만족하면 System으로 취급한다.
 | DSL Bundle 구현 (4개 번들, 멤버 역할, 불변조건) | [dsl-bundle.md](../indexing-core-system/dsl-bundle.md) |
 | Taxonomy 분류군 (topological / functional / bridge) | [meta-taxonomy.spec.md](meta-taxonomy.spec.md) |
 | 두 좌표 시스템 동형성 (이벤트 ↔ 문서) | [dual-coordinate-system.spec.md](dual-coordinate-system.spec.md) |
+| 서비스 정의 표준 구조 | [service-definition-standard.rule.md](service-definition-standard.rule.md) |

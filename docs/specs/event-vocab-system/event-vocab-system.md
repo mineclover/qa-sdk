@@ -2,6 +2,7 @@
 def:
   id: event-vocab-system
   tier: system
+  level: module
   address: def_document:v2:342023
   scope: data
   aspect: domain_data
@@ -17,18 +18,18 @@ def:
       type: contains
     - target: payload-guide
       type: contains
-    - target: event-taxonomy-layering-plan
-      type: depends_on
     - target: event-taxonomy-role-contract
       type: contains
-    - target: event-taxonomy-roadmap-plan
-      type: depends_on
     - target: event-mapping-pack-spec
       type: contains
     - target: service-event-adoption-spec
       type: contains
     - target: service-event-adoption-rule
       type: contains
+    - target: event-intent-definition-rule
+      type: contains
+    - target: event-intent-definition-cases
+      type: traces_to
     - target: event-taxonomy-contracts-test
       type: contains
     - target: event-mapping-pack-plan
@@ -43,6 +44,10 @@ def:
       type: depends_on
     - target: registry-events-spec
       type: contains
+sources:
+  - packages/event-catalog/src/index.ts
+  - packages/event-catalog/src/registry.ts
+  - packages/event-catalog/src/types.ts
 ---
 
 ## 목적 ^purpose
@@ -60,6 +65,7 @@ def:
 - `event-mapping-pack-spec`: mapping pack의 현재 계약.
 - `service-event-adoption-spec`: 서비스별 pack 채택의 현재 계약.
 - `service-event-adoption-rule`: service adoption을 소비할 때 확인할 운영 규칙.
+- `event-intent-definition-rule`: requester, request path, frontend behavior unit, data effect를 결합해 event intent를 정의하는 규칙.
 - `event-taxonomy-contracts-test`: 현재 계약을 유지하는 validation 시나리오.
 - `event-mapping-pack-plan`: mapping pack의 역사적 설계 메모.
 - `service-event-adoption-plan`: service adoption의 초기 설계 배경 메모.

@@ -1,5 +1,5 @@
-// @def.boundary infra-engine
-// @def.doc infra-engine
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
 
 // .env.docker 평문 파일 reader — Plan 04d Task 2
 // QA_SDK_*_PASSWORD 등 PG 도메인 비밀번호를 로드한다.

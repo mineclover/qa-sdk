@@ -147,6 +147,25 @@ def:
 
 원칙: "모든 문서는 하나의 개념과 그 개념의 구성을 참조하는 완결된 정의여야 한다."
 
+새 문서를 만들 때 authoring 기준은 E/C/I/S + L/P 책임이다. `level`은 contains 그래프 검증을 위한 보조 메타데이터로만 둔다.
+
+frontmatter option 의미는 `definition-frontmatter-metadata-system`이 소유한다. 새 문서 작성 중 `tier`, `type`, `owner_system`, `scope/aspect`, `depth`, `lifecycle`, `links`, `source/sources` 판단이 애매하면 먼저 해당 option system을 조회한다.
+
+```bash
+qa-sdk def get definition-frontmatter-metadata-system
+qa-sdk def get definition-metadata-tier
+qa-sdk def get definition-metadata-scope-aspect
+qa-sdk def get definition-metadata-links
+```
+
+| 책임 | frontmatter 힌트 | 링크 규칙 |
+|------|------------------|----------|
+| Entry / Identity | `tier: entry` 또는 identity-specific component | behavior를 소유하지 않는다 |
+| Component | `tier: component` | data/state/evidence shape를 정의하고 contains를 피한다 |
+| Interface / DSL | `scope: interface` 또는 `.rule.md` | System behavior를 직접 소유하지 않는다 |
+| System | `tier: system` | behavior/runtime/source/test boundary를 닫고 필요 시 contains를 가진다 |
+| Layout / Pack | `tier: layout` | `refs`만 사용하고 behavior/data ownership을 갖지 않는다 |
+
 | 질문 | level | 의미 |
 |------|-------|------|
 | "왜 이것들이 함께 있는가?" | `group` | 묶임의 이유 설명 |
@@ -155,7 +174,7 @@ def:
 
 group → group | module (재귀 가능), module → module | leaf (재귀 가능).
 
-검증: group/module은 contains 자식 1건 이상 필수. leaf는 contains 자식 금지.
+검증: `level: group|module`은 contains 자식 1건 이상 필수. `level: leaf`는 contains 자식 금지. 단, 새 authoring 판단은 E/C/I/S + L/P 책임을 우선한다.
 
 ## scope-aspect 유효 조합 (22개)
 
@@ -191,17 +210,17 @@ qa-sdk def find-by-file <관련 코드 경로[:symbol]>
 - 개념 자체를 정의하는 지식 문서는 `type: knowledge` + `knowledge_kind: concept`를 사용한다.
 - 새 문서를 생성한 뒤 실행 환경의 `~/.codex/skills/`나 DB를 직접 고치지 않는다. repo 문서와 `def sync`가 기준이다.
 - 코드 경계와 실제로 맞추려면 top-level frontmatter에 `source: packages/.../file.ts[:symbol]`를 추가한다.
-- 코드 파일 안에는 `@def.boundary <group-or-module-doc-id>[#symbol]` 또는 `@def.doc <module-or-leaf-doc-id>[#symbol]` 주석을 붙일 수 있다.
+- 코드 파일 안에는 `@def.boundary <system-doc-id>[#symbol]` 또는 `@def.doc <doc-id>[#symbol]` 주석을 붙일 수 있다.
 - 그런 뒤 `qa-sdk def sync`로 DB의 `code_references`를 갱신하고 `def find-by-file <관련 코드 경로[:symbol]>`로 확인한다.
 
 ## 자기 증명 원칙
 
 모든 문서는 자기 존재를 증명할 수 있어야 한다:
 
-- **상위 문서 (module/group)**: 하위 문서를 빠짐없이 담는다 (`contains` 링크 + `^overview` 요약)
-- **하위 문서 (leaf)**: 자기 자신에 대한 정의를 마커 규칙에 맞게 관리하고, 구현 코드와 테스트 코드 참조를 포함한다
+- **System 문서**: 하위 책임 문서를 빠짐없이 담는다 (`contains` 링크 + `^overview` 요약)
+- **Component/Interface/Entry 문서**: 자기 자신에 대한 정의를 마커 규칙에 맞게 관리하고, 구현 코드와 테스트 코드 참조를 포함한다
 
-leaf 문서에 `## 구현 참조` 섹션을 권장한다:
+구현된 behavior를 설명하는 문서에는 `## 구현 참조` 섹션을 권장한다:
 
 ```markdown
 ## 구현 참조

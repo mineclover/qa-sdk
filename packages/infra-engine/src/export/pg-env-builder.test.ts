@@ -1,5 +1,5 @@
-// @def.boundary infra-engine
-// @def.doc infra-engine
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
 
 // pg-env-builder 단위 테스트 — Plan 04d Task 1
 // 도메인별 (role, schema, password) 매핑과 SERVICE_PORTS 동적 조회 검증

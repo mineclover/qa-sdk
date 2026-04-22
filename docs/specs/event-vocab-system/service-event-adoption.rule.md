@@ -14,6 +14,8 @@ def:
       type: refines
     - target: event-taxonomy-role-contract
       type: depends_on
+    - target: event-intent-definition-rule
+      type: depends_on
 ---
 
 # Service Event Adoption — 소비 규칙
@@ -46,6 +48,19 @@ service event adoption을 수정하거나 운영 게이트에서 소비할 때 �
 - active pack owner 서비스
 
 이 두 집합의 합집합만 catalog gate 대상으로 본다.
+
+### 5. logger fallback event key
+
+- `svc_log.<level>`은 logger bridge의 진단 fallback이며 adoption-clean event key로 자동 인정하지 않는다.
+- 서비스가 `svc_log.<level>`을 운영 taxonomy 대상으로 삼으려면 해당 key를 포함한 mapping pack을 만들고 service adoption에 pin해야 한다.
+- gate-clean domain/production event는 fallback에 의존하지 말고 명시 `eventKey`를 사용한다.
+
+### 6. requester-aware data-effect event
+
+- backend event key는 raw DB mutation만으로 정하지 않는다.
+- request path, requester, frontend behavior unit, data subject/effect, persistence outcome을 함께 보고 event intent를 정한다.
+- alerting에 쓰이는 event는 `requester_type`, `requester_id` 또는 그에 준하는 actor context를 가져야 한다.
+- frontend event는 behavior unit을, backend event는 data effect와 persistence outcome을 소유한다.
 
 ## 운영 순서
 

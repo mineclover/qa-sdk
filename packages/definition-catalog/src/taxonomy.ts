@@ -402,7 +402,7 @@ export const CONCERN_TAGS: readonly ConcernTag[] = [
 
 /** 구조 태그 목록 */
 export const STRUCTURAL_TAGS: readonly StructuralTag[] = [
-  "cross-scope", "entry-point", "decision", "generated",
+  "cross-scope", "coordinate-cluster", "entry-point", "decision", "generated",
 ];
 
 /** 알려진 태그 전체 목록 */

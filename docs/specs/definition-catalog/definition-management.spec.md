@@ -14,6 +14,8 @@ def:
   svc: definition-service
   tags: [structural, entry-point]
   links:
+    - target: definition-frontmatter-metadata-system
+      type: refs
     - target: definition-taxonomy
       type: depends_on
     - target: definition-level
@@ -46,8 +48,9 @@ def:
 
 ## 구성 ^overview
 
-- `definition-mgmt-coordinates`: 문서에 좌표를 부여하는 기준. layer, docType, level, scope×aspect, depth, tag를 어떤 질문으로 결정하는지 정리한다.
-- `definition-mgmt-graph-links`: contains 계층과 횡방향 링크가 어떻게 함께 정의 그래프를 구성하는지 정리한다.
+- `definition-frontmatter-metadata-system`: frontmatter metadata option 하나하나의 의미와 검증 소유자.
+- `definition-mgmt-coordinates`: 문서에 좌표를 부여하는 기준. layer, docType, E/C/I/S + L/P 책임, scope×aspect, depth, tag를 어떤 질문으로 결정하는지 정리한다.
+- `definition-mgmt-graph-links`: E/C/I/S + L/P 소유/조망 관계와 횡방향 링크가 어떻게 함께 정의 그래프를 구성하는지 정리한다.
 - `definition-mgmt-state-tracking`: harness와 quality gate가 definition 상태를 어떻게 추적하는지 정리한다.
 - `definition-mgmt-feedback-loop`: 관측, feedback request, decision, infra 전이가 어떻게 순환하는지 정리한다.
 - `definition-mgmt-observability-model`: Definition/State/Decision/Verification 평면과 reachable path registry를 어떤 심볼과 FSM으로 다룰지 정리한다.
@@ -80,6 +83,7 @@ def:
 | 6 | 구조 lint를 언제 semantic override로 완화하는가 | `definition-mgmt-semantic-lint` |
 | 7 | 무엇을 어떤 순서로 검증하는가 | `definition-mgmt-verification-loop` |
 | 8 | 무엇을 지켜야 일관성이 유지되는가 | `definition-mgmt-consistency-rules` |
+| M | 각 frontmatter option은 무엇을 의미하는가 | `definition-frontmatter-metadata-system` |
 
 ## 사용 맥락 ^context
 

@@ -14,6 +14,8 @@ def:
       type: refines
     - target: skill-def-context
       type: depends_on
+    - target: definition-frontmatter-metadata-system
+      type: depends_on
     - target: skill-def-link
       type: traces_to
 ---
@@ -32,7 +34,7 @@ definition-catalog 규약을 따르는 새 문서를 안정적으로 시작하�
 ## 사용 맥락 ^context
 
 새 스펙, 가이드, knowledge 문서를 만들 때 사용한다.
-특히 scope/aspect/depth를 정하는 순간부터 문서 계약을 맞춰야 할 때 유용하다.
+특히 `type`, `tier`, `owner_system`, `scope/aspect`, `depth`, `lifecycle`, `links`, `source/sources`를 정하는 순간부터 문서 계약을 맞춰야 할 때 유용하다.
 
 ## 설계 의도 ^intent
 
@@ -43,6 +45,7 @@ definition-catalog 규약을 따르는 새 문서를 안정적으로 시작하�
 
 - 생성 후 purpose 누락이나 links 누락이 반복되면 템플릿 안내를 더 강화한다.
 - knowledge 문서 생성이 자주 이어지면 knowledge-kind 예시를 더 풍부하게 제공한다.
+- frontmatter option 판단이 반복적으로 흔들리면 `definition-frontmatter-metadata-system`과 해당 `definition-metadata-*` 문서를 먼저 보도록 안내한다.
 
 ## 주의사항 ^caveat
 

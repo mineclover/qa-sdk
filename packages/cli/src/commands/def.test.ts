@@ -171,6 +171,22 @@ describe("def commands", () => {
     });
   });
 
+  describe("topdown (sync 후)", () => {
+    it("incoming depends_on 소비자를 구조 멤버와 분리한다", async () => {
+      await runDef(["sync"]);
+      vi.mocked(console.log).mockClear();
+
+      await runDef(["topdown", "definition-management"]);
+      const output = getOutput();
+
+      expect(output).toContain("Definition Frontmatter Metadata System");
+      expect(output).toContain("via: refs");
+      expect(output).toContain("## 관련 소비자/의존자 (incoming depends_on)");
+      expect(output).toContain("[depends_on←] viteplus-playbook-template-flow");
+      expect(output).not.toContain("## [flow] Vite+ Playbook Template 확장 흐름");
+    });
+  });
+
   describe("에러 처리", () => {
     it("get: ID 없이 호출하면 무시", async () => {
       await runDef(["sync"]);

@@ -1,5 +1,5 @@
-// @def.boundary infra-engine
-// @def.doc infra-engine
+// @def.boundary infra-engine-system
+// @def.doc infra-engine-system
 
 /**
  * SERVICE_PORTS + 비밀번호 시크릿에서 도메인별 PG env 변수 dict 생성.

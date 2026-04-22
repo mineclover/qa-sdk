@@ -9,6 +9,9 @@ def:
   lifecycle: approved
   layer: operation
   svc: infra-engine
+  links:
+    - target: infra-engine-system-rule
+      type: traces_to
 ---
 # Infra Engine System
 ## 목적 ^purpose

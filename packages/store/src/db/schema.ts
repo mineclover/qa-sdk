@@ -192,6 +192,7 @@ export const deadLetterQueue = pgTable("dead_letter_queue", {
  * 만족하지 못한다. neue 코드는 import 금지. history 보존용으로만 유지.
  * 다음 packages/store major release에서 제거 예정.
  */
+// @def.coord-storage-exempt: deprecated legacy key_observations schema; ingest-server pg schema is SSOT.
 export const keyObservations = pgTable("key_observations", {
   packedKey: text("packed_key").primaryKey(),
   prefixId: text("prefix_id").notNull(),
