@@ -11,21 +11,21 @@ import {
   PolicyNotFoundError,
 } from "permission-engine";
 
-import { DrizzleResourcePolicyRegistry } from "./drizzle-registry.js";
+import { SqliteResourcePolicyRegistry } from "./adapter.js";
 import { RESOURCE_POLICIES_DDL } from "./schema.js";
 
 const NOW = "2026-04-22T10:00:00Z";
 const LATER = "2026-04-22T11:00:00Z";
 
-describe("DrizzleResourcePolicyRegistry — permission-engine 인터페이스 충족", () => {
+describe("SqliteResourcePolicyRegistry — permission-engine 인터페이스 충족", () => {
   let db: BetterSQLite3Database;
-  let registry: DrizzleResourcePolicyRegistry;
+  let registry: SqliteResourcePolicyRegistry;
 
   beforeEach(() => {
     const raw = new Database(":memory:");
     raw.exec(RESOURCE_POLICIES_DDL);
     db = drizzle({ client: raw });
-    registry = new DrizzleResourcePolicyRegistry(db);
+    registry = new SqliteResourcePolicyRegistry(db);
   });
 
   it("create + resolve", async () => {

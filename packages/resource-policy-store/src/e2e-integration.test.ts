@@ -36,8 +36,8 @@ import {
   type InstancePolicyEvaluator,
 } from "permission-engine";
 
-import { DrizzleResourcePolicyRegistry } from "./drizzle-registry.js";
-import { RESOURCE_POLICIES_DDL } from "./schema.js";
+import { SqliteResourcePolicyRegistry } from "./sqlite/adapter.js";
+import { RESOURCE_POLICIES_DDL } from "./sqlite/schema.js";
 
 describe("권한 모델 End-to-End 통합", () => {
   // ── 조립 ──────────────────────────────────────────────────────────────────
@@ -57,7 +57,7 @@ describe("권한 모델 End-to-End 통합", () => {
     const raw = new Database(":memory:");
     raw.exec(RESOURCE_POLICIES_DDL);
     const db = drizzle({ client: raw });
-    const registry = new DrizzleResourcePolicyRegistry(db);
+    const registry = new SqliteResourcePolicyRegistry(db);
     const audit = new InMemoryAuditRecorder();
     const secret = randomBytes(32);
     let spanCounter = 0;

@@ -2,15 +2,18 @@
 // @def.doc authorization-ontology-resource-lifecycle
 
 /**
- * DrizzleResourcePolicyRegistry — permission-engine의 ResourcePolicyRegistry
+ * SqliteResourcePolicyRegistry — permission-engine의 ResourcePolicyRegistry
  * 인터페이스를 SQLite + Drizzle로 영속 구현.
+ *
+ * Plan 05a에서 sqlite/ 디렉토리로 이동 + 클래스 rename.
+ * 비즈니스 로직 변경 없음 — 순수 refactor.
  *
  * FSM 규약(역전이 금지, canTransition) 자체는 순수 함수(permission-engine/state)에서
  * 재사용하고, 본 어댑터는 I/O만 담당한다.
  */
 
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import {
   DuplicatePolicyError,
@@ -58,7 +61,7 @@ function toRow(p: ResourcePolicy): typeof resourcePolicies.$inferInsert {
   };
 }
 
-export class DrizzleResourcePolicyRegistry implements ResourcePolicyRegistry {
+export class SqliteResourcePolicyRegistry implements ResourcePolicyRegistry {
   constructor(private readonly db: BetterSQLite3Database) {}
 
   async resolve(resourceId: string): Promise<ResourcePolicy | null> {
