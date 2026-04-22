@@ -55,3 +55,6 @@ export {
   RLS_BIT_CATALOG,
   type RlsBitName,
 } from "./pg/rls-bits.js";
+
+// Plan 15c — RLS-aware 래퍼
+export { RlsAwarePgResourcePolicyRegistry } from "./pg/rls-aware-adapter.js";
