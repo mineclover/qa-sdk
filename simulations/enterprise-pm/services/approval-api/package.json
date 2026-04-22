@@ -10,7 +10,9 @@
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "db:gen:sqlite": "drizzle-kit generate --config drizzle.sqlite.config.ts",
+    "db:gen:pg": "drizzle-kit generate --config drizzle.pg.config.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -20,12 +22,25 @@
     "@qa-sdk/logger": "workspace:*",
     "@qa-sdk/otel": "workspace:*",
     "db-bootstrap": "workspace:*",
+    "drizzle-orm": "catalog:",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "zod": "^3.24.2"
   },
+  "peerDependencies": {
+    "better-sqlite3": "catalog:",
+    "postgres": "^3.4.0"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": { "optional": true },
+    "postgres": { "optional": true }
+  },
   "devDependencies": {
+    "@types/better-sqlite3": "catalog:",
     "@types/node": "^22.0.0",
+    "better-sqlite3": "catalog:",
+    "drizzle-kit": "catalog:",
+    "postgres": "^3.4.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "vitest": "^1.6.1"
