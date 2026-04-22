@@ -2,9 +2,11 @@
 // @def.doc authorization-ontology-nested-audit-tracing
 
 /**
- * DrizzleAuditRecorder — AuditRecorder 인터페이스의 SQLite 영속 구현.
+ * SqliteAuditRecorder — permission-engine의 AuditRecorder
+ * 인터페이스를 SQLite + Drizzle로 영속 구현.
  *
- * InMemory 구현과 동일 계약(트리 구축 규약, kind 구분, 정렬).
+ * Plan 06a에서 sqlite/ 디렉토리로 이동 + 클래스 rename.
+ * 비즈니스 로직 변경 없음 — 트리 구축/parent 조회/정렬 invariant 그대로.
  * I/O만 담당하며 트리 invariant는 호출 시 parent 조회 후 검증한다.
  */
 
@@ -112,7 +114,7 @@ function checkToRow(c: CheckEntry): Insert {
   };
 }
 
-export class DrizzleAuditRecorder implements AuditRecorder {
+export class SqliteAuditRecorder implements AuditRecorder {
   constructor(private readonly db: BetterSQLite3Database) {}
 
   async startExecution(args: RecordExecutionArgs): Promise<ExecutionEntry> {

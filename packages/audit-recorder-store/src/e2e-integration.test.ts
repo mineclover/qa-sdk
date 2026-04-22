@@ -24,8 +24,8 @@ import {
 
 import { createSqliteTestFixture } from "db-bootstrap";
 
-import { DrizzleAuditRecorder } from "./drizzle-recorder.js";
-import { AUDIT_ENTRIES_DDL } from "./schema.js";
+import { SqliteAuditRecorder } from "./sqlite/adapter.js";
+import { AUDIT_ENTRIES_DDL } from "./sqlite/schema.js";
 
 describe("E2E — Drizzle audit + Drizzle resource-policy 공존", () => {
   const ACTIONS = { read: 1, write: 2 } as const;
@@ -45,8 +45,8 @@ describe("E2E — Drizzle audit + Drizzle resource-policy 공존", () => {
       dialect: "sqlite",
       db: fixture.db as never,
     });
-    // DrizzleAuditRecorder는 본 패키지의 직접 클래스 — factory 미적용 (별도 plan).
-    const audit = new DrizzleAuditRecorder(fixture.db as never);
+    // SqliteAuditRecorder는 본 패키지의 직접 클래스 — factory 미적용 (별도 plan).
+    const audit = new SqliteAuditRecorder(fixture.db as never);
     const secret = randomBytes(32);
     let n = 0;
     const newSpanId = () => `span-${++n}`;

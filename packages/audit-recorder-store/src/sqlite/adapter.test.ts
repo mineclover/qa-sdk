@@ -7,18 +7,18 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { EntryNotFoundError, ParentNotFoundError } from "permission-engine";
 
-import { DrizzleAuditRecorder } from "./drizzle-recorder.js";
+import { SqliteAuditRecorder } from "./adapter.js";
 import { AUDIT_ENTRIES_DDL } from "./schema.js";
 
-describe("DrizzleAuditRecorder — AuditRecorder 인터페이스 충족", () => {
+describe("SqliteAuditRecorder — AuditRecorder 인터페이스 충족", () => {
   let db: BetterSQLite3Database;
-  let rec: DrizzleAuditRecorder;
+  let rec: SqliteAuditRecorder;
 
   beforeEach(() => {
     const raw = new Database(":memory:");
     raw.exec(AUDIT_ENTRIES_DDL);
     db = drizzle({ client: raw });
-    rec = new DrizzleAuditRecorder(db);
+    rec = new SqliteAuditRecorder(db);
   });
 
   describe("트리 구축", () => {
