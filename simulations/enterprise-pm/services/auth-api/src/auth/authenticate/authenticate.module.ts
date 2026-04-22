@@ -15,7 +15,14 @@ export interface AuthenticateModuleOptions {
   credentialStore?: CredentialStore;
 }
 
-@Module({})
+@Module({
+  imports: [UserModule],
+  controllers: [AuthenticateController],
+  providers: [
+    { provide: CREDENTIAL_STORE, useClass: NoopCredentialStore },
+  ],
+  exports: [CREDENTIAL_STORE],
+})
 export class AuthenticateModule {
   static forRoot(opts: AuthenticateModuleOptions = {}): DynamicModule {
     const store = opts.credentialStore ?? new NoopCredentialStore();

@@ -20,7 +20,7 @@ const authSchema = z.object({
 @Controller("auth")
 export class AuthenticateController {
   constructor(
-    private readonly users: UserService,
+    @Inject(UserService) private readonly users: UserService,
     @Inject(CREDENTIAL_STORE) private readonly credentials: CredentialStore,
   ) {}
 

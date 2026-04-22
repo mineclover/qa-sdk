@@ -1,7 +1,7 @@
 // @def.boundary sim-auth-api
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import { Body, Controller, NotFoundException, Post } from "@nestjs/common";
+import { Body, Controller, Inject, NotFoundException, Post } from "@nestjs/common";
 import { z } from "zod";
 import { BitmapIssuerService } from "./bitmap-issuer.service.js";
 
@@ -9,7 +9,9 @@ const issueSchema = z.object({ userId: z.string().min(1) });
 
 @Controller("bitmap")
 export class BitmapController {
-  constructor(private readonly issuer: BitmapIssuerService) {}
+  constructor(
+    @Inject(BitmapIssuerService) private readonly issuer: BitmapIssuerService,
+  ) {}
 
   /**
    * POST /bitmap/issue
