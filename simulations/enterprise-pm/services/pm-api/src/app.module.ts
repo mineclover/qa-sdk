@@ -3,10 +3,11 @@
 
 import { Module } from "@nestjs/common";
 import { HealthModule } from "./health/health.module.js";
-import { PmDbModule } from "./pm/pm-db.module.js";
+import { PmDbModule, PM_DB_INSTANCE, type PmDbInstanceHandle } from "./pm/pm-db.module.js";
 import { ProjectModule } from "./pm/project/project.module.js";
 import { TaskModule } from "./pm/task/task.module.js";
 import { MemberModule } from "./pm/member/member.module.js";
+import { AccessCheckerModule } from "./auth-deps/access-checker.module.js";
 import { BitmapCacheModule } from "@qa-sdk/sim-bitmap-cache";
 import { env } from "./config/env.js";
 import { createLogger } from "./lib/logger.js";
@@ -16,6 +17,13 @@ import { createSubscriberLogger } from "./lib/bitmap-cache-logger.js";
   imports: [
     HealthModule,
     PmDbModule.forRoot(),
+    AccessCheckerModule.forRootAsync({
+      inject: [PM_DB_INSTANCE],
+      useFactory: (...args: unknown[]) => {
+        const handle = args[0] as PmDbInstanceHandle;
+        return { dialect: handle.dialect, db: handle.db };
+      },
+    }),
     ProjectModule,
     TaskModule,
     MemberModule,

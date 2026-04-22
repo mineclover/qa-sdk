@@ -1,7 +1,7 @@
 // @def.boundary sim-pm-api
 // @def.doc sim-erp-pm-design
 
-import { Module, type DynamicModule } from "@nestjs/common";
+import { Module, type DynamicModule, type Provider } from "@nestjs/common";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { createConnection } from "db-bootstrap";
@@ -12,6 +12,13 @@ import { SIM_PM_SQLITE_DDL } from "./sqlite/schema.js";
 import { SIM_PM_PG_DDL } from "./pg/schema.js";
 
 export const PM_REPOSITORY = Symbol("PM_REPOSITORY");
+export const PM_DB_INSTANCE = Symbol("PM_DB_INSTANCE");
+export const PM_DB_DIALECT = Symbol("PM_DB_DIALECT");
+
+export interface PmDbInstanceHandle {
+  dialect: "sqlite" | "pg";
+  db: BetterSQLite3Database | PostgresJsDatabase;
+}
 
 async function applyDdl(conn: Awaited<ReturnType<typeof createConnection>>): Promise<void> {
   if (conn.dialect === "sqlite") {
@@ -32,37 +39,49 @@ async function applyDdl(conn: Awaited<ReturnType<typeof createConnection>>): Pro
 @Module({})
 export class PmDbModule {
   static forRoot(): DynamicModule {
+    // PM_DB_INSTANCE: 단일 Connection 재사용 — AccessCheckerModule 과 db 공유
+    const dbInstanceProvider: Provider = {
+      provide: PM_DB_INSTANCE,
+      useFactory: async (): Promise<PmDbInstanceHandle> => {
+        const conn = await createConnection(
+          env.QA_DB_DIALECT === "sqlite"
+            ? {
+                dialect: "sqlite",
+                sqlitePath: env.QA_SQLITE_PATH,
+              }
+            : {
+                dialect: "pg",
+                pgHost: env.QA_PG_HOST!,
+                pgPort: env.QA_PG_PORT!,
+                pgDatabase: env.QA_PG_DATABASE!,
+                pgUser: env.QA_PG_USER!,
+                pgPassword: env.QA_PG_PASSWORD!,
+                pgSchema: env.QA_PG_SCHEMA ?? "sim",
+              },
+        );
+        await applyDdl(conn);
+        return {
+          dialect: conn.dialect,
+          db: conn.db as BetterSQLite3Database | PostgresJsDatabase,
+        };
+      },
+    };
     return {
       module: PmDbModule,
       providers: [
+        dbInstanceProvider,
         {
           provide: PM_REPOSITORY,
-          useFactory: async (): Promise<PmRepository> => {
-            const conn = await createConnection(
-              env.QA_DB_DIALECT === "sqlite"
-                ? {
-                    dialect: "sqlite",
-                    sqlitePath: env.QA_SQLITE_PATH,
-                  }
-                : {
-                    dialect: "pg",
-                    pgHost: env.QA_PG_HOST!,
-                    pgPort: env.QA_PG_PORT!,
-                    pgDatabase: env.QA_PG_DATABASE!,
-                    pgUser: env.QA_PG_USER!,
-                    pgPassword: env.QA_PG_PASSWORD!,
-                    pgSchema: env.QA_PG_SCHEMA ?? "sim",
-                  },
-            );
-            await applyDdl(conn);
-            return createPmRepository({
-              dialect: conn.dialect,
-              db: conn.db as BetterSQLite3Database | PostgresJsDatabase,
+          useFactory: async (handle: PmDbInstanceHandle): Promise<PmRepository> => {
+            return await createPmRepository({
+              dialect: handle.dialect,
+              db: handle.db,
             });
           },
+          inject: [PM_DB_INSTANCE],
         },
       ],
-      exports: [PM_REPOSITORY],
+      exports: [PM_REPOSITORY, PM_DB_INSTANCE],
       global: true,
     };
   }
