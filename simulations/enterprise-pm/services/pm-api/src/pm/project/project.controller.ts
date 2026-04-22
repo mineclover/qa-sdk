@@ -7,6 +7,7 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  Inject,
   NotFoundException,
   Param,
   Post,
@@ -32,8 +33,8 @@ const updateSchema = createSchema.partial();
 @UseGuards(CurrentUserGuard)
 export class ProjectController {
   constructor(
-    private readonly svc: ProjectService,
-    private readonly access: ProjectAccessService,
+    @Inject(ProjectService) private readonly svc: ProjectService,
+    @Inject(ProjectAccessService) private readonly access: ProjectAccessService,
   ) {}
 
   @Post()

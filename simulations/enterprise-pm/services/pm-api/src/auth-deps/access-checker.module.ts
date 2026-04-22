@@ -10,8 +10,10 @@ import {
   type InstancePolicyEvaluator,
   type ResourcePolicyRegistry,
 } from "permission-engine";
-import { createResourcePolicyRegistry } from "resource-policy-store";
+import { createResourcePolicyRegistry, RESOURCE_POLICIES_DDL } from "resource-policy-store";
 import { DisjointUnionIndex } from "weighted-index";
+import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
 export const PROJECT_ACCESS_CHECKER = Symbol("PROJECT_ACCESS_CHECKER");
 export const PROJECT_POLICY_REGISTRY = Symbol("PROJECT_POLICY_REGISTRY");
@@ -102,9 +104,18 @@ export class AccessCheckerModule {
             "AccessCheckerModule: db + dialect 또는 overrideRegistry 필수",
           );
         }
+        // SQLite 경로는 resource-policies DDL 자동 적용 (in-memory fixture 대비).
+        if (resolved.dialect === "sqlite") {
+          const raw = (resolved.db as BetterSQLite3Database as unknown as {
+            $client: { exec: (sql: string) => void };
+          }).$client;
+          if (raw && typeof raw.exec === "function") {
+            raw.exec(RESOURCE_POLICIES_DDL);
+          }
+        }
         return createResourcePolicyRegistry({
           dialect: resolved.dialect,
-          db: resolved.db as never,
+          db: resolved.db as BetterSQLite3Database | PostgresJsDatabase,
         });
       },
       inject: opts.inject ?? [],
