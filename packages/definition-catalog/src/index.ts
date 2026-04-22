@@ -370,6 +370,7 @@ export type {
   DefSyntheticIncomingLink,
   DefValidationIssue,
   DefValidationResult,
+  DefValidateOptions,
   DefDataSource,
 } from "./data-source.js";
 

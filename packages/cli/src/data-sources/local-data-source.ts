@@ -24,6 +24,7 @@ import type {
   DefListFilter,
   DefOutgoingLink,
   DefSyntheticIncomingLink,
+  DefValidateOptions,
   DefValidationResult,
   DefinitionEntry,
   DefinitionLink,
@@ -31,6 +32,7 @@ import type {
 import {
   analyzeImpact,
   computeEffectiveConcerns,
+  scanCoordinateStorage,
   selectConcernContext,
   selectImpactContext,
 } from "definition-catalog";
@@ -356,7 +358,7 @@ export class LocalDataSource implements DefDataSource {
 
     const children = (await this.getChildren(docId))
       .toSorted((left, right) =>
-        scopeIndex(left.scope) - scopeIndex(right.scope) || left.docId.localeCompare(right.docId),
+        scopeIndex(left.scope ?? "") - scopeIndex(right.scope ?? "") || left.docId.localeCompare(right.docId),
       )
       .map((child) => ({
         docId: child.docId,
@@ -524,7 +526,7 @@ export class LocalDataSource implements DefDataSource {
     };
   }
 
-  async validate(): Promise<DefValidationResult> {
+  async validate(options: DefValidateOptions = {}): Promise<DefValidationResult> {
     const allDocs = await this.list({ limit: 10000 });
     const allIds = new Set(allDocs.map(d => d.docId));
     const referenced = new Set<string>();
@@ -550,6 +552,31 @@ export class LocalDataSource implements DefDataSource {
         if (!outgoing.some(l => l.type === "contains")) {
           issues.push({ severity: "warning", type: "orphan", docId: doc.docId, message: "approved 리프이지만 어디에도 참조되지 않음" });
         }
+      }
+    }
+
+    // ── coordinate-storage.rule 자동 검출 ──
+    if (options.includeCoordStorageCheck) {
+      try {
+        const repoRootOpt = options.repoRoot;
+        const coordViolations = scanCoordinateStorage(
+          repoRootOpt ? { repoRoot: repoRootOpt } : {},
+        );
+        for (const v of coordViolations) {
+          issues.push({
+            severity: "error",
+            type: "coordinate-storage-violation",
+            docId: `${v.filePath}:${v.lineNumber}`,
+            message: `[${v.tableName}] ${v.message}`,
+          });
+        }
+      } catch (err) {
+        issues.push({
+          severity: "warning",
+          type: "coordinate-storage-violation",
+          docId: "coordinate-storage-check",
+          message: `coord-storage 스캔 실패 (warning으로 강등): ${err instanceof Error ? err.message : String(err)}`,
+        });
       }
     }
 

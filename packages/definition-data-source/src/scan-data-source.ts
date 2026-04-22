@@ -16,7 +16,9 @@ import type {
   DefListFilter,
   DefOutgoingLink,
   DefSyntheticIncomingLink,
+  DefValidateOptions,
   DefValidationResult,
+  ValidateGraphOptions,
 } from "definition-catalog";
 import {
   analyzeImpact,
@@ -479,8 +481,12 @@ export class ScanDataSource implements DefDataSource {
     };
   }
 
-  async validate(): Promise<DefValidationResult> {
-    const graph = validateGraph(this.registry);
+  async validate(options: DefValidateOptions = {}): Promise<DefValidationResult> {
+    const graphOptions: ValidateGraphOptions = {
+      ...(options.includeCoordStorageCheck ? { includeCoordStorageCheck: true } : {}),
+      ...(options.repoRoot ? { repoRoot: options.repoRoot } : {}),
+    };
+    const graph = validateGraph(this.registry, graphOptions);
     const issues: DefValidationResult["issues"] = [
       ...this.scanErrors.map((item) => ({
         severity: "error" as const,

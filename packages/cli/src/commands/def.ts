@@ -479,8 +479,15 @@ async function cmdOutgoing(source: DefDataSource, docId?: string, address?: stri
   for (const l of links) console.log(`  ${formatLinkRef(l.target, l.targetAddress)} (${l.type})`);
 }
 
-async function cmdValidate(source: DefDataSource) {
-  const result = await source.validate();
+async function cmdValidate(source: DefDataSource, flags: Record<string, string> = {}) {
+  // coordinate-storage.rule 자동 검출 — 기본 활성화 (server 모드는 무시).
+  // --no-code-checks=true 또는 --no-code-checks 로 비활성화.
+  const skipCodeChecks =
+    flags["no-code-checks"] === "true" || flags["no-code-checks"] === "";
+  const result = await source.validate({
+    includeCoordStorageCheck: !skipCodeChecks,
+    repoRoot: process.cwd(),
+  });
   if (result.passed) {
     console.log(`[${source.mode}] ✓ 검증 통과 (경고 ${result.warnings}건)`);
   } else {
@@ -705,7 +712,8 @@ async function cmdStats(source: DefDataSource) {
   const byScope: Record<string, number> = {};
   const byLayer: Record<string, number> = {};
   for (const d of approved) {
-    byScope[d.scope] = (byScope[d.scope] || 0) + 1;
+    const scope = d.scope ?? "(none)";
+    byScope[scope] = (byScope[scope] || 0) + 1;
     if (d.layer) byLayer[d.layer] = (byLayer[d.layer] || 0) + 1;
   }
 
@@ -724,8 +732,10 @@ async function cmdOverview(source: DefDataSource) {
   // scope×aspect 매트릭스
   const matrix: Record<string, Record<string, number>> = {};
   for (const d of approved) {
-    if (!matrix[d.scope]) matrix[d.scope] = {};
-    matrix[d.scope][d.aspect] = (matrix[d.scope][d.aspect] || 0) + 1;
+    const scope = d.scope ?? "(none)";
+    const aspect = d.aspect ?? "(none)";
+    if (!matrix[scope]) matrix[scope] = {};
+    matrix[scope][aspect] = (matrix[scope][aspect] || 0) + 1;
   }
 
   // svc별 문서 수 + scope 커버리지
@@ -734,7 +744,7 @@ async function cmdOverview(source: DefDataSource) {
     const svc = d.svc || "(라이브러리)";
     if (!bySvc[svc]) bySvc[svc] = { count: 0, scopes: new Set() };
     bySvc[svc].count++;
-    bySvc[svc].scopes.add(d.scope);
+    bySvc[svc].scopes.add(d.scope ?? "(none)");
   }
 
   // links 통계
@@ -791,7 +801,7 @@ async function cmdAuditDb(source: DefDataSource) {
 
     if (!d.svc && d.scope !== "data" && d.aspect !== "prefix_schema" && !isServiceExempt(d)) {
       // 라이브러리/prefix 문서 제외
-      if (!["user_scenario", "process_flow"].includes(d.aspect)) {
+      if (!["user_scenario", "process_flow"].includes(d.aspect ?? "")) {
         noSvc++;
       }
     }
@@ -2037,7 +2047,7 @@ export async function cliDef(args: string[]): Promise<void> {
         case "parent": return await cmdParent(source, rest[0]);
         case "incoming": return await cmdIncoming(source, rest[0], flags["address"]);
         case "outgoing": return await cmdOutgoing(source, rest[0], flags["address"]);
-        case "validate": return await cmdValidate(source);
+        case "validate": return await cmdValidate(source, flags);
         case "search": return await cmdSearch(source, rest[0] ?? flags["q"] ?? "");
         case "concepts": return await cmdConcepts(source, flags);
         case "stats": return await cmdStats(source);
@@ -2172,9 +2182,9 @@ async function cmdGuide(source: DefDataSource, topic?: string) {
       console.log("=== 문서 작성 빠른 진입 ===\n");
       console.log(doc?.purpose ?? "(definition-authoring-guide 문서 없음)");
       console.log("\n핵심 체크:");
-      console.log("  1. 좌표 결정: scope/aspect/depth + level/layer/lifecycle");
+      console.log("  1. 책임/좌표 결정: E/C/I/S + L/P, tier/scope/aspect/depth + layer/lifecycle");
       console.log("  2. frontmatter: id, links, svc, tags");
-      console.log("  3. 본문: ^purpose 필수, group/module은 ^overview + contains");
+      console.log("  3. 본문: ^purpose 필수, contains parent는 ^overview + contains");
       console.log("  4. 코드 매핑: source: + @def.boundary/@def.doc → def sync → def find-by-file <경로[:symbol]>");
       console.log("\n바로 보기:");
       console.log("  def body definition-authoring-guide");
@@ -2217,11 +2227,12 @@ async function cmdGuide(source: DefDataSource, topic?: string) {
       const _level = await source.get("definition-level");
       console.log("=== 문서 분류 체계 ===\n");
       console.log("분류 축:");
+      console.log("  tier          — 구조 책임 (system/layout/component/entry)");
       console.log("  scope (7종)  — 무엇에 대한 정의인가 (ui/feature/flow/state/constraint/data/interface)");
       console.log("  aspect (22종) — 어떤 측면을 정의하는가 (scope별 2~5종)");
       console.log("  depth (4종)  — 얼마나 상세한가 (overview/specification/implementation/validation)");
       console.log("\n메타데이터:");
-      console.log("  level (3종)  — 문서의 역할 (group/module/leaf)");
+      console.log("  level (3종)  — contains 검증용 보조 메타데이터 (group/module/leaf)");
       console.log("  layer (4종)  — 왜 존재하는가 (domain/operation/mediation/experience)");
       console.log("  lifecycle    — 현재 상태 (draft/review/approved/deprecated/archived)");
       console.log("\n더 알아보기:");

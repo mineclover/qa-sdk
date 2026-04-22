@@ -302,5 +302,20 @@ export interface DefDataSource {
   ): Promise<DefBoundaryContextResult | null>;
 
   /** 그래프 검증 */
-  validate(): Promise<DefValidationResult>;
+  validate(options?: DefValidateOptions): Promise<DefValidationResult>;
+}
+
+/**
+ * `validate()` 호출 옵션
+ */
+export interface DefValidateOptions {
+  /**
+   * true면 packages/ Drizzle 스키마 정적 스캔으로 coordinate-storage.rule
+   * 위반을 함께 검출. local/scan 모드에서만 의미 있음 (server는 무시).
+   */
+  readonly includeCoordStorageCheck?: boolean;
+  /**
+   * 코드 스캔 루트 (기본: process.cwd()). 모노레포 외부에서 호출할 때 사용.
+   */
+  readonly repoRoot?: string;
 }

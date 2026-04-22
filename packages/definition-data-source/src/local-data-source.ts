@@ -21,9 +21,11 @@ import type {
   DefIncomingLink,
   DefListFilter,
   DefOutgoingLink,
+  DefValidateOptions,
   DefValidationResult,
   DefinitionEntry,
   DefinitionLink,
+  ValidateGraphOptions,
 } from "definition-catalog";
 import {
   analyzeImpact,
@@ -577,7 +579,7 @@ export class LocalDataSource implements DefDataSource {
     };
   }
 
-  async validate(): Promise<DefValidationResult> {
+  async validate(options: DefValidateOptions = {}): Promise<DefValidationResult> {
     const allDocs = await this.list({ limit: 10000 });
     const allIds = new Set(allDocs.map(d => d.docId));
     const issues: DefValidationResult["issues"] = [];
@@ -604,7 +606,11 @@ export class LocalDataSource implements DefDataSource {
       }
     }
 
-    issues.push(...validateGraph(registry).issues);
+    const graphOptions: ValidateGraphOptions = {
+      ...(options.includeCoordStorageCheck ? { includeCoordStorageCheck: true } : {}),
+      ...(options.repoRoot ? { repoRoot: options.repoRoot } : {}),
+    };
+    issues.push(...validateGraph(registry, graphOptions).issues);
 
     const refs = this.getAllCodeReferences();
     const docsById = new Map(allDocs.map((doc) => [doc.docId, doc]));
@@ -622,16 +628,16 @@ export class LocalDataSource implements DefDataSource {
         continue;
       }
       const isBoundaryEligible =
-        doc.level === "group" ||
-        doc.level === "module" ||
         doc.tier === "system" ||
-        doc.tier === "layout";
+        doc.tier === "layout" ||
+        doc.level === "group" ||
+        doc.level === "module";
       if (ref.relationType === "boundary" && !isBoundaryEligible) {
         issues.push({
           severity: "error",
           type: "invalid-code-boundary",
           docId: ref.docId,
-          message: `boundary reference "${ref.codePath}"는 group/module 또는 tier:system/layout 문서를 가리켜야 함`,
+          message: `boundary reference "${ref.codePath}"는 tier:system/layout 또는 legacy contains parent 문서를 가리켜야 함`,
         });
       }
       const scopeKey = makeCodeReferenceScopeKey(ref.codePath, ref.symbol);

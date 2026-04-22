@@ -20,6 +20,7 @@ import type {
   DefListFilter,
   DefOutgoingLink,
   DefSyntheticIncomingLink,
+  DefValidateOptions,
   DefValidationResult,
 } from "definition-catalog";
 
@@ -120,7 +121,8 @@ export class ServerDataSource implements DefDataSource {
     return this.fetchJson<DefBoundaryContextResult>(`/graph/${docId}/boundary-context?level=${level}&mode=${mode}`);
   }
 
-  async validate(): Promise<DefValidationResult> {
+  async validate(_options?: DefValidateOptions): Promise<DefValidationResult> {
+    // 서버는 코드 정적 스캔 불가 — _options.includeCoordStorageCheck는 무시한다.
     return this.fetchJson("/graph/validate", "POST");
   }
 
