@@ -3220,13 +3220,22 @@ importers:
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
+      resource-policy-store:
+        specifier: workspace:*
+        version: link:../../../../packages/resource-policy-store
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      weighted-index:
+        specifier: workspace:*
+        version: link:../../../../packages/weighted-index
       zod:
         specifier: ^3.24.2
         version: 3.25.76
     devDependencies:
+      '@nestjs/testing':
+        specifier: ^11.0.0
+        version: 11.1.17(@nestjs/common@11.1.17(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.17)
       '@types/better-sqlite3':
         specifier: 'catalog:'
         version: 7.6.13
