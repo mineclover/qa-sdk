@@ -184,6 +184,7 @@ export const deadLetterQueue = pgTable("dead_letter_queue", {
 // ── Key Observations ───────────────────────────────────
 // packed_key 관측 빈도 추적. 좌표 공간 coverage/drift 분석.
 
+// @def.coord-storage-exempt: PG 스키마 미이행 — auth-model-implementation-backlog Plan 07b(ingest key_observations PG 어댑터)에서 dual-target 패턴으로 이행 예정. D1 동기는 §4(02-ingest-audit-versioning.md) 완료.
 export const keyObservations = pgTable("key_observations", {
   packedKey: text("packed_key").primaryKey(),
   prefixId: text("prefix_id").notNull(),
