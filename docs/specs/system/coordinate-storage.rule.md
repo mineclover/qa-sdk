@@ -130,3 +130,9 @@ const DEFAULT_VERSION = "v1";
 // ❌ 금지 — address_context: {"role": 1, "action": 2}
 // ✅ 권장 — address_context: {"version": "pv1", "coords": {...}}
 ```
+
+---
+
+## 사례
+
+- **2026-04-22**: ingest-server `key_observations`/`key_observation_prefixes` 이행. packed_key 단일 컬럼 → `(prefix_id, version, address)` 복합 PK + 구조화 컬럼. SDK emit 단계에서 `AddressContextV1Schema` 검증 진입점 추가. 감사: `docs/proposals/ingest-coordinate-storage-audit/README.md`

@@ -2,6 +2,9 @@
 
 ingest-server의 저장 스키마를 `coordinate-storage.rule.md` 기준으로 감사하고, 이행 필요성을 평가한다.
 
+> **이행 상태 (2026-04-22)**: P1·P2·P3 모두 완료 (D1 한정). ClickHouse는 운영 도입 시점에 동기.
+> 결론: "부분 준수" → **"준수"**. 상세는 본 문서 끝의 [이행 완료](#이행-완료-2026-04-22) 섹션 참조.
+
 **결론**: 현재 저장 패턴은 `coordinate-storage.rule`의 엄격 준수는 아니지만, 대부분 실질적으로는 안전. 일부 테이블에 예외 문서화 또는 점진적 이행 필요.
 
 감사 대상: `packages/ingest-server/src/stores/d1-schema.sql.ts` (D1 DDL, Drizzle schema와 동기)
@@ -118,3 +121,19 @@ prefix별 aggregate. 좌표 저장 아님. 예외.
 - 규칙: `docs/specs/system/coordinate-storage.rule.md`
 - 전략: `packages/weighted-index/docs/rdbms-equivalence/strategy-hybrid.md`
 - 이행 체크리스트: (P1 실행 시 별도 todo 문서로 승격)
+
+---
+
+## 이행 완료 (2026-04-22)
+
+| 항목 | 상태 | 위치 |
+|---|---|---|
+| P1 — `key_observations` version 컬럼 | ✅ 완료 | `packages/ingest-server/src/db/schema.ts`, `packages/ingest-server/src/stores/d1-key-observation-store.ts`, 마이그레이션 `packages/ingest-server/src/stores/migrations/0001_key_observations_versioned.sql.ts` |
+| P2 — `address_context` JSON 스키마 계약 | ✅ 완료 | `AddressContextV1Schema` in `@qa-sdk/core/coordinates/address-context-schema` + SDK `auto-track` emit 시점 검증 |
+| P3 — `key_observation_prefixes` version 차원 | ✅ 완료 | schema/store/마이그레이션 `0002_key_observation_prefixes_versioned.sql.ts` |
+
+ClickHouse 스키마는 운영 도입 시점에 동기 (보류). `packages/ingest-server/src/stores/clickhouse-schema.sql.ts` 상단 TODO 참조.
+
+**본 감사 결론 변경**: "부분 준수" → **"준수"**.
+
+다음 재감사 트리거: 신규 좌표 저장 테이블 추가, ClickHouse 운영 도입, PG 스키마에 동일 패턴 적용.
