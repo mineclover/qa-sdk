@@ -6,7 +6,7 @@ def:
   scope: interface
   aspect: api_contract
   depth: specification
-  lifecycle: implemented
+  lifecycle: approved
   layer: operation
   svc: authorization-ontology
   tags: [security, observability, audit, tracing]
