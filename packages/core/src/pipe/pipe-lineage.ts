@@ -137,7 +137,7 @@ function extractStepLineage(
     const hint = dc.lineageHints?.[outputField];
 
     if (hint) {
-      // 명시적 힌트 사용
+      // 명시적 힌트 사용 — FieldLineage spec(facet-code-lineage.spec.md)이 정의한 필드만 사용
       lineages.push({
         target: { schemaId: stepSchemaId, column: outputField },
         sources: hint.sources.map(s => ({ schemaId: stepSchemaId, column: s })),
@@ -145,9 +145,6 @@ function extractStepLineage(
         pipeId,
         stepPath: path,
         facet: step.facet || undefined,
-        // ─── 추적 정보 주입 ───
-        lineageFacet: "transform", // 생산/변환 단계
-        intentHierarchy: "core",    // 기본값. 향후 step.meta 등에서 오버라이드 가능
       });
     }
     // hints 없는 이름 매칭 pass-through는 chain lineage에서 처리 (step-internal에서 생성하면 self-reference BFS 문제)
