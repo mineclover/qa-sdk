@@ -7,8 +7,10 @@
  * 데이터 추적성의 기반 — 스키마에서 도메인 타입까지 추적 가능.
  */
 
-/** eventRecords.addressContext — prefix별 인코딩된 좌표 */
-export type AddressContextJson = Record<string, string>;
+import type { AddressContextV1 } from "./address-context-schema.js";
+
+/** eventRecords.addressContext — prefix별 인코딩된 좌표 (계약: AddressContextV1) */
+export type AddressContextJson = AddressContextV1;
 
 /** eventRecords.payload — 이벤트 페이로드 */
 export type EventPayloadJson = Record<string, unknown>;
@@ -49,3 +51,11 @@ export const EMPTY_PAYLOAD_SUMMARY: PayloadSummaryJson = {
   fieldFrequency: {},
   sampleValues: {},
 };
+
+export {
+  AddressContextV1Schema,
+  parsePackedAddress,
+  serializePackedAddress,
+  type AddressContextV1,
+  type ParsedPackedAddress,
+} from "./address-context-schema.js";

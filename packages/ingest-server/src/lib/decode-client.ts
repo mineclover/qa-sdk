@@ -8,6 +8,8 @@
  * DECODE_SERVICE_URL이 설정되지 않으면 null 반환 → 로컬 fallback.
  */
 
+import { parsePackedAddress } from "../db/address-context-schema.js";
+
 export interface DecodedAddress {
   prefix: string;
   version: string;
@@ -30,27 +32,29 @@ export async function decodeAddressContext(
     const results: Record<string, DecodedAddress> = {};
 
     for (const [key, value] of Object.entries(addressContext)) {
-      const parts = value.split(":");
-      if (parts.length < 3) continue;
-
-      // 3파트: prefix:version:address  또는 4파트: catalogId:prefix:version:address
-      const address = parseInt(parts[parts.length - 1], 10);
-      const version = parts[parts.length - 2];
-      const prefix = parts.length === 4 ? parts[1] : parts[0];
-
-      if (isNaN(address)) continue;
+      const parsed = parsePackedAddress(value);
+      if (!parsed) continue;
 
       const res = await fetch(`${baseUrl}/decode`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input: address, prefix, version }),
+        body: JSON.stringify({
+          input: parsed.address,
+          prefix: parsed.prefix,
+          version: parsed.version,
+        }),
         signal: AbortSignal.timeout(3_000),
       });
 
       if (res.ok) {
-        const body = await res.json() as { entities?: Record<string, string> };
+        const body = (await res.json()) as { entities?: Record<string, string> };
         if (body.entities) {
-          results[key] = { prefix, version, address, entities: body.entities };
+          results[key] = {
+            prefix: parsed.prefix,
+            version: parsed.version,
+            address: parsed.address,
+            entities: body.entities,
+          };
         }
       }
     }
