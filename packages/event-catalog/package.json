@@ -16,6 +16,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
+  "dependencies": {
+    "@qa-sdk/core": "workspace:*"
+  },
   "devDependencies": {
     "typescript": "^5.8.2"
   }

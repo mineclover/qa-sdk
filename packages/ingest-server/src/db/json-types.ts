@@ -7,7 +7,7 @@
  * 데이터 추적성의 기반 — 스키마에서 도메인 타입까지 추적 가능.
  */
 
-import type { AddressContextV1 } from "./address-context-schema.js";
+import type { AddressContextV1 } from "@qa-sdk/core/coordinates/address-context-schema";
 
 /** eventRecords.addressContext — prefix별 인코딩된 좌표 (계약: AddressContextV1) */
 export type AddressContextJson = AddressContextV1;
@@ -58,4 +58,4 @@ export {
   serializePackedAddress,
   type AddressContextV1,
   type ParsedPackedAddress,
-} from "./address-context-schema.js";
+} from "@qa-sdk/core/coordinates/address-context-schema";

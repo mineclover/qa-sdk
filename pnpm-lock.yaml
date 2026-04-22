@@ -1022,6 +1022,10 @@ importers:
         version: 5.9.3
 
   packages/event-catalog:
+    dependencies:
+      '@qa-sdk/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       typescript:
         specifier: ^5.8.2

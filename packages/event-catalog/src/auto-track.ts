@@ -13,6 +13,8 @@
  *   5. emitFn 호출 (QaMonitor.emitWithCoords 또는 QaLogger.log)
  */
 
+import { AddressContextV1Schema } from "@qa-sdk/core/coordinates/address-context-schema";
+
 import { getMapping, resolvePrefixDims } from "./prefix-mapping.js";
 import type { TrackingContextManager } from "./tracking-context.js";
 
@@ -132,7 +134,20 @@ export function createAutoTracker(config: AutoTrackerConfig): AutoTracker {
         }
       }
 
-      emit(eventKey, addressContext, payload);
+      // emit 직전 schema 검증 — fail-fast로 잘못된 좌표가 ingest까지 도달하지 못 하게.
+      // dev/test: throw (systematic bug 즉시 노출)
+      // prod: silent skip + 빈 컨텍스트로 emit (UI 크래시 방지)
+      const validation = AddressContextV1Schema.safeParse(addressContext);
+      if (!validation.success) {
+        if (typeof process !== "undefined" && process.env?.NODE_ENV !== "production") {
+          throw new Error(
+            `auto-track: addressContext schema 위반 — ${eventKey}: ${validation.error.message}`,
+          );
+        }
+        emit(eventKey, {}, payload);
+        return;
+      }
+      emit(eventKey, validation.data, payload);
     },
   };
 }

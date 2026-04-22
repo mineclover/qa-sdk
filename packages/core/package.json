@@ -15,6 +15,10 @@
     "./platform": {
       "types": "./dist/platform/index.d.ts",
       "import": "./dist/platform/index.js"
+    },
+    "./coordinates/*": {
+      "types": "./dist/coordinates/*.d.ts",
+      "import": "./dist/coordinates/*.js"
     }
   },
   "files": [
