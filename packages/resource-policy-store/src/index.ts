@@ -43,3 +43,15 @@ export {
   type ResourcePolicyRegisterArgs,
   type ResourcePolicyDelegateArgs,
 } from "./port.js";
+
+// RLS bit catalog (Plan 15b)
+export {
+  RP_READ_BIT,
+  RP_WRITE_BIT,
+  RP_DELETE_BIT,
+  AUDIT_READ_BIT,
+  INGEST_READ_BIT,
+  EVENT_READ_BIT,
+  RLS_BIT_CATALOG,
+  type RlsBitName,
+} from "./pg/rls-bits.js";
