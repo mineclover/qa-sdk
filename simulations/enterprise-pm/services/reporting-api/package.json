@@ -1,7 +1,7 @@
 {
   "name": "@qa-sdk/sim-reporting-api",
   "version": "0.1.0",
-  "description": "시뮬 — 분석·대시보드 (marginal density 측정) NestJS 서비스",
+  "description": "\uc2dc\ubbac \u2014 \ubd84\uc11d\u00b7\ub300\uc2dc\ubcf4\ub4dc (marginal density \uce21\uc815) NestJS \uc11c\ube44\uc2a4",
   "private": true,
   "type": "module",
   "scripts": {
@@ -21,6 +21,7 @@
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/logger": "workspace:*",
     "@qa-sdk/otel": "workspace:*",
+    "@qa-sdk/sim-bitmap-cache": "workspace:*",
     "db-bootstrap": "workspace:*",
     "drizzle-orm": "catalog:",
     "reflect-metadata": "^0.2.2",
@@ -32,8 +33,12 @@
     "postgres": "^3.4.0"
   },
   "peerDependenciesMeta": {
-    "better-sqlite3": { "optional": true },
-    "postgres": { "optional": true }
+    "better-sqlite3": {
+      "optional": true
+    },
+    "postgres": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/better-sqlite3": "catalog:",

@@ -2711,6 +2711,9 @@ importers:
       '@qa-sdk/otel':
         specifier: workspace:*
         version: link:../../../../packages/otel
+      '@qa-sdk/sim-bitmap-cache':
+        specifier: workspace:*
+        version: link:../../packages/sim-bitmap-cache
       db-bootstrap:
         specifier: workspace:*
         version: link:../../../../packages/db-bootstrap
@@ -2772,6 +2775,9 @@ importers:
       '@qa-sdk/otel':
         specifier: workspace:*
         version: link:../../../../packages/otel
+      '@qa-sdk/sim-bitmap-cache':
+        specifier: workspace:*
+        version: link:../../packages/sim-bitmap-cache
       audit-recorder-store:
         specifier: workspace:*
         version: link:../../../../packages/audit-recorder-store
@@ -2891,6 +2897,9 @@ importers:
       '@qa-sdk/otel':
         specifier: workspace:*
         version: link:../../../../packages/otel
+      '@qa-sdk/sim-bitmap-cache':
+        specifier: workspace:*
+        version: link:../../packages/sim-bitmap-cache
       db-bootstrap:
         specifier: workspace:*
         version: link:../../../../packages/db-bootstrap
@@ -3047,6 +3056,9 @@ importers:
       '@qa-sdk/otel':
         specifier: workspace:*
         version: link:../../../../packages/otel
+      '@qa-sdk/sim-bitmap-cache':
+        specifier: workspace:*
+        version: link:../../packages/sim-bitmap-cache
       db-bootstrap:
         specifier: workspace:*
         version: link:../../../../packages/db-bootstrap
@@ -3108,6 +3120,9 @@ importers:
       '@qa-sdk/otel':
         specifier: workspace:*
         version: link:../../../../packages/otel
+      '@qa-sdk/sim-bitmap-cache':
+        specifier: workspace:*
+        version: link:../../packages/sim-bitmap-cache
       db-bootstrap:
         specifier: workspace:*
         version: link:../../../../packages/db-bootstrap
@@ -3169,6 +3184,9 @@ importers:
       '@qa-sdk/otel':
         specifier: workspace:*
         version: link:../../../../packages/otel
+      '@qa-sdk/sim-bitmap-cache':
+        specifier: workspace:*
+        version: link:../../packages/sim-bitmap-cache
       db-bootstrap:
         specifier: workspace:*
         version: link:../../../../packages/db-bootstrap

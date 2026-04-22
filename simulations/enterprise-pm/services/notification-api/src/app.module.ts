@@ -1,11 +1,15 @@
 // @def.boundary sim-notification-api
-// @def.doc sim-erp-pm-design
+// @def.doc authorization-ontology-bitmap-pipeline
 
 import { Module } from "@nestjs/common";
 import { HealthModule } from "./health/health.module.js";
 import { NotificationDbModule } from "./notification/notification-db.module.js";
 import { NotificationModule } from "./notification/notification/notification.module.js";
 import { SubscriptionModule } from "./notification/subscription/subscription.module.js";
+import { BitmapCacheModule } from "@qa-sdk/sim-bitmap-cache";
+import { env } from "./config/env.js";
+import { createLogger } from "./lib/logger.js";
+import { createSubscriberLogger } from "./lib/bitmap-cache-logger.js";
 
 @Module({
   imports: [
@@ -13,6 +17,14 @@ import { SubscriptionModule } from "./notification/subscription/subscription.mod
     NotificationDbModule.forRoot(),
     NotificationModule,
     SubscriptionModule,
+    BitmapCacheModule.forRoot({
+      redisUrl: env.SIM_REDIS_URL,
+      publisherEnabled: false,
+      listenerEnabled: true,
+      publisherName: "sim-notification-api",
+      lruMax: 10_000,
+      logger: createSubscriberLogger(createLogger("sim-notification-api.bitmap-cache")),
+    }),
   ],
 })
 export class AppModule {}
