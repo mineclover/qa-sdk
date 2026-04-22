@@ -24,3 +24,14 @@ export {
   type DbEnv,
   type ParsedDbEnv,
 } from "./env.js";
+
+// Plan 15c — RLS session context
+export {
+  type RlsSessionContext,
+  type RlsTxRunner,
+  EMPTY_RLS_CONTEXT,
+  MAX_BITMAP_BYTES,
+  BitmapTooLargeError,
+  encodeBitmapHex,
+  createRlsTxRunner,
+} from "./rls-session.js";
