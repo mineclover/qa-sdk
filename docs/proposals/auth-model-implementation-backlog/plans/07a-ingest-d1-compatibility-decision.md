@@ -1,13 +1,15 @@
 ---
-status: review
+status: approved
 type: plan
 owner: auth-model-implementation-backlog
-needs-input: true
+decision: A
+decided-at: 2026-04-22
+decided-by: user
 ---
 
 # Plan 07a — D1 호환성 결정 (디자인 문서)
 
-> **For human reviewers:** 본 문서는 코드 변경이 없는 **결정 문서**다. 07b/07c/07d 실행 전에 사용자 확정이 필요하다 (`needs-input: true`). 추천 옵션 + 근거를 명시했고, 최종 결정은 `## 결정 기록` 섹션에 사용자 또는 lead가 서명한다.
+> **결정 확정 (2026-04-22, 사용자)**: **Option A** — D1을 SQLite 어댑터의 capability-flag special case로 통합. 07b/07c/07d는 본 결정 기반으로 구현한다.
 
 **Goal:** ingest-server는 D1(Cloudflare Workers의 SQLite-호환) + 자체 SQLite 둘 다 운영 중이다. Plan 07b/07c가 PG 어댑터를 추가하면 dialect 분기가 2 → 3으로 늘어난다. D1을 어떻게 다룰지 결정해 후속 plan의 디렉토리 구조·factory 분기·테스트 매트릭스를 확정한다.
 
