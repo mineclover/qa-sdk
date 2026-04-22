@@ -157,6 +157,34 @@ CREATE INDEX IF NOT EXISTS idx_event_records_trace_id_pg         ON ingest.event
 CREATE INDEX IF NOT EXISTS idx_event_records_trace_timestamp_pg  ON ingest.event_records(trace_id, timestamp);
 CREATE INDEX IF NOT EXISTS idx_event_records_event_key_pg        ON ingest.event_records(event_key);
 CREATE INDEX IF NOT EXISTS idx_event_records_session_id_pg       ON ingest.event_records(qa_session_id);
+
+-- RLS — Phase 3 Plan 15b
+-- actor_id OR user_id 가 current_user_id() 와 일치하는 row 만 read.
+-- INSERT 는 actor_id = current_user_id() 또는 NULL.
+
+ALTER TABLE ingest.event_records ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY er_admin_bypass ON ingest.event_records
+  FOR ALL
+  USING (auth.current_role_tag() = 'admin')
+  WITH CHECK (auth.current_role_tag() = 'admin');
+
+CREATE POLICY er_select_policy ON ingest.event_records
+  FOR SELECT
+  USING (
+    auth.has_bit(31)
+    AND (
+      actor_id = auth.current_user_id()
+      OR user_id = auth.current_user_id()
+    )
+  );
+
+CREATE POLICY er_insert_policy ON ingest.event_records
+  FOR INSERT
+  WITH CHECK (
+    actor_id IS NULL
+    OR actor_id = auth.current_user_id()
+  );
 `;
 
 /**
@@ -193,4 +221,55 @@ CREATE TABLE IF NOT EXISTS ingest.key_observation_prefixes (
   last_seen      TEXT NOT NULL,
   PRIMARY KEY (prefix_id, version)
 );
+
+-- RLS — Phase 3 Plan 15b 실제 정책
+-- helper: auth.* (Plan 15a). bit: INGEST_READ_BIT=30 (rls-bits.ts).
+-- tenant 경계: prefix_id 앞 segment 가 app.tenant_id 와 일치해야 함.
+
+ALTER TABLE ingest.key_observations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY ko_admin_bypass ON ingest.key_observations
+  FOR ALL
+  USING (auth.current_role_tag() = 'admin')
+  WITH CHECK (auth.current_role_tag() = 'admin');
+
+CREATE POLICY ko_select_policy ON ingest.key_observations
+  FOR SELECT
+  USING (
+    auth.has_bit(30)
+    AND split_part(prefix_id, '_', 1) = current_setting('app.tenant_id', true)
+    AND current_setting('app.tenant_id', true) IS NOT NULL
+    AND current_setting('app.tenant_id', true) <> ''
+  );
+
+CREATE POLICY ko_insert_policy ON ingest.key_observations
+  FOR INSERT
+  WITH CHECK (
+    split_part(prefix_id, '_', 1) = current_setting('app.tenant_id', true)
+    AND current_setting('app.tenant_id', true) IS NOT NULL
+    AND current_setting('app.tenant_id', true) <> ''
+  );
+
+-- UPDATE (count 증가 upsert) 은 INSERT 와 동일 tenant 조건
+CREATE POLICY ko_update_policy ON ingest.key_observations
+  FOR UPDATE
+  USING (
+    split_part(prefix_id, '_', 1) = current_setting('app.tenant_id', true)
+  )
+  WITH CHECK (
+    split_part(prefix_id, '_', 1) = current_setting('app.tenant_id', true)
+  );
+
+-- key_observation_prefixes 도 동일 tenant 경계
+ALTER TABLE ingest.key_observation_prefixes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY kop_admin_bypass ON ingest.key_observation_prefixes
+  FOR ALL
+  USING (auth.current_role_tag() = 'admin')
+  WITH CHECK (auth.current_role_tag() = 'admin');
+
+CREATE POLICY kop_all_policy ON ingest.key_observation_prefixes
+  FOR ALL
+  USING (split_part(prefix_id, '_', 1) = current_setting('app.tenant_id', true))
+  WITH CHECK (split_part(prefix_id, '_', 1) = current_setting('app.tenant_id', true));
 `;

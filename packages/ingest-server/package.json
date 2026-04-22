@@ -66,6 +66,7 @@
     "@types/ws": "^8.18.1",
     "drizzle-kit": "catalog:",
     "postgres": "^3.4.0",
+    "resource-policy-store": "workspace:*",
     "tsup": "^8.5.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
