@@ -99,37 +99,11 @@ Covering 전략(`strategy-covering.md`)을 따라 entity 이름·값을 함께 �
 
 ## 5. 검증
 
-### 5.1 자동 검출 (`def validate`)
-
-`def validate`는 `packages/*/src/**/*.ts` Drizzle 스키마를 정적 스캔하여 본 규칙 위반을 검출한다.
-
-- **검출 대상**: `sqliteTable` / `pgTable` / `mysqlTable` 호출 중 `address` 또는 `packedKey` 컬럼과 `prefix_id` 컬럼이 함께 존재하는 테이블
-- **검증 항목**:
-  1. `version` 컬럼 존재 (위반 시 `missing-version` 에러)
-  2. PK 또는 UNIQUE 제약이 `(prefix_id, version, address|packed_key)` 모두 포함 (위반 시 `missing-composite-pk` 에러)
-- **집계 테이블 예외**: address/packedKey 없이 `(prefix_id, version)` PK만 있는 경우는 통과 (예: `key_observation_prefixes`)
-- **issue type**: `coordinate-storage-violation` (severity=error, CI gate 실패)
-- **비활성화**: `def validate --no-code-checks=true`
-
-### 5.2 Opt-out: exempt 주석
-
-테이블 선언 직전 줄에 다음 주석 1줄을 두면 검사 통과:
-
-```ts
-// @def.coord-storage-exempt: <100자 이내 사유>
-export const legacyTable = pgTable("legacy", { ... });
-```
-
-- 사유 비어 있으면 인정 안 됨
-- 사유에는 backlog/plan 참조를 권장 (예: `Plan 07b backlog 참조`)
-- exempt는 영구가 아닌 이행 대기 상태를 의미. 이행 완료 시 주석 제거
-
-### 5.3 작성자 책임
-
-- 새 좌표 저장 스키마 PR은 본 규칙 참조 필수
-- `def validate`에서 본 rule을 참조하는 스펙 문서가 존재하는지 확인
-- 저장 스키마 변경 시 관련 ADR 또는 plan 문서 갱신
-- exempt 주석 추가 시 backlog 또는 후속 plan 문서에 이행 항목 등록
+- `def validate`가 `packages/*/src/**/*.ts` Drizzle 스키마를 정적 스캔 — `address`/`packedKey` + `prefix_id` 공존 테이블에 대해 `version` 컬럼 + `(prefix_id, version, address|packed_key)` 복합 PK/UNIQUE 강제. 위반 issue type = `coordinate-storage-violation` (error, CI gate 실패). 비활성화: `--no-code-checks=true`.
+- 집계 테이블(`address`/`packedKey` 없이 `(prefix_id, version)` PK)은 통과.
+- Opt-out: 테이블 선언 직전에 `// @def.coord-storage-exempt: <사유>` 1줄. 사유 빈 칸은 인정 안 됨. backlog/plan 참조 권장.
+- 작성자 체크리스트: `coordinate-storage-pr-checklist` 참조.
+- 저장 스키마 변경 시 관련 ADR 또는 plan 문서 갱신.
 
 ---
 
