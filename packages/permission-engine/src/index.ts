@@ -20,6 +20,41 @@ export {
 } from "./resource-policy/index.js";
 
 export {
+  issueBitmap,
+  verifyBitmap,
+  type IssueArgs,
+  type VerifyArgs,
+  type VerifyFailureReason,
+  type VerifyResult,
+  type VersionedBitmap,
+} from "./versioned-bitmap/index.js";
+
+export {
+  EntryNotFoundError,
+  InMemoryAuditRecorder,
+  ParentNotFoundError,
+  type AuditEntry,
+  type AuditKind,
+  type AuditOutcome,
+  type AuditRecorder,
+  type CheckEntry,
+  type CheckPass,
+  type ExecutionEntry,
+  type RecordCheckArgs,
+  type RecordExecutionArgs,
+} from "./audit/index.js";
+
+export {
+  AccessChecker,
+  type AccessCheckerDeps,
+  type AccessContext,
+  type AccessResult,
+  type ApiCall,
+  type InstancePolicyEvaluator,
+  type InstancePolicyResolver,
+} from "./access-checker/index.js";
+
+export {
   PermissionSet,
   type DimDef,
   type PermissionSetOptions,
