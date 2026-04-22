@@ -33,7 +33,7 @@ export async function proxyRequest(args: ProxyArgs): Promise<Response> {
   });
 
   // body 변환 — GET/HEAD는 body 금지
-  let body: BodyInit | undefined;
+  let body: ArrayBuffer | undefined;
   if (args.request.method !== "GET" && args.request.method !== "HEAD") {
     body = await args.request.clone().arrayBuffer();
   }

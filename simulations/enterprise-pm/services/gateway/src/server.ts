@@ -1,8 +1,6 @@
 // @def.boundary sim-gateway
-// @def.doc sim-erp-pm-design
+// @def.doc authorization-ontology-bitmap-pipeline
 
-// NOTE: reflect-metadata는 Hono 서비스에서 불필요 — decode-service 패턴과 일치.
-// 본 plan 10c Task 4의 초기 snippet은 NestJS 패턴을 실수로 복제. metrics-collector(동일 plan)는 미포함.
 import { serve } from "@hono/node-server";
 import { warnPortConflict, installSimpleShutdown } from "@qa-sdk/core";
 import { initTelemetry, otelEnvSchema } from "@qa-sdk/otel";
@@ -18,21 +16,32 @@ const otelShutdown = initTelemetry({
   env: otelEnvSchema.parse(process.env),
 });
 
-const app = createApp();
+const app = createApp({
+  authApiUrl: env.AUTH_API_URL,
+  jwtSecret: env.JWT_SECRET,
+  jwtTtlSeconds: env.JWT_TTL_SECONDS,
+  currentBitmapV: env.BITMAP_VERSION, // §2 §6 unified version
+  proxyTimeoutMs: env.PROXY_TIMEOUT_MS,
+  proxyTargets: {
+    "sim-pm-api": env.PM_API_URL,
+    "sim-approval-api": env.APPROVAL_API_URL,
+    "sim-notification-api": env.NOTIFICATION_API_URL,
+    "sim-reporting-api": env.REPORTING_API_URL,
+    "sim-document-api": env.DOCUMENT_API_URL,
+    "sim-audit-browser-api": env.AUDIT_BROWSER_API_URL,
+  },
+});
 
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
   logger.info(
     {
       port: info.port,
       authApi: env.AUTH_API_URL,
-      pmApi: env.PM_API_URL,
-      approvalApi: env.APPROVAL_API_URL,
-      notificationApi: env.NOTIFICATION_API_URL,
-      reportingApi: env.REPORTING_API_URL,
-      documentApi: env.DOCUMENT_API_URL,
-      auditBrowserApi: env.AUDIT_BROWSER_API_URL,
+      currentBitmapV: env.BITMAP_VERSION,
+      jwtTtlSeconds: env.JWT_TTL_SECONDS,
+      proxyTimeoutMs: env.PROXY_TIMEOUT_MS,
     },
-    `${SERVICE_NAME} listening`,
+    `${SERVICE_NAME} listening (Plan 12a JWT + traceparent + reverse proxy)`,
   );
   warnPortConflict(SERVICE_NAME, env.PORT, logger);
 });
