@@ -4,6 +4,31 @@
   "description": "시뮬 — Hono 기반 gateway (JWT bitmap embed + traceparent + 라우팅)",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    },
+    "./app": {
+      "types": "./dist/app.d.ts",
+      "import": "./dist/app.js"
+    },
+    "./jwt": {
+      "types": "./dist/lib/jwt.d.ts",
+      "import": "./dist/lib/jwt.js"
+    },
+    "./bitmap-claim": {
+      "types": "./dist/lib/bitmap-claim.d.ts",
+      "import": "./dist/lib/bitmap-claim.js"
+    },
+    "./test-bootstrap": {
+      "types": "./dist/test-bootstrap.d.ts",
+      "import": "./dist/test-bootstrap.js"
+    }
+  },
+  "bin": {
+    "sim-gateway": "dist/server.js"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsup",

@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 // @def.boundary sim-gateway
 // @def.doc authorization-ontology-bitmap-pipeline
 
