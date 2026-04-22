@@ -60,3 +60,10 @@ export {
   RLS_SHADOW_META,
   type RlsShadowRecorder,
 } from "./rls-shadow-interceptor.js";
+
+// Plan 15e — admin bypass connection
+export {
+  createAdminBypassConnection,
+  type AdminBypassConnectionConfig,
+  type AdminBypassConnection,
+} from "./admin-bypass.js";
