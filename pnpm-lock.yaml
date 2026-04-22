@@ -2676,6 +2676,55 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(lightningcss@1.32.0)
 
+  simulations/enterprise-pm/services/audit-browser-api:
+    dependencies:
+      '@nestjs/common':
+        specifier: ^11.0.0
+        version: 11.1.17(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core':
+        specifier: ^11.0.0
+        version: 11.1.17(@nestjs/common@11.1.17(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/websockets@11.1.17)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/platform-fastify':
+        specifier: ^11.0.0
+        version: 11.1.17(@fastify/static@9.0.0)(@nestjs/common@11.1.17(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.17)
+      '@qa-sdk/core':
+        specifier: workspace:*
+        version: link:../../../../packages/core
+      '@qa-sdk/logger':
+        specifier: workspace:*
+        version: link:../../../../packages/logger
+      '@qa-sdk/otel':
+        specifier: workspace:*
+        version: link:../../../../packages/otel
+      audit-recorder-store:
+        specifier: workspace:*
+        version: link:../../../../packages/audit-recorder-store
+      db-bootstrap:
+        specifier: workspace:*
+        version: link:../../../../packages/db-bootstrap
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: ^7.8.1
+        version: 7.8.2
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.15
+      tsx:
+        specifier: ^4.19.3
+        version: 4.21.0
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(lightningcss@1.32.0)
+
   simulations/enterprise-pm/services/auth-api:
     dependencies:
       '@nestjs/common':
