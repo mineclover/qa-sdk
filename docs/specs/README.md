@@ -301,6 +301,14 @@ Claude/Codex skill + DKG skill의 목적·맥락·관계를 experience 계층에
 | [gate-api.spec.md](gate/gate-api.spec.md) | Gate Service — 주소 상태 관리 API와 cascade 정합성 모델 | GateEngine, invalid-ranges | implemented |
 | [query-api.spec.md](query-system/query-api.spec.md) | Query Service — 관계형 질의, 정책 해소, gate 통합 API | RelationalEngine, policy-resolver | implemented |
 
+### simulations/ — 시뮬레이션 커버리지
+
+qa-sdk 5축(권한·이벤트·관측·로직·로깅)을 실제 도메인에서 end-to-end 검증하는 시뮬레이션 결과 매트릭스.
+
+| 스펙 | 설명 | 원본 경로 | 상태 |
+|---|---|---|---|
+| [sim-erp-pm-coverage.spec.md](sim-erp-pm-coverage.spec.md) | Enterprise PM 시뮬 — 5축 × 8 시나리오 매트릭스 + 회귀 게이트 | simulations/enterprise-pm/ | draft |
+
 ### operations/ — 운영 시나리오
 
 런타임 흐름 정의와 심볼 체계. 모듈 스펙에서 `[S2]`, `[A5]` 등으로 cross-reference한다.
