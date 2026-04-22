@@ -135,6 +135,11 @@ export {
   createBinder,
   type PartialBinder,
 } from "./vocab/partial-binder.js";
+export {
+  DisjointUnionIndex,
+  UnionKindError,
+  type UnionVariant,
+} from "./vocab/union-index.js";
 
 // ── protocol ────────────────────────────────────────────────────────────────
 export {

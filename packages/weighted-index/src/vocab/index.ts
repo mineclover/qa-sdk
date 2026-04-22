@@ -32,3 +32,9 @@ export {
   createBinder,
   type PartialBinder,
 } from "./partial-binder.js";
+
+export {
+  DisjointUnionIndex,
+  UnionKindError,
+  type UnionVariant,
+} from "./union-index.js";
