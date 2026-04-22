@@ -382,3 +382,15 @@ export {
   suggestLifecycleFromVerdict,
   buildDefinitionContext,
 } from "./bridge.js";
+
+// ─── 좌표 저장 자동 검출 (coordinate-storage.rule) ──────
+export {
+  parseDrizzleTables,
+  checkCoordinateStorage,
+  scanCoordinateStorage,
+  type CoordStorageViolation,
+  type CoordStorageViolationKind,
+  type CoordStorageScanOptions,
+  type ScannedTable,
+  type DrizzleDialect,
+} from "./coordinate-storage-check.js";
