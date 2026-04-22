@@ -23,6 +23,7 @@ QA-SDK 마이크로서비스 및 인프라 도구의 포트 할당 규칙을 정
 - **SSOT**: `@qa-sdk/core`의 `SERVICE_PORTS` 상수가 포트 할당의 유일한 진실 공급원이다.
 - **주입 방식**: `infra-engine export env` 명령이 중앙 정의를 바탕으로 `.env` 파일을 자동 생성하며, 서비스는 이를 주입받아 실행된다.
 - **Strict Enforcement**: 각 서비스의 `env.ts`는 하드코딩된 fallback 포트를 가질 수 없으며, 중앙 레지스트리에 등록되지 않은 서비스는 실행이 차단된다.
+- **인프라 DB**: `zitadel-postgres`, `qa-sdk-postgres`처럼 PG 인스턴스도 SERVICE_PORTS에 등록한다. 서비스의 `QA_PG_PORT`는 service-profile/.env에서 주입받으며 SERVICE_PORTS는 충돌 검출 단일 진입점 역할.
 
 ## 포트 테이블 ^overview
 
@@ -31,6 +32,8 @@ QA-SDK 마이크로서비스 및 인프라 도구의 포트 할당 규칙을 정
 | **Infra** | Grafana | 3000 | 시각화 대시보드 |
 | **Infra** | Loki | 3100 | 로그 집계 (과거 registry-server 포트) |
 | **Infra** | Prometheus | 9090 | 메트릭 수집 |
+| **Infra** | zitadel-postgres | 5433 | Zitadel 인증 DB 컨테이너 |
+| **Infra** | qa-sdk-postgres | 5434 | qa-sdk 메인 PG 컨테이너 (auth/audit/ingest/decision/definition schema) |
 | **Engine** | ingest-server | 3200 | 이벤트 수집 |
 | **Engine** | registry-service | 3300 | 정의 및 주소 스키마 관리 |
 | **Engine** | gate-service | 3400 | 주소 상태 게이트 |

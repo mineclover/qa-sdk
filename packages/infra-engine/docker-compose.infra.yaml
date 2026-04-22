@@ -111,7 +111,32 @@ services:
       timeout: 3s
       retries: 10
 
+  qa-sdk-db:
+    image: postgres:16-alpine
+    env_file: .env.docker
+    environment:
+      POSTGRES_DB: postgres
+      # init.sql의 \getenv가 읽을 환경 변수 주입
+      QA_SDK_AUTH_PASSWORD: ${QA_SDK_AUTH_PASSWORD}
+      QA_SDK_AUDIT_PASSWORD: ${QA_SDK_AUDIT_PASSWORD}
+      QA_SDK_INGEST_PASSWORD: ${QA_SDK_INGEST_PASSWORD}
+      QA_SDK_DECISION_PASSWORD: ${QA_SDK_DECISION_PASSWORD}
+      QA_SDK_DEFINITION_PASSWORD: ${QA_SDK_DEFINITION_PASSWORD}
+      QA_SDK_ADMIN_PASSWORD: ${QA_SDK_ADMIN_PASSWORD}
+    ports:
+      - "5434:5432"
+    volumes:
+      - qa-sdk-db-data:/var/lib/postgresql/data
+      - ./init/qa-sdk-db.sql:/docker-entrypoint-initdb.d/00-qa-sdk-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d qa_sdk"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 10s
+
 volumes:
   minio-data:
   zitadel-db-data:
   zitadel-pat:
+  qa-sdk-db-data:
