@@ -23,8 +23,6 @@
  *   8. Decision replay — 실패 원인 식별
  */
 
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
 import { randomBytes } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { DisjointUnionIndex, buildMask } from "weighted-index";
@@ -36,7 +34,10 @@ import {
   type InstancePolicyEvaluator,
 } from "permission-engine";
 
-import { SqliteResourcePolicyRegistry } from "./sqlite/adapter.js";
+import { createSqliteTestFixture } from "db-bootstrap";
+
+import { createResourcePolicyRegistry } from "./factory.js";
+import { type ResourcePolicyRegistry } from "./port.js";
 import { RESOURCE_POLICIES_DDL } from "./sqlite/schema.js";
 
 describe("권한 모델 End-to-End 통합", () => {
@@ -53,16 +54,23 @@ describe("권한 모델 End-to-End 통합", () => {
     { kind: "transaction", shape: [2] },
   ]);
 
-  function setupContext() {
-    const raw = new Database(":memory:");
-    raw.exec(RESOURCE_POLICIES_DDL);
-    const db = drizzle({ client: raw });
-    const registry = new SqliteResourcePolicyRegistry(db);
+  async function setupContext() {
+    const fixture = await createSqliteTestFixture(RESOURCE_POLICIES_DDL);
+    const registry: ResourcePolicyRegistry = await createResourcePolicyRegistry({
+      dialect: "sqlite",
+      db: fixture.db as never,
+    });
     const audit = new InMemoryAuditRecorder();
     const secret = randomBytes(32);
     let spanCounter = 0;
     const newSpanId = () => `span-${++spanCounter}`;
-    return { db, registry, audit, secret, newSpanId };
+    return {
+      registry,
+      audit,
+      secret,
+      newSpanId,
+      cleanup: fixture.cleanup,
+    };
   }
 
   function makeBitmap(secret: Uint8Array, bits: number[]) {
@@ -85,7 +93,9 @@ describe("권한 모델 End-to-End 통합", () => {
   }
 
   it("풀 시나리오 — 8단계 통합 플로우 (audit tree + replay 포함)", async () => {
-    const { registry, audit, secret, newSpanId } = setupContext();
+    const ctx = await setupContext();
+    try {
+      const { registry, audit, secret, newSpanId } = ctx;
 
     // Cerbos mock: 공유된 리소스는 user-A(owner), user-B(shared) 둘 다 읽기 허용
     const evaluator = makeEvaluator(({ userId }) => userId === "user-A" || userId === "user-B");
@@ -230,21 +240,29 @@ describe("권한 모델 End-to-End 통합", () => {
     );
     expect(failCheck?.kind === "check" && failCheck.pass).toBe("cerbos");
     expect(failCheck?.kind === "check" && failCheck.denyReason).toBe("cerbos_deny");
+    } finally {
+      await ctx.cleanup();
+    }
   });
 
   it("VersionedBitmap 변조 검증 — HMAC 서명 불일치", async () => {
-    const { secret } = setupContext();
-    const bitmap = makeBitmap(secret, [union.encode("resource", [1, 1])]);
+    const ctx = await setupContext();
+    try {
+      const { secret } = ctx;
+      const bitmap = makeBitmap(secret, [union.encode("resource", [1, 1])]);
 
-    // 공격자가 mask 비트 조작 — 없던 권한 추가 시도
-    const tampered = {
-      ...bitmap,
-      mask: buildMask(union.totalSize, [0, 1, 2, 3, 4, 5, 6, 7]), // 전체 허용
-    };
+      // 공격자가 mask 비트 조작 — 없던 권한 추가 시도
+      const tampered = {
+        ...bitmap,
+        mask: buildMask(union.totalSize, [0, 1, 2, 3, 4, 5, 6, 7]), // 전체 허용
+      };
 
-    const { verifyBitmap } = await import("permission-engine");
-    const result = verifyBitmap({ bitmap: tampered, secret });
-    expect(result).toEqual({ ok: false, reason: "signature_mismatch" });
+      const { verifyBitmap } = await import("permission-engine");
+      const result = verifyBitmap({ bitmap: tampered, secret });
+      expect(result).toEqual({ ok: false, reason: "signature_mismatch" });
+    } finally {
+      await ctx.cleanup();
+    }
   });
 
   it("Cross-kind disjoint — resource와 transaction address 충돌 없음", async () => {
