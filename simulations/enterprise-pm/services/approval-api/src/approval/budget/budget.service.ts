@@ -48,10 +48,16 @@ export class BudgetService {
         resourceType: "budget_request",
         ownerId: args.requesterId,
       });
+      // Plan 13 시나리오 3/5: 다른 user 가 승인자로 참여할 수 있도록
+      // 즉시 REGISTERED 로 전이 — SimInstanceEvaluator.evaluateRegistered 는
+      // policyRef 가 비어있지 않으면 allow.
+      await this.policies.register(request.id, {
+        cerbosPolicyRef: `budget-request-${request.id}`,
+      });
     } catch (err) {
       log.error(
         { err, requestId: request.id },
-        "policy 생성 실패 — budget_request 롤백 고려 필요",
+        "policy 생성/등록 실패 — budget_request 롤백 고려 필요",
       );
       throw err;
     }
