@@ -9,6 +9,12 @@ export {
 } from "./recorder.js";
 
 export {
+  OtelAuditRecorder,
+  type OtelRecordCheckArgs,
+  type OtelRecordExecutionArgs,
+} from "./otel-wrapper.js";
+
+export {
   type AuditEntry,
   type AuditKind,
   type AuditOutcome,
