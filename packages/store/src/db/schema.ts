@@ -184,7 +184,14 @@ export const deadLetterQueue = pgTable("dead_letter_queue", {
 // ── Key Observations ───────────────────────────────────
 // packed_key 관측 빈도 추적. 좌표 공간 coverage/drift 분석.
 
-// @def.coord-storage-exempt: PG 스키마 미이행 — auth-model-implementation-backlog Plan 07b(ingest key_observations PG 어댑터)에서 dual-target 패턴으로 이행 예정. D1 동기는 §4(02-ingest-audit-versioning.md) 완료.
+/**
+ * @deprecated 2026-04-22 (Plan 07b 완료) — `@qa-sdk/ingest-server`의
+ * `src/stores/pg/schema.ts` (pgSchema("ingest").table("key_observations"))가 SSOT.
+ *
+ * 본 정의는 단일 PK(packed_key)로 §4 P1·P3 결과(`(prefix_id, version, address)` 복합 PK)를
+ * 만족하지 못한다. neue 코드는 import 금지. history 보존용으로만 유지.
+ * 다음 packages/store major release에서 제거 예정.
+ */
 export const keyObservations = pgTable("key_observations", {
   packedKey: text("packed_key").primaryKey(),
   prefixId: text("prefix_id").notNull(),
@@ -203,6 +210,13 @@ export const keyObservations = pgTable("key_observations", {
 // ── Key Observation Prefixes ───────────────────────────
 // prefix 레벨 집계. capacity planning 지원.
 
+/**
+ * @deprecated 2026-04-22 (Plan 07b 완료) — `@qa-sdk/ingest-server`의
+ * `src/stores/pg/schema.ts` (pgSchema("ingest").table("key_observation_prefixes"))가 SSOT.
+ *
+ * 본 정의는 단일 PK(prefix_id)로 §4 P3 결과(version별 분리 집계)를 만족하지 못한다.
+ * 신규 코드 import 금지. 다음 major release에서 제거 예정.
+ */
 export const keyObservationPrefixes = pgTable("key_observation_prefixes", {
   prefixId: text("prefix_id").primaryKey(),
   distinctKeys: integer("distinct_keys").notNull().default(1),
