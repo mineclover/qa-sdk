@@ -8,3 +8,7 @@ export { resourcePolicies, RESOURCE_POLICIES_DDL } from "./sqlite/schema.js";
 // Backward-compat alias — 기존 외부 호출자 영향 회피.
 // Plan 05c(factory) 도입 후 deprecation 마킹.
 export { SqliteResourcePolicyRegistry as DrizzleResourcePolicyRegistry } from "./sqlite/adapter.js";
+
+// PG 어댑터 (Plan 05b)
+export { PgResourcePolicyRegistry } from "./pg/adapter.js";
+export { resourcePolicies as resourcePoliciesPg, RESOURCE_POLICIES_PG_DDL } from "./pg/schema.js";
