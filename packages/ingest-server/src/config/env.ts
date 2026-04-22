@@ -29,6 +29,15 @@ function loadProfileDefaults(): Record<string, string> {
       if (profile.appHub?.endpoint) defaults.APP_HUB_ENDPOINT = profile.appHub.endpoint;
       if (profile.appHub?.projectId) defaults.APP_HUB_PROJECT_ID = profile.appHub.projectId;
       if (profile.appHub?.credential) defaults.APP_HUB_CREDENTIAL = profile.appHub.credential;
+      // Plan 07d — ingestServer.dialect/pgUrl/pgSchema 매핑
+      const ingestSrv = profile.ingestServer ?? profile.ingest_server ?? {};
+      if (ingestSrv.dialect === "pg") {
+        defaults.STORE_DRIVER = "pg";
+        if (ingestSrv.pgUrl) defaults.TRACE_DATABASE_URL = ingestSrv.pgUrl;
+        if (ingestSrv.pgSchema) defaults.QA_PG_SCHEMA = ingestSrv.pgSchema;
+      } else if (ingestSrv.dialect === "sqlite") {
+        defaults.STORE_DRIVER = "sqlite";
+      }
       return defaults;
     }
     return {};
