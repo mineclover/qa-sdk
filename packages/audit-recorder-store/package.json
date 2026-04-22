@@ -22,6 +22,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "db-bootstrap": "workspace:*",
     "drizzle-orm": "catalog:",
     "permission-engine": "workspace:*"
   },
@@ -37,7 +38,6 @@
     "@types/better-sqlite3": "catalog:",
     "@types/node": "^22.0.0",
     "better-sqlite3": "catalog:",
-    "db-bootstrap": "workspace:*",
     "postgres": "^3.4.0",
     "resource-policy-store": "workspace:*",
     "tsup": "^8.5.1",

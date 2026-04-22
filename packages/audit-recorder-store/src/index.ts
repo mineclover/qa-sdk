@@ -22,3 +22,8 @@ export {
 
 // Plan 15d — RLS shadow mode
 export { rlsShadowDecisions, RLS_SHADOW_DECISIONS_PG_DDL } from "./pg/shadow-schema.js";
+export {
+  PgRlsShadowRecorder,
+  type ShadowRecordInput,
+  type Logger as RlsShadowLogger,
+} from "./pg/shadow-recorder.js";
