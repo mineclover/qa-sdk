@@ -21,6 +21,10 @@ def:
       type: traces_to
     - target: coordinate-storage
       type: refs
+    - target: wi-disjoint-union-addressing
+      type: depends_on
+    - target: authorization-ontology-nested-audit-tracing
+      type: refs
 ---
 
 # Authorization Ontology Bitmap Pipeline — bitmap 발급·갱신·무효화 파이프라인
@@ -56,8 +60,8 @@ bitmap 수명주기는 3단계:
 ```ts
 interface VersionedBitmap {
   prefix: string;        // 좌표 네임스페이스 (예: "perm")
-  v: string;             // shape 스냅샷 (예: "pv2")
-  mask: Uint8Array;      // ⌈WI.size / 8⌉ 바이트
+  v: string;             // shape 스냅샷 (예: "uv1") — union 전체를 하나로 바인딩
+  mask: Uint8Array;      // ⌈DisjointUnionIndex.totalSize / 8⌉ 바이트
   issuedAt: string;      // ISO-8601
   expiresAt: string;     // ISO-8601
   /** 발급 주체 — 무결성 검증 대상. */
@@ -69,12 +73,33 @@ interface VersionedBitmap {
 
 `VersionedIndex`의 bulk 버전. `coordinate-storage.rule`의 version binding 요건을 자동 만족.
 
+### 1.1 Union-based 주소 공간
+
+bitmap의 주소 공간은 **단일 `DisjointUnionIndex`**로 구성된다 (`wi-disjoint-union-addressing` 스펙 참조). 축 설계:
+
+```
+union variants:
+  { kind: "resource",    shape: [role_n, action_n, resource_type_n] }
+  { kind: "transaction", shape: [role_n, action_n, transition_id_n] }
+  # 향후 추가 가능: admin, system, ... (append-only)
+
+target_kind 축이 곱셈이 아니라 합산(sum)으로 처리됨 → 각 kind의 N 차이가 공간 낭비로 이어지지 않음.
+```
+
+**권한 체크 시 좌표**:
+- resource CRUD: `encode("resource", [role, action, resource_type])` → address_A
+- transaction 실행: `encode("transaction", [role, action, transition_id])` → address_B
+- 두 address는 disjoint — 같은 bitmap에서 충돌 없음.
+
+**version (v)는 union 전체에 unified**. 어느 kind든 shape 변경 시 전체 bitmap 재발급 (unified versioning 결정, Q1 합의).
+
 ### 2. 발급 (Issuance)
 
 트리거:
 - 로그인 성공 (ZITADEL token 검증 후)
 - 권한 변경 (역할 부여/박탈, 리소스 owner 변경)
 - bitmap schema 변경 (shape 또는 prefix 버전 bump)
+- **새 kind 추가** (DisjointUnionIndex variants 확장) — §6 Version binding 참조
 
 알고리즘:
 
@@ -153,17 +178,31 @@ await redis.publish("bitmap:invalidate", JSON.stringify({
 
 **무효화 지연 허용**: pub/sub 전파 지연 (~수백 ms) + JWT TTL (수 분). 이 범위 초과 시 다음 방어선(API 레이어의 Cerbos 호출)이 동작한다는 전제.
 
-### 6. Version binding 규약
+### 6. Version binding 규약 (Unified)
 
 `(prefix, v)`는 bitmap의 의미 좌표. shape 변경 시 **새 v로 즉시 재발급**하며, 기존 bitmap은 해당 v가 유효한 동안만 유지된다.
 
+**Unified versioning (Q1 결정)**: `DisjointUnionIndex`의 variant 구성·순서·각 variant의 shape이 **전체 union 수준에서 하나의 version**으로 관리된다. 어느 kind의 변경이든 동일하게 새 v 발급.
+
 ```ts
-// PrefixCodec에 새 version 등록
-prefixCodec.addVersion("perm", "pv3", { role: "v2", action: "v1", ... });
+// variant 추가 또는 기존 shape 확장 → 새 union version
+prefixCodec.addVersion("perm", "uv2", {
+  variants: [
+    { kind: "resource",    shape: [5, 5, 120] },  // role, action, resource_type
+    { kind: "transaction", shape: [5, 5, 80]  },  // role, action, transition_id
+    { kind: "admin",       shape: [5, 5, 10]  },  // 신규 kind 추가
+  ],
+});
 
 // 모든 활성 사용자 bitmap 재발급 트리거
 await invalidateAll({ scope: "prefix", target: "perm" });
 ```
+
+**장점**: 재발급 단위가 명확(전체 한 번). 각 kind별 version 관리의 조합 폭발 회피.
+
+**단점**: 특정 kind의 작은 변경도 전체 재발급 필요. 빈번한 변경 시 비용. 완화책:
+- kind별 변경 빈도가 자주 엇갈리면 prefix 분리 검토 (`perm-core`, `perm-admin` 등)
+- variant append는 비교적 저비용 (기존 address 유지, 구 bitmap은 새 kind 비트가 0일 뿐)
 
 구 버전 bitmap은 API 미들웨어에서 `VERSION_MISMATCH`로 거절되어 클라이언트가 refresh하도록 유도 (permission-middleware의 기존 동작과 일치).
 

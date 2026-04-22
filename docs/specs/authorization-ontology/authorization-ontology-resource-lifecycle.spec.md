@@ -11,6 +11,8 @@ def:
   svc: authorization-ontology
   tags: [security, structural, lifecycle, permission]
   links:
+    - target: state-event-terminology
+      type: depends_on
     - target: authorization-ontology-system
       type: traces_to
     - target: authorization-ontology-application-enforcement
@@ -25,6 +27,12 @@ def:
       type: refs
     - target: coordinate-storage
       type: refs
+    - target: wi-disjoint-union-addressing
+      type: depends_on
+    - target: authorization-ontology-bitmap-pipeline
+      type: refs
+    - target: authorization-ontology-nested-audit-tracing
+      type: refs
 ---
 
 # Authorization Ontology Resource Lifecycle — 리소스 인스턴스 권한 상태 모델
@@ -38,6 +46,8 @@ permission-engine의 bitmap 기반 정적 권한(타입 레벨)과 Cerbos의 정
 ## 구성 ^overview
 
 리소스 권한 lifecycle은 **3상태 FSM**으로 표현된다. 모든 리소스 인스턴스는 생성 시 `UNREGISTERED`로 시작하며, 공유·위임에 따라 `REGISTERED` 또는 `DELEGATED`로 전이한다. 역전이는 금지된다.
+
+여기서 FSM은 current state와 허용 전이의 authority다. Event는 이 전이가 발생했다는 감사/evidence를 남기는 관측 평면이며, FSM을 대체하지 않는다. 용어 기준은 `state-event-terminology`를 따른다.
 
 권한 체크는 **2-pass 구조**:
 
@@ -100,50 +110,63 @@ CREATE INDEX idx_rp_type ON resource_policies(resource_type);
 
 ### 4. 체크 알고리즘
 
+**전제**: 모든 API 호출(CRUD 엔드포인트든 트랜잭션 엔드포인트든)이 동일한 2-pass 체크를 받는다. 트랜잭션은 "여러 API를 묶는 상위 개념"이지만 호출 경로 관점에서는 **그 자체가 하나의 API**다. 따라서 별도 권한 레이어가 아니라 Pass 1 bitmap의 다른 `kind` variant로 표현된다 (`wi-disjoint-union-addressing` 참조).
+
 ```ts
 interface AuthContext {
   userId: string;
-  bitmap: VersionedBitmap;       // 타입 레벨 정적 권한
+  bitmap: VersionedBitmap;       // DisjointUnionIndex 기반 mask
   policyEngine: CerbosClient;    // Cerbos 판정
   graphAcl: GraphAclClient;      // ACL 그래프 탐색
   policyRegistry: ResourcePolicyRegistry; // resource_policies 조회
 }
 
-async function check(
-  ctx: AuthContext,
-  action: Action,
-  resource: Resource,
-): Promise<boolean> {
-  // Pass 1: 타입 레벨 정적 권한 (bitmap, O(1))
-  const typeAddr = WI.encode([action, resource.type]);
-  if (!hasBit(ctx.bitmap.mask, typeAddr)) return false;
+interface ApiCall {
+  kind: "resource" | "transaction";  // DisjointUnionIndex variant
+  action: string;                    // "read" | "write" | "execute" | ...
+  targetId: string;                  // resource_type 또는 transition_id
+  resource?: Resource;               // kind="resource"일 때만
+}
 
-  // Pass 2: 인스턴스 레벨 lifecycle
-  const policy = await ctx.policyRegistry.resolve(resource.id);
+async function check(ctx: AuthContext, call: ApiCall): Promise<boolean> {
+  // Pass 1: API 호출 권한 (union-aware bitmap, O(1))
+  const addr = UNION_INDEX.encode(call.kind, [ctx.role, call.action, call.targetId]);
+  if (!hasBit(ctx.bitmap.mask, addr)) return false;
+
+  // Pass 2: resource kind일 때만 인스턴스 lifecycle
+  if (call.kind !== "resource" || !call.resource) return true;
+
+  const policy = await ctx.policyRegistry.resolve(call.resource.id);
   switch (policy.state) {
     case "UNREGISTERED":
-      return resource.ownerId === ctx.userId;
+      return call.resource.ownerId === ctx.userId;
 
     case "REGISTERED":
       return ctx.policyEngine.check({
-        principal: { id: ctx.userId, /* claims */ },
-        resource: { kind: resource.type, id: resource.id, attrs: resource.attrs },
-        action: action.name,
+        principal: { id: ctx.userId },
+        resource: { kind: call.resource.type, id: call.resource.id, attrs: call.resource.attrs },
+        action: call.action,
         policyRef: policy.cerbos_policy_ref,
       });
 
     case "DELEGATED":
       return ctx.graphAcl.canAccess({
         actor: ctx.userId,
-        action: action.name,
+        action: call.action,
         rootId: policy.graph_root_id,
-        resourceId: resource.id,
+        resourceId: call.resource.id,
       });
   }
 }
 ```
 
-빠른 경로: 대부분 리소스는 `UNREGISTERED + owner 체크`로 끝. DB 조회는 `resource_policies` 한 번 (캐시 가능).
+**트랜잭션 엔드포인트의 경우** (`kind: "transaction"`):
+- Pass 1만 통과하면 호출 허가
+- Pass 2는 불필요 (트랜잭션 자체는 인스턴스 아님)
+- 단, 트랜잭션 **내부**에서 호출되는 개별 API(CRUD)는 각자 2-pass 체크 독립 수행
+- 중첩 트랜잭션도 각 레벨에서 자기 kind="transaction" 비트 체크 (`authorization-ontology-nested-audit-tracing` 참조)
+
+빠른 경로: 대부분 호출은 Pass 1만으로 판정 (transaction) 또는 `UNREGISTERED + owner 체크`로 끝. DB 조회는 `resource_policies` 한 번 (캐시 가능).
 
 ### 5. 동기화 전략 — Hybrid
 
@@ -174,6 +197,7 @@ L3: resource_policies 테이블 (L1/L2 miss 시)
 ### 7. 관측·감사
 
 - 모든 상태 전이는 `authorization-ontology-decision-observation` 스펙과 연동해 기록 (actor, from, to, timestamp, policy_ref).
+- 이 기록은 event/audit evidence다. `resource_policies.state`와 transition 함수가 state authority이며, event log만으로 현재 상태를 임의 override하지 않는다.
 - `authorization-monitor-web`에 state 분포 대시보드 추가 (타입별 UNREGISTERED / REGISTERED / DELEGATED 비율).
 - 배치 감사 항목:
   - orphan policy (resource 삭제됐는데 policy row 잔존)
