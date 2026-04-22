@@ -75,4 +75,34 @@ export class ProjectService {
       });
     }
   }
+
+  /**
+   * delegate — Plan 13c 시나리오 6. resource-policy 를 DELEGATED 상태로 전이.
+   *
+   * 전제: 현재 UNREGISTERED 또는 REGISTERED. graphRootId 설정 후
+   * InstancePolicyEvaluator.evaluateDelegated 가 Pass 2 에서 호출됨.
+   */
+  async delegate(args: {
+    projectId: string;
+    graphRootId: string;
+    delegateUserId: string;
+  }): Promise<{ state: string; graphRootId: string }> {
+    if (!this.policies) {
+      throw new Error("PROJECT_POLICY_REGISTRY not registered — delegate 불가");
+    }
+    // policy 가 UNREGISTERED 면 먼저 REGISTERED 로 전이 (cerbosPolicyRef 요구).
+    const cur = await this.policies.resolve(args.projectId);
+    if (!cur) {
+      throw new Error(`policy not found for project ${args.projectId}`);
+    }
+    if (cur.state === "UNREGISTERED") {
+      await this.policies.register(args.projectId, {
+        cerbosPolicyRef: `project-${args.projectId}`,
+      });
+    }
+    await this.policies.delegate(args.projectId, {
+      graphRootId: args.graphRootId,
+    });
+    return { state: "DELEGATED", graphRootId: args.graphRootId };
+  }
 }
