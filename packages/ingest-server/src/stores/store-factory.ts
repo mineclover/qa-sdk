@@ -16,7 +16,11 @@ import type {
   KeyObservationStore,
 } from "@qa-sdk/core";
 
-export type StoreDriver = "memory" | "pg" | "d1" | "clickhouse";
+/**
+ * StoreDriver — Plan 07a 옵션 A에 따라 sqlite 추가. d1은 sqlite의 deprecation alias.
+ * 런타임 선택은 `resolveStoreDriver(env)` (config/env.ts)가 수행.
+ */
+export type StoreDriver = "memory" | "sqlite" | "pg" | "d1" | "clickhouse";
 
 export interface StoreSet {
   recordStore: RecordStore;
@@ -84,13 +88,34 @@ export async function createD1Stores(driver: import("index-meta").SqlDriver): Pr
   };
 }
 
-/** PostgreSQL stores 생성 */
-export async function createPgStores(databaseUrl: string): Promise<StoreSet> {
+/**
+ * PostgreSQL stores 생성.
+ *
+ * key_observations + event_records는 Plan 07b/07c의 ingest-server pg 어댑터 사용
+ * (§4 P1~P3 결과 반영 — `(prefix_id, version, address)` 복합 PK + jsonb).
+ * 기타 store(Trace/Session/Verdict/Graph/ScenarioSpec/Transmission/Dlq)는 @qa-sdk/store
+ * 그대로 — 별도 plan 08에서 점진적 이전.
+ */
+export async function createPgStores(
+  databaseUrl: string,
+  opts?: { schema?: string },
+): Promise<StoreSet> {
   const store = await import("@qa-sdk/store");
   const db = store.createDb(databaseUrl);
 
+  // Plan 07b/07c 어댑터 — ingest schema 입주
+  const { createPgIngestStores } = await import("./pg/factory.js");
+  const ingestStores = await createPgIngestStores({
+    url: databaseUrl,
+    schema: opts?.schema ?? "ingest",
+  });
+
   return {
-    recordStore: new store.DrizzleRecordStore(db),
+    // 07c — ingest-server pg 어댑터
+    recordStore: ingestStores.recordStore,
+    // 07b — ingest-server pg 어댑터
+    keyObservationStore: ingestStores.keyObservationStore,
+    // 기타 — @qa-sdk/store 그대로 (별도 plan 08에서 이전 검토)
     traceStore: new store.DrizzleTraceStore(db),
     sessionStore: new store.DrizzleSessionStore(db),
     verdictStore: new store.DrizzleVerdictStore(db),
@@ -132,16 +157,20 @@ export async function createClickHouseStores(client: import("./clickhouse-record
 export async function createStores(opts: {
   driver: StoreDriver;
   databaseUrl?: string;
+  /** PG schema (STORE_DRIVER=pg 시 사용). 기본 "ingest". */
+  pgSchema?: string;
   sqliteDriver?: import("index-meta").SqlDriver;
   clickhouseClient?: import("./clickhouse-record-store.js").ClickHouseClient;
 }): Promise<StoreSet> {
   switch (opts.driver) {
     case "pg": {
       if (!opts.databaseUrl) throw new Error("STORE_DRIVER=pg requires TRACE_DATABASE_URL");
-      return createPgStores(opts.databaseUrl);
+      return createPgStores(opts.databaseUrl, { schema: opts.pgSchema });
     }
+    // Plan 07a 옵션 A: d1과 sqlite 동일 처리 — 단일 SQLite 어댑터로 통합.
+    case "sqlite":
     case "d1": {
-      if (!opts.sqliteDriver) throw new Error("STORE_DRIVER=d1 requires SqlDriver instance");
+      if (!opts.sqliteDriver) throw new Error("STORE_DRIVER=sqlite requires SqlDriver instance");
       return createD1Stores(opts.sqliteDriver);
     }
     case "clickhouse": {
