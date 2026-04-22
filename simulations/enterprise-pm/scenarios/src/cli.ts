@@ -6,12 +6,16 @@ import { runScenario } from "./runner/runner.js";
 import { parseScenarioEnv } from "./env/env.js";
 import { scenario1Login } from "./scenarios/scenario-1-login.js";
 import { scenario2ProjectCreate } from "./scenarios/scenario-2-project-create.js";
+import { scenario3SelfDeptApproval } from "./scenarios/scenario-3-self-dept-approval.js";
+import { scenario4CrossDeptDeny } from "./scenarios/scenario-4-cross-dept-deny.js";
 import type { Scenario, ScenarioResult } from "./runner/types.js";
 
 export const ALL_SCENARIOS: readonly Scenario[] = [
   scenario1Login,
   scenario2ProjectCreate,
-  // Plan 13b/c/d 가 추가
+  scenario3SelfDeptApproval,
+  scenario4CrossDeptDeny,
+  // Plan 13c/d 가 추가
 ];
 
 export function buildCli(): Command {
