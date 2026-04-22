@@ -2051,6 +2051,9 @@ importers:
       better-sqlite3:
         specifier: 'catalog:'
         version: 12.8.0
+      db-bootstrap:
+        specifier: workspace:*
+        version: link:../db-bootstrap
       postgres:
         specifier: ^3.4.0
         version: 3.4.8
