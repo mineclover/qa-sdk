@@ -1,14 +1,18 @@
--- Enterprise PM 시뮬 — 역할 7개 seed
--- 의존: Plan 11a의 sim.role 테이블 (id BIGSERIAL, name TEXT UNIQUE, description TEXT, created_at TIMESTAMPTZ DEFAULT now())
+-- Enterprise PM 시뮬 — 역할 7개 seed (Plan 11d 정렬)
+-- 의존: Plan 11a의 sim.auth_roles 테이블
+--   (id TEXT PRIMARY KEY, name TEXT UNIQUE NOT NULL,
+--    scope_type TEXT NOT NULL CHECK (scope_type IN ('global','department','project')),
+--    default_mask_hex TEXT NOT NULL, created_at TEXT NOT NULL)
+--
+-- id 컨벤션: "r-<slug>" (kebab-case).
+-- default_mask_hex: Plan 11a의 computeUserBits + DisjointUnionIndex가 파생. AUTH_BITMASK_BYTES=2.
 
-INSERT INTO sim.role (id, name, description) VALUES
-  (1, 'admin',           '시스템 관리자 — global scope, 전체 권한'),
-  (2, 'cfo',             '재무 책임자 — global scope, 모든 budget 승인'),
-  (3, 'director',        '부서장 — department scope, 부서 내 모든 리소스'),
-  (4, 'project_manager', '프로젝트 매니저 — project scope, 프로젝트 lead'),
-  (5, 'approver',        '승인자 — department scope, 일반 승인 단계'),
-  (6, 'member',          '구성원 — project scope, 일반 작업'),
-  (7, 'finance',         '재무 담당자 — department scope (Finance), 비용 처리')
+INSERT INTO sim.auth_roles (id, name, scope_type, default_mask_hex, created_at) VALUES
+  ('r-admin',           'admin',           'global',     'ffff', '2026-04-22T00:00:00Z'),
+  ('r-cfo',             'cfo',             'global',     'ffff', '2026-04-22T00:00:00Z'),
+  ('r-director',        'director',        'department', '0101', '2026-04-22T00:00:00Z'),
+  ('r-project-manager', 'project_manager', 'project',    '0100', '2026-04-22T00:00:00Z'),
+  ('r-approver',        'approver',        'department', '0001', '2026-04-22T00:00:00Z'),
+  ('r-member',          'member',          'project',    '0100', '2026-04-22T00:00:00Z'),
+  ('r-finance',         'finance',         'department', '0101', '2026-04-22T00:00:00Z')
 ON CONFLICT (id) DO NOTHING;
-
-SELECT setval('sim.role_id_seq', (SELECT MAX(id) FROM sim.role));

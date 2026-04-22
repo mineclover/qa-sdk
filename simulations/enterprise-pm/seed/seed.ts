@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Enterprise PM 시뮬 — seed 데이터 적용 runner
+ * Enterprise PM 시뮬 — seed 데이터 적용 runner (Plan 11d 정렬)
  *
  * 사용:
  *   pnpm sim:seed         — 실제 적용 (트랜잭션 + 커밋)
@@ -8,7 +8,8 @@
  *
  * 의존:
  *   - .env.sim (sops decrypt 후 평문)
- *   - Plan 11a 완료 (sim.department/role/user/role_assignment 테이블 존재)
+ *   - Plan 11a 완료 (sim.auth_departments/auth_roles/auth_users/auth_role_assignments
+ *     테이블 존재)
  *
  * 본 runner는 schema-agnostic — SQL 파일을 그대로 실행만 한다.
  * 테이블 DDL은 Plan 11a/Drizzle migration이 담당.
@@ -104,7 +105,12 @@ async function main() {
 
   try {
     // ── 사전 점검 — 테이블 존재 확인 ──
-    const requiredTables = ["department", "role", "user", "role_assignment"];
+    const requiredTables = [
+      "auth_departments",
+      "auth_roles",
+      "auth_users",
+      "auth_role_assignments",
+    ];
     const present = await sql<{ table_name: string }[]>`
       SELECT table_name
       FROM information_schema.tables
@@ -114,8 +120,10 @@ async function main() {
     const presentNames = new Set(present.map((r) => r.table_name));
     const missing = requiredTables.filter((t) => !presentNames.has(t));
     if (missing.length > 0) {
-      console.error(`\n⚠ 다음 테이블이 ${process.env.QA_PG_SCHEMA} schema에 없습니다: ${missing.join(", ")}`);
-      console.error(`   Plan 11a (도메인 모델)가 먼저 완료되어야 합니다.`);
+      console.error(
+        `\n⚠ 다음 테이블이 ${process.env.QA_PG_SCHEMA} schema에 없습니다: ${missing.join(", ")}`,
+      );
+      console.error(`   Plan 11a (auth domain 모델)가 먼저 완료되어야 합니다.`);
       console.error(`   현재 단계에서는 dry run으로만 검증: pnpm sim:seed:dry`);
       process.exit(2);
     }
@@ -137,10 +145,10 @@ async function main() {
     const counts = await sql<
       { table_name: string; count: number }[]
     >`
-      SELECT 'department' AS table_name, COUNT(*)::int AS count FROM ${sql(process.env.QA_PG_SCHEMA!)}.department
-      UNION ALL SELECT 'role',            COUNT(*)::int FROM ${sql(process.env.QA_PG_SCHEMA!)}.role
-      UNION ALL SELECT 'user',            COUNT(*)::int FROM ${sql(process.env.QA_PG_SCHEMA!)}."user"
-      UNION ALL SELECT 'role_assignment', COUNT(*)::int FROM ${sql(process.env.QA_PG_SCHEMA!)}.role_assignment
+      SELECT 'auth_departments' AS table_name, COUNT(*)::int AS count FROM ${sql(process.env.QA_PG_SCHEMA!)}.auth_departments
+      UNION ALL SELECT 'auth_roles',             COUNT(*)::int FROM ${sql(process.env.QA_PG_SCHEMA!)}.auth_roles
+      UNION ALL SELECT 'auth_users',             COUNT(*)::int FROM ${sql(process.env.QA_PG_SCHEMA!)}.auth_users
+      UNION ALL SELECT 'auth_role_assignments',  COUNT(*)::int FROM ${sql(process.env.QA_PG_SCHEMA!)}.auth_role_assignments
     `;
     for (const row of counts) {
       console.log(`    ${row.table_name.padEnd(20)} ${row.count}`);

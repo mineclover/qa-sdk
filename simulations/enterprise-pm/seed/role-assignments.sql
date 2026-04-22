@@ -1,59 +1,76 @@
--- Enterprise PM 시뮬 — 역할 부여 seed
--- 의존: Plan 11a의 sim.role_assignment 테이블
---   (id BIGSERIAL, user_id BIGINT REFERENCES sim.user(id), role_id BIGINT REFERENCES sim.role(id),
+-- Enterprise PM 시뮬 — 역할 부여 seed (Plan 11d 정렬)
+-- 의존: Plan 11a의 sim.auth_role_assignments 테이블
+--   (user_id TEXT, role_id TEXT,
 --    scope_type TEXT CHECK (scope_type IN ('global','department','project')),
---    scope_id BIGINT NULL,
---    granted_at TIMESTAMPTZ DEFAULT now())
+--    scope_id TEXT,
+--    assigned_at TEXT NOT NULL,
+--    PRIMARY KEY (user_id, role_id, scope_type, scope_id))
 --
--- 디자인 §3 권한 hierarchy 5계층:
---   global     — 모든 리소스 (admin, cfo)
---   department — 부서 전체 (director, finance, dept_approver)
---   project    — 단일 프로젝트 (PM, member) — 프로젝트는 Plan 11 후 별도 시드
+-- scope_id 처리:
+--   - global scope는 '' (빈 문자열) 사용 — composite PK의 NULL 비교 이슈 회피.
+--   - department scope는 'd-eng', 'd-mkt' 등 auth_departments.id 참조.
+--   - project scope는 동적 생성 — 시나리오 2 (프로젝트 생성)가 자동 시드.
 
-INSERT INTO sim.role_assignment (user_id, role_id, scope_type, scope_id) VALUES
+INSERT INTO sim.auth_role_assignments (user_id, role_id, scope_type, scope_id, assigned_at) VALUES
   -- ── global scope ──
-  (1,  1, 'global',     NULL),  -- Alice → admin
-  (2,  2, 'global',     NULL),  -- Bob → cfo
+  ('u-admin-001', 'r-admin', 'global', '', '2026-04-22T00:00:00Z'),
+  ('u-cfo-001',   'r-cfo',   'global', '', '2026-04-22T00:00:00Z'),
 
-  -- ── department scope (director) ──
-  (3,  3, 'department', 2),     -- Carol → Engineering director
-  (15, 3, 'department', 3),     -- Olivia → Marketing director
-  (23, 3, 'department', 4),     -- Walt → Finance director
-  (29, 3, 'department', 5),     -- Cleo → Operations director
-  (37, 3, 'department', 6),     -- Kara → Sales director
-  (45, 3, 'department', 7),     -- Sven → HR director
+  -- ── department scope (director 6명) ──
+  ('u-dir-eng-001', 'r-director', 'department', 'd-eng', '2026-04-22T00:00:00Z'),
+  ('u-dir-mkt-001', 'r-director', 'department', 'd-mkt', '2026-04-22T00:00:00Z'),
+  ('u-dir-fin-001', 'r-director', 'department', 'd-fin', '2026-04-22T00:00:00Z'),
+  ('u-dir-ops-001', 'r-director', 'department', 'd-ops', '2026-04-22T00:00:00Z'),
+  ('u-dir-sal-001', 'r-director', 'department', 'd-sal', '2026-04-22T00:00:00Z'),
+  ('u-dir-hr-001',  'r-director', 'department', 'd-hr',  '2026-04-22T00:00:00Z'),
 
   -- ── department scope (approver) ──
-  (6,  5, 'department', 2),     -- Frank → Eng approver
-  (17, 5, 'department', 3),     -- Quinn → Mkt approver
-  (28, 5, 'department', 4),     -- Ben → Fin approver
-  (31, 5, 'department', 5),     -- Ellen → Ops approver
-  (39, 5, 'department', 6),     -- Maya → Sal approver
-  (46, 5, 'department', 7),     -- Tara → HR approver
+  ('u-eng-appr-001', 'r-approver', 'department', 'd-eng', '2026-04-22T00:00:00Z'),
+  ('u-mkt-appr-001', 'r-approver', 'department', 'd-mkt', '2026-04-22T00:00:00Z'),
+  ('u-fin-appr-001', 'r-approver', 'department', 'd-fin', '2026-04-22T00:00:00Z'),
+  ('u-ops-appr-001', 'r-approver', 'department', 'd-ops', '2026-04-22T00:00:00Z'),
+  ('u-sal-appr-001', 'r-approver', 'department', 'd-sal', '2026-04-22T00:00:00Z'),
+  ('u-hr-appr-001',  'r-approver', 'department', 'd-hr',  '2026-04-22T00:00:00Z'),
 
   -- ── department scope (finance) ──
-  (24, 7, 'department', 4),     -- Xena → Fin
-  (25, 7, 'department', 4),     -- Yuki → Fin
-  (26, 7, 'department', 4),     -- Zach → Fin
-  (27, 7, 'department', 4),     -- Amy → Fin
+  ('u-fin-001', 'r-finance', 'department', 'd-fin', '2026-04-22T00:00:00Z'),
+  ('u-fin-002', 'r-finance', 'department', 'd-fin', '2026-04-22T00:00:00Z'),
+  ('u-fin-003', 'r-finance', 'department', 'd-fin', '2026-04-22T00:00:00Z'),
+  ('u-fin-004', 'r-finance', 'department', 'd-fin', '2026-04-22T00:00:00Z'),
 
-  -- ── department scope (PM이 자기 부서 접근권 — 프로젝트 외 리소스 조회용) ──
-  (4,  4, 'department', 2),     -- Dave → Eng PM
-  (5,  4, 'department', 2),     -- Eve → Eng PM
-  (16, 4, 'department', 3),     -- Peter → Mkt PM
-  (30, 4, 'department', 5),     -- Dan → Ops PM
-  (38, 4, 'department', 6),     -- Liam → Sal PM
+  -- ── department scope (project_manager — 자기 부서 접근용) ──
+  ('u-alice-001',   'r-project-manager', 'department', 'd-eng', '2026-04-22T00:00:00Z'),
+  ('u-eng-pm-002',  'r-project-manager', 'department', 'd-eng', '2026-04-22T00:00:00Z'),
+  ('u-bob-001',     'r-project-manager', 'department', 'd-mkt', '2026-04-22T00:00:00Z'),
+  ('u-ops-pm-001',  'r-project-manager', 'department', 'd-ops', '2026-04-22T00:00:00Z'),
+  ('u-sal-pm-001',  'r-project-manager', 'department', 'd-sal', '2026-04-22T00:00:00Z'),
 
-  -- ── department scope (member 역할 — 자기 부서 일반 조회) ──
-  (7,  6, 'department', 2),  (8,  6, 'department', 2),  (9,  6, 'department', 2),
-  (10, 6, 'department', 2),  (11, 6, 'department', 2),  (12, 6, 'department', 2),
-  (13, 6, 'department', 2),  (14, 6, 'department', 2),
-  (18, 6, 'department', 3),  (19, 6, 'department', 3),  (20, 6, 'department', 3),
-  (21, 6, 'department', 3),  (22, 6, 'department', 3),
-  (32, 6, 'department', 5),  (33, 6, 'department', 5),  (34, 6, 'department', 5),
-  (35, 6, 'department', 5),  (36, 6, 'department', 5),
-  (40, 6, 'department', 6),  (41, 6, 'department', 6),  (42, 6, 'department', 6),
-  (43, 6, 'department', 6),  (44, 6, 'department', 6),
-  (47, 6, 'department', 7),  (48, 6, 'department', 7),  (49, 6, 'department', 7),
-  (50, 6, 'department', 7)
+  -- ── department scope (member) ──
+  ('u-eng-m-001', 'r-member', 'department', 'd-eng', '2026-04-22T00:00:00Z'),
+  ('u-eng-m-002', 'r-member', 'department', 'd-eng', '2026-04-22T00:00:00Z'),
+  ('u-eng-m-003', 'r-member', 'department', 'd-eng', '2026-04-22T00:00:00Z'),
+  ('u-eng-m-004', 'r-member', 'department', 'd-eng', '2026-04-22T00:00:00Z'),
+  ('u-eng-m-005', 'r-member', 'department', 'd-eng', '2026-04-22T00:00:00Z'),
+  ('u-eng-m-006', 'r-member', 'department', 'd-eng', '2026-04-22T00:00:00Z'),
+  ('u-eng-m-007', 'r-member', 'department', 'd-eng', '2026-04-22T00:00:00Z'),
+  ('u-eng-m-008', 'r-member', 'department', 'd-eng', '2026-04-22T00:00:00Z'),
+  ('u-mkt-m-001', 'r-member', 'department', 'd-mkt', '2026-04-22T00:00:00Z'),
+  ('u-mkt-m-002', 'r-member', 'department', 'd-mkt', '2026-04-22T00:00:00Z'),
+  ('u-mkt-m-003', 'r-member', 'department', 'd-mkt', '2026-04-22T00:00:00Z'),
+  ('u-mkt-m-004', 'r-member', 'department', 'd-mkt', '2026-04-22T00:00:00Z'),
+  ('u-mkt-m-005', 'r-member', 'department', 'd-mkt', '2026-04-22T00:00:00Z'),
+  ('u-ops-m-001', 'r-member', 'department', 'd-ops', '2026-04-22T00:00:00Z'),
+  ('u-ops-m-002', 'r-member', 'department', 'd-ops', '2026-04-22T00:00:00Z'),
+  ('u-ops-m-003', 'r-member', 'department', 'd-ops', '2026-04-22T00:00:00Z'),
+  ('u-ops-m-004', 'r-member', 'department', 'd-ops', '2026-04-22T00:00:00Z'),
+  ('u-ops-m-005', 'r-member', 'department', 'd-ops', '2026-04-22T00:00:00Z'),
+  ('u-sal-m-001', 'r-member', 'department', 'd-sal', '2026-04-22T00:00:00Z'),
+  ('u-sal-m-002', 'r-member', 'department', 'd-sal', '2026-04-22T00:00:00Z'),
+  ('u-sal-m-003', 'r-member', 'department', 'd-sal', '2026-04-22T00:00:00Z'),
+  ('u-sal-m-004', 'r-member', 'department', 'd-sal', '2026-04-22T00:00:00Z'),
+  ('u-sal-m-005', 'r-member', 'department', 'd-sal', '2026-04-22T00:00:00Z'),
+  ('u-hr-m-001',  'r-member', 'department', 'd-hr',  '2026-04-22T00:00:00Z'),
+  ('u-hr-m-002',  'r-member', 'department', 'd-hr',  '2026-04-22T00:00:00Z'),
+  ('u-hr-m-003',  'r-member', 'department', 'd-hr',  '2026-04-22T00:00:00Z'),
+  ('u-hr-m-004',  'r-member', 'department', 'd-hr',  '2026-04-22T00:00:00Z')
 ON CONFLICT DO NOTHING;

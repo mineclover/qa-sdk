@@ -11,10 +11,11 @@
     "sim:ps": "docker compose -f docker-compose.sim.yaml ps",
     "sim:seed": "tsx seed/seed.ts",
     "sim:seed:dry": "SIM_SEED_DRY_RUN=true tsx seed/seed.ts",
+    "sim:seed:test": "vitest run seed",
     "sim:scenario": "echo 'scenario runner는 Plan 13에서 추가 예정' && exit 1",
     "sim:doctor": "bash scripts/sim-doctor.sh || echo 'sim-doctor.sh는 Plan 14에서 추가 예정'",
     "build": "echo 'sim root는 빌드 산출물 없음'",
-    "test": "echo 'sim root 자체 테스트 없음'"
+    "test": "vitest run seed"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
@@ -23,6 +24,7 @@
   "devDependencies": {
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
+    "vitest": "^1.6.1",
     "@types/node": "^22.0.0"
   },
   "engines": {

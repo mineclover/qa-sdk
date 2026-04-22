@@ -1,15 +1,17 @@
--- Enterprise PM 시뮬 — 부서 7개 seed
--- 의존: Plan 11a의 sim.department 테이블 (id BIGSERIAL, name TEXT, parent_id BIGINT NULL, manager_id BIGINT NULL, created_at TIMESTAMPTZ DEFAULT now())
+-- Enterprise PM 시뮬 — 부서 7개 seed (Plan 11d 정렬)
+-- 의존: Plan 11a의 sim.auth_departments 테이블
+--   (id TEXT PRIMARY KEY, name TEXT NOT NULL, parent_id TEXT,
+--    manager_id TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)
+--
+-- id 컨벤션: "d-<slug>" (kebab-case 부서 slug).
+-- manager_id는 users.sql이 적용된 후 별도 UPDATE 단계에서 채움 (FK 참조 회피).
 
-INSERT INTO sim.department (id, name, parent_id, manager_id) VALUES
-  (1, 'Executive',           NULL, NULL),
-  (2, 'Engineering',          1,   NULL),
-  (3, 'Marketing',            1,   NULL),
-  (4, 'Finance',              1,   NULL),
-  (5, 'Operations',           1,   NULL),
-  (6, 'Sales',                1,   NULL),
-  (7, 'Human Resources',      1,   NULL)
+INSERT INTO sim.auth_departments (id, name, parent_id, manager_id, created_at, updated_at) VALUES
+  ('d-exec', 'Executive',       NULL,    NULL, '2026-04-22T00:00:00Z', '2026-04-22T00:00:00Z'),
+  ('d-eng',  'Engineering',     'd-exec', NULL, '2026-04-22T00:00:00Z', '2026-04-22T00:00:00Z'),
+  ('d-mkt',  'Marketing',       'd-exec', NULL, '2026-04-22T00:00:00Z', '2026-04-22T00:00:00Z'),
+  ('d-fin',  'Finance',         'd-exec', NULL, '2026-04-22T00:00:00Z', '2026-04-22T00:00:00Z'),
+  ('d-ops',  'Operations',      'd-exec', NULL, '2026-04-22T00:00:00Z', '2026-04-22T00:00:00Z'),
+  ('d-sal',  'Sales',           'd-exec', NULL, '2026-04-22T00:00:00Z', '2026-04-22T00:00:00Z'),
+  ('d-hr',   'Human Resources', 'd-exec', NULL, '2026-04-22T00:00:00Z', '2026-04-22T00:00:00Z')
 ON CONFLICT (id) DO NOTHING;
-
--- BIGSERIAL sequence를 수동 INSERT 이후로 진행 — 다음 INSERT가 id=8부터
-SELECT setval('sim.department_id_seq', (SELECT MAX(id) FROM sim.department));
