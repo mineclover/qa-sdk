@@ -70,7 +70,7 @@ export async function createConnection(cfg: ConnectionConfig): Promise<Connectio
 
   return {
     dialect: "pg",
-    db: drizzle(sql),
+    db: drizzle({ client: sql }),
     async close() { await sql.end(); },
   };
 }

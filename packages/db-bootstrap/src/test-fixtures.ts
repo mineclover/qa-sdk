@@ -66,7 +66,7 @@ export async function createPgTestFixture(
   await sql.unsafe(ddl);
 
   return {
-    db: drizzle(sql),
+    db: drizzle({ client: sql }),
     schemaName,
     async cleanup() {
       try {
