@@ -41,7 +41,8 @@
     "@qa-sdk/convergence": "workspace:*",
     "@qa-sdk/event-catalog": "workspace:*",
     "@qa-sdk/spec-core": "workspace:*",
-    "demo-snapshot": "workspace:*"
+    "demo-snapshot": "workspace:*",
+    "postgres": "^3.4.0"
   },
   "peerDependenciesMeta": {
     "@qa-sdk/spec-core": {
@@ -55,12 +56,16 @@
     },
     "demo-snapshot": {
       "optional": true
+    },
+    "postgres": {
+      "optional": true
     }
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
     "@types/ws": "^8.18.1",
     "drizzle-kit": "catalog:",
+    "postgres": "^3.4.0",
     "tsup": "^8.5.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
