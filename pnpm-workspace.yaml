@@ -3,6 +3,7 @@ packages:
   - "simulations/enterprise-pm"
   - "simulations/enterprise-pm/services/*"
   - "simulations/enterprise-pm/packages/*"
+  - "simulations/enterprise-pm/scenarios"
 
 # 모노레포 전체에서 공유하는 버전은 여기에 catalog로 선언하고
 # 각 package.json은 `"catalog:"`로 참조한다.

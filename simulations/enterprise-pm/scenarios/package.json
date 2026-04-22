@@ -1,0 +1,42 @@
+{
+  "name": "@qa-sdk/sim-scenarios",
+  "version": "0.1.0",
+  "description": "시뮬 — 8 시나리오 runner + CLI",
+  "private": true,
+  "type": "module",
+  "main": "dist/cli.js",
+  "bin": {
+    "sim-scenarios": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "start": "node dist/cli.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-fastify": "^11.0.0",
+    "@nestjs/testing": "^11.0.0",
+    "@qa-sdk/sim-audit-recorder-provider": "workspace:*",
+    "@qa-sdk/sim-auth-api": "workspace:*",
+    "@qa-sdk/sim-approval-api": "workspace:*",
+    "@qa-sdk/sim-audit-browser-api": "workspace:*",
+    "@qa-sdk/sim-gateway": "workspace:*",
+    "@qa-sdk/sim-pm-api": "workspace:*",
+    "audit-recorder-store": "workspace:*",
+    "commander": "^12.1.0",
+    "permission-engine": "workspace:*",
+    "weighted-index": "workspace:*",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "better-sqlite3": "catalog:",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
+  }
+}
