@@ -60,15 +60,27 @@ export async function signBitmapJwt(args: SignArgs): Promise<string> {
     .sign(secretToKey(args.secret));
 }
 
+export interface VerifyOptions {
+  /**
+   * Plan 13d — POST /auth/refresh 는 만료된 token 도 받아들여 재발급.
+   * jose clockTolerance 를 매우 크게 설정해 exp 검증을 사실상 무시.
+   * signature/malformed 오류는 여전히 발생.
+   */
+  ignoreExpiration?: boolean;
+}
+
 export async function verifyBitmapJwt(
   token: string,
   secret: string,
+  options: VerifyOptions = {},
 ): Promise<VerifiedJwt> {
   let payload: Record<string, unknown>;
   try {
     const result = await jwtVerify(token, secretToKey(secret), {
       issuer: "sim-gateway",
       algorithms: ["HS256"],
+      // 100y (~3.15e9 초) — 만료 무시 효과.
+      ...(options.ignoreExpiration ? { clockTolerance: "100y" } : {}),
     });
     payload = result.payload as Record<string, unknown>;
   } catch (err) {

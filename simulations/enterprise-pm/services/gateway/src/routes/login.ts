@@ -3,7 +3,7 @@
 
 import { Hono } from "hono";
 import { z } from "zod";
-import { signBitmapJwt } from "../lib/jwt.js";
+import { JwtVerifyError, signBitmapJwt, verifyBitmapJwt } from "../lib/jwt.js";
 import type { VersionedBitmap } from "permission-engine";
 
 export interface LoginRouteOptions {
@@ -141,6 +141,84 @@ export function createLoginRoute(opts: LoginRouteOptions) {
       tokenType: "Bearer",
       expiresIn: opts.jwtTtlSeconds,
       userId: authParsed.data.userId,
+      bitmapPrefix: bitmap.prefix,
+      bitmapV: bitmap.v,
+    });
+  });
+
+  /**
+   * POST /auth/refresh — 만료된 token 으로 fresh bitmap JWT 재발급.
+   *
+   * §2 bitmap-pipeline §4 (Refresh):
+   *   클라이언트가 expiresAt 임박 시 호출. body 없음 — Authorization 헤더의 old token 을 그대로 사용.
+   *   signature 는 검증되어야 하며, 만료 자체는 무시 (ignoreExpiration).
+   */
+  r.post("/auth/refresh", async (c) => {
+    const auth = c.req.header("authorization") ?? c.req.header("Authorization");
+    if (!auth || !/^Bearer\s+/i.test(auth)) {
+      return c.json({ error: "missing_bearer" }, 401);
+    }
+    const token = auth.replace(/^Bearer\s+/i, "").trim();
+
+    let userId: string;
+    try {
+      const verified = await verifyBitmapJwt(token, opts.jwtSecret, {
+        ignoreExpiration: true,
+      });
+      userId = verified.userId;
+    } catch (err) {
+      if (err instanceof JwtVerifyError) {
+        return c.json({ error: "invalid_token", reason: err.reason }, 401);
+      }
+      throw err;
+    }
+
+    // auth-api 에서 fresh bitmap 발급
+    const bmRes = await fetch(`${opts.authApiUrl}/bitmap/issue`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ userId }),
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!bmRes.ok) {
+      return c.json(
+        { error: "bitmap_upstream_failure", status: bmRes.status },
+        502,
+      );
+    }
+    let bmJson: unknown;
+    try {
+      bmJson = await bmRes.json();
+    } catch {
+      return c.json({ error: "bitmap_upstream_invalid_json" }, 502);
+    }
+    const bmParsed = bitmapResponseSchema.safeParse(bmJson);
+    if (!bmParsed.success) {
+      return c.json({ error: "bitmap_upstream_schema" }, 502);
+    }
+
+    const bitmap: VersionedBitmap = {
+      prefix: bmParsed.data.prefix,
+      v: bmParsed.data.v,
+      mask: new Uint8Array(Buffer.from(bmParsed.data.maskBase64, "base64")),
+      issuedAt: bmParsed.data.issuedAt,
+      expiresAt: bmParsed.data.expiresAt,
+      issuer: bmParsed.data.issuer,
+      signature: bmParsed.data.signature,
+    };
+
+    const newToken = await signBitmapJwt({
+      userId,
+      bitmap,
+      secret: opts.jwtSecret,
+      ttlSeconds: opts.jwtTtlSeconds,
+    });
+
+    return c.json({
+      token: newToken,
+      tokenType: "Bearer",
+      expiresIn: opts.jwtTtlSeconds,
+      userId,
       bitmapPrefix: bitmap.prefix,
       bitmapV: bitmap.v,
     });
