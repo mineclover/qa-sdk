@@ -12,13 +12,13 @@ describe("proxyRequest", () => {
       expect(String(url)).toBe("http://downstream.local:1234/projects/abc");
       expect(init?.method).toBe("GET");
       const headers = new Headers(init?.headers);
-      expect(headers.get("x-user-id")).toBe("user-1");
+      expect(headers.get("x-auth-user-id")).toBe("user-1");
       return new Response("ok", { status: 200 });
     });
     vi.stubGlobal("fetch", fetchMock);
     const inReq = new Request("http://gateway/projects/abc", {
       method: "GET",
-      headers: { "x-user-id": "user-1" },
+      headers: { "x-auth-user-id": "user-1" },
     });
     const res = await proxyRequest({
       targetBaseUrl: "http://downstream.local:1234",
@@ -93,7 +93,7 @@ describe("proxyRequest", () => {
   it("traceparent 헤더가 OTel propagation으로 자동 부착 시도", async () => {
     const fetchMock = vi.fn(async (_url: string | URL, init?: RequestInit) => {
       const headers = new Headers(init?.headers);
-      expect(headers.has("x-user-id")).toBe(true);
+      expect(headers.has("x-auth-user-id")).toBe(true);
       return new Response("ok", { status: 200 });
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -101,7 +101,7 @@ describe("proxyRequest", () => {
       targetBaseUrl: "http://downstream.local:1234",
       sourcePath: "/x",
       request: new Request("http://gateway/x", {
-        headers: { "x-user-id": "u" },
+        headers: { "x-auth-user-id": "u" },
       }),
       timeoutMs: 5000,
     });

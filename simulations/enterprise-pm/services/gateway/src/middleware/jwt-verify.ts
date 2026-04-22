@@ -12,10 +12,12 @@ export interface JwtVerifyOptions {
 
 /**
  * Authorization: Bearer <jwt> 검증 → 성공 시 downstream에 header 주입:
- *   x-user-id              — JWT sub
- *   x-user-bitmap-prefix   — claim.bitmap_prefix
- *   x-user-bitmap-v        — claim.bitmap_v
- *   x-user-bitmap-mask     — base64 mask
+ *   x-auth-user-id         — JWT sub
+ *   x-auth-bitmap-prefix   — claim.bitmap_prefix
+ *   x-auth-bitmap-v        — claim.bitmap_v
+ *   x-auth-bitmap-mask     — base64 mask
+ *
+ * downstream NestJS 서비스는 CurrentUserGuard 에서 동일 header 를 읽는다.
  *
  * 실패:
  *   - 헤더 없음/형식 오류 → 401
@@ -43,11 +45,11 @@ export function jwtVerifyMiddleware(opts: JwtVerifyOptions): MiddlewareHandler {
         );
       }
       // Hono req.raw.headers는 mutable Web Headers — downstream fetch에서 활용.
-      c.req.raw.headers.set("x-user-id", verified.userId);
-      c.req.raw.headers.set("x-user-bitmap-prefix", verified.bitmap.prefix);
-      c.req.raw.headers.set("x-user-bitmap-v", verified.bitmap.v);
+      c.req.raw.headers.set("x-auth-user-id", verified.userId);
+      c.req.raw.headers.set("x-auth-bitmap-prefix", verified.bitmap.prefix);
+      c.req.raw.headers.set("x-auth-bitmap-v", verified.bitmap.v);
       c.req.raw.headers.set(
-        "x-user-bitmap-mask",
+        "x-auth-bitmap-mask",
         Buffer.from(verified.bitmap.mask).toString("base64"),
       );
       c.set("verifiedJwt", verified);

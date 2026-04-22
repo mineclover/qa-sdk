@@ -42,18 +42,10 @@ class SimInstanceEvaluator implements InstancePolicyEvaluator {
 }
 
 function buildDefaultUnion(): DisjointUnionIndex {
-  // approval_api_action 6 라벨
-  const labels = [
-    "budget.create",
-    "budget.read",
-    "budget.submit",
-    "budget.start-review",
-    "budget.approve",
-    "budget.reject",
-  ];
+  // approval_api_action 6 values — WeightedIndex labels 는 dimension name.
   return new DisjointUnionIndex([
-    { kind: "transaction", shape: [labels.length], labels },
-    { kind: "resource", shape: [labels.length], labels },
+    { kind: "transaction", shape: [6], labels: ["action"] },
+    { kind: "resource", shape: [6], labels: ["action"] },
   ]);
 }
 

@@ -55,12 +55,12 @@ describe("createProxyRoutes — 6 service reverse proxy", () => {
     ]);
   });
 
-  it("/projects/123 → sim-pm-api로 proxy + downstream에 x-user-id", async () => {
+  it("/projects/123 → sim-pm-api로 proxy + downstream에 x-auth-user-id", async () => {
     const fetchMock = vi.fn(async (url: string | URL, init?: RequestInit) => {
       expect(String(url)).toBe("http://sim-pm-api:4500/projects/123");
       const headers = new Headers(init?.headers);
-      expect(headers.get("x-user-id")).toBe("user-42");
-      expect(headers.get("x-user-bitmap-v")).toBe("uv1");
+      expect(headers.get("x-auth-user-id")).toBe("user-42");
+      expect(headers.get("x-auth-bitmap-v")).toBe("uv1");
       return Response.json({ project: "p123" });
     });
     vi.stubGlobal("fetch", fetchMock);

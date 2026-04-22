@@ -52,17 +52,12 @@ class SimInstanceEvaluator implements InstancePolicyEvaluator {
  * 기본 0번 address에 set된 mask를 사용 (Plan 05 evaluator 책임 외).
  */
 function buildDefaultUnion(): DisjointUnionIndex {
-  // pm_api_action 4개 라벨 (project.create/read/update/delete) = 4 positions
+  // pm_api_action 4개 value (project.create/read/update/delete) = 4 positions
+  // labels 는 dimension name (WeightedIndex 요구) — 1 dim 이므로 label 1개.
   // kind="transaction" 과 "resource" 양쪽에 동일 action 공간 제공.
-  const labels = [
-    "project.create",
-    "project.read",
-    "project.update",
-    "project.delete",
-  ];
   return new DisjointUnionIndex([
-    { kind: "transaction", shape: [labels.length], labels },
-    { kind: "resource", shape: [labels.length], labels },
+    { kind: "transaction", shape: [4], labels: ["action"] },
+    { kind: "resource", shape: [4], labels: ["action"] },
   ]);
 }
 

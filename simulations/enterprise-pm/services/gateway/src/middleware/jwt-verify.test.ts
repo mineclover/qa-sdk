@@ -23,10 +23,10 @@ function makeApp() {
   app.use("*", jwtVerifyMiddleware({ secret: SECRET, currentBitmapV: "uv1" }));
   app.get("/protected", (c) => {
     return c.json({
-      userId: c.req.header("x-user-id"),
-      bitmapV: c.req.header("x-user-bitmap-v"),
-      bitmapMask: c.req.header("x-user-bitmap-mask"),
-      bitmapPrefix: c.req.header("x-user-bitmap-prefix"),
+      userId: c.req.header("x-auth-user-id"),
+      bitmapV: c.req.header("x-auth-bitmap-v"),
+      bitmapMask: c.req.header("x-auth-bitmap-mask"),
+      bitmapPrefix: c.req.header("x-auth-bitmap-prefix"),
     });
   });
   return app;
