@@ -1,0 +1,165 @@
+# Enterprise PM 시뮬 — 10 컨테이너 (1 redis + 9 NestJS)
+# 외부 network: qa-sdk-net (packages/infra-engine/docker-compose.infra.yaml이 생성)
+# 외부 의존: qa-sdk-db (5434), ingest-server (3200, host process)
+#
+# 사용:
+#   bash scripts/sim-up.sh        — 부팅 + healthcheck 대기
+#   bash scripts/sim-down.sh      — 종료 (본체 컨테이너 영향 없음)
+
+x-nestjs-common: &nestjs-common
+  env_file:
+    - .env.sim
+  restart: unless-stopped
+  depends_on:
+    sim-redis:
+      condition: service_healthy
+  networks:
+    - default
+
+x-nestjs-build: &nestjs-build
+  # Plan 10 전: services/.placeholder 사용. Plan 10 후: 각 서비스의 Dockerfile.service 사용.
+  context: ../..
+  dockerfile: simulations/enterprise-pm/services/.placeholder/Dockerfile
+
+services:
+  # ── 인프라 ──
+
+  sim-redis:
+    image: redis:7-alpine
+    container_name: sim-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - sim-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+      start_period: 5s
+    networks:
+      - default
+
+  # ── 비즈니스 NestJS 서비스 (4400~4900) ──
+
+  sim-auth-api:
+    <<: *nestjs-common
+    container_name: sim-auth-api
+    build: *nestjs-build
+    # Plan 10 후 다음으로 교체:
+    # build:
+    #   context: ../..
+    #   dockerfile: simulations/enterprise-pm/Dockerfile.service
+    #   args:
+    #     SERVICE_NAME: sim-auth-api
+    ports:
+      - "4400:4400"
+    environment:
+      PORT: 4400
+      SIM_SERVICE_NAME: sim-auth-api
+
+  sim-pm-api:
+    <<: *nestjs-common
+    container_name: sim-pm-api
+    build: *nestjs-build
+    ports:
+      - "4500:4500"
+    environment:
+      PORT: 4500
+      SIM_SERVICE_NAME: sim-pm-api
+
+  sim-approval-api:
+    <<: *nestjs-common
+    container_name: sim-approval-api
+    build: *nestjs-build
+    ports:
+      - "4600:4600"
+    environment:
+      PORT: 4600
+      SIM_SERVICE_NAME: sim-approval-api
+
+  sim-notification-api:
+    <<: *nestjs-common
+    container_name: sim-notification-api
+    build: *nestjs-build
+    ports:
+      - "4700:4700"
+    environment:
+      PORT: 4700
+      SIM_SERVICE_NAME: sim-notification-api
+
+  sim-reporting-api:
+    <<: *nestjs-common
+    container_name: sim-reporting-api
+    build: *nestjs-build
+    ports:
+      - "4800:4800"
+    environment:
+      PORT: 4800
+      SIM_SERVICE_NAME: sim-reporting-api
+
+  sim-document-api:
+    <<: *nestjs-common
+    container_name: sim-document-api
+    build: *nestjs-build
+    ports:
+      - "4900:4900"
+    environment:
+      PORT: 4900
+      SIM_SERVICE_NAME: sim-document-api
+
+  # ── 시뮬 인프라 (5100, 5200, 8888) ──
+
+  sim-audit-browser-api:
+    <<: *nestjs-common
+    container_name: sim-audit-browser-api
+    build: *nestjs-build
+    ports:
+      - "5100:5100"
+    environment:
+      PORT: 5100
+      SIM_SERVICE_NAME: sim-audit-browser-api
+
+  sim-metrics-collector:
+    <<: *nestjs-common
+    container_name: sim-metrics-collector
+    build: *nestjs-build
+    ports:
+      - "5200:5200"
+    environment:
+      PORT: 5200
+      SIM_SERVICE_NAME: sim-metrics-collector
+
+  sim-gateway:
+    <<: *nestjs-common
+    container_name: sim-gateway
+    build: *nestjs-build
+    ports:
+      - "8888:8888"
+    environment:
+      PORT: 8888
+      SIM_SERVICE_NAME: sim-gateway
+    depends_on:
+      sim-redis:
+        condition: service_healthy
+      sim-auth-api:
+        condition: service_started
+      sim-pm-api:
+        condition: service_started
+      sim-approval-api:
+        condition: service_started
+      sim-notification-api:
+        condition: service_started
+      sim-reporting-api:
+        condition: service_started
+      sim-document-api:
+        condition: service_started
+
+volumes:
+  sim-redis-data:
+
+networks:
+  default:
+    name: qa-sdk-net
+    external: true

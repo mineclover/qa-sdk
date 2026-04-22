@@ -141,3 +141,8 @@ volumes:
   zitadel-db-data:
   zitadel-pat:
   qa-sdk-db-data:
+
+networks:
+  default:
+    name: qa-sdk-net
+    driver: bridge

@@ -1,0 +1,15 @@
+node_modules
+**/node_modules
+dist
+**/dist
+.env.sim
+.env.sim.local
+*.log
+.git
+coverage
+.turbo
+docs
+tests
+e2e
+*.test.ts
+*.spec.ts

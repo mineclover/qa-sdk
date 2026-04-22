@@ -1,0 +1,10 @@
+{
+  "name": "@qa-sdk-sim/placeholder",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Plan 10 전 build 검증용 placeholder. Plan 10에서 9 NestJS 서비스로 교체됨.",
+  "scripts": {
+    "build": "echo 'placeholder — no real build'",
+    "start": "node -e 'console.log(\"placeholder service. Plan 10에서 NestJS로 교체.\"); setInterval(() => {}, 1000);'"
+  }
+}
