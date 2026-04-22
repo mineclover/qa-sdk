@@ -13,6 +13,10 @@ import { scenario6DelegatedResource } from "./scenarios/scenario-6-delegated-res
 import { scenario7BitmapRefresh } from "./scenarios/scenario-7-bitmap-refresh.js";
 import { scenario8PubsubInvalidation } from "./scenarios/scenario-8-pubsub-invalidation.js";
 import type { Scenario, ScenarioResult } from "./runner/types.js";
+import {
+  fetchDensity,
+  summarizeDensity,
+} from "./post-run/density-collector.js";
 
 export const ALL_SCENARIOS: readonly Scenario[] = [
   scenario1Login,
@@ -102,6 +106,39 @@ export function buildCli(): Command {
         for (const v of s.validates) process.stdout.write(`  · ${v}\n`);
       }
     });
+
+  cmd
+    .command("density")
+    .description("§5 marginal density 측정 — sim-reporting-api 호출")
+    .option("--catalog <id>", "catalog ID", "sim")
+    .option("--prefix <id>", "prefix ID (예: sim.bitmap)", "sim.bitmap")
+    .option("--version <v>", "prefix version", "uv1")
+    .option(
+      "--reporting-url <url>",
+      "sim-reporting-api base URL",
+      "http://localhost:4800",
+    )
+    .option("--json", "JSON 출력", false)
+    .action(
+      async (opts: {
+        catalog: string;
+        prefix: string;
+        version: string;
+        reportingUrl: string;
+        json: boolean;
+      }) => {
+        const result = await fetchDensity(opts.reportingUrl, {
+          catalog: opts.catalog,
+          prefix: opts.prefix,
+          version: opts.version,
+        });
+        if (opts.json) {
+          process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+        } else {
+          process.stdout.write(summarizeDensity(result) + "\n");
+        }
+      },
+    );
 
   return cmd;
 }

@@ -16,11 +16,12 @@ describe("sim-scenarios CLI", () => {
     ]);
   });
 
-  it("buildCli — list / run 명령어 등록", () => {
+  it("buildCli — list / run / density 명령어 등록", () => {
     const cmd = buildCli();
     const cmdNames = cmd.commands.map((c) => c.name());
     expect(cmdNames).toContain("run");
     expect(cmdNames).toContain("list");
+    expect(cmdNames).toContain("density");
   });
 
   it("scenario.validates — design.md §4 매트릭스 컬럼 추적", () => {
