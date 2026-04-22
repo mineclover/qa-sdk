@@ -2739,6 +2739,9 @@ importers:
       '@qa-sdk/sim-bitmap-cache':
         specifier: workspace:*
         version: link:../../packages/sim-bitmap-cache
+      '@qa-sdk/sim-otel-utils':
+        specifier: workspace:*
+        version: link:../../packages/sim-otel-utils
       db-bootstrap:
         specifier: workspace:*
         version: link:../../../../packages/db-bootstrap
@@ -2806,6 +2809,9 @@ importers:
       '@qa-sdk/sim-bitmap-cache':
         specifier: workspace:*
         version: link:../../packages/sim-bitmap-cache
+      '@qa-sdk/sim-otel-utils':
+        specifier: workspace:*
+        version: link:../../packages/sim-otel-utils
       audit-recorder-store:
         specifier: workspace:*
         version: link:../../../../packages/audit-recorder-store
@@ -2934,6 +2940,9 @@ importers:
       '@qa-sdk/sim-bitmap-cache':
         specifier: workspace:*
         version: link:../../packages/sim-bitmap-cache
+      '@qa-sdk/sim-otel-utils':
+        specifier: workspace:*
+        version: link:../../packages/sim-otel-utils
       db-bootstrap:
         specifier: workspace:*
         version: link:../../../../packages/db-bootstrap
@@ -3102,6 +3111,9 @@ importers:
       '@qa-sdk/sim-bitmap-cache':
         specifier: workspace:*
         version: link:../../packages/sim-bitmap-cache
+      '@qa-sdk/sim-otel-utils':
+        specifier: workspace:*
+        version: link:../../packages/sim-otel-utils
       db-bootstrap:
         specifier: workspace:*
         version: link:../../../../packages/db-bootstrap
@@ -3169,6 +3181,9 @@ importers:
       '@qa-sdk/sim-bitmap-cache':
         specifier: workspace:*
         version: link:../../packages/sim-bitmap-cache
+      '@qa-sdk/sim-otel-utils':
+        specifier: workspace:*
+        version: link:../../packages/sim-otel-utils
       db-bootstrap:
         specifier: workspace:*
         version: link:../../../../packages/db-bootstrap
@@ -3236,6 +3251,9 @@ importers:
       '@qa-sdk/sim-bitmap-cache':
         specifier: workspace:*
         version: link:../../packages/sim-bitmap-cache
+      '@qa-sdk/sim-otel-utils':
+        specifier: workspace:*
+        version: link:../../packages/sim-otel-utils
       db-bootstrap:
         specifier: workspace:*
         version: link:../../../../packages/db-bootstrap

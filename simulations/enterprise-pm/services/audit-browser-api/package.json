@@ -21,6 +21,7 @@
     "@qa-sdk/logger": "workspace:*",
     "@qa-sdk/otel": "workspace:*",
     "@qa-sdk/sim-bitmap-cache": "workspace:*",
+    "@qa-sdk/sim-otel-utils": "workspace:*",
     "audit-recorder-store": "workspace:*",
     "db-bootstrap": "workspace:*",
     "reflect-metadata": "^0.2.2",
