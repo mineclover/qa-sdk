@@ -1,0 +1,37 @@
+{
+  "name": "resource-policy-store",
+  "version": "0.1.0",
+  "description": "ResourcePolicyRegistry SQLite 영속 구현 — authorization-ontology-resource-lifecycle 스펙 Phase 2",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "better-sqlite3": "catalog:",
+    "drizzle-orm": "catalog:",
+    "permission-engine": "workspace:*",
+    "weighted-index": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "catalog:",
+    "@types/node": "^22.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
+  }
+}
