@@ -32,6 +32,7 @@ export {
 export {
   EntryNotFoundError,
   InMemoryAuditRecorder,
+  OtelAuditRecorder,
   ParentNotFoundError,
   type AuditEntry,
   type AuditKind,
@@ -40,6 +41,8 @@ export {
   type CheckEntry,
   type CheckPass,
   type ExecutionEntry,
+  type OtelRecordCheckArgs,
+  type OtelRecordExecutionArgs,
   type RecordCheckArgs,
   type RecordExecutionArgs,
 } from "./audit/index.js";
