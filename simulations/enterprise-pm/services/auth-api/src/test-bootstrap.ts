@@ -153,14 +153,15 @@ export async function seedTestData(handle: TestApiHandle): Promise<TestFixtureHa
   const marketing = await depts.create({ name: "Marketing" });
 
   // 2. 기본 role 3종 (design.md §3)
-  //    manager: department scope, default mask 는 user_action + dept_action 대부분 set
-  //    member: project scope, user_action 일부
+  //    manager: department scope, pm-api (8 addr) + approval-api (12 addr) 커버를 위해
+  //             2 byte 전체 set (0xffff).
+  //    member: project scope, 일부 action (0x0f00 = 하위 4비트만)
   //    admin: global scope, 모든 action
   //    AUTH_BITMASK_BYTES (=2)에 맞춰 2바이트 hex 사용.
   const managerRole = await roles.create({
     name: "manager",
     scopeType: "department",
-    defaultMaskHex: "ff00", // 2 bytes — Plan 11a auth-codec AUTH_BITMASK_BYTES 준수
+    defaultMaskHex: "ffff", // 2 bytes 전체 set — pm/approval address 전범위 커버
   });
   const memberRole = await roles.create({
     name: "member",
@@ -234,4 +235,177 @@ export async function seedTestData(handle: TestApiHandle): Promise<TestFixtureHa
 
 export async function closeTestApi(handle: TestApiHandle): Promise<void> {
   await handle.close();
+}
+
+/** 확장 user 시드 결과 — sim-scenarios 가 base seed 위에 얹어서 사용. */
+export interface ExtendedSeedHandle {
+  carol: TestUser;
+  david: TestUser;
+  eve: TestUser;
+  frank: TestUser;
+  admin: TestUser;
+  extra_roles: {
+    director: { id: string; name: string };
+    cfo: { id: string; name: string };
+    approver: { id: string; name: string };
+    external_consultant: { id: string; name: string };
+  };
+}
+
+/**
+ * seedExtendedUsers — Plan 13c/d 시나리오용 추가 user 5명 + role 4개 시드.
+ *
+ * 전제: 이미 seedTestData 로 base fixture (alice/bob + manager/member/admin role +
+ * engineering/marketing dept) 가 생성되어 있어야 함.
+ *
+ * 추가 user:
+ *   - carol: engineering manager (시나리오 5 stage 1)
+ *   - david: engineering director (시나리오 5 stage 2)
+ *   - eve:   global CFO (시나리오 5 stage 3)
+ *   - frank: external_consultant (시나리오 6 delegate recipient)
+ *   - admin: global admin (시나리오 8 role 변경 권한)
+ *
+ * role.defaultMaskHex 는 pm-api/approval-api 의 buildDefaultUnion 주소 범위를 커버하도록
+ * 0xffff (16 bit 전체 set) 로 설정 — approval-api 는 12 address 공간 (kind 2 × labels 6).
+ */
+export async function seedExtendedUsers(
+  handle: TestApiHandle,
+  base: TestFixtureHandle,
+): Promise<ExtendedSeedHandle> {
+  const users = handle.app.get(UserService);
+  const roles = handle.app.get(RoleService);
+  const assignments = handle.app.get(RoleAssignmentService);
+
+  const director = await roles.create({
+    name: "director",
+    scopeType: "department",
+    defaultMaskHex: "ffff",
+  });
+  const cfo = await roles.create({
+    name: "cfo",
+    scopeType: "global",
+    defaultMaskHex: "ffff",
+  });
+  const approver = await roles.create({
+    name: "approver",
+    scopeType: "department",
+    defaultMaskHex: "ffff",
+  });
+  const external = await roles.create({
+    name: "external_consultant",
+    scopeType: "global",
+    defaultMaskHex: "ffff",
+  });
+
+  const carol = await users.create({
+    email: "carol@example.com",
+    displayName: "Carol",
+    departmentId: base.departments.engineering.id,
+    primaryRoleId: base.roles.manager.id,
+  });
+  const david = await users.create({
+    email: "david@example.com",
+    displayName: "David",
+    departmentId: base.departments.engineering.id,
+    primaryRoleId: director.id,
+  });
+  const eve = await users.create({
+    email: "eve@example.com",
+    displayName: "Eve",
+    departmentId: base.departments.engineering.id,
+    primaryRoleId: cfo.id,
+  });
+  const frank = await users.create({
+    email: "frank@example.com",
+    displayName: "Frank",
+    departmentId: base.departments.engineering.id,
+    primaryRoleId: external.id,
+  });
+  const admin = await users.create({
+    email: "admin@example.com",
+    displayName: "Admin",
+    departmentId: base.departments.engineering.id,
+    primaryRoleId: base.roles.admin.id,
+  });
+
+  await assignments.assign({
+    userId: carol.id,
+    roleId: base.roles.manager.id,
+    scopeType: "department",
+    scopeId: base.departments.engineering.id,
+  });
+  await assignments.assign({
+    userId: david.id,
+    roleId: director.id,
+    scopeType: "department",
+    scopeId: base.departments.engineering.id,
+  });
+  await assignments.assign({
+    userId: eve.id,
+    roleId: cfo.id,
+    scopeType: "global",
+    scopeId: "global",
+  });
+  await assignments.assign({
+    userId: frank.id,
+    roleId: external.id,
+    scopeType: "global",
+    scopeId: "global",
+  });
+  await assignments.assign({
+    userId: admin.id,
+    roleId: base.roles.admin.id,
+    scopeType: "global",
+    scopeId: "global",
+  });
+
+  handle.credentials.set("carol@example.com", "carol-pass");
+  handle.credentials.set("david@example.com", "david-pass");
+  handle.credentials.set("eve@example.com", "eve-pass");
+  handle.credentials.set("frank@example.com", "frank-pass");
+  handle.credentials.set("admin@example.com", "admin-pass");
+
+  return {
+    carol: {
+      id: carol.id,
+      email: "carol@example.com",
+      password: "carol-pass",
+      displayName: "Carol",
+      departmentId: base.departments.engineering.id,
+    },
+    david: {
+      id: david.id,
+      email: "david@example.com",
+      password: "david-pass",
+      displayName: "David",
+      departmentId: base.departments.engineering.id,
+    },
+    eve: {
+      id: eve.id,
+      email: "eve@example.com",
+      password: "eve-pass",
+      displayName: "Eve",
+      departmentId: base.departments.engineering.id,
+    },
+    frank: {
+      id: frank.id,
+      email: "frank@example.com",
+      password: "frank-pass",
+      displayName: "Frank",
+      departmentId: base.departments.engineering.id,
+    },
+    admin: {
+      id: admin.id,
+      email: "admin@example.com",
+      password: "admin-pass",
+      displayName: "Admin",
+      departmentId: base.departments.engineering.id,
+    },
+    extra_roles: {
+      director: { id: director.id, name: director.name },
+      cfo: { id: cfo.id, name: cfo.name },
+      approver: { id: approver.id, name: approver.name },
+      external_consultant: { id: external.id, name: external.name },
+    },
+  };
 }

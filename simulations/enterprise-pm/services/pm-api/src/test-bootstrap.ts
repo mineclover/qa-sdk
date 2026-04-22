@@ -15,7 +15,7 @@ import {
   FastifyAdapter,
   type NestFastifyApplication,
 } from "@nestjs/platform-fastify";
-import type { AccessChecker, ResourcePolicyRegistry } from "permission-engine";
+import type { AccessChecker, AuditRecorder, ResourcePolicyRegistry } from "permission-engine";
 import { HealthModule } from "./health/health.module.js";
 import { PmDbModule, PM_DB_INSTANCE, type PmDbInstanceHandle } from "./pm/pm-db.module.js";
 import { ProjectModule } from "./pm/project/project.module.js";
@@ -32,6 +32,8 @@ export interface TestBootstrapOptions {
   /** Plan 13 시나리오는 fake AccessChecker (항상 allow) 로 부팅 후 실 Checker 는 통합 테스트에서 교체. */
   overrideChecker?: AccessChecker;
   overrideRegistry?: ResourcePolicyRegistry;
+  /** Plan 13 시나리오 — 3 서비스 간 공유 AuditRecorder. 미주입 시 서비스별 InMemory. */
+  overrideAudit?: AuditRecorder;
 }
 
 export interface TestPmApiHandle {
@@ -71,6 +73,7 @@ function buildTestAppModule(opts: TestBootstrapOptions): DynamicModule {
             db: handle.db,
             overrideChecker: opts.overrideChecker,
             overrideRegistry: opts.overrideRegistry,
+            overrideAudit: opts.overrideAudit,
           };
         },
       }),

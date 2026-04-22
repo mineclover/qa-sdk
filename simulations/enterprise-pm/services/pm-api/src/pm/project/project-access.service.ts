@@ -35,11 +35,18 @@ export interface ProjectCheckResult {
   denyReason?: string;
 }
 
+/**
+ * PROJECT_API_COORDS — DisjointUnionIndex encode() 용 1-based 좌표.
+ *
+ * WeightedIndex.encode 는 1-based coords 를 요구 — coords=[0] 은 throw.
+ * 따라서 4 action 은 [1, 2, 3, 4] 로 매핑. access-checker.module.ts 의
+ * buildDefaultUnion labels (project.create/read/update/delete) 순서와 1:1.
+ */
 const PROJECT_API_COORDS: Record<ProjectApiId, number[]> = {
-  "project.create": [0],
-  "project.read": [1],
-  "project.update": [2],
-  "project.delete": [3],
+  "project.create": [1],
+  "project.read": [2],
+  "project.update": [3],
+  "project.delete": [4],
 };
 
 function newSpanId(): string {

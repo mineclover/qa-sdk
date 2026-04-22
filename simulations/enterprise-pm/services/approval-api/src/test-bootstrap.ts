@@ -12,7 +12,7 @@ import {
   FastifyAdapter,
   type NestFastifyApplication,
 } from "@nestjs/platform-fastify";
-import type { AccessChecker, ResourcePolicyRegistry } from "permission-engine";
+import type { AccessChecker, AuditRecorder, ResourcePolicyRegistry } from "permission-engine";
 import { HealthModule } from "./health/health.module.js";
 import {
   ApprovalDbModule,
@@ -32,6 +32,8 @@ export interface TestBootstrapOptions {
   sqlitePath?: string;
   overrideChecker?: AccessChecker;
   overrideRegistry?: ResourcePolicyRegistry;
+  /** Plan 13 시나리오 — 3 서비스 간 공유 AuditRecorder. 미주입 시 서비스별 InMemory. */
+  overrideAudit?: AuditRecorder;
 }
 
 export interface TestApprovalApiHandle {
@@ -71,6 +73,7 @@ function buildTestAppModule(opts: TestBootstrapOptions): DynamicModule {
             db: handle.db,
             overrideChecker: opts.overrideChecker,
             overrideRegistry: opts.overrideRegistry,
+            overrideAudit: opts.overrideAudit,
           };
         },
       }),

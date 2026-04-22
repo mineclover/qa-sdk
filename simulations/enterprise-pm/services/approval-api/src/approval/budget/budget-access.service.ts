@@ -32,13 +32,20 @@ export interface BudgetCheckResult {
   firstFailureSpanId?: string;
 }
 
+/**
+ * BUDGET_API_COORDS — DisjointUnionIndex encode() 용 1-based 좌표.
+ *
+ * WeightedIndex.encode 는 1-based — coords=[0] 은 throw. 따라서 6 action 은 [1..6].
+ * approval-api 의 buildDefaultUnion labels (budget.create/read/submit/start-review/approve/reject)
+ * 순서와 1:1 매칭.
+ */
 const BUDGET_API_COORDS: Record<BudgetApiId, number[]> = {
-  "budget.create": [0],
-  "budget.read": [1],
-  "budget.submit": [2],
-  "budget.start-review": [3],
-  "budget.approve": [4],
-  "budget.reject": [5],
+  "budget.create": [1],
+  "budget.read": [2],
+  "budget.submit": [3],
+  "budget.start-review": [4],
+  "budget.approve": [5],
+  "budget.reject": [6],
 };
 
 function newSpanId(): string {
