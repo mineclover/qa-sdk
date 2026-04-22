@@ -19,3 +19,6 @@ export {
   type AuditRecorderDialect,
   type CreateAuditRecorderArgs,
 } from "./factory.js";
+
+// Plan 15d — RLS shadow mode
+export { rlsShadowDecisions, RLS_SHADOW_DECISIONS_PG_DDL } from "./pg/shadow-schema.js";
