@@ -2,6 +2,24 @@
 // @def.doc permission-engine-spec
 
 export {
+  DuplicatePolicyError,
+  InMemoryResourcePolicyRegistry,
+  InvalidTransitionError,
+  PolicyNotFoundError,
+  canAccessUnregistered,
+  canTransition,
+  createUnregistered,
+  delegate as delegateResourcePolicy,
+  register as registerResourcePolicy,
+  type CreateArgs as ResourcePolicyCreateArgs,
+  type DelegateArgs as ResourcePolicyDelegateArgs,
+  type RegisterArgs as ResourcePolicyRegisterArgs,
+  type ResourcePolicy,
+  type ResourcePolicyRegistry,
+  type ResourcePolicyState,
+} from "./resource-policy/index.js";
+
+export {
   PermissionSet,
   type DimDef,
   type PermissionSetOptions,
