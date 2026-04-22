@@ -159,6 +159,7 @@ export async function bootstrapInProcess(
   });
 
   // in-process budget seed helper — approval-api service layer 직접 호출
+  // 시나리오 3/4/5 는 decide 호출 가능한 in_review 상태 필요.
   const seedBudgetRequest = async (args: {
     projectId: string;
     projectDepartmentId: string;
@@ -166,7 +167,10 @@ export async function bootstrapInProcess(
     requesterId: string;
   }) => {
     const { createTestBudgetRequest } = approvalBootstrap;
-    const req = await createTestBudgetRequest(approvalHandle, args);
+    const req = await createTestBudgetRequest(approvalHandle, {
+      ...args,
+      advanceTo: "in_review",
+    });
     return { id: req.id };
   };
 

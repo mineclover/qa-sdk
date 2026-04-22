@@ -141,6 +141,8 @@ export async function seedApprovalFixtures(
 /**
  * 단일 budget request 생성 — Plan 13b scenario 3/4 setup 진입점.
  * gateway / guard 우회 (직접 service 호출) — 내부 테스트 전용.
+ *
+ * 기본은 draft 상태. advanceTo="in_review" 로 호출하면 submit + review 까지 전이.
  */
 export async function createTestBudgetRequest(
   handle: TestApprovalApiHandle,
@@ -149,10 +151,24 @@ export async function createTestBudgetRequest(
     projectDepartmentId: string;
     amount: number;
     requesterId: string;
+    /** Plan 13 시나리오 3/4/5 — 결정 가능 상태로 미리 전이. */
+    advanceTo?: "draft" | "submitted" | "in_review";
   },
 ): Promise<TestBudgetRequestFixture> {
   const svc = handle.app.get(BudgetService);
-  const req = await svc.create(args);
+  let req = await svc.create({
+    projectId: args.projectId,
+    projectDepartmentId: args.projectDepartmentId,
+    amount: args.amount,
+    requesterId: args.requesterId,
+  });
+  const target = args.advanceTo ?? "draft";
+  if (target === "submitted" || target === "in_review") {
+    req = await svc.submit(req.id);
+  }
+  if (target === "in_review") {
+    req = await svc.startReview(req.id);
+  }
   return {
     id: req.id,
     projectId: req.projectId,
