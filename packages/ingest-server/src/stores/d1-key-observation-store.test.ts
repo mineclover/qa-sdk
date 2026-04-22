@@ -12,28 +12,35 @@ import { migrate } from "drizzle-orm/node-sqlite/migrator";
 
 const migrationsFolder = new URL("../../drizzle", import.meta.url).pathname;
 
-// key_observations 테이블은 migration에 미포함 — DDL 직접 실행
+// key_observations 테이블은 migration에 미포함 — DDL 직접 실행.
+// coordinate-storage.rule §1.1 P1+P3 준수: PK = (prefix_id, version, address) / (prefix_id, version).
 const KEY_OBS_DDL = `
 CREATE TABLE IF NOT EXISTS key_observations (
-  packed_key      TEXT    NOT NULL PRIMARY KEY,
   prefix_id       TEXT    NOT NULL,
+  version         TEXT    NOT NULL,
+  address         INTEGER NOT NULL,
+  packed_key      TEXT    NOT NULL,
   registered      INTEGER NOT NULL DEFAULT 0,
   count           INTEGER NOT NULL DEFAULT 1,
   first_seen      TEXT    NOT NULL,
   last_seen       TEXT    NOT NULL,
-  payload_summary TEXT    NOT NULL DEFAULT '{}'
+  payload_summary TEXT    NOT NULL DEFAULT '{}',
+  PRIMARY KEY (prefix_id, version, address)
 );
-CREATE INDEX IF NOT EXISTS idx_key_obs_prefix ON key_observations(prefix_id);
+CREATE INDEX IF NOT EXISTS idx_key_obs_packed ON key_observations(packed_key);
+CREATE INDEX IF NOT EXISTS idx_key_obs_prefix_version ON key_observations(prefix_id, version);
 CREATE INDEX IF NOT EXISTS idx_key_obs_last_seen ON key_observations(last_seen);
 CREATE INDEX IF NOT EXISTS idx_key_obs_count ON key_observations(count DESC);
 CREATE INDEX IF NOT EXISTS idx_key_obs_registered ON key_observations(registered);
 
 CREATE TABLE IF NOT EXISTS key_observation_prefixes (
-  prefix_id      TEXT    NOT NULL PRIMARY KEY,
+  prefix_id      TEXT    NOT NULL,
+  version        TEXT    NOT NULL,
   distinct_keys  INTEGER NOT NULL DEFAULT 1,
   total_count    INTEGER NOT NULL DEFAULT 0,
   first_seen     TEXT    NOT NULL,
-  last_seen      TEXT    NOT NULL
+  last_seen      TEXT    NOT NULL,
+  PRIMARY KEY (prefix_id, version)
 );
 `;
 
@@ -143,7 +150,7 @@ describe("D1KeyObservationStore", () => {
     expect(unregistered.every((o) => !o.registered)).toBe(true);
   });
 
-  it("prefixSummary — prefix 레벨 집계", async () => {
+  it("prefixSummary — prefix 레벨 집계 (version별 분리)", async () => {
     await store.observeBatch([
       { packedKey: "svc:v1:1", prefixId: "svc", registered: true, timestamp: "2026-04-06T10:00:00Z" },
       { packedKey: "svc:v1:2", prefixId: "svc", registered: true, timestamp: "2026-04-06T10:01:00Z" },
@@ -152,6 +159,7 @@ describe("D1KeyObservationStore", () => {
 
     const prefixes = await store.prefixSummary("svc");
     expect(prefixes).toHaveLength(1);
+    expect(prefixes[0].version).toBe("v1");
     expect(prefixes[0].distinctKeys).toBe(2);
     expect(prefixes[0].totalCount).toBe(3);
   });

@@ -3,7 +3,7 @@
 
 // packages/ingest-server/src/stores/d1-key-observation-store.ts
 
-import { count as countFn, desc, eq, lt, sql, sum, asc } from "drizzle-orm";
+import { count as countFn, desc, eq, lt, sql, sum, asc, and } from "drizzle-orm";
 import type {
   KeyObservationStore,
   KeyObservationEntry,
@@ -11,6 +11,7 @@ import type {
   KeyObservationSummary,
   PrefixObservationSummary,
 } from "@qa-sdk/core";
+import { parsePackedAddress } from "@qa-sdk/core/coordinates/address-context-schema";
 import { keyObservations, keyObservationPrefixes } from "../db/schema.js";
 import { parseJsonColumn, type PayloadSummaryJson, EMPTY_PAYLOAD_SUMMARY } from "../db/json-types.js";
 import type { D1Db } from "./d1-db-type.js";
@@ -24,23 +25,41 @@ export class D1KeyObservationStore implements KeyObservationStore {
 
   async observeBatch(entries: readonly KeyObservationEntry[]): Promise<void> {
     for (const entry of entries) {
-      // 기존 payloadSummary 조회 → merge
+      // entry에 explicit version/address가 있으면 우선 사용, 없으면 packed_key parse.
+      // 포맷 위반은 silent skip (ingest hot path — 이상 데이터로 트래픽 차단 방지).
+      const resolved = entry.version !== undefined && entry.address !== undefined
+        ? { version: entry.version, address: entry.address }
+        : (() => {
+            const p = parsePackedAddress(entry.packedKey);
+            return p ? { version: p.version, address: p.address } : null;
+          })();
+
+      if (!resolved) continue;
+      const { version, address } = resolved;
+
+      // 기존 payloadSummary 조회 (PK 변경 — packed_key 대신 (prefix, version, address))
       const [existing] = await this.db
         .select({ payloadSummary: keyObservations.payloadSummary })
         .from(keyObservations)
-        .where(eq(keyObservations.packedKey, entry.packedKey));
+        .where(and(
+          eq(keyObservations.prefixId, entry.prefixId),
+          eq(keyObservations.version, version),
+          eq(keyObservations.address, address),
+        ));
 
       const prevSummary = existing
         ? parseJsonColumn<PayloadSummaryJson>(existing.payloadSummary, EMPTY_PAYLOAD_SUMMARY)
         : EMPTY_PAYLOAD_SUMMARY;
       const merged = mergePayloadSummary(prevSummary, entry);
 
-      // key_observations upsert
+      // key_observations upsert — PK = (prefix_id, version, address)
       await this.db
         .insert(keyObservations)
         .values({
-          packedKey: entry.packedKey,
           prefixId: entry.prefixId,
+          version,
+          address,
+          packedKey: entry.packedKey,
           registered: entry.registered,
           count: 1,
           firstSeen: entry.timestamp,
@@ -48,7 +67,7 @@ export class D1KeyObservationStore implements KeyObservationStore {
           payloadSummary: JSON.stringify(merged),
         })
         .onConflictDoUpdate({
-          target: keyObservations.packedKey,
+          target: [keyObservations.prefixId, keyObservations.version, keyObservations.address],
           set: {
             count: sql`${keyObservations.count} + 1`,
             lastSeen: entry.timestamp,
@@ -57,24 +76,27 @@ export class D1KeyObservationStore implements KeyObservationStore {
           },
         });
 
-      // key_observation_prefixes upsert
+      // key_observation_prefixes upsert — version 차원 포함 (P3)
       await this.db
         .insert(keyObservationPrefixes)
         .values({
           prefixId: entry.prefixId,
+          version,
           distinctKeys: 1,
           totalCount: 1,
           firstSeen: entry.timestamp,
           lastSeen: entry.timestamp,
         })
         .onConflictDoUpdate({
-          target: keyObservationPrefixes.prefixId,
+          target: [keyObservationPrefixes.prefixId, keyObservationPrefixes.version],
           set: {
             distinctKeys: sql`CASE
               WHEN NOT EXISTS (
                 SELECT 1 FROM ${keyObservations}
-                WHERE ${keyObservations.packedKey} = ${entry.packedKey}
-                AND ${keyObservations.count} > 1
+                WHERE ${keyObservations.prefixId} = ${entry.prefixId}
+                  AND ${keyObservations.version} = ${version}
+                  AND ${keyObservations.address} = ${address}
+                  AND ${keyObservations.count} > 1
               )
               THEN ${keyObservationPrefixes.distinctKeys} + 1
               ELSE ${keyObservationPrefixes.distinctKeys}
@@ -167,6 +189,7 @@ export class D1KeyObservationStore implements KeyObservationStore {
 
     return rows.map((r) => ({
       prefixId: r.prefixId,
+      version: r.version,
       distinctKeys: r.distinctKeys,
       totalCount: r.totalCount,
       firstSeen: r.firstSeen,
@@ -179,6 +202,8 @@ function toKeyObservation(row: typeof keyObservations.$inferSelect): KeyObservat
   return {
     packedKey: row.packedKey,
     prefixId: row.prefixId,
+    version: row.version,
+    address: row.address,
     registered: !!row.registered,
     count: row.count,
     firstSeen: row.firstSeen,
