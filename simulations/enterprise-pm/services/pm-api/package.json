@@ -18,6 +18,7 @@
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-fastify": "^11.0.0",
+    "@opentelemetry/api": "^1.9.0",
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/logger": "workspace:*",
     "@qa-sdk/otel": "workspace:*",

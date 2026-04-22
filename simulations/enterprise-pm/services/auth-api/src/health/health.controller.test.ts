@@ -20,4 +20,10 @@ describe("sim-auth-api HealthController", () => {
     const res = ctl.health();
     expect(res.ts).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
+
+  it("otelStatus 필드 포함 (ok|noop) — Plan 12c", () => {
+    const ctl = new HealthController();
+    const res = ctl.health();
+    expect(res.otelStatus).toMatch(/^(ok|noop)$/);
+  });
 });
