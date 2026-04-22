@@ -2776,12 +2776,18 @@ importers:
       '@qa-sdk/otel':
         specifier: workspace:*
         version: link:../../../../packages/otel
+      '@qa-sdk/sim-audit-recorder-provider':
+        specifier: workspace:*
+        version: link:../../packages/sim-audit-recorder-provider
       '@qa-sdk/sim-bitmap-cache':
         specifier: workspace:*
         version: link:../../packages/sim-bitmap-cache
       '@qa-sdk/sim-otel-utils':
         specifier: workspace:*
         version: link:../../packages/sim-otel-utils
+      audit-recorder-store:
+        specifier: workspace:*
+        version: link:../../../../packages/audit-recorder-store
       db-bootstrap:
         specifier: workspace:*
         version: link:../../../../packages/db-bootstrap
@@ -3254,12 +3260,18 @@ importers:
       '@qa-sdk/otel':
         specifier: workspace:*
         version: link:../../../../packages/otel
+      '@qa-sdk/sim-audit-recorder-provider':
+        specifier: workspace:*
+        version: link:../../packages/sim-audit-recorder-provider
       '@qa-sdk/sim-bitmap-cache':
         specifier: workspace:*
         version: link:../../packages/sim-bitmap-cache
       '@qa-sdk/sim-otel-utils':
         specifier: workspace:*
         version: link:../../packages/sim-otel-utils
+      audit-recorder-store:
+        specifier: workspace:*
+        version: link:../../../../packages/audit-recorder-store
       db-bootstrap:
         specifier: workspace:*
         version: link:../../../../packages/db-bootstrap

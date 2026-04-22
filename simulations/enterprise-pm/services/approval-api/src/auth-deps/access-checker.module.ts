@@ -14,6 +14,8 @@ import {
   createResourcePolicyRegistry,
   RESOURCE_POLICIES_DDL,
 } from "resource-policy-store";
+import { createSimAuditRecorder } from "@qa-sdk/sim-audit-recorder-provider";
+import { AUDIT_ENTRIES_DDL } from "audit-recorder-store";
 import { DisjointUnionIndex } from "weighted-index";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -110,11 +112,32 @@ export class AccessCheckerModule {
       ): Promise<AccessChecker> => {
         const resolved = await opts.useFactory(...deps);
         if (resolved.overrideChecker) return resolved.overrideChecker;
+
+        let audit: AuditRecorder;
+        if (resolved.overrideAudit) {
+          audit = resolved.overrideAudit;
+        } else if (resolved.db && resolved.dialect) {
+          if (resolved.dialect === "sqlite") {
+            const raw = (resolved.db as BetterSQLite3Database as unknown as {
+              $client: { exec: (sql: string) => void };
+            }).$client;
+            if (raw && typeof raw.exec === "function") {
+              raw.exec(AUDIT_ENTRIES_DDL);
+            }
+          }
+          audit = await createSimAuditRecorder({
+            dialect: resolved.dialect,
+            db: resolved.db,
+          });
+        } else {
+          audit = new InMemoryAuditRecorder();
+        }
+
         const checkerDeps: AccessCheckerDeps = {
           union: resolved.overrideUnion ?? buildDefaultUnion(),
           policyRegistry: registry,
           evaluator: resolved.overrideEvaluator ?? new SimInstanceEvaluator(),
-          audit: resolved.overrideAudit ?? new InMemoryAuditRecorder(),
+          audit,
         };
         return new AccessChecker(checkerDeps);
       },
