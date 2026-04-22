@@ -21,6 +21,9 @@ export const SERVICE_PORTS: readonly ServicePortEntry[] = [
   { name: "grafana",            defaultPort: 3000, description: "대시보드 시각화" },
   { name: "loki",               defaultPort: 3100, description: "로그 집계 서비스" },
   { name: "prometheus",         defaultPort: 9090, description: "메트릭 수집 서비스" },
+  // ── 인프라 데이터베이스 (PostgreSQL 인스턴스) ──
+  { name: "zitadel-postgres",   defaultPort: 5433, description: "Zitadel 인증 DB 컨테이너 (docker-compose.infra.yaml)" },
+  { name: "qa-sdk-postgres",    defaultPort: 5434, description: "qa-sdk 메인 PG 컨테이너 (auth/audit/ingest/decision/definition schema)" },
   // ── QA-SDK 엔진 서비스 (3xxx) ──
   { name: "ingest-server",      defaultPort: 3200, description: "이벤트 수집 + Phase-2 (PostgreSQL/In-memory)" },
   { name: "registry-service",   defaultPort: 3300, description: "카탈로그/주소 스키마 관리 (SQLite) + Dev Dashboard" },
