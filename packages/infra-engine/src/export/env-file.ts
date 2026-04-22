@@ -4,6 +4,8 @@
 // export/env-file.ts — .env 파일 생성기
 import { getRequiredServicePort } from "@qa-sdk/core";
 import type { DiscoveryClient } from "../discovery/client.js";
+import { buildPgEnvVars, type PgDomain } from "./pg-env-builder.js";
+import { readEnvDockerSecrets } from "./env-docker-reader.js";
 
 /** 모든 서비스가 기본으로 필요로 하는 core 서비스 */
 const CORE_SERVICE_IDS = new Set(["ingest-server", "registry-service"]);
@@ -16,6 +18,12 @@ export interface EnvFileOptions {
   env: string;
   /** true: 모든 서비스 URL 포함, false(기본): consumedPrefixes + core 서비스만 */
   includeAll?: boolean;
+  /** PG 사용 시 도메인 지정 — auth/audit/ingest/decision/definition/admin */
+  pgDomain?: PgDomain;
+  /** PG host (기본 localhost) */
+  pgHost?: string;
+  /** .env.docker 파일 경로 (기본: packages/infra-engine/.env.docker) */
+  envDockerPath?: string;
 }
 
 /** config JSON의 서비스 설정 객체를 env vars로 변환 */
@@ -76,6 +84,25 @@ export async function generateEnvFile(
   if (configEntries.length > 0) {
     lines.push(``, `# 서비스 설정`);
     for (const [key, value] of configEntries) {
+      lines.push(`${key}=${value}`);
+    }
+  }
+
+  // PG 변수 (pgDomain 지정 시) — Plan 04d
+  if (options.pgDomain) {
+    if (!options.envDockerPath) {
+      throw new Error(
+        "pgDomain 지정 시 envDockerPath 필수 (예: packages/infra-engine/.env.docker)",
+      );
+    }
+    const secrets = await readEnvDockerSecrets(options.envDockerPath);
+    const pgEnv = buildPgEnvVars({
+      domain: options.pgDomain,
+      host: options.pgHost ?? "localhost",
+      secrets,
+    });
+    lines.push(``, `# PG 연결 (도메인: ${options.pgDomain})`);
+    for (const [key, value] of Object.entries(pgEnv)) {
       lines.push(`${key}=${value}`);
     }
   }

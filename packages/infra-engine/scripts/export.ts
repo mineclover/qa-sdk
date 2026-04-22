@@ -16,6 +16,7 @@ import { createDefinitionAdapter } from "../src/adapters/definition.js";
 import { createFleetManager } from "../src/fleet/manager.js";
 import type { FleetServiceStatus } from "../src/fleet/manager.js";
 import { generateEnvFile } from "../src/export/env-file.js";
+import type { PgDomain } from "../src/export/pg-env-builder.js";
 import { generateTypescriptModule } from "../src/export/typescript-module.js";
 import { generateDockerComposeOverride } from "../src/export/docker-compose.js";
 import { homedir } from "node:os";
@@ -68,15 +69,38 @@ async function main() {
 
     case "env": {
       if (!arg1) {
-        console.error("사용: export.ts env <serviceId> [env]");
+        console.error("사용: export.ts env <serviceId> [env] [--all] [--pg-domain <domain>] [--pg-host <host>]");
         process.exit(1);
       }
       const includeAll = process.argv.includes("--all");
 
+      // --pg-domain <domain> 파싱
+      const VALID_PG_DOMAINS: readonly PgDomain[] = [
+        "auth", "audit", "ingest", "decision", "definition", "admin",
+      ];
+      const pgDomainIdx = process.argv.indexOf("--pg-domain");
+      const pgDomainRaw = pgDomainIdx !== -1 ? process.argv[pgDomainIdx + 1] : undefined;
+      if (pgDomainIdx !== -1 && !pgDomainRaw) {
+        console.error("--pg-domain 다음에 도메인 (auth/audit/ingest/decision/definition/admin) 필요");
+        process.exit(1);
+      }
+      if (pgDomainRaw && !VALID_PG_DOMAINS.includes(pgDomainRaw as PgDomain)) {
+        console.error(`--pg-domain 값이 잘못됨: ${pgDomainRaw}. 허용: ${VALID_PG_DOMAINS.join("/")}`);
+        process.exit(1);
+      }
+      const pgDomain = pgDomainRaw as PgDomain | undefined;
+
+      // --pg-host <host> 파싱 (선택)
+      const pgHostIdx = process.argv.indexOf("--pg-host");
+      const pgHost = pgHostIdx !== -1 ? process.argv[pgHostIdx + 1] : undefined;
+
+      // .env.docker 기본 경로 — packages/infra-engine/.env.docker (pgDomain 사용 시만 read)
+      const __dirname = dirname(fileURLToPath(import.meta.url));
+      const envDockerPath = process.env.QA_ENV_DOCKER_PATH ?? resolve(__dirname, "../.env.docker");
+
       // config JSON에서 서비스별 설정 로딩
       let svcConfig: Record<string, unknown> | undefined;
       try {
-        const __dirname = dirname(fileURLToPath(import.meta.url));
         const configPath = resolve(__dirname, `../config/${arg2}.json`);
         const raw = JSON.parse(await readFile(configPath, "utf-8"));
         svcConfig = raw.services?.[arg1] as Record<string, unknown> | undefined;
@@ -86,7 +110,14 @@ async function main() {
 
       const content = await generateEnvFile(
         client,
-        { serviceId: arg1, env: arg2, includeAll },
+        {
+          serviceId: arg1,
+          env: arg2,
+          includeAll,
+          pgDomain,
+          pgHost,
+          envDockerPath: pgDomain ? envDockerPath : undefined,
+        },
         svcConfig,
       );
       const outPath = EXPORT_OUT ?? `.env.${arg1}.${arg2}`;
