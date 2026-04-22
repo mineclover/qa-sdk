@@ -88,6 +88,9 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.15
+      db-bootstrap:
+        specifier: workspace:*
+        version: link:../db-bootstrap
       resource-policy-store:
         specifier: workspace:*
         version: link:../resource-policy-store
