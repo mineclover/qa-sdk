@@ -1,9 +1,10 @@
 // @def.boundary sim-auth-api
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import { Body, Controller, Post, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Inject, Post, UnauthorizedException } from "@nestjs/common";
 import { z } from "zod";
 import { UserService } from "../user/user.service.js";
+import { CREDENTIAL_STORE, type CredentialStore } from "./credential-store.js";
 
 const authSchema = z.object({
   email: z.string().email(),
@@ -13,19 +14,25 @@ const authSchema = z.object({
 /**
  * POST /auth/authenticate
  *
- * 시뮬 환경 — 실제 password verify 로직은 sim 스코프 밖. email 존재 여부만 검증.
- * §2 bitmap-pipeline §3 (저장·전달) — gateway가 본 엔드포인트로 userId 확정 후
- * /bitmap/issue를 호출하는 two-step 플로우.
+ * sim 편의 — email 존재 + credentialStore.verify(email, password) 양자 통과 시 userId 반환.
+ * 실패 시 401 — 동일한 오류 메시지로 타이밍 공격 방지 고려는 §Defer.
  */
 @Controller("auth")
 export class AuthenticateController {
-  constructor(private readonly users: UserService) {}
+  constructor(
+    private readonly users: UserService,
+    @Inject(CREDENTIAL_STORE) private readonly credentials: CredentialStore,
+  ) {}
 
   @Post("authenticate")
   async authenticate(@Body() body: unknown) {
-    const { email } = authSchema.parse(body);
+    const { email, password } = authSchema.parse(body);
     const user = await this.users.findByEmail(email);
     if (!user) throw new UnauthorizedException({ error: "invalid_credentials" });
+
+    const ok = await this.credentials.verify(email, password);
+    if (!ok) throw new UnauthorizedException({ error: "invalid_credentials" });
+
     return {
       userId: user.id,
       displayName: user.displayName,

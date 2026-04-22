@@ -22,7 +22,7 @@ import { env } from "./config/env.js";
     RoleModule,
     RoleAssignmentModule,
     BitmapModule,
-    AuthenticateModule,
+    AuthenticateModule.forRoot(), // 기본 NoopCredentialStore — 운영 부팅
     // §5 Invalidation Publisher — 권한 변경 시 pub/sub 메시지 발행.
     BitmapCacheModule.forRoot({
       redisUrl: env.SIM_REDIS_URL,
