@@ -50,14 +50,23 @@ describe("Alignment Engine — compareIntentWithExecution", () => {
     expect(result.issues[0].type).toBe("broken-promise");
   });
 
-  it("위계(Hierarchy)가 불일치하면 감점 및 경고 발생", () => {
-    const mismatchedExec: ModuleIR = {
-      ...mockExecution,
-      meta: { ...mockExecution.meta, intentHierarchy: "auxiliary" }, // 구현은 보조 로직
-    };
-    const result = compareIntentWithExecution(mockIntent, [mismatchedExec]);
+  it("위계(Hierarchy)가 불일치하면 감점 및 경고 발생 — sidecar(core↔aux) 예외 외", () => {
+    // 의도는 보조(auxiliary)인데 구현이 코어(core)로 추출 → mismatch (sidecar 패턴 아님)
+    // commit 1a85f3c2: core+aux는 sidecar로 의도적 제외, 그 외 mismatch는 경고.
+    const auxIntent: DefinitionEntry = { ...mockIntent, intent_hierarchy: "auxiliary" };
+    const result = compareIntentWithExecution(auxIntent, [mockExecution]);
     expect(result.score).toBeLessThan(100);
-    expect(result.issues[0].type).toBe("hierarchy-mismatch");
+    expect(result.issues.some((i) => i.type === "hierarchy-mismatch")).toBe(true);
+  });
+
+  it("core 의도 + auxiliary 구현은 sidecar로 간주되어 hierarchy-mismatch 없음", () => {
+    // commit 1a85f3c2 의도적 정책 — alignment score penalty에서 제외
+    const sidecarExec: ModuleIR = {
+      ...mockExecution,
+      meta: { ...mockExecution.meta, intentHierarchy: "auxiliary" },
+    };
+    const result = compareIntentWithExecution(mockIntent, [sidecarExec]);
+    expect(result.issues.some((i) => i.type === "hierarchy-mismatch")).toBe(false);
   });
 });
 
