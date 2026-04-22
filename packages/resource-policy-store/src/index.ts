@@ -12,3 +12,21 @@ export { SqliteResourcePolicyRegistry as DrizzleResourcePolicyRegistry } from ".
 // PG 어댑터 (Plan 05b)
 export { PgResourcePolicyRegistry } from "./pg/adapter.js";
 export { resourcePolicies as resourcePoliciesPg, RESOURCE_POLICIES_PG_DDL } from "./pg/schema.js";
+
+// Factory + port (Plan 05c)
+export {
+  createResourcePolicyRegistry,
+  type CreateRegistryOptions,
+  type ResourcePolicyDialect,
+} from "./factory.js";
+
+export {
+  DuplicatePolicyError,
+  PolicyNotFoundError,
+  type ResourcePolicy,
+  type ResourcePolicyRegistry,
+  type ResourcePolicyState,
+  type ResourcePolicyCreateArgs,
+  type ResourcePolicyRegisterArgs,
+  type ResourcePolicyDelegateArgs,
+} from "./port.js";
