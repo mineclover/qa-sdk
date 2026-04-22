@@ -2858,6 +2858,9 @@ importers:
       '@qa-sdk/otel':
         specifier: workspace:*
         version: link:../../../../packages/otel
+      '@qa-sdk/sim-audit-recorder-provider':
+        specifier: workspace:*
+        version: link:../../packages/sim-audit-recorder-provider
       '@qa-sdk/sim-bitmap-cache':
         specifier: workspace:*
         version: link:../../packages/sim-bitmap-cache

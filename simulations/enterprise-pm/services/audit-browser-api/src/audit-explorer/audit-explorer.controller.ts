@@ -1,7 +1,7 @@
 // @def.boundary sim-audit-browser-api
 // @def.doc authorization-ontology-nested-audit-tracing
 
-import { Controller, Get, NotFoundException, Param } from "@nestjs/common";
+import { Controller, Get, Inject, NotFoundException, Param } from "@nestjs/common";
 import { AuditExplorerService } from "./audit-explorer.service.js";
 
 /**
@@ -11,7 +11,9 @@ import { AuditExplorerService } from "./audit-explorer.service.js";
  */
 @Controller("audit")
 export class AuditExplorerController {
-  constructor(private readonly svc: AuditExplorerService) {}
+  constructor(
+    @Inject(AuditExplorerService) private readonly svc: AuditExplorerService,
+  ) {}
 
   @Get("trace/:rootSpanId")
   async trace(@Param("rootSpanId") id: string) {

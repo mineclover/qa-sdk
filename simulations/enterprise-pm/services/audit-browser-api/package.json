@@ -4,6 +4,20 @@
   "description": "\uc2dc\ubbac \u2014 audit trace explorer NestJS \uc11c\ube44\uc2a4 (audit-recorder-store \uc870\ud68c)",
   "private": true,
   "type": "module",
+  "main": "dist/main.js",
+  "exports": {
+    ".": { "import": "./dist/main.js" },
+    "./app-module": {
+      "types": "./dist/app-module.d.ts",
+      "import": "./dist/app-module.js"
+    },
+    "./test-bootstrap": {
+      "types": "./dist/test-bootstrap.d.ts",
+      "import": "./dist/test-bootstrap.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "README.md"],
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsc",
@@ -20,6 +34,7 @@
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/logger": "workspace:*",
     "@qa-sdk/otel": "workspace:*",
+    "@qa-sdk/sim-audit-recorder-provider": "workspace:*",
     "@qa-sdk/sim-bitmap-cache": "workspace:*",
     "@qa-sdk/sim-otel-utils": "workspace:*",
     "audit-recorder-store": "workspace:*",
