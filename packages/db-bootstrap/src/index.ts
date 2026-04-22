@@ -45,3 +45,11 @@ export {
   decodeBitmapHex,
   type RlsJwtClaims,
 } from "./rls-nest-interceptor.js";
+
+// Plan 15d — Shadow mode predictor
+export {
+  predictRlsDecision,
+  type RlsShadowQuery,
+  type RlsWouldDecision,
+  type RlsShadowPrediction,
+} from "./rls-shadow-evaluator.js";
