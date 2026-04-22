@@ -71,6 +71,95 @@ export type KeyObservationPrefixPgRow =
   typeof keyObservationPrefixes.$inferSelect;
 
 /**
+ * ingest.event_records — RecordStore의 PG 구현 대상 (Plan 07c).
+ *
+ * D1 schema(`packages/ingest-server/src/db/schema.ts` eventRecords)와 동일 컬럼.
+ * dialect 차이:
+ *   - boolean payload_masking_applied: PG native (D1은 INTEGER 0/1)
+ *   - jsonb 컬럼: payload, address_context, user_attributes, payload_masked_fields
+ *     (D1은 모두 TEXT JSON)
+ *   - timestamp 필드는 ISO-8601 text 유지 — ingest 핫패스 호환성
+ */
+export const eventRecords = ingestSchema.table(
+  "event_records",
+  {
+    logId: text("log_id").primaryKey(),
+    traceId: text("trace_id").notNull(),
+    spanId: text("span_id").notNull(),
+    parentSpanId: text("parent_span_id"),
+    timestamp: text("timestamp").notNull(),
+    recordKind: text("record_kind").notNull(),
+    eventKey: text("event_key").notNull(),
+    eventVersion: text("event_version").notNull(),
+    spanName: text("span_name"),
+    startTime: text("start_time"),
+    endTime: text("end_time"),
+    statusCode: text("status_code"),
+    payloadFormat: text("payload_format").notNull(),
+    payloadEncoding: text("payload_encoding").notNull(),
+    payloadMaskingApplied: boolean("payload_masking_applied")
+      .notNull()
+      .default(false),
+    payloadMaskedFields: jsonb("payload_masked_fields").notNull().default([]),
+    payload: jsonb("payload"),
+    registryWarning: text("registry_warning"),
+    addressContext: jsonb("address_context"),
+    qaSessionId: text("qa_session_id"),
+    actorId: text("actor_id"),
+    userId: text("user_id"),
+    userAttributes: jsonb("user_attributes"),
+    createdAt: text("created_at").notNull(),
+  },
+  (t) => [
+    index("idx_event_records_trace_id_pg").on(t.traceId),
+    index("idx_event_records_trace_timestamp_pg").on(t.traceId, t.timestamp),
+    index("idx_event_records_event_key_pg").on(t.eventKey),
+    index("idx_event_records_session_id_pg").on(t.qaSessionId),
+  ],
+);
+
+export type EventRecordPgRow = typeof eventRecords.$inferSelect;
+
+/**
+ * raw DDL — ingest.event_records.
+ * KEY_OBSERVATIONS_PG_DDL과 별도 — schema CREATE는 idempotent.
+ */
+export const EVENT_RECORDS_PG_DDL = `
+CREATE SCHEMA IF NOT EXISTS ingest;
+
+CREATE TABLE IF NOT EXISTS ingest.event_records (
+  log_id                   TEXT PRIMARY KEY,
+  trace_id                 TEXT NOT NULL,
+  span_id                  TEXT NOT NULL,
+  parent_span_id           TEXT,
+  timestamp                TEXT NOT NULL,
+  record_kind              TEXT NOT NULL,
+  event_key                TEXT NOT NULL,
+  event_version            TEXT NOT NULL,
+  span_name                TEXT,
+  start_time               TEXT,
+  end_time                 TEXT,
+  status_code              TEXT,
+  payload_format           TEXT NOT NULL,
+  payload_encoding         TEXT NOT NULL,
+  payload_masking_applied  BOOLEAN NOT NULL DEFAULT FALSE,
+  payload_masked_fields    JSONB NOT NULL DEFAULT '[]'::jsonb,
+  payload                  JSONB,
+  registry_warning         TEXT,
+  address_context          JSONB,
+  qa_session_id            TEXT,
+  actor_id                 TEXT,
+  user_id                  TEXT,
+  user_attributes          JSONB,
+  created_at               TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_event_records_trace_id_pg         ON ingest.event_records(trace_id);
+CREATE INDEX IF NOT EXISTS idx_event_records_trace_timestamp_pg  ON ingest.event_records(trace_id, timestamp);
+CREATE INDEX IF NOT EXISTS idx_event_records_event_key_pg        ON ingest.event_records(event_key);
+CREATE INDEX IF NOT EXISTS idx_event_records_session_id_pg       ON ingest.event_records(qa_session_id);
+`;
+
+/**
  * raw DDL — Drizzle Kit 마이그레이션 정착 전까지 fixture/migration용.
  * §4 P1~P3 패턴 PG 이식.
  */
