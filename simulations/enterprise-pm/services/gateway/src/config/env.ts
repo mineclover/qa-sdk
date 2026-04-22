@@ -33,6 +33,8 @@ export const envSchema = z.object({
   PROXY_TIMEOUT_MS: z.coerce.number().int().positive().default(5_000),
   /** §2 §6 unified bitmap version — version mismatch 시 refresh 강제. */
   BITMAP_VERSION: z.string().default("v1"),
+  /** Redis pub/sub — §5 Invalidation Subscriber 구동. */
+  SIM_REDIS_URL: z.string().default("redis://localhost:6379"),
 });
 
 export type Env = z.infer<typeof envSchema>;

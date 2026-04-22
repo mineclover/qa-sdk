@@ -4,6 +4,8 @@
 import { serve } from "@hono/node-server";
 import { warnPortConflict, installSimpleShutdown } from "@qa-sdk/core";
 import { initTelemetry, otelEnvSchema } from "@qa-sdk/otel";
+import { BitmapCacheService } from "@qa-sdk/sim-bitmap-cache";
+import Redis from "ioredis";
 import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 import { createLogger } from "./lib/logger.js";
@@ -15,6 +17,21 @@ const otelShutdown = initTelemetry({
   serviceName: SERVICE_NAME,
   env: otelEnvSchema.parse(process.env),
 });
+
+// §5 Invalidation Subscriber — gateway는 Hono 기반(NestJS DI 없음) → 직접 인스턴스화.
+// publisher 미활성 — gateway는 pub만 소비.
+const bitmapCache = new BitmapCacheService({
+  subscriberRedis: new Redis(env.SIM_REDIS_URL),
+  publisherName: SERVICE_NAME,
+  cache: { max: 10_000 },
+  logger: {
+    info: (obj, msg) => logger.info(obj as Record<string, unknown>, msg),
+    warn: (obj, msg) => logger.warn(obj as Record<string, unknown>, msg),
+    error: (obj, msg) => logger.error(obj as Record<string, unknown>, msg),
+  },
+});
+
+await bitmapCache.start();
 
 const app = createApp({
   authApiUrl: env.AUTH_API_URL,
@@ -40,13 +57,20 @@ const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
       currentBitmapV: env.BITMAP_VERSION,
       jwtTtlSeconds: env.JWT_TTL_SECONDS,
       proxyTimeoutMs: env.PROXY_TIMEOUT_MS,
+      redisUrl: env.SIM_REDIS_URL,
     },
-    `${SERVICE_NAME} listening (Plan 12a JWT + traceparent + reverse proxy)`,
+    `${SERVICE_NAME} listening (Plan 12a/12b JWT + traceparent + bitmap cache)`,
   );
   warnPortConflict(SERVICE_NAME, env.PORT, logger);
 });
 
 installSimpleShutdown({ server, logger });
 
-process.on("SIGTERM", () => void otelShutdown());
-process.on("SIGINT", () => void otelShutdown());
+process.on("SIGTERM", async () => {
+  await bitmapCache.stop();
+  await otelShutdown();
+});
+process.on("SIGINT", async () => {
+  await bitmapCache.stop();
+  await otelShutdown();
+});

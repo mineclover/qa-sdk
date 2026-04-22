@@ -2958,9 +2958,15 @@ importers:
       '@qa-sdk/otel':
         specifier: workspace:*
         version: link:../../../../packages/otel
+      '@qa-sdk/sim-bitmap-cache':
+        specifier: workspace:*
+        version: link:../../packages/sim-bitmap-cache
       hono:
         specifier: ^4.7.5
         version: 4.12.7
+      ioredis:
+        specifier: 'catalog:'
+        version: 5.10.1
       jose:
         specifier: ^5.9.0
         version: 5.10.0

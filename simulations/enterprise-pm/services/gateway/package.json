@@ -18,7 +18,9 @@
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/logger": "workspace:*",
     "@qa-sdk/otel": "workspace:*",
+    "@qa-sdk/sim-bitmap-cache": "workspace:*",
     "hono": "^4.7.5",
+    "ioredis": "catalog:",
     "jose": "^5.9.0",
     "permission-engine": "workspace:*",
     "zod": "^3.24.2"
