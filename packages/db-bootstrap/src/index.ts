@@ -53,3 +53,10 @@ export {
   type RlsWouldDecision,
   type RlsShadowPrediction,
 } from "./rls-shadow-evaluator.js";
+
+export {
+  RlsShadowInterceptor,
+  RlsShadow,
+  RLS_SHADOW_META,
+  type RlsShadowRecorder,
+} from "./rls-shadow-interceptor.js";
