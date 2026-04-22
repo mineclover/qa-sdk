@@ -12,7 +12,8 @@ import { index, integer, jsonb, pgSchema, text, varchar } from "drizzle-orm/pg-c
  *   - metadata는 jsonb로 저장 (SQLite는 text JSON-string). adapter 토글 분기.
  *   - text 컬럼은 PG에서도 text (둘 다 unbounded)
  *
- * RLS는 본 schema에 ENABLE만, 정책 정의는 Phase 3 RLS plan.
+ * RLS 정책: Plan 15b (Phase 3) 로 ae_select/ae_insert/ae_admin_bypass 3 정책 배포 완료.
+ * UPDATE/DELETE 는 admin bypass 전용. FORCE 활성화는 Plan 15e.
  *
  * audit 도메인 grant 모델 (pg-migration-design.md §3):
  *   - audit_app: SELECT, INSERT만 (write-mostly, UPDATE·DELETE 금지)
@@ -96,17 +97,40 @@ CREATE INDEX IF NOT EXISTS idx_audit_parent_pg ON audit.audit_entries(parent_spa
 CREATE INDEX IF NOT EXISTS idx_audit_actor_pg  ON audit.audit_entries(actor_user_id, started_at);
 CREATE INDEX IF NOT EXISTS idx_audit_target_pg ON audit.audit_entries(target_kind, target_id);
 
--- RLS placeholder — Phase 3 RLS plan에서 정책 추가
-ALTER TABLE audit.audit_entries ENABLE ROW LEVEL SECURITY;
--- 임시 fallback 정책 (Phase 3에서 더 정교한 정책으로 교체):
-CREATE POLICY ae_temp_allow_all ON audit.audit_entries
-  USING (true)
-  WITH CHECK (true);
+-- RLS — Phase 3 Plan 15b 실제 정책
+-- helper: auth.* (Plan 15a). bit 상수: AUDIT_READ_BIT=20 (rls-bits.ts).
 
--- grant 모델 (init.sql에서 부여, 본 DDL은 도메인 의도 기록용 주석):
---   GRANT USAGE          ON SCHEMA audit                      TO audit_app;
---   GRANT SELECT, INSERT ON audit.audit_entries               TO audit_app;
---   GRANT USAGE          ON SCHEMA audit                      TO qa_admin;
---   GRANT SELECT         ON audit.audit_entries               TO qa_admin;
--- UPDATE(finishExecution)은 별도 audit_writer role에서 수행 — Phase 3에서 분리.
+ALTER TABLE audit.audit_entries ENABLE ROW LEVEL SECURITY;
+
+-- 0. admin bypass
+CREATE POLICY ae_admin_bypass ON audit.audit_entries
+  FOR ALL
+  USING (auth.current_role_tag() = 'admin')
+  WITH CHECK (auth.current_role_tag() = 'admin');
+
+-- 1. SELECT — Pass 1: AUDIT_READ_BIT set + Pass 2: actor 본인
+CREATE POLICY ae_select_policy ON audit.audit_entries
+  FOR SELECT
+  USING (
+    auth.has_bit(20)
+    AND actor_user_id = auth.current_user_id()
+  );
+
+-- 2. INSERT — actor_user_id 가 세션 사용자와 일치 (대리 기록 금지)
+--    nullable 이지만 set 된 경우 일치 필수
+CREATE POLICY ae_insert_policy ON audit.audit_entries
+  FOR INSERT
+  WITH CHECK (
+    actor_user_id IS NULL
+    OR actor_user_id = auth.current_user_id()
+  );
+
+-- UPDATE/DELETE 는 admin bypass 만 — ae_admin_bypass 에서 커버.
+-- finishExecution 에서 사용되는 UPDATE 경로는 별도 audit_writer role + admin 세션 컨텍스트 필요 (spec §주의사항).
+
+-- grant 모델 (init.sql 또는 도메인 service 부트 시점 부여):
+--   GRANT USAGE          ON SCHEMA audit              TO audit_app;
+--   GRANT SELECT, INSERT ON audit.audit_entries       TO audit_app;
+--   GRANT USAGE          ON SCHEMA audit              TO qa_admin;
+--   GRANT SELECT         ON audit.audit_entries       TO qa_admin;
 `;
