@@ -2,7 +2,7 @@
 // @def.doc authorization-ontology-nested-audit-tracing
 
 /**
- * DrizzleAuditRecorder + DrizzleResourcePolicyRegistry — 동일 SQLite 인스턴스 공존 검증.
+ * DrizzleAuditRecorder + SqliteResourcePolicyRegistry — 동일 SQLite 인스턴스 공존 검증.
  *
  * AccessChecker가 두 store를 동시에 쓰는 시나리오에서 트리/lifecycle invariant가 유지되는지.
  */
