@@ -7,7 +7,7 @@
  *
  * 런타임 변경 없음 — drizzle-kit generate용 스키마 정의만 포함.
  */
-import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index, uniqueIndex, primaryKey } from "drizzle-orm/sqlite-core";
 
 // ─── qa_sessions ───────────────────────────────────────────────
 export const qaSessions = sqliteTable("qa_sessions", {
@@ -168,11 +168,15 @@ export const insightLabels = sqliteTable(
 );
 
 // ─── key_observations ─────────────────────────────────────────
+// coordinate-storage.rule §1.1 — version은 1급 컬럼으로 분리. PK는 (prefix_id, version, address).
+// packed_key는 역호환·이력 추적용 secondary index만.
 export const keyObservations = sqliteTable(
   "key_observations",
   {
-    packedKey: text("packed_key").primaryKey(),
     prefixId: text("prefix_id").notNull(),
+    version: text("version").notNull(),
+    address: integer("address").notNull(),
+    packedKey: text("packed_key").notNull(),
     registered: integer("registered", { mode: "boolean" }).notNull().default(false),
     count: integer("count").notNull().default(1),
     firstSeen: text("first_seen").notNull(),
@@ -180,7 +184,9 @@ export const keyObservations = sqliteTable(
     payloadSummary: text("payload_summary").notNull().default("{}"),
   },
   (t) => [
-    index("idx_key_obs_prefix").on(t.prefixId),
+    primaryKey({ columns: [t.prefixId, t.version, t.address] }),
+    index("idx_key_obs_packed").on(t.packedKey),
+    index("idx_key_obs_prefix_version").on(t.prefixId, t.version),
     index("idx_key_obs_last_seen").on(t.lastSeen),
     index("idx_key_obs_count").on(t.count),
     index("idx_key_obs_registered").on(t.registered),
@@ -190,15 +196,20 @@ export const keyObservations = sqliteTable(
 export type KeyObservationRow = typeof keyObservations.$inferSelect;
 
 // ─── key_observation_prefixes ─────────────────────────────────
+// coordinate-storage.rule §1.1 P3 — version 차원 추가, 집계도 version별 분리.
 export const keyObservationPrefixes = sqliteTable(
   "key_observation_prefixes",
   {
-    prefixId: text("prefix_id").primaryKey(),
+    prefixId: text("prefix_id").notNull(),
+    version: text("version").notNull(),
     distinctKeys: integer("distinct_keys").notNull().default(1),
     totalCount: integer("total_count").notNull().default(0),
     firstSeen: text("first_seen").notNull(),
     lastSeen: text("last_seen").notNull(),
   },
+  (t) => [
+    primaryKey({ columns: [t.prefixId, t.version] }),
+  ],
 );
 
 export type KeyObservationPrefixRow = typeof keyObservationPrefixes.$inferSelect;
