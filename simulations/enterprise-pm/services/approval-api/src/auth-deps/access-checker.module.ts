@@ -7,6 +7,7 @@ import {
   InMemoryAuditRecorder,
   type AccessCheckerDeps,
   type AuditRecorder,
+  type InstancePolicyDecision,
   type InstancePolicyEvaluator,
   type ResourcePolicyRegistry,
 } from "permission-engine";
@@ -19,25 +20,87 @@ import { AUDIT_ENTRIES_DDL } from "audit-recorder-store";
 import { DisjointUnionIndex } from "weighted-index";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { ApprovalRepository } from "../approval/shared/port.js";
 
 export const APPROVAL_ACCESS_CHECKER = Symbol("APPROVAL_ACCESS_CHECKER");
 export const APPROVAL_POLICY_REGISTRY = Symbol("APPROVAL_POLICY_REGISTRY");
 
 class SimInstanceEvaluator implements InstancePolicyEvaluator {
+  constructor(private readonly repo: ApprovalRepository | undefined) {}
+
   async evaluateRegistered(args: {
     userId: string;
     resourceId: string;
     policyRef: string;
-  }): Promise<boolean> {
-    return args.policyRef.length > 0;
+    attributes?: Record<string, unknown>;
+  }): Promise<InstancePolicyDecision> {
+    if (!this.repo) {
+      return { allowed: args.policyRef.length > 0, denyReason: "approval_repo_unavailable" };
+    }
+    const request = await this.repo.findBudgetRequest(args.resourceId);
+    if (!request) {
+      return { allowed: false, denyReason: "request_not_found" };
+    }
+
+    const roleNames = asStringArray(args.attributes?.actorRoleNames);
+    const actorDepartmentId = asNullableString(args.attributes?.actorDepartmentId);
+    const roleAssignments = asRoleAssignments(args.attributes?.actorRoleAssignments);
+    const apiId = asString(args.attributes?.apiId);
+
+    if (roleNames.includes("admin")) {
+      return { allowed: true };
+    }
+
+    const isOwner = request.requesterId === args.userId;
+    if (isOwner && apiId !== "budget.approve" && apiId !== "budget.reject") {
+      return { allowed: true };
+    }
+
+    const sameDepartment =
+      actorDepartmentId !== null && actorDepartmentId === request.projectDepartmentId;
+    const scopedManager = hasScopedRole(roleAssignments, ["manager"], request.projectDepartmentId);
+    const scopedDirector = hasScopedRole(roleAssignments, ["director"], request.projectDepartmentId);
+    const scopedApprover = hasScopedRole(roleAssignments, ["approver"], request.projectDepartmentId);
+    const globalCfo = hasScopedRole(roleAssignments, ["cfo"], request.projectDepartmentId);
+    const globalAdmin = hasScopedRole(roleAssignments, ["admin"], request.projectDepartmentId);
+    const scopedStageCapability =
+      scopedManager || scopedDirector || scopedApprover || globalCfo || globalAdmin;
+    if (!sameDepartment && !scopedStageCapability) {
+      return { allowed: false, denyReason: "cross_department_requires_approver_role" };
+    }
+
+    if (apiId === "budget.read" || apiId === "budget.submit" || apiId === "budget.start-review") {
+      return {
+        allowed: sameDepartment || scopedStageCapability,
+        denyReason: sameDepartment || scopedStageCapability ? undefined : "department_scope_mismatch",
+      };
+    }
+
+    const stageAllowed = isStageRoleAllowed(request.currentStage, {
+      scopedManager,
+      scopedDirector,
+      scopedApprover,
+      globalCfo,
+      globalAdmin,
+      roleNames,
+    });
+    return {
+      allowed: stageAllowed,
+      denyReason: stageAllowed ? undefined : "approval_stage_role_mismatch",
+    };
   }
 
   async evaluateDelegated(args: {
     userId: string;
     resourceId: string;
     graphRootId: string;
-  }): Promise<boolean> {
-    return args.graphRootId.length > 0;
+    attributes?: Record<string, unknown>;
+  }): Promise<InstancePolicyDecision> {
+    const roleNames = asStringArray(args.attributes?.actorRoleNames);
+    return {
+      allowed: hasAnyRole(roleNames, ["admin", "approver", "cfo"]),
+      denyReason: hasAnyRole(roleNames, ["admin", "approver", "cfo"]) ? undefined : "delegation_not_supported",
+    };
   }
 }
 
@@ -57,6 +120,7 @@ export interface AccessCheckerModuleOptions {
   overrideAudit?: AuditRecorder;
   overrideEvaluator?: InstancePolicyEvaluator;
   overrideUnion?: DisjointUnionIndex;
+  repo?: ApprovalRepository;
 }
 
 export interface AccessCheckerAsyncOptions {
@@ -128,7 +192,7 @@ export class AccessCheckerModule {
         const checkerDeps: AccessCheckerDeps = {
           union: resolved.overrideUnion ?? buildDefaultUnion(),
           policyRegistry: registry,
-          evaluator: resolved.overrideEvaluator ?? new SimInstanceEvaluator(),
+          evaluator: resolved.overrideEvaluator ?? new SimInstanceEvaluator(resolved.repo),
           audit,
         };
         return new AccessChecker(checkerDeps);
@@ -144,4 +208,76 @@ export class AccessCheckerModule {
       global: true,
     };
   }
+}
+
+function asString(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function asNullableString(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string");
+}
+
+function hasAnyRole(roleNames: readonly string[], expected: readonly string[]): boolean {
+  return expected.some((role) => roleNames.includes(role));
+}
+
+function asRoleAssignments(
+  value: unknown,
+): Array<{ roleId: string; roleName: string; scopeType: string; scopeId: string | null }> {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) =>
+    item &&
+    typeof item === "object" &&
+    typeof (item as Record<string, unknown>).roleId === "string" &&
+    typeof (item as Record<string, unknown>).roleName === "string" &&
+    typeof (item as Record<string, unknown>).scopeType === "string"
+      ? [{
+          roleId: (item as Record<string, unknown>).roleId as string,
+          roleName: (item as Record<string, unknown>).roleName as string,
+          scopeType: (item as Record<string, unknown>).scopeType as string,
+          scopeId:
+            typeof (item as Record<string, unknown>).scopeId === "string" || (item as Record<string, unknown>).scopeId === null
+              ? ((item as Record<string, unknown>).scopeId as string | null)
+              : null,
+        }]
+      : [],
+  );
+}
+
+function hasScopedRole(
+  assignments: readonly { roleName: string; scopeType: string; scopeId: string | null }[],
+  expectedRoleNames: readonly string[],
+  projectDepartmentId: string,
+): boolean {
+  return assignments.some((assignment) => {
+    if (!expectedRoleNames.includes(assignment.roleName)) return false;
+    return assignment.scopeType === "global" ||
+      (assignment.scopeType === "department" && assignment.scopeId === projectDepartmentId);
+  });
+}
+
+function isStageRoleAllowed(
+  stage: number,
+  args: {
+    scopedManager: boolean;
+    scopedDirector: boolean;
+    scopedApprover: boolean;
+    globalCfo: boolean;
+    globalAdmin: boolean;
+    roleNames: readonly string[];
+  },
+): boolean {
+  if (stage <= 1) {
+    return args.scopedManager || args.scopedDirector || args.scopedApprover || args.globalCfo || args.globalAdmin;
+  }
+  if (stage === 2) {
+    return args.scopedDirector || args.scopedApprover || args.globalCfo || args.globalAdmin;
+  }
+  return args.scopedApprover || args.globalCfo || args.globalAdmin;
 }

@@ -17,6 +17,7 @@ import { HealthModule } from "./health/health.module.js";
 import {
   ApprovalDbModule,
   APPROVAL_DB_INSTANCE,
+  APPROVAL_REPOSITORY,
   type ApprovalDbInstanceHandle,
 } from "./approval/approval-db.module.js";
 import { BudgetModule } from "./approval/budget/budget.module.js";
@@ -25,6 +26,7 @@ import { TimeOffModule } from "./approval/timeoff/timeoff.module.js";
 import { ExpenseModule } from "./approval/expense/expense.module.js";
 import { AccessCheckerModule } from "./auth-deps/access-checker.module.js";
 import { BudgetService } from "./approval/budget/budget.service.js";
+import type { ApprovalRepository } from "./approval/shared/port.js";
 
 export { AppModule } from "./app.module.js";
 
@@ -65,12 +67,14 @@ function buildTestAppModule(opts: TestBootstrapOptions): DynamicModule {
       HealthModule,
       ApprovalDbModule.forRoot(),
       AccessCheckerModule.forRootAsync({
-        inject: [APPROVAL_DB_INSTANCE],
+        inject: [APPROVAL_DB_INSTANCE, APPROVAL_REPOSITORY],
         useFactory: (...args: unknown[]) => {
           const handle = args[0] as ApprovalDbInstanceHandle;
+          const repo = args[1] as ApprovalRepository;
           return {
             dialect: handle.dialect,
             db: handle.db,
+            repo,
             overrideChecker: opts.overrideChecker,
             overrideRegistry: opts.overrideRegistry,
             overrideAudit: opts.overrideAudit,

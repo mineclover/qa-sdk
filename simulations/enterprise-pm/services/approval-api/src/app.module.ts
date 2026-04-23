@@ -6,6 +6,7 @@ import { HealthModule } from "./health/health.module.js";
 import {
   ApprovalDbModule,
   APPROVAL_DB_INSTANCE,
+  APPROVAL_REPOSITORY,
   type ApprovalDbInstanceHandle,
 } from "./approval/approval-db.module.js";
 import { BudgetModule } from "./approval/budget/budget.module.js";
@@ -17,16 +18,18 @@ import { BitmapCacheModule } from "@qa-sdk/sim-bitmap-cache";
 import { env } from "./config/env.js";
 import { createLogger } from "./lib/logger.js";
 import { createSubscriberLogger } from "./lib/bitmap-cache-logger.js";
+import type { ApprovalRepository } from "./approval/shared/port.js";
 
 @Module({
   imports: [
     HealthModule,
     ApprovalDbModule.forRoot(),
     AccessCheckerModule.forRootAsync({
-      inject: [APPROVAL_DB_INSTANCE],
+      inject: [APPROVAL_DB_INSTANCE, APPROVAL_REPOSITORY],
       useFactory: (...args: unknown[]) => {
         const handle = args[0] as ApprovalDbInstanceHandle;
-        return { dialect: handle.dialect, db: handle.db };
+        const repo = args[1] as ApprovalRepository;
+        return { dialect: handle.dialect, db: handle.db, repo };
       },
     }),
     BudgetModule,

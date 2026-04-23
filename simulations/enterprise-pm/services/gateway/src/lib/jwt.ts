@@ -34,6 +34,25 @@ export interface SignArgs {
   /** UTF-8 문자열 secret (>= 32 bytes). */
   secret: string;
   ttlSeconds: number;
+  authContext?: {
+    departmentId?: string | null;
+    primaryRoleId?: string | null;
+    roleIds?: string[];
+    roleNames?: string[];
+    roleAssignments?: Array<{
+      roleId: string;
+      roleName: string;
+      scopeType: string;
+      scopeId: string | null;
+    }>;
+  };
+}
+
+export interface VerifiedRoleAssignment {
+  roleId: string;
+  roleName: string;
+  scopeType: string;
+  scopeId: string | null;
 }
 
 export interface VerifiedJwt {
@@ -43,6 +62,11 @@ export interface VerifiedJwt {
   issuedAt: string;
   /** JWT exp → ISO-8601. */
   expiresAt: string;
+  departmentId?: string | null;
+  primaryRoleId?: string | null;
+  roleIds: string[];
+  roleNames: string[];
+  roleAssignments: VerifiedRoleAssignment[];
 }
 
 function secretToKey(secret: string): Uint8Array {
@@ -51,7 +75,14 @@ function secretToKey(secret: string): Uint8Array {
 
 export async function signBitmapJwt(args: SignArgs): Promise<string> {
   const claim: BitmapClaim = bitmapToClaim(args.bitmap);
-  return await new SignJWT({ ...claim })
+  return await new SignJWT({
+    ...claim,
+    ...(args.authContext?.departmentId !== undefined ? { department_id: args.authContext.departmentId } : {}),
+    ...(args.authContext?.primaryRoleId !== undefined ? { primary_role_id: args.authContext.primaryRoleId } : {}),
+    ...(args.authContext?.roleIds ? { role_ids: args.authContext.roleIds } : {}),
+    ...(args.authContext?.roleNames ? { role_names: args.authContext.roleNames } : {}),
+    ...(args.authContext?.roleAssignments ? { role_assignments: args.authContext.roleAssignments } : {}),
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(args.userId)
     .setIssuedAt()
@@ -114,5 +145,51 @@ export async function verifyBitmapJwt(
   } catch (err) {
     throw new JwtVerifyError("claim_missing", (err as Error).message);
   }
-  return { userId, bitmap, issuedAt, expiresAt };
+  const roleIds = Array.isArray(payload.role_ids)
+    ? payload.role_ids.filter((value): value is string => typeof value === "string")
+    : [];
+  const roleNames = Array.isArray(payload.role_names)
+    ? payload.role_names.filter((value): value is string => typeof value === "string")
+    : [];
+  const roleAssignments = Array.isArray(payload.role_assignments)
+    ? payload.role_assignments.flatMap((value) => {
+        if (typeof value !== "object" || value === null) return [];
+        const roleId = typeof (value as Record<string, unknown>).roleId === "string"
+          ? (value as Record<string, unknown>).roleId as string
+          : null;
+        const roleName = typeof (value as Record<string, unknown>).roleName === "string"
+          ? (value as Record<string, unknown>).roleName as string
+          : null;
+        const scopeType = typeof (value as Record<string, unknown>).scopeType === "string"
+          ? (value as Record<string, unknown>).scopeType as string
+          : null;
+        const rawScopeId = (value as Record<string, unknown>).scopeId;
+        const scopeId =
+          rawScopeId === null || typeof rawScopeId === "string"
+            ? rawScopeId as string | null
+            : null;
+        return roleId && roleName && scopeType
+          ? [{ roleId, roleName, scopeType, scopeId }]
+          : [];
+      })
+    : [];
+  const departmentId =
+    payload.department_id === null || typeof payload.department_id === "string"
+      ? (payload.department_id as string | null | undefined)
+      : undefined;
+  const primaryRoleId =
+    payload.primary_role_id === null || typeof payload.primary_role_id === "string"
+      ? (payload.primary_role_id as string | null | undefined)
+      : undefined;
+  return {
+    userId,
+    bitmap,
+    issuedAt,
+    expiresAt,
+    departmentId,
+    primaryRoleId,
+    roleIds,
+    roleNames,
+    roleAssignments,
+  };
 }

@@ -5,11 +5,20 @@ import { Body, Controller, Inject, Post, UnauthorizedException } from "@nestjs/c
 import { z } from "zod";
 import { UserService } from "../user/user.service.js";
 import { CREDENTIAL_STORE, type CredentialStore } from "./credential-store.js";
+import { RoleAssignmentService } from "../role-assignment/role-assignment.service.js";
+import { RoleService } from "../role/role.service.js";
 
 const authSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
+
+interface AuthRoleAssignmentView {
+  roleId: string;
+  roleName: string;
+  scopeType: string;
+  scopeId: string | null;
+}
 
 /**
  * POST /auth/authenticate
@@ -22,6 +31,8 @@ export class AuthenticateController {
   constructor(
     @Inject(UserService) private readonly users: UserService,
     @Inject(CREDENTIAL_STORE) private readonly credentials: CredentialStore,
+    @Inject(RoleAssignmentService) private readonly assignments: RoleAssignmentService,
+    @Inject(RoleService) private readonly roles: RoleService,
   ) {}
 
   @Post("authenticate")
@@ -33,10 +44,49 @@ export class AuthenticateController {
     const ok = await this.credentials.verify(email, password);
     if (!ok) throw new UnauthorizedException({ error: "invalid_credentials" });
 
+    const roleAssignments = await this.listRoleAssignments(user.id);
+    const roleIds = [...new Set(roleAssignments.map((assignment) => assignment.roleId))];
+    const roleNames = [...new Set(roleAssignments.map((assignment) => assignment.roleName))];
+
     return {
       userId: user.id,
       displayName: user.displayName,
       departmentId: user.departmentId ?? null,
+      primaryRoleId: user.primaryRoleId ?? null,
+      roleIds,
+      roleNames,
+      roleAssignments,
     };
+  }
+
+  private async listRoleIds(userId: string): Promise<string[]> {
+    const assignments = await this.assignments.listForUser(userId);
+    return [...new Set(assignments.map((assignment) => assignment.roleId))];
+  }
+
+  private async listRoleNames(userId: string): Promise<string[]> {
+    const roleIds = await this.listRoleIds(userId);
+    const names = await Promise.all(roleIds.map(async (roleId) => (await this.roles.find(roleId))?.name ?? null));
+    return names.filter((name): name is string => typeof name === "string");
+  }
+
+  private async listRoleAssignments(userId: string): Promise<AuthRoleAssignmentView[]> {
+    const assignments = await this.assignments.listForUser(userId);
+    const roles = await Promise.all(
+      assignments.map(async (assignment) => ({
+        assignment,
+        role: await this.roles.find(assignment.roleId),
+      })),
+    );
+    return roles.flatMap(({ assignment, role }) =>
+      role
+        ? [{
+            roleId: assignment.roleId,
+            roleName: role.name,
+            scopeType: assignment.scopeType,
+            scopeId: assignment.scopeId,
+          }]
+        : [],
+    );
   }
 }

@@ -53,6 +53,8 @@ export {
   type AccessContext,
   type AccessResult,
   type ApiCall,
+  type InstancePolicyDecision,
+  type InstancePolicyEvaluation,
   type InstancePolicyEvaluator,
   type InstancePolicyResolver,
 } from "./access-checker/index.js";

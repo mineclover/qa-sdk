@@ -24,6 +24,20 @@ describe("sim-gateway JWT — sign + verify round-trip", () => {
       bitmap: sampleBm,
       secret: SECRET,
       ttlSeconds: 300,
+      authContext: {
+        departmentId: "dept-eng",
+        primaryRoleId: "role-manager",
+        roleIds: ["role-manager"],
+        roleNames: ["manager"],
+        roleAssignments: [
+          {
+            roleId: "role-manager",
+            roleName: "manager",
+            scopeType: "department",
+            scopeId: "dept-eng",
+          },
+        ],
+      },
     });
     expect(token.split(".")).toHaveLength(3);
 
@@ -32,6 +46,10 @@ describe("sim-gateway JWT — sign + verify round-trip", () => {
     expect(verified.bitmap.prefix).toBe("sim.bitmap");
     expect(verified.bitmap.v).toBe("uv1");
     expect(Array.from(verified.bitmap.mask)).toEqual([0xff, 0x12, 0x34]);
+    expect(verified.departmentId).toBe("dept-eng");
+    expect(verified.primaryRoleId).toBe("role-manager");
+    expect(verified.roleNames).toContain("manager");
+    expect(verified.roleAssignments[0]?.scopeId).toBe("dept-eng");
   });
 
   it("tampered token (mask 비트 변조) → JwtVerifyError", async () => {

@@ -78,6 +78,15 @@ export class ProjectAccessService {
           resource: {
             id: input.targetId!,
             ownerId: input.resourceOwnerId!,
+            attributes: {
+              actorDepartmentId: input.user.departmentId ?? null,
+              actorPrimaryRoleId: input.user.primaryRoleId ?? null,
+              actorRoleIds: input.user.roleIds,
+              actorRoleNames: input.user.roleNames,
+              actorRoleAssignments: input.user.roleAssignments,
+              projectDepartmentId: input.departmentId,
+              apiId: input.apiId,
+            },
           },
         }
       : {

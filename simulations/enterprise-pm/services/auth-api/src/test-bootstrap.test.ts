@@ -43,9 +43,26 @@ describe("sim-auth-api/test-bootstrap", () => {
       body: JSON.stringify({ email: fixtures.alice.email, password: fixtures.alice.password }),
     });
     expect(res.status).toBe(201);
-    const body = (await res.json()) as { userId: string; departmentId: string };
+    const body = (await res.json()) as {
+      userId: string;
+      departmentId: string;
+      primaryRoleId: string | null;
+      roleIds: string[];
+      roleNames: string[];
+      roleAssignments: Array<{ roleName: string; scopeType: string; scopeId: string | null }>;
+    };
     expect(body.userId).toBe(fixtures.alice.id);
     expect(body.departmentId).toBe(fixtures.departments.engineering.id);
+    expect(body.roleNames).toContain("manager");
+    expect(body.roleAssignments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          roleName: "manager",
+          scopeType: "department",
+          scopeId: fixtures.departments.engineering.id,
+        }),
+      ]),
+    );
   });
 
   it("POST /auth/authenticate — 잘못된 password → 401", async () => {

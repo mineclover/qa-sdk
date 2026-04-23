@@ -7,7 +7,11 @@ import type { ResourcePolicyRegistry } from "permission-engine";
 import { PM_REPOSITORY } from "../pm-db.module.js";
 import type { PmRepository } from "../shared/port.js";
 import type { Project, ProjectCreate } from "../shared/types.js";
-import { PROJECT_POLICY_REGISTRY } from "../../auth-deps/access-checker.module.js";
+import {
+  PROJECT_DELEGATION_GRAPH,
+  PROJECT_POLICY_REGISTRY,
+  type ProjectDelegationGraphStore,
+} from "../../auth-deps/access-checker.module.js";
 
 const log = createLogger("sim-pm-api.project.service");
 
@@ -26,6 +30,9 @@ export class ProjectService {
     @Optional()
     @Inject(PROJECT_POLICY_REGISTRY)
     private readonly policies?: ResourcePolicyRegistry,
+    @Optional()
+    @Inject(PROJECT_DELEGATION_GRAPH)
+    private readonly delegationGraph?: ProjectDelegationGraphStore,
   ) {}
 
   async create(args: ProjectCreate): Promise<Project> {
@@ -103,6 +110,7 @@ export class ProjectService {
     await this.policies.delegate(args.projectId, {
       graphRootId: args.graphRootId,
     });
+    this.delegationGraph?.grant(args.graphRootId, args.delegateUserId);
     return { state: "DELEGATED", graphRootId: args.graphRootId };
   }
 }

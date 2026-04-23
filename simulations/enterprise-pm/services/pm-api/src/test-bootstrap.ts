@@ -17,13 +17,19 @@ import {
 } from "@nestjs/platform-fastify";
 import type { AccessChecker, AuditRecorder, ResourcePolicyRegistry } from "permission-engine";
 import { HealthModule } from "./health/health.module.js";
-import { PmDbModule, PM_DB_INSTANCE, type PmDbInstanceHandle } from "./pm/pm-db.module.js";
+import {
+  PmDbModule,
+  PM_DB_INSTANCE,
+  PM_REPOSITORY,
+  type PmDbInstanceHandle,
+} from "./pm/pm-db.module.js";
 import { ProjectModule } from "./pm/project/project.module.js";
 import { TaskModule } from "./pm/task/task.module.js";
 import { MemberModule } from "./pm/member/member.module.js";
 import { AccessCheckerModule } from "./auth-deps/access-checker.module.js";
 import { ProjectService } from "./pm/project/project.service.js";
 import { MemberService } from "./pm/member/member.service.js";
+import type { PmRepository } from "./pm/shared/port.js";
 
 export { AppModule } from "./app.module.js";
 
@@ -70,12 +76,14 @@ function buildTestAppModule(opts: TestBootstrapOptions): DynamicModule {
       HealthModule,
       PmDbModule.forRoot(),
       AccessCheckerModule.forRootAsync({
-        inject: [PM_DB_INSTANCE],
+        inject: [PM_DB_INSTANCE, PM_REPOSITORY],
         useFactory: (...args: unknown[]) => {
           const handle = args[0] as PmDbInstanceHandle;
+          const repo = args[1] as PmRepository;
           return {
             dialect: handle.dialect,
             db: handle.db,
+            repo,
             overrideChecker: opts.overrideChecker,
             overrideRegistry: opts.overrideRegistry,
             overrideAudit: opts.overrideAudit,

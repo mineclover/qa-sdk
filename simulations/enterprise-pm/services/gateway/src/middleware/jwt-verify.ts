@@ -16,6 +16,10 @@ export interface JwtVerifyOptions {
  *   x-auth-bitmap-prefix   — claim.bitmap_prefix
  *   x-auth-bitmap-v        — claim.bitmap_v
  *   x-auth-bitmap-mask     — base64 mask
+ *   x-auth-department-id   — actor department
+ *   x-auth-primary-role-id — actor primary role
+ *   x-auth-role-names      — csv role names
+ *   x-auth-role-assignments — base64url(JSON) scoped role assignments
  *
  * downstream NestJS 서비스는 CurrentUserGuard 에서 동일 header 를 읽는다.
  *
@@ -52,6 +56,24 @@ export function jwtVerifyMiddleware(opts: JwtVerifyOptions): MiddlewareHandler {
         "x-auth-bitmap-mask",
         Buffer.from(verified.bitmap.mask).toString("base64"),
       );
+      if (verified.departmentId) {
+        c.req.raw.headers.set("x-auth-department-id", verified.departmentId);
+      }
+      if (verified.primaryRoleId) {
+        c.req.raw.headers.set("x-auth-primary-role-id", verified.primaryRoleId);
+      }
+      if (verified.roleNames.length > 0) {
+        c.req.raw.headers.set("x-auth-role-names", verified.roleNames.join(","));
+      }
+      if (verified.roleIds.length > 0) {
+        c.req.raw.headers.set("x-auth-role-ids", verified.roleIds.join(","));
+      }
+      if (verified.roleAssignments.length > 0) {
+        c.req.raw.headers.set(
+          "x-auth-role-assignments",
+          Buffer.from(JSON.stringify(verified.roleAssignments)).toString("base64url"),
+        );
+      }
       c.set("verifiedJwt", verified);
       await next();
       return;

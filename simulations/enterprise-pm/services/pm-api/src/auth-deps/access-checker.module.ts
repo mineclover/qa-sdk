@@ -7,6 +7,7 @@ import {
   InMemoryAuditRecorder,
   type AccessCheckerDeps,
   type AuditRecorder,
+  type InstancePolicyDecision,
   type InstancePolicyEvaluator,
   type ResourcePolicyRegistry,
 } from "permission-engine";
@@ -16,9 +17,25 @@ import { AUDIT_ENTRIES_DDL } from "audit-recorder-store";
 import { DisjointUnionIndex } from "weighted-index";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { PmRepository } from "../pm/shared/port.js";
 
 export const PROJECT_ACCESS_CHECKER = Symbol("PROJECT_ACCESS_CHECKER");
 export const PROJECT_POLICY_REGISTRY = Symbol("PROJECT_POLICY_REGISTRY");
+export const PROJECT_DELEGATION_GRAPH = Symbol("PROJECT_DELEGATION_GRAPH");
+
+export class ProjectDelegationGraphStore {
+  private readonly edges = new Map<string, Set<string>>();
+
+  grant(graphRootId: string, delegateUserId: string): void {
+    const current = this.edges.get(graphRootId) ?? new Set<string>();
+    current.add(delegateUserId);
+    this.edges.set(graphRootId, current);
+  }
+
+  hasDelegate(graphRootId: string, userId: string): boolean {
+    return this.edges.get(graphRootId)?.has(userId) ?? false;
+  }
+}
 
 /**
  * 기본 InstancePolicyEvaluator — sim 시뮬용 (Cerbos 미도입).
@@ -27,20 +44,66 @@ export const PROJECT_POLICY_REGISTRY = Symbol("PROJECT_POLICY_REGISTRY");
  * DELEGATED 상태는 graphRoot 존재 시 모두 allow. sim 시나리오에서 충분.
  */
 class SimInstanceEvaluator implements InstancePolicyEvaluator {
+  constructor(
+    private readonly repo: PmRepository | undefined,
+    private readonly delegationGraph: ProjectDelegationGraphStore,
+  ) {}
+
   async evaluateRegistered(args: {
     userId: string;
     resourceId: string;
     policyRef: string;
-  }): Promise<boolean> {
-    return args.policyRef.length > 0;
+    attributes?: Record<string, unknown>;
+  }): Promise<InstancePolicyDecision> {
+    if (!this.repo) {
+      return { allowed: args.policyRef.length > 0, denyReason: "pm_repo_unavailable" };
+    }
+    const project = await this.repo.findProject(args.resourceId);
+    if (!project) {
+      return { allowed: false, denyReason: "project_not_found" };
+    }
+    if (project.ownerId === args.userId) {
+      return { allowed: true };
+    }
+    const members = await this.repo.listMembers(args.resourceId);
+    if (members.some((member) => member.userId === args.userId)) {
+      return { allowed: true };
+    }
+    const roleNames = asStringArray(args.attributes?.actorRoleNames);
+    if (roleNames.includes("admin")) {
+      return { allowed: true };
+    }
+    return { allowed: false, denyReason: "project_membership_required" };
   }
 
   async evaluateDelegated(args: {
     userId: string;
     resourceId: string;
     graphRootId: string;
-  }): Promise<boolean> {
-    return args.graphRootId.length > 0;
+    attributes?: Record<string, unknown>;
+  }): Promise<InstancePolicyDecision> {
+    if (!this.repo) {
+      return { allowed: args.graphRootId.length > 0, denyReason: "pm_repo_unavailable" };
+    }
+    const project = await this.repo.findProject(args.resourceId);
+    if (!project) {
+      return { allowed: false, denyReason: "project_not_found" };
+    }
+    if (project.ownerId === args.userId) {
+      return { allowed: true };
+    }
+    const members = await this.repo.listMembers(args.resourceId);
+    if (members.some((member) => member.userId === args.userId)) {
+      return { allowed: true };
+    }
+    const roleNames = asStringArray(args.attributes?.actorRoleNames);
+    if (roleNames.includes("admin")) {
+      return { allowed: true };
+    }
+    if (this.delegationGraph.hasDelegate(args.graphRootId, args.userId)) {
+      return { allowed: true };
+    }
+    return { allowed: false, denyReason: "delegation_not_found" };
   }
 }
 
@@ -74,6 +137,8 @@ export interface AccessCheckerModuleOptions {
   overrideEvaluator?: InstancePolicyEvaluator;
   /** union override. 기본 buildDefaultUnion(). */
   overrideUnion?: DisjointUnionIndex;
+  /** membership 기반 REGISTERED 판정용 repository. */
+  repo?: PmRepository;
 }
 
 export interface AccessCheckerAsyncOptions {
@@ -91,6 +156,10 @@ export class AccessCheckerModule {
    * 운영에서는 db + dialect 만 주입해 실 registry 자동 생성.
    */
   static forRootAsync(opts: AccessCheckerAsyncOptions): DynamicModule {
+    const delegationGraphProvider: Provider = {
+      provide: PROJECT_DELEGATION_GRAPH,
+      useValue: new ProjectDelegationGraphStore(),
+    };
     const registryProvider: Provider = {
       provide: PROJECT_POLICY_REGISTRY,
       useFactory: async (...deps: unknown[]): Promise<ResourcePolicyRegistry> => {
@@ -122,6 +191,7 @@ export class AccessCheckerModule {
       provide: PROJECT_ACCESS_CHECKER,
       useFactory: async (
         registry: ResourcePolicyRegistry,
+        delegationGraph: ProjectDelegationGraphStore,
         ...deps: unknown[]
       ): Promise<AccessChecker> => {
         const resolved = await opts.useFactory(...deps);
@@ -151,20 +221,25 @@ export class AccessCheckerModule {
         const checkerDeps: AccessCheckerDeps = {
           union: resolved.overrideUnion ?? buildDefaultUnion(),
           policyRegistry: registry,
-          evaluator: resolved.overrideEvaluator ?? new SimInstanceEvaluator(),
+          evaluator: resolved.overrideEvaluator ?? new SimInstanceEvaluator(resolved.repo, delegationGraph),
           audit,
         };
         return new AccessChecker(checkerDeps);
       },
-      inject: [PROJECT_POLICY_REGISTRY, ...(opts.inject ?? [])],
+      inject: [PROJECT_POLICY_REGISTRY, PROJECT_DELEGATION_GRAPH, ...(opts.inject ?? [])],
     };
 
     return {
       module: AccessCheckerModule,
       imports: opts.imports ?? [],
-      providers: [registryProvider, checkerProvider],
-      exports: [PROJECT_ACCESS_CHECKER, PROJECT_POLICY_REGISTRY],
+      providers: [delegationGraphProvider, registryProvider, checkerProvider],
+      exports: [PROJECT_ACCESS_CHECKER, PROJECT_POLICY_REGISTRY, PROJECT_DELEGATION_GRAPH],
       global: true,
     };
   }
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string");
 }

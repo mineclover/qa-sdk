@@ -7,6 +7,16 @@ export interface CurrentUserContext {
   userId: string;
   bitmapMask: Uint8Array;
   bitmapVersion: string;
+  departmentId?: string | null;
+  primaryRoleId?: string | null;
+  roleIds: string[];
+  roleNames: string[];
+  roleAssignments: Array<{
+    roleId: string;
+    roleName: string;
+    scopeType: string;
+    scopeId: string | null;
+  }>;
 }
 
 /**

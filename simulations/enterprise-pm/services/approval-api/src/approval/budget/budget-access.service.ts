@@ -77,6 +77,16 @@ export class BudgetAccessService {
           resource: {
             id: input.requestId!,
             ownerId: input.resourceOwnerId!,
+            attributes: {
+              actorDepartmentId: input.user.departmentId ?? null,
+              actorPrimaryRoleId: input.user.primaryRoleId ?? null,
+              actorRoleIds: input.user.roleIds,
+              actorRoleNames: input.user.roleNames,
+              actorRoleAssignments: input.user.roleAssignments,
+              projectDepartmentId: input.projectDepartmentId,
+              approverDepartmentId: input.approverDepartmentId ?? null,
+              apiId: input.apiId,
+            },
           },
         }
       : {

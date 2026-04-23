@@ -27,6 +27,8 @@ function makeApp() {
       bitmapV: c.req.header("x-auth-bitmap-v"),
       bitmapMask: c.req.header("x-auth-bitmap-mask"),
       bitmapPrefix: c.req.header("x-auth-bitmap-prefix"),
+      departmentId: c.req.header("x-auth-department-id"),
+      roleNames: c.req.header("x-auth-role-names"),
     });
   });
   return app;
@@ -53,6 +55,20 @@ describe("jwt-verify middleware", () => {
       bitmap: SAMPLE_BM,
       secret: SECRET,
       ttlSeconds: 300,
+      authContext: {
+        departmentId: "dept-eng",
+        primaryRoleId: "role-manager",
+        roleIds: ["role-manager"],
+        roleNames: ["manager"],
+        roleAssignments: [
+          {
+            roleId: "role-manager",
+            roleName: "manager",
+            scopeType: "department",
+            scopeId: "dept-eng",
+          },
+        ],
+      },
     });
     const app = makeApp();
     const res = await app.request("/protected", {
@@ -64,11 +80,15 @@ describe("jwt-verify middleware", () => {
       bitmapV: string;
       bitmapPrefix: string;
       bitmapMask: string;
+      departmentId?: string | null;
+      roleNames?: string;
     };
     expect(body.userId).toBe("user-42");
     expect(body.bitmapV).toBe("uv1");
     expect(body.bitmapPrefix).toBe("sim.bitmap");
     expect(body.bitmapMask).toBe(Buffer.from([0xab, 0xcd]).toString("base64"));
+    expect(body.departmentId).toBe("dept-eng");
+    expect(body.roleNames).toBe("manager");
   });
 
   it("invalid signature → 401", async () => {

@@ -21,6 +21,15 @@ const authResponseSchema = z.object({
   userId: z.string().min(1),
   displayName: z.string().optional(),
   departmentId: z.string().nullable().optional(),
+  primaryRoleId: z.string().nullable().optional(),
+  roleIds: z.array(z.string()).optional(),
+  roleNames: z.array(z.string()).optional(),
+  roleAssignments: z.array(z.object({
+    roleId: z.string(),
+    roleName: z.string(),
+    scopeType: z.string(),
+    scopeId: z.string().nullable(),
+  })).optional(),
 });
 
 const bitmapResponseSchema = z.object({
@@ -134,6 +143,13 @@ export function createLoginRoute(opts: LoginRouteOptions) {
       bitmap,
       secret: opts.jwtSecret,
       ttlSeconds: opts.jwtTtlSeconds,
+      authContext: {
+        departmentId: authParsed.data.departmentId ?? null,
+        primaryRoleId: authParsed.data.primaryRoleId ?? null,
+        roleIds: authParsed.data.roleIds ?? [],
+        roleNames: authParsed.data.roleNames ?? [],
+        roleAssignments: authParsed.data.roleAssignments ?? [],
+      },
     });
 
     return c.json({

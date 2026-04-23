@@ -51,6 +51,7 @@ export interface ApiCall {
   resource?: {
     id: string;
     ownerId: string;
+    attributes?: Record<string, unknown>;
   };
 }
 
@@ -59,20 +60,29 @@ export interface InstancePolicyResolver {
 }
 
 /** Cerbos/ACL 판정은 구체 구현을 주입 (adapter 패턴). */
+export interface InstancePolicyDecision {
+  allowed: boolean;
+  denyReason?: string;
+}
+
+export type InstancePolicyEvaluation = boolean | InstancePolicyDecision;
+
 export interface InstancePolicyEvaluator {
   /** REGISTERED 상태 판정. */
   evaluateRegistered(args: {
     userId: string;
     resourceId: string;
     policyRef: string;
-  }): Promise<boolean>;
+    attributes?: Record<string, unknown>;
+  }): Promise<InstancePolicyEvaluation>;
 
   /** DELEGATED 상태 판정. */
   evaluateDelegated(args: {
     userId: string;
     resourceId: string;
     graphRootId: string;
-  }): Promise<boolean>;
+    attributes?: Record<string, unknown>;
+  }): Promise<InstancePolicyEvaluation>;
 }
 
 export interface AccessCheckerDeps {
@@ -175,7 +185,7 @@ export class AccessChecker {
 
   private async evaluateInstance(
     userId: string,
-    resource: { id: string; ownerId: string },
+    resource: { id: string; ownerId: string; attributes?: Record<string, unknown> },
     policy: ResourcePolicy,
   ): Promise<[boolean, CheckPass, string | undefined]> {
     switch (policy.state) {
@@ -189,8 +199,10 @@ export class AccessChecker {
         }
         const ok = await this.deps.evaluator.evaluateRegistered({
           userId, resourceId: resource.id, policyRef: policy.cerbosPolicyRef,
+          attributes: resource.attributes,
         });
-        return [ok, "cerbos", ok ? undefined : "cerbos_deny"];
+        const decision = normalizeInstancePolicyEvaluation(ok);
+        return [decision.allowed, "cerbos", decision.allowed ? undefined : (decision.denyReason ?? "cerbos_deny")];
       }
       case "DELEGATED": {
         if (!policy.graphRootId) {
@@ -198,8 +210,10 @@ export class AccessChecker {
         }
         const ok = await this.deps.evaluator.evaluateDelegated({
           userId, resourceId: resource.id, graphRootId: policy.graphRootId,
+          attributes: resource.attributes,
         });
-        return [ok, "acl", ok ? undefined : "acl_deny"];
+        const decision = normalizeInstancePolicyEvaluation(ok);
+        return [decision.allowed, "acl", decision.allowed ? undefined : (decision.denyReason ?? "acl_deny")];
       }
     }
   }
@@ -221,4 +235,10 @@ export class AccessChecker {
     });
     await this.deps.audit.finishExecution(execSpanId, outcome);
   }
+}
+
+function normalizeInstancePolicyEvaluation(
+  value: InstancePolicyEvaluation,
+): InstancePolicyDecision {
+  return typeof value === "boolean" ? { allowed: value } : value;
 }

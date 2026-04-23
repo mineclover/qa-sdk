@@ -4,6 +4,8 @@
 import { type DynamicModule, Module } from "@nestjs/common";
 import { AuthenticateController } from "./authenticate.controller.js";
 import { UserModule } from "../user/user.module.js";
+import { RoleAssignmentModule } from "../role-assignment/role-assignment.module.js";
+import { RoleModule } from "../role/role.module.js";
 import {
   CREDENTIAL_STORE,
   type CredentialStore,
@@ -16,7 +18,7 @@ export interface AuthenticateModuleOptions {
 }
 
 @Module({
-  imports: [UserModule],
+  imports: [UserModule, RoleAssignmentModule, RoleModule],
   controllers: [AuthenticateController],
   providers: [
     { provide: CREDENTIAL_STORE, useClass: NoopCredentialStore },
@@ -28,7 +30,7 @@ export class AuthenticateModule {
     const store = opts.credentialStore ?? new NoopCredentialStore();
     return {
       module: AuthenticateModule,
-      imports: [UserModule],
+      imports: [UserModule, RoleAssignmentModule, RoleModule],
       controllers: [AuthenticateController],
       providers: [
         {
