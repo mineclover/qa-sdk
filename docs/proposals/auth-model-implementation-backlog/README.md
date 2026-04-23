@@ -2,20 +2,47 @@
 
 권한 모델 스펙 작업(2026-04 세션) 이후 **스펙은 작성됐지만 아직 구현되지 않은 항목들**의 컨텍스트 정리. 각 항목은 별도 세션에서 독립적으로 착수 가능하도록 진입점·의존·트리거·리스크를 담았다.
 
+> **2026-04-23 업데이트**: §1·§2·§3·§4·§5·§6 모두 구현 완료. 시뮬 프로젝트(Phase 4)도 8 시나리오 PASS. 후속 todo는 [`follow-up.todo.md`](follow-up.todo.md) 참조.
+
 ---
 
-## 0. 현재 구현 스택 (기준선)
+## 진행 매트릭스 (최종)
 
-이 backlog를 읽기 전 현재 뭐가 있는지 알아야 한다. 2026-04 세션 커밋 체인 기준:
+| Phase | 영역 | Plan | 상태 |
+|---|---|---|---|
+| **1** | §1 audit DB / §4 ingest versioning / §6 coord-storage | `plans/01~03` | ✅ |
+| **2** | PG 이행 (dual-target) | `plans/04a~07d` 15 plans | ✅ |
+| **3** | §3 RLS enforce | `plans/15a~e` 5 plans | ✅ (511 tests) |
+| **4** | 시뮬 프로젝트 | `plans/09~14` + 보강 6 plans | ✅ (8 시나리오 PASS) |
+| **5** | §2 Bitmap pipeline / §5 Marginal density | Phase 4에 흡수 | ✅ |
+
+**디자인 문서**:
+- [`pg-migration-design.md`](pg-migration-design.md) — Phase 2 dual-target 아키텍처
+- [`sim-erp-pm-design.md`](sim-erp-pm-design.md) — Phase 4 시뮬 디자인
+- [`plans/`](plans/) — 43+ plan 파일 (~30000줄)
+
+**후속 작업**: [`follow-up.todo.md`](follow-up.todo.md) — 12 TODO (P0 docker smoke 우선).
+
+---
+
+## 0. 현재 구현 스택 (기준선) — 2026-04-23 갱신
 
 ```
 Layer 1: DisjointUnionIndex                    ✅ packages/weighted-index/src/vocab/union-index.ts
 Layer 2: ResourcePolicyRegistry FSM            ✅ packages/permission-engine/src/resource-policy/
-         + Drizzle/SQLite adapter              ✅ packages/resource-policy-store/
+         + Drizzle/SQLite adapter              ✅ packages/resource-policy-store/sqlite/
+         + Drizzle/PG adapter (Plan 05b)       ✅ packages/resource-policy-store/pg/
+         + factory + port-contract.test         ✅ packages/resource-policy-store/factory.ts
 Layer 3: VersionedBitmap (issue/verify)        ✅ packages/permission-engine/src/versioned-bitmap/
-Layer 4: AuditRecorder (InMemory)              ✅ packages/permission-engine/src/audit/
+Layer 4: AuditRecorder
+         + InMemory                             ✅ packages/permission-engine/src/audit/
+         + Drizzle/SQLite (Plan 01)             ✅ packages/audit-recorder-store/sqlite/
+         + Drizzle/PG (Plan 06b)                ✅ packages/audit-recorder-store/pg/
+         + OTEL wrapper                         ✅ packages/permission-engine/src/audit/otel-wrapper.ts
 Layer 5: AccessChecker (2-pass)                ✅ packages/permission-engine/src/access-checker/
-E2E 통합 테스트                                ✅ packages/resource-policy-store/src/e2e-integration.test.ts
+RLS:     FORCE + qa_admin_bypass               ✅ packages/*/src/pg/ + Plan 15e runbook
+시뮬:    9 services + 8 시나리오 PASS           ✅ simulations/enterprise-pm/
+E2E 통합 테스트                                ✅ 다수
 ```
 
 **핵심 스펙:**
