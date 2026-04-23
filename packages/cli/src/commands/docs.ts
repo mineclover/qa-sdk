@@ -238,7 +238,7 @@ interface ExploreResult {
 }
 
 type ExploreMode = "intent" | "map" | "diagnostic";
-type SelectorKind = "doc" | "service" | "owner" | "family";
+type SelectorKind = "doc" | "service" | "package" | "owner" | "family";
 type SelectorScope = "root" | "family" | "owned";
 
 interface SelectorRoute {
@@ -3737,11 +3737,11 @@ function compareResolutionPriority(left: DocumentEnvelope, right: DocumentEnvelo
 
 function parseSelectorRoute(value: string): SelectorRoute | undefined {
   const trimmed = value.trim();
-  const colonMatch = trimmed.match(/^(doc|service|svc|owner|own|family|fam):(.*)$/);
+  const colonMatch = trimmed.match(/^(doc|service|svc|package|pkg|owner|own|family|fam):(.*)$/);
   if (colonMatch && colonMatch[2].trim()) {
     return { kind: normalizeSelectorKind(colonMatch[1]!), value: colonMatch[2].trim() };
   }
-  const slashMatch = trimmed.match(/^(doc|service|svc|owner|own|family|fam)\/(.+)$/);
+  const slashMatch = trimmed.match(/^(doc|service|svc|package|pkg|owner|own|family|fam)\/(.+)$/);
   if (slashMatch && slashMatch[2].trim()) {
     return { kind: normalizeSelectorKind(slashMatch[1]!), value: slashMatch[2].trim() };
   }
@@ -3750,6 +3750,7 @@ function parseSelectorRoute(value: string): SelectorRoute | undefined {
 
 function normalizeSelectorKind(raw: string): SelectorKind {
   if (raw === "svc") return "service";
+  if (raw === "pkg") return "package";
   if (raw === "own") return "owner";
   if (raw === "fam") return "family";
   return raw as SelectorKind;
@@ -3790,6 +3791,8 @@ function selectDocumentsBySelector(
       return documents.filter((document) => documentIdentityValues(document).includes(selector.value));
     case "service":
       return documents.filter((document) => asString(document.metadata.svc) === selector.value);
+    case "package":
+      return documents.filter((document) => asString(document.metadata.svc) === selector.value);
     case "owner":
       return documents.filter((document) => asString(document.metadata.ownerSystem) === selector.value);
     case "family":
@@ -3828,7 +3831,7 @@ function selectorRootScore(
   else if (document.kind === "spec") score += 60;
   else if (document.kind === "rule") score += 40;
   else if (type === "knowledge") score -= 40;
-  if (selector.kind === "service" || selector.kind === "owner") {
+  if (selector.kind === "service" || selector.kind === "package" || selector.kind === "owner") {
     if (stableId === `${value}-system`) score += 240;
     if (stableId === value) score += 200;
   }

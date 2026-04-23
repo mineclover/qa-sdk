@@ -62,6 +62,7 @@ def:
 | selector | 권장 root |
 |----------|-----------|
 | `service:<svc>` | `<service>-system` 또는 동일 `svc`의 entry-point overview |
+| `package:<pkg>` | 패키지/서비스 id에 대응하는 `<service>-system` 또는 root overview |
 | `owner:<owner_system>` | owner boundary를 대표하는 system/layout |
 | `family:<familyId>` | family 내부 entry-point overview |
 

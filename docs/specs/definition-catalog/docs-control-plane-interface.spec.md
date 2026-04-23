@@ -59,12 +59,14 @@ sources:
 |----------|-------------|
 | `doc:<stableId>` | 해당 문서 |
 | `service:<svc>` | `svc`가 일치하는 문서 중 entry-point/overview/layout-system 우선 root |
+| `package:<pkg>` | `svc`가 패키지/서비스 id와 일치하는 문서 중 root index |
 | `owner:<owner_system>` | `owner_system`이 일치하는 문서 중 root index |
 | `family:<familyId>` | family 내부 root index |
 
 짧은 alias:
 
 - `svc:<svc>` → `service:<svc>`
+- `pkg:<pkg>` → `package:<pkg>`
 - `own:<owner_system>` → `owner:<owner_system>`
 - `fam:<familyId>` → `family:<familyId>`
 

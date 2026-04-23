@@ -1566,6 +1566,12 @@ Define the public payments API contract.
     const aliasText = output();
     expect(aliasText).toContain("selector: service=payments");
     expect(aliasText).toContain("entry: [spec] payments-system");
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["explore", "package:payments", "--root", workspace]);
+    const packageText = output();
+    expect(packageText).toContain("selector: package=payments");
+    expect(packageText).toContain("entry: [spec] payments-system");
   });
 
   it("uses selector-bounded search for service roots", async () => {
@@ -1627,6 +1633,12 @@ Define the public payments API contract.
     expect(ownedText).toContain("selector scope: owned");
     expect(ownedText).toContain("[spec] payments-system");
     expect(ownedText).toContain("[spec] payments-api");
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["search", "pkg:payments", "--root", workspace]);
+    const packageSelectorText = output();
+    expect(packageSelectorText).toContain("selector: package=payments");
+    expect(packageSelectorText).toContain("root index: [spec] payments-system");
   });
 
   it("[contract:docs-control-plane.bdd.cli.list-contracts.v1][contract:docs-control-plane.bdd.cli.validate-contracts.v1][contract:docs-control-plane.bdd.cli.units-grouped.v1] exposes BDD contracts and units through docs bdd commands", async () => {
