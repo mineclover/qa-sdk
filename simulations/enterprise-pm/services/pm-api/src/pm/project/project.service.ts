@@ -10,8 +10,8 @@ import type { Project, ProjectCreate } from "../shared/types.js";
 import {
   PROJECT_DELEGATION_GRAPH,
   PROJECT_POLICY_REGISTRY,
-  type ProjectDelegationGraphStore,
 } from "../../auth-deps/access-checker.module.js";
+import type { ProjectDelegationGraphStore } from "../../auth-deps/delegation-graph-store.js";
 
 const log = createLogger("sim-pm-api.project.service");
 
@@ -110,7 +110,7 @@ export class ProjectService {
     await this.policies.delegate(args.projectId, {
       graphRootId: args.graphRootId,
     });
-    this.delegationGraph?.grant(args.graphRootId, args.delegateUserId);
+    await this.delegationGraph?.grant(args.graphRootId, args.delegateUserId);
     return { state: "DELEGATED", graphRootId: args.graphRootId };
   }
 }

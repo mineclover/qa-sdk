@@ -71,12 +71,12 @@ pnpm sim:smoke:keep    # 컨테이너 유지하고 수동 디버깅
 
 ### TODO-004 — DELEGATED authorization-graph 본격 구현
 
-**상태**: scenario 6 PASS. 현재는 sim in-memory graph store가 `graphRootId -> delegateUserId[]`를 관리하며, 실제 authorization-graph-store adapter는 후속.
+**상태**: scenario 6 PASS. 현재는 sim이 `AuthorizationGraphStore` contract 위에 `InMemoryAuthorizationGraphStore` adapter를 얹어 delegated snapshot을 저장한다. 운영용 persistent graph store adapter는 후속.
 
 **할 일**:
-- `authorization-graph` 패키지 또는 모듈 추가 (graph node + edge 정의)
-- DELEGATED 리소스의 graphRootId → delegatee 탐색 (graph traversal)
-- `evaluator.evaluateDelegated`가 실제 graph 조회로 동작
+- persistent `AuthorizationGraphStore` adapter 추가
+- DELEGATED 리소스의 graphRootId → delegatee 탐색을 snapshot graph traversal로 승격
+- `evaluator.evaluateDelegated`가 sim wrapper가 아닌 공용 graph query surface로 동작
 - scenario 6에서 frank(컨설턴트)가 alice 프로젝트 접근 시 graph 조회 검증
 
 **진입점**: `packages/permission-engine/src/access-checker/checker.ts`의 DELEGATED branch

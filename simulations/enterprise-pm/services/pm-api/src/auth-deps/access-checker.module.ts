@@ -18,24 +18,11 @@ import { DisjointUnionIndex } from "weighted-index";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { PmRepository } from "../pm/shared/port.js";
+import { ProjectDelegationGraphStore } from "./delegation-graph-store.js";
 
 export const PROJECT_ACCESS_CHECKER = Symbol("PROJECT_ACCESS_CHECKER");
 export const PROJECT_POLICY_REGISTRY = Symbol("PROJECT_POLICY_REGISTRY");
 export const PROJECT_DELEGATION_GRAPH = Symbol("PROJECT_DELEGATION_GRAPH");
-
-export class ProjectDelegationGraphStore {
-  private readonly edges = new Map<string, Set<string>>();
-
-  grant(graphRootId: string, delegateUserId: string): void {
-    const current = this.edges.get(graphRootId) ?? new Set<string>();
-    current.add(delegateUserId);
-    this.edges.set(graphRootId, current);
-  }
-
-  hasDelegate(graphRootId: string, userId: string): boolean {
-    return this.edges.get(graphRootId)?.has(userId) ?? false;
-  }
-}
 
 /**
  * 기본 InstancePolicyEvaluator — sim 시뮬용.
@@ -45,10 +32,9 @@ export class ProjectDelegationGraphStore {
  *
  * DELEGATED:
  * - owner / project member / admin 허용
- * - delegate endpoint가 기록한 graphRootId → delegateUserId 매핑이 있으면 허용
+ * - delegate endpoint가 기록한 authorization graph snapshot 에 delegate principal 이 있으면 허용
  *
- * 실제 authorization-graph-store adapter는 아직 아니지만, 더 이상 graphRootId 존재만으로
- * 허용하지 않는다.
+ * 현재 adapter는 `AuthorizationGraphStore` contract 위의 in-memory 구현이다.
  */
 class SimInstanceEvaluator implements InstancePolicyEvaluator {
   constructor(
@@ -107,7 +93,7 @@ class SimInstanceEvaluator implements InstancePolicyEvaluator {
     if (roleNames.includes("admin")) {
       return { allowed: true };
     }
-    if (this.delegationGraph.hasDelegate(args.graphRootId, args.userId)) {
+    if (await this.delegationGraph.hasDelegate(args.graphRootId, args.userId)) {
       return { allowed: true };
     }
     return { allowed: false, denyReason: "delegation_not_found" };

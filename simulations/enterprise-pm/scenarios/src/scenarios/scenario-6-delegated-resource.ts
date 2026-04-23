@@ -18,8 +18,8 @@ interface S6Ctx {
  * authorization-ontology-resource-lifecycle:
  *   UNREGISTERED → (auto REGISTERED) → DELEGATED 전이 (alice 호출)
  *   DELEGATED 상태에서 frank 접근 시 Pass 2 evaluateDelegated 호출
- *   evaluateDelegated 는 delegate endpoint가 기록한 graphRootId → delegateUserId
- *   매핑을 보고 allow 한다 (sim in-memory graph store)
+ *   evaluateDelegated 는 delegate endpoint가 기록한 authorization-graph snapshot
+ *   (`AuthorizationGraphStore` backed in-memory adapter) 에서 delegate principal 을 조회해 allow 한다
  *
  * 검증:
  *   - alice POST /projects/:id/delegate → 200, policy.state=DELEGATED
