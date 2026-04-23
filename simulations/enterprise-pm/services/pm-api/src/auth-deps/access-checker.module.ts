@@ -38,10 +38,17 @@ export class ProjectDelegationGraphStore {
 }
 
 /**
- * 기본 InstancePolicyEvaluator — sim 시뮬용 (Cerbos 미도입).
+ * 기본 InstancePolicyEvaluator — sim 시뮬용.
  *
- * REGISTERED 상태는 policyRef 존재 시 모두 allow (정책 구현 이전 단계 placeholder).
- * DELEGATED 상태는 graphRoot 존재 시 모두 allow. sim 시나리오에서 충분.
+ * REGISTERED:
+ * - owner / project member / admin 허용
+ *
+ * DELEGATED:
+ * - owner / project member / admin 허용
+ * - delegate endpoint가 기록한 graphRootId → delegateUserId 매핑이 있으면 허용
+ *
+ * 실제 authorization-graph-store adapter는 아직 아니지만, 더 이상 graphRootId 존재만으로
+ * 허용하지 않는다.
  */
 class SimInstanceEvaluator implements InstancePolicyEvaluator {
   constructor(

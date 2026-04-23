@@ -71,7 +71,7 @@ pnpm sim:smoke:keep    # 컨테이너 유지하고 수동 디버깅
 
 ### TODO-004 — DELEGATED authorization-graph 본격 구현
 
-**상태**: scenario 6 PASS하지만 graph 탐색 로직 단순화 (`graphRootId.length > 0`)
+**상태**: scenario 6 PASS. 현재는 sim in-memory graph store가 `graphRootId -> delegateUserId[]`를 관리하며, 실제 authorization-graph-store adapter는 후속.
 
 **할 일**:
 - `authorization-graph` 패키지 또는 모듈 추가 (graph node + edge 정의)
