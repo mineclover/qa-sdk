@@ -56,6 +56,7 @@ import {
   previewPrdCompletionSync,
   rankDocumentGraphTraversal,
   summarizeDocumentGraphResult,
+  summarizeDocumentGraphTraversalMissingRoles,
   TRAVERSAL_DIRECTIONS,
   TRAVERSAL_PRESET_IDS,
   traverseDocumentGraph,
@@ -229,6 +230,8 @@ interface ClosureResult {
 interface ExploreResult {
   readonly target: string;
   readonly mode: ExploreMode;
+  readonly selector?: SelectorRoute;
+  readonly rootIndex?: DocumentSummary;
   readonly status: StatusResult;
   readonly familyMembers: readonly DocumentSummary[];
   readonly recommendedCommands: readonly string[];
@@ -431,6 +434,11 @@ interface DocsGraphCliResult {
   readonly paths: DocumentGraphTraversalResult["paths"];
   readonly roleGroups: DocumentGraphTraversalResult["roleGroups"];
   readonly missingRoles: DocumentGraphTraversalResult["missingRoles"];
+  readonly missingRoleSummary: readonly {
+    readonly familyId: string;
+    readonly roleTypes: readonly string[];
+    readonly optionalCount: number;
+  }[];
   readonly filters: DocumentGraphFilterResult["filters"];
   readonly filtering: DocumentGraphFilterResult;
   readonly ranking: DocumentGraphRankingResult;
@@ -444,6 +452,7 @@ interface DocsGraphCliResult {
     readonly diagnostics: number;
     readonly roleGroups: number;
     readonly missingRoles: number;
+    readonly missingRoleFamilies: number;
   };
   readonly truncated: boolean;
   readonly omittedCounts: DocumentGraphTraversalResult["omittedCounts"];
@@ -1874,6 +1883,7 @@ function toDocsGraphCliResult(
   const ranked = rankDocumentGraphTraversal(result);
   const { ranking, filtering } = filterDocumentGraphRanking(ranked, filters);
   const summary = summarizeDocumentGraphResult(result, filtering);
+  const missingRoleSummary = summarizeDocumentGraphTraversalMissingRoles(result);
   return {
     input: result.input,
     targetResolution: result.targetResolution,
@@ -1883,6 +1893,7 @@ function toDocsGraphCliResult(
     paths: result.paths,
     roleGroups: result.roleGroups,
     missingRoles: result.missingRoles,
+    missingRoleSummary,
     filters: filtering.filters,
     filtering,
     ranking,
@@ -1896,6 +1907,7 @@ function toDocsGraphCliResult(
       diagnostics: result.diagnostics.length,
       roleGroups: result.roleGroups.length,
       missingRoles: result.missingRoles.length,
+      missingRoleFamilies: missingRoleSummary.length,
     },
     truncated: result.truncated,
     omittedCounts: result.omittedCounts,
@@ -2285,6 +2297,8 @@ async function buildExploreResult(
   mode: ExploreMode,
 ): Promise<ExploreResult> {
   const status = await buildStatusResult(documents, rootDir, target, { familyOnly: true });
+  const selector = parseSelectorRoute(target);
+  const rootIndex = selector ? resolveSelectorDocument(documents, selector) : undefined;
   const resolved = resolveDocument(documents, target);
   const familyMembers = resolved
     ? collectFamilyOnlyScope(documents, resolved, { familyOnly: true }).documents.map(summarizeDocument)
@@ -2293,6 +2307,8 @@ async function buildExploreResult(
   return {
     target,
     mode,
+    ...(selector ? { selector } : {}),
+    ...(rootIndex ? { rootIndex: summarizeDocument(rootIndex) } : {}),
     status,
     familyMembers,
     recommendedCommands: recommendedExploreCommands(target, status),
@@ -3721,15 +3737,22 @@ function compareResolutionPriority(left: DocumentEnvelope, right: DocumentEnvelo
 
 function parseSelectorRoute(value: string): SelectorRoute | undefined {
   const trimmed = value.trim();
-  const colonMatch = trimmed.match(/^(doc|service|owner|family):(.*)$/);
+  const colonMatch = trimmed.match(/^(doc|service|svc|owner|own|family|fam):(.*)$/);
   if (colonMatch && colonMatch[2].trim()) {
-    return { kind: colonMatch[1] as SelectorKind, value: colonMatch[2].trim() };
+    return { kind: normalizeSelectorKind(colonMatch[1]!), value: colonMatch[2].trim() };
   }
-  const slashMatch = trimmed.match(/^(doc|service|owner|family)\/(.+)$/);
+  const slashMatch = trimmed.match(/^(doc|service|svc|owner|own|family|fam)\/(.+)$/);
   if (slashMatch && slashMatch[2].trim()) {
-    return { kind: slashMatch[1] as SelectorKind, value: slashMatch[2].trim() };
+    return { kind: normalizeSelectorKind(slashMatch[1]!), value: slashMatch[2].trim() };
   }
   return undefined;
+}
+
+function normalizeSelectorKind(raw: string): SelectorKind {
+  if (raw === "svc") return "service";
+  if (raw === "own") return "owner";
+  if (raw === "fam") return "family";
+  return raw as SelectorKind;
 }
 
 function resolveSelectorDocument(
@@ -4105,6 +4128,8 @@ function printExploreIntent(result: ExploreResult): void {
   const status = result.status;
   console.log(`docs explore: ${result.target}`);
   console.log(`  mode: intent`);
+  if (result.selector) console.log(`  selector: ${result.selector.kind}=${result.selector.value}`);
+  if (result.rootIndex) console.log(`  root index: [${result.rootIndex.kind}] ${result.rootIndex.stableId}`);
   if (status.document) {
     console.log(`  entry: [${status.document.kind}] ${status.document.stableId}`);
     console.log(`  path: ${status.document.path}`);
@@ -4125,6 +4150,8 @@ function printExploreMap(result: ExploreResult): void {
   const status = result.status;
   console.log(`docs explore: ${result.target}`);
   console.log(`  mode: map`);
+  if (result.selector) console.log(`  selector: ${result.selector.kind}=${result.selector.value}`);
+  if (result.rootIndex) console.log(`  root index: [${result.rootIndex.kind}] ${result.rootIndex.stableId}`);
   if (status.document) {
     console.log(`  entry: [${status.document.kind}] ${status.document.stableId}`);
     console.log(`  path: ${status.document.path}`);
@@ -4157,6 +4184,8 @@ function printExploreDiagnostic(result: ExploreResult): void {
   const status = result.status;
   console.log(`docs explore: ${result.target}`);
   console.log(`  mode: diagnostic`);
+  if (result.selector) console.log(`  selector: ${result.selector.kind}=${result.selector.value}`);
+  if (result.rootIndex) console.log(`  root index: [${result.rootIndex.kind}] ${result.rootIndex.stableId}`);
   if (status.document) {
     console.log(`  entry: [${status.document.kind}] ${status.document.stableId}`);
     console.log(`  path: ${status.document.path}`);
@@ -4473,6 +4502,11 @@ function printGraphSummary(result: DocsGraphCliResult): void {
     result.filters.includeArchive
   ) {
     console.log(`    archive: included ${summary.archive.included}, excluded ${summary.archive.excluded}`);
+  }
+  if (result.missingRoleSummary.length > 0) {
+    console.log(
+      `    optional role gaps: ${result.missingRoleSummary.length} family, ${result.counts.missingRoles} role slot(s)`,
+    );
   }
   console.log(`    diagnostics: ${summary.diagnostics}`);
 }

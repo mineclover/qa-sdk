@@ -1550,13 +1550,22 @@ Define the public payments API contract.
     await cliDocs(["explore", "service:payments", "--root", workspace]);
     const serviceText = output();
     expect(serviceText).toContain("docs explore: service:payments");
+    expect(serviceText).toContain("selector: service=payments");
+    expect(serviceText).toContain("root index: [spec] payments-system");
     expect(serviceText).toContain("entry: [spec] payments-system");
     expect(serviceText).toContain("intent: Own the payments runtime boundary.");
 
     vi.mocked(console.log).mockClear();
     await cliDocs(["explore", "owner:payments-system", "--root", workspace]);
     const ownerText = output();
+    expect(ownerText).toContain("selector: owner=payments-system");
     expect(ownerText).toContain("entry: [spec] payments-system");
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["explore", "svc:payments", "--root", workspace]);
+    const aliasText = output();
+    expect(aliasText).toContain("selector: service=payments");
+    expect(aliasText).toContain("entry: [spec] payments-system");
   });
 
   it("uses selector-bounded search for service roots", async () => {
@@ -3215,7 +3224,13 @@ Archived checkout work.
       nodes: 1,
       edges: 0,
       paths: 1,
-      diagnostics: 1,
+      diagnostics: 2,
+      diagnosticCounts: {
+        traversal: 1,
+        bySeverity: {
+          info: 1,
+        },
+      },
       counts: {
         byNodeKind: { source: 1 },
         byTraversalAxis: {},
@@ -3281,6 +3296,95 @@ Archived checkout work.
         byFollowUpCategory: { actionable: 1 },
       },
     });
+  });
+
+  it("summarizes optional missing role gaps without repeating raw absence lines", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/matrix"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/matrix/matrix.spec.md"), `---
+def:
+  id: matrix-spec
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+# Matrix Spec
+
+## 목적 ^purpose
+
+Define sparse role coverage.
+`);
+    await writeFile(join(workspace, "docs/specs/matrix/matrix.todo.md"), `---
+def:
+  id: matrix-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Matrix Todo
+
+## 목적 ^purpose
+
+Track sparse role follow-up.
+`);
+
+    await cliDocs([
+      "graph",
+      "matrix-spec",
+      "--axis",
+      "role",
+      "--direction",
+      "out",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const jsonResult = parsedOutput<{
+      counts: { missingRoles: number; missingRoleFamilies: number };
+      missingRoles: Array<{ familyId: string; roleType: string }>;
+      missingRoleSummary: Array<{ familyId: string; roleTypes: string[]; optionalCount: number }>;
+    }>();
+    expect(jsonResult.counts).toMatchObject({
+      missingRoles: 5,
+      missingRoleFamilies: 1,
+    });
+    expect(jsonResult.missingRoles).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ familyId: "docs/specs/matrix/matrix", roleType: "plan" }),
+        expect.objectContaining({ familyId: "docs/specs/matrix/matrix", roleType: "memo" }),
+      ]),
+    );
+    expect(jsonResult.missingRoleSummary).toEqual([
+      {
+        familyId: "docs/specs/matrix/matrix",
+        roleTypes: ["plan", "rule", "cases", "test", "memo"],
+        optionalCount: 5,
+      },
+    ]);
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs([
+      "graph",
+      "matrix-spec",
+      "--axis",
+      "role",
+      "--direction",
+      "out",
+      "--root",
+      workspace,
+      "--verbose",
+    ]);
+
+    const text = output();
+    expect(text).toContain("optional role gaps: 1 family, 5 role slot(s)");
+    expect(text).toContain("optional missing roles:");
+    expect(text).toContain("docs/specs/matrix/matrix: plan, rule, cases, test, memo");
+    expect(text).not.toContain("optional missing in docs/specs/matrix/matrix");
   });
 
   it("excludes archived documents from active graph views unless requested", async () => {

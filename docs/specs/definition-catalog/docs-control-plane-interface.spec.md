@@ -62,12 +62,19 @@ sources:
 | `owner:<owner_system>` | `owner_system`이 일치하는 문서 중 root index |
 | `family:<familyId>` | family 내부 root index |
 
+짧은 alias:
+
+- `svc:<svc>` → `service:<svc>`
+- `own:<owner_system>` → `owner:<owner_system>`
+- `fam:<familyId>` → `family:<familyId>`
+
 기본 철학:
 
 - selector는 broad search가 아니라 root-index routing이다.
 - root index는 `entry-point`, `overview`, `tier: layout|system`을 우선한다.
 - `docs explore` 기본 모드는 `intent`이며 root purpose와 다음 탐색 경로를 보여준다.
 - map/diagnostic은 명시 `--mode`로만 내려간다.
+- `docs search`의 selector는 기본 `--selector-scope=root`를 사용한다. `family` 또는 `owned` scope는 명시 opt-in이다.
 
 ## Write authority
 
