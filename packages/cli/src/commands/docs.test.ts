@@ -1094,6 +1094,101 @@ Specify consumer expectations for permission policy, error response, and observa
     expect(positiveMissingCodes).not.toContain("error-policy-evidence");
     expect(positiveMissingCodes).not.toContain("permission-policy-evidence");
     expect(positiveMissingCodes).not.toContain("observability-evidence");
+
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-observability-pack.spec.md"), `---
+def:
+  id: checkout-observability-pack
+  tier: layout
+  owner_system: checkout
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+  links:
+    - target: checkout-observability-bootstrap
+      type: refs
+---
+# Checkout Observability Pack
+
+## 목적 ^purpose
+
+Organize checkout logging and trace bootstrap surfaces.
+`);
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-observability-bootstrap.spec.md"), `---
+def:
+  id: checkout-observability-bootstrap
+  tier: system
+  owner_system: checkout
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+  tags: [observability]
+  links:
+    - target: checkout-observability-pack
+      type: refines
+    - target: checkout-observability-rule
+      type: traces_to
+source: packages/checkout/src/observability-bootstrap.ts
+---
+# Checkout Observability Bootstrap
+
+## 목적 ^purpose
+
+Standardize checkout log and trace bootstrap behavior.
+`);
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-observability.rule.md"), `---
+def:
+  id: checkout-observability-rule
+  tier: component
+  scope: constraint
+  aspect: tech_constraint
+  depth: specification
+  lifecycle: approved
+  links:
+    - target: checkout-observability-bootstrap
+      type: constrains
+---
+# Checkout Observability Rule
+
+## 목적 ^purpose
+
+Require audit log, metric, and trace evidence for checkout bootstrap.
+`);
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-observability-bootstrap.test.md"), `---
+def:
+  id: checkout-observability-bootstrap-test
+  tier: component
+  scope: flow
+  aspect: user_scenario
+  depth: validation
+  lifecycle: approved
+  tags: [observability, testing]
+  links:
+    - target: checkout-observability-bootstrap
+      type: refines
+source: packages/checkout/src/observability-bootstrap.test.ts
+---
+# Checkout Observability Bootstrap Test
+
+## 목적 ^purpose
+
+Verify audit log and trace observability behavior for checkout bootstrap.
+`);
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["closure", "checkout-observability-bootstrap", "--root", workspace, "--json"]);
+
+    const childEvidenceConcernClosure = parsedOutput<{
+      state: string;
+      evidence: {
+        tests: Array<{ stableId: string }>;
+      };
+      missing: Array<{ code: string; severity: string }>;
+    }>();
+    expect(childEvidenceConcernClosure.state).toBe("closed");
+    expect(childEvidenceConcernClosure.evidence.tests.map((test) => test.stableId)).toContain("checkout-observability-bootstrap-test");
+    expect(childEvidenceConcernClosure.missing.map((item) => item.code)).not.toContain("observability-evidence");
   });
 
   it("preserves todo hierarchy in JSON status follow-up candidates", async () => {
@@ -1439,8 +1534,436 @@ Track completed RLSC text occupancy work.
     expect(result.nextFollowUps).toEqual([]);
   });
 
+  it("reviews completed record cleanup candidates without mutating sources", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/cleanup"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.spec.md"), `---
+def:
+  id: cleanup-spec
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+# Cleanup Spec
+
+## 목적 ^purpose
+
+Assimilate completed cleanup work into a stable spec.
+`);
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.todo.md"), `---
+def:
+  id: cleanup-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Cleanup Todo
+
+## 목적 ^purpose
+
+Track completed cleanup work.
+
+## Completed — 완료 기록
+
+- [x] Cleanup review surface is implemented.
+`);
+
+    await cliDocs(["cleanup", "review", "--root", workspace, "--json"]);
+
+    const result = parsedOutput<{
+      scope: string;
+      counts: { completedRecords: number; candidates: number; diagnostics: number };
+      candidates: Array<{
+        record: { kind: string; path: string };
+        recommendation: { action: string; reason: string };
+        allowedActions: string[];
+        familyId?: string;
+        relatedDocuments: Array<{ stableId: string; kind: string; path: string; title: string }>;
+        evidenceSummary: { documents: number; sources: number; evidence: number; diagnostics: number };
+      }>;
+    }>();
+
+    expect(result.scope).toBe("repo");
+    expect(result.counts).toMatchObject({
+      completedRecords: 2,
+      candidates: 2,
+      diagnostics: 0,
+    });
+    expect(result.candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          record: expect.objectContaining({
+            kind: "prd",
+            path: "tasks/checkout-prd.md",
+          }),
+          recommendation: expect.objectContaining({
+            action: "keep-as-evidence",
+          }),
+          allowedActions: ["keep-as-evidence", "archive-review", "memo-conversion-review"],
+        }),
+        expect.objectContaining({
+          record: expect.objectContaining({
+            kind: "todo",
+            path: "docs/specs/cleanup/cleanup.todo.md",
+          }),
+          recommendation: expect.objectContaining({
+            action: "archive-review",
+          }),
+          familyId: "docs/specs/cleanup/cleanup",
+          relatedDocuments: expect.arrayContaining([
+            expect.objectContaining({ stableId: "cleanup-spec", kind: "spec" }),
+            expect.objectContaining({ stableId: "cleanup-todo", kind: "todo" }),
+          ]),
+          evidenceSummary: expect.objectContaining({
+            documents: 2,
+          }),
+        }),
+      ]),
+    );
+  });
+
+  it("scopes cleanup review to a PRD family through --prd", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "cleanup",
+      "review",
+      "--prd",
+      "tasks/checkout-prd.json",
+      "--root",
+      workspace,
+    ]);
+
+    const text = output();
+    expect(text).toContain("docs cleanup review: tasks/checkout-prd.json");
+    expect(text).toContain("scope: prd");
+    expect(text).toContain("completed records: 1");
+    expect(text).toContain("[prd] tasks/checkout-prd.md -> keep-as-evidence");
+    expect(text).toContain("allowed: keep-as-evidence, archive-review, memo-conversion-review");
+  });
+
+  it("builds a dry-run cleanup archive plan for a completed todo record", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/cleanup"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.spec.md"), `---
+def:
+  id: cleanup-spec
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+# Cleanup Spec
+
+## 목적 ^purpose
+
+Assimilate completed cleanup work into a stable spec.
+`);
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.todo.md"), `---
+def:
+  id: cleanup-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Cleanup Todo
+
+## 목적 ^purpose
+
+Track completed cleanup work.
+
+## Completed — 완료 기록
+
+- [x] Cleanup review surface is implemented.
+`);
+
+    await cliDocs([
+      "cleanup",
+      "plan",
+      "cleanup-todo",
+      "--action",
+      "archive",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      action: string;
+      dryRunDefaulted: boolean;
+      targetValidatedAs: string;
+      proposedOutputPath: string;
+      recommendationMatchesAction: boolean;
+      record: { path: string; kind: string };
+      recommendation: { action: string };
+      validationCommands: string[];
+      preservedEvidencePaths: string[];
+      steps: string[];
+      warnings: string[];
+    }>();
+
+    expect(result).toMatchObject({
+      action: "archive",
+      dryRunDefaulted: true,
+      targetValidatedAs: "document-id",
+      proposedOutputPath: "docs/specs/cleanup/archive/cleanup.todo.md",
+      recommendationMatchesAction: true,
+      record: {
+        path: "docs/specs/cleanup/cleanup.todo.md",
+        kind: "todo",
+      },
+      recommendation: {
+        action: "archive-review",
+      },
+    });
+    expect(result.validationCommands).toEqual(
+      expect.arrayContaining([
+        "qa-sdk docs cleanup review docs/specs/cleanup/cleanup.todo.md --json",
+        "qa-sdk docs status cleanup-todo --family-only --json",
+        "qa-sdk docs collect docs/specs/cleanup/cleanup.todo.md --family-only --json",
+      ]),
+    );
+    expect(result.preservedEvidencePaths).toEqual(
+      expect.arrayContaining([
+        "docs/specs/cleanup/cleanup.todo.md",
+        "docs/specs/cleanup/cleanup.spec.md",
+      ]),
+    );
+    expect(result.steps[1]).toContain("archive/cleanup.todo.md");
+    expect(result.warnings).toEqual([]);
+  });
+
+  it("builds a dry-run memo conversion plan for a completed PRD pair and warns on recommendation mismatch", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "cleanup",
+      "plan",
+      "tasks/checkout-prd.json",
+      "--action",
+      "memo-conversion",
+      "--root",
+      workspace,
+    ]);
+
+    const text = output();
+    expect(text).toContain("docs cleanup plan: tasks/checkout-prd.json");
+    expect(text).toContain("action: memo-conversion");
+    expect(text).toContain("target validated as: paired-path");
+    expect(text).toContain("proposed output: tasks/checkout-prd.memo.md");
+    expect(text).toContain("recommendation match: no");
+    expect(text).toContain("review recommendation: keep-as-evidence");
+    expect(text).toContain("warnings (2):");
+  });
+
+  it("refuses cleanup plan apply mode", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "cleanup",
+      "plan",
+      "tasks/checkout-prd.md",
+      "--action",
+      "archive",
+      "--root",
+      workspace,
+      "--apply",
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      error: { code: string; operation: string; remediation: string };
+    }>();
+    expect(result.error).toMatchObject({
+      code: "unsupported-operation",
+      operation: "docs.cleanup.plan.apply",
+    });
+    expect(result.error.remediation).toContain("--dry-run");
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("applies archive cleanup for a completed PRD pair", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "cleanup",
+      "apply",
+      "tasks/checkout-prd.md",
+      "--action",
+      "archive",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      action: string;
+      targetValidatedAs: string;
+      moved: Array<{ kind: string; from: string; to: string }>;
+      preservedEvidencePaths: string[];
+    }>();
+    expect(result).toMatchObject({
+      action: "archive",
+      targetValidatedAs: "record-path",
+      moved: [
+        {
+          kind: "record",
+          from: "tasks/checkout-prd.md",
+          to: "tasks/archive/checkout-prd.md",
+        },
+        {
+          kind: "paired",
+          from: "tasks/checkout-prd.json",
+          to: "tasks/archive/checkout-prd.json",
+        },
+      ],
+    });
+    expect(result.preservedEvidencePaths).toEqual(
+      expect.arrayContaining([
+        "tasks/checkout-prd.md",
+        "tasks/checkout-prd.json",
+      ]),
+    );
+    await expect(readFile(join(workspace, "tasks/checkout-prd.md"), "utf8")).rejects.toThrow();
+    await expect(readFile(join(workspace, "tasks/checkout-prd.json"), "utf8")).rejects.toThrow();
+    await expect(readFile(join(workspace, "tasks/archive/checkout-prd.md"), "utf8")).resolves.toContain("Checkout PRD");
+    await expect(readFile(join(workspace, "tasks/archive/checkout-prd.json"), "utf8")).resolves.toContain("\"Checkout PRD\"");
+  });
+
+  it("applies memo conversion cleanup for a completed todo record", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/cleanup"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.todo.md"), `---
+def:
+  id: cleanup-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Cleanup Todo
+
+## 목적 ^purpose
+
+Track completed cleanup work.
+
+## Completed — 완료 기록
+
+- [x] Cleanup review surface is implemented.
+`);
+
+    await cliDocs([
+      "cleanup",
+      "apply",
+      "cleanup-todo",
+      "--action",
+      "memo-conversion",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      action: string;
+      targetValidatedAs: string;
+      moved: Array<{ kind: string; from: string; to: string }>;
+    }>();
+    expect(result).toMatchObject({
+      action: "memo-conversion",
+      targetValidatedAs: "document-id",
+      moved: [
+        {
+          kind: "record",
+          from: "docs/specs/cleanup/cleanup.todo.md",
+          to: "docs/specs/cleanup/cleanup.memo.md",
+        },
+      ],
+    });
+    await expect(readFile(join(workspace, "docs/specs/cleanup/cleanup.todo.md"), "utf8")).rejects.toThrow();
+    await expect(readFile(join(workspace, "docs/specs/cleanup/cleanup.memo.md"), "utf8")).resolves.toContain("Cleanup Todo");
+  });
+
+  it("refuses cleanup apply when the archive output already exists", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "tasks/archive"), { recursive: true });
+    await writeFile(join(workspace, "tasks/archive/checkout-prd.md"), "already archived\n");
+
+    await cliDocs([
+      "cleanup",
+      "apply",
+      "tasks/checkout-prd.md",
+      "--action",
+      "archive",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      error: { code: string; operation: string; remediation: string };
+    }>();
+    expect(result.error).toMatchObject({
+      code: "cleanup-output-exists",
+      operation: "docs.cleanup.apply",
+    });
+    expect(result.error.remediation).toContain("move the existing archive output");
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("applies memo conversion for a completed PRD pair while archiving the paired JSON", async () => {
+    const workspace = await createFixtureWorkspace();
+
+    await cliDocs([
+      "cleanup",
+      "apply",
+      "tasks/checkout-prd.md",
+      "--action",
+      "memo-conversion",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      action: string;
+      targetValidatedAs: string;
+      moved: Array<{ kind: string; from: string; to: string }>;
+    }>();
+    expect(result).toMatchObject({
+      action: "memo-conversion",
+      targetValidatedAs: "record-path",
+      moved: [
+        {
+          kind: "record",
+          from: "tasks/checkout-prd.md",
+          to: "tasks/checkout-prd.memo.md",
+        },
+        {
+          kind: "paired",
+          from: "tasks/checkout-prd.json",
+          to: "tasks/archive/checkout-prd.json",
+        },
+      ],
+    });
+    await expect(readFile(join(workspace, "tasks/checkout-prd.md"), "utf8")).rejects.toThrow();
+    await expect(readFile(join(workspace, "tasks/checkout-prd.memo.md"), "utf8")).resolves.toContain("Checkout PRD");
+    await expect(readFile(join(workspace, "tasks/checkout-prd.json"), "utf8")).rejects.toThrow();
+    await expect(readFile(join(workspace, "tasks/archive/checkout-prd.json"), "utf8")).resolves.toContain("\"Checkout PRD\"");
+  });
+
   it("exposes docs graph through root usage, dispatch, and command help", async () => {
     expect(USAGE).toContain("qa-sdk docs graph <target>");
+    expect(USAGE).toContain("qa-sdk docs cleanup review");
+    expect(USAGE).toContain("qa-sdk docs cleanup plan");
+    expect(USAGE).toContain("qa-sdk docs cleanup apply");
     expect(USAGE).toContain("qa-sdk docs closure <doc-id|path|source-file[:symbol]>");
     expect(USAGE).toContain("qa-sdk docs explore <doc-id|path>");
     expect(resolveSubcommand(["docs", "closure", "checkout-spec"])).toEqual({
@@ -1455,12 +1978,22 @@ Track completed RLSC text occupancy work.
       name: "docs explore",
       rest: ["checkout-spec"],
     });
+    expect(resolveSubcommand(["docs", "cleanup", "review", "checkout-spec"])).toEqual({
+      name: "docs cleanup review",
+      rest: ["checkout-spec"],
+    });
+    expect(resolveSubcommand(["docs", "cleanup", "apply", "tasks/checkout-prd.md", "--action", "archive"])).toEqual({
+      name: "docs cleanup apply",
+      rest: ["tasks/checkout-prd.md", "--action", "archive"],
+    });
 
     await main(["docs", "help"]);
 
     const rootHelp = output();
     expect(rootHelp).toContain("Quick Start");
     expect(rootHelp).toContain("qa-sdk docs explore <doc-id|path>");
+    expect(rootHelp).toContain("qa-sdk docs cleanup review");
+    expect(rootHelp).toContain("qa-sdk docs cleanup apply");
 
     vi.mocked(console.log).mockClear();
     await main(["docs", "graph", "--help"]);

@@ -17,6 +17,10 @@ def:
       type: traces_to
     - target: nest-service-kit-test
       type: traces_to
+    - target: nest-service-bootstrap-rule
+      type: traces_to
+    - target: nest-service-bootstrap-cases
+      type: traces_to
     - target: nest-service-bootstrap-test
       type: traces_to
 ---

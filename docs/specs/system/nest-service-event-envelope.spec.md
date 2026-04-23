@@ -19,11 +19,16 @@ def:
       type: traces_to
     - target: nest-service-kit-test
       type: traces_to
+    - target: nest-service-event-envelope-rule
+      type: traces_to
+    - target: nest-service-event-envelope-cases
+      type: traces_to
     - target: nest-service-event-envelope-test
       type: traces_to
 ---
 sources:
   - packages/nest-service-kit/src/event-envelope.ts
+
 
 # Nest Service Event Envelope
 

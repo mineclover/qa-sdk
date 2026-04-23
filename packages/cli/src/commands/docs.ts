@@ -96,9 +96,18 @@ import {
   previewPrdToRalphJson,
   type PrdToRalphJsonPreview,
 } from "../lib/docs-control-plane/prd-to-ralph-json.js";
+import {
+  buildCompletedRecordCleanupReview,
+  type CompletedRecordCleanupAction,
+} from "../lib/docs-control-plane/completed-record-review.js";
+import {
+  buildCompletedRecordCleanupPlan,
+  type CompletedRecordCleanupPlanAction,
+} from "../lib/docs-control-plane/completed-record-cleanup-plan.js";
+import { applyCompletedRecordCleanup } from "../lib/docs-control-plane/completed-record-cleanup-apply.js";
 import { formatHelpSections, type CommandHelpSectionSpec } from "../command-spec.js";
 
-type DocsCommand = "help" | "status" | "explore" | "collect" | "closure" | "search" | "drift" | "bdd" | "transform" | "prd" | "graph";
+type DocsCommand = "help" | "status" | "explore" | "collect" | "closure" | "search" | "drift" | "bdd" | "transform" | "prd" | "graph" | "cleanup";
 
 interface ParsedDocsArgs {
   readonly command: DocsCommand;
@@ -589,6 +598,85 @@ interface PrdScaffoldResult {
   readonly context: PrdAuthoringContext;
 }
 
+interface CleanupReviewResult {
+  readonly target?: string;
+  readonly scope: "repo" | "family" | "prd";
+  readonly counts: {
+    readonly completedRecords: number;
+    readonly candidates: number;
+    readonly relatedDocuments: number;
+    readonly diagnostics: number;
+  };
+  readonly candidates: readonly {
+    readonly record: CompletedRecordState;
+    readonly recommendation: {
+      readonly action: CompletedRecordCleanupAction;
+      readonly reason: string;
+    };
+    readonly allowedActions: readonly CompletedRecordCleanupAction[];
+    readonly primaryDocument?: {
+      readonly stableId: string;
+      readonly kind: string;
+      readonly path: string;
+      readonly title: string;
+    };
+    readonly pairedDocument?: {
+      readonly stableId: string;
+      readonly kind: string;
+      readonly path: string;
+      readonly title: string;
+    };
+    readonly familyId?: string;
+    readonly relatedDocuments: readonly {
+      readonly stableId: string;
+      readonly kind: string;
+      readonly path: string;
+      readonly title: string;
+    }[];
+    readonly evidenceSummary: {
+      readonly documents: number;
+      readonly sources: number;
+      readonly evidence: number;
+      readonly diagnostics: number;
+    };
+  }[];
+  readonly diagnostics: readonly DocumentDiagnostic[];
+}
+
+interface CleanupPlanResult {
+  readonly action: CompletedRecordCleanupPlanAction;
+  readonly dryRunDefaulted: boolean;
+  readonly target: string;
+  readonly targetValidatedAs: "record-path" | "document-id" | "paired-path";
+  readonly proposedOutputPath: string;
+  readonly recommendationMatchesAction: boolean;
+  readonly record: CompletedRecordState;
+  readonly recommendation: {
+    readonly action: CompletedRecordCleanupAction;
+    readonly reason: string;
+  };
+  readonly allowedActions: readonly CompletedRecordCleanupAction[];
+  readonly preservedEvidencePaths: readonly string[];
+  readonly relatedDocumentPaths: readonly string[];
+  readonly validationCommands: readonly string[];
+  readonly steps: readonly string[];
+  readonly warnings: readonly string[];
+}
+
+interface CleanupApplyResult {
+  readonly action: CompletedRecordCleanupPlanAction;
+  readonly target: string;
+  readonly targetValidatedAs: "record-path" | "document-id" | "paired-path";
+  readonly record: CompletedRecordState;
+  readonly moved: readonly {
+    readonly from: string;
+    readonly to: string;
+    readonly kind: "record" | "paired";
+  }[];
+  readonly preservedEvidencePaths: readonly string[];
+  readonly warnings: readonly string[];
+}
+
 const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
   {
     title: "Quick Start",
@@ -610,6 +698,9 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "qa-sdk docs graph <target> [--axis <csv>] [--filter-axis <csv>] [--kind <csv>] [--role <csv>] [--follow-up-category <csv>] [--include-archive] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--verbose] [--json]",
       "qa-sdk docs search <selector|query> [--selector-scope root|family|owned] [--kind <kind>] [--metadata key=value] [--json]",
       "qa-sdk docs drift [--prd <file>] [--include-session] [--json]",
+      "qa-sdk docs cleanup review [doc-id|path] [--prd <file>] [--family-only] [--include-session] [--json]",
+      "qa-sdk docs cleanup plan <record-path|doc-id|paired-path> --action archive|memo-conversion [--dry-run] [--json]",
+      "qa-sdk docs cleanup apply <record-path|doc-id|paired-path> --action archive|memo-conversion [--json]",
       "qa-sdk docs bdd list <doc-id|path> [--family-only] [--json]",
       "qa-sdk docs bdd validate <doc-id|path> [--family-only] [--json]",
       "qa-sdk docs bdd units <doc-id|path> [--family-only] [--json]",
@@ -750,6 +841,11 @@ export async function cliDocs(args: string[]): Promise<void> {
     return;
   }
 
+  if (parsed.command === "cleanup") {
+    await cmdCleanup(documents, options, parsed.positional, parsed.flags);
+    return;
+  }
+
   if (parsed.command === "bdd") {
     await cmdBdd(documents, options, parsed.positional, parsed.flags);
     return;
@@ -814,6 +910,7 @@ function normalizeCommand(value: string | undefined): DocsCommand {
     || value === "search"
     || value === "help"
     || value === "drift"
+    || value === "cleanup"
     || value === "bdd"
     || value === "transform"
     || value === "prd"
@@ -822,6 +919,167 @@ function normalizeCommand(value: string | undefined): DocsCommand {
     return value;
   }
   return "help";
+}
+
+async function cmdCleanup(
+  documents: readonly DocumentEnvelope[],
+  options: DocsRuntimeOptions,
+  positional: readonly string[],
+  flags: Readonly<Record<string, readonly string[]>>,
+): Promise<void> {
+  const json = hasFlag(flags, "json");
+  const action = positional[0];
+  const target = positional.slice(1).join(" ").trim();
+
+  if (action !== "review" && action !== "plan" && action !== "apply") {
+    console.error("Usage: qa-sdk docs cleanup review [doc-id|path] [--prd <file>] [--family-only] [--include-session] [--json]");
+    console.error("Usage: qa-sdk docs cleanup plan <record-path|doc-id|paired-path> --action archive|memo-conversion [--dry-run] [--json]");
+    console.error("Usage: qa-sdk docs cleanup apply <record-path|doc-id|paired-path> --action archive|memo-conversion [--json]");
+    process.exitCode = 1;
+    return;
+  }
+
+  if (action === "plan") {
+    if (hasFlag(flags, "apply")) {
+      printStructuredError({
+        error: {
+          code: "unsupported-operation",
+          operation: "docs.cleanup.plan.apply",
+          message: "docs cleanup plan is dry-run only until an explicit write workflow is approved.",
+          remediation: "Run docs cleanup plan with --dry-run, review the planned paths and validations, and keep writes in a separate explicit workflow.",
+        },
+      }, json);
+      process.exitCode = 1;
+      return;
+    }
+
+    const cleanupAction = parseCleanupPlanAction(flags);
+    if (!cleanupAction) {
+      printStructuredError({
+        error: {
+          code: "missing-required-option",
+          operation: "docs.cleanup.plan",
+          message: "docs cleanup plan requires --action archive|memo-conversion.",
+          remediation: "Choose one explicit cleanup action with --action archive or --action memo-conversion.",
+        },
+      }, json);
+      process.exitCode = 1;
+      return;
+    }
+    if (!target) {
+      printStructuredError({
+        error: {
+          code: "missing-required-option",
+          operation: "docs.cleanup.plan",
+          message: "docs cleanup plan requires a completed record target path, document id, or paired PRD JSON path.",
+          remediation: "Pass the completed record path/document id as a positional argument, e.g. docs cleanup plan tasks/example-prd.md --action archive.",
+        },
+      }, json);
+      process.exitCode = 1;
+      return;
+    }
+
+    const result = await buildCleanupPlanResult(documents, options.rootDir, {
+      target,
+      action: cleanupAction,
+      dryRunDefaulted: !hasFlag(flags, "dry-run"),
+    });
+    if (isStructuredDocsError(result)) {
+      printStructuredError(result, json);
+      process.exitCode = 1;
+      return;
+    }
+
+    if (json) {
+      printJson(result);
+      return;
+    }
+    printCleanupPlan(result);
+    return;
+  }
+
+  if (action === "apply") {
+    const cleanupAction = parseCleanupPlanAction(flags);
+    if (!cleanupAction) {
+      printStructuredError({
+        error: {
+          code: "missing-required-option",
+          operation: "docs.cleanup.apply",
+          message: "docs cleanup apply requires --action archive|memo-conversion.",
+          remediation: "Choose one explicit cleanup action with --action archive or --action memo-conversion.",
+        },
+      }, json);
+      process.exitCode = 1;
+      return;
+    }
+    if (!target) {
+      printStructuredError({
+        error: {
+          code: "missing-required-option",
+          operation: "docs.cleanup.apply",
+          message: "docs cleanup apply requires a completed record target path, document id, or paired PRD JSON path.",
+          remediation: "Pass the completed record path/document id as a positional argument, e.g. docs cleanup apply tasks/example-prd.md --action archive.",
+        },
+      }, json);
+      process.exitCode = 1;
+      return;
+    }
+
+    const result = await buildCleanupApplyResult(documents, options.rootDir, {
+      target,
+      action: cleanupAction,
+    });
+    if (isStructuredDocsError(result)) {
+      printStructuredError(result, json);
+      process.exitCode = 1;
+      return;
+    }
+
+    if (json) {
+      printJson(result);
+      return;
+    }
+    printCleanupApply(result);
+    return;
+  }
+
+  if (target && options.prdPath) {
+    printStructuredError({
+      error: {
+        code: "ambiguous-cleanup-target",
+        operation: "docs.cleanup.review",
+        message: "docs cleanup review accepts either a positional target or --prd, not both.",
+        remediation: "Use a positional doc-id/path for family cleanup, or use --prd to scope cleanup review to one PRD family.",
+      },
+    }, json);
+    process.exitCode = 1;
+    return;
+  }
+
+  const result = await buildCleanupReviewResult(documents, options.rootDir, {
+    target: target || undefined,
+    prdPath: options.prdPath,
+    includeTransient: hasFlag(flags, "include-session"),
+  });
+  if (isStructuredDocsError(result)) {
+    printStructuredError(result, json);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (json) {
+    printJson(result);
+    return;
+  }
+  printCleanupReview(result);
+}
+
+function parseCleanupPlanAction(
+  flags: Readonly<Record<string, readonly string[]>>,
+): CompletedRecordCleanupPlanAction | null {
+  const action = pickLast(flags, "action");
+  if (action === "archive" || action === "memo-conversion") return action;
+  return null;
 }
 
 async function cmdBdd(
@@ -2384,6 +2642,192 @@ async function buildCollectResult(
   };
 }
 
+async function buildCleanupReviewResult(
+  documents: readonly DocumentEnvelope[],
+  rootDir: string,
+  options: {
+    readonly target?: string;
+    readonly prdPath?: string;
+    readonly includeTransient: boolean;
+  },
+): Promise<CleanupReviewResult | StructuredDocsError> {
+  let scope: CleanupReviewResult["scope"] = "repo";
+  let scopedDocuments = documents;
+  let target = options.target;
+
+  if (options.prdPath) {
+    const resolvedPrd = resolveDocument(documents, options.prdPath);
+    if (!resolvedPrd) {
+      return docsGraphError(
+        "docs.cleanup.review",
+        "cleanup-prd-not-found",
+        `Cleanup review could not resolve PRD target "${options.prdPath}".`,
+        "Use --prd with a PRD markdown/JSON path that is already visible to docs control-plane adapters.",
+      );
+    }
+    scope = "prd";
+    target = options.prdPath;
+    scopedDocuments = collectFamilyOnlyScope(documents, resolvedPrd, {
+      familyOnly: true,
+      includeTransient: options.includeTransient,
+    }).documents;
+  } else if (options.target) {
+    const resolved = resolveDocument(documents, options.target);
+    if (!resolved) {
+      return docsGraphError(
+        "docs.cleanup.review",
+        "cleanup-target-not-found",
+        `Cleanup review could not resolve "${options.target}".`,
+        "Use a document id/path already visible to docs control-plane adapters, or omit the target to review all active completed records.",
+      );
+    }
+    scope = "family";
+    scopedDocuments = collectFamilyOnlyScope(documents, resolved, {
+      familyOnly: true,
+      includeTransient: options.includeTransient,
+    }).documents;
+  }
+
+  const completedRecords = await detectCompletedRecordsWithRalphIntegration({
+    rootDir,
+    documents: scopedDocuments,
+  });
+  const review = buildCompletedRecordCleanupReview({
+    documents: scopedDocuments,
+    completedRecords,
+  });
+
+  return {
+    ...(target ? { target } : {}),
+    scope,
+    counts: {
+      completedRecords: completedRecords.length,
+      candidates: review.candidates.length,
+      relatedDocuments: review.candidates.reduce((count, candidate) => count + candidate.relatedDocuments.length, 0),
+      diagnostics: review.diagnostics.length,
+    },
+    candidates: review.candidates,
+    diagnostics: review.diagnostics,
+  };
+}
+
+async function buildCleanupPlanResult(
+  documents: readonly DocumentEnvelope[],
+  rootDir: string,
+  options: {
+    readonly target: string;
+    readonly action: CompletedRecordCleanupPlanAction;
+    readonly dryRunDefaulted: boolean;
+  },
+): Promise<CleanupPlanResult | StructuredDocsError> {
+  const completedRecords = await detectCompletedRecordsWithRalphIntegration({
+    rootDir,
+    documents,
+  });
+  const plan = buildCompletedRecordCleanupPlan({
+    documents,
+    completedRecords,
+    target: options.target,
+    action: options.action,
+    dryRunDefaulted: options.dryRunDefaulted,
+  });
+  if (!plan) {
+    return docsGraphError(
+      "docs.cleanup.plan",
+      "cleanup-plan-target-not-found",
+      `Cleanup plan could not resolve completed record target "${options.target}".`,
+      "Run docs cleanup review --json first and then use one candidate's record path, document id, or paired PRD JSON path.",
+    );
+  }
+
+  return {
+    action: plan.action,
+    dryRunDefaulted: plan.dryRunDefaulted,
+    target: plan.target,
+    targetValidatedAs: plan.targetValidatedAs,
+    proposedOutputPath: plan.proposedOutputPath,
+    recommendationMatchesAction: plan.recommendationMatchesAction,
+    record: plan.record,
+    recommendation: plan.candidate.recommendation,
+    allowedActions: plan.candidate.allowedActions,
+    preservedEvidencePaths: plan.preservedEvidencePaths,
+    relatedDocumentPaths: plan.relatedDocumentPaths,
+    validationCommands: plan.validationCommands,
+    steps: plan.steps,
+    warnings: plan.warnings,
+  };
+}
+
+async function buildCleanupApplyResult(
+  documents: readonly DocumentEnvelope[],
+  rootDir: string,
+  options: {
+    readonly target: string;
+    readonly action: CompletedRecordCleanupPlanAction;
+  },
+): Promise<CleanupApplyResult | StructuredDocsError> {
+  const completedRecords = await detectCompletedRecordsWithRalphIntegration({
+    rootDir,
+    documents,
+  });
+
+  try {
+    const result = await applyCompletedRecordCleanup({
+      rootDir,
+      documents,
+      completedRecords,
+      target: options.target,
+      action: options.action,
+    });
+    if (!result) {
+      const plan = buildCompletedRecordCleanupPlan({
+        documents,
+        completedRecords,
+        target: options.target,
+        action: options.action,
+        dryRunDefaulted: false,
+      });
+      if (plan) {
+        return {
+          error: {
+            code: "unsupported-operation",
+            operation: "docs.cleanup.apply",
+            message: `docs cleanup apply does not support --action ${options.action} for target "${options.target}".`,
+            remediation: "Use docs cleanup plan to review the proposal, or choose a supported cleanup target/action combination with explicit output paths and preserved evidence links.",
+          },
+        };
+      }
+      return docsGraphError(
+        "docs.cleanup.apply",
+        "cleanup-apply-target-not-found",
+        `Cleanup apply could not resolve completed record target "${options.target}".`,
+        "Run docs cleanup review --json first and then use one candidate's record path, document id, or paired PRD JSON path.",
+      );
+    }
+    return result;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.startsWith("cleanup output path already exists:")) {
+      const path = message.slice("cleanup output path already exists:".length).trim();
+      return docsGraphError(
+        "docs.cleanup.apply",
+        "cleanup-output-exists",
+        `Cleanup apply would overwrite existing path "${path}".`,
+        "Choose a different target or move the existing archive output before retrying cleanup apply.",
+      );
+    }
+    if (message.includes("ENOENT")) {
+      return docsGraphError(
+        "docs.cleanup.apply",
+        "cleanup-source-missing",
+        `Cleanup apply could not find one of the planned source files for "${options.target}".`,
+        "Run docs cleanup review and docs cleanup plan again to confirm the target still exists in the current workspace.",
+      );
+    }
+    throw error;
+  }
+}
+
 async function buildClosureResult(
   documents: readonly DocumentEnvelope[],
   rootDir: string,
@@ -2632,21 +3076,21 @@ function collectClosureMissingItems(input: {
   }
 
   const concernSignals = collectClosureConcernSignals(input.scopedDocuments);
-  if (concernSignals.error && !hasClosureConcernEvidence(input.scopedDocuments, input.evidence, ERROR_EVIDENCE_KEYWORDS)) {
+  if (concernSignals.error && !hasClosureConcernEvidence(input.scopedDocuments, input.consumedRules, input.evidence, ERROR_EVIDENCE_KEYWORDS)) {
     missing.push({
       code: "error-policy-evidence",
       severity: "warning",
       message: "Error/failure concern is present but no error policy or failure-path evidence was found.",
     });
   }
-  if (concernSignals.permission && !hasClosureConcernEvidence(input.scopedDocuments, input.evidence, PERMISSION_EVIDENCE_KEYWORDS)) {
+  if (concernSignals.permission && !hasClosureConcernEvidence(input.scopedDocuments, input.consumedRules, input.evidence, PERMISSION_EVIDENCE_KEYWORDS)) {
     missing.push({
       code: "permission-policy-evidence",
       severity: "warning",
       message: "Permission/authorization concern is present but no permission policy evidence was found.",
     });
   }
-  if (concernSignals.observability && !hasClosureConcernEvidence(input.scopedDocuments, input.evidence, OBSERVABILITY_EVIDENCE_KEYWORDS)) {
+  if (concernSignals.observability && !hasClosureConcernEvidence(input.scopedDocuments, input.consumedRules, input.evidence, OBSERVABILITY_EVIDENCE_KEYWORDS)) {
     missing.push({
       code: "observability-evidence",
       severity: "warning",
@@ -2726,15 +3170,17 @@ function collectClosureConcernSignals(
 
 function hasClosureConcernEvidence(
   documents: readonly DocumentEnvelope[],
+  consumedRules: readonly DocumentSummary[],
   evidence: ClosureEvidenceSummary,
   keywords: readonly string[],
 ): boolean {
-  return hasClosureConcernPolicyEvidence(documents, keywords) &&
+  return hasClosureConcernPolicyEvidence(documents, consumedRules, keywords) &&
     hasClosureConcernVerificationEvidence(documents, evidence, keywords);
 }
 
 function hasClosureConcernPolicyEvidence(
   documents: readonly DocumentEnvelope[],
+  consumedRules: readonly DocumentSummary[],
   keywords: readonly string[],
 ): boolean {
   const policyDocuments = documents.filter((document) =>
@@ -2743,7 +3189,10 @@ function hasClosureConcernPolicyEvidence(
     asString(document.metadata.scope) === "constraint" ||
     asString(document.metadata.aspect) === "tech_constraint"
   );
-  const text = policyDocuments.map(closureSignalText).join("\n").toLowerCase();
+  const text = [
+    ...policyDocuments.map(closureSignalText),
+    ...consumedRules.map(closureSummaryText),
+  ].join("\n").toLowerCase();
   return matchesAnyKeyword(text, keywords);
 }
 
@@ -2758,6 +3207,8 @@ function hasClosureConcernVerificationEvidence(
   );
   const text = [
     ...verificationDocuments.map(closureSignalText),
+    ...evidence.tests.map(closureSummaryText),
+    ...evidence.cases.map(closureSummaryText),
     ...evidence.evidence.map((item) => `${item.id} ${item.kind ?? ""} ${item.summary ?? ""} ${metadataSearchText(item.metadata)}`),
     ...evidence.sources
       .filter((source) => isTestLikePath(source.path) || isTestLikePath(asString(source.metadata.value)))
@@ -2773,6 +3224,15 @@ function closureSignalText(document: DocumentEnvelope): string {
     titleOf(document),
     metadataSearchText(document.metadata),
     ...document.links.map((link) => `${link.type} ${link.targetId}`),
+  ].join(" ");
+}
+
+function closureSummaryText(document: DocumentSummary): string {
+  return [
+    document.stableId,
+    document.path,
+    document.title,
+    metadataSearchText(document.metadata),
   ].join(" ");
 }
 
@@ -4675,6 +5135,55 @@ function printPrdCompletionSyncPreview(result: PrdCompletionSyncPreview): void {
     `${candidate.path}${candidate.rowIndex ? ` row ${candidate.rowIndex}` : ""}${candidate.evidenceIds.length > 0 ? ` evidence=${candidate.evidenceIds.join(",")}` : ""}`
   );
   printDiagnostics([...result.sessionDrift, ...result.diagnostics]);
+}
+
+function printCleanupReview(result: CleanupReviewResult): void {
+  console.log(`docs cleanup review: ${result.target ?? "repo"}`);
+  console.log(`  scope: ${result.scope}`);
+  console.log(`  completed records: ${result.counts.completedRecords}`);
+  console.log(`  candidates: ${result.counts.candidates}`);
+  console.log(`  diagnostics: ${result.counts.diagnostics}`);
+  printNamedCollection("cleanup candidates", result.candidates, (candidate) => {
+    const family = candidate.familyId ? ` family=${candidate.familyId}` : "";
+    const paired = candidate.pairedDocument ? ` paired=${candidate.pairedDocument.path}` : "";
+    return `[${candidate.record.kind}] ${candidate.record.path} -> ${candidate.recommendation.action}${family}${paired}`;
+  });
+  for (const candidate of result.candidates) {
+    console.log(`    reason: ${candidate.recommendation.reason}`);
+    console.log(`    allowed: ${candidate.allowedActions.join(", ")}`);
+    console.log(
+      `    related docs/sources/evidence/diagnostics: ${candidate.evidenceSummary.documents}/${candidate.evidenceSummary.sources}/${candidate.evidenceSummary.evidence}/${candidate.evidenceSummary.diagnostics}`,
+    );
+  }
+  printDiagnostics(result.diagnostics);
+}
+
+function printCleanupPlan(result: CleanupPlanResult): void {
+  console.log(`docs cleanup plan: ${result.target}`);
+  console.log(`  action: ${result.action}`);
+  console.log(`  dry-run defaulted: ${result.dryRunDefaulted ? "yes" : "no"}`);
+  console.log(`  target validated as: ${result.targetValidatedAs}`);
+  console.log(`  proposed output: ${result.proposedOutputPath}`);
+  console.log(`  recommendation match: ${result.recommendationMatchesAction ? "yes" : "no"}`);
+  console.log(`  review recommendation: ${result.recommendation.action}`);
+  console.log(`    reason: ${result.recommendation.reason}`);
+  printNamedCollection("cleanup steps", result.steps, (step) => step);
+  printNamedCollection("validation commands", result.validationCommands, (command) => command);
+  printNamedCollection("preserved evidence paths", result.preservedEvidencePaths, (path) => path);
+  if (result.warnings.length > 0) {
+    printNamedCollection("warnings", result.warnings, (warning) => warning);
+  }
+}
+
+function printCleanupApply(result: CleanupApplyResult): void {
+  console.log(`docs cleanup apply: ${result.target}`);
+  console.log(`  action: ${result.action}`);
+  console.log(`  target validated as: ${result.targetValidatedAs}`);
+  printNamedCollection("moved", result.moved, (move) => `[${move.kind}] ${move.from} -> ${move.to}`);
+  printNamedCollection("preserved evidence paths", result.preservedEvidencePaths, (path) => path);
+  if (result.warnings.length > 0) {
+    printNamedCollection("warnings", result.warnings, (warning) => warning);
+  }
 }
 
 function toPrdToRalphJsonOutput(result: PrdToRalphJsonPreview): object {
