@@ -21,9 +21,9 @@ import {
   type NestFastifyApplication,
 } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
+import { createInMemorySqliteAuthorizationGraphFixture } from "@qa-sdk/sim-authorization-graph-provider/memory-sqlite-fixture";
 import type { AuditRecorder } from "permission-engine";
 import type { AuthorizationGraphStore } from "authorization-ontology";
-import { InMemoryAuthorizationGraphStore } from "authorization-ontology";
 import { HealthModule } from "./health/health.module.js";
 import {
   AuditExplorerService,
@@ -90,9 +90,12 @@ export async function bootstrapTestAuditBrowserApi(
     );
   }
 
+  const graphFixture = args.graphStore
+    ? null
+    : await createInMemorySqliteAuthorizationGraphFixture();
   const TestAppModule = buildTestAppModule(
     args.recorder,
-    args.graphStore ?? new InMemoryAuthorizationGraphStore(),
+    args.graphStore ?? graphFixture!.store,
   );
   const moduleRef = await Test.createTestingModule({
     imports: [TestAppModule],
@@ -109,6 +112,7 @@ export async function bootstrapTestAuditBrowserApi(
     if (closed) return;
     closed = true;
     await app.close();
+    graphFixture?.close();
   };
 
   return { app, close };

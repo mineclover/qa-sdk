@@ -65,6 +65,7 @@ sim-metrics-collector (5200) — Prometheus exporter
 qa-sdk 본체:
   qa-sdk-db (5434)            — PG 운영 DB
   ingest-server (3200)        — 모든 서비스 로그/event 수집 + density 소스
+  sim.authorization_graph_snapshots — delegated graph snapshot persistence
 ```
 
 ## 4. 환경 변수
@@ -164,6 +165,8 @@ curl http://localhost:8888/audit/firstFailure/<root-span-id> -H "Authorization: 
 # delegated graph snapshot 조회
 curl http://localhost:8888/audit/graphs/<graph-root-id>/latest -H "Authorization: Bearer $TOKEN" | jq .
 ```
+
+기본 docker/PG 경로에서는 pm-api가 delegated graph snapshot을 `AuthorizationGraphStore` persistent adapter로 저장하고, audit-browser-api가 같은 table을 읽는다.
 
 ### NestJS 서비스 부팅 실패
 

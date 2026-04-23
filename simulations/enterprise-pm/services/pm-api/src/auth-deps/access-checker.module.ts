@@ -11,10 +11,11 @@ import {
   type InstancePolicyEvaluator,
   type ResourcePolicyRegistry,
 } from "permission-engine";
+import { createSimAuthorizationGraphStore } from "@qa-sdk/sim-authorization-graph-provider";
 import { createResourcePolicyRegistry, RESOURCE_POLICIES_DDL } from "resource-policy-store";
 import { createSimAuditRecorder } from "@qa-sdk/sim-audit-recorder-provider";
 import { AUDIT_ENTRIES_DDL } from "audit-recorder-store";
-import { InMemoryAuthorizationGraphStore, type AuthorizationGraphStore } from "authorization-ontology";
+import type { AuthorizationGraphStore } from "authorization-ontology";
 import { DisjointUnionIndex } from "weighted-index";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -153,7 +154,17 @@ export class AccessCheckerModule {
   static forRootAsync(opts: AccessCheckerAsyncOptions): DynamicModule {
     const graphStoreProvider: Provider = {
       provide: PROJECT_AUTHORIZATION_GRAPH_STORE,
-      useValue: new InMemoryAuthorizationGraphStore() satisfies AuthorizationGraphStore,
+      useFactory: async (...deps: unknown[]) => {
+        const resolved = await opts.useFactory(...deps);
+        if (!resolved.db || !resolved.dialect) {
+          throw new Error("AccessCheckerModule: db + dialect 또는 overrideRegistry 필수");
+        }
+        return createSimAuthorizationGraphStore({
+          dialect: resolved.dialect,
+          db: resolved.db,
+        }) satisfies Promise<AuthorizationGraphStore>;
+      },
+      inject: opts.inject ?? [],
     };
     const delegationGraphProvider: Provider = {
       provide: PROJECT_DELEGATION_GRAPH,

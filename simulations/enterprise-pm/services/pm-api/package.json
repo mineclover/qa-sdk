@@ -36,6 +36,7 @@
     "@qa-sdk/logger": "workspace:*",
     "@qa-sdk/otel": "workspace:*",
     "@qa-sdk/sim-audit-recorder-provider": "workspace:*",
+    "@qa-sdk/sim-authorization-graph-provider": "workspace:*",
     "@qa-sdk/sim-bitmap-cache": "workspace:*",
     "authorization-ontology": "workspace:*",
     "audit-recorder-store": "workspace:*",

@@ -2,7 +2,8 @@
 // @def.doc authorization-ontology-nested-audit-tracing
 
 import { Global, Module } from "@nestjs/common";
-import { InMemoryAuthorizationGraphStore, type AuthorizationGraphStore } from "authorization-ontology";
+import { createSimAuthorizationGraphStore } from "@qa-sdk/sim-authorization-graph-provider";
+import type { AuthorizationGraphStore } from "authorization-ontology";
 import {
   AuditExplorerService,
   AUDIT_RECORDER,
@@ -72,7 +73,28 @@ import { GraphExplorerController } from "../graph-explorer/graph-explorer.contro
     },
     {
       provide: AUTHORIZATION_GRAPH_STORE,
-      useValue: new InMemoryAuthorizationGraphStore() satisfies AuthorizationGraphStore,
+      useFactory: async (): Promise<AuthorizationGraphStore> => {
+        const connection = await createConnection(
+          env.QA_DB_DIALECT === "sqlite"
+            ? {
+                dialect: "sqlite",
+                sqlitePath: env.QA_SQLITE_PATH,
+              }
+            : {
+                dialect: "pg",
+                pgHost: env.QA_PG_HOST!,
+                pgPort: env.QA_PG_PORT!,
+                pgDatabase: env.QA_PG_DATABASE!,
+                pgUser: env.QA_PG_USER!,
+                pgPassword: env.QA_PG_PASSWORD!,
+                pgSchema: env.QA_PG_SCHEMA ?? "sim",
+              },
+        );
+        return createSimAuthorizationGraphStore({
+          dialect: connection.dialect,
+          db: connection.db,
+        });
+      },
     },
   ],
   exports: [AuditExplorerService, GraphExplorerService, AUDIT_RECORDER, AUTHORIZATION_GRAPH_STORE],
