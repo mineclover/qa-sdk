@@ -236,6 +236,7 @@ interface ExploreResult {
 
 type ExploreMode = "intent" | "map" | "diagnostic";
 type SelectorKind = "doc" | "service" | "owner" | "family";
+type SelectorScope = "root" | "family" | "owned";
 
 interface SelectorRoute {
   readonly kind: SelectorKind;
@@ -245,6 +246,7 @@ interface SelectorRoute {
 interface SearchResult {
   readonly query: string;
   readonly selector?: SelectorRoute;
+  readonly selectorScope?: SelectorScope;
   readonly rootIndex?: DocumentSummary;
   readonly filters: {
     readonly kinds: readonly string[];
@@ -597,7 +599,7 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "qa-sdk docs collect <doc-id|path> [--graph] [--family-only] [--include-session] [--axis <csv>] [--filter-axis <csv>] [--kind <csv>] [--role <csv>] [--follow-up-category <csv>] [--include-archive] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
       "qa-sdk docs closure <doc-id|path|source-file[:symbol]> [--json]",
       "qa-sdk docs graph <target> [--axis <csv>] [--filter-axis <csv>] [--kind <csv>] [--role <csv>] [--follow-up-category <csv>] [--include-archive] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--verbose] [--json]",
-      "qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]",
+      "qa-sdk docs search <selector|query> [--selector-scope root|family|owned] [--kind <kind>] [--metadata key=value] [--json]",
       "qa-sdk docs drift [--prd <file>] [--include-session] [--json]",
       "qa-sdk docs bdd list <doc-id|path> [--family-only] [--json]",
       "qa-sdk docs bdd validate <doc-id|path> [--family-only] [--json]",
@@ -608,7 +610,7 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "qa-sdk docs prd context <topic|doc-id> [--family-only] [--include-session] [--kind <csv>] [--role <csv>] [--filter-axis <csv>] [--follow-up-category <csv>] [--include-archive] [--json]",
       "qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]",
       "qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]",
-      "qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--family-only] [--include-session] [--json]",
+      "qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--family-only] [--include-session] [--strict] [--evidence-only] [--json]",
       "qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run] [--json]",
     ],
   },
@@ -638,6 +640,8 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "--output <file>              PRD markdown scaffold or PRD JSON conversion output path",
       "--rule <json-file|inline-json> metadata transform rule for dry-run preview",
       "--dry-run                    preview only; this is the default",
+      "--strict                     fail preview when blocked promotions, session drift, or diagnostics remain",
+      "--evidence-only              count only evidence refs toward promotion support; ignore source/test-only proof",
       "--apply                      unsupported in this PRD; returns a structured error",
       "--artifact-registry <file>   artifact evidence registry path (repeatable)",
       "--json                       emit structured JSON",
@@ -1607,13 +1611,20 @@ async function cmdSearch(
   const metadataFilter = parseMetadataFilters(pickAll(flags, "metadata", []));
   const kinds = pickAll(flags, "kind", []).flatMap(splitCsv);
   const selector = parseSelectorRoute(query);
+  const selectorScope = selector ? parseSelectorScope(flags) : undefined;
+  if (selector && !selectorScope) {
+    console.error("Usage: qa-sdk docs search <selector|query> [--selector-scope root|family|owned] [--kind <kind>] [--metadata key=value] [--json]");
+    process.exitCode = 1;
+    return;
+  }
   const selectorRoot = selector ? resolveSelectorDocument(documents, selector) : undefined;
   const selectorDocuments = selector
-    ? selectSelectorSearchScope(documents, selector, selectorRoot)
+    ? selectSelectorSearchScope(documents, selector, selectorRoot, selectorScope ?? "root")
     : documents;
   const result: SearchResult = {
     query,
     ...(selector ? { selector } : {}),
+    ...(selectorScope ? { selectorScope } : {}),
     ...(selectorRoot ? { rootIndex: summarizeDocument(selectorRoot) } : {}),
     filters: {
       kinds,
@@ -1842,6 +1853,12 @@ function parseExploreMode(flags: Readonly<Record<string, readonly string[]>>): E
   return null;
 }
 
+function parseSelectorScope(flags: Readonly<Record<string, readonly string[]>>): SelectorScope | null {
+  const raw = pickLast(flags, "selector-scope") ?? "root";
+  if (raw === "root" || raw === "family" || raw === "owned") return raw;
+  return null;
+}
+
 function isStructuredDocsError(value: unknown): value is StructuredDocsError {
   return Boolean(
     value &&
@@ -1988,7 +2005,7 @@ async function cmdPrd(
     console.error("Usage: qa-sdk docs prd context <topic|doc-id> [--family-only] [--include-session] [--kind <csv>] [--role <csv>] [--filter-axis <csv>] [--follow-up-category <csv>] [--include-archive] [--json]");
     console.error("Usage: qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]");
     console.error("Usage: qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]");
-    console.error("Usage: qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--family-only] [--include-session] [--json]");
+    console.error("Usage: qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--family-only] [--include-session] [--strict] [--evidence-only] [--json]");
     process.exitCode = 1;
     return;
   }
@@ -2046,8 +2063,13 @@ async function cmdPrd(
       dryRunDefaulted: !hasFlag(flags, "dry-run"),
       familyOnly: hasFlag(flags, "family-only"),
       includeTransient: hasFlag(flags, "include-session"),
+      strict: hasFlag(flags, "strict"),
+      evidenceOnly: hasFlag(flags, "evidence-only"),
     });
     if (hasErrorDiagnostic(result.diagnostics)) {
+      process.exitCode = 1;
+    }
+    if (result.options.strict && result.counts.strictFailures > 0) {
       process.exitCode = 1;
     }
     if (json) {
@@ -3722,13 +3744,18 @@ function selectSelectorSearchScope(
   documents: readonly DocumentEnvelope[],
   selector: SelectorRoute,
   rootIndex: DocumentEnvelope | undefined,
+  scope: SelectorScope,
 ): readonly DocumentEnvelope[] {
   if (!rootIndex) return selectDocumentsBySelector(documents, selector);
-  if (!rootIndex.familyId) return [rootIndex];
-  return uniqueDocuments([
-    rootIndex,
-    ...collectFamilyOnlyScope(documents, { document: rootIndex }, { familyOnly: true }).documents,
-  ]);
+  if (scope === "root") return [rootIndex];
+  if (scope === "family") {
+    if (!rootIndex.familyId) return [rootIndex];
+    return uniqueDocuments([
+      rootIndex,
+      ...collectFamilyOnlyScope(documents, { document: rootIndex }, { familyOnly: true }).documents,
+    ]);
+  }
+  return selectDocumentsBySelector(documents, selector);
 }
 
 function selectDocumentsBySelector(
@@ -3765,14 +3792,19 @@ function selectorRootScore(
   const tags = asStringArray(document.metadata.tags).map((tag) => tag.toLowerCase());
   const tier = asString(document.metadata.tier)?.toLowerCase();
   const depth = asString(document.metadata.depth)?.toLowerCase();
+  const path = document.path.toLowerCase();
+  const type = asString(document.metadata.type)?.toLowerCase();
   let score = 0;
   if (tags.includes("entry-point")) score += 120;
   if (depth === "overview") score += 100;
   if (tier === "layout") score += 90;
   else if (tier === "system") score += 80;
-  if (document.kind === "spec" && asString(document.metadata.type) === "design") score += 70;
+  if (path.startsWith("docs/specs/")) score += 80;
+  if (path.startsWith("docs/proposals/")) score -= 180;
+  if (document.kind === "spec" && type === "design") score += 70;
   else if (document.kind === "spec") score += 60;
   else if (document.kind === "rule") score += 40;
+  else if (type === "knowledge") score -= 40;
   if (selector.kind === "service" || selector.kind === "owner") {
     if (stableId === `${value}-system`) score += 240;
     if (stableId === value) score += 200;
@@ -4288,6 +4320,7 @@ function printSearch(result: SearchResult): void {
   console.log(`docs search: "${result.query}" -> ${result.results.length} result(s)`);
   if (result.selector) {
     console.log(`  selector: ${result.selector.kind}=${result.selector.value}`);
+    if (result.selectorScope) console.log(`  selector scope: ${result.selectorScope}`);
     if (result.rootIndex) {
       console.log(`  root index: [${result.rootIndex.kind}] ${result.rootIndex.stableId}`);
     }
@@ -4576,10 +4609,13 @@ function printPrdCompletionSyncPreview(result: PrdCompletionSyncPreview): void {
     console.log(`  completed stories: ${result.prd.completedStoryCount}/${result.prd.storyCount}`);
   }
   console.log(`  dry-run defaulted: ${result.dryRunDefaulted ? "yes" : "no"}`);
+  console.log(`  strict: ${result.options.strict ? "yes" : "no"}`);
+  console.log(`  evidence-only: ${result.options.evidenceOnly ? "yes" : "no"}`);
   console.log(`  affected docs: ${result.counts.affectedDocs}`);
   console.log(`  open TODO candidates: ${result.counts.openTodoCandidates}`);
   console.log(`  spec update candidates: ${result.counts.specUpdateCandidates}`);
   console.log(`  blocked promotions: ${result.counts.blockedPromotions}`);
+  console.log(`  strict failures: ${result.counts.strictFailures}`);
   console.log(`  roadmap update candidates: ${result.counts.roadmapUpdateCandidates}`);
   console.log(`  scenario matrix update candidates: ${result.counts.scenarioMatrixUpdateCandidates}`);
   console.log(`  session drift: ${result.counts.sessionDrift}`);
@@ -4587,13 +4623,13 @@ function printPrdCompletionSyncPreview(result: PrdCompletionSyncPreview): void {
     `${story.id}: ${story.title}${story.evidenceRefs.length > 0 ? ` evidence=${story.evidenceRefs.join(",")}` : ""}`
   );
   printNamedCollection("affected docs", result.affectedDocs.slice(0, 12), (document) =>
-    `[${document.kind}] ${document.stableId} ${document.path} (${document.reason})`
+    `[${document.kind}] ${document.stableId} ${document.path} (${document.reason}, score=${document.score})`
   );
   printNamedCollection("open TODO candidates", result.openTodoCandidates, (candidate) =>
-    `${candidate.promotionState} ${candidate.text} (${candidate.path} ${candidate.pointer})`
+    `${candidate.promotionState} score=${candidate.score.total} ${candidate.text} (${candidate.path} ${candidate.pointer})${candidate.blockedReasons[0] ? ` :: ${candidate.blockedReasons[0]}` : ""}`
   );
   printNamedCollection("spec update candidates", result.specUpdateCandidates, (candidate) =>
-    `${candidate.promotionState} ${candidate.documentId} ${candidate.path}`
+    `${candidate.promotionState} score=${candidate.score.total} ${candidate.documentId} ${candidate.path}${candidate.blockedReasons[0] ? ` :: ${candidate.blockedReasons[0]}` : ""}`
   );
   printNamedCollection("roadmap update candidates", result.roadmapUpdateCandidates, (candidate) =>
     `${candidate.documentId} ${candidate.path}`

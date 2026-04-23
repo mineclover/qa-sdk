@@ -104,10 +104,11 @@ export const DOCS_COMMAND_DESCRIPTORS = [
   {
     id: "docs.search",
     path: ["search"],
-    usage: "qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]",
+    usage: "qa-sdk docs search <selector|query> [--selector-scope root|family|owned] [--kind <kind>] [--metadata key=value] [--json]",
     handlerKey: "docs.search",
     options: [
       { flag: "--kind", valueHint: "<kind>", type: "string", description: "document kind filter, repeatable or comma-separated" },
+      { flag: "--selector-scope", valueHint: "root|family|owned", type: "string", description: "selector result scope when query is service:/owner:/family:/doc:" },
       { flag: "--metadata", valueHint: "key=value", type: "string", description: "metadata exact-match filter, repeatable or comma-separated" },
       { flag: "--json", type: "boolean", description: "emit structured JSON" },
       { flag: "--root", valueHint: "<dir>", type: "string", description: "repository root override" },

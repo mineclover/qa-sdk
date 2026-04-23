@@ -546,6 +546,31 @@ Track inventory scenario coverage.
     return rootDir;
   }
 
+  async function addSourceOnlyCompletionCandidate(workspace: string): Promise<void> {
+    await writeFile(join(workspace, "docs/specs/checkout/checkout-source-only.spec.md"), `---
+def:
+  id: checkout-source-only
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: approved
+source: packages/checkout/src/completion.ts
+---
+# Checkout Source Only
+
+## 목적 ^purpose
+
+Provide source-only completion proof for PRD sync precision tests.
+`);
+    const prdPath = join(workspace, "tasks/checkout-prd.json");
+    const prdJson = JSON.parse(await readFile(prdPath, "utf8")) as {
+      userStories: Array<{ completionNotes?: string }>;
+    };
+    prdJson.userStories[0]!.completionNotes = "Completed by agent. See packages/checkout/src/completion.ts.";
+    await writeFile(prdPath, JSON.stringify(prdJson, null, 2));
+  }
+
   function output(): string {
     return vi.mocked(console.log).mock.calls.map((call) => String(call[0])).join("\n");
   }
@@ -1580,10 +1605,19 @@ Define the public payments API contract.
     const text = output();
     expect(text).toContain('docs search: "service:payments"');
     expect(text).toContain("selector: service=payments");
+    expect(text).toContain("selector scope: root");
     expect(text).toContain("root index: [spec] payments-system");
     expect(text).toContain("bounded by selector root-index routing");
     expect(text).toContain("[spec] payments-system");
     expect(text).not.toContain("warning: text search is broad");
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["search", "service:payments", "--root", workspace, "--selector-scope=owned"]);
+
+    const ownedText = output();
+    expect(ownedText).toContain("selector scope: owned");
+    expect(ownedText).toContain("[spec] payments-system");
+    expect(ownedText).toContain("[spec] payments-api");
   });
 
   it("[contract:docs-control-plane.bdd.cli.list-contracts.v1][contract:docs-control-plane.bdd.cli.validate-contracts.v1][contract:docs-control-plane.bdd.cli.units-grouped.v1] exposes BDD contracts and units through docs bdd commands", async () => {
@@ -4692,6 +4726,141 @@ Archived checkout work.
     expect(process.exitCode).toBeUndefined();
   });
 
+  it("supports evidence-only completion review mode", async () => {
+    const workspace = await createFixtureWorkspace();
+    await addSourceOnlyCompletionCandidate(workspace);
+
+    await cliDocs([
+      "prd",
+      "sync-completion",
+      "--prd",
+      "tasks/checkout-prd.json",
+      "--root",
+      workspace,
+      "--evidence-only",
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      options: { evidenceOnly: boolean; strict: boolean };
+      counts: { blockedPromotions: number; strictFailures: number };
+      specUpdateCandidates: Array<{
+        documentId: string;
+        promotionState: string;
+        support: { source: number; test: number; evidence: number; qualifying: number; ignored: number };
+        blockedReasons: string[];
+        score: { total: number; strength: string };
+      }>;
+    }>();
+
+    expect(result.options).toMatchObject({
+      evidenceOnly: true,
+      strict: false,
+    });
+    expect(result.counts.blockedPromotions).toBeGreaterThanOrEqual(1);
+    expect(result.specUpdateCandidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          documentId: "checkout-spec",
+          promotionState: "eligible",
+          support: expect.objectContaining({
+            evidence: expect.any(Number),
+            qualifying: expect.any(Number),
+          }),
+        }),
+        expect.objectContaining({
+          documentId: "checkout-source-only",
+          promotionState: "blocked",
+          support: expect.objectContaining({
+            source: 2,
+            evidence: 0,
+            qualifying: 0,
+            ignored: 2,
+          }),
+          blockedReasons: expect.arrayContaining([
+            expect.stringContaining("--evidence-only"),
+          ]),
+          score: expect.objectContaining({
+            total: expect.any(Number),
+          }),
+        }),
+      ]),
+    );
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  it("fails strict completion sync for low-confidence source-only candidates", async () => {
+    const workspace = await createFixtureWorkspace();
+    await addSourceOnlyCompletionCandidate(workspace);
+
+    await cliDocs([
+      "prd",
+      "sync-completion",
+      "--prd",
+      "tasks/checkout-prd.json",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const defaultResult = parsedOutput<{
+      specUpdateCandidates: Array<{ documentId: string; promotionState: string; score: { total: number } }>;
+    }>();
+    expect(defaultResult.specUpdateCandidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          documentId: "checkout-source-only",
+          promotionState: "eligible",
+        }),
+      ]),
+    );
+    expect(process.exitCode).toBeUndefined();
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs([
+      "prd",
+      "sync-completion",
+      "--prd",
+      "tasks/checkout-prd.json",
+      "--root",
+      workspace,
+      "--strict",
+      "--json",
+    ]);
+
+    const strictResult = parsedOutput<{
+      options: { strict: boolean; evidenceOnly: boolean };
+      counts: { strictFailures: number; blockedPromotions: number };
+      specUpdateCandidates: Array<{
+        documentId: string;
+        promotionState: string;
+        blockedReasons: string[];
+        score: { total: number; strength: string };
+      }>;
+    }>();
+    expect(strictResult.options).toMatchObject({
+      strict: true,
+      evidenceOnly: false,
+    });
+    expect(strictResult.counts.strictFailures).toBeGreaterThanOrEqual(1);
+    expect(strictResult.counts.blockedPromotions).toBeGreaterThanOrEqual(1);
+    expect(strictResult.specUpdateCandidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          documentId: "checkout-source-only",
+          promotionState: "blocked",
+          blockedReasons: expect.arrayContaining([
+            expect.stringContaining("strict mode requires completion score"),
+          ]),
+          score: expect.objectContaining({
+            strength: "weak",
+          }),
+        }),
+      ]),
+    );
+    expect(process.exitCode).toBe(1);
+  });
+
   it("includes ralph session state in completion sync only when requested", async () => {
     const workspace = await createFixtureWorkspace();
 
@@ -4755,7 +4924,7 @@ Mentions checkout without being linked to the active PRD family.
     ]);
 
     const result = parsedOutput<{
-      affectedDocs: Array<{ kind: string; stableId: string; path: string; reason: string }>;
+      affectedDocs: Array<{ kind: string; stableId: string; path: string; reason: string; reasons: string[] }>;
       counts: { sessionDrift: number };
       openTodoCandidates: Array<{ documentId: string; path: string }>;
     }>();
@@ -4763,9 +4932,9 @@ Mentions checkout without being linked to the active PRD family.
       expect.arrayContaining([
         expect.objectContaining({ kind: "prd", stableId: "tasks/checkout-prd", reason: "role" }),
         expect.objectContaining({ kind: "ralph-prd-json", stableId: "tasks/checkout-prd", reason: "target" }),
-        expect.objectContaining({ kind: "spec", stableId: "checkout-spec", reason: "trace" }),
-        expect.objectContaining({ kind: "todo", stableId: "checkout-todo", reason: "trace" }),
-        expect.objectContaining({ kind: "plan", stableId: "checkout-plan", reason: "trace" }),
+        expect.objectContaining({ kind: "spec", stableId: "checkout-spec", reasons: expect.arrayContaining(["trace"]) }),
+        expect.objectContaining({ kind: "todo", stableId: "checkout-todo", reasons: expect.arrayContaining(["trace"]) }),
+        expect.objectContaining({ kind: "plan", stableId: "checkout-plan", reasons: expect.arrayContaining(["trace"]) }),
         expect.objectContaining({ kind: "rule", stableId: "checkout-rule", reason: "role" }),
         expect.objectContaining({ kind: "spec", stableId: "checkout-child", reason: "composition" }),
       ]),
@@ -4793,7 +4962,7 @@ Mentions checkout without being linked to the active PRD family.
       "--json",
     ]);
     const withSession = parsedOutput<{
-      affectedDocs: Array<{ kind: string; path: string; reason: string }>;
+      affectedDocs: Array<{ kind: string; path: string; reason: string; reasons: string[] }>;
       counts: { sessionDrift: number };
     }>();
     expect(withSession.affectedDocs).toEqual(
