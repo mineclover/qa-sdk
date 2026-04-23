@@ -38,6 +38,7 @@
     "@qa-sdk/sim-bitmap-cache": "workspace:*",
     "@qa-sdk/sim-otel-utils": "workspace:*",
     "audit-recorder-store": "workspace:*",
+    "authorization-ontology": "workspace:*",
     "db-bootstrap": "workspace:*",
     "drizzle-orm": "catalog:",
     "permission-engine": "workspace:*",

@@ -57,7 +57,7 @@ gateway (8888) — JWT bitmap embed + traceparent
    ├─ notification-api (4700)
    ├─ reporting-api (4800)    [Report / DailyMetric / GET /density]
    ├─ document-api (4900)
-   └─ audit-browser-api (5100) [audit-recorder 조회 API]
+   └─ audit-browser-api (5100) [audit-recorder + authorization graph snapshot 조회 API]
 
 sim-redis (6379) — pub/sub bitmap:invalidate
 sim-metrics-collector (5200) — Prometheus exporter
@@ -160,6 +160,9 @@ curl http://localhost:8888/audit/trace/<root-span-id> -H "Authorization: Bearer 
 
 # firstFailure 조회
 curl http://localhost:8888/audit/firstFailure/<root-span-id> -H "Authorization: Bearer $TOKEN" | jq .
+
+# delegated graph snapshot 조회
+curl http://localhost:8888/audit/graphs/<graph-root-id>/latest -H "Authorization: Bearer $TOKEN" | jq .
 ```
 
 ### NestJS 서비스 부팅 실패

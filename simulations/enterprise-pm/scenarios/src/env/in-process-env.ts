@@ -117,6 +117,7 @@ export async function bootstrapInProcess(
   const pmHandle = await pmBootstrap.bootstrapTestApi({
     overrideAudit: sharedRecorder,
   });
+  const pmGraphStore = pmHandle.app.get(pmBootstrap.PROJECT_AUTHORIZATION_GRAPH_STORE);
 
   // 4. approval-api bootstrap (overrideAudit)
   const approvalBootstrap = await import(
@@ -132,6 +133,7 @@ export async function bootstrapInProcess(
   );
   const auditBrowserHandle = await auditBrowserBootstrap.bootstrapTestAuditBrowserApi({
     recorder: sharedRecorder,
+    graphStore: pmGraphStore,
   });
   // audit-browser-api 는 NestJS app 이지만 listen 안 된 상태 — listen 필요
   await auditBrowserHandle.app.listen(0, "127.0.0.1");

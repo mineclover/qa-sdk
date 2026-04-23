@@ -2,6 +2,7 @@
 // @def.doc authorization-ontology-nested-audit-tracing
 
 import { Global, Module } from "@nestjs/common";
+import { InMemoryAuthorizationGraphStore, type AuthorizationGraphStore } from "authorization-ontology";
 import {
   AuditExplorerService,
   AUDIT_RECORDER,
@@ -13,6 +14,11 @@ import { createConnection } from "db-bootstrap";
 import { env } from "../config/env.js";
 import type { AuditRecorder } from "permission-engine";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import {
+  AUTHORIZATION_GRAPH_STORE,
+  GraphExplorerService,
+} from "../graph-explorer/graph-explorer.service.js";
+import { GraphExplorerController } from "../graph-explorer/graph-explorer.controller.js";
 
 /**
  * AUDIT_RECORDER provider — 실 PgAuditRecorder / SqliteAuditRecorder 주입.
@@ -26,9 +32,10 @@ import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
  */
 @Global()
 @Module({
-  controllers: [AuditExplorerController],
+  controllers: [AuditExplorerController, GraphExplorerController],
   providers: [
     AuditExplorerService,
+    GraphExplorerService,
     {
       provide: AUDIT_RECORDER,
       useFactory: async (): Promise<AuditRecorder> => {
@@ -63,7 +70,11 @@ import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
         });
       },
     },
+    {
+      provide: AUTHORIZATION_GRAPH_STORE,
+      useValue: new InMemoryAuthorizationGraphStore() satisfies AuthorizationGraphStore,
+    },
   ],
-  exports: [AuditExplorerService, AUDIT_RECORDER],
+  exports: [AuditExplorerService, GraphExplorerService, AUDIT_RECORDER, AUTHORIZATION_GRAPH_STORE],
 })
 export class AuditExplorerModule {}

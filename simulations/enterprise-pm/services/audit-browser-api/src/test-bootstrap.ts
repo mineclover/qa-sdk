@@ -22,16 +22,25 @@ import {
 } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
 import type { AuditRecorder } from "permission-engine";
+import type { AuthorizationGraphStore } from "authorization-ontology";
+import { InMemoryAuthorizationGraphStore } from "authorization-ontology";
 import { HealthModule } from "./health/health.module.js";
 import {
   AuditExplorerService,
   AUDIT_RECORDER,
 } from "./audit-explorer/audit-explorer.service.js";
 import { AuditExplorerController } from "./audit-explorer/audit-explorer.controller.js";
+import {
+  AUTHORIZATION_GRAPH_STORE,
+  GraphExplorerService,
+} from "./graph-explorer/graph-explorer.service.js";
+import { GraphExplorerController } from "./graph-explorer/graph-explorer.controller.js";
 
 export interface BootstrapArgs {
   /** 외부에서 이미 생성된 AuditRecorder. null/undefined 불허. */
   recorder: AuditRecorder;
+  /** 외부에서 공유하는 authorization graph store. 미주입 시 in-memory 빈 store. */
+  graphStore?: AuthorizationGraphStore;
 }
 
 export interface BootstrapHandle {
@@ -43,22 +52,30 @@ export interface BootstrapHandle {
  * Test 전용 AuditExplorerModule — 운영 module 의 useFactory (실 DB 연결 시도) 를
  * 피하기 위해 외부 recorder 를 useValue 로 직접 주입. AppModule import 하지 않음.
  */
-function buildTestAuditExplorerModule(recorder: AuditRecorder) {
+function buildTestAuditExplorerModule(
+  recorder: AuditRecorder,
+  graphStore: AuthorizationGraphStore,
+) {
   @Global()
   @Module({
-    controllers: [AuditExplorerController],
+    controllers: [AuditExplorerController, GraphExplorerController],
     providers: [
       AuditExplorerService,
+      GraphExplorerService,
       { provide: AUDIT_RECORDER, useValue: recorder },
+      { provide: AUTHORIZATION_GRAPH_STORE, useValue: graphStore },
     ],
-    exports: [AuditExplorerService, AUDIT_RECORDER],
+    exports: [AuditExplorerService, GraphExplorerService, AUDIT_RECORDER, AUTHORIZATION_GRAPH_STORE],
   })
   class TestAuditExplorerModule {}
   return TestAuditExplorerModule;
 }
 
-function buildTestAppModule(recorder: AuditRecorder) {
-  const TestAuditExplorerModule = buildTestAuditExplorerModule(recorder);
+function buildTestAppModule(
+  recorder: AuditRecorder,
+  graphStore: AuthorizationGraphStore,
+) {
+  const TestAuditExplorerModule = buildTestAuditExplorerModule(recorder, graphStore);
   @Module({ imports: [HealthModule, TestAuditExplorerModule] })
   class TestAppModule {}
   return TestAppModule;
@@ -73,7 +90,10 @@ export async function bootstrapTestAuditBrowserApi(
     );
   }
 
-  const TestAppModule = buildTestAppModule(args.recorder);
+  const TestAppModule = buildTestAppModule(
+    args.recorder,
+    args.graphStore ?? new InMemoryAuthorizationGraphStore(),
+  );
   const moduleRef = await Test.createTestingModule({
     imports: [TestAppModule],
   }).compile();

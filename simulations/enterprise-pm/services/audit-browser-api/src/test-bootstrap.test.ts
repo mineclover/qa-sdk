@@ -3,6 +3,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 import type { AuditRecorder } from "permission-engine";
+import { InMemoryAuthorizationGraphStore } from "authorization-ontology";
 import { bootstrapTestAuditBrowserApi } from "./test-bootstrap.js";
 
 describe("bootstrapTestAuditBrowserApi", () => {
@@ -69,5 +70,45 @@ describe("bootstrapTestAuditBrowserApi", () => {
     const ctx = await bootstrapTestAuditBrowserApi({ recorder: mockRecorder });
     await ctx.close();
     await ctx.close(); // idempotent
+  });
+
+  it("graph store 주입 → /audit/graphs/:graphId/latest 조회 가능", async () => {
+    const graphStore = new InMemoryAuthorizationGraphStore();
+    await graphStore.saveSnapshot({
+      graphId: "delegation-1",
+      snapshotId: "delegation-1:001",
+      createdAt: "2026-04-24T00:00:00.000Z",
+      graph: { realms: [], nodes: [], relations: [] },
+    });
+    const mockRecorder = {
+      listByRoot: vi.fn(),
+      firstFailure: vi.fn(),
+      get: vi.fn(),
+      startExecution: vi.fn(),
+      finishExecution: vi.fn(),
+      recordCheck: vi.fn(),
+    } as unknown as AuditRecorder;
+
+    const ctx = await bootstrapTestAuditBrowserApi({
+      recorder: mockRecorder,
+      graphStore,
+    });
+    try {
+      const fastifyInstance = ctx.app.getHttpAdapter().getInstance() as {
+        inject: (opts: { method: string; url: string }) => Promise<{
+          statusCode: number;
+          payload: string;
+        }>;
+      };
+      const res = await fastifyInstance.inject({
+        method: "GET",
+        url: "/audit/graphs/delegation-1/latest",
+      });
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.payload);
+      expect(body.snapshotId).toBe("delegation-1:001");
+    } finally {
+      await ctx.close();
+    }
   });
 });

@@ -135,7 +135,7 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
     };
 
     const graphRes = await gatewayFetch(
-      new Request(`http://sim/projects/${ctx.project.id}/delegation-graph`, {
+      new Request(`http://sim/audit/graphs/${ctx.graphRootId}/latest`, {
         headers: { Authorization: `Bearer ${aliceToken}` },
       }),
     );

@@ -2971,6 +2971,9 @@ importers:
       audit-recorder-store:
         specifier: workspace:*
         version: link:../../../../packages/audit-recorder-store
+      authorization-ontology:
+        specifier: workspace:*
+        version: link:../../../../packages/authorization-ontology
       db-bootstrap:
         specifier: workspace:*
         version: link:../../../../packages/db-bootstrap

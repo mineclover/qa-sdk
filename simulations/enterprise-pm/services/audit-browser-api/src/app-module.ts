@@ -13,3 +13,7 @@ export {
   AuditExplorerService,
   AUDIT_RECORDER,
 } from "./audit-explorer/audit-explorer.service.js";
+export {
+  GraphExplorerService,
+  AUTHORIZATION_GRAPH_STORE,
+} from "./graph-explorer/graph-explorer.service.js";

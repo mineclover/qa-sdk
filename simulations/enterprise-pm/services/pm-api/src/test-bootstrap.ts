@@ -32,6 +32,7 @@ import { MemberService } from "./pm/member/member.service.js";
 import type { PmRepository } from "./pm/shared/port.js";
 
 export { AppModule } from "./app.module.js";
+export { PROJECT_AUTHORIZATION_GRAPH_STORE } from "./auth-deps/access-checker.module.js";
 
 export interface TestBootstrapOptions {
   sqlitePath?: string; // 기본 ":memory:"

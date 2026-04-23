@@ -14,6 +14,7 @@ import {
 import { createResourcePolicyRegistry, RESOURCE_POLICIES_DDL } from "resource-policy-store";
 import { createSimAuditRecorder } from "@qa-sdk/sim-audit-recorder-provider";
 import { AUDIT_ENTRIES_DDL } from "audit-recorder-store";
+import { InMemoryAuthorizationGraphStore, type AuthorizationGraphStore } from "authorization-ontology";
 import { DisjointUnionIndex } from "weighted-index";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -23,6 +24,7 @@ import { ProjectDelegationGraphStore } from "./delegation-graph-store.js";
 export const PROJECT_ACCESS_CHECKER = Symbol("PROJECT_ACCESS_CHECKER");
 export const PROJECT_POLICY_REGISTRY = Symbol("PROJECT_POLICY_REGISTRY");
 export const PROJECT_DELEGATION_GRAPH = Symbol("PROJECT_DELEGATION_GRAPH");
+export const PROJECT_AUTHORIZATION_GRAPH_STORE = Symbol("PROJECT_AUTHORIZATION_GRAPH_STORE");
 
 /**
  * 기본 InstancePolicyEvaluator — sim 시뮬용.
@@ -149,9 +151,14 @@ export class AccessCheckerModule {
    * 운영에서는 db + dialect 만 주입해 실 registry 자동 생성.
    */
   static forRootAsync(opts: AccessCheckerAsyncOptions): DynamicModule {
+    const graphStoreProvider: Provider = {
+      provide: PROJECT_AUTHORIZATION_GRAPH_STORE,
+      useValue: new InMemoryAuthorizationGraphStore() satisfies AuthorizationGraphStore,
+    };
     const delegationGraphProvider: Provider = {
       provide: PROJECT_DELEGATION_GRAPH,
-      useValue: new ProjectDelegationGraphStore(),
+      useFactory: (store: AuthorizationGraphStore) => new ProjectDelegationGraphStore(store),
+      inject: [PROJECT_AUTHORIZATION_GRAPH_STORE],
     };
     const registryProvider: Provider = {
       provide: PROJECT_POLICY_REGISTRY,
@@ -225,8 +232,13 @@ export class AccessCheckerModule {
     return {
       module: AccessCheckerModule,
       imports: opts.imports ?? [],
-      providers: [delegationGraphProvider, registryProvider, checkerProvider],
-      exports: [PROJECT_ACCESS_CHECKER, PROJECT_POLICY_REGISTRY, PROJECT_DELEGATION_GRAPH],
+      providers: [graphStoreProvider, delegationGraphProvider, registryProvider, checkerProvider],
+      exports: [
+        PROJECT_ACCESS_CHECKER,
+        PROJECT_POLICY_REGISTRY,
+        PROJECT_DELEGATION_GRAPH,
+        PROJECT_AUTHORIZATION_GRAPH_STORE,
+      ],
       global: true,
     };
   }

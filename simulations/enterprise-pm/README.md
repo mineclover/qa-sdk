@@ -93,7 +93,7 @@ pnpm sim:scenarios density --prefix=sim.bitmap --version=uv1
 | sim-notification-api | 4700 | 알림·구독 |
 | sim-reporting-api | 4800 | 분석·대시보드 + `GET /density` |
 | sim-document-api | 4900 | 첨부·코멘트·버전 |
-| sim-audit-browser-api | 5100 | audit trace explorer API |
+| sim-audit-browser-api | 5100 | audit trace explorer + authorization graph snapshot API |
 | sim-metrics-collector | 5200 | Prometheus exporter |
 | sim-redis | 6379 | bitmap pub/sub + event broadcast |
 
