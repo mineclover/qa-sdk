@@ -72,13 +72,15 @@ pnpm sim:scenarios run scenario-4-cross-dept-deny
 pnpm sim:scenarios list
 ```
 
+`--mode in-process`는 현재 auth-api, pm-api, approval-api, audit-browser-api, gateway만 부팅한다. 현재 시나리오 매트릭스는 이 subset으로 동작하지만, notification/reporting/document API 자체를 직접 검증하는 흐름은 docker/http 모드를 기준으로 본다.
+
 ### 4. density 측정
 
 ```bash
 pnpm sim:scenarios density --prefix=sim.bitmap --version=uv1
 ```
 
-§5 marginal density 출력 — underutilized / saturated axes 알림.
+기본 docker/PG 경로에서는 reporting-api가 `ingest.key_observations`를 직접 읽어 §5 marginal density를 계산한다. sqlite/in-process 경로는 ingest store 분리가 아직 없어 in-memory fallback이다.
 
 ## 서비스·포트
 

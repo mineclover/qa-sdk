@@ -151,12 +151,15 @@ describe('init --nest-service', () => {
 
     expect(packageJson.name).toBe('@qa-sdk/sample-service');
     expect(packageJson.dependencies?.['@qa-sdk/nest-service-kit']).toBe('workspace:*');
+    expect(packageJson.dependencies?.['@qa-sdk/otel']).toBe('workspace:*');
     expect(packageJson.dependencies?.['db-bootstrap']).toBe('workspace:*');
     expect(packageJson.scripts?.build).toBe('tsc');
     expect(main).toContain('bootstrapNestService');
+    expect(main).toContain('telemetryEnv: env');
     expect(main).toContain('serviceName: "sample-service"');
     expect(appModule).toContain('ExampleModule');
     expect(env).toContain('dbEnvSchema');
+    expect(env).toContain('otelEnvSchema');
     expect(port).toContain('abstract class ProjectQueryPort');
     expect(service).toContain('EventPublisherPort');
     expect(service).toContain('createEventEnvelope');

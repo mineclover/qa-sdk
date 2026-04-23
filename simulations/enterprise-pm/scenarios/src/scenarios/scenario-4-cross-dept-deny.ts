@@ -118,7 +118,7 @@ export const scenario4CrossDeptDeny: Scenario<S4Ctx> = {
       denyReason?: string;
     } = {};
     try {
-      denyBody = await denyRes.json();
+      denyBody = (await denyRes.json()) as typeof denyBody;
     } catch {
       // JSON 파싱 실패 — body 무시
     }

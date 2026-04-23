@@ -35,6 +35,7 @@ export function generateNestServicePackageJson(input: NestServiceTemplateInput):
       "@nestjs/core": "^11.0.0",
       "@nestjs/platform-fastify": "^11.0.0",
       "@qa-sdk/nest-service-kit": "workspace:*",
+      "@qa-sdk/otel": "workspace:*",
       "db-bootstrap": "workspace:*",
       "reflect-metadata": "^0.2.2",
       "zod": "^3.24.2",
@@ -106,15 +107,13 @@ pnpm --filter ${input.packageName} test
 }
 
 export function generateNestServiceEnvTs(input: NestServiceTemplateInput): string {
-  return `import { z } from "zod";
+  return `import { otelEnvSchema } from "@qa-sdk/otel";
+import { z } from "zod";
 import { dbEnvSchema } from "db-bootstrap";
 
-export const envSchema = dbEnvSchema.extend({
+export const envSchema = dbEnvSchema.merge(otelEnvSchema).extend({
   PORT: z.coerce.number().int().default(${input.port}),
   CORS_ORIGIN: z.string().default("*"),
-  OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
-  OTEL_ENABLED: z
-    .preprocess((value) => value ?? "true", z.enum(["true", "false"]).transform((value) => value === "true")),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -150,6 +149,7 @@ await bootstrapNestService({
   serviceName: "${escapeTemplateLiteral(input.serviceName)}",
   port: env.PORT,
   corsOrigin: env.CORS_ORIGIN,
+  telemetryEnv: env,
 });
 `;
 }

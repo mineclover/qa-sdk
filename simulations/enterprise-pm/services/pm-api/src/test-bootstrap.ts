@@ -50,6 +50,11 @@ export interface TestProjectFixture {
   departmentId: string;
 }
 
+export interface TestDelegationFixture {
+  state: string;
+  graphRootId: string;
+}
+
 export interface TestSeedInput {
   projects?: Array<{ name: string; ownerId: string; departmentId: string }>;
   members?: Array<{ projectId: string; userId: string; role: "lead" | "contributor" | "viewer" }>;
@@ -171,4 +176,13 @@ export async function createTestProject(
     ownerId: p.ownerId,
     departmentId: p.departmentId,
   };
+}
+
+/** delegate endpoint/service 확인용 편의 유틸 — in-process runner 와 통합 테스트에서 재사용. */
+export async function delegateTestProject(
+  handle: TestPmApiHandle,
+  args: { projectId: string; graphRootId: string; delegateUserId: string },
+): Promise<TestDelegationFixture> {
+  const svc = handle.app.get(ProjectService);
+  return svc.delegate(args);
 }

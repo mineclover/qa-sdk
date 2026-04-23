@@ -3,6 +3,7 @@ import type { AccessChecker } from "permission-engine";
 import {
   bootstrapTestApi,
   createTestProject,
+  delegateTestProject,
   seedTestData,
   type TestPmApiHandle,
 } from "./test-bootstrap.js";
@@ -80,5 +81,22 @@ describe("sim-pm-api/test-bootstrap", () => {
     const body = (await res.json()) as { id: string; ownerId: string; rootSpanId: string };
     expect(body.ownerId).toBe("user-alice");
     expect(body.rootSpanId).toBe("root-allow");
+  });
+
+  it("delegateTestProject — UNREGISTERED policy를 REGISTERED 후 DELEGATED로 전이한다", async () => {
+    const project = await createTestProject(handle, {
+      name: "Delegated",
+      ownerId: "user-alice",
+      departmentId: "dept-eng",
+    });
+
+    const delegated = await delegateTestProject(handle, {
+      projectId: project.id,
+      graphRootId: `graph-${project.id}`,
+      delegateUserId: "user-frank",
+    });
+
+    expect(delegated.state).toBe("DELEGATED");
+    expect(delegated.graphRootId).toBe(`graph-${project.id}`);
   });
 });

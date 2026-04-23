@@ -174,15 +174,13 @@ export async function bootstrapInProcess(
     return { id: req.id };
   };
 
-  // project delegate — 시나리오 6 (plan 11b-1 defer — 본 runner 가 minimal stub 유지)
-  const delegateProject = async (_args: {
+  // project delegate helper — pm-api service layer 직접 호출.
+  const delegateProject = async (args: {
     projectId: string;
     graphRootId: string;
     delegateUserId: string;
   }) => {
-    throw new Error(
-      "delegateProject: pm-api 의 /projects/:id/delegate 는 Plan 11b-1 defer 상태. Plan 13c 시나리오 6 실행 시 endpoint 추가 필요.",
-    );
+    await pmBootstrap.delegateTestProject(pmHandle, args);
   };
 
   const handle: InProcessHandle = {

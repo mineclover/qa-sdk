@@ -103,6 +103,11 @@ pnpm sim:scenarios run --all --json > /tmp/sim-results.json
 SIM_SCENARIO_INPROC=1 pnpm sim:scenarios run scenario-1-login
 ```
 
+주의:
+- 현재 in-process bootstrap 은 auth-api, pm-api, approval-api, audit-browser-api, gateway만 띄운다.
+- notification/reporting/document API를 직접 때리는 흐름은 docker/http 모드를 기준으로 본다.
+- 현재 시나리오 1~8은 이 subset으로 동작하도록 구성돼 있다.
+
 각 시나리오:
 - exit code 0 → 모든 시나리오 passed
 - exit code 1 → 1+ 시나리오 실패
@@ -179,10 +184,11 @@ curl -X POST http://localhost:4400/bitmap/issue \
 # maskBase64가 비어있으면 — RoleAssignment 시드 누락 (seed.ts 확인)
 ```
 
-### density 엔드포인트 500
+### density 응답이 0으로만 나온다
 
-- 원인: reporting-api가 ingest.key_observations PG에 연결 못함 (default binding은 in-memory — 0-density 응답)
-- 실 PG 연결은 Plan 14b 이후 확장 (DENSITY_OPTIONS factory를 app.module에서 override)
+- sqlite / in-process 경로는 기본적으로 in-memory keyObservationStore를 사용한다.
+- docker 기본 경로(`QA_DB_DIALECT=pg`)에서는 reporting-api가 `ingest.key_observations`를 직접 조회한다.
+- PG 경로에서도 0만 나오면 `qa-sdk-db`에 시나리오 실행 결과가 실제로 적재됐는지와 `QA_INGEST_URL`을 먼저 확인한다.
 
 ## 8. Teardown
 
