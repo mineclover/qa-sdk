@@ -1480,6 +1480,112 @@ Track completed RLSC text occupancy work.
     expect(diagnosticText).toContain("links/sources/tasks/evidence/diagnostics:");
   });
 
+  it("routes service and owner selectors to root index documents", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/payments"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/payments/payments-system.spec.md"), `---
+def:
+  id: payments-system
+  type: design
+  tier: system
+  owner_system: payments-system
+  scope: feature
+  aspect: func_def
+  depth: overview
+  lifecycle: approved
+  layer: operation
+  svc: payments
+  tags: [entry-point]
+---
+# Payments System
+
+## 목적 ^purpose
+
+Own the payments runtime boundary.
+`);
+    await writeFile(join(workspace, "docs/specs/payments/payments-api.spec.md"), `---
+def:
+  id: payments-api
+  type: design
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+  layer: mediation
+  svc: payments
+  owner_system: payments-system
+---
+# Payments API
+
+## 목적 ^purpose
+
+Define the public payments API contract.
+`);
+
+    await cliDocs(["explore", "service:payments", "--root", workspace]);
+    const serviceText = output();
+    expect(serviceText).toContain("docs explore: service:payments");
+    expect(serviceText).toContain("entry: [spec] payments-system");
+    expect(serviceText).toContain("intent: Own the payments runtime boundary.");
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs(["explore", "owner:payments-system", "--root", workspace]);
+    const ownerText = output();
+    expect(ownerText).toContain("entry: [spec] payments-system");
+  });
+
+  it("uses selector-bounded search for service roots", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/payments"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/payments/payments-system.spec.md"), `---
+def:
+  id: payments-system
+  type: design
+  tier: system
+  owner_system: payments-system
+  scope: feature
+  aspect: func_def
+  depth: overview
+  lifecycle: approved
+  layer: operation
+  svc: payments
+  tags: [entry-point]
+---
+# Payments System
+
+## 목적 ^purpose
+
+Own the payments runtime boundary.
+`);
+    await writeFile(join(workspace, "docs/specs/payments/payments-api.spec.md"), `---
+def:
+  id: payments-api
+  type: design
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+  layer: mediation
+  svc: payments
+  owner_system: payments-system
+---
+# Payments API
+
+## 목적 ^purpose
+
+Define the public payments API contract.
+`);
+
+    await cliDocs(["search", "service:payments", "--root", workspace]);
+    const text = output();
+    expect(text).toContain('docs search: "service:payments"');
+    expect(text).toContain("selector: service=payments");
+    expect(text).toContain("root index: [spec] payments-system");
+    expect(text).toContain("bounded by selector root-index routing");
+    expect(text).toContain("[spec] payments-system");
+    expect(text).not.toContain("warning: text search is broad");
+  });
+
   it("[contract:docs-control-plane.bdd.cli.list-contracts.v1][contract:docs-control-plane.bdd.cli.validate-contracts.v1][contract:docs-control-plane.bdd.cli.units-grouped.v1] exposes BDD contracts and units through docs bdd commands", async () => {
     const workspace = await createFixtureWorkspace();
     await writeFile(join(workspace, "docs/specs/checkout/checkout.cases.md"), `---

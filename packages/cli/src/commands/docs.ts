@@ -235,9 +235,17 @@ interface ExploreResult {
 }
 
 type ExploreMode = "intent" | "map" | "diagnostic";
+type SelectorKind = "doc" | "service" | "owner" | "family";
+
+interface SelectorRoute {
+  readonly kind: SelectorKind;
+  readonly value: string;
+}
 
 interface SearchResult {
   readonly query: string;
+  readonly selector?: SelectorRoute;
+  readonly rootIndex?: DocumentSummary;
   readonly filters: {
     readonly kinds: readonly string[];
     readonly metadata: DocumentMetadata;
@@ -1598,15 +1606,26 @@ async function cmdSearch(
 
   const metadataFilter = parseMetadataFilters(pickAll(flags, "metadata", []));
   const kinds = pickAll(flags, "kind", []).flatMap(splitCsv);
+  const selector = parseSelectorRoute(query);
+  const selectorRoot = selector ? resolveSelectorDocument(documents, selector) : undefined;
+  const selectorDocuments = selector
+    ? selectSelectorSearchScope(documents, selector, selectorRoot)
+    : documents;
   const result: SearchResult = {
     query,
+    ...(selector ? { selector } : {}),
+    ...(selectorRoot ? { rootIndex: summarizeDocument(selectorRoot) } : {}),
     filters: {
       kinds,
       metadata: metadataFilter,
     },
-    results: documents
-      .filter((document) => matchesSearch(document, query, kinds, metadataFilter))
-      .toSorted((left, right) => compareSearchDocuments(left, right, query))
+    results: selectorDocuments
+      .filter((document) => matchesSearch(document, selector ? "" : query, kinds, metadataFilter))
+      .toSorted((left, right) =>
+        selector
+          ? compareSelectorDocuments(left, right, selector)
+          : compareSearchDocuments(left, right, query)
+      )
       .map(summarizeDocument),
   };
 
@@ -3611,6 +3630,12 @@ function resolveDocument(
   documents: readonly DocumentEnvelope[],
   target: string,
 ): ResolvedDocument | undefined {
+  const selector = parseSelectorRoute(target);
+  if (selector) {
+    const bySelector = resolveSelectorDocument(documents, selector);
+    if (bySelector) return { document: bySelector };
+  }
+
   const normalizedTarget = normalizePath(target);
   const identityMatches = documents.filter((document) => documentIdentityValues(document).includes(target));
   const pathMatches = documents.filter((document) => documentPathValues(document).includes(normalizedTarget));
@@ -3670,6 +3695,91 @@ function isPathLikeTarget(target: string): boolean {
 function compareResolutionPriority(left: DocumentEnvelope, right: DocumentEnvelope): number {
   return (RESOLUTION_KIND_PRIORITY[left.kind] ?? 50) - (RESOLUTION_KIND_PRIORITY[right.kind] ?? 50)
     || compareDocuments(left, right);
+}
+
+function parseSelectorRoute(value: string): SelectorRoute | undefined {
+  const trimmed = value.trim();
+  const colonMatch = trimmed.match(/^(doc|service|owner|family):(.*)$/);
+  if (colonMatch && colonMatch[2].trim()) {
+    return { kind: colonMatch[1] as SelectorKind, value: colonMatch[2].trim() };
+  }
+  const slashMatch = trimmed.match(/^(doc|service|owner|family)\/(.+)$/);
+  if (slashMatch && slashMatch[2].trim()) {
+    return { kind: slashMatch[1] as SelectorKind, value: slashMatch[2].trim() };
+  }
+  return undefined;
+}
+
+function resolveSelectorDocument(
+  documents: readonly DocumentEnvelope[],
+  selector: SelectorRoute,
+): DocumentEnvelope | undefined {
+  return [...selectDocumentsBySelector(documents, selector)]
+    .toSorted((left, right) => compareSelectorDocuments(left, right, selector))[0];
+}
+
+function selectSelectorSearchScope(
+  documents: readonly DocumentEnvelope[],
+  selector: SelectorRoute,
+  rootIndex: DocumentEnvelope | undefined,
+): readonly DocumentEnvelope[] {
+  if (!rootIndex) return selectDocumentsBySelector(documents, selector);
+  if (!rootIndex.familyId) return [rootIndex];
+  return uniqueDocuments([
+    rootIndex,
+    ...collectFamilyOnlyScope(documents, { document: rootIndex }, { familyOnly: true }).documents,
+  ]);
+}
+
+function selectDocumentsBySelector(
+  documents: readonly DocumentEnvelope[],
+  selector: SelectorRoute,
+): readonly DocumentEnvelope[] {
+  switch (selector.kind) {
+    case "doc":
+      return documents.filter((document) => documentIdentityValues(document).includes(selector.value));
+    case "service":
+      return documents.filter((document) => asString(document.metadata.svc) === selector.value);
+    case "owner":
+      return documents.filter((document) => asString(document.metadata.ownerSystem) === selector.value);
+    case "family":
+      return documents.filter((document) => document.familyId === selector.value);
+  }
+}
+
+function compareSelectorDocuments(
+  left: DocumentEnvelope,
+  right: DocumentEnvelope,
+  selector: SelectorRoute,
+): number {
+  return selectorRootScore(right, selector) - selectorRootScore(left, selector)
+    || compareResolutionPriority(left, right);
+}
+
+function selectorRootScore(
+  document: DocumentEnvelope,
+  selector: SelectorRoute,
+): number {
+  const stableId = document.stableId.toLowerCase();
+  const value = selector.value.toLowerCase();
+  const tags = asStringArray(document.metadata.tags).map((tag) => tag.toLowerCase());
+  const tier = asString(document.metadata.tier)?.toLowerCase();
+  const depth = asString(document.metadata.depth)?.toLowerCase();
+  let score = 0;
+  if (tags.includes("entry-point")) score += 120;
+  if (depth === "overview") score += 100;
+  if (tier === "layout") score += 90;
+  else if (tier === "system") score += 80;
+  if (document.kind === "spec" && asString(document.metadata.type) === "design") score += 70;
+  else if (document.kind === "spec") score += 60;
+  else if (document.kind === "rule") score += 40;
+  if (selector.kind === "service" || selector.kind === "owner") {
+    if (stableId === `${value}-system`) score += 240;
+    if (stableId === value) score += 200;
+  }
+  if (selector.kind === "family" && document.familyId === selector.value) score += 180;
+  if (selector.kind === "doc" && stableId === value) score += 260;
+  return score;
 }
 
 function taskState(task: DocumentTask): string {
@@ -4176,7 +4286,15 @@ function printCollectGraphView(result: DocsGraphCliResult): void {
 
 function printSearch(result: SearchResult): void {
   console.log(`docs search: "${result.query}" -> ${result.results.length} result(s)`);
-  console.log("  warning: text search is broad; prefer metadata filters or docs graph with explicit axes for bounded traversal");
+  if (result.selector) {
+    console.log(`  selector: ${result.selector.kind}=${result.selector.value}`);
+    if (result.rootIndex) {
+      console.log(`  root index: [${result.rootIndex.kind}] ${result.rootIndex.stableId}`);
+    }
+    console.log("  bounded by selector root-index routing");
+  } else {
+    console.log("  warning: text search is broad; prefer metadata filters or docs graph with explicit axes for bounded traversal");
+  }
   for (const item of result.results) {
     console.log(`  - [${item.kind}] ${item.stableId}`);
     console.log(`    path: ${item.path}`);

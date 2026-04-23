@@ -6,6 +6,7 @@ import { join, relative } from "node:path";
 
 import {
   extractFrontmatter,
+  collectCodeReferences,
   extractSourceEntriesFromYaml,
   parseCodeReferenceTarget,
   parseDocument,
@@ -33,6 +34,16 @@ import type {
   DocumentSectionInput,
   DocumentSourceInput,
 } from "doc-envelope";
+import {
+  extractBddDocumentMetadata,
+  hasBddMetadata,
+  type BddContractDiagnostic,
+} from "../bdd-contract-extract.js";
+import {
+  extractWorkTopicDocumentMetadata,
+  hasWorkTopicMetadata,
+  type WorkTopicDiagnostic,
+} from "../work-topic-extract.js";
 
 export const DEFINITION_MARKDOWN_ADAPTER_ID = "definition-markdown";
 
@@ -106,12 +117,18 @@ async function collectDefinitionMarkdownEnvelopes(
   const validation = validateGraph(scanResult.registry);
   const diagnosticsByDocId = groupValidationIssuesByDocId(validation.issues);
   const defIdCounts = countBy(parsedDocs, (doc) => doc.document.def.id);
+  const codeCommentSourcesByDocId = collectCodeCommentSourcesByDocId(rootDir);
   const usedStableIds = new Set<string>();
 
   return parsedDocs
     .map((doc) => {
       const stableId = buildStableId(doc, defIdCounts.get(doc.document.def.id) ?? 0, usedStableIds);
-      return buildEnvelope(doc, stableId, diagnosticsByDocId.get(doc.document.def.id) ?? []);
+      return buildEnvelope(
+        doc,
+        stableId,
+        diagnosticsByDocId.get(doc.document.def.id) ?? [],
+        codeCommentSourcesByDocId.get(doc.document.def.id) ?? [],
+      );
     })
     .filter((envelope): envelope is DocumentEnvelope => envelope !== null);
 }
@@ -179,18 +196,24 @@ function buildEnvelope(
   parsed: ParsedDefinitionMarkdown,
   stableId: string,
   validationIssues: readonly ValidationIssue[],
+  codeCommentSources: readonly DocumentSourceInput[],
 ): DocumentEnvelope {
   const { def, body } = parsed.document;
   const summary = summarizeDocument(
     def.id,
-    def.scope,
-    def.aspect,
-    def.depth,
+    def.scope ?? "",
+    def.aspect ?? "",
+    def.depth ?? "",
     parsed.title,
     body,
   );
   const overview = summary.overview.join("\n\n");
   const todoCategories = parsed.kind === "todo" ? todoFollowUpCategories(body) : [];
+  const bddMetadata = parsed.kind === "cases" || parsed.kind === "test"
+    ? extractBddDocumentMetadata(parsed.relativePath, body)
+    : undefined;
+  const workTopicMetadata = extractWorkTopicDocumentMetadata(parsed.relativePath, body);
+  const allowsWorkTopic = parsed.kind === "plan" || parsed.kind === "todo";
   // 필드 소유권은 `docs/specs/definition-catalog/doc-metadata-field-ownership.rule.md` 참조.
   // scope/aspect/depth/layer/svc/address/version/revision은 현재 decision 비소비 —
   // frontmatter round-trip writer + docs status --json API surface 유지를 위해 passthrough.
@@ -200,11 +223,13 @@ function buildEnvelope(
     title: parsed.title,
     type: def.type ?? "spec",
     ...(def.knowledge_kind ? { knowledgeKind: def.knowledge_kind } : {}),
+    ...(def.tier ? { tier: def.tier } : {}),
     level: def.level,
     scope: def.scope,
     aspect: def.aspect,
     depth: def.depth,
     lifecycle: def.lifecycle,
+    ...(def.owner_system ? { ownerSystem: def.owner_system } : {}),
     ...(def.layer ? { layer: def.layer } : {}),
     tags: [...(def.tags ?? [])],
     ...(def.svc ? { svc: def.svc } : {}),
@@ -221,6 +246,8 @@ function buildEnvelope(
       : {}),
     ...(summary.purpose ? { purpose: summary.purpose } : {}),
     ...(overview ? { overview } : {}),
+    ...(bddMetadata && hasBddMetadata(bddMetadata) ? { bdd: bddMetadata } : {}),
+    ...(allowsWorkTopic && hasWorkTopicMetadata(workTopicMetadata) ? { workTopic: workTopicMetadata } : {}),
   };
 
   return normalizeDocumentEnvelope({
@@ -231,9 +258,19 @@ function buildEnvelope(
     path: parsed.relativePath,
     metadata,
     links: toDocumentLinks(def.id, def.links ?? []),
-    sources: toDocumentSources(parsed),
+    sources: [
+      ...toDocumentSources(parsed),
+      ...codeCommentSources,
+    ],
     sections: toDocumentSections(parsed.relativePath, summary.purpose, summary.overview),
-    diagnostics: validationIssues.map((issue) => toDocumentDiagnostic(parsed.relativePath, issue)),
+    diagnostics: [
+      ...validationIssues.map((issue) => toDocumentDiagnostic(parsed.relativePath, issue)),
+      ...(bddMetadata?.diagnostics ?? []).map(toDocumentBddDiagnostic),
+      ...workTopicMetadata.diagnostics.map(toDocumentWorkTopicDiagnostic),
+      ...(!allowsWorkTopic && hasWorkTopicMetadata(workTopicMetadata)
+        ? [toDocumentWorkTopicKindDiagnostic(parsed.relativePath, parsed.kind)]
+        : []),
+    ],
     rawSource: {
       path: parsed.relativePath,
       sourceSchema: "definition-frontmatter",
@@ -242,6 +279,87 @@ function buildEnvelope(
       },
     },
   });
+}
+
+function collectCodeCommentSourcesByDocId(rootDir: string): ReadonlyMap<string, readonly DocumentSourceInput[]> {
+  const grouped = new Map<string, DocumentSourceInput[]>();
+  for (const ref of collectCodeReferences(rootDir).filter((item) => item.sourceKind === "code_comment")) {
+    const sources = grouped.get(ref.docId) ?? [];
+    sources.push({
+      id: `code-comment:${sources.length + 1}`,
+      path: ref.codePath,
+      ...(ref.symbol ? { label: ref.symbol } : {}),
+      rawSource: {
+        path: ref.codePath,
+        ...(ref.line ? { pointer: `line ${ref.line}` } : {}),
+        sourceSchema: "code-comment",
+      },
+      metadata: {
+        value: ref.symbol ? `${ref.codePath}:${ref.symbol}` : ref.codePath,
+        sourceKind: "code_comment",
+        relationType: ref.relationType,
+        ...(ref.line ? { line: ref.line } : {}),
+        ...(ref.symbol ? { symbol: ref.symbol } : {}),
+      },
+    });
+    grouped.set(ref.docId, sources);
+  }
+  return grouped;
+}
+
+function toDocumentBddDiagnostic(
+  diagnostic: BddContractDiagnostic,
+): DocumentDiagnosticInput {
+  return {
+    code: diagnostic.code,
+    severity: diagnostic.severity,
+    message: diagnostic.message,
+    rawSource: {
+      path: diagnostic.sourcePath,
+      pointer: diagnostic.pointer,
+      sourceSchema: "bdd-contract",
+    },
+    metadata: {
+      source: "bdd-contract",
+      ...(diagnostic.contractId ? { contractId: diagnostic.contractId } : {}),
+      ...(diagnostic.metadata ?? {}),
+    },
+  };
+}
+
+function toDocumentWorkTopicDiagnostic(
+  diagnostic: WorkTopicDiagnostic,
+): DocumentDiagnosticInput {
+  return {
+    code: diagnostic.code,
+    severity: diagnostic.severity,
+    message: diagnostic.message,
+    rawSource: {
+      path: diagnostic.sourcePath,
+      pointer: diagnostic.pointer,
+      sourceSchema: "work-topic",
+    },
+    ...(diagnostic.metadata ? { metadata: diagnostic.metadata } : {}),
+  };
+}
+
+function toDocumentWorkTopicKindDiagnostic(
+  sourcePath: string,
+  kind: DefinitionMarkdownKind,
+): DocumentDiagnosticInput {
+  return {
+    code: "work-topic-invalid-document-kind",
+    severity: "warning",
+    message: `work_topic blocks are consumed only from plan or todo documents, not ${kind}.`,
+    rawSource: {
+      path: sourcePath,
+      pointer: "work-topic",
+      sourceSchema: "work-topic",
+    },
+    metadata: {
+      documentKind: kind,
+    },
+  };
 }
 
 function toDocumentLinks(

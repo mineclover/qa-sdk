@@ -55,6 +55,25 @@ def:
 | closure evidence | Responsibility Closure | source/rule/test/cases/evidence가 같은 책임을 가리키는가 | `.test.md`, source mapping, `docs closure` |
 | layout/pack view | Layout / Pack | 서비스와 하위/주변 시스템을 어떻게 조망하는가 | domain/system layout |
 
+## Root Index Convention
+
+서비스 family에는 selector가 도달할 수 있는 root index가 있어야 한다.
+
+| selector | 권장 root |
+|----------|-----------|
+| `service:<svc>` | `<service>-system` 또는 동일 `svc`의 entry-point overview |
+| `owner:<owner_system>` | owner boundary를 대표하는 system/layout |
+| `family:<familyId>` | family 내부 entry-point overview |
+
+루트 인덱스 문서는 다음을 만족하는 것이 좋다.
+
+- `entry-point` 태그 또는 equivalent root 역할
+- `depth: overview`
+- `tier: system` 또는 `tier: layout`
+- 다음 탐색 경로(Interface, Component, Event/Payload/Insight, Operations, Closure)를 guide할 수 있는 `^overview`
+
+이 규칙은 Next.js의 폴더 기반 라우팅처럼 "경로/셀렉터가 먼저 root index에 도착하고, 그 다음 하위 구조를 따라 내려간다"는 탐색 모델을 문서화한 것이다.
+
 ## 작성 순서 ^method
 
 1. **System boundary**를 먼저 정한다.
