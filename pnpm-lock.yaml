@@ -1551,6 +1551,37 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(lightningcss@1.32.0)
 
+  packages/nest-service-kit:
+    dependencies:
+      '@qa-sdk/core':
+        specifier: workspace:*
+        version: link:../core
+      '@qa-sdk/otel':
+        specifier: workspace:*
+        version: link:../otel
+    devDependencies:
+      '@nestjs/common':
+        specifier: ^11.0.0
+        version: 11.1.17(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core':
+        specifier: ^11.0.0
+        version: 11.1.17(@nestjs/common@11.1.17(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/websockets@11.1.17)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/platform-fastify':
+        specifier: ^11.0.0
+        version: 11.1.17(@fastify/static@9.0.0)(@nestjs/common@11.1.17(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.17)
+      '@nestjs/platform-ws':
+        specifier: ^11.0.0
+        version: 11.1.17(@nestjs/common@11.1.17(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/websockets@11.1.17)(rxjs@7.8.2)
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.15
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(lightningcss@1.32.0)
+
   packages/ontology-pack-validate:
     dependencies:
       authorization-ontology:

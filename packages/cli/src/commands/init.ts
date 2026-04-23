@@ -2,7 +2,7 @@
 // @def.doc docs-control-plane
 
 /**
- * qa-sdk init — 새 카탈로그 프로젝트 스캐폴딩.
+ * qa-sdk init — 새 카탈로그 프로젝트 / 소비처 / Nest 서비스 스캐폴딩.
  *
  * Usage:
  *   qa-sdk init                      인터랙티브 프롬프트
@@ -10,7 +10,7 @@
  */
 
 import { writeFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
-import { basename, dirname, resolve } from 'node:path';
+import { basename, dirname, relative, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import {
   generateCatalogTs,
@@ -23,10 +23,25 @@ import {
   generateViteQaBridgeTestTs,
   generateViteQaBridgeTs,
 } from '../templates/vite-sdk-template.js';
+import {
+  generateNestServiceAppModuleTs,
+  generateNestServiceEnvTs,
+  generateNestServiceExampleModuleTs,
+  generateNestServiceExamplePortTs,
+  generateNestServiceExampleServiceTs,
+  generateNestServiceHealthControllerTs,
+  generateNestServiceHealthModuleTs,
+  generateNestServiceMainTs,
+  generateNestServicePackageJson,
+  generateNestServiceReadme,
+  generateNestServiceTsconfig,
+  generateNestServiceVitestConfig,
+} from '../templates/nest-service-template.js';
 
 export interface InitOptions {
   readonly from?: string;
   readonly viteConsumer?: string;
+  readonly nestService?: string;
   readonly serviceName?: string;
   readonly ownerId?: string;
   readonly buildEnv?: string;
@@ -37,6 +52,9 @@ export interface InitOptions {
 export async function init(options: InitOptions): Promise<void> {
   if (options.viteConsumer) {
     return initViteConsumer(options);
+  }
+  if (options.nestService) {
+    return initNestService(options);
   }
 
   if (options.from === 'demo') {
@@ -106,6 +124,43 @@ async function initViteConsumer(options: InitOptions): Promise<void> {
     packageName,
     serviceName,
     serviceInCatalog,
+  });
+}
+
+// ── Nest 서비스 초기화 ────────────────────────────────
+
+async function initNestService(options: InitOptions): Promise<void> {
+  const cwd = options.cwd ?? process.cwd();
+  const targetDir = resolve(cwd, options.nestService ?? '.');
+  const packageName = inferNestPackageName(options.nestService ?? basename(targetDir));
+  const serviceName = options.serviceName ?? inferServiceName(packageName);
+  const ownerSystem = options.ownerId ?? `${serviceName}-system`;
+  const tsconfigExtendsPath = toPosixRelativePath(relative(targetDir, resolve(cwd, 'tsconfig.json')));
+
+  const files = [
+    { path: resolve(targetDir, 'package.json'), content: generateNestServicePackageJson({ packageName, serviceName, ownerSystem, port: 4400 }) },
+    { path: resolve(targetDir, 'tsconfig.json'), content: generateNestServiceTsconfig(tsconfigExtendsPath) },
+    { path: resolve(targetDir, 'vitest.config.ts'), content: generateNestServiceVitestConfig() },
+    { path: resolve(targetDir, 'README.md'), content: generateNestServiceReadme({ packageName, serviceName, ownerSystem, port: 4400 }) },
+    { path: resolve(targetDir, 'src/config/env.ts'), content: generateNestServiceEnvTs({ packageName, serviceName, ownerSystem, port: 4400 }) },
+    { path: resolve(targetDir, 'src/app.module.ts'), content: generateNestServiceAppModuleTs({ packageName, serviceName, ownerSystem, port: 4400 }) },
+    { path: resolve(targetDir, 'src/main.ts'), content: generateNestServiceMainTs({ packageName, serviceName, ownerSystem, port: 4400 }) },
+    { path: resolve(targetDir, 'src/health/health.controller.ts'), content: generateNestServiceHealthControllerTs({ packageName, serviceName, ownerSystem, port: 4400 }) },
+    { path: resolve(targetDir, 'src/health/health.module.ts'), content: generateNestServiceHealthModuleTs() },
+    { path: resolve(targetDir, 'src/domains/example/api/project-query.port.ts'), content: generateNestServiceExamplePortTs() },
+    { path: resolve(targetDir, 'src/domains/example/application/assign-manager.service.ts'), content: generateNestServiceExampleServiceTs({ packageName, serviceName, ownerSystem, port: 4400 }) },
+    { path: resolve(targetDir, 'src/domains/example/infrastructure/example.module.ts'), content: generateNestServiceExampleModuleTs() },
+  ];
+
+  for (const file of files) {
+    writeScaffoldFile(file.path, file.content, options.force ?? false);
+  }
+
+  printNestServiceNextSteps({
+    packageDir: options.nestService ?? relativeToCwd(targetDir),
+    packageName,
+    serviceName,
+    ownerSystem,
   });
 }
 
@@ -316,6 +371,16 @@ function inferServiceName(packageName: string): string {
   return packageName;
 }
 
+function inferNestPackageName(target: string): string {
+  const normalized = target.replace(/\/+$/, '');
+  const base = inferServiceName(basename(normalized));
+  return base.startsWith('@') ? base : `@qa-sdk/${base}`;
+}
+
+function toPosixRelativePath(value: string): string {
+  return value.split('\\').join('/');
+}
+
 function writeScaffoldFile(path: string, content: string, force: boolean): void {
   mkdirSync(dirname(path), { recursive: true });
   if (existsSync(path) && !force) {
@@ -396,6 +461,45 @@ ${catalogAdvice}
   소비처 경로: ${input.packageDir}
   패키지명:   ${input.packageName}
   서비스명:   ${input.serviceName}
+`);
+}
+
+function printNestServiceNextSteps(input: {
+  readonly packageDir: string;
+  readonly packageName: string;
+  readonly serviceName: string;
+  readonly ownerSystem: string;
+}): void {
+  console.log(`
+✅ Nest 서비스 템플릿 적용 완료
+
+═══ 다음 단계 ═══
+
+  1. service system 문서 생성
+     - ${input.ownerSystem}.spec.md
+     - ${input.ownerSystem}.cases.md
+     - ${input.ownerSystem}.test.md
+     - ${input.ownerSystem}.rule.md
+
+  2. 기본 검증
+     $ pnpm --filter ${input.packageName} typecheck
+     $ pnpm --filter ${input.packageName} test
+
+  3. 실제 도메인 wiring
+     - src/domains/example 를 실제 bounded context 이름으로 교체
+     - ProjectQueryPort, EventPublisherPort 구현체를 실제 adapter로 교체
+     - NoopEventPublisher를 Outbox/Kafka adapter로 교체
+
+  4. 문서 연결
+     - qa-sdk def find-by-file ${input.packageDir}/src/main.ts
+     - qa-sdk docs closure ${input.ownerSystem}
+
+═══════════════════
+
+  경로:         ${input.packageDir}
+  패키지명:     ${input.packageName}
+  서비스명:     ${input.serviceName}
+  owner_system: ${input.ownerSystem}
 `);
 }
 

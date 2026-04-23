@@ -125,6 +125,12 @@ Backend가 `status: 1 -> 2`를 수행했다는 사실만으로는 event intent�
 
 모든 파일이 항상 필요한 것은 아니다. 하지만 슬롯 자체는 존재해야 하며, 생략할 때는 service system 문서에서 "해당 없음" 또는 참조 대상을 명시한다.
 
+## Reference Scaffold
+
+`qa-sdk init --nest-service <packages/<service>>`는 이 표준 구조의 baseline scaffold를 생성한다. 생성 범위는 `main.ts`, `AppModule`, `config/env.ts`, health endpoint, `api/application/infrastructure` 예시 domain, `@qa-sdk/nest-service-kit` wiring까지다.
+
+템플릿은 시작 구조만 제공한다. 실제 서비스는 example domain 교체, outbox/event adapter 연결, service family docs 생성, closure evidence 연결을 별도로 수행해야 한다. 구체 scaffold behavior는 `nest-service-template`, bootstrap/event/port baseline은 `nest-service-kit`이 소유한다.
+
 ## Frontmatter 기준
 
 | 슬롯 | 권장 metadata |

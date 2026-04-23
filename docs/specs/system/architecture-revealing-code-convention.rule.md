@@ -101,6 +101,25 @@ export * from "./graph-rank.js";
 
 문서는 이 초기 진입점에서 시작해 하위 Interface/Component/System behavior로 내려갈 수 있어야 한다. selector 기반 탐색이 가능한 이유는 코드와 문서 양쪽이 같은 root-index convention을 따르기 때문이다.
 
+### 4.6 Canonical Nest service tree
+
+Nest 기반 modular-monolith baseline은 다음처럼 책임이 드러나게 둔다.
+
+```text
+src/
+  main.ts                       # System root index / bootstrap ownership
+  app.module.ts                 # Layout / module assembly
+  config/env.ts                 # Component env vocabulary
+  health/                       # Interface + simple runtime probe
+  domains/<domain>/
+    api/                        # Interface / port / DTO
+    application/                # System orchestration
+    domain/                     # pure business rules
+    infrastructure/             # adapter implementation
+```
+
+`qa-sdk init --nest-service`와 `@qa-sdk/nest-service-kit`은 이 baseline을 생성/지원한다. 중요한 것은 폴더 이름보다도 `main.ts`, `api`, `application`, `domain`, `infrastructure`가 어떤 책임을 소유하는지가 코드에서 숨지 않는 것이다.
+
 ### 5. Entry는 안정 식별자만 둔다
 
 Entry 코드는 stable id, singleton, closed value만 둔다. shape가 커지면 Component, behavior가 생기면 System으로 승격한다.

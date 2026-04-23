@@ -123,3 +123,61 @@ describe('init --vite-consumer', () => {
     );
   });
 });
+
+describe('init --nest-service', () => {
+  it('nest 서비스 템플릿과 공용 패키지 의존성을 생성한다', async () => {
+    const cwd = await mkdtemp(join(tmpdir(), 'qa-sdk-init-nest-'));
+    createdDirs.push(cwd);
+
+    await init({
+      cwd,
+      nestService: 'packages/sample-service',
+      serviceName: 'sample-service',
+      ownerId: 'sample-service-system',
+    });
+
+    const pkgDir = join(cwd, 'packages', 'sample-service');
+    const packageJson = JSON.parse(await readFile(join(pkgDir, 'package.json'), 'utf-8')) as {
+      name: string;
+      dependencies?: Record<string, string>;
+      scripts?: Record<string, string>;
+    };
+    const main = await readFile(join(pkgDir, 'src/main.ts'), 'utf-8');
+    const appModule = await readFile(join(pkgDir, 'src/app.module.ts'), 'utf-8');
+    const env = await readFile(join(pkgDir, 'src/config/env.ts'), 'utf-8');
+    const port = await readFile(join(pkgDir, 'src/domains/example/api/project-query.port.ts'), 'utf-8');
+    const service = await readFile(join(pkgDir, 'src/domains/example/application/assign-manager.service.ts'), 'utf-8');
+    const moduleFile = await readFile(join(pkgDir, 'src/domains/example/infrastructure/example.module.ts'), 'utf-8');
+
+    expect(packageJson.name).toBe('@qa-sdk/sample-service');
+    expect(packageJson.dependencies?.['@qa-sdk/nest-service-kit']).toBe('workspace:*');
+    expect(packageJson.dependencies?.['db-bootstrap']).toBe('workspace:*');
+    expect(packageJson.scripts?.build).toBe('tsc');
+    expect(main).toContain('bootstrapNestService');
+    expect(main).toContain('serviceName: "sample-service"');
+    expect(appModule).toContain('ExampleModule');
+    expect(env).toContain('dbEnvSchema');
+    expect(port).toContain('abstract class ProjectQueryPort');
+    expect(service).toContain('EventPublisherPort');
+    expect(service).toContain('createEventEnvelope');
+    expect(moduleFile).toContain('NoopEventPublisher');
+  });
+
+  it('중첩 경로에도 workspace root 기준 tsconfig 경로를 생성한다', async () => {
+    const cwd = await mkdtemp(join(tmpdir(), 'qa-sdk-init-nest-'));
+    createdDirs.push(cwd);
+
+    await init({
+      cwd,
+      nestService: 'services/backend/sample-service',
+    });
+
+    const tsconfig = await readFile(join(cwd, 'services/backend/sample-service/tsconfig.json'), 'utf-8');
+    const packageJson = JSON.parse(
+      await readFile(join(cwd, 'services/backend/sample-service/package.json'), 'utf-8'),
+    ) as { name: string };
+
+    expect(tsconfig).toContain('"extends": "../../../tsconfig.json"');
+    expect(packageJson.name).toBe('@qa-sdk/sample-service');
+  });
+});

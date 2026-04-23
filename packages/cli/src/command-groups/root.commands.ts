@@ -33,8 +33,17 @@ export const ROOT_COMMAND_DESCRIPTORS = [
   {
     id: "root.init",
     path: ["init"],
-    usage: "qa-sdk init [options]            새 카탈로그 프로젝트 또는 Vite 소비처 스캐폴딩",
-    handlerKey: "root.init"
+    usage: "qa-sdk init [options]            새 카탈로그 프로젝트, Vite 소비처, Nest 서비스를 스캐폴딩",
+    handlerKey: "root.init",
+    options: [
+      { flag: "--from", valueHint: "<demo>", type: "string", description: "데모 카탈로그 기반으로 초기화" },
+      { flag: "--vite-consumer", valueHint: "<path>", type: "string", description: "Vite 소비처 템플릿 적용 경로" },
+      { flag: "--nest-service", valueHint: "<path>", type: "string", description: "Nest 서비스 템플릿 생성 경로" },
+      { flag: "--service-name", valueHint: "<id>", type: "string", description: "서비스 이름 override" },
+      { flag: "--owner-id", valueHint: "<doc-id>", type: "string", description: "owner_system 또는 owner id override" },
+      { flag: "--build-env", valueHint: "<env>", type: "string", description: "Vite 템플릿 build env" },
+      { flag: "--force", type: "boolean", description: "기존 파일이 있어도 덮어쓰기" },
+    ],
   },
   {
     id: "root.register",
@@ -124,6 +133,7 @@ export function createRootHandlerRegistry(
         options: {
           from: { type: "string" },
           "vite-consumer": { type: "string" },
+          "nest-service": { type: "string" },
           "service-name": { type: "string" },
           "owner-id": { type: "string" },
           "build-env": { type: "string" },
@@ -134,6 +144,7 @@ export function createRootHandlerRegistry(
       await init({
         from: values.from,
         viteConsumer: values["vite-consumer"],
+        nestService: values["nest-service"],
         serviceName: values["service-name"],
         ownerId: values["owner-id"],
         buildEnv: values["build-env"],
