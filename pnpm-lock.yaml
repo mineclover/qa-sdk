@@ -16171,3 +16171,6 @@ snapshots:
       youch-core: 0.3.3
 
   zod@3.25.76: {}
+      authorization-ontology:
+        specifier: workspace:*
+        version: link:../../../../packages/authorization-ontology

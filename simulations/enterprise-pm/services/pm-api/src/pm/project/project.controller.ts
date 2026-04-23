@@ -67,6 +67,47 @@ export class ProjectController {
     return { ...project, rootSpanId: pre.rootSpanId };
   }
 
+  @Get(":id/delegation-graph")
+  async delegationGraph(
+    @Param("id") id: string,
+    @CurrentUser() user: CurrentUserContext,
+  ) {
+    const p = await this.svc.find(id);
+    if (!p) throw new NotFoundException(`Project not found: ${id}`);
+
+    const check = await this.access.check({
+      apiId: "project.read",
+      user,
+      targetId: id,
+      resourceOwnerId: p.ownerId,
+      departmentId: p.departmentId,
+    });
+    if (!check.allow) {
+      throw new ForbiddenException({
+        error: "access_denied",
+        denyReason: check.denyReason,
+        rootSpanId: check.rootSpanId,
+      });
+    }
+
+    const snapshot = await this.svc.getDelegationSnapshot(id);
+    if (!snapshot) {
+      throw new NotFoundException({
+        error: "delegation_graph_not_found",
+        projectId: id,
+      });
+    }
+
+    return {
+      rootSpanId: check.rootSpanId,
+      graphId: snapshot.graphId,
+      snapshotId: snapshot.snapshotId,
+      nodeCount: snapshot.graph.nodes.length,
+      relationCount: snapshot.graph.relations.length,
+      graph: snapshot.graph,
+    };
+  }
+
   @Get(":id")
   async get(@Param("id") id: string, @CurrentUser() user: CurrentUserContext) {
     const p = await this.svc.find(id);

@@ -4,6 +4,7 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import { createLogger } from "../../lib/logger.js";
 import type { ResourcePolicyRegistry } from "permission-engine";
+import type { AuthorizationGraphSnapshotRecord } from "authorization-ontology";
 import { PM_REPOSITORY } from "../pm-db.module.js";
 import type { PmRepository } from "../shared/port.js";
 import type { Project, ProjectCreate } from "../shared/types.js";
@@ -81,6 +82,13 @@ export class ProjectService {
         log.warn({ err, projectId: id }, "policy 삭제 실패 — orphan policy 가능");
       });
     }
+  }
+
+  async getDelegationSnapshot(projectId: string): Promise<AuthorizationGraphSnapshotRecord | null> {
+    if (!this.policies || !this.delegationGraph) return null;
+    const policy = await this.policies.resolve(projectId);
+    if (!policy?.graphRootId) return null;
+    return (await this.delegationGraph.getLatest(policy.graphRootId)) ?? null;
   }
 
   /**

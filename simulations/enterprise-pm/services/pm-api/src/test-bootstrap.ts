@@ -61,6 +61,17 @@ export interface TestDelegationFixture {
   graphRootId: string;
 }
 
+export interface TestDelegationGraphFixture {
+  graphId: string;
+  snapshotId: string;
+  nodeCount: number;
+  relationCount: number;
+  graph: {
+    nodes: Array<{ nodeId: string; coord: { anchor: string } }>;
+    relations: Array<{ relationId: string }>;
+  };
+}
+
 export interface TestSeedInput {
   projects?: Array<{ name: string; ownerId: string; departmentId: string }>;
   members?: Array<{ projectId: string; userId: string; role: "lead" | "contributor" | "viewer" }>;
@@ -193,4 +204,20 @@ export async function delegateTestProject(
 ): Promise<TestDelegationFixture> {
   const svc = handle.app.get(ProjectService);
   return svc.delegate(args);
+}
+
+export async function getDelegationGraph(
+  handle: TestPmApiHandle,
+  projectId: string,
+): Promise<TestDelegationGraphFixture | null> {
+  const svc = handle.app.get(ProjectService);
+  const snapshot = await svc.getDelegationSnapshot(projectId);
+  if (!snapshot) return null;
+  return {
+    graphId: snapshot.graphId,
+    snapshotId: snapshot.snapshotId,
+    nodeCount: snapshot.graph.nodes.length,
+    relationCount: snapshot.graph.relations.length,
+    graph: snapshot.graph as TestDelegationGraphFixture["graph"],
+  };
 }

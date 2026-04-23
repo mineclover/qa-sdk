@@ -134,6 +134,26 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
       graphRootId: string;
     };
 
+    const graphRes = await gatewayFetch(
+      new Request(`http://sim/projects/${ctx.project.id}/delegation-graph`, {
+        headers: { Authorization: `Bearer ${aliceToken}` },
+      }),
+    );
+    if (!graphRes.ok) {
+      throw new Error(
+        `delegation-graph: status=${graphRes.status} body=${await graphRes.text()}`,
+      );
+    }
+    const delegationGraph = (await graphRes.json()) as {
+      graphId: string;
+      snapshotId: string;
+      nodeCount: number;
+      relationCount: number;
+      graph: {
+        nodes: Array<{ coord: { anchor: string } }>;
+      };
+    };
+
     // frank login
     const frankLogin = await gatewayFetch(
       new Request("http://sim/auth/login", {
@@ -173,16 +193,19 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
         delegateStatus: delegateRes.status,
         delegatedState: delegated.state,
         delegatedGraphRootId: delegated.graphRootId,
+        delegationGraphId: delegationGraph.graphId,
+        delegationGraphSnapshotId: delegationGraph.snapshotId,
+        delegationGraphNodeAnchors: delegationGraph.graph.nodes.map((node) => node.coord.anchor),
         frankReadOk: frankGetRes.ok,
         frankReadStatus: frankGetRes.status,
         trace,
       },
       traceIds: traceIds.filter(Boolean),
-      stepCount: 4,
+      stepCount: 5,
     };
   },
 
-  async assert(_ctx, actResult) {
+  async assert(ctx, actResult) {
     const d = actResult.data as Record<string, unknown>;
     ok(
       d.delegateStatus === 200 || d.delegateStatus === 201,
@@ -192,6 +215,18 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
     ok(
       (d.delegatedGraphRootId as string).startsWith("consultant-graph-"),
       "graphRootId must be set",
+    );
+    equal(d.delegationGraphId, d.delegatedGraphRootId, "graph snapshot must be saved under graphRootId");
+    ok(
+      typeof d.delegationGraphSnapshotId === "string" &&
+        (d.delegationGraphSnapshotId as string).length > 0,
+      "delegation graph snapshotId must exist",
+    );
+    ok(
+      Array.isArray(d.delegationGraphNodeAnchors) &&
+        (d.delegationGraphNodeAnchors as string[]).includes(ctx.graphRootId) &&
+        (d.delegationGraphNodeAnchors as string[]).includes(ctx.frank.id),
+      "delegation graph snapshot must contain graph root and delegate principal",
     );
 
     equal(

@@ -93,6 +93,10 @@ export class ProjectDelegationGraphStore {
     );
   }
 
+  async getLatest(graphRootId: string) {
+    return this.latestSnapshot(graphRootId);
+  }
+
   private async latestSnapshot(graphRootId: string) {
     const snapshots = await this.store.listSnapshots({ graphId: graphRootId });
     return snapshots[snapshots.length - 1];

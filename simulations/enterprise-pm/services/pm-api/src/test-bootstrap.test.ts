@@ -4,6 +4,7 @@ import {
   bootstrapTestApi,
   createTestProject,
   delegateTestProject,
+  getDelegationGraph,
   seedTestData,
   type TestPmApiHandle,
 } from "./test-bootstrap.js";
@@ -98,5 +99,11 @@ describe("sim-pm-api/test-bootstrap", () => {
 
     expect(delegated.state).toBe("DELEGATED");
     expect(delegated.graphRootId).toBe(`graph-${project.id}`);
+
+    const snapshot = await getDelegationGraph(handle, project.id);
+    expect(snapshot?.graphId).toBe(`graph-${project.id}`);
+    expect(snapshot?.graph.nodes.map((node) => node.coord.anchor)).toEqual(
+      expect.arrayContaining([`graph-${project.id}`, "user-frank"]),
+    );
   });
 });
