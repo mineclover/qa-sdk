@@ -172,7 +172,7 @@ describe("def commands", () => {
   });
 
   describe("topdown (sync 후)", () => {
-    it("incoming depends_on 소비자를 구조 멤버와 분리한다", async () => {
+    it("기본 topdown은 구조 멤버만 보여주고 consumer는 숨긴다", async () => {
       await runDef(["sync"]);
       vi.mocked(console.log).mockClear();
 
@@ -181,9 +181,19 @@ describe("def commands", () => {
 
       expect(output).toContain("Definition Frontmatter Metadata System");
       expect(output).toContain("via: refs");
+      expect(output).not.toContain("## 관련 소비자/의존자 (incoming depends_on)");
+      expect(output).not.toContain("## [flow] Vite+ Playbook Template 확장 흐름");
+    });
+
+    it("--with-consumers를 주면 incoming depends_on 소비자를 별도 섹션으로 보여준다", async () => {
+      await runDef(["sync"]);
+      vi.mocked(console.log).mockClear();
+
+      await runDef(["topdown", "definition-management", "--with-consumers"]);
+      const output = getOutput();
+
       expect(output).toContain("## 관련 소비자/의존자 (incoming depends_on)");
       expect(output).toContain("[depends_on←] viteplus-playbook-template-flow");
-      expect(output).not.toContain("## [flow] Vite+ Playbook Template 확장 흐름");
     });
   });
 

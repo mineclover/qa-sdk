@@ -87,6 +87,10 @@ function formatLinkRef(id: string, address?: string): string {
   return address ? `${id} <${address}>` : id;
 }
 
+function hasFlag(flags: Record<string, string>, name: string): boolean {
+  return flags[name] === "true";
+}
+
 async function collectFeedbackMatches(
   source: DefDataSource,
   docIds: readonly string[],
@@ -926,7 +930,12 @@ async function collectDomainMembers(
   );
 }
 
-async function cmdTopdown(source: DefDataSource, groupId: string, level: "purpose" | "overview" = "purpose") {
+async function cmdTopdown(
+  source: DefDataSource,
+  groupId: string,
+  level: "purpose" | "overview" = "purpose",
+  options: { readonly includeConsumers?: boolean } = {},
+) {
   const group = await source.get(groupId);
   if (!group) { console.log(`문서 "${groupId}" 없음`); return; }
 
@@ -969,7 +978,7 @@ async function cmdTopdown(source: DefDataSource, groupId: string, level: "purpos
     console.log();
   }
 
-  if (consumers.length > 0) {
+  if (options.includeConsumers && consumers.length > 0) {
     console.log("## 관련 소비자/의존자 (incoming depends_on)");
     for (const relation of consumers) {
       const doc = relation.doc;
@@ -2028,7 +2037,7 @@ const DEF_HELP_SECTIONS = [
       "boundary <ID> | --address=<ADDR>       바운더리 구조 + direct coupling (--level, --json 가능)",
       "boundary-context <ID> | --address=<ADDR> 바운더리 + concerns + impact + feedback (--level, --mode, --json 가능)",
       "impact <ID> | --address=<ADDR>  변경 영향 분석",
-      "topdown <ID>        탑다운 조립 (구조 멤버와 incoming depends_on 소비자 분리)",
+      "topdown <ID>        탑다운 조립 (기본=구조 멤버만, --with-consumers 시 의존자 포함)",
       "bottomup <ID>       영향 역추적",
     ],
   },
@@ -2135,8 +2144,13 @@ export async function cliDef(args: string[]): Promise<void> {
         case "find-by-file": return await cmdFindByFile(source, rest[0] ?? "");
         case "guide": return await cmdGuide(source, rest[0]);
         case "topdown":
-          if (!rest[0]) { console.log("Usage: qa-sdk def topdown <그룹ID>"); return; }
-          return await cmdTopdown(source, rest[0], flags["overview"] === "true" ? "overview" : "purpose");
+          if (!rest[0]) { console.log("Usage: qa-sdk def topdown <그룹ID> [--overview] [--with-consumers]"); return; }
+          return await cmdTopdown(
+            source,
+            rest[0],
+            hasFlag(flags, "overview") ? "overview" : "purpose",
+            { includeConsumers: hasFlag(flags, "with-consumers") },
+          );
         case "bottomup":
           if (!rest[0]) { console.log("Usage: qa-sdk def bottomup <문서ID>"); return; }
           return await cmdBottomup(source, rest[0]);
