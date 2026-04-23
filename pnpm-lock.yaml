@@ -3467,6 +3467,9 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      weighted-index:
+        specifier: workspace:*
+        version: link:../../../../packages/weighted-index
       zod:
         specifier: ^3.24.2
         version: 3.25.76
@@ -16174,6 +16177,3 @@ snapshots:
       youch-core: 0.3.3
 
   zod@3.25.76: {}
-      authorization-ontology:
-        specifier: workspace:*
-        version: link:../../../../packages/authorization-ontology
