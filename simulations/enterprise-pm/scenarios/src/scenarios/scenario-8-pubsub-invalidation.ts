@@ -125,8 +125,19 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
       }),
     );
     const initialDenyStatus = initialDeny.status;
-    await initialDeny.text().catch(() => null);
+    let initialDenyBody: Record<string, unknown> | null = null;
+    try {
+      initialDenyBody = (await initialDeny.json()) as Record<string, unknown>;
+    } catch {
+      initialDenyBody = null;
+    }
     traceIds.push(initialDeny.headers.get("x-trace-id") ?? "");
+    const initialDenyMeta = ((initialDenyBody?.message as Record<string, unknown>) ??
+      initialDenyBody ??
+      {}) as {
+      rootSpanId?: string;
+      firstFailureSpanId?: string;
+    };
 
     // 3. admin → auth-api 직접 role assign (gateway proxy 우회)
     const assignRes = await fetch(`${ctx.authApiBaseUrl}/assignments`, {
@@ -160,7 +171,18 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
       }),
     );
     const staleStatus = staleRes.status;
-    await staleRes.text().catch(() => null);
+    let staleBody: Record<string, unknown> | null = null;
+    try {
+      staleBody = (await staleRes.json()) as Record<string, unknown>;
+    } catch {
+      staleBody = null;
+    }
+    const staleMeta = ((staleBody?.message as Record<string, unknown>) ??
+      staleBody ??
+      {}) as {
+      rootSpanId?: string;
+      firstFailureSpanId?: string;
+    };
 
     // 6. bob 다시 login → token2 (fresh bitmap with new manager role)
     const bobLogin2 = await gatewayFetch(
@@ -188,19 +210,59 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
       }),
     );
     const freshStatus = freshRes.status;
-    await freshRes.text().catch(() => null);
+    let freshBody: Record<string, unknown> | null = null;
+    try {
+      freshBody = (await freshRes.json()) as Record<string, unknown>;
+    } catch {
+      freshBody = null;
+    }
 
     return {
       data: {
         initialDenyStatus,
+        initialDenyMeta,
         assignStatus: assignRes.status,
         staleStatus,
+        staleMeta,
         freshStatus,
+        freshRootSpanId:
+          typeof freshBody?.rootSpanId === "string"
+            ? freshBody.rootSpanId
+            : null,
         token1,
         token2,
       },
       traceIds: traceIds.filter(Boolean),
       stepCount: 7,
+      operatorHints: [
+        ...(initialDenyMeta.rootSpanId
+          ? [
+              `initial-deny-trace: pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${initialDenyMeta.rootSpanId}`,
+              `initial-deny-first-failure: pnpm --filter @qa-sdk/sim-scenarios start -- audit first-failure --root-span-id ${initialDenyMeta.rootSpanId}`,
+            ]
+          : []),
+        ...(initialDenyMeta.firstFailureSpanId
+          ? [
+              `initial-deny-entry: pnpm --filter @qa-sdk/sim-scenarios start -- audit entry --span-id ${initialDenyMeta.firstFailureSpanId}`,
+            ]
+          : []),
+        ...(staleMeta.rootSpanId
+          ? [
+              `stale-deny-trace: pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${staleMeta.rootSpanId}`,
+              `stale-deny-first-failure: pnpm --filter @qa-sdk/sim-scenarios start -- audit first-failure --root-span-id ${staleMeta.rootSpanId}`,
+            ]
+          : []),
+        ...(staleMeta.firstFailureSpanId
+          ? [
+              `stale-deny-entry: pnpm --filter @qa-sdk/sim-scenarios start -- audit entry --span-id ${staleMeta.firstFailureSpanId}`,
+            ]
+          : []),
+        ...(typeof freshBody?.rootSpanId === "string"
+          ? [
+              `fresh-approve-trace: pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${freshBody.rootSpanId}`,
+            ]
+          : []),
+      ],
     };
   },
 
