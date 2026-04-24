@@ -4,6 +4,9 @@
 export {
   createSimAuthorizationGraphStore,
   type CreateSimAuthorizationGraphStoreArgs,
+  pruneAuthorizationGraphSnapshots,
+  type PruneAuthorizationGraphSnapshotsArgs,
+  type PruneAuthorizationGraphSnapshotsResult,
 } from "./create-store.js";
 export {
   createInMemorySqliteAuthorizationGraphFixture,

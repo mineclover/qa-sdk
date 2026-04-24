@@ -1,7 +1,7 @@
 // @def.boundary sim-audit-browser-api
 // @def.doc authorization-graph-store
 
-import { Controller, Get, Inject, NotFoundException, Param } from "@nestjs/common";
+import { Controller, Delete, Get, Inject, NotFoundException, Param } from "@nestjs/common";
 import { GraphExplorerService } from "./graph-explorer.service.js";
 
 @Controller("audit/graphs")
@@ -52,5 +52,17 @@ export class GraphExplorerController {
       });
     }
     return diff;
+  }
+
+  @Delete(":graphId/prune/:keepLatest")
+  async prune(
+    @Param("graphId") graphId: string,
+    @Param("keepLatest") keepLatest: string,
+  ) {
+    const parsedKeepLatest = Number.parseInt(keepLatest, 10);
+    if (!Number.isFinite(parsedKeepLatest) || parsedKeepLatest < 0) {
+      throw new NotFoundException({ error: "invalid_keep_latest", keepLatest });
+    }
+    return this.svc.prune(graphId, parsedKeepLatest);
   }
 }

@@ -79,4 +79,24 @@ describe("GraphExplorerController", () => {
     const result = await ctrl.diff("s1", "s2");
     expect(result.summary.addedNodeCount).toBe(1);
   });
+
+  it("DELETE /audit/graphs/:graphId/prune/:keepLatest prunes snapshots", async () => {
+    const svc = {
+      latest: vi.fn(),
+      list: vi.fn(),
+      getSnapshot: vi.fn(),
+      diff: vi.fn(),
+      prune: vi.fn(async () => ({
+        graphId: "delegation-1",
+        beforeCount: 3,
+        afterCount: 1,
+        deletedSnapshotIds: ["s1", "s2"],
+        keptSnapshotIds: ["s3"],
+      })),
+    } as unknown as GraphExplorerService;
+    const ctrl = new GraphExplorerController(svc);
+    const result = await ctrl.prune("delegation-1", "1");
+    expect(result.afterCount).toBe(1);
+    expect(result.deletedSnapshotIds).toEqual(["s1", "s2"]);
+  });
 });

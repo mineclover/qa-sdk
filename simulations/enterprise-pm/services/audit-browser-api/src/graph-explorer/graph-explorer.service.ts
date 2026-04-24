@@ -2,6 +2,7 @@
 // @def.doc authorization-graph-store
 
 import { Inject, Injectable } from "@nestjs/common";
+import { pruneAuthorizationGraphSnapshots } from "@qa-sdk/sim-authorization-graph-provider";
 import type {
   AuthorizationGraphDiff,
   AuthorizationGraphSnapshotRecord,
@@ -36,5 +37,9 @@ export class GraphExplorerService {
     toSnapshotId: string,
   ): Promise<AuthorizationGraphDiff | null> {
     return diffAuthorizationGraphSnapshots(this.store, fromSnapshotId, toSnapshotId);
+  }
+
+  async prune(graphId: string, keepLatest: number) {
+    return pruneAuthorizationGraphSnapshots(this.store, { graphId, keepLatest });
   }
 }

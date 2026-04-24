@@ -30,6 +30,19 @@ export interface CreateSimAuthorizationGraphStoreArgs {
   applyDdl?: boolean;
 }
 
+export interface PruneAuthorizationGraphSnapshotsArgs {
+  graphId: string;
+  keepLatest: number;
+}
+
+export interface PruneAuthorizationGraphSnapshotsResult {
+  graphId: string;
+  beforeCount: number;
+  afterCount: number;
+  deletedSnapshotIds: string[];
+  keptSnapshotIds: string[];
+}
+
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
@@ -245,4 +258,27 @@ export async function createSimAuthorizationGraphStore(
   }
 
   throw new Error(`createSimAuthorizationGraphStore: unsupported dialect=${String((args as { dialect?: string }).dialect)}`);
+}
+
+export async function pruneAuthorizationGraphSnapshots(
+  store: AuthorizationGraphStore,
+  args: PruneAuthorizationGraphSnapshotsArgs,
+): Promise<PruneAuthorizationGraphSnapshotsResult> {
+  const keepLatest = Math.max(0, Math.trunc(args.keepLatest));
+  const snapshots = await store.listSnapshots({ graphId: args.graphId });
+  const sorted = [...snapshots].sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+  const kept = keepLatest === 0 ? [] : sorted.slice(-keepLatest);
+  const deleted = keepLatest === 0 ? sorted : sorted.slice(0, Math.max(0, sorted.length - keepLatest));
+
+  for (const snapshot of deleted) {
+    await store.deleteSnapshot(snapshot.snapshotId);
+  }
+
+  return {
+    graphId: args.graphId,
+    beforeCount: sorted.length,
+    afterCount: kept.length,
+    deletedSnapshotIds: deleted.map((snapshot) => snapshot.snapshotId),
+    keptSnapshotIds: kept.map((snapshot) => snapshot.snapshotId),
+  };
 }

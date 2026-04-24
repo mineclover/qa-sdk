@@ -53,4 +53,25 @@ describe("GraphExplorerService", () => {
     expect(diff?.summary.addedNodeCount).toBe(1);
     expect(diff?.toSnapshotId).toBe("delegation-1:002");
   });
+
+  it("prunes older snapshots and keeps the newest ones", async () => {
+    const store = new InMemoryAuthorizationGraphStore();
+    await store.saveSnapshot({
+      graphId: "delegation-2",
+      snapshotId: "delegation-2:001",
+      createdAt: "2026-04-24T00:00:00.000Z",
+      graph: { realms: [], nodes: [], relations: [] },
+    });
+    await store.saveSnapshot({
+      graphId: "delegation-2",
+      snapshotId: "delegation-2:002",
+      createdAt: "2026-04-24T00:01:00.000Z",
+      graph: { realms: [], nodes: [], relations: [] },
+    });
+
+    const svc = new GraphExplorerService(store);
+    const result = await svc.prune("delegation-2", 1);
+    expect(result.deletedSnapshotIds).toEqual(["delegation-2:001"]);
+    expect((await svc.list("delegation-2")).map((snapshot) => snapshot.snapshotId)).toEqual(["delegation-2:002"]);
+  });
 });

@@ -2,7 +2,10 @@
 // @def.doc authorization-graph-store
 
 import { afterEach, describe, expect, it } from "vitest";
-import { createInMemorySqliteAuthorizationGraphFixture } from "./memory-sqlite-fixture.js";
+import {
+  createInMemorySqliteAuthorizationGraphFixture,
+} from "./memory-sqlite-fixture.js";
+import { pruneAuthorizationGraphSnapshots } from "./create-store.js";
 
 describe("createSimAuthorizationGraphStore — sqlite", () => {
   let fixture: Awaited<ReturnType<typeof createInMemorySqliteAuthorizationGraphFixture>> | null = null;
@@ -50,5 +53,42 @@ describe("createSimAuthorizationGraphStore — sqlite", () => {
     expect(first.auditReport?.ok).toBe(true);
     expect(await fixture.store.deleteSnapshot(first.snapshotId)).toBe(true);
     expect(await fixture.store.getSnapshot(first.snapshotId)).toBeNull();
+  });
+
+  it("prunes old snapshots while keeping the latest N", async () => {
+    fixture = await createInMemorySqliteAuthorizationGraphFixture();
+
+    await fixture.store.saveSnapshot({
+      graphId: "delegation-2",
+      snapshotId: "delegation-2:001",
+      createdAt: "2026-04-24T00:00:00.000Z",
+      graph: { realms: [], nodes: [], relations: [] },
+    });
+    await fixture.store.saveSnapshot({
+      graphId: "delegation-2",
+      snapshotId: "delegation-2:002",
+      createdAt: "2026-04-24T00:01:00.000Z",
+      graph: { realms: [], nodes: [], relations: [] },
+    });
+    await fixture.store.saveSnapshot({
+      graphId: "delegation-2",
+      snapshotId: "delegation-2:003",
+      createdAt: "2026-04-24T00:02:00.000Z",
+      graph: { realms: [], nodes: [], relations: [] },
+    });
+
+    const result = await pruneAuthorizationGraphSnapshots(fixture.store, {
+      graphId: "delegation-2",
+      keepLatest: 1,
+    });
+
+    expect(result.deletedSnapshotIds).toEqual([
+      "delegation-2:001",
+      "delegation-2:002",
+    ]);
+    expect(result.keptSnapshotIds).toEqual(["delegation-2:003"]);
+    expect((await fixture.store.listSnapshots({ graphId: "delegation-2" })).map((snapshot) => snapshot.snapshotId)).toEqual([
+      "delegation-2:003",
+    ]);
   });
 });
