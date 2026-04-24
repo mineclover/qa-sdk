@@ -18,6 +18,10 @@ import {
   summarizeGraphRetention,
 } from "./post-run/graph-retention.js";
 import {
+  fetchGraphRetentionInsight,
+  summarizeGraphRetentionInsight,
+} from "./post-run/graph-retention-insight.js";
+import {
   fetchDensity,
   summarizeDensity,
 } from "./post-run/density-collector.js";
@@ -154,19 +158,28 @@ export function buildCli(): Command {
       "sim-audit-browser-api base URL",
       "http://localhost:5100",
     )
+    .option(
+      "--ingest-url <url>",
+      "ingest-server base URL",
+      "http://localhost:3200",
+    )
     .option("--keep-latest <n>", "graph별 최신 snapshot 보존 개수", "1")
     .option("--graph-id <id>", "단일 graphId만 prune", "")
+    .option("--with-insight", "prune 후 ingest insight까지 이어서 조회", false)
     .option("--json", "JSON 출력", false)
     .action(
       async (opts: {
         auditUrl: string;
+        ingestUrl: string;
         keepLatest: string;
         graphId: string;
+        withInsight: boolean;
         json: boolean;
       }) => {
         const env = parseScenarioEnv({
           ...process.env,
           SCENARIO_AUDIT_URL: opts.auditUrl,
+          SCENARIO_INGEST_URL: opts.ingestUrl,
         });
         const keepLatest = Number.parseInt(opts.keepLatest, 10);
         if (!Number.isFinite(keepLatest) || keepLatest < 0) {
@@ -178,10 +191,26 @@ export function buildCli(): Command {
           graphId: opts.graphId || undefined,
         });
 
+        const insight = opts.withInsight
+          ? await fetchGraphRetentionInsight(env.SCENARIO_INGEST_URL, {
+              graphId: opts.graphId || undefined,
+              limit: 20,
+            })
+          : null;
+
         if (opts.json) {
-          process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+          process.stdout.write(
+            JSON.stringify(
+              insight ? { retention: result, insight } : result,
+              null,
+              2,
+            ) + "\n",
+          );
         } else {
           process.stdout.write(summarizeGraphRetention(result) + "\n");
+          if (insight) {
+            process.stdout.write(summarizeGraphRetentionInsight(insight) + "\n");
+          }
         }
       },
     );

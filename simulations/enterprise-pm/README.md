@@ -125,6 +125,7 @@ graph snapshot housekeeping CLI:
 ```bash
 pnpm --filter @qa-sdk/sim-scenarios start -- housekeeping graph-retention --keep-latest 1
 pnpm --filter @qa-sdk/sim-scenarios start -- housekeeping graph-retention --graph-id consultant-graph-123 --keep-latest 1
+pnpm --filter @qa-sdk/sim-scenarios start -- housekeeping graph-retention --graph-id consultant-graph-123 --keep-latest 1 --with-insight
 ```
 
 optional periodic housekeeping:

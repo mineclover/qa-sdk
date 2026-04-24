@@ -7,6 +7,7 @@ export const envSchema = z.object({
   SCENARIO_MODE: z.enum(["in-process", "http"]).default("in-process"),
   SCENARIO_GATEWAY_URL: z.string().default("http://localhost:8888"),
   SCENARIO_AUDIT_URL: z.string().default("http://localhost:5100"),
+  SCENARIO_INGEST_URL: z.string().default("http://localhost:3200"),
   /** in-process 모드에서 NestJS app 부팅 시 dialect. */
   QA_DB_DIALECT: z.enum(["sqlite", "pg"]).default("sqlite"),
   /** Redis URL — sim-bitmap-cache 통합. in-process는 mock 사용. */
