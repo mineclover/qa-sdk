@@ -12,7 +12,7 @@ def:
   tags: [entry-point, runtime, observability]
   links:
     - target: prefix-guide
-      type: refines
+      type: traces_to
 ---
 
 # Prefix 모델링 기준 — 무엇이든 prefix가 될 수 있다

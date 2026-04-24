@@ -69,6 +69,11 @@
   },
   "monitoring": {
     "interval": 30,
+    "recovery": {
+      "enabled": false,
+      "maxRetries": 2,
+      "cooldownSec": 600
+    },
     "webhooks": [
       {
         "url": "https://hooks.slack.com/services/PROD_WEBHOOK",

@@ -2,8 +2,7 @@
 def:
   tier: component
   id: browser-session-patterns
-  type: knowledge
-  knowledge_kind: pattern
+  type: spec
   address: def_document:v2:137345
   scope: flow
   aspect: process_flow
@@ -14,7 +13,7 @@ def:
   tags: [observability, runtime, structural]
   links:
     - target: browser-lifecycle-system
-      type: refines
+      type: traces_to
 ---
 
 # 브라우저 세션 패턴

@@ -133,7 +133,14 @@ health_event (2차원)
   └── health_status: axis (healthy, degraded, unhealthy, maintenance)
 ```
 
-동일한 `CoordinateAdapter.resolveSvcRef()` + TransmissionEnvelope 패턴 사용.
+동일한 `CoordinateAdapter.resolveSvcRef()` + TransmissionEnvelope 패턴 사용. 현재 구현의 상태 매핑은 다음과 같다:
+
+| SyncStatus | health_status |
+|------------|---------------|
+| `Synced` | `healthy` |
+| `Degraded` | `degraded` |
+| `OutOfSync` | `unhealthy` |
+| `Unknown` | `unhealthy` |
 
 ## 모니터링 등록
 
@@ -148,13 +155,19 @@ interface MonitorTarget {
   env: string;
   region: string;
   namespace: string;             // svc_ref 해석에 필요
-  interval: number;              // 헬스체크 주기 (초). 기본 60
+  interval: number;              // ctx.config.monitoring.interval 또는 기본 60
   lastChecked?: string;          // ISO-8601
   lastStatus?: "Synced" | "OutOfSync" | "Degraded" | "Unknown";
 }
 ```
 
 저장 위치: `~/.qa-sdk/infra-profile.json`의 `monitors` 필드 (infra-profile과 통합)
+
+등록 값은 다음 규칙을 따른다:
+- `endpoint`: `ctx.provision.outputs.endpoint`
+- `healthPath`: `ctx.config.connections[serviceId].health_path`가 있으면 우선, 없으면 `/health`
+- `interval`: `ctx.config.monitoring.interval`이 있으면 사용, 없으면 `60`
+- `namespace`: 현재 구현은 `"default"`를 저장하고, sync-loop가 해당 값을 그대로 좌표 해석에 전달한다
 
 sync-loop가 주기적으로 모든 MonitorTarget에 헬스체크를 수행하고, 상태 변화 시 `health_event`를 emit한다. 상세: [infra-monitoring.spec.md](infra-monitoring.spec.md)
 

@@ -87,7 +87,7 @@ simulation은 local artifact registry JSON과 CLI fixture를 입력으로 사용
 - 문서 `sources`에는 소비자 코드와 targeted test 파일을 모두 넣는다.
 - test title은 scenario 이름과 expected interpretation을 함께 포함한다.
 - warning/action code는 CLI JSON field명과 같은 문자열을 assert한다.
-- transform function을 바꾸면 이 문서의 Data Flow Contract와 provider/quality evidence/CLI leaf 중 해당 소유 문서를 함께 갱신한다.
+- transform function을 바꾸면 이 문서의 Data Flow Contract와 provider/quality evidence/CLI 책임 문서 중 해당 소유 문서를 함께 갱신한다.
 
 ## Relation Vocabulary Review
 

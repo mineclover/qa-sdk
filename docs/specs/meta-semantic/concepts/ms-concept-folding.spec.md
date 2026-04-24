@@ -2,8 +2,7 @@
 def:
   tier: exempt
   id: ms-concept-folding
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: data
   aspect: domain_data
   depth: specification
@@ -11,13 +10,13 @@ def:
   layer: domain
   links:
     - target: meta-semantic-concepts
-      type: depends_on
+      type: traces_to
     - target: ms-concept-boundary
-      type: depends_on
+      type: traces_to
     - target: ms-concept-data-facets
-      type: depends_on
+      type: traces_to
     - target: ms-concept-pipe
-      type: depends_on
+      type: traces_to
 ---
 
 # Semantic Folding

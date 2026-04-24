@@ -44,15 +44,15 @@ sources:
   - packages/registry-service/src/modules/ontology/ontology-activation.helper.ts
 ---
 
-# Operational Ontology Registry Allocation - module overview
+# Operational Ontology Registry Allocation - system overview
 
 ## 목적 ^purpose
 
-operational ontology schema가 registry-service와 index-meta로 승격되는 문서 family의 module overview를 정의한다. 목표는 local allocation model, lifecycle, activation CLI, activation result, activation evidence, scenario proof, persistence handoff, index-meta sync handoff, validation contract, scoped-prefix decision을 하나의 registry allocation family 아래 stable coordinate로 묶는 것이다.
+operational ontology schema가 registry-service와 index-meta로 승격되는 registry allocation System overview를 정의한다. 목표는 local allocation model, lifecycle, activation CLI, activation result, activation evidence, scenario proof, persistence handoff, index-meta sync handoff, validation contract, scoped-prefix decision을 하나의 registry allocation family 아래 stable coordinate로 묶는 것이다.
 
 ## 구성 ^overview
 
-이 module은 현재 구현된 registry allocation family의 소유 경계다. 상세한 lifecycle, command, payload, evidence, scenario proof는 leaf 문서가 소유하고, 이 문서는 어떤 leaf가 어떤 concern을 닫는지만 조립한다.
+이 System은 현재 구현된 registry allocation family의 소유 경계다. 상세한 lifecycle, command, payload, evidence, scenario proof는 세부 책임 문서가 소유하고, 이 문서는 어떤 문서가 어떤 concern을 닫는지만 조립한다.
 
 - **Allocation validation contract** - `OperationalOntologySchema`를 namespace, axis, taxonomy, allocation, segment plan으로 투영하고 local invariant를 검증한다.
 - **Registry lifecycle** - Phase 2A persistence schema부터 Phase 5 activation helper/smoke까지의 현재 상태와 owner boundary를 정리한다.
@@ -66,11 +66,11 @@ operational ontology schema가 registry-service와 index-meta로 승격되는 �
 
 ## Family Ownership ^defines
 
-`operational-ontology-system`은 이 module을 포함한다. 이 module은 registry allocation 내부 leaf를 포함한다. 따라서 lifecycle, activation, evidence, and scenario leaf docs는 system group의 direct child가 아니라 이 module의 child로 유지한다.
+`operational-ontology-system`은 이 System을 포함한다. 이 System은 registry allocation 내부 세부 책임 문서를 포함한다. 따라서 lifecycle, activation, evidence, and scenario docs는 root System의 direct child가 아니라 이 registry allocation System의 child로 유지한다.
 
-Leaf ownership is intentionally narrow:
+Detailed document ownership is intentionally narrow:
 
-| leaf | owned concern |
+| document | owned concern |
 |------|---------------|
 | `operational-ontology-allocation-validation-contract` | local allocation projection and invariant validation |
 | `operational-ontology-registry-lifecycle` | Phase 2A through Phase 5 current lifecycle state |
@@ -86,15 +86,15 @@ Leaf ownership is intentionally narrow:
 
 The implemented allocation family covers local allocation, persistence, store adapter validation, service lifecycle, index-meta sync, helper activation, local CLI activation, explicit activation evidence persistence, and scenario proof for `programming-artifact-ontology` and `authorization-ontology`.
 
-This module does not add registry-service REST activation, a remote activation service, scoped-prefix schema/API migration, dynamic external pack loading, or pack authoring commands. Those remain follow-up concerns owned by their own PRDs and must not be inferred from the local CLI lifecycle.
+This System does not add registry-service REST activation, a remote activation service, scoped-prefix schema/API migration, dynamic external pack loading, or pack authoring commands. Those remain follow-up concerns owned by their own PRDs and must not be inferred from the local CLI lifecycle.
 
 ## Source Policy
 
-Module sources stay conservative and point at the stable implementation boundaries that define allocation, store/service lifecycle, sync, and helper activation. PRD files are not frontmatter sources for this module; historical PRDs remain traces in task files or leaf narrative only, so docs status for this family is not widened by unrelated PRD documents.
+System sources stay conservative and point at the stable implementation boundaries that define allocation, store/service lifecycle, sync, and helper activation. PRD files are not frontmatter sources for this System; historical PRDs remain traces in task files or detail-document narrative only, so docs status for this family is not widened by unrelated PRD documents.
 
 Post-split CLI source boundaries are owned by the activation leaves:
 
-| leaf | source boundary |
+| document | source boundary |
 |------|-----------------|
 | `operational-ontology-registry-activation-cli` | `packages/cli/src/commands/ontology/activation.ts` plus command descriptor, local runtime, helper, and CLI tests |
 | `operational-ontology-registry-activation-result` | `packages/cli/src/commands/ontology/activation.ts` plus registry-service helper |

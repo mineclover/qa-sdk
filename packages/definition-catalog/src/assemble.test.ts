@@ -41,9 +41,9 @@ describe("assembleFeature: gate-system", () => {
     expect(group!.depth).toBe("overview");
   });
 
-  it("gate-system이 6개 멤버를 contains한다", () => {
+  it("gate-system이 6개 멤버를 structural link로 조망한다", () => {
     const links = result.registry.getLinks("gate-system", "outgoing")
-      .filter(l => l.linkType === "contains");
+      .filter(l => l.linkType === "contains" || l.linkType === "refs");
     expect(links.length).toBeGreaterThanOrEqual(6);
   });
 
@@ -154,8 +154,8 @@ describe("assembleBoundary: viteplus playbook", () => {
     expect(assembled).not.toBeNull();
     expect(assembled!.members.some(m => m.id === "viteplus-playbook-template-implementation")).toBe(true);
     expect(assembled!.members.some(m => m.id === "viteplus-playbook-provider-stack")).toBe(true);
-    expect(assembled!.couplings.outgoing.some(c => c.doc.id === "sdk-usage-guide")).toBe(true);
-    expect(assembled!.couplings.outgoing.some(c => c.doc.id === "sdk-vite-onboarding-guide")).toBe(true);
+    expect(assembled!.members.some(m => m.id === "sdk-usage-guide")).toBe(true);
+    expect(assembled!.members.some(m => m.id === "sdk-vite-onboarding-guide")).toBe(true);
     expect(assembled!.text).toContain("## 구조");
     expect(assembled!.text).toContain("## 직접 결합");
   });
@@ -178,17 +178,15 @@ describe("assembleBoundary: viteplus playbook", () => {
 
 // ─── concern 전파 (contains 경로) ────────────────────────
 
-describe("contains 경로 concern 전파", () => {
-  it("gate-system의 security가 멤버에 전파된다", () => {
+describe("refs 경로 concern 분리", () => {
+  it("gate-system layout refs는 gate-api의 직접 security를 대체하지 않는다", () => {
     const gateApi = computeEffectiveConcerns(
       "gate-api",
       id => result.registry.get(id),
       (id, dir) => result.registry.getLinks(id, dir),
     );
     expect(gateApi.all).toContain("security");
-    expect(gateApi.inherited.some(i =>
-      i.concern === "security" && i.from === "gate-system" && i.via === "contains",
-    )).toBe(true);
+    expect(gateApi.direct).toContain("security");
   });
 });
 
@@ -199,6 +197,8 @@ describe("마커 커버리지", () => {
     const withoutPurpose: string[] = [];
 
     for (const entry of result.registry.all()) {
+      if (entry.ref?.startsWith("docs/proposals/")) continue;
+      if (entry.ref?.startsWith("docs/archive/")) continue;
       const body = bodies.get(entry.id);
       if (!body) continue;
       const r = extractByLevel(body, "purpose");

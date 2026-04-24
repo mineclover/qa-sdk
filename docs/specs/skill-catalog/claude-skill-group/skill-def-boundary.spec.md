@@ -55,6 +55,6 @@ overview 문서에 business logic를 넣으면 state/interaction/validation 문�
 
 - `qa-sdk def boundary <문서ID>`
 - `qa-sdk def boundary-context <문서ID> --mode direct|transitive`
-- `docs/specs/skill-catalog/skill-cli-def-commands.spec.md`
+- `docs/specs/skill-catalog/cli-command-group/skill-cli-def-commands.spec.md`
 
 `skills/def-boundary/SKILL.md`는 구현 SSOT이지만, 조회 진입점은 위 command 표면을 따른다.

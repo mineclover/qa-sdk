@@ -12,8 +12,6 @@ def:
   lifecycle: approved
   layer: domain
   links:
-    - target: meta-semantic-pipe-impl
-      type: depends_on
     - target: ms-concept-pipe
       type: implements
 ---

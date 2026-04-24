@@ -12,9 +12,13 @@
 import { createDiscoveryClient } from "../src/discovery/client.js";
 import { createDefinitionAdapter } from "../src/adapters/definition.js";
 import { createEnhancedDiscoveryClient } from "../src/discovery/enhanced-client.js";
+import { createInfraProfileAdapter } from "../src/adapters/infra-profile.js";
+import { homedir } from "node:os";
+import { resolve } from "node:path";
 
 const REGISTRY_URL = process.env.REGISTRY_URL ?? "http://localhost:3300";
 const DEFINITION_URL = process.env.DEFINITION_URL ?? "http://localhost:3700";
+const PROFILE_DIR = resolve(homedir(), ".qa-sdk");
 
 // 인자 파싱
 const args = process.argv.slice(2);
@@ -27,10 +31,27 @@ const env = args[1] ?? "dev";
 
 async function main() {
   const client = createDiscoveryClient(REGISTRY_URL);
+  const infraProfile = createInfraProfileAdapter(PROFILE_DIR);
 
   if (arg1 === "--all") {
     console.log(`\n=== 전체 서비스 URL (env: ${env}) ===\n`);
-    const urls = await client.resolveAll(env);
+    let urls: Record<string, string>;
+    try {
+      urls = await client.resolveAll(env);
+    } catch {
+      const deployments = await infraProfile.getAllDeployments();
+      urls = Object.fromEntries(
+        Object.values(deployments)
+          .filter((deployment) => deployment.env === env)
+          .map((deployment) => [deployment.serviceId, deployment.endpoint]),
+      );
+      console.log("[offline] registry 미실행 — infra-profile 기준 endpoint 출력");
+    }
+
+    if (Object.keys(urls).length === 0) {
+      console.log("(표시할 서비스 없음)");
+      return;
+    }
     const maxLen = Math.max(...Object.keys(urls).map((k) => k.length));
     for (const [id, url] of Object.entries(urls).sort(([a], [b]) => a.localeCompare(b))) {
       console.log(`  ${id.padEnd(maxLen)}  ${url}`);
@@ -52,7 +73,23 @@ async function main() {
 
   if (arg1 === "--list") {
     console.log(`\n=== 서비스 목록 ===\n`);
-    const services = await client.listServices();
+    let services: Array<{ serviceId: string; name: string; tier: string }>;
+    try {
+      services = await client.listServices();
+    } catch {
+      const deployments = await infraProfile.getAllDeployments();
+      services = Object.values(deployments).map((deployment) => ({
+        serviceId: deployment.serviceId,
+        name: deployment.serviceId,
+        tier: `local-state/${deployment.provider}`,
+      }));
+      console.log("[offline] registry 미실행 — infra-profile 기준 목록 출력");
+    }
+
+    if (services.length === 0) {
+      console.log("(표시할 서비스 없음)");
+      return;
+    }
     for (const svc of services) {
       console.log(`  ${svc.serviceId.padEnd(25)} ${svc.name.padEnd(15)} tier=${svc.tier}`);
     }
@@ -139,8 +176,20 @@ async function main() {
   // 단일 서비스 조회 (기본)
   const svc = await client.resolve(arg1, env);
   if (!svc) {
-    console.error(`서비스 "${arg1}"를 찾을 수 없습니다`);
-    process.exit(1);
+    const deployment = await infraProfile.getDeployment(arg1);
+    if (!deployment || deployment.env !== env) {
+      console.error(`서비스 "${arg1}"를 찾을 수 없습니다`);
+      process.exit(1);
+    }
+
+    console.log(`\n=== ${deployment.serviceId} (${deployment.serviceId}) ===`);
+    console.log("  Source:   infra-profile (registry 미연결)");
+    console.log(`  URL:      ${deployment.endpoint}`);
+    console.log(`  Provider: ${deployment.provider}`);
+    console.log(`  Env:      ${deployment.env}`);
+    console.log(`  Region:   ${deployment.region}`);
+    console.log(`  Health:   ${deployment.healthPath}`);
+    return;
   }
 
   console.log(`\n=== ${svc.name} (${svc.serviceId}) ===`);

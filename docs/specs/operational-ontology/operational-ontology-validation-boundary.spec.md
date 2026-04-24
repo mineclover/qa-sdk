@@ -1,8 +1,7 @@
 ---
 def:
   id: operational-ontology-validation-boundary
-  type: knowledge
-  knowledge_kind: guide
+  type: spec
   tier: component
   scope: constraint
   aspect: tech_constraint
@@ -12,17 +11,17 @@ def:
   tags: [structural, testing, contract, cross-scope]
   links:
     - target: operational-ontology-system
-      type: refines
+      type: traces_to
     - target: definition-management
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-schema-validation
-      type: depends_on
+      type: traces_to
     - target: programming-artifact-ontology-context-simulation
       type: traces_to
     - target: registry-system
-      type: depends_on
+      type: traces_to
     - target: index-meta-system
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Validation Boundary — ontology design 변경 검증 범위
@@ -68,4 +67,4 @@ Escalate from local validation to lifecycle validation only when the change edit
 
 Every ontology validation doc that describes implemented behavior should carry top-level `sources`. Use implementation files for the owned behavior and test files for the expected gate. Do not use prose-only references as a substitute for source links when a concrete package file exists.
 
-For ontology module/leaf/plan/todo/knowledge frontmatter, `contains`, split, and source-map rules, use `operational-ontology-definition-graph-requirements` as the local contract before editing implementation docs.
+For ontology E/C/I/S + L/P frontmatter, `contains`/`refs`, split, and source-map rules, use `operational-ontology-definition-graph-requirements` as the local contract before editing implementation docs.

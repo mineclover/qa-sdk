@@ -30,11 +30,11 @@ sources:
 
 ## 목적 ^purpose
 
-Phase 2A부터 Phase 5까지 완료된 ontology registry lifecycle current state를 하나의 leaf로 고정한다. 목표는 persistence, store validation, service activation, index-meta sync, activation helper/smoke 경계를 lifecycle narrative로 섞지 않고 각 phase의 owner와 non-goal을 명확히 하는 것이다.
+Phase 2A부터 Phase 5까지 완료된 ontology registry lifecycle current state를 하나의 책임 문서로 고정한다. 목표는 persistence, store validation, service activation, index-meta sync, activation helper/smoke 경계를 lifecycle narrative로 섞지 않고 각 phase의 owner와 non-goal을 명확히 하는 것이다.
 
 ## 구성 ^overview
 
-이 문서는 registry allocation module의 lifecycle leaf다. Record shape는 persistence handoff가, active allocation materialization은 index-meta sync handoff가, public CLI execution은 activation CLI leaf가 소유한다.
+이 문서는 registry allocation System의 lifecycle detail이다. Record shape는 persistence handoff가, active allocation materialization은 index-meta sync handoff가, public CLI execution은 activation CLI 문서가 소유한다.
 
 ## Phase Current State ^defines
 

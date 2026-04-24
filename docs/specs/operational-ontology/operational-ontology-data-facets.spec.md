@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-data-facets
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: data
   aspect: domain_data
   depth: specification
@@ -12,13 +11,13 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: operational-ontology-system
-      type: refines
+      type: traces_to
     - target: meta-semantic-concepts
-      type: depends_on
+      type: traces_to
     - target: tracking-three-axes
-      type: depends_on
+      type: traces_to
     - target: meta-semantic-ir
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Data Facets — 정보를 데이터 패싯으로 다루기

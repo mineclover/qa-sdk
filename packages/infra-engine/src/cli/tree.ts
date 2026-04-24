@@ -41,6 +41,8 @@ export const INFRA_COMMAND_TREE: CliCommandNode[] = [
       { flag: "--dry-run", type: "boolean", description: "변경 사항 미리보기" },
       { flag: "--provider", type: "string", description: "프로바이더", choices: ["local", "cloudflare"] },
       { flag: "--all", type: "boolean", description: "전체 서비스 배포" },
+      { flag: "--tier", type: "string", description: "특정 tier만 배포" },
+      { flag: "--services", type: "string", description: "쉼표로 구분한 서비스 목록만 배포" },
       { flag: "--continue-on-error", type: "boolean", description: "실패 시 계속" },
       { flag: "--sync", type: "boolean", description: "배포 후 codegen + cascade 자동 실행" },
       { flag: "--artifact-registry", type: "string", description: "배포 산출물 registry JSON 기록" },
@@ -55,12 +57,14 @@ export const INFRA_COMMAND_TREE: CliCommandNode[] = [
   },
   {
     segment: "export",
-    description: "연결 정보 export",
+    description: "연결 정보 export (legacy; 신규는 infra-env 사용)",
     handler: exportHandler,
     args: [{ name: "format" }, { name: "target" }, { name: "env" }],
     options: [
       { flag: "--all", type: "boolean", description: "전체 URL 포함" },
       { flag: "--out", type: "string", description: "출력 경로" },
+      { flag: "--pg-domain", type: "string", description: "PG 도메인" },
+      { flag: "--pg-host", type: "string", description: "PG host" },
     ],
   },
   {
@@ -73,8 +77,12 @@ export const INFRA_COMMAND_TREE: CliCommandNode[] = [
     segment: "history",
     description: "배포 이력",
     handler: historyHandler,
-    args: [{ name: "service", required: true }],
-    options: [{ flag: "--json", type: "boolean", description: "JSON 형식 출력" }],
+    args: [{ name: "service" }],
+    options: [
+      { flag: "--json", type: "boolean", description: "JSON 형식 출력" },
+      { flag: "--fleet", type: "boolean", description: "Fleet 요약 이력 조회" },
+      { flag: "--env", type: "string", description: "Fleet 이력 env 필터" },
+    ],
   },
   {
     segment: "audit",
@@ -95,8 +103,27 @@ export const INFRA_COMMAND_TREE: CliCommandNode[] = [
     segment: "monitor",
     description: "헬스 모니터링",
     children: [
-      { segment: "start", description: "sync-loop 시작", handler: monitorStartHandler, options: [{ flag: "--interval", type: "string", description: "체크 간격 (초)" }] },
-      { segment: "check", description: "수동 1회 체크", handler: monitorCheckHandler },
+      {
+        segment: "start",
+        description: "sync-loop 시작",
+        handler: monitorStartHandler,
+        options: [
+          { flag: "--interval", type: "string", description: "체크 간격 (초)" },
+          { flag: "--auto-recover", type: "boolean", description: "이상 상태 자동 재배포" },
+          { flag: "--max-retries", type: "string", description: "자동 복구 최대 시도 횟수" },
+          { flag: "--cooldown-sec", type: "string", description: "자동 복구 재시도 간격 (초)" },
+        ],
+      },
+      {
+        segment: "check",
+        description: "수동 1회 체크",
+        handler: monitorCheckHandler,
+        options: [
+          { flag: "--auto-recover", type: "boolean", description: "이상 상태 자동 재배포" },
+          { flag: "--max-retries", type: "string", description: "자동 복구 최대 시도 횟수" },
+          { flag: "--cooldown-sec", type: "string", description: "자동 복구 재시도 간격 (초)" },
+        ],
+      },
       { segment: "status", description: "마지막 결과", handler: monitorStatusHandler },
     ],
   },

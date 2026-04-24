@@ -20,6 +20,29 @@
 - CLI 표면과 라이브러리 표면을 같은 패키지에서 제공한다.
 - `infra authz graph`로 Nginx/Zitadel proxy config와 route별 Cerbos policy map을 authorization ontology graph로 투영한다.
 
+## CLI 사용 기준
+
+`infra-engine`는 **운영/소비자 CLI**다.
+
+- 배포/검증/관측/이력/Fleet 상태: `infra ...`
+- 환경 공급(.env/TS 연결 코드/compose override): `infra-env ...`가 기본 surface
+
+즉:
+
+```bash
+# 운영/배포
+pnpm --filter infra-engine infra deploy ingest-server dev
+pnpm --filter infra-engine infra status dev
+
+# 환경 공급
+pnpm --filter infra-env-kit build
+pnpm --filter infra-env-kit cli env ingest-server dev
+pnpm --filter infra-env-kit cli ts dev
+pnpm --filter infra-env-kit cli compose dev
+```
+
+`infra export env|ts|compose`는 호환성 때문에 유지되는 legacy consumer surface다. 신규 문서, 예제, 운영 스크립트는 `infra-env` 기준으로 작성하는 것이 원칙이다.
+
 ## 코드 진입점
 
 - `src/index.ts` — 라이브러리 export 진입점

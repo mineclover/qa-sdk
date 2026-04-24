@@ -56,15 +56,14 @@ describe("decision-flow 문서 등록", () => {
 });
 
 describe("df-system 그룹 조립", () => {
-  it("contains 멤버 9건 (3 서브그룹 + 6 직접 멤버)", () => {
+  it("structural refs 멤버 5건을 조망한다", () => {
     const links = result.registry.getLinks("df-system", "outgoing")
-      .filter(l => l.linkType === "contains");
-    expect(links.length).toBeGreaterThanOrEqual(9);
-    // 서브그룹 확인
+      .filter(l => l.linkType === "contains" || l.linkType === "refs");
+    expect(links.length).toBeGreaterThanOrEqual(5);
     const memberIds = links.map(l => l.targetId);
-    expect(memberIds).toContain("df-model-group");
-    expect(memberIds).toContain("df-analysis-group");
-    expect(memberIds).toContain("df-interface-group");
+    expect(memberIds).toContain("df-constraint");
+    expect(memberIds).toContain("axis-decision-guide");
+    expect(memberIds).toContain("decision-flow-store");
   });
 });
 
@@ -120,8 +119,8 @@ describe("link 연결", () => {
     expect(links.some(l => l.targetId === "decision-standard-checklist" && l.linkType === "contains")).toBe(true);
   });
 
-  it("axis-decision-guide → decision-standard (refines)", () => {
+  it("axis-decision-guide → decision-standard (traces_to)", () => {
     const links = result.registry.getLinks("axis-decision-guide", "outgoing");
-    expect(links.some(l => l.targetId === "decision-standard-group" && l.linkType === "refines")).toBe(true);
+    expect(links.some(l => l.targetId === "decision-standard-group" && l.linkType === "traces_to")).toBe(true);
   });
 });

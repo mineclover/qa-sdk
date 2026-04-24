@@ -12,7 +12,7 @@ def:
     - target: programming-artifact-ontology-context-simulation-plan
       type: traces_to
     - target: programming-artifact-ontology-system
-      type: refines
+      type: traces_to
 ---
 
 # Programming Artifact Ontology Context Simulation — 구현 TODO

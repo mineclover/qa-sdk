@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-lineage
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: flow
   aspect: relation
   depth: specification
@@ -12,11 +11,11 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: operational-ontology-data-facets
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-information-transmission
-      type: depends_on
+      type: traces_to
     - target: meta-semantic-ir
-      type: depends_on
+      type: traces_to
 sources:
   - packages/operational-ontology/src/internal/lineage-core.ts
   - packages/operational-ontology/src/internal/lineage-projector.ts

@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-control-flow
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: flow
   aspect: process_flow
   depth: specification
@@ -12,13 +11,13 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: operational-ontology-information-transmission
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-branch-handling
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-simulation
-      type: depends_on
+      type: traces_to
     - target: meta-semantic-pipe-impl
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Control Flow — 제어 흐름 관리의 최소 모델

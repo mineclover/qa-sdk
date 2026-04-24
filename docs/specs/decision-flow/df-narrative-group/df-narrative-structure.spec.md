@@ -2,8 +2,7 @@
 def:
   tier: component
   id: df-narrative-structure
-  type: knowledge
-  knowledge_kind: narrative
+  type: spec
   address: def_document:v2:205958
   scope: state
   aspect: domain_state
@@ -14,7 +13,7 @@ def:
   tags: [decision]
   links:
     - target: df-state-model
-      type: depends_on
+      type: traces_to
 ---
 # Decision Flow — 서사 구조
 

@@ -2,8 +2,7 @@
 def:
   tier: component
   id: authorization-ontology-monitor-web
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: ui
   aspect: component
   depth: specification
@@ -12,13 +11,13 @@ def:
   tags: [security, structural]
   links:
     - target: authorization-ontology-system
-      type: refines
+      type: traces_to
     - target: authorization-ontology-auth-chain
-      type: depends_on
+      type: traces_to
     - target: authorization-ontology-application-enforcement
-      type: depends_on
+      type: traces_to
     - target: authorization-ontology-audit-layer
-      type: depends_on
+      type: traces_to
 ---
 
 # Authorization Ontology Monitor Web — 권한 관측 독립 웹

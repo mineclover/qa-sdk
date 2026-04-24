@@ -1,8 +1,7 @@
 ---
 def:
   id: operational-ontology-ssot-navigation-guide
-  type: knowledge
-  knowledge_kind: guide
+  type: spec
   tier: component
   scope: constraint
   aspect: tech_constraint
@@ -12,13 +11,13 @@ def:
   tags: [structural, contract, cross-scope]
   links:
     - target: operational-ontology-system
-      type: refines
+      type: traces_to
     - target: operational-ontology-registry-lifecycle
-      type: depends_on
+      type: traces_to
     - target: registry-system
-      type: depends_on
+      type: traces_to
     - target: index-meta-system
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology SSOT Navigation Guide — schema/registry/address 경계 탐색

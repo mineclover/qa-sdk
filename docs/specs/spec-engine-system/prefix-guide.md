@@ -13,7 +13,7 @@ def:
   tags: [entry-point]
   links:
     - target: convergence-layer-group
-      type: refines
+      type: traces_to
     - target: prefix-guide-modeling
       type: contains
     - target: prefix-guide-env-override

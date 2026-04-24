@@ -1,8 +1,7 @@
 ---
 def:
   id: viteplus-playbook-user-scenarios
-  type: knowledge
-  knowledge_kind: guide
+  type: spec
   tier: component
   scope: flow
   aspect: user_scenario
@@ -13,13 +12,13 @@ def:
   tags: [entry-point, frontend, testing]
   links:
     - target: viteplus-sdk-smoke-system
-      type: refines
+      type: traces_to
     - target: platform-sdk-user-scenarios
-      type: depends_on
+      type: traces_to
     - target: scope-nesting-system
-      type: depends_on
+      type: traces_to
     - target: viteplus-playbook-template-flow
-      type: depends_on
+      type: traces_to
 ---
 
 # Vite+ Playbook Context-Action 유저 시나리오

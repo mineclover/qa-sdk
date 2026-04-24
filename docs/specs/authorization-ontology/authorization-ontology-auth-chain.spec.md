@@ -2,8 +2,7 @@
 def:
   tier: component
   id: authorization-ontology-auth-chain
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: interface
   aspect: api_contract
   depth: specification
@@ -12,9 +11,9 @@ def:
   tags: [security, structural]
   links:
     - target: authorization-ontology-system
-      type: refines
+      type: traces_to
     - target: auth-permission-integration
-      type: depends_on
+      type: traces_to
 ---
 
 # Authorization Ontology Auth Chain — 인증/인가 서비스 체인 모델

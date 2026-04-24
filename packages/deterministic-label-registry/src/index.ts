@@ -9,7 +9,8 @@
  *   - records.ts:    candidate → DeterministicLabelRecord 투영
  *   - inventory.ts:  inventory 조립 + summary
  *
- * FSM readiness 및 transition dry-run은 단순화 과정에서 제거됨 (2026-04-18).
+ * FSM readiness 및 transition dry-run은 이 패키지 범위의 단순화 과정에서 제거됨 (2026-04-18).
+ * 이는 전역 FSM 금지가 아니라 deterministic-label projection의 목적 단위 결정이다.
  * 상세: `deterministic-label-stability-boundary.memo.md`.
  */
 

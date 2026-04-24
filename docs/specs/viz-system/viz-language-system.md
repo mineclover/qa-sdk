@@ -20,7 +20,7 @@ def:
     - target: motion-content-editor-demo
       type: contains
     - target: canvas-viewport-spec
-      type: depends_on
+      type: refs
 ---
 
 # Viz 언어 계약 그룹

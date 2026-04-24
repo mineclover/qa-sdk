@@ -8,6 +8,7 @@ import {
   extractFrontmatter,
   collectCodeReferences,
   extractSourceEntriesFromYaml,
+  findMarkedSections,
   parseCodeReferenceTarget,
   parseDocument,
   parseYaml,
@@ -262,7 +263,7 @@ function buildEnvelope(
       ...toDocumentSources(parsed),
       ...codeCommentSources,
     ],
-    sections: toDocumentSections(parsed.relativePath, summary.purpose, summary.overview),
+    sections: toDocumentSections(parsed.relativePath, body),
     diagnostics: [
       ...validationIssues.map((issue) => toDocumentDiagnostic(parsed.relativePath, issue)),
       ...(bddMetadata?.diagnostics ?? []).map(toDocumentBddDiagnostic),
@@ -396,31 +397,136 @@ function toDocumentSources(parsed: ParsedDefinitionMarkdown): readonly DocumentS
 
 function toDocumentSections(
   sourcePath: string,
-  purpose: string | null,
-  overview: readonly string[],
+  body: string,
 ): readonly DocumentSectionInput[] {
-  const sections: DocumentSectionInput[] = [];
-  if (purpose) {
-    sections.push({
-      id: "purpose",
-      title: "purpose",
-      anchor: "^purpose",
-      content: purpose,
-      order: 0,
-      rawSource: { path: sourcePath, pointer: "^purpose" },
+  const sections = [
+    ...extractMarkedSections(sourcePath, body),
+    ...extractHeadingSections(sourcePath, body),
+  ].toSorted((left, right) => left.order - right.order);
+
+  return sections.map((section, index) => ({
+    ...section,
+    order: index,
+  }));
+}
+
+function extractMarkedSections(
+  sourcePath: string,
+  body: string,
+): readonly (DocumentSectionInput & { readonly order: number })[] {
+  const counts = new Map<string, number>();
+
+  return findMarkedSections(body)
+    .filter((section) => section.level > 0 && isTrackedMarker(section.marker))
+    .map((section) => {
+      const count = (counts.get(section.marker) ?? 0) + 1;
+      counts.set(section.marker, count);
+      return {
+        id: count === 1 ? section.marker : `${section.marker}:${count}`,
+        title: stripHeadingPrefix(section.header) || section.marker,
+        anchor: `^${section.marker}`,
+        content: section.body,
+        order: section.line,
+        rawSource: { path: sourcePath, pointer: `^${section.marker}` },
+        metadata: sectionReferenceMetadata(section.body, section.marker),
+      } satisfies DocumentSectionInput & { readonly order: number };
     });
-  }
-  overview.forEach((content, index) => {
-    sections.push({
-      id: index === 0 ? "overview" : `overview:${index + 1}`,
-      title: "overview",
-      anchor: "^overview",
-      content,
-      order: index + 1,
-      rawSource: { path: sourcePath, pointer: "^overview" },
+}
+
+function extractHeadingSections(
+  sourcePath: string,
+  body: string,
+): readonly (DocumentSectionInput & { readonly order: number })[] {
+  const counts = new Map<string, number>();
+
+  return findHeadingSections(body, ["Scenario Matrix"])
+    .map((section) => {
+      const sectionId = slug(section.title);
+      const count = (counts.get(sectionId) ?? 0) + 1;
+      counts.set(sectionId, count);
+      return {
+        id: count === 1 ? sectionId : `${sectionId}:${count}`,
+        title: section.title,
+        anchor: sectionId,
+        content: section.content,
+        order: section.line,
+        rawSource: { path: sourcePath, pointer: `## ${section.title}` },
+        metadata: sectionReferenceMetadata(section.content, sectionId),
+      } satisfies DocumentSectionInput & { readonly order: number };
     });
+}
+
+function isTrackedMarker(marker: string): boolean {
+  return marker === "purpose" || marker === "overview" || marker === "constraint";
+}
+
+function stripHeadingPrefix(value: string): string {
+  return value.replace(/^#{1,6}\s*/, "").trim();
+}
+
+function sectionReferenceMetadata(
+  content: string,
+  sectionKind: string,
+): DocumentMetadata {
+  const evidenceIds = unique(content.match(/\bE-[A-Za-z0-9][A-Za-z0-9_-]*\b/g) ?? []);
+  const sourceRefs = unique(
+    (
+      content.match(/[A-Za-z0-9._/-]+\.(?:c|cc|cpp|css|go|html|java|js|json|jsx|kt|md|py|rb|rs|ts|tsx|txt|yaml|yml)(?::[A-Za-z0-9_$.-]+)?/g)
+      ?? []
+    ).map(stripSourceSymbol),
+  );
+  return {
+    sectionKind,
+    ...(sourceRefs.length > 0 ? { sourceRefs } : {}),
+    ...(evidenceIds.length > 0 ? { evidenceIds } : {}),
+  };
+}
+
+function stripSourceSymbol(value: string): string {
+  return value.replace(/[:#][A-Za-z0-9_$.-]+$/, "");
+}
+
+function findHeadingSections(
+  content: string,
+  titles: readonly string[],
+): readonly { readonly title: string; readonly content: string; readonly line: number }[] {
+  const headings = [...content.matchAll(/^(#{2,6})\s+(.+?)\s*$/gm)]
+    .map((match) => ({
+      title: match[2]?.trim() ?? "",
+      index: match.index ?? 0,
+      endOfHeading: (match.index ?? 0) + match[0].length,
+      line: countLinesBefore(content, match.index ?? 0),
+    }))
+    .filter((heading) => titles.some((title) => title.toLowerCase() === heading.title.toLowerCase()));
+
+  return headings.map((heading, index) => {
+    const next = headings[index + 1];
+    return {
+      title: heading.title,
+      content: content.slice(heading.endOfHeading, next?.index ?? content.length).trim(),
+      line: heading.line,
+    };
   });
-  return sections;
+}
+
+function countLinesBefore(content: string, index: number): number {
+  let lines = 0;
+  for (let position = 0; position < index; position += 1) {
+    if (content[position] === "\n") lines += 1;
+  }
+  return lines;
+}
+
+function slug(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function unique(values: readonly string[]): readonly string[] {
+  return [...new Set(values.filter((value) => value.length > 0))];
 }
 
 function todoFollowUpCategories(body: string): readonly TodoFollowUpCategory[] {

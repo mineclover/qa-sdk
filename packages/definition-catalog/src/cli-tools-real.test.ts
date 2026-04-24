@@ -31,7 +31,7 @@ describe("definition-catalog CLI tools", () => {
   it("system-root topdown은 모든 contains 멤버의 purpose를 조립한다", async () => {
     const text = await topdown(ROOT, "system-root");
     const members = result.registry.getLinks("system-root", "outgoing")
-      .filter(link => link.linkType === "contains")
+      .filter(link => link.linkType === "contains" || link.linkType === "refs")
       .map(link => result.registry.get(link.targetId))
       .filter((entry): entry is NonNullable<typeof entry> => entry !== undefined);
 

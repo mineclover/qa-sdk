@@ -67,6 +67,8 @@ describe("InfraProfileAdapter", () => {
     const history = await adapter.getHistory("test-svc");
     expect(history).toHaveLength(1);
     expect(history[0]).toEqual(historyEntry);
+    const allHistory = await adapter.getAllHistory();
+    expect(allHistory["test-svc"]).toEqual([historyEntry]);
   });
 
   it("getHistory — 존재하지 않는 서비스 → 빈 배열", async () => {

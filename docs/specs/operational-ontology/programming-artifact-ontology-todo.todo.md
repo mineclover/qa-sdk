@@ -10,7 +10,7 @@ def:
   tags: [structural, testing, contract]
   links:
     - target: programming-artifact-ontology-plan
-      type: refines
+      type: traces_to
 ---
 
 # Programming Artifact Ontology — 구현 TODO
@@ -50,7 +50,7 @@ def:
 - [x] `quality export --artifact-registry` record metadata에 bundle state, gate count, claim count, generated timestamp closure 요약 추가
 - [x] `extract-artifact --json`의 `source.governanceClosure`가 quality-status found/missing/invalid/incomplete 상태, matched refs, warning/action을 노출
 - [x] quality-status governance closure contract를 system/CLI/development guide/prompt artifact generation docs에 동기화
-- [x] provider lookup, activation evidence, quality evidence concerns를 `programming-artifact-ontology-system` 하위 leaf 문서로 분리
+- [x] provider lookup, activation evidence, quality evidence concerns를 `programming-artifact-ontology-system` 하위 책임 문서로 분리
 - [x] `operational-ontology-registry-allocation.plan.md`와 `.todo.md`를 adjacent docs로 검토하고, ontology pack allocation lifecycle 변경이 없으므로 out of scope로 유지
 - [x] quality export JSON snapshot evidence가 부족한 경우 explicit `--quality-ledger` fallback으로 resolved gate descriptor surface를 검증
 - [x] quality-status `generatedAt` 기반 stale SLA가 필요해지면 freshness threshold와 warning policy를 별도 story로 추가

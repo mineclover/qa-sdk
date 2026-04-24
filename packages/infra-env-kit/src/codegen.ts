@@ -1,19 +1,19 @@
-// @def.boundary infra-engine-system
-// @def.doc infra-engine-system
+// @def.boundary shared-utility-group
+// @def.doc shared-utility-group
 
-import type { DiscoveryClient } from "../discovery/client.js";
-import { generateTypescriptModule } from "../export/typescript-module.js";
-import { generateEnvFile } from "../export/env-file.js";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { EnvDiscoveryClient } from "./types.js";
+import { generateTypescriptModule } from "./typescript-module.js";
+import { generateEnvFile } from "./env-file.js";
 
 export interface CodegenOptions {
   /** TypeScript 모듈 출력 경로 (기본: generated/service-connections.{env}.ts) */
   tsOutputDir?: string;
   /** .env 파일 출력 디렉토리 (기본: generated/env/) */
   envOutputDir?: string;
-  /** 대상 서비스 (기본: 배포된 서비스의 depends_on 역추적) */
+  /** 대상 서비스 (기본: 배포된 서비스의 consumedPrefixes 역추적) */
   targetServices?: string[];
   /** config JSON 경로 (미지정 시 config/{env}.json 자동 탐색) */
   configPath?: string;
@@ -29,7 +29,7 @@ async function loadServiceConfigs(
       configPath ??
       resolve(
         dirname(fileURLToPath(import.meta.url)),
-        `../../config/${env}.json`,
+        `../../../infra-engine/config/${env}.json`,
       );
     const raw = JSON.parse(await readFile(path, "utf-8"));
     return (raw.services ?? {}) as Record<string, Record<string, unknown>>;
@@ -39,7 +39,7 @@ async function loadServiceConfigs(
 }
 
 export async function runPostDeployCodegen(
-  discovery: DiscoveryClient,
+  discovery: EnvDiscoveryClient,
   deployedServiceId: string,
   env: string,
   options?: CodegenOptions,
@@ -48,20 +48,16 @@ export async function runPostDeployCodegen(
   const envDir = options?.envOutputDir ?? "generated/env";
   const envPaths: string[] = [];
 
-  // config JSON 로딩
   const serviceConfigs = await loadServiceConfigs(env, options?.configPath);
 
-  // 1. TypeScript 연결 모듈 재생성
   await mkdir(tsDir, { recursive: true });
   const tsContent = await generateTypescriptModule(discovery, env);
   const tsPath = resolve(tsDir, `service-connections.${env}.ts`);
   await writeFile(tsPath, tsContent);
 
-  // 2. 배포된 서비스 + 의존 서비스의 .env 파일 재생성
   await mkdir(envDir, { recursive: true });
   const allServices = await discovery.listServices();
 
-  // 배포된 서비스 자체
   const selfEnv = await generateEnvFile(
     discovery,
     { serviceId: deployedServiceId, env },
@@ -71,7 +67,6 @@ export async function runPostDeployCodegen(
   await writeFile(selfPath, selfEnv);
   envPaths.push(selfPath);
 
-  // 배포된 서비스에 의존하는 서비스들 (reverse deps)
   const targets = options?.targetServices ?? findDependentServices(allServices, deployedServiceId);
   for (const targetId of targets) {
     const envContent = await generateEnvFile(
@@ -88,17 +83,21 @@ export async function runPostDeployCodegen(
 }
 
 /** deployedServiceId에 의존하는 서비스 찾기 (consumedPrefixes 기반 역추적) */
-function findDependentServices(services: any[], deployedServiceId: string): string[] {
-  const deployed = services.find(s => s.serviceId === deployedServiceId);
+function findDependentServices(
+  services: Awaited<ReturnType<EnvDiscoveryClient["listServices"]>>,
+  deployedServiceId: string,
+): string[] {
+  const deployed = services.find((service) => service.serviceId === deployedServiceId);
   if (!deployed) return [];
 
   const deployedPrefixes = new Set<string>(deployed.ownedPrefixes ?? []);
   if (deployedPrefixes.size === 0) return [];
 
   return services
-    .filter(s =>
-      s.serviceId !== deployedServiceId &&
-      s.consumedPrefixes?.some((p: string) => deployedPrefixes.has(p)),
+    .filter(
+      (service) =>
+        service.serviceId !== deployedServiceId &&
+        service.consumedPrefixes?.some((prefix) => deployedPrefixes.has(prefix)),
     )
-    .map(s => s.serviceId);
+    .map((service) => service.serviceId);
 }

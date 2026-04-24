@@ -12,11 +12,11 @@ def:
   tags: [entry-point]
   links:
     - target: guides-system
-      type: refines
+      type: traces_to
     - target: platform-sdk-spec
-      type: depends_on
+      type: traces_to
     - target: quickstart-guide
-      type: depends_on
+      type: traces_to
 ---
 
 # qa-sdk Usage Reference — 현재 환경 기준

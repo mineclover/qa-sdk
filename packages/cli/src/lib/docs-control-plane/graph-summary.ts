@@ -42,6 +42,7 @@ export interface DocumentGraphResultSummary {
     readonly byNodeKind: Readonly<Record<string, number>>;
     readonly byTraversalAxis: Readonly<Record<string, number>>;
     readonly byDocumentRole: Readonly<Record<string, number>>;
+    readonly bySemanticType: Readonly<Record<string, number>>;
     readonly byFollowUpCategory: Readonly<Record<string, number>>;
   };
 }
@@ -78,6 +79,7 @@ export function summarizeDocumentGraphResult(
       byNodeKind: countByNodeKind(nodes),
       byTraversalAxis: countByTraversalAxis(nodes),
       byDocumentRole: countByDocumentRole(nodes),
+      bySemanticType: countBySemanticType(nodes),
       byFollowUpCategory: countByFollowUpCategory(nodes),
     },
   };
@@ -114,6 +116,17 @@ function countByDocumentRole(
     if (role) increment(counts, role);
   }
   return toSortedRecord(counts, DOCUMENT_GRAPH_FAMILY_ROLE_TYPES);
+}
+
+function countBySemanticType(
+  nodes: readonly DocumentGraphRankedNode[],
+): Readonly<Record<string, number>> {
+  const counts = new Map<string, number>();
+  for (const node of nodes) {
+    const type = factorStringMetadata(node, "node-kind", "type");
+    if (type) increment(counts, type);
+  }
+  return toSortedRecord(counts, ["design", "knowledge", "spec"]);
 }
 
 function countByFollowUpCategory(
@@ -153,10 +166,23 @@ function countDiagnostics(
     bySeverity.warning += metadataNumber(metadata, "warning");
     bySeverity.info += metadataNumber(metadata, "info");
   }
+  for (const diagnostic of traversal.diagnostics) {
+    const severity = traversalDiagnosticSeverity(diagnostic);
+    bySeverity[severity] += 1;
+  }
   return {
     traversal: traversal.diagnostics.length,
     bySeverity,
   };
+}
+
+function traversalDiagnosticSeverity(
+  diagnostic: string,
+): keyof DocumentGraphSummaryDiagnosticCounts["bySeverity"] {
+  const normalized = diagnostic.trim().toLowerCase();
+  if (normalized.startsWith("error:")) return "error";
+  if (normalized.startsWith("warning:") || normalized.startsWith("warn:")) return "warning";
+  return "info";
 }
 
 function isArchiveRankedNode(node: DocumentGraphRankedNode): boolean {

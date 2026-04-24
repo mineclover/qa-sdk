@@ -2,8 +2,7 @@
 def:
   tier: exempt
   id: ms-concept-spacetime-uid
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: data
   aspect: domain_data
   depth: specification
@@ -11,9 +10,9 @@ def:
   layer: domain
   links:
     - target: meta-semantic-concepts
-      type: depends_on
+      type: traces_to
     - target: ms-concept-branch-path
-      type: depends_on
+      type: traces_to
 ---
 
 # Spacetime UID

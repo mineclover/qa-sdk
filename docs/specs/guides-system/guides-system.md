@@ -13,7 +13,7 @@ def:
   tags: [structural, entry-point, cross-scope]
   links:
     - target: analysis-system
-      type: depends_on
+      type: traces_to
     - target: architecture-decisions
       type: contains
     - target: coding-conventions

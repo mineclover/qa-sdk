@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "dspy-cost-report-v1",
+  "bindingId": "dspy:meta-semantic-system:ExtractionPort:v1",
+  "programId": "dspy-program:meta-semantic-extraction:v1",
+  "generatedAt": "2026-04-20T00:00:00.000Z",
+  "currency": "USD",
+  "usage": {
+    "totalCalls": 30,
+    "totalInputTokens": 0,
+    "totalOutputTokens": 0,
+    "totalCost": 0,
+    "averageCostPerJudgment": 0,
+    "p95LatencyMs": 0
+  },
+  "budget": {
+    "maxAverageCostPerJudgment": null,
+    "maxP95LatencyMs": null
+  },
+  "pass": true
+}

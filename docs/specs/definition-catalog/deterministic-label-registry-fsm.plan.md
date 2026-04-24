@@ -2,8 +2,7 @@
 def:
   tier: component
   id: deterministic-label-registry-fsm-plan
-  type: knowledge
-  knowledge_kind: proposal
+  type: spec
   scope: flow
   aspect: process_flow
   depth: specification
@@ -13,19 +12,19 @@ def:
   tags: [structural, contract, observability]
   links:
     - target: docs-control-plane
-      type: refines
+      type: traces_to
     - target: docs-control-plane-rule
-      type: depends_on
+      type: traces_to
     - target: definition-catalog-spec
-      type: depends_on
+      type: traces_to
     - target: definition-state-model
-      type: depends_on
+      type: traces_to
     - target: definition-harness
-      type: depends_on
+      type: traces_to
     - target: registry-system
-      type: depends_on
+      type: traces_to
     - target: index-meta-system
-      type: depends_on
+      type: traces_to
     - target: deterministic-label-registry-fsm-todo
       type: traces_to
 ---
@@ -34,7 +33,7 @@ def:
 
 ## 목적 ^purpose
 
-문서, pack, source, PRD, evidence 같은 형상 단위를 semantic coordinate로 식별하고, append-only label registry와 FSM 전이 규칙으로 결정론적 제어를 달성하기 위한 방향 계획을 정의한다. 목표는 PRD/TODO 같은 실행 artifact보다 낮은 계층의 형상 관리 control plane을 먼저 고정해, 같은 입력과 같은 상태에서 항상 같은 lint/resolve/active 판단이 나오게 만드는 것이다.
+문서, pack, source, PRD, evidence 같은 형상 단위를 semantic coordinate로 식별하고, append-only label registry와 FSM 전이 규칙으로 결정론적 제어를 달성하기 위한 초기 방향 계획을 정의한다. 이후 2026-04-18 단순화에서 FSM readiness, transition dry-run, currentState는 `deterministic-label-registry` 범위에서 제거되었다. 현재 이 문서는 history/roadmap 기록이며, 현행 구현 authority는 `deterministic-label-architecture`, `deterministic-label-stability-boundary`, `deterministic-label-projection-determinism`이다.
 
 ## 현재 판단
 
@@ -47,9 +46,9 @@ def:
 - pack authoring and validation: `ontology pack scaffold`, `ontology pack validate`
 - completed-record and follow-up candidates: `completedRecords[]`, `nextFollowUps[]`
 
-하지만 이들은 아직 하나의 deterministic label registry/FSM control plane으로 닫혀 있지 않다. 여러 read-model은 존재하지만, 모든 형상 단위가 공통 semantic coordinate와 공통 state transition rule을 공유하지는 않는다.
+하지만 이들은 아직 하나의 deterministic label registry control plane으로 닫혀 있지 않다. 여러 read-model은 존재하지만, 모든 형상 단위가 공통 semantic coordinate를 공유하지는 않는다. 공통 state transition rule은 현행 범위에서 제외됐다.
 
-US-001~US-008 구현은 이 계획의 1차 범위를 read-only internal API로 고정했다. `buildDeterministicLabelInventory()`가 docs-control-plane adapters, completed-record detection, ontology pack projection, optional FSM readiness, summary counts를 한 번에 조립하고, command layer는 아직 새 `docs label *` surface를 갖지 않는다. 따라서 현재 operator surface는 기존 `docs status`, `docs graph`, `docs drift`, `docs prd *`, `def validate`, `ontology pack validate`이고, deterministic label/FSM은 이 surface들이 소비할 수 있는 공통 read model이다.
+US-001~US-008 구현은 이 계획의 1차 범위를 read-only internal API로 고정했다. `buildDeterministicLabelInventory()`가 docs-control-plane adapters, completed-record detection, label records, summary counts를 조립하고, command layer는 아직 새 `docs label *` surface를 갖지 않는다. 따라서 현재 operator surface는 기존 `docs status`, `docs graph`, `docs drift`, `docs prd *`, `def validate`, `ontology pack validate`이고, deterministic label은 이 surface들이 소비할 수 있는 공통 read model이다.
 
 ## 목표 아키텍처
 
@@ -144,7 +143,9 @@ interface DeterministicLabelRecord {
 
 현재 `definition-catalog` DB, docs adapters, artifact registry, known pack resolver, registry-service/index-meta stores는 label 후보의 입력 source다. 1차 PRD는 이들을 하나로 복사하지 않고, read-only projection으로 조립한다. Label projection은 `def.id`, `stableId`, source path, pack id, artifact id, PRD story id를 재작성하지 않으며, append-only label registry persistence는 Phase 4 이후 별도 판단으로 남긴다.
 
-## FSM 방향
+## Historical FSM 방향 (현재 제거됨)
+
+아래 상태 모델은 초기 계획의 기록이다. 현행 `deterministic-label-registry` 구현에는 persisted `currentState`, FSM readiness, transition dry-run이 없다. 상태 모델이 다시 필요하면 `state-event-terminology` 기준으로 별도 설계한다.
 
 1차 상태 정의:
 
@@ -204,7 +205,7 @@ Controller gate 후보:
 - docs/pack/source/PRD/evidence label 후보 수집
 - collision/ambiguity/gap diagnostics
 
-### Phase 2: FSM readiness calculation
+### Phase 2: FSM readiness calculation (historical)
 
 상태: implemented as read-only readiness projection.
 
@@ -212,7 +213,7 @@ Controller gate 후보:
 - existing `def validate`, `docs drift`, `docs graph`, `pack validate` 결과를 gate input으로 연결
 - transition dry-run result shape
 
-### Phase 3: Transition controller dry-run
+### Phase 3: Transition controller dry-run (historical)
 
 상태: implemented (internal API, command surface deferred).
 

@@ -29,21 +29,25 @@ definition 문서들이 `contains`, `depends_on`, `implements`, `refines`, `cons
 
 ## 구성 ^overview
 
-- 세로 구조: contains가 level 계층을 구성한다.
+- 세로 구조: contains/refs가 E/C/I/S + L/P 책임 문서의 소유/조망 관계를 구성한다.
 - 가로 구조: scope 간 상호작용은 횡방향 링크로 표현한다.
 - 그래프 관측: 구조 변경은 graph_event 좌표로 관측된다.
 
-## 세로 구조 (level 계층)
+## 세로 구조 (E/C/I/S + L/P 관계)
 
-contains 링크는 역할 계층을 만든다.
+contains 링크는 같은 System boundary 안에서 Interface, Component, Entry, System behavior 문서의 소유 관계를 만든다.
+refs 링크는 Layout/Pack이 여러 System 또는 Interface 조각을 조망할 때 사용한다.
 
 ```text
-system-root (group)
-  └── system-infra (group)
-       └── ingest-system (module, scope: flow)
-            ├── ingest-api (leaf, scope: interface)
-            ├── ingest-data (leaf, scope: data)
-            └── ingest-constraint (leaf, scope: constraint)
+ingest-system (tier: system)
+  ├── ingest-interface (scope: interface, aspect: api_contract)
+  ├── ingest-record-component (tier: component, scope: data)
+  ├── ingest-state-component (tier: component, scope: state)
+  └── ingest-rule (scope: constraint)
+
+ingest-pack-or-layout (tier: layout)
+  ├── refs -> ingest-system
+  └── refs -> ingest-observability-system
 ```
 
 ## 가로 교류 (scope 간 연결)
@@ -51,11 +55,25 @@ system-root (group)
 횡방향 링크는 관점 간 관계를 표현한다.
 
 ```text
-leaf(interface) ──depends_on──→ leaf(data)
-leaf(feature)   ──implements──→ leaf(interface)
-leaf(constraint)──constrains──→ module(feature)
-leaf(flow)      ──refines────→ leaf(flow)
+interface(api_contract) ──depends_on──→ component(data)
+system(feature/flow)     ──implements──→ interface(api_contract)
+rule(constraint)         ──constrains──→ system(feature/flow)
+specialized contract     ──refines────→ base contract
 ```
+
+## 행동/이벤트 연결
+
+BDD contract와 event taxonomy는 별도 authority다.
+
+```text
+bdd_contract.when.operation ──depends_on──→ interface operation
+bdd_contract.when.event_key ──depends_on──→ event vocabulary or mapping pack
+bdd_contract.then.emits     ──depends_on──→ event vocabulary or mapping pack
+bdd_contract.then.state     ──depends_on──→ component(state)
+system behavior             ──implements──→ interface contract
+```
+
+이벤트는 behavior 자체가 아니라 관측 가능한 fact key다. Behavior semantics는 `bdd_contract`가, event key vocabulary는 event catalog/mapping pack이 소유한다.
 
 ## 링크 사용 원칙 ^constraint
 

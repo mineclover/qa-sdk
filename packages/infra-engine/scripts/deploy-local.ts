@@ -31,6 +31,8 @@ import { createLocalProvider, type LocalProviderOptions } from "../src/providers
 import { registerProvider, getProvider } from "../src/providers/registry.js";
 import { createPulumiDeployFn } from "../src/providers/pulumi-deploy.js";
 import { writeDeploymentOutputArtifactRegistryRecord } from "../src/post-deploy/artifact-registry.js";
+import { buildDeployHistoryEntry, readFleetRunContextFromEnv } from "../src/post-deploy/deploy-history.js";
+import { runPostDeployCodegen } from "infra-env-kit";
 import type {
   RegistryAdapter,
   IngestAdapter,
@@ -48,6 +50,7 @@ const CONFIG_FILE = positionalArgs[2] || `${ENV}.json`;
 const CONFIG_PATH = resolve(__dirname, `../config/${CONFIG_FILE}`);
 const PROFILE_DIR = resolve(homedir(), ".qa-sdk");
 const ARTIFACT_REGISTRY = flags["artifact-registry"];
+const FLEET_CONTEXT = readFleetRunContextFromEnv();
 
 function parseScriptArgs(args: readonly string[]): {
   positional: string[];
@@ -120,11 +123,12 @@ async function main() {
   // 실제 registry-service 연동 (미실행 시 mock fallback)
   let registry: RegistryAdapter;
   try {
-    const res = await fetch("http://localhost:3300/health", { signal: AbortSignal.timeout(2000) });
+    const registryUrl = process.env.REGISTRY_URL ?? "http://localhost:3300";
+    const res = await fetch(new URL("/health", registryUrl), { signal: AbortSignal.timeout(2000) });
     if (res.ok) {
       const { createRegistryAdapter } = await import("../src/adapters/registry.js");
-      registry = createRegistryAdapter("http://localhost:3300");
-      console.log("[registry] 실서비스 연결됨 (localhost:3300)");
+      registry = createRegistryAdapter(registryUrl);
+      console.log(`[registry] 실서비스 연결됨 (${registryUrl})`);
     } else {
       throw new Error("not ok");
     }
@@ -140,11 +144,12 @@ async function main() {
   // IngestAdapter — ingest-server 실행 시 실연동, 미실행 시 mock fallback
   let ingestAdapter: IngestAdapter;
   try {
-    const res = await fetch("http://localhost:3200/health/live", { signal: AbortSignal.timeout(2000) });
+    const ingestUrl = process.env.INGEST_URL ?? "http://localhost:3200";
+    const res = await fetch(new URL("/health/live", ingestUrl), { signal: AbortSignal.timeout(2000) });
     if (res.ok) {
       const { createIngestAdapter } = await import("../src/adapters/ingest.js");
-      ingestAdapter = createIngestAdapter({ baseUrl: "http://localhost:3200" });
-      console.log("[ingest] 실서비스 연결됨 (localhost:3200)");
+      ingestAdapter = createIngestAdapter({ baseUrl: ingestUrl });
+      console.log(`[ingest] 실서비스 연결됨 (${ingestUrl})`);
     } else {
       throw new Error("not ok");
     }
@@ -203,17 +208,8 @@ async function main() {
 
   // 배포 이력 기록
   if (!DRY_RUN) {
-    const historyEntry: DeployHistoryEntry = {
-      deployedAt: new Date().toISOString(),
-      version: result.endpoint ?? "unknown",
-      env: ENV,
-      provider: "local",
-      endpoint: result.endpoint ?? "",
-      duration: result.duration,
-      success: result.success,
-      triggeredBy: "manual",
-    };
-    await infraProfile.addHistory(SERVICE, historyEntry);
+    let artifactId: string | undefined;
+    const deployedAt = new Date().toISOString();
 
     // 버전 기록
     if (result.success) {
@@ -239,21 +235,38 @@ async function main() {
           provider: "local",
           configPath: CONFIG_PATH,
           result,
+          fleetRunId: FLEET_CONTEXT.runId,
+          fleetMode: FLEET_CONTEXT.mode,
+          fleetScope: FLEET_CONTEXT.scope,
         });
         if (record) {
+          artifactId = record.artifactId;
           console.log(`[artifact-registry] ${record.artifactId} -> ${ARTIFACT_REGISTRY}`);
         }
       } catch (err) {
         console.warn(`[artifact-registry] 기록 실패: ${err}`);
       }
     }
+
+    const historyEntry: DeployHistoryEntry = buildDeployHistoryEntry({
+      deployedAt,
+      version: result.endpoint ?? "unknown",
+      env: ENV,
+      provider: "local",
+      endpoint: result.endpoint ?? "",
+      duration: result.duration,
+      success: result.success,
+      triggeredBy: "manual",
+      configPath: CONFIG_PATH,
+      artifactId,
+    }, FLEET_CONTEXT);
+    await infraProfile.addHistory(SERVICE, historyEntry);
   }
 
   // --sync: codegen + cascade
   if (result.success && process.argv.includes("--sync")) {
     try {
       const { createDiscoveryClient } = await import("../src/discovery/client.js");
-      const { runPostDeployCodegen } = await import("../src/post-deploy/codegen.js");
       const client = createDiscoveryClient(process.env.REGISTRY_URL ?? "http://localhost:3300");
       const codegenResult = await runPostDeployCodegen(client, SERVICE, ENV);
       console.log(`[codegen] TS: ${codegenResult.tsPath}`);

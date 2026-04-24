@@ -49,7 +49,7 @@ const inventory = await buildDeterministicLabelInventory({
 - **쓰기 금지** — registry 영속, transition event 발행, state override 없음
 - **persistence 없음** — 실행할 때마다 source에서 재계산
 - **adapter 소유 안 함** — envelope 수집 방법은 소비자가 adapter 주입으로 결정
-- **FSM/transition 없음** — 2026-04-18 단순화에서 제거. 재도입은 별도 설계 필요
+- **FSM/transition 없음** — 2026-04-18 단순화에서 이 패키지 범위의 readiness/transition dry-run을 제거. 전역 FSM 금지가 아니며 재도입은 별도 설계 필요
 - **JSON API surface 아님** — 공개 CLI 명령은 `@qa-sdk/cli`가 관리
 
 ## 의존

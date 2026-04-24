@@ -2,11 +2,9 @@
 // @def.doc infra-engine-system
 
 // adapters/ingest.ts — IngestAdapter 실구현
-import { createRequire } from "node:module";
 import type { IngestAdapter } from "./adapter.js";
 
-const require = createRequire(import.meta.url);
-const { version: SDK_VERSION } = require("../../package.json") as { version: string };
+const SDK_VERSION = process.env.npm_package_version ?? "0.1.0";
 
 export interface IngestAdapterOptions {
   baseUrl: string; // "http://localhost:3200"

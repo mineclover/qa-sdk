@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-category-constraint
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: constraint
   aspect: tech_constraint
   depth: specification
@@ -12,9 +11,9 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: operational-ontology-relation-taxonomy
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-core-model
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Category Constraint — relation 조합 폭발을 막는 grammar

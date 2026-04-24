@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-taxonomy-schema
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: data
   aspect: prefix_schema
   depth: specification

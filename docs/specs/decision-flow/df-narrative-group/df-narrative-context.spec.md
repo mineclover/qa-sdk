@@ -2,8 +2,7 @@
 def:
   tier: component
   id: df-narrative-context
-  type: knowledge
-  knowledge_kind: narrative
+  type: spec
   address: def_document:v2:68757
   scope: feature
   aspect: func_def
@@ -14,7 +13,7 @@ def:
   tags: [decision]
   links:
     - target: df-narrative-structure
-      type: depends_on
+      type: traces_to
 ---
 # Decision Flow — ContextProvider
 

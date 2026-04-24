@@ -9,9 +9,16 @@ const webhookSchema = z.object({
   events: z.array(z.string()),
 });
 
+const recoverySchema = z.object({
+  enabled: z.boolean().optional(),
+  maxRetries: z.number().int().positive().optional(),
+  cooldownSec: z.number().int().positive().optional(),
+});
+
 const monitoringSchema = z.object({
   interval: z.number().positive().default(60),
   webhooks: z.array(webhookSchema).optional(),
+  recovery: recoverySchema.optional(),
 });
 
 const gateDefSchema = z.object({

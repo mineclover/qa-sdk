@@ -68,6 +68,11 @@
   },
   "monitoring": {
     "interval": 60,
+    "recovery": {
+      "enabled": false,
+      "maxRetries": 2,
+      "cooldownSec": 300
+    },
     "webhooks": [
       {
         "url": "https://hooks.slack.com/services/STAGING_WEBHOOK",

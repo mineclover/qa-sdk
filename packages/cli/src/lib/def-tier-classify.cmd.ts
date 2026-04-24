@@ -1,4 +1,4 @@
-import type { DefDataSource } from "../data-sources/data-source.js";
+import type { DefDataSource } from "definition-catalog";
 import { classifyTier } from "./def-tier-classify.js";
 import { resolve } from "node:path";
 import { writeFile } from "node:fs/promises";
@@ -20,13 +20,16 @@ export async function cmdTierClassify(source: DefDataSource, args: string[], fla
     if (entry.lifecycle === "deprecated") continue;
     
     // get outgoing links
-    const outgoing = await source.getOutgoingLinks(entry.id);
+    const outgoing = (await source.getOutgoingLinks(entry.docId)).map((link) => ({
+      targetId: link.target,
+      linkType: link.type,
+    }));
     
-    const suggestion = await classifyTier(source, entry.id, entry, allEntries, outgoing);
+    const suggestion = await classifyTier(source, entry.docId, entry, allEntries, outgoing);
     
     results.push({
-      id: entry.id,
-      path: entry.ref,
+      id: entry.docId,
+      path: entry.sourcePath,
       currentType: entry.type || "spec",
       currentLevel: entry.level || "leaf",
       suggestion

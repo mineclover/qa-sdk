@@ -2,8 +2,7 @@
 def:
   tier: component
   id: authorization-ontology-column-lineage-policy
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: flow
   aspect: relation
   depth: specification
@@ -12,11 +11,11 @@ def:
   tags: [security, structural, observability]
   links:
     - target: authorization-ontology-system
-      type: refines
+      type: traces_to
     - target: operational-ontology-lineage
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-persistence
-      type: depends_on
+      type: traces_to
 ---
 
 # Authorization Ontology Column Lineage Policy — 컬럼 리니지 기반 권한 전파

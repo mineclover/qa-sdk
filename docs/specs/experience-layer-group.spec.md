@@ -2,13 +2,17 @@
 def:
   id: experience-layer-group
   type: spec
-  tier: layout
+  tier: system
   scope: ui
   aspect: layout
   depth: overview
   lifecycle: approved
   layer: experience
   links:
+    - target: viz-system
+      type: refs
+    - target: platform-demo-system
+      type: refs
     - target: indexing-core-system
       type: depends_on
 ---

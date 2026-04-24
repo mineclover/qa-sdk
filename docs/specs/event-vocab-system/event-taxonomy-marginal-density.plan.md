@@ -1,18 +1,18 @@
 ---
 def:
   id: event-taxonomy-marginal-density
-  type: plan
+  type: spec
   tier: component
   scope: feature
   aspect: func_def
-  depth: planning
+  depth: specification
   lifecycle: draft
   layer: experience
   tags: [monitoring, quality-gate, weighted-index, taxonomy]
   links:
     - target: event-vocab-system
       type: traces_to
-    - target: event-taxonomy-roadmap
+    - target: event-taxonomy-roadmap-plan
       type: refines
 ---
 

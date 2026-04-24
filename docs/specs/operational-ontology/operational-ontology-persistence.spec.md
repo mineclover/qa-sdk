@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-persistence
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: data
   aspect: system_data
   depth: specification
@@ -12,17 +11,17 @@ def:
   tags: [cross-scope, structural, persistence]
   links:
     - target: operational-ontology-taxonomy-schema
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-schema-validation
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-core-model
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-edge-assertion
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-traversal-coordinate
-      type: depends_on
+      type: traces_to
     - target: address-context-storage
-      type: refines
+      type: traces_to
 sources:
   - packages/operational-ontology/src/internal/persistence-core.ts
   - packages/operational-ontology/src/internal/persistence-memory.ts

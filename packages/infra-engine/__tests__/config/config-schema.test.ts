@@ -34,4 +34,24 @@ describe("configSchema", () => {
     const result = configSchema.parse(withMonitoring);
     expect(result.monitoring?.interval).toBe(30);
   });
+
+  it("monitoring.recovery 선택 필드", () => {
+    const withRecovery = {
+      global: { region: "local" },
+      services: {},
+      connections: {},
+      monitoring: {
+        interval: 30,
+        recovery: {
+          enabled: true,
+          maxRetries: 5,
+          cooldownSec: 120,
+        },
+      },
+    };
+    const result = configSchema.parse(withRecovery);
+    expect(result.monitoring?.recovery?.enabled).toBe(true);
+    expect(result.monitoring?.recovery?.maxRetries).toBe(5);
+    expect(result.monitoring?.recovery?.cooldownSec).toBe(120);
+  });
 });

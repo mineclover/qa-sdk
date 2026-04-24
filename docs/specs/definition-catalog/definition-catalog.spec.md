@@ -3,7 +3,7 @@ def:
   id: definition-catalog-spec
   intent_hierarchy: core
   type: design
-  tier: layout
+  tier: system
   address: def_document:v2:342162
   scope: data
   aspect: domain_data
@@ -36,7 +36,7 @@ def:
     - target: definition-harness
       type: refs
     - target: definition-management
-      type: refs
+      type: traces_to
     - target: definition-cross-loop-bridge
       type: refs
     - target: definition-data-source

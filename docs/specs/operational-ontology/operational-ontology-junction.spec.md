@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-junction
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: flow
   aspect: process_flow
   depth: specification
@@ -12,11 +11,11 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: operational-ontology-branch-handling
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-control-flow
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-simulation
-      type: refines
+      type: traces_to
 sources:
   - packages/operational-ontology/src/internal/junction-core.ts
 ---

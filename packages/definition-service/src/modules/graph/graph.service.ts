@@ -219,12 +219,17 @@ export class GraphService {
         });
         continue;
       }
-      if (ref.relationType === "boundary" && doc.level !== "group" && doc.level !== "module") {
+      const isBoundaryEligible =
+        doc.tier === "system" ||
+        doc.tier === "layout" ||
+        doc.level === "group" ||
+        doc.level === "module";
+      if (ref.relationType === "boundary" && !isBoundaryEligible) {
         issues.push({
           severity: "error",
           type: "invalid-code-boundary",
           docId: ref.docId,
-          message: `boundary reference "${ref.codePath}"는 group/module 문서를 가리켜야 함`,
+          message: `boundary reference "${ref.codePath}"는 tier:system/layout 또는 legacy contains parent 문서를 가리켜야 함`,
         });
       }
       const scopeKey = makeCodeReferenceScopeKey(ref.codePath, ref.symbol);

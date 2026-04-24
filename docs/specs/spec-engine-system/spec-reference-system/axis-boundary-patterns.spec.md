@@ -2,8 +2,7 @@
 def:
   tier: component
   id: axis-boundary-patterns
-  type: knowledge
-  knowledge_kind: pattern
+  type: spec
   address: def_document:v2:69760
   scope: feature
   aspect: scenario
@@ -14,7 +13,7 @@ def:
   tags: [entry-point]
   links:
     - target: spec-reference-system
-      type: refines
+      type: traces_to
 ---
 
 # Axis 경계 적용 패턴

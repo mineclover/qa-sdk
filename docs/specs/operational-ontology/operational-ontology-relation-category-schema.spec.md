@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-relation-category-schema
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: data
   aspect: axis_catalog
   depth: specification

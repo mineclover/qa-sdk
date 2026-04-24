@@ -2,8 +2,7 @@
 def:
   tier: component
   id: event-core-pattern
-  type: knowledge
-  knowledge_kind: pattern
+  type: spec
   address: def_document:v2:342176
   scope: data
   aspect: domain_data
@@ -14,7 +13,7 @@ def:
   tags: [data, observability, entry-point]
   links:
     - target: graph-spec
-      type: depends_on
+      type: traces_to
 ---
 
 # Event Registry Core Pattern v1

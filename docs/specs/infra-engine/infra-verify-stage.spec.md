@@ -9,11 +9,7 @@ def:
   layer: operation
   tags: [infra, quality-gate, health-check]
   links:
-    - target: infra-engine-pipeline
-      type: implements
     - target: endpoint-resolution-chain
-      type: contains
-    - target: infra-register-stage
       type: contains
     - target: infra-engine-system
       type: depends_on

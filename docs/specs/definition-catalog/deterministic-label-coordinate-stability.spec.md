@@ -250,6 +250,6 @@ Windows 경로 구분자를 `/`로 통일하고 중복 `/`를 제거한다. loca
 ## 비목표
 
 - **투영 결정론** — 정렬, 스냅샷, non-determinism 거부는 `deterministic-label-projection-determinism.spec.md`
-- **FSM readiness / transition** — `deterministic-label-registry-fsm-plan` 및 해당 module 내부 계약
+- **FSM readiness / transition** — 초기 계획에는 있었으나 2026-04-18 단순화에서 제거됨. 재도입은 `state-event-terminology` 기준의 별도 설계 필요
 - **append-only registry persistence** — deferred, write-mode PRD에서 다룸
 - **URN rename 시 alias/redirection** — `def.id` 변경 = URN 변경이라는 1A 선택의 의도된 트레이드오프. 외부 링크 안정성은 별도 decision 필요 (본 spec 범위 밖)

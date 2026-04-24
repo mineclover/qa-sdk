@@ -111,6 +111,12 @@ export interface DocumentGraphTraversalMissingRole {
   readonly reason: "optional-absence";
 }
 
+export interface DocumentGraphTraversalMissingRoleSummary {
+  readonly familyId: string;
+  readonly roleTypes: readonly DocumentGraphFamilyRoleType[];
+  readonly optionalCount: number;
+}
+
 export interface DocumentGraphTraversalRoleGroup {
   readonly roleType: DocumentGraphFamilyRoleType;
   readonly nodes: readonly DocumentGraphTraversalRoleNode[];
@@ -387,11 +393,40 @@ export function formatDocumentGraphTraversalRoleGroups(
       const familyIds = node.familyIds.length > 0 ? ` family=${node.familyIds.join(",")}` : "";
       lines.push(`    - ${node.stableId ?? node.id}${extension}${documentKind}${familyIds}`);
     }
-    for (const missing of group.missing) {
-      lines.push(`    - optional missing in ${missing.familyId}`);
+  }
+
+  const missingSummaries = summarizeDocumentGraphTraversalMissingRoles(result);
+  if (missingSummaries.length > 0) {
+    lines.push("  optional missing roles:");
+    for (const summary of missingSummaries) {
+      lines.push(`    - ${summary.familyId}: ${summary.roleTypes.join(", ")}`);
     }
   }
   return lines;
+}
+
+export function summarizeDocumentGraphTraversalMissingRoles(
+  result: Pick<DocumentGraphTraversalResult, "missingRoles">,
+): readonly DocumentGraphTraversalMissingRoleSummary[] {
+  const byFamily = new Map<string, Set<DocumentGraphFamilyRoleType>>();
+  for (const missing of result.missingRoles) {
+    const bucket = byFamily.get(missing.familyId) ?? new Set<DocumentGraphFamilyRoleType>();
+    bucket.add(missing.roleType);
+    byFamily.set(missing.familyId, bucket);
+  }
+
+  return [...byFamily.entries()]
+    .map(([familyId, roleTypes]) => {
+      const sortedRoleTypes = [...roleTypes].toSorted((left, right) =>
+        roleTypePriority(left) - roleTypePriority(right)
+      );
+      return {
+        familyId,
+        roleTypes: sortedRoleTypes,
+        optionalCount: sortedRoleTypes.length,
+      } satisfies DocumentGraphTraversalMissingRoleSummary;
+    })
+    .toSorted((left, right) => left.familyId.localeCompare(right.familyId));
 }
 
 function traversalCandidates(
@@ -613,13 +648,16 @@ function missingFamilyRoles(
 function roleTypeForNode(
   node: DocumentGraphTraversalNode,
 ): DocumentGraphFamilyRoleType | undefined {
-  if (node.kind === "knowledge" || node.metadata.type === "knowledge") return "knowledge";
-  if (isFamilyRoleType(node.kind)) return node.kind;
+  if (node.kind !== "spec" && isFamilyRoleType(node.kind)) return node.kind;
 
   const documentKind = asString(node.metadata.documentKind);
-  if (documentKind && isFamilyRoleType(documentKind)) return documentKind;
+  if (documentKind && documentKind !== "spec" && isFamilyRoleType(documentKind)) return documentKind;
 
   const extensionRole = roleTypeFromPath(node.path);
+  if (extensionRole && extensionRole !== "spec") return extensionRole;
+
+  if (isFamilyRoleType(node.kind)) return node.kind;
+  if (documentKind && isFamilyRoleType(documentKind)) return documentKind;
   return extensionRole;
 }
 

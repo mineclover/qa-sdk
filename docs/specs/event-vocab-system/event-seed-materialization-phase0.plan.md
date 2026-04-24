@@ -11,13 +11,13 @@ def:
   tags: [cross-scope, structural, observability]
   links:
     - target: event-taxonomy-roadmap-plan
-      type: refines
+      type: traces_to
     - target: event-taxonomy-rollout-todo
       type: traces_to
     - target: registry-events-module
-      type: depends_on
+      type: traces_to
     - target: service-ownership-spec
-      type: depends_on
+      type: traces_to
 ---
 
 # Event Seed Materialization Phase 0 — 하드코딩 제거 설계

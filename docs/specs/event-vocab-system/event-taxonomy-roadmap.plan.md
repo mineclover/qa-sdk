@@ -11,7 +11,7 @@ def:
   tags: [cross-scope, structural, observability, entry-point]
   links:
     - target: event-taxonomy-layering-plan
-      type: refines
+      type: traces_to
     - target: event-seed-materialization-phase0-plan
       type: contains
     - target: event-taxonomy-usecases-plan

@@ -59,6 +59,7 @@ export interface InfraProfileAdapter {
   updateMonitorStatus(serviceId: string, status: string, checkedAt: string): Promise<void>;
   addHistory(serviceId: string, entry: DeployHistoryEntry): Promise<void>;
   getHistory(serviceId: string): Promise<DeployHistoryEntry[]>;
+  getAllHistory(): Promise<Record<string, DeployHistoryEntry[]>>;
 }
 
 // --- 4. IngestAdapter ---

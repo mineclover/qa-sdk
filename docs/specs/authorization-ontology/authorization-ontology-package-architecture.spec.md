@@ -2,8 +2,7 @@
 def:
   tier: component
   id: authorization-ontology-package-architecture
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: interface
   aspect: api_contract
   depth: overview
@@ -12,7 +11,7 @@ def:
   tags: [security, structural]
   links:
     - target: authorization-ontology-system
-      type: refines
+      type: traces_to
 source: packages/authorization-ontology/src/index.ts
 ---
 

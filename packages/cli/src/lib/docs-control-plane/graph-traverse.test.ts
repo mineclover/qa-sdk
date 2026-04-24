@@ -15,6 +15,7 @@ import {
   MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
   normalizeDocumentEnvelope,
   normalizeDocumentGraphTraversalInput,
+  summarizeDocumentGraphTraversalMissingRoles,
   traverseDocumentGraph,
   type DocumentEnvelope,
   type DocumentEnvelopeInput,
@@ -336,7 +337,7 @@ describe("docs-control-plane graph traversal", () => {
     });
   });
 
-  it("groups role traversal for spec, todo, plan, rule, cases, test, memo, and knowledge family members", () => {
+  it("groups role traversal for artifact roles and keeps knowledge as semantic type metadata", () => {
     const index = buildDocumentGraphIndex(roleFixtureDocuments());
 
     const result = traverseDocumentGraph(index, {
@@ -350,27 +351,21 @@ describe("docs-control-plane graph traversal", () => {
     expect(result.roleGroups.map((group) => group.roleType)).toEqual(
       DOCUMENT_GRAPH_FAMILY_ROLE_TYPES,
     );
-    expect(roleGroupStableIds(result, "spec")).toEqual(["checkout-spec"]);
+    expect(roleGroupStableIds(result, "spec")).toEqual([
+      "checkout-spec",
+      "checkout-knowledge",
+    ]);
     expect(roleGroupStableIds(result, "todo")).toEqual(["checkout-todo"]);
     expect(roleGroupStableIds(result, "plan")).toEqual(["checkout-plan"]);
     expect(roleGroupStableIds(result, "rule")).toEqual(["checkout-rule"]);
     expect(roleGroupStableIds(result, "cases")).toEqual(["checkout-cases"]);
     expect(roleGroupStableIds(result, "test")).toEqual(["checkout-test"]);
     expect(roleGroupStableIds(result, "memo")).toEqual(["checkout-memo"]);
-    expect(roleGroupStableIds(result, "knowledge")).toEqual([
-      "checkout-context-guide",
-      "checkout-knowledge",
-    ]);
-    expect(result.roleGroups.find((group) => group.roleType === "knowledge")?.nodes).toEqual(
+    expect(result.roleGroups.some((group) => group.roleType === "knowledge")).toBe(false);
+    expect(result.roleGroups.find((group) => group.roleType === "spec")?.nodes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           stableId: "checkout-knowledge",
-          documentKind: "spec",
-          extension: ".spec.md",
-          familyIds: ["docs/specs/checkout/checkout"],
-        }),
-        expect.objectContaining({
-          stableId: "checkout-context-guide",
           documentKind: "spec",
           extension: ".spec.md",
           familyIds: ["docs/specs/checkout/checkout"],
@@ -379,20 +374,14 @@ describe("docs-control-plane graph traversal", () => {
     );
 
     const lines = formatDocumentGraphTraversalRoleGroups(result);
-    expect(lines.join("\n")).toContain("knowledge (2):");
+    expect(lines.join("\n")).not.toContain("knowledge (");
+    expect(lines.join("\n")).toContain("spec (2):");
     expect(lines.join("\n")).toContain(
-      "checkout-knowledge .spec.md documentKind=spec family=docs/specs/checkout/checkout",
+      "checkout-knowledge .spec.md family=docs/specs/checkout/checkout",
     );
 
     expect(index.edges).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          kind: "role-membership",
-          axis: "role",
-          fromNodeId: "document:checkout-context-guide",
-          toNodeId: "document:checkout-spec",
-          authoredType: "family-context",
-        }),
         expect.objectContaining({
           kind: "document-constraint",
           axis: "constraint",
@@ -442,14 +431,23 @@ describe("docs-control-plane graph traversal", () => {
         },
         {
           familyId: "docs/specs/checkout/checkout",
-          roleType: "knowledge",
+          roleType: "memo",
           optional: true,
           reason: "optional-absence",
         },
       ]),
     );
-    expect(formatDocumentGraphTraversalRoleGroups(result).join("\n")).toContain(
-      "optional missing in docs/specs/checkout/checkout",
+    expect(summarizeDocumentGraphTraversalMissingRoles(result)).toEqual([
+      {
+        familyId: "docs/specs/checkout/checkout",
+        roleTypes: ["plan", "rule", "cases", "test", "memo"],
+        optionalCount: 5,
+      },
+    ]);
+    const formatted = formatDocumentGraphTraversalRoleGroups(result).join("\n");
+    expect(formatted).toContain("optional missing roles:");
+    expect(formatted).toContain(
+      "docs/specs/checkout/checkout: plan, rule, cases, test, memo",
     );
   });
 
@@ -598,6 +596,62 @@ describe("docs-control-plane graph traversal", () => {
     expect(edgeIds(trace)).not.toEqual(edgeIds(source));
     expect(edgeIds(trace)).not.toEqual(edgeIds(evidence));
     expect(edgeIds(source)).not.toEqual(edgeIds(evidence));
+  });
+
+  it("resolves section targets and traverses section-level source/evidence refs", () => {
+    const index = buildDocumentGraphIndex([
+      graphDocument({
+        adapterId: "definition-markdown",
+        kind: "spec",
+        stableId: "checkout-scenario-matrix",
+        familyId: "docs/specs/checkout/checkout",
+        path: "docs/specs/checkout/checkout-scenario-matrix.spec.md",
+        metadata: {
+          defId: "checkout-scenario-matrix",
+          sourcePath: "docs/specs/checkout/checkout-scenario-matrix.spec.md",
+        },
+        sections: [
+          {
+            id: "scenario-matrix",
+            title: "Scenario Matrix",
+            anchor: "scenario-matrix",
+            content: "| scenario | evidence | source |",
+            metadata: {
+              sectionKind: "scenario-matrix",
+              evidenceIds: ["E-CHECKOUT-SMOKE"],
+              sourceRefs: ["packages/checkout/src/checkout.test.ts"],
+            },
+          },
+        ],
+      }),
+    ], {
+      rootDir: "/repo",
+    });
+
+    const result = traverseDocumentGraph(index, {
+      target: "docs/specs/checkout/checkout-scenario-matrix.spec.md#scenario-matrix",
+      axes: ["source", "evidence"],
+      direction: "out",
+      depth: 1,
+    });
+
+    expect(result.targetResolution).toMatchObject({
+      lookupKind: "path",
+      node: {
+        id: "section:checkout-scenario-matrix:scenario-matrix",
+        kind: "section",
+      },
+    });
+    expect(traversalNodeIds(result)).toEqual([
+      "section:checkout-scenario-matrix:scenario-matrix",
+      "source:packages/checkout/src/checkout.test.ts",
+      "evidence:E-CHECKOUT-SMOKE",
+    ]);
+    expect(uniqueEdgeAxes(result)).toEqual(["source", "evidence"]);
+    expect(edgeIds(result)).toEqual([
+      "edge:evidence:document-evidence:section:checkout-scenario-matrix:scenario-matrix->evidence:E-CHECKOUT-SMOKE:section-evidence",
+      "edge:source:document-source:section:checkout-scenario-matrix:scenario-matrix->source:packages/checkout/src/checkout.test.ts:section-source",
+    ]);
   });
 });
 

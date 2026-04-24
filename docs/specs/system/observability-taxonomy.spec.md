@@ -1,8 +1,7 @@
 ---
 def:
   id: observability-taxonomy
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   tier: system
   scope: data
   aspect: system_data
@@ -20,7 +19,7 @@ def:
     - target: infra-observe-stage
       type: contains
     - target: taxonomy-boundaries
-      type: refines
+      type: traces_to
 ---
 
 # Observability Taxonomy — 관측 책임 경계

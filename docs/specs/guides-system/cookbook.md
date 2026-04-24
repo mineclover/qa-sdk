@@ -13,7 +13,7 @@ def:
   tags: [entry-point]
   links:
     - target: spec-reference-system
-      type: refines
+      type: traces_to
 ---
 
 # Cookbook — 자주 쓰는 레시피

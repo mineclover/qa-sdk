@@ -24,7 +24,7 @@ core package의 canonical event record 구조와 저장/조회 동작을 정의�
 
 ## 구성 ^overview
 
-- **EventRecord 구조**: log_id(ULID), trace context(trace_id/span_id/parent_span_id), event identity(event_key/event_version), span 전용 필드, payload descriptor 4종 + 자유 payload
+- **EventRecord 구조**: log_id(ULID), trace context(trace_id/span_id/parent_span_id), event identity(event_key/event_version), span/metric 전용 필드, payload descriptor 4종 + 자유 payload
 - **PayloadFormat 6종**: json, rpc, protobuf, text, binary, stream — PayloadEncoding(raw/base64/gzip+base64)과 독립 축으로 조합
 - **RecordStore 동작**: batch 단위 저장, trace_id/session_id/event_key 기준 조회, timestamp+log_id cursor 기반 페이지네이션
 - **설계 원칙**: 모든 필드명 snake_case, payload 자유 구조 허용하되 descriptor 필드는 항상 동반, 중복 삽입 처리는 adapter 위임
@@ -55,7 +55,7 @@ SDK가 수집하는 단일 이벤트 레코드. 모든 필드명은 `snake_case`
 interface EventRecord {
   log_id: string; // log_<ULID>
   timestamp: string; // ISO-8601 UTC
-  record_kind: "log" | "span";
+  record_kind: "log" | "span" | "metric";
 
   // trace context
   trace_id: string; // trc_<ULID>
@@ -71,6 +71,15 @@ interface EventRecord {
   start_time?: string; // ISO-8601 UTC
   end_time?: string; // ISO-8601 UTC
   status_code?: "ok" | "error" | "unset";
+
+  // metric-only fields
+  metric_type?: "counter" | "gauge" | "histogram" | "summary";
+  metric_name?: string;
+  metric_value?: number;
+  metric_unit?: string;
+  metric_labels?: Record<string, string>;
+  metric_buckets?: number[];
+  metric_quantiles?: number[];
 
   // payload descriptor
   payload_format: PayloadFormat;
@@ -98,3 +107,4 @@ interface EventRecord {
 - `payload_masked_fields`에는 masking 후 남기는 논리 필드명이 담기며, encoded payload byte range를 기록하지 않는다.
 - `payload_format`과 `payload_encoding`은 독립 축이다. 예: `payload_format: "json"` + `payload_encoding: "gzip+base64"`.
 - `payload`는 자유 구조를 허용하지만, descriptor 필드(`payload_*`)는 항상 함께 기록한다.
+- `metric` 전용 의미와 집계 모델은 `metrics-spec`이 소유한다. 이 문서는 EventRecord canonical union에 `metric`이 포함된 현재 구조만 소유한다.

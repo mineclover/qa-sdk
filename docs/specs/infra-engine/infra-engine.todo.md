@@ -9,7 +9,7 @@ def:
   layer: operation
   links:
     - target: infra-engine-pipeline
-      type: refines
+      type: traces_to
 ---
 
 # Infra Engine — TODO
@@ -120,7 +120,7 @@ infra-engine 패키지의 잔여 작업을 추적한다. 구현 완료 항목은
 ### CI/CD
 
 - [ ] **GitHub Actions 활성화** — OIDC, SOPS, config 변경 감지 → 자동 배포
-- [ ] **S3 + DynamoDB 운영 State** — MinIO → AWS S3 전환
+- [ ] **운영 DIY backend hardening** — MinIO/AWS S3 접근 제어, 백업, 버저닝, project-scope 검증
 
 ### 고도화
 

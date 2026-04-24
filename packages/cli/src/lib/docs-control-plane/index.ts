@@ -62,6 +62,7 @@ export {
   MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
   MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
   normalizeDocumentGraphTraversalInput,
+  summarizeDocumentGraphTraversalMissingRoles,
   traverseDocumentGraph,
 } from "./graph-traverse.js";
 export {
@@ -107,6 +108,15 @@ export {
 export {
   buildDeterministicLabelInventory,
 } from "deterministic-label-registry";
+export {
+  extractBddDocumentMetadata,
+  hasBddMetadata,
+  validateBddDocumentSet,
+} from "./bdd-contract-extract.js";
+export {
+  extractWorkTopicDocumentMetadata,
+  hasWorkTopicMetadata,
+} from "./work-topic-extract.js";
 export {
   buildSemanticCoordinateCandidatesFromDocument,
   buildSemanticCoordinateCandidate,
@@ -157,6 +167,7 @@ export type {
   DocumentGraphTraversalEdge,
   DocumentGraphTraversalInput,
   DocumentGraphTraversalMissingRole,
+  DocumentGraphTraversalMissingRoleSummary,
   DocumentGraphTraversalNode,
   DocumentGraphTraversalPath,
   DocumentGraphTraversalPathStep,
@@ -209,6 +220,18 @@ export type {
   CompletedRecordDetectionOptions,
   CompletedRecordState,
 } from "doc-envelope";
+export type {
+  BddContractDiagnostic,
+  BddDocumentMetadata,
+  BddValidationDocument,
+} from "./bdd-contract-extract.js";
+export type {
+  WorkTopic,
+  WorkTopicBoundary,
+  WorkTopicDiagnostic,
+  WorkTopicDiagnosticSeverity,
+  WorkTopicDocumentMetadata,
+} from "./work-topic-extract.js";
 export type {
   FollowUpDetectionOptions,
   FollowUpState,
@@ -269,6 +292,8 @@ export type {
 } from "./adapters/prd-markdown.js";
 export type {
   PrdCompletionAffectedDocument,
+  PrdCompletionCandidateScore,
+  PrdCompletionCandidateSupport,
   PrdCompletionEvidenceRef,
   PrdCompletionOpenTodoCandidate,
   PrdCompletionPromotionState,

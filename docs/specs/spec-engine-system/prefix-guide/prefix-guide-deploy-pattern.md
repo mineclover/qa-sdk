@@ -12,7 +12,7 @@ def:
   tags: [entry-point, runtime, observability]
   links:
     - target: prefix-guide
-      type: refines
+      type: traces_to
 ---
 
 # 환경별 오버라이드 예시

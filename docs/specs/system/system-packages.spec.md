@@ -27,6 +27,7 @@ qa-sdk 모노레포의 패키지 의존 관계. 인코딩 라이브러리 체인
 - `인코딩 체인`: weighted-index → bit-index → permission-engine 인코딩 라이브러리 의존 체인을 정의한다.
 - `플랫폼 체인`: @qa-sdk/core → logger → codec → context → sdk 플랫폼 계층을 기술한다.
 - `인프라 서비스`: ingest(3200), registry(3300), gate(3400), query(3500), decode(3600) 서비스를 명시한다.
+- `환경 공급 패키지`: infra-env-kit이 `.env`/연결 코드/compose override 공급 책임을 가진다.
 - `스펙/분석 패키지`: spec-core, convergence, decision-flow, event-catalog의 역할을 정리한다.
 - `프론트엔드/데모`: platform-demo, shop-web, viz-web, browser-sdk의 위치를 기술한다.
 
@@ -93,6 +94,19 @@ SERVICE_PORTS (core/src/lib/service-ports.ts) SSOT:
 | decision-flow | 의사결정 흐름 엔진 (FlowEngine, FlowSchema, narrative) |
 | event-catalog | 이벤트 카탈로그 + auto-track + prefix 매핑 |
 | definition-catalog | 좌표/영속/전파/추출/조립/역추적 전체 구조 |
+
+## 환경 공급 패키지
+
+| 패키지 | 역할 |
+|--------|------|
+| infra-env-kit | `.env` 생성, 서비스 연결 TS 모듈 생성, docker-compose override 생성, export/codegen orchestration, `infra-env` CLI |
+
+운영/소비 패키지인 `infra-engine`와 분리되어, 공급 기능은 `infra-env-kit`를 기본 surface로 사용한다.
+
+권장 사용 분리:
+
+- 운영/배포/관측: `infra ...`
+- 환경 공급: `infra-env ...`
 
 ## 프론트엔드/데모
 

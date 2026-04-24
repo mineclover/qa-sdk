@@ -2,8 +2,7 @@
 def:
   tier: component
   id: authorization-ontology-permission-engine-bridge
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: interface
   aspect: api_contract
   depth: specification
@@ -12,11 +11,11 @@ def:
   tags: [security, structural]
   links:
     - target: authorization-ontology-system
-      type: refines
+      type: traces_to
     - target: permission-system
-      type: depends_on
+      type: traces_to
     - target: authorization-ontology-audit-layer
-      type: depends_on
+      type: traces_to
 source: packages/authorization-ontology/src/permission-engine-bridge.test.ts
 ---
 

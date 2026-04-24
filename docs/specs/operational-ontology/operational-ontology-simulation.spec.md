@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-simulation
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: feature
   aspect: scenario
   depth: specification
@@ -12,13 +11,13 @@ def:
   tags: [cross-scope, structural, testing]
   links:
     - target: operational-ontology-data-facets
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-information-transmission
-      type: depends_on
+      type: traces_to
     - target: meta-semantic-pipe-impl
-      type: depends_on
+      type: traces_to
     - target: tracking-three-axes
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Simulation — 정보 패싯과 전달을 시뮬레이션하기

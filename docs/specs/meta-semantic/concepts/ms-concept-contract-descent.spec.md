@@ -2,8 +2,7 @@
 def:
   tier: exempt
   id: ms-concept-contract-descent
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: data
   aspect: domain_data
   depth: specification
@@ -11,9 +10,9 @@ def:
   layer: domain
   links:
     - target: meta-semantic-concepts
-      type: depends_on
+      type: traces_to
     - target: ms-concept-boundary
-      type: depends_on
+      type: traces_to
 ---
 
 # 계약 하향 (Contract Descent)

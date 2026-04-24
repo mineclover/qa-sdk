@@ -1,8 +1,7 @@
 ---
 def:
   id: axis-consumption-patterns
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   tier: component
   scope: data
   aspect: domain_data
@@ -12,9 +11,9 @@ def:
   tags: [entry-point, structural]
   links:
     - target: axis-boundary-patterns
-      type: depends_on
+      type: traces_to
     - target: axis-decision-guide
-      type: depends_on
+      type: traces_to
 ---
 
 # Axis 소비 패턴 — 개념 정의

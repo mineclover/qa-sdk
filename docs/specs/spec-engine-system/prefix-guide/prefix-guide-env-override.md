@@ -12,7 +12,7 @@ def:
   tags: [entry-point, runtime, observability]
   links:
     - target: prefix-guide
-      type: refines
+      type: traces_to
 ---
 
 # SDK 환경 오버라이드 패턴

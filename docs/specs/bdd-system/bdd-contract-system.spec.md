@@ -13,11 +13,15 @@ def:
   layer: operation
   tags: [testing, contract, structural]
   links:
+    - target: meta-semantic-system
+      type: refines
     - target: docs-control-plane
       type: depends_on
     - target: bdd-contract-schema
       type: contains
     - target: bdd-contract-cli
+      type: contains
+    - target: bdd-contract-cli-rule
       type: contains
     - target: bdd-contract-system-todo
       type: traces_to
@@ -43,6 +47,14 @@ BDD의 `Given / When / Then`을 qa-sdk의 기계적 행동 계약으로 정의�
 - `bdd-contract-cli`: `qa-sdk docs bdd` CLI 소비 표면
 - `docs-control-plane` adapter: `.cases.md` / `.test.md` fenced `yaml bdd` block을 `DocumentEnvelope.metadata.bdd`로 투영
 
+현재 구현 범위:
+
+- Core BDD IR 타입과 Zod schema
+- same-document + same-family validation
+- `DocumentEnvelope.metadata.bdd` projection
+- exact command inventory는 `bdd-contract-cli.spec`이 소유
+- `BddContract → ScenarioSpec → PipeGraph` deterministic preview compile
+
 ## 핵심 규칙 ^defines
 
 - BDD core가 의미를 소유하고, CLI는 소비자다.
@@ -52,14 +64,8 @@ BDD의 `Given / When / Then`을 qa-sdk의 기계적 행동 계약으로 정의�
 
 ## 소비 표면 ^consumes
 
-```bash
-qa-sdk docs bdd list <target> [--family-only] [--json]
-qa-sdk docs bdd validate <target> [--family-only] [--json]
-qa-sdk docs bdd units <target> [--family-only] [--json]
-qa-sdk docs bdd compile <target> [--format scenario|pipe|both] [--family-only] [--json]
-qa-sdk docs bdd test-plan <target> [--family-only] [--json]
-qa-sdk docs bdd impl-plan <target> [--family-only] [--json]
-```
+- CLI command surface는 `bdd-contract-cli.spec`을 따른다.
+- CLI consumption/read-only authority는 `bdd-contract-cli.rule`을 따른다.
 
 ## 검증 참조
 
@@ -67,3 +73,7 @@ qa-sdk docs bdd impl-plan <target> [--family-only] [--json]
 - `packages/core/src/bdd-contract/compile-scenario.test.ts`
 - `packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts`
 - `packages/cli/src/commands/docs.test.ts`
+
+## 남은 범위
+
+- 남은 실행 작업의 상세 owner는 `bdd-contract-system.todo`다.

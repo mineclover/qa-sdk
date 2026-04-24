@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-event-projector
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: interface
   aspect: api_contract
   depth: specification
@@ -12,11 +11,11 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: operational-ontology-runtime-interface
-      type: refines
+      type: traces_to
     - target: operational-ontology-checkpoint
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-flow-corridor
-      type: depends_on
+      type: traces_to
 sources:
   - packages/operational-ontology/src/internal/event-projector.ts
   - packages/operational-ontology/src/projectors-event.ts

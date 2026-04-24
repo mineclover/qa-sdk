@@ -10,7 +10,7 @@ def:
   tags: [cross-scope]
   links:
     - target: infra-auth-integration
-      type: refines
+      type: traces_to
 ---
 
 # AuthN/AuthZ 통합 — TODO

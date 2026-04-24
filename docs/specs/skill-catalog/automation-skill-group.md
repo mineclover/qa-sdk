@@ -2,6 +2,7 @@
 def:
   id: automation-skill-group
   tier: system
+  level: group
   scope: feature
   aspect: func_def
   depth: overview
@@ -13,9 +14,13 @@ def:
       type: contains
     - target: skill-e2e-test
       type: contains
+    - target: skill-doc-lifecycle
+      type: contains
     - target: skill-gform-parser
       type: contains
     - target: skill-spec-lifecycle
+      type: contains
+    - target: skill-test-split
       type: contains
     - target: skill-event-taxonomy-gate
       type: contains
@@ -28,7 +33,7 @@ def:
 
 skill-catalog-system > **automation-skill-group**
 
-형제: `claude-skill-group` · `ralph-tui-skill-group` · `dkg-skill-group` · `cli-command-group`
+형제: `claude-skill-group` · `ralph-tui-skill-group` · `dkg-skill-group` · `cli-command-group` · `infra-skill-group` · `governance-skill-group`
 
 ## 목적 ^purpose
 
@@ -38,8 +43,10 @@ skill-catalog-system > **automation-skill-group**
 
 - `e2e-test` — 시나리오 문서를 Playwright E2E로 변환하고 디버깅
 - `bdd-contract` — Given/When/Then을 행동 계약으로 정규화하고 테스트/구현 단위를 도출
+- `doc-lifecycle` — spec/rule/todo/test/cases/memo/plan 문서 생명주기 관리
 - `gform-parser` — Google Form URL에서 폼 메타데이터와 config/HTML 생성
 - `spec-lifecycle` — 구현 완료 후 스펙 문서를 코드 참조 중심으로 전환
+- `test-split` — 테스트 파일 패싯 분리와 시나리오 구조 표준화
 - `event-taxonomy-gate` — registry event taxonomy 운영 게이트 실행
 
 ## 사용 순서
@@ -53,7 +60,7 @@ skill-catalog-system > **automation-skill-group**
 ## 경계 ^boundary
 
 이 문서는 automation 계열 skill의 카탈로그 문서다.
-- 실제 skill 정의는 `skills/e2e-test`, `skills/gform-parser`, `skills/spec-lifecycle`
+- 실제 skill 정의는 `skills/bdd-contract`, `skills/e2e-test`, `skills/gform-parser`, `skills/spec-lifecycle`, `skills/event-taxonomy-gate`
 - 운영 플레이북은 `docs/skills/automation-workflows.md`
 - representative workflow 검증은 `packages/cli/src/skills-workflows.test.ts`와 `packages/cli/src/scenarios.e2e.test.ts`가 담당
 

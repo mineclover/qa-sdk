@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-checkpoint
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: interface
   aspect: api_contract
   depth: specification
@@ -12,11 +11,11 @@ def:
   tags: [cross-scope, structural, observability]
   links:
     - target: operational-ontology-runtime-interface
-      type: depends_on
+      type: traces_to
     - target: observability-taxonomy
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-persistence
-      type: refines
+      type: traces_to
 sources:
   - packages/operational-ontology/src/internal/checkpoint-core.ts
 ---

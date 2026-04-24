@@ -342,7 +342,7 @@ runtime-flows 심볼 기반 도출 태스크. 📋/🔧 → ✅ 전환 작업 �
 |---|---|---|---|
 | [infra-engine-pipeline.spec.md](infra-engine/infra-engine-pipeline.spec.md) | **중심 인덱스** — 5단계 파이프라인 + 패키지 구조 | infra-engine | implemented |
 | [infra-config-stage.spec.md](infra-engine/infra-config-stage.spec.md) | ConfigStage — SOPS 복호화 + zod 검증 | infra-engine | implemented |
-| [infra-provision-stage.spec.md](infra-engine/infra-provision-stage.spec.md) | ProvisionStage — Pulumi 실행 + S3 state | infra-engine | implemented |
+| [infra-provision-stage.spec.md](infra-engine/infra-provision-stage.spec.md) | ProvisionStage — Pulumi 실행 + DIY state backend | infra-engine | implemented |
 | [infra-register-stage.spec.md](infra-engine/infra-register-stage.spec.md) | RegisterStage — registry-service 등록 + service-profile | infra-engine | implemented |
 | [infra-verify-stage.spec.md](infra-engine/infra-verify-stage.spec.md) | VerifyStage — 헬스체크 + 품질 게이트 | infra-engine | implemented |
 | [infra-observe-stage.spec.md](infra-engine/infra-observe-stage.spec.md) | ObserveStage — 배포 이벤트 emit + 모니터링 등록 | infra-engine | implemented |
@@ -350,6 +350,22 @@ runtime-flows 심볼 기반 도출 태스크. 📋/🔧 → ✅ 전환 작업 �
 | [infra-adapters.spec.md](infra-engine/infra-adapters.spec.md) | qa-sdk 연동 어댑터 — 6개 포트 인터페이스 | infra-engine | implemented |
 | [infra-discovery.spec.md](infra-engine/infra-discovery.spec.md) | 서비스 디스커버리 + Fleet 관리 + export 도구 | infra-engine | implemented |
 | [infra-monitoring.spec.md](infra-engine/infra-monitoring.spec.md) | ArgoCD 스타일 모니터링 — sync-loop + 대시보드 + 자동 복구 + SLA | infra-engine | implemented |
+
+### infra-env-kit/ — 환경 공급 유틸리티
+
+`infra-engine`에서 분리된 공급 패키지. `.env` 생성, 서비스 연결 코드 생성, export orchestration을 담당한다.
+
+권장 surface:
+
+```bash
+pnpm --filter infra-env-kit build
+pnpm --filter infra-env-kit cli --help
+pnpm --filter infra-env-kit cli env ingest-server dev
+pnpm --filter infra-env-kit cli ts dev
+pnpm --filter infra-env-kit cli compose dev
+```
+
+운영/배포는 `infra`, 환경 공급은 `infra-env`로 분리해서 사용한다.
 
 ### infra/ — 인프라 도구
 

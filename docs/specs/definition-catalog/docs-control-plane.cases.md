@@ -16,6 +16,8 @@ def:
   links:
     - target: docs-control-plane
       type: traces_to
+    - target: docs-control-plane-bdd
+      type: depends_on
 ---
 
 # Docs Control Plane — BDD Contract Cases

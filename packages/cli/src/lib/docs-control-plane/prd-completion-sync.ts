@@ -33,6 +33,8 @@ export interface PrdCompletionSyncOptions {
   readonly dryRunDefaulted: boolean;
   readonly familyOnly?: boolean;
   readonly includeTransient?: boolean;
+  readonly strict?: boolean;
+  readonly evidenceOnly?: boolean;
 }
 
 export interface PrdCompletionStorySummary {
@@ -50,6 +52,8 @@ export interface PrdCompletionAffectedDocument {
   readonly path: string;
   readonly title?: string;
   readonly reason: string;
+  readonly reasons: readonly string[];
+  readonly score: number;
   readonly metadata: DocumentMetadata;
 }
 
@@ -62,6 +66,23 @@ export interface PrdCompletionEvidenceRef {
 
 export type PrdCompletionPromotionState = "eligible" | "blocked";
 
+export interface PrdCompletionCandidateSupport {
+  readonly source: number;
+  readonly test: number;
+  readonly evidence: number;
+  readonly qualifying: number;
+  readonly ignored: number;
+}
+
+export interface PrdCompletionCandidateScore {
+  readonly total: number;
+  readonly graph: number;
+  readonly support: number;
+  readonly story: number;
+  readonly strength: "strong" | "medium" | "weak" | "insufficient";
+  readonly axes: readonly string[];
+}
+
 export interface PrdCompletionOpenTodoCandidate {
   readonly documentId: string;
   readonly path: string;
@@ -71,6 +92,9 @@ export interface PrdCompletionOpenTodoCandidate {
   readonly promotionState: PrdCompletionPromotionState;
   readonly reason: string;
   readonly evidence: readonly PrdCompletionEvidenceRef[];
+  readonly support: PrdCompletionCandidateSupport;
+  readonly score: PrdCompletionCandidateScore;
+  readonly blockedReasons: readonly string[];
 }
 
 export interface PrdCompletionSpecUpdateCandidate {
@@ -81,6 +105,9 @@ export interface PrdCompletionSpecUpdateCandidate {
   readonly promotionState: PrdCompletionPromotionState;
   readonly reason: string;
   readonly evidence: readonly PrdCompletionEvidenceRef[];
+  readonly support: PrdCompletionCandidateSupport;
+  readonly score: PrdCompletionCandidateScore;
+  readonly blockedReasons: readonly string[];
 }
 
 export interface PrdCompletionRoadmapUpdateCandidate {
@@ -103,6 +130,12 @@ export interface PrdCompletionScenarioMatrixUpdateCandidate {
 export interface PrdCompletionSyncPreview {
   readonly mode: "dry-run";
   readonly dryRunDefaulted: boolean;
+  readonly options: {
+    readonly strict: boolean;
+    readonly evidenceOnly: boolean;
+    readonly familyOnly: boolean;
+    readonly includeTransient: boolean;
+  };
   readonly prd: {
     readonly stableId: string;
     readonly path: string;
@@ -117,6 +150,7 @@ export interface PrdCompletionSyncPreview {
     readonly openTodoCandidates: number;
     readonly specUpdateCandidates: number;
     readonly blockedPromotions: number;
+    readonly strictFailures: number;
     readonly roadmapUpdateCandidates: number;
     readonly scenarioMatrixUpdateCandidates: number;
     readonly sessionDrift: number;
@@ -135,6 +169,8 @@ export interface PrdCompletionSyncPreview {
 interface AffectedDocumentEntry {
   readonly document: DocumentEnvelope;
   readonly reason: string;
+  readonly reasons: readonly string[];
+  readonly score: number;
 }
 
 interface OpenTodoItem {
@@ -146,6 +182,19 @@ interface ScenarioMatrixRow {
   readonly rowIndex: number;
   readonly cells: Readonly<Record<string, string>>;
   readonly evidenceIds: readonly string[];
+}
+
+interface CandidateAssessmentOptions {
+  readonly strict: boolean;
+  readonly evidenceOnly: boolean;
+}
+
+interface CandidateAssessment {
+  readonly promotionState: PrdCompletionPromotionState;
+  readonly reason: string;
+  readonly support: PrdCompletionCandidateSupport;
+  readonly score: PrdCompletionCandidateScore;
+  readonly blockedReasons: readonly string[];
 }
 
 const GENERIC_TOKENS = new Set([
@@ -163,12 +212,39 @@ const GENERIC_TOKENS = new Set([
   "test",
 ]);
 
+const COMPLETION_REASON_SCORE = {
+  target: 16,
+  evidence: 14,
+  source: 12,
+  role: 10,
+  composition: 8,
+  trace: 6,
+  dependency: 5,
+  refinement: 5,
+  constraint: 4,
+  transient: 2,
+} as const satisfies Readonly<Record<string, number>>;
+
+const COMPLETION_SUPPORT_SCORE = {
+  source: 18,
+  test: 22,
+  evidence: 26,
+} as const;
+
+const STRICT_COMPLETION_SCORE_THRESHOLD = 50;
+
 export async function previewPrdCompletionSync(
   options: PrdCompletionSyncOptions,
 ): Promise<PrdCompletionSyncPreview> {
   const prdPath = toRepoPath(options.rootDir, options.prdPath);
   const prdDocument = findPrdJsonDocument(options.documents, prdPath);
   const diagnostics: DocumentDiagnostic[] = [];
+  const evaluationOptions = {
+    strict: options.strict === true,
+    evidenceOnly: options.evidenceOnly === true,
+    familyOnly: options.familyOnly === true,
+    includeTransient: options.includeTransient === true,
+  };
 
   if (!prdDocument) {
     diagnostics.push(diagnostic(
@@ -177,7 +253,7 @@ export async function previewPrdCompletionSync(
       "error",
       "PRD JSON input could not be found through the ralph PRD JSON adapter.",
     ));
-    return emptyPreview(options.dryRunDefaulted, diagnostics);
+    return emptyPreview(options.dryRunDefaulted, evaluationOptions, diagnostics);
   }
 
   const completedStories = prdDocument.tasks
@@ -208,16 +284,21 @@ export async function previewPrdCompletionSync(
     : affectedEntries.filter((entry) => entry.document.kind !== "ralph-session");
   const affectedDocuments = trackedAffectedEntries.map(toAffectedDocument);
   const affectedDocs = trackedAffectedEntries.map((entry) => entry.document);
+  const affectedEntryByKey = new Map(trackedAffectedEntries.map((entry) => [documentKey(entry.document), entry]));
   const openTodoCandidates = await collectOpenTodoCandidates(
     options.rootDir,
     affectedDocs,
     completedStories,
     options.documents,
+    affectedEntryByKey,
+    evaluationOptions,
   );
   const specUpdateCandidates = collectSpecUpdateCandidates(
     affectedDocs,
     completedStories,
     options.documents,
+    affectedEntryByKey,
+    evaluationOptions,
   );
   const roadmapUpdateCandidates = collectRoadmapUpdateCandidates(affectedDocs, completedStories);
   const scenarioMatrixUpdateCandidates = await collectScenarioMatrixUpdateCandidates(
@@ -234,10 +315,12 @@ export async function previewPrdCompletionSync(
   const blockedPromotions = openTodoCandidates
     .filter((candidate) => candidate.promotionState === "blocked").length
     + specUpdateCandidates.filter((candidate) => candidate.promotionState === "blocked").length;
+  const strictFailures = blockedPromotions + sessionDrift.length + diagnostics.length;
 
   return {
     mode: "dry-run",
     dryRunDefaulted: options.dryRunDefaulted,
+    options: evaluationOptions,
     prd: {
       stableId: prdDocument.stableId,
       path: prdDocument.path,
@@ -252,6 +335,7 @@ export async function previewPrdCompletionSync(
       openTodoCandidates: openTodoCandidates.length,
       specUpdateCandidates: specUpdateCandidates.length,
       blockedPromotions,
+      strictFailures,
       roadmapUpdateCandidates: roadmapUpdateCandidates.length,
       scenarioMatrixUpdateCandidates: scenarioMatrixUpdateCandidates.length,
       sessionDrift: sessionDrift.length,
@@ -270,11 +354,13 @@ export async function previewPrdCompletionSync(
 
 function emptyPreview(
   dryRunDefaulted: boolean,
+  options: PrdCompletionSyncPreview["options"],
   diagnostics: readonly DocumentDiagnostic[],
 ): PrdCompletionSyncPreview {
   return {
     mode: "dry-run",
     dryRunDefaulted,
+    options,
     prd: null,
     counts: {
       completedStories: 0,
@@ -282,6 +368,7 @@ function emptyPreview(
       openTodoCandidates: 0,
       specUpdateCandidates: 0,
       blockedPromotions: 0,
+      strictFailures: 0,
       roadmapUpdateCandidates: 0,
       scenarioMatrixUpdateCandidates: 0,
       sessionDrift: 0,
@@ -475,8 +562,23 @@ function addAffected(
   reason: string,
 ): void {
   const key = documentKey(document);
-  if (byKey.has(key)) return;
-  byKey.set(key, { document, reason });
+  const existing = byKey.get(key);
+  if (!existing) {
+    byKey.set(key, {
+      document,
+      reason,
+      reasons: [reason],
+      score: graphScoreForReasons([reason]),
+    });
+    return;
+  }
+  const reasons = sortCompletionReasons([...existing.reasons, reason]);
+  byKey.set(key, {
+    document: existing.document,
+    reason: reasons[0] ?? existing.reason,
+    reasons,
+    score: graphScoreForReasons(reasons),
+  });
 }
 
 function prdCompletionGraphReasonForNode(
@@ -513,6 +615,8 @@ function toAffectedDocument(entry: AffectedDocumentEntry): PrdCompletionAffected
     path: entry.document.path,
     ...(title ? { title } : {}),
     reason: entry.reason,
+    reasons: entry.reasons,
+    score: entry.score,
     metadata: entry.document.metadata,
   };
 }
@@ -522,6 +626,8 @@ async function collectOpenTodoCandidates(
   documents: readonly DocumentEnvelope[],
   stories: readonly PrdCompletionStorySummary[],
   allDocuments: readonly DocumentEnvelope[],
+  affectedEntryByKey: ReadonlyMap<string, AffectedDocumentEntry>,
+  options: CandidateAssessmentOptions,
 ): Promise<readonly PrdCompletionOpenTodoCandidate[]> {
   const candidates: PrdCompletionOpenTodoCandidate[] = [];
   for (const document of documents) {
@@ -533,18 +639,27 @@ async function collectOpenTodoCandidates(
       if (matchedStories.length === 0 && stories.length === 0) continue;
       const effectiveStories = matchedStories.length > 0 ? matchedStories : stories;
       const evidence = evidenceForDocument(document, effectiveStories, allDocuments);
-      const promotionState: PrdCompletionPromotionState = evidence.length > 0 ? "eligible" : "blocked";
+      const assessment = assessCompletionCandidate({
+        document,
+        evidence,
+        matchedStories,
+        effectiveStories,
+        allStories: stories,
+        affectedEntry: affectedEntryByKey.get(documentKey(document)),
+        options,
+      });
       candidates.push({
         documentId: document.stableId,
         path: document.path,
         pointer: item.pointer,
         text: item.text,
         matchedStoryIds: effectiveStories.map((story) => story.id),
-        promotionState,
-        reason: promotionState === "eligible"
-          ? "Open TODO matches completed PRD story and has source/test/evidence links for reviewer confirmation."
-          : "Blocked: PRD passes=true is not enough to promote TODO state without source/test/evidence links.",
+        promotionState: assessment.promotionState,
+        reason: assessment.reason,
         evidence,
+        support: assessment.support,
+        score: assessment.score,
+        blockedReasons: assessment.blockedReasons,
       });
     }
   }
@@ -557,6 +672,8 @@ function collectSpecUpdateCandidates(
   documents: readonly DocumentEnvelope[],
   stories: readonly PrdCompletionStorySummary[],
   allDocuments: readonly DocumentEnvelope[],
+  affectedEntryByKey: ReadonlyMap<string, AffectedDocumentEntry>,
+  options: CandidateAssessmentOptions,
 ): readonly PrdCompletionSpecUpdateCandidate[] {
   return documents
     .filter((document) => document.kind === "spec")
@@ -564,17 +681,26 @@ function collectSpecUpdateCandidates(
       const matchedStories = matchingStoriesForDocument(stories, document);
       const effectiveStories = matchedStories.length > 0 ? matchedStories : stories;
       const evidence = evidenceForDocument(document, effectiveStories, allDocuments);
-      const promotionState: PrdCompletionPromotionState = evidence.length > 0 ? "eligible" : "blocked";
+      const assessment = assessCompletionCandidate({
+        document,
+        evidence,
+        matchedStories,
+        effectiveStories,
+        allStories: stories,
+        affectedEntry: affectedEntryByKey.get(documentKey(document)),
+        options,
+      });
       return {
         documentId: document.stableId,
         path: document.path,
         ...(titleOf(document) ? { title: titleOf(document) } : {}),
         matchedStoryIds: effectiveStories.map((story) => story.id),
-        promotionState,
-        reason: promotionState === "eligible"
-          ? "Spec can be updated to describe completed behavior with supporting source/test/evidence links."
-          : "Blocked: completed PRD story needs source/test/evidence links before spec promotion is safe.",
+        promotionState: assessment.promotionState,
+        reason: assessment.reason,
         evidence,
+        support: assessment.support,
+        score: assessment.score,
+        blockedReasons: assessment.blockedReasons,
       };
     })
     .toSorted((left, right) => left.path.localeCompare(right.path));
@@ -644,6 +770,166 @@ async function collectScenarioMatrixUpdateCandidates(
   );
 }
 
+function assessCompletionCandidate(input: {
+  readonly document: DocumentEnvelope;
+  readonly evidence: readonly PrdCompletionEvidenceRef[];
+  readonly matchedStories: readonly PrdCompletionStorySummary[];
+  readonly effectiveStories: readonly PrdCompletionStorySummary[];
+  readonly allStories: readonly PrdCompletionStorySummary[];
+  readonly affectedEntry?: AffectedDocumentEntry;
+  readonly options: CandidateAssessmentOptions;
+}): CandidateAssessment {
+  const support = summarizeCandidateSupport(input.evidence, input.options);
+  const graphAxes = input.affectedEntry?.reasons ?? [];
+  const score = {
+    graph: graphScoreForReasons(graphAxes),
+    support: supportScore(support, input.options),
+    story: storyScoreForCandidate(input.allStories, input.matchedStories, input.effectiveStories),
+  };
+  const total = score.graph + score.support + score.story;
+  const blockedReasons = blockedReasonsForCandidate({
+    support,
+    total,
+    graphAxes,
+    options: input.options,
+  });
+  const promotionState: PrdCompletionPromotionState = blockedReasons.length > 0 ? "blocked" : "eligible";
+  const scoreSummary: PrdCompletionCandidateScore = {
+    total,
+    graph: score.graph,
+    support: score.support,
+    story: score.story,
+    strength: scoreStrength(total),
+    axes: graphAxes,
+  };
+  return {
+    promotionState,
+    reason: promotionState === "eligible"
+      ? eligibleReasonForCandidate(scoreSummary, support)
+      : blockedReasons[0] ?? "Blocked: candidate requires stronger completion evidence before promotion review.",
+    support,
+    score: scoreSummary,
+    blockedReasons,
+  };
+}
+
+function summarizeCandidateSupport(
+  evidence: readonly PrdCompletionEvidenceRef[],
+  options: CandidateAssessmentOptions,
+): PrdCompletionCandidateSupport {
+  const source = evidence.filter((item) => item.kind === "source").length;
+  const test = evidence.filter((item) => item.kind === "test").length;
+  const artifactEvidence = evidence.filter((item) => item.kind === "evidence").length;
+  const qualifying = options.evidenceOnly === true
+    ? artifactEvidence
+    : evidence.length;
+  return {
+    source,
+    test,
+    evidence: artifactEvidence,
+    qualifying,
+    ignored: options.evidenceOnly === true ? source + test : 0,
+  };
+}
+
+function supportScore(
+  support: PrdCompletionCandidateSupport,
+  options: CandidateAssessmentOptions,
+): number {
+  const scores = support.qualifying === 0
+    ? []
+    : options.evidenceOnly === true
+    ? [support.evidence > 0 ? COMPLETION_SUPPORT_SCORE.evidence : 0].filter((value) => value > 0)
+    : [
+      support.source > 0 ? COMPLETION_SUPPORT_SCORE.source : 0,
+      support.test > 0 ? COMPLETION_SUPPORT_SCORE.test : 0,
+      support.evidence > 0 ? COMPLETION_SUPPORT_SCORE.evidence : 0,
+    ].filter((value) => value > 0);
+  return scores.reduce((sum, value) => sum + value, 0)
+    + (scores.length > 1 ? 4 : 0);
+}
+
+function graphScoreForReasons(reasons: readonly string[]): number {
+  const sorted = sortCompletionReasons(reasons);
+  if (sorted.length === 0) return 0;
+  const primary = completionReasonScore(sorted[0]!);
+  const secondaryBonus = sorted
+    .slice(1)
+    .reduce((sum, reason) => sum + Math.max(1, Math.floor(completionReasonScore(reason) / 4)), 0);
+  return primary + Math.min(8, secondaryBonus);
+}
+
+function storyScoreForCandidate(
+  allStories: readonly PrdCompletionStorySummary[],
+  matchedStories: readonly PrdCompletionStorySummary[],
+  effectiveStories: readonly PrdCompletionStorySummary[],
+): number {
+  if (allStories.length === 0 || effectiveStories.length === 0) return 0;
+  if (matchedStories.length === 0) return 4;
+  return Math.min(16, 10 + matchedStories.length * 2);
+}
+
+function blockedReasonsForCandidate(input: {
+  readonly support: PrdCompletionCandidateSupport;
+  readonly total: number;
+  readonly graphAxes: readonly string[];
+  readonly options: CandidateAssessmentOptions;
+}): readonly string[] {
+  const reasons: string[] = [];
+  if (input.support.qualifying === 0) {
+    if (input.options.evidenceOnly === true && input.support.ignored > 0) {
+      reasons.push(
+        "Blocked: source/test links exist, but --evidence-only ignores them until activation or verification evidence is linked.",
+      );
+    } else {
+      reasons.push(
+        "Blocked: PRD passes=true is not enough to promote state without aligned source/test/evidence links.",
+      );
+    }
+  }
+  if (input.options.strict === true && input.total < STRICT_COMPLETION_SCORE_THRESHOLD) {
+    const axisSummary = input.graphAxes.length > 0 ? input.graphAxes.join(", ") : "no graph-axis signal";
+    reasons.push(
+      `Blocked: strict mode requires completion score >= ${STRICT_COMPLETION_SCORE_THRESHOLD}; current score is ${input.total} (${axisSummary}).`,
+    );
+  }
+  return reasons;
+}
+
+function eligibleReasonForCandidate(
+  score: PrdCompletionCandidateScore,
+  support: PrdCompletionCandidateSupport,
+): string {
+  const supportKinds = [
+    support.source > 0 ? "source" : null,
+    support.test > 0 ? "test" : null,
+    support.evidence > 0 ? "evidence" : null,
+  ].filter((value): value is string => value !== null);
+  const axisSummary = score.axes.length > 0 ? score.axes.join(", ") : "graph preview";
+  return `Candidate has corroborating ${supportKinds.join("/") || "completion"} support with ${axisSummary} signals.`;
+}
+
+function scoreStrength(total: number): PrdCompletionCandidateScore["strength"] {
+  if (total >= 70) return "strong";
+  if (total >= 50) return "medium";
+  if (total >= 25) return "weak";
+  return "insufficient";
+}
+
+function completionReasonScore(reason: string): number {
+  return reason in COMPLETION_REASON_SCORE
+    ? COMPLETION_REASON_SCORE[reason as keyof typeof COMPLETION_REASON_SCORE]
+    : 4;
+}
+
+function sortCompletionReasons(reasons: readonly string[]): readonly string[] {
+  return unique(reasons)
+    .toSorted((left, right) =>
+      completionReasonScore(right) - completionReasonScore(left)
+      || left.localeCompare(right)
+    );
+}
+
 function evidenceForDocument(
   document: DocumentEnvelope,
   stories: readonly PrdCompletionStorySummary[],
@@ -652,6 +938,7 @@ function evidenceForDocument(
   const refs: PrdCompletionEvidenceRef[] = [];
   const identities = new Set(documentIdentityValues(document));
   const paths = new Set(documentPathValues(document));
+  const relatedDocuments = relatedDocumentsForCompletion(document, allDocuments, identities, paths);
 
   for (const source of document.sources) {
     const path = source.path ?? pathLikeReference(source.label ?? "");
@@ -674,18 +961,19 @@ function evidenceForDocument(
 
   for (const storyRef of stories.flatMap((story) => story.evidenceRefs)) {
     if (storyRef.startsWith("E-")) {
-      refs.push({ kind: "evidence", id: storyRef });
+      if (documentHasEvidenceRef(document, relatedDocuments, storyRef)) {
+        refs.push({ kind: "evidence", id: storyRef });
+      }
       continue;
     }
     const path = pathLikeReference(storyRef);
-    if (path) refs.push({ kind: isTestPath(path) ? "test" : "source", id: storyRef, path });
+    if (path && documentHasSourceRef(document, relatedDocuments, normalizePath(path))) {
+      refs.push({ kind: isTestPath(path) ? "test" : "source", id: storyRef, path });
+    }
   }
 
-  for (const candidate of allDocuments) {
+  for (const candidate of relatedDocuments) {
     if (candidate === document || candidate.kind === "prd" || candidate.kind === "ralph-prd-json") continue;
-    const candidateRefs = documentReferences(candidate);
-    const sameFamily = Boolean(document.familyId && candidate.familyId === document.familyId);
-    if (!sameFamily && !candidateRefs.some((ref) => identities.has(ref) || paths.has(normalizePath(ref)))) continue;
     for (const evidence of candidate.evidence) {
       refs.push({
         kind: "evidence",
@@ -706,6 +994,38 @@ function evidenceForDocument(
   }
 
   return uniqueEvidenceRefs(refs);
+}
+
+function relatedDocumentsForCompletion(
+  document: DocumentEnvelope,
+  allDocuments: readonly DocumentEnvelope[],
+  identities: ReadonlySet<string>,
+  paths: ReadonlySet<string>,
+): readonly DocumentEnvelope[] {
+  return allDocuments.filter((candidate) => {
+    if (candidate === document || candidate.kind === "prd" || candidate.kind === "ralph-prd-json") return false;
+    const candidateRefs = documentReferences(candidate);
+    const sameFamily = Boolean(document.familyId && candidate.familyId === document.familyId);
+    return sameFamily || candidateRefs.some((ref) => identities.has(ref) || paths.has(normalizePath(ref)));
+  });
+}
+
+function documentHasEvidenceRef(
+  document: DocumentEnvelope,
+  relatedDocuments: readonly DocumentEnvelope[],
+  evidenceId: string,
+): boolean {
+  return document.evidence.some((item) => item.id === evidenceId)
+    || relatedDocuments.some((candidate) => candidate.evidence.some((item) => item.id === evidenceId));
+}
+
+function documentHasSourceRef(
+  document: DocumentEnvelope,
+  relatedDocuments: readonly DocumentEnvelope[],
+  path: string,
+): boolean {
+  return documentPathValues(document).includes(path)
+    || relatedDocuments.some((candidate) => documentPathValues(candidate).includes(path));
 }
 
 function matchingStoriesForDocument(

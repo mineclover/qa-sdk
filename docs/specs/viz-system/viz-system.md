@@ -13,8 +13,10 @@ def:
   links:
     - target: api-client-spec
       type: refs
+    - target: canvas-viewport-overview
+      type: refs
     - target: canvas-viewport-spec
-      type: depends_on
+      type: refs
     - target: docs-explorer-spec
       type: refs
     - target: iframe-protocol-spec
@@ -26,7 +28,7 @@ def:
     - target: inspector-engine
       type: refs
     - target: platform-demo-api-spec
-      type: depends_on
+      type: refs
     - target: registry-ui-spec
       type: refs
     - target: viz-3d-spec

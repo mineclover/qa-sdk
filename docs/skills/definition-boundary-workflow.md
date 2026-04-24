@@ -15,7 +15,9 @@ description: "definition-catalog boundary를 기준으로 direct 구조, couplin
 3. `boundary-context --mode direct`로 현재 작업 단위를 읽는다.
 4. `boundary-context --mode transitive`로 전이 영향을 읽는다.
 5. 요약만으로 부족하면 `body`로 최신 본문 전체를 읽는다.
-6. 필요하면 provider/state/interaction/validation 문서로 분리한다.
+6. 먼저 책임지는 `tier: system` 문서가 맞는지 확인한다.
+7. 필요하면 System 내부를 E/C/I/S 문서(Entry, Component, Interface/DSL, System behavior)로 분리한다.
+8. 문서 분리 뒤 source file이 여전히 여러 문서 단위를 한꺼번에 소유하면 코드 boundary 분리도 검토한다.
 
 ```bash
 qa-sdk def sync
@@ -57,6 +59,14 @@ node packages/cli/dist/index.js def validate --scan
 
 ## 문서 분해 기준
 
+- system boundary
+  독립적으로 동작하는 연산/서비스/패키지 책임 단위다. 분할은 이 문서를 기준으로 시작한다.
+- interface / DSL
+  system을 어떻게 소비할지 정하는 API/CLI/event/rule 계약 평면이다. 별도 tier가 아니라 `scope: interface` 또는 rule/spec 계약으로 표현한다.
+- component
+  data shape, state enum, evidence shape, validation vocabulary처럼 수동 참조되는 데이터 평면이다.
+- entry / identity
+  안정 ID, 유한 값, singleton identity처럼 식별만 담당한다.
 - boundary overview
   structural purpose만 적는다.
 - provider 순서
@@ -69,6 +79,17 @@ node packages/cli/dist/index.js def validate --scan
   `feature/func_def`
 - 검증
   `feature/scenario` + `depth: validation`
+
+## 코드 boundary 공동 분할
+
+문서 경계와 코드 경계가 서로 다르면 boundary 조회 품질이 떨어진다.
+
+- system 문서는 코드 boundary 후보다. `@def.boundary`는 가능한 system 단위에 붙인다.
+- E/C/I/S 문서가 생기면 대응 source boundary와 test evidence가 있는지 확인한다.
+- code boundary 판단은 `architecture-revealing-code-convention` rule을 따른다.
+- source file 하나가 여러 E/C/I/S 문서를 과도하게 담당하면 파일 또는 source boundary 분할 후보로 본다.
+- 분할하기 어렵다면 관련 소스에 구체 symbol을 적고, 후속 `todo`에 code split 후보를 남긴다.
+- 테스트 파일도 여러 source boundary를 검증하면 `test-split` 기준으로 나눈다.
 
 ## 함께 쓰는 명령 진입점
 

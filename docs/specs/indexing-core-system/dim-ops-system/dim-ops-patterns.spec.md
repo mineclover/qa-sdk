@@ -2,8 +2,7 @@
 def:
   tier: component
   id: dim-ops-patterns
-  type: knowledge
-  knowledge_kind: pattern
+  type: spec
   address: def_document:v2:136321
   scope: flow
   aspect: user_scenario
@@ -14,11 +13,11 @@ def:
   tags: [runtime, observability, structural]
   links:
     - target: dim-ops-cross-select
-      type: refines
+      type: traces_to
     - target: dim-ops-env-inject
-      type: refines
+      type: traces_to
     - target: dim-ops-deploy-resolve
-      type: refines
+      type: traces_to
 ---
 
 # 차원 조합 패턴

@@ -1,8 +1,7 @@
 ---
 def:
   id: status-crosswalk
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   tier: component
   scope: flow
   aspect: relation
@@ -16,13 +15,13 @@ def:
     - target: pm-taxonomy-plan
       type: traces_to
     - target: definition-mgmt-state-tracking
-      type: depends_on
+      type: traces_to
     - target: df-state-model
-      type: depends_on
+      type: traces_to
     - target: infra-engine-pipeline
-      type: depends_on
+      type: traces_to
     - target: infra-observe-stage
-      type: depends_on
+      type: traces_to
     - target: decision-definition-bridge
       type: traces_to
 ---

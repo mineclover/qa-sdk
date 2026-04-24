@@ -176,16 +176,25 @@ pnpm --filter <pkg> exec vitest run src/<new-file>.test.ts
 ## 판단 원칙 (meta-semantic 기반)
 
 def-split이 문서의 **패싯 경계**(생산·소비·정의·관리·저장)로 분할하듯,
-test-split은 테스트의 **소스 모듈 경계**로 분할한다.
+test-split은 테스트의 **source boundary**로 분할한다.
+문서가 E/C/I/S + L/P로 나뉘었으면 테스트도 같은 source boundary 또는 BDD contract 경계로 따라 나뉘어야 한다. Layout/Pack 자체는 보통 직접 테스트하지 않고, refs 대상 System/Interface/Component의 test evidence를 조망한다.
+코드 경계 판단은 `docs/specs/system/architecture-revealing-code-convention.rule.md`를 따른다.
 
 | def-split 개념 | test-split 대응 |
 |----------------|----------------|
-| 문서 1개 = 개념 1개 | 테스트 파일 1개 = 소스 모듈 1개 |
-| 150줄+ leaf → 분할 | 50+ tests → 분할 검토 |
-| module + leaf 구조 | describe(기능) + it(시나리오) 구조 |
+| 문서 1개 = E/C/I/S + L/P 책임 1개 | 테스트 파일 1개 = source boundary 1개 |
+| 비대한 혼합 문서 → 분할 | 50+ tests → 분할 검토 |
+| Interface/Component/System behavior 분리 | describe(기능) + it(시나리오) 구조 |
 | ^purpose 필수 | describe명에 목적 명시 |
 | contains 링크 | import 관계 |
 | qa-sdk def sync 검증 | vitest run 테스트 수 검증 |
+
+문서-코드-테스트 정렬 기준:
+
+- doc responsibility → source boundary 또는 symbol → test describe/file이 추적 가능해야 한다.
+- source boundary를 분리했는데 test가 여전히 통합 파일 하나에 남아 있으면 `test-split` 미완료로 본다.
+- Layout/Pack 문서의 검증은 refs 대상 문서들의 test evidence가 보이는지 확인하는 방식으로 한다.
+- 통합 테스트는 예외지만, 이 경우 `.test.md`나 test title에 통합 범위를 명시한다.
 
 ## 예시: pipe-infra.test.ts 분리
 

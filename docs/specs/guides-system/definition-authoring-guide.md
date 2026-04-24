@@ -12,17 +12,21 @@ def:
   tags: [entry-point]
   links:
     - target: definition-catalog-spec
+      type: traces_to
+    - target: definition-frontmatter-metadata-system
       type: depends_on
     - target: guides-system
-      type: refines
+      type: traces_to
     - target: tag-management-spec
-      type: depends_on
+      type: traces_to
 ---
 # 문서 작성 표준 가이드
 
 ## 목적 ^purpose
 
 definition-catalog 문서를 일관되게 작성하고 모듈 단위로 쿼리할 수 있도록 표준을 정의한다.
+
+개별 frontmatter option의 의미와 값 목록은 `definition-frontmatter-metadata-system`이 소유한다. 이 guide는 작성 순서와 실전 판단만 설명한다.
 
 ## 핵심 원칙 ^overview
 
@@ -232,7 +236,7 @@ DB의 `code_references`를 갱신한다. `qa-sdk def find-by-file`와 review-fee
 
 | 신호 | 조치 |
 |------|------|
-| 150줄 초과 | `/def-split` — module + leaf 분해 |
+| 150줄 초과 | `/def-split` — E/C/I/S + L/P 책임 분해 |
 | 2개 이상 scope 혼재 | scope별 분리 → link 연결 |
 | ^defines가 7개 초과 | 개념 단위로 분리 |
 | svc가 다른 내용 혼재 | svc별 분리 |

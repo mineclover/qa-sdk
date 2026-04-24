@@ -211,7 +211,6 @@ function roleFromKind(kind: string): string | undefined {
     "cases",
     "test",
     "memo",
-    "knowledge",
     "prd",
     "ralph-prd-json",
   ].includes(kind)

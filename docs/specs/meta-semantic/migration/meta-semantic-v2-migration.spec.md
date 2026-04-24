@@ -2,8 +2,7 @@
 def:
   tier: component
   id: meta-semantic-v2-migration
-  type: knowledge
-  knowledge_kind: proposal
+  type: spec
   scope: flow
   aspect: process_flow
   depth: overview
@@ -12,7 +11,7 @@ def:
   tags: [entry-point]
   links:
     - target: meta-semantic-system
-      type: depends_on
+      type: traces_to
 ---
 
 # Meta-Semantic v2 마이그레이션 계획

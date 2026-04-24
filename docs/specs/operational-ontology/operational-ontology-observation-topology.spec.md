@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-observation-topology
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: flow
   aspect: process_flow
   depth: specification
@@ -12,13 +11,13 @@ def:
   tags: [cross-scope, structural, observability]
   links:
     - target: operational-ontology-flow-corridor
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-junction
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-checkpoint
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-runtime-interface
-      type: refines
+      type: traces_to
 sources:
   - packages/operational-ontology/src/internal/topology-core.ts
   - packages/operational-ontology/src/topology.ts

@@ -25,7 +25,7 @@ skill-catalog-system > claude-skill-group > **skill-def-level**
 
 ## 목적 ^purpose
 
-문서의 전체-부분 분해 구조에서의 위치(system/area/unit/module/leaf)를 선언하고, contains 자식과의 일관성을 검증한다.
+문서의 contains 검증용 level(group/module/leaf)을 선언하고, E/C/I/S + L/P 책임과 contains 자식의 일관성을 검증한다.
 
 ## 정의 ^defines
 

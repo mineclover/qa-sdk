@@ -5,8 +5,7 @@ def:
   owner_system: definition-service
   projection_plane: intent
   intent_hierarchy: core
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   address: def_document:v2:342161
   scope: data
   aspect: domain_data
@@ -17,7 +16,7 @@ def:
   tags: [entry-point]
   links:
     - target: definition-taxonomy
-      type: refines
+      type: traces_to
     - target: definition-addressing-plan
       type: traces_to
 ---

@@ -27,16 +27,16 @@ skill-catalog-system > claude-skill-group > **skill-def-split**
 
 ## 목적 ^purpose
 
-비대한 leaf 문서를 module + leaf 구조로 재편해, 문서가 다시 탐색 가능한 크기와 의미 단위를 갖도록 만드는 분할 스킬이다.
+비대한 문서나 혼합 책임 문서를 E/C/I/S + L/P 책임으로 재편해, 문서가 다시 탐색 가능한 크기와 의미 단위를 갖도록 만드는 분할 스킬이다.
 
 ## 사용 맥락 ^context
 
-audit에서 leaf-too-long 경고가 나오거나 한 문서 안에 여러 하위 개념이 섞여 읽기 순서가 무너졌을 때 사용한다.
+audit에서 leaf-too-long 경고가 나오거나 한 문서 안에 여러 책임이 섞여 읽기 순서가 무너졌을 때 사용한다.
 
 ## 설계 의도 ^intent
 
-원본 leaf를 같은 docId의 module overview로 바꾸고 하위 leaf를 만드는 패턴을 고정해,
-링크 안정성을 유지하면서도 구조만 개선하게 한다.
+원본 docId는 가능한 책임 문서로 유지하고, 하위 책임 문서를 E/C/I/S + L/P 기준으로 나누는 패턴을 고정해,
+링크 안정성을 유지하면서도 구조를 개선하게 한다.
 
 ## 피드백 규칙 ^feedback
 

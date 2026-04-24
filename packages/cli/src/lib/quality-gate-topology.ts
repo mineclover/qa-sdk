@@ -54,9 +54,9 @@ export function toQualityTopologyDoc(
     title: entry.title,
     version: options.version ?? entry.revision ?? 1,
     level: entry.level,
-    scope: entry.scope,
-    aspect: entry.aspect,
-    depth: entry.depth,
+    scope: qualityDimension(entry.scope),
+    aspect: qualityDimension(entry.aspect),
+    depth: qualityDimension(entry.depth),
     serviceId: entry.serviceId,
     tags: entry.tags,
     gate: entry.gate,
@@ -71,13 +71,17 @@ export function defDocToQualityTopologyDoc(
     title: doc.title ?? doc.docId,
     version: doc.version,
     level: doc.level,
-    scope: doc.scope,
-    aspect: doc.aspect,
-    depth: doc.depth,
+    scope: qualityDimension(doc.scope),
+    aspect: qualityDimension(doc.aspect),
+    depth: qualityDimension(doc.depth),
     serviceId: doc.svc,
     tags: doc.tags,
     gate: doc.gate,
   };
+}
+
+function qualityDimension(value: string | undefined): string {
+  return value ?? "unknown";
 }
 
 export function collectContainedQualityDocs(

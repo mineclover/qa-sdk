@@ -16,6 +16,10 @@ def:
   links:
     - target: definition-harness
       type: depends_on
+    - target: responsibility-closure-harness
+      type: refs
+    - target: state-event-terminology
+      type: depends_on
     - target: definition-harness-derive
       type: contains
     - target: definition-harness-persistence
@@ -30,6 +34,8 @@ def:
 
 문서의 생명주기, 스펙 구현 단계, 품질 게이트 통과 여부, 서비스 건강도를 유한 상태 머신으로 모델링하고, 모든 상태 전이를 좌표 이벤트로 수집한다. 수집된 이벤트는 수렴 분석 파이프라인을 통해 패턴과 이상을 감지하고, 그 결과가 다시 다음 의사결정의 컨텍스트가 된다.
 
+이 아키텍처의 상위 목적은 Responsibility Closure다. 코드가 자신이 완성해야 하는 책임을 드러내고, 그 책임이 시스템 boundary, coding/document convention, design/error/permission policy, test/evidence로 닫혔는지 추적한다.
+
 ## 구성 ^overview
 
 ### 왜 하네스인가
@@ -40,6 +46,19 @@ def:
 | 품질 게이트 통과했나? | CI 로그 확인 | `bundle_observation: complete` |
 | 버전 릴리스 가능한가? | 체크리스트 수동 확인 | `prefix-release` 프로세스 실행 |
 | 이 결정이 문서에 반영됐나? | 슬랙 검색 | `decision→doc approved` 자동 전이 |
+
+### Responsibility Closure Harness
+
+```text
+Code reveals responsibility
+  -> responsibility forms a system boundary
+  -> boundary consumes conventions/policies/designs
+  -> behavior is verified by BDD/test/evidence
+  -> docs map and govern the boundary
+  -> harness detects closure and drift
+```
+
+상태 머신은 이 폐쇄 루프를 관측하기 위한 표현이다. `doc-lifecycle`, `spec-impl`, `convention-compliance`, `db-sync`, quality bundle state는 각각 책임 폐쇄의 일부 증거만 담당한다. 상태 머신은 현재 상태와 허용 전이를 소유하고, `harness.transition` 같은 event는 그 전이가 발생했다는 관측/evidence를 소유한다.
 
 ### 2계층 구조
 

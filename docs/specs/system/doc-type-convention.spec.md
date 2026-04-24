@@ -9,7 +9,7 @@ def:
   layer: operation
   links:
     - target: definition-catalog-spec
-      type: contains
+      type: depends_on
     - target: doc-type-convention-cases
       type: contains
     - target: drizzle-orm-convention
@@ -43,6 +43,25 @@ definition-catalog 문서의 역할을 확장자로 명시하여,
 - rule = "이것을 소비할 때 어떤 조건을 확인하는가" (판별 기준 + 체크리스트)
 - guide(knowledge_kind)와의 차이: guide는 프로젝트 전역 절차, rule은 spec 단위 종속
 - rule은 소비자가 생길 때 생성. spec만으로 소비 가능하면 불필요
+
+### reference-first compression
+
+- **한 사실은 한 문서만 소유** — 같은 표, 같은 command inventory, 같은 schema field 설명, 같은 남은 작업 목록을 여러 문서에 복제하지 않는다.
+- **파생 문서는 delta만 기록** — 종속 문서는 owner 문서의 내용을 다시 쓰지 말고, 자신이 추가로 소유하는 판단/체크/잔여/시나리오만 적는다.
+- **참조는 id + 문서 + 섹션으로 건다** — 가능하면 `def.id`, 문서 경로, heading 이름으로 owner를 가리키고, 필요한 경우 3-7줄 이하의 국소 예시만 남긴다.
+- **역할별 owner를 넘지 않는다** — 구조는 spec, 소비 판별은 rule, 사용 흐름은 cases, 코드 검증 매핑은 test, 잔여 실행은 todo, 순서와 단계는 plan이 소유한다.
+- **현황 목록은 한곳에만 둔다** — "현재 구현 범위", "보류", "남은 작업"은 spec/rule/todo 중 한 문서만 owner가 되고 나머지는 참조만 남긴다.
+
+### owner 압축 규칙
+
+| 내용 종류 | owner 문서 | 다른 문서에서 허용되는 표현 |
+|-----------|------------|-----------------------------|
+| 구조, 데이터 shape, command surface | `.spec.md` | 요약 1-2줄 + owner 참조 |
+| 소비 체크리스트, read-only/write authority, preview 정책 | `.rule.md` | owner 참조만 |
+| 사용 흐름, UC, 기대 결과 | `.cases.md` | contract/scenario id 참조 |
+| test title, assertion 매핑, evidence surface | `.test.md` | test id / file path 참조 |
+| 남은 작업, 보류, deferred scope | `.todo.md` | owner 참조만 |
+| 단계, 순서, topic ordering | `.plan.md` | owner 참조만 |
 
 ### cases vs test
 
@@ -116,12 +135,14 @@ docs/specs/meta-semantic/meta-semantic-ir/
 - spec과 같은 디렉토리에 배치
 - 내용: 판별 기준, 체크리스트, 좌표 매핑, 소비 조건
 - 내용 아닌 것: 정의(→spec), 구현 계획(→todo), 이유(→memo)
+- command inventory, schema field table, 구현 현황 목록은 spec/todo owner가 있으면 다시 복제하지 않고 참조만 둔다
 
 ### todo 규칙
 
 - todo에만 `[ ]` 체크박스 사용
 - plan에는 체크박스 없음 (방향만)
 - **이번에 구현 시작 가능한 것만** todo에 기재
+- 구현 완료 사실, 현재 surface 설명, read-only 규칙은 spec/rule owner가 있으면 todo에 남기지 않는다
 
 ### memo 분리 기준
 
@@ -132,20 +153,24 @@ docs/specs/meta-semantic/meta-semantic-ir/
 
 - **종속 spec 필수** — cases만 단독 존재 불가
 - 각 UC: 상황, 관여 패키지, 흐름, 기대 결과, 검증 참조로 구성
+- 기계 검증이 필요한 경우 fenced `yaml bdd` block에 `bdd_contract`, `test_unit`, `implementation_unit`을 작성
 - 내용: 사용 시나리오(UC), 입력→흐름→출력, 기대 결과
 - 내용 아닌 것: 설계 구조(→spec), 코드 검증 매핑(→test), 잔여 작업(→todo)
 - test.ts 테스트 케이스의 원천 시나리오 — cases에서 파생하여 test.ts로 구현
+- command surface나 schema field 설명은 owner spec을 참조하고, cases에는 시나리오에 필요한 식별자와 기대 결과만 남긴다
 
 ### test.md 규칙
 
 - test.ts의 `describe`/`it` 식별자를 참조하는 구조
 - 코드와 독립적 — 구현 전에도 작성 가능 (TDD 명세)
+- behavior 설명을 다시 장문으로 쓰지 않고 scenario id / contract id / assertion surface 중심으로 기록한다
 
 ### plan 규칙
 
 - 현재 목표 → 장기 목표 구분
 - 구체적 체크박스 없음 — 방향과 단계만
 - 실행 가능해지면 todo로 추출
+- 별도 schema/spec이 있는 경우 필드 정의를 plan에 다시 쓰지 않고 owner 문서를 참조한다
 
 ### topic/cases 분리
 
@@ -162,6 +187,9 @@ docs/specs/meta-semantic/meta-semantic-ir/
 | 고아 memo | warning | memo가 있지만 대응 spec/todo 없음 |
 | test.md 미연결 | warning | 시나리오 ID가 test.ts에 없음 |
 | plan 체류 | info | plan에 장기 체류 항목 |
+| spec/rule 구조 중복 | warning | rule이 spec의 command/table/schema 설명을 장문 복제 |
+| spec/todo 현황 중복 | warning | todo가 이미 spec이 소유한 현재 구현 범위를 다시 서술 |
+| plan/spec shape 중복 | warning | plan이 별도 schema spec이 소유한 필드 정의를 다시 복제 |
 
 ## ^consumes
 

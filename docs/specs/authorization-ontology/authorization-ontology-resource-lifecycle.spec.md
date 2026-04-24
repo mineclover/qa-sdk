@@ -33,6 +33,14 @@ def:
       type: refs
     - target: authorization-ontology-nested-audit-tracing
       type: refs
+sources:
+  - packages/permission-engine/src/resource-policy/state.ts
+  - packages/permission-engine/src/resource-policy/state.test.ts
+  - packages/permission-engine/src/resource-policy/state.test.ts:InvalidTransitionError
+  - packages/permission-engine/src/resource-policy/registry.ts
+  - packages/permission-engine/src/resource-policy/registry.test.ts
+  - packages/permission-engine/src/access-checker/checker.ts
+  - packages/permission-engine/src/access-checker/checker.test.ts:audit
 ---
 
 # Authorization Ontology Resource Lifecycle — 리소스 인스턴스 권한 상태 모델

@@ -12,7 +12,7 @@ def:
   tags: [entry-point, runtime]
   links:
     - target: infra-engine-pipeline
-      type: depends_on
+      type: traces_to
     - target: infra-port-allocation
       type: contains
     - target: cf-workers-deployment

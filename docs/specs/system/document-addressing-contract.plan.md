@@ -9,13 +9,13 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: document-addressing-contract
-      type: refines
+      type: traces_to
     - target: definition-taxonomy
-      type: depends_on
+      type: traces_to
     - target: doc-type-convention
-      type: depends_on
+      type: traces_to
     - target: taxonomy-boundaries
-      type: depends_on
+      type: traces_to
 ---
 
 # Document Addressing Contract — 계획

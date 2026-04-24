@@ -2,15 +2,17 @@
 // @def.doc infra-engine-system
 
 // monitor/sync-loop.ts — 서비스 헬스 체크 주기 실행
-import type { InfraProfileAdapter, IngestAdapter } from "../adapters/adapter.js";
+import type { CoordinateAdapter, InfraProfileAdapter, IngestAdapter } from "../adapters/adapter.js";
 import type { MonitorTarget, SyncStatus } from "../core/types.js";
 
 export interface SyncLoopOptions {
   infraProfile: InfraProfileAdapter;
   ingest?: IngestAdapter;
+  coordinate?: CoordinateAdapter;
   webhooks?: Array<{ url: string; events: string[] }>;
   interval?: number; // seconds, default 60
   onStatusChange?: (serviceId: string, prev: SyncStatus, curr: SyncStatus) => void;
+  onResults?: (results: SyncCheckResult[]) => void | Promise<void>;
 }
 
 export interface SyncCheckResult {
@@ -23,10 +25,22 @@ export interface SyncCheckResult {
   detail: string;
 }
 
+function mapSyncStatusToHealthStatus(status: SyncStatus): "healthy" | "degraded" | "unhealthy" {
+  switch (status) {
+    case "Synced":
+      return "healthy";
+    case "Degraded":
+      return "degraded";
+    default:
+      return "unhealthy";
+  }
+}
+
 export function createSyncLoop(options: SyncLoopOptions) {
   const interval = (options.interval ?? 60) * 1000;
   let timer: ReturnType<typeof setInterval> | null = null;
   let lastResults: SyncCheckResult[] = [];
+  let inFlight: Promise<SyncCheckResult[]> | null = null;
 
   async function checkOne(target: MonitorTarget): Promise<SyncCheckResult> {
     const checkedAt = new Date().toISOString();
@@ -68,10 +82,11 @@ export function createSyncLoop(options: SyncLoopOptions) {
     }
   }
 
-  async function syncAll(): Promise<SyncCheckResult[]> {
+  async function executeSyncAll(): Promise<SyncCheckResult[]> {
     const monitors = await options.infraProfile.getAllMonitors();
     if (monitors.length === 0) return [];
 
+    const monitorByService = new Map(monitors.map((monitor) => [monitor.serviceId, monitor]));
     const results = await Promise.all(monitors.map(checkOne));
 
     // 프로필 상태 업데이트 + 변경 알림
@@ -110,6 +125,23 @@ export function createSyncLoop(options: SyncLoopOptions) {
         // Ingest emit (fail-open)
         if (options.ingest) {
           try {
+            const addressContext = (() => {
+              const monitor = monitorByService.get(r.serviceId);
+              if (!options.coordinate || !monitor) return {};
+              const svcRef = options.coordinate.resolveSvcRef(
+                r.serviceId,
+                monitor.env,
+                monitor.region,
+                monitor.namespace,
+              );
+              return svcRef
+                ? options.coordinate.encodeHealthEvent(
+                    svcRef,
+                    mapSyncStatusToHealthStatus(r.currentStatus),
+                  )
+                : {};
+            })();
+
             await options.ingest.emit(
               "health_event",
               {
@@ -118,7 +150,7 @@ export function createSyncLoop(options: SyncLoopOptions) {
                 current_status: r.currentStatus,
                 latency_ms: r.latency,
               },
-              {},
+              addressContext,
             );
           } catch {
             /* fail-open */
@@ -128,7 +160,16 @@ export function createSyncLoop(options: SyncLoopOptions) {
     }
 
     lastResults = results;
+    await options.onResults?.(results);
     return results;
+  }
+
+  async function syncAll(): Promise<SyncCheckResult[]> {
+    if (inFlight) return inFlight;
+    inFlight = executeSyncAll().finally(() => {
+      inFlight = null;
+    });
+    return inFlight;
   }
 
   return {

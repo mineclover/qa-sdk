@@ -20,14 +20,14 @@ def:
 
 ## 목적 ^purpose
 
-Pulumi Automation API를 사용하여 선택된 프로바이더에 서비스를 배포한다. S3 state backend로 상태를 영속하고, DynamoDB로 동시 배포 충돌을 방지한다.
+Pulumi Automation API를 사용하여 선택된 프로바이더에 서비스를 배포한다. Pulumi DIY backend(AWS S3 / MinIO / file)로 상태를 영속하고, backend의 기본 lock/history 메커니즘을 사용해 상태 일관성을 유지한다.
 
 ## 구성 ^overview
 
 - Pulumi Automation API — CLI 없이 TypeScript 코드로 인프라 제어
 - 프로바이더별 Pulumi Program — `DeployProvider` 인터페이스 구현
-- S3 state backend — `s3://qa-sdk-infra-state/{project}/{stack}`
-- DynamoDB lock — 동시 배포 시 mutex
+- DIY state backend — `s3://qa-sdk-infra-state` 또는 `file://~/.pulumi-local`
+- Pulumi backend lock/history — `.pulumi/locks/`, `.pulumi/history/`
 - 프로바이더 선택은 사용자 입력 (`ctx.provider`)
 
 ---
@@ -47,10 +47,8 @@ ctx.config (ResolvedConfig)
 ### State Backend 설정
 
 ```typescript
-// S3 backend URL에 DynamoDB lock 테이블 명시
-const backendUrl = "s3://qa-sdk-infra-state"
-  + `?region=ap-northeast-2`
-  + `&dynamoTable=qa-sdk-infra-lock`;  // DynamoDB lock 테이블
+// AWS S3 또는 MinIO 같은 DIY backend URL
+const backendUrl = "s3://qa-sdk-infra-state?endpoint=http://localhost:9000&disableSSL=true&s3ForcePathStyle=true";
 
 const stackName = `${ctx.service}-${ctx.env}-${ctx.provider}-${ctx.region}`;
 
@@ -67,14 +65,12 @@ const stack = await LocalWorkspace.createOrSelectStack({
   workDir: workspace.workDir,
 });
 
-// secretsProvider는 스택 레벨에서 설정
-await stack.setConfig("aws:secretsProvider", { value: "awskms://KEY_ID" });
+// DIY backend는 Pulumi가 .pulumi/locks 아래 lock file을 관리한다.
 ```
 
 - 스택 이름: `{service}-{env}-{provider}-{region}` (예: `ingest-server-staging-railway-apne2`)
-- S3 버저닝 활성 — 상태 파일 히스토리 보존
-- DynamoDB lock: S3 URL의 `dynamoTable` 파라미터로 지정
-- DynamoDB TTL — 비정상 종료 시 lock 자동 해제 (30분)
+- S3/MinIO backend는 `.pulumi/stacks/`, `.pulumi/history/`, `.pulumi/locks/` 구조를 사용
+- self-managed backend에서 버저닝/백업/접근 제어는 운영자가 관리
 
 ## 정의 ^defines
 
@@ -149,7 +145,6 @@ async rollback(ctx: DeployContext): Promise<void> {
 
 - `@pulumi/pulumi` `^3.229.0` — Automation API (LocalWorkspace, Stack)
 - `@aws-sdk/client-s3` `^3.1024.0` — State backend
-- `@aws-sdk/client-dynamodb` `^3.1024.0` — Lock table
 - `@aws-sdk/client-sts` `^3.1024.0` — OIDC 임시 토큰 발급
 - 프로바이더별 Pulumi SDK (providers.spec.md 참조)
 
@@ -157,4 +152,4 @@ async rollback(ctx: DeployContext): Promise<void> {
 
 - **VM 프로비저닝은 범위 밖** — 이미 존재하는 인프라 위에 애플리케이션만 배포
 - **프로바이더 간 상태 공유 없음** — 각 스택은 독립. 프로바이더 간 의존은 connections 설정으로 해결
-- **동시 배포 제한** — 같은 스택(service+env+provider+region)에 대한 동시 배포는 DynamoDB lock이 차단
+- **동시 배포 제한** — 같은 스택(service+env+provider+region)에 대한 동시 수정은 Pulumi DIY backend lock이 차단한다. 단, self-managed backend의 가용성과 스토리지 일관성은 운영 환경이 책임진다.

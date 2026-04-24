@@ -47,7 +47,7 @@ def:
 - **범위**: 애플리케이션 배포 중심 (VM/네트워크 프로비저닝은 범위 밖)
 - **엔진**: Pulumi Automation API (프로바이더별 추상화)
 - **설정 SSOT**: SOPS + KMS 암호화 YAML (시크릿 + 일반설정 + 서비스 연결정보)
-- **상태 관리**: AWS S3 (Pulumi state) + DynamoDB (Lock)
+- **상태 관리**: Pulumi DIY backend (AWS S3 / MinIO / file) + backend built-in locking/history
 - **코어는 qa-sdk 무의존** — 어댑터 계층을 통해 연동
 
 ## 방법 ^method
@@ -68,7 +68,7 @@ def:
   ▼
 ┌─ ProvisionStage ───────────────────────────────┐
 │  Pulumi Automation API → 프로바이더별 Program    │
-│  S3 state lock → deploy → unlock               │
+│  DIY backend lock → deploy → unlock            │
 │  spec: infra-provision-stage                   │
 └────────────────────────────────────────────────┘
   │
@@ -115,7 +115,7 @@ DeployResult { endpoint, registryId, healthStatus, gateVerdict }
 ### 실행 보장
 
 - **순차 실행**: 스테이지는 반드시 정의된 순서대로 실행
-- **동시 배포 차단**: 같은 (service, env, provider, region) 조합에 대한 동시 배포는 DynamoDB lock이 차단
+- **동시 배포 차단**: 같은 (service, env, provider, region) 조합에 대한 동시 배포는 Pulumi DIY backend lock이 차단
 - **triggeredBy**: 파이프라인 입력에 `triggeredBy: "ci" | "manual"` 포함 (기본: "manual")
 
 ## 정의 ^defines
@@ -186,7 +186,6 @@ interface StageResult {
 - `sops` CLI 바이너리 — Mozilla SOPS (shell-out via `execa`)
 - `@pulumi/pulumi` `^3.229.0` — Automation API
 - `@aws-sdk/client-s3` `^3.1024.0` — S3 state backend
-- `@aws-sdk/client-dynamodb` `^3.1024.0` — DynamoDB lock
 - `@aws-sdk/client-kms` `^3.1024.0` — KMS 복호화
 - `@aws-sdk/client-sts` `^3.1024.0` — OIDC STS 임시 토큰
 - `zod` — 설정 스키마 검증

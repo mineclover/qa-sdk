@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-prompt-artifact-generation
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: interface
   aspect: api_contract
   depth: specification
@@ -12,17 +11,17 @@ def:
   tags: [cross-scope, contract, testing]
   links:
     - target: operational-ontology-production-factory
-      type: refines
+      type: traces_to
     - target: operational-ontology-flow-corridor
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-checkpoint
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-traversal-coordinate
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-package-architecture
       type: implements
     - target: programming-artifact-ontology-quality-evidence
-      type: depends_on
+      type: traces_to
 sources:
   - packages/operational-ontology/src/internal/prompt-artifact-core.ts
   - packages/operational-ontology/src/prompt-artifacts.ts

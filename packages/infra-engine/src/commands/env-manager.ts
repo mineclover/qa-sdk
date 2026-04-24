@@ -57,10 +57,21 @@ export async function envDown(cwd: string): Promise<void> {
 export async function envStatus(): Promise<void> {
   console.log("\n=== 인프라 환경 상태 ===\n");
 
+  let config: Awaited<ReturnType<typeof import("./config-manager.js").loadInfraConfig>> | undefined;
+  try {
+    const { loadInfraConfig } = await import("./config-manager.js");
+    config = await loadInfraConfig();
+  } catch {
+    /* config 조회 실패는 fallback 사용 */
+  }
+
+  let minioRunning = false;
+
   // MinIO
   try {
     const res = await fetch(`${MINIO_ENDPOINT}/minio/health/live`, { signal: AbortSignal.timeout(2000) });
     if (res.ok) {
+      minioRunning = true;
       console.log("  MinIO S3:    🟢 실행 중");
       console.log(`    endpoint: ${MINIO_ENDPOINT}`);
       console.log(`    console:  ${MINIO_CONSOLE}`);
@@ -112,25 +123,28 @@ export async function envStatus(): Promise<void> {
 
   // 서비스: registry-service
   try {
-    const res = await fetch("http://localhost:3300/health", { signal: AbortSignal.timeout(2000) });
-    console.log(`  Registry:   ${res.ok ? "🟢 실행 중 (localhost:3300)" : "⬜ 미실행"}`);
+    const registryUrl = config?.services.registry ?? process.env.REGISTRY_URL ?? "http://localhost:3300";
+    const res = await fetch(new URL("/health", registryUrl), { signal: AbortSignal.timeout(2000) });
+    console.log(`  Registry:   ${res.ok ? `🟢 실행 중 (${registryUrl})` : "⬜ 미실행"}`);
   } catch {
     console.log("  Registry:   ⬜ 미실행");
   }
 
   // 서비스: ingest-server
   try {
-    const res = await fetch("http://localhost:3200/health/live", { signal: AbortSignal.timeout(2000) });
-    const storeMode = process.env.STORE_DRIVER ?? "memory";
-    console.log(`  Ingest:     ${res.ok ? `🟢 실행 중 (${storeMode} 모드)` : "⬜ 미실행"}`);
+    const ingestUrl = config?.services.ingest ?? process.env.INGEST_URL ?? "http://localhost:3200";
+    const res = await fetch(new URL("/health/live", ingestUrl), { signal: AbortSignal.timeout(2000) });
+    const storeMode = config?.ingestStore ?? process.env.STORE_DRIVER ?? "memory";
+    console.log(`  Ingest:     ${res.ok ? `🟢 실행 중 (${storeMode} 모드, ${ingestUrl})` : "⬜ 미실행"}`);
   } catch {
     console.log("  Ingest:     ⬜ 미실행");
   }
 
   // 서비스: definition-service
   try {
-    const res = await fetch("http://localhost:3700/health", { signal: AbortSignal.timeout(2000) });
-    console.log(`  Definition: ${res.ok ? "🟢 실행 중 (localhost:3700)" : "⬜ 미실행"}`);
+    const definitionUrl = config?.services.definition ?? process.env.DEFINITION_URL ?? "http://localhost:3700";
+    const res = await fetch(new URL("/health", definitionUrl), { signal: AbortSignal.timeout(2000) });
+    console.log(`  Definition: ${res.ok ? `🟢 실행 중 (${definitionUrl})` : "⬜ 미실행"}`);
   } catch {
     console.log("  Definition: ⬜ 미실행");
   }
@@ -160,6 +174,24 @@ export async function envStatus(): Promise<void> {
     : "📁 파일";
   console.log(`  Pulumi:     ${pulumiLabel} (${backend.split("?")[0]})`);
 
+  try {
+    if (!config) {
+      const { loadInfraConfig } = await import("./config-manager.js");
+      config = await loadInfraConfig();
+    }
+    const configuredLabel = config.backend === "minio"
+      ? `minio (${config.s3Endpoint ?? "endpoint 미지정"})`
+      : config.backend === "s3"
+        ? `s3 (${config.s3Bucket})`
+        : "file";
+    console.log(`  Config:     ${configuredLabel}`);
+    if (config.backend === "minio" && !minioRunning) {
+      console.log("  Warning:    MinIO backend로 설정됐지만 현재 endpoint에 연결되지 않음");
+    }
+  } catch {
+    /* config 조회 실패는 상태 출력에 영향 주지 않음 */
+  }
+
   console.log("");
 }
 
@@ -170,8 +202,20 @@ export async function envReset(cwd: string): Promise<void> {
 }
 
 /** MinIO 실행 여부 확인 + 환경변수 자동 설정 */
-export async function detectEnvironment(): Promise<"minio" | "file"> {
-  // 명시적 설정 확인
+export async function detectEnvironment(preferredBackend?: "file" | "minio" | "s3"): Promise<"minio" | "file"> {
+  // 명시적 backend profile이 file/s3면 MinIO fallback을 금지
+  if (preferredBackend === "file" || preferredBackend === "s3") {
+    return "file";
+  }
+
+  // 이미 backend URL이 정해져 있으면 그대로 존중
+  if (process.env.PULUMI_BACKEND_URL) {
+    const isLocalMinio = process.env.PULUMI_BACKEND_URL.includes("localhost")
+      || process.env.PULUMI_BACKEND_URL.includes("127.0.0.1");
+    return isLocalMinio ? "minio" : "file";
+  }
+
+  // 명시적 MinIO endpoint 설정 확인
   if (process.env.INFRA_AWS_ENDPOINT) {
     return "minio";
   }

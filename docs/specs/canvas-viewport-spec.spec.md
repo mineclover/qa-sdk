@@ -1,13 +1,16 @@
 ---
 def:
-  id: canvas-viewport-spec
+  id: canvas-viewport-overview
   type: spec
-  tier: component
+  tier: layout
   scope: ui
   aspect: layout
   depth: specification
   lifecycle: approved
   layer: experience
+  links:
+    - target: canvas-viewport-spec
+      type: refs
 ---
 # Canvas Viewport Spec
 ## 목적 ^purpose

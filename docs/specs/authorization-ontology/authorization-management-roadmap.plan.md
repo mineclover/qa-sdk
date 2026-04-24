@@ -10,11 +10,11 @@ def:
   tags: [security, observability, structural, entry-point]
   links:
     - target: authorization-management-usecases
-      type: depends_on
+      type: traces_to
     - target: authorization-management-hardening-todo
-      type: depends_on
+      type: traces_to
     - target: authorization-ontology-system
-      type: refines
+      type: traces_to
 ---
 
 # Authorization Management Roadmap — 권한 관리 목표와 단계

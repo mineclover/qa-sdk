@@ -26,7 +26,18 @@ export {
 } from "./discovery/enhanced-client.js";
 export { createSopsLoader, createPlainLoader } from "./config/sops-loader.js";
 export { createConfigStage } from "./config/config-stage.js";
-export { extractServiceEnv, resolveConnectionEnv } from "./config/env-bridge.js";
+export {
+  configToEnvVars,
+  extractServiceEnv,
+  resolveConnectionEnv,
+  generateEnvFile,
+  generateTypescriptModule,
+  generateDockerComposeOverride,
+  runPostDeployCodegen,
+  type EnvFileOptions,
+  type PgDomain,
+  type CodegenOptions,
+} from "infra-env-kit";
 export { createVerifyStage } from "./verify/verify-stage.js";
 export { createRegisterStage } from "./stages/register-stage.js";
 export { createObserveStage } from "./stages/observe-stage.js";
@@ -40,10 +51,9 @@ export {
   type FleetStatus,
   type FleetServiceStatus,
   type FleetDeployResult,
+  type FleetRunOptions,
+  type FleetManagerOptions,
 } from "./fleet/manager.js";
-export { generateEnvFile, type EnvFileOptions } from "./export/env-file.js";
-export { generateTypescriptModule } from "./export/typescript-module.js";
-export { generateDockerComposeOverride } from "./export/docker-compose.js";
 export { destroy } from "./commands/destroy.js";
 export { envUp, envDown, envStatus, envReset, detectEnvironment } from "./commands/env-manager.js";
 export { loadSecrets, ensureSecrets, rotateSecrets, generateDockerEnv, type InfraSecrets } from "./commands/secrets-manager.js";
@@ -75,15 +85,18 @@ export { loadPfMap, savePfMap, registerPfEntry, removePfEntry, type PfEntry, typ
 export { vitePfPlugin, type VitePfPluginOptions } from "./lib/vite-pf-plugin.js";
 
 // --- post-deploy ---
-export { runPostDeployCodegen, type CodegenOptions } from "./post-deploy/codegen.js";
 export { findCascadeTargets, executeCascade, type CascadeTarget } from "./post-deploy/cascade.js";
 export { createVersionStore, type VersionStore, type ServiceVersion } from "./post-deploy/version-manager.js";
 export { recordDeployVersion, syncToDefinitionService, type DeployVersion } from "./post-deploy/sync.js";
 export {
   buildDeploymentOutputArtifactRegistryRecord,
+  buildFleetDeploymentArtifactRegistryRecord,
   writeDeploymentOutputArtifactRegistryRecord,
+  writeFleetDeploymentArtifactRegistryRecord,
   type DeploymentOutputArtifactRecordInput,
   type DeploymentOutputArtifactRegistryWriteInput,
+  type FleetDeploymentArtifactRecordInput,
+  type FleetDeploymentArtifactRegistryWriteInput,
 } from "./post-deploy/artifact-registry.js";
 
 import { createPipeline } from "./core/pipeline.js";

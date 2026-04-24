@@ -1,10 +1,15 @@
-# Enterprise PM 시뮬 — 10 컨테이너 (1 redis + 9 NestJS)
+# Enterprise PM 시뮬 — 10 컨테이너 (1 redis + 9 sim 서비스)
 # 외부 network: qa-sdk-net (packages/infra-engine/docker-compose.infra.yaml이 생성)
 # 외부 의존: qa-sdk-db (5434), ingest-server (3200, host process)
 #
 # 사용:
 #   bash scripts/sim-up.sh        — 부팅 + healthcheck 대기
 #   bash scripts/sim-down.sh      — 종료 (본체 컨테이너 영향 없음)
+#
+# Plan 10 후: 각 서비스의 wrapper Dockerfile (qa-sdk/sim-base:latest 의존)을 사용한다.
+# 본 compose 호출 전 sim-base 이미지를 먼저 빌드해야 한다:
+#   docker build -f simulations/enterprise-pm/sim-base.Dockerfile -t qa-sdk/sim-base:latest .
+# (반드시 모노레포 root 디렉토리에서 실행)
 
 x-nestjs-common: &nestjs-common
   env_file:
@@ -15,11 +20,6 @@ x-nestjs-common: &nestjs-common
       condition: service_healthy
   networks:
     - default
-
-x-nestjs-build: &nestjs-build
-  # Plan 10 전: services/.placeholder 사용. Plan 10 후: 각 서비스의 Dockerfile.service 사용.
-  context: ../..
-  dockerfile: simulations/enterprise-pm/services/.placeholder/Dockerfile
 
 services:
   # ── 인프라 ──
@@ -46,13 +46,9 @@ services:
   sim-auth-api:
     <<: *nestjs-common
     container_name: sim-auth-api
-    build: *nestjs-build
-    # Plan 10 후 다음으로 교체:
-    # build:
-    #   context: ../..
-    #   dockerfile: simulations/enterprise-pm/Dockerfile.service
-    #   args:
-    #     SERVICE_NAME: sim-auth-api
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/auth-api/Dockerfile
     ports:
       - "4400:4400"
     environment:
@@ -62,7 +58,9 @@ services:
   sim-pm-api:
     <<: *nestjs-common
     container_name: sim-pm-api
-    build: *nestjs-build
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/pm-api/Dockerfile
     ports:
       - "4500:4500"
     environment:
@@ -72,7 +70,9 @@ services:
   sim-approval-api:
     <<: *nestjs-common
     container_name: sim-approval-api
-    build: *nestjs-build
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/approval-api/Dockerfile
     ports:
       - "4600:4600"
     environment:
@@ -82,7 +82,9 @@ services:
   sim-notification-api:
     <<: *nestjs-common
     container_name: sim-notification-api
-    build: *nestjs-build
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/notification-api/Dockerfile
     ports:
       - "4700:4700"
     environment:
@@ -92,7 +94,9 @@ services:
   sim-reporting-api:
     <<: *nestjs-common
     container_name: sim-reporting-api
-    build: *nestjs-build
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/reporting-api/Dockerfile
     ports:
       - "4800:4800"
     environment:
@@ -102,7 +106,9 @@ services:
   sim-document-api:
     <<: *nestjs-common
     container_name: sim-document-api
-    build: *nestjs-build
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/document-api/Dockerfile
     ports:
       - "4900:4900"
     environment:
@@ -114,7 +120,9 @@ services:
   sim-audit-browser-api:
     <<: *nestjs-common
     container_name: sim-audit-browser-api
-    build: *nestjs-build
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/audit-browser-api/Dockerfile
     ports:
       - "5100:5100"
     environment:
@@ -124,7 +132,9 @@ services:
   sim-metrics-collector:
     <<: *nestjs-common
     container_name: sim-metrics-collector
-    build: *nestjs-build
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/metrics-collector/Dockerfile
     ports:
       - "5200:5200"
     environment:
@@ -134,7 +144,9 @@ services:
   sim-gateway:
     <<: *nestjs-common
     container_name: sim-gateway
-    build: *nestjs-build
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/gateway/Dockerfile
     ports:
       - "8888:8888"
     environment:

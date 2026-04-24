@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: pino
-  tags: [logging, runtime]
+  tags: [logging, runtime, observability]
   links:
     - target: apm-runtime-system
       type: refines

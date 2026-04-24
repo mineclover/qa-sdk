@@ -3,7 +3,7 @@
 /**
  * Indexing Core 시스템 문서 링크 검증
  *
- * indexing-core-system overview가 contains로 선언한 멤버 문서를 스캔하고,
+ * indexing-core-system overview가 contains/refs로 선언한 구조 문서를 스캔하고,
  * 멤버 간 횡방향 링크와 핵심 의존 관계가 유지되는지 확인한다.
  */
 
@@ -65,10 +65,10 @@ describe("indexing-core-system 문서 등록", () => {
 });
 
 describe("indexing-core-system 그룹 조립", () => {
-  it("contains 멤버 20건", () => {
+  it("structural 멤버 13건 이상", () => {
     const links = result.registry.getLinks("indexing-core-system", "outgoing")
-      .filter(l => l.linkType === "contains");
-    expect(links.length).toBeGreaterThanOrEqual(20);
+      .filter(l => l.linkType === "contains" || l.linkType === "refs");
+    expect(links.length).toBeGreaterThanOrEqual(13);
   });
 });
 

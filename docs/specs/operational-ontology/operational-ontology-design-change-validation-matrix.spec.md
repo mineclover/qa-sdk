@@ -1,8 +1,7 @@
 ---
 def:
   id: operational-ontology-design-change-validation-matrix
-  type: knowledge
-  knowledge_kind: guide
+  type: spec
   tier: component
   scope: constraint
   aspect: tech_constraint
@@ -12,27 +11,27 @@ def:
   tags: [structural, testing, contract, cross-scope]
   links:
     - target: operational-ontology-system
-      type: refines
+      type: traces_to
     - target: operational-ontology-validation-boundary
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-definition-graph-requirements
       type: traces_to
     - target: operational-ontology-taxonomy-schema
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-relation-category-schema
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-allocation-validation-contract
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-pack-interface
-      type: depends_on
+      type: traces_to
     - target: definition-management
-      type: depends_on
+      type: traces_to
     - target: df-constraint
-      type: depends_on
+      type: traces_to
     - target: registry-system
-      type: depends_on
+      type: traces_to
     - target: index-meta-system
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Design Change Validation Matrix — ontology 변경 시나리오별 검증 경로

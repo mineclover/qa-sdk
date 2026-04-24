@@ -12,7 +12,7 @@ def:
   tags: [entry-point, runtime, observability]
   links:
     - target: prefix-guide
-      type: refines
+      type: traces_to
 ---
 
 # 비즈니스 로직 관측 포인트

@@ -9,7 +9,7 @@ def:
   layer: operation
   links:
     - target: ingest-runtime-operations
-      type: depends_on
+      type: traces_to
 ---
 
 # Ingest Store Drivers — 구현 TODO

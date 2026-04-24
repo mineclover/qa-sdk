@@ -82,7 +82,6 @@ describe("docs-control-plane graph taxonomy", () => {
       "cases",
       "test",
       "memo",
-      "knowledge",
     ]);
     expect(isDocumentGraphNodeKind("ralph-session")).toBe(true);
     expect(isDocumentGraphNodeKind("authored-link")).toBe(false);

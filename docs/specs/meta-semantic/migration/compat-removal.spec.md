@@ -2,8 +2,7 @@
 def:
   tier: component
   id: compat-removal
-  type: knowledge
-  knowledge_kind: proposal
+  type: spec
   scope: flow
   aspect: process_flow
   depth: specification
@@ -11,9 +10,9 @@ def:
   layer: operation
   links:
     - target: meta-semantic-v2-migration
-      type: depends_on
+      type: traces_to
     - target: meta-semantic-scope
-      type: depends_on
+      type: traces_to
 ---
 
 # compat 파일 제거 (ASPECT_TO_SCOPE 잔존 19줄)

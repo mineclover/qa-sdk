@@ -1,6 +1,7 @@
 ---
 def:
   id: log-ingest-bridge
+  level: module
   scope: constraint
   aspect: infra_constraint
   depth: specification
@@ -62,6 +63,13 @@ pino 구조화 로그 중 좌표 데이터(`addressContext`)를 포함한 로그
        ├─ 4. Flush: batchSize 도달 or flushInterval(5s)
        └─ 5. Send: POST /v1/ingest (fail-open)
 ```
+
+## Event key 정책
+
+- 호출부가 `eventKey`를 제공하면 해당 값을 `EventRecord.event_key`로 그대로 전달한다.
+- `eventKey`가 없으면 `svc_log.<level>`을 진단 fallback으로 생성한다.
+- `svc_log.<level>`은 bridge-local fallback이며, core event vocabulary 또는 service adoption을 자동으로 의미하지 않는다.
+- taxonomy gate를 clean하게 통과해야 하는 서비스 이벤트는 호출부에서 adopted mapping pack/core vocabulary의 명시 `eventKey`를 넣어야 한다.
 
 ## 의존 방향
 

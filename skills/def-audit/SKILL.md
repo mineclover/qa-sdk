@@ -147,7 +147,7 @@ synthetic feedback 관계는 보조 신호일 뿐이며, frontmatter 기반 auth
 - meta-semantic / scope-nesting 바운더리 문서는 **concept link**로 semantic family가 확인되면 cross-scope parent 조합을 허용할 수 있다
 - 태그 없이 다중 소속이면 **비의도적 중복 가능** → warning
 - 조치: 의도적이면 `cross-scope` 태그 추가, 비의도적이면 하나를 `depends_on`으로 전환
-- 먼저 `contains` 방향이 맞는지 확인한다. leaf가 부모를 `contains`로 잡은 경우는 다중 소속이 아니라 링크 방향 오류일 가능성이 높다.
+- 먼저 `contains` 방향이 맞는지 확인한다. 종단 문서가 부모를 `contains`로 잡은 경우는 다중 소속이 아니라 링크 방향 오류일 가능성이 높다.
 
 ### level 검증 (3-level 모델)
 
@@ -180,13 +180,13 @@ contains 계층이 4단계를 초과하면 warning.
 
 ## 자기 증명 점검
 
-leaf 문서는 자기 존재를 증명할 수 있어야 한다:
+종단 책임 문서는 자기 존재를 증명할 수 있어야 한다:
 
 - `^purpose`, `^defines`, `^consumes` 마커가 규칙에 맞게 작성되었는가
 - 구현 코드 참조(`패키지/src/파일.ts`)가 있는가
 - 테스트 코드 참조(`패키지/src/파일.test.ts:라인`)가 있는가
 
-상위 문서(module/group)는 하위를 빠짐없이 담는가:
+상위 System/contains parent 문서는 하위를 빠짐없이 담는가:
 - `contains` 링크가 실제 하위 문서와 1:1 대응하는가
 - `^overview`에서 각 하위 문서의 역할을 요약하는가
 
@@ -199,7 +199,7 @@ leaf 문서는 자기 존재를 증명할 수 있어야 한다:
 1. `^purpose` 30자 이상
 2. authored links 1개 이상
 3. tags 2~5개
-4. leaf에 구현/테스트 코드 참조 존재
+4. 구현된 책임 문서에 구현/테스트 코드 참조 존재
 5. `def validate`, `def audit-db` 모두 이슈 0
 
 ## 경험 규칙

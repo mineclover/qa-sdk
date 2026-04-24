@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-pack-interface
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: interface
   aspect: api_contract
   depth: specification
@@ -12,11 +11,11 @@ def:
   tags: [cross-scope, structural, entry-point]
   links:
     - target: operational-ontology-system
-      type: refines
+      type: traces_to
     - target: operational-ontology-taxonomy-schema
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-production-factory
-      type: depends_on
+      type: traces_to
 sources:
   - packages/operational-ontology/src/internal/pack-core.ts
   - packages/operational-ontology/src/pack.ts

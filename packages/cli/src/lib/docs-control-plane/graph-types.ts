@@ -48,7 +48,6 @@ export const DOCUMENT_GRAPH_FAMILY_ROLE_TYPES = [
   "cases",
   "test",
   "memo",
-  "knowledge",
 ] as const;
 
 export type DocumentGraphFamilyRoleType =

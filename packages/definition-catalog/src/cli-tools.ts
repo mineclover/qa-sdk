@@ -128,15 +128,16 @@ export async function context(
     ``,
   ];
 
-  // 소속 그룹
-  const containsIncoming = reg.getLinks(docId, "incoming").filter(l => l.linkType === "contains");
-  if (containsIncoming.length > 0) {
+  // 소속/조망 그룹. Legacy ownership은 contains, Layout/Pack view는 refs를 쓴다.
+  const structuralIncoming = reg.getLinks(docId, "incoming")
+    .filter(l => l.linkType === "contains" || l.linkType === "refs");
+  if (structuralIncoming.length > 0) {
     lines.push(`## 소속`);
-    for (const l of containsIncoming) {
+    for (const l of structuralIncoming) {
       const _group = reg.get(l.sourceId);
       const groupBody = bodies.get(l.sourceId);
       const groupPurpose = groupBody ? extractByLevel(groupBody, "purpose").text : "";
-      lines.push(`- ${l.sourceId}: ${groupPurpose.split("\n")[0] || "(purpose 없음)"}`);
+      lines.push(`- [${l.linkType}] ${l.sourceId}: ${groupPurpose.split("\n")[0] || "(purpose 없음)"}`);
     }
     lines.push(``);
   }

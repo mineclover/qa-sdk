@@ -1,8 +1,7 @@
 ---
 def:
   id: platform-sdk-user-scenarios
-  type: knowledge
-  knowledge_kind: guide
+  type: spec
   tier: component
   scope: flow
   aspect: user_scenario
@@ -12,9 +11,9 @@ def:
   tags: [entry-point]
   links:
     - target: platform-chain-system
-      type: refines
+      type: traces_to
     - target: platform-sdk-spec
-      type: depends_on
+      type: traces_to
 ---
 
 # @qa-sdk/sdk 소비 유저 시나리오

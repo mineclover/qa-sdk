@@ -154,11 +154,23 @@ qa-sdk dkg decide --type merge             # merge/split 판정
 
 ## 문서 시스템 (definition-catalog)
 
-모든 문서는 **좌표 체계**(scope × aspect × depth)로 식별되고, **역할(level)**과 **주제(scope)** 두 축으로 분류된다.
+모든 문서는 **좌표 체계**(tier × scope × aspect × depth)로 식별되고, authoring 기준은 **E/C/I/S + L/P 책임 분리**다.
 
 **원칙: 모든 문서는 하나의 개념과 그 개념의 구성을 참조하는 완결된 정의여야 한다.**
 
-### 문서 역할 (DefLevel 3단계)
+### 문서 책임 (E/C/I/S + L/P)
+
+| 책임 | 정의하는 것 | 문서화 규칙 |
+|------|-----------|------------|
+| **Entry / Identity (E)** | 안정 ID, 유한 값, singleton identity | 상태와 행위를 넣지 않는다 |
+| **Component (C)** | data/state/evidence shape, validation vocabulary | data-only read model로 둔다 |
+| **Interface / DSL (I)** | API/CLI/event/rule 소비 계약 | 별도 tier가 아니라 `scope: interface` 또는 rule/spec 계약으로 표현한다 |
+| **System (S)** | 독립 behavior/runtime/transform boundary | behavior ownership과 source/test boundary를 닫는다 |
+| **Layout / Pack (L/P)** | 여러 System/Interface의 조망, 배치, pack | `tier: layout` + `refs`; behavior/data ownership을 갖지 않는다 |
+
+### 보조 검증 메타데이터 (DefLevel 3단계)
+
+`level`은 contains 그래프 검증을 위한 보조 메타데이터다. 새 문서 분할과 책임 판정은 E/C/I/S + L/P를 먼저 사용한다.
 
 | level | 질문 | 정의하는 것 | contains |
 |-------|------|-----------|----------|
@@ -167,7 +179,7 @@ qa-sdk dkg decide --type merge             # merge/split 판정
 | **leaf** | "어떻게 동작하는가" | 최종 명세 (기본값) | → (없음) |
 
 - group은 재귀 가능 (group → group → module → leaf)
-- group/module: contains 자식 1건 이상 필수 (`validateGraph` 검증)
+- `level: group|module`: contains 자식 1건 이상 필수 (`validateGraph` 검증)
 - leaf: contains 자식 금지. 150줄 초과 시 분할 경고
 
 ### 문서 유형 (DocType)
@@ -203,11 +215,11 @@ knowledge 문서는 `knowledge_kind`로 세분화: philosophy, adr, guide, narra
 | `/def-topdown <그룹ID>` | 시스템 탑다운 조립 |
 | `/def-bottomup <문서ID>` | 변경 시 영향 역추적 |
 | `/def-context <문서ID>` | 작업 전 컨텍스트 수집 |
-| `/def-split` | 대형 문서(150줄+) 분할 → module + leaf |
+| `/def-split` | 대형/혼합 책임 문서 분할 → E/C/I/S + L/P |
 | `/def-new` | 새 스펙 문서 생성 |
 | `/def-link` | 문서 간 링크 연결 |
 | `/def-audit` | 문서 품질 감사 (level 검증 포함) |
-| `/def-level` | level 판별 + 검증 |
+| `/def-level` | contains 검증용 level 판별 |
 | `/def-state` | 11개 상태 머신 + 게이트 + Cross-Loop |
 | `/def-knowledge` | 지식 문서 조회/생성 유도 |
 | `/def-explore` | 시스템 구조 탐색 |
@@ -237,8 +249,9 @@ def:
 ### 핵심 규칙
 
 - 모든 approved 문서에 `## 목적 ^purpose` 필수
-- group/module 문서는 `^overview` + `contains` 링크 필수
-- 150줄 이상이면 `/def-split`으로 분할 → module + leaf
+- 새 문서/분할은 E/C/I/S + L/P 책임을 먼저 정한다
+- contains parent 문서는 `^overview` + `contains` 링크 필수
+- 150줄 이상이거나 책임이 섞이면 `/def-split`으로 E/C/I/S + L/P 기준 분할
 - `svc:` 필드로 서비스 레지스트리와 연결
 - concern 태그(7종)만 BFS 전파. structural 태그(4종)는 비전파
 
@@ -259,9 +272,9 @@ def:
 - [ ] 계층 횡단 → 에스컬레이션 요청 생성 (직접 변경 금지)
 - [ ] 경계 횡단 → import/export 프로토콜 확인
 - [ ] address_context → `buildSelectionContext()` 등으로 생성 (하드코딩 금지)
-- [ ] 문서 생성 → level(group/module/leaf) + scope + aspect 결정. 참조: `definition-management.spec.md`
-- [ ] group/module → contains 자식 1건 이상 확인
-- [ ] leaf → 150줄 초과 시 `/def-split`으로 분할
+- [ ] 문서 생성 → E/C/I/S + L/P 책임, tier, scope, aspect 결정. 참조: `definition-management.spec.md`
+- [ ] group/module level 메타데이터가 있으면 contains 자식 1건 이상 확인
+- [ ] 종단 문서가 150줄 초과 또는 혼합 책임이면 `/def-split`으로 분할
 - [ ] 품질 게이트 → `createGateTracker({ listener: runtime.gateListener })` 패턴 사용
 - [ ] 스킬 수정 → `skills/` 디렉토리에서 수정 후 `sync-skills.sh`로 전파 (실행 환경 직접 수정 금지)
 

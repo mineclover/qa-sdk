@@ -145,7 +145,7 @@ describe("concern 전파", () => {
     const api = compute("ingest-api-system");
     expect(api.all).toContain("performance");
     expect(api.inherited.some(i =>
-      i.concern === "performance" && i.from === "ingest-system" && i.via === "contains",
+      i.concern === "performance" && i.from === "ingest-system" && i.via === "depends_on",
     )).toBe(true);
   });
 

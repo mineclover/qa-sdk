@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-snapshot-projector
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: interface
   aspect: api_contract
   depth: specification
@@ -12,15 +11,15 @@ def:
   tags: [cross-scope, structural, entry-point]
   links:
     - target: operational-ontology-runtime-interface
-      type: refines
+      type: traces_to
     - target: operational-ontology-observation-topology
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-event-projector
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-pipe-projector
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-path-projector
-      type: depends_on
+      type: traces_to
 sources:
   - packages/operational-ontology/src/internal/snapshot-projector.ts
   - packages/operational-ontology/src/projectors-snapshot.ts

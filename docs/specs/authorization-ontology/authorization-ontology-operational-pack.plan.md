@@ -10,13 +10,13 @@ def:
   tags: [security, structural, observability]
   links:
     - target: authorization-ontology-system
-      type: refines
+      type: traces_to
     - target: operational-ontology-pack-interface
-      type: depends_on
+      type: traces_to
     - target: authorization-ontology-decision-observation
-      type: depends_on
+      type: traces_to
     - target: authorization-ontology-audit-layer
-      type: depends_on
+      type: traces_to
 ---
 
 # Authorization Ontology Operational Pack — 현황과 적용 계획

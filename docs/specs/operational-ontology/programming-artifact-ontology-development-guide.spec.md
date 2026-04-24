@@ -1,8 +1,7 @@
 ---
 def:
   id: programming-artifact-ontology-development-guide
-  type: knowledge
-  knowledge_kind: guide
+  type: spec
   tier: component
   scope: constraint
   aspect: tech_constraint
@@ -29,8 +28,8 @@ sources:
 작업 시작 전에는 아래 순서로 읽는다.
 
 1. `docs/specs/operational-ontology/programming-artifact-ontology-system.spec.md`
-   module entry다. 현재 vocabulary, pack schema, child document coordinates를 먼저 확인한다.
-2. provider/evidence 작업이면 해당 leaf를 이어서 읽는다.
+   System entry다. 현재 vocabulary, pack schema, child document coordinates를 먼저 확인한다.
+2. provider/evidence 작업이면 해당 세부 책임 문서를 이어서 읽는다.
    - `docs/specs/operational-ontology/programming-artifact-ontology-registry-provider.spec.md`
    - `docs/specs/operational-ontology/programming-artifact-ontology-activation-evidence.spec.md`
    - `docs/specs/operational-ontology/programming-artifact-ontology-quality-evidence.spec.md`
@@ -66,7 +65,7 @@ Adjacent review:
 
 | 문서 | 역할 | 갱신 조건 |
 |------|------|-----------|
-| `programming-artifact-ontology-system.spec.md` | module entry, pack/vocabulary/child coordinate overview | 새 child 문서, 새 axis/relation |
+| `programming-artifact-ontology-system.spec.md` | System entry, pack/vocabulary/child coordinate overview | 새 child 문서, 새 axis/relation |
 | `programming-artifact-ontology-registry-provider.spec.md` | provider lookup, registry store, relation projection | provider lookup이나 registry relation projection 변경 |
 | `programming-artifact-ontology-activation-evidence.spec.md` | activation-evidence kind, record mapping, provider consumption | activation proof registry semantics 변경 |
 | `programming-artifact-ontology-quality-evidence.spec.md` | quality-status matching, snapshot, ledger, freshness, governance closure | quality evidence interpretation 변경 |
@@ -76,7 +75,7 @@ Adjacent review:
 | `programming-artifact-ontology-plan.plan.md` | 장기 단계와 다음 milestone | 단계 순서나 목표 변경 |
 | `programming-artifact-ontology-todo.todo.md` | 실행 체크박스 | 세션 단위 작업 추가/완료 |
 
-새 문서를 만들 때는 `programming-artifact-ontology-system`의 `contains`에 먼저 연결한다. leaf 문서가 150줄을 넘거나 두 개 이상의 개념을 다루면 module + leaf로 분할한다.
+새 문서를 만들 때는 `programming-artifact-ontology-system`의 `contains`에 먼저 연결한다. 세부 문서가 150줄을 넘거나 두 개 이상의 책임을 다루면 E/C/I/S + L/P 기준으로 분할한다.
 
 ## 변경 유형별 필수 확인
 

@@ -3,7 +3,7 @@
 /**
  * 문서 조립 (Assembly)
  *
- * 그룹 문서의 contains 관계를 따라 멤버 문서의 purpose/overview를 수집하고,
+ * 그룹 문서의 contains/refs 관계를 따라 멤버 문서의 purpose/overview를 수집하고,
  * 하나의 구조화된 요약으로 조립한다.
  *
  * assembleFeature("gate-system")
@@ -212,11 +212,12 @@ export function assembleFeature(
     : [];
   const groupOverview = groupOverviewSections.map(s => s.body).filter(b => b.length > 0);
 
-  // contains 멤버 수집
-  const containsLinks = getLinks(groupId, "outgoing").filter(l => l.linkType === "contains");
+  // 구조 멤버 수집. Legacy group/module은 contains를, E/C/I/S + L/P Layout/Pack은 refs를 쓴다.
+  const memberLinks = getLinks(groupId, "outgoing")
+    .filter(l => l.linkType === "contains" || l.linkType === "refs");
   const members: MemberSummary[] = [];
 
-  for (const link of containsLinks) {
+  for (const link of memberLinks) {
     const member = getEntry(link.targetId);
     if (!member) continue;
 
@@ -281,7 +282,7 @@ export function assembleFeature(
 /**
  * 바운더리 문서에서 direct 구조 + direct coupling만 조립한다.
  *
- * - 구조: outgoing contains 1-hop
+ * - 구조: outgoing contains/refs 1-hop
  * - 결합: direct incoming/outgoing depends_on/constrains/refines
  * - 세부 business logic는 포함하지 않고 purpose/overview 수준만 노출한다.
  */
@@ -306,7 +307,7 @@ export function assembleBoundary(
   );
 
   const members = getLinks(boundaryId, "outgoing")
-    .filter((link) => link.linkType === "contains")
+    .filter((link) => link.linkType === "contains" || link.linkType === "refs")
     .map((link) => getEntry(link.targetId))
     .filter((entry): entry is DefinitionEntry => entry !== undefined)
     .map((entry) =>

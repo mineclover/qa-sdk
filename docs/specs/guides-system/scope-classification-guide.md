@@ -13,9 +13,9 @@ def:
   tags: [cross-scope, entry-point]
   links:
     - target: definition-system-philosophy
-      type: refines
+      type: traces_to
     - target: dual-coordinate-system
-      type: depends_on
+      type: traces_to
 ---
 # Scope 분류 가이드 — "이 정의는 어디에 속하는가"
 

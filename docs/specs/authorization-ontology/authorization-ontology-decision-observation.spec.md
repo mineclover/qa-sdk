@@ -2,8 +2,7 @@
 def:
   tier: component
   id: authorization-ontology-decision-observation
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: flow
   aspect: relation
   depth: specification
@@ -12,11 +11,11 @@ def:
   tags: [security, observability, structural]
   links:
     - target: authorization-ontology-system
-      type: refines
+      type: traces_to
     - target: authorization-ontology-cerbos-mapping
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-checkpoint
-      type: depends_on
+      type: traces_to
 ---
 
 # Authorization Ontology Decision Observation — Cerbos 판정 관측 모델

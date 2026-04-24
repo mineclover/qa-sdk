@@ -41,9 +41,9 @@ ralph-tui 계열 skill은 요구사항을 먼저 구조화하고, 그 결과를 
   `qa-sdk dkg skills analysis`
 - catalog 문서
   `docs/specs/skill-catalog/ralph-tui-skill-group.md`
-  `docs/specs/skill-catalog/skill-ralph-tui-prd.spec.md`
-  `docs/specs/skill-catalog/skill-ralph-tui-create-json.spec.md`
-  `docs/specs/skill-catalog/skill-ralph-tui-create-beads.spec.md`
-  `docs/specs/skill-catalog/skill-ralph-tui-create-beads-rust.spec.md`
+  `docs/specs/skill-catalog/ralph-tui-skill-group/skill-ralph-tui-prd.spec.md`
+  `docs/specs/skill-catalog/ralph-tui-skill-group/skill-ralph-tui-create-json.spec.md`
+  `docs/specs/skill-catalog/ralph-tui-skill-group/skill-ralph-tui-create-beads.spec.md`
+  `docs/specs/skill-catalog/ralph-tui-skill-group/skill-ralph-tui-create-beads-rust.spec.md`
 
 skill 파일은 구현 SSOT이지만, 조회는 command entrypoint와 catalog 문서를 통해 간접적으로 수행한다.

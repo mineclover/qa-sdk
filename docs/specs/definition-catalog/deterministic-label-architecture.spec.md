@@ -94,7 +94,7 @@ deterministic-label-registry  ← doc-envelope만
 **소유하지 않음**:
 - 특정 도구(ralph-tui 등)의 파일 경로 하드코딩
 - 특정 도구의 schema/format 파싱
-- 해석 logic (graph ranking, FSM readiness, drift 등)
+- 해석 logic (graph ranking, readiness, drift 등)
 - 쓰기 경로
 
 **허용 import**: node built-ins만
@@ -135,7 +135,7 @@ deterministic-label-registry  ← doc-envelope만
 - Inventory 조립 (documents + extraRecords 주입점)
 
 **의도적으로 소유하지 않음 (2026-04-18 단순화로 제거)**:
-- FSM readiness gates
+- readiness gates (FSM readiness는 2026-04-18 단순화에서 제거)
 - Transition dry-run
 - State enum / gate evidence
 - Append-only event schema candidate

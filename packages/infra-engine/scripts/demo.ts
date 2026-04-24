@@ -402,7 +402,7 @@ async function main() {
 
   await test("env 파일 생성 (ingest-server dev)", async () => {
     const { createDiscoveryClient } = await import("../src/discovery/client.js");
-    const { generateEnvFile } = await import("../src/export/env-file.js");
+    const { generateEnvFile } = await import("infra-env-kit");
     const client = createDiscoveryClient(REGISTRY);
     const configPath = resolve(__dirname, "../config/dev.json");
     const config = JSON.parse(await readFile(configPath, "utf-8"));
@@ -416,7 +416,7 @@ async function main() {
 
   await test("TypeScript 모듈 생성", async () => {
     const { createDiscoveryClient } = await import("../src/discovery/client.js");
-    const { generateTypescriptModule } = await import("../src/export/typescript-module.js");
+    const { generateTypescriptModule } = await import("infra-env-kit");
     const client = createDiscoveryClient(REGISTRY);
     const content = await generateTypescriptModule(client, "dev");
     return content.includes("SERVICE_URLS") && content.includes("export");
@@ -424,7 +424,7 @@ async function main() {
 
   await test("docker-compose override 생성", async () => {
     const { createDiscoveryClient } = await import("../src/discovery/client.js");
-    const { generateDockerComposeOverride } = await import("../src/export/docker-compose.js");
+    const { generateDockerComposeOverride } = await import("infra-env-kit");
     const client = createDiscoveryClient(REGISTRY);
     const content = await generateDockerComposeOverride(client, "dev");
     return content.includes("services") || content.includes("version");

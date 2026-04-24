@@ -15,6 +15,8 @@ def:
   svc: cli
   tags: [decision, contract, structural]
   links:
+    - target: state-event-terminology
+      type: traces_to
     - target: deterministic-label-stability-plan
       type: traces_to
     - target: deterministic-label-coordinate-stability
@@ -118,7 +120,7 @@ def:
 - Operator-facing CLI surface (`docs label transition --dry-run`) 추가 계획 제거
 - Write-mode transition controller 구상 자체 제거
 
-이유: 해석 계약이 약하고 (spec coverage 얕음), 실제 소비자 0, 현재 부여된 가치보다 유지 부담이 큼. FSM 관점이 다시 필요하면 별도 설계/패키지에서 재개.
+이유: 해석 계약이 약하고 (spec coverage 얕음), 실제 소비자 0, 현재 부여된 가치보다 유지 부담이 큼. 이 결정은 deterministic-label-registry 범위의 단순화이며, 전역적으로 FSM이나 상태 모델을 event로 대체한다는 뜻이 아니다. FSM 관점이 다시 필요하면 `state-event-terminology` 기준에 맞춰 별도 설계/패키지에서 재개.
 
 ### Axis 통합 보류
 

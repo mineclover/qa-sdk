@@ -2,8 +2,7 @@
 def:
   tier: component
   id: ms-concept-event
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: data
   aspect: domain_data
   depth: specification
@@ -11,13 +10,13 @@ def:
   layer: domain
   links:
     - target: meta-semantic-concepts
-      type: depends_on
+      type: traces_to
     - target: ms-concept-data-facets
-      type: depends_on
+      type: traces_to
     - target: ms-concept-pipe
-      type: depends_on
+      type: traces_to
     - target: system-concepts
-      type: refines
+      type: traces_to
 ---
 
 # 이벤트 (Event)

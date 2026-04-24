@@ -11,6 +11,7 @@ import {
 } from "operational-ontology/programming-artifacts";
 
 import type { DeployResult, ProviderId } from "../core/types.js";
+import type { FleetDeployResult, FleetRunOptions } from "../fleet/manager.js";
 
 interface ProgrammingArtifactRegistryEnvelope {
   artifacts?: ProgrammingArtifactRegistryRecord[];
@@ -24,10 +25,29 @@ export interface DeploymentOutputArtifactRecordInput {
   configPath: string;
   result: DeployResult;
   createdAt?: string;
+  fleetRunId?: string;
+  fleetMode?: string;
+  fleetScope?: string;
 }
 
 export interface DeploymentOutputArtifactRegistryWriteInput
   extends DeploymentOutputArtifactRecordInput {
+  artifactRegistry: string;
+}
+
+export interface FleetDeploymentArtifactRecordInput {
+  env: string;
+  configPath: string;
+  result: FleetDeployResult;
+  runId: string;
+  mode: string;
+  scope: string;
+  options?: FleetRunOptions;
+  createdAt?: string;
+}
+
+export interface FleetDeploymentArtifactRegistryWriteInput
+  extends FleetDeploymentArtifactRecordInput {
   artifactRegistry: string;
 }
 
@@ -45,6 +65,7 @@ export function buildDeploymentOutputArtifactRegistryRecord(
       input.configPath,
       `service:${input.service}`,
       `env:${input.env}`,
+      ...(input.fleetRunId ? [`fleet-run:${input.fleetRunId}`] : []),
     ],
     verifiesRefs: input.result.success
       ? [
@@ -65,6 +86,9 @@ export function buildDeploymentOutputArtifactRegistryRecord(
       env: input.env,
       provider: input.provider,
       endpoint,
+      fleetRunId: input.fleetRunId,
+      fleetMode: input.fleetMode,
+      fleetScope: input.fleetScope,
       success: input.result.success,
       healthStatus: input.result.healthStatus,
       gateVerdict: input.result.gateVerdict,
@@ -80,6 +104,68 @@ export async function writeDeploymentOutputArtifactRegistryRecord(
   if (!input.result.success) return undefined;
 
   const record = buildDeploymentOutputArtifactRegistryRecord(input);
+  await appendProgrammingArtifactRegistryRecord(input.artifactRegistry, record);
+  return record;
+}
+
+export function buildFleetDeploymentArtifactRegistryRecord(
+  input: FleetDeploymentArtifactRecordInput,
+): ProgrammingArtifactRegistryRecord {
+  const successfulServices = input.result.results
+    .filter((result) => result.success)
+    .map((result) => result.serviceId);
+  const failedServices = input.result.results
+    .filter((result) => !result.success)
+    .map((result) => result.serviceId);
+  const artifactRef = `fleet-run:${input.runId}`;
+
+  return createProgrammingArtifactRegistryRecord({
+    artifactId: `fleet-deployment-${slugRef(input.env)}-${slugRef(input.mode)}-${slugRef(input.runId)}`,
+    artifactRef,
+    kind: "deployment-batch",
+    producedByRef: [
+      "infra deploy --all",
+      input.env,
+      ...(input.scope !== "all" ? ["--tier", input.scope] : []),
+      ...(input.options?.provider ? ["--provider", input.options.provider] : []),
+      ...(input.options?.sync ? ["--sync"] : []),
+      ...(input.options?.continueOnError ? ["--continue-on-error"] : []),
+      ...(input.options?.dryRun !== false ? ["--dry-run"] : []),
+    ].join(" "),
+    derivedFromRefs: [
+      input.configPath,
+      `env:${input.env}`,
+      ...input.result.results.map((result) => `service:${result.serviceId}`),
+    ],
+    verifiesRefs: successfulServices.map((serviceId) => `service:${serviceId}`),
+    ownerDefinitionId: "infra-engine-pipeline",
+    materializesOutputRefs: [
+      `env:${input.env}`,
+      artifactRef,
+      ...successfulServices.map((serviceId) => `service:${serviceId}`),
+    ],
+    sourceRefs: [input.configPath],
+    createdAt: input.createdAt ?? new Date().toISOString(),
+    metadata: {
+      env: input.env,
+      runId: input.runId,
+      mode: input.mode,
+      scope: input.scope,
+      options: input.options,
+      successCount: input.result.summary.success,
+      failedCount: input.result.summary.failed,
+      totalDuration: input.result.summary.totalDuration,
+      successfulServices,
+      failedServices,
+      results: input.result.results,
+    },
+  });
+}
+
+export async function writeFleetDeploymentArtifactRegistryRecord(
+  input: FleetDeploymentArtifactRegistryWriteInput,
+): Promise<ProgrammingArtifactRegistryRecord> {
+  const record = buildFleetDeploymentArtifactRegistryRecord(input);
   await appendProgrammingArtifactRegistryRecord(input.artifactRegistry, record);
   return record;
 }

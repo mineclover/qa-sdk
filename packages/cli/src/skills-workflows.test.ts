@@ -21,8 +21,18 @@ describe("skills workflow mapping", () => {
     expect(doc).toContain("qa-sdk quality show <gate-doc-id>");
     expect(doc).toContain("qa-sdk quality run <gate-doc-id> --json");
     expect(doc).toContain("qa-sdk review request ...");
+    expect(doc).toContain("qa-sdk docs bdd validate <doc-id> --family-only --json");
+    expect(doc).toContain("pnpm gate:event-taxonomy");
     expect(doc).toContain("검증 매핑");
 
+    expect(resolveSubcommand(["docs", "bdd", "validate", "checkout-spec", "--family-only", "--json"])).toEqual({
+      name: "docs bdd validate",
+      rest: ["checkout-spec", "--family-only", "--json"],
+    });
+    expect(resolveSubcommand(["docs", "bdd", "units", "checkout-spec", "--family-only", "--json"])).toEqual({
+      name: "docs bdd units",
+      rest: ["checkout-spec", "--family-only", "--json"],
+    });
     expect(resolveSubcommand(["quality", "show", "gate-a"])).toEqual({
       name: "quality show",
       rest: ["gate-a"],
@@ -39,6 +49,31 @@ describe("skills workflow mapping", () => {
     expect(existsSync(resolve(REPO_ROOT, "packages/cli/src/commands/quality.test.ts"))).toBe(true);
     expect(existsSync(resolve(REPO_ROOT, "packages/cli/src/commands/review.test.ts"))).toBe(true);
     expect(existsSync(resolve(REPO_ROOT, "packages/cli/src/scenarios.e2e.test.ts"))).toBe(true);
+    expect(existsSync(resolve(REPO_ROOT, "packages/cli/src/commands/docs.test.ts"))).toBe(true);
+    expect(existsSync(resolve(REPO_ROOT, "scripts/registry-event-taxonomy-gate.sh"))).toBe(true);
+  });
+
+  it("skill catalog guide paths point at existing files", () => {
+    const guides = [
+      "docs/skills/automation-workflows.md",
+      "docs/skills/ralph-tui-workflows.md",
+    ];
+    const referencedSkillCatalogPaths = guides.flatMap((path) => {
+      const doc = readDoc(path);
+      return [...doc.matchAll(/`(docs\/specs\/skill-catalog\/[^`]+)`/g)]
+        .map((match) => match[1]!)
+        .filter((value) => !value.includes("*"));
+    });
+
+    expect(referencedSkillCatalogPaths).toEqual(expect.arrayContaining([
+      "docs/specs/skill-catalog/automation-skill-group/skill-bdd-contract.spec.md",
+      "docs/specs/skill-catalog/automation-skill-group/skill-doc-lifecycle.spec.md",
+      "docs/specs/skill-catalog/automation-skill-group/skill-event-taxonomy-gate.spec.md",
+      "docs/specs/skill-catalog/ralph-tui-skill-group/skill-ralph-tui-prd.spec.md",
+    ]));
+    for (const path of referencedSkillCatalogPaths) {
+      expect(existsSync(resolve(REPO_ROOT, path)), path).toBe(true);
+    }
   });
 
   it("system-review 문서를 대표 command/test와 1:1로 연결한다", async () => {

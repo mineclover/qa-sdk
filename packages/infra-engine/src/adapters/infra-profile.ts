@@ -118,5 +118,9 @@ export function createInfraProfileAdapter(baseDir: string): InfraProfileAdapter 
       const data = await load();
       return data.history?.[serviceId] ?? [];
     },
+    async getAllHistory() {
+      const data = await load();
+      return data.history ?? {};
+    },
   };
 }

@@ -46,7 +46,7 @@ sources:
 
 ## 구성 ^overview
 
-이 모듈은 `programming-artifact-ontology` pack schema와 하위 문서 좌표를 정의한다. provider lookup, activation evidence, quality-status evidence, CLI command contract는 각 leaf가 소유한다.
+이 System은 `programming-artifact-ontology` pack schema와 하위 문서 좌표를 정의한다. provider lookup, activation evidence, quality-status evidence, CLI command contract는 각 세부 책임 문서가 소유한다.
 
 - `programming_artifact_kind` axis — 산출물 node 종류를 닫힌 vocabulary로 분류한다.
 - `programming_artifact_relation_kind` axis — 산출물과 producer/source/definition/output 사이의 edge 의미를 닫힌 vocabulary로 분류한다.

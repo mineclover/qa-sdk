@@ -2,8 +2,7 @@
 def:
   tier: component
   id: definition-mgmt-observability-planes
-  type: knowledge
-  knowledge_kind: proposal
+  type: spec
   scope: flow
   aspect: process_flow
   depth: specification
@@ -12,11 +11,11 @@ def:
   tags: [observability]
   links:
     - target: definition-mgmt-observability-model
-      type: refines
+      type: traces_to
     - target: definition-mgmt-state-tracking
-      type: depends_on
+      type: traces_to
     - target: definition-mgmt-verification-loop
-      type: depends_on
+      type: traces_to
 ---
 # Definition Management — Observability Planes
 

@@ -48,11 +48,18 @@ export interface ConnectionConfig {
 export interface MonitoringConfig {
   interval: number;
   webhooks?: WebhookConfig[];
+  recovery?: RecoveryConfig;
 }
 
 export interface WebhookConfig {
   url: string;
   events: string[];
+}
+
+export interface RecoveryConfig {
+  enabled?: boolean;
+  maxRetries?: number;
+  cooldownSec?: number;
 }
 
 export interface GateDefinition {
@@ -173,4 +180,10 @@ export interface DeployHistoryEntry {
   duration: number;
   success: boolean;
   triggeredBy: "ci" | "manual";
+  mode?: "single" | "fleet-service" | "fleet-summary";
+  runId?: string;
+  scope?: string;
+  configPath?: string;
+  artifactId?: string;
+  error?: string;
 }

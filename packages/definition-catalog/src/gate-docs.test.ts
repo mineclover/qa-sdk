@@ -79,9 +79,9 @@ describe("gate 문서 등록", () => {
 // ─── 2. 관계 그래프 검증 ─────────────────────────────────
 
 describe("gate 관계 그래프", () => {
-  it("gate-api → gate-state-model (depends_on)", () => {
+  it("gate-api → gate-state-model (refs)", () => {
     const links = result.registry.getLinks("gate-api", "outgoing");
-    expect(links.some(l => l.targetId === "gate-state-model" && l.linkType === "depends_on")).toBe(true);
+    expect(links.some(l => l.targetId === "gate-state-model" && l.linkType === "refs")).toBe(true);
   });
 
   it("gate-api → gate-engine-func (implements)", () => {

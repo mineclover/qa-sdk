@@ -21,7 +21,7 @@ describe("docs-control-plane role matrix", () => {
       stableId: "checkout-todo",
       familyId: "docs/specs/checkout/checkout",
       path: "docs/specs/checkout/checkout.todo.md",
-      metadata: { title: "Checkout Todo" },
+      metadata: { type: "knowledge", title: "Checkout Todo" },
     });
     const knowledge = document({
       kind: "spec",
@@ -69,13 +69,34 @@ describe("docs-control-plane role matrix", () => {
         path: "docs/specs/checkout/checkout.todo.md",
       }),
     ]);
-    expect(role(matrix!, "knowledge").sameFamily).toEqual([
-      expect.objectContaining({
-        stableId: "checkout-knowledge",
-        kind: "spec",
-        path: "docs/specs/checkout/checkout-knowledge.spec.md",
-      }),
-    ]);
+    expect(role(matrix!, "spec").sameFamily).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          stableId: "checkout-spec",
+          kind: "spec",
+          path: "docs/specs/checkout/checkout.spec.md",
+        }),
+        expect.objectContaining({
+          stableId: "checkout-knowledge",
+          kind: "spec",
+          path: "docs/specs/checkout/checkout-knowledge.spec.md",
+        }),
+      ]),
+    );
+    expect(typeCoverage(matrix!, "knowledge").sameFamily).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          stableId: "checkout-todo",
+          kind: "todo",
+          path: "docs/specs/checkout/checkout.todo.md",
+        }),
+        expect.objectContaining({
+          stableId: "checkout-knowledge",
+          kind: "spec",
+          path: "docs/specs/checkout/checkout-knowledge.spec.md",
+        }),
+      ]),
+    );
     expect(role(matrix!, "prd").sameFamily).toEqual([]);
     expect(role(matrix!, "ralph-prd-json").sameFamily).toEqual([]);
     expect(matrix?.missingSameFamilyRoles).toContain("prd");
@@ -192,6 +213,15 @@ function role(
   name: string,
 ): NonNullable<ReturnType<typeof buildDocumentRoleMatrix>>["roles"][number] {
   const match = matrix.roles.find((item) => item.role === name);
+  expect(match).toBeDefined();
+  return match!;
+}
+
+function typeCoverage(
+  matrix: NonNullable<ReturnType<typeof buildDocumentRoleMatrix>>,
+  name: string,
+): NonNullable<ReturnType<typeof buildDocumentRoleMatrix>>["typeCoverage"]["types"][number] {
+  const match = matrix.typeCoverage.types.find((item) => item.type === name);
   expect(match).toBeDefined();
   return match!;
 }

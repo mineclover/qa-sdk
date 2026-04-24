@@ -1,8 +1,7 @@
 ---
 def:
   id: pm-taxonomy
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   tier: component
   scope: data
   aspect: domain_data
@@ -12,15 +11,15 @@ def:
   tags: [cross-scope, structural, entry-point]
   links:
     - target: taxonomy-boundaries
-      type: refines
+      type: traces_to
     - target: status-crosswalk
-      type: depends_on
+      type: traces_to
     - target: df-taxonomy
-      type: depends_on
+      type: traces_to
     - target: definition-taxonomy
-      type: depends_on
+      type: traces_to
     - target: structural-taxonomy
-      type: depends_on
+      type: traces_to
 ---
 
 # PM Taxonomy — delivery 상태 관리 분류 체계

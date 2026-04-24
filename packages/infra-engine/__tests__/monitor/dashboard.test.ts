@@ -23,6 +23,7 @@ function makeMockProfile(opts: {
     updateMonitorStatus: vi.fn(),
     addHistory: vi.fn(),
     getHistory: vi.fn().mockImplementation(async (id: string) => history[id] ?? []),
+    getAllHistory: vi.fn().mockResolvedValue(history),
   };
 }
 
@@ -164,12 +165,120 @@ describe("createDashboardData", () => {
     expect(svc.uptime).toBeUndefined();
   });
 
+  it("uptime 비율은 100%를 넘지 않고 가장 최근 성공 배포를 기준으로 계산", async () => {
+    const history: Record<string, DeployHistoryEntry[]> = {
+      "svc-a": [
+        {
+          deployedAt: "2026-04-01T00:00:00Z",
+          version: "v0",
+          env: "dev",
+          provider: "local",
+          endpoint: "http://localhost:3200",
+          duration: 1000,
+          success: false,
+          triggeredBy: "manual",
+        },
+        {
+          deployedAt: "2026-04-02T00:00:00Z",
+          version: "v1",
+          env: "dev",
+          provider: "local",
+          endpoint: "http://localhost:3200",
+          duration: 1000,
+          success: true,
+          triggeredBy: "manual",
+        },
+        {
+          deployedAt: "2026-04-03T00:00:00Z",
+          version: "v2",
+          env: "dev",
+          provider: "local",
+          endpoint: "http://localhost:3200",
+          duration: 1000,
+          success: true,
+          triggeredBy: "manual",
+        },
+      ],
+    };
+
+    const profile = makeMockProfile({ history });
+    const dashboard = createDashboardData(profile);
+    const svc = await dashboard.getServiceDashboard("svc-a");
+
+    expect(svc.uptime).toBeDefined();
+    expect(svc.uptime!.since).toBe("2026-04-03T00:00:00Z");
+    expect(svc.uptime!.percentage).toBeLessThanOrEqual(100);
+  });
+
   it("exportJson — JSON 문자열 반환", async () => {
-    const profile = makeMockProfile({});
+    const profile = makeMockProfile({
+      history: {
+        "fleet:dev:all": [
+          {
+            deployedAt: "2026-04-05T00:00:00Z",
+            version: "fleet-123",
+            env: "dev",
+            provider: "fleet",
+            endpoint: "",
+            duration: 1234,
+            success: true,
+            triggeredBy: "manual",
+            mode: "fleet-summary",
+            runId: "fleet-123",
+            scope: "all",
+          },
+        ],
+      },
+    });
     const dashboard = createDashboardData(profile);
     const json = await dashboard.exportJson();
     const parsed = JSON.parse(json);
     expect(parsed.summary).toBeDefined();
+    expect(parsed.fleetRuns).toHaveLength(1);
     expect(parsed.services).toBeDefined();
+  });
+
+  it("getFleetRuns — fleet-summary history만 반환", async () => {
+    const profile = makeMockProfile({
+      history: {
+        "svc-a": [
+          {
+            deployedAt: "2026-04-05T00:00:00Z",
+            version: "v1",
+            env: "dev",
+            provider: "local",
+            endpoint: "http://localhost:3200",
+            duration: 100,
+            success: true,
+            triggeredBy: "manual",
+            mode: "single",
+          },
+        ],
+        "fleet:dev:all": [
+          {
+            deployedAt: "2026-04-06T00:00:00Z",
+            version: "fleet-456",
+            env: "dev",
+            provider: "fleet",
+            endpoint: "",
+            duration: 500,
+            success: true,
+            triggeredBy: "manual",
+            mode: "fleet-summary",
+            runId: "fleet-456",
+            scope: "all",
+          },
+        ],
+      },
+    });
+    const dashboard = createDashboardData(profile);
+    const fleetRuns = await dashboard.getFleetRuns();
+
+    expect(fleetRuns).toHaveLength(1);
+    expect(fleetRuns[0]).toMatchObject({
+      historyKey: "fleet:dev:all",
+      runId: "fleet-456",
+      scope: "all",
+    });
   });
 });

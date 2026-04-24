@@ -5,8 +5,7 @@ def:
   owner_system: meta-semantic-system
   projection_plane: intent
   intent_hierarchy: core
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: feature
   aspect: func_def
   depth: specification
@@ -14,9 +13,9 @@ def:
   layer: domain
   links:
     - target: pipe-flow-catalog
-      type: depends_on
+      type: traces_to
     - target: pipe-types
-      type: depends_on
+      type: traces_to
 ---
 
 # PipeFlow: branch — 조건부 분기

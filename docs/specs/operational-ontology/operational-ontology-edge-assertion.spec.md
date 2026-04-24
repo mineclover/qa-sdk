@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-edge-assertion
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: flow
   aspect: relation
   depth: specification
@@ -12,9 +11,9 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: operational-ontology-core-model
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-relation-taxonomy
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Edge Assertion — relation type의 실제 연결 사실

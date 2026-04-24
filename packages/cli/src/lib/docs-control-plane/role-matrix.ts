@@ -13,7 +13,6 @@ export const DOCUMENT_ROLE_MATRIX_ROLES = [
   "cases",
   "test",
   "memo",
-  "knowledge",
   "prd",
   "ralph-prd-json",
 ] as const;
@@ -51,10 +50,28 @@ export interface DocumentRoleMatrixRoleCoverage {
   readonly linked: readonly DocumentRoleMatrixLinkedDocument[];
 }
 
+export interface DocumentTypeCoverage {
+  readonly type: string;
+  readonly present: boolean;
+  readonly sameFamilyPresent: boolean;
+  readonly linkedPresent: boolean;
+  readonly sameFamily: readonly DocumentRoleMatrixDocument[];
+  readonly linked: readonly DocumentRoleMatrixLinkedDocument[];
+}
+
 export interface DocumentRoleMatrix {
   readonly familyId: string;
   readonly target: DocumentRoleMatrixDocument;
   readonly roles: readonly DocumentRoleMatrixRoleCoverage[];
+  readonly typeCoverage: {
+    readonly types: readonly DocumentTypeCoverage[];
+    readonly counts: {
+      readonly types: number;
+      readonly presentTypes: number;
+      readonly sameFamilyPresentTypes: number;
+      readonly linkedPresentTypes: number;
+    };
+  };
   readonly missingRoles: readonly DocumentRoleMatrixRole[];
   readonly missingSameFamilyRoles: readonly DocumentRoleMatrixRole[];
   readonly counts: {
@@ -99,8 +116,9 @@ export function buildDocumentRoleMatrix(
     appendRoleMatrixDocument(sameFamilyByRole, role, toRoleMatrixDocument(document));
   }
 
+  const linkedRoleDocuments = collectLinkedRoleDocuments(activeDocuments, seedDocuments, familyId);
   const linkedByRole = new Map<DocumentRoleMatrixRole, DocumentRoleMatrixLinkedDocument[]>();
-  for (const linked of collectLinkedRoleDocuments(activeDocuments, seedDocuments, familyId)) {
+  for (const linked of linkedRoleDocuments) {
     appendRoleMatrixDocument(linkedByRole, linked.role, linked.document);
   }
 
@@ -123,11 +141,13 @@ export function buildDocumentRoleMatrix(
   const missingSameFamilyRoles = roles
     .filter((coverage) => !coverage.sameFamilyPresent)
     .map((coverage) => coverage.role);
+  const typeCoverage = buildTypeCoverage(sameFamilyDocuments, linkedRoleDocuments.map((item) => item.document));
 
   return {
     familyId,
     target: toRoleMatrixDocument(options.target),
     roles,
+    typeCoverage,
     missingRoles,
     missingSameFamilyRoles,
     counts: {
@@ -146,16 +166,73 @@ export function buildDocumentRoleMatrix(
 export function roleOfDocument(
   document: DocumentEnvelope,
 ): DocumentRoleMatrixRole | undefined {
-  if (document.metadata.type === "knowledge" || document.kind === "knowledge") {
-    return "knowledge";
-  }
+  const documentKind = asString(document.metadata.documentKind);
+  const pathRole = roleFromPath(document.path);
+
+  if (document.kind !== "spec" && isDocumentRoleMatrixRole(document.kind)) return document.kind;
+  if (documentKind && documentKind !== "spec" && isDocumentRoleMatrixRole(documentKind)) return documentKind;
+  if (pathRole && pathRole !== "spec") return pathRole;
   if (isDocumentRoleMatrixRole(document.kind)) return document.kind;
 
-  const documentKind = asString(document.metadata.documentKind);
   if (documentKind && isDocumentRoleMatrixRole(documentKind)) return documentKind;
 
-  const pathRole = roleFromPath(document.path);
   return pathRole;
+}
+
+function buildTypeCoverage(
+  sameFamilyDocuments: readonly DocumentEnvelope[],
+  linkedDocuments: readonly DocumentRoleMatrixLinkedDocument[],
+): DocumentRoleMatrix["typeCoverage"] {
+  const sameFamilyByType = new Map<string, DocumentRoleMatrixDocument[]>();
+  for (const document of sameFamilyDocuments) {
+    const type = typeOfDocument(document);
+    appendRoleMatrixDocument(sameFamilyByType, type, toRoleMatrixDocument(document));
+  }
+
+  const linkedByType = new Map<string, DocumentRoleMatrixLinkedDocument[]>();
+  for (const document of linkedDocuments) {
+    const type = typeOfRoleMatrixDocument(document);
+    appendRoleMatrixDocument(linkedByType, type, document);
+  }
+
+  const types = unique([...sameFamilyByType.keys(), ...linkedByType.keys()])
+    .toSorted()
+    .map((type) => {
+      const sameFamily = (sameFamilyByType.get(type) ?? []).toSorted(compareRoleMatrixDocuments);
+      const linked = (linkedByType.get(type) ?? []).toSorted(compareLinkedRoleMatrixDocuments);
+      return {
+        type,
+        present: sameFamily.length > 0 || linked.length > 0,
+        sameFamilyPresent: sameFamily.length > 0,
+        linkedPresent: linked.length > 0,
+        sameFamily,
+        linked,
+      };
+    });
+
+  return {
+    types,
+    counts: {
+      types: types.length,
+      presentTypes: types.filter((coverage) => coverage.present).length,
+      sameFamilyPresentTypes: types.filter((coverage) => coverage.sameFamilyPresent).length,
+      linkedPresentTypes: types.filter((coverage) => coverage.linkedPresent).length,
+    },
+  };
+}
+
+function typeOfDocument(document: DocumentEnvelope): string {
+  return (asString(document.metadata.type)
+    ?? asString(document.metadata.documentKind)
+    ?? document.kind)
+    || "document";
+}
+
+function typeOfRoleMatrixDocument(document: DocumentRoleMatrixDocument): string {
+  return (asString(document.metadata.type)
+    ?? asString(document.metadata.documentKind)
+    ?? document.kind)
+    || "document";
 }
 
 function collectLinkedRoleDocuments(
@@ -294,8 +371,8 @@ function toRoleMatrixDocument(document: DocumentEnvelope): DocumentRoleMatrixDoc
 }
 
 function appendRoleMatrixDocument<T extends DocumentRoleMatrixDocument>(
-  byRole: Map<DocumentRoleMatrixRole, T[]>,
-  role: DocumentRoleMatrixRole,
+  byRole: Map<string, T[]>,
+  role: string,
   document: T,
 ): void {
   const documents = byRole.get(role) ?? [];

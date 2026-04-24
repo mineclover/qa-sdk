@@ -81,6 +81,11 @@
     "gateway": { "endpoint": "http://localhost:8787" }
   },
   "monitoring": {
-    "interval": 60
+    "interval": 60,
+    "recovery": {
+      "enabled": true,
+      "maxRetries": 2,
+      "cooldownSec": 120
+    }
   }
 }

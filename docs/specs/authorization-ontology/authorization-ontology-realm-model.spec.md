@@ -2,8 +2,7 @@
 def:
   tier: component
   id: authorization-ontology-realm-model
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: constraint
   aspect: biz_constraint
   depth: specification
@@ -12,9 +11,9 @@ def:
   tags: [security, structural]
   links:
     - target: authorization-ontology-system
-      type: refines
+      type: traces_to
     - target: operational-ontology-core-model
-      type: depends_on
+      type: traces_to
 ---
 
 # Authorization Ontology Realm Model — 권한 authority boundary 정의

@@ -6,7 +6,7 @@ description: "definition-catalog 바운더리 조회와 구조화. 문서/컨텍
 # Definition Catalog — Boundary
 
 문서 그래프를 파일 묶음이 아니라 바운더리와 결합으로 읽는다.
-문서 경계를 새로 정의하거나, provider 순서와 state/interaction 분리를 안정화할 때 사용한다.
+문서 경계를 새로 정의하거나, E/C/I/S + L/P 책임 분리를 안정화할 때 사용한다.
 
 ## 권장 순서
 
@@ -48,11 +48,11 @@ qa-sdk def body <문서ID>
 
 | 대상 | 권장 좌표 |
 |------|-----------|
-| boundary overview | `flow/relation` 또는 boundary를 대표하는 `feature/func_def` |
-| provider 선언/조립 순서 | `flow/process_flow` |
-| runtime 상태 전이 | `state/app_state` |
-| 사용자 반응 규칙 | `ui/interaction` |
-| 세부 구현 | `feature/func_def` |
+| System behavior boundary | `flow/process_flow` 또는 `feature/func_def` |
+| Interface / DSL contract | `interface/api_contract`, `interface/cli_contract`, `interface/event_contract` |
+| Component data/state/evidence | `data/*`, `state/*`, `constraint/tech_constraint` |
+| Entry / Identity | `data/domain_data` 또는 identity-specific component |
+| Layout / Pack view | `tier: layout` + `refs` |
 | 검증 시나리오 | `feature/scenario` + `depth: validation` |
 
 ## 결합 표현 규칙
@@ -68,9 +68,9 @@ qa-sdk def body <문서ID>
 
 방향 sanity check:
 
-- leaf 문서가 부모/상위 문서를 `contains`로 가리키면 거의 항상 방향 오류다.
-- 이런 경우는 leaf를 module로 승격할지 보기 전에, 먼저 `refines` 또는 `depends_on`로 고친다.
-- `level=leaf인데 contains 자식` 경고는 분해 부족이 아니라 링크 방향 오류일 수 있다.
+- 종단 문서가 부모/상위 문서를 `contains`로 가리키면 거의 항상 방향 오류다.
+- 이런 경우는 먼저 E/C/I/S + L/P 책임과 link 방향을 재판정하고, 필요하면 `refines` 또는 `depends_on`로 낮춘다.
+- `level=leaf인데 contains 자식` 경고는 보조 메타데이터 신호다. 실제 분해 여부는 System/Interface/Component/Entry/Layout 책임이 섞였는지로 판단한다.
 
 ## direct 와 transitive
 
@@ -85,12 +85,13 @@ qa-sdk def body <문서ID>
 
 boundary가 흐리거나 결합이 과하면 다음 순서로 정리한다.
 
-1. boundary overview 문서에 structural purpose만 남긴다.
-2. provider 순서를 `flow/process_flow`로 분리한다.
-3. 상태 전이를 `state/app_state`로 분리한다.
-4. interaction을 `ui/interaction`으로 분리한다.
-5. 세부 로직은 implementation/validation leaf로 내린다.
-6. 다중 부모가 의도적 공유라면 `cross-scope` 태그를 추가하고, 비의도적이면 하나의 `contains`를 `depends_on`으로 낮춘다.
+1. System boundary 문서에 behavior/runtime ownership만 남긴다.
+2. 호출/소비 계약은 Interface / DSL 문서로 분리한다.
+3. data/state/evidence vocabulary는 Component 문서로 분리한다.
+4. 안정 ID/finite value는 Entry / Identity 문서로 분리한다.
+5. 여러 System/Interface를 조망하는 문서는 Layout / Pack으로 두고 `refs`만 사용한다.
+6. 세부 behavior는 BDD contract와 implementation/test source boundary로 닫는다.
+7. 다중 부모가 의도적 공유라면 `cross-scope` 태그를 추가하고, 비의도적이면 하나의 `contains`를 `depends_on`/`refs`로 낮춘다.
 
 ## API surface
 

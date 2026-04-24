@@ -11,11 +11,11 @@ def:
   tags: [structural]
   links:
     - target: cli-command-group
-      type: depends_on
+      type: traces_to
     - target: cli-command-spec
-      type: depends_on
+      type: traces_to
     - target: cli-minor-gaps-todo
-      type: depends_on
+      type: traces_to
 ---
 
 # CLI Command Registry — 전환 완료

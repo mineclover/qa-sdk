@@ -35,7 +35,7 @@ def:
     - target: rlsc-monitor
       type: contains
     - target: rlsc-test
-      type: depends_on
+      type: traces_to
   source: packages/rlsc/src/index.ts
 ---
 

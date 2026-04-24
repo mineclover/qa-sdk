@@ -103,6 +103,10 @@ interface LoadedDocGraph {
   readonly errors: readonly { file: string; error: string }[];
 }
 
+function qualityDocDimension(value: string | undefined): string {
+  return value ?? "unknown";
+}
+
 interface QualityBundleStatusSummary {
   readonly bundleId: string;
   readonly title: string;
@@ -334,9 +338,9 @@ function toQualityDoc(doc: DefDoc): LoadedQualityDoc | undefined {
       title: doc.title ?? doc.docId,
       version: doc.version,
       level: doc.level,
-      scope: doc.scope,
-      aspect: doc.aspect,
-      depth: doc.depth,
+      scope: qualityDocDimension(doc.scope),
+      aspect: qualityDocDimension(doc.aspect),
+      depth: qualityDocDimension(doc.depth),
       ref: doc.sourcePath,
       gate: doc.gate,
     },
@@ -351,9 +355,9 @@ function toSimpleDoc(doc: DefDoc | undefined | null): SimpleDoc | undefined {
     title: doc.title ?? doc.docId,
     version: doc.version,
     level: doc.level,
-    scope: doc.scope,
-    aspect: doc.aspect,
-    depth: doc.depth,
+    scope: qualityDocDimension(doc.scope),
+    aspect: qualityDocDimension(doc.aspect),
+    depth: qualityDocDimension(doc.depth),
     serviceId: doc.svc,
     tags: doc.tags,
     gate: doc.gate,
@@ -391,9 +395,9 @@ async function loadQualityDocsFromScan(rootDir: string): Promise<LoadedQualityIn
         title: entry.title,
         version: entry.revision ?? 1,
         level: entry.level,
-        scope: entry.scope,
-        aspect: entry.aspect,
-        depth: entry.depth,
+        scope: qualityDocDimension(entry.scope),
+        aspect: qualityDocDimension(entry.aspect),
+        depth: qualityDocDimension(entry.depth),
         ref: entry.ref,
         gate: entry.gate,
       },
@@ -448,9 +452,9 @@ function loadQualityDocsFromGraph(graph: LoadedDocGraph): LoadedQualityIndex {
         title: entry.title,
         version: entry.revision ?? 1,
         level: entry.level,
-        scope: entry.scope,
-        aspect: entry.aspect,
-        depth: entry.depth,
+        scope: qualityDocDimension(entry.scope),
+        aspect: qualityDocDimension(entry.aspect),
+        depth: qualityDocDimension(entry.depth),
         ref: entry.ref,
         gate: entry.gate,
       },
@@ -1293,9 +1297,9 @@ async function buildBundleStatusSummary(
     title: bundle.title,
     version: 0,
     level: bundle.level,
-    scope: bundle.scope,
-    aspect: bundle.aspect,
-    depth: bundle.depth,
+    scope: qualityDocDimension(bundle.scope),
+    aspect: qualityDocDimension(bundle.aspect),
+    depth: qualityDocDimension(bundle.depth),
     serviceId: bundle.serviceId,
     tags: bundle.tags,
   }, gateDocs);
@@ -1329,9 +1333,9 @@ async function buildBundleStatusSummary(
         title: bundle.title,
         version: 0,
         level: bundle.level,
-        scope: bundle.scope,
-        aspect: bundle.aspect,
-        depth: bundle.depth,
+        scope: qualityDocDimension(bundle.scope),
+        aspect: qualityDocDimension(bundle.aspect),
+        depth: qualityDocDimension(bundle.depth),
         serviceId: bundle.serviceId,
         tags: bundle.tags,
       },
@@ -2054,9 +2058,9 @@ async function cmdClaims(
     title: bundle.title,
     version: 0,
     level: bundle.level,
-    scope: bundle.scope,
-    aspect: bundle.aspect,
-    depth: bundle.depth,
+    scope: qualityDocDimension(bundle.scope),
+    aspect: qualityDocDimension(bundle.aspect),
+    depth: qualityDocDimension(bundle.depth),
     serviceId: bundle.serviceId,
     tags: bundle.tags,
   }, gateDocs);

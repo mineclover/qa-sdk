@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-traversal-coordinate
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: flow
   aspect: process_flow
   depth: specification
@@ -12,13 +11,13 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: operational-ontology-schema-validation
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-core-model
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-relation-taxonomy
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-category-constraint
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Traversal Coordinate — start/end/edge chain을 route identity로 다루기

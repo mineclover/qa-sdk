@@ -38,6 +38,7 @@ description: "qa-sdk 좌표계/링크 구조 semantic 변경 시 따라야 할 �
 - [ ] 변경이 **L1 Data 만** touching 인지, **L2 Validator** 까지 cascade 인지, **L3 Workflow / L4 Tooling** 까지 파급인지 판정
 - [ ] 암묵 가정 탐색 — 기존 CLI / skill / 외부 도구 가 어떤 데이터 shape 를 가정하는가?
   - `collectDomainMembers` 는 contains ∪ depends_on← ∪ refines← 를 기대
+  - `collectDocumentFamilyOnlyScope` 는 same-family role docs + `tier: system`/legacy group/module `contains` + layout `refs` 를 기대
   - `@def.boundary` 는 `tier: system | layout` 을 기대
   - `deriveDomainRoot` 는 outgoing `refines` / `depends_on` 만 walk
 - [ ] 역방향 데이터 참조 (reverse index, incoming link walk) 가 의존하는가?
@@ -85,6 +86,7 @@ description: "qa-sdk 좌표계/링크 구조 semantic 변경 시 따라야 할 �
 - [ ] 단일 edge-type 의존 금지 (contains only, depends_on only 등)
 - [ ] 최소 2 개 edge-type 조합 허용 — migration 중 데이터 이질성 수용
 - [ ] 예: `collectDomainMembers` = (contains 순방향) ∪ (depends_on 역방향) ∪ (refines 역방향)
+- [ ] Layout/Pack 탐색은 `refs`도 family scope에 포함해야 한다
 - [ ] silent empty 는 사용자에게 warning hint 출력 (예: `(멤버 없음 — contains/depends_on/refines 링크 부재)`)
 
 ### Step 5 — 커밋 원칙

@@ -26,10 +26,16 @@ export interface DocRow {
   lifecycle: string;
   layer?: string | null;
   owner_system?: string | null;
+  /** DefDoc uses camelCase alias */
+  ownerSystem?: string | null;
   projection_plane?: string | null;
+  projectionPlane?: string | null;
   intent_hierarchy?: string | null;
+  intentHierarchy?: string | null;
   lineage_facet?: string | null;
+  lineageFacet?: string | null;
   lineage_kind?: string | null;
+  lineageKind?: string | null;
   tags: readonly string[];
   svc?: string | null;
   gate?: QualityGateSpec | null;
@@ -51,11 +57,11 @@ export function docRowToRegistryInput(doc: DocRow): DefinitionEntryInput {
     depth: doc.depth as DefinitionEntry["depth"],
     lifecycle: doc.lifecycle as DefinitionEntry["lifecycle"],
     ...(doc.layer ? { layer: doc.layer as DefinitionEntry["layer"] } : {}),
-    ...(doc.owner_system ? { owner_system: doc.owner_system } : {}),
-    ...(doc.projection_plane ? { projection_plane: doc.projection_plane as any } : {}),
-    ...(doc.intent_hierarchy ? { intent_hierarchy: doc.intent_hierarchy as any } : {}),
-    ...(doc.lineage_facet ? { lineage_facet: doc.lineage_facet as any } : {}),
-    ...(doc.lineage_kind ? { lineage_kind: doc.lineage_kind as any } : {}),
+    ...((doc.owner_system ?? doc.ownerSystem) ? { owner_system: (doc.owner_system ?? doc.ownerSystem)! } : {}),
+    ...((doc.projection_plane ?? doc.projectionPlane) ? { projection_plane: (doc.projection_plane ?? doc.projectionPlane) as any } : {}),
+    ...((doc.intent_hierarchy ?? doc.intentHierarchy) ? { intent_hierarchy: (doc.intent_hierarchy ?? doc.intentHierarchy) as any } : {}),
+    ...((doc.lineage_facet ?? doc.lineageFacet) ? { lineage_facet: (doc.lineage_facet ?? doc.lineageFacet) as any } : {}),
+    ...((doc.lineage_kind ?? doc.lineageKind) ? { lineage_kind: (doc.lineage_kind ?? doc.lineageKind) as any } : {}),
     ...(doc.tags.length > 0 ? { tags: [...doc.tags] } : {}),
     ...(doc.svc ? { serviceId: doc.svc } : {}),
     ...(doc.gate ? { gate: doc.gate } : {}),

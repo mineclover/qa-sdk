@@ -1,4 +1,4 @@
-// @def.boundary cli-command
+// @def.boundary cli-command-spec
 // @def.doc authorization-ontology-rls-enforcement
 
 /**

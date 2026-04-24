@@ -3,6 +3,7 @@ def:
   id: operational-ontology-system
   type: spec
   tier: system
+  level: group
   scope: data
   aspect: system_data
   depth: overview
@@ -17,75 +18,15 @@ def:
       type: traces_to
     - target: dual-coordinate-system
       type: traces_to
-    - target: operational-ontology-taxonomy-schema
+    - target: operational-ontology-component-plane
       type: contains
-    - target: operational-ontology-relation-category-schema
+    - target: operational-ontology-interface-plane
       type: contains
-    - target: operational-ontology-schema-validation
+    - target: operational-ontology-behavior-plane
       type: contains
-    - target: operational-ontology-registry-allocation
-      type: refs
-    - target: operational-ontology-validation-boundary
+    - target: operational-ontology-observation-plane
       type: contains
-    - target: operational-ontology-design-change-validation-matrix
-      type: contains
-    - target: operational-ontology-definition-graph-requirements
-      type: contains
-    - target: operational-ontology-pack-interface
-      type: contains
-    - target: operational-ontology-production-factory
-      type: contains
-    - target: operational-ontology-prompt-artifact-generation
-      type: contains
-    - target: operational-ontology-persistence
-      type: contains
-    - target: operational-ontology-data-facets
-      type: contains
-    - target: operational-ontology-flow-corridor
-      type: contains
-    - target: operational-ontology-junction
-      type: contains
-    - target: operational-ontology-checkpoint
-      type: contains
-    - target: operational-ontology-observation-topology
-      type: contains
-    - target: operational-ontology-information-transmission
-      type: contains
-    - target: operational-ontology-lineage
-      type: contains
-    - target: operational-ontology-branch-handling
-      type: contains
-    - target: operational-ontology-control-flow
-      type: contains
-    - target: operational-ontology-simulation
-      type: contains
-    - target: operational-ontology-runtime-interface
-      type: refs
-    - target: operational-ontology-package-architecture
-      type: contains
-    - target: operational-ontology-visualization-web
-      type: contains
-    - target: operational-ontology-core-model
-      type: contains
-    - target: operational-ontology-relation-taxonomy
-      type: contains
-    - target: operational-ontology-edge-assertion
-      type: contains
-    - target: operational-ontology-category-constraint
-      type: contains
-    - target: operational-ontology-traversal-coordinate
-      type: contains
-    - target: operational-ontology-rdf-bridge
-      type: contains
-    - target: programming-artifact-ontology-system
-      type: refs
-    - target: operational-ontology-registry-allocation-plan
-      type: contains
-    - target: operational-ontology-registry-allocation-todo
-      type: contains
-    - target: operational-ontology-ssot-navigation-guide
-      type: contains
-    - target: operational-ontology-web
+    - target: operational-ontology-governance-plane
       type: contains
 ---
 
@@ -97,55 +38,15 @@ taxonomy를 먼저 schema로 선언하고 검증한 뒤, 그 schema에서 node, 
 
 ## 구성 ^overview
 
-이 시스템은 schema plane, validation plane, implementation governance plane, instance plane, persistence plane 위에 현재 우선순위로 `corridor / junction / checkpoint` 관점의 해석층을 올리는 구조로 구성된다.
+이 시스템은 E/C/I/S + L/P 책임으로 5개 plane을 갖는다.
 
-- **Schema plane**
-  - `AxisSchema` — 축 정의
-  - `TaxonomySchema` — taxonomy 정의
-  - `RelationCategorySchema` — relation type grammar 정의
-  - `TraversalSchema` — purpose별 route family 정의
-- **Validation plane**
-  - schema 무결성, axis 중복, unknown reference, category overlap 검증
-  - registry-service/index-meta가 소비할 수 있는 현재 allocation contract
-  - ontology design 변경 전 확인해야 하는 local/system validation boundary
-  - ontology design 변경 종류별 문서/소유 경계/테스트/명령 matrix
-  - ontology module/leaf/plan/todo/knowledge 문서 graph requirement
-  - allocation plan projection/validation 불변조건을 고정하는 local contract
-- **Pack plane**
-  - schema, governance taxonomy, blueprint를 도메인 pack 단위로 묶고 한 번에 검증
-- **Implementation governance plane**
-  - 승인된 schema와 taxonomy 좌표를 구현/검증 binding과 consistency constraint로 매칭하는 거버넌스 계약
-- **Prompt artifact plane**
-  - governance evidence에서 작업영역별 `self_reflection` / `code_editing_rules`를 생성하는 파생 산출물 표면
-- **Programming artifact plane**
-  - build/generated/quality/deploy/prompt 산출물을 artifact registry provider로 해석하는 pack schema
-- **Registry allocation plane**
-  - schema allocation plan을 namespace/axis/taxonomy/address allocation record로 투영하고 registry-service/index-meta 승격 경계를 준비
-  - registry allocation module 아래에 lifecycle, persistence, sync, activation CLI, result, evidence, scenario, scoped-prefix decision leaf를 둔다
-- **Instance plane**
-  - `NodeCoord`
-  - `RelationTypeCoord`
-  - `EdgeCoord`
-  - `TraversalCoord`
-- **Persistence plane**
-  - schema store
-  - registry store
-  - assertion store
-  - observation log
-  - rebuildable projection store
-- **Interpretation priority**
-  - data facet model
-  - flow corridor
-  - checkpoint observation
-  - information transmission semantics
-  - data lineage tracking
-  - junction / branch handling
-  - control-flow management
-  - simulation model
-- **Runtime interface**
-  - `operational-ontology-runtime-interface` module 아래에서 Event / Pipe / Path / Snapshot projector family로 세분화
+- `operational-ontology-component-plane`: schema, taxonomy, relation, traversal, data facet, persistence vocabulary.
+- `operational-ontology-interface-plane`: pack/runtime/web/package interface와 external bridge.
+- `operational-ontology-behavior-plane`: schema validation, implementation governance, prompt artifact, simulation/control behavior.
+- `operational-ontology-observation-plane`: corridor, junction, checkpoint, transmission, lineage, branch/control observation semantics.
+- `operational-ontology-governance-plane`: validation boundary, design-change matrix, definition graph requirements, registry allocation roadmap.
 
-RDF bridge는 이 4층 전체에 대응되는 외부 의미 계층이다.
+RDF bridge와 programming artifact ontology는 이 system의 direct ownership이 아니라 interface/governance plane을 통해 참조한다.
 
 초안의 기준 원칙은 다음과 같다.
 
@@ -179,37 +80,8 @@ RDF bridge는 이 4층 전체에 대응되는 외부 의미 계층이다.
 
 ## 위임 ^delegates
 
-- `operational-ontology-taxonomy-schema` — axis/taxonomy를 schema plane으로 선언하는 규칙
-- `operational-ontology-relation-category-schema` — relation type category schema 정의
-- `operational-ontology-schema-validation` — schema plane과 instance plane 사이의 검증 규칙
-- `operational-ontology-registry-allocation` — local allocation model, validation, lifecycle, persistence/sync handoff, activation CLI/result/evidence/scenario leaf를 포함하는 registry allocation module
-- `operational-ontology-validation-boundary` — ontology design 변경의 문서/패키지/시뮬레이션/registry lifecycle 검증 경계
-- `operational-ontology-design-change-validation-matrix` — axis/taxonomy/relation/allocation/definition/pack activation 변경별 검증 경로
-- `operational-ontology-definition-graph-requirements` — ontology module/leaf/plan/todo/knowledge 문서의 frontmatter, contains, split, sources 규칙
-- `operational-ontology-pack-interface` — schema/governance/blueprint를 pack 단위로 묶는 인터페이스
-- `operational-ontology-prompt-artifact-generation` — 작업영역별 prompt artifact 생성과 검증 규칙
-- `operational-ontology-persistence` — schema/registry/assertion/observation/projection 저장 모델
-- `operational-ontology-data-facets` — 정보를 canonical data facet bundle로 읽는 원칙
-- `operational-ontology-flow-corridor` — 데이터가 지나가는 통로를 정의하는 원칙
-- `operational-ontology-junction` — 갈림길과 합류 지점을 정의하는 원칙
-- `operational-ontology-checkpoint` — corridor 위 관측 지점을 정의하는 원칙
-- `operational-ontology-observation-topology` — corridor/junction/checkpoint 상위 배치 계약
-- `operational-ontology-information-transmission` — 정보 전달을 edge semantics로 읽는 원칙
-- `operational-ontology-lineage` — 정보 facet 사이의 계보 추적 원칙
-- `operational-ontology-branch-handling` — 분기 처리의 해석 규칙
-- `operational-ontology-control-flow` — 제어 흐름 관리의 최소 vocabulary
-- `operational-ontology-simulation` — facet과 transmission을 시뮬레이션하는 원칙
-- `operational-ontology-runtime-interface` — 현재 시스템 입력을 operational-ontology 해석층으로 투영하는 운영 포트
-  projector family leaf:
-  `operational-ontology-event-projector`, `operational-ontology-pipe-projector`, `operational-ontology-path-projector`, `operational-ontology-snapshot-projector`
-- `operational-ontology-package-architecture` — plane별 공개 facade와 패키지 경계
-- `operational-ontology-core-model` — NodeCoord와 anchor/canonical identity 모델
-- `operational-ontology-relation-taxonomy` — relation type을 taxonomy로 다루는 원칙
-- `operational-ontology-edge-assertion` — relation type이 node 사이에서 성립한 assertion 모델
-- `operational-ontology-category-constraint` — category-constrained grammar와 운영 규칙
-- `operational-ontology-traversal-coordinate` — route identity와 purpose projection
-- `operational-ontology-rdf-bridge` — RDF와 operational coordinate의 대응 규칙
-- `programming-artifact-ontology-system` — build/generated/quality/deploy/prompt/activation 산출물 vocabulary와 provider/evidence module
-- `operational-ontology-registry-allocation-plan` — ontology-aware registry/address allocation 로드맵
-- `operational-ontology-registry-allocation-todo` — registry allocation 구현 체크리스트
-- `operational-ontology-ssot-navigation-guide` — schema/registry/address/observation SSOT 탐색 순서
+- `operational-ontology-component-plane` — Component vocabulary plane
+- `operational-ontology-interface-plane` — Interface/Pack/Layout plane
+- `operational-ontology-behavior-plane` — System behavior plane
+- `operational-ontology-observation-plane` — observation semantics plane
+- `operational-ontology-governance-plane` — validation/governance plane

@@ -54,6 +54,7 @@ function parseDefBlock(yaml) {
   const lines = yaml.split(/\r?\n/);
   const def = {
     id: "",
+    tier: "",
     depth: "",
     lifecycle: "",
     tags: [],
@@ -92,7 +93,7 @@ function parseDefBlock(yaml) {
       const [, key, value] = field;
       const parsedValue = stripQuotes(value.trim());
 
-      if (key === "id" || key === "depth" || key === "lifecycle") {
+      if (key === "id" || key === "tier" || key === "depth" || key === "lifecycle") {
         def[key] = parsedValue;
       }
 
@@ -172,8 +173,12 @@ export function collectQualityStats(rootDir = DEFAULT_ROOT) {
     const def = parseDefBlock(fm.yaml);
     if (def.lifecycle !== "approved" || !def.id) continue;
 
-    const hasContainsLink = def.links.some(link => link.type === "contains");
-    const isGroup = def.depth === "overview" && hasContainsLink;
+    const hasStructuralLink = def.links.some(link => link.type === "contains" || link.type === "refs");
+    const isGroup = def.depth === "overview" && (
+      hasStructuralLink ||
+      def.tier === "system" ||
+      def.tier === "layout"
+    );
     const purposeText = extractPurposeText(content);
     const hasPurpose = content.includes("^purpose");
     const hasOverview = content.includes("^overview");

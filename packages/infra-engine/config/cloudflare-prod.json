@@ -34,6 +34,11 @@
     "gateway": { "endpoint": "https://qa-gateway.astralclover.workers.dev", "health_path": "/health" }
   },
   "monitoring": {
-    "interval": 60
+    "interval": 60,
+    "recovery": {
+      "enabled": false,
+      "maxRetries": 2,
+      "cooldownSec": 600
+    }
   }
 }

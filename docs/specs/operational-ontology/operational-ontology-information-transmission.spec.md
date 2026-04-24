@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-information-transmission
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: flow
   aspect: process_flow
   depth: specification
@@ -12,11 +11,11 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: operational-ontology-data-facets
-      type: depends_on
+      type: traces_to
     - target: meta-semantic-ir
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-edge-assertion
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Information Transmission — 정보를 전달하는 개념

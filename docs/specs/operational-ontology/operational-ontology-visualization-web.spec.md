@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-visualization-web
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: ui
   aspect: component
   depth: specification
@@ -12,11 +11,11 @@ def:
   tags: [frontend, visualization, observability]
   links:
     - target: operational-ontology-system
-      type: refines
+      type: traces_to
     - target: operational-ontology-persistence
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-package-architecture
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Visualization Web — 수집 store 시각화

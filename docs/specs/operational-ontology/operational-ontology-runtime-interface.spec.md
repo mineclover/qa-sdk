@@ -1,8 +1,7 @@
 ---
 def:
   id: operational-ontology-runtime-interface
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   tier: system
   scope: interface
   aspect: api_contract
@@ -12,7 +11,7 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: operational-ontology-system
-      type: refines
+      type: traces_to
     - target: operational-ontology-data-facets
       type: contains
     - target: operational-ontology-information-transmission
@@ -64,7 +63,7 @@ sources:
 - **PathObservation / NonLinearPathObservation**
   - traversal observation과 branch decision으로 투영
 
-이 네 입력을 각각 별도 projector port로 나누고, 최상위에서는 `OperationalOntologyRuntimePorts`로 묶는다. 이 문서는 projector family의 module 문서이고, 각 세부 projector surface는 하위 leaf 문서에서 따로 고정한다.
+이 네 입력을 각각 별도 projector port로 나누고, 최상위에서는 `OperationalOntologyRuntimePorts`로 묶는다. 이 문서는 projector family의 System 문서이고, 각 세부 projector surface는 하위 Interface/Component 문서에서 따로 고정한다.
 
 public package surface에서는 아래 좁은 subpath를 우선 사용한다.
 

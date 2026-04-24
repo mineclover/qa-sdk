@@ -2,8 +2,7 @@
 def:
   tier: component
   id: ms-concept-branch-path
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: data
   aspect: domain_data
   depth: specification
@@ -11,7 +10,7 @@ def:
   layer: domain
   links:
     - target: meta-semantic-concepts
-      type: depends_on
+      type: traces_to
 ---
 
 # 분기 경로 (Branch Path)

@@ -25,6 +25,9 @@ SOPS로 암호화된 YAML 설정을 복호화하고, zod 스키마로 검증하�
 - 복호화는 메모리 상에서만 — 디스크에 평문 잔류 금지
 - zod 스키마로 런타임 검증 — 각 서비스의 `env.ts`와 통합 완료 (중앙 포트 할당표 참조)
 - 환경별 설정 파일: `config/{env}.yaml`
+- 현재 CLI 기본 경로는 `createPlainLoader()` + `config/{env}.json`
+- `~/.qa-sdk/infra-config.json`은 backend/서비스 URL/store driver 같은 로컬 실행 프로필을 관리
+- `scripts/infra.ts`는 profile 적용 후 local MinIO runtime fallback을 감지한다
 
 ---
 
@@ -92,11 +95,18 @@ interface ResolvedConfig {
 interface MonitoringConfig {
   interval: number;           // 헬스체크 주기 (초). 기본 60
   webhooks?: WebhookConfig[];
+  recovery?: RecoveryConfig;
 }
 
 interface WebhookConfig {
   url: string;
   events: string[];           // 알림 트리거 상태 (예: ["OutOfSync", "Unknown"])
+}
+
+interface RecoveryConfig {
+  enabled?: boolean;          // 자동 복구 기본 활성화 여부
+  maxRetries?: number;        // 기본 3
+  cooldownSec?: number;       // 기본 300
 }
 
 interface GlobalConfig {
@@ -152,6 +162,85 @@ function createPlainLoader(): SopsLoader;
 - `readFile(configPath, "utf-8")` → `JSON.parse()` — SOPS CLI 호출 없이 평문 JSON 파일을 직접 읽는다
 - SopsLoader 인터페이스와 동일하므로 ConfigStage에 그대로 주입 가능
 - 개발/테스트 환경에서 SOPS 없이 파이프라인을 실행할 때 사용
+- 현재 `infra deploy`, `scripts/deploy-local.ts`, Cloudflare 배포, Fleet 실행 경로는 대부분 `createPlainLoader()`를 사용한다
+
+## 런타임 env 관리 계층
+
+infra-engine의 env 관리는 단일 파일이 아니라 3계층으로 나뉜다.
+
+### 1. 실행 프로필 — `~/.qa-sdk/infra-config.json`
+
+`scripts/infra.ts` 시작 시 가장 먼저 로드된다.
+
+- backend: `file|minio|s3`
+- backend endpoint/bucket
+- registry / ingest / definition 서비스 URL
+- ingest store driver (`memory|d1|pg`)
+- k8s context
+
+이 값들은 `applyConfigToEnv()`를 통해 `PULUMI_BACKEND_URL`, `REGISTRY_URL`, `INGEST_URL`, `DEFINITION_URL`, `STORE_DRIVER`, `SQLITE_PATH` 같은 환경변수로 주입된다.
+
+### 2. 기존 셸 환경변수
+
+`applyConfigToEnv()`는 `??=`를 사용하므로, 이미 셸에 설정된 값이 있으면 프로필보다 우선한다.
+
+예:
+
+```bash
+PULUMI_BACKEND_URL=file://~/.pulumi-local pnpm --filter infra-engine exec node --import tsx ./scripts/infra.ts deploy ingest-server dev
+```
+
+이 경우 `infra-config.json`이 `backend=minio`여도 현재 프로세스에서는 file backend가 우선한다.
+
+### 3. runtime fallback — `detectEnvironment()`
+
+`scripts/infra.ts`는 profile 적용 직후 `detectEnvironment()`를 호출한다.
+
+- profile이 `backend=file` 또는 `backend=s3`를 명시하면 MinIO auto-detect를 수행하지 않는다
+- `PULUMI_BACKEND_URL`이 이미 설정돼 있으면 그 값을 우선 존중한다
+- MinIO가 localhost:9000에서 응답하고 backend 관련 env가 비어 있을 때만 local MinIO backend를 자동 설정한다
+- 즉 fallback은 "명시적 backend 미설정" 상태에서만 보조 역할을 수행한다
+
+### 4. 서비스별 배포 설정 — `packages/infra-engine/config/{env}.json`
+
+이 파일은 backend profile과 별개로, 각 env에서 **무엇을 배포하고 어떤 연결/모니터링 설정을 쓸지** 정의한다.
+
+- `services`: 포트, depends_on, 서비스별 primitive 설정
+- `connections`: 서비스 endpoint / health_path
+- `monitoring`: interval, webhooks, recovery
+
+즉:
+- `infra-config.json` = 실행 환경/로컬 제어 plane
+- `config/{env}.json` = 서비스 topology / 배포 contract
+
+### 5. env 파일 생성 경로
+
+`.env` 생성은 `config/{env}.json` 기준이다.
+
+- `services.<serviceId>`의 primitive 값 → env vars
+- `connections` 또는 discovery 결과 → `*_URL`
+- PG가 필요하면 `.env.docker`에서 docker secret을 읽어 PG env 조립
+
+따라서 profile env와 generated `.env`는 역할이 다르다:
+
+- profile env: infra-engine 자신이 동작하기 위한 실행 컨텍스트
+- generated `.env`: 배포/소비 서비스에 주입할 서비스별 런타임 값
+
+### 6. env 변환 규칙의 단일화
+
+서비스 설정을 env vars로 바꾸는 규칙은 `infra-env-kit`의 `configToEnvVars()`를 공통으로 사용한다.
+
+- primitive 값만 env로 승격
+- `depends_on`, `gates`, `health_path`는 infra 내부 제어 키로 간주하여 env 변환에서 제외
+- `.env` 생성기(`infra-env-kit`)와 런타임 bridge(`extractServiceEnv`)가 같은 규칙을 공유한다
+
+### 7. profile 기반 서비스 URL 소비
+
+CLI의 registry/ingest/definition 연결은 하드코딩 localhost보다 `REGISTRY_URL`, `INGEST_URL`, `DEFINITION_URL`을 우선 사용한다.
+
+- `scripts/infra.ts`에서 profile을 env로 주입
+- `cmd-deploy.ts`, `scripts/deploy-local.ts`, `env status`가 이를 사용
+- profile을 `staging`/`prod`로 바꾸면 core service health check와 adapter 초기화도 해당 URL 기준으로 동작한다
 
 ### ConfigStage 실행 흐름
 
@@ -197,7 +286,7 @@ function resolveConnectionEnv(
 
 ## env 파일 생성 — config JSON → 환경변수 변환
 
-배포 후 각 서비스에 주입할 `.env` 파일을 config JSON에서 자동 생성한다. `export/env-file.ts`의 `configToEnvVars()`와 `generateEnvFile()`이 담당한다.
+배포 후 각 서비스에 주입할 `.env` 파일을 config JSON에서 자동 생성한다. 현재 공급 구현은 `infra-env-kit` 패키지의 `configToEnvVars()`와 `generateEnvFile()`이 담당하고, `infra-engine`은 이를 소비한다.
 
 ### 변환 규칙
 

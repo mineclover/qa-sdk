@@ -128,10 +128,11 @@ def:
 
 ### 6. `invalid-code-boundary`
 
-**원인**: `@def.boundary <id>`로 참조된 문서가 `tier: system`도 `level: group/module`도 아님.
+**원인**: `@def.boundary <id>`로 참조된 문서가 코드 boundary를 소유할 수 있는 `tier: system|layout` 또는 legacy contains parent가 아님.
 
 **수정**:
 - 코드 경계를 소유해야 하는 문서: `tier: system`으로 변경
+- 여러 System/Interface를 조망하는 boundary면 `tier: layout` + `refs`로 변경
 - 잘못 annotation된 경우: 소스 파일에서 `@def.boundary` 주석 제거
 
 ---

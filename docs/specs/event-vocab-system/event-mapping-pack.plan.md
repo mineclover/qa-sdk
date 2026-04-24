@@ -11,11 +11,11 @@ def:
   tags: [cross-scope, structural, observability]
   links:
     - target: event-taxonomy-layering-plan
-      type: refines
+      type: traces_to
     - target: event-taxonomy-usecases-plan
       type: traces_to
     - target: event-core-pattern
-      type: depends_on
+      type: traces_to
 ---
 
 # Event Mapping Pack — 설계 계획

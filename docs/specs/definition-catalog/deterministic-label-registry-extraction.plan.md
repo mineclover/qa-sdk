@@ -2,8 +2,7 @@
 def:
   tier: component
   id: deterministic-label-registry-extraction-plan
-  type: knowledge
-  knowledge_kind: proposal
+  type: spec
   scope: flow
   aspect: process_flow
   depth: specification
@@ -13,15 +12,15 @@ def:
   tags: [contract, decision, structural]
   links:
     - target: deterministic-label-stability-plan
-      type: depends_on
+      type: traces_to
     - target: doc-frontmatter-namespace
-      type: depends_on
+      type: traces_to
     - target: doc-metadata-field-ownership
-      type: depends_on
+      type: traces_to
     - target: deterministic-label-stability-boundary
       type: traces_to
     - target: docs-control-plane
-      type: refines
+      type: traces_to
 ---
 
 # Deterministic Label Registry — 패키지 추출 계획
@@ -93,7 +92,7 @@ def:
 - `packages/cli/src/lib/docs-control-plane/deterministic-labels.ts` (68, barrel)
 - `packages/cli/src/lib/docs-control-plane/deterministic-labels.test.ts` (1667)
 
-**결과**: `packages/deterministic-label-registry/` (unscoped library). Read-only label projection + FSM readiness + transition dry-run.
+**결과**: `packages/deterministic-label-registry/` (unscoped library). 현재는 read-only label projection만 소유한다. FSM readiness + transition dry-run은 초기 구현 후 2026-04-18 단순화에서 제거됐다.
 
 **의존**: `doc-envelope` (C-1), `ontology-pack-validate` (C-2), `definition-catalog` (기존)
 

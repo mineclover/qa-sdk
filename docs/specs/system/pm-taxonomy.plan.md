@@ -10,15 +10,15 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: taxonomy-boundaries
-      type: refines
+      type: traces_to
     - target: status-crosswalk
-      type: depends_on
+      type: traces_to
     - target: df-taxonomy
-      type: depends_on
+      type: traces_to
     - target: definition-taxonomy
-      type: depends_on
+      type: traces_to
     - target: structural-taxonomy
-      type: depends_on
+      type: traces_to
 ---
 
 # PM Taxonomy — 상태 관리 초안 계획

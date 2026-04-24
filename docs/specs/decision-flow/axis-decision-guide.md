@@ -13,7 +13,7 @@ def:
   tags: [entry-point, decision]
   links:
     - target: decision-standard-group
-      type: refines
+      type: traces_to
 ---
 
 # Axis Decision Guide — 축에 넣을 것과 넣지 않을 것

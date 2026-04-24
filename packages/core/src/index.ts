@@ -60,6 +60,22 @@ export type { IdentificationMode, BehaviorPattern, PatternConfidence, PatternRul
 export type { RecordKind, MetricType, SpanStatusCode, EventRecord } from "./types/record.js";
 export type { QaSession } from "./types/session.js";
 export type { ScenarioSpec, EntryCondition, StepKind, ScenarioStep, StepConstraint, BranchDef } from "./types/scenario.js";
+export type {
+  BddContract,
+  BddContractBlock,
+  BddContractKind,
+  BddContractLinks,
+  BddEgressAssertion,
+  BddGiven,
+  BddImplementationUnit,
+  BddImplementationUnitKind,
+  BddMode,
+  BddTestLevel,
+  BddTestUnit,
+  BddThen,
+  BddThenError,
+  BddWhen,
+} from "./types/bdd-contract.js";
 export type { SpecGraph, SpecNode, SpecEdgeType, SpecEdge, RuntimeGraph, RuntimeNode, RuntimeEdgeType, RuntimeEdge } from "./types/graph.js";
 export type { Verdict, ConstraintResult, StepMatch, MatchResult, VerdictReport, LatencyViolation, OrderingViolation } from "./types/verdict.js";
 export type { PathObservation, ReachedNode, TraversedEdge, TerminalReason, BranchPath, BranchPoint, NonLinearPathObservation } from "./types/path-observation.js";
@@ -88,6 +104,34 @@ export {
 export { ownerTypeSchema, transmissionOwnerSchema, transmissionSourceSchema, transmissionRuntimeSchema, buildEnvSchema, transmissionBuildSchema, transmissionEnvelopeSchema } from "./schema/envelope.schema.js";
 export { recordKindSchema, metricTypeSchema, spanStatusCodeSchema, payloadFormatSchema, payloadEncodingSchema, eventRecordSchema } from "./schema/record.schema.js";
 export { constraintOpSchema, stepConstraintSchema, entryConditionSchema, branchDefSchema, stepKindSchema, scenarioStepSchema, scenarioSpecSchema } from "./schema/scenario.schema.js";
+export {
+  bddContractBlockSchema,
+  bddContractKindSchema,
+  bddContractLinksSchema,
+  bddContractSchema,
+  bddEgressAssertionSchema,
+  bddGivenSchema,
+  bddImplementationUnitKindSchema,
+  bddImplementationUnitSchema,
+  bddModeSchema,
+  bddTestLevelSchema,
+  bddTestUnitSchema,
+  bddThenErrorSchema,
+  bddThenSchema,
+  bddWhenSchema,
+} from "./schema/bdd-contract.schema.js";
+export {
+  compileBddContractsToPipeGraphs,
+  compileBddContractsToScenarioSpecs,
+  compileBddContractToPipeGraph,
+  compileBddContractToScenarioSpec,
+} from "./bdd-contract/compile-scenario.js";
+export type {
+  BddPipeGraphCompileResult,
+  BddScenarioCompileIssue,
+  BddScenarioCompileOptions,
+  BddScenarioCompileResult,
+} from "./bdd-contract/compile-scenario.js";
 
 // ── Lib ─────────────────────────────────────────────────
 

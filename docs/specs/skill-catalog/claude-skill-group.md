@@ -3,6 +3,7 @@ def:
   id: claude-skill-group
   tier: system
   address: def_document:v2:68614
+  level: group
   scope: feature
   aspect: func_def
   depth: overview
@@ -18,6 +19,10 @@ def:
       type: contains
     - target: skill-def-context
       type: contains
+    - target: skill-def-doctor
+      type: contains
+    - target: skill-def-entry-sync
+      type: contains
     - target: skill-def-audit
       type: contains
     - target: skill-def-explore
@@ -25,6 +30,10 @@ def:
     - target: skill-def-knowledge
       type: contains
     - target: skill-def-level
+      type: contains
+    - target: skill-def-tier
+      type: contains
+    - target: skill-def-validate
       type: contains
     - target: skill-def-new
       type: contains
@@ -43,11 +52,11 @@ def:
 
 skill-catalog-system > **claude-skill-group**
 
-형제: `automation-skill-group` · `ralph-tui-skill-group` · `dkg-skill-group` · `cli-command-group`
+형제: `automation-skill-group` · `ralph-tui-skill-group` · `dkg-skill-group` · `cli-command-group` · `infra-skill-group` · `governance-skill-group`
 
 ## 목적 ^purpose
 
-definition-catalog를 읽고, 만들고, 분해하고, 상태를 관리하는 핵심 스킬 묶음이다.
+definition-catalog를 읽고, 만들고, 분해하고, 상태를 관리하는 핵심 스킬 16개 묶음이다.
 문서 작업 전 탐색과 감사 루틴, boundary 구조화 루틴을 표준화해 스킬 간 사용 순서를 고정한다.
 
 ## 구성 ^overview
@@ -56,10 +65,14 @@ definition-catalog를 읽고, 만들고, 분해하고, 상태를 관리하는 �
 - `def-topdown`
 - `def-bottomup`
 - `def-context`
+- `def-doctor`
+- `def-entry-sync`
 - `def-audit`
 - `def-explore`
 - `def-knowledge`
 - `def-level`
+- `def-tier`
+- `def-validate`
 - `def-new`
 - `def-link`
 - `def-split`

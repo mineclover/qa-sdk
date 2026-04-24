@@ -14,10 +14,12 @@ export const dashboardSummaryHandler: CommandHandler = async (_ctx) => {
   const { createDashboardData } = await import("../monitor/dashboard.js");
   const dashboard = createDashboardData(infraProfile);
   const s = await dashboard.getSummary();
+  const fleetRuns = await dashboard.getFleetRuns();
   console.log(`\n=== Dashboard Summary ===`);
   console.log(`  시각:       ${s.timestamp}`);
   console.log(`  배포:       ${s.deployed}건`);
   console.log(`  모니터:     ${s.monitored}건`);
+  console.log(`  Fleet Runs: ${fleetRuns.length}건`);
   console.log(`  상태:       ${Object.entries(s.byStatus).map(([k, v]) => `${k}:${v}`).join(", ")}`);
   console.log(`  프로바이더: ${Object.entries(s.byProvider).map(([k, v]) => `${k}:${v}`).join(", ") || "-"}`);
   console.log(`  환경:       ${Object.entries(s.byEnv).map(([k, v]) => `${k}:${v}`).join(", ") || "-"}`);

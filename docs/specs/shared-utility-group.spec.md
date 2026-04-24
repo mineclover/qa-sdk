@@ -2,7 +2,7 @@
 def:
   id: shared-utility-group
   type: spec
-  tier: layout
+  tier: system
   scope: data
   aspect: system_data
   depth: overview

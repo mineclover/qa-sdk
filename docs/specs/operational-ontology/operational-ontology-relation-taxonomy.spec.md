@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-relation-taxonomy
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: flow
   aspect: relation
   depth: specification
@@ -12,13 +11,13 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: operational-ontology-relation-category-schema
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-core-model
-      type: depends_on
+      type: traces_to
     - target: meta-taxonomy
-      type: depends_on
+      type: traces_to
     - target: taxonomy-boundaries
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Relation Taxonomy — relation type도 taxonomy여야 한다

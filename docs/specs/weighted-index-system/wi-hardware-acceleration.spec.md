@@ -1,8 +1,7 @@
 ---
 def:
   id: wi-hardware-acceleration
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   tier: component
   scope: feature
   aspect: func_def
@@ -13,7 +12,7 @@ def:
   tags: [runtime, performance]
   links:
     - target: wi-system
-      type: depends_on
+      type: traces_to
 ---
 
 # 하드웨어 가속 — WASM / GPU / FPGA

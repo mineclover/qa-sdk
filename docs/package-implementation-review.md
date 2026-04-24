@@ -30,6 +30,14 @@ def:
 
 이미 패키지 진입 문서가 있는 축은 기존 surface를 유지한다: `address-index`, `apm`, `bench`, `bit-index`, `browser-codec`, `browser-sdk`, `canvas-viewport`, `cli`, `cli-command`, `codec`, `codec-proto`, `codegen-core`, `config-loader`, `context`, `convergence`, `core`, `data-object-codegen`, `db-traffic-control`, `decision-flow`, `decision-service`, `definition-catalog`, `definition-client`, `definition-data-source`, `definition-service`, `demo-snapshot`, `demo-tests`, `dkg`, `engine`, `event-catalog`, `gateway`, `git-utils`, `index-meta`, `infra-engine`, `ingest-server`, `logger`, `motion-*`, `otel`, `package-classifier`, `permission-engine`, `pino`, `platform-demo`, `quality-ledger`, `query-service`, `registry-client`, `registry-service`, `registry-ui`, `review-ledger`, `rlsc`, `roleplay-web`, `sdk`, `snapshot-io`, `spec-analyzer`, `spec-core`, `spec-schema`, `spec-tracker`, `spec-transition`, `store`, `tag-search`, `test-scenario-store`, `test-types`, `viteplus-sdk-smoke`, `weighted-index`, `weighted-index-explorer`, `weighted-ui`, `viz-web`, `work-domain`.
 
+2026-04-24 분리 반영:
+- `infra-env-kit`를 추가했다. env 공급/코드 생성/orchestration을 `infra-engine`에서 분리한 공급 패키지다.
+- `infra-engine`는 배포/관측/운영 소비 패키지로 남고, 기존 export/env/codegen 경로는 호환성 re-export wrapper만 유지한다.
+
+2026-04-24 정리 반영:
+- `infra-engine` 내부 wrapper 파일(`src/export/*`, `src/config/env-bridge.ts`, `src/post-deploy/codegen.ts`)은 제거했다.
+- 공급 기능은 `infra-env-kit` direct import와 `infra-env` CLI로 정착했다.
+
 2026-04-07 1차 반영:
 - `infra-engine`, `cli`, `decision-service`, `definition-service`, `query-service`, `registry-service`, `registry-ui`, `platform-demo` README를 중앙 spec 참조형 인덱스로 추가했다.
 

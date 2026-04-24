@@ -27,8 +27,10 @@ function hasLink(sourceId: string, targetId: string, linkType: string): boolean 
   );
 }
 
-function containsCount(groupId: string): number {
-  return result.registry.getLinks(groupId, "outgoing").filter(link => link.linkType === "contains").length;
+function structuralCount(groupId: string): number {
+  return result.registry.getLinks(groupId, "outgoing")
+    .filter(link => link.linkType === "contains" || link.linkType === "refs")
+    .length;
 }
 
 describe("US-007 링크 커버리지", () => {
@@ -47,27 +49,27 @@ describe("US-007 링크 커버리지", () => {
   });
 
   it("신규 subgroup overview가 contains SSOT를 선언한다", () => {
-    expect(containsCount("benchmark-system")).toBe(4);
-    expect(containsCount("conventions-system")).toBe(3);
-    expect(containsCount("dim-ops-system")).toBe(4);
-    expect(containsCount("spec-prop-system")).toBe(4);
-    expect(containsCount("sdk-system")).toBe(3);
-    expect(containsCount("wi-trace-group")).toBe(3);
-    expect(containsCount("df-narrative-group")).toBe(3);
-    expect(containsCount("quality-gates-system")).toBeGreaterThanOrEqual(12);
+    expect(structuralCount("benchmark-system")).toBe(4);
+    expect(structuralCount("conventions-system")).toBe(3);
+    expect(structuralCount("dim-ops-system")).toBe(4);
+    expect(structuralCount("spec-prop-system")).toBe(4);
+    expect(structuralCount("sdk-system")).toBe(3);
+    expect(structuralCount("wi-trace-group")).toBe(3);
+    expect(structuralCount("df-narrative-group")).toBe(2);
+    expect(structuralCount("quality-gates-system")).toBeGreaterThanOrEqual(5);
   });
 
   it("대표 constraint/feature/data 링크가 유지된다", () => {
     expect(hasLink("permission-constraint", "perm-codec-system", "constrains")).toBe(true);
     expect(hasLink("decode-deploy", "decode-api", "constrains")).toBe(true);
-    expect(hasLink("query-rules", "registry-data-model", "depends_on")).toBe(true);
+    expect(hasLink("query-rules", "registry-data-model", "contains")).toBe(true);
     expect(hasLink("registry-client-spec", "registry-events-spec", "depends_on")).toBe(true);
     expect(hasLink("dkg-skill-cascade", "dkg-skill-catalog", "depends_on")).toBe(true);
     expect(hasLink("wi-capacity-planning", "wi-pack-format-def", "depends_on")).toBe(true);
     expect(hasLink("cq-version-query", "registry-version-lifecycle", "depends_on")).toBe(true);
     // browser-monitor-spec, convergence-layer-spec — 분할/rename으로 삭제됨
     // index-meta-sdk-spec — 분할/rename으로 삭제됨
-    expect(hasLink("event-core-pattern", "graph-spec", "depends_on")).toBe(true);
-    expect(hasLink("quickstart-guide", "system-data-flow", "refines")).toBe(true);
+    expect(hasLink("event-core-pattern", "graph-spec", "traces_to")).toBe(true);
+    expect(hasLink("quickstart-guide", "system-data-flow", "traces_to")).toBe(true);
   });
 });

@@ -13,7 +13,7 @@ def:
   tags: [entry-point]
   links:
     - target: decision-standard-group
-      type: refines
+      type: traces_to
 ---
 
 # Prefix 유형 가이드 — 프로젝트 분석 → prefix 설계

@@ -1,8 +1,7 @@
 ---
 def:
   id: df-narrative-proof-core-gates
-  type: knowledge
-  knowledge_kind: narrative
+  type: spec
   tier: component
   scope: feature
   aspect: scenario
@@ -13,13 +12,13 @@ def:
   tags: [decision, testing]
   links:
     - target: df-narrative-proofs
-      type: refines
+      type: traces_to
     - target: df-constraint
-      type: depends_on
+      type: traces_to
     - target: decision-standard-group
-      type: depends_on
+      type: traces_to
     - target: axis-decision-guide
-      type: depends_on
+      type: traces_to
 ---
 # Decision Flow — 서사 증명: 코어 gate와 축 설계
 

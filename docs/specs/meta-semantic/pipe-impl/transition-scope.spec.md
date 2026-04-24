@@ -13,10 +13,6 @@ def:
   layer: domain
   tags: [cross-scope]
   links:
-    - target: meta-semantic-pipe-impl
-      type: depends_on
-    - target: pipe-flow-catalog
-      type: refines
     - target: prefix-path-summation
       type: depends_on
 ---

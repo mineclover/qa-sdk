@@ -14,7 +14,7 @@ await applyConfigToEnv(infraConfig);
 
 // MinIO 자동 감지 fallback
 import { detectEnvironment } from "../src/commands/env-manager.js";
-await detectEnvironment();
+await detectEnvironment(infraConfig.backend);
 
 // CLI 실행
 import { executeCommand, generateHelp } from "cli-command";

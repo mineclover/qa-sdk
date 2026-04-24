@@ -13,8 +13,6 @@ def:
   layer: domain
   tags: [cross-scope]
   links:
-    - target: meta-semantic-pipe-catalog
-      type: refines
     - target: pipe-types
       type: refines
     - target: pc-next

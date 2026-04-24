@@ -150,6 +150,65 @@ describe("docs-control-plane graph edge normalization", () => {
     expect(edges.map((item) => item.axis)).not.toContain("context");
   });
 
+  it("maps section-level source and evidence refs into graph edges", () => {
+    const edges = normalizeDocumentGraphEdges([
+      envelope({
+        adapterId: "definition-markdown",
+        kind: "spec",
+        stableId: "checkout-scenario-matrix",
+        familyId: "docs/specs/checkout/checkout",
+        path: "docs/specs/checkout/checkout-scenario-matrix.spec.md",
+        metadata: {
+          defId: "checkout-scenario-matrix",
+          sourcePath: "docs/specs/checkout/checkout-scenario-matrix.spec.md",
+        },
+        sections: [
+          {
+            id: "scenario-matrix",
+            title: "Scenario Matrix",
+            anchor: "scenario-matrix",
+            content: "| scenario | evidence | source |",
+            metadata: {
+              sectionKind: "scenario-matrix",
+              evidenceIds: ["E-CHECKOUT-SMOKE"],
+              sourceRefs: ["packages/checkout/src/checkout.test.ts"],
+            },
+            rawSource: {
+              path: "docs/specs/checkout/checkout-scenario-matrix.spec.md",
+              pointer: "## Scenario Matrix",
+            },
+          },
+        ],
+      }),
+    ]);
+
+    expect(edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "section-membership",
+          axis: "composition",
+          fromNodeId: "document:checkout-scenario-matrix",
+          toNodeId: "section:checkout-scenario-matrix:scenario-matrix",
+          authoredType: "section",
+        }),
+        expect.objectContaining({
+          kind: "document-source",
+          axis: "source",
+          fromNodeId: "section:checkout-scenario-matrix:scenario-matrix",
+          toNodeId: "source:packages/checkout/src/checkout.test.ts",
+          authoredType: "section-source",
+        }),
+        expect.objectContaining({
+          kind: "document-evidence",
+          axis: "evidence",
+          fromNodeId: "section:checkout-scenario-matrix:scenario-matrix",
+          toNodeId: "evidence:E-CHECKOUT-SMOKE",
+          authoredType: "section-evidence",
+        }),
+      ]),
+    );
+  });
+
   it("preserves explainability metadata on every normalized edge reason", () => {
     const edges = normalizeDocumentGraphEdges(fixtureDocuments());
 

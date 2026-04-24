@@ -14,7 +14,7 @@ def:
   tags: [decision]
   links:
     - target: architecture-decisions
-      type: refines
+      type: traces_to
     - target: dim-ops-system
       type: constrains
 ---

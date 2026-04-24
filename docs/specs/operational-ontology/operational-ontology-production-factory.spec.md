@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-production-factory
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: flow
   aspect: process_flow
   depth: specification
@@ -12,17 +11,17 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: operational-ontology-system
-      type: refines
+      type: traces_to
     - target: operational-ontology-taxonomy-schema
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-schema-validation
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-core-model
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-persistence
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-simulation
-      type: depends_on
+      type: traces_to
 sources:
   - packages/operational-ontology/src/internal/implementation-governance-core.ts
   - packages/operational-ontology/src/internal/implementation-governance-types.ts

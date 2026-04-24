@@ -1,8 +1,7 @@
 ---
 def:
   id: error-handling-convention
-  type: knowledge
-  knowledge_kind: convention
+  type: spec
   tier: component
   scope: constraint
   aspect: tech_constraint

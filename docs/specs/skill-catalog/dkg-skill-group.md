@@ -3,6 +3,7 @@ def:
   id: dkg-skill-group
   tier: system
   address: def_document:v2:68627
+  level: group
   scope: feature
   aspect: func_def
   depth: overview
@@ -29,7 +30,7 @@ def:
 
 skill-catalog-system > **dkg-skill-group**
 
-형제: `claude-skill-group` · `automation-skill-group` · `ralph-tui-skill-group` · `cli-command-group`
+형제: `claude-skill-group` · `automation-skill-group` · `ralph-tui-skill-group` · `cli-command-group` · `infra-skill-group` · `governance-skill-group`
 
 ## 목적 ^purpose
 

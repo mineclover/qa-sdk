@@ -197,11 +197,10 @@ cli의 기본 adapter(`createDeterministicLabelInventoryAdapters`)는 이 계약
   - `packages/deterministic-label-registry/src/records.ts` — `projectDeterministicLabelRecordsFromDocuments()`, `compareDeterministicLabelRecords()`, `documentKey()`
   - `packages/deterministic-label-registry/src/candidates.ts` — `normalizeRecordRefs()`, `normalizeCoordinatePart()`, `normalizeMetadata()`
   - `packages/deterministic-label-registry/src/inventory.ts` — `buildDeterministicLabelInventory()` 조립
-  - `packages/deterministic-label-registry/src/fsm.ts` — readiness + dry-run 결정론
 - 테스트: `packages/cli/src/lib/deterministic-label-registry.test.ts` — 28 tests
   - collision signature 결정론
   - record 정렬 안정성
-  - dry-run mutation safety (before/after snapshot 동등성)
+  - historical dry-run mutation safety (제거된 FSM 범위의 회귀 기록)
 
 ## 비목표
 

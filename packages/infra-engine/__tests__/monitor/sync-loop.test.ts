@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createSyncLoop, type SyncCheckResult } from "../../src/monitor/sync-loop.js";
-import type { InfraProfileAdapter } from "../../src/adapters/adapter.js";
+import type { CoordinateAdapter, InfraProfileAdapter, IngestAdapter } from "../../src/adapters/adapter.js";
 import type { MonitorTarget, SyncStatus } from "../../src/core/types.js";
 
 function makeMonitor(overrides?: Partial<MonitorTarget>): MonitorTarget {
@@ -176,5 +176,81 @@ describe("createSyncLoop", () => {
 
     expect(results).toHaveLength(3);
     expect(results.map((r) => r.serviceId)).toEqual(["svc-a", "svc-b", "svc-c"]);
+  });
+
+  it("onResults 콜백은 sync 결과를 1회 전달", async () => {
+    const monitors = [makeMonitor()];
+    const profile = makeMockProfile(monitors);
+    const onResults = vi.fn();
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, status: 200 }),
+    );
+
+    const loop = createSyncLoop({ infraProfile: profile, onResults });
+    const results = await loop.syncAll();
+
+    expect(onResults).toHaveBeenCalledTimes(1);
+    expect(onResults).toHaveBeenCalledWith(results);
+  });
+
+  it("동일 시점 중복 syncAll 호출은 in-flight 결과를 공유", async () => {
+    const monitors = [makeMonitor()];
+    const profile = makeMockProfile(monitors);
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        await gate;
+        return { ok: true, status: 200 };
+      }),
+    );
+
+    const loop = createSyncLoop({ infraProfile: profile });
+    const first = loop.syncAll();
+    const second = loop.syncAll();
+    release();
+    const [left, right] = await Promise.all([first, second]);
+
+    expect(left).toEqual(right);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("상태 변경 시 ingest emit + health_event address_context 전달", async () => {
+    const monitors = [makeMonitor({ lastStatus: "Synced" })];
+    const profile = makeMockProfile(monitors);
+    const ingest: IngestAdapter = {
+      emit: vi.fn(async () => ({ ok: true })),
+    };
+    const coordinate: CoordinateAdapter = {
+      resolveSvcRef: vi.fn(() => "service:v1:123"),
+      encodeDeployEvent: vi.fn(() => ({})),
+      encodeHealthEvent: vi.fn(() => ({ health_event: "health_event:v1:777" })),
+    };
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 500 }),
+    );
+
+    const loop = createSyncLoop({ infraProfile: profile, ingest, coordinate });
+    await loop.syncAll();
+
+    expect(ingest.emit).toHaveBeenCalledWith(
+      "health_event",
+      expect.objectContaining({
+        service_id: "test-svc",
+        previous_status: "Synced",
+        current_status: "OutOfSync",
+      }),
+      { health_event: "health_event:v1:777" },
+    );
+    expect(coordinate.resolveSvcRef).toHaveBeenCalledWith("test-svc", "dev", "local", "qa-dev");
+    expect(coordinate.encodeHealthEvent).toHaveBeenCalledWith("service:v1:123", "unhealthy");
   });
 });

@@ -1,8 +1,7 @@
 ---
 def:
   id: df-narrative-proof-operational-cases
-  type: knowledge
-  knowledge_kind: narrative
+  type: spec
   tier: component
   scope: feature
   aspect: scenario
@@ -13,11 +12,11 @@ def:
   tags: [decision, testing]
   links:
     - target: df-narrative-proofs
-      type: refines
+      type: traces_to
     - target: df-narrative-context
-      type: depends_on
+      type: traces_to
     - target: df-state-model
-      type: depends_on
+      type: traces_to
 ---
 # Decision Flow — 서사 증명: 운영 사례
 

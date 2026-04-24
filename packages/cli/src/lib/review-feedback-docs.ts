@@ -57,9 +57,9 @@ export async function resolveRelatedDocsForFile(
     const doc = mapping.supportingDocs[0]!;
     return [{
       docId: doc.docId,
-      scope: doc.scope,
-      aspect: doc.aspect,
-      depth: doc.depth,
+      scope: doc.scope ?? "unknown",
+      aspect: doc.aspect ?? "unknown",
+      depth: doc.depth ?? "unknown",
       reason: "file-hint",
       ...(doc.purpose ? { purpose: doc.purpose } : {}),
     }];
@@ -67,9 +67,9 @@ export async function resolveRelatedDocsForFile(
 
   return [{
     docId: mapping.anchor.docId,
-    scope: mapping.anchor.scope,
-    aspect: mapping.anchor.aspect,
-    depth: mapping.anchor.depth,
+    scope: mapping.anchor.scope ?? "unknown",
+    aspect: mapping.anchor.aspect ?? "unknown",
+    depth: mapping.anchor.depth ?? "unknown",
     reason: "file-hint",
     ...(mapping.anchor.purpose ? { purpose: mapping.anchor.purpose } : {}),
   }];

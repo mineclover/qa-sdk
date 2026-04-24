@@ -2,8 +2,7 @@
 def:
   tier: component
   id: slot-marker-patterns
-  type: knowledge
-  knowledge_kind: pattern
+  type: spec
   address: def_document:v2:69761
   scope: feature
   aspect: scenario
@@ -14,7 +13,7 @@ def:
   tags: [runtime, observability, structural]
   links:
     - target: slot-marker-concept
-      type: depends_on
+      type: traces_to
 ---
 # 슬롯 마커의 실제 사용 패턴
 

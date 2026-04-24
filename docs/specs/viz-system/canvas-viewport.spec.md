@@ -1,7 +1,7 @@
 ---
 def:
   id: canvas-viewport-spec
-  tier: component
+  tier: system
   scope: ui
   aspect: component
   depth: specification
@@ -11,9 +11,9 @@ def:
   tags: [frontend, visualization, runtime]
   links:
     - target: viz-system
-      type: refines
+      type: traces_to
     - target: scope-nesting-visualization
-      type: depends_on
+      type: refs
 ---
 # Canvas Viewport
 

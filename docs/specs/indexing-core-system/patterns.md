@@ -14,9 +14,9 @@ def:
   tags: [runtime, observability, structural]
   links:
     - target: coord-foundation
-      type: depends_on
+      type: traces_to
     - target: conventions-system
-      type: depends_on
+      type: traces_to
 ---
 
 # 인덱싱 시스템 사용 패턴

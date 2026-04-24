@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-package-architecture
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: flow
   aspect: process_flow
   depth: overview
@@ -12,9 +11,9 @@ def:
   tags: [cross-scope, structural, entry-point]
   links:
     - target: operational-ontology-system
-      type: refines
+      type: traces_to
     - target: operational-ontology-runtime-interface
-      type: depends_on
+      type: traces_to
 sources:
   - packages/operational-ontology/src/index.ts
   - packages/operational-ontology/src/checkpoint.ts
@@ -30,7 +29,7 @@ sources:
 
 ## 구성 ^overview
 
-현재 공개 표면은 아래 grouped facade로 나뉜다. 이 문서는 패키지 public surface를 설명하는 leaf 문서이고, 각 plane의 개념 정의 자체는 별도 문서를 참조한다.
+현재 공개 표면은 아래 grouped facade로 나뉜다. 이 문서는 패키지 public surface를 설명하는 Component 문서이고, 각 plane의 개념 정의 자체는 별도 문서를 참조한다.
 
 - `operationalOntologySchemaPlane`
 - `operationalOntologyAllocationPlane`

@@ -139,11 +139,25 @@ export async function setConfigField(field: string, value: string): Promise<Infr
   return config;
 }
 
+export function resolvePulumiBackendUrl(config: InfraConfig): string | undefined {
+  if (config.backend === "minio" && config.s3Endpoint) {
+    return `s3://${config.s3Bucket}?endpoint=${config.s3Endpoint}&disableSSL=true&s3ForcePathStyle=true`;
+  }
+  if (config.backend === "s3") {
+    return `s3://${config.s3Bucket}`;
+  }
+  return undefined;
+}
+
 /** 설정을 환경변수로 적용 */
 export async function applyConfigToEnv(config: InfraConfig): Promise<void> {
-  // Pulumi backend
+  const backendUrl = resolvePulumiBackendUrl(config);
+  if (backendUrl) {
+    process.env.PULUMI_BACKEND_URL ??= backendUrl;
+  }
+
+  // Pulumi backend credentials
   if (config.backend === "minio" && config.s3Endpoint) {
-    process.env.PULUMI_BACKEND_URL ??= `s3://${config.s3Bucket}?endpoint=${config.s3Endpoint}&disableSSL=true&s3ForcePathStyle=true`;
     // MinIO 자격증명: secrets에서 로드, fallback은 기본값
     if (isLocalhost(config.s3Endpoint)) {
       try {
@@ -156,8 +170,6 @@ export async function applyConfigToEnv(config: InfraConfig): Promise<void> {
         process.env.AWS_SECRET_ACCESS_KEY ??= "minioadmin";
       }
     }
-  } else if (config.backend === "s3") {
-    process.env.PULUMI_BACKEND_URL ??= `s3://${config.s3Bucket}`;
   }
   // else "file" → PULUMI_BACKEND_URL 미설정 → file:// 기본
 

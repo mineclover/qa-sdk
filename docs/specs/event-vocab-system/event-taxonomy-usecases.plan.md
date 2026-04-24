@@ -11,15 +11,15 @@ def:
   tags: [cross-scope, structural, observability, entry-point]
   links:
     - target: event-taxonomy-layering-plan
-      type: refines
+      type: traces_to
     - target: event-mapping-pack-plan
-      type: depends_on
+      type: traces_to
     - target: service-event-adoption-plan
-      type: depends_on
+      type: traces_to
     - target: event-core-pattern
-      type: depends_on
+      type: traces_to
     - target: service-ownership-spec
-      type: depends_on
+      type: traces_to
 ---
 
 # Event Taxonomy Use Cases — 설계 검증 계획

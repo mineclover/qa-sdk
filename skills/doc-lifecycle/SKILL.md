@@ -214,7 +214,7 @@ def:
 - 기본값은 `flow/user_scenario + depth: validation`
 - feature 전용 시나리오를 강조할 때만 `feature/scenario + depth: validation`
 - `aspect: validation`은 현재 taxonomy에 없으므로 쓰지 않는다
-- `.test.md`는 spec 또는 상위 module에서 authored link로 참조해야 orphan 경고가 나지 않는다
+- `.test.md`는 대응 spec 또는 책임 System 문서에서 authored link로 참조해야 orphan 경고가 나지 않는다
 
 ### cases 템플릿
 

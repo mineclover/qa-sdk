@@ -18,6 +18,8 @@ def:
       type: refines
     - target: definition-state-model
       type: refs
+    - target: responsibility-closure-harness
+      type: refs
     - target: definition-taxonomy
       type: depends_on
     - target: spec-verification-system
@@ -35,6 +37,8 @@ def:
 
 유한 상태 모델(definition-state-model)을 실제 시스템에 적용하는 접착층. 11개 머신의 **정의**는 state-model이 소유하고, 이 문서는 머신 간 의존 관계(cascade/guard/notify), 복합 프로세스, SDK 이벤트 수집을 담당한다. state-model이 엔진이라면 harness는 엔진을 차에 장착하고 텔레메트리를 연결하는 것이다.
 
+하네스의 상위 목적은 `responsibility-closure-harness`가 정의한다. 즉 "이 코드가 지금 어떤 상태인가"를 넘어서, 코드가 드러낸 책임이 System/Interface/Component/Entry/Layout boundary, 횡단 규칙, 테스트/증거, 문서 lifecycle로 닫혔는지를 추적한다.
+
 ## 정의 ^defines
 
 - cascade/guard/notify 3종 의존 유형 (MachineDependency)
@@ -42,6 +46,7 @@ def:
 - 3개 프로세스 (prefix-release, doc-approval, service-deprecation)
 - SDK 이벤트 3종 (harness.transition, harness.process_step, harness.guard_check)
 - harness_transition prefix 좌표 정의
+- responsibility closure 상태 파생 관점
 
 ## 소비 ^consumes
 
@@ -54,6 +59,7 @@ def:
 - **harness-cli** → CLI 조회/전이/프로세스 실행
 - **harness-persistence** → 상태 영속화 (def-config + SDK 이벤트)
 - **harness-derive** → 11개 머신 상태 자동 파생
+- **responsibility-closure-harness** → 코드 책임 폐쇄 여부의 상위 판정 관점
 
 ## 구성 ^overview
 
@@ -64,6 +70,18 @@ def:
 - `definition-harness-derive`: 코드/테스트/문서 상태에서 머신 상태 자동 파생
 
 SDK 수집: `harness-tracker.ts` → `harness.transition` / `harness.process_step` / `harness.guard_check` 이벤트 → ingest-server
+
+## Responsibility Closure 관점
+
+Definition Harness는 다음 질문을 상태와 이벤트로 관측한다.
+
+| 질문 | 하네스 surface |
+|------|----------------|
+| 코드가 어떤 책임을 드러내는가 | `@def.boundary`, `@def.doc`, source mapping |
+| 그 책임이 어떤 System boundary에 속하는가 | definition graph, E/C/I/S + L/P tier/scope/aspect |
+| 어떤 convention/policy/design/error/permission rule을 소비하는가 | rule/spec links, concern tags |
+| 어떤 테스트/BDD/evidence로 닫혔는가 | quality gate, BDD contract, `.test.md`, test source |
+| 변경 후 drift가 생겼는가 | state derivation, workflow smoke, docs collect diagnostics |
 
 ## 11개 상태 머신
 

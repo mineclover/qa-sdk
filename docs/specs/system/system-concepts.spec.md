@@ -1,8 +1,7 @@
 ---
 def:
   id: system-concepts
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   tier: component
   address: def_document:v2:342033
   scope: data
@@ -13,7 +12,7 @@ def:
   tags: [entry-point]
   links:
     - target: coord-foundation
-      type: depends_on
+      type: traces_to
 ---
 
 # 핵심 개념

@@ -10,11 +10,11 @@ def:
   tags: [structural, testing, contract, observability]
   links:
     - target: programming-artifact-ontology-system
-      type: refines
+      type: traces_to
     - target: programming-artifact-ontology-cli
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-prompt-artifact-generation
-      type: depends_on
+      type: traces_to
     - target: programming-artifact-ontology-context-simulation-todo
       type: traces_to
 ---
@@ -31,7 +31,7 @@ def:
 
 ## 장기 목표
 
-프로그래밍 작업은 자유 검색이 아니라 context contract를 통해 시작해야 한다. 작업 유형이 주어지면 system/module/leaf 문서, 구현 파일, evidence source, out-of-scope boundary가 구조적으로 선택되고, data flow transform과 invariant가 테스트로 추적되어야 한다. 이 계획은 local JSON registry 단계에서 시작하지만, 향후 registry-service/index-meta allocation lifecycle로 승격할지 여부를 판단하는 근거를 만든다.
+프로그래밍 작업은 자유 검색이 아니라 context contract를 통해 시작해야 한다. 작업 유형이 주어지면 System/Interface/Component/Entry/Layout/Pack 문서, 구현 파일, evidence source, out-of-scope boundary가 구조적으로 선택되고, data flow transform과 invariant가 테스트로 추적되어야 한다. 이 계획은 local JSON registry 단계에서 시작하지만, 향후 registry-service/index-meta allocation lifecycle로 승격할지 여부를 판단하는 근거를 만든다.
 
 ## 계층 모델
 

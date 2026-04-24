@@ -12,10 +12,6 @@ def:
   lifecycle: approved
   layer: operation
   links:
-    - target: meta-semantic-pipe-impl
-      type: depends_on
-    - target: pipe-types
-      type: contains
     - target: pipe-store-memory
       type: contains
     - target: pipe-store-sqlite

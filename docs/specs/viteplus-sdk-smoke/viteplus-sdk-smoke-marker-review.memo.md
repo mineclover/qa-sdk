@@ -12,7 +12,7 @@ def:
   svc: viteplus-sdk-smoke
   links:
     - target: viteplus-sdk-smoke-system
-      type: refines
+      type: traces_to
 ---
 
 # Vite+ SDK Smoke 스펙 리뷰 — 결정 기록

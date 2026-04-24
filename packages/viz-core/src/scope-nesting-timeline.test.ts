@@ -27,7 +27,7 @@ function makeData(overrides?: Partial<ScopeTimelineData>): ScopeTimelineData {
         {
           scopeId: "feature",
           provides: [],
-          consumes: [{ contractId: "state", required: true }],
+          consumes: [{ contractId: "state", type: "state", required: true }],
           facets: ["소비", "관리"],
         },
       ],

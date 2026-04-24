@@ -2,8 +2,7 @@
 def:
   tier: component
   id: meta-semantic-philosophy
-  type: knowledge
-  knowledge_kind: philosophy
+  type: spec
   scope: data
   aspect: system_data
   depth: overview
@@ -12,7 +11,7 @@ def:
   tags: [entry-point]
   links:
     - target: meta-semantic-system
-      type: refines
+      type: traces_to
 ---
 
 # Meta-Semantic 설계 철학

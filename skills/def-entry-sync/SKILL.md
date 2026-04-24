@@ -29,7 +29,7 @@ node packages/cli/dist/index.js def audit-db
 
 1. feature/code SSOT가 어디인지 먼저 고정한다.
 2. 해당 기능의 root entry spec이 있는지 확인한다.
-3. 상위 system/module 문서의 `^overview`와 `contains`가 새 child를 반영하는지 본다.
+3. 상위 System/Layout/Pack entry 문서의 `^overview`와 `contains`/`refs`가 새 child를 반영하는지 본다.
 4. `docs/skills/README.md`에 사람이 찾을 진입점이 생겼는지 본다.
 5. skill을 추가했다면 `skills/<name>/SKILL.md`와 실행 환경 sync까지 확인한다.
 6. command/CLI surface가 생겼다면 관련 skill-catalog spec 또는 CLI spec이 그 surface를 설명하는지 본다.
@@ -45,7 +45,7 @@ node packages/cli/dist/index.js def audit-db
 - skill index:
   `docs/skills/README.md`
 
-기능별로는 해당 `<domain>-system`, `<module>.spec.md`, `docs/specs/skill-catalog/...`까지 같이 본다.
+기능별로는 해당 `<domain>-system`, E/C/I/S + L/P child spec, `docs/specs/skill-catalog/...`까지 같이 본다.
 
 ## code SSOT
 
@@ -82,7 +82,7 @@ ls ~/.claude/skills
 
 ## 흔한 drift
 
-- 새 child spec을 만들고 상위 module의 `contains`를 안 건드림
+- 새 child spec을 만들고 상위 System의 `contains` 또는 Layout/Pack의 `refs`를 안 건드림
 - 새 skill을 만들고 `docs/skills/README.md`에는 안 적음
 - CLI surface를 추가했는데 skill-catalog spec이나 command guide가 그대로임
 - taxonomy 숫자, axis entry 수, lifecycle 표가 예전 값으로 남음
@@ -90,6 +90,7 @@ ls ~/.claude/skills
 ## 판정 기준
 
 - root entry 문서가 현재 구조를 설명한다
+- System/Interface/Component/Entry/Layout/Pack 책임이 같은 용어로 설명된다
 - skill index가 새 skill/새 운영 surface를 찾게 해 준다
 - `def validate`, `def scan-audit`, `def audit-db`가 모두 기대값대로 유지된다
 - agent와 사람의 진입점이 서로 다른 정보를 말하지 않는다

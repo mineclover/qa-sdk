@@ -89,6 +89,7 @@ export function normalizeDocumentGraphEdges(
     addTaskTraceEdges(builder, index, document);
     addTaskEvidenceEdges(builder, index, document);
     addSectionMembershipEdges(builder, document);
+    addSectionReferenceEdges(builder, index, document);
     if (includeContext) addContextEdges(builder, document);
   }
 
@@ -528,6 +529,65 @@ function addSectionMembershipEdges(
   }
 }
 
+function addSectionReferenceEdges(
+  builder: EdgeBuilder,
+  index: ResolutionIndex,
+  document: DocumentEnvelope,
+): void {
+  for (const section of document.sections) {
+    const sectionTarget = sectionNodeTarget(document, section);
+    for (const value of metadataStringValues(section.metadata.sourceRefs)) {
+      const target = sourceTarget(value);
+      builder.add({
+        kind: "document-source",
+        axis: "source",
+        fromNodeId: sectionTarget.nodeId,
+        toNodeId: target.nodeId,
+        authoredType: "section-source",
+        reason: reasonFor(document, {
+          reason: "section source reference",
+          rawSource: section.rawSource ?? rawSourceFor(document, `sections.${section.id}.sourceRefs`),
+          target,
+          metadata: {
+            sectionId: section.id,
+            value,
+          },
+        }),
+        metadata: {
+          source: "DocumentSection.metadata.sourceRefs",
+          sectionId: section.id,
+          value,
+        },
+      });
+    }
+
+    for (const value of metadataStringValues(section.metadata.evidenceIds)) {
+      const target = resolveDocumentOrReference(index, value, "evidence");
+      builder.add({
+        kind: "document-evidence",
+        axis: "evidence",
+        fromNodeId: sectionTarget.nodeId,
+        toNodeId: target.nodeId,
+        authoredType: "section-evidence",
+        reason: reasonFor(document, {
+          reason: "section evidence reference",
+          rawSource: section.rawSource ?? rawSourceFor(document, `sections.${section.id}.evidenceIds`),
+          target,
+          metadata: {
+            sectionId: section.id,
+            value,
+          },
+        }),
+        metadata: {
+          source: "DocumentSection.metadata.evidenceIds",
+          sectionId: section.id,
+          value,
+        },
+      });
+    }
+  }
+}
+
 function addContextEdges(
   builder: EdgeBuilder,
   document: DocumentEnvelope,
@@ -809,19 +869,22 @@ function dedupeRoleMemberships(
 
 function isFamilyContextRoleDocument(document: DocumentEnvelope): boolean {
   const roleType = roleTypeForDocument(document);
-  return roleType === "cases" || roleType === "test" || roleType === "memo" || roleType === "knowledge";
+  return roleType === "cases" || roleType === "test" || roleType === "memo";
 }
 
 function roleTypeForDocument(
   document: DocumentEnvelope,
 ): DocumentGraphFamilyRoleType | undefined {
-  if (document.metadata.type === "knowledge" || document.kind === "knowledge") return "knowledge";
-  if (isFamilyRoleType(document.kind)) return document.kind;
+  if (document.kind !== "spec" && isFamilyRoleType(document.kind)) return document.kind;
 
   const documentKind = asString(document.metadata.documentKind);
-  if (documentKind && isFamilyRoleType(documentKind)) return documentKind;
+  if (documentKind && documentKind !== "spec" && isFamilyRoleType(documentKind)) return documentKind;
 
   const pathRoleType = familyRoleTypeFromPath(document.path);
+  if (pathRoleType && pathRoleType !== "spec") return pathRoleType;
+
+  if (isFamilyRoleType(document.kind)) return document.kind;
+  if (documentKind && isFamilyRoleType(documentKind)) return documentKind;
   return pathRoleType;
 }
 

@@ -10,12 +10,6 @@ def:
   svc: ingest-server
   tags: [persistence, adapter, parity, testing]
   links:
-    - target: ingest-infra-system
-      type: refines
-    - target: ingest-runtime-operations
-      type: contains
-    - target: key-observation-store
-      type: contains
     - target: ingest-system
       type: depends_on
 ---

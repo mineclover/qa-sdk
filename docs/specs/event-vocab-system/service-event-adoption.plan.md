@@ -11,13 +11,13 @@ def:
   tags: [cross-scope, structural, observability]
   links:
     - target: event-taxonomy-layering-plan
-      type: refines
+      type: traces_to
     - target: event-taxonomy-usecases-plan
       type: traces_to
     - target: service-ownership-spec
-      type: depends_on
+      type: traces_to
     - target: event-mapping-pack-plan
-      type: depends_on
+      type: traces_to
 ---
 
 # Service Event Adoption — 설계 계획

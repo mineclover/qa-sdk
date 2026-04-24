@@ -1,7 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve, relative, join } from "node:path";
-import type { DefinitionEntry, LinkType } from "definition-catalog";
-import type { DefDataSource } from "../data-sources/data-source.js";
+import type { DefDataSource, DefDoc } from "definition-catalog";
 
 interface DocSignature {
   path: string;
@@ -34,11 +33,11 @@ export interface ClassificationSuggestion {
 export async function classifyTier(
   source: DefDataSource,
   docId: string,
-  entry: DefinitionEntry,
-  allEntries: DefinitionEntry[],
-  links: { targetId: string; linkType: LinkType }[]
+  entry: DefDoc,
+  allEntries: DefDoc[],
+  links: { targetId: string; linkType: string }[]
 ): Promise<ClassificationSuggestion> {
-  const relPath = entry.ref || "";
+  const relPath = entry.sourcePath || "";
 
   // Step 0 - Exempt (D-2 Extended)
   const exemptPatterns = [
@@ -99,7 +98,7 @@ export async function classifyTier(
 
   const containsTargets = links.filter(l => l.linkType === "contains").map(l => l.targetId);
   const childLevels = containsTargets
-    .map(id => allEntries.find(e => e.id === id)?.level || "leaf");
+    .map(id => allEntries.find(e => e.docId === id)?.level || "leaf");
 
   // Step 2 - Layout
   if (entry.level === "group" || entry.depth === "overview") {
@@ -116,9 +115,9 @@ export async function classifyTier(
 
   // Step 3 - System
   let systemScore = 0;
-  if (relPath.endsWith("-system.md") || (entry.id && entry.id.endsWith("-system"))) systemScore += 1;
+  if (relPath.endsWith("-system.md") || entry.docId.endsWith("-system")) systemScore += 1;
   if (hasOperations) systemScore += 1;
-  if (hasStateList || entry.lifecycleRef) systemScore += 1;
+  if (hasStateList) systemScore += 1;
 
   const warnings: string[] = [];
   if (systemScore >= 2) {
@@ -141,14 +140,14 @@ export async function classifyTier(
     let conf: any = "high";
     if (hasStateList && !hasSchemaDef && !hasOperations) {
       subtype = "state-enum";
-    } else if (hasEvidenceShape && entry.id && (entry.id.includes("evidence") || entry.id.includes("readiness"))) {
+    } else if (hasEvidenceShape && (entry.docId.includes("evidence") || entry.docId.includes("readiness"))) {
       subtype = "evidence-shape";
     } else if (entry.aspect && ["production", "consumption"].includes(entry.aspect)) {
       subtype = "data-facet-role";
-    } else if (hasSchemaDef && entry.id && entry.id.includes("rule")) {
+    } else if (hasSchemaDef && entry.docId.includes("rule")) {
       subtype = "validation-rule";
       conf = "medium";
-    } else if (entry.id && entry.id.includes("constant")) {
+    } else if (entry.docId.includes("constant")) {
       subtype = "constant-literal";
       conf = "medium";
     } else if (hasSchemaDef) {

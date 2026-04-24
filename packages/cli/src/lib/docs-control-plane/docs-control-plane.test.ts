@@ -486,6 +486,7 @@ def:
   id: checkout-flow
   type: knowledge
   knowledge_kind: guide
+  tier: system
   level: module
   scope: flow
   aspect: process_flow
@@ -550,6 +551,7 @@ Define one checkout step.
         title: "Checkout Flow",
         type: "knowledge",
         knowledgeKind: "guide",
+        tier: "system",
         level: "module",
         scope: "flow",
         aspect: "process_flow",
@@ -588,6 +590,308 @@ Define one checkout step.
       expect(doc!.sections.map((section) => section.id)).toEqual(["purpose", "overview"]);
       expect(doc!.sections[0].content).toBe("Coordinate checkout decisions.");
       expect(doc!.sections[1].content).toContain("Step records payment handoff.");
+    });
+  });
+
+  it("extracts constraint and scenario-matrix sections with source/evidence refs", async () => {
+    await withTempDocs(async (rootDir) => {
+      await writeFile(join(rootDir, "docs/specs/checkout/checkout-constraints.spec.md"), `---
+def:
+  id: checkout-constraints
+  level: leaf
+  scope: constraint
+  aspect: tech_constraint
+  depth: specification
+  lifecycle: approved
+---
+# Checkout Constraints
+
+## 목적 ^purpose
+
+Guard checkout completion proof boundaries.
+
+## 불변 조건 ^constraint
+
+- Keep \`packages/checkout/src/rules.ts\` aligned with \`E-CHECKOUT-RULE\`.
+
+## Scenario Matrix
+
+| scenario | evidence | source |
+|----------|----------|--------|
+| checkout rule | \`E-CHECKOUT-SMOKE\` | \`packages/checkout/src/checkout.test.ts\` |
+`);
+
+      const adapter = createDefinitionMarkdownAdapter({ rootDir });
+      const docs = await adapter.listDocuments();
+      const doc = docs.find((item) => item.metadata.defId === "checkout-constraints");
+
+      expect(doc).toBeDefined();
+      expect(doc!.sections.map((section) => section.id)).toEqual([
+        "purpose",
+        "constraint",
+        "scenario-matrix",
+      ]);
+      expect(doc!.sections[1]).toMatchObject({
+        id: "constraint",
+        anchor: "^constraint",
+        metadata: {
+          sectionKind: "constraint",
+          sourceRefs: ["packages/checkout/src/rules.ts"],
+          evidenceIds: ["E-CHECKOUT-RULE"],
+        },
+      });
+      expect(doc!.sections[2]).toMatchObject({
+        id: "scenario-matrix",
+        anchor: "scenario-matrix",
+        metadata: {
+          sectionKind: "scenario-matrix",
+          sourceRefs: ["packages/checkout/src/checkout.test.ts"],
+          evidenceIds: ["E-CHECKOUT-SMOKE"],
+        },
+      });
+    });
+  });
+
+  it("[contract:docs-control-plane.bdd.parse.valid-block.v1] projects BDD contracts and units from cases markdown metadata", async () => {
+    await withTempDocs(async (rootDir) => {
+      await writeFile(join(rootDir, "docs/specs/checkout/checkout.cases.md"), `---
+def:
+  id: checkout-cases
+  level: leaf
+  scope: feature
+  aspect: scenario
+  depth: specification
+  lifecycle: approved
+---
+# Checkout Cases
+
+## 목적 ^purpose
+
+Define checkout behavior contracts.
+
+\`\`\`yaml bdd
+bdd_contract:
+  id: checkout.pending.submit.accepted.v1
+  owner_system: checkout-system
+  contract_kind: state-transition
+  mode: write
+  given:
+    state: PENDING
+    predicates: [cart.exists]
+  when:
+    operation: checkout-system.submit
+    event_key: checkout.submit.requested
+  then:
+    state: ACCEPTED
+    emits: [checkout.accepted]
+test_unit:
+  id: TU-checkout-submit-accepted
+  contract: checkout.pending.submit.accepted.v1
+  level: integration
+  assertions: [then.state, then.emits]
+  test_file: packages/checkout/src/checkout-system.test.ts
+implementation_unit:
+  id: IU-checkout-submit-operation
+  contract: checkout.pending.submit.accepted.v1
+  unit_kind: operation
+  owned_by: checkout-system
+  source_target: packages/checkout/src/checkout-system.ts
+\`\`\`
+`);
+
+      const adapter = createDefinitionMarkdownAdapter({ rootDir });
+      const docs = await adapter.listDocuments();
+      const doc = docs.find((item) => item.metadata.defId === "checkout-cases");
+
+      expect(doc).toBeDefined();
+      expect(doc!.kind).toBe("cases");
+      expect(doc!.metadata.bdd).toMatchObject({
+        contracts: [
+          {
+            id: "checkout.pending.submit.accepted.v1",
+            ownerSystem: "checkout-system",
+            contractKind: "state-transition",
+            mode: "write",
+          },
+        ],
+        testUnits: [
+          {
+            id: "TU-checkout-submit-accepted",
+            contract: "checkout.pending.submit.accepted.v1",
+            level: "integration",
+            testFile: "packages/checkout/src/checkout-system.test.ts",
+          },
+        ],
+        implementationUnits: [
+          {
+            id: "IU-checkout-submit-operation",
+            contract: "checkout.pending.submit.accepted.v1",
+            unitKind: "operation",
+            ownedBy: "checkout-system",
+            sourceTarget: "packages/checkout/src/checkout-system.ts",
+          },
+        ],
+      });
+    });
+  });
+
+  it("[contract:docs-control-plane.bdd.parse.invalid-block-diagnostic.v1] keeps invalid BDD blocks as diagnostics without dropping the document", async () => {
+    await withTempDocs(async (rootDir) => {
+      await writeFile(join(rootDir, "docs/specs/checkout/checkout.cases.md"), `---
+def:
+  id: checkout-cases
+  level: leaf
+  scope: feature
+  aspect: scenario
+  depth: specification
+  lifecycle: approved
+---
+# Checkout Cases
+
+## 목적 ^purpose
+
+Define checkout behavior contracts.
+
+\`\`\`yaml bdd
+bdd_contract:
+  id: checkout.pending.submit.accepted.v1
+  owner_system: checkout-system
+  contract_kind: state-transition
+  mode: write
+  given:
+    predicates: [cart.exists]
+  when:
+    operation: checkout-system.submit
+  then:
+    emits: [checkout.accepted]
+\`\`\`
+`);
+
+      const adapter = createDefinitionMarkdownAdapter({ rootDir });
+      const docs = await adapter.listDocuments();
+      const doc = docs.find((item) => item.metadata.defId === "checkout-cases");
+
+      expect(doc).toBeDefined();
+      expect(doc!.diagnostics.some((item) => item.code === "bdd-schema-error")).toBe(true);
+      expect(String(doc!.metadata.bdd)).not.toBe("");
+    });
+  });
+
+  it("extracts work-topic blocks into document metadata without changing document kind", async () => {
+    await withTempDocs(async (rootDir) => {
+      await writeFile(join(rootDir, "docs/specs/checkout/checkout.plan.md"), `---
+def:
+  id: checkout-plan
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Checkout Plan
+
+## 목적 ^purpose
+
+Plan checkout delivery slices.
+
+\`\`\`yaml work-topic
+work_topic:
+  id: checkout.submit.readiness.v1
+  owner_system: checkout-system
+  goal: close checkout submit lifecycle
+  topic_kind: feature-delivery
+  contracts:
+    - checkout.pending.submit.accepted.v1
+  source_targets:
+    - packages/checkout/src/checkout-system.ts
+  proof_surface:
+    - packages/checkout/src/checkout-system.test.ts
+  assimilation_target:
+    - docs/specs/checkout/checkout.spec.md
+  boundaries:
+    read:
+      - checkout-system
+    write:
+      - checkout-system
+    forbidden:
+      - unrelated-owner-system
+\`\`\`
+`);
+
+      const adapter = createDefinitionMarkdownAdapter({ rootDir });
+      const docs = await adapter.listDocuments();
+      const doc = docs.find((item) => item.metadata.defId === "checkout-plan");
+
+      expect(doc).toBeDefined();
+      expect(doc!.kind).toBe("plan");
+      expect(doc!.metadata.workTopic).toMatchObject({
+        topics: [
+          {
+            id: "checkout.submit.readiness.v1",
+            ownerSystem: "checkout-system",
+            goal: "close checkout submit lifecycle",
+            topicKind: "feature-delivery",
+            contracts: ["checkout.pending.submit.accepted.v1"],
+            sourceTargets: ["packages/checkout/src/checkout-system.ts"],
+            proofSurface: ["packages/checkout/src/checkout-system.test.ts"],
+            assimilationTarget: ["docs/specs/checkout/checkout.spec.md"],
+            boundaries: {
+              read: ["checkout-system"],
+              write: ["checkout-system"],
+              forbidden: ["unrelated-owner-system"],
+            },
+          },
+        ],
+        diagnostics: [],
+      });
+    });
+  });
+
+  it("warns and does not consume work-topic blocks from behavior contract documents", async () => {
+    await withTempDocs(async (rootDir) => {
+      await writeFile(join(rootDir, "docs/specs/checkout/checkout.cases.md"), `---
+def:
+  id: checkout-cases
+  level: leaf
+  scope: feature
+  aspect: scenario
+  depth: specification
+  lifecycle: approved
+---
+# Checkout Cases
+
+## 목적 ^purpose
+
+Define checkout behavior contracts.
+
+\`\`\`yaml work-topic
+work_topic:
+  id: checkout.submit.readiness.v1
+  owner_system: checkout-system
+  goal: close checkout submit lifecycle
+  contracts:
+    - checkout.pending.submit.accepted.v1
+  source_targets:
+    - packages/checkout/src/checkout-system.ts
+  proof_surface:
+    - packages/checkout/src/checkout-system.test.ts
+  assimilation_target:
+    - docs/specs/checkout/checkout.spec.md
+\`\`\`
+`);
+
+      const adapter = createDefinitionMarkdownAdapter({ rootDir });
+      const docs = await adapter.listDocuments();
+      const doc = docs.find((item) => item.metadata.defId === "checkout-cases");
+
+      expect(doc).toBeDefined();
+      expect(doc!.metadata.workTopic).toBeUndefined();
+      expect(doc!.diagnostics).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          code: "work-topic-invalid-document-kind",
+          severity: "warning",
+        }),
+      ]));
     });
   });
 

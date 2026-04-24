@@ -37,9 +37,23 @@ export interface ServiceDashboard {
   };
 }
 
+export interface FleetRunDashboard {
+  historyKey: string;
+  deployedAt: string;
+  env: string;
+  provider: string;
+  duration: number;
+  success: boolean;
+  runId?: string;
+  scope?: string;
+  artifactId?: string;
+  error?: string;
+}
+
 export interface DashboardData {
   getSummary(): Promise<DashboardSummary>;
   getServiceDashboard(serviceId: string): Promise<ServiceDashboard>;
+  getFleetRuns(): Promise<FleetRunDashboard[]>;
   exportJson(): Promise<string>;
 }
 
@@ -83,16 +97,19 @@ export function createDashboardData(infraProfile: InfraProfileAdapter): Dashboar
       // 가동 시간 계산
       let uptime: ServiceDashboard["uptime"];
       if (history.length > 0) {
-        const lastSuccess = history.find((h) => h.success);
+        const chronological = [...history].sort(
+          (left, right) => new Date(left.deployedAt).getTime() - new Date(right.deployedAt).getTime(),
+        );
+        const lastSuccess = [...chronological].reverse().find((h) => h.success);
         if (lastSuccess) {
           const since = lastSuccess.deployedAt;
           const durationMs = Date.now() - new Date(since).getTime();
-          const firstDeploy = history[history.length - 1].deployedAt;
+          const firstDeploy = chronological[0].deployedAt;
           const totalMs = Date.now() - new Date(firstDeploy).getTime();
           uptime = {
             since,
             durationMs,
-            percentage: totalMs > 0 ? Math.round((durationMs / totalMs) * 100) : 100,
+            percentage: totalMs > 0 ? Math.min(100, Math.max(0, Math.round((durationMs / totalMs) * 100))) : 100,
           };
         }
       }
@@ -120,15 +137,43 @@ export function createDashboardData(infraProfile: InfraProfileAdapter): Dashboar
       };
     },
 
+    async getFleetRuns() {
+      const allHistory = await infraProfile.getAllHistory();
+      const fleetRuns: FleetRunDashboard[] = [];
+
+      for (const [historyKey, entries] of Object.entries(allHistory)) {
+        for (const entry of entries) {
+          if (entry.mode !== "fleet-summary") continue;
+          fleetRuns.push({
+            historyKey,
+            deployedAt: entry.deployedAt,
+            env: entry.env,
+            provider: entry.provider,
+            duration: entry.duration,
+            success: entry.success,
+            runId: entry.runId,
+            scope: entry.scope,
+            artifactId: entry.artifactId,
+            error: entry.error,
+          });
+        }
+      }
+
+      return fleetRuns.sort(
+        (left, right) => new Date(right.deployedAt).getTime() - new Date(left.deployedAt).getTime(),
+      );
+    },
+
     async exportJson() {
       const summary = await this.getSummary();
       const deployments = await infraProfile.getAllDeployments();
+      const fleetRuns = await this.getFleetRuns();
       const serviceIds = Object.keys(deployments);
       const services: Record<string, ServiceDashboard> = {};
       for (const id of serviceIds) {
         services[id] = await this.getServiceDashboard(id);
       }
-      return JSON.stringify({ summary, services }, null, 2);
+      return JSON.stringify({ summary, fleetRuns, services }, null, 2);
     },
   };
 }

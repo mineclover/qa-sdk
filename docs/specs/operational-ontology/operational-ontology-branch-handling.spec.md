@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-branch-handling
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: flow
   aspect: process_flow
   depth: specification
@@ -12,13 +11,13 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: operational-ontology-information-transmission
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-simulation
-      type: depends_on
+      type: traces_to
     - target: meta-semantic-pipe-impl
-      type: depends_on
+      type: traces_to
     - target: tracking-three-axes
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Branch Handling — 분기 처리의 해석 규칙

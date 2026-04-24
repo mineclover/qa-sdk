@@ -10,17 +10,17 @@ def:
   tags: [structural, observability, contract]
   links:
     - target: operational-ontology-system
-      type: refines
+      type: traces_to
     - target: operational-ontology-registry-allocation
       type: traces_to
     - target: operational-ontology-taxonomy-schema
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-pack-interface
-      type: depends_on
+      type: traces_to
     - target: registry-system
-      type: depends_on
+      type: traces_to
     - target: index-meta-system
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Registry Allocation — 방향 계획

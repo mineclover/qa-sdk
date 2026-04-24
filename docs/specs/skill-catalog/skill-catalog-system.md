@@ -1,8 +1,8 @@
 ---
 def:
   id: skill-catalog-system
-  tier: layout
   address: def_document:v2:68645
+  level: group
   scope: feature
   aspect: func_def
   depth: overview
@@ -10,18 +10,20 @@ def:
   layer: experience
   tags: [structural, entry-point, generated]
   links:
-    - target: dkg-skill-group
-      type: depends_on
     - target: claude-skill-group
-      type: refs
+      type: contains
     - target: automation-skill-group
-      type: refs
+      type: contains
     - target: ralph-tui-skill-group
-      type: refs
+      type: contains
     - target: dkg-skill-group
-      type: refs
+      type: contains
     - target: cli-command-group
-      type: refs
+      type: contains
+    - target: infra-skill-group
+      type: contains
+    - target: governance-skill-group
+      type: contains
 ---
 
 ## 목적 ^purpose
@@ -31,11 +33,13 @@ def:
 
 ## 구성 ^overview
 
-- claude-skill-group: definition-catalog 중심 스킬 12개
-- automation-skill-group: 구현/테스트/문서 전환/운영 게이트 보조 스킬 4개
+- claude-skill-group: definition-catalog 중심 스킬 16개
+- automation-skill-group: 구현/테스트/문서 전환/운영 게이트 보조 스킬 7개
 - ralph-tui-skill-group: PRD/작업 생성용 ralph-tui 스킬 4개
 - dkg-skill-group: DKG 그래프 자동화 39개 (read 5, write 5, analysis 26, chain 3)
 - cli-command-group: CLI 명령 그룹 (def/dkg/flow/coord 4개)
+- infra-skill-group: 로컬 인프라 배포/조회/export/status 스킬 4개
+- governance-skill-group: audit/semantic-change 같은 구조 거버넌스 스킬 2개
 
 ## 3디렉토리 경계 ^boundary
 

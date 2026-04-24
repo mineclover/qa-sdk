@@ -3,7 +3,7 @@ def:
   id: domain-hierarchy-selector-fixes
   type: knowledge
   knowledge_kind: proposal
-  lifecycle: accepted
+  lifecycle: archived
   owner_system: definition-catalog
   projection_plane: intent
   scope: meta

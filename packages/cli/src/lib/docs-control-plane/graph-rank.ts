@@ -249,6 +249,7 @@ function nodeKindFactor(node: TraversalNode): DocumentGraphRankFactor {
     metadata: {
       kind: node.kind,
       documentKind: asString(node.metadata.documentKind),
+      type: asString(node.metadata.type),
     },
   };
 }
@@ -410,13 +411,16 @@ function pathAxes(node: TraversalNode): readonly TraversalAxis[] {
 function roleTypeForNode(
   node: TraversalNode,
 ): DocumentGraphFamilyRoleType | undefined {
-  if (node.kind === "knowledge" || node.metadata.type === "knowledge") return "knowledge";
-  if (isFamilyRoleType(node.kind)) return node.kind;
+  if (node.kind !== "spec" && isFamilyRoleType(node.kind)) return node.kind;
 
   const documentKind = asString(node.metadata.documentKind);
-  if (documentKind && isFamilyRoleType(documentKind)) return documentKind;
+  if (documentKind && documentKind !== "spec" && isFamilyRoleType(documentKind)) return documentKind;
 
   const pathRole = roleTypeFromPath(node.path);
+  if (pathRole && pathRole !== "spec") return pathRole;
+
+  if (isFamilyRoleType(node.kind)) return node.kind;
+  if (documentKind && isFamilyRoleType(documentKind)) return documentKind;
   return pathRole;
 }
 

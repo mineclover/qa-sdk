@@ -1,8 +1,7 @@
 ---
 def:
   id: meta-taxonomy
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   tier: component
   scope: data
   aspect: domain_data
@@ -12,7 +11,7 @@ def:
   tags: [cross-scope, structural, entry-point]
   links:
     - target: taxonomy-boundaries
-      type: refines
+      type: traces_to
     - target: definition-taxonomy
       type: constrains
     - target: structural-taxonomy

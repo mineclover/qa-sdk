@@ -2,8 +2,7 @@
 def:
   tier: component
   id: definition-addressing-plan
-  type: knowledge
-  knowledge_kind: proposal
+  type: spec
   scope: data
   aspect: domain_data
   depth: specification
@@ -12,7 +11,7 @@ def:
   svc: definition-service
   links:
     - target: definition-addressing
-      type: refines
+      type: traces_to
 ---
 
 # Definition Addressing — 전환 계획

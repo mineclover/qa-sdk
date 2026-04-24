@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-core-model
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: data
   aspect: domain_data
   depth: specification
@@ -12,11 +11,11 @@ def:
   tags: [structural, cross-scope]
   links:
     - target: operational-ontology-taxonomy-schema
-      type: depends_on
+      type: traces_to
     - target: dual-coordinate-system
-      type: depends_on
+      type: traces_to
     - target: taxonomy-boundaries
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Core Model — canonical identity와 anchor 좌표

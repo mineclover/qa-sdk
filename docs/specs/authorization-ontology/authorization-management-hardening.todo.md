@@ -10,11 +10,11 @@ def:
   tags: [security, observability, structural]
   links:
     - target: authorization-management-usecases
-      type: refines
+      type: traces_to
     - target: authorization-management-usage-rule
-      type: depends_on
+      type: traces_to
     - target: authorization-ontology-system
-      type: depends_on
+      type: traces_to
 ---
 
 # Authorization Management Hardening — 보강 TODO

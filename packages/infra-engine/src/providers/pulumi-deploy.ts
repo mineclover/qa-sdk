@@ -22,6 +22,18 @@ export interface PulumiDeployOptions {
   k8sContext?: string;    // 기본: process.env.KUBECONFIG_CONTEXT ?? "k3d-qa-local"
 }
 
+export function resolveLocalPort(env: string, port: number): number {
+  const envOffset: Record<string, number> = {
+    test: 23000,
+    dev: 20000,
+    stage: 21000,
+    staging: 21000,
+    prod: 22000,
+    production: 22000,
+  };
+  return port + (envOffset[env] ?? 24000);
+}
+
 export function createPulumiDeployFn(options?: PulumiDeployOptions) {
   return (provider: DeployProvider, config: ResolvedConfig, serviceId: string, stackName: string) =>
     pulumiDeployFn(provider, config, serviceId, stackName, options);
@@ -89,9 +101,7 @@ export async function pulumiDeployFn(
   const env = options?.env ?? "dev";
   const ENV_NS: Record<string, string> = { test: "qa-dev", dev: "qa-dev", stage: "qa-stage", staging: "qa-stage", prod: "qa-prod", production: "qa-prod" };
   const namespace = ENV_NS[env] ?? "qa-dev";
-  // 환경별 포트 오프셋 — 동일 서비스 다중 환경 배포 시 충돌 방지
-  const envOffset: Record<string, number> = { dev: 20000, stage: 21000, prod: 22000 };
-  const localPort = port + (envOffset[env] ?? 20000);
+  const localPort = resolveLocalPort(env, port);
 
   if (outputs.serviceName) {
     const pfKey = `${serviceId}-${env}`;

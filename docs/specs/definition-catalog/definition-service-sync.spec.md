@@ -15,7 +15,7 @@ def:
   lineage_kind: settlement
   links:
     - target: definition-catalog-spec
-      type: contains
+      type: depends_on
 ---
 
 # Definition Service Sync — 동기화 로직

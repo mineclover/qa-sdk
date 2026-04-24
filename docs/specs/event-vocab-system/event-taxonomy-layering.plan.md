@@ -11,7 +11,7 @@ def:
   tags: [cross-scope, structural, observability]
   links:
     - target: event-vocab-system
-      type: refines
+      type: traces_to
     - target: event-core-pattern
       type: contains
     - target: event-mapping-pack-plan

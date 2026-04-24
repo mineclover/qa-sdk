@@ -12,9 +12,9 @@ def:
     - target: operational-ontology-registry-allocation
       type: traces_to
     - target: operational-ontology-registry-allocation-plan
-      type: refines
+      type: traces_to
     - target: operational-ontology-ssot-navigation-guide
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology Registry Allocation — 구현 TODO

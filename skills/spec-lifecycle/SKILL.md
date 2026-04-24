@@ -31,6 +31,26 @@ interface ContractEvidence {
 참조: packages/spec-tracker/src/types.ts:ContractEvidence
 ```
 
+### 1.5. 문서 분할 후 코드 boundary 점검
+
+문서가 E/C/I/S + L/P로 분리됐는데 구현 코드가 그대로 하나의 거대 파일에 남아 있으면 drift 위험이 남는다.
+
+코드 작성 규칙은 `docs/specs/system/architecture-revealing-code-convention.rule.md`를 기준으로 본다. 목표는 코드 자체가 책임을 드러내고, 문서가 그 책임을 좌표화하는 것이다.
+
+점검:
+
+- Interface/Component/System behavior 문서마다 대응 source symbol 또는 source file이 있는가?
+- Layout/Pack 문서가 behavior/data source를 직접 소유하고 있지는 않은가?
+- 여러 문서가 같은 source file 전체를 참조한다면 실제 코드 책임도 나눌 수 있는가?
+- test file도 같은 기준으로 분리돼 있는가? 필요하면 `test-split`을 사용한다.
+- 코드가 이미 모듈화되어 있다면 각 모듈이 Component/Interface/System/Layout 중 어떤 책임인지 파일명/export로 드러나는가?
+
+판정:
+
+- 코드도 나눌 수 있으면 code split을 먼저 하거나 같은 변경 묶음에서 닫는다.
+- 지금 나눌 수 없으면 문서에 shared source임을 명시하고 `.todo.md`에 code split follow-up을 남긴다.
+- 코드가 충분히 나뉘어 있지만 같은 책임을 함께 구현한다면 문서는 하나로 유지하고 `sources`에 여러 파일을 나열한다.
+
 ### 2. 문서에 남는 것 vs 코드로 옮기는 것
 
 | 문서에 남는다 (코드로 표현 불가) | 코드로 옮긴다 (구현 시점에) |
@@ -105,6 +125,7 @@ interface DriftReport {
 ```
 
 4. svc 필드가 없으면 추가한다
+5. E/C/I/S + L/P 문서가 여럿인데 같은 source file 전체만 참조하면 code boundary split 또는 symbol-level reference를 검토한다
 
 ### 3단계: 검증 — drift 점검
 
@@ -141,30 +162,17 @@ qa-sdk def audit
 - `packages/<pkg>/src/routes.ts:POST /sync` — 동기화 엔드포인트
 ```
 
-## 분해 시 level 전환
+## 분해 시 E/C/I/S + L/P 전환
 
-문서가 분해(하위 문서 생성)되면 level을 전환한다:
+문서가 분해되면 먼저 책임을 전환한다:
 
-```
-1. leaf → module로 변경 (하위 문서를 가지게 됨)
-2. contains 링크로 하위 문서 연결
-3. 주소는 불변 (level은 좌표에 포함하지 않음)
-```
+1. behavior owner이면 `tier: system`으로 둔다.
+2. 소비 계약이면 `scope: interface` 문서로 분리한다.
+3. data/state/evidence vocabulary이면 `tier: component`로 분리한다.
+4. stable id/value이면 `tier: entry` 또는 identity 문서로 분리한다.
+5. 조망/배치/pack이면 `tier: layout` + `refs`로 둔다.
 
-예: `record-spec`(leaf)이 분해되면:
-```yaml
-# record-spec.md — level: leaf → module로 변경
-def:
-  id: record-spec
-  level: module          # leaf에서 변경
-  scope: data
-  aspect: domain_data
-  links:
-    - target: record-schema
-      type: contains
-    - target: record-validation
-      type: contains
-```
+`level: group|module|leaf`는 아직 contains 검증에 쓰이는 보조 메타데이터다. 새 authoring 판단은 E/C/I/S + L/P가 우선이다.
 
 ## 문서 유형 공존 컨벤션 (7종)
 
@@ -187,7 +195,7 @@ def:
 4. **같은 id**: frontmatter `id`는 동일. 두 파일이 하나의 기능을 다른 시점에서 기술
 5. **contains**: 부모 문서는 id 하나만 참조 (두 파일을 개별 참조하지 않음)
 6. **같은 stem 유지**: `{id}.spec.md`와 `{id}.todo.md`는 basename이 같아야 scan 단계에서 공존으로 인식된다
-7. **test 문서 연결**: `.test.md`는 spec 또는 상위 module의 authored link(`refines` 또는 `contains`)가 있어야 orphan 경고가 나지 않는다
+7. **test 문서 연결**: `.test.md`는 spec 또는 상위 System/Interface/Behavior 문서의 authored link(`refines`, `depends_on`, 또는 필요한 경우 `contains`)가 있어야 orphan 경고가 나지 않는다
 
 ### 예시
 

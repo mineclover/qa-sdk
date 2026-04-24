@@ -2,8 +2,7 @@
 def:
   tier: component
   id: path-matcher-migration
-  type: knowledge
-  knowledge_kind: proposal
+  type: spec
   scope: flow
   aspect: process_flow
   depth: specification
@@ -11,9 +10,9 @@ def:
   layer: domain
   links:
     - target: meta-semantic-v2-migration
-      type: depends_on
+      type: traces_to
     - target: meta-semantic-execution-semantics
-      type: depends_on
+      type: traces_to
 sources:
   - packages/engine/src/matching/path-matcher-adapter.ts
   - packages/engine/src/matching/path-matcher-adapter.test.ts

@@ -1,8 +1,7 @@
 ---
 def:
   id: testing-patterns
-  type: knowledge
-  knowledge_kind: pattern
+  type: spec
   tier: component
   scope: flow
   aspect: process_flow
@@ -12,7 +11,7 @@ def:
   tags: [testing, ssot]
   links:
     - target: facet-test-isolation
-      type: depends_on
+      type: traces_to
 ---
 
 # 테스트 패턴 — SSOT 파생 표준

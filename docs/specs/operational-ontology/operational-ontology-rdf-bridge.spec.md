@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-rdf-bridge
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: interface
   aspect: api_contract
   depth: specification
@@ -12,11 +11,11 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: operational-ontology-core-model
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-relation-taxonomy
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-traversal-coordinate
-      type: depends_on
+      type: traces_to
 ---
 
 # Operational Ontology RDF Bridge — RDF 개념을 operational coordinate로 읽기

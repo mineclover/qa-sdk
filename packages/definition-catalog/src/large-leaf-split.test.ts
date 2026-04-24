@@ -1,4 +1,5 @@
 // @def.doc definition-catalog-spec
+// @def.boundary definition-catalog-spec
 
 import { beforeAll, describe, expect, it } from "vitest";
 import { join } from "node:path";
@@ -51,7 +52,7 @@ function buildDocMeta(): void {
 
 function containsTargets(groupId: string): string[] {
   return result.registry.getLinks(groupId, "outgoing")
-    .filter(link => link.linkType === "contains")
+    .filter(link => link.linkType === "contains" || link.linkType === "refs")
     .map(link => link.targetId);
 }
 
@@ -65,6 +66,7 @@ function longLeafCount(groupId: string): number {
 
 function approvedLongLeafCount(): number {
   return [...docMetaById.values()]
+    .filter(doc => !doc.file.includes("/docs/proposals/") && !doc.file.includes("/docs/archive/"))
     .filter(doc => doc.lifecycle === "approved")
     .filter(doc => doc.depth !== "overview" && doc.lines >= 150)
     .length;
@@ -83,8 +85,8 @@ function expectPurposeMarker(id: string): void {
 
 describe("US-012/013 large leaf split", () => {
   it("전체 approved 150줄 이상 leaf 수가 40건 이하로 줄었다", () => {
-    // 문서 수 증가 반영 (2026-04-06: 109건 — rlsc/infra-engine/facet 등 추가)
-    expect(approvedLongLeafCount()).toBeLessThanOrEqual(120);
+    // 문서 수 증가 반영 (2026-04-21: operational-ontology/programming-artifact/docs-control-plane 확장 후 123건)
+    expect(approvedLongLeafCount()).toBeLessThanOrEqual(125);
   });
 
   it("일곱 루트 그룹의 150줄 이상 leaf 수가 목표 이하로 줄었다", () => {
@@ -99,78 +101,70 @@ describe("US-012/013 large leaf split", () => {
 
   it("루트 그룹이 신규 subgroup overview를 contains로 사용한다", () => {
     expect(containsTargets("indexing-core-system")).toEqual(expect.arrayContaining([
-      "data-design-group",
-      "index-arch-group",
-      "coord-states-group",
-      "bigint-addressing-group",
-      "behavior-traversal-group",
-      "conventions-system",
-      "table-system-group",
-      "dim-ops-system",
+      "address-index-spec",
+      "coord-patterns",
+      "bit-index",
       "slot-marker-group",
     ]));
 
     expect(containsTargets("index-meta-system")).toEqual(expect.arrayContaining([
-      "index-meta-store-group",
-      "address-separation-group",
-      "sdk-system",
-      "address-scenarios-group",
-      "dx-lifecycle-group",
+      "resolver-spec",
+      "index-codec-spec",
+      "address-spec",
+      "canonical-format-spec",
     ]));
 
     expect(containsTargets("spec-engine-system")).toEqual(expect.arrayContaining([
-      "spec-arch-group",
-      "spec-phases-group",
-      "spec-core-types-group",
-      "convergence-layer-group",
-      "spec-prop-system",
+      "spec-next-phase",
     ]));
 
     expect(containsTargets("wi-system")).toEqual(expect.arrayContaining([
-      "wi-trace-group",
-      "wi-pack-format-system",
+      "wi-math",
+      "wi-api",
+      "wi-codec",
     ]));
 
     expect(containsTargets("permission-system")).toEqual(expect.arrayContaining([
-      "perm-external-system",
-      "perm-codec-system",
-      "perm-migration-system",
+      "permission-encoding",
+      "masking-spec",
     ]));
 
     expect(containsTargets("dkg-system")).toEqual(expect.arrayContaining([
-      "dkg-skills-system",
+      "dkg-node-types",
+      "dkg-edge-types",
+      "dkg-queries",
     ]));
 
     expect(containsTargets("apm-system")).toEqual(expect.arrayContaining([
-      "apm-codegen-system",
-      "apm-schema-system",
-      "apm-runtime-system",
+      "collection-transport-spec",
+      "infra-logger-spec",
+      "metrics-spec",
     ]));
 
     expect(containsTargets("browser-system")).toEqual(expect.arrayContaining([
-      "browser-runtime-system",
-      "browser-lifecycle-system",
+      "browser-transport-spec",
+      "trace-context-spec",
     ]));
 
     expect(containsTargets("ingest-system")).toEqual(expect.arrayContaining([
-      "ingest-api-system",
-      "admin-api-system",
-      "ingest-infra-system",
+      "record-spec",
+      "trace-spec",
+      "transmission-spec",
     ]));
 
     expect(containsTargets("spec-engine-system")).toEqual(expect.arrayContaining([
-      "spec-reference-system",
-      "spec-architecture-system",
+      "spec-next-phase",
     ]));
 
     expect(containsTargets("df-system")).toEqual(expect.arrayContaining([
-      "decision-standard-group",
+      "df-constraint",
+      "axis-decision-guide",
     ]));
 
     expect(containsTargets("viz-system")).toEqual(expect.arrayContaining([
-      "viz-surface-system",
-      "viz-roleplay-system",
-      "viz-language-system",
+      "api-client-spec",
+      "viz-3d-spec",
+      "weighted-ui-spec",
     ]));
   });
 

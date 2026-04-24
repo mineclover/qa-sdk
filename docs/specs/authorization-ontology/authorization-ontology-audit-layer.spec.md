@@ -2,8 +2,7 @@
 def:
   tier: component
   id: authorization-ontology-audit-layer
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: constraint
   aspect: biz_constraint
   depth: specification
@@ -12,11 +11,11 @@ def:
   tags: [security, structural]
   links:
     - target: authorization-ontology-system
-      type: refines
+      type: traces_to
     - target: authorization-ontology-cerbos-mapping
-      type: depends_on
+      type: traces_to
     - target: authorization-ontology-decision-observation
-      type: depends_on
+      type: traces_to
 ---
 
 # Authorization Ontology Audit Layer — 권한 선언/적용/관측 감사

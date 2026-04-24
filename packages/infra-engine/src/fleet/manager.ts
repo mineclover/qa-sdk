@@ -2,6 +2,8 @@
 // @def.doc infra-engine-system
 
 // fleet/manager.ts — 중앙 배포 관리 (Fleet Manager)
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import type { DiscoveryClient, ServiceInfo } from "../discovery/client.js";
 import type { InfraProfileAdapter } from "../adapters/adapter.js";
 
@@ -49,6 +51,13 @@ export interface FleetDeployResult {
   };
 }
 
+export interface FleetRunOptions {
+  dryRun?: boolean;
+  continueOnError?: boolean;
+  provider?: "local" | "cloudflare";
+  sync?: boolean;
+}
+
 export interface FleetManager {
   /** 환경별 전체 서비스 상태 조회 */
   status(env: string): Promise<FleetStatus>;
@@ -59,25 +68,60 @@ export interface FleetManager {
   /** 환경에 모든 서비스 배포 (순차) */
   deployAll(
     env: string,
-    options?: { dryRun?: boolean },
+    options?: FleetRunOptions,
   ): Promise<FleetDeployResult>;
 
   /** 특정 tier의 서비스만 배포 */
-  deployByTier(env: string, tier: string): Promise<FleetDeployResult>;
+  deployByTier(env: string, tier: string, options?: FleetRunOptions): Promise<FleetDeployResult>;
+}
+
+export interface FleetManagerOptions {
+  deployExecutor?: (
+    serviceId: string,
+    env: string,
+    options?: FleetRunOptions,
+  ) => Promise<void>;
 }
 
 export function createFleetManager(
   discovery: DiscoveryClient,
   infraProfile: InfraProfileAdapter,
+  managerOptions?: FleetManagerOptions,
 ): FleetManager {
+  function buildOfflineServices(
+    env: string,
+    deployments: Record<string, { serviceId: string; env: string; endpoint: string }>,
+  ): ServiceInfo[] {
+    return Object.values(deployments)
+      .filter((deployment) => deployment.env === env)
+      .map((deployment) => ({
+        serviceId: deployment.serviceId,
+        name: deployment.serviceId,
+        url: deployment.endpoint,
+        tier: "unknown",
+        team: "infra-profile",
+        ownedPrefixes: [],
+        consumedPrefixes: [],
+        urls: { [env]: deployment.endpoint },
+      }));
+  }
+
   async function buildServiceStatuses(
     env: string,
   ): Promise<FleetServiceStatus[]> {
-    const [services, urls, deployments] = await Promise.all([
-      discovery.listServices(),
-      discovery.resolveAll(env),
-      infraProfile.getAllDeployments(),
-    ]);
+    const deployments = await infraProfile.getAllDeployments();
+    let services: ServiceInfo[];
+    let urls: Record<string, string>;
+
+    try {
+      [services, urls] = await Promise.all([
+        discovery.listServices(),
+        discovery.resolveAll(env),
+      ]);
+    } catch {
+      services = buildOfflineServices(env, deployments);
+      urls = Object.fromEntries(services.map((svc) => [svc.serviceId, svc.url]));
+    }
 
     // 1차: 각 서비스의 고유 상태 수집
     const statuses: FleetServiceStatus[] = [];
@@ -189,6 +233,91 @@ export function createFleetManager(
     };
   }
 
+  async function defaultDeployExecutor(
+    serviceId: string,
+    env: string,
+    options?: FleetRunOptions,
+  ): Promise<void> {
+    const packageRoot = existsSync(resolve(process.cwd(), "scripts/infra.ts"))
+      ? process.cwd()
+      : resolve(process.cwd(), "packages/infra-engine");
+    const args = [
+      "--import",
+      "tsx",
+      "./scripts/infra.ts",
+      "deploy",
+      serviceId,
+      env,
+    ];
+    if (options?.provider) {
+      args.push("--provider", options.provider);
+    }
+    if (options?.sync) {
+      args.push("--sync");
+    }
+    if (options?.dryRun) {
+      args.push("--dry-run");
+    }
+
+    const { execa } = await import("execa");
+    await execa("node", args, {
+      cwd: packageRoot,
+      env: process.env,
+      stdio: "inherit",
+    });
+  }
+
+  async function runDeploy(
+    env: string,
+    services: ServiceInfo[],
+    options?: FleetRunOptions,
+  ): Promise<FleetDeployResult> {
+    if (options?.dryRun !== false) {
+      return buildDryRunResult(env, services);
+    }
+
+    const deployRunner = managerOptions?.deployExecutor ?? defaultDeployExecutor;
+
+    const results: FleetDeployResult["results"] = [];
+
+    for (const svc of services) {
+      const start = Date.now();
+      try {
+        await deployRunner(svc.serviceId, env, options);
+        results.push({
+          serviceId: svc.serviceId,
+          success: true,
+          duration: Date.now() - start,
+        });
+      } catch (err) {
+        results.push({
+          serviceId: svc.serviceId,
+          success: false,
+          duration: Date.now() - start,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        if (!options?.continueOnError) {
+          break;
+        }
+      }
+    }
+
+    const success = results.filter((result) => result.success).length;
+    const failed = results.filter((result) => !result.success).length;
+    const totalDuration = results.reduce((sum, result) => sum + result.duration, 0);
+
+    return {
+      env,
+      results,
+      summary: {
+        total: results.length,
+        success,
+        failed,
+        totalDuration,
+      },
+    };
+  }
+
   return {
     async status(env) {
       const services = await buildServiceStatuses(env);
@@ -196,28 +325,26 @@ export function createFleetManager(
     },
 
     async listDeployable(env) {
-      const services = await discovery.listServices();
-      const urls = await discovery.resolveAll(env);
-      // URL이 있는 서비스만 배포 가능
-      return services.filter((svc) => urls[svc.serviceId] ?? svc.url);
+      try {
+        const services = await discovery.listServices();
+        const urls = await discovery.resolveAll(env);
+        // URL이 있고 독립 배포 단위인 서비스만 배포 가능
+        return services.filter((svc) => !svc.deployedWith && (urls[svc.serviceId] ?? svc.url));
+      } catch {
+        const deployments = await infraProfile.getAllDeployments();
+        return buildOfflineServices(env, deployments);
+      }
     },
 
     async deployAll(env, options) {
       const deployable = await this.listDeployable(env);
-
-      // dry-run 또는 초기 버전: 계획만 반환
-      if (options?.dryRun !== false) {
-        return buildDryRunResult(env, deployable);
-      }
-
-      // 실제 배포는 향후 파이프라인 연동으로 구현
-      return buildDryRunResult(env, deployable);
+      return runDeploy(env, deployable, options);
     },
 
-    async deployByTier(env, tier) {
+    async deployByTier(env, tier, options) {
       const deployable = await this.listDeployable(env);
       const filtered = deployable.filter((svc) => svc.tier === tier);
-      return buildDryRunResult(env, filtered);
+      return runDeploy(env, filtered, options);
     },
   };
 }

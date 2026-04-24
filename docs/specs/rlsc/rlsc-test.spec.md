@@ -9,8 +9,6 @@ def:
   layer: domain
   svc: rlsc
   links:
-    - target: rlsc
-      type: refines
     - target: rlsc-encoder-test
       type: contains
     - target: rlsc-relations-test

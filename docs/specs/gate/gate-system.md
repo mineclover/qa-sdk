@@ -11,6 +11,8 @@ def:
   svc: gate-service
   tags: [structural, security, entry-point]
   links:
+    - target: gate-api
+      type: refs
     - target: gate-state-model
       type: refs
     - target: gate-state-model-rule

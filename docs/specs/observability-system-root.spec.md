@@ -9,6 +9,9 @@ def:
   lifecycle: approved
   layer: operation
   svc: observability
+  links:
+    - target: event-logging-lifecycle
+      type: contains
 ---
 # Observability System Root
 ## 목적 ^purpose

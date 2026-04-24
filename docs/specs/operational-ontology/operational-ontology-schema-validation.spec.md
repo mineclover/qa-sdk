@@ -2,8 +2,7 @@
 def:
   tier: component
   id: operational-ontology-schema-validation
-  type: knowledge
-  knowledge_kind: concept
+  type: spec
   scope: constraint
   aspect: tech_constraint
   depth: specification
@@ -12,11 +11,11 @@ def:
   tags: [cross-scope, structural]
   links:
     - target: operational-ontology-taxonomy-schema
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-relation-category-schema
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-category-constraint
-      type: depends_on
+      type: traces_to
 sources:
   - packages/operational-ontology/src/internal/schema-core.ts
   - packages/operational-ontology/src/internal/schema-memory.ts

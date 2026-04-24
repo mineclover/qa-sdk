@@ -12,9 +12,9 @@ def:
   tags: [entry-point, cross-scope, runtime]
   links:
     - target: definition-management
-      type: depends_on
+      type: traces_to
     - target: harness-architecture
-      type: depends_on
+      type: traces_to
 ---
 
 ## 목적 ^purpose

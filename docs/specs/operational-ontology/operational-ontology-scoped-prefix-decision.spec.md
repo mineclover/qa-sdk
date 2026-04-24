@@ -1,8 +1,7 @@
 ---
 def:
   id: operational-ontology-scoped-prefix-decision
-  type: knowledge
-  knowledge_kind: adr
+  type: spec
   tier: component
   scope: constraint
   aspect: tech_constraint
@@ -12,9 +11,9 @@ def:
   tags: [decision, structural, contract, cross-scope]
   links:
     - target: operational-ontology-system
-      type: refines
+      type: traces_to
     - target: operational-ontology-registry-allocation-plan
-      type: depends_on
+      type: traces_to
     - target: operational-ontology-registry-allocation-todo
       type: traces_to
     - target: operational-ontology-registry-persistence-handoff

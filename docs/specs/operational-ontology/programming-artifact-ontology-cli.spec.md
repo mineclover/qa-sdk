@@ -26,7 +26,7 @@ sources:
 
 ## 목적 ^purpose
 
-`programming-artifact-ontology`가 제공하는 artifact registry 기능의 public CLI command, flag, JSON output contract를 정의한다. 목표는 command path와 flag behavior를 안정화하고, provider lookup, activation evidence, quality evidence의 구현 세부는 전용 leaf 문서로 위임하는 것이다.
+`programming-artifact-ontology`가 제공하는 artifact registry 기능의 public CLI command, flag, JSON output contract를 정의한다. 목표는 command path와 flag behavior를 안정화하고, provider lookup, activation evidence, quality evidence의 구현 세부는 전용 책임 문서로 위임하는 것이다.
 
 ## Commands ^defines
 

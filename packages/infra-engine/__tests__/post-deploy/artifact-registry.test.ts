@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { DeployResult } from "../../src/core/types.js";
 import {
   buildDeploymentOutputArtifactRegistryRecord,
+  buildFleetDeploymentArtifactRegistryRecord,
   writeDeploymentOutputArtifactRegistryRecord,
 } from "../../src/post-deploy/artifact-registry.js";
 
@@ -45,6 +46,9 @@ describe("deployment output artifact registry", () => {
       configPath: "packages/infra-engine/config/cloudflare-prod.json",
       result: successfulDeployResult(),
       createdAt: "2026-04-13T00:00:00.000Z",
+      fleetRunId: "fleet-123",
+      fleetMode: "all",
+      fleetScope: "all",
     });
 
     expect(record).toMatchObject({
@@ -65,6 +69,7 @@ describe("deployment output artifact registry", () => {
       "packages/infra-engine/config/cloudflare-prod.json",
       "service:order-api",
       "env:prod",
+      "fleet-run:fleet-123",
     ]);
     expect(record.verifiesRefs).toEqual([
       "service:order-api",
@@ -82,6 +87,58 @@ describe("deployment output artifact registry", () => {
         }),
       ]),
     );
+    expect(record.metadata).toMatchObject({
+      fleetRunId: "fleet-123",
+      fleetMode: "all",
+      fleetScope: "all",
+    });
+  });
+
+  it("fleet 배포 결과를 deployment-batch registry record로 변환한다", () => {
+    const record = buildFleetDeploymentArtifactRegistryRecord({
+      env: "dev",
+      configPath: "packages/infra-engine/config/dev.json",
+      runId: "fleet-456",
+      mode: "all",
+      scope: "all",
+      options: {
+        dryRun: false,
+        continueOnError: true,
+        provider: "local",
+        sync: true,
+      },
+      result: {
+        env: "dev",
+        results: [
+          { serviceId: "svc-a", success: true, duration: 10 },
+          { serviceId: "svc-b", success: false, duration: 20, error: "boom" },
+        ],
+        summary: {
+          total: 2,
+          success: 1,
+          failed: 1,
+          totalDuration: 30,
+        },
+      },
+      createdAt: "2026-04-13T00:00:00.000Z",
+    });
+
+    expect(record).toMatchObject({
+      artifactId: "fleet-deployment-dev-all-fleet-456",
+      artifactRef: "fleet-run:fleet-456",
+      kind: "deployment-batch",
+      ownerDefinitionId: "infra-engine-pipeline",
+      createdAt: "2026-04-13T00:00:00.000Z",
+    });
+    expect(record.verifiesRefs).toEqual(["service:svc-a"]);
+    expect(record.metadata).toMatchObject({
+      env: "dev",
+      runId: "fleet-456",
+      mode: "all",
+      scope: "all",
+      successCount: 1,
+      failedCount: 1,
+    });
   });
 
   it("성공한 배포 결과를 registry JSON에 append/upsert한다", async () => {

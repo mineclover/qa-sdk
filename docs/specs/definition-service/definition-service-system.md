@@ -12,7 +12,7 @@ def:
   tags: [structural, entry-point]
   links:
     - target: definition-catalog-spec
-      type: contains
+      type: depends_on
     - target: def-svc-data-model
       type: contains
     - target: def-svc-docs-module

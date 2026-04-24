@@ -2,8 +2,7 @@
 def:
   tier: component
   id: deterministic-label-stability-plan
-  type: knowledge
-  knowledge_kind: proposal
+  type: spec
   scope: flow
   aspect: process_flow
   depth: specification
@@ -13,11 +12,11 @@ def:
   tags: [contract, decision, observability]
   links:
     - target: deterministic-label-registry-fsm-plan
-      type: refines
+      type: traces_to
     - target: docs-control-plane
-      type: depends_on
+      type: traces_to
     - target: definition-catalog-spec
-      type: depends_on
+      type: traces_to
 ---
 
 # Deterministic Label Stability — 정의 방법 탐색 계획
@@ -28,7 +27,7 @@ def:
 
 ## 현재 판단
 
-직전 PRD `deterministic-label-registry-fsm-read-model`은 read-only projection + FSM readiness + 전이 dry-run을 완성했다. 그러나 증명은 fixture 수준에 머물렀고, 다음은 계약으로 명시되지 않았다.
+직전 PRD `deterministic-label-registry-fsm-read-model`은 read-only projection + FSM readiness + 전이 dry-run을 한때 완성했다. 그러나 이후 2026-04-18 단순화에서 FSM/currentState/transition dry-run은 제거되었고, 현행 stability 증명 대상은 상태 없는 label projection이다. 다음은 계약으로 명시되지 않았다.
 
 1. 좌표 형식이 v1으로 고정되었다는 선언 (edge case 완결성)
 2. 같은 repo state → byte-identical output (결정론 계약)
@@ -37,13 +36,13 @@ def:
 
 ## 선행 조건 (2026-04-18 추가)
 
-본 plan은 [tier-redesign 제안](../../proposals/tier-redesign/)의 Phase 3 완료를 **선행 조건**으로 한다. 5-tier 체계(Component / Entry / FSM / System / Layout)가 확정되기 전에 stability spec을 작성하면, code-level 결정(특히 FSM 표현)과 doc-level tier 구조가 충돌할 수 있다. 재개 조건은 [01-migration.md](../../proposals/tier-redesign/01-migration.md)의 "Stability 작업 재개 조건" 섹션 참조.
+본 plan은 [tier-redesign 제안](../../proposals/tier-redesign/)의 Phase 3 완료를 **선행 조건**으로 작성되었으나, 이후 STC에서 FSM tier가 제거되고 deterministic-label-registry도 상태 없는 projection으로 단순화됐다. 현재 이 조건은 historical context이며, 현행 stability spec은 `deterministic-label-stability-boundary`의 단순화 결정을 따른다.
 
 > **참고**: 현재 tier-redesign 제안은 `docs/proposals/tier-redesign/`에서 격리 진행 중(RFC 단계). def graph에 포함되지 않으므로 본 plan의 frontmatter에 `depends_on` 링크는 없다. 수락(accepted) 후 정규 spec이 생성되면 그때 `depends_on`을 복원한다.
 
 따라서 본 plan의 단계 실행은 현재 **보류**다. tier-redesign 제안 진행 중 참고 문서로 유지한다.
 
-**결정 2C 매핑**: 결정 2C의 `currentState` enum + `gateEvidence[]`는 5-tier FSM 관점에서 다음으로 매핑된다 — **FSM document가 states의 SSOT**이고, **code enum은 FSM frontmatter `states[]`를 구현**한다. 즉 `deterministic-label-record-fsm.md`(미작성)가 정의한 states 리스트를 `DeterministicLabelRecordState` TypeScript enum이 따라야 한다. `def validate`가 동기 검증. FSM tier 설계 근거: [02-fsm-composition.md](../../proposals/tier-redesign/02-fsm-composition.md) §근거 7~8.
+**Historical 결정 2C 매핑**: `currentState` enum + `gateEvidence[]`는 초기 FSM 관점의 후보였지만 폐기됐다. 현행 record는 상태 없는 projection이며, FSM/state 모델을 다시 도입하려면 `state-event-terminology` 기준의 별도 설계가 필요하다.
 
 ## 정의 대상
 
@@ -127,8 +126,8 @@ def:
 ECS 비교를 거쳐 3개 추가 결정 축(identity / state / event scope)이 도출되었고, 다음 조합으로 확정되었다.
 
 - **1A**: Content-derived URN (source field의 순수 함수)
-- **2C**: `currentState` enum + `gateEvidence[]` 게이트별 독립 근거
-- **3B**: Dry-run event candidate도 결정론 계약에 포함
+- **2C (dropped)**: `currentState` enum + `gateEvidence[]` 게이트별 독립 근거
+- **3B (dropped)**: Dry-run event candidate도 결정론 계약에 포함
 
 근거와 거부한 대안은 `deterministic-label-stability-boundary.memo.md` (결정 table 포함) 참조.
 

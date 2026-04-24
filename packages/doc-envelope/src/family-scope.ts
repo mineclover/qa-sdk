@@ -56,14 +56,24 @@ export function collectDocumentFamilyOnlyScope(
     }
   }
 
-  if (target.metadata.level === "module") {
+  if (isContainableFamilyRoot(target)) {
     for (const link of target.links) {
       if (link.type !== "contains") continue;
       const contained = resolveDocumentReference(documents, link.targetId);
       if (!contained) continue;
-      if (!isDirectContainedModuleOrLeaf(contained)) continue;
+      if (!isDirectContainedDefinitionNode(contained)) continue;
       if (!isActiveFamilyOnlyDocument(contained, options)) continue;
       addFamilyScopedDocument(selected, reasonByDocumentKey, contained, "family-only:contains");
+    }
+  }
+
+  if (isLayoutFamilyRoot(target)) {
+    for (const link of target.links) {
+      if (link.type !== "refs") continue;
+      const referenced = resolveDocumentReference(documents, link.targetId);
+      if (!referenced) continue;
+      if (!isActiveFamilyOnlyDocument(referenced, options)) continue;
+      addFamilyScopedDocument(selected, reasonByDocumentKey, referenced, "family-only:refs");
     }
   }
 
@@ -97,8 +107,27 @@ function isFamilyOnlyRoleDocument(
   return includeTransient && isTransientDocument(document);
 }
 
-function isDirectContainedModuleOrLeaf(document: DocumentEnvelope): boolean {
-  return document.metadata.level === "module" || document.metadata.level === "leaf";
+function isContainableFamilyRoot(document: DocumentEnvelope): boolean {
+  return document.metadata.tier === "system" ||
+    document.metadata.level === "group" ||
+    document.metadata.level === "module";
+}
+
+function isLayoutFamilyRoot(document: DocumentEnvelope): boolean {
+  return document.metadata.tier === "layout";
+}
+
+function isDirectContainedDefinitionNode(document: DocumentEnvelope): boolean {
+  if (typeof document.metadata.defId === "string" && document.metadata.defId.length > 0) {
+    return true;
+  }
+  return document.metadata.level === "group" ||
+    document.metadata.level === "module" ||
+    document.metadata.level === "leaf" ||
+    document.metadata.tier === "system" ||
+    document.metadata.tier === "layout" ||
+    document.metadata.tier === "component" ||
+    document.metadata.tier === "entry";
 }
 
 function isActiveFamilyOnlyDocument(
