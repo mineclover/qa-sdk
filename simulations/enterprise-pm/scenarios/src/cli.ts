@@ -49,6 +49,36 @@ export const ALL_SCENARIOS: readonly Scenario[] = [
   scenario8PubsubInvalidation,
 ];
 
+function summarizeTraceIds(traceIds: string[]): string {
+  if (traceIds.length === 0) {
+    return "0";
+  }
+  const preview = traceIds.slice(0, 3).join(", ");
+  const more = traceIds.length > 3 ? `, +${traceIds.length - 3} more` : "";
+  return `${traceIds.length} (${preview}${more})`;
+}
+
+export function formatScenarioResult(result: ScenarioResult): string {
+  const mark = result.status === "passed" ? "OK" : "XX";
+  const lines = [
+    `[${mark}] ${result.name}`,
+    `  summary: ${result.status}, ${result.durationMs}ms, ${result.stepCount} step`,
+    `  traces: ${summarizeTraceIds(result.traceIds)}`,
+  ];
+
+  if (result.operatorHints?.length) {
+    for (const [index, hint] of result.operatorHints.entries()) {
+      lines.push(`  operator.${index + 1}: ${hint}`);
+    }
+  }
+
+  if (result.error) {
+    lines.push(`  error.${result.error.phase}: ${result.error.message}`);
+  }
+
+  return lines.join("\n");
+}
+
 export function buildCli(): Command {
   const cmd = new Command();
   cmd.name("sim-scenarios").description("qa-sdk 시뮬 시나리오 runner");
@@ -101,20 +131,7 @@ export function buildCli(): Command {
           process.stdout.write(JSON.stringify(results, null, 2) + "\n");
         } else {
           for (const r of results) {
-            const mark = r.status === "passed" ? "OK" : "XX";
-            process.stdout.write(
-              `[${mark}] ${r.name} — ${r.status} (${r.durationMs}ms, ${r.stepCount} step)\n`,
-            );
-            if (r.operatorHints?.length) {
-              for (const hint of r.operatorHints) {
-                process.stdout.write(`  → operator: ${hint}\n`);
-              }
-            }
-            if (r.error) {
-              process.stdout.write(
-                `  → ${r.error.phase} 실패: ${r.error.message}\n`,
-              );
-            }
+            process.stdout.write(formatScenarioResult(r) + "\n");
           }
         }
 
