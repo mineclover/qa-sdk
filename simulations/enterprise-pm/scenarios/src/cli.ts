@@ -14,6 +14,14 @@ import { scenario7BitmapRefresh } from "./scenarios/scenario-7-bitmap-refresh.js
 import { scenario8PubsubInvalidation } from "./scenarios/scenario-8-pubsub-invalidation.js";
 import type { Scenario, ScenarioResult } from "./runner/types.js";
 import {
+  fetchAuditEntryView,
+  fetchAuditFirstFailureView,
+  fetchAuditTraceView,
+  summarizeAuditEntryView,
+  summarizeAuditFirstFailureView,
+  summarizeAuditTraceView,
+} from "./post-run/audit-trace.js";
+import {
   fetchAuditContextComposite,
   summarizeAuditContextComposite,
 } from "./post-run/audit-context.js";
@@ -44,6 +52,7 @@ export const ALL_SCENARIOS: readonly Scenario[] = [
 export function buildCli(): Command {
   const cmd = new Command();
   cmd.name("sim-scenarios").description("qa-sdk 시뮬 시나리오 runner");
+  const auditCmd = cmd.command("audit").description("audit/graph composite 조회");
 
   cmd
     .command("run [name]")
@@ -157,9 +166,103 @@ export function buildCli(): Command {
       },
     );
 
-  cmd
-    .command("audit")
-    .description("audit/graph composite 조회")
+  auditCmd
+    .command("trace")
+    .description("audit trace 조회")
+    .requiredOption("--root-span-id <id>", "audit rootSpanId")
+    .option(
+      "--audit-url <url>",
+      "sim-audit-browser-api base URL",
+      "http://localhost:5100",
+    )
+    .option("--json", "JSON 출력", false)
+    .action(
+      async (opts: {
+        rootSpanId: string;
+        auditUrl: string;
+        json: boolean;
+      }) => {
+        const env = parseScenarioEnv({
+          ...process.env,
+          SCENARIO_AUDIT_URL: opts.auditUrl,
+        });
+        const result = await fetchAuditTraceView(
+          env.SCENARIO_AUDIT_URL,
+          opts.rootSpanId,
+        );
+        if (opts.json) {
+          process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+        } else {
+          process.stdout.write(summarizeAuditTraceView(result) + "\n");
+        }
+      },
+    );
+
+  auditCmd
+    .command("first-failure")
+    .description("audit firstFailure 조회")
+    .requiredOption("--root-span-id <id>", "audit rootSpanId")
+    .option(
+      "--audit-url <url>",
+      "sim-audit-browser-api base URL",
+      "http://localhost:5100",
+    )
+    .option("--json", "JSON 출력", false)
+    .action(
+      async (opts: {
+        rootSpanId: string;
+        auditUrl: string;
+        json: boolean;
+      }) => {
+        const env = parseScenarioEnv({
+          ...process.env,
+          SCENARIO_AUDIT_URL: opts.auditUrl,
+        });
+        const result = await fetchAuditFirstFailureView(
+          env.SCENARIO_AUDIT_URL,
+          opts.rootSpanId,
+        );
+        if (opts.json) {
+          process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+        } else {
+          process.stdout.write(summarizeAuditFirstFailureView(result) + "\n");
+        }
+      },
+    );
+
+  auditCmd
+    .command("entry")
+    .description("audit entry 조회")
+    .requiredOption("--span-id <id>", "audit spanId")
+    .option(
+      "--audit-url <url>",
+      "sim-audit-browser-api base URL",
+      "http://localhost:5100",
+    )
+    .option("--json", "JSON 출력", false)
+    .action(
+      async (opts: {
+        spanId: string;
+        auditUrl: string;
+        json: boolean;
+      }) => {
+        const env = parseScenarioEnv({
+          ...process.env,
+          SCENARIO_AUDIT_URL: opts.auditUrl,
+        });
+        const result = await fetchAuditEntryView(
+          env.SCENARIO_AUDIT_URL,
+          opts.spanId,
+        );
+        if (opts.json) {
+          process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+        } else {
+          process.stdout.write(summarizeAuditEntryView(result) + "\n");
+        }
+      },
+    );
+
+  auditCmd
     .command("context")
     .description("trace + graph + retention insight composite view")
     .requiredOption("--root-span-id <id>", "audit rootSpanId")

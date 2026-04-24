@@ -179,6 +179,17 @@ export const scenario4CrossDeptDeny: Scenario<S4Ctx> = {
       },
       traceIds: traceIds.filter(Boolean),
       stepCount: 4,
+      operatorHints: rootSpanId
+        ? [
+            `pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${rootSpanId}`,
+            `pnpm --filter @qa-sdk/sim-scenarios start -- audit first-failure --root-span-id ${rootSpanId}`,
+            ...(firstFailure?.firstFailure?.spanId
+              ? [
+                  `pnpm --filter @qa-sdk/sim-scenarios start -- audit entry --span-id ${firstFailure.firstFailure.spanId}`,
+                ]
+              : []),
+          ]
+        : undefined,
     };
   },
 

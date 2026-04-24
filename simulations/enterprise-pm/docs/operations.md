@@ -221,6 +221,9 @@ operator composite CLI:
 
 ```bash
 pnpm --filter @qa-sdk/sim-scenarios start -- audit context --root-span-id <root-span-id> --graph-id <graph-id>
+pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id <root-span-id>
+pnpm --filter @qa-sdk/sim-scenarios start -- audit first-failure --root-span-id <root-span-id>
+pnpm --filter @qa-sdk/sim-scenarios start -- audit entry --span-id <span-id>
 ```
 
 ### NestJS 서비스 부팅 실패

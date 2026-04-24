@@ -154,6 +154,8 @@ operator composite CLI:
 
 ```bash
 pnpm --filter @qa-sdk/sim-scenarios start -- audit context --root-span-id <root-span-id> --graph-id <graph-id>
+pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id <root-span-id>
+pnpm --filter @qa-sdk/sim-scenarios start -- audit first-failure --root-span-id <root-span-id>
 ```
 
 ## 외부 의존 (qa-sdk 본체 컨테이너)

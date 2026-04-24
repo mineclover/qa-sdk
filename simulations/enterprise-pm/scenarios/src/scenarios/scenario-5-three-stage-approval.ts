@@ -180,6 +180,10 @@ export const scenario5ThreeStageApproval: Scenario<S5Ctx> = {
       },
       traceIds: traceIds.filter(Boolean),
       stepCount: 4,
+      operatorHints: stageRootSpanIds.flatMap((rootSpanId) => [
+        `pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${rootSpanId}`,
+        `pnpm --filter @qa-sdk/sim-scenarios start -- audit first-failure --root-span-id ${rootSpanId}`,
+      ]),
     };
   },
 
