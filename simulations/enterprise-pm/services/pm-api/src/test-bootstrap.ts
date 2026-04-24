@@ -62,6 +62,12 @@ export interface TestDelegationFixture {
   graphRootId: string;
 }
 
+export interface TestAppendDelegationFixture {
+  state: string;
+  graphRootId: string;
+  delegateUserId: string;
+}
+
 export interface TestDelegationGraphFixture {
   graphId: string;
   snapshotId: string;
@@ -205,6 +211,14 @@ export async function delegateTestProject(
 ): Promise<TestDelegationFixture> {
   const svc = handle.app.get(ProjectService);
   return svc.delegate(args);
+}
+
+export async function addDelegateToProject(
+  handle: TestPmApiHandle,
+  args: { projectId: string; delegateUserId: string },
+): Promise<TestAppendDelegationFixture> {
+  const svc = handle.app.get(ProjectService);
+  return svc.addDelegate(args);
 }
 
 export async function getDelegationGraph(

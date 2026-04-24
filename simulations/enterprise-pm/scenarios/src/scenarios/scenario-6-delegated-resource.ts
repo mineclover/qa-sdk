@@ -3,11 +3,16 @@
 
 import { ok, equal } from "node:assert/strict";
 import type { Scenario } from "../runner/types.js";
-import { fetchAuditContext } from "./lib/audit-helpers.js";
+import {
+  fetchAuditContext,
+  fetchGraphSnapshotDiff,
+  fetchGraphSnapshotList,
+} from "./lib/audit-helpers.js";
 
 interface S6Ctx {
   alice: { email: string; password: string };
   frank: { id: string; email: string; password: string };
+  eve: { id: string };
   project: { id: string; departmentId: string };
   graphRootId: string;
 }
@@ -87,6 +92,7 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
     return {
       alice: { email: fx.alice.email, password: fx.alice.password },
       frank: { id: fx.frank.id, email: fx.frank.email, password: fx.frank.password },
+      eve: { id: fx.eve.id },
       project: { id: project.id, departmentId: fx.departments.eng },
       graphRootId: `consultant-graph-${project.id}`,
     };
@@ -134,6 +140,24 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
       graphRootId: string;
     };
 
+    const appendRes = await gatewayFetch(
+      new Request(`http://sim/projects/${ctx.project.id}/delegates`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          Authorization: `Bearer ${aliceToken}`,
+        },
+        body: JSON.stringify({
+          delegateUserId: ctx.eve.id,
+        }),
+      }),
+    );
+    if (!appendRes.ok) {
+      throw new Error(
+        `append-delegate: status=${appendRes.status} body=${await appendRes.text()}`,
+      );
+    }
+
     // frank login
     const frankLogin = await gatewayFetch(
       new Request("http://sim/auth/login", {
@@ -163,6 +187,8 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
     frankRootSpanId = frankBody.rootSpanId ?? null;
 
     let auditContext: Awaited<ReturnType<typeof fetchAuditContext>> | null = null;
+    let graphSnapshotList: Awaited<ReturnType<typeof fetchGraphSnapshotList>> | null = null;
+    let graphSnapshotDiff: Awaited<ReturnType<typeof fetchGraphSnapshotDiff>> | null = null;
     if (frankRootSpanId) {
       auditContext = await fetchAuditContext(
         gatewayFetch,
@@ -170,6 +196,21 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
         ctx.graphRootId,
         aliceToken,
       );
+      graphSnapshotList = await fetchGraphSnapshotList(
+        gatewayFetch,
+        ctx.graphRootId,
+        aliceToken,
+      );
+      if ((graphSnapshotList?.snapshots.length ?? 0) >= 2) {
+        const from = graphSnapshotList!.snapshots[0]!;
+        const to = graphSnapshotList!.snapshots[graphSnapshotList!.snapshots.length - 1]!;
+        graphSnapshotDiff = await fetchGraphSnapshotDiff(
+          gatewayFetch,
+          from.snapshotId,
+          to.snapshotId,
+          aliceToken,
+        );
+      }
     }
 
     return {
@@ -177,12 +218,15 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
         delegateStatus: delegateRes.status,
         delegatedState: delegated.state,
         delegatedGraphRootId: delegated.graphRootId,
+        appendDelegateStatus: appendRes.status,
         frankReadOk: frankGetRes.ok,
         frankReadStatus: frankGetRes.status,
         auditContext,
+        graphSnapshotList,
+        graphSnapshotDiff,
       },
       traceIds: traceIds.filter(Boolean),
-      stepCount: 4,
+      stepCount: 5,
     };
   },
 
@@ -196,6 +240,10 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
     ok(
       (d.delegatedGraphRootId as string).startsWith("consultant-graph-"),
       "graphRootId must be set",
+    );
+    ok(
+      d.appendDelegateStatus === 200 || d.appendDelegateStatus === 201,
+      `append delegate should be 200/201, got ${d.appendDelegateStatus}`,
     );
     const auditContext = d.auditContext as {
       graphId: string;
@@ -217,6 +265,26 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
       auditContext!.graphSnapshot.graph.nodes.map((node) => node.coord.anchor).includes(ctx.graphRootId) &&
         auditContext!.graphSnapshot.graph.nodes.map((node) => node.coord.anchor).includes(ctx.frank.id),
       "delegation graph snapshot must contain graph root and delegate principal",
+    );
+    ok(
+      auditContext!.graphSnapshot.graph.nodes.map((node) => node.coord.anchor).includes(ctx.eve.id),
+      "delegation graph latest snapshot must contain appended delegate principal",
+    );
+
+    const snapshotList = d.graphSnapshotList as {
+      count: number;
+      snapshots: Array<{ snapshotId: string }>;
+    } | null;
+    ok(snapshotList, "graph snapshot list must exist");
+    ok(snapshotList!.count >= 2, `expected >= 2 graph snapshots, got ${snapshotList!.count}`);
+
+    const snapshotDiff = d.graphSnapshotDiff as {
+      summary: { addedNodeCount: number };
+    } | null;
+    ok(snapshotDiff, "graph snapshot diff must exist");
+    ok(
+      snapshotDiff!.summary.addedNodeCount >= 1,
+      `expected graph diff to add nodes, got ${snapshotDiff!.summary.addedNodeCount}`,
     );
 
     equal(

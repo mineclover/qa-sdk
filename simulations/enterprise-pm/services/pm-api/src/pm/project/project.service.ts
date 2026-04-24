@@ -91,6 +91,28 @@ export class ProjectService {
     return (await this.delegationGraph.getLatest(policy.graphRootId)) ?? null;
   }
 
+  async addDelegate(args: {
+    projectId: string;
+    delegateUserId: string;
+  }): Promise<{ state: string; graphRootId: string; delegateUserId: string }> {
+    if (!this.policies || !this.delegationGraph) {
+      throw new Error("PROJECT_POLICY_REGISTRY or PROJECT_DELEGATION_GRAPH not registered — addDelegate 불가");
+    }
+    const cur = await this.policies.resolve(args.projectId);
+    if (!cur) {
+      throw new Error(`policy not found for project ${args.projectId}`);
+    }
+    if (cur.state !== "DELEGATED" || !cur.graphRootId) {
+      throw new Error(`project ${args.projectId} is not in DELEGATED state`);
+    }
+    await this.delegationGraph.grant(cur.graphRootId, args.delegateUserId);
+    return {
+      state: cur.state,
+      graphRootId: cur.graphRootId,
+      delegateUserId: args.delegateUserId,
+    };
+  }
+
   /**
    * delegate — Plan 13c 시나리오 6. resource-policy 를 DELEGATED 상태로 전이.
    *

@@ -202,6 +202,40 @@ export class ProjectController {
     return { ...res, rootSpanId: check.rootSpanId };
   }
 
+  @Post(":id/delegates")
+  async addDelegate(
+    @Param("id") id: string,
+    @Body() body: unknown,
+    @CurrentUser() user: CurrentUserContext,
+  ) {
+    const parsed = z
+      .object({
+        delegateUserId: z.string().min(1),
+      })
+      .parse(body);
+    const p = await this.svc.find(id);
+    if (!p) throw new NotFoundException(`Project not found: ${id}`);
+    const check = await this.access.check({
+      apiId: "project.update",
+      user,
+      targetId: id,
+      resourceOwnerId: p.ownerId,
+      departmentId: p.departmentId,
+    });
+    if (!check.allow) {
+      throw new ForbiddenException({
+        error: "access_denied",
+        denyReason: check.denyReason,
+        rootSpanId: check.rootSpanId,
+      });
+    }
+    const res = await this.svc.addDelegate({
+      projectId: id,
+      delegateUserId: parsed.delegateUserId,
+    });
+    return { ...res, rootSpanId: check.rootSpanId };
+  }
+
   @Delete(":id")
   async remove(@Param("id") id: string, @CurrentUser() user: CurrentUserContext) {
     const p = await this.svc.find(id);

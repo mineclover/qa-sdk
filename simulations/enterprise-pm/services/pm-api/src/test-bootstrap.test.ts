@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { AccessChecker } from "permission-engine";
 import {
+  addDelegateToProject,
   bootstrapTestApi,
   createTestProject,
   delegateTestProject,
@@ -104,6 +105,17 @@ describe("sim-pm-api/test-bootstrap", () => {
     expect(snapshot?.graphId).toBe(`graph-${project.id}`);
     expect(snapshot?.graph.nodes.map((node) => node.coord.anchor)).toEqual(
       expect.arrayContaining([`graph-${project.id}`, "user-frank"]),
+    );
+
+    const appended = await addDelegateToProject(handle, {
+      projectId: project.id,
+      delegateUserId: "user-eve",
+    });
+    expect(appended.graphRootId).toBe(`graph-${project.id}`);
+
+    const updatedSnapshot = await getDelegationGraph(handle, project.id);
+    expect(updatedSnapshot?.graph.nodes.map((node) => node.coord.anchor)).toEqual(
+      expect.arrayContaining([`graph-${project.id}`, "user-frank", "user-eve"]),
     );
   });
 });

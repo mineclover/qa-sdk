@@ -39,6 +39,27 @@ export interface AuditContextResponse {
   };
 }
 
+export interface GraphSnapshotListResponse {
+  graphId: string;
+  count: number;
+  snapshots: Array<{
+    snapshotId: string;
+    createdAt: string;
+    graphId: string;
+  }>;
+}
+
+export interface GraphSnapshotDiffResponse {
+  fromSnapshotId?: string;
+  toSnapshotId?: string;
+  summary: {
+    addedNodeCount: number;
+    removedNodeCount: number;
+    addedRelationCount: number;
+    removedRelationCount: number;
+  };
+}
+
 export async function fetchAuditTrace(
   gatewayFetch: (req: Request) => Promise<Response>,
   rootSpanId: string,
@@ -110,4 +131,41 @@ export async function fetchAuditContext(
     );
   }
   return (await res.json()) as AuditContextResponse;
+}
+
+export async function fetchGraphSnapshotList(
+  gatewayFetch: (req: Request) => Promise<Response>,
+  graphId: string,
+  authToken: string,
+): Promise<GraphSnapshotListResponse> {
+  const res = await gatewayFetch(
+    new Request(`http://sim/audit/graphs/${graphId}`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    }),
+  );
+  if (!res.ok) {
+    throw new Error(
+      `fetchGraphSnapshotList ${graphId}: status=${res.status} body=${await res.text()}`,
+    );
+  }
+  return (await res.json()) as GraphSnapshotListResponse;
+}
+
+export async function fetchGraphSnapshotDiff(
+  gatewayFetch: (req: Request) => Promise<Response>,
+  fromSnapshotId: string,
+  toSnapshotId: string,
+  authToken: string,
+): Promise<GraphSnapshotDiffResponse> {
+  const res = await gatewayFetch(
+    new Request(`http://sim/audit/graphs/diff/${fromSnapshotId}/${toSnapshotId}`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    }),
+  );
+  if (!res.ok) {
+    throw new Error(
+      `fetchGraphSnapshotDiff ${fromSnapshotId}/${toSnapshotId}: status=${res.status} body=${await res.text()}`,
+    );
+  }
+  return (await res.json()) as GraphSnapshotDiffResponse;
 }
