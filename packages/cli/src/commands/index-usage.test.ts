@@ -14,8 +14,11 @@ describe("top-level usage contracts", () => {
     expect(USAGE).toContain("qa-sdk docs status [doc-id|path] [--family-only] [--include-session] [--json]");
     expect(USAGE).toContain("qa-sdk docs collect <doc-id|path> [--graph] [--family-only] [--include-session]");
     expect(USAGE).toContain("qa-sdk docs graph <target> [--axis <csv>] [--filter-axis <csv>]");
-    expect(USAGE).toContain("qa-sdk docs search <query> [--kind <kind>] [--metadata key=value] [--json]");
+    expect(USAGE).toContain("qa-sdk docs search <selector|query> [--selector-scope root|family|owned] [--kind <kind>] [--metadata key=value] [--json]");
     expect(USAGE).toContain("qa-sdk docs drift [--prd <file>] [--include-session] [--json]");
+    expect(USAGE).toContain("qa-sdk docs cleanup review [doc-id|path] [--prd <file>] [--family-only] [--include-session] [--json]");
+    expect(USAGE).toContain("qa-sdk docs cleanup plan <record-path|doc-id|paired-path> --action archive|memo-conversion|promote-spec|rewrite [--override <json-file|inline-json>] [--dry-run] [--json]");
+    expect(USAGE).toContain("qa-sdk docs cleanup apply <record-path|doc-id|paired-path> --action archive|memo-conversion|promote-spec|rewrite [--override <json-file|inline-json>] [--json]");
     expect(USAGE).toContain("qa-sdk docs prd context <topic|doc-id> [--family-only] [--include-session] [--kind <csv>]");
     expect(USAGE).toContain("qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]");
     expect(USAGE).toContain("qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]");

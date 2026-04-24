@@ -135,6 +135,13 @@ Authored link vocabulary remains source-owned. Values like `contains`,
 canonical axes only for traversal. Presets such as `family`, `impact`, and
 `prd-completion` are convenience views over those axes, not new axes.
 
+Section nodes are read-only review anchors projected from `DocumentEnvelope.sections`.
+Current adapter coverage includes definition markdown marker sections such as
+`^purpose`, `^overview`, `^constraint`, plus heading sections such as
+`Scenario Matrix` when present. Section metadata may carry `sourceRefs[]` and
+`evidenceIds[]`; graph normalization turns those into section-level `source`
+and `evidence` edges without changing document ownership.
+
 | Preset | Axes | Direction | Depth | Context |
 |--------|------|-----------|-------|---------|
 | `family` | `role`, `composition` | `both` | 2 | excluded |
@@ -169,6 +176,10 @@ excluded from this active family scope unless explicitly targeted, and
 also passed. `docs collect --graph --family-only` returns a compact graph
 summary for the family-only document set; omitting `--family-only` keeps the
 normal graph traversal behavior.
+
+Raw `missingRoles[]` stays on traversal results, but CLI review output groups
+optional role gaps by family so sparse families do not print one repeated line
+per missing role slot.
 
 `docs status <doc-id> --json` also emits `roleCoverage` for the target family.
 It reports the active matrix roles `spec`, `plan`, `todo`, `rule`, `cases`,
@@ -229,7 +240,7 @@ Filter scope:
 | `--axis` | traversal input | Selects which canonical axes may be walked; can change raw `nodes`, `edges`, and `paths`. |
 | `--filter-axis` | result view | Keeps ranked nodes whose path contains the listed axes; cannot discover new nodes. |
 | `--kind` | result view | Matches graph node kind and document kind metadata. |
-| `--role` | result view | Matches family role metadata, role-like document kinds, or role-like file suffixes. |
+| `--role` | result view | Matches artifact roles such as `spec`, `todo`, `plan`, `rule`, `cases`, `test`, and `memo`. Semantic type such as `type: knowledge` is exposed through metadata/type coverage, not role. |
 | `--follow-up-category` | result view | Matches TODO/follow-up metadata such as `actionable`, `deferred`, or `parking-lot`. |
 | `--include-archive` | result view | Includes archived/historical/deprecated records in ranked/filtered views. |
 
@@ -313,25 +324,56 @@ Review flow:
    `node packages/cli/dist/index.js docs collect <target> --family-only --json`.
    Use the family-only view to check same-family role docs, direct module
    children, source refs, and evidence refs.
-3. Verify the source-owned completion signal. A completed TODO must still be
+3. Run
+   `node packages/cli/dist/index.js docs cleanup review [<target>|--prd <file>] --json`
+   to group completed-record candidates and compare `keep-as-evidence`,
+   `archive-review`, `memo-conversion-review`, and `promote-spec-review`
+   recommendations without mutating repository files.
+4. When a target is clear, run
+   `node packages/cli/dist/index.js docs cleanup plan <target> --action archive|memo-conversion|promote-spec|rewrite --json`
+   to validate the target, inspect the proposed output path, and capture the
+   validation commands and preserved evidence paths before any write workflow is
+   approved.
+5. An explicit write surface now exists:
+   `node packages/cli/dist/index.js docs cleanup apply <target> --action archive|memo-conversion|promote-spec|rewrite --json`.
+   It refuses overwrite, validates the target again, archives paired PRD JSON
+   alongside the markdown record when applicable, supports memo conversion for
+   completed TODO records, converts completed PRD markdown to `.memo.md`
+   while archiving the paired PRD JSON, can assimilate a completed TODO
+   into a single same-family spec before archiving the TODO record, rewrites
+   moved memo/rewrite targets when `bodyTemplate` or `appendMarkdown` is
+   supplied, and can append/update an explicit rewrite assimilation target
+   using the same override bundle.
+6. Batch cleanup is also available through `--all --recommended` or
+   `--all --action-map <json-file|inline-json>`. Repo-wide batch apply is
+   allowed, but only the supported action matrix runs and the preflight rejects
+   duplicate outputs or existing target paths before writing. Action-map values
+   may be strings or objects with `action`, `outputPath`,
+   `secondaryOutputPath`, `assimilationTargetPath`, `appendMarkdown`,
+   `bodyTemplate`, and `frontmatterPatch` overrides.
+   Override string fields support placeholders such as
+   `{{record.path}}`, `{{record.documentId}}`, `{{record.basename}}`,
+   `{{candidate.familyId}}`, `{{primary.path}}`, and `{{paired.path}}`.
+7. Verify the source-owned completion signal. A completed TODO must still be
    checked-only with zero open checkboxes and at least one checked checkbox. A
    completed PRD markdown record must still have paired ralph PRD JSON with all
    stories passing. For PRD-scoped candidates, run
    `node packages/cli/dist/index.js docs drift --prd <prd-file> --json` and
    treat completed-record `info` issues as review evidence, not failures.
-4. Decide whether to keep, archive, or convert. Keep a completed TODO in place
+8. Decide whether to keep, archive, convert, or promote. Keep a completed TODO in place
    when it is still the clearest audit trail, carries useful implementation
    evidence not represented elsewhere, remains part of an active family review,
    or has not been named by an approved cleanup PRD. Archive only stale
    execution records whose value is historical. Convert to memo/knowledge only
    when the record contains durable rationale, review notes, or decision
    context that should live outside TODO syntax.
-5. Create a future archive/memo conversion PRD when the cleanup would affect
-   multiple records, define archive or memo naming rules, change links or
-   frontmatter, change role-coverage expectations, or introduce any reusable
-   write command. That PRD must name target records, own the write authority,
-   preserve source/evidence links, and list the validation commands.
-6. Commit only the reviewed documentation edits, archive moves, or memo
+9. Create a future cleanup PRD only when the requested lifecycle rewrite goes
+   beyond the supported action matrix or override fields. Batch cleanup, custom
+   output paths, templated body/frontmatter patches, and bounded assimilation
+   target rewrites are already supported by `docs cleanup plan/apply`; a new
+   PRD is required only for new action semantics, broader link mutation policy,
+   or another reusable write contract.
+10. Commit only the reviewed documentation edits, archive moves, memo
    conversions from the explicit cleanup scope. `docs status`,
    `docs collect --family-only`, and `docs drift` are command evidence; they are
    not automatic archive or memo commands.
@@ -450,9 +492,12 @@ scheduling, archetypes, or storage layout.
   scenario matrix 후보를 dry-run으로 계산한다. 기본값은 repo-tracked 문서/PRD
   state만 보며, `.ralph-tui` session state는 `--include-session`일 때만 포함한다.
   `passes: true`는 candidate signal이고 source/test/evidence가 없는 TODO/spec
-  promotion은 blocked로 남긴다. Affected document reasons are canonical
-  `target`, `role`, `composition`, `trace`, `source`, or `evidence`; transient
-  session state uses `session` only when explicitly included.
+  promotion은 blocked로 남긴다. Candidate scoring은 canonical graph-axis signal
+  (`target`, `role`, `composition`, `trace`, `source`, `evidence`)과 aligned
+  source/test/evidence support를 함께 본다. `--evidence-only`는 source/test-only
+  proof를 무시하고, `--strict`는 blocked promotion, session drift, diagnostics를
+  review failure로 승격한다. Affected document reasons stay canonical and
+  transient session state uses `transient` only when explicitly included.
 - `docs transform metadata`: definition markdown frontmatter만 대상으로 dry-run
   projection을 만든다. 지원 rule은 `select|match`, `set.lifecycle`, `set.level`,
   `set.svc`, `set.sources`, `tags.add/remove`, `links.add/remove`,

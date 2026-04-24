@@ -10,7 +10,7 @@
  */
 
 import { existsSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import {
   compileBddContractsToPipeGraphs,
@@ -99,9 +99,11 @@ import {
 import {
   buildCompletedRecordCleanupReview,
   type CompletedRecordCleanupAction,
+  type CompletedRecordCleanupCandidate,
 } from "../lib/docs-control-plane/completed-record-review.js";
 import {
   buildCompletedRecordCleanupPlan,
+  type CompletedRecordCleanupPathOverrides,
   type CompletedRecordCleanupPlanAction,
 } from "../lib/docs-control-plane/completed-record-cleanup-plan.js";
 import { applyCompletedRecordCleanup } from "../lib/docs-control-plane/completed-record-cleanup-apply.js";
@@ -649,6 +651,15 @@ interface CleanupPlanResult {
   readonly target: string;
   readonly targetValidatedAs: "record-path" | "document-id" | "paired-path";
   readonly proposedOutputPath: string;
+  readonly secondaryOutputPath?: string;
+  readonly assimilationTargetPath?: string;
+  readonly appendMarkdown?: string;
+  readonly bodyTemplate?: string;
+  readonly frontmatterPatch?: {
+    readonly lifecycle?: string;
+    readonly svc?: string;
+    readonly tags?: readonly string[];
+  };
   readonly recommendationMatchesAction: boolean;
   readonly record: CompletedRecordState;
   readonly recommendation: {
@@ -673,8 +684,70 @@ interface CleanupApplyResult {
     readonly to: string;
     readonly kind: "record" | "paired";
   }[];
+  readonly updated: readonly string[];
   readonly preservedEvidencePaths: readonly string[];
   readonly warnings: readonly string[];
+}
+
+interface CleanupBatchSkip {
+  readonly record: CompletedRecordState;
+  readonly recommendation: {
+    readonly action: CompletedRecordCleanupAction;
+    readonly reason: string;
+  };
+  readonly reason: string;
+}
+
+interface CleanupBatchPlanResult {
+  readonly mode: "batch";
+  readonly strategy: "recommended" | "action-map";
+  readonly scope: "repo" | "family" | "prd";
+  readonly target?: string;
+  readonly actionMapSource?: string;
+  readonly dryRunDefaulted: boolean;
+  readonly counts: {
+    readonly completedRecords: number;
+    readonly candidates: number;
+    readonly planned: number;
+    readonly skipped: number;
+    readonly warnings: number;
+  };
+  readonly plans: readonly CleanupPlanResult[];
+  readonly skipped: readonly CleanupBatchSkip[];
+  readonly warnings: readonly string[];
+}
+
+interface CleanupBatchApplyResult {
+  readonly mode: "batch";
+  readonly strategy: "recommended" | "action-map";
+  readonly scope: "repo" | "family" | "prd";
+  readonly target?: string;
+  readonly actionMapSource?: string;
+  readonly counts: {
+    readonly applied: number;
+    readonly skipped: number;
+    readonly moved: number;
+    readonly updated: number;
+    readonly warnings: number;
+  };
+  readonly applied: readonly CleanupApplyResult[];
+  readonly skipped: readonly CleanupBatchSkip[];
+  readonly warnings: readonly string[];
+}
+
+interface CleanupScopeResolution {
+  readonly scope: "repo" | "family" | "prd";
+  readonly target?: string;
+  readonly documents: readonly DocumentEnvelope[];
+}
+
+interface CleanupBatchStrategySelection {
+  readonly strategy: "recommended" | "action-map";
+  readonly actionMap?: Readonly<Record<string, {
+    readonly action: CompletedRecordCleanupPlanAction;
+    readonly overrides?: CompletedRecordCleanupPathOverrides;
+  }>>;
+  readonly actionMapSource?: string;
 }
 
 const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
@@ -699,8 +772,10 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "qa-sdk docs search <selector|query> [--selector-scope root|family|owned] [--kind <kind>] [--metadata key=value] [--json]",
       "qa-sdk docs drift [--prd <file>] [--include-session] [--json]",
       "qa-sdk docs cleanup review [doc-id|path] [--prd <file>] [--family-only] [--include-session] [--json]",
-      "qa-sdk docs cleanup plan <record-path|doc-id|paired-path> --action archive|memo-conversion [--dry-run] [--json]",
-      "qa-sdk docs cleanup apply <record-path|doc-id|paired-path> --action archive|memo-conversion [--json]",
+      "qa-sdk docs cleanup plan <record-path|doc-id|paired-path> --action archive|memo-conversion|promote-spec|rewrite [--override <json-file|inline-json>] [--dry-run] [--json]",
+      "qa-sdk docs cleanup plan --all (--recommended | --action-map <json-file|inline-json>) [doc-id|path|--prd <file>] [--dry-run] [--json]",
+      "qa-sdk docs cleanup apply <record-path|doc-id|paired-path> --action archive|memo-conversion|promote-spec|rewrite [--override <json-file|inline-json>] [--json]",
+      "qa-sdk docs cleanup apply --all (--recommended | --action-map <json-file|inline-json>) [doc-id|path|--prd <file>] [--json]",
       "qa-sdk docs bdd list <doc-id|path> [--family-only] [--json]",
       "qa-sdk docs bdd validate <doc-id|path> [--family-only] [--json]",
       "qa-sdk docs bdd units <doc-id|path> [--family-only] [--json]",
@@ -742,6 +817,10 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "--dry-run                    preview only; this is the default",
       "--strict                     fail preview when blocked promotions, session drift, or diagnostics remain",
       "--evidence-only              count only evidence refs toward promotion support; ignore source/test-only proof",
+      "--all                        apply the cleanup command to every candidate in scope",
+      "--recommended                use review recommendations as the batch cleanup strategy",
+      "--action-map <json>          explicit completed-record -> action mapping for batch cleanup",
+      "--override <json>            explicit override object for a single cleanup target",
       "--apply                      unsupported in this PRD; returns a structured error",
       "--artifact-registry <file>   artifact evidence registry path (repeatable)",
       "--json                       emit structured JSON",
@@ -930,16 +1009,47 @@ async function cmdCleanup(
   const json = hasFlag(flags, "json");
   const action = positional[0];
   const target = positional.slice(1).join(" ").trim();
+  const batchAll = hasFlag(flags, "all");
+  const recommended = hasFlag(flags, "recommended");
 
   if (action !== "review" && action !== "plan" && action !== "apply") {
     console.error("Usage: qa-sdk docs cleanup review [doc-id|path] [--prd <file>] [--family-only] [--include-session] [--json]");
-    console.error("Usage: qa-sdk docs cleanup plan <record-path|doc-id|paired-path> --action archive|memo-conversion [--dry-run] [--json]");
-    console.error("Usage: qa-sdk docs cleanup apply <record-path|doc-id|paired-path> --action archive|memo-conversion [--json]");
+    console.error("Usage: qa-sdk docs cleanup plan <record-path|doc-id|paired-path> --action archive|memo-conversion|promote-spec|rewrite [--override <json-file|inline-json>] [--dry-run] [--json]");
+    console.error("Usage: qa-sdk docs cleanup plan --all (--recommended | --action-map <json-file|inline-json>) [doc-id|path|--prd <file>] [--dry-run] [--json]");
+    console.error("Usage: qa-sdk docs cleanup apply <record-path|doc-id|paired-path> --action archive|memo-conversion|promote-spec|rewrite [--override <json-file|inline-json>] [--json]");
+    console.error("Usage: qa-sdk docs cleanup apply --all (--recommended | --action-map <json-file|inline-json>) [doc-id|path|--prd <file>] [--json]");
     process.exitCode = 1;
     return;
   }
 
   if (action === "plan") {
+    if (batchAll) {
+      const strategy = await resolveCleanupBatchStrategy(options.rootDir, flags, "docs.cleanup.plan");
+      if (isStructuredDocsError(strategy)) {
+        printStructuredError(strategy, json);
+        process.exitCode = 1;
+        return;
+      }
+      const result = await buildCleanupBatchPlanResult(documents, options.rootDir, {
+        target: target || undefined,
+        prdPath: options.prdPath,
+        includeTransient: hasFlag(flags, "include-session"),
+        dryRunDefaulted: !hasFlag(flags, "dry-run"),
+        strategy,
+      });
+      if (isStructuredDocsError(result)) {
+        printStructuredError(result, json);
+        process.exitCode = 1;
+        return;
+      }
+      if (json) {
+        printJson(result);
+        return;
+      }
+      printCleanupBatchPlan(result);
+      return;
+    }
+
     if (hasFlag(flags, "apply")) {
       printStructuredError({
         error: {
@@ -959,8 +1069,8 @@ async function cmdCleanup(
         error: {
           code: "missing-required-option",
           operation: "docs.cleanup.plan",
-          message: "docs cleanup plan requires --action archive|memo-conversion.",
-          remediation: "Choose one explicit cleanup action with --action archive or --action memo-conversion.",
+          message: "docs cleanup plan requires --action archive|memo-conversion|promote-spec|rewrite.",
+          remediation: "Choose one explicit cleanup action with --action archive, --action memo-conversion, --action promote-spec, or --action rewrite.",
         },
       }, json);
       process.exitCode = 1;
@@ -978,11 +1088,18 @@ async function cmdCleanup(
       process.exitCode = 1;
       return;
     }
+    const override = await loadCleanupOverride(options.rootDir, pickLast(flags, "override"), cleanupAction);
+    if (isStructuredDocsError(override)) {
+      printStructuredError(override, json);
+      process.exitCode = 1;
+      return;
+    }
 
     const result = await buildCleanupPlanResult(documents, options.rootDir, {
       target,
       action: cleanupAction,
       dryRunDefaulted: !hasFlag(flags, "dry-run"),
+      ...(override ? { overrides: override } : {}),
     });
     if (isStructuredDocsError(result)) {
       printStructuredError(result, json);
@@ -999,14 +1116,40 @@ async function cmdCleanup(
   }
 
   if (action === "apply") {
+    if (batchAll) {
+      const strategy = await resolveCleanupBatchStrategy(options.rootDir, flags, "docs.cleanup.apply");
+      if (isStructuredDocsError(strategy)) {
+        printStructuredError(strategy, json);
+        process.exitCode = 1;
+        return;
+      }
+      const result = await buildCleanupBatchApplyResult(documents, options.rootDir, {
+        target: target || undefined,
+        prdPath: options.prdPath,
+        includeTransient: hasFlag(flags, "include-session"),
+        strategy,
+      });
+      if (isStructuredDocsError(result)) {
+        printStructuredError(result, json);
+        process.exitCode = 1;
+        return;
+      }
+      if (json) {
+        printJson(result);
+        return;
+      }
+      printCleanupBatchApply(result);
+      return;
+    }
+
     const cleanupAction = parseCleanupPlanAction(flags);
     if (!cleanupAction) {
       printStructuredError({
         error: {
           code: "missing-required-option",
           operation: "docs.cleanup.apply",
-          message: "docs cleanup apply requires --action archive|memo-conversion.",
-          remediation: "Choose one explicit cleanup action with --action archive or --action memo-conversion.",
+          message: "docs cleanup apply requires --action archive|memo-conversion|promote-spec|rewrite.",
+          remediation: "Choose one explicit cleanup action with --action archive, --action memo-conversion, --action promote-spec, or --action rewrite. Use --all --recommended for batch cleanup.",
         },
       }, json);
       process.exitCode = 1;
@@ -1024,10 +1167,17 @@ async function cmdCleanup(
       process.exitCode = 1;
       return;
     }
+    const override = await loadCleanupOverride(options.rootDir, pickLast(flags, "override"), cleanupAction);
+    if (isStructuredDocsError(override)) {
+      printStructuredError(override, json);
+      process.exitCode = 1;
+      return;
+    }
 
     const result = await buildCleanupApplyResult(documents, options.rootDir, {
       target,
       action: cleanupAction,
+      ...(override ? { overrides: override } : {}),
     });
     if (isStructuredDocsError(result)) {
       printStructuredError(result, json);
@@ -1078,8 +1228,314 @@ function parseCleanupPlanAction(
   flags: Readonly<Record<string, readonly string[]>>,
 ): CompletedRecordCleanupPlanAction | null {
   const action = pickLast(flags, "action");
-  if (action === "archive" || action === "memo-conversion") return action;
+  if (action === "archive" || action === "memo-conversion" || action === "promote-spec" || action === "rewrite") return action;
   return null;
+}
+
+async function resolveCleanupBatchStrategy(
+  rootDir: string,
+  flags: Readonly<Record<string, readonly string[]>>,
+  operation: string,
+): Promise<CleanupBatchStrategySelection | StructuredDocsError> {
+  const recommended = hasFlag(flags, "recommended");
+  const actionMap = pickLast(flags, "action-map");
+  if (recommended === Boolean(actionMap)) {
+    return {
+      error: {
+        code: "missing-required-option",
+        operation,
+        message: `${operation} --all requires exactly one strategy: --recommended or --action-map <json-file|inline-json>.`,
+        remediation: "Choose either --recommended for recommendation-driven cleanup, or --action-map with an explicit record-to-action mapping.",
+      },
+    };
+  }
+  if (recommended) {
+    return { strategy: "recommended" };
+  }
+
+  const loaded = await loadCleanupActionMap(rootDir, actionMap!);
+  if (isStructuredDocsError(loaded)) return loaded;
+  return {
+    strategy: "action-map",
+    actionMap: loaded.actionMap,
+    actionMapSource: loaded.source,
+  };
+}
+
+async function loadCleanupActionMap(
+  rootDir: string,
+  rawValue: string,
+): Promise<{ readonly source: string; readonly actionMap: Readonly<Record<string, { readonly action: CompletedRecordCleanupPlanAction; readonly overrides?: CompletedRecordCleanupPathOverrides }>> } | StructuredDocsError> {
+  const trimmed = rawValue.trim();
+  const source = trimmed.startsWith("{") ? "inline-json" : trimmed;
+  let content = trimmed;
+  if (!trimmed.startsWith("{")) {
+    const fullPath = isAbsolute(trimmed) ? trimmed : join(rootDir, trimmed);
+    if (!existsSync(fullPath)) {
+      return {
+        error: {
+          code: "cleanup-action-map-not-found",
+          operation: "docs.cleanup",
+          message: `Cleanup action-map file not found: ${trimmed}.`,
+          remediation: "Pass --action-map with an existing JSON file path or an inline JSON object.",
+        },
+      };
+    }
+    content = await readFile(fullPath, "utf8");
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch (error) {
+    return {
+      error: {
+        code: "cleanup-action-map-invalid-json",
+        operation: "docs.cleanup",
+        message: `Cleanup action-map is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
+        remediation: "Use a JSON object mapping completed record identifiers to archive|memo-conversion|promote-spec|rewrite.",
+      },
+    };
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return {
+      error: {
+        code: "cleanup-action-map-invalid-shape",
+        operation: "docs.cleanup",
+        message: "Cleanup action-map must be a JSON object.",
+        remediation: "Use a JSON object like {\"tasks/example-prd.md\":\"memo-conversion\"}.",
+      },
+    };
+  }
+
+  const actionMap: Record<string, { action: CompletedRecordCleanupPlanAction; overrides?: CompletedRecordCleanupPathOverrides }> = {};
+  for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+    const normalizedKey = key.trim();
+    if (!normalizedKey) {
+      return {
+        error: {
+          code: "cleanup-action-map-invalid-key",
+          operation: "docs.cleanup",
+          message: "Cleanup action-map keys must be non-empty strings.",
+          remediation: "Use record paths, document ids, or paired PRD JSON paths as action-map keys.",
+        },
+      };
+    }
+    const parsedEntry = normalizeCleanupActionMapEntry(normalizedKey, value);
+    if (isStructuredDocsError(parsedEntry)) return parsedEntry;
+    actionMap[normalizedKey] = parsedEntry;
+  }
+
+  return {
+    source,
+    actionMap,
+  };
+}
+
+async function loadCleanupOverride(
+  rootDir: string,
+  rawValue: string | undefined,
+  action: CompletedRecordCleanupPlanAction,
+): Promise<CompletedRecordCleanupPathOverrides | StructuredDocsError | null> {
+  if (!rawValue) return null;
+  const trimmed = rawValue.trim();
+  const source = trimmed.startsWith("{") ? "inline-json" : trimmed;
+  let content = trimmed;
+  if (!trimmed.startsWith("{")) {
+    const fullPath = isAbsolute(trimmed) ? trimmed : join(rootDir, trimmed);
+    if (!existsSync(fullPath)) {
+      return {
+        error: {
+          code: "cleanup-override-not-found",
+          operation: "docs.cleanup",
+          message: `Cleanup override file not found: ${trimmed}.`,
+          remediation: "Pass --override with an existing JSON file path or an inline JSON object.",
+        },
+      };
+    }
+    content = await readFile(fullPath, "utf8");
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch (error) {
+    return {
+      error: {
+        code: "cleanup-override-invalid-json",
+        operation: "docs.cleanup",
+        message: `Cleanup override is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
+        remediation: "Use a JSON object like {\"outputPath\":\"docs/archive/example.md\"}.",
+      },
+    };
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return {
+      error: {
+        code: "cleanup-override-invalid-shape",
+        operation: "docs.cleanup",
+        message: "Single-target cleanup override must be a JSON object.",
+        remediation: "Pass --override with one inline JSON object or file that contains one cleanup override definition.",
+      },
+    };
+  }
+  const entry = normalizeCleanupActionMapEntry(
+    "__override__",
+    isRecordWithAction(parsed) ? parsed : { action, ...(parsed as Record<string, unknown>) },
+  );
+  if (isStructuredDocsError(entry)) return entry;
+  if (entry.action !== action) {
+    return {
+      error: {
+        code: "cleanup-override-action-mismatch",
+        operation: "docs.cleanup",
+        message: `Single-target cleanup override action ${entry.action} does not match --action ${action}.`,
+        remediation: "Keep --action and the override entry action aligned, or omit action from the override and use --action as the source of truth.",
+      },
+    };
+  }
+  return entry.overrides ?? {};
+}
+
+function isRecordWithAction(value: unknown): value is Record<string, unknown> & { action: unknown } {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value) && "action" in value);
+}
+
+function normalizeCleanupActionMapEntry(
+  key: string,
+  value: unknown,
+): { readonly action: CompletedRecordCleanupPlanAction; readonly overrides?: CompletedRecordCleanupPathOverrides } | StructuredDocsError {
+  if (value === "archive" || value === "memo-conversion" || value === "promote-spec" || value === "rewrite") {
+    return { action: value };
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {
+      error: {
+        code: "cleanup-action-map-invalid-action",
+        operation: "docs.cleanup",
+        message: `Cleanup action-map entry ${key} has unsupported action ${String(value)}.`,
+        remediation: "Use archive, memo-conversion, promote-spec, rewrite, or an object like {\"action\":\"archive\",\"outputPath\":\"...\"}.",
+      },
+    };
+  }
+  const record = value as Record<string, unknown>;
+  const action = record.action;
+  if (action !== "archive" && action !== "memo-conversion" && action !== "promote-spec" && action !== "rewrite") {
+    return {
+      error: {
+        code: "cleanup-action-map-invalid-action",
+        operation: "docs.cleanup",
+        message: `Cleanup action-map entry ${key} has unsupported action ${String(action)}.`,
+        remediation: "Use only archive, memo-conversion, promote-spec, or rewrite as cleanup actions.",
+      },
+    };
+  }
+  const frontmatterPatch = record.frontmatterPatch && typeof record.frontmatterPatch === "object" && !Array.isArray(record.frontmatterPatch)
+    ? normalizeCleanupFrontmatterPatch(key, record.frontmatterPatch as Record<string, unknown>)
+    : null;
+  if (frontmatterPatch && isStructuredDocsError(frontmatterPatch)) {
+    return frontmatterPatch;
+  }
+  const overrides: CompletedRecordCleanupPathOverrides = {
+    ...(typeof record.outputPath === "string" && record.outputPath.trim().length > 0
+      ? { outputPath: record.outputPath.trim() }
+      : {}),
+    ...(typeof record.secondaryOutputPath === "string" && record.secondaryOutputPath.trim().length > 0
+      ? { secondaryOutputPath: record.secondaryOutputPath.trim() }
+      : {}),
+    ...(typeof record.assimilationTargetPath === "string" && record.assimilationTargetPath.trim().length > 0
+      ? { assimilationTargetPath: record.assimilationTargetPath.trim() }
+      : {}),
+    ...(typeof record.appendMarkdown === "string" && record.appendMarkdown.trim().length > 0
+      ? { appendMarkdown: record.appendMarkdown }
+      : {}),
+    ...(typeof record.bodyTemplate === "string" && record.bodyTemplate.trim().length > 0
+      ? { bodyTemplate: record.bodyTemplate }
+      : {}),
+    ...(frontmatterPatch ? frontmatterPatch : {}),
+  };
+  return {
+    action,
+    ...(Object.keys(overrides).length > 0 ? { overrides } : {}),
+  };
+}
+
+function normalizeCleanupFrontmatterPatch(
+  key: string,
+  value: Record<string, unknown>,
+): { readonly frontmatterPatch: { readonly lifecycle?: string; readonly svc?: string; readonly tags?: readonly string[]; readonly links?: readonly { readonly target: string; readonly type: string }[] } } | StructuredDocsError {
+  const patch: {
+    level?: string;
+    scope?: string;
+    aspect?: string;
+    depth?: string;
+    layer?: string;
+    lifecycle?: string;
+    svc?: string;
+    tags?: readonly string[];
+    links?: readonly { readonly target: string; readonly type: string }[];
+  } = {};
+  for (const field of Object.keys(value)) {
+    if (
+      field !== "level" &&
+      field !== "scope" &&
+      field !== "aspect" &&
+      field !== "depth" &&
+      field !== "layer" &&
+      field !== "lifecycle" &&
+      field !== "svc" &&
+      field !== "tags" &&
+      field !== "links"
+    ) {
+      return {
+        error: {
+          code: "cleanup-action-map-invalid-frontmatter-patch",
+          operation: "docs.cleanup",
+          message: `Cleanup action-map entry ${key} has unsupported frontmatterPatch field ${field}.`,
+          remediation: "Use only level, scope, aspect, depth, layer, lifecycle, svc, tags, or links in frontmatterPatch.",
+        },
+      };
+    }
+  }
+  if (typeof value.level === "string" && value.level.trim().length > 0) {
+    patch.level = value.level.trim();
+  }
+  if (typeof value.scope === "string" && value.scope.trim().length > 0) {
+    patch.scope = value.scope.trim();
+  }
+  if (typeof value.aspect === "string" && value.aspect.trim().length > 0) {
+    patch.aspect = value.aspect.trim();
+  }
+  if (typeof value.depth === "string" && value.depth.trim().length > 0) {
+    patch.depth = value.depth.trim();
+  }
+  if (typeof value.layer === "string" && value.layer.trim().length > 0) {
+    patch.layer = value.layer.trim();
+  }
+  if (typeof value.lifecycle === "string" && value.lifecycle.trim().length > 0) {
+    patch.lifecycle = value.lifecycle.trim();
+  }
+  if (typeof value.svc === "string" && value.svc.trim().length > 0) {
+    patch.svc = value.svc.trim();
+  }
+  if (Array.isArray(value.tags)) {
+    patch.tags = value.tags
+      .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+      .map((item) => item.trim());
+  }
+  if (Array.isArray(value.links)) {
+    const links = value.links.map((item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+      const record = item as Record<string, unknown>;
+      const targetValue = record.target;
+      const typeValue = record.type;
+      const target = typeof targetValue === "string" ? targetValue.trim() : "";
+      const type = typeof typeValue === "string" ? typeValue.trim() : "";
+      return target && type ? { target, type } : null;
+    }).filter((item): item is { target: string; type: string } => item !== null);
+    patch.links = links;
+  }
+  return Object.keys(patch).length > 0 ? { frontmatterPatch: patch } : { frontmatterPatch: {} };
 }
 
 async function cmdBdd(
@@ -2651,55 +3107,25 @@ async function buildCleanupReviewResult(
     readonly includeTransient: boolean;
   },
 ): Promise<CleanupReviewResult | StructuredDocsError> {
-  let scope: CleanupReviewResult["scope"] = "repo";
-  let scopedDocuments = documents;
-  let target = options.target;
-
-  if (options.prdPath) {
-    const resolvedPrd = resolveDocument(documents, options.prdPath);
-    if (!resolvedPrd) {
-      return docsGraphError(
-        "docs.cleanup.review",
-        "cleanup-prd-not-found",
-        `Cleanup review could not resolve PRD target "${options.prdPath}".`,
-        "Use --prd with a PRD markdown/JSON path that is already visible to docs control-plane adapters.",
-      );
-    }
-    scope = "prd";
-    target = options.prdPath;
-    scopedDocuments = collectFamilyOnlyScope(documents, resolvedPrd, {
-      familyOnly: true,
-      includeTransient: options.includeTransient,
-    }).documents;
-  } else if (options.target) {
-    const resolved = resolveDocument(documents, options.target);
-    if (!resolved) {
-      return docsGraphError(
-        "docs.cleanup.review",
-        "cleanup-target-not-found",
-        `Cleanup review could not resolve "${options.target}".`,
-        "Use a document id/path already visible to docs control-plane adapters, or omit the target to review all active completed records.",
-      );
-    }
-    scope = "family";
-    scopedDocuments = collectFamilyOnlyScope(documents, resolved, {
-      familyOnly: true,
-      includeTransient: options.includeTransient,
-    }).documents;
-  }
+  const scope = resolveCleanupScope(documents, {
+    target: options.target,
+    prdPath: options.prdPath,
+    includeTransient: options.includeTransient,
+  });
+  if (isStructuredDocsError(scope)) return scope;
 
   const completedRecords = await detectCompletedRecordsWithRalphIntegration({
     rootDir,
-    documents: scopedDocuments,
+    documents: scope.documents,
   });
   const review = buildCompletedRecordCleanupReview({
-    documents: scopedDocuments,
+    documents: scope.documents,
     completedRecords,
   });
 
   return {
-    ...(target ? { target } : {}),
-    scope,
+    ...(scope.target ? { target: scope.target } : {}),
+    scope: scope.scope,
     counts: {
       completedRecords: completedRecords.length,
       candidates: review.candidates.length,
@@ -2711,6 +3137,60 @@ async function buildCleanupReviewResult(
   };
 }
 
+function resolveCleanupScope(
+  documents: readonly DocumentEnvelope[],
+  options: {
+    readonly target?: string;
+    readonly prdPath?: string;
+    readonly includeTransient: boolean;
+  },
+): CleanupScopeResolution | StructuredDocsError {
+  if (options.prdPath) {
+    const resolvedPrd = resolveDocument(documents, options.prdPath);
+    if (!resolvedPrd) {
+      return docsGraphError(
+        "docs.cleanup",
+        "cleanup-prd-not-found",
+        `Cleanup scope could not resolve PRD target "${options.prdPath}".`,
+        "Use --prd with a PRD markdown/JSON path that is already visible to docs control-plane adapters.",
+      );
+    }
+    return {
+      scope: "prd",
+      target: options.prdPath,
+      documents: collectFamilyOnlyScope(documents, resolvedPrd, {
+        familyOnly: true,
+        includeTransient: options.includeTransient,
+      }).documents,
+    };
+  }
+
+  if (options.target) {
+    const resolved = resolveDocument(documents, options.target);
+    if (!resolved) {
+      return docsGraphError(
+        "docs.cleanup",
+        "cleanup-target-not-found",
+        `Cleanup scope could not resolve "${options.target}".`,
+        "Use a document id/path already visible to docs control-plane adapters, or omit the target to review all active completed records.",
+      );
+    }
+    return {
+      scope: "family",
+      target: options.target,
+      documents: collectFamilyOnlyScope(documents, resolved, {
+        familyOnly: true,
+        includeTransient: options.includeTransient,
+      }).documents,
+    };
+  }
+
+  return {
+    scope: "repo",
+    documents,
+  };
+}
+
 async function buildCleanupPlanResult(
   documents: readonly DocumentEnvelope[],
   rootDir: string,
@@ -2718,6 +3198,7 @@ async function buildCleanupPlanResult(
     readonly target: string;
     readonly action: CompletedRecordCleanupPlanAction;
     readonly dryRunDefaulted: boolean;
+    readonly overrides?: CompletedRecordCleanupPathOverrides;
   },
 ): Promise<CleanupPlanResult | StructuredDocsError> {
   const completedRecords = await detectCompletedRecordsWithRalphIntegration({
@@ -2730,6 +3211,7 @@ async function buildCleanupPlanResult(
     target: options.target,
     action: options.action,
     dryRunDefaulted: options.dryRunDefaulted,
+    ...(options.overrides ? { overrides: options.overrides } : {}),
   });
   if (!plan) {
     return docsGraphError(
@@ -2746,6 +3228,11 @@ async function buildCleanupPlanResult(
     target: plan.target,
     targetValidatedAs: plan.targetValidatedAs,
     proposedOutputPath: plan.proposedOutputPath,
+    ...(plan.secondaryOutputPath ? { secondaryOutputPath: plan.secondaryOutputPath } : {}),
+    ...(plan.assimilationTargetPath ? { assimilationTargetPath: plan.assimilationTargetPath } : {}),
+    ...(plan.appendMarkdown ? { appendMarkdown: plan.appendMarkdown } : {}),
+    ...(plan.bodyTemplate ? { bodyTemplate: plan.bodyTemplate } : {}),
+    ...(plan.frontmatterPatch ? { frontmatterPatch: plan.frontmatterPatch } : {}),
     recommendationMatchesAction: plan.recommendationMatchesAction,
     record: plan.record,
     recommendation: plan.candidate.recommendation,
@@ -2764,12 +3251,32 @@ async function buildCleanupApplyResult(
   options: {
     readonly target: string;
     readonly action: CompletedRecordCleanupPlanAction;
+    readonly plan?: CleanupPlanResult;
+    readonly overrides?: CompletedRecordCleanupPathOverrides;
   },
 ): Promise<CleanupApplyResult | StructuredDocsError> {
   const completedRecords = await detectCompletedRecordsWithRalphIntegration({
     rootDir,
     documents,
   });
+  const overridePlan = !options.plan && options.overrides
+    ? buildCompletedRecordCleanupPlan({
+      documents,
+      completedRecords,
+      target: options.target,
+      action: options.action,
+      dryRunDefaulted: false,
+      overrides: options.overrides,
+    })
+    : undefined;
+  if (!options.plan && options.overrides && !overridePlan) {
+    return docsGraphError(
+      "docs.cleanup.apply",
+      "cleanup-override-target-invalid",
+      `Cleanup apply override could not build a valid plan for "${options.target}".`,
+      "Run docs cleanup plan with the same --override first and confirm the target/action/override combination is valid.",
+    );
+  }
 
   try {
     const result = await applyCompletedRecordCleanup({
@@ -2778,6 +3285,22 @@ async function buildCleanupApplyResult(
       completedRecords,
       target: options.target,
       action: options.action,
+      ...(overridePlan ? { plan: overridePlan } : {}),
+      ...(options.plan ? { plan: buildCompletedRecordCleanupPlan({
+        documents,
+        completedRecords,
+        target: options.plan.target,
+        action: options.plan.action,
+        dryRunDefaulted: false,
+        overrides: {
+          outputPath: options.plan.proposedOutputPath,
+          ...(options.plan.secondaryOutputPath ? { secondaryOutputPath: options.plan.secondaryOutputPath } : {}),
+          ...(options.plan.assimilationTargetPath ? { assimilationTargetPath: options.plan.assimilationTargetPath } : {}),
+          ...(options.plan.appendMarkdown ? { appendMarkdown: options.plan.appendMarkdown } : {}),
+          ...(options.plan.bodyTemplate ? { bodyTemplate: options.plan.bodyTemplate } : {}),
+          ...(options.plan.frontmatterPatch ? { frontmatterPatch: options.plan.frontmatterPatch } : {}),
+        },
+      }) ?? undefined } : {}),
     });
     if (!result) {
       const plan = buildCompletedRecordCleanupPlan({
@@ -2826,6 +3349,266 @@ async function buildCleanupApplyResult(
     }
     throw error;
   }
+}
+
+async function buildCleanupBatchPlanResult(
+  documents: readonly DocumentEnvelope[],
+  rootDir: string,
+  options: {
+    readonly target?: string;
+    readonly prdPath?: string;
+    readonly includeTransient: boolean;
+    readonly dryRunDefaulted: boolean;
+    readonly strategy: CleanupBatchStrategySelection;
+  },
+): Promise<CleanupBatchPlanResult | StructuredDocsError> {
+  const scope = resolveCleanupScope(documents, options);
+  if (isStructuredDocsError(scope)) return scope;
+
+  const completedRecords = await detectCompletedRecordsWithRalphIntegration({
+    rootDir,
+    documents: scope.documents,
+  });
+  const review = buildCompletedRecordCleanupReview({
+    documents: scope.documents,
+    completedRecords,
+  });
+
+  const planned: CleanupPlanResult[] = [];
+  const skipped: CleanupBatchSkip[] = [];
+  for (const candidate of review.candidates) {
+    const selection = selectCleanupBatchAction(candidate, options.strategy);
+    if ("error" in selection) {
+      return docsGraphError(
+        "docs.cleanup",
+        "cleanup-action-map-conflict",
+        selection.error,
+        "Use exactly one cleanup action per completed record when supplying --action-map.",
+      );
+    }
+    if (!selection.action) {
+      skipped.push({
+        record: candidate.record,
+        recommendation: candidate.recommendation,
+        reason: selection.reason,
+      });
+      continue;
+    }
+    const plan = await buildCleanupPlanResult(scope.documents, rootDir, {
+      target: candidate.record.path,
+      action: selection.action,
+      dryRunDefaulted: options.dryRunDefaulted,
+      overrides: selection.overrides,
+    });
+    if (isStructuredDocsError(plan)) {
+      skipped.push({
+        record: candidate.record,
+        recommendation: candidate.recommendation,
+        reason: plan.error.message,
+      });
+      continue;
+    }
+    planned.push(plan);
+  }
+
+  const warnings = planned.flatMap((plan) => plan.warnings);
+  return {
+    mode: "batch",
+    strategy: options.strategy.strategy,
+    scope: scope.scope,
+    ...(scope.target ? { target: scope.target } : {}),
+    ...(options.strategy.actionMapSource ? { actionMapSource: options.strategy.actionMapSource } : {}),
+    dryRunDefaulted: options.dryRunDefaulted,
+    counts: {
+      completedRecords: completedRecords.length,
+      candidates: review.candidates.length,
+      planned: planned.length,
+      skipped: skipped.length,
+      warnings: warnings.length,
+    },
+    plans: planned,
+    skipped,
+    warnings,
+  };
+}
+
+async function buildCleanupBatchApplyResult(
+  documents: readonly DocumentEnvelope[],
+  rootDir: string,
+  options: {
+    readonly target?: string;
+    readonly prdPath?: string;
+    readonly includeTransient: boolean;
+    readonly strategy: CleanupBatchStrategySelection;
+  },
+): Promise<CleanupBatchApplyResult | StructuredDocsError> {
+  const scope = resolveCleanupScope(documents, options);
+  if (isStructuredDocsError(scope)) return scope;
+
+  const batchPlan = await buildCleanupBatchPlanResult(documents, rootDir, {
+    target: options.target,
+    prdPath: options.prdPath,
+    includeTransient: options.includeTransient,
+    dryRunDefaulted: false,
+    strategy: options.strategy,
+  });
+  if (isStructuredDocsError(batchPlan)) return batchPlan;
+
+  const preflight = await preflightCleanupBatchPlans(rootDir, batchPlan.plans);
+  if (preflight) return preflight;
+
+  const applied: CleanupApplyResult[] = [];
+  for (const plan of batchPlan.plans) {
+    const result = await buildCleanupApplyResult(scope.documents, rootDir, {
+      target: plan.target,
+      action: plan.action,
+      plan,
+    });
+    if (isStructuredDocsError(result)) return result;
+    applied.push(result);
+  }
+
+  return {
+    mode: "batch",
+    strategy: options.strategy.strategy,
+    scope: scope.scope,
+    ...(scope.target ? { target: scope.target } : {}),
+    ...(options.strategy.actionMapSource ? { actionMapSource: options.strategy.actionMapSource } : {}),
+    counts: {
+      applied: applied.length,
+      skipped: batchPlan.skipped.length,
+      moved: applied.reduce((count, item) => count + item.moved.length, 0),
+      updated: applied.reduce((count, item) => count + item.updated.length, 0),
+      warnings: applied.reduce((count, item) => count + item.warnings.length, 0),
+    },
+    applied,
+    skipped: batchPlan.skipped,
+    warnings: applied.flatMap((item) => item.warnings),
+  };
+}
+
+function recommendationToCleanupPlanAction(
+  action: CompletedRecordCleanupAction,
+): CompletedRecordCleanupPlanAction | null {
+  if (action === "archive-review") return "archive";
+  if (action === "memo-conversion-review") return "memo-conversion";
+  if (action === "promote-spec-review") return "promote-spec";
+  return null;
+}
+
+function selectCleanupBatchAction(
+  candidate: CompletedRecordCleanupCandidate,
+  strategy: CleanupBatchStrategySelection,
+): { readonly action: CompletedRecordCleanupPlanAction | null; readonly reason: string; readonly overrides?: CompletedRecordCleanupPathOverrides } | { readonly error: string } {
+  if (strategy.strategy === "recommended") {
+    const action = recommendationToCleanupPlanAction(candidate.recommendation.action);
+    if (!action) {
+      return {
+        action: null,
+        reason: "Recommendation stays advisory; no write plan is generated for keep-as-evidence.",
+      };
+    }
+    return {
+      action,
+      reason: "Recommendation-derived cleanup action.",
+    };
+  }
+
+  const mappedEntries = uniqueActionMapEntries([
+    strategy.actionMap?.[candidate.record.path],
+    strategy.actionMap?.[candidate.record.documentId],
+    candidate.record.pairedPath ? strategy.actionMap?.[candidate.record.pairedPath] : undefined,
+  ]);
+  if (mappedEntries.length === 0) {
+    return {
+      action: null,
+      reason: "No action-map entry selected this completed record.",
+    };
+  }
+  if (mappedEntries.length > 1) {
+    return {
+      error: `Cleanup action-map selects conflicting actions for ${candidate.record.path}: ${mappedEntries.map((entry) => entry.action).join(", ")}.`,
+    };
+  }
+  return {
+    action: mappedEntries[0]!.action,
+    reason: "Action-map selected cleanup action.",
+    ...(mappedEntries[0]!.overrides ? { overrides: mappedEntries[0]!.overrides } : {}),
+  };
+}
+
+function uniqueActionMapEntries(
+  values: readonly ({ readonly action: CompletedRecordCleanupPlanAction; readonly overrides?: CompletedRecordCleanupPathOverrides } | undefined)[],
+): readonly { readonly action: CompletedRecordCleanupPlanAction; readonly overrides?: CompletedRecordCleanupPathOverrides }[] {
+  const byKey = new Map<string, { readonly action: CompletedRecordCleanupPlanAction; readonly overrides?: CompletedRecordCleanupPathOverrides }>();
+  for (const value of values) {
+    if (!value) continue;
+    const key = JSON.stringify(value);
+    byKey.set(key, value);
+  }
+  return [...byKey.values()];
+}
+
+async function preflightCleanupBatchPlans(
+  rootDir: string,
+  plans: readonly CleanupPlanResult[],
+): Promise<StructuredDocsError | null> {
+  const moveOutputs = plans.flatMap((plan) => cleanupMoveOutputPaths(plan));
+  const duplicates = duplicateStrings(moveOutputs);
+  if (duplicates.length > 0) {
+    return docsGraphError(
+      "docs.cleanup.apply",
+      "cleanup-batch-conflict",
+      `Batch cleanup apply has conflicting output paths: ${duplicates.join(", ")}.`,
+      "Adjust the scope or run the conflicting cleanup operations one at a time.",
+    );
+  }
+
+  for (const path of moveOutputs) {
+    if (await pathExists(rootDir, path)) {
+      return docsGraphError(
+        "docs.cleanup.apply",
+        "cleanup-output-exists",
+        `Batch cleanup apply would overwrite existing path "${path}".`,
+        "Move the existing output path away or choose a narrower cleanup scope before retrying.",
+      );
+    }
+  }
+
+  return null;
+}
+
+function cleanupMoveOutputPaths(plan: CleanupPlanResult): readonly string[] {
+  if (plan.action === "archive") {
+    return unique([plan.proposedOutputPath, plan.secondaryOutputPath]);
+  }
+  if (plan.action === "memo-conversion") {
+    return unique([plan.proposedOutputPath, plan.secondaryOutputPath]);
+  }
+  if (plan.action === "promote-spec") {
+    return unique([plan.secondaryOutputPath]);
+  }
+  return [];
+}
+
+async function pathExists(rootDir: string, path: string): Promise<boolean> {
+  try {
+    await access(resolve(rootDir, normalizePath(path)));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function duplicateStrings(values: readonly string[]): readonly string[] {
+  const counts = new Map<string, number>();
+  for (const value of values) {
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([value]) => value)
+    .sort();
 }
 
 async function buildClosureResult(
@@ -5164,6 +5947,12 @@ function printCleanupPlan(result: CleanupPlanResult): void {
   console.log(`  dry-run defaulted: ${result.dryRunDefaulted ? "yes" : "no"}`);
   console.log(`  target validated as: ${result.targetValidatedAs}`);
   console.log(`  proposed output: ${result.proposedOutputPath}`);
+  if (result.secondaryOutputPath) {
+    console.log(`  secondary output: ${result.secondaryOutputPath}`);
+  }
+  if (result.assimilationTargetPath) {
+    console.log(`  assimilation target: ${result.assimilationTargetPath}`);
+  }
   console.log(`  recommendation match: ${result.recommendationMatchesAction ? "yes" : "no"}`);
   console.log(`  review recommendation: ${result.recommendation.action}`);
   console.log(`    reason: ${result.recommendation.reason}`);
@@ -5180,9 +5969,43 @@ function printCleanupApply(result: CleanupApplyResult): void {
   console.log(`  action: ${result.action}`);
   console.log(`  target validated as: ${result.targetValidatedAs}`);
   printNamedCollection("moved", result.moved, (move) => `[${move.kind}] ${move.from} -> ${move.to}`);
+  if (result.updated.length > 0) {
+    printNamedCollection("updated", result.updated, (path) => path);
+  }
   printNamedCollection("preserved evidence paths", result.preservedEvidencePaths, (path) => path);
   if (result.warnings.length > 0) {
     printNamedCollection("warnings", result.warnings, (warning) => warning);
+  }
+}
+
+function printCleanupBatchPlan(result: CleanupBatchPlanResult): void {
+  console.log(`docs cleanup plan: batch ${result.target ?? result.scope}`);
+  console.log(`  strategy: ${result.strategy}`);
+  console.log(`  scope: ${result.scope}`);
+  console.log(`  dry-run defaulted: ${result.dryRunDefaulted ? "yes" : "no"}`);
+  console.log(`  completed records/candidates/planned/skipped: ${result.counts.completedRecords}/${result.counts.candidates}/${result.counts.planned}/${result.counts.skipped}`);
+  printNamedCollection("planned cleanup actions", result.plans, (plan) =>
+    `${plan.action} ${plan.record.path} -> ${plan.proposedOutputPath}`,
+  );
+  if (result.skipped.length > 0) {
+    printNamedCollection("skipped cleanup candidates", result.skipped, (item) =>
+      `${item.record.path} (${item.recommendation.action}) :: ${item.reason}`,
+    );
+  }
+}
+
+function printCleanupBatchApply(result: CleanupBatchApplyResult): void {
+  console.log(`docs cleanup apply: batch ${result.target ?? result.scope}`);
+  console.log(`  strategy: ${result.strategy}`);
+  console.log(`  scope: ${result.scope}`);
+  console.log(`  applied/skipped/moved/updated: ${result.counts.applied}/${result.counts.skipped}/${result.counts.moved}/${result.counts.updated}`);
+  printNamedCollection("applied cleanup actions", result.applied, (item) =>
+    `${item.action} ${item.record.path}`,
+  );
+  if (result.skipped.length > 0) {
+    printNamedCollection("skipped cleanup candidates", result.skipped, (item) =>
+      `${item.record.path} (${item.recommendation.action}) :: ${item.reason}`,
+    );
   }
 }
 

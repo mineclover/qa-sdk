@@ -1602,8 +1602,9 @@ Track completed cleanup work.
           }),
           recommendation: expect.objectContaining({
             action: "keep-as-evidence",
+            reason: "Completed PRD markdown remains execution evidence unless an operator explicitly chooses archive or memo conversion.",
           }),
-          allowedActions: ["keep-as-evidence", "archive-review", "memo-conversion-review"],
+          allowedActions: ["keep-as-evidence", "archive-review", "memo-conversion-review", "promote-spec-review"],
         }),
         expect.objectContaining({
           record: expect.objectContaining({
@@ -1611,7 +1612,7 @@ Track completed cleanup work.
             path: "docs/specs/cleanup/cleanup.todo.md",
           }),
           recommendation: expect.objectContaining({
-            action: "archive-review",
+            action: "promote-spec-review",
           }),
           familyId: "docs/specs/cleanup/cleanup",
           relatedDocuments: expect.arrayContaining([
@@ -1643,7 +1644,7 @@ Track completed cleanup work.
     expect(text).toContain("scope: prd");
     expect(text).toContain("completed records: 1");
     expect(text).toContain("[prd] tasks/checkout-prd.md -> keep-as-evidence");
-    expect(text).toContain("allowed: keep-as-evidence, archive-review, memo-conversion-review");
+    expect(text).toContain("allowed: keep-as-evidence, archive-review, memo-conversion-review, promote-spec-review");
   });
 
   it("builds a dry-run cleanup archive plan for a completed todo record", async () => {
@@ -1714,13 +1715,13 @@ Track completed cleanup work.
       dryRunDefaulted: true,
       targetValidatedAs: "document-id",
       proposedOutputPath: "docs/specs/cleanup/archive/cleanup.todo.md",
-      recommendationMatchesAction: true,
+      recommendationMatchesAction: false,
       record: {
         path: "docs/specs/cleanup/cleanup.todo.md",
         kind: "todo",
       },
       recommendation: {
-        action: "archive-review",
+        action: "promote-spec-review",
       },
     });
     expect(result.validationCommands).toEqual(
@@ -1737,7 +1738,86 @@ Track completed cleanup work.
       ]),
     );
     expect(result.steps[1]).toContain("archive/cleanup.todo.md");
-    expect(result.warnings).toEqual([]);
+    expect(result.warnings).toEqual([
+      "Requested archive does not match cleanup review recommendation promote-spec-review.",
+    ]);
+  });
+
+  it("builds a dry-run spec promotion plan for a completed todo record", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/cleanup"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.spec.md"), `---
+def:
+  id: cleanup-spec
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+# Cleanup Spec
+
+## 목적 ^purpose
+
+Assimilate completed cleanup work into a stable spec.
+`);
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.todo.md"), `---
+def:
+  id: cleanup-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Cleanup Todo
+
+## 목적 ^purpose
+
+Track completed cleanup work.
+
+## Completed — 완료 기록
+
+- [x] Cleanup review surface is implemented.
+`);
+
+    await cliDocs([
+      "cleanup",
+      "plan",
+      "cleanup-todo",
+      "--action",
+      "promote-spec",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      action: string;
+      targetValidatedAs: string;
+      proposedOutputPath: string;
+      assimilationTargetPath: string;
+      secondaryOutputPath: string;
+      recommendation: { action: string };
+      validationCommands: string[];
+    }>();
+
+    expect(result).toMatchObject({
+      action: "promote-spec",
+      targetValidatedAs: "document-id",
+      proposedOutputPath: "docs/specs/cleanup/cleanup.spec.md",
+      assimilationTargetPath: "docs/specs/cleanup/cleanup.spec.md",
+      secondaryOutputPath: "docs/specs/cleanup/archive/cleanup.todo.md",
+      recommendation: {
+        action: "promote-spec-review",
+      },
+    });
+    expect(result.validationCommands).toEqual(
+      expect.arrayContaining([
+        "qa-sdk docs cleanup review docs/specs/cleanup/cleanup.todo.md --json",
+        "qa-sdk docs status cleanup-spec --family-only --json",
+      ]),
+    );
   });
 
   it("builds a dry-run memo conversion plan for a completed PRD pair and warns on recommendation mismatch", async () => {
@@ -1889,6 +1969,1142 @@ Track completed cleanup work.
     });
     await expect(readFile(join(workspace, "docs/specs/cleanup/cleanup.todo.md"), "utf8")).rejects.toThrow();
     await expect(readFile(join(workspace, "docs/specs/cleanup/cleanup.memo.md"), "utf8")).resolves.toContain("Cleanup Todo");
+  });
+
+  it("applies spec promotion for a completed todo by updating the spec and archiving the todo", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/cleanup"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.spec.md"), `---
+def:
+  id: cleanup-spec
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+# Cleanup Spec
+
+## 목적 ^purpose
+
+Assimilate completed cleanup work into a stable spec.
+`);
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.todo.md"), `---
+def:
+  id: cleanup-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Cleanup Todo
+
+## 목적 ^purpose
+
+Track completed cleanup work.
+
+## Completed — 완료 기록
+
+- [x] Cleanup review surface is implemented.
+`);
+
+    await cliDocs([
+      "cleanup",
+      "apply",
+      "cleanup-todo",
+      "--action",
+      "promote-spec",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      action: string;
+      updated: string[];
+      moved: Array<{ from: string; to: string; kind: string }>;
+    }>();
+    expect(result).toMatchObject({
+      action: "promote-spec",
+      updated: ["docs/specs/cleanup/cleanup.spec.md"],
+      moved: [
+        {
+          kind: "record",
+          from: "docs/specs/cleanup/cleanup.todo.md",
+          to: "docs/specs/cleanup/archive/cleanup.todo.md",
+        },
+      ],
+    });
+    await expect(readFile(join(workspace, "docs/specs/cleanup/cleanup.todo.md"), "utf8")).rejects.toThrow();
+    await expect(readFile(join(workspace, "docs/specs/cleanup/archive/cleanup.todo.md"), "utf8")).resolves.toContain("Cleanup Todo");
+    await expect(readFile(join(workspace, "docs/specs/cleanup/archive/cleanup.todo.md"), "utf8")).resolves.toContain("lifecycle: archived");
+    await expect(readFile(join(workspace, "docs/specs/cleanup/cleanup.spec.md"), "utf8")).resolves.toContain(
+      "Assimilated from `docs/specs/cleanup/cleanup.todo.md`.",
+    );
+  });
+
+  it("builds batch cleanup plans from recommended actions within a family scope", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/cleanup"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.spec.md"), `---
+def:
+  id: cleanup-spec
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+# Cleanup Spec
+
+## 목적 ^purpose
+
+Assimilate completed cleanup work into a stable spec.
+`);
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.todo.md"), `---
+def:
+  id: cleanup-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Cleanup Todo
+
+## 목적 ^purpose
+
+Track completed cleanup work.
+
+## Completed — 완료 기록
+
+- [x] Cleanup review surface is implemented.
+`);
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup-followup.todo.md"), `---
+def:
+  id: cleanup-followup-todo
+  familyId: docs/specs/cleanup/cleanup
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Cleanup Followup Todo
+
+## 목적 ^purpose
+
+Track second completed cleanup slice.
+
+## Completed — 완료 기록
+
+- [x] Cleanup followup slice is implemented.
+`);
+
+    await cliDocs([
+      "cleanup",
+      "plan",
+      "cleanup-spec",
+      "--all",
+      "--recommended",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      mode: string;
+      strategy: string;
+      scope: string;
+      counts: { completedRecords: number; planned: number; skipped: number };
+      plans: Array<{ action: string; record: { documentId: string; path: string }; assimilationTargetPath?: string }>;
+      skipped: Array<{ record: { path: string }; reason: string }>;
+    }>();
+    expect(result).toMatchObject({
+      mode: "batch",
+      strategy: "recommended",
+      scope: "family",
+      counts: {
+        completedRecords: 2,
+        planned: 2,
+        skipped: 0,
+      },
+    });
+    expect(result.plans).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: "promote-spec",
+          record: expect.objectContaining({ documentId: "cleanup-todo" }),
+          assimilationTargetPath: "docs/specs/cleanup/cleanup.spec.md",
+        }),
+        expect.objectContaining({
+          action: "promote-spec",
+          record: expect.objectContaining({ documentId: "cleanup-followup-todo" }),
+          assimilationTargetPath: "docs/specs/cleanup/cleanup.spec.md",
+        }),
+      ]),
+    );
+    expect(result.skipped).toEqual([]);
+  });
+
+  it("applies batch cleanup from recommended actions within a family scope", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/cleanup"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.spec.md"), `---
+def:
+  id: cleanup-spec
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+# Cleanup Spec
+
+## 목적 ^purpose
+
+Assimilate completed cleanup work into a stable spec.
+`);
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.todo.md"), `---
+def:
+  id: cleanup-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Cleanup Todo
+
+## 목적 ^purpose
+
+Track completed cleanup work.
+
+## Completed — 완료 기록
+
+- [x] Cleanup review surface is implemented.
+`);
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup-followup.todo.md"), `---
+def:
+  id: cleanup-followup-todo
+  familyId: docs/specs/cleanup/cleanup
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Cleanup Followup Todo
+
+## 목적 ^purpose
+
+Track second completed cleanup slice.
+
+## Completed — 완료 기록
+
+- [x] Cleanup followup slice is implemented.
+`);
+
+    await cliDocs([
+      "cleanup",
+      "apply",
+      "cleanup-spec",
+      "--all",
+      "--recommended",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      mode: string;
+      strategy: string;
+      scope: string;
+      counts: { applied: number; moved: number; updated: number; skipped: number };
+      applied: Array<{ action: string; record: { documentId: string }; updated: string[]; moved: Array<{ to: string }> }>;
+    }>();
+    expect(result).toMatchObject({
+      mode: "batch",
+      strategy: "recommended",
+      scope: "family",
+      counts: {
+        applied: 2,
+        moved: 2,
+        updated: 2,
+        skipped: 0,
+      },
+    });
+    expect(result.applied).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: "promote-spec",
+          record: expect.objectContaining({ documentId: "cleanup-todo" }),
+          updated: ["docs/specs/cleanup/cleanup.spec.md"],
+          moved: [expect.objectContaining({ to: "docs/specs/cleanup/archive/cleanup.todo.md" })],
+        }),
+        expect.objectContaining({
+          action: "promote-spec",
+          record: expect.objectContaining({ documentId: "cleanup-followup-todo" }),
+          updated: ["docs/specs/cleanup/cleanup.spec.md"],
+          moved: [expect.objectContaining({ to: "docs/specs/cleanup/archive/cleanup-followup.todo.md" })],
+        }),
+      ]),
+    );
+    await expect(readFile(join(workspace, "docs/specs/cleanup/cleanup.spec.md"), "utf8")).resolves.toContain(
+      "Assimilated from `docs/specs/cleanup/cleanup.todo.md`.",
+    );
+    await expect(readFile(join(workspace, "docs/specs/cleanup/cleanup.spec.md"), "utf8")).resolves.toContain(
+      "Assimilated from `docs/specs/cleanup/cleanup-followup.todo.md`.",
+    );
+    await expect(readFile(join(workspace, "docs/specs/cleanup/archive/cleanup.todo.md"), "utf8")).resolves.toContain("Cleanup Todo");
+    await expect(readFile(join(workspace, "docs/specs/cleanup/archive/cleanup-followup.todo.md"), "utf8")).resolves.toContain("Cleanup Followup Todo");
+    await expect(readFile(join(workspace, "docs/specs/cleanup/archive/cleanup.todo.md"), "utf8")).resolves.toContain("lifecycle: archived");
+    await expect(readFile(join(workspace, "docs/specs/cleanup/archive/cleanup-followup.todo.md"), "utf8")).resolves.toContain("lifecycle: archived");
+  });
+
+  it("applies repo-wide batch cleanup from recommended actions with mixed outcomes", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/cleanup"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.spec.md"), `---
+def:
+  id: cleanup-spec
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+# Cleanup Spec
+
+## 목적 ^purpose
+
+Assimilate completed cleanup work into a stable spec.
+`);
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.todo.md"), `---
+def:
+  id: cleanup-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Cleanup Todo
+
+## 목적 ^purpose
+
+Track completed cleanup work.
+
+## Completed — 완료 기록
+
+- [x] Cleanup review surface is implemented.
+`);
+
+    await cliDocs([
+      "cleanup",
+      "apply",
+      "--all",
+      "--recommended",
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      mode: string;
+      strategy: string;
+      scope: string;
+      counts: { applied: number; skipped: number; moved: number; updated: number };
+      applied: Array<{ action: string; record: { documentId: string } }>;
+      skipped: Array<{ record: { documentId: string }; recommendation: { action: string } }>;
+    }>();
+    expect(result).toMatchObject({
+      mode: "batch",
+      strategy: "recommended",
+      scope: "repo",
+      counts: {
+        applied: 1,
+        skipped: 1,
+        moved: 1,
+        updated: 1,
+      },
+    });
+    expect(result.applied).toEqual([
+      expect.objectContaining({
+        action: "promote-spec",
+        record: expect.objectContaining({ documentId: "cleanup-todo" }),
+      }),
+    ]);
+    expect(result.skipped).toEqual([
+      expect.objectContaining({
+        record: expect.objectContaining({ documentId: "tasks/checkout-prd" }),
+        recommendation: expect.objectContaining({ action: "keep-as-evidence" }),
+      }),
+    ]);
+    await expect(readFile(join(workspace, "docs/specs/cleanup/cleanup.spec.md"), "utf8")).resolves.toContain(
+      "Assimilated from `docs/specs/cleanup/cleanup.todo.md`.",
+    );
+    await expect(readFile(join(workspace, "docs/specs/cleanup/archive/cleanup.todo.md"), "utf8")).resolves.toContain("Cleanup Todo");
+  });
+
+  it("builds batch cleanup plans from an explicit action map", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/cleanup"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.todo.md"), `---
+def:
+  id: cleanup-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Cleanup Todo
+
+## 목적 ^purpose
+
+Track completed cleanup work.
+
+## Completed — 완료 기록
+
+- [x] Cleanup review surface is implemented.
+`);
+
+    await cliDocs([
+      "cleanup",
+      "plan",
+      "--all",
+      "--action-map",
+      JSON.stringify({
+        "tasks/checkout-prd.md": "archive",
+        "cleanup-todo": "memo-conversion",
+      }),
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      mode: string;
+      strategy: string;
+      actionMapSource?: string;
+      counts: { planned: number; skipped: number };
+      plans: Array<{ action: string; record: { documentId: string }; proposedOutputPath: string }>;
+      skipped: Array<{ record: { documentId: string }; reason: string }>;
+    }>();
+    expect(result).toMatchObject({
+      mode: "batch",
+      strategy: "action-map",
+      actionMapSource: "inline-json",
+      counts: {
+        planned: 2,
+      },
+    });
+    expect(result.plans).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: "archive",
+          record: expect.objectContaining({ documentId: "tasks/checkout-prd" }),
+          proposedOutputPath: "tasks/archive/checkout-prd.md",
+        }),
+        expect.objectContaining({
+          action: "memo-conversion",
+          record: expect.objectContaining({ documentId: "cleanup-todo" }),
+          proposedOutputPath: "docs/specs/cleanup/cleanup.memo.md",
+        }),
+      ]),
+    );
+    expect(result.skipped).toEqual([]);
+  });
+
+  it("applies batch cleanup from an explicit action map", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/cleanup"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.todo.md"), `---
+def:
+  id: cleanup-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Cleanup Todo
+
+## 목적 ^purpose
+
+Track completed cleanup work.
+
+## Completed — 완료 기록
+
+- [x] Cleanup review surface is implemented.
+`);
+
+    await cliDocs([
+      "cleanup",
+      "apply",
+      "--all",
+      "--action-map",
+      JSON.stringify({
+        "tasks/checkout-prd.md": "archive",
+        "cleanup-todo": "memo-conversion",
+      }),
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      mode: string;
+      strategy: string;
+      actionMapSource?: string;
+      counts: { applied: number; skipped: number; moved: number };
+      applied: Array<{ action: string; record: { documentId: string } }>;
+      skipped: Array<{ record: { documentId: string } }>;
+    }>();
+    expect(result).toMatchObject({
+      mode: "batch",
+      strategy: "action-map",
+      actionMapSource: "inline-json",
+      counts: {
+        applied: 2,
+      },
+    });
+    expect(result.applied).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: "archive",
+          record: expect.objectContaining({ documentId: "tasks/checkout-prd" }),
+        }),
+        expect.objectContaining({
+          action: "memo-conversion",
+          record: expect.objectContaining({ documentId: "cleanup-todo" }),
+        }),
+      ]),
+    );
+    expect(result.skipped).toEqual([]);
+    await expect(readFile(join(workspace, "tasks/archive/checkout-prd.md"), "utf8")).resolves.toContain("Checkout PRD");
+    await expect(readFile(join(workspace, "docs/specs/cleanup/cleanup.memo.md"), "utf8")).resolves.toContain("Cleanup Todo");
+  });
+
+  it("supports a batch rewrite action with in-place body/frontmatter updates", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/rewrite"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/rewrite/rewrite.todo.md"), `---
+def:
+  id: rewrite-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Rewrite Todo
+
+## 목적 ^purpose
+
+Track rewrite work.
+
+## Completed — 완료 기록
+
+- [x] Rewrite slice is implemented.
+`);
+
+    await cliDocs([
+      "cleanup",
+      "plan",
+      "--all",
+      "--action-map",
+      JSON.stringify({
+        "rewrite-todo": {
+          action: "rewrite",
+          bodyTemplate: "## Rewritten Body\n\n{{source.body}}\n\n{{appendMarkdown}}",
+          appendMarkdown: "Rewrite override applied.",
+          frontmatterPatch: {
+            svc: "rewrite-service",
+            tags: ["rewrite-applied"],
+          },
+        },
+      }),
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const plan = parsedOutput<{
+      strategy: string;
+      plans: Array<{ action: string; record: { documentId: string }; proposedOutputPath: string; warnings: string[] }>;
+    }>();
+    expect(plan.strategy).toBe("action-map");
+    expect(plan.plans).toEqual([
+      expect.objectContaining({
+        action: "rewrite",
+        record: expect.objectContaining({ documentId: "rewrite-todo" }),
+        proposedOutputPath: "docs/specs/rewrite/rewrite.todo.md",
+        warnings: expect.arrayContaining([
+          "Rewrite action is in-place; confirm the override intent before applying.",
+        ]),
+      }),
+    ]);
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs([
+      "cleanup",
+      "apply",
+      "--all",
+      "--action-map",
+      JSON.stringify({
+        "rewrite-todo": {
+          action: "rewrite",
+          bodyTemplate: "## Rewritten Body\n\n{{source.body}}\n\n{{appendMarkdown}}",
+          appendMarkdown: "Rewrite override applied.",
+          frontmatterPatch: {
+            svc: "rewrite-service",
+            tags: ["rewrite-applied"],
+          },
+        },
+      }),
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      strategy: string;
+      applied: Array<{ action: string; record: { documentId: string }; moved: unknown[]; updated: unknown[] }>;
+    }>();
+    expect(result.strategy).toBe("action-map");
+    expect(result.applied).toEqual([
+      expect.objectContaining({
+        action: "rewrite",
+        record: expect.objectContaining({ documentId: "rewrite-todo" }),
+        moved: [],
+      }),
+    ]);
+    await expect(readFile(join(workspace, "docs/specs/rewrite/rewrite.todo.md"), "utf8")).resolves.toContain("## Rewritten Body");
+    await expect(readFile(join(workspace, "docs/specs/rewrite/rewrite.todo.md"), "utf8")).resolves.toContain("Rewrite override applied.");
+    await expect(readFile(join(workspace, "docs/specs/rewrite/rewrite.todo.md"), "utf8")).resolves.toContain("svc: rewrite-service");
+    await expect(readFile(join(workspace, "docs/specs/rewrite/rewrite.todo.md"), "utf8")).resolves.toContain("tags: [rewrite-applied]");
+  });
+
+  it("supports a batch rewrite action with in-place frontmatter-only updates", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/rewrite"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/rewrite/rewrite.todo.md"), `---
+def:
+  id: rewrite-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Rewrite Todo
+
+## 목적 ^purpose
+
+Track rewrite work.
+
+## Completed — 완료 기록
+
+- [x] Rewrite slice is implemented.
+`);
+
+    await cliDocs([
+      "cleanup",
+      "apply",
+      "--all",
+      "--action-map",
+      JSON.stringify({
+        "rewrite-todo": {
+          action: "rewrite",
+          frontmatterPatch: {
+            svc: "rewrite-frontmatter",
+            tags: ["rewrite-only"],
+          },
+        },
+      }),
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    await expect(readFile(join(workspace, "docs/specs/rewrite/rewrite.todo.md"), "utf8")).resolves.toContain("svc: rewrite-frontmatter");
+    await expect(readFile(join(workspace, "docs/specs/rewrite/rewrite.todo.md"), "utf8")).resolves.toContain("tags: [rewrite-only]");
+    await expect(readFile(join(workspace, "docs/specs/rewrite/rewrite.todo.md"), "utf8")).resolves.not.toContain("## Rewritten Body");
+  });
+
+  it("supports single-target cleanup overrides via --override", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/rewrite"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/rewrite/rewrite.todo.md"), `---
+def:
+  id: rewrite-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Rewrite Todo
+
+## 목적 ^purpose
+
+Track rewrite work.
+
+## Completed — 완료 기록
+
+- [x] Rewrite slice is implemented.
+`);
+
+    await cliDocs([
+      "cleanup",
+      "plan",
+      "rewrite-todo",
+      "--action",
+      "rewrite",
+      "--override",
+      JSON.stringify({
+        bodyTemplate: "## Override Body\n\n{{source.body}}\n\n{{appendMarkdown}}",
+        appendMarkdown: "Single override applied.",
+        frontmatterPatch: {
+          svc: "single-override",
+          tags: ["single-override"],
+        },
+      }),
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const plan = parsedOutput<{
+      action: string;
+      bodyTemplate?: string;
+      appendMarkdown?: string;
+      frontmatterPatch?: { svc?: string; tags?: string[] };
+    }>();
+    expect(plan).toMatchObject({
+      action: "rewrite",
+      bodyTemplate: "## Override Body\n\n{{source.body}}\n\n{{appendMarkdown}}",
+      appendMarkdown: "Single override applied.",
+      frontmatterPatch: {
+        svc: "single-override",
+        tags: ["single-override"],
+      },
+    });
+
+    vi.mocked(console.log).mockClear();
+    await cliDocs([
+      "cleanup",
+      "apply",
+      "rewrite-todo",
+      "--action",
+      "rewrite",
+      "--override",
+      JSON.stringify({
+        bodyTemplate: "## Override Body\n\n{{source.body}}\n\n{{appendMarkdown}}",
+        appendMarkdown: "Single override applied.",
+        frontmatterPatch: {
+          svc: "single-override",
+          tags: ["single-override"],
+        },
+      }),
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    await expect(readFile(join(workspace, "docs/specs/rewrite/rewrite.todo.md"), "utf8")).resolves.toContain("## Override Body");
+    await expect(readFile(join(workspace, "docs/specs/rewrite/rewrite.todo.md"), "utf8")).resolves.toContain("Single override applied.");
+    await expect(readFile(join(workspace, "docs/specs/rewrite/rewrite.todo.md"), "utf8")).resolves.toContain("svc: single-override");
+    await expect(readFile(join(workspace, "docs/specs/rewrite/rewrite.todo.md"), "utf8")).resolves.toContain("tags: [single-override]");
+  });
+
+  it("applies memo conversion body overrides when the record moves", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/cleanup"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.todo.md"), `---
+def:
+  id: cleanup-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Cleanup Todo
+
+## 목적 ^purpose
+
+Track completed cleanup work.
+
+## Completed — 완료 기록
+
+- [x] Cleanup review surface is implemented.
+`);
+
+    await cliDocs([
+      "cleanup",
+      "apply",
+      "cleanup-todo",
+      "--action",
+      "memo-conversion",
+      "--override",
+      JSON.stringify({
+        bodyTemplate: "## Memo Override\n\nFrom {{source.path}}\n\n{{completedItemsMarkdown}}\n\n{{appendMarkdown}}",
+        appendMarkdown: "Memo override applied.",
+      }),
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    await expect(readFile(join(workspace, "docs/specs/cleanup/cleanup.memo.md"), "utf8")).resolves.toContain("## Memo Override");
+    await expect(readFile(join(workspace, "docs/specs/cleanup/cleanup.memo.md"), "utf8")).resolves.toContain(
+      "From docs/specs/cleanup/cleanup.todo.md",
+    );
+    await expect(readFile(join(workspace, "docs/specs/cleanup/cleanup.memo.md"), "utf8")).resolves.toContain(
+      "- Cleanup review surface is implemented.",
+    );
+    await expect(readFile(join(workspace, "docs/specs/cleanup/cleanup.memo.md"), "utf8")).resolves.toContain(
+      "Memo override applied.",
+    );
+  });
+
+  it("applies rewrite body overrides to moved records and assimilation targets", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/rewrite"), { recursive: true });
+    await mkdir(join(workspace, "docs/specs/target"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/rewrite/rewrite.todo.md"), `---
+def:
+  id: rewrite-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Rewrite Todo
+
+## 목적 ^purpose
+
+Track rewrite work.
+
+## Completed — 완료 기록
+
+- [x] Rewrite slice is implemented.
+`);
+    await writeFile(join(workspace, "docs/specs/target/target.spec.md"), `---
+def:
+  id: target-spec
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+# Target Spec
+
+## 목적 ^purpose
+
+Receive assimilated cleanup facts.
+`);
+
+    await cliDocs([
+      "cleanup",
+      "apply",
+      "rewrite-todo",
+      "--action",
+      "rewrite",
+      "--override",
+      JSON.stringify({
+        outputPath: "docs/specs/rewrite/archive/{{record.basename}}.md",
+        assimilationTargetPath: "docs/specs/target/target.spec.md",
+        bodyTemplate: "## Rewrite Bridge\n\nFrom {{source.path}}\n\n{{completedItemsMarkdown}}\n\n{{appendMarkdown}}",
+        appendMarkdown: "Rewrite assimilation applied.",
+        frontmatterPatch: {
+          svc: "rewrite-assimilation",
+          tags: ["rewrite-{{record.documentId}}"],
+        },
+      }),
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      action: string;
+      moved: Array<{ to: string }>;
+      updated: string[];
+    }>();
+    expect(result).toMatchObject({
+      action: "rewrite",
+      moved: [expect.objectContaining({ to: "docs/specs/rewrite/archive/rewrite.todo.md" })],
+      updated: ["docs/specs/target/target.spec.md"],
+    });
+    await expect(readFile(join(workspace, "docs/specs/rewrite/archive/rewrite.todo.md"), "utf8")).resolves.toContain(
+      "## Rewrite Bridge",
+    );
+    await expect(readFile(join(workspace, "docs/specs/rewrite/archive/rewrite.todo.md"), "utf8")).resolves.toContain(
+      "From docs/specs/rewrite/rewrite.todo.md",
+    );
+    await expect(readFile(join(workspace, "docs/specs/rewrite/archive/rewrite.todo.md"), "utf8")).resolves.toContain(
+      "- Rewrite slice is implemented.",
+    );
+    await expect(readFile(join(workspace, "docs/specs/rewrite/archive/rewrite.todo.md"), "utf8")).resolves.toContain(
+      "Rewrite assimilation applied.",
+    );
+    await expect(readFile(join(workspace, "docs/specs/rewrite/archive/rewrite.todo.md"), "utf8")).resolves.toContain(
+      "svc: rewrite-assimilation",
+    );
+    await expect(readFile(join(workspace, "docs/specs/rewrite/archive/rewrite.todo.md"), "utf8")).resolves.toContain(
+      "tags: [rewrite-rewrite-todo]",
+    );
+    await expect(readFile(join(workspace, "docs/specs/target/target.spec.md"), "utf8")).resolves.toContain(
+      "Receive assimilated cleanup facts.",
+    );
+    await expect(readFile(join(workspace, "docs/specs/target/target.spec.md"), "utf8")).resolves.toContain(
+      "## Rewrite Bridge",
+    );
+    await expect(readFile(join(workspace, "docs/specs/target/target.spec.md"), "utf8")).resolves.toContain(
+      "From docs/specs/rewrite/rewrite.todo.md",
+    );
+    await expect(readFile(join(workspace, "docs/specs/target/target.spec.md"), "utf8")).resolves.toContain(
+      "svc: rewrite-assimilation",
+    );
+  });
+
+  it("supports custom output and cross-family assimilation overrides in action-map plans", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/cleanup"), { recursive: true });
+    await mkdir(join(workspace, "docs/specs/target"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.todo.md"), `---
+def:
+  id: cleanup-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Cleanup Todo
+
+## 목적 ^purpose
+
+Track completed cleanup work.
+
+## Completed — 완료 기록
+
+- [x] Cleanup review surface is implemented.
+`);
+    await writeFile(join(workspace, "docs/specs/target/target.spec.md"), `---
+def:
+  id: target-spec
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+# Target Spec
+
+## 목적 ^purpose
+
+Receive assimilated cleanup facts.
+`);
+
+    await cliDocs([
+      "cleanup",
+      "plan",
+      "--all",
+      "--action-map",
+      JSON.stringify({
+        "cleanup-todo": {
+          action: "promote-spec",
+          assimilationTargetPath: "docs/specs/target/target.spec.md",
+          secondaryOutputPath: "docs/specs/custom-archive/{{record.basename}}.md",
+          appendMarkdown: "Custom cleanup note for {{record.documentId}}.",
+          bodyTemplate: "## Custom Assimilation\n\nFrom {{record.path}}\n\n{{completedItemsMarkdown}}\n\n{{appendMarkdown}}",
+          frontmatterPatch: {
+            level: "module",
+            scope: "constraint",
+            aspect: "tech_constraint",
+            depth: "validation",
+            layer: "operation",
+            lifecycle: "archived",
+            tags: ["cleanup-{{record.kind}}"],
+            svc: "cleanup-{{record.documentId}}",
+            links: [
+              { target: "{{primary.stableId}}", type: "refines" },
+            ],
+          },
+        },
+      }),
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      strategy: string;
+      plans: Array<{
+        action: string;
+        record: { documentId: string };
+        assimilationTargetPath?: string;
+        secondaryOutputPath?: string;
+        bodyTemplate?: string;
+      }>;
+    }>();
+    expect(result.strategy).toBe("action-map");
+    expect(result.plans).toEqual([
+      expect.objectContaining({
+        action: "promote-spec",
+        record: expect.objectContaining({ documentId: "cleanup-todo" }),
+        assimilationTargetPath: "docs/specs/target/target.spec.md",
+        secondaryOutputPath: "docs/specs/custom-archive/cleanup.todo.md",
+        bodyTemplate: "## Custom Assimilation\n\nFrom {{record.path}}\n\n{{completedItemsMarkdown}}\n\n{{appendMarkdown}}",
+      }),
+    ]);
+  });
+
+  it("applies custom output and cross-family assimilation overrides from an action-map", async () => {
+    const workspace = await createFixtureWorkspace();
+    await mkdir(join(workspace, "docs/specs/cleanup"), { recursive: true });
+    await mkdir(join(workspace, "docs/specs/target"), { recursive: true });
+    await writeFile(join(workspace, "docs/specs/cleanup/cleanup.todo.md"), `---
+def:
+  id: cleanup-todo
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: draft
+---
+# Cleanup Todo
+
+## 목적 ^purpose
+
+Track completed cleanup work.
+
+## Completed — 완료 기록
+
+- [x] Cleanup review surface is implemented.
+`);
+    await writeFile(join(workspace, "docs/specs/target/target.spec.md"), `---
+def:
+  id: target-spec
+  level: leaf
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+# Target Spec
+
+## 목적 ^purpose
+
+Receive assimilated cleanup facts.
+`);
+
+    await cliDocs([
+      "cleanup",
+      "apply",
+      "--all",
+      "--action-map",
+      JSON.stringify({
+        "cleanup-todo": {
+          action: "promote-spec",
+          assimilationTargetPath: "docs/specs/target/target.spec.md",
+          secondaryOutputPath: "docs/specs/custom-archive/{{record.basename}}.md",
+          appendMarkdown: "Custom cleanup note for {{record.documentId}}.",
+          bodyTemplate: "## Custom Assimilation\n\nFrom {{record.path}}\n\n{{completedItemsMarkdown}}\n\n{{appendMarkdown}}",
+          frontmatterPatch: {
+            level: "module",
+            scope: "constraint",
+            aspect: "tech_constraint",
+            depth: "validation",
+            layer: "operation",
+            lifecycle: "archived",
+            tags: ["cleanup-{{record.kind}}"],
+            svc: "cleanup-{{record.documentId}}",
+            links: [
+              { target: "{{primary.stableId}}", type: "refines" },
+            ],
+          },
+        },
+      }),
+      "--root",
+      workspace,
+      "--json",
+    ]);
+
+    const result = parsedOutput<{
+      strategy: string;
+      applied: Array<{
+        action: string;
+        record: { documentId: string };
+        updated: string[];
+        moved: Array<{ to: string }>;
+      }>;
+    }>();
+    expect(result.strategy).toBe("action-map");
+    expect(result.applied).toEqual([
+      expect.objectContaining({
+        action: "promote-spec",
+        record: expect.objectContaining({ documentId: "cleanup-todo" }),
+        updated: ["docs/specs/target/target.spec.md"],
+        moved: [expect.objectContaining({ to: "docs/specs/custom-archive/cleanup.todo.md" })],
+        warnings: expect.arrayContaining([
+          "Requested promote-spec does not match cleanup review recommendation memo-conversion-review.",
+        ]),
+      }),
+    ]);
+    await expect(readFile(join(workspace, "docs/specs/target/target.spec.md"), "utf8")).resolves.toContain(
+      "## Custom Assimilation",
+    );
+    await expect(readFile(join(workspace, "docs/specs/target/target.spec.md"), "utf8")).resolves.toContain(
+      "From docs/specs/cleanup/cleanup.todo.md",
+    );
+    await expect(readFile(join(workspace, "docs/specs/target/target.spec.md"), "utf8")).resolves.toContain(
+      "- Cleanup review surface is implemented.",
+    );
+    await expect(readFile(join(workspace, "docs/specs/target/target.spec.md"), "utf8")).resolves.toContain(
+      "Custom cleanup note for cleanup-todo.",
+    );
+    await expect(readFile(join(workspace, "docs/specs/custom-archive/cleanup.todo.md"), "utf8")).resolves.toContain(
+      "Cleanup Todo",
+    );
+    await expect(readFile(join(workspace, "docs/specs/custom-archive/cleanup.todo.md"), "utf8")).resolves.toContain(
+      "level: module",
+    );
+    await expect(readFile(join(workspace, "docs/specs/custom-archive/cleanup.todo.md"), "utf8")).resolves.toContain(
+      "scope: constraint",
+    );
+    await expect(readFile(join(workspace, "docs/specs/custom-archive/cleanup.todo.md"), "utf8")).resolves.toContain(
+      "aspect: tech_constraint",
+    );
+    await expect(readFile(join(workspace, "docs/specs/custom-archive/cleanup.todo.md"), "utf8")).resolves.toContain(
+      "depth: validation",
+    );
+    await expect(readFile(join(workspace, "docs/specs/custom-archive/cleanup.todo.md"), "utf8")).resolves.toContain(
+      "layer: operation",
+    );
+    await expect(readFile(join(workspace, "docs/specs/custom-archive/cleanup.todo.md"), "utf8")).resolves.toContain(
+      "lifecycle: archived",
+    );
+    await expect(readFile(join(workspace, "docs/specs/custom-archive/cleanup.todo.md"), "utf8")).resolves.toContain(
+      "tags: [cleanup-todo]",
+    );
+    await expect(readFile(join(workspace, "docs/specs/custom-archive/cleanup.todo.md"), "utf8")).resolves.toContain(
+      "svc: cleanup-cleanup-todo",
+    );
+    await expect(readFile(join(workspace, "docs/specs/custom-archive/cleanup.todo.md"), "utf8")).resolves.toContain(
+      "- target: cleanup-todo",
+    );
+    await expect(readFile(join(workspace, "docs/specs/custom-archive/cleanup.todo.md"), "utf8")).resolves.toContain(
+      "type: refines",
+    );
   });
 
   it("refuses cleanup apply when the archive output already exists", async () => {
