@@ -145,8 +145,8 @@ export const scenario3SelfDeptApproval: Scenario<S3Ctx> = {
       traceIds: traceIds.filter(Boolean),
       stepCount: 4,
       operatorHints: [
-        `pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${approved.rootSpanId}`,
-        `pnpm --filter @qa-sdk/sim-scenarios start -- audit first-failure --root-span-id ${approved.rootSpanId}`,
+        `approve-trace: pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${approved.rootSpanId}`,
+        `approve-first-failure: pnpm --filter @qa-sdk/sim-scenarios start -- audit first-failure --root-span-id ${approved.rootSpanId}`,
       ],
     };
   },

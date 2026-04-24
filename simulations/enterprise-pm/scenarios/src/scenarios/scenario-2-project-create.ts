@@ -124,6 +124,10 @@ export const scenario2ProjectCreate: Scenario<S2Ctx> = {
       },
       traceIds: traceIds.filter(Boolean),
       stepCount: 3,
+      operatorHints: [
+        `create: pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${created.rootSpanId}`,
+        `fetch: pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${fetched.rootSpanId}`,
+      ],
     };
   },
 
