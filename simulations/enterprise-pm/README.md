@@ -119,6 +119,7 @@ pnpm sim:scenarios density --prefix=sim.bitmap --version=uv1
 ## 운영 가이드
 
 상세 부팅·환경변수·troubleshooting → [`docs/operations.md`](docs/operations.md)
+canonical operator flow → [`docs/operator-workflows.md`](docs/operator-workflows.md)
 
 graph snapshot housekeeping CLI:
 

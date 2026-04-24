@@ -2,6 +2,8 @@
 
 운영자 / 디버거 참조 문서. 부팅 절차 + 환경 변수 + troubleshooting.
 
+operator handoff canonical flow: [`operator-workflows.md`](./operator-workflows.md)
+
 ## 1. 시스템 개요
 
 본 시뮬은 9 마이크로서비스 + Hono gateway + Redis + qa-sdk 본체 인프라(PG + ingest-server)로 구성된다. 8 시나리오를 실행하여 qa-sdk의 5축(권한·이벤트·관측·로직·로깅)을 검증한다.
