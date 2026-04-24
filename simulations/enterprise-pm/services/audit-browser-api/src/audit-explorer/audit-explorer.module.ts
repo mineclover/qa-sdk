@@ -24,6 +24,10 @@ import {
   GRAPH_RETENTION_HOUSEKEEPING_OPTIONS,
   GraphRetentionHousekeepingService,
 } from "../graph-explorer/graph-retention-housekeeping.service.js";
+import {
+  GRAPH_RETENTION_INSIGHT_ENDPOINT,
+  GraphRetentionInsightService,
+} from "../graph-explorer/graph-retention-insight.service.js";
 
 /**
  * AUDIT_RECORDER provider — 실 PgAuditRecorder / SqliteAuditRecorder 주입.
@@ -41,7 +45,12 @@ import {
   providers: [
     AuditExplorerService,
     GraphExplorerService,
+    GraphRetentionInsightService,
     GraphRetentionHousekeepingService,
+    {
+      provide: GRAPH_RETENTION_INSIGHT_ENDPOINT,
+      useValue: env.QA_INGEST_URL,
+    },
     {
       provide: GRAPH_RETENTION_HOUSEKEEPING_OPTIONS,
       useValue: {

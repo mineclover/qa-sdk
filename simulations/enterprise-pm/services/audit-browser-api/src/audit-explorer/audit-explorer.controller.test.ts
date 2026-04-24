@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { AuditExplorerController } from "./audit-explorer.controller.js";
 import { AuditExplorerService } from "./audit-explorer.service.js";
 import { GraphExplorerService } from "../graph-explorer/graph-explorer.service.js";
+import { GraphRetentionInsightService } from "../graph-explorer/graph-retention-insight.service.js";
 import type { AuditRecorder } from "permission-engine";
 
 function makeMockRecorder(
@@ -33,6 +34,15 @@ function makeMockGraphExplorer(
   } as unknown as GraphExplorerService;
 }
 
+function makeMockRetentionInsight(
+  overrides: Partial<GraphRetentionInsightService> = {},
+): GraphRetentionInsightService {
+  return {
+    getForGraph: vi.fn(async () => null),
+    ...overrides,
+  } as unknown as GraphRetentionInsightService;
+}
+
 describe("AuditExplorerController", () => {
   it("GET /audit/trace/:id — count + entries 응답", async () => {
     const rec = makeMockRecorder({
@@ -57,7 +67,11 @@ describe("AuditExplorerController", () => {
       ]),
     });
     const svc = new AuditExplorerService(rec);
-    const ctrl = new AuditExplorerController(svc, makeMockGraphExplorer());
+    const ctrl = new AuditExplorerController(
+      svc,
+      makeMockGraphExplorer(),
+      makeMockRetentionInsight(),
+    );
     const result = await ctrl.trace("x");
     expect(result.count).toBe(1);
     expect(result.rootSpanId).toBe("x");
@@ -66,7 +80,11 @@ describe("AuditExplorerController", () => {
   it("GET /audit/entry/:id (미존재) → NotFoundException", async () => {
     const rec = makeMockRecorder({ get: vi.fn(async () => null) });
     const svc = new AuditExplorerService(rec);
-    const ctrl = new AuditExplorerController(svc, makeMockGraphExplorer());
+    const ctrl = new AuditExplorerController(
+      svc,
+      makeMockGraphExplorer(),
+      makeMockRetentionInsight(),
+    );
     try {
       await ctrl.entry("nope");
       throw new Error("should have thrown");
@@ -111,10 +129,20 @@ describe("AuditExplorerController", () => {
           graph: { realms: [], nodes: [], relations: [] },
         })),
       }),
+      makeMockRetentionInsight({
+        getForGraph: vi.fn(async () => ({
+          total: 1,
+          summary: { "sim.graph_retention.graph_pruned": 1 },
+          byTrigger: { api: 1 },
+          byGraphId: { "graph-1": 1 },
+          items: [],
+        })),
+      }),
     );
     const result = await ctrl.context("root-1", "graph-1");
     expect(result.trace.count).toBe(1);
     expect(result.graphSnapshot.snapshotId).toBe("graph-1:001");
     expect(result.firstFailure).toBeNull();
+    expect(result.graphRetentionInsight?.total).toBe(1);
   });
 });

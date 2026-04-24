@@ -35,6 +35,10 @@ import {
   GraphExplorerService,
 } from "./graph-explorer/graph-explorer.service.js";
 import { GraphExplorerController } from "./graph-explorer/graph-explorer.controller.js";
+import {
+  GRAPH_RETENTION_INSIGHT_ENDPOINT,
+  GraphRetentionInsightService,
+} from "./graph-explorer/graph-retention-insight.service.js";
 
 export interface BootstrapArgs {
   /** 외부에서 이미 생성된 AuditRecorder. null/undefined 불허. */
@@ -62,8 +66,10 @@ function buildTestAuditExplorerModule(
     providers: [
       AuditExplorerService,
       GraphExplorerService,
+      GraphRetentionInsightService,
       { provide: AUDIT_RECORDER, useValue: recorder },
       { provide: AUTHORIZATION_GRAPH_STORE, useValue: graphStore },
+      { provide: GRAPH_RETENTION_INSIGHT_ENDPOINT, useValue: undefined },
     ],
     exports: [AuditExplorerService, GraphExplorerService, AUDIT_RECORDER, AUTHORIZATION_GRAPH_STORE],
   })
