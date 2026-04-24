@@ -3,7 +3,7 @@
 
 import { ok, equal } from "node:assert/strict";
 import type { Scenario } from "../runner/types.js";
-import { fetchAuditTrace } from "./lib/audit-helpers.js";
+import { fetchAuditContext } from "./lib/audit-helpers.js";
 
 interface S6Ctx {
   alice: { email: string; password: string };
@@ -134,26 +134,6 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
       graphRootId: string;
     };
 
-    const graphRes = await gatewayFetch(
-      new Request(`http://sim/audit/graphs/${ctx.graphRootId}/latest`, {
-        headers: { Authorization: `Bearer ${aliceToken}` },
-      }),
-    );
-    if (!graphRes.ok) {
-      throw new Error(
-        `delegation-graph: status=${graphRes.status} body=${await graphRes.text()}`,
-      );
-    }
-    const delegationGraph = (await graphRes.json()) as {
-      graphId: string;
-      snapshotId: string;
-      nodeCount: number;
-      relationCount: number;
-      graph: {
-        nodes: Array<{ coord: { anchor: string } }>;
-      };
-    };
-
     // frank login
     const frankLogin = await gatewayFetch(
       new Request("http://sim/auth/login", {
@@ -182,10 +162,14 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
       : {};
     frankRootSpanId = frankBody.rootSpanId ?? null;
 
-    // audit trace (alice token 으로 조회)
-    let trace: Awaited<ReturnType<typeof fetchAuditTrace>> | null = null;
+    let auditContext: Awaited<ReturnType<typeof fetchAuditContext>> | null = null;
     if (frankRootSpanId) {
-      trace = await fetchAuditTrace(gatewayFetch, frankRootSpanId, aliceToken);
+      auditContext = await fetchAuditContext(
+        gatewayFetch,
+        frankRootSpanId,
+        ctx.graphRootId,
+        aliceToken,
+      );
     }
 
     return {
@@ -193,15 +177,12 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
         delegateStatus: delegateRes.status,
         delegatedState: delegated.state,
         delegatedGraphRootId: delegated.graphRootId,
-        delegationGraphId: delegationGraph.graphId,
-        delegationGraphSnapshotId: delegationGraph.snapshotId,
-        delegationGraphNodeAnchors: delegationGraph.graph.nodes.map((node) => node.coord.anchor),
         frankReadOk: frankGetRes.ok,
         frankReadStatus: frankGetRes.status,
-        trace,
+        auditContext,
       },
       traceIds: traceIds.filter(Boolean),
-      stepCount: 5,
+      stepCount: 4,
     };
   },
 
@@ -216,16 +197,25 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
       (d.delegatedGraphRootId as string).startsWith("consultant-graph-"),
       "graphRootId must be set",
     );
-    equal(d.delegationGraphId, d.delegatedGraphRootId, "graph snapshot must be saved under graphRootId");
+    const auditContext = d.auditContext as {
+      graphId: string;
+      firstFailure: unknown;
+      trace: { entries: Array<{ kind: string; pass?: string; outcome: string }> };
+      graphSnapshot: {
+        snapshotId: string;
+        graph: { nodes: Array<{ coord: { anchor: string } }> };
+      };
+    } | null;
+    ok(auditContext, "audit context must exist");
+    equal(auditContext!.graphId, d.delegatedGraphRootId, "graph snapshot must be saved under graphRootId");
     ok(
-      typeof d.delegationGraphSnapshotId === "string" &&
-        (d.delegationGraphSnapshotId as string).length > 0,
+      typeof auditContext!.graphSnapshot.snapshotId === "string" &&
+        auditContext!.graphSnapshot.snapshotId.length > 0,
       "delegation graph snapshotId must exist",
     );
     ok(
-      Array.isArray(d.delegationGraphNodeAnchors) &&
-        (d.delegationGraphNodeAnchors as string[]).includes(ctx.graphRootId) &&
-        (d.delegationGraphNodeAnchors as string[]).includes(ctx.frank.id),
+      auditContext!.graphSnapshot.graph.nodes.map((node) => node.coord.anchor).includes(ctx.graphRootId) &&
+        auditContext!.graphSnapshot.graph.nodes.map((node) => node.coord.anchor).includes(ctx.frank.id),
       "delegation graph snapshot must contain graph root and delegate principal",
     );
 
@@ -235,9 +225,7 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
       `frank GET should succeed (DELEGATED → evaluator.evaluateDelegated allow), got status=${d.frankReadStatus}`,
     );
 
-    const trace = d.trace as {
-      entries: Array<{ kind: string; pass?: string; outcome: string }>;
-    } | null;
+    const trace = auditContext!.trace;
     if (trace) {
       const aclEntries = trace.entries.filter(
         (e) => e.kind === "check" && e.pass === "acl",

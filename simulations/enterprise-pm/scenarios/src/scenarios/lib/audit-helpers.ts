@@ -23,6 +23,22 @@ export interface AuditFirstFailureResponse {
   firstFailure: AuditEntry | null;
 }
 
+export interface AuditContextResponse {
+  rootSpanId: string;
+  graphId: string;
+  trace: AuditTraceResponse;
+  firstFailure: AuditEntry | null;
+  graphSnapshot: {
+    graphId: string;
+    snapshotId: string;
+    graph: {
+      nodes: Array<{ coord: { anchor: string } }>;
+      relations: Array<{ relationId: string }>;
+      realms: Array<{ realmId: string }>;
+    };
+  };
+}
+
 export async function fetchAuditTrace(
   gatewayFetch: (req: Request) => Promise<Response>,
   rootSpanId: string,
@@ -75,4 +91,23 @@ export async function fetchAuditEntry(
     );
   }
   return (await res.json()) as AuditEntry;
+}
+
+export async function fetchAuditContext(
+  gatewayFetch: (req: Request) => Promise<Response>,
+  rootSpanId: string,
+  graphId: string,
+  authToken: string,
+): Promise<AuditContextResponse> {
+  const res = await gatewayFetch(
+    new Request(`http://sim/audit/context/${rootSpanId}/${graphId}`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    }),
+  );
+  if (!res.ok) {
+    throw new Error(
+      `fetchAuditContext ${rootSpanId}/${graphId}: status=${res.status} body=${await res.text()}`,
+    );
+  }
+  return (await res.json()) as AuditContextResponse;
 }

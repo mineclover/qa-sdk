@@ -3,6 +3,7 @@
 
 import { Controller, Get, Inject, NotFoundException, Param } from "@nestjs/common";
 import { AuditExplorerService } from "./audit-explorer.service.js";
+import { GraphExplorerService } from "../graph-explorer/graph-explorer.service.js";
 
 /**
  * GET /audit/trace/:rootSpanId       — nested tree
@@ -13,6 +14,7 @@ import { AuditExplorerService } from "./audit-explorer.service.js";
 export class AuditExplorerController {
   constructor(
     @Inject(AuditExplorerService) private readonly svc: AuditExplorerService,
+    @Inject(GraphExplorerService) private readonly graphs: GraphExplorerService,
   ) {}
 
   @Get("trace/:rootSpanId")
@@ -32,5 +34,30 @@ export class AuditExplorerController {
     const e = await this.svc.getEntry(id);
     if (!e) throw new NotFoundException({ error: "not_found", spanId: id });
     return e;
+  }
+
+  @Get("context/:rootSpanId/:graphId")
+  async context(
+    @Param("rootSpanId") rootSpanId: string,
+    @Param("graphId") graphId: string,
+  ) {
+    const [entries, firstFailure, graphSnapshot] = await Promise.all([
+      this.svc.listTrace(rootSpanId),
+      this.svc.findFirstFailure(rootSpanId),
+      this.graphs.latest(graphId),
+    ]);
+    if (!graphSnapshot) {
+      throw new NotFoundException({ error: "graph_not_found", graphId });
+    }
+    return {
+      rootSpanId,
+      graphId,
+      trace: {
+        count: entries.length,
+        entries,
+      },
+      firstFailure,
+      graphSnapshot,
+    };
   }
 }
