@@ -3,9 +3,11 @@
 
 import { Inject, Injectable } from "@nestjs/common";
 import type {
+  AuthorizationGraphDiff,
   AuthorizationGraphSnapshotRecord,
   AuthorizationGraphStore,
 } from "authorization-ontology";
+import { diffAuthorizationGraphSnapshots } from "authorization-ontology";
 
 export const AUTHORIZATION_GRAPH_STORE = Symbol("AUTHORIZATION_GRAPH_STORE");
 
@@ -23,5 +25,16 @@ export class GraphExplorerService {
 
   async getSnapshot(snapshotId: string): Promise<AuthorizationGraphSnapshotRecord | null> {
     return this.store.getSnapshot(snapshotId);
+  }
+
+  async list(graphId: string): Promise<AuthorizationGraphSnapshotRecord[]> {
+    return this.store.listSnapshots({ graphId });
+  }
+
+  async diff(
+    fromSnapshotId: string,
+    toSnapshotId: string,
+  ): Promise<AuthorizationGraphDiff | null> {
+    return diffAuthorizationGraphSnapshots(this.store, fromSnapshotId, toSnapshotId);
   }
 }

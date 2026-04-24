@@ -19,6 +19,16 @@ export class GraphExplorerController {
     return snapshot;
   }
 
+  @Get(":graphId")
+  async list(@Param("graphId") graphId: string) {
+    const snapshots = await this.svc.list(graphId);
+    return {
+      graphId,
+      count: snapshots.length,
+      snapshots,
+    };
+  }
+
   @Get("snapshots/:snapshotId")
   async snapshot(@Param("snapshotId") snapshotId: string) {
     const snapshot = await this.svc.getSnapshot(snapshotId);
@@ -26,5 +36,21 @@ export class GraphExplorerController {
       throw new NotFoundException({ error: "snapshot_not_found", snapshotId });
     }
     return snapshot;
+  }
+
+  @Get("diff/:fromSnapshotId/:toSnapshotId")
+  async diff(
+    @Param("fromSnapshotId") fromSnapshotId: string,
+    @Param("toSnapshotId") toSnapshotId: string,
+  ) {
+    const diff = await this.svc.diff(fromSnapshotId, toSnapshotId);
+    if (!diff) {
+      throw new NotFoundException({
+        error: "graph_diff_not_found",
+        fromSnapshotId,
+        toSnapshotId,
+      });
+    }
+    return diff;
   }
 }

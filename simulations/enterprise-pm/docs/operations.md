@@ -164,6 +164,12 @@ curl http://localhost:8888/audit/firstFailure/<root-span-id> -H "Authorization: 
 
 # delegated graph snapshot 조회
 curl http://localhost:8888/audit/graphs/<graph-root-id>/latest -H "Authorization: Bearer $TOKEN" | jq .
+
+# delegated graph snapshot 목록
+curl http://localhost:8888/audit/graphs/<graph-root-id> -H "Authorization: Bearer $TOKEN" | jq .
+
+# delegated graph snapshot diff
+curl http://localhost:8888/audit/graphs/diff/<from-snapshot-id>/<to-snapshot-id> -H "Authorization: Bearer $TOKEN" | jq .
 ```
 
 기본 docker/PG 경로에서는 pm-api가 delegated graph snapshot을 `AuthorizationGraphStore` persistent adapter로 저장하고, audit-browser-api가 같은 table을 읽는다.

@@ -96,6 +96,8 @@ pnpm sim:scenarios density --prefix=sim.bitmap --version=uv1
 | sim-audit-browser-api | 5100 | audit trace explorer + authorization graph snapshot API |
 
 `sim-authorization-graph-provider`는 `AuthorizationGraphStore`의 sim adapter다. 기본 docker/PG 경로에서는 pm-api와 audit-browser-api가 같은 persistent graph snapshot table을 통해 delegated graph를 공유한다.
+
+`sim-audit-browser-api`는 최신 snapshot 조회뿐 아니라 graph별 snapshot 목록과 snapshot diff도 제공한다.
 | sim-metrics-collector | 5200 | Prometheus exporter |
 | sim-redis | 6379 | bitmap pub/sub + event broadcast |
 

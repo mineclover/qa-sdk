@@ -14,7 +14,9 @@ describe("GraphExplorerController", () => {
         createdAt: "2026-04-24T00:00:00.000Z",
         graph: { realms: [], nodes: [], relations: [] },
       })),
+      list: vi.fn(),
       getSnapshot: vi.fn(),
+      diff: vi.fn(),
     } as unknown as GraphExplorerService;
     const ctrl = new GraphExplorerController(svc);
     const result = await ctrl.latest("delegation-1");
@@ -24,11 +26,57 @@ describe("GraphExplorerController", () => {
   it("GET /audit/graphs/:graphId/latest not found -> NotFoundException", async () => {
     const svc = {
       latest: vi.fn(async () => null),
+      list: vi.fn(),
       getSnapshot: vi.fn(),
+      diff: vi.fn(),
     } as unknown as GraphExplorerService;
     const ctrl = new GraphExplorerController(svc);
     await expect(ctrl.latest("missing")).rejects.toMatchObject({
       response: { error: "graph_not_found", graphId: "missing" },
     });
+  });
+
+  it("GET /audit/graphs/:graphId lists snapshots", async () => {
+    const svc = {
+      latest: vi.fn(),
+      list: vi.fn(async () => [{ snapshotId: "s1" }, { snapshotId: "s2" }]),
+      getSnapshot: vi.fn(),
+      diff: vi.fn(),
+    } as unknown as GraphExplorerService;
+    const ctrl = new GraphExplorerController(svc);
+    const result = await ctrl.list("delegation-1");
+    expect(result.count).toBe(2);
+  });
+
+  it("GET /audit/graphs/diff/:from/:to returns diff", async () => {
+    const svc = {
+      latest: vi.fn(),
+      list: vi.fn(),
+      getSnapshot: vi.fn(),
+      diff: vi.fn(async () => ({
+        fromSnapshotId: "s1",
+        toSnapshotId: "s2",
+        summary: {
+          nodeCountDelta: 1,
+          relationCountDelta: 0,
+          realmCountDelta: 0,
+          addedNodeCount: 1,
+          removedNodeCount: 0,
+          addedRelationCount: 0,
+          removedRelationCount: 0,
+          addedRealmCount: 0,
+          removedRealmCount: 0,
+        },
+        addedNodeIds: ["n1"],
+        removedNodeIds: [],
+        addedRelationIds: [],
+        removedRelationIds: [],
+        addedRealmIds: [],
+        removedRealmIds: [],
+      })),
+    } as unknown as GraphExplorerService;
+    const ctrl = new GraphExplorerController(svc);
+    const result = await ctrl.diff("s1", "s2");
+    expect(result.summary.addedNodeCount).toBe(1);
   });
 });
