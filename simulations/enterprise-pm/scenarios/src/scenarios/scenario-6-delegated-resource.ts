@@ -7,6 +7,7 @@ import {
   fetchAuditContext,
   fetchGraphSnapshotDiff,
   fetchGraphSnapshotList,
+  fetchGraphSnapshotPrune,
 } from "./lib/audit-helpers.js";
 
 interface S6Ctx {
@@ -24,11 +25,12 @@ interface S6Ctx {
  *   UNREGISTERED → (auto REGISTERED) → DELEGATED 전이 (alice 호출)
  *   DELEGATED 상태에서 frank 접근 시 Pass 2 evaluateDelegated 호출
  *   evaluateDelegated 는 delegate endpoint가 기록한 authorization-graph snapshot
- *   (`AuthorizationGraphStore` backed in-memory adapter) 에서 delegate principal 을 조회해 allow 한다
+ *   (`AuthorizationGraphStore` persistent sim adapter) 에서 delegate principal 을 조회해 allow 한다
  *
  * 검증:
  *   - alice POST /projects/:id/delegate → 200, policy.state=DELEGATED
  *   - frank GET /projects/:id → 200 (Pass 2 acl branch allow)
+ *   - graph snapshot list/diff/prune → delegated graph lifecycle evidence
  *   - audit entry pass=acl 존재 (DELEGATED 분기 증거)
  */
 export const scenario6DelegatedResource: Scenario<S6Ctx> = {
@@ -49,6 +51,7 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
           fixtures: {
             alice: { email: string; password: string; departmentId: string };
             frank: { id: string; email: string; password: string };
+            eve: { id: string };
             departments: { eng: string };
           };
         }
@@ -189,6 +192,10 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
     let auditContext: Awaited<ReturnType<typeof fetchAuditContext>> | null = null;
     let graphSnapshotList: Awaited<ReturnType<typeof fetchGraphSnapshotList>> | null = null;
     let graphSnapshotDiff: Awaited<ReturnType<typeof fetchGraphSnapshotDiff>> | null = null;
+    let graphSnapshotPrune: Awaited<ReturnType<typeof fetchGraphSnapshotPrune>> | null = null;
+    let graphSnapshotListAfterPrune:
+      | Awaited<ReturnType<typeof fetchGraphSnapshotList>>
+      | null = null;
     if (frankRootSpanId) {
       auditContext = await fetchAuditContext(
         gatewayFetch,
@@ -210,6 +217,17 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
           to.snapshotId,
           aliceToken,
         );
+        graphSnapshotPrune = await fetchGraphSnapshotPrune(
+          gatewayFetch,
+          ctx.graphRootId,
+          1,
+          aliceToken,
+        );
+        graphSnapshotListAfterPrune = await fetchGraphSnapshotList(
+          gatewayFetch,
+          ctx.graphRootId,
+          aliceToken,
+        );
       }
     }
 
@@ -224,9 +242,11 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
         auditContext,
         graphSnapshotList,
         graphSnapshotDiff,
+        graphSnapshotPrune,
+        graphSnapshotListAfterPrune,
       },
       traceIds: traceIds.filter(Boolean),
-      stepCount: 5,
+      stepCount: 6,
     };
   },
 
@@ -285,6 +305,47 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
     ok(
       snapshotDiff!.summary.addedNodeCount >= 1,
       `expected graph diff to add nodes, got ${snapshotDiff!.summary.addedNodeCount}`,
+    );
+
+    const pruneResult = d.graphSnapshotPrune as {
+      beforeCount: number;
+      afterCount: number;
+      deletedSnapshotIds: string[];
+      keptSnapshotIds: string[];
+    } | null;
+    ok(pruneResult, "graph snapshot prune result must exist");
+    equal(
+      pruneResult!.beforeCount,
+      snapshotList!.count,
+      "prune should see the same snapshot count as the pre-prune list",
+    );
+    equal(pruneResult!.afterCount, 1, "prune should keep only the latest snapshot");
+    equal(
+      pruneResult!.deletedSnapshotIds.length,
+      pruneResult!.beforeCount - 1,
+      "prune should delete all but the latest snapshot",
+    );
+    equal(
+      pruneResult!.keptSnapshotIds.length,
+      1,
+      "prune should return one kept snapshot id",
+    );
+    equal(
+      pruneResult!.keptSnapshotIds[0],
+      auditContext!.graphSnapshot.snapshotId,
+      "prune should keep the latest snapshot from the composite audit view",
+    );
+
+    const snapshotListAfterPrune = d.graphSnapshotListAfterPrune as {
+      count: number;
+      snapshots: Array<{ snapshotId: string }>;
+    } | null;
+    ok(snapshotListAfterPrune, "graph snapshot list after prune must exist");
+    equal(snapshotListAfterPrune!.count, 1, "graph snapshot list after prune must contain one snapshot");
+    equal(
+      snapshotListAfterPrune!.snapshots[0]?.snapshotId,
+      pruneResult!.keptSnapshotIds[0],
+      "graph snapshot list after prune must match the kept snapshot",
     );
 
     equal(

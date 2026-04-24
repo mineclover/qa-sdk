@@ -60,6 +60,14 @@ export interface GraphSnapshotDiffResponse {
   };
 }
 
+export interface GraphSnapshotPruneResponse {
+  graphId: string;
+  beforeCount: number;
+  afterCount: number;
+  deletedSnapshotIds: string[];
+  keptSnapshotIds: string[];
+}
+
 export async function fetchAuditTrace(
   gatewayFetch: (req: Request) => Promise<Response>,
   rootSpanId: string,
@@ -168,4 +176,24 @@ export async function fetchGraphSnapshotDiff(
     );
   }
   return (await res.json()) as GraphSnapshotDiffResponse;
+}
+
+export async function fetchGraphSnapshotPrune(
+  gatewayFetch: (req: Request) => Promise<Response>,
+  graphId: string,
+  keepLatest: number,
+  authToken: string,
+): Promise<GraphSnapshotPruneResponse> {
+  const res = await gatewayFetch(
+    new Request(`http://sim/audit/graphs/${graphId}/prune/${keepLatest}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${authToken}` },
+    }),
+  );
+  if (!res.ok) {
+    throw new Error(
+      `fetchGraphSnapshotPrune ${graphId}/${keepLatest}: status=${res.status} body=${await res.text()}`,
+    );
+  }
+  return (await res.json()) as GraphSnapshotPruneResponse;
 }

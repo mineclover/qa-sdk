@@ -97,7 +97,7 @@ pnpm sim:scenarios density --prefix=sim.bitmap --version=uv1
 
 `sim-authorization-graph-provider`는 `AuthorizationGraphStore`의 sim adapter다. 기본 docker/PG 경로에서는 pm-api와 audit-browser-api가 같은 persistent graph snapshot table을 통해 delegated graph를 공유한다.
 
-`sim-audit-browser-api`는 최신 snapshot 조회뿐 아니라 graph별 snapshot 목록과 snapshot diff도 제공한다.
+`sim-audit-browser-api`는 최신 snapshot 조회뿐 아니라 graph별 snapshot 목록, snapshot diff, prune, trace+graph composite context를 제공한다.
 | sim-metrics-collector | 5200 | Prometheus exporter |
 | sim-redis | 6379 | bitmap pub/sub + event broadcast |
 
@@ -112,7 +112,7 @@ pnpm sim:scenarios density --prefix=sim.bitmap --version=uv1
 | 3 | 자기 부서 100만원 단일 승인 | state machine, audit nested tree |
 | 4 | cross-dept 단독 승인 → deny | RLS scoping, decision replay (firstFailure) |
 | 5 | 1500만원 → 3-stage 승인 | 다단계 transition, OTEL trace 일관성 |
-| 6 | DELEGATED 외부 컨설턴트 위임 | resource-policy.delegate, Pass 2 acl branch |
+| 6 | DELEGATED 외부 컨설턴트 위임 | resource-policy.delegate, Pass 2 acl branch, graph snapshot lifecycle |
 | 7 | bitmap 만료 → refresh | §2 §4 refresh endpoint |
 | 8 | 권한 변경 → pub/sub invalidation | §2 §5 Redis pub/sub, LRU flush |
 

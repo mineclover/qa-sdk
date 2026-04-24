@@ -171,11 +171,14 @@ curl http://localhost:8888/audit/graphs/<graph-root-id> -H "Authorization: Beare
 # delegated graph snapshot diff
 curl http://localhost:8888/audit/graphs/diff/<from-snapshot-id>/<to-snapshot-id> -H "Authorization: Bearer $TOKEN" | jq .
 
+# delegated graph snapshot retention cleanup (latest N만 보존)
+curl -X DELETE http://localhost:8888/audit/graphs/<graph-root-id>/prune/1 -H "Authorization: Bearer $TOKEN" | jq .
+
 # trace + firstFailure + latest graph snapshot composite view
 curl http://localhost:8888/audit/context/<root-span-id>/<graph-root-id> -H "Authorization: Bearer $TOKEN" | jq .
 ```
 
-기본 docker/PG 경로에서는 pm-api가 delegated graph snapshot을 `AuthorizationGraphStore` persistent adapter로 저장하고, audit-browser-api가 같은 table을 읽는다.
+기본 docker/PG 경로에서는 pm-api가 delegated graph snapshot을 `AuthorizationGraphStore` persistent adapter로 저장하고, audit-browser-api가 같은 table을 읽는다. operator는 prune endpoint로 graph별 snapshot retention을 정리할 수 있다.
 
 ### NestJS 서비스 부팅 실패
 
