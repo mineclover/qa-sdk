@@ -9,6 +9,10 @@ import {
 } from "@nestjs/common";
 import { createLogger } from "../lib/logger.js";
 import { GraphExplorerService } from "./graph-explorer.service.js";
+import {
+  buildGraphRetentionFailureLog,
+  buildGraphRetentionSweepLog,
+} from "./graph-retention-event.js";
 
 export interface GraphRetentionHousekeepingOptions {
   keepLatest?: number;
@@ -68,17 +72,30 @@ export class GraphRetentionHousekeepingService
       return;
     }
 
-    const result = await this.graphs.pruneAll(keepLatest);
-    this.logger.info(
-      {
-        trigger,
-        keepLatest,
-        graphCount: result.graphCount,
-        beforeCount: result.beforeCount,
-        afterCount: result.afterCount,
-        deletedCount: result.deletedSnapshotIds.length,
-      },
-      "graph retention housekeeping completed",
-    );
+    try {
+      const result = await this.graphs.pruneAll(keepLatest);
+      this.logger.info(
+        buildGraphRetentionSweepLog({
+          trigger,
+          keepLatest,
+          graphCount: result.graphCount,
+          beforeCount: result.beforeCount,
+          afterCount: result.afterCount,
+          deletedSnapshotIds: result.deletedSnapshotIds,
+          graphIds: result.graphIds,
+        }),
+        "graph retention housekeeping completed",
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        buildGraphRetentionFailureLog({
+          trigger,
+          keepLatest,
+          error: message,
+        }),
+        "graph retention housekeeping failed",
+      );
+    }
   }
 }

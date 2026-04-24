@@ -2,10 +2,17 @@
 // @def.doc authorization-graph-store
 
 import { Controller, Delete, Get, Inject, NotFoundException, Param } from "@nestjs/common";
+import { createLogger } from "../lib/logger.js";
 import { GraphExplorerService } from "./graph-explorer.service.js";
+import {
+  buildGraphRetentionGraphLog,
+  buildGraphRetentionSweepLog,
+} from "./graph-retention-event.js";
 
 @Controller("audit/graphs")
 export class GraphExplorerController {
+  private readonly logger = createLogger("sim-audit-browser-api.graph-explorer");
+
   constructor(
     @Inject(GraphExplorerService) private readonly svc: GraphExplorerService,
   ) {}
@@ -25,7 +32,20 @@ export class GraphExplorerController {
     if (!Number.isFinite(parsedKeepLatest) || parsedKeepLatest < 0) {
       throw new NotFoundException({ error: "invalid_keep_latest", keepLatest });
     }
-    return this.svc.pruneAll(parsedKeepLatest);
+    const result = await this.svc.pruneAll(parsedKeepLatest);
+    this.logger.info(
+      buildGraphRetentionSweepLog({
+        trigger: "api",
+        keepLatest: parsedKeepLatest,
+        graphCount: result.graphCount,
+        beforeCount: result.beforeCount,
+        afterCount: result.afterCount,
+        deletedSnapshotIds: result.deletedSnapshotIds,
+        graphIds: result.graphIds,
+      }),
+      "graph retention sweep requested via API",
+    );
+    return result;
   }
 
   @Get(":graphId/latest")
@@ -81,6 +101,19 @@ export class GraphExplorerController {
     if (!Number.isFinite(parsedKeepLatest) || parsedKeepLatest < 0) {
       throw new NotFoundException({ error: "invalid_keep_latest", keepLatest });
     }
-    return this.svc.prune(graphId, parsedKeepLatest);
+    const result = await this.svc.prune(graphId, parsedKeepLatest);
+    this.logger.info(
+      buildGraphRetentionGraphLog({
+        trigger: "api",
+        graphId,
+        keepLatest: parsedKeepLatest,
+        beforeCount: result.beforeCount,
+        afterCount: result.afterCount,
+        deletedSnapshotIds: result.deletedSnapshotIds,
+        keptSnapshotIds: result.keptSnapshotIds,
+      }),
+      "graph retention prune requested via API",
+    );
+    return result;
   }
 }

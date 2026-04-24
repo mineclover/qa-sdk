@@ -202,6 +202,11 @@ SIM_GRAPH_RETENTION_RUN_ON_BOOT=true \
 pnpm --filter @qa-sdk/sim-audit-browser-api start
 ```
 
+retention observability event keys:
+- `sim.graph_retention.sweep`
+- `sim.graph_retention.graph_pruned`
+- `sim.graph_retention.failed`
+
 ### NestJS 서비스 부팅 실패
 
 ```bash

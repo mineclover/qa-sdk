@@ -135,6 +135,11 @@ SIM_GRAPH_RETENTION_INTERVAL_MS=60000 \
 pnpm --filter @qa-sdk/sim-audit-browser-api start
 ```
 
+retention observability events:
+- `sim.graph_retention.sweep`
+- `sim.graph_retention.graph_pruned`
+- `sim.graph_retention.failed`
+
 ## 외부 의존 (qa-sdk 본체 컨테이너)
 
 - `qa-sdk-db` (5434) — `sim` schema
