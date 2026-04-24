@@ -27,6 +27,7 @@ import type {
   ServicePrefixInsight,
   CorrelationInsight,
   ErrorInsight,
+  GraphRetentionInsight,
   PrefixCorrelation,
   IntentLinkSuggestion,
 } from "../ports/insights-store.port.js";
@@ -35,6 +36,11 @@ type DrizzleDb = ReturnType<typeof drizzle>;
 
 const AUTO_EVENT_KEY_LIST = ["click", "page_view", "form_submit", "scroll", "visibility_change"] as const;
 const AUTO_EVENT_KEYS = new Set<string>(AUTO_EVENT_KEY_LIST);
+const GRAPH_RETENTION_EVENT_KEYS = [
+  "sim.graph_retention.sweep",
+  "sim.graph_retention.graph_pruned",
+  "sim.graph_retention.failed",
+] as const;
 
 const EVENT_CATEGORY_PATTERNS: Array<{ pattern: RegExp; category: string }> = [
   { pattern: /^page\.|^screen\.|^route\./, category: "navigation" },
@@ -569,5 +575,86 @@ export class DrizzleInsightsStore implements InsightsStore {
       byCode[item.code] = (byCode[item.code] ?? 0) + 1;
     }
     return { items, total: items.length, byService, byCode };
+  }
+
+  async getGraphRetentionEvents(opts?: {
+    limit?: number;
+    graphId?: string;
+  }): Promise<GraphRetentionInsight> {
+    const rows = this.db
+      .select({
+        logId: eventRecords.logId,
+        traceId: eventRecords.traceId,
+        timestamp: eventRecords.timestamp,
+        eventKey: eventRecords.eventKey,
+        payload: eventRecords.payload,
+        addressContext: eventRecords.addressContext,
+      })
+      .from(eventRecords)
+      .where(
+        opts?.graphId
+          ? sql`${eventRecords.eventKey} IN (${sql.join(GRAPH_RETENTION_EVENT_KEYS.map((key) => sql`${key}`), sql`, `)})
+              AND ${eventRecords.addressContext} LIKE ${`%authorization_graph:v1:${opts.graphId}%`}`
+          : inArray(eventRecords.eventKey, GRAPH_RETENTION_EVENT_KEYS as unknown as string[]),
+      )
+      .orderBy(desc(eventRecords.timestamp))
+      .limit(opts?.limit ?? 50)
+      .all();
+
+    const items = rows.map((row) => {
+      const payload = parseJsonColumn<EventPayloadJson | undefined>(row.payload, undefined);
+      const addressContext = parseJsonColumn<Record<string, string> | undefined>(
+        row.addressContext,
+        undefined,
+      );
+      const graphRef = addressContext?.graph;
+      const graphScope = addressContext?.graph_scope ?? null;
+      const graphId = graphRef?.startsWith("authorization_graph:v1:")
+        ? graphRef.slice("authorization_graph:v1:".length)
+        : null;
+
+      return {
+        logId: row.logId,
+        traceId: row.traceId,
+        timestamp: row.timestamp,
+        eventKey: row.eventKey,
+        graphId,
+        graphScope,
+        trigger: typeof payload?.trigger === "string" ? payload.trigger : null,
+        keepLatest:
+          typeof payload?.keepLatest === "number" ? payload.keepLatest : null,
+        beforeCount:
+          typeof payload?.beforeCount === "number" ? payload.beforeCount : null,
+        afterCount:
+          typeof payload?.afterCount === "number" ? payload.afterCount : null,
+        deletedCount:
+          typeof payload?.deletedCount === "number" ? payload.deletedCount : null,
+        error: typeof payload?.error === "string" ? payload.error : null,
+        addressContext,
+      };
+    });
+
+    const summary: Record<string, number> = {};
+    const byTrigger: Record<string, number> = {};
+    const byGraphId: Record<string, number> = {};
+    for (const item of items) {
+      summary[item.eventKey] = (summary[item.eventKey] ?? 0) + 1;
+      if (item.trigger) {
+        byTrigger[item.trigger] = (byTrigger[item.trigger] ?? 0) + 1;
+      }
+      if (item.graphId) {
+        byGraphId[item.graphId] = (byGraphId[item.graphId] ?? 0) + 1;
+      } else if (item.graphScope) {
+        byGraphId[item.graphScope] = (byGraphId[item.graphScope] ?? 0) + 1;
+      }
+    }
+
+    return {
+      items,
+      total: items.length,
+      summary,
+      byTrigger,
+      byGraphId,
+    };
   }
 }

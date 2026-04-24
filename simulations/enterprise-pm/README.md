@@ -140,6 +140,13 @@ retention observability events:
 - `sim.graph_retention.graph_pruned`
 - `sim.graph_retention.failed`
 
+ingest insight query:
+
+```bash
+curl "http://localhost:3200/v1/insights/graph-retention?limit=20" | jq .
+curl "http://localhost:3200/v1/insights/graph-retention?graph_id=consultant-graph-123" | jq .
+```
+
 ## 외부 의존 (qa-sdk 본체 컨테이너)
 
 - `qa-sdk-db` (5434) — `sim` schema

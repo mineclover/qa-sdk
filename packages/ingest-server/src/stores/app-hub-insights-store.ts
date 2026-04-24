@@ -26,6 +26,7 @@ import type {
   ServicePrefixInsight,
   CorrelationInsight,
   ErrorInsight,
+  GraphRetentionInsight,
 } from "../ports/insights-store.port.js";
 
 export interface AppHubConfig {
@@ -136,6 +137,19 @@ export class AppHubInsightsStore implements InsightsStore {
 
   async getErrors(_opts?: { limit?: number }): Promise<ErrorInsight> {
     return this.stubQuery("getErrors", { items: [], total: 0, byService: {}, byCode: {} });
+  }
+
+  async getGraphRetentionEvents(_opts?: {
+    limit?: number;
+    graphId?: string;
+  }): Promise<GraphRetentionInsight> {
+    return this.stubQuery("getGraphRetentionEvents", {
+      items: [],
+      total: 0,
+      summary: {},
+      byTrigger: {},
+      byGraphId: {},
+    });
   }
 
   // ── 내부 ──

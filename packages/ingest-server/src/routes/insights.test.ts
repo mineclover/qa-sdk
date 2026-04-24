@@ -4,6 +4,7 @@
 import { Hono } from "hono";
 import { describe, expect, it, beforeEach } from "vitest";
 import { getDatabaseSync } from "index-meta";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-sqlite";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
 import { createInsightsRoutes } from "./insights.js";
@@ -166,5 +167,87 @@ describe("insights API", () => {
     expect(d.total).toBe(2); // auth.login + permission.check
     expect(d.summary["auth.login"]).toBe(1);
     expect(d.summary["permission.check"]).toBe(1);
+  });
+
+  it("GET /v1/insights/graph-retention — retention 이벤트 요약", async () => {
+    insertRecord(db, {
+      logId: "r7",
+      traceId: "t3",
+      eventKey: "sim.graph_retention.sweep",
+      addressContext:
+        '{"service":"service:v1:sim-audit-browser-api","housekeeping":"housekeeping:v1:graph-retention","graph_scope":"authorization_graph:v1:all"}',
+    });
+    insertRecord(db, {
+      logId: "r8",
+      traceId: "t3",
+      eventKey: "sim.graph_retention.graph_pruned",
+      addressContext:
+        '{"service":"service:v1:sim-audit-browser-api","housekeeping":"housekeeping:v1:graph-retention","graph":"authorization_graph:v1:consultant-graph-1"}',
+    });
+    db.update(eventRecords)
+      .set({
+        payload: JSON.stringify({
+          trigger: "api",
+          keepLatest: 1,
+          beforeCount: 4,
+          afterCount: 2,
+          deletedCount: 2,
+        }),
+      })
+      .where(eq(eventRecords.logId, "r7"))
+      .run();
+    db.update(eventRecords)
+      .set({
+        payload: JSON.stringify({
+          trigger: "api",
+          keepLatest: 1,
+          beforeCount: 3,
+          afterCount: 1,
+          deletedCount: 2,
+        }),
+      })
+      .where(eq(eventRecords.logId, "r8"))
+      .run();
+
+    const res = await app.request("/v1/insights/graph-retention");
+    expect(res.status).toBe(200);
+    const d = await res.json() as any;
+    expect(d.total).toBe(2);
+    expect(d.summary["sim.graph_retention.sweep"]).toBe(1);
+    expect(d.summary["sim.graph_retention.graph_pruned"]).toBe(1);
+    expect(d.byTrigger.api).toBe(2);
+    expect(d.byGraphId["authorization_graph:v1:all"]).toBe(1);
+    expect(d.byGraphId["consultant-graph-1"]).toBe(1);
+  });
+
+  it("GET /v1/insights/graph-retention?graph_id=... filters by graph", async () => {
+    insertRecord(db, {
+      logId: "r8",
+      traceId: "t3",
+      eventKey: "sim.graph_retention.graph_pruned",
+      addressContext:
+        '{"service":"service:v1:sim-audit-browser-api","housekeeping":"housekeeping:v1:graph-retention","graph":"authorization_graph:v1:consultant-graph-1"}',
+    });
+    db.update(eventRecords)
+      .set({
+        payload: JSON.stringify({
+          trigger: "api",
+          keepLatest: 1,
+          beforeCount: 3,
+          afterCount: 1,
+          deletedCount: 2,
+        }),
+      })
+      .where(eq(eventRecords.logId, "r8"))
+      .run();
+
+    const res = await app.request(
+      "/v1/insights/graph-retention?graph_id=consultant-graph-1",
+    );
+    expect(res.status).toBe(200);
+    const d = await res.json() as any;
+    expect(d.total).toBe(1);
+    expect(d.items[0].graphId).toBe("consultant-graph-1");
+    expect(d.items[0].eventKey).toBe("sim.graph_retention.graph_pruned");
   });
 });

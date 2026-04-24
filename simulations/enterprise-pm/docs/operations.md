@@ -207,6 +207,13 @@ retention observability event keys:
 - `sim.graph_retention.graph_pruned`
 - `sim.graph_retention.failed`
 
+ingest insight query:
+
+```bash
+curl "http://localhost:3200/v1/insights/graph-retention?limit=20" | jq .
+curl "http://localhost:3200/v1/insights/graph-retention?graph_id=consultant-graph-123" | jq .
+```
+
 ### NestJS 서비스 부팅 실패
 
 ```bash

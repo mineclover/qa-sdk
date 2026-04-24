@@ -92,5 +92,12 @@ export function createInsightsRoutes(deps: InsightsDeps) {
     return c.json(await store.getErrors({ limit }));
   });
 
+  // GET /v1/insights/graph-retention — graph retention housekeeping 이벤트
+  app.get("/v1/insights/graph-retention", async (c) => {
+    const limit = safeInt(c.req.query("limit"), 50);
+    const graphId = c.req.query("graph_id") || undefined;
+    return c.json(await store.getGraphRetentionEvents({ limit, graphId }));
+  });
+
   return app;
 }

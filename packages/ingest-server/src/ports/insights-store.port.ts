@@ -160,6 +160,30 @@ export interface ErrorInsight {
   readonly byCode: Readonly<Record<string, number>>;
 }
 
+export interface GraphRetentionEventItem {
+  readonly logId: string;
+  readonly traceId: string;
+  readonly timestamp: string;
+  readonly eventKey: string;
+  readonly graphId: string | null;
+  readonly graphScope: string | null;
+  readonly trigger: string | null;
+  readonly keepLatest: number | null;
+  readonly beforeCount: number | null;
+  readonly afterCount: number | null;
+  readonly deletedCount: number | null;
+  readonly error: string | null;
+  readonly addressContext: Record<string, string> | undefined;
+}
+
+export interface GraphRetentionInsight {
+  readonly items: readonly GraphRetentionEventItem[];
+  readonly total: number;
+  readonly summary: Readonly<Record<string, number>>;
+  readonly byTrigger: Readonly<Record<string, number>>;
+  readonly byGraphId: Readonly<Record<string, number>>;
+}
+
 // ── 수집 배치 (쓰기) ────────────────────────────────────
 
 export interface InsightsRecord {
@@ -214,6 +238,10 @@ export interface InsightsStore {
   getServicePrefixes(): Promise<readonly ServicePrefixInsight[]>;
   getCorrelations(opts?: { minSupport?: number }): Promise<CorrelationInsight>;
   getErrors(opts?: { limit?: number }): Promise<ErrorInsight>;
+  getGraphRetentionEvents(opts?: {
+    limit?: number;
+    graphId?: string;
+  }): Promise<GraphRetentionInsight>;
 
   // ── 쓰기 (수집) ──
   /**
