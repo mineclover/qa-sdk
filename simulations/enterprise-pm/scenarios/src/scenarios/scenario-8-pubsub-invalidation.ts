@@ -3,6 +3,11 @@
 
 import { ok, equal, notEqual } from "node:assert/strict";
 import type { Scenario } from "../runner/types.js";
+import {
+  auditEntryHint,
+  auditFirstFailureHint,
+  auditTraceHint,
+} from "../post-run/operator-handoff.js";
 
 interface S8Ctx {
   bob: { id: string; email: string; password: string };
@@ -237,29 +242,41 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
       operatorHints: [
         ...(initialDenyMeta.rootSpanId
           ? [
-              `initial-deny-trace: pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${initialDenyMeta.rootSpanId}`,
-              `initial-deny-first-failure: pnpm --filter @qa-sdk/sim-scenarios start -- audit first-failure --root-span-id ${initialDenyMeta.rootSpanId}`,
+              auditTraceHint(initialDenyMeta.rootSpanId, "initial-deny-trace"),
+              auditFirstFailureHint(
+                initialDenyMeta.rootSpanId,
+                "initial-deny-first-failure",
+              ),
             ]
           : []),
         ...(initialDenyMeta.firstFailureSpanId
           ? [
-              `initial-deny-entry: pnpm --filter @qa-sdk/sim-scenarios start -- audit entry --span-id ${initialDenyMeta.firstFailureSpanId}`,
+              auditEntryHint(
+                initialDenyMeta.firstFailureSpanId,
+                "initial-deny-entry",
+              ),
             ]
           : []),
         ...(staleMeta.rootSpanId
           ? [
-              `stale-deny-trace: pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${staleMeta.rootSpanId}`,
-              `stale-deny-first-failure: pnpm --filter @qa-sdk/sim-scenarios start -- audit first-failure --root-span-id ${staleMeta.rootSpanId}`,
+              auditTraceHint(staleMeta.rootSpanId, "stale-deny-trace"),
+              auditFirstFailureHint(
+                staleMeta.rootSpanId,
+                "stale-deny-first-failure",
+              ),
             ]
           : []),
         ...(staleMeta.firstFailureSpanId
           ? [
-              `stale-deny-entry: pnpm --filter @qa-sdk/sim-scenarios start -- audit entry --span-id ${staleMeta.firstFailureSpanId}`,
+              auditEntryHint(
+                staleMeta.firstFailureSpanId,
+                "stale-deny-entry",
+              ),
             ]
           : []),
         ...(typeof freshBody?.rootSpanId === "string"
           ? [
-              `fresh-approve-trace: pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${freshBody.rootSpanId}`,
+              auditTraceHint(freshBody.rootSpanId, "fresh-approve-trace"),
             ]
           : []),
       ],

@@ -9,6 +9,7 @@ import {
   fetchGraphSnapshotList,
   fetchGraphSnapshotPrune,
 } from "./lib/audit-helpers.js";
+import { auditContextHint } from "../post-run/operator-handoff.js";
 
 interface S6Ctx {
   alice: { email: string; password: string };
@@ -251,7 +252,11 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
       stepCount: 6,
       operatorHints: frankRootSpanId
         ? [
-            `pnpm --filter @qa-sdk/sim-scenarios start -- audit context --root-span-id ${frankRootSpanId} --graph-id ${ctx.graphRootId}`,
+            auditContextHint(
+              frankRootSpanId,
+              ctx.graphRootId,
+              "delegated-context",
+            ),
           ]
         : undefined,
     };

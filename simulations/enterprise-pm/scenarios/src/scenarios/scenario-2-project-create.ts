@@ -3,6 +3,7 @@
 
 import { ok, equal } from "node:assert/strict";
 import type { Scenario } from "../runner/types.js";
+import { auditTraceHint } from "../post-run/operator-handoff.js";
 
 interface S2Ctx {
   email: string;
@@ -125,8 +126,8 @@ export const scenario2ProjectCreate: Scenario<S2Ctx> = {
       traceIds: traceIds.filter(Boolean),
       stepCount: 3,
       operatorHints: [
-        `create: pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${created.rootSpanId}`,
-        `fetch: pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${fetched.rootSpanId}`,
+        auditTraceHint(created.rootSpanId, "create"),
+        auditTraceHint(fetched.rootSpanId, "fetch"),
       ],
     };
   },

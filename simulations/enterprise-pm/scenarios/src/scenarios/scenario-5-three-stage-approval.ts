@@ -4,6 +4,10 @@
 import { ok, equal } from "node:assert/strict";
 import type { Scenario } from "../runner/types.js";
 import { fetchAuditTrace, fetchFirstFailure } from "./lib/audit-helpers.js";
+import {
+  auditFirstFailureHint,
+  auditTraceHint,
+} from "../post-run/operator-handoff.js";
 
 interface S5Ctx {
   carol: { email: string; password: string };
@@ -181,8 +185,11 @@ export const scenario5ThreeStageApproval: Scenario<S5Ctx> = {
       traceIds: traceIds.filter(Boolean),
       stepCount: 4,
       operatorHints: stageRootSpanIds.flatMap((rootSpanId, index) => [
-        `stage-${index + 1}-trace: pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${rootSpanId}`,
-        `stage-${index + 1}-first-failure: pnpm --filter @qa-sdk/sim-scenarios start -- audit first-failure --root-span-id ${rootSpanId}`,
+        auditTraceHint(rootSpanId, `stage-${index + 1}-trace`),
+        auditFirstFailureHint(
+          rootSpanId,
+          `stage-${index + 1}-first-failure`,
+        ),
       ]),
     };
   },

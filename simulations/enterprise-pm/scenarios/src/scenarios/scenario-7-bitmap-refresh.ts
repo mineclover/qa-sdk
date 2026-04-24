@@ -3,6 +3,7 @@
 
 import { ok, equal, notEqual } from "node:assert/strict";
 import type { Scenario } from "../runner/types.js";
+import { auditTraceHint } from "../post-run/operator-handoff.js";
 
 interface S7Ctx {
   alice: { email: string; password: string; departmentId: string };
@@ -81,7 +82,12 @@ export const scenario7BitmapRefresh: Scenario<S7Ctx> = {
       }),
     );
     const immediateStatus = immediateRes.status;
-    await immediateRes.text().catch(() => null); // drain body
+    let immediateBody: { rootSpanId?: string } | null = null;
+    try {
+      immediateBody = (await immediateRes.json()) as { rootSpanId?: string };
+    } catch {
+      immediateBody = null;
+    }
 
     // 3. TTL + 1 초 대기 (만료)
     await new Promise((r) => setTimeout(r, (expiresIn + 1) * 1000));
@@ -128,21 +134,36 @@ export const scenario7BitmapRefresh: Scenario<S7Ctx> = {
           }),
         )
       : new Response("", { status: 0 });
-    await reauthRes.text().catch(() => null);
+    let reauthBody: { rootSpanId?: string } | null = null;
+    try {
+      reauthBody = (await reauthRes.json()) as { rootSpanId?: string };
+    } catch {
+      reauthBody = null;
+    }
 
     return {
       data: {
         ttlSeconds: expiresIn,
         immediateStatus,
+        immediateRootSpanId: immediateBody?.rootSpanId ?? null,
         expiredStatus,
         expiredWwwAuth: wwwAuth,
         refreshStatus,
         token1,
         token2,
         reauthStatus: reauthRes.status,
+        reauthRootSpanId: reauthBody?.rootSpanId ?? null,
       },
       traceIds: traceIds.filter(Boolean),
       stepCount: 6,
+      operatorHints: [
+        ...(immediateBody?.rootSpanId
+          ? [auditTraceHint(immediateBody.rootSpanId, "pre-expiry-trace")]
+          : []),
+        ...(reauthBody?.rootSpanId
+          ? [auditTraceHint(reauthBody.rootSpanId, "post-refresh-trace")]
+          : []),
+      ],
     };
   },
 

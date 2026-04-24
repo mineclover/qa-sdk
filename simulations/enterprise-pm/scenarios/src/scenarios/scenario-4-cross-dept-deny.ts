@@ -8,6 +8,11 @@ import {
   fetchFirstFailure,
   fetchAuditEntry,
 } from "./lib/audit-helpers.js";
+import {
+  auditEntryHint,
+  auditFirstFailureHint,
+  auditTraceHint,
+} from "../post-run/operator-handoff.js";
 
 interface S4Ctx {
   badApprover: { email: string; password: string };
@@ -181,11 +186,14 @@ export const scenario4CrossDeptDeny: Scenario<S4Ctx> = {
       stepCount: 4,
       operatorHints: rootSpanId
         ? [
-            `deny-trace: pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${rootSpanId}`,
-            `deny-first-failure: pnpm --filter @qa-sdk/sim-scenarios start -- audit first-failure --root-span-id ${rootSpanId}`,
+            auditTraceHint(rootSpanId, "deny-trace"),
+            auditFirstFailureHint(rootSpanId, "deny-first-failure"),
             ...(firstFailure?.firstFailure?.spanId
               ? [
-                  `deny-entry: pnpm --filter @qa-sdk/sim-scenarios start -- audit entry --span-id ${firstFailure.firstFailure.spanId}`,
+                  auditEntryHint(
+                    firstFailure.firstFailure.spanId,
+                    "deny-entry",
+                  ),
                 ]
               : []),
           ]

@@ -4,6 +4,10 @@
 import { ok, equal } from "node:assert/strict";
 import type { Scenario } from "../runner/types.js";
 import { fetchAuditTrace, fetchFirstFailure } from "./lib/audit-helpers.js";
+import {
+  auditFirstFailureHint,
+  auditTraceHint,
+} from "../post-run/operator-handoff.js";
 
 interface S3Ctx {
   approver: { email: string; password: string };
@@ -145,8 +149,11 @@ export const scenario3SelfDeptApproval: Scenario<S3Ctx> = {
       traceIds: traceIds.filter(Boolean),
       stepCount: 4,
       operatorHints: [
-        `approve-trace: pnpm --filter @qa-sdk/sim-scenarios start -- audit trace --root-span-id ${approved.rootSpanId}`,
-        `approve-first-failure: pnpm --filter @qa-sdk/sim-scenarios start -- audit first-failure --root-span-id ${approved.rootSpanId}`,
+        auditTraceHint(approved.rootSpanId, "approve-trace"),
+        auditFirstFailureHint(
+          approved.rootSpanId,
+          "approve-first-failure",
+        ),
       ],
     };
   },
