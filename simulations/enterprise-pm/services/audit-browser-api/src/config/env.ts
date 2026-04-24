@@ -15,6 +15,16 @@ export const envSchema = dbEnvSchema.extend({
     .preprocess((v) => v ?? "true", z.enum(["true", "false"]).transform((v) => v === "true")),
   QA_INGEST_URL: z.string().optional(),
   SIM_REDIS_URL: z.string().default("redis://localhost:6379"),
+  SIM_GRAPH_RETENTION_KEEP_LATEST: z.preprocess(
+    (value) => (value === "" || value === undefined ? undefined : value),
+    z.coerce.number().int().min(0).optional(),
+  ),
+  SIM_GRAPH_RETENTION_INTERVAL_MS: z.preprocess(
+    (value) => (value === "" || value === undefined ? undefined : value),
+    z.coerce.number().int().positive().optional(),
+  ),
+  SIM_GRAPH_RETENTION_RUN_ON_BOOT: z
+    .preprocess((v) => v ?? "true", z.enum(["true", "false"]).transform((v) => v === "true")),
 });
 
 export type Env = z.infer<typeof envSchema>;

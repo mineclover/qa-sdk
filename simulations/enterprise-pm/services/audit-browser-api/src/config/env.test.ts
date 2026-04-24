@@ -31,4 +31,22 @@ describe("sim-audit-browser-api env", () => {
     const env = parseEnv({});
     expect(env.QA_DB_DIALECT).toBe("sqlite");
   });
+
+  it("graph retention scheduler env는 optional", () => {
+    const env = parseEnv({});
+    expect(env.SIM_GRAPH_RETENTION_KEEP_LATEST).toBeUndefined();
+    expect(env.SIM_GRAPH_RETENTION_INTERVAL_MS).toBeUndefined();
+    expect(env.SIM_GRAPH_RETENTION_RUN_ON_BOOT).toBe(true);
+  });
+
+  it("graph retention scheduler env를 number/bool로 파싱", () => {
+    const env = parseEnv({
+      SIM_GRAPH_RETENTION_KEEP_LATEST: "2",
+      SIM_GRAPH_RETENTION_INTERVAL_MS: "60000",
+      SIM_GRAPH_RETENTION_RUN_ON_BOOT: "false",
+    });
+    expect(env.SIM_GRAPH_RETENTION_KEEP_LATEST).toBe(2);
+    expect(env.SIM_GRAPH_RETENTION_INTERVAL_MS).toBe(60000);
+    expect(env.SIM_GRAPH_RETENTION_RUN_ON_BOOT).toBe(false);
+  });
 });

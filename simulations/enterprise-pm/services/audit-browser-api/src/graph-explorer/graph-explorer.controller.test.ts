@@ -48,6 +48,20 @@ describe("GraphExplorerController", () => {
     expect(result.count).toBe(2);
   });
 
+  it("GET /audit/graphs/catalog lists graph ids", async () => {
+    const svc = {
+      graphIds: vi.fn(async () => ["delegation-1", "delegation-2"]),
+      latest: vi.fn(),
+      list: vi.fn(),
+      getSnapshot: vi.fn(),
+      diff: vi.fn(),
+    } as unknown as GraphExplorerService;
+    const ctrl = new GraphExplorerController(svc);
+    const result = await ctrl.catalog();
+    expect(result.count).toBe(2);
+    expect(result.graphIds).toEqual(["delegation-1", "delegation-2"]);
+  });
+
   it("GET /audit/graphs/diff/:from/:to returns diff", async () => {
     const svc = {
       latest: vi.fn(),
@@ -78,6 +92,28 @@ describe("GraphExplorerController", () => {
     const ctrl = new GraphExplorerController(svc);
     const result = await ctrl.diff("s1", "s2");
     expect(result.summary.addedNodeCount).toBe(1);
+  });
+
+  it("DELETE /audit/graphs/prune/:keepLatest prunes all graphs", async () => {
+    const svc = {
+      latest: vi.fn(),
+      list: vi.fn(),
+      getSnapshot: vi.fn(),
+      diff: vi.fn(),
+      pruneAll: vi.fn(async () => ({
+        keepLatest: 1,
+        graphIds: ["delegation-1", "delegation-2"],
+        graphCount: 2,
+        beforeCount: 4,
+        afterCount: 2,
+        deletedSnapshotIds: ["s1", "s3"],
+        graphs: [],
+      })),
+    } as unknown as GraphExplorerService;
+    const ctrl = new GraphExplorerController(svc);
+    const result = await ctrl.pruneAll("1");
+    expect(result.graphCount).toBe(2);
+    expect(result.deletedSnapshotIds).toEqual(["s1", "s3"]);
   });
 
   it("DELETE /audit/graphs/:graphId/prune/:keepLatest prunes snapshots", async () => {

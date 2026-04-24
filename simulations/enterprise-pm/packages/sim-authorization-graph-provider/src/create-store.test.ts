@@ -5,7 +5,11 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   createInMemorySqliteAuthorizationGraphFixture,
 } from "./memory-sqlite-fixture.js";
-import { pruneAuthorizationGraphSnapshots } from "./create-store.js";
+import {
+  listAuthorizationGraphIds,
+  pruneAllAuthorizationGraphSnapshots,
+  pruneAuthorizationGraphSnapshots,
+} from "./create-store.js";
 
 describe("createSimAuthorizationGraphStore — sqlite", () => {
   let fixture: Awaited<ReturnType<typeof createInMemorySqliteAuthorizationGraphFixture>> | null = null;
@@ -89,6 +93,56 @@ describe("createSimAuthorizationGraphStore — sqlite", () => {
     expect(result.keptSnapshotIds).toEqual(["delegation-2:003"]);
     expect((await fixture.store.listSnapshots({ graphId: "delegation-2" })).map((snapshot) => snapshot.snapshotId)).toEqual([
       "delegation-2:003",
+    ]);
+  });
+
+  it("lists graph ids and prunes all graphs in one housekeeping sweep", async () => {
+    fixture = await createInMemorySqliteAuthorizationGraphFixture();
+
+    await fixture.store.saveSnapshot({
+      graphId: "delegation-3",
+      snapshotId: "delegation-3:001",
+      createdAt: "2026-04-24T00:00:00.000Z",
+      graph: { realms: [], nodes: [], relations: [] },
+    });
+    await fixture.store.saveSnapshot({
+      graphId: "delegation-3",
+      snapshotId: "delegation-3:002",
+      createdAt: "2026-04-24T00:01:00.000Z",
+      graph: { realms: [], nodes: [], relations: [] },
+    });
+    await fixture.store.saveSnapshot({
+      graphId: "delegation-4",
+      snapshotId: "delegation-4:001",
+      createdAt: "2026-04-24T00:02:00.000Z",
+      graph: { realms: [], nodes: [], relations: [] },
+    });
+    await fixture.store.saveSnapshot({
+      graphId: "delegation-4",
+      snapshotId: "delegation-4:002",
+      createdAt: "2026-04-24T00:03:00.000Z",
+      graph: { realms: [], nodes: [], relations: [] },
+    });
+
+    expect(await listAuthorizationGraphIds(fixture.store)).toEqual([
+      "delegation-3",
+      "delegation-4",
+    ]);
+
+    const result = await pruneAllAuthorizationGraphSnapshots(fixture.store, {
+      keepLatest: 1,
+    });
+
+    expect(result.graphCount).toBe(2);
+    expect(result.beforeCount).toBe(4);
+    expect(result.afterCount).toBe(2);
+    expect(result.deletedSnapshotIds).toEqual([
+      "delegation-3:001",
+      "delegation-4:001",
+    ]);
+    expect(result.graphs.map((graph) => graph.graphId)).toEqual([
+      "delegation-3",
+      "delegation-4",
     ]);
   });
 });

@@ -14,6 +14,10 @@ import { scenario7BitmapRefresh } from "./scenarios/scenario-7-bitmap-refresh.js
 import { scenario8PubsubInvalidation } from "./scenarios/scenario-8-pubsub-invalidation.js";
 import type { Scenario, ScenarioResult } from "./runner/types.js";
 import {
+  fetchGraphRetention,
+  summarizeGraphRetention,
+} from "./post-run/graph-retention.js";
+import {
   fetchDensity,
   summarizeDensity,
 } from "./post-run/density-collector.js";
@@ -136,6 +140,48 @@ export function buildCli(): Command {
           process.stdout.write(JSON.stringify(result, null, 2) + "\n");
         } else {
           process.stdout.write(summarizeDensity(result) + "\n");
+        }
+      },
+    );
+
+  cmd
+    .command("housekeeping")
+    .description("운영 housekeeping 작업 실행")
+    .command("graph-retention")
+    .description("authorization graph snapshot retention sweep")
+    .option(
+      "--audit-url <url>",
+      "sim-audit-browser-api base URL",
+      "http://localhost:5100",
+    )
+    .option("--keep-latest <n>", "graph별 최신 snapshot 보존 개수", "1")
+    .option("--graph-id <id>", "단일 graphId만 prune", "")
+    .option("--json", "JSON 출력", false)
+    .action(
+      async (opts: {
+        auditUrl: string;
+        keepLatest: string;
+        graphId: string;
+        json: boolean;
+      }) => {
+        const env = parseScenarioEnv({
+          ...process.env,
+          SCENARIO_AUDIT_URL: opts.auditUrl,
+        });
+        const keepLatest = Number.parseInt(opts.keepLatest, 10);
+        if (!Number.isFinite(keepLatest) || keepLatest < 0) {
+          throw new Error(`invalid --keep-latest: ${opts.keepLatest}`);
+        }
+
+        const result = await fetchGraphRetention(env.SCENARIO_AUDIT_URL, {
+          keepLatest,
+          graphId: opts.graphId || undefined,
+        });
+
+        if (opts.json) {
+          process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+        } else {
+          process.stdout.write(summarizeGraphRetention(result) + "\n");
         }
       },
     );

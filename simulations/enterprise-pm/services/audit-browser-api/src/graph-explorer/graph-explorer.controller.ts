@@ -10,6 +10,24 @@ export class GraphExplorerController {
     @Inject(GraphExplorerService) private readonly svc: GraphExplorerService,
   ) {}
 
+  @Get("catalog")
+  async catalog() {
+    const graphIds = await this.svc.graphIds();
+    return {
+      count: graphIds.length,
+      graphIds,
+    };
+  }
+
+  @Delete("prune/:keepLatest")
+  async pruneAll(@Param("keepLatest") keepLatest: string) {
+    const parsedKeepLatest = Number.parseInt(keepLatest, 10);
+    if (!Number.isFinite(parsedKeepLatest) || parsedKeepLatest < 0) {
+      throw new NotFoundException({ error: "invalid_keep_latest", keepLatest });
+    }
+    return this.svc.pruneAll(parsedKeepLatest);
+  }
+
   @Get(":graphId/latest")
   async latest(@Param("graphId") graphId: string) {
     const snapshot = await this.svc.latest(graphId);

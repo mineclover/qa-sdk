@@ -3,7 +3,11 @@
 
 export {
   createSimAuthorizationGraphStore,
+  listAuthorizationGraphIds,
+  pruneAllAuthorizationGraphSnapshots,
   type CreateSimAuthorizationGraphStoreArgs,
+  type PruneAllAuthorizationGraphSnapshotsArgs,
+  type PruneAllAuthorizationGraphSnapshotsResult,
   pruneAuthorizationGraphSnapshots,
   type PruneAuthorizationGraphSnapshotsArgs,
   type PruneAuthorizationGraphSnapshotsResult,

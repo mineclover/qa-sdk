@@ -20,6 +20,10 @@ import {
   GraphExplorerService,
 } from "../graph-explorer/graph-explorer.service.js";
 import { GraphExplorerController } from "../graph-explorer/graph-explorer.controller.js";
+import {
+  GRAPH_RETENTION_HOUSEKEEPING_OPTIONS,
+  GraphRetentionHousekeepingService,
+} from "../graph-explorer/graph-retention-housekeeping.service.js";
 
 /**
  * AUDIT_RECORDER provider — 실 PgAuditRecorder / SqliteAuditRecorder 주입.
@@ -37,6 +41,15 @@ import { GraphExplorerController } from "../graph-explorer/graph-explorer.contro
   providers: [
     AuditExplorerService,
     GraphExplorerService,
+    GraphRetentionHousekeepingService,
+    {
+      provide: GRAPH_RETENTION_HOUSEKEEPING_OPTIONS,
+      useValue: {
+        keepLatest: env.SIM_GRAPH_RETENTION_KEEP_LATEST,
+        intervalMs: env.SIM_GRAPH_RETENTION_INTERVAL_MS,
+        runOnBoot: env.SIM_GRAPH_RETENTION_RUN_ON_BOOT,
+      },
+    },
     {
       provide: AUDIT_RECORDER,
       useFactory: async (): Promise<AuditRecorder> => {

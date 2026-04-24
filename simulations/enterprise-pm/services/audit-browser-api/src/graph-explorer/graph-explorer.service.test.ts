@@ -74,4 +74,44 @@ describe("GraphExplorerService", () => {
     expect(result.deletedSnapshotIds).toEqual(["delegation-2:001"]);
     expect((await svc.list("delegation-2")).map((snapshot) => snapshot.snapshotId)).toEqual(["delegation-2:002"]);
   });
+
+  it("lists graph ids and prunes all graphs in one sweep", async () => {
+    const store = new InMemoryAuthorizationGraphStore();
+    await store.saveSnapshot({
+      graphId: "delegation-3",
+      snapshotId: "delegation-3:001",
+      createdAt: "2026-04-24T00:00:00.000Z",
+      graph: { realms: [], nodes: [], relations: [] },
+    });
+    await store.saveSnapshot({
+      graphId: "delegation-3",
+      snapshotId: "delegation-3:002",
+      createdAt: "2026-04-24T00:01:00.000Z",
+      graph: { realms: [], nodes: [], relations: [] },
+    });
+    await store.saveSnapshot({
+      graphId: "delegation-4",
+      snapshotId: "delegation-4:001",
+      createdAt: "2026-04-24T00:02:00.000Z",
+      graph: { realms: [], nodes: [], relations: [] },
+    });
+    await store.saveSnapshot({
+      graphId: "delegation-4",
+      snapshotId: "delegation-4:002",
+      createdAt: "2026-04-24T00:03:00.000Z",
+      graph: { realms: [], nodes: [], relations: [] },
+    });
+
+    const svc = new GraphExplorerService(store);
+    expect(await svc.graphIds()).toEqual(["delegation-3", "delegation-4"]);
+
+    const result = await svc.pruneAll(1);
+    expect(result.graphCount).toBe(2);
+    expect(result.beforeCount).toBe(4);
+    expect(result.afterCount).toBe(2);
+    expect(result.deletedSnapshotIds).toEqual([
+      "delegation-3:001",
+      "delegation-4:001",
+    ]);
+  });
 });

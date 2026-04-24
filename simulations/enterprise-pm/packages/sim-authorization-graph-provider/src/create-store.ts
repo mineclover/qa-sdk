@@ -43,6 +43,20 @@ export interface PruneAuthorizationGraphSnapshotsResult {
   keptSnapshotIds: string[];
 }
 
+export interface PruneAllAuthorizationGraphSnapshotsArgs {
+  keepLatest: number;
+}
+
+export interface PruneAllAuthorizationGraphSnapshotsResult {
+  keepLatest: number;
+  graphIds: string[];
+  graphCount: number;
+  beforeCount: number;
+  afterCount: number;
+  deletedSnapshotIds: string[];
+  graphs: PruneAuthorizationGraphSnapshotsResult[];
+}
+
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
@@ -280,5 +294,39 @@ export async function pruneAuthorizationGraphSnapshots(
     afterCount: kept.length,
     deletedSnapshotIds: deleted.map((snapshot) => snapshot.snapshotId),
     keptSnapshotIds: kept.map((snapshot) => snapshot.snapshotId),
+  };
+}
+
+export async function listAuthorizationGraphIds(
+  store: AuthorizationGraphStore,
+): Promise<string[]> {
+  const snapshots = await store.listSnapshots({});
+  return [...new Set(snapshots.map((snapshot) => snapshot.graphId))].sort();
+}
+
+export async function pruneAllAuthorizationGraphSnapshots(
+  store: AuthorizationGraphStore,
+  args: PruneAllAuthorizationGraphSnapshotsArgs,
+): Promise<PruneAllAuthorizationGraphSnapshotsResult> {
+  const graphIds = await listAuthorizationGraphIds(store);
+  const graphs: PruneAuthorizationGraphSnapshotsResult[] = [];
+
+  for (const graphId of graphIds) {
+    graphs.push(
+      await pruneAuthorizationGraphSnapshots(store, {
+        graphId,
+        keepLatest: args.keepLatest,
+      }),
+    );
+  }
+
+  return {
+    keepLatest: Math.max(0, Math.trunc(args.keepLatest)),
+    graphIds,
+    graphCount: graphIds.length,
+    beforeCount: graphs.reduce((sum, graph) => sum + graph.beforeCount, 0),
+    afterCount: graphs.reduce((sum, graph) => sum + graph.afterCount, 0),
+    deletedSnapshotIds: graphs.flatMap((graph) => graph.deletedSnapshotIds),
+    graphs,
   };
 }
