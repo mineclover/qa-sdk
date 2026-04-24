@@ -96,6 +96,11 @@ export function buildCli(): Command {
             process.stdout.write(
               `[${mark}] ${r.name} — ${r.status} (${r.durationMs}ms, ${r.stepCount} step)\n`,
             );
+            if (r.operatorHints?.length) {
+              for (const hint of r.operatorHints) {
+                process.stdout.write(`  → operator: ${hint}\n`);
+              }
+            }
             if (r.error) {
               process.stdout.write(
                 `  → ${r.error.phase} 실패: ${r.error.message}\n`,

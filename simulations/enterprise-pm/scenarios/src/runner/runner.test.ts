@@ -5,7 +5,14 @@ import type { Scenario } from "./types.js";
 describe("runScenario", () => {
   it("성공 시나리오 — setup→act→assert→teardown 4 phase 실행 + status=passed", async () => {
     const setup = vi.fn(async () => ({ x: 1 }));
-    const act = vi.fn(async () => ({ data: { ok: true }, traceIds: ["t1"], stepCount: 2 }));
+    const act = vi.fn(async () => ({
+      data: { ok: true },
+      traceIds: ["t1"],
+      stepCount: 2,
+      operatorHints: [
+        "pnpm --filter @qa-sdk/sim-scenarios start -- audit context --root-span-id root-1 --graph-id graph-1",
+      ],
+    }));
     const assertFn = vi.fn(async () => undefined);
     const teardown = vi.fn(async () => undefined);
 
@@ -25,6 +32,9 @@ describe("runScenario", () => {
     expect(result.status).toBe("passed");
     expect(result.stepCount).toBe(2);
     expect(result.traceIds).toEqual(["t1"]);
+    expect(result.operatorHints).toEqual([
+      "pnpm --filter @qa-sdk/sim-scenarios start -- audit context --root-span-id root-1 --graph-id graph-1",
+    ]);
     expect(setup).toHaveBeenCalledTimes(1);
     expect(act).toHaveBeenCalledTimes(1);
     expect(assertFn).toHaveBeenCalledTimes(1);

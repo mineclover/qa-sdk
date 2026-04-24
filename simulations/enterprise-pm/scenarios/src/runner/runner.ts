@@ -1,7 +1,12 @@
 // @def.boundary sim-scenarios
 // @def.doc sim-erp-pm-design
 
-import type { Scenario, ScenarioEnv, ScenarioResult } from "./types.js";
+import type {
+  Scenario,
+  ScenarioActResult,
+  ScenarioEnv,
+  ScenarioResult,
+} from "./types.js";
 
 /**
  * runScenario — Scenario 4 phase를 일관된 에러 격리로 실행.
@@ -20,7 +25,11 @@ export async function runScenario<TCtx>(
 ): Promise<ScenarioResult> {
   const startedAt = Date.now();
   let ctx: TCtx | undefined;
-  let actResult = { data: {}, traceIds: [] as string[], stepCount: 0 };
+  let actResult: ScenarioActResult = {
+    data: {},
+    traceIds: [] as string[],
+    stepCount: 0,
+  };
   let errPhase: "setup" | "act" | "assert" | "teardown" | null = null;
   let err: Error | null = null;
 
@@ -70,6 +79,7 @@ export async function runScenario<TCtx>(
       durationMs,
       stepCount: actResult.stepCount,
       traceIds: actResult.traceIds,
+      operatorHints: actResult.operatorHints,
       error: {
         message: err.message,
         stack: err.stack,
@@ -83,5 +93,6 @@ export async function runScenario<TCtx>(
     durationMs,
     stepCount: actResult.stepCount,
     traceIds: actResult.traceIds,
+    operatorHints: actResult.operatorHints,
   };
 }

@@ -23,6 +23,8 @@ export interface ScenarioActResult {
   traceIds: string[];
   /** 시나리오 step count (출력용). */
   stepCount: number;
+  /** operator가 바로 이어서 사용할 수 있는 후속 명령. */
+  operatorHints?: string[];
 }
 
 export interface Scenario<TCtx = unknown> {
@@ -44,6 +46,7 @@ export interface ScenarioResult {
   durationMs: number;
   stepCount: number;
   traceIds: string[];
+  operatorHints?: string[];
   /** 실패 시 첫 에러. */
   error?: {
     message: string;

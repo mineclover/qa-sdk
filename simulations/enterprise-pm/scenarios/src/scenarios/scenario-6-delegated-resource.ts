@@ -249,6 +249,11 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
       },
       traceIds: traceIds.filter(Boolean),
       stepCount: 6,
+      operatorHints: frankRootSpanId
+        ? [
+            `pnpm --filter @qa-sdk/sim-scenarios start -- audit context --root-span-id ${frankRootSpanId} --graph-id ${ctx.graphRootId}`,
+          ]
+        : undefined,
     };
   },
 
