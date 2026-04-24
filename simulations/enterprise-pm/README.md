@@ -150,6 +150,12 @@ curl "http://localhost:3200/v1/insights/graph-retention?graph_id=consultant-grap
 
 `GET /audit/context/:rootSpanId/:graphId`는 `QA_INGEST_URL`이 설정된 경우 `graphRetentionInsight`도 함께 반환한다.
 
+operator composite CLI:
+
+```bash
+pnpm --filter @qa-sdk/sim-scenarios start -- audit context --root-span-id <root-span-id> --graph-id <graph-id>
+```
+
 ## 외부 의존 (qa-sdk 본체 컨테이너)
 
 - `qa-sdk-db` (5434) — `sim` schema

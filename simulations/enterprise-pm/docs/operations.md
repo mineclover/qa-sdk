@@ -217,6 +217,12 @@ curl "http://localhost:3200/v1/insights/graph-retention?graph_id=consultant-grap
 
 `GET /audit/context/:rootSpanId/:graphId`는 `QA_INGEST_URL`이 설정되면 `graphRetentionInsight` 필드를 포함해 trace/graph/retention evidence를 한 번에 반환한다.
 
+operator composite CLI:
+
+```bash
+pnpm --filter @qa-sdk/sim-scenarios start -- audit context --root-span-id <root-span-id> --graph-id <graph-id>
+```
+
 ### NestJS 서비스 부팅 실패
 
 ```bash

@@ -14,6 +14,10 @@ import { scenario7BitmapRefresh } from "./scenarios/scenario-7-bitmap-refresh.js
 import { scenario8PubsubInvalidation } from "./scenarios/scenario-8-pubsub-invalidation.js";
 import type { Scenario, ScenarioResult } from "./runner/types.js";
 import {
+  fetchAuditContextComposite,
+  summarizeAuditContextComposite,
+} from "./post-run/audit-context.js";
+import {
   fetchGraphRetention,
   summarizeGraphRetention,
 } from "./post-run/graph-retention.js";
@@ -144,6 +148,43 @@ export function buildCli(): Command {
           process.stdout.write(JSON.stringify(result, null, 2) + "\n");
         } else {
           process.stdout.write(summarizeDensity(result) + "\n");
+        }
+      },
+    );
+
+  cmd
+    .command("audit")
+    .description("audit/graph composite 조회")
+    .command("context")
+    .description("trace + graph + retention insight composite view")
+    .requiredOption("--root-span-id <id>", "audit rootSpanId")
+    .requiredOption("--graph-id <id>", "delegated graphId")
+    .option(
+      "--audit-url <url>",
+      "sim-audit-browser-api base URL",
+      "http://localhost:5100",
+    )
+    .option("--json", "JSON 출력", false)
+    .action(
+      async (opts: {
+        rootSpanId: string;
+        graphId: string;
+        auditUrl: string;
+        json: boolean;
+      }) => {
+        const env = parseScenarioEnv({
+          ...process.env,
+          SCENARIO_AUDIT_URL: opts.auditUrl,
+        });
+        const result = await fetchAuditContextComposite(
+          env.SCENARIO_AUDIT_URL,
+          opts.rootSpanId,
+          opts.graphId,
+        );
+        if (opts.json) {
+          process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+        } else {
+          process.stdout.write(summarizeAuditContextComposite(result) + "\n");
         }
       },
     );
