@@ -85,12 +85,14 @@ density (§5)                          → 8 시나리오 실행 후 측정
 
 - 운영자/QA가 회귀 분석 시 진입점
 - CI gate (Phase 5)에서 `sim:smoke` 결과를 본 spec의 매트릭스와 cross-reference
+- 시나리오 실행 후 실제 조사 절차는 `simulations/enterprise-pm/docs/operator-workflows.md`를 canonical runtime flow로 사용
 
 ## 위임 ^delegates
 
 - 시나리오별 detail: [`/docs/proposals/auth-model-implementation-backlog/plans/13a-sim-scenario-runner-1-2.md`](../proposals/auth-model-implementation-backlog/plans/13a-sim-scenario-runner-1-2.md) ~ 13d
 - 인프라: [Plan 09 시리즈](../proposals/auth-model-implementation-backlog/plans/09a-sim-workspace-bootstrap.md)
 - 운영: [`/simulations/enterprise-pm/docs/operations.md`](../../simulations/enterprise-pm/docs/operations.md)
+- operator runtime flow: [`/simulations/enterprise-pm/docs/operator-workflows.md`](../../simulations/enterprise-pm/docs/operator-workflows.md)
 
 ## 방법 ^method
 
@@ -100,7 +102,8 @@ density (§5)                          → 8 시나리오 실행 후 측정
 2. 시나리오 N번이 실패하면 본 매트릭스의 column N 확인
 3. 해당 column에 hit인 패키지의 최근 변경(git log)을 review
 4. 변경된 패키지의 단위 테스트 + port-contract 회귀 점검
-5. 수정 후 `pnpm sim:smoke` 재실행으로 회귀 검증
+5. 필요하면 scenario 출력의 operator handoff 또는 `operator-workflows.md`를 따라 audit / graph / retention evidence를 직접 확인
+6. 수정 후 `pnpm sim:smoke` 재실행으로 회귀 검증
 
 ### 시나리오 추가 시
 

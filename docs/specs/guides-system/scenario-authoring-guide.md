@@ -12,9 +12,9 @@ def:
   tags: [entry-point, testing, structural]
   links:
     - target: definition-authoring-guide
-      type: refines
+      type: traces_to
     - target: guides-system
-      type: refines
+      type: traces_to
 ---
 # 유저 시나리오 작성 가이드
 
@@ -32,6 +32,47 @@ def:
 ```
 
 둘 다 definition-catalog의 마커 시스템을 사용하지만 목적이 다르다.
+
+## BDD contract block
+
+기계적으로 검증할 시나리오는 `.cases.md` 또는 `.test.md` 안에 fenced `yaml bdd` block을 둔다. 이 block은 `qa-sdk docs bdd`가 읽어 `DocumentEnvelope.metadata.bdd`로 투영한다.
+
+````markdown
+```yaml bdd
+bdd_contract:
+  id: checkout.pending.submit.accepted.v1
+  owner_system: checkout-system
+  contract_kind: state-transition
+  mode: write
+  given:
+    state: PENDING
+    predicates: [cart.exists]
+  when:
+    operation: checkout-system.submit
+  then:
+    state: ACCEPTED
+test_unit:
+  id: TU-checkout-submit-accepted
+  contract: checkout.pending.submit.accepted.v1
+  level: integration
+  assertions: [then.state]
+implementation_unit:
+  id: IU-checkout-submit-operation
+  contract: checkout.pending.submit.accepted.v1
+  unit_kind: operation
+  owned_by: checkout-system
+```
+````
+
+조회:
+
+```bash
+qa-sdk docs bdd validate <doc-id> --family-only --json
+qa-sdk docs bdd units <doc-id> --family-only --json
+qa-sdk docs bdd compile <doc-id> --family-only --format both --json
+```
+
+상세 스펙: `docs/specs/bdd-system/bdd-contract-system.spec.md`
 
 ## 6종 시나리오 마커
 
@@ -101,6 +142,26 @@ def:
 ^variants      → additional test cases
 ```
 
+## 운영 handoff 패턴
+
+시나리오 harness가 실제 runtime proof를 남기는 경우, 테스트 성공 후 운영자가 바로 따라갈 수 있는 handoff command를 함께 제공하는 것이 좋다.
+
+예:
+
+```text
+operator.1: audit trace
+operator.2: audit first-failure
+operator.3: audit context
+```
+
+의도:
+
+- 테스트와 운영자가 같은 진입점을 본다.
+- 실패 재현과 원인 조사 흐름이 `run -> handoff -> audit`로 고정된다.
+- graph lifecycle 같은 복합 흐름은 `audit context`를 우선 surface로 둔다.
+
+실제 canonical 예시는 `simulations/enterprise-pm/docs/operator-workflows.md`를 따른다.
+
 ## frontmatter 템플릿
 
 ```yaml
@@ -122,3 +183,4 @@ def:
 
 - `definition-catalog/src/taxonomy.ts` — SCENARIO_MARKERS
 - `skills/e2e-test/` — e2e 테스트 생성 (시나리오 소비자)
+- `simulations/enterprise-pm/docs/operator-workflows.md` — scenario run 후 operator handoff canonical flow
