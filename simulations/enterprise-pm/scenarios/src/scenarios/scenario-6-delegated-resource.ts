@@ -31,6 +31,7 @@ interface S6Ctx {
  *   - alice POST /projects/:id/delegate → 200, policy.state=DELEGATED
  *   - frank GET /projects/:id → 200 (Pass 2 acl branch allow)
  *   - graph snapshot list/diff/prune → delegated graph lifecycle evidence
+ *   - prune 이후 audit/context 재조회 → trace + latest graph + retention insight composite proof
  *   - audit entry pass=acl 존재 (DELEGATED 분기 증거)
  */
 export const scenario6DelegatedResource: Scenario<S6Ctx> = {
@@ -193,8 +194,8 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
     let graphSnapshotList: Awaited<ReturnType<typeof fetchGraphSnapshotList>> | null = null;
     let graphSnapshotDiff: Awaited<ReturnType<typeof fetchGraphSnapshotDiff>> | null = null;
     let graphSnapshotPrune: Awaited<ReturnType<typeof fetchGraphSnapshotPrune>> | null = null;
-    let graphSnapshotListAfterPrune:
-      | Awaited<ReturnType<typeof fetchGraphSnapshotList>>
+    let auditContextAfterPrune:
+      | Awaited<ReturnType<typeof fetchAuditContext>>
       | null = null;
     if (frankRootSpanId) {
       auditContext = await fetchAuditContext(
@@ -223,8 +224,9 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
           1,
           aliceToken,
         );
-        graphSnapshotListAfterPrune = await fetchGraphSnapshotList(
+        auditContextAfterPrune = await fetchAuditContext(
           gatewayFetch,
+          frankRootSpanId,
           ctx.graphRootId,
           aliceToken,
         );
@@ -243,7 +245,7 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
         graphSnapshotList,
         graphSnapshotDiff,
         graphSnapshotPrune,
-        graphSnapshotListAfterPrune,
+        auditContextAfterPrune,
       },
       traceIds: traceIds.filter(Boolean),
       stepCount: 6,
@@ -273,6 +275,11 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
         snapshotId: string;
         graph: { nodes: Array<{ coord: { anchor: string } }> };
       };
+      graphRetentionInsight?: {
+        total: number;
+        summary: Record<string, number>;
+        byTrigger: Record<string, number>;
+      } | null;
     } | null;
     ok(auditContext, "audit context must exist");
     equal(auditContext!.graphId, d.delegatedGraphRootId, "graph snapshot must be saved under graphRootId");
@@ -336,17 +343,42 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
       "prune should keep the latest snapshot from the composite audit view",
     );
 
-    const snapshotListAfterPrune = d.graphSnapshotListAfterPrune as {
-      count: number;
-      snapshots: Array<{ snapshotId: string }>;
+    const auditContextAfterPrune = d.auditContextAfterPrune as {
+      graphId: string;
+      trace: { count: number };
+      graphSnapshot: { snapshotId: string };
+      graphRetentionInsight?: {
+        total: number;
+        summary: Record<string, number>;
+        byTrigger: Record<string, number>;
+      } | null;
     } | null;
-    ok(snapshotListAfterPrune, "graph snapshot list after prune must exist");
-    equal(snapshotListAfterPrune!.count, 1, "graph snapshot list after prune must contain one snapshot");
+    ok(auditContextAfterPrune, "audit context after prune must exist");
     equal(
-      snapshotListAfterPrune!.snapshots[0]?.snapshotId,
+      auditContextAfterPrune!.graphSnapshot.snapshotId,
       pruneResult!.keptSnapshotIds[0],
-      "graph snapshot list after prune must match the kept snapshot",
+      "audit context after prune must point to the kept latest snapshot",
     );
+    equal(
+      auditContextAfterPrune!.graphId,
+      d.delegatedGraphRootId,
+      "audit context after prune must stay bound to the delegated graph",
+    );
+
+    if (auditContextAfterPrune!.graphRetentionInsight) {
+      ok(
+        auditContextAfterPrune!.graphRetentionInsight.total >= 1,
+        "graph retention insight should include at least one retention event when ingest insight is available",
+      );
+      ok(
+        (auditContextAfterPrune!.graphRetentionInsight.summary["sim.graph_retention.graph_pruned"] ?? 0) >= 1,
+        "graph retention insight should include graph_pruned event when available",
+      );
+      ok(
+        (auditContextAfterPrune!.graphRetentionInsight.byTrigger.api ?? 0) >= 1,
+        "graph retention insight should attribute retained events to api trigger when available",
+      );
+    }
 
     equal(
       d.frankReadOk,

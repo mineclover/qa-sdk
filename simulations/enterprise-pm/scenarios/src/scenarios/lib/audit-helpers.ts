@@ -37,6 +37,23 @@ export interface AuditContextResponse {
       realms: Array<{ realmId: string }>;
     };
   };
+  graphRetentionInsight?: {
+    total: number;
+    summary: Record<string, number>;
+    byTrigger: Record<string, number>;
+    byGraphId: Record<string, number>;
+    items: Array<{
+      eventKey: string;
+      graphId: string | null;
+      graphScope: string | null;
+      trigger: string | null;
+      keepLatest: number | null;
+      beforeCount: number | null;
+      afterCount: number | null;
+      deletedCount: number | null;
+      error: string | null;
+    }>;
+  } | null;
 }
 
 export interface GraphSnapshotListResponse {
