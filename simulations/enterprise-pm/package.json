@@ -15,19 +15,21 @@
     "sim:scenario": "echo 'scenario runner는 Plan 13에서 추가 예정' && exit 1",
     "sim:scenarios": "pnpm --filter @qa-sdk/sim-scenarios start",
     "sim:scenarios:build": "pnpm --filter @qa-sdk/sim-scenarios build",
+    "contracts:openapi:check": "node contracts/openapi/scripts/check-merge.mjs",
     "sim:doctor": "bash scripts/sim-doctor.sh || echo 'sim-doctor.sh는 Plan 14에서 추가 예정'",
     "build": "echo 'sim root는 빌드 산출물 없음'",
     "test": "vitest run seed"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
-    "postgres": "^3.4.5"
+    "postgres": "^3.4.5",
+    "yaml": "^2.8.3"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
-    "vitest": "^1.6.1",
-    "@types/node": "^22.0.0"
+    "vitest": "^1.6.1"
   },
   "engines": {
     "node": ">=22.0.0",

@@ -1,0 +1,25 @@
+import { Body, Controller, Post } from "@nestjs/common";
+
+import type { Create<%= classify(name) %>Command } from "../../application/commands/create-<%= dasherize(name) %>.command";
+import { <%= classify(name) %>UseCase } from "../../application/use-cases/<%= dasherize(name) %>.use-case";
+
+function TraceId(): MethodDecorator {
+  return () => undefined;
+}
+
+function DistributedLock(_key: string): MethodDecorator {
+  return () => undefined;
+}
+
+@Controller("<%= dasherize(name) %>")
+export class <%= classify(name) %>Controller {
+  constructor(private readonly useCase: <%= classify(name) %>UseCase) {}
+
+  @Post()
+  @TraceId()
+  @DistributedLock("<%= dasherize(name) %>:create")
+  async create(@Body() command: Create<%= classify(name) %>Command): Promise<{ ok: true }> {
+    await this.useCase.create(command);
+    return { ok: true };
+  }
+}

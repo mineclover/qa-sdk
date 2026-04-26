@@ -58,6 +58,8 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
 
 - `docs/skills/automation-workflows.md`
   `bdd-contract`, `e2e-test`, `gform-parser`, `spec-lifecycle`, `event-taxonomy-gate` 사용 순서
+- `skills/domain-slice-architecture/SKILL.md`
+  Domain Slice Architecture의 데이터 모델, 계약, 로깅, CQRS/BFF, 트랜잭션, 테스트 경계를 재귀적으로 개선하는 실행 루프
 - `skills/event-taxonomy-gate/SKILL.md`
   registry event taxonomy의 migrate/check/assert 운영 게이트
 - `skills/dkg-audit/SKILL.md`

@@ -1,0 +1,9 @@
+openapi: 3.2.0
+info:
+  title: Enterprise PM Simulation API
+  version: 0.1.0
+  summary: Architecture simulation contracts for qa-sdk enterprise-pm.
+tags:
+  - name: assignment
+    description: Assignment command/read model APIs.
+

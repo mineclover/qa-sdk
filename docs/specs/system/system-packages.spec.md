@@ -14,6 +14,14 @@ def:
       type: refines
     - target: registry-api
       type: refines
+    - target: resource-policy-store-system
+      type: contains
+    - target: audit-recorder-store-system
+      type: contains
+    - target: infra-env-kit-system
+      type: contains
+    - target: scaffold-system
+      type: contains
 ---
 
 # 패키지 구조
@@ -27,7 +35,9 @@ qa-sdk 모노레포의 패키지 의존 관계. 인코딩 라이브러리 체인
 - `인코딩 체인`: weighted-index → bit-index → permission-engine 인코딩 라이브러리 의존 체인을 정의한다.
 - `플랫폼 체인`: @qa-sdk/core → logger → codec → context → sdk 플랫폼 계층을 기술한다.
 - `인프라 서비스`: ingest(3200), registry(3300), gate(3400), query(3500), decode(3600) 서비스를 명시한다.
+- `권한 지원 저장소`: resource-policy-store와 audit-recorder-store의 권한 lifecycle/audit 영속 경계를 명시한다.
 - `환경 공급 패키지`: infra-env-kit이 `.env`/연결 코드/compose override 공급 책임을 가진다.
+- `스캐폴딩 패키지`: @qa-sdk/scaffold가 도메인 계층 구조와 데이터 거버넌스 표준을 코드/템플릿/검증 규칙으로 물질화한다.
 - `스펙/분석 패키지`: spec-core, convergence, decision-flow, event-catalog의 역할을 정리한다.
 - `프론트엔드/데모`: platform-demo, shop-web, viz-web, browser-sdk의 위치를 기술한다.
 
@@ -102,6 +112,19 @@ SERVICE_PORTS (core/src/lib/service-ports.ts) SSOT:
 | infra-env-kit | `.env` 생성, 서비스 연결 TS 모듈 생성, docker-compose override 생성, export/codegen orchestration, `infra-env` CLI |
 
 운영/소비 패키지인 `infra-engine`와 분리되어, 공급 기능은 `infra-env-kit`를 기본 surface로 사용한다.
+
+## 권한 지원 저장소
+
+| 패키지 | 역할 | 시스템 문서 |
+|--------|------|-------------|
+| resource-policy-store | `ResourcePolicyRegistry` SQLite/PG 구현, resource lifecycle persistence, PostgreSQL RLS enforcement | `resource-policy-store-system` |
+| audit-recorder-store | `AuditRecorder` SQLite/PG 구현, nested audit tree persistence, first-failure replay, RLS shadow evidence | `audit-recorder-store-system` |
+
+## 스캐폴딩 패키지
+
+| 패키지 | 역할 | 시스템 문서 |
+|--------|------|-------------|
+| @qa-sdk/scaffold | DDD/CQRS/Ports and Adapters 도메인 구조, template catalog, architecture validator, governance metadata scaffold | `scaffold-system` |
 
 권장 사용 분리:
 

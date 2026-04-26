@@ -1,0 +1,14 @@
+import { index, sqliteTable, text } from "drizzle-orm/sqlite-core";
+
+export const <%= camelize(name) %>Table = sqliteTable(
+  "<%= dasherize(name).replace(/-/g, "_") %>",
+  {
+    id: text("id").primaryKey(),
+    status: text("status").notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    statusIdx: index("idx_<%= dasherize(name).replace(/-/g, "_") %>_status").on(table.status),
+  }),
+);

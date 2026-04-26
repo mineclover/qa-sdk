@@ -1,0 +1,19 @@
+export interface <%= classify(name) %>LogEvent {
+  readonly traceId: string;
+  readonly correlationId: string;
+  readonly domain: "<%= dasherize(name) %>";
+  readonly useCase: string;
+  readonly aggregateId: string;
+  readonly commandName?: string;
+  readonly queryName?: string;
+  readonly eventName?: string;
+  readonly eventVersion?: string;
+  readonly outcome: "started" | "success" | "failure";
+  readonly errorCode?: string;
+  readonly cacheKeyPrefix?: string;
+  readonly cacheHit?: boolean;
+}
+
+export abstract class <%= classify(name) %>LoggerPort {
+  abstract record(event: <%= classify(name) %>LogEvent): Promise<void>;
+}

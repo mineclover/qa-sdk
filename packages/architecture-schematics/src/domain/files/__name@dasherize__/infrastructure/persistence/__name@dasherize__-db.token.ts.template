@@ -1,0 +1,1 @@
+export const <%= constantize(name) %>_DRIZZLE_DB = Symbol("<%= constantize(name) %>_DRIZZLE_DB");

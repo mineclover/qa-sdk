@@ -1,0 +1,7 @@
+import type { <%= classify(name) %>Entity } from "../../domain";
+import type { <%= classify(name) %>TransactionScope } from "./<%= dasherize(name) %>-transaction.port";
+
+export abstract class <%= classify(name) %>RepositoryPort {
+  abstract save(entity: <%= classify(name) %>Entity, scope?: <%= classify(name) %>TransactionScope): Promise<void>;
+  abstract findById(id: string): Promise<<%= classify(name) %>Entity | null>;
+}

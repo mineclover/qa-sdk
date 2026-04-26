@@ -20,11 +20,11 @@ def:
       type: traces_to
 ---
 
-# Architecture-Revealing Code Convention — E/C/I/S + L/P 코드 구조 규칙
+# Architecture-Revealing Code Convention — Responsibility Topology 코드 구조 규칙
 
 ## 목적 ^purpose
 
-코드를 읽을 때 Entry/Identity, Component, Interface/DSL, System, Layout/Pack 책임이 드러나도록 작성하고, 문서는 그 코드 책임을 definition 좌표와 source mapping으로 고정하는 코딩 컨벤션을 정의한다. 목표는 문서 분할이 코드와 따로 놀지 않고, 코드 모듈화가 문서의 검증 가능한 책임 경계로 이어지게 하는 것이다.
+코드를 읽을 때 책임 토폴로지(Responsibility Topology)가 드러나도록 작성하고, 문서는 그 코드 책임을 definition 좌표와 source mapping으로 고정하는 코딩 컨벤션을 정의한다. 현행 vocabulary는 Entry/Identity, Component, Interface/DSL, System, Layout/Pack이지만, 구조가 바뀌어도 이 문서의 상위 개념은 책임 토폴로지로 유지한다.
 
 ## 원칙 ^defines
 
@@ -143,7 +143,7 @@ Entry 코드는 stable id, singleton, closed value만 둔다. shape가 커지면
 
 - `@def.boundary`는 System 또는 Layout/Pack 코드 경계에 붙인다.
 - `@def.doc`는 구체 책임 문서나 symbol-level mapping에 붙인다.
-- 하나의 source file이 서로 다른 E/C/I/S + L/P 문서 3개 이상을 소유하면 code split 후보로 본다.
+- 하나의 source file이 서로 다른 책임 토폴로지 문서 3개 이상을 소유하면 code split 후보로 본다.
 - code split이 과하면 `file.ts:symbol` 단위로 좁힌다.
 - 같은 System 문서가 여러 source file을 갖는 것은 정상이다. 단, 각 source file의 역할이 topology로 설명되어야 한다.
 
@@ -177,7 +177,7 @@ export interface DocumentGraphNode { ... }
 - Layout/Pack 파일에 조건 분기 많은 behavior가 있다.
 - System 문서가 data shape를 새로 정의한다.
 - Layout/Pack 문서가 source file 전체를 자기 구현으로 소유한다.
-- 문서가 E/C/I/S + L/P로 나뉘었는데 code/test boundary는 하나의 거대 파일로 남아 있다.
+- 문서가 책임 토폴로지로 나뉘었는데 code/test boundary는 하나의 거대 파일로 남아 있다.
 
 ## 검증 ^consumes
 

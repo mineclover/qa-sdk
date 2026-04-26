@@ -176,6 +176,25 @@ pnpm --filter @qa-sdk/sim-scenarios start -- audit first-failure --root-span-id 
 - 디자인: [`sim-erp-pm-design.md`](../../docs/proposals/auth-model-implementation-backlog/sim-erp-pm-design.md)
 - 5축 커버리지 spec: [`docs/specs/sim-erp-pm-coverage.spec.md`](../../docs/specs/sim-erp-pm-coverage.spec.md)
 
+## Architecture Simulation Lab
+
+`/Users/junwoobang/document/아키텍처`의 도메인 계층, CQRS, saga/outbox, OpenMetadata 거버넌스 개념은 `scenarios/src/architecture/architecture-manifest.ts`에서 시뮬레이션 slice로 매핑한다.
+
+초기 slice:
+
+- `assignment-command-write-model`: 목적형 command DTO, rich aggregate, repository port, transactional outbox.
+- `assignment-read-model-sync`: outbox event 기반 read model sync와 QueryPort/back-query composition.
+- `openmetadata-governance-seed`: OpenMetadata Domain/Team/Glossary/Lineage/Data Quality seed.
+- `oa-sdk-openapi-merge-gate`: `contracts/openapi/src`의 domain별 OpenAPI fragment를 `/Users/junwoobang/workflow/oa-sdk` 병합 규칙으로 검증하는 계약 gate.
+
+계약 fragment 위치:
+
+```bash
+simulations/enterprise-pm/contracts/openapi/src/domains/assignment/spec.yaml
+```
+
+`oa-sdk` 병합 관리 도구 연동은 `simulations/enterprise-pm/contracts/openapi/README.md`를 기준으로 진행한다.
+
 ## 라이선스 / 정책
 
 본 시뮬은 qa-sdk 검증용 test harness이며 실제 제품이 아니다. 진짜 ERP의 HR·재무·인벤토리 모듈은 의도적으로 제외한다.

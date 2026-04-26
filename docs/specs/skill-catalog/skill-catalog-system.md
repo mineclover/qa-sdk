@@ -34,7 +34,7 @@ def:
 ## 구성 ^overview
 
 - claude-skill-group: definition-catalog 중심 스킬 16개
-- automation-skill-group: 구현/테스트/문서 전환/운영 게이트 보조 스킬 7개
+- automation-skill-group: 구현/테스트/문서 전환/운영 게이트/아키텍처 slice 보조 스킬 8개
 - ralph-tui-skill-group: PRD/작업 생성용 ralph-tui 스킬 4개
 - dkg-skill-group: DKG 그래프 자동화 39개 (read 5, write 5, analysis 26, chain 3)
 - cli-command-group: CLI 명령 그룹 (def/dkg/flow/coord 4개)

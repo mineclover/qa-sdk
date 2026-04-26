@@ -1,0 +1,9 @@
+export interface <%= classify(name) %>ReadModel {
+  readonly id: string;
+  readonly status: string;
+  readonly updatedAt: string;
+}
+
+export abstract class <%= classify(name) %>ReadModelPort {
+  abstract findById(id: string): Promise<<%= classify(name) %>ReadModel | null>;
+}

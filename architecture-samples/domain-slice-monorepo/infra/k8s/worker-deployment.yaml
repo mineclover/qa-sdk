@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sample-worker
+  template:
+    metadata:
+      labels:
+        app: sample-worker
+    spec:
+      containers:
+        - name: worker
+          image: sample-worker:local
+          env:
+            - name: NODE_ENV
+              value: production
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: sample-worker
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sample-worker
+  minReplicas: 1
+  maxReplicas: 12
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: queue_lag
+        target:
+          type: AverageValue
+          averageValue: "50"
+

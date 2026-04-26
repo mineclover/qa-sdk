@@ -355,6 +355,14 @@ runtime-flows 심볼 기반 도출 태스크. 📋/🔧 → ✅ 전환 작업 �
 
 `infra-engine`에서 분리된 공급 패키지. `.env` 생성, 서비스 연결 코드 생성, export orchestration을 담당한다.
 
+| 스펙 | 설명 | 원본 패키지 | 상태 |
+|---|---|---|---|
+| [infra-env-kit-system.spec.md](infra-env-kit/infra-env-kit-system.spec.md) | 중심 인덱스 — env bridge, export surface, post-deploy codegen | infra-env-kit | implemented |
+| [infra-env-kit-env-bridge.spec.md](infra-env-kit/infra-env-kit-env-bridge.spec.md) | service config/dependency connection → env var 변환 | infra-env-kit | implemented |
+| [infra-env-kit-export-surface.spec.md](infra-env-kit/infra-env-kit-export-surface.spec.md) | `infra-env env\|ts\|compose` CLI와 file writer surface | infra-env-kit | implemented |
+| [infra-env-kit-codegen.spec.md](infra-env-kit/infra-env-kit-codegen.spec.md) | post-deploy service connection/env artifact 생성 | infra-env-kit | implemented |
+| [infra-env-kit-validation.spec.md](infra-env-kit/infra-env-kit-validation.spec.md) | bridge/export/codegen/discovery 검증 경계 | infra-env-kit | implemented |
+
 권장 surface:
 
 ```bash
@@ -367,9 +375,48 @@ pnpm --filter infra-env-kit cli compose dev
 
 운영/배포는 `infra`, 환경 공급은 `infra-env`로 분리해서 사용한다.
 
+### resource-policy-store/ — 권한 리소스 lifecycle 저장소
+
+`permission-engine`의 `ResourcePolicyRegistry` 포트를 SQLite/PG로 구현하고, PostgreSQL RLS enforcement 경계를 제공한다.
+
+| 스펙 | 설명 | 원본 패키지 | 상태 |
+|---|---|---|---|
+| [resource-policy-store-system.spec.md](resource-policy-store/resource-policy-store-system.spec.md) | 중심 인덱스 — port, adapters, RLS, validation | resource-policy-store | implemented |
+| [resource-policy-store-port.spec.md](resource-policy-store/resource-policy-store-port.spec.md) | permission-engine port/error re-export 경계 | resource-policy-store | implemented |
+| [resource-policy-store-adapters.spec.md](resource-policy-store/resource-policy-store-adapters.spec.md) | SQLite/PG adapter와 dialect factory | resource-policy-store | implemented |
+| [resource-policy-store-rls.spec.md](resource-policy-store/resource-policy-store-rls.spec.md) | RLS bit catalog와 RLS-aware PG adapter | resource-policy-store | implemented |
+| [resource-policy-store-validation.spec.md](resource-policy-store/resource-policy-store-validation.spec.md) | adapter parity, lifecycle, RLS, E2E 검증 | resource-policy-store | implemented |
+
+### audit-recorder-store/ — 권한 audit tree 저장소
+
+`permission-engine`의 `AuditRecorder` 포트를 SQLite/PG로 구현하고, nested audit tree와 RLS shadow evidence를 영속화한다.
+
+| 스펙 | 설명 | 원본 패키지 | 상태 |
+|---|---|---|---|
+| [audit-recorder-store-system.spec.md](audit-recorder-store/audit-recorder-store-system.spec.md) | 중심 인덱스 — port, adapters, RLS shadow, validation | audit-recorder-store | implemented |
+| [audit-recorder-store-port.spec.md](audit-recorder-store/audit-recorder-store-port.spec.md) | dialect factory와 public package surface | audit-recorder-store | implemented |
+| [audit-recorder-store-adapters.spec.md](audit-recorder-store/audit-recorder-store-adapters.spec.md) | SQLite/PG audit entry adapter와 schema | audit-recorder-store | implemented |
+| [audit-recorder-store-rls-shadow.spec.md](audit-recorder-store/audit-recorder-store-rls-shadow.spec.md) | application decision vs RLS prediction shadow evidence | audit-recorder-store | implemented |
+| [audit-recorder-store-validation.spec.md](audit-recorder-store/audit-recorder-store-validation.spec.md) | tree invariant, adapter parity, RLS, shadow 검증 | audit-recorder-store | implemented |
+
 ### infra/ — 인프라 도구
 
 로깅 등 횡단 인프라 유틸리티.
+
+### scaffold/ — 아키텍처 스캐폴딩 도구
+
+Domain Slice Architecture를 빠르게 코드와 템플릿으로 물질화하는 `@qa-sdk/scaffold` 패키지. 이 구조는 도메인 계층, CQRS read/write 분리, adapter boundary, Nest module assembly, OpenMetadata 거버넌스 메타데이터 표준을 하나의 생성 단위로 묶는다.
+
+| 스펙 | 설명 | 원본 패키지 | 상태 |
+|---|---|---|---|
+| [scaffold-system.spec.md](scaffold/scaffold-system.spec.md) | 중심 인덱스 — domain schematic, template catalog, validator, governance metadata | @qa-sdk/scaffold | implemented |
+| [scaffold-domain-schematic.spec.md](scaffold/scaffold-domain-schematic.spec.md) | `nest g @qa-sdk/scaffold:domain` 생성 flow와 Nest module wiring | @qa-sdk/scaffold | implemented |
+| [scaffold-domain-development-convention.rule.md](scaffold/scaffold-domain-development-convention.rule.md) | Domain Slice Architecture 코드 레이어와 책임 토폴로지 매핑 컨벤션 | @qa-sdk/scaffold | implemented |
+| [scaffold-template-catalog.spec.md](scaffold/scaffold-template-catalog.spec.md) | 템플릿 artifact/rule을 학습 가능한 아키텍처 문법으로 노출 | @qa-sdk/scaffold | implemented |
+| [scaffold-architecture-validator.spec.md](scaffold/scaffold-architecture-validator.spec.md) | domain/application/presentation import 경계 검증 | @qa-sdk/scaffold | implemented |
+| [scaffold-governance-metadata.spec.md](scaffold/scaffold-governance-metadata.spec.md) | OpenMetadata domain/lineage/quality/cache key metadata scaffold 기준 | @qa-sdk/scaffold | implemented |
+| [scaffold-openmetadata-storage.spec.md](scaffold/scaffold-openmetadata-storage.spec.md) | OpenMetadata seed manifest 저장 방식과 SSOT 경계 | @qa-sdk/scaffold | implemented |
+| [scaffold-cache-key-dsl.spec.md](scaffold/scaffold-cache-key-dsl.spec.md) | cache key prefix DSL과 `prefix:version:id...` 생성/검증 규칙 | @qa-sdk/scaffold | implemented |
 
 | 스펙 | 설명 | 원본 패키지 | 상태 |
 |---|---|---|---|
@@ -394,6 +441,8 @@ pnpm --filter infra-env-kit cli compose dev
 | @qa-sdk/demo-tests | `indexing/README.md` (통합 테스트 섹션) |
 | platform-demo | `indexing/README.md` (플랫폼 데모 섹션) |
 | permission-engine | `permission/permission-system.md`, `permission/perm-codec-system.md`, `permission/perm-external-system.md`, `permission/perm-migration-system.md` |
+| resource-policy-store | `resource-policy-store/` |
+| audit-recorder-store | `audit-recorder-store/` |
 | index-meta | `indexing/index-meta/README.md` + `indexing/index-meta/` |
 | @qa-sdk/pino | `apm-system/logger.spec.md` (zero-dependency pino 호환 래퍼) |
 | @qa-sdk/core (createLogger) | `apm-system/logger.spec.md` |
@@ -406,6 +455,7 @@ pnpm --filter infra-env-kit cli compose dev
 | @qa-sdk/cli | `spec-engine/` (codegen), `dkg-system/` (dkg 명령), `skill-catalog/` (skill 메타) |
 | meta-semantic | `meta-semantic/` |
 | infra-engine | `infra-engine/` |
+| infra-env-kit | `infra-env-kit/` |
 | shop-web | — (데모 사이트, 별도 스펙 없음) |
 | platform-demo | — (3D 모니터 + 레이아웃 데모) |
 | e2e | — (Playwright E2E 테스트) |

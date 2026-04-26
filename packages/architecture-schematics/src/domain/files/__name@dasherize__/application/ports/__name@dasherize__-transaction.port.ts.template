@@ -1,0 +1,11 @@
+export interface <%= classify(name) %>TransactionScope {
+  readonly id: string;
+  readonly name: string;
+}
+
+export abstract class <%= classify(name) %>TransactionPort {
+  abstract run<T>(
+    name: string,
+    handler: (scope: <%= classify(name) %>TransactionScope) => Promise<T>,
+  ): Promise<T>;
+}

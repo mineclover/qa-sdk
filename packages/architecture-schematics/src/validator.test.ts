@@ -1,0 +1,195 @@
+import { describe, expect, it } from "vitest";
+
+import { validateArchitecture } from "./validator.js";
+
+describe("validateArchitecture", () => {
+  it("accepts the intended dependency direction", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/domain/payment.entity.ts",
+        content: "export class PaymentEntity {}",
+      },
+      {
+        path: "src/modules/payment/application/use-cases/payment.use-case.ts",
+        content: [
+          'import { PaymentRepositoryPort } from "../ports/payment-repository.port";',
+          'import { PaymentTransactionPort } from "../ports/payment-transaction.port";',
+          'import { PaymentLoggerPort } from "../ports/payment-logger.port";',
+          "export class PaymentUseCase {",
+          "  constructor(transaction: PaymentTransactionPort, logger: PaymentLoggerPort) {}",
+          "}",
+        ].join("\n"),
+      },
+      {
+        path: "src/modules/payment/presentation/http/payment.controller.ts",
+        content: 'import { PaymentUseCase } from "../../application/use-cases/payment.use-case";',
+      },
+      {
+        path: "src/modules/payment/infrastructure/persistence/payment.repository.ts",
+        content: 'import { eq } from "drizzle-orm";',
+      },
+    ]);
+
+    expect(result).toEqual({ ok: true, issues: [] });
+  });
+
+  it("flags domain framework leakage and application adapter leakage", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/domain/payment.entity.ts",
+        content: 'import { Injectable } from "@nestjs/common";',
+      },
+      {
+        path: "src/modules/payment/application/use-cases/payment.use-case.ts",
+        content: 'import { DrizzlePaymentRepository } from "../../infrastructure/persistence/payment.repository";',
+      },
+      {
+        path: "src/modules/payment/presentation/http/payment.controller.ts",
+        content: 'import { DrizzlePaymentRepository } from "../../infrastructure/persistence/payment.repository";',
+      },
+    ]);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.map((issue) => issue.ruleId)).toEqual([
+      "domain-is-pure",
+      "application-uses-ports",
+      "transaction-and-logging-are-ports",
+      "transaction-and-logging-are-ports",
+      "presentation-calls-application",
+    ]);
+  });
+
+  it("flags use cases missing transaction and logger ports", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/application/use-cases/payment.use-case.ts",
+        content: "export class PaymentUseCase {}",
+      },
+    ]);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.map((issue) => issue.ruleId)).toEqual([
+      "transaction-and-logging-are-ports",
+      "transaction-and-logging-are-ports",
+    ]);
+  });
+
+  it("flags BFF entity exposure and missing BFF metadata", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/presentation/bff/payment-detail.bff.ts",
+        content: [
+          'import { PaymentEntity } from "../../domain";',
+          "export class PaymentBff {",
+          "  save(): PaymentEntity { throw new Error('bad'); }",
+          "}",
+        ].join("\n"),
+      },
+    ]);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.map((issue) => issue.ruleId)).toEqual([
+      "bff-does-not-expose-domain-entity",
+      "bff-does-not-expose-domain-entity",
+      "metadata-ships-with-domain-slice",
+    ]);
+  });
+
+  it("flags read model and BFF metadata drift", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/application/queries/payment.read-model.ts",
+        content: "export interface PaymentReadModel {}",
+      },
+      {
+        path: "src/modules/payment/presentation/bff/payment-detail.bff.ts",
+        content: "export class PaymentBff {}",
+      },
+      {
+        path: "src/modules/payment/metadata/openmetadata.seed.json",
+        content: JSON.stringify({ cacheKeys: [{ id: "payment-read-model" }] }),
+      },
+    ]);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.map((issue) => issue.ruleId)).toEqual([
+      "metadata-ships-with-domain-slice",
+    ]);
+  });
+
+  it("flags OpenAPI fragments exposing domain entities", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/contracts/openapi/domains/payment/spec.json",
+        content: JSON.stringify({ components: { schemas: { PaymentEntity: {} } } }),
+      },
+    ]);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.map((issue) => issue.ruleId)).toEqual([
+      "openapi-does-not-expose-domain-entity",
+    ]);
+  });
+
+  it("flags slices outside modules and transaction/outbox slices missing unit of work", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/payment/application/ports/payment-transaction.port.ts",
+        content: "export abstract class PaymentTransactionPort {}",
+      },
+      {
+        path: "src/payment/application/ports/payment-outbox.port.ts",
+        content: "export abstract class PaymentOutboxPort {}",
+      },
+    ]);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.map((issue) => issue.ruleId)).toEqual([
+      "domain-slice-under-modules",
+      "transaction-outbox-use-unit-of-work",
+    ]);
+  });
+
+  it("flags cross-domain deep imports and allows local query ports", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/modules/billing/application/use-cases/create-billing.use-case.ts",
+        content: [
+          'import { AssignmentEntity } from "../../../assignment/domain/assignment.entity";',
+          'import { AssignmentStateQueryPort } from "../ports/assignment-state.query-port";',
+          "export class CreateBillingUseCase {}",
+        ].join("\n"),
+      },
+    ]);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.map((issue) => issue.ruleId)).toContain("bounded-context-uses-contracts");
+  });
+
+  it("flags path alias based cross-domain deep imports", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/modules/billing/application/use-cases/create-billing.use-case.ts",
+        content: [
+          'import { AssignmentEntity } from "@modules/assignment/domain/assignment.entity";',
+          'import { AssignmentStateQueryPort } from "@modules/billing/application/ports/assignment-state.query-port";',
+          "export class CreateBillingUseCase {}",
+        ].join("\n"),
+      },
+      {
+        path: "src/modules/billing/application/ports/assignment-state.query-port.ts",
+        content: "export abstract class AssignmentStateQueryPort {}",
+      },
+    ]);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues).toContainEqual(expect.objectContaining({
+      importPath: "@modules/assignment/domain/assignment.entity",
+      ruleId: "bounded-context-uses-contracts",
+    }));
+    expect(result.issues).not.toContainEqual(expect.objectContaining({
+      importPath: "@modules/billing/application/ports/assignment-state.query-port",
+      ruleId: "bounded-context-uses-contracts",
+    }));
+  });
+});

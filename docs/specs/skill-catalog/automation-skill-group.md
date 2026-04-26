@@ -24,6 +24,8 @@ def:
       type: contains
     - target: skill-event-taxonomy-gate
       type: contains
+    - target: skill-domain-slice-architecture
+      type: contains
     - target: skill-catalog-system
       type: depends_on
 ---
@@ -48,6 +50,7 @@ skill-catalog-system > **automation-skill-group**
 - `spec-lifecycle` — 구현 완료 후 스펙 문서를 코드 참조 중심으로 전환
 - `test-split` — 테스트 파일 패싯 분리와 시나리오 구조 표준화
 - `event-taxonomy-gate` — registry event taxonomy 운영 게이트 실행
+- `domain-slice-architecture` — Domain Slice Architecture 설계/구현/검증 재귀 개선 루프
 
 ## 사용 순서
 
@@ -56,11 +59,12 @@ skill-catalog-system > **automation-skill-group**
 구현 완료 후에는 `spec-lifecycle`로 문서 전환 조건을 확인하고,
 외부 폼 입력 연동이 있으면 `gform-parser`로 config 생성을 자동화한다.
 운영 정합성 점검이 필요하면 `event-taxonomy-gate`를 별도로 실행한다.
+도메인 slice 자체의 설계와 구현을 반복 개선할 때는 `domain-slice-architecture`를 먼저 적용해 데이터 모델, 계약, 로깅, CQRS/BFF, 테스트 경계를 고정한다.
 
 ## 경계 ^boundary
 
 이 문서는 automation 계열 skill의 카탈로그 문서다.
-- 실제 skill 정의는 `skills/bdd-contract`, `skills/e2e-test`, `skills/gform-parser`, `skills/spec-lifecycle`, `skills/event-taxonomy-gate`
+- 실제 skill 정의는 `skills/bdd-contract`, `skills/e2e-test`, `skills/gform-parser`, `skills/spec-lifecycle`, `skills/event-taxonomy-gate`, `skills/domain-slice-architecture`
 - 운영 플레이북은 `docs/skills/automation-workflows.md`
 - representative workflow 검증은 `packages/cli/src/skills-workflows.test.ts`와 `packages/cli/src/scenarios.e2e.test.ts`가 담당
 

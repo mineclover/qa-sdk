@@ -1,0 +1,4 @@
+servers:
+  - url: http://localhost:4500
+    description: sim-pm-api local
+

@@ -1,0 +1,91 @@
+import { Inject, Injectable, Optional } from "@nestjs/common";
+import { eq } from "drizzle-orm";
+
+import { <%= classify(name) %>RepositoryPort } from "../../application/ports/<%= dasherize(name) %>-repository.port";
+import type { <%= classify(name) %>TransactionScope } from "../../application/ports/<%= dasherize(name) %>-transaction.port";
+import { <%= classify(name) %>Entity } from "../../domain";
+import { <%= constantize(name) %>_DRIZZLE_DB } from "./<%= dasherize(name) %>-db.token";
+import { <%= camelize(name) %>Table } from "./<%= dasherize(name) %>.schema";
+import {
+  is<%= classify(name) %>UnitOfWorkScope,
+  <%= classify(name) %>UnitOfWorkStore,
+} from "../transaction/<%= dasherize(name) %>.unit-of-work";
+
+type DrizzleDb = {
+  insert(table: unknown): {
+    values(value: Record<string, unknown>): {
+      onConflictDoUpdate(args: unknown): Promise<unknown>;
+    };
+  };
+  select(): {
+    from(table: unknown): {
+      where(condition: unknown): {
+        limit(count: number): Promise<Record<string, unknown>[]>;
+      };
+    };
+  };
+};
+
+@Injectable()
+export class Drizzle<%= classify(name) %>Repository extends <%= classify(name) %>RepositoryPort {
+  constructor(
+    private readonly store: <%= classify(name) %>UnitOfWorkStore,
+    @Optional() @Inject(<%= constantize(name) %>_DRIZZLE_DB) private readonly db?: DrizzleDb,
+  ) {
+    super();
+  }
+
+  async save(entity: <%= classify(name) %>Entity, scope?: <%= classify(name) %>TransactionScope): Promise<void> {
+    const snapshot = entity.toSnapshot();
+    if (is<%= classify(name) %>UnitOfWorkScope(scope)) {
+      scope.pendingSnapshots.set(snapshot.id, snapshot);
+      return;
+    }
+
+    if (!this.db) {
+      const autocommit = this.store.beginAutocommit("<%= dasherize(name) %>.autocommit");
+      autocommit.pendingSnapshots.set(snapshot.id, snapshot);
+      this.store.commit(autocommit);
+      return;
+    }
+
+    const db = this.db;
+    await db
+      .insert(<%= camelize(name) %>Table)
+      .values({
+        id: snapshot.id,
+        status: snapshot.status,
+        createdAt: snapshot.createdAt,
+        updatedAt: snapshot.updatedAt,
+      })
+      .onConflictDoUpdate({
+        target: <%= camelize(name) %>Table.id,
+        set: {
+          status: snapshot.status,
+          updatedAt: snapshot.updatedAt,
+        },
+      });
+  }
+
+  async findById(id: string): Promise<<%= classify(name) %>Entity | null> {
+    const snapshot = this.store.findSnapshot(id);
+    if (snapshot) return <%= classify(name) %>Entity.rehydrate(snapshot);
+
+    const db = this.requireDb();
+    const [row] = await db.select().from(<%= camelize(name) %>Table).where(eq(<%= camelize(name) %>Table.id, id)).limit(1);
+    if (!row) return null;
+    return <%= classify(name) %>Entity.rehydrate({
+      id: String(row.id),
+      status: row.status as never,
+      createdAt: String(row.createdAt),
+      updatedAt: String(row.updatedAt),
+    });
+  }
+
+  private requireDb(): DrizzleDb {
+    if (!this.db) {
+      throw new Error("<%= constantize(name) %>_DRIZZLE_DB provider is not configured.");
+    }
+    return this.db;
+  }
+}

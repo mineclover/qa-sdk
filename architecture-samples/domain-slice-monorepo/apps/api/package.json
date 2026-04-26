@@ -1,0 +1,13 @@
+{
+  "name": "@sample/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "@sample/contracts": "workspace:*",
+    "@sample/platform": "workspace:*"
+  }
+}
+

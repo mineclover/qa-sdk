@@ -1,0 +1,31 @@
+{
+  "openmetadata": {
+    "domain": "<%= dasherize(name) %>",
+    "glossary": ["<%= dasherize(name) %>"],
+    "lineage": [],
+    "qualityTests": []
+  },
+  "cacheKeys": [
+    {
+      "id": "<%= dasherize(name) %>-read-model",
+      "domain": "<%= dasherize(name) %>",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "<%= dasherize(name) %>-read-model",
+      "segments": [{ "name": "<%= camelize(name) %>Id" }],
+      "ttl": "medium",
+      "openmetadataEntity": "reporting.<%= dasherize(name).replace(/-/g, "_") %>_read_model"
+    }<% if (includeBff) { %>,
+    {
+      "id": "<%= dasherize(name) %>-bff-detail",
+      "domain": "<%= dasherize(name) %>",
+      "purpose": "bff_detail",
+      "version": "v1",
+      "prefix": "<%= dasherize(name) %>-bff-detail",
+      "segments": [{ "name": "<%= camelize(name) %>Id" }],
+      "ttl": "short",
+      "openmetadataEntity": "experience.<%= dasherize(name).replace(/-/g, "_") %>_detail"
+    }
+    <% } %>
+  ]
+}

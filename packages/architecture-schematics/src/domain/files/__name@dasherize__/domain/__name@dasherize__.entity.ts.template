@@ -1,0 +1,42 @@
+import { to<%= classify(name) %>Id } from "./<%= dasherize(name) %>.ids";
+import { Archived<%= classify(name) %>Exception } from "./<%= dasherize(name) %>.exceptions";
+import type { <%= classify(name) %>Props, <%= classify(name) %>Snapshot } from "./<%= dasherize(name) %>.types";
+
+export class <%= classify(name) %>Entity {
+  private constructor(private readonly props: <%= classify(name) %>Props) {}
+
+  static create(input: { readonly id: string; readonly now?: Date }): <%= classify(name) %>Entity {
+    const now = input.now ?? new Date();
+    return new <%= classify(name) %>Entity({
+      id: to<%= classify(name) %>Id(input.id),
+      status: "draft",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  static rehydrate(snapshot: <%= classify(name) %>Snapshot): <%= classify(name) %>Entity {
+    return new <%= classify(name) %>Entity({
+      id: to<%= classify(name) %>Id(snapshot.id),
+      status: snapshot.status,
+      createdAt: new Date(snapshot.createdAt),
+      updatedAt: new Date(snapshot.updatedAt),
+    });
+  }
+
+  activate(now = new Date()): <%= classify(name) %>Entity {
+    if (this.props.status === "archived") {
+      throw new Archived<%= classify(name) %>Exception();
+    }
+    return new <%= classify(name) %>Entity({ ...this.props, status: "active", updatedAt: now });
+  }
+
+  toSnapshot(): <%= classify(name) %>Snapshot {
+    return {
+      id: this.props.id,
+      status: this.props.status,
+      createdAt: this.props.createdAt.toISOString(),
+      updatedAt: this.props.updatedAt.toISOString(),
+    };
+  }
+}

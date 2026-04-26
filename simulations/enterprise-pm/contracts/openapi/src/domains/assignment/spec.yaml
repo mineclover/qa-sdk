@@ -1,0 +1,100 @@
+tags:
+  - name: assignment
+    description: Manager assignment command and read-model API.
+paths:
+  /assignments:
+    post:
+      tags: [assignment]
+      operationId: createAssignment
+      summary: Create a pending manager assignment.
+      x-domain: assignment
+      x-architecture-slice: assignment-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignManagerCommand"
+      responses:
+        "202":
+          description: Assignment command accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssignmentCommandAccepted"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /assignments/{assignmentId}:
+    get:
+      tags: [assignment]
+      operationId: getAssignmentReadModel
+      summary: Read denormalized assignment view.
+      x-domain: assignment
+      x-architecture-slice: assignment-read-model-sync
+      parameters:
+        - name: assignmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Assignment read model.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssignmentReadModel"
+        "404":
+          description: Assignment read model was not found.
+components:
+  schemas:
+    AssignManagerCommand:
+      type: object
+      required: [projectId, processType, managerId]
+      properties:
+        projectId:
+          type: string
+        courseId:
+          type: string
+        processType:
+          type: string
+        managerId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        idempotencyKey:
+          type: string
+      additionalProperties: false
+    AssignmentCommandAccepted:
+      type: object
+      required: [assignmentId, status]
+      properties:
+        assignmentId:
+          type: string
+        status:
+          type: string
+          enum: [PENDING]
+      additionalProperties: false
+    AssignmentReadModel:
+      type: object
+      required: [assignmentId, projectId, projectName, processType, managerId, status, updatedAt]
+      properties:
+        assignmentId:
+          type: string
+        projectId:
+          type: string
+        projectName:
+          type: string
+        processType:
+          type: string
+        managerId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        status:
+          type: string
+          enum: [PENDING, COMPLETED, CANCELED]
+          x-openmetadata-tags: [Tier.Tier1]
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: false
+

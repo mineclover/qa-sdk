@@ -1,0 +1,14 @@
+import { Injectable } from "@nestjs/common";
+
+import { <%= classify(name) %>LoggerPort } from "../../application/ports/<%= dasherize(name) %>-logger.port";
+import type { <%= classify(name) %>LogEvent } from "../../application/ports/<%= dasherize(name) %>-logger.port";
+
+@Injectable()
+export class Console<%= classify(name) %>Logger extends <%= classify(name) %>LoggerPort {
+  readonly events: <%= classify(name) %>LogEvent[] = [];
+
+  async record(event: <%= classify(name) %>LogEvent): Promise<void> {
+    this.events.push(event);
+    console.log(JSON.stringify({ type: "<%= dasherize(name) %>.log", event }));
+  }
+}

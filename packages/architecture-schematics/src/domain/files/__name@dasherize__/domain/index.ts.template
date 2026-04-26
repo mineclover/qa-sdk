@@ -1,0 +1,4 @@
+export * from "./<%= dasherize(name) %>.entity";
+export * from "./<%= dasherize(name) %>.exceptions";
+export * from "./<%= dasherize(name) %>.ids";
+export * from "./<%= dasherize(name) %>.types";

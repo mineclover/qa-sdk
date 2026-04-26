@@ -20,6 +20,7 @@
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-fastify": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
+    "@qa-sdk/scaffold": "workspace:*",
     "@qa-sdk/sim-audit-recorder-provider": "workspace:*",
     "@qa-sdk/sim-auth-api": "workspace:*",
     "@qa-sdk/sim-approval-api": "workspace:*",
