@@ -95,8 +95,13 @@ git status --short
 - `docs/specs/system/change-simulation-precedence.rule.md` — 구조 변경 시 사전 시뮬레이션
 - `docs/specs/system/testing-patterns.spec.md` — 테스트 SSOT 파생 표준
 - `docs/plan/simulations-domain-slice-migration/README.md` — 본 가이드의 실증 사례 plan
+- `docs/plan/simulations-domain-slice-migration/lessons-learned.md` — Phase 1/2/3 false-claim 7/7 패턴 + 6+ 시간 cleanup 비용 등 정량 근거
 - superpowers `verification-before-completion` skill — evidence before assertions
 - superpowers `dispatching-parallel-agents` skill — 병렬 dispatch 일반 가이드
+
+## Reference (실증)
+
+- 2026-04-27 simulations/enterprise-pm Domain Slice 마이그레이션 — Phase 2 sub-agent 7/7 false-claim, vitest(esbuild) 통과 ≠ tsc 통과. 정량 데이터: [`docs/plan/simulations-domain-slice-migration/lessons-learned.md`](../plan/simulations-domain-slice-migration/lessons-learned.md) §2~§3.
 
 ## 트리거 키워드
 

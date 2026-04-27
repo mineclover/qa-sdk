@@ -95,6 +95,27 @@ Phase 2 의 각 에이전트는 정확히 한 슬라이스를 소유한다. 슬�
 | `phase-1-reference.md` | architecture-samples/assignment → pm-api/assignment 포트 작업 |
 | `phase-2-parallel.md` | 22 슬라이스, slice spec sheet 템플릿, 에이전트 프롬프트 템플릿 |
 | `phase-3-integration.md` | manifest, OpenAPI merge, CI gate, current/ 문서 갱신 |
+| `lessons-learned.md` | Phase 0~3 + 후속 작업 회고 — process gap, 적용된 개선, 잔여 backlog, 메트릭 |
+
+## 후속 작업 (Phase 3 종료 후)
+
+Phase 3 종료 시점부터 누적된 follow-up 작업. 상세는 [`lessons-learned.md`](./lessons-learned.md) 참조.
+
+| ID | 영역 | 상태 | 메모 |
+|---|---|---|---|
+| F1 | validator port 검사 substring → AST | done | commit `155e448e` |
+| F2 | validator 추가 substring rule AST 강화 | done | 동일 회귀 패턴 차단 |
+| B7 | 5 슬라이스 토폴로지 metadata 24 슬라이스 부착 | done | commit `7ed87cc9` |
+| B9 | validator 5 토폴로지 first-class 인식 | done | commits `60f19529`, `68c93f12` |
+| B6 | bitmap 슬라이스 process.env → forRoot config | done | commit `e47282e0` |
+| A2 | dead factory.ts / shared/ 정리 | done | commit `71e6244c` |
+| C10 | SubscriptionUserQueryPort production adapter | done | commit `9faa04a1` |
+| C11 | C10 의 ^method 마커 등록 | done | commit `11481a5a` |
+| E15 | outbox alias re-export 16 줄 dedup | done | commit `37de1ec2` |
+| D13 | sub-agent-verify-discipline skill | done | [`docs/skills/sub-agent-verify-discipline.md`](../../skills/sub-agent-verify-discipline.md) |
+| D14 | simulations production taxonomy 면제 결정 | done | lessons-learned §4 |
+| G1 | BFF prefix 라우팅 governance + gateway 충돌 일부 해소 | partial | commit `bde538cd` |
+| C12 | 미proxy slice routes | open | 사용자 결정 대기 |
 
 ## 진행 방식
 
