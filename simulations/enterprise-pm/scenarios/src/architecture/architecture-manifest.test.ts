@@ -41,7 +41,17 @@ describe("architecture simulation manifest", () => {
   });
 
   it("validates the assignment OpenMetadata seed and cache key DSL", () => {
-    const seedPath = join(process.cwd(), "..", "metadata", "openmetadata", "assignment.seed.json");
+    const seedPath = join(
+      process.cwd(),
+      "..",
+      "services",
+      "pm-api",
+      "src",
+      "pm",
+      "assignment",
+      "metadata",
+      "openmetadata.seed.json",
+    );
     const manifest = JSON.parse(readFileSync(seedPath, "utf-8")) as GovernanceManifest;
 
     expect(validateGovernanceManifest(manifest)).toEqual([]);
