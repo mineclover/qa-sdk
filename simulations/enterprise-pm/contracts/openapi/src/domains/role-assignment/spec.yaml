@@ -1,0 +1,111 @@
+tags:
+  - name: role-assignment
+    description: Role-Assignment command and read-model API.
+paths:
+  /role-assignments:
+    post:
+      tags: [role-assignment]
+      operationId: assignRole
+      x-domain: role-assignment
+      x-architecture-slice: role-assignment-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignRoleCommand"
+      responses:
+        "200":
+          description: Assignment detail.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleAssignmentReadModel"
+        "404":
+          description: Role not found.
+    delete:
+      tags: [role-assignment]
+      operationId: revokeRole
+      x-domain: role-assignment
+      x-architecture-slice: role-assignment-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RevokeRoleCommand"
+      responses:
+        "200":
+          description: Revoke acknowledged.
+    get:
+      tags: [role-assignment]
+      operationId: listAssignmentsForUser
+      x-domain: role-assignment
+      x-architecture-slice: role-assignment-read-model-sync
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of assignments for the given user.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RoleAssignmentReadModel"
+components:
+  schemas:
+    AssignRoleCommand:
+      type: object
+      required: [userId, roleId, scopeType, scopeId]
+      properties:
+        userId:
+          type: string
+        roleId:
+          type: string
+        scopeType:
+          type: string
+          enum: [global, department, project]
+        scopeId:
+          type: string
+          nullable: true
+      additionalProperties: false
+    RevokeRoleCommand:
+      type: object
+      required: [userId, roleId, scopeType, scopeId]
+      properties:
+        userId:
+          type: string
+        roleId:
+          type: string
+        scopeType:
+          type: string
+          enum: [global, department, project]
+        scopeId:
+          type: string
+          nullable: true
+      additionalProperties: false
+    RoleAssignmentReadModel:
+      type: object
+      required: [id, userId, roleId, scopeType, scopeId, assignedAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        roleId:
+          type: string
+        scopeType:
+          type: string
+          enum: [global, department, project]
+        scopeId:
+          type: string
+          nullable: true
+        assignedAt:
+          type: string
+          format: date-time
+      additionalProperties: false

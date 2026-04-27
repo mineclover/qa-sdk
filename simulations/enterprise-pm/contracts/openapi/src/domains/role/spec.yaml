@@ -1,0 +1,119 @@
+tags:
+  - name: role
+    description: Role command and read-model API.
+paths:
+  /roles:
+    post:
+      tags: [role]
+      operationId: createRole
+      summary: Create a role.
+      x-domain: role
+      x-architecture-slice: role-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoleCommand"
+      responses:
+        "200":
+          description: Role detail.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleReadModel"
+        "409":
+          description: Role name already exists.
+    get:
+      tags: [role]
+      operationId: listRoles
+      summary: List roles.
+      x-domain: role
+      x-architecture-slice: role-read-model-sync
+      responses:
+        "200":
+          description: List of roles.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RoleReadModel"
+  /roles/{roleId}:
+    get:
+      tags: [role]
+      operationId: getRoleReadModel
+      summary: Read role detail.
+      x-domain: role
+      x-architecture-slice: role-read-model-sync
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Role detail.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleReadModel"
+        "404":
+          description: Role not found.
+    delete:
+      tags: [role]
+      operationId: deleteRole
+      summary: Delete a role.
+      x-domain: role
+      x-architecture-slice: role-command-write-model
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Delete acknowledged.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [deleted]
+                required: [status]
+components:
+  schemas:
+    CreateRoleCommand:
+      type: object
+      required: [name, scopeType, defaultMaskHex]
+      properties:
+        name:
+          type: string
+        scopeType:
+          type: string
+          enum: [global, department, project]
+        defaultMaskHex:
+          type: string
+          pattern: "^[0-9a-fA-F]+$"
+      additionalProperties: false
+    RoleReadModel:
+      type: object
+      required: [id, name, scopeType, defaultMaskHex, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        scopeType:
+          type: string
+          enum: [global, department, project]
+        defaultMaskHex:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      additionalProperties: false

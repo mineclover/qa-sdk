@@ -1,0 +1,161 @@
+tags:
+  - name: department
+    description: Department command and read-model API.
+paths:
+  /departments:
+    post:
+      tags: [department]
+      operationId: createDepartment
+      x-domain: department
+      x-architecture-slice: department-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDepartmentCommand"
+      responses:
+        "200":
+          description: Department detail.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepartmentReadModel"
+    get:
+      tags: [department]
+      operationId: listDepartments
+      x-domain: department
+      x-architecture-slice: department-read-model-sync
+      responses:
+        "200":
+          description: List of departments.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DepartmentReadModel"
+  /departments/{deptId}:
+    get:
+      tags: [department]
+      operationId: getDepartmentReadModel
+      x-domain: department
+      x-architecture-slice: department-read-model-sync
+      parameters:
+        - name: deptId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Department detail.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepartmentReadModel"
+        "404":
+          description: Department not found.
+    put:
+      tags: [department]
+      operationId: updateDepartment
+      x-domain: department
+      x-architecture-slice: department-command-write-model
+      parameters:
+        - name: deptId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDepartmentCommand"
+      responses:
+        "200":
+          description: Update accepted.
+        "409":
+          description: Cycle detected.
+    delete:
+      tags: [department]
+      operationId: deleteDepartment
+      x-domain: department
+      x-architecture-slice: department-command-write-model
+      parameters:
+        - name: deptId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Delete acknowledged.
+  /departments/{deptId}/chain:
+    get:
+      tags: [department]
+      operationId: getDepartmentChain
+      x-domain: department
+      x-architecture-slice: department-read-model-sync
+      parameters:
+        - name: deptId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Ancestor chain (self → root).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DepartmentReadModel"
+components:
+  schemas:
+    CreateDepartmentCommand:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        parentId:
+          type: string
+        managerId:
+          type: string
+      additionalProperties: false
+    UpdateDepartmentCommand:
+      type: object
+      properties:
+        name:
+          type: string
+        parentId:
+          type: string
+          nullable: true
+        managerId:
+          type: string
+          nullable: true
+      additionalProperties: false
+    DepartmentReadModel:
+      type: object
+      required: [id, name, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        parentId:
+          type: string
+          nullable: true
+        managerId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: false

@@ -1,0 +1,65 @@
+{
+  "openmetadata": {
+    "domain": {
+      "name": "Role",
+      "team": "Auth Team",
+      "owner": "sim-auth-owner"
+    },
+    "glossary": [
+      {
+        "term": "Role",
+        "description": "A named bundle of permissions (default action mask) bound to a scope type."
+      },
+      {
+        "term": "DefaultMaskHex",
+        "description": "Hex-encoded base permission mask applied when computing user bits."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "role-write-path",
+        "from": "auth.roles",
+        "to": "auth.outbox_events",
+        "via": "transactional-outbox"
+      }
+    ],
+    "qualityTests": [
+      {
+        "name": "role_name_unique",
+        "type": "columnUnique",
+        "entity": "auth.roles.name"
+      },
+      {
+        "name": "role_scope_values",
+        "type": "columnValuesToBeInSet",
+        "entity": "auth.roles.scope_type",
+        "values": ["global", "department", "project"]
+      }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "role-read-model",
+      "domain": "role",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "role-read-model",
+      "segments": [
+        { "name": "roleId" }
+      ],
+      "ttl": "medium",
+      "openmetadataEntity": "reporting.role_read_model"
+    },
+    {
+      "id": "role-idempotency",
+      "domain": "role",
+      "purpose": "idempotency",
+      "version": "v1",
+      "prefix": "role-idempotency",
+      "segments": [
+        { "name": "idempotencyKey", "pii": false }
+      ],
+      "ttl": "short"
+    }
+  ]
+}

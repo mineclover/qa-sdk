@@ -1,0 +1,71 @@
+{
+  "openmetadata": {
+    "domain": {
+      "name": "User",
+      "team": "Auth Team",
+      "owner": "sim-auth-owner"
+    },
+    "glossary": [
+      {
+        "term": "User",
+        "description": "An identity that can authenticate and be assigned roles within sim-erp."
+      },
+      {
+        "term": "PrimaryRole",
+        "description": "Default role suggested for the user; not authoritative for permission checks."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "user-write-path",
+        "from": "auth.users",
+        "to": "auth.outbox_events",
+        "via": "transactional-outbox"
+      },
+      {
+        "name": "user-read-path",
+        "from": "auth.outbox_events",
+        "to": "reporting.user_read_model",
+        "via": "user-read-model-sync"
+      }
+    ],
+    "qualityTests": [
+      {
+        "name": "user_email_unique",
+        "type": "columnUnique",
+        "entity": "auth.users.email"
+      },
+      {
+        "name": "user_email_not_null",
+        "type": "columnNullCount",
+        "entity": "auth.users.email",
+        "maxNullCount": 0
+      }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "user-read-model",
+      "domain": "user",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "user-read-model",
+      "segments": [
+        { "name": "userId" }
+      ],
+      "ttl": "medium",
+      "openmetadataEntity": "reporting.user_read_model"
+    },
+    {
+      "id": "user-idempotency",
+      "domain": "user",
+      "purpose": "idempotency",
+      "version": "v1",
+      "prefix": "user-idempotency",
+      "segments": [
+        { "name": "idempotencyKey", "pii": true, "encoding": "hash" }
+      ],
+      "ttl": "short"
+    }
+  ]
+}

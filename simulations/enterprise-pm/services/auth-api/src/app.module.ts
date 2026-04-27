@@ -4,12 +4,7 @@
 import { Module } from "@nestjs/common";
 import { HealthModule } from "./health/health.module.js";
 import { AuthDbModule } from "./auth/auth-db.module.js";
-import { UserModule } from "./auth/user/user.module.js";
-import { DepartmentModule } from "./auth/department/department.module.js";
-import { RoleModule } from "./auth/role/role.module.js";
-import { RoleAssignmentModule } from "./auth/role-assignment/role-assignment.module.js";
-import { BitmapModule } from "./auth/bitmap/bitmap.module.js";
-import { AuthenticateModule } from "./auth/authenticate/authenticate.module.js";
+import { AUTH_SLICE_MODULES } from "./auth/auth-slices.registry.js";
 import { BitmapCacheModule } from "@qa-sdk/sim-bitmap-cache";
 import { env } from "./config/env.js";
 
@@ -17,12 +12,7 @@ import { env } from "./config/env.js";
   imports: [
     HealthModule,
     AuthDbModule.forRoot(),
-    UserModule,
-    DepartmentModule,
-    RoleModule,
-    RoleAssignmentModule,
-    BitmapModule,
-    AuthenticateModule.forRoot(), // 기본 NoopCredentialStore — 운영 부팅
+    ...AUTH_SLICE_MODULES,
     // §5 Invalidation Publisher — 권한 변경 시 pub/sub 메시지 발행.
     BitmapCacheModule.forRoot({
       redisUrl: env.SIM_REDIS_URL,

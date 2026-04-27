@@ -1,0 +1,68 @@
+{
+  "openmetadata": {
+    "domain": {
+      "name": "RoleAssignment",
+      "team": "Auth Team",
+      "owner": "sim-auth-owner"
+    },
+    "glossary": [
+      {
+        "term": "RoleAssignment",
+        "description": "A binding of a User to a Role within a specific scope (global/department/project)."
+      },
+      {
+        "term": "PermissionChange",
+        "description": "Pub/sub event emitted on assignment/revocation; bitmap cache subscribes to invalidate user bits."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "role-assignment-write-path",
+        "from": "auth.role_assignments",
+        "to": "auth.outbox_events",
+        "via": "transactional-outbox"
+      },
+      {
+        "name": "role-assignment-invalidation",
+        "from": "auth.role_assignments",
+        "to": "bitmap-cache.user_invalidation",
+        "via": "permission-change-publisher"
+      }
+    ],
+    "qualityTests": [
+      {
+        "name": "role_assignment_scope_values",
+        "type": "columnValuesToBeInSet",
+        "entity": "auth.role_assignments.scope_type",
+        "values": ["global", "department", "project"]
+      }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "role-assignment-read-model",
+      "domain": "role-assignment",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "role-assignment-read-model",
+      "segments": [
+        { "name": "userId" },
+        { "name": "roleId" },
+        { "name": "scopeType" },
+        { "name": "scopeId" }
+      ],
+      "ttl": "medium"
+    },
+    {
+      "id": "role-assignment-idempotency",
+      "domain": "role-assignment",
+      "purpose": "idempotency",
+      "version": "v1",
+      "prefix": "role-assignment-idempotency",
+      "segments": [
+        { "name": "idempotencyKey", "pii": false }
+      ],
+      "ttl": "short"
+    }
+  ]
+}

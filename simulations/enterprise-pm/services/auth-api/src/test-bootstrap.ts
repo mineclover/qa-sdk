@@ -23,17 +23,21 @@ import {
 } from "@nestjs/platform-fastify";
 import { HealthModule } from "./health/health.module.js";
 import { AuthDbModule } from "./auth/auth-db.module.js";
-import { UserModule } from "./auth/user/user.module.js";
-import { DepartmentModule } from "./auth/department/department.module.js";
-import { RoleModule } from "./auth/role/role.module.js";
-import { RoleAssignmentModule } from "./auth/role-assignment/role-assignment.module.js";
-import { BitmapModule } from "./auth/bitmap/bitmap.module.js";
-import { AuthenticateModule } from "./auth/authenticate/authenticate.module.js";
-import { UserService } from "./auth/user/user.service.js";
-import { DepartmentService } from "./auth/department/department.service.js";
-import { RoleService } from "./auth/role/role.service.js";
-import { RoleAssignmentService } from "./auth/role-assignment/role-assignment.service.js";
-import { TestCredentialStore } from "./auth/authenticate/credential-store.js";
+import { UserSliceModule } from "./auth/user/user.module.js";
+import { DepartmentSliceModule } from "./auth/department/department.module.js";
+import { RoleSliceModule } from "./auth/role/role.module.js";
+import { RoleAssignmentSliceModule } from "./auth/role-assignment/role-assignment.module.js";
+import { BitmapSliceModule } from "./auth/bitmap/bitmap.module.js";
+import { AuthenticateSliceModule } from "./auth/authenticate/authenticate.module.js";
+import { UserUseCase } from "./auth/user/application/use-cases/user.use-case.js";
+import { UserReadModelQuery } from "./auth/user/application/queries/user-read-model.query.js";
+import { DepartmentUseCase } from "./auth/department/application/use-cases/department.use-case.js";
+import { DepartmentReadModelQuery } from "./auth/department/application/queries/department-read-model.query.js";
+import { RoleUseCase } from "./auth/role/application/use-cases/role.use-case.js";
+import { RoleReadModelQuery } from "./auth/role/application/queries/role-read-model.query.js";
+import { RoleAssignmentUseCase } from "./auth/role-assignment/application/use-cases/role-assignment.use-case.js";
+import { TestCredentialStore } from "./auth/authenticate/application/ports/credential-store.port.js";
+import type { AssignmentScopeType } from "./auth/role-assignment/domain/index.js";
 
 export { AppModule } from "./app.module.js";
 
@@ -75,21 +79,37 @@ export interface TestUser {
   departmentId: string;
 }
 
+/** 결정론적 ID 헬퍼 — controller derivation 과 동일 규약. */
+function deriveUserId(email: string): string {
+  return `usr_${email.replace(/[^a-zA-Z0-9]/g, "_")}`;
+}
+
+function deriveRoleId(name: string): string {
+  return `role_${name.replace(/[^a-zA-Z0-9]/g, "_")}`;
+}
+
+function deriveDeptId(name: string): string {
+  return `dept_${name.replace(/[^a-zA-Z0-9]/g, "_")}`;
+}
+
 /**
- * TestBootstrap 전용 AppModule — AuthenticateModule.forRoot 에 TestCredentialStore 주입.
- * NoopCredentialStore 를 대체하기 위해 별도 모듈로 구성.
+ * TestBootstrap 전용 AppModule — AuthenticateSliceModule.forRoot 에
+ * TestCredentialStore 주입.
+ *
+ * 슬라이스 직접 import 패턴 (registry 미사용) — AuthenticateSliceModule 만
+ * dynamic forRoot 로 변경하면 되므로 단순.
  */
 function buildTestAppModule(credentialStore: TestCredentialStore): DynamicModule {
   @Module({
     imports: [
       HealthModule,
       AuthDbModule.forRoot(),
-      UserModule,
-      DepartmentModule,
-      RoleModule,
-      RoleAssignmentModule,
-      BitmapModule,
-      AuthenticateModule.forRoot({ credentialStore }),
+      UserSliceModule,
+      DepartmentSliceModule,
+      RoleSliceModule,
+      RoleAssignmentSliceModule,
+      BitmapSliceModule,
+      AuthenticateSliceModule.forRoot({ credentialStore }),
       // BitmapCacheModule 은 운영용(Redis publisher) — 테스트에서는 생략.
     ],
   })
@@ -143,14 +163,24 @@ export async function bootstrapTestApi(
 }
 
 export async function seedTestData(handle: TestApiHandle): Promise<TestFixtureHandle> {
-  const users = handle.app.get(UserService);
-  const depts = handle.app.get(DepartmentService);
-  const roles = handle.app.get(RoleService);
-  const assignments = handle.app.get(RoleAssignmentService);
+  const userUseCase = handle.app.get(UserUseCase);
+  const userReadModel = handle.app.get(UserReadModelQuery);
+  const deptUseCase = handle.app.get(DepartmentUseCase);
+  const deptReadModel = handle.app.get(DepartmentReadModelQuery);
+  const roleUseCase = handle.app.get(RoleUseCase);
+  const roleReadModel = handle.app.get(RoleReadModelQuery);
+  const assignmentUseCase = handle.app.get(RoleAssignmentUseCase);
 
   // 1. 부서
-  const engineering = await depts.create({ name: "Engineering" });
-  const marketing = await depts.create({ name: "Marketing" });
+  const engineeringId = deriveDeptId("Engineering");
+  const marketingId = deriveDeptId("Marketing");
+  await deptUseCase.create({ id: engineeringId, name: "Engineering" });
+  await deptUseCase.create({ id: marketingId, name: "Marketing" });
+  const engineering = await deptReadModel.findDetail(engineeringId);
+  const marketing = await deptReadModel.findDetail(marketingId);
+  if (!engineering || !marketing) {
+    throw new Error("seedTestData: department seed lookup failed");
+  }
 
   // 2. 기본 role 3종 (design.md §3)
   //    manager: department scope, pm-api (8 addr) + approval-api (12 addr) 커버를 위해
@@ -158,47 +188,68 @@ export async function seedTestData(handle: TestApiHandle): Promise<TestFixtureHa
   //    member: project scope, 일부 action (0x0f00 = 하위 4비트만)
   //    admin: global scope, 모든 action
   //    AUTH_BITMASK_BYTES (=2)에 맞춰 2바이트 hex 사용.
-  const managerRole = await roles.create({
+  const managerRoleId = deriveRoleId("manager");
+  const memberRoleId = deriveRoleId("member");
+  const adminRoleId = deriveRoleId("admin");
+  await roleUseCase.create({
+    id: managerRoleId,
     name: "manager",
     scopeType: "department",
-    defaultMaskHex: "ffff", // 2 bytes 전체 set — pm/approval address 전범위 커버
+    defaultMaskHex: "ffff",
   });
-  const memberRole = await roles.create({
+  await roleUseCase.create({
+    id: memberRoleId,
     name: "member",
     scopeType: "project",
     defaultMaskHex: "0f00",
   });
-  const adminRole = await roles.create({
+  await roleUseCase.create({
+    id: adminRoleId,
     name: "admin",
     scopeType: "global",
     defaultMaskHex: "ffff",
   });
+  const managerRole = await roleReadModel.findDetail(managerRoleId);
+  const memberRole = await roleReadModel.findDetail(memberRoleId);
+  const adminRole = await roleReadModel.findDetail(adminRoleId);
+  if (!managerRole || !memberRole || !adminRole) {
+    throw new Error("seedTestData: role seed lookup failed");
+  }
 
   // 3. alice (Engineering manager) / bob (Marketing member)
-  const alice = await users.create({
+  const aliceId = deriveUserId("alice@example.com");
+  const bobId = deriveUserId("bob@example.com");
+  await userUseCase.create({
+    id: aliceId,
     email: "alice@example.com",
     displayName: "Alice",
     departmentId: engineering.id,
     primaryRoleId: managerRole.id,
   });
-  const bob = await users.create({
+  await userUseCase.create({
+    id: bobId,
     email: "bob@example.com",
     displayName: "Bob",
     departmentId: marketing.id,
     primaryRoleId: memberRole.id,
   });
+  const alice = await userReadModel.findDetail(aliceId);
+  const bob = await userReadModel.findDetail(bobId);
+  if (!alice || !bob) {
+    throw new Error("seedTestData: user seed lookup failed");
+  }
 
   // 4. role_assignments
-  await assignments.assign({
+  await assignmentUseCase.assign({
     userId: alice.id,
     roleId: managerRole.id,
-    scopeType: "department",
+    scopeType: "department" as AssignmentScopeType,
     scopeId: engineering.id,
   });
-  await assignments.assign({
+  await assignmentUseCase.assign({
     userId: bob.id,
     roleId: memberRole.id,
-    scopeType: "department",
+    scopeType: "department" as AssignmentScopeType,
     scopeId: marketing.id,
   });
 
@@ -272,90 +323,125 @@ export async function seedExtendedUsers(
   handle: TestApiHandle,
   base: TestFixtureHandle,
 ): Promise<ExtendedSeedHandle> {
-  const users = handle.app.get(UserService);
-  const roles = handle.app.get(RoleService);
-  const assignments = handle.app.get(RoleAssignmentService);
+  const userUseCase = handle.app.get(UserUseCase);
+  const userReadModel = handle.app.get(UserReadModelQuery);
+  const roleUseCase = handle.app.get(RoleUseCase);
+  const roleReadModel = handle.app.get(RoleReadModelQuery);
+  const assignmentUseCase = handle.app.get(RoleAssignmentUseCase);
 
-  const director = await roles.create({
+  const directorId = deriveRoleId("director");
+  const cfoId = deriveRoleId("cfo");
+  const approverId = deriveRoleId("approver");
+  const externalId = deriveRoleId("external_consultant");
+  await roleUseCase.create({
+    id: directorId,
     name: "director",
     scopeType: "department",
     defaultMaskHex: "ffff",
   });
-  const cfo = await roles.create({
+  await roleUseCase.create({
+    id: cfoId,
     name: "cfo",
     scopeType: "global",
     defaultMaskHex: "ffff",
   });
-  const approver = await roles.create({
+  await roleUseCase.create({
+    id: approverId,
     name: "approver",
     scopeType: "department",
     defaultMaskHex: "ffff",
   });
-  const external = await roles.create({
+  await roleUseCase.create({
+    id: externalId,
     name: "external_consultant",
     scopeType: "global",
     defaultMaskHex: "ffff",
   });
+  const director = await roleReadModel.findDetail(directorId);
+  const cfo = await roleReadModel.findDetail(cfoId);
+  const approver = await roleReadModel.findDetail(approverId);
+  const external = await roleReadModel.findDetail(externalId);
+  if (!director || !cfo || !approver || !external) {
+    throw new Error("seedExtendedUsers: role seed lookup failed");
+  }
 
-  const carol = await users.create({
+  const carolId = deriveUserId("carol@example.com");
+  const davidId = deriveUserId("david@example.com");
+  const eveId = deriveUserId("eve@example.com");
+  const frankId = deriveUserId("frank@example.com");
+  const adminUserId = deriveUserId("admin@example.com");
+  await userUseCase.create({
+    id: carolId,
     email: "carol@example.com",
     displayName: "Carol",
     departmentId: base.departments.engineering.id,
     primaryRoleId: base.roles.manager.id,
   });
-  const david = await users.create({
+  await userUseCase.create({
+    id: davidId,
     email: "david@example.com",
     displayName: "David",
     departmentId: base.departments.engineering.id,
     primaryRoleId: director.id,
   });
-  const eve = await users.create({
+  await userUseCase.create({
+    id: eveId,
     email: "eve@example.com",
     displayName: "Eve",
     departmentId: base.departments.engineering.id,
     primaryRoleId: cfo.id,
   });
-  const frank = await users.create({
+  await userUseCase.create({
+    id: frankId,
     email: "frank@example.com",
     displayName: "Frank",
     departmentId: base.departments.engineering.id,
     primaryRoleId: external.id,
   });
-  const admin = await users.create({
+  await userUseCase.create({
+    id: adminUserId,
     email: "admin@example.com",
     displayName: "Admin",
     departmentId: base.departments.engineering.id,
     primaryRoleId: base.roles.admin.id,
   });
+  const carol = await userReadModel.findDetail(carolId);
+  const david = await userReadModel.findDetail(davidId);
+  const eve = await userReadModel.findDetail(eveId);
+  const frank = await userReadModel.findDetail(frankId);
+  const adminUser = await userReadModel.findDetail(adminUserId);
+  if (!carol || !david || !eve || !frank || !adminUser) {
+    throw new Error("seedExtendedUsers: user seed lookup failed");
+  }
 
-  await assignments.assign({
+  await assignmentUseCase.assign({
     userId: carol.id,
     roleId: base.roles.manager.id,
-    scopeType: "department",
+    scopeType: "department" as AssignmentScopeType,
     scopeId: base.departments.engineering.id,
   });
-  await assignments.assign({
+  await assignmentUseCase.assign({
     userId: david.id,
     roleId: director.id,
-    scopeType: "department",
+    scopeType: "department" as AssignmentScopeType,
     scopeId: base.departments.engineering.id,
   });
-  await assignments.assign({
+  await assignmentUseCase.assign({
     userId: eve.id,
     roleId: cfo.id,
-    scopeType: "global",
+    scopeType: "global" as AssignmentScopeType,
     scopeId: "global",
   });
-  await assignments.assign({
+  await assignmentUseCase.assign({
     userId: frank.id,
     roleId: external.id,
-    scopeType: "global",
+    scopeType: "global" as AssignmentScopeType,
     scopeId: "global",
   });
-  await assignments.assign({
-    userId: admin.id,
+  await assignmentUseCase.assign({
+    userId: adminUser.id,
     roleId: base.roles.admin.id,
-    scopeType: "global",
+    scopeType: "global" as AssignmentScopeType,
     scopeId: "global",
   });
 
@@ -395,7 +481,7 @@ export async function seedExtendedUsers(
       departmentId: base.departments.engineering.id,
     },
     admin: {
-      id: admin.id,
+      id: adminUser.id,
       email: "admin@example.com",
       password: "admin-pass",
       displayName: "Admin",

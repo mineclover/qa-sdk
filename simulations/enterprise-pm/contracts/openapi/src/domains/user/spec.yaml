@@ -1,0 +1,192 @@
+tags:
+  - name: user
+    description: User identity command and read-model API.
+paths:
+  /users:
+    post:
+      tags: [user]
+      operationId: createUser
+      summary: Create a user.
+      x-domain: user
+      x-architecture-slice: user-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserCommand"
+      responses:
+        "200":
+          description: User detail.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserReadModel"
+        "400":
+          description: Validation error.
+        "409":
+          description: Email already exists.
+    get:
+      tags: [user]
+      operationId: listUsersByDepartment
+      summary: List users by department.
+      x-domain: user
+      x-architecture-slice: user-read-model-sync
+      parameters:
+        - name: departmentId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserReadModel"
+  /users/{userId}:
+    get:
+      tags: [user]
+      operationId: getUserReadModel
+      summary: Read denormalized user view.
+      x-domain: user
+      x-architecture-slice: user-read-model-sync
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User read model.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserReadModel"
+        "404":
+          description: User not found.
+    put:
+      tags: [user]
+      operationId: updateUser
+      summary: Update a user.
+      x-domain: user
+      x-architecture-slice: user-command-write-model
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserCommand"
+      responses:
+        "200":
+          description: User command accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserCommandAccepted"
+        "404":
+          description: User not found.
+    delete:
+      tags: [user]
+      operationId: deleteUser
+      summary: Delete a user.
+      x-domain: user
+      x-architecture-slice: user-command-write-model
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Delete acknowledged.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [deleted]
+components:
+  schemas:
+    CreateUserCommand:
+      type: object
+      required: [email, displayName]
+      properties:
+        email:
+          type: string
+          format: email
+          x-openmetadata-tags: [PII.Sensitive]
+        displayName:
+          type: string
+        departmentId:
+          type: string
+        primaryRoleId:
+          type: string
+      additionalProperties: false
+    UpdateUserCommand:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        departmentId:
+          type: string
+          nullable: true
+        primaryRoleId:
+          type: string
+          nullable: true
+      additionalProperties: false
+    UserCommandAccepted:
+      type: object
+      required: [userId, status]
+      properties:
+        userId:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, DELETED]
+      additionalProperties: false
+    UserReadModel:
+      type: object
+      required: [id, email, displayName, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+          x-openmetadata-tags: [PII.Sensitive]
+        displayName:
+          type: string
+        departmentId:
+          type: string
+          nullable: true
+        primaryRoleId:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: false

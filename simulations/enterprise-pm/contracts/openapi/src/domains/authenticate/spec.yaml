@@ -1,0 +1,83 @@
+tags:
+  - name: authenticate
+    description: Authenticate command (command-only slice).
+paths:
+  /auth/authenticate:
+    post:
+      tags: [authenticate]
+      operationId: authenticateCommand
+      summary: Verify email + password and return composed session.
+      x-domain: authenticate
+      x-architecture-slice: authenticate-command-only
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthenticateCommand"
+      responses:
+        "200":
+          description: Authenticated session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticatedSession"
+        "400":
+          description: Invalid input.
+        "401":
+          description: Invalid credentials.
+components:
+  schemas:
+    AuthenticateCommand:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          x-openmetadata-tags: [PII.Sensitive]
+        password:
+          type: string
+          x-openmetadata-tags: [PII.Sensitive]
+      additionalProperties: false
+    AuthenticatedSession:
+      type: object
+      required: [userId, displayName, roleIds, roleNames, roleAssignments]
+      properties:
+        userId:
+          type: string
+        displayName:
+          type: string
+        departmentId:
+          type: string
+          nullable: true
+        primaryRoleId:
+          type: string
+          nullable: true
+        roleIds:
+          type: array
+          items:
+            type: string
+        roleNames:
+          type: array
+          items:
+            type: string
+        roleAssignments:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthenticatedRoleAssignment"
+      additionalProperties: false
+    AuthenticatedRoleAssignment:
+      type: object
+      required: [roleId, roleName, scopeType, scopeId]
+      properties:
+        roleId:
+          type: string
+        roleName:
+          type: string
+        scopeType:
+          type: string
+        scopeId:
+          type: string
+          nullable: true
+      additionalProperties: false
