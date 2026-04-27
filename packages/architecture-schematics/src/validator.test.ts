@@ -259,6 +259,91 @@ describe("validateArchitecture", () => {
     expect(result).toEqual({ ok: true, issues: [] });
   });
 
+  it("rejects use-cases that only mention TransactionPort/LoggerPort in comments or strings", () => {
+    // 강화된 AST 룰 — substring 검사는 import 가 없어도 주석/문자열만으로 통과했다
+    // (false negative). 실제 import + 사용이 모두 갖춰져야 통과해야 한다.
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/application/use-cases/payment.use-case.ts",
+        content: [
+          "// Comment referencing TransactionPort and LoggerPort symbols by name only.",
+          'const note = "TransactionPort + LoggerPort";',
+          "export class PaymentUseCase {}",
+        ].join("\n"),
+      },
+    ]);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.map((issue) => issue.ruleId)).toEqual([
+      "transaction-and-logging-are-ports",
+      "transaction-and-logging-are-ports",
+    ]);
+  });
+
+  it("rejects use-cases that only import TransactionPort/LoggerPort without using them", () => {
+    // import 만 있고 본문 사용이 없으면 dead import — 강화된 AST 룰이 잡아야 한다.
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/application/use-cases/payment.use-case.ts",
+        content: [
+          'import type { PaymentTransactionPort } from "../ports/payment-transaction.port";',
+          'import type { PaymentLoggerPort } from "../ports/payment-logger.port";',
+          "export class PaymentUseCase {",
+          "  constructor() {}",
+          "}",
+        ].join("\n"),
+      },
+    ]);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.map((issue) => issue.ruleId)).toEqual([
+      "transaction-and-logging-are-ports",
+      "transaction-and-logging-are-ports",
+    ]);
+  });
+
+  it("accepts SLICE_LOGGER_PORT token inject as a valid LoggerPort dependency", () => {
+    // kit 의 LoggerPort 추상에 의존하는 정당한 패턴 — type import 가 아닌 토큰 inject.
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/application/use-cases/payment.use-case.ts",
+        content: [
+          'import { Inject } from "@nestjs/common";',
+          'import { SLICE_LOGGER_PORT } from "@qa-sdk/sim-domain-slice-kit";',
+          'import type { PaymentTransactionPort } from "../ports/payment-transaction.port";',
+          "export class PaymentUseCase {",
+          "  constructor(",
+          "    @Inject(SLICE_LOGGER_PORT) private readonly logger: unknown,",
+          "    private readonly tx: PaymentTransactionPort,",
+          "  ) {}",
+          "}",
+        ].join("\n"),
+      },
+    ]);
+
+    expect(result).toEqual({ ok: true, issues: [] });
+  });
+
+  it("accepts use-cases that import + use TransactionPort/LoggerPort as type references", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/application/use-cases/payment.use-case.ts",
+        content: [
+          'import type { PaymentTransactionPort } from "../ports/payment-transaction.port";',
+          'import type { PaymentLoggerPort } from "../ports/payment-logger.port";',
+          "export class PaymentUseCase {",
+          "  constructor(",
+          "    private readonly tx: PaymentTransactionPort,",
+          "    private readonly logger: PaymentLoggerPort,",
+          "  ) {}",
+          "}",
+        ].join("\n"),
+      },
+    ]);
+
+    expect(result).toEqual({ ok: true, issues: [] });
+  });
+
   it("flags path alias based cross-domain deep imports", () => {
     const result = validateArchitecture([
       {

@@ -137,7 +137,12 @@ function validateFile(
     const enforceTransactionPort =
       topology === "service" || topology === "command-only";
 
-    if (enforceTransactionPort && !file.content.includes("TransactionPort")) {
+    // AST 기반 검사 — substring 검사는 import 라인 한 줄 또는 주석/식별자 토큰으로
+    // 우회 가능 (false negative). 실제 import + 실제 사용 (type reference / 식별자
+    // 참조) 을 모두 확인한다.
+    const usage = analyzePortUsage(file);
+
+    if (enforceTransactionPort && !usage.hasTransactionPort) {
       issues.push(createIssue(
         "transaction-and-logging-are-ports",
         file.path,
@@ -145,7 +150,7 @@ function validateFile(
         "Use case must depend on a transaction port.",
       ));
     }
-    if (!file.content.includes("LoggerPort")) {
+    if (!usage.hasLoggerPort) {
       issues.push(createIssue(
         "transaction-and-logging-are-ports",
         file.path,
@@ -391,6 +396,167 @@ function readImports(file: SourceFileInput): string[] {
   }
 
   return imports;
+}
+
+interface PortUsageAnalysis {
+  /** TransactionPort symbol 이 import + 실제 사용 (type reference) 까지 갖춰진 경우 */
+  readonly hasTransactionPort: boolean;
+  /**
+   * LoggerPort symbol 이 import + 실제 사용 (type reference) 으로 사용된 경우, 또는
+   * SLICE_LOGGER_PORT (또는 *_LOGGER_PORT) 토큰이 import + 식별자 참조로 사용된 경우.
+   */
+  readonly hasLoggerPort: boolean;
+}
+
+/**
+ * use-case 파일의 TransactionPort/LoggerPort 의존을 AST 로 분석한다.
+ *
+ * substring 검사는 import 한 줄만으로 또는 주석/변수명 토큰만으로 통과 가능했다
+ * (false negative). 본 분석은 다음 두 단계를 모두 통과해야 "사용함" 으로 판정한다:
+ *
+ * 1. import declaration 의 named/namespace import 로 symbol 이 실제로 들여와짐.
+ * 2. 본문에서 type reference (`ts.isTypeReferenceNode`) 또는 식별자 참조로 그
+ *    symbol 이 등장.
+ *
+ * LoggerPort 의 경우 두 가지 정당한 패턴을 모두 허용한다:
+ *
+ * - LoggerPort 추상에 대한 type reference (예: `private readonly logger: AssignmentLoggerPort`).
+ * - kit 의 `SLICE_LOGGER_PORT` 토큰을 inject 하는 패턴 (예: `@Inject(SLICE_LOGGER_PORT)`).
+ *   이 경우 LoggerPort 타입 자체를 import 하지 않을 수 있어 type reference 만으로는
+ *   누락된다. `*_LOGGER_PORT` 식별자가 import + 본문 참조로 등장하면 통과로 본다.
+ */
+function analyzePortUsage(file: SourceFileInput): PortUsageAnalysis {
+  const sourceFile = ts.createSourceFile(
+    file.path,
+    file.content,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
+
+  const importedTypeSymbols = new Set<string>();
+  const importedValueSymbols = new Set<string>();
+
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement)) continue;
+    const clause = statement.importClause;
+    if (!clause) continue;
+    const isTypeOnlyImport = clause.isTypeOnly === true;
+
+    // default import: `import Foo from "..."` 는 TS value+type 모두에 바인딩.
+    if (clause.name) {
+      const name = clause.name.text;
+      if (isTypeOnlyImport) importedTypeSymbols.add(name);
+      else {
+        importedTypeSymbols.add(name);
+        importedValueSymbols.add(name);
+      }
+    }
+
+    const bindings = clause.namedBindings;
+    if (!bindings) continue;
+
+    if (ts.isNamespaceImport(bindings)) {
+      // `import * as ns from "..."` — 본문에서 `ns.X` 참조로 등장. 사용 검사는
+      // 식별자 단위로만 하므로 namespace prefix 자체를 등록.
+      const ns = bindings.name.text;
+      if (isTypeOnlyImport) importedTypeSymbols.add(ns);
+      else {
+        importedTypeSymbols.add(ns);
+        importedValueSymbols.add(ns);
+      }
+      continue;
+    }
+
+    if (ts.isNamedImports(bindings)) {
+      for (const element of bindings.elements) {
+        const localName = element.name.text;
+        const memberIsTypeOnly = element.isTypeOnly === true;
+        const effectiveTypeOnly = isTypeOnlyImport || memberIsTypeOnly;
+        importedTypeSymbols.add(localName);
+        if (!effectiveTypeOnly) {
+          importedValueSymbols.add(localName);
+        }
+      }
+    }
+  }
+
+  // 본문 내 type reference 식별자 + 일반 식별자 참조 수집.
+  const typeReferenceNames = new Set<string>();
+  const identifierReferenceNames = new Set<string>();
+
+  const visit = (node: ts.Node): void => {
+    if (ts.isImportDeclaration(node)) {
+      // import 자체는 사용처가 아니다.
+      return;
+    }
+
+    if (ts.isTypeReferenceNode(node)) {
+      const typeName = node.typeName;
+      if (ts.isIdentifier(typeName)) {
+        typeReferenceNames.add(typeName.text);
+      } else if (ts.isQualifiedName(typeName)) {
+        // `ns.X` 형태 — leftmost identifier 만 등록 (namespace import 매칭용).
+        let cursor: ts.EntityName = typeName;
+        while (ts.isQualifiedName(cursor)) cursor = cursor.left;
+        if (ts.isIdentifier(cursor)) typeReferenceNames.add(cursor.text);
+      }
+    }
+
+    if (ts.isIdentifier(node)) {
+      // type reference 의 typeName 은 위에서 처리했으므로 여기서는 일반 식별자
+      // 참조 (값 참조) 를 수집한다. 단순히 모든 Identifier 를 모은다 — false
+      // positive 가 있더라도 import 와의 교집합으로 좁히기 때문에 safe.
+      identifierReferenceNames.add(node.text);
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  // 파일 statements 를 순회하되 ImportDeclaration 자체는 건너뛴다.
+  for (const statement of sourceFile.statements) {
+    if (ts.isImportDeclaration(statement)) continue;
+    visit(statement);
+  }
+
+  const hasTransactionPort = anyMatch(
+    importedTypeSymbols,
+    typeReferenceNames,
+    (name) => name.endsWith("TransactionPort"),
+  );
+
+  const hasLoggerPortType = anyMatch(
+    importedTypeSymbols,
+    typeReferenceNames,
+    (name) => name.endsWith("LoggerPort"),
+  );
+
+  // SLICE_LOGGER_PORT / *_LOGGER_PORT 토큰 inject 케이스. 값 import + 값 참조.
+  const hasLoggerPortToken = anyMatch(
+    importedValueSymbols,
+    identifierReferenceNames,
+    (name) => /_LOGGER_PORT$/.test(name),
+  );
+
+  return {
+    hasTransactionPort,
+    hasLoggerPort: hasLoggerPortType || hasLoggerPortToken,
+  };
+}
+
+/**
+ * import set 과 사용처 set 의 교집합에서 predicate 를 만족하는 식별자가 있는지 본다.
+ */
+function anyMatch(
+  imported: ReadonlySet<string>,
+  used: ReadonlySet<string>,
+  predicate: (name: string) => boolean,
+): boolean {
+  for (const name of imported) {
+    if (!predicate(name)) continue;
+    if (used.has(name)) return true;
+  }
+  return false;
 }
 
 function detectLayer(path: string): Layer {
