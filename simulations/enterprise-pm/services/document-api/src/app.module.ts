@@ -4,9 +4,7 @@
 import { Module } from "@nestjs/common";
 import { HealthModule } from "./health/health.module.js";
 import { DocumentDbModule } from "./document/document-db.module.js";
-import { DocumentModule } from "./document/document/document.module.js";
-import { VersionModule } from "./document/version/version.module.js";
-import { CommentModule } from "./document/comment/comment.module.js";
+import { DOCUMENT_SLICE_MODULES } from "./document/document-slices.registry.js";
 import { BitmapCacheModule } from "@qa-sdk/sim-bitmap-cache";
 import { env } from "./config/env.js";
 import { createLogger } from "./lib/logger.js";
@@ -16,9 +14,7 @@ import { createSubscriberLogger } from "./lib/bitmap-cache-logger.js";
   imports: [
     HealthModule,
     DocumentDbModule.forRoot(),
-    DocumentModule,
-    VersionModule,
-    CommentModule,
+    ...DOCUMENT_SLICE_MODULES,
     BitmapCacheModule.forRoot({
       redisUrl: env.SIM_REDIS_URL,
       publisherEnabled: false,

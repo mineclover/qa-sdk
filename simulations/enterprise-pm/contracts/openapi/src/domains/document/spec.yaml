@@ -1,0 +1,173 @@
+tags:
+  - name: document
+    description: Document command and read-model API.
+paths:
+  /documents:
+    post:
+      tags: [document]
+      operationId: createDocument
+      summary: Create a document.
+      x-domain: document
+      x-architecture-slice: document-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocumentCommand"
+      responses:
+        "201":
+          description: Document created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentCommandAccepted"
+        "400":
+          description: Validation failed.
+    get:
+      tags: [document]
+      operationId: listDocuments
+      summary: List documents by project.
+      x-domain: document
+      x-architecture-slice: document-read-model
+      parameters:
+        - name: projectId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Document list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentReadModel"
+  /documents/{documentId}:
+    get:
+      tags: [document]
+      operationId: getDocument
+      summary: Read denormalized document detail.
+      x-domain: document
+      x-architecture-slice: document-read-model
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Document read model.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentReadModel"
+        "404":
+          description: Not found.
+    put:
+      tags: [document]
+      operationId: updateDocument
+      summary: Update a document.
+      x-domain: document
+      x-architecture-slice: document-command-write-model
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDocumentCommand"
+      responses:
+        "200":
+          description: Document updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentCommandAccepted"
+        "404":
+          description: Not found.
+    delete:
+      tags: [document]
+      operationId: deleteDocument
+      summary: Delete a document.
+      x-domain: document
+      x-architecture-slice: document-command-write-model
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Document deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentCommandAccepted"
+components:
+  schemas:
+    CreateDocumentCommand:
+      type: object
+      required: [projectId, title, ownerId]
+      properties:
+        projectId:
+          type: string
+        title:
+          type: string
+        ownerId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+      additionalProperties: false
+    UpdateDocumentCommand:
+      type: object
+      properties:
+        projectId:
+          type: string
+        title:
+          type: string
+        ownerId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+      additionalProperties: false
+    DocumentCommandAccepted:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [CREATED, UPDATED, DELETED]
+      additionalProperties: false
+    DocumentReadModel:
+      type: object
+      required: [id, projectId, title, currentVersion, ownerId, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        title:
+          type: string
+        currentVersion:
+          type: integer
+          minimum: 0
+        ownerId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: false

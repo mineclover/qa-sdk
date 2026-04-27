@@ -1,0 +1,157 @@
+tags:
+  - name: comment
+    description: Document comment command and read-model API.
+paths:
+  /comments:
+    post:
+      tags: [comment]
+      operationId: createComment
+      summary: Create a comment on a document.
+      x-domain: comment
+      x-architecture-slice: comment-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCommentCommand"
+      responses:
+        "201":
+          description: Comment created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentCommandAccepted"
+        "404":
+          description: Document not found.
+  /comments/{commentId}:
+    get:
+      tags: [comment]
+      operationId: getComment
+      summary: Read denormalized comment.
+      x-domain: comment
+      x-architecture-slice: comment-read-model
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Comment read model.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentReadModel"
+        "404":
+          description: Not found.
+    delete:
+      tags: [comment]
+      operationId: deleteComment
+      summary: Delete a comment.
+      x-domain: comment
+      x-architecture-slice: comment-command-write-model
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Comment deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentCommandAccepted"
+  /documents/{documentId}/comments:
+    get:
+      tags: [comment]
+      operationId: listCommentsForDocument
+      summary: List comments on a document.
+      x-domain: comment
+      x-architecture-slice: comment-read-model
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Comment list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CommentReadModel"
+  /comments/{parentCommentId}/replies:
+    get:
+      tags: [comment]
+      operationId: listCommentReplies
+      summary: List replies to a comment.
+      x-domain: comment
+      x-architecture-slice: comment-read-model
+      parameters:
+        - name: parentCommentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Replies list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CommentReadModel"
+components:
+  schemas:
+    CreateCommentCommand:
+      type: object
+      required: [documentId, authorId, body]
+      properties:
+        documentId:
+          type: string
+        authorId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        body:
+          type: string
+        parentCommentId:
+          type: string
+      additionalProperties: false
+    CommentCommandAccepted:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [CREATED, DELETED]
+      additionalProperties: false
+    CommentReadModel:
+      type: object
+      required: [id, documentId, authorId, body, createdAt]
+      properties:
+        id:
+          type: string
+        documentId:
+          type: string
+        authorId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        parentCommentId:
+          type: string
+          nullable: true
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      additionalProperties: false

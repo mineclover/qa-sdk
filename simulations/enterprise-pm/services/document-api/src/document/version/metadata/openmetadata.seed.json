@@ -1,0 +1,48 @@
+{
+  "openmetadata": {
+    "domain": {
+      "name": "DocumentVersion",
+      "team": "Document Team",
+      "owner": "sim-document-owner"
+    },
+    "glossary": [
+      {
+        "term": "DocumentVersion",
+        "description": "An append-only version snapshot of a document content reference."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "version-write-path",
+        "from": "doc.versions",
+        "to": "doc.outbox_events",
+        "via": "transactional-outbox"
+      },
+      {
+        "name": "version-document-ref",
+        "from": "doc.documents",
+        "to": "doc.versions",
+        "via": "cross-domain-query"
+      }
+    ],
+    "qualityTests": [
+      {
+        "name": "version_content_ref_not_empty",
+        "type": "columnNullCount",
+        "entity": "doc.versions.content_ref",
+        "maxNullCount": 0
+      }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "version-read-model",
+      "domain": "version",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "version-read-model",
+      "segments": [{ "name": "documentId" }, { "name": "versionNumber" }],
+      "ttl": "medium"
+    }
+  ]
+}

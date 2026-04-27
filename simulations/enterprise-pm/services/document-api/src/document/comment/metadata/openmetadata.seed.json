@@ -1,0 +1,57 @@
+{
+  "openmetadata": {
+    "domain": {
+      "name": "Comment",
+      "team": "Document Team",
+      "owner": "sim-document-owner"
+    },
+    "glossary": [
+      {
+        "term": "Comment",
+        "description": "A threaded user comment attached to a document."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "comment-write-path",
+        "from": "doc.comments",
+        "to": "doc.outbox_events",
+        "via": "transactional-outbox"
+      },
+      {
+        "name": "comment-document-ref",
+        "from": "doc.documents",
+        "to": "doc.comments",
+        "via": "cross-domain-query"
+      }
+    ],
+    "qualityTests": [
+      {
+        "name": "comment_body_not_empty",
+        "type": "columnNullCount",
+        "entity": "doc.comments.body",
+        "maxNullCount": 0
+      }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "comment-read-model",
+      "domain": "comment",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "comment-read-model",
+      "segments": [{ "name": "commentId" }],
+      "ttl": "medium"
+    },
+    {
+      "id": "comment-idempotency",
+      "domain": "comment",
+      "purpose": "idempotency",
+      "version": "v1",
+      "prefix": "comment-idempotency",
+      "segments": [{ "name": "idempotencyKey", "pii": true, "encoding": "hash" }],
+      "ttl": "short"
+    }
+  ]
+}
