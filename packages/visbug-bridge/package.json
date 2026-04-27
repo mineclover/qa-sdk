@@ -13,7 +13,9 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -28,6 +30,7 @@
   "devDependencies": {
     "@playwright/test": "^1.50.0",
     "@types/node": "^20.0.0",
+    "http-server": "^14.1.1",
     "jsdom": "^25.0.0",
     "tsup": "^8.5.1",
     "typescript": "^5.8.2",
