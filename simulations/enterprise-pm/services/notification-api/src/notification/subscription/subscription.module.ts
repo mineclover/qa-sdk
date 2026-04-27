@@ -32,6 +32,19 @@ import { SubscriptionController } from "./presentation/http/subscription.control
 import { SubscriptionDetailBff } from "./presentation/bff/subscription-detail.bff.js";
 import { SubscriptionDetailController } from "./presentation/bff/subscription-detail.controller.js";
 
+// production user-query 어댑터 (외부 컴포지션용 re-export — 모듈 자체는
+// 기본값으로 AlwaysTrueUserQuery 를 유지). NestJS override 또는 dynamic
+// composition 을 통해 InProcess/Http 어댑터로 교체 가능.
+export {
+  InProcessSubscriptionUserQuery,
+  type UserReadModelLike,
+} from "./infrastructure/adapters/in-process-user-query.adapter.js";
+export {
+  HttpSubscriptionUserQuery,
+  type HttpSubscriptionUserQueryOptions,
+  type FetchLike,
+} from "./infrastructure/adapters/http-user-query.adapter.js";
+
 const SUB_TRANSACTION_PORT = Symbol.for("sim-notification-api/subscription/TransactionPort");
 const SUB_OUTBOX_PORT = Symbol.for("sim-notification-api/subscription/OutboxPort");
 
@@ -75,6 +88,16 @@ const readModelProvider: Provider = {
  * AlwaysTrueUserQuery 를 사용해 user 존재를 항상 true 로 가정한다 (dev/test
  * fail-open). auth-api 가 ready 되면 BFF / anti-corruption 레이어가 본 토큰의
  * 실제 구현을 주입한다.
+ *
+ * Production 어댑터:
+ *   - InProcessSubscriptionUserQuery — 단일 프로세스 (시뮬/통합 테스트). 외부
+ *     컴포지션이 auth-api 의 UserReadModelQuery 를 구조적 타이핑으로 주입.
+ *   - HttpSubscriptionUserQuery — cross-process (운영 형태). auth-api 의
+ *     `GET /users/:id` 호출 + AbortSignal.timeout + fail-open.
+ *
+ * 두 production 어댑터 모두 본 모듈의 top-level 에서 re-export 됨. 컴포지션
+ * 루트 (시나리오/통합 환경) 는 NestJS `Test.overrideProvider` 또는 동등한
+ * mechanism 으로 본 provider 를 swap 한다.
  */
 const userQueryProvider: Provider = {
   provide: SubscriptionUserQueryPort,
