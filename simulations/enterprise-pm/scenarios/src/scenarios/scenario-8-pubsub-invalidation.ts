@@ -145,7 +145,7 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
     };
 
     // 3. admin → auth-api 직접 role assign (gateway proxy 우회)
-    const assignRes = await fetch(`${ctx.authApiBaseUrl}/assignments`, {
+    const assignRes = await fetch(`${ctx.authApiBaseUrl}/role-assignments`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
