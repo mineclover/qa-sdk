@@ -1,0 +1,92 @@
+{
+  "openmetadata": {
+    "domain": {
+      "name": "Assignment",
+      "team": "Assignment Team",
+      "owner": "sim-assignment-owner"
+    },
+    "glossary": [
+      {
+        "term": "Assignment",
+        "description": "A manager assignment for a project process."
+      },
+      {
+        "term": "Manager",
+        "description": "The responsible employee assigned to a process."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "assignment-write-path",
+        "from": "pm.assignments",
+        "to": "pm.outbox_events",
+        "via": "transactional-outbox"
+      },
+      {
+        "name": "assignment-read-path",
+        "from": "pm.outbox_events",
+        "to": "reporting.assignment_read_model",
+        "via": "assignment-read-model-sync"
+      }
+    ],
+    "qualityTests": [
+      {
+        "name": "assignment_status_values",
+        "type": "columnValuesToBeInSet",
+        "entity": "pm.assignments.status",
+        "values": ["draft", "assigned", "cancelled"]
+      },
+      {
+        "name": "assignment_manager_not_null",
+        "type": "columnNullCount",
+        "entity": "pm.assignments.manager_id",
+        "maxNullCount": 0
+      }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "assignment-read-model",
+      "domain": "assignment",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "assignment-read-model",
+      "segments": [
+        {
+          "name": "assignmentId"
+        }
+      ],
+      "ttl": "medium",
+      "openmetadataEntity": "reporting.assignment_read_model"
+    },
+    {
+      "id": "assignment-bff-detail",
+      "domain": "assignment",
+      "purpose": "bff_detail",
+      "version": "v1",
+      "prefix": "assignment-bff-detail",
+      "segments": [
+        {
+          "name": "assignmentId"
+        }
+      ],
+      "ttl": "short",
+      "openmetadataEntity": "experience.assignment_detail"
+    },
+    {
+      "id": "assignment-idempotency",
+      "domain": "assignment",
+      "purpose": "idempotency",
+      "version": "v1",
+      "prefix": "assignment-idempotency",
+      "segments": [
+        {
+          "name": "idempotencyKey",
+          "pii": true,
+          "encoding": "hash"
+        }
+      ],
+      "ttl": "short"
+    }
+  ]
+}
