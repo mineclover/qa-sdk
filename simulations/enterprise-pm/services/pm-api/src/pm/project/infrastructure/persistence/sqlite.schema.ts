@@ -7,11 +7,9 @@ import { sqliteTable, text, index } from "drizzle-orm/sqlite-core";
  * SQLite schema (project slice).
  *
  * 본 테이블 (`projects`) 은 pm/sqlite/schema 의 SIM_PM_SQLITE_DDL 이 정의한다.
- * outbox 는 pm domain 공유 테이블 `pm_outbox_events` 를 재사용한다 (다른
- * sim-* 서비스와 동일한 service-shared outbox 패턴).
+ * outbox 는 pm domain 공유 테이블 `pm_outbox_events` 를 재사용한다 (outbox
+ * 어댑터가 service-shared schema 를 직접 import; alias re-export 불필요).
  */
-export { pmOutboxEvents as projectOutbox } from "../../../sqlite/schema.js";
-
 export const projects = sqliteTable(
   "projects",
   {

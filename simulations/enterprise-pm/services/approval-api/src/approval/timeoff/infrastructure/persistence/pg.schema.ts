@@ -3,8 +3,6 @@
 
 import { pgSchema, text } from "drizzle-orm/pg-core";
 
-export { approvalOutboxEvents as approvalOutbox } from "../../../pg/schema.js";
-
 const sim = pgSchema("sim");
 
 export const timeOffRequests = sim.table("approval_time_off_requests", {

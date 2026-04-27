@@ -4,8 +4,8 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { createDrizzleOutboxPort, type OutboxPort } from "@qa-sdk/sim-domain-slice-kit";
-import { approvalOutbox as sqliteApprovalOutbox } from "../persistence/sqlite.schema.js";
-import { approvalOutbox as pgApprovalOutbox } from "../persistence/pg.schema.js";
+import { approvalOutboxEvents as sqliteApprovalOutbox } from "../../../sqlite/schema.js";
+import { approvalOutboxEvents as pgApprovalOutbox } from "../../../pg/schema.js";
 
 export type ExpenseDialect = "sqlite" | "pg";
 

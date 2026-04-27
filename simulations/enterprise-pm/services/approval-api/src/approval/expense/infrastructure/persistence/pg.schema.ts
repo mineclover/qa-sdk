@@ -3,8 +3,6 @@
 
 import { pgSchema, text, doublePrecision } from "drizzle-orm/pg-core";
 
-export { approvalOutboxEvents as approvalOutbox } from "../../../pg/schema.js";
-
 const sim = pgSchema("sim");
 
 export const expenseReports = sim.table("approval_expense_reports", {

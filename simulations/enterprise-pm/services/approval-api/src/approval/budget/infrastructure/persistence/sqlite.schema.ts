@@ -3,8 +3,6 @@
 
 import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
 
-export { approvalOutboxEvents as approvalOutbox } from "../../../sqlite/schema.js";
-
 /**
  * SQLite schema (budget slice).
  *

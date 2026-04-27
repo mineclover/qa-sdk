@@ -13,10 +13,9 @@ import { sqliteTable, text, index } from "drizzle-orm/sqlite-core";
  *
  * outbox 테이블은 pm-api 의 모든 슬라이스가 공유하는 `pm_outbox_events` 를
  * 사용한다 (다른 sim-* 서비스의 service-shared outbox 패턴과 일치). 슬라이스
- * 구분은 event_name (`assignment.created` 등) 으로 한다.
+ * 구분은 event_name (`assignment.created` 등) 으로 한다. outbox 어댑터가
+ * service-shared schema 를 직접 import 하므로 별도 alias re-export 는 두지 않는다.
  */
-export { pmOutboxEvents as assignmentOutbox } from "../../../sqlite/schema.js";
-
 export const assignments = sqliteTable(
   "pm_assignments",
   {

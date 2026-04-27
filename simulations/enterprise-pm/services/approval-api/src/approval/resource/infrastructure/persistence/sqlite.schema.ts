@@ -3,8 +3,6 @@
 
 import { sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-export { approvalOutboxEvents as approvalOutbox } from "../../../sqlite/schema.js";
-
 export const resourceRequests = sqliteTable("resource_requests", {
   id: text("id").primaryKey(),
   projectId: text("project_id").notNull(),

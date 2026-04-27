@@ -7,10 +7,9 @@ import { pgSchema, text, index } from "drizzle-orm/pg-core";
  * Postgres schema (assignment slice).
  *
  * 기존 pm pg/schema.ts 와 동일한 sim namespace 사용. 컬럼명 snake_case.
- * outbox 는 pm-api domain 공유 테이블 `sim.pm_outbox_events` 를 재사용한다.
+ * outbox 는 pm-api domain 공유 테이블 `sim.pm_outbox_events` 를 재사용한다
+ * (outbox 어댑터가 service-shared schema 를 직접 import; alias re-export 불필요).
  */
-export { pmOutboxEvents as assignmentOutbox } from "../../../pg/schema.js";
-
 const sim = pgSchema("sim");
 
 export const assignments = sim.table(

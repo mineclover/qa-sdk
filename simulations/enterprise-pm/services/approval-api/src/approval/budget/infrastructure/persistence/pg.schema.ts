@@ -3,8 +3,6 @@
 
 import { pgSchema, text, integer, doublePrecision, index } from "drizzle-orm/pg-core";
 
-export { approvalOutboxEvents as approvalOutbox } from "../../../pg/schema.js";
-
 /**
  * Postgres schema (budget slice).
  *
