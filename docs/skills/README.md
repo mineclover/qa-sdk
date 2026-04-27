@@ -92,6 +92,8 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
   frontmatter metadata option catalog — `tier/type/owner_system/scope/aspect/depth/lifecycle/links/source` 같은 option 하나하나의 의미와 검증 소유자
 - `docs/skills/decide.md`
   decision-flow 실행 절차
+- `docs/skills/sub-agent-verify-discipline.md`
+  sub-agent dispatch 시 verify-before-complete 룰 (stdout 원문 캡처 + spot-check). superpowers `verification-before-completion` / `dispatching-parallel-agents` 와 결합해 사용
 
 ### Skill Catalog
 

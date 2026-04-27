@@ -99,3 +99,12 @@ Phase 2 의 각 에이전트는 정확히 한 슬라이스를 소유한다. 슬�
 ## 진행 방식
 
 본 plan 커밋 이후 별도 승인 없이 Phase 0 → 3 를 순차/병렬로 실행한다. Phase 2 의 병렬 dispatch 시점에 슬라이스 spec sheet 를 동적으로 생성하여 각 에이전트에 전달한다.
+
+## Sub-Agent Dispatch 규율
+
+Phase 1 / Phase 2 / Phase 3 에서 sub-agent 를 호출할 때는 **반드시** 다음 가이드를 따른다 (false-claim 사례 재발 방지).
+
+- `docs/skills/sub-agent-verify-discipline.md` — verify-before-complete 룰, prompt 템플릿, caller spot-check 절차
+- 검증 명령은 stdout last ~20 lines 를 sub-agent 보고에 그대로 포함. "통과" / "ok" 같은 자기 평가 단어 금지
+- vitest 통과 ≠ tsc 통과 — `pnpm --filter <pkg> build` 별도 강제
+- 상위 에이전트는 phase advance 전 spot-check 1-2 개 명령을 직접 재실행해 일치 확인
