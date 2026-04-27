@@ -26,7 +26,8 @@
   "devDependencies": {
     "tsup": "^8.5.1",
     "typescript": "^5.8.2",
-    "vitest": "^1.6.1"
+    "vitest": "^1.6.1",
+    "visbug-bridge": "workspace:*"
   },
   "dependencies": {
     "@chenglou/pretext": "0.0.4"

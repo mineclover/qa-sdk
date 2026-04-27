@@ -2221,6 +2221,9 @@ importers:
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
+      visbug-bridge:
+        specifier: workspace:*
+        version: link:../visbug-bridge
       vitest:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@25.5.0)(happy-dom@20.8.4)(jsdom@25.0.1)(lightningcss@1.32.0)
