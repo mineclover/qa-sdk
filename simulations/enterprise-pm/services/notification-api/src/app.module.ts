@@ -1,11 +1,10 @@
 // @def.boundary sim-notification-api
-// @def.doc authorization-ontology-bitmap-pipeline
+// @def.doc domain-slice-architecture
 
 import { Module } from "@nestjs/common";
 import { HealthModule } from "./health/health.module.js";
 import { NotificationDbModule } from "./notification/notification-db.module.js";
-import { NotificationModule } from "./notification/notification/notification.module.js";
-import { SubscriptionModule } from "./notification/subscription/subscription.module.js";
+import { NOTIFICATION_SLICE_MODULES } from "./notification/notification-slices.registry.js";
 import { BitmapCacheModule } from "@qa-sdk/sim-bitmap-cache";
 import { env } from "./config/env.js";
 import { createLogger } from "./lib/logger.js";
@@ -15,8 +14,7 @@ import { createSubscriberLogger } from "./lib/bitmap-cache-logger.js";
   imports: [
     HealthModule,
     NotificationDbModule.forRoot(),
-    NotificationModule,
-    SubscriptionModule,
+    ...NOTIFICATION_SLICE_MODULES,
     BitmapCacheModule.forRoot({
       redisUrl: env.SIM_REDIS_URL,
       publisherEnabled: false,

@@ -1,10 +1,137 @@
-import { Module } from "@nestjs/common";
-import { SubscriptionService } from "./subscription.service.js";
-import { SubscriptionController } from "./subscription.controller.js";
+// @def.boundary sim-notification-api
+// @def.doc domain-slice-architecture
 
+import { Module, type Provider } from "@nestjs/common";
+import {
+  SLICE_LOGGER_PORT,
+  type LoggerPort,
+  type TransactionPort,
+  type OutboxPort,
+} from "@qa-sdk/sim-domain-slice-kit";
+
+import {
+  NOTIF_DB_INSTANCE,
+  type NotifDbInstanceHandle,
+} from "../notification-db.module.js";
+
+import { SubscriptionRepositoryPort } from "./application/ports/subscription-repository.port.js";
+import { SubscriptionReadModelQuery } from "./application/queries/subscription-read-model.query.js";
+import { SubscriptionUseCase } from "./application/use-cases/subscription.use-case.js";
+import {
+  AlwaysTrueUserQuery,
+  SubscriptionUserQueryPort,
+} from "./application/ports/user-query.port.js";
+
+import { createSubscriptionRepository } from "./infrastructure/persistence/subscription.repository.js";
+import { createSubscriptionTransactionPort } from "./infrastructure/transaction/subscription.drizzle-transaction.js";
+import { createSubscriptionOutboxPort } from "./infrastructure/outbox/subscription.outbox.js";
+import { createSubscriptionLogger } from "./infrastructure/logging/subscription.logger.js";
+import { RepositorySubscriptionReadModel } from "./infrastructure/read-model/subscription.read-model.js";
+
+import { SubscriptionController } from "./presentation/http/subscription.controller.js";
+import { SubscriptionDetailBff } from "./presentation/bff/subscription-detail.bff.js";
+import { SubscriptionDetailController } from "./presentation/bff/subscription-detail.controller.js";
+
+const SUB_TRANSACTION_PORT = Symbol.for("sim-notification-api/subscription/TransactionPort");
+const SUB_OUTBOX_PORT = Symbol.for("sim-notification-api/subscription/OutboxPort");
+
+const repositoryProvider: Provider = {
+  provide: SubscriptionRepositoryPort,
+  useFactory: (handle: NotifDbInstanceHandle) =>
+    createSubscriptionRepository({ dialect: handle.dialect, db: handle.db }),
+  inject: [NOTIF_DB_INSTANCE],
+};
+
+const transactionProvider: Provider = {
+  provide: SUB_TRANSACTION_PORT,
+  useFactory: (handle: NotifDbInstanceHandle): TransactionPort =>
+    createSubscriptionTransactionPort({ dialect: handle.dialect, db: handle.db }),
+  inject: [NOTIF_DB_INSTANCE],
+};
+
+const outboxProvider: Provider = {
+  provide: SUB_OUTBOX_PORT,
+  useFactory: (handle: NotifDbInstanceHandle): OutboxPort =>
+    createSubscriptionOutboxPort({ dialect: handle.dialect, db: handle.db }),
+  inject: [NOTIF_DB_INSTANCE],
+};
+
+const loggerProvider: Provider = {
+  provide: SLICE_LOGGER_PORT,
+  useFactory: (): LoggerPort => createSubscriptionLogger(),
+};
+
+const readModelProvider: Provider = {
+  provide: SubscriptionReadModelQuery,
+  useFactory: (repo: SubscriptionRepositoryPort) =>
+    new RepositorySubscriptionReadModel(repo),
+  inject: [SubscriptionRepositoryPort],
+};
+
+/**
+ * SubscriptionUserQueryPort 어댑터 — cross-domain anti-corruption seam.
+ *
+ * sim-notification-api 는 user 영속을 소유하지 않는다. 기본 어댑터는
+ * AlwaysTrueUserQuery 를 사용해 user 존재를 항상 true 로 가정한다 (dev/test
+ * fail-open). auth-api 가 ready 되면 BFF / anti-corruption 레이어가 본 토큰의
+ * 실제 구현을 주입한다.
+ */
+const userQueryProvider: Provider = {
+  provide: SubscriptionUserQueryPort,
+  useFactory: () => new AlwaysTrueUserQuery(),
+};
+
+const useCaseProvider: Provider = {
+  provide: SubscriptionUseCase,
+  useFactory: (
+    repo: SubscriptionRepositoryPort,
+    outbox: OutboxPort,
+    transaction: TransactionPort,
+    logger: LoggerPort,
+    userQuery: SubscriptionUserQueryPort,
+  ) => new SubscriptionUseCase(repo, outbox, transaction, logger, userQuery),
+  inject: [
+    SubscriptionRepositoryPort,
+    SUB_OUTBOX_PORT,
+    SUB_TRANSACTION_PORT,
+    SLICE_LOGGER_PORT,
+    SubscriptionUserQueryPort,
+  ],
+};
+
+const detailBffProvider: Provider = {
+  provide: SubscriptionDetailBff,
+  useFactory: (rm: SubscriptionReadModelQuery, logger: LoggerPort) =>
+    new SubscriptionDetailBff(rm, logger),
+  inject: [SubscriptionReadModelQuery, SLICE_LOGGER_PORT],
+};
+
+/**
+ * Subscription 슬라이스의 NestJS 모듈.
+ *
+ * - NotificationDbModule (forRoot, global) 이 export 한 NOTIF_DB_INSTANCE 를 의존.
+ * - SubscriptionUserQueryPort 의 기본 어댑터는 AlwaysTrueUserQuery
+ *   (anti-corruption seam — auth-api 부재 환경에서 fail-open).
+ * - http controller + bff controller (GET /bff/subscriptions/:userId/:eventType) 노출.
+ */
 @Module({
-  providers: [SubscriptionService],
-  controllers: [SubscriptionController],
-  exports: [SubscriptionService],
+  providers: [
+    repositoryProvider,
+    transactionProvider,
+    outboxProvider,
+    loggerProvider,
+    readModelProvider,
+    userQueryProvider,
+    useCaseProvider,
+    detailBffProvider,
+  ],
+  controllers: [SubscriptionController, SubscriptionDetailController],
+  exports: [
+    SubscriptionRepositoryPort,
+    SubscriptionReadModelQuery,
+    SubscriptionUseCase,
+    SubscriptionUserQueryPort,
+    SubscriptionDetailBff,
+  ],
 })
-export class SubscriptionModule {}
+export class SubscriptionSliceModule {}

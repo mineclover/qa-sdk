@@ -1,0 +1,78 @@
+{
+  "openmetadata": {
+    "domain": {
+      "name": "Subscription",
+      "team": "Notification Team",
+      "owner": "sim-notification-owner"
+    },
+    "glossary": [
+      {
+        "term": "Subscription",
+        "description": "User opt-in/out preference for receiving notifications of a given event type."
+      },
+      {
+        "term": "EventTypePattern",
+        "description": "Either an exact event identifier (e.g. budget.approved) or wildcard (e.g. budget.*)."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "subscription-write-path",
+        "from": "notification.notif_subscriptions",
+        "to": "notification.notification_outbox_events",
+        "via": "transactional-outbox"
+      },
+      {
+        "name": "subscription-resolve-path",
+        "from": "notification.notif_subscriptions",
+        "to": "notification.notif_notifications",
+        "via": "subscription-resolver"
+      }
+    ],
+    "qualityTests": [
+      {
+        "name": "subscription_channel_values",
+        "type": "columnValuesToBeInSet",
+        "entity": "notification.notif_subscriptions.channel",
+        "values": ["in_app", "email"]
+      },
+      {
+        "name": "subscription_pk_unique",
+        "type": "uniqueConstraint",
+        "entity": "notification.notif_subscriptions",
+        "columns": ["user_id", "event_type"]
+      }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "subscription-read-model",
+      "domain": "subscription",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "subscription-read-model",
+      "segments": [{ "name": "userId" }, { "name": "eventType" }],
+      "ttl": "medium",
+      "openmetadataEntity": "reporting.subscription_read_model"
+    },
+    {
+      "id": "subscription-bff-detail",
+      "domain": "subscription",
+      "purpose": "bff_detail",
+      "version": "v1",
+      "prefix": "subscription-bff-detail",
+      "segments": [{ "name": "userId" }, { "name": "eventType" }],
+      "ttl": "short",
+      "openmetadataEntity": "experience.subscription_detail"
+    },
+    {
+      "id": "subscription-idempotency",
+      "domain": "subscription",
+      "purpose": "idempotency",
+      "version": "v1",
+      "prefix": "subscription-idempotency",
+      "segments": [{ "name": "userId" }, { "name": "eventType" }],
+      "ttl": "short"
+    }
+  ]
+}
