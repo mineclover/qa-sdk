@@ -166,4 +166,35 @@ describe("cross-slice conventions (Phase 3)", () => {
     const expected = ["pm-api/project", "approval-api/budget", "audit-browser-api/audit-explorer", "audit-browser-api/graph-explorer"];
     expect(Object.keys(EXCEPTION_FILTER_EXEMPTIONS).sort()).toEqual(expected.slice().sort());
   });
+
+  it("OpenMetadata seed topology mirrors manifest kind (SSOT alignment)", () => {
+    // architecture-manifest.ts 의 MigrationSlice.kind 가 SSOT.
+    // 각 슬라이스의 metadata/openmetadata.seed.json 에 같은 위상이 명시돼야
+    // validator 가 위상 분기 룰을 적용할 수 있다.
+    const drift: string[] = [];
+    for (const slice of ARCHITECTURE_MIGRATION_SLICES) {
+      const seedTarget = slice.targets.find((t) => t.kind === "metadata");
+      if (!seedTarget) {
+        drift.push(`${slice.id}: manifest missing metadata target`);
+        continue;
+      }
+      const seedPath = join(REPO_ROOT, seedTarget.path);
+      const raw = readFileSafe(seedPath);
+      if (raw === null) {
+        drift.push(`${slice.id}: seed file missing at ${seedTarget.path}`);
+        continue;
+      }
+      let parsed: { topology?: unknown };
+      try {
+        parsed = JSON.parse(raw) as { topology?: unknown };
+      } catch (error) {
+        drift.push(`${slice.id}: seed JSON parse failed (${(error as Error).message})`);
+        continue;
+      }
+      if (parsed.topology !== slice.kind) {
+        drift.push(`${slice.id}: seed.topology=${String(parsed.topology)} but manifest.kind=${slice.kind}`);
+      }
+    }
+    expect(drift, `Topology drift between manifest and OM seed:\n  ${drift.join("\n  ")}`).toEqual([]);
+  });
 });
