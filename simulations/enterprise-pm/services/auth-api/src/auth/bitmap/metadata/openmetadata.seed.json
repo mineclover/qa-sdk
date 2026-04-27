@@ -1,4 +1,5 @@
 {
+  "topology": "read-mostly",
   "openmetadata": {
     "domain": {
       "name": "Bitmap",

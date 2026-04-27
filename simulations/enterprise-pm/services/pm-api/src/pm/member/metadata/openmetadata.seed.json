@@ -1,4 +1,5 @@
 {
+  "topology": "service",
   "openmetadata": {
     "domain": {
       "name": "Member",

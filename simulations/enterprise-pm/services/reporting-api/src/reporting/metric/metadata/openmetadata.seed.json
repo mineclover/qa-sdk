@@ -1,4 +1,5 @@
 {
+  "topology": "read-model",
   "openmetadata": {
     "domain": {
       "name": "Metric",
