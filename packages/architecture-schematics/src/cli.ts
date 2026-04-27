@@ -24,6 +24,7 @@ async function main(): Promise<void> {
   if (command === "validate") {
     const root = arg ?? "src";
     const files = await readArchitectureFiles(root);
+    await collectAdjacentRegistryMarkers(root, files);
     const result = validateArchitecture(files);
 
     if (result.issues.length === 0) {
@@ -144,6 +145,41 @@ async function readArchitectureFiles(root: string): Promise<SourceFileInput[]> {
   const files: SourceFileInput[] = [];
   await collect(root, files);
   return files;
+}
+
+/**
+ * 슬라이스 디렉터리만 입력으로 받았을 때, 부모 디렉터리에 존재하는
+ * `<domain>-slices.registry.ts` 마커를 file list 에 합류시킨다.
+ * validator 의 `isDomainSliceProperlyGrouped` 가 마커 존재 여부를 본다.
+ */
+async function collectAdjacentRegistryMarkers(root: string, files: SourceFileInput[]): Promise<void> {
+  const normalized = root.replace(/\\/g, "/").replace(/\/+$/, "");
+  const segments = normalized.split("/");
+  if (segments.length < 1) return;
+
+  // 부모 두 단계까지 marker 검사 (density 같은 top-level 슬라이스도 커버)
+  for (let depth = 1; depth <= 2; depth += 1) {
+    const parentSegments = segments.slice(0, segments.length - depth);
+    if (parentSegments.length === 0) break;
+    const parent = parentSegments.join("/");
+    let entries;
+    try {
+      entries = await readdir(parent, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      if (!entry.isFile()) continue;
+      if (!entry.name.endsWith("-slices.registry.ts")) continue;
+      const absPath = join(parent, entry.name);
+      const rel = relative(process.cwd(), absPath).replace(/\\/g, "/");
+      if (files.some((f) => f.path === rel)) continue;
+      files.push({
+        path: rel,
+        content: await readFile(absPath, "utf-8"),
+      });
+    }
+  }
 }
 
 async function collect(path: string, files: SourceFileInput[]): Promise<void> {

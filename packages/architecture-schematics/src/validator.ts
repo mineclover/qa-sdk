@@ -142,12 +142,12 @@ function validateDomainSlices(files: readonly SourceFileInput[]): ArchitectureIs
   const slices = groupByDomainSlice(files);
 
   for (const [root, sliceFiles] of slices) {
-    if (!isDomainSliceUnderModules(root)) {
+    if (!isDomainSliceProperlyGrouped(root, files)) {
       issues.push(createIssue(
         "domain-slice-under-modules",
         root,
         "",
-        "Domain slices must live under modules/<domain> to keep bounded contexts grouped.",
+        "Domain slices must live under modules/<domain> or share a parent <domain>-slices.registry.ts marker to keep bounded contexts grouped.",
       ));
     }
 
@@ -209,6 +209,30 @@ function validateDomainSlices(files: readonly SourceFileInput[]): ArchitectureIs
 function isDomainSliceUnderModules(root: string): boolean {
   const normalized = root.replace(/\\/g, "/");
   return normalized.includes("/modules/") || normalized.startsWith("modules/");
+}
+
+/**
+ * 슬라이스가 적절히 그룹핑되어 있는지 판정한다.
+ * 1) 전통 컨벤션: `modules/<domain>/<slice>` 하위
+ * 2) 시뮬레이션 컨벤션: 부모 디렉터리에 `<domain>-slices.registry.ts` 마커가 존재
+ *    (예: `services/pm-api/src/pm/pm-slices.registry.ts` + `services/pm-api/src/pm/assignment/`)
+ */
+function isDomainSliceProperlyGrouped(root: string, files: readonly SourceFileInput[]): boolean {
+  if (isDomainSliceUnderModules(root)) {
+    return true;
+  }
+  const normalized = root.replace(/\\/g, "/");
+  const parent = normalized.split("/").slice(0, -1).join("/");
+  if (!parent) return false;
+  // 부모 또는 조상 (1단계 위까지) 의 *-slices.registry.ts 마커를 찾는다.
+  // density 같은 경우 슬라이스가 src/density/, marker 가 src/density-slices.registry.ts 형태여서
+  // 부모와 같은 깊이의 marker 도 허용해야 한다.
+  return files.some((file) => {
+    const filePath = file.path.replace(/\\/g, "/");
+    if (!filePath.endsWith("-slices.registry.ts")) return false;
+    const fileDir = filePath.split("/").slice(0, -1).join("/");
+    return fileDir === parent || fileDir === normalized.split("/").slice(0, -2).join("/");
+  });
 }
 
 function readImports(file: SourceFileInput): string[] {
