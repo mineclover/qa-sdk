@@ -10,8 +10,8 @@ export interface GraphRetentionSweepLogInput {
   graphCount: number;
   beforeCount: number;
   afterCount: number;
-  deletedSnapshotIds: string[];
-  graphIds: string[];
+  deletedSnapshotIds: readonly string[];
+  graphIds: readonly string[];
 }
 
 export interface GraphRetentionGraphLogInput {
@@ -20,8 +20,8 @@ export interface GraphRetentionGraphLogInput {
   keepLatest: number;
   beforeCount: number;
   afterCount: number;
-  deletedSnapshotIds: string[];
-  keptSnapshotIds: string[];
+  deletedSnapshotIds: readonly string[];
+  keptSnapshotIds: readonly string[];
 }
 
 export interface GraphRetentionFailureLogInput {

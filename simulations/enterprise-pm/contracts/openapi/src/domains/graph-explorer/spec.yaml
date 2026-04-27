@@ -1,0 +1,236 @@
+tags:
+  - name: graph-explorer
+    description: BFF endpoints for navigating and pruning the authorization graph snapshot store.
+paths:
+  /audit/graphs/catalog:
+    get:
+      tags: [graph-explorer]
+      operationId: listGraphCatalog
+      summary: List all known authorization graph IDs.
+      x-domain: graph-explorer
+      x-architecture-slice: graph-explorer-bff-catalog
+      responses:
+        "200":
+          description: Catalog response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GraphCatalog"
+  /audit/graphs/{graphId}/latest:
+    get:
+      tags: [graph-explorer]
+      operationId: getLatestGraphSnapshot
+      summary: Return the latest snapshot for a graph.
+      x-domain: graph-explorer
+      x-architecture-slice: graph-explorer-bff-catalog
+      parameters:
+        - name: graphId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Latest authorization graph snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GraphSnapshotRecord"
+        "404":
+          description: Graph not found.
+  /audit/graphs/{graphId}:
+    get:
+      tags: [graph-explorer]
+      operationId: listGraphSnapshots
+      summary: List all snapshots for a graph.
+      x-domain: graph-explorer
+      x-architecture-slice: graph-explorer-bff-snapshots
+      parameters:
+        - name: graphId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Snapshot list response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GraphSnapshotsList"
+  /audit/graphs/snapshots/{snapshotId}:
+    get:
+      tags: [graph-explorer]
+      operationId: getGraphSnapshot
+      summary: Lookup a snapshot by snapshotId.
+      x-domain: graph-explorer
+      x-architecture-slice: graph-explorer-bff-snapshots
+      parameters:
+        - name: snapshotId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Snapshot record.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GraphSnapshotRecord"
+        "404":
+          description: Snapshot not found.
+  /audit/graphs/diff/{fromSnapshotId}/{toSnapshotId}:
+    get:
+      tags: [graph-explorer]
+      operationId: getGraphDiff
+      summary: Compute the diff between two snapshots.
+      x-domain: graph-explorer
+      x-architecture-slice: graph-explorer-bff-snapshots
+      parameters:
+        - name: fromSnapshotId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: toSnapshotId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Computed diff.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GraphDiff"
+        "404":
+          description: One of the snapshots was not found.
+  /audit/graphs/{graphId}/prune/{keepLatest}:
+    delete:
+      tags: [graph-explorer]
+      operationId: pruneGraphRetention
+      summary: Prune older snapshots of a graph keeping only the latest N.
+      x-domain: graph-explorer
+      x-architecture-slice: graph-explorer-bff-catalog
+      parameters:
+        - name: graphId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: keepLatest
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        "200":
+          description: Prune result for the requested graph.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GraphPruneResult"
+        "404":
+          description: keepLatest invalid.
+  /audit/graphs/prune/{keepLatest}:
+    delete:
+      tags: [graph-explorer]
+      operationId: pruneAllGraphRetention
+      summary: Prune all graphs keeping only the latest N snapshots each.
+      x-domain: graph-explorer
+      x-architecture-slice: graph-explorer-bff-catalog
+      parameters:
+        - name: keepLatest
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        "200":
+          description: Aggregated sweep result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GraphPruneAllResult"
+        "404":
+          description: keepLatest invalid.
+components:
+  schemas:
+    GraphSnapshotRecord:
+      type: object
+      additionalProperties: true
+    GraphCatalog:
+      type: object
+      required: [count, graphIds]
+      properties:
+        count:
+          type: integer
+        graphIds:
+          type: array
+          items:
+            type: string
+      additionalProperties: false
+    GraphSnapshotsList:
+      type: object
+      required: [graphId, count, snapshots]
+      properties:
+        graphId:
+          type: string
+        count:
+          type: integer
+        snapshots:
+          type: array
+          items:
+            $ref: "#/components/schemas/GraphSnapshotRecord"
+      additionalProperties: false
+    GraphDiff:
+      type: object
+      additionalProperties: true
+    GraphPruneResult:
+      type: object
+      required: [graphId, beforeCount, afterCount, deletedSnapshotIds, keptSnapshotIds]
+      properties:
+        graphId:
+          type: string
+        beforeCount:
+          type: integer
+        afterCount:
+          type: integer
+        deletedSnapshotIds:
+          type: array
+          items:
+            type: string
+        keptSnapshotIds:
+          type: array
+          items:
+            type: string
+      additionalProperties: false
+    GraphPruneAllResult:
+      type: object
+      required: [keepLatest, graphIds, graphCount, beforeCount, afterCount, deletedSnapshotIds, graphs]
+      properties:
+        keepLatest:
+          type: integer
+        graphIds:
+          type: array
+          items:
+            type: string
+        graphCount:
+          type: integer
+        beforeCount:
+          type: integer
+        afterCount:
+          type: integer
+        deletedSnapshotIds:
+          type: array
+          items:
+            type: string
+        graphs:
+          type: array
+          items:
+            $ref: "#/components/schemas/GraphPruneResult"
+      additionalProperties: false

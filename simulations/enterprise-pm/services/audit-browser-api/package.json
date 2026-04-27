@@ -37,6 +37,7 @@
     "@qa-sdk/sim-audit-recorder-provider": "workspace:*",
     "@qa-sdk/sim-authorization-graph-provider": "workspace:*",
     "@qa-sdk/sim-bitmap-cache": "workspace:*",
+    "@qa-sdk/sim-domain-slice-kit": "workspace:*",
     "@qa-sdk/sim-otel-utils": "workspace:*",
     "audit-recorder-store": "workspace:*",
     "authorization-ontology": "workspace:*",

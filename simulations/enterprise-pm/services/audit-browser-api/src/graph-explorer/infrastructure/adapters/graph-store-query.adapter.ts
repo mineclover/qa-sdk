@@ -1,7 +1,6 @@
 // @def.boundary sim-audit-browser-api
-// @def.doc authorization-graph-store
+// @def.doc domain-slice-architecture
 
-import { Inject, Injectable } from "@nestjs/common";
 import {
   listAuthorizationGraphIds,
   pruneAllAuthorizationGraphSnapshots,
@@ -13,30 +12,37 @@ import type {
   AuthorizationGraphStore,
 } from "authorization-ontology";
 import { diffAuthorizationGraphSnapshots } from "authorization-ontology";
+import {
+  GraphStoreQueryPort,
+  type GraphRetentionPruneAllResult,
+  type GraphRetentionPruneResult,
+} from "../../application/ports/graph-store-query.port.js";
 
-export const AUTHORIZATION_GRAPH_STORE = Symbol("AUTHORIZATION_GRAPH_STORE");
-
-@Injectable()
-export class GraphExplorerService {
-  constructor(
-    @Inject(AUTHORIZATION_GRAPH_STORE)
-    private readonly store: AuthorizationGraphStore,
-  ) {}
+/**
+ * GraphStoreQueryPort 의 어댑터.
+ *
+ * authorization-ontology 의 AuthorizationGraphStore 를 그대로 위임. graph-explorer
+ * 는 BFF 슬라이스이므로 자체 read store 를 갖지 않는다.
+ */
+export class GraphStoreQueryAdapter extends GraphStoreQueryPort {
+  constructor(private readonly store: AuthorizationGraphStore) {
+    super();
+  }
 
   async latest(graphId: string): Promise<AuthorizationGraphSnapshotRecord | null> {
     const snapshots = await this.store.listSnapshots({ graphId });
     return snapshots[snapshots.length - 1] ?? null;
   }
 
+  async list(graphId: string): Promise<readonly AuthorizationGraphSnapshotRecord[]> {
+    return this.store.listSnapshots({ graphId });
+  }
+
   async getSnapshot(snapshotId: string): Promise<AuthorizationGraphSnapshotRecord | null> {
     return this.store.getSnapshot(snapshotId);
   }
 
-  async list(graphId: string): Promise<AuthorizationGraphSnapshotRecord[]> {
-    return this.store.listSnapshots({ graphId });
-  }
-
-  async graphIds(): Promise<string[]> {
+  async graphIds(): Promise<readonly string[]> {
     return listAuthorizationGraphIds(this.store);
   }
 
@@ -47,11 +53,11 @@ export class GraphExplorerService {
     return diffAuthorizationGraphSnapshots(this.store, fromSnapshotId, toSnapshotId);
   }
 
-  async prune(graphId: string, keepLatest: number) {
+  async prune(graphId: string, keepLatest: number): Promise<GraphRetentionPruneResult> {
     return pruneAuthorizationGraphSnapshots(this.store, { graphId, keepLatest });
   }
 
-  async pruneAll(keepLatest: number) {
+  async pruneAll(keepLatest: number): Promise<GraphRetentionPruneAllResult> {
     return pruneAllAuthorizationGraphSnapshots(this.store, { keepLatest });
   }
 }

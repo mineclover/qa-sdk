@@ -1,3 +1,6 @@
+// @def.boundary sim-audit-browser-api
+// @def.doc authorization-graph-store
+
 import { describe, expect, it } from "vitest";
 import {
   buildGraphRetentionFailureLog,

@@ -1,0 +1,180 @@
+tags:
+  - name: audit-explorer
+    description: BFF endpoints composing audit trace + authorization graph + retention insight reads.
+paths:
+  /audit/trace/{rootSpanId}:
+    get:
+      tags: [audit-explorer]
+      operationId: getAuditTrace
+      summary: List audit entries belonging to a root span.
+      x-domain: audit-explorer
+      x-architecture-slice: audit-explorer-bff-trace
+      parameters:
+        - name: rootSpanId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: x-trace-id
+          in: header
+          required: false
+          schema:
+            type: string
+        - name: x-correlation-id
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Trace summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditTraceSummary"
+  /audit/firstFailure/{rootSpanId}:
+    get:
+      tags: [audit-explorer]
+      operationId: getAuditFirstFailure
+      summary: Return the first deny/error entry within a trace.
+      x-domain: audit-explorer
+      x-architecture-slice: audit-explorer-bff-trace
+      parameters:
+        - name: rootSpanId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: First failure entry (nullable).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditFirstFailure"
+  /audit/entry/{spanId}:
+    get:
+      tags: [audit-explorer]
+      operationId: getAuditEntry
+      summary: Lookup a single audit entry by spanId.
+      x-domain: audit-explorer
+      x-architecture-slice: audit-explorer-bff-trace
+      parameters:
+        - name: spanId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Audit entry record.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditEntryRecord"
+        "404":
+          description: Entry not found.
+  /audit/context/{rootSpanId}/{graphId}:
+    get:
+      tags: [audit-explorer]
+      operationId: getAuditTraceContext
+      summary: Composed audit trace context (trace + first-failure + graph snapshot + retention insight).
+      x-domain: audit-explorer
+      x-architecture-slice: audit-explorer-bff-context
+      parameters:
+        - name: rootSpanId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: graphId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Composed BFF context payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditTraceContext"
+        "404":
+          description: Authorization graph snapshot not found for graphId.
+components:
+  schemas:
+    AuditEntryRecord:
+      type: object
+      additionalProperties: true
+    AuditTraceSummary:
+      type: object
+      required: [rootSpanId, count, entries]
+      properties:
+        rootSpanId:
+          type: string
+        count:
+          type: integer
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditEntryRecord"
+      additionalProperties: false
+    AuditFirstFailure:
+      type: object
+      required: [rootSpanId, firstFailure]
+      properties:
+        rootSpanId:
+          type: string
+        firstFailure:
+          oneOf:
+            - $ref: "#/components/schemas/AuditEntryRecord"
+            - type: "null"
+      additionalProperties: false
+    GraphSnapshotRecord:
+      type: object
+      additionalProperties: true
+    GraphRetentionInsight:
+      type: object
+      required: [total, summary, byTrigger, byGraphId, items]
+      properties:
+        total:
+          type: integer
+        summary:
+          type: object
+          additionalProperties:
+            type: integer
+        byTrigger:
+          type: object
+          additionalProperties:
+            type: integer
+        byGraphId:
+          type: object
+          additionalProperties:
+            type: integer
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+      additionalProperties: false
+    AuditTraceContext:
+      type: object
+      required: [rootSpanId, graphId, trace, firstFailure, graphSnapshot]
+      properties:
+        rootSpanId:
+          type: string
+        graphId:
+          type: string
+        trace:
+          $ref: "#/components/schemas/AuditTraceSummary"
+        firstFailure:
+          oneOf:
+            - $ref: "#/components/schemas/AuditEntryRecord"
+            - type: "null"
+        graphSnapshot:
+          $ref: "#/components/schemas/GraphSnapshotRecord"
+        graphRetentionInsight:
+          oneOf:
+            - $ref: "#/components/schemas/GraphRetentionInsight"
+            - type: "null"
+      additionalProperties: false

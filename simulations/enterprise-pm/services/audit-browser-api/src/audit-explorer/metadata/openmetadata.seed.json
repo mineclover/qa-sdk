@@ -1,0 +1,71 @@
+{
+  "openmetadata": {
+    "domain": {
+      "name": "AuditExplorer",
+      "team": "Audit Browser Team",
+      "owner": "sim-audit-browser-owner"
+    },
+    "glossary": [
+      {
+        "term": "AuditTrace",
+        "description": "Nested audit log tree rooted at a single execution span."
+      },
+      {
+        "term": "FirstFailure",
+        "description": "First deny or error entry within an audit trace."
+      },
+      {
+        "term": "AuditContext",
+        "description": "Composed UI shape: trace + first-failure + authorization graph snapshot + retention insight."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "audit-explorer-trace-read",
+        "from": "audit-recorder-store.audit_entries",
+        "to": "experience.audit_trace",
+        "via": "audit-explorer-bff"
+      },
+      {
+        "name": "audit-explorer-context-compose",
+        "from": "authorization-ontology.graph_snapshots",
+        "to": "experience.audit_trace_context",
+        "via": "audit-explorer-bff"
+      },
+      {
+        "name": "audit-explorer-insight-pull",
+        "from": "ingest.graph_retention_insight",
+        "to": "experience.audit_trace_context",
+        "via": "audit-explorer-bff"
+      }
+    ],
+    "qualityTests": []
+  },
+  "cacheKeys": [
+    {
+      "id": "audit-explorer-bff-trace",
+      "domain": "audit-explorer",
+      "purpose": "bff_trace",
+      "version": "v1",
+      "prefix": "audit-explorer-bff-trace",
+      "segments": [
+        { "name": "rootSpanId" }
+      ],
+      "ttl": "short",
+      "openmetadataEntity": "experience.audit_trace"
+    },
+    {
+      "id": "audit-explorer-bff-context",
+      "domain": "audit-explorer",
+      "purpose": "bff_context",
+      "version": "v1",
+      "prefix": "audit-explorer-bff-trace",
+      "segments": [
+        { "name": "rootSpanId" },
+        { "name": "graphId" }
+      ],
+      "ttl": "short",
+      "openmetadataEntity": "experience.audit_trace_context"
+    }
+  ]
+}
