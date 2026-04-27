@@ -5,44 +5,130 @@ import {
   Module,
   type DynamicModule,
   type FactoryProvider,
+  type Provider,
 } from "@nestjs/common";
-import { DensityController } from "./density.controller.js";
 import {
-  DENSITY_OPTIONS,
-  MarginalDensityService,
-  type MarginalDensityServiceOptions,
-} from "./density.service.js";
+  SLICE_LOGGER_PORT,
+  type LoggerPort,
+} from "@qa-sdk/sim-domain-slice-kit";
 
-export interface DensityModuleOptions {
-  /** DENSITY_OPTIONS 생성 factory — ingest store / prefix catalog / threshold 주입. */
+import { DensityReadModelQuery } from "./application/queries/density-read-model.query.js";
+import { KeyObservationQueryPort } from "./application/ports/key-observation.query.port.js";
+import { PrefixCatalogQueryPort } from "./application/ports/prefix-catalog.query.port.js";
+import {
+  MarginalDensityReadModelAdapter,
+  type MarginalDensityThresholds,
+} from "./infrastructure/read-model/density.read-model.js";
+import { createDensityLogger } from "./infrastructure/logging/density.logger.js";
+import { DensityController } from "./presentation/http/density.controller.js";
+
+/**
+ * Density 슬라이스 — read-model 위상 (cross-domain).
+ *
+ * Layer reduction:
+ * - domain/        : minimal (id types + read shapes + exceptions only)
+ * - application/queries/ : DensityReadModelQuery (compute)
+ * - application/commands/: NONE (pure read-model, source-of-truth 외부)
+ * - application/ports/   : KeyObservationQueryPort + PrefixCatalogQueryPort
+ *                          (cross-domain query ports, write surface 없음)
+ * - application/use-cases/: NONE (읽기 슬라이스, transaction port 회피)
+ * - infrastructure/persistence/ : NONE (primary store 외부)
+ * - infrastructure/read-model/  : MarginalDensityReadModelAdapter (heavy aggregation)
+ *                                + KeyObservationQueryPort 어댑터 (pg/sqlite/memory)
+ *                                + SimPrefixCatalogQueryPort 어댑터
+ * - infrastructure/logging/     : createDensityLogger
+ * - infrastructure/transaction/ : NONE
+ * - infrastructure/outbox/      : NONE
+ * - presentation/http/          : DensityController (GET-only)
+ * - presentation/bff/           : NONE
+ * - metadata/openmetadata.seed.json : cache_keys 명시
+ *
+ * Dynamic registration (.register({useFactory})) — KeyObservation/PrefixCatalog
+ * 두 cross-domain port 의 어댑터 선택을 호출자가 결정하도록 한다 (PG/sqlite/memory).
+ */
+
+export interface DensitySliceDeps {
+  readonly observations: KeyObservationQueryPort;
+  readonly catalog: PrefixCatalogQueryPort;
+  readonly thresholds: MarginalDensityThresholds;
+}
+
+export interface DensitySliceModuleOptions {
+  /** Cross-domain dependencies — 호출자가 dialect-aware 로 어댑터를 만들어 주입. */
   useFactory: (
     ...deps: unknown[]
-  ) => Promise<MarginalDensityServiceOptions> | MarginalDensityServiceOptions;
-  /** factory가 주입받을 Nest 토큰 목록 (옵션). */
+  ) => Promise<DensitySliceDeps> | DensitySliceDeps;
+  /** factory 가 주입받을 Nest 토큰 목록. */
   inject?: FactoryProvider["inject"];
 }
 
-/**
- * DensityModule — GET /density endpoint + MarginalDensityService DI.
- *
- * register({ useFactory }) 로 호출자 측에서 options 주입 방식을 결정한다.
- * 기본 app.module 조립에서는 DB 기반 ingest store factory를 전달한다.
- */
+const DENSITY_SLICE_DEPS = Symbol.for(
+  "sim-reporting-api/density/DensitySliceDeps",
+);
+
 @Module({})
-export class DensityModule {
-  static register(opts: DensityModuleOptions): DynamicModule {
-    return {
-      module: DensityModule,
-      controllers: [DensityController],
-      providers: [
-        MarginalDensityService,
-        {
-          provide: DENSITY_OPTIONS,
-          useFactory: opts.useFactory,
-          inject: opts.inject,
-        },
+export class DensitySliceModule {
+  static register(opts: DensitySliceModuleOptions): DynamicModule {
+    const depsProvider: FactoryProvider = {
+      provide: DENSITY_SLICE_DEPS,
+      useFactory: opts.useFactory,
+      inject: opts.inject,
+    };
+
+    const observationsProvider: Provider = {
+      provide: KeyObservationQueryPort,
+      useFactory: (deps: DensitySliceDeps) => deps.observations,
+      inject: [DENSITY_SLICE_DEPS],
+    };
+
+    const catalogProvider: Provider = {
+      provide: PrefixCatalogQueryPort,
+      useFactory: (deps: DensitySliceDeps) => deps.catalog,
+      inject: [DENSITY_SLICE_DEPS],
+    };
+
+    const loggerProvider: Provider = {
+      provide: SLICE_LOGGER_PORT,
+      useFactory: (): LoggerPort => createDensityLogger(),
+    };
+
+    const readModelProvider: Provider = {
+      provide: DensityReadModelQuery,
+      useFactory: (
+        observations: KeyObservationQueryPort,
+        catalog: PrefixCatalogQueryPort,
+        deps: DensitySliceDeps,
+        logger: LoggerPort,
+      ) =>
+        new MarginalDensityReadModelAdapter(
+          observations,
+          catalog,
+          deps.thresholds,
+          logger,
+        ),
+      inject: [
+        KeyObservationQueryPort,
+        PrefixCatalogQueryPort,
+        DENSITY_SLICE_DEPS,
+        SLICE_LOGGER_PORT,
       ],
-      exports: [MarginalDensityService],
+    };
+
+    return {
+      module: DensitySliceModule,
+      providers: [
+        depsProvider,
+        observationsProvider,
+        catalogProvider,
+        loggerProvider,
+        readModelProvider,
+      ],
+      controllers: [DensityController],
+      exports: [
+        DensityReadModelQuery,
+        KeyObservationQueryPort,
+        PrefixCatalogQueryPort,
+      ],
     };
   }
 }
