@@ -274,3 +274,4 @@ docker volume rm enterprise-pm_sim-redis-data
 - [§2 Bitmap pipeline spec](../../../docs/specs/authorization-ontology/authorization-ontology-bitmap-pipeline.spec.md)
 - [§5 Marginal density plan](../../../docs/specs/event-vocab-system/event-taxonomy-marginal-density.plan.md)
 - [sim-erp-pm-coverage.spec.md](../../../docs/specs/sim-erp-pm-coverage.spec.md) — 본 시뮬이 검증한 5축 매트릭스
+- [bff-convention.md](./bff-convention.md) — BFF 슬라이스 위치/path/메타데이터 컨벤션
