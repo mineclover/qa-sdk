@@ -22,6 +22,20 @@ folder and create an adapted current reference. In this repo, use:
 
 Use `current/` for implementation decisions. Use `raw/` only for traceability.
 
+## 1.5. Slice Topology Decision
+
+`metadata/openmetadata.seed.json` 의 top-level `topology` 필드를 결정 — 5 위상 중 하나. validator 가 위상별로 룰을 분기한다.
+
+| 질문 | 위상 |
+|---|---|
+| 쓰기 명령 + aggregate 정상 | `service` |
+| 쓰기 명령 + aggregate 없음 (예: authenticate) | `command-only` |
+| 본체가 query/projection (admin write 분리) | `read-model` |
+| `presentation/bff/*` 합성 controller | `bff` |
+| cache/lookup/issuer 위주 (예: bitmap) | `read-mostly` |
+
+상세 + 룰 분기 표 + 안티 패턴: `topology-taxonomy.md`.
+
 ## 2. Data Schema Addition
 
 Add schema only after deciding which model it serves:
@@ -31,7 +45,13 @@ Add schema only after deciding which model it serves:
 | write table | infrastructure/persistence | aggregate persistence |
 | read model table | projector/BFF/read side | query latency/composition |
 | event/outbox table | transaction boundary | reliable publish |
-| metadata seed | governance | lineage, glossary, quality, cache policy |
+| metadata seed | governance | lineage, glossary, quality, cache policy, **topology** |
+
+### Service-Shared Outbox
+
+각 서비스가 단일 `<svc>_outbox_events` 테이블 (snake_case 컬럼: `aggregate_id`, `event_name`, `event_version`, `payload`, `occurred_at`, `scope_id`, `status` — kit 컨벤션).
+
+슬라이스의 `infrastructure/outbox/<slice>.outbox.ts` 가 service-shared schema 의 dialect 별 table (`sqlite/schema.js`, `pg/schema.js`) 을 직접 import 해 kit `createDrizzleOutboxPort({ db, table })` 에 전달. alias re-export 금지 (drift 방지).
 
 ## 3. Feature Implementation Order
 
