@@ -68,7 +68,7 @@ async function main(): Promise<void> {
     "[gitlab-destroy] 정리 완료. emptyDir 사용으로 GitLab 데이터(repo/issue/user)는 모두 제거됨.",
   );
   console.log(
-    "[gitlab-destroy] Pulumi stack 자체를 지우려면: pulumi -C ~/.pulumi-local stack rm gitlab-local --yes",
+    "[gitlab-destroy] Pulumi stack 자체를 지우려면: PULUMI_BACKEND_URL=file://~/.pulumi-local pulumi stack rm infra-engine-gitlab/gitlab-local --yes",
   );
 }
 

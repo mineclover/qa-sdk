@@ -226,4 +226,26 @@ describe("createGitlabProgram (mocked Pulumi runtime)", () => {
     const names = volumes.map((v) => v.name).sort();
     expect(names).toEqual(["gitlab-config", "gitlab-data", "gitlab-logs"]);
   });
+
+  it("Deployment env는 GITLAB_OMNIBUS_CONFIG를 포함하고 외부 URL이 omnibus config에 반영된다", async () => {
+    const program = createGitlabProgram({ externalUrl: "http://gitlab.example:9000" });
+    await program();
+
+    const deployment = captured.find(
+      (r) => r.type === "kubernetes:apps/v1:Deployment",
+    )!;
+    const containers = (
+      ((deployment.inputs.spec as Record<string, unknown>).template as Record<
+        string,
+        unknown
+      >).spec as Record<string, unknown>
+    ).containers as Array<Record<string, unknown>>;
+    const env = containers[0]!.env as Array<Record<string, unknown>>;
+
+    const omnibus = env.find((e) => e.name === "GITLAB_OMNIBUS_CONFIG");
+    expect(omnibus).toBeDefined();
+    expect(omnibus!.value).toBe(
+      "external_url 'http://gitlab.example:9000'",
+    );
+  });
 });
