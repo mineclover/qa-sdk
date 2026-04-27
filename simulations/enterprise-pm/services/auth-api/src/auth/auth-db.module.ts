@@ -5,17 +5,13 @@ import { Module, type DynamicModule } from "@nestjs/common";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { createConnection } from "db-bootstrap";
-import { createAuthRepository } from "./factory.js";
 import { env } from "../config/env.js";
-import type { AuthRepository } from "./shared/port.js";
 import { SIM_AUTH_SQLITE_DDL } from "./sqlite/schema.js";
 import { SIM_AUTH_PG_DDL } from "./pg/schema.js";
 import {
   SIM_AUTH_OUTBOX_SQLITE_DDL,
   SIM_AUTH_OUTBOX_PG_DDL,
 } from "./_outbox/auth-outbox.schema.js";
-
-export const AUTH_REPOSITORY = Symbol("AUTH_REPOSITORY");
 
 /**
  * NestJS DI 토큰 — auth 슬라이스가 공유하는 Drizzle DB 핸들.
@@ -65,8 +61,8 @@ async function applyDdl(conn: Awaited<ReturnType<typeof createConnection>>): Pro
 export class AuthDbModule {
   static forRoot(): DynamicModule {
     /**
-     * 단일 connection 캐시 — AUTH_DB_INSTANCE 와 AUTH_REPOSITORY 가 같은 Drizzle
-     * 인스턴스를 공유하도록 useFactory 들 사이에서 promise 를 메모이즈한다.
+     * 단일 connection 캐시 — AUTH_DB_INSTANCE provider useFactory 가 같은
+     * Drizzle 인스턴스를 재사용하도록 promise 를 메모이즈한다.
      * (NestJS provider 인스턴스는 모듈 단위로 재사용되므로 module 클로저에
      * 보관해도 안전.)
      */
@@ -109,18 +105,8 @@ export class AuthDbModule {
             };
           },
         },
-        {
-          provide: AUTH_REPOSITORY,
-          useFactory: async (): Promise<AuthRepository> => {
-            const conn = await getConnection();
-            return createAuthRepository({
-              dialect: conn.dialect,
-              db: conn.db as BetterSQLite3Database | PostgresJsDatabase,
-            });
-          },
-        },
       ],
-      exports: [AUTH_DB_INSTANCE, AUTH_REPOSITORY],
+      exports: [AUTH_DB_INSTANCE],
       global: true,
     };
   }

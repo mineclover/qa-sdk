@@ -15,8 +15,8 @@
       "types": "./dist/test-bootstrap.d.ts"
     },
     "./auth-codec": {
-      "import": "./dist/auth/shared/auth-codec.js",
-      "types": "./dist/auth/shared/auth-codec.d.ts"
+      "import": "./dist/auth/bitmap/infrastructure/codec/auth-codec.js",
+      "types": "./dist/auth/bitmap/infrastructure/codec/auth-codec.d.ts"
     },
     "./package.json": "./package.json"
   },
