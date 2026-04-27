@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 import { readdir, readFile } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { listTemplateCatalogs } from "./catalog.js";
 import { promoteOpenApiFragment } from "./openapi-promote.js";
@@ -48,6 +49,11 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (command === "domain") {
+    await runDomainSchematic(process.argv.slice(3));
+    return;
+  }
+
   if (command === "validate-scenarios") {
     const root = arg ?? "docs/scenarios";
     const result = await validateScenarios(root);
@@ -75,7 +81,62 @@ Usage:
   qa-scaffold validate <path>
   qa-scaffold validate-scenarios <path>
   qa-scaffold promote-openapi <source> --contracts-root <path> [--domain <name>] [--force]
+  qa-scaffold domain <name> --parent-module <path> [--bff] [--skip-format]
 `);
+}
+
+async function runDomainSchematic(args: string[]): Promise<void> {
+  const [name, ...rest] = args;
+  if (!name) throw new Error("domain requires a slice name (e.g., qa-scaffold domain payment ...).");
+
+  const options: Record<string, string | boolean> = { name };
+  for (let i = 0; i < rest.length; i += 1) {
+    const arg = rest[i];
+    if (arg === "--parent-module") {
+      options.parentModule = rest[i + 1] ?? "";
+      i += 1;
+      continue;
+    }
+    if (arg === "--bff") { options.includeBff = true; continue; }
+    if (arg === "--read-model") { options.includeReadModel = true; continue; }
+    if (arg === "--skip-format") { options.skipFormat = true; continue; }
+    throw new Error(`Unknown domain option: ${arg}`);
+  }
+  if (!options.parentModule) {
+    throw new Error("domain requires --parent-module <path>.");
+  }
+
+  // Resolve collection.json (one level above dist/cli.js when built; src/cli.ts when ts-node).
+  const here = dirname(fileURLToPath(import.meta.url));
+  const collectionPath = join(here, "..", "collection.json");
+
+  const { NodeWorkflow } = await import("@angular-devkit/schematics/tools/index.js");
+  const workflow = new NodeWorkflow(process.cwd(), { force: false, dryRun: false });
+
+  await new Promise<void>((resolve, reject) => {
+    workflow
+      .execute({
+        collection: collectionPath,
+        schematic: "domain",
+        options,
+        allowPrivate: false,
+        debug: false,
+        logger: {
+          fatal: console.error.bind(console),
+          error: console.error.bind(console),
+          warn: console.warn.bind(console),
+          info: console.log.bind(console),
+          debug: () => undefined,
+          createChild: () => null as never,
+          // pino-호환 메서드들 (NodeWorkflow 가 호출)
+        } as never,
+      })
+      .subscribe({
+        next: () => undefined,
+        complete: () => resolve(),
+        error: (err: unknown) => reject(err instanceof Error ? err : new Error(String(err))),
+      });
+  });
 }
 
 function parsePromoteOpenApiArgs(args: string[]): {
