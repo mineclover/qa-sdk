@@ -39,20 +39,33 @@ export function createApp(opts: AppOptions) {
 
   // protected routes — JWT verify
   for (const target of PROXY_TARGETS) {
-    app.use(
-      `${target.path}/*`,
-      jwtVerifyMiddleware({
-        secret: opts.jwtSecret,
-        currentBitmapV: opts.currentBitmapV,
-      }),
-    );
-    app.use(
-      target.path,
-      jwtVerifyMiddleware({
-        secret: opts.jwtSecret,
-        currentBitmapV: opts.currentBitmapV,
-      }),
-    );
+    const kind = target.kind ?? "prefix";
+    if (kind === "exact") {
+      // path-param specific — `/users/:userId/projects` 처럼 정확 매칭만 보호.
+      app.use(
+        target.path,
+        jwtVerifyMiddleware({
+          secret: opts.jwtSecret,
+          currentBitmapV: opts.currentBitmapV,
+        }),
+      );
+    } else {
+      // prefix — `/path` 와 `/path/*` 모두 보호.
+      app.use(
+        `${target.path}/*`,
+        jwtVerifyMiddleware({
+          secret: opts.jwtSecret,
+          currentBitmapV: opts.currentBitmapV,
+        }),
+      );
+      app.use(
+        target.path,
+        jwtVerifyMiddleware({
+          secret: opts.jwtSecret,
+          currentBitmapV: opts.currentBitmapV,
+        }),
+      );
+    }
   }
   app.route(
     "/",
