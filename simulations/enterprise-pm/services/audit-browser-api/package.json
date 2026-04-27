@@ -6,14 +6,13 @@
   "type": "module",
   "main": "dist/main.js",
   "exports": {
-    ".": { "import": "./dist/main.js" },
-    "./app-module": {
-      "types": "./dist/app-module.d.ts",
-      "import": "./dist/app-module.js"
+    ".": {
+      "import": "./dist/main.js",
+      "types": "./dist/main.d.ts"
     },
     "./test-bootstrap": {
-      "types": "./dist/test-bootstrap.d.ts",
-      "import": "./dist/test-bootstrap.js"
+      "import": "./dist/test-bootstrap.js",
+      "types": "./dist/test-bootstrap.d.ts"
     },
     "./package.json": "./package.json"
   },
