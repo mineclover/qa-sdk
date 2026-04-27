@@ -9,10 +9,7 @@ import {
   APPROVAL_REPOSITORY,
   type ApprovalDbInstanceHandle,
 } from "./approval/approval-db.module.js";
-import { BudgetModule } from "./approval/budget/budget.module.js";
-import { ResourceModule } from "./approval/resource/resource.module.js";
-import { TimeOffModule } from "./approval/timeoff/timeoff.module.js";
-import { ExpenseModule } from "./approval/expense/expense.module.js";
+import { APPROVAL_SLICE_MODULES } from "./approval/approval-slices.registry.js";
 import { AccessCheckerModule } from "./auth-deps/access-checker.module.js";
 import { BitmapCacheModule } from "@qa-sdk/sim-bitmap-cache";
 import { env } from "./config/env.js";
@@ -32,10 +29,7 @@ import type { ApprovalRepository } from "./approval/shared/port.js";
         return { dialect: handle.dialect, db: handle.db, repo };
       },
     }),
-    BudgetModule,
-    ResourceModule,
-    TimeOffModule,
-    ExpenseModule,
+    ...APPROVAL_SLICE_MODULES,
     BitmapCacheModule.forRoot({
       redisUrl: env.SIM_REDIS_URL,
       publisherEnabled: false,

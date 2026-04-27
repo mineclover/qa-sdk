@@ -1,0 +1,52 @@
+{
+  "openmetadata": {
+    "domain": {
+      "name": "Budget",
+      "team": "Approval Workflow Team",
+      "owner": "sim-approval-owner"
+    },
+    "glossary": [
+      { "term": "BudgetRequest", "description": "An employee's request to allocate budget to a project." },
+      { "term": "ApprovalStage", "description": "Discrete approval step. Determined by amount: <1M=1, <10M=2, ≥10M=3." }
+    ],
+    "lineage": [
+      { "name": "budget-write-path", "from": "approval.budget_requests", "to": "approval.outbox_events", "via": "transactional-outbox" },
+      { "name": "budget-read-path", "from": "approval.outbox_events", "to": "reporting.budget_read_model", "via": "budget-read-model-sync" }
+    ],
+    "qualityTests": [
+      { "name": "budget_status_values", "type": "columnValuesToBeInSet", "entity": "approval.budget_requests.status", "values": ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"] },
+      { "name": "budget_amount_positive", "type": "columnValuesToBeBetween", "entity": "approval.budget_requests.amount", "min": 0 }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "budget-read-model",
+      "domain": "budget",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "budget-read-model",
+      "segments": [{ "name": "budgetRequestId" }],
+      "ttl": "medium",
+      "openmetadataEntity": "reporting.budget_read_model"
+    },
+    {
+      "id": "budget-bff-detail",
+      "domain": "budget",
+      "purpose": "bff_detail",
+      "version": "v1",
+      "prefix": "budget-bff-detail",
+      "segments": [{ "name": "budgetRequestId" }],
+      "ttl": "short",
+      "openmetadataEntity": "experience.budget_detail"
+    },
+    {
+      "id": "budget-idempotency",
+      "domain": "budget",
+      "purpose": "idempotency",
+      "version": "v1",
+      "prefix": "budget-idempotency",
+      "segments": [{ "name": "idempotencyKey", "pii": true, "encoding": "hash" }],
+      "ttl": "short"
+    }
+  ]
+}

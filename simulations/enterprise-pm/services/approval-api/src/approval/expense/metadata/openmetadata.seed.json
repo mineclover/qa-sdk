@@ -1,0 +1,51 @@
+{
+  "openmetadata": {
+    "domain": {
+      "name": "Expense",
+      "team": "Approval Workflow Team",
+      "owner": "sim-approval-owner"
+    },
+    "glossary": [
+      { "term": "ExpenseReport", "description": "An employee's reimbursement request after spending." },
+      { "term": "ExpenseCategory", "description": "Type label of the spending (travel/lodging/meal/...)." }
+    ],
+    "lineage": [
+      { "name": "expense-write-path", "from": "approval.expense_reports", "to": "approval.outbox_events", "via": "transactional-outbox" },
+      { "name": "expense-read-path", "from": "approval.outbox_events", "to": "reporting.expense_read_model", "via": "expense-read-model-sync" }
+    ],
+    "qualityTests": [
+      { "name": "expense_status_values", "type": "columnValuesToBeInSet", "entity": "approval.expense_reports.status", "values": ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"] }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "expense-read-model",
+      "domain": "expense",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "expense-read-model",
+      "segments": [{ "name": "expenseReportId" }],
+      "ttl": "medium",
+      "openmetadataEntity": "reporting.expense_read_model"
+    },
+    {
+      "id": "expense-bff-detail",
+      "domain": "expense",
+      "purpose": "bff_detail",
+      "version": "v1",
+      "prefix": "expense-bff-detail",
+      "segments": [{ "name": "expenseReportId" }],
+      "ttl": "short",
+      "openmetadataEntity": "experience.expense_detail"
+    },
+    {
+      "id": "expense-idempotency",
+      "domain": "expense",
+      "purpose": "idempotency",
+      "version": "v1",
+      "prefix": "expense-idempotency",
+      "segments": [{ "name": "idempotencyKey", "pii": true, "encoding": "hash" }],
+      "ttl": "short"
+    }
+  ]
+}

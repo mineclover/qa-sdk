@@ -7,10 +7,36 @@ import {
   index,
   text,
   integer,
+  bigint,
   doublePrecision,
 } from "drizzle-orm/pg-core";
 
 const sim = pgSchema("sim");
+
+/**
+ * Phase 2 — approval-api 의 모든 슬라이스 (budget/expense/resource/timeoff) 가
+ * 공유하는 outbox 테이블 (Postgres / sim namespace).
+ *
+ * Slice 별 outbox factory 가 본 테이블을 참조. event_name 으로 슬라이스 구분.
+ * 컬럼명은 sim-domain-slice-kit/createDrizzleOutboxPort 컨벤션과 일치.
+ * event_version / occurred_at 은 Postgres BIGINT (drizzle bigint mode "number").
+ */
+export const approvalOutboxEvents = sim.table(
+  "approval_outbox_events",
+  {
+    id: text("id").primaryKey(),
+    aggregate_id: text("aggregate_id").notNull(),
+    event_name: text("event_name").notNull(),
+    event_version: bigint("event_version", { mode: "number" }).notNull(),
+    payload: text("payload").notNull(),
+    occurred_at: bigint("occurred_at", { mode: "number" }).notNull(),
+    scope_id: text("scope_id").notNull(),
+    status: text("status", { enum: ["pending", "published", "failed"] })
+      .notNull()
+      .default("pending"),
+  },
+  (t) => [index("idx_sim_approval_outbox_status").on(t.status, t.occurred_at)],
+);
 
 export const budgetRequests = sim.table("approval_budget_requests", {
   id: text("id").primaryKey(),
@@ -121,6 +147,18 @@ CREATE TABLE IF NOT EXISTS sim.approval_expense_reports (
   status TEXT NOT NULL CHECK (status IN ('draft','submitted','in_review','approved','rejected','revision_requested')),
   created_at TEXT NOT NULL, updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS sim.approval_outbox_events (
+  id TEXT PRIMARY KEY,
+  aggregate_id TEXT NOT NULL,
+  event_name TEXT NOT NULL,
+  event_version BIGINT NOT NULL,
+  payload TEXT NOT NULL,
+  occurred_at BIGINT NOT NULL,
+  scope_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending'
+);
+CREATE INDEX IF NOT EXISTS idx_sim_approval_outbox_status ON sim.approval_outbox_events(status, occurred_at);
 `;
 
 export const SIM_APPROVAL_PG_RESET_DDL = `
@@ -129,6 +167,7 @@ DROP TABLE IF EXISTS sim.approval_budget_requests CASCADE;
 DROP TABLE IF EXISTS sim.approval_resource_requests CASCADE;
 DROP TABLE IF EXISTS sim.approval_time_off_requests CASCADE;
 DROP TABLE IF EXISTS sim.approval_expense_reports CASCADE;
+DROP TABLE IF EXISTS sim.approval_outbox_events CASCADE;
 
 CREATE TABLE sim.approval_budget_requests (
   id TEXT PRIMARY KEY, project_id TEXT NOT NULL,
@@ -170,4 +209,16 @@ CREATE TABLE sim.approval_expense_reports (
   status TEXT NOT NULL CHECK (status IN ('draft','submitted','in_review','approved','rejected','revision_requested')),
   created_at TEXT NOT NULL, updated_at TEXT NOT NULL
 );
+
+CREATE TABLE sim.approval_outbox_events (
+  id TEXT PRIMARY KEY,
+  aggregate_id TEXT NOT NULL,
+  event_name TEXT NOT NULL,
+  event_version BIGINT NOT NULL,
+  payload TEXT NOT NULL,
+  occurred_at BIGINT NOT NULL,
+  scope_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending'
+);
+CREATE INDEX idx_sim_approval_outbox_status ON sim.approval_outbox_events(status, occurred_at);
 `;

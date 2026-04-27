@@ -20,12 +20,10 @@ import {
   APPROVAL_REPOSITORY,
   type ApprovalDbInstanceHandle,
 } from "./approval/approval-db.module.js";
-import { BudgetModule } from "./approval/budget/budget.module.js";
-import { ResourceModule } from "./approval/resource/resource.module.js";
-import { TimeOffModule } from "./approval/timeoff/timeoff.module.js";
-import { ExpenseModule } from "./approval/expense/expense.module.js";
+import { APPROVAL_SLICE_MODULES } from "./approval/approval-slices.registry.js";
 import { AccessCheckerModule } from "./auth-deps/access-checker.module.js";
-import { BudgetService } from "./approval/budget/budget.service.js";
+import { BudgetUseCase } from "./approval/budget/application/use-cases/budget.use-case.js";
+import { BudgetReadModelQuery } from "./approval/budget/application/queries/budget-read-model.query.js";
 import type { ApprovalRepository } from "./approval/shared/port.js";
 
 export { AppModule } from "./app.module.js";
@@ -81,10 +79,7 @@ function buildTestAppModule(opts: TestBootstrapOptions): DynamicModule {
           };
         },
       }),
-      BudgetModule,
-      ResourceModule,
-      TimeOffModule,
-      ExpenseModule,
+      ...APPROVAL_SLICE_MODULES,
     ],
   })
   class TestAppModule {}
@@ -144,9 +139,12 @@ export async function seedApprovalFixtures(
 
 /**
  * 단일 budget request 생성 — Plan 13b scenario 3/4 setup 진입점.
- * gateway / guard 우회 (직접 service 호출) — 내부 테스트 전용.
+ * gateway / guard 우회 (직접 use-case 호출) — 내부 테스트 전용.
  *
  * 기본은 draft 상태. advanceTo="in_review" 로 호출하면 submit + review 까지 전이.
+ *
+ * NEW SLICE 후 BudgetUseCase + BudgetReadModelQuery 조합으로 전환 (legacy
+ * BudgetService 와 외부 시그니처는 동일).
  */
 export async function createTestBudgetRequest(
   handle: TestApprovalApiHandle,
@@ -159,8 +157,11 @@ export async function createTestBudgetRequest(
     advanceTo?: "draft" | "submitted" | "in_review";
   },
 ): Promise<TestBudgetRequestFixture> {
-  const svc = handle.app.get(BudgetService);
-  let req = await svc.create({
+  const useCase = handle.app.get(BudgetUseCase);
+  const readModel = handle.app.get(BudgetReadModelQuery);
+  const id = `br_${args.projectId}_${args.requesterId}_${Date.now().toString(36)}`;
+  await useCase.create({
+    id,
     projectId: args.projectId,
     projectDepartmentId: args.projectDepartmentId,
     amount: args.amount,
@@ -168,19 +169,23 @@ export async function createTestBudgetRequest(
   });
   const target = args.advanceTo ?? "draft";
   if (target === "submitted" || target === "in_review") {
-    req = await svc.submit(req.id);
+    await useCase.submit(id);
   }
   if (target === "in_review") {
-    req = await svc.startReview(req.id);
+    await useCase.startReview(id);
+  }
+  const detail = await readModel.findDetail(id);
+  if (!detail) {
+    throw new Error(`createTestBudgetRequest: detail not found after create id=${id}`);
   }
   return {
-    id: req.id,
-    projectId: req.projectId,
-    projectDepartmentId: req.projectDepartmentId,
-    amount: req.amount,
-    requesterId: req.requesterId,
-    status: req.status,
-    currentStage: req.currentStage,
-    totalStages: req.totalStages,
+    id: detail.id,
+    projectId: detail.projectId,
+    projectDepartmentId: detail.projectDepartmentId,
+    amount: detail.amount,
+    requesterId: detail.requesterId,
+    status: detail.status,
+    currentStage: detail.currentStage,
+    totalStages: detail.totalStages,
   };
 }

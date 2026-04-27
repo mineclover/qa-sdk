@@ -1,0 +1,204 @@
+tags:
+  - name: budget
+    description: Budget request command + read-model API.
+paths:
+  /approvals/requests:
+    post:
+      tags: [budget]
+      operationId: createBudgetRequest
+      summary: Create a new budget request.
+      x-domain: budget
+      x-architecture-slice: budget-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBudgetCommand"
+      responses:
+        "201":
+          description: Budget request created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetReadModel"
+        "400":
+          description: Validation error.
+        "403":
+          description: Access denied.
+    get:
+      tags: [budget]
+      operationId: listBudgetRequests
+      summary: List budget requests by project or requester.
+      x-domain: budget
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string }
+        - name: requesterId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Budget request list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BudgetReadModel"
+  /approvals/requests/{id}:
+    get:
+      tags: [budget]
+      operationId: getBudgetRequest
+      summary: Read denormalized budget request view.
+      x-domain: budget
+      x-architecture-slice: budget-read-model-sync
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Budget read model.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetReadModel"
+        "403":
+          description: Access denied.
+        "404":
+          description: Budget request not found.
+  /approvals/requests/{id}/steps:
+    get:
+      tags: [budget]
+      operationId: listBudgetSteps
+      x-domain: budget
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Approval step list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BudgetStep"
+  /approvals/requests/{id}/submit:
+    post:
+      tags: [budget]
+      operationId: submitBudgetRequest
+      x-domain: budget
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "201":
+          description: Updated read model.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetReadModel"
+  /approvals/requests/{id}/start-review:
+    post:
+      tags: [budget]
+      operationId: startBudgetReview
+      x-domain: budget
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "201":
+          description: Updated read model.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetReadModel"
+  /approvals/requests/{id}/decisions:
+    post:
+      tags: [budget]
+      operationId: decideBudgetRequest
+      x-domain: budget
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DecideBudgetCommand"
+      responses:
+        "201":
+          description: Updated read model after decision.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetReadModel"
+components:
+  schemas:
+    CreateBudgetCommand:
+      type: object
+      required: [projectId, projectDepartmentId, amount, requesterId]
+      properties:
+        projectId: { type: string }
+        projectDepartmentId: { type: string }
+        amount: { type: number, format: double }
+        requesterId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+      additionalProperties: false
+    DecideBudgetCommand:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [approve, reject]
+        comment:
+          type: string
+      additionalProperties: false
+    BudgetReadModel:
+      type: object
+      required: [id, projectId, projectDepartmentId, amount, requesterId, status, currentStage, totalStages, updatedAt]
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        projectDepartmentId: { type: string }
+        amount: { type: number, format: double }
+        requesterId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        status:
+          type: string
+          enum: [draft, submitted, in_review, approved, rejected, revision_requested]
+          x-openmetadata-tags: [Tier.Tier1]
+        currentStage: { type: integer }
+        totalStages: { type: integer }
+        updatedAt: { type: string, format: date-time }
+        rootSpanId: { type: string }
+      additionalProperties: false
+    BudgetStep:
+      type: object
+      required: [requestId, stageNumber, decision]
+      properties:
+        requestId: { type: string }
+        stageNumber: { type: integer }
+        approverId: { type: string, nullable: true }
+        decision:
+          type: string
+          enum: [approved, rejected, pending]
+        comment: { type: string, nullable: true }
+        decidedAt: { type: string, format: date-time, nullable: true }
+      additionalProperties: false

@@ -94,17 +94,14 @@ describe("sim-approval-api/test-bootstrap", () => {
 
   it("POST decisions — cross-dept deny → 403 + denyReason", async () => {
     handle = await bootstrapTestApi({ overrideChecker: denyChecker() });
-    // bootstrap 후 req 직접 service 로 생성 (override deny 통과 X)
+    // bootstrap 후 req 직접 use-case 로 생성 (override deny 통과 X)
     const req = await createTestBudgetRequest(handle, {
       projectId: "p-1",
       projectDepartmentId: "dept-eng",
       amount: 500_000,
       requesterId: "user-1",
+      advanceTo: "in_review",
     });
-    const svcModule = await import("./approval/budget/budget.service.js");
-    const svc = handle.app.get(svcModule.BudgetService);
-    await svc.submit(req.id);
-    await svc.startReview(req.id);
 
     const maskB64 = Buffer.from([0xff, 0xff]).toString("base64");
     const res = await fetch(`${handle.baseUrl}/approvals/requests/${req.id}/decisions`, {

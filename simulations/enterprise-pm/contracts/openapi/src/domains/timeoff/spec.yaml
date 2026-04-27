@@ -1,0 +1,103 @@
+tags:
+  - name: timeoff
+    description: Time-off request command + read-model API.
+paths:
+  /time-off-requests:
+    post:
+      tags: [timeoff]
+      operationId: createTimeOffRequest
+      x-domain: timeoff
+      x-architecture-slice: timeoff-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTimeOffCommand"
+      responses:
+        "201":
+          description: Time-off created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeOffReadModel"
+  /time-off-requests/{id}:
+    get:
+      tags: [timeoff]
+      operationId: getTimeOffRequest
+      x-domain: timeoff
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Time-off read model.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeOffReadModel"
+        "404":
+          description: Time-off not found.
+  /time-off-requests/{id}/status:
+    put:
+      tags: [timeoff]
+      operationId: updateTimeOffRequestStatus
+      x-domain: timeoff
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTimeOffStatusCommand"
+      responses:
+        "200":
+          description: Updated time-off.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeOffReadModel"
+components:
+  schemas:
+    CreateTimeOffCommand:
+      type: object
+      required: [requesterId, startDate, endDate, reason]
+      properties:
+        requesterId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        reason: { type: string }
+      additionalProperties: false
+    UpdateTimeOffStatusCommand:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [draft, submitted, in_review, approved, rejected, revision_requested]
+      additionalProperties: false
+    TimeOffReadModel:
+      type: object
+      required: [id, requesterId, startDate, endDate, reason, status, updatedAt]
+      properties:
+        id: { type: string }
+        requesterId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        reason: { type: string }
+        status:
+          type: string
+          enum: [draft, submitted, in_review, approved, rejected, revision_requested]
+          x-openmetadata-tags: [Tier.Tier2]
+        updatedAt: { type: string, format: date-time }
+      additionalProperties: false

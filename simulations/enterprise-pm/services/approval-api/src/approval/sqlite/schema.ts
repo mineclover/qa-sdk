@@ -3,6 +3,31 @@
 
 import { sqliteTable, text, integer, real, primaryKey, index } from "drizzle-orm/sqlite-core";
 
+/**
+ * Phase 2 — approval-api 의 모든 슬라이스 (budget/expense/resource/timeoff) 가
+ * 공유하는 outbox 테이블.
+ *
+ * Slice 별 outbox factory 가 본 테이블을 참조한다. event_name 으로 슬라이스를 구분
+ * (`budget.created`, `expense.created`, `resource.created`, `timeoff.created` 등).
+ * 컬럼명은 sim-domain-slice-kit/createDrizzleOutboxPort 컨벤션과 일치 (snake_case).
+ */
+export const approvalOutboxEvents = sqliteTable(
+  "approval_outbox_events",
+  {
+    id: text("id").primaryKey(),
+    aggregate_id: text("aggregate_id").notNull(),
+    event_name: text("event_name").notNull(),
+    event_version: integer("event_version").notNull(),
+    payload: text("payload").notNull(),
+    occurred_at: integer("occurred_at").notNull(),
+    scope_id: text("scope_id").notNull(),
+    status: text("status", { enum: ["pending", "published", "failed"] })
+      .notNull()
+      .default("pending"),
+  },
+  (t) => [index("approval_outbox_status_idx").on(t.status, t.occurred_at)],
+);
+
 export const budgetRequests = sqliteTable("budget_requests", {
   id: text("id").primaryKey(),
   projectId: text("project_id").notNull(),
@@ -110,4 +135,16 @@ CREATE TABLE IF NOT EXISTS expense_reports (
   status TEXT NOT NULL CHECK (status IN ('draft','submitted','in_review','approved','rejected','revision_requested')),
   created_at TEXT NOT NULL, updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS approval_outbox_events (
+  id TEXT PRIMARY KEY,
+  aggregate_id TEXT NOT NULL,
+  event_name TEXT NOT NULL,
+  event_version INTEGER NOT NULL,
+  payload TEXT NOT NULL,
+  occurred_at INTEGER NOT NULL,
+  scope_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending'
+);
+CREATE INDEX IF NOT EXISTS approval_outbox_status_idx ON approval_outbox_events(status, occurred_at);
 `;
