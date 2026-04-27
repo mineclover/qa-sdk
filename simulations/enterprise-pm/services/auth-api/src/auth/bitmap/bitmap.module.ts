@@ -1,8 +1,7 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { Module, type Provider } from "@nestjs/common";
-import { z } from "zod";
+import { Module, type DynamicModule, type Provider } from "@nestjs/common";
 import {
   SLICE_LOGGER_PORT,
   type LoggerPort,
@@ -32,11 +31,6 @@ import { createBitmapLogger } from "./infrastructure/logging/bitmap.logger.js";
 import { BitmapController } from "./presentation/http/bitmap.controller.js";
 
 const BITMAP_ISSUER_CONFIG = Symbol.for("sim-auth-api/bitmap/IssuerConfig");
-
-const bitmapEnvSchema = z.object({
-  SIM_BITMAP_SECRET: z.string().default("dev-only-bitmap-secret-32-bytes-min!"),
-  SIM_BITMAP_TTL_MS: z.coerce.number().int().positive().default(3600_000),
-});
 
 class UserReadModelQueryAdapter extends UserQueryPort {
   constructor(private readonly readModel: UserReadModelQuery) {
@@ -81,19 +75,6 @@ class RoleAssignmentReadModelQueryAdapter extends RoleAssignmentQueryPort {
     }));
   }
 }
-
-const issuerConfigProvider: Provider = {
-  provide: BITMAP_ISSUER_CONFIG,
-  useFactory: (): BitmapIssuerConfig => {
-    const e = bitmapEnvSchema.parse(process.env);
-    return {
-      secret: new TextEncoder().encode(e.SIM_BITMAP_SECRET),
-      ttlMs: e.SIM_BITMAP_TTL_MS,
-      issuer: "sim-auth-api",
-      version: "v1",
-    };
-  },
-};
 
 const userQueryProvider: Provider = {
   provide: UserQueryPort,
@@ -142,18 +123,32 @@ const issueQueryProvider: Provider = {
  * - User/Role/RoleAssignment 슬라이스 의 read model 을 cross-domain query
  *   port 로 어댑팅하여 합성한다.
  * - VersionedBitmap 발급은 transient (서명 + TTL) — write 영속 없음.
+ *
+ * 라이브러리 컨벤션: process.env 직접 접근 금지. issuer 설정은 서비스
+ * 부팅부 (config/env.ts → buildBitmapIssuerConfig) 에서 주입한다.
+ * forRoot 호출이 유일한 진입점 — 정적 import 시도는 BITMAP_ISSUER_CONFIG
+ * 미주입으로 부팅에 실패한다.
  */
-@Module({
-  imports: [UserSliceModule, RoleSliceModule, RoleAssignmentSliceModule],
-  providers: [
-    issuerConfigProvider,
-    loggerProvider,
-    userQueryProvider,
-    roleQueryProvider,
-    roleAssignmentQueryProvider,
-    issueQueryProvider,
-  ],
-  controllers: [BitmapController],
-  exports: [BitmapIssueQuery],
-})
-export class BitmapSliceModule {}
+@Module({})
+export class BitmapSliceModule {
+  static forRoot(config: BitmapIssuerConfig): DynamicModule {
+    const issuerConfigProvider: Provider = {
+      provide: BITMAP_ISSUER_CONFIG,
+      useValue: config,
+    };
+    return {
+      module: BitmapSliceModule,
+      imports: [UserSliceModule, RoleSliceModule, RoleAssignmentSliceModule],
+      providers: [
+        issuerConfigProvider,
+        loggerProvider,
+        userQueryProvider,
+        roleQueryProvider,
+        roleAssignmentQueryProvider,
+        issueQueryProvider,
+      ],
+      controllers: [BitmapController],
+      exports: [BitmapIssueQuery],
+    };
+  }
+}

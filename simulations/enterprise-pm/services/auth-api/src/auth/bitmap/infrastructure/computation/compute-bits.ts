@@ -1,7 +1,7 @@
 // @def.boundary sim-auth-api
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import { AUTH_BITMASK_BYTES } from "../../../shared/auth-codec.js";
+import { AUTH_BITMASK_BYTES } from "../codec/auth-codec.js";
 import type { RoleAssignmentViewForBitmap } from "../../application/ports/role-assignment-query.port.js";
 import type { RoleViewForBitmap } from "../../application/ports/role-query.port.js";
 

@@ -3,7 +3,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 import { IssuerBitmapReadModel } from "./bitmap-issue.read-model.js";
-import { AUTH_BITMASK_BYTES } from "../../../shared/auth-codec.js";
+import { AUTH_BITMASK_BYTES } from "../codec/auth-codec.js";
 import type { UserQueryPort } from "../../application/ports/user-query.port.js";
 import type { RoleAssignmentQueryPort } from "../../application/ports/role-assignment-query.port.js";
 import type { RoleQueryPort } from "../../application/ports/role-query.port.js";

@@ -28,6 +28,7 @@ import { DepartmentSliceModule } from "./auth/department/department.module.js";
 import { RoleSliceModule } from "./auth/role/role.module.js";
 import { RoleAssignmentSliceModule } from "./auth/role-assignment/role-assignment.module.js";
 import { BitmapSliceModule } from "./auth/bitmap/bitmap.module.js";
+import type { BitmapIssuerConfig } from "./auth/bitmap/infrastructure/read-model/bitmap-issue.read-model.js";
 import { AuthenticateSliceModule } from "./auth/authenticate/authenticate.module.js";
 import { UserUseCase } from "./auth/user/application/use-cases/user.use-case.js";
 import { UserReadModelQuery } from "./auth/user/application/queries/user-read-model.query.js";
@@ -94,12 +95,15 @@ function deriveDeptId(name: string): string {
 
 /**
  * TestBootstrap 전용 AppModule — AuthenticateSliceModule.forRoot 에
- * TestCredentialStore 주입.
+ * TestCredentialStore 주입, BitmapSliceModule.forRoot 에 issuer config 주입.
  *
- * 슬라이스 직접 import 패턴 (registry 미사용) — AuthenticateSliceModule 만
- * dynamic forRoot 로 변경하면 되므로 단순.
+ * 슬라이스 직접 import 패턴 (registry 미사용) — AuthenticateSliceModule 과
+ * BitmapSliceModule 이 dynamic forRoot 진입점.
  */
-function buildTestAppModule(credentialStore: TestCredentialStore): DynamicModule {
+function buildTestAppModule(
+  credentialStore: TestCredentialStore,
+  bitmapConfig: BitmapIssuerConfig,
+): DynamicModule {
   @Module({
     imports: [
       HealthModule,
@@ -108,7 +112,7 @@ function buildTestAppModule(credentialStore: TestCredentialStore): DynamicModule
       DepartmentSliceModule,
       RoleSliceModule,
       RoleAssignmentSliceModule,
-      BitmapSliceModule,
+      BitmapSliceModule.forRoot(bitmapConfig),
       AuthenticateSliceModule.forRoot({ credentialStore }),
       // BitmapCacheModule 은 운영용(Redis publisher) — 테스트에서는 생략.
     ],
@@ -120,19 +124,25 @@ function buildTestAppModule(credentialStore: TestCredentialStore): DynamicModule
 export async function bootstrapTestApi(
   opts: TestBootstrapOptions = {},
 ): Promise<TestApiHandle> {
-  // SQLite in-memory + JWT secret — 환경변수로 Plan 11a의 AuthDbModule 동적 설정 전달.
+  // SQLite in-memory — Plan 11a의 AuthDbModule 동적 설정은 여전히 환경변수
+  // 통신 채널을 사용 (해당 모듈 변경 범위 밖). bitmap secret 은 forRoot
+  // 인자로 직접 전달되므로 process.env 우회가 필요 없음.
   const prev = {
     QA_DB_DIALECT: process.env.QA_DB_DIALECT,
     QA_SQLITE_PATH: process.env.QA_SQLITE_PATH,
-    SIM_BITMAP_SECRET: process.env.SIM_BITMAP_SECRET,
   };
   process.env.QA_DB_DIALECT = "sqlite";
   process.env.QA_SQLITE_PATH = opts.sqlitePath ?? ":memory:";
-  process.env.SIM_BITMAP_SECRET = opts.jwtSecret ?? "x".repeat(32);
 
   const credentials = new TestCredentialStore();
+  const bitmapConfig: BitmapIssuerConfig = {
+    secret: new TextEncoder().encode(opts.jwtSecret ?? "x".repeat(32)),
+    ttlMs: 3600_000,
+    issuer: "sim-auth-api",
+    version: "v1",
+  };
   const moduleRef = await Test.createTestingModule({
-    imports: [buildTestAppModule(credentials)],
+    imports: [buildTestAppModule(credentials, bitmapConfig)],
   }).compile();
 
   const app = moduleRef.createNestApplication<NestFastifyApplication>(
@@ -156,7 +166,6 @@ export async function bootstrapTestApi(
       } finally {
         process.env.QA_DB_DIALECT = prev.QA_DB_DIALECT;
         process.env.QA_SQLITE_PATH = prev.QA_SQLITE_PATH;
-        process.env.SIM_BITMAP_SECRET = prev.SIM_BITMAP_SECRET;
       }
     },
   };
