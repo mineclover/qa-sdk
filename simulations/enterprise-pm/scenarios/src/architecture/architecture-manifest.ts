@@ -130,3 +130,83 @@ export function findSimulationSlice(id: string): ArchitectureSimulationSlice | u
   return ARCHITECTURE_SIMULATION_SLICES.find((slice) => slice.id === id);
 }
 
+/**
+ * Phase 0–3 마이그레이션 결과 슬라이스 인벤토리 (24건).
+ *
+ * `ARCHITECTURE_SIMULATION_SLICES` 가 외부 아키텍처 *개념* → 시뮬레이션 위치를
+ * 매핑한다면, 본 인벤토리는 실제로 마이그레이션된 슬라이스 디렉터리와 그 산출물
+ * 위치를 추적한다. cross-slice-conventions.test 와 architecture-manifest.test
+ * 의 fileExists 검증 입력으로 사용된다.
+ */
+export interface MigrationSliceTarget {
+  readonly kind: "service" | "metadata" | "contract";
+  readonly path: string;
+}
+
+export interface MigrationSlice {
+  readonly id: string;
+  readonly service: string;
+  readonly domain: string;
+  readonly kind: "service" | "read-model" | "bff" | "command-only" | "read-mostly";
+  readonly targets: readonly MigrationSliceTarget[];
+  readonly responsibility: string;
+}
+
+const SIM_ROOT = "simulations/enterprise-pm";
+
+function buildSlice(
+  service: string,
+  domain: string,
+  slicePath: string,
+  fragmentName: string,
+  kind: MigrationSlice["kind"],
+  responsibility: string,
+): MigrationSlice {
+  return {
+    id: `${service}/${fragmentName}`,
+    service,
+    domain,
+    kind,
+    targets: [
+      { kind: "service", path: `${SIM_ROOT}/${slicePath}` },
+      { kind: "metadata", path: `${SIM_ROOT}/${slicePath}/metadata/openmetadata.seed.json` },
+      { kind: "contract", path: `${SIM_ROOT}/contracts/openapi/src/domains/${fragmentName}/spec.yaml` },
+    ],
+    responsibility,
+  };
+}
+
+export const ARCHITECTURE_MIGRATION_SLICES: readonly MigrationSlice[] = [
+  // pm-api (4)
+  buildSlice("pm-api", "pm", "services/pm-api/src/pm/assignment", "assignment", "service", "Phase 1 reference: ManagerAssignment aggregate + outbox + read-model."),
+  buildSlice("pm-api", "pm", "services/pm-api/src/pm/project", "project", "service", "Project lifecycle (draft→active→archived) + delegation graph + access policy."),
+  buildSlice("pm-api", "pm", "services/pm-api/src/pm/task", "task", "service", "Task state machine (todo→in_progress→done) + assignment link."),
+  buildSlice("pm-api", "pm", "services/pm-api/src/pm/member", "member", "service", "Project membership + role transition policy."),
+  // approval-api (4)
+  buildSlice("approval-api", "approval", "services/approval-api/src/approval/budget", "budget", "service", "Budget request + access service coupling + decision lifecycle."),
+  buildSlice("approval-api", "approval", "services/approval-api/src/approval/expense", "expense", "service", "Expense report submit/review/approve flow."),
+  buildSlice("approval-api", "approval", "services/approval-api/src/approval/resource", "resource", "service", "Resource request approval + resource-policy lookup."),
+  buildSlice("approval-api", "approval", "services/approval-api/src/approval/timeoff", "timeoff", "service", "Time-off request + status transitions."),
+  // auth-api (6)
+  buildSlice("auth-api", "auth", "services/auth-api/src/auth/user", "user", "service", "User aggregate + credential lookup."),
+  buildSlice("auth-api", "auth", "services/auth-api/src/auth/role", "role", "service", "Role aggregate + permission catalog."),
+  buildSlice("auth-api", "auth", "services/auth-api/src/auth/role-assignment", "role-assignment", "service", "User↔Role binding + bitmap cache invalidation."),
+  buildSlice("auth-api", "auth", "services/auth-api/src/auth/department", "department", "service", "Department hierarchy + cycle detection."),
+  buildSlice("auth-api", "auth", "services/auth-api/src/auth/authenticate", "authenticate", "command-only", "Command-only login + credential verification (no aggregate)."),
+  buildSlice("auth-api", "auth", "services/auth-api/src/auth/bitmap", "bitmap", "read-mostly", "Authorization bitmap cache + issuer query."),
+  // document-api (3)
+  buildSlice("document-api", "document", "services/document-api/src/document/document", "document", "service", "Document aggregate + version chain root."),
+  buildSlice("document-api", "document", "services/document-api/src/document/comment", "comment", "service", "Comment thread + cross-domain document existence check."),
+  buildSlice("document-api", "document", "services/document-api/src/document/version", "version", "service", "Document version history."),
+  // notification-api (2)
+  buildSlice("notification-api", "notification", "services/notification-api/src/notification/notification", "notification", "service", "Notification aggregate + delivery state machine."),
+  buildSlice("notification-api", "notification", "services/notification-api/src/notification/subscription", "subscription", "service", "Subscription per (user, eventType) composite key."),
+  // reporting-api (3 read-model)
+  buildSlice("reporting-api", "reporting", "services/reporting-api/src/reporting/report", "report", "read-model", "Report read-model + admin upsert command."),
+  buildSlice("reporting-api", "reporting", "services/reporting-api/src/reporting/metric", "metric", "read-model", "Time-series metric read-model."),
+  buildSlice("reporting-api", "reporting", "services/reporting-api/src/density", "density", "read-model", "Density distribution read-model + cross-domain key observation query."),
+  // audit-browser-api (2 BFF)
+  buildSlice("audit-browser-api", "audit-browser", "services/audit-browser-api/src/audit-explorer", "audit-explorer", "bff", "Audit trace BFF — composes audit recorder + auth lookups."),
+  buildSlice("audit-browser-api", "audit-browser", "services/audit-browser-api/src/graph-explorer", "graph-explorer", "bff", "Graph snapshot BFF — composes authorization-ontology + retention insight."),
+];
+
