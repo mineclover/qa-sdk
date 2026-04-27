@@ -28,13 +28,17 @@ export default defineConfig({
 
   webServer: [
     {
-      // DB 없이 인메모리 스토어로 구동
+      // 인메모리 스토어 + convergence pipeline (프로덕션 모드)
       command:
         "pnpm --filter @qa-sdk/ingest-server exec tsx src/test-server.ts",
       url: `${INGEST_URL}/health`,
       reuseExistingServer: !process.env["CI"],
       timeout: 15_000,
-      env: { PORT: "3101" },
+      env: {
+        PORT: "3101",
+        CONVERGENCE_ENABLED: "true",
+        CONVERGENCE_DKG_SQLITE_PATH: ":memory:",
+      },
     },
     {
       command: "pnpm --filter @qa-sdk/viz-web exec vite --port 5210",

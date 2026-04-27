@@ -4,7 +4,7 @@ import { vitePfPlugin } from "../../packages/infra-engine/src/lib/vite-pf-plugin
 
 export default defineConfig({
   root: ".",
-  appType: "spa",
+  appType: "mpa",
   build: {
     outDir: "dist",
     emptyOutDir: true,

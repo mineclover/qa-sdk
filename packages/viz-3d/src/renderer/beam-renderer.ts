@@ -66,13 +66,20 @@ export class ThreeBeamRenderer {
     }
   }
 
+  /** 모든 beam 즉시 제거 (pinned + transient) */
+  clearAll(): void {
+    for (const b of this.lines) {
+      b.pinned = false; b.life = 0; b.mat.opacity = 0;
+    }
+  }
+
   /** 매 프레임 호출 — transient beam fade 처리 */
   update(dt: number): void {
     for (const b of this.lines) {
       if (b.pinned) continue;
       if (b.life > 0) {
-        b.life -= dt * 0.5;
-        b.mat.opacity = Math.max(0, Math.min(b.life * 0.2, 0.6));
+        b.life -= dt;
+        b.mat.opacity = Math.max(0, Math.min(b.life * 0.3, 0.6));
       }
     }
   }
