@@ -69,7 +69,7 @@ function validateFile(
 ): ArchitectureIssue[] {
   const issues: ArchitectureIssue[] = [];
 
-  if (isOpenApiFile(file.path) && file.content.includes("Entity")) {
+  if (isOpenApiFile(file.path) && analyzeOpenApiEntityExposure(file)) {
     issues.push(createIssue(
       "openapi-does-not-expose-domain-entity",
       file.path,
@@ -161,7 +161,7 @@ function validateFile(
   }
 
   if (isBffFile(file.path)) {
-    if (file.content.includes("Entity")) {
+    if (analyzeBffEntityExposure(file)) {
       issues.push(createIssue(
         "bff-does-not-expose-domain-entity",
         file.path,
@@ -169,7 +169,7 @@ function validateFile(
         "BFF surface must not import or expose domain entities.",
       ));
     }
-    if (file.content.includes(".save(") || file.content.includes(" save(")) {
+    if (analyzeBffPersistenceWrite(file)) {
       issues.push(createIssue(
         "bff-does-not-expose-domain-entity",
         file.path,
@@ -542,6 +542,183 @@ function analyzePortUsage(file: SourceFileInput): PortUsageAnalysis {
     hasTransactionPort,
     hasLoggerPort: hasLoggerPortType || hasLoggerPortToken,
   };
+}
+
+/**
+ * BFF 파일이 도메인 Entity 를 노출하는지 AST 로 분석한다.
+ *
+ * substring 검사는 주석/문자열 리터럴/식별자 토큰 어디든 "Entity" 가 등장하면
+ * 트리거되어 false positive 가 컸다. 본 분석은 다음 위치에서만 `*Entity` 식별자를
+ * 검출한다:
+ *
+ * - import declaration 의 named/default/namespace import (`import { FooEntity }`,
+ *   `import FooEntity from "..."`).
+ * - 본문 type reference 노드 (`function f(): FooEntity`, `private readonly e: FooEntity`).
+ *
+ * 주석, string literal, regex literal, JSDoc, 그리고 식별자 prefix 가 우연히
+ * 일치하는 케이스 (예: `Entitys` 같은 단어) 는 트리거하지 않는다. 단어 경계는
+ * `endsWith("Entity")` 로 잡되 `Entity` 자체와 `*Entity` (camelCase suffix) 만
+ * 허용한다.
+ */
+function analyzeBffEntityExposure(file: SourceFileInput): boolean {
+  const sourceFile = ts.createSourceFile(
+    file.path,
+    file.content,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
+
+  const isEntityName = (name: string): boolean => name === "Entity" || name.endsWith("Entity");
+
+  // 1) import declaration 검사.
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement)) continue;
+    const clause = statement.importClause;
+    if (!clause) continue;
+
+    if (clause.name && isEntityName(clause.name.text)) return true;
+
+    const bindings = clause.namedBindings;
+    if (!bindings) continue;
+
+    if (ts.isNamespaceImport(bindings)) {
+      if (isEntityName(bindings.name.text)) return true;
+      continue;
+    }
+    if (ts.isNamedImports(bindings)) {
+      for (const element of bindings.elements) {
+        // `import { OriginalEntity as Foo }` 의 경우 propertyName 이 원본명, name 이 alias.
+        // 둘 중 하나라도 Entity 면 노출로 본다 (재export/사용 가능성).
+        const original = element.propertyName?.text ?? element.name.text;
+        if (isEntityName(original) || isEntityName(element.name.text)) return true;
+      }
+    }
+  }
+
+  // 2) 본문 type reference 검사.
+  let found = false;
+  const visit = (node: ts.Node): void => {
+    if (found) return;
+    if (ts.isImportDeclaration(node)) return;
+    if (ts.isTypeReferenceNode(node)) {
+      const typeName = node.typeName;
+      if (ts.isIdentifier(typeName)) {
+        if (isEntityName(typeName.text)) {
+          found = true;
+          return;
+        }
+      } else if (ts.isQualifiedName(typeName)) {
+        // `ns.FooEntity` — 가장 우측 식별자가 Entity 면 노출.
+        let cursor: ts.EntityName = typeName;
+        while (ts.isQualifiedName(cursor)) cursor = cursor.right;
+        if (ts.isIdentifier(cursor) && isEntityName(cursor.text)) {
+          found = true;
+          return;
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  for (const statement of sourceFile.statements) {
+    if (ts.isImportDeclaration(statement)) continue;
+    visit(statement);
+    if (found) break;
+  }
+  return found;
+}
+
+/**
+ * BFF 파일이 영속 쓰기 (`.save(...)` 류) 를 직접 수행하는지 AST 로 분석한다.
+ *
+ * substring 검사는 주석/문자열 리터럴 안의 ".save(" 도 잡았다 (false positive).
+ * 본 분석은 method call expression (`x.save(...)` 또는 `x[ "save" ](...)`) 형태로
+ * 호출이 발생하는 경우만 검출한다. 변수명이 "save" 를 포함해도 호출이 없으면
+ * 통과한다.
+ */
+function analyzeBffPersistenceWrite(file: SourceFileInput): boolean {
+  const sourceFile = ts.createSourceFile(
+    file.path,
+    file.content,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
+
+  let found = false;
+  const visit = (node: ts.Node): void => {
+    if (found) return;
+    if (ts.isCallExpression(node)) {
+      const expr = node.expression;
+      if (ts.isPropertyAccessExpression(expr) && expr.name.text === "save") {
+        // `repo.save(...)`, `this.repository.save(...)` 등.
+        found = true;
+        return;
+      }
+      if (ts.isElementAccessExpression(expr)) {
+        // `repo["save"](...)` 형태도 호출 의도.
+        const arg = expr.argumentExpression;
+        if (arg && ts.isStringLiteralLike(arg) && arg.text === "save") {
+          found = true;
+          return;
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  for (const statement of sourceFile.statements) {
+    visit(statement);
+    if (found) break;
+  }
+  return found;
+}
+
+/**
+ * OpenAPI fragment (yaml/json) 가 도메인 Entity 를 노출하는지 분석한다.
+ *
+ * substring 검사는 description/title/example 등 어떤 문자열이든 "Entity" 가
+ * 들어가면 트리거되어 false positive 가 컸다. 본 분석은 schema 이름 (식별자)
+ * 위치만 본다:
+ *
+ * - `components.schemas.<Name>` 의 Name.
+ * - `definitions.<Name>` (Swagger 2.0 호환) 의 Name.
+ *
+ * Name 이 `Entity` 또는 `*Entity` 로 끝나면 노출로 판정. description 본문, tag 이름,
+ * operationId, example 값 등은 검사하지 않는다. JSON parse 실패 시 false (다른
+ * governance check 가 잡는다).
+ */
+function analyzeOpenApiEntityExposure(file: SourceFileInput): boolean {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(file.content);
+  } catch {
+    return false;
+  }
+  if (!parsed || typeof parsed !== "object") return false;
+
+  const isEntityName = (name: string): boolean => name === "Entity" || name.endsWith("Entity");
+
+  const root = parsed as Record<string, unknown>;
+  const schemaContainers: Array<Record<string, unknown> | undefined> = [];
+  const components = root.components;
+  if (components && typeof components === "object") {
+    const schemas = (components as Record<string, unknown>).schemas;
+    if (schemas && typeof schemas === "object") {
+      schemaContainers.push(schemas as Record<string, unknown>);
+    }
+  }
+  const definitions = root.definitions;
+  if (definitions && typeof definitions === "object") {
+    schemaContainers.push(definitions as Record<string, unknown>);
+  }
+
+  for (const container of schemaContainers) {
+    if (!container) continue;
+    for (const name of Object.keys(container)) {
+      if (isEntityName(name)) return true;
+    }
+  }
+  return false;
 }
 
 /**

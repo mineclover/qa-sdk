@@ -81,7 +81,8 @@ describe("validateArchitecture", () => {
         content: [
           'import { PaymentEntity } from "../../domain";',
           "export class PaymentBff {",
-          "  save(): PaymentEntity { throw new Error('bad'); }",
+          "  constructor(private readonly repo: { save(input: PaymentEntity): Promise<void> }) {}",
+          "  build(input: PaymentEntity): Promise<void> { return this.repo.save(input); }",
           "}",
         ].join("\n"),
       },
@@ -92,6 +93,156 @@ describe("validateArchitecture", () => {
       "bff-does-not-expose-domain-entity",
       "bff-does-not-expose-domain-entity",
       "metadata-ships-with-domain-slice",
+    ]);
+  });
+
+  it("does not flag BFF files that mention 'Entity' only inside string/comment tokens", () => {
+    // 강화된 AST 룰 — "Entity" 단어가 주석/문자열 리터럴/변수명에만 등장하면 false
+    // positive 였다. import 또는 type reference 위치에서만 트리거되어야 한다.
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/presentation/bff/payment-detail.bff.ts",
+        content: [
+          "// returns an entity-like detail view but is not a domain Entity.",
+          'const errorMessage = "Entity not found";',
+          "export class PaymentDetailBff {",
+          "  // 변수명에 Entity 단어가 들어가도 type 이 아니면 통과.",
+          "  private readonly entityCacheLabel = errorMessage;",
+          "}",
+        ].join("\n"),
+      },
+      {
+        path: "src/modules/payment/metadata/openmetadata.seed.json",
+        content: JSON.stringify({
+          topology: "bff",
+          cacheKeys: [{ id: "payment-bff-detail" }],
+        }),
+      },
+    ]);
+
+    expect(result).toEqual({ ok: true, issues: [] });
+  });
+
+  it("flags BFF files that import or type-reference *Entity symbols", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/presentation/bff/payment-detail.bff.ts",
+        content: [
+          'import type { PaymentEntity } from "../../domain/payment.entity";',
+          "export class PaymentDetailBff {",
+          "  build(): PaymentEntity { throw new Error('bad'); }",
+          "}",
+        ].join("\n"),
+      },
+      {
+        path: "src/modules/payment/metadata/openmetadata.seed.json",
+        content: JSON.stringify({
+          topology: "bff",
+          cacheKeys: [{ id: "payment-bff-detail" }],
+        }),
+      },
+    ]);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.map((issue) => issue.ruleId)).toContain(
+      "bff-does-not-expose-domain-entity",
+    );
+  });
+
+  it("flags BFF files calling repo.save(...) but not variables named save", () => {
+    const flagged = validateArchitecture([
+      {
+        path: "src/modules/payment/presentation/bff/payment-detail.bff.ts",
+        content: [
+          "export class PaymentDetailBff {",
+          "  constructor(private readonly repo: { save(input: unknown): Promise<void> }) {}",
+          "  async write(input: unknown): Promise<void> {",
+          "    await this.repo.save(input);",
+          "  }",
+          "}",
+        ].join("\n"),
+      },
+      {
+        path: "src/modules/payment/metadata/openmetadata.seed.json",
+        content: JSON.stringify({
+          topology: "bff",
+          cacheKeys: [{ id: "payment-bff-detail" }],
+        }),
+      },
+    ]);
+
+    expect(flagged.ok).toBe(false);
+    expect(flagged.issues.map((issue) => issue.ruleId)).toContain(
+      "bff-does-not-expose-domain-entity",
+    );
+
+    // 변수명에 save 가 있지만 호출은 없는 경우 — 통과해야 한다.
+    const passing = validateArchitecture([
+      {
+        path: "src/modules/payment/presentation/bff/payment-detail.bff.ts",
+        content: [
+          "export class PaymentDetailBff {",
+          "  // 캐시 라벨 토큰에 'save' 가 등장하지만 method 호출은 없다.",
+          "  private readonly saveLabel = 'save-counter';",
+          "  private readonly noteAboutSave = '주석: .save( 패턴 설명';",
+          "  describe(): string { return this.saveLabel + this.noteAboutSave; }",
+          "}",
+        ].join("\n"),
+      },
+      {
+        path: "src/modules/payment/metadata/openmetadata.seed.json",
+        content: JSON.stringify({
+          topology: "bff",
+          cacheKeys: [{ id: "payment-bff-detail" }],
+        }),
+      },
+    ]);
+
+    expect(passing).toEqual({ ok: true, issues: [] });
+  });
+
+  it("does not flag OpenAPI fragments that mention 'Entity' only in description text", () => {
+    // 강화된 AST 룰 — description/title/example 본문에 Entity 단어가 등장해도 schema
+    // 이름이 아니면 통과해야 한다.
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/contracts/openapi/domains/payment/spec.json",
+        content: JSON.stringify({
+          components: {
+            schemas: {
+              PaymentReadModel: {
+                type: "object",
+                description: "Read model representation, not a domain Entity.",
+                properties: {
+                  id: { type: "string", example: "Entity ID format" },
+                },
+              },
+            },
+          },
+        }),
+      },
+    ]);
+
+    expect(result).toEqual({ ok: true, issues: [] });
+  });
+
+  it("flags OpenAPI fragments whose schema name is or ends with Entity", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/contracts/openapi/domains/payment/spec.json",
+        content: JSON.stringify({
+          components: {
+            schemas: {
+              UserEntity: { type: "object" },
+            },
+          },
+        }),
+      },
+    ]);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.map((issue) => issue.ruleId)).toEqual([
+      "openapi-does-not-expose-domain-entity",
     ]);
   });
 
