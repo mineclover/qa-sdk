@@ -954,3 +954,14 @@ git status
 - 라벨 키 `managed-by`, `qa-sdk-component` Task 2 구현(`COMMON_LABELS`)과 테스트 동일.
 - 스택/프로젝트 이름 `gitlab-local` / `infra-engine-gitlab` Task 3, 4에서 동일 사용.
 - 볼륨 이름 `gitlab-config`/`gitlab-logs`/`gitlab-data` 구현·테스트 일치 (테스트는 알파벳 정렬 후 비교).
+
+---
+
+## Errata (2026-04-28)
+
+After first live deploy, two gaps were fixed in a follow-up commit (see `git log --grep "fix(infra-engine).*nginx listen"`):
+
+1. `buildOmnibusConfig` now requires `nginxListenPort: number` and emits `nginx['listen_port'] = N; nginx['listen_https'] = false` lines. Without them, GitLab Omnibus listens on the `external_url` port instead of the container port, and the K8s Service routes to nothing.
+2. `createGitlabProgram` now sets `progressDeadlineSeconds: 1800` on the Deployment. K8s default 600s caused `pulumi up` to fail with `ProgressDeadlineExceeded` while the pod was still progressing through Omnibus first boot.
+
+If re-running Tasks 1 / 2 from the plan above, use the current code in `packages/infra-engine/src/programs/gitlab-program.ts` rather than the original code blocks — those are preserved as historical record.

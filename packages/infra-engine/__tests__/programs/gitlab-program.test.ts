@@ -39,14 +39,18 @@ describe("buildOmnibusConfig", () => {
   it("external_url만 포함한다 (rootPasswordEnv 없음)", () => {
     const cfg = buildOmnibusConfig({
       externalUrl: "http://localhost:8929",
+      nginxListenPort: 80,
       useRootPasswordEnv: false,
     });
-    expect(cfg).toBe("external_url 'http://localhost:8929'");
+    expect(cfg).toBe(
+      "external_url 'http://localhost:8929'; nginx['listen_port'] = 80; nginx['listen_https'] = false",
+    );
   });
 
   it("rootPasswordEnv가 true면 initial_root_password 라인을 추가한다", () => {
     const cfg = buildOmnibusConfig({
       externalUrl: "http://localhost:8929",
+      nginxListenPort: 80,
       useRootPasswordEnv: true,
     });
     expect(cfg).toContain("external_url 'http://localhost:8929'");
@@ -58,11 +62,29 @@ describe("buildOmnibusConfig", () => {
   it("두 라인 사이는 세미콜론+공백으로 구분한다", () => {
     const cfg = buildOmnibusConfig({
       externalUrl: "http://gitlab.test",
+      nginxListenPort: 80,
       useRootPasswordEnv: true,
     });
     const parts = cfg.split("; ");
-    expect(parts).toHaveLength(2);
+    expect(parts).toHaveLength(4);
     expect(parts[0]).toBe("external_url 'http://gitlab.test'");
+  });
+
+  it("nginx['listen_port']와 nginx['listen_https']=false가 external_url 다음, initial_root_password 앞에 온다", () => {
+    const cfg = buildOmnibusConfig({
+      externalUrl: "http://localhost:8929",
+      nginxListenPort: 80,
+      useRootPasswordEnv: true,
+    });
+    const parts = cfg.split("; ");
+    const idxExternal = parts.findIndex((p) => p.startsWith("external_url"));
+    const idxListenPort = parts.findIndex((p) => p.startsWith("nginx['listen_port']"));
+    const idxListenHttps = parts.findIndex((p) => p.startsWith("nginx['listen_https']"));
+    const idxRootPw = parts.findIndex((p) => p.startsWith("gitlab_rails['initial_root_password']"));
+    expect(idxExternal).toBe(0);
+    expect(idxListenPort).toBe(1);
+    expect(idxListenHttps).toBe(2);
+    expect(idxRootPw).toBe(3);
   });
 });
 
@@ -244,8 +266,37 @@ describe("createGitlabProgram (mocked Pulumi runtime)", () => {
 
     const omnibus = env.find((e) => e.name === "GITLAB_OMNIBUS_CONFIG");
     expect(omnibus).toBeDefined();
-    expect(omnibus!.value).toBe(
-      "external_url 'http://gitlab.example:9000'",
-    );
+    expect(omnibus!.value).toContain("external_url 'http://gitlab.example:9000'");
+  });
+
+  it("Deployment.spec.progressDeadlineSeconds === 1800", async () => {
+    const program = createGitlabProgram();
+    await program();
+
+    const deployment = captured.find(
+      (r) => r.type === "kubernetes:apps/v1:Deployment",
+    )!;
+    const spec = deployment.inputs.spec as Record<string, unknown>;
+    expect(spec.progressDeadlineSeconds).toBe(1800);
+  });
+
+  it("Deployment env GITLAB_OMNIBUS_CONFIG에 nginx['listen_port'] = 80가 포함된다", async () => {
+    const program = createGitlabProgram();
+    await program();
+
+    const deployment = captured.find(
+      (r) => r.type === "kubernetes:apps/v1:Deployment",
+    )!;
+    const containers = (
+      ((deployment.inputs.spec as Record<string, unknown>).template as Record<
+        string,
+        unknown
+      >).spec as Record<string, unknown>
+    ).containers as Array<Record<string, unknown>>;
+    const env = containers[0]!.env as Array<Record<string, unknown>>;
+
+    const omnibus = env.find((e) => e.name === "GITLAB_OMNIBUS_CONFIG");
+    expect(omnibus).toBeDefined();
+    expect(omnibus!.value).toContain("nginx['listen_port'] = 80");
   });
 });

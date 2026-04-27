@@ -9,6 +9,12 @@ import * as k8s from "@pulumi/kubernetes";
 export interface BuildOmnibusConfigInput {
   /** GitLab external_url (예: "http://localhost:8929") */
   externalUrl: string;
+  /**
+   * nginx가 실제로 listen할 포트. 컨테이너 포트와 일치시켜야 K8s Service 라우팅이 정상 동작.
+   * external_url의 포트는 GitLab이 absolute URL 생성에만 사용되며, 별도로 지정하지 않으면
+   * nginx가 해당 포트로 listen해 컨테이너 포트와 어긋날 수 있다.
+   */
+  nginxListenPort: number;
   /** true면 GITLAB_ROOT_PASSWORD env에서 초기 비밀번호를 주입하는 라인을 포함 */
   useRootPasswordEnv: boolean;
 }
@@ -18,7 +24,11 @@ export interface BuildOmnibusConfigInput {
  * 결정론적: 같은 입력 → 같은 출력.
  */
 export function buildOmnibusConfig(input: BuildOmnibusConfigInput): string {
-  const lines: string[] = [`external_url '${input.externalUrl}'`];
+  const lines: string[] = [
+    `external_url '${input.externalUrl}'`,
+    `nginx['listen_port'] = ${input.nginxListenPort}`,
+    `nginx['listen_https'] = false`,
+  ];
   if (input.useRootPasswordEnv) {
     lines.push(
       "gitlab_rails['initial_root_password'] = ENV['GITLAB_ROOT_PASSWORD'] if ENV['GITLAB_ROOT_PASSWORD']",
@@ -44,6 +54,7 @@ export interface GitlabProgramOptions {
 }
 
 const APP_LABEL = "gitlab";
+const CONTAINER_PORT = 80;
 const COMMON_LABELS = {
   app: APP_LABEL,
   "managed-by": "pulumi",
@@ -97,6 +108,7 @@ export function createGitlabProgram(
         name: "GITLAB_OMNIBUS_CONFIG",
         value: buildOmnibusConfig({
           externalUrl,
+          nginxListenPort: CONTAINER_PORT,
           useRootPasswordEnv: secret !== undefined,
         }),
       },
@@ -115,6 +127,7 @@ export function createGitlabProgram(
       metadata: { namespace, name: "gitlab", labels: COMMON_LABELS },
       spec: {
         replicas: 1,
+        progressDeadlineSeconds: 1800,
         strategy: { type: "Recreate" },
         selector: { matchLabels: { app: APP_LABEL } },
         template: {
@@ -125,7 +138,7 @@ export function createGitlabProgram(
                 name: "gitlab",
                 image,
                 imagePullPolicy: "IfNotPresent",
-                ports: [{ containerPort: 80, name: "http" }],
+                ports: [{ containerPort: CONTAINER_PORT, name: "http" }],
                 env,
                 resources,
                 volumeMounts: [
@@ -134,7 +147,7 @@ export function createGitlabProgram(
                   { name: "gitlab-data", mountPath: "/var/opt/gitlab" },
                 ],
                 readinessProbe: {
-                  httpGet: { path: "/-/readiness", port: 80 },
+                  httpGet: { path: "/-/readiness", port: CONTAINER_PORT },
                   initialDelaySeconds: 180,
                   periodSeconds: 30,
                   failureThreshold: 20,
@@ -157,7 +170,7 @@ export function createGitlabProgram(
       spec: {
         type: "NodePort",
         selector: { app: APP_LABEL },
-        ports: [{ port: 80, targetPort: 80, name: "http" }],
+        ports: [{ port: CONTAINER_PORT, targetPort: CONTAINER_PORT, name: "http" }],
       },
     });
 

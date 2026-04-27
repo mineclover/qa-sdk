@@ -109,8 +109,9 @@ export function createGitlabProgram(options?: GitlabProgramOptions): () => Promi
 2. **Secret `gitlab-root-credentials`** — `rootPassword`가 주어진 경우에만 생성. key: `password`. `Opaque` 타입.
 3. **Deployment `gitlab`**
    - `replicas: 1`, `strategy: { type: "Recreate" }` (Omnibus는 RWX 가정 안 됨, 두 개 동시에 못 뜸)
+   - `progressDeadlineSeconds: 1800` (Omnibus 첫 부팅이 K8s 기본 600s 초과 → Pulumi가 ProgressDeadlineExceeded로 실패하는 것을 방지)
    - 환경변수
-     - `GITLAB_OMNIBUS_CONFIG` — `external_url '<externalUrl>'; gitlab_rails['initial_root_password'] = ENV['GITLAB_ROOT_PASSWORD'] if ENV['GITLAB_ROOT_PASSWORD']`
+     - `GITLAB_OMNIBUS_CONFIG` — `external_url '<externalUrl>'; nginx['listen_port'] = <containerPort>; nginx['listen_https'] = false; gitlab_rails['initial_root_password'] = ENV['GITLAB_ROOT_PASSWORD'] if ENV['GITLAB_ROOT_PASSWORD']`. `nginx['listen_port']`를 컨테이너 포트와 일치시켜야 K8s Service 라우팅이 정상 동작 (external_url 포트는 GitLab이 absolute URL 생성에만 사용).
      - `GITLAB_ROOT_PASSWORD` (Secret이 있는 경우) — `valueFrom.secretKeyRef`
    - `volumes` — 3개 emptyDir: `gitlab-config` → `/etc/gitlab`, `gitlab-logs` → `/var/log/gitlab`, `gitlab-data` → `/var/opt/gitlab`
    - `ports` — `containerPort: 80` 1개만
