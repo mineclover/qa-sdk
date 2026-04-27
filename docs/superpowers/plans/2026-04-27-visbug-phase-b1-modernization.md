@@ -1,5 +1,7 @@
 # VisBug Phase B'1 — 모더나이즈 Implementation Plan
 
+> **Status: 완료 (2026-04-27)** — 모든 Task 실행 + main 머지. vendor SHA `030e115`, monorepo SHA `5759736b`. playwright 56/57 PASS (1건 font 회귀는 FU-2에서 해결).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** `vendor/projectvisbug` 빌드/테스트 toolchain을 modern 도구로 교체. 기존 동작 보존.

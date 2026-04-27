@@ -2,6 +2,8 @@
 
 > 2026-04-27. ProjectVisBug fork(`vendor/projectvisbug`)를 모더나이즈하고, 사용자 편집을 기록·노출하는 edit-log 기능을 추가하여 rlsc/pretext의 측정 도구로 평가한다.
 
+> **Status (2026-04-27): 구현 완료.** 3 phase + 후속 4건 전부 머지. 자세한 내용은 본 문서 끝의 "구현 결과" 섹션 참조.
+
 ## 목적
 
 1. **인간 인텐트 신호 캡처** — 디자이너가 visbug로 page를 어떻게 바꾸려 하는지를 구조화된 엔트리로 기록한다. rlsc(자동 측정)와 결합하여 "현재 구조 ↔ 원하는 변경" 신호를 얻는다.
@@ -346,3 +348,42 @@ qa-sdk playwright e2e:
 ## 다음 단계
 
 본 design doc 승인 후 `superpowers:writing-plans` skill로 Phase B'1/B'2/B'3 각각의 implementation plan을 작성한다.
+
+## 구현 결과
+
+### Phase 별 머지
+
+| Phase | vendor SHA | monorepo SHA | 산출 |
+|---|---|---|---|
+| B'1 모더나이즈 | `030e115` | `5759736b` | rollup 4 / postcss 8 / playwright / vitest 토대, 12 feature test 마이그레이션 |
+| B'2 edit-log core | `8bbb606` | `0fedfda9` | 8 모듈 (entry/dispatcher/mutation-watcher/feature-wrapper/merge/formatters/replay/index) + `<vis-bug>` 통합 |
+| B'3 UI + bridge | `793c0ff` | `55d70276` | edit-log-panel, visbug-bridge pnpm 패키지, monorepo CI submodule fix |
+
+### Plan 대비 deviation
+
+- **B'2 Task 11 (feature wrapping)** — 스킵. visbug features는 module-level closure로 동작 (`Padding(visbug)` factory에서 hotkey 핸들러가 `padElement` worker를 직접 호출). ES 모듈 export는 불변이라 host method wrap 불가. v1은 MutationObserver baseline에 의존 (모든 entry `source: 'mutation'`, `feature: 'unknown'`). feature 의미 복원은 consumer 측 CSS prop 매핑 또는 v1.1에서 features/*.js 소스 수정으로 해결 가능.
+- **B'3 Task 9 (e2e)** — 포트 3300이 로컬 registry-service와 충돌 → 4300으로 변경. 브라우저 측 `'visbug'` import 해결을 위해 importmap 사용 (Vite 도입 회피).
+
+### 후속 작업 (FU) 완료
+
+| FU | 산출 | SHA |
+|---|---|---|
+| FU-1 def-catalog 좌표 | `docs/specs/visbug-bridge/visbug-bridge.spec.md` | `a373ac0b` |
+| FU-2 font 회귀 fix | `<b>` user-agent stylesheet가 headless에서 다름 → 명시적 baseline 설정 | `194264c` (vendor) + `281ee7df` (monorepo) |
+| FU-3 CI e2e job | `.github/workflows/ci.yml`에 `visbug-bridge-e2e` 잡 | `9ea1d78e` |
+| FU-4 rlsc 통합 smoke | `packages/rlsc/src/visbug-bridge-join.test.ts` (5 tests) + `packages/rlsc/docs/visbug-bridge-integration.md` | `58cd8ae5` |
+
+### 최종 검증
+
+- vendor playwright: **61/61 PASS**
+- vendor vitest (edit-log + panel): **42/42 PASS**
+- visbug-bridge vitest: **8/8 PASS**
+- visbug-bridge playwright e2e: **2/2 PASS**
+- rlsc vitest (smoke 포함): **155/155 PASS**
+
+### 알려진 한계 (스코프 외, 별도 PR 후보)
+
+- vendor extension/Xcode 빌드 — 미작업
+- replay v2 (UI 노출) — verification 모드만 v1
+- vendor의 npm test를 monorepo CI에 포함시키는 방식 — 미결정
+- visbug feature wrapping (source='feature' 활성화) — features/*.js 직접 수정 필요

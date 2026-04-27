@@ -1,67 +1,58 @@
 # visbug-bridge CI 통합 노트
 
-## 자동 포함
+## 자동 포함 (monorepo-wide)
 
 `pnpm-workspace.yaml`의 `packages/*` glob에 의해 visbug-bridge가 자동 포함됨.
-다음 monorepo-wide 명령에 자동으로 잡힘:
+다음 명령에 자동으로 잡힘:
 
 - `pnpm -r run build`
 - `pnpm -r run test`
 - `pnpm -r run typecheck`
 
-## CI에서 추가 고려사항
+## 전용 e2e 잡 (`visbug-bridge-e2e`)
 
-### vendor 의존성
+`.github/workflows/ci.yml`에 정의됨. 단계:
 
-`dependencies: { "visbug": "file:../../vendor/projectvisbug" }`. CI는 다음을 보장해야 함:
+1. `actions/checkout@v4` with `submodules: recursive`
+2. Node 22 + pnpm 10.30.3 (corepack)
+3. `pnpm install --frozen-lockfile`
+4. `cd vendor/projectvisbug && npm install && npm run bundle` (e2e용 vendor bundle)
+5. `pnpm --filter visbug-bridge build` (tsup ESM/CJS/DTS)
+6. `pnpm --filter visbug-bridge exec playwright install --with-deps chromium`
+7. `pnpm --filter visbug-bridge test` (vitest 단위, 8개)
+8. `pnpm --filter visbug-bridge test:e2e` (playwright, 2개)
+9. 실패 시 `test-results/` artifact 업로드 (7일 보관)
 
-- git submodule 체크아웃 (`git submodule update --init --recursive`)
-- vendor의 `app/bundle.js` 빌드 (e2e 실행 시):
-  ```bash
-  cd vendor/projectvisbug && npm install && npm run bundle
-  ```
-- 단위 테스트(`pnpm --filter visbug-bridge test`)는 vendor bundle 불필요 (jsdom + stub)
+병렬 실행: 기존 `ci`/`security` 잡과 같은 워크플로 안에서 별도 잡으로 동시 실행.
 
-### checkout@v4 — submodules 미설정 주의
+## Checkout 스텝의 submodules 필수
 
-현재 `.github/workflows/ci.yml`의 `actions/checkout@v4` 스텝에 `submodules: recursive`가
-없음. `pnpm install --frozen-lockfile`은 `file:` 의존성을 로컬 경로로 해석하므로,
-vendor 디렉터리가 비어 있으면 `pnpm install` 자체가 실패할 수 있음.
+`.github/workflows/ci.yml`의 `ci`/`security`/`visbug-bridge-e2e` 잡 모두 `submodules: recursive` 설정.
+`def-gate.yml`도 동일.
 
-**권장 수정** (별도 PR):
+근거: visbug-bridge가 `"visbug": "file:../../vendor/projectvisbug"`를 declare하므로 `pnpm install`
+시점에 vendor 디렉터리가 비어 있으면 경로 해석 실패. submodule recursive 체크아웃이 필수 조건.
+
+## 보조 패턴 (필요 시)
+
+### 특정 패키지만 제외
 ```yaml
-- name: Check out repository
-  uses: actions/checkout@v4
-  with:
-    submodules: recursive
+- run: pnpm -r --filter '!visbug-bridge' run build
 ```
 
-단위 테스트만 CI에 포함하고 vendor 소스가 필요 없다면 `file:` 의존을 `optionalDependencies`로
-이동하거나, visbug-bridge를 별도 잡으로 분리하는 것도 대안.
-
-### e2e 실행 (선택)
-
-`pnpm --filter visbug-bridge test:e2e`는 chromium 필요:
-```bash
-npx playwright install chromium
-```
-
-기존 monorepo CI에 e2e가 포함되지 않으면 별도 잡으로 추가하는 것을 후속 PR로 분리 권장.
-
-### 필요 시 명시적 제외
-
-vendor를 monorepo CI 워크플로에서 제외해야 할 경우 (예: vendor의 npm test가 별도 환경 요구):
-
+### path filter로 트리거 절약
+visbug-bridge 변경 시에만 e2e 잡 실행하려면 `paths` 필터 추가:
 ```yaml
-# .github/workflows/...
-- run: pnpm -r --filter '!visbug-bridge' run build  # bridge만 제외
+on:
+  pull_request:
+    paths:
+      - 'packages/visbug-bridge/**'
+      - 'vendor/projectvisbug'   # submodule pointer
+      - '.github/workflows/ci.yml'
 ```
 
-또는 path filter로 visbug-bridge 변경 시에만 별도 잡 트리거.
+현재 워크플로는 path filter 없이 항상 실행 (vendor bundle 빌드 비용은 작음).
 
-## 후속 작업
+## 미완
 
-- def-catalog 좌표 부여 (`docs/specs/visbug-bridge/...`) — 별도 PR
-- monorepo CI에 visbug-bridge e2e 잡 추가 — 별도 PR
-- vendor의 npm test를 monorepo CI에서 어떻게 다룰지 결정 — 별도 PR
-- ci.yml checkout 스텝에 `submodules: recursive` 추가 — 별도 PR (visbug-bridge merge 전 필수)
+- vendor의 npm test (`cd vendor/projectvisbug && npm test`)를 monorepo CI에 포함시키는 방식 — 미결정. 현재는 vendor 작업 시 로컬 검증만.

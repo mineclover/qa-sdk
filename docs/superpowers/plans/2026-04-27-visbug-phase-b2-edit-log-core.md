@@ -1,5 +1,9 @@
 # VisBug Phase B'2 — edit-log core Implementation Plan
 
+> **Status: 완료 (2026-04-27)** — vendor SHA `8bbb606`, monorepo SHA `0fedfda9`. vitest 37/37 + playwright e2e 4/4 PASS.
+>
+> **Deviation: Task 11 스킵** — visbug features는 module-level closure 기반 (`Padding(visbug)` factory 안에서 hotkey 핸들러가 worker 함수를 직접 호출). ES 모듈 export 불변성으로 host method monkey-patch 불가. v1은 MutationObserver baseline에 의존 (모든 entry `source: 'mutation'`, `feature: 'unknown'`). feature 의미 복원은 consumer 측 CSS prop 매핑 또는 v1.1에서 features/*.js 소스 수정 필요.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** `<vis-bug>` Web Component에 사용자 편집 캡처 + listener API + verification replay를 추가. UI 없음, headless 측정 가능 시점.

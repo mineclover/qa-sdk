@@ -90,7 +90,9 @@ WeakRef / AsyncIterator / CustomElements v1 / MutationObserver — Chrome 86+, F
 
 ## 변경 이력
 
-- **2026-04-27** — Phase B'3 완료, 본 spec 등록 (commit `55d70276`)
+- **2026-04-27** — Phase B'1/B'2/B'3 완료 + FU 4건 머지 (def-catalog 좌표, font 회귀 fix, CI e2e 잡, rlsc 통합 smoke)
+  - vendor `194264c` (main), monorepo `58cd8ae5` (main)
+  - 검증: vendor playwright 61/61, vendor vitest 42/42, bridge unit 8/8 + e2e 2/2, rlsc 155/155
 
 ## 참조
 

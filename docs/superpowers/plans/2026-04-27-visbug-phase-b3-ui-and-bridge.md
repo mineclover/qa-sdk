@@ -1,5 +1,12 @@
 # VisBug Phase B'3 — History Panel UI + visbug-bridge Implementation Plan
 
+> **Status: 완료 (2026-04-27)** — vendor SHA `793c0ff`, monorepo SHA `55d70276`. panel vitest 5/5 + bridge unit 8/8 + bridge e2e 2/2 PASS.
+>
+> **Notable details:**
+> - 포트 3300 → 4300 변경 (로컬 registry-service와 충돌)
+> - 브라우저 측 `'visbug'` import 해결을 위해 importmap 사용 (Vite 도입 회피)
+> - CI submodule fix 포함 (`.github/workflows/ci.yml`/`def-gate.yml`에 `submodules: recursive` 추가) — 이게 없으면 monorepo CI에서 `pnpm install` 실패
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Phase B'2의 edit-log API 위에 사용자 향 history panel UI를 얹고, qa-sdk 측 진입점인 `visbug-bridge` 패키지를 만들어 typed listener API를 노출.
