@@ -1,0 +1,250 @@
+tags:
+  - name: project
+    description: Project command and read-model API with policy lifecycle.
+paths:
+  /projects:
+    post:
+      tags: [project]
+      operationId: createProject
+      summary: Create a new project (draft state).
+      x-domain: project
+      x-architecture-slice: project-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectCommand"
+      responses:
+        "201":
+          description: Project created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectReadModelWithSpan"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          description: Access denied.
+    get:
+      tags: [project]
+      operationId: listProjects
+      summary: List projects by department or owner.
+      x-domain: project
+      x-architecture-slice: project-read-model-sync
+      parameters:
+        - name: departmentId
+          in: query
+          schema:
+            type: string
+        - name: ownerId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Projects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectReadModel"
+  /projects/{projectId}:
+    get:
+      tags: [project]
+      operationId: getProject
+      summary: Read project detail.
+      x-domain: project
+      x-architecture-slice: project-read-model-sync
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Project read model.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectReadModelWithSpan"
+        "404":
+          description: Project not found.
+        "403":
+          description: Access denied.
+    put:
+      tags: [project]
+      operationId: updateProject
+      summary: Update project properties.
+      x-domain: project
+      x-architecture-slice: project-command-write-model
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProjectCommand"
+      responses:
+        "200":
+          description: Project updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectReadModelWithSpan"
+    delete:
+      tags: [project]
+      operationId: deleteProject
+      summary: Delete a project (and its policy).
+      x-domain: project
+      x-architecture-slice: project-command-write-model
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Project deleted.
+  /projects/{projectId}/delegate:
+    post:
+      tags: [project]
+      operationId: delegateProject
+      summary: Move project policy to DELEGATED state.
+      x-domain: project
+      x-architecture-slice: project-command-write-model
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DelegateProjectCommand"
+      responses:
+        "200":
+          description: Project delegated.
+  /projects/{projectId}/delegates:
+    post:
+      tags: [project]
+      operationId: addProjectDelegate
+      summary: Append a delegate principal to project's authorization graph.
+      x-domain: project
+      x-architecture-slice: project-command-write-model
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddProjectDelegateCommand"
+      responses:
+        "200":
+          description: Delegate added.
+  /projects/{projectId}/delegation-graph:
+    get:
+      tags: [project]
+      operationId: getProjectDelegationGraph
+      summary: Read latest delegation graph snapshot.
+      x-domain: project
+      x-architecture-slice: project-read-model-sync
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Delegation graph snapshot.
+        "404":
+          description: Snapshot not found.
+components:
+  schemas:
+    CreateProjectCommand:
+      type: object
+      required: [name, departmentId]
+      properties:
+        name:
+          type: string
+        departmentId:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, archived]
+      additionalProperties: false
+    UpdateProjectCommand:
+      type: object
+      properties:
+        name:
+          type: string
+        departmentId:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, archived]
+      additionalProperties: false
+    DelegateProjectCommand:
+      type: object
+      required: [graphRootId, delegateUserId]
+      properties:
+        graphRootId:
+          type: string
+        delegateUserId:
+          type: string
+      additionalProperties: false
+    AddProjectDelegateCommand:
+      type: object
+      required: [delegateUserId]
+      properties:
+        delegateUserId:
+          type: string
+      additionalProperties: false
+    ProjectReadModel:
+      type: object
+      required: [id, name, ownerId, departmentId, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        ownerId:
+          type: string
+        departmentId:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, archived]
+          x-openmetadata-tags: [Tier.Tier1]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: false
+    ProjectReadModelWithSpan:
+      allOf:
+        - $ref: "#/components/schemas/ProjectReadModel"
+        - type: object
+          required: [rootSpanId]
+          properties:
+            rootSpanId:
+              type: string

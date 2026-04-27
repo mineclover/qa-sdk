@@ -1,9 +1,32 @@
 // @def.boundary sim-pm-api
 // @def.doc sim-erp-pm-design
 
-import { pgSchema, primaryKey, index, text } from "drizzle-orm/pg-core";
+import { pgSchema, primaryKey, index, text, bigint } from "drizzle-orm/pg-core";
 
 const sim = pgSchema("sim");
+
+/**
+ * Phase 3 — pm domain 의 모든 슬라이스가 공유하는 outbox 테이블.
+ *
+ * Slice 별 outbox factory 가 본 테이블을 참조한다. event_version/occurred_at 은
+ * BIGINT (epoch ms 호환) 로 두어 sqlite INTEGER 와 의미적 호환을 유지.
+ */
+export const pmOutboxEvents = sim.table(
+  "pm_outbox_events",
+  {
+    id: text("id").primaryKey(),
+    aggregate_id: text("aggregate_id").notNull(),
+    event_name: text("event_name").notNull(),
+    event_version: bigint("event_version", { mode: "number" }).notNull(),
+    payload: text("payload").notNull(),
+    occurred_at: bigint("occurred_at", { mode: "number" }).notNull(),
+    scope_id: text("scope_id").notNull(),
+    status: text("status", { enum: ["pending", "published", "failed"] })
+      .notNull()
+      .default("pending"),
+  },
+  (t) => [index("idx_sim_pm_outbox_status").on(t.status, t.occurred_at)],
+);
 
 export const projects = sim.table("pm_projects", {
   id: text("id").primaryKey(),
@@ -71,6 +94,18 @@ CREATE TABLE IF NOT EXISTS sim.pm_project_members (
   PRIMARY KEY (project_id, user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_sim_pm_member_user ON sim.pm_project_members(user_id);
+
+CREATE TABLE IF NOT EXISTS sim.pm_outbox_events (
+  id TEXT PRIMARY KEY,
+  aggregate_id TEXT NOT NULL,
+  event_name TEXT NOT NULL,
+  event_version BIGINT NOT NULL,
+  payload TEXT NOT NULL,
+  occurred_at BIGINT NOT NULL,
+  scope_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending'
+);
+CREATE INDEX IF NOT EXISTS idx_sim_pm_outbox_status ON sim.pm_outbox_events(status, occurred_at);
 `;
 
 export const SIM_PM_PG_RESET_DDL = `

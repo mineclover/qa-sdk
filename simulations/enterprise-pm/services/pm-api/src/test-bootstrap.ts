@@ -8,6 +8,7 @@
  * seedTestData({ projects, members }) 는 optional — fixture 시드 없이 API 호출만 테스트도 가능.
  */
 
+import { randomUUID } from "node:crypto";
 import { Test } from "@nestjs/testing";
 import type { DynamicModule } from "@nestjs/common";
 import { Module } from "@nestjs/common";
@@ -23,12 +24,11 @@ import {
   PM_REPOSITORY,
   type PmDbInstanceHandle,
 } from "./pm/pm-db.module.js";
-import { ProjectModule } from "./pm/project/project.module.js";
-import { TaskModule } from "./pm/task/task.module.js";
-import { MemberModule } from "./pm/member/member.module.js";
+import { PM_SLICE_MODULES } from "./pm/pm-slices.registry.js";
 import { AccessCheckerModule } from "./auth-deps/access-checker.module.js";
-import { ProjectService } from "./pm/project/project.service.js";
-import { MemberService } from "./pm/member/member.service.js";
+import { ProjectUseCase } from "./pm/project/application/use-cases/project.use-case.js";
+import { ProjectReadModelQuery } from "./pm/project/application/queries/project-read-model.query.js";
+import { MemberUseCase } from "./pm/member/application/use-cases/member.use-case.js";
 import type { PmRepository } from "./pm/shared/port.js";
 
 export { AppModule } from "./app.module.js";
@@ -108,9 +108,7 @@ function buildTestAppModule(opts: TestBootstrapOptions): DynamicModule {
           };
         },
       }),
-      ProjectModule,
-      TaskModule,
-      MemberModule,
+      ...PM_SLICE_MODULES,
       // BitmapCacheModule 은 운영용 — 테스트에서 생략
     ],
   })
@@ -161,12 +159,13 @@ export async function seedTestData(
   handle: TestPmApiHandle,
   input: TestSeedInput = {},
 ): Promise<TestSeedHandle> {
-  const projectSvc = handle.app.get(ProjectService);
-  const memberSvc = handle.app.get(MemberService);
+  const projectUseCase = handle.app.get(ProjectUseCase);
+  const memberUseCase = handle.app.get(MemberUseCase);
 
   const projects: TestProjectFixture[] = [];
   for (const p of input.projects ?? []) {
-    const created = await projectSvc.create({
+    const created = await projectUseCase.create({
+      id: randomUUID(),
       name: p.name,
       ownerId: p.ownerId,
       departmentId: p.departmentId,
@@ -179,7 +178,7 @@ export async function seedTestData(
     });
   }
   for (const m of input.members ?? []) {
-    await memberSvc.add({
+    await memberUseCase.add({
       projectId: m.projectId,
       userId: m.userId,
       role: m.role,
@@ -194,13 +193,18 @@ export async function createTestProject(
   handle: TestPmApiHandle,
   args: { name: string; ownerId: string; departmentId: string },
 ): Promise<TestProjectFixture> {
-  const svc = handle.app.get(ProjectService);
-  const p = await svc.create(args);
+  const useCase = handle.app.get(ProjectUseCase);
+  const created = await useCase.create({
+    id: randomUUID(),
+    name: args.name,
+    ownerId: args.ownerId,
+    departmentId: args.departmentId,
+  });
   return {
-    id: p.id,
-    name: p.name,
-    ownerId: p.ownerId,
-    departmentId: p.departmentId,
+    id: created.id,
+    name: created.name,
+    ownerId: created.ownerId,
+    departmentId: created.departmentId,
   };
 }
 
@@ -209,30 +213,37 @@ export async function delegateTestProject(
   handle: TestPmApiHandle,
   args: { projectId: string; graphRootId: string; delegateUserId: string },
 ): Promise<TestDelegationFixture> {
-  const svc = handle.app.get(ProjectService);
-  return svc.delegate(args);
+  const useCase = handle.app.get(ProjectUseCase);
+  return useCase.delegate({
+    id: args.projectId,
+    graphRootId: args.graphRootId,
+    delegateUserId: args.delegateUserId,
+  });
 }
 
 export async function addDelegateToProject(
   handle: TestPmApiHandle,
   args: { projectId: string; delegateUserId: string },
 ): Promise<TestAppendDelegationFixture> {
-  const svc = handle.app.get(ProjectService);
-  return svc.addDelegate(args);
+  const useCase = handle.app.get(ProjectUseCase);
+  return useCase.addDelegate({
+    id: args.projectId,
+    delegateUserId: args.delegateUserId,
+  });
 }
 
 export async function getDelegationGraph(
   handle: TestPmApiHandle,
   projectId: string,
 ): Promise<TestDelegationGraphFixture | null> {
-  const svc = handle.app.get(ProjectService);
-  const snapshot = await svc.getDelegationSnapshot(projectId);
+  const readModel = handle.app.get(ProjectReadModelQuery);
+  const snapshot = await readModel.findDelegationSnapshot(projectId);
   if (!snapshot) return null;
   return {
     graphId: snapshot.graphId,
     snapshotId: snapshot.snapshotId,
-    nodeCount: snapshot.graph.nodes.length,
-    relationCount: snapshot.graph.relations.length,
+    nodeCount: snapshot.nodeCount,
+    relationCount: snapshot.relationCount,
     graph: snapshot.graph as TestDelegationGraphFixture["graph"],
   };
 }

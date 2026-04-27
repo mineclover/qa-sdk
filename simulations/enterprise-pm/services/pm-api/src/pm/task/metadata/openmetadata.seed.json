@@ -1,0 +1,78 @@
+{
+  "openmetadata": {
+    "domain": {
+      "name": "Task",
+      "team": "PM Task Team",
+      "owner": "sim-pm-task-owner"
+    },
+    "glossary": [
+      {
+        "term": "Task",
+        "description": "A unit of work assigned to a project with a status lifecycle (todo, in_progress, blocked, done)."
+      },
+      {
+        "term": "Subtask",
+        "description": "A task that has a parent task — used for hierarchical decomposition of work."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "task-write-path",
+        "from": "pm.tasks",
+        "to": "pm.task_outbox",
+        "via": "transactional-outbox"
+      },
+      {
+        "name": "task-read-path",
+        "from": "pm.tasks",
+        "to": "experience.task_detail",
+        "via": "task-read-model"
+      }
+    ],
+    "qualityTests": [
+      {
+        "name": "task_status_values",
+        "type": "columnValuesToBeInSet",
+        "entity": "pm.tasks.status",
+        "values": ["todo", "in_progress", "done", "blocked"]
+      },
+      {
+        "name": "task_title_not_null",
+        "type": "columnNullCount",
+        "entity": "pm.tasks.title",
+        "maxNullCount": 0
+      }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "task-read-model",
+      "domain": "task",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "task-read-model",
+      "segments": [
+        {
+          "name": "taskId"
+        }
+      ],
+      "ttl": "medium",
+      "openmetadataEntity": "pm.tasks"
+    },
+    {
+      "id": "task-idempotency",
+      "domain": "task",
+      "purpose": "idempotency",
+      "version": "v1",
+      "prefix": "task-idempotency",
+      "segments": [
+        {
+          "name": "idempotencyKey",
+          "pii": false,
+          "encoding": "hash"
+        }
+      ],
+      "ttl": "short"
+    }
+  ]
+}

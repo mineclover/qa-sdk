@@ -1,0 +1,120 @@
+tags:
+  - name: member
+    description: Project member command and read-model API.
+paths:
+  /members:
+    post:
+      tags: [member]
+      operationId: addMember
+      summary: Add a member to a project.
+      x-domain: member
+      x-architecture-slice: member-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddMemberCommand"
+      responses:
+        "201":
+          description: Member added.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberReadModel"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    delete:
+      tags: [member]
+      operationId: removeMember
+      summary: Remove a member from a project.
+      x-domain: member
+      x-architecture-slice: member-command-write-model
+      parameters:
+        - name: projectId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Member removed.
+  /projects/{projectId}/members:
+    get:
+      tags: [member]
+      operationId: listMembersForProject
+      summary: List members for a project.
+      x-domain: member
+      x-architecture-slice: member-read-model-sync
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Members list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MemberReadModel"
+  /users/{userId}/projects:
+    get:
+      tags: [member]
+      operationId: listProjectsForUser
+      summary: List project memberships for a user.
+      x-domain: member
+      x-architecture-slice: member-read-model-sync
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Memberships list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MemberReadModel"
+components:
+  schemas:
+    AddMemberCommand:
+      type: object
+      required: [projectId, userId, role]
+      properties:
+        projectId:
+          type: string
+        userId:
+          type: string
+        role:
+          type: string
+          enum: [lead, contributor, viewer]
+      additionalProperties: false
+    MemberReadModel:
+      type: object
+      required: [projectId, userId, role, joinedAt]
+      properties:
+        projectId:
+          type: string
+        userId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        role:
+          type: string
+          enum: [lead, contributor, viewer]
+        joinedAt:
+          type: string
+          format: date-time
+      additionalProperties: false

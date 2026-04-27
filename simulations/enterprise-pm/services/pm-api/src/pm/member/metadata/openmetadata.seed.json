@@ -1,0 +1,81 @@
+{
+  "openmetadata": {
+    "domain": {
+      "name": "Member",
+      "team": "PM Member Team",
+      "owner": "sim-pm-member-owner"
+    },
+    "glossary": [
+      {
+        "term": "ProjectMember",
+        "description": "An association between a user and a project, with a role (lead/contributor/viewer)."
+      },
+      {
+        "term": "MemberRole",
+        "description": "Authorization role within a project. Lifecycle: viewer → contributor → lead (no direct viewer→lead)."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "member-write-path",
+        "from": "pm.project_members",
+        "to": "pm.member_outbox",
+        "via": "transactional-outbox"
+      },
+      {
+        "name": "member-read-path",
+        "from": "pm.project_members",
+        "to": "experience.project_members",
+        "via": "member-read-model"
+      }
+    ],
+    "qualityTests": [
+      {
+        "name": "member_role_values",
+        "type": "columnValuesToBeInSet",
+        "entity": "pm.project_members.role",
+        "values": ["lead", "contributor", "viewer"]
+      },
+      {
+        "name": "member_user_id_not_null",
+        "type": "columnNullCount",
+        "entity": "pm.project_members.user_id",
+        "maxNullCount": 0
+      }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "member-read-model",
+      "domain": "member",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "member-read-model",
+      "segments": [
+        {
+          "name": "projectId"
+        },
+        {
+          "name": "userId"
+        }
+      ],
+      "ttl": "medium",
+      "openmetadataEntity": "pm.project_members"
+    },
+    {
+      "id": "member-idempotency",
+      "domain": "member",
+      "purpose": "idempotency",
+      "version": "v1",
+      "prefix": "member-idempotency",
+      "segments": [
+        {
+          "name": "idempotencyKey",
+          "pii": false,
+          "encoding": "hash"
+        }
+      ],
+      "ttl": "short"
+    }
+  ]
+}

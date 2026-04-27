@@ -9,9 +9,7 @@ import {
   PM_REPOSITORY,
   type PmDbInstanceHandle,
 } from "./pm/pm-db.module.js";
-import { ProjectModule } from "./pm/project/project.module.js";
-import { TaskModule } from "./pm/task/task.module.js";
-import { MemberModule } from "./pm/member/member.module.js";
+import { PM_SLICE_MODULES } from "./pm/pm-slices.registry.js";
 import { AccessCheckerModule } from "./auth-deps/access-checker.module.js";
 import { BitmapCacheModule } from "@qa-sdk/sim-bitmap-cache";
 import { env } from "./config/env.js";
@@ -31,9 +29,7 @@ import type { PmRepository } from "./pm/shared/port.js";
         return { dialect: handle.dialect, db: handle.db, repo };
       },
     }),
-    ProjectModule,
-    TaskModule,
-    MemberModule,
+    ...PM_SLICE_MODULES,
     BitmapCacheModule.forRoot({
       redisUrl: env.SIM_REDIS_URL,
       publisherEnabled: false,

@@ -1,0 +1,108 @@
+{
+  "openmetadata": {
+    "domain": {
+      "name": "Project",
+      "team": "PM Project Team",
+      "owner": "sim-pm-project-owner"
+    },
+    "glossary": [
+      {
+        "term": "Project",
+        "description": "A unit of organized work with an owner, department, and a status lifecycle (draft, active, archived)."
+      },
+      {
+        "term": "ProjectStatus",
+        "description": "Lifecycle states of a project. Transitions: draft -> active, draft -> archived, active -> archived. Terminal: archived."
+      },
+      {
+        "term": "ProjectDelegation",
+        "description": "Authorization delegation graph linked to a project's resource policy (UNREGISTERED -> REGISTERED -> DELEGATED)."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "project-write-path",
+        "from": "pm.projects",
+        "to": "pm.project_outbox",
+        "via": "transactional-outbox"
+      },
+      {
+        "name": "project-read-path",
+        "from": "pm.projects",
+        "to": "experience.project_detail",
+        "via": "project-read-model"
+      },
+      {
+        "name": "project-policy-path",
+        "from": "pm.projects",
+        "to": "auth.resource_policies",
+        "via": "project-policy-lifecycle"
+      }
+    ],
+    "qualityTests": [
+      {
+        "name": "project_status_values",
+        "type": "columnValuesToBeInSet",
+        "entity": "pm.projects.status",
+        "values": ["draft", "active", "archived"]
+      },
+      {
+        "name": "project_owner_not_null",
+        "type": "columnNullCount",
+        "entity": "pm.projects.owner_id",
+        "maxNullCount": 0
+      },
+      {
+        "name": "project_department_not_null",
+        "type": "columnNullCount",
+        "entity": "pm.projects.department_id",
+        "maxNullCount": 0
+      }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "project-read-model",
+      "domain": "project",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "project-read-model",
+      "segments": [
+        {
+          "name": "projectId"
+        }
+      ],
+      "ttl": "medium",
+      "openmetadataEntity": "pm.projects"
+    },
+    {
+      "id": "project-delegation-graph",
+      "domain": "project",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "project-delegation-graph",
+      "segments": [
+        {
+          "name": "projectId"
+        }
+      ],
+      "ttl": "short",
+      "openmetadataEntity": "auth.resource_policies"
+    },
+    {
+      "id": "project-idempotency",
+      "domain": "project",
+      "purpose": "idempotency",
+      "version": "v1",
+      "prefix": "project-idempotency",
+      "segments": [
+        {
+          "name": "idempotencyKey",
+          "pii": false,
+          "encoding": "hash"
+        }
+      ],
+      "ttl": "short"
+    }
+  ]
+}
