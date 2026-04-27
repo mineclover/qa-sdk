@@ -166,6 +166,8 @@ Phase 1 종료 시 다음 표가 채워져 Phase 2 에이전트가 정확히 어
 SLICE=services/pm-api/src/pm/task
 SVC=pm-api
 
+# qa-scaffold 는 dist/cli.js 를 가리키므로 최초/변경 시 빌드 선행
+pnpm --filter @qa-sdk/scaffold build
 pnpm --filter @qa-sdk/sim-enterprise-pm-$SVC build
 pnpm --filter @qa-sdk/sim-enterprise-pm-$SVC test --filter "task"
 pnpm exec qa-scaffold validate $SLICE

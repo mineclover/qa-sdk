@@ -60,7 +60,8 @@ jobs:
         run: pnpm --filter @qa-sdk/sim-domain-slice-kit build
 
       - name: Build architecture-schematics (validator CLI)
-        run: pnpm --filter architecture-schematics build
+        # qa-scaffold bin 은 dist/cli.js 를 가리키므로 빌드가 선행되어야 한다.
+        run: pnpm --filter @qa-sdk/scaffold build
 
       - name: Validate every migration slice (per-slice validator)
         shell: bash
@@ -94,7 +95,7 @@ jobs:
           )
           fail=0
           for p in "${paths[@]}"; do
-            if ! node packages/architecture-schematics/dist/cli.js validate "$p"; then
+            if ! pnpm exec qa-scaffold validate "$p"; then
               echo "FAIL: $p"
               fail=1
             fi

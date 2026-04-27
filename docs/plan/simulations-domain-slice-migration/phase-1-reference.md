@@ -139,7 +139,9 @@ pg 버전도 동등하게 추가.
 ```bash
 pnpm --filter @qa-sdk/sim-enterprise-pm-pm-api build
 pnpm --filter @qa-sdk/sim-enterprise-pm-pm-api test
-pnpm --filter @qa-sdk/scaffold exec qa-scaffold validate \
+# qa-scaffold 는 dist/cli.js 를 가리키므로 최초/변경 시 빌드 선행
+pnpm --filter @qa-sdk/scaffold build
+pnpm exec qa-scaffold validate \
   simulations/enterprise-pm/services/pm-api/src/pm/assignment
 pnpm --filter @qa-sdk/sim-enterprise-pm-scenarios test architecture-manifest
 ```

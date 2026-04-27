@@ -70,6 +70,8 @@ jobs:
     steps:
       - run: pnpm install
       - run: pnpm --filter sim-domain-slice-kit build
+      # qa-scaffold 는 dist/cli.js 를 bin 으로 가리키므로 빌드 선행 필수
+      - run: pnpm --filter @qa-sdk/scaffold build
       - run: pnpm exec qa-scaffold validate simulations/enterprise-pm/services
       - run: node simulations/enterprise-pm/contracts/openapi/scripts/check-merge.mjs
       - run: pnpm --filter @qa-sdk/sim-enterprise-pm-scenarios test architecture-manifest
