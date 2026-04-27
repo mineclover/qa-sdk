@@ -166,6 +166,99 @@ describe("validateArchitecture", () => {
     expect(result.issues.map((issue) => issue.ruleId)).toContain("bounded-context-uses-contracts");
   });
 
+  it("treats read-model topology as transaction/use-case exempt", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/application/queries/payment-read-model.query.ts",
+        content: "export class PaymentReadModelQuery {}",
+      },
+      {
+        path: "src/modules/payment/infrastructure/read-model/payment.read-model.ts",
+        content: "export class PaymentReadModel {}",
+      },
+      {
+        path: "src/modules/payment/metadata/openmetadata.seed.json",
+        content: JSON.stringify({
+          topology: "read-model",
+          cacheKeys: [{ id: "payment-read-model" }],
+        }),
+      },
+    ]);
+    expect(result).toEqual({ ok: true, issues: [] });
+  });
+
+  it("requires read-model artifact when topology declares read-model", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/domain/payment.types.ts",
+        content: "export interface Payment {}",
+      },
+      {
+        path: "src/modules/payment/metadata/openmetadata.seed.json",
+        content: JSON.stringify({
+          topology: "read-model",
+          cacheKeys: [{ id: "payment-read-model" }],
+        }),
+      },
+    ]);
+    expect(result.ok).toBe(false);
+    expect(result.issues.map((issue) => issue.ruleId)).toContain("topology-shape-mismatch");
+  });
+
+  it("treats bff topology as transaction/outbox exempt", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/modules/payment/presentation/bff/payment-detail.bff.ts",
+        content: "export class PaymentDetailBff {}",
+      },
+      {
+        path: "src/modules/payment/metadata/openmetadata.seed.json",
+        content: JSON.stringify({
+          topology: "bff",
+          cacheKeys: [{ id: "payment-bff-detail" }],
+        }),
+      },
+    ]);
+    expect(result).toEqual({ ok: true, issues: [] });
+  });
+
+  it("treats command-only topology as read-model/entity exempt", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/modules/login/application/use-cases/login.use-case.ts",
+        content: [
+          'import { LoginTransactionPort } from "../ports/login-transaction.port";',
+          'import { LoginLoggerPort } from "../ports/login-logger.port";',
+          "export class LoginUseCase {",
+          "  constructor(tx: LoginTransactionPort, logger: LoginLoggerPort) {}",
+          "}",
+        ].join("\n"),
+      },
+      {
+        path: "src/modules/login/metadata/openmetadata.seed.json",
+        content: JSON.stringify({ topology: "command-only", cacheKeys: [] }),
+      },
+    ]);
+    expect(result).toEqual({ ok: true, issues: [] });
+  });
+
+  it("treats read-mostly topology as transaction/outbox exempt and requires read-model cache", () => {
+    const result = validateArchitecture([
+      {
+        path: "src/modules/bitmap/infrastructure/read-model/bitmap.read-model.ts",
+        content: "export class BitmapReadModel {}",
+      },
+      {
+        path: "src/modules/bitmap/metadata/openmetadata.seed.json",
+        content: JSON.stringify({
+          topology: "read-mostly",
+          cacheKeys: [{ id: "bitmap-read-model" }],
+        }),
+      },
+    ]);
+    expect(result).toEqual({ ok: true, issues: [] });
+  });
+
   it("flags path alias based cross-domain deep imports", () => {
     const result = validateArchitecture([
       {

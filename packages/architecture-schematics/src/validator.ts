@@ -22,10 +22,40 @@ export interface ArchitectureValidationResult {
 
 type Layer = "domain" | "application" | "infrastructure" | "presentation" | "module" | "unknown";
 
+/**
+ * 슬라이스 위상 (topology).
+ *
+ * Validator 가 슬라이스 별 룰을 first-class 로 분기할 때 사용하는 식별자다.
+ * `metadata/openmetadata.seed.json` 의 top-level `topology` 필드 또는 (폴백)
+ * 슬라이스 내부 시그너처로 추론한다.
+ *
+ * - `service`: aggregate + use-case + outbox 가 정상인 표준 도메인 슬라이스 (기본값).
+ * - `read-model`: 쓰기 명령은 admin port 로 분리되고 application/queries/* +
+ *    infrastructure/read-model/* 가 핵심 산출물. transaction/outbox/use-case 부재가 정상.
+ * - `bff`: presentation/bff/* 합성 슬라이스. aggregate/transaction/outbox 부재가 정상.
+ * - `command-only`: aggregate 없는 순수 command (예: authenticate). entity/read-model 부재가 정상.
+ * - `read-mostly`: read-model 위주 cache/lookup (예: bitmap). transaction/outbox 부재가 정상.
+ */
+export type SliceTopology = "service" | "read-model" | "bff" | "command-only" | "read-mostly";
+
+const KNOWN_TOPOLOGIES: ReadonlySet<SliceTopology> = new Set([
+  "service",
+  "read-model",
+  "bff",
+  "command-only",
+  "read-mostly",
+]);
+
 export function validateArchitecture(files: readonly SourceFileInput[]): ArchitectureValidationResult {
+  const slices = groupByDomainSlice(files);
+  const topologyByRoot = new Map<string, SliceTopology>();
+  for (const [root, sliceFiles] of slices) {
+    topologyByRoot.set(root, resolveTopology(sliceFiles));
+  }
+
   const issues = [
-    ...files.flatMap(validateFile),
-    ...validateDomainSlices(files),
+    ...files.flatMap((file) => validateFile(file, topologyByRoot)),
+    ...validateDomainSlices(files, slices, topologyByRoot),
   ];
   return {
     ok: issues.every((issue) => issue.severity !== "error"),
@@ -33,7 +63,10 @@ export function validateArchitecture(files: readonly SourceFileInput[]): Archite
   };
 }
 
-function validateFile(file: SourceFileInput): ArchitectureIssue[] {
+function validateFile(
+  file: SourceFileInput,
+  topologyByRoot: ReadonlyMap<string, SliceTopology>,
+): ArchitectureIssue[] {
   const issues: ArchitectureIssue[] = [];
 
   if (isOpenApiFile(file.path) && file.content.includes("Entity")) {
@@ -97,7 +130,14 @@ function validateFile(file: SourceFileInput): ArchitectureIssue[] {
   }
 
   if (isUseCaseFile(file.path)) {
-    if (!file.content.includes("TransactionPort")) {
+    const sliceRoot = domainSliceRoot(file.path);
+    const topology = sliceRoot ? topologyByRoot.get(sliceRoot) ?? "service" : "service";
+    // read-model / bff / read-mostly 는 use-case 자체가 흔치 않지만, 만에 하나 존재한다면
+    // logger 만 강제하고 transaction port 는 강제하지 않는다 (쓰기 책임 부재).
+    const enforceTransactionPort =
+      topology === "service" || topology === "command-only";
+
+    if (enforceTransactionPort && !file.content.includes("TransactionPort")) {
       issues.push(createIssue(
         "transaction-and-logging-are-ports",
         file.path,
@@ -137,11 +177,16 @@ function validateFile(file: SourceFileInput): ArchitectureIssue[] {
   return issues;
 }
 
-function validateDomainSlices(files: readonly SourceFileInput[]): ArchitectureIssue[] {
+function validateDomainSlices(
+  files: readonly SourceFileInput[],
+  slices: ReadonlyMap<string, SourceFileInput[]>,
+  topologyByRoot: ReadonlyMap<string, SliceTopology>,
+): ArchitectureIssue[] {
   const issues: ArchitectureIssue[] = [];
-  const slices = groupByDomainSlice(files);
 
   for (const [root, sliceFiles] of slices) {
+    const topology = topologyByRoot.get(root) ?? "service";
+
     if (!isDomainSliceProperlyGrouped(root, files)) {
       issues.push(createIssue(
         "domain-slice-under-modules",
@@ -162,7 +207,14 @@ function validateDomainSlices(files: readonly SourceFileInput[]): ArchitectureIs
     const hasUnitOfWork = sliceFiles.some((file) => file.path.includes("/infrastructure/transaction/")
       && file.path.endsWith(".unit-of-work.ts"));
 
-    if (hasTransactionPort && hasOutboxPort && !hasUnitOfWork) {
+    // 위상 별 룰 분기.
+    //
+    // - service / command-only: transaction + outbox 가 함께 선언되면 unit-of-work 필수.
+    // - read-model / bff / read-mostly: 트랜잭션 자체가 위상상 부재해야 정상.
+    //   (admin port 로 분리된 변형 명령은 service 슬라이스가 책임지지 않음)
+    const enforceTxOutboxUow =
+      topology === "service" || topology === "command-only";
+    if (enforceTxOutboxUow && hasTransactionPort && hasOutboxPort && !hasUnitOfWork) {
       issues.push(createIssue(
         "transaction-outbox-use-unit-of-work",
         root,
@@ -171,6 +223,9 @@ function validateDomainSlices(files: readonly SourceFileInput[]): ArchitectureIs
       ));
     }
 
+    // 위상이 명시되지 않은 슬라이스에서 read-model/BFF 시그너처가 보이는데 metadata 가
+    // 없다면 governance seed 누락으로 판단. 위상이 'service' 라도 read-model/BFF
+    // 시그너처가 보이면 동일하게 강제 (legacy 컨벤션 호환).
     if ((hasReadModel || hasBff) && !metadata) {
       issues.push(createIssue(
         "metadata-ships-with-domain-slice",
@@ -181,11 +236,32 @@ function validateDomainSlices(files: readonly SourceFileInput[]): ArchitectureIs
       continue;
     }
 
+    // 위상에 따라 metadata 필수성을 강제 — read-model/bff/read-mostly 는 OM seed 가
+    // governance SSOT 이므로 반드시 존재해야 한다.
+    if (
+      !metadata
+      && (topology === "read-model" || topology === "bff" || topology === "read-mostly")
+    ) {
+      issues.push(createIssue(
+        "metadata-ships-with-domain-slice",
+        root,
+        "",
+        `${topology} domain slice must include metadata/openmetadata.seed.json.`,
+      ));
+      continue;
+    }
+
     if (!metadata) continue;
 
     const cacheIds = readCacheKeyIds(metadata);
     const domainName = root.split("/").at(-1) ?? "domain";
-    if (hasReadModel && !cacheIds.some((id) => id.includes("read-model"))) {
+
+    // read-model / bff cache key 강제는 위상 또는 시그너처가 명시할 때만 발동.
+    // 'service' 위상에서도 read-model 시그너처가 있으면 cache key 를 요구한다 (호환).
+    const requiresReadModelCache =
+      topology === "read-model" || topology === "read-mostly"
+      || (topology === "service" && hasReadModel);
+    if (requiresReadModelCache && !cacheIds.some((id) => id.includes("read-model"))) {
       issues.push(createIssue(
         "metadata-ships-with-domain-slice",
         metadata.path,
@@ -193,7 +269,10 @@ function validateDomainSlices(files: readonly SourceFileInput[]): ArchitectureIs
         "Read model domain slice must include a read-model cache key metadata entry.",
       ));
     }
-    if (hasBff && !cacheIds.some((id) => id.includes("bff"))) {
+
+    const requiresBffCache =
+      topology === "bff" || (topology === "service" && hasBff);
+    if (requiresBffCache && !cacheIds.some((id) => id.includes("bff"))) {
       issues.push(createIssue(
         "metadata-ships-with-domain-slice",
         metadata.path,
@@ -201,9 +280,73 @@ function validateDomainSlices(files: readonly SourceFileInput[]): ArchitectureIs
         `BFF domain slice must include a BFF cache key metadata entry for ${domainName}.`,
       ));
     }
+
+    // 위상 별 산출물 가시성 — read-model/bff 는 본체 산출물이 위상에 맞춰 존재해야 한다.
+    if (topology === "read-model" && !hasReadModel) {
+      issues.push(createIssue(
+        "topology-shape-mismatch",
+        root,
+        "",
+        "read-model topology slice must ship application/queries/* or infrastructure/read-model/*.",
+      ));
+    }
+    if (topology === "bff" && !hasBff) {
+      issues.push(createIssue(
+        "topology-shape-mismatch",
+        root,
+        "",
+        "bff topology slice must ship presentation/bff/* surface.",
+      ));
+    }
   }
 
   return issues;
+}
+
+/**
+ * 슬라이스의 위상을 결정한다.
+ *
+ * 1순위: `metadata/openmetadata.seed.json` 의 top-level `topology` 필드.
+ * 2순위: 슬라이스 디렉터리 시그너처 (presentation/bff → bff, queries/read-model → read-model).
+ * 3순위 (기본): `service`.
+ *
+ * 1순위가 우선이지만, 명시된 값이 알려진 위상이 아니면 fall through 한다 (unknown 값 무시).
+ */
+function resolveTopology(sliceFiles: readonly SourceFileInput[]): SliceTopology {
+  const metadata = sliceFiles.find((file) =>
+    file.path.endsWith("/metadata/openmetadata.seed.json"));
+  if (metadata) {
+    const declared = readDeclaredTopology(metadata);
+    if (declared) return declared;
+  }
+
+  const hasBff = sliceFiles.some((file) => file.path.includes("/presentation/bff/"));
+  if (hasBff) return "bff";
+
+  const hasUseCase = sliceFiles.some((file) =>
+    file.path.includes("/application/use-cases/")
+    && file.path.endsWith(".use-case.ts"));
+  const hasReadModelArtifact = sliceFiles.some((file) =>
+    file.path.includes("/application/queries/")
+    || file.path.includes("/infrastructure/read-model/"));
+  if (hasReadModelArtifact && !hasUseCase) {
+    return "read-model";
+  }
+
+  return "service";
+}
+
+function readDeclaredTopology(file: SourceFileInput): SliceTopology | null {
+  try {
+    const parsed = JSON.parse(file.content) as { topology?: unknown };
+    const value = parsed.topology;
+    if (typeof value === "string" && KNOWN_TOPOLOGIES.has(value as SliceTopology)) {
+      return value as SliceTopology;
+    }
+  } catch {
+    // ignore — JSON parse 오류는 다른 governance check 에서 잡는다.
+  }
+  return null;
 }
 
 function isDomainSliceUnderModules(root: string): boolean {
