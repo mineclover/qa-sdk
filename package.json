@@ -38,6 +38,7 @@
     ]
   },
   "devDependencies": {
+    "@qa-sdk/scaffold": "workspace:*",
     "concurrently": "^9.2.1",
     "oxfmt": "^0.42.0",
     "oxlint": "^1.57.0",

@@ -32,6 +32,9 @@ importers:
 
   .:
     devDependencies:
+      '@qa-sdk/scaffold':
+        specifier: workspace:*
+        version: link:packages/architecture-schematics
       concurrently:
         specifier: ^9.2.1
         version: 9.2.1
