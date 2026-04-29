@@ -29,15 +29,21 @@ WORKDIR /workspace
 RUN apk add --no-cache python3 make g++ libc6-compat
 RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
 
-# workspace 메타 + lockfile (캐시 최적화)
-COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+# workspace 메타 + 루트 tsconfig + lockfile (캐시 최적화)
+# tsconfig.json은 sub-package들의 "extends": "../../tsconfig.json"이 참조하므로 필수
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.json ./
 COPY packages packages
 
-# ingest-server와 그 의존만 install
-RUN pnpm install --frozen-lockfile --filter "...{./packages/ingest-server}"
+# ingest-server와 그 의존을 함께 install
+# pnpm filter 문법: "@qa-sdk/ingest-server..."는 ingest-server + 모든 transitive deps를 매치한다
+# (참고: "...{./packages/ingest-server}" 는 path 기준 정확히 1 package만 매치하므로 deps 누락)
+RUN pnpm install --frozen-lockfile --filter "@qa-sdk/ingest-server..."
 
 # ingest-server + 의존 패키지 build
-RUN pnpm --filter "...{./packages/ingest-server}" run build
+# "!@qa-sdk/spec-core" 제외: spec-core는 본 사이클 외부의 pre-existing 빌드 결함이 있고
+# (spec-transition / dkg / @qa-sdk/core import 미해결), ingest-server는 이를 *_ENABLED=true 일 때만
+# dynamic import 하므로 default(memory) 부팅에 영향 없음. spec-core 결함은 별도 sub-project로 처리.
+RUN pnpm --filter "@qa-sdk/ingest-server..." --filter "!@qa-sdk/spec-core" run build
 
 # ============================================================
 # Stage 2: runtime — 경량 런타임
@@ -50,14 +56,17 @@ RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
 
 ENV NODE_ENV=production
 ENV PORT=3200
+# pnpm 10.30.3은 TTY 없는 환경에서 modules dir 정리 시 confirmation을 요구하므로
+# CI=true 또는 --config.confirmModulesPurge=false 가 필요하다.
+ENV CI=true
 
 # 빌더에서 산출물만 복사
 COPY --from=builder /workspace /app
 
 WORKDIR /app/packages/ingest-server
 
-# 런타임 의존만 재설치
-RUN pnpm install --prod --frozen-lockfile --filter "...{./}"
+# 런타임 의존만 재설치 (filter 문법은 builder stage와 동일 사유로 "..." prefix 사용)
+RUN pnpm install --prod --frozen-lockfile --filter "@qa-sdk/ingest-server..."
 
 EXPOSE 3200
 

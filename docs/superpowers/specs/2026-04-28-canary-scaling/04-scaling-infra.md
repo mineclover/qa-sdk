@@ -371,6 +371,13 @@ qa-sdk-ingest:
 
 이미지 태그 `qa-sdk/ingest-server:latest`는 단순 dev 용. CI/release 빌드는 grammar #3 version axis 값이 들어간 태그(`qa-sdk/ingest-server:0.42.0`)로 고정 핀.
 
+**빌드 제약 (Plan A 단계 1.1 구현 검증으로 확정).** `packages/ingest-server/Dockerfile`은 모노레포 root 컨텍스트에서 빌드되며 다음 제약을 갖는다. 상세 Dockerfile 텍스트는 `docs/superpowers/plans/2026-04-28-canary-scaling/A-stage-1-host-and-ingest.md` Task 1.1을 SSOT로 참조한다.
+
+- pnpm filter 문법은 path 기반(`"...{./packages/ingest-server}"`)이 아니라 **package-name 기반**(`"@qa-sdk/ingest-server..."`)을 사용한다. path 기반은 transitive deps를 매치하지 않아 빌드가 깨진다.
+- 루트 `tsconfig.json`을 빌더 컨텍스트에 함께 COPY해야 한다. sub-package들이 `"extends": "../../tsconfig.json"`로 참조하기 때문.
+- 런타임 stage는 `ENV CI=true`를 갖는다. pnpm 10.30.3이 TTY 부재 시 modules dir 정리 confirmation을 요구하기 때문.
+- 빌드 set에서 `@qa-sdk/spec-core`는 `--filter "!@qa-sdk/spec-core"`로 제외한다. spec-core는 본 사이클 외부의 pre-existing 빌드 결함(`spec-transition`/`dkg`/`@qa-sdk/core` import 미해결)이 있고, ingest-server는 이를 `*_ENABLED=true`일 때만 dynamic import 하므로 default(memory) 부팅에 영향이 없다. spec-core 결함 자체는 별도 sub-project로 처리한다(`06-roadmap.md` §4 후속 항목 ⓥ로 추가 후보).
+
 ### 6.4 OTel collector 옵션 처리
 
 OTel 비활성 환경(default sim)에서는 `qa-sdk-otel-collector` entry 자체를 docker-compose의 별도 profile(`profiles: ["telemetry"]`)에 둔다. `pnpm sim:up`은 default profile만 띄우므로 OTel 컨테이너 미기동·env 미설정이 자연스럽게 정합한다. telemetry 검증이 필요한 시나리오만 `pnpm sim:up --profile telemetry`로 활성화 — 시나리오 fixture가 명시적으로 require하면 controller가 launch 단계에서 검증.
