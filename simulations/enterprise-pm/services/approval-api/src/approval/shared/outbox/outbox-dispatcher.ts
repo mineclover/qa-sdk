@@ -19,7 +19,10 @@
  */
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { Sql } from "postgres";
-import { parseIdempotencyKey } from "sim-identifier-grammar";
+import {
+  buildIdempotencyKey,
+  parseIdempotencyKey,
+} from "sim-identifier-grammar";
 
 export interface OutboxEvent {
   readonly id: string;
@@ -67,7 +70,7 @@ export function createOutboxDispatcher(
       let processed = 0;
       // tx 단위로 SELECT FOR UPDATE 락을 잡는다.
       await opts.sql.begin(async (tx) => {
-        // §2.1 폴링 락
+        // §2.1 폴링 락 — status='pending' 또는 backoff 만료된 'failed' row 모두 대상.
         const rows = await tx<
           {
             id: string;
@@ -79,7 +82,7 @@ export function createOutboxDispatcher(
         >`
           SELECT id, aggregate_id, event_name, payload, idempotency_key
           FROM sim.approval_outbox_events
-          WHERE status = 'pending'
+          WHERE status IN ('pending', 'failed')
             AND (next_attempt_at IS NULL OR next_attempt_at <= ${Date.now()})
           ORDER BY occurred_at
           LIMIT ${opts.batchSize}
@@ -97,36 +100,35 @@ export function createOutboxDispatcher(
             idempotencyKey: row.idempotency_key,
           };
 
-          // §2.2 consumer-log 진입 — 다른 dispatcher 가 이미 처리했다면 RETURNING 비어 있음.
-          const claimed = await tx<{ idempotency_key: string }[]>`
-            INSERT INTO sim.outbox_consumer_log (idempotency_key, consumer, processed_at)
-            VALUES (${evt.idempotencyKey}, ${opts.consumerName}, ${Date.now()})
-            ON CONFLICT (idempotency_key, consumer) DO NOTHING
-            RETURNING idempotency_key`;
-
-          if (claimed.length === 0) {
-            // 다른 dispatcher 가 이미 처리 → status 만 dispatched 로 정리(silent skip).
-            await tx`
-              UPDATE sim.approval_outbox_events
-              SET status = 'dispatched', dispatched_at = ${Date.now()}
-              WHERE id = ${row.id} AND status = 'pending'`;
-            continue;
-          }
-
           try {
+            // consume 먼저 실행 — 성공 시에만 §2.2 consumer-log 에 기록한다.
+            // 같은 (key, consumer) 중복 INSERT race 는 ON CONFLICT 가 흡수.
             await opts.consume(evt);
-            // §2.3 status 전이 — AND status='pending' 가드로 동시성 자연 no-op.
+
+            // §2.2 멱등성 키 — 다른 dispatcher 가 이미 동일 (key, consumer) 로 처리했다면
+            // RETURNING 이 비어 silent skip. 우리 자신의 retry path 는 이 분기에 도달하지
+            // 않는다 (실패 시 catch 분기에서 retry/dlq 처리, 성공 시에만 본 INSERT 도달).
+            const claimed = await tx<{ idempotency_key: string }[]>`
+              INSERT INTO sim.outbox_consumer_log (idempotency_key, consumer, processed_at)
+              VALUES (${evt.idempotencyKey}, ${opts.consumerName}, ${Date.now()})
+              ON CONFLICT (idempotency_key, consumer) DO NOTHING
+              RETURNING idempotency_key`;
+
+            // §2.3 status 전이 — AND status IN ('pending','failed') 가드로 동시성 자연 no-op.
             await tx`
               UPDATE sim.approval_outbox_events
               SET status = 'dispatched', dispatched_at = ${Date.now()}
-              WHERE id = ${row.id} AND status = 'pending'`;
-            processed++;
+              WHERE id = ${row.id} AND status IN ('pending', 'failed')`;
+
+            // claimed.length === 0 이면 다른 dispatcher 가 이미 처리한 것 → 본 dispatcher 도
+            // 이미 consume 했으므로 결과적으로 중복 효과 0. status 만 정리 후 다음 row.
+            if (claimed.length > 0) processed++;
           } catch {
             // §2.3 retry/backoff/DLQ.
             const next = await tx<{ retry_count: number }[]>`
               UPDATE sim.approval_outbox_events
               SET retry_count = retry_count + 1
-              WHERE id = ${row.id} AND status = 'pending'
+              WHERE id = ${row.id} AND status IN ('pending', 'failed')
               RETURNING retry_count`;
             const newCount = next[0]?.retry_count ?? 0;
 
@@ -139,7 +141,14 @@ export function createOutboxDispatcher(
               // DLQ 진입 자체를 outbox 이벤트로 발행 — controller 안전 가드 카테고리 신호.
               const dlqEventName = "approval.outbox.dlq-entered";
               const dlqId = `dlq-${row.id}`;
-              const dlqIdempotencyKey = `dlq:${row.idempotency_key}`;
+              // DLQ 이벤트의 idempotencyKey 도 grammar #12 형식 준수.
+              // aggregateId 는 원본 row.id 를 kebab-safe 한 형태로 prefix 한다.
+              const dlqOccurredAt = Date.now();
+              const dlqIdempotencyKey = buildIdempotencyKey({
+                aggregateId: `dlq-${row.id}`.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+                eventName: dlqEventName,
+                occurredAt: dlqOccurredAt,
+              });
               await tx`
                 INSERT INTO sim.approval_outbox_events
                   (id, aggregate_id, event_name, event_version, payload,
@@ -150,7 +159,7 @@ export function createOutboxDispatcher(
                   ${dlqEventName},
                   1,
                   ${JSON.stringify({ originId: row.id, eventName: row.event_name })},
-                  ${Date.now()},
+                  ${dlqOccurredAt},
                   'tx-dlq',
                   'pending',
                   ${dlqIdempotencyKey},
