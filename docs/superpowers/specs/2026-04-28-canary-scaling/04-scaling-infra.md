@@ -376,7 +376,9 @@ qa-sdk-ingest:
 - pnpm filter 문법은 path 기반(`"...{./packages/ingest-server}"`)이 아니라 **package-name 기반**(`"@qa-sdk/ingest-server..."`)을 사용한다. path 기반은 transitive deps를 매치하지 않아 빌드가 깨진다.
 - 루트 `tsconfig.json`을 빌더 컨텍스트에 함께 COPY해야 한다. sub-package들이 `"extends": "../../tsconfig.json"`로 참조하기 때문.
 - 런타임 stage는 `ENV CI=true`를 갖는다. pnpm 10.30.3이 TTY 부재 시 modules dir 정리 confirmation을 요구하기 때문.
-- 빌드 set에서 `@qa-sdk/spec-core`는 `--filter "!@qa-sdk/spec-core"`로 제외한다. spec-core는 본 사이클 외부의 pre-existing 빌드 결함(`spec-transition`/`dkg`/`@qa-sdk/core` import 미해결)이 있고, ingest-server는 이를 `*_ENABLED=true`일 때만 dynamic import 하므로 default(memory) 부팅에 영향이 없다. spec-core 결함 자체는 별도 sub-project로 처리한다(`06-roadmap.md` §4 후속 항목 ⓥ로 추가 후보).
+- 빌드 set에서 `@qa-sdk/spec-core`는 `--filter "!@qa-sdk/spec-core"`로 제외한다. spec-core는 본 사이클 외부의 pre-existing 빌드 결함(`spec-transition`/`dkg`/`@qa-sdk/core` import 미해결)이 있고, ingest-server는 이를 `*_ENABLED=true`일 때만 dynamic import 하므로 default(memory) 부팅에 영향이 없다.
+- 빌드 set에서 `viz-core`도 `--filter "!viz-core"`로 함께 제외한다. `packages/core`의 devDeps에 `viz-core`가 등록되어 있고(`packages/core/src/**/*.test.ts`에서만 사용되어 core tsconfig는 test 파일을 제외함) `viz-core`의 prod deps에 `@qa-sdk/core`가 있어 devDeps cycle이 형성된다. pnpm은 cycle 시 토폴로지 정렬을 포기하고 두 패키지를 병렬 빌드하므로 `viz-core` DTS 단계가 `@qa-sdk/core/dist/index.d.ts` 부재 상태에서 `TS2307`로 실패한다. `viz-core`는 ingest-server runtime과 무관하므로 안전하게 제외 가능.
+- 위 두 결함(spec-core 빌드 / core↔viz-core devDeps cycle)은 본 사이클 범위 밖의 모노레포 build hygiene 이슈로, 별도 sub-project로 처리한다(`06-roadmap.md` §4 후속 항목으로 추가 후보).
 
 ### 6.4 OTel collector 옵션 처리
 

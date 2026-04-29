@@ -43,7 +43,12 @@ RUN pnpm install --frozen-lockfile --filter "@qa-sdk/ingest-server..."
 # "!@qa-sdk/spec-core" 제외: spec-core는 본 사이클 외부의 pre-existing 빌드 결함이 있고
 # (spec-transition / dkg / @qa-sdk/core import 미해결), ingest-server는 이를 *_ENABLED=true 일 때만
 # dynamic import 하므로 default(memory) 부팅에 영향 없음. spec-core 결함은 별도 sub-project로 처리.
-RUN pnpm --filter "@qa-sdk/ingest-server..." --filter "!@qa-sdk/spec-core" run build
+# "!viz-core" 제외: @qa-sdk/core devDeps에 viz-core가 있고 viz-core prod deps에 @qa-sdk/core가 있어
+# devDeps cycle이 형성된다. pnpm은 cycle 시 토폴로지 정렬을 포기하고 병렬 실행하므로 viz-core DTS
+# 빌드가 @qa-sdk/core/dist/*.d.ts 를 못 찾아 TS2307. viz-core는 ingest-server의 런타임 의존이 아니고
+# (오직 packages/core/src/**/*.test.ts에서만 import 되며 core tsconfig는 test 제외), 빌드에서 빼도
+# default(memory) 부팅에 영향 없음. devDeps cycle 결함은 별도 sub-project로 처리.
+RUN pnpm --filter "@qa-sdk/ingest-server..." --filter "!@qa-sdk/spec-core" --filter "!viz-core" run build
 
 # ============================================================
 # Stage 2: runtime — 경량 런타임
@@ -66,7 +71,9 @@ COPY --from=builder /workspace /app
 WORKDIR /app/packages/ingest-server
 
 # 런타임 의존만 재설치 (filter 문법은 builder stage와 동일 사유로 "..." prefix 사용)
-RUN pnpm install --prod --frozen-lockfile --filter "@qa-sdk/ingest-server..."
+# --prod 는 devDeps를 traverse하지 않으므로 viz-core/spec-core가 자연스럽게 빠지지만,
+# 명시적으로 제외해서 builder stage와 일관성 유지.
+RUN pnpm install --prod --frozen-lockfile --filter "@qa-sdk/ingest-server..." --filter "!@qa-sdk/spec-core" --filter "!viz-core"
 
 EXPOSE 3200
 
