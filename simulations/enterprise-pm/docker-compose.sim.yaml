@@ -41,6 +41,39 @@ services:
     networks:
       - default
 
+  # qa-sdk-* — 시뮬 외부 인프라 (canary stage-1: 컨테이너 내부 호스팅)
+  qa-sdk-ingest:
+    image: qa-sdk/ingest-server:latest
+    build:
+      context: ../..
+      dockerfile: packages/ingest-server/Dockerfile
+    environment:
+      PORT: 3200
+      STORE_DRIVER: pg
+      QA_PG_HOST: qa-sdk-db
+      QA_PG_PORT: 5432
+      QA_PG_DATABASE: qa_sdk
+      QA_PG_USER: ingest_app
+      QA_PG_PASSWORD: ${QA_PG_INGEST_PASSWORD}
+      QA_PG_SCHEMA: ingest
+      REDIS_URL: redis://sim-redis:6379
+      CORS_ORIGIN: "*"
+      SIM_LOG_LEVEL: info
+    ports:
+      - "3200:3200"
+    networks:
+      - default
+    depends_on:
+      sim-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:3200/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
   # ── 비즈니스 NestJS 서비스 (4400~4900) ──
 
   sim-auth-api:
