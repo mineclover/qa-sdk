@@ -149,3 +149,76 @@ describe("BitmapInvalidationSubscriber", () => {
     await sub.stop();
   });
 });
+
+// spec 04 §3.3 — subscriber는 evict 트리거. 회복 *보장*은 §3.2 TTL+version-check.
+
+import { DEFAULT_BITMAP_TTL_MS } from "./lru-cache.js";
+
+function fakeRedisDriver() {
+  const handlers: Array<(c: string, m: string) => void> = [];
+  return {
+    on: vi.fn((ev: string, h: (c: string, m: string) => void): void => {
+      if (ev === "message") handlers.push(h);
+    }),
+    off: vi.fn(),
+    subscribe: vi.fn(async () => 1),
+    unsubscribe: vi.fn(async () => 1),
+    emit: (c: string, m: string): void => {
+      for (const h of handlers) h(c, m);
+    },
+  };
+}
+const ENTRY_KEY = "bitmap:user:U001:sim.svc.approval:v3";
+const seedEntry = () => ({
+  key: ENTRY_KEY,
+  prefix: "sim.svc.approval",
+  prefixVersion: "v3",
+  mask: new Uint8Array([0x01]),
+  issuedAt: Date.now(),
+  ttlMs: DEFAULT_BITMAP_TTL_MS,
+});
+
+describe("Subscriber as evict trigger only (spec 04 §3.3)", () => {
+  it('scope=user → cache evict + recovery="fallthrough-trigger" 로그', async () => {
+    const cache = new BitmapLruCache({ max: 100 });
+    cache.setEntry(seedEntry());
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+    const redis = fakeRedisDriver();
+    const sub = new BitmapInvalidationSubscriber({
+      redis: redis as never,
+      cache,
+      logger,
+    });
+    await sub.start();
+    redis.emit(
+      INVALIDATION_CHANNEL,
+      serializeMessage({
+        scope: "user",
+        target: "U001",
+        reason: "permission_change",
+        issuedAt: new Date().toISOString(),
+        publisher: "test",
+      }),
+    );
+    expect(cache.getEntry(ENTRY_KEY)).toBeUndefined();
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({ recovery: "fallthrough-trigger" }),
+      expect.any(String),
+    );
+  });
+  it("malformed 메시지 → fail-safe noop, cache 보존 (정합성은 §3.2 보장)", async () => {
+    const cache = new BitmapLruCache({ max: 100 });
+    cache.setEntry(seedEntry());
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+    const redis = fakeRedisDriver();
+    const sub = new BitmapInvalidationSubscriber({
+      redis: redis as never,
+      cache,
+      logger,
+    });
+    await sub.start();
+    redis.emit(INVALIDATION_CHANNEL, "{not-json");
+    expect(cache.getEntry(ENTRY_KEY)).toBeDefined();
+    expect(logger.warn).toHaveBeenCalled();
+  });
+});

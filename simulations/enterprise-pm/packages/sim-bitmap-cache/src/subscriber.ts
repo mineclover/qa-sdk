@@ -71,17 +71,26 @@ export class BitmapInvalidationSubscriber {
     } catch (err) {
       this.opts.logger.warn(
         { err: (err as Error).message, raw },
-        "InvalidationMessage parse 실패 — cache 변경 없음",
+        "InvalidationMessage parse 실패 — TTL+version-check가 회복 보장 (spec 04 §3.2)",
       );
       return;
     }
+
+    // spec 04 §3.3 — subscriber는 evict trigger. 회복은 §3.2 TTL+version-check.
+    const recovery = "fallthrough-trigger" as const;
 
     switch (msg.scope) {
       case "user": {
         const removed = this.opts.cache.invalidateUser(msg.target);
         this.opts.logger.info(
-          { scope: "user", target: msg.target, removed, reason: msg.reason },
-          "cache invalidated",
+          {
+            scope: "user",
+            target: msg.target,
+            removed,
+            reason: msg.reason,
+            recovery,
+          },
+          "cache evicted (latency 최적화 trigger; 정합성은 §3.2 보장)",
         );
         break;
       }
@@ -89,22 +98,34 @@ export class BitmapInvalidationSubscriber {
         if (!msg.affectedUserIds || msg.affectedUserIds.length === 0) {
           this.opts.logger.warn(
             { roleId: msg.target },
-            "role scope이지만 affectedUserIds 누락 — fail-safe noop",
+            "role scope이지만 affectedUserIds 누락 — 정합성은 §3.2 TTL+version-check 보장",
           );
           return;
         }
         const removed = this.opts.cache.invalidateUsers(msg.affectedUserIds);
         this.opts.logger.info(
-          { scope: "role", target: msg.target, removed, reason: msg.reason },
-          "cache invalidated",
+          {
+            scope: "role",
+            target: msg.target,
+            removed,
+            reason: msg.reason,
+            recovery,
+          },
+          "cache evicted (latency 최적화 trigger; 정합성은 §3.2 보장)",
         );
         break;
       }
       case "prefix": {
         const removed = this.opts.cache.invalidatePrefix(msg.target);
         this.opts.logger.info(
-          { scope: "prefix", target: msg.target, removed, reason: msg.reason },
-          "cache invalidated",
+          {
+            scope: "prefix",
+            target: msg.target,
+            removed,
+            reason: msg.reason,
+            recovery,
+          },
+          "cache evicted (latency 최적화 trigger; 정합성은 §3.2 보장)",
         );
         break;
       }
