@@ -113,6 +113,16 @@ services:
 
   qa-sdk-db:
     image: postgres:16-alpine
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=4
+      - -c
+      - max_replication_slots=4
+      - -c
+      - hot_standby=on
     env_file: .env.docker
     environment:
       POSTGRES_DB: postgres
@@ -124,12 +134,14 @@ services:
       QA_SDK_DEFINITION_PASSWORD: ${QA_SDK_DEFINITION_PASSWORD}
       QA_SDK_ADMIN_PASSWORD: ${QA_SDK_ADMIN_PASSWORD}
       QA_SDK_SIM_PASSWORD: ${QA_SDK_SIM_PASSWORD}
+      QA_SDK_REPLICATOR_PASSWORD: ${QA_SDK_REPLICATOR_PASSWORD}
     ports:
       - "5434:5432"
     volumes:
       - qa-sdk-db-data:/var/lib/postgresql/data
       - ./init/qa-sdk-db.sql:/docker-entrypoint-initdb.d/00-qa-sdk-db.sql:ro
       - ./init/qa-sdk-db-helpers.sql:/docker-entrypoint-initdb.d/10-qa-sdk-db-helpers.sql:ro
+      - ./init/qa-sdk-db-replication.sql:/docker-entrypoint-initdb.d/20-qa-sdk-db-replication.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d qa_sdk"]
       interval: 5s
