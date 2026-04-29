@@ -101,3 +101,13 @@ export {
   type IdempotencyKey,
   type IdempotencyKeyInput,
 } from "./idempotency-key.js";
+
+export {
+  buildReplicationSlot,
+  parseReplicationSlot,
+  ReplicationSlotSchema,
+  ReplicationSlotNameSchema,
+  REPLICATION_PURPOSES,
+  type ReplicationSlot,
+  type ReplicationPurpose,
+} from "./replication-slot.js";
