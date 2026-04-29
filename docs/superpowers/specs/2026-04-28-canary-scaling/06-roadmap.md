@@ -178,6 +178,7 @@
 | #13 .env.sim.example 정리 | Task 1.3은 plan verbatim 위치(observability 섹션)에 추가. 다음 보강은 후속 처리 | (a) `QA_PG_INGEST_PASSWORD`를 `# ── 데이터베이스 ──` 섹션으로 이동(실제로는 DB 비밀번호). (b) `qa-sdk-otel-collector` dangling reference에 inline 주석(telemetry profile에서만 기동, 비활성 시 무시). (c) `__from_sops__` 옆에 용도 주석 추가(qa-sdk-ingest 의 PG 사용자 비밀번호) |
 | #14 sim-up.sh 동적 카운터 | Task 1.4는 services 배열 1줄만 갱신(spec verbatim). line 49의 "10/10 서비스" 하드코딩은 11 서비스 환경에서 misleading | sim-up.sh line 49 출력을 `${#SERVICES[@]}`로 동적 파생 — 추후 서비스 추가/제거 시 자동 동기화 |
 | #15 sim-event-vocabulary 분리 | Task 2.6은 plan literal대로 `simulations/enterprise-pm/contracts/event-vocabulary.catalog.ts`를 그대로 사용. tsconfig에서 `rootDir` 제거로 build 통과시킴 | (a) catalog를 신규 패키지 `packages/sim-event-vocabulary/`(또는 `sim-domain-vocabulary`)로 이동 — packages/ → simulations/ 의존 방향 위반 정도. (b) sim-identifier-grammar가 새 패키지를 dependency로 import. (c) plan A-stage-2 + spec 03 §2.5 + Task 2.17 모두 갱신 |
+| #16 sim-identifier-grammar typecheck cleanup | Task 2.2~2.16의 plan literal test fixture와 식별자 type shape 간 cross-section 불일치 발생 (예: schema-hash.test.ts의 eventName fixture는 `{ domain, entity, action }`인데 #5 event-name 정의는 `{ domain, aggregate, verbPast }`). vitest runtime은 esbuild라 모든 73 tests PASS, `tsc --noEmit`만 ~7건 typecheck error | (a) plan A-stage-2의 모든 test fixture를 식별자 정의와 동기화. (b) `pnpm --filter sim-identifier-grammar typecheck` PASS 확인. (c) CI gate에 typecheck 추가 |
 
 각 후속 sub-project는 별도 brainstorming → spec → plan 사이클로 진행한다.
 
