@@ -11,3 +11,12 @@ export {
   type ServicePrefixNamespace,
   type ServicePrefixCategory,
 } from "./service-prefix.js";
+
+export {
+  buildVersionTag,
+  parseVersionTag,
+  VersionTagSchema,
+  VERSION_TAG_STATES,
+  type VersionTag,
+  type VersionTagState,
+} from "./version-tag.js";
