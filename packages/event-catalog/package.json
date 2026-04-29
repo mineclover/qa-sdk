@@ -20,6 +20,7 @@
     "@qa-sdk/core": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^22.13.10",
     "typescript": "^5.8.2"
   }
 }

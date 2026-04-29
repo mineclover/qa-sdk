@@ -334,6 +334,9 @@ importers:
       index-meta:
         specifier: workspace:*
         version: link:../index-meta
+      markdown-it:
+        specifier: ^14.1.1
+        version: 14.1.1
       motion-content:
         specifier: workspace:*
         version: link:../motion-content
@@ -389,6 +392,9 @@ importers:
       '@types/better-sqlite3':
         specifier: 'catalog:'
         version: 7.6.13
+      '@types/markdown-it':
+        specifier: ^14.1.2
+        version: 14.1.2
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.15
@@ -1116,6 +1122,9 @@ importers:
         specifier: workspace:*
         version: link:../core
     devDependencies:
+      '@types/node':
+        specifier: ^22.13.10
+        version: 22.19.15
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
