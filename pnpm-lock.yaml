@@ -2808,6 +2808,12 @@ importers:
       postgres:
         specifier: ^3.4.5
         version: 3.4.8
+      sim-identifier-grammar:
+        specifier: workspace:*
+        version: link:../../packages/sim-identifier-grammar
+      sim-service-catalog:
+        specifier: workspace:*
+        version: link:../../packages/sim-service-catalog
       yaml:
         specifier: ^2.8.3
         version: 2.8.3
