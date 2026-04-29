@@ -3057,6 +3057,9 @@ importers:
       permission-engine:
         specifier: workspace:*
         version: link:../../../packages/permission-engine
+      sim-identifier-grammar:
+        specifier: workspace:*
+        version: link:../../../packages/sim-identifier-grammar
       weighted-index:
         specifier: workspace:*
         version: link:../../../packages/weighted-index
