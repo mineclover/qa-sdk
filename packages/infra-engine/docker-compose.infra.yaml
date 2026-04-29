@@ -149,11 +149,44 @@ services:
       retries: 15
       start_period: 10s
 
+  qa-sdk-db-replica:
+    image: postgres:16-alpine
+    environment:
+      PGUSER: replicator
+      PGPASSWORD: ${QA_SDK_REPLICATOR_PASSWORD}
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+        if [ ! -s "$$PGDATA/PG_VERSION" ]; then
+          until pg_basebackup -h qa-sdk-db -p 5432 -U replicator -D "$$PGDATA" -R -P -X stream -S sim_read_replica_slot; do
+            echo "Waiting for primary to be ready for basebackup..."
+            sleep 2
+          done
+          chmod 700 "$$PGDATA"
+        fi
+        exec docker-entrypoint.sh postgres -c hot_standby=on
+    ports:
+      - "5435:5432"
+    volumes:
+      - qa-sdk-db-replica-data:/var/lib/postgresql/data
+    depends_on:
+      qa-sdk-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U replicator"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 30s
+
 volumes:
   minio-data:
   zitadel-db-data:
   zitadel-pat:
   qa-sdk-db-data:
+  qa-sdk-db-replica-data:
 
 networks:
   default:
