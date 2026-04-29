@@ -74,3 +74,67 @@ export async function createConnection(cfg: ConnectionConfig): Promise<Connectio
     async close() { await sql.end(); },
   };
 }
+
+// ============================================================
+// Dual connection (write + read replica)
+// ============================================================
+
+/**
+ * write + read 두 Connection을 묶은 형태.
+ *
+ * - write: primary 인스턴스 (DDL/DML 모두 가능)
+ * - read: replica 인스턴스 (read-only 권장)
+ * - close(): 두 connection을 병렬로 닫음
+ */
+export interface DualConnection {
+  dialect: DialectKind;
+  write: Connection;
+  read: Connection;
+  close(): Promise<void>;
+}
+
+export type DualConnectionConfig =
+  | {
+      dialect: "pg";
+      write: Omit<PgConfig, "dialect">;
+      read: Omit<PgConfig, "dialect">;
+    }
+  | {
+      dialect: "sqlite";
+      write: Omit<SqliteConfig, "dialect">;
+      read: Omit<SqliteConfig, "dialect">;
+    };
+
+/**
+ * write + read 두 Connection을 동일 dialect로 생성한다.
+ *
+ * - 내부적으로 `createConnection`을 두 번 호출 — 두 인스턴스는 항상 분리되어 있다.
+ * - sqlite의 경우에도 별도 인스턴스를 생성한다 (호출자가 같은 파일/`:memory:`를
+ *   지정하더라도 connection 자체는 분리됨).
+ */
+export async function createDualConnection(
+  cfg: DualConnectionConfig,
+): Promise<DualConnection> {
+  if (cfg.dialect === "pg") {
+    const write = await createConnection({ dialect: "pg", ...cfg.write });
+    const read = await createConnection({ dialect: "pg", ...cfg.read });
+    return {
+      dialect: "pg",
+      write,
+      read,
+      close: async () => {
+        await Promise.all([write.close(), read.close()]);
+      },
+    };
+  }
+  const write = await createConnection({ dialect: "sqlite", ...cfg.write });
+  const read = await createConnection({ dialect: "sqlite", ...cfg.read });
+  return {
+    dialect: "sqlite",
+    write,
+    read,
+    close: async () => {
+      await Promise.all([write.close(), read.close()]);
+    },
+  };
+}

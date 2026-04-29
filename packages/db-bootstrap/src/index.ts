@@ -3,9 +3,12 @@
 
 export {
   createConnection,
+  createDualConnection,
   type Connection,
   type ConnectionConfig,
   type DialectKind,
+  type DualConnection,
+  type DualConnectionConfig,
   type PgConfig,
   type SqliteConfig,
 } from "./connection.js";
