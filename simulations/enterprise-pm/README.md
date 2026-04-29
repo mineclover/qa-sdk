@@ -2,6 +2,17 @@
 
 > qa-sdk 5축(권한·이벤트·관측·로직·로깅)을 PM + Approval Workflow 도메인에서 end-to-end 검증하는 test harness.
 
+## 1차 사이클 (2026-04-28) Implementation 완료
+
+본 시뮬은 카나리·스케일링 1차 사이클을 통해 17 시나리오 + 인프라 검증 6종으로 확장되었다. closed-at은 운영자 확정 후 보고서에 기록.
+
+- 사이클 spec: [`docs/superpowers/specs/2026-04-28-canary-scaling/`](../../docs/superpowers/specs/2026-04-28-canary-scaling/)
+- 완료 보고: [`docs/superpowers/specs/2026-04-28-canary-scaling/완료-보고.md`](../../docs/superpowers/specs/2026-04-28-canary-scaling/완료-보고.md)
+- 검증 entrypoint: `pnpm sim:smoke:full` (인프라 검증 6종 → 17 시나리오 정적 → e2e 옵션)
+- escape hatch: `pnpm sim:canary {abort|force-promote|controller stop}`, `pnpm sim:scale set --pin`
+
+후속 sub-project (spec 06 §4) 5종은 별도 brainstorming → spec → plan 사이클로 진행한다.
+
 ## 목적
 
 - 9 마이크로서비스 + Hono gateway 토폴로지 위에서 8 시나리오를 실행하여 qa-sdk의 핵심 기능 검증
