@@ -74,3 +74,13 @@ export {
   type LabelKey,
   type LabelKeyName,
 } from "./label-key.js";
+
+export {
+  buildPubsubChannel,
+  parsePubsubChannel,
+  PubSubChannelSchema,
+  PubSubChannelNameSchema,
+  PUBSUB_TOPICS,
+  type PubSubChannel,
+  type PubsubTopic,
+} from "./pubsub-channel.js";
