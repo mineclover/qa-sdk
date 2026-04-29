@@ -1,8 +1,21 @@
 // @def.boundary sim-canary-controller
 // @def.doc canary-controller-config
-// 단계 9.5에서 PG advisory lock service를 채운다.
 
 import { Module } from "@nestjs/common";
+import { AdvisoryLockService } from "./advisory-lock.service.js";
+import { env } from "../config/env.js";
 
-@Module({})
+@Module({
+  providers: [
+    {
+      provide: AdvisoryLockService,
+      useFactory: () =>
+        new AdvisoryLockService({
+          pgUrl: env.SIM_DB_WRITE_URL,
+          lockKey: "sim-canary-controller",
+        }),
+    },
+  ],
+  exports: [AdvisoryLockService],
+})
 export class AdvisoryLockModule {}
