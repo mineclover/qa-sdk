@@ -84,3 +84,12 @@ export {
   type PubSubChannel,
   type PubsubTopic,
 } from "./pubsub-channel.js";
+
+export {
+  buildBitmapCacheKey,
+  parseBitmapCacheKey,
+  BitmapCacheKeySchema,
+  BITMAP_SCOPES,
+  type BitmapCacheKey,
+  type BitmapScope,
+} from "./cache-key.js";
