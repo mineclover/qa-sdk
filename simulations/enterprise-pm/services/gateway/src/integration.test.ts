@@ -8,6 +8,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
 import { verifyBitmapJwt } from "./lib/jwt.js";
+import { InMemoryRoutingStore } from "./routing/routing-table.js";
+import { parseCidrList } from "./lib/internal-network.js";
 import {
   bootstrapTestApi,
   closeTestApi,
@@ -48,6 +50,11 @@ describe("sim-gateway integration — real sim-auth-api", () => {
       currentBitmapV: "v1",
       proxyTimeoutMs: 5_000,
       proxyTargets: targets,
+      // Plan C 단계 7 Task 7.8 — 빈 routing store + 내부 CIDR 주입.
+      // routes에 sim-pm-api/sim-approval-api 등록되지 않음 → proxy-routes는 legacy
+      // fall-through (proxyTargets[serviceKey])로 동작. 기존 시나리오 무회귀.
+      routingStore: new InMemoryRoutingStore(),
+      internalCidrs: parseCidrList("172.16.0.0/12"),
     });
 
     const loginRes = await app.request("/auth/login", {
