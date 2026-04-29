@@ -93,3 +93,11 @@ export {
   type BitmapCacheKey,
   type BitmapScope,
 } from "./cache-key.js";
+
+export {
+  buildIdempotencyKey,
+  parseIdempotencyKey,
+  IdempotencyKeySchema,
+  type IdempotencyKey,
+  type IdempotencyKeyInput,
+} from "./idempotency-key.js";
