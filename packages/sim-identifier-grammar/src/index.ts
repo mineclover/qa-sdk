@@ -122,3 +122,16 @@ export {
   type DecisionCategory,
   type DecisionCategoryName,
 } from "./decision-category.js";
+
+export {
+  buildDecisionSignal,
+  parseDecisionSignal,
+  DecisionSignalSchema,
+  DecisionSignalStringSchema,
+  SIGNALS_BY_CATEGORY,
+  SIGNAL_CATEGORIES,
+  ALL_SIGNAL_PAIRS,
+  type DecisionSignal,
+  type SignalCategory,
+  type SignalName,
+} from "./decision-signal.js";
