@@ -3440,6 +3440,9 @@ importers:
       permission-engine:
         specifier: workspace:*
         version: link:../../../../packages/permission-engine
+      sim-identifier-grammar:
+        specifier: workspace:*
+        version: link:../../../../packages/sim-identifier-grammar
       zod:
         specifier: ^3.24.2
         version: 3.25.76

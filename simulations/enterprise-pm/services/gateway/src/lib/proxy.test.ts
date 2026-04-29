@@ -2,6 +2,7 @@
 // @def.doc authorization-ontology-bitmap-pipeline
 
 import { describe, expect, it, vi, afterEach } from "vitest";
+import type { VersionTag } from "sim-identifier-grammar";
 import { proxyRequest } from "./proxy.js";
 
 afterEach(() => vi.restoreAllMocks());
@@ -106,5 +107,39 @@ describe("proxyRequest", () => {
       timeoutMs: 5000,
     });
     expect(res.status).toBe(200);
+  });
+});
+
+describe("proxyRequest version stamp (Plan A grammar #4)", () => {
+  async function callAndCapture(targetVersion?: VersionTag): Promise<Headers | undefined> {
+    let captured: Headers | undefined;
+    const fetchMock = vi.fn(async (_url: string | URL, init?: RequestInit) => {
+      captured = new Headers(init?.headers ?? {});
+      return new Response("{}", { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    await proxyRequest({
+      targetBaseUrl: "http://upstream:4500",
+      sourcePath: "/approvals",
+      request: new Request("http://gw/approvals"),
+      timeoutMs: 1000,
+      targetVersion,
+    });
+    return captured;
+  }
+
+  it("stable v3 → x-service-version: v3", async () => {
+    const h = await callAndCapture({ axis: "version", value: 3, state: "stable" });
+    expect(h?.get("x-service-version")).toBe("v3");
+  });
+
+  it("candidate v4 → x-service-version: v4-candidate", async () => {
+    const h = await callAndCapture({ axis: "version", value: 4, state: "candidate" });
+    expect(h?.get("x-service-version")).toBe("v4-candidate");
+  });
+
+  it("omit targetVersion → no x-service-version (legacy compat)", async () => {
+    const h = await callAndCapture(undefined);
+    expect(h?.get("x-service-version")).toBeNull();
   });
 });

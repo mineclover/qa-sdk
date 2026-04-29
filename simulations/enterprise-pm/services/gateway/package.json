@@ -48,6 +48,7 @@
     "ioredis": "catalog:",
     "jose": "^5.9.0",
     "permission-engine": "workspace:*",
+    "sim-identifier-grammar": "workspace:*",
     "zod": "^3.24.2"
   },
   "devDependencies": {
