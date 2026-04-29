@@ -33,7 +33,8 @@
     "sim:scenarios": "node ./simulations/enterprise-pm/scenarios/dist/cli.js",
     "sim:lint:identifiers": "tsx scripts/lint-identifiers.ts",
     "sim:canary": "tsx scripts/sim-canary.ts",
-    "sim:scale": "tsx scripts/sim-scale.ts"
+    "sim:scale": "tsx scripts/sim-scale.ts",
+    "sim:smoke:full": "tsx scripts/sim-smoke-full.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
