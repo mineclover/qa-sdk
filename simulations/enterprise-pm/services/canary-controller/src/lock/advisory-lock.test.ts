@@ -6,7 +6,8 @@ import { describe, it, expect } from "vitest";
 import { AdvisoryLockService } from "./advisory-lock.service.js";
 
 describe("AdvisoryLockService (spec 01 §6)", () => {
-  const PG = process.env.SIM_DB_WRITE_URL;
+  // 통합 테스트는 SIM_INTEGRATION_PG 명시적 설정 시에만 실행 — 단위 테스트 환경에서는 SKIP.
+  const PG = process.env.SIM_INTEGRATION_PG;
   const itPg = PG ? it : it.skip;
 
   itPg(
