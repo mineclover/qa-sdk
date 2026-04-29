@@ -5,7 +5,7 @@
 
 패키지: `permission-engine`
 의존: `weighted-index`
-운영 흐름: `[S2]` 권한 해소/검사 — [runtime-flows.spec.md](../../operations/runtime-flows.spec.md)
+운영 흐름: `[S2]` 권한 해소/검사 — `docs/specs/operations/runtime-flows.spec.md` (planned, source file not present)
 
 ## 상태
 

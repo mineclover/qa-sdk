@@ -33,7 +33,7 @@ function defineTable(id: string, input: {
 }): TableDef
 ```
 
-### 검증 규칙
+### 검증 규칙 ^define-table-validation
 
 | 규칙 | 에러 |
 |------|------|
@@ -72,7 +72,7 @@ function compileSchema(defs: TableDef[]): CompiledSchema
                     composite → CompositeVersionSpec (capacity = dim capacity 곱)
 ```
 
-### 검증 규칙
+### 검증 규칙 ^compile-schema-validation
 
 | 규칙 | 에러 |
 |------|------|

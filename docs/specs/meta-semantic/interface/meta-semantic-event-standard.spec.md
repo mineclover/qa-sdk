@@ -65,7 +65,7 @@ qa-sdk는 다음 확장을 사용한다:
 | `qasdk_traceid` | trace ID | 파이프 체인 추적용 |
 | `qasdk_sessionid` | session ID | 세션 단위 그룹핑 |
 
-### 예시
+### 예시 ^cloudevents-example
 
 ```json
 {
@@ -117,7 +117,7 @@ interface ServiceVersionManifest {
 }
 ```
 
-### 예시
+### 예시 ^manifest-example
 
 ```typescript
 const manifest: ServiceVersionManifest = {

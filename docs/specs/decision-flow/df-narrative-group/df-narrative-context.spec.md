@@ -145,12 +145,12 @@ interface HierarchySource {
 
 ## 장 8: 시스템의 역할은 결정을 쉽게 만드는 것이다
 
-### 질문
+### 질문 ^chapter-8-question
 
 이 시스템이 결정을 **더 어렵게** 만들고 있지 않은가?
 기록, 추적, 모니터링, 알림 — 이 모든 것이 관료주의가 아닌가?
 
-### 증명
+### 증명 ^chapter-8-proof
 
 `ContextProvider`를 구현했다.
 결정을 시작할 때 `provide(schemaId, context)`를 호출하면:
@@ -173,7 +173,7 @@ interface HierarchySource {
 
 강제하지 않는다. 컨텍스트를 무시하고 결정해도 된다. 시스템은 "이런 맥락이 있다"고 보여줄 뿐.
 
-### 결론
+### 결론 ^chapter-8-conclusion
 
 **시스템의 핵심 역할은 기록이 아니라 컨텍스트 제공이다.**
 
@@ -192,7 +192,7 @@ interface HierarchySource {
 
 ## 장 9: 시스템 구조를 관통하여 맥락을 조합한다
 
-### 질문
+### 질문 ^chapter-9-question
 
 decision-flow는 독립 모듈인가, 아니면 시스템 전체의 통합 지점인가?
 
@@ -200,7 +200,7 @@ decision-flow는 독립 모듈인가, 아니면 시스템 전체의 통합 지�
 catalog, DKG, GateEngine, decode, registry, convergence, spec-core, ContextProvider.
 이것들이 결정 시점에 하나로 합쳐지는가?
 
-### 증명
+### 증명 ^chapter-9-proof
 
 `assembleHierarchicalContext("cart_event")`를 호출하면 5개 레벨에서 맥락이 조합된다:
 
@@ -232,7 +232,7 @@ page_view에서는 다른 맥락이 조합됨:
 
 복수 prefix를 한 번에 조합하면 교차점(공유 DSL)도 보임.
 
-### 결론
+### 결론 ^chapter-9-conclusion
 
 **decision-flow는 독립 모듈이 아니라 시스템 구조의 통합 지점이다.**
 

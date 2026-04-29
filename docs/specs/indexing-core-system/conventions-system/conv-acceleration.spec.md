@@ -33,7 +33,7 @@ def:
 
 가속 지향 설계 규칙. Snapshot Supply 전략, 캐시 친화적 구조, 불필요한 계산 회피.
 
-그룹: [conventions-system.md](conventions-system.md)
+그룹: [conventions-system.md](../conventions-system.md)
 원본: `docs/specs/indexing/conventions.md` SS6
 
 > 근거: `acceleration.md` — 하드웨어 가속 비전

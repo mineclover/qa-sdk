@@ -25,15 +25,15 @@ ADR-001~009 아키텍처 결정 기록. 불변 주소, 단방향 의존, fail-op
 
 ## ADR-001: 게이트웨이 레벨 인증
 
-### 결정
+### 결정 ^adr-001-decision
 
 내부 서비스(registry-server, ingest-server, registry-client)는 **인증을 수행하지 않는다**. 인증은 게이트웨이에서 일괄 처리한다.
 
-### 배경
+### 배경 ^adr-001-background
 
 초기에는 각 서비스가 SHA256 Bearer token 기반 API key 인증을 자체 수행했다. 서비스가 늘어나면서 인증 미들웨어 복제, API key 동기화, 환경 변수 관리 비용이 증가했다.
 
-### 규칙
+### 규칙 ^adr-001-rules
 
 | 규칙 | 설명 |
 |---|---|
@@ -59,15 +59,15 @@ ingest-server:    requestId → shutdown → rateLimiter → routes → errorHan
 
 ## ADR-002: Event Catalog 정적 데이터 패키지
 
-### 결정
+### 결정 ^adr-002-decision
 
 Core Event 정의, Payload Field Guide, v1 Minimal Set, Graph Hint를 **`@qa-sdk/event-catalog`** 독립 패키지로 분리한다. 엔진, 서버, SDK가 이 패키지를 import하여 동일한 이벤트 어휘를 공유한다.
 
-### 배경
+### 배경 ^adr-002-background
 
 이벤트 정의는 여러 소비자(engine, registry-server, SDK)가 참조하는 공유 어휘다. 특정 패키지에 종속시키면 순환 의존이 발생하거나 소비자마다 정의가 분산된다.
 
-### 규칙
+### 규칙 ^adr-002-rules
 
 | 규칙 | 설명 |
 |---|---|
@@ -134,7 +134,7 @@ Custom으로 둘 것:
 
 ## ADR-003: 패키지 경계 규칙
 
-### 결정
+### 결정 ^adr-003-decision
 
 각 패키지는 명확한 책임 경계를 가진다. 의존 방향은 항상 단방향이며, 순환 의존을 금지한다.
 
@@ -166,7 +166,7 @@ core  ← 모든 패키지가 의존
 | `registry-server` | 서비스·이벤트 메타데이터 CRUD | 다른 서비스 의존 금지 |
 | `ingest-server` | Composition Root — 모든 어댑터 바인딩 | (유일하게 여러 패키지 조합 허용) |
 
-### 규칙
+### 규칙 ^adr-003-rules
 
 | 규칙 | 설명 |
 |---|---|
@@ -180,7 +180,7 @@ core  ← 모든 패키지가 의존
 
 ## ADR-004: 내부 서비스 간 통신
 
-### 결정
+### 결정 ^adr-004-decision
 
 내부 서비스 간 통신은 **인증 없는 plain HTTP**로 한다. fail-open 전략을 기본으로 한다.
 
@@ -193,7 +193,7 @@ ingest-server → registry-server
   전략: fail-open (레지스트리 장애 시 이벤트 통과)
 ```
 
-### 규칙
+### 규칙 ^adr-004-rules
 
 | 규칙 | 설명 |
 |---|---|
@@ -224,15 +224,15 @@ ingest-server → registry-server
 
 ## ADR-005: 멀티 카탈로그 런타임
 
-### 결정
+### 결정 ^adr-005-decision
 
 하나의 런타임에서 여러 Catalog를 CatalogRegistry(인메모리 Map)로 관리한다. DKG 상태는 단일 SQLite + `catalog_id` 컬럼으로 격리한다. 주소 형식은 기존 3파트와 4파트(catalogId 포함)를 양립한다.
 
-### 배경
+### 배경 ^adr-005-background
 
 Phase 1-5까지 DEMO_CATALOG 단일 인스턴스. 멀티 테넌트/조직을 지원하려면 카탈로그별 독립 관리가 필요하지만 기존 3파트 주소와의 하위 호환을 깨면 안 된다.
 
-### 규칙
+### 규칙 ^adr-005-rules
 
 | 규칙 | 설명 |
 |---|---|
@@ -248,11 +248,11 @@ Phase 1-5까지 DEMO_CATALOG 단일 인스턴스. 멀티 테넌트/조직을 지
 
 ## ADR-006: 이벤트 패턴 분류 체계
 
-### 결정
+### 결정 ^adr-006-decision
 
 세션 수준의 이벤트 시퀀스를 **식별 모드(IdentificationMode) × 행동 패턴(BehaviorPattern)** 2축으로 자동 분류한다. 분류 결과는 좌표계(`pattern_match` prefix)로 인코딩되어 convergence 분석에 통합된다.
 
-### 배경
+### 배경 ^adr-006-background
 
 QA 플랫폼에서 "어떤 이벤트가 발생했는가"는 추적하지만 "이 세션이 어떤 유형의 사용자 행동인가"는 추적하지 않았다. 식별된 구매 vs 비식별 탐색 vs 봇 크롤링을 구분하지 못하면 수집 품질과 비즈니스 의미를 평가할 수 없다.
 
@@ -273,7 +273,7 @@ QA 플랫폼에서 "어떤 이벤트가 발생했는가"는 추적하지만 "이
 | **identification_mode** | anonymous, identified, pseudonymized, service | actor_id/user_id 유무 + platform |
 | **behavior_pattern** | purchase_complete, browse_only, cart_abandon, checkout_fail, error_recovery, return_visit, anonymous_browse, anonymous_cart, api_integration, bot_crawl, health_check, unclassified | event_key 시퀀스 + 시간 패턴 |
 
-### 규칙
+### 규칙 ^adr-006-rules
 
 | 규칙 | 설명 |
 |---|---|
@@ -299,11 +299,11 @@ QA 플랫폼에서 "어떤 이벤트가 발생했는가"는 추적하지만 "이
 
 ## ADR-007: GraphPort 3단 추상화
 
-### 결정
+### 결정 ^adr-007-decision
 
 DKG 그래프 저장소의 소비자를 3단계로 분리한다.
 
-### 배경
+### 배경 ^adr-007-background
 
 DKG GraphRegistry는 15종 노드 + 18종 엣지의 구체 타입을 가진 그래프 저장소다. convergence 분석 함수(15개), 서비스 동적 import(ingest/registry), CLI/skills가 모두 같은 그래프를 사용하지만 필요한 정보 범위가 다르다.
 
@@ -312,7 +312,7 @@ DKG GraphRegistry는 15종 노드 + 18종 엣지의 구체 타입을 가진 그�
 - 서비스가 optional peer를 정적 import 불가
 - 테스트에서 전체 구현 mock 필요
 
-### 구조
+### 구조 ^adr-007-structure
 
 | 레벨 | 인터페이스 | 반환 타입 | 소비자 | 파일 수 |
 |------|-----------|----------|--------|--------|
@@ -320,7 +320,7 @@ DKG GraphRegistry는 15종 노드 + 18종 엣지의 구체 타입을 가진 그�
 | **GraphRegistryPort** | 서비스 `types/spec-core-ports.ts` | `{ kind, id, [key] }` | 동적 import 서비스 | 2 |
 | **GraphRegistry** | `dkg/graph-registry.ts` | `DkgNode` 15종 | bootstrap/store/lifecycle/mermaid | 9 |
 
-### 규칙
+### 규칙 ^adr-007-rules
 
 | 규칙 | 설명 |
 |------|------|
@@ -333,15 +333,15 @@ DKG GraphRegistry는 15종 노드 + 18종 엣지의 구체 타입을 가진 그�
 
 ## ADR-008: DKG Table 의존 추적
 
-### 결정
+### 결정 ^adr-008-decision
 
 Catalog의 `tables` 섹션을 DKG 그래프에 `TableNode`로 자동 파생하고, column-level 엣지로 DB ↔ prefix ↔ service 의존 체인을 추적한다.
 
-### 배경
+### 배경 ^adr-008-background
 
 로깅 시스템이 "어떤 DB가 어떤 이벤트에 영향 받는가"를 질의하려면 테이블-prefix 관계가 구조화되어야 한다. 기존에는 prefix의 `table_ref` dim이 단순 문자열 참조였고, DKG에 테이블 노드가 없어 역추적이 불가능했다.
 
-### 구조
+### 구조 ^adr-008-structure
 
 ```
 Catalog.tables → catalog-derive → TableNode + column edges
@@ -360,7 +360,7 @@ ServiceTopology 추론:
   getServicesForTable(tableId, graph)    — 역방향 추론
 ```
 
-### 규칙
+### 규칙 ^adr-008-rules
 
 | 규칙 | 설명 |
 |------|------|
@@ -372,15 +372,15 @@ ServiceTopology 추론:
 
 ## ADR-009: Transition Spec DSL — 좌표계 위의 상태 해석 계층
 
-### 결정
+### 결정 ^adr-009-decision
 
 좌표계(DEMO_CATALOG)는 불변 primitive로 유지하면서, 상태 전이 해석을 외부 spec으로 분리한다. 상태는 별도 vocabulary가 아닌 기존 축(axis)의 entry로 표현한다.
 
-### 배경
+### 배경 ^adr-009-background
 
 기존 시스템은 "이 흐름이 올바른가?"(Verdict: pass/fail)만 판단했다. "이 흐름으로 무슨 상태가 되었는가?"를 알려면 이벤트 시퀀스에 상태 전이 의미를 부여하는 해석 계층이 필요했다. 별도 slot vocabulary를 만들면 축 시스템과 이중 관리가 되므로, 기존 축을 그대로 사용한다.
 
-### 구조
+### 구조 ^adr-009-structure
 
 ```
 DEMO_CATALOG (좌표 + 축) ← 불변
@@ -416,7 +416,7 @@ Phase 2.6: Convergence Notification
 
 에러 격리: Phase 2.5 전체 실패 → verdict/convergence 미영향.
 
-### 규칙
+### 규칙 ^adr-009-rules
 
 | 규칙 | 설명 |
 |------|------|

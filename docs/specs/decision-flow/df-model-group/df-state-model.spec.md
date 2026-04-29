@@ -20,7 +20,7 @@ def:
 
 FlowInstance의 생명주기(pending→active→completed/abandoned/blocked)와 서사 구조(배경→여정→도달→산출→회고)를 정의한다. 과정(active→completed)과 결론(verdict)은 시간축이 다르다.
 
-## 생명주기 ^state-def
+## 생명주기 ^state-def:lifecycle
 
 ```
 pending → active → completed → (시간 경과) → verdict 기록
@@ -28,7 +28,7 @@ pending → active → completed → (시간 경과) → verdict 기록
                  → blocked
 ```
 
-## 서사 구조 ^state-def
+## 서사 구조 ^state-def:narrative
 
 ```
 배경(context)   왜 이 결정이 필요했는가

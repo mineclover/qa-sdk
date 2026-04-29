@@ -38,15 +38,15 @@ superseded_by: -
 
 ## Phase 0 — 투자 판단 (0.5일)
 
-### 목표
+### 목표 ^phase-0-goal
 실제로 `domain_root` 파생이 중복 좌표를 줄이는지 시뮬레이션으로 검증.
 
-### 작업
+### 작업 ^phase-0-work
 1. Ad-hoc 스크립트로 현 DB의 모든 `tier: system` 문서에 대해 파생 시뮬레이션
 2. `(tier, scope, layer, aspect, domain_root)` 키로 중복 재집계
 3. 줄어드는 중복 수 측정
 
-### 성공 기준
+### 성공 기준 ^phase-0-success
 - 현재 30건 중 ≥ 15건이 domain_root로 구별됨 → Phase 1 진행
 - < 15건만 구별됨 → 파생 규칙 재검토 또는 대안 제안
 
@@ -57,10 +57,10 @@ superseded_by: -
 
 ## Phase 1 — 파생 로직 구현 (1일)
 
-### 목표
+### 목표 ^phase-1-goal
 `deriveDomainRoot()` 함수와 주변 유틸을 `definition-catalog` 패키지에 추가.
 
-### 작업
+### 작업 ^phase-1-work
 1. `packages/definition-catalog/src/domain-root.ts` 신규 파일
    - `deriveDomainRoot(doc, registry): string`
    - `deriveAllDomainRoots(registry): Map<docId, domainRootId>`
@@ -73,21 +73,21 @@ superseded_by: -
    - 순환 참조 방어
 3. Export from `src/index.ts`
 
-### 성공 기준
+### 성공 기준 ^phase-1-success
 - 테스트 커버리지 ≥ 80%
 - 1,119건 DB에 대해 전수 파생 실행 시간 < 500ms
 
-### 리스크
+### 리스크 ^phase-1-risks
 - `selectPrimaryParent` 규칙이 실제 데이터에서 비결정적이면 재현 불가 → 테스트 고정 필요
 
 ---
 
 ## Phase 2 — validator 통합 (1일)
 
-### 목표
+### 목표 ^phase-2-goal
 `validate.ts`의 duplicate-coordinate 체크를 `domain_root` 포함 키로 전환.
 
-### 작업
+### 작업 ^phase-2-work
 1. `validateGraph()`에서 모든 entry에 대해 `deriveDomainRoot` 미리 계산 (맵으로 캐시)
 2. duplicate-coordinate 키를 `tier:scope:layer:aspect:domain_root`로 확장
 3. 메시지에 domain_root 표시
@@ -97,7 +97,7 @@ superseded_by: -
 4. 신규 경고 `multi-domain` 추가 (선택 — P2 후반)
 5. `def audit`에 `--by-domain` 리포트 추가
 
-### 성공 기준
+### 성공 기준 ^phase-2-success
 - `pnpm exec qa-sdk def validate`로 `duplicate-coordinate` 경고 수 측정
 - 목표: 30 → ≤ 15 (Phase 3 실행 전, 링크 미보완 상태)
 
@@ -112,10 +112,10 @@ pnpm --filter @qa-sdk/cli build
 
 ## Phase 3 — 소속 관계 보완 (2~3일)
 
-### 목표
+### 목표 ^phase-3-goal
 `missing-domain-root` 후보 시스템들에 부모 링크 추가. 링크 그래프가 진짜 도메인 구조를 반영하도록 보정.
 
-### 작업
+### 작업 ^phase-3-work
 
 #### 3.1 후보 리스트 생성
 ```bash
@@ -151,12 +151,12 @@ links:
 - `fix(def): df 서브시스템 도메인 루트 연결`
 - `fix(def): wi/cq 서브시스템 도메인 루트 연결`
 
-### 성공 기준
+### 성공 기준 ^phase-3-success
 - `missing-domain-root` 경고 0건
 - `duplicate-coordinate` 30 → ≤ 8건
 - 각 도메인의 계층 구조가 `def-topdown`으로 드릴다운 가능
 
-### 리스크
+### 리스크 ^phase-3-risks
 - 후보 자동 추론이 틀린 경우 (접두사만으로 판단하면 오류 가능)
 - 도메인 루트 자체가 모호한 경우 (예: scope-nesting-system은 APM인가 coord system인가?)
 
@@ -164,10 +164,10 @@ links:
 
 ## Phase 4 — 도메인 루트 layout 정비 (1~2일)
 
-### 목표
+### 목표 ^phase-4-goal
 모든 도메인 루트가 최상위 layout에서 `refs`로 참조되도록 보강. orphan 해소와 동시 진행.
 
-### 작업
+### 작업 ^phase-4-work
 1. `system-root-layout.md` (또는 유사 루트 layout) 식별/생성
 2. 각 도메인 루트(`apm-system`, `df-system`, `wi-system`, `gate-system`, …)를 `refs`로 등록
 3. 기존 layout(`system-infra`, `system-libraries`, …)과 교차 정렬
@@ -176,7 +176,7 @@ links:
    - `df-domain-layout.md`: refs = df 관련 시스템 전부
    - …
 
-### 성공 기준
+### 성공 기준 ^phase-4-success
 - `orphan` 경고 중 `*-system`, `*-system-root` 패턴 0건
 - 루트 layout에서 `def topdown`으로 모든 도메인 도달 가능
 
@@ -184,10 +184,10 @@ links:
 
 ## Phase 5 — 내용 중복 제거 (1~2일, 병행)
 
-### 목표
+### 목표 ^phase-5-goal
 Phase 2 후 "같은 domain_root + 같은 좌표"로 남은 5~8건의 진짜 중복 후보를 사람 리뷰 후 정리.
 
-### 작업
+### 작업 ^phase-5-work
 
 #### 5.1 후보 페어 추출
 `duplicate-coordinate` 경고에 남은 쌍들.
@@ -214,10 +214,10 @@ Phase 2 후 "같은 domain_root + 같은 좌표"로 남은 5~8건의 진짜 중�
 
 ## Phase 5.5 — 기대 시나리오 커버리지 (2~3일)
 
-### 목표
+### 목표 ^phase-5-5-goal
 `depends_on` 링크마다 기대 시나리오를 명세화하여 **의존성 계약 품질**을 측정 가능하게 만든다. 00-design §2.5 정책의 실행 단계.
 
-### 작업
+### 작업 ^phase-5-5-work
 
 #### 5.5.1 의존 링크 인벤토리
 ```bash
@@ -275,11 +275,11 @@ def:
 #### 5.5.4 기존 `.test.md` 감사
 이미 존재하는 테스트 문서를 먼저 활용. 미연결된 기존 테스트 문서가 있으면 `verifies` 링크 추가.
 
-### 성공 기준
+### 성공 기준 ^phase-5-5-success
 - `def audit --coverage` 에서 `approved + 핵심 도메인` 범위의 의존성 시나리오 커버리지 ≥ 80%
 - `dependency-without-scenario` 경고 ≤ 20건 (나머지는 draft 또는 의도된 생략)
 
-### 리스크
+### 리스크 ^phase-5-5-risks
 - 시나리오 정의가 단순한 "API doc 복붙"으로 전락 → 의미 없음
 - 대응: 리뷰 단계에서 "이 시나리오가 실패하면 구현 어디를 고쳐야 하는가?" 질문이 명확히 답 가능한지 체크
 
@@ -287,17 +287,17 @@ def:
 
 ## Phase 6 — CLI/skills 확장 (1일)
 
-### 목표
+### 목표 ^phase-6-goal
 `domain_root` 기반 탐색을 일상 워크플로우로 통합.
 
-### 작업
+### 작업 ^phase-6-work
 1. `qa-sdk def list --domain-root <id>` 구현
 2. `qa-sdk def context <id>`에 "도메인 루트: apm-system" 표시
 3. `def-topdown` skill에 `--from-domain-root` 인자 추가
 4. `def-explore` skill에 도메인 필터 가이드 추가
 5. `def-audit` skill에 `by-domain` 섹션 언급
 
-### 성공 기준
+### 성공 기준 ^phase-6-success
 - 새 도메인에서 작업 시 `def list --domain-root <domain>`로 한 번에 탐색 가능
 - skills 문서에 domain_root 사용법 명시
 

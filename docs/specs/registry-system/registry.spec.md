@@ -20,9 +20,9 @@ def:
 ## 목적 ^purpose
 
 MetaRegistry — 주소 게이트웨이. 스키마 관리 + 직렬화 + 코덱 생성.
-entity ID ↔ VersionedValue 변환(encode/decode)은 [MetaCodec](codec.spec.md)이 담당한다.
+entity ID ↔ VersionedValue 변환(encode/decode)은 [MetaCodec](../index-meta-system/codec.spec.md)이 담당한다.
 
-디코딩 파이프라인: [../pipeline.md](../pipeline.md)
+디코딩 파이프라인: [../pipeline.md](../pipeline-system/pipeline.md)
 
 ## 구성 ^overview
 
@@ -37,7 +37,7 @@ entity ID ↔ VersionedValue 변환(encode/decode)은 [MetaCodec](codec.spec.md)
 
 ## 참조
 
-패키지 인덱스: [README.md](README.md)
+패키지 인덱스: [README.md](../README.md)
 
 ## 상태
 
@@ -193,7 +193,7 @@ new MetaRegistry(input: MetaRegistryInput)
 
 > **Note**: encode/decode/toPK/fromPK는 MetaCodec으로 분리되었다.
 > `codec.encode(entityIds)` + `reg.serialize(vv)` 조합으로 사용한다.
-> BigInt 인덱스(shape product > 2^53)는 `createCodecBig()` + `serializeBig()` 사용. 상세: [../../indexing-core-system/bigint-addressing-group.md](../../indexing-core-system/bigint-addressing-group.md)
+> BigInt 인덱스(shape product > 2^53)는 `createCodecBig()` + `serializeBig()` 사용. 상세: [../../indexing-core-system/bigint-addressing-group.md](../indexing-core-system/bigint-addressing-group.md)
 
 ### 조회 API
 
@@ -236,7 +236,7 @@ IndexMetaError (base)
 | index_ref / entryRefs 교차 검증 | 생성자 | `IndexNotFoundError` / `IndexVersionNotFoundError` |
 | parse value 범위 초과 | parse() | `ParseError` |
 
-Address 검증 규칙은 [address.spec.md](address.spec.md) 참조.
+Address 검증 규칙은 [address.spec.md](../index-meta-system/address.spec.md) 참조.
 
 ---
 

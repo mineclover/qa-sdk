@@ -40,7 +40,7 @@ def:
 
 ## 참조
 
-관련 계획: [tasks/indexing-merge-plan.md](../../../../tasks/indexing-merge-plan.md)
+관련 계획: `tasks/indexing-merge-plan.md` (source file not present)
 
 ## 맥락
 

@@ -98,4 +98,4 @@ metaCodec.encode({ service, type, resource, action }).value
 
 - strict schema/version 검증은 PermissionCodec이 아닌 호출자 책임이다.
 - 상호운용은 shape와 entry 순서가 동일할 때만 성립하므로, catalog drift를 허용하면 address 동등성이 깨진다.
-- permission text의 semantic validation은 여전히 [perm-external-system.md](perm-external-system.md)의 resource/service-ref 규칙을 따라야 한다.
+- permission text의 semantic validation은 여전히 [perm-external-system.md](../perm-external-system.md)의 resource/service-ref 규칙을 따라야 한다.

@@ -28,7 +28,7 @@ D1(SQLite)과 PostgreSQL 두 드라이버에서 동일한 Store 포트 인터페
 - **교차 테스트 31 케이스** — 동일 테스트를 D1/PG 양쪽에서 실행.
 - **ClickHouse** — DDL만 (11 테이블). OLAP 전용 AnalyticsStore는 별도 설계.
 
-## Store 포트 × 드라이버 매트릭스 ^defines
+## Store 포트 × 드라이버 매트릭스 ^defines:store-driver-matrix
 
 | Store 포트 | 포트 파일 | D1 어댑터 | PG 어댑터 | 교차 테스트 |
 |-----------|----------|----------|----------|:---:|
@@ -127,7 +127,7 @@ findUnregistered(opts?): Promise<KeyObservation[]>
 prefixSummary(prefixId?: string): Promise<PrefixObservationSummary[]>
 ```
 
-## 스키마 동기화 ^defines
+## 스키마 동기화 ^defines:schema-sync
 
 ### 11 테이블 — D1/PG/CH 공통
 
@@ -162,7 +162,7 @@ D1과 PG 모두 동일 인덱스 셋 보유:
 - `idx_verdict_reports_verdict` — overallVerdict
 - `idx_dlq_trace_phase` — (traceId, phase)
 
-## 교차 어댑터 테스트 ^delegates
+## 교차 어댑터 테스트 ^delegates:cross-adapter-tests
 
 ### 구조
 
@@ -200,7 +200,7 @@ ClickHouse는 OLAP 분석 전용. CRUD 포트와 분리된 AnalyticsStore 인터
 - Store 어댑터: RecordStore 1종만 기존 구현 (ClickhouseRecordStore)
 - 향후: `docs/specs/ingest/ingest-infra-system/clickhouse-analytics.todo.md` 참조
 
-## store-factory 드라이버 선택 ^delegates
+## store-factory 드라이버 선택 ^delegates:store-factory-driver-selection
 
 ```typescript
 type StoreDriver = "memory" | "pg" | "d1" | "clickhouse";

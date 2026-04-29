@@ -91,7 +91,7 @@ interface ResolveResult {
     → 원격 의존 서비스 헬스체크 수행
 ```
 
-### Local Skip — 로컬 엔드포인트 자동 제외 ^constraint
+### Local Skip — 로컬 엔드포인트 자동 제외 ^constraint:local-skip
 
 `isRemoteEndpoint()` 함수가 URL의 hostname을 검사하여 아래 주소는 로컬로 판단한다.
 
@@ -105,7 +105,7 @@ interface ResolveResult {
 
 로컬 엔드포인트는 CF Workers 등 원격 배포 환경에서 물리적으로 도달 불가하므로 dependency-reach 게이트를 `pass`로 처리하고 `"스킵 (로컬: {endpoint})"` 상세를 기록한다.
 
-### Warn-not-fail — 의존 도달 실패 완화 ^constraint
+### Warn-not-fail — 의존 도달 실패 완화 ^constraint:warn-not-fail
 
 원격 의존 서비스에 대한 `httpProbe` 호출이 실패(timeout 5초)해도 `verdict`를 `"fail"` → `"warn"`으로 강제 전환한다.
 

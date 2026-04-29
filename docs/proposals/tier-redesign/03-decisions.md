@@ -35,7 +35,7 @@ superseded_by: -
 
 각 결정은 `D-<번호>`, 각 개념 리뷰는 `R-<번호>`로 번호를 붙인다. 후속 문서는 이 번호로 인용한다.
 
-> **D-17 Pivot (2026-04-18)**: FSM tier를 STC에서 제거하고 상태 전이를 meta-semantic에 위임하는 근본 결정. D-5/D-7/D-9/D-10/D-12/D-13/D-14/D-16 등 FSM 관련 결정 다수가 superseded. 상세: [D-17](#d-17-fsm-tier-pivot-----meta-semantic에-상태-위임), [rules/state-machine-delegation.md](./rules/state-machine-delegation.md)
+> **D-17 Pivot (2026-04-18)**: FSM tier를 STC에서 제거하고 상태 전이를 meta-semantic에 위임하는 근본 결정. D-5/D-7/D-9/D-10/D-12/D-13/D-14/D-16 등 FSM 관련 결정 다수가 superseded. 상세: [D-17](#d-17-fsm-tier-pivot-meta-semantic에-상태-위임), [rules/state-machine-delegation.md](./rules/state-machine-delegation.md)
 
 ## TL;DR
 
@@ -217,9 +217,9 @@ Lifecycle / 전이   → meta-semantic 체계 참조 (외부)
 
 **영향**:
 
-- [tiers/fsm.md](./tiers/fsm.md) — **삭제**
-- [02-fsm-composition.md](./02-fsm-composition.md) — **삭제**
-- [examples/deterministic-label-record-fsm.md](./examples/deterministic-label-record-fsm.md) — **삭제**
+- `tiers/fsm.md` — **삭제**
+- `02-fsm-composition.md` — **삭제**
+- `examples/deterministic-label-record-fsm.md` — **삭제**
 - [rules/state-machine-delegation.md](./rules/state-machine-delegation.md) — **신규**: 상태 관리 위임 규칙
 - [tiers/system.md](./tiers/system.md) — `lifecycle_ref` 설명 추가
 - [tiers/component.md](./tiers/component.md) — State enum Component 역할 추가

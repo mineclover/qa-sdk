@@ -33,10 +33,10 @@ def:
 
 Axis와 Prefix는 개념 계층(Entry → Taxonomy → System)에 적용되는 **좌표 표현 수단**이다. 계층 자체가 아니라, 각 계층 단위에 주소를 부여하는 방법이다. Axis = 1D 표현, Prefix = nD 표현. 계층 원칙: [composition-hierarchy.spec.md](../system/composition-hierarchy.spec.md)
 
-사용 패턴: [`patterns.md`](patterns.md) · 프로젝트 관례: [`../indexing-core-system/conventions-system.md`](../indexing-core-system/conventions-system.md) · 설계 구조: [`data-design.md`](data-design.md)
+사용 패턴: [`patterns.md`](patterns.md) · 프로젝트 관례: [`../indexing-core-system/conventions-system.md`](../indexing-core-system/conventions-system.md) · 설계 구조: [`data-design-group.md`](data-design-group.md)
 
-- [`weighted-index/`](weighted-index/README.md)
-- [`index-meta/`](index-meta/README.md)
+- [`weighted-index/`](../indexing/weighted-index/README.md)
+- [`index-meta/`](../indexing/index-meta/README.md)
 
 ## 구성 ^overview
 
@@ -64,4 +64,4 @@ Axis와 Prefix는 개념 계층(Entry → Taxonomy → System)에 적용되는 *
 관련 스펙:
 - 사용 패턴: [`patterns.md`](patterns.md)
 - 프로젝트 관례: [`../indexing-core-system/conventions-system.md`](../indexing-core-system/conventions-system.md)
-- 설계 구조: [`data-design.md`](data-design.md)
+- 설계 구조: [`data-design-group.md`](data-design-group.md)

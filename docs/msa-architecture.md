@@ -300,7 +300,7 @@ wal_level = replica
 recovery_target_time = '2026-03-21 14:30:00'
 ```
 
-#### 복원
+#### 복원 ^registry-db-restore
 
 ```bash
 # 전체 복원
@@ -341,7 +341,7 @@ cp ~/.qa-sdk/state.sqlite /backup/state-$(date +%F).sqlite
 sqlite3 ~/.qa-sdk/state.sqlite ".backup /backup/state-$(date +%F).sqlite"
 ```
 
-#### 복원
+#### 복원 ^dkg-sqlite-restore
 
 ```bash
 # JSON import (카탈로그별, 기존 데이터에 머지)

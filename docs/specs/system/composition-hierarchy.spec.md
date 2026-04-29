@@ -29,7 +29,7 @@ def:
 
 ---
 
-## 1. 개념 계층 ^defines
+## 1. 개념 계층 ^defines:concept-hierarchy
 
 이 시스템의 구성 단위는 네 책임 평면으로 이루어진다.
 
@@ -98,7 +98,7 @@ Interface / DSL Bundle / Taxonomy가 독립 운용과 behavior ownership을 갖�
 
 ---
 
-## 2. 좌표 표현 원칙 ^defines
+## 2. 좌표 표현 원칙 ^defines:coordinate-principles
 
 **Axis와 Prefix는 계층이 아닌 표현 수단이다.**
 

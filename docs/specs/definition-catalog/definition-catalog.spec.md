@@ -88,7 +88,7 @@ def:
 
 관련 스펙: [df-system.md](../decision-flow/df-system.md)
 
-## 관련 소스
+## 관련 소스 ^implementation-sources
 
 - `packages/definition-catalog/src/` — 구현
 
@@ -170,7 +170,7 @@ docs/*.md frontmatter
 - harness
   문서 상태를 기계적으로 추적하는 실행 레이어
 
-## 관련 소스
+## 관련 소스 ^operation-sources
 
 - `packages/definition-catalog/src/frontmatter.ts`
 - `packages/definition-catalog/src/validate.ts`

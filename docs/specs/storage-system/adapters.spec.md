@@ -89,7 +89,7 @@ implemented
 
 - Map 기반, 이미 존재하면 무시
 
-### 제약
+### 제약 ^session-store-constraints
 
 - session 한 번 close 하면 재오픈 불가
 - scenarioId, labels는 첫 upsert에서만 설정
@@ -106,7 +106,7 @@ implemented
 
 - 배열 기반, push
 
-### 제약
+### 제약 ^transmission-store-constraints
 
 - 현재 insert only (읽기 API 없음) — 감사 로그 용도
 - 향후 목록 조회 필요 시 port에 find 메서드 추가
@@ -128,7 +128,7 @@ implemented
 - Map 기반, upsert: structuredClone으로 저장
 - findByDomain: filter
 
-### 제약
+### 제약 ^scenario-spec-store-constraints
 
 - scenario_id는 유일 (PK)
 - spec JSON 전체를 JSONB로 저장 — 개별 필드 쿼리 불가
@@ -146,7 +146,7 @@ implemented
 
 - Map 기반
 
-### 제약
+### 제약 ^graph-store-constraints
 
 - RuntimeGraph는 JSON 직렬화 가능해야 함
 - graph 크기가 클 수 있음 (수천 노드/엣지) — JSONB 성능 고려
@@ -166,7 +166,7 @@ implemented
 
 - 배열 기반, filter
 
-### 제약
+### 제약 ^verdict-store-constraints
 
 - (scenario_id, trace_id) 복합 unique — 재판정 시 기존 삭제 후 재삽입 필요
 - report는 VerdictReport JSON 전체를 JSONB로 저장
@@ -187,7 +187,7 @@ implemented
 - Map 기반, insert: structuredClone으로 저장 (중복 id 시 에러)
 - findPending: resolved_at === null 필터 → created_at 정렬 → slice
 
-### 제약
+### 제약 ^dlq-store-constraints
 
 - id는 유일 (PK)
 - phase는 `"reconstruction"` 또는 `"verdict"`
@@ -216,7 +216,7 @@ cleanup 전용 포트. core port에 정의되지 않고 ingest-server 내부에�
 - InMemory store의 private Map에 직접 접근하여 삭제 수행
 - 테스트용
 
-### 제약
+### 제약 ^cleanup-store-constraints
 
 - cascade 없음 — trace 삭제 전 관련 record/graph/verdict를 먼저 삭제해야 함
 - orphan session 정리는 trace 삭제 후 수행

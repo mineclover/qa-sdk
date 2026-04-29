@@ -156,7 +156,7 @@ index-meta/                        ← 스키마 + 프로토콜 바인딩 + 외�
 | [../permission/permission-system.md](../permission/permission-system.md) | 4 문서 | 비트마스크 권한 엔진, 3-tier 코덱, external identity layer, ternary 상속, 외부 scope 라우팅, shape migration | implemented |
 | [../index-meta-system/index-meta-system.md](../index-meta-system/index-meta-system.md) | 13 문서 | 스키마 선언, 저장소, 주소 게이트웨이, 코덱, Address, Resolver, SDK, DX, GateEngine, 시나리오, ADR | implemented / planned |
 
-대표 하위 문서: [weighted-index/partial-binder.spec.md](weighted-index/partial-binder.spec.md) · [permission-engine/README.md](permission-engine/README.md)
+대표 하위 문서: [weighted-index/partial-binder.spec.md](../weighted-index-system/partial-binder.spec.md) · [permission-engine/README.md](permission-engine/README.md)
 
 ## 좌표 시스템 관심사 흐름
 
@@ -266,7 +266,7 @@ AXIS.role.capacity    // 8
 
 좌표 시스템은 주소 공간을 정의하고 주소를 할당/해석한다. RDF/OWL 온톨로지의 스키마 영역까지 담을 수 있으나, **데이터를 저장하지 않는다.** 좌표에 값을 저장하고 질의하는 것은 데이터 저장 계층의 책임이다.
 
-> 상세: [ontology-evaluation.md](ontology-evaluation.md)
+> 상세: [ontology-evaluation.md](../indexing-core-system/ontology-evaluation.md)
 
 ## 통합 테스트 (demo-tests)
 
@@ -333,4 +333,4 @@ shape  ─→  shapeProduct(shape)  ─→  ≤ 2^53?  ─→  WeightedIndex (Nu
 
 > **검증**: [`format-adapter.test.ts`](../../../packages/weighted-index/src/format-adapter.test.ts) — §1 구조적 격리, §2 사후 분석, §3 실시간 감지, §4 경계값 정밀도, §5 엔진 선택 분리, §6 다중 포맷 동시 평가, §7 포맷 변경 시 수학 불변
 
-상세: [bigint-addressing.spec.md](bigint-addressing.spec.md)
+상세: [bigint-addressing-group.md](../indexing-core-system/bigint-addressing-group.md)

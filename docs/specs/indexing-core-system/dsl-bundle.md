@@ -35,7 +35,7 @@ DSL Bundle은 여러 prefix를 묶어 **하나의 사용 시나리오**를 구�
 - **커버리지 분석**: analyzeDslCoverage()로 카탈로그 prefix의 DSL 배치 현황(covered/uncovered/unbound) 파악
 - **불변조건 선언**: 번들별로 prefix 간 선후 관계나 필수 공출현 조건을 명시 (예: checkout page_view 없이 flow_point success 관측 금지)
 
-기반 문서: [dimension-operations.md](dimension-operations.md) · [table-system.md](table-system.md)
+기반 문서: [dim-ops-system.md](dim-ops-system.md) · [table-system-group.md](table-system-group.md)
 
 ---
 
@@ -337,7 +337,7 @@ Taxonomy 수준부터 System이 된다. DSL Bundle 하나가 독립 운용 + 복
 
 ## 참조
 
-- [dimension-operations.md](dimension-operations.md) — 축 교차 선택, 환경 주입, 배포 시점 해석, 인프라 계측
-- [table-system.md](table-system.md) — 좌표↔관계형 양방향 연결, 이벤트 인코딩 분리
+- [dim-ops-system.md](dim-ops-system.md) — 축 교차 선택, 환경 주입, 배포 시점 해석, 인프라 계측
+- [table-system-group.md](table-system-group.md) — 좌표↔관계형 양방향 연결, 이벤트 인코딩 분리
 - `docs/specs/spec-engine/prefix-guide.md` — prefix 실용 가이드, 환경 오버라이드 패턴
 - `docs/specs/decision-flow/decision-standard-group.md` — 의사결정 표준 프로세스

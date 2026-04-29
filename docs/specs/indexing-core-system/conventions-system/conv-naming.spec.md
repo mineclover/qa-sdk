@@ -36,7 +36,7 @@ def:
 - **이름 규칙**: PackFormat.name은 lowercase+하이픈, AddressProtocol.name은 `layout:{format.name}` 자동 생성
 - **groups 설계**: 내부 저장용은 생략, API 노출용은 4~8자 단위, UUID 호환은 RFC 4122 고정 그룹
 
-그룹: [conventions-system.md](conventions-system.md)
+그룹: [conventions-system.md](../conventions-system.md)
 원본: `docs/specs/indexing/conventions.md` SS1, SS3, SS4
 
 ## 상태

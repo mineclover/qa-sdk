@@ -58,7 +58,7 @@ test:{scope-index}:{aspect-index}:{facet}:{seq}
   test:5:1:관리:1     → constraint/tech_constraint의 관리 패싯 1번 테스트
 ```
 
-### 타입 정의
+### 타입 정의 ^test-tracking-types
 
 ```typescript
 interface TestCase {
@@ -230,7 +230,7 @@ TestResult → EventRecord:
 3. 추가 필드는 상위 호환 [test:1:3:소비:4]
 ```
 
-### 타입 정의
+### 타입 정의 ^event-mapping-types
 
 ```typescript
 interface TestContract {

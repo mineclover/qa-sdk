@@ -127,7 +127,7 @@ docs/specs/meta-semantic/meta-semantic-ir/
 | `.memo.md` | 없음 (히스토리) | — |
 | `.plan.md` | 없음 (방향) | — |
 
-## 운영 규칙 ^constraint
+## 운영 규칙 ^constraint:operating-rules
 
 ### rule 규칙
 
@@ -176,7 +176,7 @@ docs/specs/meta-semantic/meta-semantic-ir/
 
 새 이슈, 미확정 토론, 실행 후보, 확정된 구조, 사용 규칙, 검증 문서로 전이되는 실제 흐름은 `doc-type-convention-cases`가 사용 시나리오로 소유한다. 이 문서는 확장자별 역할과 전이 원칙만 소유한다.
 
-## 정합성 검증 ^constraint
+## 정합성 검증 ^constraint:consistency-validation
 
 | 검증 | 심각도 | 설명 |
 |------|--------|------|

@@ -33,7 +33,7 @@ def:
 - **createPermCodeFactory 연동**: ServiceContext의 `ref()`만 사용하므로 permission code에 deploy context가 기본 포함되지 않음
 
 소스: `packages/permission-engine/src/service-ref.ts`
-그룹: [perm-external-system.md](perm-external-system.md)
+그룹: [perm-external-system.md](../perm-external-system.md)
 원본: `docs/specs/indexing/permission-engine/resource.spec.md` SS3
 
 ## 상태

@@ -159,8 +159,8 @@ post-vocab-change: 26 failed | 584 passed (동일)
 
 ## 참조
 
-- [test-md-convention.rule.md](../../specs/system/test-md-convention.rule.md) — 원본 규칙
-- [link-type-usage.rule.md](../../specs/system/link-type-usage.rule.md) — §1.3 `verifies` 특례 (이제 정식 타입으로 승격)
+- [test-md-convention.rule.md](../../../specs/system/test-md-convention.rule.md) — 원본 규칙
+- [link-type-usage.rule.md](../../../specs/system/link-type-usage.rule.md) — §1.3 `verifies` 특례 (이제 정식 타입으로 승격)
 - [2026-04-21-final-cleanup.md](./2026-04-21-final-cleanup.md) — 본 작업 직전 validator baseline 확정
 - `packages/definition-catalog/src/vocabulary.ts` §`LINK_TYPE` — 10 entries
 - `packages/definition-catalog/src/frontmatter.ts:186` — `VALID_LINK_TYPES` Set

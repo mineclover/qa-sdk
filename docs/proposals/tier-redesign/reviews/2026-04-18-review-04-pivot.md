@@ -65,11 +65,11 @@ D-17 Pivot은 **개념적으로는 성공**했다. FSM tier 제거 + meta-semant
 - `:143` "> **D-17 Pivot**: 기존 ... 관계가 모두 제거됨"은 타당하지만, 같은 문서 위쪽 규칙 1 (line 19, 규칙 3 line 122)에서 FSM을 여전히 언급 — 자체 모순.
 
 **`tiers/component.md` 중대 regress 3건**:
-- `:57` "상태 전이 규칙 → [FSM tier](./fsm.md)": 삭제된 파일로 링크 + FSM tier 언급. 이 줄은 **가장 규모 큰 regress** — 상태 전이 규칙 포함 금지 대상이 "FSM tier"로 명시되어 있고 링크가 404.
-- `:97` "현재는 [FSM 예시](../examples/deterministic-label-record-fsm.md)": 삭제된 파일로 링크. Component tier 예시로 FSM 예시 evidence_shapes를 참고하라는 말이지만 파일 자체가 없음.
+- `:57` "상태 전이 규칙 → `FSM tier` (`tiers/fsm.md`)": 삭제된 파일 참조 + FSM tier 언급. 이 줄은 **가장 규모 큰 regress** — 상태 전이 규칙 포함 금지 대상이 "FSM tier"로 명시되어 있고 파일이 없음.
+- `:97` "현재는 `FSM 예시` (`examples/deterministic-label-record-fsm.md`)": 삭제된 파일 참조. Component tier 예시로 FSM 예시 evidence_shapes를 참고하라는 말이지만 파일 자체가 없음.
 
 **`tiers/entry.md` regress 1건**:
-- `:52` "인스턴스 생명주기 전이 → [FSM](./fsm.md)": 삭제된 파일로 링크 + FSM tier 언급.
+- `:52` "인스턴스 생명주기 전이 → `FSM` (`tiers/fsm.md`)": 삭제된 파일 참조 + FSM tier 언급.
 
 **`rules/classification.md` regress 1건**:
 - `:52` "| `leaf` | `component` / `entry` / `fsm` 중 하나 |": level→tier 매핑 표에 `fsm`이 여전히 tier 후보로 등장. D-17로 4 tier이므로 `fsm`이 있으면 안 됨.
@@ -637,7 +637,7 @@ D-17 Pivot으로 체크리스트 전면 재작성 필요.
 
 **발견**: `tiers/entry.md`는 D-17 Pivot 영향 리스트(`03-decisions.md:444~463`)에 포함되지 않음 — 저자는 Entry tier가 D-17과 무관하다고 판단한 듯.
 
-**실제**: `:52` "인스턴스 생명주기 전이 → [FSM](./fsm.md)" — FSM tier 참조. D-17 이후 이 대안 제시가 **존재하지 않는 tier를 가리킴**.
+**실제**: `:52` "인스턴스 생명주기 전이 → `FSM` (`tiers/fsm.md`)" — FSM tier 참조. D-17 이후 이 대안 제시가 **존재하지 않는 tier를 가리킴**.
 
 **권장**: `tiers/entry.md`를 D-17 영향 리스트에 추가하고 line 52를 "인스턴스 생명주기 전이 → System + lifecycle_ref로 meta-semantic 참조"로 수정.
 

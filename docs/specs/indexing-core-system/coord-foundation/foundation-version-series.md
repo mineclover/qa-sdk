@@ -162,4 +162,4 @@ composite "column":   [table_ref, column_type, constraint]
 
 headroom을 충분히 잡으면 대부분의 스키마 진화가 Phase 1(평시)에서 처리되고, draft cycle은 드물게 발생한다.
 
-> **버전 운영 상세**: [`version-operations.md`](version-operations.md) — DraftWorkspace, 배포 워크플로우, 다중 버전 관리, 저장값 마이그레이션
+> **버전 운영 상세**: [`version-operations.md`](../version-operations.md) — DraftWorkspace, 배포 워크플로우, 다중 버전 관리, 저장값 마이그레이션

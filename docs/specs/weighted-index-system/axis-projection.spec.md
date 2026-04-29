@@ -20,7 +20,7 @@ def:
 
 mixed-radix weighted-index에서 전체 decode O(d) 대신 요청한 k개 차원만 O(k)로 추출한다.
 
-## 수학적 기반 ^defines
+## 수학적 기반 ^defines:math
 
 i번째 차원 독립 추출 공식:
 
@@ -81,7 +81,7 @@ projectAxis 내부에서 partialDecodeFn이 있으면 사용, 없으면 기존 d
 
 정의: `store/src/adapters/memory/aggregator.adapter.ts`
 
-## 성능 ^defines
+## 성능 ^defines:performance
 
 | 시나리오 | Full decode | Partial decode |
 |----------|:-----------:|:--------------:|

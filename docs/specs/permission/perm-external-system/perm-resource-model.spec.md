@@ -33,7 +33,7 @@ def:
 - **validateResourceForType()**: 타입별 maxDepth/allowParams를 자동 적용하며, 미등록 타입은 일반 규칙으로 fallback
 
 소스: `packages/permission-engine/src/resource.ts`
-그룹: [perm-external-system.md](perm-external-system.md)
+그룹: [perm-external-system.md](../perm-external-system.md)
 원본: `docs/specs/indexing/permission-engine/resource.spec.md` SS2
 
 ## 상태

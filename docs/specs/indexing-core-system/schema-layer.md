@@ -50,4 +50,4 @@ def:
 
 ## 참조
 
-기반: [coordinate-states.md](coordinate-states.md) · [event-schema.md](event-schema.md)
+기반: [coord-states-group.md](coord-states-group.md) · [event-schema.md](event-schema.md)

@@ -179,7 +179,7 @@ Phase 1.B critical path:
 
 **구현 주의사항 (CLI 제약)**:
 
-- **CLI tsup 번들 제약**: 새 명령 (`def tier classify` 등) 추가 시 static import만 허용 (dynamic import 금지) — [CLAUDE.md § CLI tsup 번들 제약](../../../../CLAUDE.md) 참조
+- **CLI tsup 번들 제약**: 새 명령 (`def tier classify` 등) 추가 시 static import만 허용 (dynamic import 금지) — [CLAUDE.md § CLI tsup 번들 제약](../../../CLAUDE.md) 참조
 - **async createRuntimeStores**: ingest-server 연계 호출 시 `await` 필수
 - 신규 명령은 `packages/cli/src/commands/` 아래 배치, `dist/index.js`로 번들
 

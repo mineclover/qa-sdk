@@ -34,11 +34,11 @@ entity ID ↔ PK 문자열 전체 경로를 한 곳에서 정의한다.
 - **프로토콜 변환**: colon, uri, compact, uuid, int64 간 변환은 AddressConverter가 SemanticAddress 3필드만으로 수행
 - **합성 메서드**: `reg.serialize(codec.encode(entityIds))`로 인코딩 전체 경로, `codec.decode(reg.parse(pk))`로 디코딩 전체 경로 1줄 합성
 
-- 레이어 분리 원리: [`foundation.md`](foundation.md) §3
+- 레이어 분리 원리: [`foundation.md`](../indexing-core-system/foundation.md) §3
 - 수학 엔진: [`../weighted-index-system/wi-math.spec.md`](../weighted-index-system/wi-math.spec.md)
-- 스키마 레이어: [`index-meta/registry.spec.md`](index-meta/registry.spec.md)
+- 스키마 레이어: [`index-meta/registry.spec.md`](../registry-system/registry.spec.md)
 - 프로토콜/포맷: [`../weighted-index-system/wi-pack-format-system.md`](../weighted-index-system/wi-pack-format-system.md)
-- 외부 소비 (DecodeMap): [`index-meta/resolver.spec.md`](index-meta/resolver.spec.md)
+- 외부 소비 (DecodeMap): [`index-meta/resolver.spec.md`](../index-meta-system/resolver.spec.md)
 
 ---
 
@@ -103,7 +103,7 @@ VersionedValue { indexId: "perm", versionId: "v1", value: 14 }
 "00010100-0000-0000-0000-00000000000e"
 ```
 
-### 메서드 참조
+### 메서드 참조 ^encoding-methods
 
 | 단계 | 패키지 | 메서드 | 입력 → 출력 |
 |---|---|---|---|
@@ -163,7 +163,7 @@ coords = [2, 2, 3]
 { role: "editor", action: "write", resource: 30 }
 ```
 
-### 메서드 참조
+### 메서드 참조 ^decoding-methods
 
 | 단계 | 패키지 | 메서드 | 입력 → 출력 |
 |---|---|---|---|
@@ -224,7 +224,7 @@ const ids = codec.decodeValue(14);
 
 `DecodeMap`에 `address`가 포함되면 UUID 파싱 → value 추출 → 좌표 복원 → entity 매핑까지 전체 파이프라인을 외부에서 자립적으로 수행할 수 있다. MetaCodec은 DecodeMap 하나로 동작하므로 MetaRegistry가 불필요하다.
 
-버전 range 조회(`getIndexRange`, `getDimRange`)와 전체 데이터셋 내보내기(`getDataset`)는 [`index-meta/resolver.spec.md`](index-meta/resolver.spec.md) 참조.
+버전 range 조회(`getIndexRange`, `getDimRange`)와 전체 데이터셋 내보내기(`getDataset`)는 [`index-meta/resolver.spec.md`](../index-meta-system/resolver.spec.md) 참조.
 
 ---
 

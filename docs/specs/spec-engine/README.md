@@ -7,7 +7,7 @@
 >
 > NestJS를 호스트 런타임으로 사용하되, 코어 모델은 framework-agnostic 독립 커널로 유지한다.
 
-기반: [../indexing/README.md](../indexing/README.md) · [../indexing/schema-layer.md](../indexing/schema-layer.md) · [../indexing/coordinate-states.md](../indexing/coordinate-states.md)
+기반: [../indexing/README.md](../indexing/README.md) · [../indexing-core-system/schema-layer.md](../indexing-core-system/schema-layer.md) · [../indexing-core-system/coord-states-group.md](../indexing-core-system/coord-states-group.md)
 
 ---
 
@@ -201,7 +201,7 @@ prefix의 존재 이유를 문서화. c4-doc 참조하되 독립 재작성.
 | [../dkg-system/dkg-skills-system.md](../dkg-system/dkg-skills-system.md) | DKG Skills — 종단 파이프라인, migrator 추론, VersionEvent 파생, Decision 템플릿, skill 카탈로그 |
 | [../spec-engine-system/spec-prop-system.md](../spec-engine-system/spec-prop-system.md) | Spec Propagation — PrefixSpec 작성 → registry 고정 → 소비자 전파 → codegen → DKG 기록 종단 파이프라인 |
 | [convergence-layer.md](convergence-layer.md) | Convergence Layer — 심볼 비교, 결정 비교, 인과 발견, 최소 가짓수, 경계 추천. 신경기호 검증 |
-| [decision-standard.md](decision-standard.md) | 의사결정 표준 프로세스 — 새 요구 시 prefix 평가/생성 표준 경로, 7개 체크리스트, skill 매핑 |
+| [decision-standard-group.md](../decision-flow/decision-standard-group.md) | 의사결정 표준 프로세스 — 새 요구 시 prefix 평가/생성 표준 경로, 7개 체크리스트, skill 매핑 |
 | [prefix-guide.md](prefix-guide.md) | Prefix 실용 가이드 — 페이지/API/이벤트/권한이 모두 prefix, 환경 오버라이드 패턴, 관측 포인트 정의 |
 | [../spec-engine-system/spec-reference-system.md](../spec-engine-system/spec-reference-system.md) | Axis Boundary — 축에 넣을 것과 넣지 않을 것. endpoint prefix 재설계. 미들웨어 자동 태깅 |
 | [../spec-engine-system/spec-reference-system.md](../spec-engine-system/spec-reference-system.md) | Spec Linking Standard — 문서 간 참조 규칙. prefix↔spec↔decision 연결 형식 표준화 |

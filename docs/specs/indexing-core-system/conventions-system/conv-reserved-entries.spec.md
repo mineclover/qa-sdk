@@ -37,7 +37,7 @@ Reserved Entry 규칙. 시스템 예약 entry와 커스텀 PackFormat 등록 절
 - **주소 3세그먼트 형식**: `{prefix}:{v}:{index}` — 모든 전략에서 동일하며, v 세그먼트는 stride가 변경된 version ID
 - **전략 선택 기준**: 크로스-버전 분석 → axis, 수집/감사 → envelope, 혼합 워크로드 → context, 개발/내부 → implicit
 
-그룹: [conventions-system.md](conventions-system.md)
+그룹: [conventions-system.md](../conventions-system.md)
 원본: `docs/specs/indexing/conventions.md` SS2, SS5
 
 ## 상태

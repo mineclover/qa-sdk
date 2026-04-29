@@ -67,7 +67,7 @@ System (STC)
        read_only_projection: true/false
 ```
 
-### 세부 규칙
+### 세부 규칙 ^lifecycle-ref-rules
 
 - **State enum 분리** — Entity가 가질 수 있는 상태 리스트는 **Component tier 문서**로 분리. System 문서에 인라인 금지
 - **Lifecycle 참조** — 전이/원자 경계/compensate/이벤트 카탈로그는 meta-semantic 문서(`docs/specs/meta-semantic/`) 참조
@@ -132,7 +132,7 @@ some-layout (Layout)
   refs: existing-system, new-system  ← 독립 파일로 만든 뒤 참조
 ```
 
-### 세부 규칙
+### 세부 규칙 ^inline-definition-rules
 
 - Layout 문서는 **참조(refs)와 조직**만 담는다
 - 새 System / Component / State enum의 operations / lifecycle / schema 정의는 **독립 tier 문서로** (상태 전이는 meta-semantic 참조)

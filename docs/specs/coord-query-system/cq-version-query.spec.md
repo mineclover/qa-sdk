@@ -37,7 +37,7 @@ Version Query는 세 가지 기능으로 구성된다.
 
 ## queryAcrossVersions
 
-### 시그니처
+### 시그니처 ^query-across-versions-signature
 
 ```typescript
 queryAcrossVersions(
@@ -64,7 +64,7 @@ const result = service.queryAcrossVersions(
 // }
 ```
 
-### 용도
+### 용도 ^query-across-versions-usage
 
 - 구버전 데이터와 신버전 데이터의 주소 범위를 동시에 파악
 - 마이그레이션 전후 영향 범위 분석
@@ -72,7 +72,7 @@ const result = service.queryAcrossVersions(
 
 ## PrefixCodec.migrate
 
-### 시그니처
+### 시그니처 ^prefix-codec-migrate-signature
 
 ```typescript
 migrate(
@@ -114,7 +114,7 @@ type CoordMigrator = (
 
 ## PrefixCodec.diff
 
-### 시그니처
+### 시그니처 ^prefix-codec-diff-signature
 
 ```typescript
 diff(
@@ -141,7 +141,7 @@ interface PrefixVersionDiff {
 }
 ```
 
-### 용도
+### 용도 ^prefix-codec-diff-usage
 
 - 버전 간 shape 변화 파악 (어떤 축이 늘어나거나 줄었는지)
 - 마이그레이션 필요성 판단 (changedLabels가 비어있으면 shape 동일)

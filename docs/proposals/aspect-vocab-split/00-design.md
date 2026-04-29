@@ -205,7 +205,7 @@ Phase 5 redesign 은 두 가지 해소 축을 제시했다.
 
 ## Helper: deriveAspectParent (Phase B-0 에서 추가)
 
-### 목적
+### 목적 ^discipline-purpose
 
 명명 컨벤션 `{role}_{parent-stem}` 을 준수하는 자식 aspect 에 대해 **부모 aspect id 를 조회** 하는 순수 함수. 이름에서 파생하지 않고 명시 map 을 lookup 한다.
 

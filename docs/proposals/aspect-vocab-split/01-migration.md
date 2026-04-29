@@ -39,11 +39,11 @@ role: migration
 
 ## Phase B-0 — Vocabulary Addition (non-breaking)
 
-### 목적
+### 목적 ^b0-purpose
 
 새 aspect 값을 코드에 선언하고 유효 scope 매핑을 확장한다. **문서는 건드리지 않는다**. 이 단계 이후 기존 문서는 모두 그대로, 새 값만 선택 가능.
 
-### 작업 내용
+### 작업 내용 ^b0-work
 
 1. `packages/definition-catalog/src/vocabulary.ts` — `DEF_ASPECT`:
    - `entries` 에 17 개 신규 값 추가 (단 `dkg_data` 는 00-design §D 의견에 따라 **제외** 권장 → 16 개 추가로 최종 조정 가능)
@@ -57,24 +57,24 @@ role: migration
 3. `DEFINITION_TAXONOMY` 의 각 scope 블록에도 신규 aspect description 추가
 4. (선택) `docs/specs/definition-catalog/definition-taxonomy.spec.md` 본문에서 aspect 목록을 enumerate 한 표가 있다면 동기화. 단 본 RFC 는 스펙 프론트매터/본문 수정 금지 대상이므로 **별도 후속 작업**으로 분리.
 
-### 성공 기준
+### 성공 기준 ^b0-success
 
 - `pnpm --filter definition-catalog build` 성공
 - `pnpm --filter definition-catalog test` 성공 (특히 `validateScopeAspect` 테스트 — 새 값이 전부 valid 한지)
 - `pnpm exec qa-sdk def sync` 성공 후 `def validate` errors=0 유지 (문서 미변경)
 - Capacity guard 경고 없음 (capacity 128, entries 40, headroom 88)
 
-### 롤백
+### 롤백 ^b0-rollback
 
 - vocabulary/taxonomy 커밋 1건 revert. 파일 2개 수정만으로 복구 완료.
 
-### 의존
+### 의존 ^b0-dependencies
 
 없음. 본 단계는 단독 실행 가능.
 
 ## Phase B-1 — HIGH Confidence Migration
 
-### 목적
+### 목적 ^b1-purpose
 
 [02-impact.md](./02-impact.md) 의 HIGH 등급 문서 **47 건** 을 새 aspect 로 점진 이동. 각 target aspect 는 독립 배치로 나누어 실행.
 
@@ -90,57 +90,57 @@ role: migration
 4. **B-1d: `domain_data` 배치** (HIGH 5 건, 1 dup-coord 그룹)
    - 예상 dup-coord 감소: 1 → 0 (definition-catalog-spec 흡수 4 멤버 이동)
 
-### 작업 방법 (문서당)
+### 작업 방법 (문서당) ^b1-method
 
 - `.spec.md` / `.plan.md` 등의 frontmatter `def.aspect` 필드만 수정
 - 변경 후 `pnpm exec qa-sdk def sync` 실행
 - dup-coord 수 확인: `pnpm exec qa-sdk def audit | grep duplicate-coordinate`
 - 한 배치(예: B-1a) 완료 후 audit 재검증. 예상치와 실제치가 다르면 중단하고 원인 추적.
 
-### 성공 기준
+### 성공 기준 ^b1-success
 
 - 각 배치 완료 후 `def validate` errors=0
 - dup-coord 건수가 예상 감소량 내로 감소
 - `invalid-scope-aspect` 에러 없음
 - 마이그레이션 문서의 incoming link(`depends_on`/`implements`/`refines`/`contains`) 전수 정상 유지 (링크는 doc id 기반, aspect 에 의존 없음 — R1 검증)
 
-### 롤백
+### 롤백 ^b1-rollback
 
 - 배치 단위로 `git revert` 가능. 문서 frontmatter 만 수정되므로 롤백 비용 낮음.
 
-### 의존
+### 의존 ^b1-dependencies
 
 - B-0 완료 필수 (vocabulary 확장 없이는 validator 가 새 aspect 를 reject 한다).
 
 ## Phase B-2 — MED Confidence Migration
 
-### 목적
+### 목적 ^b2-purpose
 
 MED 10 건은 "두 개 이상의 신규 aspect 가 모두 합리적" 이거나 "분할 대상 값 중 어느 것에도 완벽히 맞지 않지만 fallback 보다는 구체화가 낫다" 는 경계 사례. 개별 승인 후 이동.
 
-### 작업 방법
+### 작업 방법 ^b2-method
 
 - MED 리스트 ([02-impact.md](./02-impact.md) confidence=med) 를 리뷰 세션에서 1 건씩 검토
 - 리뷰어가 aspect 선택 (또는 fallback 유지 선택) → 결정을 02-impact.md 에 기록
 - 선택된 값으로 frontmatter 수정 후 sync
 
-### 성공 기준
+### 성공 기준 ^b2-success
 
 - 각 MED 문서마다 리뷰어 결정 기록 (log 또는 02-impact.md 갱신)
 - `def validate` errors=0
 - 결정 중 "fallback 유지" 라고 판단된 문서는 aspect 미이동 — 이 경우 dup-coord 가 남아도 의도적 상태 기록
 
-### 롤백
+### 롤백 ^b2-rollback
 
 - 문서 단위 revert.
 
-### 의존
+### 의존 ^b2-dependencies
 
 - B-1 완료 권장 (HIGH 이동 후에 MED 의 dup-coord 잔여 상태를 정확히 파악 가능)
 
 ## Phase B-3 — LOW Confidence / Exception
 
-### 목적
+### 목적 ^b3-purpose
 
 LOW 2 건(decision-service-system, definition-service-system) 및 특수 케이스 처리.
 
@@ -154,27 +154,27 @@ LOW 2 건(decision-service-system, definition-service-system) 및 특수 케이�
 3. **system-libraries / system-infra 그룹 (2 멤버, layout 티어)**: 00-design §B 의 Option-B 권장 — system-libraries 를 aspect `process_flow` → `relation` 으로 이동. `relation` aspect 는 flow scope 의 기존 값이며 의미상 "라이브러리 간 의존 관계" 에 적합.
 4. **viz 그룹 (component aspect)**: 본 RFC 범위 밖. Phase 5c §"3+ 멤버 그룹" 으로 환원.
 
-### 작업 방법
+### 작업 방법 ^b3-method
 
 - 각 특수 케이스에 대해 결정 기록 → 실행
 - dkg-system 그룹은 별도 PR 로 처리 권장
 
-### 성공 기준
+### 성공 기준 ^b3-success
 
 - `def validate` errors=0
 - dup-coord 건수가 최종 안정 상태 도달 (목표: ≤ 5, 대개는 viz 그룹과 사람이 유지 판단한 cluster)
 
-### 롤백
+### 롤백 ^b3-rollback
 
 - 케이스별 독립 revert.
 
-### 의존
+### 의존 ^b3-dependencies
 
 - B-2 완료 권장.
 
 ## Phase B-4 — Legacy Aspect Deprecation (optional)
 
-### 목적
+### 목적 ^b4-purpose
 
 모든 HIGH/MED 마이그레이션이 완료된 후, 기존 `func_def`/`process_flow`/`api_contract`/`domain_data` 가 여전히 다수 문서에서 fallback 으로 쓰이고 있다면 현상 유지. 만약 마이그레이션이 진행되어 fallback 사용이 <30% 수준까지 축소되면 deprecated 처리 검토.
 
@@ -187,30 +187,30 @@ LOW 2 건(decision-service-system, definition-service-system) 및 특수 케이�
    - Validator 가 deprecated aspect 사용 문서에 warning 발생
    - 신규 문서는 세분화된 값 사용하도록 유도
 
-### 작업 방법 (옵션 2 선택 시)
+### 작업 방법 (옵션 2 선택 시) ^b4-method
 
 - `vocabulary.ts` 의 축 정의 인터페이스에 `deprecatedEntries: readonly string[]` 필드 추가
 - `validate.ts` 에 deprecated aspect 사용 감지 루프 추가
 - 코드 LOC 변화: ~20 추정
 - 이름 제거는 **절대 금지** — 기존 ingest 된 문서가 참조할 수 있음
 
-### 성공 기준
+### 성공 기준 ^b4-success
 
 - 기존 문서 검증에 regression 없음
 - 신규 deprecation warning 만 추가
 
-### 롤백
+### 롤백 ^b4-rollback
 
 - 코드 1 커밋 revert. 축 데이터는 변경되지 않음.
 
-### 의존
+### 의존 ^b4-dependencies
 
 - B-2 완료.
 - 사람 승인 — 본 단계는 **실행하지 않을 수 있다**.
 
 ## Phase C — Schema Hierarchy 전환 (향후 별도 RFC)
 
-### 목적
+### 목적 ^c-purpose
 
 Phase A (flat 확장) / B-0~B-4 (migration) 완료 후, vocabulary 의 flat aspect 집합이 안정화되면 **schema 기반 계층** 으로 전환한다. 본 Phase 5b RFC 는 Phase C 를 **예고만** 하며, 실제 실행은 별도 RFC 에서 다룬다.
 

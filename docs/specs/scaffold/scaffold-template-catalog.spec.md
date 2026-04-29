@@ -28,7 +28,8 @@ def:
 ## 구성 ^overview
 
 - `DOMAIN_TEMPLATE_CATALOG`는 `domain` scaffold의 artifact, layer, responsibility, responsibility topology를 열거한다.
-- artifact는 identity, domain state shape, domain behavior, domain behavior test evidence, command DTO, repository/outbox/transaction/logger/read-model port, Drizzle adapter/schema, outbox/transaction/unit-of-work/logger/read-model adapter, HTTP controller, optional BFF surface, OpenAPI fragment, governance metadata, Nest module을 포함한다.
+- artifact는 identity, domain state shape, domain behavior, domain behavior test evidence, command DTO, repository/outbox/transaction/logger/read-model port, Drizzle DB token/adapter/schema, outbox/transaction/unit-of-work/logger/read-model adapter, HTTP controller, optional BFF surface, OpenAPI fragment, governance metadata, Nest module을 포함한다.
+- optional artifact는 `optional: true`로 표시한다. 현재 optional artifact는 read model port/adapter와 BFF surface/controller다.
 - rule은 `domain-is-pure`, `application-uses-ports`, `presentation-calls-application`, `module-binds-port`, `metadata-ships-with-domain-slice`, `transaction-and-logging-are-ports`, `bff-does-not-expose-domain-entity`를 포함한다.
 - `qa-scaffold catalog`는 카탈로그를 터미널에서 출력해 onboarding, 리뷰, 템플릿 변경 검토에 사용한다.
 

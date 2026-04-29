@@ -21,8 +21,8 @@ def:
 
 MetaRegistry의 VersionedValue를 UUID 등 고정 포맷 PK로 직렬화하는 설정과 동작 규칙.
 
-디코딩 파이프라인: [../pipeline.md](../pipeline.md)
-weighted-index 측 통합 문서: [../../weighted-index-system/wi-pack-format-system.md](../../weighted-index-system/wi-pack-format-system.md)
+디코딩 파이프라인: [../pipeline.md](../pipeline-system/pipeline.md)
+weighted-index 측 통합 문서: [../../weighted-index-system/wi-pack-format-system.md](../weighted-index-system/wi-pack-format-system.md)
 
 ## 구성 ^overview
 
@@ -36,7 +36,7 @@ weighted-index 측 통합 문서: [../../weighted-index-system/wi-pack-format-sy
 
 ## 참조
 
-패키지 인덱스: [README.md](README.md)
+패키지 인덱스: [README.md](../README.md)
 
 ## 상태
 
@@ -92,7 +92,7 @@ interface MetaRegistryInput {
 | `format: uuid` | `"layout:uuid"` | `"00010001-...-002a"` |
 | `format: int64` | `"layout:int64"` | `"010100000000002a"` |
 
-> **BigInt**: shape product > 2^53인 인덱스는 `serializeBig()`/`parseBig()`와 `createLayoutProtocolBig` 사용. 상세: [../../indexing-core-system/bigint-addressing-runtime.spec.md](../../indexing-core-system/bigint-addressing-runtime.spec.md) §4
+> **BigInt**: shape product > 2^53인 인덱스는 `serializeBig()`/`parseBig()`와 `createLayoutProtocolBig` 사용. 상세: [../../indexing-core-system/bigint-addressing-runtime.spec.md](../indexing-core-system/bigint-addressing-group/bigint-addressing-runtime.spec.md) §4
 
 ---
 
@@ -110,7 +110,7 @@ interface MetaRegistryInput {
 
 ## PK 디코딩 경로
 
-UUID → entity ID 전체 디코딩 경로(4단계), 각 단계의 메서드·필요 정보·소속 패키지는 [`../pipeline.md`](../pipeline.md)에 정의되어 있다.
+UUID → entity ID 전체 디코딩 경로(4단계), 각 단계의 메서드·필요 정보·소속 패키지는 [`../pipeline.md`](../pipeline-system/pipeline.md)에 정의되어 있다.
 
 핵심: UUID는 **어떤 인덱스의 어떤 버전인지**까지만 자기 설명적이다. 정수 값이 무엇을 의미하는지는 MetaRegistry(shape + entries)가 반드시 필요하다.
 

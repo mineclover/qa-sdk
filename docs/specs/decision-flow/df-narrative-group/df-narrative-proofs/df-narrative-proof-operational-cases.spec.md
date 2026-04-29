@@ -44,7 +44,7 @@ stabilization flow 기준:
 - 코드 품질: acceptable
 - 판정: stable
 
-### 결론
+### 결론 ^operation-simulation-conclusion
 
 실제 사례에서도 decision-flow는 "왜 지금은 안정화보다 관찰이 맞는가"를 구조적으로 설명한다.
 
@@ -58,6 +58,6 @@ stabilization flow 기준:
 
 `~/.qa-sdk/decision-flow.sqlite`에 FlowInstance가 저장되어 복수 프로세스에 걸쳐 결정 진행이 가능하다. 이전 선택과 verdict가 다음 실행 시점에도 다시 읽힌다.
 
-### 결론
+### 결론 ^governance-loop-conclusion
 
 서사는 일회성 메모가 아니라 영속되는 운영 자산이다. 세션을 넘어도 같은 좌표계 위에서 이어진다.

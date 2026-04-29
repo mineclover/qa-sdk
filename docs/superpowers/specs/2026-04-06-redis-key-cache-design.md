@@ -56,7 +56,7 @@ class RedisKeyCache<T = unknown> implements KeyCache<T> {
 - `JSON.stringify()` / `JSON.parse()`
 - parse 실패 → undefined + miss 카운터 (데이터 손상 방어)
 
-### 파일 배치
+### 파일 배치 ^phase-1-file-layout
 
 ```
 packages/store/
@@ -116,7 +116,7 @@ Redis 장애 시 in-memory pool만으로 동작. Redis 연결 에러 → warn �
 | `qa-sdk cache stats` | Redis INFO + SCAN count → 키 수, 메모리, 프로세스 hit rate |
 | `qa-sdk cache clear [--prefix <id>]` | SCAN+DEL. --prefix 지정 시 해당 prefix만 |
 
-### 파일 배치
+### 파일 배치 ^phase-4-file-layout
 
 ```
 packages/cli/src/command-groups/

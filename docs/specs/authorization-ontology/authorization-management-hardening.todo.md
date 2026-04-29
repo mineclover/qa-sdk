@@ -34,47 +34,47 @@ def:
 - [x] decision observation ingest API 연결
 - [x] graph diff API 추가
 
-#### Policy Source Adapter
+#### Policy Source Adapter ^completed-policy-source-adapter
 
 - [x] Cerbos JSON loader 추가
 - [x] Cerbos YAML loader 추가
 - [x] Cerbos bundle/sourceRef/version metadata adapter 추가
 
-#### Runtime Feedback
+#### Runtime Feedback ^completed-runtime-feedback
 
 - [x] `PermissionMiddleware` feedback을 ingest event로 전송하는 adapter 추가
 
-#### Audit / Coverage
+#### Audit / Coverage ^completed-audit-coverage
 
 - [x] route-policy-domain-resource coverage score 계산
 
-#### Monitor Web
+#### Monitor Web ^completed-monitor-web
 
 - [x] `authorization-monitor-web` live API adapter 추가
 - [x] graph store에서 실제 graph를 읽는 모드 추가
 
 ### Actionable — 실행 가능
 
-#### Policy Source Adapter
+#### Policy Source Adapter ^actionable-policy-source-adapter
 
 - [ ] Caddy config adapter 추가
 - [ ] Authentik outpost/application adapter 추가
 - [ ] ArgoCD/Pulumi output에서 route-policy map 자동 생성
 
-#### Runtime Feedback
+#### Runtime Feedback ^actionable-runtime-feedback
 
 - [ ] `VERSION_MISMATCH` 발생 시 token refresh/remediation workflow 정의
 - [ ] `SCHEMA_MISMATCH` 발생 시 re-authentication workflow 정의
 - [ ] `PERMISSION_DENIED`와 `NO_DOMAIN_CLAIM`의 운영 alert severity 분리
 
-#### Audit / Coverage
+#### Audit / Coverage ^actionable-audit-coverage
 
 - [ ] proxy-only 보호 route와 app-only 보호 resource 차이 report
 - [ ] allow decision이 policy action과 불일치할 때 gate 실패 처리
 - [ ] dangling relation을 build/test gate로 승격
 - [ ] column lineage policy propagation 결과를 audit report에 포함
 
-#### Monitor Web
+#### Monitor Web ^actionable-monitor-web
 
 - [ ] audit issue panel 추가
 - [ ] RLSC layout snapshot 자동 수집 테스트 추가

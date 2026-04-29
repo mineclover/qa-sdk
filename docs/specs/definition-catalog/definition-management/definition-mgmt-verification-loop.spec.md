@@ -51,7 +51,7 @@ node packages/cli/dist/index.js def audit
 node packages/cli/dist/index.js def audit-db
 ```
 
-### 읽는 법
+### 읽는 법 ^default-loop-reading-guide
 
 - `build`
   CLI 표면과 타입 surface가 깨지지 않았는지 본다.
@@ -78,7 +78,7 @@ node packages/cli/dist/index.js quality status quality-gates-system --json
 node packages/cli/dist/index.js quality export quality-gates-system --output=artifacts/quality-gates-system.json
 ```
 
-### 읽는 법
+### 읽는 법 ^quality-loop-reading-guide
 
 - `quality show`
   게이트 계약과 명령 구성을 확인한다.

@@ -53,12 +53,19 @@ import {
   isTraversalAxis,
   isTraversalDirection,
   isTraversalPresetId,
+  buildMarkdownBundlePreview,
+  buildMarkdownLinkRebase,
+  buildMarkdownLinkRepair,
+  loadMarkdownLinkLedger,
   previewPrdCompletionSync,
   rankDocumentGraphTraversal,
+  renderMarkdownBundlePreview,
+  scanMarkdownLinks,
   summarizeDocumentGraphResult,
   summarizeDocumentGraphTraversalMissingRoles,
   TRAVERSAL_DIRECTIONS,
   TRAVERSAL_PRESET_IDS,
+  writeMarkdownLinkLedger,
   traverseDocumentGraph,
   type DocumentGraphTraversalInput,
   type DocumentGraphTraversalResult,
@@ -71,6 +78,10 @@ import {
   type CompletedRecordState,
   DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
   DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
+  type MarkdownLinkRebaseResult,
+  type MarkdownLinkRepairResult,
+  type MarkdownLinkScanResult,
+  type MarkdownBundleFormat,
   type PrdCompletionSyncPreview,
   MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH,
   MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT,
@@ -109,7 +120,7 @@ import {
 import { applyCompletedRecordCleanup } from "../lib/docs-control-plane/completed-record-cleanup-apply.js";
 import { formatHelpSections, type CommandHelpSectionSpec } from "../command-spec.js";
 
-type DocsCommand = "help" | "status" | "explore" | "collect" | "closure" | "search" | "drift" | "bdd" | "transform" | "prd" | "graph" | "cleanup";
+type DocsCommand = "help" | "status" | "explore" | "collect" | "closure" | "search" | "drift" | "bdd" | "transform" | "prd" | "graph" | "cleanup" | "links" | "bundle";
 
 interface ParsedDocsArgs {
   readonly command: DocsCommand;
@@ -771,6 +782,10 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "qa-sdk docs graph <target> [--axis <csv>] [--filter-axis <csv>] [--kind <csv>] [--role <csv>] [--follow-up-category <csv>] [--include-archive] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--verbose] [--json]",
       "qa-sdk docs search <selector|query> [--selector-scope root|family|owned] [--kind <kind>] [--metadata key=value] [--json]",
       "qa-sdk docs drift [--prd <file>] [--include-session] [--json]",
+      "qa-sdk docs links scan [--ledger <file>] [--write-ledger <file>] [--json]",
+      "qa-sdk docs links repair [--ledger <file>] [--threshold <n>] [--apply] [--json]",
+      "qa-sdk docs links rebase --from-root <dir> --to-root <dir> [--apply] [--json]",
+      "qa-sdk docs bundle preview <file|dir> [--order <csv>] [--format markdown|toc|stats|json]",
       "qa-sdk docs cleanup review [doc-id|path] [--prd <file>] [--family-only] [--include-session] [--json]",
       "qa-sdk docs cleanup plan <record-path|doc-id|paired-path> --action archive|memo-conversion|promote-spec|rewrite [--override <json-file|inline-json>] [--dry-run] [--json]",
       "qa-sdk docs cleanup plan --all (--recommended | --action-map <json-file|inline-json>) [doc-id|path|--prd <file>] [--dry-run] [--json]",
@@ -814,6 +829,13 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "--graph                      use graph traversal for docs collect; defaults to the family preset",
       "--output <file>              PRD markdown scaffold or PRD JSON conversion output path",
       "--rule <json-file|inline-json> metadata transform rule for dry-run preview",
+      "--ledger <file>              previous docs links scan JSON for identity-based repair",
+      "--write-ledger <file>        write docs links scan result as a reusable ledger",
+      "--candidate-root <dir>       alternate markdown root to test for missing links; repeatable",
+      "--format <name>              bundle preview format: markdown, toc, stats, json",
+      "--order <csv>                explicit bundle file order by basename without extension",
+      "--threshold <n>              minimum docs links repair confidence, default 90",
+      "--from-root/--to-root <dir>  rebase valid markdown links between project root bases",
       "--dry-run                    preview only; this is the default",
       "--strict                     fail preview when blocked promotions, session drift, or diagnostics remain",
       "--evidence-only              count only evidence refs toward promotion support; ignore source/test-only proof",
@@ -821,7 +843,7 @@ const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
       "--recommended                use review recommendations as the batch cleanup strategy",
       "--action-map <json>          explicit completed-record -> action mapping for batch cleanup",
       "--override <json>            explicit override object for a single cleanup target",
-      "--apply                      unsupported in this PRD; returns a structured error",
+      "--apply                      write supported docs links and cleanup changes",
       "--artifact-registry <file>   artifact evidence registry path (repeatable)",
       "--json                       emit structured JSON",
     ],
@@ -888,6 +910,15 @@ export async function cliDocs(args: string[]): Promise<void> {
   }
 
   const options = runtimeOptions(parsed.flags);
+  if (parsed.command === "links") {
+    await cmdLinks(options, parsed.positional, parsed.flags);
+    return;
+  }
+  if (parsed.command === "bundle") {
+    await cmdBundle(options, parsed.positional, parsed.flags);
+    return;
+  }
+
   const documents = await collectAllDocuments(createDocsAdapters(options));
 
   if (parsed.command === "status") {
@@ -990,6 +1021,8 @@ function normalizeCommand(value: string | undefined): DocsCommand {
     || value === "help"
     || value === "drift"
     || value === "cleanup"
+    || value === "links"
+    || value === "bundle"
     || value === "bdd"
     || value === "transform"
     || value === "prd"
@@ -2647,6 +2680,160 @@ async function cmdDrift(
     return;
   }
   printDrift(result);
+}
+
+async function cmdLinks(
+  options: DocsRuntimeOptions,
+  positional: readonly string[],
+  flags: Readonly<Record<string, readonly string[]>>,
+): Promise<void> {
+  const json = hasFlag(flags, "json");
+  const action = positional[0];
+  if (action !== "scan" && action !== "repair" && action !== "rebase") {
+    console.error("Usage: qa-sdk docs links scan [--ledger <file>] [--write-ledger <file>] [--json]");
+    console.error("Usage: qa-sdk docs links repair [--ledger <file>] [--threshold <n>] [--apply] [--json]");
+    console.error("Usage: qa-sdk docs links rebase --from-root <dir> --to-root <dir> [--apply] [--json]");
+    process.exitCode = 1;
+    return;
+  }
+
+  let ledger: MarkdownLinkScanResult | undefined;
+  const ledgerPath = pickLast(flags, "ledger");
+  if (ledgerPath) {
+    try {
+      ledger = await loadMarkdownLinkLedger(options.rootDir, ledgerPath);
+    } catch (error) {
+      printStructuredError({
+        error: {
+          code: "invalid-markdown-link-ledger",
+          operation: `docs.links.${action}`,
+          message: error instanceof Error ? error.message : String(error),
+          remediation: "Pass a JSON file produced by qa-sdk docs links scan --write-ledger.",
+        },
+      }, json);
+      process.exitCode = 1;
+      return;
+    }
+  }
+
+  const scan = await scanMarkdownLinks({
+    rootDir: options.rootDir,
+    docsDirs: options.docsDirs,
+    candidateRoots: pickAll(flags, "candidate-root", []),
+    ...(ledger ? { ledger } : {}),
+  });
+
+  if (action === "scan") {
+    const writeLedgerPath = pickLast(flags, "write-ledger");
+    if (writeLedgerPath) await writeMarkdownLinkLedger(options.rootDir, writeLedgerPath, scan);
+    if (json) {
+      printJson(scan);
+      return;
+    }
+    if (scan.counts.missing > 0 || scan.counts.headingMissing > 0) process.exitCode = 1;
+    printMarkdownLinkScan(scan, writeLedgerPath);
+    return;
+  }
+
+  if (action === "repair") {
+    const threshold = parseMarkdownLinkThreshold(flags);
+    if (threshold === null) {
+      printStructuredError({
+        error: {
+          code: "invalid-threshold",
+          operation: "docs.links.repair",
+          message: "docs links repair --threshold expects an integer from 0 to 200.",
+          remediation: "Pass --threshold 90 or omit it for the default.",
+        },
+      }, json);
+      process.exitCode = 1;
+      return;
+    }
+    const result = await buildMarkdownLinkRepair(scan, {
+      apply: hasFlag(flags, "apply"),
+      threshold,
+    });
+    if (json) {
+      printJson(result);
+      return;
+    }
+    printMarkdownLinkRepair(result);
+    return;
+  }
+
+  const fromRoot = pickLast(flags, "from-root");
+  const toRoot = pickLast(flags, "to-root");
+  if (!fromRoot || !toRoot) {
+    printStructuredError({
+      error: {
+        code: "missing-required-option",
+        operation: "docs.links.rebase",
+        message: "docs links rebase requires --from-root <dir> and --to-root <dir>.",
+        remediation: "For example: qa-sdk docs links rebase --from-root docs --to-root . --json.",
+      },
+    }, json);
+    process.exitCode = 1;
+    return;
+  }
+  const result = await buildMarkdownLinkRebase(scan, {
+    fromRoot,
+    toRoot,
+    apply: hasFlag(flags, "apply"),
+  });
+  if (json) {
+    printJson(result);
+    return;
+  }
+  printMarkdownLinkRebase(result);
+}
+
+async function cmdBundle(
+  options: DocsRuntimeOptions,
+  positional: readonly string[],
+  flags: Readonly<Record<string, readonly string[]>>,
+): Promise<void> {
+  const action = positional[0];
+  const target = positional[1];
+  if (action !== "preview" || !target) {
+    console.error("Usage: qa-sdk docs bundle preview <file|dir> [--order <csv>] [--format markdown|toc|stats|json]");
+    process.exitCode = 1;
+    return;
+  }
+
+  const format = parseMarkdownBundleFormat(flags);
+  if (!format) {
+    printStructuredError({
+      error: {
+        code: "invalid-bundle-format",
+        operation: "docs.bundle.preview",
+        message: "docs bundle preview --format expects markdown, toc, stats, or json.",
+        remediation: "Pass --format markdown, --format toc, --format stats, or --format json.",
+      },
+    }, hasFlag(flags, "json"));
+    process.exitCode = 1;
+    return;
+  }
+
+  const preview = await buildMarkdownBundlePreview({
+    rootDir: options.rootDir,
+    target,
+    order: pickAll(flags, "order", []).flatMap(splitCsv),
+  });
+  process.stdout.write(renderMarkdownBundlePreview(preview, format));
+}
+
+function parseMarkdownBundleFormat(flags: Readonly<Record<string, readonly string[]>>): MarkdownBundleFormat | null {
+  const raw = pickLast(flags, "format") ?? (hasFlag(flags, "json") ? "json" : "markdown");
+  if (raw === "markdown" || raw === "toc" || raw === "stats" || raw === "json") return raw;
+  return null;
+}
+
+function parseMarkdownLinkThreshold(flags: Readonly<Record<string, readonly string[]>>): number | null {
+  const raw = pickLast(flags, "threshold");
+  if (!raw) return 90;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 0 || value > 200) return null;
+  return value;
 }
 
 async function cmdTransform(
@@ -5811,6 +5998,65 @@ function printDrift(result: DocumentDriftResult): void {
   console.log(`  documents: ${result.scope.documents}`);
   for (const severity of ["error", "warning", "info"] as const satisfies readonly DocumentDriftSeverity[]) {
     printDriftIssueGroup(severity, result.issuesBySeverity[severity]);
+  }
+}
+
+function printMarkdownLinkScan(result: MarkdownLinkScanResult, ledgerPath?: string): void {
+  console.log("docs links scan");
+  console.log(`  parser: ${result.parser}`);
+  console.log(`  files/identities/links: ${result.counts.files}/${result.counts.identities}/${result.counts.links}`);
+  console.log(`  valid/missing/heading-missing/root-resolvable/external/anchor/unsafe: ${result.counts.valid}/${result.counts.missing}/${result.counts.headingMissing}/${result.counts.rootResolvable}/${result.counts.external}/${result.counts.anchor}/${result.counts.unsafe}`);
+  if (result.counts.duplicateHeadings > 0) console.log(`  duplicate heading anchors: ${result.counts.duplicateHeadings}`);
+  if (result.counts.repeatableHeadings > 0) console.log(`  repeatable heading anchors: ${result.counts.repeatableHeadings}`);
+  if (result.counts.unmarkedRepeatableHeadings > 0) console.log(`  repeatable headings without markers: ${result.counts.unmarkedRepeatableHeadings}`);
+  if (result.counts.duplicateMarkers > 0) console.log(`  duplicate marker anchors: ${result.counts.duplicateMarkers}`);
+  if (result.counts.repeatableMarkers > 0) console.log(`  repeatable contract markers: ${result.counts.repeatableMarkers}`);
+  if (ledgerPath) console.log(`  ledger: ${ledgerPath}`);
+  const brokenLinks = result.links.filter((item) => item.status === "missing" || item.status === "heading-missing");
+  for (const link of brokenLinks.slice(0, 20)) {
+    console.log(`  - ${link.status} ${link.sourcePath}:${link.line}:${link.column} ${link.rawHref}`);
+    for (const candidate of link.candidates.slice(0, 3)) {
+      console.log(`    candidate ${candidate.score}: ${candidate.path}${candidate.defId ? ` def=${candidate.defId}` : ""}`);
+    }
+    for (const candidate of link.rootCandidates.slice(0, 3)) {
+      console.log(`    root ${candidate.score}: ${candidate.root || "."} -> ${candidate.path}`);
+    }
+    for (const candidate of link.headingCandidates.slice(0, 3)) {
+      console.log(`    heading ${candidate.score}: #${candidate.slug} (${candidate.text})`);
+    }
+  }
+  printMarkdownLinkDiagnostics(result.diagnostics);
+  if (brokenLinks.length > 20) console.log(`  ... ${brokenLinks.length - 20} more broken links`);
+}
+
+function printMarkdownLinkRepair(result: MarkdownLinkRepairResult): void {
+  console.log(`docs links repair${result.applied ? " applied" : " preview"}`);
+  console.log(`  threshold: ${result.threshold}`);
+  console.log(`  missing/planned/applied/ambiguous: ${result.counts.missing}/${result.counts.planned}/${result.counts.applied}/${result.counts.ambiguous}`);
+  for (const change of result.changes.slice(0, 30)) {
+    console.log(`  - ${change.sourcePath}:${change.line}:${change.column}`);
+    console.log(`    ${change.rawHref} -> ${change.nextHref} (${change.confidence}, ${change.reason})`);
+  }
+  if (result.changes.length > 30) console.log(`  ... ${result.changes.length - 30} more planned changes`);
+  printMarkdownLinkDiagnostics(result.diagnostics);
+}
+
+function printMarkdownLinkRebase(result: MarkdownLinkRebaseResult): void {
+  console.log(`docs links rebase${result.applied ? " applied" : " preview"}`);
+  console.log(`  roots: ${result.fromRoot || "."} -> ${result.toRoot || "."}`);
+  console.log(`  valid/planned/applied: ${result.counts.valid}/${result.counts.planned}/${result.counts.applied}`);
+  for (const change of result.changes.slice(0, 30)) {
+    console.log(`  - ${change.sourcePath}:${change.line}:${change.column}`);
+    console.log(`    ${change.rawHref} -> ${change.nextHref}`);
+  }
+  if (result.changes.length > 30) console.log(`  ... ${result.changes.length - 30} more planned changes`);
+  printMarkdownLinkDiagnostics(result.diagnostics);
+}
+
+function printMarkdownLinkDiagnostics(diagnostics: readonly { readonly severity: string; readonly code: string; readonly message: string }[]): void {
+  for (const diagnostic of diagnostics) {
+    if (diagnostic.severity === "info" && (diagnostic.code === "repeatable-heading-anchor" || diagnostic.code === "repeatable-contract-marker")) continue;
+    console.log(`  ${diagnostic.severity}: ${diagnostic.code}: ${diagnostic.message}`);
   }
 }
 

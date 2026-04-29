@@ -22,7 +22,7 @@ def:
 
 게이트 무게(core/structural/tactical), 인과 그래프(GateDependency), 결정 계층(strategic→tactical→operational→execution)과 컨텍스트 바운더리를 정의한다.
 
-## 게이트 무게 ^constraint
+## 게이트 무게 ^constraint:gate-weight
 
 | weight | 의미 | 변경 영향 |
 |--------|------|---------|
@@ -30,7 +30,7 @@ def:
 | structural | 다수의 후속 결정에 영향 | 연쇄 변경 |
 | tactical | 국소적 영향, 독립적 되돌림 가능 | 해당 gate만 |
 
-## 계층 규칙 ^constraint
+## 계층 규칙 ^constraint:layer-rules
 
 | 규칙 | 허용 | 위반 시 |
 |------|------|--------|

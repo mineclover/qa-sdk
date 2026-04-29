@@ -174,4 +174,4 @@ view.applyRevoke("shop/payment", "api", "admin/teams", "GET");    // 회수
 
 - `CodecSnapshot`은 공개 타입이지만 현재 클래스 메서드 surface에 직접 연결되지 않았다.
 - strict schema/version 검증이 필요하면 `parse()` 이후 호출자가 추가 확인해야 한다.
-- 외부 식별자 규칙은 [perm-external-system.md](perm-external-system.md)가 맡고, PermissionCodec은 그 결과를 닫힌 주소 공간으로 투영하는 단계만 책임진다.
+- 외부 식별자 규칙은 [perm-external-system.md](../perm-external-system.md)가 맡고, PermissionCodec은 그 결과를 닫힌 주소 공간으로 투영하는 단계만 책임진다.

@@ -38,7 +38,7 @@ def:
 - **상수**: `CANONICAL_TEXT_PROTOCOL = "colon"`
 - **예시**: `perm:v1:42`
 
-### 선택 근거
+### 선택 근거 ^json-structure-rationale
 
 - colon(`:`)은 hex 패턴(`[0-9a-f-]`)과 충돌하지 않아 가장 비모호하다.
 - URI(`wi://`)는 scheme prefix로 인해 길고, compact(`-`)는 hex-only schema/version과 구분 불가능한 경우가 있다.
@@ -54,7 +54,7 @@ hex container (UUID, int64, custom)
 - **상수**: `CANONICAL_BINARY_PREFIX = "layout:"`
 - **예시**: `00010001-0000-0000-0000-00000000002a` (layout:uuid)
 
-### 선택 근거
+### 선택 근거 ^colon-protocol-rationale
 
 - layout protocol은 SemanticAddress 필드를 고정 크기 hex 컨테이너에 packed하여 DB 네이티브 타입(UUID, BIGINT)에 직접 저장 가능.
 - 바이너리 저장은 정렬/인덱싱/비교에서 텍스트보다 효율적.

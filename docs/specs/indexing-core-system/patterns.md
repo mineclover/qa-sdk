@@ -26,8 +26,8 @@ def:
 시스템을 **어떻게 쓰는가** — 버전 이동, index 합성, 필터링 패턴.
 기반 원리는 [`foundation.md`](foundation.md), 프로젝트 관례는 [`../indexing-core-system/conventions-system.md`](../indexing-core-system/conventions-system.md)를 참조한다.
 
-- [`weighted-index/`](weighted-index/README.md)
-- [`index-meta/`](index-meta/README.md)
+- [`weighted-index/`](../indexing/weighted-index/README.md)
+- [`index-meta/`](../indexing/index-meta/README.md)
 
 ## 구성 ^overview
 

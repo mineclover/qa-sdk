@@ -48,7 +48,7 @@ rlsc → @chenglou/pretext
 
 작업은 3단계로 분리한다. 각 단계는 독립 검증/롤백 가능하며 PR 단위로 작게 유지한다.
 
-### Phase B'1 — 모더나이즈
+### Phase B'1 — 모더나이즈 ^phase-b1-modernize-plan
 - `vendor/projectvisbug` 내부 빌드/테스트 도구 갱신
 - 산출물 `dist/visbug.esm.js` 안정화
 - extension/ 및 VisBug/(Xcode)는 손대지 않음 (평가 단계 스코프 외)
@@ -136,7 +136,7 @@ rlsc → @chenglou/pretext
 **correlationId 산출**: `hash(target.nodePath + sorted(changedProps).join(',') + Math.floor(ts / 100))`. 100ms 버킷이면 wrapper와 mutation-observer가 동일 변경에 대해 같은 id를 산출. 버킷 크기는 너무 작으면(<50ms) MutationObserver의 microtask 지연으로 split, 너무 크면(>500ms) 별개 변경이 충돌. 기본 100ms은 visbug 키-홀드 반복 입력 간격(50ms)보다 크지만 사용자 인지 단위는 보존.
 | `merge.js` | 같은 correlationId 그룹을 1엔트리로 결합. `agreement` (afterCSS 일치 여부) / `divergence` (불일치 prop diff) 산출 | entry |
 | `formatters.js` | `toCSS/toScript/toJSON(entries)`. 단일 entry 변환 실패는 그 엔트리만 skip | entry |
-| `replay.js` | `replay(entry, {mode: 'css'\|'feature'})`. css: target에 afterCSS 적용. feature: target 재해결 후 features/[feature](args) 호출. `agreement===false` 시 warning 메타 동봉 | entry, features/*, formatters |
+| `replay.js` | `replay(entry, {mode: 'css'\|'feature'})`. css: target에 afterCSS 적용. feature: target 재해결 후 `features/[feature](args)` 호출. `agreement===false` 시 warning 메타 동봉 | entry, features/*, formatters |
 | `index.js` | `install(host)` — 위 전부를 `<vis-bug>` 인스턴스에 결합 | 위 전부 |
 
 ### `vendor/projectvisbug/app/components/vis-bug/vis-bug.element.js` (수정, Phase B'2)
@@ -287,7 +287,7 @@ WeakRef, AsyncIterator, CustomElements v1, 표준 MutationObserver — Chrome 86
 
 ## 테스트 전략
 
-### Phase B'1 (모더나이즈)
+### Phase B'1 (모더나이즈) ^phase-b1-modernize-test
 
 | 대상 | 도구 | 통과 기준 |
 |---|---|---|

@@ -24,7 +24,7 @@ index-meta SDK의 퍼블릭 API. MetaCodec 위에 구축된 encode/decode/resolv
 
 index-meta SDK의 퍼블릭 API. MetaCodec 위에 구축된 encode/decode/resolve/serialize 통합 인터페이스.
 
-그룹: [sdk-system.md](sdk-system.md)
+그룹: [sdk-system.md](../sdk-system.md)
 원본: `docs/specs/indexing/index-meta/sdk.spec.md`
 
 ## 구성 ^overview

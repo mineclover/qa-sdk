@@ -24,7 +24,7 @@ constants() 빌드 로직과 RESERVED_TOKENS. 모든 예약 토큰은 constants(
 
 constants() 빌드 로직과 RESERVED_TOKENS. 모든 예약 토큰은 constants()를 통해 공급된다.
 
-그룹: [sdk-system.md](sdk-system.md)
+그룹: [sdk-system.md](../sdk-system.md)
 원본: `docs/specs/indexing/index-meta/sdk.spec.md`
 
 ## 구성 ^overview

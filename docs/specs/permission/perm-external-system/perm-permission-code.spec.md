@@ -25,7 +25,7 @@ def:
 권한 코드 형식: {service-ref}.{type}.{resource}.{action}. 외부 시스템이 권한을 참조하는 표준 포맷.
 
 소스: `packages/permission-engine/src/permission-code.ts`
-그룹: [perm-external-system.md](perm-external-system.md)
+그룹: [perm-external-system.md](../perm-external-system.md)
 원본: `docs/specs/indexing/permission-engine/resource.spec.md` SS4
 
 ## 구성 ^overview

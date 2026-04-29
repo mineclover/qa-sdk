@@ -332,7 +332,7 @@ pnpm sim:scenarios density --prefix=sim.bitmap --version=uv1
 
 ## 운영 가이드
 
-상세 절차, 환경 변수, troubleshooting → [`docs/operations.md`](docs/operations.md)
+상세 절차, 환경 변수, troubleshooting → [`simulations/enterprise-pm/docs/operations.md`](../../../../simulations/enterprise-pm/docs/operations.md)
 
 ## 관련 plan
 
@@ -342,7 +342,7 @@ pnpm sim:scenarios density --prefix=sim.bitmap --version=uv1
 - Plan 12 (cross-service 통합): 12a/b/c
 - Plan 13 (시나리오): 13a/b/c/d
 - Plan 14 (검증·마무리): 14a/b
-- 디자인: [`sim-erp-pm-design.md`](../../docs/proposals/auth-model-implementation-backlog/sim-erp-pm-design.md)
+- 디자인: [`sim-erp-pm-design.md`](../sim-erp-pm-design.md)
 ```
 
 - [ ] **Step 2: 커밋**
@@ -463,7 +463,7 @@ qa-sdk 본체:
 | `QA_INGEST_URL` | IngestForwarder 대상 | `http://host.docker.internal:3200` |
 | `JWT_SECRET` | gateway HS256 | (부팅 시 32+ char 강제) |
 
-상세: [`/docs/CONVENTIONS.md`](../../../docs/CONVENTIONS.md) env var 표 참조.
+상세: [`/docs/CONVENTIONS.md`](../../../CONVENTIONS.md) env var 표 참조.
 
 ## 5. 8 시나리오 실행
 
@@ -500,7 +500,7 @@ threshold:
 - `underutilized: density < 0.1` — 축이 거의 관측 안 됨 (설계 과잉 또는 트래픽 누락)
 - `saturated: density > 0.9` — 축이 거의 다 관측 (capacity headroom 부족)
 
-§5 spec: [`/docs/specs/event-vocab-system/event-taxonomy-marginal-density.plan.md`](../../../docs/specs/event-vocab-system/event-taxonomy-marginal-density.plan.md)
+§5 spec: [`/docs/specs/event-vocab-system/event-taxonomy-marginal-density.plan.md`](../../../specs/event-vocab-system/event-taxonomy-marginal-density.plan.md)
 
 ## 7. Troubleshooting
 
@@ -568,10 +568,10 @@ docker volume rm enterprise-pm_sim-redis-data
 
 ## 9. 추가 참조
 
-- [Plan 14a — marginal density 측정](../../../docs/proposals/auth-model-implementation-backlog/plans/14a-sim-marginal-density-measurement.md)
-- [§2 Bitmap pipeline spec](../../../docs/specs/authorization-ontology/authorization-ontology-bitmap-pipeline.spec.md)
-- [§5 Marginal density plan](../../../docs/specs/event-vocab-system/event-taxonomy-marginal-density.plan.md)
-- [sim-erp-pm-coverage.spec.md](../../../docs/specs/sim-erp-pm-coverage.spec.md) — 본 시뮬이 검증한 5축 매트릭스
+- [Plan 14a — marginal density 측정](./14a-sim-marginal-density-measurement.md)
+- [§2 Bitmap pipeline spec](../../../specs/authorization-ontology/authorization-ontology-bitmap-pipeline.spec.md)
+- [§5 Marginal density plan](../../../specs/event-vocab-system/event-taxonomy-marginal-density.plan.md)
+- [sim-erp-pm-coverage.spec.md](../../../specs/sim-erp-pm-coverage.spec.md) — 본 시뮬이 검증한 5축 매트릭스
 ```
 
 - [ ] **Step 2: 커밋**

@@ -26,7 +26,7 @@ def:
 DecodeMap 기반 독립 encode/decode 모듈.
 MetaRegistry 없이 entity ID ↔ VersionedValue 변환을 수행한다.
 
-디코딩 파이프라인: [../pipeline.md](../pipeline.md)
+디코딩 파이프라인: [../pipeline.md](../pipeline-system/pipeline.md)
 
 ## 구성 ^overview
 
@@ -41,8 +41,8 @@ MetaRegistry 없이 entity ID ↔ VersionedValue 변환을 수행한다.
 
 ## 참조
 
-패키지 인덱스: [README.md](README.md)
-운영 흐름: `[S2, A1]` encode · `[S5, A5, D1]` decode — [runtime-flows.spec.md](../../operations/runtime-flows.spec.md)
+패키지 인덱스: [README.md](../README.md)
+운영 흐름: `[S2, A1]` encode · `[S5, A5, D1]` decode — `docs/specs/operations/runtime-flows.spec.md` (planned, source file not present)
 
 ## 상태
 
@@ -108,7 +108,7 @@ const codec = new MetaCodec(received);
 
 ---
 
-## API
+## API ^meta-codec-api
 
 ```ts
 class MetaCodec {
@@ -209,7 +209,7 @@ const ids = codec.decodeValue(valueFromDB);
 | 추가 API | - | `matchRanges(partial)` → `[bigint, bigint][]` |
 | 사용 기준 | totalSpace <= 2^53 | totalSpace > 2^53 |
 
-### API
+### API ^meta-codec-big-api
 
 ```ts
 class MetaCodecBig {

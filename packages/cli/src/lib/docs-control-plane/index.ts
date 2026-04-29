@@ -103,6 +103,22 @@ export {
   detectCompletedRecords,
 } from "doc-envelope";
 export {
+  buildMarkdownLinkRebase,
+  buildMarkdownLinkRepair,
+  loadMarkdownLinkLedger,
+  scanMarkdownLinks,
+  writeMarkdownLinkLedger,
+  type MarkdownLinkRebaseResult,
+  type MarkdownLinkRepairResult,
+  type MarkdownLinkScanResult,
+} from "./markdown-links.js";
+export {
+  buildMarkdownBundlePreview,
+  renderMarkdownBundlePreview,
+  type MarkdownBundleFormat,
+  type MarkdownBundlePreview,
+} from "./markdown-bundle.js";
+export {
   findNextFollowUps,
 } from "./follow-ups.js";
 export {

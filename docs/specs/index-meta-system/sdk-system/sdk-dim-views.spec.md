@@ -20,7 +20,7 @@ def:
 
 DimCapacityInfo(용량 정보)와 DimFullView(전체 주소 공간 뷰). 축별 capacity, headroom, stride를 조회한다.
 
-그룹: [sdk-system.md](sdk-system.md)
+그룹: [sdk-system.md](../sdk-system.md)
 원본: `docs/specs/indexing/index-meta/sdk.spec.md`
 
 ## 구성 ^overview
@@ -55,7 +55,7 @@ interface DimCapacityInfo {
 headroom > 0이면 **버전 변경 없이** 새 entry를 추가할 수 있는 여유 공간이 있다.
 일부러 빈 공간으로 남겨둔 것은 서비스 시나리오 상 추가 가능한 영역이다.
 
-> **Note**: `DimCapacityInfo`는 Number 값만 반환한다. BigInt 용량 정보가 필요하면 `registry.getCapacityInfo(indexId, versionId)`로 `VersionCapacityInfo`(sizeBigInt, fitsNumber, numberType 포함)를 조회한다. 상세: [../indexing-core-system/bigint-addressing-group.md](../indexing-core-system/bigint-addressing-group.md)
+> **Note**: `DimCapacityInfo`는 Number 값만 반환한다. BigInt 용량 정보가 필요하면 `registry.getCapacityInfo(indexId, versionId)`로 `VersionCapacityInfo`(sizeBigInt, fitsNumber, numberType 포함)를 조회한다. 상세: [../indexing-core-system/bigint-addressing-group.md](../../indexing-core-system/bigint-addressing-group.md)
 
 ```ts
 const info = tracking.dimCapacity("action");

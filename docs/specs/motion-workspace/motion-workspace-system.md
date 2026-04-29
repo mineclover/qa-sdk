@@ -21,13 +21,13 @@ def:
 
 모션 콘텐츠 편집 워크스페이스 시스템. 도메인 라이브러리(motion-workspace), HTTP/WS 클라이언트(motion-workspace-client), API 서비스(motion-workspace-service)로 구성된다.
 
-## 구성 ^overview
+## 구성 ^overview:package-composition
 
 - **motion-workspace**: 도메인 계층 — 스키마, IO, 마이그레이션, headless controller
 - **motion-workspace-client**: 중재 계층 — 타입 안전 HTTP + WebSocket 클라이언트
 - **motion-workspace-service**: 운영 계층 — Hono 기반 REST + WS API 서비스 (port 3710)
 
-## 서비스 런타임 구성 ^overview
+## 서비스 런타임 구성 ^overview:service-runtime
 
 `motion-workspace-service` 패키지는 다음 구성요소를 조립한다.
 

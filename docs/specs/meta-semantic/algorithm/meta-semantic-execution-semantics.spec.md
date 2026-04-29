@@ -71,7 +71,7 @@ Phase 2(선언 + 시뮬레이션)와 Phase 3(런타임 실행)의 경계를 명�
 
 ## 2. 조건 표현 언어 (Condition Expression)
 
-### 현재 문제
+### 현재 문제 ^condition-expression-current-problem
 
 ```typescript
 { kind: "branch", condition: "amount > 0", paths: [...] }
@@ -79,7 +79,7 @@ Phase 2(선언 + 시뮬레이션)와 Phase 3(런타임 실행)의 경계를 명�
 //                            문자열. 평가 규칙 없음.
 ```
 
-### 설계
+### 설계 ^condition-expression-design
 
 조건은 **표현식 트리**로 정의한다. 문자열은 단축 표기.
 
@@ -142,12 +142,12 @@ interface ConditionEvaluator {
 
 ## 3. 에러 전파 모델 (Error Propagation)
 
-### 현재 문제
+### 현재 문제 ^error-propagation-current-problem
 
 시뮬레이션에서 `failureResolver`로 성공/실패를 외부에서 주입.
 실제 실행에서는 step이 throw하거나 에러를 반환해야 함.
 
-### 설계
+### 설계 ^error-propagation-design
 
 ```typescript
 /** step 실행 결과 */
@@ -197,11 +197,11 @@ GraphError (PipeGraph 레벨, 어떤 connection에서 실패했는지)
 
 ## 4. 취소 모델 (Cancellation)
 
-### 현재 문제
+### 현재 문제 ^cancellation-current-problem
 
 race에서 승자가 결정되면 패자는? timeout 초과 시 진행 중인 body는?
 
-### 설계
+### 설계 ^cancellation-design
 
 ```typescript
 /** 취소 토큰 — 협력적 취소 */
@@ -243,11 +243,11 @@ race
 
 ## 5. 컨텍스트 전달 (PipeContext)
 
-### 현재 문제
+### 현재 문제 ^pipe-context-current-problem
 
 step 간 데이터가 어떻게 전달되는가? `StepDataContract`는 선언만.
 
-### 설계
+### 설계 ^pipe-context-design
 
 ```typescript
 /** 파이프 실행 컨텍스트 — step 간 데이터 전달 */

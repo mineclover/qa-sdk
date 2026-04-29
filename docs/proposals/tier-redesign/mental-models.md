@@ -41,7 +41,7 @@ STC 제안은 **3가지 mental model**의 교차로 읽을 수 있다. 모델은
 
 ECS(Entity/Component/System) 패턴에서 차용한 **tier 축의 값 체계**. STC 신규 축.
 
-### Taxonomy
+### Taxonomy ^ecs-taxonomy
 
 ```
 tier ∈ { component, entry, system, layout }
@@ -79,7 +79,7 @@ STC는 ECS를 **그대로 재현하지 않는다**. "ECS 적응"이라는 라벨
 
 **핵심 변형**: STC는 ECS의 **3축(Entity/Component/System)** 을 문서 분류로 이식하되, (1) Layout 확장 / (2) Entity 문서화 대상 축소 / (3) State 관리 외부 위임 — 세 가지 변형을 가진다.
 
-### 관련 문서
+### 관련 문서 ^ecs-related-docs
 
 - [tiers/](./tiers/) — 각 tier 값의 독립 정의 문서
 - [00-design.md §2](./00-design.md) — 전체 tier 체계
@@ -91,7 +91,7 @@ STC는 ECS를 **그대로 재현하지 않는다**. "ECS 적응"이라는 라벨
 
 같은 `id` 개념에 대해 **역할을 확장자로 분리**. qa-sdk 기존 convention. tier와 직교.
 
-### Taxonomy
+### Taxonomy ^doc-type-taxonomy
 
 ```
 doc-type-ext ∈ { .spec, .rule, .todo, .plan, .test, .memo, .cases }
@@ -122,7 +122,7 @@ docs-control-plane.plan.md       (tier=system, .plan)
 
 네 파일은 같은 `id: docs-control-plane` + 같은 `tier=system`이지만 **다른 역할**(확장자)로 독립 존재.
 
-### 관련 문서
+### 관련 문서 ^doc-type-related-docs
 
 - [03-decisions.md R-1](./03-decisions.md) — tier ⊥ doc-type 직교성
 - qa-sdk `docs/specs/system/doc-type-convention.spec.md` (정규 docs) — 컨벤션 원본

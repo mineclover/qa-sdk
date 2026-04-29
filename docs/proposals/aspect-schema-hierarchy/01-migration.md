@@ -39,11 +39,11 @@ role: migration
 
 ## Phase C-0 — Schema Introduction (non-breaking)
 
-### 목적
+### 목적 ^c0-purpose
 
 `aspect_parents` 테이블 스키마를 `definition-service` 에 추가하고 Phase 5b B-0 의 `ASPECT_PARENTS` map 을 bulk populate. **validator 동작은 변경하지 않는다** — runtime map 만으로 계속 작동.
 
-### 작업 내용
+### 작업 내용 ^c0-work
 
 1. **Drizzle 스키마 추가** — `packages/definition-service/src/db/schema.ts`:
    - `aspectParents` sqliteTable 정의 (DDL: [02-schema-diff.md](./02-schema-diff.md) §"After")
@@ -56,7 +56,7 @@ role: migration
 3. **Populate 로직** — service 부팅 시 `aspect_parents` 가 비어있거나 map 과 drift 있으면 자동 sync (idempotent). 상세: [02-schema-diff.md](./02-schema-diff.md) §"Populate script".
 4. **테스트** — `aspect-parents.test.ts` (신규) — populate 후 row 수 = `Object.keys(ASPECT_PARENTS).length` 검증.
 
-### 성공 기준
+### 성공 기준 ^c0-success
 
 - `pnpm --filter definition-service build` 성공
 - `pnpm --filter definition-service test` 성공 (신규 테스트 포함)
@@ -64,22 +64,22 @@ role: migration
 - `pnpm exec qa-sdk def sync` / `def validate` 결과 변화 없음 (errors=0 유지, dup-coord 동일)
 - 기존 모든 테스트 통과 (regression 없음)
 
-### 롤백
+### 롤백 ^c0-rollback
 
 - Drizzle 스키마에서 `aspectParents` 제거 + `DROP TABLE aspect_parents` SQL 추가 migration.
 - 코드는 runtime map 만으로 계속 작동 (C-0 은 validator 경로 미변경) — regression 없음.
 
-### 의존
+### 의존 ^c0-dependencies
 
 없음. 본 단계는 단독 실행 가능.
 
 ## Phase C-1 — Validator Bridge (graceful fallback)
 
-### 목적
+### 목적 ^c1-purpose
 
 Validator / aspect lookup 경로가 DB 를 **우선 조회** 하도록 전환. DB 미존재 / 테이블 빈 상태 / drift 탐지 시 runtime map fallback. **Fail-open** 원칙.
 
-### 작업 내용
+### 작업 내용 ^c1-work
 
 1. **Service-level helper 도입** — `packages/definition-service/src/core/aspect-registry.ts` (신규):
    ```
@@ -95,29 +95,29 @@ Validator / aspect lookup 경로가 DB 를 **우선 조회** 하도록 전환. D
 3. **Catalog 패키지 불변** — `deriveAspectParent` 는 그대로. 패키지 의존 방향 유지 (catalog → DB 없음).
 4. **registry-service 연동** — `/catalogs/definition/aspects/:id/parent` 엔드포인트 추가 (선택, Q1 에 따라 service 응답 경로)
 
-### 성공 기준
+### 성공 기준 ^c1-success
 
 - service 재시작 후 DB 가 비어있어도 validator 가 정상 작동 (fallback 경로 통과)
 - `aspect_parents` 테이블을 수동으로 DROP 한 상태에서도 `def validate` errors=0
 - DB / map drift 로그가 적절히 발생 (단위 테스트로 확인)
 - `aspect-registry.test.ts` (신규) — DB 경로, fallback 경로, drift 경로 3 case 통과
 
-### 롤백
+### 롤백 ^c1-rollback
 
 - `aspect-registry.ts` 제거 + validator 호출부를 `deriveAspectParent` 직접 호출로 복원
 - `ASPECT_PARENTS` map 이 영속 유지되므로 revert 비용 최소
 
-### 의존
+### 의존 ^c1-dependencies
 
 - C-0 완료 필수 (테이블 존재해야 bridge 가 의미있음)
 
 ## Phase C-2 — Rollup API + CLI (수요 도달 시 개시)
 
-### 목적
+### 목적 ^c2-purpose
 
 `getAspectFamily` API 를 정식 도입하고 CLI 에 `--include-children` / `--rollup-aspect` 플래그를 노출. **실증 수요 (rollup 요구 ≥ 3) 도달 후에만 개시**.
 
-### 작업 내용
+### 작업 내용 ^c2-work
 
 1. **`getAspectFamily` 구현** — `aspect-registry.ts`:
    ```
@@ -132,28 +132,28 @@ Validator / aspect lookup 경로가 DB 를 **우선 조회** 하도록 전환. D
 3. **GraphQL 노출** (선택) — `doc.resolver.ts` 에 `Query.aspectFamily(id)` 추가
 4. **테스트** — CLI snapshot 테스트, API round-trip 테스트
 
-### 성공 기준
+### 성공 기준 ^c2-success
 
 - `def list --aspect func_def --include-children` 이 40+ 문서 반환 (7 자식 aspect + 부모)
 - `def audit --rollup-aspect process_flow` 가 5 개 자식 + 부모 기준 dup-coord 집계 정확
 - `pnpm --filter cli test` 통과
 
-### 롤백
+### 롤백 ^c2-rollback
 
 - CLI 플래그 제거 + API method 제거. DB / 스키마는 그대로.
 
-### 의존
+### 의존 ^c2-dependencies
 
 - C-1 완료
 - **실증 수요 확인** — CHANGELOG 또는 issue tracker 에서 rollup 요구 ≥ 3 건 누적
 
 ## Phase C-3 — Runtime Map Deprecation
 
-### 목적
+### 목적 ^c3-purpose
 
 `ASPECT_PARENTS` map + `deriveAspectParent()` 에 JSDoc `@deprecated` 추가. 신규 코드는 service helper (`aspect-registry.getAspectParent`) 사용하도록 유도. **1 릴리즈 cycle 동안 fallback 으로 유지** 후 C-4 또는 영구 보존 결정.
 
-### 작업 내용
+### 작업 내용 ^c3-work
 
 1. **JSDoc 추가** — `packages/definition-catalog/src/vocabulary.ts`:
    ```
@@ -169,17 +169,17 @@ Validator / aspect lookup 경로가 DB 를 **우선 조회** 하도록 전환. D
 2. **내부 호출부 업데이트** — service/CLI 코드에서 `deriveAspectParent` 호출을 `aspect-registry.getAspectParent` 로 이전 (test-only 제외)
 3. **README 업데이트** — `aspect-vocab-split/01-migration.md` §"Phase C" 의 map 언급을 "deprecated, fallback only" 로 업데이트
 
-### 성공 기준
+### 성공 기준 ^c3-success
 
 - TypeScript build 에서 deprecated 경로 사용처 warning 확인
 - 기존 코드 regression 없음
 - Catalog 패키지의 순수성 유지 확인 (DB 의존 미도입)
 
-### 롤백
+### 롤백 ^c3-rollback
 
 - JSDoc 제거 1 커밋. 기능 변화 없음.
 
-### 의존
+### 의존 ^c3-dependencies
 
 - C-2 완료 + 1 릴리즈 cycle 경과 (regression 관찰 기간)
 

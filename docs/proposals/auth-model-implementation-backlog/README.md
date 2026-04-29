@@ -66,19 +66,19 @@ E2E 통합 테스트                                ✅ 다수
 
 **우선순위**: 최우선 (프로덕션 전환에 필수)
 
-### 현재 상태
+### 현재 상태 ^stage-1-status
 
 - `InMemoryAuditRecorder` (단일 프로세스, 휘발성) ✅
 - 스펙: `authorization-ontology-nested-audit-tracing.spec.md`
 
-### 미구현
+### 미구현 ^stage-1-missing
 
 - **DB 영속 AuditRecorder**: `audit_entries` 테이블 + Drizzle 어댑터
 - **OTEL wrapper**: span context에서 `traceId/spanId/parentSpanId` 자동 주입
 - **Trace explorer UI**: `authorization-monitor-web` 페이지
 - **Retention 배치**: hot(30d) / warm(90d execution only) / cold(1y) 전이
 
-### 구현 단위
+### 구현 단위 ^stage-1-implementation-units
 
 1. **Phase 1** — DrizzleAuditRecorder
    - 신규 패키지: `packages/audit-recorder-store/` (이름은 `resource-policy-store` 컨벤션 따름)
@@ -96,21 +96,21 @@ E2E 통합 테스트                                ✅ 다수
    - Retention archiver (scheduled task)
    - trace explorer (viz-web 또는 monitor-web)
 
-### 진입점
+### 진입점 ^stage-1-entrypoints
 
 - 시작 파일: `packages/audit-recorder-store/src/schema.ts` (resource-policy-store 복제)
 - 스키마 참고: `authorization-ontology-nested-audit-tracing.spec.md` §1
 
-### 의존
+### 의존 ^stage-1-dependencies
 
 - `@qa-sdk/otel` (Phase 2)
 - `permission-engine` 인터페이스 이미 export
 
-### 트리거
+### 트리거 ^stage-1-triggers
 
 **언제 시작**: 관측 인프라를 실제로 붙일 때. 또는 테스트 환경에서 인프로세스 debug가 부족해지는 순간.
 
-### 리스크
+### 리스크 ^stage-1-risks
 
 - **Check entry 폭발**: 고빈도 API에서 매 check = entry 1개 → 쓰기 비용 큼. 샘플링·aggregate 전략 필요 (deny/error만 저장)
 - **OTEL context 누락**: cron job·내부 이벤트 핸들러에서 context 없으면 root가 여럿 생성. 수동 startExecution root 정책 필요
@@ -122,13 +122,13 @@ E2E 통합 테스트                                ✅ 다수
 
 **우선순위**: 높음 (실제 유저 권한 변경 반영 필수)
 
-### 현재 상태
+### 현재 상태 ^stage-2-status
 
 - `issueBitmap` / `verifyBitmap` (HMAC + TTL + dual-accept rotation) ✅
 - `VersionedBitmap` 타입 + 테스트 9건 ✅
 - 스펙: `authorization-ontology-bitmap-pipeline.spec.md`
 
-### 미구현
+### 미구현 ^stage-2-missing
 
 - **Refresh endpoint**: expiresAt 임박 시 background 재발급
 - **Pub/sub invalidation**: 권한 변경 이벤트 → 모든 서버 L1 LRU flush
@@ -136,7 +136,7 @@ E2E 통합 테스트                                ✅ 다수
 - **HMAC secret rotation 자동화**: 90일 주기 + 24h dual-accept
 - **`computeUserBits` 구현**: 실제 user의 role·override·inheritance 해석
 
-### 구현 단위
+### 구현 단위 ^stage-2-implementation-units
 
 1. **`BitmapIssuer` 서비스**
    - 위치 후보: `packages/permission-engine/src/versioned-bitmap/issuer-service.ts`
@@ -158,22 +158,22 @@ E2E 통합 테스트                                ✅ 다수
    - dual-accept 24h 동안 구·신 모두 허용 (verifyBitmap.previousSecrets)
    - KID(Key ID)를 VersionedBitmap 메타에 추가하는 방안 검토
 
-### 진입점
+### 진입점 ^stage-2-entrypoints
 
 - 시작 파일: `packages/permission-engine/src/versioned-bitmap/issuer-service.ts`
 - 스펙: `authorization-ontology-bitmap-pipeline.spec.md` §2-5
 
-### 의존
+### 의존 ^stage-2-dependencies
 
 - Redis (프로덕션) 또는 ioredis 라이브러리
 - `role-registry`, `org-role-registry` (already in permission-engine)
 - HTTP 프레임워크 (hono 또는 nestjs — ingest-server 등 참조)
 
-### 트리거
+### 트리거 ^stage-2-triggers
 
 **언제 시작**: 실제 유저 로그인·권한 변경이 있는 auth service를 붙일 때. 또는 현 in-memory 테스트만으로는 실전 검증이 부족해지는 시점.
 
-### 리스크
+### 리스크 ^stage-2-risks
 
 - **freshness ≠ 0**: pub/sub 전파 + 캐시 TTL 만큼 지연. 중요한 거절은 Cerbos로 double-check 정책 필요
 - **JWT size inflation**: bitmap이 커지면 매 요청 payload 증가. Redis reference 패턴 강제 시점 결정 필요
@@ -186,12 +186,12 @@ E2E 통합 테스트                                ✅ 다수
 
 **우선순위**: 중간 (SQLite → PG 이행 시점에 상향)
 
-### 현재 상태
+### 현재 상태 ^stage-3-status
 
 - 스펙: `authorization-ontology-rls-enforcement.spec.md` (전체 5-phase 계획)
 - 현재 qa-sdk는 SQLite + D1 사용 중 → 적용 대상 없음
 
-### 미구현
+### 미구현 ^stage-3-missing
 
 - `auth` schema + helper 함수 (`current_user_id`, `has_bit`, `resource_state`)
 - 보호 대상 테이블별 정책 템플릿
@@ -199,7 +199,7 @@ E2E 통합 테스트                                ✅ 다수
 - Shadow mode → enforce 단계적 전환
 - Admin bypass (별도 PG role + 감사)
 
-### 구현 단위
+### 구현 단위 ^stage-3-implementation-units
 
 1. **Phase 1 — Helper functions + 스키마**
    - PG migration 스크립트
@@ -222,21 +222,21 @@ E2E 통합 테스트                                ✅ 다수
    - `FORCE ROW LEVEL SECURITY`
    - admin bypass 연결만 예외
 
-### 진입점
+### 진입점 ^stage-3-entrypoints
 
 - 시작 파일: PG migration (`packages/<service>/drizzle/XXXX_auth_helpers.sql`)
 - 스펙: `authorization-ontology-rls-enforcement.spec.md` §3-5
 
-### 의존
+### 의존 ^stage-3-dependencies
 
 - PostgreSQL 이행 완료 (현재 SQLite/D1 → PG)
 - `resource-policy-store`의 PG 버전 (SQLite 버전은 이미 있음)
 
-### 트리거
+### 트리거 ^stage-3-triggers
 
 **언제 시작**: 프로덕션 DB가 PG로 이행하거나, DB 직접 접근 감사에서 bypass 사례가 발견될 때.
 
-### 리스크
+### 리스크 ^stage-3-risks
 
 - **REGISTERED/DELEGATED는 RLS 안 하기로 결정** (스펙 §3) — 복잡한 정책 판정은 API 레이어에만. DB 직접 접근자는 보수적으로 UNREGISTERED만 허용.
 - **SET LOCAL 누락**: connection 재사용 시 이전 context 유출 가능. pool hook 확실히
@@ -249,12 +249,12 @@ E2E 통합 테스트                                ✅ 다수
 
 **우선순위**: 조건부 (shape 변경 계획 수립 시에만)
 
-### 현재 상태
+### 현재 상태 ^stage-4-status
 
 - 감사 문서: `docs/proposals/ingest-coordinate-storage-audit/README.md`
 - 분류 완료: event_records (범주 B), key_observations (범주 A 미확인)
 
-### 미구현 (P1~P3)
+### 미구현 (P1~P3) ^stage-4-missing
 
 #### P1. `key_observations` version 컬럼 분리
 
@@ -281,11 +281,11 @@ E2E 통합 테스트                                ✅ 다수
 - **작업**: `(prefix_id, version)` 복합 PK
 - **진입점**: `packages/ingest-server/src/stores/d1-schema.sql.ts`
 
-### 트리거
+### 트리거 ^stage-4-triggers
 
 **언제 시작**: prefix 또는 shape 스키마 변경 계획 수립 시 (재감사). 또는 저장소 마이그레이션(D1 → PG, ClickHouse 이관) 시.
 
-### 리스크
+### 리스크 ^stage-4-risks
 
 - **현재 shape이 안정적이라 즉시 이행 필수 아님** — backlog 유지 정당성
 - **이행 순서**: P2(JSON 스키마) → P1(key_observations) → P3(prefix aggregates)
@@ -297,19 +297,19 @@ E2E 통합 테스트                                ✅ 다수
 
 **우선순위**: 낮음 (운영 지표 필요 시)
 
-### 현재 상태
+### 현재 상태 ^stage-5-status
 
 - 계획: `docs/specs/event-vocab-system/event-taxonomy-marginal-density.plan.md`
 - 현재 gate는 `classificationRate`만 체크
 
-### 미구현
+### 미구현 ^stage-5-missing
 
 - registry-service API endpoint (`/api/event-catalog/taxonomy/marginal-density`)
 - gate script 확장 (jq 파싱)
 - threshold (underutilized < 0.1, saturated > 0.9)
 - 3-phase 도입 (정보제공 → 대시보드 → 게이팅)
 
-### 구현 단위
+### 구현 단위 ^stage-5-implementation-units
 
 1. **Phase 1 — 조회 API**
    - endpoint: `GET /api/event-catalog/taxonomy/marginal-density?catalog=&prefix=&version=`
@@ -325,21 +325,21 @@ E2E 통합 테스트                                ✅ 다수
    - `saturated` 축 발견 → capacity 확장 plan 트리거
    - `underutilized` 축 → scope-expansion decision-flow 연계
 
-### 진입점
+### 진입점 ^stage-5-entrypoints
 
 - 시작 파일: `packages/registry-service/src/taxonomy/` (새 모듈)
 - 계획: `event-taxonomy-marginal-density.plan.md`
 
-### 의존
+### 의존 ^stage-5-dependencies
 
 - `key_observations` 또는 `event_records`의 distinct 집계 쿼리
 - `coordinate-storage.rule §2.1 준수` — 단일 `(prefix, version)` 필터
 
-### 트리거
+### 트리거 ^stage-5-triggers
 
 **언제 시작**: 운영 중 "왜 축 활용이 낮은가"에 대한 답이 필요해질 때. 또는 capacity planning 결정을 정량 근거로 해야 할 때.
 
-### 리스크
+### 리스크 ^stage-5-risks
 
 - **측정 비용**: `COUNT DISTINCT` × 축 개수 × catalog 수 → DB 부담. 주기적 집계 테이블 필요할 수 있음
 - **Noise**: 초기 트래픽 적은 서비스는 모두 underutilized → threshold 조정
@@ -351,7 +351,7 @@ E2E 통합 테스트                                ✅ 다수
 
 **우선순위**: 중간 (신규 PR 리뷰 기준으로 사용 중)
 
-### 현재 상태
+### 현재 상태 ^stage-6-status
 
 - 규칙: `docs/specs/system/coordinate-storage.rule.md` ✅ 확정
 - `docs/specs/system/README.md` index 등록 ✅
@@ -381,13 +381,13 @@ E2E 통합 테스트                                ✅ 다수
 - P1~P3 이행 시 본 규칙의 legacy 예외 해소
 - 이행 완료 후 감사 문서(§4) 종료
 
-### 트리거
+### 트리거 ^stage-6-triggers
 
 **6.1**: 다음 좌표 저장 PR이 등장할 때 (선제적으로 만들 수도)
 **6.2**: def validate 확장 세션에서
 **6.3**: Ingest audit P1~P3 시작 시 연동
 
-### 리스크
+### 리스크 ^stage-6-risks
 
 - **자동 검출의 false positive**: `address` 컬럼명이 다른 의미로 쓰이는 경우 다수. allowlist 관리 필요
 - **리뷰어 피로**: 체크리스트가 길어지면 무시. 자동화가 완료된 항목만 명시적 체크

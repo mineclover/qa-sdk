@@ -52,7 +52,7 @@ def:
 
 ## 결정 1: Multi-source collision은 diagnostic code 분리로 처리
 
-### 선택
+### 선택 ^two-tier-cleanup-selection
 
 `semantic-coordinate-multi-source` (warning) 코드를 추가해 다음 케이스를 `semantic-coordinate-collision-candidate` (error)와 분리한다:
 
@@ -83,7 +83,7 @@ def:
 
 ## 결정 2: Snapshot fixture 없음 — git이 역사의 SSOT
 
-### 선택
+### 선택 ^header-anchor-selection
 
 `packages/cli/fixtures/deterministic-label-inventory-snapshot.json` 같은 커밋된 기준 파일을 **두지 않는다**. 결정론 증명은 "같은 세션에서 2회 실행 결과가 byte-identical" 로 대체.
 

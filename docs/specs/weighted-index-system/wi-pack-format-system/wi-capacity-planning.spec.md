@@ -43,7 +43,7 @@ fitShape({
 })
 ```
 
-### 알고리즘
+### 알고리즘 ^fit-shape-algorithm
 
 1. **비례 스케일링**: `ratio = (maxProduct / currentProduct) ^ (1 / freeDims)`
 2. **Floor + min 보장**: 각 차원을 floor 후 min 이상으로 보정
@@ -51,7 +51,7 @@ fitShape({
 
 반환값이 `null`이면 이미 맞거나 (조정 불필요) 맞출 수 없음.
 
-### 결과
+### 결과 ^fit-shape-result
 
 ```typescript
 interface FitShapeResult {
@@ -100,7 +100,7 @@ planCapacity({
 })
 ```
 
-### 알고리즘
+### 알고리즘 ^plan-capacity-algorithm
 
 1. 각 차원: `current + growth → nextPow2` 정렬
 2. 포맷 예산 초과 시 `fitShape`로 축소 (current를 min으로 보호)
@@ -113,7 +113,7 @@ planCapacity({
 
 `growth` 미지정 시 `current`와 동일 (= 2배 headroom이 기본값).
 
-### 결과
+### 결과 ^plan-capacity-result
 
 ```typescript
 interface CapacityPlanResult {

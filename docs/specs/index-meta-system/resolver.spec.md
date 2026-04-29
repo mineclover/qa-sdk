@@ -25,7 +25,7 @@ def:
 
 MetaRegistry의 데이터를 외부 소비용 번들(DecodeMap, DimRange, IndexRange, MetaDataset)로 변환한다.
 
-디코딩 파이프라인: [../pipeline.md](../pipeline.md)
+디코딩 파이프라인: [../pipeline.md](../pipeline-system/pipeline.md)
 
 ## 구성 ^overview
 
@@ -39,7 +39,7 @@ MetaRegistry의 데이터를 외부 소비용 번들(DecodeMap, DimRange, IndexR
 
 ## 참조
 
-패키지 인덱스: [README.md](README.md)
+패키지 인덱스: [README.md](../README.md)
 
 ## 상태
 
@@ -137,7 +137,7 @@ interface DecodeMap {
 }
 ```
 
-외부 디코딩 절차 (전체 경로는 [`../pipeline.md`](../pipeline.md) 참조):
+외부 디코딩 절차 (전체 경로는 [`../pipeline.md`](../pipeline-system/pipeline.md) 참조):
 
 ```
 1. weights[i] = product(shape[i+1:])

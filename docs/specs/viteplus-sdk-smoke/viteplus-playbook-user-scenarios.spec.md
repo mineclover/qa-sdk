@@ -42,7 +42,7 @@ context-action 패턴과 scope-nesting 검증 도구를 실제 개발자가 어�
 **사용자:** playbook feature 개발자
 **목표:** canonical-review, incident-escalation에 이어 3번째 feature를 추가하고 구조 정합성 확보
 
-### 순서
+### 순서 ^scenario-1-steps
 
 1. `template-flow`의 6단계 프로세스를 따라 domain draft, validation, handlers, views를 작성한다.
 2. scope-nesting fixture에 새 feature의 pipe binding을 추가한다.
@@ -78,7 +78,7 @@ const bindings = {
 **사용자:** 리팩터링 담당 개발자
 **목표:** qa-bridge와 feature-context의 순서를 바꿔도 되는지 사전 확인
 
-### 순서
+### 순서 ^scenario-2-steps
 
 1. `checkSwapSafety()`로 교환 대상 두 scope의 안전성 검사.
 
@@ -105,7 +105,7 @@ if (errors) {
 **사용자:** 경량 모드 또는 offline 환경 개발자
 **목표:** logging 인프라 없이도 handler가 동작하게 만들기
 
-### 순서
+### 순서 ^scenario-3-steps
 
 1. consumes에서 logging-session을 `required: false`로 선언.
 
@@ -160,7 +160,7 @@ const nesting: ScopeNesting = {
 **사용자:** 테스트 작성자
 **목표:** 실제 feature-context 대신 mock state를 주입하여 handler를 격리 테스트
 
-### 순서
+### 순서 ^scenario-4-steps
 
 1. 테스트용 scope에서 `playbook-state`를 `override: true`로 제공.
 
@@ -218,7 +218,7 @@ assert(state.overridden === true);
 **사용자:** QA 엔지니어
 **목표:** persist load 전에 submit이 실행되는 타이밍 버그를 시뮬레이션으로 사전 검출
 
-### 순서
+### 순서 ^scenario-5-steps
 
 1. playbook-state에 `readyAfter`를 선언.
 
@@ -259,7 +259,7 @@ if (!timing.valid) {
 **사용자:** QA 엔지니어
 **목표:** submit → persist 완료 사이에 view가 stale state를 렌더링하는 구간 검출
 
-### 순서
+### 순서 ^scenario-6-steps
 
 1. submit handler에 `delegatesTo` 선언.
 

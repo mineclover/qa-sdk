@@ -43,7 +43,7 @@ function newVerdictId(): string;       // "vrd_<ULID>"
 function newDlqId(): string;           // "dlq_<ULID>"
 ```
 
-### 동작
+### 동작 ^id-generation-behavior
 
 - 각 함수는 `<prefix>_<ULID>` 포맷의 문자열 반환
 - ULID는 시간순 정렬 가능 (Crockford's Base32, 48-bit timestamp + 80-bit random)
@@ -67,7 +67,7 @@ function newDlqId(): string;           // "dlq_<ULID>"
 function now(): string;  // ISO-8601 UTC
 ```
 
-### 동작
+### 동작 ^clock-behavior
 
 - `new Date().toISOString()` 반환
 - SDK의 timestamp, span의 start_time/end_time 등에서 사용

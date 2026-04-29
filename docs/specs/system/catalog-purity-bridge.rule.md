@@ -98,7 +98,7 @@ Bridge 패턴 3원칙:
 
 `ASPECT_PARENTS` map 은 catalog SSoT, `aspect_parents` DB 테이블은 service-side replica. Bridge 의 역할은 DB-first 쿼리 + runtime map fallback 이며, 역방향 (DB → catalog 치유) 은 금지.
 
-완결성 불변식 (Phase C-3): 모든 aspect 는 `ROOT_ASPECTS` 또는 `ASPECT_PARENTS` 중 정확히 하나에 등록되어야 한다. 상세: [aspect-naming-convention.rule.md §1.6](./aspect-naming-convention.rule.md#completeness-invariant)
+완결성 불변식 (Phase C-3): 모든 aspect 는 `ROOT_ASPECTS` 또는 `ASPECT_PARENTS` 중 정확히 하나에 등록되어야 한다. 상세: [aspect-naming-convention.rule.md §1.6](./aspect-naming-convention.rule.md#16-completeness-불변식-phase-c-3-completeness-invariant)
 
 ### 1.4 CLI 호출 경로 선택
 

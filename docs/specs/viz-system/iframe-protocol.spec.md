@@ -82,7 +82,7 @@ QA 이벤트 발생 알림을 부모에게 전달한다.
 > 타입 정의: packages/viz-web/src/iframe/roleplay-host.ts — RoleplayHost
 > 함수 정의: packages/viz-web/src/iframe/roleplay-host.ts — createRoleplayHost()
 
-### 동작
+### 동작 ^roleplay-host-behavior
 
 1. `ROLEPLAY_WEB_URL`을 `src`로 하는 `<iframe>`을 생성한다.
 2. iframe sandbox: `allow-scripts allow-same-origin allow-forms`.
@@ -96,7 +96,7 @@ QA 이벤트 발생 알림을 부모에게 전달한다.
 > 타입 정의: packages/roleplay-web/src/iframe/child-bridge.ts — ChildBridge
 > 함수 정의: packages/roleplay-web/src/iframe/child-bridge.ts — createChildBridge()
 
-### 동작
+### 동작 ^child-bridge-behavior
 
 1. `window.addEventListener("message", handler)` — origin이 `vizOrigin`인 `ContextMessage`만 처리한다.
 2. `notifyEvent(eventKey)` — `EventEmittedMessage`를 생성하여 `window.parent.postMessage(msg, vizOrigin)` 전송. `window.parent === window`이면 (iframe이 아닌 경우) 전송하지 않는다.

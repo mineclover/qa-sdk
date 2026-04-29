@@ -21,7 +21,7 @@ def:
 
 인덱싱 시스템이 하드웨어 가속에 구조적으로 적합한 이유를 정의한다. 문자열 경계, ref_id 수렴, packed key identity, 불변성이 가속의 전제 조건임을 명시한다.
 
-> 상세: [`acceleration.md`](acceleration.md) — 하드웨어 가속 비전 및 로드맵
+> 상세: [`acceleration.md`](../acceleration.md) — 하드웨어 가속 비전 및 로드맵
 
 인덱싱 시스템의 연산 특성은 하드웨어 가속(FPGA/PCIe 등)에 구조적으로 적합하다. 이 적합성은 부수적 결과가 아니라, 아래 원칙에서 **자연스럽게 도출되는 성질**이다.
 

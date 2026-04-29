@@ -35,7 +35,7 @@ Core Event별 권장 payload 필드 가이드. SDK, 엔진, DSL이 같은 필드
 
 implemented
 
-## 목적
+## 목적 ^payload-field-purpose
 
 - QA 엔진이 constraint 비교할 때 참조할 필드명 표준
 - SDK가 자동 수집할 때 어떤 필드를 채울지 가이드

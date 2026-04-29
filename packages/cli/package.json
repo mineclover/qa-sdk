@@ -50,6 +50,7 @@
     "execa": "^9.6.1",
     "git-utils": "workspace:*",
     "index-meta": "workspace:*",
+    "markdown-it": "^14.1.1",
     "motion-content": "workspace:*",
     "motion-workspace": "workspace:*",
     "motion-workspace-client": "workspace:*",
@@ -69,6 +70,7 @@
   "devDependencies": {
     "@qa-sdk/motion-workspace-service": "workspace:*",
     "@types/better-sqlite3": "catalog:",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^22.0.0",
     "drizzle-kit": "catalog:",
     "tsup": "^8.5.1",

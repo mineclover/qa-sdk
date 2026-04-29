@@ -24,7 +24,7 @@ def:
 ## 목적 ^purpose
 시스템의 지식 자산을 일관된 텍소노미로 분류하고, 생애주기를 추적하여 설계 의도와 실제 구현 간의 정합성을 보장하는 거버넌스 가이드를 제공한다.
 
-## 1. 최상위 문서 분류 (D-19) ^defines
+## 1. 최상위 문서 분류 (D-19) ^defines:top-level-document-types
 모든 문서는 `type` 필드를 통해 설계 자산(`design`)과 맥락 지식(`knowledge`)으로 엄격히 분리된다.
 
 ### 1.1 설계 평면 (Design Plane)
@@ -44,7 +44,7 @@ def:
 
 ---
 
-## 2. E/C/I/S + L/P 아키텍처 ^defines
+## 2. E/C/I/S + L/P 아키텍처 ^defines:ecis-lp-architecture
 
 설계 자산(`type: design`)은 Entry, Component, Interface/DSL, System, Layout/Pack 책임을 분리한다. frontmatter `tier` 값은 `layout`, `system`, `component`, `entry` 4종이며, Interface는 별도 tier가 아니라 `scope: interface`와 rule/spec 계약 평면으로 표현한다. Pack은 배포/문서 묶음 이름이며 보통 Layout과 같은 조직 평면이다.
 
@@ -70,7 +70,7 @@ def:
 
 ---
 
-## 3. 이중 평면 거버넌스 ^defines
+## 3. 이중 평면 거버넌스 ^defines:dual-plane-governance
 의도(`intent`)와 실재(`execution`)를 분리 관찰하여 시스템의 드리프트를 제어한다.
 
 ### 3.1 계획에서 실재로의 전이
@@ -87,7 +87,7 @@ def:
 
 ---
 
-## 4. 운영 규칙 ^defines
+## 4. 운영 규칙 ^defines:operating-rules
 
 ### 4.1 소유권 및 좌표
 - 모든 설계 문서는 반드시 `owner_system`을 가져야 하며, 이는 해당 시스템의 책임 한계를 나타낸다.
