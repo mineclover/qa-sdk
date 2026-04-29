@@ -66,7 +66,10 @@ describe("ResourceUseCase", () => {
       "outbox.append",
       "transaction.run.commit",
     ]);
-    expect(m.outboxRecords[0].eventName).toBe("resource.created");
+    expect(m.outboxRecords[0].eventName).toBe("approval.resource.submitted");
+    expect(m.outboxRecords[0].idempotencyKey).toMatch(
+      /^rsr-1:approval\.resource\.submitted:\d+$/,
+    );
   });
 
   it("updateStatus: 미존재 → ResourceNotFoundException", async () => {

@@ -54,7 +54,11 @@ CREATE TABLE IF NOT EXISTS approval_outbox_events (
   payload TEXT NOT NULL,
   occurred_at INTEGER NOT NULL,
   scope_id TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending'
+  status TEXT NOT NULL DEFAULT 'pending',
+  idempotency_key TEXT NOT NULL DEFAULT '',
+  dispatched_at INTEGER,
+  retry_count INTEGER NOT NULL DEFAULT 0,
+  next_attempt_at INTEGER
 );
 CREATE INDEX IF NOT EXISTS approval_outbox_status_idx ON approval_outbox_events(status, occurred_at);
 `;

@@ -1,7 +1,10 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
+import { buildIdempotencyKey } from "sim-identifier-grammar";
+
 import { ResourceEntity, ResourceNotFoundException } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import type { CreateResourceCommand } from "../commands/create-resource.command.js";
 import type { UpdateResourceStatusCommand } from "../commands/update-resource-status.command.js";
 import type { ResourceLoggerPort } from "../ports/resource-logger.port.js";
@@ -35,28 +38,35 @@ export class ResourceUseCase {
     this.logger.info({ ...ctxBase }, "resource.create.started");
     try {
       const entity = ResourceEntity.create(command);
+      const eventName = "approval.resource.submitted";
       await this.transaction.run("resource.create", async (scope) => {
         await this.repository.save(entity, scope);
+        const occurredAt = new Date();
         const payload: ResourceCreatedEventPayload = {
           id: entity.id,
           projectId: command.projectId,
           requesterId: command.requesterId,
           resourceType: command.resourceType,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
         await this.outbox.append(
           {
             aggregateId: entity.id,
-            eventName: "resource.created",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(entity.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
       });
       this.logger.info(
-        { ...ctxBase, eventName: "resource.created", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
         "resource.create.success",
       );
       return { id: entity.id, status: entity.status };
@@ -87,30 +97,37 @@ export class ResourceUseCase {
     } as const;
     this.logger.info({ ...ctxBase }, "resource.updateStatus.started");
     try {
+      const eventName = "approval.resource.status-changed";
       const result = await this.transaction.run("resource.updateStatus", async (scope) => {
         const e = await this.repository.findById(command.id);
         if (!e) throw new ResourceNotFoundException(command.id);
         const next = e.changeStatus(command.status);
         await this.repository.save(next, scope);
+        const occurredAt = new Date();
         const payload: ResourceStatusChangedEventPayload = {
           id: next.id,
           status: next.status,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
         await this.outbox.append(
           {
             aggregateId: next.id,
-            eventName: "resource.status_changed",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(next.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
         return { id: next.id, status: next.status };
       });
       this.logger.info(
-        { ...ctxBase, eventName: "resource.status_changed", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
         "resource.updateStatus.success",
       );
       return result;

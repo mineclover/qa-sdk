@@ -1,8 +1,11 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
+import { buildIdempotencyKey } from "sim-identifier-grammar";
+
 import { BudgetEntity } from "../../domain/index.js";
 import { BudgetNotFoundException } from "../../domain/budget.exceptions.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import type { CreateBudgetCommand } from "../commands/create-budget.command.js";
 import type { DecideBudgetCommand } from "../commands/decide-budget.command.js";
 import type { BudgetLoggerPort } from "../ports/budget-logger.port.js";
@@ -60,6 +63,8 @@ export class BudgetUseCase {
 
       await this.transaction.run("budget.create", async (scope) => {
         await this.repository.save(entity, scope);
+        const occurredAt = new Date();
+        const eventName = "approval.budget.submitted";
         const payload: BudgetCreatedEventPayload = {
           id: entity.id,
           projectId: command.projectId,
@@ -67,15 +72,20 @@ export class BudgetUseCase {
           amount: command.amount,
           requesterId: command.requesterId,
           totalStages: entity.totalStages,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
         await this.outbox.append(
           {
             aggregateId: entity.id,
-            eventName: "budget.created",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(entity.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -104,7 +114,7 @@ export class BudgetUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "budget.created",
+          eventName: "approval.budget.submitted",
           eventVersion: 1,
           outcome: "success",
         },
@@ -158,6 +168,12 @@ export class BudgetUseCase {
       commandName: "DecideBudgetCommand",
     } as const;
 
+    // grammar #12 — verb 는 decision 결과(approved|rejected)로 정확화.
+    const eventName: "approval.budget.approved" | "approval.budget.rejected" =
+      command.decision === "approved"
+        ? "approval.budget.approved"
+        : "approval.budget.rejected";
+
     this.logger.info({ ...ctxBase }, `budget.decide.started.${command.decision}`);
 
     try {
@@ -167,21 +183,27 @@ export class BudgetUseCase {
         const stageBefore = entity.currentStage;
         const next = entity.decide(command.decision);
         await this.repository.save(next, scope);
+        const occurredAt = new Date();
         const payload: BudgetDecidedEventPayload = {
           id: next.id,
           approverId: command.approverId,
           decision: command.decision,
           stage: stageBefore,
           nextStatus: next.status,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
         await this.outbox.append(
           {
             aggregateId: next.id,
-            eventName: "budget.decided",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(next.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -191,7 +213,7 @@ export class BudgetUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "budget.decided",
+          eventName,
           eventVersion: 1,
           outcome: "success",
         },

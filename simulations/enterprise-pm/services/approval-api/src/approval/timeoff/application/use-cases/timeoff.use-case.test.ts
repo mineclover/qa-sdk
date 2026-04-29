@@ -56,7 +56,10 @@ describe("TimeOffUseCase", () => {
       endDate: "2026-05-03",
       reason: "vacation",
     });
-    expect(m.outboxRecords[0].eventName).toBe("timeoff.created");
+    expect(m.outboxRecords[0].eventName).toBe("approval.time-off.submitted");
+    expect(m.outboxRecords[0].idempotencyKey).toMatch(
+      /^tof-1:approval\.time-off\.submitted:\d+$/,
+    );
   });
 
   it("updateStatus: 미존재 → TimeOffNotFoundException", async () => {

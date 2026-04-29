@@ -36,10 +36,11 @@ describe("ExpenseUnitOfWork", () => {
       await ctx.outbox.append(
         {
           aggregateId: "exp_uow_1",
-          eventName: "expense.created",
+          eventName: "approval.expense.submitted",
           eventVersion: 1,
           payload: {},
           occurredAt: new Date(),
+          idempotencyKey: `exp-uow-1:approval.expense.submitted:${Date.now()}`,
         },
         ctx.scope,
       );

@@ -1,7 +1,10 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
+import { buildIdempotencyKey } from "sim-identifier-grammar";
+
 import { TimeOffEntity, TimeOffNotFoundException } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import type { CreateTimeOffCommand } from "../commands/create-timeoff.command.js";
 import type { UpdateTimeOffStatusCommand } from "../commands/update-timeoff-status.command.js";
 import type { TimeOffLoggerPort } from "../ports/timeoff-logger.port.js";
@@ -35,28 +38,35 @@ export class TimeOffUseCase {
     this.logger.info({ ...ctxBase }, "timeoff.create.started");
     try {
       const entity = TimeOffEntity.create(command);
+      const eventName = "approval.time-off.submitted";
       await this.transaction.run("timeoff.create", async (scope) => {
         await this.repository.save(entity, scope);
+        const occurredAt = new Date();
         const payload: TimeOffCreatedEventPayload = {
           id: entity.id,
           requesterId: command.requesterId,
           startDate: command.startDate,
           endDate: command.endDate,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
         await this.outbox.append(
           {
             aggregateId: entity.id,
-            eventName: "timeoff.created",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(entity.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
       });
       this.logger.info(
-        { ...ctxBase, eventName: "timeoff.created", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
         "timeoff.create.success",
       );
       return { id: entity.id, status: entity.status };
@@ -87,30 +97,37 @@ export class TimeOffUseCase {
     } as const;
     this.logger.info({ ...ctxBase }, "timeoff.updateStatus.started");
     try {
+      const eventName = "approval.time-off.status-changed";
       const result = await this.transaction.run("timeoff.updateStatus", async (scope) => {
         const e = await this.repository.findById(command.id);
         if (!e) throw new TimeOffNotFoundException(command.id);
         const next = e.changeStatus(command.status);
         await this.repository.save(next, scope);
+        const occurredAt = new Date();
         const payload: TimeOffStatusChangedEventPayload = {
           id: next.id,
           status: next.status,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
         await this.outbox.append(
           {
             aggregateId: next.id,
-            eventName: "timeoff.status_changed",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(next.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
         return { id: next.id, status: next.status };
       });
       this.logger.info(
-        { ...ctxBase, eventName: "timeoff.status_changed", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
         "timeoff.updateStatus.success",
       );
       return result;

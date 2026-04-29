@@ -36,10 +36,11 @@ describe("TimeOffUnitOfWork", () => {
       await ctx.outbox.append(
         {
           aggregateId: "tof_uow_1",
-          eventName: "timeoff.created",
+          eventName: "approval.time-off.submitted",
           eventVersion: 1,
           payload: {},
           occurredAt: new Date(),
+          idempotencyKey: `tof-uow-1:approval.time-off.submitted:${Date.now()}`,
         },
         ctx.scope,
       );

@@ -86,15 +86,19 @@ describe("BudgetUseCase.create", () => {
     ]);
   });
 
-  it("outbox 레코드 shape — eventName=budget.created v1", async () => {
+  it("outbox 레코드 shape — eventName=approval.budget.submitted v1 + idempotencyKey grammar #12", async () => {
     const m = makeMocks();
     const useCase = new BudgetUseCase(m.repository, m.outbox, m.transaction, m.logger);
     await useCase.create(createCommand);
     expect(m.outboxRecords[0]).toMatchObject({
       aggregateId: "br_001",
-      eventName: "budget.created",
+      eventName: "approval.budget.submitted",
       eventVersion: 1,
     });
+    // idempotencyKey 는 grammar #12 형식이어야 한다 (3-tier kebab + epoch ms).
+    expect(m.outboxRecords[0].idempotencyKey).toMatch(
+      /^br-001:approval\.budget\.submitted:\d+$/,
+    );
   });
 
   it("policyLifecycle 미주입 시에도 정상 동작 (fail-open)", async () => {

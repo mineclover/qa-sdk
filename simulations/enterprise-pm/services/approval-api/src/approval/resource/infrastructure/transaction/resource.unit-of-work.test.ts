@@ -36,10 +36,11 @@ describe("ResourceUnitOfWork", () => {
       await ctx.outbox.append(
         {
           aggregateId: "rsr_uow_1",
-          eventName: "resource.created",
+          eventName: "approval.resource.submitted",
           eventVersion: 1,
           payload: {},
           occurredAt: new Date(),
+          idempotencyKey: `rsr-uow-1:approval.resource.submitted:${Date.now()}`,
         },
         ctx.scope,
       );

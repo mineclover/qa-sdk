@@ -38,10 +38,11 @@ describe("BudgetUnitOfWork", () => {
       await ctx.outbox.append(
         {
           aggregateId: "br_uow_1",
-          eventName: "budget.created",
+          eventName: "approval.budget.submitted",
           eventVersion: 1,
           payload: { id: "br_uow_1" },
           occurredAt: new Date("2026-03-01T00:00:01.000Z"),
+          idempotencyKey: "br-uow-1:approval.budget.submitted:1740614401000",
         },
         ctx.scope,
       );
@@ -55,7 +56,7 @@ describe("BudgetUnitOfWork", () => {
     }>;
     expect(rows).toHaveLength(1);
     expect(rows[0].aggregate_id).toBe("br_uow_1");
-    expect(rows[0].event_name).toBe("budget.created");
+    expect(rows[0].event_name).toBe("approval.budget.submitted");
     expect(rows[0].status).toBe("pending");
     expect(rows[0].scope_id.startsWith("budget.create:")).toBe(true);
     sqlite.close();
@@ -76,10 +77,11 @@ describe("BudgetUnitOfWork", () => {
         await ctx.outbox.append(
           {
             aggregateId: "br_uow_2",
-            eventName: "budget.created",
+            eventName: "approval.budget.submitted",
             eventVersion: 1,
             payload: {},
             occurredAt: new Date(),
+            idempotencyKey: `br-uow-2:approval.budget.submitted:${Date.now()}`,
           },
           ctx.scope,
         );

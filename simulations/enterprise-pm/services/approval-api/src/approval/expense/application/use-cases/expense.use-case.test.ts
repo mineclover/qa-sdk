@@ -75,7 +75,10 @@ describe("ExpenseUseCase", () => {
       "transaction.run.commit",
       "logger.info:success",
     ]);
-    expect(m.outboxRecords[0].eventName).toBe("expense.created");
+    expect(m.outboxRecords[0].eventName).toBe("approval.expense.submitted");
+    expect(m.outboxRecords[0].idempotencyKey).toMatch(
+      /^exp-1:approval\.expense\.submitted:\d+$/,
+    );
   });
 
   it("updateStatus: 미존재 → ExpenseNotFoundException (NotFoundError)", async () => {
