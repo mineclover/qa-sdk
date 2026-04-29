@@ -35,7 +35,7 @@ echo "==> 3/4 시뮬 컨테이너 부팅"
 docker compose -f docker-compose.sim.yaml up -d --build
 
 echo "==> 4/4 healthcheck 대기 (최대 90초)"
-SERVICES=(sim-redis sim-auth-api sim-pm-api sim-approval-api sim-notification-api sim-reporting-api sim-document-api sim-audit-browser-api sim-metrics-collector sim-gateway)
+SERVICES=(qa-sdk-ingest sim-redis sim-auth-api sim-pm-api sim-approval-api sim-notification-api sim-reporting-api sim-document-api sim-audit-browser-api sim-metrics-collector sim-gateway)
 unhealthy=()
 for i in $(seq 1 18); do
   unhealthy=()
