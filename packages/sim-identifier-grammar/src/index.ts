@@ -20,3 +20,11 @@ export {
   type VersionTag,
   type VersionTagState,
 } from "./version-tag.js";
+
+export {
+  buildImageTag,
+  parseImageTag,
+  IMAGE_REGISTRIES,
+  type ImageTag,
+  type ImageRegistry,
+} from "./image-tag.js";
