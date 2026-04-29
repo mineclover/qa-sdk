@@ -3,6 +3,7 @@
 
 import { Hono } from "hono";
 import { proxyRequest } from "../lib/proxy.js";
+import type { InMemoryRoutingStore } from "../routing/routing-table.js";
 
 /**
  * 라우팅 종류:
@@ -78,6 +79,12 @@ export interface CreateProxyRoutesOptions {
   /** serviceKey → base URL. PROXY_TARGETS의 모든 serviceKey가 등록되어야 함. */
   targets: Record<string, string>;
   timeoutMs: number;
+  /**
+   * Plan C 단계 7 — controller가 push한 라우팅 store. 등록되지 않은 serviceKey는
+   * `targets[serviceKey]`로 fall-through (legacy 호환). Task 7.8에서 routing decision
+   * 호출이 추가된다.
+   */
+  routingStore?: InMemoryRoutingStore;
 }
 
 export function createProxyRoutes(opts: CreateProxyRoutesOptions) {
