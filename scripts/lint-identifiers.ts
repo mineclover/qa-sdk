@@ -16,6 +16,9 @@ const ROOT = resolve(__dirname, "..");
 const errors: string[] = [];
 
 const IMAGE_TAG_RE = /^([a-z][a-z0-9-]+)\/([a-z0-9-]+):(v[1-9][0-9]*(?:-(candidate|retired))?|latest)$/;
+// 본 사이클의 grammar 검증 대상은 시뮬 자체 image (qa-sdk 또는 qa-sdk-sim 레지스트리)에 한함.
+// 외부 base image (redis:7-alpine, postgres:16-alpine, node:22 등)는 grammar 적용 대상 아님 — skip.
+const SIM_IMAGE_PREFIX_RE = /^qa-sdk(-sim)?\//;
 const LABEL_KEY_RE = /^sim\.[a-z][a-z0-9-]{0,30}$/;
 
 async function main(): Promise<void> {
@@ -32,8 +35,8 @@ async function main(): Promise<void> {
         errors.push(`${file}:${i + 1} host.docker.internal 잔존 (extra_hosts 외)`);
       }
       const imageMatch = line.match(/^\s*image:\s*(\S+)/);
-      if (imageMatch && !IMAGE_TAG_RE.test(imageMatch[1])) {
-        errors.push(`${file}:${i + 1} image tag grammar 위반: ${imageMatch[1]}`);
+      if (imageMatch && SIM_IMAGE_PREFIX_RE.test(imageMatch[1]) && !IMAGE_TAG_RE.test(imageMatch[1])) {
+        errors.push(`${file}:${i + 1} image tag grammar 위반 (qa-sdk image): ${imageMatch[1]}`);
       }
       const labelMatch = line.match(/^\s+([a-zA-Z][a-zA-Z0-9.-]*):\s*\S+$/);
       if (labelMatch && /^sim\./.test(labelMatch[1]) && !LABEL_KEY_RE.test(labelMatch[1])) {
