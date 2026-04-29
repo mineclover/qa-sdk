@@ -1,8 +1,21 @@
 // @def.boundary sim-canary-controller
 // @def.doc canary-controller-config
-// 단계 9.11에서 action executor service를 채운다.
 
 import { Module } from "@nestjs/common";
+import { ActionExecutorService } from "./action-executor.service.js";
+import { env } from "../config/env.js";
 
-@Module({})
+@Module({
+  providers: [
+    {
+      provide: ActionExecutorService,
+      useFactory: () =>
+        new ActionExecutorService({
+          gatewayUrl: env.SIM_GATEWAY_ADMIN_URL,
+          composeProject: env.SIM_COMPOSE_PROJECT,
+        }),
+    },
+  ],
+  exports: [ActionExecutorService],
+})
 export class ActionModule {}
