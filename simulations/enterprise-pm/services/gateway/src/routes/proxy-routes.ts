@@ -2,8 +2,11 @@
 // @def.doc authorization-ontology-bitmap-pipeline
 
 import { Hono } from "hono";
+import { parseVersionTag, type VersionTag } from "sim-identifier-grammar";
 import { proxyRequest } from "../lib/proxy.js";
 import type { InMemoryRoutingStore } from "../routing/routing-table.js";
+import { decideRoute } from "../routing/route-decision.js";
+import type { CanaryOverride } from "../middleware/canary-override.js";
 
 /**
  * 라우팅 종류:
@@ -90,8 +93,8 @@ export interface CreateProxyRoutesOptions {
 export function createProxyRoutes(opts: CreateProxyRoutesOptions) {
   const r = new Hono();
   for (const target of PROXY_TARGETS) {
-    const base = opts.targets[target.serviceKey];
-    if (!base) {
+    const fallbackBase = opts.targets[target.serviceKey];
+    if (!fallbackBase) {
       throw new Error(
         `createProxyRoutes: target ${target.serviceKey} URL missing`,
       );
@@ -100,11 +103,37 @@ export function createProxyRoutes(opts: CreateProxyRoutesOptions) {
       c: Parameters<Parameters<Hono["all"]>[1]>[0],
     ) => {
       const url = new URL(c.req.url);
+
+      // Plan C 단계 7 — routing decision 흐름:
+      //   1. routingStore + entry 존재 → decideRoute (sticky-by-user) 또는 escape hatch.
+      //   2. 미존재 → legacy fall-through (기존 시나리오 1~8 무회귀).
+      const entry = opts.routingStore?.getRoute(target.serviceKey);
+      let targetBaseUrl = fallbackBase;
+      let targetVersion: VersionTag | undefined;
+
+      if (entry) {
+        const override = c.get("canary-override") as CanaryOverride | undefined;
+        if (override) {
+          // spec §3.4 — internal IP에서 검증된 강제 라우팅.
+          const pair = override.target === "candidate" ? entry.candidate : entry.stable;
+          if (pair) {
+            targetBaseUrl = pair.upstream;
+            targetVersion = parseVersionTag(pair.version);
+          }
+        } else {
+          const userId = c.req.raw.headers.get("x-auth-user-id") ?? undefined;
+          const decision = decideRoute({ entry, userId });
+          targetBaseUrl = decision.upstream;
+          targetVersion = parseVersionTag(decision.version);
+        }
+      }
+
       return proxyRequest({
-        targetBaseUrl: base,
+        targetBaseUrl,
         sourcePath: url.pathname + url.search,
         request: c.req.raw,
         timeoutMs: opts.timeoutMs,
+        targetVersion,
       });
     };
     const kind: ProxyKind = target.kind ?? "prefix";
