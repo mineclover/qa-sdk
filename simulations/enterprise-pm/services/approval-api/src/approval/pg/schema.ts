@@ -11,6 +11,17 @@ import {
   doublePrecision,
 } from "drizzle-orm/pg-core";
 
+import {
+  SIM_OUTBOX_CONSUMER_LOG_PG_DDL,
+  SIM_OUTBOX_CONSUMER_LOG_PG_RESET_DDL,
+} from "../shared/outbox/outbox-consumer-log.schema.js";
+
+export {
+  outboxConsumerLog,
+  SIM_OUTBOX_CONSUMER_LOG_PG_DDL,
+  SIM_OUTBOX_CONSUMER_LOG_PG_RESET_DDL,
+} from "../shared/outbox/outbox-consumer-log.schema.js";
+
 const sim = pgSchema("sim");
 
 /**
@@ -31,9 +42,14 @@ export const approvalOutboxEvents = sim.table(
     payload: text("payload").notNull(),
     occurred_at: bigint("occurred_at", { mode: "number" }).notNull(),
     scope_id: text("scope_id").notNull(),
-    status: text("status", { enum: ["pending", "published", "failed"] })
+    // spec 04 §2.1/§2.3 — status enum 확장 + dispatcher 필드 4종
+    status: text("status", { enum: ["pending", "dispatched", "failed", "dlq"] })
       .notNull()
       .default("pending"),
+    idempotency_key: text("idempotency_key").notNull(),
+    dispatched_at: bigint("dispatched_at", { mode: "number" }),
+    retry_count: integer("retry_count").notNull().default(0),
+    next_attempt_at: bigint("next_attempt_at", { mode: "number" }),
   },
   (t) => [index("idx_sim_approval_outbox_status").on(t.status, t.occurred_at)],
 );
@@ -157,8 +173,15 @@ CREATE TABLE IF NOT EXISTS sim.approval_outbox_events (
   occurred_at BIGINT NOT NULL,
   scope_id TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending','dispatched','failed','dlq')),
+  idempotency_key TEXT NOT NULL,
+  dispatched_at BIGINT,
+  retry_count INTEGER NOT NULL DEFAULT 0,
+  next_attempt_at BIGINT
 );
 CREATE INDEX IF NOT EXISTS idx_sim_approval_outbox_status ON sim.approval_outbox_events(status, occurred_at);
+
+${SIM_OUTBOX_CONSUMER_LOG_PG_DDL}
 `;
 
 export const SIM_APPROVAL_PG_RESET_DDL = `
@@ -219,6 +242,35 @@ CREATE TABLE sim.approval_outbox_events (
   occurred_at BIGINT NOT NULL,
   scope_id TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending','dispatched','failed','dlq')),
+  idempotency_key TEXT NOT NULL,
+  dispatched_at BIGINT,
+  retry_count INTEGER NOT NULL DEFAULT 0,
+  next_attempt_at BIGINT
 );
 CREATE INDEX idx_sim_approval_outbox_status ON sim.approval_outbox_events(status, occurred_at);
+
+${SIM_OUTBOX_CONSUMER_LOG_PG_RESET_DDL}
+`;
+
+/**
+ * spec 04 §2.1/§2.3 — 기존 dev/CI DB(컬럼 4종 이전 버전)를 위한 ALTER TABLE 마이그레이션.
+ *
+ * RESET DDL과 달리 본 스니펫은 *기존 데이터 보존* 환경에서만 의미가 있다. status 체크
+ * 제약을 새로운 enum(`pending|dispatched|failed|dlq`)으로 교체하고, 4종 컬럼을 추가한다.
+ * idempotency_key 는 NOT NULL 이지만 기존 row 가 있을 수 있으므로 backfill 후 NOT NULL.
+ */
+export const SIM_APPROVAL_PG_OUTBOX_ALTER_DDL = `
+ALTER TABLE sim.approval_outbox_events
+  ADD COLUMN IF NOT EXISTS idempotency_key TEXT,
+  ADD COLUMN IF NOT EXISTS dispatched_at BIGINT,
+  ADD COLUMN IF NOT EXISTS retry_count INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS next_attempt_at BIGINT;
+ALTER TABLE sim.approval_outbox_events
+  DROP CONSTRAINT IF EXISTS approval_outbox_events_status_check;
+ALTER TABLE sim.approval_outbox_events
+  ADD CONSTRAINT approval_outbox_events_status_check
+  CHECK (status IN ('pending','dispatched','failed','dlq'));
+UPDATE sim.approval_outbox_events SET idempotency_key = id WHERE idempotency_key IS NULL;
+ALTER TABLE sim.approval_outbox_events ALTER COLUMN idempotency_key SET NOT NULL;
 `;
