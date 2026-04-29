@@ -28,3 +28,13 @@ export {
   type ImageTag,
   type ImageRegistry,
 } from "./image-tag.js";
+
+export {
+  buildHttpHeader,
+  parseHttpHeader,
+  HttpHeaderSchema,
+  HttpHeaderNameSchema,
+  HEADER_DOMAINS,
+  type HttpHeader,
+  type HeaderDomain,
+} from "./http-header.js";
