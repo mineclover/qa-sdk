@@ -4,6 +4,8 @@
 export { getServiceVersionTag } from "./get-service-version-tag.js";
 export { transitionState } from "./transition-state.js";
 export type { TransitionInput, TransitionResult } from "./transition-state.js";
+export { getCurrentTopology } from "./get-current-topology.js";
+export type { TopologyOptions } from "./get-current-topology.js";
 export type {
   CatalogPrefixDefinition,
   ServiceState,
