@@ -47,3 +47,12 @@ export {
   type SchemaHashInput,
   type CanonicalShape,
 } from "./schema-hash.js";
+
+export {
+  buildDecisionId,
+  parseDecisionId,
+  DecisionIdSchema,
+  DECISION_PASSES,
+  type DecisionId,
+  type DecisionPass,
+} from "./decision-id.js";
