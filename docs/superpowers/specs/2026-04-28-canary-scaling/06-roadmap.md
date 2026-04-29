@@ -174,6 +174,7 @@
 | #9 모노레포 build hygiene sweep | 단계 1.1 진행 위해 spec-core/viz-core/event-catalog/lockfile 4개 결함만 최소 처리(Dockerfile fix #1~4 + worktree-local lockfile sync) | spec-core 빌드(spec-transition/dkg/@qa-sdk/core import 미해결) source 차원 fix · core↔viz-core devDeps cycle 정리 · 27 의존 패키지의 누락 devDep sweep · main checkout uncommitted 작업과 lockfile 일관성 회복 |
 | #10 monorepo-root .dockerignore | 단계 1 .dockerignore는 packages/ingest-server/ 안에 둠(현재 빌드 컨텍스트에서는 무시되지만 future packages-only 빌드용) | monorepo root에 `.dockerignore` 신설 — `**/node_modules`, `**/dist`, `.git`, `.worktrees/`, `**/.env`, `**/.env.local`, `**/.env.sim`(not `.example`), `coverage` 등 제외. **보안 사유**: sops 사용자가 `.env.sim`을 decrypt 한 상태에서 monorepo root context build 시 secret이 build cache로 누출될 수 있음 |
 | #11 ingest-server 이미지 hardening | 단계 1 이미지는 sim-only/dev 용으로 설계됨. multistage가 부분적으로만 image size 절감, root 사용자, healthcheck wget 의존이 BusyBox 기본 포함에 의존 | (a) Stage 2 `COPY --from=builder` 를 dist 산출물만 선택적으로 복사하도록 수정 → 진짜 multistage prune. (b) Stage 2 apk 라인에 `wget` 명시 추가(BusyBox 의존 제거). (c) `USER nonroot` 추가. 운영(prod) 사용 후보 시 진행 |
+| #12 qa-sdk-ingest compose entry 정리 | Task 1.2는 plan verbatim. 다음 3개 보강은 단계 1 외 처리 | (a) `<<: *nestjs-common` 미사용 사유 인라인 주석. (b) `container_name: qa-sdk-ingest` 추가 — 다른 sim-* 서비스들과 parity, `docker logs <name>` 사용성 회복. (c) `CORS_ORIGIN: "*"` narrowing 또는 `ports: 3200:3200` host publish 제거 — sim-only 컨테이너간 통신은 default network로 충분, host publish + wildcard CORS는 dev 환경에서도 unauthenticated ingest 노출 위험 |
 
 각 후속 sub-project는 별도 brainstorming → spec → plan 사이클로 진행한다.
 
