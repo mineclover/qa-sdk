@@ -18,6 +18,14 @@ export const envSchema = dbEnvSchema.extend({
   QA_INGEST_URL: z.string().optional(),
   /** Redis pub/sub — Plan 12b가 사용. 본 plan에서는 read-only 노출. */
   SIM_REDIS_URL: z.string().default("redis://localhost:6379"),
+  /** 단계 8(Plan C): 컨테이너 자기 버전 — Dockerfile ARG에서 주입. grammar #3 형식 */
+  SIM_SERVICE_VERSION: z
+    .string()
+    .regex(
+      /^v\d+(-stable|-candidate)?$/,
+      "SIM_SERVICE_VERSION must match grammar #3 (v<n>[-stable|-candidate])",
+    )
+    .default("v0-stable"),
 });
 
 export type Env = z.infer<typeof envSchema>;

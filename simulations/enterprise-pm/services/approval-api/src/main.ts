@@ -9,6 +9,7 @@ import { initTelemetry, otelEnvSchema } from "@qa-sdk/otel";
 import { createLogger } from "./lib/logger.js";
 import { AppModule } from "./app.module.js";
 import { env } from "./config/env.js";
+import { VersionStampInterceptor } from "./lib/version-stamp.interceptor.js";
 
 const SERVICE_NAME = "sim-approval-api";
 const logger = createLogger(SERVICE_NAME);
@@ -26,6 +27,8 @@ async function bootstrap() {
     new FastifyAdapter(),
     { logger: false }, // pino logger를 직접 사용, NestJS 기본 로거 비활성화
   );
+  // 단계 8(Plan C) — 모든 응답에 x-service-version 첨부. spec 02 §4.1.
+  app.useGlobalInterceptors(new VersionStampInterceptor());
   app.enableCors({ origin: env.CORS_ORIGIN });
 
   await app.listen({ port: env.PORT, host: "0.0.0.0" });
