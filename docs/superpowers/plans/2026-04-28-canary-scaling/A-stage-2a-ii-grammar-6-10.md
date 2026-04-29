@@ -7,6 +7,8 @@
 
 이벤트 페이로드 형태에 대한 결정론적 content hash. spec §2.6 인용: "결정론 보장: ① `canonicalJSON`은 키 정렬/공백 제거/숫자 정규화. ② `payloadShape`는 nullable/optional/required 명시. ③ 동일 shape는 항상 동일 hash, 타이브레이커 없음." 합성식: `sha256(canonicalJSON(payloadShape))[:16]`. parser는 hash로부터 원형을 복원할 수 없어 *없음* — 대신 `verifySchemaHash`가 같은 역할. eventName 검증은 Task 2.6 결과를 type-only로 import 하여 병렬 작성 시 의존을 차단한다.
 
+> **fixture 주의** (follow-up #16): `eventName` fixture는 #5 event-name(Task 2.6)이 정의한 `EventName` type과 정확히 일치해야 한다 — `{ domain, aggregate, verbPast }` 키. `{ domain, entity, action }`처럼 spec 03 §2.5와 다른 키 이름을 쓰면 vitest runtime은 PASS이지만 `tsc --noEmit`은 7건 typecheck error 누적. schema-hash 모듈 자체는 eventName 형태를 검증하지 않지만 `SchemaHashInput.eventName: EventName` type으로 narrowed → fixture가 type-compatible이어야 한다.
+
 - [ ] **Step 2.7.1: 실패 테스트 작성**
 
 `packages/sim-identifier-grammar/src/schema-hash.test.ts`:
@@ -16,7 +18,9 @@ import { describe, it, expect } from "vitest";
 import * as fc from "fast-check";
 import { buildSchemaHash, verifySchemaHash, type SchemaHashInput } from "./schema-hash.js";
 
-const ev = { domain: "approval", entity: "request", action: "submitted" } as const;
+// EventName({ domain, aggregate, verbPast }) type 정합 — spec 03 §2.5.
+// 잘못된 키({ entity, action })는 vitest runtime PASS이지만 tsc typecheck 실패.
+const ev = { domain: "approval", aggregate: "request", verbPast: "submitted" } as const;
 const mk = (payloadShape: SchemaHashInput["payloadShape"]) => buildSchemaHash({ eventName: ev, payloadShape });
 
 describe("outbox schemaHash grammar (#6)", () => {

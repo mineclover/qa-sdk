@@ -258,12 +258,17 @@ jobs:
       - name: Build sim-identifier-grammar
         run: pnpm --filter sim-identifier-grammar build
 
+      - name: Typecheck (follow-up #16 — fixture/EventName 정합성)
+        run: pnpm --filter sim-identifier-grammar typecheck
+
       - name: Roundtrip property tests
         run: pnpm --filter sim-identifier-grammar test
 
       - name: Static identifier lint
         run: pnpm sim:lint:identifiers
 ```
+
+> **typecheck step 추가 (follow-up #16)**: vitest는 esbuild로 transpile만 하므로 type mismatch 있는 fixture도 runtime PASS. cross-section 정합성 회귀를 차단하려면 `tsc --noEmit`를 별도 step으로 둔다 — 식별자별 builder input 타입과 fixture가 일치 보장.
 
 - [ ] **Step 2.20.2: workflow 문법 검증 (선택, gh act 또는 yamllint)**
 

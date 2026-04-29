@@ -519,6 +519,8 @@ git commit -m "feat(sim-service-catalog): transitionState — allowed transition
 
 spec 02 §5: *"`{ stable, candidate, retired }` — gateway/controller 부팅 시 sync. 응답 자체에 catalog revision이 박혀 있어 gateway가 이후 routing push와 정합성 비교 가능"*.
 
+> **SSOT 결정**: refEntries의 *`entry.state`* 필드가 role assignment의 단일 진실이다. `version` 문자열(`"v1"`, `"v4-candidate"`)은 image tag/url interpolation 용도일 뿐 — `parseVersionTag("v1")` 결과 `state: "stable"`은 retired entry의 `state: "retired"`와 직교 차원. tag-string과 entry.state를 비교하는 drift check는 false-positive(spec §2.1 fixture의 retired 항목 `{ version: "v1", state: "retired" }` 자기 자신을 잡음)를 일으키므로 도입하지 않는다. state suffix 강제는 별도 게이트(`buildVersionTag` 검증)에서만 다룬다.
+
 - [ ] **Step 3.4.1: 실패 테스트 작성**
 
 `src/get-current-topology.test.ts`:
@@ -611,12 +613,12 @@ export function getCurrentTopology(
   const retireds: VersionTag[] = [];
 
   for (const entry of catalog.refEntries) {
-    const tag = parseVersionTag(entry.version);
-    if (tag.state !== entry.state) {
-      throw new Error(
-        `getCurrentTopology: state drift — entry.version=${entry.version} entry.state=${entry.state} parsed.state=${tag.state}`,
-      );
-    }
+    // version 문자열은 grammar 통과 (parseVersionTag) — image tag 보간용 정규성 보장.
+    // role assignment(stable/candidate/retired)는 *entry.state* 필드가 SSOT.
+    // tag-string 자체의 state suffix와 entry.state 비교는 retired entry의
+    // bare "v1" 표기를 false-positive로 잡으므로 도입하지 않는다 (위 SSOT 결정 참조).
+    const parsed = parseVersionTag(entry.version);
+    const tag: VersionTag = { axis: "version", value: parsed.value, state: entry.state };
     if (entry.state === "stable") stables.push(tag);
     else if (entry.state === "candidate") candidates.push(tag);
     else retireds.push(tag);

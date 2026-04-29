@@ -2,7 +2,13 @@
 
 **Spec 참조:** `04-scaling-infra.md` §2
 
-approval-api replica가 N개로 scale될 때 모든 replica 안에서 outbox dispatcher가 동시에 폴링한다. 본 단계는 (a) `FOR UPDATE SKIP LOCKED` 폴링 락(§2.1), (b) `(idempotency_key, consumer)` UNIQUE consumer-log(§2.2), (c) `WHERE status='pending'` 동시성 가드 + retry/DLQ 전이(§2.3)를 추가해 중복 dispatch 0·중복 효과 0을 보장하고, idempotency_key는 Plan A Task 2.13의 `buildIdempotencyKey`만 사용하도록 강제한다.
+approval-api replica가 N개로 scale될 때 모든 replica 안에서 outbox dispatcher가 동시에 폴링한다. 본 단계는 (a) `FOR UPDATE SKIP LOCKED` 폴링 락(§2.1), (b) `(idempotency_key, consumer)` UNIQUE consumer-log(§2.2), (c) `WHERE status IN ('pending','failed')` 동시성 가드 + retry/DLQ 전이(§2.3)를 추가해 중복 dispatch 0·중복 효과 0을 보장하고, idempotency_key는 Plan A Task 2.13의 `buildIdempotencyKey`만 사용하도록 강제한다.
+
+> **Import scope**: `sim-identifier-grammar` 패키지는 unscoped (Plan A Task 2.1.1 — `"name": "sim-identifier-grammar"`). 본 단계의 모든 import는 `from "sim-identifier-grammar"` (NOT `@qa-sdk/sim-identifier-grammar`).
+>
+> **Event name grammar**: 도메인 outbox event는 spec 03 §2.5 grammar #5 — `${domain}.${aggregate}.${verbPast}` 3-tier kebab. 4 슬라이스 fixture는 `approval.budget.submitted` / `approval.budget.approved` / `approval.budget.rejected` / `approval.expense.submitted` 등으로 3-tier 정합. 2-tier(`budget.created`) 또는 underscore(`expense.status_changed`) 표기는 grammar 위반.
+>
+> **Entity ID canonicalize**: 도메인 entity id가 underscore/mixed-case(예: `br_001`, `exp_1`)인 경우, idempotency key 합성 직전에 `toGrammarSafeAggregateId(rawId)` helper로 grammar-safe 형태로 변환한다 (Task 5.6 참조). raw 보간 금지.
 
 ### File Structure (단계 5)
 
@@ -16,6 +22,7 @@ approval-api replica가 N개로 scale될 때 모든 replica 안에서 outbox dis
 | Create | `simulations/enterprise-pm/services/approval-api/src/approval/shared/outbox/outbox-dispatcher.status-guard.test.ts` |
 | Create | `simulations/enterprise-pm/services/approval-api/src/approval/shared/outbox/outbox-dispatcher.dlq.test.ts` |
 | Create | `simulations/enterprise-pm/services/approval-api/src/approval/shared/outbox/outbox-dispatcher.contention.test.ts` (락 경합 단위 테스트) |
+| Create | `simulations/enterprise-pm/services/approval-api/src/approval/shared/outbox/idempotency-key-source.ts` (`toGrammarSafeAggregateId` helper — entity id canonicalize) |
 | Create | `simulations/enterprise-pm/services/approval-api/src/approval/shared/outbox/idempotency-key-source.test.ts` |
 | Modify | `simulations/enterprise-pm/packages/sim-domain-slice-kit/src/outbox.port.ts` (`OutboxRecord.idempotencyKey: string` 추가) |
 | Modify | `simulations/enterprise-pm/packages/sim-domain-slice-kit/src/outbox/drizzle.ts` (idempotencyKey 가드 + `idempotency_key` / `retry_count` 컬럼 매핑) |
@@ -136,7 +143,7 @@ git commit -m "feat(sim-approval-api): sim.outbox_consumer_log table (UNIQUE ide
 `outbox-dispatcher.test.ts` 핵심 케이스 3건 (`QA_TEST_PG=1` gate):
 
 ```typescript
-import { buildIdempotencyKey } from "@qa-sdk/sim-identifier-grammar";
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { createOutboxDispatcher } from "./outbox-dispatcher.js";
 import {
   SIM_APPROVAL_PG_RESET_DDL,
@@ -229,7 +236,7 @@ ALTER TABLE sim.approval_outbox_events ALTER COLUMN idempotency_key SET NOT NULL
 // @def.boundary sim-approval-api
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { Sql } from "postgres";
-import { parseIdempotencyKey } from "@qa-sdk/sim-identifier-grammar";
+import { buildIdempotencyKey, parseIdempotencyKey } from "sim-identifier-grammar";
 
 export interface OutboxEvent {
   id: string; aggregateId: string; eventName: string;
@@ -255,14 +262,15 @@ export function createOutboxDispatcher(opts: OutboxDispatcherOptions): OutboxDis
     async tick() {
       let processed = 0;
       await opts.sql.begin(async (tx) => {
-        // §2.1 폴링
+        // §2.1 폴링 — 'pending' 또는 backoff 만료된 'failed' row 모두 대상.
+        // 'failed' 누락 시 retry 사이클이 정지하므로 IN ('pending','failed') 필수.
         const rows = await tx<{
           id: string; aggregate_id: string; event_name: string;
           payload: string; idempotency_key: string;
         }[]>`
           SELECT id, aggregate_id, event_name, payload, idempotency_key
           FROM sim.approval_outbox_events
-          WHERE status = 'pending'
+          WHERE status IN ('pending', 'failed')
             AND (next_attempt_at IS NULL OR next_attempt_at <= ${Date.now()})
           ORDER BY occurred_at
           LIMIT ${opts.batchSize}
@@ -275,49 +283,58 @@ export function createOutboxDispatcher(opts: OutboxDispatcherOptions): OutboxDis
             payload: row.payload, idempotencyKey: row.idempotency_key,
           };
 
-          // §2.2 멱등성 키
-          const claimed = await tx<{ idempotency_key: string }[]>`
-            INSERT INTO sim.outbox_consumer_log (idempotency_key, consumer, processed_at)
-            VALUES (${evt.idempotencyKey}, ${opts.consumerName}, ${Date.now()})
-            ON CONFLICT (idempotency_key, consumer) DO NOTHING
-            RETURNING idempotency_key`;
-
-          if (claimed.length === 0) {
-            // 다른 dispatcher 가 이미 처리 → status 만 dispatched (silent skip)
-            await tx`
-              UPDATE sim.approval_outbox_events
-              SET status = 'dispatched', dispatched_at = ${Date.now()}
-              WHERE id = ${row.id} AND status = 'pending'`;
-            continue;
-          }
-
           try {
+            // §2.2 — consume-then-claim 순서. 먼저 consume, 성공 시에만 consumer-log INSERT.
+            // claim-then-consume 순서는 다른 dispatcher가 이미 처리한 row에 대해
+            // 본 dispatcher가 silent skip(continue)하면서 자기 자신은 consume을 *건너뛰므로*
+            // "내가 처리하지 않은 row의 status를 dispatched로 바꾸는" race가 발생.
+            // 본 dispatcher가 먼저 consume하고, 그 결과만 consumer-log로 영속화하면
+            // ON CONFLICT가 같은 (key, consumer) 중복 INSERT race를 자연 흡수.
             await opts.consume(evt);
-            // §2.3 status 전이 (동시성 가드 AND status='pending')
+
+            const claimed = await tx<{ idempotency_key: string }[]>`
+              INSERT INTO sim.outbox_consumer_log (idempotency_key, consumer, processed_at)
+              VALUES (${evt.idempotencyKey}, ${opts.consumerName}, ${Date.now()})
+              ON CONFLICT (idempotency_key, consumer) DO NOTHING
+              RETURNING idempotency_key`;
+
+            // §2.3 status 전이 — AND status IN ('pending','failed') 가드로 동시성 자연 no-op.
             await tx`
               UPDATE sim.approval_outbox_events
               SET status = 'dispatched', dispatched_at = ${Date.now()}
-              WHERE id = ${row.id} AND status = 'pending'`;
-            processed++;
+              WHERE id = ${row.id} AND status IN ('pending', 'failed')`;
+
+            // claimed.length === 0 이면 다른 dispatcher 가 이미 동일 (key, consumer) 처리.
+            // 본 dispatcher 도 이미 consume 했으므로 결과적으로 중복 효과 0. 다음 row.
+            if (claimed.length > 0) processed++;
           } catch {
             const next = await tx<{ retry_count: number }[]>`
               UPDATE sim.approval_outbox_events
               SET retry_count = retry_count + 1
-              WHERE id = ${row.id} AND status = 'pending'
+              WHERE id = ${row.id} AND status IN ('pending', 'failed')
               RETURNING retry_count`;
             const newCount = next[0]?.retry_count ?? 0;
             if (newCount > opts.maxRetries) {
               await tx`UPDATE sim.approval_outbox_events SET status='dlq' WHERE id=${row.id}`;
-              // DLQ 진입 자체를 outbox 이벤트로 발행 (controller 신호)
+              // DLQ 진입 자체를 outbox 이벤트로 발행 (controller 신호).
+              // DLQ event의 idempotency_key 도 grammar #12 (3-tier) 형식 준수.
+              // raw `dlq:${...}` 보간은 grammar 위반 — buildIdempotencyKey 사용 강제.
+              const dlqEventName = "approval.outbox.dlq-entered";
+              const dlqOccurredAt = Date.now();
+              const dlqIdempotencyKey = buildIdempotencyKey({
+                aggregateId: `dlq-${row.id}`.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+                eventName: dlqEventName,
+                occurredAt: dlqOccurredAt,
+              });
               await tx`
                 INSERT INTO sim.approval_outbox_events
                   (id, aggregate_id, event_name, event_version, payload,
                    occurred_at, scope_id, status, idempotency_key, retry_count)
                 VALUES (${`dlq-${row.id}`}, ${row.aggregate_id},
-                  'approval.outbox.dlq-entered', 1,
+                  ${dlqEventName}, 1,
                   ${JSON.stringify({ originId: row.id, eventName: row.event_name })},
-                  ${Date.now()}, 'tx-dlq', 'pending',
-                  ${`dlq:${row.idempotency_key}`}, 0)`;
+                  ${dlqOccurredAt}, 'tx-dlq', 'pending',
+                  ${dlqIdempotencyKey}, 0)`;
             } else {
               await tx`
                 UPDATE sim.approval_outbox_events
@@ -355,7 +372,7 @@ git commit -m "feat(sim-approval-api): outbox dispatcher with FOR UPDATE SKIP LO
 **Files:**
 - Create: `…/approval/shared/outbox/outbox-dispatcher.status-guard.test.ts`
 
-spec 04 §2.3의 `WHERE id=$1 AND status='pending'` 가드는 두 dispatcher가 같은 row를 UPDATE할 때 두 번째 시도가 자연스럽게 no-op(`ROW_COUNT=0`)이 되게 한다. Task 5.2 dispatcher가 이 형태를 이미 따르므로 본 task는 *동시성 자체에 대한 회귀 단위 테스트*만 추가한다.
+spec 04 §2.3의 `WHERE id=$1 AND status IN ('pending','failed')` 가드는 두 dispatcher가 같은 row를 UPDATE할 때 두 번째 시도가 자연스럽게 no-op(`ROW_COUNT=0`)이 되게 한다. Task 5.2 dispatcher가 이 형태를 이미 따르므로 본 task는 *동시성 자체에 대한 회귀 단위 테스트*만 추가한다. (`'pending'` 단일 가드는 retry 사이클의 `'failed'` row를 잡지 못하므로 `IN ('pending','failed')`로 확장.)
 
 - [ ] **Step 5.3.1: 실패 테스트 작성**
 
@@ -371,17 +388,17 @@ describe.skipIf(!PG_AVAILABLE)("outbox status 전이 동시성 가드", () => {
       sqlA.begin(async (tx) =>
         (await tx`UPDATE sim.approval_outbox_events
                   SET status='dispatched', dispatched_at=${Date.now()}
-                  WHERE id='evt-1' AND status='pending'`).count),
+                  WHERE id='evt-1' AND status IN ('pending','failed')`).count),
       sqlB.begin(async (tx) =>
         (await tx`UPDATE sim.approval_outbox_events
                   SET status='dispatched', dispatched_at=${Date.now()}
-                  WHERE id='evt-1' AND status='pending'`).count),
+                  WHERE id='evt-1' AND status IN ('pending','failed')`).count),
     ]);
     expect([r1, r2].sort()).toEqual([0, 1]);
     // 최종 status='dispatched' 확인
   });
 
-  it("status='pending' 가드 누락 시 두 트랜잭션 모두 ROW_COUNT=1 (가드 필요성 음성 통제)", async () => {
+  it("status 가드 누락 시 두 트랜잭션 모두 ROW_COUNT=1 (가드 필요성 음성 통제)", async () => {
     // 동일 흐름을 가드 없이 — r1+r2 = 2
   });
 });
@@ -396,7 +413,7 @@ Task 5.2 구현이 가드를 포함하므로 PASS여야 한다. FAIL 시 dispatc
 
 - [ ] **Step 5.3.3: 최소 보강 (필요 시)**
 
-`outbox-dispatcher.ts`의 두 UPDATE문에 `AND status='pending'`을 추가. 일반적으로 본 step은 no-op (5.2가 이미 포함).
+`outbox-dispatcher.ts`의 두 UPDATE문에 `AND status IN ('pending','failed')`을 추가. 일반적으로 본 step은 no-op (5.2가 이미 포함).
 
 - [ ] **Step 5.3.4: 테스트 통과**
 
@@ -432,9 +449,10 @@ describe.skipIf(!PG_AVAILABLE)("outbox dispatcher DLQ", () => {
     const disp = createOutboxDispatcher({ db, sql, consumerName: "sim-approval-api",
       consume: failing, batchSize: 10, maxRetries: 5 });
     for (let i = 0; i < 6; i++) {
-      // 매 사이클: next_attempt_at=NULL + status='pending'으로 되감아 즉시 재시도
+      // 매 사이클: next_attempt_at=NULL 으로만 되감아 즉시 재시도 (status 자체는
+      // 'failed' 그대로 — dispatcher가 IN ('pending','failed')로 폴링하므로 충분).
       await sql`UPDATE sim.approval_outbox_events
-                 SET next_attempt_at=NULL, status='pending'
+                 SET next_attempt_at=NULL
                  WHERE id='evt-fail' AND status IN ('pending','failed')`;
       await disp.tick();
     }
@@ -455,7 +473,7 @@ describe.skipIf(!PG_AVAILABLE)("outbox dispatcher DLQ", () => {
     const expected = [1_000, 2_000, 4_000, 8_000, 16_000];
     for (let i = 0; i < expected.length; i++) {
       await sql`UPDATE sim.approval_outbox_events
-                 SET next_attempt_at=NULL, status='pending' WHERE id='evt-fail'`;
+                 SET next_attempt_at=NULL WHERE id='evt-fail'`;
       const before = Date.now();
       await disp.tick();
       const row = await sql<{ next_attempt_at: number | null }[]>
@@ -583,7 +601,7 @@ slice publisher가 outbox row INSERT 시 `idempotency_key`는 *반드시* Plan A
 `idempotency-key-source.test.ts`:
 
 ```typescript
-import { buildIdempotencyKey, parseIdempotencyKey } from "@qa-sdk/sim-identifier-grammar";
+import { buildIdempotencyKey, parseIdempotencyKey } from "sim-identifier-grammar";
 import { createDrizzleOutboxPort } from "@qa-sdk/sim-domain-slice-kit";
 import type { OutboxRecord, TransactionScope } from "@qa-sdk/sim-domain-slice-kit";
 
@@ -672,28 +690,32 @@ async append(record: OutboxRecord, scope: TransactionScope): Promise<void> {
 }
 ```
 
-(b) 4 slice use-case (`budget`, `expense`, `resource`, `timeoff`)의 `outbox.append({...})` 호출부에 `buildIdempotencyKey` 결과를 명시 주입:
+(b) 4 slice use-case (`budget`, `expense`, `resource`, `timeoff`)의 `outbox.append({...})` 호출부에 `buildIdempotencyKey` 결과를 명시 주입. 도메인 entity id가 underscore/mixed-case이면 (예: `br_001`, `exp_1`) `toGrammarSafeAggregateId(rawId)`로 canonicalize한 뒤 `buildIdempotencyKey`에 전달한다 (raw 보간 금지). event name은 grammar #5 (3-tier kebab) 정합:
 
 ```typescript
-import { buildIdempotencyKey } from "@qa-sdk/sim-identifier-grammar";
+import { buildIdempotencyKey } from "sim-identifier-grammar";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 // …
+const eventName = "approval.budget.submitted"; // grammar #5: domain.aggregate.verbPast
 await this.outbox.append({
-  aggregateId: budget.id,
-  eventName: "approval.budget.submitted",
+  aggregateId: budget.id,                      // outbox row의 aggregate_id 컬럼은 원본 그대로
+  eventName,
   eventVersion: 1,
   payload: budget.toSnapshot(),
   occurredAt: now,
   idempotencyKey: buildIdempotencyKey({
-    aggregateId: budget.id,
-    eventName: "approval.budget.submitted",
+    aggregateId: toGrammarSafeAggregateId(budget.id), // grammar #12 형식 강제
+    eventName,
     occurredAt: now,
   }),
 }, scope);
 ```
 
-(나머지 expense/resource/timeoff은 eventName만 슬라이스에 맞춰 교체.)
+(나머지 expense/resource/timeoff은 eventName만 슬라이스에 맞춰 교체 — 모두 `approval.{slice}.{verbPast}` 3-tier kebab. `budget.created`/`expense.status_changed` 등 2-tier 또는 underscore 표기는 grammar 위반.)
 
-(c) consumer 측 — `outbox-dispatcher.ts`의 폴링 row 처리 루프 시작부에 `parseIdempotencyKey(row.idempotency_key)` 호출을 둬 raw 보간 row를 즉시 throw 시킨다 (Task 5.2 dispatcher 코드에 이미 포함됨).
+> **Helper 위치**: `toGrammarSafeAggregateId`는 `simulations/enterprise-pm/services/approval-api/src/approval/shared/outbox/idempotency-key-source.ts`에 둔다. underscore→hyphen, 대문자→소문자, grammar 외 문자→hyphen, 첫 글자가 [a-z]가 아니면 `x-` prefix, trailing hyphen 제거. 결과 길이 < 2면 throw (정상 entity id라면 도달 불가). 본 helper는 raw 보간이 아닌 *명시적 정규화* — fallback approximation 금지 (`feedback_no-fallback-approximation`).
+
+(c) consumer 측 — `outbox-dispatcher.ts`의 폴링 row 처리 루프 시작부에 `parseIdempotencyKey(row.idempotency_key)` 호출을 둬 raw 보간 row를 즉시 throw 시킨다 (Task 5.2 dispatcher 코드에 이미 포함됨). dispatcher 내부 DLQ event 발행도 `buildIdempotencyKey({aggregateId, eventName, occurredAt})`만 사용 — raw `dlq:${...}` 보간 금지.
 
 - [ ] **Step 5.6.4: 테스트 통과**
 
@@ -712,6 +734,7 @@ git add simulations/enterprise-pm/packages/sim-domain-slice-kit/src/outbox.port.
         simulations/enterprise-pm/services/approval-api/src/approval/expense/application/use-cases/ \
         simulations/enterprise-pm/services/approval-api/src/approval/resource/application/use-cases/ \
         simulations/enterprise-pm/services/approval-api/src/approval/timeoff/application/use-cases/ \
+        simulations/enterprise-pm/services/approval-api/src/approval/shared/outbox/idempotency-key-source.ts \
         simulations/enterprise-pm/services/approval-api/src/approval/shared/outbox/idempotency-key-source.test.ts \
         simulations/enterprise-pm/services/approval-api/src/approval/shared/outbox/outbox-dispatcher.ts
 git commit -m "feat(sim-approval-api): enforce buildIdempotencyKey at outbox publisher + dispatcher"

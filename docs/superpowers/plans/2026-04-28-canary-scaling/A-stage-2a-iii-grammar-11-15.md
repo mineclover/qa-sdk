@@ -15,6 +15,7 @@
 import { describe, it, expect } from "vitest";
 import * as fc from "fast-check";
 import { buildBitmapCacheKey, parseBitmapCacheKey, type BitmapCacheKey } from "./cache-key.js";
+import type { VersionTagState } from "./version-tag.js";
 
 const P = { namespace: "sim", category: "svc", name: "approval" } as const;
 const V = { axis: "version", value: 3, state: "stable" } as const;
@@ -45,16 +46,18 @@ describe("bitmap cache key grammar (#11)", () => {
     expect(() => parseBitmapCacheKey("bitmap:user:U001:approval-v3")).toThrow();
   });
   it("roundtrip property (200 cases — scope × id × prefix × version)", () => {
+    // fc.constantFrom의 widening 회피를 위해 union literal 어휘를 명시 좁힘.
+    // (follow-up #16 — typecheck 정합성: state는 VersionTagState로 좁힘 필수.)
     fc.assert(
       fc.property(
-        fc.constantFrom("user", "role"),
+        fc.constantFrom("user", "role") as fc.Arbitrary<"user" | "role">,
         fc.stringMatching(/^[A-Za-z0-9_-]{1,20}$/),
         fc.stringMatching(/^[a-z][a-z0-9-]{0,20}$/),
         fc.integer({ min: 1, max: 999 }),
-        fc.constantFrom("stable", "candidate", "retired"),
+        fc.constantFrom("stable", "candidate", "retired") as fc.Arbitrary<VersionTagState>,
         (scope, id, name, value, state) => {
           const orig: BitmapCacheKey = {
-            scope: scope as "user" | "role", id,
+            scope, id,
             prefix: { namespace: "sim", category: "svc", name },
             version: { axis: "version", value, state },
           };
@@ -675,7 +678,7 @@ import * as fc from "fast-check";
 import {
   buildDecisionSignal, parseDecisionSignal,
   SIGNALS_BY_CATEGORY, ALL_SIGNAL_PAIRS,
-  type DecisionSignal, type SignalCategory,
+  type DecisionSignal, type SignalCategory, type SignalName,
 } from "./decision-signal.js";
 
 describe("decision signal grammar (#15)", () => {
@@ -706,7 +709,10 @@ describe("decision signal grammar (#15)", () => {
   });
 
   it("roundtrip over every pair in matrix", () => {
-    for (const [category, signal] of ALL_SIGNAL_PAIRS) {
+    // ALL_SIGNAL_PAIRS의 element 타입이 [SignalCategory, SignalName] 튜플로 좁혀지지 않는
+    // 경우(readonly 배열의 destructure에서 widen됨) buildDecisionSignal의 narrowed enum
+    // input에 not-assignable. 명시 타입 어노테이션으로 좁힘.
+    for (const [category, signal] of ALL_SIGNAL_PAIRS as readonly (readonly [SignalCategory, SignalName])[]) {
       expect(parseDecisionSignal(buildDecisionSignal({ category, signal })))
         .toEqual({ category, signal });
     }
@@ -714,15 +720,18 @@ describe("decision signal grammar (#15)", () => {
 
   it("property: 200 random pairs roundtrip + cross-category reject", () => {
     fc.assert(
-      fc.property(fc.constantFrom(...ALL_SIGNAL_PAIRS), ([category, signal]) => {
-        expect(parseDecisionSignal(buildDecisionSignal({ category, signal })))
-          .toEqual({ category, signal });
-        for (const other of Object.keys(SIGNALS_BY_CATEGORY) as SignalCategory[]) {
-          if (other === category) continue;
-          if ((SIGNALS_BY_CATEGORY[other] as readonly string[]).includes(signal)) continue;
-          expect(() => buildDecisionSignal({ category: other, signal: signal as never })).toThrow();
-        }
-      }),
+      fc.property(
+        fc.constantFrom(...ALL_SIGNAL_PAIRS) as fc.Arbitrary<readonly [SignalCategory, SignalName]>,
+        ([category, signal]) => {
+          expect(parseDecisionSignal(buildDecisionSignal({ category, signal })))
+            .toEqual({ category, signal });
+          for (const other of Object.keys(SIGNALS_BY_CATEGORY) as SignalCategory[]) {
+            if (other === category) continue;
+            if ((SIGNALS_BY_CATEGORY[other] as readonly string[]).includes(signal)) continue;
+            expect(() => buildDecisionSignal({ category: other, signal: signal as never })).toThrow();
+          }
+        },
+      ),
       { numRuns: 200 },
     );
   });

@@ -4,6 +4,14 @@
 
 식별자 15종 builder/parser/Zod를 구현하고, 라운드트립 property test로 보장하며, CI gate에서 코드/yaml/env를 정적 린트한다.
 
+> **Cross-section type 정합성** (follow-up #16): vitest는 esbuild로 transpile만 하므로 type mismatch 있는 fixture도 runtime PASS. 그러나 `tsc --noEmit`(typecheck)은 실패. 식별자별 builder가 받는 input 타입 (예: #5 event-name의 `EventName({ domain, aggregate, verbPast })`)이 cross-section에서 정확히 매칭되도록 fixture를 작성해야 한다.
+>
+> - **valid input fixture**: 해당 builder의 input shape를 정확히 따른다 (`{ domain, aggregate, verbPast }`이지 `{ domain, entity, action }`이 *아니다*).
+> - **negative test의 `as never` cast**: literal-narrowed enum에 invalid 값을 주입하는 경우 의도가 분명하므로 보존 (e.g. `category: "performance" as never`). negative path의 type bypass용.
+> - **typecheck CI gate**: `pnpm --filter sim-identifier-grammar typecheck` 통과를 단계 2의 gate에 추가한다 (Plan A Task 2.21 lint 스크립트와 함께).
+>
+> Task 2.2 ~ 2.16 모든 test fixture는 본 원칙을 따른다.
+
 ### Task 2.1: 패키지 골격 생성
 
 **Files:**
@@ -166,6 +174,7 @@ import {
   parseServicePrefix,
   ServicePrefixSchema,
   type ServicePrefix,
+  type ServicePrefixCategory,
 } from "./service-prefix.js";
 
 describe("service prefix grammar (#1)", () => {
@@ -205,7 +214,7 @@ describe("service prefix grammar (#1)", () => {
   it("roundtrip property: build∘parse = id", () => {
     fc.assert(
       fc.property(
-        fc.constantFrom("svc", "slice", "evt", "cache"),
+        fc.constantFrom("svc", "slice", "evt", "cache") as fc.Arbitrary<ServicePrefixCategory>,
         fc.stringMatching(/^[a-z][a-z0-9-]{0,30}$/),
         (category, name) => {
           const orig: ServicePrefix = { namespace: "sim", category, name };
@@ -331,6 +340,7 @@ import {
   parseVersionTag,
   VersionTagSchema,
   type VersionTag,
+  type VersionTagState,
 } from "./version-tag.js";
 
 describe("version tag grammar (#2)", () => {
@@ -373,7 +383,7 @@ describe("version tag grammar (#2)", () => {
     fc.assert(
       fc.property(
         fc.integer({ min: 1, max: 10_000 }),
-        fc.constantFrom("stable", "candidate", "retired"),
+        fc.constantFrom("stable", "candidate", "retired") as fc.Arbitrary<VersionTagState>,
         (value, state) => {
           const orig: VersionTag = { axis: "version", value, state };
           expect(parseVersionTag(buildVersionTag(orig))).toEqual(orig);
@@ -384,6 +394,8 @@ describe("version tag grammar (#2)", () => {
   });
 });
 ```
+
+> **Property test typing**: `fc.constantFrom(...literals)`는 TypeScript에서 `Arbitrary<string>`으로 widening된다. 이를 `as fc.Arbitrary<VersionTagState>`로 명시 좁힘하지 않으면 `(value, state) => {…orig: VersionTag = {…, state}}`에서 `state: string`이 narrowed enum에 not-assignable이라 typecheck fail. 모든 property test fixture에 동일 패턴 적용. (cache-key/image-tag/decision-signal/http-header/service-prefix property test 동일.)
 
 - [ ] **Step 2.3.2: 테스트 실패 확인**
 
@@ -569,7 +581,7 @@ describe("image tag grammar (#3)", () => {
       fc.property(
         fc.stringMatching(/^[a-z][a-z0-9-]{0,20}$/),
         fc.integer({ min: 1, max: 999 }),
-        fc.constantFrom("stable", "candidate", "retired"),
+        fc.constantFrom("stable", "candidate", "retired") as fc.Arbitrary<VersionTagState>,
         (name, value, state) => {
           const orig: ImageTag = {
             registry: "qa-sdk",
@@ -584,6 +596,8 @@ describe("image tag grammar (#3)", () => {
   });
 });
 ```
+
+(`VersionTagState` import는 `./version-tag.js`에서 type-only로 — Task 2.3 결과 의존. 병렬 작성 시 placeholder 타입으로 임시 처리 가능.)
 
 - [ ] **Step 2.4.2: 테스트 실패 확인**
 
@@ -785,7 +799,7 @@ describe("HTTP header grammar (#4)", () => {
   it("roundtrip property", () => {
     fc.assert(
       fc.property(
-        fc.constantFrom("service", "canary", "trace", "sim"),
+        fc.constantFrom("service", "canary", "trace", "sim") as fc.Arbitrary<HttpHeaderDomain>,
         fc.stringMatching(/^[a-z][a-z0-9-]{0,30}$/),
         (domain, attr) => {
           const orig: HttpHeader = { kind: "header", domain, attr };
@@ -797,6 +811,8 @@ describe("HTTP header grammar (#4)", () => {
   });
 });
 ```
+
+(`HttpHeaderDomain` type은 본 task의 builder가 export — Task 2.5.3 구현부 참조.)
 
 - [ ] **Step 2.5.2: 테스트 실패 확인**
 
