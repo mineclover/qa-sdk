@@ -9,6 +9,7 @@ import { MetricsScrapeModule } from "./metrics/metrics-scrape.module.js";
 import { DecisionModule } from "./decision/decision.module.js";
 import { ActionModule } from "./action/action.module.js";
 import { CycleModule } from "./cycle/cycle.module.js";
+import { FaultModule } from "./fault/fault.module.js";
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { CycleModule } from "./cycle/cycle.module.js";
     DecisionModule,
     ActionModule,
     CycleModule,
+    FaultModule,
   ],
 })
 export class AppModule {}
