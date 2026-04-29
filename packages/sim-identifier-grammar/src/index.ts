@@ -40,3 +40,10 @@ export {
 } from "./http-header.js";
 
 export { buildEventName, parseEventName, type EventName } from "./event-name.js";
+
+export {
+  buildSchemaHash,
+  verifySchemaHash,
+  type SchemaHashInput,
+  type CanonicalShape,
+} from "./schema-hash.js";
