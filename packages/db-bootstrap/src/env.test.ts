@@ -2,7 +2,7 @@
 // @def.doc db-bootstrap
 
 import { describe, it, expect } from "vitest";
-import { dbEnvSchema, parseDbEnv } from "./env.js";
+import { dbEnvSchema, parseDbEnv, parsePgUrl } from "./env.js";
 
 describe("dbEnvSchema", () => {
   it("기본값: dialect=sqlite", () => {
@@ -62,5 +62,21 @@ describe("parseDbEnv — 의미 검증", () => {
       expect(e.pgPort).toBe(5434);
       expect(e.pgSchema).toBe("auth");
     }
+  });
+});
+
+describe("parsePgUrl", () => {
+  it("parses postgres://user:pw@host:5432/db", () => {
+    expect(parsePgUrl("postgres://app:secret@localhost:5432/qa_sdk")).toEqual({
+      pgHost: "localhost",
+      pgPort: 5432,
+      pgDatabase: "qa_sdk",
+      pgUser: "app",
+      pgPassword: "secret",
+    });
+  });
+
+  it("defaults port to 5432 when missing", () => {
+    expect(parsePgUrl("postgres://app:secret@localhost/qa_sdk").pgPort).toBe(5432);
   });
 });

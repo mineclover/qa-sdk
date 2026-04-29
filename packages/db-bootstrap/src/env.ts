@@ -8,6 +8,7 @@
  */
 
 import { z } from "zod";
+import type { PgConfig } from "./connection.js";
 
 export const dbEnvSchema = z.object({
   QA_DB_DIALECT: z.enum(["sqlite", "pg"]).default("sqlite"),
@@ -21,6 +22,9 @@ export const dbEnvSchema = z.object({
   QA_PG_PASSWORD: z.string().optional(),
   QA_PG_SCHEMA: z.string().optional(),
   QA_PG_POOL_MAX: z.coerce.number().int().positive().optional(),
+  // SIM canary: write/read 분리 URL — createDualConnection 호출 site에서 parsePgUrl로 분해
+  SIM_DB_WRITE_URL: z.string().url().optional(),
+  SIM_DB_READ_URL: z.string().url().optional(),
 });
 
 export type DbEnv = z.infer<typeof dbEnvSchema>;
@@ -71,5 +75,26 @@ export function parseDbEnv(input: Record<string, string | undefined>): ParsedDbE
     pgPassword: env.QA_PG_PASSWORD!,
     pgSchema: env.QA_PG_SCHEMA,
     pgPoolMax: env.QA_PG_POOL_MAX,
+  };
+}
+
+/**
+ * postgres URL → PgConfig 필드 분해.
+ *
+ * 지원 형식: `postgres://user:password@host[:port]/database`
+ * - port 미지정 시 기본 5432
+ * - user/password는 percent-decoded
+ *
+ * createDualConnection 호출 site에서 SIM_DB_WRITE_URL / SIM_DB_READ_URL을
+ * PgConfig로 변환할 때 사용한다. dialect 필드는 호출자가 부여.
+ */
+export function parsePgUrl(url: string): Omit<PgConfig, "dialect"> {
+  const u = new URL(url);
+  return {
+    pgHost: u.hostname,
+    pgPort: Number(u.port || 5432),
+    pgDatabase: u.pathname.slice(1),
+    pgUser: decodeURIComponent(u.username),
+    pgPassword: decodeURIComponent(u.password),
   };
 }
