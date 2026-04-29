@@ -1,7 +1,10 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
+import { buildIdempotencyKey } from "sim-identifier-grammar";
+
 import { RoleEntity, DuplicateRoleNameException } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../_outbox/idempotency-key-source.js";
 import type { CreateRoleCommand } from "../commands/create-role.command.js";
 import type { DeleteRoleCommand } from "../commands/delete-role.command.js";
 import type { RoleLoggerPort } from "../ports/role-logger.port.js";
@@ -41,6 +44,7 @@ export class RoleUseCase {
         throw new DuplicateRoleNameException(command.name);
       }
 
+      const eventName = "auth.role.created";
       await this.transaction.run("role.create", async (scope): Promise<void> => {
         const role = RoleEntity.create({
           id: command.id,
@@ -49,28 +53,34 @@ export class RoleUseCase {
           defaultMaskHex: command.defaultMaskHex,
         });
         await this.repository.save(role, scope);
+        const occurredAt = new Date();
         const snap = role.toSnapshot();
         const payload: RoleCreatedEventPayload = {
           id: snap.id,
           name: snap.name,
           scopeType: snap.scopeType,
           defaultMaskHex: snap.defaultMaskHex,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "role.created",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
       });
 
       this.logger.info(
-        { ...ctxBase, eventName: "role.created", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
         "role.create.success",
       );
       return { id: command.id, status: "ACTIVE" };
@@ -103,26 +113,33 @@ export class RoleUseCase {
     this.logger.info({ ...ctxBase }, "role.delete.started");
 
     try {
+      const eventName = "auth.role.deleted";
       await this.transaction.run("role.delete", async (scope): Promise<void> => {
         await this.repository.delete(command.id, scope);
+        const occurredAt = new Date();
         const payload: RoleDeletedEventPayload = {
           id: command.id,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "role.deleted",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
       });
 
       this.logger.info(
-        { ...ctxBase, eventName: "role.deleted", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
         "role.delete.success",
       );
       return { id: command.id, status: "DELETED" };

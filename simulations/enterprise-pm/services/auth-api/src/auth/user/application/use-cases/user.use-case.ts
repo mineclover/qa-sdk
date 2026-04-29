@@ -1,7 +1,10 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
+import { buildIdempotencyKey } from "sim-identifier-grammar";
+
 import { UserEntity, DuplicateUserEmailException, UserNotFoundException } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../_outbox/idempotency-key-source.js";
 import type { CreateUserCommand } from "../commands/create-user.command.js";
 import type { UpdateUserCommand } from "../commands/update-user.command.js";
 import type { DeleteUserCommand } from "../commands/delete-user.command.js";
@@ -53,6 +56,7 @@ export class UserUseCase {
         throw new DuplicateUserEmailException(command.email);
       }
 
+      const eventName = "auth.user.created";
       await this.transaction.run("user.create", async (scope): Promise<void> => {
         const user = UserEntity.create({
           id: command.id,
@@ -62,21 +66,28 @@ export class UserUseCase {
           primaryRoleId: command.primaryRoleId ?? null,
         });
         await this.repository.save(user, scope);
+        const occurredAt = new Date();
+        const snap = user.toSnapshot();
         const payload: UserCreatedEventPayload = {
-          id: user.toSnapshot().id,
-          email: user.toSnapshot().email,
-          displayName: user.toSnapshot().displayName,
-          departmentId: user.toSnapshot().departmentId,
-          primaryRoleId: user.toSnapshot().primaryRoleId,
-          occurredAt: new Date().toISOString(),
+          id: snap.id,
+          email: snap.email,
+          displayName: snap.displayName,
+          departmentId: snap.departmentId,
+          primaryRoleId: snap.primaryRoleId,
+          occurredAt: occurredAt.toISOString(),
         };
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "user.created",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -85,7 +96,7 @@ export class UserUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "user.created",
+          eventName,
           eventVersion: 1,
           outcome: "success",
         },
@@ -127,9 +138,11 @@ export class UserUseCase {
         throw new UserNotFoundException(command.id);
       }
 
+      const eventName = "auth.user.updated";
       await this.transaction.run("user.update", async (scope) => {
         const updated = existing.updateProfile(command.patch);
         await this.repository.save(updated, scope);
+        const occurredAt = new Date();
         const snap = updated.toSnapshot();
         const payload: UserUpdatedEventPayload = {
           id: snap.id,
@@ -137,22 +150,27 @@ export class UserUseCase {
           displayName: snap.displayName,
           departmentId: snap.departmentId,
           primaryRoleId: snap.primaryRoleId,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "user.updated",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
       });
 
       this.logger.info(
-        { ...ctxBase, eventName: "user.updated", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
         "user.update.success",
       );
       return { id: command.id, status: "ACTIVE" };
@@ -185,26 +203,33 @@ export class UserUseCase {
     this.logger.info({ ...ctxBase }, "user.delete.started");
 
     try {
+      const eventName = "auth.user.deleted";
       await this.transaction.run("user.delete", async (scope) => {
         await this.repository.delete(command.id, scope);
+        const occurredAt = new Date();
         const payload: UserDeletedEventPayload = {
           id: command.id,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "user.deleted",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
       });
 
       this.logger.info(
-        { ...ctxBase, eventName: "user.deleted", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
         "user.delete.success",
       );
       return { id: command.id, status: "DELETED" };

@@ -4,10 +4,12 @@
 import { describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { RoleEntity } from "../../domain/index.js";
 import { SqliteRoleRepository } from "../persistence/role.repository.js";
 import { SIM_AUTH_ROLE_SQLITE_DDL } from "../persistence/sqlite.schema.js";
 import { SIM_AUTH_OUTBOX_SQLITE_DDL } from "../../../_outbox/auth-outbox.schema.js";
+import { toGrammarSafeAggregateId } from "../../../_outbox/idempotency-key-source.js";
 import { createRoleSqliteTransactionPort } from "./role.drizzle-transaction.js";
 import { createRoleOutboxPort } from "../outbox/role.outbox.js";
 import { RoleUnitOfWork } from "./role.unit-of-work.js";
@@ -33,15 +35,22 @@ describe("RoleUnitOfWork", () => {
       scopeType: "department",
       defaultMaskHex: "ffff",
     });
+    const eventName = "auth.role.created";
+    const occurredAt = new Date();
     await uow.withinTransaction("role.create", async (ctx) => {
       await ctx.repository.save(e, ctx.scope);
       await ctx.outbox.append(
         {
           aggregateId: "r_uow_1",
-          eventName: "role.created",
+          eventName,
           eventVersion: 1,
           payload: { id: "r_uow_1" },
-          occurredAt: new Date(),
+          occurredAt,
+          idempotencyKey: buildIdempotencyKey({
+            aggregateId: toGrammarSafeAggregateId("r_uow_1"),
+            eventName,
+            occurredAt,
+          }),
         },
         ctx.scope,
       );

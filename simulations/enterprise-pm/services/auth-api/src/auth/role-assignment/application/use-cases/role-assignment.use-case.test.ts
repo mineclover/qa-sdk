@@ -72,7 +72,7 @@ describe("RoleAssignmentUseCase.assign", () => {
     expect(m.calls).toContain("outbox.append");
     expect(m.calls).toContain("publisher.publish");
     expect(m.publishCalls).toEqual([{ userId: "u1", reason: "permission_change" }]);
-    expect(m.outboxRecords[0]).toMatchObject({ eventName: "role-assignment.assigned", eventVersion: 1 });
+    expect(m.outboxRecords[0]).toMatchObject({ eventName: "auth.role-assignment.assigned", eventVersion: 1 });
   });
 
   it("role 미존재 → NotFoundError, save/outbox 호출 없음", async () => {
@@ -104,6 +104,6 @@ describe("RoleAssignmentUseCase.revoke", () => {
     await uc.revoke({ userId: "u1", roleId: "r1", scopeType: "global", scopeId: null });
     expect(m.calls).toContain("repository.delete");
     expect(m.calls).toContain("publisher.publish");
-    expect(m.outboxRecords[0]).toMatchObject({ eventName: "role-assignment.revoked" });
+    expect(m.outboxRecords[0]).toMatchObject({ eventName: "auth.role-assignment.revoked" });
   });
 });

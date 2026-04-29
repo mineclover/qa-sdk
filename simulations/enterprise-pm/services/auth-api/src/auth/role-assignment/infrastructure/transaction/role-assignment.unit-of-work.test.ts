@@ -4,10 +4,12 @@
 import { describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { RoleAssignmentEntity } from "../../domain/index.js";
 import { SqliteRoleAssignmentRepository } from "../persistence/role-assignment.repository.js";
 import { SIM_AUTH_ROLE_ASSIGNMENT_SQLITE_DDL } from "../persistence/sqlite.schema.js";
 import { SIM_AUTH_OUTBOX_SQLITE_DDL } from "../../../_outbox/auth-outbox.schema.js";
+import { toGrammarSafeAggregateId } from "../../../_outbox/idempotency-key-source.js";
 import { createRoleAssignmentSqliteTransactionPort } from "./role-assignment.drizzle-transaction.js";
 import { createRoleAssignmentOutboxPort } from "../outbox/role-assignment.outbox.js";
 import { RoleAssignmentUnitOfWork } from "./role-assignment.unit-of-work.js";
@@ -33,15 +35,22 @@ describe("RoleAssignmentUnitOfWork", () => {
       scopeType: "global",
       scopeId: null,
     });
+    const eventName = "auth.role-assignment.assigned";
+    const occurredAt = new Date();
     await uow.withinTransaction("role-assignment.assign", async (ctx) => {
       await ctx.repository.save(ra, ctx.scope);
       await ctx.outbox.append(
         {
           aggregateId: ra.id,
-          eventName: "role-assignment.assigned",
+          eventName,
           eventVersion: 1,
           payload: {},
-          occurredAt: new Date(),
+          occurredAt,
+          idempotencyKey: buildIdempotencyKey({
+            aggregateId: toGrammarSafeAggregateId(ra.id),
+            eventName,
+            occurredAt,
+          }),
         },
         ctx.scope,
       );

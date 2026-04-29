@@ -4,10 +4,12 @@
 import { describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { UserEntity } from "../../domain/index.js";
 import { SqliteUserRepository } from "../persistence/user.repository.js";
 import { SIM_AUTH_USER_SQLITE_DDL } from "../persistence/sqlite.schema.js";
 import { SIM_AUTH_OUTBOX_SQLITE_DDL } from "../../../_outbox/auth-outbox.schema.js";
+import { toGrammarSafeAggregateId } from "../../../_outbox/idempotency-key-source.js";
 import { createUserSqliteTransactionPort } from "./user.drizzle-transaction.js";
 import { createUserOutboxPort } from "../outbox/user.outbox.js";
 import { UserUnitOfWork } from "./user.unit-of-work.js";
@@ -34,15 +36,22 @@ describe("UserUnitOfWork", () => {
       now: new Date("2026-03-01T00:00:00.000Z"),
     });
 
+    const eventName = "auth.user.created";
+    const occurredAt = new Date("2026-03-01T00:00:01.000Z");
     await uow.withinTransaction("user.create", async (ctx) => {
       await ctx.repository.save(entity, ctx.scope);
       await ctx.outbox.append(
         {
           aggregateId: "u_uow_1",
-          eventName: "user.created",
+          eventName,
           eventVersion: 1,
           payload: { id: "u_uow_1" },
-          occurredAt: new Date("2026-03-01T00:00:01.000Z"),
+          occurredAt,
+          idempotencyKey: buildIdempotencyKey({
+            aggregateId: toGrammarSafeAggregateId("u_uow_1"),
+            eventName,
+            occurredAt,
+          }),
         },
         ctx.scope,
       );
@@ -59,7 +68,7 @@ describe("UserUnitOfWork", () => {
     }>;
     expect(outboxRows).toHaveLength(1);
     expect(outboxRows[0].aggregate_id).toBe("u_uow_1");
-    expect(outboxRows[0].event_name).toBe("user.created");
+    expect(outboxRows[0].event_name).toBe("auth.user.created");
     expect(outboxRows[0].status).toBe("pending");
     expect(outboxRows[0].scope_id).toMatch(/^user\.create:/);
 
@@ -73,13 +82,20 @@ describe("UserUnitOfWork", () => {
       uow.withinTransaction("user.create", async (ctx) => {
         const e = UserEntity.create({ id: "u_uow_2", email: "uow2@x", displayName: "UOW2" });
         await ctx.repository.save(e, ctx.scope);
+        const eventName = "auth.user.created";
+        const occurredAt = new Date();
         await ctx.outbox.append(
           {
             aggregateId: "u_uow_2",
-            eventName: "user.created",
+            eventName,
             eventVersion: 1,
             payload: { id: "u_uow_2" },
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId("u_uow_2"),
+              eventName,
+              occurredAt,
+            }),
           },
           ctx.scope,
         );

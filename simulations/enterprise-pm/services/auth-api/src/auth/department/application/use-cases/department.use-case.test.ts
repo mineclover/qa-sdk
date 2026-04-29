@@ -59,7 +59,7 @@ describe("DepartmentUseCase.create", () => {
       "transaction.run.commit",
       "logger.info:success",
     ]);
-    expect(m.outboxRecords[0]).toMatchObject({ eventName: "department.created", eventVersion: 1 });
+    expect(m.outboxRecords[0]).toMatchObject({ eventName: "auth.department.created", eventVersion: 1 });
   });
 });
 
@@ -106,6 +106,6 @@ describe("DepartmentUseCase.delete", () => {
     const uc = new DepartmentUseCase(m.repository, m.outbox, m.transaction, m.logger);
     await uc.delete({ id: "d_x" });
     expect(m.calls).toContain("repository.delete");
-    expect(m.outboxRecords[0]).toMatchObject({ eventName: "department.deleted" });
+    expect(m.outboxRecords[0]).toMatchObject({ eventName: "auth.department.deleted" });
   });
 });

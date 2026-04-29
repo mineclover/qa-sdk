@@ -50,7 +50,7 @@ describe("RoleUseCase.create", () => {
     correlationId: "cor",
   };
 
-  it("transaction wrapping + outbox(role.created)", async () => {
+  it("transaction wrapping + outbox(auth.role.created)", async () => {
     const m = makeMocks();
     const uc = new RoleUseCase(m.repository, m.outbox, m.transaction, m.logger);
     await uc.create(command);
@@ -62,7 +62,9 @@ describe("RoleUseCase.create", () => {
       "transaction.run.commit",
       "logger.info:success",
     ]);
-    expect(m.outboxRecords[0]).toMatchObject({ eventName: "role.created", eventVersion: 1 });
+    expect(m.outboxRecords[0]).toMatchObject({ eventName: "auth.role.created", eventVersion: 1 });
+    expect(typeof m.outboxRecords[0].idempotencyKey).toBe("string");
+    expect(m.outboxRecords[0].idempotencyKey.length).toBeGreaterThan(0);
   });
 
   it("이미 존재하는 name 이면 ConflictError", async () => {
@@ -76,11 +78,12 @@ describe("RoleUseCase.create", () => {
 });
 
 describe("RoleUseCase.delete", () => {
-  it("repository.delete + outbox(role.deleted)", async () => {
+  it("repository.delete + outbox(auth.role.deleted)", async () => {
     const m = makeMocks();
     const uc = new RoleUseCase(m.repository, m.outbox, m.transaction, m.logger);
     await uc.delete({ id: "role_x" });
     expect(m.calls).toContain("repository.delete");
-    expect(m.outboxRecords[0]).toMatchObject({ eventName: "role.deleted" });
+    expect(m.outboxRecords[0]).toMatchObject({ eventName: "auth.role.deleted" });
+    expect(typeof m.outboxRecords[0].idempotencyKey).toBe("string");
   });
 });

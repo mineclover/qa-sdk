@@ -5,12 +5,18 @@ export const SIM_EVENT_VOCABULARY = {
   domains: ["approval", "auth", "pm", "document", "notification"] as const,
   aggregates: {
     approval:     ["budget", "resource", "expense", "time-off"] as const,
-    auth:         ["user", "role", "department", "bitmap"] as const,
+    auth:         ["user", "role", "role-assignment", "department", "bitmap"] as const,
     pm:           ["project", "task", "member", "assignment"] as const,
     document:     ["document", "comment", "version"] as const,
     notification: ["notification", "subscription"] as const,
   },
-  verbsPast: ["submitted", "approved", "rejected", "revised", "cancelled", "completed", "issued"] as const,
+  // 도메인 verb 어휘.
+  // - approval/document: submitted/approved/rejected/revised/cancelled/completed/issued
+  // - auth: created/updated/deleted (user/role/department) + assigned/revoked (role-assignment)
+  verbsPast: [
+    "submitted", "approved", "rejected", "revised", "cancelled", "completed", "issued",
+    "created", "updated", "deleted", "assigned", "revoked",
+  ] as const,
 } as const;
 
 // ──────────────────────────────────────────────────────────────────────

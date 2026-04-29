@@ -1,11 +1,14 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
+import { buildIdempotencyKey } from "sim-identifier-grammar";
+
 import {
   DepartmentEntity,
   DepartmentNotFoundException,
   DepartmentCycleException,
 } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../_outbox/idempotency-key-source.js";
 import type { CreateDepartmentCommand } from "../commands/create-department.command.js";
 import type { UpdateDepartmentCommand } from "../commands/update-department.command.js";
 import type { DeleteDepartmentCommand } from "../commands/delete-department.command.js";
@@ -40,6 +43,7 @@ export class DepartmentUseCase {
     } as const;
     this.logger.info({ ...ctxBase }, "department.create.started");
     try {
+      const eventName = "auth.department.created";
       await this.transaction.run("department.create", async (scope): Promise<void> => {
         const dept = DepartmentEntity.create({
           id: command.id,
@@ -48,27 +52,33 @@ export class DepartmentUseCase {
           managerId: command.managerId ?? null,
         });
         await this.repository.save(dept, scope);
+        const occurredAt = new Date();
         const snap = dept.toSnapshot();
         const payload: DepartmentCreatedEventPayload = {
           id: snap.id,
           name: snap.name,
           parentId: snap.parentId,
           managerId: snap.managerId,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "department.created",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
       });
       this.logger.info(
-        { ...ctxBase, eventName: "department.created", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
         "department.create.success",
       );
       return { id: command.id, status: "ACTIVE" };
@@ -114,30 +124,37 @@ export class DepartmentUseCase {
         }
       }
 
+      const eventName = "auth.department.updated";
       await this.transaction.run("department.update", async (scope): Promise<void> => {
         const updated = existing.updateProfile(command.patch);
         await this.repository.save(updated, scope);
+        const occurredAt = new Date();
         const snap = updated.toSnapshot();
         const payload: DepartmentUpdatedEventPayload = {
           id: snap.id,
           name: snap.name,
           parentId: snap.parentId,
           managerId: snap.managerId,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "department.updated",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
       });
       this.logger.info(
-        { ...ctxBase, eventName: "department.updated", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
         "department.update.success",
       );
       return { id: command.id, status: "ACTIVE" };
@@ -168,25 +185,32 @@ export class DepartmentUseCase {
     } as const;
     this.logger.info({ ...ctxBase }, "department.delete.started");
     try {
+      const eventName = "auth.department.deleted";
       await this.transaction.run("department.delete", async (scope): Promise<void> => {
         await this.repository.delete(command.id, scope);
+        const occurredAt = new Date();
         const payload: DepartmentDeletedEventPayload = {
           id: command.id,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "department.deleted",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
       });
       this.logger.info(
-        { ...ctxBase, eventName: "department.deleted", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
         "department.delete.success",
       );
       return { id: command.id, status: "DELETED" };

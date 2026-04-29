@@ -1,7 +1,10 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
+import { buildIdempotencyKey } from "sim-identifier-grammar";
+
 import { RoleAssignmentEntity, RoleAssignmentNotFoundException } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../_outbox/idempotency-key-source.js";
 import type { AssignRoleCommand } from "../commands/assign-role.command.js";
 import type { RevokeRoleCommand } from "../commands/revoke-role.command.js";
 import type { RoleAssignmentLoggerPort } from "../ports/role-assignment-logger.port.js";
@@ -50,6 +53,7 @@ export class RoleAssignmentUseCase {
         throw err;
       }
 
+      const eventName = "auth.role-assignment.assigned";
       await this.deps.transaction.run("role-assignment.assign", async (scope): Promise<void> => {
         const ra = RoleAssignmentEntity.create({
           userId: command.userId,
@@ -58,20 +62,26 @@ export class RoleAssignmentUseCase {
           scopeId: command.scopeId,
         });
         await this.deps.repository.save(ra, scope);
+        const occurredAt = new Date();
         const payload: RoleAssignedEventPayload = {
           userId: command.userId,
           roleId: command.roleId,
           scopeType: command.scopeType,
           scopeId: command.scopeId,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
         await this.deps.outbox.append(
           {
             aggregateId,
-            eventName: "role-assignment.assigned",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(aggregateId),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -92,7 +102,7 @@ export class RoleAssignmentUseCase {
       }
 
       this.deps.logger.info(
-        { ...ctxBase, eventName: "role-assignment.assigned", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
         "role-assignment.assign.success",
       );
       return { id: aggregateId, status: "ASSIGNED" };
@@ -125,6 +135,7 @@ export class RoleAssignmentUseCase {
     this.deps.logger.info({ ...ctxBase }, "role-assignment.revoke.started");
 
     try {
+      const eventName = "auth.role-assignment.revoked";
       await this.deps.transaction.run("role-assignment.revoke", async (scope): Promise<void> => {
         await this.deps.repository.delete(
           command.userId,
@@ -133,20 +144,26 @@ export class RoleAssignmentUseCase {
           command.scopeId,
           scope,
         );
+        const occurredAt = new Date();
         const payload: RoleRevokedEventPayload = {
           userId: command.userId,
           roleId: command.roleId,
           scopeType: command.scopeType,
           scopeId: command.scopeId,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
         await this.deps.outbox.append(
           {
             aggregateId,
-            eventName: "role-assignment.revoked",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(aggregateId),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -166,7 +183,7 @@ export class RoleAssignmentUseCase {
       }
 
       this.deps.logger.info(
-        { ...ctxBase, eventName: "role-assignment.revoked", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
         "role-assignment.revoke.success",
       );
       return { id: aggregateId, status: "REVOKED" };

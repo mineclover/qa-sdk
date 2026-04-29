@@ -112,7 +112,7 @@ describe("UserUseCase.create", () => {
     const successLog = m.logged.find((l) => l.msg === "user.create.success")!;
     expect(successLog.ctx).toMatchObject({
       outcome: "success",
-      eventName: "user.created",
+      eventName: "auth.user.created",
       eventVersion: 1,
     });
   });
@@ -134,7 +134,7 @@ describe("UserUseCase.create", () => {
 
     expect(m.outboxRecords[0]).toMatchObject({
       aggregateId: "usr_001",
-      eventName: "user.created",
+      eventName: "auth.user.created",
       eventVersion: 1,
     });
     expect(m.outboxRecords[0].payload).toMatchObject({
@@ -168,7 +168,7 @@ describe("UserUseCase.update", () => {
     const useCase = new UserUseCase(m.repository, m.outbox, m.transaction, m.logger);
     await useCase.update({ id: "usr_010", patch: { displayName: "X2" } });
     expect(m.outboxRecords[0]).toMatchObject({
-      eventName: "user.updated",
+      eventName: "auth.user.updated",
       aggregateId: "usr_010",
     });
     expect((m.outboxRecords[0].payload as { displayName: string }).displayName).toBe("X2");
@@ -182,7 +182,7 @@ describe("UserUseCase.delete", () => {
     await useCase.delete({ id: "usr_020" });
     expect(m.calls).toContain("repository.delete");
     expect(m.outboxRecords[0]).toMatchObject({
-      eventName: "user.deleted",
+      eventName: "auth.user.deleted",
       aggregateId: "usr_020",
     });
   });
