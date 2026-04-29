@@ -31,7 +31,9 @@
     "sim:smoke": "./simulations/enterprise-pm/scripts/smoke.sh",
     "sim:smoke:keep": "./simulations/enterprise-pm/scripts/smoke.sh --keep-up",
     "sim:scenarios": "node ./simulations/enterprise-pm/scenarios/dist/cli.js",
-    "sim:lint:identifiers": "tsx scripts/lint-identifiers.ts"
+    "sim:lint:identifiers": "tsx scripts/lint-identifiers.ts",
+    "sim:canary": "tsx scripts/sim-canary.ts",
+    "sim:scale": "tsx scripts/sim-scale.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -40,10 +42,13 @@
   },
   "devDependencies": {
     "@qa-sdk/scaffold": "workspace:*",
+    "commander": "^12.1.0",
     "concurrently": "^9.2.1",
     "oxfmt": "^0.42.0",
     "oxlint": "^1.57.0",
     "protobufjs-cli": "^2.0.0",
+    "sim-identifier-grammar": "workspace:*",
+    "sim-service-catalog": "workspace:*",
     "tinyglobby": "^0.2.16",
     "tsx": "^4.21.0",
     "verdaccio": "^6.3.2",

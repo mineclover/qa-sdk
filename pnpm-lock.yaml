@@ -35,6 +35,9 @@ importers:
       '@qa-sdk/scaffold':
         specifier: workspace:*
         version: link:packages/architecture-schematics
+      commander:
+        specifier: ^12.1.0
+        version: 12.1.0
       concurrently:
         specifier: ^9.2.1
         version: 9.2.1
@@ -47,6 +50,12 @@ importers:
       protobufjs-cli:
         specifier: ^2.0.0
         version: 2.0.0(protobufjs@7.5.4)
+      sim-identifier-grammar:
+        specifier: workspace:*
+        version: link:packages/sim-identifier-grammar
+      sim-service-catalog:
+        specifier: workspace:*
+        version: link:packages/sim-service-catalog
       tinyglobby:
         specifier: ^0.2.16
         version: 0.2.16
