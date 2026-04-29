@@ -1,0 +1,57 @@
+name: identifier-gate
+
+on:
+  pull_request:
+    paths:
+      - 'simulations/enterprise-pm/**'
+      - 'packages/sim-identifier-grammar/**'
+      - 'scripts/lint-identifiers.ts'
+      - '.github/workflows/identifier-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'simulations/enterprise-pm/**'
+      - 'packages/sim-identifier-grammar/**'
+  workflow_dispatch:
+
+concurrency:
+  group: identifier-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  identifier-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.30.3 --activate
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store/v3
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build sim-identifier-grammar
+        run: pnpm --filter sim-identifier-grammar build
+
+      - name: Roundtrip property tests
+        run: pnpm --filter sim-identifier-grammar test
+
+      - name: Static identifier lint
+        run: pnpm sim:lint:identifiers
