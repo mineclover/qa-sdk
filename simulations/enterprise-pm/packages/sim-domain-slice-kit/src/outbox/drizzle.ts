@@ -45,6 +45,16 @@ export function createDrizzleOutboxPort(opts: DrizzleOutboxPortOptions): OutboxP
   const serialize = opts.serializePayload ?? ((p: unknown) => JSON.stringify(p));
   return {
     async append(record: OutboxRecord, scope: TransactionScope): Promise<void> {
+      // grammar #12 강제 — raw 보간 차단. record.idempotencyKey 는 호출부에서
+      // buildIdempotencyKey() 결과여야 한다.
+      if (
+        typeof record.idempotencyKey !== "string" ||
+        record.idempotencyKey.length === 0
+      ) {
+        throw new Error(
+          "OutboxRecord.idempotencyKey is required — use buildIdempotencyKey from sim-identifier-grammar",
+        );
+      }
       const row = {
         id: randomUUID(),
         aggregate_id: record.aggregateId,
@@ -54,6 +64,8 @@ export function createDrizzleOutboxPort(opts: DrizzleOutboxPortOptions): OutboxP
         occurred_at: record.occurredAt.getTime(),
         scope_id: scope.id,
         status: "pending" as const,
+        idempotency_key: record.idempotencyKey,
+        retry_count: 0,
       };
       const builder = opts.db.insert(opts.table).values(row);
       // drizzle <=0.30 returns thenable directly; >=1.0 has explicit .execute()

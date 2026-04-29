@@ -3103,6 +3103,9 @@ importers:
       '@qa-sdk/sim-bitmap-cache':
         specifier: workspace:*
         version: link:../../packages/sim-bitmap-cache
+      '@qa-sdk/sim-domain-slice-kit':
+        specifier: workspace:*
+        version: link:../../packages/sim-domain-slice-kit
       '@qa-sdk/sim-otel-utils':
         specifier: workspace:*
         version: link:../../packages/sim-otel-utils
@@ -3127,6 +3130,9 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      sim-identifier-grammar:
+        specifier: workspace:*
+        version: link:../../../../packages/sim-identifier-grammar
       weighted-index:
         specifier: workspace:*
         version: link:../../../../packages/weighted-index

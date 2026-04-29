@@ -32,6 +32,7 @@ describe("createDrizzleOutboxPort", () => {
         eventVersion: 1,
         payload: { foo: "bar" },
         occurredAt,
+        idempotencyKey: "agg-1:assignment.created.v1:1700000000000",
       },
       scope,
     );
@@ -46,6 +47,8 @@ describe("createDrizzleOutboxPort", () => {
     expect(row.occurred_at).toBe(occurredAt.getTime());
     expect(row.scope_id).toBe("test:abc");
     expect(row.status).toBe("pending");
+    expect(row.idempotency_key).toBe("agg-1:assignment.created.v1:1700000000000");
+    expect(row.retry_count).toBe(0);
   });
 
   it("supports builder.execute() pattern (drizzle >=1.0)", async () => {
@@ -71,6 +74,7 @@ describe("createDrizzleOutboxPort", () => {
         eventVersion: 1,
         payload: {},
         occurredAt: new Date(),
+        idempotencyKey: "a:e.x.y:1",
       },
       { id: "s", startedAt: new Date() },
     );
@@ -101,6 +105,7 @@ describe("createDrizzleOutboxPort", () => {
         eventVersion: 1,
         payload: { x: 1 },
         occurredAt: new Date(),
+        idempotencyKey: "a:e.x.y:1",
       },
       { id: "s", startedAt: new Date() },
     );
