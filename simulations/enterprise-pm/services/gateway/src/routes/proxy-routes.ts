@@ -1,7 +1,7 @@
 // @def.boundary sim-gateway
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { parseVersionTag, type VersionTag } from "sim-identifier-grammar";
 import { proxyRequest } from "../lib/proxy.js";
 import type { InMemoryRoutingStore } from "../routing/routing-table.js";
@@ -99,9 +99,7 @@ export function createProxyRoutes(opts: CreateProxyRoutesOptions) {
         `createProxyRoutes: target ${target.serviceKey} URL missing`,
       );
     }
-    const handler = async (
-      c: Parameters<Parameters<Hono["all"]>[1]>[0],
-    ) => {
+    const handler = async (c: Context) => {
       const url = new URL(c.req.url);
 
       // Plan C 단계 7 — routing decision 흐름:
