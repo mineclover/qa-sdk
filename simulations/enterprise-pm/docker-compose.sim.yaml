@@ -100,17 +100,48 @@ services:
       PORT: 4500
       SIM_SERVICE_NAME: sim-pm-api
 
-  sim-approval-api:
+  # ── 단계 8(Plan C): approval-api v1/v2 동시 배포 ──
+  # 같은 Dockerfile + build arg/env로만 정체성 분리. spec 02 §1.
+  sim-approval-api-v1:
     <<: *nestjs-common
-    container_name: sim-approval-api
+    container_name: sim-approval-api-v1
+    image: qa-sdk/sim-approval-api:${APPROVAL_V1_TAG:-v3}
     build:
       context: ../..
       dockerfile: simulations/enterprise-pm/services/approval-api/Dockerfile
+      args:
+        SERVICE_VERSION: ${APPROVAL_V1_TAG:-v3}
     ports:
-      - "4600:4600"
+      - "4600:4600"   # stable: host 노출. v2는 host 노출 없음 (gateway 통과만 허용).
     environment:
       PORT: 4600
       SIM_SERVICE_NAME: sim-approval-api
+      SIM_SERVICE_VERSION: ${APPROVAL_V1_TAG:-v3}
+      SIM_DB_WRITE_URL: postgres://approval_app:${QA_PG_APPROVAL_PASSWORD}@qa-sdk-db:5432/qa_sdk
+      SIM_DB_READ_URL:  postgres://approval_app:${QA_PG_APPROVAL_PASSWORD}@qa-sdk-db-replica:5432/qa_sdk
+    labels:
+      sim.role: approval-api
+      sim.version: ${APPROVAL_V1_TAG:-v3}
+
+  sim-approval-api-v2:
+    <<: *nestjs-common
+    container_name: sim-approval-api-v2
+    image: qa-sdk/sim-approval-api:${APPROVAL_V2_TAG:-v4-candidate}
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/approval-api/Dockerfile
+      args:
+        SERVICE_VERSION: ${APPROVAL_V2_TAG:-v4-candidate}
+    # v2 host port 미노출 — gateway만이 라우팅 (spec 02 §3 단일 라우팅 책임).
+    environment:
+      PORT: 4600
+      SIM_SERVICE_NAME: sim-approval-api
+      SIM_SERVICE_VERSION: ${APPROVAL_V2_TAG:-v4-candidate}
+      SIM_DB_WRITE_URL: postgres://approval_app:${QA_PG_APPROVAL_PASSWORD}@qa-sdk-db:5432/qa_sdk
+      SIM_DB_READ_URL:  postgres://approval_app:${QA_PG_APPROVAL_PASSWORD}@qa-sdk-db-replica:5432/qa_sdk
+    labels:
+      sim.role: approval-api
+      sim.version: ${APPROVAL_V2_TAG:-v4-candidate}
 
   sim-notification-api:
     <<: *nestjs-common
@@ -192,7 +223,9 @@ services:
         condition: service_started
       sim-pm-api:
         condition: service_started
-      sim-approval-api:
+      sim-approval-api-v1:
+        condition: service_started
+      sim-approval-api-v2:
         condition: service_started
       sim-notification-api:
         condition: service_started
