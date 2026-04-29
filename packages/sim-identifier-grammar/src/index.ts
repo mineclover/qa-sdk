@@ -38,3 +38,5 @@ export {
   type HttpHeader,
   type HeaderDomain,
 } from "./http-header.js";
+
+export { buildEventName, parseEventName, type EventName } from "./event-name.js";
