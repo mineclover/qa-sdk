@@ -4,6 +4,10 @@
 import { Command } from "commander";
 import { runScenario } from "./runner/runner.js";
 import { parseScenarioEnv } from "./env/env.js";
+import {
+  wireSimHandles,
+  unwireSimHandles,
+} from "./runner/sim-handles/index.js";
 import { scenario1Login } from "./scenarios/scenario-1-login.js";
 import { scenario2ProjectCreate } from "./scenarios/scenario-2-project-create.js";
 import { scenario3SelfDeptApproval } from "./scenarios/scenario-3-self-dept-approval.js";
@@ -136,13 +140,33 @@ export function buildCli(): Command {
           return;
         }
 
-        const results: ScenarioResult[] = [];
-        for (const s of targets) {
-          const result = await runScenario(s, {
+        // sim-handles wiring — Plan E Stage 11 follow-up #24.
+        // SIM_SCENARIO_INPROC=1일 때만 12 globalThis handle을 binding한다.
+        // 시나리오 9~17이 audit-recorder/controller/gateway/auth-api/approval-api에
+        // 의존하므로 e2e 환경에서만 활성화. unit test 격리는 unwireSimHandles로 보장.
+        const inproc = env.SIM_SCENARIO_INPROC === "1";
+        if (inproc) {
+          wireSimHandles({
+            auditRecorderUrl: env.SIM_AUDIT_RECORDER_URL,
+            controllerUrl: env.SIM_CONTROLLER_URL,
             gatewayUrl: env.SCENARIO_GATEWAY_URL,
-            mode: env.SCENARIO_MODE,
+            authApiUrl: env.SIM_AUTH_API_URL,
+            approvalApiUrl: env.SIM_APPROVAL_API_URL,
+            bffReadUrl: env.SIM_BFF_READ_URL,
           });
-          results.push(result);
+        }
+
+        const results: ScenarioResult[] = [];
+        try {
+          for (const s of targets) {
+            const result = await runScenario(s, {
+              gatewayUrl: env.SCENARIO_GATEWAY_URL,
+              mode: env.SCENARIO_MODE,
+            });
+            results.push(result);
+          }
+        } finally {
+          if (inproc) unwireSimHandles();
         }
 
         if (opts.json) {

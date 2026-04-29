@@ -31,6 +31,13 @@
 - Create: `simulations/enterprise-pm/scenarios/src/lib/audit-fetcher.ts`
 - Create: `simulations/enterprise-pm/scenarios/src/lib/assertions/decision-assertions.ts`
 - Create: `simulations/enterprise-pm/scenarios/src/lib/assertions/decision-assertions.test.ts`
+- Create (follow-up #24): `simulations/enterprise-pm/scenarios/src/runner/sim-handles/` —
+  12 globalThis handle factory(`audit-fetcher`, `wait-for-cycles`, `catalog-store`,
+  `fault-injector`, `compose-handle`, `burst-load`, `bff-read`, `outbox-client`,
+  `bitmap-metrics`, `bitmap-version-mutator`, `bitmap-version-check`,
+  `gateway-sticky-consistency`) + `index.ts` `wireSimHandles()`/`unwireSimHandles()`.
+  cli.ts가 SIM_SCENARIO_INPROC=1 일 때 wireSimHandles 호출 후 시나리오 실행.
+  각 handle은 fetchImpl/execImpl 주입을 통한 단위 테스트 PASS (60건).
 
 신규 9개 시나리오는 모두 `audit.queryDecisions({ cycleIds })` → `assertSafetyVerdict(decision, expected)` 패턴을 공유한다. 인라인 단언을 두면 spec 05 §3.1 (a) 원칙(결정 객체 필드 직접 비교)이 표현마다 흔들리고, `triggerCategory`/`categoryVerdicts`/`action` 비교가 누락되기 쉬우므로 헬퍼로 응집시킨다. fetcher는 Plan C `audit-recorder-store` 인터페이스를 wrapping해 시나리오 코드가 store 구현(in-memory/pg)에 직접 의존하지 않게 한다.
 

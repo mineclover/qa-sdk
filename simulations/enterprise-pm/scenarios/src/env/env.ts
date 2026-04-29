@@ -12,6 +12,17 @@ export const envSchema = z.object({
   QA_DB_DIALECT: z.enum(["sqlite", "pg"]).default("sqlite"),
   /** Redis URL — sim-bitmap-cache 통합. in-process는 mock 사용. */
   SIM_REDIS_URL: z.string().optional(),
+  /**
+   * sim-handles wiring URLs — Plan E Stage 11 follow-up #24.
+   * 시나리오 9~17 e2e용. SIM_SCENARIO_INPROC=1일 때 wireSimHandles가 사용.
+   */
+  SIM_AUDIT_RECORDER_URL: z.string().default("http://localhost:5100"),
+  SIM_CONTROLLER_URL: z.string().default("http://localhost:7070"),
+  SIM_AUTH_API_URL: z.string().default("http://localhost:4001"),
+  SIM_APPROVAL_API_URL: z.string().default("http://localhost:4002"),
+  SIM_BFF_READ_URL: z.string().default("http://localhost:5100/v1/audit/trace"),
+  /** 시나리오 in-process 부팅 게이트. SIM_SCENARIO_INPROC=1일 때 wireSimHandles 호출. */
+  SIM_SCENARIO_INPROC: z.string().optional(),
 });
 
 export type ScenarioEnvVars = z.infer<typeof envSchema>;
