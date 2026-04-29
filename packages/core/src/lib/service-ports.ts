@@ -48,6 +48,7 @@ export const SERVICE_PORTS: readonly ServicePortEntry[] = [
   { name: "sim-document-api",        defaultPort: 4900, description: "시뮬: 첨부파일·코멘트·버전" },
   { name: "sim-audit-browser-api",   defaultPort: 5100, description: "시뮬: audit trace explorer API" },
   { name: "sim-metrics-collector",   defaultPort: 5200, description: "시뮬: Prometheus exporter" },
+  { name: "sim-canary-controller",   defaultPort: 5300, description: "시뮬: 카나리 control-plane (Pass 1 + Pass 2 + 30s cycle)" },
   { name: "sim-gateway",             defaultPort: 8888, description: "시뮬: Hono gateway (JWT + traceparent)" },
   // ── 프론트엔드 (5xxx) ──
   { name: "shopping-web",       defaultPort: 5220, description: "쇼핑 데모 사이트" },
