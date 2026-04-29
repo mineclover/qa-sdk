@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { ALL_SCENARIOS, buildCli, formatScenarioResult } from "./cli.js";
 
 describe("sim-scenarios CLI", () => {
-  it("ALL_SCENARIOS — Plan 13d 시점에 8건 (전체)", () => {
-    expect(ALL_SCENARIOS).toHaveLength(8);
+  it("ALL_SCENARIOS — Plan E Stage 11 시점에 17건 (1~17 전체)", () => {
+    expect(ALL_SCENARIOS).toHaveLength(17);
     expect(ALL_SCENARIOS.map((s) => s.name)).toEqual([
       "scenario-1-login",
       "scenario-2-project-create",
@@ -13,6 +13,15 @@ describe("sim-scenarios CLI", () => {
       "scenario-6-delegated-resource",
       "scenario-7-bitmap-refresh",
       "scenario-8-pubsub-invalidation",
+      "scenario-9-canary-happy-promote",
+      "scenario-10-canary-rollback-compatibility",
+      "scenario-11-canary-rollback-audit-spike",
+      "scenario-12-scale-up-load-pressure",
+      "scenario-13-scale-blocked-by-db-pool",
+      "scenario-14-read-replica-lag-fallback",
+      "scenario-15-outbox-multi-dispatcher-lock",
+      "scenario-16-bitmap-cache-version-fallback",
+      "scenario-17-pass-priority-canary-blocks-scale",
     ]);
   });
 

@@ -12,6 +12,15 @@ import { scenario5ThreeStageApproval } from "./scenarios/scenario-5-three-stage-
 import { scenario6DelegatedResource } from "./scenarios/scenario-6-delegated-resource.js";
 import { scenario7BitmapRefresh } from "./scenarios/scenario-7-bitmap-refresh.js";
 import { scenario8PubsubInvalidation } from "./scenarios/scenario-8-pubsub-invalidation.js";
+import { scenario9CanaryHappyPromote } from "./scenarios/scenario-9-canary-happy-promote.js";
+import { scenario10CanaryRollbackCompatibility } from "./scenarios/scenario-10-canary-rollback-compatibility.js";
+import { scenario11CanaryRollbackAuditSpike } from "./scenarios/scenario-11-canary-rollback-audit-spike.js";
+import { scenario12ScaleUpLoadPressure } from "./scenarios/scenario-12-scale-up-load-pressure.js";
+import { scenario13ScaleBlockedByDbPool } from "./scenarios/scenario-13-scale-blocked-by-db-pool.js";
+import { scenario14ReadReplicaLagFallback } from "./scenarios/scenario-14-read-replica-lag-fallback.js";
+import { scenario15OutboxMultiDispatcherLock } from "./scenarios/scenario-15-outbox-multi-dispatcher-lock.js";
+import { scenario16BitmapCacheVersionFallback } from "./scenarios/scenario-16-bitmap-cache-version-fallback.js";
+import { scenario17PassPriorityCanaryBlocksScale } from "./scenarios/scenario-17-pass-priority-canary-blocks-scale.js";
 import type { Scenario, ScenarioResult } from "./runner/types.js";
 import {
   fetchAuditEntryView,
@@ -47,6 +56,15 @@ export const ALL_SCENARIOS: readonly Scenario[] = [
   scenario6DelegatedResource,
   scenario7BitmapRefresh,
   scenario8PubsubInvalidation,
+  scenario9CanaryHappyPromote,
+  scenario10CanaryRollbackCompatibility,
+  scenario11CanaryRollbackAuditSpike,
+  scenario12ScaleUpLoadPressure,
+  scenario13ScaleBlockedByDbPool,
+  scenario14ReadReplicaLagFallback,
+  scenario15OutboxMultiDispatcherLock,
+  scenario16BitmapCacheVersionFallback,
+  scenario17PassPriorityCanaryBlocksScale,
 ];
 
 function summarizeTraceIds(traceIds: string[]): string {
