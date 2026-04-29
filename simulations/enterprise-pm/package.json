@@ -19,7 +19,7 @@
     "contracts:openapi:check": "node contracts/openapi/scripts/check-merge.mjs",
     "sim:doctor": "bash scripts/sim-doctor.sh || echo 'sim-doctor.sh는 Plan 14에서 추가 예정'",
     "build": "echo 'sim root는 빌드 산출물 없음'",
-    "test": "vitest run seed"
+    "test": "vitest run"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
