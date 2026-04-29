@@ -15,14 +15,19 @@
 `packages/infra-engine/init/qa-sdk-db-replication.sql`:
 
 ```sql
+-- read replica 토폴로지 부트스트랩 — qa-sdk-db (primary) 측
+-- Plan A 단계 4 Task 4.1: replicator role + physical replication slot
+--
+-- 환경 변수 → psql 변수 로드 (psql 14+ \getenv) — qa-sdk-db.sql 컨벤션 동일
+\getenv replicator_password QA_SDK_REPLICATOR_PASSWORD
+
 -- replicator role: streaming replication 전용 LOGIN
 -- (실제 패스워드는 .env.docker의 QA_SDK_REPLICATOR_PASSWORD 환경에서 inject됨)
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'replicator') THEN
-    CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD :'replicator_password';
-  END IF;
-END $$;
+--
+-- 주의: psql 변수(:'name')는 dollar-quoted block($$...$$) 내부에서 치환되지 않음.
+-- /docker-entrypoint-initdb.d/ 는 빈 PGDATA 에서만 1회 실행되므로 IF NOT EXISTS 가드 불필요.
+-- qa-sdk-db.sql 의 CREATE ROLE 패턴과 동일하게 평문 statement 로 작성.
+CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD :'replicator_password';
 
 -- physical replication slot — qa-sdk-db-replica 가 사용
 SELECT pg_create_physical_replication_slot('sim_read_replica_slot')
@@ -30,6 +35,8 @@ WHERE NOT EXISTS (
   SELECT 1 FROM pg_replication_slots WHERE slot_name = 'sim_read_replica_slot'
 );
 ```
+
+> **Spec fix (Task 4.1 구현 검증으로 확정).** 초안의 `DO $$ ... END $$` 블록 안에서 `:'replicator_password'` psql 변수를 사용하면 dollar-quoted string 내부에서 substitution이 발생하지 않아 fresh volume에서도 syntax error가 발생한다. 본 SQL은 그것을 정정한 형태로, `qa-sdk-db.sql`의 기존 `CREATE ROLE` 컨벤션과 동일하게 `\getenv` + 평문 `CREATE ROLE`로 작성한다. `IF NOT EXISTS` 가드는 `/docker-entrypoint-initdb.d/`가 빈 PGDATA에서만 1회 실행되므로 불필요.
 
 - [ ] **Step 4.1.2: docker-compose.infra.yaml의 qa-sdk-db에 wal_level + 새 init SQL volume 추가**
 
@@ -85,6 +92,15 @@ POSTGRES_INITDB_ARGS=--auth-host=md5
 ```
 
 또는 standby가 부팅 시 `-Fp -X stream` 옵션으로 직접 streaming 모드를 활성화한다 (Task 4.2에서 다룸).
+
+> **사용자 작업 (단계 4 적용 전 prerequisite).**
+>
+> 1. `.env.docker`에 `QA_SDK_REPLICATOR_PASSWORD=<생성한 비밀번호>` 추가. (sops 사용자) `sops decrypt .env.docker.enc > .env.docker` → 변수 추가 → `sops encrypt .env.docker > .env.docker.enc`.
+> 2. 기존 `qa-sdk-db` PG volume(`infra-engine_qa-sdk-db-data`)이 비어 있지 않으면 `/docker-entrypoint-initdb.d/`가 실행되지 않으므로 다음 둘 중 하나 선택:
+>     - **(a) destructive)** `docker volume rm infra-engine_qa-sdk-db-data` 후 재부팅. 기존 데이터 소실.
+>     - **(b) non-destructive)** 변수 추가 + 부팅 후 `docker exec qa-sdk-db sh -c 'psql -U postgres -d qa_sdk -f /docker-entrypoint-initdb.d/20-qa-sdk-db-replication.sql'` 수동 실행.
+>
+> 본 task의 코드 변경(SQL/yaml)은 위 prerequisite과 독립적으로 commit한다. 부팅 검증은 prerequisite 충족 후 수동 수행.
 
 - [ ] **Step 4.1.4: 부팅 검증**
 
