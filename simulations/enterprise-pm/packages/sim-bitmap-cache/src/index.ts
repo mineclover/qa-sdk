@@ -3,8 +3,10 @@
 
 export {
   BitmapLruCache,
+  DEFAULT_BITMAP_TTL_MS,
   makeKey,
   parseKey,
+  type BitmapCacheEntry,
   type BitmapLruCacheOptions,
 } from "./lru-cache.js";
 
@@ -21,6 +23,8 @@ export {
 
 export {
   BitmapCacheService,
+  type BitmapAuthApi,
+  type BitmapCacheCatalog,
   type BitmapCacheServiceOptions,
 } from "./cache-service.js";
 
@@ -33,6 +37,13 @@ export {
   type Scope,
   type Reason,
 } from "./message.js";
+
+export {
+  bitmapCacheLookupTotal,
+  recordBitmapCacheLookup,
+  BITMAP_CACHE_LOOKUP_RESULTS,
+  type BitmapCacheLookupResult,
+} from "./metrics.js";
 
 export {
   BitmapCacheModule,
