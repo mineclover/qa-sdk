@@ -10,9 +10,40 @@ import Redis from "ioredis";
 import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 import { createLogger } from "./lib/logger.js";
+import { InMemoryRoutingStore } from "./routing/routing-table.js";
+import { parseCidrList } from "./lib/internal-network.js";
+import { bootstrapRouting, type FallbackTargets } from "./lib/routing-bootstrap.js";
 
 const SERVICE_NAME = "sim-gateway";
 const logger = createLogger(SERVICE_NAME);
+
+// Plan C 단계 7 — routing store + internal CIDR + controller bootstrap.
+const routingStore = new InMemoryRoutingStore();
+const internalCidrs = parseCidrList(env.INTERNAL_CIDRS);
+
+let canaryTargets: FallbackTargets = {};
+try {
+  const parsed = JSON.parse(env.CANARY_TARGETS_JSON);
+  if (parsed && typeof parsed === "object") {
+    canaryTargets = parsed as FallbackTargets;
+  }
+} catch (err) {
+  logger.warn(
+    { err, raw: env.CANARY_TARGETS_JSON },
+    "CANARY_TARGETS_JSON parse failed — fallback seed will be empty",
+  );
+}
+
+await bootstrapRouting({
+  store: routingStore,
+  controllerUrl: env.CONTROLLER_URL,
+  fallbackTargets: canaryTargets,
+  fetchTimeoutMs: 5_000,
+  logger: {
+    info: (obj, msg) => logger.info(obj as Record<string, unknown>, msg),
+    warn: (obj, msg) => logger.warn(obj as Record<string, unknown>, msg),
+  },
+});
 
 const otelShutdown = initTelemetry({
   serviceName: SERVICE_NAME,
@@ -48,6 +79,8 @@ const app = createApp({
     "sim-document-api": env.DOCUMENT_API_URL,
     "sim-audit-browser-api": env.AUDIT_BROWSER_API_URL,
   },
+  routingStore,
+  internalCidrs,
 });
 
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {

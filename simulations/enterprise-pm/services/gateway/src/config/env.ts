@@ -35,6 +35,22 @@ export const envSchema = z.object({
   BITMAP_VERSION: z.string().default("v1"),
   /** Redis pub/sub — §5 Invalidation Subscriber 구동. */
   SIM_REDIS_URL: z.string().default("redis://localhost:6379"),
+  // ── Plan C 단계 7 (canary routing) ───────────────────────────────
+  /**
+   * spec 02 §3.2 — controller가 routing을 push하는 출처. 부팅 시 GET으로 sync 시도.
+   * 미설정/미가동/timeout 시 fallback (CANARY_TARGETS_JSON으로 v1 stable seed).
+   */
+  CONTROLLER_URL: z.string().optional(),
+  /**
+   * spec 02 §3.4 — escape hatch가 신뢰할 내부 네트워크 CIDR (compose network 정의에서 도출).
+   * env는 단순 전달 채널. 외부 IP 요청의 x-canary-override는 silent ignore.
+   */
+  INTERNAL_CIDRS: z.string().default("172.16.0.0/12"),
+  /**
+   * spec 02 §3 — controller 미가동 시 fallback seed에 쓸 service→{v1,v2} upstream URL map (JSON).
+   * 형식: `{"sim-approval-api":{"v1":"http://...","v2":"http://..."}}`. 빈 객체면 seed 안 함.
+   */
+  CANARY_TARGETS_JSON: z.string().default("{}"),
 });
 
 export type Env = z.infer<typeof envSchema>;
