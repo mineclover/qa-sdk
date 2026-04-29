@@ -92,13 +92,16 @@ export default defineConfig({
     "strict": true,
     "skipLibCheck": true,
     "declaration": true,
-    "outDir": "./dist",
-    "rootDir": "./src"
+    "outDir": "./dist"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "tests"]
 }
 ```
+
+> **Spec fix (Task 2.6 구현 검증으로 확정).** 초안의 `"rootDir": "./src"`는 식별자 #5 `event-name.ts`가 외부 `simulations/enterprise-pm/contracts/event-vocabulary.catalog.ts`를 import할 때 tsup DTS 단계에서 `TS6059: File ... is not under 'rootDir' 'src'`로 실패한다. `rootDir`를 명시하지 않으면 tsc가 모든 import 파일을 자동 추론해 빌드가 통과한다. tsup의 `entry: ["src/index.ts"]` 가 dist 출력 구조를 보장하므로 dist 파일 경로는 변하지 않는다.
+>
+> 의존 방향 측면에서 `packages/sim-identifier-grammar`가 `simulations/enterprise-pm/contracts`를 import 하는 것은 **CLAUDE.md "의존 방향: QA 플랫폼 → 인코딩 라이브러리만 허용 (역방향 금지)"** 위반이다. 본 사이클에서는 build 통과를 위한 최소 fix만 적용하고, catalog의 정도 위치(별도 packages/sim-event-vocabulary 등) 분리는 후속 sub-project로 처리한다.
 
 - [ ] **Step 2.1.4: vitest.config.ts**
 
