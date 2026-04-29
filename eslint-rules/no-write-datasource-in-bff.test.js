@@ -71,3 +71,22 @@ test("non-BFF path is ignored entirely (use-case can use WRITE)", () => {
   );
   assert.equal(reports.length, 0);
 });
+
+// Plan E Stage 13 §13.2.2 — BFF path prefix 매칭 회귀 케이스.
+// `presentation/bff/` segment가 깊게 중첩되어도 정확히 매칭되는지 검증.
+test("nested BFF path (presentation/bff/<sub-feature>/...) is enforced", () => {
+  const reports = runOnFile(
+    "/repo/services/approval-api/src/approval/budget/presentation/bff/detail/budget-detail.controller.ts",
+    ["WRITE_DATA_SOURCE"],
+  );
+  assert.equal(reports.length, 1);
+});
+
+test("path with 'bff' substring outside presentation/ is NOT enforced", () => {
+  // 의도적 false-positive 회귀 가드 — `bffMetrics.ts` 같은 일반 파일은 lint 대상 아님.
+  const reports = runOnFile(
+    "/repo/services/approval-api/src/approval/budget/lib/bffMetrics.ts",
+    ["WRITE_DATA_SOURCE"],
+  );
+  assert.equal(reports.length, 0);
+});
