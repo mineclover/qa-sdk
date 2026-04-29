@@ -111,3 +111,14 @@ export {
   type ReplicationSlot,
   type ReplicationPurpose,
 } from "./replication-slot.js";
+
+// `DecisionPass`는 decision-id.ts와 enum 값(`safety`/`resource`)이 동일하므로
+// 본 모듈에서는 재export하지 않는다(중복 export 회피). 본 모듈 내부에서는 정상 import 가능.
+export {
+  buildDecisionCategory,
+  parseDecisionCategory,
+  DecisionCategorySchema,
+  CATEGORIES,
+  type DecisionCategory,
+  type DecisionCategoryName,
+} from "./decision-category.js";
