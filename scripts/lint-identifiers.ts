@@ -15,7 +15,13 @@ import { glob } from "tinyglobby";
 const ROOT = resolve(__dirname, "..");
 const errors: string[] = [];
 
-const IMAGE_TAG_RE = /^([a-z][a-z0-9-]+)\/([a-z0-9-]+):(v[1-9][0-9]*(?:-(candidate|retired))?|latest)$/;
+// IMAGE_TAG_RE — image tag는 다음 4종 형태를 허용:
+//   1. literal version: `v3`, `v4-candidate`, `v5-retired`
+//   2. latest: `latest`
+//   3. env-var placeholder (default 없음): `${APPROVAL_V1_TAG}`
+//   4. env-var placeholder (default 있음): `${APPROVAL_V1_TAG:-v3}`
+// (3)/(4)는 docker-compose v1/v2 카나리 토글에 사용. follow-up #26 참조.
+const IMAGE_TAG_RE = /^([a-z][a-z0-9-]+)\/([a-z0-9-]+):(v[1-9][0-9]*(?:-(candidate|retired))?|latest|\$\{[A-Z_][A-Z0-9_]*(?::-[a-z0-9.-]+)?\})$/;
 // 본 사이클의 grammar 검증 대상은 시뮬 자체 image (qa-sdk 또는 qa-sdk-sim 레지스트리)에 한함.
 // 외부 base image (redis:7-alpine, postgres:16-alpine, node:22 등)는 grammar 적용 대상 아님 — skip.
 const SIM_IMAGE_PREFIX_RE = /^qa-sdk(-sim)?\//;
