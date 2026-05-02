@@ -1172,3 +1172,102 @@ surfacing 됐다. Task 1.5 의 Input 타입 수정으로 controller record 가 �
 **Typecheck status (post-fix)** — `pnpm --filter @qa-sdk/sim-canary-controller typecheck`:
 2 ring buffer push site 에러 (TS2345) 모두 해결. 잔여 `src/main.ts(8,46): @qa-sdk/otel
 module not found` 는 pre-existing baseline noise (이번 작업 범위 외).
+
+### Task 1.8 environmental constraint #1 — vitest+NestJS DI: `@Inject(DecisionRingBuffer)` 필수
+
+NestJS Reflect-based DI 는 TypeScript `emitDecoratorMetadata` 가 emit 한 design:paramtypes
+를 읽어 token 을 추론한다. 본 monorepo 의 vitest 는 esbuild transpile 을 쓰므로 metadata
+emit 이 없어 ctor 인자가 `Object` 로 보인다. 결과적으로 `constructor(private readonly ring:
+DecisionRingBuffer)` 만으로는 `Nest can't resolve dependencies of the
+DecisionQueryController (?, ...)` 에러가 발생한다.
+
+**Resolution (commit `f7707dc2`)** — `decision-query.controller.ts` 의 ring buffer
+인자에 명시적 `@Inject(DecisionRingBuffer)` 를 부착해 token 을 강제. 운영 빌드 (tsc) 에는
+영향 없으며, vitest smoke test 가 정상 통과한다.
+
+### Task 1.8 environmental constraint #2 — zod default + coerce: strict-mode 추론 회피
+
+`z.coerce.number().int().min(1).max(100).default(10)` 로 query string 입력을 coerce 하는
+경우, output 타입은 strict-mode TS 추론에서 `number | undefined` 가 된다 (default 가
+parse 시점에만 적용). controller signature 가 zod input shape 을 그대로 받으면 후속
+`Math.max(0, q.limit - 1)` 등에서 TS2532 에러가 surfacing.
+
+**Resolution (commit `f7707dc2`)** — controller 본체에서 `q.limit ?? 10`, `q.cursor ?? 0`
+fallback 을 적용. zod default 가 보증하므로 런타임 영향은 없으나 TS 추론을 만족시키기
+위한 의도적 dual-fallback. 향후 zod v4 narrowing 이 들어오면 제거 가능.
+
+### Task 1.9 — package.json deps no-op (선행 task 가 미리 추가)
+
+초안 plan §1.9.1 은 controller `package.json` 에 `sim-internal-network` /
+`sim-decision-view` workspace 의존을 신규 추가하도록 지시했으나, Task 1.6 (ring buffer)
+와 Task 1.8 (controller) 가 import 시점에 dependency check 통과를 위해 이미 dep 을
+추가한 상태였다. 결과적으로 Task 1.9 의 deps 추가 step 은 no-op.
+
+**Resolution (commit `745572f0`)** — Task 1.9 는 AppModule wiring (`DecisionQueryModule`
+import + `DecisionRingBuffer` provider 등록) 만 수행. plan 본문의 deps step 은 사실상
+"이미 추가됨" 검증으로 의미 축소.
+
+### Stage 1a integration verification (Task 1.10 결과)
+
+**Step 1.10.1 — build / test / typecheck (3 패키지)**:
+
+| 패키지 | build | test | typecheck |
+|--------|-------|------|-----------|
+| `sim-internal-network` | PASS (ESM+CJS+DTS dual) | 7/7 PASS | PASS |
+| `sim-decision-view` | PASS (ESM+CJS+DTS dual) | 7/7 PASS | PASS |
+| `@qa-sdk/sim-canary-controller` | PASS (tsc emit) | 67 PASS, 5 fail (pre-existing cycle-flow.test.ts), 1 skipped — Stage 1a 신규 `decision-query.module.smoke.test.ts` PASS | PASS |
+
+신규 산출물 자체는 모두 green. cycle-flow.test.ts 5 fail 은 HEAD 이전부터 존재한 baseline
+noise (Task 1.7 defect log 후속, D-stage-9 통합 fixture 정비 필요).
+
+**Step 1.10.2 — host.docker.internal 무회귀 + spec cross-ref grep**:
+
+- `grep -rn "host.docker.internal" simulations/enterprise-pm/` (extra_hosts 제외) → empty.
+  Plan A Stage 1 무회귀 보증 유지.
+- `grep -rn "spec 2026-05-02"` (3 신규 패키지/모듈 src) → 13 매치 (>=5 임계 통과). 각 신규
+  파일 헤더에 spec §3·§4·§5·§6 cross-ref 헤더 부착 확인.
+
+**Step 1.10.3 — contract typecheck (sim-decision-view import drift)**:
+
+임시 fixture `simulations/.../decision/__contract-check.ts` 작성 후 `pnpm --filter
+@qa-sdk/sim-canary-controller typecheck` 실행 → PASS. fixture 즉시 삭제 (commit 안 함).
+
+```typescript
+import type { SafetyDecisionRecordView } from "sim-decision-view";
+import { toSafetyDecisionView } from "sim-decision-view";
+import type { SafetyDecisionRecord } from "./decision-builder.service.js";
+const _check: (r: SafetyDecisionRecord) => SafetyDecisionRecordView = toSafetyDecisionView;
+```
+
+> 참고: 초안 plan §1.10.3 의 import path `@qa-sdk-sim/canary-controller/decision` 은 본
+> monorepo 의 실제 패키지 명 (`@qa-sdk/sim-canary-controller`) 과 다르고, controller 는
+> subpath export 를 노출하지 않는다. 따라서 fixture 는 controller src 트리 내부에 배치하고
+> 상대 경로 (`./decision-builder.service.js`) 로 record 타입을 참조해 동등한 contract 단언을
+> 수행한다.
+
+**Step 1.10.4 — Stage 1a 9 commit cherry-list (origin/main..HEAD)**:
+
+| Task | Commit |
+|------|--------|
+| 1.1 sim-internal-network skeleton + isInternalIp | `41c4ac5b` |
+| 1.2 InternalIpGuard NestJS | `6eb59adc` |
+| 1.3 internalIpMiddleware Hono | `c6ea8c4b` |
+| 1.4 sim-decision-view skeleton | `5181a096` |
+| 1.5 sim-decision-view conversion | `1cd1aad3` |
+| 1.6 DecisionRingBuffer | `9a85e0e5` |
+| 1.7 wire CycleScheduler to DecisionRingBuffer | `c038803a` |
+| 1.8 DecisionQueryController + InternalIpGuard | `f7707dc2` |
+| 1.9 wire DecisionQueryModule into AppModule | `745572f0` |
+
+추가 plan/defect 문서 commit (`2442b0a6`, `d0bd3656`, `7662868c`) 3건 포함, 총 12 commit
+이 origin/main 보다 앞서 있음. PR-A 본문에서 Stage 1a 범위로 위 9 task commit 을 cherry-list
+하고, Stage 1b 는 후속 plan `A-stage-1b-admin-and-fault.md` 로 이어 받는다.
+
+**Stage 1a DoD 6 항목 (Task 1.10 종료 시점)**:
+
+- [x] sim-internal-network: `isInternalIp` + `InternalIpGuard` + `internalIpMiddleware` export, unit test 7/7 PASS
+- [x] sim-decision-view: 4 view 타입 + 4 conversion 함수 export, conversion test 7/7 PASS
+- [x] DecisionRingBuffer + cycle-scheduler ring buffer wiring (`history` 필드 제거 commit `c038803a`)
+- [x] DecisionQueryController 3 endpoint (`/v1/decisions`, `/v1/decisions/first`, `/v1/cycles/recent`) + `@UseGuards(InternalIpGuard)` (commit `f7707dc2`)
+- [x] AppModule 에 DecisionQueryModule 등록, controller TS 빌드 / typecheck 통과 (commit `745572f0`)
+- [x] host.docker.internal 무회귀 grep + spec §3·§4·§5·§6 cross-ref 헤더 통과 (Step 1.10.2)
