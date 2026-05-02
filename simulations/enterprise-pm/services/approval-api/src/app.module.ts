@@ -16,6 +16,7 @@ import { env } from "./config/env.js";
 import { createLogger } from "./lib/logger.js";
 import { createSubscriberLogger } from "./lib/bitmap-cache-logger.js";
 import type { ApprovalRepository } from "./approval/shared/port.js";
+import { OutboxAdminModule } from "./admin/outbox-admin.module.js";
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import type { ApprovalRepository } from "./approval/shared/port.js";
       },
     }),
     ...APPROVAL_SLICE_MODULES,
+    OutboxAdminModule,
     BitmapCacheModule.forRoot({
       redisUrl: env.SIM_REDIS_URL,
       publisherEnabled: false,
