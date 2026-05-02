@@ -10,13 +10,24 @@
 |---|---|
 | Create | `docs/superpowers/specs/2026-04-28-canary-scaling/완료-보고.md` |
 | Create | `scripts/sim-smoke-full.ts` |
-| Create | `packages/sim-eslint-rules/src/rules/no-write-call-on-read-datasource.ts` |
-| Create | `packages/sim-eslint-rules/src/rules/no-write-call-on-read-datasource.test.ts` |
-| Modify | `packages/sim-eslint-rules/src/index.ts` (rule 신규 export) |
-| Modify | `packages/sim-eslint-rules/package.json` (필요 시 typescript-eslint utils 의존 추가) |
-| Modify | `.eslintrc.cjs` (root) — `sim/no-write-import-in-bff` + `sim/no-write-call-on-read-datasource` 활성화 검증 |
+| Create | `eslint-rules/no-write-call-on-read-datasource.js` (repo 루트 — Plan C §8.6 정착 구조) |
+| Create | `eslint-rules/no-write-call-on-read-datasource.test.js` (`node:test` + `assert/strict`) |
+| Modify | `eslint.config.mjs` (flat config) — `qa-sdk-sim/no-write-datasource-in-bff` + `qa-sdk-sim/no-write-call-on-read-datasource` 활성화 검증 |
 | Modify | `package.json` (root) — `sim:smoke:full` 스크립트 추가 |
 | Modify | `simulations/enterprise-pm/README.md` — 1차 사이클 완료 표기 + 후속 sub-project 5종 인덱스 링크 |
+
+> **구조 정정 (follow-up #25)**: 본 plan literal은 초기 작성 시 `packages/sim-eslint-rules/` 별도 패키지 + `.eslintrc.cjs` legacy config + `sim/...` plugin namespace + `@typescript-eslint/rule-tester` RuleTester + 별도 read DataSource 모듈(`@qa-sdk-sim/approval-read-datasource`) 을 가정했다. 실제로는 Plan C §8.6 에서 정착된 구조를 사용한다.
+>
+> | literal 가정 | 실제 구조 (SSOT) |
+> |---|---|
+> | 별도 패키지 `packages/sim-eslint-rules/` | repo 루트 `eslint-rules/` 디렉터리 |
+> | `.eslintrc.cjs` (legacy) | `eslint.config.mjs` (flat config) |
+> | plugin namespace `sim/...` | `qa-sdk-sim/...` |
+> | `@typescript-eslint/rule-tester` RuleTester | `node:test` + `assert/strict` 단위 테스트 |
+> | 별도 read DataSource 모듈(`@qa-sdk-sim/approval-read-datasource`) | 동일 모듈에서 `READ_DATA_SOURCE`/`WRITE_DATA_SOURCE` Symbol DI 토큰을 export |
+> | rule 이름 `no-write-import-in-bff` | `no-write-datasource-in-bff` |
+>
+> 본 단계 §13.2~§13.3 의 코드 블록은 위 실제 구조 위에서 신규 rule(`qa-sdk-sim/no-write-call-on-read-datasource`)을 추가한다. ESLint runtime 통합이 실제로 필요하면 root `pnpm exec eslint` 활성화 노트가 별도로 들어간다 (현재는 ESLint package 미설치 — flat config dormant. 18 unit tests 가 `node:test` 로 회귀 가드를 진다).
 
 ### Task 13.1: 인프라 검증 6종 cross-check 매트릭스
 
@@ -42,8 +53,8 @@
 | identifier-gate CI | Plan A 단계 2 — Task 2.20 (`.github/workflows/identifier-gate.yml`) | (CI 자동) + 로컬: `pnpm sim:lint:identifiers` |
 | catalog ↔ compose ↔ env 4-way 정합성 | Plan B 단계 3 — Task 3.7 (`scripts/validate-catalog.ts`) | `pnpm sim:catalog:validate` |
 | host.docker.internal negative grep | Plan A 단계 1 — Task 1.5.1 (sim 디렉터리 grep gate) + Task 2.19 (compose 라인 단위 lint) | Task 1.5.1 명령 + `pnpm sim:lint:identifiers` |
-| BFF 모듈에서 write DataSource import 없음 | Plan C 단계 8 — Task 8.6 (`sim/no-write-import-in-bff` ESLint custom rule) | `pnpm lint` (root) |
-| read DataSource로 INSERT/UPDATE/DELETE 호출 없음 | **단계 13 — Task 13.3 (`sim/no-write-call-on-read-datasource`)** + 런타임 PG `default_transaction_read_only=on` (Plan A 단계 4 read replica 부팅 옵션) | `pnpm lint` + 런타임 `set_session_authorization` 거부 |
+| BFF 모듈에서 write DataSource import 없음 | Plan C 단계 8 — Task 8.6 (`qa-sdk-sim/no-write-datasource-in-bff` ESLint custom rule) | `pnpm lint` (root) |
+| read DataSource로 INSERT/UPDATE/DELETE 호출 없음 | **단계 13 — Task 13.3 (`qa-sdk-sim/no-write-call-on-read-datasource`)** + 런타임 PG `default_transaction_read_only=on` (Plan A 단계 4 read replica 부팅 옵션) | `pnpm lint` + 런타임 `set_session_authorization` 거부 |
 
 ## 2. (이후 Task 13.5에서 채움)
 ```
@@ -71,28 +82,33 @@ git commit -m "docs(spec/canary-cycle1): cross-check matrix — 인프라 검증
 ### Task 13.2: BFF write DataSource lint 활성화 검증
 
 **Files:**
-- Modify: `.eslintrc.cjs` (root, plugin/rule 등록 검증)
+- Modify: `eslint.config.mjs` (root, plugin/rule 등록 검증)
 
-본 task는 신규 rule을 만들지 않는다. Plan C 단계 8 Task 8.6에서 만든 `sim/no-write-import-in-bff` rule이 root ESLint 설정에 등록되어 있고, BFF 디렉터리 fixture에서 의도적 위반이 정확히 검출되는지 통합 lint를 돌려 회귀 가드를 닫는다.
+본 task는 신규 rule을 만들지 않는다. Plan C 단계 8 Task 8.6에서 만든 `qa-sdk-sim/no-write-datasource-in-bff` rule이 root ESLint 설정에 등록되어 있고, BFF 디렉터리 fixture에서 의도적 위반이 정확히 검출되는지 통합 lint를 돌려 회귀 가드를 닫는다.
 
-- [ ] **Step 13.2.1: root .eslintrc.cjs에서 rule 등록 확인**
+- [ ] **Step 13.2.1: root eslint.config.mjs에서 rule 등록 확인**
 
 ```bash
 cd /Users/junwoobang/workflow/qa-sdk
-grep -n "sim/no-write-import-in-bff\|sim-eslint-rules" .eslintrc.cjs
+grep -n "qa-sdk-sim/no-write-datasource-in-bff\|sim-eslint-rules" eslint.config.mjs
 ```
 
-기대: 두 토큰 모두 hit. `plugins: [..., "sim"]` + `rules: { "sim/no-write-import-in-bff": "error", ... }` 라인이 있어야 한다. 없으면 `.eslintrc.cjs`에 다음을 추가한다 (Plan C에서 누락된 경우의 보강):
+기대: 두 토큰 모두 hit. flat config 에 `plugins: { "qa-sdk-sim": simPlugin }` + `rules: { "qa-sdk-sim/no-write-datasource-in-bff": "error", ... }` 라인이 있어야 한다. 없으면 `eslint.config.mjs` 에 다음을 추가한다 (Plan C 에서 누락된 경우의 보강):
 
 ```javascript
-module.exports = {
+// eslint.config.mjs (flat config — repo 루트)
+import simPlugin from "./eslint-rules/index.js"; // { rules: { "no-write-datasource-in-bff": ..., "no-write-call-on-read-datasource": ... } }
+
+export default [
   // ... 기존 설정
-  plugins: [/* 기존 */, "sim"],
-  rules: {
-    // ... 기존
-    "sim/no-write-import-in-bff": "error",
+  {
+    plugins: { "qa-sdk-sim": simPlugin },
+    rules: {
+      "qa-sdk-sim/no-write-datasource-in-bff": "error",
+      "qa-sdk-sim/no-write-call-on-read-datasource": "error",
+    },
   },
-};
+];
 ```
 
 - [ ] **Step 13.2.2: BFF 디렉터리에 의도적 위반 fixture로 회귀 검증**
@@ -100,25 +116,30 @@ module.exports = {
 `apps/bff/__lint_fixtures__/violation.ts.fixture` (lint 대상에서 제외되도록 확장자는 `.fixture`):
 
 ```typescript
-// lint fixture — 본 파일은 .eslintignore 또는 overrides로 lint 대상에서 제외하되,
-// 별도 unit test에서 RuleTester로 검증한다.
-import { writeRepository } from "@qa-sdk-sim/approval-write-datasource"; // ← rule 위반
-export const x = writeRepository;
+// lint fixture — 본 파일은 ignores 또는 overrides로 lint 대상에서 제외하되,
+// 별도 unit test에서 node:test 로 검증한다.
+import { WRITE_DATA_SOURCE } from "@qa-sdk-sim/approval-shared-datasource"; // ← BFF에서 write 토큰 import 위반
+export const x = WRITE_DATA_SOURCE;
 ```
 
-`packages/sim-eslint-rules/src/rules/no-write-import-in-bff.test.ts`에 (Plan C에서 만든 RuleTester 케이스가 있으면 skip) BFF path prefix 매칭 케이스 1건 추가:
+`eslint-rules/no-write-datasource-in-bff.test.js` 에 (Plan C §8.6에서 만든 단위 테스트가 있으면 skip) BFF path prefix 매칭 케이스 1건 추가 — `node:test` + `assert/strict` + ESLint `Linter` 인스턴스 직접 호출 패턴(Plan C §8.6 SSOT):
 
-```typescript
-ruleTester.run("no-write-import-in-bff", rule, {
-  valid: [
-    { code: 'import { readRepository } from "@qa-sdk-sim/approval-read-datasource";',
-      filename: "/repo/apps/bff/src/handler.ts" },
-  ],
-  invalid: [
-    { code: 'import { writeRepository } from "@qa-sdk-sim/approval-write-datasource";',
-      filename: "/repo/apps/bff/src/handler.ts",
-      errors: [{ messageId: "writeImportInBff" }] },
-  ],
+```javascript
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { Linter } from "eslint";
+import rule from "./no-write-datasource-in-bff.js";
+
+const linter = new Linter();
+linter.defineRule("qa-sdk-sim/no-write-datasource-in-bff", rule);
+
+test("BFF path 에서 WRITE_DATA_SOURCE import 시 violation 1건", () => {
+  const code = `import { WRITE_DATA_SOURCE } from "@qa-sdk-sim/approval-shared-datasource";`;
+  const messages = linter.verify(code, {
+    rules: { "qa-sdk-sim/no-write-datasource-in-bff": "error" },
+  }, { filename: "/repo/apps/bff/src/handler.ts" });
+  assert.equal(messages.length, 1);
+  assert.match(messages[0].message, /write/i);
 });
 ```
 
@@ -127,107 +148,162 @@ ruleTester.run("no-write-import-in-bff", rule, {
 ```bash
 cd /Users/junwoobang/workflow/qa-sdk
 pnpm lint 2>&1 | tee /tmp/sim-lint.log
-grep "no-write-import-in-bff" /tmp/sim-lint.log || echo "rule이 lint 출력에 등장하지 않음 — fixture 경로/플러그인 등록 확인"
+grep "no-write-datasource-in-bff" /tmp/sim-lint.log || echo "rule이 lint 출력에 등장하지 않음 — fixture 경로/플러그인 등록 확인"
 ```
 
-기대: rule violation이 fixture 외 실제 BFF 코드에서 0건. fixture 자체는 `.eslintignore`로 제외했으므로 lint 출력에는 등장하지 않으면 된다. RuleTester 단위 테스트는 PASS.
+기대: rule violation이 fixture 외 실제 BFF 코드에서 0건. fixture 자체는 flat config `ignores`로 제외했으므로 lint 출력에는 등장하지 않으면 된다. `node:test` 단위 테스트는 PASS. (현재는 ESLint package 미설치 — flat config dormant. 단위 테스트로 회귀 가드를 진다. ESLint runtime 통합이 실제로 필요해지면 root에 `pnpm exec eslint` 활성화 노트를 추가한다.)
 
 - [ ] **Step 13.2.4: 회귀 게이트 명세를 보고서에 추가**
 
 `완료-보고.md` §1 매트릭스에 BFF 행 옆에 검증 일시·실행자(local/CI)를 기록할 컬럼 자리를 비워둔다. CI에서 `pnpm lint`를 강제하는 워크플로 경로(`.github/workflows/`)도 grep으로 1회 확인한다.
 
 ```bash
-grep -rn "pnpm lint\|sim/no-write" .github/workflows/ || echo "CI에서 sim ESLint plugin 미강제 — Plan C 단계 8에서 보강 필요"
+grep -rn "pnpm lint\|qa-sdk-sim/no-write" .github/workflows/ || echo "CI에서 sim ESLint plugin 미강제 — Plan C 단계 8에서 보강 필요"
 ```
 
 - [ ] **Step 13.2.5: Commit**
 
 ```bash
-git add .eslintrc.cjs packages/sim-eslint-rules/src/rules/no-write-import-in-bff.test.ts
+git add eslint.config.mjs eslint-rules/no-write-datasource-in-bff.test.js
 git commit -m "test(sim-eslint-rules): BFF path prefix 매칭 케이스 보강 + root 등록 검증"
 ```
 
 ### Task 13.3: read DataSource INSERT/UPDATE/DELETE 호출 차단 lint (신규)
 
 **Files:**
-- Create: `packages/sim-eslint-rules/src/rules/no-write-call-on-read-datasource.ts`
-- Create: `packages/sim-eslint-rules/src/rules/no-write-call-on-read-datasource.test.ts`
-- Modify: `packages/sim-eslint-rules/src/index.ts`
+- Create: `eslint-rules/no-write-call-on-read-datasource.js` (repo 루트, plain JS — Plan C §8.6 정착 구조)
+- Create: `eslint-rules/no-write-call-on-read-datasource.test.js` (`node:test` + `assert/strict`)
+- Modify: `eslint.config.mjs` (flat config — rule 등록)
 
 Plan C 단계 8 Task 8.6은 _import 차단_ 만 다룬다. 그러나 같은 read 모듈을 import한 이후 호출 사이트에서 `Repository#save / insert / update / delete` 같은 변경 메서드를 호출하면 정적 lint를 우회한다. 본 task는 호출 사이트 자체를 정적으로 거부하는 신규 rule을 추가한다. spec 05 §4의 6번째 검증 항목이 본 task로 활성화된다.
 
 - [ ] **Step 13.3.1: 실패 테스트 작성**
 
-`packages/sim-eslint-rules/src/rules/no-write-call-on-read-datasource.test.ts`:
+`eslint-rules/no-write-call-on-read-datasource.test.js` — Plan C §8.6 SSOT 패턴 (`node:test` + `assert/strict` + ESLint `Linter` 직접 호출):
 
-```typescript
-import { RuleTester } from "@typescript-eslint/rule-tester";
-import { rule } from "./no-write-call-on-read-datasource.js";
+```javascript
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { Linter } from "eslint";
+import rule from "./no-write-call-on-read-datasource.js";
 
-const tester = new RuleTester({
-  parser: require.resolve("@typescript-eslint/parser"),
-  parserOptions: { ecmaVersion: 2023, sourceType: "module" },
+const linter = new Linter();
+linter.defineRule("qa-sdk-sim/no-write-call-on-read-datasource", rule);
+
+const cfg = {
+  rules: { "qa-sdk-sim/no-write-call-on-read-datasource": "error" },
+  languageOptions: { ecmaVersion: 2023, sourceType: "module" },
+};
+
+// SSOT: 모듈 내 동일한 모듈에서 export 되는 READ_DATA_SOURCE / WRITE_DATA_SOURCE Symbol DI 토큰을 사용한다.
+// 본 rule 은 READ_DATA_SOURCE 으로 import 한 식별자에 대한 write 메서드 호출만 거부한다.
+
+test("READ_DATA_SOURCE.find/select 는 valid", () => {
+  const code = `
+    import { READ_DATA_SOURCE } from "@qa-sdk-sim/approval-shared-datasource";
+    await container.get(READ_DATA_SOURCE).find({ where: { id: 1 } });
+  `;
+  assert.equal(linter.verify(code, cfg).length, 0);
 });
 
-tester.run("no-write-call-on-read-datasource", rule, {
-  valid: [
-    {
-      code: `
-        import { readRepository } from "@qa-sdk-sim/approval-read-datasource";
-        await readRepository.find({ where: { id: 1 } });
-      `,
-    },
-    {
-      // write datasource는 본 rule 대상이 아님 (BFF import lint와 책임 분리)
-      code: `
-        import { writeRepository } from "@qa-sdk-sim/approval-write-datasource";
-        await writeRepository.save(entity);
-      `,
-    },
-  ],
-  invalid: [
-    {
-      code: `
-        import { readRepository } from "@qa-sdk-sim/approval-read-datasource";
-        await readRepository.save(entity);
-      `,
-      errors: [{ messageId: "writeCallOnReadDatasource", data: { method: "save" } }],
-    },
-    {
-      code: `
-        import { readRepository as r } from "@qa-sdk-sim/approval-read-datasource";
-        await r.insert({});
-      `,
-      errors: [{ messageId: "writeCallOnReadDatasource", data: { method: "insert" } }],
-    },
-    {
-      code: `
-        import { readRepository } from "@qa-sdk-sim/approval-read-datasource";
-        await readRepository.update({}, {});
-        await readRepository.delete({});
-      `,
-      errors: [
-        { messageId: "writeCallOnReadDatasource", data: { method: "update" } },
-        { messageId: "writeCallOnReadDatasource", data: { method: "delete" } },
-      ],
-    },
-  ],
+test("READ_DATA_SOURCE.save/insert/update/delete 는 invalid", () => {
+  const cases = ["save", "insert", "update", "delete", "upsert", "remove"];
+  for (const method of cases) {
+    const code = `
+      import { READ_DATA_SOURCE } from "@qa-sdk-sim/approval-shared-datasource";
+      await container.get(READ_DATA_SOURCE).${method}({});
+    `;
+    const messages = linter.verify(code, cfg);
+    assert.equal(messages.length, 1, `expected 1 violation for ${method}`);
+    assert.match(messages[0].message, new RegExp(method));
+  }
+});
+
+test("WRITE_DATA_SOURCE 는 본 rule 대상이 아님 (BFF import lint 와 책임 분리)", () => {
+  const code = `
+    import { WRITE_DATA_SOURCE } from "@qa-sdk-sim/approval-shared-datasource";
+    await container.get(WRITE_DATA_SOURCE).save(entity);
+  `;
+  assert.equal(linter.verify(code, cfg).length, 0);
 });
 ```
 
 - [ ] **Step 13.3.2: 테스트 실패 확인**
 
 ```bash
-pnpm --filter sim-eslint-rules test no-write-call-on-read-datasource
+node --test eslint-rules/ no-write-call-on-read-datasource
 ```
 
 기대: FAIL (모듈 미존재).
 
 - [ ] **Step 13.3.3: 최소 구현**
 
-`packages/sim-eslint-rules/src/rules/no-write-call-on-read-datasource.ts`:
+`eslint-rules/no-write-call-on-read-datasource.js` — plain JS, ESLint v9 flat-config 호환 rule shape (Plan C §8.6 SSOT):
+
+```javascript
+// READ_DATA_SOURCE / WRITE_DATA_SOURCE 는 동일 모듈에서 export 되는 Symbol DI 토큰.
+// 본 rule 은 READ_DATA_SOURCE 으로 import 한 식별자에 대한 write 메서드 호출만 거부한다.
+
+const WRITE_METHODS = new Set(["save", "insert", "update", "delete", "upsert", "remove"]);
+const READ_TOKEN_LOCAL_NAMES_KEY = Symbol("readTokenLocalNames");
+
+/** @type {import('eslint').Rule.RuleModule} */
+export default {
+  meta: {
+    type: "problem",
+    docs: {
+      description:
+        "READ_DATA_SOURCE 으로 import 한 식별자에 write 메서드(save/insert/update/delete/upsert/remove) 호출을 금지한다 (CQRS 분리 — spec 05 §4).",
+    },
+    messages: {
+      writeCallOnReadDatasource:
+        "READ_DATA_SOURCE 으로 import 한 식별자에 write 메서드({{method}})를 호출할 수 없습니다.",
+    },
+    schema: [],
+  },
+  create(context) {
+    const readBindings = new Set();
+    return {
+      ImportDeclaration(node) {
+        for (const spec of node.specifiers) {
+          if (spec.type !== "ImportSpecifier") continue;
+          // imported.name 이 READ_DATA_SOURCE 일 때만 local 이름을 추적한다.
+          if (spec.imported.type === "Identifier" && spec.imported.name === "READ_DATA_SOURCE") {
+            readBindings.add(spec.local.name);
+          }
+        }
+      },
+      CallExpression(node) {
+        const callee = node.callee;
+        if (callee.type !== "MemberExpression") return;
+        if (callee.property.type !== "Identifier") return;
+        const method = callee.property.name;
+        if (!WRITE_METHODS.has(method)) return;
+        // container.get(READ_DATA_SOURCE).save(...) 패턴: callee.object 는 CallExpression(get(READ_TOKEN)).
+        // 단순 케이스(direct identifier) 도 함께 다룬다.
+        const obj = callee.object;
+        let isReadBound = false;
+        if (obj.type === "Identifier" && readBindings.has(obj.name)) isReadBound = true;
+        if (obj.type === "CallExpression") {
+          for (const arg of obj.arguments) {
+            if (arg.type === "Identifier" && readBindings.has(arg.name)) { isReadBound = true; break; }
+          }
+        }
+        if (isReadBound) {
+          context.report({ node, messageId: "writeCallOnReadDatasource", data: { method } });
+        }
+      },
+    };
+  },
+};
+```
+
+(원래 plan literal 의 TypeScript `ESLintUtils.RuleCreator` + `RuleTester` 패턴은 Plan C §8.6 정착 구조와 어긋난다. 위 plain JS 패턴이 SSOT — `eslint-rules/no-write-datasource-in-bff.js` 와 동일한 export 형태.)
+
+(아래 블록은 historical reference 로 유지 — 원래 RuleCreator 시그니처):
 
 ```typescript
+// historical (사용 금지) — RuleCreator + RuleTester 가정
 import { ESLintUtils, TSESTree } from "@typescript-eslint/utils";
 
 const WRITE_METHODS = new Set(["save", "insert", "update", "delete", "upsert", "remove"]);
@@ -280,44 +356,50 @@ export const rule = createRule<[], "writeCallOnReadDatasource">({
 });
 ```
 
-`packages/sim-eslint-rules/src/index.ts`에 추가:
+`eslint-rules/index.js` (qa-sdk-sim plugin 진입점) 에 신규 rule 등록 + `eslint.config.mjs` 의 rules 블록에 활성화:
 
-```typescript
-import { rule as noWriteCallOnReadDatasource } from "./rules/no-write-call-on-read-datasource.js";
-// ... 기존 rule import
+```javascript
+// eslint-rules/index.js — qa-sdk-sim plugin
+import noWriteDatasourceInBff from "./no-write-datasource-in-bff.js";
+import noWriteCallOnReadDatasource from "./no-write-call-on-read-datasource.js";
 
-export = {
+export default {
   rules: {
-    // ... 기존
+    "no-write-datasource-in-bff": noWriteDatasourceInBff,
     "no-write-call-on-read-datasource": noWriteCallOnReadDatasource,
   },
 };
 ```
 
-`.eslintrc.cjs`의 rules 블록에 등록:
-
 ```javascript
-"sim/no-write-call-on-read-datasource": "error",
+// eslint.config.mjs (flat config) — rules 블록에 등록
+{
+  plugins: { "qa-sdk-sim": simPlugin },
+  rules: {
+    "qa-sdk-sim/no-write-datasource-in-bff": "error",
+    "qa-sdk-sim/no-write-call-on-read-datasource": "error",
+  },
+}
 ```
 
 - [ ] **Step 13.3.4: 테스트 통과 + 통합 lint 회귀**
 
 ```bash
-pnpm --filter sim-eslint-rules build
-pnpm --filter sim-eslint-rules test no-write-call-on-read-datasource
-pnpm lint
+node --test eslint-rules/no-write-call-on-read-datasource.test.js
+# ESLint package 미설치 시 `pnpm exec eslint` 는 dormant — 단위 테스트 PASS 만으로 회귀 가드 충족.
+# 통합 lint 가 필요해지면 root 에 ESLint 설치 후 `pnpm exec eslint simulations/enterprise-pm/services` 활성화.
 ```
 
-기대: RuleTester 4건 PASS, root `pnpm lint`는 위반 0건. 위반이 발견되면 BFF/reporting slice 코드를 read 전용으로 정정한다 (Plan C 단계 8 Task 8.x 회귀).
+기대: `node:test` 단위 테스트 PASS (Plan C §8.6 SSOT 패턴, RuleTester 미사용). 위반이 발견되면 BFF/reporting slice 코드를 read 전용으로 정정한다 (Plan C 단계 8 Task 8.x 회귀).
 
 - [ ] **Step 13.3.5: Commit**
 
 ```bash
-git add packages/sim-eslint-rules/src/rules/no-write-call-on-read-datasource.ts \
-        packages/sim-eslint-rules/src/rules/no-write-call-on-read-datasource.test.ts \
-        packages/sim-eslint-rules/src/index.ts \
-        .eslintrc.cjs
-git commit -m "feat(sim-eslint-rules): no-write-call-on-read-datasource (CQRS 호출 차단)"
+git add eslint-rules/no-write-call-on-read-datasource.js \
+        eslint-rules/no-write-call-on-read-datasource.test.js \
+        eslint-rules/index.js \
+        eslint.config.mjs
+git commit -m "feat(eslint-rules): qa-sdk-sim/no-write-call-on-read-datasource (CQRS 호출 차단)"
 ```
 
 ### Task 13.4: pnpm sim:smoke:full — 17 시나리오 + 인프라 검증 6종 통합 entrypoint
