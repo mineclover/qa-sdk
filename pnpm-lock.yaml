@@ -3187,6 +3187,9 @@ importers:
       sim-identifier-grammar:
         specifier: workspace:*
         version: link:../../../../packages/sim-identifier-grammar
+      sim-internal-network:
+        specifier: workspace:*
+        version: link:../../../../packages/sim-internal-network
       weighted-index:
         specifier: workspace:*
         version: link:../../../../packages/weighted-index

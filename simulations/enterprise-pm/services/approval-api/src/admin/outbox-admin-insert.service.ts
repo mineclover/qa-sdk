@@ -21,7 +21,9 @@ import {
 export interface OutboxEventInput {
   aggregateId: string;
   eventName: string;
-  payload: unknown;
+  // zod 의 z.unknown() 은 inferred 타입이 optional 이므로 본 인터페이스도 optional 로 둔다.
+  // 누락 시 빈 객체로 직렬화한다.
+  payload?: unknown;
   occurredAt: number;
   eventVersion?: number;
 }
@@ -68,7 +70,9 @@ export class OutboxAdminInsertService {
         event_name: e.eventName,
         event_version: e.eventVersion ?? 1,
         payload:
-          typeof e.payload === "string" ? e.payload : JSON.stringify(e.payload),
+          typeof e.payload === "string"
+            ? e.payload
+            : JSON.stringify(e.payload ?? {}),
         occurred_at: e.occurredAt,
         scope_id: scopeId,
         status: "pending" as const,
