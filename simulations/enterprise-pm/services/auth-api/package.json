@@ -45,6 +45,8 @@
     "permission-engine": "workspace:*",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "sim-identifier-grammar": "workspace:*",
+    "sim-internal-network": "workspace:*",
     "weighted-index": "workspace:*",
     "zod": "^3.24.2"
   },
