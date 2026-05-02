@@ -24,6 +24,7 @@
     "drizzle-orm": "catalog:",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "sim-decision-view": "workspace:*",
     "sim-identifier-grammar": "workspace:*",
     "ulid": "^2.3.0",
     "yaml": "^2.5.0",

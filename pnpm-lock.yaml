@@ -3421,6 +3421,9 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      sim-decision-view:
+        specifier: workspace:*
+        version: link:../../../../packages/sim-decision-view
       sim-identifier-grammar:
         specifier: workspace:*
         version: link:../../../../packages/sim-identifier-grammar
