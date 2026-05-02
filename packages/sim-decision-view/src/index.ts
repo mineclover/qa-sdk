@@ -3,4 +3,4 @@ export type { ResourceDecisionRecordView, ResourceVerdict, ResourceCategory, Res
 export type { AlertEventView } from "./alert-event-view.js";
 export type { AuditTraceView } from "./audit-trace-view.js";
 export { toSafetyDecisionView, toResourceDecisionView, toAlertEventView, toAuditTraceView } from "./conversion.js";
-export type { SafetyDecisionRecordInput, ResourceDecisionRecordInput, AlertEventRecordInput, AuditTraceInput } from "./conversion.js";
+export type { SafetyDecisionRecordInput, ResourceDecisionRecordInput, AlertEventRecordInput, AuditTraceInput, SafetyActionInput, ResourceActionInput } from "./conversion.js";
