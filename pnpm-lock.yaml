@@ -2316,6 +2316,21 @@ importers:
 
   packages/shop-web: {}
 
+  packages/sim-decision-view:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.15
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(jsdom@25.0.1)(lightningcss@1.32.0)
+
   packages/sim-identifier-grammar:
     dependencies:
       ulid:
@@ -2331,6 +2346,46 @@ importers:
       fast-check:
         specifier: ^3.23.2
         version: 3.23.2
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(jsdom@25.0.1)(lightningcss@1.32.0)
+
+  packages/sim-internal-network:
+    devDependencies:
+      '@nestjs/common':
+        specifier: ^11.0.0
+        version: 11.1.17(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.15
+      hono:
+        specifier: ^4.6.0
+        version: 4.12.7
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(jsdom@25.0.1)(lightningcss@1.32.0)
+
+  packages/sim-outbox-view:
+    dependencies:
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.15
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
@@ -3069,6 +3124,9 @@ importers:
       sim-identifier-grammar:
         specifier: workspace:*
         version: link:../../../packages/sim-identifier-grammar
+      sim-outbox-view:
+        specifier: workspace:*
+        version: link:../../../packages/sim-outbox-view
       weighted-index:
         specifier: workspace:*
         version: link:../../../packages/weighted-index
@@ -3151,6 +3209,12 @@ importers:
       sim-identifier-grammar:
         specifier: workspace:*
         version: link:../../../../packages/sim-identifier-grammar
+      sim-internal-network:
+        specifier: workspace:*
+        version: link:../../../../packages/sim-internal-network
+      sim-outbox-view:
+        specifier: workspace:*
+        version: link:../../../../packages/sim-outbox-view
       weighted-index:
         specifier: workspace:*
         version: link:../../../../packages/weighted-index
@@ -3315,6 +3379,12 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      sim-identifier-grammar:
+        specifier: workspace:*
+        version: link:../../../../packages/sim-identifier-grammar
+      sim-internal-network:
+        specifier: workspace:*
+        version: link:../../../../packages/sim-internal-network
       weighted-index:
         specifier: workspace:*
         version: link:../../../../packages/weighted-index
@@ -3373,6 +3443,9 @@ importers:
       '@qa-sdk/otel':
         specifier: workspace:*
         version: link:../../../../packages/otel
+      '@qa-sdk/sim-gateway':
+        specifier: workspace:*
+        version: link:../gateway
       db-bootstrap:
         specifier: workspace:*
         version: link:../../../../packages/db-bootstrap
@@ -3385,9 +3458,18 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      sim-decision-view:
+        specifier: workspace:*
+        version: link:../../../../packages/sim-decision-view
       sim-identifier-grammar:
         specifier: workspace:*
         version: link:../../../../packages/sim-identifier-grammar
+      sim-internal-network:
+        specifier: workspace:*
+        version: link:../../../../packages/sim-internal-network
+      sim-service-catalog:
+        specifier: workspace:*
+        version: link:../../../../packages/sim-service-catalog
       ulid:
         specifier: ^2.3.0
         version: 2.4.0
@@ -3522,6 +3604,9 @@ importers:
       sim-identifier-grammar:
         specifier: workspace:*
         version: link:../../../../packages/sim-identifier-grammar
+      sim-internal-network:
+        specifier: workspace:*
+        version: link:../../../../packages/sim-internal-network
       zod:
         specifier: ^3.24.2
         version: 3.25.76

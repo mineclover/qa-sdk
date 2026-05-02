@@ -1,11 +1,13 @@
 // @def.boundary sim-gateway
 // @def.doc authorization-ontology-bitmap-pipeline
+// spec 2026-05-02 §9 Stage 2 — decideRouteWithTracking + StickyDecisionTracker DI.
 
 import { Hono, type Context } from "hono";
 import { parseVersionTag, type VersionTag } from "sim-identifier-grammar";
 import { proxyRequest } from "../lib/proxy.js";
 import type { InMemoryRoutingStore } from "../routing/routing-table.js";
-import { decideRoute } from "../routing/route-decision.js";
+import { decideRoute, decideRouteWithTracking } from "../routing/route-decision.js";
+import type { StickyDecisionTracker } from "../routing/sticky-decision-tracker.js";
 import type { CanaryOverride } from "../middleware/canary-override.js";
 
 /**
@@ -88,6 +90,12 @@ export interface CreateProxyRoutesOptions {
    * 호출이 추가된다.
    */
   routingStore?: InMemoryRoutingStore;
+  /**
+   * spec 2026-05-02 §9 Stage 2 — routing decision ring buffer. 주입되면
+   * `decideRouteWithTracking` 으로 user_id × version × at 를 기록.
+   * 미지정 시 record skip → legacy 동작 유지.
+   */
+  stickyTracker?: StickyDecisionTracker;
 }
 
 export function createProxyRoutes(opts: CreateProxyRoutesOptions) {
@@ -120,7 +128,15 @@ export function createProxyRoutes(opts: CreateProxyRoutesOptions) {
           }
         } else {
           const userId = c.req.raw.headers.get("x-auth-user-id") ?? undefined;
-          const decision = decideRoute({ entry, userId });
+          // spec §9 Stage 2 — tracker 주입 시 decideRouteWithTracking 으로 record.
+          // 미주입 / anonymous 는 wrapper 내부에서 skip → legacy decideRoute 와 동일.
+          const decision = opts.stickyTracker
+            ? decideRouteWithTracking({
+                tracker: opts.stickyTracker,
+                entry,
+                userId,
+              })
+            : decideRoute({ entry, userId });
           targetBaseUrl = decision.upstream;
           targetVersion = parseVersionTag(decision.version);
         }

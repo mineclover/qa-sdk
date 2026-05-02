@@ -6,8 +6,10 @@
 // 시나리오 16이 bitmap cache가 expectedVersion으로 회복될 때까지 polling 후
 // 회복 시간 + 회복 경로(version-check / TTL)를 반환한다.
 //
-// auth-api admin endpoint:
-//   GET /admin/bitmap/version → { current: string, recoveredVia: "version-check" | "ttl" | "stale" }
+// auth-api admin endpoint (spec 2026-05-02-server-side-admin-endpoints §9 SSOT):
+//   GET /admin/bitmap/version?prefix=... → { prefix: string, version: VersionTag }
+// 서버는 recoveredVia 필드를 보내지 않으므로 핸들은 always "version-check"로 합성.
+// (TTL 회복 분기는 client-side에서 추가 신호로 판정 — 본 단계에서는 미지원.)
 
 export type FetchLike = (
   input: string,
@@ -87,13 +89,13 @@ export function createBitmapVersionCheck(
           `bitmap-version-check JSON parse failed: ${(e as Error).message}`,
         );
       }
-      const obj = json as { current?: unknown; recoveredVia?: unknown };
-      if (typeof obj.current !== "string") {
+      const obj = json as { version?: unknown; recoveredVia?: unknown };
+      if (typeof obj.version !== "string") {
         throw new Error(
           `bitmap-version-check invalid shape: ${JSON.stringify(json)}`,
         );
       }
-      if (obj.current === expected) {
+      if (obj.version === expected) {
         const via =
           obj.recoveredVia === "version-check" || obj.recoveredVia === "ttl"
             ? obj.recoveredVia

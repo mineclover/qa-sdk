@@ -24,6 +24,10 @@
     "./test-bootstrap": {
       "types": "./dist/test-bootstrap.d.ts",
       "import": "./dist/test-bootstrap.js"
+    },
+    "./routing": {
+      "types": "./dist/routing/routing-table.d.ts",
+      "import": "./dist/routing/routing-table.js"
     }
   },
   "bin": {
@@ -49,6 +53,7 @@
     "jose": "^5.9.0",
     "permission-engine": "workspace:*",
     "sim-identifier-grammar": "workspace:*",
+    "sim-internal-network": "workspace:*",
     "zod": "^3.24.2"
   },
   "devDependencies": {

@@ -3,13 +3,8 @@
 // spec 02 §3.2 — controller가 push, gateway가 권위. 외부 접근은 404 silent.
 
 import { Hono, type MiddlewareHandler } from "hono";
-import { z } from "zod";
-import { type InMemoryRoutingStore, RouteEntrySchema } from "../routing/routing-table.js";
+import { type InMemoryRoutingStore, RoutingPushSchema } from "../routing/routing-table.js";
 import { isInternalIp, type Cidr } from "../lib/internal-network.js";
-
-const RoutingPushSchema = z.object({
-  services: z.record(z.string().min(1), RouteEntrySchema),
-});
 
 export interface CreateAdminRoutingOptions {
   store: InMemoryRoutingStore;

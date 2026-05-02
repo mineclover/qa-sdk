@@ -9,9 +9,9 @@ import {
 describe("bitmap-version-check handle", () => {
   it("expectedVersion 회복 시 recoveredVia + recoveredAtMs 반환", async () => {
     const states = [
-      { current: "v1", recoveredVia: "stale" },
-      { current: "v1", recoveredVia: "stale" },
-      { current: "v2", recoveredVia: "version-check" },
+      { version: "v1", recoveredVia: "stale" },
+      { version: "v1", recoveredVia: "stale" },
+      { version: "v2", recoveredVia: "version-check" },
     ];
     let i = 0;
     const fetchImpl: FetchLike = async () => {
@@ -52,7 +52,7 @@ describe("bitmap-version-check handle", () => {
         return "";
       },
       async json() {
-        return { current: "v2", recoveredVia: "ttl" };
+        return { version: "v2", recoveredVia: "ttl" };
       },
     });
     const checker = createBitmapVersionCheck({
@@ -73,7 +73,7 @@ describe("bitmap-version-check handle", () => {
         return "";
       },
       async json() {
-        return { current: "v1", recoveredVia: "stale" };
+        return { version: "v1", recoveredVia: "stale" };
       },
     });
     let nowVal = 0;
