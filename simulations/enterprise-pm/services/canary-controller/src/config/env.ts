@@ -25,6 +25,8 @@ const envSchema = z.object({
   SIM_DB_POOL_HIGH_PCT: z.coerce.number().min(0).max(100).default(80),
   SIM_SCALE_COOLDOWN_UP_MS: z.coerce.number().int().positive().default(60_000),
   SIM_SCALE_COOLDOWN_DOWN_MS: z.coerce.number().int().positive().default(180_000),
+  // spec 2026-05-02 §7 — controller 가 routing push 시 대상 서비스 이름.
+  SIM_CONTROLLER_TARGET_SERVICE: z.string().default("approval"),
 });
 
 export const env = envSchema.parse(process.env);

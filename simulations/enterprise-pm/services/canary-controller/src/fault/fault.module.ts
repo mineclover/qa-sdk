@@ -9,6 +9,7 @@
 // 작업 시 별도 어댑터로 대체된다.
 
 import {
+  Inject,
   Injectable,
   Module,
   type OnModuleDestroy,
@@ -98,7 +99,10 @@ class InMemoryDbPoolGaugeStore implements DbPoolGaugeStore {
 export class FaultInjectorLifecycle
   implements OnModuleDestroy, OnApplicationShutdown
 {
-  constructor(private readonly injector: FaultInjector) {}
+  // vitest 환경은 emitDecoratorMetadata 를 무시하므로 @Inject 토큰 명시 (Stage 1a 컨벤션).
+  constructor(
+    @Inject(FaultInjector) private readonly injector: FaultInjector,
+  ) {}
   async onModuleDestroy() {
     // controller 라이프사이클 종료 시 누수 방지 — spec 05 §3 시나리오 종료 후 reset.
     await this.injector.resetAll();
