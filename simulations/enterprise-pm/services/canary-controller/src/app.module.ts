@@ -7,6 +7,7 @@ import { HealthModule } from "./health/health.module.js";
 import { AdvisoryLockModule } from "./lock/advisory-lock.module.js";
 import { MetricsScrapeModule } from "./metrics/metrics-scrape.module.js";
 import { DecisionModule } from "./decision/decision.module.js";
+import { DecisionQueryModule } from "./decision/decision-query.module.js";
 import { ActionModule } from "./action/action.module.js";
 import { CycleModule } from "./cycle/cycle.module.js";
 import { FaultModule } from "./fault/fault.module.js";
@@ -18,6 +19,7 @@ import { FaultModule } from "./fault/fault.module.js";
     AdvisoryLockModule,
     MetricsScrapeModule,
     DecisionModule,
+    DecisionQueryModule,
     ActionModule,
     CycleModule,
     FaultModule,
