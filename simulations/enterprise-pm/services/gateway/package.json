@@ -24,6 +24,10 @@
     "./test-bootstrap": {
       "types": "./dist/test-bootstrap.d.ts",
       "import": "./dist/test-bootstrap.js"
+    },
+    "./routing": {
+      "types": "./dist/routing/routing-table.d.ts",
+      "import": "./dist/routing/routing-table.js"
     }
   },
   "bin": {
