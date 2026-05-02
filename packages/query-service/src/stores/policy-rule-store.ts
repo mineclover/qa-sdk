@@ -1,6 +1,10 @@
-import type { PolicyRule } from "index-meta";
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
 
-export interface StoredPolicyRule<T> extends PolicyRule<T> {
+// @facet
+import type { PatternRule } from "index-meta-workers";
+
+export interface StoredPolicyRule<T> extends PatternRule<T> {
   readonly indexId: string;
   readonly versionId: string;
   readonly createdAt: string;

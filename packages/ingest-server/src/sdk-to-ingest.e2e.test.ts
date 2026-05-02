@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { EventRecord, ScenarioSpec } from "@qa-sdk/core";
 import {
   InMemoryDlqStore,
@@ -143,7 +146,7 @@ describe("SDK to ingest E2E", () => {
 
       const recordsBody =
         (await recordsResponse.json()) as PaginatedRecordResponse;
-      const expectedRecords = [firstLog, maskedLog, nestedSpanRecord].sort(
+      const expectedRecords = [firstLog, maskedLog, nestedSpanRecord].toSorted(
         compareEventRecords,
       );
 

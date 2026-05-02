@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * PrefixMeta — prefix 유형별 의미 메타데이터.
  *
@@ -370,10 +373,10 @@ export function formatDetail(meta: PrefixMetadata, entry?: string): string {
     }
     case "permission":
       lines.push(`<div style="margin-top:6px;font-size:8px;color:#445;letter-spacing:1px">PERMISSION</div>`);
-      lines.push(`<div style="font-size:9px;color:#00e676">${(meta.detail as any)?.matrix || "role-based grant/deny"}</div>`);
+      lines.push(`<div style="font-size:9px;color:#00e676">${meta.detail?.matrix || "role-based grant/deny"}</div>`);
       break;
     case "endpoint": {
-      const routes = (meta.detail as any)?.routes;
+      const routes = meta.detail?.routes as Array<{ method: string; path: string }> | undefined;
       if (routes) {
         lines.push(`<div style="margin-top:6px;font-size:8px;color:#445;letter-spacing:1px">ROUTES</div>`);
         for (const r of routes) {

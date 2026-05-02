@@ -1,8 +1,11 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * RegistryHttpClient — registry-service HTTP API를 호출하는 RegistryPort 구현.
  *
  * InMemoryRegistry 대신 실제 서버에 연결.
- * 환경 변수: QA_REGISTRY_URL (기본: http://localhost:3100)
+ * 환경 변수: QA_REGISTRY_URL (기본: http://localhost:3300)
  */
 
 import type { RegistryPort } from "./registry-port.js";
@@ -10,8 +13,12 @@ import type { RegistryPort } from "./registry-port.js";
 export class RegistryHttpClient implements RegistryPort {
   private readonly baseUrl: string;
 
+  /**
+   * @param baseUrl — registry-service URL. 미지정 시 QA_REGISTRY_URL env fallback.
+   *   라이브러리에서 process.env 직접 접근은 최소화하되, CLI/SDK 편의를 위해 fallback 유지.
+   */
   constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl ?? process.env.QA_REGISTRY_URL ?? "http://localhost:3100";
+    this.baseUrl = baseUrl ?? process.env.QA_REGISTRY_URL ?? "http://localhost:3300";
   }
 
   private async request(path: string, options?: RequestInit): Promise<Response> {

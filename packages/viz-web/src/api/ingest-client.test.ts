@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { getSessionRecords } from "./ingest-client.js";
 

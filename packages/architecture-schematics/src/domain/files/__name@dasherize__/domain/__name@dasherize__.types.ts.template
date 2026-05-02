@@ -1,0 +1,17 @@
+import type { <%= classify(name) %>Id } from "./<%= dasherize(name) %>.ids";
+
+export type <%= classify(name) %>Status = "draft" | "active" | "archived";
+
+export interface <%= classify(name) %>Props {
+  readonly id: <%= classify(name) %>Id;
+  readonly status: <%= classify(name) %>Status;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+}
+
+export interface <%= classify(name) %>Snapshot {
+  readonly id: string;
+  readonly status: <%= classify(name) %>Status;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}

@@ -11,11 +11,11 @@
  * 환경변수:
  *   SESSION_ID   : viz-web 헤더에 표시된 세션 ID (지정 시 해당 세션에 이벤트 주입)
  *   SCENARIO_ID  : 세션 없을 때 자동 생성할 시나리오 ID
- *   INGEST_URL   : 기본값 http://localhost:3100
+ *   INGEST_URL   : 기본값 http://localhost:3200
  *   DELAY_MS     : 이벤트 간 딜레이 ms (기본값 800)
  */
 
-const INGEST_URL = process.env["INGEST_URL"] ?? "http://localhost:3100";
+const INGEST_URL = process.env["INGEST_URL"] ?? "http://localhost:3200";
 const DELAY_MS = Number(process.env["DELAY_MS"] ?? "800");
 
 function sleep(ms: number) {

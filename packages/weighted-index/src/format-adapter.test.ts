@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * format-adapter.test.ts — WeightedIndex 순수 수학 + 외부 포맷 어댑터 검증
  *

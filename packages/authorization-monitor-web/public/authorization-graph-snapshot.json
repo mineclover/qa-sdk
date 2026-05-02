@@ -1,0 +1,208 @@
+{
+  "graphId": "sample-authz-live",
+  "snapshotId": "sample-authz-live:001",
+  "graph": {
+    "nodes": [
+      {
+        "nodeId": "node:policy:cerbos:prod/policy/cerbos:resource:crm.customer_profile?node_kind=policy&policy_kind=cerbos_resource_policy&version=v1",
+        "kind": "policy",
+        "coord": {
+          "realm": "policy:cerbos:prod",
+          "space": "policy",
+          "anchor": "cerbos:resource:crm.customer_profile",
+          "taxonomies": {
+            "node_kind": "policy",
+            "policy_kind": "cerbos_resource_policy",
+            "version": "v1"
+          }
+        }
+      },
+      {
+        "nodeId": "node:application:service:crm:prod/resource/crm.customer_profile?node_kind=resource&resource_kind=service",
+        "kind": "resource",
+        "coord": {
+          "realm": "application:service:crm:prod",
+          "space": "resource",
+          "anchor": "crm.customer_profile",
+          "taxonomies": {
+            "node_kind": "resource",
+            "resource_kind": "service"
+          }
+        }
+      },
+      {
+        "nodeId": "node:policy:cerbos:prod/action/read?node_kind=action&action_kind=read",
+        "kind": "action",
+        "coord": {
+          "realm": "policy:cerbos:prod",
+          "space": "action",
+          "anchor": "read",
+          "taxonomies": {
+            "node_kind": "action",
+            "action_kind": "read"
+          }
+        }
+      },
+      {
+        "nodeId": "node:enforcement:nginx:prod/resource/crm.example.com/customers?node_kind=resource&resource_kind=proxy_route&method=GET",
+        "kind": "resource",
+        "coord": {
+          "realm": "enforcement:nginx:prod",
+          "space": "resource",
+          "anchor": "crm.example.com/customers",
+          "taxonomies": {
+            "node_kind": "resource",
+            "resource_kind": "proxy_route",
+            "method": "GET"
+          }
+        }
+      },
+      {
+        "nodeId": "node:enforcement:nginx:prod/enforcement/edge-nginx:crm?node_kind=enforcement_point&enforcement_kind=nginx_proxy",
+        "kind": "enforcement_point",
+        "coord": {
+          "realm": "enforcement:nginx:prod",
+          "space": "enforcement",
+          "anchor": "edge-nginx:crm",
+          "taxonomies": {
+            "node_kind": "enforcement_point",
+            "enforcement_kind": "nginx_proxy"
+          }
+        }
+      },
+      {
+        "nodeId": "node:application:service:crm:prod/resource/crm.customer_profile:customer-123?node_kind=resource&resource_kind=domain_resource&sensitivity=pii",
+        "kind": "resource",
+        "coord": {
+          "realm": "application:service:crm:prod",
+          "space": "resource",
+          "anchor": "crm.customer_profile:customer-123",
+          "taxonomies": {
+            "node_kind": "resource",
+            "resource_kind": "domain_resource",
+            "sensitivity": "pii"
+          }
+        }
+      },
+      {
+        "nodeId": "node:enforcement:service:crm:prod/enforcement/crm-api:cerbos-middleware?node_kind=enforcement_point&enforcement_kind=service_middleware",
+        "kind": "enforcement_point",
+        "coord": {
+          "realm": "enforcement:service:crm:prod",
+          "space": "enforcement",
+          "anchor": "crm-api:cerbos-middleware",
+          "taxonomies": {
+            "node_kind": "enforcement_point",
+            "enforcement_kind": "service_middleware"
+          }
+        }
+      },
+      {
+        "nodeId": "node:identity:zitadel:prod/principal/user:lee?node_kind=principal&principal_kind=human_user",
+        "kind": "principal",
+        "coord": {
+          "realm": "identity:zitadel:prod",
+          "space": "principal",
+          "anchor": "user:lee",
+          "taxonomies": {
+            "node_kind": "principal",
+            "principal_kind": "human_user"
+          }
+        }
+      },
+      {
+        "nodeId": "node:enforcement:service:crm:prod/decision/req-app-0101:read?node_kind=decision&effect=allow",
+        "kind": "decision",
+        "coord": {
+          "realm": "enforcement:service:crm:prod",
+          "space": "decision",
+          "anchor": "req-app-0101:read",
+          "taxonomies": {
+            "node_kind": "decision",
+            "effect": "allow"
+          }
+        }
+      }
+    ],
+    "relations": [
+      {
+        "relationId": "authz:protects:policy-service",
+        "kind": "protects",
+        "fromNodeId": "node:policy:cerbos:prod/policy/cerbos:resource:crm.customer_profile?node_kind=policy&policy_kind=cerbos_resource_policy&version=v1",
+        "toNodeId": "node:application:service:crm:prod/resource/crm.customer_profile?node_kind=resource&resource_kind=service"
+      },
+      {
+        "relationId": "authz:allows_action:policy-read",
+        "kind": "allows_action",
+        "fromNodeId": "node:policy:cerbos:prod/policy/cerbos:resource:crm.customer_profile?node_kind=policy&policy_kind=cerbos_resource_policy&version=v1",
+        "toNodeId": "node:policy:cerbos:prod/action/read?node_kind=action&action_kind=read"
+      },
+      {
+        "relationId": "authz:enforced_at:route-proxy",
+        "kind": "enforced_at",
+        "fromNodeId": "node:enforcement:nginx:prod/resource/crm.example.com/customers?node_kind=resource&resource_kind=proxy_route&method=GET",
+        "toNodeId": "node:enforcement:nginx:prod/enforcement/edge-nginx:crm?node_kind=enforcement_point&enforcement_kind=nginx_proxy"
+      },
+      {
+        "relationId": "authz:matches_resource:route-service",
+        "kind": "matches_resource",
+        "fromNodeId": "node:enforcement:nginx:prod/resource/crm.example.com/customers?node_kind=resource&resource_kind=proxy_route&method=GET",
+        "toNodeId": "node:application:service:crm:prod/resource/crm.customer_profile?node_kind=resource&resource_kind=service"
+      },
+      {
+        "relationId": "authz:protects:policy-route",
+        "kind": "protects",
+        "fromNodeId": "node:policy:cerbos:prod/policy/cerbos:resource:crm.customer_profile?node_kind=policy&policy_kind=cerbos_resource_policy&version=v1",
+        "toNodeId": "node:enforcement:nginx:prod/resource/crm.example.com/customers?node_kind=resource&resource_kind=proxy_route&method=GET"
+      },
+      {
+        "relationId": "authz:matches_resource:service-domain",
+        "kind": "matches_resource",
+        "fromNodeId": "node:application:service:crm:prod/resource/crm.customer_profile?node_kind=resource&resource_kind=service",
+        "toNodeId": "node:application:service:crm:prod/resource/crm.customer_profile:customer-123?node_kind=resource&resource_kind=domain_resource&sensitivity=pii"
+      },
+      {
+        "relationId": "authz:enforced_at:domain-middleware",
+        "kind": "enforced_at",
+        "fromNodeId": "node:application:service:crm:prod/resource/crm.customer_profile:customer-123?node_kind=resource&resource_kind=domain_resource&sensitivity=pii",
+        "toNodeId": "node:enforcement:service:crm:prod/enforcement/crm-api:cerbos-middleware?node_kind=enforcement_point&enforcement_kind=service_middleware"
+      },
+      {
+        "relationId": "authz:protects:policy-domain",
+        "kind": "protects",
+        "fromNodeId": "node:policy:cerbos:prod/policy/cerbos:resource:crm.customer_profile?node_kind=policy&policy_kind=cerbos_resource_policy&version=v1",
+        "toNodeId": "node:application:service:crm:prod/resource/crm.customer_profile:customer-123?node_kind=resource&resource_kind=domain_resource&sensitivity=pii"
+      },
+      {
+        "relationId": "authz:decision_principal:app",
+        "kind": "decision_principal",
+        "fromNodeId": "node:enforcement:service:crm:prod/decision/req-app-0101:read?node_kind=decision&effect=allow",
+        "toNodeId": "node:identity:zitadel:prod/principal/user:lee?node_kind=principal&principal_kind=human_user"
+      },
+      {
+        "relationId": "authz:decision_resource:app",
+        "kind": "decision_resource",
+        "fromNodeId": "node:enforcement:service:crm:prod/decision/req-app-0101:read?node_kind=decision&effect=allow",
+        "toNodeId": "node:application:service:crm:prod/resource/crm.customer_profile:customer-123?node_kind=resource&resource_kind=domain_resource&sensitivity=pii"
+      },
+      {
+        "relationId": "authz:decision_action:app",
+        "kind": "decision_action",
+        "fromNodeId": "node:enforcement:service:crm:prod/decision/req-app-0101:read?node_kind=decision&effect=allow",
+        "toNodeId": "node:policy:cerbos:prod/action/read?node_kind=action&action_kind=read"
+      },
+      {
+        "relationId": "authz:decision_policy:app",
+        "kind": "decision_policy",
+        "fromNodeId": "node:enforcement:service:crm:prod/decision/req-app-0101:read?node_kind=decision&effect=allow",
+        "toNodeId": "node:policy:cerbos:prod/policy/cerbos:resource:crm.customer_profile?node_kind=policy&policy_kind=cerbos_resource_policy&version=v1"
+      },
+      {
+        "relationId": "authz:decision_enforcement:app",
+        "kind": "decision_enforcement",
+        "fromNodeId": "node:enforcement:service:crm:prod/decision/req-app-0101:read?node_kind=decision&effect=allow",
+        "toNodeId": "node:enforcement:service:crm:prod/enforcement/crm-api:cerbos-middleware?node_kind=enforcement_point&enforcement_kind=service_middleware"
+      }
+    ]
+  }
+}

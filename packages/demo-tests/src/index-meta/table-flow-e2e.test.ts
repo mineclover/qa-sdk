@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * E2E: 테이블 정의 → 데이터 적재 → 전체 1D 엔트리 조회 → 서비스 활용
  *
@@ -10,10 +13,12 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { defineTable } from "index-meta";
-import { compileSchema } from "index-meta";
-import { InMemoryIndexMetaStore } from "index-meta";
-import type { EntryRecord } from "index-meta";
+import {
+  defineTable,
+  compileSchema,
+  InMemoryIndexMetaStore,
+  type EntryRecord,
+} from "index-meta";
 
 // ── 예약 토큰 상수 ────────────────────────────────────────
 

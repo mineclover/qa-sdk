@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * SqlIndexMetaStore 테스트
  *
@@ -74,21 +77,21 @@ class InMemorySqlDriver implements SqlDriver {
       const [prefix] = params as [string];
       return [...this.schemaVersions.values()]
         .filter((r) => r.prefix === prefix)
-        .sort((a, b) => a.created_at.localeCompare(b.created_at)) as unknown as T[];
+        .toSorted((a, b) => a.created_at.localeCompare(b.created_at)) as unknown as T[];
     }
 
     if (s.includes("FROM ENTRY") && s.includes("POSITION >=")) {
       const [prefix, version_id, from, to] = params as [string, string, number, number];
       return [...this.entries.values()]
         .filter((r) => r.prefix === prefix && r.version_id === version_id && r.position >= from && r.position <= to)
-        .sort((a, b) => a.position - b.position) as unknown as T[];
+        .toSorted((a, b) => a.position - b.position) as unknown as T[];
     }
 
     if (s.includes("FROM ENTRY")) {
       const [prefix, version_id] = params as [string, string];
       return [...this.entries.values()]
         .filter((r) => r.prefix === prefix && r.version_id === version_id)
-        .sort((a, b) => a.position - b.position) as unknown as T[];
+        .toSorted((a, b) => a.position - b.position) as unknown as T[];
     }
 
     throw new Error(`InMemorySqlDriver: unsupported query`);

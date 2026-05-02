@@ -16,6 +16,7 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsup",
+    "test": "vitest run",
     "clean": "rm -rf dist",
     "dev": "tsup --watch"
   },
@@ -23,8 +24,9 @@
     "weighted-index": "^0.1.0"
   },
   "devDependencies": {
-    "tsup": "^8.4.0",
+    "tsup": "^8.5.1",
     "typescript": "^5.8.3",
+    "vitest": "^1.6.1",
     "weighted-index": "workspace:*"
   }
 }

@@ -1,0 +1,32 @@
+{
+  "global": {
+    "region": "local"
+  },
+  "services": {
+    "ingest-server": {
+      "port": 3200,
+      "store_driver": "memory",
+      "depends_on": ["registry-service"]
+    },
+    "registry-service": {
+      "port": 3300
+    },
+    "gate-service": {
+      "port": 3400,
+      "depends_on": ["registry-service", "ingest-server"]
+    }
+  },
+  "connections": {
+    "ingest-server": { "endpoint": "http://localhost:3200" },
+    "registry-service": { "endpoint": "http://localhost:3300" },
+    "gate-service": { "endpoint": "http://localhost:3400" }
+  },
+  "monitoring": {
+    "interval": 30,
+    "recovery": {
+      "enabled": false,
+      "maxRetries": 1,
+      "cooldownSec": 30
+    }
+  }
+}

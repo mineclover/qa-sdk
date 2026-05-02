@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import type { StoredRecord } from "@qa-sdk/core";
 import { INGEST_SERVER_URL } from "../config";
 
@@ -50,9 +53,9 @@ export function subscribeToTrace(
     source.close();
   });
 
-  source.onerror = (evt) => {
+  source.addEventListener("error", (evt) => {
     handlers.onError(evt);
-  };
+  });
 
   return () => {
     source.close();

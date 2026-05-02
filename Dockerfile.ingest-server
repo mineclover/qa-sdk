@@ -5,7 +5,17 @@ FROM base AS build
 WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile
-RUN pnpm --filter @qa-sdk/ingest-server... run build
+# 런타임 의존 순서대로 빌드
+RUN pnpm --filter @qa-sdk/pino run build && \
+    pnpm --filter test-types run build && \
+    pnpm --filter @qa-sdk/core run build && \
+    pnpm --filter @qa-sdk/otel run build && \
+    pnpm --filter @qa-sdk/codec-proto run build && \
+    pnpm --filter @qa-sdk/engine run build && \
+    pnpm --filter @qa-sdk/registry-client run build && \
+    pnpm --filter @qa-sdk/store run build && \
+    pnpm --filter index-meta run build && \
+    pnpm --filter @qa-sdk/ingest-server run build
 
 FROM node:22-slim AS production
 RUN apt-get update \

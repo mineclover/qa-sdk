@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * colors.ts — 색상 보간 및 밀도 기반 색상 계산.
  *

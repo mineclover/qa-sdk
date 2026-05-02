@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * binary-axis.ts — ArrayBuffer 기반 축 데이터 직렬화.
  *
@@ -22,7 +25,7 @@ const FIXED_BYTES = 8;
 const PER_DIM_BYTES = 12;
 
 /** 최소 유효 버퍼 크기 (dimCount ≥ 1) */
-const MIN_BUFFER_SIZE = FIXED_BYTES + PER_DIM_BYTES;
+const _MIN_BUFFER_SIZE = FIXED_BYTES + PER_DIM_BYTES;
 
 /**
  * shape + strides를 ArrayBuffer로 직렬화.

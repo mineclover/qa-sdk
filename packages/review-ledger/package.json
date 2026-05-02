@@ -1,0 +1,40 @@
+{
+  "name": "review-ledger",
+  "version": "0.1.0",
+  "description": "Git 커밋 기준 파일 리뷰 완료 기록 원장 — SQLite 기반 중앙 리뷰 추적",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "drizzle"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push"
+  },
+  "dependencies": {
+    "@qa-sdk/core": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "execa": "^9.6.1",
+    "index-meta": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "drizzle-kit": "catalog:",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
+  }
+}

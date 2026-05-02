@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * permission-codec.ts — text ↔ integer ↔ bitmask 3-tier 코덱.
  *
@@ -29,7 +32,6 @@ import {
   parsePermCode,
   type PermissionCode,
 } from "./permission-code.js";
-import type { ServiceContext } from "./service-ref.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * viz-3d 핵심 타입 — 3D 큐브 매트릭스의 선언적 API.
  *

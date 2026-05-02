@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA-SDK Dev Debugger</title>
+<script src="config.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Sora:wght@300;400;600&display=swap');
+:root{--bg:#0a0c12;--panel:#0d1117;--card:#161b22;--border:rgba(100,255,218,0.08);--border-h:rgba(100,255,218,0.18);--mint:#64ffda;--cyan:#00b4d8;--amber:#ff9f43;--violet:#a78bfa;--rose:#ff6b6b;--txt:#c9d1d9;--dim:#484f58;--green:#2dd4bf}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--txt);font-family:'Sora',sans-serif;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+/* ── Nav ── */
+nav{height:32px;background:rgba(13,17,23,0.95);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:4px;flex-shrink:0;backdrop-filter:blur(6px);z-index:50}
+nav .logo{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--mint);margin-right:12px}
+nav a{padding:4px 12px;font-size:11px;color:#8b949e;text-decoration:none;border-radius:4px;transition:all .15s}
+nav a:hover{color:#c9d1d9}
+nav a.active{color:var(--mint);background:rgba(100,255,218,0.08)}
+
+/* ── Layout ── */
+.layout{display:flex;flex:1;overflow:hidden}
+.sidebar{width:240px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.detail{width:320px;background:var(--panel);border-left:1px solid var(--border);flex-shrink:0;overflow-y:auto;transition:width .2s}
+.detail.collapsed{width:0;border:none;overflow:hidden}
+
+/* ── Shared ── */
+.mono{font-family:'IBM Plex Mono',monospace}
+.section{padding:10px 14px;border-bottom:1px solid var(--border)}
+.section-label{font-size:7px;letter-spacing:2.5px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;font-family:'IBM Plex Mono',monospace}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:2px 0}
+.stat-label{font-size:9px;color:var(--dim)}
+.stat-value{font-size:11px;font-weight:500;font-family:'IBM Plex Mono',monospace}
+
+/* ── Connection ── */
+.conn-status{display:flex;align-items:center;gap:6px}
+.conn-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.conn-dot.on{background:var(--green);box-shadow:0 0 6px var(--green)}
+.conn-dot.off{background:var(--rose);box-shadow:0 0 6px var(--rose)}
+.conn-text{font-size:10px;font-family:'IBM Plex Mono',monospace}
+
+/* ── Filters ── */
+.filter-input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:3px;padding:5px 8px;font-size:10px;color:var(--txt);font-family:'IBM Plex Mono',monospace;outline:none;transition:border-color .15s}
+.filter-input:focus{border-color:var(--mint)}
+.filter-input::placeholder{color:#333d47}
+
+/* ── Traces ── */
+.trace-item{padding:5px 8px;border-radius:3px;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:6px;font-size:9px;font-family:'IBM Plex Mono',monospace}
+.trace-item:hover{background:rgba(100,255,218,0.06)}
+.trace-item.active{background:rgba(100,255,218,0.1);color:var(--mint)}
+.trace-count{font-size:8px;color:var(--dim);margin-left:auto}
+
+/* ── Toolbar ── */
+.toolbar{height:34px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:6px;flex-shrink:0}
+.toolbar-btn{font-size:9px;padding:4px 10px;border:1px solid var(--border);background:transparent;color:var(--dim);border-radius:3px;cursor:pointer;font-family:'IBM Plex Mono',monospace;letter-spacing:.5px;transition:all .15s}
+.toolbar-btn:hover{border-color:#556;color:var(--txt)}
+.toolbar-btn.on{border-color:var(--mint);color:var(--mint);background:rgba(100,255,218,0.06)}
+.toolbar-btn.danger{color:var(--rose)}
+.toolbar-btn.danger:hover{border-color:var(--rose)}
+.toolbar-sep{width:1px;height:18px;background:var(--border);margin:0 4px}
+.toolbar-info{font-size:9px;color:var(--dim);margin-left:auto;font-family:'IBM Plex Mono',monospace}
+
+/* ── Log Stream ── */
+.log-stream{flex:1;overflow-y:auto;font-family:'IBM Plex Mono',monospace;font-size:10px}
+.log-entry{display:grid;grid-template-columns:72px 1fr 100px 80px;padding:4px 12px;border-bottom:1px solid rgba(255,255,255,0.02);cursor:pointer;transition:background .1s;align-items:center;min-height:26px}
+.log-entry:hover{background:rgba(100,255,218,0.03)}
+.log-entry.selected{background:rgba(100,255,218,0.07);border-left:2px solid var(--mint)}
+.log-entry.paused{opacity:0.4}
+.log-ts{color:var(--dim);font-size:9px}
+.log-key{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-key.kind-log{color:var(--mint)}
+.log-key.kind-span{color:var(--amber)}
+.log-key.kind-metric{color:var(--violet)}
+.log-svc{color:var(--dim);font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-trace{color:#333d47;font-size:8px;text-align:right}
+
+/* ── Expanded Row ── */
+.log-expand{display:none;padding:6px 12px 10px 84px;background:rgba(22,27,34,0.6);border-bottom:1px solid var(--border);font-size:9px;line-height:1.6}
+.log-expand.open{display:block}
+.log-expand .dims-table{display:grid;grid-template-columns:auto 1fr;gap:1px 12px;margin:4px 0}
+.log-expand .dim-label{color:var(--dim)}
+.log-expand .dim-value{color:var(--cyan)}
+.log-expand .dim-value.ref{color:var(--amber)}
+
+/* ── Detail Panel ── */
+.detail-header{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.detail-title{font-size:11px;font-weight:600;color:var(--mint)}
+.detail-close{background:none;border:none;color:var(--dim);cursor:pointer;font-size:14px;padding:2px 6px}
+.detail-close:hover{color:var(--txt)}
+.detail-empty{display:flex;align-items:center;justify-content:center;height:200px;color:#333d47;font-size:11px}
+
+/* ── JSON Viewer ── */
+.json-view{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;line-height:1.6;overflow-x:auto;white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto}
+.json-key{color:var(--cyan)}
+.json-str{color:var(--green)}
+.json-num{color:var(--amber)}
+.json-bool{color:var(--violet)}
+.json-null{color:var(--dim)}
+
+/* ── Address Context ── */
+.addr-table{width:100%;border-collapse:collapse;font-size:9px;font-family:'IBM Plex Mono',monospace}
+.addr-table th{text-align:left;padding:4px 8px;color:var(--dim);font-weight:400;border-bottom:1px solid var(--border);font-size:8px;letter-spacing:1px;text-transform:uppercase}
+.addr-table td{padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.02)}
+.addr-prefix{color:var(--mint)}
+.addr-encoded{color:var(--dim);font-size:8px}
+
+/* ── Trace Timeline ── */
+.timeline-entry{display:flex;align-items:flex-start;gap:8px;padding:4px 0;position:relative}
+.timeline-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.timeline-line{position:absolute;left:17px;top:14px;bottom:-4px;width:1px;background:var(--border)}
+.timeline-body{flex:1;min-width:0}
+.timeline-key{font-size:10px;font-weight:500}
+.timeline-time{font-size:8px;color:var(--dim)}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#1c2129;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#2d333b}
+
+/* ── Scanline effect ── */
+.log-stream::after{content:'';position:fixed;top:32px;left:240px;right:320px;bottom:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);z-index:1}
+
+/* ── Kbd hints ── */
+.kbd{display:inline-block;padding:1px 5px;background:var(--card);border:1px solid var(--border);border-radius:2px;font-size:8px;color:var(--dim);font-family:'IBM Plex Mono',monospace}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="logo">QA-SDK</span>
+  <a href="/">Demo</a>
+  <a href="/monitor.html">Monitor</a>
+  <a href="/diagram.html">Diagram</a>
+  <a href="/dashboard.html">Dashboard</a>
+  <a href="/events.html">Events</a>
+  <a href="/insights.html">Insights</a>
+  <a href="/flow.html">Flow</a>
+  <a href="/debugger.html" class="active">Debugger</a>
+</nav>
+
+<div class="layout">
+  <!-- LEFT SIDEBAR -->
+  <div class="sidebar">
+    <div class="section">
+      <div class="section-label">Connection</div>
+      <div class="conn-status">
+        <div class="conn-dot off" id="conn-dot"></div>
+        <span class="conn-text" id="conn-text">disconnected</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Filters</div>
+      <input class="filter-input" id="filter-prefix" placeholder="prefix (e.g. page_view)" style="margin-bottom:4px">
+      <input class="filter-input" id="filter-service" placeholder="service (e.g. shopping-web)" style="margin-bottom:4px">
+      <input class="filter-input" id="filter-event" placeholder="event_key (e.g. page.home)">
+    </div>
+
+    <div class="section">
+      <div class="section-label">Stats</div>
+      <div class="stat-row"><span class="stat-label">events/sec</span><span class="stat-value" id="stat-eps" style="color:var(--mint)">0</span></div>
+      <div class="stat-row"><span class="stat-label">total</span><span class="stat-value" id="stat-total">0</span></div>
+      <div class="stat-row"><span class="stat-label">connected</span><span class="stat-value" id="stat-duration" style="color:var(--dim)">—</span></div>
+      <div class="stat-row"><span class="stat-label">buffer</span><span class="stat-value" id="stat-buffer" style="color:var(--dim)">0</span></div>
+    </div>
+
+    <div class="section" style="flex:1">
+      <div class="section-label">Active Traces</div>
+      <div id="trace-list" style="max-height:300px;overflow-y:auto"></div>
+    </div>
+
+    <div class="section" style="border-bottom:none">
+      <div style="font-size:8px;color:#333d47;line-height:1.5">
+        <span class="kbd">Space</span> pause
+        <span class="kbd">C</span> clear
+        <span class="kbd">Esc</span> deselect
+        <span class="kbd">D</span> detail panel
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="toolbar">
+      <button class="toolbar-btn on" id="btn-autoscroll" onclick="toggleAutoScroll()">↓ Auto</button>
+      <button class="toolbar-btn" id="btn-pause" onclick="togglePause()">⏸ Pause</button>
+      <div class="toolbar-sep"></div>
+      <button class="toolbar-btn danger" onclick="clearLogs()">✕ Clear</button>
+      <button class="toolbar-btn" onclick="exportLogs()">↗ Export</button>
+      <div class="toolbar-sep"></div>
+      <button class="toolbar-btn" id="btn-binary" title="Binary protocol active">BIN</button>
+      <span class="toolbar-info"><span id="log-count">0</span> / 500</span>
+    </div>
+    <div class="log-stream" id="log-stream"></div>
+  </div>
+
+  <!-- RIGHT DETAIL -->
+  <div class="detail" id="detail-panel">
+    <div class="detail-header">
+      <span class="detail-title">Event Detail</span>
+      <button class="detail-close" onclick="toggleDetail()">✕</button>
+    </div>
+    <div id="detail-content">
+      <div class="detail-empty">클릭하여 이벤트 선택</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  Config
+// ═══════════════════════════════════════════════════════
+const _cfg = window.__QA_CONFIG__ || {};
+const WS_URL = _cfg.WS_URL
+  ? _cfg.WS_URL.replace('/v1/ws', '/v1/debug-ws')
+  : 'wss://qa-ingest-server.astralclover.workers.dev/v1/debug-ws';
+
+// ═══════════════════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════════════════
+const MAX_ENTRIES = 500;
+let logs = [];
+let autoScroll = true;
+let paused = false;
+let selectedIdx = -1;
+let totalEvents = 0;
+let recentEvents = [];
+let connectedAt = null;
+let ws = null;
+let reconnectTimer = null;
+let reconnectDelay = 1000;
+let binaryMode = false;
+let traceMap = new Map(); // traceId → count
+let activeTraceFilter = null;
+
+// ═══════════════════════════════════════════════════════
+//  Minimal MsgPack Decoder (inline, ~1.5KB)
+//  Supports: fixstr, str8/16/32, fixint, uint8/16/32, int8/16/32,
+//  float32/64, fixmap, map16, fixarray, array16, bin8/16, nil, bool
+// ═══════════════════════════════════════════════════════
+const MsgPack = (() => {
+  function decode(buf) {
+    const view = new DataView(buf.buffer || buf, buf.byteOffset || 0);
+    let offset = 0;
+    function read() {
+      const b = view.getUint8(offset++);
+      // positive fixint
+      if (b <= 0x7f) return b;
+      // fixmap
+      if ((b & 0xf0) === 0x80) { const n = b & 0x0f; const o = {}; for (let i = 0; i < n; i++) { const k = read(); o[k] = read(); } return o; }
+      // fixarray
+      if ((b & 0xf0) === 0x90) { const n = b & 0x0f; const a = []; for (let i = 0; i < n; i++) a.push(read()); return a; }
+      // fixstr
+      if ((b & 0xe0) === 0xa0) { const n = b & 0x1f; const s = new TextDecoder().decode(new Uint8Array(buf.buffer || buf, (buf.byteOffset || 0) + offset, n)); offset += n; return s; }
+      // negative fixint
+      if (b >= 0xe0) return b - 256;
+      switch (b) {
+        case 0xc0: return null;
+        case 0xc2: return false;
+        case 0xc3: return true;
+        case 0xc4: { const n = view.getUint8(offset++); offset += n; return null; } // bin8 skip
+        case 0xc5: { const n = view.getUint16(offset); offset += 2 + n; return null; } // bin16 skip
+        case 0xca: { const v = view.getFloat32(offset); offset += 4; return v; }
+        case 0xcb: { const v = view.getFloat64(offset); offset += 8; return v; }
+        case 0xcc: return view.getUint8(offset++);
+        case 0xcd: { const v = view.getUint16(offset); offset += 2; return v; }
+        case 0xce: { const v = view.getUint32(offset); offset += 4; return v; }
+        case 0xd0: return view.getInt8(offset++);
+        case 0xd1: { const v = view.getInt16(offset); offset += 2; return v; }
+        case 0xd2: { const v = view.getInt32(offset); offset += 4; return v; }
+        case 0xd9: { const n = view.getUint8(offset++); const s = new TextDecoder().decode(new Uint8Array(buf.buffer || buf, (buf.byteOffset || 0) + offset, n)); offset += n; return s; }
+        case 0xda: { const n = view.getUint16(offset); offset += 2; const s = new TextDecoder().decode(new Uint8Array(buf.buffer || buf, (buf.byteOffset || 0) + offset, n)); offset += n; return s; }
+        case 0xdb: { const n = view.getUint32(offset); offset += 4; const s = new TextDecoder().decode(new Uint8Array(buf.buffer || buf, (buf.byteOffset || 0) + offset, n)); offset += n; return s; }
+        case 0xdc: { const n = view.getUint16(offset); offset += 2; const a = []; for (let i = 0; i < n; i++) a.push(read()); return a; }
+        case 0xdd: { const n = view.getUint32(offset); offset += 4; const a = []; for (let i = 0; i < n; i++) a.push(read()); return a; }
+        case 0xde: { const n = view.getUint16(offset); offset += 2; const o = {}; for (let i = 0; i < n; i++) { const k = read(); o[k] = read(); } return o; }
+        case 0xdf: { const n = view.getUint32(offset); offset += 4; const o = {}; for (let i = 0; i < n; i++) { const k = read(); o[k] = read(); } return o; }
+        // uint64/int64 — approximate as Number
+        case 0xcf: { const hi = view.getUint32(offset); const lo = view.getUint32(offset+4); offset += 8; return hi * 0x100000000 + lo; }
+        case 0xd3: { const hi = view.getInt32(offset); const lo = view.getUint32(offset+4); offset += 8; return hi * 0x100000000 + lo; }
+        default: return null;
+      }
+    }
+    return read();
+  }
+  return { decode };
+})();
+
+// ═══════════════════════════════════════════════════════
+//  WebSocket
+// ═══════════════════════════════════════════════════════
+function connect() {
+  if (ws) return;
+  try {
+    ws = new WebSocket(WS_URL);
+    ws.binaryType = 'arraybuffer';
+
+    ws.onopen = () => {
+      connectedAt = Date.now();
+      reconnectDelay = 1000;
+      updateConnStatus(true);
+      // Subscribe with current filter
+      ws.send(JSON.stringify({ type: 'subscribe', filter: buildFilter() }));
+    };
+
+    ws.onmessage = (evt) => {
+      if (evt.data instanceof ArrayBuffer) {
+        handleBinaryFrame(new Uint8Array(evt.data));
+      } else {
+        handleJsonMessage(evt.data);
+      }
+    };
+
+    ws.onclose = () => {
+      ws = null;
+      connectedAt = null;
+      updateConnStatus(false);
+      scheduleReconnect();
+    };
+
+    ws.onerror = () => {};
+  } catch { scheduleReconnect(); }
+}
+
+function scheduleReconnect() {
+  if (reconnectTimer) return;
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+    connect();
+  }, reconnectDelay);
+}
+
+function handleBinaryFrame(bytes) {
+  if (bytes.length < 2) return;
+  const tag = bytes[0];
+  const payload = bytes.subarray(1);
+
+  if (tag === 0x01) { // EventRecord
+    try {
+      binaryMode = true;
+      document.getElementById('btn-binary').classList.add('on');
+      const record = MsgPack.decode(payload);
+      addEvent(record);
+    } catch(e) { console.warn('msgpack decode error', e); }
+  }
+  // tag 0x03 = DebugResponse, 0x04 = Heartbeat — ignore for now
+}
+
+function handleJsonMessage(data) {
+  try {
+    const msg = JSON.parse(data);
+    if (msg.type === 'record' && msg.data) addEvent(msg.data);
+    else if (msg.logId || msg.eventKey || msg.event_key) addEvent(msg);
+  } catch {}
+}
+
+function buildFilter() {
+  const f = { decodeAddresses: true };
+  const prefix = document.getElementById('filter-prefix').value.trim();
+  const service = document.getElementById('filter-service').value.trim();
+  const event = document.getElementById('filter-event').value.trim();
+  if (prefix) f.prefixIds = prefix.split(',').map(s => s.trim());
+  if (service) f.serviceIds = service.split(',').map(s => s.trim());
+  if (event) f.eventKeys = event.split(',').map(s => s.trim());
+  if (activeTraceFilter) f.traceId = activeTraceFilter;
+  return f;
+}
+
+function applyFilter() {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'set-filter', filter: buildFilter() }));
+  }
+}
+
+// Filter inputs — debounced
+let filterTimer;
+document.querySelectorAll('.filter-input').forEach(el => {
+  el.addEventListener('input', () => {
+    clearTimeout(filterTimer);
+    filterTimer = setTimeout(applyFilter, 300);
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+//  Event Processing
+// ═══════════════════════════════════════════════════════
+function addEvent(record) {
+  if (paused) return;
+  totalEvents++;
+  recentEvents.push(Date.now());
+
+  const entry = {
+    logId: record.logId || record.log_id || '',
+    traceId: record.traceId || record.trace_id || '',
+    eventKey: record.eventKey || record.event_key || '',
+    recordKind: record.recordKind || record.record_kind || 'log',
+    serviceName: record.serviceName || record.service_name || '',
+    timestampMs: record.timestampMs || record.timestamp_ms || Date.now(),
+    addressContext: record.addressContext || record.address_context || null,
+    decodedDims: record.decodedDims || record.decoded_dims || null,
+    qaSessionId: record.qaSessionId || record.qa_session_id || '',
+    payloadJson: record.payloadJson || record.payload_json || null,
+    raw: record,
+  };
+
+  // Track traces
+  const tc = traceMap.get(entry.traceId) || 0;
+  traceMap.set(entry.traceId, tc + 1);
+
+  logs.unshift(entry);
+  if (logs.length > MAX_ENTRIES) logs.pop();
+
+  renderLogEntry(entry, 0);
+  trimLogEntries();
+  updateStats();
+  updateTraceList();
+
+  if (autoScroll) {
+    const stream = document.getElementById('log-stream');
+    stream.scrollTop = 0;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  Rendering
+// ═══════════════════════════════════════════════════════
+function renderLogEntry(entry, idx) {
+  const stream = document.getElementById('log-stream');
+  const ts = new Date(entry.timestampMs);
+  const timeStr = ts.toLocaleTimeString('ko-KR', { hour12: false }) + '.' + String(ts.getMilliseconds()).padStart(3, '0');
+  const traceShort = entry.traceId ? entry.traceId.slice(-8) : '';
+
+  const row = document.createElement('div');
+  row.className = 'log-entry';
+  row.dataset.idx = String(logs.indexOf(entry));
+  row.innerHTML = `
+    <span class="log-ts">${timeStr}</span>
+    <span class="log-key kind-${entry.recordKind}">${entry.eventKey}</span>
+    <span class="log-svc">${entry.serviceName}</span>
+    <span class="log-trace">${traceShort}</span>
+  `;
+  row.addEventListener('click', () => selectEntry(logs.indexOf(entry)));
+
+  // Expand area
+  const expand = document.createElement('div');
+  expand.className = 'log-expand';
+  expand.id = `expand-${entry.logId}`;
+
+  let expandHtml = '';
+  if (entry.addressContext) {
+    expandHtml += '<div class="dims-table">';
+    for (const [prefix, encoded] of Object.entries(entry.addressContext)) {
+      expandHtml += `<span class="dim-label">${prefix}</span><span class="dim-value">${encoded}</span>`;
+    }
+    expandHtml += '</div>';
+  }
+  if (entry.decodedDims) {
+    expandHtml += '<div class="dims-table" style="margin-top:4px">';
+    for (const [k, v] of Object.entries(entry.decodedDims)) {
+      expandHtml += `<span class="dim-label">${k}</span><span class="dim-value ref">${v}</span>`;
+    }
+    expandHtml += '</div>';
+  }
+  expand.innerHTML = expandHtml;
+
+  stream.insertBefore(expand, stream.firstChild);
+  stream.insertBefore(row, stream.firstChild);
+}
+
+function trimLogEntries() {
+  const stream = document.getElementById('log-stream');
+  while (stream.children.length > MAX_ENTRIES * 2) {
+    stream.removeChild(stream.lastChild);
+    stream.removeChild(stream.lastChild);
+  }
+}
+
+function selectEntry(idx) {
+  if (idx < 0 || idx >= logs.length) return;
+  selectedIdx = idx;
+
+  // Highlight
+  document.querySelectorAll('.log-entry.selected').forEach(el => el.classList.remove('selected'));
+  const entries = document.querySelectorAll('.log-entry');
+  entries.forEach(el => { if (el.dataset.idx === String(idx)) el.classList.add('selected'); });
+
+  renderDetail(logs[idx]);
+}
+
+function renderDetail(entry) {
+  const content = document.getElementById('detail-content');
+  let html = '';
+
+  // Header
+  html += `<div class="section">
+    <div class="section-label">Event</div>
+    <div style="font-size:13px;font-weight:600;color:var(--mint);margin-bottom:4px">${entry.eventKey}</div>
+    <div style="font-size:9px;color:var(--dim)">
+      ${entry.recordKind} · ${entry.serviceName || '—'} · ${new Date(entry.timestampMs).toISOString()}
+    </div>
+    <div style="font-size:8px;color:#333d47;margin-top:4px;font-family:'IBM Plex Mono',monospace">
+      trace: ${entry.traceId}<br>
+      log: ${entry.logId}<br>
+      session: ${entry.qaSessionId || '—'}
+    </div>
+  </div>`;
+
+  // Address Context
+  if (entry.addressContext && Object.keys(entry.addressContext).length > 0) {
+    html += `<div class="section">
+      <div class="section-label">Address Context</div>
+      <table class="addr-table">
+        <tr><th>prefix</th><th>encoded</th></tr>`;
+    for (const [prefix, encoded] of Object.entries(entry.addressContext)) {
+      html += `<tr><td class="addr-prefix">${prefix}</td><td class="addr-encoded">${encoded}</td></tr>`;
+    }
+    html += '</table></div>';
+  }
+
+  // Decoded Dims
+  if (entry.decodedDims && Object.keys(entry.decodedDims).length > 0) {
+    html += `<div class="section">
+      <div class="section-label">Decoded Dimensions</div>
+      <table class="addr-table">
+        <tr><th>axis</th><th>value</th></tr>`;
+    for (const [k, v] of Object.entries(entry.decodedDims)) {
+      html += `<tr><td>${k}</td><td style="color:var(--cyan)">${v}</td></tr>`;
+    }
+    html += '</table></div>';
+  }
+
+  // Payload
+  if (entry.payloadJson) {
+    html += `<div class="section">
+      <div class="section-label">Payload</div>
+      <div class="json-view">${syntaxHighlight(entry.payloadJson)}</div>
+    </div>`;
+  }
+
+  // Trace Timeline
+  const traceEvents = logs.filter(e => e.traceId === entry.traceId);
+  if (traceEvents.length > 1) {
+    html += `<div class="section">
+      <div class="section-label">Trace Timeline (${traceEvents.length})</div>`;
+    traceEvents.slice(0, 20).forEach((te, i) => {
+      const kindColor = te.recordKind === 'span' ? 'var(--amber)' : te.recordKind === 'metric' ? 'var(--violet)' : 'var(--mint)';
+      const isActive = te.logId === entry.logId;
+      html += `<div class="timeline-entry">
+        ${i < traceEvents.length - 1 ? '<div class="timeline-line"></div>' : ''}
+        <div class="timeline-dot" style="background:${kindColor}${isActive ? '' : ';opacity:0.4'}"></div>
+        <div class="timeline-body">
+          <div class="timeline-key" style="color:${isActive ? kindColor : 'var(--dim)'}">${te.eventKey}</div>
+          <div class="timeline-time">${new Date(te.timestampMs).toLocaleTimeString('ko-KR', { hour12: false })}</div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  // Raw JSON
+  html += `<div class="section" style="border-bottom:none">
+    <div class="section-label">Raw Record</div>
+    <div class="json-view">${syntaxHighlight(JSON.stringify(entry.raw, null, 2))}</div>
+  </div>`;
+
+  content.innerHTML = html;
+}
+
+function syntaxHighlight(json) {
+  if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
+  return json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"([^"]+)"(\s*:)/g, '<span class="json-key">"$1"</span>$2')
+    .replace(/: "([^"]*?)"/g, ': <span class="json-str">"$1"</span>')
+    .replace(/: (\d+\.?\d*)/g, ': <span class="json-num">$1</span>')
+    .replace(/: (true|false)/g, ': <span class="json-bool">$1</span>')
+    .replace(/: (null)/g, ': <span class="json-null">$1</span>');
+}
+
+// ═══════════════════════════════════════════════════════
+//  Traces
+// ═══════════════════════════════════════════════════════
+function updateTraceList() {
+  const container = document.getElementById('trace-list');
+  const sorted = [...traceMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20);
+  container.innerHTML = sorted.map(([tid, count]) =>
+    `<div class="trace-item ${activeTraceFilter === tid ? 'active' : ''}" onclick="filterTrace('${tid}')">
+      <span>${tid.slice(-10)}</span>
+      <span class="trace-count">${count}</span>
+    </div>`
+  ).join('');
+}
+
+function filterTrace(traceId) {
+  activeTraceFilter = activeTraceFilter === traceId ? null : traceId;
+  applyFilter();
+  updateTraceList();
+}
+
+// ═══════════════════════════════════════════════════════
+//  Stats
+// ═══════════════════════════════════════════════════════
+function updateStats() {
+  document.getElementById('stat-total').textContent = totalEvents.toLocaleString();
+  document.getElementById('log-count').textContent = logs.length;
+
+  const now = Date.now();
+  recentEvents = recentEvents.filter(t => now - t < 1000);
+  document.getElementById('stat-eps').textContent = recentEvents.length;
+
+  if (connectedAt) {
+    const sec = Math.floor((now - connectedAt) / 1000);
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    document.getElementById('stat-duration').textContent = `${m}:${String(s).padStart(2, '0')}`;
+  }
+}
+
+function updateConnStatus(connected) {
+  const dot = document.getElementById('conn-dot');
+  const text = document.getElementById('conn-text');
+  dot.className = 'conn-dot ' + (connected ? 'on' : 'off');
+  text.textContent = connected ? 'connected' : 'disconnected';
+  text.style.color = connected ? 'var(--green)' : 'var(--rose)';
+}
+
+setInterval(updateStats, 1000);
+
+// ═══════════════════════════════════════════════════════
+//  Controls
+// ═══════════════════════════════════════════════════════
+function toggleAutoScroll() {
+  autoScroll = !autoScroll;
+  document.getElementById('btn-autoscroll').classList.toggle('on', autoScroll);
+}
+
+function togglePause() {
+  paused = !paused;
+  const btn = document.getElementById('btn-pause');
+  btn.textContent = paused ? '▶ Resume' : '⏸ Pause';
+  btn.classList.toggle('on', paused);
+}
+
+function clearLogs() {
+  logs = [];
+  totalEvents = 0;
+  traceMap.clear();
+  selectedIdx = -1;
+  document.getElementById('log-stream').innerHTML = '';
+  document.getElementById('detail-content').innerHTML = '<div class="detail-empty">클릭하여 이벤트 선택</div>';
+  updateStats();
+  updateTraceList();
+}
+
+function exportLogs() {
+  const data = JSON.stringify(logs.map(l => l.raw), null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `debug-logs-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.json`;
+  a.click();
+}
+
+function toggleDetail() {
+  document.getElementById('detail-panel').classList.toggle('collapsed');
+}
+
+// Keyboard
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  switch (e.key) {
+    case ' ': e.preventDefault(); togglePause(); break;
+    case 'c': case 'C': clearLogs(); break;
+    case 'Escape': selectedIdx = -1; document.querySelectorAll('.log-entry.selected').forEach(el => el.classList.remove('selected')); break;
+    case 'd': case 'D': toggleDetail(); break;
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════════════════════
+connect();
+</script>
+</body>
+</html>

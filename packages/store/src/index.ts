@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 // ── DB ──────────────────────────────────────────────────
 
 export { closeClient, createDb, getClient, withTransaction } from "./db/client.js";
@@ -15,6 +18,7 @@ export {
   DrizzleScenarioSpecStore,
   DrizzleVerdictStore,
   DrizzleDlqStore,
+  DrizzleKeyObservationStore,
 } from "./adapters/drizzle/index.js";
 
 // ── In-Memory Adapters ─────────────────────────────────
@@ -28,4 +32,10 @@ export {
   InMemoryScenarioSpecStore,
   InMemoryVerdictStore,
   InMemoryDlqStore,
+  InMemoryKeyCache,
+  InMemoryAggregator,
 } from "./adapters/memory/index.js";
+
+// ── Redis Adapters ────────────────────────────────────
+
+export { RedisKeyCache } from "./adapters/redis/index.js";

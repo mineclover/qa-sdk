@@ -1,0 +1,112 @@
+tags:
+  - name: metric
+    description: Daily metric time-series read-model + admin record API.
+paths:
+  /metrics:
+    post:
+      tags: [metric]
+      operationId: recordMetric
+      summary: Record a daily metric value.
+      x-domain: metric
+      x-architecture-slice: metric-admin-record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordMetricCommand"
+      responses:
+        "201":
+          description: Metric recorded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyMetricReadModel"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    get:
+      tags: [metric]
+      operationId: listMetricsByKey
+      summary: List daily metric records for a key over a date range.
+      x-domain: metric
+      x-architecture-slice: metric-read-model
+      parameters:
+        - name: metricKey
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: fromDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Metric record range.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DailyMetricReadModel"
+  /metrics/keys:
+    get:
+      tags: [metric]
+      operationId: listMetricKeys
+      summary: List distinct metric keys.
+      x-domain: metric
+      x-architecture-slice: metric-read-model
+      responses:
+        "200":
+          description: Metric key list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+components:
+  schemas:
+    RecordMetricCommand:
+      type: object
+      required: [metricKey, date, value, dimensions]
+      properties:
+        metricKey:
+          type: string
+          minLength: 1
+        date:
+          type: string
+          format: date
+        value:
+          type: number
+        dimensions:
+          type: string
+          minLength: 1
+      additionalProperties: false
+    DailyMetricReadModel:
+      type: object
+      required: [id, metricKey, date, value, dimensions, computedAt]
+      properties:
+        id:
+          type: string
+        metricKey:
+          type: string
+        date:
+          type: string
+          format: date
+        value:
+          type: number
+        dimensions:
+          type: string
+        computedAt:
+          type: string
+          format: date-time
+      additionalProperties: false

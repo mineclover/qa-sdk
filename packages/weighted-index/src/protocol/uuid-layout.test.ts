@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 import { describe, it, expect } from "vitest";
 import { createUUIDLayout, packUUID, unpackUUID, charsForMax, planLayout } from "./uuid-layout.js";
 

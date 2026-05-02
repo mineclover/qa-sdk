@@ -1,8 +1,11 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Propagation 전용 타입.
  */
 
-import type { VersionEventNode } from "../dkg/dkg.types.js";
+import type { VersionEventNode } from "dkg";
 
 export type { VersionEventNode };
 

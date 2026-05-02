@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG } from "demo-snapshot";
-import { encodePrefixByValue, decodePrefix, getPrefixShape } from "demo-snapshot";
-import { createDimWireCodec } from "./dim-wire.js";
+import { DEMO_CATALOG, encodePrefixByValue, decodePrefix, getPrefixShape } from "demo-snapshot";
+import { createDimWireCodec } from "@qa-sdk/codec";
 
 describe("DimWireCodec", () => {
   const codec = createDimWireCodec(DEMO_CATALOG);
@@ -58,20 +57,19 @@ describe("DimWireCodec", () => {
     });
   });
 
-  // ── tracking prefix: trackAction × page × userType (axis 전용) ────────────
-  describe("tracking (axis-only prefix)", () => {
+  // ── rbac prefix: role × action × resource (axis 전용, prefix_ref 없음) ────────────
+  describe("rbac (axis-only prefix)", () => {
     it("encodeDims → decodeDims 라운드트립", () => {
-      const values = { trackAction: "click", page: "home", userType: "guest" };
-      const dims = codec.encodeDims("tracking", values);
-      const decoded = codec.decodeDims("tracking", dims);
+      const values = { role: "admin", action: "read", resource: "users" };
+      const dims = codec.encodeDims("rbac", values);
+      const decoded = codec.decodeDims("rbac", dims);
       expect(decoded).toEqual(values);
     });
 
     it("addressToDims → dimsToAddress 라운드트립", () => {
-      // tracking 최신 버전 사용
-      const address = 10;
-      const dims = codec.addressToDims("tracking", address);
-      const restored = codec.dimsToAddress("tracking", dims);
+      const address = 0;
+      const dims = codec.addressToDims("rbac", address);
+      const restored = codec.dimsToAddress("rbac", dims);
       expect(restored).toBe(address);
     });
   });

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * relational-engine.ts — 관계형 엔진 facade
  *
@@ -17,7 +20,7 @@ import {
   matchRules,
   resolvePolicy,
   detectConflicts,
-  type PolicyRule,
+  type PatternRule,
   type ConflictStrategy,
   type ResolveResult,
   type ConflictReport,
@@ -41,7 +44,7 @@ export interface RelationTypeRule<T> {
   instanceRules?: {
     indexId: string;
     versionId: string;
-    rules: PolicyRule<T>[];
+    rules: PatternRule<T>[];
     strategy: ConflictStrategy;
   };
   priority?: number;
@@ -144,16 +147,16 @@ export class RelationalEngine {
   /** 좌표에 매칭되는 모든 규칙을 구체성 내림차순으로 반환 */
   matchRules<T>(
     coord: readonly number[],
-    rules: readonly PolicyRule<T>[],
+    rules: readonly PatternRule<T>[],
     shape: readonly number[],
-  ): PolicyRule<T>[] {
+  ): PatternRule<T>[] {
     return matchRules(coord, rules, shape);
   }
 
   /** 전략에 따라 최종 값 결정 */
   resolvePolicy<T>(
     coord: readonly number[],
-    rules: readonly PolicyRule<T>[],
+    rules: readonly PatternRule<T>[],
     shape: readonly number[],
     strategy: ConflictStrategy,
   ): ResolveResult<T> | null {
@@ -162,7 +165,7 @@ export class RelationalEngine {
 
   /** 규칙 간 충돌 탐지 */
   detectConflicts<T>(
-    rules: readonly PolicyRule<T>[],
+    rules: readonly PatternRule<T>[],
     shape: readonly number[],
     eq?: (a: T, b: T) => boolean,
   ): ConflictReport<T>[] {
@@ -191,14 +194,14 @@ export class RelationalEngine {
     instanceCoord?: readonly number[],
   ): RelationResolveResult<T> | null {
     // Level 1: type-level 매칭
-    const typePolicyRules: PolicyRule<T>[] = typeRules.map((r) => ({
+    const typePatternRules: PatternRule<T>[] = typeRules.map((r) => ({
       id: r.id,
       pattern: r.pattern,
       value: r.effect,
       priority: r.priority,
     }));
 
-    const typeResult = resolvePolicy(relTypeCoord, typePolicyRules, relShape, typeStrategy);
+    const typeResult = resolvePolicy(relTypeCoord, typePatternRules, relShape, typeStrategy);
     if (!typeResult) return null;
 
     // type-level에서 매칭된 원본 규칙 찾기

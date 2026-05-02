@@ -1,0 +1,59 @@
+{
+  "topology": "read-model",
+  "openmetadata": {
+    "domain": {
+      "name": "Density",
+      "team": "Reporting Platform",
+      "owner": "sim-reporting-owner"
+    },
+    "glossary": [
+      {
+        "term": "MarginalDensity",
+        "description": "Per-axis observed coverage ratio of a prefix's coordinate space."
+      },
+      {
+        "term": "Prefix",
+        "description": "Capacity-versioned coordinate axis bundle that decodes packed observation keys."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "density-read-path",
+        "from": "ingest.key_observations",
+        "to": "reporting.density_read_model",
+        "via": "marginal-density-aggregation"
+      },
+      {
+        "name": "density-prefix-resolution",
+        "from": "auth.prefix_catalog",
+        "to": "reporting.density_read_model",
+        "via": "sim-prefix-catalog-adapter"
+      }
+    ],
+    "qualityTests": [
+      {
+        "name": "density_marginal_in_unit_range",
+        "type": "columnValuesToBeBetween",
+        "entity": "reporting.density_read_model.marginalDensity",
+        "minValue": 0,
+        "maxValue": 1
+      }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "density-read-model",
+      "domain": "density",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "density-read-model",
+      "segments": [
+        { "name": "catalog" },
+        { "name": "prefix" },
+        { "name": "version" }
+      ],
+      "ttl": "short",
+      "openmetadataEntity": "reporting.density_read_model"
+    }
+  ]
+}

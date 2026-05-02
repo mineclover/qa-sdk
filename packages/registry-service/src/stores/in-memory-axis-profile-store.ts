@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { AxisProfileRecord, AxisProfilePatch, AxisProfileStore } from "./axis-profile-store.js";
 
 export class InMemoryAxisProfileStore implements AxisProfileStore {

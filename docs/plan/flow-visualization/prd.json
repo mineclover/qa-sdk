@@ -1,0 +1,196 @@
+{
+  "name": "Flow Visualization",
+  "description": "packages/platform-demo/public/flow.html 단일 파일 작업. 이벤트 흐름을 SVG 기반으로 시각화. 백엔드 변경 없음 — 기존 API 소비만.",
+  "branchName": "ralph/flow-visualization",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "flow.html 셸 + CSS + nav 연결",
+      "description": "As a developer, I want the flow.html page with dark theme CSS, nav bar, config.js, and 3-panel layout.",
+      "acceptanceCriteria": [
+        "packages/platform-demo/public/flow.html 생성",
+        "nav bar: Demo, Monitor, Diagram, Dashboard, Events, Insights, Flow(active) 링크",
+        "3-panel CSS: left sidebar(240px), center canvas(flex-1), right detail(0px→400px on open)",
+        "dark theme CSS 변수 (--bg:#0d1117 계열) — 기존 events.html에서 복사",
+        "<script src='config.js'></script> 포함",
+        "JS에서 INGEST_URL, REGISTRY_URL 변수 설정",
+        "diagram.html, events.html, insights.html, dashboard.html nav에 Flow 링크 1줄씩 추가"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "파일: flow.html(신규 ~80줄) + 기존 4파일 nav 링크 추가. 작업량: 소.",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "flow-map 데이터 로드 + prefix 목록 렌더링",
+      "description": "As a user, I want to see all 51 prefixes listed in the sidebar grouped by category so I can browse the coordinate system.",
+      "acceptanceCriteria": [
+        "fetch(REGISTRY_URL + '/api/dashboard/flow-map') 호출",
+        "fetch(INGEST_URL + '/v1/insights/prefixes') 호출",
+        "left sidebar에 prefix 목록: category별 그룹 (observation/event/policy 등)",
+        "각 prefix: id, dimCount, observed 배지 (Nx 또는 idle)",
+        "상단에 커버리지 요약: 'N/46 observed (X%)'",
+        "prefix 클릭 시 selectedPrefix 상태 업데이트 (US-003에서 사용)"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "SVG 캔버스 없이 순수 HTML 리스트만. 작업량: 소.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "SVG 캔버스 — prefix 노드 배치",
+      "description": "As a user, I want to see prefixes as SVG nodes on the center canvas arranged by category so I can visualize the coordinate space.",
+      "acceptanceCriteria": [
+        "center 영역에 <svg> 생성, viewBox 자동 조정",
+        "prefix 노드: rect(rounded) + text(id), category별 y 그룹핑",
+        "observed prefix: 녹색 stroke + fill 약간 밝게",
+        "unobserved prefix: 회색 stroke, dim fill",
+        "노드 위에 event count 배지 (observed인 경우)",
+        "마우스 hover 시 강조 (stroke 두꺼워짐)",
+        "노드 클릭 → right panel에 prefix 상세 (id, name, category, dimCount, axes 목록)"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "46개 prefix만. axes/consumer는 다음 스토리. 그리드 레이아웃 (6열 x N행). 작업량: 중.",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "SVG 캔버스 — 엣지 + 줌/팬",
+      "description": "As a user, I want to see edges between nodes and navigate the canvas with zoom/pan so I can explore the topology.",
+      "acceptanceCriteria": [
+        "composes 엣지: prefix → axis 연결선 (라이트 회색, 가느다란 선)",
+        "observed prefix의 엣지: 녹색 하이라이트",
+        "prefix 클릭 시 해당 prefix의 엣지만 강조, 나머지 dim",
+        "마우스 휠 → 줌 (0.3x ~ 3x)",
+        "마우스 드래그 → 팬",
+        "Fit 버튼 → 전체 보기로 리셋",
+        "canvas 좌상단에 줌 레벨 표시"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "SVG transform으로 줌/팬. 엣지 수 147개 — <line> 또는 <path>. 작업량: 중.",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "Live Event Stream 피드",
+      "description": "As a user, I want to see recent events in a scrollable feed so I can observe system activity.",
+      "acceptanceCriteria": [
+        "sidebar 하단에 'Event Feed' 영역",
+        "fetch(INGEST_URL + '/v1/traces/recent?limit=15') 폴링 (10초)",
+        "각 trace: timestamp, serviceName, recordCount, firstEvent (첫 event_key)",
+        "trace 클릭 → records 로드 → right panel에 이벤트 시퀀스 표시",
+        "새 trace 도착 시 리스트 상단에 추가 (fade-in 애니메이션)",
+        "Auto/Pause 토글 버튼",
+        "최대 30개 유지"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "이벤트 도착 시 canvas prefix 노드 pulse는 US-007에서. 여기서는 리스트만. 작업량: 소.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "IntentLink 오버레이",
+      "description": "As a user, I want to select an IntentLink and see its path highlighted on the canvas with observed/unobserved gap analysis.",
+      "acceptanceCriteria": [
+        "sidebar에 IntentLink 드롭다운 (fetch /api/diagrams → intent-links 목록)",
+        "선택 시 해당 IL의 endpoints(prefix ID 배열)를 canvas에서 하이라이트",
+        "observed endpoint: 녹색 강조 + ✓",
+        "unobserved endpoint: 주황 경고 + ✗",
+        "하단에 gap summary: 'IL-checkout-flow: 3/5 observed (60%)'",
+        "Clear 버튼으로 오버레이 해제",
+        "오버레이 시 관련 없는 노드 dim"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "API: /api/diagrams 에서 intent-links 배열의 id 사용. endpoints는 prefix ID 목록. 작업량: 중.",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "이벤트 → 캔버스 pulse 애니메이션",
+      "description": "As a user, I want to see canvas nodes light up when new events arrive so I can visually track event flow.",
+      "acceptanceCriteria": [
+        "새 trace 도착 시 해당 trace의 address_context prefixes 추출",
+        "해당 prefix 노드에 1초 pulse 애니메이션 (scale 1→1.2→1 + glow 효과)",
+        "pulse 중 노드 색상 밝게 변경",
+        "동시에 여러 prefix pulse 가능",
+        "sidebar event feed와 canvas 노드가 시각적으로 연결됨"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "US-005(event feed) + US-003(canvas nodes) 의존. CSS @keyframes 또는 SVG animate. 작업량: 소.",
+      "dependsOn": [
+        "US-005",
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-008",
+      "title": "Event Category 도넛 차트",
+      "description": "As a user, I want to see a donut chart showing event category distribution.",
+      "acceptanceCriteria": [
+        "fetch(INGEST_URL + '/v1/insights/coverage') 호출",
+        "SVG 도넛 차트: 카테고리별 비율 (arc path)",
+        "카테고리 색상: navigation=#58a6ff, session=#3fb950, outcome=#f85149 등",
+        "hover 시 툴팁: 'navigation: 12 events (63%)'",
+        "차트 중앙에 총 이벤트 수",
+        "sidebar 상단에 배치 (compact, 높이 150px)",
+        "이벤트 10초 폴링 시 함께 갱신"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "SVG arc: d='M... A...' 패턴. 원 중심에서 시작/끝 각도 계산. 작업량: 중.",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-009",
+      "title": "빌드 + 배포 + E2E",
+      "description": "As a developer, I want to deploy and verify the flow page works with prod APIs.",
+      "acceptanceCriteria": [
+        "pnpm --filter platform-demo exec vite build --mode production 성공",
+        "npx wrangler pages deploy 성공",
+        "https://platform-demo-3v1.pages.dev/flow 접근 200",
+        "canvas에 prefix 노드 표시 + observed 하이라이트",
+        "event feed에 실제 데이터 표시",
+        "IntentLink 오버레이 동작",
+        "localhost 참조 0건"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "작업량: 소. 명령어 실행 + curl 검증만.",
+      "dependsOn": [
+        "US-007",
+        "US-008"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-03-23T16:46:34.245Z"
+  }
+}

@@ -1,0 +1,44 @@
+import { describe, expect, it } from "vitest";
+
+import { <%= classify(name) %>Entity } from "./<%= dasherize(name) %>.entity";
+import {
+  Archived<%= classify(name) %>Exception,
+  Invalid<%= classify(name) %>IdException,
+} from "./<%= dasherize(name) %>.exceptions";
+import { to<%= classify(name) %>Id } from "./<%= dasherize(name) %>.ids";
+
+describe("<%= classify(name) %>Entity", () => {
+  it("creates a draft <%= dasherize(name) %> and transitions it to active", () => {
+    const createdAt = new Date("2026-04-25T00:00:00.000Z");
+    const activatedAt = new Date("2026-04-25T00:01:00.000Z");
+
+    const entity = <%= classify(name) %>Entity.create({
+      id: "<%= dasherize(name) %>-1",
+      now: createdAt,
+    }).activate(activatedAt);
+
+    expect(entity.toSnapshot()).toEqual({
+      id: "<%= dasherize(name) %>-1",
+      status: "active",
+      createdAt: "2026-04-25T00:00:00.000Z",
+      updatedAt: "2026-04-25T00:01:00.000Z",
+    });
+  });
+
+  it("rejects archived transition with a named domain exception", () => {
+    const archived = <%= classify(name) %>Entity.rehydrate({
+      id: "<%= dasherize(name) %>-archived",
+      status: "archived",
+      createdAt: "2026-04-25T00:00:00.000Z",
+      updatedAt: "2026-04-25T00:00:00.000Z",
+    });
+
+    expect(() => archived.activate()).toThrow(Archived<%= classify(name) %>Exception);
+  });
+});
+
+describe("to<%= classify(name) %>Id", () => {
+  it("rejects blank identifiers with a named domain exception", () => {
+    expect(() => to<%= classify(name) %>Id(" ")).toThrow(Invalid<%= classify(name) %>IdException);
+  });
+});

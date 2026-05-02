@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-engine-system
+// @def.doc qa-sdk-engine-system
+
 import { describe, expect, it, vi } from "vitest";
 import type {
   DlqInsert,

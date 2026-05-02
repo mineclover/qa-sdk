@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 import { type CellData, type DimKey, type VersionDef } from "../data.js";
 import { coordChip, dimBadge, permVersionSpan } from "../utils/badge.js";
 import { encodeRowsHtml, decodeRowsHtml } from "../utils/encode-html.js";

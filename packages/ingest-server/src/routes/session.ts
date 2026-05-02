@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { Hono } from "hono";
 import { z } from "zod";
 import type { SessionStore } from "@qa-sdk/core";
@@ -61,12 +64,15 @@ export function createSessionRoutes(deps: SessionRouteDeps) {
     await deps.sessionStore.upsert({ sessionId, scenarioId, labels });
 
     const session = await deps.sessionStore.findById(sessionId);
+    if (!session) {
+      throw badRequest("failed to retrieve created session");
+    }
 
     return c.json(
       {
-        sessionId: session!.sessionId,
-        scenarioId: session!.scenarioId,
-        startedAt: session!.startedAt.toISOString(),
+        sessionId: session.sessionId,
+        scenarioId: session.scenarioId,
+        startedAt: session.startedAt.toISOString(),
       },
       201,
     );

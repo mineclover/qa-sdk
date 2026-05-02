@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import type { SpecGraph, StoredRecord } from "@qa-sdk/core";
 import type { GraphRenderer } from "./renderer";
 import type { NodeState } from "./style";

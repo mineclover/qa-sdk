@@ -1,0 +1,24 @@
+import { Injectable } from "@nestjs/common";
+
+import { <%= classify(name) %>TransactionPort } from "../../application/ports/<%= dasherize(name) %>-transaction.port";
+import type { <%= classify(name) %>TransactionScope } from "../../application/ports/<%= dasherize(name) %>-transaction.port";
+import { <%= classify(name) %>UnitOfWorkStore } from "./<%= dasherize(name) %>.unit-of-work";
+
+@Injectable()
+export class InMemory<%= classify(name) %>Transaction extends <%= classify(name) %>TransactionPort {
+  private nextId = 1;
+
+  constructor(private readonly store: <%= classify(name) %>UnitOfWorkStore) {
+    super();
+  }
+
+  async run<T>(
+    name: string,
+    handler: (scope: <%= classify(name) %>TransactionScope) => Promise<T>,
+  ): Promise<T> {
+    const scope = this.store.begin(`${name}:${this.nextId++}`, name);
+    const result = await handler(scope);
+    this.store.commit(scope);
+    return result;
+  }
+}

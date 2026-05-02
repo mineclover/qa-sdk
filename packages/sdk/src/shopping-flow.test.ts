@@ -8,20 +8,33 @@
 
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
-import { createQaContext } from "./qa-context.js";
-import { buildLayerMap, MonitorState } from "@qa-sdk/spec-core/viz";
-import type { AddressContextRecord } from "@qa-sdk/spec-core/analysis";
+import { createQaContext } from "@qa-sdk/context";
+import { buildLayerMap, buildSvcOwnerMap, MonitorState, SERVICE_PROJECTION } from "@qa-sdk/spec-core/viz";
+import type { AddressContextRecord } from "@qa-sdk/convergence";
 import type { TracePath } from "@qa-sdk/spec-core/viz";
+import type { TypedQaContext } from "demo-types";
+import { DSL_CHECKOUT, sdk } from "demo-types";
+
+// 서비스 소유 매핑 — Projection이 발생 서비스 기반 layer를 결정
+const DEMO_SVC_OWNERS = buildSvcOwnerMap([
+  { serviceId: "shopping-web", ownedPrefixes: ["page_view", "tracking", "cart_event", "auth_event"] },
+  { serviceId: "shopping-backend", ownedPrefixes: ["order_event", "permission", "event", "endpoint"] },
+  { serviceId: "auth", ownedPrefixes: ["rbac"] },
+  { serviceId: "gateway", ownedPrefixes: ["flow_point"] },
+  { serviceId: "content-service", ownedPrefixes: ["content", "relational"] },
+  { serviceId: "infra-controller", ownedPrefixes: ["deploy_event", "health_event", "pipeline_point", "data_policy", "engine_event", "schema_event", "service", "pattern_match", "pattern_anomaly", "ingest_record"] },
+]);
 
 describe("전체 쇼핑 흐름 시뮬레이션 — 로그인부터 창 닫기까지", () => {
 
-  const qa = createQaContext({
+  // TypedQaContext — prefix 자동완성 제공
+  const qa: TypedQaContext = createQaContext({
     env: "prod", region: "asia", service: "shopping-web", namespace: "shop",
     catalog: DEMO_CATALOG, executionMode: "test", executionId: "shopping-e2e",
   });
 
-  const layerMap = buildLayerMap(DEMO_CATALOG);
-  const monitor = new MonitorState(DEMO_CATALOG, { windowSeconds: 300 });
+  const layerMap = buildLayerMap(DEMO_CATALOG, SERVICE_PROJECTION, DEMO_SVC_OWNERS);
+  const monitor = new MonitorState(DEMO_CATALOG, { windowSeconds: 300, svcOwners: DEMO_SVC_OWNERS });
 
   // 전체 흐름을 하나의 trace로 추적
   const traceId = "trace-shopping-full";
@@ -189,5 +202,21 @@ describe("전체 쇼핑 흐름 시뮬레이션 — 로그인부터 창 닫기까
     expect(activity.some(a => a.prefixId === "endpoint")).toBe(true);
     expect(activity.some(a => a.prefixId === "tracking")).toBe(true);
     expect(activity.some(a => a.prefixId === "flow_point")).toBe(true);
+  });
+
+  it("생성된 DSL_CHECKOUT const 검증", () => {
+    // codegen에서 생성된 DSL 상수와 실제 사용 멤버가 일치하는지 확인
+    expect(DSL_CHECKOUT.id).toBe("dsl-checkout");
+    expect(DSL_CHECKOUT.members).toContain("page_view");
+    expect(DSL_CHECKOUT.members).toContain("endpoint");
+    expect(DSL_CHECKOUT.members).toContain("flow_point");
+    expect(DSL_CHECKOUT.serviceBindingPrefix).toBe("service");
+  });
+
+  it("생성된 sdk로 encode/decode 라운드트립", () => {
+    // codegen에서 생성된 createIndexSDK 인스턴스
+    const addr = sdk.encode("permission", { role: "admin" });
+    const decoded = sdk.decode("permission", addr);
+    expect(decoded.role).toBe("admin");
   });
 });

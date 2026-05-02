@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * calc-big.ts — BigInt 기반 순수 계산 함수.
  *
@@ -42,7 +45,7 @@ export function calcAddressRangesBig(
  */
 export function mergeRangesBig(ranges: [bigint, bigint][]): [bigint, bigint][] {
   if (ranges.length === 0) return [];
-  const sorted = [...ranges].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+  const sorted = [...ranges].toSorted((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
   const result: [bigint, bigint][] = [[sorted[0][0], sorted[0][1]]];
   for (let i = 1; i < sorted.length; i++) {
     const last = result[result.length - 1];

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import type { EntryMetadataStore, MetadataEntry } from "../entry-metadata-store.js";
 
 export class InMemoryEntryMetadataStore implements EntryMetadataStore {
@@ -43,6 +46,6 @@ export class InMemoryEntryMetadataStore implements EntryMetadataStore {
         result.push({ position: entry.position, value: entry.value });
       }
     }
-    return result.sort((a, b) => a.position - b.position);
+    return result.toSorted((a, b) => a.position - b.position);
   }
 }

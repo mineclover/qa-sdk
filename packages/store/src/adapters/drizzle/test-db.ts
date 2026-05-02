@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { closeClient, createDb, getClient, type Db } from "../../db/client.js";
 
 const tableSetupStatements = [
@@ -81,6 +84,39 @@ const tableSetupStatements = [
     "created_at" timestamp with time zone not null default now(),
     "resolved_at" timestamp with time zone
   )`,
+  `create table if not exists "key_observations" (
+    "packed_key" text primary key,
+    "prefix_id" text not null,
+    "registered" boolean not null default false,
+    "count" integer not null default 1,
+    "first_seen" timestamptz not null,
+    "last_seen" timestamptz not null,
+    "payload_summary" jsonb not null default '{}'
+  )`,
+  `create index if not exists "idx_key_obs_prefix" on "key_observations"("prefix_id")`,
+  `create index if not exists "idx_key_obs_last_seen" on "key_observations"("last_seen")`,
+  `create index if not exists "idx_key_obs_count" on "key_observations"("count")`,
+  `create index if not exists "idx_key_obs_registered" on "key_observations"("registered")`,
+  `create table if not exists "key_observation_prefixes" (
+    "prefix_id" text primary key,
+    "distinct_keys" integer not null default 1,
+    "total_count" integer not null default 0,
+    "first_seen" timestamptz not null,
+    "last_seen" timestamptz not null
+  )`,
+  `create table if not exists "insight_labels" (
+    "id" text primary key,
+    "kind" text not null,
+    "target_id" text not null,
+    "label" text not null,
+    "status" text not null default 'pending',
+    "notes" text,
+    "metadata" jsonb,
+    "created_at" timestamptz not null default now(),
+    "updated_at" timestamptz not null default now()
+  )`,
+  `create index if not exists "idx_insight_labels_kind" on "insight_labels"("kind")`,
+  `create index if not exists "idx_insight_labels_target" on "insight_labels"("target_id")`,
 ];
 
 let testDb: Db | null = null;
@@ -108,6 +144,9 @@ async function hasRequiredTables(databaseUrl: string) {
     runtime_graphs_table: string | null;
     verdict_reports_table: string | null;
     dead_letter_queue_table: string | null;
+    key_observations_table: string | null;
+    key_observation_prefixes_table: string | null;
+    insight_labels_table: string | null;
   }[]>`
     select
       to_regclass('public.qa_sessions')::text as qa_sessions_table,
@@ -116,7 +155,10 @@ async function hasRequiredTables(databaseUrl: string) {
       to_regclass('public.transmissions')::text as transmissions_table,
       to_regclass('public.runtime_graphs')::text as runtime_graphs_table,
       to_regclass('public.verdict_reports')::text as verdict_reports_table,
-      to_regclass('public.dead_letter_queue')::text as dead_letter_queue_table
+      to_regclass('public.dead_letter_queue')::text as dead_letter_queue_table,
+      to_regclass('public.key_observations')::text as key_observations_table,
+      to_regclass('public.key_observation_prefixes')::text as key_observation_prefixes_table,
+      to_regclass('public.insight_labels')::text as insight_labels_table
   `;
 
   return (
@@ -126,7 +168,10 @@ async function hasRequiredTables(databaseUrl: string) {
     row?.transmissions_table !== null &&
     row?.runtime_graphs_table !== null &&
     row?.verdict_reports_table !== null &&
-    row?.dead_letter_queue_table !== null
+    row?.dead_letter_queue_table !== null &&
+    row?.key_observations_table !== null &&
+    row?.key_observation_prefixes_table !== null &&
+    row?.insight_labels_table !== null
   );
 }
 
@@ -164,7 +209,7 @@ export async function cleanupDb() {
 
   const client = getClient(databaseUrl);
   await client.unsafe(
-    'truncate table "dead_letter_queue", "event_records", "runtime_graphs", "verdict_reports", "transmissions", "traces", "qa_sessions" restart identity cascade',
+    'truncate table "insight_labels", "key_observation_prefixes", "key_observations", "dead_letter_queue", "event_records", "runtime_graphs", "verdict_reports", "transmissions", "traces", "qa_sessions" restart identity cascade',
   );
 }
 

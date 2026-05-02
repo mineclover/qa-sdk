@@ -8,14 +8,19 @@ export default defineConfig({
       name: "QaMonitor",
       formats: ["es", "umd"],
       fileName: (format) =>
-        format === "es" ? "qa-monitor.esm.js" : "qa-monitor.umd.cjs",
+        format === "es" ? "qa-browser-sdk.js" : "qa-browser-sdk.umd.cjs",
     },
-    // 단일 번들 파일 — 의존성을 외부화하지 않음
-    rollupOptions: {},
+    // 단일 번들 파일 — chunk splitting 비활성화
+    rollupOptions: {
+      output: { inlineDynamicImports: true },
+    },
     sourcemap: true,
   },
   resolve: {
-    // workspace 패키지를 소스에서 직접 참조
     conditions: ["source"],
+    alias: {
+      // viz-3d 소스 직접 참조 (subpath export 없이 내부 모듈 접근)
+      "@qa-sdk/viz-3d/src/": resolve(__dirname, "../viz-3d/src/"),
+    },
   },
 });

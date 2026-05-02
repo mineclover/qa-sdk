@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 /**
  * dev-dkg-provider — 개발 대시보드용 DKG 데이터 프로바이더.
  *
@@ -14,6 +17,8 @@ import type {
   AnalysisModulePort,
   StoreModulePort,
   CatalogPort,
+  DkgConfigPort,
+  TransitionSpecPort,
 } from "../types/spec-core-ports.js";
 
 export interface DevDkgProviderConfig {
@@ -41,15 +46,109 @@ export interface DevDkgProvider {
 export async function createDevDkgProvider(
   config: DevDkgProviderConfig,
 ): Promise<DevDkgProvider> {
-  const analysis = await import("@qa-sdk/spec-core/analysis") as unknown as AnalysisModulePort;
-  const storeModule = await import("@qa-sdk/spec-core/store") as unknown as StoreModulePort;
-  const demoSnapshot = await import("demo-snapshot") as { DEMO_CATALOG: CatalogPort };
+  const dkgModule = await import("@qa-sdk/spec-core/dkg");
+  const convergenceModule = await import("@qa-sdk/spec-core/convergence");
+  const storeModuleImport = await import("@qa-sdk/spec-core/store");
+  const demoSnapshotImport = await import("demo-snapshot");
+
+  const analysis: AnalysisModulePort = {
+    bootstrapDkg(options) {
+      return dkgModule.bootstrapDkg({
+        catalog: options.catalog as Parameters<typeof dkgModule.bootstrapDkg>[0]["catalog"],
+        config: options.config as Parameters<typeof dkgModule.bootstrapDkg>[0]["config"],
+        date: options.date,
+        transitionSpecs: options.transitionSpecs as Parameters<typeof dkgModule.bootstrapDkg>[0]["transitionSpecs"],
+      });
+    },
+    collectMetrics(catalog, graph, usage) {
+      return convergenceModule.collectMetrics(
+        catalog as Parameters<typeof convergenceModule.collectMetrics>[0],
+        graph as Parameters<typeof convergenceModule.collectMetrics>[1],
+        usage as Parameters<typeof convergenceModule.collectMetrics>[2],
+      ) as MetricValuePort[];
+    },
+    metricsToObservations(metrics, options) {
+      return convergenceModule.metricsToObservations(
+        metrics as Parameters<typeof convergenceModule.metricsToObservations>[0],
+        options,
+      ) as ObservationNodePort[];
+    },
+  };
+
+  class DkgSqliteStoreAdapter implements DkgSqliteStorePort {
+    private readonly inner: InstanceType<typeof storeModuleImport.DkgSqliteStore>;
+
+    constructor(path: string, catalogId?: string) {
+      this.inner = new storeModuleImport.DkgSqliteStore(path, catalogId);
+    }
+
+    loadGraph(): GraphRegistryPort {
+      return this.inner.loadGraph();
+    }
+
+    saveGraph(graph: GraphRegistryPort, source: string): { nodesWritten: number; edgesWritten: number } {
+      return this.inner.saveGraph(
+        graph as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>["saveGraph"]>[0],
+        source as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>["saveGraph"]>[1],
+      );
+    }
+
+    saveNodes(
+      nodes: readonly import("../types/spec-core-ports.js").DkgNodePort[],
+      edges: readonly import("../types/spec-core-ports.js").DkgEdgePort[],
+      source: string,
+    ): void {
+      this.inner.saveNodes(
+        nodes as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>["saveNodes"]>[0],
+        edges as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>["saveNodes"]>[1],
+        source as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>["saveNodes"]>[2],
+      );
+    }
+
+    saveUsageSnapshotWithObservations(usage: import("../types/spec-core-ports.js").UsageDataPort, observations: readonly import("../types/spec-core-ports.js").DkgNodePort[]): { snapshotId: number } {
+      return this.inner.saveUsageSnapshotWithObservations(
+        usage as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>["saveUsageSnapshotWithObservations"]>[0],
+        observations as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>["saveUsageSnapshotWithObservations"]>[1],
+      );
+    }
+
+    setMeta(key: string, value: string): void {
+      this.inner.setMeta(key, value);
+    }
+
+    getMeta(key: string): string | null {
+      return this.inner.getMeta(key);
+    }
+
+    updateNode(node: import("../types/spec-core-ports.js").DkgNodePort): void {
+      this.inner.updateNode(
+        node as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>["updateNode"]>[0],
+      );
+    }
+
+    close(): void {
+      this.inner.close();
+    }
+  }
+
+  const storeModule: StoreModulePort = {
+    DkgSqliteStore: DkgSqliteStoreAdapter,
+  };
+
+  const demoSnapshot: { DEMO_CATALOG: CatalogPort; DEMO_DKG_CONFIG: DkgConfigPort } = {
+    DEMO_CATALOG: demoSnapshotImport.DEMO_CATALOG,
+    DEMO_DKG_CONFIG: demoSnapshotImport.DEMO_DKG_CONFIG,
+  };
 
   const ttl = config.cacheTtlMs ?? 10 * 60 * 1000; // 10분
   let cachedGraph: GraphRegistryPort | null = null;
   let cachedCatalog: CatalogPort | null = null;
   let dkgStore: DkgSqliteStorePort | null = null;
   let lastInit = 0;
+
+  // TransitionSpec 로드 (non-blocking, 실패 시 undefined)
+  let transitionSpecs: readonly TransitionSpecPort[] | undefined;
+  import("@qa-sdk/spec-core/transition").then(m => { transitionSpecs = m.DEMO_TRANSITION_SPECS; return undefined; }).catch(() => {});
 
   function ensureInit(): void {
     const now = Date.now();
@@ -66,13 +165,13 @@ export async function createDevDkgProvider(
       }
       const loaded = dkgStore.loadGraph();
       if (loaded.getAllNodes().length === 0) {
-        cachedGraph = analysis.bootstrapDkg({ catalog: cachedCatalog });
-        dkgStore.saveGraph(cachedGraph!, "bootstrap");
+        cachedGraph = analysis.bootstrapDkg({ catalog: cachedCatalog, config: demoSnapshot.DEMO_DKG_CONFIG, transitionSpecs });
+        dkgStore.saveGraph(cachedGraph, "bootstrap");
       } else {
         cachedGraph = loaded;
       }
     } else {
-      cachedGraph = analysis.bootstrapDkg({ catalog: cachedCatalog });
+      cachedGraph = analysis.bootstrapDkg({ catalog: cachedCatalog, config: demoSnapshot.DEMO_DKG_CONFIG, transitionSpecs });
     }
 
     lastInit = now;
@@ -115,10 +214,12 @@ export async function createDevDkgProvider(
   return {
     getGraph() {
       ensureInit();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- ensureInit() guarantees cachedGraph is set
       return cachedGraph!;
     },
     getCatalog() {
       ensureInit();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- ensureInit() guarantees cachedCatalog is set
       return cachedCatalog!;
     },
     getStore() {
@@ -127,6 +228,7 @@ export async function createDevDkgProvider(
     },
     collectMetrics() {
       ensureInit();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- ensureInit() guarantees both are set
       return analysis.collectMetrics(cachedCatalog!, cachedGraph!, null);
     },
     metricsToObservations(metrics: MetricValuePort[]) {

@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 import { describe, expect, it } from "vitest";
 import { createLabelRegistry, PrefixCodec } from "weighted-index";
 import { buildAddressRanges } from "./address-ranges.js";

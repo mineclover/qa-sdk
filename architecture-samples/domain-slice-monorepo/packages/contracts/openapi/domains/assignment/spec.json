@@ -1,0 +1,103 @@
+{
+  "tags": [
+    { "name": "assignment" },
+    { "name": "assignment-bff" }
+  ],
+  "paths": {
+    "/assignments": {
+      "post": {
+        "operationId": "createAssignment",
+        "tags": ["assignment"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAssignmentCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bff/assignments/{id}": {
+      "get": {
+        "operationId": "getAssignmentDetail",
+        "tags": ["assignment-bff"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Assignment detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentDetailBffResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Assignment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateAssignmentCommand": {
+        "type": "object",
+        "required": ["id", "assigneeId"],
+        "properties": {
+          "id": { "type": "string" },
+          "assigneeId": { "type": "string" },
+          "traceId": { "type": "string" },
+          "correlationId": { "type": "string" }
+        }
+      },
+      "AssignmentDetailBffResponse": {
+        "type": "object",
+        "required": ["id", "title", "assigneeLabel", "statusLabel", "updatedAt"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "assigneeLabel": { "type": "string" },
+          "statusLabel": { "type": "string" },
+          "updatedAt": { "type": "string" },
+          "cacheKey": { "type": "string" }
+        }
+      }
+    }
+  }
+}

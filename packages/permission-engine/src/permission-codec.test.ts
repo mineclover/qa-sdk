@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 import { describe, it, expect } from "vitest";
 import { PermissionCodec, PermissionView } from "./permission-codec.js";
 import { hasBit, popcount } from "weighted-index";
@@ -271,19 +274,19 @@ describe("PermissionView — 캐시된 필터 뷰", () => {
   });
 
   it("distinctServices", () => {
-    expect(view.distinctServices().sort()).toEqual(["cms/auth", "shop/payment"]);
+    expect(view.distinctServices().toSorted()).toEqual(["cms/auth", "shop/payment"]);
   });
 
   it("distinctTypes", () => {
-    expect(view.distinctTypes().sort()).toEqual(["api", "page"]);
+    expect(view.distinctTypes().toSorted()).toEqual(["api", "page"]);
   });
 
   it("distinctActions", () => {
-    expect(view.distinctActions().sort()).toEqual(["DELETE", "GET", "POST", "PUT"]);
+    expect(view.distinctActions().toSorted()).toEqual(["DELETE", "GET", "POST", "PUT"]);
   });
 
   it("distinctResources", () => {
-    const resources = view.distinctResources().sort();
+    const resources = view.distinctResources().toSorted();
     expect(resources).toContain("admin/teams");
     expect(resources).toContain("dashboard");
     expect(resources).toContain("users/profile");

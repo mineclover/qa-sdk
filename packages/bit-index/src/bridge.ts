@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 /**
  * bridge.ts — WeightedIndex ↔ BitIndex 브릿지
  *
@@ -23,7 +26,6 @@
 
 import { WeightedIndex } from "weighted-index";
 import { BitIndex, BitIndexBig } from "./bit-index.js";
-import { ShapeError } from "weighted-index";
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  IndexBridge

@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ConvergencePipelineRunner, type ConvergencePipelineDeps, type ConvergenceFunctions, type PatternFunctions, type DkgStorePort } from "./convergence-pipeline.js";
 
@@ -123,8 +126,8 @@ function createDeps(overrides?: Partial<ConvergencePipelineDeps>): ConvergencePi
   return {
     recordStore: createMockRecordStore(),
     convergenceFns: createMockConvergenceFns(),
-    graphProvider: () => ({ getAllNodes: () => [] }),
-    catalogProvider: () => ({ axes: {}, prefixes: {} }),
+    graphProvider: () => ({ getAllNodes: () => [], getNodesByKind: () => [] }) as any,
+    catalogProvider: () => ({ id: "test", name: "test", axes: {}, prefixes: {} }),
     dkgStore: createMockDkgStore(),
     ...overrides,
   };
@@ -370,7 +373,7 @@ describe("ConvergencePipelineRunner", () => {
     const savedObs = (dkgStore.saveUsageSnapshotWithObservations as any).mock.calls[0][1];
     const patternObs = savedObs.filter((o: any) => o.id?.startsWith("OBS-PATTERN-"));
     expect(patternObs.length).toBe(1);
-    expect(patternObs[0].subjectId).toBe("pattern_anomaly");
+    expect(patternObs[0].subjects).toContain("pattern_anomaly");
   });
 
   it("패턴 없이도 기존 pipeline 정상 동작 (patternFns 미제공)", async () => {

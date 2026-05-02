@@ -1,0 +1,34 @@
+{
+  "name": "test-scenario-store",
+  "version": "0.1.0",
+  "description": "테스트 시나리오 B 좌표를 저장하는 SQLite 레지스트리",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "drizzle-orm": "catalog:",
+    "index-meta": "workspace:*",
+    "test-types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "drizzle-kit": "catalog:",
+    "tsup": "^8.5.1",
+    "typescript": "*",
+    "vitest": "*"
+  }
+}

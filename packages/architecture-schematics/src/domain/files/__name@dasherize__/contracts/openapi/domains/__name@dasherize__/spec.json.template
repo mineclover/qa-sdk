@@ -1,0 +1,30 @@
+{
+  "tags": [
+    { "name": "<%= dasherize(name) %>" }<% if (includeBff) { %>,
+    { "name": "<%= dasherize(name) %>-bff" }<% } %>
+  ],
+  "paths": {
+    "/<%= dasherize(name) %>": {
+      "post": {
+        "operationId": "create<%= classify(name) %>",
+        "tags": ["<%= dasherize(name) %>"],
+        "responses": {
+          "200": {
+            "description": "Created"
+          }
+        }
+      }
+    }<% if (includeBff) { %>,
+    "/bff/<%= dasherize(name) %>/{id}": {
+      "get": {
+        "operationId": "get<%= classify(name) %>Detail",
+        "tags": ["<%= dasherize(name) %>-bff"],
+        "responses": {
+          "200": {
+            "description": "<%= classify(name) %> detail"
+          }
+        }
+      }
+    }<% } %>
+  }
+}

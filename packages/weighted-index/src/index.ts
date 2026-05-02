@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * weighted-index — 닫힌 패턴의 좌표 압축 라이브러리.
  *
@@ -31,6 +34,7 @@ export {
 export {
   calcWeights,
   partialQueryBase,
+  partialDecode,
   describeRangeFormula,
   mergeRanges,
   intersectRanges,
@@ -56,6 +60,7 @@ export {
   createMask, setBit, clearBit, hasBit,
   buildMask, hasAnyBit, hasAllBits, popcount,
   maskAnd, maskOr, masksOverlap,
+  isPowerOf2, nextPowerOf2,
 } from "./math/bitmask.js";
 export {
   WeightedIndexError,
@@ -130,6 +135,11 @@ export {
   createBinder,
   type PartialBinder,
 } from "./vocab/partial-binder.js";
+export {
+  DisjointUnionIndex,
+  UnionKindError,
+  type UnionVariant,
+} from "./vocab/union-index.js";
 
 // ── protocol ────────────────────────────────────────────────────────────────
 export {

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Motion Content Editor Demo</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: var(--mce-font-family-base, "JetBrains Mono", "Fira Code", "SF Mono", monospace);
+        background: var(--mce-color-surface-page, #0c1016);
+        color: var(--mce-color-text-primary, #eef3f8);
+      }
+      .demo-shell {
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+      .demo-header {
+        padding: var(--mce-space-5, 20px) var(--mce-space-6, 24px);
+        border-bottom: 1px solid var(--mce-color-border-default, rgba(255,255,255,0.08));
+        background: radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--mce-color-accent-primary, #f08f20) 20%, transparent), transparent 32%), var(--mce-color-surface-canvas, #121820);
+      }
+      .demo-header h1 {
+        margin: 0 0 var(--mce-space-2, 8px);
+        font-size: var(--mce-font-size-2xl, 24px);
+        line-height: var(--mce-line-height-snug, 1.2);
+      }
+      .demo-header p {
+        margin: 0;
+        color: color-mix(in srgb, var(--mce-color-text-primary, #eef3f8) 72%, transparent);
+        line-height: var(--mce-line-height-relaxed, 1.6);
+      }
+      #app {
+        padding: var(--mce-space-6, 24px);
+      }
+      .demo-workflow {
+        display: grid;
+        gap: var(--mce-space-3, 12px);
+        margin-bottom: var(--mce-space-5, 20px);
+        padding: var(--mce-space-4, 16px) var(--mce-space-5, 20px);
+        border: 1px solid var(--mce-color-border-default, rgba(255,255,255,0.08));
+        border-radius: var(--mce-radius-lg, 20px);
+        background: linear-gradient(135deg, color-mix(in srgb, var(--mce-color-surface-pane, #131922) 95%, transparent), color-mix(in srgb, var(--mce-color-surface-canvas, #10141b) 92%, transparent));
+        box-shadow: var(--mce-shadow-elevation-2, 0 18px 32px rgba(0,0,0,0.18));
+      }
+      .demo-workflow__main {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--mce-space-3, 12px);
+        align-items: end;
+      }
+      .demo-workflow__meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--mce-space-2, 8px) var(--mce-space-5, 20px);
+      }
+      .demo-autosave-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 0 var(--mce-space-3, 12px);
+        border-radius: var(--mce-radius-pill, 999px);
+        border: 1px solid var(--mce-color-border-default, rgba(255,255,255,0.08));
+        background: color-mix(in srgb, var(--mce-color-surface-section, rgba(255,255,255,0.06)) 92%, transparent);
+        color: color-mix(in srgb, var(--mce-color-text-primary, #eef3f8) 86%, transparent);
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .demo-autosave-pill[data-phase="saving"] {
+        border-color: color-mix(in srgb, var(--mce-color-accent-primary, #f08f20) 48%, transparent);
+        color: var(--mce-color-accent-primary, #f08f20);
+      }
+      .demo-autosave-pill[data-phase="saved"] {
+        border-color: color-mix(in srgb, #53c67a 48%, transparent);
+        color: #53c67a;
+      }
+      .demo-autosave-pill[data-phase="error"],
+      .demo-autosave-pill[data-phase="conflict"] {
+        border-color: color-mix(in srgb, var(--mce-color-state-warning, #f08f20) 52%, transparent);
+        color: var(--mce-color-state-warning, #f08f20);
+      }
+      .demo-field {
+        display: grid;
+        gap: var(--mce-space-2, 8px);
+      }
+      .demo-field span {
+        font-size: var(--mce-font-size-sm, 12px);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: color-mix(in srgb, var(--mce-color-text-primary, #eef3f8) 62%, transparent);
+      }
+      .demo-field input,
+      .demo-field select,
+      .demo-button {
+        height: 40px;
+        border-radius: var(--mce-radius-pill, 999px);
+        border: 1px solid var(--mce-color-border-strong, rgba(255,255,255,0.12));
+        background: var(--mce-color-surface-section, rgba(255,255,255,0.06));
+        color: var(--mce-color-text-primary, #eef3f8);
+        padding: 0 var(--mce-space-4, 16px);
+        font: inherit;
+      }
+      .demo-field input,
+      .demo-field select {
+        min-width: 220px;
+      }
+      .demo-button {
+        cursor: pointer;
+      }
+      .demo-button:not(.demo-button--ghost) {
+        background: var(--mce-color-accent-primary, #f08f20);
+        color: var(--mce-color-accent-contrast, #111820);
+        border-color: transparent;
+      }
+      .demo-button--ghost {
+        background: transparent;
+      }
+      .demo-status {
+        color: var(--mce-color-text-primary, #eef3f8);
+        font-size: 14px;
+      }
+      .demo-status[data-tone="success"] {
+        color: #53c67a;
+      }
+      .demo-status[data-tone="warning"] {
+        color: var(--mce-color-state-warning, #f08f20);
+      }
+      .demo-status[data-tone="danger"] {
+        color: #ff7f6b;
+      }
+      .demo-status--muted {
+        color: color-mix(in srgb, var(--mce-color-text-primary, #eef3f8) 62%, transparent);
+      }
+      .demo-status--detail {
+        flex-basis: 100%;
+        padding: var(--mce-space-3, 12px) var(--mce-space-4, 16px);
+        border-radius: var(--mce-radius-md, 14px);
+        border: 1px solid color-mix(in srgb, var(--mce-color-border-default, rgba(255,255,255,0.08)) 90%, transparent);
+        background: color-mix(in srgb, var(--mce-color-surface-section, rgba(255,255,255,0.06)) 92%, transparent);
+      }
+      .demo-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--mce-space-3, 12px);
+        flex-basis: 100%;
+      }
+      .demo-note {
+        margin: 0;
+        color: color-mix(in srgb, var(--mce-color-text-primary, #eef3f8) 74%, transparent);
+        font-size: 14px;
+        line-height: var(--mce-line-height-relaxed, 1.6);
+      }
+      .demo-note strong {
+        color: var(--mce-color-text-primary, #eef3f8);
+      }
+      @media (max-width: 900px) {
+        #app {
+          padding: var(--mce-space-4, 16px);
+        }
+        .demo-header {
+          padding: var(--mce-space-4, 16px);
+        }
+        .demo-workflow__main {
+          align-items: stretch;
+        }
+        .demo-field input,
+        .demo-field select,
+        .demo-button {
+          width: 100%;
+        }
+        .demo-autosave-pill,
+        .demo-actions {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="demo-shell">
+      <header class="demo-header" style="display:flex;align-items:center;gap:20px">
+        <div style="flex:1">
+          <h1>Motion Content Editor Demo</h1>
+          <p>Remotion 개념층을 참고한 GSAP 기반 composition editor sandbox</p>
+        </div>
+        <nav style="display:flex;gap:4px">
+          <a href="/" style="padding:6px 14px;border-radius:999px;font-size:12px;text-decoration:none;color:var(--mce-color-accent-primary,#f08f20);border:1px solid rgba(240,143,32,0.18);background:rgba(240,143,32,0.18)">Editor</a>
+          <a href="/inspector.html" style="padding:6px 14px;border-radius:999px;font-size:12px;text-decoration:none;color:rgba(238,243,248,0.55);border:1px solid transparent">Inspector</a>
+        </nav>
+      </header>
+      <main id="app"></main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+  </html>

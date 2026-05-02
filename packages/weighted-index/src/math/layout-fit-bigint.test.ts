@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * layout-fit-bigint.test.ts — BigInt의 UUID 전체 공간 커버 가능성 탐사.
  *

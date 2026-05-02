@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import type { EntityId } from "./types.js";
 
 // ── Record 타입 ───────────────────────────────────────────

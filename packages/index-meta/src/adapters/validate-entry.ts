@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * validate-entry.ts — Shared entry validation logic for IndexMetaStore adapters.
  *

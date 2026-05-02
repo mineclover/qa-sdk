@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 import { describe, it, expect } from "vitest";
 import * as fc from "fast-check";
 import { WeightedIndex } from "./weighted-index.js";
@@ -200,7 +203,7 @@ describe("[동치 분할] 입력 유효성", () => {
 describe("[에러 계층] instanceof 타입 검증", () => {
   it("빈 shape → ShapeError extends WeightedIndexError", () => {
     try {
-      new WeightedIndex([]);
+      const _wi = new WeightedIndex([]);
     } catch (e) {
       expect(e).toBeInstanceOf(ShapeError);
       expect(e).toBeInstanceOf(WeightedIndexError);
@@ -434,5 +437,34 @@ describe("[속성 기반] 랜덤 입력 불변식", () => {
     for (const [shape, expected] of cases) {
       expect(new WeightedIndex(shape).size).toBe(expected);
     }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [extractDims] label 기반 부분 decode
+// ─────────────────────────────────────────────────────────────────────────────
+describe("extractDims", () => {
+  const wi = new WeightedIndex([8, 4, 5, 4], ["env", "region", "svc", "ns"]);
+
+  it("label로 부분 추출", () => {
+    const addr = wi.encode([3, 2, 4, 1]);
+    const result = wi.extractDims(addr, ["env", "svc"]);
+    expect(result).toEqual({ env: 3, svc: 4 });
+  });
+
+  it("전체 label → decodeToRecord와 동일", () => {
+    const addr = wi.encode([3, 2, 4, 1]);
+    const full = wi.decodeToRecord(addr);
+    const partial = wi.extractDims(addr, ["env", "region", "svc", "ns"]);
+    expect(partial).toEqual(full);
+  });
+
+  it("단일 label 추출", () => {
+    const addr = wi.encode([1, 3, 5, 4]);
+    expect(wi.extractDims(addr, ["ns"])).toEqual({ ns: 4 });
+  });
+
+  it("미존재 label → 에러", () => {
+    expect(() => wi.extractDims(0, ["unknown"])).toThrow("Unknown label");
   });
 });

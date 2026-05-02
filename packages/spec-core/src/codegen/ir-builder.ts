@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * 데이터 원천에서 IRModule을 생성하는 빌더.
  *

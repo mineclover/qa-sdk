@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * capacity-planner.ts — Pure geometry/capacity algorithms.
  *
@@ -93,7 +96,7 @@ export function fitShape(opts: FitShapeOptions): FitShapeResult | null {
 
   let product = result.reduce((a, s) => a * s, 1);
   if (product > maxProduct) {
-    const descFree = [...freeIndices].sort((a, b) => result[b] - result[a]);
+    const descFree = [...freeIndices].toSorted((a, b) => result[b] - result[a]);
     while (product > maxProduct) {
       let reduced = false;
       for (const i of descFree) {
@@ -108,7 +111,7 @@ export function fitShape(opts: FitShapeOptions): FitShapeResult | null {
     }
   }
 
-  const priority = [...freeIndices].sort((a, b) => shape[b] - shape[a]);
+  const priority = [...freeIndices].toSorted((a, b) => shape[b] - shape[a]);
   let changed = true;
   while (changed) {
     changed = false;

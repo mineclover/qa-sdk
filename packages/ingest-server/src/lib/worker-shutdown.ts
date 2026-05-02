@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { Logger } from "pino";
 
 type ExitFn = (code: number) => never | void;

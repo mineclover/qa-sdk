@@ -1,0 +1,473 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Gate Service API",
+    "version": "1.0.0",
+    "description": "주소 공간의 물리적 유효성을 관리하여 encode/decode 가능 여부를 결정하는 서비스."
+  },
+  "components": {
+    "schemas": {
+      "GateCheckResponse": {
+        "type": "object",
+        "properties": {
+          "encode": {
+            "type": "boolean"
+          },
+          "decode": {
+            "type": "boolean"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "open",
+              "reserved"
+            ]
+          },
+          "shouldVerify": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "encode",
+          "decode",
+          "state",
+          "shouldVerify"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "GateClassifyResponse": {
+        "type": "string",
+        "enum": [
+          "active",
+          "inactive",
+          "open",
+          "reserved"
+        ]
+      },
+      "GateFilterResponse": {
+        "type": "object",
+        "properties": {
+          "ranges": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "ranges"
+        ]
+      },
+      "GateStateResponse": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "reserved": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          },
+          "inactive": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          },
+          "open": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "reserved",
+          "inactive",
+          "open"
+        ]
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "gate_engine_configured": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status",
+          "gate_engine_configured"
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/gate/check": {
+      "post": {
+        "tags": [
+          "Gate"
+        ],
+        "summary": "주소 encode/decode 가능 여부 확인",
+        "description": "주소의 gate 상태를 확인하여 encode/decode 허용 여부를 반환한다.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prefix": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "versionId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "address": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "prefix",
+                  "versionId",
+                  "address"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Gate 확인 결과",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GateCheckResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gate/classify": {
+      "post": {
+        "tags": [
+          "Gate"
+        ],
+        "summary": "주소 상태 분류",
+        "description": "주소의 상태를 active/inactive/open/reserved 중 하나로 분류한다.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prefix": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "versionId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "address": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "prefix",
+                  "versionId",
+                  "address"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "분류 결과",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GateClassifyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gate/recompute": {
+      "post": {
+        "tags": [
+          "Gate"
+        ],
+        "summary": "단일 prefix 상태 재계산",
+        "description": "DimStateSpec을 기반으로 단일 prefix의 주소 상태를 재계산한다.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prefix": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "versionId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "prefix",
+                  "versionId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "재계산 완료"
+          }
+        }
+      }
+    },
+    "/gate/cascade-recompute": {
+      "post": {
+        "tags": [
+          "Gate"
+        ],
+        "summary": "leaf → composite cascade 전파",
+        "description": "leaf prefix 변경을 composite prefix까지 DFS 전파하여 재계산한다.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prefix": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "versionId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "prefix",
+                  "versionId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "cascade 재계산 완료"
+          }
+        }
+      }
+    },
+    "/gate/filter-ranges": {
+      "post": {
+        "tags": [
+          "Gate"
+        ],
+        "summary": "gate 차단 범위 제거",
+        "description": "입력 범위에서 gate 차단 범위를 제거하여 유효 범위만 반환한다.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prefix": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "versionId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "ranges": {
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      ]
+                    }
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "encodable",
+                      "decodable",
+                      "active"
+                    ]
+                  }
+                },
+                "required": [
+                  "prefix",
+                  "versionId",
+                  "ranges",
+                  "mode"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "필터링된 범위",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GateFilterResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gate/state/{prefix}/{version}": {
+      "get": {
+        "tags": [
+          "Gate"
+        ],
+        "summary": "prefix 전체 상태 범위 조회",
+        "description": "prefix의 reserved/inactive/open 전체 범위를 반환한다.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "prefix",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "version",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "상태 범위",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GateStateResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "서비스 상태",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}

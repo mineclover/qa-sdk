@@ -1,0 +1,77 @@
+{
+  "name": "viz-core",
+  "version": "0.1.0",
+  "description": "QA-SDK 시각화 코어 — SVG primitives, tokens, renderers",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./primitives": {
+      "types": "./dist/primitives.d.ts",
+      "import": "./dist/primitives.js",
+      "require": "./dist/primitives.cjs"
+    },
+    "./shapes": {
+      "types": "./dist/shapes.d.ts",
+      "import": "./dist/shapes.js",
+      "require": "./dist/shapes.cjs"
+    },
+    "./pipe-mermaid": {
+      "types": "./dist/pipe-mermaid.d.ts",
+      "import": "./dist/pipe-mermaid.js",
+      "require": "./dist/pipe-mermaid.cjs"
+    },
+    "./scope-mermaid": {
+      "types": "./dist/scope-mermaid.d.ts",
+      "import": "./dist/scope-mermaid.js",
+      "require": "./dist/scope-mermaid.cjs"
+    },
+    "./scope-d3": {
+      "types": "./dist/scope-d3.d.ts",
+      "import": "./dist/scope-d3.js",
+      "require": "./dist/scope-d3.cjs"
+    },
+    "./concept-grid": {
+      "types": "./dist/concept-grid.d.ts",
+      "import": "./dist/concept-grid.js",
+      "require": "./dist/concept-grid.cjs"
+    },
+    "./pipe-svg": {
+      "types": "./dist/pipe-svg.d.ts",
+      "import": "./dist/pipe-svg.js",
+      "require": "./dist/pipe-svg.cjs"
+    },
+    "./scope-nesting-timeline": {
+      "types": "./dist/scope-nesting-timeline.d.ts",
+      "import": "./dist/scope-nesting-timeline.js",
+      "require": "./dist/scope-nesting-timeline.cjs"
+    },
+    "./ontology-graph": {
+      "types": "./dist/ontology-graph.d.ts",
+      "import": "./dist/ontology-graph.js",
+      "require": "./dist/ontology-graph.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@qa-sdk/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
+  }
+}

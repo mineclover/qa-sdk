@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  주소 체계 레퍼런스 — 데이터 스토리지 주소 시스템 예제
 // ═══════════════════════════════════════════════════════════════════════════
@@ -382,15 +385,18 @@ function setupEncoder(container: HTMLElement): void {
       total += (v - 1) * w;
       parts.push(`(${v}−1)×${w.toLocaleString()}`);
 
-      const valEl  = container.querySelector(`#enc-val-${dim}`)!;
-      const fmlEl  = container.querySelector(`#enc-f-${dim}`)!;
-      valEl.textContent = String(v);
-      fmlEl.textContent = `(${v}−1)×${w.toLocaleString()} = ${((v - 1) * w).toLocaleString()}`;
+      const valEl  = container.querySelector(`#enc-val-${dim}`);
+      const fmlEl  = container.querySelector(`#enc-f-${dim}`);
+      if (valEl) valEl.textContent = String(v);
+      if (fmlEl) fmlEl.textContent = `(${v}−1)×${w.toLocaleString()} = ${((v - 1) * w).toLocaleString()}`;
     });
 
-    container.querySelector("#enc-result")!.textContent = String(total);
-    container.querySelector("#enc-total-id")!.textContent = String(total);
-    container.querySelector("#enc-formula-full")!.textContent =
+    const encResult = container.querySelector("#enc-result");
+    const encTotalId = container.querySelector("#enc-total-id");
+    const encFormulaFull = container.querySelector("#enc-formula-full");
+    if (encResult) encResult.textContent = String(total);
+    if (encTotalId) encTotalId.textContent = String(total);
+    if (encFormulaFull) encFormulaFull.textContent =
       parts.join(" + ") + ` = ${total.toLocaleString()}`;
   }
 
@@ -399,8 +405,9 @@ function setupEncoder(container: HTMLElement): void {
 }
 
 function setupDecoder(container: HTMLElement): void {
-  const input  = container.querySelector<HTMLInputElement>("#dec-input")!;
-  const result = container.querySelector<HTMLElement>("#dec-result")!;
+  const input  = container.querySelector<HTMLInputElement>("#dec-input");
+  const result = container.querySelector<HTMLElement>("#dec-result");
+  if (!input || !result) return;
 
   function decode(): void {
     const raw = Number(input.value);

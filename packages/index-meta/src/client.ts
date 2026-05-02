@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * index-meta/client — 경량 클라이언트 SDK 진입점
  *

@@ -1,0 +1,57 @@
+# qa-sdk Enterprise PM 시뮬 — NestJS 공통 Dockerfile
+# build context는 모노레포 root (/Users/junwoobang/workflow/qa-sdk)
+# build arg SERVICE_NAME으로 simulations/enterprise-pm/services/<SERVICE_NAME> 빌드
+
+ARG NODE_VERSION=22-alpine
+
+# ── Stage 1: deps + build ──
+FROM node:${NODE_VERSION} AS builder
+
+# pnpm 활성화 (corepack)
+RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
+
+WORKDIR /workspace
+
+# workspace 메타 + 패키지 명세 먼저 복사 (캐시 hit 극대화)
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY simulations/enterprise-pm/package.json ./simulations/enterprise-pm/
+COPY simulations/enterprise-pm/tsconfig.base.json ./simulations/enterprise-pm/
+
+# 시뮬 서비스 정의는 빌드 시점에만 알 수 있음 → ARG 받아서 그 폴더만 복사
+ARG SERVICE_NAME
+RUN test -n "$SERVICE_NAME" || (echo "ERROR: SERVICE_NAME build arg required" && exit 1)
+
+# 의존 패키지(qa-sdk core/logger/codec 등) — 시뮬이 import할 가능성 → 전체 packages/ 복사
+COPY packages ./packages
+COPY simulations/enterprise-pm/services/${SERVICE_NAME} ./simulations/enterprise-pm/services/${SERVICE_NAME}
+
+# 의존 설치 (workspace-aware)
+RUN pnpm install --frozen-lockfile --filter "...{./simulations/enterprise-pm/services/${SERVICE_NAME}}"
+
+# 빌드
+RUN pnpm --filter "{./simulations/enterprise-pm/services/${SERVICE_NAME}}" build
+
+# ── Stage 2: runtime ──
+FROM node:${NODE_VERSION} AS runtime
+
+RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
+
+WORKDIR /app
+
+ARG SERVICE_NAME
+ENV SERVICE_NAME=${SERVICE_NAME}
+
+# 빌더 산출물만 복사 (deps는 production install로 재설치 → 이미지 크기 절감)
+COPY --from=builder /workspace/simulations/enterprise-pm/services/${SERVICE_NAME}/dist ./dist
+COPY --from=builder /workspace/simulations/enterprise-pm/services/${SERVICE_NAME}/package.json ./
+COPY --from=builder /workspace/pnpm-lock.yaml /workspace/pnpm-workspace.yaml /workspace/package.json /workspace/
+COPY --from=builder /workspace/packages /workspace/packages
+
+# 런타임 의존만 설치
+RUN cd /workspace && pnpm install --prod --frozen-lockfile --filter "{./simulations/enterprise-pm/services/${SERVICE_NAME}}"
+
+# Healthcheck 기본 — NestJS 서비스는 /health 엔드포인트 노출 (Plan 10에서 추가)
+HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=5 \
+  CMD wget -q -O- http://localhost:${PORT:-3000}/health || exit 1
+
+CMD ["node", "dist/main.js"]

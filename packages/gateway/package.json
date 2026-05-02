@@ -1,0 +1,26 @@
+{
+  "name": "@qa-sdk/gateway",
+  "version": "0.1.0",
+  "description": "인증과 내부 서비스 라우팅을 담당하는 API 게이트웨이",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsup",
+    "start": "node dist/server.js",
+    "dev": "tsx server.ts",
+    "dev:worker": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:prod": "wrangler deploy --env production",
+    "tailscale:serve": "tailscale serve --bg 8787",
+    "tailscale:funnel": "tailscale funnel --bg 8787"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.1",
+    "hono": "^4.7.5"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "tsx": "^4.0.0",
+    "wrangler": "^4.0.0"
+  }
+}

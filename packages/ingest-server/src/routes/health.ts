@@ -1,5 +1,8 @@
-import { readFileSync } from "node:fs";
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { Db } from "@qa-sdk/store";
+import { readFileSync } from "node:fs";
 import { Hono, type Context } from "hono";
 
 export interface DbHealthStatus {
@@ -15,11 +18,23 @@ export interface HealthRoutesOptions {
   version?: string;
 }
 
-const packageVersion = readPackageVersion();
+let _packageVersion: string | undefined;
+function getPackageVersion(): string {
+  if (_packageVersion) return _packageVersion;
+  let version: string;
+  try {
+    const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
+    version = pkg.version ?? "0.0.0";
+  } catch {
+    version = "0.0.0";
+  }
+  _packageVersion = version;
+  return version;
+}
 
 export function createHealthRoutes(options: HealthRoutesOptions) {
   const routes = new Hono();
-  const version = options.version ?? packageVersion;
+  const version = options.version ?? getPackageVersion();
   const getUptimeSeconds = options.getUptimeSeconds ?? (() => process.uptime());
 
   routes.get("/health", (c) =>
@@ -87,10 +102,3 @@ async function respondWithHealth(
   );
 }
 
-function readPackageVersion() {
-  const packageJson = JSON.parse(
-    readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
-  ) as { version?: string };
-
-  return packageJson.version ?? "0.0.0";
-}

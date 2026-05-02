@@ -1,3 +1,6 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
 import {
   InMemoryAddressStateStore,
   checkGate as resolveGateResult,
@@ -8,7 +11,7 @@ import {
   type AddressStateStore,
   type GateEngine,
   type GateResult,
-} from "index-meta";
+} from "index-meta-workers";
 
 export interface GateServiceDeps {
   addressStateStore?: AddressStateStore;

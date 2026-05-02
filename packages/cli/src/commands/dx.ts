@@ -1,47 +1,51 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk DX 명령어 — 개발자용 encode/decode/resolve/find/derive.
  *
  * 개발자가 정수를 보지 않고 문자열만 다루는 것이 핵심.
  * CLI가 문자열 ↔ 정수 변환을 투명하게 처리한다.
+ *
+ * 모든 함수는 Catalog을 첫 번째 인자로 받는다.
+ * CLI index.ts의 loadCatalog()가 --catalog → qa-sdk.config.ts → DEMO_CATALOG 순서로 해석.
  */
 
+import type { Catalog } from "@qa-sdk/core";
 import {
-  DEMO_CATALOG,
-  encodePrefixByValue, decodePrefix, resolveAddress,
-  getPrefixShape, getPrefixStructure,
-} from "demo-snapshot";
-import type { DemoCatalog } from "demo-snapshot";
-import { parseSerializedAddress, serializeAddress } from "@qa-sdk/core";
+  parseSerializedAddress,
+  encodePrefixByValue, decodePrefixAsResult, decodeResultToEntities, decomposeAddress, resolveAddress,
+  getPrefixShape, latestPrefixVersion,
+} from "@qa-sdk/core";
 import {
   resolve,
   findVersionForEntry,
-  findRefAddress,
   validateRefEntries,
   getAllSemanticRefs,
   bootstrapDkg,
   analyzeImpact,
-} from "@qa-sdk/spec-core/analysis";
+} from "dkg";
 
 // ── qa encode ───────────────────────────────────────
 
-export function cliEncode(args: {
+export function cliEncode(catalog: Catalog, args: {
   prefix: string;
   dims: Record<string, string | number>;
   version?: string;
   json?: boolean;
 }): void {
-  const prefix = DEMO_CATALOG.prefixes[args.prefix as keyof typeof DEMO_CATALOG.prefixes];
+  const prefix = catalog.prefixes[args.prefix];
   if (!prefix) {
     console.error(`Unknown prefix: ${args.prefix}`);
-    console.error(`Available: ${Object.keys(DEMO_CATALOG.prefixes).join(", ")}`);
+    console.error(`Available: ${Object.keys(catalog.prefixes).join(", ")}`);
     process.exitCode = 1;
     return;
   }
 
-  const version = args.version ?? prefix.versions[prefix.versions.length - 1].version;
+  const version = args.version ?? latestPrefixVersion(catalog, args.prefix);
 
   try {
-    const address = encodePrefixByValue(DEMO_CATALOG, args.prefix, version, args.dims);
+    const address = encodePrefixByValue(catalog, args.prefix, version, args.dims);
     const serialized = `${args.prefix}:${version}:${address}`;
 
     if (args.json) {
@@ -57,7 +61,7 @@ export function cliEncode(args: {
 
 // ── qa decode ───────────────────────────────────────
 
-export function cliDecode(args: {
+export function cliDecode(catalog: Catalog, args: {
   address: string;
   deep?: boolean;
   json?: boolean;
@@ -74,13 +78,11 @@ export function cliDecode(args: {
   const { prefix: prefixId, version, address } = parsed;
 
   try {
-    const decoded = decodePrefix(DEMO_CATALOG, prefixId, version, address);
-    const values = Object.fromEntries(
-      Object.entries(decoded).map(([k, v]) => [k, v.value]),
-    );
+    const result = decodePrefixAsResult(catalog, prefixId, version, address);
+    const values = decodeResultToEntities(result);
 
     if (args.json) {
-      const result: Record<string, unknown> = {
+      const output: Record<string, unknown> = {
         address: args.address,
         prefix: prefixId,
         version,
@@ -89,19 +91,32 @@ export function cliDecode(args: {
       };
 
       if (args.deep) {
-        const resolved = resolveAddress(DEMO_CATALOG, prefixId, version, address);
-        result.resolved = resolved;
+        const resolved = resolveAddress(catalog, prefixId, version, address);
+        output.resolved = resolved;
       }
 
-      console.log(JSON.stringify(result, null, 2));
+      console.log(JSON.stringify(output, null, 2));
     } else {
       console.log(`\n  ${args.address}`);
-      for (const [k, v] of Object.entries(values)) {
-        console.log(`    ${k}: ${v}`);
+
+      // prefixRef는 참조 주소로 표시, axis는 직접 값으로 표시
+      const prefixDef = catalog.prefixes[prefixId];
+      const decomposed = decomposeAddress(catalog, prefixId, version, address);
+      for (const [k, dim] of Object.entries(decomposed)) {
+        if ("refDims" in dim && dim.refDims) {
+          // prefixRef — 참조 prefix 주소 + 대표값 표시
+          const refPrefix = prefixDef?.dims?.[k];
+          const refPrefixId = refPrefix && "prefixId" in refPrefix ? refPrefix.prefixId : "?";
+          const refEntries = Object.entries(dim.refDims as Record<string, { value: unknown }>);
+          const summary = refEntries.map(([, v]) => v.value).join("/");
+          console.log(`    ${k}: ${refPrefixId}:${dim.refAddress} (${summary})`);
+        } else {
+          console.log(`    ${k}: ${dim.value}`);
+        }
       }
 
       if (args.deep) {
-        const resolved = resolveAddress(DEMO_CATALOG, prefixId, version, address);
+        const resolved = resolveAddress(catalog, prefixId, version, address);
         console.log("\n  deep resolve:");
         for (const [k, dim] of Object.entries(resolved.dims)) {
           const ko = dim.ko ? ` (${dim.ko})` : "";
@@ -123,13 +138,13 @@ export function cliDecode(args: {
 
 // ── qa resolve ──────────────────────────────────────
 
-export function cliResolve(args: {
+export function cliResolve(catalog: Catalog, args: {
   address: string;
   to?: string;
   json?: boolean;
 }): void {
   try {
-    const result = resolve(DEMO_CATALOG, args.address, args.to);
+    const result = resolve(catalog, args.address, args.to);
     const values = Object.fromEntries(
       Object.entries(result.values).map(([k, v]) => [k, v.value]),
     );
@@ -156,16 +171,16 @@ export function cliResolve(args: {
 
 // ── qa find-version ─────────────────────────────────
 
-export function cliFindVersion(args: {
+export function cliFindVersion(catalog: Catalog, args: {
   axis: string;
   entry: string;
 }): void {
-  const versions = findVersionForEntry(DEMO_CATALOG, args.axis, args.entry);
+  const versions = findVersionForEntry(catalog, args.axis, args.entry);
 
   if (versions.length === 0) {
     console.log(`\n  "${args.entry}" not found in axis "${args.axis}"`);
     // 유사 entry 추천
-    const axis = (DEMO_CATALOG.axes as Record<string, { versions: Record<string, { entries: readonly string[] }> }>)[args.axis];
+    const axis = (catalog.axes as Record<string, { versions: Record<string, { entries: readonly string[] }> }>)[args.axis];
     if (axis) {
       const allEntries = new Set<string>();
       for (const snap of Object.values(axis.versions)) {
@@ -178,7 +193,7 @@ export function cliFindVersion(args: {
 
   console.log(`\n  "${args.entry}" in ${args.axis}:`);
   for (const v of versions) {
-    const snap = (DEMO_CATALOG.axes as Record<string, { versions: Record<string, { entries: readonly string[] }> }>)[args.axis].versions[v];
+    const snap = (catalog.axes as Record<string, { versions: Record<string, { entries: readonly string[] }> }>)[args.axis].versions[v];
     const pos = snap.entries.indexOf(args.entry);
     console.log(`    ${v}: position ${pos}`);
   }
@@ -186,7 +201,7 @@ export function cliFindVersion(args: {
 
 // ── qa derive-refs ──────────────────────────────────
 
-export function cliDeriveRefs(args: {
+export function cliDeriveRefs(catalog: Catalog, _args: {
   check?: boolean;
 }): void {
   const semantics = getAllSemanticRefs();
@@ -195,7 +210,7 @@ export function cliDeriveRefs(args: {
 
   let allValid = true;
   for (const semantic of semantics) {
-    const result = validateRefEntries(DEMO_CATALOG, semantic);
+    const result = validateRefEntries(catalog, semantic);
 
     if (!result.valid) {
       allValid = false;
@@ -216,11 +231,19 @@ export function cliDeriveRefs(args: {
 
 // ── qa impact ───────────────────────────────────────
 
-export function cliImpact(args: {
-  axis?: string;
-  prefix?: string;
-}): void {
-  const graph = bootstrapDkg();
+function isGraphPort(v: unknown): v is Parameters<typeof analyzeImpact>[0] {
+  return !!v && typeof v === "object" && "cascadeFromAxis" in v;
+}
+
+/** graph를 직접 받으면 재사용, config를 받으면 bootstrap */
+export function cliImpact(
+  catalog: Catalog,
+  graphOrConfig: Parameters<typeof analyzeImpact>[0] | Parameters<typeof bootstrapDkg>[0]["config"],
+  args: { axis?: string; prefix?: string },
+): void {
+  const graph = isGraphPort(graphOrConfig)
+    ? graphOrConfig
+    : bootstrapDkg({ catalog, config: graphOrConfig });
 
   const input = args.axis
     ? { type: "entry-added" as const, target: { axis: args.axis } }
@@ -264,12 +287,12 @@ export function cliImpact(args: {
 
 // ── qa list-prefixes ────────────────────────────────
 
-export function cliListPrefixes(args: { json?: boolean }): void {
-  const prefixes = Object.entries(DEMO_CATALOG.prefixes);
+export function cliListPrefixes(catalog: Catalog, args: { json?: boolean }): void {
+  const prefixes = Object.entries(catalog.prefixes);
 
   if (args.json) {
     const result = prefixes.map(([id, p]) => {
-      const shape = getPrefixShape(DEMO_CATALOG, id, p.versions[p.versions.length - 1].version);
+      const shape = getPrefixShape(catalog, id, latestPrefixVersion(catalog, id));
       return {
         id,
         name: p.name,
@@ -285,8 +308,8 @@ export function cliListPrefixes(args: { json?: boolean }): void {
 
   console.log(`\n══ Prefixes (${prefixes.length}) ══\n`);
   for (const [id, p] of prefixes) {
-    const latestV = p.versions[p.versions.length - 1].version;
-    const shape = getPrefixShape(DEMO_CATALOG, id, latestV);
+    const latestV = latestPrefixVersion(catalog, id);
+    const shape = getPrefixShape(catalog, id, latestV);
     const dimTypes = p.labels.map(l => {
       const d = p.dims[l];
       return d.kind === "axis" ? l : d.kind === "prefix_ref" ? `${l}(ref)` : `${l}(tbl)`;
@@ -297,13 +320,13 @@ export function cliListPrefixes(args: { json?: boolean }): void {
 
 // ── qa list-axes ────────────────────────────────────
 
-export function cliListAxes(args: { json?: boolean }): void {
-  const axes = Object.entries(DEMO_CATALOG.axes);
+export function cliListAxes(catalog: Catalog, args: { json?: boolean }): void {
+  const axes = Object.entries(catalog.axes);
 
   if (args.json) {
     const result = axes.map(([id, a]) => {
       const versions = Object.keys(a.versions);
-      const latest = a.versions[versions[versions.length - 1] as keyof typeof a.versions] as any;
+      const latest = a.versions[versions[versions.length - 1] as keyof typeof a.versions];
       return {
         id,
         name: a.name,
@@ -319,7 +342,7 @@ export function cliListAxes(args: { json?: boolean }): void {
   console.log(`\n══ Axes (${axes.length}) ══\n`);
   for (const [id, a] of axes) {
     const versions = Object.keys(a.versions);
-    const latest = a.versions[versions[versions.length - 1] as keyof typeof a.versions] as any;
+    const latest = a.versions[versions[versions.length - 1] as keyof typeof a.versions];
     const entries = latest.entries?.length ?? 0;
     const cap = latest.capacity ?? entries;
     console.log(`  ${id.padEnd(15)} ${a.name.padEnd(12)} entries=${String(entries).padStart(2)} cap=${String(cap).padStart(3)} headroom=${cap - entries}`);

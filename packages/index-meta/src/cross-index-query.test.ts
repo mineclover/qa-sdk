@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { describe, it, expect } from "vitest";
 import { MetaRegistry } from "./meta-registry.js";
 import { composeQuery, deepDecode } from "./cross-index-query.js";

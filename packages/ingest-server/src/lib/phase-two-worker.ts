@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import {
   now,
   type DlqStore,
@@ -14,6 +17,7 @@ import {
 } from "@qa-sdk/core";
 import { computePendingVerdicts, reconstructPendingTraces } from "@qa-sdk/engine";
 import { aggregateMetrics } from "./metric-aggregator.js";
+import { decodeAddressContext } from "./decode-client.js";
 import type { Logger } from "pino";
 
 export const PHASE_TWO_TASK_QUEUE_OPTIONS = {
@@ -26,6 +30,16 @@ export interface ConvergencePipelinePort {
   notifyCompletion(traceIds: readonly string[]): void;
 }
 
+/** TransitionFunctions 최소 인터페이스 (순환 의존 방지) */
+export interface TransitionEnginePort {
+  processSession(input: { readonly sessionId: string; readonly events: readonly unknown[] }): {
+    readonly instances: readonly unknown[];
+    readonly violations: readonly unknown[];
+    readonly unmatchedCount: number;
+  };
+  decodeCtx(catalog: unknown, encoded: Record<string, string>): Record<string, string>;
+}
+
 export interface PhaseTwoWorkerDeps {
   recordStore: RecordStore;
   traceStore: TraceStore;
@@ -36,6 +50,10 @@ export interface PhaseTwoWorkerDeps {
   dlqStore: DlqStore;
   metricRollupStore?: MetricRollupStore;
   convergencePipeline?: ConvergencePipelinePort;
+  transitionEngine?: TransitionEnginePort;
+  transitionCatalog?: unknown;
+  /** decode-service URL — 설정 시 address_context 디코딩에 외부 서비스 사용 */
+  decodeServiceUrl?: string;
   logger?: Logger;
   taskQueue?: TaskQueue<TaskPayload>;
 }
@@ -149,6 +167,62 @@ export async function processPendingPhaseTwo(
       },
     },
   );
+
+  // ── Phase 2.5: Transition Matching (에러 격리) ──────
+  if (deps.transitionEngine && deps.transitionCatalog) {
+    const transitionEngine = deps.transitionEngine;
+    const transitionCatalog = deps.transitionCatalog;
+    try {
+      for (const traceId of reconstructResult.reconstructedTraceIds) {
+        const records = await deps.recordStore.findByTraceId(traceId);
+        // address_context가 있는 레코드만 디코딩 + 전이 매칭
+        const withCtx = records.filter((r) => r.addressContext && typeof r.addressContext === "object");
+        const decodedEvents: Array<Record<string, unknown>> = [];
+        for (const r of withCtx) {
+          const ctx = r.addressContext as Record<string, string>;
+          // 1) decode-service 우선 시도 (설정된 경우)
+          let decoded: Record<string, string> | undefined;
+          if (deps.decodeServiceUrl) {
+            const result = await decodeAddressContext(deps.decodeServiceUrl, ctx);
+            if (result) {
+              decoded = {};
+              for (const [k, v] of Object.entries(result)) {
+                for (const [ek, ev] of Object.entries(v.entities)) {
+                  decoded[`${k}.${ek}`] = ev;
+                }
+              }
+            }
+          }
+          // 2) 로컬 fallback
+          if (!decoded) {
+            decoded = transitionEngine.decodeCtx(transitionCatalog, ctx);
+          }
+          decodedEvents.push({
+            ...r,
+            log_id: r.logId ?? "",
+            timestamp: r.createdAt ?? r.timestamp ?? "",
+            address_context: decoded,
+          });
+        }
+
+        if (decodedEvents.length > 0) {
+          const result = deps.transitionEngine.processSession({
+            sessionId: traceId,
+            events: decodedEvents,
+          });
+
+          if (result.violations.length > 0) {
+            deps.logger?.warn(
+              { traceId, violations: result.violations.length, instances: result.instances.length },
+              "transition violations detected",
+            );
+          }
+        }
+      }
+    } catch (error) {
+      deps.logger?.error({ err: error }, "transition matching failed (Phase 2.5) — verdict unaffected");
+    }
+  }
 
   // convergence 파이프라인에 완료 알림 (에러 격리)
   if (deps.convergencePipeline) {

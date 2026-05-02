@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * codegen.ts — MetaRegistryInput에서 TypeScript 타입 코드를 생성
  *
@@ -7,8 +10,8 @@
  * 3. 스키마 검증(lint) 및 diff 리포트
  */
 
-import type { MetaRegistryInput, DimInput, IndexInput, DimSnapshotInput } from "./types.js";
-import type { CompiledSchema, SchemaDiff, TableVersionChange } from "./compile-schema.js";
+import type { MetaRegistryInput, DimInput } from "./types.js";
+import type { SchemaDiff } from "./compile-schema.js";
 
 // ── codegen ─────────────────────────────────────────────────────────────────
 

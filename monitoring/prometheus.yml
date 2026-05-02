@@ -1,5 +1,6 @@
 # Prometheus 스크레이프 설정
-# docker compose -f docker-compose.yml -f docker-compose.ha.yml 환경 기준
+# 로컬 개발: docker compose -f monitoring/docker-compose.monitoring.yml up
+# HA 배포: docker compose -f docker-compose.yml -f docker-compose.ha.yml up
 
 global:
   scrape_interval: 15s
@@ -9,30 +10,47 @@ rule_files:
   - "alerting-rules.yml"
 
 scrape_configs:
-  # ── ingest-server (HA: 2개 인스턴스) ──
+  # ── ingest-server ──
   - job_name: "ingest-server"
     metrics_path: "/v1/metrics"
     static_configs:
-      - targets:
-          - "ingest-1:3200"
-          - "ingest-2:3200"
+      - targets: ["host.docker.internal:3200"]
         labels:
           service: "ingest-server"
+          env: "dev"
 
   # ── registry-service ──
   - job_name: "registry-service"
-    metrics_path: "/metrics"
+    metrics_path: "/health"
     static_configs:
-      - targets:
-          - "registry-service:3300"
+      - targets: ["host.docker.internal:3300"]
         labels:
           service: "registry-service"
+          env: "dev"
 
-  # ── nginx LB ──
-  - job_name: "nginx"
-    metrics_path: "/nginx-health"
+  # ── gate-service ──
+  - job_name: "gate-service"
+    metrics_path: "/health"
     static_configs:
-      - targets:
-          - "nginx:3200"
+      - targets: ["host.docker.internal:3400"]
         labels:
-          service: "nginx-lb"
+          service: "gate-service"
+          env: "dev"
+
+  # ── query-service ──
+  - job_name: "query-service"
+    metrics_path: "/health"
+    static_configs:
+      - targets: ["host.docker.internal:3500"]
+        labels:
+          service: "query-service"
+          env: "dev"
+
+  # ── decode-service ──
+  - job_name: "decode-service"
+    metrics_path: "/health"
+    static_configs:
+      - targets: ["host.docker.internal:3600"]
+        labels:
+          service: "decode-service"
+          env: "dev"

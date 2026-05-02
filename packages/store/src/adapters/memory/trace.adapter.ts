@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import type { StoredTrace, TraceStore, TraceUpsert } from "@qa-sdk/core";
 
 /** TraceStore의 in-memory 구현 */

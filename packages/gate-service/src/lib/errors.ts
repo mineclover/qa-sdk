@@ -1,3 +1,6 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
 import {
   EntryNotFoundError,
   IndexMetaError,
@@ -5,24 +8,15 @@ import {
   IndexVersionNotFoundError,
   ParseError,
   ValidationError,
-} from "index-meta";
+} from "index-meta-workers";
+export { AppError } from "@qa-sdk/core";
+import { AppError } from "@qa-sdk/core";
 
 export type ErrorCode =
   | "INVALID_INPUT"
   | "NOT_FOUND"
   | "PARSE_ERROR"
   | "INTERNAL_ERROR";
-
-export class AppError extends Error {
-  constructor(
-    public readonly code: ErrorCode,
-    message: string,
-    public readonly statusCode: number = 400,
-  ) {
-    super(message);
-    this.name = "AppError";
-  }
-}
 
 export function fromIndexMetaError(err: unknown): AppError {
   if (err instanceof EntryNotFoundError) {

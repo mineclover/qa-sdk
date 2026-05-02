@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   InMemoryPrefixRegistry,
@@ -8,7 +11,7 @@ import {
   gateAwareResolve,
   gateFilterRanges,
   queryAcrossVersions,
-  resolvePolicy,
+  resolvePatternPolicy,
   type MetaRegistryInput,
   type AddressStateCacheRecord,
   type DimStateSpec,
@@ -441,7 +444,7 @@ describe("query-service", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual(
-      resolvePolicy(
+      resolvePatternPolicy(
         [1, 1],
         [
           { id: "broad-high", pattern: [null, null], value: "allow", priority: 10 },
@@ -765,7 +768,7 @@ describe("query-service", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual(
       gateAwareResolve(
-        resolvePolicy(
+        resolvePatternPolicy(
           [2, 1, 1],
           rules,
           [3, 2, 2],
@@ -806,5 +809,123 @@ describe("query-service", () => {
     expect(response.status).toBe(503);
     const body = await response.json() as { error: { code: string } };
     expect(body.error.code).toBe("SERVICE_UNAVAILABLE");
+  });
+
+  it("POST /rules/migrate returns 503 when migration service is not configured", async () => {
+    const noMigrationApp = createApp({
+      policyRuleStore,
+      prefixRegistry,
+    });
+
+    const response = await req(noMigrationApp, "POST", "/rules/migrate", {
+      indexId: "perm",
+      fromVersion: "v1",
+      toVersion: "v2",
+    });
+
+    expect(response.status).toBe(503);
+    const body = await response.json() as { error: { code: string } };
+    expect(body.error.code).toBe("SERVICE_UNAVAILABLE");
+  });
+
+  it("GET /state/:context/:resource/at filters records by explicit ids only", async () => {
+    const stateApp = createApp({
+      policyRuleStore,
+      prefixRegistry,
+      metaRegistry,
+      stateRoutes: {
+        recordStore: {
+          async findByTimeRange() {
+            return [
+              {
+                logId: "keep",
+                traceId: "t1",
+                spanId: "s1",
+                timestamp: AT,
+                recordKind: "log",
+                eventKey: "evt",
+                eventVersion: "v1",
+                payloadFormat: "json",
+                payloadEncoding: "raw",
+                payloadMaskingApplied: false,
+                payloadMaskedFields: [],
+                payload: { context_id: "ctx-1", resource_id: "res-1" },
+                addressContext: { flow_step: "entry" },
+                createdAt: AT,
+              },
+              {
+                logId: "drop",
+                traceId: "t2",
+                spanId: "s2",
+                timestamp: AT,
+                recordKind: "log",
+                eventKey: "evt",
+                eventVersion: "v1",
+                payloadFormat: "json",
+                payloadEncoding: "raw",
+                payloadMaskingApplied: false,
+                payloadMaskedFields: [],
+                payload: { context_id: "ctx-1", resource_id: "other" },
+                addressContext: { unrelated: "res-1", lifecycle_state: "active" },
+                createdAt: AT,
+              },
+            ];
+          },
+        },
+      },
+    });
+
+    const response = await stateApp.request("/state/ctx-1/res-1/at?ts=2026-01-01T00:00:00.000Z");
+    expect(response.status).toBe(200);
+    const body = await response.json() as {
+      mode: string;
+      recordCount: number;
+      state: Record<string, string>;
+    };
+
+    expect(body.mode).toBe("replay");
+    expect(body.recordCount).toBe(1);
+    expect(body.state).toEqual({ flow_step: "entry" });
+  });
+
+  it("GET /state/:context/:resource/at prefers replayTransition when available", async () => {
+    const replayTransition = vi.fn(async () => ({ lifecycle_state: "active" }));
+    const stateApp = createApp({
+      policyRuleStore,
+      prefixRegistry,
+      metaRegistry,
+      stateRoutes: {
+        recordStore: {
+          async findByTimeRange() {
+            return [
+              {
+                logId: "keep",
+                traceId: "t1",
+                spanId: "s1",
+                timestamp: AT,
+                recordKind: "log",
+                eventKey: "evt",
+                eventVersion: "v1",
+                payloadFormat: "json",
+                payloadEncoding: "raw",
+                payloadMaskingApplied: false,
+                payloadMaskedFields: [],
+                payload: { context_id: "ctx-1", resource_id: "res-1" },
+                addressContext: { flow_step: "entry" },
+                createdAt: AT,
+              },
+            ];
+          },
+        },
+        replayTransition,
+      },
+    });
+
+    const response = await stateApp.request("/state/ctx-1/res-1/at?ts=2026-01-01T00:00:00.000Z");
+    expect(response.status).toBe(200);
+    const body = await response.json() as { mode: string; state: Record<string, string> };
+    expect(body.mode).toBe("engine-replay");
+    expect(body.state).toEqual({ lifecycle_state: "active" });
+    expect(replayTransition).toHaveBeenCalledOnce();
   });
 });

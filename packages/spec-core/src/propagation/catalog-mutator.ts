@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * catalog-mutator — 카탈로그 불변 변이.
  *
@@ -9,6 +12,7 @@
  *   - 영향 prefix의 버전 핀 자동 갱신
  */
 
+import { nextPowerOf2 } from "weighted-index";
 import type {
   Catalog,
   VersionedAxis,
@@ -191,8 +195,3 @@ function updateAffectedPrefixes(
   return { updatedPrefixes, affectedPrefixes, updatedPrefixVersions };
 }
 
-function nextPowerOf2(n: number): number {
-  let p = 1;
-  while (p < n) p <<= 1;
-  return p;
-}

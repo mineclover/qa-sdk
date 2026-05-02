@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * 리소스 사용량 벤치마크
  *
@@ -92,7 +95,7 @@ describe("WeightedIndex 인스턴스 메모리", () => {
     // 생성 시간 측정
     const ITER = 50_000;
     const start = performance.now();
-    for (let i = 0; i < ITER; i++) new WeightedIndex(shape);
+    for (let i = 0; i < ITER; i++) void new WeightedIndex(shape);
     const constructUs = ((performance.now() - start) / ITER) * 1000;
 
     const wi = new WeightedIndex(shape);

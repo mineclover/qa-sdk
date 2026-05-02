@@ -1,0 +1,57 @@
+{
+  "topology": "read-model",
+  "openmetadata": {
+    "domain": {
+      "name": "Metric",
+      "team": "Reporting Platform",
+      "owner": "sim-reporting-owner"
+    },
+    "glossary": [
+      {
+        "term": "DailyMetric",
+        "description": "A daily-grain time-series record indexed by metricKey + date."
+      },
+      {
+        "term": "MetricKey",
+        "description": "Stable identifier of a time-series (e.g. marginal_density.sim.budget)."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "metric-read-path",
+        "from": "reporting.daily_metrics",
+        "to": "reporting.metric_read_model",
+        "via": "metric-read-model-adapter"
+      }
+    ],
+    "qualityTests": [
+      {
+        "name": "metric_value_is_number",
+        "type": "columnValuesToBeOfType",
+        "entity": "reporting.daily_metrics.value",
+        "expectedType": "number"
+      },
+      {
+        "name": "metric_key_not_null",
+        "type": "columnNullCount",
+        "entity": "reporting.daily_metrics.metric_key",
+        "maxNullCount": 0
+      }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "metric-read-model",
+      "domain": "metric",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "metric-read-model",
+      "segments": [
+        { "name": "metricKey" },
+        { "name": "date" }
+      ],
+      "ttl": "medium",
+      "openmetadataEntity": "reporting.metric_read_model"
+    }
+  ]
+}

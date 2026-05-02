@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RecordInsert } from "@qa-sdk/core";
 import { InMemoryRecordStore } from "./record.adapter.js";

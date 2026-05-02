@@ -1,12 +1,15 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * activation-gate — 활성화 전 DKG constraint/domain-health 검사.
  *
  * registry-service가 이 순수 함수를 소비하여 활성화 게이트를 구현한다.
  */
 
-import type { GraphRegistry } from "../dkg/graph-registry.js";
-import { checkConstraints } from "../dkg/skills/constraint-check.js";
-import { validatePrefixCategory } from "../schema/category-rules.js";
+import type { GraphPort, GraphNodeLike } from "spec-schema";
+import { checkConstraints } from "dkg";
+import { validatePrefixCategory } from "spec-schema";
 
 export interface ActivationDiagnostic {
   readonly level: "error" | "warning" | "info";
@@ -21,6 +24,21 @@ export interface ActivationGateResult {
   readonly constraintViolations: number;
 }
 
+interface ObservationLike {
+  readonly kind: "observation";
+  readonly id: string;
+  readonly finding: string;
+  readonly source?: string;
+  readonly suggestion?: unknown;
+  readonly intent?: string;
+  readonly resolution?: unknown;
+}
+
+function isObservationLike(node: GraphNodeLike | undefined): node is GraphNodeLike & ObservationLike {
+  const record = node as (GraphNodeLike & Record<string, unknown>) | undefined;
+  return node?.kind === "observation" && typeof record?.finding === "string";
+}
+
 /**
  * prefix 활성화 전 DKG constraint + observation 검사.
  *
@@ -29,7 +47,7 @@ export interface ActivationGateResult {
  * - "warn": 항상 allowed=true (진단만 반환)
  */
 export function checkActivationReadiness(
-  graph: GraphRegistry,
+  graph: GraphPort,
   prefixId: string,
   options?: { mode?: "strict" | "warn"; schemaCheck?: boolean },
 ): ActivationGateResult {
@@ -40,7 +58,7 @@ export function checkActivationReadiness(
   const constraintResult = checkConstraints(graph, prefixId);
   for (const v of constraintResult.violations) {
     diagnostics.push({
-      level: v.severity,
+      level: v.severity ?? "warning",
       source: "constraint",
       id: v.constraintId,
       message: `Constraint violated: ${v.rule}`,
@@ -50,8 +68,8 @@ export function checkActivationReadiness(
   // 2. Check unresolved critical observations on this prefix
   const obsEdges = graph.edgesTo(prefixId, "observes");
   for (const edge of obsEdges) {
-    const obs = graph.getNode(edge.from) as any;
-    if (!obs || obs.kind !== "observation") continue;
+    const obs = graph.getNode(edge.from);
+    if (!isObservationLike(obs)) continue;
     if (obs.resolution) continue; // already resolved
 
     // Only report action-needed observations
@@ -71,7 +89,7 @@ export function checkActivationReadiness(
   // 3. Find which domain this prefix belongs to, check domain health
   const domainEdges = graph.edgesTo(prefixId, "contains");
   for (const edge of domainEdges) {
-    const domain = graph.getNode(edge.from) as any;
+    const domain = graph.getNode(edge.from);
     if (!domain || domain.kind !== "domain") continue;
 
     // Check constraints on the domain itself

@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * ColorTokens — 시각화 색상 토큰 시스템.
  *
@@ -74,8 +77,33 @@ export const CATEGORY_COLORS: Record<string, CategoryColor> = {
   event:       { main: token(0xff9100), emissive: token(0xbf6c00) },
   policy:      { main: token(0x00e676), emissive: token(0x009624) },
   relation:    { main: token(0xb388ff), emissive: token(0x7c4dff) },
-  entity:      { main: token(0x546e7a), emissive: token(0x37474f) },
+  entity:      { main: token(0x78909c), emissive: token(0xb0bec5) },
+  state:       { main: token(0x9575cd), emissive: token(0xd1c4e9) },
   table:       { main: token(0xff5252), emissive: token(0xc62828) },
+};
+
+// ═══════════════════════════════════════════════════
+//  Signal Role Colors (이벤트 흐름 역할별 색상)
+// ═══════════════════════════════════════════════════
+
+export interface RoleColor {
+  readonly token: ColorToken;
+  readonly hex: number;
+}
+
+function roleToken(hex: number): RoleColor {
+  return { token: token(hex), hex };
+}
+
+/** Signal Role → 색상 매핑. 선(beam)/반짝임(glow)/타임라인에 사용. */
+export const ROLE_COLORS: Record<string, RoleColor> = {
+  context: roleToken(0x4ade80),
+  trigger: roleToken(0xfacc15),
+  channel: roleToken(0x60a5fa),
+  state:   roleToken(0xc084fc),
+  guard:   roleToken(0xf472b6),
+  effect:  roleToken(0xfb923c),
+  data:    roleToken(0x94a3b8),
 };
 
 // ═══════════════════════════════════════════════════
@@ -110,6 +138,8 @@ export function generateCssVariables(): string {
     `--cyan:${PALETTE.cyan.css}`,
     // Category
     ...Object.entries(CATEGORY_COLORS).map(([k, v]) => `--cat-${k}:${v.main.css}`),
+    // Signal Role
+    ...Object.entries(ROLE_COLORS).map(([k, v]) => `--role-${k}:${v.token.css}`),
     // Layer
     ...LAYER_COLORS.map((c, i) => `--layer-${i}:${c.css}`),
   ].join(";");

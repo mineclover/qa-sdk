@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * observation lifecycle 테스트 — 결정적 ID + auto-resolve + store 영속화.
  *
@@ -10,11 +13,11 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { metricsToObservations, resolveRecoveredMetrics, collectMetrics } from "./metric-registry.js";
-import type { MetricValue } from "./metric.types.js";
-import type { ObservationNode } from "../dkg/dkg.types.js";
-import { DkgSqliteStore } from "../store/dkg-sqlite-store.js";
-import { bootstrapDkg } from "../dkg/bootstrap.js";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
+import { metricsToObservations, resolveRecoveredMetrics, collectMetrics } from "@qa-sdk/convergence";
+import type { MetricValue, ObservationNode } from "@qa-sdk/convergence";
+import { DkgSqliteStore } from "dkg/store";
+import { bootstrapDkg } from "dkg";
 
 // ── 결정적 ID ────────────────────────────────────────
 
@@ -296,12 +299,11 @@ describe("observation store 멱등성 — 반복 converge 시 누적 안 함", (
     const store = new DkgSqliteStore(":memory:", "cycle-test");
 
     // 1. bootstrap
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     store.saveGraph(graph);
     const initialStats = store.stats();
 
     // 2. collectMetrics → metricsToObservations → save (1회차)
-    const { DEMO_CATALOG } = require("demo-snapshot");
     const metrics1 = collectMetrics(DEMO_CATALOG, graph, null);
     const obs1 = metricsToObservations(metrics1);
     if (obs1.length > 0) {
@@ -339,8 +341,8 @@ describe("observation store 멱등성 — 반복 converge 시 누적 안 함", (
     expect(afterThird.nodes).toBe(afterFirst.nodes);
 
     // observation ID 동일 확인
-    expect(obs1.map(o => o.id).sort()).toEqual(obs2.map(o => o.id).sort());
-    expect(obs2.map(o => o.id).sort()).toEqual(obs3.map(o => o.id).sort());
+    expect(obs1.map(o => o.id).toSorted()).toEqual(obs2.map(o => o.id).toSorted());
+    expect(obs2.map(o => o.id).toSorted()).toEqual(obs3.map(o => o.id).toSorted());
 
     store.close();
   });

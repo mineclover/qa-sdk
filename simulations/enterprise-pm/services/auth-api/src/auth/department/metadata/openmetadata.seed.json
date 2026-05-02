@@ -1,0 +1,72 @@
+{
+  "topology": "service",
+  "openmetadata": {
+    "domain": {
+      "name": "Department",
+      "team": "Auth Team",
+      "owner": "sim-auth-owner"
+    },
+    "glossary": [
+      {
+        "term": "Department",
+        "description": "An organizational unit; departments form a tree via parent_id."
+      },
+      {
+        "term": "DepartmentChain",
+        "description": "Resolved path from a department up to the organizational root."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "department-write-path",
+        "from": "auth.departments",
+        "to": "auth.outbox_events",
+        "via": "transactional-outbox"
+      }
+    ],
+    "qualityTests": [
+      {
+        "name": "department_name_not_null",
+        "type": "columnNullCount",
+        "entity": "auth.departments.name",
+        "maxNullCount": 0
+      }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "department-read-model",
+      "domain": "department",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "department-read-model",
+      "segments": [
+        { "name": "departmentId" }
+      ],
+      "ttl": "medium",
+      "openmetadataEntity": "reporting.department_read_model"
+    },
+    {
+      "id": "department-chain",
+      "domain": "department",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "department-chain",
+      "segments": [
+        { "name": "departmentId" }
+      ],
+      "ttl": "medium"
+    },
+    {
+      "id": "department-idempotency",
+      "domain": "department",
+      "purpose": "idempotency",
+      "version": "v1",
+      "prefix": "department-idempotency",
+      "segments": [
+        { "name": "idempotencyKey", "pii": false }
+      ],
+      "ttl": "short"
+    }
+  ]
+}

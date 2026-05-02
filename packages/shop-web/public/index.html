@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QA Shop</title>
+<script src="config.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
 :root{--bg:#f8f9fb;--card:#fff;--primary:#4a6cf7;--primary-dark:#3558d6;--accent:#ff6b6b;--text:#2d3436;--dim:#8395a7;--border:#e8ecf1;--success:#00b894;--shadow:0 2px 8px rgba(0,0,0,0.06)}
@@ -191,39 +192,59 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 <script type="module">
 // ═══════════════════════════════════════════════════
-//  QA Tracking — viz-3d-core.js의 encode 사용 (단일 출처)
+//  QA SDK — @qa-sdk/browser 번들 사용
 // ═══════════════════════════════════════════════════
 
-import { track as qaTrackEncode, BROWSER_CATALOG, classifyByRole } from './viz-3d-core.js';
+import { createQaMonitor } from './qa-browser-sdk.js';
 
-const INGEST_URL=(new URLSearchParams(location.search).get('ingest'))||'http://localhost:3100';
-const traceId='trc_shop_'+Date.now();
-let spanSeq=0,eventCount=0,userType='guest';
-const sessionId='ses_'+Date.now();
+const _cfg = window.__QA_CONFIG__ || {};
+const _qs = new URLSearchParams(location.search);
+const INGEST_URL = _qs.get('ingest') || _cfg.INGEST_URL || 'http://localhost:3200';
 
-function qaTrack(eventKey,prefixes){
-  const ctx=qaTrackEncode(BROWSER_CATALOG,prefixes);
-  spanSeq++;eventCount++;
-  document.getElementById('qa-events').textContent=`events: ${eventCount}`;
-  document.getElementById('qa-status').textContent=`qa: ${eventKey} → sending`;
+// ── QaMonitor 생성 — serviceConfig만 넘기면 infra_context 자동 생성 ──
+const monitor = createQaMonitor({
+  ingestUrl: INGEST_URL,
+  serviceConfig: {
+    namespace: 'shop',
+    name: 'shopping-web',
+    env: _qs.get('env') || _cfg.ENV || 'dev',
+    region: _qs.get('region') || _cfg.REGION || 'asia',
+  },
+  owner: { owner_type: 'tenant', owner_id: 'shop-monitor' },
+  autoCapture: { clicks: true, navigation: true },
+});
 
-  fetch(`${INGEST_URL}/v1/ingest`,{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      transmission_id:`tx_shop_${Date.now()}`,sent_at:new Date().toISOString(),
-      owner:{owner_type:'workspace',owner_id:'shop-web'},
-      source:{service_name:'shopping-web',sdk_name:'@qa-sdk/shop',sdk_version:'0.1.0'},
-      runtime:{platform:'browser'},build:{env:'dev'},
-      records:[{
-        log_id:`log_${Date.now()}_${spanSeq}`,timestamp:new Date().toISOString(),record_kind:'log',
-        trace_id:traceId,span_id:`spn_${spanSeq}`,event_key:eventKey,event_version:'001',
-        payload_format:'json',payload_encoding:'raw',payload_masking_applied:false,payload_masked_fields:[],
-        payload:{event:eventKey},address_context:ctx,
-        qa_session_id:sessionId,
-      }],
-    }),
-  }).then(r=>{document.getElementById('qa-status').textContent=`qa: ${eventKey} → ${r.status}`})
-    .catch(()=>{document.getElementById('qa-status').textContent=`qa: ${eventKey} → offline`});
+let eventCount = 0, userType = sessionStorage.getItem('shop_userType') || 'guest';
+
+// svc_ref를 사용하는 prefix에 service 주소를 자동 주입
+const SVC_REF_PREFIXES = new Set([
+  'page_view', 'endpoint', 'flow_point', 'permission', 'tracking',
+  'cart_event', 'auth_event', 'order_event', 'event',
+  'pipeline_point', 'data_policy', 'health_event', 'deploy_event',
+  'engine_event', 'schema_event', 'schema_validation',
+  'pattern_match', 'pattern_anomaly', 'version_point', 'gate_point',
+  'execution_context', 'ingest_record', 'event_classification', 'metric_point',
+]);
+const SVC_ADDR = {
+  env: _qs.get('env') || _cfg.ENV || 'dev',
+  region: _qs.get('region') || _cfg.REGION || 'asia',
+  svc_name: 'shopping-web',
+  namespace: 'shop',
+};
+
+function qaTrack(eventKey, prefixes) {
+  eventCount++;
+  document.getElementById('qa-events').textContent = `events: ${eventCount}`;
+  document.getElementById('qa-status').textContent = `qa: ${eventKey}`;
+  // svc_ref 자동 주입 — prefix_ref 차원이 있는 prefix에 service 좌표 바인딩
+  const enriched = {};
+  for (const [pid, dims] of Object.entries(prefixes)) {
+    enriched[pid] = SVC_REF_PREFIXES.has(pid) && !dims.svc_ref
+      ? { svc_ref: SVC_ADDR, ...dims }
+      : dims;
+  }
+  // emitWithCoords — 좌표 인코딩 + 전송을 한 번에
+  monitor.emitWithCoords(eventKey, enriched, { event: eventKey, userType });
 }
 
 // ═══════════════════════════════════════════════════
@@ -240,12 +261,58 @@ const PRODUCTS=[
   {id:8,name:'노이즈캔슬링 헤드폰',price:199000,cat:'audio',desc:'오버이어. 30시간 배터리. 멀티포인트.',emoji:'🎵'},
 ];
 
-let cart=[],orders=[],selectedProduct=null,loggedIn=false;
+let cart=[],orders=[],selectedProduct=null,loggedIn=sessionStorage.getItem('shop_loggedIn')==='true';
+
+// ═══════════════════════════════════════════════════
+//  Permission Check — 페이지/기능별 접근 권한 추적
+// ═══════════════════════════════════════════════════
+const PAGE_PERMISSIONS = {
+  home:     { resource: 'page/home',     action: 'view', minRole: 'guest' },
+  products: { resource: 'page/products', action: 'view', minRole: 'guest' },
+  detail:   { resource: 'page/product',  action: 'view', minRole: 'guest' },
+  cart:     { resource: 'page/cart',     action: 'view', minRole: 'customer' },
+  checkout: { resource: 'page/checkout', action: 'purchase', minRole: 'customer' },
+  mypage:   { resource: 'page/mypage',   action: 'view', minRole: 'customer' },
+  complete: { resource: 'page/order',    action: 'view', minRole: 'customer' },
+};
+const ROLE_LEVEL = { guest: 0, customer: 1, admin: 2 };
+
+function checkPermission(page, action) {
+  const rule = PAGE_PERMISSIONS[page];
+  if (!rule) return { allowed: true, resource: 'page/' + page, action: action || 'view', role: userType };
+  const currentLevel = ROLE_LEVEL[userType] ?? 0;
+  const requiredLevel = ROLE_LEVEL[rule.minRole] ?? 0;
+  const allowed = currentLevel >= requiredLevel;
+  const result = {
+    allowed,
+    resource: rule.resource,
+    action: rule.action,
+    role: userType,
+    requiredRole: rule.minRole,
+  };
+  // 권한 체크 이벤트 — 허용/거부 모두 기록
+  qaTrack('permission.check', {
+    permission: { role: userType },
+    rbac: { role: userType, action: rule.action, resource_type: 'page' },
+  });
+  return result;
+}
 
 // ═══════════════════════════════════════════════════
 //  Navigation
 // ═══════════════════════════════════════════════════
 window.go=function go(page){
+  // 권한 체크 — 거부 시 로그인 페이지로 리다이렉트
+  const perm = checkPermission(page, 'view');
+  if (!perm.allowed) {
+    qaTrack('permission.denied', {
+      permission: { role: userType },
+      auth_event: { action: 'denied' },
+    });
+    go('login');
+    return;
+  }
+
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
   document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('active'));
@@ -272,17 +339,25 @@ window.addEventListener('hashchange',()=>{
 //  Auth
 // ═══════════════════════════════════════════════════
 window.doLogin=function(){
-  loggedIn=true;userType='member';
-  document.getElementById('user-name').textContent='user@shop.com';
-  document.getElementById('nav').style.display='flex';
-  qaTrack('auth.login',{
-    page_view:{page:'login',locale:'ko',userType:'guest'},
-    tracking:{trackAction:'submit',page:'login',userType:'guest'},
-    auth_event:{action:'login'},
-    endpoint:{resource_type:'api',http_method:'POST',api_version:'v1'},
-    flow_point:{flow_name:'login',flow_step:'entry',flow_variant:'default'},
-    permission:{role:'customer'},
-  });
+  try {
+    const emailInput = document.querySelector('[data-testid="login-email"]');
+    const email = emailInput ? emailInput.value.trim() : 'user@shop.com';
+    loggedIn=true;userType='member';
+    sessionStorage.setItem('shop_loggedIn','true');
+    sessionStorage.setItem('shop_userType','member');
+    sessionStorage.setItem('shop_email',email);
+    document.getElementById('user-name').textContent=email;
+    document.getElementById('nav').style.display='flex';
+    if (monitor && monitor.setUser) monitor.setUser({ userId: email, actorId: email });
+    qaTrack('auth.login',{
+      page_view:{page:'login',locale:'ko',userType:'guest'},
+      tracking:{trackAction:'submit',page:'login',userType:'guest'},
+      auth_event:{action:'login'},
+      endpoint:{resource_type:'api',http_method:'POST',api_version:'v1'},
+      flow_point:{flow_name:'login',flow_step:'entry',flow_variant:'default'},
+      permission:{role:'customer'},
+    });
+  } catch(e) { console.warn('[doLogin] error:', e); loggedIn=true; }
   go('home');
 };
 
@@ -290,9 +365,14 @@ window.doLogout=function(){
   qaTrack('auth.logout',{
     tracking:{trackAction:'close',page:'mypage',userType},
     auth_event:{action:'logout'},
+    endpoint:{resource_type:'api',http_method:'POST',api_version:'v1'},
     flow_point:{flow_name:'browse',flow_step:'exit',flow_variant:'default'},
   });
   loggedIn=false;userType='guest';
+  sessionStorage.removeItem('shop_loggedIn');
+  sessionStorage.removeItem('shop_userType');
+  sessionStorage.removeItem('shop_email');
+  if (monitor.clearUser) monitor.clearUser();
   document.getElementById('user-name').textContent='Guest';
   document.getElementById('nav').style.display='none';
   go('login');
@@ -313,7 +393,10 @@ function renderProducts(){
       </div>
     </div>
   `).join('');
-  qaTrack('api.product_list',{endpoint:{resource_type:'api',http_method:'GET',api_version:'v1'}});
+  qaTrack('api.product_list',{
+    tracking:{trackAction:'view',page:'product_list',userType},
+    endpoint:{resource_type:'api',http_method:'GET',api_version:'v1'},
+  });
 }
 
 window.viewProduct=function(id){
@@ -334,6 +417,7 @@ window.viewProduct=function(id){
 // ═══════════════════════════════════════════════════
 window.addToCart=function(){
   if(!selectedProduct)return;
+  checkPermission('cart', 'add_to_cart');
   cart.push({...selectedProduct,qty:1});
   document.getElementById('cart-count').textContent=cart.length;
   qaTrack('cart.add',{
@@ -361,17 +445,23 @@ function renderCart(){
 // ═══════════════════════════════════════════════════
 window.goCheckout=function(){
   if(cart.length===0){alert('장바구니가 비어있습니다');return}
+  const perm = checkPermission('checkout', 'purchase');
+  if (!perm.allowed) { go('login'); return; }
   go('checkout');
   qaTrack('checkout.entry',{
     page_view:{page:'checkout',locale:'ko',userType},
     tracking:{trackAction:'navigate',page:'checkout',userType},
+    endpoint:{resource_type:'page',http_method:'GET',api_version:'v1'},
     flow_point:{flow_name:'checkout',flow_step:'entry',flow_variant:'default'},
     permission:{role:'customer'},
   });
 };
 
 window.doPayment=function(){
+  checkPermission('checkout', 'payment');
   qaTrack('checkout.process',{
+    page_view:{page:'checkout',locale:'ko',userType},
+    tracking:{trackAction:'submit',page:'checkout',userType},
     endpoint:{resource_type:'api',http_method:'POST',api_version:'v1'},
     flow_point:{flow_name:'checkout',flow_step:'processing',flow_variant:'default'},
     permission:{role:'customer'},
@@ -380,8 +470,10 @@ window.doPayment=function(){
 
   setTimeout(()=>{
     qaTrack('payment.process',{
+      tracking:{trackAction:'submit',page:'checkout',userType},
       endpoint:{resource_type:'api',http_method:'POST',api_version:'v1'},
       flow_point:{flow_name:'payment',flow_step:'payment',flow_variant:'default'},
+      pipeline_point:{pipeline_phase:'ingest',validation_mode:'strict',verdict_result:'pass',temporal_strategy:'span_local'},
     });
   },500);
 
@@ -391,8 +483,10 @@ window.doPayment=function(){
     cart=[];document.getElementById('cart-count').textContent='0';
     document.getElementById('order-id').textContent=orderId;
     qaTrack('payment.success',{
+      tracking:{trackAction:'purchase',page:'checkout',userType},
       order_event:{action:'complete'},
       flow_point:{flow_name:'checkout',flow_step:'success',flow_variant:'default'},
+      pipeline_point:{pipeline_phase:'verdict',validation_mode:'strict',verdict_result:'pass',temporal_strategy:'span_local'},
     });
     go('complete');
   },1500);
@@ -411,11 +505,40 @@ function renderMypage(){
 // ═══════════════════════════════════════════════════
 //  Init
 // ═══════════════════════════════════════════════════
-document.getElementById('qa-status').textContent=`qa: ready → ${INGEST_URL}`;
+const svcConfig = monitor.getSession ? monitor.getSession() : {};
+document.getElementById('qa-status').textContent = `qa: ready → ${INGEST_URL} (session: ${svcConfig.sessionId ?? 'n/a'})`;
 
-// Monitor link에 ingest URL 전달
-const monitorUrl=location.origin.replace(location.port,'3335');
-document.getElementById('monitor-btn').href=`${monitorUrl}/monitor.html`;
+// 세션 복원 — 새로고침 시 로그인 상태 유지
+const savedEmail = sessionStorage.getItem('shop_email');
+if (loggedIn && savedEmail) {
+  document.getElementById('user-name').textContent = savedEmail;
+  document.getElementById('nav').style.display = 'flex';
+  if (monitor && monitor.setUser) monitor.setUser({ userId: savedEmail, actorId: savedEmail });
+  go('home');
+} else {
+  loggedIn = false;
+  userType = 'guest';
+  go('login');
+}
+
+// Monitor link — registry에서 URL resolve, fallback config.js
+(async () => {
+  const regUrl = _cfg.REGISTRY_URL || 'http://localhost:3300';
+  try {
+    const envName = _cfg.ENV || 'dev';
+    const res = await fetch(`${regUrl}/api/services/urls?env=${envName}`, { signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+      const urls = await res.json();
+      const demoUrl = urls['platform-demo'];
+      if (demoUrl) {
+        document.getElementById('monitor-btn').href = `${demoUrl}/monitor.html`;
+        return;
+      }
+    }
+  } catch { /* registry 실패 시 config.js fallback */ }
+  const monitorUrl = _cfg.MONITOR_URL || location.origin.replace(location.port, '5176');
+  document.getElementById('monitor-btn').href = `${monitorUrl}/monitor.html`;
+})();
 </script>
 </body>
 </html>

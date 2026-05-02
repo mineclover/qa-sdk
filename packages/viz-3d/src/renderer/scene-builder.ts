@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * SceneBuilder — Three.js 씬을 선언적 config에서 자동 구성.
  *
@@ -9,7 +12,7 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import type { VizConfig, CellGridDef, ViewMode } from "../core/types.js";
+import type { VizConfig, CellGridDef } from "../core/types.js";
 import { DEFAULT_THEME } from "../core/types.js";
 import { CATEGORY_COLORS, LAYER_COLORS, PALETTE } from "../core/color-tokens.js";
 import { buildGridPositions, type GridPositions } from "../core/grid-builder.js";
@@ -143,6 +146,7 @@ export function createScene(canvas: HTMLCanvasElement, config: VizConfig): Scene
   const gridGroups = new Map<string, THREE.Group>();
 
   for (const gridLayout of gridPositions.grids) {
+    // eslint-disable-next-line typescript/no-non-null-assertion -- gridLayout.id는 config.grids에서 유래
     const def = config.grids.find(g => g.id === gridLayout.id)!;
     const catDef = CATEGORY_COLORS[def.category] ?? CATEGORY_COLORS.entity;
     const pos = gridPositions.viewPositions.layer[def.id];
@@ -280,6 +284,7 @@ export function updateScene(state: SceneState, dt: number, time: number, setting
 function createTextTexture(text: string, fontSize: number, color: string): THREE.CanvasTexture {
   const c = document.createElement("canvas");
   c.width = 256; c.height = 48;
+  // eslint-disable-next-line typescript/no-non-null-assertion -- canvas 2d 컨텍스트 보장
   const ctx = c.getContext("2d")!;
   ctx.fillStyle = color;
   ctx.font = `500 ${fontSize}px IBM Plex Mono, monospace`;

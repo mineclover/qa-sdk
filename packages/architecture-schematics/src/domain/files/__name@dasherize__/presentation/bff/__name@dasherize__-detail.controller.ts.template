@@ -1,0 +1,18 @@
+import { Controller, Get, Param } from "@nestjs/common";
+
+import type { <%= classify(name) %>DetailBffModel } from "./<%= dasherize(name) %>-detail.bff";
+import { <%= classify(name) %>DetailBff } from "./<%= dasherize(name) %>-detail.bff";
+
+@Controller("bff/<%= dasherize(name) %>")
+export class <%= classify(name) %>DetailController {
+  constructor(private readonly bff: <%= classify(name) %>DetailBff) {}
+
+  @Get(":id")
+  async getDetail(@Param("id") id: string): Promise<<%= classify(name) %>DetailBffModel | null> {
+    return this.bff.getDetail({
+      id,
+      traceId: `trace-${id}`,
+      correlationId: `trace-${id}`,
+    });
+  }
+}

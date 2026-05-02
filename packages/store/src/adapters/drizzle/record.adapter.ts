@@ -1,4 +1,7 @@
-import { and, asc, eq, gt, or, type SQL } from "drizzle-orm";
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
+import { and, asc, eq, gt, gte, lte, or, type SQL } from "drizzle-orm";
 import type {
   RecordStore,
   RecordInsert,
@@ -6,6 +9,7 @@ import type {
   RecordPaginationParams,
   StoredRecord,
   StoredRecordPage,
+  TimeRangeParams,
 } from "@qa-sdk/core";
 import type { DbExecutor } from "../../db/client.js";
 import { eventRecords } from "../../db/schema.js";
@@ -42,7 +46,8 @@ export class DrizzleRecordStore implements RecordStore {
         userId: r.userId,
         userAttributes: r.userAttributes,
       })),
-    ).onConflictDoNothing({ target: eventRecords.logId });
+    ).onConflictDoNothing({ target: eventRecords.logId })
+      .comment({ adapter: "RecordStore", method: "insertBatch" });
   }
 
   async findByTraceId(traceId: string): Promise<StoredRecord[]> {
@@ -50,7 +55,8 @@ export class DrizzleRecordStore implements RecordStore {
       .select()
       .from(eventRecords)
       .where(eq(eventRecords.traceId, traceId))
-      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId));
+      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
+      .comment({ adapter: "RecordStore", method: "findByTraceId" });
     return rows.map(toStoredRecord);
   }
 
@@ -64,7 +70,8 @@ export class DrizzleRecordStore implements RecordStore {
       .from(eventRecords)
       .where(buildPaginatedWhere(eq(eventRecords.traceId, traceId), params.cursor))
       .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
-      .limit(limit + 1);
+      .limit(limit + 1)
+      .comment({ adapter: "RecordStore", method: "findByTraceIdPaginated" });
 
     return toStoredRecordPage(rows, limit);
   }
@@ -74,7 +81,8 @@ export class DrizzleRecordStore implements RecordStore {
       .select()
       .from(eventRecords)
       .where(eq(eventRecords.qaSessionId, sessionId))
-      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId));
+      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
+      .comment({ adapter: "RecordStore", method: "findBySessionId" });
     return rows.map(toStoredRecord);
   }
 
@@ -90,7 +98,8 @@ export class DrizzleRecordStore implements RecordStore {
         buildPaginatedWhere(eq(eventRecords.qaSessionId, sessionId), params.cursor),
       )
       .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
-      .limit(limit + 1);
+      .limit(limit + 1)
+      .comment({ adapter: "RecordStore", method: "findBySessionIdPaginated" });
 
     return toStoredRecordPage(rows, limit);
   }
@@ -108,7 +117,28 @@ export class DrizzleRecordStore implements RecordStore {
           eq(eventRecords.eventKey, eventKey),
         ),
       )
-      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId));
+      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
+      .comment({ adapter: "RecordStore", method: "findByTraceAndEventKey" });
+    return rows.map(toStoredRecord);
+  }
+
+  async findByTimeRange(params: TimeRangeParams): Promise<StoredRecord[]> {
+    const conditions: SQL<unknown>[] = [];
+    if (params.from) conditions.push(gte(eventRecords.timestamp, params.from));
+    if (params.to) conditions.push(lte(eventRecords.timestamp, params.to));
+    if (params.eventKey) conditions.push(eq(eventRecords.eventKey, params.eventKey));
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+    const limit = params.limit ?? 1000;
+
+    const rows = await this.db
+      .select()
+      .from(eventRecords)
+      .where(where)
+      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
+      .limit(limit)
+      .comment({ adapter: "RecordStore", method: "findByTimeRange" });
+
     return rows.map(toStoredRecord);
   }
 }

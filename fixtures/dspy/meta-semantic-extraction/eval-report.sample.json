@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "dspy-eval-report-v1",
+  "bindingId": "dspy:meta-semantic-system:ExtractionPort:v1",
+  "programId": "dspy-program:meta-semantic-extraction:v1",
+  "caseSetId": "meta-semantic-extraction-v1",
+  "generatedAt": "2026-04-20T00:00:00.000Z",
+  "summary": {
+    "totalCases": 30,
+    "passedCases": 30,
+    "weightedAccuracy": 1,
+    "structuredOutputValidity": 1,
+    "falsePositiveRate": 0,
+    "fallbackRegressions": 0,
+    "pass": true
+  },
+  "thresholds": {
+    "weightedAccuracy": 0.9,
+    "structuredOutputValidity": 0.98,
+    "falsePositiveRateMax": 0.05,
+    "fallbackRegressionsMax": 0
+  },
+  "results": [
+    {
+      "caseId": "branch.null-check.ignored",
+      "passed": true,
+      "expectedVerdict": false,
+      "actualVerdict": false,
+      "confidence": 0.82,
+      "fallback": {
+        "verdict": false,
+        "confidence": 0.2
+      },
+      "candidate": {
+        "verdict": false,
+        "confidence": 0.82
+      },
+      "regression": false,
+      "issues": []
+    }
+  ]
+}

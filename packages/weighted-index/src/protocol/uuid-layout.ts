@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * uuid-layout.ts — Pack/unpack named fields into a fixed 128-bit UUID shape.
  *

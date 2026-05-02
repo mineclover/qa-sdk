@@ -1,0 +1,268 @@
+{
+  "name": "Ontology Registry Index-Meta Sync",
+  "description": "Implement Phase 4 registry-service index-meta sync for active ontology allocations: product prefix DAG materialization, sum leaf/segment sidecar reporting, schema version writes, idempotency, drift handling, service integration, tests, and docs updates.",
+  "branchName": "ralph/ontology-registry-index-meta-sync",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Define Index-Meta Sync Adapter Boundary",
+      "description": "As a registry-service developer, I want a sync adapter boundary so that `OntologyRegistryService` can materialize active allocations without embedding index-meta details in unrelated service logic.",
+      "acceptanceCriteria": [
+        "Add a sync adapter interface or internal helper under `packages/registry-service/src/modules/ontology/` or a similarly scoped module.",
+        "Define sync input bundle shape containing allocation, namespace, taxonomy, axes, and segments.",
+        "Define sync report shape for materialized records, no-op idempotent records, repaired records, collisions, and deferred/unsupported sum segment semantics.",
+        "Adapter depends on index-meta `PrefixRegistry` and schema version store APIs, not raw index-meta tables.",
+        "Adapter does not add REST routes or CLI commands.",
+        "Existing deferred report shape from Phase 3 remains source-compatible where possible.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Collect Active Allocation Sync Bundle",
+      "description": "As a registry-service developer, I want the service to collect a complete active allocation bundle so that sync does not infer ontology state from index-meta.",
+      "acceptanceCriteria": [
+        "`syncToPrefixRegistry(allocationId)` loads the active allocation from `OntologyRegistryStore`.",
+        "Method rejects missing allocation and non-active allocation as before.",
+        "Method loads the allocation namespace, taxonomy, required axes, and segments from the store.",
+        "Missing namespace, taxonomy, axis, or segment data returns structured sync precondition errors.",
+        "Bundle preserves taxonomy `axisIds` order.",
+        "Bundle preserves segment `addressOffset`, `addressSize`, and `consumes`.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "Materialize Product Allocation Prefixes",
+      "description": "As an ontology registry operator, I want product allocations materialized into index-meta prefix records so that composite decode can use existing prefix DAG behavior.",
+      "acceptanceCriteria": [
+        "For each taxonomy axis, derive a deterministic axis leaf prefix name.",
+        "Register each axis leaf prefix/version with capacity matching the axis registration.",
+        "Register the allocation prefix/version as a composite prefix with refs in taxonomy `axisIds` order.",
+        "Parent capacity equals allocation capacity, allocation address size, and product of ref capacities.",
+        "Product segment shape is checked before writing the parent record.",
+        "Re-running the same sync is idempotent.",
+        "Existing same prefix/version with different capacity or refs fails without overwriting.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001",
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "Write Schema Version Records",
+      "description": "As an index-meta consumer, I want schema version rows created alongside prefix registry rows so that prefix registry and schema version capacity stay aligned.",
+      "acceptanceCriteria": [
+        "Sync writes schema version records for every materialized axis leaf prefix.",
+        "Sync writes a schema version record for the allocation prefix.",
+        "Schema version capacity matches prefix registry capacity for every written prefix.",
+        "Existing matching schema version is treated as idempotent no-op.",
+        "Existing mismatched schema version capacity is reported as capacity drift and not overwritten.",
+        "Partial prefix/schema records are repaired only if existing records match intended allocation shape.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001",
+        "US-002",
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "Materialize Sum Allocation as Leaf with Segment Sidecar",
+      "description": "As an ontology registry operator, I want sum allocations handled safely even though index-meta has no segment model yet.",
+      "acceptanceCriteria": [
+        "Sum allocation sync registers allocation prefix/version as a leaf prefix with capacity equal to allocation capacity.",
+        "Sync writes matching schema version record for the sum allocation prefix.",
+        "Sync does not write `prefix_ref` rows for sum segments.",
+        "Sync report includes segment sidecar metadata with range and consumes data.",
+        "Segment sidecar coverage is validated for range containment, no overlap, and total coverage policy chosen by the handoff spec.",
+        "Re-running the same sum allocation sync is idempotent.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001",
+        "US-002",
+        "US-004"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "Add Sync Collision and Drift Tests",
+      "description": "As a registry-service maintainer, I want tests for sync collisions and drift so that index-meta records are not silently overwritten.",
+      "acceptanceCriteria": [
+        "Test idempotent product sync retry.",
+        "Test idempotent sum sync retry.",
+        "Test product prefix capacity drift fails without overwrite.",
+        "Test product refs drift fails without overwrite.",
+        "Test schema version capacity drift fails without overwrite.",
+        "Test partial matching records can be completed when safe.",
+        "Test partial mismatched records fail without overwrite.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-003",
+        "US-004",
+        "US-005"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "Replace Deferred Sync Report in Service",
+      "description": "As a registry-service consumer, I want `syncToPrefixRegistry()` to perform real sync while preserving Phase 3 preconditions.",
+      "acceptanceCriteria": [
+        "`OntologyRegistryService.syncToPrefixRegistry()` calls the sync adapter for active allocations.",
+        "Missing and non-active allocation errors remain compatible with Phase 3.",
+        "Successful report has `syncStatus` representing real sync result, not only `\"deferred\"`.",
+        "Report includes written/no-op/repaired/collision summaries.",
+        "Method does not activate allocations; it only syncs already-active allocations.",
+        "Existing Phase 3 service tests are updated without weakening precondition coverage.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-006"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-008",
+      "title": "Add Activation Smoke-Level Sync Checks",
+      "description": "As a future activation smoke implementer, I want minimum post-sync checks available so Phase 5 can prove end-to-end activation without reimplementing sync validation.",
+      "acceptanceCriteria": [
+        "Add helper or report fields that confirm prefix registry record exists after sync.",
+        "Add helper or report fields that confirm schema version capacity exists after sync.",
+        "For product allocations, verify `getShape(prefix, versionId)` equals ordered axis capacities.",
+        "For product allocations, verify last valid address index is in range and capacity index is out of range if a resolver helper exists.",
+        "For sum allocations, verify reported segment sidecar covers the allocation according to the selected sum policy.",
+        "These checks do not implement full Phase 5 activation helper.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-007"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-009",
+      "title": "Reflect Phase 4 Completion in Docs and TODO",
+      "description": "As an ontology documentation maintainer, I want Phase 4 completion reflected in specs and TODO so Phase 5 activation smoke starts from stable sync behavior.",
+      "acceptanceCriteria": [
+        "Update `operational-ontology-registry-allocation.todo.md` to mark Phase 4 index-meta sync items complete or explicitly deferred.",
+        "Update `operational-ontology-registry-allocation.spec.md` to summarize sync adapter, product mapping, sum sidecar policy, idempotency, and drift behavior.",
+        "Update `operational-ontology-index-meta-sync-handoff.spec.md` with implementation refinements and real report shape.",
+        "Keep Phase 5 activation smoke items open.",
+        "Update `tasks/prd-ontology-registry-allocation-lifecycle-master.md` with the Phase 5 execution PRD path if it is created.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-008"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-14T12:16:20.056Z"
+  }
+}

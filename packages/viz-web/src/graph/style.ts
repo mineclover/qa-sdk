@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import type { GraphRole } from "@qa-sdk/event-catalog";
 
 export type NodeState = "pending" | "active" | "matched" | "failed" | "skipped";

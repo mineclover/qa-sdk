@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import type {
   RecordInsert,
   RecordPaginationCursor,
@@ -5,6 +8,7 @@ import type {
   RecordStore,
   StoredRecord,
   StoredRecordPage,
+  TimeRangeParams,
 } from "@qa-sdk/core";
 
 /** RecordStore의 in-memory 구현 */
@@ -69,12 +73,35 @@ export class InMemoryRecordStore implements RecordStore {
     );
   }
 
+  async findByTimeRange(params: TimeRangeParams): Promise<StoredRecord[]> {
+    return this.selectRecords((r) => {
+      if (params.from && r.timestamp.getTime() < params.from.getTime()) return false;
+      if (params.to && r.timestamp.getTime() > params.to.getTime()) return false;
+      if (params.eventKey && r.eventKey !== params.eventKey) return false;
+      return true;
+    }).slice(0, params.limit ?? 1000);
+  }
+
+  /** 전체 고유 traceId 목록 반환 */
+  getTraceIds(): string[] {
+    const ids = new Set<string>();
+    for (const record of this.records.values()) {
+      ids.add(record.traceId);
+    }
+    return [...ids];
+  }
+
+  /** 저장된 레코드 수 */
+  get size(): number {
+    return this.records.size;
+  }
+
   private selectRecords(
     predicate: (record: StoredRecord) => boolean,
   ): StoredRecord[] {
     return Array.from(this.records.values())
       .filter(predicate)
-      .sort(compareRecords)
+      .toSorted(compareRecords)
       .map((record) => structuredClone(record));
   }
 

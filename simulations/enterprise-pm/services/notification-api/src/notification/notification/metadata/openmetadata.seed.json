@@ -1,0 +1,79 @@
+{
+  "topology": "service",
+  "openmetadata": {
+    "domain": {
+      "name": "Notification",
+      "team": "Notification Team",
+      "owner": "sim-notification-owner"
+    },
+    "glossary": [
+      {
+        "term": "Notification",
+        "description": "An asynchronous message dispatched to a recipient user (in_app or email channel)."
+      },
+      {
+        "term": "DeliveryStatus",
+        "description": "Lifecycle of a notification: pending → sent → read, or pending/sent → failed."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "notification-write-path",
+        "from": "notification.notif_notifications",
+        "to": "notification.notification_outbox_events",
+        "via": "transactional-outbox"
+      },
+      {
+        "name": "notification-read-path",
+        "from": "notification.notification_outbox_events",
+        "to": "reporting.notification_read_model",
+        "via": "notification-read-model-sync"
+      }
+    ],
+    "qualityTests": [
+      {
+        "name": "notification_status_values",
+        "type": "columnValuesToBeInSet",
+        "entity": "notification.notif_notifications.status",
+        "values": ["pending", "sent", "read", "failed"]
+      },
+      {
+        "name": "notification_recipient_not_null",
+        "type": "columnNullCount",
+        "entity": "notification.notif_notifications.recipient_user_id",
+        "maxNullCount": 0
+      }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "notification-read-model",
+      "domain": "notification",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "notification-read-model",
+      "segments": [{ "name": "notificationId" }],
+      "ttl": "medium",
+      "openmetadataEntity": "reporting.notification_read_model"
+    },
+    {
+      "id": "notification-bff-detail",
+      "domain": "notification",
+      "purpose": "bff_detail",
+      "version": "v1",
+      "prefix": "notification-bff-detail",
+      "segments": [{ "name": "notificationId" }],
+      "ttl": "short",
+      "openmetadataEntity": "experience.notification_detail"
+    },
+    {
+      "id": "notification-idempotency",
+      "domain": "notification",
+      "purpose": "idempotency",
+      "version": "v1",
+      "prefix": "notification-idempotency",
+      "segments": [{ "name": "idempotencyKey", "pii": true, "encoding": "hash" }],
+      "ttl": "short"
+    }
+  ]
+}

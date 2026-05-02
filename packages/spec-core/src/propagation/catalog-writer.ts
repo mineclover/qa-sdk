@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * catalog-writer — Catalog 객체 → TypeScript 소스 문자열 변환.
  *

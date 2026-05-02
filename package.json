@@ -3,19 +3,56 @@
   "private": true,
   "packageManager": "pnpm@10.30.3",
   "scripts": {
+    "setup": "bash scripts/setup.sh",
+    "health": "bash scripts/health.sh",
+    "gate:event-taxonomy": "bash scripts/registry-event-taxonomy-gate.sh",
     "build": "pnpm -r run build",
     "test": "pnpm -r --workspace-concurrency=1 run test",
-    "lint": "pnpm -r run lint",
+    "lint": "oxlint packages/",
+    "lint:fix": "oxlint --fix packages/",
+    "lint:ci": "oxlint --format=github --deny-warnings packages/",
+    "format": "oxfmt packages/",
+    "format:check": "oxfmt --check packages/",
     "clean": "pnpm -r run clean",
+    "sync:skills": "bash scripts/sync-skills.sh",
+    "def:check": "node packages/cli/dist/index.js def validate && node packages/cli/dist/index.js def audit-db",
     "dev:ingest": "pnpm --filter @qa-sdk/ingest-server dev",
+    "dev:registry": "pnpm --filter @qa-sdk/registry-service dev",
+    "dev:shop": "pnpm --filter @qa-sdk/shop-web dev",
+    "dev:demo": "pnpm --filter platform-demo dev",
     "dev:viz": "pnpm --filter @qa-sdk/viz-web dev",
     "dev:roleplay": "pnpm --filter @qa-sdk/roleplay-web dev",
-    "test:e2e": "pnpm --filter @qa-sdk/e2e test"
+    "demo": "concurrently -n reg,ing,shop,demo -c cyan,yellow,green,magenta \"pnpm dev:registry\" \"pnpm dev:ingest\" \"pnpm dev:shop\" \"pnpm dev:demo\"",
+    "monitoring": "docker compose -f monitoring/docker-compose.monitoring.yml up -d && echo '  Prometheus: http://localhost:9090\n  Grafana: http://localhost:3000 (admin/admin)'",
+    "monitoring:down": "docker compose -f monitoring/docker-compose.monitoring.yml down",
+    "registry": "npx verdaccio --config verdaccio/config.yml",
+    "publish:local": "bash scripts/publish-local.sh",
+    "test:e2e": "pnpm --filter @qa-sdk/e2e test",
+    "sim:smoke": "./simulations/enterprise-pm/scripts/smoke.sh",
+    "sim:smoke:keep": "./simulations/enterprise-pm/scripts/smoke.sh --keep-up",
+    "sim:scenarios": "node ./simulations/enterprise-pm/scenarios/dist/cli.js",
+    "sim:lint:identifiers": "tsx scripts/lint-identifiers.ts",
+    "sim:canary": "tsx scripts/sim-canary.ts",
+    "sim:scale": "tsx scripts/sim-scale.ts",
+    "sim:smoke:full": "tsx scripts/sim-smoke-full.ts"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["better-sqlite3"]
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
   },
   "devDependencies": {
+    "@qa-sdk/scaffold": "workspace:*",
+    "commander": "^12.1.0",
+    "concurrently": "^9.2.1",
+    "oxfmt": "^0.42.0",
+    "oxlint": "^1.57.0",
+    "protobufjs-cli": "^2.0.0",
+    "sim-identifier-grammar": "workspace:*",
+    "sim-service-catalog": "workspace:*",
+    "tinyglobby": "^0.2.16",
+    "tsx": "^4.21.0",
+    "verdaccio": "^6.3.2",
     "vitest": "^1.6.1"
   }
 }

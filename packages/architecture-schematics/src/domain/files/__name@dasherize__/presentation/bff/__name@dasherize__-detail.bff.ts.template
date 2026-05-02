@@ -1,0 +1,51 @@
+import { Injectable } from "@nestjs/common";
+
+import { <%= classify(name) %>LoggerPort } from "../../application/ports/<%= dasherize(name) %>-logger.port";
+import { <%= classify(name) %>ReadModelPort } from "../../application/queries/<%= dasherize(name) %>.read-model";
+
+export interface <%= classify(name) %>DetailBffModel {
+  readonly id: string;
+  readonly title: string;
+  readonly statusLabel: string;
+  readonly updatedAt: string;
+  readonly cacheKey: string;
+}
+
+@Injectable()
+export class <%= classify(name) %>DetailBff {
+  readonly cachePrefix = "<%= dasherize(name) %>-bff-detail:v1";
+
+  constructor(
+    private readonly readModel: <%= classify(name) %>ReadModelPort,
+    private readonly logger: <%= classify(name) %>LoggerPort,
+  ) {}
+
+  async getDetail(input: {
+    readonly id: string;
+    readonly traceId: string;
+    readonly correlationId: string;
+  }): Promise<<%= classify(name) %>DetailBffModel | null> {
+    const cacheKey = `${this.cachePrefix}:${input.id}`;
+    const detail = await this.readModel.findById(input.id);
+    await this.logger.record({
+      traceId: input.traceId,
+      correlationId: input.correlationId,
+      domain: "<%= dasherize(name) %>",
+      useCase: "<%= classify(name) %>DetailBff.getDetail",
+      aggregateId: input.id,
+      queryName: "<%= classify(name) %>DetailBffQuery",
+      outcome: detail ? "success" : "failure",
+      cacheKeyPrefix: this.cachePrefix,
+      cacheHit: false,
+    });
+
+    if (!detail) return null;
+    return {
+      id: detail.id,
+      title: "<%= classify(name) %> " + detail.id,
+      statusLabel: detail.status.toUpperCase(),
+      updatedAt: detail.updatedAt,
+      cacheKey,
+    };
+  }
+}

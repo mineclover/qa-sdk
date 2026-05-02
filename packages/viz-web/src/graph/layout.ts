@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import dagre from "dagre";
 import type { SpecGraph, SpecEdge } from "@qa-sdk/core";
 import { getCoreEvent } from "@qa-sdk/event-catalog";

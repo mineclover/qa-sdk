@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/sdk",
   "version": "0.1.0",
+  "description": "core, logger, context, codec를 묶는 통합 수집 SDK",
   "type": "module",
   "exports": {
     ".": {
@@ -18,11 +19,17 @@
   },
   "dependencies": {
     "@qa-sdk/core": "workspace:*",
-    "demo-snapshot": "workspace:*",
-    "weighted-index": "workspace:*"
+    "@qa-sdk/logger": "workspace:*",
+    "@qa-sdk/codec": "workspace:*",
+    "@qa-sdk/context": "workspace:*"
   },
   "devDependencies": {
+    "@qa-sdk/convergence": "workspace:*",
     "@qa-sdk/spec-core": "workspace:*",
+    "demo-snapshot": "workspace:*",
+    "dkg": "workspace:*",
+    "demo-types": "workspace:*",
+    "weighted-index": "workspace:*",
     "typescript": "^5.8.2"
   }
 }

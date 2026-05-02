@@ -1,0 +1,259 @@
+{
+  "name": "Ontology Registry Activation Smoke",
+  "description": "Implement Phase 5 end-to-end ontology registry activation smoke: review Phase 4 sync assumptions, add internal activation helper, prove valid pack activation through reservation/activation/sync/smoke, prove invalid and duplicate cases leave no partial state, and update docs.",
+  "branchName": "ralph/ontology-registry-activation-smoke",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Review Phase 4 Sync Contract and Adjust Smoke Assumptions",
+      "description": "As an ontology maintainer, I want Phase 4 sync assumptions reviewed before activation smoke so that Phase 5 does not encode a stale or impossible contract.",
+      "acceptanceCriteria": [
+        "Review Phase 4 sync implementation and tests against `operational-ontology-index-meta-sync-handoff.spec.md`.",
+        "Reconcile the handoff statement about axis leaf `valuesHash` drift with the actual index-meta materialization surface.",
+        "If `valuesHash` is not persisted in index-meta, update docs to state that Phase 4 detects capacity/refs drift and that valuesHash reproduction only applies when future axis-value entry materialization is implemented.",
+        "Confirm Phase 4 report fields are sufficient for Phase 5 smoke checks.",
+        "Do not edit the already completed Phase 4 PRD JSON as part of this story.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Define Activation Helper Boundary",
+      "description": "As a registry-service developer, I want an internal activation helper boundary so that activation smoke orchestration is separate from store and sync internals.",
+      "acceptanceCriteria": [
+        "Add `activateOntologyPack(pack, options)` or equivalent helper under the ontology module/service boundary.",
+        "Define activation input options for ontology id, namespace, owner, version id, address model, capacity overrides, prefix overrides, and timestamp.",
+        "Define activation result payload with pack id, ontology id, namespace record, allocations, activation statuses, sync reports, warnings, and errors.",
+        "Helper uses `OntologyRegistryService` methods instead of raw store or raw SQL access.",
+        "Helper does not add REST routes or CLI commands.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "Implement Valid Pack Activation Flow",
+      "description": "As an ontology operator, I want a valid pack to validate, reserve, activate, and sync so that a complete activation path exists internally.",
+      "acceptanceCriteria": [
+        "Valid pack activation runs pack validation before reservation.",
+        "Valid pack activation reserves address space and writes namespace, axis, taxonomy, allocation, and segment rows.",
+        "Activation moves every intended allocation from `reserved` to `active` or documents a deterministic selection policy if only selected allocations activate.",
+        "Activation calls index-meta sync for every activated allocation.",
+        "Activation result reports each allocation id, prefix, version id, status, and sync status.",
+        "Index-meta prefix registry and schema version records exist for synced allocations.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "Add Product Activation Smoke Checks",
+      "description": "As an ontology operator, I want product allocation activation smoke checks so that composite index-meta materialization is proven after sync.",
+      "acceptanceCriteria": [
+        "Smoke checks assert source allocation status is `active`.",
+        "Smoke checks assert `PrefixRegistry.getRecord(prefix, versionId)` returns the intended product allocation prefix record.",
+        "Smoke checks assert schema version capacity matches prefix registry capacity.",
+        "Smoke checks assert `PrefixRegistry.getShape(prefix, versionId)` equals ordered axis capacities.",
+        "Smoke checks assert last valid address index resolves in range.",
+        "Smoke checks assert capacity index resolves as out of range.",
+        "Smoke checks are available in the activation result payload.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "Add Sum Activation Smoke Checks",
+      "description": "As an ontology operator, I want sum allocation activation smoke checks so that leaf sync and segment sidecar semantics are explicit.",
+      "acceptanceCriteria": [
+        "Smoke checks assert source allocation status is `active`.",
+        "Smoke checks assert sum allocation prefix registry record exists as a leaf record.",
+        "Smoke checks assert schema version capacity matches sum allocation capacity.",
+        "Smoke checks assert segment sidecar metadata covers the allocation range according to the chosen Phase 4 policy.",
+        "Smoke checks do not claim product DAG decode semantics for sum segments.",
+        "Smoke checks are available in the activation result payload.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-003",
+        "US-004"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "Prove Invalid Pack and Invalid Allocation No-Write",
+      "description": "As a registry-service maintainer, I want invalid activation inputs to leave no partial state so that activation is safe to retry after correction.",
+      "acceptanceCriteria": [
+        "Invalid pack activation returns a structured invalid-pack error.",
+        "Invalid pack activation leaves no namespace, axis, taxonomy, allocation, segment, prefix registry, or schema version records.",
+        "Invalid allocation plan returns a structured invalid-allocation-plan error.",
+        "Invalid allocation plan leaves no partial registry-service or index-meta rows.",
+        "Tests cover both in-memory and SQL-backed registry-service stores where practical.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "Prove Duplicate Prefix/Version Activation Is Blocked",
+      "description": "As an ontology operator, I want duplicate active prefix/version activation blocked so that global prefix uniqueness is preserved.",
+      "acceptanceCriteria": [
+        "Activation is blocked when another active allocation already owns the same `(prefix, versionId)`.",
+        "Activation is blocked when index-meta already has mismatched prefix registry records for the target `(prefix, versionId)`.",
+        "Activation is blocked when index-meta already has mismatched schema version capacity for the target `(prefix, versionId)`.",
+        "Blocked activation returns structured errors with allocation ids, prefix, version id, and drift/collision details.",
+        "Blocked activation does not overwrite existing index-meta records.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-003",
+        "US-006"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-008",
+      "title": "Add Activation Result Payload Tests",
+      "description": "As a future API/CLI implementer, I want activation result payload tests so public surfaces can later expose activation without guessing shape.",
+      "acceptanceCriteria": [
+        "Activation success result includes namespace record summary.",
+        "Activation success result includes allocation records and statuses.",
+        "Activation success result includes sync summaries grouped by allocation id.",
+        "Activation success result includes smoke check summary.",
+        "Activation failure result or thrown error includes enough structured context to identify failed phase.",
+        "Payload does not expose raw SQL errors.",
+        "Failed sync after activation is reported as structured failed activation result without attempting cross-boundary rollback.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-004",
+        "US-005",
+        "US-006",
+        "US-007"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-009",
+      "title": "Reflect Phase 5 Completion in Docs and TODO",
+      "description": "As an ontology documentation maintainer, I want Phase 5 completion reflected in specs and TODO so remaining roadmap work is explicit.",
+      "acceptanceCriteria": [
+        "Update `operational-ontology-registry-allocation.todo.md` to mark Phase 5 activation smoke items complete.",
+        "Update `operational-ontology-registry-allocation.spec.md` to summarize activation helper, smoke checks, and result payload.",
+        "Update `operational-ontology-index-meta-sync-handoff.spec.md` if Phase 5 clarifies sync smoke responsibilities.",
+        "Update `tasks/prd-ontology-registry-allocation-lifecycle-master.md` with final Phase 5 state and any remaining Phase 6 policy-only work.",
+        "Keep scoped prefix implementation out of scope unless a new decision PRD is created.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter index-meta test` passes.",
+        "`pnpm --filter index-meta typecheck` passes.",
+        "`pnpm --filter index-meta build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-008"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ]
+}

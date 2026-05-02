@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * E2E: 저장소 생명주기 — SQL 기반 운영 시나리오
  *
@@ -17,11 +20,15 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { NodeSqliteDriver } from "index-meta";
-import { SqlIndexMetaStore } from "index-meta";
-import { SqlAddressStateStore } from "index-meta";
-import { computeStateRanges, checkGate, activeRanges } from "index-meta";
-import type { DimStateSpec } from "index-meta";
+import {
+  NodeSqliteDriver,
+  SqlIndexMetaStore,
+  SqlAddressStateStore,
+  computeStateRanges,
+  checkGate,
+  activeRanges,
+  type DimStateSpec,
+} from "index-meta";
 
 // ── 공통 픽스처 ───────────────────────────────────────────
 

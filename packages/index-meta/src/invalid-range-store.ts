@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * AddressStateStore — 1D 주소 공간 활성화 상태 캐시
  *

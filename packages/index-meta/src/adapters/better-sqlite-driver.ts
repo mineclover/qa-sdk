@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * BetterSqliteDriver — better-sqlite3 기반 SqlDriver 구현
  *
@@ -6,18 +9,13 @@
  */
 
 import Database from "better-sqlite3";
-import type { SqlDriver, SqlDialect, ExecuteResult } from "./sql-store.js";
+import type { SqlDriver, ExecuteResult } from "./sql-store.js";
+import { SQLITE_DIALECT, runTransaction } from "./sqlite-shared.js";
 
 export class BetterSqliteDriver implements SqlDriver {
   private readonly db: Database.Database;
 
-  readonly dialect: SqlDialect = {
-    name: "sqlite",
-    supportsTransaction: true,
-    supportsReturning: true,
-    supportsJsonType: false,
-    supportsUpsert: true,
-  };
+  readonly dialect = SQLITE_DIALECT;
 
   /**
    * @param path SQLite 파일 경로 (기본 `:memory:`)
@@ -48,15 +46,7 @@ export class BetterSqliteDriver implements SqlDriver {
   }
 
   async transaction<T>(fn: (tx: SqlDriver) => Promise<T>): Promise<T> {
-    this.db.exec("BEGIN");
-    try {
-      const result = await fn(this);
-      this.db.exec("COMMIT");
-      return result;
-    } catch (err) {
-      this.db.exec("ROLLBACK");
-      throw err;
-    }
+    return runTransaction(s => this.db.exec(s), this, fn);
   }
 
   async batchExecute(sql: string, paramsList: unknown[][]): Promise<void> {

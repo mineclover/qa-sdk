@@ -163,8 +163,9 @@ body {
   flex: 1;
   min-height: 0;
   background: var(--bg-primary);
-  overflow: auto;
+  overflow: hidden;
   padding: 16px;
+  position: relative;
 }
 
 /* ── Event Log ────────────────────────────────────────── */

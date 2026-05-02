@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * PrefixRegistry — 주소 공간 DAG의 중앙 관리자
  *

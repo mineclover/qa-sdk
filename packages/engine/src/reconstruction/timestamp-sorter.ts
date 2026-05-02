@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-engine-system
+// @def.doc qa-sdk-engine-system
+
 import type { EventRecord } from "@qa-sdk/core";
 
 /**
@@ -6,7 +9,7 @@ import type { EventRecord } from "@qa-sdk/core";
  * 원본 배열을 변경하지 않고 새 배열을 반환한다.
  */
 export function sortByTimestamp(records: EventRecord[]): EventRecord[] {
-  return [...records].sort((a, b) => {
+  return [...records].toSorted((a, b) => {
     const ta = new Date(a.timestamp).getTime();
     const tb = new Date(b.timestamp).getTime();
     if (ta !== tb) return ta - tb;

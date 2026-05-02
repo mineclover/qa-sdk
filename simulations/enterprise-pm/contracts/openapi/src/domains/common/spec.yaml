@@ -1,0 +1,21 @@
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        traceId:
+          type: string
+      additionalProperties: false
+  responses:
+    BadRequest:
+      description: Invalid request payload.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+

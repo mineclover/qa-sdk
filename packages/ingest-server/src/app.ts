@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type {
@@ -23,12 +26,14 @@ import {
   type TraceTransactionRunner,
 } from "./routes/ingest.js";
 import { createQueryRoutes } from "./routes/query.js";
+import { createTraceDiagramRoutes } from "./routes/trace-diagrams.js";
 import { createStreamRoutes } from "./routes/streams.js";
 import { createScenarioRoutes } from "./routes/scenario.js";
 import { createVerdictRoutes } from "./routes/verdict.js";
 import { createDlqRoutes } from "./routes/dlq.js";
 import { createCleanupRoutes } from "./routes/cleanup.js";
 import { createMetricsRoutes } from "./routes/metrics.js";
+import { createPatternRoutes, type PatternStatsCache } from "./routes/patterns.js";
 import { createSessionRoutes } from "./routes/session.js";
 import { createErrorHandler } from "./middleware/error-handler.js";
 import type { RecordStreamBroker } from "./lib/record-stream-broker.js";
@@ -52,6 +57,10 @@ import {
 import type { DebugStore } from "./lib/debug-store.js";
 import type { ConvergencePipelinePort } from "./lib/phase-two-worker.js";
 import type { MetricsCollector } from "./lib/metrics-collector.js";
+import type { CatalogValidator } from "./lib/catalog-validator.js";
+import { createInsightsRoutes } from "./routes/insights.js";
+import type { InsightsStore } from "./ports/insights-store.port.js";
+import { createLabelsRoutes } from "./routes/labels.js";
 
 export interface AppDeps {
   appLifecycle?: AppLifecycle;
@@ -76,11 +85,19 @@ export interface AppDeps {
   taskQueue?: TaskQueue<TaskPayload>;
   convergencePipeline?: ConvergencePipelinePort;
   metricsCollector?: MetricsCollector;
+  getPatternStats?: () => PatternStatsCache | null;
   withTraceTransaction?: TraceTransactionRunner;
   logger?: Logger;
   streamConnectionRegistry?: StreamConnectionRegistry;
   getUptimeSeconds?: () => number;
   version?: string;
+  corsOrigin?: string;
+  /** D1 SqlDriver — labels 등 raw SQL 쿼리용 (Worker 모드) */
+  sqlDriver?: import("index-meta").SqlDriver;
+  /** InsightsStore — 인사이트 조회/수집 (INSIGHTS_DRIVER로 구현체 선택) */
+  insightsStore?: InsightsStore;
+  /** 카탈로그 기반 event/prefix 검증 (fail-open) */
+  catalogValidator?: CatalogValidator;
 }
 
 export function createApp(deps: AppDeps) {
@@ -95,7 +112,7 @@ export function createApp(deps: AppDeps) {
     maxRequests: deps.rateLimitMaxRequests,
   });
 
-  app.use("*", cors());
+  app.use("*", cors({ origin: deps.corsOrigin ?? "*" }));
   app.use("*", requestId);
   app.use("*", createShutdownMiddleware(appLifecycle));
   app.use("/v1/ingest", ingestRateLimiter);
@@ -117,6 +134,7 @@ export function createApp(deps: AppDeps) {
       logger,
     }),
   );
+  app.route("/v1/traces", createTraceDiagramRoutes({ recordStore: deps.recordStore, logger }));
   app.route("/", createQueryRoutes(deps));
   app.route(
     "/",
@@ -129,6 +147,8 @@ export function createApp(deps: AppDeps) {
   app.route("/", createScenarioRoutes(deps));
   app.route("/", createSessionRoutes(deps));
   app.route("/", createVerdictRoutes(deps));
+  app.route("/", createInsightsRoutes({ store: deps.insightsStore }));
+  app.route("/", createLabelsRoutes({ driver: deps.sqlDriver }));
   app.route(
     "/",
     createDlqRoutes({
@@ -153,6 +173,10 @@ export function createApp(deps: AppDeps) {
       getUptimeSeconds: deps.getUptimeSeconds,
     }),
   );
+  app.route("/", createPatternRoutes({
+    getPatternStats: deps.getPatternStats,
+    logger,
+  }));
 
   return app;
 }

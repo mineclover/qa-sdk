@@ -1,0 +1,26 @@
+{
+  "name": "@qa-sdk/codec",
+  "version": "0.1.0",
+  "description": "dim-wire 인코딩/디코딩과 typed SDK 패턴을 제공하는 플랫폼 보조층",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@qa-sdk/core": "workspace:*",
+    "weighted-index": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2"
+  }
+}

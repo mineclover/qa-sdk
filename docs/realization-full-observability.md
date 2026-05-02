@@ -1,8 +1,30 @@
+---
+def:
+  id: realization-observability
+  type: knowledge
+  knowledge_kind: narrative
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+  tags: [observability, runtime, cross-scope]
+  links:
+    - target: system-narrative
+      type: refines
+---
 # Realization Plan: 완전 관측 — CLI + DKG + 시스템 이벤트의 좌표화
 
-> Status: verified
+## 목적 ^purpose
+
+완전 관측성 실현 계획. 이벤트 수집→convergence→insights 파이프라인 완성 로드맵을 기술한다.
+
+
+> Status: **completed**
 > Created: 2026-03-21
-> Last verified: —
+> Completed: 2026-03-22
+>
+> **달성**: cli_event prefix + 3축(cli_intent/cli_domain/cli_subject) + CLI_COMMAND_MAP 75개 명령 → 50 고유 좌표.
+> emitCliEvent() 전 CLI 명령에 통합. analyzeCliCoverage() → dormant 감지. dsl-dev DSL에 배정.
 
 ## 1. 핵심 원칙
 

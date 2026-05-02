@@ -1,12 +1,16 @@
 {
   "name": "@qa-sdk/decode-service",
   "version": "0.1.0",
+  "description": "DecodeMap 기반 주소 디코딩 API 서비스",
   "private": true,
   "type": "module",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsup",
+    "build:tsc": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -16,15 +20,23 @@
   "dependencies": {
     "@hono/node-server": "^1.14.1",
     "@qa-sdk/core": "workspace:*",
-    "index-meta": "workspace:*",
+    "@qa-sdk/logger": "workspace:*",
+    "@qa-sdk/store": "workspace:*",
+    "dotenv": "^17.3.1",
     "hono": "^4.7.5",
-    "pino": "workspace:@qa-sdk/pino@^9.9.4",
+    "index-meta": "workspace:*",
+    "index-meta-workers": "workspace:*",
+    "ioredis": "^5.10.1",
+    "pino": "workspace:@qa-sdk/pino@*",
+    "weighted-index": "workspace:*",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
+    "tsup": "^8.5.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
-    "vitest": "^1.6.1"
+    "vitest": "^1.6.1",
+    "wrangler": "^4.76.0"
   }
 }

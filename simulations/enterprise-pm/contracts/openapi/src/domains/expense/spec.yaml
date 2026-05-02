@@ -1,0 +1,106 @@
+tags:
+  - name: expense
+    description: Expense report command + read-model API.
+paths:
+  /expense-reports:
+    post:
+      tags: [expense]
+      operationId: createExpenseReport
+      summary: Create a new expense report.
+      x-domain: expense
+      x-architecture-slice: expense-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExpenseCommand"
+      responses:
+        "201":
+          description: Expense report created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseReadModel"
+        "400":
+          description: Validation error.
+  /expense-reports/{id}:
+    get:
+      tags: [expense]
+      operationId: getExpenseReport
+      x-domain: expense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Expense read model.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseReadModel"
+        "404":
+          description: Expense report not found.
+  /expense-reports/{id}/status:
+    put:
+      tags: [expense]
+      operationId: updateExpenseReportStatus
+      x-domain: expense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateExpenseStatusCommand"
+      responses:
+        "200":
+          description: Updated expense.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseReadModel"
+components:
+  schemas:
+    CreateExpenseCommand:
+      type: object
+      required: [requesterId, amount, category, description]
+      properties:
+        requesterId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        amount: { type: number, format: double }
+        category: { type: string }
+        description: { type: string }
+      additionalProperties: false
+    UpdateExpenseStatusCommand:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [draft, submitted, in_review, approved, rejected, revision_requested]
+      additionalProperties: false
+    ExpenseReadModel:
+      type: object
+      required: [id, requesterId, amount, category, description, status, updatedAt]
+      properties:
+        id: { type: string }
+        requesterId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        amount: { type: number, format: double }
+        category: { type: string }
+        description: { type: string }
+        status:
+          type: string
+          enum: [draft, submitted, in_review, approved, rejected, revision_requested]
+          x-openmetadata-tags: [Tier.Tier2]
+        updatedAt: { type: string, format: date-time }
+      additionalProperties: false

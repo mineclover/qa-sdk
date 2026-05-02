@@ -1,8 +1,11 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { describe, it, expect } from "vitest";
 import { writeFile, rm, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { readSnapshot, readSnapshots } from "./snapshot-io.js";
+import { readSnapshot, readSnapshots } from "snapshot-io";
 
 const TMP = join(tmpdir(), "qa-cli-test-" + Date.now());
 
@@ -74,7 +77,7 @@ describe("snapshot-io", () => {
 
     const snaps = await readSnapshots(TMP);
     expect(snaps).toHaveLength(2);
-    expect(snaps.map((s) => s.id).sort()).toEqual(["a", "b"]);
+    expect(snaps.map((s) => s.id).toSorted()).toEqual(["a", "b"]);
     await rm(TMP, { recursive: true, force: true });
   });
 });

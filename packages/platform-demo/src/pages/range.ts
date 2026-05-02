@@ -1,3 +1,6 @@
+// @def.boundary platform-demo-system
+// @def.doc platform-demo-system
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  범위 탐색 — 차원 고정/와일드카드로 주소 범위 시각화
 // ═══════════════════════════════════════════════════════════════════════════
@@ -82,7 +85,7 @@ function computeRange(selections: DimSelection[]): number[] {
     partials = next;
   }
 
-  return partials.sort((a, b) => a - b);
+  return partials.toSorted((a, b) => a - b);
 }
 
 // ── Decode a value back to 4D coordinates ─────────────────────────────────

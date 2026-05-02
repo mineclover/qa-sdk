@@ -1,4 +1,23 @@
+---
+def:
+  id: data-model-guide
+  type: knowledge
+  knowledge_kind: guide
+  scope: data
+  aspect: domain_data
+  depth: overview
+  lifecycle: approved
+  tags: [entry-point, data, structural]
+  links:
+    - target: guides-system
+      type: refines
+---
 # Data Model
+
+## 목적 ^purpose
+
+ingest-server의 핵심 데이터 모델(Record, Trace, Session, Verdict, Scenario)의 스키마와 관계를 정의한다.
+
 
 시스템 전체 데이터 구성 요약. 상세 스펙은 `docs/specs/data-model/` 참조.
 
@@ -20,9 +39,11 @@ TransmissionEnvelope
 EventRecord
   ├─ log_id, timestamp
   ├─ trace_id, span_id, parent_span_id?
-  ├─ record_kind: "log" | "span"
+  ├─ record_kind: "log" | "span" | "metric"
   ├─ event_key, event_version
   ├─ span_name?, start_time?, end_time?, status_code?   ← span 전용
+  ├─ metric_type?: "counter"|"gauge"|"histogram"|"summary"  ← metric 전용
+  ├─ metric_name?, metric_value?, metric_unit?
   ├─ payload_format, payload_encoding
   ├─ payload_masking_applied, payload_masked_fields[]
   ├─ payload: unknown
@@ -156,10 +177,66 @@ Ingest Server
         ▼
   RuntimeGraph
         │ compileSpec(ScenarioSpec) → SpecGraph
-        │ matchGraphs(SpecGraph, RuntimeGraph)
+        │ matchViaPathMatcher(SpecGraph, RuntimeGraph)
         ▼
   VerdictReport  →  StoredVerdict
+        │
+        │ Phase 2.5 (TRANSITION_ENGINE_ENABLED)
+        ▼
+  TransitionInstance[]  →  StateStore (축별 상태)
+        │
         │ SSE /v1/streams/scenarios/:scenarioId
         ▼
 viz-web (실시간 시각화)
 ```
+
+---
+
+## 전이 해석 — Transition Spec DSL
+
+```
+TransitionSpec
+  ├─ transition: string         ← <domain>.<entity>.<operation>
+  ├─ version: string
+  ├─ match: MatchPattern
+  │    ├─ mode: "single" | "ordered"
+  │    └─ coordinates: CoordinatePattern[]  ← 축 이름 → entry 값
+  ├─ bind: BindDef
+  │    ├─ context_id: string    ← $.events[N].field
+  │    └─ resource_id: string
+  ├─ input: InputCondition
+  │    └─ all: StateCondition[] ← axis + eq/neq/in/exists
+  ├─ output: OutputMutation
+  │    └─ set: StateAssignment[] ← axis + value (string | null)
+  └─ effect: EffectDef
+       └─ kind: "create"|"update"|"move"|"consume"|"open"|"close"
+```
+
+```
+TransitionInstance
+  ├─ transition_name, spec_version
+  ├─ context_id, resource_id
+  ├─ matched_event_ids: string[]
+  ├─ input_snapshot: Record<string, string | null>
+  ├─ output_snapshot: Record<string, string | null>
+  ├─ effect_kind
+  └─ matched_at: string (ISO timestamp)
+```
+
+```
+StateStore (축 기반)
+  key: (context_id, resource_id)
+  value: Map<axisId, entryValue>
+  │
+  ├─ InMemoryStateStore  ← 개발/테스트
+  └─ SqliteStateStore    ← 영속 분석
+```
+
+### 질의 API (query-service)
+
+| 엔드포인트 | 설명 |
+|---|---|
+| `GET /state/:ctx/:res` | 현재 축 스냅샷 |
+| `GET /state/:ctx/:res/history` | transition instance 이력 |
+| `GET /state/:ctx/:res/at?ts=` | 시점 상태 (replay) |
+| `GET /transitions?context_id=&limit=` | context별 전이 목록 |

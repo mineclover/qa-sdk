@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 import { describe, expect, it, vi } from "vitest";
 import type { AddressStateCacheRecord } from "index-meta";
 import {
@@ -47,7 +50,7 @@ describe("HttpGateStateClient", () => {
     await expect(client.getStateRanges("perm", "v1")).rejects.toMatchObject({
       name: "GateServiceClientError",
       message: "gate unavailable",
-      statusCode: 503,
+      status: 503,
     } satisfies Partial<GateServiceClientError>);
   });
 });

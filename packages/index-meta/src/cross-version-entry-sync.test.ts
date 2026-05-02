@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * CrossVersionEntrySync 테스트
  * prefix의 모든 활성 버전에 entry를 동일 position으로 전파.

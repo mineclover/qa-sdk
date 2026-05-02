@@ -1,0 +1,27 @@
+{
+  "name": "@qa-sdk/convergence",
+  "version": "0.1.0",
+  "description": "usage snapshot 기반 구조 수렴 분석 엔진",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@qa-sdk/core": "workspace:*",
+    "spec-schema": "workspace:*",
+    "weighted-index": "workspace:*"
+  },
+  "devDependencies": {
+    "demo-snapshot": "workspace:*",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.0"
+  }
+}

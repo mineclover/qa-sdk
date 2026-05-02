@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { MiddlewareHandler } from "hono";
 import { randomUUID } from "node:crypto";
 

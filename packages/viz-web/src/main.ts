@@ -1,6 +1,10 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import "./styles/main.css";
 import "./styles/graph.css";
 
+import { getCanvasPaneFocusFlags, toggleCanvasPaneFocus } from "canvas-viewport";
 import type { ScenarioSpec, SpecGraph, StoredRecord, VerdictReport } from "@qa-sdk/core";
 import { compileSpec } from "@qa-sdk/engine";
 import { computeLayout } from "./graph/layout";
@@ -15,7 +19,8 @@ import { createWsClient, type WsClient } from "./api/ws-client";
 import { createSession, listSessions, getSessionRecords, getSessionVerdicts, recomputeVerdicts } from "./api/ingest-client";
 import { mergeAndSortRecords } from "./lib/record-utils";
 
-// ── DOM refs ─────────────────────────────────────────────────
+// ── DOM refs (HTML 템플릿에 정의된 요소) ─────────────────────
+/* eslint-disable typescript/no-non-null-assertion */
 const sidebarEl = document.getElementById("sidebar")!;
 const graphContainerEl = document.getElementById("graph-container")!;
 const eventLogContainerEl = document.getElementById("event-log-container")!;
@@ -29,6 +34,7 @@ const mainRightEl = document.getElementById("main-right")!;
 const errorBannerEl = document.getElementById("error-banner")!;
 const errorBannerMsgEl = document.getElementById("error-banner-msg")!;
 const errorBannerCloseBtn = document.getElementById("error-banner-close")!;
+/* eslint-enable typescript/no-non-null-assertion */
 
 // ── Error Banner ──────────────────────────────────────────────
 errorBannerCloseBtn.addEventListener("click", () => { errorBannerEl.hidden = true; });
@@ -46,18 +52,13 @@ function clearError(): void {
 let focusedPane: "left" | "right" | null = null;
 
 function focusPane(pane: "left" | "right"): void {
-  if (focusedPane === pane) {
-    // second click on same pane → reset to equal
-    mainLeftEl.classList.remove("focused", "unfocused");
-    mainRightEl.classList.remove("focused", "unfocused");
-    focusedPane = null;
-  } else {
-    focusedPane = pane;
-    mainLeftEl.classList.toggle("focused", pane === "left");
-    mainLeftEl.classList.toggle("unfocused", pane === "right");
-    mainRightEl.classList.toggle("focused", pane === "right");
-    mainRightEl.classList.toggle("unfocused", pane === "left");
-  }
+  focusedPane = toggleCanvasPaneFocus(focusedPane, pane);
+  const left = getCanvasPaneFocusFlags(focusedPane, "left");
+  const right = getCanvasPaneFocusFlags(focusedPane, "right");
+  mainLeftEl.classList.toggle("focused", left.focused);
+  mainLeftEl.classList.toggle("unfocused", left.unfocused);
+  mainRightEl.classList.toggle("focused", right.focused);
+  mainRightEl.classList.toggle("unfocused", right.unfocused);
 }
 
 // Only focus on clicks that hit the pane background (not interactive children)
@@ -81,7 +82,7 @@ let currentGraph: SpecGraph | null = null;
 let currentRenderer: GraphRenderer | null = null;
 let currentUpdater: GraphUpdater | null = null;
 let currentSessionId: string | null = null;   // session being visualized
-let mySessionId: string | null = null;        // session created for this visit
+let _mySessionId: string | null = null;       // session created for this visit
 let wsClient: WsClient | null = null;
 let wsReconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let wsReconnectDelay = 1_000; // exponential backoff: 1s → 2s → 4s → max 30s
@@ -183,7 +184,7 @@ async function handleScenarioSelect(spec: ScenarioSpec): Promise<void> {
   sessionList.clear();
   sessionRecords.clear();
   currentSessionId = null;
-  mySessionId = null;
+  _mySessionId = null;
   renderGraph(spec);
 
   sessionInfoEl.hidden = false;
@@ -210,7 +211,7 @@ async function handleScenarioSelect(spec: ScenarioSpec): Promise<void> {
   // 2. Create a new session for this visit
   try {
     const session = await createSession(spec.scenario_id);
-    mySessionId = session.sessionId;
+    _mySessionId = session.sessionId;
 
     sessionList.addOrUpdate({
       sessionId: session.sessionId,
@@ -278,6 +279,7 @@ function connectWs(scenarioId: string): void {
         sessionRecords.set(sid, []);
       }
 
+      // eslint-disable-next-line typescript/no-non-null-assertion -- .has() 분기 후 .set() 완료
       const records = sessionRecords.get(sid)!;
       if (records.length >= MAX_RECORDS_PER_SESSION) {
         records.shift(); // drop oldest record for this session

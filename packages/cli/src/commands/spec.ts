@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk spec — spec-core CLI 명령어.
  *
@@ -16,7 +19,6 @@ import {
 } from "@qa-sdk/spec-core";
 import type { PrefixSpec } from "@qa-sdk/spec-core";
 import {
-  generateTypescriptFile,
   buildIR,
   generateFromIR,
   generateJSFromIR,
@@ -26,9 +28,36 @@ import {
   generateDtsFromIR,
 } from "@qa-sdk/spec-core/codegen";
 import type { AxisInput } from "@qa-sdk/spec-core/codegen";
-import { decodePrefix, resolveAddress, type DemoCatalog } from "demo-snapshot";
+import { resolveAddress, type DemoCatalog } from "demo-snapshot";
+import { decodePrefixAsResult, type ResolvedAddress, type ResolvedDimValue } from "@qa-sdk/core";
+import { parseArgs } from "node:util";
 
 // ── Shared bootstrap ────────────────────────────────
+
+export type CatalogInputLike = Parameters<typeof catalogToPrefixSpecs>[0];
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | readonly JsonValue[]
+  | { readonly [key: string]: JsonValue };
+
+export type SchemaValidationInput = Record<string, JsonValue>;
+
+interface ResolvedRefJson {
+  address: string;
+  prefix: string;
+  version: string;
+  dims: Record<string, ResolvedDimJson>;
+}
+
+interface ResolvedDimJson {
+  value: string | number;
+  position: number;
+  ko?: string;
+  ref?: ResolvedRefJson;
+}
 
 interface SpecContext {
   surfaces: ExportSurfaceRegistry;
@@ -36,7 +65,7 @@ interface SpecContext {
   validator: SchemaValidator;
   specDocs: SpecDocumentRegistry;
   prefixSpecs: PrefixSpec[];
-  catalogInput?: unknown;
+  catalogInput?: CatalogInputLike;
 }
 
 /** 싱글턴 캐시 — 같은 옵션이면 재생성하지 않음 */
@@ -48,7 +77,7 @@ let cachedKey = "";
  * catalogInput이 있으면 catalog bridge, specPath가 있으면 파일 로딩.
  */
 export async function createSpecContext(options: {
-  catalogInput?: unknown;
+  catalogInput?: CatalogInputLike;
   specPath?: string;
 }): Promise<SpecContext> {
   const key = JSON.stringify({ catalog: !!options.catalogInput, specPath: options.specPath });
@@ -101,10 +130,31 @@ export async function createSpecContext(options: {
   return cachedContext;
 }
 
+// ── spec 공통: --catalog / --specs 파싱 ─────────────
+
+const SPEC_BASE_OPTIONS = {
+  specs: { type: "string" as const },
+  catalog: { type: "boolean" as const, default: false },
+};
+
+function isSchemaValidationInput(value: unknown): value is SchemaValidationInput {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+async function loadCatalogInput(): Promise<CatalogInputLike | undefined> {
+  try {
+    const { DEMO_CATALOG } = await import("demo-snapshot");
+    return DEMO_CATALOG;
+  } catch {
+    console.error("demo-snapshot 패키지를 로딩할 수 없습니다");
+    process.exit(1);
+  }
+}
+
 // ── spec list ───────────────────────────────────────
 
 export async function specList(options: {
-  catalogInput?: unknown;
+  catalogInput?: CatalogInputLike;
   specPath?: string;
 }): Promise<void> {
   const ctx = await createSpecContext(options);
@@ -158,10 +208,18 @@ export async function specList(options: {
   }
 }
 
+export async function runSpecList(argv: string[]): Promise<void> {
+  const { values } = parseArgs({ args: argv, options: { ...SPEC_BASE_OPTIONS }, strict: true });
+  await specList({
+    specPath: values.specs,
+    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
+  });
+}
+
 // ── spec resolve ────────────────────────────────────
 
 export async function specResolve(options: {
-  catalogInput?: unknown;
+  catalogInput?: CatalogInputLike;
   specPath?: string;
   prefixId: string;
   values: Record<string, string>;
@@ -171,13 +229,44 @@ export async function specResolve(options: {
   console.log(title);
 }
 
+export async function runSpecResolve(argv: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args: argv,
+    options: { ...SPEC_BASE_OPTIONS, prefix: { type: "string" }, values: { type: "string" } },
+    strict: true,
+  });
+
+  if (!values.prefix || !values.values) {
+    console.error("--prefix <id> --values <json> 필수");
+    console.error(
+      '예: qa-sdk spec resolve --catalog --prefix permission --values \'{"perm_svc":"40","role":"admin"}\'',
+    );
+    process.exit(1);
+  }
+
+  let parsed: Record<string, string>;
+  try {
+    parsed = JSON.parse(values.values) as Record<string, string>;
+  } catch {
+    console.error("--values JSON 파싱 실패");
+    process.exit(1);
+  }
+
+  await specResolve({
+    specPath: values.specs,
+    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
+    prefixId: values.prefix,
+    values: parsed,
+  });
+}
+
 // ── spec validate ───────────────────────────────────
 
 export async function specValidate(options: {
-  catalogInput?: unknown;
+  catalogInput?: CatalogInputLike;
   specPath?: string;
   schemaId: string;
-  data: Record<string, unknown>;
+  data: SchemaValidationInput;
 }): Promise<void> {
   const ctx = await createSpecContext(options);
 
@@ -201,10 +290,40 @@ export async function specValidate(options: {
   }
 }
 
+export async function runSpecValidate(argv: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args: argv,
+    options: { ...SPEC_BASE_OPTIONS, schema: { type: "string" }, data: { type: "string" } },
+    strict: true,
+  });
+
+  if (!values.schema || !values.data) {
+    console.error("--schema <id> --data <json> 필수");
+    process.exit(1);
+  }
+
+  let parsed: SchemaValidationInput;
+  try {
+    const raw = JSON.parse(values.data) as unknown;
+    if (!isSchemaValidationInput(raw)) throw new Error("invalid");
+    parsed = raw;
+  } catch {
+    console.error("--data JSON 파싱 실패");
+    process.exit(1);
+  }
+
+  await specValidate({
+    specPath: values.specs,
+    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
+    schemaId: values.schema,
+    data: parsed,
+  });
+}
+
 // ── spec decode ─────────────────────────────────────
 
 export async function specDecode(options: {
-  catalogInput?: unknown;
+  catalogInput?: CatalogInputLike;
   specPath?: string;
   address: string;   // "prefix:version:address" 형식
   deep?: boolean;
@@ -236,10 +355,13 @@ export async function specDecode(options: {
 
   const catalog = ctx.catalogInput as DemoCatalog;
 
-  // 1단계: decode → positions + values
+  // 1단계: decode → DecodeResult (kind 기반 분기)
   let decoded: Record<string, { position: number; value: string | number }>;
   try {
-    decoded = decodePrefix(catalog, prefixId, version, address);
+    const result = decodePrefixAsResult(catalog, prefixId, version, address);
+    decoded = Object.fromEntries(
+      Object.entries(result.dims).map(([k, d]) => [k, { position: d.position, value: d.value }]),
+    );
   } catch (e) {
     console.error((e as Error).message);
     process.exitCode = 1;
@@ -265,20 +387,29 @@ export async function specDecode(options: {
 
   // ── JSON 출력 ─────────────────────────────────────
   if (options.format === "json") {
-    const result: Record<string, unknown> = {
+    const result: {
+      address: string;
+      title: string;
+      prefix: string;
+      version: string;
+      index: number;
+      dims: Record<string, { value: string | number; position: number }>;
+      export?: { dims: readonly string[]; pattern: string };
+      resolved?: Record<string, ResolvedDimJson>;
+    } = {
       address: `${prefixId}:${version}:${address}`,
       title,
       prefix: prefixId,
       version,
       index: address,
-      dims: {} as Record<string, unknown>,
+      dims: {},
     };
 
     if (spec) {
-      (result as Record<string, unknown>).export = { dims: spec.export.dims, pattern: spec.export.pattern };
+      result.export = { dims: spec.export.dims, pattern: spec.export.pattern };
     }
 
-    const dims: Record<string, unknown> = {};
+    const dims: Record<string, { value: string | number; position: number }> = {};
     for (const [label, dim] of Object.entries(decoded)) {
       dims[label] = { value: dim.value, position: dim.position };
     }
@@ -305,17 +436,47 @@ export async function specDecode(options: {
   }
 }
 
+export async function runSpecDecode(argv: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args: argv,
+    options: {
+      ...SPEC_BASE_OPTIONS,
+      address: { type: "string" },
+      deep: { type: "boolean", default: false },
+      format: { type: "string" },
+    },
+    strict: true,
+  });
+
+  if (!values.address) {
+    console.error('--address "prefix:version:address" 필수');
+    console.error("예: qa-sdk spec decode --catalog --address permission:v1:3");
+    console.error("    qa-sdk spec decode --catalog --address permission:v1:3 --deep");
+    process.exit(1);
+  }
+
+  await specDecode({
+    specPath: values.specs,
+    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
+    address: values.address,
+    deep: values.deep,
+    format: values.format === "json" ? "json" : "text",
+  });
+}
+
 function buildResolvedJson(
-  dims: Record<string, { label: string; position: number; value: string | number; ko?: string; ref?: unknown }>,
-): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
+  dims: Record<string, ResolvedDimValue>,
+): Record<string, ResolvedDimJson> {
+  const result: Record<string, ResolvedDimJson> = {};
   for (const [label, dim] of Object.entries(dims)) {
-    const entry: Record<string, unknown> = { value: dim.value, position: dim.position };
+    const entry: ResolvedDimJson = { value: dim.value, position: dim.position };
     if (dim.ko) entry.ko = dim.ko;
-    if (dim.ref && typeof dim.ref === "object") {
-      const ref = dim.ref as { prefix: string; version: string; address: number; dims: typeof dims };
+    if (dim.ref) {
+      const ref: ResolvedAddress = dim.ref;
       entry.ref = {
         address: `${ref.prefix}:${ref.version}:${ref.address}`,
+        prefix: ref.prefix,
+        version: ref.version,
         dims: buildResolvedJson(ref.dims),
       };
     }
@@ -325,14 +486,14 @@ function buildResolvedJson(
 }
 
 function printResolved(
-  dims: Record<string, { label: string; position: number; value: string | number; ko?: string; ref?: unknown }>,
+  dims: Record<string, ResolvedDimValue>,
   indent: string,
 ): void {
   for (const [label, dim] of Object.entries(dims)) {
     const ko = dim.ko ? ` (${dim.ko})` : "";
     console.log(`${indent}${label}: ${dim.value}${ko} [pos:${dim.position}]`);
-    if (dim.ref && typeof dim.ref === "object") {
-      const ref = dim.ref as { prefix: string; version: string; address: number; dims: typeof dims };
+    if (dim.ref) {
+      const ref: ResolvedAddress = dim.ref;
       console.log(`${indent}  → ${ref.prefix}:${ref.version}:${ref.address}`);
       printResolved(ref.dims, indent + "    ");
     }
@@ -344,7 +505,7 @@ function printResolved(
 export type CodegenFormat = "ts" | "esm" | "cjs" | "proto" | "json-schema" | "dts";
 
 export async function specCodegen(options: {
-  catalogInput?: unknown;
+  catalogInput?: CatalogInputLike;
   specPath?: string;
   output?: string;
   format?: CodegenFormat;
@@ -358,15 +519,16 @@ export async function specCodegen(options: {
   }
 
   // codegen 전 스키마 검증
-  const validationResult = ctx.validator.validate(
-    ctx.prefixSpecs.length > 0 ? `${(ctx.prefixSpecs[0] as any).category ?? "entity"}.base` : "entity.base",
+  const _validationResult = ctx.validator.validate(
+    ctx.prefixSpecs.length > 0 ? `${ctx.prefixSpecs[0].schema?.category ?? "entity"}.base` : "entity.base",
     {},
   );
   // prefix specs 자체 구조 검증 (validator가 등록된 schema가 없으면 skip)
   try {
     for (const spec of ctx.prefixSpecs) {
       if (!spec.schema) continue;
-      const result = ctx.validator.validate(spec.schema, {});
+      const schemaId = spec.schema.schemaRef ?? `${spec.schema.category}.base`;
+      const result = ctx.validator.validate(schemaId, {});
       if (!result.valid) {
         console.warn(`  ⚠ ${spec.id} 스키마 검증 경고: ${result.errors.length}건`);
         for (const e of result.errors) {
@@ -450,10 +612,29 @@ export async function specCodegen(options: {
   }
 }
 
+export async function runSpecCodegen(argv: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args: argv,
+    options: {
+      ...SPEC_BASE_OPTIONS,
+      output: { type: "string" },
+      format: { type: "string", default: "ts" },
+    },
+    strict: true,
+  });
+
+  await specCodegen({
+    specPath: values.specs,
+    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
+    output: values.output,
+    format: values.format as "ts" | "esm" | "cjs" | "proto" | "json-schema",
+  });
+}
+
 // ── spec trace ──────────────────────────────────────
 
 export async function specTrace(options: {
-  catalogInput?: unknown;
+  catalogInput?: CatalogInputLike;
   specPath?: string;
   specId: string;
 }): Promise<void> {
@@ -506,4 +687,24 @@ export async function specTrace(options: {
   if (outgoing.length === 0 && incoming.length === 0 && linkedPrefixes.length === 0) {
     console.log("\n  (no relations or linked prefixes)");
   }
+}
+
+export async function runSpecTrace(argv: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args: argv,
+    options: { ...SPEC_BASE_OPTIONS, id: { type: "string" } },
+    strict: true,
+  });
+
+  if (!values.id) {
+    console.error("--id <specId> 필수");
+    console.error("예: qa-sdk spec trace --id FEAT-003");
+    process.exit(1);
+  }
+
+  await specTrace({
+    specPath: values.specs,
+    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
+    specId: values.id,
+  });
 }

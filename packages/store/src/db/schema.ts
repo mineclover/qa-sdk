@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import type { PathObservation, RuntimeGraph } from "@qa-sdk/core";
 import {
   pgTable,
@@ -40,10 +43,10 @@ export const traces = pgTable("traces", {
   reconstructed: boolean("reconstructed").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-}, (table) => ({
-  idxSessionId: index("idx_traces_session_id").on(table.sessionId),
-  idxReconstructed: index("idx_traces_reconstructed").on(table.reconstructed),
-}));
+}, (table) => [
+  index("idx_traces_session_id").on(table.sessionId),
+  index("idx_traces_reconstructed").on(table.reconstructed, table.createdAt),
+]);
 
 // ── Event Records ───────────────────────────────────────
 // SDK가 전송한 개별 이벤트 레코드. ingestion 시 저장된다.
@@ -79,15 +82,15 @@ export const eventRecords = pgTable("event_records", {
   userAttributes: jsonb("user_attributes").$type<Record<string, string>>(),
 
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-}, (table) => ({
-  idxTraceId: index("idx_event_records_trace_id").on(table.traceId),
-  idxTraceTimestamp: index("idx_event_records_trace_timestamp").on(
+}, (table) => [
+  index("idx_event_records_trace_id").on(table.traceId),
+  index("idx_event_records_trace_timestamp").on(
     table.traceId,
     table.timestamp,
   ),
-  idxEventKey: index("idx_event_records_event_key").on(table.eventKey),
-  idxSessionId: index("idx_event_records_session_id").on(table.qaSessionId),
-}));
+  index("idx_event_records_event_key").on(table.eventKey),
+  index("idx_event_records_session_id").on(table.qaSessionId),
+]);
 
 // ── Transmissions ───────────────────────────────────────
 // 수신한 envelope 메타데이터. 감사/디버깅용.
@@ -128,9 +131,9 @@ export const scenarioSpecs = pgTable("scenario_specs", {
   spec: jsonb("spec").notNull(), // Full ScenarioSpec JSON
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-}, (table) => ({
-  idxDomain: index("idx_scenario_specs_domain").on(table.domain),
-}));
+}, (table) => [
+  index("idx_scenario_specs_domain").on(table.domain),
+]);
 
 // ── Verdict Reports ─────────────────────────────────────
 // matching + verdict 결과.
@@ -147,13 +150,13 @@ export const verdictReports = pgTable("verdict_reports", {
   loopDetected: boolean("loop_detected"),
   terminalReason: text("terminal_reason"),
   computedAt: timestamp("computed_at", { withTimezone: true }).notNull().defaultNow(),
-}, (table) => ({
-  idxScenarioId: index("idx_verdict_reports_scenario_id").on(table.scenarioId),
-  idxTraceId: index("idx_verdict_reports_trace_id").on(table.traceId),
-  idxSessionId: index("idx_verdict_reports_session_id").on(table.qaSessionId),
-  idxVerdict: index("idx_verdict_reports_verdict").on(table.overallVerdict),
-  uniqScenarioTrace: unique().on(table.scenarioId, table.traceId),
-}));
+}, (table) => [
+  index("idx_verdict_reports_scenario_id").on(table.scenarioId),
+  index("idx_verdict_reports_trace_id").on(table.traceId),
+  index("idx_verdict_reports_session_id").on(table.qaSessionId),
+  index("idx_verdict_reports_verdict").on(table.overallVerdict),
+  unique().on(table.scenarioId, table.traceId),
+]);
 
 // ── Dead Letter Queue ───────────────────────────────────
 // reconstruction / verdict 후처리 실패를 추적한다.
@@ -167,13 +170,76 @@ export const deadLetterQueue = pgTable("dead_letter_queue", {
   lastAttemptedAt: timestamp("last_attempted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   resolvedAt: timestamp("resolved_at", { withTimezone: true }),
-}, (table) => ({
-  idxPending: index("idx_dead_letter_queue_pending").on(
+}, (table) => [
+  index("idx_dead_letter_queue_pending").on(
     table.resolvedAt,
     table.createdAt,
   ),
-  idxTracePhase: index("idx_dead_letter_queue_trace_phase").on(
+  index("idx_dead_letter_queue_trace_phase").on(
     table.traceId,
     table.phase,
   ),
-}));
+]);
+
+// ── Key Observations ───────────────────────────────────
+// packed_key 관측 빈도 추적. 좌표 공간 coverage/drift 분석.
+
+/**
+ * @deprecated 2026-04-22 (Plan 07b 완료) — `@qa-sdk/ingest-server`의
+ * `src/stores/pg/schema.ts` (pgSchema("ingest").table("key_observations"))가 SSOT.
+ *
+ * 본 정의는 단일 PK(packed_key)로 §4 P1·P3 결과(`(prefix_id, version, address)` 복합 PK)를
+ * 만족하지 못한다. neue 코드는 import 금지. history 보존용으로만 유지.
+ * 다음 packages/store major release에서 제거 예정.
+ */
+// @def.coord-storage-exempt: deprecated legacy key_observations schema; ingest-server pg schema is SSOT.
+export const keyObservations = pgTable("key_observations", {
+  packedKey: text("packed_key").primaryKey(),
+  prefixId: text("prefix_id").notNull(),
+  registered: boolean("registered").notNull().default(false),
+  count: integer("count").notNull().default(1),
+  firstSeen: timestamp("first_seen", { withTimezone: true }).notNull(),
+  lastSeen: timestamp("last_seen", { withTimezone: true }).notNull(),
+  payloadSummary: jsonb("payload_summary").notNull().default({}),
+}, (t) => [
+  index("idx_key_obs_prefix").on(t.prefixId),
+  index("idx_key_obs_last_seen").on(t.lastSeen),
+  index("idx_key_obs_count").on(t.count),
+  index("idx_key_obs_registered").on(t.registered),
+]);
+
+// ── Key Observation Prefixes ───────────────────────────
+// prefix 레벨 집계. capacity planning 지원.
+
+/**
+ * @deprecated 2026-04-22 (Plan 07b 완료) — `@qa-sdk/ingest-server`의
+ * `src/stores/pg/schema.ts` (pgSchema("ingest").table("key_observation_prefixes"))가 SSOT.
+ *
+ * 본 정의는 단일 PK(prefix_id)로 §4 P3 결과(version별 분리 집계)를 만족하지 못한다.
+ * 신규 코드 import 금지. 다음 major release에서 제거 예정.
+ */
+export const keyObservationPrefixes = pgTable("key_observation_prefixes", {
+  prefixId: text("prefix_id").primaryKey(),
+  distinctKeys: integer("distinct_keys").notNull().default(1),
+  totalCount: integer("total_count").notNull().default(0),
+  firstSeen: timestamp("first_seen", { withTimezone: true }).notNull(),
+  lastSeen: timestamp("last_seen", { withTimezone: true }).notNull(),
+});
+
+// ── Insight Labels ─────────────────────────────────────
+// 관측 데이터 수동 레이블링. 인사이트 분류·감사 추적.
+
+export const insightLabels = pgTable("insight_labels", {
+  id: text("id").primaryKey(),
+  kind: text("kind").notNull(),
+  targetId: text("target_id").notNull(),
+  label: text("label").notNull(),
+  status: text("status").notNull().default("pending"),
+  notes: text("notes"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index("idx_insight_labels_kind").on(t.kind),
+  index("idx_insight_labels_target").on(t.targetId),
+]);

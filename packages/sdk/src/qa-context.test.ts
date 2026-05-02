@@ -1,9 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
-import { createQaContext } from "./qa-context.js";
+import { createQaContext, createQaContextAsync } from "@qa-sdk/context";
+import type { TypedQaContext } from "demo-types";
 
 describe("QaContext", () => {
-  const qa = createQaContext({
+  // TypedQaContext — encode("permission", ...) 등 prefix 자동완성
+  const qa: TypedQaContext = createQaContext({
     env: "prod", region: "asia", service: "shopping-web", namespace: "shop",
     catalog: DEMO_CATALOG,
   });
@@ -28,6 +30,11 @@ describe("QaContext", () => {
     expect(result.address_context.service).toMatch(/^service:v1:\d+$/);
   });
 
+  it("infraContext — 서비스 주소를 infra_context로 반환", () => {
+    const infra = qa.infraContext();
+    expect(infra.service).toMatch(/^service:v\d+:\d+$/);
+  });
+
   it("executionMode 기본값 live", () => {
     expect(qa.executionMode).toBe("live");
   });
@@ -41,6 +48,34 @@ describe("QaContext", () => {
     });
     expect(testQa.executionMode).toBe("test");
     expect(testQa.executionId).toBe("e2e-checkout-v1");
+  });
+});
+
+describe("QaContext async fallback", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("registry fetch 실패 시 로컬 catalog로 fallback한다", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      throw new Error("registry down");
+    }));
+
+    const qa = await createQaContextAsync({
+      registry: "http://registry.invalid",
+      env: "prod",
+      region: "asia",
+      service: "shopping-web",
+      namespace: "shop",
+    });
+
+    const serialized = qa.encode("endpoint", {
+      resource_type: "api",
+      http_method: "POST",
+      api_version: "v1",
+    });
+
+    expect(serialized).toMatch(/^endpoint:v1:\d+$/);
   });
 });
 

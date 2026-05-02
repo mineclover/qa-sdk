@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 export interface DomNode {
   id: string;
   tag: string;
@@ -7,10 +10,7 @@ export interface DomNode {
   textContent?: string;
 }
 
-export function createNode(
-  tag: string,
-  attrs?: Record<string, string>,
-): DomNode {
+export function createNode(tag: string, attrs?: Record<string, string>): DomNode {
   return {
     id: crypto.randomUUID(),
     tag,
@@ -31,10 +31,7 @@ export function removeChild(parent: DomNode, childId: string): void {
   }
 }
 
-export function findNode(
-  root: DomNode,
-  id: string,
-): DomNode | undefined {
+export function findNode(root: DomNode, id: string): DomNode | undefined {
   if (root.id === id) return root;
   for (const child of root.children) {
     const found = findNode(child, id);
@@ -43,10 +40,7 @@ export function findNode(
   return undefined;
 }
 
-export function findParent(
-  root: DomNode,
-  childId: string,
-): DomNode | undefined {
+export function findParent(root: DomNode, childId: string): DomNode | undefined {
   for (const child of root.children) {
     if (child.id === childId) return root;
     const found = findParent(child, childId);
@@ -67,41 +61,41 @@ export function cloneNode(node: DomNode): DomNode {
 }
 
 export function createDefaultTree(): DomNode {
-  const root = createNode("div", { class: "form-container" });
+  const root = createNode('div', { class: 'form-container' });
   root.styles = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    padding: "24px",
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    padding: '24px',
   };
 
-  const form = createNode("form", { id: "main-form" });
+  const form = createNode('form', { id: 'main-form' });
   form.styles = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
   };
 
-  const nameLabel = createNode("label");
-  nameLabel.textContent = "Name";
+  const nameLabel = createNode('label');
+  nameLabel.textContent = 'Name';
 
-  const nameInput = createNode("input", {
-    type: "text",
-    name: "name",
-    placeholder: "Enter your name",
+  const nameInput = createNode('input', {
+    type: 'text',
+    name: 'name',
+    placeholder: 'Enter your name',
   });
 
-  const emailLabel = createNode("label");
-  emailLabel.textContent = "Email";
+  const emailLabel = createNode('label');
+  emailLabel.textContent = 'Email';
 
-  const emailInput = createNode("input", {
-    type: "email",
-    name: "email",
-    placeholder: "Enter your email",
+  const emailInput = createNode('input', {
+    type: 'email',
+    name: 'email',
+    placeholder: 'Enter your email',
   });
 
-  const submitBtn = createNode("button", { type: "submit" });
-  submitBtn.textContent = "Submit";
+  const submitBtn = createNode('button', { type: 'submit' });
+  submitBtn.textContent = 'Submit';
 
   addChild(form, nameLabel);
   addChild(form, nameInput);

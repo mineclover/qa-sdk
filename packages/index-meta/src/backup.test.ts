@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { describe, expect, expectTypeOf, it } from "vitest";
 import * as publicApi from "./index.js";
 import {

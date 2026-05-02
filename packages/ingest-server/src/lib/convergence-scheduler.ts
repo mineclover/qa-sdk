@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * convergence-scheduler — 주기적 convergence flush.
  *
@@ -50,6 +53,7 @@ export function installConvergenceScheduler(
             "convergence scheduled flush completed",
           );
         }
+        return undefined;
       })
       .catch((error) => {
         deps.logger?.error({ err: error }, "convergence scheduled flush failed");

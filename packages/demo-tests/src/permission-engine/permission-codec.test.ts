@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 import { describe, it, expect } from "vitest";
 import { PermissionCodec, type CodecDims } from "permission-engine";
 
@@ -185,7 +188,7 @@ describe("PermissionCodec", () => {
 
       // Tier 3 → Tier 1
       const listed = c.listGrants(mask);
-      expect(listed.sort()).toEqual(perms.sort());
+      expect(listed.toSorted()).toEqual(perms.toSorted());
 
       // Tier 3 크기 확인
       expect(mask.length).toBe(14); // 108 slots → 14 bytes

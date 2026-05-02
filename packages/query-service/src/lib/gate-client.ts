@@ -1,4 +1,8 @@
-import type { AddressStateCacheRecord } from "index-meta";
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
+import type { AddressStateCacheRecord } from "index-meta-workers";
+import { ServiceClientError } from "@qa-sdk/core";
 import { z } from "zod";
 
 const addressRangeSchema = z
@@ -28,12 +32,9 @@ export interface GateStateClient {
   getStateRanges(prefix: string, versionId: string): Promise<AddressStateCacheRecord | null>;
 }
 
-export class GateServiceClientError extends Error {
-  constructor(
-    message: string,
-    public readonly statusCode?: number,
-  ) {
-    super(message);
+export class GateServiceClientError extends ServiceClientError {
+  constructor(message: string, status?: number) {
+    super(message, status ?? 500);
     this.name = "GateServiceClientError";
   }
 }

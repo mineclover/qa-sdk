@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/apm",
   "version": "0.1.0",
+  "description": "주소 컨텍스트와 메트릭 보조 유틸리티를 제공하는 APM 지원 레이어",
   "type": "module",
   "exports": {
     ".": {

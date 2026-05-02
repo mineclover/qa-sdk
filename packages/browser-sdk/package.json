@@ -1,14 +1,15 @@
 {
   "name": "@qa-sdk/browser",
   "version": "0.1.0",
+  "description": "QaMonitor, session, auto-capture를 제공하는 브라우저 수집 SDK",
   "private": true,
   "type": "module",
-  "main": "dist/qa-monitor.umd.cjs",
-  "module": "dist/qa-monitor.esm.js",
+  "main": "dist/qa-browser-sdk.umd.cjs",
+  "module": "dist/qa-browser-sdk.js",
   "exports": {
     ".": {
-      "import": "./dist/qa-monitor.esm.js",
-      "require": "./dist/qa-monitor.umd.cjs"
+      "import": "./dist/qa-browser-sdk.js",
+      "require": "./dist/qa-browser-sdk.umd.cjs"
     }
   },
   "scripts": {
@@ -18,6 +19,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@qa-sdk/browser-codec": "workspace:*",
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/event-catalog": "workspace:*",
     "@qa-sdk/sdk": "workspace:*"

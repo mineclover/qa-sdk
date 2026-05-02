@@ -1,0 +1,544 @@
+{
+  "schemaVersion": "dspy-eval-cases-v1",
+  "caseSetId": "meta-semantic-extraction-v1",
+  "ownerSystem": "meta-semantic-system",
+  "targetPort": "ExtractionPort",
+  "cases": [
+    {
+      "caseId": "testability.public-transform.accepted",
+      "requestKind": "testability",
+      "inputRef": "packages/spec-analyzer/src/drift.ts#analyzeDrift",
+      "input": {
+        "codeSnippet": "export function analyzeDrift(specId: string, svc: string, declared: readonly DeclaredSymbol[], implemented: readonly ImplementedSymbol[]): DriftReport { return { specId, svc, declared, implemented, missing: [], undocumented: [], coverage: 1 }; }",
+        "context": {
+          "paramCount": 4,
+          "hasReturn": true
+        }
+      },
+      "expected": {
+        "verdict": true
+      },
+      "weight": 1,
+      "tags": ["testability", "positive", "source-derived"]
+    },
+    {
+      "caseId": "testability.marker-hinted.accepted",
+      "requestKind": "testability",
+      "inputRef": "packages/core/src/meta-semantic/extraction.ts#extractMarkerHints",
+      "input": {
+        "codeSnippet": "/** ^intent marker extraction */\nexport function extractMarkerHints(comment: string): MarkerHint[] { return []; }",
+        "context": {
+          "paramCount": 1,
+          "hasReturn": true,
+          "markers": ["intent: marker extraction"]
+        }
+      },
+      "expected": {
+        "verdict": true
+      },
+      "weight": 1,
+      "tags": ["testability", "positive", "source-derived"]
+    },
+    {
+      "caseId": "testability.path-counter.accepted",
+      "requestKind": "testability",
+      "inputRef": "packages/core/src/meta-semantic/extraction.ts#countExecutionPaths",
+      "input": {
+        "codeSnippet": "export function countExecutionPaths(unit: ExecutionUnit): number { if (!unit.entryPoint) return 1; return 2; }",
+        "context": {
+          "paramCount": 1,
+          "hasReturn": true
+        }
+      },
+      "expected": {
+        "verdict": true
+      },
+      "weight": 1,
+      "tags": ["testability", "positive", "source-derived"]
+    },
+    {
+      "caseId": "testability.schema-validator.accepted",
+      "requestKind": "testability",
+      "inputRef": "planned:extraction-optimization#validateBinding",
+      "input": {
+        "codeSnippet": "export function validateBinding(input: unknown): BindingManifest { return bindingSchema.parse(input); }",
+        "context": {
+          "paramCount": 1,
+          "hasReturn": true
+        }
+      },
+      "expected": {
+        "verdict": true
+      },
+      "weight": 1,
+      "tags": ["testability", "positive"]
+    },
+    {
+      "caseId": "testability-report-builder.accepted",
+      "requestKind": "testability",
+      "inputRef": "planned:dspy-eval#buildEvalReport",
+      "input": {
+        "codeSnippet": "export function buildEvalReport(results: readonly CaseResult[]): EvalReport { return summarize(results); }",
+        "context": {
+          "paramCount": 1,
+          "hasReturn": true
+        }
+      },
+      "expected": {
+        "verdict": true
+      },
+      "weight": 1,
+      "tags": ["testability", "positive"]
+    },
+    {
+      "caseId": "testability.getter.rejected",
+      "requestKind": "testability",
+      "inputRef": "synthetic:testability/getter",
+      "input": {
+        "codeSnippet": "get value(): string { return this._value; }",
+        "context": {
+          "paramCount": 0,
+          "hasReturn": true
+        }
+      },
+      "expected": {
+        "verdict": false
+      },
+      "weight": 1,
+      "tags": ["testability", "negative", "false-positive-cap"]
+    },
+    {
+      "caseId": "testability.type-guard.rejected",
+      "requestKind": "testability",
+      "inputRef": "synthetic:testability/type-guard",
+      "input": {
+        "codeSnippet": "export function isString(value: unknown): value is string { return typeof value === 'string'; }",
+        "context": {
+          "paramCount": 1,
+          "hasReturn": true
+        }
+      },
+      "expected": {
+        "verdict": false
+      },
+      "weight": 1,
+      "tags": ["testability", "negative", "false-positive-cap"]
+    },
+    {
+      "caseId": "testability.private-helper.rejected",
+      "requestKind": "testability",
+      "inputRef": "packages/spec-analyzer/src/drift.ts#normalizeEndpoint",
+      "input": {
+        "codeSnippet": "function normalizeEndpoint(name: string): string { return name.replace(/:(\\w+)/g, '{$1}').replace(/\\/+$/, ''); }",
+        "context": {
+          "paramCount": 1,
+          "hasReturn": true
+        }
+      },
+      "expected": {
+        "verdict": false
+      },
+      "weight": 1,
+      "tags": ["testability", "negative", "source-derived", "false-positive-cap"]
+    },
+    {
+      "caseId": "testability.pass-through-wrapper.rejected",
+      "requestKind": "testability",
+      "inputRef": "synthetic:testability/pass-through",
+      "input": {
+        "codeSnippet": "export function asValue(input: Value): Value { return input; }",
+        "context": {
+          "paramCount": 1,
+          "hasReturn": true
+        }
+      },
+      "expected": {
+        "verdict": false
+      },
+      "weight": 1,
+      "tags": ["testability", "negative", "false-positive-cap"]
+    },
+    {
+      "caseId": "testability.constant-reader.rejected",
+      "requestKind": "testability",
+      "inputRef": "synthetic:testability/constant-reader",
+      "input": {
+        "codeSnippet": "export function getDefaultMode(): string { return 'candidate'; }",
+        "context": {
+          "paramCount": 0,
+          "hasReturn": true
+        }
+      },
+      "expected": {
+        "verdict": false
+      },
+      "weight": 1,
+      "tags": ["testability", "negative", "false-positive-cap"]
+    },
+    {
+      "caseId": "branch.domain-state.accepted",
+      "requestKind": "branch-significance",
+      "inputRef": "synthetic:branch/domain-state",
+      "input": {
+        "codeSnippet": "switch (request.state) { case 'PENDING': return approve(request); case 'CANCELLED': return rejectCancelled(request); }",
+        "context": {
+          "functionId": "transitionApproval",
+          "kind": "switch",
+          "branchCount": 2,
+          "branchLabels": ["PENDING", "CANCELLED"]
+        }
+      },
+      "expected": {
+        "verdict": true
+      },
+      "weight": 1,
+      "tags": ["branch", "positive"]
+    },
+    {
+      "caseId": "branch.permission-policy.accepted",
+      "requestKind": "branch-significance",
+      "inputRef": "packages/permission-engine/src/permission-codec.ts",
+      "input": {
+        "codeSnippet": "if (policy.effect === 'allow') { return grant(mask); } else { return deny(mask); }",
+        "context": {
+          "functionId": "resolvePolicy",
+          "kind": "if",
+          "branchCount": 2,
+          "branchLabels": ["allow", "deny"]
+        }
+      },
+      "expected": {
+        "verdict": true
+      },
+      "weight": 1,
+      "tags": ["branch", "positive", "source-derived"]
+    },
+    {
+      "caseId": "branch.lifecycle-transition.accepted",
+      "requestKind": "branch-significance",
+      "inputRef": "packages/work-domain/src/gate-fsm.ts",
+      "input": {
+        "codeSnippet": "if (event.type === 'exit' && event.code === 0) return 'passed'; if (event.type === 'exit') return 'failed';",
+        "context": {
+          "functionId": "transitionGate",
+          "kind": "if",
+          "branchCount": 2,
+          "branchLabels": ["passed", "failed"]
+        }
+      },
+      "expected": {
+        "verdict": true
+      },
+      "weight": 1,
+      "tags": ["branch", "positive", "source-derived"]
+    },
+    {
+      "caseId": "branch.lineage-facet.accepted",
+      "requestKind": "branch-significance",
+      "inputRef": "packages/core/src/meta-semantic/extraction-prompts.ts#side-effects",
+      "input": {
+        "codeSnippet": "if (effect.kind === 'db-write') return 'egress'; if (effect.kind === 'event-emit') return 'egress'; return 'checkpoint';",
+        "context": {
+          "functionId": "classifyLineageFacet",
+          "kind": "if",
+          "branchCount": 3,
+          "branchLabels": ["db-write", "event-emit", "checkpoint"]
+        }
+      },
+      "expected": {
+        "verdict": true
+      },
+      "weight": 1,
+      "tags": ["branch", "positive"]
+    },
+    {
+      "caseId": "branch.target-kind-routing.accepted",
+      "requestKind": "branch-significance",
+      "inputRef": "packages/operational-ontology/src/internal/prompt-artifact-core.ts#PromptArtifactContextProvider",
+      "input": {
+        "codeSnippet": "if (request.targetKind === 'artifact') return resolveArtifact(request); if (request.targetKind === 'definition') return resolveDefinition(request); return null;",
+        "context": {
+          "functionId": "resolvePromptContext",
+          "kind": "if",
+          "branchCount": 3,
+          "branchLabels": ["artifact", "definition", "none"]
+        }
+      },
+      "expected": {
+        "verdict": true
+      },
+      "weight": 1,
+      "tags": ["branch", "positive", "source-derived"]
+    },
+    {
+      "caseId": "branch.null-check.ignored",
+      "requestKind": "branch-significance",
+      "inputRef": "synthetic:branch/null-check",
+      "input": {
+        "codeSnippet": "if (value == null) return undefined;",
+        "context": {
+          "functionId": "normalizeOptional",
+          "kind": "if",
+          "branchCount": 2,
+          "branchLabels": ["null", "value"]
+        }
+      },
+      "expected": {
+        "verdict": false
+      },
+      "weight": 1,
+      "tags": ["branch", "negative", "false-positive-cap"]
+    },
+    {
+      "caseId": "branch.logging-flag.ignored",
+      "requestKind": "branch-significance",
+      "inputRef": "synthetic:branch/logging-flag",
+      "input": {
+        "codeSnippet": "if (debug) logger.info({ payload }, 'debug payload');",
+        "context": {
+          "functionId": "maybeLog",
+          "kind": "if",
+          "branchCount": 2,
+          "branchLabels": ["debug", "silent"]
+        }
+      },
+      "expected": {
+        "verdict": false
+      },
+      "weight": 1,
+      "tags": ["branch", "negative", "false-positive-cap"]
+    },
+    {
+      "caseId": "branch.try-catch.ignored",
+      "requestKind": "branch-significance",
+      "inputRef": "synthetic:branch/try-catch",
+      "input": {
+        "codeSnippet": "try { return JSON.parse(value); } catch { return null; }",
+        "context": {
+          "functionId": "safeParse",
+          "kind": "try",
+          "branchCount": 2,
+          "branchLabels": ["ok", "catch"]
+        }
+      },
+      "expected": {
+        "verdict": false
+      },
+      "weight": 1,
+      "tags": ["branch", "negative", "false-positive-cap"]
+    },
+    {
+      "caseId": "branch.defensive-default.ignored",
+      "requestKind": "branch-significance",
+      "inputRef": "synthetic:branch/defensive-default",
+      "input": {
+        "codeSnippet": "const mode = input.mode ?? 'candidate';",
+        "context": {
+          "functionId": "normalizeMode",
+          "kind": "expression",
+          "branchCount": 2,
+          "branchLabels": ["provided", "default"]
+        }
+      },
+      "expected": {
+        "verdict": false
+      },
+      "weight": 1,
+      "tags": ["branch", "negative", "false-positive-cap"]
+    },
+    {
+      "caseId": "branch.type-guard.ignored",
+      "requestKind": "branch-significance",
+      "inputRef": "synthetic:branch/type-guard",
+      "input": {
+        "codeSnippet": "if (typeof value === 'string') return value.trim();",
+        "context": {
+          "functionId": "normalizeString",
+          "kind": "if",
+          "branchCount": 2,
+          "branchLabels": ["string", "other"]
+        }
+      },
+      "expected": {
+        "verdict": false
+      },
+      "weight": 1,
+      "tags": ["branch", "negative", "false-positive-cap"]
+    },
+    {
+      "caseId": "branch.test-only-snapshot.ignored",
+      "requestKind": "branch-significance",
+      "inputRef": "synthetic:branch/test-only",
+      "input": {
+        "codeSnippet": "if (process.env.UPDATE_SNAPSHOT) writeSnapshot(output);",
+        "context": {
+          "functionId": "maybeUpdateSnapshot",
+          "kind": "if",
+          "branchCount": 2,
+          "branchLabels": ["update", "skip"]
+        }
+      },
+      "expected": {
+        "verdict": false
+      },
+      "weight": 1,
+      "tags": ["branch", "negative", "false-positive-cap"]
+    },
+    {
+      "caseId": "branch.empty-array-guard.ignored",
+      "requestKind": "branch-significance",
+      "inputRef": "synthetic:branch/empty-array",
+      "input": {
+        "codeSnippet": "if (items.length === 0) return [];",
+        "context": {
+          "functionId": "mapItems",
+          "kind": "if",
+          "branchCount": 2,
+          "branchLabels": ["empty", "non-empty"]
+        }
+      },
+      "expected": {
+        "verdict": false
+      },
+      "weight": 1,
+      "tags": ["branch", "negative", "false-positive-cap"]
+    },
+    {
+      "caseId": "side-effects.db-write.detected",
+      "requestKind": "side-effects",
+      "inputRef": "synthetic:side-effects/db-write",
+      "input": {
+        "codeSnippet": "await db.insert(records).values(payload);",
+        "context": {}
+      },
+      "expected": {
+        "verdict": true,
+        "extracted": {
+          "sideEffectsIncludes": ["db-write"],
+          "lineageFacet": "egress"
+        }
+      },
+      "weight": 1,
+      "tags": ["side-effects", "positive"]
+    },
+    {
+      "caseId": "side-effects.event-emit.detected",
+      "requestKind": "side-effects",
+      "inputRef": "synthetic:side-effects/event-emit",
+      "input": {
+        "codeSnippet": "eventBus.emit('approval.approved', payload);",
+        "context": {}
+      },
+      "expected": {
+        "verdict": true,
+        "extracted": {
+          "sideEffectsIncludes": ["event-emit"],
+          "lineageFacet": "egress"
+        }
+      },
+      "weight": 1,
+      "tags": ["side-effects", "positive"]
+    },
+    {
+      "caseId": "side-effects.file-write.detected",
+      "requestKind": "side-effects",
+      "inputRef": "synthetic:side-effects/file-write",
+      "input": {
+        "codeSnippet": "await writeFile(outputPath, JSON.stringify(report));",
+        "context": {}
+      },
+      "expected": {
+        "verdict": true,
+        "extracted": {
+          "sideEffectsIncludes": ["file-write"],
+          "lineageFacet": "egress"
+        }
+      },
+      "weight": 1,
+      "tags": ["side-effects", "positive"]
+    },
+    {
+      "caseId": "side-effects.http-call.detected",
+      "requestKind": "side-effects",
+      "inputRef": "synthetic:side-effects/http-call",
+      "input": {
+        "codeSnippet": "const response = await fetch(url, { method: 'POST', body });",
+        "context": {}
+      },
+      "expected": {
+        "verdict": true,
+        "extracted": {
+          "sideEffectsIncludes": ["http-request"],
+          "lineageFacet": "egress"
+        }
+      },
+      "weight": 1,
+      "tags": ["side-effects", "positive"]
+    },
+    {
+      "caseId": "side-effects.pure-transform.none",
+      "requestKind": "side-effects",
+      "inputRef": "synthetic:side-effects/pure-transform",
+      "input": {
+        "codeSnippet": "return entries.map((entry) => ({ id: entry.id, label: entry.label.trim() }));",
+        "context": {}
+      },
+      "expected": {
+        "verdict": false,
+        "extracted": {
+          "sideEffectsIncludes": []
+        }
+      },
+      "weight": 1,
+      "tags": ["side-effects", "negative", "false-positive-cap"]
+    },
+    {
+      "caseId": "dependency.repository.core",
+      "requestKind": "dependency-importance",
+      "inputRef": "synthetic:dependency/repository",
+      "input": {
+        "codeSnippet": "const record = await approvalRepository.findById(requestId); await approvalRepository.save(record);",
+        "context": {
+          "dependency": "approvalRepository"
+        }
+      },
+      "expected": {
+        "verdict": true
+      },
+      "weight": 1,
+      "tags": ["dependency", "core"]
+    },
+    {
+      "caseId": "dependency.logger.auxiliary",
+      "requestKind": "dependency-importance",
+      "inputRef": "synthetic:dependency/logger",
+      "input": {
+        "codeSnippet": "logger.info({ requestId }, 'approval request loaded'); return request;",
+        "context": {
+          "dependency": "logger"
+        }
+      },
+      "expected": {
+        "verdict": false
+      },
+      "weight": 1,
+      "tags": ["dependency", "auxiliary", "false-positive-cap"]
+    },
+    {
+      "caseId": "dependency.metrics.auxiliary",
+      "requestKind": "dependency-importance",
+      "inputRef": "synthetic:dependency/metrics",
+      "input": {
+        "codeSnippet": "metrics.increment('approval.loaded'); return request;",
+        "context": {
+          "dependency": "metrics"
+        }
+      },
+      "expected": {
+        "verdict": false
+      },
+      "weight": 1,
+      "tags": ["dependency", "auxiliary", "false-positive-cap"]
+    }
+  ]
+}

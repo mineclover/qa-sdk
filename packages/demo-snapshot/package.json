@@ -1,6 +1,7 @@
 {
   "name": "demo-snapshot",
   "version": "0.2.0",
+  "description": "DEMO_CATALOG와 데모 도메인 데이터를 제공하는 카탈로그 SSOT",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -13,12 +14,17 @@
     }
   },
   "files": ["dist"],
+  "dependencies": {
+    "@qa-sdk/core": "workspace:*",
+    "decision-flow": "workspace:*",
+    "weighted-index": "workspace:*"
+  },
   "scripts": {
     "build": "tsup",
     "test": "vitest run"
   },
   "devDependencies": {
-    "tsup": "^8.5.0",
+    "tsup": "^8.5.1",
     "typescript": "^5.8.2",
     "vitest": "^1.6.1"
   }

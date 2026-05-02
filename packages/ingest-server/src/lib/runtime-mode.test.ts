@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { describe, expect, it } from "vitest";
 import { resolveRuntimeMode } from "./runtime-mode.js";
 

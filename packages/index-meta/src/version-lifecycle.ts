@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * VersionLifecycleStore — 버전 상태 관리 (PositionEngine)
  *
@@ -22,8 +25,6 @@
  *           flag 변경 시 AddressStateStore 재계산 필요.
  *           용도: 피처 플래그, 동적 설정, A/B 테스트.
  */
-
-import type { EntityId } from "./types.js";
 
 // ── 타입 ──────────────────────────────────────────────────
 

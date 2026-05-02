@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { StoredRecord } from "@qa-sdk/core";
 
 export const DEFAULT_DEBUG_STORE_TTL_MS = 5 * 60 * 1_000;

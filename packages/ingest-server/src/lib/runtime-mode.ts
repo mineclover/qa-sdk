@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 export type RuntimeMode = "server" | "worker";
 
 const DEFAULT_RUNTIME_MODE: RuntimeMode = "server";

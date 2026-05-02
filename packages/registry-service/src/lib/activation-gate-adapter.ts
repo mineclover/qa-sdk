@@ -1,8 +1,11 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 /**
  * activation-gate-adapter — spec-core의 checkActivationReadiness를 RegistryService에 연결.
  *
  * spec-core에 대한 정적 의존 없이 ActivationGatePort 인터페이스로 추상화한다.
- * 제네릭 <G>로 graph 타입을 캡슐화하여 `as any` 없이 타입 안전하게 연결.
+ * 제네릭 <G>로 graph 타입을 캡슐화하여 강한 타입 경계를 유지한다.
  */
 
 export interface ActivationGatePort {

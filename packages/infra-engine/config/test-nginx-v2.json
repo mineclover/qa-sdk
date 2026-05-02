@@ -1,0 +1,18 @@
+{
+  "global": {
+    "region": "local"
+  },
+  "services": {
+    "nginx-test": {
+      "port": 80,
+      "replicas": "2",
+      "version": "v2-canary"
+    }
+  },
+  "connections": {
+    "nginx-test": {
+      "endpoint": "http://localhost:80",
+      "health_path": "/"
+    }
+  }
+}

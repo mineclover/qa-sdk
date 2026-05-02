@@ -1,0 +1,163 @@
+tags:
+  - name: report
+    description: Report read-model + admin catalog API.
+paths:
+  /reports:
+    post:
+      tags: [report]
+      operationId: createReport
+      summary: Create a report catalog entry.
+      x-domain: report
+      x-architecture-slice: report-admin-catalog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReportCommand"
+      responses:
+        "201":
+          description: Report created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportReadModel"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    get:
+      tags: [report]
+      operationId: listReports
+      summary: List report catalog entries.
+      x-domain: report
+      x-architecture-slice: report-read-model
+      responses:
+        "200":
+          description: Report list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportReadModel"
+  /reports/{reportId}:
+    get:
+      tags: [report]
+      operationId: getReport
+      summary: Read a single report read model.
+      x-domain: report
+      x-architecture-slice: report-read-model
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Report read model.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportReadModel"
+        "404":
+          description: Report not found.
+    put:
+      tags: [report]
+      operationId: updateReport
+      summary: Update a report catalog entry.
+      x-domain: report
+      x-architecture-slice: report-admin-catalog
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateReportCommand"
+      responses:
+        "200":
+          description: Report updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportReadModel"
+        "404":
+          description: Report not found.
+    delete:
+      tags: [report]
+      operationId: deleteReport
+      summary: Delete a report catalog entry.
+      x-domain: report
+      x-architecture-slice: report-admin-catalog
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deletion accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [deleted]
+                additionalProperties: false
+components:
+  schemas:
+    CreateReportCommand:
+      type: object
+      required: [name, queryDefinition, createdBy]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        queryDefinition:
+          type: string
+          minLength: 1
+        createdBy:
+          type: string
+          minLength: 1
+      additionalProperties: false
+    UpdateReportCommand:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        queryDefinition:
+          type: string
+          minLength: 1
+        createdBy:
+          type: string
+          minLength: 1
+      additionalProperties: false
+    ReportReadModel:
+      type: object
+      required: [id, name, queryDefinition, createdBy, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        queryDefinition:
+          type: string
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: false

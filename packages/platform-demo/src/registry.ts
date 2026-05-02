@@ -1,3 +1,6 @@
+// @def.boundary platform-demo-system
+// @def.doc platform-demo-system
+
 // API response types used by the frontend
 
 export interface ServiceCell { xPos: number; yPos: number; value: number }

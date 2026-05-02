@@ -1,3 +1,6 @@
+// @def.boundary platform-demo-system
+// @def.doc platform-demo-system
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  이벤트 인덱스 — 3D grid page (API-backed, version-aware)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -258,6 +261,7 @@ export async function renderEventPage(
     }
   }
 
+  // eslint-disable-next-line typescript/no-non-null-assertion -- .has() 직후 .get()
   const data = _evtCache.get(cacheKey)!;
 
   renderGrid(gridContainer, state, data, (v) => {

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * cross-index-query.ts — index_ref 합성 질의 및 깊은 디코딩.
  *

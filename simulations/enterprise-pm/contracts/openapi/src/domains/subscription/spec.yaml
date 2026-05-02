@@ -1,0 +1,161 @@
+tags:
+  - name: subscription
+    description: User notification subscription management API.
+paths:
+  /subscriptions:
+    post:
+      tags: [subscription]
+      operationId: createSubscription
+      summary: Create a notification subscription for a user.
+      x-domain: subscription
+      x-architecture-slice: subscription-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubscriptionCommand"
+      responses:
+        "200":
+          description: Subscription accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: User does not exist (cross-domain validation failure).
+  /subscriptions/{userId}/{eventType}/active:
+    put:
+      tags: [subscription]
+      operationId: setSubscriptionActive
+      summary: Toggle subscription active state.
+      x-domain: subscription
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: eventType
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isActive]
+              properties:
+                isActive:
+                  type: boolean
+              additionalProperties: false
+      responses:
+        "200":
+          description: Updated subscription.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionResult"
+        "404":
+          description: Subscription not found.
+  /subscriptions/{userId}/{eventType}:
+    delete:
+      tags: [subscription]
+      operationId: deleteSubscription
+      summary: Remove a subscription.
+      x-domain: subscription
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: eventType
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [deleted]
+                additionalProperties: false
+  /users/{userId}/subscriptions:
+    get:
+      tags: [subscription]
+      operationId: listUserSubscriptions
+      summary: List a user's subscriptions.
+      x-domain: subscription
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Subscription list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubscriptionDetail"
+components:
+  schemas:
+    CreateSubscriptionCommand:
+      type: object
+      required: [userId, eventType, channel]
+      properties:
+        userId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        eventType:
+          type: string
+        channel:
+          type: string
+          enum: [in_app, email]
+        isActive:
+          type: boolean
+      additionalProperties: false
+    SubscriptionResult:
+      type: object
+      required: [userId, eventType, isActive]
+      properties:
+        userId:
+          type: string
+        eventType:
+          type: string
+        isActive:
+          type: boolean
+      additionalProperties: false
+    SubscriptionDetail:
+      type: object
+      required: [userId, eventType, channel, isActive, createdAt]
+      properties:
+        userId:
+          type: string
+        eventType:
+          type: string
+        channel:
+          type: string
+          enum: [in_app, email]
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      additionalProperties: false

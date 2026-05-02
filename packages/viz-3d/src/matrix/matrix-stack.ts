@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * MatrixStack — 여러 prefix 그리드를 큐브로 스택/겹침.
  *

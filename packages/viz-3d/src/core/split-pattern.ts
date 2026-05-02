@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * SplitPattern — 좌표계 데이터의 차원별 표현 패턴 정형화.
  *
@@ -354,7 +357,7 @@ export function inferRole(axisName: string, dimKind: string): AxisRole {
 }
 
 /** 역할 기반 시각 채널 결정 */
-function roleToChannel(role: AxisRole): VisualChannel {
+function _roleToChannel(role: AxisRole): VisualChannel {
   switch (role) {
     case "classify": return "group";
     case "sequence": return "x";
@@ -384,7 +387,7 @@ export function inferPattern(prefixId: string, input: string[] | DimInfo[]): Spl
   const tableDims = dims.filter(d => d.kind === "table_ref");
 
   // 역할 추론
-  const roles = axisDims.map(d => ({ ...d, role: inferRole(d.label, d.kind) }));
+  const roles = axisDims.map(d => Object.assign({}, d, { role: inferRole(d.label, d.kind) }));
   const classifiers = roles.filter(r => r.role === "classify");
   const sequences = roles.filter(r => r.role === "sequence");
   const variants = roles.filter(r => r.role === "variant");

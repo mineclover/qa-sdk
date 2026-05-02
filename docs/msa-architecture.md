@@ -1,4 +1,23 @@
+---
+def:
+  id: msa-architecture
+  type: knowledge
+  knowledge_kind: narrative
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+  tags: [cross-scope, observability, runtime]
+  links:
+    - target: system-narrative
+      type: refines
+---
 # MSA 구성도 + 백업 시나리오
+
+## 목적 ^purpose
+
+마이크로서비스 토폴로지, 패턴 분류(인코딩→수집→분석→제공), 전이 엔진 구조를 설명한다.
+
 
 > Phase 6 멀티 카탈로그 런타임 반영
 > Created: 2026-03-21
@@ -16,12 +35,12 @@
             ┌──────────────────────┘      │      └──────────────────────┐
             ▼                             ▼                            ▼
   ┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
-  │  ingest-server  │         │ registry-server  │         │registry-service │
-  │   :3200 (HTTP)  │────────▶│    :3100 (HTTP)  │         │   :3300 (HTTP)  │
-  │   :3200 (WS)   │         │                  │         │  SQLite / Mem   │
-  │  PostgreSQL +   │         │   PostgreSQL     │         │                 │
-  │  Redis (BullMQ) │         │   (Drizzle ORM)  │         │  + CatalogStore │
-  └──────┬──────────┘         └──────────────────┘         └─────────────────┘
+  │  ingest-server  │         │ registry-service │         │  loki (Infra)   │
+  │   :3200 (HTTP)  │────────▶│    :3300 (HTTP)  │         │   :3100 (HTTP)  │
+  │   :3200 (WS)   │         │  SQLite / Mem   │         │   Logs Store    │
+  │  PostgreSQL +   │         │                 │         │                 │
+  │  Redis (BullMQ) │         │  + CatalogStore │         │                 │
+  └──────┬──────────┘         └─────────────────┘         └─────────────────┘
          │
          │ Task Queue (Redis)
          ▼
@@ -47,7 +66,6 @@
 |--------|------|--------|------|----------|
 | **ingest-server** | 3200 | PostgreSQL + Redis | 이벤트 수집, address_context 검증, 실시간 스트림 (SSE/WS) | Horizontal (stateless HTTP + worker 분리) |
 | **worker** | — | PostgreSQL + Redis | Phase-2 비동기 처리 (reconstruction, verdict), DLQ | Horizontal (concurrency 조절) |
-| **registry-server** | 3100 | PostgreSQL | prefix 메타데이터, 버전 관리, Drizzle 마이그레이션 | Single primary + read replica |
 | **registry-service** | 3300 | SQLite/Mem | prefix 등록, **카탈로그 CRUD**, 주소 인코딩 스키마 관리 | Horizontal (SQLite=file, Mem=stateless) |
 | **decode-service** | 3600 | In-memory cache | mixed-radix decode, TTL 캐시 풀 | Horizontal (stateless) |
 | **gate-service** | 3400 | SQLite (file) | 주소 상태 관리 (reserved/inactive/open), cascade 전파 | Single primary (상태 보존) |

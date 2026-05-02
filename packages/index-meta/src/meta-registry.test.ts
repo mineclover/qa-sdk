@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { describe, it, expect } from "vitest";
 import { MetaRegistry, computeActiveIndices } from "./meta-registry.js";
 import { MetaCodec } from "./meta-codec.js";
@@ -1596,8 +1599,8 @@ describe("toInput() / MetaRegistryDataset", () => {
     const reg = new MetaRegistry(baseInput());
     const reg2 = new MetaRegistry(reg.toInput());
 
-    expect(reg2.dimIds.sort()).toEqual(reg.dimIds.slice().sort());
-    expect(reg2.indexIds.sort()).toEqual(reg.indexIds.slice().sort());
+    expect(reg2.dimIds.toSorted()).toEqual(reg.dimIds.slice().toSorted());
+    expect(reg2.indexIds.toSorted()).toEqual(reg.indexIds.slice().toSorted());
     const codec1 = reg.createCodec("perm", "iv1");
     const codec2 = reg2.createCodec("perm", "iv1");
     expect(codec2.encode({ role: "admin", action: "read", resource: 10 })).toEqual(

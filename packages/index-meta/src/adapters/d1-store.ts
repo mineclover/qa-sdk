@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * D1IndexMetaStore — Cloudflare D1 어댑터
  *

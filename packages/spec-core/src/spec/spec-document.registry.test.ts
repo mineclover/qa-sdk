@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 import { describe, it, expect, beforeEach } from "vitest";
 import { SpecDocumentRegistry } from "./spec-document.registry.js";
 import type { SpecDocument } from "./spec.types.js";

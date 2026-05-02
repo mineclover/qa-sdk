@@ -1,0 +1,281 @@
+{
+  "name": "Definition Catalog 문서 품질 고도화",
+  "description": "265건 문서의 링크/purpose/태그 품질을 7개 def-* 스킬로 개선한다. links 169→0, purpose 짧음 5→0, overview 28→100%, tags 34→50%+",
+  "branchName": "ralph/def-catalog-quality",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "스킬 구성 — 7개 def-* 스킬 확인 + 설치",
+      "description": "repo의 skills/ 디렉토리에서 7개 def-* 스킬을 확인하고, 에이전트 환경에 설치한다. skills/가 SSOT이며 없으면 cp -r skills/def-* ~/.codex/skills/ 로 복사.",
+      "acceptanceCriteria": [
+        "skills/def-topdown/SKILL.md 존재 확인",
+        "skills/def-bottomup/SKILL.md 존재 확인",
+        "skills/def-context/SKILL.md 존재 확인",
+        "skills/def-split/SKILL.md 존재 확인",
+        "skills/def-new/SKILL.md 존재 확인",
+        "skills/def-link/SKILL.md 존재 확인",
+        "skills/def-audit/SKILL.md 존재 확인",
+        "AGENTS.md에 '문서 시스템 (definition-catalog)' 섹션 존재 확인",
+        "grep -rl 'depth: overview' docs/specs/ | head -3 실행 시 3건 출력",
+        "awk '/^  links:/,/^---/{if(/target:/)t=$NF; if(/type: contains/)print t}' docs/specs/gate/gate-system.md 실행 시 6건+ 출력",
+        "pnpm --filter definition-catalog test 통과"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "SSOT: skills/ 디렉토리. 에이전트 환경에 없으면 cp로 복사.",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "전체 품질 리포트 생성",
+      "description": "skills/def-audit/SKILL.md의 전체 품질 리포트 스크립트를 실행하여 현재 기준선을 확인한다.",
+      "acceptanceCriteria": [
+        "^purpose 커버리지 수치 출력",
+        "links 없는 리프 문서 수 출력",
+        "purpose 30자 미만 문서 목록 출력",
+        "^overview 없는 그룹 문서 목록 출력",
+        "tags 없는 문서 수 출력",
+        "pnpm --filter definition-catalog test 통과"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "skills/def-audit/SKILL.md의 '전체 품질 리포트' 섹션 참조.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "gate-system 링크 연결 (파일럿)",
+      "description": "skills/def-link/SKILL.md의 절차로 gate 그룹 내 멤버 간 횡방향 관계를 추가한다. 다른 시스템의 기준이 되는 파일럿.",
+      "acceptanceCriteria": [
+        "gate-system 멤버(gate-api, gate-state-model, gate-engine-func, gate-flow, gate-constraint, gate-scenario) 중 links 없는 문서 0건",
+        "constraint → interface/feature constrains 관계 추가",
+        "state → (다른 멤버) depends_on 관계 추가",
+        "flow → interface/feature refines 관계 추가",
+        "grep -c 'target:' docs/specs/gate/*.md 실행 시 각 파일에 1건+ links",
+        "pnpm --filter definition-catalog test 통과"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "skills/def-link/SKILL.md의 'scope 기반 추론' 규칙 참조. 순환 참조 금지.",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "ingest-system 링크 연결",
+      "description": "ingest 그룹 내 14건 멤버 간 횡방향 관계를 추가한다.",
+      "acceptanceCriteria": [
+        "ingest-system 멤버 중 links 없는 문서 0건",
+        "API 문서(ingest-api, query-api, scenario-api 등) → data 모델(record-spec, trace-spec, session-spec) depends_on 연결",
+        "pipeline-flow → ingest-api refines 연결",
+        "pnpm --filter definition-catalog test 통과"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "US-003의 패턴을 따른다.",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "df-system 링크 연결",
+      "description": "decision-flow 그룹 내 10건 멤버 간 횡방향 관계를 추가한다.",
+      "acceptanceCriteria": [
+        "df-system 멤버 중 links 없는 문서 0건",
+        "df-vector-analysis → df-observation-space depends_on 연결",
+        "df-serialization → df-observation-space depends_on 연결",
+        "df-causal-mapping → df-state-model depends_on 연결",
+        "pnpm --filter definition-catalog test 통과"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "indexing-core-system 링크 연결",
+      "description": "가장 큰 그룹(20건) 내 횡방향 관계를 추가한다.",
+      "acceptanceCriteria": [
+        "indexing-core-system 멤버 중 links 없는 문서 0건",
+        "coord-foundation에 다른 멤버가 depends_on으로 연결",
+        "constraint 문서가 관련 feature/interface를 constrains",
+        "pnpm --filter definition-catalog test 통과"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "20건으로 가장 큰 그룹. coord-foundation이 핵심 의존 대상.",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "나머지 시스템 링크 일괄 연결",
+      "description": "permission, decode, query, registry, dkg, wi, cq, browser, spec-engine, index-meta, viz, apm, storage, event-vocab, guides 그룹의 링크를 연결한다.",
+      "acceptanceCriteria": [
+        "전체 리프 중 links 없는 문서 10건 이하",
+        "각 그룹 내 constraint → 대상 constrains, feature → data depends_on 패턴 적용",
+        "pnpm --filter definition-catalog test 통과"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "US-003~006의 패턴을 나머지 15개 그룹에 일괄 적용.",
+      "dependsOn": [
+        "US-004",
+        "US-005",
+        "US-006"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-008",
+      "title": "짧은 purpose 보강",
+      "description": "30자 미만 purpose 5건을 '무엇+왜+범위' 패턴으로 보강한다.",
+      "acceptanceCriteria": [
+        "masking-spec purpose 30자+ — '클라이언트 측 payload 마스킹' 보강 (보안 맥락 추가)",
+        "collection-transport-spec purpose 30자+ — 전송 계층 역할/인터페이스 설명",
+        "verdict-api-spec purpose 30자+ — 판정 조회/재계산 맥락 추가",
+        "registry-services-api-spec purpose 30자+ — 서비스 디스커버리 맥락",
+        "wi-constraint purpose 30자+ — 좌표 안전성/검증 맥락",
+        "pnpm --filter definition-catalog test 통과"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "skills/def-audit/SKILL.md의 'purpose 보강 가이드' 참조. 무엇+왜+범위 패턴.",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-009",
+      "title": "그룹 ^overview 보강",
+      "description": "^overview가 없는 그룹 문서(depth: overview)에 '## 구성 ^overview' 섹션을 추가한다.",
+      "acceptanceCriteria": [
+        "모든 그룹 문서(depth: overview)에 ^overview 마커 있음",
+        "overview에 멤버 수 + 각 멤버 1줄 요약 포함",
+        "grep -rl 'depth: overview' docs/specs/ | xargs grep -L '^overview' 실행 시 0건",
+        "pnpm --filter definition-catalog test 통과"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-010",
+      "title": "concern/tier 태그 일괄 부여",
+      "description": "security, performance, observability 등 concern 태그와 tier-* 태그를 관련 문서에 부여한다.",
+      "acceptanceCriteria": [
+        "권한 관련 문서(perm-*, rbac, auth)에 security 태그",
+        "벤치마크/성능 문서(bench-*, acceleration)에 performance 태그",
+        "로깅/메트릭 문서(logger, metrics, pipeline-monitoring)에 observability 태그",
+        "tags 커버리지 50%+ (현재 34%) — grep -rl 'tags:' docs/ | wc -l 로 확인",
+        "pnpm --filter definition-catalog test 통과"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "태그는 packages/definition-catalog/src/taxonomy.ts의 KNOWN_TAGS에 정의된 것을 사용.",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-011",
+      "title": "최종 조립 검증",
+      "description": "system-root 탑다운 조립과 주요 문서 컨텍스트/영향 분석이 정상인지 확인한다.",
+      "acceptanceCriteria": [
+        "skills/def-topdown/SKILL.md 절차로 system-root 탑다운 조립 시 모든 하위 시스템 purpose 표시",
+        "skills/def-context/SKILL.md 절차로 gate-api 컨텍스트 조회 시 소속/제약/의존/blast radius 표시",
+        "skills/def-bottomup/SKILL.md 절차로 record-spec blast radius가 US-007 이전보다 증가",
+        "pnpm --filter definition-catalog test 통과"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-007",
+        "US-008",
+        "US-009",
+        "US-010"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-012",
+      "title": "리프 분할 — indexing-core/index-meta/spec-engine 그룹",
+      "description": "indexing-core-system, index-meta-system, spec-engine-system 소속 150줄+ 리프를 분할한다. 가장 큰 그룹 3개를 먼저 처리.",
+      "acceptanceCriteria": [
+        "indexing-core-system 소속 150줄+ 리프 수 50% 감소",
+        "index-meta-system 소속 150줄+ 리프 수 50% 감소",
+        "spec-engine-system 소속 150줄+ 리프 수 50% 감소",
+        "분할된 원본은 lifecycle: deprecated",
+        "새 멤버 문서에 ## 목적 ^purpose 있음",
+        "pnpm --filter definition-catalog test 통과"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": "skills/def-split/SKILL.md 절차 참조. 한 그룹씩 순차 처리.",
+      "dependsOn": [
+        "US-011"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-013",
+      "title": "리프 분할 — wi/permission/dkg/gate 그룹",
+      "description": "wi-system, permission-system, dkg-system, gate-system 소속 150줄+ 리프를 분할한다.",
+      "acceptanceCriteria": [
+        "해당 그룹 소속 150줄+ 리프 수 50% 감소",
+        "분할된 원본은 lifecycle: deprecated",
+        "새 멤버 문서에 ## 목적 ^purpose 있음",
+        "pnpm --filter definition-catalog test 통과"
+      ],
+      "priority": 13,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-012"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-014",
+      "title": "리프 분할 — 나머지 그룹 + 최종 검증",
+      "description": "나머지 그룹의 150줄+ 리프를 분할하고, 깨진 링크 검증(validateGraph)을 실행한다.",
+      "acceptanceCriteria": [
+        "전체 150줄+ 리프 수 40건 이하",
+        "분할된 원본은 lifecycle: deprecated",
+        "깨진 링크 검증: node -e로 BROKEN 0건 확인",
+        "pnpm --filter definition-catalog test 통과"
+      ],
+      "priority": 14,
+      "passes": true,
+      "notes": "skills/def-link/SKILL.md의 깨진 링크 검증 스크립트 실행.",
+      "dependsOn": [
+        "US-013"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-03-25T14:27:23.022Z"
+  }
+}

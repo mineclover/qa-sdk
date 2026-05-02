@@ -36,6 +36,57 @@ docker compose down -v
 - `TASK_QUEUE_ENABLED=true`면 ingest-server가 Phase 2를 BullMQ worker로 분리하고, `false`면 기존 동기 경로를 유지한다.
 - `INGEST_REGISTRY_VALIDATION_MODE=warn`이 기본값이며, 인증은 게이트웨이에서 처리한다 ([ADR-001](docs/architecture-decisions.md#adr-001-게이트웨이-레벨-인증)).
 
+## Skill Docs
+
+skill 운영 가이드와 카탈로그는 아래에서 시작한다.
+
+- `skills/` — 프로젝트 로컬 실제 skill 정의 원본 (`SKILL.md`)
+- `docs/skills/README.md` — skill 운영 가이드 index
+- `docs/specs/skill-catalog/skill-catalog-system.md` — skill 카탈로그 구조와 관계 문서
+
+## Quality Gate Status
+
+현재 quality claim audit으로 실제 gate 실행 + review 원장까지 닫힌 번들은 다음과 같다.
+
+| Bundle | Claims | Gates | 상태 |
+|---|---:|---:|---|
+| `work-domain-quality-bundle` | 15 | 3 | verified |
+| `decision-flow-quality-bundle` | 15 | 3 | verified |
+| `ingest-quality-bundle` | 15 | 3 | verified |
+| `query-quality-bundle` | 15 | 3 | verified |
+| `decode-quality-bundle` | 15 | 3 | verified |
+| `registry-quality-bundle` | 15 | 3 | verified |
+| `definition-service-quality-bundle` | 15 | 3 | verified |
+| `definition-quality-gates` | 18 | 3 | verified |
+
+루트 `quality-gates-system`은 현재 24개 gate 문서를 포함하며 `quality bundle quality-gates-system` 기준 `verified` 상태다.
+2026년 3월 30일 기준 대표 gate `gate-definition-quality-cli`를 다시 실행했고, 루트 상태 스냅샷은 `artifacts/quality-gates-system.json`으로 export했다.
+
+문서 품질 평가 기준 현재 상태:
+
+- `def audit`: 문서 `662`, purpose `662`, links `551`, tags `662`
+- `def validate`: 그래프 검증 경고 `0`
+
+대표 명령:
+
+```bash
+qa-sdk def sync
+qa-sdk def validate
+qa-sdk quality bundle quality-gates-system
+qa-sdk quality claims quality-gates-system
+qa-sdk quality status quality-gates-system
+qa-sdk quality export quality-gates-system --output=artifacts/quality-gates-system.json
+```
+
+대표 라이프사이클:
+
+1. `qa-sdk def sync`로 문서 그래프와 로컬 datasource를 맞춘다.
+2. `qa-sdk def validate`로 링크/계층/분류 위반이 없는지 확인한다.
+3. `qa-sdk quality show <gate-id>`로 대상 gate 계약과 현재 상태를 읽는다.
+4. `qa-sdk quality run <gate-id> --json`으로 gate를 실행해 `quality-ledger`를 갱신한다.
+5. `qa-sdk quality diagnose <gate-id> --json`과 `qa-sdk quality claims <bundle-id>`로 gate 진단과 claim verdict를 확인한다.
+6. `qa-sdk quality bundle <bundle-id>`, `qa-sdk quality status quality-gates-system`, `qa-sdk quality export ...` 순서로 bundle/system 상태를 요약하고 artifact를 남긴다.
+
 ---
 
 ## 모노레포 구조

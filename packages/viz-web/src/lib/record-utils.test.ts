@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import { describe, it, expect } from "vitest";
 import type { StoredRecord } from "@qa-sdk/core";
 import { mergeAndSortRecords } from "./record-utils.js";

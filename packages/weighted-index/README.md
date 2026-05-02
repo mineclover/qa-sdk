@@ -147,6 +147,36 @@ const migrated = codec.migrate(vi, "pv2", (oldCoords, oldLabels, newLabels) => {
 });
 ```
 
+### DisjointUnionIndex — sum type 주소 공간
+
+서로 다른 `kind`가 각자의 shape을 유지하면서 **하나의 address 공간을 공유**해야 할 때. `WeightedIndex`의 product type이 곱셈으로 공간을 낭비하는 상황을 disjoint offset 합산으로 해결한다.
+
+```ts
+import { DisjointUnionIndex } from "weighted-index";
+
+const union = new DisjointUnionIndex([
+  { kind: "resource",    shape: [3, 3, 3] },   // size 27  → [0, 26]
+  { kind: "transaction", shape: [2, 5]    },   // size 10  → [27, 36]
+]);
+
+union.totalSize;                          // → 37 (27 + 10)
+union.encode("resource", [2, 1, 3]);      // → 12
+union.encode("transaction", [1, 1]);      // → 27 (offset 적용)
+
+union.decode(27);                         // → { kind: "transaction", coords: [1, 1] }
+union.rangeOf("resource");                // → [0, 26]
+union.calcAddressRanges("resource", ["2", null, null]); // → [[9, 17]]
+```
+
+**용도**: 권한 bitmap에서 resource CRUD와 transaction 실행 권한을 같은 bitmap에 담되, 각 kind의 N이 다를 때 product 낭비 회피. `N_r + N_t` vs `max(N_r, N_t) × 2` 차이가 큼.
+
+**제약**:
+- variant는 **append-only** — 순서·기존 kind 변경 금지 (address 의미 전부 깨짐)
+- **cross-kind 패턴 쿼리 불가** — 필요 시 `mergeRanges`로 application-level 합산
+- version 관리는 union 전체 단위 (unified versioning — 상위 계층 책임)
+
+상세: [`docs/specs/weighted-index-system/wi-disjoint-union-addressing.spec.md`](../../docs/specs/weighted-index-system/wi-disjoint-union-addressing.spec.md)
+
 ---
 
 ## 범위 연산 (calc)
@@ -525,6 +555,14 @@ import {
 | `PrefixNotFoundError` | 존재하지 않는 prefix |
 | `SerializeError` | 직렬화 형식 오류 |
 | `MigrateError` | 마이그레이션이 유효하지 않은 좌표 반환 |
+
+---
+
+## 관련 문서
+
+- [`docs/module-structure.md`](docs/module-structure.md) — 내부 모듈 구성과 의존 방향
+- [`docs/partial-binder.md`](docs/partial-binder.md) — 차원 부분 바인딩
+- [`docs/rdbms-equivalence/`](docs/rdbms-equivalence/README.md) — RDBMS materialization과의 등가성 + 인덱스 전략 7종 + 보완 전략 4종
 
 ---
 

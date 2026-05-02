@@ -1,5 +1,8 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 import type { SpecDocument, SpecId, SpecRelation, SpecLifecycle } from "./spec.types.js";
-import { DuplicateRegistrationError, NotFoundError } from "../shared/errors.js";
+import { DuplicateRegistrationError, NotFoundError } from "spec-schema";
 
 /**
  * 스펙 문서를 등록하고 관계를 탐색하는 레지스트리.

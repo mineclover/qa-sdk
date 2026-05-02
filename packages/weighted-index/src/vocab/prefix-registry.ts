@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * PrefixCodec
  *
@@ -384,7 +387,7 @@ export class PrefixCodec {
     const pv = def.versions.find((v) => v.version === version);
     if (!pv) {
       throw new VersionNotFoundError(
-        `Unknown version "${version}" for prefix "${prefix}". Available: [${formatList(def.versions.map((pv) => pv.version))}]`
+        `Unknown version "${version}" for prefix "${prefix}". Available: [${formatList(def.versions.map((v) => v.version))}]`
       );
     }
     return pv;

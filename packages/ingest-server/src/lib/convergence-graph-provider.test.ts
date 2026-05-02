@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * convergence-graph-provider 통합 테스트.
  *
@@ -6,6 +9,7 @@
  */
 
 import { describe, it, expect, afterEach } from "vitest";
+// spec-core + demo-snapshot 동적 import가 무거워 타임아웃 연장
 import { createGraphProvider, type GraphProviderResult } from "./convergence-graph-provider.js";
 
 let provider: GraphProviderResult | null = null;
@@ -15,7 +19,7 @@ afterEach(() => {
   provider = null;
 });
 
-describe("createGraphProvider", () => {
+describe("createGraphProvider", { timeout: 30_000 }, () => {
   it("인메모리 부트스트랩: graph + catalog 반환", async () => {
     provider = await createGraphProvider({});
 

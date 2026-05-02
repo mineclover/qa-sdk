@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * bit-field-layout.ts — Bit-level variable-width field packing.
  *

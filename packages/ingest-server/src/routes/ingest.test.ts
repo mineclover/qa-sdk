@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { Hono } from "hono";
 import pino from "pino";
 import { describe, expect, it, vi } from "vitest";
@@ -415,5 +418,57 @@ describe("POST /v1/ingest — actor context 전파", () => {
     expect(trace?.actorId).toBeNull();
     expect(trace?.userId).toBeNull();
     expect(trace?.userAttributes).toBeNull();
+  });
+});
+
+describe("POST /v1/ingest — keyObservationStore fail-open", () => {
+  it("keyObservationStore.observeBatch 실패 시에도 202를 반환하고 레코드가 저장된다", async () => {
+    const failingStore = {
+      observe: vi.fn().mockResolvedValue(undefined),
+      observeBatch: vi.fn().mockRejectedValue(new Error("observation DB unavailable")),
+      findByPrefix: vi.fn().mockResolvedValue([]),
+      summary: vi.fn().mockResolvedValue({ totalKeys: 0, totalCount: 0, registeredKeys: 0, unregisteredKeys: 0, prefixBreakdown: {} }),
+      findStale: vi.fn().mockResolvedValue([]),
+      findUnregistered: vi.fn().mockResolvedValue([]),
+      prefixSummary: vi.fn().mockResolvedValue([]),
+    };
+
+    const deps = buildDeps();
+    const app = new Hono();
+    app.onError(createErrorHandler(pino({ level: "silent" })));
+    app.route(
+      "/",
+      createIngestRoutes({
+        ...deps,
+        keyObservationStore: failingStore,
+        knownPrefixes: new Set(["pfx_page"]),
+      }),
+    );
+
+    const envelope = buildEnvelope({
+      records: [
+        buildRecord({
+          log_id: "log_ko_001",
+          address_context: { pfx_page: "packed_key_001" },
+        }),
+      ],
+    });
+
+    const res = await app.request("/v1/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(envelope),
+    });
+
+    expect(res.status).toBe(202);
+    const body = await res.json();
+    expect(body.accepted).toBe(true);
+    expect(body.record_count).toBe(1);
+
+    const records = await deps.recordStore.findByTraceId("trc_001");
+    expect(records).toHaveLength(1);
+    expect(records[0]?.logId).toBe("log_ko_001");
+
+    expect(failingStore.observeBatch).toHaveBeenCalledOnce();
   });
 });

@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { ErrorHandler } from "hono";
 import { AppError } from "../lib/errors.js";
 import { ZodError } from "zod";

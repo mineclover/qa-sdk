@@ -1,0 +1,10 @@
+import { Invalid<%= classify(name) %>IdException } from "./<%= dasherize(name) %>.exceptions";
+
+export type <%= classify(name) %>Id = string & { readonly __brand: "<%= classify(name) %>Id" };
+
+export function to<%= classify(name) %>Id(value: string): <%= classify(name) %>Id {
+  if (value.trim().length === 0) {
+    throw new Invalid<%= classify(name) %>IdException();
+  }
+  return value as <%= classify(name) %>Id;
+}

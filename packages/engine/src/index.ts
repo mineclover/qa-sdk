@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-engine-system
+// @def.doc qa-sdk-engine-system
+
 // ── Reconstruction ──────────────────────────────────────
 
 export { groupByTrace } from "./reconstruction/trace-grouper.js";
@@ -40,7 +43,7 @@ export {
   evaluateConstraint,
   evaluateConstraints,
 } from "./matching/constraint-evaluator.js";
-export { matchGraphs } from "./matching/graph-matcher.js";
+export { matchViaPathMatcher } from "./matching/path-matcher-adapter.js";
 
 // ── Path Observation ─────────────────────────────────────
 

@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/roleplay-web",
   "version": "0.1.0",
+  "description": "QA bridge 기반 롤플레이 폼 빌더 웹 앱",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,15 +11,16 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@qa-sdk/browser-codec": "workspace:*",
     "@qa-sdk/core": "workspace:*",
-    "@qa-sdk/sdk": "workspace:*",
     "@qa-sdk/event-catalog": "workspace:*",
+    "@qa-sdk/sdk": "workspace:*",
     "handlebars": "^4.7.8"
   },
   "devDependencies": {
+    "happy-dom": "^15.11.7",
     "typescript": "^5.8.2",
     "vite": "^6.3.5",
-    "vitest": "^1.6.1",
-    "happy-dom": "^15.11.7"
+    "vitest": "^1.6.1"
   }
 }

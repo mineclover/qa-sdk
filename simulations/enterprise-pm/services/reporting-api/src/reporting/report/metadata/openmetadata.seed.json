@@ -1,0 +1,52 @@
+{
+  "topology": "read-model",
+  "openmetadata": {
+    "domain": {
+      "name": "Report",
+      "team": "Reporting Platform",
+      "owner": "sim-reporting-owner"
+    },
+    "glossary": [
+      {
+        "term": "Report",
+        "description": "A named, persisted query definition managed by the reporting platform."
+      },
+      {
+        "term": "QueryDefinition",
+        "description": "JSON-serialized query body interpreted by downstream analytics."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "report-read-path",
+        "from": "reporting.reports",
+        "to": "reporting.report_read_model",
+        "via": "report-read-model-adapter"
+      }
+    ],
+    "qualityTests": [
+      {
+        "name": "report_name_not_null",
+        "type": "columnNullCount",
+        "entity": "reporting.reports.name",
+        "maxNullCount": 0
+      }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "report-read-model",
+      "domain": "report",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "report-read-model",
+      "segments": [
+        {
+          "name": "reportId"
+        }
+      ],
+      "ttl": "medium",
+      "openmetadataEntity": "reporting.report_read_model"
+    }
+  ]
+}

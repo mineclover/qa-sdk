@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/store",
   "version": "0.1.0",
+  "description": "EventRecord, Trace, Session, Verdict 등의 저장소 어댑터 집합",
   "type": "module",
   "exports": {
     ".": {
@@ -8,11 +9,13 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
-    "test:integration": "vitest run src/adapters/drizzle/adapters.integration.test.ts",
+    "test:integration": "vitest run src/adapters/drizzle/*.integration.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
@@ -20,12 +23,19 @@
   },
   "dependencies": {
     "@qa-sdk/core": "workspace:*",
-    "drizzle-orm": "^0.39.3",
+    "drizzle-orm": "catalog:",
     "postgres": "^3.4.5"
   },
+  "optionalDependencies": {
+    "ioredis": "^5.10.1"
+  },
   "devDependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/sdk-trace-base": "^1.30.0",
+    "@opentelemetry/sdk-trace-node": "^1.30.0",
+    "@qa-sdk/otel": "workspace:*",
     "@types/node": "^22.13.10",
-    "drizzle-kit": "^0.30.5",
+    "drizzle-kit": "catalog:",
     "typescript": "^5.8.2"
   }
 }

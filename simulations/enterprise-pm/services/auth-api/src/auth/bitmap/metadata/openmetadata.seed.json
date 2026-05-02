@@ -1,0 +1,43 @@
+{
+  "topology": "read-mostly",
+  "openmetadata": {
+    "domain": {
+      "name": "Bitmap",
+      "team": "Auth Team",
+      "owner": "sim-auth-owner"
+    },
+    "glossary": [
+      {
+        "term": "Bitmap",
+        "description": "Signed VersionedBitmap derived from user's role assignments. JWT-embeddable permission token."
+      },
+      {
+        "term": "BitmapIssuer",
+        "description": "Read-side composer that OR-unions role default masks for a user, producing HMAC-signed bitmap with TTL."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "bitmap-read-path",
+        "from": "auth.users + auth.roles + auth.role_assignments",
+        "to": "permission-engine.versioned-bitmap",
+        "via": "bitmap-issue-read-model"
+      }
+    ],
+    "qualityTests": []
+  },
+  "cacheKeys": [
+    {
+      "id": "bitmap-read-model",
+      "domain": "bitmap",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "bitmap-read-model",
+      "segments": [
+        { "name": "userId" }
+      ],
+      "ttl": "short",
+      "openmetadataEntity": "permission-engine.versioned_bitmap"
+    }
+  ]
+}

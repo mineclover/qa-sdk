@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 // ── Actor Context ────────────────────────────────────────
 
 import type { IdentificationMode } from "./event-pattern.js";

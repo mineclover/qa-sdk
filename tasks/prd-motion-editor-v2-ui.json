@@ -1,0 +1,286 @@
+{
+  "name": "Motion Content Editor V2 UI — 프로 에디터급 레이아웃 + 디자인 시스템 + 인라인 편집",
+  "description": "After Effects/Premiere 수준의 도킹 패널 레이아웃, CSS 디자인 토큰 시스템, 모든 속성 인라인 편집, CRUD 커맨드 확장을 구현한다.",
+  "branchName": "ralph/motion-editor-v2-ui",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "디자인 토큰 시스템 구축",
+      "description": "개발자로서, CSS custom properties 기반 디자인 토큰을 정의하여 모든 UI 컴포넌트가 일관된 시각 언어를 사용하게 한다.",
+      "acceptanceCriteria": [
+        "design-tokens.ts에 토큰 정의: 색상(surface/text/accent/border/state), 타이포(font-family/size/weight/line-height), 스페이싱(4px 배수 스케일), 라운딩(sm/md/lg), 섀도우(elevation 3단계)",
+        "다크 테마와 라이트 테마 두 세트의 토큰 값 정의",
+        "CSS custom properties로 :root에 주입하는 applyMotionEditorTheme(theme) 함수 제공",
+        "기본 폰트를 모노스페이스(JetBrains Mono, Fira Code, SF Mono, monospace)로 설정",
+        "기존 styles.ts의 인라인 색상/폰트/스페이싱을 토큰 참조(var(--mce-*))로 전환",
+        "다크 테마가 기본 적용됨",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "design-tokens.ts에 dark/light 토큰과 theme apply/read/write 유틸을 추가하고 styles.ts를 var(--mce-*) 기반으로 전환했다. build 3종과 motion-content/motion-content-editor vitest를 다시 통과시켰고 2026-03-26 로컬 브라우저 QA에서 dark 기본값과 light 전환을 확인했다."
+    },
+    {
+      "id": "US-002",
+      "title": "도킹 패널 레이아웃 시스템",
+      "description": "사용자로서, 패널을 탭으로 그룹하고 splitter로 영역 크기를 조절할 수 있어야 한다.",
+      "acceptanceCriteria": [
+        "panel-layout.ts 모듈: PanelGroup(탭 기반 패널 컨테이너), Splitter(드래그 리사이즈) 구현",
+        "기본 레이아웃: 좌측(Properties/Layers/Sequences 탭) | 중앙(Stage) | 우측(Selection Detail/Active State 탭) | 하단(Timeline)",
+        "splitter 드래그로 좌/중앙/우 너비, 하단 높이 조절 가능",
+        "패널 탭 클릭으로 활성 패널 전환",
+        "패널 접기(collapse) 버튼으로 영역 최소화 가능",
+        "최소 너비/높이 제한으로 UI 깨짐 방지",
+        "CSS grid/flexbox 기반, 외부 라이브러리 없음",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content-editor && npx vitest run passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "panel-layout.ts에 PanelGroup/Splitter를 추가하고 shell.ts에 좌/중/우/하단 도킹 레이아웃, 탭 전환, collapse, 최소 크기 clamp를 연결했다. motion-content-editor vitest와 데모 브라우저 QA에서 좌측/하단 splitter 드래그와 collapse 동작을 확인했다."
+    },
+    {
+      "id": "US-003",
+      "title": "레이아웃 저장/복원",
+      "description": "사용자로서, 내가 조정한 패널 크기와 탭 상태가 다음 접속 시 복원되어야 한다.",
+      "acceptanceCriteria": [
+        "패널 크기, 활성 탭, collapse 상태를 localStorage에 저장",
+        "저장 키: mce-layout/v1",
+        "페이지 로드 시 저장된 레이아웃 복원, 없으면 기본 레이아웃 적용",
+        "레이아웃 초기화 버튼으로 기본 상태 복원 가능",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content-editor && npx vitest run passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "shell.ts에서 mce-layout/v1 localStorage 저장/복원/초기화 흐름을 구현했다. shell.test의 저장/복원/초기화 케이스와 2026-03-26 브라우저 리로드 QA로 탭/크기/collapse 상태가 유지되는 것을 확인했다."
+    },
+    {
+      "id": "US-004",
+      "title": "하단 전체 폭 타임라인",
+      "description": "사용자로서, Premiere처럼 화면 하단 전체 폭을 사용하는 타임라인에서 작업하고 싶다.",
+      "acceptanceCriteria": [
+        "타임라인이 스테이지 아래가 아닌 하단 전체 폭 영역으로 이동",
+        "splitter로 타임라인 높이 조절 가능",
+        "시간 눈금(ruler)이 타임라인 상단에 표시됨",
+        "현재 재생 시점 표시선(playhead)이 타임라인 전체 높이를 관통",
+        "기존 타임라인 기능(드래그/리사이즈/선택) 유지",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content-editor && npx vitest run passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "타임라인을 하단 전체 폭 패널로 이동하고 ruler/playhead를 추가했으며 하단 splitter로 높이 조절되도록 연결했다. timeline/shell 테스트와 브라우저 스크린샷에서 전체 폭 타임라인과 playhead/ruler 렌더링을 확인했다."
+    },
+    {
+      "id": "US-005",
+      "title": "테마 전환 (다크/라이트)",
+      "description": "사용자로서, 다크 테마와 라이트 테마를 전환할 수 있어야 한다.",
+      "acceptanceCriteria": [
+        "툴바에 테마 토글 버튼 추가",
+        "토글 시 즉시 전체 UI에 반영 (페이지 새로고침 없음)",
+        "테마 선택이 localStorage에 저장되어 다음 접속 시 복원",
+        "스테이지 영역은 테마 영향을 받지 않음 (콘텐츠 프리뷰는 원본 유지, isolation: isolate)",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content-editor && npx vitest run passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "툴바에 테마 토글을 추가하고 mce-theme/v1 저장/복원 및 stage preview isolation 변수를 연결했다. shell.test와 2026-03-26 브라우저 QA에서 dark→light 전환, reload 복원, stage preview가 테마 변경 영향을 받지 않는 것을 확인했다."
+    },
+    {
+      "id": "US-006",
+      "title": "CRUD 커맨드 확장 — Layer 추가/삭제",
+      "description": "사용자로서, 에디터에서 직접 새 layer를 추가하거나 기존 layer를 삭제할 수 있어야 한다.",
+      "acceptanceCriteria": [
+        "MotionEditorCommand에 add-layer, remove-layer 타입 추가",
+        "add-layer: id, label, target, content, enter(기본 cue), durationMs를 받아 composition.layers에 추가",
+        "remove-layer: layerId를 받아 composition.layers에서 제거 + 관련 sequence.layerIds/layers 슬롯에서도 제거",
+        "applyMotionEditorCommand에서 add/remove 처리",
+        "history checkpoint 전략: add-layer와 remove-layer는 append",
+        "Layers 패널에 + 추가 버튼과 각 layer에 ✕ 삭제 버튼",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "motion-content의 command/type/state/history에 add-layer/remove-layer를 추가하고 layers 패널에 +/삭제 버튼을 연결했다. state/history/shell 테스트와 브라우저 QA에서 layer 추가, label 편집, scrub 조정, 삭제까지 확인했다."
+    },
+    {
+      "id": "US-007",
+      "title": "CRUD 커맨드 확장 — Sequence/Caption/Transition 추가/삭제",
+      "description": "사용자로서, 에디터에서 sequence, caption, transition을 직접 추가/삭제할 수 있어야 한다.",
+      "acceptanceCriteria": [
+        "MotionEditorCommand에 add-sequence, remove-sequence, add-caption, remove-caption, add-transition, remove-transition 타입 추가",
+        "각 add 커맨드는 필수 필드를 받아 해당 배열에 추가",
+        "각 remove 커맨드는 id를 받아 제거 + 참조 정리 (transition의 sequence 참조 등)",
+        "각 패널에 추가/삭제 버튼",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-006"
+      ],
+      "completionNotes": "add/remove sequence, caption, transition command와 상태 정리 로직 및 각 패널의 +/삭제 버튼을 구현했다. state/history/shell 테스트와 브라우저 QA에서 sequence/caption/transition CRUD가 실제로 동작함을 확인했다."
+    },
+    {
+      "id": "US-008",
+      "title": "인라인 숫자 편집 (드래그 스크럽)",
+      "description": "사용자로서, 숫자 값(timing, duration, offsetMs 등)을 After Effects처럼 드래그로 조절하고 싶다.",
+      "acceptanceCriteria": [
+        "scrub-input.ts 모듈: 숫자 필드에 마우스 좌우 드래그로 값 변경",
+        "Shift 키: 10배 단위, Alt 키: 0.1배 단위",
+        "더블클릭: 직접 입력 모드 전환",
+        "Selection Detail 패널의 모든 숫자 값에 적용 (startMs, durationMs, offsetMs, zIndex 등)",
+        "값 변경 시 해당 MotionEditorCommand dispatch",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content-editor && npx vitest run passes"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002",
+        "US-006"
+      ],
+      "completionNotes": "scrub-input.ts를 추가해 drag/Shift/Alt/double-click 숫자 편집을 만들고 selection detail의 숫자 필드에 연결했다. shell/state/history 테스트와 브라우저 QA에서 layer startMs scrub 변경이 로컬 저장 문서에 반영되는 것을 확인했다."
+    },
+    {
+      "id": "US-009",
+      "title": "인라인 드롭다운/컬러 편집",
+      "description": "사용자로서, enum 값(cue kind, content type, transition style, role)은 드롭다운으로, 색상은 컬러 피커로 편집하고 싶다.",
+      "acceptanceCriteria": [
+        "Selection Detail에서 cue kind 변경 시 드롭다운 (fade/slide-up/slide-left/slide-right/scale-pop)",
+        "content type 변경 시 드롭다운 (dom/image/video/svg/canvas)",
+        "transition style 변경 시 드롭다운 (crossfade/flash/lift)",
+        "slot role 변경 시 드롭다운 (background/content/overlay/accent)",
+        "transition params의 glowColor 편집 시 네이티브 컬러 피커",
+        "Parameter 패널의 color 타입도 네이티브 컬러 피커 사용",
+        "cue preset 참조 변경 시 preset 목록 드롭다운",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content-editor && npx vitest run passes"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-008"
+      ],
+      "completionNotes": "selection detail에 cue kind/content type/slot role/transition style/cue preset 드롭다운과 네이티브 color input을 연결하고 parameter color input도 네이티브로 전환했다. shell/state/history 테스트와 브라우저 QA에서 transition style/color 변경이 로컬 저장 문서에 반영되는 것을 확인했다."
+    },
+    {
+      "id": "US-010",
+      "title": "인라인 텍스트/문자열 편집",
+      "description": "사용자로서, label, title, text, id 등 문자열 값을 패널에서 직접 수정하고 싶다.",
+      "acceptanceCriteria": [
+        "Selection Detail에서 layer label, sequence title, caption text를 클릭하면 인라인 편집 모드",
+        "Enter로 확정, Escape로 취소",
+        "변경 시 composition에 반영 (set-composition 또는 전용 커맨드)",
+        "빈 문자열 방지 (최소 1글자)",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content-editor && npx vitest run passes"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-008"
+      ],
+      "completionNotes": "inline-text-input.ts로 layer label, sequence title, caption text의 클릭 편집/Enter 확정/Escape 취소/빈값 방지를 구현했다. shell/state/history 테스트와 브라우저 QA에서 layer label 인라인 수정이 저장 문서에 반영되는 것을 확인했다."
+    },
+    {
+      "id": "US-011",
+      "title": "CuePreset 인라인 편집",
+      "description": "사용자로서, CuePreset의 kind/durationMs/ease/amount를 패널에서 직접 수정하고, 참조하는 모든 layer에 즉시 반영되게 하고 싶다.",
+      "acceptanceCriteria": [
+        "CuePresets 섹션에서 preset 클릭 시 Selection Detail에 preset 속성 표시",
+        "kind 드롭다운, durationMs 스크럽, ease 텍스트, amount 스크럽 편집 가능",
+        "preset 값 변경 시 composition.cuePresets 교체 후 set-composition dispatch",
+        "참조하는 모든 layer의 실행 결과가 즉시 갱신됨",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content-editor && npx vitest run passes"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-009",
+        "US-010"
+      ],
+      "completionNotes": "CuePreset 선택 시 selection detail에 kind/durationMs/ease/amount 편집 UI를 노출하고 set-composition dispatch로 cuePresets 교체가 반영되도록 구현했다. shell.test와 브라우저 QA에서 preset kind/ease/amount 수정 후 참조 상태가 로컬 저장 문서에 반영되는 것을 확인했다."
+    },
+    {
+      "id": "US-012",
+      "title": "정보 밀도 + 가독성 최적화",
+      "description": "개발자로서, AE/Premiere 수준의 고밀도 레이아웃에서도 텍스트가 잘 읽히도록 타이포그래피와 간격을 최적화한다.",
+      "acceptanceCriteria": [
+        "모든 텍스트가 모노스페이스 폰트 사용",
+        "패널 헤더: 11px bold uppercase, 콘텐츠: 11px regular",
+        "행 높이: 22px (리스트 아이템), 패딩: 4px 8px",
+        "숫자 값은 고정 폭 정렬 (tabular-nums)",
+        "선택 상태: accent border-left 3px + 배경 하이라이트",
+        "비활성 텍스트: 50% opacity",
+        "섹션 구분: 1px border-bottom (#333 다크 / #ddd 라이트)",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content-editor && npx vitest run passes"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001",
+        "US-002",
+        "US-004"
+      ],
+      "completionNotes": "styles.ts에 22px row height, 4px/8px padding, monospace typography, tabular-nums, 활성 left border/highlight, 50% inactive opacity, theme별 divider 색을 반영했다. design-tokens.test와 2026-03-26 브라우저 스크린샷 검토에서 고밀도 레이아웃 가독성을 확인했다."
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-03-26T14:30:00.000Z",
+    "updatedAt": "2026-03-26T14:34:12.739Z"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "global": {
+    "region": "ap-northeast-2"
+  },
+  "services": {
+    "ingest-server": {
+      "port": 3200,
+      "store_driver": "d1",
+      "cors_origin": "*",
+      "registry_url": "https://registry.staging.qa-sdk.io",
+      "registry_validation_mode": "strict",
+      "health_path": "/health/live",
+      "depends_on": ["registry-service"]
+    },
+    "registry-service": {
+      "port": 3300,
+      "cors_origin": "*"
+    },
+    "gate-service": {
+      "port": 3400,
+      "sqlite_driver": "node",
+      "sqlite_path": "data/gate-service.sqlite",
+      "depends_on": ["registry-service", "ingest-server"]
+    },
+    "query-service": {
+      "port": 3500,
+      "sqlite_driver": "node",
+      "sqlite_path": "data/query-service.sqlite",
+      "gate_service_url": "https://gate.staging.qa-sdk.io",
+      "depends_on": ["gate-service"]
+    },
+    "decode-service": {
+      "port": 3600,
+      "registry_url": "https://registry.staging.qa-sdk.io",
+      "cache_ttl_ms": 60000
+    },
+    "definition-service": {
+      "port": 3700,
+      "sqlite_path": "data/definition-service.sqlite",
+      "registry_url": "https://registry.staging.qa-sdk.io",
+      "cors_origin": "*",
+      "health_path": "/health",
+      "depends_on": ["registry-service"]
+    },
+    "decision-service": {
+      "port": 3800,
+      "sqlite_path": "data/decision-service.sqlite",
+      "definition_service_url": "https://definition.staging.qa-sdk.io",
+      "cors_origin": "*",
+      "health_path": "/health",
+      "depends_on": ["definition-service"]
+    },
+    "motion-workspace-service": {
+      "port": 3710,
+      "sqlite_path": "data/motion-workspace-service.sqlite",
+      "health_path": "/health"
+    }
+  },
+  "connections": {
+    "ingest-server": { "endpoint": "https://ingest.staging.qa-sdk.io" },
+    "registry-service": { "endpoint": "https://registry.staging.qa-sdk.io" },
+    "gate-service": { "endpoint": "https://gate.staging.qa-sdk.io" },
+    "query-service": { "endpoint": "https://query.staging.qa-sdk.io" },
+    "decode-service": { "endpoint": "https://decode.staging.qa-sdk.io" },
+    "definition-service": { "endpoint": "https://definition.staging.qa-sdk.io" },
+    "decision-service": { "endpoint": "https://decision.staging.qa-sdk.io" },
+    "motion-workspace-service": { "endpoint": "https://motion.staging.qa-sdk.io" }
+  },
+  "monitoring": {
+    "interval": 60,
+    "recovery": {
+      "enabled": false,
+      "maxRetries": 2,
+      "cooldownSec": 300
+    },
+    "webhooks": [
+      {
+        "url": "https://hooks.slack.com/services/STAGING_WEBHOOK",
+        "events": ["OutOfSync", "Unknown"]
+      }
+    ]
+  }
+}

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * index-meta/decode — decode 전용 경량 진입점
  *

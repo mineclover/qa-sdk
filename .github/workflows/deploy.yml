@@ -1,0 +1,142 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-pages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # shop-web (정적 — 빌드 불필요)
+      - name: Deploy shop-web to CF Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          command: pages deploy packages/shop-web/public --project-name=shop-web --commit-dirty=true
+        continue-on-error: true
+
+      # platform-demo (vite 빌드 필요)
+      - name: Build platform-demo
+        run: pnpm --filter platform-demo build
+        continue-on-error: true
+
+      - name: Deploy platform-demo to CF Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          command: pages deploy packages/platform-demo/dist --project-name=platform-demo --commit-dirty=true
+        continue-on-error: true
+
+  deploy-workers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r build
+
+      # ingest-server Worker (D1)
+      - name: Deploy ingest-server Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: packages/ingest-server
+          command: deploy
+        continue-on-error: true
+
+      # registry-service Worker (D1)
+      - name: Deploy registry-service Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: packages/registry-service
+          command: deploy
+        continue-on-error: true
+
+      # gate-service Worker (D1)
+      - name: Deploy gate-service Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: packages/gate-service
+          command: deploy
+        continue-on-error: true
+
+      # query-service Worker (D1)
+      - name: Deploy query-service Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: packages/query-service
+          command: deploy
+        continue-on-error: true
+
+      # decode-service Worker
+      - name: Deploy decode-service Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: packages/decode-service
+          command: deploy
+        continue-on-error: true
+
+      # platform-demo-api Worker (D1)
+      - name: Deploy platform-demo-api Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: packages/platform-demo-api
+          command: deploy
+        continue-on-error: true
+
+      # API Gateway Worker
+      - name: Deploy Gateway Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: packages/gateway
+          command: deploy
+        continue-on-error: true

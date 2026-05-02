@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { describe, it, expect, beforeEach } from "vitest";
 import { NodeSqliteDriver } from "./node-sqlite-driver.js";
 import { SqlPrefixRegistry } from "./sql-prefix-registry.js";
@@ -226,7 +229,7 @@ describe("getReverseRefs", () => {
     });
 
     const reverseRefs = await reg.getReverseRefs("role", "v1");
-    expect(reverseRefs.map((r) => r.prefix).sort()).toEqual(["perm", "perm2"]);
+    expect(reverseRefs.map((r) => r.prefix).toSorted()).toEqual(["perm", "perm2"]);
   });
 
   it("아무도 참조하지 않으면 빈 배열", async () => {

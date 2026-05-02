@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * 패턴 분류 파이프라인 포트 — ingest-server에서 spec-core 의존 없이 사용.
  *

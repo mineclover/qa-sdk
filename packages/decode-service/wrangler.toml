@@ -1,0 +1,13 @@
+name = "qa-decode-service"
+main = "src/worker.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+REGISTRY_URL = "https://qa-registry-service.astralclover.workers.dev"
+
+# registry D1 직접 조회 (CF Workers 간 fetch 404 우회)
+[[d1_databases]]
+binding = "REGISTRY_DB"
+database_name = "qa-registry"
+database_id = "9bc1407e-0e3a-4d5b-8b48-97513c52702e"

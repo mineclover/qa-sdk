@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { describe, it, expect, vi } from "vitest";
 import { aggregateMetrics } from "./metric-aggregator.js";
 import type { StoredRecord, MetricRollupStore, MetricRollupInsert } from "@qa-sdk/core";

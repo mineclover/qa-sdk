@@ -1,9 +1,27 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
+import { initTelemetry, withQueryTracing } from "@qa-sdk/otel";
+import "dotenv/config";
 import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
-import { newDlqId } from "@qa-sdk/core";
-import { RegistryClient } from "@qa-sdk/registry-client";
-import { closeClient, createDb, withTransaction } from "@qa-sdk/store";
 import {
+  newDlqId,
+  createServiceBootConfig,
+  warnPortConflict,
+  type DlqStore,
+  type GraphStore,
+  type RecordStore,
+  type ScenarioSpecStore,
+  type SessionStore,
+  type TraceStore,
+  type TransmissionStore,
+  type VerdictStore,
+  type Catalog,
+} from "@qa-sdk/core";
+import { RegistryClient } from "@qa-sdk/registry-client";
+import {
+  closeClient, createDb, withTransaction,
   DrizzleDlqStore,
   DrizzleGraphStore,
   DrizzleRecordStore,
@@ -12,6 +30,9 @@ import {
   DrizzleTraceStore,
   DrizzleTransmissionStore,
   DrizzleVerdictStore,
+  InMemoryDlqStore, InMemoryGraphStore, InMemoryRecordStore,
+  InMemoryScenarioSpecStore, InMemorySessionStore,
+  InMemoryTraceStore, InMemoryTransmissionStore, InMemoryVerdictStore,
 } from "@qa-sdk/store";
 import { env } from "./config/env.js";
 import { createApp } from "./app.js";
@@ -32,21 +53,27 @@ import { createStreamConnectionRegistry } from "./lib/stream-connection-registry
 import { installWorkerShutdown } from "./lib/worker-shutdown.js";
 import { createDbHealthChecker } from "./routes/health.js";
 import { createWsHandler } from "./routes/ws.js";
-import type { ConvergencePipelineRunner, PatternFunctions } from "./lib/convergence-pipeline.js";
+import { createDebugWsHandler } from "./routes/debug-ws.js";
+import type { ConvergencePipelineRunner, ConvergenceFunctions, ConvergenceGraphPort, PatternFunctions } from "./lib/convergence-pipeline.js";
+import type { TransitionFunctions } from "@qa-sdk/spec-core/transition";
+import type { TransitionEnginePort } from "./lib/phase-two-worker.js";
 import type { ConvergenceSchedulerHandle } from "./lib/convergence-scheduler.js";
+import type { InsightsStore } from "./ports/insights-store.port.js";
 
 const PHASE_TWO_QUEUE_NAME = "ingest-phase-two";
 
 interface RuntimeStores {
-  db: ReturnType<typeof createDb>;
-  dlqStore: DrizzleDlqStore;
-  graphStore: DrizzleGraphStore;
-  recordStore: DrizzleRecordStore;
-  scenarioSpecStore: DrizzleScenarioSpecStore;
-  sessionStore: DrizzleSessionStore;
-  traceStore: DrizzleTraceStore;
-  transmissionStore: DrizzleTransmissionStore;
-  verdictStore: DrizzleVerdictStore;
+  db: ReturnType<typeof createDb> | null;
+  /** D1 모드 시 SQLite drizzle 인스턴스 (InsightsStore 공유용) */
+  d1Db?: unknown;
+  dlqStore: DlqStore;
+  graphStore: GraphStore;
+  recordStore: RecordStore;
+  scenarioSpecStore: ScenarioSpecStore;
+  sessionStore: SessionStore;
+  traceStore: TraceStore;
+  transmissionStore: TransmissionStore;
+  verdictStore: VerdictStore;
 }
 
 async function main(argv = process.argv.slice(2)) {
@@ -61,19 +88,21 @@ async function main(argv = process.argv.slice(2)) {
 }
 
 async function startServer() {
+  const shutdownTelemetry = initTelemetry({ serviceName: "ingest-server", env });
   const logger = createLogger("ingest-server");
-  const stores = createRuntimeStores();
+  const stores = await createRuntimeStores();
   const appLifecycle = createAppLifecycle();
   const recordStreamBroker = new RecordStreamBroker();
   const debugStore = new InMemoryDebugStore();
   const streamConnectionRegistry = createStreamConnectionRegistry();
-  const cleanupStore = createDatabaseCleanupStore(env.TRACE_DATABASE_URL);
+  const cleanupStore = env.TRACE_DATABASE_URL ? createDatabaseCleanupStore(env.TRACE_DATABASE_URL) : undefined;
   const cleanupScheduler = installCleanupScheduler({
-    enabled: env.CLEANUP_CRON_ENABLED,
+    enabled: env.CLEANUP_CRON_ENABLED && !!cleanupStore,
     logger,
     runCleanup: () =>
       cleanupExpiredData({
-        cleanupStore,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- enabled 조건에서 !!cleanupStore로 보장
+        cleanupStore: cleanupStore!,
         logger,
       }),
   });
@@ -104,26 +133,43 @@ async function startServer() {
       });
 
       // spec-core convergence 함수 동적 import
-      const specAnalysis = await import("@qa-sdk/spec-core/analysis");
+      const specConvergence = await import("@qa-sdk/convergence");
+      const specDkg = await import("@qa-sdk/spec-core/dkg");
       const convergenceFns = {
-        aggregateUsageData: (specAnalysis as any).aggregateUsageData,
-        collectMetrics: (specAnalysis as any).collectMetrics,
-        metricsToObservations: (specAnalysis as any).metricsToObservations,
-      };
+        aggregateUsageData: specConvergence.aggregateUsageData,
+        collectMetrics: specConvergence.collectMetrics,
+        metricsToObservations: specConvergence.metricsToObservations,
+        traceFlows: specDkg.traceFlows,
+      } as unknown as ConvergenceFunctions;
 
       // 패턴 분류 함수 (optional — 실패해도 convergence 전체는 동작)
       let patternFns: PatternFunctions | undefined;
       try {
-        const sa = specAnalysis as any;
-        if (sa.classifyPattern && sa.DEMO_PATTERN_RULES) {
-          patternFns = {
-            classifyPattern: sa.classifyPattern,
-            aggregatePatternStats: sa.aggregatePatternStats,
-            detectAnomalies: sa.detectAnomalies,
-            buildPatternHealthReport: sa.buildPatternHealthReport,
-            patternRules: sa.DEMO_PATTERN_RULES,
-          };
-          logger.info("pattern classification enabled");
+        if (env.PATTERN_CLASSIFICATION_ENABLED && specConvergence.classifyPattern) {
+          // PatternRules: registry → 코드 상수 fallback
+          let patternRules = specConvergence.DEMO_PATTERN_RULES;
+          const registryUrl = env.REGISTRY_URL ?? env.CONVERGENCE_REGISTRY_URL;
+          if (registryUrl) {
+            try {
+              const rulesRes = await fetch(`${registryUrl}/catalogs/${env.CATALOG_ID}/pattern-rules`, { signal: AbortSignal.timeout(5_000) });
+              if (rulesRes.ok) {
+                const rulesBody = await rulesRes.json() as { data: string };
+                patternRules = JSON.parse(rulesBody.data);
+                logger.info({ source: "registry", count: patternRules.length }, "pattern rules loaded from registry");
+              }
+            } catch { /* registry 실패 → 코드 상수 fallback */ }
+          }
+
+          if (patternRules) {
+            patternFns = {
+              classifyPattern: specConvergence.classifyPattern,
+              aggregatePatternStats: specConvergence.aggregatePatternStats,
+              detectAnomalies: specConvergence.detectAnomalies,
+              buildPatternHealthReport: specConvergence.buildPatternHealthReport,
+              patternRules,
+            };
+            logger.info("pattern classification enabled");
+          }
         }
       } catch (patternErr) {
         logger.warn({ err: patternErr }, "pattern classification not available — skipped");
@@ -134,9 +180,9 @@ async function startServer() {
           recordStore: stores.recordStore,
           convergenceFns,
           patternFns,
-          graphProvider: () => graphProvider.getGraph(),
-          catalogProvider: () => graphProvider.getCatalog(),
-          dkgStore: graphProvider.getDkgStore() as any,
+          graphProvider: () => (graphProvider.getGraph() ?? { getAllNodes: () => [], getNodesByKind: () => [] }) as unknown as ConvergenceGraphPort,
+          catalogProvider: () => graphProvider.getCatalog() as Catalog,
+          dkgStore: graphProvider.getDkgStore() ?? undefined,
           logger,
         },
         {
@@ -158,14 +204,97 @@ async function startServer() {
     }
   }
 
+  // ── Transition Engine (Phase 2.5, optional) ─────────
+  let _transitionFns: TransitionFunctions | undefined;
+  let _transitionCatalog: unknown;
+  if (env.TRANSITION_ENGINE_ENABLED) {
+    try {
+      const { createTransitionFunctions, DEMO_TRANSITION_SPECS } = await import("@qa-sdk/spec-core/transition");
+      const { DEMO_CATALOG } = await import("demo-snapshot");
+      _transitionFns = createTransitionFunctions(DEMO_TRANSITION_SPECS);
+      _transitionCatalog = DEMO_CATALOG;
+      logger.info(`transition engine enabled (${DEMO_TRANSITION_SPECS.length} specs)`);
+    } catch (error) {
+      logger.error({ err: error }, "transition engine initialization failed — disabled");
+    }
+  }
+
+  // ── DEMO_SCENARIOS 등록 (ScenarioSpecStore) ──────────
+  try {
+    const { DEMO_SCENARIOS } = await import("demo-snapshot");
+    if (DEMO_SCENARIOS && stores.scenarioSpecStore) {
+      let registered = 0;
+      for (const spec of DEMO_SCENARIOS) {
+        await stores.scenarioSpecStore.upsert(spec);
+        registered++;
+      }
+      if (registered > 0) {
+        logger.info(`demo scenarios registered: ${registered}`);
+      }
+    }
+  } catch {
+    // demo-snapshot 미사용 환경에서는 무시
+  }
+
+  // ── Catalog Validator (event/prefix 검증, fail-open) ──
+  let catalogValidator: import("./lib/catalog-validator.js").CatalogValidator | undefined;
+  try {
+    const { DEMO_CATALOG } = await import("demo-snapshot");
+    const knownPrefixes = new Set(Object.keys(DEMO_CATALOG.prefixes));
+
+    // event-catalog 동적 import (optional — 미설치 시 eventKey 검증만 비활성화)
+    let isCoreEvent: ((eventKey: string) => boolean) | undefined;
+    try {
+      const eventCatalog = await import("@qa-sdk/event-catalog" as string);
+      isCoreEvent = eventCatalog.isCoreEvent;
+      logger.info({ coreEventCount: (eventCatalog.allCoreEvents as unknown[]).length }, "event-catalog 로드 완료");
+    } catch {
+      logger.warn("event-catalog 미설치 — eventKey 검증 비활성화");
+    }
+
+    const { createCatalogValidator } = await import("./lib/catalog-validator.js");
+    catalogValidator = createCatalogValidator({ knownPrefixes, isCoreEvent, logger });
+    logger.info({ prefixCount: knownPrefixes.size }, "catalog validator 초기화 완료");
+  } catch {
+    logger.warn("catalog validator 초기화 실패 — event/prefix 검증 비활성화");
+  }
+
+  const { createMetricsCollector } = await import("./lib/metrics-collector.js");
+  const metricsCollector = createMetricsCollector();
+
+  // ── InsightsStore (INSIGHTS_DRIVER 기반 선택) ────────
+  let insightsStore: InsightsStore | undefined;
+  if (env.INSIGHTS_DRIVER === "app-hub") {
+    const { AppHubInsightsStore } = await import("./stores/app-hub-insights-store.js");
+    insightsStore = new AppHubInsightsStore({
+      endpoint: env.APP_HUB_ENDPOINT!,
+      credential: env.APP_HUB_CREDENTIAL ?? "",
+      projectId: env.APP_HUB_PROJECT_ID!,
+    }, logger);
+    logger.info({ driver: "app-hub" }, "insights store initialized");
+  } else if (stores.d1Db) {
+    // local 모드 — ingest stores와 같은 SQLite DB 인스턴스 공유
+    try {
+      const { DrizzleInsightsStore } = await import("./stores/drizzle-insights-store.js");
+      // d1Db는 createD1Drizzle()이 반환한 node-sqlite drizzle 인스턴스
+      insightsStore = new DrizzleInsightsStore(stores.d1Db as unknown as ReturnType<typeof import("drizzle-orm/node-sqlite").drizzle>);
+      logger.info({ driver: "local", shared: true }, "insights store initialized (D1 DB 공유)");
+    } catch (err) {
+      logger.warn({ err }, "insights store initialization failed — insights disabled");
+    }
+  } else {
+    logger.info({ driver: env.INSIGHTS_DRIVER, storeDriver: env.STORE_DRIVER }, "insights disabled — SQLITE_PATH 또는 STORE_DRIVER=d1 필요");
+  }
+
   const app = createApp({
     appLifecycle,
-    checkDbHealth: createDbHealthChecker(stores.db),
+    checkDbHealth: stores.db ? createDbHealthChecker(stores.db) : undefined,
     cleanupStore,
     debugStore,
     dlqStore: stores.dlqStore,
     graphStore: stores.graphStore,
     logger,
+    metricsCollector,
     rateLimitMaxRequests: env.RATE_LIMIT_MAX_REQUESTS,
     rateLimitWindowMs: env.RATE_LIMIT_WINDOW_MS,
     recordStore: stores.recordStore,
@@ -180,26 +309,59 @@ async function startServer() {
     traceStore: stores.traceStore,
     transmissionStore: stores.transmissionStore,
     verdictStore: stores.verdictStore,
-    withTraceTransaction: (fn) =>
-      withTransaction(stores.db, async (tx) =>
-        fn({
-          recordStore: new DrizzleRecordStore(tx),
-          traceStore: new DrizzleTraceStore(tx),
-          sessionStore: new DrizzleSessionStore(tx),
-        }),
-      ),
+    withTraceTransaction: stores.db
+      ? (fn) =>
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- stores.db 조건 분기 직후
+          withTransaction(stores.db!, async (tx) =>
+            fn({
+              recordStore: new DrizzleRecordStore(tx),
+              traceStore: new DrizzleTraceStore(tx),
+              sessionStore: new DrizzleSessionStore(tx),
+            }),
+          )
+      : (fn) => fn({ recordStore: stores.recordStore, traceStore: stores.traceStore, sessionStore: stores.sessionStore }),
     dlqMaxRetryAttempts: env.DLQ_MAX_RETRY_ATTEMPTS,
     convergencePipeline,
+    corsOrigin: env.CORS_ORIGIN,
+    catalogValidator,
+    insightsStore,
   });
 
   const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
   app.get("/v1/ws", upgradeWebSocket(createWsHandler({ recordStreamBroker, logger })));
+  app.get("/v1/debug-ws", upgradeWebSocket(createDebugWsHandler({
+    recordStreamBroker,
+    traceStore: stores.traceStore,
+    recordStore: stores.recordStore,
+    logger,
+  })));
 
+  const serviceConfig = createServiceBootConfig("ingest-server");
   const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
-    logger.info({ port: info.port }, "ingest-server listening");
+    logger.info({
+      port: info.port,
+      service: `${serviceConfig.namespace}/${serviceConfig.name}`,
+      env: serviceConfig.env,
+      region: serviceConfig.region,
+    }, "ingest-server listening");
+    warnPortConflict("ingest-server", info.port, logger);
   });
 
   injectWebSocket(server);
+
+  // gRPC Debug Server (GRPC_PORT 설정 시 활성화)
+  const grpcPort = process.env["GRPC_PORT"];
+  if (grpcPort) {
+    import("./grpc/debug-server.js").then(({ startGrpcDebugServer }) => {
+      startGrpcDebugServer({
+        recordStreamBroker,
+        traceStore: stores.traceStore,
+        logger,
+        port: parseInt(grpcPort),
+      }).catch(err => logger.warn({ err }, "gRPC server failed to start"));
+      return undefined;
+    }).catch(() => { /* @grpc/grpc-js not available */ });
+  }
 
   installGracefulShutdown({
     appLifecycle,
@@ -208,7 +370,8 @@ async function startServer() {
       await convergencePipeline?.close();
       cleanupScheduler?.stop();
       await taskQueue?.close();
-      await closeClient(env.TRACE_DATABASE_URL);
+      if (env.TRACE_DATABASE_URL) await closeClient(env.TRACE_DATABASE_URL);
+      await shutdownTelemetry();
     },
     logger,
     recordStreamBroker,
@@ -218,8 +381,9 @@ async function startServer() {
 }
 
 async function startWorker() {
+  const shutdownTelemetry = initTelemetry({ serviceName: "ingest-worker", env });
   const logger = createLogger("ingest-worker");
-  const stores = createRuntimeStores();
+  const stores = await createRuntimeStores();
   const taskQueue = createTaskQueue({
     dlqStore: stores.dlqStore,
     logger,
@@ -231,6 +395,21 @@ async function startWorker() {
     );
   }
 
+  // Transition Engine (worker mode)
+  let workerTransitionEngine: TransitionEnginePort | undefined;
+  let workerTransitionCatalog: unknown;
+  if (env.TRANSITION_ENGINE_ENABLED) {
+    try {
+      const { createTransitionFunctions, DEMO_TRANSITION_SPECS } = await import("@qa-sdk/spec-core/transition");
+      const { DEMO_CATALOG } = await import("demo-snapshot");
+      workerTransitionEngine = createTransitionFunctions(DEMO_TRANSITION_SPECS);
+      workerTransitionCatalog = DEMO_CATALOG;
+      logger.info(`transition engine enabled in worker (${DEMO_TRANSITION_SPECS.length} specs)`);
+    } catch (error) {
+      logger.warn({ err: error }, "transition engine not available in worker — skipped");
+    }
+  }
+
   await registerTaskQueueWorker(taskQueue, {
     dlqStore: stores.dlqStore,
     graphStore: stores.graphStore,
@@ -240,6 +419,9 @@ async function startWorker() {
     sessionStore: stores.sessionStore,
     traceStore: stores.traceStore,
     verdictStore: stores.verdictStore,
+    transitionEngine: workerTransitionEngine,
+    transitionCatalog: workerTransitionCatalog,
+    decodeServiceUrl: env.DECODE_SERVICE_URL,
   });
 
   logger.info(
@@ -253,14 +435,70 @@ async function startWorker() {
   installWorkerShutdown({
     close: async () => {
       await taskQueue.close();
-      await closeClient(env.TRACE_DATABASE_URL);
+      if (env.TRACE_DATABASE_URL) await closeClient(env.TRACE_DATABASE_URL);
+      await shutdownTelemetry();
     },
     logger,
   });
 }
 
-function createRuntimeStores(): RuntimeStores {
-  const db = createDb(env.TRACE_DATABASE_URL);
+async function createRuntimeStores(): Promise<RuntimeStores> {
+  // D1/SQLite 모드 (SQLITE_PATH 또는 STORE_DRIVER=d1)
+  // D1/SQLite 모드 — memory(기본) 또는 d1 드라이버에서 자동 업그레이드
+  // insights가 D1 DB를 공유하므로 memory 모드에서도 D1+:memory:를 우선 시도
+  // pg 드라이버(STORE_DRIVER=pg)만 PG 경로로 진행
+  if (env.STORE_DRIVER !== "pg") {
+    try {
+      const { NodeSqliteDriver } = await import("index-meta");
+      const { drizzle } = await import("drizzle-orm/node-sqlite");
+      const { migrate } = await import("drizzle-orm/node-sqlite/migrator");
+      const { createD1Drizzle } = await import("./stores/d1-db-type.js");
+      const { D1RecordStore } = await import("./stores/d1-record-store.js");
+      const { D1TraceStore } = await import("./stores/d1-trace-store.js");
+      const { D1SessionStore } = await import("./stores/d1-session-store.js");
+      const { D1VerdictStore } = await import("./stores/d1-verdict-store.js");
+
+      const sqlitePath = env.SQLITE_PATH ?? ":memory:";
+      const driver = new NodeSqliteDriver(sqlitePath, null);
+      const migrationsFolder = new URL("../drizzle", import.meta.url).pathname;
+      const plainDb = drizzle({ client: driver.$client as import("node:sqlite").DatabaseSync });
+      migrate(plainDb, { migrationsFolder });
+      const d1Db = createD1Drizzle(driver.$client);
+      return {
+        db: null,
+        d1Db,
+        dlqStore: new InMemoryDlqStore(),
+        graphStore: new InMemoryGraphStore(),
+        recordStore: new D1RecordStore(d1Db),
+        scenarioSpecStore: new InMemoryScenarioSpecStore(),
+        sessionStore: new D1SessionStore(d1Db),
+        traceStore: new D1TraceStore(d1Db),
+        transmissionStore: new InMemoryTransmissionStore(),
+        verdictStore: new D1VerdictStore(d1Db),
+      };
+    } catch (d1Err) {
+      // D1 초기화 실패 → 순수 InMemory fallback (insights 비활성)
+      console.warn("[ingest] D1 auto-upgrade 실패 — InMemory fallback:", d1Err instanceof Error ? d1Err.message : String(d1Err));
+      return {
+        db: null,
+        dlqStore: new InMemoryDlqStore(),
+        graphStore: new InMemoryGraphStore(),
+        recordStore: new InMemoryRecordStore(),
+        scenarioSpecStore: new InMemoryScenarioSpecStore(),
+        sessionStore: new InMemorySessionStore(),
+        traceStore: new InMemoryTraceStore(),
+        transmissionStore: new InMemoryTransmissionStore(),
+        verdictStore: new InMemoryVerdictStore(),
+      };
+    }
+  }
+
+  // PG 모드 (STORE_DRIVER=pg, TRACE_DATABASE_URL 필수)
+  if (!env.TRACE_DATABASE_URL) {
+    throw new Error("STORE_DRIVER=pg requires TRACE_DATABASE_URL");
+  }
+  const rawDb = createDb(env.TRACE_DATABASE_URL);
+  const db = withQueryTracing(rawDb);
 
   return {
     db,
@@ -279,7 +517,7 @@ function createTaskQueue({
   dlqStore,
   logger,
 }: {
-  dlqStore: DrizzleDlqStore;
+  dlqStore: DlqStore;
   logger: ReturnType<typeof createLogger>;
 }) {
   if (!env.TASK_QUEUE_ENABLED || !env.REDIS_URL) {

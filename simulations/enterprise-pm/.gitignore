@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env.sim
+.env.sim.local
+*.log
+coverage/
+.turbo/
+contracts/openapi/.merged.openapi.yaml

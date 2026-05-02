@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * bit-mask-set-e2e.test.ts — BitMaskSet E2E 증명
  *

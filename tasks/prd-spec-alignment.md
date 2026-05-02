@@ -86,141 +86,141 @@ interface SpecNode {
 **Description:** As a developer, I want core specs to accurately reflect the target design so that implementation work has a clear reference.
 
 **Acceptance Criteria:**
-- [ ] `core/specs/record.spec.md` — payload_format 6개(`json | rpc | protobuf | text | binary | stream`), payload_encoding 3개(`raw | base64 | gzip+base64`), `_registry_warning` 필드 반영. 모든 필드명 snake_case 확인
-- [ ] `core/specs/graph.spec.md` — 전면 재작성: RuntimeNode에 `log_id`, `payload_masking_applied`, `payload_masked_fields` 추가. `service_name`은 optional로 유지하되 "reconstruction에서 trace-level에서 주입 예정" 명시. edge 필드 `source/target` 확정, edge 타입에 `causal` 확정. SpecNode를 경량 구조로 확정 (step_id, event_key, event_version?, source?, record_kind?, required, kind, constraints?, timeout_ms?). 모든 필드 snake_case
-- [ ] `core/specs/verdict.spec.md` — 전면 재작성: `step_matches: StepMatch[]` 구조 확정, `StepMatch.constraint_results: ConstraintResult[]` 확정, `qa_session_id`, `summary` 필드 추가, `computed_at` VerdictReport에 유지, VerdictStore에 `remove_by_scenario_and_trace()`, `find_by_trace_id()` 메서드 추가. 모든 필드 snake_case
-- [ ] `core/specs/utils.spec.md` — `newVerdictId()`, `newDlqId()` 함수 추가
-- [ ] 스펙 문서만 수정, 코드 변경 없음
+- [x] `core/specs/record.spec.md` — payload_format 6개(`json | rpc | protobuf | text | binary | stream`), payload_encoding 3개(`raw | base64 | gzip+base64`), `_registry_warning` 필드 반영. 모든 필드명 snake_case 확인
+- [x] `core/specs/graph.spec.md` — 전면 재작성: RuntimeNode에 `log_id`, `payload_masking_applied`, `payload_masked_fields` 추가. `service_name`은 optional로 유지하되 "reconstruction에서 trace-level에서 주입 예정" 명시. edge 필드 `source/target` 확정, edge 타입에 `causal` 확정. SpecNode를 경량 구조로 확정 (step_id, event_key, event_version?, source?, record_kind?, required, kind, constraints?, timeout_ms?). 모든 필드 snake_case
+- [x] `core/specs/verdict.spec.md` — 전면 재작성: `step_matches: StepMatch[]` 구조 확정, `StepMatch.constraint_results: ConstraintResult[]` 확정, `qa_session_id`, `summary` 필드 추가, `computed_at` VerdictReport에 유지, VerdictStore에 `remove_by_scenario_and_trace()`, `find_by_trace_id()` 메서드 추가. 모든 필드 snake_case
+- [x] `core/specs/utils.spec.md` — `newVerdictId()`, `newDlqId()` 함수 추가
+- [x] 스펙 문서만 수정, 코드 변경 없음
 
 ### US-002: engine/pipeline.spec.md 재작성
 
 **Description:** As a developer, I want the engine pipeline spec to match the confirmed function signatures so that refactoring has a clear target.
 
 **Acceptance Criteria:**
-- [ ] `reconstruct(trace_id: string, records: EventRecord[], options?: ReconstructionOptions): RuntimeGraph` — trace_id 파라미터 문서화
-- [ ] `ReconstructionOptions.temporal_strategy: "span-local" | "global"` 문서화 (boolean flag 대체)
-- [ ] `evaluateConstraints()` 반환 타입을 `ConstraintResult[]` (`{ constraint: StepConstraint; passed: boolean; actual?: unknown }`)로 문서화
-- [ ] `computeVerdict(match_result, spec_graph, runtime_graph, qa_session_id?)` 시그니처 문서화
-- [ ] 비공개 헬퍼 `reconstructTrace()`, `computeTraceVerdict()` 존재 문서화
-- [ ] 스펙 문서만 수정, 코드 변경 없음
+- [x] `reconstruct(trace_id: string, records: EventRecord[], options?: ReconstructionOptions): RuntimeGraph` — trace_id 파라미터 문서화
+- [x] `ReconstructionOptions.temporal_strategy: "span-local" | "global"` 문서화 (boolean flag 대체)
+- [x] `evaluateConstraints()` 반환 타입을 `ConstraintResult[]` (`{ constraint: StepConstraint; passed: boolean; actual?: unknown }`)로 문서화
+- [x] `computeVerdict(match_result, spec_graph, runtime_graph, qa_session_id?)` 시그니처 문서화
+- [x] 비공개 헬퍼 `reconstructTrace()`, `computeTraceVerdict()` 존재 문서화
+- [x] 스펙 문서만 수정, 코드 변경 없음
 
 ### US-003: sdk/logger.spec.md 확장 + 미문서화 포트 스펙 작성
 
 **Description:** As a developer, I want all public interfaces to have specs so that the codebase has no documentation blind spots.
 
 **Acceptance Criteria:**
-- [ ] `sdk/specs/logger.spec.md` — LogParams 타입 정의 추가: `{ event_key, event_version, payload?, payload_format?, payload_encoding?, qa_session_id? }`. SpanParams 타입 정의 추가: LogParams + `span_name` 필수. SpanHandle.end() 파라미터 문서화
-- [ ] `core/specs/scenario-spec-store.spec.md` 신규 작성 — `upsert()`, `findById()`, `findAll()`, `findByDomain()`, `remove()` 메서드 문서화 (현재 구현 기반)
-- [ ] `core/specs/dlq-store.spec.md` 신규 작성 — `DlqPhase`, `DlqInsert`, `StoredDlqItem` 타입 + `insert()`, `findPending()`, `markAttempted()`, `markResolved()` 메서드 문서화 (현재 구현 기반)
-- [ ] 각 패키지의 `specs/README.md` 인덱스 업데이트
-- [ ] 스펙 문서만 수정/생성, 코드 변경 없음
+- [x] `sdk/specs/logger.spec.md` — LogParams 타입 정의 추가: `{ event_key, event_version, payload?, payload_format?, payload_encoding?, qa_session_id? }`. SpanParams 타입 정의 추가: LogParams + `span_name` 필수. SpanHandle.end() 파라미터 문서화
+- [x] `core/specs/scenario-spec-store.spec.md` 신규 작성 — `upsert()`, `findById()`, `findAll()`, `findByDomain()`, `remove()` 메서드 문서화 (현재 구현 기반)
+- [x] `core/specs/dlq-store.spec.md` 신규 작성 — `DlqPhase`, `DlqInsert`, `StoredDlqItem` 타입 + `insert()`, `findPending()`, `markAttempted()`, `markResolved()` 메서드 문서화 (현재 구현 기반)
+- [x] 각 패키지의 `specs/README.md` 인덱스 업데이트
+- [x] 스펙 문서만 수정/생성, 코드 변경 없음
 
 ### US-004: Failing 테스트 수정 (store + registry-server)
 
 **Description:** As a developer, I want all existing tests to pass so that the test suite is trustworthy before refactoring.
 
 **Acceptance Criteria:**
-- [ ] `store` session.adapter.test.ts 수정 — `upsert()` 반환값이 void이므로 테스트에서 반환값 검증 대신 `findById()`로 확인하는 패턴으로 변경
-- [ ] `store` trace.adapter.test.ts 수정 — 동일 패턴으로 변경
-- [ ] `registry-server` env.test.ts 수정 — 모듈 레벨 `parseEnv(process.env)` 실행 시점 문제 해결 (테스트에서 env 주입 방식 수정)
-- [ ] `pnpm --filter @qa-sdk/store run test` 전체 통과
-- [ ] `pnpm --filter @qa-sdk/registry-server run test` 전체 통과
+- [x] `store` session.adapter.test.ts 수정 — `upsert()` 반환값이 void이므로 테스트에서 반환값 검증 대신 `findById()`로 확인하는 패턴으로 변경
+- [x] `store` trace.adapter.test.ts 수정 — 동일 패턴으로 변경
+- [x] `registry-server` env.test.ts 수정 — 모듈 레벨 `parseEnv(process.env)` 실행 시점 문제 해결 (테스트에서 env 주입 방식 수정)
+- [x] `pnpm --filter @qa-sdk/store run test` 전체 통과
+- [x] `pnpm --filter @qa-sdk/registry-server run test` 전체 통과
 
 ### US-005: Verdict 리팩토링 — core 타입 + engine 전체
 
 **Description:** As a developer, I want VerdictReport to use the step_matches structure defined in spec so that constraint-level debugging info is available.
 
 **Acceptance Criteria:**
-- [ ] `core/types` — `VerdictReport` 타입 변경: `passed_steps/failed_steps/warning_steps/missing_steps/unexpected_nodes` → `step_matches: StepMatch[]`로 대체. `qa_session_id`, `summary`, `computed_at` 필드 유지/추가
-- [ ] `core/types` — `StepMatch` 타입 변경: `reason?: string` → `constraint_results: ConstraintResult[]`로 대체. `ConstraintResult = { constraint: StepConstraint; passed: boolean; actual?: unknown }`
-- [ ] `engine` — `evaluateConstraints()` 반환 타입을 `ConstraintResult[]`로 변경 (boolean AND 결과 대신 상세 배열)
-- [ ] `engine` — `graph-matcher` 업데이트: evaluateConstraints 결과를 StepMatch.constraint_results에 수집
-- [ ] `engine` — `computeVerdict()` 업데이트: step_matches 배열에서 overall_verdict 계산, summary 생성
-- [ ] 모든 engine 테스트 업데이트: constraint-evaluator (26개), graph-matcher (12개), verdict compute (11개), pipeline integration (18개)
-- [ ] `pnpm --filter @qa-sdk/core run typecheck` 통과
-- [ ] `pnpm --filter @qa-sdk/engine run test` 전체 통과
+- [x] `core/types` — `VerdictReport` 타입 변경: `passed_steps/failed_steps/warning_steps/missing_steps/unexpected_nodes` → `step_matches: StepMatch[]`로 대체. `qa_session_id`, `summary`, `computed_at` 필드 유지/추가
+- [x] `core/types` — `StepMatch` 타입 변경: `reason?: string` → `constraint_results: ConstraintResult[]`로 대체. `ConstraintResult = { constraint: StepConstraint; passed: boolean; actual?: unknown }`
+- [x] `engine` — `evaluateConstraints()` 반환 타입을 `ConstraintResult[]`로 변경 (boolean AND 결과 대신 상세 배열)
+- [x] `engine` — `graph-matcher` 업데이트: evaluateConstraints 결과를 StepMatch.constraint_results에 수집
+- [x] `engine` — `computeVerdict()` 업데이트: step_matches 배열에서 overall_verdict 계산, summary 생성
+- [x] 모든 engine 테스트 업데이트: constraint-evaluator (26개), graph-matcher (12개), verdict compute (11개), pipeline integration (18개)
+- [x] `pnpm --filter @qa-sdk/core run typecheck` 통과
+- [x] `pnpm --filter @qa-sdk/engine run test` 전체 통과
 
 ### US-006: Verdict 리팩토링 — store + ingest-server
 
 **Description:** As a developer, I want store adapters and API routes to use the new VerdictReport structure.
 
 **Acceptance Criteria:**
-- [ ] `store` — verdict memory adapter 업데이트: 새 VerdictReport 구조 저장/조회
-- [ ] `store` — verdict drizzle adapter 업데이트 (verdict_reports 테이블의 JSONB 구조)
-- [ ] `ingest-server` — verdict 라우트 응답 형식이 새 VerdictReport 구조 반영
-- [ ] `ingest-server` — verdict recompute 라우트가 새 구조로 동작
-- [ ] `pnpm --filter @qa-sdk/store run test` 통과
-- [ ] `pnpm --filter @qa-sdk/ingest-server run test` 통과
+- [x] `store` — verdict memory adapter 업데이트: 새 VerdictReport 구조 저장/조회
+- [x] `store` — verdict drizzle adapter 업데이트 (verdict_reports 테이블의 JSONB 구조)
+- [x] `ingest-server` — verdict 라우트 응답 형식이 새 VerdictReport 구조 반영
+- [x] `ingest-server` — verdict recompute 라우트가 새 구조로 동작
+- [x] `pnpm --filter @qa-sdk/store run test` 통과
+- [x] `pnpm --filter @qa-sdk/ingest-server run test` 통과
 
 ### US-007: Graph 리팩토링 — core 타입 + engine 전체
 
 **Description:** As a developer, I want graph types to match spec so that edge semantics (source/target, causal) are consistent.
 
 **Acceptance Criteria:**
-- [ ] `core/types` — RuntimeEdge: `from/to` → `source/target` 변경
-- [ ] `core/types` — SpecEdge: `from/to` → `source/target` 변경
-- [ ] `core/types` — EdgeType: `derived` → `causal` 변경
-- [ ] `core/types` — SpecNode: `{ id, step: ScenarioStep }` → 경량 투영 `{ step_id, event_key, event_version?, source?, record_kind?, required, kind, constraints?, timeout_ms? }` 변경
-- [ ] `engine` — spec-compiler: 새 SpecNode 경량 구조 생성 (ScenarioStep에서 필요 필드만 투영)
-- [ ] `engine` — reconstruction: 새 edge 필드명(source/target) + causal edge 로직 사용
-- [ ] `engine` — graph-matcher: 새 edge/node 타입으로 매칭. SpecNode에서 직접 필드 접근 (`specNode.event_key` 등, `specNode.step.event_key` 대신)
-- [ ] `engine` — computeVerdict: `specNode.timeout_ms` 로 latency 체크 (기존 `specNode.step.timeout_ms` 대체)
-- [ ] 모든 engine 테스트 업데이트: spec-compiler (8개), reconstruction (10개), graph-matcher (12개), pipeline (18개)
-- [ ] `pnpm --filter @qa-sdk/core run typecheck` 통과
-- [ ] `pnpm --filter @qa-sdk/engine run test` 전체 통과
+- [x] `core/types` — RuntimeEdge: `from/to` → `source/target` 변경
+- [x] `core/types` — SpecEdge: `from/to` → `source/target` 변경
+- [x] `core/types` — EdgeType: `derived` → `causal` 변경
+- [x] `core/types` — SpecNode: `{ id, step: ScenarioStep }` → 경량 투영 `{ step_id, event_key, event_version?, source?, record_kind?, required, kind, constraints?, timeout_ms? }` 변경
+- [x] `engine` — spec-compiler: 새 SpecNode 경량 구조 생성 (ScenarioStep에서 필요 필드만 투영)
+- [x] `engine` — reconstruction: 새 edge 필드명(source/target) + causal edge 로직 사용
+- [x] `engine` — graph-matcher: 새 edge/node 타입으로 매칭. SpecNode에서 직접 필드 접근 (`specNode.event_key` 등, `specNode.step.event_key` 대신)
+- [x] `engine` — computeVerdict: `specNode.timeout_ms` 로 latency 체크 (기존 `specNode.step.timeout_ms` 대체)
+- [x] 모든 engine 테스트 업데이트: spec-compiler (8개), reconstruction (10개), graph-matcher (12개), pipeline (18개)
+- [x] `pnpm --filter @qa-sdk/core run typecheck` 통과
+- [x] `pnpm --filter @qa-sdk/engine run test` 전체 통과
 
 ### US-008: Graph 리팩토링 — store + ingest-server
 
 **Description:** As a developer, I want store adapters and API routes to use the new graph types.
 
 **Acceptance Criteria:**
-- [ ] `store` — graph memory adapter: 새 RuntimeGraph 구조 저장/조회 (source/target edges)
-- [ ] `store` — graph drizzle adapter: JSONB 구조 업데이트
-- [ ] `ingest-server` — graph query 라우트(`/traces/:traceId/graph`) 응답 형식 업데이트
-- [ ] `ingest-server` — reconstruction 호출부 업데이트
-- [ ] drizzle-kit으로 새 마이그레이션 생성 (필요 시)
-- [ ] `pnpm --filter @qa-sdk/store run test` 통과
-- [ ] `pnpm --filter @qa-sdk/ingest-server run test` 통과
+- [x] `store` — graph memory adapter: 새 RuntimeGraph 구조 저장/조회 (source/target edges)
+- [x] `store` — graph drizzle adapter: JSONB 구조 업데이트
+- [x] `ingest-server` — graph query 라우트(`/traces/:traceId/graph`) 응답 형식 업데이트
+- [x] `ingest-server` — reconstruction 호출부 업데이트
+- [x] drizzle-kit으로 새 마이그레이션 생성 (필요 시)
+- [x] `pnpm --filter @qa-sdk/store run test` 통과
+- [x] `pnpm --filter @qa-sdk/ingest-server run test` 통과
 
 ### US-009: GraphHint 타입 + 60개 이벤트 데이터 구현
 
 **Description:** As a developer, I want core events to include graph_hint metadata so that engine can use role/goal/loop hints for smarter graph analysis.
 
 **Acceptance Criteria:**
-- [ ] `event-catalog/src/types.ts` — `GraphRole` 타입 추가: `"entry" | "transition" | "terminal" | "observation"`
-- [ ] `event-catalog/src/types.ts` — `GraphHint` 인터페이스 추가: `{ role: GraphRole; goal_eligible: boolean; loopable: boolean }`
-- [ ] `event-catalog/src/types.ts` — `CoreEventDef`에 `graph_hint: GraphHint` 필드 추가
-- [ ] 8개 카테고리 파일 전체 — 60개 이벤트에 `graph-hint.spec.md` 매핑표 기준으로 graph_hint 값 추가
-- [ ] graph-hint.spec.md 상태를 `draft` → `implemented` 로 변경
-- [ ] `pnpm --filter @qa-sdk/event-catalog run typecheck` 통과
+- [x] `event-catalog/src/types.ts` — `GraphRole` 타입 추가: `"entry" | "transition" | "terminal" | "observation"`
+- [x] `event-catalog/src/types.ts` — `GraphHint` 인터페이스 추가: `{ role: GraphRole; goal_eligible: boolean; loopable: boolean }`
+- [x] `event-catalog/src/types.ts` — `CoreEventDef`에 `graph_hint: GraphHint` 필드 추가
+- [x] 8개 카테고리 파일 전체 — 60개 이벤트에 `graph-hint.spec.md` 매핑표 기준으로 graph_hint 값 추가
+- [x] graph-hint.spec.md 상태를 `draft` → `implemented` 로 변경
+- [x] `pnpm --filter @qa-sdk/event-catalog run typecheck` 통과
 
 ### US-010: event-catalog 테스트 스위트 작성
 
 **Description:** As a developer, I want event-catalog to have a test suite so that data integrity is verified.
 
 **Acceptance Criteria:**
-- [ ] vitest 설정 추가 (package.json scripts + vitest.config.ts)
-- [ ] 전체 60개 이벤트 등록 확인 (allCoreEvents.length === 60)
-- [ ] 카테고리별 이벤트 수 검증 (navigation 7, interaction 10, form 5, session 6, network 8, execution 9, outcome 7, quality 8)
-- [ ] v1 minimal set 20개 검증 (v1MinimalSet.length === 20, 각 키 존재 확인)
-- [ ] coreEventMap에서 키로 조회 가능 확인
-- [ ] isCoreEvent / isV1MinimalEvent 함수 동작 검증
-- [ ] payload guide 20개 존재 확인 + required 필드가 실제로 required: true인지 검증
-- [ ] graph_hint 검증: 모든 60개 이벤트에 graph_hint 존재, role이 유효값, goal_eligible true인 이벤트가 정확히 4개 (success, complete, conversion, form_submit_success)
-- [ ] `pnpm --filter @qa-sdk/event-catalog run test` 전체 통과
+- [x] vitest 설정 추가 (package.json scripts + vitest.config.ts)
+- [x] 전체 60개 이벤트 등록 확인 (allCoreEvents.length === 60)
+- [x] 카테고리별 이벤트 수 검증 (navigation 7, interaction 10, form 5, session 6, network 8, execution 9, outcome 7, quality 8)
+- [x] v1 minimal set 20개 검증 (v1MinimalSet.length === 20, 각 키 존재 확인)
+- [x] coreEventMap에서 키로 조회 가능 확인
+- [x] isCoreEvent / isV1MinimalEvent 함수 동작 검증
+- [x] payload guide 20개 존재 확인 + required 필드가 실제로 required: true인지 검증
+- [x] graph_hint 검증: 모든 60개 이벤트에 graph_hint 존재, role이 유효값, goal_eligible true인 이벤트가 정확히 4개 (success, complete, conversion, form_submit_success)
+- [x] `pnpm --filter @qa-sdk/event-catalog run test` 전체 통과
 
 ### US-011: pino 테스트 스위트 작성
 
 **Description:** As a developer, I want the pino logger to have tests so that logging behavior is verified.
 
 **Acceptance Criteria:**
-- [ ] vitest 설정 추가 (package.json scripts + vitest.config.ts)
-- [ ] 레벨 필터링 테스트: info 레벨에서 debug 로그가 출력되지 않음
-- [ ] 구조화 출력 테스트: JSON 형식으로 출력, `level`, `time`, `msg` 필드 포함
-- [ ] child logger 테스트: 부모 bindings 상속 + 자체 bindings 병합
-- [ ] error 직렬화 테스트: Error 객체가 `type`, `message`, `stack` 필드로 직렬화
-- [ ] silent 레벨 테스트: 아무것도 출력하지 않음
-- [ ] `pnpm --filter @qa-sdk/pino run test` 전체 통과
+- [x] vitest 설정 추가 (package.json scripts + vitest.config.ts)
+- [x] 레벨 필터링 테스트: info 레벨에서 debug 로그가 출력되지 않음
+- [x] 구조화 출력 테스트: JSON 형식으로 출력, `level`, `time`, `msg` 필드 포함
+- [x] child logger 테스트: 부모 bindings 상속 + 자체 bindings 병합
+- [x] error 직렬화 테스트: Error 객체가 `type`, `message`, `stack` 필드로 직렬화
+- [x] silent 레벨 테스트: 아무것도 출력하지 않음
+- [x] `pnpm --filter @qa-sdk/pino run test` 전체 통과
 
 ## Functional Requirements
 

@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { Logger } from "pino";

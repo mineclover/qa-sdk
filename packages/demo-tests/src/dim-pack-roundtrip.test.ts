@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * dim-pack-roundtrip.test.ts — BitIndex 데이터 변환 라운드트립 검증
  *

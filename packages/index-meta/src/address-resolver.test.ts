@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * Address Resolution + Graph-DB 효율 시나리오 테스트
  *

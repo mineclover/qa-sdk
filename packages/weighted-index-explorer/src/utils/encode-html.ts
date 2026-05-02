@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * encode-html.ts — HTML rendering for encode / decode formula steps.
  *

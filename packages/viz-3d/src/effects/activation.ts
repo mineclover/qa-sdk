@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * ActivationSystem — 셀 활성화 상태 관리 + beam 풀.
  *

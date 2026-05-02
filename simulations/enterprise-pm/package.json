@@ -1,0 +1,41 @@
+{
+  "name": "@qa-sdk-sim/enterprise-pm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Enterprise PM 시뮬 — qa-sdk 5축 검증용 9서비스 orchestration root",
+  "type": "module",
+  "scripts": {
+    "sim:up": "bash scripts/sim-up.sh",
+    "sim:down": "bash scripts/sim-down.sh",
+    "sim:logs": "docker compose -f docker-compose.sim.yaml logs -f --tail=100",
+    "sim:ps": "docker compose -f docker-compose.sim.yaml ps",
+    "sim:seed": "tsx seed/seed.ts",
+    "sim:seed:dry": "SIM_SEED_DRY_RUN=true tsx seed/seed.ts",
+    "sim:seed:test": "vitest run seed",
+    "sim:scenario": "echo 'scenario runner는 Plan 13에서 추가 예정' && exit 1",
+    "sim:scenarios": "pnpm --filter @qa-sdk/sim-scenarios start",
+    "sim:scenarios:build": "pnpm --filter @qa-sdk/sim-scenarios build",
+    "sim:catalog:validate": "tsx scripts/validate-catalog.ts",
+    "contracts:openapi:check": "node contracts/openapi/scripts/check-merge.mjs",
+    "sim:doctor": "bash scripts/sim-doctor.sh || echo 'sim-doctor.sh는 Plan 14에서 추가 예정'",
+    "build": "echo 'sim root는 빌드 산출물 없음'",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "postgres": "^3.4.5",
+    "sim-identifier-grammar": "workspace:*",
+    "sim-service-catalog": "workspace:*",
+    "yaml": "^2.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^1.6.1"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  }
+}

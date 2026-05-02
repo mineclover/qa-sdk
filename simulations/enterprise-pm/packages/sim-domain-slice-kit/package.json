@@ -1,0 +1,52 @@
+{
+  "name": "@qa-sdk/sim-domain-slice-kit",
+  "version": "0.1.0",
+  "description": "시뮬 — Domain Slice Architecture 공유 kit (transaction/outbox/logger ports + Nest integration)",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "drizzle-orm": "catalog:",
+    "zod": "^3.24.2"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "better-sqlite3": "catalog:",
+    "pino": "^9.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@nestjs/common": { "optional": true },
+    "@nestjs/core": { "optional": true },
+    "better-sqlite3": { "optional": true },
+    "pino": { "optional": true }
+  },
+  "devDependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/testing": "^11.0.0",
+    "@types/better-sqlite3": "catalog:",
+    "@types/node": "^22.0.0",
+    "better-sqlite3": "catalog:",
+    "pino": "^9.0.0",
+    "reflect-metadata": "^0.2.2",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
+  }
+}

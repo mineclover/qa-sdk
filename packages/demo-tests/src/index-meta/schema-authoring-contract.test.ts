@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 import { describe, expect, it } from "vitest";
 import {
   MetaRegistry,

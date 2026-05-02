@@ -1,0 +1,24 @@
+export class <%= classify(name) %>DomainException extends Error {
+  constructor(
+    readonly code: string,
+    message: string,
+    readonly details: Record<string, unknown> = {},
+  ) {
+    super(message);
+    this.name = "<%= classify(name) %>DomainException";
+  }
+}
+
+export class Invalid<%= classify(name) %>IdException extends <%= classify(name) %>DomainException {
+  constructor() {
+    super("INVALID_<%= constantize(name) %>_ID", "<%= classify(name) %>Id must not be empty.");
+    this.name = "Invalid<%= classify(name) %>IdException";
+  }
+}
+
+export class Archived<%= classify(name) %>Exception extends <%= classify(name) %>DomainException {
+  constructor() {
+    super("ARCHIVED_<%= constantize(name) %>", "Archived <%= dasherize(name) %> cannot be activated.");
+    this.name = "Archived<%= classify(name) %>Exception";
+  }
+}

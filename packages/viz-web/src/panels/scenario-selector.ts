@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import type { ScenarioSpec } from "@qa-sdk/core";
 import { listScenarios } from "../api/ingest-client";
 

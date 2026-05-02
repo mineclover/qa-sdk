@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * 간단한 인메모리 메트릭 카운터/게이지 레지스트리.
  * Prometheus text format 출력을 지원한다.
@@ -16,6 +19,7 @@ export function createMetricsCollector(): MetricsCollector {
   return {
     inc(name, labels = {}, delta = 1) {
       if (!counters.has(name)) counters.set(name, new Map());
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- .has() 직후 .get()
       const bucket = counters.get(name)!;
       const key = serializeLabels(labels);
       bucket.set(key, (bucket.get(key) ?? 0) + delta);

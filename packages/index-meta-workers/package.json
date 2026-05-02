@@ -1,0 +1,39 @@
+{
+  "name": "index-meta-workers",
+  "version": "0.1.0",
+  "description": "Workers/Edge-compatible subset of index-meta. No Node.js-specific dependencies.",
+  "keywords": [
+    "index-meta",
+    "workers",
+    "cloudflare",
+    "edge"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "validate": "tsup && node -e \"const f=require('fs').readFileSync('dist/index.js','utf8');const bad=['node:fs','node:path','node:module','node:sqlite','better-sqlite3','bun:sqlite'];const found=bad.filter(b=>f.includes(b));if(found.length){console.error('Node.js leak:',found);process.exit(1)}else console.log('OK: no Node.js leak')\"",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "index-meta": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2"
+  }
+}

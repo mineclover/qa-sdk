@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * CatalogProvider — 카탈로그 접근 인터페이스.
  */

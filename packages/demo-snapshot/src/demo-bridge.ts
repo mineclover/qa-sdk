@@ -6,6 +6,7 @@
  */
 
 import { DEMO_CATALOG, type DemoCatalog } from "./demo-catalog.js";
+import { decodePrefix } from "@qa-sdk/core/catalog";
 
 // ── MetaRegistry 입력 ───────────────────────────────────────────────────────
 
@@ -13,6 +14,46 @@ function buildEntryRefs(count: number, indexId: string, versionId: string) {
   const refs: Record<number, { indexId: string; versionId: string }> = {};
   for (let i = 1; i <= count; i++) refs[i] = { indexId, versionId };
   return refs;
+}
+
+function getRegistryDimSize(
+  catalog: DemoCatalog,
+  prefixId: string,
+  versionId: string,
+  label: string,
+): number {
+  const prefix = catalog.prefixes[prefixId];
+  const version = prefix.versions.find((candidate) => candidate.version === versionId);
+  if (!version) {
+    throw new Error(`Unknown prefix version: ${prefixId}/${versionId}`);
+  }
+
+  const dim = prefix.dims[label];
+  if (dim.kind === "axis") {
+    return catalog.axes[dim.axisId].versions[version.axisVersions[label]].entries.length;
+  }
+
+  return version.refEntries?.[label]?.values.length ?? 0;
+}
+
+function toRegistryIndexRefValue(
+  catalog: DemoCatalog,
+  prefixId: string,
+  versionId: string,
+  rawValue: number,
+): number {
+  const prefix = catalog.prefixes[prefixId];
+  const decoded = decodePrefix(catalog, prefixId, versionId, rawValue);
+
+  let encoded = 0;
+  let stride = 1;
+  for (let index = prefix.labels.length - 1; index >= 0; index -= 1) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- for 루프 인덱스 범위 내 보장
+    const label = prefix.labels[index]!;
+    encoded += decoded[label].position * stride;
+    stride *= getRegistryDimSize(catalog, prefixId, versionId, label);
+  }
+  return encoded;
 }
 
 /**
@@ -54,34 +95,21 @@ export function catalogToRegistryInput(catalog: DemoCatalog = DEMO_CATALOG) {
         const ref = vdef.refEntries?.[label];
         if (ref) {
           snapshots[vdef.version] = {
-            entries: [...ref.values],
+            entries: ref.values.map((value) =>
+              toRegistryIndexRefValue(catalog, dim.prefixId, ref.refVersion, value),
+            ),
             entryRefs: buildEntryRefs(ref.values.length, dim.prefixId, ref.refVersion),
           };
         }
       }
-      // 중복 스냅샷 제거: 동일한 values면 첫 번째만
-      const deduped: Record<string, { entries: (string | number)[]; entryRefs?: ReturnType<typeof buildEntryRefs> }> = {};
-      let lastKey: string | null = null;
-      for (const [ver, snap] of Object.entries(snapshots)) {
-        const key = JSON.stringify(snap.entries);
-        if (key !== lastKey) {
-          deduped[ver] = snap;
-          lastKey = key;
-        }
-      }
-      dims[label] = { kind: { type: "index_ref", indexId: dim.prefixId }, snapshots: deduped };
+      dims[label] = { kind: { type: "index_ref", indexId: dim.prefixId }, snapshots };
     } else if (dim.kind === "axis") {
       const axis = catalog.axes[dim.axisId];
       const snapshots: Record<string, { entries: (string | number)[] }> = {};
-      let lastKey: string | null = null;
       for (const vdef of permPrefix.versions) {
         const axisVer = vdef.axisVersions[label];
         const snap = axis.versions[axisVer];
-        const key = JSON.stringify(snap.entries);
-        if (key !== lastKey) {
-          snapshots[vdef.version] = { entries: [...snap.entries] };
-          lastKey = key;
-        }
+        snapshots[vdef.version] = { entries: [...snap.entries] };
       }
       dims[label] = { kind: { type: "string_enum" }, snapshots };
     }
@@ -94,33 +122,25 @@ export function catalogToRegistryInput(catalog: DemoCatalog = DEMO_CATALOG) {
     const dim = evtPrefix.dims[label];
     if (dim.kind === "prefix_ref") {
       const snapshots: Record<string, { entries: (string | number)[]; entryRefs?: ReturnType<typeof buildEntryRefs> }> = {};
-      let lastKey: string | null = null;
       for (const vdef of evtPrefix.versions) {
         const ref = vdef.refEntries?.[label];
         if (ref) {
-          const key = JSON.stringify(ref.values);
-          if (key !== lastKey) {
-            snapshots[vdef.version] = {
-              entries: [...ref.values],
-              entryRefs: buildEntryRefs(ref.values.length, dim.prefixId, ref.refVersion),
-            };
-            lastKey = key;
-          }
+          snapshots[vdef.version] = {
+            entries: ref.values.map((value) =>
+              toRegistryIndexRefValue(catalog, dim.prefixId, ref.refVersion, value),
+            ),
+            entryRefs: buildEntryRefs(ref.values.length, dim.prefixId, ref.refVersion),
+          };
         }
       }
       dims[label] = { kind: { type: "index_ref", indexId: dim.prefixId }, snapshots };
     } else if (dim.kind === "axis") {
       const axis = catalog.axes[dim.axisId];
       const snapshots: Record<string, { entries: (string | number)[] }> = {};
-      let lastKey: string | null = null;
       for (const vdef of evtPrefix.versions) {
         const axisVer = vdef.axisVersions[label];
         const snap = axis.versions[axisVer];
-        const key = JSON.stringify(snap.entries);
-        if (key !== lastKey) {
-          snapshots[vdef.version] = { entries: [...snap.entries] };
-          lastKey = key;
-        }
+        snapshots[vdef.version] = { entries: [...snap.entries] };
       }
       dims[label] = { kind: { type: "string_enum" }, snapshots };
     }

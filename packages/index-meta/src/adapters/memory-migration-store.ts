@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import type {
   MigrationStore,
   MigrationMapping,
@@ -44,7 +47,7 @@ export class InMemoryMigrationStore implements MigrationStore {
     return this._mappings
       .filter((entry) => entry.prefix === prefix && entry.mapping.position === position)
       .map((entry) => entry.mapping)
-      .sort((a, b) => compareHistory(a, b));
+      .toSorted((a, b) => compareHistory(a, b));
   }
 
   async getMappings(
@@ -60,7 +63,7 @@ export class InMemoryMigrationStore implements MigrationStore {
           entry.mapping.toVersionId === toVersionId,
       )
       .map((entry) => entry.mapping)
-      .sort((a, b) => a.position - b.position);
+      .toSorted((a, b) => a.position - b.position);
   }
 
   async resolveToLatest(
@@ -91,8 +94,8 @@ export class InMemoryMigrationStore implements MigrationStore {
     let foundChange = false;
 
     for (let index = 0; index < path.length - 1; index++) {
-      const currentVersionId = path[index]!;
-      const toVersionId = path[index + 1]!;
+      const currentVersionId = path[index];
+      const toVersionId = path[index + 1];
       const mapping = this._mappings
         .find(
           (entry) =>
@@ -139,6 +142,7 @@ export class InMemoryMigrationStore implements MigrationStore {
     const previous = new Map<string, string | null>([[fromVersionId, null]]);
 
     while (queue.length > 0) {
+      // eslint-disable-next-line typescript/no-non-null-assertion -- while 조건이 queue.length > 0 보장
       const current = queue.shift()!;
       for (const edge of adjacency.get(current) ?? []) {
         if (previous.has(edge.toVersionId)) continue;
@@ -169,7 +173,7 @@ export class InMemoryMigrationStore implements MigrationStore {
       }
     }
 
-    return [...edgeMap.values()].sort(
+    return [...edgeMap.values()].toSorted(
       (a, b) =>
         a.firstCreatedAt.localeCompare(b.firstCreatedAt) ||
         a.fromVersionId.localeCompare(b.fromVersionId) ||
@@ -195,5 +199,5 @@ function reconstructPath(previous: Map<string, string | null>, target: string): 
     current = previous.get(current) ?? null;
   }
 
-  return path.reverse();
+  return path.toReversed();
 }

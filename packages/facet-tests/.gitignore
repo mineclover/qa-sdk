@@ -1,0 +1,4 @@
+# rclone 복제본 — 재생성 가능
+synced/
+# facet scan 생성물
+include-list.txt

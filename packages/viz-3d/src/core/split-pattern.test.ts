@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import { describe, it, expect } from "vitest";
 import {
   scalar, row, grid, cube, spine, shelf, nested,
@@ -169,8 +172,8 @@ describe("computePatternLayout — 셀 위치 계산", () => {
     });
     expect(layout.cells.length).toBe(12); // 3 × 2 × 2
     // 그룹별 y 오프셋
-    const checkoutCells = layout.cells.filter(c => c.group === "checkout");
-    const loginCells = layout.cells.filter(c => c.group === "login");
-    expect(checkoutCells[0].y).not.toBe(loginCells[0].y);
+    const checkoutCell = layout.cells.find(c => c.group === "checkout");
+    const loginCell = layout.cells.find(c => c.group === "login");
+    expect(checkoutCell!.y).not.toBe(loginCell!.y);
   });
 });

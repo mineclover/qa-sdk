@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import pino from "pino";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RegistryClient } from "./index.js";

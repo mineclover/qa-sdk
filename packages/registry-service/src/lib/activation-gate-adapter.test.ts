@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { describe, it, expect, vi } from "vitest";
 import { createActivationGate, type ActivationGateConfig } from "./activation-gate-adapter.js";
 

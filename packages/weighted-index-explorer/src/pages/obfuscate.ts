@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  난독화 — 비트 변환 & 복호화 페이지
 // ═══════════════════════════════════════════════════════════════════════════
@@ -13,7 +16,6 @@ import {
   toUUID,
   toNanoId,
   toStructuredUUID,
-  fromHex,
 } from "weighted-index";
 
 // ── 탐색기와 동일한 권한 모델 ──────────────────────────────────────────────
@@ -606,20 +608,28 @@ export function decodeToken(hex: string): number {
 // ── 인터랙티브 로직 ───────────────────────────────────────────────────────
 
 function setupInteractivity(container: HTMLElement): void {
-  const bwSlider  = container.querySelector<HTMLInputElement>("#obf-bw-slider")!;
-  const bwNum     = container.querySelector<HTMLInputElement>("#obf-bw-num")!;
-  const slider    = container.querySelector<HTMLInputElement>("#obf-id-slider")!;
-  const numInput  = container.querySelector<HTMLInputElement>("#obf-id-num")!;
+  const bwSlider  = container.querySelector<HTMLInputElement>("#obf-bw-slider");
+  const bwNum     = container.querySelector<HTMLInputElement>("#obf-bw-num");
+  const slider    = container.querySelector<HTMLInputElement>("#obf-id-slider");
+  const numInput  = container.querySelector<HTMLInputElement>("#obf-id-num");
   const radios    = container.querySelectorAll<HTMLInputElement>("input[name='obf-type']");
-  const keyInput  = container.querySelector<HTMLInputElement>("#obf-key")!;
-  const amtInput  = container.querySelector<HTMLInputElement>("#obf-amount")!;
-  const ckeyInput = container.querySelector<HTMLInputElement>("#obf-ckey")!;
-  const camtInput = container.querySelector<HTMLInputElement>("#obf-camount")!;
-  const paramDivs = {
-    xor:     container.querySelector<HTMLElement>("#param-xor")!,
-    rotate:  container.querySelector<HTMLElement>("#param-rotate")!,
-    reverse: container.querySelector<HTMLElement>("#param-reverse")!,
-    compose: container.querySelector<HTMLElement>("#param-compose")!,
+  const keyInput  = container.querySelector<HTMLInputElement>("#obf-key");
+  const amtInput  = container.querySelector<HTMLInputElement>("#obf-amount");
+  const ckeyInput = container.querySelector<HTMLInputElement>("#obf-ckey");
+  const camtInput = container.querySelector<HTMLInputElement>("#obf-camount");
+  if (!bwSlider || !bwNum || !slider || !numInput || !keyInput || !amtInput || !ckeyInput || !camtInput) return;
+
+  const paramXor     = container.querySelector<HTMLElement>("#param-xor");
+  const paramRotate  = container.querySelector<HTMLElement>("#param-rotate");
+  const paramReverse = container.querySelector<HTMLElement>("#param-reverse");
+  const paramCompose = container.querySelector<HTMLElement>("#param-compose");
+  if (!paramXor || !paramRotate || !paramReverse || !paramCompose) return;
+
+  const paramDivs: Record<TransformType, HTMLElement> = {
+    xor:     paramXor,
+    rotate:  paramRotate,
+    reverse: paramReverse,
+    compose: paramCompose,
   };
 
   function getBitWidth(): number {
@@ -682,17 +692,25 @@ function setupInteractivity(container: HTMLElement): void {
     const obfBits  = toBits(token, bw);
     const changed  = changedBits(origBits, obfBits);
 
-    container.querySelector<HTMLElement>("#viz-orig-bits")!.innerHTML = renderBitRow(origBits, new Set());
-    container.querySelector<HTMLElement>("#viz-obf-bits")!.innerHTML  = renderBitRow(obfBits, changed);
-    container.querySelector<HTMLElement>("#viz-orig-num")!.textContent = String(id);
-    container.querySelector<HTMLElement>("#viz-obf-num")!.textContent  = String(token);
-    const changedEl = container.querySelector<HTMLElement>("#viz-changed")!;
-    changedEl.textContent = `${changed.size}비트 변경`;
-    changedEl.style.color = changed.size === 0 ? "var(--text-muted)" : "var(--status-warn, #f59e0b)";
+    const vizOrigBits = container.querySelector<HTMLElement>("#viz-orig-bits");
+    const vizObfBits  = container.querySelector<HTMLElement>("#viz-obf-bits");
+    const vizOrigNum  = container.querySelector<HTMLElement>("#viz-orig-num");
+    const vizObfNum   = container.querySelector<HTMLElement>("#viz-obf-num");
+    const changedEl   = container.querySelector<HTMLElement>("#viz-changed");
+    if (vizOrigBits) vizOrigBits.innerHTML = renderBitRow(origBits, new Set());
+    if (vizObfBits)  vizObfBits.innerHTML  = renderBitRow(obfBits, changed);
+    if (vizOrigNum)  vizOrigNum.textContent = String(id);
+    if (vizObfNum)   vizObfNum.textContent  = String(token);
+    if (changedEl) {
+      changedEl.textContent = `${changed.size}비트 변경`;
+      changedEl.style.color = changed.size === 0 ? "var(--text-muted)" : "var(--status-warn, #f59e0b)";
+    }
 
     // Tokens
-    container.querySelector<HTMLElement>("#tok-hex")!.textContent    = toHex(token, bw);
-    container.querySelector<HTMLElement>("#tok-nanoid")!.textContent = toNanoId(token, bw);
+    const tokHex   = container.querySelector<HTMLElement>("#tok-hex");
+    const tokNanoid = container.querySelector<HTMLElement>("#tok-nanoid");
+    if (tokHex)    tokHex.textContent    = toHex(token, bw);
+    if (tokNanoid) tokNanoid.textContent = toNanoId(token, bw);
 
     // Structured token: version=1 (4-bit) + obfuscated id
     const structToken = toStructuredUUID([
@@ -700,7 +718,8 @@ function setupInteractivity(container: HTMLElement): void {
       { value: token, bitWidth: bw },
     ]);
     const structTotalBits = 4 + bw;
-    container.querySelector<HTMLElement>("#tok-struct")!.textContent = structToken;
+    const tokStruct = container.querySelector<HTMLElement>("#tok-struct");
+    if (tokStruct) tokStruct.textContent = structToken;
 
     // Token hints
     const hexHint    = container.querySelector<HTMLElement>("#tok-hex-hint");
@@ -718,7 +737,8 @@ function setupInteractivity(container: HTMLElement): void {
 
     // Round-trip verification
     const ok = decoded === id;
-    container.querySelector<HTMLElement>("#rt-formula")!.innerHTML =
+    const rtFormula = container.querySelector<HTMLElement>("#rt-formula");
+    if (rtFormula) rtFormula.innerHTML =
       `decode(${token}) = <strong>${decoded}</strong> ${ok ? '<span style="color:var(--xl-green)">✓</span>' : '<span style="color:var(--status-fail)">✗</span>'}`;
   }
 

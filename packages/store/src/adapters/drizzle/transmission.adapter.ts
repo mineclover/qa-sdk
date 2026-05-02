@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import type { TransmissionStore, TransmissionInsert } from "@qa-sdk/core";
 import type { DbExecutor } from "../../db/client.js";
 import { transmissions } from "../../db/schema.js";
@@ -18,6 +21,6 @@ export class DrizzleTransmissionStore implements TransmissionStore {
       platform: params.platform,
       env: params.env,
       recordCount: params.recordCount,
-    });
+    }).comment({ adapter: "TransmissionStore", method: "insert" });
   }
 }

@@ -1,1 +1,6 @@
+# Cloudflare Pages는 Pretty URLs로 /dashboard → dashboard.html 자동 매핑
+# HTML rewrite 규칙 불필요 (오히려 redirect loop 유발)
+
+# API 프록시
 /api/* https://platform-demo-api.astralclover.workers.dev/api/:splat 200
+/v1/*  https://platform-demo-api.astralclover.workers.dev/v1/:splat 200

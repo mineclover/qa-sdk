@@ -1,0 +1,12 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Domain Slice Sample API",
+    "version": "1.0.0"
+  },
+  "tags": [],
+  "paths": {},
+  "components": {
+    "schemas": {}
+  }
+}

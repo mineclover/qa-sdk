@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { Hono } from "hono";
 import type {
   EventRecord,
@@ -48,6 +51,34 @@ export interface QueryDeps {
 
 export function createQueryRoutes(deps: QueryDeps) {
   const app = new Hono();
+
+  // 최근 trace 목록 — :traceId 보다 먼저 매칭되어야 함
+  app.get("/v1/traces/recent", async (c) => {
+    const limit = parseInt(c.req.query("limit") ?? "50");
+    if (deps.traceStore.findRecent) {
+      const traces = await deps.traceStore.findRecent(limit);
+      return c.json({ items: traces.map(toTraceResponse), total: traces.length });
+    }
+    return c.json({ items: [], total: 0 });
+  });
+
+  // POST /v1/traces/bulk-records — 여러 trace의 records를 한 번에 조회 (N+1 해소)
+  app.post("/v1/traces/bulk-records", async (c) => {
+    const body = await c.req.json<{ traceIds: string[]; limit?: number }>();
+    if (!body.traceIds || !Array.isArray(body.traceIds)) {
+      return c.json({ error: "traceIds array required" }, 400);
+    }
+    const limit = body.limit ?? 20;
+    const traceIds = body.traceIds.slice(0, limit);
+
+    const result: Record<string, unknown[]> = {};
+    await Promise.all(traceIds.map(async (traceId) => {
+      const records = await deps.recordStore.findByTraceId(traceId);
+      result[traceId] = records.map(toEventRecord);
+    }));
+
+    return c.json(result);
+  });
 
   app.get("/v1/traces/:traceId", async (c) => {
     const traceId = c.req.param("traceId");
@@ -258,6 +289,7 @@ function toEventRecord(record: StoredRecord): EventRecord {
     payload: record.payload,
     qa_session_id: record.qaSessionId,
     _registry_warning: record.registryWarning,
+    address_context: record.addressContext ?? undefined,
   };
 }
 

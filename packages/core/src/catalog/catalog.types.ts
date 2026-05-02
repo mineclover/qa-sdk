@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * Catalog — 범용 카탈로그 인터페이스.
  *
@@ -78,6 +81,65 @@ export interface PrefixVersionDef {
   readonly version: string;
   readonly axisVersions: Record<string, string>;
   readonly refEntries?: Record<string, { values: readonly number[]; refVersion: string }>;
+  /** 경로 합산 세그먼트 (addressModel: "sum"일 때). 버전마다 세그먼트 구성이 다를 수 있음. */
+  readonly segments?: readonly PathSegment[];
+}
+
+/** 주소 모델: product(전곱, 기본) | sum(경로 합산) */
+export type AddressModel = "product" | "sum";
+
+/**
+ * 축 값 기반 분기 조건.
+ * spec-core의 StateCondition과 동일 구조 — 축 이름 + 값 매칭.
+ */
+export interface AxisCondition {
+  /** 축 라벨 (consumes 내 축) */
+  readonly axis: string;
+  /** entry 값 일치 (인덱스) */
+  readonly eq?: number;
+  /** entry 값 목록 포함 */
+  readonly in?: readonly number[];
+}
+
+/** 이벤트 전이 대상 */
+export interface EventTransition {
+  readonly eventKey: string;
+  readonly prefixId?: string;
+}
+
+/** 분기 라우팅 — 축 값에 따라 다른 이벤트로 전이 */
+export interface BranchRoute {
+  /** 분기 조건 (축 값 매칭) */
+  readonly when: AxisCondition;
+  /** 전이 대상 이벤트 */
+  readonly transition: EventTransition;
+}
+
+/**
+ * 경로 세그먼트 — prefix axis pool에서 선택적으로 소비하는 단위.
+ *
+ * 전곱은 pool의 모든 축을 1개 세그먼트로 소비하는 특수 케이스.
+ * 합산은 각 세그먼트가 pool의 부분집합을 소비하고, 주소 범위를 연접한다.
+ *
+ * 관계가 꼭 있어야 합산은 아님 — 소비 구조는 자유.
+ */
+export interface PathSegment {
+  /** 세그먼트 식별자 (prefix 내 유일) */
+  readonly segmentId: string;
+  /** prefix.dims 중 이 세그먼트가 소비하는 축 라벨 (부분집합) */
+  readonly consumes: readonly string[];
+  /** 각 소비 축의 capacity (consumes와 동일 순서). axis pool에서 파생 가능하나 명시 선언. */
+  readonly shape: readonly number[];
+  /** 전체 주소 공간에서의 시작 오프셋 */
+  readonly addressOffset: number;
+  /** 이 세그먼트의 주소 크기 (shape의 곱) */
+  readonly size: number;
+  /** 하위 세그먼트 (재귀, 깊이 무제한 — 비즈니스 흐름이 결정) */
+  readonly children?: readonly PathSegment[];
+  /** 세그먼트 전체 전이 (모든 값이 같은 이벤트로) */
+  readonly transition?: EventTransition;
+  /** 축 값별 분기 라우팅 (특정 값일 때만 전이) */
+  readonly routes?: readonly BranchRoute[];
 }
 
 export interface PrefixDef {
@@ -88,6 +150,8 @@ export interface PrefixDef {
   readonly dims: Record<string, DimRef>;
   readonly versions: readonly PrefixVersionDef[];
   readonly meta?: PrefixMeta;
+  /** 주소 모델 (미선언 시 "product" 기본값) */
+  readonly addressModel?: AddressModel;
 }
 
 // ── Table Schema ──────────────────────────────────────────────────────────
@@ -98,9 +162,17 @@ export type ColumnRef =
   | { readonly kind: "table_ref"; readonly table: string }
   | { readonly kind: "axis_ref"; readonly axisId: string };
 
+/** prefix dim에서 이 테이블을 table_ref로 참조하는 역방향 선언 */
+export interface TableRefSource {
+  readonly prefixId: string;
+  readonly dimLabel: string;
+}
+
 export interface TableSchema {
   readonly table: string;
   readonly columns: Record<string, ColumnRef>;
+  /** 이 테이블이 어떤 prefix dim에서 table_ref로 참조되는지 (colocation 선언) */
+  readonly referencedBy?: readonly TableRefSource[];
 }
 
 // ── Catalog ───────────────────────────────────────────────────────────────
@@ -112,3 +184,11 @@ export interface Catalog {
   readonly prefixes: Record<string, PrefixDef>;
   readonly tables?: Record<string, TableSchema>;
 }
+
+// ── Catalog 유틸리티 타입 ─────────────────────────────────────────────────
+
+/** Catalog에서 prefix 이름 리터럴 유니온 추출 */
+export type PrefixIds<C extends Catalog> = keyof C["prefixes"] & string;
+
+/** Catalog에서 axis 이름 리터럴 유니온 추출 */
+export type AxisIds<C extends Catalog> = keyof C["axes"] & string;

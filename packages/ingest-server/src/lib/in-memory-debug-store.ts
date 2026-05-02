@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { StoredRecord } from "@qa-sdk/core";
 import {
   DEFAULT_DEBUG_STORE_MAX_ENTRIES,
@@ -90,7 +93,7 @@ export class InMemoryDebugStore implements DebugStore {
     const normalizedLimit = normalizeLimit(limit, records.length);
 
     return records
-      .sort(compareRecordsByRecency)
+      .toSorted(compareRecordsByRecency)
       .slice(0, normalizedLimit)
       .map((record) => structuredClone(record));
   }

@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-engine-system
+// @def.doc qa-sdk-engine-system
+
 import type {
   DlqStore,
   GraphStore,
@@ -12,7 +15,7 @@ import type {
 import { newDlqId, newVerdictId, now } from "@qa-sdk/core";
 import { compileSpec } from "../spec-compiler/compile.js";
 import { evaluateConstraint } from "../matching/constraint-evaluator.js";
-import { matchGraphs } from "../matching/graph-matcher.js";
+import { matchViaPathMatcher } from "../matching/path-matcher-adapter.js";
 import { computeVerdict } from "../verdict/compute.js";
 
 export interface ComputePendingVerdictsDeps {
@@ -138,7 +141,7 @@ export async function computeTraceVerdict(
 
   // entry_conditions 평가: 조건 미충족 시 "skipped" verdict를 저장하고 종료
   if (specGraph.entry_conditions && specGraph.entry_conditions.length > 0) {
-    const sortedNodes = [...graph.nodes].sort(
+    const sortedNodes = [...graph.nodes].toSorted(
       (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
     );
     const firstNode = sortedNodes[0] ?? null;
@@ -176,7 +179,7 @@ export async function computeTraceVerdict(
     }
   }
 
-  const matchResult = matchGraphs(specGraph, graph);
+  const matchResult = matchViaPathMatcher(specGraph, graph);
   const report = computeVerdict(matchResult, specGraph, graph, session.sessionId);
 
   const verdictInsert: VerdictInsert = {

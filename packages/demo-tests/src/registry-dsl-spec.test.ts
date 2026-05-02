@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * Registry DSL Spec — 선언적 서비스 관리 DSL 스펙 + 메타 DSL
  *

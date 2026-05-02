@@ -1,0 +1,55 @@
+tags:
+  - name: bitmap
+    description: Bitmap issuance API (read-mostly slice).
+paths:
+  /bitmap/issue:
+    post:
+      tags: [bitmap]
+      operationId: issueBitmap
+      summary: Issue a signed VersionedBitmap for a user.
+      x-domain: bitmap
+      x-architecture-slice: bitmap-read-mostly
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BitmapIssueRequest"
+      responses:
+        "200":
+          description: Issued bitmap (signed).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BitmapIssueResponse"
+        "404":
+          description: User not found.
+components:
+  schemas:
+    BitmapIssueRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+      additionalProperties: false
+    BitmapIssueResponse:
+      type: object
+      required: [prefix, v, maskBase64, issuedAt, expiresAt, issuer, signature]
+      properties:
+        prefix:
+          type: string
+          enum: [sim.bitmap]
+        v:
+          type: string
+        maskBase64:
+          type: string
+        issuedAt:
+          type: integer
+        expiresAt:
+          type: integer
+        issuer:
+          type: string
+        signature:
+          type: string
+      additionalProperties: false

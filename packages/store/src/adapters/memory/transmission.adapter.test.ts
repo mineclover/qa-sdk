@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { describe, expect, it } from "vitest";
 import type { TransmissionInsert } from "@qa-sdk/core";
 import { InMemoryTransmissionStore } from "./transmission.adapter.js";

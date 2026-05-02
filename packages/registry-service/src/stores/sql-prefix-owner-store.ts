@@ -1,6 +1,10 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { SqlDriver } from "index-meta";
 import type { PrefixOwnerRecord, PrefixProfileMeta } from "../types/index.js";
 import type { PrefixOwnerStore, PrefixProfilePatch } from "./prefix-owner-store.js";
+import { parseJsonColumn } from "../lib/typed-json.js";
 
 export class SqlPrefixOwnerStore implements PrefixOwnerStore {
   constructor(private readonly driver: SqlDriver) {}
@@ -41,7 +45,7 @@ export class SqlPrefixOwnerStore implements PrefixOwnerStore {
 
     // meta: 기존 + patch 병합
     const mergedMeta: Record<string, unknown> | undefined = patch.meta
-      ? { ...(existing.meta ?? {}), ...patch.meta }
+      ? { ...existing.meta, ...patch.meta }
       : existing.meta ? { ...existing.meta } : undefined;
     if (patch.name && mergedMeta) {
       mergedMeta.name = patch.name;
@@ -78,7 +82,7 @@ function toRecord(row: PrefixRow): PrefixOwnerRecord {
     kind: row.kind as "leaf" | "composite",
     numberType: row.number_type as "number" | "bigint",
     createdAt: row.created_at,
-    meta: row.meta_json ? JSON.parse(row.meta_json) as PrefixProfileMeta : undefined,
-    labels: row.labels_json ? JSON.parse(row.labels_json) as string[] : undefined,
+    meta: parseJsonColumn<PrefixProfileMeta | undefined>(row.meta_json, undefined),
+    labels: parseJsonColumn<string[] | undefined>(row.labels_json, undefined),
   };
 }

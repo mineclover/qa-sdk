@@ -1,0 +1,221 @@
+{
+  "name": "Ontology Design & Validation Stabilization",
+  "description": "Stabilize qa-sdk ontology design and validation by defining local validation contracts, documentation graph requirements, allocation invariants, and handoff boundaries before implementing registry-service persistence or index-meta sync.",
+  "branchName": "ralph/ontology-design-validation-stabilization",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Consolidate Ontology Validation Scope",
+      "description": "As an ontology maintainer, I want a clear validation scope map so that agents know which documents, packages, and gates must be checked before changing ontology design.",
+      "acceptanceCriteria": [
+        "Add or update a spec/guide section that names the validation boundary for ontology design changes.",
+        "The boundary distinguishes definition-catalog validation, operational-ontology allocation validation, programming-artifact simulation validation, and registry-service/index-meta lifecycle validation.",
+        "The boundary states that registry-service/index-meta implementation is not required for local validation stories.",
+        "Relevant docs include `sources` pointing to implementation/test files where applicable.",
+        "`node packages/cli/dist/index.js def validate` passes.",
+        "`pnpm --filter operational-ontology test` passes.",
+        "`pnpm --filter operational-ontology typecheck` passes.",
+        "`pnpm --filter operational-ontology build` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Define Allocation Validation Contract",
+      "description": "As an ontology maintainer, I want allocation validation requirements written as a contract so that future registry persistence work preserves the current local allocation invariants.",
+      "acceptanceCriteria": [
+        "Document the current `allocateOntologyAddressSpace()` and `validateOntologyAddressAllocationPlan()` invariants.",
+        "Cover duplicate prefix/version allocation, missing taxonomy axis, product allocation, and sum segment allocation.",
+        "State which invariants belong to `operational-ontology` and which are deferred to registry-service persistence.",
+        "Link the contract to `docs/specs/operational-ontology/operational-ontology-registry-allocation.todo.md`.",
+        "Existing allocation tests remain the executable source of truth.",
+        "`pnpm --filter operational-ontology test` passes.",
+        "`pnpm --filter operational-ontology typecheck` passes.",
+        "`pnpm --filter operational-ontology build` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "Add Validation Matrix for Ontology Design Changes",
+      "description": "As an ontology maintainer, I want a scenario matrix for ontology design changes so that each kind of change has a known validation path.",
+      "acceptanceCriteria": [
+        "Add a matrix covering axis changes, taxonomy changes, relation/category changes, allocation policy changes, definition graph changes, and pack activation changes.",
+        "Each matrix row lists required docs, code owners, tests, and commands.",
+        "Core gate changes require impact analysis or escalation guidance rather than silent local edits.",
+        "The matrix references the 5Q checklist for new axes.",
+        "The matrix explicitly separates local validation from registry-service/index-meta activation.",
+        "`pnpm --filter operational-ontology test` passes.",
+        "`pnpm --filter operational-ontology typecheck` passes.",
+        "`pnpm --filter operational-ontology build` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001",
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "Reorganize Registry Allocation TODO into Executable Phases",
+      "description": "As a ralph-tui planner, I want the large registry allocation TODO split into execution phases so that each phase can become a small agent task.",
+      "acceptanceCriteria": [
+        "Group open TODO items into persistence schema, store adapter, service layer, index-meta sync, activation smoke, and prefix policy phases.",
+        "Each phase has a short goal, non-goals, prerequisites, and validation commands.",
+        "Cross-phase dependencies are explicit.",
+        "Phase 2 persistence tasks do not depend on implementing Phase 4 index-meta sync.",
+        "The original TODO intent is preserved; no open item is silently removed.",
+        "`pnpm --filter operational-ontology test` passes.",
+        "`pnpm --filter operational-ontology typecheck` passes.",
+        "`pnpm --filter operational-ontology build` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "Stabilize Definition Graph Requirements for Ontology Modules",
+      "description": "As a documentation maintainer, I want ontology module docs to have explicit graph requirements so that contains/link drift is caught before implementation starts.",
+      "acceptanceCriteria": [
+        "Define required frontmatter fields for ontology module, leaf, plan, todo, and knowledge docs.",
+        "Define when module docs must include `contains` links.",
+        "Define when leaf docs should split before exceeding 150 lines.",
+        "Document how `sources` should point from specs to implementation and tests.",
+        "`def validate` reports no warnings after the documentation updates.",
+        "`pnpm --filter operational-ontology test` passes.",
+        "`pnpm --filter operational-ontology typecheck` passes.",
+        "`pnpm --filter operational-ontology build` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "Add Local Validation Fixture for Allocation Drift",
+      "description": "As an ontology implementer, I want a targeted local fixture for allocation drift so that invalid allocation plans fail before registry persistence exists.",
+      "acceptanceCriteria": [
+        "Add or extend an operational-ontology test fixture for allocation drift.",
+        "The fixture covers at least one prefix/version collision.",
+        "The fixture covers at least one taxonomy-axis mismatch.",
+        "The fixture returns structured validation errors that identify the offending prefix, taxonomy, or axis.",
+        "The fixture does not require registry-service or index-meta.",
+        "`pnpm --filter operational-ontology test` passes.",
+        "`pnpm --filter operational-ontology typecheck` passes.",
+        "`pnpm --filter operational-ontology build` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "Specify Registry-Service Persistence Handoff",
+      "description": "As a future registry-service implementer, I want a handoff spec for ontology persistence so that DB schema work starts from stable local contracts.",
+      "acceptanceCriteria": [
+        "Define the persistence records expected for namespace, axis, taxonomy, allocation, and allocation segment.",
+        "Map each persistence record back to local allocation model fields.",
+        "State duplicate/collision rules that must be enforced at store or service level.",
+        "Identify which tests should be added under `registry-service` when persistence begins.",
+        "Keep actual DB schema implementation out of this story unless explicitly selected in a follow-up PRD.",
+        "`pnpm --filter operational-ontology test` passes.",
+        "`pnpm --filter operational-ontology typecheck` passes.",
+        "`pnpm --filter operational-ontology build` passes.",
+        "`node packages/cli/dist/index.js def validate` passes.",
+        "If registry-service code is changed, `pnpm --filter registry-service test` passes."
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002",
+        "US-004"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-008",
+      "title": "Specify Index-Meta Sync Handoff",
+      "description": "As a future index-meta implementer, I want a sync handoff spec so that active ontology allocations can later materialize into prefix registry and schema version records.",
+      "acceptanceCriteria": [
+        "Define what data active allocation must send to index-meta.",
+        "Distinguish product allocation, sum allocation, and segment materialization.",
+        "State idempotency and collision expectations for sync.",
+        "Define minimum activation smoke checks.",
+        "Keep actual index-meta sync implementation out of this story unless explicitly selected in a follow-up PRD.",
+        "`pnpm --filter operational-ontology test` passes.",
+        "`pnpm --filter operational-ontology typecheck` passes.",
+        "`pnpm --filter operational-ontology build` passes.",
+        "`node packages/cli/dist/index.js def validate` passes.",
+        "If index-meta code is changed, `pnpm --filter index-meta test` passes."
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002",
+        "US-004",
+        "US-007"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-009",
+      "title": "Define Catalog Scoped Prefix Decision Criteria",
+      "description": "As an ontology architect, I want scoped prefix decision criteria so that prefix namespace changes are not made before there is a concrete need.",
+      "acceptanceCriteria": [
+        "Write decision criteria for retaining global prefix uniqueness versus introducing scoped prefixes.",
+        "Include scenarios involving catalog id, ontology id, tenant boundary, and pack collisions.",
+        "List affected surfaces: `/prefixes/:prefix`, index-meta key shape, decode-service/cache keys, and migration plan.",
+        "State that registry-service prefix table schema must not change until this decision is resolved.",
+        "If a new decision doc is created, it links back to the registry allocation TODO.",
+        "`pnpm --filter operational-ontology test` passes.",
+        "`pnpm --filter operational-ontology typecheck` passes.",
+        "`pnpm --filter operational-ontology build` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-004"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-14T01:24:13.085Z"
+  }
+}

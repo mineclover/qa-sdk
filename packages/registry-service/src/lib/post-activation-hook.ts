@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 /**
  * post-activation-hook — 버전 활성화 성공 후 DKG 기록.
  *

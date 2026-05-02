@@ -1,0 +1,30 @@
+{
+  "topology": "command-only",
+  "openmetadata": {
+    "domain": {
+      "name": "Authenticate",
+      "team": "Auth Team",
+      "owner": "sim-auth-owner"
+    },
+    "glossary": [
+      {
+        "term": "Authenticate",
+        "description": "Email + password verification command; returns AuthenticatedSession composed from user/role/role-assignment read models."
+      },
+      {
+        "term": "CredentialStore",
+        "description": "Pluggable store of password verifiers; production replaces NoopCredentialStore with bcrypt/argon2 backend."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "authenticate-compose",
+        "from": "auth.users + auth.roles + auth.role_assignments",
+        "to": "session.authenticated",
+        "via": "authenticate-use-case-composition"
+      }
+    ],
+    "qualityTests": []
+  },
+  "cacheKeys": []
+}

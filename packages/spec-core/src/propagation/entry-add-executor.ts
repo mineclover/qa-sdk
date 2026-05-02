@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * entry-add-executor — 축 entry 추가 실행기.
  *
@@ -12,14 +15,14 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import type { GraphRegistry } from "../dkg/graph-registry.js";
+import type { GraphRegistry } from "dkg";
 import type {
   DkgNode,
   AxisNode,
   VersionEventNode,
   VersionChange,
-} from "../dkg/dkg.types.js";
-import { safeEntryAdd, type SafeEntryAddResult } from "../dkg/skills/safe-entry-add.js";
+} from "dkg";
+import { safeEntryAdd, type SafeEntryAddResult } from "dkg";
 import {
   addEntryToCatalog,
   expandCapacity,
@@ -65,7 +68,7 @@ export function executeEntryAdd(
   const warnings: string[] = [];
 
   // ── 1. 멱등성 — 동일 entry에 대한 VersionEvent가 이미 존재하는지 확인 ──
-  const existingEvents = graph.getNodesByKind("version-event") as VersionEventNode[];
+  const existingEvents = graph.getNodesByKind("version-event");
   const alreadyRecorded = existingEvents.some(
     (e) =>
       e.subjectId === axisId &&
@@ -79,7 +82,7 @@ export function executeEntryAdd(
   }
 
   // ── 2. 안전성 검사 ──
-  const check = safeEntryAdd(catalog as any, graph, { axisId, entry });
+  const check = safeEntryAdd(catalog, graph, { axisId, entry });
 
   let capacityExpanded = false;
 
@@ -130,6 +133,7 @@ export function executeEntryAdd(
   }
 
   // ── 4. VersionEvent 생성 ──
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- ISO string always contains "T"
   const date = new Date().toISOString().split("T")[0]!;
   const changes: VersionChange[] = [
     { kind: "entry-added", detail: `"${entry}" added to ${axisId}` },

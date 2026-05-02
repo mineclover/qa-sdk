@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * validate-entry.test.ts — validateEntryForInsert 유닛 테스트
  *

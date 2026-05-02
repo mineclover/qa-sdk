@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import { describe, it, expect, beforeEach } from "vitest";
 import { InMemoryPrefixOwnerStore } from "./in-memory-prefix-owner-store.js";
 import type { PrefixOwnerStore } from "./prefix-owner-store.js";
@@ -43,7 +46,7 @@ function runContractTests(name: string, factory: () => PrefixOwnerStore) {
       await store.register(makeRecord("action", { owner: "service-b" }));
       const list = await store.list();
       expect(list).toHaveLength(2);
-      expect(list.map((r) => r.prefix).sort()).toEqual(["action", "role"]);
+      expect(list.map((r) => r.prefix).toSorted()).toEqual(["action", "role"]);
     });
 
     it("delete removes record", async () => {

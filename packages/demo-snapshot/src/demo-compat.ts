@@ -4,6 +4,7 @@
  * 의존 방향: demo-catalog → demo-compat → demo-snapshot/demo-domains
  */
 
+import { calcWeights } from "weighted-index";
 import { DEMO_CATALOG, type Axis, type Domain, type AxisVersionSnapshot, type VersionedAxis } from "./demo-catalog.js";
 
 // ── 내부 헬퍼 ────────────────────────────────────────────────────────────────
@@ -21,14 +22,6 @@ function axisCap(axisId: string, ver: string): number {
   return snap.capacity ?? snap.entries.length;
 }
 
-function computeStrides(shape: readonly number[]): readonly number[] {
-  const strides: number[] = new Array(shape.length);
-  strides[shape.length - 1] = 1;
-  for (let i = shape.length - 2; i >= 0; i--) {
-    strides[i] = strides[i + 1] * shape[i + 1];
-  }
-  return strides;
-}
 
 function catalogAxisToLegacy(axisId: string, ver: string, overrideId?: string): Axis {
   const axis = (C.axes as Record<string, VersionedAxis>)[axisId];
@@ -38,7 +31,7 @@ function catalogAxisToLegacy(axisId: string, ver: string, overrideId?: string): 
     name: axis.name,
     entries: snap.entries,
     ...(snap.capacity !== undefined ? { capacity: snap.capacity } : {}),
-    ko: { ...(snap.ko ?? {}) },
+    ko: { ...snap.ko },
   };
 }
 
@@ -112,7 +105,7 @@ export const DEMO_SVC_SHAPE = _svcPrefix.labels.map(label => {
   return axisCap(dim.axisId as keyof typeof C.axes, _svcV1.axisVersions[label]);
 }) as unknown as readonly [number, number, number, number];
 
-export const DEMO_SVC_STRIDES = computeStrides(DEMO_SVC_SHAPE) as readonly [number, number, number, number];
+export const DEMO_SVC_STRIDES = calcWeights(DEMO_SVC_SHAPE as unknown as number[]) as unknown as readonly [number, number, number, number];
 
 export function demoEncodeSvc(coords: readonly number[]): number {
   let v = 0;
@@ -135,7 +128,9 @@ export function demoDecodeSvc(v: number): number[] {
 const _permV1 = C.prefixes.permission.versions[0];
 const _evtV1 = C.prefixes.event.versions[0];
 
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- permission prefix v1에 refEntries 필수 (CON-006)
 export const DEMO_PERM_SVC_VALUES = _permV1.refEntries!.perm_svc.values;
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- event prefix v1에 refEntries 필수 (CON-006)
 export const DEMO_EVT_SVC_VALUES = _evtV1.refEntries!.evt_svc.values;
 
 // ── Permission / Event helpers ──────────────────────────────────────────────

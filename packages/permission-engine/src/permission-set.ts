@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * permission-set.ts — 비트마스크 기반 권한 관리 엔진.
  *
@@ -16,7 +19,6 @@ import {
   setBit,
   clearBit,
   hasBit,
-  buildMask,
   hasAnyBit,
   popcount,
   maskAnd,
@@ -227,8 +229,8 @@ export class PermissionSet {
 
   /** boolean[][] 매트릭스 반환. matrix[featureIdx][roleIdx]. */
   toMatrix(): boolean[][] {
-    return this._featureIds.map((_, fi) =>
-      this._roleIds.map((_, ri) =>
+    return this._featureIds.map((_f, fi) =>
+      this._roleIds.map((_r, ri) =>
         hasBit(this.mask, this.index.encode([fi + 1, ri + 1]))
       )
     );

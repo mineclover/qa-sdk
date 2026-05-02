@@ -1,0 +1,60 @@
+import { Injectable } from "@nestjs/common";
+
+import type { <%= classify(name) %>CreatedEvent } from "../../application/ports/<%= dasherize(name) %>-outbox.port";
+import type { <%= classify(name) %>TransactionScope } from "../../application/ports/<%= dasherize(name) %>-transaction.port";
+import type { <%= classify(name) %>Snapshot } from "../../domain";
+
+export interface <%= classify(name) %>OutboxRecord {
+  readonly id: string;
+  readonly eventName: "<%= dasherize(name) %>.created";
+  readonly eventVersion: "v1";
+  readonly aggregateId: string;
+  readonly payload: <%= classify(name) %>CreatedEvent;
+  readonly transactionId: string;
+}
+
+export interface <%= classify(name) %>UnitOfWorkScope extends <%= classify(name) %>TransactionScope {
+  readonly pendingSnapshots: Map<string, <%= classify(name) %>Snapshot>;
+  readonly pendingOutbox: <%= classify(name) %>OutboxRecord[];
+}
+
+@Injectable()
+export class <%= classify(name) %>UnitOfWorkStore {
+  private readonly snapshots = new Map<string, <%= classify(name) %>Snapshot>();
+  private readonly outbox: <%= classify(name) %>OutboxRecord[] = [];
+  private nextAutocommitId = 1;
+
+  begin(id: string, name: string): <%= classify(name) %>UnitOfWorkScope {
+    return {
+      id,
+      name,
+      pendingSnapshots: new Map<string, <%= classify(name) %>Snapshot>(),
+      pendingOutbox: [],
+    };
+  }
+
+  beginAutocommit(name: string): <%= classify(name) %>UnitOfWorkScope {
+    return this.begin(`${name}:${this.nextAutocommitId++}`, name);
+  }
+
+  commit(scope: <%= classify(name) %>UnitOfWorkScope): void {
+    for (const [id, snapshot] of scope.pendingSnapshots) {
+      this.snapshots.set(id, snapshot);
+    }
+    this.outbox.push(...scope.pendingOutbox);
+  }
+
+  findSnapshot(id: string): <%= classify(name) %>Snapshot | null {
+    return this.snapshots.get(id) ?? null;
+  }
+
+  listOutbox(): readonly <%= classify(name) %>OutboxRecord[] {
+    return [...this.outbox];
+  }
+}
+
+export function is<%= classify(name) %>UnitOfWorkScope(
+  scope: <%= classify(name) %>TransactionScope | undefined,
+): scope is <%= classify(name) %>UnitOfWorkScope {
+  return Boolean(scope && "pendingSnapshots" in scope && "pendingOutbox" in scope);
+}

@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { describe, expect, it } from "vitest";
 import type { ScenarioSpec } from "@qa-sdk/core";
 import { InMemoryScenarioSpecStore } from "./scenario-spec.adapter.js";

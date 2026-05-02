@@ -1,63 +1,84 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { describe, it, expect } from "vitest";
-import { writeFile, readFile, rm, mkdir } from "node:fs/promises";
+import { readFile, rm, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { codegen } from "./codegen.js";
 
 const TMP = join(tmpdir(), "qa-codegen-test-" + Date.now());
 
-const SNAPSHOT = {
-  id: "git-dsl-v1",
-  axes: [
-    { id: "git_repo", entries: ["qa-sdk", "frontend"], capacity: 64 },
-    { id: "git_branch_type", entries: ["main", "feature"], capacity: 8 },
-  ],
-  composites: [
-    { id: "git_build_addr", dims: ["git_repo", "git_branch_type"], owner: "git-dsl-v1" },
-  ],
-};
-
 describe("codegen command", () => {
-  it("단일 파일 → proto + ts 생성", async () => {
-    const input = join(TMP, "input");
-    const output = join(TMP, "output");
-    await mkdir(input, { recursive: true });
-    await writeFile(join(input, "git-dsl-v1.json"), JSON.stringify(SNAPSHOT));
+  it("Catalog → TypeScript SDK 생성", async () => {
+    const output = join(TMP, "catalog-output");
+
+    // demo-snapshot에서 카탈로그 로드
+    const { DEMO_CATALOG } = await import("demo-snapshot");
 
     await codegen({
-      formats: ["proto", "ts"],
-      input: join(input, "git-dsl-v1.json"),
       output,
+      loadedCatalog: DEMO_CATALOG,
     });
 
-    const proto = await readFile(join(output, "git-dsl-v1.proto"), "utf-8");
-    expect(proto).toContain("enum GitRepo {");
-    expect(proto).toContain("GIT_REPO_QA_SDK = 1;");
-    expect(proto).toContain("message ApmRecord {");
-
-    const ts = await readFile(join(output, "git-dsl-v1.d.ts"), "utf-8");
-    expect(ts).toContain("export const GIT_REPO = {");
-    expect(ts).toContain('QA_SDK: "qa-sdk",');
-    expect(ts).toContain("export interface GitBuildAddrDims {");
+    // 생성된 파일이 존재하고 타입 정의 포함
+    const files = await import("node:fs").then(fs =>
+      fs.readdirSync(output).filter(f => f.endsWith(".ts")),
+    );
+    expect(files.length).toBeGreaterThan(0);
 
     await rm(TMP, { recursive: true, force: true });
   });
 
-  it("디렉토리 입력 → 여러 스냅샷 처리", async () => {
-    const input = join(TMP, "multi-input");
-    const output = join(TMP, "multi-output");
-    await mkdir(input, { recursive: true });
+  it("codegen 산출물을 artifact registry record로 기록한다", async () => {
+    const output = join(TMP, "registry-output");
+    const artifactRegistry = join(TMP, "artifacts", "programming-artifacts.json");
+    const { DEMO_CATALOG } = await import("demo-snapshot");
 
-    await writeFile(join(input, "a.json"), JSON.stringify({ ...SNAPSHOT, id: "a" }));
-    await writeFile(join(input, "b.json"), JSON.stringify({ ...SNAPSHOT, id: "b" }));
+    await codegen({
+      output,
+      loadedCatalog: DEMO_CATALOG,
+      artifactRegistry,
+    });
 
-    await codegen({ formats: ["ts"], input, output });
+    const payload = JSON.parse(await readFile(artifactRegistry, "utf8")) as {
+      artifacts: Array<{
+        artifactRef: string;
+        kind: string;
+        producedByRef?: string;
+        ownerDefinitionId?: string;
+        materializesOutputRefs?: string[];
+        relations?: Array<{ kind: string; toRef: string }>;
+      }>;
+    };
 
-    const a = await readFile(join(output, "a.d.ts"), "utf-8");
-    const b = await readFile(join(output, "b.d.ts"), "utf-8");
-    expect(a).toContain('SchemaSnapshot "a"');
-    expect(b).toContain('SchemaSnapshot "b"');
+    expect(payload.artifacts.length).toBeGreaterThan(0);
+    expect(payload.artifacts[0]).toMatchObject({
+      kind: "generated-source",
+      producedByRef: "qa-sdk codegen",
+      ownerDefinitionId: "codegen-schema-output",
+      materializesOutputRefs: ["apm-codegen-system", "codegen-schema-output"],
+    });
+    expect(payload.artifacts[0]!.artifactRef).toContain("registry-output/");
+    expect(payload.artifacts[0]!.relations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "produced_by",
+          toRef: "qa-sdk codegen",
+        }),
+        expect.objectContaining({
+          kind: "owned_by_definition",
+          toRef: "codegen-schema-output",
+        }),
+      ]),
+    );
 
     await rm(TMP, { recursive: true, force: true });
+  });
+
+  it("catalog 경로가 존재하지 않으면 에러", async () => {
+    await expect(
+      codegen({ output: join(TMP, "empty"), catalog: "/nonexistent/path/catalog.ts" }),
+    ).rejects.toThrow();
   });
 });

@@ -1,0 +1,5 @@
+export interface Create<%= classify(name) %>Command {
+  readonly id: string;
+  readonly traceId?: string;
+  readonly correlationId?: string;
+}

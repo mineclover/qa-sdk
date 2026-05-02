@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * obs — Obsidian spec-prefix 볼트 조회/수정 CLI.
  *
@@ -18,7 +21,8 @@ function obs(args: string[]): string {
     return stdout.trim();
   } catch (err: unknown) {
     if (isExecaError(err)) {
-      console.error(err.stderr?.trim() || err.shortMessage);
+      const stderr = typeof err.stderr === "string" ? err.stderr.trim() : String(err.stderr ?? "").trim();
+      console.error(stderr || err.shortMessage);
     } else {
       console.error(err instanceof Error ? err.message : String(err));
     }

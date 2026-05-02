@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /**
  * CatalogRegistry — 멀티 카탈로그 인메모리 레지스트리.
  *

@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * decode-distribution E2E 테스트
  *
@@ -12,10 +15,12 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { MetaRegistry } from "index-meta";
-import { MetaResolver } from "index-meta";
-import { PrefixDecoder } from "index-meta";
-import type { PrefixDecoderConfig } from "index-meta";
+import {
+  MetaRegistry,
+  MetaResolver,
+  PrefixDecoder,
+  type PrefixDecoderConfig,
+} from "index-meta";
 import { AXIS } from "demo-snapshot";
 
 // ── 픽스처: 2-level cross-index ──────────────────────────────────────────────

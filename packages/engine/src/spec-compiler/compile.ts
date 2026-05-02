@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-engine-system
+// @def.doc qa-sdk-engine-system
+
 import type {
   ScenarioSpec,
   ScenarioStep,
@@ -11,7 +14,7 @@ import type {
  * ScenarioSpec DSL → SpecGraph 변환.
  * steps의 next/branches 정의를 기반으로 노드·엣지를 생성한다.
  * spec.entry_conditions는 SpecGraph에 그대로 전달되며,
- * computeTraceVerdict에서 matchGraphs 호출 전에 평가된다.
+ * computeTraceVerdict에서 매칭 호출 전에 평가된다.
  */
 export function compileSpec(spec: ScenarioSpec): SpecGraph {
   const nodes: SpecNode[] = spec.steps.map(projectStep);

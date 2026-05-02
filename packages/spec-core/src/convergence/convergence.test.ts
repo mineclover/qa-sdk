@@ -1,16 +1,19 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 import { describe, it, expect, beforeEach } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
-import { GraphRegistry } from "../dkg/graph-registry.js";
-import { deriveFromCatalog } from "../dkg/catalog-derive.js";
-import { compareAxes, comparePrefixes, scanAxisOverlaps } from "./symbol-comparator.js";
-import { compareDecisions, scanDecisionConflicts } from "./decision-comparator.js";
-import { discoverCausality } from "./causal-discovery.js";
-import { discoverCausalityWithObservations } from "./causal-discovery.js";
-import { analyzeSimplification, scanAllSimplifications } from "./simplification-advisor.js";
-import { recommendFromSimplification, recommendFromObservation, recommendFromCausality, recommendAll } from "./boundary-recommender.js";
-import { runConvergenceAnalysis } from "./convergence-runner.js";
-import type { DecisionNode, IntentLinkNode, DomainNode } from "../dkg/dkg.types.js";
-import type { CoOccurrence, EntryUsage, AddressUsage, UsageData } from "./convergence.types.js";
+import { GraphRegistry, deriveFromCatalog } from "dkg";
+import {
+  compareAxes, comparePrefixes, scanAxisOverlaps,
+  compareDecisions, scanDecisionConflicts,
+  discoverCausality, discoverCausalityWithObservations,
+  analyzeSimplification, scanAllSimplifications,
+  recommendFromSimplification, recommendFromObservation, recommendFromCausality, recommendAll,
+  runConvergenceAnalysis,
+} from "@qa-sdk/convergence";
+import type { DecisionNode, IntentLinkNode, DomainNode } from "dkg";
+import type { CoOccurrence, EntryUsage, AddressUsage, UsageData } from "@qa-sdk/convergence";
 
 let graph: GraphRegistry;
 

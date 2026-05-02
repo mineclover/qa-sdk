@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "sourceMap": true,
+    "rootDir": ".",
+    "paths": {
+      "@sample/contracts": ["./packages/contracts/src/index.ts"],
+      "@sample/platform": ["./packages/platform/src/index.ts"]
+    }
+  }
+}

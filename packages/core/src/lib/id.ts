@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { ulid } from "ulid";
 
 export function newTransmissionId(): string {

@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * vocab/ — 문자열 ↔ 정수 매핑 모듈.
  *
@@ -29,3 +32,9 @@ export {
   createBinder,
   type PartialBinder,
 } from "./partial-binder.js";
+
+export {
+  DisjointUnionIndex,
+  UnionKindError,
+  type UnionVariant,
+} from "./union-index.js";

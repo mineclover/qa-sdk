@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * format.ts — 숫자·텍스트 포매팅 유틸리티.
  */

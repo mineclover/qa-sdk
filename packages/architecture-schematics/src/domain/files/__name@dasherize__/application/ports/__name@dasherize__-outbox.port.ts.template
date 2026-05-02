@@ -1,0 +1,10 @@
+import type { <%= classify(name) %>TransactionScope } from "./<%= dasherize(name) %>-transaction.port";
+
+export interface <%= classify(name) %>CreatedEvent {
+  readonly id: string;
+  readonly occurredAt: string;
+}
+
+export abstract class <%= classify(name) %>OutboxPort {
+  abstract appendCreated(event: <%= classify(name) %>CreatedEvent, scope?: <%= classify(name) %>TransactionScope): Promise<void>;
+}

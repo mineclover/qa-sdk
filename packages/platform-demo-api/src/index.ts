@@ -1,20 +1,22 @@
+// @def.boundary platform-demo-system
+// @def.doc platform-demo-system
+
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
   registry,
-  svcCodec, permCodec, evtCodec, permCodecV2, evtCodecV2,
+  permCodec, evtCodec, permCodecV2, evtCodecV2,
   permCodecV3, evtCodecV3, permCodecV4, evtCodecV4,
   ENV_KO, REGION_KO, SVC_NAME_KO, NS_KO, ROLE_KO, EVT_KO,
-  ENVS, REGIONS, SVCS, NSS, ROLES, EVENTS, INITIATORS,
+  ENVS, REGIONS, SVCS, NSS, INITIATORS,
   PERM_SVC_VALUES, EVT_SVC_VALUES,
-  ROLES_V1, EVENTS_V1,
 } from "./registry.js";
 import {
   demoEncodeSvc, demoDecodeSvc, DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS,
   demoRolesFor, demoRoleStride, demoEventsFor, demoEvtStride,
-  DEMO_FEATURES_V1, DEMO_FEATURES_V2, DEMO_FEATURES_V4, demoFeatures,
-  DEMO_ROLE_POS_V1, DEMO_ROLE_POS_V2, demoRolePos,
-  DEMO_ROLES_V1, DEMO_ROLES_V2, DEMO_ROLES_V4,
+  DEMO_FEATURES_V1, DEMO_FEATURES_V4, demoFeatures,
+  demoRolePos,
+  DEMO_ROLES_V4,
   type DemoVer, type DemoFeatureDef,
 } from "demo-snapshot";
 import { PermissionSet, type DimDef } from "permission-engine";
@@ -67,11 +69,6 @@ function decodeSvcValue(value: number): { env: string; region: string; svc_name:
 
 // ── Scenario / Features constants (demo-snapshot SSOT) ───────────────────
 
-const ROLE_POS     = DEMO_ROLE_POS_V2;
-const ROLE_POS_V1  = DEMO_ROLE_POS_V1;
-const ROLE_LIST    = DEMO_ROLES_V2;
-const ROLE_LIST_V1 = DEMO_ROLES_V1;
-const FEATURE_DEFS    = DEMO_FEATURES_V2;
 const FEATURE_DEFS_V1 = DEMO_FEATURES_V1;
 
 // ── Version-aware helpers ─────────────────────────────────────────────────
@@ -135,8 +132,9 @@ app.use("*", cors({
   allowMethods: ["GET", "POST", "PATCH", "OPTIONS"],
 }));
 
-// GET /api/health
-app.get("/api/health", (c) => c.json({ ok: true }));
+// GET /health, /api/health
+app.get("/health", (c) => c.json({ ok: true, service: "platform-demo-api" }));
+app.get("/api/health", (c) => c.json({ ok: true, service: "platform-demo-api" }));
 
 // ── Prefix meta route ─────────────────────────────────────────────────────
 
@@ -438,6 +436,7 @@ app.get("/api/scenario", async (c) => {
     }
     const role = roleParam;
     const roleKo = ROLE_KO[role] ?? role;
+    // eslint-disable-next-line typescript/no-non-null-assertion -- `role in rolePos_` 직후
     const rolePos = rolePos_[role]!;
     const grants = await loadGrants(c.env.DB);
 
@@ -538,12 +537,14 @@ app.get("/api/grant-table", async (c) => {
     const codec = getEvtCodec(ver);
     const grants = await loadGrants(c.env.DB);
 
-    const rows = featureDefs.map((f) =>
+    const rows = featureDefs.flatMap((f) =>
       [...roleList].map((role) => {
+        // eslint-disable-next-line typescript/no-non-null-assertion -- role은 roleList에서 유래
         const rolePos = rolePos_[role]!;
         const permValue = (f.permSvcPos - 1) * roleStride + (rolePos - 1);
         const granted = isGrantedVer(ver, grants, f.id, role);
 
+        // eslint-disable-next-line typescript/no-non-null-assertion -- permSvcPos는 1-based 유효 인덱스
         const svcValue  = PERM_SVC_VALUES[f.permSvcPos - 1]!;
         const svcInfo   = decodeSvcValue(svcValue);
 
@@ -584,7 +585,7 @@ app.get("/api/grant-table", async (c) => {
           eventType,
         };
       })
-    ).flat();
+    );
 
     return c.json({ rows });
   } catch (e) {

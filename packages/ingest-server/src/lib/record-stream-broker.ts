@@ -1,4 +1,10 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { StoredRecord } from "@qa-sdk/core";
+import { createLogger } from "./logger.js";
+
+const logger = createLogger("record-stream-broker");
 
 type RecordListener = (record: StoredRecord) => void | Promise<void>;
 type SubscriberMap = Map<string, Set<RecordListener>>;
@@ -42,6 +48,9 @@ export class RecordStreamBroker {
         record,
       );
     }
+
+    // "*" 와일드카드 시나리오 구독자에게 모든 레코드 전달 (LIVE 모니터링)
+    this.publishToSubscribers(this.scenarioSubscribers, "*", record);
   }
 
   publishToScenario(scenarioId: string, record: StoredRecord): void {
@@ -128,10 +137,10 @@ export class RecordStreamBroker {
       try {
         const result = listener(snapshot);
         Promise.resolve(result).catch((err: unknown) => {
-          console.error("[record-stream-broker] async listener error", err);
+          logger.error({ err, eventKey: record.eventKey }, "async listener error");
         });
       } catch (err: unknown) {
-        console.error("[record-stream-broker] sync listener error", err);
+        logger.error({ err, eventKey: record.eventKey }, "sync listener error");
       }
     }
   }

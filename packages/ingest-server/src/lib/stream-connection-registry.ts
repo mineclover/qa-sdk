@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 type CloseReason = string;
 
 export interface ManagedStreamConnection {
@@ -57,7 +60,7 @@ export function createStreamConnectionRegistry(): StreamConnectionRegistry {
             // Shutdown should continue even if a client socket is already gone.
           }
         }),
-      ).then(() => {});
+      ).then(() => undefined);
 
       return shutdownPromise;
     },

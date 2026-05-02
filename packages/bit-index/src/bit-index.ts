@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 /**
  * bit-index.ts — 차원별 비트 패킹 인덱스
  *
@@ -33,7 +36,6 @@
 
 import {
   createBitFieldLayout,
-  bitPack,
   bitUnpack,
   bitPackToBytes,
   bitPackToHex,

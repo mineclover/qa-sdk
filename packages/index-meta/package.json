@@ -25,6 +25,11 @@
       "types": "./dist/decode.d.ts",
       "import": "./dist/decode.js",
       "require": "./dist/decode.cjs"
+    },
+    "./workers": {
+      "types": "./dist/workers.d.ts",
+      "import": "./dist/workers.js",
+      "require": "./dist/workers.cjs"
     }
   },
   "main": "./dist/index.cjs",
@@ -38,14 +43,17 @@
     "dev": "tsup --watch",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
+    "drizzle-orm": "catalog:",
     "weighted-index": "workspace:*"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
-    "better-sqlite3": "^12.8.0",
+    "@types/better-sqlite3": "catalog:",
+    "better-sqlite3": "catalog:",
+    "drizzle-kit": "catalog:",
     "tsup": "^8.5.1",
     "typescript": "^5.8.2",
     "vitest": "^1.6.1"

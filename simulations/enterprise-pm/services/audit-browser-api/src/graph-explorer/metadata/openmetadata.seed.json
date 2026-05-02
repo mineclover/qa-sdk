@@ -1,0 +1,63 @@
+{
+  "topology": "bff",
+  "openmetadata": {
+    "domain": {
+      "name": "GraphExplorer",
+      "team": "Audit Browser Team",
+      "owner": "sim-audit-browser-owner"
+    },
+    "glossary": [
+      {
+        "term": "AuthorizationGraphSnapshot",
+        "description": "Versioned snapshot of the authorization graph (realms/nodes/relations)."
+      },
+      {
+        "term": "GraphDiff",
+        "description": "Computed delta between two authorization graph snapshots."
+      },
+      {
+        "term": "GraphRetention",
+        "description": "Bounded retention policy that keeps the latest N snapshots per graph."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "graph-explorer-snapshot-read",
+        "from": "authorization-ontology.graph_snapshots",
+        "to": "experience.graph_catalog",
+        "via": "graph-explorer-bff"
+      },
+      {
+        "name": "graph-explorer-retention-prune",
+        "from": "authorization-ontology.graph_snapshots",
+        "to": "ingest.graph_retention_events",
+        "via": "graph-explorer-housekeeping"
+      }
+    ],
+    "qualityTests": []
+  },
+  "cacheKeys": [
+    {
+      "id": "graph-explorer-bff-catalog",
+      "domain": "graph-explorer",
+      "purpose": "bff_catalog",
+      "version": "v1",
+      "prefix": "graph-explorer-bff-catalog",
+      "segments": [],
+      "ttl": "short",
+      "openmetadataEntity": "experience.graph_catalog"
+    },
+    {
+      "id": "graph-explorer-bff-snapshots",
+      "domain": "graph-explorer",
+      "purpose": "bff_snapshots",
+      "version": "v1",
+      "prefix": "graph-explorer-bff-catalog",
+      "segments": [
+        { "name": "graphId" }
+      ],
+      "ttl": "short",
+      "openmetadataEntity": "experience.graph_snapshots"
+    }
+  ]
+}

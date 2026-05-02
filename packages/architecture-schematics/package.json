@@ -1,0 +1,43 @@
+{
+  "name": "@qa-sdk/scaffold",
+  "version": "0.1.0",
+  "description": "Internal NestJS schematics for Domain Slice Architecture scaffolding",
+  "license": "UNLICENSED",
+  "type": "module",
+  "schematics": "./collection.json",
+  "bin": {
+    "qa-scaffold": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "collection.json",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "pnpm build && vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@angular-devkit/core": "^19.2.15",
+    "@angular-devkit/schematics": "^19.2.15",
+    "@nestjs/schematics": "^11.0.9",
+    "prettier": "^3.8.3",
+    "typescript": "^5.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.5.1",
+    "vitest": "^3.0.0"
+  }
+}

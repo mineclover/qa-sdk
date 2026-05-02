@@ -3,15 +3,15 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG } from "demo-snapshot";
-import { createQaContext } from "./qa-context.js";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
+import { createQaContext } from "@qa-sdk/context";
 import { catalogToPrefixSpecs } from "@qa-sdk/spec-core";
+import { auditCoverage, traceFlows, bootstrapDkg } from "dkg";
 import {
   aggregateUsageData, analyzeCollectionHealth,
   type AddressContextRecord,
-  auditCoverage, traceFlows, bootstrapDkg,
   aggregateByDsl, aggregateByCategory, aggregateByService,
-} from "@qa-sdk/spec-core/analysis";
+} from "@qa-sdk/convergence";
 
 describe("DSL 종단 E2E", () => {
 
@@ -62,7 +62,7 @@ describe("DSL 종단 E2E", () => {
     }
 
     const usage = aggregateUsageData(DEMO_CATALOG, records);
-    const graph = bootstrapDkg({ date: "2026-03-20" });
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG, date: "2026-03-20" });
     const audit = auditCoverage(DEMO_CATALOG, graph, usage.entryUsages, usage.addressUsages, { date: "2026-03-20" });
 
     console.log(`  coverage: ${audit.report.summary}`);
@@ -93,7 +93,7 @@ describe("DSL 종단 E2E", () => {
       records.push({ address_context: { flow_point: fp }, timestamp: new Date(2026, 2, 20, 3, 0, i).toISOString() });
     }
 
-    const graph = bootstrapDkg({ date: "2026-03-20" });
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG, date: "2026-03-20" });
     const trace = traceFlows(graph, records, { date: "2026-03-20" });
 
     console.log(`  flow-trace: ${trace.summary}`);
@@ -158,13 +158,13 @@ describe("DSL 종단 E2E", () => {
     console.log(`  records: ${usage.sourceStats!.totalRecords}`);
 
     console.log(`\n  [분기 지점: flow_step]`);
-    for (const e of flowStepEntries.sort((a, b) => b.count - a.count)) {
+    for (const e of flowStepEntries.toSorted((a, b) => b.count - a.count)) {
       const pct = ((e.count / 300) * 100).toFixed(1);
       console.log(`    ${e.entry.padEnd(10)} ${e.count}건 (${pct}%)`);
     }
 
     console.log(`\n  [분기 결과: verdict_result]`);
-    for (const e of verdictEntries.sort((a, b) => b.count - a.count)) {
+    for (const e of verdictEntries.toSorted((a, b) => b.count - a.count)) {
       const pct = ((e.count / 100) * 100).toFixed(1);
       console.log(`    ${e.entry.padEnd(10)} ${e.count}건 (${pct}%)`);
     }
@@ -174,7 +174,7 @@ describe("DSL 종단 E2E", () => {
     for (const r of records) {
       if (r.event_key) keyGroups.set(r.event_key, (keyGroups.get(r.event_key) ?? 0) + 1);
     }
-    for (const [key, count] of [...keyGroups.entries()].sort((a, b) => b[1] - a[1])) {
+    for (const [key, count] of [...keyGroups.entries()].toSorted((a, b) => b[1] - a[1])) {
       console.log(`    ${key.padEnd(20)} ${count}건`);
     }
 

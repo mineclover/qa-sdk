@@ -1,3 +1,6 @@
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
 /**
  * address-ranges.ts — PrefixCodec 기반 주소 범위 계산 래퍼.
  *

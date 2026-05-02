@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>QA-SDK OIDC Login Test</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    h1 { color: #333; }
+    button { padding: 12px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 6px; margin: 4px; }
+    .btn-login { background: #4CAF50; color: white; }
+    .btn-logout { background: #f44336; color: white; }
+    .btn-test { background: #2196F3; color: white; }
+    .btn-exchange { background: #FF9800; color: white; }
+    pre { background: #f5f5f5; padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 13px; }
+    .section { margin: 20px 0; padding: 16px; border: 1px solid #ddd; border-radius: 8px; }
+    .status { padding: 8px 16px; border-radius: 4px; display: inline-block; margin: 4px; }
+    .ok { background: #e8f5e9; color: #2e7d32; }
+    .fail { background: #ffebee; color: #c62828; }
+    .info { background: #e3f2fd; color: #1565c0; }
+  </style>
+</head>
+<body>
+  <h1>QA-SDK OIDC Login Test</h1>
+
+  <div class="section">
+    <h2>1. 설정</h2>
+    <p>Zitadel: <span class="status info" id="zitadel-status">확인 중...</span></p>
+    <p>Gateway: <span class="status info" id="gateway-status">확인 중...</span></p>
+    <p>Enrichment: <span class="status info" id="enrichment-status">확인 중...</span></p>
+    <div>
+      <label>Zitadel URL: <input id="zitadel-url" value="http://localhost:8085" size="40"></label><br>
+      <label>Client ID: <input id="client-id" value="" size="40" placeholder="Zitadel SPA app client ID"></label><br>
+      <label>Gateway URL: <input id="gateway-url" value="http://localhost:28787" size="40"></label><br>
+      <label>Enrichment URL: <input id="enrichment-url" value="http://localhost:3900" size="40"></label>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>2. 로그인</h2>
+    <button class="btn-login" onclick="login()">Zitadel 로그인 (OIDC + PKCE)</button>
+    <button class="btn-logout" onclick="logout()">로그아웃</button>
+    <p id="login-status"></p>
+  </div>
+
+  <div class="section">
+    <h2>3. 토큰</h2>
+    <h3>ID Token</h3>
+    <pre id="id-token-claims">로그인 필요</pre>
+    <h3>Access Token</h3>
+    <pre id="access-token-info">로그인 필요</pre>
+  </div>
+
+  <div class="section">
+    <h2>4. Token Exchange (Enrichment JWT)</h2>
+    <button class="btn-exchange" onclick="exchangeToken()">Enrichment JWT 교환</button>
+    <pre id="enrichment-jwt">교환 전</pre>
+  </div>
+
+  <div class="section">
+    <h2>5. Gateway 테스트</h2>
+    <button class="btn-test" onclick="testGateway()">Gateway API 테스트</button>
+    <pre id="gateway-results">테스트 전</pre>
+  </div>
+
+  <script>
+    // -- PKCE --
+    function generateCodeVerifier() {
+      const arr = new Uint8Array(32);
+      crypto.getRandomValues(arr);
+      return btoa(String.fromCharCode(...arr)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+    async function generateCodeChallenge(verifier) {
+      const data = new TextEncoder().encode(verifier);
+      const digest = await crypto.subtle.digest('SHA-256', data);
+      return btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+
+    // -- State --
+    let accessToken = null;
+    let idToken = null;
+    let enrichmentJwt = null;
+
+    // -- Health Checks --
+    async function checkHealth() {
+      const checks = [
+        { id: 'zitadel-status', url: () => '/proxy/zitadel/health' },
+        { id: 'gateway-status', url: () => document.getElementById('gateway-url').value + '/health' },
+        { id: 'enrichment-status', url: () => '/proxy/enrichment/health' },
+      ];
+      for (const c of checks) {
+        try {
+          const res = await fetch(c.url(), { signal: AbortSignal.timeout(3000) });
+          document.getElementById(c.id).className = `status ${res.ok ? 'ok' : 'fail'}`;
+          document.getElementById(c.id).textContent = res.ok ? 'OK' : `ERR ${res.status}`;
+        } catch {
+          document.getElementById(c.id).className = 'status fail';
+          document.getElementById(c.id).textContent = '연결 불가';
+        }
+      }
+    }
+
+    // -- Login --
+    async function login() {
+      const zitadelUrl = document.getElementById('zitadel-url').value;
+      const clientId = document.getElementById('client-id').value;
+      if (!clientId) { alert('Client ID를 입력하세요'); return; }
+
+      const verifier = generateCodeVerifier();
+      const challenge = await generateCodeChallenge(verifier);
+      sessionStorage.setItem('pkce_verifier', verifier);
+      sessionStorage.setItem('client_id', clientId);
+      sessionStorage.setItem('zitadel_url', zitadelUrl);
+
+      const params = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: window.location.origin + '/callback',
+        response_type: 'code',
+        scope: 'openid profile email',
+        code_challenge: challenge,
+        code_challenge_method: 'S256',
+      });
+
+      window.location.href = `${zitadelUrl}/oauth/v2/authorize?${params}`;
+    }
+
+    // -- Callback --
+    async function handleCallback() {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      if (!code) return;
+
+      const zitadelUrl = sessionStorage.getItem('zitadel_url') || document.getElementById('zitadel-url').value;
+      const clientId = sessionStorage.getItem('client_id') || document.getElementById('client-id').value;
+      const verifier = sessionStorage.getItem('pkce_verifier');
+
+      if (!verifier) { console.error('No PKCE verifier'); return; }
+
+      try {
+        const tokenRes = await fetch(`${zitadelUrl}/oauth/v2/token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'authorization_code',
+            code,
+            redirect_uri: window.location.origin + '/callback',
+            client_id: clientId,
+            code_verifier: verifier,
+          }),
+        });
+
+        const tokens = await tokenRes.json();
+        accessToken = tokens.access_token;
+        idToken = tokens.id_token;
+
+        // Display
+        if (idToken) {
+          const claims = JSON.parse(atob(idToken.split('.')[1]));
+          document.getElementById('id-token-claims').textContent = JSON.stringify(claims, null, 2);
+        }
+        document.getElementById('access-token-info').textContent =
+          `type: ${tokens.token_type}\nexpires_in: ${tokens.expires_in}\ntoken: ${(accessToken || '').slice(0, 50)}...`;
+        document.getElementById('login-status').innerHTML = '<span class="status ok">로그인 성공</span>';
+
+        // Restore client-id input
+        if (clientId) {
+          document.getElementById('client-id').value = clientId;
+        }
+        if (zitadelUrl) {
+          document.getElementById('zitadel-url').value = zitadelUrl;
+        }
+      } catch (err) {
+        document.getElementById('login-status').innerHTML = `<span class="status fail">토큰 교환 실패: ${err.message}</span>`;
+      }
+
+      // Clean URL
+      window.history.replaceState({}, '', '/');
+    }
+
+    // -- Token Exchange --
+    async function exchangeToken() {
+      if (!accessToken) { alert('먼저 로그인하세요'); return; }
+      const enrichmentUrl = document.getElementById('enrichment-url').value;
+
+      try {
+        const res = await fetch(`${enrichmentUrl}/token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ zitadel_token: accessToken }),
+        });
+        const data = await res.json();
+        enrichmentJwt = data.token;
+
+        if (enrichmentJwt) {
+          const claims = JSON.parse(atob(enrichmentJwt.split('.')[1]));
+          document.getElementById('enrichment-jwt').textContent =
+            `Enrichment JWT 발급 성공\n\nclaims:\n${JSON.stringify(claims, null, 2)}\n\ntoken: ${enrichmentJwt.slice(0, 80)}...`;
+        } else {
+          document.getElementById('enrichment-jwt').textContent = `실패: ${JSON.stringify(data)}`;
+        }
+      } catch (err) {
+        document.getElementById('enrichment-jwt').textContent = `에러: ${err.message}`;
+      }
+    }
+
+    // -- Gateway Test --
+    async function testGateway() {
+      const token = enrichmentJwt || accessToken || idToken;
+      if (!token) { alert('먼저 로그인 또는 토큰 교환하세요'); return; }
+      const gwUrl = document.getElementById('gateway-url').value;
+
+      const tests = [
+        { name: 'GET /health', url: `${gwUrl}/health` },
+        { name: 'GET /v1/sessions', url: `${gwUrl}/v1/sessions` },
+      ];
+
+      const results = [];
+      for (const t of tests) {
+        try {
+          const res = await fetch(t.url, {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: AbortSignal.timeout(5000),
+          });
+          const body = await res.text();
+          results.push(`${res.ok ? 'OK' : 'FAIL'} ${t.name}: ${res.status} ${body.slice(0, 100)}`);
+        } catch (err) {
+          results.push(`FAIL ${t.name}: ${err.message}`);
+        }
+      }
+      document.getElementById('gateway-results').textContent = results.join('\n');
+    }
+
+    // -- Logout --
+    function logout() {
+      accessToken = null;
+      idToken = null;
+      enrichmentJwt = null;
+      sessionStorage.clear();
+      document.getElementById('id-token-claims').textContent = '로그인 필요';
+      document.getElementById('access-token-info').textContent = '로그인 필요';
+      document.getElementById('enrichment-jwt').textContent = '교환 전';
+      document.getElementById('gateway-results').textContent = '테스트 전';
+      document.getElementById('login-status').innerHTML = '<span class="status info">로그아웃됨</span>';
+
+      const zitadelUrl = document.getElementById('zitadel-url').value;
+      window.location.href = `${zitadelUrl}/oidc/v1/end_session?post_logout_redirect_uri=${encodeURIComponent(window.location.origin)}`;
+    }
+
+    // -- Init --
+    checkHealth();
+    if (window.location.search.includes('code=')) {
+      handleCallback();
+    }
+  </script>
+</body>
+</html>

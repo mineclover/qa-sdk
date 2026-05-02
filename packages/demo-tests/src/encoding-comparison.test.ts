@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * encoding-comparison.test.ts — WeightedIndex vs BitIndex 역할 분담 증명
  *

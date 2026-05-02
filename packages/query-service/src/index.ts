@@ -1,3 +1,6 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 export { createApp, type AppDeps } from "./app.js";
 export {
   createQueryService,
@@ -20,6 +23,11 @@ export {
 } from "./stores/in-memory-policy-rule-store.js";
 export { NodeSqliteDriver, BetterSqliteDriver } from "index-meta";
 export { SqlPolicyRuleStore } from "./stores/sql-policy-rule-store.js";
+export {
+  RuleMigrationService,
+  createRuleMigrationService,
+} from "./lib/rule-migration-service.js";
+export type { RuleMigrationResult } from "./lib/rule-migration-service.js";
 export {
   PolicyRuleNotFoundError,
   PolicyRuleAlreadyExistsError,

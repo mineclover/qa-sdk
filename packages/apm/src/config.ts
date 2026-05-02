@@ -1,4 +1,13 @@
-import type { QaLoggerConfig } from "@qa-sdk/sdk";
+// @def.boundary observability-system-root
+// @def.doc observability-system-root
+
+import type {
+  ServiceBootConfig,
+  TransmissionOwner,
+  TransmissionRuntime,
+  ActorContext,
+} from "@qa-sdk/core";
+import type { QaLoggerConfig, Transport } from "@qa-sdk/sdk";
 import type { PrefixCodec } from "weighted-index";
 
 /**
@@ -23,6 +32,32 @@ export interface ApmLoggerConfig extends Omit<QaLoggerConfig, "infraContext"> {
   /** SnapshotSupply 전략 ID */
   snapshotSupply?: string;
 
+  /** 배포 시점의 entry snapshot ID */
+  entrySnapshot?: string;
+}
+
+/**
+ * ApmLogger 부트 설정 — ServiceBootConfig 기반 편의 인터페이스.
+ *
+ * ServiceBootConfig 하나로 source, build, fixedDims를 자동 파생한다.
+ */
+export interface ApmBootConfig {
+  /** 통합 서비스 설정 */
+  service: ServiceBootConfig;
+  /** Transport */
+  transport: Transport;
+  /** Owner */
+  owner: TransmissionOwner;
+  /** PrefixCodec 인스턴스 */
+  codec: PrefixCodec;
+  /** 대상 prefix (default: "service") */
+  prefix?: string;
+  /** GENERATION 상수 */
+  generation?: string;
+  /** Runtime 정보 (default: platform "node") */
+  runtime?: Partial<TransmissionRuntime>;
+  /** Actor 컨텍스트 */
+  actor?: ActorContext;
   /** 배포 시점의 entry snapshot ID */
   entrySnapshot?: string;
 }

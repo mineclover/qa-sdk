@@ -29,12 +29,11 @@ services:
   migrations:
     build:
       context: .
-      dockerfile: Dockerfile.registry-server
+      dockerfile: Dockerfile.ingest-server
       target: build
     env_file:
       - .env
     environment:
-      DATABASE_URL: ${REGISTRY_DATABASE_URL}
       TRACE_DATABASE_URL: ${TRACE_DATABASE_URL}
     depends_on:
       postgres:
@@ -43,26 +42,8 @@ services:
       - sh
       - -lc
       - |
-        pnpm --filter @qa-sdk/registry-server db:migrate
         pnpm --filter @qa-sdk/store db:migrate
     restart: "no"
-
-  registry-server:
-    build:
-      context: .
-      dockerfile: Dockerfile.registry-server
-    env_file:
-      - .env
-    environment:
-      DATABASE_URL: ${REGISTRY_DATABASE_URL}
-      PORT: ${REGISTRY_SERVER_PORT}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      migrations:
-        condition: service_completed_successfully
-    ports:
-      - "${REGISTRY_SERVER_PORT}:${REGISTRY_SERVER_PORT}"
 
   ingest-server:
     build:
@@ -94,8 +75,6 @@ services:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
-      registry-server:
-        condition: service_started
     ports:
       - "${INGEST_SERVER_PORT}:${INGEST_SERVER_PORT}"
     volumes:
@@ -219,7 +198,6 @@ services:
       BACKUP_DIR: /backup
       BACKUP_RETENTION_DAILY: ${BACKUP_RETENTION_DAILY:-30}
       BACKUP_RETENTION_WEEKLY: ${BACKUP_RETENTION_WEEKLY:-90}
-      REGISTRY_DATABASE_URL: ${REGISTRY_DATABASE_URL}
       TRACE_DATABASE_URL: ${TRACE_DATABASE_URL}
       REGISTRY_SERVICE_URL: http://registry-service:${REGISTRY_SERVICE_PORT:-3300}
     depends_on:

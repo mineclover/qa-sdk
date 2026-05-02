@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 /**
  * 용어집 — Registry DSL 핵심 개념 + 구조 설명
  */

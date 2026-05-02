@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * SqlPrefixRouter — PrefixRouter의 SQL 구현
  *

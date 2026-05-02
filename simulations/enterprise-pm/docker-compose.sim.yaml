@@ -1,0 +1,281 @@
+# Enterprise PM 시뮬 — 10 컨테이너 (1 redis + 9 sim 서비스)
+# 외부 network: qa-sdk-net (packages/infra-engine/docker-compose.infra.yaml이 생성)
+# 외부 의존: qa-sdk-db (5434), ingest-server (3200, host process)
+#
+# 사용:
+#   bash scripts/sim-up.sh        — 부팅 + healthcheck 대기
+#   bash scripts/sim-down.sh      — 종료 (본체 컨테이너 영향 없음)
+#
+# Plan 10 후: 각 서비스의 wrapper Dockerfile (qa-sdk/sim-base:latest 의존)을 사용한다.
+# 본 compose 호출 전 sim-base 이미지를 먼저 빌드해야 한다:
+#   docker build -f simulations/enterprise-pm/sim-base.Dockerfile -t qa-sdk/sim-base:latest .
+# (반드시 모노레포 root 디렉토리에서 실행)
+
+x-nestjs-common: &nestjs-common
+  env_file:
+    - .env.sim
+  restart: unless-stopped
+  depends_on:
+    sim-redis:
+      condition: service_healthy
+  networks:
+    - default
+
+services:
+  # ── 인프라 ──
+
+  sim-redis:
+    image: redis:7-alpine
+    container_name: sim-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - sim-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+      start_period: 5s
+    networks:
+      - default
+
+  # qa-sdk-* — 시뮬 외부 인프라 (canary stage-1: 컨테이너 내부 호스팅)
+  qa-sdk-ingest:
+    image: qa-sdk/ingest-server:latest
+    build:
+      context: ../..
+      dockerfile: packages/ingest-server/Dockerfile
+    environment:
+      PORT: 3200
+      STORE_DRIVER: pg
+      QA_PG_HOST: qa-sdk-db
+      QA_PG_PORT: 5432
+      QA_PG_DATABASE: qa_sdk
+      QA_PG_USER: ingest_app
+      QA_PG_PASSWORD: ${QA_PG_INGEST_PASSWORD}
+      QA_PG_SCHEMA: ingest
+      REDIS_URL: redis://sim-redis:6379
+      CORS_ORIGIN: "*"
+      SIM_LOG_LEVEL: info
+    ports:
+      - "3200:3200"
+    networks:
+      - default
+    depends_on:
+      sim-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:3200/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  # ── 비즈니스 NestJS 서비스 (4400~4900) ──
+
+  sim-auth-api:
+    <<: *nestjs-common
+    container_name: sim-auth-api
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/auth-api/Dockerfile
+    ports:
+      - "4400:4400"
+    environment:
+      PORT: 4400
+      SIM_SERVICE_NAME: sim-auth-api
+
+  sim-pm-api:
+    <<: *nestjs-common
+    container_name: sim-pm-api
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/pm-api/Dockerfile
+    ports:
+      - "4500:4500"
+    environment:
+      PORT: 4500
+      SIM_SERVICE_NAME: sim-pm-api
+
+  # ── 단계 8(Plan C): approval-api v1/v2 동시 배포 ──
+  # 같은 Dockerfile + build arg/env로만 정체성 분리. spec 02 §1.
+  sim-approval-api-v1:
+    <<: *nestjs-common
+    container_name: sim-approval-api-v1
+    image: qa-sdk/sim-approval-api:${APPROVAL_V1_TAG:-v3}
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/approval-api/Dockerfile
+      args:
+        SERVICE_VERSION: ${APPROVAL_V1_TAG:-v3}
+    ports:
+      - "4600:4600"   # stable: host 노출. v2는 host 노출 없음 (gateway 통과만 허용).
+    environment:
+      PORT: 4600
+      SIM_SERVICE_NAME: sim-approval-api
+      SIM_SERVICE_VERSION: ${APPROVAL_V1_TAG:-v3}
+      SIM_DB_WRITE_URL: postgres://approval_app:${QA_PG_APPROVAL_PASSWORD}@qa-sdk-db:5432/qa_sdk
+      SIM_DB_READ_URL:  postgres://approval_app:${QA_PG_APPROVAL_PASSWORD}@qa-sdk-db-replica:5432/qa_sdk
+    labels:
+      sim.role: approval-api
+      sim.version: ${APPROVAL_V1_TAG:-v3}
+
+  sim-approval-api-v2:
+    <<: *nestjs-common
+    container_name: sim-approval-api-v2
+    image: qa-sdk/sim-approval-api:${APPROVAL_V2_TAG:-v4-candidate}
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/approval-api/Dockerfile
+      args:
+        SERVICE_VERSION: ${APPROVAL_V2_TAG:-v4-candidate}
+    # v2 host port 미노출 — gateway만이 라우팅 (spec 02 §3 단일 라우팅 책임).
+    environment:
+      PORT: 4600
+      SIM_SERVICE_NAME: sim-approval-api
+      SIM_SERVICE_VERSION: ${APPROVAL_V2_TAG:-v4-candidate}
+      SIM_DB_WRITE_URL: postgres://approval_app:${QA_PG_APPROVAL_PASSWORD}@qa-sdk-db:5432/qa_sdk
+      SIM_DB_READ_URL:  postgres://approval_app:${QA_PG_APPROVAL_PASSWORD}@qa-sdk-db-replica:5432/qa_sdk
+    labels:
+      sim.role: approval-api
+      sim.version: ${APPROVAL_V2_TAG:-v4-candidate}
+
+  sim-notification-api:
+    <<: *nestjs-common
+    container_name: sim-notification-api
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/notification-api/Dockerfile
+    ports:
+      - "4700:4700"
+    environment:
+      PORT: 4700
+      SIM_SERVICE_NAME: sim-notification-api
+
+  sim-reporting-api:
+    <<: *nestjs-common
+    container_name: sim-reporting-api
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/reporting-api/Dockerfile
+    ports:
+      - "4800:4800"
+    environment:
+      PORT: 4800
+      SIM_SERVICE_NAME: sim-reporting-api
+
+  sim-document-api:
+    <<: *nestjs-common
+    container_name: sim-document-api
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/document-api/Dockerfile
+    ports:
+      - "4900:4900"
+    environment:
+      PORT: 4900
+      SIM_SERVICE_NAME: sim-document-api
+
+  # ── 시뮬 인프라 (5100, 5200, 8888) ──
+
+  sim-audit-browser-api:
+    <<: *nestjs-common
+    container_name: sim-audit-browser-api
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/audit-browser-api/Dockerfile
+    ports:
+      - "5100:5100"
+    environment:
+      PORT: 5100
+      SIM_SERVICE_NAME: sim-audit-browser-api
+
+  sim-metrics-collector:
+    <<: *nestjs-common
+    container_name: sim-metrics-collector
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/metrics-collector/Dockerfile
+    ports:
+      - "5200:5200"
+    environment:
+      PORT: 5200
+      SIM_SERVICE_NAME: sim-metrics-collector
+
+  sim-gateway:
+    <<: *nestjs-common
+    container_name: sim-gateway
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/gateway/Dockerfile
+    ports:
+      - "8888:8888"
+    environment:
+      PORT: 8888
+      SIM_SERVICE_NAME: sim-gateway
+    depends_on:
+      sim-redis:
+        condition: service_healthy
+      sim-auth-api:
+        condition: service_started
+      sim-pm-api:
+        condition: service_started
+      sim-approval-api-v1:
+        condition: service_started
+      sim-approval-api-v2:
+        condition: service_started
+      sim-notification-api:
+        condition: service_started
+      sim-reporting-api:
+        condition: service_started
+      sim-document-api:
+        condition: service_started
+
+  # ── 단계 9: canary control-plane ──
+  sim-canary-controller:
+    <<: *nestjs-common
+    container_name: sim-canary-controller
+    build:
+      context: ../..
+      dockerfile: simulations/enterprise-pm/services/canary-controller/Dockerfile
+    ports:
+      - "5300:5300"
+    environment:
+      PORT: 5300
+      SIM_LOG_LEVEL: info
+      SIM_SERVICE_NAME: sim-canary-controller
+      SIM_CONTROLLER_ID: ${SIM_CONTROLLER_ID:-CTRL0001}
+      SIM_CONTROLLER_CYCLE_MS: ${SIM_CONTROLLER_CYCLE_MS:-30000}
+      SIM_CONTROLLER_CONFIG_PATH: /app/simulations/enterprise-pm/services/canary-controller/controller-config.yaml
+      SIM_DB_WRITE_URL: ${SIM_DB_WRITE_URL}
+      SIM_METRICS_COLLECTOR_URL: http://sim-metrics-collector:5200
+      QA_INGEST_URL: http://qa-sdk-ingest:3200
+      SIM_AUDIT_RECORDER_URL: http://sim-audit-browser-api:5100
+      SIM_GATEWAY_ADMIN_URL: http://sim-gateway:8888
+      SIM_COMPOSE_PROJECT: enterprise-pm
+    depends_on:
+      sim-redis:
+        condition: service_healthy
+      sim-metrics-collector:
+        condition: service_started
+      sim-audit-browser-api:
+        condition: service_started
+      sim-gateway:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:5300/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  sim-redis-data:
+
+networks:
+  default:
+    name: qa-sdk-net
+    external: true

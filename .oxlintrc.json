@@ -1,0 +1,67 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicolo-ribaudo/oxc-project.github.io/config-schema/src/public/schema/v1/oxlintrc.schema.json",
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "plugins": ["typescript", "unicorn", "oxc", "import", "vitest", "node", "promise"],
+  "env": {
+    "node": true,
+    "es2024": true
+  },
+  "rules": {
+    "typescript/no-explicit-any": "warn",
+    "typescript/no-non-null-assertion": "warn",
+    "typescript/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+
+    "import/no-cycle": "warn",
+    "import/no-self-import": "error",
+    "import/no-duplicates": "warn",
+
+    "vitest/no-focused-tests": "error",
+    "vitest/no-disabled-tests": "warn",
+
+    "no-unused-expressions": "warn",
+
+    "typescript/no-extraneous-class": ["warn", { "allowWithDecorator": true }],
+
+    "unicorn/filename-case": "off",
+    "unicorn/no-null": "off",
+    "unicorn/prevent-abbreviations": "off",
+    "unicorn/no-process-exit": "off",
+    "unicorn/no-new-array": "off",
+    "unicorn/consistent-function-scoping": "off",
+
+    "import/no-unassigned-import": "off",
+    "no-await-in-loop": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.spec.ts", "**/test/**/*.ts", "**/*.contract.ts"],
+      "rules": {
+        "typescript/no-explicit-any": "off",
+        "typescript/no-non-null-assertion": "off",
+        "typescript/no-unused-vars": "off",
+        "no-unused-expressions": "off",
+        "unicorn/no-thenable": "off",
+        "jest/require-to-throw-message": "off"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "dist/",
+    "node_modules/",
+    ".pnpm-store/",
+    "drizzle/",
+    "*.generated.*",
+    "packages/demo-types/",
+    "packages/weighted-wasm/pkg/",
+    "packages/platform-demo/public/diagram-presets.js",
+    "packages/platform-demo/public/viz-3d-core.js",
+    "packages/shop-web/public/",
+    "monitoring/",
+    "verdaccio/",
+    "scripts/"
+  ]
+}

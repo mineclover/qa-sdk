@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 export { createIndexSDK, RESERVED_TOKENS } from "./index-sdk.js";
 export type { IndexSDK, IndexClient, IndexSDKOptions, DimCapacityInfo, DimEntryView, DimFullView } from "./index-sdk.js";
 export { MetaRegistry, computeActiveIndices, snapshotCapacity, computeShapeProductBig, fitsNumber } from "./meta-registry.js";
@@ -14,12 +17,14 @@ export { InMemoryPrefixRouter } from "./adapters/memory-prefix-router.js";
 export { SqlPrefixRouter } from "./adapters/sql-prefix-router.js";
 export { SqlIndexMetaStore } from "./adapters/sql-store.js";
 export type { SqlDriver, SqlDialect, ExecuteResult } from "./adapters/sql-store.js";
+export { getDatabaseSync, type DatabaseSyncCtor, type DatabaseSyncInstance } from "./adapters/database-sync-loader.js";
 export { NodeSqliteDriver } from "./adapters/node-sqlite-driver.js";
 export { BetterSqliteDriver } from "./adapters/better-sqlite-driver.js";
 export { createSqliteDriver } from "./adapters/create-sqlite-driver.js";
 export type { SqliteDriverType, CreateSqliteDriverOptions } from "./adapters/create-sqlite-driver.js";
 export { D1SqlDriver } from "./adapters/d1-driver.js";
 export { D1IndexMetaStore, type D1Database } from "./adapters/d1-store.js";
+export { BunSqliteDriver, type BunDatabase } from "./adapters/bun-sqlite-driver.js";
 export { DistributedStoreClient } from "./distributed-client.js";
 export { syncSchemaToRegistry, applySchemaDiff } from "./schema-sync.js";
 export type { ApplySchemaDiffResult } from "./schema-sync.js";
@@ -63,17 +68,31 @@ export {
 } from "./migrate-address.js";
 export { RelationalEngine } from "./relational-engine.js";
 export type { RelationTypeRule, RelationResolveResult } from "./relational-engine.js";
+// ── 내부 전용 (position 기반 pattern resolver) ──
 export {
   matchRules,
-  resolvePolicy,
-  detectConflicts,
+  resolvePolicy as resolvePatternPolicy,
+  detectConflicts as detectPatternConflicts,
 } from "./policy-resolver.js";
 export type {
-  PolicyRule,
+  PatternRule,
   ConflictStrategy,
   ResolveResult,
   ConflictReport,
 } from "./policy-resolver.js";
+// ── 공개 API (entity name + 명시적 와일드카드) ──
+export {
+  WILDCARD,
+  matchToConstraints,
+  entitiesToCoord,
+  ruleToPattern,
+  resolvePolicy,
+  detectConflicts,
+} from "./named-policy.js";
+export type {
+  MatchSpec,
+  PolicyRule,
+} from "./named-policy.js";
 export {
   composeQuery,
   deepDecode,
@@ -85,11 +104,14 @@ export type {
 } from "./cross-index-query.js";
 export { PrefixDecoder } from "./prefix-decoder.js";
 export type { PrefixDecoderConfig, PrefixDeepDecodeResult, PrefixDeepDecodeDetailedResult } from "./prefix-decoder.js";
+export { PrefixDecoderBig } from "./prefix-decoder-big.js";
+export type { PrefixDecoderBigConfig, PrefixDeepDecodeResultBig, PrefixDeepDecodeDetailedResultBig } from "./prefix-decoder-big.js";
 export {
   queryAcrossVersions,
   entityVersionSpan,
   translateConstraint,
 } from "./version-query.js";
+export type { CoordConstraint } from "weighted-index";
 export { exportVersion, importVersion } from "./backup.js";
 export { validateEntryBatchPayload, applyEntryBatch } from "./api-payload.js";
 export { generateTypes, lintSchema, formatSchemaDiff } from "./codegen.js";

@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * WeightedIndex — 닫힌 패턴의 주소 압축기
  *
@@ -131,6 +134,23 @@ export class WeightedIndex {
       rec[this.labels[i]] = coords[i];
     }
     return rec;
+  }
+
+  /**
+   * 요청한 labels에 해당하는 차원만 부분 decode. O(k).
+   * full decodeToRecord() 대비 k << d 일 때 유리.
+   */
+  extractDims(address: number, labels: string[]): Record<string, number> {
+    this._validateIndex(address);
+    const result: Record<string, number> = {};
+    for (const label of labels) {
+      const i = this.labels.indexOf(label);
+      if (i < 0) {
+        throw new CoordError(`Unknown label "${label}" in extractDims`);
+      }
+      result[label] = Math.floor(address / this.strides[i]) % this.shape[i] + 1;
+    }
+    return result;
   }
 
   /** { label: value } 객체 → 정수 인덱스. */

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import type { PrefixRegistry } from "./prefix-registry.js";
 import type { IndexMetaStore } from "./index-meta-store.js";
 import type { CrossVersionEntrySync } from "./cross-version-entry-sync.js";
@@ -108,7 +111,7 @@ export async function applyEntryBatch(
   // position 오름차순 정렬
   const sorted = Object.entries(payload.entries)
     .map(([posStr, value]) => ({ position: Number(posStr), value }))
-    .sort((a, b) => a.position - b.position);
+    .toSorted((a, b) => a.position - b.position);
 
   if (sync) {
     // CrossVersionEntrySync 경로: 모든 writable 버전에 전파

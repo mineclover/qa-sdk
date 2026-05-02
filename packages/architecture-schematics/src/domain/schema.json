@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "ArchitectureDomainSchematic",
+  "title": "Domain Schematic",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Domain name, e.g. payment or assignment.",
+      "x-prompt": "Domain name"
+    },
+    "includeReadModel": {
+      "type": "boolean",
+      "default": false,
+      "description": "Generate query-side read model contracts and projection skeletons.",
+      "x-prompt": "Generate query read model files?"
+    },
+    "includeBff": {
+      "type": "boolean",
+      "default": false,
+      "description": "Generate UI-facing BFF query adapter and controller. Implies read model files.",
+      "x-prompt": "Generate BFF files?"
+    },
+    "parentModule": {
+      "type": "string",
+      "description": "Parent NestJS module file to update, e.g. src/app.module.ts.",
+      "x-prompt": "Parent bounded-context module path"
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "default": false,
+      "description": "Skip formatting task scheduling."
+    }
+  },
+  "required": ["name", "parentModule"]
+}

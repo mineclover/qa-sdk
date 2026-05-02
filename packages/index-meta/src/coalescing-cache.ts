@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * CoalescingCache — 단일 비행(single-flight) 캐시 프리미티브
  *

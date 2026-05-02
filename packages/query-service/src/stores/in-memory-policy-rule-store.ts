@@ -1,3 +1,7 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
+// @facet
 import {
   cloneStoredPolicyRule,
   compareStoredPolicyRules,
@@ -39,7 +43,7 @@ export class InMemoryPolicyRuleStore<T = unknown>
         (rule) =>
           rule.indexId === indexId && rule.versionId === versionId,
       )
-      .sort(compareStoredPolicyRules)
+      .toSorted(compareStoredPolicyRules)
       .map(cloneStoredPolicyRule);
   }
 

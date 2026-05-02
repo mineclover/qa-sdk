@@ -1,3 +1,6 @@
+// @def.boundary decode-service-system
+// @def.doc decode-service-system
+
 import {
   EntryNotFoundError,
   IndexNotFoundError,
@@ -5,25 +8,18 @@ import {
   ParseError,
   ValidationError,
   IndexMetaError,
-} from "index-meta";
+} from "index-meta-workers";
+import { IndexRangeError } from "weighted-index";
+export { AppError } from "@qa-sdk/core";
+import { AppError } from "@qa-sdk/core";
 
 export type ErrorCode =
   | "INVALID_INPUT"
   | "NOT_FOUND"
   | "PARSE_ERROR"
+  | "RANGE_EXCEEDED"
   | "DECODER_NOT_LOADED"
   | "INTERNAL_ERROR";
-
-export class AppError extends Error {
-  constructor(
-    public readonly code: ErrorCode,
-    message: string,
-    public readonly statusCode: number = 400,
-  ) {
-    super(message);
-    this.name = "AppError";
-  }
-}
 
 export function notFound(message: string): AppError {
   return new AppError("NOT_FOUND", message, 404);
@@ -53,6 +49,9 @@ export function fromIndexMetaError(err: unknown): AppError {
   }
   if (err instanceof ValidationError) {
     return new AppError("INVALID_INPUT", err.message, 400);
+  }
+  if (err instanceof IndexRangeError) {
+    return new AppError("RANGE_EXCEEDED", (err as Error).message, 400);
   }
   if (err instanceof IndexMetaError) {
     return new AppError("INTERNAL_ERROR", err.message, 500);

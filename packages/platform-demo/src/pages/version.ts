@@ -1,3 +1,6 @@
+// @def.boundary platform-demo-system
+// @def.doc platform-demo-system
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  버전 변경 — v1 / v2 비교 (SSOT 기반)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -8,8 +11,6 @@
 //
 
 import {
-  DEMO_ROLES_V1, DEMO_ROLES_V2, DEMO_ROLES_V3, DEMO_ROLES_V4,
-  DEMO_EVENTS_V1, DEMO_EVENTS_V2, DEMO_EVENTS_V3, DEMO_EVENTS_V4,
   DEMO_ROLE_CAP, DEMO_EVENT_CAP,
   DEMO_INITIATORS, DEMO_KO,
   DEMO_SVC_SHAPE, DEMO_SVC_STRIDES,
@@ -257,8 +258,6 @@ function buildFeaturesSection(ver: Ver, data: FeatureData | null): HTMLElement {
   const prev = prevVer(ver);
   const prevData = prev ? currentData[prev] : null;
   const prevFeatureIds = prevData ? new Set(prevData.features.map(f => f.id)) : new Set<string>();
-  const currentFeatureIds = new Set(current.features.map(f => f.id));
-
   // prev version grant lookup for diff
   const prevGrants = new Map<string, Set<string>>();
   if (prevData) {
@@ -818,6 +817,7 @@ export function renderVersionPage(
         featuresEl.replaceWith(newEl);
         featuresEl = newEl;
       }
+      return undefined;
     })
     .catch(() => { /* API 미접속 시 로딩 상태 유지 */ });
 

@@ -1,0 +1,109 @@
+name: simulation domain slice gate
+
+# 목적: simulations/enterprise-pm 의 23 슬라이스가 sim-domain-slice-kit
+# 컨벤션과 OpenAPI merge 규칙을 모두 통과하는지 PR 단위로 검증한다.
+# 근거: docs/plan/simulations-domain-slice-migration/phase-3-integration.md
+
+on:
+  pull_request:
+    paths:
+      - 'simulations/enterprise-pm/**'
+      - 'packages/architecture-schematics/**'
+      - '.github/workflows/simulation-domain-slice-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'simulations/enterprise-pm/**'
+      - 'packages/architecture-schematics/**'
+      - '.github/workflows/simulation-domain-slice-gate.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: sim-domain-slice-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sim-domain-slice-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable Corepack (pnpm 10.30.3)
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.30.3 --activate
+
+      - name: Resolve pnpm store path
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-node-22-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node-22-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build sim-domain-slice-kit (Phase 0 산출)
+        run: pnpm --filter @qa-sdk/sim-domain-slice-kit build
+
+      - name: Build architecture-schematics (validator CLI)
+        # qa-scaffold bin 은 dist/cli.js 를 가리키므로 빌드가 선행되어야 한다.
+        run: pnpm --filter @qa-sdk/scaffold build
+
+      - name: Validate every migration slice (per-slice validator)
+        shell: bash
+        run: |
+          set -euo pipefail
+          paths=(
+            simulations/enterprise-pm/services/pm-api/src/pm/assignment
+            simulations/enterprise-pm/services/pm-api/src/pm/project
+            simulations/enterprise-pm/services/pm-api/src/pm/task
+            simulations/enterprise-pm/services/pm-api/src/pm/member
+            simulations/enterprise-pm/services/approval-api/src/approval/budget
+            simulations/enterprise-pm/services/approval-api/src/approval/expense
+            simulations/enterprise-pm/services/approval-api/src/approval/resource
+            simulations/enterprise-pm/services/approval-api/src/approval/timeoff
+            simulations/enterprise-pm/services/auth-api/src/auth/user
+            simulations/enterprise-pm/services/auth-api/src/auth/role
+            simulations/enterprise-pm/services/auth-api/src/auth/role-assignment
+            simulations/enterprise-pm/services/auth-api/src/auth/department
+            simulations/enterprise-pm/services/auth-api/src/auth/authenticate
+            simulations/enterprise-pm/services/auth-api/src/auth/bitmap
+            simulations/enterprise-pm/services/document-api/src/document/document
+            simulations/enterprise-pm/services/document-api/src/document/comment
+            simulations/enterprise-pm/services/document-api/src/document/version
+            simulations/enterprise-pm/services/notification-api/src/notification/notification
+            simulations/enterprise-pm/services/notification-api/src/notification/subscription
+            simulations/enterprise-pm/services/reporting-api/src/reporting/report
+            simulations/enterprise-pm/services/reporting-api/src/reporting/metric
+            simulations/enterprise-pm/services/reporting-api/src/density
+            simulations/enterprise-pm/services/audit-browser-api/src/audit-explorer
+            simulations/enterprise-pm/services/audit-browser-api/src/graph-explorer
+          )
+          fail=0
+          for p in "${paths[@]}"; do
+            if ! pnpm exec qa-scaffold validate "$p"; then
+              echo "FAIL: $p"
+              fail=1
+            fi
+          done
+          exit "$fail"
+
+      - name: OpenAPI fragment merge check
+        run: node simulations/enterprise-pm/contracts/openapi/scripts/check-merge.mjs
+
+      - name: scenarios test (architecture-manifest + cross-slice-conventions)
+        run: pnpm --filter @qa-sdk/sim-scenarios test

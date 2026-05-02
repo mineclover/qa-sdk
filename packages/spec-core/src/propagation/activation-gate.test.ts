@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * activation-gate 테스트.
  *
@@ -5,14 +8,14 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { GraphRegistry } from "../dkg/graph-registry.js";
+import { GraphRegistry } from "dkg";
 import { checkActivationReadiness } from "./activation-gate.js";
 import type {
   PrefixNode,
   DomainNode,
   ConstraintNode,
   ObservationNode,
-} from "../dkg/dkg.types.js";
+} from "dkg";
 
 let graph: GraphRegistry;
 

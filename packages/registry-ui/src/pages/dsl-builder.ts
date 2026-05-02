@@ -1,8 +1,11 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 /**
  * DSL 빌더 — store의 축/composite를 선택하여 인코딩/디코딩 테스트
  */
 
-import { WeightedIndex } from "weighted-index";
+import { WeightedIndex, calcWeights } from "weighted-index";
 import { store, resolveAll, toSnapshot, fromSnapshot, type ResolvedDef } from "../store.js";
 
 let container: HTMLElement;
@@ -351,7 +354,6 @@ function bindVersionCheck(composites: ResolvedDef[]): void {
     const r = composites.find((x) => x.id === compId);
     if (!r) return;
 
-    const resolved = resolveAll();
     const dimIdx = r.dims.indexOf(dimId);
     if (dimIdx < 0) return;
 

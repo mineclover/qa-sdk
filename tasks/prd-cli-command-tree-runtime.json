@@ -1,0 +1,106 @@
+{
+  "name": "CLI Command Tree Runtime Finish",
+  "description": "Finish the remaining cli-command CommandDescriptor migration so group files become the authoritative source for runtime trees, handler registries, and help generation in @qa-sdk/cli.",
+  "branchName": "ralph/cli-command-tree-runtime-finish",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Finish group-file authority for motion/spec/ingest/gate/query",
+      "description": "As a CLI maintainer, I want the motion, spec, ingest, gate, and query command groups to be consumed from command-groups files so index.ts no longer carries duplicate authored metadata for those groups.",
+      "acceptanceCriteria": [
+        "motion/spec/ingest/gate/query group files are the runtime source for descriptor/tree/help data",
+        "index.ts no longer relies on duplicate local authored metadata for those groups",
+        "pnpm --filter cli-command exec vitest run __tests__/compose.test.ts __tests__/help.test.ts passes",
+        "pnpm --filter @qa-sdk/cli exec vitest run src/commands/index-usage.test.ts src/commands/motion.test.ts src/commands/motion-workspace.test.ts src/commands/flow.test.ts src/commands/service.test.ts src/commands/review.test.ts src/commands/quality.test.ts src/commands/def.test.ts passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "node packages/cli/dist/index.js def validate passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Finish group-file authority for root/scan/git/prefix/facet/test/catalog",
+      "description": "As a CLI maintainer, I want the remaining direct and utility command groups to be served from command-groups manifests so root and utility surfaces stop depending on local duplicate authored metadata in index.ts.",
+      "acceptanceCriteria": [
+        "root/scan/git/prefix/facet/test/catalog group files are the runtime source for descriptor/tree/help data",
+        "index.ts no longer relies on duplicate local authored metadata for those groups",
+        "Custom handler factories such as prefix use group-file helpers rather than inline authored command blocks",
+        "pnpm --filter cli-command exec vitest run __tests__/compose.test.ts __tests__/help.test.ts passes",
+        "pnpm --filter @qa-sdk/cli exec vitest run src/commands/index-usage.test.ts src/commands/service.test.ts src/commands/review.test.ts src/commands/quality.test.ts src/commands/def.test.ts passes",
+        "pnpm --filter @qa-sdk/cli build passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "Make dkg command group physically authoritative",
+      "description": "As a CLI maintainer, I want dkg.commands.ts to be the authoritative authored source for dkg metadata so the largest command group no longer duplicates descriptor declarations in index.ts.",
+      "acceptanceCriteria": [
+        "dkg group file is the runtime source for descriptor/tree/help data",
+        "index.ts no longer carries duplicate authored dkg descriptor blocks",
+        "dkg subtree help still works for decisions and transition surfaces",
+        "pnpm --filter @qa-sdk/cli exec vitest run src/commands/index-usage.test.ts src/commands/flow.test.ts src/commands/service.test.ts src/commands/def.test.ts passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "node packages/cli/dist/index.js dkg decisions --help works"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "Shrink index dispatch and dead metadata",
+      "description": "As a CLI maintainer, I want index.ts to become an assembly entry so remaining dead metadata blocks and reducible handler switches are removed or collapsed into registries.",
+      "acceptanceCriteria": [
+        "index.ts reads primarily as assembly and runtime wiring rather than authored command data",
+        "Service, flow, quality, review, and other migrated groups use handler registries instead of repetitive switches where practical",
+        "Remaining exceptions are small and explicitly documented",
+        "pnpm --filter @qa-sdk/cli exec vitest run src/commands/index-usage.test.ts src/commands/service.test.ts src/commands/review.test.ts src/commands/quality.test.ts src/commands/flow.test.ts src/commands/def.test.ts passes",
+        "pnpm --filter @qa-sdk/cli build passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "Resolve legacy exception surfaces and close docs",
+      "description": "As a CLI maintainer, I want the remaining legacy surfaces and docs to be reconciled so the command runtime model has a clear end-state and validation stays clean.",
+      "acceptanceCriteria": [
+        "spec drift, def help, def alias, and quality alias are either absorbed into the runtime model or explicitly documented as intentional exceptions",
+        "CLI command spec/plan/todo docs describe the final authority model accurately",
+        "node packages/cli/dist/index.js def validate passes with 0 warnings",
+        "node packages/cli/dist/index.js def scan-audit passes with 0 graph issues",
+        "node packages/cli/dist/index.js def audit-db reports no issues"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-004"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-06T00:53:29.602Z"
+  }
+}

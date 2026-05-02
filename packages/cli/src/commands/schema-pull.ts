@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 

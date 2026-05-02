@@ -1,3 +1,6 @@
+// @def.boundary platform-demo-system
+// @def.doc platform-demo-system
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  시나리오 페이지 — 역할 전환 + 기능 접근 매트릭스 + 시뮬레이션 재생
 // ═══════════════════════════════════════════════════════════════════════════
@@ -13,13 +16,14 @@ import {
   DEMO_KO,
   DEMO_FEATURE_KO,
   demoRolesFor, demoFeatures,
+  type DemoVer,
 } from "demo-snapshot";
 
 
 // ── Constants (demo-snapshot SSOT 기반) ───────────────────────────────────
 
 function rolesMetaFor(ver: string) {
-  return demoRolesFor(ver as any).map((id: string) => ({ id, ko: DEMO_KO.role[id] ?? id }));
+  return demoRolesFor(ver as DemoVer).map((id: string) => ({ id, ko: DEMO_KO.role[id] ?? id }));
 }
 // 하위 호환 (기존 default 파라미터 참조용)
 const ROLES_META_V2 = rolesMetaFor("v2");
@@ -266,6 +270,7 @@ function renderSiteSection(scenario: ScenarioResponse, navItems: { label: string
     }
 
     // Update content title + body
+    // eslint-disable-next-line typescript/no-non-null-assertion -- featureId는 navItems에서 유래
     const navItem = navItems.find((n) => n.featureId === featureId)!;
     contentArea.innerHTML = `
       <h2 style="font-size:1rem;font-weight:700;margin-bottom:12px;color:#1e3a5f">${navItem.title}</h2>
@@ -462,6 +467,7 @@ function renderSimSection(scenario: ScenarioResponse): HTMLElement {
   }
 
   // Play button logic
+  // eslint-disable-next-line typescript/no-non-null-assertion -- 바로 위에서 innerHTML로 생성
   const playBtn = header.querySelector<HTMLButtonElement>("#scenario-play-btn")!;
   let animTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -500,7 +506,7 @@ export function renderScenarioPage(container: HTMLElement, ver = "v2"): void {
   container.classList.add("scenario-body");
 
   const rolesMeta = rolesMetaFor(ver);
-  const navItems = buildNavItems(demoFeatures(ver as any));
+  const navItems = buildNavItems(demoFeatures(ver as DemoVer));
 
   let activeRole = "viewer";
 
@@ -509,9 +515,6 @@ export function renderScenarioPage(container: HTMLElement, ver = "v2"): void {
   let siteSection: HTMLElement | null = null;
   let matrixSection: HTMLElement | null = null;
   let simSection: HTMLElement | null = null;
-
-  // Cache for features (fetched once)
-  let featuresCache: FeaturesResponse | null = null;
 
   function showSimLoading(): void {
     if (simSection) {
@@ -525,45 +528,6 @@ export function renderScenarioPage(container: HTMLElement, ver = "v2"): void {
         </div>
       `;
     }
-  }
-
-  function renderAll(scenario: ScenarioResponse, features: FeaturesResponse): void {
-    // Role bar
-    const newRoleBar = renderRoleBar(activeRole, handleRoleChange, rolesMeta);
-    if (roleBar) {
-      container.replaceChild(newRoleBar, roleBar);
-    } else {
-      container.insertBefore(newRoleBar, container.firstChild);
-    }
-    roleBar = newRoleBar;
-
-    // Site section
-    const newSite = renderSiteSection(scenario, navItems);
-    if (siteSection && siteSection.parentNode === container) {
-      container.replaceChild(newSite, siteSection);
-    } else {
-      // Insert after role bar
-      roleBar.insertAdjacentElement("afterend", newSite);
-    }
-    siteSection = newSite;
-
-    // Matrix section
-    const newMatrix = renderMatrixSection(features, activeRole);
-    if (matrixSection && matrixSection.parentNode === container) {
-      container.replaceChild(newMatrix, matrixSection);
-    } else {
-      siteSection.insertAdjacentElement("afterend", newMatrix);
-    }
-    matrixSection = newMatrix;
-
-    // Sim section
-    const newSim = renderSimSection(scenario);
-    if (simSection && simSection.parentNode === container) {
-      container.replaceChild(newSim, simSection);
-    } else {
-      matrixSection.insertAdjacentElement("afterend", newSim);
-    }
-    simSection = newSim;
   }
 
   function handleRoleChange(newRole: string): void {
@@ -582,8 +546,6 @@ export function renderScenarioPage(container: HTMLElement, ver = "v2"): void {
 
     // Fetch scenario + features together so matrix reflects latest grant state
     Promise.all([fetchScenario(activeRole, ver), fetchFeatures(ver)]).then(([scenario, features]) => {
-      featuresCache = features;
-
       if (siteSection && siteSection.parentNode === container) {
         const newSite = renderSiteSection(scenario, navItems);
         newSite.classList.add("scenario-content-enter");
@@ -604,6 +566,7 @@ export function renderScenarioPage(container: HTMLElement, ver = "v2"): void {
         container.replaceChild(newSim, simSection);
       }
       simSection = newSim;
+      return undefined;
     }).catch((e: unknown) => {
       if (simSection) {
         simSection.innerHTML = `<div style="padding:16px;color:#c0392b">오류: ${e instanceof Error ? e.message : "알 수 없는 오류"}</div>`;
@@ -645,12 +608,12 @@ export function renderScenarioPage(container: HTMLElement, ver = "v2"): void {
     fetchScenario(activeRole, ver),
     fetchFeatures(ver),
   ]).then(([scenario, features]) => {
-    featuresCache = features;
     container.removeChild(loadingDiv);
 
     // Render site section
     siteSection = renderSiteSection(scenario, navItems);
     siteSection.classList.add("scenario-content-enter");
+    // eslint-disable-next-line typescript/no-non-null-assertion -- 위에서 roleBar 할당 완료
     roleBar!.insertAdjacentElement("afterend", siteSection);
 
     // Render matrix section
@@ -662,21 +625,9 @@ export function renderScenarioPage(container: HTMLElement, ver = "v2"): void {
     simSection = renderSimSection(scenario);
     simSection.classList.add("scenario-content-enter");
     matrixSection.insertAdjacentElement("afterend", simSection);
-
-    // Patch handleRoleChange to use featuresCache
-    // (already captured by closure — featuresCache is set above)
+    return undefined;
   }).catch((e: unknown) => {
     loadingDiv.style.color = "#c0392b";
     loadingDiv.textContent = `오류: ${e instanceof Error ? e.message : "알 수 없는 오류"}`;
   });
-
-  // Override handleRoleChange to use featuresCache once loaded
-  // Re-define inline via the outer closure variable — the inner function already
-  // references featuresCache by closure, so once it's set it will be used.
-  // But the matrix column-only update path uses updateMatrixColumnHighlight directly.
-  // We keep the approach of only re-fetching scenario on role change (matrix stays).
-
-  // Patch: when handleRoleChange is called after features are loaded,
-  // it should also re-render matrix only if needed (column highlight already handled).
-  // The matrix doesn't need re-fetch — features are static.
 }

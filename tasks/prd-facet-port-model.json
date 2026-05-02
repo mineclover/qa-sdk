@@ -1,0 +1,188 @@
+{
+  "name": "Facet-Port 모델 — Feynman 인과 다이어그램 기반 Pipe 재설계",
+  "description": "PipeSpec/PipeGraph를 flow kind 중심에서 데이터 패싯 + typed port 중심으로 재설계. PipePort 타입 도입, PipeConnection port-level 연결 확장, StepDataContract→PipePort 자동 도출, classifyPipeRole port 기반 재작성, SVG 노드 boundary port dot + edge facetType 라벨 렌더링, 14종 fold topology 기반 flow catalog 재편.",
+  "branchName": "ralph/facet-port-model",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "PipePort 타입 + PipeSpec.ports 필드 추가",
+      "description": "개발자로서, PipeSpec에 typed input/output port를 선언하여 vertex가 어떤 데이터 패싯을 받고 내보내는지 명시할 수 있다.",
+      "acceptanceCriteria": [
+        "packages/core/src/types/pipe-spec.ts에 PipePort { portId, direction: 'in'|'out', facetType?, label?, required? } 인터페이스 추가",
+        "PipeSpec.ports?: PipePort[] 필드 추가",
+        "validatePipeSpec에 port 유일성 검증: 같은 방향 내 portId 중복 시 ValidationIssue 추가",
+        "serializePipeSpec / deserializePipeSpec에 ports 필드 포함",
+        "기존 테스트 전부 통과 (ports는 optional이므로 하위 호환)"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "breaking change 없음 — optional 필드 추가만. pipe-spec.ts 수정 + pipe-validate.ts 수정 + pipe-serialize.ts 수정.",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "PortRef 타입 + PipeConnection port-level 연결 확장",
+      "description": "개발자로서, PipeConnection을 특정 포트까지 지정하여 'A의 payment_result 포트에서 B의 payment_input 포트로 연결'을 표현할 수 있다.",
+      "acceptanceCriteria": [
+        "PortRef { pipeId: string; portId?: string } 타입 추가 (pipe-spec.ts)",
+        "PipeConnection.from, to를 string | string[] | PortRef | PortRef[]로 확장",
+        "PipeConnection.facetType?: string 필드 추가 (이 line이 운반하는 데이터 타입)",
+        "string 형태 그대로 쓰면 기존 동작 동일 (portId 없음 = pipe-level 연결)",
+        "validatePipeGraph에서 portRef.portId가 해당 pipe.ports에 존재하는지 검증",
+        "normalize(from) 유틸이 PortRef[] 처리 가능하도록 업데이트 (pipe-fold.ts)",
+        "직렬화/역직렬화 하위 호환: string 입력은 그대로 string으로 저장"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "pipe-spec.ts + pipe-validate.ts + pipe-fold.ts(normalize) + pipe-serialize.ts 수정. 기존 string 연결 완전 호환.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "inferPortsFromDataContract 유틸",
+      "description": "개발자로서, PipeStep에 이미 선언된 dataContract를 바탕으로 PipePort를 자동 도출하여 명시적 ports 선언 없이도 port 정보를 얻을 수 있다.",
+      "acceptanceCriteria": [
+        "inferPortsFromDataContract(pipe: PipeSpec): PipePort[] 함수 추가",
+        "step.dataContract.consumes 각 필드 → { direction: 'in', portId: fieldName, facetType: field.type }",
+        "step.dataContract.produces 각 필드 → { direction: 'out', portId: fieldName, facetType: field.type }",
+        "resolvePorts(pipe: PipeSpec): PipePort[] — 명시 ports가 있으면 우선, 없으면 dataContract에서 도출",
+        "leaf 아닌 flow (sequence, parallel 등)에서 하위 step들의 ports 집계",
+        "테스트: dataContract만 있는 pipe → ports 도출 결과 검증"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "신규 파일 pipe-port.ts 또는 pipe-interpret.ts에 추가. 순수 함수, 외부 의존 없음.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "classifyPipeRole port 기반 재작성",
+      "description": "개발자로서, classifyPipeRole이 port 구성을 1차 기준으로 삼아 'vertex에 어떤 line이 붙어있나'로 역할을 결정하도록 한다. flow.kind 기반은 fallback으로 유지.",
+      "acceptanceCriteria": [
+        "classifyPipeRole 판정 로직 우선순위 변경: resolvePorts 결과를 1차 기준으로 사용",
+        "tap flow + output ports 없음 → observer",
+        "branch flow + data ports 없음 → router",
+        "input + output ports 모두 있음 → transformer",
+        "output ports만 있거나 emit 포함 → producer",
+        "fallback: input ports만 또는 ports 없음 → consumer (기존 flow.kind 로직 유지)",
+        "기존 pipe-interpret.test.ts 23 tests 전부 통과",
+        "신규 테스트: ports 명시 선언이 flow.kind 추론보다 우선함을 검증"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "pipe-interpret.ts 수정. resolvePorts(US-003) 의존.",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "SVG 노드 boundary에 typed port dot 렌더링",
+      "description": "개발자로서, SVG 노드의 왼쪽(input)·오른쪽(output) 경계에 typed port dot이 표시되어 어떤 데이터가 들어오고 나가는지 시각적으로 파악할 수 있다.",
+      "acceptanceCriteria": [
+        "drawPortDots(x, y, w, h, ports: PipePort[]): string 함수 추가 (pipe-svg-shapes.ts)",
+        "input ports: 노드 왼쪽 경계 y 균등 분배, 인입 dot 스타일",
+        "output ports: 오른쪽 경계 y 균등 분배, 출력 dot 스타일",
+        "dot 색상: facetType 해시 기반 (없으면 #90a4ae)",
+        "dot에 SVG title: portId (facetType) 텍스트",
+        "StandaloneNodeOptions.ports?: PipePort[] 필드 추가",
+        "standaloneNodeSvg가 ports 있으면 drawPortDots 호출",
+        "기존 pipe-svg.test.ts 15 tests 전부 통과 (ports 없으면 기존 동작 동일)"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "pipe-svg-shapes.ts 수정. US-001(PipePort 타입) 의존.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "SVG edge에 facetType 라벨 렌더링",
+      "description": "개발자로서, PipeConnection에 facetType이 있는 edge는 edge 중간에 작은 라벨을 렌더링하여 '어떤 데이터가 흐르는지' 다이어그램에서 직접 읽을 수 있다.",
+      "acceptanceCriteria": [
+        "drawEdgePath에 facetType?: string 옵션 추가 (EdgePathOptions)",
+        "facetType 있으면 edge 중간점에 pill-style 라벨 렌더링 (반투명 배경 rect + 10px monospace)",
+        "standaloneEdgeSvg에 facetType? 옵션 추가 (StandaloneEdgeOptions)",
+        "pipeGraphToSvg에서 PipeConnection.facetType이 있으면 drawEdgePath에 전달",
+        "기존 pipe-svg.test.ts 전부 통과"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "pipe-svg-shapes.ts + pipe-svg.ts 수정. US-002(PipeConnection.facetType) 의존.",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "pipeGraphToSvg PortRef 기반 엣지 라우팅",
+      "description": "개발자로서, PortRef 연결이 있는 경우 edge가 port dot 위치에서 출발/도착하여 정확한 인과 구조를 표현할 수 있다.",
+      "acceptanceCriteria": [
+        "pipeGraphToSvg 내부에서 connection.from/to가 PortRef이면 해당 port dot의 (x, y)에서 edge path 시작/종료",
+        "port 위치 계산: computeLayout 결과 노드 rect + port index 기반",
+        "PortRef 없는 기존 연결은 노드 중앙 기준 (기존 동작 동일)",
+        "D3Link에 sourcePorts?: string[], targetPorts?: string[] 추가",
+        "pipeGraphToD3 업데이트: PortRef 정보를 D3Link에 포함",
+        "신규 테스트: PortRef 연결 SVG에 port dot 좌표 기반 path 생성 검증"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "pipe-svg.ts 수정. US-002(PortRef) + US-005(port dot 위치) 의존.",
+      "dependsOn": [
+        "US-002",
+        "US-005"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-008",
+      "title": "pipe-design.ts 카탈로그 업데이트 — port + facetType 시연",
+      "description": "디자인 카탈로그(pipe-design.html)에 port dot와 facetType 라벨이 실제로 렌더링되는 예시를 추가하여 Feynman 시각 스펙을 완성한다.",
+      "acceptanceCriteria": [
+        "pipe-design.html TOC에 'Port & FacetType' 섹션 추가",
+        "port dot 갤러리: input-only / output-only / input+output / typed facetType 색상 4종",
+        "facetType edge 갤러리: facetType 라벨 있는 edge 4종 (next/event/conditional/fan-out)",
+        "실전 패턴 1종 추가: OrderData → [payment] → PaymentResult → [notification] (port + facetType 전부 명시)",
+        "pnpm --filter @qa-sdk/viz-web exec tsc --noEmit 통과"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "viz-web/src/pipe-design.ts + pipe-design.html 수정. US-005 + US-006 의존.",
+      "dependsOn": [
+        "US-005",
+        "US-006"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-009",
+      "title": "flow catalog fold topology 재편",
+      "description": "개발자로서, 29종 flow kind가 'fold topology' 관점으로 재분류되어 각 flow kind가 '어떻게 패싯들을 합성하는가'의 기술자로 이해된다.",
+      "acceptanceCriteria": [
+        "pipe-flow-catalog.spec.md에 fold topology 분류 섹션 추가: atomic(1):step / linear(1):sequence / conditional(2):branch,optional / concurrent(3):parallel,race,await / resilient(3):retry,fallback,circuit-breaker / iterative(2):loop,feedback / transactional(2):compensate,finally / signaling(1):emit / temporal(3):timeout,throttle,debounce / batch(4):map,reduce,buffer,filter / transformation(2):split,enrich / streaming(2):resequence,window / stateful(2):dedup,correlation / observational(1):tap — 14종 topology, 29 flow kind 전수",
+        "각 topology 분류에 'port 구성 패턴' 추가: 입력 포트 수, 출력 포트 수, 특이사항",
+        "pf-*.spec.md 29개 각각에 '## fold topology' 섹션 추가: 어떤 topology에 속하고 이유 1-2줄",
+        "meta-semantic-pipe-impl.spec.md 방법 섹션에 fold topology 관점 설명 추가"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "코드 변경 없음. 문서 전용. 29개 pf-*.spec.md 수정 + 카탈로그 스펙 수정.",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-02T10:59:13.892Z"
+  }
+}

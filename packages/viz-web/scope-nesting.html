@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scope Nesting Preview</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
+      header {
+        background: #1a1a2e; color: #fff; padding: 12px 24px;
+        display: flex; align-items: center; gap: 16px;
+      }
+      header h1 { font-size: 18px; font-weight: 600; }
+      header .subtitle { font-size: 13px; color: #aaa; }
+      .controls {
+        background: #fff; border-bottom: 1px solid #e0e0e0;
+        padding: 10px 24px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+      }
+      .controls label { font-size: 13px; font-weight: 500; }
+      .filter-group { display: flex; gap: 10px; align-items: center; }
+      .filter-group label { display: flex; align-items: center; gap: 4px; font-weight: 400; cursor: pointer; }
+      .filter-group input[type=checkbox] { accent-color: #5c6bc0; }
+      .main { display: flex; height: calc(100vh - 100px); }
+      .sidebar {
+        width: 240px; min-width: 200px; background: #fff;
+        border-right: 1px solid #e0e0e0; overflow-y: auto; padding: 12px;
+      }
+      .sidebar h2 {
+        font-size: 13px; font-weight: 600; color: #666; text-transform: uppercase;
+        letter-spacing: 0.05em; margin-bottom: 8px;
+      }
+      .example-item {
+        padding: 8px 10px; border-radius: 6px; cursor: pointer;
+        font-size: 13px; margin-bottom: 4px; border: 1px solid transparent;
+      }
+      .example-item:hover { background: #f0f4ff; }
+      .example-item.active { background: #e8eeff; border-color: #5c6bc0; }
+      .example-item .name { font-weight: 500; }
+      .example-item .desc { font-size: 11px; color: #888; margin-top: 2px; }
+      .viewer { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+      .tabs {
+        display: flex; border-bottom: 1px solid #e0e0e0; background: #fff;
+        padding: 0 16px;
+      }
+      .tab {
+        padding: 8px 16px; font-size: 13px; cursor: pointer;
+        border-bottom: 2px solid transparent; color: #666;
+      }
+      .tab.active { border-bottom-color: #5c6bc0; color: #5c6bc0; font-weight: 500; }
+      .tab-content { flex: 1; overflow: auto; padding: 16px; }
+      .tab-pane { display: none; }
+      .tab-pane.active { display: block; }
+      #timeline-container svg {
+        background: #fff; border-radius: 8px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+        max-width: 100%;
+      }
+      .mermaid-section { margin-bottom: 20px; }
+      .mermaid-section h3 {
+        font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px;
+      }
+      pre {
+        background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px;
+        font-size: 12px; overflow: auto; line-height: 1.6;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        position: relative;
+      }
+      .stats {
+        display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap;
+      }
+      .stat {
+        background: #fff; padding: 8px 14px; border-radius: 6px; font-size: 12px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      }
+      .stat .val { font-size: 20px; font-weight: 700; color: #5c6bc0; }
+      .stat .key { color: #888; margin-top: 2px; }
+      .copy-btn {
+        position: absolute; top: 8px; right: 8px;
+        padding: 4px 10px; font-size: 11px;
+        background: #333; color: #fff; border: none; border-radius: 4px; cursor: pointer;
+      }
+      .copy-btn:hover { background: #555; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Scope Nesting Preview</h1>
+      <span class="subtitle">scopeTimelineToSvg · nestingToMermaid · scopeTimelineToD3</span>
+    </header>
+
+    <div class="controls">
+      <span style="font-size:13px;font-weight:500;">행 필터:</span>
+      <div class="filter-group">
+        <label><input type="checkbox" class="row-filter" value="scope" checked> Scope</label>
+        <label><input type="checkbox" class="row-filter" value="contract" checked> Contract</label>
+        <label><input type="checkbox" class="row-filter" value="pipe" checked> Pipe</label>
+        <label><input type="checkbox" class="row-filter" value="delegation" checked> Delegation</label>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="sidebar">
+        <h2>예제 시나리오</h2>
+        <div id="example-list"></div>
+      </div>
+
+      <div class="viewer">
+        <div class="tabs">
+          <div class="tab active" data-tab="timeline">Timeline</div>
+          <div class="tab" data-tab="mermaid">Mermaid</div>
+          <div class="tab" data-tab="d3">D3 Data</div>
+        </div>
+
+        <div class="tab-content">
+          <div class="tab-pane active" id="tab-timeline">
+            <div class="stats" id="stats"></div>
+            <div id="timeline-container"></div>
+          </div>
+
+          <div class="tab-pane" id="tab-mermaid">
+            <div class="mermaid-section">
+              <h3>Scope Nesting (계층 + 계약 하향)</h3>
+              <pre><button class="copy-btn" data-target="mermaid-nesting">복사</button><code id="mermaid-nesting"></code></pre>
+            </div>
+            <div class="mermaid-section">
+              <h3>Mount Flow (활성 계약 타임라인)</h3>
+              <pre><button class="copy-btn" data-target="mermaid-mount">복사</button><code id="mermaid-mount"></code></pre>
+            </div>
+            <div class="mermaid-section">
+              <h3>Contract Timing (readiness + delegation)</h3>
+              <pre><button class="copy-btn" data-target="mermaid-timing">복사</button><code id="mermaid-timing"></code></pre>
+            </div>
+          </div>
+
+          <div class="tab-pane" id="tab-d3">
+            <pre><button class="copy-btn" data-target="d3-code">복사</button><code id="d3-code"></code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/scope-nesting-preview.ts"></script>
+  </body>
+</html>

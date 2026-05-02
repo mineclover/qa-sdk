@@ -1,27 +1,24 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk dry-run — 변경 시뮬레이션.
  *
  * 실제로 아무것도 변경하지 않는다.
- * SchemaSnapshot에 가상의 변경(축 entry 추가/제거, capacity 변경)을 적용하고
+ * 축에 가상의 변경(entry 추가/제거, capacity 변경)을 적용하고
  * DAG 전파 결과(stride 변경, overflow, 마이그레이션 필요 여부)를 보여준다.
  *
  * ── 모드 ──
- *   --input (로컬): SchemaSnapshot JSON 기반 로컬 시뮬레이션
+ *   --catalog (로컬): Catalog 기반 로컬 시뮬레이션 (기본)
  *   --registry (원격): Registry API POST /workspace/simulate 호출
  */
 
-import type { SchemaSnapshot, Axis, Composite } from "../lib/types.js";
-import { readSnapshot } from "../lib/snapshot-io.js";
+import { latestPrefixVersion, type Catalog } from "@qa-sdk/core";
+import { loadCatalog } from "config-loader";
 
 const MAX_SAFE = Number.MAX_SAFE_INTEGER;
 
 // ── Types ────────────────────────────────────────────
-
-export interface DryRunOptions {
-  input?: string;
-  registry?: string;
-  changes: ChangeScenario;
-}
 
 /** 축별 capacity 변경 또는 entry 추가/제거 */
 export interface ChangeScenario {
@@ -30,6 +27,32 @@ export interface ChangeScenario {
     addEntries?: string[];
     removeEntries?: string[];
   };
+}
+
+/** Registry API 원격 시뮬레이션 */
+export interface DryRunRegistryOptions {
+  registry: string;
+  changes: ChangeScenario;
+}
+
+/** 로컬 Catalog 기반 시뮬레이션 */
+export interface DryRunCatalogOptions {
+  catalog?: string;
+  loadedCatalog?: Catalog;
+  changes: ChangeScenario;
+}
+
+export type DryRunOptions = DryRunRegistryOptions | DryRunCatalogOptions;
+
+interface AxisData {
+  id: string;
+  entries: string[];
+  capacity: number;
+}
+
+interface CompositeData {
+  id: string;
+  dims: string[];
 }
 
 interface CompositeImpact {
@@ -47,31 +70,67 @@ interface CompositeImpact {
 
 // ── Main ─────────────────────────────────────────────
 
+function isRegistryOptions(opts: DryRunOptions): opts is DryRunRegistryOptions {
+  return "registry" in opts && !!opts.registry;
+}
+
 export async function dryRun(opts: DryRunOptions): Promise<void> {
-  if (opts.registry) {
+  if (isRegistryOptions(opts)) {
     return dryRunRemote(opts.registry, opts.changes);
   }
 
-  if (opts.input) {
-    return dryRunLocal(opts.input, opts.changes);
-  }
-
-  throw new Error("--input 또는 --registry 중 하나 필요");
+  const catalog = opts.loadedCatalog ?? await loadCatalog(opts.catalog) as Catalog | undefined;
+  if (!catalog) throw new Error("--catalog <경로> 필수 (또는 자동 탐색 가능한 위치에 배치)");
+  return dryRunWithCatalog(catalog, opts.changes);
 }
 
-// ── 로컬 시뮬레이션 ─────────────────────────────────
+// ── Catalog 기반 시뮬레이션 ─────────────────────────
 
-async function dryRunLocal(inputPath: string, changes: ChangeScenario): Promise<void> {
-  const snapshot = await readSnapshot(inputPath);
+function catalogToSimData(catalog: Catalog): { axes: AxisData[]; composites: CompositeData[] } {
+  const axes: AxisData[] = Object.entries(catalog.axes).map(([id, axis]) => {
+    const versionKeys = Object.keys(axis.versions);
+    const latestVer = versionKeys[versionKeys.length - 1] ?? "v1";
+    const snap = axis.versions[latestVer];
+    return {
+      id,
+      entries: [...snap.entries],
+      capacity: snap.capacity ?? snap.entries.length,
+    };
+  });
 
-  console.log(`Dry-run: "${snapshot.id}"`);
+  const composites: CompositeData[] = [];
+  for (const [prefixId, prefix] of Object.entries(catalog.prefixes)) {
+    const version = latestPrefixVersion(catalog, prefixId);
+    // prefix.dims에서 axis kind만 추출
+    const axisDims = Object.entries(prefix.dims)
+      .filter(([, ref]) => ref.kind === "axis")
+      .map(([, ref]) => (ref as { kind: "axis"; axisId: string }).axisId);
+    if (axisDims.length === 0) continue;
+    composites.push({
+      id: `${prefixId}:${version}`,
+      dims: axisDims,
+    });
+  }
+
+  return { axes, composites };
+}
+
+async function dryRunWithCatalog(catalog: Catalog, changes: ChangeScenario): Promise<void> {
+  console.log(`Dry-run: catalog "${catalog.id}"`);
   console.log(`Changes: ${Object.keys(changes).join(", ")}\n`);
 
-  const axisMap = new Map(snapshot.axes.map((a) => [a.id, a]));
+  const { axes, composites } = catalogToSimData(catalog);
+  simulateAndPrint(axes, composites, changes);
+}
+
+// ── 시뮬레이션 공통 로직 ───────────────────────────
+
+function simulateAndPrint(axes: AxisData[], composites: CompositeData[], changes: ChangeScenario): void {
+  const axisMap = new Map(axes.map(a => [a.id, a]));
 
   // 변경 적용 후의 축 상태 계산
   const newAxes = new Map<string, { entries: string[]; capacity: number }>();
-  for (const axis of snapshot.axes) {
+  for (const axis of axes) {
     const change = changes[axis.id];
     if (!change) {
       newAxes.set(axis.id, { entries: axis.entries, capacity: axis.capacity });
@@ -80,10 +139,12 @@ async function dryRunLocal(inputPath: string, changes: ChangeScenario): Promise<
 
     let entries = [...axis.entries];
     if (change.addEntries) entries.push(...change.addEntries);
-    if (change.removeEntries) entries = entries.filter((e) => !change.removeEntries!.includes(e));
+    if (change.removeEntries) {
+      const toRemove = change.removeEntries;
+      entries = entries.filter(e => !toRemove.includes(e));
+    }
     const capacity = change.capacity ?? axis.capacity;
 
-    // capacity가 entries 수보다 작으면 경고
     if (capacity < entries.length) {
       console.log(`  [E] ${axis.id}: capacity ${capacity} < entries ${entries.length}`);
     }
@@ -95,12 +156,12 @@ async function dryRunLocal(inputPath: string, changes: ChangeScenario): Promise<
   // 각 composite의 영향 계산
   const impacts: CompositeImpact[] = [];
 
-  for (const comp of snapshot.composites) {
-    const currentShape = comp.dims.map((d) => axisMap.get(d)?.capacity ?? 0);
+  for (const comp of composites) {
+    const currentShape = comp.dims.map(d => axisMap.get(d)?.capacity ?? 0);
     const currentStride = calcStrides(currentShape);
     const currentProduct = currentShape.reduce((a, b) => a * b, 1);
 
-    const newShape = comp.dims.map((d) => newAxes.get(d)?.capacity ?? 0);
+    const newShape = comp.dims.map(d => newAxes.get(d)?.capacity ?? 0);
     const newStride = calcStrides(newShape);
     const newProduct = newShape.reduce((a, b) => a * b, 1);
 
@@ -139,9 +200,9 @@ async function dryRunLocal(inputPath: string, changes: ChangeScenario): Promise<
   }
 
   // 요약
-  const errors = impacts.filter((i) => i.overflow).length;
-  const warnings = impacts.filter((i) => i.strideChanged && !i.overflow).length;
-  const safe = impacts.filter((i) => !i.strideChanged && !i.overflow).length;
+  const errors = impacts.filter(i => i.overflow).length;
+  const warnings = impacts.filter(i => i.strideChanged && !i.overflow).length;
+  const safe = impacts.filter(i => !i.strideChanged && !i.overflow).length;
 
   console.log(`── Summary ──`);
   console.log(`  composites: ${impacts.length}`);
@@ -154,7 +215,6 @@ async function dryRunLocal(inputPath: string, changes: ChangeScenario): Promise<
 // ── 원격 시뮬레이션 ─────────────────────────────────
 
 async function dryRunRemote(registry: string, changes: ChangeScenario): Promise<void> {
-  // ChangeScenario → Registry API format: Record<string, { capacity: number }>
   const apiChanges: Record<string, { capacity: number }> = {};
   for (const [axisId, change] of Object.entries(changes)) {
     if (change.capacity) {

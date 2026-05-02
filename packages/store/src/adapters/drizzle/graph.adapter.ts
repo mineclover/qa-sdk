@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { eq } from "drizzle-orm";
 import type { GraphStore } from "@qa-sdk/core";
 import type { RuntimeGraph } from "@qa-sdk/core";
@@ -20,7 +23,8 @@ export class DrizzleGraphStore implements GraphStore {
           edgeCount: graph.edges.length,
           builtAt: new Date(),
         })
-        .where(eq(runtimeGraphs.traceId, traceId));
+        .where(eq(runtimeGraphs.traceId, traceId))
+        .comment({ adapter: "GraphStore", method: "upsert.update" });
       return;
     }
 
@@ -29,14 +33,15 @@ export class DrizzleGraphStore implements GraphStore {
       graph,
       nodeCount: graph.nodes.length,
       edgeCount: graph.edges.length,
-    });
+    }).comment({ adapter: "GraphStore", method: "upsert.insert" });
   }
 
   async findByTraceId(traceId: string): Promise<RuntimeGraph | null> {
     const [row] = await this.db
       .select()
       .from(runtimeGraphs)
-      .where(eq(runtimeGraphs.traceId, traceId));
+      .where(eq(runtimeGraphs.traceId, traceId))
+      .comment({ adapter: "GraphStore", method: "findByTraceId" });
     return row?.graph ?? null;
   }
 }

@@ -1,0 +1,3427 @@
+{
+  "objects": [
+    {
+      "objectId": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order",
+      "objectKind": "traversal",
+      "canonicalKey": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order",
+      "schemaVersion": "v1",
+      "lifecycle": "observed",
+      "createdAt": "2026-04-11T22:27:21.846Z",
+      "updatedAt": "2026-04-11T22:27:21.846Z"
+    }
+  ],
+  "facets": [
+    {
+      "objectId": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order",
+      "facetKind": "route",
+      "version": "v1",
+      "payloadJson": {
+        "purpose": "observe",
+        "start": "collect-order",
+        "edges": [
+          "edge:collect-order->path:branch->validate-order"
+        ],
+        "end": "validate-order",
+        "canonicalizable": true
+      },
+      "sourceRef": "snapshot:web-full",
+      "recordedAt": "2026-04-11T22:27:21.846Z"
+    },
+    {
+      "objectId": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order",
+      "facetKind": "aggregate",
+      "version": "v1",
+      "payloadJson": {
+        "observationCount": 1,
+        "lastObservedAt": "2026-04-11T22:27:21.846Z",
+        "reachability": "complete"
+      },
+      "sourceRef": "snapshot:web-full",
+      "recordedAt": "2026-04-11T22:27:21.846Z"
+    }
+  ],
+  "observations": [
+    {
+      "observationId": "snapshot:web-full:traversal:traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order",
+      "targetObjectId": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order",
+      "observationKind": "traversal_observed",
+      "payloadJson": {
+        "traversal": {
+          "purpose": "observe",
+          "start": "collect-order",
+          "edges": [
+            "edge:collect-order->path:branch->validate-order"
+          ],
+          "end": "validate-order",
+          "canonicalKey": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order"
+        },
+        "reachedGoalIds": [
+          "validate-order"
+        ],
+        "unreachableGoalIds": [],
+        "loopDetected": false,
+        "recoveryUsed": false,
+        "terminalNodeId": "run-validate",
+        "terminalReason": "goal_reached"
+      },
+      "observedAt": "2026-04-11T22:27:21.846Z"
+    }
+  ],
+  "projections": [
+    {
+      "projectionId": "snapshot:web-full",
+      "projectionKind": "operational_ontology_snapshot",
+      "targetScope": "web-full",
+      "payloadJson": {
+        "topologyTemplateKind": "runtime_snapshot",
+        "topologyTemplateDescription": "Snapshot that combines corridor, junction, checkpoint, transmission, lineage, and traversal views",
+        "topologyValidation": {
+          "valid": true,
+          "corridorCount": 2,
+          "maxCheckpointLatticeDepth": 2,
+          "missingCorridorKinds": [],
+          "missingJunctionTemplateKinds": [],
+          "missingCheckpointTemplateKinds": [],
+          "missingCheckpointLattices": false,
+          "missingRouteDecisions": false,
+          "missingTraversals": false,
+          "tooFewCorridors": false,
+          "tooManyCorridors": false,
+          "checkpointDepthTooShallow": false,
+          "routeDecisionsMissingRefs": [],
+          "checkpointsMissingCorridor": []
+        },
+        "corridors": [
+          {
+            "flowId": "snapshot-web",
+            "templateKind": "pipe_graph",
+            "templateDescription": "Corridor materialized from PipeGraph and optional schema/lineage alignment",
+            "entryNodeId": "collect-order",
+            "nodeIds": [
+              "collect-order",
+              "validate-order"
+            ],
+            "schemaIds": [],
+            "endpoints": [],
+            "contracts": [],
+            "links": [
+              {
+                "linkId": "flow-link:collect-order:conditional:validate-order:order.valid == true",
+                "templateKind": "pipe_connection",
+                "fromEndpointId": "endpoint:collect-order:out:_node",
+                "toEndpointId": "endpoint:validate-order:in:_node",
+                "semantic": "production_to_consumption",
+                "medium": "direct",
+                "condition": "order.valid == true",
+                "relationType": "pipe_connection:conditional",
+                "sourceKind": "connection"
+              }
+            ],
+            "templateValidation": {
+              "valid": true,
+              "missingEndpointKinds": [],
+              "disallowedEndpointKinds": [],
+              "missingContractKinds": [],
+              "disallowedContractKinds": [],
+              "missingLinkKinds": [],
+              "disallowedLinkKinds": []
+            }
+          },
+          {
+            "flowId": "event-record:log-web-snapshot",
+            "templateKind": "event_record_observed",
+            "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+            "entryNodeId": "event-record:log-web-snapshot",
+            "nodeIds": [
+              "event-record:log-web-snapshot",
+              "address-context:order_event:order_event:v1:7"
+            ],
+            "schemaIds": [],
+            "endpoints": [
+              {
+                "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                "templateKind": "payload_root",
+                "nodeId": "event-record:log-web-snapshot",
+                "direction": "out",
+                "facetKind": "production",
+                "field": "payload",
+                "sourceKind": "contract"
+              },
+              {
+                "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                "templateKind": "payload_field",
+                "nodeId": "event-record:log-web-snapshot",
+                "direction": "out",
+                "facetKind": "production",
+                "field": "orderId",
+                "sourceKind": "contract"
+              },
+              {
+                "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                "templateKind": "payload_field",
+                "nodeId": "event-record:log-web-snapshot",
+                "direction": "out",
+                "facetKind": "production",
+                "field": "amount",
+                "sourceKind": "contract"
+              },
+              {
+                "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                "templateKind": "address_binding",
+                "nodeId": "address-context:order_event:order_event:v1:7",
+                "direction": "in",
+                "facetKind": "consumption",
+                "field": "order_event",
+                "sourceKind": "contract"
+              }
+            ],
+            "contracts": [
+              {
+                "contractId": "contract:event-record:log-web-snapshot",
+                "templateKind": "event_record_contract",
+                "nodeId": "event-record:log-web-snapshot",
+                "consumes": [],
+                "produces": [
+                  {
+                    "field": "payload",
+                    "type": "object:json",
+                    "required": true,
+                    "source": "order.submit"
+                  },
+                  {
+                    "field": "orderId",
+                    "type": "string",
+                    "required": true,
+                    "source": "order.submit"
+                  },
+                  {
+                    "field": "amount",
+                    "type": "number",
+                    "required": true,
+                    "source": "order.submit"
+                  }
+                ]
+              },
+              {
+                "contractId": "contract:address-context:order_event:order_event:v1:7",
+                "templateKind": "address_binding_contract",
+                "nodeId": "address-context:order_event:order_event:v1:7",
+                "consumes": [
+                  {
+                    "field": "order_event",
+                    "type": "address_context_binding",
+                    "required": true,
+                    "source": "order.submit"
+                  }
+                ],
+                "produces": []
+              }
+            ],
+            "links": [
+              {
+                "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+                "templateKind": "payload_projection",
+                "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                "semantic": "production_to_consumption",
+                "medium": "direct",
+                "relationType": "payload_field",
+                "sourceKind": "payload"
+              },
+              {
+                "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+                "templateKind": "payload_projection",
+                "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                "semantic": "production_to_consumption",
+                "medium": "direct",
+                "relationType": "payload_field",
+                "sourceKind": "payload"
+              },
+              {
+                "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+                "templateKind": "observation_link",
+                "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                "semantic": "observation_emission",
+                "medium": "observation",
+                "relationType": "observes_address_context",
+                "sourceKind": "connection"
+              }
+            ],
+            "templateValidation": {
+              "valid": true,
+              "missingEndpointKinds": [],
+              "disallowedEndpointKinds": [],
+              "missingContractKinds": [],
+              "disallowedContractKinds": [],
+              "missingLinkKinds": [],
+              "disallowedLinkKinds": []
+            }
+          }
+        ],
+        "controlFlows": [
+          {
+            "graphId": "snapshot-web",
+            "entryNodeId": "collect-order",
+            "nodes": [
+              {
+                "nodeId": "collect-order",
+                "kind": "step",
+                "facet": "production",
+                "entryCondition": "event:order.submit",
+                "sourceKind": "step"
+              },
+              {
+                "nodeId": "validate-order",
+                "kind": "step",
+                "facet": "consumption",
+                "entryCondition": "event:order.created",
+                "sourceKind": "step"
+              }
+            ],
+            "edges": [
+              {
+                "from": "collect-order",
+                "to": "validate-order",
+                "kind": "conditional",
+                "condition": "order.valid == true",
+                "sourceKind": "conditional"
+              }
+            ],
+            "version": "v1"
+          }
+        ],
+        "checkpoints": [
+          {
+            "checkpointId": "checkpoint:event-record:log-web-snapshot",
+            "templateKind": "root",
+            "recordId": "log-web-snapshot",
+            "traceId": "trace-web-snapshot",
+            "eventKey": "order.submit",
+            "timestamp": "2026-04-12T00:01:00.000Z",
+            "corridorId": "event-record:log-web-snapshot",
+            "observedNodeKeys": [
+              "event-record:log-web-snapshot",
+              "address-context:order_event:order_event:v1:7"
+            ],
+            "observedEdgeKeys": [
+              "edge:event-record:log-web-snapshot->observes_address_context->address-context:order_event:order_event:v1:7"
+            ],
+            "transmissions": [
+              {
+                "transmissionId": "transmission:observation_emission:facet:event-record:log-web-snapshot:production->facet:address-context:order_event:order_event:v1:7:consumption",
+                "source": {
+                  "nodeId": "event-record:log-web-snapshot",
+                  "facetKind": "production",
+                  "key": "facet:event-record:log-web-snapshot:production"
+                },
+                "target": {
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "facetKind": "consumption",
+                  "key": "facet:address-context:order_event:order_event:v1:7:consumption"
+                },
+                "semantic": "observation_emission",
+                "medium": "observation",
+                "direction": "forward",
+                "relationType": "observes_address_context",
+                "contractRefs": [
+                  "order_event"
+                ]
+              }
+            ],
+            "dataFlow": {
+              "flowId": "event-record:log-web-snapshot",
+              "templateKind": "event_record_observed",
+              "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+              "entryNodeId": "event-record:log-web-snapshot",
+              "nodeIds": [
+                "event-record:log-web-snapshot",
+                "address-context:order_event:order_event:v1:7"
+              ],
+              "schemaIds": [],
+              "endpoints": [
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "templateKind": "payload_root",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "payload",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "orderId",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "amount",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "templateKind": "address_binding",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "direction": "in",
+                  "facetKind": "consumption",
+                  "field": "order_event",
+                  "sourceKind": "contract"
+                }
+              ],
+              "contracts": [
+                {
+                  "contractId": "contract:event-record:log-web-snapshot",
+                  "templateKind": "event_record_contract",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "consumes": [],
+                  "produces": [
+                    {
+                      "field": "payload",
+                      "type": "object:json",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "orderId",
+                      "type": "string",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "amount",
+                      "type": "number",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ]
+                },
+                {
+                  "contractId": "contract:address-context:order_event:order_event:v1:7",
+                  "templateKind": "address_binding_contract",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "consumes": [
+                    {
+                      "field": "order_event",
+                      "type": "address_context_binding",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ],
+                  "produces": []
+                }
+              ],
+              "links": [
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+                  "templateKind": "observation_link",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "semantic": "observation_emission",
+                  "medium": "observation",
+                  "relationType": "observes_address_context",
+                  "sourceKind": "connection"
+                }
+              ],
+              "templateValidation": {
+                "valid": true,
+                "missingEndpointKinds": [],
+                "disallowedEndpointKinds": [],
+                "missingContractKinds": [],
+                "disallowedContractKinds": [],
+                "missingLinkKinds": [],
+                "disallowedLinkKinds": []
+              }
+            },
+            "templateDescription": "Corridor root checkpoint for a single observed record",
+            "templateValidation": {
+              "valid": true,
+              "missingObservedFields": false,
+              "missingObservedPrefixIds": false,
+              "nodeNotObserved": false
+            },
+            "junctionId": "collect-order",
+            "traversalKey": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order"
+          },
+          {
+            "checkpointId": "checkpoint:event-record:log-web-snapshot:payload:orderId",
+            "templateKind": "payload_field",
+            "recordId": "log-web-snapshot",
+            "traceId": "trace-web-snapshot",
+            "eventKey": "order.submit",
+            "timestamp": "2026-04-12T00:01:00.000Z",
+            "corridorId": "event-record:log-web-snapshot",
+            "observedNodeKeys": [
+              "event-record:log-web-snapshot"
+            ],
+            "observedEdgeKeys": [
+              "edge:event-record:log-web-snapshot->payload_field->event-record:log-web-snapshot:orderId"
+            ],
+            "transmissions": [],
+            "dataFlow": {
+              "flowId": "event-record:log-web-snapshot",
+              "templateKind": "event_record_observed",
+              "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+              "entryNodeId": "event-record:log-web-snapshot",
+              "nodeIds": [
+                "event-record:log-web-snapshot",
+                "address-context:order_event:order_event:v1:7"
+              ],
+              "schemaIds": [],
+              "endpoints": [
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "templateKind": "payload_root",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "payload",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "orderId",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "amount",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "templateKind": "address_binding",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "direction": "in",
+                  "facetKind": "consumption",
+                  "field": "order_event",
+                  "sourceKind": "contract"
+                }
+              ],
+              "contracts": [
+                {
+                  "contractId": "contract:event-record:log-web-snapshot",
+                  "templateKind": "event_record_contract",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "consumes": [],
+                  "produces": [
+                    {
+                      "field": "payload",
+                      "type": "object:json",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "orderId",
+                      "type": "string",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "amount",
+                      "type": "number",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ]
+                },
+                {
+                  "contractId": "contract:address-context:order_event:order_event:v1:7",
+                  "templateKind": "address_binding_contract",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "consumes": [
+                    {
+                      "field": "order_event",
+                      "type": "address_context_binding",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ],
+                  "produces": []
+                }
+              ],
+              "links": [
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+                  "templateKind": "observation_link",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "semantic": "observation_emission",
+                  "medium": "observation",
+                  "relationType": "observes_address_context",
+                  "sourceKind": "connection"
+                }
+              ],
+              "templateValidation": {
+                "valid": true,
+                "missingEndpointKinds": [],
+                "disallowedEndpointKinds": [],
+                "missingContractKinds": [],
+                "disallowedContractKinds": [],
+                "missingLinkKinds": [],
+                "disallowedLinkKinds": []
+              }
+            },
+            "templateDescription": "Checkpoint for an observed top-level payload field",
+            "templateValidation": {
+              "valid": true,
+              "missingObservedFields": false,
+              "missingObservedPrefixIds": false,
+              "nodeNotObserved": false
+            },
+            "junctionId": "collect-order",
+            "traversalKey": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order"
+          },
+          {
+            "checkpointId": "checkpoint:event-record:log-web-snapshot:payload:amount",
+            "templateKind": "payload_field",
+            "recordId": "log-web-snapshot",
+            "traceId": "trace-web-snapshot",
+            "eventKey": "order.submit",
+            "timestamp": "2026-04-12T00:01:00.000Z",
+            "corridorId": "event-record:log-web-snapshot",
+            "observedNodeKeys": [
+              "event-record:log-web-snapshot"
+            ],
+            "observedEdgeKeys": [
+              "edge:event-record:log-web-snapshot->payload_field->event-record:log-web-snapshot:amount"
+            ],
+            "transmissions": [],
+            "dataFlow": {
+              "flowId": "event-record:log-web-snapshot",
+              "templateKind": "event_record_observed",
+              "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+              "entryNodeId": "event-record:log-web-snapshot",
+              "nodeIds": [
+                "event-record:log-web-snapshot",
+                "address-context:order_event:order_event:v1:7"
+              ],
+              "schemaIds": [],
+              "endpoints": [
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "templateKind": "payload_root",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "payload",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "orderId",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "amount",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "templateKind": "address_binding",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "direction": "in",
+                  "facetKind": "consumption",
+                  "field": "order_event",
+                  "sourceKind": "contract"
+                }
+              ],
+              "contracts": [
+                {
+                  "contractId": "contract:event-record:log-web-snapshot",
+                  "templateKind": "event_record_contract",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "consumes": [],
+                  "produces": [
+                    {
+                      "field": "payload",
+                      "type": "object:json",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "orderId",
+                      "type": "string",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "amount",
+                      "type": "number",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ]
+                },
+                {
+                  "contractId": "contract:address-context:order_event:order_event:v1:7",
+                  "templateKind": "address_binding_contract",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "consumes": [
+                    {
+                      "field": "order_event",
+                      "type": "address_context_binding",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ],
+                  "produces": []
+                }
+              ],
+              "links": [
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+                  "templateKind": "observation_link",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "semantic": "observation_emission",
+                  "medium": "observation",
+                  "relationType": "observes_address_context",
+                  "sourceKind": "connection"
+                }
+              ],
+              "templateValidation": {
+                "valid": true,
+                "missingEndpointKinds": [],
+                "disallowedEndpointKinds": [],
+                "missingContractKinds": [],
+                "disallowedContractKinds": [],
+                "missingLinkKinds": [],
+                "disallowedLinkKinds": []
+              }
+            },
+            "templateDescription": "Checkpoint for an observed top-level payload field",
+            "templateValidation": {
+              "valid": true,
+              "missingObservedFields": false,
+              "missingObservedPrefixIds": false,
+              "nodeNotObserved": false
+            },
+            "junctionId": "collect-order",
+            "traversalKey": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order"
+          },
+          {
+            "checkpointId": "checkpoint:event-record:log-web-snapshot:binding:order_event:0",
+            "templateKind": "address_binding",
+            "recordId": "log-web-snapshot",
+            "traceId": "trace-web-snapshot",
+            "eventKey": "order.submit",
+            "timestamp": "2026-04-12T00:01:00.000Z",
+            "corridorId": "event-record:log-web-snapshot",
+            "observedNodeKeys": [
+              "event-record:log-web-snapshot",
+              "address-context:order_event:order_event:v1:7"
+            ],
+            "observedEdgeKeys": [
+              "edge:event-record:log-web-snapshot->observes_address_context->address-context:order_event:order_event:v1:7"
+            ],
+            "transmissions": [
+              {
+                "transmissionId": "transmission:observation_emission:facet:event-record:log-web-snapshot:production->facet:address-context:order_event:order_event:v1:7:consumption",
+                "source": {
+                  "nodeId": "event-record:log-web-snapshot",
+                  "facetKind": "production",
+                  "key": "facet:event-record:log-web-snapshot:production"
+                },
+                "target": {
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "facetKind": "consumption",
+                  "key": "facet:address-context:order_event:order_event:v1:7:consumption"
+                },
+                "semantic": "observation_emission",
+                "medium": "observation",
+                "direction": "forward",
+                "relationType": "observes_address_context",
+                "contractRefs": [
+                  "order_event"
+                ]
+              }
+            ],
+            "dataFlow": {
+              "flowId": "event-record:log-web-snapshot",
+              "templateKind": "event_record_observed",
+              "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+              "entryNodeId": "event-record:log-web-snapshot",
+              "nodeIds": [
+                "event-record:log-web-snapshot",
+                "address-context:order_event:order_event:v1:7"
+              ],
+              "schemaIds": [],
+              "endpoints": [
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "templateKind": "payload_root",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "payload",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "orderId",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "amount",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "templateKind": "address_binding",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "direction": "in",
+                  "facetKind": "consumption",
+                  "field": "order_event",
+                  "sourceKind": "contract"
+                }
+              ],
+              "contracts": [
+                {
+                  "contractId": "contract:event-record:log-web-snapshot",
+                  "templateKind": "event_record_contract",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "consumes": [],
+                  "produces": [
+                    {
+                      "field": "payload",
+                      "type": "object:json",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "orderId",
+                      "type": "string",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "amount",
+                      "type": "number",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ]
+                },
+                {
+                  "contractId": "contract:address-context:order_event:order_event:v1:7",
+                  "templateKind": "address_binding_contract",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "consumes": [
+                    {
+                      "field": "order_event",
+                      "type": "address_context_binding",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ],
+                  "produces": []
+                }
+              ],
+              "links": [
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+                  "templateKind": "observation_link",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "semantic": "observation_emission",
+                  "medium": "observation",
+                  "relationType": "observes_address_context",
+                  "sourceKind": "connection"
+                }
+              ],
+              "templateValidation": {
+                "valid": true,
+                "missingEndpointKinds": [],
+                "disallowedEndpointKinds": [],
+                "missingContractKinds": [],
+                "disallowedContractKinds": [],
+                "missingLinkKinds": [],
+                "disallowedLinkKinds": []
+              }
+            },
+            "templateDescription": "Checkpoint for an observed address_context binding",
+            "templateValidation": {
+              "valid": true,
+              "missingObservedFields": false,
+              "missingObservedPrefixIds": false,
+              "nodeNotObserved": false
+            },
+            "junctionId": "collect-order",
+            "traversalKey": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order"
+          },
+          {
+            "checkpointId": "checkpoint:event-record:log-web-snapshot:route:collect-order",
+            "templateKind": "route_decision",
+            "recordId": "log-web-snapshot",
+            "traceId": "trace-web-snapshot",
+            "eventKey": "order.submit",
+            "timestamp": "2026-04-12T00:01:00.000Z",
+            "corridorId": "snapshot-web",
+            "junctionId": "collect-order",
+            "traversalKey": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order",
+            "observedNodeKeys": [
+              "event-record:log-web-snapshot",
+              "address-context:order_event:order_event:v1:7",
+              "collect-order"
+            ],
+            "observedEdgeKeys": [
+              "edge:event-record:log-web-snapshot->observes_address_context->address-context:order_event:order_event:v1:7"
+            ],
+            "transmissions": [],
+            "dataFlow": {
+              "flowId": "event-record:log-web-snapshot",
+              "templateKind": "event_record_observed",
+              "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+              "entryNodeId": "event-record:log-web-snapshot",
+              "nodeIds": [
+                "event-record:log-web-snapshot",
+                "address-context:order_event:order_event:v1:7"
+              ],
+              "schemaIds": [],
+              "endpoints": [
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "templateKind": "payload_root",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "payload",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "orderId",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "amount",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "templateKind": "address_binding",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "direction": "in",
+                  "facetKind": "consumption",
+                  "field": "order_event",
+                  "sourceKind": "contract"
+                }
+              ],
+              "contracts": [
+                {
+                  "contractId": "contract:event-record:log-web-snapshot",
+                  "templateKind": "event_record_contract",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "consumes": [],
+                  "produces": [
+                    {
+                      "field": "payload",
+                      "type": "object:json",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "orderId",
+                      "type": "string",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "amount",
+                      "type": "number",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ]
+                },
+                {
+                  "contractId": "contract:address-context:order_event:order_event:v1:7",
+                  "templateKind": "address_binding_contract",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "consumes": [
+                    {
+                      "field": "order_event",
+                      "type": "address_context_binding",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ],
+                  "produces": []
+                }
+              ],
+              "links": [
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+                  "templateKind": "observation_link",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "semantic": "observation_emission",
+                  "medium": "observation",
+                  "relationType": "observes_address_context",
+                  "sourceKind": "connection"
+                }
+              ],
+              "templateValidation": {
+                "valid": true,
+                "missingEndpointKinds": [],
+                "disallowedEndpointKinds": [],
+                "missingContractKinds": [],
+                "disallowedContractKinds": [],
+                "missingLinkKinds": [],
+                "disallowedLinkKinds": []
+              }
+            },
+            "templateDescription": "Checkpoint for a route decision attached during snapshot synthesis",
+            "templateValidation": {
+              "valid": true,
+              "missingObservedFields": false,
+              "missingObservedPrefixIds": false,
+              "nodeNotObserved": false
+            }
+          }
+        ],
+        "checkpointLattices": [
+          {
+            "corridorId": "event-record:log-web-snapshot",
+            "rootCheckpointId": "checkpoint:event-record:log-web-snapshot",
+            "definitions": [
+              {
+                "checkpointId": "checkpoint:event-record:log-web-snapshot",
+                "templateKind": "root",
+                "templateDescription": "Corridor root checkpoint for a single observed record",
+                "templateValidation": {
+                  "valid": true,
+                  "missingObservedFields": false,
+                  "missingObservedPrefixIds": false,
+                  "nodeNotObserved": false
+                },
+                "nodeId": "event-record:log-web-snapshot",
+                "observedPrefixIds": [
+                  "order_event"
+                ],
+                "observedFields": [
+                  "orderId",
+                  "amount"
+                ]
+              },
+              {
+                "checkpointId": "checkpoint:event-record:log-web-snapshot:payload:orderId",
+                "templateKind": "payload_field",
+                "templateDescription": "Checkpoint for an observed top-level payload field",
+                "templateValidation": {
+                  "valid": true,
+                  "missingObservedFields": false,
+                  "missingObservedPrefixIds": false,
+                  "nodeNotObserved": false
+                },
+                "nodeId": "event-record:log-web-snapshot",
+                "observedPrefixIds": [],
+                "observedFields": [
+                  "orderId"
+                ]
+              },
+              {
+                "checkpointId": "checkpoint:event-record:log-web-snapshot:payload:amount",
+                "templateKind": "payload_field",
+                "templateDescription": "Checkpoint for an observed top-level payload field",
+                "templateValidation": {
+                  "valid": true,
+                  "missingObservedFields": false,
+                  "missingObservedPrefixIds": false,
+                  "nodeNotObserved": false
+                },
+                "nodeId": "event-record:log-web-snapshot",
+                "observedPrefixIds": [],
+                "observedFields": [
+                  "amount"
+                ]
+              },
+              {
+                "checkpointId": "checkpoint:event-record:log-web-snapshot:binding:order_event:0",
+                "templateKind": "address_binding",
+                "templateDescription": "Checkpoint for an observed address_context binding",
+                "templateValidation": {
+                  "valid": true,
+                  "missingObservedFields": false,
+                  "missingObservedPrefixIds": false,
+                  "nodeNotObserved": false
+                },
+                "nodeId": "address-context:order_event:order_event:v1:7",
+                "observedPrefixIds": [
+                  "order_event"
+                ],
+                "observedFields": []
+              },
+              {
+                "checkpointId": "checkpoint:event-record:log-web-snapshot:route:collect-order",
+                "templateKind": "route_decision",
+                "templateDescription": "Checkpoint for a route decision attached during snapshot synthesis",
+                "templateValidation": {
+                  "valid": true,
+                  "missingObservedFields": false,
+                  "missingObservedPrefixIds": false,
+                  "nodeNotObserved": false
+                },
+                "nodeId": "collect-order",
+                "observedPrefixIds": [],
+                "observedFields": []
+              }
+            ],
+            "observations": [
+              {
+                "checkpointId": "checkpoint:event-record:log-web-snapshot",
+                "templateKind": "root",
+                "recordId": "log-web-snapshot",
+                "traceId": "trace-web-snapshot",
+                "eventKey": "order.submit",
+                "timestamp": "2026-04-12T00:01:00.000Z",
+                "corridorId": "event-record:log-web-snapshot",
+                "observedNodeKeys": [
+                  "event-record:log-web-snapshot",
+                  "address-context:order_event:order_event:v1:7"
+                ],
+                "observedEdgeKeys": [
+                  "edge:event-record:log-web-snapshot->observes_address_context->address-context:order_event:order_event:v1:7"
+                ],
+                "transmissions": [
+                  {
+                    "transmissionId": "transmission:observation_emission:facet:event-record:log-web-snapshot:production->facet:address-context:order_event:order_event:v1:7:consumption",
+                    "source": {
+                      "nodeId": "event-record:log-web-snapshot",
+                      "facetKind": "production",
+                      "key": "facet:event-record:log-web-snapshot:production"
+                    },
+                    "target": {
+                      "nodeId": "address-context:order_event:order_event:v1:7",
+                      "facetKind": "consumption",
+                      "key": "facet:address-context:order_event:order_event:v1:7:consumption"
+                    },
+                    "semantic": "observation_emission",
+                    "medium": "observation",
+                    "direction": "forward",
+                    "relationType": "observes_address_context",
+                    "contractRefs": [
+                      "order_event"
+                    ]
+                  }
+                ],
+                "dataFlow": {
+                  "flowId": "event-record:log-web-snapshot",
+                  "templateKind": "event_record_observed",
+                  "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+                  "entryNodeId": "event-record:log-web-snapshot",
+                  "nodeIds": [
+                    "event-record:log-web-snapshot",
+                    "address-context:order_event:order_event:v1:7"
+                  ],
+                  "schemaIds": [],
+                  "endpoints": [
+                    {
+                      "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "templateKind": "payload_root",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "direction": "out",
+                      "facetKind": "production",
+                      "field": "payload",
+                      "sourceKind": "contract"
+                    },
+                    {
+                      "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                      "templateKind": "payload_field",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "direction": "out",
+                      "facetKind": "production",
+                      "field": "orderId",
+                      "sourceKind": "contract"
+                    },
+                    {
+                      "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                      "templateKind": "payload_field",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "direction": "out",
+                      "facetKind": "production",
+                      "field": "amount",
+                      "sourceKind": "contract"
+                    },
+                    {
+                      "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                      "templateKind": "address_binding",
+                      "nodeId": "address-context:order_event:order_event:v1:7",
+                      "direction": "in",
+                      "facetKind": "consumption",
+                      "field": "order_event",
+                      "sourceKind": "contract"
+                    }
+                  ],
+                  "contracts": [
+                    {
+                      "contractId": "contract:event-record:log-web-snapshot",
+                      "templateKind": "event_record_contract",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "consumes": [],
+                      "produces": [
+                        {
+                          "field": "payload",
+                          "type": "object:json",
+                          "required": true,
+                          "source": "order.submit"
+                        },
+                        {
+                          "field": "orderId",
+                          "type": "string",
+                          "required": true,
+                          "source": "order.submit"
+                        },
+                        {
+                          "field": "amount",
+                          "type": "number",
+                          "required": true,
+                          "source": "order.submit"
+                        }
+                      ]
+                    },
+                    {
+                      "contractId": "contract:address-context:order_event:order_event:v1:7",
+                      "templateKind": "address_binding_contract",
+                      "nodeId": "address-context:order_event:order_event:v1:7",
+                      "consumes": [
+                        {
+                          "field": "order_event",
+                          "type": "address_context_binding",
+                          "required": true,
+                          "source": "order.submit"
+                        }
+                      ],
+                      "produces": []
+                    }
+                  ],
+                  "links": [
+                    {
+                      "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+                      "templateKind": "payload_projection",
+                      "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                      "semantic": "production_to_consumption",
+                      "medium": "direct",
+                      "relationType": "payload_field",
+                      "sourceKind": "payload"
+                    },
+                    {
+                      "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+                      "templateKind": "payload_projection",
+                      "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                      "semantic": "production_to_consumption",
+                      "medium": "direct",
+                      "relationType": "payload_field",
+                      "sourceKind": "payload"
+                    },
+                    {
+                      "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+                      "templateKind": "observation_link",
+                      "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                      "semantic": "observation_emission",
+                      "medium": "observation",
+                      "relationType": "observes_address_context",
+                      "sourceKind": "connection"
+                    }
+                  ],
+                  "templateValidation": {
+                    "valid": true,
+                    "missingEndpointKinds": [],
+                    "disallowedEndpointKinds": [],
+                    "missingContractKinds": [],
+                    "disallowedContractKinds": [],
+                    "missingLinkKinds": [],
+                    "disallowedLinkKinds": []
+                  }
+                },
+                "templateDescription": "Corridor root checkpoint for a single observed record",
+                "templateValidation": {
+                  "valid": true,
+                  "missingObservedFields": false,
+                  "missingObservedPrefixIds": false,
+                  "nodeNotObserved": false
+                }
+              },
+              {
+                "checkpointId": "checkpoint:event-record:log-web-snapshot:payload:orderId",
+                "templateKind": "payload_field",
+                "recordId": "log-web-snapshot",
+                "traceId": "trace-web-snapshot",
+                "eventKey": "order.submit",
+                "timestamp": "2026-04-12T00:01:00.000Z",
+                "corridorId": "event-record:log-web-snapshot",
+                "observedNodeKeys": [
+                  "event-record:log-web-snapshot"
+                ],
+                "observedEdgeKeys": [
+                  "edge:event-record:log-web-snapshot->payload_field->event-record:log-web-snapshot:orderId"
+                ],
+                "transmissions": [],
+                "dataFlow": {
+                  "flowId": "event-record:log-web-snapshot",
+                  "templateKind": "event_record_observed",
+                  "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+                  "entryNodeId": "event-record:log-web-snapshot",
+                  "nodeIds": [
+                    "event-record:log-web-snapshot",
+                    "address-context:order_event:order_event:v1:7"
+                  ],
+                  "schemaIds": [],
+                  "endpoints": [
+                    {
+                      "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "templateKind": "payload_root",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "direction": "out",
+                      "facetKind": "production",
+                      "field": "payload",
+                      "sourceKind": "contract"
+                    },
+                    {
+                      "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                      "templateKind": "payload_field",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "direction": "out",
+                      "facetKind": "production",
+                      "field": "orderId",
+                      "sourceKind": "contract"
+                    },
+                    {
+                      "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                      "templateKind": "payload_field",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "direction": "out",
+                      "facetKind": "production",
+                      "field": "amount",
+                      "sourceKind": "contract"
+                    },
+                    {
+                      "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                      "templateKind": "address_binding",
+                      "nodeId": "address-context:order_event:order_event:v1:7",
+                      "direction": "in",
+                      "facetKind": "consumption",
+                      "field": "order_event",
+                      "sourceKind": "contract"
+                    }
+                  ],
+                  "contracts": [
+                    {
+                      "contractId": "contract:event-record:log-web-snapshot",
+                      "templateKind": "event_record_contract",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "consumes": [],
+                      "produces": [
+                        {
+                          "field": "payload",
+                          "type": "object:json",
+                          "required": true,
+                          "source": "order.submit"
+                        },
+                        {
+                          "field": "orderId",
+                          "type": "string",
+                          "required": true,
+                          "source": "order.submit"
+                        },
+                        {
+                          "field": "amount",
+                          "type": "number",
+                          "required": true,
+                          "source": "order.submit"
+                        }
+                      ]
+                    },
+                    {
+                      "contractId": "contract:address-context:order_event:order_event:v1:7",
+                      "templateKind": "address_binding_contract",
+                      "nodeId": "address-context:order_event:order_event:v1:7",
+                      "consumes": [
+                        {
+                          "field": "order_event",
+                          "type": "address_context_binding",
+                          "required": true,
+                          "source": "order.submit"
+                        }
+                      ],
+                      "produces": []
+                    }
+                  ],
+                  "links": [
+                    {
+                      "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+                      "templateKind": "payload_projection",
+                      "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                      "semantic": "production_to_consumption",
+                      "medium": "direct",
+                      "relationType": "payload_field",
+                      "sourceKind": "payload"
+                    },
+                    {
+                      "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+                      "templateKind": "payload_projection",
+                      "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                      "semantic": "production_to_consumption",
+                      "medium": "direct",
+                      "relationType": "payload_field",
+                      "sourceKind": "payload"
+                    },
+                    {
+                      "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+                      "templateKind": "observation_link",
+                      "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                      "semantic": "observation_emission",
+                      "medium": "observation",
+                      "relationType": "observes_address_context",
+                      "sourceKind": "connection"
+                    }
+                  ],
+                  "templateValidation": {
+                    "valid": true,
+                    "missingEndpointKinds": [],
+                    "disallowedEndpointKinds": [],
+                    "missingContractKinds": [],
+                    "disallowedContractKinds": [],
+                    "missingLinkKinds": [],
+                    "disallowedLinkKinds": []
+                  }
+                },
+                "templateDescription": "Checkpoint for an observed top-level payload field",
+                "templateValidation": {
+                  "valid": true,
+                  "missingObservedFields": false,
+                  "missingObservedPrefixIds": false,
+                  "nodeNotObserved": false
+                }
+              },
+              {
+                "checkpointId": "checkpoint:event-record:log-web-snapshot:payload:amount",
+                "templateKind": "payload_field",
+                "recordId": "log-web-snapshot",
+                "traceId": "trace-web-snapshot",
+                "eventKey": "order.submit",
+                "timestamp": "2026-04-12T00:01:00.000Z",
+                "corridorId": "event-record:log-web-snapshot",
+                "observedNodeKeys": [
+                  "event-record:log-web-snapshot"
+                ],
+                "observedEdgeKeys": [
+                  "edge:event-record:log-web-snapshot->payload_field->event-record:log-web-snapshot:amount"
+                ],
+                "transmissions": [],
+                "dataFlow": {
+                  "flowId": "event-record:log-web-snapshot",
+                  "templateKind": "event_record_observed",
+                  "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+                  "entryNodeId": "event-record:log-web-snapshot",
+                  "nodeIds": [
+                    "event-record:log-web-snapshot",
+                    "address-context:order_event:order_event:v1:7"
+                  ],
+                  "schemaIds": [],
+                  "endpoints": [
+                    {
+                      "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "templateKind": "payload_root",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "direction": "out",
+                      "facetKind": "production",
+                      "field": "payload",
+                      "sourceKind": "contract"
+                    },
+                    {
+                      "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                      "templateKind": "payload_field",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "direction": "out",
+                      "facetKind": "production",
+                      "field": "orderId",
+                      "sourceKind": "contract"
+                    },
+                    {
+                      "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                      "templateKind": "payload_field",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "direction": "out",
+                      "facetKind": "production",
+                      "field": "amount",
+                      "sourceKind": "contract"
+                    },
+                    {
+                      "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                      "templateKind": "address_binding",
+                      "nodeId": "address-context:order_event:order_event:v1:7",
+                      "direction": "in",
+                      "facetKind": "consumption",
+                      "field": "order_event",
+                      "sourceKind": "contract"
+                    }
+                  ],
+                  "contracts": [
+                    {
+                      "contractId": "contract:event-record:log-web-snapshot",
+                      "templateKind": "event_record_contract",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "consumes": [],
+                      "produces": [
+                        {
+                          "field": "payload",
+                          "type": "object:json",
+                          "required": true,
+                          "source": "order.submit"
+                        },
+                        {
+                          "field": "orderId",
+                          "type": "string",
+                          "required": true,
+                          "source": "order.submit"
+                        },
+                        {
+                          "field": "amount",
+                          "type": "number",
+                          "required": true,
+                          "source": "order.submit"
+                        }
+                      ]
+                    },
+                    {
+                      "contractId": "contract:address-context:order_event:order_event:v1:7",
+                      "templateKind": "address_binding_contract",
+                      "nodeId": "address-context:order_event:order_event:v1:7",
+                      "consumes": [
+                        {
+                          "field": "order_event",
+                          "type": "address_context_binding",
+                          "required": true,
+                          "source": "order.submit"
+                        }
+                      ],
+                      "produces": []
+                    }
+                  ],
+                  "links": [
+                    {
+                      "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+                      "templateKind": "payload_projection",
+                      "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                      "semantic": "production_to_consumption",
+                      "medium": "direct",
+                      "relationType": "payload_field",
+                      "sourceKind": "payload"
+                    },
+                    {
+                      "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+                      "templateKind": "payload_projection",
+                      "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                      "semantic": "production_to_consumption",
+                      "medium": "direct",
+                      "relationType": "payload_field",
+                      "sourceKind": "payload"
+                    },
+                    {
+                      "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+                      "templateKind": "observation_link",
+                      "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                      "semantic": "observation_emission",
+                      "medium": "observation",
+                      "relationType": "observes_address_context",
+                      "sourceKind": "connection"
+                    }
+                  ],
+                  "templateValidation": {
+                    "valid": true,
+                    "missingEndpointKinds": [],
+                    "disallowedEndpointKinds": [],
+                    "missingContractKinds": [],
+                    "disallowedContractKinds": [],
+                    "missingLinkKinds": [],
+                    "disallowedLinkKinds": []
+                  }
+                },
+                "templateDescription": "Checkpoint for an observed top-level payload field",
+                "templateValidation": {
+                  "valid": true,
+                  "missingObservedFields": false,
+                  "missingObservedPrefixIds": false,
+                  "nodeNotObserved": false
+                }
+              },
+              {
+                "checkpointId": "checkpoint:event-record:log-web-snapshot:binding:order_event:0",
+                "templateKind": "address_binding",
+                "recordId": "log-web-snapshot",
+                "traceId": "trace-web-snapshot",
+                "eventKey": "order.submit",
+                "timestamp": "2026-04-12T00:01:00.000Z",
+                "corridorId": "event-record:log-web-snapshot",
+                "observedNodeKeys": [
+                  "event-record:log-web-snapshot",
+                  "address-context:order_event:order_event:v1:7"
+                ],
+                "observedEdgeKeys": [
+                  "edge:event-record:log-web-snapshot->observes_address_context->address-context:order_event:order_event:v1:7"
+                ],
+                "transmissions": [
+                  {
+                    "transmissionId": "transmission:observation_emission:facet:event-record:log-web-snapshot:production->facet:address-context:order_event:order_event:v1:7:consumption",
+                    "source": {
+                      "nodeId": "event-record:log-web-snapshot",
+                      "facetKind": "production",
+                      "key": "facet:event-record:log-web-snapshot:production"
+                    },
+                    "target": {
+                      "nodeId": "address-context:order_event:order_event:v1:7",
+                      "facetKind": "consumption",
+                      "key": "facet:address-context:order_event:order_event:v1:7:consumption"
+                    },
+                    "semantic": "observation_emission",
+                    "medium": "observation",
+                    "direction": "forward",
+                    "relationType": "observes_address_context",
+                    "contractRefs": [
+                      "order_event"
+                    ]
+                  }
+                ],
+                "dataFlow": {
+                  "flowId": "event-record:log-web-snapshot",
+                  "templateKind": "event_record_observed",
+                  "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+                  "entryNodeId": "event-record:log-web-snapshot",
+                  "nodeIds": [
+                    "event-record:log-web-snapshot",
+                    "address-context:order_event:order_event:v1:7"
+                  ],
+                  "schemaIds": [],
+                  "endpoints": [
+                    {
+                      "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "templateKind": "payload_root",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "direction": "out",
+                      "facetKind": "production",
+                      "field": "payload",
+                      "sourceKind": "contract"
+                    },
+                    {
+                      "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                      "templateKind": "payload_field",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "direction": "out",
+                      "facetKind": "production",
+                      "field": "orderId",
+                      "sourceKind": "contract"
+                    },
+                    {
+                      "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                      "templateKind": "payload_field",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "direction": "out",
+                      "facetKind": "production",
+                      "field": "amount",
+                      "sourceKind": "contract"
+                    },
+                    {
+                      "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                      "templateKind": "address_binding",
+                      "nodeId": "address-context:order_event:order_event:v1:7",
+                      "direction": "in",
+                      "facetKind": "consumption",
+                      "field": "order_event",
+                      "sourceKind": "contract"
+                    }
+                  ],
+                  "contracts": [
+                    {
+                      "contractId": "contract:event-record:log-web-snapshot",
+                      "templateKind": "event_record_contract",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "consumes": [],
+                      "produces": [
+                        {
+                          "field": "payload",
+                          "type": "object:json",
+                          "required": true,
+                          "source": "order.submit"
+                        },
+                        {
+                          "field": "orderId",
+                          "type": "string",
+                          "required": true,
+                          "source": "order.submit"
+                        },
+                        {
+                          "field": "amount",
+                          "type": "number",
+                          "required": true,
+                          "source": "order.submit"
+                        }
+                      ]
+                    },
+                    {
+                      "contractId": "contract:address-context:order_event:order_event:v1:7",
+                      "templateKind": "address_binding_contract",
+                      "nodeId": "address-context:order_event:order_event:v1:7",
+                      "consumes": [
+                        {
+                          "field": "order_event",
+                          "type": "address_context_binding",
+                          "required": true,
+                          "source": "order.submit"
+                        }
+                      ],
+                      "produces": []
+                    }
+                  ],
+                  "links": [
+                    {
+                      "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+                      "templateKind": "payload_projection",
+                      "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                      "semantic": "production_to_consumption",
+                      "medium": "direct",
+                      "relationType": "payload_field",
+                      "sourceKind": "payload"
+                    },
+                    {
+                      "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+                      "templateKind": "payload_projection",
+                      "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                      "semantic": "production_to_consumption",
+                      "medium": "direct",
+                      "relationType": "payload_field",
+                      "sourceKind": "payload"
+                    },
+                    {
+                      "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+                      "templateKind": "observation_link",
+                      "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                      "semantic": "observation_emission",
+                      "medium": "observation",
+                      "relationType": "observes_address_context",
+                      "sourceKind": "connection"
+                    }
+                  ],
+                  "templateValidation": {
+                    "valid": true,
+                    "missingEndpointKinds": [],
+                    "disallowedEndpointKinds": [],
+                    "missingContractKinds": [],
+                    "disallowedContractKinds": [],
+                    "missingLinkKinds": [],
+                    "disallowedLinkKinds": []
+                  }
+                },
+                "templateDescription": "Checkpoint for an observed address_context binding",
+                "templateValidation": {
+                  "valid": true,
+                  "missingObservedFields": false,
+                  "missingObservedPrefixIds": false,
+                  "nodeNotObserved": false
+                }
+              },
+              {
+                "checkpointId": "checkpoint:event-record:log-web-snapshot:route:collect-order",
+                "templateKind": "route_decision",
+                "recordId": "log-web-snapshot",
+                "traceId": "trace-web-snapshot",
+                "eventKey": "order.submit",
+                "timestamp": "2026-04-12T00:01:00.000Z",
+                "corridorId": "snapshot-web",
+                "junctionId": "collect-order",
+                "traversalKey": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order",
+                "observedNodeKeys": [
+                  "event-record:log-web-snapshot",
+                  "address-context:order_event:order_event:v1:7",
+                  "collect-order"
+                ],
+                "observedEdgeKeys": [
+                  "edge:event-record:log-web-snapshot->observes_address_context->address-context:order_event:order_event:v1:7"
+                ],
+                "transmissions": [],
+                "dataFlow": {
+                  "flowId": "event-record:log-web-snapshot",
+                  "templateKind": "event_record_observed",
+                  "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+                  "entryNodeId": "event-record:log-web-snapshot",
+                  "nodeIds": [
+                    "event-record:log-web-snapshot",
+                    "address-context:order_event:order_event:v1:7"
+                  ],
+                  "schemaIds": [],
+                  "endpoints": [
+                    {
+                      "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "templateKind": "payload_root",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "direction": "out",
+                      "facetKind": "production",
+                      "field": "payload",
+                      "sourceKind": "contract"
+                    },
+                    {
+                      "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                      "templateKind": "payload_field",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "direction": "out",
+                      "facetKind": "production",
+                      "field": "orderId",
+                      "sourceKind": "contract"
+                    },
+                    {
+                      "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                      "templateKind": "payload_field",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "direction": "out",
+                      "facetKind": "production",
+                      "field": "amount",
+                      "sourceKind": "contract"
+                    },
+                    {
+                      "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                      "templateKind": "address_binding",
+                      "nodeId": "address-context:order_event:order_event:v1:7",
+                      "direction": "in",
+                      "facetKind": "consumption",
+                      "field": "order_event",
+                      "sourceKind": "contract"
+                    }
+                  ],
+                  "contracts": [
+                    {
+                      "contractId": "contract:event-record:log-web-snapshot",
+                      "templateKind": "event_record_contract",
+                      "nodeId": "event-record:log-web-snapshot",
+                      "consumes": [],
+                      "produces": [
+                        {
+                          "field": "payload",
+                          "type": "object:json",
+                          "required": true,
+                          "source": "order.submit"
+                        },
+                        {
+                          "field": "orderId",
+                          "type": "string",
+                          "required": true,
+                          "source": "order.submit"
+                        },
+                        {
+                          "field": "amount",
+                          "type": "number",
+                          "required": true,
+                          "source": "order.submit"
+                        }
+                      ]
+                    },
+                    {
+                      "contractId": "contract:address-context:order_event:order_event:v1:7",
+                      "templateKind": "address_binding_contract",
+                      "nodeId": "address-context:order_event:order_event:v1:7",
+                      "consumes": [
+                        {
+                          "field": "order_event",
+                          "type": "address_context_binding",
+                          "required": true,
+                          "source": "order.submit"
+                        }
+                      ],
+                      "produces": []
+                    }
+                  ],
+                  "links": [
+                    {
+                      "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+                      "templateKind": "payload_projection",
+                      "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                      "semantic": "production_to_consumption",
+                      "medium": "direct",
+                      "relationType": "payload_field",
+                      "sourceKind": "payload"
+                    },
+                    {
+                      "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+                      "templateKind": "payload_projection",
+                      "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                      "semantic": "production_to_consumption",
+                      "medium": "direct",
+                      "relationType": "payload_field",
+                      "sourceKind": "payload"
+                    },
+                    {
+                      "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+                      "templateKind": "observation_link",
+                      "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                      "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                      "semantic": "observation_emission",
+                      "medium": "observation",
+                      "relationType": "observes_address_context",
+                      "sourceKind": "connection"
+                    }
+                  ],
+                  "templateValidation": {
+                    "valid": true,
+                    "missingEndpointKinds": [],
+                    "disallowedEndpointKinds": [],
+                    "missingContractKinds": [],
+                    "disallowedContractKinds": [],
+                    "missingLinkKinds": [],
+                    "disallowedLinkKinds": []
+                  }
+                },
+                "templateDescription": "Checkpoint for a route decision attached during snapshot synthesis",
+                "templateValidation": {
+                  "valid": true,
+                  "missingObservedFields": false,
+                  "missingObservedPrefixIds": false,
+                  "nodeNotObserved": false
+                }
+              }
+            ],
+            "links": [
+              {
+                "fromCheckpointId": "checkpoint:event-record:log-web-snapshot",
+                "toCheckpointId": "checkpoint:event-record:log-web-snapshot:payload:orderId",
+                "relation": "contains"
+              },
+              {
+                "fromCheckpointId": "checkpoint:event-record:log-web-snapshot",
+                "toCheckpointId": "checkpoint:event-record:log-web-snapshot:payload:amount",
+                "relation": "contains"
+              },
+              {
+                "fromCheckpointId": "checkpoint:event-record:log-web-snapshot",
+                "toCheckpointId": "checkpoint:event-record:log-web-snapshot:binding:order_event:0",
+                "relation": "contains"
+              },
+              {
+                "fromCheckpointId": "checkpoint:event-record:log-web-snapshot",
+                "toCheckpointId": "checkpoint:event-record:log-web-snapshot:route:collect-order",
+                "relation": "decides"
+              }
+            ]
+          }
+        ],
+        "junctions": [
+          {
+            "templateKind": "conditional_branch",
+            "templateDescription": "Junction materialized from conditional PipeConnection paths",
+            "templateValidation": {
+              "valid": true,
+              "pathCount": 1,
+              "tooFewPaths": false,
+              "tooManyPaths": false,
+              "pathsMissingCondition": []
+            },
+            "branchNodeId": "collect-order",
+            "mode": "first_match",
+            "paths": [
+              {
+                "pathId": "collect-order->validate-order:0",
+                "when": {
+                  "conditionId": "collect-order:condition:0",
+                  "expression": "order.valid == true"
+                },
+                "nextNodeIds": [
+                  "validate-order"
+                ],
+                "priority": 0
+              }
+            ]
+          }
+        ],
+        "routeDecisions": [
+          {
+            "templateKind": "observed_route_decision",
+            "templateDescription": "Route decision materialized from observed branch outcomes",
+            "templateValidation": {
+              "valid": true,
+              "pathCount": 1,
+              "tooFewPaths": false,
+              "tooManyPaths": false,
+              "pathsMissingCondition": []
+            },
+            "branchNodeId": "collect-order",
+            "mode": "first_match",
+            "selectedPathIds": [
+              "collect-order->validate-order"
+            ],
+            "skippedPathIds": [],
+            "reason": "observed-paths",
+            "junctionId": "collect-order",
+            "corridorId": "snapshot-web",
+            "traversalKey": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order"
+          }
+        ],
+        "traversals": [
+          {
+            "traversal": {
+              "purpose": "observe",
+              "start": "collect-order",
+              "edges": [
+                "edge:collect-order->path:branch->validate-order"
+              ],
+              "end": "validate-order",
+              "canonicalKey": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order"
+            },
+            "reachedGoalIds": [
+              "validate-order"
+            ],
+            "unreachableGoalIds": [],
+            "loopDetected": false,
+            "recoveryUsed": false,
+            "terminalNodeId": "run-validate",
+            "terminalReason": "goal_reached"
+          }
+        ],
+        "transmissions": [
+          {
+            "transmissionId": "transmission:production_to_consumption:facet:collect-order:production->facet:validate-order:consumption",
+            "source": {
+              "nodeId": "collect-order",
+              "facetKind": "production",
+              "key": "facet:collect-order:production"
+            },
+            "target": {
+              "nodeId": "validate-order",
+              "facetKind": "consumption",
+              "key": "facet:validate-order:consumption"
+            },
+            "semantic": "production_to_consumption",
+            "medium": "direct",
+            "direction": "forward",
+            "relationType": "pipe_connection:conditional",
+            "contractRefs": [
+              "order.valid == true"
+            ]
+          },
+          {
+            "transmissionId": "transmission:observation_emission:facet:event-record:log-web-snapshot:production->facet:address-context:order_event:order_event:v1:7:consumption",
+            "source": {
+              "nodeId": "event-record:log-web-snapshot",
+              "facetKind": "production",
+              "key": "facet:event-record:log-web-snapshot:production"
+            },
+            "target": {
+              "nodeId": "address-context:order_event:order_event:v1:7",
+              "facetKind": "consumption",
+              "key": "facet:address-context:order_event:order_event:v1:7:consumption"
+            },
+            "semantic": "observation_emission",
+            "medium": "observation",
+            "direction": "forward",
+            "relationType": "observes_address_context",
+            "contractRefs": [
+              "order_event"
+            ]
+          }
+        ],
+        "lineageLinks": [],
+        "observedNodeKeys": [
+          "event-record:log-web-snapshot",
+          "address-context:order_event:order_event:v1:7"
+        ],
+        "observedEdgeKeys": [
+          "edge:event-record:log-web-snapshot->observes_address_context->address-context:order_event:order_event:v1:7"
+        ]
+      },
+      "builtFrom": [
+        "snapshot-web",
+        "event-record:log-web-snapshot",
+        "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order"
+      ],
+      "builtAt": "2026-04-11T22:27:21.846Z"
+    },
+    {
+      "projectionId": "snapshot:web-full:corridor:snapshot-web",
+      "projectionKind": "operational_ontology_corridor",
+      "targetScope": "snapshot-web",
+      "payloadJson": {
+        "flowId": "snapshot-web",
+        "templateKind": "pipe_graph",
+        "templateDescription": "Corridor materialized from PipeGraph and optional schema/lineage alignment",
+        "entryNodeId": "collect-order",
+        "nodeIds": [
+          "collect-order",
+          "validate-order"
+        ],
+        "schemaIds": [],
+        "endpoints": [],
+        "contracts": [],
+        "links": [
+          {
+            "linkId": "flow-link:collect-order:conditional:validate-order:order.valid == true",
+            "templateKind": "pipe_connection",
+            "fromEndpointId": "endpoint:collect-order:out:_node",
+            "toEndpointId": "endpoint:validate-order:in:_node",
+            "semantic": "production_to_consumption",
+            "medium": "direct",
+            "condition": "order.valid == true",
+            "relationType": "pipe_connection:conditional",
+            "sourceKind": "connection"
+          }
+        ],
+        "templateValidation": {
+          "valid": true,
+          "missingEndpointKinds": [],
+          "disallowedEndpointKinds": [],
+          "missingContractKinds": [],
+          "disallowedContractKinds": [],
+          "missingLinkKinds": [],
+          "disallowedLinkKinds": []
+        }
+      },
+      "builtFrom": [
+        "snapshot:web-full"
+      ],
+      "builtAt": "2026-04-11T22:27:21.846Z"
+    },
+    {
+      "projectionId": "snapshot:web-full:corridor:event-record:log-web-snapshot",
+      "projectionKind": "operational_ontology_corridor",
+      "targetScope": "event-record:log-web-snapshot",
+      "payloadJson": {
+        "flowId": "event-record:log-web-snapshot",
+        "templateKind": "event_record_observed",
+        "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+        "entryNodeId": "event-record:log-web-snapshot",
+        "nodeIds": [
+          "event-record:log-web-snapshot",
+          "address-context:order_event:order_event:v1:7"
+        ],
+        "schemaIds": [],
+        "endpoints": [
+          {
+            "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+            "templateKind": "payload_root",
+            "nodeId": "event-record:log-web-snapshot",
+            "direction": "out",
+            "facetKind": "production",
+            "field": "payload",
+            "sourceKind": "contract"
+          },
+          {
+            "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+            "templateKind": "payload_field",
+            "nodeId": "event-record:log-web-snapshot",
+            "direction": "out",
+            "facetKind": "production",
+            "field": "orderId",
+            "sourceKind": "contract"
+          },
+          {
+            "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+            "templateKind": "payload_field",
+            "nodeId": "event-record:log-web-snapshot",
+            "direction": "out",
+            "facetKind": "production",
+            "field": "amount",
+            "sourceKind": "contract"
+          },
+          {
+            "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+            "templateKind": "address_binding",
+            "nodeId": "address-context:order_event:order_event:v1:7",
+            "direction": "in",
+            "facetKind": "consumption",
+            "field": "order_event",
+            "sourceKind": "contract"
+          }
+        ],
+        "contracts": [
+          {
+            "contractId": "contract:event-record:log-web-snapshot",
+            "templateKind": "event_record_contract",
+            "nodeId": "event-record:log-web-snapshot",
+            "consumes": [],
+            "produces": [
+              {
+                "field": "payload",
+                "type": "object:json",
+                "required": true,
+                "source": "order.submit"
+              },
+              {
+                "field": "orderId",
+                "type": "string",
+                "required": true,
+                "source": "order.submit"
+              },
+              {
+                "field": "amount",
+                "type": "number",
+                "required": true,
+                "source": "order.submit"
+              }
+            ]
+          },
+          {
+            "contractId": "contract:address-context:order_event:order_event:v1:7",
+            "templateKind": "address_binding_contract",
+            "nodeId": "address-context:order_event:order_event:v1:7",
+            "consumes": [
+              {
+                "field": "order_event",
+                "type": "address_context_binding",
+                "required": true,
+                "source": "order.submit"
+              }
+            ],
+            "produces": []
+          }
+        ],
+        "links": [
+          {
+            "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+            "templateKind": "payload_projection",
+            "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+            "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+            "semantic": "production_to_consumption",
+            "medium": "direct",
+            "relationType": "payload_field",
+            "sourceKind": "payload"
+          },
+          {
+            "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+            "templateKind": "payload_projection",
+            "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+            "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+            "semantic": "production_to_consumption",
+            "medium": "direct",
+            "relationType": "payload_field",
+            "sourceKind": "payload"
+          },
+          {
+            "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+            "templateKind": "observation_link",
+            "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+            "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+            "semantic": "observation_emission",
+            "medium": "observation",
+            "relationType": "observes_address_context",
+            "sourceKind": "connection"
+          }
+        ],
+        "templateValidation": {
+          "valid": true,
+          "missingEndpointKinds": [],
+          "disallowedEndpointKinds": [],
+          "missingContractKinds": [],
+          "disallowedContractKinds": [],
+          "missingLinkKinds": [],
+          "disallowedLinkKinds": []
+        }
+      },
+      "builtFrom": [
+        "snapshot:web-full"
+      ],
+      "builtAt": "2026-04-11T22:27:21.846Z"
+    },
+    {
+      "projectionId": "snapshot:web-full:control-flow:snapshot-web",
+      "projectionKind": "operational_ontology_control_flow",
+      "targetScope": "snapshot-web",
+      "payloadJson": {
+        "graphId": "snapshot-web",
+        "entryNodeId": "collect-order",
+        "nodes": [
+          {
+            "nodeId": "collect-order",
+            "kind": "step",
+            "facet": "production",
+            "entryCondition": "event:order.submit",
+            "sourceKind": "step"
+          },
+          {
+            "nodeId": "validate-order",
+            "kind": "step",
+            "facet": "consumption",
+            "entryCondition": "event:order.created",
+            "sourceKind": "step"
+          }
+        ],
+        "edges": [
+          {
+            "from": "collect-order",
+            "to": "validate-order",
+            "kind": "conditional",
+            "condition": "order.valid == true",
+            "sourceKind": "conditional"
+          }
+        ],
+        "version": "v1"
+      },
+      "builtFrom": [
+        "snapshot:web-full"
+      ],
+      "builtAt": "2026-04-11T22:27:21.846Z"
+    },
+    {
+      "projectionId": "snapshot:web-full:checkpoint-lattice:checkpoint:event-record:log-web-snapshot",
+      "projectionKind": "operational_ontology_checkpoint_lattice",
+      "targetScope": "event-record:log-web-snapshot",
+      "payloadJson": {
+        "corridorId": "event-record:log-web-snapshot",
+        "rootCheckpointId": "checkpoint:event-record:log-web-snapshot",
+        "definitions": [
+          {
+            "checkpointId": "checkpoint:event-record:log-web-snapshot",
+            "templateKind": "root",
+            "templateDescription": "Corridor root checkpoint for a single observed record",
+            "templateValidation": {
+              "valid": true,
+              "missingObservedFields": false,
+              "missingObservedPrefixIds": false,
+              "nodeNotObserved": false
+            },
+            "nodeId": "event-record:log-web-snapshot",
+            "observedPrefixIds": [
+              "order_event"
+            ],
+            "observedFields": [
+              "orderId",
+              "amount"
+            ]
+          },
+          {
+            "checkpointId": "checkpoint:event-record:log-web-snapshot:payload:orderId",
+            "templateKind": "payload_field",
+            "templateDescription": "Checkpoint for an observed top-level payload field",
+            "templateValidation": {
+              "valid": true,
+              "missingObservedFields": false,
+              "missingObservedPrefixIds": false,
+              "nodeNotObserved": false
+            },
+            "nodeId": "event-record:log-web-snapshot",
+            "observedPrefixIds": [],
+            "observedFields": [
+              "orderId"
+            ]
+          },
+          {
+            "checkpointId": "checkpoint:event-record:log-web-snapshot:payload:amount",
+            "templateKind": "payload_field",
+            "templateDescription": "Checkpoint for an observed top-level payload field",
+            "templateValidation": {
+              "valid": true,
+              "missingObservedFields": false,
+              "missingObservedPrefixIds": false,
+              "nodeNotObserved": false
+            },
+            "nodeId": "event-record:log-web-snapshot",
+            "observedPrefixIds": [],
+            "observedFields": [
+              "amount"
+            ]
+          },
+          {
+            "checkpointId": "checkpoint:event-record:log-web-snapshot:binding:order_event:0",
+            "templateKind": "address_binding",
+            "templateDescription": "Checkpoint for an observed address_context binding",
+            "templateValidation": {
+              "valid": true,
+              "missingObservedFields": false,
+              "missingObservedPrefixIds": false,
+              "nodeNotObserved": false
+            },
+            "nodeId": "address-context:order_event:order_event:v1:7",
+            "observedPrefixIds": [
+              "order_event"
+            ],
+            "observedFields": []
+          },
+          {
+            "checkpointId": "checkpoint:event-record:log-web-snapshot:route:collect-order",
+            "templateKind": "route_decision",
+            "templateDescription": "Checkpoint for a route decision attached during snapshot synthesis",
+            "templateValidation": {
+              "valid": true,
+              "missingObservedFields": false,
+              "missingObservedPrefixIds": false,
+              "nodeNotObserved": false
+            },
+            "nodeId": "collect-order",
+            "observedPrefixIds": [],
+            "observedFields": []
+          }
+        ],
+        "observations": [
+          {
+            "checkpointId": "checkpoint:event-record:log-web-snapshot",
+            "templateKind": "root",
+            "recordId": "log-web-snapshot",
+            "traceId": "trace-web-snapshot",
+            "eventKey": "order.submit",
+            "timestamp": "2026-04-12T00:01:00.000Z",
+            "corridorId": "event-record:log-web-snapshot",
+            "observedNodeKeys": [
+              "event-record:log-web-snapshot",
+              "address-context:order_event:order_event:v1:7"
+            ],
+            "observedEdgeKeys": [
+              "edge:event-record:log-web-snapshot->observes_address_context->address-context:order_event:order_event:v1:7"
+            ],
+            "transmissions": [
+              {
+                "transmissionId": "transmission:observation_emission:facet:event-record:log-web-snapshot:production->facet:address-context:order_event:order_event:v1:7:consumption",
+                "source": {
+                  "nodeId": "event-record:log-web-snapshot",
+                  "facetKind": "production",
+                  "key": "facet:event-record:log-web-snapshot:production"
+                },
+                "target": {
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "facetKind": "consumption",
+                  "key": "facet:address-context:order_event:order_event:v1:7:consumption"
+                },
+                "semantic": "observation_emission",
+                "medium": "observation",
+                "direction": "forward",
+                "relationType": "observes_address_context",
+                "contractRefs": [
+                  "order_event"
+                ]
+              }
+            ],
+            "dataFlow": {
+              "flowId": "event-record:log-web-snapshot",
+              "templateKind": "event_record_observed",
+              "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+              "entryNodeId": "event-record:log-web-snapshot",
+              "nodeIds": [
+                "event-record:log-web-snapshot",
+                "address-context:order_event:order_event:v1:7"
+              ],
+              "schemaIds": [],
+              "endpoints": [
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "templateKind": "payload_root",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "payload",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "orderId",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "amount",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "templateKind": "address_binding",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "direction": "in",
+                  "facetKind": "consumption",
+                  "field": "order_event",
+                  "sourceKind": "contract"
+                }
+              ],
+              "contracts": [
+                {
+                  "contractId": "contract:event-record:log-web-snapshot",
+                  "templateKind": "event_record_contract",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "consumes": [],
+                  "produces": [
+                    {
+                      "field": "payload",
+                      "type": "object:json",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "orderId",
+                      "type": "string",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "amount",
+                      "type": "number",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ]
+                },
+                {
+                  "contractId": "contract:address-context:order_event:order_event:v1:7",
+                  "templateKind": "address_binding_contract",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "consumes": [
+                    {
+                      "field": "order_event",
+                      "type": "address_context_binding",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ],
+                  "produces": []
+                }
+              ],
+              "links": [
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+                  "templateKind": "observation_link",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "semantic": "observation_emission",
+                  "medium": "observation",
+                  "relationType": "observes_address_context",
+                  "sourceKind": "connection"
+                }
+              ],
+              "templateValidation": {
+                "valid": true,
+                "missingEndpointKinds": [],
+                "disallowedEndpointKinds": [],
+                "missingContractKinds": [],
+                "disallowedContractKinds": [],
+                "missingLinkKinds": [],
+                "disallowedLinkKinds": []
+              }
+            },
+            "templateDescription": "Corridor root checkpoint for a single observed record",
+            "templateValidation": {
+              "valid": true,
+              "missingObservedFields": false,
+              "missingObservedPrefixIds": false,
+              "nodeNotObserved": false
+            }
+          },
+          {
+            "checkpointId": "checkpoint:event-record:log-web-snapshot:payload:orderId",
+            "templateKind": "payload_field",
+            "recordId": "log-web-snapshot",
+            "traceId": "trace-web-snapshot",
+            "eventKey": "order.submit",
+            "timestamp": "2026-04-12T00:01:00.000Z",
+            "corridorId": "event-record:log-web-snapshot",
+            "observedNodeKeys": [
+              "event-record:log-web-snapshot"
+            ],
+            "observedEdgeKeys": [
+              "edge:event-record:log-web-snapshot->payload_field->event-record:log-web-snapshot:orderId"
+            ],
+            "transmissions": [],
+            "dataFlow": {
+              "flowId": "event-record:log-web-snapshot",
+              "templateKind": "event_record_observed",
+              "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+              "entryNodeId": "event-record:log-web-snapshot",
+              "nodeIds": [
+                "event-record:log-web-snapshot",
+                "address-context:order_event:order_event:v1:7"
+              ],
+              "schemaIds": [],
+              "endpoints": [
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "templateKind": "payload_root",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "payload",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "orderId",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "amount",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "templateKind": "address_binding",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "direction": "in",
+                  "facetKind": "consumption",
+                  "field": "order_event",
+                  "sourceKind": "contract"
+                }
+              ],
+              "contracts": [
+                {
+                  "contractId": "contract:event-record:log-web-snapshot",
+                  "templateKind": "event_record_contract",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "consumes": [],
+                  "produces": [
+                    {
+                      "field": "payload",
+                      "type": "object:json",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "orderId",
+                      "type": "string",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "amount",
+                      "type": "number",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ]
+                },
+                {
+                  "contractId": "contract:address-context:order_event:order_event:v1:7",
+                  "templateKind": "address_binding_contract",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "consumes": [
+                    {
+                      "field": "order_event",
+                      "type": "address_context_binding",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ],
+                  "produces": []
+                }
+              ],
+              "links": [
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+                  "templateKind": "observation_link",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "semantic": "observation_emission",
+                  "medium": "observation",
+                  "relationType": "observes_address_context",
+                  "sourceKind": "connection"
+                }
+              ],
+              "templateValidation": {
+                "valid": true,
+                "missingEndpointKinds": [],
+                "disallowedEndpointKinds": [],
+                "missingContractKinds": [],
+                "disallowedContractKinds": [],
+                "missingLinkKinds": [],
+                "disallowedLinkKinds": []
+              }
+            },
+            "templateDescription": "Checkpoint for an observed top-level payload field",
+            "templateValidation": {
+              "valid": true,
+              "missingObservedFields": false,
+              "missingObservedPrefixIds": false,
+              "nodeNotObserved": false
+            }
+          },
+          {
+            "checkpointId": "checkpoint:event-record:log-web-snapshot:payload:amount",
+            "templateKind": "payload_field",
+            "recordId": "log-web-snapshot",
+            "traceId": "trace-web-snapshot",
+            "eventKey": "order.submit",
+            "timestamp": "2026-04-12T00:01:00.000Z",
+            "corridorId": "event-record:log-web-snapshot",
+            "observedNodeKeys": [
+              "event-record:log-web-snapshot"
+            ],
+            "observedEdgeKeys": [
+              "edge:event-record:log-web-snapshot->payload_field->event-record:log-web-snapshot:amount"
+            ],
+            "transmissions": [],
+            "dataFlow": {
+              "flowId": "event-record:log-web-snapshot",
+              "templateKind": "event_record_observed",
+              "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+              "entryNodeId": "event-record:log-web-snapshot",
+              "nodeIds": [
+                "event-record:log-web-snapshot",
+                "address-context:order_event:order_event:v1:7"
+              ],
+              "schemaIds": [],
+              "endpoints": [
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "templateKind": "payload_root",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "payload",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "orderId",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "amount",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "templateKind": "address_binding",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "direction": "in",
+                  "facetKind": "consumption",
+                  "field": "order_event",
+                  "sourceKind": "contract"
+                }
+              ],
+              "contracts": [
+                {
+                  "contractId": "contract:event-record:log-web-snapshot",
+                  "templateKind": "event_record_contract",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "consumes": [],
+                  "produces": [
+                    {
+                      "field": "payload",
+                      "type": "object:json",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "orderId",
+                      "type": "string",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "amount",
+                      "type": "number",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ]
+                },
+                {
+                  "contractId": "contract:address-context:order_event:order_event:v1:7",
+                  "templateKind": "address_binding_contract",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "consumes": [
+                    {
+                      "field": "order_event",
+                      "type": "address_context_binding",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ],
+                  "produces": []
+                }
+              ],
+              "links": [
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+                  "templateKind": "observation_link",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "semantic": "observation_emission",
+                  "medium": "observation",
+                  "relationType": "observes_address_context",
+                  "sourceKind": "connection"
+                }
+              ],
+              "templateValidation": {
+                "valid": true,
+                "missingEndpointKinds": [],
+                "disallowedEndpointKinds": [],
+                "missingContractKinds": [],
+                "disallowedContractKinds": [],
+                "missingLinkKinds": [],
+                "disallowedLinkKinds": []
+              }
+            },
+            "templateDescription": "Checkpoint for an observed top-level payload field",
+            "templateValidation": {
+              "valid": true,
+              "missingObservedFields": false,
+              "missingObservedPrefixIds": false,
+              "nodeNotObserved": false
+            }
+          },
+          {
+            "checkpointId": "checkpoint:event-record:log-web-snapshot:binding:order_event:0",
+            "templateKind": "address_binding",
+            "recordId": "log-web-snapshot",
+            "traceId": "trace-web-snapshot",
+            "eventKey": "order.submit",
+            "timestamp": "2026-04-12T00:01:00.000Z",
+            "corridorId": "event-record:log-web-snapshot",
+            "observedNodeKeys": [
+              "event-record:log-web-snapshot",
+              "address-context:order_event:order_event:v1:7"
+            ],
+            "observedEdgeKeys": [
+              "edge:event-record:log-web-snapshot->observes_address_context->address-context:order_event:order_event:v1:7"
+            ],
+            "transmissions": [
+              {
+                "transmissionId": "transmission:observation_emission:facet:event-record:log-web-snapshot:production->facet:address-context:order_event:order_event:v1:7:consumption",
+                "source": {
+                  "nodeId": "event-record:log-web-snapshot",
+                  "facetKind": "production",
+                  "key": "facet:event-record:log-web-snapshot:production"
+                },
+                "target": {
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "facetKind": "consumption",
+                  "key": "facet:address-context:order_event:order_event:v1:7:consumption"
+                },
+                "semantic": "observation_emission",
+                "medium": "observation",
+                "direction": "forward",
+                "relationType": "observes_address_context",
+                "contractRefs": [
+                  "order_event"
+                ]
+              }
+            ],
+            "dataFlow": {
+              "flowId": "event-record:log-web-snapshot",
+              "templateKind": "event_record_observed",
+              "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+              "entryNodeId": "event-record:log-web-snapshot",
+              "nodeIds": [
+                "event-record:log-web-snapshot",
+                "address-context:order_event:order_event:v1:7"
+              ],
+              "schemaIds": [],
+              "endpoints": [
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "templateKind": "payload_root",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "payload",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "orderId",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "amount",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "templateKind": "address_binding",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "direction": "in",
+                  "facetKind": "consumption",
+                  "field": "order_event",
+                  "sourceKind": "contract"
+                }
+              ],
+              "contracts": [
+                {
+                  "contractId": "contract:event-record:log-web-snapshot",
+                  "templateKind": "event_record_contract",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "consumes": [],
+                  "produces": [
+                    {
+                      "field": "payload",
+                      "type": "object:json",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "orderId",
+                      "type": "string",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "amount",
+                      "type": "number",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ]
+                },
+                {
+                  "contractId": "contract:address-context:order_event:order_event:v1:7",
+                  "templateKind": "address_binding_contract",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "consumes": [
+                    {
+                      "field": "order_event",
+                      "type": "address_context_binding",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ],
+                  "produces": []
+                }
+              ],
+              "links": [
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+                  "templateKind": "observation_link",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "semantic": "observation_emission",
+                  "medium": "observation",
+                  "relationType": "observes_address_context",
+                  "sourceKind": "connection"
+                }
+              ],
+              "templateValidation": {
+                "valid": true,
+                "missingEndpointKinds": [],
+                "disallowedEndpointKinds": [],
+                "missingContractKinds": [],
+                "disallowedContractKinds": [],
+                "missingLinkKinds": [],
+                "disallowedLinkKinds": []
+              }
+            },
+            "templateDescription": "Checkpoint for an observed address_context binding",
+            "templateValidation": {
+              "valid": true,
+              "missingObservedFields": false,
+              "missingObservedPrefixIds": false,
+              "nodeNotObserved": false
+            }
+          },
+          {
+            "checkpointId": "checkpoint:event-record:log-web-snapshot:route:collect-order",
+            "templateKind": "route_decision",
+            "recordId": "log-web-snapshot",
+            "traceId": "trace-web-snapshot",
+            "eventKey": "order.submit",
+            "timestamp": "2026-04-12T00:01:00.000Z",
+            "corridorId": "snapshot-web",
+            "junctionId": "collect-order",
+            "traversalKey": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order",
+            "observedNodeKeys": [
+              "event-record:log-web-snapshot",
+              "address-context:order_event:order_event:v1:7",
+              "collect-order"
+            ],
+            "observedEdgeKeys": [
+              "edge:event-record:log-web-snapshot->observes_address_context->address-context:order_event:order_event:v1:7"
+            ],
+            "transmissions": [],
+            "dataFlow": {
+              "flowId": "event-record:log-web-snapshot",
+              "templateKind": "event_record_observed",
+              "templateDescription": "Synthetic observed corridor materialized from EventRecord payload and address_context",
+              "entryNodeId": "event-record:log-web-snapshot",
+              "nodeIds": [
+                "event-record:log-web-snapshot",
+                "address-context:order_event:order_event:v1:7"
+              ],
+              "schemaIds": [],
+              "endpoints": [
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "templateKind": "payload_root",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "payload",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "orderId",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "templateKind": "payload_field",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "direction": "out",
+                  "facetKind": "production",
+                  "field": "amount",
+                  "sourceKind": "contract"
+                },
+                {
+                  "endpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "templateKind": "address_binding",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "direction": "in",
+                  "facetKind": "consumption",
+                  "field": "order_event",
+                  "sourceKind": "contract"
+                }
+              ],
+              "contracts": [
+                {
+                  "contractId": "contract:event-record:log-web-snapshot",
+                  "templateKind": "event_record_contract",
+                  "nodeId": "event-record:log-web-snapshot",
+                  "consumes": [],
+                  "produces": [
+                    {
+                      "field": "payload",
+                      "type": "object:json",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "orderId",
+                      "type": "string",
+                      "required": true,
+                      "source": "order.submit"
+                    },
+                    {
+                      "field": "amount",
+                      "type": "number",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ]
+                },
+                {
+                  "contractId": "contract:address-context:order_event:order_event:v1:7",
+                  "templateKind": "address_binding_contract",
+                  "nodeId": "address-context:order_event:order_event:v1:7",
+                  "consumes": [
+                    {
+                      "field": "order_event",
+                      "type": "address_context_binding",
+                      "required": true,
+                      "source": "order.submit"
+                    }
+                  ],
+                  "produces": []
+                }
+              ],
+              "links": [
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:orderId:0",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:orderId",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:payload:amount:1",
+                  "templateKind": "payload_projection",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:event-record:log-web-snapshot:out:amount",
+                  "semantic": "production_to_consumption",
+                  "medium": "direct",
+                  "relationType": "payload_field",
+                  "sourceKind": "payload"
+                },
+                {
+                  "linkId": "flow-link:event-record:log-web-snapshot:order_event:0",
+                  "templateKind": "observation_link",
+                  "fromEndpointId": "endpoint:event-record:log-web-snapshot:out:payload",
+                  "toEndpointId": "endpoint:address-context:order_event:order_event:v1:7:in:order_event",
+                  "semantic": "observation_emission",
+                  "medium": "observation",
+                  "relationType": "observes_address_context",
+                  "sourceKind": "connection"
+                }
+              ],
+              "templateValidation": {
+                "valid": true,
+                "missingEndpointKinds": [],
+                "disallowedEndpointKinds": [],
+                "missingContractKinds": [],
+                "disallowedContractKinds": [],
+                "missingLinkKinds": [],
+                "disallowedLinkKinds": []
+              }
+            },
+            "templateDescription": "Checkpoint for a route decision attached during snapshot synthesis",
+            "templateValidation": {
+              "valid": true,
+              "missingObservedFields": false,
+              "missingObservedPrefixIds": false,
+              "nodeNotObserved": false
+            }
+          }
+        ],
+        "links": [
+          {
+            "fromCheckpointId": "checkpoint:event-record:log-web-snapshot",
+            "toCheckpointId": "checkpoint:event-record:log-web-snapshot:payload:orderId",
+            "relation": "contains"
+          },
+          {
+            "fromCheckpointId": "checkpoint:event-record:log-web-snapshot",
+            "toCheckpointId": "checkpoint:event-record:log-web-snapshot:payload:amount",
+            "relation": "contains"
+          },
+          {
+            "fromCheckpointId": "checkpoint:event-record:log-web-snapshot",
+            "toCheckpointId": "checkpoint:event-record:log-web-snapshot:binding:order_event:0",
+            "relation": "contains"
+          },
+          {
+            "fromCheckpointId": "checkpoint:event-record:log-web-snapshot",
+            "toCheckpointId": "checkpoint:event-record:log-web-snapshot:route:collect-order",
+            "relation": "decides"
+          }
+        ]
+      },
+      "builtFrom": [
+        "snapshot:web-full"
+      ],
+      "builtAt": "2026-04-11T22:27:21.846Z"
+    },
+    {
+      "projectionId": "snapshot:web-full:junction:collect-order",
+      "projectionKind": "operational_ontology_junction",
+      "targetScope": "collect-order",
+      "payloadJson": {
+        "templateKind": "conditional_branch",
+        "templateDescription": "Junction materialized from conditional PipeConnection paths",
+        "templateValidation": {
+          "valid": true,
+          "pathCount": 1,
+          "tooFewPaths": false,
+          "tooManyPaths": false,
+          "pathsMissingCondition": []
+        },
+        "branchNodeId": "collect-order",
+        "mode": "first_match",
+        "paths": [
+          {
+            "pathId": "collect-order->validate-order:0",
+            "when": {
+              "conditionId": "collect-order:condition:0",
+              "expression": "order.valid == true"
+            },
+            "nextNodeIds": [
+              "validate-order"
+            ],
+            "priority": 0
+          }
+        ]
+      },
+      "builtFrom": [
+        "snapshot:web-full"
+      ],
+      "builtAt": "2026-04-11T22:27:21.846Z"
+    },
+    {
+      "projectionId": "snapshot:web-full:route-decision:collect-order",
+      "projectionKind": "operational_ontology_route_decision",
+      "targetScope": "snapshot-web",
+      "payloadJson": {
+        "templateKind": "observed_route_decision",
+        "templateDescription": "Route decision materialized from observed branch outcomes",
+        "templateValidation": {
+          "valid": true,
+          "pathCount": 1,
+          "tooFewPaths": false,
+          "tooManyPaths": false,
+          "pathsMissingCondition": []
+        },
+        "branchNodeId": "collect-order",
+        "mode": "first_match",
+        "selectedPathIds": [
+          "collect-order->validate-order"
+        ],
+        "skippedPathIds": [],
+        "reason": "observed-paths",
+        "junctionId": "collect-order",
+        "corridorId": "snapshot-web",
+        "traversalKey": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order"
+      },
+      "builtFrom": [
+        "snapshot:web-full"
+      ],
+      "builtAt": "2026-04-11T22:27:21.846Z"
+    }
+  ]
+}

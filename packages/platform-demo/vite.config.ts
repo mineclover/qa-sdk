@@ -1,9 +1,10 @@
 import { defineConfig } from "vite";
 import obfuscatorPlugin from "rollup-plugin-obfuscator";
+import { vitePfPlugin } from "../../packages/infra-engine/src/lib/vite-pf-plugin.js";
 
 export default defineConfig({
   root: ".",
-  appType: "spa",
+  appType: "mpa",
   build: {
     outDir: "dist",
     emptyOutDir: true,
@@ -27,9 +28,18 @@ export default defineConfig({
       ],
     },
   },
+  plugins: [vitePfPlugin({
+    service: "platform-demo",
+    note: "Vite dev — RLSC Inspector + platform demo",
+  })],
   server: {
-    port: 5175,
+    port: 5176,
     proxy: {
+      "/api/diagrams": "http://localhost:3300",
+      "/api/event-catalog": "http://localhost:3300",
+      "/api/services": "http://localhost:3300",
+      "/api/endpoints": "http://localhost:3300",
+      "/v1": "http://localhost:3200",
       "/api": "http://localhost:8787",
     },
   },

@@ -1,0 +1,178 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "f913b88c-757c-45c0-a605-5babdc869d54",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "ddl": [
+    {
+      "name": "review_entries",
+      "entityType": "tables"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "review_entries"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "file_path",
+      "entityType": "columns",
+      "table": "review_entries"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reviewed_commit",
+      "entityType": "columns",
+      "table": "review_entries"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(datetime('now'))",
+      "generated": null,
+      "name": "reviewed_at",
+      "entityType": "columns",
+      "table": "review_entries"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reviewer",
+      "entityType": "columns",
+      "table": "review_entries"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ai_model",
+      "entityType": "columns",
+      "table": "review_entries"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "service_scope",
+      "entityType": "columns",
+      "table": "review_entries"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "notes",
+      "entityType": "columns",
+      "table": "review_entries"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "review_entries_pk",
+      "table": "review_entries",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "file_path",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_re_file",
+      "entityType": "indexes",
+      "table": "review_entries"
+    },
+    {
+      "columns": [
+        {
+          "value": "service_scope",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_re_scope",
+      "entityType": "indexes",
+      "table": "review_entries"
+    },
+    {
+      "columns": [
+        {
+          "value": "reviewer",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_re_reviewer",
+      "entityType": "indexes",
+      "table": "review_entries"
+    },
+    {
+      "columns": [
+        {
+          "value": "reviewed_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_re_at",
+      "entityType": "indexes",
+      "table": "review_entries"
+    },
+    {
+      "columns": [
+        {
+          "value": "file_path",
+          "isExpression": false
+        },
+        {
+          "value": "reviewed_commit",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_re_file_commit",
+      "entityType": "indexes",
+      "table": "review_entries"
+    }
+  ],
+  "renames": []
+}

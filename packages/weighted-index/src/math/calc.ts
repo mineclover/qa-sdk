@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * calc.ts — Standalone calculation utilities for weighted positional notation.
  *
@@ -69,6 +72,33 @@ export function partialQueryBase(
 }
 
 /**
+ * 특정 차원만 추출하는 부분 decode. O(k) — k = dimIndices 수.
+ *
+ * mixed-radix에서 i번째 차원 좌표 독립 추출 공식:
+ *   coord_i = floor(address / stride[i]) % shape[i] + 1
+ *
+ * full decode O(d) 대비 k << d 일 때 유리.
+ *
+ * @param address    - 1D 주소 (0-based)
+ * @param shape      - 각 차원의 크기 배열
+ * @param strides    - calcWeights(shape) 결과
+ * @param dimIndices - 추출할 차원 인덱스 (0-based)
+ * @returns { dimIndex: coord(1-based) } 맵
+ */
+export function partialDecode(
+  address: number,
+  shape: readonly number[],
+  strides: readonly number[],
+  dimIndices: readonly number[],
+): Record<number, number> {
+  const result: Record<number, number> = {};
+  for (const i of dimIndices) {
+    result[i] = Math.floor(address / strides[i]) % shape[i] + 1;
+  }
+  return result;
+}
+
+/**
  * 인접하거나 겹치는 [from, to] 구간들을 병합한다 (합집합).
  *
  * @example
@@ -76,7 +106,7 @@ export function partialQueryBase(
  */
 export function mergeRanges(ranges: [number, number][]): [number, number][] {
   if (ranges.length === 0) return [];
-  const sorted = [...ranges].sort((a, b) => a[0] - b[0]);
+  const sorted = [...ranges].toSorted((a, b) => a[0] - b[0]);
   const result: [number, number][] = [[...sorted[0]]];
   for (let i = 1; i < sorted.length; i++) {
     const last = result[result.length - 1];
@@ -182,7 +212,7 @@ export function containsAddress(
  */
 export function positionsToConstraint(positions: readonly number[]): string {
   if (positions.length === 0) return "";
-  const sorted = [...positions].sort((a, b) => a - b);
+  const sorted = [...positions].toSorted((a, b) => a - b);
   const segments: string[] = [];
   let from = sorted[0];
   let to   = sorted[0];

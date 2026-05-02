@@ -1,4 +1,23 @@
+---
+def:
+  id: spec-convention
+  type: knowledge
+  knowledge_kind: convention
+  scope: constraint
+  aspect: tech_constraint
+  depth: overview
+  lifecycle: approved
+  tags: [entry-point, structural, testing]
+  links:
+    - target: guides-system
+      type: refines
+---
 # Spec Convention
+
+## 목적 ^purpose
+
+스펙 문서 작성 컨벤션. frontmatter 구조, 마커 사용법, scope-aspect 판별 기준을 정의한다.
+
 
 스펙은 `docs/specs/` 디렉토리에서 **관심사(concern)** 단위로 중앙 관리한다.
 
@@ -59,7 +78,7 @@ implemented | draft | planned | hold
 | `data-model/` | 2개 이상 패키지가 공유하는 타입 + 포트 | EventRecord, RuntimeGraph, VerdictStore |
 | `event-vocabulary/` | 이벤트 정의, payload 규격, 그래프 힌트 | CoreEventDef, PayloadFieldGuide, GraphHint |
 | `collection/` | SDK 클라이언트 사이드 수집 | QaLogger, TraceContext, masking |
-| `pipeline/` | 데이터 처리 파이프라인 (엔진 + 오케스트레이션) | reconstruct, matchGraphs, ingest Phase 1/2 |
+| `pipeline/` | 데이터 처리 파이프라인 (엔진 + 오케스트레이션) | reconstruct, matchViaPathMatcher, ingest Phase 1/2 |
 | `server/<name>/` | 서버 엔드포인트 | REST API, SSE, health check |
 | `storage/` | DB 스키마 + 어댑터 구현 | PostgreSQL 테이블, Drizzle adapter |
 | `infra/` | 횡단 인프라 도구 | pino 로거 |

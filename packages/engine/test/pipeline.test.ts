@@ -13,7 +13,7 @@ import {
   compileSpec,
   computeVerdict,
   evaluateConstraint,
-  matchGraphs,
+  matchViaPathMatcher,
   reconstruct,
 } from "../src/index.js";
 
@@ -246,7 +246,7 @@ describe("compileSpec", () => {
   });
 });
 
-describe("matchGraphs", () => {
+describe("matchViaPathMatcher", () => {
   it("matches spec steps to runtime nodes by event_key and tracks unmatched nodes", () => {
     const spec = compileSpec(
       buildSpec([
@@ -268,7 +268,7 @@ describe("matchGraphs", () => {
       buildRuntimeNode({ id: "runtime-audit", event_key: "checkout.audit" }),
     ]);
 
-    const result = matchGraphs(spec, runtime);
+    const result = matchViaPathMatcher(spec, runtime);
 
     expect(result.step_matches).toEqual([
       {
@@ -340,7 +340,7 @@ describe("computeVerdict", () => {
     ]);
 
     const report = computeVerdict(
-      matchGraphs(spec, runtime),
+      matchViaPathMatcher(spec, runtime),
       spec,
       runtime,
       "qas_1",
@@ -380,7 +380,7 @@ describe("computeVerdict", () => {
       }),
     ]);
 
-    const report = computeVerdict(matchGraphs(spec, runtime), spec, runtime);
+    const report = computeVerdict(matchViaPathMatcher(spec, runtime), spec, runtime);
 
     expect(report.overall_verdict).toBe("warn");
     expect(report.step_matches.filter((stepMatch) => stepMatch.verdict === "warn")).toEqual([
@@ -413,7 +413,7 @@ describe("computeVerdict", () => {
       }),
     ]);
 
-    const report = computeVerdict(matchGraphs(spec, runtime), spec, runtime);
+    const report = computeVerdict(matchViaPathMatcher(spec, runtime), spec, runtime);
 
     expect(report.overall_verdict).toBe("degraded");
     expect(report.latency_violations).toEqual([
@@ -449,7 +449,7 @@ describe("computeVerdict", () => {
       }),
     ]);
 
-    const report = computeVerdict(matchGraphs(spec, runtime), spec, runtime);
+    const report = computeVerdict(matchViaPathMatcher(spec, runtime), spec, runtime);
 
     expect(report.overall_verdict).toBe("fail");
     expect(report.step_matches.filter((stepMatch) => stepMatch.verdict === "fail")).toEqual([

@@ -1,0 +1,31 @@
+{
+  "name": "@qa-sdk/sim-metrics-collector",
+  "version": "0.1.0",
+  "description": "시뮬 — Prometheus exporter (prom-client 기반)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsup",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.1",
+    "@qa-sdk/core": "workspace:*",
+    "@qa-sdk/logger": "workspace:*",
+    "@qa-sdk/otel": "workspace:*",
+    "hono": "^4.7.5",
+    "prom-client": "^15.1.3",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
+  }
+}

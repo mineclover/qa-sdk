@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * SqlEntryFlagStore — entry 수준 상태 이력의 SQL 구현
  *

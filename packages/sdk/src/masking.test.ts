@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyMasking } from "./masking.js";
+import { applyMasking } from "@qa-sdk/logger";
 
 describe("applyMasking", () => {
   it("keeps raw fields unchanged", () => {

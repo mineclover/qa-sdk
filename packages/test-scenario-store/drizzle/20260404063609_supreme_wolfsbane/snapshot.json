@@ -1,0 +1,326 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "8c2070b4-8bf6-4724-8192-74a79cfd7bf0",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "ddl": [
+    {
+      "name": "test_scenario_runs",
+      "entityType": "tables"
+    },
+    {
+      "name": "test_scenarios",
+      "entityType": "tables"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "test_scenario_runs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "scenario_id",
+      "entityType": "columns",
+      "table": "test_scenario_runs"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "passed",
+      "entityType": "columns",
+      "table": "test_scenario_runs"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "commit_hash",
+      "entityType": "columns",
+      "table": "test_scenario_runs"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "duration_ms",
+      "entityType": "columns",
+      "table": "test_scenario_runs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(datetime('now'))",
+      "generated": null,
+      "name": "run_at",
+      "entityType": "columns",
+      "table": "test_scenario_runs"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "test_scenarios"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "a_coord",
+      "entityType": "columns",
+      "table": "test_scenarios"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "spec_address",
+      "entityType": "columns",
+      "table": "test_scenarios"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "kind",
+      "entityType": "columns",
+      "table": "test_scenarios"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'single'",
+      "generated": null,
+      "name": "scope",
+      "entityType": "columns",
+      "table": "test_scenarios"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'declared'",
+      "generated": null,
+      "name": "lifecycle",
+      "entityType": "columns",
+      "table": "test_scenarios"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "intent",
+      "entityType": "columns",
+      "table": "test_scenarios"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "primary_svc",
+      "entityType": "columns",
+      "table": "test_scenarios"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'[]'",
+      "generated": null,
+      "name": "participants",
+      "entityType": "columns",
+      "table": "test_scenarios"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "file_path",
+      "entityType": "columns",
+      "table": "test_scenarios"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "simulation_ref",
+      "entityType": "columns",
+      "table": "test_scenarios"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "spec_version",
+      "entityType": "columns",
+      "table": "test_scenarios"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "convention_violation",
+      "entityType": "columns",
+      "table": "test_scenarios"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(datetime('now'))",
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "test_scenarios"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(datetime('now'))",
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "test_scenarios"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "test_scenario_runs_pk",
+      "table": "test_scenario_runs",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "test_scenarios_pk",
+      "table": "test_scenarios",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "scenario_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_tsr_scenario",
+      "entityType": "indexes",
+      "table": "test_scenario_runs"
+    },
+    {
+      "columns": [
+        {
+          "value": "run_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_tsr_run_at",
+      "entityType": "indexes",
+      "table": "test_scenario_runs"
+    },
+    {
+      "columns": [
+        {
+          "value": "spec_address",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_ts_spec",
+      "entityType": "indexes",
+      "table": "test_scenarios"
+    },
+    {
+      "columns": [
+        {
+          "value": "kind",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_ts_kind",
+      "entityType": "indexes",
+      "table": "test_scenarios"
+    },
+    {
+      "columns": [
+        {
+          "value": "lifecycle",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_ts_lifecycle",
+      "entityType": "indexes",
+      "table": "test_scenarios"
+    },
+    {
+      "columns": [
+        "a_coord"
+      ],
+      "nameExplicit": false,
+      "name": "test_scenarios_a_coord_unique",
+      "entityType": "uniques",
+      "table": "test_scenarios"
+    }
+  ],
+  "renames": []
+}

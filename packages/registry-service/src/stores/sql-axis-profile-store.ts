@@ -1,5 +1,9 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { SqlDriver } from "index-meta";
 import type { AxisProfileRecord, AxisProfilePatch, AxisProfileStore } from "./axis-profile-store.js";
+import { parseJsonColumn } from "../lib/typed-json.js";
 
 export class SqlAxisProfileStore implements AxisProfileStore {
   constructor(private readonly driver: SqlDriver) {}
@@ -67,7 +71,7 @@ function toRecord(row: AxisRow): AxisProfileRecord {
     currentVersion: row.current_version,
     capacity: Number(row.capacity),
     entryCount: Number(row.entry_count),
-    meta: row.meta_json ? JSON.parse(row.meta_json) : undefined,
+    meta: parseJsonColumn<Record<string, unknown> | undefined>(row.meta_json, undefined),
     updatedAt: row.updated_at,
   };
 }

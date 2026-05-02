@@ -1,3 +1,6 @@
+// @def.boundary platform-demo-system
+// @def.doc platform-demo-system
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  Casbin 권한 모델 해설 — qa-sdk 주소 체계 ↔ Casbin 대비
 // ═══════════════════════════════════════════════════════════════════════════
@@ -734,6 +737,7 @@ export function renderCasbinPage(container: HTMLElement, ver = "v2"): void {
     featuresData = features;
     loading.remove();
     switchStep("ours");
+    return undefined;
   }).catch((e: unknown) => {
     loading.innerHTML = `<div style="padding:16px;color:#c0392b">오류: ${e instanceof Error ? e.message : "알 수 없는 오류"}</div>`;
   });

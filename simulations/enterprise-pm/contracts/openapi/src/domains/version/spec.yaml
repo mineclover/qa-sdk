@@ -1,0 +1,124 @@
+tags:
+  - name: version
+    description: Document version (append-only) command and read-model API.
+paths:
+  /documents/{documentId}/versions:
+    post:
+      tags: [version]
+      operationId: createDocumentVersion
+      summary: Append a new document version.
+      x-domain: version
+      x-architecture-slice: version-command-write-model
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVersionCommand"
+      responses:
+        "201":
+          description: Version created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionCommandAccepted"
+        "404":
+          description: Document not found.
+    get:
+      tags: [version]
+      operationId: listDocumentVersions
+      summary: List versions of a document.
+      x-domain: version
+      x-architecture-slice: version-read-model
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Version list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VersionReadModel"
+  /documents/{documentId}/versions/{versionNumber}:
+    get:
+      tags: [version]
+      operationId: getDocumentVersion
+      summary: Read a specific document version.
+      x-domain: version
+      x-architecture-slice: version-read-model
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: versionNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Version detail.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionReadModel"
+        "404":
+          description: Not found.
+components:
+  schemas:
+    CreateVersionCommand:
+      type: object
+      required: [contentRef, authorId]
+      properties:
+        contentRef:
+          type: string
+        authorId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+      additionalProperties: false
+    VersionCommandAccepted:
+      type: object
+      required: [documentId, versionNumber, status]
+      properties:
+        documentId:
+          type: string
+        versionNumber:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum: [CREATED]
+      additionalProperties: false
+    VersionReadModel:
+      type: object
+      required: [documentId, versionNumber, contentRef, authorId, createdAt]
+      properties:
+        documentId:
+          type: string
+        versionNumber:
+          type: integer
+          minimum: 1
+        contentRef:
+          type: string
+        authorId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        createdAt:
+          type: string
+          format: date-time
+      additionalProperties: false

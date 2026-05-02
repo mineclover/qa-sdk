@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 import { ROLEPLAY_WEB_URL } from "../config";
 import type { ParentMessage, ChildMessage } from "./message-protocol";
 import { isChildMessage } from "./message-protocol";

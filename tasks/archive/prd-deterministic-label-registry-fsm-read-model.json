@@ -1,0 +1,302 @@
+{
+  "name": "Deterministic Label Registry FSM Read Model",
+  "description": "This PRD implements the first read-only layer of the deterministic label registry and FSM control plane described by `deterministic-label-registry-fsm-plan` and `deterministic-label-registry-fsm-todo`. The goal is to move below PRD/TODO convenience artifacts and model repository configuration units as deterministic label candidates with semantic coordinates, label records, FSM readiness, and transition dry-run results.\n\nThe work is deliberately read-only. It must not persist an append-only registry, mutate document lifecycle state, move files, migrate ids to URNs, or perform real transitions. It should collect current docs/pack/source/PRD/evidence state into deterministic projections and report what would be required for `DRAFT -> LINTED -> RESOLVED -> ACTIVE` readiness.",
+  "branchName": "ralph/deterministic-label-registry-fsm-read-model",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Define Semantic Coordinate Candidate Types",
+      "description": "As a docs-control-plane maintainer, I want a semantic coordinate candidate model so configuration units can be identified independently of physical paths.",
+      "acceptanceCriteria": [
+        "Add types for semantic coordinate candidates.",
+        "Support label kinds for definition docs, source files, ontology packs, artifacts, PRD markdown, ralph PRD JSON, PRD stories, and evidence.",
+        "Define canonical candidate format examples for `urn:def:*`, `urn:source:*`, `urn:pack:*`, `urn:artifact:*`, and `urn:prd:*`.",
+        "Preserve existing ids and paths; do not migrate repository ids to URNs.",
+        "Add diagnostics for missing kind, invalid version, ambiguous physical ref, and collision candidates.",
+        "Add unit tests for coordinate generation from representative ids.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and deterministic label read-model tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-plan --json`",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-todo --json`",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-completed-record-lifecycle.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Map Existing IDs To Label Candidates",
+      "description": "As a docs operator, I want existing ids mapped into label candidates so the system can inventory current docs without requiring a migration.",
+      "acceptanceCriteria": [
+        "Map `def.id`, `stableId`, `familyId`, `sourcePath`, `packId`, `artifactId`, and PRD story ids to label candidates.",
+        "Preserve physical refs such as markdown paths, source paths, PRD paths, and artifact output paths.",
+        "Report duplicate label candidates as diagnostics rather than overwriting.",
+        "Exclude archive PRDs and transient `.ralph-tui` session state by default.",
+        "Include archive/session only through existing exact target or opt-in policy where applicable.",
+        "Add tests using mixed definition markdown, source path, pack, PRD, and evidence fixtures.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and deterministic label read-model tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-plan --json`",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-todo --json`",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-completed-record-lifecycle.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "Define Deterministic Label Record Shape",
+      "description": "As a maintainer, I want a read-only label record shape that can later become an append-only registry entry without changing semantics.",
+      "acceptanceCriteria": [
+        "Define `DeterministicLabelRecord` or equivalent type.",
+        "Include label, kind, currentState, physicalRefs, dependencyLabels, sourceRefs, evidenceRefs, and diagnostics.",
+        "Keep the projection read-only and candidate-based.",
+        "Do not introduce persistence or append-only storage in this story.",
+        "Add tests for record construction with empty and populated dependencies/source/evidence refs.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and deterministic label read-model tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-plan --json`",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-todo --json`",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-completed-record-lifecycle.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001",
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "Project DocumentEnvelope Inputs Into Label Records",
+      "description": "As a docs-control-plane maintainer, I want `DocumentEnvelope` data projected into label records so definition docs and PRD artifacts can participate in deterministic readiness checks.",
+      "acceptanceCriteria": [
+        "Project definition markdown envelopes into label records.",
+        "Project PRD markdown and ralph PRD JSON envelopes into label records.",
+        "Project document links into dependency label candidates.",
+        "Project document sources into source label candidates.",
+        "Project document evidence into evidence label candidates.",
+        "Preserve completed-record and active/archive scope metadata.",
+        "Add tests for projection from representative `DocumentEnvelope` fixtures.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and deterministic label read-model tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-plan --json`",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-todo --json`",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-completed-record-lifecycle.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "Project Ontology Pack And Artifact Inputs Into Label Records",
+      "description": "As an ontology maintainer, I want pack validation and artifact evidence data projected into label records so packs and evidence can join the same deterministic control plane.",
+      "acceptanceCriteria": [
+        "Project known ontology pack ids into pack label records.",
+        "Project `ontology pack validate` identity, component schema, system bindings, runtime, and readiness status into label metadata.",
+        "Project artifact/evidence records where available into artifact/evidence label records.",
+        "Preserve readiness warnings as diagnostics, not hard failures.",
+        "Do not activate packs or mutate known-pack registry.",
+        "Add tests for programming-artifact and authorization pack projection fixtures.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and deterministic label read-model tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-plan --json`",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-todo --json`",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-completed-record-lifecycle.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "Compute FSM Readiness States",
+      "description": "As an operator, I want deterministic readiness states computed from existing validation signals so state transitions can be reviewed before any write-mode controller exists.",
+      "acceptanceCriteria": [
+        "Define FSM states `DRAFT`, `LINTED`, `RESOLVED`, `ACTIVE`, `DEPRECATED`, `ARCHIVED`, and `BLOCKED`.",
+        "Compute `DRAFT -> LINTED` readiness from syntax/frontmatter/schema/doc-type validation signals.",
+        "Compute `LINTED -> RESOLVED` readiness from link/source-map/dependency/evidence resolution.",
+        "Compute `RESOLVED -> ACTIVE` readiness from drift-free status, required evidence, role quality placeholders, and pack runtime validation where applicable.",
+        "Represent invalid transitions as blocked diagnostics without changing current state.",
+        "Add tests for linted, unresolved, resolved, active-ready, deprecated, archived, and blocked examples.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and deterministic label read-model tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-plan --json`",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-todo --json`",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-completed-record-lifecycle.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-003",
+        "US-004",
+        "US-005"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "Add Transition Dry-Run Result Shape",
+      "description": "As a future controller implementer, I want a transition dry-run result shape so transition logic can be tested before persistence is introduced.",
+      "acceptanceCriteria": [
+        "Define transition request shape with target label, requested state, reason, and evidence refs.",
+        "Define dry-run result shape with accepted/rejected, current state, next state, blockers, and gate evidence.",
+        "Ensure dry-run results do not mutate labels, documents, PRDs, or registries.",
+        "Include append-only transition event schema candidate as metadata or documentation.",
+        "Add tests for accepted and rejected dry-run transitions.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and deterministic label read-model tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-plan --json`",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-todo --json`",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-completed-record-lifecycle.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-006"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-008",
+      "title": "Add Read-Only Inventory API Or Internal Entry Point",
+      "description": "As a CLI maintainer, I want a reusable entry point for deterministic label inventory so commands and future PRDs can consume the same projection.",
+      "acceptanceCriteria": [
+        "Add an internal read-only function to build deterministic label inventory from docs-control-plane inputs.",
+        "Function accepts rootDir and existing document envelopes or builds them through existing adapters.",
+        "Function returns label records, diagnostics, and summary counts.",
+        "No user-facing command is required in this story unless implementation naturally needs one.",
+        "Add tests for summary counts and deterministic ordering.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and deterministic label read-model tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-plan --json`",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-todo --json`",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-completed-record-lifecycle.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-004",
+        "US-005",
+        "US-006",
+        "US-007"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-009",
+      "title": "Document Operating Boundaries",
+      "description": "As a future maintainer, I want docs explaining how deterministic labels, FSM readiness, and transition dry-run relate to existing docs-control-plane commands.",
+      "acceptanceCriteria": [
+        "Update `deterministic-label-registry-fsm-plan` if implementation decisions refine the plan.",
+        "Update `docs-control-plane.rule.md` or a linked rule section with deterministic label/FSM consumption rules.",
+        "Document that PRD/TODO are execution artifacts, not transition authority.",
+        "Document that label projection is read-only and persistence is deferred.",
+        "Document that ECS is a separation reference model, not the only supported architecture.",
+        "Document future write-mode transition controller as out of scope.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and deterministic label read-model tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-plan --json`",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-todo --json`",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-completed-record-lifecycle.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-008"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-010",
+      "title": "Verify Deterministic Label Registry FSM Read Model Operationally",
+      "description": "As a reviewer, I want command evidence that the read-only deterministic label model works without hidden writes.",
+      "acceptanceCriteria": [
+        "Run status checks for deterministic plan/todo and docs-control-plane.",
+        "Run drift checks for at least two completed PRDs.",
+        "Run `def validate`.",
+        "Run all quality gates.",
+        "Verify no files are moved, archived, or rewritten automatically.",
+        "Record residual label/FSM follow-up candidates in `deterministic-label-registry-fsm-todo.md` if needed.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and deterministic label read-model tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-plan --json`",
+        "`node packages/cli/dist/index.js docs status deterministic-label-registry-fsm-todo --json`",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-completed-record-lifecycle.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-009"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-17T16:49:26.430Z"
+  }
+}

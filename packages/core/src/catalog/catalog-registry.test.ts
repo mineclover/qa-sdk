@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 import { describe, expect, it } from "vitest";
 import { CatalogRegistry } from "./catalog-registry.js";
 import type { Catalog } from "./catalog.types.js";

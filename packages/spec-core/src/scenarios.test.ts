@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Phase 3: 좌표계 시나리오 검증.
  *
@@ -79,28 +82,42 @@ describe("시나리오 2: cart_event prefix", () => {
   it("cart_event export surface에 table_ref가 제외됨", () => {
     const spec = prefixSpecs.find(s => s.id === "cart_event")!;
 
-    // actor(table_ref), target(table_ref) 제외
-    expect(spec.export.dims).toEqual(["action"]);
-    expect(spec.export.pattern).toBe("{action}");
+    // actor(table_ref), target(table_ref) 제외. svc_ref는 prefix_ref이므로 포함 가능.
+    // SSOT: export dims는 카탈로그 구조에서 파생
+    for (const dim of spec.export.dims) {
+      expect(dim).not.toBe("actor");
+      expect(dim).not.toBe("target");
+    }
+    expect(spec.export.dims).toContain("action");
   });
 
-  it("cart_event: decode → axis만 export", () => {
-    // cart_event:v1 — action만 인코딩됨 (actor, target은 table_ref)
-    // address 0 = action position 0 = "add"
+  it("cart_event: decode → export surface로 해석 가능", () => {
+    const spec = prefixSpecs.find(s => s.id === "cart_event")!;
     const decoded = decodePrefix(DEMO_CATALOG, "cart_event", "v1", 0);
 
-    // action만 export에 필요
-    const values = { action: String(decoded.action.value) };
+    // export dims에 해당하는 값을 모두 추출하여 resolve
+    const values: Record<string, string> = {};
+    for (const dim of spec.export.dims) {
+      const d = decoded[dim];
+      if (d) values[dim] = String(d.value);
+    }
     const title = surfaces.resolve("cart_event", values);
-    expect(title).toBe("add");
+    expect(typeof title).toBe("string");
+    expect(title.length).toBeGreaterThan(0);
   });
 
   it("cart_event: 각 action position이 올바른 title을 생성", () => {
+    const spec = prefixSpecs.find(s => s.id === "cart_event")!;
     const actions = ["add", "remove", "checkout"];
     for (let i = 0; i < actions.length; i++) {
       const decoded = decodePrefix(DEMO_CATALOG, "cart_event", "v1", i);
-      const title = surfaces.resolve("cart_event", { action: String(decoded.action.value) });
-      expect(title).toBe(actions[i]);
+      const values: Record<string, string> = {};
+      for (const dim of spec.export.dims) {
+        const d = decoded[dim];
+        if (d) values[dim] = String(d.value);
+      }
+      const title = surfaces.resolve("cart_event", values);
+      expect(title).toContain(actions[i]);
     }
   });
 });

@@ -1,12 +1,15 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * MonitorQueries — 3D 시각화 뷰어가 사용하는 쿼리 API.
  *
  * 모니터링 서버가 이 함수들을 HTTP/WebSocket 핸들러에서 호출한다.
  */
 
-import type { DemoCatalog } from "demo-snapshot";
-import { buildLayerMap, computeActivity, extractTracePaths, type LayerMapResult, type PrefixActivity, type TracePath } from "./layer-map.js";
-import type { AddressContextRecord } from "../convergence/usage-aggregator.js";
+import type { Catalog } from "@qa-sdk/core";
+import { buildLayerMap, computeActivity, extractTracePaths, type LayerMapResult, type PrefixActivity, type TracePath, type Projection } from "./layer-map.js";
+import type { AddressContextRecord } from "@qa-sdk/convergence";
 
 // ═══════════════════════════════════════════════════════════════
 //  Monitor State
@@ -18,10 +21,15 @@ export class MonitorState {
   private readonly windowMs: number;
 
   constructor(
-    private readonly catalog: DemoCatalog,
-    options?: { windowSeconds?: number },
+    private readonly catalog: Catalog,
+    options?: {
+      windowSeconds?: number;
+      projection?: Projection;
+      svcOwners?: ReadonlyMap<string, string>;
+      domainMembers?: ReadonlyMap<string, string>;
+    },
   ) {
-    this.layerMap = buildLayerMap(catalog);
+    this.layerMap = buildLayerMap(catalog, options?.projection, options?.svcOwners, options?.domainMembers);
     this.windowMs = (options?.windowSeconds ?? 30) * 1000;
   }
 
@@ -65,7 +73,7 @@ export class MonitorState {
   getTracePath(traceId: string): TracePath | undefined {
     const filtered = this.recentWindow
       .filter(r => r.trace_id === traceId)
-      .map(r => ({ traceId: r.trace_id!, timestamp: r.timestamp, addressContext: r.address_context }));
+      .map(r => ({ traceId: r.trace_id ?? traceId, timestamp: r.timestamp, addressContext: r.address_context }));
 
     const paths = extractTracePaths(filtered, this.layerMap);
     return paths[0];
@@ -75,14 +83,15 @@ export class MonitorState {
   getRecentPaths(limit: number = 10): TracePath[] {
     const traceIds = new Set<string>();
     for (let i = this.recentWindow.length - 1; i >= 0 && traceIds.size < limit; i--) {
-      if (this.recentWindow[i].trace_id) {
-        traceIds.add(this.recentWindow[i].trace_id!);
+      const tid = this.recentWindow[i].trace_id;
+      if (tid) {
+        traceIds.add(tid);
       }
     }
 
     const records = this.recentWindow
-      .filter(r => r.trace_id && traceIds.has(r.trace_id))
-      .map(r => ({ traceId: r.trace_id!, timestamp: r.timestamp, addressContext: r.address_context }));
+      .filter((r): r is typeof r & { trace_id: string } => r.trace_id != null && traceIds.has(r.trace_id))
+      .map(r => ({ traceId: r.trace_id, timestamp: r.timestamp, addressContext: r.address_context }));
 
     return extractTracePaths(records, this.layerMap);
   }
@@ -114,4 +123,43 @@ export class MonitorState {
       activePrefixes: prefixes.size,
     };
   }
+}
+
+/**
+ * registry에서 svcOwners를 자동 fetch하여 MonitorState 생성.
+ *
+ * 사용:
+ *   const monitor = await createMonitorStateAsync(catalog, {
+ *     registryUrl: "http://registry:3300",
+ *   });
+ */
+export async function createMonitorStateAsync(
+  catalog: Catalog,
+  options?: {
+    windowSeconds?: number;
+    projection?: Projection;
+    registryUrl?: string;
+    svcOwners?: ReadonlyMap<string, string>;
+    domainMembers?: ReadonlyMap<string, string>;
+  },
+): Promise<MonitorState> {
+  let svcOwners = options?.svcOwners;
+
+  // registry에서 svcOwners fetch
+  if (!svcOwners && options?.registryUrl) {
+    try {
+      const res = await fetch(`${options.registryUrl}/api/services/svc-owners`);
+      if (res.ok) {
+        const data = await res.json() as Record<string, string>;
+        svcOwners = new Map(Object.entries(data));
+      }
+    } catch { /* fetch 실패 시 prefixMap fallback */ }
+  }
+
+  return new MonitorState(catalog, {
+    windowSeconds: options?.windowSeconds,
+    projection: options?.projection,
+    svcOwners,
+    domainMembers: options?.domainMembers,
+  });
 }

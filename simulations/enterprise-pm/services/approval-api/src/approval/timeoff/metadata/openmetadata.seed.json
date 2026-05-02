@@ -1,0 +1,52 @@
+{
+  "topology": "service",
+  "openmetadata": {
+    "domain": {
+      "name": "TimeOff",
+      "team": "Approval Workflow Team",
+      "owner": "sim-approval-owner"
+    },
+    "glossary": [
+      { "term": "TimeOffRequest", "description": "An employee's request for paid leave between startDate and endDate." }
+    ],
+    "lineage": [
+      { "name": "timeoff-write-path", "from": "approval.time_off_requests", "to": "approval.outbox_events", "via": "transactional-outbox" },
+      { "name": "timeoff-read-path", "from": "approval.outbox_events", "to": "reporting.timeoff_read_model", "via": "timeoff-read-model-sync" }
+    ],
+    "qualityTests": [
+      { "name": "timeoff_status_values", "type": "columnValuesToBeInSet", "entity": "approval.time_off_requests.status", "values": ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"] },
+      { "name": "timeoff_range_valid", "type": "columnValuesToBeBetween", "entity": "approval.time_off_requests.start_date", "comparison": "<= end_date" }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "timeoff-read-model",
+      "domain": "timeoff",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "timeoff-read-model",
+      "segments": [{ "name": "timeOffRequestId" }],
+      "ttl": "medium",
+      "openmetadataEntity": "reporting.timeoff_read_model"
+    },
+    {
+      "id": "timeoff-bff-detail",
+      "domain": "timeoff",
+      "purpose": "bff_detail",
+      "version": "v1",
+      "prefix": "timeoff-bff-detail",
+      "segments": [{ "name": "timeOffRequestId" }],
+      "ttl": "short",
+      "openmetadataEntity": "experience.timeoff_detail"
+    },
+    {
+      "id": "timeoff-idempotency",
+      "domain": "timeoff",
+      "purpose": "idempotency",
+      "version": "v1",
+      "prefix": "timeoff-idempotency",
+      "segments": [{ "name": "idempotencyKey", "pii": true, "encoding": "hash" }],
+      "ttl": "short"
+    }
+  ]
+}

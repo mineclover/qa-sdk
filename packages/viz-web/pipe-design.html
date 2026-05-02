@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pipe Design Catalog</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: system-ui, sans-serif; background: #f0f2f5; color: #1a1a1a; }
+
+      header {
+        background: #0d0d1a; color: #fff; padding: 14px 28px;
+        display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 100;
+      }
+      header h1 { font-size: 18px; font-weight: 600; }
+      header .sub { font-size: 12px; color: #888; }
+      header nav { margin-left: auto; display: flex; gap: 20px; }
+      header nav a { color: #90caf9; font-size: 13px; text-decoration: none; }
+      header nav a:hover { color: #fff; }
+
+      /* TOC */
+      .toc {
+        background: #fff; border-bottom: 1px solid #e0e0e0;
+        padding: 10px 28px; display: flex; gap: 6px; flex-wrap: wrap;
+        font-size: 12px;
+      }
+      .toc a {
+        padding: 4px 10px; border-radius: 20px; color: #546e7a;
+        text-decoration: none; border: 1px solid #cfd8dc;
+        transition: background 0.15s;
+      }
+      .toc a:hover { background: #e3f2fd; border-color: #1976d2; color: #1976d2; }
+
+      .page { max-width: 1280px; margin: 0 auto; padding: 28px 24px 80px; }
+
+      h2 {
+        font-size: 20px; font-weight: 700; margin: 48px 0 6px;
+        padding-bottom: 8px; border-bottom: 2px solid #e0e0e0;
+        color: #1a1a2e; scroll-margin-top: 100px;
+      }
+      h2:first-child { margin-top: 0; }
+      .section-desc { font-size: 13px; color: #666; margin-bottom: 18px; }
+
+      /* ── 노드 갤러리 ── */
+      .node-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 14px;
+      }
+      .node-card {
+        background: #fff; border-radius: 10px; padding: 14px 10px 12px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+      }
+      .node-card svg { display: block; }
+      .node-card .label { font-size: 12px; font-weight: 600; color: #37474f; }
+      .node-card .desc { font-size: 11px; color: #888; text-align: center; line-height: 1.5; }
+      .node-card .tag { font-size: 10px; padding: 2px 7px; border-radius: 10px;
+        background: #eceff1; color: #546e7a; font-family: monospace; }
+
+      /* ── flow 카탈로그 ── */
+      .flow-category { margin-bottom: 28px; }
+      .flow-category-title {
+        font-size: 13px; font-weight: 700; color: #fff; padding: 4px 14px;
+        border-radius: 4px; display: inline-block; margin-bottom: 12px;
+      }
+      .flow-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+      }
+      .flow-card {
+        background: #fff; border-radius: 8px; padding: 12px 10px;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.07);
+        display: flex; flex-direction: column; align-items: center; gap: 7px;
+        border-top: 3px solid transparent;
+      }
+      .flow-card svg { display: block; }
+      .flow-card .kind { font-size: 11px; font-weight: 700; font-family: monospace; }
+      .flow-card .role-tag { font-size: 10px; padding: 1px 6px; border-radius: 8px;
+        font-weight: 600; }
+      .flow-card .concern-tags { display: flex; gap: 3px; flex-wrap: wrap; justify-content: center; }
+      .flow-card .ctag { width: 16px; height: 16px; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 8px; font-weight: 800; color: #333; }
+      .flow-card .fields { font-size: 9px; color: #999; text-align: center; line-height: 1.4; }
+
+      /* ── role × certainty 매트릭스 ── */
+      .matrix { overflow-x: auto; }
+      .matrix table { border-collapse: collapse; width: 100%; }
+      .matrix th {
+        background: #1a1a2e; color: #fff; padding: 8px 12px;
+        font-size: 12px; font-weight: 600; text-align: center;
+      }
+      .matrix td {
+        padding: 8px; border: 1px solid #e0e0e0; text-align: center;
+        background: #fff;
+      }
+      .matrix td svg { display: block; margin: 0 auto; }
+      .matrix .row-label {
+        background: #f5f5f5; font-size: 11px; font-weight: 700;
+        color: #37474f; padding: 8px 14px; text-align: left;
+        white-space: nowrap;
+      }
+
+      /* ── 엣지 갤러리 ── */
+      .edge-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 14px;
+      }
+      .edge-card { background: #fff; border-radius: 10px; padding: 14px; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+      .edge-card .edge-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+      .edge-card .kind-badge {
+        padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+      }
+      .edge-card .edge-desc { font-size: 11px; color: #666; margin-top: 8px; }
+      .edge-card .edge-meta { font-size: 10px; color: #999; margin-top: 4px; font-family: monospace; }
+      .color-code { font-size: 10px; font-family: monospace; color: #999; margin-left: auto; }
+
+      /* ── port + facetType ── */
+      .port-facet-section {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 18px;
+      }
+      .section-card {
+        background: #fff; border-radius: 12px; padding: 18px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+      }
+      .section-card h3 { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
+      .section-card .subdesc { font-size: 11px; color: #888; margin-bottom: 12px; }
+      .mini-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 12px;
+      }
+      .mini-card {
+        border: 1px solid #eceff1; border-radius: 10px; padding: 12px 10px;
+        background: linear-gradient(180deg, #fcfdff 0%, #f7f9fc 100%);
+      }
+      .mini-card svg { display: block; margin: 0 auto; width: 100%; height: auto; }
+      .mini-card .mini-title { font-size: 11px; font-weight: 700; color: #37474f; margin-top: 8px; text-align: center; }
+      .mini-card .mini-desc { font-size: 10px; color: #78909c; line-height: 1.5; margin-top: 4px; text-align: center; }
+      .facet-list {
+        display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+        margin-top: 8px;
+      }
+      .facet-pill {
+        font-size: 10px; padding: 3px 8px; border-radius: 999px;
+        border: 1px solid #d7dee4; color: #546e7a; background: #fff;
+        font-family: monospace;
+      }
+
+      /* ── concern ── */
+      .concern-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+      .concern-item {
+        background: #fff; border-radius: 10px; padding: 12px 16px;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.07);
+        display: flex; align-items: center; gap: 10px; min-width: 190px;
+      }
+      .concern-circle {
+        width: 30px; height: 30px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 12px; font-weight: 800; color: #333;
+        border: 1.5px solid rgba(0,0,0,0.12); flex-shrink: 0;
+      }
+      .concern-info .name { font-size: 12px; font-weight: 600; }
+      .concern-info .hint { font-size: 10px; color: #888; margin-top: 2px; }
+
+      /* ── 샘플 ── */
+      .sample-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 18px;
+      }
+      .sample-card { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+      .sample-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+      .sample-card .sdesc { font-size: 11px; color: #888; margin-bottom: 12px; }
+      .sample-card svg { width: 100%; height: auto; }
+
+      /* ── 줌 비교 ── */
+      .zoom-compare {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+      }
+      .zoom-card { background: #fff; border-radius: 10px; padding: 14px; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+      .zoom-card h4 { font-size: 12px; font-weight: 700; color: #5c6bc0; margin-bottom: 8px; }
+      .zoom-card .zdesc { font-size: 11px; color: #888; margin-bottom: 10px; }
+      .zoom-card svg { width: 100%; height: auto; }
+
+      @media (max-width: 900px) {
+        .port-facet-section { grid-template-columns: 1fr; }
+        .zoom-compare { grid-template-columns: 1fr; }
+      }
+
+      @media (max-width: 640px) {
+        header { flex-wrap: wrap; padding: 14px 18px; }
+        header nav { margin-left: 0; width: 100%; }
+        .toc { padding: 10px 18px; }
+        .page { padding: 24px 16px 72px; }
+        .sample-grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Pipe Design Catalog</h1>
+      <span class="sub">노드 · 엣지 · flow · concern 시각 스펙</span>
+      <nav>
+        <a href="/pipe-preview.html">← Preview</a>
+      </nav>
+    </header>
+
+    <div class="toc">
+      <a href="#role">Role 5종</a>
+      <a href="#certainty">Certainty 3종</a>
+      <a href="#modifier">Entry · Concern · Folded</a>
+      <a href="#matrix">Role × Certainty 매트릭스</a>
+      <a href="#flow">PipeFlow 29종</a>
+      <a href="#edge">Edge 8종</a>
+      <a href="#port-facet">Port & FacetType</a>
+      <a href="#concern">Concern 배지</a>
+      <a href="#zoom">줌 레벨 비교</a>
+      <a href="#samples">실전 패턴</a>
+    </div>
+
+    <div class="page">
+      <h2 id="role">Node — PipeRole 5종</h2>
+      <p class="section-desc">파이프의 역할(role)에 따라 형태(shape)와 색상이 달라집니다. role은 flow 구조에서 자동 도출됩니다.</p>
+      <div class="node-grid" id="role-grid"></div>
+
+      <h2 id="certainty">Node — Certainty 3종</h2>
+      <p class="section-desc">타입 확실성(certainty)은 테두리 스타일로 표현됩니다. flow에 optional/branch가 포함되면 flexible, 혼합이면 mixed.</p>
+      <div class="node-grid" id="certainty-grid"></div>
+
+      <h2 id="modifier">Node — Entry · Concern · Folded</h2>
+      <p class="section-desc">진입 마커(▶), concern 배지(최대 4개), 접힌 노드(이중 테두리 stadium) 표현입니다.</p>
+      <div class="node-grid" id="modifier-grid"></div>
+
+      <h2 id="matrix">Node — Role × Certainty 매트릭스</h2>
+      <p class="section-desc">5가지 role과 3가지 certainty의 15개 조합을 모두 표시합니다.</p>
+      <div class="matrix" id="matrix-grid"></div>
+
+      <h2 id="flow">PipeFlow 29종 레퍼런스</h2>
+      <p class="section-desc">각 flow kind가 어떤 role과 concern을 만드는지, 실제 노드 렌더링과 함께 표시합니다.</p>
+      <div id="flow-catalog"></div>
+
+      <h2 id="edge">Edge — ConnectionKind 8종</h2>
+      <p class="section-desc">연결 종류(kind)에 따라 색상 · 선 스타일 · 마커가 달라집니다.</p>
+      <div class="edge-grid" id="edge-grid"></div>
+
+      <h2 id="port-facet">Port & FacetType</h2>
+      <p class="section-desc">포트 dot은 입력/출력 방향과 facetType별 색상으로, edge는 facetType pill 라벨로 의미를 드러냅니다.</p>
+      <div class="port-facet-section">
+        <section class="section-card">
+          <h3>Port Dot 갤러리</h3>
+          <div class="subdesc">input-only / output-only / input+output / typed facetType 색상 4종</div>
+          <div class="mini-grid" id="port-grid"></div>
+        </section>
+        <section class="section-card">
+          <h3>FacetType Edge 갤러리</h3>
+          <div class="subdesc">next / event / conditional / fan-out edge에 facetType pill 라벨 적용</div>
+          <div class="mini-grid" id="facet-edge-grid"></div>
+        </section>
+      </div>
+
+      <h2 id="concern">PipeConcern 배지 8종</h2>
+      <p class="section-desc">관심사(concern)는 노드 우측에 원형 배지로 표시됩니다. flow 구조에서 자동 추출됩니다.</p>
+      <div class="concern-grid" id="concern-grid"></div>
+
+      <h2 id="zoom">줌 레벨 비교</h2>
+      <p class="section-desc">동일한 PipeGraph를 group / module / leaf 3단계 줌으로 비교합니다.</p>
+      <div class="zoom-compare" id="zoom-compare"></div>
+
+      <h2 id="samples">실전 패턴 갤러리</h2>
+      <p class="section-desc">실제 사용 패턴에서 각 시각 요소가 어떻게 조합되는지 보여줍니다.</p>
+      <div class="sample-grid" id="sample-grid"></div>
+    </div>
+
+    <script type="module" src="/src/pipe-design.ts"></script>
+  </body>
+</html>

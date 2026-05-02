@@ -1,0 +1,217 @@
+{
+  "name": "Ontology Registry Service Layer",
+  "description": "Implement Phase 3 registry-service orchestration over the ontology registry store: pack registration, address reservation, activation rules, sync precondition reporting, internal wiring, tests, and docs updates without public routes or index-meta sync.",
+  "branchName": "ralph/ontology-registry-service-layer",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Define Ontology Registry Service Boundary",
+      "description": "As a registry-service developer, I want an internal ontology registry service boundary so that lifecycle orchestration is separate from low-level store persistence.",
+      "acceptanceCriteria": [
+        "Add `packages/registry-service/src/modules/ontology/ontology-registry.service.ts` or a similarly scoped internal service file.",
+        "Define service input/result types for `registerOntologyPack`, `reserveAddressSpace`, `activateAllocation`, and `syncToPrefixRegistry`.",
+        "Define service-level error/conflict types for invalid pack, invalid allocation plan, duplicate allocation, invalid transition, missing allocation, and sync precondition failure.",
+        "The service depends on `OntologyRegistryStore` and does not perform raw SQL directly.",
+        "The service does not expose REST controllers or CLI commands.",
+        "Add `operational-ontology` as a registry-service dependency if needed for pack validation/allocation projection.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Implement Pack Registration and Reservation",
+      "description": "As a registry-service developer, I want pack registration to validate ontology packs and reserve address space so that invalid packs cannot create registry rows.",
+      "acceptanceCriteria": [
+        "Implement `registerOntologyPack(pack, options)` or equivalent method.",
+        "Method validates the pack with `validateOperationalOntologyPack()` before allocation.",
+        "Method projects the pack/schema into an allocation plan using `allocateOntologyAddressSpace()`.",
+        "Method validates the allocation plan with `validateOntologyAddressAllocationPlan()`.",
+        "Method persists only valid plans through `OntologyRegistryStore.writeAllocationPlan()`.",
+        "Invalid pack or invalid allocation plan leaves no namespace, axis, taxonomy, allocation, or segment rows.",
+        "Default `ontologyId` is `pack.packId` unless an explicit option overrides it.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "Implement Reserve Address Space API",
+      "description": "As a registry-service developer, I want a reserve API over existing allocation inputs so that service callers can reserve address space without activating it.",
+      "acceptanceCriteria": [
+        "Implement `reserveAddressSpace(input)` or equivalent method.",
+        "Method accepts schema/allocation policy inputs compatible with `allocateOntologyAddressSpace()`.",
+        "Reserved allocations are persisted with status `reserved`.",
+        "Duplicate prefix/version and duplicate ontology/taxonomy/version conflicts are surfaced as structured service errors.",
+        "Store errors are mapped without losing conflict details.",
+        "No index-meta records are written.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001",
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "Implement Allocation Activation Rules",
+      "description": "As a registry-service developer, I want allocation activation rules so that only valid reserved allocations can become active.",
+      "acceptanceCriteria": [
+        "Implement `activateAllocation(allocationId)` or equivalent method.",
+        "Missing allocation returns a structured missing-allocation error.",
+        "Only `reserved -> active` transition is allowed.",
+        "Deprecated allocations cannot be reactivated.",
+        "Activation is blocked if another active allocation has the same `(prefix, versionId)`.",
+        "Activation updates allocation status through the store boundary or an approved store method added for this transition.",
+        "The method does not call index-meta.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001",
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "Add Sync-To-Prefix-Registry Precondition Shell",
+      "description": "As a future index-meta sync implementer, I want a sync precondition/report shell so that Phase 4 can attach real sync behavior without changing Phase 3 APIs.",
+      "acceptanceCriteria": [
+        "Implement `syncToPrefixRegistry(allocationId)` as a precondition/report shell.",
+        "Method requires the allocation to exist and be `active`.",
+        "Method returns a report payload with allocation id, prefix, version id, taxonomy id, status, and `syncStatus` indicating that real index-meta sync is deferred.",
+        "Missing or non-active allocation returns structured service errors.",
+        "Method does not write to index-meta, `prefix_registry`, or `schema_version`.",
+        "Report shape is documented for Phase 4.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001",
+        "US-004"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "Add Service-Layer Tests",
+      "description": "As a registry-service maintainer, I want service tests for pack registration, reservation, activation, and sync preconditions so that lifecycle behavior is fixed before index-meta sync begins.",
+      "acceptanceCriteria": [
+        "Add `packages/registry-service/src/modules/ontology/ontology-registry.service.test.ts` or equivalent tests.",
+        "Test valid pack registration persists namespace, axis, taxonomy, allocation, and segment records.",
+        "Test invalid pack leaves no partial rows.",
+        "Test invalid allocation plan leaves no partial rows.",
+        "Test duplicate prefix/version reserve fails with structured conflict details.",
+        "Test `reserved -> active` succeeds.",
+        "Test missing, active-again, deprecated, and duplicate-active activation paths are rejected.",
+        "Test `syncToPrefixRegistry()` returns deferred sync report for active allocation and rejects non-active allocation.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002",
+        "US-003",
+        "US-004",
+        "US-005"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "Wire Internal Service into Registry-Service Module Boundary",
+      "description": "As a registry-service integrator, I want the ontology registry service available inside registry-service so future modules can consume it without exposing public endpoints yet.",
+      "acceptanceCriteria": [
+        "Add an internal Nest module/provider only if it matches existing registry-service module patterns.",
+        "Provider receives `ontologyStore` from bootstrap/store dependency wiring or a test-friendly factory.",
+        "No REST controller route is added.",
+        "No CLI command is added.",
+        "Existing app/module startup tests continue to pass.",
+        "Add a focused module/provider test if the service is wired through Nest.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-006"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-008",
+      "title": "Reflect Phase 3 Completion in Docs and TODO",
+      "description": "As an ontology documentation maintainer, I want Phase 3 completion reflected in specs and TODO so that Phase 4 can start from a stable active allocation contract.",
+      "acceptanceCriteria": [
+        "Update `operational-ontology-registry-allocation.todo.md` to mark Phase 3 service layer items complete.",
+        "Update `operational-ontology-registry-allocation.spec.md` to summarize the service methods and lifecycle rules.",
+        "Update `operational-ontology-registry-persistence-handoff.spec.md` if service error naming refines the handoff contract.",
+        "Keep Phase 4 index-meta sync items open.",
+        "Update `tasks/prd-ontology-registry-allocation-lifecycle-master.md` with the Phase 4 execution PRD path if it is created.",
+        "`pnpm --filter registry-service test` passes.",
+        "`pnpm --filter registry-service typecheck` passes.",
+        "`pnpm --filter registry-service build` passes.",
+        "`pnpm --filter operational-ontology test -- allocation` passes.",
+        "`node packages/cli/dist/index.js def validate` passes."
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-007"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-14T10:14:26.535Z"
+  }
+}

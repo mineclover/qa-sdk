@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { Context, MiddlewareHandler } from "hono";
 
 const DEFAULT_RATE_LIMIT_WINDOW_MS = 60_000;

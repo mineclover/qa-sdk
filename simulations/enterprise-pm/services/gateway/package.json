@@ -1,0 +1,65 @@
+{
+  "name": "@qa-sdk/sim-gateway",
+  "version": "0.1.0",
+  "description": "시뮬 — Hono 기반 gateway (JWT bitmap embed + traceparent + 라우팅)",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    },
+    "./app": {
+      "types": "./dist/app.d.ts",
+      "import": "./dist/app.js"
+    },
+    "./jwt": {
+      "types": "./dist/lib/jwt.d.ts",
+      "import": "./dist/lib/jwt.js"
+    },
+    "./bitmap-claim": {
+      "types": "./dist/lib/bitmap-claim.d.ts",
+      "import": "./dist/lib/bitmap-claim.js"
+    },
+    "./test-bootstrap": {
+      "types": "./dist/test-bootstrap.d.ts",
+      "import": "./dist/test-bootstrap.js"
+    }
+  },
+  "bin": {
+    "sim-gateway": "dist/server.js"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsup",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.1",
+    "@opentelemetry/api": "^1.9.0",
+    "@qa-sdk/core": "workspace:*",
+    "@qa-sdk/logger": "workspace:*",
+    "@qa-sdk/otel": "workspace:*",
+    "@qa-sdk/sim-bitmap-cache": "workspace:*",
+    "hono": "^4.7.5",
+    "ioredis": "catalog:",
+    "jose": "^5.9.0",
+    "permission-engine": "workspace:*",
+    "sim-identifier-grammar": "workspace:*",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@opentelemetry/context-async-hooks": "^1.30.1",
+    "@opentelemetry/core": "^1.30.1",
+    "@opentelemetry/sdk-trace-base": "^1.30.1",
+    "@types/node": "^22.0.0",
+    "fast-check": "^3.23.2",
+    "tsup": "^8.5.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
+  }
+}

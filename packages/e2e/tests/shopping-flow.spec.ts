@@ -1,7 +1,10 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 import { test, expect } from "@playwright/test";
 
 const SHOP_URL = "http://localhost:5220";
-const INGEST_URL = "http://localhost:3100";
+const INGEST_URL = "http://localhost:3200";
 
 test.describe("쇼핑 전체 흐름 E2E — address_context 검증", () => {
 

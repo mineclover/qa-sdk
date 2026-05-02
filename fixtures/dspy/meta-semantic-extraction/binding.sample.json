@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "dspy-binding-v1",
+  "bindingId": "dspy:meta-semantic-system:ExtractionPort:v1",
+  "ownerSystem": "meta-semantic-system",
+  "targetPort": "ExtractionPort",
+  "targetKinds": [
+    "testability",
+    "branch-significance",
+    "side-effects",
+    "dependency-importance"
+  ],
+  "mode": "candidate",
+  "fallback": {
+    "kind": "prompt-template",
+    "ref": "packages/core/src/meta-semantic/extraction-prompts.ts#PROMPT_TEMPLATES"
+  },
+  "artifacts": {
+    "compiledProgram": "program.json",
+    "evalCases": "eval-cases.json",
+    "evalReport": "eval-report.json",
+    "costReport": "cost-report.json"
+  },
+  "inputSpecRefs": [
+    "meta-semantic-extraction",
+    "ms-concept-verification-unit"
+  ],
+  "qualityGates": [
+    {
+      "kind": "eval-benchmark",
+      "required": true,
+      "reportRef": "eval-report.json"
+    },
+    {
+      "kind": "cost-track",
+      "required": true,
+      "reportRef": "cost-report.json"
+    }
+  ],
+  "activation": {
+    "approvedBy": null,
+    "approvedAt": null,
+    "decisionRef": null
+  },
+  "hash": "sha256:sample-binding-hash"
+}

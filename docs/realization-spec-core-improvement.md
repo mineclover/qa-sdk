@@ -1,7 +1,31 @@
+---
+def:
+  id: realization-spec-core
+  type: knowledge
+  knowledge_kind: narrative
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+  tags: [structural, observability, runtime]
+  links:
+    - target: system-narrative
+      type: refines
+---
 # Realization Plan: spec-core 패키지 개선/분해
 
-> Status: partial — analysis barrel 분리 완료, convergence 물리적 분리 불필요 판정
+## 목적 ^purpose
+
+spec-core 개선 실현 계획. DKG 스킬, convergence 분석, 관측 자동화 고도화를 기술한다.
+
+
+> Status: **completed** — Phase 1 (경계 분리) + Phase 2 (물리 분할) 완료
 > Created: 2026-03-22
+> Completed: 2026-03-22
+>
+> **달성**:
+> Phase 1: scaffoldDecision → shared/ 이동, convergence→dkg runtime import 0건, boundary lint 테스트
+> Phase 2: @qa-sdk/convergence 독립 패키지 (26 파일), spec-core는 re-export로 하위 호환 유지
 
 ## 1. 현재 구조 분석
 

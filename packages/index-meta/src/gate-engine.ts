@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * GateEngine — release / flag 변경 시 AddressStateStore 자동 재계산 (PositionEngine Phase 3)
  *
@@ -14,7 +17,7 @@
  * GateAwareEntryFlagStore:        flexible 모드 setFlag() 후 자동 재계산
  */
 
-import type { PrefixRegistry, PrefixRegistryRecord } from "./prefix-registry.js";
+import type { PrefixRegistry } from "./prefix-registry.js";
 import type { IndexMetaStore } from "./index-meta-store.js";
 import type { EntryFlagStore, EntryFlagRecord } from "./entry-flag-store.js";
 import type {
@@ -66,9 +69,41 @@ export class GateEngine {
     // composite prefix — 각 dim의 leaf ref에서 specs 수집
     const specs: DimStateSpec[] = [];
     for (let i = 0; i < record.refs.length; i++) {
-      const ref = record.refs[i]!;
+      const ref = record.refs[i];
       const dimSpecs = await this._buildLeafSpecs(ref.prefix, ref.versionId, i, ref.capacity);
       specs.push(...dimSpecs);
+
+      // CON-006: refEntries 바운딩 — ref.capacity가 참조 prefix의 전체 capacity보다 작으면
+      // refEntries로 바운딩된 것. 참조 prefix의 전체 공간에서 refEntries 밖의 position은 reserved.
+      const refRecord = await this._deps.prefixRegistry.getRecord(ref.prefix, ref.versionId);
+      if (refRecord && ref.capacity < refRecord.capacity) {
+        // ref.capacity = refEntries.length (바운딩됨)
+        // refRecord.capacity = 참조 prefix 전체 capacity
+        // refEntries 이후 position(ref.capacity ~ refRecord.capacity-1)은 여기서 이미 shape 밖이므로 자동 제외.
+        // 단, 이 dim의 shape가 ref.capacity이므로 추가 처리 불필요.
+      } else if (refRecord && ref.capacity === refRecord.capacity) {
+        // refEntries 미정의 — 전체 공간이 열려 있음.
+        // 참조 prefix의 실제 entries만 유효하고, 나머지는 reserved.
+        const refEntries = await this._deps.metaStore.getEntries(ref.prefix, ref.versionId);
+        const filledPositions = new Set(refEntries.map(e => e.position));
+        const reservedPositions: number[] = [];
+        for (let pos = 1; pos <= ref.capacity; pos++) {
+          if (!filledPositions.has(pos)) {
+            reservedPositions.push(pos);
+          }
+        }
+        if (reservedPositions.length > 0) {
+          const coords = positionsToConstraint(reservedPositions);
+          if (coords) {
+            specs.push({
+              dimIndex: i,
+              state: "reserved",
+              coords,
+              reason: `prefix_ref(${ref.prefix}:${ref.versionId}) refEntries 미정의 — 미사용 position reserved (CON-006)`,
+            });
+          }
+        }
+      }
     }
     return specs;
   }

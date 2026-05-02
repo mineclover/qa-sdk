@@ -1,0 +1,208 @@
+tags:
+  - name: notification
+    description: Notification command and read-model API.
+paths:
+  /notifications:
+    post:
+      tags: [notification]
+      operationId: createNotification
+      summary: Create a notification (initial status=pending).
+      x-domain: notification
+      x-architecture-slice: notification-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNotificationCommand"
+      responses:
+        "200":
+          description: Notification accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /notifications/{id}:
+    get:
+      tags: [notification]
+      operationId: getNotificationReadModel
+      summary: Read denormalized notification view.
+      x-domain: notification
+      x-architecture-slice: notification-read-model-sync
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notification read model.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationReadModel"
+        "404":
+          description: Notification not found.
+  /notifications/{id}/sent:
+    put:
+      tags: [notification]
+      operationId: markNotificationSent
+      summary: Transition pending → sent and emit notification.sent event.
+      x-domain: notification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationResult"
+  /notifications/{id}/read:
+    put:
+      tags: [notification]
+      operationId: markNotificationRead
+      summary: Transition sent/pending → read and emit notification.delivered event.
+      x-domain: notification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationResult"
+  /notifications/{id}/failed:
+    put:
+      tags: [notification]
+      operationId: markNotificationFailed
+      summary: Transition pending/sent → failed.
+      x-domain: notification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationResult"
+  /users/{userId}/notifications:
+    get:
+      tags: [notification]
+      operationId: listUserNotifications
+      summary: List a user's notifications, optionally filtered by status.
+      x-domain: notification
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, sent, read, failed]
+      responses:
+        "200":
+          description: Notification list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NotificationListItem"
+components:
+  schemas:
+    CreateNotificationCommand:
+      type: object
+      required: [recipientUserId, type, title, body]
+      properties:
+        recipientUserId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        type:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        idempotencyKey:
+          type: string
+      additionalProperties: false
+    NotificationResult:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [pending, sent, read, failed]
+      additionalProperties: false
+    NotificationReadModel:
+      type: object
+      required: [id, recipientUserId, type, title, body, status, createdAt]
+      properties:
+        id:
+          type: string
+        recipientUserId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        type:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        status:
+          type: string
+          enum: [pending, sent, read, failed]
+          x-openmetadata-tags: [Tier.Tier2]
+        createdAt:
+          type: string
+          format: date-time
+        sentAt:
+          type: string
+          format: date-time
+          nullable: true
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+      additionalProperties: false
+    NotificationListItem:
+      type: object
+      required: [id, type, title, status, createdAt]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+          enum: [pending, sent, read, failed]
+        createdAt:
+          type: string
+          format: date-time
+      additionalProperties: false

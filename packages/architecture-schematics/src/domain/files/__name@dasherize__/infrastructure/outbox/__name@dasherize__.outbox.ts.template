@@ -1,0 +1,51 @@
+import { Injectable } from "@nestjs/common";
+import { createEventEnvelope, EventPublisherPort } from "nest-service-kit";
+
+import type { <%= classify(name) %>CreatedEvent } from "../../application/ports/<%= dasherize(name) %>-outbox.port";
+import { <%= classify(name) %>OutboxPort } from "../../application/ports/<%= dasherize(name) %>-outbox.port";
+import type { <%= classify(name) %>TransactionScope } from "../../application/ports/<%= dasherize(name) %>-transaction.port";
+import {
+  is<%= classify(name) %>UnitOfWorkScope,
+  <%= classify(name) %>UnitOfWorkStore,
+} from "../transaction/<%= dasherize(name) %>.unit-of-work";
+
+@Injectable()
+export class <%= classify(name) %>OutboxAdapter extends <%= classify(name) %>OutboxPort {
+  constructor(
+    private readonly store: <%= classify(name) %>UnitOfWorkStore,
+    private readonly eventPublisher: EventPublisherPort,
+  ) {
+    super();
+  }
+
+  async appendCreated(event: <%= classify(name) %>CreatedEvent, scope?: <%= classify(name) %>TransactionScope): Promise<void> {
+    const createRecord = (transactionId: string) => ({
+      id: `<%= dasherize(name) %>.created:${event.id}:${transactionId}`,
+      eventName: "<%= dasherize(name) %>.created" as const,
+      eventVersion: "v1" as const,
+      aggregateId: event.id,
+      payload: event,
+      transactionId,
+    });
+
+    if (is<%= classify(name) %>UnitOfWorkScope(scope)) {
+      scope.pendingOutbox.push(createRecord(scope.id));
+      return;
+    }
+
+    const autocommit = this.store.beginAutocommit("<%= dasherize(name) %>.autocommit");
+    autocommit.pendingOutbox.push(createRecord(autocommit.id));
+    this.store.commit(autocommit);
+
+    await this.eventPublisher.publish(createEventEnvelope({
+      eventKey: "<%= dasherize(name) %>.created",
+      eventVersion: "v1",
+      producerService: "backend",
+      producerModule: "<%= dasherize(name) %>",
+      subjectType: "<%= dasherize(name) %>",
+      subjectId: event.id,
+      outcome: "success",
+      payload: event,
+    }));
+  }
+}

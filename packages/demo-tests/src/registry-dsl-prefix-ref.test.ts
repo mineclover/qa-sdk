@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * Registry DSL — Prefix 참조 구조 + 버전 고정 주소
  *

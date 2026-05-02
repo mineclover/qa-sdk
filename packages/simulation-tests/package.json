@@ -1,0 +1,18 @@
+{
+  "name": "@qa-sdk/simulation-tests",
+  "version": "0.1.0",
+  "description": "서비스 간 순수 로직 결합을 검증하는 시뮬레이션 테스트",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "index-meta": "workspace:*",
+    "@qa-sdk/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
+  }
+}

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * EntryCache — L1 prefix·version 단위 양방향 entry 캐시 (PositionEngine)
  *

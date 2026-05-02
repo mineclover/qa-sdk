@@ -1,0 +1,55 @@
+# ═══════════════════════════════════════════════════════
+#  registry-service — Cloudflare Workers 배포 설정
+#
+#  사용법:
+#    npx wrangler d1 create qa-registry       # D1 DB 생성
+#    npx wrangler dev --local                 # 로컬 개발
+#    npx wrangler deploy                      # 프로덕션 배포
+# ═══════════════════════════════════════════════════════
+
+name = "qa-registry-service"
+main = "src/worker.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "qa-registry"
+database_id = "9bc1407e-0e3a-4d5b-8b48-97513c52702e"
+
+# Cron Trigger — 5분마다 warm up (DKG bootstrap cold start 방지)
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Service Bindings — 헬스체크 시 Worker-to-Worker 직접 호출
+[[services]]
+binding = "INGEST_SERVICE"
+service = "qa-ingest-server"
+
+[[services]]
+binding = "GATE_SERVICE"
+service = "qa-gate-service"
+
+[[services]]
+binding = "QUERY_SERVICE"
+service = "qa-query-service"
+
+[[services]]
+binding = "DECODE_SERVICE"
+service = "qa-decode-service"
+
+[[services]]
+binding = "GATEWAY_SERVICE"
+service = "qa-gateway"
+
+[[services]]
+binding = "DEMO_API_SERVICE"
+service = "platform-demo-api"
+
+# 환경별 설정
+# [env.production]
+# name = "qa-registry-service-prod"
+# [[env.production.d1_databases]]
+# binding = "DB"
+# database_name = "qa-registry-prod"
+# database_id = ""

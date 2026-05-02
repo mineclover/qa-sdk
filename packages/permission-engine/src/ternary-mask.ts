@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * ternary-mask.ts — 3-state 권한 마스크 (-1, 0, 1).
  *
@@ -29,8 +32,6 @@ import {
   clearBit,
   hasBit,
   popcount,
-  maskAnd,
-  maskOr,
 } from "weighted-index";
 
 // ── Types ────────────────────────────────────────────────────────────────────

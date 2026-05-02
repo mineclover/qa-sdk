@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { Context, MiddlewareHandler } from "hono";
 import type { AppLifecycle } from "../lib/app-lifecycle.js";
 

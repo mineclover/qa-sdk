@@ -1,3 +1,6 @@
+// @def.boundary platform-demo-system
+// @def.doc platform-demo-system
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  플랫폼 인덱스 데모 — Main entry point
 // ═══════════════════════════════════════════════════════════════════════════
@@ -90,65 +93,94 @@ const state: AppState = {
 //  DOM refs
 // ═══════════════════════════════════════════════════════════════════════════
 
+// eslint-disable-next-line typescript/no-non-null-assertion -- HTML 템플릿에 정의된 요소
 const nameBox       = document.getElementById("name-box")!;
+// eslint-disable-next-line typescript/no-non-null-assertion
 const fbFormula     = document.getElementById("fb-formula")!;
+// eslint-disable-next-line typescript/no-non-null-assertion
 const axisBar       = document.getElementById("axis-bar")!;
+// eslint-disable-next-line typescript/no-non-null-assertion
 const xAxisBtns     = document.getElementById("x-axis-btns")!;
+// eslint-disable-next-line typescript/no-non-null-assertion
 const yAxisBtns     = document.getElementById("y-axis-btns")!;
+// eslint-disable-next-line typescript/no-non-null-assertion
 const statusShape   = document.getElementById("status-shape")!;
+// eslint-disable-next-line typescript/no-non-null-assertion
 const statusSlots   = document.getElementById("status-slots")!;
+// eslint-disable-next-line typescript/no-non-null-assertion
 const statusSel     = document.getElementById("status-sel")!;
 
 // Service sheet refs
+// eslint-disable-next-line typescript/no-non-null-assertion
 const svcGridContainer  = document.getElementById("svc-grid-container")!;
+// eslint-disable-next-line typescript/no-non-null-assertion
 const svcDimSidebar     = document.getElementById("svc-dim-sidebar")!;
+// eslint-disable-next-line typescript/no-non-null-assertion
 const svcSpPlaceholder  = document.getElementById("svc-sp-placeholder")!;
+// eslint-disable-next-line typescript/no-non-null-assertion
 const svcSpContent      = document.getElementById("svc-sp-content")!;
 
 // Permission sheet refs
+// eslint-disable-next-line typescript/no-non-null-assertion
 const permGridContainer = document.getElementById("perm-grid-container")!;
+// eslint-disable-next-line typescript/no-non-null-assertion
 const permSpPlaceholder = document.getElementById("perm-sp-placeholder")!;
+// eslint-disable-next-line typescript/no-non-null-assertion
 const permSpContent     = document.getElementById("perm-sp-content")!;
 
 // Event sheet refs
+// eslint-disable-next-line typescript/no-non-null-assertion
 const evtGridContainer  = document.getElementById("evt-grid-container")!;
+// eslint-disable-next-line typescript/no-non-null-assertion
 const evtInitiatorBar   = document.getElementById("evt-initiator-bar")!;
+// eslint-disable-next-line typescript/no-non-null-assertion
 const evtSpPlaceholder  = document.getElementById("evt-sp-placeholder")!;
+// eslint-disable-next-line typescript/no-non-null-assertion
 const evtSpContent      = document.getElementById("evt-sp-content")!;
 
 // Overview sheet refs
+// eslint-disable-next-line typescript/no-non-null-assertion
 const overviewContainer = document.getElementById("overview-container")!;
 
 // Scenario sheet refs
+// eslint-disable-next-line typescript/no-non-null-assertion
 const scenarioContainer = document.getElementById("scenario-container")!;
 
 // Grant sheet refs
+// eslint-disable-next-line typescript/no-non-null-assertion
 const grantContainer = document.getElementById("grant-container")!;
 
 // Casbin sheet refs
+// eslint-disable-next-line typescript/no-non-null-assertion
 const casbinContainer = document.getElementById("casbin-container")!;
 
 // Range sheet refs
+// eslint-disable-next-line typescript/no-non-null-assertion
 const rangeContainer = document.getElementById("range-container")!;
 
 // Access (permission range) sheet refs
+// eslint-disable-next-line typescript/no-non-null-assertion
 const accessContainer = document.getElementById("access-container")!;
 
 // Logging sheet refs
+// eslint-disable-next-line typescript/no-non-null-assertion
 const loggingContainer = document.getElementById("logging-container")!;
 
 // Layout sheet refs
+// eslint-disable-next-line typescript/no-non-null-assertion
 const layoutContainer = document.getElementById("layout-container")!;
 
 // Version sheet refs
+// eslint-disable-next-line typescript/no-non-null-assertion
 const versionContainer = document.getElementById("version-container")!;
 
 // Permission Engine sheet refs
+// eslint-disable-next-line typescript/no-non-null-assertion
 const permEngineContainer = document.getElementById("perm-engine-container")!;
 
 // Prefix Meta sheet refs
+// eslint-disable-next-line typescript/no-non-null-assertion
 const prefixMetaContainer = document.getElementById("prefix-meta-container")!;
-
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Status bar (version-aware)

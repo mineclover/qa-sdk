@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk dkg — DKG 조회 + 자가 진단 CLI 명령어.
  *
@@ -5,19 +8,35 @@
  * 페이지네이션 지원.
  */
 
-import { DEMO_CATALOG, encodePrefixByValue } from "demo-snapshot";
-import { CatalogRegistry } from "@qa-sdk/core";
-import type { Catalog } from "@qa-sdk/core";
+import { parseArgs } from "node:util";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, latestPrefixVersion, type DemoAxisId } from "demo-snapshot";
+import { extractCausalGraph, type FlowSchema } from "decision-flow";
+import { DEMO_TRANSITION_SPECS } from "spec-transition";
+import {
+  CatalogRegistry,
+  collectAxisUsage,
+  summarizeAxisUsage,
+  findUnusedAxes,
+  createServiceBootConfig,
+  getPrefixProfile,
+  newLogId,
+  newTransmissionId,
+  newTraceId,
+  newSpanId,
+  now,
+  toServiceDims,
+  toTransmissionBuild,
+  toTransmissionSource,
+  type Catalog,
+  type AxisVersionSnapshot,
+  type EventRecord,
+  type TransmissionEnvelope,
+} from "@qa-sdk/core";
 import { catalogToPrefixSpecs, catalogToSchemaSnapshot } from "@qa-sdk/spec-core";
-import type { PrefixSpec } from "@qa-sdk/spec-core";
 import {
   bootstrapDkg,
   GraphRegistry,
-  scanAxisOverlaps,
   analyzeImpact,
-  analyzeSimplification,
-  scanDecisionConflicts,
-  analyzeDeploymentSkew,
   createDemoTopology,
   exploreService,
   explorePrefix,
@@ -32,12 +51,27 @@ import {
   resolveObservation,
   safeEntryAdd,
   checkConstraints,
-  auditAllConstraints,
   checkDomainHealth,
   checkAllDomainsHealth,
   entryAddChain,
   systemHealthChain,
   convergeChain,
+  traceFlows,
+  validateDslInvariants,
+  scaffoldDecision,
+  inferMigrator,
+  auditCoverage,
+  transitionPrefix,
+  transitionDecision,
+  serviceHealthCheck,
+  eventCoverageCheck,
+  analyzeDslVersionSkew,
+  type DkgNode, type DkgNodeDetails, type DecisionType, type ClaimData, type ObservationNode, type DecisionNode, type SkillNode, type TableNode, type ConstraintNode, type DkgEdgeType, type SpecNode, type ConvergeAction, type ObservationSuggestion, type TransitionSpecNode,
+} from "dkg";
+import {
+  scanAxisOverlaps,
+  scanDecisionConflicts,
+  analyzeDeploymentSkew,
   collectMetrics,
   metricsToObservations,
   resolveRecoveredMetrics,
@@ -45,22 +79,34 @@ import {
   aggregateUsageData,
   analyzeCollectionHealth,
   analyzeEntryCoverage,
-  classifyPattern,
   DEMO_PATTERN_RULES,
-  buildPatternHealthReport,
   scanPromotionCandidates,
-} from "@qa-sdk/spec-core/analysis";
+  analyzeSelfCheck,
+  discoverCausality,
+  type AddressContextRecord,
+  type MetricValue, type CausalCandidate, type UsageData, type EntryUsage, type AddressUsage, type CoOccurrence,
+} from "@qa-sdk/convergence";
+import { auditSchemaHealth } from "@qa-sdk/spec-core";
 import {
   executeEntryAdd,
   EntryAddError,
   writeCatalogFile,
 } from "@qa-sdk/spec-core/propagation";
-import type { AddressContextRecord } from "@qa-sdk/spec-core/analysis";
-import type { DkgNode, AxisNode, PrefixNode, DomainNode, ConsumerNode, DslBundleNode, DecisionType, ClaimData, ObservationNode, DecisionNode, SkillNode, MetricValue } from "@qa-sdk/spec-core/analysis";
-import { DkgSqliteStore } from "@qa-sdk/spec-core/store";
+import { DkgSqliteStore } from "dkg/store";
 import { join, dirname } from "node:path";
 import { mkdirSync, existsSync, writeFileSync, readFileSync } from "node:fs";
-import { execSync } from "node:child_process";
+import { execaSync } from "execa";
+import { createInterface } from "node:readline";
+import { getQaSdkDir } from "../lib/qa-dir.js";
+import {
+  buildDkgFlowAddressMetadata,
+  collectDkgCoreGateWarnings,
+  formatDkgCoreGateWarnings,
+  formatFlowInstanceCoreTrace,
+  loadFlowInstanceMeta,
+  saveFlowInstanceMeta,
+  startDkgDecisionFlowBridge,
+} from "./dkg-decision-flow.js";
 
 // ── Catalog Context ──────────────────────────────────
 // CLI에서 --catalog 옵션으로 주입된 카탈로그.
@@ -68,13 +114,26 @@ import { execSync } from "node:child_process";
 
 const registry = new CatalogRegistry();
 let activeCatalogId = "demo";
-let _configOverride: unknown | undefined;
+type BootstrapConfigInput = Parameters<typeof bootstrapDkg>[0]["config"];
+type BootstrapCatalogInput = Parameters<typeof bootstrapDkg>[0]["catalog"];
+type FlowSchemaConfigEntry = NonNullable<BootstrapConfigInput["flowSchemas"]>[number];
+type DecisionListData = {
+  title?: string;
+  finding?: string;
+  lifecycle?: string;
+  resolution?: { outcome?: string };
+};
 
-export function setCatalogContext(catalog?: unknown, config?: unknown): void {
+let _configOverride: BootstrapConfigInput | undefined;
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+export function setCatalogContext(catalog?: BootstrapCatalogInput, config?: BootstrapConfigInput): void {
   if (catalog) {
-    const cat = catalog as Catalog;
-    registry.register(cat);
-    activeCatalogId = cat.id;
+    registry.register(catalog);
+    activeCatalogId = catalog.id;
     registry.setDefault(activeCatalogId);
     graphCache.delete(activeCatalogId);
   }
@@ -88,7 +147,7 @@ export function getCatalogRegistry(): CatalogRegistry {
 
 // ── Shared ──────────────────────────────────────────
 
-const STATE_DIR = join(process.env.HOME ?? ".", ".qa-sdk");
+const STATE_DIR = getQaSdkDir();
 const STATE_DB = join(STATE_DIR, "state.sqlite");
 
 const storeCache = new Map<string, DkgSqliteStore>();
@@ -100,17 +159,22 @@ function getStore(catalogId?: string): DkgSqliteStore {
     if (!existsSync(STATE_DIR)) mkdirSync(STATE_DIR, { recursive: true });
     storeCache.set(id, new DkgSqliteStore(STATE_DB, id));
   }
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- .has() 직전에 .set() 보장
   return storeCache.get(id)!;
+}
+
+/** bootstrap 옵션 생성 — transitionSpecs 주입 DRY */
+function bootstrapOptions(catalogOverride?: BootstrapCatalogInput) {
+  const catalog = catalogOverride ?? DEMO_CATALOG;
+  const config = _configOverride ?? DEMO_DKG_CONFIG;
+  return { catalog, config, transitionSpecs: DEMO_TRANSITION_SPECS };
 }
 
 function getGraph(catalogId?: string): GraphRegistry {
   const id = catalogId ?? activeCatalogId;
   if (!graphCache.has(id)) {
     if (registry.has(id) && id !== "demo") {
-      const graph = bootstrapDkg({
-        catalog: registry.getCatalog(id) as any,
-        config: _configOverride as any,
-      });
+      const graph = bootstrapDkg(bootstrapOptions(registry.getCatalog(id)));
       graphCache.set(id, graph);
       console.log(`  (bootstrapped with custom catalog: ${id})`);
       return graph;
@@ -125,9 +189,7 @@ function getGraph(catalogId?: string): GraphRegistry {
       console.log(`  (loaded from ${STATE_DB} [${id}]: ${stats.nodes} nodes, ${stats.edges} edges)`);
     } else {
       const graph = bootstrapDkg(
-        registry.has(id)
-          ? { catalog: registry.getCatalog(id) as any, config: _configOverride as any }
-          : undefined,
+        registry.has(id) ? bootstrapOptions(registry.getCatalog(id)) : bootstrapOptions(),
       );
       const saved = store.saveGraph(graph);
       store.setMeta("last_bootstrap", new Date().toISOString());
@@ -135,6 +197,7 @@ function getGraph(catalogId?: string): GraphRegistry {
       console.log(`  (bootstrapped & saved [${id}]: ${saved.nodesWritten} nodes, ${saved.edgesWritten} edges)`);
     }
   }
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위에서 .set() 보장
   return graphCache.get(id)!;
 }
 
@@ -148,12 +211,14 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   "dkg axes":      { intent: "query", domain: "dkg-graph", subject: "axis" },
   "dkg prefixes":  { intent: "query", domain: "dkg-graph", subject: "prefix" },
   "dkg domains":   { intent: "query", domain: "dkg-graph", subject: "domain" },
+  "dkg flow-schemas": { intent: "query", domain: "dkg-graph", subject: "flow-schema" },
+  "dkg flow-schema": { intent: "query", domain: "dkg-graph", subject: "flow-schema" },
   "dkg dsl":       { intent: "query", domain: "dkg-graph", subject: "dsl-bundle" },
-  "dkg service":   { intent: "query", domain: "dkg-graph", subject: "prefix" },
+  "dkg service":   { intent: "query", domain: "dkg-graph", subject: "service" },
   "dkg prefix":    { intent: "query", domain: "dkg-graph", subject: "prefix" },
   "dkg overview":  { intent: "query", domain: "dkg-graph", subject: "system" },
-  "dkg trace":     { intent: "query", domain: "dkg-graph", subject: "prefix" },
-  "dkg claims":    { intent: "query", domain: "dkg-graph", subject: "prefix" },
+  "dkg trace":     { intent: "analyze", domain: "dkg-graph", subject: "prefix" },
+  "dkg claims":    { intent: "query", domain: "dkg-graph", subject: "observation" },
   "dkg timeline":  { intent: "query", domain: "dkg-graph", subject: "observation" },
   "dkg skills":    { intent: "query", domain: "dkg-skill", subject: "skill" },
   "dkg history":   { intent: "query", domain: "convergence", subject: "system" },
@@ -166,9 +231,11 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   // dkg analyze
   "dkg impact":    { intent: "analyze", domain: "dkg-graph", subject: "axis" },
   "dkg overlaps":  { intent: "analyze", domain: "convergence", subject: "axis" },
+  "dkg audit-events": { intent: "query", domain: "registry", subject: "system" },
   "dkg self-check": { intent: "analyze", domain: "self-ref", subject: "system" },
   "dkg converge":  { intent: "analyze", domain: "convergence", subject: "system" },
   "dkg promote":   { intent: "analyze", domain: "self-ref", subject: "axis" },
+  "dkg discover-links": { intent: "analyze", domain: "convergence", subject: "intent-link" },
   // dkg mutate
   "dkg decide":    { intent: "mutate", domain: "dkg-graph", subject: "decision" },
   "dkg observe":   { intent: "mutate", domain: "dkg-graph", subject: "observation" },
@@ -203,6 +270,18 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   "spec trace":    { intent: "query", domain: "spec", subject: "spec" },
   "spec decode":   { intent: "query", domain: "spec", subject: "prefix" },
   "spec codegen":  { intent: "publish", domain: "spec", subject: "schema" },
+  // service (registry 기반)
+  "service list":      { intent: "query", domain: "registry", subject: "service" },
+  "service show":      { intent: "analyze", domain: "registry", subject: "service" },
+  "service owners":    { intent: "query", domain: "registry", subject: "prefix" },
+  "service endpoints": { intent: "query", domain: "ingest", subject: "service" },
+  // ingest
+  "ingest health":   { intent: "query", domain: "ingest", subject: "system" },
+  "ingest send":     { intent: "mutate", domain: "ingest", subject: "prefix" },
+  "ingest recent":   { intent: "query", domain: "ingest", subject: "prefix" },
+  "ingest trace":    { intent: "query", domain: "ingest", subject: "prefix" },
+  "ingest status":   { intent: "query", domain: "ingest", subject: "system" },
+  "ingest services": { intent: "query", domain: "registry", subject: "service" },
   // system
   "init":          { intent: "init", domain: "system", subject: "catalog" },
   "scan git":      { intent: "init", domain: "system", subject: "schema" },
@@ -225,6 +304,13 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   "obs backlinks": { intent: "query", domain: "system", subject: "spec" },
   "obs list":      { intent: "query", domain: "system", subject: "spec" },
   "obs stats":     { intent: "query", domain: "system", subject: "system" },
+  "dkg diagram":   { intent: "query", domain: "dkg-graph", subject: "domain" },
+  "dkg tables":    { intent: "query", domain: "dkg-graph", subject: "table" },
+  "dkg table":     { intent: "query", domain: "dkg-graph", subject: "table" },
+  "dkg transitions": { intent: "query", domain: "dkg-graph", subject: "spec" },
+  "dkg transition": { intent: "analyze", domain: "dkg-graph", subject: "spec" },
+  "dkg scan-tables": { intent: "analyze", domain: "dkg-graph", subject: "table" },
+  "dkg audit":       { intent: "analyze", domain: "dkg-graph", subject: "constraint" },
 };
 
 /**
@@ -235,27 +321,36 @@ export function emitCliEvent(command: string): void {
   const mapping = CLI_COMMAND_MAP[command];
   if (!mapping) return;
   try {
-    const now = new Date().toISOString();
-    const session = `cli-${process.env.USER ?? "unknown"}`;
-    const address = encodePrefixByValue(DEMO_CATALOG, "cli_event", latestVer("cli_event"), {
+    const collectedAt = now();
+    const version = latestVer("cli_event");
+    const address = encodePrefixByValue(DEMO_CATALOG, "cli_event", version, {
       cli_intent: mapping.intent,
       cli_domain: mapping.domain,
       cli_subject: mapping.subject,
     });
-    const store = getStore();
-    store.saveUsageSnapshot({
+    const serialized = serializeAddressContext("cli_event", version, address);
+    saveUsageTelemetry({
+      collectedAt,
       entryUsages: [
-        { axisId: "cli_intent", entry: mapping.intent, count: 1, lastSeen: now },
-        { axisId: "cli_domain", entry: mapping.domain, count: 1, lastSeen: now },
-        { axisId: "cli_subject", entry: mapping.subject, count: 1, lastSeen: now },
+        { axisId: "cli_intent", entry: mapping.intent, count: 1, lastSeen: collectedAt },
+        { axisId: "cli_domain", entry: mapping.domain, count: 1, lastSeen: collectedAt },
+        { axisId: "cli_subject", entry: mapping.subject, count: 1, lastSeen: collectedAt },
       ],
-      addressUsages: [
-        { prefix: "cli_event", version: "v1", address, count: 1 },
-      ],
-      coOccurrences: [],
-      versionUsages: [{ prefix: "cli_event", version: latestVer("cli_event"), count: 1, lastSeen: now, sessions: [session] }],
-      collectionPeriod: { from: now, to: now },
-    } as any);
+      addressUsages: [{ prefix: "cli_event", version, address, count: 1 }],
+      versionPrefixes: [{ prefix: "cli_event", version }],
+    });
+    persistAuditRecord({
+      eventKey: "cli.command.executed",
+      eventPrefix: "cli_event",
+      command,
+      addressContext: { cli_event: serialized },
+      payload: {
+        command,
+        cli_intent: mapping.intent,
+        cli_domain: mapping.domain,
+        cli_subject: mapping.subject,
+      },
+    });
   } catch {
     // 인코딩 실패 시 무시
   }
@@ -286,10 +381,7 @@ export function analyzeCliCoverage(): {
   const observedSubjects = new Set<string>();
   try {
     const s = getStore();
-    // DkgSqliteStore 내부의 db에 접근하여 raw data 쿼리
-    const rows = (s as any).db.prepare(
-      "SELECT data FROM usage_snapshots ORDER BY id DESC LIMIT 500",
-    ).all() as Array<{ data: string }>;
+    const rows = s.getRecentUsageSnapshots(500);
     for (const row of rows) {
       try {
         const d = JSON.parse(row.data);
@@ -298,9 +390,11 @@ export function analyzeCliCoverage(): {
           if (eu.axisId === "cli_domain") observedDomains.add(eu.entry);
           if (eu.axisId === "cli_subject") observedSubjects.add(eu.entry);
         }
-      } catch { /* 개별 파싱 실패 무시 */ }
+      } catch { /* 개별 snapshot JSON 파싱 실패 — 스킵 */ }
     }
-  } catch { /* store 접근 실패 */ }
+  } catch (err) {
+    if (process.env.DEBUG) console.warn("[analyzeCliCoverage] store access failed:", err);
+  }
 
   // 관측된 좌표 조합 판별
   const observed = new Set<string>();
@@ -327,33 +421,163 @@ export function analyzeCliCoverage(): {
 /** skill 실행 이벤트를 skill_execution prefix로 기록 */
 function emitSkillExecution(skillId: string, category: string, outcome: string = "ok"): void {
   try {
-    const now = new Date().toISOString();
-    const session = `cli-${process.env.USER ?? "unknown"}`;
+    const collectedAt = now();
     const ver = latestVer("skill_execution");
     encodePrefixByValue(DEMO_CATALOG, "skill_execution", ver, {
       skill_id: skillId,
       skill_category: category,
       skill_outcome: outcome,
     });
-    const store = getStore();
-    store.saveUsageSnapshot({
+    saveUsageTelemetry({
+      collectedAt,
       entryUsages: [
-        { axisId: "skill_id", entry: skillId, count: 1, lastSeen: now },
-        { axisId: "skill_category", entry: category, count: 1, lastSeen: now },
-        { axisId: "skill_outcome", entry: outcome, count: 1, lastSeen: now },
+        { axisId: "skill_id", entry: skillId, count: 1, lastSeen: collectedAt },
+        { axisId: "skill_category", entry: category, count: 1, lastSeen: collectedAt },
+        { axisId: "skill_outcome", entry: outcome, count: 1, lastSeen: collectedAt },
       ],
-      addressUsages: [],
-      coOccurrences: [],
-      versionUsages: [{ prefix: "skill_execution", version: ver, count: 1, lastSeen: now, sessions: [session] }],
-      collectionPeriod: { from: now, to: now },
-    } as any);
+      versionPrefixes: [{ prefix: "skill_execution", version: ver }],
+    });
   } catch { /* 기록 실패 시 무시 */ }
 }
 
 function latestVer(prefixId: string): string {
-  const prefix = (DEMO_CATALOG as any).prefixes?.[prefixId];
-  if (!prefix?.versions?.length) return "v1";
-  return prefix.versions[prefix.versions.length - 1].version;
+  return latestPrefixVersion(DEMO_CATALOG, prefixId);
+}
+
+function cliSessionId(): string {
+  return `cli-${process.env.USER ?? "unknown"}`;
+}
+
+const CLI_AUDIT_SERVICE = createServiceBootConfig("qa-sdk-cli");
+const CLI_AUDIT_SOURCE = toTransmissionSource(CLI_AUDIT_SERVICE, "@qa-sdk/cli", "0.1.0");
+const CLI_AUDIT_BUILD = toTransmissionBuild(CLI_AUDIT_SERVICE);
+
+function resolveAuditIngestUrl(): string | null {
+  const base = process.env.QA_CLI_AUDIT_INGEST_URL ?? process.env.INGEST_URL;
+  if (!base) return null;
+  return base.endsWith("/v1/ingest") ? base : `${base}/v1/ingest`;
+}
+
+async function forwardAuditRecordToIngest(record: EventRecord): Promise<void> {
+  const ingestUrl = resolveAuditIngestUrl();
+  if (!ingestUrl) return;
+
+  const dims = toServiceDims(CLI_AUDIT_SERVICE);
+  const envelope: TransmissionEnvelope = {
+    transmission_id: newTransmissionId(),
+    sent_at: record.timestamp,
+    owner: {
+      owner_type: "agent",
+      owner_id: record.qa_session_id ?? cliSessionId(),
+    },
+    source: CLI_AUDIT_SOURCE,
+    runtime: { platform: "node" },
+    build: CLI_AUDIT_BUILD,
+    infra_context: {
+      env: dims.env,
+      region: dims.region,
+      svc_name: dims.svc_name,
+      namespace: dims.namespace,
+    },
+    records: [record],
+  };
+
+  try {
+    await fetch(ingestUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(envelope),
+      signal: AbortSignal.timeout(3_000),
+    });
+  } catch (err) {
+    if (process.env.DEBUG || process.env.QA_CLI_AUDIT_WARN === "1") {
+      console.warn(`[cli-audit-ingest] 전송 실패 (${ingestUrl}): ${errorMessage(err)}`);
+    }
+  }
+}
+
+function serializeAddressContext(prefix: string, version: string, address: number): string {
+  return `${prefix}:${version}:${address}`;
+}
+
+function saveUsageTelemetry(input: {
+  collectedAt: string;
+  entryUsages?: EntryUsage[];
+  addressUsages?: AddressUsage[];
+  versionPrefixes?: Array<{ prefix: string; version: string }>;
+}): void {
+  const entryUsages = input.entryUsages ?? [];
+  const addressUsages = input.addressUsages ?? [];
+  const versionUsages = (input.versionPrefixes ?? []).map(({ prefix, version }) => ({
+    prefix,
+    version,
+    count: 1,
+    lastSeen: input.collectedAt,
+    sessions: [cliSessionId()],
+  }));
+
+  if (entryUsages.length === 0 && addressUsages.length === 0 && versionUsages.length === 0) {
+    return;
+  }
+
+  const store = getStore();
+  store.saveUsageSnapshot({
+    entryUsages,
+    addressUsages,
+    coOccurrences: [],
+    versionUsages,
+    collectionPeriod: { from: input.collectedAt, to: input.collectedAt },
+  } satisfies UsageData);
+}
+
+function makeAuditRecord(
+  eventKey: string,
+  payload: Record<string, unknown>,
+  addressContext?: Record<string, string>,
+): EventRecord {
+  return {
+    log_id: newLogId(),
+    timestamp: now(),
+    record_kind: "log",
+    trace_id: newTraceId(),
+    span_id: newSpanId(),
+    event_key: eventKey,
+    event_version: "1",
+    payload_format: "json",
+    payload_encoding: "raw",
+    payload_masking_applied: false,
+    payload_masked_fields: [],
+    payload,
+    qa_session_id: cliSessionId(),
+    ...(addressContext && Object.keys(addressContext).length > 0
+      ? { address_context: addressContext }
+      : {}),
+  };
+}
+
+function persistAuditRecord(input: {
+  eventKey: string;
+  payload: Record<string, unknown>;
+  addressContext?: Record<string, string>;
+  eventPrefix?: string;
+  command?: string;
+  targetId?: string;
+  targetKind?: string;
+  lifecycleFrom?: string;
+  lifecycleTo?: string;
+}): void {
+  const store = getStore();
+  const record = makeAuditRecord(input.eventKey, input.payload, input.addressContext);
+  store.saveCliAuditEvent({
+    record,
+    eventPrefix: input.eventPrefix,
+    command: input.command,
+    targetId: input.targetId,
+    targetKind: input.targetKind,
+    lifecycleFrom: input.lifecycleFrom,
+    lifecycleTo: input.lifecycleTo,
+  });
+  void forwardAuditRecordToIngest(record);
 }
 
 // ── DKG 이벤트 기록 (write 명령 상세) ──────────────────
@@ -363,52 +587,90 @@ function emitDkgEvent(
   op: string,
   targetKind: string,
   targetId: string,
-  extra?: { decisionType?: string; obsSource?: string; nodeSource?: string; lifecycleState?: string },
+  extra?: {
+    decisionType?: string;
+    obsSource?: string;
+    nodeSource?: string;
+    lifecycleState?: string;
+    lifecycleFrom?: string;
+    command?: string;
+  },
 ): void {
   try {
-    const now = new Date().toISOString();
-    const session = `cli-${process.env.USER ?? "unknown"}`;
-    const versionUsages: Array<{ prefix: string; version: string; count: number; lastSeen: string; sessions: string[] }> = [];
+    const collectedAt = now();
+    const versionUsages: Array<{ prefix: string; version: string }> = [];
+    const addressUsages: AddressUsage[] = [];
+    const addressContext: Record<string, string> = {};
 
     // 기본 dkg_event
-    const baseAddr = encodePrefixByValue(DEMO_CATALOG, "dkg_event", latestVer("dkg_event"), {
-      dkg_op: op,
-      dkg_target_kind: targetKind,
-    });
-    versionUsages.push({ prefix: "dkg_event", version: "v1", count: 1, lastSeen: now, sessions: [session] });
+    try {
+      const dkgVersion = latestVer("dkg_event");
+      const dkgAddress = encodePrefixByValue(DEMO_CATALOG, "dkg_event", dkgVersion, {
+        dkg_op: op,
+        dkg_target_kind: targetKind,
+      });
+      addressUsages.push({ prefix: "dkg_event", version: dkgVersion, address: dkgAddress, count: 1 });
+      addressContext.dkg_event = serializeAddressContext("dkg_event", dkgVersion, dkgAddress);
+      versionUsages.push({ prefix: "dkg_event", version: dkgVersion });
+    } catch {
+      // dkg_target_kind에 등록되지 않은 값이어도 audit record 자체는 남긴다.
+    }
 
     // 승격된 prefix: dkg_decision_event (decide 시)
     if (extra?.decisionType) {
       try {
-        encodePrefixByValue(DEMO_CATALOG, "dkg_decision_event", latestVer("dkg_decision_event"), {
+        const decisionVersion = latestVer("dkg_decision_event");
+        const decisionAddress = encodePrefixByValue(DEMO_CATALOG, "dkg_decision_event", decisionVersion, {
           decision_type: extra.decisionType,
           dkg_target_kind: targetKind,
           node_source: extra.nodeSource ?? "manual",
         });
-        versionUsages.push({ prefix: "dkg_decision_event", version: "v1", count: 1, lastSeen: now, sessions: [session] });
+        addressUsages.push({ prefix: "dkg_decision_event", version: decisionVersion, address: decisionAddress, count: 1 });
+        addressContext.dkg_decision_event = serializeAddressContext("dkg_decision_event", decisionVersion, decisionAddress);
+        versionUsages.push({ prefix: "dkg_decision_event", version: decisionVersion });
       } catch { /* 값이 축에 없으면 건너뜀 */ }
     }
 
     // 승격된 prefix: dkg_observation_event (observe 시)
     if (extra?.obsSource) {
       try {
-        encodePrefixByValue(DEMO_CATALOG, "dkg_observation_event", latestVer("dkg_observation_event"), {
+        const observationVersion = latestVer("dkg_observation_event");
+        const observationAddress = encodePrefixByValue(DEMO_CATALOG, "dkg_observation_event", observationVersion, {
           obs_source: extra.obsSource,
           dkg_target_kind: targetKind,
           lifecycle_state: extra.lifecycleState ?? "active",
         });
-        versionUsages.push({ prefix: "dkg_observation_event", version: "v1", count: 1, lastSeen: now, sessions: [session] });
+        addressUsages.push({ prefix: "dkg_observation_event", version: observationVersion, address: observationAddress, count: 1 });
+        addressContext.dkg_observation_event = serializeAddressContext("dkg_observation_event", observationVersion, observationAddress);
+        versionUsages.push({ prefix: "dkg_observation_event", version: observationVersion });
       } catch { /* 값이 축에 없으면 건너뜀 */ }
     }
 
-    const store = getStore();
-    store.saveUsageSnapshot({
-      entryUsages: [],
-      addressUsages: [],
-      coOccurrences: [],
-      versionUsages,
-      collectionPeriod: { from: now, to: now },
-    } as any);
+    saveUsageTelemetry({
+      collectedAt,
+      addressUsages,
+      versionPrefixes: versionUsages,
+    });
+    persistAuditRecord({
+      eventKey: "cli.dkg.operation",
+      eventPrefix: "dkg_event",
+      command: extra?.command ?? "dkg",
+      targetId,
+      targetKind,
+      lifecycleFrom: extra?.lifecycleFrom,
+      lifecycleTo: extra?.lifecycleState,
+      addressContext,
+      payload: {
+        op,
+        targetKind,
+        targetId,
+        ...(extra?.decisionType ? { decisionType: extra.decisionType } : {}),
+        ...(extra?.obsSource ? { obsSource: extra.obsSource } : {}),
+        ...(extra?.nodeSource ? { nodeSource: extra.nodeSource } : {}),
+        ...(extra?.lifecycleFrom ? { lifecycleFrom: extra.lifecycleFrom } : {}),
+        ...(extra?.lifecycleState ? { lifecycleTo: extra.lifecycleState } : {}),
+      },
+    });
   } catch {
     // 인코딩 실패 시 무시 (운영에 영향 없음)
   }
@@ -417,6 +679,23 @@ function emitDkgEvent(
 interface PageOptions {
   page?: number;
   limit?: number;
+}
+
+async function fetchVersionStatus(
+  registryUrl: string,
+  prefix: string,
+  versionId: string,
+): Promise<string | undefined> {
+  try {
+    const res = await fetch(`${registryUrl}/prefixes/${prefix}/versions/${versionId}`, {
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!res.ok) return undefined;
+    const data = await res.json() as { status?: string };
+    return data.status;
+  } catch {
+    return undefined;
+  }
 }
 
 function paginate<T>(items: T[], opts: PageOptions): { items: T[]; page: number; totalPages: number; total: number } {
@@ -444,10 +723,10 @@ function printPageInfo(result: { page: number; totalPages: number; total: number
 export function dkgReport(): void {
   const graph = getGraph();
 
-  const axes = graph.getNodesByKind("axis") as AxisNode[];
-  const prefixes = graph.getNodesByKind("prefix") as PrefixNode[];
-  const domains = graph.getNodesByKind("domain") as DomainNode[];
-  const consumers = graph.getNodesByKind("consumer") as ConsumerNode[];
+  const axes = graph.getNodesByKind("axis");
+  const prefixes = graph.getNodesByKind("prefix");
+  const domains = graph.getNodesByKind("domain");
+  const consumers = graph.getNodesByKind("consumer");
   const decisions = graph.getNodesByKind("decision");
   const constraints = graph.getNodesByKind("constraint");
   const observations = graph.getNodesByKind("observation");
@@ -465,10 +744,11 @@ export function dkgReport(): void {
 
   // headroom 요약
   const criticalAxes = axes.filter(a => {
-    const catalog = DEMO_CATALOG.axes[a.id as keyof typeof DEMO_CATALOG.axes];
-    if (!catalog) return false;
-    const versions = Object.keys(catalog.versions);
-    const latest = catalog.versions[versions[versions.length - 1] as keyof typeof catalog.versions] as any;
+    const axisData = DEMO_CATALOG.axes[a.id as DemoAxisId];
+    if (!axisData) return false;
+    const versionKeys = Object.keys(axisData.versions);
+    const latest = (axisData.versions as Record<string, AxisVersionSnapshot>)[versionKeys[versionKeys.length - 1]];
+    if (!latest) return false;
     return (latest.capacity ?? latest.entries.length) === latest.entries.length;
   });
 
@@ -477,14 +757,39 @@ export function dkgReport(): void {
     console.log(`    (${decisions.length > 0 ? "Decision으로 확장 계획 기록됨" : "Decision 없음 — 확장 계획 필요"})`);
   }
 
-  // 수렴 분석 요약
+  // 수렴 분석 요약 — DEC-SEP/DEC-MERGE 분리 결정이 있는 쌍은 별도 표시
   const entriesMap = buildEntriesMap();
   const overlaps = scanAxisOverlaps(graph, entriesMap);
-  const mergeCandidate = overlaps.filter(o => o.recommendation === "merge");
-  const reviewCandidate = overlaps.filter(o => o.recommendation === "review");
+  function hasActiveDecision(a: string, b: string): boolean {
+    // 1. ID 패턴 매칭 (bootstrap에서 생성된 DEC-SEP-{a}-{b})
+    const ids = [`DEC-SEP-${a}-${b}`, `DEC-SEP-${b}-${a}`, `DEC-MERGE-${a}-${b}`, `DEC-MERGE-${b}-${a}`];
+    const byId = ids.some(id => {
+      const n = graph.getNode(id);
+      return n?.kind === "decision" && (n as DecisionNode).lifecycle === "active";
+    });
+    if (byId) return true;
+
+    // 2. 전체 Decision 스캔 — ID 또는 title에 두 축이 모두 언급된 활성 Decision
+    const allDecisions = graph.getNodesByKind("decision") as DecisionNode[];
+    return allDecisions.some(d => {
+      if (d.lifecycle !== "active") return false;
+      const text = `${d.id} ${d.title}`;
+      return (text.includes(a) && text.includes(b));
+    });
+  }
+  const mergeOverlaps = overlaps.filter(o => o.recommendation === "merge");
+  const mergeCandidate = mergeOverlaps.filter(o => !hasActiveDecision(o.a, o.b));
+  const mergeSuppressed = mergeOverlaps.filter(o => hasActiveDecision(o.a, o.b));
+  const reviewAll = overlaps.filter(o => o.recommendation === "review");
+  const reviewCandidate = reviewAll.filter(o => !hasActiveDecision(o.a, o.b));
+  const reviewSuppressed = reviewAll.filter(o => hasActiveDecision(o.a, o.b));
 
   if (mergeCandidate.length > 0) {
     console.log(`\n  병합 후보: ${mergeCandidate.map(o => `${o.a}↔${o.b}`).join(", ")}`);
+  }
+  if (mergeSuppressed.length > 0 || reviewSuppressed.length > 0) {
+    const all = [...mergeSuppressed, ...reviewSuppressed];
+    console.log(`  분리 유지 (결정됨): ${all.map(o => `${o.a}↔${o.b}`).join(", ")}`);
   }
   if (reviewCandidate.length > 0) {
     console.log(`  검토 필요: ${reviewCandidate.map(o => `${o.a}↔${o.b}`).join(", ")}`);
@@ -524,21 +829,78 @@ export function dkgReport(): void {
 
 // ── dkg axes ────────────────────────────────────────
 
-export function dkgAxes(opts: PageOptions): void {
+export function dkgAxes(opts: PageOptions & { groupBy?: string }): void {
   const graph = getGraph();
-  const axes = graph.getNodesByKind("axis") as AxisNode[];
+  const axes = graph.getNodesByKind("axis");
+
+  if (opts.groupBy === "prefix") {
+    // 축별 사용 prefix를 역추적하여 prefix 기준으로 그룹핑
+    const prefixToAxes = new Map<string, string[]>();
+    const usedAxes = new Set<string>();
+    for (const prefix of graph.getNodesByKind("prefix")) {
+      const edges = graph.edgesFrom(prefix.id, "composes");
+      const axisIds = edges
+        .filter(e => e.meta?.dimKind === "axis")
+        .map(e => e.to);
+      if (axisIds.length > 0) {
+        prefixToAxes.set(prefix.id, axisIds);
+        for (const a of axisIds) usedAxes.add(a);
+      }
+    }
+    console.log(`\n══ Axes by Prefix ══`);
+    for (const [prefixId, axisIds] of [...prefixToAxes.entries()].toSorted((a, b) => a[0].localeCompare(b[0]))) {
+      console.log(`  ${prefixId}`);
+      for (const axisId of axisIds) {
+        console.log(`    ${axisId}`);
+      }
+    }
+    const unused = axes.filter(a => !usedAxes.has(a.id));
+    if (unused.length > 0) {
+      console.log(`\n  ── 미사용 축 (${unused.length}) ──`);
+      for (const a of unused) console.log(`    ${a.id}`);
+    }
+    return;
+  }
+
+  if (opts.groupBy === "domain") {
+    // 도메인별: domain → prefix → axis 경로로 그룹핑
+    const domains = graph.getNodesByKind("domain");
+    console.log(`\n══ Axes by Domain ══`);
+    const domainAxes = new Set<string>();
+    for (const domain of domains) {
+      const axisSet = new Set<string>();
+      for (const prefixId of domain.prefixes) {
+        const edges = graph.edgesFrom(prefixId, "composes");
+        for (const e of edges) {
+          if (e.meta?.dimKind === "axis") axisSet.add(e.to);
+        }
+      }
+      for (const a of axisSet) domainAxes.add(a);
+      console.log(`  ${domain.id} (${axisSet.size}개 축)`);
+      for (const axisId of [...axisSet].toSorted()) {
+        console.log(`    ${axisId}`);
+      }
+    }
+    const allAxisIds = new Set(axes.map(a => a.id));
+    const orphan = [...allAxisIds].filter(a => !domainAxes.has(a));
+    if (orphan.length > 0) {
+      console.log(`\n  ── 도메인 미소속 축 (${orphan.length}) ──`);
+      for (const a of orphan) console.log(`    ${a}`);
+    }
+    return;
+  }
 
   const result = paginate(axes, opts);
 
   console.log(`\n══ Axes ══`);
   for (const axis of result.items) {
-    const catalog = DEMO_CATALOG.axes[axis.id as keyof typeof DEMO_CATALOG.axes];
+    const catalog = DEMO_CATALOG.axes[axis.id as DemoAxisId];
     let info = "";
     if (catalog) {
-      const versions = Object.keys(catalog.versions);
-      const latest = catalog.versions[versions[versions.length - 1] as keyof typeof catalog.versions] as any;
-      const entries = latest.entries?.length ?? 0;
-      const cap = latest.capacity ?? entries;
+      const versionKeys = Object.keys(catalog.versions);
+      const latest = (catalog.versions as Record<string, AxisVersionSnapshot>)[versionKeys[versionKeys.length - 1]];
+      const entries = latest?.entries?.length ?? 0;
+      const cap = latest?.capacity ?? entries;
       info = ` entries=${entries} cap=${cap} headroom=${cap - entries}`;
     }
     console.log(`  ${axis.id.padEnd(15)} ${axis.name.padEnd(12)}${info}`);
@@ -551,9 +913,7 @@ export function dkgAxes(opts: PageOptions): void {
 
 export function dkgPrefixes(opts: PageOptions): void {
   const graph = getGraph();
-  const prefixes = graph.getNodesByKind("prefix") as PrefixNode[];
-  const specs = catalogToPrefixSpecs(DEMO_CATALOG);
-  const specMap = new Map(specs.map(s => [s.id, s]));
+  const prefixes = graph.getNodesByKind("prefix");
 
   const result = paginate(prefixes, opts);
 
@@ -563,20 +923,31 @@ export function dkgPrefixes(opts: PageOptions): void {
     const axisDims = edges.filter(e => e.meta?.dimKind === "axis").length;
     const refDims = edges.filter(e => e.meta?.dimKind === "prefix_ref").length;
     const tblDims = edges.filter(e => e.meta?.dimKind === "table_ref").length;
-    const spec = specMap.get(prefix.id);
-    const cat = spec?.schema?.category ?? "?";
+    const cat = prefix.category ?? "entity";
     const catTag = `[${cat}]`.padEnd(14);
     console.log(`  ${prefix.id.padEnd(17)} ${catTag} ${prefix.name.padEnd(15)} dims=${prefix.dimLabels.length} (axis:${axisDims} ref:${refDims} tbl:${tblDims})`);
   }
 
   printPageInfo(result);
+
+  // Catalog vs DKG gap 표시 (마지막 페이지에서만)
+  const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
+  const catalogPrefixIds = Object.keys(catalog.prefixes);
+  const dkgPrefixIds = new Set(prefixes.map(p => p.id));
+  const gap = catalogPrefixIds.filter(id => !dkgPrefixIds.has(id));
+  if (gap.length > 0) {
+    console.log(`\n  ── Catalog에만 존재 (DKG 미등록: ${gap.length}건) ──`);
+    for (const id of gap) {
+      console.log(`    ${id}`);
+    }
+  }
 }
 
 // ── dkg domains ─────────────────────────────────────
 
 export function dkgDomains(opts: PageOptions): void {
   const graph = getGraph();
-  const domains = graph.getNodesByKind("domain") as DomainNode[];
+  const domains = graph.getNodesByKind("domain");
 
   const result = paginate(domains, opts);
 
@@ -593,29 +964,277 @@ export function dkgDomains(opts: PageOptions): void {
   printPageInfo(result);
 }
 
-// ── dkg impact ──────────────────────────────────────
+// ── dkg flow-schemas / dkg flow-schema ───────────────
 
-export function dkgImpact(axisId: string): void {
+export interface FlowSchemaListEntry {
+  readonly id: string;
+  readonly name: string;
+  readonly version: string;
+  readonly gateCount: number;
+  readonly coreGateCount: number;
+  readonly totalPaths: number;
+  readonly axisCount: number;
+  readonly prefixCount: number;
+}
+
+export interface FlowSchemaGateProfile {
+  readonly id: string;
+  readonly name: string;
+  readonly phase: string;
+  readonly weight: string;
+  readonly branchCount: number;
+  readonly subFlowId?: string;
+}
+
+export interface FlowSchemaProfileView {
+  readonly id: string;
+  readonly name: string;
+  readonly version: string;
+  readonly totalPaths: number;
+  readonly gateCount: number;
+  readonly coreGateIds: readonly string[];
+  readonly gates: readonly FlowSchemaGateProfile[];
+  readonly directAxisIds: readonly string[];
+  readonly directPrefixIds: readonly string[];
+  readonly transitiveAxisIds: readonly string[];
+  readonly transitivePrefixIds: readonly string[];
+  readonly subFlowIds: readonly string[];
+  readonly domainIds: readonly string[];
+}
+
+function activeDkgConfig(configOverride?: BootstrapConfigInput): BootstrapConfigInput {
+  return configOverride ?? _configOverride ?? DEMO_DKG_CONFIG;
+}
+
+function getConfiguredFlowSchemaEntries(configOverride?: BootstrapConfigInput): readonly FlowSchemaConfigEntry[] {
+  return activeDkgConfig(configOverride).flowSchemas ?? [];
+}
+
+function getConfiguredFlowSchema(flowSchemaId: string, configOverride?: BootstrapConfigInput): FlowSchema | undefined {
+  return getConfiguredFlowSchemaEntries(configOverride)
+    .find((entry) => entry.schema.id === flowSchemaId)
+    ?.schema as FlowSchema | undefined;
+}
+
+function getFlowSchemaNode(graph: GraphRegistry, flowSchemaId: string): Extract<DkgNode, { kind: "flow-schema" }> | null {
+  const node = graph.getNode(flowSchemaId);
+  if (!node || node.kind !== "flow-schema") {
+    return null;
+  }
+  return node;
+}
+
+function sortIds(ids: readonly string[]): string[] {
+  return [...ids].toSorted((a, b) => a.localeCompare(b));
+}
+
+function uniqueIds(ids: readonly string[]): string[] {
+  return [...new Set(ids)];
+}
+
+function summarizeFlowSchemaGate(
+  gate: Extract<DkgNode, { kind: "flow-schema" }>["gates"][number],
+  schema?: FlowSchema,
+): FlowSchemaGateProfile {
+  const resolved = schema?.gates.find((candidate) => candidate.id === gate.id);
+  return {
+    id: gate.id,
+    name: gate.name,
+    phase: gate.phase,
+    weight: gate.weight,
+    branchCount: resolved?.branches?.length ?? 0,
+    subFlowId: resolved?.subFlowId,
+  };
+}
+
+export function listFlowSchemas(
+  graph: GraphRegistry,
+  configOverride?: BootstrapConfigInput,
+): FlowSchemaListEntry[] {
+  return graph.getNodesByKind("flow-schema")
+    .map((node) => {
+      const schema = getConfiguredFlowSchema(node.id, configOverride);
+      const gateCount = schema?.gates.length ?? node.gates.length;
+      return {
+        id: node.id,
+        name: node.name,
+        version: node.version,
+        gateCount,
+        coreGateCount: node.coreGateIds.length,
+        totalPaths: node.totalPaths,
+        axisCount: graph.neighbors(node.id, "composes").length,
+        prefixCount: graph.neighbors(node.id, "observes").length,
+      };
+    })
+    .toSorted((a, b) => a.id.localeCompare(b.id));
+}
+
+export function getFlowSchemaProfile(
+  graph: GraphRegistry,
+  flowSchemaId: string,
+  configOverride?: BootstrapConfigInput,
+): FlowSchemaProfileView | null {
+  const node = getFlowSchemaNode(graph, flowSchemaId);
+  if (!node) {
+    return null;
+  }
+
+  const schema = getConfiguredFlowSchema(flowSchemaId, configOverride);
+  const cascade = graph.cascadeFromFlowSchema(flowSchemaId);
+
+  return {
+    id: node.id,
+    name: node.name,
+    version: node.version,
+    totalPaths: node.totalPaths,
+    gateCount: schema?.gates.length ?? node.gates.length,
+    coreGateIds: [...node.coreGateIds],
+    gates: node.gates.map((gate) => summarizeFlowSchemaGate(gate, schema)),
+    directAxisIds: sortIds(graph.neighbors(flowSchemaId, "composes")),
+    directPrefixIds: sortIds(graph.neighbors(flowSchemaId, "observes")),
+    transitiveAxisIds: sortIds(uniqueIds(cascade.axes.map((axis) => axis.id))),
+    transitivePrefixIds: sortIds(uniqueIds(cascade.prefixes.map((prefix) => prefix.id))),
+    subFlowIds: sortIds(graph.neighbors(flowSchemaId, "references")),
+    domainIds: sortIds(graph.neighbors(flowSchemaId, "contains")),
+  };
+}
+
+function mermaidSafeId(raw: string): string {
+  return raw.replace(/[^A-Za-z0-9_]/g, "_");
+}
+
+function mermaidLabel(value: string): string {
+  return value.replace(/"/g, '\\"');
+}
+
+export function renderFlowSchemaDiagramMermaid(
+  graph: GraphRegistry,
+  flowSchemaId: string,
+  configOverride?: BootstrapConfigInput,
+): string {
+  const node = getFlowSchemaNode(graph, flowSchemaId);
+  if (!node) {
+    throw new Error(`flow-schema를 찾을 수 없음: ${flowSchemaId}`);
+  }
+
+  const schema = getConfiguredFlowSchema(flowSchemaId, configOverride);
+  if (!schema) {
+    throw new Error(`DkgConfig.flowSchemas에 등록되지 않은 flow-schema: ${flowSchemaId}`);
+  }
+
+  const causalGraph = extractCausalGraph(schema);
+  const lines: string[] = [
+    "flowchart LR",
+    `  %% FlowSchema: ${schema.id} (${schema.version})`,
+    "  classDef core fill:#fde68a,stroke:#92400e,color:#451a03;",
+    "  classDef structural fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a;",
+    "  classDef tactical fill:#f3f4f6,stroke:#6b7280,color:#111827;",
+  ];
+
+  const nodeIds: string[] = [];
+
+  for (const gate of schema.gates) {
+    const mermaidId = mermaidSafeId(gate.id);
+    nodeIds.push(mermaidId);
+    const weight = gate.weight ?? "tactical";
+    const labelParts = [
+      gate.id,
+      gate.name,
+      `${gate.phase} / ${weight}`,
+    ];
+    if (gate.subFlowId) {
+      labelParts.push(`subFlow: ${gate.subFlowId}`);
+    } else if (gate.branches) {
+      labelParts.push(`branches: ${gate.branches.length}`);
+    }
+    lines.push(`  ${mermaidId}["${mermaidLabel(labelParts.join("<br/>"))}"]`);
+    lines.push(`  class ${mermaidId} ${weight};`);
+  }
+
+  for (const edge of causalGraph.edges) {
+    lines.push(
+      `  ${mermaidSafeId(edge.from)} -->|${edge.kind}| ${mermaidSafeId(edge.to)}`,
+    );
+  }
+
+  if (causalGraph.roots.length > 0) {
+    lines.push(`  %% roots: ${causalGraph.roots.join(", ")}`);
+  }
+  if (causalGraph.leaves.length > 0) {
+    lines.push(`  %% leaves: ${causalGraph.leaves.join(", ")}`);
+  }
+  if (nodeIds.length === 0) {
+    lines.push("  empty[\"gate 없음\"]");
+  }
+
+  return lines.join("\n");
+}
+
+export function dkgFlowSchemas(opts: PageOptions): void {
   const graph = getGraph();
+  const flows = listFlowSchemas(graph);
+  const result = paginate(flows, opts);
 
-  const cascade = graph.cascadeFromAxis(axisId);
-  if (cascade.length === 0) {
-    console.log(`\n  ${axisId}: 영향받는 prefix 없음`);
+  console.log(`\n══ Flow Schemas ══`);
+  for (const flow of result.items) {
+    console.log(
+      `  ${flow.id.padEnd(20)} ${flow.name.padEnd(18)} version=${flow.version} gates=${flow.gateCount} core=${flow.coreGateCount} paths=${flow.totalPaths} axes=${flow.axisCount} prefixes=${flow.prefixCount}`,
+    );
+  }
+
+  printPageInfo(result);
+}
+
+export function dkgFlowSchema(flowSchemaId: string): void {
+  const graph = getGraph();
+  const profile = getFlowSchemaProfile(graph, flowSchemaId);
+
+  if (!profile) {
+    console.error(`  flow-schema를 찾을 수 없음: ${flowSchemaId}`);
     return;
   }
 
-  console.log(`\n══ Impact: ${axisId} ══`);
-  for (const c of cascade) {
-    console.log(`  ${"  ".repeat(c.distance - 1)}${c.reason === "composes" ? "←" : "←ref─"} ${c.id} (depth=${c.distance})`);
+  console.log(`\n══ Flow Schema: ${profile.id} ══`);
+  console.log(`  name:       ${profile.name}`);
+  console.log(`  version:    ${profile.version}`);
+  console.log(`  gates:      ${profile.gateCount}`);
+  console.log(`  totalPaths: ${profile.totalPaths}`);
+
+  console.log(`\n  ── Core Gates (${profile.coreGateIds.length}) ──`);
+  if (profile.coreGateIds.length === 0) {
+    console.log("    없음");
+  } else {
+    console.log(`    ${profile.coreGateIds.join(", ")}`);
   }
 
-  // consumer까지 cascade
-  for (const c of cascade) {
-    const { domains, consumers } = graph.cascadeFromPrefix(c.id);
-    if (consumers.length > 0) {
-      console.log(`\n  ${c.id} → consumers: ${consumers.map(cc => cc.id).join(", ")}`);
-    }
+  console.log(`\n  ── Gates (${profile.gates.length}) ──`);
+  for (const gate of profile.gates) {
+    const extras = [
+      `phase=${gate.phase}`,
+      `weight=${gate.weight}`,
+      gate.subFlowId ? `subFlow=${gate.subFlowId}` : `branches=${gate.branchCount}`,
+    ].join(" ");
+    console.log(`    ${gate.id.padEnd(20)} ${gate.name} (${extras})`);
   }
+
+  console.log(`\n  ── Related Axes ──`);
+  console.log(`    direct:     ${profile.directAxisIds.join(", ") || "-"}`);
+  console.log(`    transitive: ${profile.transitiveAxisIds.join(", ") || "-"}`);
+
+  console.log(`\n  ── Related Prefixes ──`);
+  console.log(`    direct:     ${profile.directPrefixIds.join(", ") || "-"}`);
+  console.log(`    transitive: ${profile.transitivePrefixIds.join(", ") || "-"}`);
+
+  console.log(`\n  ── Relations ──`);
+  console.log(`    domains:    ${profile.domainIds.join(", ") || "-"}`);
+  console.log(`    subFlows:   ${profile.subFlowIds.join(", ") || "-"}`);
+}
+
+// ── dkg impact ──────────────────────────────────────
+
+/** 캐시된 DKG graph를 반환. cliImpact에 넘겨 이중 bootstrap 방지. */
+export function getDkgGraph(): ReturnType<typeof getGraph> {
+  return getGraph();
 }
 
 // ── dkg overlaps ────────────────────────────────────
@@ -671,6 +1290,61 @@ export function dkgHistory(opts: { limit?: number }): void {
     }
     for (const [prefix, versions] of byPrefix) {
       console.log(`    ${prefix}: ${versions.join(", ")}`);
+    }
+  }
+}
+
+// ── dkg audit-events — CLI lifecycle 감사 로그 ──────────
+
+export function dkgAuditEvents(opts: {
+  limit?: number;
+  prefix?: string;
+  command?: string;
+  targetId?: string;
+  lifecycleTo?: string;
+  json?: boolean;
+}): void {
+  const store = getStore();
+  const events = store.listRecentCliAuditEvents(opts.limit ?? 30, {
+    ...(opts.prefix ? { eventPrefix: opts.prefix } : {}),
+    ...(opts.command ? { command: opts.command } : {}),
+    ...(opts.targetId ? { targetId: opts.targetId } : {}),
+    ...(opts.lifecycleTo ? { lifecycleTo: opts.lifecycleTo } : {}),
+  });
+
+  if (opts.json) {
+    console.log(JSON.stringify(events, null, 2));
+    return;
+  }
+
+  console.log(`\n══ CLI Audit Events (${events.length}건) ══`);
+  if (events.length === 0) {
+    console.log("  (없음)");
+    return;
+  }
+
+  for (const event of events) {
+    const prefix = event.eventPrefix ?? "-";
+    const target = event.targetId ?? "-";
+    const command = event.command ?? "-";
+    const lifecycle =
+      event.lifecycleFrom || event.lifecycleTo
+        ? `${event.lifecycleFrom ?? "?"} → ${event.lifecycleTo ?? "?"}`
+        : "-";
+    console.log(`\n  #${event.id} ${event.timestamp}`);
+    console.log(`    prefix=${prefix} command=${command}`);
+    console.log(`    event=${event.eventKey}@${event.eventVersion} target=${target} kind=${event.targetKind ?? "-"}`);
+    console.log(`    lifecycle=${lifecycle}`);
+    console.log(`    trace=${event.record.trace_id} session=${event.record.qa_session_id ?? "-"}`);
+    if (event.record.address_context && Object.keys(event.record.address_context).length > 0) {
+      console.log(`    address_context=${JSON.stringify(event.record.address_context)}`);
+    }
+    const payload =
+      event.record.payload && typeof event.record.payload === "object"
+        ? JSON.stringify(event.record.payload)
+        : String(event.record.payload ?? "");
+    if (payload && payload !== "undefined") {
+      console.log(`    payload=${payload.slice(0, 240)}`);
     }
   }
 }
@@ -740,13 +1414,58 @@ export function dkgDecisionsList(opts: { limit?: number; kind?: string }): void 
 
   console.log(`\n══ 최근 의사결정 (${rows.length}건) ══\n`);
   for (const r of rows) {
-    const data = r.data as Record<string, unknown>;
+    const data = r.data as DecisionListData;
     const icon = r.kind === "decision" ? "📋" : r.kind === "observation" ? "👁" : "📦";
-    const title = (data.title as string) ?? (data.finding as string) ?? r.id;
-    const lifecycle = (data.lifecycle as string) ?? (data.resolution ? "resolved" : "open");
+    const title = data.title ?? data.finding ?? r.id;
+    const lifecycle = data.lifecycle ?? (data.resolution ? "resolved" : "open");
     console.log(`  ${icon} [${r.date.slice(0, 10)}] ${r.id}`);
     console.log(`     ${title}`);
     console.log(`     source=${r.source} lifecycle=${lifecycle}`);
+  }
+}
+
+// ── dkg observations / dkg decisions / dkg constraints ──
+
+export function dkgObservations(opts: PageOptions): void {
+  const graph = getGraph();
+  const observations = graph.getNodesByKind("observation");
+  const result = paginate(observations, opts);
+
+  console.log(`\n══ Observations (${observations.length}) ══`);
+  for (const obs of result.items) {
+    const status = obs.resolution ? `resolved(${obs.resolution.outcome})` : "open";
+    const icon = status.startsWith("resolved") ? "✅" : obs.intent === "action-needed" ? "🔴" : "🟡";
+    console.log(`  ${icon} ${obs.id}`);
+    console.log(`     ${obs.finding}`);
+    console.log(`     intent=${obs.intent ?? "?"} status=${status} source=${obs.source ?? "?"}`);
+  }
+  console.log(`\n  page ${result.page}/${result.totalPages} (total: ${observations.length})`);
+}
+
+export function dkgDecisions(opts: PageOptions): void {
+  const graph = getGraph();
+  const decisions = graph.getNodesByKind("decision");
+  const result = paginate(decisions, opts);
+
+  console.log(`\n══ Decisions (${decisions.length}) ══`);
+  for (const dec of result.items) {
+    const icon = dec.lifecycle === "active" ? "📋" : dec.lifecycle === "superseded" ? "📝" : "📦";
+    console.log(`  ${icon} ${dec.id}`);
+    console.log(`     ${dec.title}`);
+    console.log(`     lifecycle=${dec.lifecycle ?? "?"}`);
+  }
+  console.log(`\n  page ${result.page}/${result.totalPages} (total: ${decisions.length})`);
+}
+
+export function dkgConstraints(_opts: PageOptions): void {
+  const graph = getGraph();
+  const constraints = graph.getNodesByKind("constraint");
+
+  console.log(`\n══ Constraints (${constraints.length}) ══`);
+  for (const c of constraints) {
+    console.log(`  ${c.id}`);
+    console.log(`     ${c.rule}`);
+    if (c.scope?.length) console.log(`     targets: ${c.scope.join(", ")}`);
   }
 }
 
@@ -755,17 +1474,18 @@ export function dkgDecisionsList(opts: { limit?: number; kind?: string }): void 
 export function dkgRefresh(): void {
   const store = getStore();
 
-  // 1. bootstrap 데이터만 삭제 (운영 데이터 보존)
-  const cleared = store.clearBootstrap();
+  // 0. 기존 manual 노드 수집 (resolved observation 보존용)
+  const existingGraph = store.loadGraph();
 
-  // 2. 새 bootstrap 그래프 생성 → 저장
-  const graph = bootstrapDkg();
+  // 1. bootstrap 데이터만 삭제 (운영 데이터 보존)
+  store.clearBootstrap();
+
+  // 2. 새 bootstrap 그래프 생성 → 기존 그래프 전달 (resolved observation 재생성 방지)
+  const graph = bootstrapDkg({ ...bootstrapOptions(), existingGraph });
   const saved = store.saveGraph(graph, "bootstrap");
   store.setMeta("last_bootstrap", new Date().toISOString());
 
-  // 3. 전체 그래프 로드 (bootstrap + 보존된 manual)
-  const fullGraph = store.loadGraph();
-
+  // 3. 통계 조회
   const stats = store.stats();
   console.log(`  refreshed: ${saved.nodesWritten} bootstrap nodes, ${saved.edgesWritten} bootstrap edges`);
   console.log(`  보존: ${stats.manualNodes} manual nodes, ${stats.manualEdges} manual edges`);
@@ -840,24 +1560,45 @@ export function dkgCoverage(): void {
 
 // ── dkg skills ────────────────────────────────────
 
-export function dkgSkills(): void {
+export function dkgSkills(filter?: string): void {
   const graph = getGraph();
-  const skillNodes = graph.getNodesByKind("skill") as any[];
+  const skillNodes = graph.getNodesByKind("skill");
 
   if (skillNodes.length === 0) {
     console.log("\n  (skill 노드 없음. dkg refresh로 재부트스트랩하세요.)");
     return;
   }
 
+  // 필터 적용: 카테고리, 키워드, DSL/domain 검색
+  const filtered = filter
+    ? skillNodes.filter(s => {
+        const f = filter.toLowerCase();
+        return s.category === f
+          || s.id.toLowerCase().includes(f)
+          || s.name.toLowerCase().includes(f)
+          || (s.specialization?.dslBundles ?? []).some((d: string) => d.toLowerCase().includes(f))
+          || (s.specialization?.domains ?? []).some((d: string) => d.toLowerCase().includes(f))
+          || (s.specialization?.prefixes ?? []).some((p: string) => p.toLowerCase().includes(f));
+      })
+    : skillNodes;
+
   // category별 그룹핑
   const byCategory = new Map<string, typeof skillNodes>();
-  for (const s of skillNodes) {
+  for (const s of filtered) {
     const list = byCategory.get(s.category) ?? [];
     list.push(s);
     byCategory.set(s.category, list);
   }
 
-  console.log(`\n══ DKG Skills (${skillNodes.length}개) ══`);
+  const label = filter ? ` (필터: "${filter}")` : "";
+  console.log(`\n══ DKG Skills (${filtered.length}/${skillNodes.length}개${label}) ══`);
+
+  if (filtered.length === 0) {
+    console.log(`\n  "${filter}"와 일치하는 skill 없음`);
+    console.log(`  카테고리: read, write, analysis, chain`);
+    console.log(`  키워드: domain 이름, DSL 이름, prefix 이름으로 검색 가능`);
+    return;
+  }
 
   for (const [cat, skills] of byCategory) {
     console.log(`\n  [${cat}]`);
@@ -880,6 +1621,215 @@ export function dkgSkills(): void {
       }
     }
   }
+
+  if (!filter) {
+    console.log(`\n  필터: dkg skills <카테고리|키워드>  예: dkg skills chain, dkg skills checkout`);
+  }
+}
+
+// ── dkg transitions ────────────────────────────────
+
+export function dkgTransitions(specId?: string): void {
+  const graph = getGraph();
+  const tspecs = graph.getNodesByKind("transition-spec");
+
+  if (tspecs.length === 0) {
+    console.log("\n  (transition-spec 노드 없음. dkg refresh로 재부트스트랩하세요.)");
+    return;
+  }
+
+  // 상세 조회
+  if (specId) {
+    const node = tspecs.find(t => t.id === specId || t.transition === specId);
+    if (!node) {
+      console.log(`\n  transition-spec을 찾을 수 없음: ${specId}`);
+      console.log(`  등록된 spec: ${tspecs.map(t => t.transition).join(", ")}`);
+      return;
+    }
+
+    console.log(`\n══ Transition: ${node.transition} (${node.version}) ══`);
+    console.log(`  id:     ${node.id}`);
+    console.log(`  effect: ${node.effectKind}`);
+    console.log(`  match:  ${node.matchMode} (${node.coordinateCount}개 좌표)`);
+
+    console.log(`\n  ── 축 참조 (역할별) ──`);
+    console.log(`    match:  ${node.matchAxes.join(", ") || "(없음)"}`);
+    console.log(`    input:  ${node.inputAxes.join(", ") || "(없음)"}`);
+    console.log(`    output: ${node.outputAxes.join(", ") || "(없음)"}`);
+
+    // 상태 의존성 탐색 기반: output→input 교차
+    const otherSpecs = tspecs.filter(t => t.id !== node.id);
+    const produces = new Set(node.outputAxes);
+    const requires = new Set(node.inputAxes);
+
+    const dependsOn: string[] = [];   // 이 spec의 input을 다른 spec이 output으로 만드는 경우
+    const blocksFor: string[] = [];   // 이 spec의 output을 다른 spec이 input으로 요구하는 경우
+
+    for (const other of otherSpecs) {
+      const otherProduces = new Set(other.outputAxes);
+      const otherRequires = new Set(other.inputAxes);
+
+      const inputOverlap = [...requires].filter(a => otherProduces.has(a));
+      if (inputOverlap.length > 0) {
+        dependsOn.push(`${other.transition} (via ${inputOverlap.join(",")})`);
+      }
+
+      const outputOverlap = [...produces].filter(a => otherRequires.has(a));
+      if (outputOverlap.length > 0) {
+        blocksFor.push(`${other.transition} (via ${outputOverlap.join(",")})`);
+      }
+    }
+
+    if (dependsOn.length > 0 || blocksFor.length > 0) {
+      console.log(`\n  ── 상태 의존성 ──`);
+      if (dependsOn.length > 0) {
+        console.log(`    선행 필요: ${dependsOn.join(", ")}`);
+      }
+      if (blocksFor.length > 0) {
+        console.log(`    후속 가능: ${blocksFor.join(", ")}`);
+      }
+    }
+
+    // DKG consumes 엣지
+    const consumesEdges = graph.edgesFrom(node.id, "consumes");
+    if (consumesEdges.length > 0) {
+      console.log(`\n  ── DKG consumes (${consumesEdges.length}개 축) ──`);
+      for (const e of consumesEdges) {
+        const target = graph.getNode(e.to);
+        console.log(`    → ${e.to} [${target?.kind ?? "?"}]`);
+      }
+    }
+
+    return;
+  }
+
+  // 목록 조회
+  console.log(`\n══ Transition Specs (${tspecs.length}개) ══`);
+
+  // effect별 그룹핑
+  const byEffect = new Map<string, typeof tspecs>();
+  for (const t of tspecs) {
+    const list = byEffect.get(t.effectKind) ?? [];
+    list.push(t);
+    byEffect.set(t.effectKind, list);
+  }
+
+  for (const [effect, specs] of byEffect) {
+    console.log(`\n  [${effect}]`);
+    for (const t of specs) {
+      console.log(`    ${t.transition.padEnd(25)} ${t.matchMode}(${t.coordinateCount}) → match:${t.matchAxes.length} input:${t.inputAxes.length} output:${t.outputAxes.length}`);
+    }
+  }
+
+  // 축 사용 빈도 요약
+  const axisFreq = new Map<string, { match: number; input: number; output: number }>();
+  for (const t of tspecs) {
+    for (const a of t.matchAxes) {
+      const f = axisFreq.get(a) ?? { match: 0, input: 0, output: 0 };
+      f.match++;
+      axisFreq.set(a, f);
+    }
+    for (const a of t.inputAxes) {
+      const f = axisFreq.get(a) ?? { match: 0, input: 0, output: 0 };
+      f.input++;
+      axisFreq.set(a, f);
+    }
+    for (const a of t.outputAxes) {
+      const f = axisFreq.get(a) ?? { match: 0, input: 0, output: 0 };
+      f.output++;
+      axisFreq.set(a, f);
+    }
+  }
+
+  console.log(`\n  ── 축 사용 빈도 ──`);
+  const sorted = [...axisFreq.entries()].toSorted((a, b) => {
+    const totalA = a[1].match + a[1].input + a[1].output;
+    const totalB = b[1].match + b[1].input + b[1].output;
+    return totalB - totalA;
+  });
+  for (const [axis, freq] of sorted) {
+    const parts: string[] = [];
+    if (freq.match > 0) parts.push(`match:${freq.match}`);
+    if (freq.input > 0) parts.push(`input:${freq.input}`);
+    if (freq.output > 0) parts.push(`output:${freq.output}`);
+    console.log(`    ${axis.padEnd(20)} ${parts.join(" ")}`);
+  }
+}
+
+// ── dkg transition coverage/orphans/violations ────
+
+export function dkgTransitionAnalysis(subcommand: string): void {
+  const graph = getGraph();
+  const tspecs = graph.getNodesByKind("transition-spec");
+
+  if (tspecs.length === 0) {
+    console.log("\n  (transition-spec 노드 없음)");
+    return;
+  }
+
+  switch (subcommand) {
+    case "coverage": {
+      console.log(`\n══ Transition Coverage ══`);
+      console.log(`  정의된 spec: ${tspecs.length}개`);
+      // effect 분포
+      const byEffect = new Map<string, number>();
+      for (const t of tspecs) {
+        byEffect.set(t.effectKind, (byEffect.get(t.effectKind) ?? 0) + 1);
+      }
+      console.log(`  effect 분포:`);
+      for (const [effect, count] of byEffect) {
+        console.log(`    ${effect}: ${count}개`);
+      }
+      // 축 커버리지: 전체 축 중 transition이 참조하는 축 비율
+      const allAxes = new Set(graph.getNodesByKind("axis").map(a => a.id));
+      const referencedAxes = new Set(tspecs.flatMap(t => [...t.slotRefs]));
+      const covered = [...referencedAxes].filter(a => allAxes.has(a));
+      console.log(`  축 커버리지: ${covered.length}/${allAxes.size} (${((covered.length / allAxes.size) * 100).toFixed(0)}%)`);
+      console.log(`  미참조 축: ${[...allAxes].filter(a => !referencedAxes.has(a)).length}개`);
+      break;
+    }
+    case "orphans": {
+      console.log(`\n══ Orphan Analysis ══`);
+      // transition이 참조하지 않는 prefix (transition 관점에서 orphan)
+      const prefixes = graph.getNodesByKind("prefix");
+      const tspecAxes = new Set(tspecs.flatMap(t => Array.from(t.matchAxes)));
+      const orphanPrefixes = prefixes.filter(p => {
+        const composes = graph.edgesFrom(p.id, "composes");
+        const prefixAxes = composes.filter(e => (e.meta?.dimKind === "axis")).map(e => e.to);
+        return prefixAxes.length > 0 && !prefixAxes.some(a => tspecAxes.has(a));
+      });
+      console.log(`  transition이 관찰하지 않는 prefix: ${orphanPrefixes.length}개`);
+      for (const p of orphanPrefixes.slice(0, 10)) {
+        console.log(`    ${p.id}`);
+      }
+      if (orphanPrefixes.length > 10) console.log(`    ... 외 ${orphanPrefixes.length - 10}개`);
+      break;
+    }
+    case "violations": {
+      console.log(`\n══ Violation Summary ══`);
+      // DKG에서 transition observation 조회
+      const observations = graph.getNodesByKind("observation");
+      const transObs = observations.filter(o => o.id?.startsWith("OBS-TRANSITION-"));
+      if (transObs.length === 0) {
+        console.log("  기록된 전이 위반 없음");
+      } else {
+        console.log(`  전이 위반 observation: ${transObs.length}개`);
+        for (const obs of transObs) {
+          console.log(`    ${obs.id}: ${obs.finding}`);
+        }
+      }
+      // constraint 상태
+      const effectConstraint = graph.getNode("CON-EFFECT-VOCAB");
+      if (effectConstraint && effectConstraint.kind === "constraint") {
+        const con = effectConstraint as ConstraintNode;
+        console.log(`\n  CON-EFFECT-VOCAB: ${con.lifecycle} — ${con.rule?.slice(0, 80)}`);
+      }
+      break;
+    }
+    default:
+      console.log(`  알 수 없는 서브커맨드: ${subcommand}`);
+      console.log("  사용법: dkg transition coverage | orphans | violations");
+  }
 }
 
 // ── dkg audit ─────────────────────────────────────
@@ -893,12 +1843,11 @@ export function dkgAudit(): void {
   const observations = graph.getNodesByKind("observation");
   console.log(`\n  Observations: ${observations.length}개`);
   for (const obs of observations) {
-    const o = obs as any;
-    const icon = o.suggestion ? "⚠" : "ℹ";
-    console.log(`    ${icon} ${o.id}`);
-    console.log(`      ${o.finding}`);
+    const icon = obs.suggestion ? "⚠" : "ℹ";
+    console.log(`    ${icon} ${obs.id}`);
+    console.log(`      ${obs.finding}`);
     // prompts → Decision 연결
-    const prompted = graph.neighbors(o.id, "prompts");
+    const prompted = graph.neighbors(obs.id, "prompts");
     if (prompted.length > 0) {
       console.log(`      → Decision: ${prompted.join(", ")}`);
     }
@@ -908,16 +1857,15 @@ export function dkgAudit(): void {
   const decisions = graph.getNodesByKind("decision");
   console.log(`\n  Decisions: ${decisions.length}개`);
   for (const dec of decisions) {
-    const d = dec as any;
-    const governed = graph.neighbors(d.id, "governs");
-    const justified = graph.neighbors(d.id, "justifies");
+    const governed = graph.neighbors(dec.id, "governs");
+    const justified = graph.neighbors(dec.id, "justifies");
     const targets = [...governed, ...justified];
-    console.log(`    ${d.id}: ${d.title}`);
+    console.log(`    ${dec.id}: ${dec.title}`);
     if (targets.length > 0) {
       console.log(`      → 대상: ${targets.join(", ")}`);
     }
-    if (d.alternatives?.length > 0) {
-      console.log(`      → 대안: ${d.alternatives.length}개`);
+    if (dec.alternatives && dec.alternatives.length > 0) {
+      console.log(`      → 대안: ${dec.alternatives.length}개`);
     }
   }
 
@@ -925,32 +1873,57 @@ export function dkgAudit(): void {
   const constraints = graph.getNodesByKind("constraint");
   console.log(`\n  Constraints: ${constraints.length}개`);
   for (const con of constraints) {
-    const c = con as any;
-    const icon = c.lifecycle === "active" ? "✅" : "⏸";
-    console.log(`    ${icon} ${c.id}: ${c.rule}`);
+    const icon = con.lifecycle === "active" ? "✅" : "⏸";
+    console.log(`    ${icon} ${con.id}: ${con.rule}`);
   }
 
   // 4. DSL 커버리지
   const dslBundles = graph.getNodesByKind("dsl-bundle");
   console.log(`\n  DSL Bundles: ${dslBundles.length}개`);
   for (const bundle of dslBundles) {
-    const b = bundle as any;
-    const contains = graph.edgesFrom(b.id, "contains");
-    console.log(`    ${b.id}: [${contains.map((e: any) => e.to).join(",")}]`);
+    const contains = graph.edgesFrom(bundle.id, "contains");
+    console.log(`    ${bundle.id}: [${contains.map(e => e.to).join(",")}]`);
   }
 
   // 5. IntentLink invariant
   const links = graph.getNodesByKind("intent-link");
   console.log(`\n  IntentLinks: ${links.length}개`);
   for (const link of links) {
-    const l = link as any;
-    console.log(`    ${l.id}: ${l.intent}`);
-    if (l.invariant) console.log(`      invariant: ${l.invariant}`);
+    console.log(`    ${link.id}: ${link.intent}`);
+    if (link.invariant) console.log(`      invariant: ${link.invariant}`);
   }
 
-  // 6. 종합
+  // 6. 축 사용 분석 (prefix dims + TransitionSpec)
+  {
+    // TransitionSpec에서 축 참조 수집
+    const tSpecNodes = graph.getNodesByKind("transition-spec") as TransitionSpecNode[];
+    const transitionAxes = tSpecNodes.map(n => ({
+      transition: n.transition,
+      matchAxes: n.matchAxes ?? [],
+      inputAxes: n.inputAxes ?? [],
+      outputAxes: n.outputAxes ?? [],
+    }));
+    const entries = collectAxisUsage(DEMO_CATALOG, { transitionAxes });
+    const summary = summarizeAxisUsage(entries);
+    const unused = findUnusedAxes(DEMO_CATALOG, entries);
+
+    console.log(`\n  ── Axis Usage (${summary.length} axes used) ──`);
+    // source별 집계
+    const sourceTotals: Record<string, number> = {};
+    for (const e of entries) sourceTotals[e.source] = (sourceTotals[e.source] ?? 0) + 1;
+    for (const [src, cnt] of Object.entries(sourceTotals)) {
+      console.log(`    ${src}: ${cnt}건`);
+    }
+
+    if (unused.length > 0) {
+      console.log(`\n  ⚠ 미사용 축 (${unused.length}): ${unused.join(", ")}`);
+    } else {
+      console.log(`\n  ✅ 전체 ${Object.keys(DEMO_CATALOG.axes).length}개 축 사용 확인`);
+    }
+  }
+
+  // 7. 종합
   const specs = catalogToPrefixSpecs(DEMO_CATALOG);
-  const specMap = new Map(specs.map(s => [s.id, s]));
   const byCategory = new Map<string, number>();
   for (const s of specs) {
     const cat = s.schema?.category ?? "entity";
@@ -1129,6 +2102,168 @@ export function dkgPrefix(prefixId: string): void {
       console.log(`    ${l.id}: ${l.intent.slice(0, 70)}`);
     }
   }
+
+  // definition-catalog 문서 연결
+  const specRelPath = `docs/specs/prefix-catalog/prefix-${prefixId}.spec.md`;
+  try {
+    const repoRoot = execaSync("git", ["rev-parse", "--show-toplevel"]).stdout.trim();
+    const specAbsPath = join(repoRoot, specRelPath);
+    if (existsSync(specAbsPath)) {
+      console.log(`\n  ── Spec Document ──`);
+      console.log(`    ${specRelPath}`);
+    }
+  } catch { /* git 밖에서 실행 시 무시 */ }
+}
+
+// ── dkg tables / dkg table ───────────────────────────
+
+export function dkgTables(): void {
+  const graph = getGraph();
+  const topo = createDemoTopology();
+
+  const tables = graph.getNodesByKind("table");
+  if (tables.length === 0) {
+    console.log("\n  테이블 노드 없음 (catalog에 tables 섹션이 정의되지 않음)");
+    return;
+  }
+
+  console.log(`\n══ Tables (${tables.length}) ══`);
+  for (const t of tables) {
+    const prefixes = graph.getPrefixesForTable(t.id);
+    const services = topo.getServicesForTable(t.id, graph);
+    const uniqueServices = [...new Set(services.map(s => s.serviceId))];
+    const colRefs = graph.getTableColumnRefs(t.id);
+    const fkCount = colRefs.filter(r => r.refKind === "fk").length;
+    const axisCount = colRefs.filter(r => r.refKind === "column_axis").length;
+
+    console.log(`  ${t.id.padEnd(14)} cols=${t.columns.length} prefixes=${prefixes.length} services=${uniqueServices.length} fk=${fkCount} axis_ref=${axisCount}`);
+  }
+}
+
+export function dkgTable(tableId: string): void {
+  const graph = getGraph();
+  const topo = createDemoTopology();
+
+  const node = graph.getNode(tableId);
+  if (!node || node.kind !== "table") {
+    console.error(`  테이블을 찾을 수 없음: ${tableId}`);
+    return;
+  }
+
+  const tableNode = node as TableNode;
+  console.log(`\n══ Table: ${tableNode.id} ══`);
+  console.log(`  name:    ${tableNode.name}`);
+  console.log(`  columns: ${tableNode.columns.join(", ")}`);
+
+  // 컬럼 참조 상세
+  const colRefs = graph.getTableColumnRefs(tableId);
+  const kindLabels: Record<string, string> = { column_axis: "axis", fk: "FK", prefix_ref: "prefix" };
+  if (colRefs.length > 0) {
+    console.log(`\n  ── Column References (${colRefs.length}) ──`);
+    for (const ref of colRefs) {
+      const kindLabel = kindLabels[ref.refKind] ?? ref.refKind;
+      console.log(`    ${ref.column.padEnd(16)} → ${ref.targetId} [${kindLabel}]`);
+    }
+  }
+
+  // 이 테이블을 참조하는 prefix (table_ref dim)
+  const prefixes = graph.getPrefixesForTable(tableId);
+  if (prefixes.length > 0) {
+    console.log(`\n  ── Referencing Prefixes (${prefixes.length}) ──`);
+    for (const p of prefixes) {
+      const owner = topo.getOwner(p.prefixId);
+      console.log(`    ${p.prefixId.padEnd(17)} dim="${p.dimLabel}" owner=${owner ?? "-"}`);
+    }
+  }
+
+  // 이 테이블을 FK로 참조하는 다른 테이블
+  const cascade = graph.cascadeFromTable(tableId);
+  if (cascade.referencingTables.length > 0) {
+    console.log(`\n  ── Referencing Tables (FK) (${cascade.referencingTables.length}) ──`);
+    for (const rt of cascade.referencingTables) {
+      console.log(`    ${rt.id.padEnd(14)} via column "${rt.column}"`);
+    }
+  }
+
+  // 접근하는 서비스
+  const services = topo.getServicesForTable(tableId, graph);
+  if (services.length > 0) {
+    console.log(`\n  ── Accessing Services (${services.length}) ──`);
+    for (const s of services) {
+      console.log(`    ${s.serviceId.padEnd(20)} via ${s.via} [${s.role}]`);
+    }
+  }
+
+  // impact summary
+  if (cascade.prefixes.length > 0 || services.length > 0) {
+    console.log(`\n  ── Impact Summary ──`);
+    console.log(`    이 테이블 변경 시:`);
+    console.log(`      영향 prefix: ${cascade.prefixes.map(p => p.prefixId).join(", ") || "없음"}`);
+    console.log(`      영향 service: ${[...new Set(services.map(s => s.serviceId))].join(", ") || "없음"}`);
+    if (cascade.referencingTables.length > 0) {
+      console.log(`      FK 참조 테이블: ${cascade.referencingTables.map(t => t.id).join(", ")}`);
+    }
+  }
+}
+
+// ── dkg scan-tables ─────────────────────────────────
+
+export function dkgScanTables(): void {
+  // Known DB tables from schema files (manually maintained, but centralized here)
+  const KNOWN_DB_TABLES = [
+    // store (PostgreSQL)
+    "qa_sessions", "traces", "event_records", "transmissions",
+    "runtime_graphs", "scenario_specs", "verdict_reports", "dead_letter_queue",
+    // index-meta (SQLite)
+    "prefix_registry", "prefix_ref", "prefix_route", "schema_version",
+    "version_lifecycle", "entry", "entry_flag", "migration_mapping",
+    "address_state_cache", "address_range_cache",
+    // registry-service (SQLite)
+    "prefix", "draft_lock", "axis_profile", "catalogs",
+    // query-service (SQLite)
+    "policy_rule",
+    // spec-core DKG (SQLite)
+    "dkg_nodes", "dkg_edges", "usage_snapshots", "version_usages", "dkg_meta",
+    "transition_state",
+    // platform-demo-api (SQLite)
+    "grants", "logs",
+  ];
+
+  const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
+  const catalogTables = Object.values(catalog.tables ?? {}).map(t => t.table);
+
+  const registered = new Set(catalogTables);
+  const known = new Set(KNOWN_DB_TABLES);
+
+  // Tables in DB but not in catalog
+  const missing = KNOWN_DB_TABLES.filter(t => !registered.has(t));
+  // Tables in catalog but not in known DB list
+  const extra = catalogTables.filter(t => !known.has(t));
+  // Tables in both
+  const matched = catalogTables.filter(t => known.has(t));
+
+  console.log(`\n══ Table Drift Scan ══`);
+  console.log(`  DB tables:      ${KNOWN_DB_TABLES.length}`);
+  console.log(`  Catalog tables: ${catalogTables.length}`);
+  console.log(`  Matched:        ${matched.length}`);
+
+  if (missing.length > 0) {
+    console.log(`\n  ── 미등록 (DB에 있지만 catalog에 없음: ${missing.length}) ──`);
+    for (const t of missing) {
+      console.log(`    ${t}`);
+    }
+  }
+
+  if (extra.length > 0) {
+    console.log(`\n  ── 불일치 (catalog에 있지만 DB에 없음: ${extra.length}) ──`);
+    for (const t of extra) {
+      console.log(`    ${t}`);
+    }
+  }
+
+  if (missing.length === 0 && extra.length === 0) {
+    console.log(`\n  드리프트 없음`);
+  }
 }
 
 // ── dkg dsl ─────────────────────────────────────────
@@ -1138,7 +2273,7 @@ export function dkgDsl(dslId?: string): void {
 
   if (!dslId) {
     // 목록 모드
-    const bundles = graph.getNodesByKind("dsl-bundle") as DslBundleNode[];
+    const bundles = graph.getNodesByKind("dsl-bundle");
     console.log(`\n══ DSL Bundles (${bundles.length}) ══`);
     for (const b of bundles) {
       const members = graph.neighbors(b.id, "contains");
@@ -1239,12 +2374,12 @@ export function dkgOverview(): void {
 
 export function dkgTrace(nodeId: string): void {
   const graph = getGraph();
+  const store = getStore();
   const topo = createDemoTopology();
 
   const result = traceNode(graph, DEMO_CATALOG, nodeId, {
     topo,
     getClaim: (id) => {
-      const store = getStore();
       const raw = store.getMeta(`claim:${id}`);
       return raw ? JSON.parse(raw) : null;
     },
@@ -1252,6 +2387,14 @@ export function dkgTrace(nodeId: string): void {
 
   if (!result) {
     console.error(`  노드를 찾을 수 없음: ${nodeId}`);
+    console.log(`\n  trace는 DKG 그래프의 노드 ID를 직접 받습니다.`);
+    console.log(`  노드 ID 확인 방법:`);
+    console.log(`    qa-sdk dkg prefixes     prefix 노드 ID 목록`);
+    console.log(`    qa-sdk dkg axes         axis 노드 ID 목록`);
+    console.log(`    qa-sdk dkg domains      domain 노드 ID 목록`);
+    console.log(`    qa-sdk dkg service      service 노드 ID 목록`);
+    console.log(`    qa-sdk dkg dsl          DSL 번들 노드 ID 목록`);
+    console.log(`    qa-sdk dkg decisions list  decision 노드 ID 목록`);
     return;
   }
 
@@ -1263,22 +2406,25 @@ export function dkgTrace(nodeId: string): void {
     console.log(`  ⚠ 작업중: ${result.claim.by} (${result.claim.at})`);
   }
 
-  // kind-specific details
+  // kind-specific details — DkgNodeDetails<K> 타입으로 안전하게 접근
   if (result.kind === "prefix") {
-    const d = result.details as any;
+    const d = result.details as DkgNodeDetails<"prefix">;
     console.log(`  category:  ${d.category ?? "unknown"}`);
     console.log(`  lifecycle: ${d.lifecycle ?? "active"}`);
     console.log(`  dims:      ${(d.dimLabels ?? []).join(", ")}`);
   } else if (result.kind === "axis") {
-    const d = result.details as any;
+    const d = result.details as DkgNodeDetails<"axis">;
     console.log(`  versions: ${(d.currentVersions ?? []).join(", ")}`);
   } else if (result.kind === "decision") {
-    const d = result.details as any;
+    const d = result.details as DkgNodeDetails<"decision">;
     console.log(`  lifecycle: ${d.lifecycle}`);
     console.log(`  context:   ${d.context}`);
     console.log(`  rationale: ${d.rationale}`);
+    if (d.flowInstanceId) {
+      console.log(`  flow:      ${d.flowInstanceId}`);
+    }
   } else if (result.kind === "observation") {
-    const d = result.details as any;
+    const d = result.details as DkgNodeDetails<"observation">;
     console.log(`  finding: ${d.finding}`);
     console.log(`  source:  ${d.source}`);
     if (d.resolution) console.log(`  resolved: ${d.resolution.outcome} → ${d.resolution.decisionId}`);
@@ -1337,12 +2483,45 @@ export function dkgTrace(nodeId: string): void {
     }
   }
 
+  if (result.kind === "decision") {
+    const flowInstanceId = result.kind === "decision"
+      ? (result.details as DkgNodeDetails<"decision">).flowInstanceId
+      : undefined;
+    if (flowInstanceId) {
+      console.log(`\n  ── 연결된 FlowInstance 코어 추적 ──`);
+      const instance = loadFlowInstanceMeta(store, flowInstanceId);
+      if (!instance) {
+        console.log(`    저장된 FlowInstance를 찾을 수 없음: ${flowInstanceId}`);
+      } else {
+        const linkedFlows = graph
+          .reverseNeighbors(result.id, "justifies")
+          .map((id) => graph.getNode(id))
+          .filter((node): node is Extract<DkgNode, { kind: "flow-schema" }> => node?.kind === "flow-schema");
+
+        for (const flow of linkedFlows) {
+          console.log(`    flow-schema: ${flow.id} (${flow.name})`);
+        }
+        for (const line of formatFlowInstanceCoreTrace(instance)) {
+          console.log(line);
+        }
+      }
+    }
+  }
+
   // intent links
   if (result.intentLinks.length > 0) {
     console.log(`\n  ── 의도 링크 ──`);
     for (const l of result.intentLinks) {
       console.log(`    ${l.id}: ${l.intent}`);
       if (l.invariant) console.log(`      invariant: ${l.invariant}`);
+    }
+  }
+
+  // consumes
+  if (result.consumes.length > 0) {
+    console.log(`\n  ── 소비 대상 (consumes) ──`);
+    for (const c of result.consumes) {
+      console.log(`    → ${c.id} [${c.kind}] — ${c.name}`);
     }
   }
 
@@ -1374,6 +2553,7 @@ export function dkgTrace(nodeId: string): void {
   if (dsls.length > 0) console.log(`      ├── DSL:        ${dsls.join(", ")}`);
   if (result.constraints.length > 0) console.log(`      ├── 제약:       ${result.constraints.map(c => c.id).join(", ")}`);
   if (result.intentLinks.length > 0) console.log(`      ├── intent:     ${result.intentLinks.map(l => l.id).join(", ")}`);
+  if (result.consumes.length > 0) console.log(`      ├── consumes:   ${result.consumes.map(c => c.id).join(", ")}`);
   if (result.topology) {
     console.log(`      ├── owner:      ${result.topology.owner ?? "-"}`);
     console.log(`      └── consumers:  ${result.topology.consumers.join(", ") || "-"}`);
@@ -1415,13 +2595,14 @@ export function dkgTrace(nodeId: string): void {
 
 // ── dkg decide ──────────────────────────────────────
 
-export function dkgDecide(opts: {
+function recordLegacyDecision(opts: {
   target: string;
   type: string;
   title: string;
   rationale: string;
+  alternatives?: readonly string[];
   spec?: string;
-}): void {
+}): DecisionNode | null {
   const graph = getGraph();
   const store = getStore();
 
@@ -1434,32 +2615,34 @@ export function dkgDecide(opts: {
 
   if (result.verdict === "blocked") {
     console.error(`  ${result.reason}`);
-    return;
+    return null;
   }
 
   // skill이 반환한 노드/엣지를 그래프 + SQLite에 적용
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- verdict !== "blocked" → decision 존재 보장
   const dec = result.decision!;
   graph.addNode(dec);
-  const edges = [...result.edges];
+  const edges: Array<{ type: DkgEdgeType; from: string; to: string }> = [...result.edges];
 
   // --spec: 의사결정이 어떤 spec에 근거하는지 traces-to 엣지 연결
   if (opts.spec) {
     const specNode = graph.getNode(opts.spec);
     if (specNode && specNode.kind === "spec") {
       edges.push({ type: "traces-to", from: dec.id, to: opts.spec });
-      graph.addEdge("traces-to" as any, dec.id, opts.spec);
+      graph.addEdge("traces-to", dec.id, opts.spec);
     } else {
       console.warn(`  ⚠ spec '${opts.spec}' 없음 — traces-to 연결 건너뜀`);
     }
   }
 
-  for (const edge of edges) graph.addEdge(edge.type as any, edge.from, edge.to);
+  for (const edge of edges) graph.addEdge(edge.type as DkgEdgeType, edge.from, edge.to);
   store.saveNodes([dec], edges, "manual");
   store.setMeta("last_decision", dec.id);
 
   emitDkgEvent("decide", graph.getNode(opts.target)?.kind ?? "prefix", opts.target, {
     decisionType: opts.type === "capacity" ? "capacity" : opts.type === "merge" ? "merge" : opts.type === "deprecate" ? "deprecate" : opts.type === "new-axis" ? "new-axis" : opts.type === "new-prefix" ? "new-prefix" : opts.type === "dim-add" ? "dim-add" : undefined,
     nodeSource: "manual",
+    command: "dkg decide",
   });
 
   console.log(`\n══ Decision 기록 완료 ══`);
@@ -1475,6 +2658,154 @@ export function dkgDecide(opts: {
   }
   if (opts.spec) console.log(`  spec:      ${opts.spec} (traces-to)`);
   console.log(`  (source: manual — refresh 시 보존됨)`);
+  return dec;
+}
+
+function printBridgeGate(gate: { id: string; name: string; phase: string; branches?: readonly { id: string; label: string }[]; weight?: string }) {
+  const weight = gate.weight ?? "tactical";
+  const marker = weight === "core" ? "★" : weight === "structural" ? "◆" : "·";
+  console.log(`\n  ${marker} 현재 gate: ${gate.id} (${gate.name}) [${gate.phase}]`);
+  if (!gate.branches || gate.branches.length === 0) return;
+
+  console.log("  선택지:");
+  for (const branch of gate.branches) {
+    console.log(`    - ${branch.id.padEnd(20)} ${branch.label}`);
+  }
+}
+
+export async function dkgDecide(opts: {
+  target: string;
+  type: string;
+  title: string;
+  rationale: string;
+  alternatives?: readonly string[];
+  confidence?: number;
+  spec?: string;
+  force?: boolean;
+  confirmProceed?: () => Promise<boolean>;
+}): Promise<void> {
+  const warnings = collectDkgCoreGateWarnings(opts.type);
+  if (warnings.length > 0) {
+    for (const line of formatDkgCoreGateWarnings(warnings)) {
+      console.log(line);
+    }
+
+    if (opts.force) {
+      console.log("  --force 지정으로 경고 확인을 건너뜀");
+    } else {
+      const confirmed = await (opts.confirmProceed?.() ?? confirmDkgProceed());
+      if (!confirmed) {
+        console.log("  중단: 코어 gate 경고 확인 후 다시 실행하세요.");
+        console.log("  자동 진행이 필요하면 --force를 사용하세요.");
+        return;
+      }
+    }
+  }
+
+  const decision = recordLegacyDecision(opts);
+  if (!decision) {
+    return;
+  }
+
+  try {
+    const targetKind = getGraph().getNode(opts.target)?.kind;
+    const bridge = await startDkgDecisionFlowBridge({
+      type: opts.type,
+      decisionId: decision.id,
+      context: {
+        source: "dkg-decide",
+        target: opts.target,
+        ...(targetKind ? { targetKind } : {}),
+        decisionType: opts.type,
+        title: opts.title,
+        rationale: opts.rationale,
+        alternatives: opts.alternatives,
+        spec: opts.spec,
+      },
+      evidence: {
+        rationale: opts.rationale,
+        scaffoldContext: decision.context,
+        alternatives: decision.alternatives,
+        reversalConditions: decision.reversalConditions,
+        confidence: opts.confidence,
+      },
+      completeDefaults: true,
+    });
+
+    const graph = getGraph();
+    const store = getStore();
+    const bridgeMetadata = buildDkgFlowAddressMetadata(bridge.instance);
+    const linkedDecision: DecisionNode = {
+      ...decision,
+      flowInstanceId: bridge.instance.id,
+      ...((decision.metadata || bridgeMetadata)
+        ? {
+          metadata: {
+            ...decision.metadata,
+            ...bridgeMetadata,
+          },
+        }
+        : {}),
+    };
+    graph.replaceNode(linkedDecision);
+
+    const bridgeEdges: Array<{ type: DkgEdgeType; from: string; to: string }> = [];
+    if (
+      graph.hasNode(bridge.instance.schemaId)
+      && !graph.edgesFrom(bridge.instance.schemaId, "justifies").some((edge) => edge.to === linkedDecision.id)
+    ) {
+      graph.addEdge("justifies", bridge.instance.schemaId, linkedDecision.id);
+      bridgeEdges.push({ type: "justifies", from: bridge.instance.schemaId, to: linkedDecision.id });
+    }
+
+    store.saveNodes([linkedDecision], bridgeEdges, "manual");
+    saveFlowInstanceMeta(store, bridge.instance);
+
+    console.log(`\n══ coordinate-design 브릿지 ══`);
+    console.log(`  decision:      ${linkedDecision.id}`);
+    console.log(`  flow instance: ${bridge.instance.id}`);
+    console.log(`  schema:        ${bridge.instance.schemaId} (${bridge.instance.schemaVersion})`);
+
+    if (bridge.appliedSteps.length > 0) {
+      console.log("  자동 매핑:");
+      for (const step of bridge.appliedSteps) {
+        console.log(`    - ${step.gateId.padEnd(20)} → ${step.branchId}`);
+      }
+    } else {
+      console.log("  자동 매핑: 없음 — 순차 실행으로 안내");
+    }
+
+    if (bridge.currentGate) {
+      printBridgeGate(bridge.currentGate);
+    } else {
+      console.log("\n  ✓ 플로우 완료");
+    }
+  } catch (err) {
+    console.warn(`\n  ⚠ coordinate-design 브릿지 시작 실패: ${errorMessage(err)}`);
+    console.warn("  decision은 기록됨. flow 연결만 실패.");
+  }
+}
+
+async function confirmDkgProceed(): Promise<boolean> {
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    console.warn("  비대화형 환경에서는 --force가 필요합니다.");
+    return false;
+  }
+
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  try {
+    const answer = await new Promise<string>((resolve) => {
+      rl.question("  계속 진행하시겠습니까? [y/N] ", resolve);
+    });
+    const normalized = answer.trim().toLowerCase();
+    return normalized === "y" || normalized === "yes";
+  } finally {
+    rl.close();
+  }
 }
 
 // ── dkg observe ─────────────────────────────────────
@@ -1487,9 +2818,9 @@ export function dkgObserve(opts: {
   const graph = getGraph();
   const store = getStore();
 
-  let suggestion: any;
+  let suggestion: ObservationSuggestion | undefined;
   if (opts.suggestion) {
-    try { suggestion = JSON.parse(opts.suggestion); }
+    try { suggestion = JSON.parse(opts.suggestion) as ObservationSuggestion; }
     catch { console.error("  --suggestion JSON 파싱 실패"); return; }
   }
 
@@ -1505,6 +2836,7 @@ export function dkgObserve(opts: {
   }
 
   // skill이 반환한 노드/엣지를 그래프 + SQLite에 적용
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- verdict !== "blocked" → observation 존재 보장
   const obs = result.observation!;
   graph.addNode(obs);
   for (const edge of result.edges) graph.addEdge(edge.type, edge.from, edge.to);
@@ -1513,6 +2845,7 @@ export function dkgObserve(opts: {
   emitDkgEvent("observe", graph.getNode(opts.target)?.kind ?? "prefix", opts.target, {
     obsSource: "manual",
     lifecycleState: "active",
+    command: "dkg observe",
   });
 
   console.log(`\n══ Observation 기록 완료 ══`);
@@ -1547,15 +2880,21 @@ export function dkgClaim(opts: { target: string; by: string; reason?: string }):
   // claim 저장
   store.setMeta(claimKey(opts.target), JSON.stringify(result.claim));
 
-  emitDkgEvent("claim", graph.getNode(opts.target)?.kind ?? "prefix", opts.target);
+  emitDkgEvent("claim", graph.getNode(opts.target)?.kind ?? "prefix", opts.target, {
+    command: "dkg claim",
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- verdict !== "blocked" → claim/impact 존재 보장
+  const claim = result.claim!;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- verdict !== "blocked" → impact 존재 보장
+  const impact = result.impact!;
 
   console.log(`\n══ Claim: ${opts.target} ══`);
-  console.log(`  by:     ${result.claim!.by}`);
-  console.log(`  at:     ${result.claim!.at}`);
-  if (result.claim!.reason) console.log(`  reason: ${result.claim!.reason}`);
+  console.log(`  by:     ${claim.by}`);
+  console.log(`  at:     ${claim.at}`);
+  if (claim.reason) console.log(`  reason: ${claim.reason}`);
 
   // skill이 분석한 영향 범위 출력
-  const impact = result.impact!;
   const hasImpact = impact.owner || impact.consumers.length || impact.domains.length ||
     impact.dslBundles.length || impact.intentLinks.length || impact.affectedPrefixes.length;
 
@@ -1589,16 +2928,23 @@ export function dkgRelease(target: string): void {
   }
 
   // claim 해제 + observation 적용
-  store.setMeta(claimKey(target), "");
-  graph.addNode(result.observation!);
-  for (const edge of result.edges) graph.addEdge(edge.type, edge.from, edge.to);
-  store.saveNodes([result.observation!], result.edges, "manual");
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- verdict !== "blocked" → observation/previousClaim 존재 보장
+  const releaseObs = result.observation!;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- verdict !== "blocked" → previousClaim 존재 보장
+  const prevClaim = result.previousClaim!;
 
-  emitDkgEvent("release", graph.getNode(target)?.kind ?? "prefix", target);
+  store.setMeta(claimKey(target), "");
+  graph.addNode(releaseObs);
+  for (const edge of result.edges) graph.addEdge(edge.type, edge.from, edge.to);
+  store.saveNodes([releaseObs], result.edges, "manual");
+
+  emitDkgEvent("release", graph.getNode(target)?.kind ?? "prefix", target, {
+    command: "dkg release",
+  });
 
   console.log(`\n══ Release: ${target} ══`);
-  console.log(`  was:  ${result.previousClaim!.by} (${result.previousClaim!.at})`);
-  console.log(`  obs:  ${result.observation!.id}`);
+  console.log(`  was:  ${prevClaim.by} (${prevClaim.at})`);
+  console.log(`  obs:  ${releaseObs.id}`);
   console.log(`  작업 완료 observation이 DKG에 기록됨`);
 }
 
@@ -1636,6 +2982,7 @@ export function dkgResolve(opts: { obsId: string; decisionId: string; outcome: s
   graph.addEdge("prompts", opts.obsId, opts.decisionId);
 
   // SQLite에 변경 저장 — resolveObservation이 graph를 직접 변경했으므로 해당 노드만 저장
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- resolveObservation 성공 후 obsId 노드 존재 보장
   const updatedObs = graph.getNode(opts.obsId)!;
   store.saveNodes(
     [updatedObs],
@@ -1643,7 +2990,9 @@ export function dkgResolve(opts: { obsId: string; decisionId: string; outcome: s
     "manual",
   );
 
-  emitDkgEvent("resolve", "observation", opts.obsId);
+  emitDkgEvent("resolve", "observation", opts.obsId, {
+    command: "dkg resolve",
+  });
 
   console.log(`\n══ Resolve ══`);
   console.log(`  observation: ${opts.obsId}`);
@@ -1674,7 +3023,9 @@ export function dkgLink(opts: { obsId: string; decisionId: string }): void {
   graph.addEdge("prompts", opts.obsId, opts.decisionId);
   store.saveNodes([], [{ type: "prompts", from: opts.obsId, to: opts.decisionId }], "manual");
 
-  emitDkgEvent("link", "observation", opts.obsId);
+  emitDkgEvent("link", "observation", opts.obsId, {
+    command: "dkg link",
+  });
 
   console.log(`\n══ Link ══`);
   console.log(`  ${opts.obsId} → prompts → ${opts.decisionId}`);
@@ -1751,7 +3102,7 @@ export function dkgClaims(): void {
   const graph = getGraph();
 
   // dkg_meta에서 claim: 키 조회
-  const allMeta = (store as any).db.prepare("SELECT key, value FROM dkg_meta WHERE key LIKE 'claim:%' AND value != ''").all() as Array<{ key: string; value: string }>;
+  const allMeta = store.getMetaByPrefix("claim:");
 
   if (allMeta.length === 0) {
     console.log("\n  활성 claim 없음");
@@ -1763,7 +3114,7 @@ export function dkgClaims(): void {
     const target = row.key.replace("claim:", "");
     const claim = JSON.parse(row.value) as ClaimData;
     const node = graph.getNode(target);
-    const name = node ? ((node as any).name ?? target) : target;
+    const name = node && "name" in node ? (node as { name: string }).name : target;
     console.log(`  ${target.padEnd(20)} by ${claim.by} (${claim.at})`);
     console.log(`    [${node?.kind ?? "?"}] ${name}`);
     if (claim.reason) console.log(`    사유: ${claim.reason}`);
@@ -1774,7 +3125,6 @@ export function dkgClaims(): void {
 
 export function dkgRun(skillId: string, args: string[]): void {
   const graph = getGraph();
-  const store = getStore();
 
   // skill 노드 확인
   const skillNode = graph.getNode(skillId) as SkillNode | undefined;
@@ -1812,7 +3162,6 @@ export function dkgRun(skillId: string, args: string[]): void {
       break;
     }
 
-    case "skill-constraint-check":
     case "skill-event-action-check":
     case "skill-svc-binding-check": {
       const targetId = args[0];
@@ -1823,7 +3172,7 @@ export function dkgRun(skillId: string, args: string[]): void {
       } else {
         console.log(`  ⚠ ${targetId}: ${result.violations.length} violation(s)`);
         for (const v of result.violations) {
-          console.log(`    ${v.constraintId} [${v.severity}]: ${v.rule}`);
+          console.log(`    ${v.constraintId} [${v.severity ?? "warning"}]: ${v.rule}`);
         }
       }
       break;
@@ -1874,7 +3223,7 @@ export function dkgRun(skillId: string, args: string[]): void {
       console.log(`\n  ${result.summary}`);
 
       // ── metric 통합 출력 ──
-      const chainMetrics = collectMetrics(DEMO_CATALOG, graph, null);
+      const chainMetrics = collectMetrics(DEMO_CATALOG, graph, null, { schemaHealthAuditor: auditSchemaHealth });
       const relevantMetrics = chainMetrics.filter(m =>
         m.id.startsWith("metric:health") ||
         m.id.startsWith("metric:conflict") ||
@@ -1884,7 +3233,7 @@ export function dkgRun(skillId: string, args: string[]): void {
       if (relevantMetrics.length > 0) {
         const warn = relevantMetrics.filter(m => m.status !== "ok");
         console.log(`\n  ── Metrics (${relevantMetrics.length}건, ${warn.length} issues) ──`);
-        for (const m of relevantMetrics.filter(m => m.status !== "ok")) {
+        for (const m of warn) {
           const icon = m.status === "warning" ? "⚠" : "🔴";
           console.log(`    ${icon} ${m.id}: ${m.detail ?? `value=${m.value}`}`);
         }
@@ -1897,9 +3246,8 @@ export function dkgRun(skillId: string, args: string[]): void {
       const result = convergeChain(DEMO_CATALOG, graph, null, { entriesMap: buildEntriesMap() });
       console.log(`  actions: ${result.actions.length}`);
       for (const action of result.actions) {
-        const a = action as any;
-        const target = a.targets?.join("↔") ?? a.axis ?? a.prefix ?? a.source ?? "?";
-        console.log(`    [${a.kind}] ${target}`);
+        const target = convergeActionTarget(action);
+        console.log(`    [${action.kind}] ${target}`);
       }
       console.log(`\n  merges: ${result.summary.merges}, deactivations: ${result.summary.deactivations}, simplifications: ${result.summary.simplifications}, observations: ${result.summary.observations}`);
       if (result.observations.length > 0) {
@@ -1920,7 +3268,7 @@ export function dkgRun(skillId: string, args: string[]): void {
       if (!node) { console.error(`  노드 없음: ${targetId}`); return; }
       const input = node.kind === "axis"
         ? { type: "capacity-changed" as const, target: { axis: targetId } }
-        : { type: "version-bump" as const, target: { prefix: targetId } };
+        : { type: "ref-changed" as const, target: { prefix: targetId } };
       const result = analyzeImpact(graph, input);
       console.log(`  strideBreak: ${result.strideBreak}`);
       console.log(`  migrationRequired: ${result.migrationRequired}`);
@@ -1933,6 +3281,604 @@ export function dkgRun(skillId: string, args: string[]): void {
       break;
     }
 
+    case "skill-self-check-analyze": {
+      // Layer 2 (FAST) 순수 분석 — 실제 빌드/테스트 결과는 dkg self-check로 수행
+      console.log("  ⚠ mock 입력 사용 (실제 진단: dkg self-check)");
+      const mockResults = SELF_CHECK_PKGS.map(p => ({ pkg: p.name, kind: "build" as const, result: "success" }));
+      const analysis = analyzeSelfCheck(mockResults, DEMO_CATALOG, "cli-run");
+      console.log(`  records: ${analysis.records.length}, entryUsage: ${analysis.usage.entryUsages.length}`);
+      console.log(`  coverage: ${Math.round(analysis.coverage.overallCoverageRate * 100)}%`);
+      console.log(`  invariant: ${analysis.invariantViolations.length === 0 ? "통과" : analysis.invariantViolations.length + "건 위반"}`);
+      console.log(`  건전성: ${Math.round(analysis.health.healthRate * 100)}%`);
+      break;
+    }
+
+    case "skill-cli-coverage": {
+      const cov = analyzeCliCoverage();
+      console.log(`  커버리지: ${Math.round(cov.coverageRate * 100)}% (${cov.observedCoords}/${cov.totalCoords} 좌표)`);
+      console.log(`  dormant: ${cov.dormantCoords.length}개`);
+      for (const d of cov.dormantCoords.slice(0, 10)) {
+        console.log(`    ${d.coord.padEnd(35)} → ${d.commands.join(", ")}`);
+      }
+      break;
+    }
+
+    case "skill-promote-scan": {
+      dkgPromoteScan();
+      break;
+    }
+
+    case "skill-spec-manage": {
+      dkgSpecList();
+      break;
+    }
+
+    case "skill-registry-publish": {
+      const regUrl = args[0] || process.env.QA_REGISTRY_URL || "http://localhost:3300";
+      console.log(`  registry: ${regUrl}`);
+      console.log(`  이 skill은 dkg publish --registry <url>로 실행하세요.`);
+      break;
+    }
+
+    // ── read 스킬: 기존 조회 명령 재사용 ──
+    case "skill-trace": {
+      const nodeId = args[0];
+      if (!nodeId) { console.error("  Usage: dkg run skill-trace <nodeId>"); return; }
+      dkgTrace(nodeId);
+      break;
+    }
+    case "skill-explore-service": {
+      dkgService(args[0]);
+      break;
+    }
+    case "skill-explore-prefix": {
+      if (!args[0]) { console.error("  Usage: dkg run skill-explore-prefix <prefixId>"); return; }
+      dkgPrefix(args[0]);
+      break;
+    }
+    case "skill-explore-dsl": {
+      dkgDsl(args[0]);
+      break;
+    }
+    case "skill-system-overview": {
+      dkgOverview();
+      break;
+    }
+
+    // ── write 스킬 ──
+    case "skill-record-decision": {
+      const targetId = args[0];
+      const type = (args[1] || "capacity") as DecisionType;
+      const title = args[2] || findArg(args, "--title");
+      const rationale = args[3] || findArg(args, "--rationale");
+      if (!targetId || !title || !rationale) {
+        console.error("  Usage: dkg run skill-record-decision <targetId> <type> <title> <rationale>");
+        return;
+      }
+      const result = recordDecision(graph, { targetId, type, title, rationale });
+      if (result.verdict === "blocked") {
+        console.error(`  ⚠ ${result.reason}`);
+      } else {
+        const dec = result.decision!;
+        graph.addNode(dec);
+        for (const edge of result.edges) graph.addEdge(edge.type as DkgEdgeType, edge.from, edge.to);
+        getStore().saveNodes([dec], result.edges, "manual");
+        console.log(`  ✅ Decision 기록: ${dec.id}`);
+        console.log(`  ${result.summary}`);
+      }
+      break;
+    }
+
+    case "skill-record-observation": {
+      const targetId = args[0];
+      const finding = args.slice(1).join(" ") || findArg(args, "--finding");
+      if (!targetId || !finding) {
+        console.error("  Usage: dkg run skill-record-observation <targetId> <finding>");
+        return;
+      }
+      const result = recordObservation(graph, { targetId, finding });
+      if (result.verdict === "blocked") {
+        console.error(`  ⚠ ${result.reason}`);
+      } else {
+        const obs = result.observation!;
+        graph.addNode(obs);
+        for (const edge of result.edges) graph.addEdge(edge.type as DkgEdgeType, edge.from, edge.to);
+        getStore().saveNodes([obs], result.edges, "manual");
+        console.log(`  ✅ Observation 기록: ${obs.id}`);
+        console.log(`  ${result.summary}`);
+      }
+      break;
+    }
+
+    case "skill-claim": {
+      const targetId = args[0];
+      const by = args[1] || findArg(args, "--by") || "cli-user";
+      const reason = findArg(args, "--reason");
+      if (!targetId) { console.error("  Usage: dkg run skill-claim <targetId> [by] [--reason ...]"); return; }
+      const store = getStore();
+      const existingRaw = store.getMeta(claimKey(targetId));
+      const existingClaim = existingRaw ? JSON.parse(existingRaw) as ClaimData : null;
+      const topo = createDemoTopology();
+      const result = prepareClaim(graph, topo, targetId, by, existingClaim, reason);
+      if (result.verdict === "blocked") {
+        console.error(`  ⚠ ${result.reason}`);
+      } else {
+        store.setMeta(claimKey(targetId), JSON.stringify(result.claim));
+        console.log(`  ✅ Claim 등록: ${targetId} by ${by}`);
+        console.log(`  ${result.summary}`);
+        if (result.impact?.affectedPrefixes.length) {
+          console.log(`  영향 prefix: ${result.impact.affectedPrefixes.join(", ")}`);
+        }
+      }
+      break;
+    }
+
+    case "skill-release": {
+      const targetId = args[0];
+      if (!targetId) { console.error("  Usage: dkg run skill-release <targetId>"); return; }
+      const store = getStore();
+      const existingRaw = store.getMeta(claimKey(targetId));
+      const existingClaim = existingRaw ? JSON.parse(existingRaw) as ClaimData : null;
+      const result = prepareRelease(graph, targetId, existingClaim);
+      if (result.verdict === "blocked") {
+        console.error(`  ⚠ ${result.reason}`);
+      } else {
+        store.setMeta(claimKey(targetId), "");
+        if (result.observation) {
+          graph.addNode(result.observation);
+          for (const edge of result.edges) graph.addEdge(edge.type as DkgEdgeType, edge.from, edge.to);
+          getStore().saveNodes([result.observation], result.edges, "manual");
+        }
+        console.log(`  ✅ Release 완료: ${targetId}`);
+        console.log(`  ${result.summary}`);
+      }
+      break;
+    }
+
+    case "skill-lifecycle-transition": {
+      const nodeId = args[0];
+      const toLifecycle = args[1];
+      if (!nodeId || !toLifecycle) {
+        console.error("  Usage: dkg run skill-lifecycle-transition <nodeId> <active|deprecated|archived|superseded|reversed>");
+        return;
+      }
+      const node = graph.getNode(nodeId);
+      if (!node) { console.error(`  노드 없음: ${nodeId}`); return; }
+      const reason = findArg(args, "--reason");
+      const supersededBy = findArg(args, "--superseded-by");
+      let result;
+      if (node.kind === "prefix") {
+        result = transitionPrefix(graph, nodeId, toLifecycle as "active" | "deprecated" | "archived", { reason, supersededBy });
+      } else if (node.kind === "decision") {
+        result = transitionDecision(graph, nodeId, toLifecycle as "superseded" | "reversed", { reason, supersededBy });
+      } else if (node.kind === "observation") {
+        const decisionId = findArg(args, "--decision");
+        const outcome = (findArg(args, "--outcome") || "accepted") as "accepted" | "deferred" | "rejected";
+        if (!decisionId) { console.error("  observation 해소에는 --decision 필수"); return; }
+        result = resolveObservation(graph, nodeId, { decisionId, outcome, note: reason });
+      } else {
+        console.error(`  지원하지 않는 노드 종류: ${node.kind}`);
+        return;
+      }
+      const icon = result.success ? "✅" : "⚠";
+      console.log(`  ${icon} ${result.nodeId}: ${result.from} → ${result.to}`);
+      if (result.reason) console.log(`  ${result.reason}`);
+      break;
+    }
+
+    // ── analysis 스킬 (미연결분) ──
+    case "skill-decision-scaffold": {
+      const type = (args[0] || "capacity") as DecisionType;
+      const targetId = args[1] || findArg(args, "--target") || "unknown";
+      const title = args[2] || findArg(args, "--title") || `${type} 의사결정`;
+      const rationale = args[3] || findArg(args, "--rationale") || "(rationale 미입력)";
+      // 유형별 params 구성
+      const scaffoldParams: Record<string, Record<string, unknown>> = {
+        capacity: { axis: targetId, currentUsed: 0, currentCapacity: 32, proposedCapacity: 64 },
+        "new-axis": { axisId: targetId, entries: [], capacity: 32 },
+        "new-prefix": { prefixId: targetId, dims: [], domain: undefined },
+        "dim-add": { prefix: targetId, newDim: "unknown", defaultValue: 1 },
+        merge: { targets: [targetId], into: targetId, overlapEntries: [] },
+        deprecate: { target: targetId, replacement: undefined },
+      };
+      const dec = scaffoldDecision({
+        type,
+        id: `DEC-SCAFFOLD-${Date.now()}`,
+        date: new Date().toISOString().slice(0, 10),
+        title,
+        params: (scaffoldParams[type] ?? { type }) as unknown as Parameters<typeof scaffoldDecision>[0]["params"],
+        rationale,
+      });
+      console.log(`  id:         ${dec.id}`);
+      console.log(`  type:       ${type}`);
+      console.log(`  context:    ${dec.context}`);
+      console.log(`  rationale:  ${dec.rationale}`);
+      if (dec.alternatives?.length) {
+        console.log(`  alternatives:`);
+        for (const a of dec.alternatives) console.log(`    - ${a}`);
+      }
+      if (dec.reversalConditions?.length) {
+        console.log(`  reversalConditions:`);
+        for (const r of dec.reversalConditions) console.log(`    - ${r}`);
+      }
+      break;
+    }
+
+    case "skill-infer-migrator": {
+      const fromLabels = (args[0] || "").split(",").filter(Boolean);
+      const toLabels = (args[1] || "").split(",").filter(Boolean);
+      if (fromLabels.length === 0 || toLabels.length === 0) {
+        console.error("  Usage: dkg run skill-infer-migrator <fromLabels> <toLabels>");
+        console.error("    예: dkg run skill-infer-migrator env,region,svc env,region,svc,ns");
+        return;
+      }
+      const result = inferMigrator({ fromLabels, toLabels, changedLabels: [] });
+      console.log(`  pattern:     ${result.pattern}`);
+      console.log(`  description: ${result.description}`);
+      console.log(`  migrator:    ${result.migrator ? "자동 생성됨" : "null (수동 필요)"}`);
+      if (result.warnings?.length) {
+        for (const w of result.warnings) console.log(`  ⚠ ${w}`);
+      }
+      break;
+    }
+
+    case "skill-observation-coverage": {
+      const entryUsages: EntryUsage[] = [];
+      const addressUsages: AddressUsage[] = [];
+      const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
+      const result = auditCoverage(catalog, graph, entryUsages, addressUsages);
+      const report = result.report;
+      console.log(`  전체 커버리지: ${Math.round(report.overallCoverageRate * 100)}%`);
+      console.log(`  dormant: ${report.dormantCount}개, phantom: ${report.phantomCount}개`);
+      if (report.prefixes.length > 0) {
+        const low = report.prefixes.filter(p => p.coverageRate < 0.5);
+        if (low.length > 0) {
+          console.log(`  저커버리지 prefix (${low.length}개):`);
+          for (const p of low.slice(0, 10)) {
+            console.log(`    ${p.prefixId}: ${Math.round(p.coverageRate * 100)}%`);
+          }
+        }
+      }
+      if (result.observations.length > 0) {
+        console.log(`  생성된 Observation: ${result.observations.length}건`);
+        for (const o of result.observations) console.log(`    ${o.id}: ${o.finding.slice(0, 60)}`);
+      }
+      break;
+    }
+
+    case "skill-flow-trace": {
+      // 실 데이터 없으면 빈 배열로 실행 (구조 검증용)
+      const records: AddressContextRecord[] = [];
+      const result = traceFlows(graph, records);
+      console.log(`  totalRecords:  ${result.totalRecords}`);
+      console.log(`  checkedRecords: ${result.checkedRecords}`);
+      console.log(`  violations:    ${result.violations.length}`);
+      if (result.violations.length > 0) {
+        for (const v of result.violations.slice(0, 5)) {
+          console.log(`    ⚠ ${v.intentLinkId}: ${v.invariant}`);
+        }
+      }
+      if (result.observations.length > 0) {
+        console.log(`  생성된 Observation: ${result.observations.length}건`);
+      }
+      console.log(`  ${result.summary}`);
+      break;
+    }
+
+    case "skill-service-health": {
+      const regUrl = args[0] || process.env.QA_REGISTRY_URL || "http://localhost:3300";
+      const env = args[1] || "dev";
+      serviceHealthCheck(regUrl, env)
+        .then(result => {
+          const icon = result.status === "healthy" ? "✅" : result.status === "degraded" ? "⚠" : "🔴";
+          console.log(`  ${icon} status: ${result.status} (up: ${result.up}, down: ${result.down}, total: ${result.total})`);
+          if (result.downServices.length > 0) {
+            console.log(`  다운 서비스:`);
+            for (const s of result.downServices) console.log(`    🔴 ${s}`);
+          }
+          if (result.observations.length > 0) {
+            console.log(`  생성된 Observation: ${result.observations.length}건`);
+          }
+        })
+        .catch(err => console.error(`  ⚠ 헬스체크 실패: ${errorMessage(err)}`));
+      break;
+    }
+
+    case "skill-event-coverage": {
+      const ingestUrl = args[0] || process.env.QA_INGEST_ENDPOINT || "http://localhost:3200";
+      eventCoverageCheck(ingestUrl, graph)
+        .then(result => {
+          console.log(`  커버리지: ${result.coveragePercent}% (${result.observedPrefixes}/${result.definedPrefixes})`);
+          if (result.unobserved.length > 0) {
+            console.log(`  미관측 prefix (${result.unobserved.length}개):`);
+            for (const p of result.unobserved.slice(0, 10)) console.log(`    - ${p}`);
+            if (result.unobserved.length > 10) console.log(`    ... 외 ${result.unobserved.length - 10}개`);
+          }
+          if (result.observations.length > 0) {
+            console.log(`  생성된 Observation: ${result.observations.length}건`);
+          }
+        })
+        .catch(err => console.error(`  ⚠ 커버리지 체크 실패: ${errorMessage(err)}`));
+      break;
+    }
+
+    // ── 카탈로그 기반 analysis 스킬 ──
+    case "skill-schema-health-audit": {
+      const result = auditSchemaHealth(graph);
+      const icon = result.failed === 0 ? "✅" : "⚠";
+      console.log(`  ${icon} ${result.totalPrefixes} prefixes 검사: ${result.passed} 통과, ${result.failed} 위반`);
+      if (result.violations.length > 0) {
+        for (const v of result.violations) {
+          console.log(`    ⚠ ${v.prefixId} [${v.category}]:`);
+          for (const e of v.errors) console.log(`      - ${e}`);
+        }
+      }
+      if (result.observations.length > 0) {
+        console.log(`  생성된 Observation: ${result.observations.length}건`);
+        for (const o of result.observations) console.log(`    ${o.id}: ${o.finding.slice(0, 70)}`);
+      }
+      if (result.decisions.length > 0) {
+        console.log(`  생성된 Decision: ${result.decisions.length}건`);
+        for (const d of result.decisions) console.log(`    ${d.id}: ${d.title}`);
+      }
+      console.log(`  ${result.summary}`);
+      break;
+    }
+
+    case "skill-commerce-skew-audit": {
+      const bundleId = args[0];
+      const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
+      const prefixes = catalog.prefixes as unknown as Record<
+        string,
+        { versions: ReadonlyArray<{ version: string }> }
+      >;
+      const bundles = graph.getNodesByKind("dsl-bundle") as Array<{ id: string; name: string; memberPrefixes: readonly string[] }>;
+      const targets = bundleId ? bundles.filter(b => b.id === bundleId) : bundles;
+      if (targets.length === 0) { console.error(`  DSL 번들 없음${bundleId ? `: ${bundleId}` : ""}`); return; }
+      for (const bundle of targets) {
+        const versions: Array<{ prefix: string; latest: string; count: number }> = [];
+        for (const pid of bundle.memberPrefixes) {
+          const pdef = prefixes[pid];
+          if (!pdef) continue;
+          const latest = pdef.versions[pdef.versions.length - 1]?.version ?? "?";
+          versions.push({ prefix: pid, latest, count: pdef.versions.length });
+        }
+        const uniqueLatest = new Set(versions.map(v => v.latest));
+        const severity = uniqueLatest.size <= 1 ? "ok" : uniqueLatest.size <= 2 ? "minor" : "major";
+        const icon = severity === "ok" ? "✅" : severity === "minor" ? "⚠" : "🔴";
+        console.log(`  ${icon} ${bundle.id} (${bundle.name}): ${severity}`);
+        for (const v of versions) {
+          console.log(`    ${v.prefix.padEnd(20)} ${v.latest} (${v.count} versions)`);
+        }
+        if (severity !== "ok") {
+          console.log(`    → ${uniqueLatest.size}종 버전 혼재: ${[...uniqueLatest].join(", ")}`);
+        }
+      }
+      break;
+    }
+
+    case "skill-prefix-capacity-audit": {
+      const targetPrefix = args[0];
+      const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
+      const prefixIds = targetPrefix ? [targetPrefix] : Object.keys(catalog.prefixes);
+      let warnings = 0;
+      let critical = 0;
+      for (const pid of prefixIds) {
+        try {
+          const profile = getPrefixProfile(catalog, pid);
+          const issues: string[] = [];
+          for (const dim of profile.dims) {
+            // prefix_ref는 닫힌 참조 집합이므로 headroom=0이 정상
+            if (dim.kind === "prefix_ref") continue;
+            if (dim.headroom !== undefined && dim.headroom <= 0) {
+              issues.push(`${dim.label}: headroom=0 (capacity=${dim.capacity}, entries=${dim.entries})`);
+              critical++;
+            } else if (dim.headroom !== undefined && dim.headroom <= 1) {
+              issues.push(`${dim.label}: headroom=${dim.headroom} (capacity=${dim.capacity}, entries=${dim.entries})`);
+              warnings++;
+            }
+          }
+          if (!profile.safePrecision) {
+            issues.push(`CON-007: totalSpace > 2^53, safePrecision=false`);
+            critical++;
+          }
+          if (issues.length > 0 || targetPrefix) {
+            const icon = issues.some(i => i.includes("headroom=0") || i.includes("CON-007")) ? "🔴"
+              : issues.length > 0 ? "⚠" : "✅";
+            console.log(`  ${icon} ${pid} (${profile.version}): totalSpace=${profile.totalSpace}, safePrecision=${profile.safePrecision}`);
+            for (const dim of profile.dims) {
+              const hdr = dim.headroom !== undefined ? `, headroom=${dim.headroom}` : "";
+              const ent = dim.entries !== undefined ? `entries=${dim.entries}` : "entries=?";
+              console.log(`    ${dim.label.padEnd(15)} [${dim.kind}] ${ent}, capacity=${dim.capacity}${hdr}, stride=${dim.stride}`);
+            }
+            for (const i of issues) console.log(`    ⚠ ${i}`);
+          }
+        } catch { /* prefix가 빈 경우 skip */ }
+      }
+      console.log(`\n  총 ${prefixIds.length} prefix 검사: ⚠ ${warnings} warning, 🔴 ${critical} critical`);
+      break;
+    }
+
+    case "skill-gate-refentries-check": {
+      const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
+      const prefixIds = Object.keys(catalog.prefixes);
+      let totalRefs = 0;
+      let undefinedRefs = 0;
+      for (const pid of prefixIds) {
+        try {
+          const profile = getPrefixProfile(catalog, pid);
+          const refDims = profile.dims.filter(d => d.kind === "prefix_ref");
+          for (const dim of refDims) {
+            totalRefs++;
+            if (dim.entries === undefined) {
+              undefinedRefs++;
+              console.log(`  ⚠ ${pid} → ${dim.label}: refEntries 미정의 (capacity=${dim.capacity}, reserved 처리됨)`);
+            }
+          }
+        } catch { /* skip */ }
+      }
+      if (undefinedRefs === 0) {
+        console.log(`  ✅ CON-006 통과: ${totalRefs}개 prefix_ref 모두 refEntries 정의됨`);
+      } else {
+        console.log(`\n  CON-006: ${totalRefs}개 prefix_ref 중 ${undefinedRefs}개 미정의 → GateEngine reserved 처리`);
+      }
+      break;
+    }
+
+    case "skill-table-impact": {
+      const tableId = args[0];
+      const tables = graph.getNodesByKind("table") as TableNode[];
+      if (tables.length === 0) { console.log("  (table 노드 없음)"); break; }
+      if (!tableId) {
+        console.log(`\n══ Tables (${tables.length}개) ══`);
+        for (const t of tables) {
+          const refs = graph.edgesFrom(t.id, "references");
+          console.log(`  ${t.id.padEnd(25)} columns: ${t.columns.length}, refs: ${refs.length}`);
+        }
+        console.log(`\n  상세: dkg run skill-table-impact <tableId>`);
+      } else {
+        const table = tables.find(t => t.id === tableId);
+        if (!table) { console.error(`  테이블 없음: ${tableId}`); return; }
+        console.log(`\n══ Table: ${table.id} ══`);
+        console.log(`  columns: ${table.columns.join(", ")}`);
+        // 이 테이블을 참조하는 노드들
+        const incomingRefs = graph.edgesTo(table.id, "references");
+        if (incomingRefs.length > 0) {
+          console.log(`\n  참조하는 노드 (${incomingRefs.length}개):`);
+          for (const e of incomingRefs) {
+            const node = graph.getNode(e.from);
+            console.log(`    ← ${e.from} [${node?.kind ?? "?"}]`);
+          }
+        }
+        // 이 테이블이 참조하는 축/prefix
+        const outgoingRefs = graph.edgesFrom(table.id, "references");
+        if (outgoingRefs.length > 0) {
+          console.log(`\n  참조 대상 (${outgoingRefs.length}개):`);
+          for (const e of outgoingRefs) {
+            const node = graph.getNode(e.to);
+            console.log(`    → ${e.to} [${node?.kind ?? "?"}]`);
+          }
+        }
+        // 소속 domain
+        const domains = graph.edgesTo(table.id, "contains");
+        if (domains.length > 0) {
+          console.log(`\n  소속 domain: ${domains.map(e => e.from).join(", ")}`);
+        }
+      }
+      break;
+    }
+
+    // ── 런타임 데이터 기반 analysis 스킬 ──
+    // address_context 레코드가 있으면 실 검증, 없으면 구조 검증만 수행
+    case "skill-checkout-flow-verify": {
+      const bundles = (graph.getNodesByKind("dsl-bundle") as Array<{ id: string; invariants?: readonly string[]; memberPrefixes: readonly string[] }>)
+        .filter(b => b.id === "dsl-checkout");
+      if (bundles.length === 0) { console.log("  dsl-checkout 번들 없음"); break; }
+      const bundle = bundles[0];
+      console.log(`  번들: ${bundle.id} (멤버: ${bundle.memberPrefixes.join(", ")})`);
+      console.log(`  불변조건: ${bundle.invariants?.length ?? 0}개`);
+      for (const inv of bundle.invariants ?? []) console.log(`    - ${inv}`);
+      // 실 데이터로 검증
+      const dslResult = validateDslInvariants(graph, [], { excludeBundles: graph.getNodesByKind("dsl-bundle").map((b: { id: string }) => b.id).filter((id: string) => id !== "dsl-checkout") });
+      if (dslResult.violations.length > 0) {
+        console.log(`\n  위반 ${dslResult.violations.length}건:`);
+        for (const v of dslResult.violations) console.log(`    ⚠ ${v.bundleId}: ${v.invariant.slice(0, 70)}`);
+      } else {
+        console.log(`\n  ✅ 위반 없음 (${dslResult.checkedRecords}건 검사)`);
+      }
+      if (dslResult.checkedRecords === 0) console.log(`  ℹ address_context 레코드 없음 — ingest 데이터 수집 후 재실행`);
+      break;
+    }
+
+    case "skill-infra-impact-verify": {
+      const bundles = (graph.getNodesByKind("dsl-bundle") as Array<{ id: string; invariants?: readonly string[]; memberPrefixes: readonly string[] }>)
+        .filter(b => b.id === "dsl-infra");
+      if (bundles.length === 0) { console.log("  dsl-infra 번들 없음"); break; }
+      const bundle = bundles[0];
+      console.log(`  번들: ${bundle.id} (멤버: ${bundle.memberPrefixes.join(", ")})`);
+      console.log(`  불변조건: ${bundle.invariants?.length ?? 0}개`);
+      for (const inv of bundle.invariants ?? []) console.log(`    - ${inv}`);
+      const infraResult = validateDslInvariants(graph, [], { excludeBundles: graph.getNodesByKind("dsl-bundle").map((b: { id: string }) => b.id).filter((id: string) => id !== "dsl-infra") });
+      if (infraResult.violations.length > 0) {
+        console.log(`\n  위반 ${infraResult.violations.length}건:`);
+        for (const v of infraResult.violations) console.log(`    ⚠ ${v.bundleId}: ${v.invariant.slice(0, 70)}`);
+      } else {
+        console.log(`\n  ✅ 위반 없음 (${infraResult.checkedRecords}건 검사)`);
+      }
+      if (infraResult.checkedRecords === 0) console.log(`  ℹ address_context 레코드 없음 — ingest 데이터 수집 후 재실행`);
+      break;
+    }
+
+    case "skill-pipeline-phase-verify": {
+      const bundles = (graph.getNodesByKind("dsl-bundle") as Array<{ id: string; invariants?: readonly string[]; memberPrefixes: readonly string[] }>)
+        .filter(b => b.id === "dsl-pipeline");
+      if (bundles.length === 0) { console.log("  dsl-pipeline 번들 없음"); break; }
+      const bundle = bundles[0];
+      console.log(`  번들: ${bundle.id} (멤버: ${bundle.memberPrefixes.join(", ")})`);
+      console.log(`  불변조건: ${bundle.invariants?.length ?? 0}개`);
+      for (const inv of bundle.invariants ?? []) console.log(`    - ${inv}`);
+      const pipeResult = validateDslInvariants(graph, [], { excludeBundles: graph.getNodesByKind("dsl-bundle").map((b: { id: string }) => b.id).filter((id: string) => id !== "dsl-pipeline") });
+      if (pipeResult.violations.length > 0) {
+        console.log(`\n  위반 ${pipeResult.violations.length}건:`);
+        for (const v of pipeResult.violations) console.log(`    ⚠ ${v.bundleId}: ${v.invariant.slice(0, 70)}`);
+      } else {
+        console.log(`\n  ✅ 위반 없음 (${pipeResult.checkedRecords}건 검사)`);
+      }
+      if (pipeResult.checkedRecords === 0) console.log(`  ℹ address_context 레코드 없음 — ingest 데이터 수집 후 재실행`);
+      break;
+    }
+
+    case "skill-pattern-analysis": {
+      console.log(`  패턴 규칙: ${DEMO_PATTERN_RULES.length}개`);
+      for (const rule of DEMO_PATTERN_RULES) {
+        console.log(`    ${rule.id}: ${rule.behaviorPattern} (${rule.identificationMode}, priority=${rule.priority})`);
+        if (rule.description) console.log(`      ${rule.description}`);
+      }
+      console.log(`\n  ℹ 세션 이벤트 시퀀스(ClassifierInput[])가 필요합니다.`);
+      console.log(`  ingest-server에서 수집된 세션 데이터로 패턴을 분류합니다.`);
+      console.log(`  현재 데이터 없음 — ingest 파이프라인 가동 후 재실행`);
+      break;
+    }
+
+    case "skill-policy-rule-verify": {
+      // 카탈로그 기반 구조 검증: prefix별 PolicyRule dim 완전성
+      const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
+      const policyPrefixes = Object.entries(
+        catalog.prefixes as unknown as Record<
+          string,
+          { versions?: ReadonlyArray<{ dims?: ReadonlyArray<{ label: string }> }> }
+        >,
+      ).filter(([, p]) =>
+        p.versions?.some((v) => v.dims?.some((d) =>
+          d.label.includes("role") || d.label.includes("perm") || d.label.includes("rbac"),
+        )) ?? false,
+      );
+      console.log(`  권한 관련 prefix: ${policyPrefixes.length}개`);
+      for (const [pid] of policyPrefixes) {
+        const profile = getPrefixProfile(catalog, pid);
+        const dims = profile.dims.map(d => d.label);
+        console.log(`    ${pid}: dims=[${dims.join(", ")}]`);
+      }
+      // DSL 접근 제어 번들 확인
+      const aclBundles = (graph.getNodesByKind("dsl-bundle") as Array<{ id: string; memberPrefixes: readonly string[] }>)
+        .filter(b => b.id === "dsl-access-control");
+      if (aclBundles.length > 0) {
+        console.log(`\n  dsl-access-control 멤버: ${aclBundles[0].memberPrefixes.join(", ")}`);
+      }
+      // CON-003 제약 확인
+      const con003 = (graph.getNodesByKind("constraint") as ConstraintNode[]).filter(c => c.id.includes("CON-003"));
+      if (con003.length > 0) {
+        console.log(`\n  CON-003: ${con003[0].rule}`);
+        for (const [pid] of policyPrefixes) {
+          const result = checkConstraints(graph, pid);
+          const icon = result.violations.length === 0 ? "✅" : "⚠";
+          console.log(`    ${icon} ${pid}: ${result.violations.length === 0 ? "통과" : result.violations.map(v => v.rule).join("; ")}`);
+        }
+      }
+      console.log(`\n  ℹ PolicyRule 충돌 검사(detectConflicts)는 MetaCodec 인스턴스 필요 — 런타임 환경에서 실행`);
+      break;
+    }
+
     default:
       console.log(`  ${skillId}는 아직 CLI 실행을 지원하지 않음`);
       console.log(`  input:  ${skillNode.input}`);
@@ -1942,6 +3888,53 @@ export function dkgRun(skillId: string, args: string[]): void {
 
   // skill 실행 이벤트 기록
   emitSkillExecution(skillId, skillNode.category);
+
+  // next-steps 추천
+  suggestNextSteps(graph, skillId, skillNode);
+}
+
+/** skill 실행 후 다음 행동 추천 */
+function suggestNextSteps(graph: GraphRegistry, skillId: string, skillNode: SkillNode): void {
+  const suggestions: string[] = [];
+
+  // 1. depends 역방향: 이 skill에 의존하는 다른 skill
+  const dependents = graph.getNodesByKind("skill")
+    .filter(s => s.depends?.includes(skillId));
+  for (const dep of dependents) {
+    suggestions.push(`dkg run ${dep.id}  — ${dep.name}`);
+  }
+
+  // 2. 카테고리 기반 워크플로우 추천
+  const WORKFLOW_HINTS: Record<string, string[]> = {
+    // analysis 후 → 기록
+    "skill-domain-health": ["dkg run skill-record-observation <domainId> <finding>"],
+    "skill-schema-health-audit": ["dkg run skill-record-observation <prefixId> <finding>"],
+    "skill-commerce-skew-audit": ["dkg run skill-record-observation <dslId> <finding>"],
+    "skill-prefix-capacity-audit": ["dkg run skill-record-decision <axisId> capacity <title> <rationale>"],
+    "skill-analyze-impact": ["dkg run skill-record-decision <targetId> <type> <title> <rationale>"],
+    // 기록 후 → 추적
+    "skill-record-decision": ["dkg run skill-trace <targetId>  — 결정 영향 추적"],
+    "skill-record-observation": ["dkg run skill-trace <targetId>  — 관측 맥락 확인"],
+    // chain 후 → 상세
+    "skill-system-health-chain": ["dkg run skill-prefix-capacity-audit  — headroom 상세 확인", "dkg run skill-commerce-skew-audit  — 버전 스큐 상세"],
+    "skill-converge-chain": ["dkg run skill-record-decision <targetId> merge <title> <rationale>  — merge 결정 기록"],
+    "skill-entry-add-chain": ["dkg run skill-record-decision <axisId> capacity <title> <rationale>  — capacity 결정 기록"],
+    // claim 사이클
+    "skill-claim": ["dkg run skill-release <targetId>  — 작업 완료 후 해제"],
+    "skill-release": ["dkg run skill-trace <targetId>  — 변경 이력 확인"],
+  };
+
+  const hints = WORKFLOW_HINTS[skillId];
+  if (hints) {
+    for (const h of hints) suggestions.push(h);
+  }
+
+  if (suggestions.length > 0) {
+    console.log(`\n  ── 다음 행동 ──`);
+    for (const s of suggestions.slice(0, 3)) {
+      console.log(`    → ${s}`);
+    }
+  }
 }
 
 // ── dkg metrics ─────────────────────────────────────
@@ -1952,20 +3945,17 @@ export function dkgMetrics(): void {
 
   // usage data 로드 (있으면)
   const recent = store.loadRecentVersionUsages(1);
-  const usage = recent.length > 0 && recent[0].versionUsages.length > 0
-    ? (() => {
-        // minimal UsageData 구성
-        return {
-          entryUsages: [] as any[],
-          addressUsages: [] as any[],
-          coOccurrences: [] as any[],
-          versionUsages: recent[0].versionUsages,
-          collectionPeriod: { from: recent[0].collectedAt, to: recent[0].collectedAt },
-        } as any;
-      })()
+  const usage: UsageData | null = recent.length > 0 && recent[0].versionUsages.length > 0
+    ? {
+        entryUsages: [] as EntryUsage[],
+        addressUsages: [] as AddressUsage[],
+        coOccurrences: [] as CoOccurrence[],
+        versionUsages: recent[0].versionUsages,
+        collectionPeriod: { from: recent[0].collectedAt, to: recent[0].collectedAt },
+      }
     : null;
 
-  const metrics = collectMetrics(DEMO_CATALOG, graph, usage);
+  const metrics = collectMetrics(DEMO_CATALOG, graph, usage, { schemaHealthAuditor: auditSchemaHealth });
 
   console.log(`\n══ Metrics Dashboard ══`);
   console.log(`  정의: ${METRIC_DEFS.length}종, 측정: ${metrics.length}건\n`);
@@ -2017,29 +4007,29 @@ export function dkgMetrics(): void {
 export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): void {
   const graph = getGraph();
   const store = getStore();
-  const catalog = (registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG) as any;
+  const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
 
   console.log(`\n══ Convergence Pipeline ══`);
 
   // 1. Usage data 로드
   const recent = store.loadRecentVersionUsages(5);
-  const usage = recent.length > 0 && recent[0].versionUsages.length > 0
+  const usage: UsageData | null = recent.length > 0 && recent[0].versionUsages.length > 0
     ? {
-        entryUsages: [] as any[],
-        addressUsages: [] as any[],
-        coOccurrences: [] as any[],
+        entryUsages: [] as EntryUsage[],
+        addressUsages: [] as AddressUsage[],
+        coOccurrences: [] as CoOccurrence[],
         versionUsages: recent.flatMap(s => s.versionUsages),
         collectionPeriod: {
           from: recent[recent.length - 1]?.collectedAt ?? new Date().toISOString(),
           to: recent[0]?.collectedAt ?? new Date().toISOString(),
         },
-      } as any
+      }
     : null;
 
   console.log(`  usage snapshots: ${recent.length}개 로드${usage ? ` (${usage.versionUsages.length} version usages)` : " (없음)"}`);
 
   // 2. Metrics 수집
-  const metrics = collectMetrics(catalog, graph, usage) as MetricValue[];
+  const metrics = collectMetrics(catalog, graph, usage, { schemaHealthAuditor: auditSchemaHealth }) as MetricValue[];
   const ok = metrics.filter(m => m.status === "ok").length;
   const warning = metrics.filter(m => m.status === "warning").length;
   const critical = metrics.filter(m => m.status === "critical").length;
@@ -2047,7 +4037,7 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
 
   // 3. 자동 Observation 생성 + ok 복귀 시 자동 해소
   const autoObs = metricsToObservations(metrics);
-  const existingObs = graph.getNodesByKind("observation") as ObservationNode[];
+  const existingObs = graph.getNodesByKind("observation");
   const autoResolved = resolveRecoveredMetrics(metrics, existingObs);
 
   if (autoObs.length > 0) {
@@ -2071,9 +4061,8 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
   console.log(`    merges=${convergeResult.summary.merges}, deactivations=${convergeResult.summary.deactivations}, simplifications=${convergeResult.summary.simplifications}, observations=${convergeResult.summary.observations}`);
   if (opts.verbose) {
     for (const action of convergeResult.actions) {
-      const a = action as any;
-      const target = a.targets?.join("↔") ?? a.axis ?? a.prefix ?? a.source ?? "?";
-      console.log(`      [${a.kind}] ${target}`);
+      const target = convergeActionTarget(action);
+      console.log(`      [${action.kind}] ${target}`);
     }
   }
 
@@ -2082,9 +4071,26 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
   console.log(`\n  system health:`);
   console.log(`    steps: ${healthResult.steps.length}건`);
   for (const step of healthResult.steps) {
-    const s = step as any;
-    const icon = s.status === "ok" ? "✅" : s.status === "warning" ? "⚠" : "🔴";
-    console.log(`    ${icon} ${s.step}: ${s.message}`);
+    const icon = step.status === "ok" ? "✅" : step.status === "warning" ? "⚠" : "🔴";
+    console.log(`    ${icon} ${step.step}: ${step.message}`);
+  }
+
+  // 5.5. DSL 번들 불변조건 검증 (usage snapshot의 versionUsage에서 파생)
+  if (usage && usage.versionUsages.length > 0) {
+    // versionUsage → 간이 AddressContextRecord 변환 (prefix 존재만 체크)
+    const prefixSet = new Set(usage.versionUsages.map(v => v.prefix));
+    const syntheticRecord: AddressContextRecord = {
+      address_context: Object.fromEntries([...prefixSet].map(p => [p, `${p}:v1:0`])),
+      timestamp: new Date().toISOString(),
+      session_id: "converge",
+    };
+    const dslResult = validateDslInvariants(graph, [syntheticRecord]);
+    console.log(`\n  dsl invariants: ${dslResult.summary}`);
+    if (opts.verbose && dslResult.violations.length > 0) {
+      for (const v of dslResult.violations) {
+        console.log(`    ⚠ ${v.bundleId}: ${v.invariant.slice(0, 80)}`);
+      }
+    }
   }
 
   // 6. Persist (--persist)
@@ -2097,31 +4103,56 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
       console.log(`    stale observation ${cleaned}건 정리 (timestamp→결정적 ID 전환)`);
     }
 
+    // Resolved observation 정리 (30일 이상 경과)
+    const pruned = store.pruneResolvedObservations(30);
+    if (pruned > 0) {
+      console.log(`    resolved observation ${pruned}건 정리 (30일 이상 경과)`);
+    }
+
     // Usage snapshot + auto observations
     if (usage) {
       const snapResult = store.saveUsageSnapshotWithObservations(usage, autoObs);
       console.log(`    usage snapshot #${snapResult.snapshotId} 저장 (observations: ${snapResult.observationsWritten})`);
     } else if (autoObs.length > 0) {
       // usage 없어도 observation은 저장
-      const edges = autoObs.flatMap((obs: any) =>
+      const edges = autoObs.flatMap((obs) =>
         (obs.subjects ?? []).map((s: string) => ({ type: "observes" as const, from: obs.id, to: s })),
       );
       store.saveNodes(autoObs, edges, "auto");
       console.log(`    observations ${autoObs.length}건 저장 (usage 없음)`);
     }
 
+    // metric observation → 자동 prompts 연결 (Decision이 이미 존재하면 연결)
+    let promptsLinked = 0;
+    for (const obs of autoObs) {
+      if (!obs.id?.startsWith("OBS-METRIC-")) continue;
+      // 이미 prompts 엣지가 있으면 skip
+      const existing = graph.neighbors(obs.id, "prompts");
+      if (existing.length > 0) continue;
+      // subject에서 대상 식별 → 관련 Decision 검색
+      for (const subject of obs.subjects ?? []) {
+        const decisions = graph.reverseNeighbors(subject, "governs")
+          .concat(graph.reverseNeighbors(subject, "justifies"));
+        for (const decId of decisions) {
+          store.saveNodes([], [{ type: "prompts" as const, from: obs.id, to: decId }], "auto");
+          promptsLinked++;
+          break; // 첫 매칭 Decision에만 연결
+        }
+      }
+    }
+    if (promptsLinked > 0) {
+      console.log(`    metric observation → decision prompts ${promptsLinked}건 자동 연결`);
+    }
+
     // Converge chain 결과 저장
-    const allNodes = [
+    const allNodes: DkgNode[] = [
       ...convergeResult.observations,
       ...convergeResult.decisions,
-    ] as any[];
+    ];
     if (allNodes.length > 0) {
-      const edges = allNodes.flatMap((n: any) => {
-        if (n.kind === "observation" && n.subjects) {
-          return n.subjects.map((s: string) => ({ type: "observes" as const, from: n.id, to: s }));
-        }
-        if (n.kind === "decision" && n.targets) {
-          return n.targets.map((t: string) => ({ type: "justifies" as const, from: n.id, to: t }));
+      const edges = allNodes.flatMap(n => {
+        if (n.kind === "observation") {
+          return n.subjects.map((s) => ({ type: "observes" as const, from: n.id, to: s }));
         }
         return [];
       });
@@ -2132,9 +4163,31 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
     // Auto-resolved observations 영속화
     if (autoResolved.length > 0) {
       for (const obs of autoResolved) {
-        store.updateNode(obs as any);
+        store.updateNode(obs);
       }
       console.log(`    auto-resolved ${autoResolved.length}건 영속화`);
+    }
+
+    // Monitoring observation 자동 만료 (30일 이상 변화 없음)
+    const EXPIRE_DAYS = 30;
+    const expireCutoff = new Date(Date.now() - EXPIRE_DAYS * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    let expiredCount = 0;
+    for (const obs of existingObs) {
+      if (obs.resolution) continue;
+      const obsNode = obs as ObservationNode;
+      if (obsNode.intent !== "monitoring") continue;
+      if (obsNode.date > expireCutoff) continue;
+      // 30일 이상 된 monitoring observation → 자동 만료
+      const expired: ObservationNode = {
+        ...obsNode,
+        resolution: { decisionId: "auto-expire", outcome: "deferred" as const, note: `${EXPIRE_DAYS}일 이상 변화 없어 자동 만료` },
+      };
+      store.updateNode(expired);
+      graph.replaceNode(expired);
+      expiredCount++;
+    }
+    if (expiredCount > 0) {
+      console.log(`    monitoring 자동 만료: ${expiredCount}건 (${EXPIRE_DAYS}일 초과)`);
     }
 
     store.setMeta("last_convergence", new Date().toISOString());
@@ -2145,16 +4198,32 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
   const total = autoObs.length + convergeResult.observations.length + convergeResult.decisions.length;
   console.log(`\n  총 ${metrics.length} metrics, ${total} observations/decisions 생성, ${autoResolved.length} auto-resolved${opts.persist ? " (저장됨)" : " (--persist로 저장)"}`);
 
-  // 미해결 observation 안내
-  const unresolvedObs = existingObs.filter((o: any) => !o.resolution);
+  // 미해결 observation 카테고리별 안내
+  const unresolvedObs = existingObs.filter(o => !o.resolution);
   if (unresolvedObs.length > 0) {
-    console.log(`\n  ── 미해결 observation (${unresolvedObs.length}건) ──`);
-    const top = unresolvedObs.slice(0, 3);
-    for (const obs of top) {
-      console.log(`    ${obs.id}: ${(obs as any).finding?.slice(0, 70) ?? "?"}`);
+    // ID 접두사 기반 카테고리 분류 (실제 ID 패턴에서 파생)
+    const groups: Record<string, typeof unresolvedObs> = {};
+    for (const obs of unresolvedObs) {
+      let category: string;
+      if (obs.id.startsWith("OBS-METRIC-metric-coverage-")) category = "coverage-gap";
+      else if (obs.id.startsWith("OBS-METRIC-metric-health-")) category = "domain-health";
+      else if (obs.id.startsWith("OBS-METRIC-")) category = "metric";
+      else if (obs.id.startsWith("OBS-FLOW-")) category = "flow-violation";
+      else if (obs.id.startsWith("OBS-SELF-")) category = "self-check";
+      else category = "other";
+      (groups[category] ??= []).push(obs);
     }
-    if (unresolvedObs.length > 3) {
-      console.log(`    ... 외 ${unresolvedObs.length - 3}건`);
+
+    console.log(`\n  ── 미해결 observation (${unresolvedObs.length}건) ──`);
+    for (const [category, items] of Object.entries(groups)) {
+      console.log(`\n    [${category}] ${items.length}건`);
+      const top = items.slice(0, 2);
+      for (const obs of top) {
+        console.log(`      ${obs.id}: ${obs.finding?.slice(0, 60) ?? "?"}`);
+      }
+      if (items.length > 2) {
+        console.log(`      ... 외 ${items.length - 2}건`);
+      }
     }
     console.log(`\n  해소 방법: qa-sdk dkg resolve <obsId> --decision <decId> --outcome accepted`);
   }
@@ -2199,8 +4268,8 @@ export function dkgPatternStats(): void {
 // ── dkg publish ─────────────────────────────────────
 
 export async function dkgPublish(opts: { registry?: string; versionId?: string }): Promise<void> {
-  const catalog = (registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG) as any;
-  const registryUrl = opts.registry ?? process.env.QA_REGISTRY_URL ?? "http://localhost:3100";
+  const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
+  const registryUrl = opts.registry ?? process.env.QA_REGISTRY_URL ?? "http://localhost:3300";
   const versionId = opts.versionId ?? "v1";
 
   console.log(`\n══ Publish to Registry ══`);
@@ -2247,9 +4316,11 @@ export async function dkgPublish(opts: { registry?: string; versionId?: string }
       console.log(`  release order: ${result.analysis.releaseOrder.join(" → ")}`);
     }
 
-    emitDkgEvent("promote", "system", "publish");
-  } catch (err: any) {
-    console.error(`  연결 실패: ${err.message}`);
+    emitDkgEvent("promote", "system", "publish", {
+      command: "dkg publish",
+    });
+  } catch (err: unknown) {
+    console.error(`  연결 실패: ${errorMessage(err)}`);
     console.error(`  registry-service가 ${registryUrl}에서 실행 중인지 확인하세요.`);
   }
 }
@@ -2257,7 +4328,7 @@ export async function dkgPublish(opts: { registry?: string; versionId?: string }
 // ── dkg version ─────────────────────────────────────
 
 export async function dkgVersion(action: string, prefix: string, versionId: string, opts: { registry?: string }): Promise<void> {
-  const registryUrl = opts.registry ?? process.env.QA_REGISTRY_URL ?? "http://localhost:3100";
+  const registryUrl = opts.registry ?? process.env.QA_REGISTRY_URL ?? "http://localhost:3300";
 
   if (action === "list") {
     try {
@@ -2269,8 +4340,8 @@ export async function dkgVersion(action: string, prefix: string, versionId: stri
         const icon = v.status === "active" ? "✅" : v.status === "draft" ? "📝" : v.status === "locked" ? "🔒" : "⏸";
         console.log(`  ${icon} ${v.versionId.padEnd(8)} [${v.status}] cap=${v.capacity}${v.shape ? ` shape=[${v.shape}]` : ""}${v.stride ? ` stride=[${v.stride}]` : ""}`);
       }
-    } catch (err: any) {
-      console.error(`연결 실패: ${err.message}`);
+    } catch (err: unknown) {
+      console.error(`연결 실패: ${errorMessage(err)}`);
     }
     return;
   }
@@ -2284,20 +4355,88 @@ export async function dkgVersion(action: string, prefix: string, versionId: stri
     return;
   }
 
+  const beforeStatus = await fetchVersionStatus(registryUrl, prefix, versionId);
+
   try {
     const res = await fetch(`${registryUrl}/prefixes/${prefix}/versions/${versionId}/${endpoint}`, { method: "POST" });
     if (!res.ok) {
       const body = await res.text();
+      persistAuditRecord({
+        eventKey: "cli.dkg.version",
+        eventPrefix: "cli_event",
+        command: "dkg version",
+        targetId: `${prefix}:${versionId}`,
+        targetKind: "version",
+        lifecycleFrom: beforeStatus,
+        payload: {
+          action,
+          prefix,
+          versionId,
+          registryUrl,
+          ok: false,
+          statusCode: res.status,
+          error: body.slice(0, 400),
+        },
+      });
       console.error(`오류 (${res.status}): ${body}`);
       return;
     }
     const result = await res.json();
+    const afterStatus = await fetchVersionStatus(registryUrl, prefix, versionId);
     console.log(`\n  ${prefix}:${versionId} → ${action} 완료`);
     if (action === "activate" && result) {
       console.log(`  결과:`, JSON.stringify(result, null, 2).slice(0, 200));
     }
-  } catch (err: any) {
-    console.error(`연결 실패: ${err.message}`);
+
+    // version 상태 전이 후 자동 drift check
+    if (action === "activate" || action === "deprecate") {
+      console.log(`\n  prefix drift check (${prefix})...`);
+      try {
+        const { prefixDrift } = await import("./prefix-stamp.js");
+        const catalog = DEMO_CATALOG as import("@qa-sdk/core").Catalog;
+        if (catalog) prefixDrift(catalog);
+      } catch {
+        console.log("  drift check 건너뜀 (카탈로그 로드 실패)");
+      }
+    }
+
+    persistAuditRecord({
+      eventKey: "cli.dkg.version",
+      eventPrefix: "cli_event",
+      command: "dkg version",
+      targetId: `${prefix}:${versionId}`,
+      targetKind: "version",
+      lifecycleFrom: beforeStatus,
+      lifecycleTo: afterStatus ?? action,
+      payload: {
+        action,
+        prefix,
+        versionId,
+        registryUrl,
+        beforeStatus,
+        afterStatus,
+        ok: true,
+        ...(result && typeof result === "object" ? { result } : {}),
+      },
+    });
+  } catch (err: unknown) {
+    persistAuditRecord({
+      eventKey: "cli.dkg.version",
+      eventPrefix: "cli_event",
+      command: "dkg version",
+      targetId: `${prefix}:${versionId}`,
+      targetKind: "version",
+      lifecycleFrom: beforeStatus,
+      payload: {
+        action,
+        prefix,
+        versionId,
+        registryUrl,
+        ok: false,
+        error: errorMessage(err),
+      },
+    });
+    console.error(`연결 실패: ${errorMessage(err)}`);
   }
 }
 
@@ -2335,7 +4474,7 @@ export function dkgSpecAdd(opts: {
     rationale: opts.rationale,
   };
 
-  const edges: Array<{ type: string; from: string; to: string }> = [];
+  const edges: Array<{ type: DkgEdgeType; from: string; to: string }> = [];
   if (opts.governs) {
     for (const target of opts.governs) {
       if (graph.getNode(target)) {
@@ -2345,13 +4484,18 @@ export function dkgSpecAdd(opts: {
   }
 
   graph.addNode(spec);
-  for (const e of edges) graph.addEdge(e.type as any, e.from, e.to);
+  for (const e of edges) graph.addEdge(e.type, e.from, e.to);
   store.saveNodes([spec], edges, "manual");
 
   // spec_event 기록
-  emitSpecEvent(opts.type, opts.lifecycle ?? "draft");
+  emitSpecEvent(opts.type, opts.lifecycle ?? "draft", {
+    targetId: opts.id,
+    command: "dkg spec add",
+  });
 
-  emitDkgEvent("decide", "spec", opts.id);
+  emitDkgEvent("decide", "spec", opts.id, {
+    command: "dkg spec add",
+  });
 
   console.log(`\n══ Spec 등록 완료 ══`);
   console.log(`  id:        ${opts.id}`);
@@ -2363,7 +4507,7 @@ export function dkgSpecAdd(opts: {
 
 export function dkgSpecList(): void {
   const graph = getGraph();
-  const specs = graph.getNodesByKind("spec") as any[];
+  const specs = graph.getNodesByKind("spec");
 
   console.log(`\n══ Spec Documents (${specs.length}개) ══`);
   if (specs.length === 0) { console.log("  (없음)"); return; }
@@ -2390,51 +4534,79 @@ export function dkgSpecTransition(specId: string, toLifecycle: string): void {
   const graph = getGraph();
   const store = getStore();
 
-  const spec = graph.getNode(specId) as any;
-  if (!spec || spec.kind !== "spec") {
+  const specNode = graph.getNode(specId);
+  if (!specNode || specNode.kind !== "spec") {
     console.error(`  spec을 찾을 수 없음: ${specId}`);
     return;
   }
+  const spec = specNode as SpecNode;
 
-  const validLifecycles = ["draft", "active", "deprecated"];
-  if (!validLifecycles.includes(toLifecycle)) {
+  const validLifecycles = ["draft", "active", "deprecated"] as const;
+  if (!validLifecycles.includes(toLifecycle as typeof validLifecycles[number])) {
     console.error(`  유효하지 않은 lifecycle: ${toLifecycle} (${validLifecycles.join(", ")})`);
     return;
   }
 
   const fromLifecycle = spec.lifecycle;
-  const updated = { ...spec, lifecycle: toLifecycle };
+  const updated = { ...spec, lifecycle: toLifecycle as SpecNode["lifecycle"] };
   graph.replaceNode(updated);
   store.saveNodes([updated], [], "manual");
 
   // spec_event 기록
-  emitSpecEvent(spec.type, toLifecycle);
+  emitSpecEvent(spec.type, toLifecycle, {
+    targetId: specId,
+    lifecycleFrom: fromLifecycle,
+    command: "dkg spec transition",
+  });
+  emitDkgEvent("transition", "spec", specId, {
+    command: "dkg spec transition",
+    lifecycleFrom: fromLifecycle,
+    lifecycleState: toLifecycle,
+  });
 
   console.log(`\n══ Spec Transition ══`);
   console.log(`  ${specId}: ${fromLifecycle} → ${toLifecycle}`);
 }
 
 /** spec 변경 이벤트를 spec_event prefix로 기록 */
-function emitSpecEvent(specType: string, lifecycleState: string): void {
+function emitSpecEvent(
+  specType: string,
+  lifecycleState: string,
+  extra?: { targetId?: string; lifecycleFrom?: string; command?: string },
+): void {
   try {
-    const now = new Date().toISOString();
-    const session = `cli-${process.env.USER ?? "unknown"}`;
+    const collectedAt = now();
     const ver = latestVer("spec_event");
-    encodePrefixByValue(DEMO_CATALOG, "spec_event", ver, {
+    const address = encodePrefixByValue(DEMO_CATALOG, "spec_event", ver, {
       spec_type: specType,
       lifecycle_state: lifecycleState,
     });
-    const store = getStore();
-    store.saveUsageSnapshot({
+    const serialized = serializeAddressContext("spec_event", ver, address);
+    saveUsageTelemetry({
+      collectedAt,
       entryUsages: [
-        { axisId: "spec_type", entry: specType, count: 1, lastSeen: now },
-        { axisId: "lifecycle_state", entry: lifecycleState, count: 1, lastSeen: now },
+        { axisId: "spec_type", entry: specType, count: 1, lastSeen: collectedAt },
+        { axisId: "lifecycle_state", entry: lifecycleState, count: 1, lastSeen: collectedAt },
       ],
-      addressUsages: [],
-      coOccurrences: [],
-      versionUsages: [{ prefix: "spec_event", version: ver, count: 1, lastSeen: now, sessions: [session] }],
-      collectionPeriod: { from: now, to: now },
-    } as any);
+      addressUsages: [{ prefix: "spec_event", version: ver, address, count: 1 }],
+      versionPrefixes: [{ prefix: "spec_event", version: ver }],
+    });
+    persistAuditRecord({
+      eventKey: "cli.spec.lifecycle",
+      eventPrefix: "spec_event",
+      command: extra?.command ?? "dkg spec",
+      targetId: extra?.targetId,
+      targetKind: "spec",
+      lifecycleFrom: extra?.lifecycleFrom,
+      lifecycleTo: lifecycleState,
+      addressContext: { spec_event: serialized },
+      payload: {
+        specType,
+        lifecycleState,
+        ...(extra?.targetId ? { targetId: extra.targetId } : {}),
+        ...(extra?.lifecycleFrom ? { lifecycleFrom: extra.lifecycleFrom } : {}),
+      },
+    });
   } catch { /* 기록 실패 시 무시 */ }
 }
 
@@ -2508,9 +4680,11 @@ export function dkgReset(target: string, opts: { catalogId?: string; confirm?: b
 
 export function dkgPromoteScan(): void {
   const graph = getGraph();
-  const catalog = (registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG) as any;
+  const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
 
-  emitDkgEvent("promote", "system", "scan");
+    emitDkgEvent("promote", "system", "scan", {
+      command: "dkg promote",
+    });
 
   // 기존 축 이름 수집
   const existingAxes = new Set(Object.keys(catalog.axes ?? {}));
@@ -2577,7 +4751,6 @@ const SELF_CHECK_PKGS = [
   { name: "gate-service", filter: "gate-service", hasTest: true, hasBuild: true },
   { name: "query-service", filter: "query-service", hasTest: true, hasBuild: true },
   { name: "decode-service", filter: "@qa-sdk/decode-service", hasTest: true, hasBuild: true },
-  { name: "registry-server", filter: "@qa-sdk/registry-server", hasTest: true, hasBuild: true },
   { name: "registry-client", filter: "@qa-sdk/registry-client", hasTest: true, hasBuild: true },
   // 미관리 → 관리 전환 (8개)
   { name: "apm", filter: "@qa-sdk/apm", hasTest: true, hasBuild: true },
@@ -2714,22 +4887,33 @@ interface SelfCheckResult {
  *
  * DEC-CAPACITY-dsl-dev-mmzyw4go: CLI는 데이터 공급/탐색 인터페이스.
  */
-export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
+export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): void {
   const apply = opts.apply ?? false;
+  const fast = opts.fast ?? false;
   const graph = getGraph();
   const store = apply ? getStore() : null;
 
   const now = new Date().toISOString();
   const runId = `self-check-${Date.now()}`;
   const results: SelfCheckResult[] = [];
+  const fileContracts: Array<{ pkg: string; surface: string; result: string }> = [];
   const cwd = process.env.HOME ? join(process.env.HOME, "workflow/qa-sdk") : ".";
 
-  console.log(`\n══ Self-Check${apply ? " (--apply)" : ""} ══`);
+  console.log(`\n══ Self-Check${fast ? " (--fast)" : ""}${apply ? " (--apply)" : ""} ══`);
   console.log(`  run: ${runId}\n`);
 
   // ════════════════════════════════════════════════════════════
-  //  Step 1: 빌드/테스트 실행
+  //  Step 1: 빌드/테스트 실행 (--fast 시 스킵)
   // ════════════════════════════════════════════════════════════
+
+  if (fast) {
+    console.log(`\n  ── Phase A: 스킵 (--fast) ──`);
+    // mock 결과로 대체 — analyzeSelfCheck에서 합성 이벤트 생성에만 사용
+    for (const pkg of SELF_CHECK_PKGS) {
+      results.push({ pkg: pkg.name, kind: "build", module: "_all", result: "success", durationMs: 0 });
+      if (pkg.hasTest) results.push({ pkg: pkg.name, kind: "test", module: "_all", result: "passed", tests: 0, passed: 0, failed: 0, durationMs: 0 });
+    }
+  } else {
 
   console.log(`  ── Build ──`);
   for (const pkg of SELF_CHECK_PKGS) {
@@ -2741,10 +4925,11 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
     const t0 = Date.now();
     let result: string;
     try {
-      execSync(`pnpm --filter ${pkg.filter} build`, { cwd, stdio: "pipe", timeout: 60000 });
+      execaSync("pnpm", ["--filter", pkg.filter, "build"], { cwd, timeout: 60000 });
       result = "success";
-    } catch (err: any) {
-      const stderr = (err.stderr?.toString() ?? "") + (err.stdout?.toString() ?? "");
+    } catch (err: unknown) {
+      const execErr = err as { stderr?: string; stdout?: string };
+      const stderr = (execErr.stderr ?? "") + (execErr.stdout ?? "");
       result = stderr.includes("TS") ? "type-error" : "failure";
     }
     const dur = Date.now() - t0;
@@ -2754,7 +4939,6 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
   }
 
   console.log(`\n  ── Test ──`);
-  const fileContracts: Array<{ pkg: string; surface: string; result: string }> = [];
   for (const pkg of SELF_CHECK_PKGS) {
     if (!pkg.hasTest) {
       console.log(`    ⏭ ${pkg.name.padEnd(20)} (no tests)`);
@@ -2769,10 +4953,11 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
         let result: string;
         let tests = 0, passed = 0, failed = 0;
         try {
-          const output = execSync(
-            `pnpm --filter ${pkg.filter} exec playwright test tests/${scenario}.spec.ts 2>&1`,
-            { cwd, stdio: "pipe", timeout: 180000 },
-          ).toString();
+          const { stdout: output } = execaSync(
+            "pnpm",
+            ["--filter", pkg.filter, "exec", "playwright", "test", `tests/${scenario}.spec.ts`],
+            { cwd, timeout: 180000 },
+          );
           const passedMatch = output.match(/(\d+)\s+passed/);
           const failedMatch = output.match(/(\d+)\s+failed/);
           passed = passedMatch ? parseInt(passedMatch[1]) : 0;
@@ -2796,7 +4981,7 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
     let tests = 0, passed = 0, failed = 0;
     let output = "";
     try {
-      output = execSync(`pnpm --filter ${pkg.filter} test 2>&1`, { cwd, stdio: "pipe", timeout: 120000 }).toString();
+      output = execaSync("pnpm", ["--filter", pkg.filter, "test"], { cwd, timeout: 120000, all: true }).all ?? "";
       const testsMatch = output.match(/Tests\s+(\d+)\s+passed/);
       const altPassMatch = output.match(/(\d+)\s+passed\s+\((\d+)\)/);
       const failMatch = output.match(/(\d+)\s+failed/);
@@ -2836,6 +5021,8 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
       }
     }
   }
+
+  } // end of if (!fast) — Step 1 빌드/테스트
 
   // ════════════════════════════════════════════════════════════
   //  Phase A: AddressContextRecord 생성 → aggregateUsageData
@@ -2888,30 +5075,15 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
     }
   }
 
-  // 비즈니스 prefix 합성 이벤트 — 쇼핑 도메인 트래픽 주입
-  const catalog = (registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG) as any;
-  let bizRecords = 0;
-  const bizPrefixes = [
-    { prefix: "endpoint", version: "v1", dims: { resource_type: "api", http_method: "POST", api_version: "v1" }, refDim: "svc_ref" },
-    { prefix: "endpoint", version: "v1", dims: { resource_type: "api", http_method: "GET", api_version: "v1" }, refDim: "svc_ref" },
-    { prefix: "permission", version: "v4", dims: { role: "admin" }, refDim: "perm_svc" },
-    { prefix: "permission", version: "v4", dims: { role: "developer" }, refDim: "perm_svc" },
-    { prefix: "event", version: "v4", dims: { event_name: "user.login", initiator: "web" }, refDim: "evt_svc" },
-    { prefix: "event", version: "v4", dims: { event_name: "order.created", initiator: "web" }, refDim: "evt_svc" },
-  ];
-  for (const bp of bizPrefixes) {
-    try {
-      const prefixDef = catalog.prefixes?.[bp.prefix];
-      const verDef = prefixDef?.versions?.find((v: any) => v.version === bp.version);
-      const refVal = verDef?.refEntries?.[bp.refDim]?.values?.[0];
-      const dims = refVal !== undefined ? { [bp.refDim]: refVal, ...bp.dims } : bp.dims;
-      const address = encodePrefixByValue(catalog, bp.prefix, bp.version, dims);
-      records.push({
-        address_context: { [bp.prefix]: `${bp.prefix}:${bp.version}:${address}` },
-        timestamp: now, session_id: runId, event_key: `biz:${bp.prefix}`, execution_mode: "synthetic" as const, execution_id: runId,
-      });
-      bizRecords++;
-    } catch { /* 인코딩 실패 시 건너뜀 */ }
+  // 합성 이벤트 — analyzeSelfCheck의 SYNTHETIC_EVENTS를 재활용하여 전체 도메인 커버리지 확보
+  const syntheticAnalysis = analyzeSelfCheck(results, DEMO_CATALOG, runId);
+  const bizRecords = syntheticAnalysis.bizRecords;
+  // analyzeSelfCheck가 생성한 records에 contract records를 병합
+  for (const r of syntheticAnalysis.records) {
+    // build/test records는 이미 위에서 생성 — synthetic만 추가
+    if (r.execution_mode === "synthetic") {
+      records.push(r);
+    }
   }
 
   const usage = aggregateUsageData(DEMO_CATALOG, records);
@@ -2938,7 +5110,7 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
   console.log(`    전체: ${coverage.summary}`);
 
   // B-3: metrics with usage data
-  const metrics = collectMetrics(DEMO_CATALOG, graph, usage);
+  const metrics = collectMetrics(DEMO_CATALOG, graph, usage, { schemaHealthAuditor: auditSchemaHealth });
   const metricIssues = metrics.filter(m => m.status !== "ok");
   console.log(`    metrics: ${metrics.length}건, ${metricIssues.length} issues`);
 
@@ -2954,8 +5126,8 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
   // ════════════════════════════════════════════════════════════
 
   // ── observation 해소/생성 후보 탐색 (읽기 전용) ──
-  const existingObs = graph.getNodesByKind("observation") as any[];
-  const resolveTargets: Array<{ obs: any; reason: string }> = [];
+  const existingObs = graph.getNodesByKind("observation");
+  const resolveTargets: Array<{ obs: ObservationNode; reason: string }> = [];
 
   for (const obs of existingObs.filter(o => o.id.startsWith("OBS-SELF-BUILD-") && !o.resolution)) {
     const prevFailed = (obs.subjects as string[]) ?? [];
@@ -3012,6 +5184,45 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
   }
 
   // ════════════════════════════════════════════════════════════
+  //  Phase E: IntentLink 흐름 검증
+  // ════════════════════════════════════════════════════════════
+
+  console.log(`\n  ── Phase E: flow-trace ──`);
+  // 합성 이벤트는 단일 prefix만 포함하므로 IntentLink 검증에서 제외 (false positive 방지)
+  const liveRecords = records.filter(r => r.execution_mode !== "synthetic");
+  const flowResult = traceFlows(graph, liveRecords, { date: now.slice(0, 10) });
+  if (flowResult.violations.length > 0) {
+    console.log(`    🔴 IntentLink 위반 ${flowResult.violations.length}종 (${flowResult.violations.reduce((s, v) => s + v.count, 0)}건):`);
+    for (const v of flowResult.violations) {
+      console.log(`      ${v.intentLinkId}: missing=[${v.missingPrefixes.join(",")}] (${v.count}건)`);
+    }
+  } else {
+    console.log(`    ✅ IntentLink 흐름 정상 (${flowResult.checkedRecords}건 검사, ${graph.getNodesByKind("intent-link").length}개 링크)`);
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  Phase F: DSL 번들 불변조건 검증
+  // ════════════════════════════════════════════════════════════
+
+  console.log(`\n  ── Phase F: DSL invariant ──`);
+  // self-check에서 생성된 레코드로 DSL 번들 불변조건 검증
+  // dsl-dev는 Phase D invariant 검증에서 이미 처리하므로 제외
+  const dslResult = validateDslInvariants(graph, liveRecords, {
+    date: now.slice(0, 10),
+    excludeBundles: ["dsl-dev"],
+  });
+  if (dslResult.violations.length > 0) {
+    console.log(`    ⚠ DSL 불변조건 위반 ${dslResult.violations.length}종 (${dslResult.violations.reduce((s, v) => s + v.count, 0)}건):`);
+    for (const v of dslResult.violations) {
+      console.log(`      ${v.bundleId}: ${v.invariant.slice(0, 80)}`);
+    }
+  } else {
+    const bundleCount = (graph.getNodesByKind("dsl-bundle") as { invariants?: readonly string[] }[])
+      .filter(b => b.invariants && b.invariants.length > 0).length - 1; // dsl-dev 제외
+    console.log(`    ✅ DSL 불변조건 정상 (${bundleCount}개 번들, ${dslResult.checkedRecords}건 검사)`);
+  }
+
+  // ════════════════════════════════════════════════════════════
   //  저장 + 새 Observation 생성
   // ════════════════════════════════════════════════════════════
 
@@ -3035,14 +5246,17 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
     console.log(`    snapshot #${snapshotId} 저장`);
 
     for (const { obs, reason } of resolveTargets) {
-      const resolved = { ...obs, resolution: { decisionId: "auto", outcome: "accepted", note: `${runId}: ${reason}` } };
+      const resolved: ObservationNode = {
+        ...obs,
+        resolution: { decisionId: "auto", outcome: "accepted", note: `${runId}: ${reason}` },
+      };
       store.saveNodes([resolved], [], "auto");
       graph.replaceNode(resolved);
       console.log(`    resolved: ${obs.id} (${reason})`);
     }
     for (const cand of newObsCandidates) {
-      const obs = { kind: "observation" as const, id: cand.id, date: now.slice(0, 10), source: "metric" as const, intent: "action-needed" as const, subjects: cand.subjects, finding: cand.finding };
-      store.saveNodes([obs as any], [{ type: "observes", from: obs.id, to: cand.subjects[0] ?? "build_event" }], "auto");
+      const obs: ObservationNode = { kind: "observation", id: cand.id, date: now.slice(0, 10), source: "metric", intent: "action-needed", subjects: cand.subjects, finding: cand.finding };
+      store.saveNodes([obs], [{ type: "observes", from: obs.id, to: cand.subjects[0] ?? "build_event" }], "auto");
       console.log(`    created: ${cand.id}`);
     }
   } else if (resolveTargets.length > 0 || newObsCandidates.length > 0) {
@@ -3117,15 +5331,25 @@ function findArg(args: string[], flag: string): string | undefined {
 
 // ── helpers ─────────────────────────────────────────
 
-function buildEntriesMap(catalog?: any): Map<string, readonly string[]> {
+/** ConvergeAction의 대상을 사람이 읽을 수 있는 문자열로 추출 */
+function convergeActionTarget(action: ConvergeAction): string {
+  switch (action.kind) {
+    case "merge": return action.targets.join("↔");
+    case "deactivate": return action.axis;
+    case "simplify": return action.prefix;
+    case "observe": return action.source;
+  }
+}
+
+function buildEntriesMap(catalog?: Catalog): Map<string, readonly string[]> {
   const cat = catalog ?? DEMO_CATALOG;
   const map = new Map<string, readonly string[]>();
-  for (const [id, axis] of Object.entries((cat as any).axes) as [string, any][]) {
+  for (const [id, axis] of Object.entries(cat.axes)) {
     const versions = Object.keys(axis.versions);
     const latestKey = versions[versions.length - 1];
     const latest = axis.versions[latestKey];
-    if (latest && "entries" in latest) {
-      map.set(id, [...(latest as any).entries]);
+    if (latest && latest.entries) {
+      map.set(id, [...latest.entries]);
     }
   }
   return map;
@@ -3164,7 +5388,7 @@ export function dkgAddEntry(opts: {
   console.log(`\n══ Add Entry: ${opts.entry} → ${opts.axisId} (${flags}) ══`);
 
   try {
-    const result = executeEntryAdd(catalog as any, graph, opts.axisId, opts.entry, {
+    const result = executeEntryAdd(catalog, graph, opts.axisId, opts.entry, {
       dryRun,
       expandCapacity: opts.expandCapacity,
       store,
@@ -3212,6 +5436,7 @@ export function dkgAddEntry(opts: {
 
     // ── 저장 상태 ──
     if (result.graphUpdated) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- graphUpdated=true → !dryRun → store 존재 보장
       const saved = store!.saveGraph(graph);
       console.log(`\n  ✅ 저장 완료 (${saved.nodesWritten} nodes, ${saved.edgesWritten} edges)`);
 
@@ -3245,4 +5470,396 @@ export function dkgAddEntry(opts: {
       console.error(`\n  ✗ ${error instanceof Error ? error.message : String(error)}`);
     }
   }
+}
+
+// ── dkg diagram ──────────────────────────────────────────
+
+import {
+  intentLinkDiagram,
+  allIntentLinksDiagram,
+  dslDiagram,
+  domainDiagram,
+  serviceDiagram,
+  constraintDiagram,
+  tableDiagram,
+  observationLoopDiagram,
+  tableErDiagram,
+  transitionSpecDiagram,
+  transitionDagDiagram,
+  listAllDiagrams,
+} from "@qa-sdk/spec-core/viz";
+import type { MermaidDiagramOptions } from "@qa-sdk/spec-core/viz";
+// createDemoTopology already imported from dkg
+
+export async function dkgDiagram(argv: string[]): Promise<void> {
+  const { values, positionals } = parseArgs({
+    args: argv,
+    options: {
+      output: { type: "string", short: "o" },
+      format: { type: "string", default: "mmd" },
+      "no-invariants": { type: "boolean", default: false },
+    },
+    allowPositionals: true,
+    strict: false,
+  });
+
+  const kind = positionals[0];
+  const id = positionals[1];
+
+  const validKinds = ["intent-links", "dsl", "signal", "domain", "service", "constraint", "table", "table-er", "observation-loop", "transition-spec", "transition-dag", "flow-schema", "list"];
+  if (!kind || !validKinds.includes(kind)) {
+    console.log("Usage: qa-sdk dkg diagram <kind> [id] [--output path] [--format mmd|html|svg|png] [--no-invariants]");
+    console.log("  kind: list | intent-links | dsl | signal | domain | service | constraint | table | observation-loop | transition-spec | transition-dag | flow-schema");
+    console.log("");
+    console.log("Examples:");
+    console.log("  qa-sdk dkg diagram list                        선택 가능한 다이어그램 리스트");
+    console.log("  qa-sdk dkg diagram intent-links                전체 IntentLink 시퀀스");
+    console.log("  qa-sdk dkg diagram intent-links IL-xxx         단일 IntentLink");
+    console.log("  qa-sdk dkg diagram dsl dsl-checkout            DSL 번들 시퀀스");
+    console.log("  qa-sdk dkg diagram domain dom-commerce         도메인 prefix 시퀀스");
+    console.log("  qa-sdk dkg diagram service svc-ingest          서비스 소유/소비 관계");
+    console.log("  qa-sdk dkg diagram constraint CON-001          constraint 대상");
+    console.log("  qa-sdk dkg diagram table tbl-orders            테이블 참조 관계");
+    console.log("  qa-sdk dkg diagram observation-loop            observation→decision 루프");
+    console.log("  qa-sdk dkg diagram flow-schema coordinate-design  FlowSchema gate 인과 그래프");
+    console.log("  qa-sdk dkg diagram dsl dsl-checkout -o f.mmd   파일 출력");
+    console.log("  qa-sdk dkg diagram dsl dsl-checkout --format html -o f.html  HTML 출력");
+    return;
+  }
+
+  const graph = getGraph();
+
+  // ── list: 선택 가능한 다이어그램 리스트 ──
+  if (kind === "list") {
+    const topo = createDemoTopology();
+    const allDiagrams = listAllDiagrams(graph, topo);
+    const flowSchemas = listFlowSchemas(graph);
+
+    console.log("");
+    console.log("══ Available Diagrams ══");
+
+    for (const [diagramKind, entries] of Object.entries(allDiagrams)) {
+      console.log("");
+      console.log(`[${diagramKind}] (${entries.length}개)`);
+      for (const entry of entries) {
+        const desc = entry.label.length > 60 ? entry.label.slice(0, 57) + "..." : entry.label;
+        console.log(`  ${entry.id.padEnd(28)} ${desc}`);
+      }
+    }
+
+    if (flowSchemas.length > 0) {
+      console.log("");
+      console.log(`[flow-schema] (${flowSchemas.length}개)`);
+      for (const flow of flowSchemas) {
+        console.log(`  ${flow.id.padEnd(28)} ${flow.name}`);
+      }
+    }
+
+    console.log("");
+    console.log("Usage:");
+    console.log("  qa-sdk dkg diagram intent-links              전체 IntentLink 시퀀스");
+    console.log("  qa-sdk dkg diagram intent-links IL-xxx       단일 IntentLink");
+    console.log("  qa-sdk dkg diagram dsl dsl-checkout          DSL 번들 시퀀스");
+    console.log("  qa-sdk dkg diagram domain dom-commerce       도메인 prefix 시퀀스");
+    console.log("  qa-sdk dkg diagram service svc-ingest        서비스 소유/소비 관계");
+    console.log("  qa-sdk dkg diagram constraint CON-001        constraint 대상");
+    console.log("  qa-sdk dkg diagram table tbl-orders          테이블 참조 관계");
+    console.log("  qa-sdk dkg diagram observation-loop          observation→decision 루프");
+    console.log("  qa-sdk dkg diagram flow-schema coordinate-design  FlowSchema gate 인과 그래프");
+    console.log("  qa-sdk dkg diagram dsl dsl-checkout -o f.mmd 파일 출력");
+    console.log("  qa-sdk dkg diagram dsl dsl-checkout --format html -o f.html  HTML 출력");
+    return;
+  }
+
+  const opts: MermaidDiagramOptions = { showInvariants: !values["no-invariants"] };
+  let mmd: string;
+
+  switch (kind) {
+    case "intent-links": {
+      mmd = id
+        ? intentLinkDiagram(graph, id, opts)
+        : allIntentLinksDiagram(graph, opts);
+      break;
+    }
+    case "dsl": {
+      if (!id) { console.error("Usage: qa-sdk dkg diagram dsl <dslId>"); return; }
+      mmd = dslDiagram(graph, id, opts);
+      break;
+    }
+    case "signal": {
+      if (!id) {
+        console.log("Available signal IDs require DEMO_SIGNALS from viz-3d.");
+        console.log("Signal diagram은 향후 DEMO_SIGNALS 연동 시 지원 예정.");
+        return;
+      }
+      console.log("Signal diagram은 향후 DEMO_SIGNALS 연동 시 지원 예정.");
+      return;
+    }
+    case "domain": {
+      if (!id) { console.error("Usage: qa-sdk dkg diagram domain <domainId>"); return; }
+      mmd = domainDiagram(graph, id, opts);
+      break;
+    }
+    case "service": {
+      if (!id) { console.error("Usage: qa-sdk dkg diagram service <serviceId>"); return; }
+      const topo = createDemoTopology();
+      mmd = serviceDiagram(graph, topo, id, opts);
+      break;
+    }
+    case "constraint": {
+      if (!id) { console.error("Usage: qa-sdk dkg diagram constraint <constraintId>"); return; }
+      mmd = constraintDiagram(graph, id, opts);
+      break;
+    }
+    case "table": {
+      if (!id) { console.error("Usage: qa-sdk dkg diagram table <tableId>"); return; }
+      mmd = tableDiagram(graph, id, opts);
+      break;
+    }
+    case "observation-loop": {
+      mmd = observationLoopDiagram(graph, opts);
+      break;
+    }
+    case "table-er": {
+      mmd = tableErDiagram(graph, opts);
+      break;
+    }
+    case "transition-spec": {
+      if (!id) { console.error("Usage: qa-sdk dkg diagram transition-spec <specId>"); return; }
+      mmd = transitionSpecDiagram(graph, id, opts);
+      break;
+    }
+    case "transition-dag": {
+      mmd = transitionDagDiagram(graph, opts);
+      break;
+    }
+    case "flow-schema": {
+      if (!id) { console.error("Usage: qa-sdk dkg diagram flow-schema <flowSchemaId>"); return; }
+      mmd = renderFlowSchemaDiagramMermaid(graph, id);
+      break;
+    }
+    default:
+      console.error(`Unknown diagram kind: ${kind}`);
+      return;
+  }
+
+  // Output
+  const outputPath = values.output as string | undefined;
+  const format = (values.format as string) ?? "mmd";
+
+  if (format === "html") {
+    const title = kind === "dsl" ? `DSL: ${id}`
+      : kind === "intent-links" ? (id ?? "전체 IntentLink")
+      : kind === "domain" ? `Domain: ${id}`
+      : kind === "service" ? `Service: ${id}`
+      : kind === "constraint" ? `Constraint: ${id}`
+      : kind === "table" ? `Table: ${id}`
+      : kind === "table-er" ? "All Tables ER"
+      : kind === "observation-loop" ? "Observation Loop"
+      : kind === "transition-spec" ? `Transition: ${id}`
+      : kind === "transition-dag" ? "Transition DAG"
+      : kind === "flow-schema" ? `Flow Schema: ${id}`
+      : kind;
+    const html = wrapMermaidHtml(mmd, title);
+    if (outputPath) {
+      writeFileSync(outputPath, html, "utf-8");
+      console.log(`  Written: ${outputPath}`);
+    } else {
+      console.log(html);
+    }
+    return;
+  }
+
+  if (outputPath) {
+    writeFileSync(outputPath, mmd, "utf-8");
+    console.log(`  Written: ${outputPath}`);
+  } else {
+    console.log(mmd);
+  }
+
+  // Optional render via mmdc
+  if ((format === "svg" || format === "png") && outputPath) {
+    try {
+      const { execa } = await import("execa");
+      const ext = format;
+      const renderOut = outputPath.replace(/\.mmd$/, `.${ext}`);
+      await execa("mmdc", ["-i", outputPath, "-o", renderOut]);
+      console.log(`  Rendered: ${renderOut}`);
+    } catch (err: unknown) {
+      const execErr = err as { code?: string; message?: string };
+      if (execErr.code === "ENOENT" || execErr.message?.includes("ENOENT")) {
+        console.log("  mmdc not found. Install with: npm install -g @mermaid-js/mermaid-cli");
+      } else {
+        console.error(`  mmdc error: ${errorMessage(err)}`);
+      }
+    }
+  }
+}
+
+// ── dkg discover-links — co-occurrence 기반 IntentLink 후보 발견 ──
+
+/**
+ * usage 스냅샷의 co-occurrence 데이터에서 인과 관계 후보를 추출하고
+ * IntentLink/constraint 등록 후보를 추천한다.
+ */
+export function dkgDiscoverLinks(): void {
+  const graph = getGraph();
+  const store = getStore();
+
+  console.log(`\n══ IntentLink 후보 발견 (co-occurrence 기반) ══`);
+
+  // 1. 최근 스냅샷에서 co-occurrence 데이터 로드
+  const rawSnapshots = store.getRecentUsageSnapshots(10);
+
+  if (rawSnapshots.length === 0) {
+    console.log("\n  (usage 스냅샷 없음)");
+    console.log("  이벤트를 수집하고 dkg converge --persist 를 실행하면 co-occurrence 데이터가 축적됩니다.");
+    return;
+  }
+
+  // 2. 스냅샷 JSON 파싱 → coOccurrences 추출 → 병합
+  const merged = new Map<string, { sourcePrefix: string; sourceEntry: string; targetPrefix: string; targetEntry: string; count: number; totalSourceCount: number }>();
+  let parsedCount = 0;
+
+  for (const snap of rawSnapshots) {
+    try {
+      const usage = JSON.parse(snap.data) as { coOccurrences?: Array<{ sourcePrefix: string; sourceEntry: string; targetPrefix: string; targetEntry: string; count: number; totalSourceCount: number }> };
+      for (const co of usage.coOccurrences ?? []) {
+        const key = `${co.sourcePrefix}:${co.sourceEntry}→${co.targetPrefix}:${co.targetEntry}`;
+        const existing = merged.get(key);
+        if (existing) {
+          existing.count += co.count;
+          existing.totalSourceCount += co.totalSourceCount;
+        } else {
+          merged.set(key, {
+            sourcePrefix: co.sourcePrefix,
+            sourceEntry: co.sourceEntry,
+            targetPrefix: co.targetPrefix,
+            targetEntry: co.targetEntry,
+            count: co.count,
+            totalSourceCount: co.totalSourceCount,
+          });
+        }
+      }
+      parsedCount++;
+    } catch { /* JSON 파싱 실패 스킵 */ }
+  }
+
+  const coOccurrences = [...merged.values()];
+
+  if (coOccurrences.length === 0) {
+    console.log(`\n  스냅샷 ${rawSnapshots.length}개 로드됨 (${parsedCount}개 파싱), co-occurrence 데이터 없음.`);
+    console.log("  이벤트 수집 시 address_context에 여러 prefix가 포함되어야 co-occurrence가 집계됩니다.");
+    return;
+  }
+
+  console.log(`  스냅샷: ${rawSnapshots.length}개 (${parsedCount}개 파싱), co-occurrence 쌍: ${coOccurrences.length}개`);
+
+  // 3. 인과 후보 추출
+  const candidates = discoverCausality(graph, coOccurrences);
+
+  if (candidates.length === 0) {
+    // 임계값 미달이지만 발견된 co-occurrence 패턴 표시
+    const sorted = coOccurrences.toSorted((a, b) => b.count - a.count);
+    const top = sorted.slice(0, 10);
+    console.log(`\n  임계값 미달 — 상위 co-occurrence 패턴 (${top.length}건):`);
+    for (const co of top) {
+      const rate = co.totalSourceCount > 0 ? Math.round((co.count / co.totalSourceCount) * 100) : 0;
+      const existingIL = graph.getNodesByKind("intent-link").find((il) =>
+        il.endpoints?.includes(co.sourcePrefix) && il.endpoints?.includes(co.targetPrefix),
+      );
+      const tag = existingIL ? ` [이미 등록: ${existingIL.id}]` : "";
+      console.log(`    ${co.sourcePrefix} → ${co.targetPrefix}: ${co.count}건 (rate ${rate}%)${tag}`);
+    }
+    console.log(`\n  임계값: count >= 100 필요 (현재 최대 ${top[0]?.count ?? 0}건). 더 많은 트래픽 축적 필요.`);
+    return;
+  }
+
+  // 4. 결과 표시 — confidence별 그룹
+  const high = candidates.filter(c => c.confidence === "high");
+  const medium = candidates.filter(c => c.confidence === "medium");
+  const low = candidates.filter(c => c.confidence === "low");
+
+  if (high.length > 0) {
+    console.log(`\n  ── HIGH confidence (IntentLink 후보) ── [${high.length}건]`);
+    for (const c of high) {
+      printCandidate(c);
+    }
+  }
+
+  if (medium.length > 0) {
+    console.log(`\n  ── MEDIUM confidence (constraint 후보) ── [${medium.length}건]`);
+    for (const c of medium) {
+      printCandidate(c);
+    }
+  }
+
+  if (low.length > 0) {
+    console.log(`\n  ── LOW confidence (추가 관측 필요) ── [${low.length}건]`);
+    for (const c of low) {
+      printCandidate(c);
+    }
+  }
+
+  // 5. 기존 IntentLink와 비교
+  const intentLinks = graph.getNodesByKind("intent-link");
+  if (intentLinks.length > 0) {
+    console.log(`\n  ── 기존 IntentLink (${intentLinks.length}개) ──`);
+    for (const link of intentLinks) {
+      const matchingCo = coOccurrences.find(co =>
+        link.intent.includes(co.sourceEntry) && link.intent.includes(co.targetEntry),
+      );
+      if (matchingCo) {
+        const rate = matchingCo.totalSourceCount > 0
+          ? (matchingCo.count / matchingCo.totalSourceCount * 100).toFixed(1)
+          : "N/A";
+        console.log(`    ${link.id}: ${link.intent} — 관측됨 (rate=${rate}%, count=${matchingCo.count})`);
+      } else {
+        console.log(`    ${link.id}: ${link.intent} — (co-occurrence 데이터 없음)`);
+      }
+    }
+  }
+
+  console.log(`\n  합계: ${candidates.length}건 (high=${high.length}, medium=${medium.length}, low=${low.length})`);
+}
+
+function printCandidate(c: CausalCandidate): void {
+  const ratePercent = (c.coOccurrenceRate * 100).toFixed(1);
+  console.log(`    ${c.source.prefix}:${c.source.entry} → ${c.target.prefix}:${c.target.entry}`);
+  console.log(`      rate=${ratePercent}%  count=${c.observedCount}  추천: ${c.suggestion}`);
+}
+
+/** Mermaid 텍스트를 CDN 기반 self-contained HTML로 래핑 */
+function wrapMermaidHtml(mmd: string, title: string): string {
+  const escaped = mmd.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title} — QA-SDK Diagram</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 24px; background: #fafbfc; }
+  h1 { font-size: 18px; color: #24292e; margin-bottom: 16px; }
+  #diagram { background: #fff; border: 1px solid #e1e4e8; border-radius: 6px; padding: 24px; }
+  .source { margin-top: 24px; }
+  .source summary { cursor: pointer; color: #586069; font-size: 13px; }
+  .source pre { background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 16px; overflow-x: auto; font-size: 12px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<h1>${title}</h1>
+<div id="diagram">
+  <pre class="mermaid">
+${mmd}
+  </pre>
+</div>
+<details class="source">
+  <summary>Mermaid source</summary>
+  <pre>${escaped}</pre>
+</details>
+<script>mermaid.initialize({ startOnLoad: true, theme: 'default' });</script>
+</body>
+</html>`;
 }

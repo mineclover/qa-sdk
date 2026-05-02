@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * bench-bit-optimization.test.ts — BitIndex 최적화 성능 비교
  *

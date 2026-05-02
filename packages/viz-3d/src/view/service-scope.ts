@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * ServiceScope — 서비스 중심 계층 뷰 + 축 필터링.
  *

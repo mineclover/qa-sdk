@@ -1,0 +1,229 @@
+{
+  "name": "Motion Content V1 — GSAP 기반 선언형 모션 콘텐츠 편집기",
+  "description": "motion-content / motion-content-editor / motion-content-editor-demo를 기준으로, JSON 포맷, GSAP runtime, editor session, timeline UX, devtools, demo workflow, 테스트를 닫아 라이브러리화 가능한 V1 표준을 완성한다.",
+  "branchName": "ralph/motion-content-v1",
+  "userStories": [
+    {
+      "id": "MC-001",
+      "title": "V1 개념 용어집 + 패키지 계약 문서화",
+      "description": "개발자로서, Composition/Sequence/Layer/Transition/Caption/Transport/DebugSnapshot의 의미와 패키지 경계를 문서에서 바로 이해할 수 있어야 한다.",
+      "acceptanceCriteria": [
+        "V1 개념 용어집이 문서에 정리된다",
+        "motion-content, motion-content-editor, motion-content-editor-demo의 책임 경계가 문서화된다",
+        "V1 Done Definition과 비목표가 문서에 포함된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "MC-002",
+      "title": "Composition JSON 포맷 V1 고정",
+      "description": "개발자로서, JSON 파일 하나만으로 composition을 저장하고 다시 불러올 수 있어야 한다.",
+      "acceptanceCriteria": [
+        "MotionCompositionDef V1 직렬화 포맷이 고정된다",
+        "parse validation이 필수 필드와 shape 오류를 구체 메시지로 반환한다",
+        "import/export 예제가 문서와 demo에서 동일 포맷을 사용한다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "MC-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "MC-003",
+      "title": "Asset / Stage Adapter 계약 표준화",
+      "description": "개발자로서, asset과 layer가 selector 수준을 넘어 stage adapter 계약으로 연결되도록 표준화하고 싶다.",
+      "acceptanceCriteria": [
+        "asset target과 layer target의 V1 표준 규칙이 정리된다",
+        "stage adapter가 필요한 입력과 책임 범위가 문서와 타입으로 명시된다",
+        "demo stage가 해당 계약을 따라 동작한다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "MC-001",
+        "MC-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "MC-004",
+      "title": "Runtime / Transport 표면 안정화",
+      "description": "개발자로서, play/pause/seek/restart/loop/playbackRate와 snapshot 조회를 안정적인 런타임 계약으로 사용하고 싶다.",
+      "acceptanceCriteria": [
+        "runtime transport API와 snapshot API가 문서화된다",
+        "GSAP player가 transport 상태와 동기화된다",
+        "runtime 재생 제어가 demo에서 확인 가능하다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "브라우저에서 motion-content-editor-demo 재생 제어를 수동 검증한다"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "MC-002",
+        "MC-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "MC-005",
+      "title": "Editor Session / History / Checkpoint 정리",
+      "description": "개발자로서, 편집 중 selection이나 drag preview가 undo stack을 오염시키지 않게 하고 싶다.",
+      "acceptanceCriteria": [
+        "selection은 undo stack에 쌓이지 않는다",
+        "drag는 preview와 commit이 분리된다",
+        "import/set-composition 시 checkpoint가 예측 가능하게 생성된다",
+        "dirty state 또는 checkpoint 전략이 문서화된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "MC-002",
+        "MC-004"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "MC-006",
+      "title": "Timeline 편집 UX 마감",
+      "description": "사용자로서, layer / sequence / caption / transition을 같은 타임라인 모델로 선택, 이동, resize할 수 있어야 한다.",
+      "acceptanceCriteria": [
+        "layer / sequence / caption / transition lane이 모두 렌더링된다",
+        "각 lane의 move/resize 제약이 일관된다",
+        "transition duration 편집이 시퀀스 경계와 모순되지 않는다",
+        "scrubber와 selection이 타임라인 편집 후에도 동기화된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "브라우저에서 motion-content-editor-demo 타임라인 편집을 수동 검증한다"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "MC-004",
+        "MC-005"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "MC-007",
+      "title": "Devtools / Diagnostics 강화",
+      "description": "개발자로서, 현재 composition이 왜 그렇게 보이는지 active cue와 resolved property 기준으로 추적하고 싶다.",
+      "acceptanceCriteria": [
+        "active sequence/layer/caption 정보가 panel에서 확인된다",
+        "resolved asset 또는 property diff를 노출한다",
+        "import 실패나 validation 실패가 UI에서 즉시 보인다",
+        "frame/drop 또는 timing 진단의 최소 표면이 정의된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "브라우저에서 motion-content-editor-demo diagnostics를 수동 검증한다"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "MC-004",
+        "MC-005",
+        "MC-006"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "MC-008",
+      "title": "Demo 앱 워크플로우 완성",
+      "description": "사용자로서, preset 전환과 파일 로드/저장을 포함한 V1 편집 흐름을 demo 앱 하나에서 끝낼 수 있어야 한다.",
+      "acceptanceCriteria": [
+        "demo 앱에서 preset을 전환할 수 있다",
+        "JSON 파일 업로드와 다운로드가 동작한다",
+        "마지막 composition이나 선택 preset을 로컬에 유지할 수 있다",
+        "브라우저 수동 검증 시나리오가 문서화된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "브라우저에서 motion-content-editor-demo 전체 흐름을 수동 검증한다"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "MC-002",
+        "MC-006",
+        "MC-007"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "MC-009",
+      "title": "Core 자동 테스트 추가",
+      "description": "개발자로서, 모델/IO/state/history/runtime이 회귀 없이 유지되길 원한다.",
+      "acceptanceCriteria": [
+        "model/io/state/history/runtime 핵심 경로 테스트가 추가된다",
+        "transport와 parse validation의 경계 케이스가 포함된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "MC-002",
+        "MC-004",
+        "MC-005"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "MC-010",
+      "title": "Editor 자동 테스트 추가",
+      "description": "개발자로서, timeline command와 import/export UI 흐름이 회귀 없이 유지되길 원한다.",
+      "acceptanceCriteria": [
+        "editor shell의 command 흐름 테스트가 추가된다",
+        "timeline lane 편집과 import error 노출을 검증한다",
+        "demo 소비 경로가 빌드로 검증된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "브라우저에서 motion-content-editor-demo 핵심 편집 경로를 수동 검증한다"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "MC-006",
+        "MC-007",
+        "MC-008",
+        "MC-009"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-03-24T12:23:49.370Z"
+  }
+}

@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * GateEngine — release / flag 변경 시 AddressStateStore 자동 재계산 테스트
  *
@@ -223,8 +226,9 @@ describe("[G2] recompute — AddressStateStore 저장 + AddressRangeCache 무효
 
     const record = await ctx.addressStateStore.get("perm", "v1");
     expect(record).not.toBeNull();
-    // role dim open(3-4) → composite에서 일부 주소가 open
-    expect(record!.openRanges.length).toBeGreaterThan(0);
+    // prefix_ref(refEntries 미정의)는 headroom을 reserved로 승격한다 (CON-006)
+    expect(record!.reservedRanges.length).toBeGreaterThan(0);
+    expect(checkGate(6, record!.reservedRanges, record!.inactiveRanges, record!.openRanges).state).toBe("reserved");
   });
 
   it("미등록 prefix → no-op", async () => {

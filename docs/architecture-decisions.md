@@ -1,4 +1,23 @@
+---
+def:
+  id: architecture-decisions
+  type: knowledge
+  knowledge_kind: adr
+  scope: constraint
+  aspect: tech_constraint
+  depth: overview
+  lifecycle: approved
+  tags: [entry-point, decision, cross-scope]
+  links:
+    - target: guides-system
+      type: refines
+---
 # Architecture Decisions
+
+## 목적 ^purpose
+
+ADR-001~009 아키텍처 결정 기록. 불변 주소, 단방향 의존, fail-open 게이트 등 시스템 핵심 설계 결정의 근거와 대안을 보존한다.
+
 
 > 패키지 경계, 인증 전략, 데이터 흐름에 관한 횡단 설계 결정. 각 결정은 **왜** 그렇게 했는지와 **어떤 규칙**을 지켜야 하는지를 명시한다.
 
@@ -275,3 +294,134 @@ QA 플랫폼에서 "어떤 이벤트가 발생했는가"는 추적하지만 "이
                                             ↓
                                   통계 → metric-registry → self-check 보고
 ```
+
+---
+
+## ADR-007: GraphPort 3단 추상화
+
+### 결정
+
+DKG 그래프 저장소의 소비자를 3단계로 분리한다.
+
+### 배경
+
+DKG GraphRegistry는 15종 노드 + 18종 엣지의 구체 타입을 가진 그래프 저장소다. convergence 분석 함수(15개), 서비스 동적 import(ingest/registry), CLI/skills가 모두 같은 그래프를 사용하지만 필요한 정보 범위가 다르다.
+
+모든 소비자가 GraphRegistry를 직접 import하면:
+- convergence가 DkgNode 15종에 결합 → 노드 추가 시 빌드 영향 확대
+- 서비스가 optional peer를 정적 import 불가
+- 테스트에서 전체 구현 mock 필요
+
+### 구조
+
+| 레벨 | 인터페이스 | 반환 타입 | 소비자 | 파일 수 |
+|------|-----------|----------|--------|--------|
+| **GraphPort** | `shared/graph-port.ts` | `{ kind, id }` | convergence/schema/skills | 27 |
+| **GraphRegistryPort** | 서비스 `types/spec-core-ports.ts` | `{ kind, id, [key] }` | 동적 import 서비스 | 2 |
+| **GraphRegistry** | `dkg/graph-registry.ts` | `DkgNode` 15종 | bootstrap/store/lifecycle/mermaid | 9 |
+
+### 규칙
+
+| 규칙 | 설명 |
+|------|------|
+| **GraphPort 우선** | 새 함수 작성 시 GraphPort로 충분하면 GraphPort 사용 |
+| **구체 타입 정당성** | `replaceNode`, `hasNode`, Table 질의 등 Port에 없는 메서드가 필요할 때만 GraphRegistry 사용 |
+| **Port 확장 검토** | 3개 이상 파일이 같은 Registry-only 메서드를 사용하면 Port에 승격 검토 |
+| **서비스 포트 최소화** | GraphRegistryPort는 `getAllNodes` + `getNodesByKind` 2메서드만 유지 |
+
+---
+
+## ADR-008: DKG Table 의존 추적
+
+### 결정
+
+Catalog의 `tables` 섹션을 DKG 그래프에 `TableNode`로 자동 파생하고, column-level 엣지로 DB ↔ prefix ↔ service 의존 체인을 추적한다.
+
+### 배경
+
+로깅 시스템이 "어떤 DB가 어떤 이벤트에 영향 받는가"를 질의하려면 테이블-prefix 관계가 구조화되어야 한다. 기존에는 prefix의 `table_ref` dim이 단순 문자열 참조였고, DKG에 테이블 노드가 없어 역추적이 불가능했다.
+
+### 구조
+
+```
+Catalog.tables → catalog-derive → TableNode + column edges
+  column axis_ref  → composes 엣지 (dimKind: "column_axis")
+  column prefix_ref → references 엣지
+  column table_ref  → references 엣지 (meta: { fk: true })
+
+GraphRegistry 전용 질의:
+  getPrefixesForTable(tableId)  — 테이블을 참조하는 prefix
+  getTablesForPrefix(prefixId)  — prefix가 참조하는 테이블
+  getTableColumnRefs(tableId)   — 컬럼별 참조 대상
+  cascadeFromTable(tableId)     — 변경 시 영향 prefix + FK 체인
+
+ServiceTopology 추론:
+  getTablesForService(serviceId, graph)  — prefix 소유에서 추론
+  getServicesForTable(tableId, graph)    — 역방향 추론
+```
+
+### 규칙
+
+| 규칙 | 설명 |
+|------|------|
+| **Table 질의는 GraphRegistry 전용** | GraphPort에 Table 메서드를 추가하지 않음. Table은 구체 구현의 확장 기능 |
+| **CLI로 조회** | `dkg tables` (목록), `dkg table <id>` (상세 + impact) |
+| **DEMO_CATALOG 6개 테이블** | members, orgs, items, orders, carts, cart_items |
+
+---
+
+## ADR-009: Transition Spec DSL — 좌표계 위의 상태 해석 계층
+
+### 결정
+
+좌표계(DEMO_CATALOG)는 불변 primitive로 유지하면서, 상태 전이 해석을 외부 spec으로 분리한다. 상태는 별도 vocabulary가 아닌 기존 축(axis)의 entry로 표현한다.
+
+### 배경
+
+기존 시스템은 "이 흐름이 올바른가?"(Verdict: pass/fail)만 판단했다. "이 흐름으로 무슨 상태가 되었는가?"를 알려면 이벤트 시퀀스에 상태 전이 의미를 부여하는 해석 계층이 필요했다. 별도 slot vocabulary를 만들면 축 시스템과 이중 관리가 되므로, 기존 축을 그대로 사용한다.
+
+### 구조
+
+```
+DEMO_CATALOG (좌표 + 축) ← 불변
+  ↓ match (좌표 패턴)
+TransitionSpec (해석 규칙) ← 버전별 진화
+  ↓ output (축 entry 설정)
+StateStore (축별 상태) ← 런타임 파생
+```
+
+TransitionEngine 7단계: collect → match → bind → load → validate → apply → emit
+
+### 핵심 타입
+
+- `StateCondition` — axis + eq/neq/in/exists (축 entry 기반 전제조건)
+- `StateAssignment` — axis + value (축 entry 설정, null = 제거)
+- `TransitionInstance` — 전이 결과 (input/output 스냅샷 포함)
+- `TransitionSpecNode` — DKG 노드 (matchAxes/inputAxes/outputAxes 역할별 분리)
+
+### DKG 통합
+
+- `consumes` 엣지: TransitionSpecNode → 참조 축
+- `depends-on` 엣지: outputAxes ∩ inputAxes로 전이 간 상태 의존성 자동 파생
+- `satisfies` 엣지: slotRefs ∩ DSL member axes로 invariant 형식 구현 연결
+- `CON-EFFECT-VOCAB`: effect kind 정규 vocabulary 제약
+
+### Ingest 통합 (Phase 2.5)
+
+```
+Phase 2.3: Verdict
+Phase 2.5: Decode + Transition Matching (TRANSITION_ENGINE_ENABLED)
+Phase 2.6: Convergence Notification
+```
+
+에러 격리: Phase 2.5 전체 실패 → verdict/convergence 미영향.
+
+### 규칙
+
+| 규칙 | 설명 |
+|------|------|
+| **상태는 축으로 표현** | 별도 slot vocabulary 만들지 않음. `flow_step`, `lifecycle_state` 등 기존 축 사용 |
+| **TransitionSpec이 SSOT** | DKG TransitionSpecNode는 bridge 자동 파생. 수동 정의 금지 |
+| **address_context 디코딩** | TransitionEngine은 디코딩된 이벤트만 받음. decode 책임은 호출자 |
+| **effect vocabulary 통제** | create/update/move/consume/open/close. 추가 시 DKG Decision 필수 |
+| **metric은 주입** | autoRunnable: false. Phase 2.5 결과에서 값을 계산하여 주입 |

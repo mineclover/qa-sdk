@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * 에러 패리티 계약: 같은 잘못된 입력에 대해 PermissionCodec, PrefixCodec, MetaCodec이
  * 모두 에러를 던지는지 검증한다.

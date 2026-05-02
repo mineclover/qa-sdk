@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import type {
   IndexMetaStore,
   SchemaVersionRecord,
@@ -36,7 +39,7 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
   async getSchemaVersions(prefix: string): Promise<SchemaVersionRecord[]> {
     return [...this._versions.values()]
       .filter((r) => r.prefix === prefix)
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      .toSorted((a, b) => a.createdAt.localeCompare(b.createdAt));
   }
 
   async getSchemaVersion(
@@ -66,7 +69,7 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
   async getEntries(prefix: string, versionId: string): Promise<EntryRecord[]> {
     return [...this._entries.values()]
       .filter((r) => r.prefix === prefix && r.versionId === versionId)
-      .sort((a, b) => a.position - b.position);
+      .toSorted((a, b) => a.position - b.position);
   }
 
   async getEntriesInRange(
@@ -83,7 +86,7 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
           r.position >= from &&
           r.position <= to
       )
-      .sort((a, b) => a.position - b.position);
+      .toSorted((a, b) => a.position - b.position);
   }
 
   async getEntry(

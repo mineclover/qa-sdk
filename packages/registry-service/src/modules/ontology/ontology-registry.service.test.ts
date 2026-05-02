@@ -1,0 +1,1014 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { InMemoryIndexMetaStore, InMemoryPrefixRegistry } from "index-meta";
+import { operationalOntologyAllocationPlane } from "operational-ontology/allocation";
+import type { OperationalOntologyPack } from "operational-ontology/pack";
+
+import { InMemoryOntologyRegistryStore } from "../../stores/in-memory-ontology-registry-store.js";
+import type { OntologyRegistryStore } from "../../stores/ontology-registry-store.js";
+import {
+  buildDeferredOntologyIndexMetaSyncReport,
+  createOntologyIndexMetaSyncAdapter,
+  type OntologyIndexMetaSyncAdapter,
+  type OntologyIndexMetaSyncBundle,
+  type OntologyIndexMetaSyncDeferredReport,
+} from "./index-meta-sync.adapter.js";
+import {
+  OntologyRegistryService,
+  OntologyRegistryServiceError,
+} from "./ontology-registry.service.js";
+
+const validPack = {
+  packId: "authorization-ontology",
+  schema: {
+    axes: [
+      { id: "resource_kind", values: ["service", "route"], capacity: 8 },
+      { id: "decision_kind", values: ["allow", "deny"], capacity: 4 },
+    ],
+    taxonomies: [
+      {
+        id: "authorization-resource",
+        appliesTo: ["node"],
+        axisIds: ["resource_kind"],
+        identityAxisIds: ["resource_kind"],
+        space: "authorization",
+      },
+      {
+        id: "authorization-decision",
+        appliesTo: ["node"],
+        axisIds: ["decision_kind"],
+        identityAxisIds: ["decision_kind"],
+        space: "authorization",
+      },
+    ],
+    relationCategories: [],
+  },
+} satisfies OperationalOntologyPack;
+
+const multiAxisPack = {
+  packId: "authorization-ontology",
+  schema: {
+    axes: [
+      { id: "resource_kind", values: ["service", "route"], capacity: 8 },
+      { id: "decision_kind", values: ["allow", "deny"], capacity: 4 },
+    ],
+    taxonomies: [
+      {
+        id: "authorization-surface",
+        appliesTo: ["node"],
+        axisIds: ["resource_kind", "decision_kind"],
+        identityAxisIds: ["resource_kind"],
+        space: "authorization",
+      },
+    ],
+    relationCategories: [],
+  },
+} satisfies OperationalOntologyPack;
+
+describe("OntologyRegistryService", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("registers valid packs by allocating, validating, and writing reserved rows", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const service = createService(store);
+    const allocate = vi.spyOn(
+      operationalOntologyAllocationPlane,
+      "allocateOntologyAddressSpace",
+    );
+    const validatePlan = vi.spyOn(
+      operationalOntologyAllocationPlane,
+      "validateOntologyAddressAllocationPlan",
+    );
+
+    await expect(
+      service.registerOntologyPack(validPack, {
+        namespace: "authz",
+        owner: "registry-service",
+        versionId: "v1",
+        now: "2026-04-14T00:00:00.000Z",
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        packId: "authorization-ontology",
+        ontologyId: "authorization-ontology",
+        validation: expect.objectContaining({ valid: true }),
+        allocationValidation: expect.objectContaining({ valid: true }),
+        allocations: expect.arrayContaining([
+          expect.objectContaining({
+            allocationId: "authorization-ontology:authorization-resource:v1",
+            status: "reserved",
+          }),
+          expect.objectContaining({
+            allocationId: "authorization-ontology:authorization-decision:v1",
+            status: "reserved",
+          }),
+        ]),
+      }),
+    );
+    expect(allocate).toHaveBeenCalledWith(
+      validPack.schema,
+      expect.objectContaining({ ontologyId: "authorization-ontology" }),
+    );
+    expect(validatePlan).toHaveBeenCalledWith(
+      expect.objectContaining({ schema: validPack.schema }),
+    );
+    expect(await store.listNamespaces()).toEqual([
+      {
+        createdAt: "2026-04-14T00:00:00.000Z",
+        lifecycle: "draft",
+        ontologyId: "authorization-ontology",
+        namespace: "authz",
+        owner: "registry-service",
+        updatedAt: "2026-04-14T00:00:00.000Z",
+      },
+    ]);
+    expect(await store.listAxes("authorization-ontology", "v1")).toEqual([
+      expect.objectContaining({
+        ontologyId: "authorization-ontology",
+        axisId: "decision_kind",
+        versionId: "v1",
+        values: ["allow", "deny"],
+        capacity: 4,
+        lifecycle: "draft",
+      }),
+      expect.objectContaining({
+        ontologyId: "authorization-ontology",
+        axisId: "resource_kind",
+        versionId: "v1",
+        values: ["service", "route"],
+        capacity: 8,
+        lifecycle: "draft",
+      }),
+    ]);
+    expect(await store.listTaxonomies("authorization-ontology", "v1")).toEqual([
+      {
+        ontologyId: "authorization-ontology",
+        taxonomyId: "authorization-decision",
+        versionId: "v1",
+        appliesTo: ["node"],
+        axisIds: ["decision_kind"],
+        identityAxisIds: ["decision_kind"],
+        space: "authorization",
+        lifecycle: "draft",
+      },
+      {
+        ontologyId: "authorization-ontology",
+        taxonomyId: "authorization-resource",
+        versionId: "v1",
+        appliesTo: ["node"],
+        axisIds: ["resource_kind"],
+        identityAxisIds: ["resource_kind"],
+        space: "authorization",
+        lifecycle: "draft",
+      },
+    ]);
+    expect(await store.listAllocations("authorization-ontology", "v1")).toEqual([
+      {
+        allocationId: "authorization-ontology:authorization-decision:v1",
+        ontologyId: "authorization-ontology",
+        taxonomyId: "authorization-decision",
+        prefix: "authz_authorization_decision",
+        versionId: "v1",
+        addressModel: "product",
+        capacity: 4,
+        addressOffset: 8,
+        addressSize: 4,
+        status: "reserved",
+      },
+      {
+        allocationId: "authorization-ontology:authorization-resource:v1",
+        ontologyId: "authorization-ontology",
+        taxonomyId: "authorization-resource",
+        prefix: "authz_authorization_resource",
+        versionId: "v1",
+        addressModel: "product",
+        capacity: 8,
+        addressOffset: 0,
+        addressSize: 8,
+        status: "reserved",
+      },
+    ]);
+    expect(
+      await store.listSegments("authorization-ontology:authorization-resource:v1"),
+    ).toEqual([
+      {
+        allocationId: "authorization-ontology:authorization-resource:v1",
+        segmentId: "authorization-ontology:authorization-resource:v1:product",
+        consumes: ["resource_kind"],
+        addressOffset: 0,
+        addressSize: 8,
+      },
+    ]);
+  });
+
+  it("uses pack id as default ontology id unless options override it", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const service = createService(store);
+
+    const result = await service.registerOntologyPack({
+      pack: validPack,
+      options: {
+        ontologyId: "authz-runtime",
+        namespace: "authz",
+        versionId: "v2",
+      },
+    });
+
+    expect(result.ontologyId).toBe("authz-runtime");
+    expect(await store.getNamespace("authz-runtime")).toEqual(
+      expect.objectContaining({
+        ontologyId: "authz-runtime",
+        namespace: "authz",
+      }),
+    );
+    expect(await store.listAllocations("authz-runtime", "v2")).toEqual([
+      expect.objectContaining({
+        allocationId: "authz-runtime:authorization-decision:v2",
+      }),
+      expect.objectContaining({
+        allocationId: "authz-runtime:authorization-resource:v2",
+      }),
+    ]);
+  });
+
+  it("reports invalid pack validation as a service-level no-write conflict", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const service = createService(store);
+    const allocate = vi.spyOn(
+      operationalOntologyAllocationPlane,
+      "allocateOntologyAddressSpace",
+    );
+    const write = vi.spyOn(store, "writeAllocationPlan");
+    const error = await captureServiceError(
+      service.registerOntologyPack({
+        pack: {
+          packId: "broken-pack",
+          schema: {
+            axes: [{ id: "resource_kind", values: ["service", "service"] }],
+            taxonomies: [],
+            relationCategories: [],
+          },
+        },
+      }),
+    );
+
+    expect(allocate).not.toHaveBeenCalled();
+    expect(write).not.toHaveBeenCalled();
+    expect(error.conflict).toEqual(
+      expect.objectContaining({
+        code: "invalid-pack",
+        packId: "broken-pack",
+        issues: expect.arrayContaining([
+          expect.objectContaining({ code: "axis-values-duplicate" }),
+        ]),
+      }),
+    );
+    await expectOntologyStoreEmpty(store);
+  });
+
+  it("reserves allocation plans through OntologyRegistryStore only", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const service = createService(store);
+
+    const result = await service.reserveAddressSpace({
+      pack: validPack,
+      policy: {
+        namespace: "authz",
+        owner: "registry-service",
+        versionId: "v1",
+        now: "2026-04-14T00:00:00.000Z",
+      },
+    });
+
+    expect(result.allocations.map((allocation) => allocation.allocationId)).toEqual([
+      "authorization-ontology:authorization-resource:v1",
+      "authorization-ontology:authorization-decision:v1",
+    ]);
+    expect(await store.listNamespaces()).toEqual([
+      expect.objectContaining({
+        ontologyId: "authorization-ontology",
+        namespace: "authz",
+      }),
+    ]);
+    expect(
+      (await store.listAllocations("authorization-ontology", "v1")).map(
+        (allocation) => allocation.status,
+      ),
+    ).toEqual(["reserved", "reserved"]);
+  });
+
+  it("accepts allocation schema and policy inputs while keeping reservations inactive", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const service = createService(store);
+    const prefixRegistry = new InMemoryPrefixRegistry();
+    const allocate = vi.spyOn(
+      operationalOntologyAllocationPlane,
+      "allocateOntologyAddressSpace",
+    );
+    const indexMetaRegister = vi.spyOn(prefixRegistry, "register");
+
+    const result = await service.reserveAddressSpace(validPack.schema, {
+      ontologyId: "authz-schema",
+      namespace: "authz.schema",
+      owner: "registry-service",
+      versionId: "v3",
+      status: "active",
+      addressModel: "sum",
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        packId: "authz-schema",
+        ontologyId: "authz-schema",
+        plan: expect.objectContaining({
+          validation: expect.objectContaining({ valid: true }),
+        }),
+      }),
+    );
+    expect(allocate).toHaveBeenCalledWith(
+      validPack.schema,
+      expect.objectContaining({
+        ontologyId: "authz-schema",
+        namespace: "authz.schema",
+        status: "reserved",
+        addressModel: "sum",
+      }),
+    );
+    expect(result.allocations.map((allocation) => allocation.status)).toEqual([
+      "reserved",
+      "reserved",
+    ]);
+    expect(
+      (await store.listAllocations("authz-schema", "v3")).map(
+        (allocation) => allocation.status,
+      ),
+    ).toEqual(["reserved", "reserved"]);
+    expect(indexMetaRegister).not.toHaveBeenCalled();
+    expect(await prefixRegistry.listAll()).toEqual([]);
+  });
+
+  it("rejects invalid allocation plans before persistence", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const service = createService(store);
+    const write = vi.spyOn(store, "writeAllocationPlan");
+    const invalidPlanError = await captureServiceError(
+      service.reserveAddressSpace({
+        pack: validPack,
+        policy: {
+          prefixByTaxonomyId: {
+            "authorization-resource": "authz_shared",
+            "authorization-decision": "authz_shared",
+          },
+        },
+      }),
+    );
+
+    expect(write).not.toHaveBeenCalled();
+    expect(invalidPlanError.conflict).toEqual(
+      expect.objectContaining({
+        code: "invalid-allocation-plan",
+        issues: expect.arrayContaining([
+          expect.objectContaining({ code: "ontology-prefix-version-duplicate" }),
+        ]),
+      }),
+    );
+    await expectOntologyStoreEmpty(store);
+  });
+
+  it("maps duplicate prefix/version reservations to structured service conflicts", async () => {
+    const service = createService(new InMemoryOntologyRegistryStore());
+
+    await service.reserveAddressSpace(validPack.schema, {
+      ontologyId: "authz-a",
+      namespace: "authz-a",
+      versionId: "v1",
+      prefixByTaxonomyId: {
+        "authorization-resource": "shared_prefix",
+        "authorization-decision": "authz_a_decision",
+      },
+    });
+    const duplicateError = await captureServiceError(
+      service.reserveAddressSpace(validPack.schema, {
+        ontologyId: "authz-b",
+        namespace: "authz-b",
+        versionId: "v1",
+        prefixByTaxonomyId: {
+          "authorization-resource": "shared_prefix",
+          "authorization-decision": "authz_b_decision",
+        },
+      }),
+    );
+
+    expect(duplicateError.conflict).toEqual(
+      expect.objectContaining({
+        code: "duplicate-allocation",
+        allocationIds: [
+          "authz-b:authorization-resource:v1",
+          "authz-b:authorization-decision:v1",
+        ],
+        allocationKeys: expect.arrayContaining([
+          {
+            recordKind: "allocation",
+            prefix: "shared_prefix",
+            versionId: "v1",
+          },
+        ]),
+        storeConflicts: expect.arrayContaining([
+          expect.objectContaining({
+            code: "drift",
+            key: {
+              recordKind: "allocation",
+              prefix: "shared_prefix",
+              versionId: "v1",
+            },
+          }),
+        ]),
+      }),
+    );
+  });
+
+  it("maps duplicate ontology/taxonomy/version reservations without dropping store details", async () => {
+    const service = createService(new InMemoryOntologyRegistryStore());
+
+    await service.reserveAddressSpace(validPack.schema, {
+      ontologyId: "authz",
+      namespace: "authz",
+      versionId: "v1",
+      prefixByTaxonomyId: {
+        "authorization-resource": "authz_resource",
+        "authorization-decision": "authz_decision",
+      },
+    });
+    const duplicateError = await captureServiceError(
+      service.reserveAddressSpace(validPack.schema, {
+        ontologyId: "authz",
+        namespace: "authz",
+        versionId: "v1",
+        prefixByTaxonomyId: {
+          "authorization-resource": "authz_resource_v2",
+          "authorization-decision": "authz_decision_v2",
+        },
+      }),
+    );
+
+    expect(duplicateError.conflict).toEqual(
+      expect.objectContaining({
+        code: "duplicate-allocation",
+        allocationKeys: expect.arrayContaining([
+          {
+            recordKind: "allocation",
+            ontologyId: "authz",
+            taxonomyId: "authorization-resource",
+            versionId: "v1",
+          },
+        ]),
+        storeConflicts: expect.arrayContaining([
+          expect.objectContaining({
+            code: "drift",
+            key: {
+              recordKind: "allocation",
+              allocationId: "authz:authorization-resource:v1",
+            },
+            fields: expect.arrayContaining(["prefix"]),
+          }),
+        ]),
+      }),
+    );
+  });
+
+  it("activates reserved allocations through the store boundary without index-meta calls", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const service = createService(store);
+    const prefixRegistry = new InMemoryPrefixRegistry();
+    const updateStatus = vi.spyOn(store, "updateAllocationStatus");
+    const indexMetaGet = vi.spyOn(prefixRegistry, "getRecord");
+    const indexMetaRegister = vi.spyOn(prefixRegistry, "register");
+    await service.reserveAddressSpace({ pack: validPack });
+
+    const activated = await service.activateAllocation(
+      "authorization-ontology:authorization-resource:v1",
+    );
+
+    expect(activated.allocation.status).toBe("active");
+    expect(updateStatus).toHaveBeenCalledWith(
+      "authorization-ontology:authorization-resource:v1",
+      "active",
+    );
+    expect(indexMetaGet).not.toHaveBeenCalled();
+    expect(indexMetaRegister).not.toHaveBeenCalled();
+  });
+
+  it("rejects missing, active-again, and deprecated activation paths", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const service = createService(store);
+    await service.reserveAddressSpace({ pack: validPack });
+
+    await service.activateAllocation({
+      allocationId: "authorization-ontology:authorization-resource:v1",
+    });
+
+    const transitionError = await captureServiceError(
+      service.activateAllocation({
+        allocationId: "authorization-ontology:authorization-resource:v1",
+      }),
+    );
+    expect(transitionError.conflict).toEqual(
+      expect.objectContaining({
+        code: "invalid-transition",
+        from: "active",
+        to: "active",
+      }),
+    );
+
+    await store.updateAllocationStatus(
+      "authorization-ontology:authorization-decision:v1",
+      "deprecated",
+    );
+    const deprecatedError = await captureServiceError(
+      service.activateAllocation("authorization-ontology:authorization-decision:v1"),
+    );
+    expect(deprecatedError.conflict).toEqual(
+      expect.objectContaining({
+        code: "invalid-transition",
+        from: "deprecated",
+        to: "active",
+      }),
+    );
+
+    const missingError = await captureServiceError(
+      service.activateAllocation("missing"),
+    );
+    expect(missingError.conflict).toEqual(
+      expect.objectContaining({
+        code: "missing-allocation",
+        allocationId: "missing",
+      }),
+    );
+  });
+
+  it("blocks activation when another active allocation owns the prefix/version", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const service = createService(store);
+    await service.reserveAddressSpace({ pack: validPack });
+    const allocation = await store.getAllocation(
+      "authorization-ontology:authorization-resource:v1",
+    );
+    if (!allocation) {
+      throw new Error("test fixture is missing the reserved allocation");
+    }
+    const activeAllocation = {
+      ...allocation,
+      allocationId: "legacy-ontology:authorization-resource:v1",
+      ontologyId: "legacy-ontology",
+      status: "active" as const,
+    };
+    const listActive = vi
+      .spyOn(store, "listActiveAllocations")
+      .mockResolvedValue([activeAllocation]);
+    const updateStatus = vi.spyOn(store, "updateAllocationStatus");
+
+    const duplicateError = await captureServiceError(
+      service.activateAllocation(allocation.allocationId),
+    );
+
+    expect(listActive).toHaveBeenCalled();
+    expect(updateStatus).not.toHaveBeenCalled();
+    expect(duplicateError.conflict).toEqual(
+      expect.objectContaining({
+        code: "duplicate-allocation",
+        allocationIds: [
+          "authorization-ontology:authorization-resource:v1",
+          "legacy-ontology:authorization-resource:v1",
+        ],
+        allocationKeys: expect.arrayContaining([
+          {
+            recordKind: "allocation",
+            prefix: "authorization_ontology_authorization_resource",
+            versionId: "v1",
+          },
+        ]),
+        storeConflicts: expect.arrayContaining([
+          expect.objectContaining({
+            code: "duplicate-key",
+            key: {
+              recordKind: "allocation",
+              prefix: "authorization_ontology_authorization_resource",
+              versionId: "v1",
+            },
+          }),
+        ]),
+      }),
+    );
+    expect(
+      await store.getAllocation("authorization-ontology:authorization-resource:v1"),
+    ).toEqual(expect.objectContaining({ status: "reserved" }));
+  });
+
+  it("syncs active allocations through the index-meta adapter only", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const prefixRegistry = new InMemoryPrefixRegistry();
+    const schemaVersionStore = new InMemoryIndexMetaStore();
+    const service = new OntologyRegistryService({
+      store,
+      syncAdapter: createOntologyIndexMetaSyncAdapter({
+        prefixRegistry,
+        schemaVersionStore,
+      }),
+    });
+    const indexMetaGet = vi.spyOn(prefixRegistry, "getRecord");
+    const indexMetaRegister = vi.spyOn(prefixRegistry, "register");
+    const schemaVersionGet = vi.spyOn(schemaVersionStore, "getSchemaVersion");
+    const schemaVersionInsert = vi.spyOn(
+      schemaVersionStore,
+      "insertSchemaVersion",
+    );
+    await service.reserveAddressSpace({ pack: validPack });
+
+    const reservedSyncError = await captureServiceError(
+      service.syncToPrefixRegistry("authorization-ontology:authorization-resource:v1"),
+    );
+    expect(reservedSyncError.conflict).toEqual(
+      expect.objectContaining({
+        code: "sync-precondition-failure",
+        reason: "allocation-not-active",
+        status: "reserved",
+      }),
+    );
+
+    const missingSyncError = await captureServiceError(
+      service.syncToPrefixRegistry("missing"),
+    );
+    expect(missingSyncError.conflict).toEqual(
+      expect.objectContaining({
+        code: "missing-allocation",
+        allocationId: "missing",
+      }),
+    );
+    expect(indexMetaGet).not.toHaveBeenCalled();
+    expect(indexMetaRegister).not.toHaveBeenCalled();
+    expect(schemaVersionGet).not.toHaveBeenCalled();
+    expect(schemaVersionInsert).not.toHaveBeenCalled();
+
+    await service.activateAllocation({
+      allocationId: "authorization-ontology:authorization-resource:v1",
+    });
+    const report = await service.syncToPrefixRegistry({
+      allocationId: "authorization-ontology:authorization-resource:v1",
+    });
+
+    expect(report).toEqual({
+      allocationId: "authorization-ontology:authorization-resource:v1",
+      prefix: "authorization_ontology_authorization_resource",
+      versionId: "v1",
+      taxonomyId: "authorization-resource",
+      status: "active",
+      syncStatus: "synced",
+      materializedRecords: expect.arrayContaining([
+        expect.objectContaining({
+          kind: "prefix-registry",
+          role: "axis-leaf",
+          prefix: "authorization_ontology_axis_resource_kind",
+          capacity: 8,
+          axisId: "resource_kind",
+        }),
+        expect.objectContaining({
+          kind: "schema-version",
+          role: "axis-leaf",
+          prefix: "authorization_ontology_axis_resource_kind",
+          capacity: 8,
+          axisId: "resource_kind",
+        }),
+        expect.objectContaining({
+          kind: "prefix-registry",
+          role: "allocation-prefix",
+          prefix: "authorization_ontology_authorization_resource",
+          capacity: 8,
+          refs: [
+            {
+              prefix: "authorization_ontology_axis_resource_kind",
+              versionId: "v1",
+              capacity: 8,
+            },
+          ],
+        }),
+        expect.objectContaining({
+          kind: "schema-version",
+          role: "allocation-prefix",
+          prefix: "authorization_ontology_authorization_resource",
+          capacity: 8,
+        }),
+      ]),
+      idempotentRecords: [],
+      repairedRecords: [],
+      collisions: [],
+      deferredSemantics: [],
+      postSyncChecks: {
+        targetRecords: expect.arrayContaining([
+          expect.objectContaining({
+            role: "axis-leaf",
+            axisId: "resource_kind",
+            prefix: "authorization_ontology_axis_resource_kind",
+            expectedCapacity: 8,
+            prefixRegistryRecordExists: true,
+            prefixRegistryCapacityMatches: true,
+            schemaVersionCapacityExists: true,
+            schemaVersionCapacityMatches: true,
+          }),
+          expect.objectContaining({
+            role: "allocation-prefix",
+            prefix: "authorization_ontology_authorization_resource",
+            expectedCapacity: 8,
+            prefixRegistryRecordExists: true,
+            prefixRegistryCapacityMatches: true,
+            schemaVersionCapacityExists: true,
+            schemaVersionCapacityMatches: true,
+          }),
+        ]),
+        productAllocation: expect.objectContaining({
+          prefix: "authorization_ontology_authorization_resource",
+          versionId: "v1",
+          expectedShape: [8],
+          actualShape: [8],
+          shapeMatchesOrderedAxisCapacities: true,
+          resolverChecks: expect.objectContaining({
+            lastValidAddressInRange: true,
+            capacityAddressOutOfRange: true,
+          }),
+        }),
+      },
+    });
+    if (report.syncStatus !== "synced") {
+      throw new Error("expected active allocation sync to materialize");
+    }
+    expect(report.materializedRecords).toHaveLength(4);
+    expect(await prefixRegistry.getRecord(
+      "authorization_ontology_authorization_resource",
+      "v1",
+    )).toEqual({
+      prefix: "authorization_ontology_authorization_resource",
+      versionId: "v1",
+      capacity: 8,
+      refs: [
+        {
+          prefix: "authorization_ontology_axis_resource_kind",
+          versionId: "v1",
+          capacity: 8,
+        },
+      ],
+    });
+    expect(await schemaVersionStore.getSchemaVersion(
+      "authorization_ontology_authorization_resource",
+      "v1",
+    )).toEqual(
+      expect.objectContaining({
+        prefix: "authorization_ontology_authorization_resource",
+        versionId: "v1",
+        capacity: 8,
+      }),
+    );
+    expect(
+      await store.getAllocation(
+        "authorization-ontology:authorization-decision:v1",
+      ),
+    ).toEqual(expect.objectContaining({ status: "reserved" }));
+
+    const retryReport = await service.syncToPrefixRegistry(
+      "authorization-ontology:authorization-resource:v1",
+    );
+    expect(retryReport).toEqual(
+      expect.objectContaining({
+        syncStatus: "synced",
+        materializedRecords: [],
+        repairedRecords: [],
+        collisions: [],
+        deferredSemantics: [],
+      }),
+    );
+    if (retryReport.syncStatus !== "synced") {
+      throw new Error("expected active allocation retry sync to remain synced");
+    }
+    expect(retryReport.idempotentRecords).toHaveLength(4);
+  });
+
+  it("passes a complete active allocation bundle to the sync adapter", async () => {
+    const store = new InMemoryOntologyRegistryStore();
+    const capturedBundles: OntologyIndexMetaSyncBundle[] = [];
+    const syncAdapter: OntologyIndexMetaSyncAdapter<
+      OntologyIndexMetaSyncDeferredReport
+    > = {
+      async sync(bundle) {
+        capturedBundles.push(bundle);
+        return buildDeferredOntologyIndexMetaSyncReport(bundle);
+      },
+    };
+    const service = new OntologyRegistryService({ store, syncAdapter });
+
+    await service.reserveAddressSpace({
+      pack: multiAxisPack,
+      policy: {
+        namespace: "authz",
+        owner: "registry-service",
+        versionId: "v1",
+        now: "2026-04-14T00:00:00.000Z",
+      },
+    });
+    await service.activateAllocation(
+      "authorization-ontology:authorization-surface:v1",
+    );
+
+    await service.syncToPrefixRegistry(
+      "authorization-ontology:authorization-surface:v1",
+    );
+
+    expect(capturedBundles).toHaveLength(1);
+    expect(capturedBundles[0]).toEqual(
+      expect.objectContaining({
+        allocation: expect.objectContaining({
+          allocationId: "authorization-ontology:authorization-surface:v1",
+          status: "active",
+          addressOffset: 0,
+          addressSize: 32,
+        }),
+        namespace: expect.objectContaining({
+          ontologyId: "authorization-ontology",
+          namespace: "authz",
+        }),
+        taxonomy: expect.objectContaining({
+          taxonomyId: "authorization-surface",
+          axisIds: ["resource_kind", "decision_kind"],
+        }),
+      }),
+    );
+    expect(capturedBundles[0]?.axes.map((axis) => axis.axisId)).toEqual([
+      "resource_kind",
+      "decision_kind",
+    ]);
+    expect(capturedBundles[0]?.segments).toEqual([
+      {
+        allocationId: "authorization-ontology:authorization-surface:v1",
+        segmentId: "authorization-ontology:authorization-surface:v1:product",
+        consumes: ["resource_kind", "decision_kind"],
+        addressOffset: 0,
+        addressSize: 32,
+      },
+    ]);
+  });
+
+  it("returns structured sync precondition errors for incomplete bundle rows", async () => {
+    const cases = [
+      {
+        name: "namespace",
+        overrides: {
+          getNamespace: async () => null,
+        },
+        expected: {
+          reason: "missing-namespace",
+          missingRecordKind: "namespace",
+          ontologyId: "authorization-ontology",
+        },
+      },
+      {
+        name: "taxonomy",
+        overrides: {
+          listTaxonomies: async () => [],
+        },
+        expected: {
+          reason: "missing-taxonomy",
+          missingRecordKind: "taxonomy",
+          taxonomyId: "authorization-resource",
+        },
+      },
+      {
+        name: "axis",
+        overrides: {
+          listAxes: async () => [],
+        },
+        expected: {
+          reason: "missing-axis",
+          missingRecordKind: "axis",
+          axisId: "resource_kind",
+          axisIds: ["resource_kind"],
+        },
+      },
+      {
+        name: "segment",
+        overrides: {
+          listSegments: async () => [],
+        },
+        expected: {
+          reason: "missing-segment",
+          missingRecordKind: "segment",
+          taxonomyId: "authorization-resource",
+        },
+      },
+    ] satisfies {
+      readonly name: string;
+      readonly overrides: Partial<OntologyRegistryStore>;
+      readonly expected: Record<string, unknown>;
+    }[];
+
+    for (const testCase of cases) {
+      const store = new InMemoryOntologyRegistryStore();
+      const syncAdapter = {
+        sync: vi.fn(async (bundle: OntologyIndexMetaSyncBundle) =>
+          buildDeferredOntologyIndexMetaSyncReport(bundle),
+        ),
+      } satisfies OntologyIndexMetaSyncAdapter<
+        OntologyIndexMetaSyncDeferredReport
+      >;
+      const service = new OntologyRegistryService({
+        store: overrideStore(store, testCase.overrides),
+        syncAdapter,
+      });
+
+      await service.reserveAddressSpace({
+        pack: validPack,
+        policy: {
+          namespace: "authz",
+          owner: "registry-service",
+          versionId: "v1",
+          now: "2026-04-14T00:00:00.000Z",
+        },
+      });
+      await service.activateAllocation(
+        "authorization-ontology:authorization-resource:v1",
+      );
+
+      const error = await captureServiceError(
+        service.syncToPrefixRegistry(
+          "authorization-ontology:authorization-resource:v1",
+        ),
+      );
+
+      expect(error.conflict).toEqual(
+        expect.objectContaining({
+          code: "sync-precondition-failure",
+          allocationId: "authorization-ontology:authorization-resource:v1",
+          ...testCase.expected,
+        }),
+      );
+      expect(syncAdapter.sync).not.toHaveBeenCalled();
+    }
+  });
+});
+
+function createService(store: OntologyRegistryStore): OntologyRegistryService {
+  return new OntologyRegistryService({
+    store,
+    syncAdapter: {
+      async sync(bundle) {
+        return buildDeferredOntologyIndexMetaSyncReport(bundle);
+      },
+    },
+  });
+}
+
+async function captureServiceError(
+  action: Promise<unknown>,
+): Promise<OntologyRegistryServiceError> {
+  let thrown: unknown;
+  try {
+    await action;
+  } catch (error) {
+    thrown = error;
+  }
+
+  expect(thrown).toBeInstanceOf(OntologyRegistryServiceError);
+  return thrown as OntologyRegistryServiceError;
+}
+
+async function expectOntologyStoreEmpty(
+  store: InMemoryOntologyRegistryStore,
+): Promise<void> {
+  expect(await store.listNamespaces()).toEqual([]);
+  expect(await store.listAxes("authorization-ontology", "v1")).toEqual([]);
+  expect(await store.listTaxonomies("authorization-ontology", "v1")).toEqual([]);
+  expect(await store.listAllocations("authorization-ontology", "v1")).toEqual([]);
+  expect(
+    await store.listSegments("authorization-ontology:authorization-resource:v1"),
+  ).toEqual([]);
+  expect(
+    await store.listSegments("authorization-ontology:authorization-decision:v1"),
+  ).toEqual([]);
+}
+
+function overrideStore(
+  store: OntologyRegistryStore,
+  overrides: Partial<OntologyRegistryStore>,
+): OntologyRegistryStore {
+  return new Proxy(store, {
+    get(target, property, receiver) {
+      if (property in overrides) {
+        const value = overrides[property as keyof OntologyRegistryStore];
+        return typeof value === "function" ? value.bind(overrides) : value;
+      }
+
+      const value = Reflect.get(target, property, receiver);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+  }) as OntologyRegistryStore;
+}

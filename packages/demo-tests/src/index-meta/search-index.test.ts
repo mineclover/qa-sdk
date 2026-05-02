@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * 검색 인덱스 데모 — 콘텐츠 플랫폼 다차원 필터링
  *
@@ -31,15 +34,16 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { MetaRegistry } from "index-meta";
-import { composeQuery, deepDecode } from "index-meta";
-import { containsAddress } from "weighted-index";
 import {
+  MetaRegistry,
+  composeQuery,
+  deepDecode,
   computeStateRanges,
   checkGate,
   positionsToConstraint,
+  type DimStateSpec,
 } from "index-meta";
-import type { DimStateSpec } from "index-meta";
+import { containsAddress } from "weighted-index";
 import { AXIS } from "demo-snapshot";
 
 // ── 스키마 정의 ─────────────────────────────────────────────
@@ -292,10 +296,7 @@ describe("[S3] 복합 필터 — 실제 검색 쿼리 생성", () => {
     const ranges = articleCodec.matchRanges({ category: "tech", status: "published" });
     const result = search(ranges);
 
-    const decoded = result.map((a) => ({
-      title: a.title,
-      ...articleCodec.decodeValue(a.addr),
-    }));
+    const decoded = result.map((a) => (Object.assign({title:a.title}, articleCodec.decodeValue(a.addr))));
 
     expect(decoded).toEqual([
       { title: "React 18 새 기능",         category: "tech", status: "published", locale: "ko" },

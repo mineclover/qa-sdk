@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InMemoryTraceStore } from "./trace.adapter.js";
 

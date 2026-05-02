@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * PositionEngine — EntryCache (L1) 테스트
  * prefix+version 파티션 양방향 캐시 + single-flight

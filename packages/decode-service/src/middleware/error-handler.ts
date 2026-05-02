@@ -1,8 +1,11 @@
+// @def.boundary decode-service-system
+// @def.doc decode-service-system
+
 import type { ErrorHandler } from "hono";
 import type { Logger } from "pino";
 import { ZodError } from "zod";
 import { AppError, fromIndexMetaError } from "../lib/errors.js";
-import { IndexMetaError } from "index-meta";
+import { IndexMetaError } from "index-meta-workers";
 
 export function createErrorHandler(logger: Logger): ErrorHandler {
   return (err, c) => {
@@ -27,12 +30,12 @@ export function createErrorHandler(logger: Logger): ErrorHandler {
       );
     }
 
-    // index-meta 에러 자동 변환
-    if (err instanceof IndexMetaError) {
-      const appErr = fromIndexMetaError(err);
+    // index-meta + weighted-index 에러 자동 변환
+    const mapped = fromIndexMetaError(err);
+    if (mapped.code !== "INTERNAL_ERROR" || err instanceof IndexMetaError) {
       return c.json(
-        { error: { code: appErr.code, message: appErr.message } },
-        appErr.statusCode as 400 | 404 | 500,
+        { error: { code: mapped.code, message: mapped.message } },
+        mapped.statusCode as 400 | 404 | 500,
       );
     }
 

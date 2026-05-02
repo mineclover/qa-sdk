@@ -1,11 +1,14 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import {
   InMemoryPrefixRegistry,
-  detectConflicts,
+  detectPatternConflicts,
   type ConflictReport,
   type PrefixRegistry,
-} from "index-meta";
+} from "index-meta-workers";
 import type { PolicyRulePayload } from "../schemas/policy-rule.js";
 import type {
   PolicyRuleStore,
@@ -131,7 +134,7 @@ export class RuleService {
     );
     const comparableRules = existingRules.filter((rule) => rule.id !== ignoredId);
 
-    return detectConflicts(
+    return detectPatternConflicts(
       [...comparableRules, candidate],
       shape,
       isDeepStrictEqual,

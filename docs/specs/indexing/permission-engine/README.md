@@ -76,5 +76,5 @@ index.ts
 | [../README.md](../README.md) | 인덱싱 전체 개념 맵 |
 | [../foundation.md](../foundation.md) | 닫힌 주소 공간과 전단사 원리 |
 | [../patterns.md](../patterns.md) | 인덱싱 시스템 사용 패턴 |
-| [../conventions.md](../conventions.md) | 프로젝트 관례 |
+| [../../indexing-core-system/conventions-system.md](../../indexing-core-system/conventions-system.md) | 프로젝트 관례 |
 | [../../operations/runtime-flows.spec.md](../../operations/runtime-flows.spec.md) | `[S2]` 등 런타임 흐름 심볼 체계 |

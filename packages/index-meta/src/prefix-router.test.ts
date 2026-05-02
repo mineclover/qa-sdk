@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { beforeEach, describe, expect, it } from "vitest";
 import { InMemoryPrefixRouter } from "./adapters/memory-prefix-router.js";
 import { NodeSqliteDriver } from "./adapters/node-sqlite-driver.js";
@@ -39,7 +42,7 @@ function prefixRouterSuite(name: string, factory: () => PrefixRouter) {
       await router.route("action", "db-a");
       await router.route("content", "db-b");
 
-      expect((await router.listPrefixes("db-a")).sort()).toEqual(["action", "role"]);
+      expect((await router.listPrefixes("db-a")).toSorted()).toEqual(["action", "role"]);
       expect(await router.listPrefixes("db-b")).toEqual(["content"]);
     });
 
@@ -49,7 +52,7 @@ function prefixRouterSuite(name: string, factory: () => PrefixRouter) {
       await router.route("content", "db-b");
       await router.route("audit", "db-a");
 
-      expect((await router.listPrefixes("db-a")).sort()).toEqual(["action", "audit", "role"]);
+      expect((await router.listPrefixes("db-a")).toSorted()).toEqual(["action", "audit", "role"]);
       expect(await router.getDatabase("content")).toBe("db-b");
     });
   });

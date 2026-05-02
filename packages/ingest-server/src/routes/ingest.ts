@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { Hono } from "hono";
 import {
   type GraphStore,
@@ -14,6 +17,7 @@ import {
   type SessionStore,
   type VerdictStore,
   type DlqStore,
+  type KeyObservationStore,
 } from "@qa-sdk/core";
 import type { ValidationResult } from "@qa-sdk/registry-client";
 import type { RecordStreamBroker } from "../lib/record-stream-broker.js";
@@ -30,6 +34,8 @@ import {
   processPendingPhaseTwo,
   type ConvergencePipelinePort,
 } from "../lib/phase-two-worker.js";
+import type { CatalogValidator } from "../lib/catalog-validator.js";
+import { extractKeyObservations } from "../lib/extract-key-observations.js";
 
 export type RegistryValidationMode = "strict" | "warn" | "off";
 
@@ -57,10 +63,17 @@ export interface IngestDeps {
   withTraceTransaction?: TraceTransactionRunner;
   taskQueue?: TaskQueue<TaskPayload>;
   convergencePipeline?: ConvergencePipelinePort;
+  metricsCollector?: { inc(name: string, labels?: Record<string, string>, delta?: number): void };
   logger?: Logger;
   /** 건전성 검증용 prefix 메타 (설정 시 address_context 건전성 검증 활성화) */
   knownPrefixes?: ReadonlySet<string>;
   latestVersions?: ReadonlyMap<string, string>;
+  /** 카탈로그 기반 event/prefix 검증 (fail-open) */
+  catalogValidator?: CatalogValidator;
+  /** InsightsStore — 수집된 데이터를 인사이트 저장소에 전달 (app-hub 모드) */
+  insightsStore?: import("../ports/insights-store.port.js").InsightsStore;
+  /** Key Observation — packed_key 관측 영속 기록 (fail-open) */
+  keyObservationStore?: KeyObservationStore;
 }
 
 export interface TracePersistenceStores {
@@ -73,17 +86,58 @@ export type TraceTransactionRunner = <T>(
   fn: (stores: TracePersistenceStores) => Promise<T>,
 ) => Promise<T>;
 
+/** Content-Type 기반 디시리얼라이즈. JSON/Protobuf/MessagePack 지원. */
+async function deserializeEnvelope(c: { req: { header(name: string): string | undefined; json(): Promise<unknown>; arrayBuffer(): Promise<ArrayBuffer> } }): Promise<TransmissionEnvelope> {
+  const ct = c.req.header("content-type") ?? "application/json";
+
+  if (ct.includes("application/x-protobuf") || ct.includes("application/protobuf")) {
+    const buf = await c.req.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+
+    // QAPB 프레이밍 감지 (magic: 0x51 0x41 0x50 0x42)
+    if (bytes.length >= 8 && bytes[0] === 0x51 && bytes[1] === 0x41 && bytes[2] === 0x50 && bytes[3] === 0x42) {
+      const { fromProtoEnvelope } = await import("../lib/proto-codec.js");
+      const raw = fromProtoEnvelope(bytes);
+      return transmissionEnvelopeSchema.parse(raw) as TransmissionEnvelope;
+    }
+
+    // 진짜 Protobuf 바이너리 (codec-proto)
+    try {
+      const { decodeEnvelope } = await import("@qa-sdk/codec-proto");
+      return decodeEnvelope(bytes);
+    } catch {
+      // codec-proto 미설치 시 fallback → JSON 시도
+      const text = new TextDecoder().decode(bytes);
+      return transmissionEnvelopeSchema.parse(JSON.parse(text)) as TransmissionEnvelope;
+    }
+  }
+
+  if (ct.includes("application/msgpack") || ct.includes("application/x-msgpack")) {
+    const { decode } = await import("@msgpack/msgpack");
+    const buf = await c.req.arrayBuffer();
+    const raw = decode(new Uint8Array(buf));
+    return transmissionEnvelopeSchema.parse(raw) as TransmissionEnvelope;
+  }
+
+  // Default: application/json
+  const body = await c.req.json();
+  return transmissionEnvelopeSchema.parse(body) as TransmissionEnvelope;
+}
+
 export function createIngestRoutes(deps: IngestDeps) {
   const app = new Hono();
 
   app.post("/v1/ingest", async (c) => {
-    const body = await c.req.json();
-    const parsed = transmissionEnvelopeSchema.parse(body);
-    const envelope = parsed as TransmissionEnvelope;
-
-    await processEnvelope(envelope, deps);
-
-    return c.json({ accepted: true, record_count: envelope.records.length }, 202);
+    try {
+      const envelope = await deserializeEnvelope(c);
+      await processEnvelope(envelope, deps);
+      deps.metricsCollector?.inc("ingest_requests_total", { status: "202" });
+      deps.metricsCollector?.inc("ingest_records_total", {}, envelope.records.length);
+      return c.json({ accepted: true, record_count: envelope.records.length }, 202);
+    } catch (err) {
+      deps.metricsCollector?.inc("ingest_requests_total", { status: "500" });
+      throw err;
+    }
   });
 
   return app;
@@ -95,6 +149,44 @@ async function processEnvelope(
 ) {
   // Phase 1: 저장 (응답 경로)
   const persistedTraceIds = await storeEnvelope(envelope, deps);
+
+  // InsightsStore collect — app-hub 모드에서 외부 전달, local 모드에서 no-op
+  if (deps.insightsStore) {
+    try {
+      await deps.insightsStore.collect({
+        records: envelope.records.map(r => ({
+          logId: r.log_id,
+          timestamp: r.timestamp,
+          traceId: r.trace_id,
+          eventKey: r.event_key,
+          eventVersion: r.event_version,
+          recordKind: r.record_kind,
+          addressContext: r.address_context,
+          payload: r.payload as Record<string, unknown> | undefined,
+          actorId: r.actor_id,
+          userId: r.user_id,
+          qaSessionId: r.qa_session_id,
+        })),
+        traces: (() => {
+          // traceId별 record 수를 O(N)으로 집계 (filter 반복 O(N*M) 방지)
+          const counts = new Map<string, number>();
+          for (const r of envelope.records) counts.set(r.trace_id, (counts.get(r.trace_id) ?? 0) + 1);
+          return persistedTraceIds.map(traceId => ({
+            traceId,
+            serviceName: envelope.source.service_name,
+            recordCount: counts.get(traceId) ?? 0,
+          }));
+        })(),
+        sessions: [...new Set(envelope.records.map(r => r.qa_session_id).filter(Boolean))].map(sid => ({
+          sessionId: sid!,
+          startedAt: envelope.sent_at,
+        })),
+      });
+    } catch (err) {
+      // fail-open: insights 전달 실패가 ingest를 차단하지 않음
+      deps.logger?.warn({ err }, "insights collect failed — skipped");
+    }
+  }
 
   if (deps.taskQueue) {
     await enqueuePhaseTwoTasks(persistedTraceIds, deps.taskQueue);
@@ -121,6 +213,11 @@ async function storeEnvelope(
     if (health.staleVersions.length > 0) {
       deps.logger?.warn({ stale: health.staleVersions }, "address_context stale versions detected");
     }
+  }
+
+  // 카탈로그 기반 event/prefix 검증 (fail-open)
+  if (deps.catalogValidator) {
+    validateWithCatalog(envelope, deps.catalogValidator, deps.logger);
   }
 
   const registryWarnings = await validateEnvelopeRecords(envelope, deps);
@@ -243,6 +340,18 @@ async function storeEnvelope(
         }
       }
 
+      // Key observation — packed_key 관측 기록 (fail-open)
+      if (deps.keyObservationStore) {
+        try {
+          const observations = extractKeyObservations(inserts, deps.knownPrefixes);
+          if (observations.length > 0) {
+            await deps.keyObservationStore.observeBatch(observations);
+          }
+        } catch (err) {
+          deps.logger?.warn({ err }, "key observation failed — fail-open");
+        }
+      }
+
       persistedTraceIds.push(traceId);
     } catch (error) {
       deps.logger?.error(
@@ -309,6 +418,7 @@ async function persistTrace(
     return;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- stores가 undefined이면 withTraceTransaction이 반드시 존재 (L320-322 불변조건)
   await deps.withTraceTransaction!(persist);
 }
 
@@ -475,4 +585,61 @@ function toStoredRecords(records: RecordInsert[]): StoredRecord[] {
     ...structuredClone(record),
     createdAt: new Date(),
   }));
+}
+
+/**
+ * 카탈로그 기반 eventKey/prefix 검증.
+ * fail-open: 검증 실패해도 레코드는 통과시키고 warning만 기록한다.
+ */
+function validateWithCatalog(
+  envelope: TransmissionEnvelope,
+  validator: CatalogValidator,
+  logger?: Logger,
+): void {
+  try {
+    // ── eventKey 검증 (중복 제거) ──
+    const unknownEventKeys = new Set<string>();
+    for (const record of envelope.records) {
+      const result = validator.validateEventKey(record.event_key);
+      if (!result.known) {
+        unknownEventKeys.add(record.event_key);
+      }
+    }
+
+    if (unknownEventKeys.size > 0) {
+      logger?.warn(
+        {
+          unknownEventKeys: [...unknownEventKeys],
+          serviceName: envelope.source.service_name,
+          recordCount: envelope.records.length,
+        },
+        "카탈로그에 미등록된 eventKey 감지 (fail-open)",
+      );
+    }
+
+    // ── prefix 검증 (중복 제거) ──
+    const allUnknownPrefixes = new Set<string>();
+    for (const record of envelope.records) {
+      const result = validator.validatePrefixes(record.address_context);
+      for (const prefix of result.unknownPrefixes) {
+        allUnknownPrefixes.add(prefix);
+      }
+    }
+
+    if (allUnknownPrefixes.size > 0) {
+      logger?.warn(
+        {
+          unknownPrefixes: [...allUnknownPrefixes],
+          serviceName: envelope.source.service_name,
+        },
+        "카탈로그에 미등록된 prefix 감지 (fail-open)",
+      );
+    }
+  } catch (error) {
+    // 검증 자체의 실패도 fail-open
+    logger?.warn(
+      { err: error },
+      "카탈로그 검증 실패 — fail-open 통과",
+    );
+  }
 }

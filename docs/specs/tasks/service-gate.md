@@ -43,4 +43,4 @@ E-1, E-2, E-3, E-4
 - `packages/gate-service/` 패키지
 - 6개 RPC 엔드포인트
 - 이벤트 수신 인터페이스
-- gate-engine.spec.md `[S2]` `[A4]` `[A5]` → 📋 에서 ✅로 전환
+- gate-api.spec.md `[S2]` `[A4]` `[A5]` → 📋 에서 ✅로 전환

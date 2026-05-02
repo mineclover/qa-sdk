@@ -51,14 +51,18 @@ export {
   type PrefixVersionDef, type PrefixDef, type PrefixMeta,
   type ColumnRef, type TableSchema,
   type DemoCatalog,
+  type DemoPrefixId,
+  type DemoAxisId,
+  type DemoTableId,
 } from "./demo-catalog.js";
 
 export {
-  getPrefixStructure, getPrefixShape, getPrefixEntries,
+  latestPrefixVersion,
+  getPrefixStructure, getPrefixShape, getPrefixEntries, getPrefixProfile,
   encodePrefix, decodePrefix, encodePrefixByValue,
   resolveAddress, decomposeAddress,
   verifyRoundTrip,
-  type PrefixStructure, type PrefixShape, type PrefixEntries,
+  type PrefixStructure, type PrefixShape, type PrefixEntries, type DimCapacityInfo, type PrefixDimProfile,
   type DecodedPosition, type ResolvedDimValue, type ResolvedAddress,
   type DecomposedDim,
 } from "./demo-accessors.js";
@@ -70,3 +74,14 @@ export {
 } from "./demo-bridge.js";
 
 export { DEMO_DKG_CONFIG } from "./demo-dkg-config.js";
+export {
+  SCENARIO_LOGIN,
+  SCENARIO_CHECKOUT_ENTRY,
+  SCENARIO_CHECKOUT_COMPLETE,
+  SCENARIO_FULL_PURCHASE,
+  SCENARIO_CART_ABANDON,
+  SCENARIO_DEPLOY_HEALTH,
+  SCENARIO_PIPELINE_INGEST,
+  SCENARIO_BUILD_TEST,
+  DEMO_SCENARIOS,
+} from "./demo-scenarios.js";

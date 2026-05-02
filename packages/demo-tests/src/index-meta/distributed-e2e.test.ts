@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * E2E: D1 분산 구조
  *
@@ -12,13 +15,16 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { InMemoryPrefixRegistry } from "index-meta";
-import { InMemoryPrefixRouter } from "index-meta";
-import { InMemoryIndexMetaStore } from "index-meta";
-import { DistributedStoreClient } from "index-meta";
-import { applyEntryBatch } from "index-meta";
-import { exportVersion, importVersion } from "index-meta";
-import { ValidationError } from "index-meta";
+import {
+  InMemoryPrefixRegistry,
+  InMemoryPrefixRouter,
+  InMemoryIndexMetaStore,
+  DistributedStoreClient,
+  applyEntryBatch,
+  exportVersion,
+  importVersion,
+  ValidationError,
+} from "index-meta";
 
 // ── 분산 환경 셋업 ────────────────────────────────────────
 
@@ -66,7 +72,7 @@ describe("PrefixRouter — 라우팅", () => {
     await router.route("action",  "db-a");
     await router.route("content", "db-b");
 
-    const dbAPrefixes = (await router.listPrefixes("db-a")).sort();
+    const dbAPrefixes = (await router.listPrefixes("db-a")).toSorted();
     expect(dbAPrefixes).toEqual(["action", "role"]);
     expect(await router.listPrefixes("db-b")).toEqual(["content"]);
   });
@@ -151,7 +157,7 @@ describe("DistributedStoreClient — 분산 조회", () => {
   it("listPrefixesByDatabase로 D1 인스턴스 단위 백업 범위를 파악한다", async () => {
     const { client } = env;
 
-    const dbAPrefixes = (await client.listPrefixesByDatabase("db-a")).sort();
+    const dbAPrefixes = (await client.listPrefixesByDatabase("db-a")).toSorted();
     expect(dbAPrefixes).toEqual(["action", "role"]);
     expect(await client.listPrefixesByDatabase("db-b")).toEqual(["content"]);
   });

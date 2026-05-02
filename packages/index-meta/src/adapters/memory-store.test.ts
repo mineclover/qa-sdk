@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { describe, it, expect } from "vitest";
 import { InMemoryIndexMetaStore } from "./memory-store.js";
 import { ValidationError } from "../errors.js";

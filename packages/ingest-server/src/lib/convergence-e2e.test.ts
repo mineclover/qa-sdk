@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 /**
  * 관측 루프 통합 E2E 테스트.
  *
@@ -102,8 +105,8 @@ describe("관측 루프 E2E", () => {
       {
         recordStore,
         convergenceFns,
-        graphProvider: () => ({ getAllNodes: () => [] }),
-        catalogProvider: () => ({ axes: {}, prefixes: {} }),
+        graphProvider: () => ({ getAllNodes: () => [], getNodesByKind: () => [] }) as any,
+        catalogProvider: () => ({ id: "test", name: "test", axes: {}, prefixes: {} }),
         dkgStore,
       },
       {
@@ -181,8 +184,8 @@ describe("관측 루프 E2E", () => {
           ]),
         } as any,
         convergenceFns,
-        graphProvider: () => ({}),
-        catalogProvider: () => ({}),
+        graphProvider: () => ({ getAllNodes: () => [], getNodesByKind: () => [] }) as any,
+        catalogProvider: () => ({ id: "test", name: "test", axes: {}, prefixes: {} }),
       },
       { recordThreshold: 999, flushIntervalMs: 999_999 },
     );
@@ -231,8 +234,8 @@ describe("관측 루프 E2E", () => {
       {
         recordStore,
         convergenceFns,
-        graphProvider: () => ({}),
-        catalogProvider: () => ({}),
+        graphProvider: () => ({ getAllNodes: () => [], getNodesByKind: () => [] }) as any,
+        catalogProvider: () => ({ id: "test", name: "test", axes: {}, prefixes: {} }),
       },
       { recordThreshold: 999, flushIntervalMs: 999_999 },
     );

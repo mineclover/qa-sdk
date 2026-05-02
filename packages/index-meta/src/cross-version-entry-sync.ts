@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * CrossVersionEntrySync — prefix의 모든 활성 버전에 entry를 동기 전파
  *

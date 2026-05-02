@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * MonitorAdapter — ingest-server WebSocket/HTTP 연결 + decode → 셀 키 매핑.
  *
@@ -33,12 +36,12 @@ export class MonitorAdapter {
     this.config.onConnectionChange?.("connecting");
     try {
       this.ws = new WebSocket(url);
-      this.ws.onopen = () => {
+      this.ws.addEventListener("open", () => {
         this._connected = true;
         this.config.onConnectionChange?.("connected");
-        this.ws!.send(JSON.stringify({ type: "subscribe", scenarioId: "*" }));
-      };
-      this.ws.onmessage = (evt) => {
+        this.ws?.send(JSON.stringify({ type: "subscribe", scenarioId: "*" }));
+      });
+      this.ws.addEventListener("message", (evt) => {
         try {
           const msg = JSON.parse(evt.data);
           if (msg.type === "record" && msg.data) {
@@ -47,14 +50,14 @@ export class MonitorAdapter {
             this.config.onConnectionChange?.("subscribed");
           }
         } catch {}
-      };
-      this.ws.onerror = () => {
+      });
+      this.ws.addEventListener("error", () => {
         this.config.onConnectionChange?.("error");
-      };
-      this.ws.onclose = () => {
+      });
+      this.ws.addEventListener("close", () => {
         this._connected = false;
         this.config.onConnectionChange?.("disconnected");
-      };
+      });
     } catch {
       this.config.onConnectionChange?.("failed");
     }
@@ -100,20 +103,20 @@ export class MonitorAdapter {
     } catch {}
   }
 
-  private handleRecord(record: any): void {
-    const ctx = record.addressContext || record.address_context;
+  private handleRecord(record: Record<string, unknown>): void {
+    const ctx = (record.addressContext || record.address_context) as Record<string, string> | undefined;
     if (!ctx || Object.keys(ctx).length === 0) return;
 
     const allKeys: string[] = [];
     for (const [, serialized] of Object.entries(ctx)) {
-      const decoded = this.config.decode(serialized as string);
+      const decoded = this.config.decode(serialized);
       if (!decoded) continue;
       const keys = this.config.mapToKeys(decoded.prefix, decoded.values);
       allKeys.push(...keys);
     }
 
     if (allKeys.length > 0) {
-      this.config.onActivation(allKeys, ctx as Record<string, string>);
+      this.config.onActivation(allKeys, ctx);
     }
   }
 }

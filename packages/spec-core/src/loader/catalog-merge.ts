@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * Catalog Merge — 서비스별 분리된 카탈로그를 합치는 유틸.
  *
@@ -7,18 +10,20 @@
  * 충돌 감지: 같은 ID의 axis/prefix가 다른 서비스에서 다르게 정의되면 에러.
  */
 
+import type { Catalog, PrefixDef, TableSchema, VersionedAxis } from "@qa-sdk/core";
+
 export interface PartialCatalog {
   readonly id: string;  // "shopping", "infra", "observation" 등
-  readonly axes?: Record<string, unknown>;
-  readonly prefixes?: Record<string, unknown>;
-  readonly tables?: Record<string, unknown>;
+  readonly axes?: Record<string, VersionedAxis>;
+  readonly prefixes?: Record<string, PrefixDef>;
+  readonly tables?: Record<string, TableSchema>;
 }
 
 export interface MergeResult {
   readonly catalog: {
-    axes: Record<string, unknown>;
-    prefixes: Record<string, unknown>;
-    tables: Record<string, unknown>;
+    axes: Record<string, VersionedAxis>;
+    prefixes: Record<string, PrefixDef>;
+    tables: Record<string, TableSchema>;
   };
   readonly sources: Record<string, string>;  // axisId/prefixId → sourceId
   readonly conflicts: readonly MergeConflict[];
@@ -36,9 +41,9 @@ export interface MergeConflict {
  * 충돌이 있으면 conflicts에 기록 (에러를 던지지 않음).
  */
 export function mergeCatalogs(catalogs: readonly PartialCatalog[]): MergeResult {
-  const axes: Record<string, unknown> = {};
-  const prefixes: Record<string, unknown> = {};
-  const tables: Record<string, unknown> = {};
+  const axes: Record<string, VersionedAxis> = {};
+  const prefixes: Record<string, PrefixDef> = {};
+  const tables: Record<string, TableSchema> = {};
   const sources: Record<string, string> = {};
   const conflicts: MergeConflict[] = [];
 
@@ -99,20 +104,20 @@ export function mergeCatalogs(catalogs: readonly PartialCatalog[]): MergeResult 
  * 전체 카탈로그에서 특정 서비스의 prefix만 추출한다.
  */
 export function extractServiceCatalog(
-  fullCatalog: { axes: Record<string, unknown>; prefixes: Record<string, unknown> },
+  fullCatalog: Pick<Catalog, "axes" | "prefixes">,
   prefixIds: readonly string[],
-): { axes: Record<string, unknown>; prefixes: Record<string, unknown> } {
-  const prefixes: Record<string, unknown> = {};
+): { axes: Record<string, VersionedAxis>; prefixes: Record<string, PrefixDef> } {
+  const prefixes: Record<string, PrefixDef> = {};
   const usedAxes = new Set<string>();
 
   for (const id of prefixIds) {
-    const prefix = fullCatalog.prefixes[id] as any;
+    const prefix = fullCatalog.prefixes[id];
     if (!prefix) continue;
     prefixes[id] = prefix;
 
     // 이 prefix가 사용하는 축 추출
     if (prefix.dims) {
-      for (const dimRef of Object.values(prefix.dims) as any[]) {
+      for (const dimRef of Object.values(prefix.dims)) {
         if (dimRef.kind === "axis" && dimRef.axisId) {
           usedAxes.add(dimRef.axisId);
         }
@@ -120,7 +125,7 @@ export function extractServiceCatalog(
     }
   }
 
-  const axes: Record<string, unknown> = {};
+  const axes: Record<string, VersionedAxis> = {};
   for (const axisId of usedAxes) {
     if (fullCatalog.axes[axisId]) {
       axes[axisId] = fullCatalog.axes[axisId];

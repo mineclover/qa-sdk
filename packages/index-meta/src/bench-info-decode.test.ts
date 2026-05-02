@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * 정보 디코딩 종단 벤치마크
  *
@@ -192,7 +195,7 @@ describe("차원 수 증가 — MetaCodec 정보 디코딩 스케일링", () => 
     const codec = new MetaCodec(map);
     const wi = new WeightedIndex(
       map.shape,
-      dims.map((d) => d.dimId)
+      dims.map((dim) => dim.dimId)
     );
 
     // 중앙 좌표로 테스트

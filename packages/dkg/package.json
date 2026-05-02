@@ -1,0 +1,51 @@
+{
+  "name": "dkg",
+  "version": "0.1.0",
+  "description": "Design Knowledge Graph — 노드 16종, 엣지 18종, 스킬 23개",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./store": {
+      "types": "./dist/store/index.d.ts",
+      "import": "./dist/store/index.js",
+      "require": "./dist/store/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "spec-schema": "workspace:*",
+    "spec-transition": "workspace:*",
+    "@qa-sdk/core": "workspace:*",
+    "@qa-sdk/convergence": "workspace:*",
+    "decision-flow": "workspace:*",
+    "weighted-index": "workspace:*",
+    "index-meta": "workspace:*",
+    "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@qa-sdk/spec-core": "workspace:*",
+    "demo-snapshot": "workspace:*",
+    "drizzle-kit": "catalog:",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
+  }
+}

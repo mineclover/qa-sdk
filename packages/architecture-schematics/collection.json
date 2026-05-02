@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/@angular-devkit/schematics/collection-schema.json",
+  "schematics": {
+    "domain": {
+      "description": "Generate a Domain Slice Architecture NestJS domain slice.",
+      "factory": "./dist/domain/index#domain",
+      "schema": "./dist/domain/schema.json"
+    }
+  }
+}

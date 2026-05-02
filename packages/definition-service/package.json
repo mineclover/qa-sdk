@@ -1,0 +1,41 @@
+{
+  "name": "@qa-sdk/definition-service",
+  "version": "0.1.0",
+  "description": "문서 메타데이터 sync, search, graph를 제공하는 definition 서비스",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsc --watch --preserveWatchOutput & sleep 2 && node --watch dist/main.js",
+    "build": "tsup",
+    "build:tsc": "tsc",
+    "start": "node dist/main.js",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/graphql": "^13.2.4",
+    "@nestjs/mercurius": "^13.2.4",
+    "@nestjs/platform-fastify": "^11.0.0",
+    "@qa-sdk/core": "workspace:*",
+    "@qa-sdk/logger": "workspace:*",
+    "better-sqlite3": "catalog:",
+    "drizzle-orm": "catalog:",
+    "definition-catalog": "workspace:*",
+    "graphql": "^16.13.2",
+    "mercurius": "^16.8.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "work-domain": "workspace:*",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "catalog:",
+    "drizzle-kit": "catalog:",
+    "tsup": "^8.5.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "vitest": "^1.6.1"
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "name": "@qa-sdk/sim-approval-api",
+  "version": "0.1.0",
+  "description": "\uc2dc\ubbac \u2014 Budget/Resource/Time-off/Expense workflow NestJS \uc11c\ube44\uc2a4",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.js",
+  "exports": {
+    ".": {
+      "import": "./dist/main.js",
+      "types": "./dist/main.d.ts"
+    },
+    "./test-bootstrap": {
+      "import": "./dist/test-bootstrap.js",
+      "types": "./dist/test-bootstrap.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist",
+    "db:gen:sqlite": "drizzle-kit generate --config drizzle.sqlite.config.ts",
+    "db:gen:pg": "drizzle-kit generate --config drizzle.pg.config.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-fastify": "^11.0.0",
+    "@opentelemetry/api": "^1.9.0",
+    "@qa-sdk/core": "workspace:*",
+    "@qa-sdk/logger": "workspace:*",
+    "@qa-sdk/otel": "workspace:*",
+    "@qa-sdk/sim-audit-recorder-provider": "workspace:*",
+    "@qa-sdk/sim-bitmap-cache": "workspace:*",
+    "audit-recorder-store": "workspace:*",
+    "@qa-sdk/sim-domain-slice-kit": "workspace:*",
+    "@qa-sdk/sim-otel-utils": "workspace:*",
+    "db-bootstrap": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "permission-engine": "workspace:*",
+    "reflect-metadata": "^0.2.2",
+    "resource-policy-store": "workspace:*",
+    "rxjs": "^7.8.1",
+    "sim-identifier-grammar": "workspace:*",
+    "weighted-index": "workspace:*",
+    "zod": "^3.24.2"
+  },
+  "peerDependencies": {
+    "better-sqlite3": "catalog:",
+    "postgres": "^3.4.0"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    },
+    "postgres": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^11.0.0",
+    "@types/better-sqlite3": "catalog:",
+    "@types/node": "^22.0.0",
+    "better-sqlite3": "catalog:",
+    "drizzle-kit": "catalog:",
+    "postgres": "^3.4.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
+  }
+}

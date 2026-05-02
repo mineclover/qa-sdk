@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * layout-fit.test.ts — 레이아웃 시뮬레이터 수학 검증.
  *

@@ -1,0 +1,19 @@
+# spec 01 §2 임계 매트릭스 (hard rule 제외)
+# hard rule (compatibility.schemaCompatRate < 1.0, auditSafety.criticalAnomalyRate > 0)은
+# override 불가 — yaml 미수록(코드 const).
+perf:
+  errorRate: { warn: 1.5, fail: 1.5, baselineMultiplier: true }
+  p95LatencyDelta: { warn: 0.20, fail: 0.50 }
+decisionQuality:
+  denyRateDelta: { warn: 0.05, fail: 0.15 }
+  avgConfidenceDelta: { warn: -0.05, fail: -0.15 }
+replicationHealth:
+  replicationLagMs: { warn: 500, fail: 2000 }
+window:
+  rollingCycles: 10
+  failQuorum: 3
+dwell:
+  promotionMs: 120000
+confidence:
+  holdThreshold: 0.6
+weightSequence: [5, 25, 50, 100]

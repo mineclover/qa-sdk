@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 import type { GraphStore, RuntimeGraph } from "@qa-sdk/core";
 
 /** GraphStore의 in-memory 구현 */

@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /** QA Session 저장소 계약 */
 export interface SessionStore {
   upsert(params: SessionUpsert): Promise<void>;

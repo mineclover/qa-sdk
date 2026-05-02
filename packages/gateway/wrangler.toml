@@ -1,0 +1,41 @@
+# QA-SDK API Gateway — CF Worker
+# 배포: npx wrangler deploy
+# 로컬: npx wrangler dev
+
+name = "qa-gateway"
+main = "worker.ts"
+compatibility_date = "2025-01-01"
+
+[vars]
+AUTH_MODE = "bypass"
+REGISTRY_URL = "https://qa-registry-service.astralclover.workers.dev"
+INGEST_URL = "http://localhost:3200"
+GATE_URL = "http://localhost:3400"
+QUERY_URL = "http://localhost:3500"
+DECODE_URL = "http://localhost:3600"
+
+# Service Bindings — Worker-to-Worker 직접 호출 (HTTP 우회)
+# 로컬 dev에서는 binding이 없으므로 자동으로 URL fetch fallback
+[[services]]
+binding = "REGISTRY_SERVICE"
+service = "qa-registry-service"
+
+[[services]]
+binding = "GATE_SERVICE"
+service = "qa-gate-service"
+
+[[services]]
+binding = "QUERY_SERVICE"
+service = "qa-query-service"
+
+[[services]]
+binding = "DECODE_SERVICE"
+service = "qa-decode-service"
+
+[[services]]
+binding = "INGEST_SERVICE"
+service = "qa-ingest-server"
+
+[[services]]
+binding = "DEMO_API_SERVICE"
+service = "platform-demo-api"

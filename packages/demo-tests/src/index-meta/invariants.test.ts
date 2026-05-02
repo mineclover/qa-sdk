@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * invariants.test.ts — 변환 불변조건 갭 보강 테스트
  *
@@ -21,10 +24,13 @@ import {
   PACK_FORMATS,
   type AddressProtocol,
 } from "weighted-index";
-import { MetaRegistry } from "index-meta";
-import { deepDecode } from "index-meta";
-import { computeStateRanges, checkGate } from "index-meta";
-import type { DimStateSpec } from "index-meta";
+import {
+  MetaRegistry,
+  deepDecode,
+  computeStateRanges,
+  checkGate,
+  type DimStateSpec,
+} from "index-meta";
 
 // ── 공통 픽스처 ──────────────────────────────────────────────
 

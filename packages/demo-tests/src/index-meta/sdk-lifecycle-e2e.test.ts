@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * SDK 라이프사이클 운영 시나리오 E2E 테스트
  *
@@ -13,12 +16,18 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { createIndexSDK, RESERVED_TOKENS } from "index-meta";
-import { MetaCodec } from "index-meta";
-import { MetaResolver } from "index-meta";
-import { MetaRegistry } from "index-meta";
-import type { MetaRegistryInput, VersionedValue } from "index-meta";
-import { DimNotFoundError, EntryNotFoundError, ValidationError } from "index-meta";
+import {
+  createIndexSDK,
+  RESERVED_TOKENS,
+  MetaCodec,
+  MetaResolver,
+  MetaRegistry,
+  DimNotFoundError,
+  EntryNotFoundError,
+  ValidationError,
+  type MetaRegistryInput,
+  type VersionedValue,
+} from "index-meta";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 공유 스키마: SaaS 권한 관리 시스템
@@ -146,9 +155,9 @@ describe("§20 SDK 소비 라이프사이클", () => {
     const RESOURCE = perm.constants("resource");
 
     // IDE 자동완성으로 접근 가능한 정규 값만 포함
-    expect(Object.keys(ROLE).sort()).toEqual(["admin", "editor", "viewer"]);
-    expect(Object.keys(ACTION).sort()).toEqual(["delete", "read", "write"]);
-    expect(Object.keys(RESOURCE).sort()).toEqual(["comment", "post", "user"]);
+    expect(Object.keys(ROLE).toSorted()).toEqual(["admin", "editor", "viewer"]);
+    expect(Object.keys(ACTION).toSorted()).toEqual(["delete", "read", "write"]);
+    expect(Object.keys(RESOURCE).toSorted()).toEqual(["comment", "post", "user"]);
 
     // 상수 기반 encode
     const vv = perm.encode({
@@ -394,10 +403,10 @@ describe("§22 스키마 진화 · SDK 동기화", () => {
     const v2Role = sdk.client("perm", "v2").constants("role");
 
     // v1: moderator 없음
-    expect(Object.keys(v1Role).sort()).toEqual(["admin", "editor", "viewer"]);
+    expect(Object.keys(v1Role).toSorted()).toEqual(["admin", "editor", "viewer"]);
 
     // v2: moderator 포함
-    expect(Object.keys(v2Role).sort()).toEqual(["admin", "editor", "moderator", "viewer"]);
+    expect(Object.keys(v2Role).toSorted()).toEqual(["admin", "editor", "moderator", "viewer"]);
   });
 
   // SCHEMA-EVO-6: SDK 재생성으로 동기화
@@ -517,7 +526,7 @@ describe("§23 멀티 서비스 스키마 공유", () => {
     }
     // resource는 전체 (3개)
     expect(results).toHaveLength(3);
-    expect(results.map((r) => r.resource).sort()).toEqual(["comment", "post", "user"]);
+    expect(results.map((r) => r.resource).toSorted()).toEqual(["comment", "post", "user"]);
   });
 
   // MULTI-SVC-5: versionId 기반 라우팅
@@ -591,10 +600,7 @@ describe("§24 CLI 시뮬레이션", () => {
 
     // CLI가 수행할 작업: 각 dim의 capacity 수집
     const dimIds = ["role", "action", "resource"];
-    const capacityReport = dimIds.map((dimId) => ({
-      dimId,
-      ...perm.dimCapacity(dimId),
-    }));
+    const capacityReport = dimIds.map((dimId) => (Object.assign({dimId}, perm.dimCapacity(dimId))));
 
     expect(capacityReport).toEqual([
       { dimId: "role",     total: 5, capacity: 10, headroom: 5 },
@@ -642,19 +648,19 @@ describe("§24 CLI 시뮬레이션", () => {
     expect(v2.size).toBe(640);
 
     // dim별 constants 변화
-    const v1RoleKeys = Object.keys(v1.constants("role")).sort();
-    const v2RoleKeys = Object.keys(v2.constants("role")).sort();
-    const addedRoles = v2RoleKeys.filter((k) => !v1RoleKeys.includes(k));
+    const v1RoleKeys = new Set(Object.keys(v1.constants("role")).toSorted());
+    const v2RoleKeys = Object.keys(v2.constants("role")).toSorted();
+    const addedRoles = v2RoleKeys.filter((k) => !v1RoleKeys.has(k));
     expect(addedRoles).toEqual(["moderator"]);
 
-    const v1ActionKeys = Object.keys(v1.constants("action")).sort();
-    const v2ActionKeys = Object.keys(v2.constants("action")).sort();
-    const addedActions = v2ActionKeys.filter((k) => !v1ActionKeys.includes(k));
+    const v1ActionKeys = new Set(Object.keys(v1.constants("action")).toSorted());
+    const v2ActionKeys = Object.keys(v2.constants("action")).toSorted();
+    const addedActions = v2ActionKeys.filter((k) => !v1ActionKeys.has(k));
     expect(addedActions).toEqual(["approve"]);
 
     // resource는 변경 없음
-    const v1ResourceKeys = Object.keys(v1.constants("resource")).sort();
-    const v2ResourceKeys = Object.keys(v2.constants("resource")).sort();
+    const v1ResourceKeys = Object.keys(v1.constants("resource")).toSorted();
+    const v2ResourceKeys = Object.keys(v2.constants("resource")).toSorted();
     expect(v1ResourceKeys).toEqual(v2ResourceKeys);
   });
 
@@ -732,7 +738,7 @@ describe("§25 inactive 항목 운영", () => {
 
     // constants: tester 제외
     const ROLE = perm.constants("role");
-    expect(Object.keys(ROLE).sort()).toEqual(["admin", "editor", "viewer"]);
+    expect(Object.keys(ROLE).toSorted()).toEqual(["admin", "editor", "viewer"]);
     expect("tester" in ROLE).toBe(false);
 
     // entries: tester 포함 (기존 데이터 decode 가능)

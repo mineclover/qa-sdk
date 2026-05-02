@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { describe, it, expect, beforeEach } from "vitest";
 import { InMemoryAddressRangeCache } from "./memory-address-range-cache.js";
 import { SqlAddressRangeCache } from "./sql-address-range-cache.js";
@@ -83,7 +86,7 @@ function rangeCacheSuite(
 
       const v1List = await cache.list("perm", "v1");
       expect(v1List).toHaveLength(2);
-      expect(v1List.map((r) => r.label).sort()).toEqual(["action=write", "role=admin"]);
+      expect(v1List.map((r) => r.label).toSorted()).toEqual(["action=write", "role=admin"]);
 
       const v2List = await cache.list("perm", "v2");
       expect(v2List).toHaveLength(1);

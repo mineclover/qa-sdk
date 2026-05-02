@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { resolve } from "node:path";
 
@@ -179,47 +182,5 @@ describe("gitScan", () => {
     }
   });
 
-  it("codegen 파이프라인 호환: snapshot → TypeScript 생성", async () => {
-    const { readFile, rm } = await import("node:fs/promises");
-    const { gitScan } = await import("./git-scan.js");
-    const { codegen } = await import("./codegen.js");
-    const tmpSchemas = resolve("./tmp-git-codegen-schemas");
-    const tmpOutput = resolve("./tmp-git-codegen-output");
-
-    try {
-      // 1. git scan → schema JSON
-      await gitScan({ root: MONO_ROOT, output: tmpSchemas, id: "qa-sdk" });
-
-      // 2. codegen → TypeScript (특정 파일 지정 — .meta.json 제외)
-      await codegen({
-        formats: ["ts"],
-        input: resolve(tmpSchemas, "qa-sdk-git.json"),
-        output: tmpOutput,
-      });
-
-      // 3. 생성된 .d.ts 파일 검증
-      const tsPath = resolve(tmpOutput, "qa-sdk-git.d.ts");
-      const ts = await readFile(tsPath, "utf-8");
-
-      // GENERATION 상수
-      expect(ts).toContain('export const GENERATION = "qa-sdk-git"');
-
-      // 축 const 포함
-      expect(ts).toContain("export const PKG =");
-      expect(ts).toContain("export const SEMVER =");
-      expect(ts).toContain("export const CC_TYPE =");
-
-      // PREFIXES 메타 포함
-      expect(ts).toContain("export const PREFIXES =");
-      expect(ts).toContain("pkg_version:");
-      expect(ts).toContain("change_map:");
-    } finally {
-      try {
-        await rm(tmpSchemas, { recursive: true });
-        await rm(tmpOutput, { recursive: true });
-      } catch {
-        // ignore
-      }
-    }
-  });
+  // SchemaSnapshot 기반 codegen은 제거됨 — Catalog/Registry 기반으로 전환 (codegen.test.ts에서 커버)
 });

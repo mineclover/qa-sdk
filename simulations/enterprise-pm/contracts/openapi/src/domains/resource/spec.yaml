@@ -1,0 +1,103 @@
+tags:
+  - name: resource
+    description: Resource request command + read-model API.
+paths:
+  /resource-requests:
+    post:
+      tags: [resource]
+      operationId: createResourceRequest
+      x-domain: resource
+      x-architecture-slice: resource-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateResourceCommand"
+      responses:
+        "201":
+          description: Resource request created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceReadModel"
+  /resource-requests/{id}:
+    get:
+      tags: [resource]
+      operationId: getResourceRequest
+      x-domain: resource
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Resource read model.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceReadModel"
+        "404":
+          description: Resource request not found.
+  /resource-requests/{id}/status:
+    put:
+      tags: [resource]
+      operationId: updateResourceRequestStatus
+      x-domain: resource
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateResourceStatusCommand"
+      responses:
+        "200":
+          description: Updated resource.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceReadModel"
+components:
+  schemas:
+    CreateResourceCommand:
+      type: object
+      required: [projectId, requesterId, resourceType, description]
+      properties:
+        projectId: { type: string }
+        requesterId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        resourceType: { type: string }
+        description: { type: string }
+      additionalProperties: false
+    UpdateResourceStatusCommand:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [draft, submitted, in_review, approved, rejected, revision_requested]
+      additionalProperties: false
+    ResourceReadModel:
+      type: object
+      required: [id, projectId, requesterId, resourceType, description, status, updatedAt]
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        requesterId:
+          type: string
+          x-openmetadata-tags: [PII.NonSensitive]
+        resourceType: { type: string }
+        description: { type: string }
+        status:
+          type: string
+          enum: [draft, submitted, in_review, approved, rejected, revision_requested]
+          x-openmetadata-tags: [Tier.Tier2]
+        updatedAt: { type: string, format: date-time }
+      additionalProperties: false

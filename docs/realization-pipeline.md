@@ -1,9 +1,31 @@
+---
+def:
+  id: realization-pipeline
+  type: knowledge
+  knowledge_kind: narrative
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+  tags: [observability, runtime, performance]
+  links:
+    - target: system-narrative
+      type: refines
+---
 # Realization Plan: 파이프라인 실체화
 
-> Status: verified
+## 목적 ^purpose
+
+수집 파이프라인 실현 계획. Phase 1(기본 수집)→Phase 2(verdict/활성화) 단계를 기술한다.
+
+
+> Status: **completed**
 > DKG-Ref: OBS-MANUAL-service-mmz1ay93, OBS-MANUAL-service-mmz1n7ak, OBS-MANUAL-dsl-dev-mmzwyfbc, DEC-CAPACITY-dsl-dev-mmzyw4go
 > Created: 2026-03-21
-> Last verified: 2026-03-21
+> Last verified: 2026-03-24
+>
+> **달성**: G1~G5, R2, R5 해결. 현재 85축, 51 prefix, 267 nodes, 625 edges.
+> **G5 해소**: flow-trace skill이 AddressContextRecord를 직접 소비 (CLI self-check + ingest convergence pipeline). 나머지 skill은 UsageData(집계 결과) 소비가 올바른 설계.
 
 ## 1. 배경
 
@@ -17,14 +39,14 @@
 | G2 | convergence 함수 미연결 | `analyzeCollectionHealth` + `analyzeEntryCoverage` 호출 | 건전성 100%, build 88%, test 76% |
 | G3 | 관측 자동 해소 없음 | self-check에서 이전 observation 조건 비교 + `resolveRecoveredMetrics` | auto-resolve 동작 확인 |
 | G4 | dsl-dev 불변조건 미검증 | self-check에서 2개 불변조건 검사 | 통과. registry-service 실제 위반 감지 후 수정 |
-| G5 | 전문 skill 실행 불가 | 미착수 | AddressContextRecord → skill 전달 경로 필요 |
+| G5 | 전문 skill 실행 불가 | **해소** | flow-trace가 AddressContextRecord 직접 소비. CLI(dkg.ts:4068) + ingest(convergence-pipeline.ts:296) 연결 완료. |
 
 ## 3. 현재 파이프라인
 
 ```
 dkg self-check [--apply]
   │
-  ├── 빌드/테스트 실행 (12개 패키지, execSync)
+  ├── 빌드/테스트 실행 (12개 패키지, execa)
   │
   ├── 좌표 인코딩 (encodePrefixByValue → build_event/test_event)
   │
@@ -116,11 +138,11 @@ CLI: `dkg converge [--persist] [--verbose]`
 ## 6. 현재 수치
 
 ```
-DKG:        164 nodes, 263 edges (18 decisions, 26 observations)
-spec-core:  34 test files, 328 tests
-모노레포:   2771 tests (12개 패키지)
-build:      11/11 success (1 skipped)
-metrics:    30건, 0 issues
+DKG:        85 axes, 51 prefixes, 19 tables, 11 DSL bundles, 15 intent-links, 19 transition-specs
+spec-core:  48 test files, 535 tests
+demo-tests: 54 test files, 928 tests (846 passed, 82 skipped)
+decision-flow: 12 test files, 185 tests
+build:      성공
 health:     건전성 100%, invariant 통과
 ```
 
@@ -128,7 +150,7 @@ health:     건전성 100%, invariant 통과
 
 | # | 항목 | 우선순위 | 상태 |
 |---|------|---------|------|
-| G5 | self-check → 전문 skill 전달 (AddressContextRecord 경유) | 중 | 미착수 |
-| R2 | self-check 결과로 dsl-dev 외 DSL 불변조건 검증 | 중 | 미착수 |
+| G5 | self-check → 전문 skill 전달 (AddressContextRecord 경유) | 중 | **완료** — flow-trace skill이 직접 소비 |
+| R2 | self-check 결과로 dsl-dev 외 DSL 불변조건 검증 | 중 | **완료** — validateDslInvariants() Phase F + converge 5.5 |
 | R3 | coOccurrence 활용 (빌드+테스트 cross-event) | 낮 | 보류 |
-| R5 | completed observation 수동 정리 | 낮 | 미착수 |
+| R5 | completed observation 수동 정리 | 낮 | **완료** — pruneResolvedObservations() + converge --persist 자동 실행 |

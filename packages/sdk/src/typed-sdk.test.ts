@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createIndexSDK } from "./typed-sdk.js";
+import { createIndexSDK } from "@qa-sdk/codec";
 
 // ── 테스트 스키마 (as const로 리터럴 타입 보존) ──────────────────────────────
 

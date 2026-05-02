@@ -1,0 +1,3 @@
+[submodule "vendor/projectvisbug"]
+	path = vendor/projectvisbug
+	url = https://github.com/mineclover/ProjectVisBug.git

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * PositionEngine — CoalescingCache 테스트 (L1/L2 기반 프리미티브)
  *

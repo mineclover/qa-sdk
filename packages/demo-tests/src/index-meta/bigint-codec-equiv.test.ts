@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * B-2: INV-9 MetaCodec ↔ MetaCodecBig 동등성 테스트
  *

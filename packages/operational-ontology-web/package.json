@@ -1,0 +1,19 @@
+{
+  "name": "@qa-sdk/operational-ontology-web",
+  "version": "0.1.0",
+  "description": "operational ontology store and snapshot visualization web app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "viz-core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2",
+    "vite": "^6.3.5"
+  }
+}

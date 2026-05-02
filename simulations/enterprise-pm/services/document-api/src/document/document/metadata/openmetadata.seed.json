@@ -1,0 +1,69 @@
+{
+  "topology": "service",
+  "openmetadata": {
+    "domain": {
+      "name": "Document",
+      "team": "Document Team",
+      "owner": "sim-document-owner"
+    },
+    "glossary": [
+      {
+        "term": "Document",
+        "description": "A project document with versioned content and threaded comments."
+      },
+      {
+        "term": "Owner",
+        "description": "The user responsible for a document."
+      }
+    ],
+    "lineage": [
+      {
+        "name": "document-write-path",
+        "from": "doc.documents",
+        "to": "doc.outbox_events",
+        "via": "transactional-outbox"
+      },
+      {
+        "name": "document-read-path",
+        "from": "doc.outbox_events",
+        "to": "reporting.document_read_model",
+        "via": "document-read-model-sync"
+      }
+    ],
+    "qualityTests": [
+      {
+        "name": "document_title_not_empty",
+        "type": "columnNullCount",
+        "entity": "doc.documents.title",
+        "maxNullCount": 0
+      },
+      {
+        "name": "document_owner_not_null",
+        "type": "columnNullCount",
+        "entity": "doc.documents.owner_id",
+        "maxNullCount": 0
+      }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "document-read-model",
+      "domain": "document",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "document-read-model",
+      "segments": [{ "name": "documentId" }],
+      "ttl": "medium",
+      "openmetadataEntity": "reporting.document_read_model"
+    },
+    {
+      "id": "document-idempotency",
+      "domain": "document",
+      "purpose": "idempotency",
+      "version": "v1",
+      "prefix": "document-idempotency",
+      "segments": [{ "name": "idempotencyKey", "pii": true, "encoding": "hash" }],
+      "ttl": "short"
+    }
+  ]
+}

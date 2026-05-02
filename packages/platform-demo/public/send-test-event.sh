@@ -2,7 +2,7 @@
 # 테스트 이벤트를 ingest-server에 전송하여 monitor.html LIVE 모드 검증
 # 사용: bash send-test-event.sh
 
-SERVER="${1:-http://localhost:3100}"
+SERVER="${1:-https://qa-gateway.astralclover.workers.dev}"
 
 echo "Sending test events to $SERVER/v1/ingest..."
 

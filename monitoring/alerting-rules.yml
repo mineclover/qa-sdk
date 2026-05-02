@@ -2,6 +2,28 @@
 groups:
   - name: qa-sdk-alerts
     rules:
+      # ── 프로세스 다운 ──
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} 서비스 다운"
+          description: "{{ $labels.instance }} 응답 없음"
+
+      # ── 메모리 사용량 ──
+      - alert: HighMemoryUsage
+        expr: process_rss_bytes > 512 * 1024 * 1024
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} RSS 메모리 512MB 초과"
+          description: "메모리 누수 조사 필요"
+
+  - name: ingest-alerts
+    rules:
       # ── DLQ 누적 ──
       - alert: DlqDepthHigh
         expr: dlq_depth > 100
@@ -27,7 +49,29 @@ groups:
           summary: "ingest-server 5xx 비율 1% 초과"
           description: "로그 확인, DB 연결 점검 필요"
 
-      # ── Convergence 분류율 ──
+      # ── Ingest 처리량 급감 ──
+      - alert: IngestThroughputLow
+        expr: sum(rate(ingest_records_total[5m])) < 0.1
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ingest-server 이벤트 처리량 급감"
+          description: "15분간 이벤트 수신량이 거의 없음. 클라이언트 연결 또는 LB 점검 필요"
+
+      # ── Rate Limiting 과다 ──
+      - alert: RateLimitRejectionsHigh
+        expr: sum(rate(rate_limit_rejected_total[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Rate limit 거부율 초당 1건 초과"
+          description: "정상 트래픽인지 확인. 필요 시 RATE_LIMIT_MAX_REQUESTS 조정"
+
+  - name: convergence-alerts
+    rules:
+      # ── 패턴 분류율 ──
       - alert: ClassificationRateLow
         expr: convergence_classification_rate < 80
         for: 10m
@@ -37,22 +81,44 @@ groups:
           summary: "패턴 분류율 80% 미만 ({{ $value }}%)"
           description: "패턴 규칙 추가 또는 미분류 세션 분석 필요"
 
-      # ── 프로세스 다운 ──
-      - alert: ServiceDown
-        expr: up == 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: "{{ $labels.job }} 서비스 다운"
-          description: "{{ $labels.instance }} 응답 없음"
-
-      # ── 메모리 사용량 ──
-      - alert: HighMemoryUsage
-        expr: process_rss_bytes > 512 * 1024 * 1024
-        for: 10m
+      # ── Convergence Flush 지연 ──
+      - alert: ConvergenceFlushStalled
+        expr: rate(convergence_flush_total[10m]) == 0
+        for: 15m
         labels:
           severity: warning
         annotations:
-          summary: "{{ $labels.job }} RSS 메모리 512MB 초과"
-          description: "메모리 누수 조사 필요"
+          summary: "convergence flush가 15분간 발생하지 않음"
+          description: "CONVERGENCE_ENABLED 확인, 이벤트 유입 여부 점검"
+
+      # ── 이상 감지 급증 ──
+      - alert: AnomalyDetectionSpike
+        expr: sum(rate(convergence_anomalies_detected_total[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "이상 감지 건수 급증 (초당 {{ $value }}건)"
+          description: "패턴 변화 또는 시스템 이상 확인 필요"
+
+  - name: service-alerts
+    rules:
+      # ── Gate Engine 미설정 ──
+      - alert: GateEngineNotConfigured
+        expr: gate_engine_configured == 0
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "gate-service에 GateEngine이 설정되지 않음"
+          description: "주소 상태 검사가 비활성 상태"
+
+      # ── Decode Pool 비어있음 ──
+      - alert: DecodePoolEmpty
+        expr: decode_pool_size == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "decode-service decoder pool이 비어있음"
+          description: "DecodeMap 로드 실패 또는 TTL 만료. DECODE_MAP_SOURCE 확인"

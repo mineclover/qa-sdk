@@ -1,0 +1,42 @@
+{
+  "name": "infra-engine",
+  "version": "0.1.0",
+  "description": "멀티 프로바이더 배포, 등록, 검증, 관측 파이프라인 엔진",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "deploy:local": "tsx scripts/deploy-local.ts",
+    "infra": "tsx scripts/infra.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.11",
+    "@pulumi/kubernetes": "^4.28.0",
+    "@pulumi/pulumi": "^3.229.0",
+    "@qa-sdk/core": "workspace:*",
+    "authorization-ontology": "workspace:*",
+    "cli-command": "workspace:*",
+    "demo-snapshot": "workspace:*",
+    "execa": "^9.0.0",
+    "hono": "^4.12.7",
+    "infra-env-kit": "workspace:*",
+    "operational-ontology": "workspace:*",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

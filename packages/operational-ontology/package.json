@@ -1,0 +1,124 @@
+{
+  "name": "operational-ontology",
+  "version": "0.1.0",
+  "description": "Node, relation, traversal을 taxonomy 교차점으로 좌표화하는 operational ontology 초안 라이브러리",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./allocation": {
+      "types": "./dist/allocation.d.ts",
+      "import": "./dist/allocation.js",
+      "require": "./dist/allocation.cjs"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "import": "./dist/schema.js",
+      "require": "./dist/schema.cjs"
+    },
+    "./pack": {
+      "types": "./dist/pack.d.ts",
+      "import": "./dist/pack.js",
+      "require": "./dist/pack.cjs"
+    },
+    "./governance": {
+      "types": "./dist/governance.d.ts",
+      "import": "./dist/governance.js",
+      "require": "./dist/governance.cjs"
+    },
+    "./prompt-artifacts": {
+      "types": "./dist/prompt-artifacts.d.ts",
+      "import": "./dist/prompt-artifacts.js",
+      "require": "./dist/prompt-artifacts.cjs"
+    },
+    "./programming-artifacts": {
+      "types": "./dist/programming-artifacts.d.ts",
+      "import": "./dist/programming-artifacts.js",
+      "require": "./dist/programming-artifacts.cjs"
+    },
+    "./runtime": {
+      "types": "./dist/runtime.d.ts",
+      "import": "./dist/runtime.js",
+      "require": "./dist/runtime.cjs"
+    },
+    "./lineage": {
+      "types": "./dist/lineage.d.ts",
+      "import": "./dist/lineage.js",
+      "require": "./dist/lineage.cjs"
+    },
+    "./corridor": {
+      "types": "./dist/corridor.d.ts",
+      "import": "./dist/corridor.js",
+      "require": "./dist/corridor.cjs"
+    },
+    "./junction": {
+      "types": "./dist/junction.d.ts",
+      "import": "./dist/junction.js",
+      "require": "./dist/junction.cjs"
+    },
+    "./checkpoint": {
+      "types": "./dist/checkpoint.d.ts",
+      "import": "./dist/checkpoint.js",
+      "require": "./dist/checkpoint.cjs"
+    },
+    "./topology": {
+      "types": "./dist/topology.d.ts",
+      "import": "./dist/topology.js",
+      "require": "./dist/topology.cjs"
+    },
+    "./projectors": {
+      "types": "./dist/projectors.d.ts",
+      "import": "./dist/projectors.js",
+      "require": "./dist/projectors.cjs"
+    },
+    "./projectors/event": {
+      "types": "./dist/projectors-event.d.ts",
+      "import": "./dist/projectors-event.js",
+      "require": "./dist/projectors-event.cjs"
+    },
+    "./projectors/pipe": {
+      "types": "./dist/projectors-pipe.d.ts",
+      "import": "./dist/projectors-pipe.js",
+      "require": "./dist/projectors-pipe.cjs"
+    },
+    "./projectors/path": {
+      "types": "./dist/projectors-path.d.ts",
+      "import": "./dist/projectors-path.js",
+      "require": "./dist/projectors-path.cjs"
+    },
+    "./projectors/snapshot": {
+      "types": "./dist/projectors-snapshot.d.ts",
+      "import": "./dist/projectors-snapshot.js",
+      "require": "./dist/projectors-snapshot.cjs"
+    },
+    "./persistence": {
+      "types": "./dist/persistence.d.ts",
+      "import": "./dist/persistence.js",
+      "require": "./dist/persistence.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@qa-sdk/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
+  }
+}

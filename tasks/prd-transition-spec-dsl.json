@@ -1,0 +1,158 @@
+{
+  "name": "Transition Spec DSL — 상태 전이 해석 계층",
+  "description": "raw coordinate system 위에 state semantics를 덧씌우는 해석 계층. 3-Tier 구조: 타입+스키마(Tier 1), 축 기반 상태+7단계 엔진(Tier 2), ingest 통합+수렴 metric+API(Tier 3).",
+  "branchName": "ralph/transition-spec-dsl",
+  "userStories": [
+    {
+      "id": "TS-001",
+      "title": "Tier 1 — 타입 정의 (StateCondition, StateAssignment, TransitionSpec)",
+      "description": "TransitionSpec의 핵심 타입 정의. 축 기반 상태 조건(eq/neq/in/exists)과 상태 할당(set/unset).",
+      "acceptanceCriteria": [
+        "StateCondition 인터페이스: axis, eq?, neq?, in?, exists?",
+        "StateAssignment 인터페이스: axis, value (string | null)",
+        "TransitionSpec 전체 타입: name, version, match, bind, input, output, effect",
+        "effect vocabulary: create, open, close, advance, revert, cancel, expire",
+        "pnpm --filter spec-core typecheck passes"
+      ],
+      "priority": 1,
+      "dependsOn": [],
+      "passes": true,
+      "completionNotes": "구현됨: spec-core/src/transition/transition.types.ts"
+    },
+    {
+      "id": "TS-002",
+      "title": "Tier 1 — 2단계 검증 (구조 + catalog)",
+      "description": "구조 검증(catalog 불필요)과 catalog 검증(축/entry 존재 확인) 분리.",
+      "acceptanceCriteria": [
+        "validateTransitionSpec() — 이름 규칙, bind 경로, axis snake_case, effect vocabulary",
+        "validateWithCatalog() — axis 존재, entry 유효성, match.coordinates 차원 검증",
+        "pnpm --filter spec-core test passes"
+      ],
+      "priority": 1,
+      "dependsOn": ["TS-001"],
+      "passes": true,
+      "completionNotes": "구현됨: transition.schema.ts + catalog-validator.ts"
+    },
+    {
+      "id": "TS-003",
+      "title": "Tier 1 — TransitionRegistry + Match Adapter",
+      "description": "인메모리 전이 등록 + MatchPattern → ScenarioStep[] 변환.",
+      "acceptanceCriteria": [
+        "TransitionRegistry: register, find, list",
+        "matchAdapter: 좌표 기반 매칭",
+        "pnpm --filter spec-core test passes"
+      ],
+      "priority": 1,
+      "dependsOn": ["TS-001"],
+      "passes": true,
+      "completionNotes": "구현됨: transition.registry.ts + match-adapter.ts"
+    },
+    {
+      "id": "TS-004",
+      "title": "Tier 1 — DKG TransitionSpecNode + 엣지",
+      "description": "TransitionSpec → DKG 노드 변환. consumes/depends-on/satisfies 엣지 자동 생성.",
+      "acceptanceCriteria": [
+        "TransitionSpecNode 타입 정의",
+        "consumes 엣지: 참조 축",
+        "depends-on 엣지: outputAxes ∩ inputAxes",
+        "satisfies 엣지: slotRefs ∩ DSL member axes",
+        "pnpm --filter spec-core test passes"
+      ],
+      "priority": 2,
+      "dependsOn": ["TS-001"],
+      "passes": true,
+      "completionNotes": "구현됨: dkg-bridge.ts + dkg-bridge.test.ts. bootstrapDkg에서 transitionSpecs 지원."
+    },
+    {
+      "id": "TS-005",
+      "title": "Tier 1 — Demo Specs 3종",
+      "description": "cart.checkout, user.login, payment.capture 전이 정의.",
+      "acceptanceCriteria": [
+        "3개 spec 정의 + 축 매핑",
+        "pnpm --filter spec-core test passes"
+      ],
+      "priority": 2,
+      "dependsOn": ["TS-001", "TS-002"],
+      "passes": true,
+      "completionNotes": "구현됨: demo-transition-specs.ts (33K+ lines)"
+    },
+    {
+      "id": "TS-006",
+      "title": "Tier 2 — StateStore (InMemory + SQLite)",
+      "description": "축 기반 상태 저장소. InMemory(세션 격리)와 SQLite(영속 분석).",
+      "acceptanceCriteria": [
+        "StateStore 인터페이스: get, set, unset, snapshot, clear",
+        "InMemoryStateStore 구현",
+        "SqliteStateStore (AsyncStateStore) 구현",
+        "pnpm --filter spec-core test passes"
+      ],
+      "priority": 3,
+      "dependsOn": ["TS-001"],
+      "passes": true,
+      "completionNotes": "구현됨: state-store.ts + sqlite-state-store.ts"
+    },
+    {
+      "id": "TS-007",
+      "title": "Tier 2 — Bind/Input/Output 처리기",
+      "description": "$.events[N].field 경로 추출, eq/neq/in/exists 검증, set/unset 적용.",
+      "acceptanceCriteria": [
+        "bindExtractor: JSON path 기반 identity 추출",
+        "inputValidator: 상태 조건 검증",
+        "outputApplier: 상태 변경 적용",
+        "pnpm --filter spec-core test passes"
+      ],
+      "priority": 3,
+      "dependsOn": ["TS-001", "TS-006"],
+      "passes": true,
+      "completionNotes": "구현됨: bind-extractor.ts + input-validator.ts + output-applier.ts"
+    },
+    {
+      "id": "TS-008",
+      "title": "Tier 2 — TransitionEngine 7단계 파이프라인",
+      "description": "collect → match → bind → load state → validate input → apply output → emit instance. 2-pass 아키텍처.",
+      "acceptanceCriteria": [
+        "7단계 파이프라인 구현",
+        "2-pass: Pass 1(match+bind) → matched_at 정렬 → Pass 2",
+        "processSession() 함수",
+        "proof-of-value 테스트: checkout 시나리오 A/B/C",
+        "pnpm --filter spec-core test passes"
+      ],
+      "priority": 4,
+      "dependsOn": ["TS-003", "TS-006", "TS-007"],
+      "passes": true,
+      "completionNotes": "구현됨: transition-engine.ts + transition-engine.test.ts + proof-of-value.test.ts"
+    },
+    {
+      "id": "TS-009",
+      "title": "Tier 3 — Decode Adapter + TransitionFunctions",
+      "description": "인코딩된 address_context → 축:entry flat map 변환. convergence 주입 번들.",
+      "acceptanceCriteria": [
+        "decodeAddressContext() 함수",
+        "createTransitionFunctions() → TransitionFunctions 번들",
+        "에러 격리: Phase 2.5 전체 실패 → verdict 미영향",
+        "pnpm --filter spec-core test passes"
+      ],
+      "priority": 5,
+      "dependsOn": ["TS-008"],
+      "passes": true,
+      "completionNotes": "구현됨: decode-adapter.ts + transition-pipeline.ts. lifecycle-e2e.test.ts에서 검증."
+    },
+    {
+      "id": "TS-010",
+      "title": "Tier 3 — Transition Metrics + Violation Bridge",
+      "description": "Phase 2.5 결과 → MetricValue[]. InputViolation → ObservationNode 변환.",
+      "acceptanceCriteria": [
+        "transitionFlushToMetrics() — coverage, violation-rate, orphan-sequences",
+        "violationsToObservations() — DKG 관측 노드 생성",
+        "pnpm --filter spec-core test passes"
+      ],
+      "priority": 5,
+      "dependsOn": ["TS-008", "TS-004"],
+      "passes": true,
+      "completionNotes": "구현됨: transition-metrics.ts + violation-bridge.ts. lifecycle-e2e.test.ts에서 검증."
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-03-24T04:05:00.000Z"
+  }
+}

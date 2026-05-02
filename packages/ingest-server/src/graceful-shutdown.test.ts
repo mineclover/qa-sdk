@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import type { ServerType } from "@hono/node-server";
 import type {
   RecordStore,
@@ -269,6 +272,7 @@ describe("installGracefulShutdown", () => {
     let shutdownSettled = false;
     void shutdownPromise.then(() => {
       shutdownSettled = true;
+      return undefined;
     });
 
     const rejectedResponse = await harness.app.request("/health");

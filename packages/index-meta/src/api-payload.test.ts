@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { describe, expect, it } from "vitest";
 import type { EntryBatchPayload } from "./api-payload.js";
 import { applyEntryBatch, validateEntryBatchPayload } from "./api-payload.js";

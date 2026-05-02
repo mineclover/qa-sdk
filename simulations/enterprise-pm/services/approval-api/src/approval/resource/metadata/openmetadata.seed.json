@@ -1,0 +1,52 @@
+{
+  "topology": "service",
+  "openmetadata": {
+    "domain": {
+      "name": "Resource",
+      "team": "Approval Workflow Team",
+      "owner": "sim-approval-owner"
+    },
+    "glossary": [
+      { "term": "ResourceRequest", "description": "A request to allocate consultant/equipment/license to a project." },
+      { "term": "ResourceType", "description": "The kind of resource being requested." }
+    ],
+    "lineage": [
+      { "name": "resource-write-path", "from": "approval.resource_requests", "to": "approval.outbox_events", "via": "transactional-outbox" },
+      { "name": "resource-read-path", "from": "approval.outbox_events", "to": "reporting.resource_read_model", "via": "resource-read-model-sync" }
+    ],
+    "qualityTests": [
+      { "name": "resource_status_values", "type": "columnValuesToBeInSet", "entity": "approval.resource_requests.status", "values": ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"] }
+    ]
+  },
+  "cacheKeys": [
+    {
+      "id": "resource-read-model",
+      "domain": "resource",
+      "purpose": "read_model",
+      "version": "v1",
+      "prefix": "resource-read-model",
+      "segments": [{ "name": "resourceRequestId" }],
+      "ttl": "medium",
+      "openmetadataEntity": "reporting.resource_read_model"
+    },
+    {
+      "id": "resource-bff-detail",
+      "domain": "resource",
+      "purpose": "bff_detail",
+      "version": "v1",
+      "prefix": "resource-bff-detail",
+      "segments": [{ "name": "resourceRequestId" }],
+      "ttl": "short",
+      "openmetadataEntity": "experience.resource_detail"
+    },
+    {
+      "id": "resource-idempotency",
+      "domain": "resource",
+      "purpose": "idempotency",
+      "version": "v1",
+      "prefix": "resource-idempotency",
+      "segments": [{ "name": "idempotencyKey", "pii": true, "encoding": "hash" }],
+      "ttl": "short"
+    }
+  ]
+}

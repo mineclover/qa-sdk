@@ -1,0 +1,112 @@
+---
+def:
+  id: definition-management
+  type: design
+  tier: layout
+  owner_system: definition-service
+  projection_plane: intent
+  intent_hierarchy: core
+  scope: flow
+  aspect: definition_mgmt_flow
+  depth: overview
+  lifecycle: approved
+  layer: operation
+  svc: definition-service
+  tags: [structural, entry-point]
+  links:
+    - target: definition-frontmatter-metadata-system
+      type: refs
+    - target: definition-taxonomy
+      type: depends_on
+    - target: definition-level
+      type: refs
+    - target: definition-concern
+      type: refs
+    - target: definition-assembly
+      type: refs
+    - target: harness-architecture
+      type: depends_on
+    - target: definition-mgmt-coordinates
+      type: refs
+    - target: definition-mgmt-graph-links
+      type: refs
+    - target: definition-mgmt-observability-model
+      type: depends_on
+    - target: definition-mgmt-semantic-lint
+      type: refs
+    - target: definition-mgmt-verification-loop
+      type: refs
+    - target: definition-mgmt-consistency-rules
+      type: refs
+---
+
+# Definition Management — 좌표 기반 운영
+
+## 목적 ^purpose
+
+문서, 코드, 테스트, 관측을 하나의 좌표 체계로 관통 관리하는 운영 참조점. definition-catalog의 분류, 그래프 연결, 상태 추적, 피드백 루프를 한 흐름으로 읽게 한다.
+
+## 구성 ^overview
+
+- `definition-frontmatter-metadata-system`: frontmatter metadata option 하나하나의 의미와 검증 소유자.
+- `definition-mgmt-coordinates`: 문서에 좌표를 부여하는 기준. layer, docType, E/C/I/S + L/P 책임, scope×aspect, depth, tag를 어떤 질문으로 결정하는지 정리한다.
+- `definition-mgmt-graph-links`: E/C/I/S + L/P 소유/조망 관계와 횡방향 링크가 어떻게 함께 정의 그래프를 구성하는지 정리한다.
+- `definition-mgmt-state-tracking`: harness와 quality gate가 definition 상태를 어떻게 추적하는지 정리한다.
+- `definition-mgmt-feedback-loop`: 관측, feedback request, decision, infra 전이가 어떻게 순환하는지 정리한다.
+- `definition-mgmt-observability-model`: Definition/State/Decision/Verification 평면과 reachable path registry를 어떤 심볼과 FSM으로 다룰지 정리한다.
+- `definition-mgmt-semantic-lint`: structural lint 위에 meta-semantic 2층 override를 어떻게 얹는지 정리한다.
+- `definition-mgmt-verification-loop`: build, sync, validate, audit, quality, vitest 회귀를 어떤 순서로 반복해야 하는지 정리한다.
+- `definition-mgmt-consistency-rules`: 주소 불변, 단일 개념 원칙, 상태 좌표화 등 운영 규칙을 정리한다.
+
+## 관리 흐름
+
+```
+좌표 부여
+  → 그래프 연결
+    → 상태 추적
+      → 관측/피드백 루프
+        → 검증 루프
+          → 운영 규칙으로 회수
+```
+
+이 문서는 위 5단계를 하나의 관리 흐름으로 읽게 하는 루트 모듈이다.
+
+## 단계 요약
+
+| 단계 | 질문 | 문서 |
+|------|------|------|
+| 1 | 이 정의는 어디에 놓이는가 | `definition-mgmt-coordinates` |
+| 2 | 정의들이 어떻게 교류하는가 | `definition-mgmt-graph-links` |
+| 3 | 이 정의의 현재 상태는 무엇인가 | `definition-mgmt-state-tracking` |
+| 4 | 관측이 어떻게 정의를 다시 바꾸는가 | `definition-mgmt-feedback-loop` |
+| 5 | 무엇을 어떻게 관찰하고 좌표화하는가 | `definition-mgmt-observability-model` |
+| 6 | 구조 lint를 언제 semantic override로 완화하는가 | `definition-mgmt-semantic-lint` |
+| 7 | 무엇을 어떤 순서로 검증하는가 | `definition-mgmt-verification-loop` |
+| 8 | 무엇을 지켜야 일관성이 유지되는가 | `definition-mgmt-consistency-rules` |
+| M | 각 frontmatter option은 무엇을 의미하는가 | `definition-frontmatter-metadata-system` |
+
+## 사용 맥락 ^context
+
+| 상황 | 우선 볼 문서 |
+|------|-------------|
+| 새 문서 생성 | `definition-mgmt-coordinates` |
+| 문서 분류/이동 | `definition-mgmt-coordinates`, `definition-mgmt-graph-links` |
+| 상태 조회/전이 | `definition-mgmt-state-tracking` |
+| 피드백 루프 추적 | `definition-mgmt-feedback-loop` |
+| 관찰 스키마/경로 좌표화 | `definition-mgmt-observability-model` |
+| meta-semantic 예외 규칙 점검 | `definition-mgmt-semantic-lint` |
+| 검증 순서 정하기 | `definition-mgmt-verification-loop` |
+| 규칙 점검 | `definition-mgmt-consistency-rules` |
+
+## 주의사항 ^caveat
+
+- 이전 단일 리프 문서의 상세 설명은 하위 멤버 문서로 이동했다.
+- 이 문서는 개요와 단계 지도를 유지하고, 세부 정의는 하위 문서가 소유한다.
+
+## 관련 문서
+
+| 문서 | 역할 |
+|------|------|
+| `definition-system-philosophy.md` | 좌표 기반 문서화 철학 |
+| `definition-catalog.spec.md` | definition-catalog 전체 구조 |
+| `review-ledger.spec.md` | feedback request와 definition 연동 |

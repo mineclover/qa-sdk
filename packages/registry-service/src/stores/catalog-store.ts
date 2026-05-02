@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 export interface CatalogRecord {
   readonly id: string;
   readonly name: string;

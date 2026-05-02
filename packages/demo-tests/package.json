@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/demo-tests",
   "version": "0.2.0",
+  "description": "데모 카탈로그와 서비스 흐름의 cross-package 통합 테스트 스위트",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +14,7 @@
     "weighted-index": "workspace:*",
     "bit-index": "workspace:*",
     "@qa-sdk/registry-service": "workspace:*",
-    "pino": "workspace:@qa-sdk/pino@^9.9.4",
+    "pino": "workspace:@qa-sdk/pino@*",
     "hono": "^4.7.5"
   },
   "devDependencies": {

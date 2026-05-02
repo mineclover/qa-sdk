@@ -1,3 +1,6 @@
+// @def.boundary docs-control-plane
+// @def.doc docs-control-plane
+
 /**
  * qa-sdk register — SchemaSnapshot을 Registry에 등록.
  *
@@ -8,8 +11,7 @@
  */
 
 import { stat } from "node:fs/promises";
-import type { SchemaSnapshot } from "../lib/types.js";
-import { readSnapshot, readSnapshots } from "../lib/snapshot-io.js";
+import { readSnapshot, readSnapshots } from "snapshot-io";
 
 export interface RegisterOptions {
   registry: string;

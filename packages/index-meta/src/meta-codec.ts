@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * MetaCodec — entries 기반 독립 encode/decode 모듈
  *
@@ -40,6 +43,10 @@ import {
 } from "weighted-index";
 import type { DecodeMap, EntityId, VersionedValue } from "./types.js";
 import { EntryNotFoundError, ValidationError } from "./errors.js";
+
+function toErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
 
 /**
  * DecodeMap의 유효성을 검증한다.
@@ -154,12 +161,12 @@ export class MetaCodec {
     } catch (e) {
       if (e instanceof WiEntityNotFoundError) {
         throw new EntryNotFoundError(
-          `encode "${this._map.indexId}/${this._map.versionId}": ${e.message}`
+          `encode "${this._map.indexId}/${this._map.versionId}": ${toErrorMessage(e)}`
         );
       }
       if (e instanceof CoordError) {
         throw new ValidationError(
-          `encode "${this._map.indexId}/${this._map.versionId}": ${e.message}`
+          `encode "${this._map.indexId}/${this._map.versionId}": ${toErrorMessage(e)}`
         );
       }
       throw e;
@@ -253,6 +260,11 @@ export class MetaCodec {
    */
   get dimIds(): readonly string[] {
     return this._dimIds;
+  }
+
+  /** dimId로 해당 dim의 entries/kind 정보 조회. 없으면 undefined. */
+  getDimInfo(dimId: string): { dimId: string; entries: EntityId[]; kind: DecodeMap["dims"][number]["kind"] } | undefined {
+    return this._map.dims.find(d => d.dimId === dimId);
   }
 
   /** 내부 DecodeMap의 복사본 반환. */

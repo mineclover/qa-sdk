@@ -1,3 +1,6 @@
+// @def.boundary persistence-system-root
+// @def.doc persistence-system-root
+
 /**
  * bit-mask-set.ts — BitIndex 기반 권한/상태 관리 Set
  *
@@ -167,7 +170,7 @@ export class BitMaskSet {
     for (const packed of this._set) {
       seen.add(this.index.extractDim(packed, dimIndex));
     }
-    return [...seen].sort((a, b) => a - b);
+    return [...seen].toSorted((a, b) => a - b);
   }
 
   /** 라벨 기반 고유 값 목록. */
@@ -176,7 +179,7 @@ export class BitMaskSet {
     for (const packed of this._set) {
       seen.add(this.index.extractDimByLabel(packed, label));
     }
-    return [...seen].sort((a, b) => a - b);
+    return [...seen].toSorted((a, b) => a - b);
   }
 
   // ── Set 대수 ──────────────────────────────────────────────────────────
@@ -212,7 +215,7 @@ export class BitMaskSet {
 
   /** packed 값 배열로 직렬화. */
   toArray(): number[] {
-    return [...this._set].sort((a, b) => a - b);
+    return [...this._set].toSorted((a, b) => a - b);
   }
 
   /** packed 값 배열에서 복원. */

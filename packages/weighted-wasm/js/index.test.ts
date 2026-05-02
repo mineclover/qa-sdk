@@ -69,7 +69,7 @@ describe("weighted-wasm JS wrapper", () => {
     const wrapper = await loadWrapper();
     const wrapperRecord = wrapper as Record<string, unknown>;
 
-    expect(Object.keys(wrapperRecord).sort()).toEqual([...publicExports].sort());
+    expect(Object.keys(wrapperRecord).toSorted()).toEqual([...publicExports].toSorted());
 
     for (const exportName of publicExports) {
       expect(typeof wrapperRecord[exportName]).toBe("function");

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import type {
   VersionLifecycleStore,
   VersionRecord,
@@ -104,7 +107,7 @@ export class InMemoryVersionLifecycleStore implements VersionLifecycleStore {
       if (status && rec.status !== status) continue;
       result.push(rec);
     }
-    return result.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return result.toSorted((a, b) => a.createdAt.localeCompare(b.createdAt));
   }
 
   private mustGet(prefix: string, versionId: string): VersionRecord {

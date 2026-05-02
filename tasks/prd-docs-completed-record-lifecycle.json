@@ -1,0 +1,220 @@
+{
+  "name": "Docs Completed Record Lifecycle",
+  "description": "The docs control plane can now detect completed records through `completedRecords[]`: checked-only `.todo.md` files and PRD markdown files whose paired ralph PRD JSON has all stories passing. This is useful, but the lifecycle policy is still implicit. Completed records are currently read-model candidates, not file moves, not archive operations, and not spec/todo promotion authority.\n\nThis PRD formalizes completed record lifecycle semantics. It keeps the workflow read-only and conservative: completed records are detected and surfaced clearly, `docs drift` can report relevant lifecycle warnings or info, but no files are moved to archive or converted to `.memo.md`. The goal is to make completed records understandable and actionable without creating hidden writes.",
+  "branchName": "ralph/docs-completed-record-lifecycle",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Define Completed Record Lifecycle Policy",
+      "description": "As a docs maintainer, I want completed record lifecycle semantics documented so completed records are not confused with active work or automatic archive operations.",
+      "acceptanceCriteria": [
+        "Define completed records as read-only lifecycle candidates.",
+        "Document that completed records are not automatically moved, archived, or converted to memo.",
+        "Document that completed records are not active follow-up work.",
+        "Document that `passes: true` in PRD JSON is a completion signal, not promotion authority.",
+        "Document that archive/memo conversion requires a separate explicit PRD or command.",
+        "Update `docs-control-plane.spec.md` or `docs-control-plane.rule.md` with this policy.",
+        "Do not change runtime behavior in this story.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and lifecycle regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`",
+        "`node packages/cli/dist/index.js docs collect docs-control-plane --family-only --json`"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Improve Completed TODO Detection",
+      "description": "As a documentation operator, I want checked-only `.todo.md` files to be identified as completed records with enough metadata to decide whether to archive, memo, or keep them.",
+      "acceptanceCriteria": [
+        "Completed TODO detection still requires zero open checkboxes and at least one checked checkbox.",
+        "Completed TODO record includes path, document id, completed count, open count, and reason.",
+        "Completed TODO record includes lifecycle and title metadata where available.",
+        "Completed TODO record does not appear in `nextFollowUps`.",
+        "Tests cover checked-only TODO, mixed TODO, and empty TODO cases.",
+        "Existing `docs status` JSON shape remains backward compatible.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and lifecycle regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`",
+        "`node packages/cli/dist/index.js docs collect docs-control-plane --family-only --json`"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "Improve Completed PRD Markdown Detection",
+      "description": "As a planner, I want PRD markdown paired with all-passing PRD JSON to be identified as a completed record without being treated as active planning work.",
+      "acceptanceCriteria": [
+        "Completed PRD markdown detection still requires a paired ralph PRD JSON with all stories passing.",
+        "Completed PRD record includes PRD markdown path and paired JSON path.",
+        "Completed PRD record includes story count and passed story count where available.",
+        "Completed PRD markdown does not appear as active follow-up work.",
+        "Tests cover paired complete JSON, paired incomplete JSON, and missing JSON.",
+        "Existing PRD JSON adapter behavior remains unchanged.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and lifecycle regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`",
+        "`node packages/cli/dist/index.js docs collect docs-control-plane --family-only --json`"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001",
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "Add Completed Record Drift Reporting",
+      "description": "As a docs operator, I want `docs drift` to report completed record lifecycle candidates without treating them as errors.",
+      "acceptanceCriteria": [
+        "`docs drift` can report completed record candidates as info or warning according to a documented policy.",
+        "Completed record drift output does not fail the command.",
+        "Completed record reporting is scoped by `--prd` when a PRD is provided.",
+        "Completed record reporting excludes archive PRDs by default.",
+        "Completed record reporting excludes transient `.ralph-tui` session state by default.",
+        "Tests cover completed TODO and completed PRD markdown drift reporting.",
+        "Existing drift error/warning behavior remains unchanged.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and lifecycle regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`",
+        "`node packages/cli/dist/index.js docs collect docs-control-plane --family-only --json`"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001",
+        "US-002",
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "Keep Completed Records Out Of Active Inventory",
+      "description": "As a docs control-plane user, I want completed records visible but not promoted into active next work so status and collect outputs stay focused.",
+      "acceptanceCriteria": [
+        "`docs status <target> --json` includes `completedRecords[]` where applicable.",
+        "`docs status <target> --json` excludes completed records from `nextFollowUps[]`.",
+        "`docs collect <target> --family-only --json` includes completed record data without making it active follow-up work.",
+        "Completed records do not affect `nextFollowUp` priority.",
+        "Tests verify completed records are visible and non-actionable.",
+        "Text output stays concise and labels completed records as completed records.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and lifecycle regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`",
+        "`node packages/cli/dist/index.js docs collect docs-control-plane --family-only --json`"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002",
+        "US-003",
+        "US-004"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "Document Completed Record Review Workflow",
+      "description": "As a maintainer, I want a clear manual workflow for reviewing completed records so future archive/memo conversion can be done intentionally.",
+      "acceptanceCriteria": [
+        "Document a manual review workflow for completed records.",
+        "Workflow includes inspect, verify, decide keep/archive/memo, and commit steps.",
+        "Workflow references `docs status`, `docs collect --family-only`, and `docs drift`.",
+        "Workflow explains when to leave a completed TODO in place.",
+        "Workflow explains when to create a future archive/memo conversion PRD.",
+        "No automatic archive/memo command is introduced.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and lifecycle regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`",
+        "`node packages/cli/dist/index.js docs collect docs-control-plane --family-only --json`"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-004",
+        "US-005"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "Verify Completed Record Lifecycle Operationally",
+      "description": "As a reviewer, I want command evidence proving completed record lifecycle reporting works without hidden writes.",
+      "acceptanceCriteria": [
+        "Run `docs status docs-control-plane --json` and inspect `completedRecords`.",
+        "Run `docs collect docs-control-plane --family-only --json` and inspect completed record behavior.",
+        "Run `docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`.",
+        "Run `docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`.",
+        "Run all quality gates.",
+        "Verify no files are moved, archived, or converted automatically.",
+        "Record residual completed-record cleanup candidates in docs-control-plane TODO if needed.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and lifecycle regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`node packages/cli/dist/index.js def validate` - definition graph validation",
+        "`node packages/cli/dist/index.js docs status docs-control-plane --json`",
+        "`node packages/cli/dist/index.js docs status programming-artifact-ontology-system --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-graph-result-ranking-filtering.json --json`",
+        "`node packages/cli/dist/index.js docs collect docs-control-plane --family-only --json`"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-006"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-17T13:37:06.572Z"
+  }
+}

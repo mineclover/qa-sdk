@@ -1,3 +1,6 @@
+// @def.boundary ingest-system
+// @def.doc ingest-system
+
 import { performance } from "node:perf_hooks";
 import {
   newDlqId,

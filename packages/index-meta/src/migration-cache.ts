@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * MigrationCache — L2 불변 마이그레이션 이력 캐시 (PositionEngine)
  *

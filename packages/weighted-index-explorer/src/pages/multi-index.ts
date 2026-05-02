@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  다중 인덱스 — 여러 인덱스가 하나의 UUID 주소 공간을 공유하는 시나리오
 // ═══════════════════════════════════════════════════════════════════════════
@@ -293,15 +296,17 @@ function setupInteractivity(container: HTMLElement): void {
 }
 
 function setupUUIDDemo(container: HTMLElement): void {
-  const indexSel = container.querySelector<HTMLSelectElement>("#mi-index-sel")!;
-  const versionSel = container.querySelector<HTMLSelectElement>("#mi-version-sel")!;
-  const dimContainer = container.querySelector<HTMLDivElement>("#mi-dim-selectors")!;
-  const resultDiv = container.querySelector<HTMLDivElement>("#mi-uuid-result")!;
+  const indexSel = container.querySelector<HTMLSelectElement>("#mi-index-sel");
+  const versionSel = container.querySelector<HTMLSelectElement>("#mi-version-sel");
+  const dimContainer = container.querySelector<HTMLDivElement>("#mi-dim-selectors");
+  const resultDiv = container.querySelector<HTMLDivElement>("#mi-uuid-result");
+  if (!indexSel || !versionSel || !dimContainer || !resultDiv) return;
 
-  function getIdx(): IndexDef { return INDICES.find((i) => i.id === indexSel.value)!; }
+  function getIdx(): IndexDef | undefined { return INDICES.find((i) => i.id === indexSel.value); }
 
   function updateVersions(): void {
     const idx = getIdx();
+    if (!idx) return;
     versionSel.innerHTML = idx.versions.map((v) =>
       `<option value="${v.id}">${v.id}</option>`
     ).join("");
@@ -310,6 +315,7 @@ function setupUUIDDemo(container: HTMLElement): void {
 
   function updateDimSelectors(): void {
     const idx = getIdx();
+    if (!idx) return;
     const vIdx = idx.versions.findIndex((v) => v.id === versionSel.value);
     const snap = idx.versions[Math.max(0, vIdx)].dimSnapshots;
     dimContainer.innerHTML = idx.dims.map((d, i) => `
@@ -328,6 +334,7 @@ function setupUUIDDemo(container: HTMLElement): void {
 
   function recalc(): void {
     const idx = getIdx();
+    if (!idx) return;
     const vIdx = Math.max(0, idx.versions.findIndex((v) => v.id === versionSel.value));
     const v = idx.versions[vIdx];
     const wi = getWI(idx, vIdx);
@@ -373,9 +380,10 @@ function setupUUIDDemo(container: HTMLElement): void {
 }
 
 function setupRouting(container: HTMLElement): void {
-  const input = container.querySelector<HTMLInputElement>("#mi-route-input")!;
-  const btn = container.querySelector<HTMLButtonElement>("#mi-route-btn")!;
-  const resultDiv = container.querySelector<HTMLDivElement>("#mi-route-result")!;
+  const input = container.querySelector<HTMLInputElement>("#mi-route-input");
+  const btn = container.querySelector<HTMLButtonElement>("#mi-route-btn");
+  const resultDiv = container.querySelector<HTMLDivElement>("#mi-route-result");
+  if (!input || !btn || !resultDiv) return;
 
   function analyze(): void {
     const raw = input.value.trim();
@@ -443,15 +451,20 @@ function setupRouting(container: HTMLElement): void {
 }
 
 function setupDecodeMapTabs(container: HTMLElement): void {
-  const body = container.querySelector<HTMLDivElement>("#mi-dm-body")!;
+  const body = container.querySelector<HTMLDivElement>("#mi-dm-body");
+  if (!body) return;
   const tabs = container.querySelectorAll<HTMLButtonElement>(".mi-dm-tab");
 
   function showIdx(idxId: string): void {
-    const idx = INDICES.find((i) => i.id === idxId)!;
+    const idx = INDICES.find((i) => i.id === idxId);
+    if (!idx) return;
     body.innerHTML = buildDecodeMapHtml(idx, 0);
     tabs.forEach((t) => t.classList.toggle("active", t.dataset.idx === idxId));
   }
 
-  tabs.forEach((t) => t.addEventListener("click", () => showIdx(t.dataset.idx!)));
+  tabs.forEach((t) => t.addEventListener("click", () => {
+    const idxId = t.dataset.idx;
+    if (idxId) showIdx(idxId);
+  }));
   showIdx(INDICES[0].id);
 }

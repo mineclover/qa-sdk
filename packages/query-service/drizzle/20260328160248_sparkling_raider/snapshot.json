@@ -1,0 +1,162 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "9761a201-7133-446a-95b7-fd5735d5b173",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "ddl": [
+    {
+      "name": "policy_rule",
+      "entityType": "tables"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "policy_rule"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "index_id",
+      "entityType": "columns",
+      "table": "policy_rule"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version_id",
+      "entityType": "columns",
+      "table": "policy_rule"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "pattern_json",
+      "entityType": "columns",
+      "table": "policy_rule"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "value_json",
+      "entityType": "columns",
+      "table": "policy_rule"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "priority",
+      "entityType": "columns",
+      "table": "policy_rule"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "policy_rule"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "policy_rule"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "rule_set_id",
+      "entityType": "columns",
+      "table": "policy_rule"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "policy_rule_pk",
+      "table": "policy_rule",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "index_id",
+          "isExpression": false
+        },
+        {
+          "value": "version_id",
+          "isExpression": false
+        },
+        {
+          "value": "created_at",
+          "isExpression": false
+        },
+        {
+          "value": "id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_policy_rule_lookup",
+      "entityType": "indexes",
+      "table": "policy_rule"
+    },
+    {
+      "columns": [
+        {
+          "value": "index_id",
+          "isExpression": false
+        },
+        {
+          "value": "version_id",
+          "isExpression": false
+        },
+        {
+          "value": "rule_set_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_policy_rule_ruleset",
+      "entityType": "indexes",
+      "table": "policy_rule"
+    }
+  ],
+  "renames": []
+}

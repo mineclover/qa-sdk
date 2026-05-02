@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * platform-api-contract.test.ts — platform-demo-api 응답 contract 검증
  *
@@ -25,6 +28,7 @@ import {
 // ── API Base ──────────────────────────────────────────────────────────────
 
 const API_BASE = process.env.DEMO_API_BASE ?? "https://platform-demo-api.astralclover.workers.dev";
+const describeDemoApi = process.env.DEMO_API_BASE ? describe : describe.skip;
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, init);
@@ -63,19 +67,21 @@ interface ScenarioResponse {
 
 // ── 초기화: 테스트 시작/종료 시 reset ──────────────────────────────────────
 
-beforeAll(async () => {
-  await api("/api/grants/reset", { method: "POST" });
-});
+if (process.env.DEMO_API_BASE) {
+  beforeAll(async () => {
+    await api("/api/grants/reset", { method: "POST" });
+  });
 
-afterAll(async () => {
-  await api("/api/grants/reset", { method: "POST" });
-});
+  afterAll(async () => {
+    await api("/api/grants/reset", { method: "POST" });
+  });
+}
 
 // ═════════════════════════════════════════════════════════════════════════════
 //  [API-1] GET /api/features?ver=v2 — SSOT 일치
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[API-1] GET /api/features?ver=v2 — SSOT 정합성", () => {
+describeDemoApi("[API-1] GET /api/features?ver=v2 — SSOT 정합성", () => {
   let data: FeaturesResponse;
 
   beforeAll(async () => {
@@ -131,7 +137,7 @@ describe("[API-1] GET /api/features?ver=v2 — SSOT 정합성", () => {
 //  [API-2] GET /api/features?ver=v1 — v1 SSOT 일치
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[API-2] GET /api/features?ver=v1 — v1 SSOT 정합성", () => {
+describeDemoApi("[API-2] GET /api/features?ver=v1 — v1 SSOT 정합성", () => {
   let data: FeaturesResponse;
 
   beforeAll(async () => {
@@ -159,7 +165,7 @@ describe("[API-2] GET /api/features?ver=v1 — v1 SSOT 정합성", () => {
 //  [API-3] 초기화 후 기본 grant 일치
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[API-3] POST /api/grants/reset → 기본 상태 복원", () => {
+describeDemoApi("[API-3] POST /api/grants/reset → 기본 상태 복원", () => {
   it("reset 후 v2 features의 grantedRoles가 SSOT과 일치", async () => {
     // 먼저 변경
     await api("/api/grants", {
@@ -185,7 +191,7 @@ describe("[API-3] POST /api/grants/reset → 기본 상태 복원", () => {
 //  [API-4] PATCH /api/grants — 변경 반영
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[API-4] PATCH /api/grants — grant 변경", () => {
+describeDemoApi("[API-4] PATCH /api/grants — grant 변경", () => {
   beforeAll(async () => {
     await api("/api/grants/reset", { method: "POST" });
   });
@@ -226,7 +232,7 @@ describe("[API-4] PATCH /api/grants — grant 변경", () => {
 //  [API-5] 변경 후 초기화 → 원래대로 복원
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[API-5] 변경 후 reset → 원래대로", () => {
+describeDemoApi("[API-5] 변경 후 reset → 원래대로", () => {
   it("여러 건 변경 → reset → 모든 feature가 SSOT 기본으로 복원", async () => {
     // 여러 건 변경
     await api("/api/grants/batch", {
@@ -262,7 +268,7 @@ describe("[API-5] 변경 후 reset → 원래대로", () => {
 //  [API-6] GET /api/grant-table — row 구조
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[API-6] GET /api/grant-table — row 구조 검증", () => {
+describeDemoApi("[API-6] GET /api/grant-table — row 구조 검증", () => {
   let data: GrantTableResponse;
 
   beforeAll(async () => {
@@ -298,7 +304,7 @@ describe("[API-6] GET /api/grant-table — row 구조 검증", () => {
 //  [API-7] GET /api/scenario — 시나리오 응답 구조
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[API-7] GET /api/scenario — 구조 검증", () => {
+describeDemoApi("[API-7] GET /api/scenario — 구조 검증", () => {
   beforeAll(async () => {
     await api("/api/grants/reset", { method: "POST" });
   });
@@ -367,7 +373,7 @@ interface MaskResponse {
   maskBytes: number;
 }
 
-describe("[API-8] GET /api/permission/mask — PermissionSet 기반 mask", () => {
+describeDemoApi("[API-8] GET /api/permission/mask — PermissionSet 기반 mask", () => {
   beforeAll(async () => {
     await api("/api/grants/reset", { method: "POST" });
   });

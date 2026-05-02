@@ -1,0 +1,238 @@
+{
+  "name": "Quality Gate Closure Infrastructure for Programming Artifact Evidence",
+  "description": "Connect artifact prompt extraction to the existing quality-gates-system and quality-ledger infrastructure by resolving quality-status records into GateDescriptor evidence, adding explicit ledger fallback, and supporting opt-in freshness SLA without changing registry-service, index-meta, or ontology allocation lifecycle.",
+  "branchName": "ralph/quality-gate-closure-infrastructure",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Extract shared quality gate topology helpers",
+      "description": "As a maintainer, I want quality gate topology resolution to be shared between quality export and artifact extraction so that both paths use the same definition graph semantics.",
+      "acceptanceCriteria": [
+        "Extract reusable CLI-internal helper(s) from the existing quality.ts graph traversal path",
+        "The helper traverses definition-catalog contains links the same way quality export currently does",
+        "The helper can collect contained docs for a root or bundle id",
+        "The helper can convert collected gate docs into GateDescriptor[]",
+        "The helper preserves existing quality export behavior",
+        "No public package API is introduced unless required by implementation",
+        "The helper does not read registry-service or index-meta",
+        "pnpm --filter operational-ontology test passes",
+        "pnpm --filter operational-ontology typecheck passes",
+        "pnpm --filter @qa-sdk/cli test -- ontology passes",
+        "pnpm --filter @qa-sdk/cli test -- quality passes",
+        "pnpm --filter @qa-sdk/cli typecheck passes",
+        "pnpm --filter quality-ledger test passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Keep this helper CLI-internal unless reuse pressure proves a public API is necessary. Preserve quality export behavior exactly.",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Resolve quality-status refs into quality gate descriptors",
+      "description": "As a maintainer, I want artifact quality-status records to resolve into existing quality gate descriptors so that prompt extraction can reuse the quality gate infrastructure.",
+      "acceptanceCriteria": [
+        "Add descriptor resolution for matched quality-status records in artifact extraction",
+        "Descriptor resolver input priority is loaded snapshot rootId plus bundleIds, then quality-status metadata.rootId plus metadata.bundles[].bundleId, then record.verifiesRefs and record.materializesOutputRefs, then record.verificationRefs when they point directly to gate docs, then relations with verifies or materializes_output",
+        "Root/system refs and bundle refs are resolved through the definition graph",
+        "Bundle refs resolve to all contained gate docs",
+        "Direct gate refs resolve to that gate doc only",
+        "The resulting descriptors include gateDocId, docVersion, and bundleId",
+        "docVersion is taken from the same quality doc index path used by quality export",
+        "If only scan data is available and version fallback is required, use the existing quality export behavior rather than inventing a new version policy",
+        "If no gate descriptors can be resolved, emit structured warning code quality-status-ledger-no-gate-descriptors",
+        "pnpm --filter operational-ontology test passes",
+        "pnpm --filter operational-ontology typecheck passes",
+        "pnpm --filter @qa-sdk/cli test -- ontology passes",
+        "pnpm --filter @qa-sdk/cli test -- quality passes",
+        "pnpm --filter @qa-sdk/cli typecheck passes",
+        "pnpm --filter quality-ledger test passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "This story is the key bridge from programming-artifact quality-status records to the existing quality-gates-system topology.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "Add explicit quality-ledger fallback input",
+      "description": "As a maintainer, I want artifact extraction to use quality-ledger only when explicitly requested so that local DB state does not become a hidden dependency.",
+      "acceptanceCriteria": [
+        "qa-sdk ontology prompt extract-artifact accepts --quality-ledger <path>",
+        "When --quality-ledger is absent, existing snapshot-only behavior is unchanged",
+        "A provided but missing ledger path emits quality-status-ledger-missing",
+        "A provided but unreadable or corrupt ledger path emits quality-status-ledger-read-failed",
+        "Ledger failures do not crash prompt extraction",
+        "The flag affects only artifact extraction paths that process related quality-status evidence",
+        "Non-artifact prompt extraction commands remain unchanged",
+        "pnpm --filter operational-ontology test passes",
+        "pnpm --filter operational-ontology typecheck passes",
+        "pnpm --filter @qa-sdk/cli test -- ontology passes",
+        "pnpm --filter @qa-sdk/cli test -- quality passes",
+        "pnpm --filter @qa-sdk/cli typecheck passes",
+        "pnpm --filter quality-ledger test passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Do not add automatic .qa-sdk/quality-ledger.sqlite lookup in this story.",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "Load snapshot-first ledger fallback evidence",
+      "description": "As a maintainer, I want valid quality export snapshots to remain the primary evidence source, with quality-ledger used only as a fallback.",
+      "acceptanceCriteria": [
+        "A valid quality-status.outputPath snapshot remains the primary closure evidence",
+        "Ledger fallback is attempted only when snapshot evidence is missing, invalid, incomplete, or has no verified bundle/gate surface",
+        "Ledger fallback calls existing QualityLedger.resolveBundleVerification() with resolved gate descriptors",
+        "Ledger-derived evidence includes bundle id, total gates, verified gates, blocking gate statuses, gate refs, and latest run timestamps when available",
+        "Ledger fallback never downgrades a valid verified snapshot",
+        "Snapshot/ledger conflict is narrowly defined as both snapshot and ledger are available for the same resolved bundle/gate surface, both claim a determinate verification state, and the states disagree",
+        "Snapshot/ledger conflict emits quality-status-ledger-conflict",
+        "If snapshot is verified and ledger exists but is older, missing, or not explicitly used as fallback, snapshot remains authoritative",
+        "Ledger evidence with unresolved descriptors emits quality-status-ledger-no-gate-descriptors",
+        "pnpm --filter operational-ontology test passes",
+        "pnpm --filter operational-ontology typecheck passes",
+        "pnpm --filter @qa-sdk/cli test -- ontology passes",
+        "pnpm --filter @qa-sdk/cli test -- quality passes",
+        "pnpm --filter @qa-sdk/cli typecheck passes",
+        "pnpm --filter quality-ledger test passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Snapshot remains authoritative. Ledger fallback is additive and explicit.",
+      "dependsOn": [
+        "US-002",
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "Surface ledger fallback evidence in extract-artifact JSON",
+      "description": "As a maintainer, I want extract-artifact --json to show whether governance closure came from snapshot or ledger fallback evidence.",
+      "acceptanceCriteria": [
+        "source.qualityStatusRecords.records[] includes qualityLedgerEvidence when ledger fallback is used",
+        "qualityLedgerEvidence includes ledger path, bundle ids, gate refs, verified gate count, total gate count, blocking gates, and timestamp summary",
+        "source.qualityStatusRecords.warnings[] includes stable machine-readable ledger warning objects",
+        "source.warnings[] includes the corresponding warning codes",
+        "Stable ledger warning codes are quality-status-ledger-missing, quality-status-ledger-read-failed, quality-status-ledger-no-gate-descriptors, quality-status-ledger-incomplete, and quality-status-ledger-conflict",
+        "source.governanceClosure.status continues to use only quality-status-found, quality-status-missing, quality-status-invalid, and quality-status-incomplete",
+        "Search fallback warnings remain under source.qualitySignal.warning, not source.governanceClosure.warning",
+        "pnpm --filter operational-ontology test passes",
+        "pnpm --filter operational-ontology typecheck passes",
+        "pnpm --filter @qa-sdk/cli test -- ontology passes",
+        "pnpm --filter @qa-sdk/cli test -- quality passes",
+        "pnpm --filter @qa-sdk/cli typecheck passes",
+        "pnpm --filter quality-ledger test passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Keep JSON additive and backward compatible. Do not add new governanceClosure statuses.",
+      "dependsOn": [
+        "US-004"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "Add opt-in quality-status freshness SLA",
+      "description": "As a maintainer, I want old quality-status evidence to become stale only when an explicit max age policy is provided.",
+      "acceptanceCriteria": [
+        "qa-sdk ontology prompt extract-artifact accepts --quality-status-max-age-days <n>",
+        "When the flag is absent, existing generatedAt behavior is unchanged",
+        "Invalid max-age values fail with a clear CLI error",
+        "Snapshot evidence uses snapshot generatedAt for freshness checks",
+        "Ledger fallback freshness uses BundleVerification.gateStatuses[*].lastRun.executedAt",
+        "Ledger freshness uses the oldest relevant verified gate executedAt timestamp",
+        "If any required verified gate is older than the threshold, the evidence outcome is stale",
+        "If required gate timestamps are unavailable, the evidence is incomplete, not stale",
+        "Stale evidence emits prompt-quality-status-evidence-stale and does not improve governance_closure",
+        "JSON warning code quality-status-generated-at-stale is emitted for stale freshness policy failures",
+        "pnpm --filter operational-ontology test passes",
+        "pnpm --filter operational-ontology typecheck passes",
+        "pnpm --filter @qa-sdk/cli test -- ontology passes",
+        "pnpm --filter @qa-sdk/cli test -- quality passes",
+        "pnpm --filter @qa-sdk/cli typecheck passes",
+        "pnpm --filter quality-ledger test passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Freshness SLA is opt-in only. Distinguish docVersion stale from generatedAt freshness stale in messages and docs.",
+      "dependsOn": [
+        "US-004"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "Propagate ledger and stale outcomes into prompt quality",
+      "description": "As a maintainer, I want prompt quality scoring to treat ledger-derived and stale quality-status evidence consistently with snapshot-derived evidence.",
+      "acceptanceCriteria": [
+        "Ledger-derived verified evidence is converted into existing PromptArtifactQualityStatusEvidence",
+        "Verified ledger evidence can improve governance_closure only when it verifies the target and has verified bundle/gate surface",
+        "Failed, stale, invalid, incomplete, target-mismatch, descriptor-missing, and conflict evidence does not improve governance_closure",
+        "Existing ready, usable, and degraded quality bands remain stable except for explicit ledger/freshness inputs",
+        "Mixed verified and invalid/stale/conflict evidence keeps governance closure open unless all required target evidence is verified and fresh",
+        "Existing non-artifact prompt quality behavior remains backward compatible",
+        "pnpm --filter operational-ontology test passes",
+        "pnpm --filter operational-ontology typecheck passes",
+        "pnpm --filter @qa-sdk/cli test -- ontology passes",
+        "pnpm --filter @qa-sdk/cli test -- quality passes",
+        "pnpm --filter @qa-sdk/cli typecheck passes",
+        "pnpm --filter quality-ledger test passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Use the existing PromptArtifactQualityStatusEvidence path. Avoid new prompt quality dimensions.",
+      "dependsOn": [
+        "US-005",
+        "US-006"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-008",
+      "title": "Update quality gate and programming-artifact documentation",
+      "description": "As a maintainer, I want the docs to reflect how artifact governance closure now reuses quality-gates-system and quality-ledger infrastructure.",
+      "acceptanceCriteria": [
+        "programming-artifact-ontology-system.spec.md documents snapshot-first evidence, explicit ledger fallback, descriptor resolution, and freshness SLA",
+        "programming-artifact-ontology-cli.spec.md documents --quality-ledger, --quality-status-max-age-days, JSON additions, warning codes, and descriptor input priority",
+        "programming-artifact-ontology-plan.plan.md reflects the new milestone status",
+        "programming-artifact-ontology-todo.todo.md marks completed follow-up items and preserves remaining future gaps",
+        "programming-artifact-ontology-development-guide.spec.md documents the implementation and verification workflow",
+        "operational-ontology-prompt-artifact-generation.spec.md documents ledger fallback and freshness behavior",
+        "quality-ledger.spec.md is updated only if public ledger semantics or APIs change",
+        "quality-gates-system.md is updated only if the root quality gate lifecycle or recommended commands change",
+        "operational-ontology-registry-allocation.plan.md and .todo.md remain unchanged unless implementation crosses into registry-service/index-meta allocation lifecycle",
+        "pnpm --filter operational-ontology test passes",
+        "pnpm --filter operational-ontology typecheck passes",
+        "pnpm --filter @qa-sdk/cli test -- ontology passes",
+        "pnpm --filter @qa-sdk/cli test -- quality passes",
+        "pnpm --filter @qa-sdk/cli typecheck passes",
+        "pnpm --filter quality-ledger test passes"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "Execute after implementation stories unless a prior story needs immediate spec updates to keep validation green.",
+      "dependsOn": [
+        "US-001",
+        "US-002",
+        "US-003",
+        "US-004",
+        "US-005",
+        "US-006",
+        "US-007"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-13T23:09:25.613Z"
+  }
+}

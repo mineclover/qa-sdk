@@ -1,3 +1,6 @@
+// @def.boundary experience-layer-group
+// @def.doc experience-layer-group
+
 /**
  * Prefix 제작 — 축 정의 + composite 생성 (인라인 폼)
  *
@@ -227,7 +230,7 @@ function bind(): void {
   // 프리셋
   container.querySelectorAll<HTMLButtonElement>(".pb-preset").forEach((btn) =>
     btn.addEventListener("click", () => {
-      const key = btn.dataset.key!;
+      const key = btn.dataset.key ?? "";
       if (key) loadPreset(key);
       else { store.axes = []; store.composites = []; notify(); }
     }),

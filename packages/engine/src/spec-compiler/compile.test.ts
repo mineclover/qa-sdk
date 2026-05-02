@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-engine-system
+// @def.doc qa-sdk-engine-system
+
 import { describe, expect, it } from "vitest";
 import { compileSpec } from "./compile.js";
 import type { ScenarioSpec, ScenarioStep } from "@qa-sdk/core";

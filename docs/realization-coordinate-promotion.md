@@ -1,9 +1,33 @@
+---
+def:
+  id: realization-coord-promotion
+  type: knowledge
+  knowledge_kind: narrative
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+  tags: [decision, migration, versioning]
+  links:
+    - target: system-narrative
+      type: refines
+---
 # Realization Plan: 좌표 승격 파이프라인
 
-> Status: verified
-> DKG-Ref: (작성 후 등록)
+## 목적 ^purpose
+
+좌표 승격 실현 계획. draft→released→active 버전 전이와 주소 활성화 프로세스를 기술한다.
+
+
+> Status: **completed**
 > Created: 2026-03-21
-> Last verified: —
+> Completed: 2026-03-22
+>
+> **달성**: Phase A~D 전부 구현.
+> scanPromotionCandidates() 5Q 자동 판정 (`dkg promote scan`).
+> phantom→auditCoverage()→safeEntryAdd()→executeEntryAdd() 전체 체인.
+> co-occurrence→discoverCausality()→recommendFromCausality() prefix 후보 추천.
+> writeCatalogFile() codegen + CatalogRegistry 재등록.
 
 ## 1. 배경
 

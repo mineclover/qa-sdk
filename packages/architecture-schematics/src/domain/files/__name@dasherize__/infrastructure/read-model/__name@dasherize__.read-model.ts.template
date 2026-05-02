@@ -1,0 +1,23 @@
+import { Injectable } from "@nestjs/common";
+
+import { <%= classify(name) %>ReadModelPort } from "../../application/queries/<%= dasherize(name) %>.read-model";
+import type { <%= classify(name) %>ReadModel } from "../../application/queries/<%= dasherize(name) %>.read-model";
+import type { <%= classify(name) %>RepositoryPort } from "../../application/ports/<%= dasherize(name) %>-repository.port";
+
+@Injectable()
+export class Repository<%= classify(name) %>ReadModel extends <%= classify(name) %>ReadModelPort {
+  constructor(private readonly repository: <%= classify(name) %>RepositoryPort) {
+    super();
+  }
+
+  async findById(id: string): Promise<<%= classify(name) %>ReadModel | null> {
+    const entity = await this.repository.findById(id);
+    if (!entity) return null;
+    const snapshot = entity.toSnapshot();
+    return {
+      id: snapshot.id,
+      status: snapshot.status,
+      updatedAt: snapshot.updatedAt,
+    };
+  }
+}

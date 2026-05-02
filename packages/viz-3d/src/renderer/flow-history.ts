@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * FlowHistory — 수집된 data flow 이력 관리 + 탐색.
  *

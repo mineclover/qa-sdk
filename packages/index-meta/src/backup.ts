@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import type { PrefixRegistry, PrefixRegistryRecord } from "./prefix-registry.js";
 import type { IndexMetaStore } from "./index-meta-store.js";
 import { ValidationError } from "./errors.js";
@@ -74,7 +77,7 @@ export async function exportVersion(
     prefix,
     versionId,
     capacity: record.capacity,
-    ...(record.refs ? { refs: record.refs.map((ref) => ({ ...ref })) } : {}),
+    ...(record.refs ? { refs: record.refs.map((ref) => Object.assign({}, ref)) } : {}),
     entries,
   };
 }
@@ -118,7 +121,7 @@ export async function importVersion(
 ): Promise<void> {
   if (backup.format !== "index-meta/v1") {
     throw new ValidationError(
-      `importVersion: unknown format "${(backup as any).format}"`
+      `importVersion: unknown format "${(backup as { format: string }).format}"`
     );
   }
 

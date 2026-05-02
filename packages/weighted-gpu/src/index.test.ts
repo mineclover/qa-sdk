@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import { GPUEncoder } from "./index";

@@ -1,0 +1,86 @@
+tags:
+  - name: density
+    description: Marginal density read-model API for prefix coordinate axes.
+paths:
+  /density:
+    get:
+      tags: [density]
+      operationId: getMarginalDensity
+      summary: Compute marginal density per axis for a prefix at a given version.
+      x-domain: density
+      x-architecture-slice: density-read-model
+      parameters:
+        - name: catalog
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: prefix
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Marginal density read model.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarginalDensityReadModel"
+        "400":
+          description: Missing query parameters.
+        "404":
+          description: Prefix not found in catalog.
+        "409":
+          description: Prefix version mismatch (capacity drift).
+components:
+  schemas:
+    MarginalDensityAxisReadModel:
+      type: object
+      required: [axisName, shapeCapacity, observedDistinct, marginalDensity, unobservedEntries]
+      properties:
+        axisName:
+          type: string
+        shapeCapacity:
+          type: integer
+          minimum: 0
+        observedDistinct:
+          type: integer
+          minimum: 0
+        marginalDensity:
+          type: number
+          minimum: 0
+          maximum: 1
+        unobservedEntries:
+          type: array
+          items:
+            type: string
+      additionalProperties: false
+    MarginalDensityReadModel:
+      type: object
+      required: [catalog, prefix, version, axes, underutilizedAxes, saturatedAxes]
+      properties:
+        catalog:
+          type: string
+        prefix:
+          type: string
+        version:
+          type: string
+        axes:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarginalDensityAxisReadModel"
+        underutilizedAxes:
+          type: array
+          items:
+            type: string
+        saturatedAxes:
+          type: array
+          items:
+            type: string
+      additionalProperties: false

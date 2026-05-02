@@ -1,3 +1,6 @@
+// @def.boundary weighted-index-system
+// @def.doc weighted-index-system
+
 /**
  * weighted-gpu — WebGPU compute shader 기반 배치 연산.
  *

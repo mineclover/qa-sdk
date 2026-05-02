@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * codegen — IR 기반 multi-format 코드 생성기.
  */

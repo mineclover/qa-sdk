@@ -1,0 +1,24 @@
+// @def.boundary gate-system
+// @def.doc gate-system
+
+/**
+ * worker.ts — gate-service Cloudflare Workers 진입점.
+ * D1SqlDriver → SqlAddressStateStore → createApp.
+ */
+import { D1SqlDriver, SqlAddressStateStore } from "index-meta-workers";
+import { createApp } from "./app.js";
+
+/** Cloudflare D1 바인딩 — D1SqlDriver가 받는 최소 인터페이스 */
+interface Env {
+  DB: import("index-meta-workers").D1Database;
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const driver = new D1SqlDriver(env.DB);
+    const addressStateStore = new SqlAddressStateStore(driver);
+
+    const app = createApp({ addressStateStore });
+    return app.fetch(request);
+  },
+};

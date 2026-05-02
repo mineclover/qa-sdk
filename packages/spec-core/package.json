@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/spec-core",
   "version": "0.1.0",
+  "description": "spec registry, propagation, codegen, transition, DKG bridge를 담는 spec 엔진 커널",
   "type": "module",
   "exports": {
     ".": {
@@ -19,10 +20,6 @@
       "import": "./dist/convergence/index.js",
       "types": "./dist/convergence/index.d.ts"
     },
-    "./analysis": {
-      "import": "./dist/analysis/index.js",
-      "types": "./dist/analysis/index.d.ts"
-    },
     "./propagation": {
       "import": "./dist/propagation/index.js",
       "types": "./dist/propagation/index.d.ts"
@@ -34,20 +31,33 @@
     "./viz": {
       "import": "./dist/visualization/index.js",
       "types": "./dist/visualization/index.d.ts"
+    },
+    "./transition": {
+      "import": "./dist/transition/index.js",
+      "types": "./dist/transition/index.d.ts"
     }
   },
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
+    "@qa-sdk/convergence": "workspace:*",
     "@qa-sdk/core": "workspace:*",
-    "weighted-index": "workspace:*",
-    "demo-snapshot": "workspace:*"
+    "decision-flow": "workspace:*",
+    "dkg": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "index-meta": "workspace:*",
+    "spec-schema": "workspace:*",
+    "spec-transition": "workspace:*",
+    "weighted-index": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
+    "demo-snapshot": "workspace:*",
+    "drizzle-kit": "catalog:",
     "typescript": "^5.7.0",
     "vitest": "^1.6.1"
   }

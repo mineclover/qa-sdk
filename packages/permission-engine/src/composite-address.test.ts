@@ -1,3 +1,6 @@
+// @def.boundary permission-engine-spec
+// @def.doc permission-engine-spec
+
 /**
  * composite-address.test.ts — 차원 그룹 압축 + 부분 바인딩 검증.
  *

@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * MetaResolver — 닫힌 패턴 스키마의 외부 소비 레이어
  *

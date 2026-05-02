@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { PrefixRegistry, DimRef, VersionLifecycleStore, VersionRecord } from "index-meta";
 import { calcWeights } from "weighted-index";
 import type { PrefixOwnerStore } from "../stores/prefix-owner-store.js";
@@ -102,6 +105,7 @@ export class RegistryService {
     const record = await this.ownerStore.get(prefix);
     if (!record) throw prefixNotFound(prefix);
     await this.ownerStore.patch(prefix, patch);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- existence verified above, patch does not delete
     return (await this.ownerStore.get(prefix))!;
   }
 
@@ -110,6 +114,19 @@ export class RegistryService {
     if (!record) throw prefixNotFound(prefix);
 
     const versions = await this.versionStore.getVersions(prefix);
+    const dependents = new Set<string>();
+    for (const version of versions) {
+      const reverseRefs = await this.prefixRegistry.getReverseRefs(prefix, version.versionId);
+      for (const ref of reverseRefs) {
+        dependents.add(`${ref.prefix}/${ref.versionId}`);
+      }
+    }
+    if (dependents.size > 0) {
+      throw invalidTransition(
+        `Cannot delete prefix '${prefix}': referenced by ${dependents.size} dependent version(s)`,
+      );
+    }
+
     const nonDeprecated = versions.filter((v) => v.status !== "deprecated");
     if (nonDeprecated.length > 0) {
       throw invalidTransition(
@@ -130,7 +147,7 @@ export class RegistryService {
     deactivationMode?: "strict" | "flexible";
     refs?: { prefix: string; versionId: string }[];
   }): Promise<ExtendedVersionRecord> {
-    const owner = await this.getPrefix(input.prefix);
+    await this.getPrefix(input.prefix);
 
     // composite refs 검증 + capacity 결정
     let dimRefs: DimRef[] | undefined;
@@ -612,7 +629,6 @@ export class RegistryService {
 
     const dimEntries: { dim: string; entryCount: number; capacity: number }[] = [];
     for (const dep of deps) {
-      const depVer = await this.versionStore.getVersion(dep.prefix, dep.versionId);
       dimEntries.push({
         dim: dep.prefix,
         entryCount: 0, // IndexMetaStore.getEntries가 있으면 실제 개수
@@ -808,8 +824,10 @@ export class RegistryService {
       for (const d of drafts) {
         const deps = await this.prefixRegistry.getDeps(p.prefix, d.versionId);
         if (!adj.has(p.prefix)) adj.set(p.prefix, new Set());
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- Map.get() right after set()
+        const prefixAdj = adj.get(p.prefix)!;
         for (const dep of deps) {
-          adj.get(p.prefix)!.add(dep.prefix);
+          prefixAdj.add(dep.prefix);
         }
       }
     }

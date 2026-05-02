@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * EntryFlagStore — entry 수준 활성화 상태 영속 레이어
  *
@@ -5,8 +8,6 @@
  * append-only: setFlag는 새 row를 추가한다. 현재 상태 = 가장 최신 row.
  * DB를 source of truth로 삼으면 서비스 재시작 시 코드 재구성 없이 상태 복원 가능.
  */
-
-import type { EntityId } from "./types.js";
 
 export interface EntryFlagRecord {
   readonly prefix:    string;

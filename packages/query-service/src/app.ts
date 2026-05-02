@@ -1,10 +1,13 @@
+// @def.boundary query-api-spec
+// @def.doc query-api-spec
+
 import { Hono } from "hono";
 import {
   InMemoryPrefixRegistry,
   MetaRegistry,
   type ConflictStrategy,
   type PrefixRegistry,
-} from "index-meta";
+} from "index-meta-workers";
 import type { Logger } from "pino";
 import { createLogger } from "./lib/logger.js";
 import {
@@ -17,11 +20,14 @@ import {
   type QueryLookupService,
 } from "./lib/query-service.js";
 import { createRuleService } from "./lib/rule-service.js";
+import { createRuleMigrationService } from "./lib/rule-migration-service.js";
 import { requestId } from "./middleware/request-id.js";
 import { createErrorHandler } from "./middleware/error-handler.js";
 import { createHealthRoutes } from "./routes/health.js";
+import { createMetricsRoutes } from "./routes/metrics.js";
 import { createQueryRoutes } from "./routes/query.js";
 import { createRuleRoutes } from "./routes/rules.js";
+import { createStateRoutes, type StateRouteDeps } from "./routes/state.js";
 import {
   InMemoryPolicyRuleStore,
 } from "./stores/in-memory-policy-rule-store.js";
@@ -38,6 +44,7 @@ export interface AppDeps {
   logger?: Logger;
   version?: string;
   getUptimeSeconds?: () => number;
+  stateRoutes?: StateRouteDeps;
 }
 
 export function createApp(deps: AppDeps) {
@@ -58,6 +65,12 @@ export function createApp(deps: AppDeps) {
     policyRuleStore,
     prefixRegistry: deps.prefixRegistry ?? new InMemoryPrefixRegistry(),
   });
+  const ruleMigrationService = deps.metaRegistry
+    ? createRuleMigrationService({
+        policyRuleStore,
+        metaRegistry: deps.metaRegistry,
+      })
+    : undefined;
 
   app.use("*", requestId);
 
@@ -69,8 +82,16 @@ export function createApp(deps: AppDeps) {
       version: deps.version,
     }),
   );
-  app.route("/", createRuleRoutes({ ruleService }));
+  app.route(
+    "/",
+    createMetricsRoutes({
+      getUptimeSeconds: deps.getUptimeSeconds,
+    }),
+  );
+  app.route("/", createRuleRoutes({ ruleService, ruleMigrationService }));
   app.route("/", createQueryRoutes({ queryService }));
+  app.route("/state", createStateRoutes(deps.stateRoutes ?? {}));
+  app.route("/transitions", createStateRoutes(deps.stateRoutes ?? {}));
 
   app.onError(createErrorHandler(logger));
 

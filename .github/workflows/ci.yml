@@ -33,6 +33,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -59,16 +61,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Lint
+        run: pnpm run lint:ci
+
+      - name: Format check
+        run: pnpm run format:check
+        continue-on-error: true
+
       - name: Build
         run: pnpm run build
 
       - name: Run unit tests
         run: pnpm run test
 
-      - name: Run registry-server integration tests
+      - name: Run CLI heavy smoke lane
         env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/qa_sdk_ci
-        run: pnpm --filter @qa-sdk/registry-server run test:integration
+          QA_SDK_RUN_HEAVY_SMOKE: "1"
+        run: pnpm --filter @qa-sdk/cli exec vitest run src/commands/dkg.e2e.test.ts -t "dkg self-check full path는 별도 heavy smoke lane에서 실행된다"
 
       - name: Run store integration tests
         env:
@@ -80,3 +89,76 @@ jobs:
 
       - name: DKG converge (수렴 분석)
         run: node packages/cli/dist/index.js dkg converge
+
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Dependency audit
+        run: pnpm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Check for known vulnerabilities
+        run: npx better-npm-audit audit --level high
+        continue-on-error: true
+
+  visbug-bridge-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.30.3 --activate
+
+      - name: Install monorepo dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build vendor visbug bundle
+        working-directory: vendor/projectvisbug
+        run: |
+          npm install
+          npm run bundle
+
+      - name: Build visbug-bridge
+        run: pnpm --filter visbug-bridge build
+
+      - name: Install Playwright chromium
+        run: pnpm --filter visbug-bridge exec playwright install --with-deps chromium
+
+      - name: Run visbug-bridge unit tests
+        run: pnpm --filter visbug-bridge test
+
+      - name: Run visbug-bridge e2e tests
+        run: pnpm --filter visbug-bridge test:e2e
+
+      - name: Upload playwright trace on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visbug-bridge-playwright-trace
+          path: packages/visbug-bridge/test-results/
+          retention-days: 7

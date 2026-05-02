@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import type { EntryFlagStore, EntryFlagRecord } from "../entry-flag-store.js";
 
 export class InMemoryEntryFlagStore implements EntryFlagStore {
@@ -12,7 +15,7 @@ export class InMemoryEntryFlagStore implements EntryFlagStore {
   async getFlag(prefix: string, versionId: string, position: number): Promise<EntryFlagRecord | null> {
     const matches = this._records
       .filter((r) => r.prefix === prefix && r.versionId === versionId && r.position === position)
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+      .toSorted((a, b) => b.updatedAt.localeCompare(a.updatedAt));
     return matches[0] ?? null;
   }
 
@@ -26,7 +29,7 @@ export class InMemoryEntryFlagStore implements EntryFlagStore {
         byPosition.set(r.position, r);
       }
     }
-    return [...byPosition.values()].sort((a, b) => a.position - b.position);
+    return [...byPosition.values()].toSorted((a, b) => a.position - b.position);
   }
 
   async getInactivePositions(prefix: string, versionId: string): Promise<number[]> {

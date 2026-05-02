@@ -1,3 +1,6 @@
+// @def.boundary registry-system
+// @def.doc registry-system
+
 import type { Logger } from "pino";
 
 export interface ValidationResult {
@@ -175,3 +178,183 @@ async function readErrorReason(response: Response): Promise<string> {
     return "event not found in registry";
   }
 }
+
+// ═══════════════════════════════════════════════════════
+//  Registry Config Client — 개별 레포에서 사용
+// ═══════════════════════════════════════════════════════
+
+export interface RegistryConfig {
+  /** registry-service URL */
+  readonly registryUrl: string;
+  /** catalog ID (default: "demo") */
+  readonly catalogId?: string;
+  /** 기본 환경 (default: "dev") */
+  readonly env?: string;
+  /** 기본 namespace (default: "shop") */
+  readonly namespace?: string;
+  /** 기본 region (default: "asia") */
+  readonly region?: string;
+  /** fetch timeout ms (default: 5000) */
+  readonly timeoutMs?: number;
+}
+
+/**
+ * registry-service에서 config를 받는 범용 클라이언트.
+ *
+ * 어떤 레포에서든 사용 가능:
+ *   const client = createRegistryConfigClient({ registryUrl: "http://localhost:3300" });
+ *   const endpoint = await client.resolveEndpoint({ namespace: "shop", name: "ingest-server", env: "dev", region: "asia" });
+ *   const catalog = await client.fetchCatalog();
+ *   const dkgConfig = await client.fetchConfig("dkg-config");
+ */
+export function createRegistryConfigClient(config: RegistryConfig) {
+  const baseUrl = config.registryUrl.replace(/\/+$/, "");
+  const catalogId = config.catalogId ?? "demo";
+  const defaultEnv = config.env ?? "dev";
+  const defaultNamespace = config.namespace ?? "shop";
+  const defaultRegion = config.region ?? "asia";
+  const timeoutMs = config.timeoutMs ?? 5_000;
+
+  async function safeFetch(url: string): Promise<Response | null> {
+    try {
+      return await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    } catch {
+      return null;
+    }
+  }
+
+  return {
+    /** 서비스 엔드포인트 URL resolve. name만 필수, 나머지는 기본값 사용. */
+    async resolveEndpoint(query: {
+      name: string;
+      namespace?: string;
+      env?: string;
+      region?: string;
+    }): Promise<string | null> {
+      const params = new URLSearchParams({
+        catalog: catalogId,
+        namespace: query.namespace ?? defaultNamespace,
+        name: query.name,
+        env: query.env ?? defaultEnv,
+        region: query.region ?? defaultRegion,
+      });
+      const res = await safeFetch(`${baseUrl}/api/endpoints/resolve?${params}`);
+      if (!res?.ok) return null;
+      const body = await res.json() as { url?: string };
+      return body.url ?? null;
+    },
+
+    /** 전체 엔드포인트 목록 */
+    async listEndpoints(): Promise<Array<{
+      namespace: string; svcName: string; env: string; region: string; url: string;
+    }>> {
+      const res = await safeFetch(`${baseUrl}/api/endpoints?catalog=${catalogId}`);
+      if (!res?.ok) return [];
+      return res.json() as Promise<Array<{
+        namespace: string; svcName: string; env: string; region: string; url: string;
+      }>>;
+    },
+
+    /** 서비스 URL 맵 (config.js 대체용). env로 dev/prod 전환. */
+    async fetchServiceUrls(env?: string): Promise<Record<string, string>> {
+      const e = env ?? defaultEnv;
+      const params = new URLSearchParams({ catalog: catalogId, env: e, namespace: defaultNamespace, region: defaultRegion });
+      const res = await safeFetch(`${baseUrl}/api/services/urls?${params}`);
+      if (!res?.ok) return {};
+      return res.json() as Promise<Record<string, string>>;
+    },
+
+    /** Catalog JSON fetch */
+    async fetchCatalog(): Promise<unknown | null> {
+      const res = await safeFetch(`${baseUrl}/catalogs/${catalogId}`);
+      if (!res?.ok) return null;
+      const body = await res.json() as { data?: string };
+      if (!body.data) return null;
+      try { return JSON.parse(body.data); } catch { return null; }
+    },
+
+    /**
+     * 설정 fetch.
+     * - "config" → /catalogs/:id/config (DkgConfig)
+     * - "pattern-rules" → /catalogs/:id/pattern-rules
+     */
+    async fetchConfig(configType: string): Promise<unknown | null> {
+      const res = await safeFetch(`${baseUrl}/catalogs/${catalogId}/${configType}`);
+      if (!res?.ok) return null;
+      const body = await res.json() as { data?: string };
+      if (!body.data) return null;
+      try { return JSON.parse(body.data); } catch { return null; }
+    },
+
+    /** GENERATION hash 확인 */
+    async fetchGeneration(): Promise<{
+      catalogHash: string;
+      dkgConfigHash: string | null;
+      prefixCount: number;
+      axisCount: number;
+    } | null> {
+      const res = await safeFetch(`${baseUrl}/health/generation`);
+      if (!res?.ok) return null;
+      const body = await res.json() as { generations?: Record<string, {
+        catalogHash: string;
+        dkgConfigHash: string | null;
+        prefixCount: number;
+        axisCount: number;
+      }> };
+      return body.generations?.[catalogId] ?? null;
+    },
+
+    /** 전체 DecodeMap 목록 — decode-service 초기화용 */
+    async fetchDecodeMaps(): Promise<unknown[]> {
+      const res = await safeFetch(`${baseUrl}/api/decode-map?catalog=${catalogId}`);
+      if (!res?.ok) return [];
+      return res.json() as Promise<unknown[]>;
+    },
+
+    /** 단건 DecodeMap */
+    async fetchDecodeMap(prefix: string, version: string): Promise<unknown | null> {
+      const res = await safeFetch(`${baseUrl}/api/decode-map/${prefix}/${version}?catalog=${catalogId}`);
+      if (!res?.ok) return null;
+      return res.json() as Promise<unknown>;
+    },
+
+    /** 이벤트 스키마 목록 (서비스별 필터 가능) */
+    async fetchEventSchemas(serviceId?: string): Promise<unknown[]> {
+      const q = serviceId ? `&service=${serviceId}` : "";
+      const res = await safeFetch(`${baseUrl}/api/event-schemas?catalog=${catalogId}${q}`);
+      if (!res?.ok) return [];
+      return res.json() as Promise<unknown[]>;
+    },
+
+    /** gateway 라우팅 구성 */
+    async fetchGatewayRoutes(env?: string): Promise<{ routes: Array<{ path: string; serviceId: string; url: string; tier: string }>; env: string }> {
+      const e = env ?? defaultEnv;
+      const params = new URLSearchParams({ catalog: catalogId, env: e, namespace: defaultNamespace, region: defaultRegion });
+      const res = await safeFetch(`${baseUrl}/api/services/gateway?${params}`);
+      if (!res?.ok) return { routes: [], env: e };
+      return res.json() as Promise<{ routes: Array<{ path: string; serviceId: string; url: string; tier: string }>; env: string }>;
+    },
+
+    /** svc-owners 맵 (prefix → serviceId) */
+    async fetchSvcOwners(): Promise<Record<string, string>> {
+      const res = await safeFetch(`${baseUrl}/api/services/svc-owners?catalog=${catalogId}`);
+      if (!res?.ok) return {};
+      return res.json() as Promise<Record<string, string>>;
+    },
+
+    /** health check */
+    async isHealthy(): Promise<boolean> {
+      const res = await safeFetch(`${baseUrl}/health`);
+      if (!res?.ok) return false;
+      const body = await res.json() as { ok?: boolean };
+      return body.ok === true;
+    },
+
+    /** 현재 설정값 반환 (디버깅용) */
+    get defaults() {
+      return { registryUrl: baseUrl, catalogId, env: defaultEnv, namespace: defaultNamespace, region: defaultRegion };
+    },
+  };
+}
+
+export type RegistryConfigClient = ReturnType<typeof createRegistryConfigClient>;

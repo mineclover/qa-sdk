@@ -1,76 +1,40 @@
-// ── Logger ───────────────────────────────────────────────
-
-export { QaLogger } from "./logger.js";
-export type { SpanHandle } from "./logger.js";
-
-// ── Config ──────────────────────────────────────────────
-
-export type { QaLoggerConfig } from "./config.js";
-export { DEFAULT_BATCH_SIZE, DEFAULT_FLUSH_INTERVAL_MS } from "./config.js";
-
-// ── Context ─────────────────────────────────────────────
-
-export { TraceContext } from "./context.js";
-
-// ── Masking ─────────────────────────────────────────────
-
-export { applyMasking } from "./masking.js";
-export type { MaskingRule } from "./masking.js";
-
-// ── Transport ───────────────────────────────────────────
-
-export type { Transport } from "./transport/transport.js";
-export { HttpTransport } from "./transport/http.js";
-export type { HttpTransportOptions } from "./transport/http.js";
-export { NoopTransport } from "./transport/noop.js";
-
-// ── Re-export core types for convenience ────────────────
-
-export type {
-  EventRecord,
-  TransmissionEnvelope,
-  RecordKind,
-  MetricType,
-  SpanStatusCode,
-  PayloadFormat,
-  PayloadEncoding,
-  MaskingMode,
-  QaSession,
-} from "@qa-sdk/core";
-
+// ── Logger ────────────────────────────────
 export {
-  newTraceId,
-  newSpanId,
-  newLogId,
-  newQaSessionId,
-  now,
-} from "@qa-sdk/core";
-
-// ── Typed SDK ──────────────────────────────────────────────
-
-export { createIndexSDK } from "./typed-sdk.js";
+  QaLogger, TraceContext, applyMasking,
+  HttpTransport, NoopTransport,
+  DEFAULT_BATCH_SIZE, DEFAULT_FLUSH_INTERVAL_MS,
+} from "@qa-sdk/logger";
 export type {
-  SdkSchema,
-  AxisDef,
-  PrefixDef,
-  AxisEntries,
-  PrefixNames,
-  PrefixDims,
-  PrefixCoord,
-  TypedIndexSDK,
-} from "./typed-sdk.js";
+  SpanHandle, QaLoggerConfig, MaskingRule,
+  Transport, HttpTransportOptions,
+} from "@qa-sdk/logger";
 
-// ── Dim Wire Format ────────────────────────────────────────
+// ── Codec ─────────────────────────────────
+export { createIndexSDK, createDimWireCodec } from "@qa-sdk/codec";
+export type {
+  SdkSchema, AxisDef, PrefixDef as CodecPrefixDef,
+  AxisEntries, PrefixNames, PrefixDims, PrefixCoord,
+  TypedIndexSDK, DimWireCodec,
+} from "@qa-sdk/codec";
 
-export { createDimWireCodec } from "./dim-wire.js";
-export type { DimWireCodec } from "./dim-wire.js";
+// ── Context ───────────────────────────────
+export { createQaContext, createQaContextAsync, createCatalogProvider } from "@qa-sdk/context";
+export type {
+  QaContext, QaContextConfig, DslSession, ExecutionMode,
+  CatalogProvider, CatalogProviderConfig,
+} from "@qa-sdk/context";
 
-// ── QaContext (DSL DB 앱 진입점) ─────────────────────────────
-
-export { createQaContext, createQaContextAsync } from "./qa-context.js";
-export type { QaContext, QaContextConfig, DslSession, ExecutionMode } from "./qa-context.js";
-
-// ── CatalogProvider (registry/local 추상화) ──────────────────
-
-export { createCatalogProvider } from "./catalog-provider.js";
-export type { CatalogProvider, CatalogProviderConfig } from "./catalog-provider.js";
+// ── Re-export core types for convenience ──
+export type {
+  EventRecord, TransmissionEnvelope, RecordKind,
+  MetricType, SpanStatusCode, PayloadFormat,
+  PayloadEncoding, MaskingMode, QaSession,
+  ServiceIdentity, DeployContext, ServiceBootConfig,
+  TransmissionOwner, TransmissionSource, TransmissionBuild, BuildEnv,
+  ActorContext,
+} from "@qa-sdk/core";
+export {
+  newTraceId, newSpanId, newLogId, newQaSessionId, now,
+  toServiceDims, toTransmissionSource, toTransmissionBuild,
+  catalogEnvToBuildEnv, buildEnvToCatalogEnv,
+} from "@qa-sdk/core";

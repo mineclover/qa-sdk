@@ -1,0 +1,27 @@
+{
+  "name": "demo-types",
+  "version": "0.1.0",
+  "description": "DEMO_CATALOG에서 파생된 prefix, axis, dims 타입과 SDK 팩토리 산출물",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "generate": "node ../cli/dist/index.js codegen --output ./src"
+  },
+  "dependencies": {
+    "@qa-sdk/codec": "workspace:*",
+    "@qa-sdk/context": "workspace:*"
+  },
+  "devDependencies": {
+    "@qa-sdk/core": "workspace:*",
+    "demo-snapshot": "workspace:*",
+    "typescript": "^5.8.2"
+  }
+}

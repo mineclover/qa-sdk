@@ -1,0 +1,41 @@
+# Verdaccio — 로컬 npm 레지스트리
+# 사용: pnpm verdaccio (또는 pnpm registry)
+storage: ./storage
+auth:
+  htpasswd:
+    file: ./htpasswd
+    max_users: -1  # 무제한 회원가입
+uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+packages:
+  "@qa-sdk/*":
+    access: $all
+    publish: $all
+    unpublish: $all
+  "weighted-index":
+    access: $all
+    publish: $all
+  "bit-index":
+    access: $all
+    publish: $all
+  "permission-engine":
+    access: $all
+    publish: $all
+  "index-meta":
+    access: $all
+    publish: $all
+  "demo-snapshot":
+    access: $all
+    publish: $all
+  "**":
+    access: $all
+    publish: $all
+    proxy: npmjs
+server:
+  keepAliveTimeout: 60
+listen: 0.0.0.0:4873
+log:
+  type: stdout
+  format: pretty
+  level: warn

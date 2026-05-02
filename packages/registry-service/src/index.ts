@@ -1,5 +1,21 @@
-// ── App ─────────────────────────────────────────────────
-export { createApp, type AppDeps } from "./app.js";
+// @def.boundary registry-system
+// @def.doc registry-system
+
+// ── Runtime ─────────────────────────────────────────────
+export { AppModule } from "./app.module.js";
+export { RuntimeModule } from "./runtime.module.js";
+export { bootstrapNestApp } from "./main.js";
+export {
+  createRegistryDatabaseDriver,
+  createRegistryStores,
+} from "./bootstrap/stores.js";
+export {
+  LOCAL_ONTOLOGY_ACTIVATION_MEMORY_STORE,
+  createLocalOntologyActivationRuntime,
+  resolveLocalOntologyActivationStorePath,
+  type LocalOntologyActivationRuntime,
+  type LocalOntologyActivationRuntimeOptions,
+} from "./ontology-local-runtime.js";
 
 // ── Service ─────────────────────────────────────────────
 export { RegistryService, type RegistryServiceDeps } from "./lib/registry-service.js";

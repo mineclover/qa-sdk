@@ -1,0 +1,42 @@
+{
+  "name": "@qa-sdk/decision-service",
+  "version": "0.1.0",
+  "description": "FlowSchema, FlowInstance, flow_links를 관리하는 decision-flow 서비스",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsup",
+    "build:tsc": "tsc",
+    "start": "node dist/main.js",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-fastify": "^11.0.0",
+    "@qa-sdk/core": "workspace:*",
+    "@qa-sdk/logger": "workspace:*",
+    "better-sqlite3": "catalog:",
+    "drizzle-orm": "catalog:",
+    "decision-flow": "workspace:*",
+    "dotenv": "^16.0.0",
+    "reflect-metadata": "^0.2.0",
+    "rxjs": "^7.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "catalog:",
+    "drizzle-kit": "catalog:",
+    "tsup": "^8.5.1",
+    "typescript": "^5.4.0"
+  }
+}

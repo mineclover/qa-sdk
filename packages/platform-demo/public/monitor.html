@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QA-SDK Coordinate Monitor</title>
+<script src="config.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Sora:wght@300;400;600;700&display=swap');
 :root{--bg:#050508;--card:rgba(8,10,16,0.92);--border:rgba(100,255,218,0.08);--mint:#64ffda;--cyan:#00b4d8;--amber:#ff9f43;--violet:#7c5cfc;--rose:#ff3860;--green:#2ed573;--red:#ff6b6b;--txt:#c0c8d8;--dim:#445}
@@ -13,14 +14,15 @@ canvas{position:fixed;inset:0;z-index:0}
 .hud{position:fixed;z-index:10;pointer-events:none}
 .hud *{pointer-events:none}
 .hud button,.hud input,.hud .vb{pointer-events:all}
-.hud-tl{top:14px;left:18px}.hud-tr{top:14px;right:18px;text-align:right;max-width:300px}
+.hud-tr{pointer-events:all}
+.hud-tl{top:14px;left:18px;max-height:calc(100vh - 40px);overflow-y:auto;max-width:220px}.hud-tr{top:14px;right:18px;text-align:right;max-width:260px;max-height:calc(100vh - 100px);overflow-y:auto}
 .hud-bl{bottom:14px;left:18px;right:340px;display:flex;gap:8px;align-items:flex-end}
 .hud-br{bottom:14px;right:18px;display:flex;flex-direction:column;gap:5px;align-items:flex-end}
 .m{font-family:'IBM Plex Mono',monospace}
 .brand{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#334}
 .ttl{font-size:20px;font-weight:700;letter-spacing:-.5px;background:linear-gradient(135deg,var(--mint),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .sub{font-size:10px;color:var(--dim);margin-top:2px}
-.cd{background:var(--card);border:1px solid var(--border);border-radius:5px;padding:8px 12px;backdrop-filter:blur(8px);margin-bottom:4px}
+.cd{background:var(--card);border:1px solid var(--border);border-radius:5px;padding:8px 12px;backdrop-filter:blur(8px);margin-bottom:4px;overflow:hidden}
 .cl{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:#334;margin-bottom:2px}
 .cv{font-size:15px;font-weight:600;color:var(--mint)}
 .cs{font-size:9px;color:#556;line-height:1.5}.cs .h{color:var(--mint)}
@@ -62,13 +64,29 @@ input.btn{width:170px;color:#556;text-align:left}
 .sl-role:hover{background:rgba(255,255,255,0.04)}
 .sl-role.sl-active{opacity:1}.sl-role.sl-dimmed{opacity:0.3}
 .sl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* ── Flow Step Row (hover/click highlight) ── */
+.flow-step-row{padding:3px 6px;border-radius:3px;cursor:pointer;transition:background .15s,color .15s;pointer-events:all;font-size:9px}
+.flow-step-row:hover{background:rgba(100,255,218,0.1);color:var(--mint)}
+.flow-step-row.fs-active{background:rgba(255,159,67,0.15);color:var(--amber);border-left:2px solid var(--amber)}
 </style>
 </head>
 <body>
+<nav id="nav" style="position:fixed;top:0;left:0;right:0;z-index:50;height:36px;background:rgba(22,27,34,0.95);border-bottom:1px solid #30363d;display:flex;align-items:center;padding:0 16px;font-size:13px;backdrop-filter:blur(6px);">
+  <span style="font-weight:700;color:#58a6ff;margin-right:16px;font-size:14px;">QA-SDK</span>
+  <a href="/" style="color:#8b949e;text-decoration:none;padding:6px 12px;border-radius:4px;">Demo</a>
+  <a href="/monitor.html" style="color:#3fb950;text-decoration:none;padding:6px 12px;border-radius:4px;background:rgba(63,185,80,0.1);">Monitor</a>
+  <a href="/diagram.html" style="color:#8b949e;text-decoration:none;padding:6px 12px;border-radius:4px;">Diagram</a>
+  <a href="/dashboard.html" style="color:#8b949e;text-decoration:none;padding:6px 12px;border-radius:4px;">Dashboard</a>
+  <a href="/events.html" style="color:#8b949e;text-decoration:none;padding:6px 12px;border-radius:4px;">Events</a>
+  <a href="/insights.html" style="color:#8b949e;text-decoration:none;padding:6px 12px;border-radius:4px;">Insights</a>
+  <a href="/flow.html" style="color:#8b949e;text-decoration:none;padding:6px 12px;border-radius:4px;">Flow</a>
+  <a href="/debugger.html" style="color:#8b949e;text-decoration:none;padding:6px 12px;border-radius:4px;">Debugger</a>
+</nav>
 <canvas id="c"></canvas>
 
 <!-- Info Overlay -->
-<div id="info-overlay" style="display:flex;position:fixed;inset:0;z-index:100;background:rgba(5,5,8,0.92);justify-content:center;align-items:center;pointer-events:all">
+<div id="info-overlay" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(5,5,8,0.92);justify-content:center;align-items:center;pointer-events:all">
   <div style="max-width:640px;width:90%;max-height:80vh;overflow-y:auto;background:rgba(10,12,18,0.95);border:1px solid rgba(100,255,218,0.1);border-radius:8px;padding:32px 36px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
       <div>
@@ -156,7 +174,7 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
 <div class="hud hud-tl" id="hud-tl">
   <div style="display:flex;align-items:center;gap:8px">
     <div class="brand m">qa-sdk / coordinate monitor</div>
-    <a href="http://localhost:3300/dev/" target="_blank" class="btn m" id="link-dashboard" style="font-size:7px;padding:2px 6px;text-decoration:none;pointer-events:all">Dashboard</a>
+    <a id="link-dashboard" target="_blank" class="btn m" style="font-size:7px;padding:2px 6px;text-decoration:none;pointer-events:all">Dashboard</a>
   </div>
   <div class="ttl">3D Grid View</div>
   <div class="sub m" id="status">loading modules...</div>
@@ -169,19 +187,37 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
     <div class="slider-row m"><label>grid</label><input type="range" id="sl-grid" min="0" max="100" value="40"><span id="sl-grid-v">40%</span></div>
     <div class="slider-row m"><label>bg</label><input type="range" id="sl-bg" min="0" max="30" value="3"><span id="sl-bg-v">3%</span></div>
     <div class="slider-row m"><label>fog</label><input type="range" id="sl-fog" min="0" max="30" value="6"><span id="sl-fog-v">6‰</span></div>
+    <div class="slider-row m"><label>beam</label><input type="range" id="sl-beam" min="0" max="100" value="60"><span id="sl-beam-v">60%</span></div>
+    <div class="slider-row m"><label>beam life</label><input type="range" id="sl-beam-life" min="1" max="20" value="4"><span id="sl-beam-life-v">4s</span></div>
+  </div>
+  <div class="cd" style="margin-top:4px" id="server-panel">
+    <div class="cl m">Server</div>
+    <div class="cs m" style="line-height:1.8">
+      <div id="srv-ingest" style="font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:#334">● ingest</span></div>
+      <div id="srv-registry" style="font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:#334">● registry</span></div>
+    </div>
+    <button class="btn m" id="btn-check-server" style="margin-top:4px;width:100%;font-size:8px">Check Servers</button>
+  </div>
+  <div class="cd" style="margin-top:4px" id="filter-panel">
+    <div class="cl m">Filter</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px" id="prefix-filters">
+      <!-- JS에서 동적 생성: 각 prefix에 대한 토글 칩 -->
+    </div>
+    <div style="margin-top:4px;display:flex;gap:4px">
+      <button class="btn m" id="btn-filter-all" style="font-size:7px;flex:1">All</button>
+      <button class="btn m" id="btn-filter-none" style="font-size:7px;flex:1">None</button>
+    </div>
   </div>
 </div>
 <div class="hud hud-tr" id="hud-tr">
   <div class="signal-legend" id="signal-legend">
-    <div class="cl m">Signal Roles</div>
+    <div class="cl m">Signal Roles <span style="font-size:7px;color:#445;font-weight:400">(선/반짝임)</span></div>
     <div class="sl-roles" id="sl-roles">
-      <span class="sl-role sl-active" data-role="context"><span class="sl-dot" style="background:#4ade80"></span>context</span>
-      <span class="sl-role sl-active" data-role="trigger"><span class="sl-dot" style="background:#facc15"></span>trigger</span>
-      <span class="sl-role sl-active" data-role="channel"><span class="sl-dot" style="background:#60a5fa"></span>channel</span>
-      <span class="sl-role sl-active" data-role="state"><span class="sl-dot" style="background:#c084fc"></span>state</span>
-      <span class="sl-role sl-active" data-role="guard"><span class="sl-dot" style="background:#f472b6"></span>guard</span>
-      <span class="sl-role sl-active" data-role="effect"><span class="sl-dot" style="background:#fb923c"></span>effect</span>
-      <span class="sl-role sl-active" data-role="data"><span class="sl-dot" style="background:#94a3b8"></span>data</span>
+      <!-- JS에서 동적 생성 -->
+    </div>
+    <div class="cl m" style="margin-top:6px">Category <span style="font-size:7px;color:#445;font-weight:400">(노드)</span></div>
+    <div id="cat-legend" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">
+      <!-- JS에서 동적 생성 -->
     </div>
   </div>
   <div class="cd"><div class="cl m">Step</div><div style="font-size:12px;font-weight:600" id="h-step">--</div><div class="cs m" id="h-desc"></div></div>
@@ -215,7 +251,7 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
   </div>
   <div class="cr">
     <span class="conn m" id="conn">●</span>
-    <input class="btn m" id="ws-url" value="ws://localhost:3100/v1/ws">
+    <input class="btn m" id="ws-url">
     <button class="btn m" id="btn-live">LIVE</button>
     <button class="btn m" id="btn-demo">DEMO</button>
     <button class="btn m" id="btn-reset">RESET</button>
@@ -224,6 +260,33 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
 </div>
 
 <script>
+// ── config.js 기반 URL 초기화 ──
+(function(){
+  var cfg = window.__QA_CONFIG__ || {};
+  var dash = document.getElementById('link-dashboard');
+  var wsInput = document.getElementById('ws-url');
+  if(dash) dash.href = cfg.DASHBOARD_URL || 'https://qa-gateway.astralclover.workers.dev/dev/';
+  if(wsInput) wsInput.value = cfg.WS_URL || 'wss://qa-ingest-server.astralclover.workers.dev/v1/ws';
+})();
+// ── Info overlay 닫기 (module 로딩 실패와 무관하게 동작) ──
+(function(){
+  var overlay=document.getElementById('info-overlay');
+  var btnClose=document.getElementById('btn-close-info');
+  if(!overlay)return;
+  function hide(){overlay.style.display='none';}
+  if(btnClose)btnClose.addEventListener('click',hide);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)hide();});
+  document.addEventListener('keydown',function(e){
+    if(overlay.style.display!=='none'&&(e.key==='Escape'||overlay.style.display==='flex')){hide();}
+  });
+})();
+// ── hud-tr 위에서 wheel/trackpad 이벤트가 canvas로 전파되지 않도록 차단 ──
+var hudTr = document.getElementById('hud-tr');
+if (hudTr) {
+  hudTr.addEventListener('wheel', function(e) { e.stopPropagation(); }, { passive: false });
+  hudTr.addEventListener('touchmove', function(e) { e.stopPropagation(); }, { passive: false });
+}
+
 // ── Embed mode: ?embed=true 시 HUD/컨트롤 숨기고 캔버스만 표시 ──
 (function(){
   if(new URLSearchParams(location.search).get('embed')!=='true')return;
@@ -242,13 +305,16 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 // ── viz-3d 모듈 import ──
 import {
-  PALETTE, CATEGORY_COLORS, LAYER_COLORS,
+  PALETTE, CATEGORY_COLORS, ROLE_COLORS as VIZ_ROLE_COLORS, LAYER_COLORS,
   buildGridPositions, ViewEngine, CellStateManager, BeamPool,
   FlowHistory, MonitorAdapter, defaultKeyMapper,
   computeLodLevel, getLodVisibility, PerfMonitor,
   DEMO_PREFIX_META, formatDetail,
+  buildRoleLegend, buildCategoryLegend,
   encode, decode, track as codecTrack, BROWSER_CATALOG, loadCatalog,
   classifyByRole, getPrefixRole, SIGNAL_ROLE_LABELS,
+  FlowTimeline, DemoRunner,
+  ThreeBeamRenderer, updateInstancedColors,
 } from './viz-3d-core.js';
 
 // ═══════════════════════════════════════════════════
@@ -265,54 +331,23 @@ const SP = encode(CAT,'service',{env:'prod',region:'asia',svc_name:'payment',nam
 // ═══════════════════════════════════════════════════
 //  SIGNAL ROLE COLORS + FLOW TIMELINE
 // ═══════════════════════════════════════════════════
-const ROLE_COLORS={
-  context:'#4ade80',trigger:'#facc15',channel:'#60a5fa',
-  state:'#c084fc',guard:'#f472b6',effect:'#fb923c',data:'#94a3b8'
-};
-const ROLE_HEX={
-  context:0x4ade80,trigger:0xfacc15,channel:0x60a5fa,
-  state:0xc084fc,guard:0xf472b6,effect:0xfb923c,data:0x94a3b8
-};
+// viz-3d color-tokens에서 파생 (하드코딩 제거)
+const ROLE_COLORS=Object.fromEntries(Object.entries(VIZ_ROLE_COLORS).map(([k,v])=>[k,v.token.css]));
+const ROLE_HEX=Object.fromEntries(Object.entries(VIZ_ROLE_COLORS).map(([k,v])=>[k,v.hex]));
 
 // 셀 키 → 활성화 시 사용할 role color hex (활성 이벤트마다 갱신)
 const cellRoleColor=new Map();
 
-const MAX_TIMELINE=10;
-const timelineEntries=[];
-let roleFilter=null;
+// ── 범례 동적 생성 (viz-3d/legend-builder 모듈) ──
+buildRoleLegend(document.getElementById('sl-roles'), VIZ_ROLE_COLORS);
+buildCategoryLegend(document.getElementById('cat-legend'), CATEGORY_COLORS);
+
+// ── FlowTimeline 인스턴스 (viz-3d 모듈) ──
+const FT=new FlowTimeline({maxEntries:10,containerId:'ft-inner',roleColors:ROLE_COLORS});
 
 function getRoleForKey(key){
   const prefix=key.split('/')[0];
   return getPrefixRole(prefix);
-}
-
-function addTimelineEntry(prefixId,valuesStr,role){
-  const now=new Date();
-  const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+'.'+String(now.getMilliseconds()).padStart(3,'0');
-  timelineEntries.push({prefixId,valuesStr,role,ts});
-  if(timelineEntries.length>MAX_TIMELINE)timelineEntries.shift();
-  renderTimeline();
-}
-
-function renderTimeline(){
-  const container=document.getElementById('ft-inner');if(!container)return;
-  const html=timelineEntries.map(e=>{
-    const col=ROLE_COLORS[e.role]||'#556';
-    const dimmed=roleFilter&&roleFilter!==e.role?'ft-fading':'';
-    return `<div class="ft-entry ${dimmed}"><span class="ft-role-dot" style="background:${col}"></span><div class="ft-body"><div class="ft-prefix" style="color:${col}">${e.prefixId}</div><div class="ft-values">${e.valuesStr}</div><div class="ft-role-tag" style="color:${col}">${e.role}</div></div><div class="ft-time">${e.ts}</div></div>`;
-  }).join('');
-  container.innerHTML=html;
-  const panel=document.getElementById('flow-timeline');
-  if(panel)panel.scrollTop=panel.scrollHeight;
-}
-
-function feedTimeline(ctx){
-  for(const[p,s]of Object.entries(ctx)){
-    const role=getPrefixRole(p);
-    const d=dec(s);
-    const vals=d?Object.entries(d.values).map(([k,v])=>`${k}=${v}`).join(' '):s;
-    addTimelineEntry(p,vals,role);
-  }
 }
 
 function markCellRoles(keys){
@@ -366,7 +401,7 @@ const FH=new FlowHistory();
 // ═══════════════════════════════════════════════════
 //  THREE.JS SCENE
 // ═══════════════════════════════════════════════════
-let settings={baseOpacity:0.35,glowMul:0.7,edgeOpacity:0.3,gridOpacity:0.4,bgLevel:0.03,fogDensity:0.006};
+let settings={baseOpacity:0.3,glowMul:1.2,edgeOpacity:0.3,gridOpacity:0.4,bgLevel:0.03,fogDensity:0.006,beamOpacity:0.6,beamLife:4};
 
 const canvas=document.getElementById('c');
 const R=new T.WebGLRenderer({canvas,antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));R.setSize(innerWidth,innerHeight);
@@ -392,6 +427,8 @@ function tx(t,sz,col){const c=document.createElement('canvas');c.width=256;c.hei
 const cellMap={};const groups=new Map();
 const instancedGrids=[];const labelSprites=[];
 const perf=new PerfMonitor();
+
+// CATEGORY_COLORS / ROLE_COLORS 모두 viz-3d color-tokens.ts에서 관리 (하드코딩 없음)
 
 for(const gl of GP.grids){
   const def=GRIDS.find(g=>g.id===gl.id);
@@ -449,28 +486,40 @@ for(const gl of GP.grids){
 }
 LY.forEach((y,i)=>{const lc=LAYER_COLORS[i];const l=new T.Sprite(new T.SpriteMaterial({map:tx(['L0 UI','L1 Business','L2 Infra','L3 Data'][i],13,lc.css),transparent:true,opacity:0.2}));l.scale.set(5,1,1);l.position.set(-28,y,0);scene.add(l)});
 
-// Beams
-const bLines=[];for(let i=0;i<50;i++){const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(new Float32Array(6),3));const m=new T.LineBasicMaterial({color:PALETTE.mint.hex,transparent:true,opacity:0});scene.add(new T.Line(g,m));bLines.push({g,m,life:0})}
-let bI=0;
-function beam(a,b,key){const e=bLines[bI++%50];const p=e.g.attributes.position.array;const wa=a.wp(),wb=b.wp();p[0]=wa.x;p[1]=wa.y;p[2]=wa.z;p[3]=wb.x;p[4]=wb.y;p[5]=wb.z;e.g.attributes.position.needsUpdate=true;const rc=key&&cellRoleColor.get(key);e.m.color.setHex(rc||a.cc.c);e.life=1}
+// Beams — ThreeBeamRenderer 모듈 (viz-3d)
+const beamRenderer = new ThreeBeamRenderer({ maxBeams: 50, scene, defaultColor: PALETTE.mint.hex });
+
+function beam(a, b, key) {
+  const rc = key && cellRoleColor.get(key);
+  beamRenderer.spawn(a.wp(), b.wp(), rc || a.cc.c);
+}
+
+function pinnedBeam(a, b, key) {
+  const rc = key && cellRoleColor.get(key);
+  beamRenderer.spawnPinned(a.wp(), b.wp(), rc || a.cc.c);
+}
+
+function clearPinnedBeams() {
+  beamRenderer.clearPinned();
+}
 
 // ═══════════════════════════════════════════════════
 //  DEMO STEPS (compact)
 // ═══════════════════════════════════════════════════
 const STEPS=[
-{n:'1. Login',d:'인증',e:()=>trk({page_view:{svc_ref:SW,page:'login',locale:'ko',userType:'guest'},tracking:{trackAction:'submit',page:'login',userType:'guest'},auth_event:{action:'login'},endpoint:{svc_ref:SW,resource_type:'api',http_method:'POST',api_version:'v1'},flow_point:{svc_ref:SW,flow_name:'login',flow_step:'entry',flow_variant:'default'}}),t:['members/id','members/role'],flow:[{tier:'T0',cell:'page_view/login',l:'화면: 로그인'},{tier:'T0',cell:'tracking/submit',l:'행동: 제출'},{tier:'T1',cell:'endpoint/POST/api',l:'API: POST'},{tier:'T1',cell:'flow_point/login/entry',l:'흐름: 로그인'},{tier:'T2',cell:'auth_event/login',l:'이벤트: 로그인'},{tier:'T3',cell:'members/id',l:'DB: 멤버'}]},
-{n:'2. Home',d:'홈',e:()=>trk({page_view:{svc_ref:SW,page:'home',locale:'ko',userType:'member'},tracking:{trackAction:'view',page:'home',userType:'member'}}),t:[],flow:[{tier:'T0',cell:'page_view/home',l:'화면: 홈'},{tier:'T0',cell:'tracking/view',l:'행동: 조회'}]},
-{n:'3. Products',d:'상품목록',e:()=>trk({page_view:{svc_ref:SB,page:'product_list',locale:'ko',userType:'member'},tracking:{trackAction:'view',page:'product_list',userType:'member'},endpoint:{svc_ref:SB,resource_type:'api',http_method:'GET',api_version:'v1'}}),t:['items/id','items/name'],flow:[{tier:'T0',cell:'page_view/product_list',l:'화면: 상품목록'},{tier:'T1',cell:'endpoint/GET/api',l:'API: GET'},{tier:'T3',cell:'items/id',l:'DB: 상품'}]},
-{n:'4. Detail',d:'상품상세',e:()=>trk({page_view:{svc_ref:SB,page:'product_detail',locale:'ko',userType:'member'},tracking:{trackAction:'click',page:'product_detail',userType:'member'},endpoint:{svc_ref:SB,resource_type:'api',http_method:'GET',api_version:'v1'}}),t:['items/id','orgs/region_addr'],flow:[{tier:'T0',cell:'page_view/product_detail',l:'화면: 상세'},{tier:'T0',cell:'tracking/click',l:'행동: 클릭'},{tier:'T1',cell:'endpoint/GET/api',l:'API: GET'},{tier:'T3',cell:'items/id',l:'DB: 상품'},{tier:'T3',cell:'orgs/region_addr',l:'DB: 리전'}]},
-{n:'5. Add Cart',d:'장바구니',e:()=>trk({page_view:{svc_ref:SB,page:'product_detail',locale:'ko',userType:'member'},tracking:{trackAction:'add_to_cart',page:'product_detail',userType:'member'},endpoint:{svc_ref:SB,resource_type:'api',http_method:'POST',api_version:'v1'},cart_event:{action:'add'}}),t:['carts/id','cart_items/item_id'],flow:[{tier:'T0',cell:'page_view/product_detail',l:'화면: 상세'},{tier:'T0',cell:'tracking/add_to_cart',l:'행동: 담기'},{tier:'T1',cell:'endpoint/POST/api',l:'API: POST'},{tier:'T2',cell:'cart_event/add',l:'이벤트: 추가'},{tier:'T3',cell:'carts/id',l:'DB: 장바구니'},{tier:'T3',cell:'cart_items/item_id',l:'DB: 항목'}]},
-{n:'6. Cart',d:'장바구니',e:()=>trk({page_view:{svc_ref:SB,page:'cart',locale:'ko',userType:'member'},tracking:{trackAction:'view',page:'cart',userType:'member'},endpoint:{svc_ref:SB,resource_type:'api',http_method:'GET',api_version:'v1'}}),t:['cart_items/item_id'],flow:[{tier:'T0',cell:'page_view/cart',l:'화면: 장바구니'},{tier:'T1',cell:'endpoint/GET/api',l:'API: GET'},{tier:'T3',cell:'cart_items/item_id',l:'DB: 항목'}]},
-{n:'7. Checkout',d:'결제진입',e:()=>trk({page_view:{svc_ref:SP,page:'checkout',locale:'ko',userType:'member'},tracking:{trackAction:'navigate',page:'checkout',userType:'member'},flow_point:{svc_ref:SP,flow_name:'checkout',flow_step:'entry',flow_variant:'default'},permission:{perm_svc:SP,role:'customer'}}),t:[],flow:[{tier:'T0',cell:'page_view/checkout',l:'화면: 결제'},{tier:'T1',cell:'flow_point/checkout/entry',l:'흐름: 결제진입'},{tier:'T1',cell:'permission/customer',l:'권한: 고객'}]},
+{n:'1. Login',d:'인증',e:()=>trk({page_view:{svc_ref:SW,page:'login',locale:'ko',userType:'guest'},tracking:{svc_ref:SW,trackAction:'submit',page:'login',userType:'guest'},auth_event:{svc_ref:SW,action:'login'},endpoint:{svc_ref:SW,resource_type:'api',http_method:'POST',api_version:'v1'},flow_point:{svc_ref:SW,flow_name:'login',flow_step:'entry',flow_variant:'default'}}),t:['members/id','members/role'],flow:[{tier:'T0',cell:'page_view/login',l:'화면: 로그인'},{tier:'T0',cell:'tracking/submit',l:'행동: 제출'},{tier:'T1',cell:'endpoint/POST/api',l:'API: POST'},{tier:'T1',cell:'flow_point/login/entry',l:'흐름: 로그인'},{tier:'T2',cell:'auth_event/login',l:'이벤트: 로그인'},{tier:'T3',cell:'members/id',l:'DB: 멤버'}]},
+{n:'2. Home',d:'홈',e:()=>trk({page_view:{svc_ref:SW,page:'home',locale:'ko',userType:'member'},tracking:{svc_ref:SW,trackAction:'view',page:'home',userType:'member'}}),t:[],flow:[{tier:'T0',cell:'page_view/home',l:'화면: 홈'},{tier:'T0',cell:'tracking/view',l:'행동: 조회'}]},
+{n:'3. Products',d:'상품목록',e:()=>trk({page_view:{svc_ref:SB,page:'product_list',locale:'ko',userType:'member'},tracking:{svc_ref:SB,trackAction:'view',page:'product_list',userType:'member'},endpoint:{svc_ref:SB,resource_type:'api',http_method:'GET',api_version:'v1'}}),t:['items/id','items/name'],flow:[{tier:'T0',cell:'page_view/product_list',l:'화면: 상품목록'},{tier:'T1',cell:'endpoint/GET/api',l:'API: GET'},{tier:'T3',cell:'items/id',l:'DB: 상품'}]},
+{n:'4. Detail',d:'상품상세',e:()=>trk({page_view:{svc_ref:SB,page:'product_detail',locale:'ko',userType:'member'},tracking:{svc_ref:SB,trackAction:'click',page:'product_detail',userType:'member'},endpoint:{svc_ref:SB,resource_type:'api',http_method:'GET',api_version:'v1'}}),t:['items/id','orgs/region_addr'],flow:[{tier:'T0',cell:'page_view/product_detail',l:'화면: 상세'},{tier:'T0',cell:'tracking/click',l:'행동: 클릭'},{tier:'T1',cell:'endpoint/GET/api',l:'API: GET'},{tier:'T3',cell:'items/id',l:'DB: 상품'},{tier:'T3',cell:'orgs/region_addr',l:'DB: 리전'}]},
+{n:'5. Add Cart',d:'장바구니',e:()=>trk({page_view:{svc_ref:SB,page:'product_detail',locale:'ko',userType:'member'},tracking:{svc_ref:SB,trackAction:'add_to_cart',page:'product_detail',userType:'member'},endpoint:{svc_ref:SB,resource_type:'api',http_method:'POST',api_version:'v1'},cart_event:{svc_ref:SB,action:'add'}}),t:['carts/id','cart_items/item_id'],flow:[{tier:'T0',cell:'page_view/product_detail',l:'화면: 상세'},{tier:'T0',cell:'tracking/add_to_cart',l:'행동: 담기'},{tier:'T1',cell:'endpoint/POST/api',l:'API: POST'},{tier:'T2',cell:'cart_event/add',l:'이벤트: 추가'},{tier:'T3',cell:'carts/id',l:'DB: 장바구니'},{tier:'T3',cell:'cart_items/item_id',l:'DB: 항목'}]},
+{n:'6. Cart',d:'장바구니',e:()=>trk({page_view:{svc_ref:SB,page:'cart',locale:'ko',userType:'member'},tracking:{svc_ref:SB,trackAction:'view',page:'cart',userType:'member'},endpoint:{svc_ref:SB,resource_type:'api',http_method:'GET',api_version:'v1'}}),t:['cart_items/item_id'],flow:[{tier:'T0',cell:'page_view/cart',l:'화면: 장바구니'},{tier:'T1',cell:'endpoint/GET/api',l:'API: GET'},{tier:'T3',cell:'cart_items/item_id',l:'DB: 항목'}]},
+{n:'7. Checkout',d:'결제진입',e:()=>trk({page_view:{svc_ref:SP,page:'checkout',locale:'ko',userType:'member'},tracking:{svc_ref:SP,trackAction:'navigate',page:'checkout',userType:'member'},flow_point:{svc_ref:SP,flow_name:'checkout',flow_step:'entry',flow_variant:'default'},permission:{perm_svc:SP,role:'customer'}}),t:[],flow:[{tier:'T0',cell:'page_view/checkout',l:'화면: 결제'},{tier:'T1',cell:'flow_point/checkout/entry',l:'흐름: 결제진입'},{tier:'T1',cell:'permission/customer',l:'권한: 고객'}]},
 {n:'8. Process',d:'주문생성',e:()=>trk({endpoint:{svc_ref:SP,resource_type:'api',http_method:'POST',api_version:'v1'},flow_point:{svc_ref:SP,flow_name:'checkout',flow_step:'processing',flow_variant:'default'},permission:{perm_svc:SP,role:'customer'},order_event:{service_ctx:SP,action:'create'},pipeline_point:{svc_ref:SP,pipeline_phase:'ingest',validation_mode:'strict',verdict_result:'pass',temporal_strategy:'span_local'}}),t:['orders/id','orders/status','orders/amount'],flow:[{tier:'T1',cell:'endpoint/POST/api',l:'API: POST'},{tier:'T1',cell:'flow_point/checkout/process',l:'흐름: 처리'},{tier:'T2',cell:'order_event/create',l:'이벤트: 주문생성'},{tier:'T2',cell:'pipeline_point/ingest',l:'파이프: 수집'},{tier:'T3',cell:'orders/id',l:'DB: 주문'},{tier:'T3',cell:'orders/status',l:'DB: 상태'}]},
 {n:'9. Payment',d:'결제',e:()=>trk({endpoint:{svc_ref:SP,resource_type:'api',http_method:'POST',api_version:'v1'},flow_point:{svc_ref:SP,flow_name:'payment',flow_step:'payment',flow_variant:'default'},pipeline_point:{svc_ref:SP,pipeline_phase:'reconstruct',validation_mode:'strict',verdict_result:'pass',temporal_strategy:'span_local'}}),t:[],flow:[{tier:'T1',cell:'endpoint/POST/api',l:'API: POST'},{tier:'T1',cell:'flow_point/payment/pay',l:'흐름: 결제'},{tier:'T2',cell:'pipeline_point/reconstruct',l:'파이프: 재구성'}]},
 {n:'10. OK',d:'성공',e:()=>trk({order_event:{service_ctx:SB,action:'complete'},flow_point:{svc_ref:SP,flow_name:'checkout',flow_step:'success',flow_variant:'default'},health_event:{svc_ref:SP,health_status:'healthy'},pipeline_point:{svc_ref:SP,pipeline_phase:'verdict',validation_mode:'strict',verdict_result:'pass',temporal_strategy:'span_local'}}),t:['orders/status'],flow:[{tier:'T1',cell:'flow_point/checkout/success',l:'흐름: 성공'},{tier:'T2',cell:'order_event/complete',l:'이벤트: 완료'},{tier:'T2',cell:'health_event/healthy',l:'헬스: 정상'},{tier:'T3',cell:'orders/status',l:'DB: 상태'}]},
-{n:'11. Done',d:'완료',e:()=>trk({page_view:{svc_ref:SW,page:'order_complete',locale:'ko',userType:'member'},tracking:{trackAction:'view',page:'order_complete',userType:'member'},flow_point:{svc_ref:SW,flow_name:'checkout',flow_step:'complete',flow_variant:'default'}}),t:['orders/id'],flow:[{tier:'T0',cell:'page_view/order_complete',l:'화면: 완료'},{tier:'T1',cell:'flow_point/checkout/complete',l:'흐름: 완료'},{tier:'T3',cell:'orders/id',l:'DB: 주문확인'}]},
-{n:'12. Mypage',d:'마이페이지',e:()=>trk({page_view:{svc_ref:SW,page:'mypage',locale:'ko',userType:'member'},tracking:{trackAction:'navigate',page:'mypage',userType:'member'},endpoint:{svc_ref:SW,resource_type:'api',http_method:'GET',api_version:'v1'}}),t:['members/name','orders/id'],flow:[{tier:'T0',cell:'page_view/mypage',l:'화면: 마이페이지'},{tier:'T1',cell:'endpoint/GET/api',l:'API: GET'},{tier:'T3',cell:'members/name',l:'DB: 이름'},{tier:'T3',cell:'orders/id',l:'DB: 주문'}]},
-{n:'13. Exit',d:'이탈',e:()=>trk({tracking:{trackAction:'close',page:'mypage',userType:'member'},flow_point:{svc_ref:SW,flow_name:'browse',flow_step:'exit',flow_variant:'default'},auth_event:{action:'logout'},data_policy:{svc_ref:SW,mask_mode:'raw'},pipeline_point:{svc_ref:SW,pipeline_phase:'aggregate',validation_mode:'strict',verdict_result:'pass',temporal_strategy:'span_local'}}),t:[],flow:[{tier:'T0',cell:'tracking/close',l:'행동: 닫기'},{tier:'T1',cell:'flow_point/browse/exit',l:'흐름: 이탈'},{tier:'T2',cell:'auth_event/logout',l:'이벤트: 로그아웃'},{tier:'T2',cell:'data_policy/raw',l:'정책: 원본'}]},
+{n:'11. Done',d:'완료',e:()=>trk({page_view:{svc_ref:SW,page:'order_complete',locale:'ko',userType:'member'},tracking:{svc_ref:SW,trackAction:'view',page:'order_complete',userType:'member'},flow_point:{svc_ref:SW,flow_name:'checkout',flow_step:'complete',flow_variant:'default'}}),t:['orders/id'],flow:[{tier:'T0',cell:'page_view/order_complete',l:'화면: 완료'},{tier:'T1',cell:'flow_point/checkout/complete',l:'흐름: 완료'},{tier:'T3',cell:'orders/id',l:'DB: 주문확인'}]},
+{n:'12. Mypage',d:'마이페이지',e:()=>trk({page_view:{svc_ref:SW,page:'mypage',locale:'ko',userType:'member'},tracking:{svc_ref:SW,trackAction:'navigate',page:'mypage',userType:'member'},endpoint:{svc_ref:SW,resource_type:'api',http_method:'GET',api_version:'v1'}}),t:['members/name','orders/id'],flow:[{tier:'T0',cell:'page_view/mypage',l:'화면: 마이페이지'},{tier:'T1',cell:'endpoint/GET/api',l:'API: GET'},{tier:'T3',cell:'members/name',l:'DB: 이름'},{tier:'T3',cell:'orders/id',l:'DB: 주문'}]},
+{n:'13. Exit',d:'이탈',e:()=>trk({tracking:{svc_ref:SW,trackAction:'close',page:'mypage',userType:'member'},flow_point:{svc_ref:SW,flow_name:'browse',flow_step:'exit',flow_variant:'default'},auth_event:{svc_ref:SW,action:'logout'},data_policy:{svc_ref:SW,mask_mode:'raw'},pipeline_point:{svc_ref:SW,pipeline_phase:'aggregate',validation_mode:'strict',verdict_result:'pass',temporal_strategy:'span_local'}}),t:[],flow:[{tier:'T0',cell:'tracking/close',l:'행동: 닫기'},{tier:'T1',cell:'flow_point/browse/exit',l:'흐름: 이탈'},{tier:'T2',cell:'auth_event/logout',l:'이벤트: 로그아웃'},{tier:'T2',cell:'data_policy/raw',l:'정책: 원본'}]},
 ];
 
 // ═══════════════════════════════════════════════════
@@ -494,7 +543,7 @@ function setGlow(key){
   // InstancedMesh의 glow 배열 업데이트
   for(const ig of instancedGrids){
     const idx=ig.keyToIdx.get(key);
-    if(idx!==undefined){ig.glows[idx]=2;break}
+    if(idx!==undefined){ig.glows[idx]=3;break}
   }
 }
 
@@ -527,16 +576,33 @@ function fireStep(step){
   const{keys}=decodeKeys(ctx);
   for(const t of(step.t||[]))keys.add(t);
   activateKeys(keys,step.flow);
-  feedTimeline(ctx);
+  FT.feed(ctx,dec,getPrefixRole);
   // 추가 table ref 키도 타임라인에 data role로 표시
-  for(const t of(step.t||[])){const role=getRoleForKey(t);addTimelineEntry(t.split('/')[0],t.split('/').slice(1).join('/'),role)}
+  for(const t of(step.t||[])){const role=getRoleForKey(t);FT.add(t.split('/')[0],t.split('/').slice(1).join('/'),role)}
   FH.push({name:step.n,desc:step.d,flow:step.flow||[],keys:[...keys],ctx,timestamp:new Date().toISOString(),source:'demo'});
   updateHUD(step,ctx);showFlow(FH.current());
 }
 
 function replayEntry(entry){
-  if(!entry)return;Object.values(cellMap).forEach(c=>c.mat.emissiveIntensity=0);
-  activateKeys(new Set(entry.keys),null);
+  if(!entry)return;
+  clearPinnedBeams();
+  Object.values(cellMap).forEach(c=>c.mat.emissiveIntensity=0);
+  aSet=new Set(entry.keys);
+  markCellRoles([...entry.keys]);
+  for(const k of entry.keys){setGlow(k)}
+
+  // flow가 있으면 pinned beam으로 연결 (이동 전까지 유지)
+  if(entry.flow&&entry.flow.length>1){
+    for(let i=0;i<entry.flow.length-1;i++){
+      const a=cellMap[entry.flow[i].cell],b=cellMap[entry.flow[i+1].cell];
+      if(a&&b)pinnedBeam(a,b,entry.flow[i+1].cell);
+    }
+  } else {
+    // flow 없으면 레이어 간 pinned beam
+    const act=[...entry.keys].map(k=>cellMap[k]).filter(Boolean);
+    for(let i=0;i<act.length;i++)for(let j=i+1;j<act.length;j++)if(act[i].layer!==act[j].layer)pinnedBeam(act[i],act[j]);
+  }
+
   updateHUD({n:entry.name,d:entry.desc},entry.ctx);showFlow(entry);
   $('status').textContent=`history ${FH.indexLabel()} — ${entry.name}`;
 }
@@ -545,7 +611,7 @@ function replayEntry(entry){
 //  INGEST
 // ═══════════════════════════════════════════════════
 let tId='trc_'+Date.now(),sSeq=0;
-function sendI(ctx,ek){sSeq++;const u=$('ws-url').value.replace('ws://','http://').replace('wss://','https://').replace('/v1/ws','/v1/ingest');fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transmission_id:'tx_'+Date.now(),sent_at:new Date().toISOString(),owner:{owner_type:'workspace',owner_id:'viz'},source:{service_name:'viz',sdk_name:'@qa-sdk/viz-3d',sdk_version:'0.1.0'},runtime:{platform:'browser'},build:{env:'dev'},records:[{log_id:'l_'+Date.now()+'_'+sSeq,timestamp:new Date().toISOString(),record_kind:'log',trace_id:tId,span_id:'s_'+sSeq,event_key:ek||'demo',event_version:'001',payload_format:'json',payload_encoding:'raw',payload_masking_applied:false,payload_masked_fields:[],payload:{},address_context:ctx}]})}).catch(()=>{})}
+function sendI(ctx,ek){sSeq++;const u=$('ws-url').value.replace('ws://','http://').replace('wss://','https://').replace('/v1/ws','/v1/ingest');adapter.sendToIngest(u,ctx,ek||'demo',tId,sSeq).catch(()=>{})}
 
 // ═══════════════════════════════════════════════════
 //  HUD
@@ -558,9 +624,44 @@ function updateHUD(step,ctx){
   if(ctx)$('h-ctx').innerHTML=Object.entries(ctx).map(([p,s])=>`<span class="h">${p}</span> ${s}`).join('<br>');
 }
 
+// ── Flow step 개별 하이라이트 ──
+let _fsActiveRow=null;
+function highlightFlowStep(cell,row){
+  // active row 표시
+  if(_fsActiveRow)_fsActiveRow.classList.remove('fs-active');
+  _fsActiveRow=row;row.classList.add('fs-active');
+  // 해당 셀만 활성 + glow
+  aSet=new Set([cell]);setGlow(cell);markCellRoles([cell]);
+  // beam: 현재 entry에서 인접 연결만
+  beamRenderer.clearAll();
+  const cur=FH.current();
+  if(cur&&cur.flow){
+    const idx=cur.flow.findIndex(f=>f.cell===cell);
+    if(idx>0){const a=cellMap[cur.flow[idx-1].cell],b=cellMap[cell];if(a&&b)beam(a,b,cell)}
+    if(idx>=0&&idx<cur.flow.length-1){const a=cellMap[cell],b=cellMap[cur.flow[idx+1].cell];if(a&&b)beam(a,b,cell)}
+  }
+  showCellInfo(cell);
+}
+function restoreFullFlow(){
+  if(_fsActiveRow){_fsActiveRow.classList.remove('fs-active');_fsActiveRow=null}
+  const cur=FH.current();
+  if(cur){aSet=new Set(cur.keys);markCellRoles([...cur.keys])}
+  beamRenderer.clearAll();
+}
+
 function showFlow(entry){
   if(!entry)return;$('h-flow').style.display='block';$('flow-idx').textContent=FH.indexLabel();$('flow-title').textContent=entry.name;
-  if(entry.flow.length)$('flow-steps').innerHTML=entry.flow.map(f=>`<div><span style="color:#889">${f.tier}</span> ${f.l}</div>`).join('');
+  if(!entry.flow.length)return;
+  const container=$('flow-steps');container.innerHTML='';
+  entry.flow.forEach(f=>{
+    const row=document.createElement('div');
+    row.className='flow-step-row m';
+    row.innerHTML=`<span style="color:#889">${f.tier}</span> ${f.l}`;
+    row.addEventListener('mouseenter',()=>highlightFlowStep(f.cell,row));
+    row.addEventListener('click',e=>{e.stopPropagation();highlightFlowStep(f.cell,row)});
+    container.appendChild(row);
+  });
+  container.addEventListener('mouseleave',restoreFullFlow);
 }
 
 function showCellInfo(key){
@@ -620,7 +721,7 @@ const adapter=new MonitorAdapter({
   decode:dec,mapToKeys:defaultKeyMapper,
   onActivation:(keys,ctx)=>{
     activateKeys(new Set(keys),null);
-    if(ctx)feedTimeline(ctx);
+    if(ctx)FT.feed(ctx,dec,getPrefixRole);
     FH.push({name:'live',desc:'',flow:[],keys,ctx,timestamp:new Date().toISOString(),source:'live'});
     updateHUD({n:'live',d:''},ctx);$('status').textContent=`live — ${tot} events (${FH.length} recorded)`;
   },
@@ -637,6 +738,8 @@ $('sl-edge').oninput=e=>{settings.edgeOpacity=e.target.value/100;$('sl-edge-v').
 $('sl-grid').oninput=e=>{settings.gridOpacity=e.target.value/100;$('sl-grid-v').textContent=e.target.value+'%';gf1.material.opacity=settings.gridOpacity;gf2.material.opacity=settings.gridOpacity*0.5};
 $('sl-bg').oninput=e=>{const v=e.target.value/100;$('sl-bg-v').textContent=e.target.value+'%';scene.background=new T.Color(0.02+v*0.3,0.02+v*0.3,0.03+v*0.4)};
 $('sl-fog').oninput=e=>{settings.fogDensity=e.target.value/1000;$('sl-fog-v').textContent=e.target.value+'‰';scene.fog=new T.FogExp2(scene.background,settings.fogDensity)};
+$('sl-beam').oninput=e=>{const v=e.target.value/100;$('sl-beam-v').textContent=e.target.value+'%';settings.beamOpacity=v};
+$('sl-beam-life').oninput=e=>{const v=parseInt(e.target.value);$('sl-beam-life-v').textContent=v+'s';settings.beamLife=v};
 
 // View modes
 document.querySelectorAll('.vb').forEach(b=>b.addEventListener('click',()=>{
@@ -648,17 +751,16 @@ document.querySelectorAll('.vb').forEach(b=>b.addEventListener('click',()=>{
 document.querySelectorAll('.sl-role').forEach(el=>{
   el.addEventListener('click',()=>{
     const r=el.dataset.role;
-    if(roleFilter===r){
-      roleFilter=null;
+    if(FT.roleFilter===r){
+      FT.setRoleFilter(null);
       document.querySelectorAll('.sl-role').forEach(x=>{x.classList.remove('sl-dimmed');x.classList.add('sl-active')});
     }else{
-      roleFilter=r;
+      FT.setRoleFilter(r);
       document.querySelectorAll('.sl-role').forEach(x=>{
         if(x.dataset.role===r){x.classList.remove('sl-dimmed');x.classList.add('sl-active')}
         else{x.classList.add('sl-dimmed');x.classList.remove('sl-active')}
       });
     }
-    renderTimeline();
   });
 });
 
@@ -666,44 +768,152 @@ document.querySelectorAll('.sl-role').forEach(el=>{
 $('btn-prev').addEventListener('click',()=>replayEntry(FH.prev()));
 $('btn-next').addEventListener('click',()=>replayEntry(FH.next()));
 
-// Live/Demo/Reset
-let dOn=false,dT=null,dI=0;
+// Live/Demo/Reset — DemoRunner 인스턴스 (viz-3d 모듈)
+const DR=new DemoRunner({totalSteps:STEPS.length,intervalMs:2200,onStep(i){fireStep(STEPS[i]);$('status').textContent=`demo ${i+1}/${STEPS.length}`}});
 $('btn-live').addEventListener('click',()=>{
   if(adapter.connected){adapter.disconnect();$('btn-live').classList.remove('on')}
   else{adapter.connect($('ws-url').value);$('btn-live').classList.add('on')}
 });
 $('btn-demo').addEventListener('click',()=>{
-  dOn=!dOn;$('btn-demo').classList.toggle('on',dOn);
-  if(dOn){dI=0;tId='trc_'+Date.now();sSeq=0;rD()}else clearTimeout(dT);
+  if(DR.isRunning){DR.stop();$('btn-demo').classList.remove('on')}
+  else{tId='trc_'+Date.now();sSeq=0;DR.start();$('btn-demo').classList.add('on')}
 });
-function rD(){if(!dOn)return;if(dI>=STEPS.length)dI=0;fireStep(STEPS[dI]);$('status').textContent=`demo ${dI+1}/${STEPS.length}`;dI++;dT=setTimeout(rD,2200)}
 $('btn-info').addEventListener('click',toggleInfo);
 $('btn-reset').addEventListener('click',()=>{
-  dOn=false;clearTimeout(dT);$('btn-demo').classList.remove('on');
-  tot=0;lH.fill(0);aSet.clear();CS.reset();FH.clear();
-  cellRoleColor.clear();timelineEntries.length=0;renderTimeline();
-  roleFilter=null;document.querySelectorAll('.sl-role').forEach(x=>{x.classList.remove('sl-dimmed');x.classList.add('sl-active')});
+  DR.reset();$('btn-demo').classList.remove('on');
+  tot=0;lH.fill(0);aSet.clear();CS.reset();FH.clear();clearPinnedBeams();
+  cellRoleColor.clear();FT.clear();
+  FT.setRoleFilter(null);document.querySelectorAll('.sl-role').forEach(x=>{x.classList.remove('sl-dimmed');x.classList.add('sl-active')});
   Object.values(cellMap).forEach(c=>c.mat.emissiveIntensity=0);
-  updateHUD(null,null);$('h-flow').style.display='none';$('h-select').style.display='none';$('flow-idx').textContent='-/-';$('status').textContent='reset';
+  deselectCell();
+  updateHUD(null,null);$('h-flow').style.display='none';$('flow-idx').textContent='-/-';$('status').textContent='reset';
 });
 
-// Cell click — InstancedMesh 지원
+// Server check
+$('btn-check-server').addEventListener('click', async ()=>{
+  // Check ingest
+  try {
+    const r=await fetch($('ws-url').value.replace('ws://','http://').replace('wss://','https://').replace('/v1/ws','/health'));
+    $('srv-ingest').innerHTML=r.ok?'<span style="color:#2ed573">● ingest: ok</span>':'<span style="color:#ff3860">● ingest: '+r.status+'</span>';
+  } catch { $('srv-ingest').innerHTML='<span style="color:#ff3860">● ingest: offline</span>'; }
+  // Check registry
+  try {
+    const regUrl = (window.__QA_CONFIG__||{}).REGISTRY_URL || 'https://qa-gateway.astralclover.workers.dev';
+    const r=await fetch(regUrl+'/health');
+    $('srv-registry').innerHTML=r.ok?'<span style="color:#2ed573">● registry: ok</span>':'<span style="color:#ff3860">● registry: '+r.status+'</span>';
+  } catch { $('srv-registry').innerHTML='<span style="color:#ff3860">● registry: offline</span>'; }
+});
+
+// Prefix filter chips
+const prefixVisible=new Map();
+const filterContainer=$('prefix-filters');
+GRIDS.forEach(g=>{
+  prefixVisible.set(g.id, true);
+  const chip=document.createElement('span');
+  chip.className='btn m';
+  chip.style.cssText='font-size:7px;padding:2px 6px';
+  chip.textContent=g.id;
+  chip.dataset.prefix=g.id;
+  chip.classList.add('on');
+  chip.addEventListener('click',()=>{
+    const vis=!prefixVisible.get(g.id);
+    prefixVisible.set(g.id, vis);
+    chip.classList.toggle('on', vis);
+    const grp=groups.get(g.id);
+    if(grp) grp.visible=vis;
+  });
+  filterContainer.appendChild(chip);
+});
+
+$('btn-filter-all').addEventListener('click',()=>{
+  GRIDS.forEach(g=>{prefixVisible.set(g.id,true);const grp=groups.get(g.id);if(grp)grp.visible=true});
+  filterContainer.querySelectorAll('.btn').forEach(c=>c.classList.add('on'));
+});
+$('btn-filter-none').addEventListener('click',()=>{
+  GRIDS.forEach(g=>{prefixVisible.set(g.id,false);const grp=groups.get(g.id);if(grp)grp.visible=false});
+  filterContainer.querySelectorAll('.btn').forEach(c=>c.classList.remove('on'));
+});
+
+// Cell click — InstancedMesh 지원 + 선택 마커
 const rc=new T.Raycaster(),mv=new T.Vector2();
+let selectedKey=null;
+
+// 선택 마커 — 셀 위치에 띄우는 밝은 링
+const selRingGeo=new T.RingGeometry(0.28,0.34,16);
+const selRingMat=new T.MeshBasicMaterial({color:0x64ffda,transparent:true,opacity:0.9,side:T.DoubleSide});
+const selRing=new T.Mesh(selRingGeo,selRingMat);
+selRing.rotation.x=-Math.PI/2;
+selRing.visible=false;
+scene.add(selRing);
+// 선택 마커 pulse 애니메이션용
+let selPulse=0;
+
+function selectCell(key){
+  if(selectedKey===key){selectedKey=null;selRing.visible=false;$('h-select').style.display='none';return}
+  selectedKey=key;
+  const c=cellMap[key];
+  if(!c){selRing.visible=false;return}
+  // 마커를 셀 위치로 이동
+  const wp=c.wp();
+  selRing.position.set(wp.x,wp.y+0.3,wp.z);
+  selRing.visible=true;
+  selPulse=0;
+  // glow
+  setGlow(key);
+  showCellInfo(key);
+}
+
+function deselectCell(){
+  selectedKey=null;selRing.visible=false;$('h-select').style.display='none';
+}
+
 canvas.addEventListener('click',e=>{
   mv.x=(e.clientX/innerWidth)*2-1;mv.y=-(e.clientY/innerHeight)*2+1;rc.setFromCamera(mv,cam);
   const iMeshes=instancedGrids.map(ig=>ig.iMesh);
   const h=rc.intersectObjects(iMeshes);
   if(h.length&&h[0].instanceId!==undefined){
     const ig=instancedGrids.find(g=>g.iMesh===h[0].object);
-    if(ig){const key=ig.idxToKey[h[0].instanceId];showCellInfo(key)}
-  }else $('h-select').style.display='none';
+    if(ig){selectCell(ig.idxToKey[h[0].instanceId])}
+  }else deselectCell();
 });
+
+// 호버 툴팁 — 마우스 위치에 셀 이름 표시
+const tooltip=document.createElement('div');
+tooltip.style.cssText='position:fixed;z-index:20;pointer-events:none;font-family:IBM Plex Mono,monospace;font-size:10px;color:#64ffda;background:rgba(5,5,8,0.85);border:1px solid rgba(100,255,218,0.15);padding:3px 8px;border-radius:3px;display:none;white-space:nowrap';
+document.body.appendChild(tooltip);
+let hoveredKey=null;
+
+canvas.addEventListener('mousemove',e=>{
+  mv.x=(e.clientX/innerWidth)*2-1;mv.y=-(e.clientY/innerHeight)*2+1;rc.setFromCamera(mv,cam);
+  const iMeshes=instancedGrids.map(ig=>ig.iMesh);
+  const h=rc.intersectObjects(iMeshes);
+  if(h.length&&h[0].instanceId!==undefined){
+    const ig=instancedGrids.find(g=>g.iMesh===h[0].object);
+    if(ig){
+      const key=ig.idxToKey[h[0].instanceId];
+      if(key!==hoveredKey){
+        hoveredKey=key;
+        tooltip.textContent=key;
+        canvas.style.cursor='pointer';
+      }
+      tooltip.style.display='block';
+      tooltip.style.left=(e.clientX+12)+'px';
+      tooltip.style.top=(e.clientY-8)+'px';
+    }
+  }else{
+    if(hoveredKey){hoveredKey=null;tooltip.style.display='none';canvas.style.cursor='default'}
+  }
+});
+
+// ═══════════════════════════════════════════════════
+//  키보드 상태 (RENDER LOOP에서 참조하므로 선행 선언)
+// ═══════════════════════════════════════════════════
+const keyState={};
 
 // ═══════════════════════════════════════════════════
 //  RENDER LOOP
 // ═══════════════════════════════════════════════════
 const clk=new T.Clock();
-const baseC=new T.Color(),glowC=new T.Color(),tmpC=new T.Color();
 
 function anim(){requestAnimationFrame(anim);const dt=clk.getDelta(),t=clk.elapsedTime;
   perf.tick();
@@ -711,37 +921,15 @@ function anim(){requestAnimationFrame(anim);const dt=clk.getDelta(),t=clk.elapse
   VE.update(dt);for(const[id,grp]of groups){const p=VE.getPosition(id);if(p)grp.position.lerp(new T.Vector3(p.x,p.y,p.z),dt*3)}
   CS.decay(dt);
 
-  // InstancedMesh glow update — per-instance color (개별 셀 반짝이, signal role 색상 적용)
-  for(const ig of instancedGrids){
-    let needsUpdate=false;
-    baseC.setHex(ig.cc.main.hex);
-    for(let i=0;i<ig.count;i++){
-      const key=ig.idxToKey[i];
-      if(ig.glows[i]>0)ig.glows[i]=Math.max(0,ig.glows[i]-dt*1.2);
-      const isA=aSet.has(key);
-      const pulse=isA?.4+Math.sin(t*5)*.2:0;
-      const I=Math.max(ig.glows[i],pulse);
-      if(I>0.01){
-        // 활성 셀: signal role 색상 사용 (role filter 적용)
-        const roleHex=cellRoleColor.get(key);
-        const role=getRoleForKey(key);
-        const dimByFilter=roleFilter&&roleFilter!==role;
-        if(roleHex&&!dimByFilter){
-          glowC.setHex(roleHex);
-        }else{
-          glowC.setHex(ig.cc.emissive.hex);
-        }
-        const eff=dimByFilter?I*settings.glowMul*0.2:I*settings.glowMul;
-        tmpC.copy(baseC).lerp(glowC,eff);
-        ig.iMesh.setColorAt(i,tmpC);needsUpdate=true;
-      } else {
-        ig.iMesh.setColorAt(i,baseC);needsUpdate=true;
-      }
-    }
-    ig.mat.opacity=settings.baseOpacity;
-    ig.mat.emissiveIntensity=0.1;
-    if(needsUpdate&&ig.iMesh.instanceColor)ig.iMesh.instanceColor.needsUpdate=true;
-  }
+  updateInstancedColors(instancedGrids, {
+    elapsedTime: t, dt,
+    glowMul: settings.glowMul,
+    baseOpacity: settings.baseOpacity,
+    activeSet: aSet,
+    cellRoleColor,
+    roleFilter: FT.roleFilter,
+    getRoleFn: getRoleForKey,
+  });
 
   // LOD — 카메라 거리에 따라 라벨 표시/숨김
   const camPos={x:cam.position.x,y:cam.position.y,z:cam.position.z};
@@ -756,7 +944,17 @@ function anim(){requestAnimationFrame(anim);const dt=clk.getDelta(),t=clk.elapse
   }
 
   // Beams
-  bLines.forEach(b=>{if(b.life>0){b.life-=dt*.5;b.m.opacity=Math.max(0,b.life*.4)}});
+  beamRenderer.update(dt);
+
+  // 선택 마커 pulse + 위치 추적
+  if(selRing.visible&&selectedKey){
+    selPulse+=dt*3;
+    selRingMat.opacity=0.5+Math.sin(selPulse)*0.3;
+    selRing.scale.setScalar(1+Math.sin(selPulse*0.7)*0.08);
+    // 셀 위치가 view 전환으로 바뀔 수 있으므로 매 프레임 추적
+    const c=cellMap[selectedKey];
+    if(c){const wp=c.wp();selRing.position.set(wp.x,wp.y+0.3,wp.z)}
+  }
 
   updateKeyboardNav();
   ctl.update();R.render(scene,cam);
@@ -775,9 +973,8 @@ addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProje
 //  키보드 네비게이션
 // ═══════════════════════════════════════════════════
 const moveSpeed=0.5;
-const keyState={};
 const _isEmbed=new URLSearchParams(location.search).get('embed')==='true';
-let infoVisible=!_isEmbed;
+let infoVisible=false;
 
 function toggleInfo(){if(_isEmbed)return;infoVisible=!infoVisible;$('info-overlay').style.display=infoVisible?'flex':'none'}
 

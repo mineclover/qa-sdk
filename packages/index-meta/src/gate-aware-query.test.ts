@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 /**
  * gate-aware-query.test.ts — Gate-Aware Query 합성 유틸리티 테스트
  *

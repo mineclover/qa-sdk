@@ -1,0 +1,107 @@
+---
+name: infra-status
+description: "인프라 상태 조회 — Fleet 서비스 상태, 배포/실행 현황, tier별 그룹핑. 트리거: /infra-status, '인프라 상태', 'fleet status', '배포 현황'."
+---
+
+# Infra Status — Fleet 상태 조회
+
+모든 서비스의 배포/실행 상태를 tier별로 한눈에 확인한다.
+
+## 사전 조건
+
+- registry-service 실행 중 (localhost:3300)
+
+## 명령
+
+```bash
+cd packages/infra-engine
+
+# dev 환경 상태
+pnpm exec tsx scripts/export.ts status dev
+
+# staging 환경 상태
+pnpm exec tsx scripts/export.ts status staging
+
+# prod 환경 상태
+pnpm exec tsx scripts/export.ts status prod
+```
+
+## 출력
+
+```
+=== Fleet Status (dev) ===
+
+  총: 23  배포됨: 4  실행중: 6
+
+  [backend]
+    ⬜ pending  platform-demo-api          http://localhost:8787
+    ✅ deployed motion-workspace-service   http://127.0.0.1:23710
+  [infra]
+    🟢 running  registry-service           http://localhost:3300  (CF prod)
+    ✅ deployed definition-service         http://127.0.0.1:23700
+    ✅ deployed decision-service           http://127.0.0.1:23800
+    ✅ deployed ingest-server              http://127.0.0.1:23200
+    🟢 running  gateway                    (CF prod)
+  [frontend]
+    ⬜ pending  shopping-web               http://localhost:5220
+```
+
+### 6서비스 배포 현황 (2026-04-05)
+
+| 서비스 | 환경 | 포트 | 상태 |
+|--------|------|------|------|
+| ingest-server | K3s dev | :23200 | ✅ deployed |
+| decision-service | K3s dev | :23800 | ✅ deployed |
+| definition-service | K3s dev | :23700 | ✅ deployed |
+| motion-workspace-service | K3s dev | :23710 | ✅ deployed |
+| registry-service | CF prod | — | 🟢 running |
+| gateway | CF prod | — | 🟢 running |
+| gate-service | — | — | ⬜ blocked (index-meta Workers 호환) |
+| query-service | — | — | ⬜ blocked (index-meta Workers 호환) |
+| decode-service | — | — | ⬜ blocked (index-meta Workers 호환) |
+
+## 상태 아이콘
+
+| 아이콘 | 의미 | 조건 |
+|--------|------|------|
+| ✅ | deployed | infra-engine으로 배포됨 (infra-profile에 기록) |
+| 🟢 | running | 배포 기록 없지만 헬스체크 응답 (로컬 실행 중) |
+| ⬜ | pending | 배포 안 됨 + 미실행 |
+
+## 모니터링 명령
+
+```bash
+cd packages/infra-engine
+
+# sync-loop 시작 (백그라운드 헬스체크)
+pnpm exec tsx scripts/infra.ts monitor start --interval 60
+
+# 수동 1회 동기화
+pnpm exec tsx scripts/infra.ts monitor check
+
+# 마지막 체크 결과 조회
+pnpm exec tsx scripts/infra.ts monitor status
+```
+
+## 대시보드 명령
+
+```bash
+cd packages/infra-engine
+
+# 전체 서비스 상태 요약
+pnpm exec tsx scripts/infra.ts dashboard summary
+
+# 특정 서비스 상세
+pnpm exec tsx scripts/infra.ts dashboard service ingest-server
+
+# JSON export
+pnpm exec tsx scripts/infra.ts dashboard export ./dashboard.json
+```
+
+## 활용
+
+1. **어떤 서비스가 떠있는지 확인**: `status dev` → 🟢 running 서비스 확인
+2. **배포 필요한 서비스 파악**: `status staging` → ⬜ pending 서비스가 배포 대상
+3. **환경별 비교**: `status dev` vs `status prod` → 환경 간 서비스 차이 확인
+4. **헬스 모니터링**: `monitor start` → 주기적 헬스체크로 OutOfSync 감지
+5. **대시보드 확인**: `dashboard summary` → 전체 Fleet 상태 + uptime 확인

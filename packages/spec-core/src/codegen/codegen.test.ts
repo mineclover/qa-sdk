@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * codegen 기본 테스트 — IR → TS/JS/Proto/JSON Schema/DTS 변환 검증.
  */

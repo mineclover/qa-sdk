@@ -1,8 +1,12 @@
+// @def.boundary qa-sdk-core-system
+// @def.doc qa-sdk-core-system
+
 /** Trace 메타데이터 저장소 계약 */
 export interface TraceStore {
   upsert(params: TraceUpsert): Promise<void>;
   findById(traceId: string): Promise<StoredTrace | null>;
   findUnreconstructed(limit?: number): Promise<StoredTrace[]>;
+  findRecent?(limit?: number): Promise<StoredTrace[]>;
   markReconstructed(traceId: string): Promise<void>;
 }
 

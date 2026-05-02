@@ -1,3 +1,6 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { describe, it, expect, beforeAll } from "vitest";
 import {
   MetaRegistry,
@@ -155,7 +158,7 @@ describe("strict 모드", () => {
 
   it("strict: true + 큰 shape + numberType: 'number' → 에러 메시지에 shape product 포함", () => {
     try {
-      new MetaRegistry(bigInput({ numberType: "number", strict: true }));
+      const _r = new MetaRegistry(bigInput({ numberType: "number", strict: true }));
       expect.unreachable("should throw");
     } catch (e) {
       expect(e).toBeInstanceOf(CapacityOverflowError);

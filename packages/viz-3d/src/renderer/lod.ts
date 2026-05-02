@@ -1,3 +1,6 @@
+// @def.boundary viz-system-root
+// @def.doc viz-system-root
+
 /**
  * LOD — 거리 기반 디테일 레벨 관리.
  *

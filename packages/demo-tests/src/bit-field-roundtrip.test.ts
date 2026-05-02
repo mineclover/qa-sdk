@@ -1,3 +1,6 @@
+// @def.boundary validation-layer-group
+// @def.doc validation-layer-group
+
 /**
  * bit-field-roundtrip.test.ts — bit-field-layout 데이터 변환 라운드트립 검증
  *

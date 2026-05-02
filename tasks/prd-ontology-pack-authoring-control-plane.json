@@ -1,0 +1,380 @@
+{
+  "name": "Ontology Pack Authoring Control Plane",
+  "description": "This PRD adds an authoring control plane for creating and validating `OperationalOntologyPack` based domain ontology packs. The current system has a solid runtime contract: packs can be declared as `OperationalOntologyPack`, validated with `validateOperationalOntologyPack()`, resolved as known packs, and activated through the registry/index-meta lifecycle. What is missing is a maintainer-facing scaffold and validation workflow that helps authors create a new pack consistently with code, tests, definition docs, source-map references, and known-pack registration candidates.\n\nThe feature centers on `operational-ontology-pack-interface` as the canonical pack contract. Pack authoring should preserve an architecture-neutral Entity/Component/System-informed separation. ECS is one concrete architecture that demonstrates this separation, and operational ontology can model ECS, but scaffolded packs must not become ECS-specific unless the requested domain is explicitly an ECS pack.\n\n- Entity-like identity: stable identifiers only, such as `packId`, axis ids, taxonomy ids, artifact ids, and definition ids.\n- Component-like data: data-only schemas and records, such as axes, taxonomies, relation categories, traversals, registry records, and artifact records.\n- System-like transform: explicit transformation or validation logic, such as validators, allocators, projectors, activation helpers, sync adapters, and docs graph traversal.\n\nThe scaffold workflow must keep these concerns separate. It must not hide behavior inside schema declarations, and it must not mutate known-pack registries or activate packs implicitly.",
+  "branchName": "ralph/ontology-pack-authoring-control-plane",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Define Pack Authoring Scope And CLI Contract",
+      "description": "As an ontology maintainer, I want the pack authoring scope and CLI command contract defined before implementation so scaffold behavior is predictable and bounded.",
+      "acceptanceCriteria": [
+        "Define `qa-sdk ontology pack scaffold <pack-id>` as the primary CLI surface.",
+        "Define `qa-sdk ontology pack validate <pack-ref>` as the validation surface.",
+        "Document that `OperationalOntologyPack` remains the canonical pack contract.",
+        "Document that pack authoring preserves architecture-neutral separation of entity-like ids, component-like data, and system-like transforms.",
+        "Document that operational ontology can model ECS but is not limited to ECS.",
+        "Document that scaffold is dry-run by default.",
+        "Document that file writes require explicit `--write`.",
+        "Document that known-pack registration is reported as a candidate, not applied automatically.",
+        "Document that registry activation is out of scope for scaffold.",
+        "Update relevant command help/usage strings without implementing behavior-heavy logic in this story.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter operational-ontology test -- pack` - operational ontology pack validation regression",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status operational-ontology-pack-interface --json`",
+        "`node packages/cli/dist/index.js def find-by-file packages/operational-ontology/src/internal/pack-core.ts`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Add Pack Scaffold Planning Model",
+      "description": "As a CLI maintainer, I want a structured scaffold plan model so dry-run and write modes share one source of truth.",
+      "acceptanceCriteria": [
+        "Add a scaffold plan type that includes identity declarations, component schema files, system binding files, docs paths, source-map candidates, and known-pack candidate.",
+        "Validate pack id format as a safe kebab-case entity id.",
+        "Derive default symbol names from the pack id.",
+        "Derive default package path from options or safe defaults.",
+        "Separate generated component-like schema content from generated system-like binding/blueprint content.",
+        "Support CLI options for implementation package/root, docs directory, test file path, and dry-run/write mode.",
+        "Return structured diagnostics for invalid ids, unsafe paths, and conflicting output paths.",
+        "Add unit tests for plan generation without writing files.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter operational-ontology test -- pack` - operational ontology pack validation regression",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status operational-ontology-pack-interface --json`",
+        "`node packages/cli/dist/index.js def find-by-file packages/operational-ontology/src/internal/pack-core.ts`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "Implement Dry-Run Pack Scaffold Preview",
+      "description": "As a pack author, I want to preview the files and edits that would be created before writing anything.",
+      "acceptanceCriteria": [
+        "`qa-sdk ontology pack scaffold <pack-id> --json` returns a structured dry-run preview.",
+        "Preview includes pack implementation skeleton content.",
+        "Preview includes test skeleton content.",
+        "Preview includes definition docs skeletons for spec, todo, plan, and optional rule/cases/test docs.",
+        "Preview includes source-map frontmatter candidates.",
+        "Preview includes known-pack registration candidate for `packages/cli/src/lib/known-ontology-packs.ts`.",
+        "Preview identifies identity declarations, component-like declarations, and system-like bindings separately.",
+        "Preview does not modify the filesystem.",
+        "Tests prove dry-run leaves no generated files behind.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter operational-ontology test -- pack` - operational ontology pack validation regression",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status operational-ontology-pack-interface --json`",
+        "`node packages/cli/dist/index.js def find-by-file packages/operational-ontology/src/internal/pack-core.ts`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "Implement Explicit Write Mode For Pack Scaffold",
+      "description": "As a pack author, I want scaffold output written only when I explicitly request it.",
+      "acceptanceCriteria": [
+        "`qa-sdk ontology pack scaffold <pack-id> --write` writes scaffold files.",
+        "Write mode creates parent directories as needed.",
+        "Write mode refuses to overwrite existing files unless a future explicit overwrite option is added.",
+        "Write mode emits the same file list as dry-run preview.",
+        "Write mode still treats known-pack registration as a candidate unless a separate explicit flag is introduced.",
+        "Write mode emits clear JSON and text summaries.",
+        "Tests use temporary directories and verify generated content.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter operational-ontology test -- pack` - operational ontology pack validation regression",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status operational-ontology-pack-interface --json`",
+        "`node packages/cli/dist/index.js def find-by-file packages/operational-ontology/src/internal/pack-core.ts`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "Add Pack Implementation Skeleton Template",
+      "description": "As a pack author, I want generated TypeScript pack skeletons that satisfy the `OperationalOntologyPack` contract and preserve architecture-neutral identity/data/system separation.",
+      "acceptanceCriteria": [
+        "Generated implementation imports or references `OperationalOntologyPack`.",
+        "Generated implementation exports a named pack constant satisfying `OperationalOntologyPack`.",
+        "Skeleton includes a dedicated identity constants section.",
+        "Skeleton includes a dedicated component-like schema section for axes, taxonomies, relation categories, and traversals.",
+        "Skeleton includes a dedicated system-like binding section for blueprints.",
+        "Generated template avoids ECS-specific naming unless the requested pack itself is an ECS pack.",
+        "Skeleton includes at least one example axis with stable capacity.",
+        "Skeleton includes at least one taxonomy using the axis.",
+        "Skeleton includes empty or minimal relation categories and traversals.",
+        "Skeleton includes a validation helper calling `validateOperationalOntologyPack`.",
+        "Generated code is deterministic for the same input.",
+        "Tests verify generated skeleton can be parsed or typechecked in fixture context where practical.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter operational-ontology test -- pack` - operational ontology pack validation regression",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status operational-ontology-pack-interface --json`",
+        "`node packages/cli/dist/index.js def find-by-file packages/operational-ontology/src/internal/pack-core.ts`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "Add Pack Test Skeleton Template",
+      "description": "As a pack author, I want a generated test skeleton that proves the new pack can be validated.",
+      "acceptanceCriteria": [
+        "Generated test imports the pack and validation helper.",
+        "Generated test asserts `validate...Pack().valid === true`.",
+        "Generated test includes placeholders for domain-specific axis/taxonomy expectations.",
+        "Generated test includes a placeholder for blueprint/system binding expectations.",
+        "Test skeleton path defaults next to the implementation file or follows package test conventions.",
+        "Tests verify generated test skeleton is deterministic.",
+        "Scaffold preview and write mode include the test skeleton.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter operational-ontology test -- pack` - operational ontology pack validation regression",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status operational-ontology-pack-interface --json`",
+        "`node packages/cli/dist/index.js def find-by-file packages/operational-ontology/src/internal/pack-core.ts`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-005"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "Add Definition Docs Family Scaffold",
+      "description": "As a documentation maintainer, I want generated definition docs for a new pack so docs and code start aligned.",
+      "acceptanceCriteria": [
+        "Generate a `<pack-id>-system.spec.md` skeleton with frontmatter.",
+        "Generate a `<pack-id>-todo.todo.md` skeleton with `Completed`, `Actionable`, `Deferred`, and `Parking Lot` headings.",
+        "Generate a `<pack-id>-plan.plan.md` skeleton.",
+        "Optionally generate `<pack-id>.rule.md`, `<pack-id>.cases.md`, and `<pack-id>.test.md` when requested.",
+        "Spec skeleton links to `operational-ontology-pack-interface`.",
+        "Spec skeleton includes an architecture-neutral separation section mapping identity declarations, component schema, and system bindings for the new pack.",
+        "Spec skeleton states that ECS is a possible modeled architecture, not the only supported architecture.",
+        "Spec skeleton includes source references for implementation and test candidates.",
+        "TODO skeleton starts with actionable authoring checklist and no fake completed work.",
+        "Tests verify frontmatter contains valid `def.id`, `level`, `scope`, `aspect`, `depth`, and lifecycle values.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter operational-ontology test -- pack` - operational ontology pack validation regression",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status operational-ontology-pack-interface --json`",
+        "`node packages/cli/dist/index.js def find-by-file packages/operational-ontology/src/internal/pack-core.ts`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-008",
+      "title": "Add Source-Map Candidate Generation",
+      "description": "As a docs operator, I want scaffold output to identify source-map edits so new pack code can be found by `def find-by-file` and `docs graph`.",
+      "acceptanceCriteria": [
+        "Scaffold preview reports source-map candidate paths for implementation and test files.",
+        "Spec skeleton includes conservative top-level `sources:` entries for generated implementation/test paths.",
+        "Candidate output distinguishes generated files from suggested edits to existing docs.",
+        "`def find-by-file` guidance is included in preview output.",
+        "No source comments are added by default.",
+        "Tests verify source-map candidate paths are repository-relative and normalized.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter operational-ontology test -- pack` - operational ontology pack validation regression",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status operational-ontology-pack-interface --json`",
+        "`node packages/cli/dist/index.js def find-by-file packages/operational-ontology/src/internal/pack-core.ts`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-007"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-009",
+      "title": "Add Known-Pack Registration Candidate",
+      "description": "As an ontology operator, I want scaffold output to show how a new pack would be added to known-pack resolution without mutating the resolver automatically.",
+      "acceptanceCriteria": [
+        "Scaffold preview includes a known-pack candidate targeting `packages/cli/src/lib/known-ontology-packs.ts`.",
+        "Candidate includes import path, pack id, and export symbol name.",
+        "Candidate is marked as manual by default.",
+        "Scaffold write mode does not mutate known-pack resolver automatically.",
+        "Add tests verifying candidate generation for kebab-case pack ids.",
+        "Unknown pack activation behavior remains unchanged.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter operational-ontology test -- pack` - operational ontology pack validation regression",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status operational-ontology-pack-interface --json`",
+        "`node packages/cli/dist/index.js def find-by-file packages/operational-ontology/src/internal/pack-core.ts`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-010",
+      "title": "Implement Pack Validate CLI",
+      "description": "As a pack author, I want a validation command that checks a pack against the runtime contract and authoring readiness.",
+      "acceptanceCriteria": [
+        "Add `qa-sdk ontology pack validate <pack-ref>`.",
+        "Validate runtime pack shape using `validateOperationalOntologyPack()`.",
+        "Report pack validation issues with source, path, code, and message.",
+        "When pack-ref is a known pack id, resolve it through known-pack resolver.",
+        "When pack-ref is a file path, load or import it using a documented supported path.",
+        "Validate referenced implementation/test files where paths are statically available from blueprints or scaffold metadata.",
+        "Validate docs/source-map readiness when a matching docs family exists.",
+        "JSON output includes `valid`, `issues`, `packId`, `identity`, `componentSchema`, `systemBindings`, and readiness sections.",
+        "Text output is concise and actionable.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter operational-ontology test -- pack` - operational ontology pack validation regression",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status operational-ontology-pack-interface --json`",
+        "`node packages/cli/dist/index.js def find-by-file packages/operational-ontology/src/internal/pack-core.ts`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-011",
+      "title": "Add Pack Authoring Docs And Rules",
+      "description": "As a future maintainer, I want documentation explaining how to create a pack through the scaffold workflow.",
+      "acceptanceCriteria": [
+        "Update `operational-ontology-pack-interface.spec.md` with scaffold/validate workflow.",
+        "Add or update a rule/cases document describing pack authoring decisions.",
+        "Document pack id naming rules.",
+        "Document scaffold dry-run/write policy.",
+        "Document known-pack registration candidate policy.",
+        "Document source-map candidate policy.",
+        "Document identity/data/system separation as the authoring philosophy.",
+        "Document ECS as a useful reference model, not as the only supported architecture.",
+        "Documentation explicitly says scaffold does not activate packs.",
+        "Documentation references existing programming-artifact and authorization packs as examples.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter operational-ontology test -- pack` - operational ontology pack validation regression",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status operational-ontology-pack-interface --json`",
+        "`node packages/cli/dist/index.js def find-by-file packages/operational-ontology/src/internal/pack-core.ts`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-005",
+        "US-006",
+        "US-007",
+        "US-008",
+        "US-009",
+        "US-010"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-012",
+      "title": "Verify Pack Authoring Workflow Operationally",
+      "description": "As a reviewer, I want command evidence proving scaffold and validate work without breaking existing packs.",
+      "acceptanceCriteria": [
+        "Run dry-run scaffold for a temporary pack id and record JSON summary.",
+        "Run write-mode scaffold in a temporary directory and verify files are created.",
+        "Run pack validate for `programming-artifact-ontology`.",
+        "Run pack validate for `authorization-ontology`.",
+        "Run docs status for `operational-ontology-pack-interface`.",
+        "Run `def validate`.",
+        "Run all quality gates.",
+        "Record verification results in PRD notes or a generated inventory/report file.",
+        "`pnpm --filter @qa-sdk/cli test -- docs` - docs control-plane and CLI regression tests",
+        "`pnpm --filter @qa-sdk/cli typecheck` - CLI type checking",
+        "`pnpm --filter @qa-sdk/cli build` - CLI bundle validation",
+        "`pnpm --filter operational-ontology test -- pack` - operational ontology pack validation regression",
+        "`node packages/cli/dist/index.js def validate` - definition graph and source-map validation",
+        "`node packages/cli/dist/index.js docs status operational-ontology-pack-interface --json`",
+        "`node packages/cli/dist/index.js def find-by-file packages/operational-ontology/src/internal/pack-core.ts`",
+        "`node packages/cli/dist/index.js docs drift --prd tasks/prd-docs-topdown-lifecycle-inventory-alignment.json --json`"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-004",
+        "US-011"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-16T17:09:50.278Z"
+  }
+}

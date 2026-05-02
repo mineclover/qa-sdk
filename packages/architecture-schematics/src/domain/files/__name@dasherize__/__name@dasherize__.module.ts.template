@@ -1,0 +1,58 @@
+import { Module } from "@nestjs/common";
+import { EventPublisherPort, NoopEventPublisher } from "nest-service-kit";
+
+import { <%= classify(name) %>LoggerPort } from "./application/ports/<%= dasherize(name) %>-logger.port";
+import { <%= classify(name) %>OutboxPort } from "./application/ports/<%= dasherize(name) %>-outbox.port";
+import { <%= classify(name) %>RepositoryPort } from "./application/ports/<%= dasherize(name) %>-repository.port";
+import { <%= classify(name) %>TransactionPort } from "./application/ports/<%= dasherize(name) %>-transaction.port";
+<% if (includeReadModel) { %>import { <%= classify(name) %>ReadModelPort } from "./application/queries/<%= dasherize(name) %>.read-model";
+<% } %>
+import { <%= classify(name) %>UseCase } from "./application/use-cases/<%= dasherize(name) %>.use-case";
+import { Console<%= classify(name) %>Logger } from "./infrastructure/logging/<%= dasherize(name) %>.logger";
+import { <%= classify(name) %>OutboxAdapter } from "./infrastructure/outbox/<%= dasherize(name) %>.outbox";
+import { Drizzle<%= classify(name) %>Repository } from "./infrastructure/persistence/<%= dasherize(name) %>.repository";
+<% if (includeReadModel) { %>import { Repository<%= classify(name) %>ReadModel } from "./infrastructure/read-model/<%= dasherize(name) %>.read-model";
+<% } %>
+import { InMemory<%= classify(name) %>Transaction } from "./infrastructure/transaction/<%= dasherize(name) %>.transaction";
+import { <%= classify(name) %>UnitOfWorkStore } from "./infrastructure/transaction/<%= dasherize(name) %>.unit-of-work";
+<% if (includeBff) { %>import { <%= classify(name) %>DetailBff } from "./presentation/bff/<%= dasherize(name) %>-detail.bff";
+import { <%= classify(name) %>DetailController } from "./presentation/bff/<%= dasherize(name) %>-detail.controller";
+<% } %>
+import { <%= classify(name) %>Controller } from "./presentation/http/<%= dasherize(name) %>.controller";
+
+@Module({
+  controllers: [<%= classify(name) %>Controller<% if (includeBff) { %>, <%= classify(name) %>DetailController<% } %>],
+  providers: [
+    <%= classify(name) %>UseCase,
+    <%= classify(name) %>UnitOfWorkStore,
+    <% if (includeBff) { %><%= classify(name) %>DetailBff,
+    <% } %>
+    {
+      provide: <%= classify(name) %>RepositoryPort,
+      useClass: Drizzle<%= classify(name) %>Repository,
+    },
+    {
+      provide: <%= classify(name) %>OutboxPort,
+      useClass: <%= classify(name) %>OutboxAdapter,
+    },
+    {
+      provide: <%= classify(name) %>TransactionPort,
+      useClass: InMemory<%= classify(name) %>Transaction,
+    },
+    {
+      provide: <%= classify(name) %>LoggerPort,
+      useClass: Console<%= classify(name) %>Logger,
+    },
+    <% if (includeReadModel) { %>{
+      provide: <%= classify(name) %>ReadModelPort,
+      useClass: Repository<%= classify(name) %>ReadModel,
+    },
+    <% } %>
+    {
+      provide: EventPublisherPort,
+      useClass: NoopEventPublisher,
+    },
+  ],
+  exports: [<%= classify(name) %>UseCase],
+})
+export class <%= classify(name) %>Module {}

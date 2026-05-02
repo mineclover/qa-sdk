@@ -1,3 +1,6 @@
+// @def.boundary spec-engine-system
+// @def.doc spec-engine-system
+
 /**
  * 종단 라이프사이클 시나리오 테스트.
  *
@@ -11,17 +14,12 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
-import { GraphRegistry } from "../dkg/graph-registry.js";
-import { deriveFromCatalog } from "../dkg/catalog-derive.js";
-import { analyzeImpact } from "../dkg/skills/analyze-impact.js";
-import { inferMigrator } from "../dkg/skills/infer-migrator.js";
-import { versionEventFromDiff } from "../dkg/skills/version-event-derive.js";
-import { scaffoldDecision } from "../dkg/skills/decision-scaffold.js";
+import { GraphRegistry, deriveFromCatalog, analyzeImpact, inferMigrator, versionEventFromDiff, scaffoldDecision } from "dkg";
 import { InMemoryRegistry } from "./registry-port.js";
 import { publishSpec } from "./publish.js";
 import { seal, activateAndPropagate } from "./lifecycle.js";
 import type { PrefixSpec } from "../spec/prefix-spec.types.js";
-import type { DomainNode, ConsumerNode, ObservationNode } from "../dkg/dkg.types.js";
+import type { DomainNode, ConsumerNode, ObservationNode } from "dkg";
 
 let graph: GraphRegistry;
 let registry: InMemoryRegistry;

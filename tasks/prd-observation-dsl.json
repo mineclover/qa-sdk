@@ -19,7 +19,9 @@
       ],
       "priority": 1,
       "dependsOn": [],
-      "notes": "기존 tracking prefix와 구분: tracking은 행동(click/view/scroll), page_view는 화면 진입 자체. 다른 의사결정 단위."
+      "passes": true,
+      "notes": "기존 tracking prefix와 구분: tracking은 행동(click/view/scroll), page_view는 화면 진입 자체. 다른 의사결정 단위.",
+      "completionNotes": "이미 구현됨: page_view prefix (svc_ref × page × locale × userType 4차원). PRD보다 확장된 형태로 svc_ref 서비스 바인딩 포함."
     },
     {
       "id": "OD-002",
@@ -37,7 +39,9 @@
       ],
       "priority": 1,
       "dependsOn": [],
-      "notes": "api_path는 도메인 리소스 경로. URL 전체가 아닌 논리적 리소스. 새로운 API 추가 시 entry append로 충분해야 함."
+      "passes": true,
+      "notes": "api_path는 도메인 리소스 경로. URL 전체가 아닌 논리적 리소스. 새로운 API 추가 시 entry append로 충분해야 함.",
+      "completionNotes": "이미 구현됨: endpoint prefix (svc_ref × resource_type × http_method × api_version). api_path 대신 resource_type 축 사용. API 경로는 좌표 밖(payload)."
     },
     {
       "id": "OD-003",
@@ -55,7 +59,9 @@
       ],
       "priority": 2,
       "dependsOn": [],
-      "notes": "기존 event prefix와 구분: event는 '무엇이 발생했는가', flow_point는 '흐름에서 어디에 있는가'. event가 데이터라면 flow_point는 위치."
+      "passes": true,
+      "notes": "기존 event prefix와 구분: event는 '무엇이 발생했는가', flow_point는 '흐름에서 어디에 있는가'. event가 데이터라면 flow_point는 위치.",
+      "completionNotes": "이미 구현됨: flow_point prefix (svc_ref × flow_name × flow_step × flow_variant 4차원). v1+v2 버전 존재."
     },
     {
       "id": "OD-004",
@@ -74,7 +80,9 @@
       ],
       "priority": 1,
       "dependsOn": ["OD-001", "OD-002"],
-      "notes": "PartialBinder는 이미 weighted-index에 구현됨. 여기서는 SDK 레벨에서 환경 변수와 연결하는 래퍼."
+      "passes": true,
+      "notes": "PartialBinder는 이미 weighted-index에 구현됨. 여기서는 SDK 레벨에서 환경 변수와 연결하는 래퍼.",
+      "completionNotes": "이미 구현됨: packages/context/src/qa-context.ts — createQaContext() + createQaContextAsync(). service prefix auto-injection, DSL session mode(useDsl), track/encode/decode/resolve 전체 지원."
     },
     {
       "id": "OD-005",
@@ -94,7 +102,9 @@
       ],
       "priority": 2,
       "dependsOn": ["OD-001", "OD-002", "OD-003", "OD-004"],
-      "notes": "이것이 '비즈니스 로직의 경우의 수를 제어하는' 핵심 DSL. 흐름 정의 = 의사결정의 구체화."
+      "passes": true,
+      "notes": "이것이 '비즈니스 로직의 경우의 수를 제어하는' 핵심 DSL. 흐름 정의 = 의사결정의 구체화.",
+      "completionNotes": "이미 구현됨: packages/spec-core/src/dkg/flow-definition.ts — FlowDefinition/FlowPoint/FlowDefinitionInput 타입 + defineFlow()/serializeFlow()/deserializeFlow() 함수. lifecycle-e2e.test.ts에서 checkout/signup 흐름 테스트."
     },
     {
       "id": "OD-006",
@@ -111,7 +121,9 @@
       ],
       "priority": 3,
       "dependsOn": ["OD-001", "OD-002", "OD-003"],
-      "notes": "DKG bootstrap를 확장하여 관측 포인트 prefix들을 포함. 기존 34노드/35엣지에 추가."
+      "passes": true,
+      "notes": "DKG bootstrap를 확장하여 관측 포인트 prefix들을 포함. 기존 34노드/35엣지에 추가.",
+      "completionNotes": "이미 구현됨: observation-domain에 page_view/endpoint/flow_point 포함. IL-checkout-flow 등 14개 IntentLink 존재. dsl-checkout/dsl-user-behavior 등 DSL 번들 + 스킬 정의 완료."
     },
     {
       "id": "OD-007",
@@ -129,7 +141,9 @@
       ],
       "priority": 2,
       "dependsOn": ["OD-004"],
-      "notes": "문자열 식별자가 영구 고정이므로 migrator 함수 불필요. decode → re-encode로 항상 마이그레이션 가능. 이것이 DSL DB의 마이그레이션 전략."
+      "passes": true,
+      "notes": "문자열 식별자가 영구 고정이므로 migrator 함수 불필요. decode → re-encode로 항상 마이그레이션 가능. 이것이 DSL DB의 마이그레이션 전략.",
+      "completionNotes": "이미 구현됨: spec-core/src/dkg/resolve.ts + context/src/qa-context.ts — resolve() 함수 2곳. ResolveResult 타입, v1→v2 자동 마이그레이션, lifecycle-e2e.test.ts에서 검증."
     },
     {
       "id": "OD-008",
@@ -147,7 +161,9 @@
       ],
       "priority": 3,
       "dependsOn": ["OD-005", "OD-006"],
-      "notes": "기존 dkg.ts CLI에 추가. flows 조회는 FlowDefinition을 spec-loader 또는 하드코딩으로 로드."
+      "passes": true,
+      "notes": "기존 dkg.ts CLI에 추가. flows 조회는 FlowDefinition을 spec-loader 또는 하드코딩으로 로드.",
+      "completionNotes": "이미 구현됨: dkg flow-schemas/flow-schema/impact/axes/prefixes/domains CLI 명령어 + flow.ts에 flow list/start/select/status/trace/analyze 명령어 존재."
     },
     {
       "id": "OD-009",
@@ -164,7 +180,9 @@
       ],
       "priority": 3,
       "dependsOn": ["OD-001", "OD-002", "OD-003"],
-      "notes": "이것은 1회성 대규모 변경. 이후에는 축 추가 시 optimalCapacity를 기본으로 적용하면 됨. 기존 데이터가 없으므로 stride-break 비용 없음."
+      "passes": true,
+      "notes": "이것은 1회성 대규모 변경. 이후에는 축 추가 시 optimalCapacity를 기본으로 적용하면 됨. 기존 데이터가 없으므로 stride-break 비용 없음.",
+      "completionNotes": "이미 구현됨: convergence/src/capacity-optimizer.ts — optimalCapacity/optimizeCapacities/optimizeWithImpact 함수. 모든 축 capacity가 nextPowerOf2(entries×2) 규칙 준수."
     },
     {
       "id": "OD-010",
@@ -182,7 +200,12 @@
       ],
       "priority": 3,
       "dependsOn": ["OD-005", "OD-006", "OD-007", "OD-009"],
-      "notes": "이 테스트가 통과하면 '차원 압축 기반 DSL DB'의 전체 라이프사이클이 증명된 것. 의사결정(prefix 정의) → 고정(seal) → 운용(encode/decode) → 관측(flow_point) → 마이그레이션(resolve) → 영향 분석(DKG) 전체 경로."
+      "passes": true,
+      "notes": "이 테스트가 통과하면 '차원 압축 기반 DSL DB'의 전체 라이프사이클이 증명된 것. 의사결정(prefix 정의) → 고정(seal) → 운용(encode/decode) → 관측(flow_point) → 마이그레이션(resolve) → 영향 분석(DKG) 전체 경로.",
+      "completionNotes": "이미 구현됨: spec-core/src/dkg/lifecycle-e2e.test.ts — 12개 E2E 테스트. checkout flow 정의, roundtrip, resolve 마이그레이션, DKG impact, IntentLink, self-evaluation 전체 검증."
     }
-  ]
+  ],
+  "metadata": {
+    "updatedAt": "2026-03-24T04:00:00.000Z"
+  }
 }

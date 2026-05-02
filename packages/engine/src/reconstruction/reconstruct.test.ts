@@ -1,3 +1,6 @@
+// @def.boundary qa-sdk-engine-system
+// @def.doc qa-sdk-engine-system
+
 import { describe, expect, it } from "vitest";
 import { reconstruct } from "./reconstruct.js";
 import type { EventRecord } from "@qa-sdk/core";
@@ -198,7 +201,7 @@ describe("reconstruct — serviceName propagation", () => {
     expect(graph.nodes[0].service_name).toBeUndefined();
   });
 
-  it("enables source filtering in matchGraphs via service_name", () => {
+  it("enables source filtering in matching via service_name", () => {
     const records = [
       buildRecord({ log_id: "log_a", span_id: "span_a", event_key: "order.placed" }),
     ];

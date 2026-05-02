@@ -1,0 +1,191 @@
+tags:
+  - name: task
+    description: Task command and read-model API.
+paths:
+  /tasks:
+    post:
+      tags: [task]
+      operationId: createTask
+      summary: Create a new task.
+      x-domain: task
+      x-architecture-slice: task-command-write-model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskCommand"
+      responses:
+        "201":
+          description: Task created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskReadModel"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    get:
+      tags: [task]
+      operationId: listTasksByProject
+      summary: List tasks for a project.
+      x-domain: task
+      x-architecture-slice: task-read-model-sync
+      parameters:
+        - name: projectId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Task list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TaskReadModel"
+  /tasks/{taskId}:
+    get:
+      tags: [task]
+      operationId: getTaskReadModel
+      summary: Read denormalized task view.
+      x-domain: task
+      x-architecture-slice: task-read-model-sync
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Task read model.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskReadModel"
+        "404":
+          description: Task not found.
+    put:
+      tags: [task]
+      operationId: updateTask
+      summary: Update task properties.
+      x-domain: task
+      x-architecture-slice: task-command-write-model
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskCommand"
+      responses:
+        "200":
+          description: Task updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskReadModel"
+    delete:
+      tags: [task]
+      operationId: deleteTask
+      summary: Delete a task.
+      x-domain: task
+      x-architecture-slice: task-command-write-model
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Task deleted.
+  /tasks/{taskId}/subtasks:
+    get:
+      tags: [task]
+      operationId: listSubtasks
+      summary: List subtasks for a task.
+      x-domain: task
+      x-architecture-slice: task-read-model-sync
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Subtasks.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TaskReadModel"
+components:
+  schemas:
+    CreateTaskCommand:
+      type: object
+      required: [projectId, title]
+      properties:
+        projectId:
+          type: string
+        title:
+          type: string
+        assigneeId:
+          type: string
+        status:
+          type: string
+          enum: [todo, in_progress, done, blocked]
+        parentTaskId:
+          type: string
+      additionalProperties: false
+    UpdateTaskCommand:
+      type: object
+      properties:
+        projectId:
+          type: string
+        title:
+          type: string
+        assigneeId:
+          type: string
+        status:
+          type: string
+          enum: [todo, in_progress, done, blocked]
+        parentTaskId:
+          type: string
+      additionalProperties: false
+    TaskReadModel:
+      type: object
+      required: [id, projectId, title, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        title:
+          type: string
+        assigneeId:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [todo, in_progress, done, blocked]
+          x-openmetadata-tags: [Tier.Tier2]
+        parentTaskId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: false

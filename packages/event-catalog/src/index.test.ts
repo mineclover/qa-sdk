@@ -17,9 +17,10 @@ const expectedCategoryCounts = {
   form: 5,
   session: 6,
   network: 8,
-  execution: 9,
+  execution: 16,
   outcome: 7,
   quality: 8,
+  infrastructure: 15,
 } satisfies Record<EventCategory, number>;
 
 const expectedV1MinimalKeys = [
@@ -77,8 +78,8 @@ const validGraphRoles = [
 
 describe("@qa-sdk/event-catalog", () => {
   it("registers all 60 core events with the expected category counts", () => {
-    expect(allCoreEvents).toHaveLength(60);
-    expect(new Set(allCoreEvents.map((event) => event.event_key)).size).toBe(60);
+    expect(allCoreEvents).toHaveLength(82);
+    expect(new Set(allCoreEvents.map((event) => event.event_key)).size).toBe(82);
 
     const categoryCounts = Object.fromEntries(
       Object.entries(coreEventsByCategory).map(([category, events]) => [
@@ -172,10 +173,10 @@ describe("@qa-sdk/event-catalog", () => {
     const goalEligibleEvents = allCoreEvents
       .filter((event) => event.graph_hint.goal_eligible)
       .map((event) => event.event_key)
-      .sort();
+      .toSorted();
 
     expect(goalEligibleEvents).toEqual(
-      ["success", "complete", "conversion", "form_submit_success"].sort(),
+      ["success", "complete", "conversion", "form_submit_success"].toSorted(),
     );
   });
 });

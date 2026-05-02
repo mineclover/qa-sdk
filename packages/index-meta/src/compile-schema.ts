@@ -1,5 +1,8 @@
+// @def.boundary index-meta-system
+// @def.doc index-meta-system
+
 import { ValidationError } from "./errors.js";
-import { type TableDef, isLeafVersion } from "./table-def.js";
+import { type TableDef } from "./table-def.js";
 
 // ── Output 타입 ───────────────────────────────────────────
 
@@ -92,6 +95,7 @@ class CompiledSchemaImpl implements CompiledSchema {
       if (!fromMap.has(id)) {
         added.push(toSpec);
       } else {
+        // eslint-disable-next-line typescript/no-non-null-assertion -- fromMap.has(id) 확인 후 접근
         const change = diffVersions(id, fromMap.get(id)!, toSpec);
         if (change) changed.push(change);
       }
@@ -167,6 +171,7 @@ export function compileSchema(defs: TableDef[]): CompiledSchema {
         const dims: CompositeVersionDim[] = [];
         let capacity = 1;
 
+        // eslint-disable-next-line typescript/no-non-null-assertion -- composite(source 없음)는 반드시 dims 보유
         for (const dimDef of def.dims!) {
           const ref = cv.refs[dimDef.id];
           const refSpec = specMap.get(ref.prefix);

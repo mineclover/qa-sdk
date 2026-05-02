@@ -1,0 +1,67 @@
+import { Injectable } from "@nestjs/common";
+
+import { <%= classify(name) %>Entity } from "../../domain";
+import type { Create<%= classify(name) %>Command } from "../commands/create-<%= dasherize(name) %>.command";
+import { <%= classify(name) %>LoggerPort } from "../ports/<%= dasherize(name) %>-logger.port";
+import { <%= classify(name) %>OutboxPort } from "../ports/<%= dasherize(name) %>-outbox.port";
+import { <%= classify(name) %>RepositoryPort } from "../ports/<%= dasherize(name) %>-repository.port";
+import { <%= classify(name) %>TransactionPort } from "../ports/<%= dasherize(name) %>-transaction.port";
+
+@Injectable()
+export class <%= classify(name) %>UseCase {
+  constructor(
+    private readonly repository: <%= classify(name) %>RepositoryPort,
+    private readonly outbox: <%= classify(name) %>OutboxPort,
+    private readonly transaction: <%= classify(name) %>TransactionPort,
+    private readonly logger: <%= classify(name) %>LoggerPort,
+  ) {}
+
+  async create(command: Create<%= classify(name) %>Command): Promise<void> {
+    const traceId = command.traceId ?? `trace-${command.id}`;
+    const correlationId = command.correlationId ?? traceId;
+    await this.logger.record({
+      traceId,
+      correlationId,
+      domain: "<%= dasherize(name) %>",
+      useCase: "<%= classify(name) %>UseCase.create",
+      aggregateId: command.id,
+      commandName: "Create<%= classify(name) %>Command",
+      outcome: "started",
+    });
+
+    try {
+      await this.transaction.run("<%= dasherize(name) %>.create", async (scope) => {
+        const entity = <%= classify(name) %>Entity.create({ id: command.id });
+        await this.repository.save(entity, scope);
+        await this.outbox.appendCreated({
+          id: command.id,
+          occurredAt: new Date().toISOString(),
+        }, scope);
+      });
+
+      await this.logger.record({
+        traceId,
+        correlationId,
+        domain: "<%= dasherize(name) %>",
+        useCase: "<%= classify(name) %>UseCase.create",
+        aggregateId: command.id,
+        commandName: "Create<%= classify(name) %>Command",
+        eventName: "<%= dasherize(name) %>.created",
+        eventVersion: "v1",
+        outcome: "success",
+      });
+    } catch (error) {
+      await this.logger.record({
+        traceId,
+        correlationId,
+        domain: "<%= dasherize(name) %>",
+        useCase: "<%= classify(name) %>UseCase.create",
+        aggregateId: command.id,
+        commandName: "Create<%= classify(name) %>Command",
+        outcome: "failure",
+        errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+      });
+      throw error;
+    }
+  }
+}
