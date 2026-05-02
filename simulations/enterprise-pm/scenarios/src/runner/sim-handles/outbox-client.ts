@@ -11,6 +11,8 @@
 //                                           dispatcherIds: [[id, dispatcherId], ...] }
 //
 // dispatcher 처리 완료 polling — 모든 id의 publishedAt이 채워질 때까지 대기.
+//
+// Stage 4 §4.7 — outbox admin endpoint 응답 shape 는 sim-outbox-view 패키지에서 SSOT 로 import.
 
 export type FetchLike = (
   input: string,
