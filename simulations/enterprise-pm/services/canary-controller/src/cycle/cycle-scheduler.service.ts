@@ -11,7 +11,7 @@
 // Pass 1 write 실패 → Pass 2 SKIP.
 // 다음 사이클은 SIM_CONTROLLER_CYCLE_MS 후.
 
-import { Injectable, type OnModuleInit } from "@nestjs/common";
+import { Inject, Injectable, type OnModuleInit } from "@nestjs/common";
 import { SchedulerRegistry } from "@nestjs/schedule";
 import { AdvisoryLockService } from "../lock/advisory-lock.service.js";
 import { MetricsScrapeService } from "../metrics/metrics-scrape.service.js";
@@ -36,14 +36,21 @@ export class CycleSchedulerService implements OnModuleInit {
   private lastReplicaChangeAt = 0;
 
   constructor(
-    private readonly registry: SchedulerRegistry,
-    private readonly lock: AdvisoryLockService,
-    private readonly scrape: MetricsScrapeService,
+    // vitest 환경은 emitDecoratorMetadata 를 무시하므로 @Inject 토큰 명시 (Stage 1a 컨벤션).
+    @Inject(SchedulerRegistry) private readonly registry: SchedulerRegistry,
+    @Inject(AdvisoryLockService) private readonly lock: AdvisoryLockService,
+    @Inject(MetricsScrapeService) private readonly scrape: MetricsScrapeService,
+    @Inject(CategoryVerdictService)
     private readonly verdict: CategoryVerdictService,
+    @Inject(SafetyDecisionService)
     private readonly safety: SafetyDecisionService,
+    @Inject(ResourceDecisionService)
     private readonly resource: ResourceDecisionService,
+    @Inject(DecisionBuilderService)
     private readonly builder: DecisionBuilderService,
+    @Inject(ActionExecutorService)
     private readonly action: ActionExecutorService,
+    @Inject(DecisionRingBuffer)
     private readonly ringBuffer: DecisionRingBuffer,
   ) {}
 
@@ -125,7 +132,10 @@ export class CycleSchedulerService implements OnModuleInit {
           this.logger.error({ err }, "resource write failed");
         }
         try {
-          await this.action.executeResource(resOut.action, this.current);
+          // spec 2026-05-02 §6 + Task 1b.10 — pin 활성화 service 는 compose SKIP + alert.
+          await this.action.executeResource(resOut.action, this.current, {
+            cycleId,
+          });
         } catch (err) {
           this.logger.error(
             { err },

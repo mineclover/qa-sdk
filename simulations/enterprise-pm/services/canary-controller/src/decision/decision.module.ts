@@ -1,6 +1,9 @@
 // @def.boundary sim-canary-controller
 // @def.doc canary-controller-config
-// controller-config.yaml을 부팅 시 1회 파싱 → verdict / safety / resource / builder 서비스 wire.
+// controller-config.yaml 을 부팅 시 1회 파싱 → verdict / safety / resource / builder 서비스 wire.
+// spec 2026-05-02 §8 — CategoryVerdictService 의 evaluate(scrape) 결과 perf 필드를
+//                       PerfWarnFault.applyTo 로 wrap (enabled 시 PASS → WARN 격상,
+//                       FAIL/WARN 보존).
 
 import { Module } from "@nestjs/common";
 import { readFileSync } from "node:fs";
@@ -8,6 +11,7 @@ import { parse as parseYaml } from "yaml";
 import {
   CategoryVerdictService,
   type VerdictConfig,
+  type CategoryVerdicts,
 } from "../verdict/category-verdict.service.js";
 import {
   SafetyDecisionService,
@@ -18,7 +22,28 @@ import {
   type ResourceConfig,
 } from "./resource-decision.service.js";
 import { DecisionBuilderService } from "./decision-builder.service.js";
+import { PerfWarnFault } from "../fault/perf-warn.js";
+import { FaultModule } from "../fault/fault.module.js";
+import type { ScrapeResult } from "../metrics/metrics-scrape.service.js";
 import { env } from "../config/env.js";
+
+/**
+ * spec §8 perf-warn — CategoryVerdictService 결과 perf 필드를 wrap.
+ * fault disabled → passthrough. enabled → PASS → WARN, FAIL 보존, WARN 그대로.
+ */
+class PerfWarnAwareVerdictService extends CategoryVerdictService {
+  constructor(
+    cfg: VerdictConfig,
+    private readonly perfWarn: PerfWarnFault,
+  ) {
+    super(cfg);
+  }
+  override evaluate(scrape: ScrapeResult): CategoryVerdicts {
+    const result = super.evaluate(scrape);
+    result.perf = this.perfWarn.applyTo(result.perf);
+    return result;
+  }
+}
 
 interface ControllerConfigYaml {
   perf: VerdictConfig["perf"];
@@ -36,10 +61,11 @@ function loadConfig(): ControllerConfigYaml {
 }
 
 @Module({
+  imports: [FaultModule],
   providers: [
     {
       provide: CategoryVerdictService,
-      useFactory: () => {
+      useFactory: (perfWarn: PerfWarnFault) => {
         const cfg = loadConfig();
         const verdictCfg: VerdictConfig = {
           perf: cfg.perf,
@@ -55,8 +81,9 @@ function loadConfig(): ControllerConfigYaml {
             cooldownUpMs: env.SIM_SCALE_COOLDOWN_UP_MS,
           },
         };
-        return new CategoryVerdictService(verdictCfg);
+        return new PerfWarnAwareVerdictService(verdictCfg, perfWarn);
       },
+      inject: [PerfWarnFault],
     },
     {
       provide: SafetyDecisionService,
