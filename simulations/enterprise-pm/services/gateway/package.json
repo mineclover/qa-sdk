@@ -49,6 +49,7 @@
     "jose": "^5.9.0",
     "permission-engine": "workspace:*",
     "sim-identifier-grammar": "workspace:*",
+    "sim-internal-network": "workspace:*",
     "zod": "^3.24.2"
   },
   "devDependencies": {
