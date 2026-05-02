@@ -15,6 +15,8 @@ import { spawn } from "node:child_process";
 import { buildVersionTag, type VersionTag } from "sim-identifier-grammar";
 import type { RoutingPush } from "@qa-sdk/sim-gateway/routing";
 import { createLogger } from "../lib/logger.js";
+import type { ScalePinService } from "../admin/scale-pin.service.js";
+import type { DecisionRingBuffer } from "../decision/decision-ring-buffer.js";
 
 interface ExecResult {
   stdout: string;
@@ -48,6 +50,12 @@ export interface ActionConfig {
   serviceName: string;
   catalog: SimServiceCatalogPort;
   portRegistry: PortRegistryPort;
+  /**
+   * spec §6 + Task 1b.10 — pin 활성화 service 에 대해 compose 호출 SKIP + alert 발행.
+   * 부재 시 pin 검사 비활성 (production 은 AppModule 에서 항상 wire).
+   */
+  pin?: ScalePinService;
+  ring?: DecisionRingBuffer;
   /** 테스트 주입 — production 은 docker spawn 사용. */
   scaleExec?: (argv: string[]) => Promise<ExecResult>;
 }
@@ -160,34 +168,68 @@ export class ActionExecutorService {
     );
   }
 
+  /**
+   * spec §6 + Task 1b.10 — scale 실행 전 pin 검사.
+   * - pin 이 set 된 service 는 compose --scale 호출 SKIP + ring 에
+   *   `scale-up-rejected` alert 발행.
+   * - 다른 service 는 정상 진행.
+   * - pin/ring 이 cfg 에 없으면 검사 비활성 (단위 테스트 backward compat).
+   */
   async executeResource(
     action: ResourceAction,
     current: { v1: number; v2: number },
+    ctx: { cycleId: string },
   ): Promise<void> {
     if (action.kind === "noop") return;
     if (action.target.v1 === current.v1 && action.target.v2 === current.v2) {
       this.logger.debug({ target: action.target }, "scale no-op");
       return;
     }
-    const argv = (svc: string, n: number) => [
-      "compose",
-      "-p",
-      this.cfg.composeProject,
-      "up",
-      "-d",
-      "--no-recreate",
-      "--scale",
-      `${svc}=${n}`,
-    ];
-    if (action.target.v1 !== current.v1) {
-      await this.exec(argv("sim-approval-api-v1", action.target.v1));
-    }
-    if (action.target.v2 !== current.v2) {
-      await this.exec(argv("sim-approval-api-v2", action.target.v2));
-    }
+
+    const apply = async (
+      service: string,
+      currentN: number,
+      targetN: number,
+    ): Promise<void> => {
+      if (currentN === targetN) return;
+      const pinned = this.cfg.pin?.getPin(service);
+      if (pinned !== undefined && pinned !== null) {
+        // compose --scale SKIP — alert 1 건만 ring 에 추가.
+        this.cfg.ring?.appendAlert({
+          cycleId: ctx.cycleId,
+          kind: "scale-up-rejected",
+          occurredAt: new Date().toISOString(),
+          details: {
+            reason: "pin-active",
+            service,
+            pinnedReplicas: pinned,
+            attemptedReplicas: targetN,
+          },
+        });
+        this.logger.info(
+          { service, pinned, attempted: targetN, cycleId: ctx.cycleId },
+          "scale skipped — pin active",
+        );
+        return;
+      }
+      await this.exec([
+        "compose",
+        "-p",
+        this.cfg.composeProject,
+        "up",
+        "-d",
+        "--no-recreate",
+        "--scale",
+        `${service}=${targetN}`,
+      ]);
+    };
+
+    await apply("sim-approval-api-v1", current.v1, action.target.v1);
+    await apply("sim-approval-api-v2", current.v2, action.target.v2);
+
     this.logger.info(
-      { target: action.target, reason: action.reason },
-      "compose scale ok",
+      { target: action.target, reason: action.reason, cycleId: ctx.cycleId },
+      "compose scale ok (pin-aware)",
     );
   }
 }

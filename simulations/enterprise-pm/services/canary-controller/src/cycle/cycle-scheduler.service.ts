@@ -125,7 +125,10 @@ export class CycleSchedulerService implements OnModuleInit {
           this.logger.error({ err }, "resource write failed");
         }
         try {
-          await this.action.executeResource(resOut.action, this.current);
+          // spec 2026-05-02 §6 + Task 1b.10 — pin 활성화 service 는 compose SKIP + alert.
+          await this.action.executeResource(resOut.action, this.current, {
+            cycleId,
+          });
         } catch (err) {
           this.logger.error(
             { err },

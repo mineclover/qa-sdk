@@ -133,6 +133,7 @@ describe("ActionExecutorService (spec 01 §5 + spec 2026-05-02 §7)", () => {
     await svc.executeResource(
       { kind: "scale", target: { v1: 2, v2: 1 }, reason: "test" },
       { v1: 2, v2: 1 },
+      { cycleId: "01HXSCALE000" },
     );
     expect(execSpy).not.toHaveBeenCalled();
   });
@@ -148,6 +149,7 @@ describe("ActionExecutorService (spec 01 §5 + spec 2026-05-02 §7)", () => {
     await svc.executeResource(
       { kind: "scale", target: { v1: 2, v2: 2 }, reason: "scale-up" },
       { v1: 2, v2: 1 },
+      { cycleId: "01HXSCALE001" },
     );
     expect(execSpy).toHaveBeenCalledTimes(1);
     expect(execSpy.mock.calls[0][0]).toEqual([
@@ -195,5 +197,120 @@ describe("ActionExecutorService (spec 01 §5 + spec 2026-05-02 §7)", () => {
     await expect(
       svc.executeSafety({ kind: "weight-update", weight: 25, revision: 1 }),
     ).rejects.toThrow(/catalog unreachable/);
+  });
+});
+
+// ----- spec 2026-05-02 §6 + Task 1b.10 — ActionExecutor pin awareness -----
+//
+// 4 케이스:
+//   (a) pin = null + scale-up → exec 호출
+//   (b) pin = 3 + scale-up target v2=4 → no exec + alert 1건
+//   (c) pin 이 다른 서비스에만 set → 영향 없음
+//   (d) alert payload 에 reason / pinnedReplicas / attemptedReplicas 포함
+
+import { ScaleStore } from "../admin/scale-store.js";
+import { ScalePinService } from "../admin/scale-pin.service.js";
+import { DecisionRingBuffer } from "../decision/decision-ring-buffer.js";
+
+describe("ActionExecutorService scale pin awareness (Task 1b.10)", () => {
+  it("(a) pin = null → exec 호출", async () => {
+    const exec = vi.fn(async () => ({ stdout: "", stderr: "" }));
+    const ring = new DecisionRingBuffer();
+    const pin = new ScalePinService(new ScaleStore());
+    const svc = new ActionExecutorService({
+      ...baseCfg,
+      catalog: makeCatalog({ stable: 1, candidate: 2 }),
+      portRegistry: makePortRegistry({}),
+      scaleExec: exec,
+      pin,
+      ring,
+    });
+    await svc.executeResource(
+      { kind: "scale", target: { v1: 2, v2: 2 }, reason: "load" },
+      { v1: 2, v2: 1 },
+      { cycleId: "01HXSCALE001" },
+    );
+    expect(exec).toHaveBeenCalledTimes(1);
+    expect(ring.countAlerts({ kind: "scale-up-rejected" })).toBe(0);
+  });
+
+  it("(b) pin = 3 → no exec + alert 1건", async () => {
+    const exec = vi.fn(async () => ({ stdout: "", stderr: "" }));
+    const ring = new DecisionRingBuffer();
+    const pin = new ScalePinService(new ScaleStore());
+    pin.pin("sim-approval-api-v2", 3);
+    const svc = new ActionExecutorService({
+      ...baseCfg,
+      catalog: makeCatalog({ stable: 1, candidate: 2 }),
+      portRegistry: makePortRegistry({}),
+      scaleExec: exec,
+      pin,
+      ring,
+    });
+    await svc.executeResource(
+      { kind: "scale", target: { v1: 2, v2: 4 }, reason: "load FAIL" },
+      { v1: 2, v2: 3 },
+      { cycleId: "01HXPIN0001" },
+    );
+    expect(exec).not.toHaveBeenCalled();
+    expect(ring.countAlerts({ kind: "scale-up-rejected" })).toBe(1);
+  });
+
+  it("(c) 다른 service 에 pin → 영향 없음", async () => {
+    const exec = vi.fn(async () => ({ stdout: "", stderr: "" }));
+    const ring = new DecisionRingBuffer();
+    const pin = new ScalePinService(new ScaleStore());
+    pin.pin("some-other-service", 5);
+    const svc = new ActionExecutorService({
+      ...baseCfg,
+      catalog: makeCatalog({ stable: 1, candidate: 2 }),
+      portRegistry: makePortRegistry({}),
+      scaleExec: exec,
+      pin,
+      ring,
+    });
+    await svc.executeResource(
+      { kind: "scale", target: { v1: 2, v2: 2 }, reason: "load" },
+      { v1: 2, v2: 1 },
+      { cycleId: "01HXSCALE003" },
+    );
+    expect(exec).toHaveBeenCalledTimes(1);
+    expect(ring.countAlerts({ kind: "scale-up-rejected" })).toBe(0);
+  });
+
+  it("(d) alert payload 에 reason / pinnedReplicas / attemptedReplicas 포함", async () => {
+    const exec = vi.fn(async () => ({ stdout: "", stderr: "" }));
+    const ring = new DecisionRingBuffer();
+    const appendSpy = vi.spyOn(ring, "appendAlert");
+    const pin = new ScalePinService(new ScaleStore());
+    pin.pin("sim-approval-api-v2", 3);
+    const svc = new ActionExecutorService({
+      ...baseCfg,
+      catalog: makeCatalog({ stable: 1, candidate: 2 }),
+      portRegistry: makePortRegistry({}),
+      scaleExec: exec,
+      pin,
+      ring,
+    });
+    await svc.executeResource(
+      { kind: "scale", target: { v1: 2, v2: 4 }, reason: "load FAIL" },
+      { v1: 2, v2: 3 },
+      { cycleId: "01HXPIN0004" },
+    );
+    expect(appendSpy).toHaveBeenCalledTimes(1);
+    expect(appendSpy.mock.calls[0]?.[0]).toMatchObject({
+      cycleId: "01HXPIN0004",
+      kind: "scale-up-rejected",
+      details: {
+        reason: "pin-active",
+        service: "sim-approval-api-v2",
+        pinnedReplicas: 3,
+        attemptedReplicas: 4,
+      },
+    });
+    // occurredAt 은 ISO-8601 (sim-decision-view 표준 — at 가 아닌 occurredAt 키).
+    const event = appendSpy.mock.calls[0]?.[0] as { occurredAt: string };
+    expect(typeof event.occurredAt).toBe("string");
+    expect(() => new Date(event.occurredAt).toISOString()).not.toThrow();
   });
 });
