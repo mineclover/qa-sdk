@@ -19,6 +19,8 @@ def:
       type: depends_on
     - target: doc-type-convention
       type: traces_to
+    - target: docs-control-plane-markdown-governance
+      type: refs
 ---
 
 # Docs Control Plane — 문서 바운더리 소비 규칙
@@ -53,6 +55,7 @@ Docs control plane의 문서 모듈화는 architecture-neutral한 Entry/Identity
 ## Authoring Rules
 
 - 새 document family는 가능하면 System-like transform boundary를 기준으로 잡는다. 예: graph traversal, graph reranking, PRD completion sync, pack scaffold, pack validate.
+- Markdown 상대경로, heading fragment, marker anchor, 임시 병합 preview는 `docs-control-plane-markdown-governance`를 따른다.
 - System-like 문서는 자신이 소비하는 Component-like data와 산출하는 read model을 명시해야 한다.
 - Component-like 문서는 data shape와 lifecycle만 정의하고, 검증/투영/동기화/CLI 실행 로직을 소유하지 않는다.
 - Entity-like id는 문서, source-map, PRD, artifact 전반에서 stable coordinate로 유지한다.

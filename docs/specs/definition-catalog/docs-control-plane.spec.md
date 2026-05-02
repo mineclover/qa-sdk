@@ -33,6 +33,8 @@ def:
       type: contains
     - target: docs-control-plane-cleanup
       type: contains
+    - target: docs-control-plane-markdown-governance
+      type: contains
     - target: docs-control-plane-test
       type: contains
     - target: docs-control-plane-prd
@@ -56,6 +58,7 @@ sources:
 - `docs-control-plane-graph`: document graph traversal, ranking, filtering, summary, source/evidence/role axes.
 - `docs-control-plane-bdd`: fenced `yaml bdd` extraction, BDD validation, `qa-sdk docs bdd` read-only commands.
 - `docs-control-plane-cleanup`: completed-record cleanup review/plan/apply surface and bounded cleanup rewrite model.
+- `docs-control-plane-markdown-governance`: markdown relative link scan/repair, heading marker anchor, root rebase, bundle preview rules.
 - `docs-control-plane-prd`: PRD context/scaffold/ralph-json/sync-completion command family.
 - `docs-control-plane-transform`: metadata transform dry-run preview surface.
 - `doc-envelope`: neutral read model package consumed by this system.
@@ -70,7 +73,7 @@ sources:
 | S | `docs-control-plane` | `packages/cli/src/commands/docs.ts` orchestration and command assembly |
 | I | `docs-control-plane-interface` | `packages/cli/src/command-groups/docs.commands.ts`, command handlers in `docs.ts` |
 | C | `doc-envelope`, role/follow-up/readiness metadata | `doc-envelope`, `packages/cli/src/lib/docs-control-plane/role-matrix.ts` |
-| S behavior | `docs-control-plane-graph`, `docs-control-plane-bdd`, `docs-control-plane-cleanup`, `docs-control-plane-prd`, `docs-control-plane-transform` | graph modules, BDD extraction/CLI functions, cleanup review/plan/apply, PRD transforms, metadata transform preview |
+| S behavior | `docs-control-plane-graph`, `docs-control-plane-bdd`, `docs-control-plane-cleanup`, `docs-control-plane-markdown-governance`, `docs-control-plane-prd`, `docs-control-plane-transform` | graph modules, BDD extraction/CLI functions, cleanup review/plan/apply, markdown link scan/repair/bundle preview, PRD transforms, metadata transform preview |
 | L/P | current docs family and `docs-control-plane-plan` | roadmap/organization only, no runtime ownership |
 
 ## SSOT 방향
