@@ -26,6 +26,7 @@
     "rxjs": "^7.8.1",
     "sim-decision-view": "workspace:*",
     "sim-identifier-grammar": "workspace:*",
+    "sim-internal-network": "workspace:*",
     "ulid": "^2.3.0",
     "yaml": "^2.5.0",
     "zod": "^3.24.2"

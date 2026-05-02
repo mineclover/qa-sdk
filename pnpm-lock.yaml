@@ -3427,6 +3427,9 @@ importers:
       sim-identifier-grammar:
         specifier: workspace:*
         version: link:../../../../packages/sim-identifier-grammar
+      sim-internal-network:
+        specifier: workspace:*
+        version: link:../../../../packages/sim-internal-network
       ulid:
         specifier: ^2.3.0
         version: 2.4.0
