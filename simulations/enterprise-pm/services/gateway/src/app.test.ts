@@ -149,3 +149,37 @@ describe("sim-gateway app — 통합 마운트", () => {
     }
   });
 });
+
+// spec 2026-05-02 §9 Stage 2 — sticky-consistency endpoint wiring.
+import { StickyDecisionTracker } from "./routing/sticky-decision-tracker.js";
+import { InMemoryRoutingStore } from "./routing/routing-table.js";
+
+describe("app wiring — sticky-consistency endpoint", () => {
+  it("internal → 200 / external → 404", async () => {
+    const tracker = new StickyDecisionTracker({ maxSize: 100 });
+    tracker.record("u-1", "v3", new Date());
+    const app = createApp({
+      authApiUrl: "http://x",
+      jwtSecret: SECRET,
+      jwtTtlSeconds: 300,
+      currentBitmapV: "uv1",
+      proxyTimeoutMs: 5000,
+      proxyTargets: TARGETS,
+      routingStore: new InMemoryRoutingStore(),
+      stickyTracker: tracker,
+    });
+    const ok = await app.fetch(
+      new Request("http://gw/admin/routing/sticky-consistency", {
+        headers: { "x-forwarded-for": "172.17.0.5" },
+      }),
+    );
+    expect(ok.status).toBe(200);
+    expect(((await ok.json()) as { sample: number }).sample).toBe(1);
+    const ng = await app.fetch(
+      new Request("http://gw/admin/routing/sticky-consistency", {
+        headers: { "x-forwarded-for": "8.8.8.8" },
+      }),
+    );
+    expect(ng.status).toBe(404);
+  });
+});

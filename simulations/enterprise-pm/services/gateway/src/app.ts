@@ -1,7 +1,9 @@
 // @def.boundary sim-gateway
 // @def.doc authorization-ontology-bitmap-pipeline
+// spec 2026-05-02 §9 Stage 2 — sticky-consistency endpoint wiring.
 
 import { Hono } from "hono";
+import { internalIpMiddleware } from "sim-internal-network";
 import { requestId } from "./middleware/request-id.js";
 import { traceparent } from "./middleware/traceparent.js";
 import { jwtVerifyMiddleware } from "./middleware/jwt-verify.js";
@@ -10,7 +12,9 @@ import { createHealthRoutes } from "./routes/health.js";
 import { createLoginRoute } from "./routes/login.js";
 import { createProxyRoutes, PROXY_TARGETS } from "./routes/proxy-routes.js";
 import { createAdminRoutingRoute } from "./routes/admin-routing.js";
+import { createStickyConsistencyHandler } from "./admin/sticky-consistency.handler.js";
 import { InMemoryRoutingStore } from "./routing/routing-table.js";
+import { StickyDecisionTracker } from "./routing/sticky-decision-tracker.js";
 import { parseCidrList, type Cidr } from "./lib/internal-network.js";
 
 export interface AppOptions {
@@ -32,16 +36,34 @@ export interface AppOptions {
    * (override middleware/admin route 모두 외부 요청으로 간주 — silent strip / 404).
    */
   internalCidrs?: Cidr[];
+  /**
+   * spec 2026-05-02 §9 Stage 2 — routing decision ring buffer. proxy-routes 의
+   * `decideRouteWithTracking` 호출에 주입되며 admin endpoint 가 ratio 산출에 쓴다.
+   * 미지정 시 빈 tracker (default size 1000) — legacy 호환 / 테스트 단순화.
+   */
+  stickyTracker?: StickyDecisionTracker;
 }
 
 export function createApp(opts: AppOptions) {
   const app = new Hono();
   const routingStore = opts.routingStore ?? new InMemoryRoutingStore();
   const internalCidrs = opts.internalCidrs ?? parseCidrList("");
+  // spec §9 Stage 2 — sticky tracker. 미지정 시 default size 로 빈 tracker.
+  const stickyTracker =
+    opts.stickyTracker ?? new StickyDecisionTracker({ maxSize: 1000 });
   app.use("*", requestId);
   app.use("*", traceparent);
   // x-canary-override는 admin/health/login 보다 앞에 둘 필요 없음 — protected 요청에만 의미.
   app.use("*", canaryOverrideMiddleware({ internalCidrs }));
+
+  // spec 2026-05-02 §9 Stage 2 — internal IP guard + admin endpoint.
+  // sim-internal-network 의 internalIpMiddleware 는 RFC1918 + loopback hardcoded.
+  // 외부 IP 요청 → 404 silent (spec §3, §11).
+  app.use("/admin/routing/sticky-consistency", internalIpMiddleware());
+  app.get(
+    "/admin/routing/sticky-consistency",
+    createStickyConsistencyHandler({ tracker: stickyTracker }),
+  );
 
   // /admin/routing — controller만 호출 (자체 internal-IP guard).
   app.route("/", createAdminRoutingRoute({ store: routingStore, internalCidrs }));
@@ -95,6 +117,7 @@ export function createApp(opts: AppOptions) {
       targets: opts.proxyTargets,
       timeoutMs: opts.proxyTimeoutMs,
       routingStore, // Plan C 단계 7 — Task 7.8에서 fall-through 결정 흐름 사용.
+      stickyTracker, // spec 2026-05-02 §9 Stage 2 — routing decision ring buffer.
     }),
   );
 

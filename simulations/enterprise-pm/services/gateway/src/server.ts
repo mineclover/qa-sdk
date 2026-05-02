@@ -11,6 +11,7 @@ import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 import { createLogger } from "./lib/logger.js";
 import { InMemoryRoutingStore } from "./routing/routing-table.js";
+import { StickyDecisionTracker } from "./routing/sticky-decision-tracker.js";
 import { parseCidrList } from "./lib/internal-network.js";
 import { bootstrapRouting, type FallbackTargets } from "./lib/routing-bootstrap.js";
 
@@ -20,6 +21,11 @@ const logger = createLogger(SERVICE_NAME);
 // Plan C 단계 7 — routing store + internal CIDR + controller bootstrap.
 const routingStore = new InMemoryRoutingStore();
 const internalCidrs = parseCidrList(env.INTERNAL_CIDRS);
+
+// spec 2026-05-02 §9 Stage 2 — sticky decision ring buffer.
+const stickyTracker = new StickyDecisionTracker({
+  maxSize: env.SIM_GATEWAY_STICKY_TRACKER_SIZE,
+});
 
 let canaryTargets: FallbackTargets = {};
 try {
@@ -81,6 +87,7 @@ const app = createApp({
   },
   routingStore,
   internalCidrs,
+  stickyTracker,
 });
 
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {

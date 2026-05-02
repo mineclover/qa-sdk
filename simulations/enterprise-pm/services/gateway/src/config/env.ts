@@ -51,6 +51,12 @@ export const envSchema = z.object({
    * 형식: `{"sim-approval-api":{"v1":"http://...","v2":"http://..."}}`. 빈 객체면 seed 안 함.
    */
   CANARY_TARGETS_JSON: z.string().default("{}"),
+  // ── spec 2026-05-02 §9 Stage 2 (sticky-consistency) ───────────────
+  /**
+   * StickyDecisionTracker 메모리 ring buffer 크기. routing decision N건만 보관 후
+   * 가장 오래된 것부터 evict. 충분히 크면 endpoint window query에 noise 없음.
+   */
+  SIM_GATEWAY_STICKY_TRACKER_SIZE: z.coerce.number().int().positive().default(1000),
 });
 
 export type Env = z.infer<typeof envSchema>;
