@@ -39,3 +39,48 @@ describe("decideRoute (spec §3.1/§3.3)", () => {
     expect(cand).toBeLessThan(600);
   });
 });
+
+// spec 2026-05-02 §9 Stage 2 — sticky tracker DI wrapper.
+import { StickyDecisionTracker } from "./sticky-decision-tracker.js";
+import { decideRouteWithTracking } from "./route-decision.js";
+
+describe("decideRouteWithTracking (Stage 2 — tracker DI)", () => {
+  const entry: RouteEntry = {
+    revision: 1,
+    stable: { version: "v3", upstream: "http://sim-approval-api-v1:4500" },
+    candidate: { version: "v4-candidate", upstream: "http://sim-approval-api-v2:4500" },
+    weight: 50,
+    stickyKey: "user_id",
+  };
+
+  it("결정된 version으로 tracker.record 호출됨", () => {
+    const tracker = new StickyDecisionTracker({ maxSize: 100 });
+    const at = new Date("2026-05-02T00:00:00Z");
+    decideRouteWithTracking({ tracker, entry, userId: "u-42", now: at });
+    const all = tracker.dump();
+    expect(all).toHaveLength(1);
+    expect(all[0]).toMatchObject({ userId: "u-42", at });
+    expect(["v3", "v4-candidate"]).toContain(all[0]?.version);
+  });
+
+  it("tracker undefined → record 생략 (legacy compat)", () => {
+    const r = decideRouteWithTracking({
+      tracker: undefined,
+      entry,
+      userId: "u-1",
+      now: new Date(),
+    });
+    expect(["v3", "v4-candidate"]).toContain(r.version);
+  });
+
+  it("anonymous (userId undefined) → record 생략", () => {
+    const tracker = new StickyDecisionTracker({ maxSize: 100 });
+    decideRouteWithTracking({
+      tracker,
+      entry,
+      userId: undefined,
+      now: new Date(),
+    });
+    expect(tracker.dump()).toHaveLength(0);
+  });
+});
