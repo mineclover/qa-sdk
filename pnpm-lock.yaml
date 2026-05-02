@@ -3351,6 +3351,12 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      sim-identifier-grammar:
+        specifier: workspace:*
+        version: link:../../../../packages/sim-identifier-grammar
+      sim-internal-network:
+        specifier: workspace:*
+        version: link:../../../../packages/sim-internal-network
       weighted-index:
         specifier: workspace:*
         version: link:../../../../packages/weighted-index
