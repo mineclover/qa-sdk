@@ -3,7 +3,9 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { FaultInjector } from "./fault-injector.js";
-import type { Fault, FaultKind } from "./types.js";
+import { FAULT_KINDS, type Fault, type FaultKind } from "./types.js";
+import { PubsubInvalidateDropFault } from "./pubsub-invalidate-drop.js";
+import { PerfWarnFault } from "./perf-warn.js";
 
 class StubFault implements Fault {
   enabled = false;
@@ -52,5 +54,39 @@ describe("FaultInjector registry", () => {
   });
   it("rejects unknown FaultKind", async () => {
     await expect(inj.enable("nope" as FaultKind, {})).rejects.toThrow();
+  });
+});
+
+describe("FAULT_KINDS enum (spec §8)", () => {
+  it("contains 6 entries (4 existing + 2 new)", () => {
+    expect(FAULT_KINDS).toEqual([
+      "schema-break",
+      "audit-anomaly",
+      "replication-lag",
+      "db-pool-pressure",
+      "pubsub-invalidate-drop",
+      "perf-warn",
+    ]);
+    expect(FAULT_KINDS).toHaveLength(6);
+  });
+
+  it("getFault routes to PubsubInvalidateDropFault instance", async () => {
+    const pid = new PubsubInvalidateDropFault();
+    const inj = new FaultInjector({
+      "pubsub-invalidate-drop": pid,
+    } as unknown as Record<FaultKind, Fault>);
+    expect(inj.getFault("pubsub-invalidate-drop")).toBe(pid);
+    expect(inj.getFault("pubsub-invalidate-drop")).toBeInstanceOf(
+      PubsubInvalidateDropFault,
+    );
+  });
+
+  it("getFault routes to PerfWarnFault instance", async () => {
+    const pw = new PerfWarnFault();
+    const inj = new FaultInjector({
+      "perf-warn": pw,
+    } as unknown as Record<FaultKind, Fault>);
+    expect(inj.getFault("perf-warn")).toBe(pw);
+    expect(inj.getFault("perf-warn")).toBeInstanceOf(PerfWarnFault);
   });
 });

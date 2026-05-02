@@ -1,9 +1,12 @@
 // @def.boundary sim-canary-controller
 // @def.doc canary-controller-config
-// fault-injector NestJS 모듈 — 4종 fault + Registry + admin-router 단일 진입점.
+// fault-injector NestJS 모듈 — 6종 fault + Registry + admin-router 단일 진입점.
+// 기존 4종 (schema-break/audit-anomaly/replication-lag/db-pool-pressure) +
+// spec 2026-05-02 §8 신규 2종 (pubsub-invalidate-drop/perf-warn).
 // Stage 10에서는 in-memory 임시 store로 admin endpoint를 즉시 호출 가능하게 만든다.
 // Stage 11 시나리오 runner는 본 모듈을 통해 fault 토글하고 실제 측정 표면(audit-recorder,
-// pg replica, metrics-collector gauge)에 주입은 시나리오 작업 시 별도 어댑터로 대체된다.
+// pg replica, metrics-collector gauge, pub/sub proxy, verdict wrap)에 주입은 시나리오
+// 작업 시 별도 어댑터로 대체된다.
 
 import {
   Injectable,
@@ -33,6 +36,8 @@ import {
   DbPoolPressureFault,
   type DbPoolGaugeStore,
 } from "./db-pool-pressure.js";
+import { PubsubInvalidateDropFault } from "./pubsub-invalidate-drop.js";
+import { PerfWarnFault } from "./perf-warn.js";
 import { createLogger } from "../lib/logger.js";
 
 const logger = createLogger("sim-canary-controller:fault");
@@ -106,9 +111,12 @@ export class FaultInjectorLifecycle
 @Module({
   controllers: [AdminFaultController],
   providers: [
+    // 신규 2종 — singleton (admin controller / VerdictService / pub/sub proxy 가 동일 인스턴스 공유).
+    PubsubInvalidateDropFault,
+    PerfWarnFault,
     {
       provide: FaultInjector,
-      useFactory: () => {
+      useFactory: (pid: PubsubInvalidateDropFault, pw: PerfWarnFault) => {
         const registry: Record<FaultKind, Fault> = {
           "schema-break": new SchemaBreakFault(new InMemorySchemaBreakStore()),
           "audit-anomaly": new AuditAnomalyFault(
@@ -121,9 +129,12 @@ export class FaultInjectorLifecycle
           "db-pool-pressure": new DbPoolPressureFault(
             new InMemoryDbPoolGaugeStore(),
           ),
+          "pubsub-invalidate-drop": pid,
+          "perf-warn": pw,
         };
         return new FaultInjector(registry);
       },
+      inject: [PubsubInvalidateDropFault, PerfWarnFault],
     },
     {
       provide: FAULT_INJECTOR_TOKEN,
@@ -131,6 +142,6 @@ export class FaultInjectorLifecycle
     },
     FaultInjectorLifecycle,
   ],
-  exports: [FaultInjector],
+  exports: [FaultInjector, PubsubInvalidateDropFault, PerfWarnFault],
 })
 export class FaultModule {}
