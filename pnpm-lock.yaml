@@ -3564,6 +3564,9 @@ importers:
       sim-identifier-grammar:
         specifier: workspace:*
         version: link:../../../../packages/sim-identifier-grammar
+      sim-internal-network:
+        specifier: workspace:*
+        version: link:../../../../packages/sim-internal-network
       zod:
         specifier: ^3.24.2
         version: 3.25.76
