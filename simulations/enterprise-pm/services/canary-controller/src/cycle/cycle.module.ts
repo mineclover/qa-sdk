@@ -7,6 +7,7 @@ import { AdvisoryLockModule } from "../lock/advisory-lock.module.js";
 import { MetricsScrapeModule } from "../metrics/metrics-scrape.module.js";
 import { DecisionModule } from "../decision/decision.module.js";
 import { ActionModule } from "../action/action.module.js";
+import { DecisionRingBuffer } from "../decision/decision-ring-buffer.js";
 
 @Module({
   imports: [
@@ -15,7 +16,16 @@ import { ActionModule } from "../action/action.module.js";
     DecisionModule,
     ActionModule,
   ],
-  providers: [CycleSchedulerService],
-  exports: [CycleSchedulerService],
+  providers: [
+    CycleSchedulerService,
+    {
+      provide: DecisionRingBuffer,
+      useFactory: () =>
+        new DecisionRingBuffer({
+          maxSize: Number(process.env.SIM_CONTROLLER_RING_SIZE ?? "100"),
+        }),
+    },
+  ],
+  exports: [CycleSchedulerService, DecisionRingBuffer],
 })
 export class CycleModule {}

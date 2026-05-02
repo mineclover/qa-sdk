@@ -20,6 +20,7 @@ import { SafetyDecisionService } from "../decision/safety-decision.service.js";
 import { ResourceDecisionService } from "../decision/resource-decision.service.js";
 import { DecisionBuilderService } from "../decision/decision-builder.service.js";
 import { ActionExecutorService } from "../action/action-executor.service.js";
+import { DecisionRingBuffer } from "../decision/decision-ring-buffer.js";
 import { env } from "../config/env.js";
 import { createLogger } from "../lib/logger.js";
 
@@ -28,7 +29,7 @@ export class CycleSchedulerService implements OnModuleInit {
   private readonly logger = createLogger("sim-canary-controller:cycle");
 
   // 사이클 간 영속 상태. spec 01 §5/§6 — 메모리 보유, restart 시 초기화 후 다음 사이클부터 재구축.
-  private history: boolean[] = [];
+  // safety FAIL history는 DecisionRingBuffer SSOT가 보유 (recentSafetyHistory).
   private currentWeight = 0;
   private lastPromotionAt = 0;
   private current = { v1: 1, v2: 0 };
@@ -43,6 +44,7 @@ export class CycleSchedulerService implements OnModuleInit {
     private readonly resource: ResourceDecisionService,
     private readonly builder: DecisionBuilderService,
     private readonly action: ActionExecutorService,
+    private readonly ringBuffer: DecisionRingBuffer,
   ) {}
 
   onModuleInit() {
@@ -78,22 +80,22 @@ export class CycleSchedulerService implements OnModuleInit {
         verdicts,
         confidence,
         currentWeight: this.currentWeight,
-        history: this.history,
+        history: this.ringBuffer.recentSafetyHistory(10),
         timeSincePromotionMs: Date.now() - this.lastPromotionAt,
       });
       const cycleId = this.builder.newCycleId(cycleAt);
+      const safetyRecord = this.builder.buildSafety({
+        cycleId,
+        cycleAt,
+        verdicts,
+        decision: safetyOut,
+        sources: result.sources,
+        signals: result.signals,
+        confidence,
+      });
       try {
-        await this.builder.write(
-          this.builder.buildSafety({
-            cycleId,
-            cycleAt,
-            verdicts,
-            decision: safetyOut,
-            sources: result.sources,
-            signals: result.signals,
-            confidence,
-          }),
-        );
+        await this.builder.write(safetyRecord);
+        this.ringBuffer.appendSafety(safetyRecord);
       } catch (err) {
         this.logger.error({ err }, "safety write failed; skipping resource");
         return;
@@ -107,18 +109,18 @@ export class CycleSchedulerService implements OnModuleInit {
           timeSinceLastChangeMs: Date.now() - this.lastReplicaChangeAt,
           confidence,
         });
+        const resourceRecord = this.builder.buildResource({
+          cycleId,
+          cycleAt,
+          verdicts,
+          decision: resOut,
+          sources: result.sources,
+          signals: result.signals,
+          confidence,
+        });
         try {
-          await this.builder.write(
-            this.builder.buildResource({
-              cycleId,
-              cycleAt,
-              verdicts,
-              decision: resOut,
-              sources: result.sources,
-              signals: result.signals,
-              confidence,
-            }),
-          );
+          await this.builder.write(resourceRecord);
+          this.ringBuffer.appendResource(resourceRecord);
         } catch (err) {
           this.logger.error({ err }, "resource write failed");
         }
@@ -152,16 +154,6 @@ export class CycleSchedulerService implements OnModuleInit {
         this.currentWeight = safetyOut.action.weight;
         this.lastPromotionAt = Date.now();
       }
-
-      const FAIL_CATS = [
-        "perf",
-        "decisionQuality",
-        "replicationHealth",
-        "loadPressure",
-        "resourceHeadroom",
-      ] as const;
-      const failNow = FAIL_CATS.some((k) => verdicts[k] === "FAIL");
-      this.history = [...this.history.slice(-9), failNow];
     } catch (err) {
       this.logger.error({ err }, "cycle failed; next cycle continues");
     }
