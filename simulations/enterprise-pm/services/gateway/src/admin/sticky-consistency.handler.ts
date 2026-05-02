@@ -72,3 +72,28 @@ export function createStickyConsistencyHandler(
     return c.json(body);
   };
 }
+
+// spec 2026-05-02 §9 Stage 2 — build-time drift gate.
+//
+// 현재 sim-handles `gateway-sticky-consistency` 모듈은 응답 타입을 export 하지
+// 않으며, 사용 중인 inline shape(`{ consistent, total }`) 도 spec §9 와 다르다
+// (Plan B defect log §Task 2.5 참조). 따라서 외부 import 가 가능해질 때까지는
+// spec §9 shape 을 동일 모듈 내 ground-truth interface 로 박제하고, 핸들러
+// 응답 타입과 양방향 호환성을 typechecker 로 강제한다. sim-handles 측이 타입을
+// 노출하면 아래 ground-truth interface 를 그 import 로 교체한다.
+
+interface _SpecGatewayStickyConsistencyResponse {
+  ratio: number;
+  sample: number;
+  inconsistentUsers: number;
+  window: { from: string; to: string };
+}
+
+const _typecheck1: StickyConsistencyResponse extends _SpecGatewayStickyConsistencyResponse
+  ? true
+  : never = true;
+const _typecheck2: _SpecGatewayStickyConsistencyResponse extends StickyConsistencyResponse
+  ? true
+  : never = true;
+void _typecheck1;
+void _typecheck2;
