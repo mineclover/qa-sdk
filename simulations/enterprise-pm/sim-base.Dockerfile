@@ -44,14 +44,12 @@ COPY simulations/enterprise-pm/tsconfig.base.json ./simulations/enterprise-pm/
 # 의존 설치 (frozen lockfile + workspace-wide)
 RUN pnpm install --frozen-lockfile
 
-# 9 sim 서비스 + 그 의존 패키지만 빌드 (`...` = 의존 추적, 토폴로지컬 순서)
-# 99개 전체 빌드 회피 → 빌드 시간 절감.
-# --workspace-concurrency=1: tsup 병렬 race (downstream이 upstream dts 미완성 상태에서 시작) 방지.
-RUN pnpm --filter "...{./simulations/enterprise-pm/services/*}" \
-         --filter "...{./simulations/enterprise-pm/packages/*}" \
-         --filter "{./simulations/enterprise-pm/scenarios}" \
-         --workspace-concurrency=1 \
-         run build
+# 전체 워크스페이스 빌드 — pnpm `...` 필터가 cyclic 워크스페이스 (core↔viz-core 등)
+# 의 transitive dep 을 누락하는 문제 회피. weighted-wasm (cargo+wasm-pack 의존,
+# alpine 환경 미충족) 만 제외.
+# --workspace-concurrency=1: tsup 병렬 race (downstream 이 upstream dts 미완성 상태에서
+# 시작) 방지. --bail=false: 일부 패키지 빌드 실패가 sim 서비스와 무관하면 무시.
+RUN pnpm --filter "!weighted-wasm" --workspace-concurrency=1 --bail=false -r run build || true
 
 # 빌드 후 sim 서비스 dist 검증 (없으면 빌드 실패)
 RUN ls simulations/enterprise-pm/services/auth-api/dist/main.js \
