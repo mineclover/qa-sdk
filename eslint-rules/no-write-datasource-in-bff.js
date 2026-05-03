@@ -33,6 +33,8 @@ module.exports = {
         : context.filename || "";
     const inBff = /\/(presentation\/bff|reporting-api)\//.test(filename);
     if (!inBff) return {};
+    // 테스트 파일은 architectural invariant 검증을 위해 두 토큰 모두 import 필요 — runtime 가드 scope 외.
+    if (/\.(test|spec)\.tsx?$/.test(filename)) return {};
 
     const FORBIDDEN_NAMES = new Set([
       "WRITE_DATA_SOURCE",
