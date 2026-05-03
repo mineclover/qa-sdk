@@ -56,6 +56,8 @@ services:
       QA_PG_USER: ingest_app
       QA_PG_PASSWORD: ${QA_PG_INGEST_PASSWORD}
       QA_PG_SCHEMA: ingest
+      # ingest-server 는 STORE_DRIVER=pg 시 TRACE_DATABASE_URL 필수
+      TRACE_DATABASE_URL: postgres://ingest_app:${QA_PG_INGEST_PASSWORD}@qa-sdk-db:5432/qa_sdk
       REDIS_URL: redis://sim-redis:6379
       CORS_ORIGIN: "*"
       SIM_LOG_LEVEL: info

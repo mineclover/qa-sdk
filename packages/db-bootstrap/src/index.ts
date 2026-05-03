@@ -24,6 +24,7 @@ export {
 export {
   dbEnvSchema,
   parseDbEnv,
+  parsePgUrl,
   type DbEnv,
   type ParsedDbEnv,
 } from "./env.js";

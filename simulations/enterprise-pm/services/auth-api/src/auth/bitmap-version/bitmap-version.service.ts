@@ -3,7 +3,7 @@
 //
 // prefix별 stable version을 1부터 시작하는 정수로 관리하고, bump마다 retired 누적.
 // VersionTag grammar로 round-trip 검증해 식별자 일관성 보장.
-import { Injectable } from "@nestjs/common";
+import { Injectable, Optional } from "@nestjs/common";
 import { buildVersionTag, parseVersionTag } from "sim-identifier-grammar";
 
 export interface BumpResult {
@@ -32,7 +32,7 @@ export class BitmapVersionService {
   private readonly state = new Map<string, PrefixState>();
   private readonly now: () => Date;
 
-  constructor(opts?: BitmapVersionServiceOptions) {
+  constructor(@Optional() opts?: BitmapVersionServiceOptions) {
     this.now = opts?.nowImpl ?? (() => new Date());
   }
 
