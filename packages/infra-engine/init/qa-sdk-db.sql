@@ -92,3 +92,29 @@ ALTER DEFAULT PRIVILEGES FOR ROLE qa_admin IN SCHEMA ingest     GRANT SELECT, IN
 ALTER DEFAULT PRIVILEGES FOR ROLE qa_admin IN SCHEMA decision   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO decision_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE qa_admin IN SCHEMA definition GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO definition_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE qa_admin IN SCHEMA sim        GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO sim_app;
+
+-- ── 시뮬 e2e 환경 — approval_app 추가 + sim_app cross-schema 권한 ──
+-- compose 의 sim-approval-api 는 approval_app 사용, qa-sdk-db.sql 본문에는 미생성.
+\getenv qa_approval_pw QA_SDK_APPROVAL_PASSWORD
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='approval_app') THEN
+    EXECUTE format('CREATE ROLE approval_app WITH LOGIN PASSWORD %L', current_setting('qa_approval_pw', true));
+  END IF;
+END $$;
+
+GRANT qa_admin TO approval_app;
+GRANT USAGE, CREATE ON SCHEMA auth, audit, ingest, decision, definition, sim TO approval_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA auth, audit, ingest, decision, definition, sim TO approval_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA auth, audit, ingest, decision, definition, sim
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO approval_app;
+GRANT CREATE ON DATABASE qa_sdk TO approval_app;
+
+-- pm-api/document-api/reporting-api/notification-api/audit-browser-api/auth-api 등이
+-- .env.sim 의 sim_app 으로 운영 — sim_app 에 cross-schema 접근 부여.
+GRANT USAGE, CREATE ON SCHEMA auth, audit, ingest, decision, definition TO sim_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA auth, audit, ingest, decision, definition TO sim_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA auth, audit, ingest, decision, definition
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO sim_app;
+GRANT CREATE ON DATABASE qa_sdk TO sim_app;
+GRANT CREATE ON SCHEMA sim TO sim_app;

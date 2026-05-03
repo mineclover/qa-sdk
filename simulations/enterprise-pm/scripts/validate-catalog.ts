@@ -67,8 +67,9 @@ if (candidateTag) {
 
 // (2) docker-compose
 const composeRaw = readFileSync(resolve(SIM_ROOT, "docker-compose.sim.yaml"), "utf8");
+// follow-up #26 와 동일 grammar 확장 — `${VAR}` 와 `${VAR:-default}` 둘 다 인식.
 const composeKeys = [...composeRaw.matchAll(
-  /image:\s*qa-sdk\/sim-approval-api:\$\{(APPROVAL_V[12]_TAG)\}/g,
+  /image:\s*qa-sdk\/sim-approval-api:\$\{(APPROVAL_V[12]_TAG)(?::-[a-z0-9.-]+)?\}/g,
 )].map((m) => m[1]);
 if (!composeKeys.includes("APPROVAL_V1_TAG")) {
   fail("compose", "sim-approval-api-v1 image:${APPROVAL_V1_TAG} 라인 누락");
