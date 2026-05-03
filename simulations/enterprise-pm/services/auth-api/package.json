@@ -40,6 +40,7 @@
     "@qa-sdk/logger": "workspace:*",
     "@qa-sdk/otel": "workspace:*",
     "@qa-sdk/sim-bitmap-cache": "workspace:*",
+    "@qa-sdk/sim-domain-slice-kit": "workspace:*",
     "db-bootstrap": "workspace:*",
     "drizzle-orm": "catalog:",
     "permission-engine": "workspace:*",

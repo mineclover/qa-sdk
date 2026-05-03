@@ -20,9 +20,15 @@ import {
   type ResourceConfig,
 } from "../decision/resource-decision.service.js";
 import { DecisionBuilderService } from "../decision/decision-builder.service.js";
-import { ActionExecutorService } from "../action/action-executor.service.js";
+import {
+  ActionExecutorService,
+  type SimServiceCatalogPort,
+  type PortRegistryPort,
+} from "../action/action-executor.service.js";
 import { CycleSchedulerService } from "../cycle/cycle-scheduler.service.js";
+import { DecisionRingBuffer } from "../decision/decision-ring-buffer.js";
 import type { AdvisoryLockService } from "../lock/advisory-lock.service.js";
+import type { SafetyDecisionRecordInput } from "sim-decision-view";
 
 const verdictCfg: VerdictConfig = {
   perf: {
@@ -165,11 +171,45 @@ function setupCycle(opts: SetupOptions = {}): Spies {
     controllerId: "CTRL0001",
     auditUrl: "http://audit",
   });
+  // Stage 1b — ActionExecutorService 가 catalog/portRegistry/serviceName 필수.
+  // executeSafety 에서 routing push body 합성에 사용. executeResource 는 catalog 미사용.
+  const catalog: SimServiceCatalogPort = {
+    getCurrentTopology: async () => ({
+      stable: { value: 1 },
+      candidate: { value: 2 },
+      retired: [],
+    }),
+  };
+  const portRegistry: PortRegistryPort = {
+    getUpstream: (svc: string) => `http://${svc}:4600`,
+  };
   const action = new ActionExecutorService({
     gatewayUrl: "http://gw",
     composeProject: "enterprise-pm",
+    serviceName: "approval",
+    catalog,
+    portRegistry,
     scaleExec: scaleExecSpy,
   });
+  // Stage 1a — DecisionRingBuffer 가 9번째 의존. recentSafetyHistory(10) 의 SSOT.
+  const ringBuffer = new DecisionRingBuffer({ maxSize: 100 });
+  // history opts 가 주어지면 가짜 safety record 를 ring 에 append (true=rollback,false=promote).
+  // 그 외 필드는 기존처럼 Object.assign 으로 private 주입 (currentWeight 등은 여전히 필드).
+  const history = opts.history ?? [];
+  for (let i = 0; i < history.length; i += 1) {
+    const isFail = history[i] === true;
+    const fake: SafetyDecisionRecordInput = {
+      decisionId: `FAKE-HIST-${i}`,
+      cycleId: `FAKE-CYCLE-${i}`,
+      cycleAt: new Date(Date.now() - (history.length - i) * 1000).toISOString(),
+      pass: "safety",
+      verdict: isFail ? "rollback" : "promote",
+      triggerSignals: [],
+      categoryVerdicts: {} as SafetyDecisionRecordInput["categoryVerdicts"],
+      confidence: 1,
+    };
+    ringBuffer.appendSafety(fake);
+  }
   const scheduler = new CycleSchedulerService(
     {} as unknown as SchedulerRegistry,
     lock,
@@ -179,10 +219,11 @@ function setupCycle(opts: SetupOptions = {}): Spies {
     resource,
     builder,
     action,
+    ringBuffer,
   );
   // 사이클 상태 주입 (private — Object.assign 통해 직접 설정).
+  // history 필드는 Stage 1a 에서 제거됨 (ring SSOT 로 이전).
   Object.assign(scheduler, {
-    history: opts.history ?? [],
     currentWeight: opts.currentWeight ?? 0,
     lastPromotionAt: Date.now() - (opts.timeSincePromotionMs ?? 0),
     current: opts.current ?? { v1: 1, v2: 0 },
@@ -207,10 +248,12 @@ describe("Integration: 사이클 1회 흐름 (spec 01 §5)", () => {
     await scheduler.runCycle();
     expect(auditPostSpy).toHaveBeenCalled();
     expect(routingPushSpy).toHaveBeenCalled();
+    // spec 2026-05-02 §7 #21 — RoutingPushSchema body shape:
+    //   { services: { <serviceName>: { weight, revision, stable, candidate, ... } } }.
     const body = JSON.parse(
       routingPushSpy.mock.calls[0][1]?.body ?? "{}",
     );
-    expect(body.weight).toBe(25);
+    expect(body.services.approval.weight).toBe(25);
   });
 
   it("(b) compatibility FAIL → hard rollback weight=0", async () => {
@@ -224,7 +267,7 @@ describe("Integration: 사이클 1회 흐름 (spec 01 §5)", () => {
     const body = JSON.parse(
       routingPushSpy.mock.calls[0][1]?.body ?? "{}",
     );
-    expect(body.weight).toBe(0);
+    expect(body.services.approval.weight).toBe(0);
   });
 
   it("(c) auditSafety FAIL → hard rollback", async () => {
@@ -237,7 +280,7 @@ describe("Integration: 사이클 1회 흐름 (spec 01 §5)", () => {
     const body = JSON.parse(
       routingPushSpy.mock.calls[0][1]?.body ?? "{}",
     );
-    expect(body.weight).toBe(0);
+    expect(body.services.approval.weight).toBe(0);
   });
 
   it("(d) perf WARN → hold (no routing push)", async () => {
@@ -280,11 +323,25 @@ describe("Integration: 사이클 1회 흐름 (spec 01 §5)", () => {
       controllerId: "CTRL0001",
       auditUrl: "http://audit",
     });
+    const catalog: SimServiceCatalogPort = {
+      getCurrentTopology: async () => ({
+        stable: { value: 1 },
+        candidate: { value: 2 },
+        retired: [],
+      }),
+    };
+    const portRegistry: PortRegistryPort = {
+      getUpstream: (svc: string) => `http://${svc}:4600`,
+    };
     const action = new ActionExecutorService({
       gatewayUrl: "http://gw",
       composeProject: "enterprise-pm",
+      serviceName: "approval",
+      catalog,
+      portRegistry,
       scaleExec: vi.fn(async () => ({ stdout: "", stderr: "" })),
     });
+    const ringBuffer = new DecisionRingBuffer({ maxSize: 100 });
     const scheduler = new CycleSchedulerService(
       {} as unknown as SchedulerRegistry,
       lock,
@@ -294,9 +351,9 @@ describe("Integration: 사이클 1회 흐름 (spec 01 §5)", () => {
       resource,
       builder,
       action,
+      ringBuffer,
     );
     Object.assign(scheduler, {
-      history: [],
       currentWeight: 5,
       lastPromotionAt: Date.now() - 200_000,
       current: { v1: 1, v2: 0 },
