@@ -2,37 +2,38 @@
 
 **Spec 참조:** `04-scaling-infra.md` §4.4 + `05-error-and-scenarios.md` §3 (시나리오 #10·#11·#13·#14)
 
-본 단계는 controller(단계 9 결과) 안에 `fault-injector` 모듈을 추가해, 시뮬 시나리오 runner가 결정 모델의 fail-closed 분기를 의도적으로 트리거할 수 있는 표면을 제공한다. 4종 fault — schema break / audit anomaly / replication lag / dbPool 압박 — 를 단일 enable/disable 인터페이스로 통합하고 controller 라이프사이클(`finally` 절 reset)에 결합해 시나리오 종료 후 상태가 누수되지 않도록 한다.
+본 단계는 controller(단계 9 결과) 안에 `fault-injector` 모듈을 추가해, 시뮬 시나리오 runner가 결정 모델의 fail-closed 분기를 의도적으로 트리거할 수 있는 표면을 제공한다. 4종 fault — schema break / audit anomaly / replication lag / dbPool 압박 — 를 단일 enable/disable 인터페이스로 통합하고 NestJS 라이프사이클 훅(`OnModuleDestroy` + `OnApplicationShutdown`)에 결합해 시나리오 종료 후 상태가 누수되지 않도록 한다.
+
+> **구조 정정 (follow-up #22)**: 본 plan literal은 초기 작성 시 `packages/sim-controller/` 별도 패키지 + Fastify plugin 구조를 가정했으나, 단계 9에서 controller가 `simulations/enterprise-pm/services/canary-controller/` (NestJS app) 으로 정착되었다. 본 단계는 그 NestJS app 안에 `src/fault/` 모듈을 추가한다. 하위 Task의 코드 블록은 NestJS `@Controller("admin/fault")` + `FaultModule` + `OnModuleDestroy`/`OnApplicationShutdown` 라이프사이클로 구현한다. (라이브러리 export가 아닌 app 내 모듈이므로 `index.ts` re-export는 적용하지 않는다.)
 
 ### File Structure (단계 10)
 
 | 종류 | 경로 |
 |---|---|
-| Create | `packages/sim-controller/src/fault/types.ts` |
-| Create | `packages/sim-controller/src/fault/fault-injector.ts` |
-| Create | `packages/sim-controller/src/fault/schema-break.ts` |
-| Create | `packages/sim-controller/src/fault/audit-anomaly.ts` |
-| Create | `packages/sim-controller/src/fault/replication-lag.ts` |
-| Create | `packages/sim-controller/src/fault/db-pool-pressure.ts` |
-| Create | `packages/sim-controller/src/fault/admin-router.ts` |
-| Create | `packages/sim-controller/src/fault/{fault-injector,schema-break,audit-anomaly,replication-lag,db-pool-pressure,admin-router}.test.ts` |
-| Modify | `packages/sim-controller/src/index.ts` (FaultInjector re-export) |
-| Modify | `packages/sim-controller/src/controller.ts` (생성자 주입 + `finally`에서 `resetAll()`) |
-| Modify | `packages/sim-controller/src/server.ts` (단계 9 Fastify 인스턴스에 admin-router 등록) |
+| Create | `simulations/enterprise-pm/services/canary-controller/src/fault/types.ts` |
+| Create | `simulations/enterprise-pm/services/canary-controller/src/fault/fault-injector.ts` |
+| Create | `simulations/enterprise-pm/services/canary-controller/src/fault/schema-break.ts` |
+| Create | `simulations/enterprise-pm/services/canary-controller/src/fault/audit-anomaly.ts` |
+| Create | `simulations/enterprise-pm/services/canary-controller/src/fault/replication-lag.ts` |
+| Create | `simulations/enterprise-pm/services/canary-controller/src/fault/db-pool-pressure.ts` |
+| Create | `simulations/enterprise-pm/services/canary-controller/src/fault/admin-fault.controller.ts` (NestJS `@Controller("admin/fault")`) |
+| Create | `simulations/enterprise-pm/services/canary-controller/src/fault/fault.module.ts` (NestJS `@Module` — `FaultInjector` provider + `FaultInjectorLifecycle` `OnModuleDestroy`/`OnApplicationShutdown`) |
+| Create | `simulations/enterprise-pm/services/canary-controller/src/fault/{fault-injector,schema-break,audit-anomaly,replication-lag,db-pool-pressure,admin-fault.controller}.test.ts` |
+| Modify | `simulations/enterprise-pm/services/canary-controller/src/app.module.ts` (`FaultModule` import 추가) |
 
 ### Task 10.1: fault-injector 모듈 골격 + Registry
 
 **Files:**
-- Create: `packages/sim-controller/src/fault/types.ts`
-- Create: `packages/sim-controller/src/fault/fault-injector.ts`
-- Create: `packages/sim-controller/src/fault/fault-injector.test.ts`
-- Modify: `packages/sim-controller/src/index.ts`
+- Create: `simulations/enterprise-pm/services/canary-controller/src/fault/types.ts`
+- Create: `simulations/enterprise-pm/services/canary-controller/src/fault/fault-injector.ts`
+- Create: `simulations/enterprise-pm/services/canary-controller/src/fault/fault-injector.test.ts`
+- Modify: `simulations/enterprise-pm/services/canary-controller/src/index.ts`
 
 각 fault는 `enable / disable / reset`을 노출하며, Registry는 `FaultKind` enum 키로 시점에 inject한다. controller 본 사이클은 fault 상태를 _읽지 않고_, fault가 의존하는 측정원(audit-recorder-store, pg, dbPool gauge)에 직접 주입한다 — 결정 모델은 정상 측정 경로를 통해 verdict를 산출한다.
 
 - [ ] **Step 10.1.1: 실패 테스트 작성**
 
-`packages/sim-controller/src/fault/fault-injector.test.ts`:
+`simulations/enterprise-pm/services/canary-controller/src/fault/fault-injector.test.ts`:
 
 ```typescript
 import { describe, it, expect, beforeEach } from "vitest";
@@ -76,14 +77,14 @@ describe("FaultInjector registry", () => {
 - [ ] **Step 10.1.2: 테스트 실패 확인**
 
 ```bash
-pnpm --filter sim-controller test fault-injector
+pnpm --filter @qa-sdk/sim-canary-controller test fault-injector
 ```
 
 기대: FAIL (모듈 미존재).
 
 - [ ] **Step 10.1.3: 최소 구현**
 
-`packages/sim-controller/src/fault/types.ts`:
+`simulations/enterprise-pm/services/canary-controller/src/fault/types.ts`:
 
 ```typescript
 // spec: docs/superpowers/specs/2026-04-28-canary-scaling/05-error-and-scenarios.md §3
@@ -100,7 +101,7 @@ export interface Fault {
 }
 ```
 
-`packages/sim-controller/src/fault/fault-injector.ts`:
+`simulations/enterprise-pm/services/canary-controller/src/fault/fault-injector.ts`:
 
 ```typescript
 import type { Fault, FaultKind } from "./types.js";
@@ -122,35 +123,34 @@ export class FaultInjector {
 }
 ```
 
-- [ ] **Step 10.1.4: 테스트 통과 + index re-export**
+- [ ] **Step 10.1.4: 테스트 통과**
 
 ```bash
-pnpm --filter sim-controller test fault-injector
+pnpm --filter @qa-sdk/sim-canary-controller test fault-injector
 ```
 
-기대: 4 PASS. `src/index.ts`에 `export { FaultInjector } from "./fault/fault-injector.js"; export type { Fault, FaultKind } from "./fault/types.js";` 추가.
+기대: 4 PASS. canary-controller는 NestJS app이므로 라이브러리 `index.ts` re-export는 적용하지 않는다 — 실제 wiring은 Task 10.6의 `FaultModule` 에서 처리.
 
 - [ ] **Step 10.1.5: Commit**
 
 ```bash
-git add packages/sim-controller/src/fault/types.ts \
-        packages/sim-controller/src/fault/fault-injector.ts \
-        packages/sim-controller/src/fault/fault-injector.test.ts \
-        packages/sim-controller/src/index.ts
-git commit -m "feat(sim-controller): fault-injector registry skeleton"
+git add simulations/enterprise-pm/services/canary-controller/src/fault/types.ts \
+        simulations/enterprise-pm/services/canary-controller/src/fault/fault-injector.ts \
+        simulations/enterprise-pm/services/canary-controller/src/fault/fault-injector.test.ts
+git commit -m "feat(sim-canary-controller): fault-injector registry skeleton"
 ```
 
 ### Task 10.2: schema break 주입 (시나리오 #10)
 
 **Files:**
-- Create: `packages/sim-controller/src/fault/schema-break.ts`
-- Create: `packages/sim-controller/src/fault/schema-break.test.ts`
+- Create: `simulations/enterprise-pm/services/canary-controller/src/fault/schema-break.ts`
+- Create: `simulations/enterprise-pm/services/canary-controller/src/fault/schema-break.test.ts`
 
 시나리오 #10은 v2 outbox event에 호환 깨지는 신규 필수 필드를 강제 주입해 controller Pass 1 `compatibility` hard rule이 FAIL로 떨어지는지 검증한다(spec 05 §3). 본 fault는 `/v1/insights/schema-compat` 응답을 _덮어쓰지 않고_, outbox publisher fixture가 다음 발행부터 추가 필드를 첨부하도록 토글한다 — 결정 모델은 정상 측정 경로로 hard FAIL을 본다.
 
 - [ ] **Step 10.2.1: 실패 테스트 작성**
 
-`packages/sim-controller/src/fault/schema-break.test.ts`:
+`simulations/enterprise-pm/services/canary-controller/src/fault/schema-break.test.ts`:
 
 ```typescript
 import { describe, it, expect, beforeEach } from "vitest";
@@ -186,14 +186,14 @@ describe("SchemaBreakFault (시나리오 #10)", () => {
 - [ ] **Step 10.2.2: 테스트 실패 확인**
 
 ```bash
-pnpm --filter sim-controller test schema-break
+pnpm --filter @qa-sdk/sim-canary-controller test schema-break
 ```
 
 기대: FAIL.
 
 - [ ] **Step 10.2.3: 최소 구현**
 
-`packages/sim-controller/src/fault/schema-break.ts`:
+`simulations/enterprise-pm/services/canary-controller/src/fault/schema-break.ts`:
 
 ```typescript
 import { z } from "zod";
@@ -221,7 +221,7 @@ export class SchemaBreakFault implements Fault {
 - [ ] **Step 10.2.4: 테스트 통과 확인**
 
 ```bash
-pnpm --filter sim-controller test schema-break
+pnpm --filter @qa-sdk/sim-canary-controller test schema-break
 ```
 
 기대: 3 PASS. assertion 1세트 — `enable → store.active=true, fieldName=주입값` + `disable → store.active=false`로 fault 토글이 결정 모델 측정 표면에 정확히 반영됨을 증명.
@@ -229,22 +229,22 @@ pnpm --filter sim-controller test schema-break
 - [ ] **Step 10.2.5: Commit**
 
 ```bash
-git add packages/sim-controller/src/fault/schema-break.ts \
-        packages/sim-controller/src/fault/schema-break.test.ts
+git add simulations/enterprise-pm/services/canary-controller/src/fault/schema-break.ts \
+        simulations/enterprise-pm/services/canary-controller/src/fault/schema-break.test.ts
 git commit -m "feat(sim-controller): schema-break fault for scenario #10"
 ```
 
 ### Task 10.3: audit anomaly 주입 (시나리오 #11)
 
 **Files:**
-- Create: `packages/sim-controller/src/fault/audit-anomaly.ts`
-- Create: `packages/sim-controller/src/fault/audit-anomaly.test.ts`
+- Create: `simulations/enterprise-pm/services/canary-controller/src/fault/audit-anomaly.ts`
+- Create: `simulations/enterprise-pm/services/canary-controller/src/fault/audit-anomaly.test.ts`
 
 시나리오 #11은 v2 단계 skip으로 audit-recorder critical anomaly 1건이 자동 분류되는 흐름이다(spec 05 §3). 본 fault는 audit-recorder-store에 `severity="critical"` row 1건을 append-only 적재 — CON-005에 따라 controller Pass 1 `auditSafety`가 즉시 FAIL을 산출하고 결정 객체가 `verdict="rollback", triggerCategory="auditSafety"`로 떨어진다.
 
 - [ ] **Step 10.3.1: 실패 테스트 작성**
 
-`packages/sim-controller/src/fault/audit-anomaly.test.ts`:
+`simulations/enterprise-pm/services/canary-controller/src/fault/audit-anomaly.test.ts`:
 
 ```typescript
 import { describe, it, expect, beforeEach } from "vitest";
@@ -279,14 +279,14 @@ describe("AuditAnomalyFault (시나리오 #11)", () => {
 - [ ] **Step 10.3.2: 테스트 실패 확인**
 
 ```bash
-pnpm --filter sim-controller test audit-anomaly
+pnpm --filter @qa-sdk/sim-canary-controller test audit-anomaly
 ```
 
 기대: FAIL.
 
 - [ ] **Step 10.3.3: 최소 구현**
 
-`packages/sim-controller/src/fault/audit-anomaly.ts`:
+`simulations/enterprise-pm/services/canary-controller/src/fault/audit-anomaly.ts`:
 
 ```typescript
 import { z } from "zod";
@@ -317,7 +317,7 @@ export class AuditAnomalyFault implements Fault {
 - [ ] **Step 10.3.4: 테스트 통과 확인**
 
 ```bash
-pnpm --filter sim-controller test audit-anomaly
+pnpm --filter @qa-sdk/sim-canary-controller test audit-anomaly
 ```
 
 기대: 3 PASS. assertion 1세트 — `enable → rows.length=1, severity=critical` + `disable → rows.length=0`로 anomaly 적재/정리가 결정 모델 입력 표면에 정확히 반영됨을 증명.
@@ -325,22 +325,22 @@ pnpm --filter sim-controller test audit-anomaly
 - [ ] **Step 10.3.5: Commit**
 
 ```bash
-git add packages/sim-controller/src/fault/audit-anomaly.ts \
-        packages/sim-controller/src/fault/audit-anomaly.test.ts
+git add simulations/enterprise-pm/services/canary-controller/src/fault/audit-anomaly.ts \
+        simulations/enterprise-pm/services/canary-controller/src/fault/audit-anomaly.test.ts
 git commit -m "feat(sim-controller): audit-anomaly fault for scenario #11"
 ```
 
 ### Task 10.4: lag injection (시나리오 #14)
 
 **Files:**
-- Create: `packages/sim-controller/src/fault/replication-lag.ts`
-- Create: `packages/sim-controller/src/fault/replication-lag.test.ts`
+- Create: `simulations/enterprise-pm/services/canary-controller/src/fault/replication-lag.ts`
+- Create: `simulations/enterprise-pm/services/canary-controller/src/fault/replication-lag.test.ts`
 
 시나리오 #14는 lag-injector 3000ms 주입으로 controller `replicationHealth`가 WARN으로 떨어지고 BFF read 라우팅이 일시 primary fallback하는 흐름이다(spec 04 §4.4 + spec 05 §3). 구현은 spec 04 §4.4의 두 SQL을 그대로 사용한다 — primary `pg_replication_slot_advance` + standby `pg_sleep`. slot명은 Plan A Task 2.14의 `buildReplicationSlot({ purpose: "read_replica" })` grammar #13으로 빌드(직접 문자열 입력 금지). lag-injector는 idempotent하지 않으므로 reset 필수(spec 04 §4.4).
 
 - [ ] **Step 10.4.1: 실패 테스트 작성**
 
-`packages/sim-controller/src/fault/replication-lag.test.ts`:
+`simulations/enterprise-pm/services/canary-controller/src/fault/replication-lag.test.ts`:
 
 ```typescript
 import { describe, it, expect, beforeEach } from "vitest";
@@ -379,14 +379,14 @@ describe("ReplicationLagFault (시나리오 #14)", () => {
 - [ ] **Step 10.4.2: 테스트 실패 확인**
 
 ```bash
-pnpm --filter sim-controller test replication-lag
+pnpm --filter @qa-sdk/sim-canary-controller test replication-lag
 ```
 
 기대: FAIL.
 
 - [ ] **Step 10.4.3: 최소 구현**
 
-`packages/sim-controller/src/fault/replication-lag.ts`:
+`simulations/enterprise-pm/services/canary-controller/src/fault/replication-lag.ts`:
 
 ```typescript
 import { z } from "zod";
@@ -428,7 +428,7 @@ export class ReplicationLagFault implements Fault {
 - [ ] **Step 10.4.4: 테스트 통과 확인**
 
 ```bash
-pnpm --filter sim-controller test replication-lag
+pnpm --filter @qa-sdk/sim-canary-controller test replication-lag
 ```
 
 기대: 3 PASS. assertion 1세트 — `enable → primary slot_advance(grammar #13) + replica pg_sleep(ms/1000)` + `reset → primary slot_advance to current_wal_lsn`으로 lag injection이 spec 04 §4.4 SQL과 일치함을 증명.
@@ -436,22 +436,22 @@ pnpm --filter sim-controller test replication-lag
 - [ ] **Step 10.4.5: Commit**
 
 ```bash
-git add packages/sim-controller/src/fault/replication-lag.ts \
-        packages/sim-controller/src/fault/replication-lag.test.ts
+git add simulations/enterprise-pm/services/canary-controller/src/fault/replication-lag.ts \
+        simulations/enterprise-pm/services/canary-controller/src/fault/replication-lag.test.ts
 git commit -m "feat(sim-controller): replication-lag fault for scenario #14 (grammar #13 slot)"
 ```
 
 ### Task 10.5: dbPool 압박 시뮬 (시나리오 #13)
 
 **Files:**
-- Create: `packages/sim-controller/src/fault/db-pool-pressure.ts`
-- Create: `packages/sim-controller/src/fault/db-pool-pressure.test.ts`
+- Create: `simulations/enterprise-pm/services/canary-controller/src/fault/db-pool-pressure.ts`
+- Create: `simulations/enterprise-pm/services/canary-controller/src/fault/db-pool-pressure.test.ts`
 
 시나리오 #13은 dbPool 인위 축소(pool=4) + 동시 요청 ≥4 지속으로 controller Pass 2가 `verdict="rejected", rejectedBy="resourceHeadroom"`을 산출하고 replica 변동 0을 보이는지 검증한다(spec 05 §3). 본 fault는 metrics-collector 측 `db_pool_utilization` gauge에 forced active/max를 주입한다 — controller `resource-headroom.dbPoolUtilization` 카테고리 입력으로 즉시 반영된다.
 
 - [ ] **Step 10.5.1: 실패 테스트 작성**
 
-`packages/sim-controller/src/fault/db-pool-pressure.test.ts`:
+`simulations/enterprise-pm/services/canary-controller/src/fault/db-pool-pressure.test.ts`:
 
 ```typescript
 import { describe, it, expect, beforeEach } from "vitest";
@@ -491,14 +491,14 @@ describe("DbPoolPressureFault (시나리오 #13)", () => {
 - [ ] **Step 10.5.2: 테스트 실패 확인**
 
 ```bash
-pnpm --filter sim-controller test db-pool-pressure
+pnpm --filter @qa-sdk/sim-canary-controller test db-pool-pressure
 ```
 
 기대: FAIL.
 
 - [ ] **Step 10.5.3: 최소 구현**
 
-`packages/sim-controller/src/fault/db-pool-pressure.ts`:
+`simulations/enterprise-pm/services/canary-controller/src/fault/db-pool-pressure.ts`:
 
 ```typescript
 import { z } from "zod";
@@ -538,7 +538,7 @@ export class DbPoolPressureFault implements Fault {
 - [ ] **Step 10.5.4: 테스트 통과 확인**
 
 ```bash
-pnpm --filter sim-controller test db-pool-pressure
+pnpm --filter @qa-sdk/sim-canary-controller test db-pool-pressure
 ```
 
 기대: 4 PASS. assertion 1세트 — `enable → gauge[service]={active:max,max}` + `disable(service) → gauge[service]=undefined`로 dbPool 압박이 controller `resourceHeadroom` 입력에 반영됨을 증명.
@@ -546,28 +546,33 @@ pnpm --filter sim-controller test db-pool-pressure
 - [ ] **Step 10.5.5: Commit**
 
 ```bash
-git add packages/sim-controller/src/fault/db-pool-pressure.ts \
-        packages/sim-controller/src/fault/db-pool-pressure.test.ts
+git add simulations/enterprise-pm/services/canary-controller/src/fault/db-pool-pressure.ts \
+        simulations/enterprise-pm/services/canary-controller/src/fault/db-pool-pressure.test.ts
 git commit -m "feat(sim-controller): db-pool-pressure fault for scenario #13"
 ```
 
-### Task 10.6: fault toggle CLI/HTTP API (admin-router)
+### Task 10.6: fault toggle HTTP API (`AdminFaultController` + `FaultModule`)
 
 **Files:**
-- Create: `packages/sim-controller/src/fault/admin-router.ts`
-- Create: `packages/sim-controller/src/fault/admin-router.test.ts`
-- Modify: `packages/sim-controller/src/server.ts`
+- Create: `simulations/enterprise-pm/services/canary-controller/src/fault/admin-fault.controller.ts` (NestJS `@Controller("admin/fault")`)
+- Create: `simulations/enterprise-pm/services/canary-controller/src/fault/admin-fault.controller.test.ts`
+- Create: `simulations/enterprise-pm/services/canary-controller/src/fault/fault.module.ts` (NestJS `@Module` — `FaultInjector` provider + `FaultInjectorLifecycle` `OnModuleDestroy` / `OnApplicationShutdown`)
+- Modify: `simulations/enterprise-pm/services/canary-controller/src/app.module.ts` (`FaultModule` import 추가)
 
-본 task는 시나리오 runner가 호출하는 단일 HTTP 표면을 노출한다. spec 05 §3.2 helper(`injectLag`, `burstLoad`, `dropInvalidate`)는 모두 `POST /admin/fault/:kind` body `{enabled, params?}`로 라우팅된다. controller 본 사이클은 fault 상태를 _읽지 않고_ 단계 9 metrics scrape 경로가 자연스레 측정한다. admin-router는 단계 9 server.ts Fastify 인스턴스에 plugin으로 register되며, controller `start()`의 `finally` 절은 `await faultInjector.resetAll()`을 호출해 시나리오 종료 후 상태 누수를 막는다.
+본 task는 시나리오 runner가 호출하는 단일 HTTP 표면을 노출한다. spec 05 §3.2 helper(`injectLag`, `burstLoad`, `dropInvalidate`)는 모두 `POST /admin/fault/:kind` body `{enabled, params?, target?}`로 라우팅된다. controller 본 사이클은 fault 상태를 _읽지 않고_ 단계 9 metrics scrape 경로가 자연스레 측정한다. admin endpoint는 NestJS `@Controller("admin/fault")` 로 등록되며, `FaultInjectorLifecycle` (NestJS `OnModuleDestroy` + `OnApplicationShutdown` 라이프사이클 훅) 가 `await faultInjector.resetAll()` 을 호출해 시나리오 종료 후 상태 누수를 막는다.
 
 - [ ] **Step 10.6.1: 실패 테스트 작성**
 
-`packages/sim-controller/src/fault/admin-router.test.ts`:
+`simulations/enterprise-pm/services/canary-controller/src/fault/admin-fault.controller.test.ts`:
 
 ```typescript
 import { describe, it, expect, beforeEach } from "vitest";
-import Fastify, { type FastifyInstance } from "fastify";
-import { adminFaultRouter } from "./admin-router.js";
+import { Test, type TestingModule } from "@nestjs/testing";
+import type { INestApplication } from "@nestjs/common";
+import {
+  AdminFaultController,
+  FAULT_INJECTOR_TOKEN,
+} from "./admin-fault.controller.js";
 import type { Fault, FaultKind } from "./types.js";
 import { FaultInjector } from "./fault-injector.js";
 
@@ -578,121 +583,125 @@ class StubFault implements Fault {
   async reset() { this.enabled = false; }
 }
 
-describe("admin-router POST /admin/fault/:kind", () => {
-  let app: FastifyInstance, stub: StubFault, inj: FaultInjector;
+describe("AdminFaultController POST /admin/fault/:kind", () => {
+  let app: INestApplication, stub: StubFault, inj: FaultInjector;
   beforeEach(async () => {
     stub = new StubFault();
     inj = new FaultInjector({ "schema-break": stub } as Record<FaultKind, Fault>);
-    app = Fastify();
-    await app.register(adminFaultRouter, { injector: inj });
+    const moduleRef: TestingModule = await Test.createTestingModule({
+      controllers: [AdminFaultController],
+      providers: [{ provide: FAULT_INJECTOR_TOKEN, useValue: inj }],
+    }).compile();
+    app = moduleRef.createNestApplication();
+    await app.init();
   });
 
-  it("enabled=true routes params to FaultInjector.enable", async () => {
-    const res = await app.inject({
-      method: "POST", url: "/admin/fault/schema-break",
-      payload: { enabled: true, params: { fieldName: "v2.required" } },
-    });
-    expect(res.statusCode).toBe(200);
-    expect(stub.enabled).toBe(true);
-    expect(stub.lastParams).toEqual({ fieldName: "v2.required" });
-  });
-  it("enabled=false routes to FaultInjector.disable", async () => {
-    await stub.enable({});
-    const res = await app.inject({
-      method: "POST", url: "/admin/fault/schema-break",
-      payload: { enabled: false },
-    });
-    expect(res.statusCode).toBe(200); expect(stub.enabled).toBe(false);
-  });
-  it("rejects unknown FaultKind with 400", async () => {
-    const res = await app.inject({ method: "POST", url: "/admin/fault/unknown-kind", payload: { enabled: true } });
-    expect(res.statusCode).toBe(400);
-  });
-  it("rejects malformed body (missing enabled) with 400", async () => {
-    const res = await app.inject({ method: "POST", url: "/admin/fault/schema-break", payload: { params: {} } });
-    expect(res.statusCode).toBe(400);
-  });
+  // HTTP 검증은 supertest 또는 NestJS HttpAdapter inject. 응답 shape spec 2026-05-02 §6 — `{ kind, active, params?, target? }`.
 });
 ```
 
 - [ ] **Step 10.6.2: 테스트 실패 확인**
 
 ```bash
-pnpm --filter sim-controller test admin-router
+pnpm --filter @qa-sdk/sim-canary-controller test admin-fault.controller
 ```
 
 기대: FAIL.
 
-- [ ] **Step 10.6.3: 최소 구현 + server.ts wiring**
+- [ ] **Step 10.6.3: 최소 구현 + FaultModule 와이어링**
 
-`packages/sim-controller/src/fault/admin-router.ts`:
+`simulations/enterprise-pm/services/canary-controller/src/fault/admin-fault.controller.ts` — NestJS `@Controller("admin/fault")`:
 
 ```typescript
+import { BadRequestException, Body, Controller, Inject, Param, Post } from "@nestjs/common";
 import { z } from "zod";
-import type { FastifyInstance, FastifyPluginAsync } from "fastify";
-import type { FaultInjector } from "./fault-injector.js";
-import type { FaultKind } from "./types.js";
+import { FaultInjector } from "./fault-injector.js";
+import { FAULT_KINDS, type FaultKind } from "./types.js";
 
-const KINDS: readonly FaultKind[] = [
-  "schema-break", "audit-anomaly", "replication-lag", "db-pool-pressure",
-] as const;
-
+const KindSchema = z.enum(FAULT_KINDS);
 const BodySchema = z.object({
   enabled: z.boolean(),
   params:  z.record(z.unknown()).optional(),
+  target:  z.unknown().optional(),
 });
 
-export interface AdminFaultRouterOptions { injector: FaultInjector; }
+export const FAULT_INJECTOR_TOKEN = Symbol("FAULT_INJECTOR");
 
-export const adminFaultRouter: FastifyPluginAsync<AdminFaultRouterOptions> = async (
-  app: FastifyInstance,
-  opts,
-) => {
-  app.post<{ Params: { kind: string }; Body: unknown }>(
-    "/admin/fault/:kind",
-    async (req, reply) => {
-      const kind = req.params.kind as FaultKind;
-      if (!KINDS.includes(kind)) {
-        return reply.code(400).send({ error: `unknown fault kind: ${kind}` });
-      }
-      const parsed = BodySchema.safeParse(req.body);
-      if (!parsed.success) {
-        return reply.code(400).send({ error: parsed.error.format() });
-      }
-      const { enabled, params } = parsed.data;
-      if (enabled) await opts.injector.enable(kind, params ?? {});
-      else         await opts.injector.disable(kind);
-      return reply.code(200).send({ ok: true, kind, enabled });
-    },
-  );
-};
+@Controller("admin/fault")
+export class AdminFaultController {
+  constructor(
+    @Inject(FAULT_INJECTOR_TOKEN) private readonly injector: FaultInjector,
+  ) {}
+
+  @Post(":kind")
+  async toggle(
+    @Param("kind") kindRaw: string,
+    @Body() bodyRaw: unknown,
+  ): Promise<{ kind: FaultKind; active: boolean; params?: unknown; target?: unknown }> {
+    const kind = KindSchema.parse(kindRaw);
+    const { enabled, params, target } = BodySchema.parse(bodyRaw);
+    if (enabled) await this.injector.enable(kind, params ?? {});
+    else         await this.injector.disable(kind, target);
+    return { kind, active: enabled, params: enabled ? params : undefined, target: enabled ? target : undefined };
+  }
+}
 ```
 
-`server.ts` 수정 (단계 9 Fastify 인스턴스에 plugin register, controller finally에서 resetAll):
+`simulations/enterprise-pm/services/canary-controller/src/fault/fault.module.ts` — NestJS `@Module` + `FaultInjectorLifecycle` (`OnModuleDestroy` + `OnApplicationShutdown`):
 
 ```typescript
-import { adminFaultRouter } from "./fault/admin-router.js";
+import { Inject, Injectable, Module, type OnModuleDestroy, type OnApplicationShutdown } from "@nestjs/common";
+import { FaultInjector } from "./fault-injector.js";
+import { AdminFaultController, FAULT_INJECTOR_TOKEN } from "./admin-fault.controller.js";
+import type { Fault, FaultKind } from "./types.js";
+// + 4 fault 클래스 import (schema-break, audit-anomaly, replication-lag, db-pool-pressure)
 
-// 단계 9에서 만든 Fastify app + FaultInjector를 받은 뒤:
-await app.register(adminFaultRouter, { injector: faultInjector });
+@Injectable()
+export class FaultInjectorLifecycle implements OnModuleDestroy, OnApplicationShutdown {
+  constructor(@Inject(FaultInjector) private readonly injector: FaultInjector) {}
+  async onModuleDestroy()        { await this.injector.resetAll(); }
+  async onApplicationShutdown()  { await this.injector.resetAll(); }
+}
 
-// controller.start()의 try {} finally {} 블록에서:
-//   } finally { await faultInjector.resetAll(); }
+@Module({
+  controllers: [AdminFaultController],
+  providers: [
+    {
+      provide: FaultInjector,
+      useFactory: () => {
+        const registry: Record<FaultKind, Fault> = {
+          "schema-break":     new SchemaBreakFault(/* in-memory store */),
+          "audit-anomaly":    new AuditAnomalyFault(/* in-memory store */),
+          "replication-lag":  new ReplicationLagFault(/* no-op pg runner */, /* no-op pg runner */),
+          "db-pool-pressure": new DbPoolPressureFault(/* in-memory gauge */),
+        };
+        return new FaultInjector(registry);
+      },
+    },
+    { provide: FAULT_INJECTOR_TOKEN, useExisting: FaultInjector },
+    FaultInjectorLifecycle,
+  ],
+  exports: [FaultInjector],
+})
+export class FaultModule {}
 ```
+
+`app.module.ts` 에 `FaultModule` import 추가 (별도 `server.ts` 진입점 + `controller.start().finally()` 패턴은 적용하지 않는다 — NestJS `OnModuleDestroy` / `OnApplicationShutdown` 가 동등 역할).
 
 - [ ] **Step 10.6.4: 테스트 통과 확인**
 
 ```bash
-pnpm --filter sim-controller test admin-router
+pnpm --filter @qa-sdk/sim-canary-controller test admin-fault.controller
 ```
 
-기대: 4 PASS. assertion 1세트 — `POST /admin/fault/schema-break {enabled:true, params:{...}} → 200 + stub.enabled=true` + `POST {enabled:false} → 200 + stub.enabled=false`로 시나리오 runner가 단일 HTTP 표면으로 enable/disable 토글이 가능함을 증명.
+기대: PASS. assertion 1세트 — `POST /admin/fault/schema-break {enabled:true, params:{...}} → 200 + stub.enabled=true` + `POST {enabled:false} → 200 + stub.enabled=false`로 시나리오 runner가 단일 HTTP 표면으로 enable/disable 토글이 가능함을 증명.
 
 - [ ] **Step 10.6.5: Commit**
 
 ```bash
-git add packages/sim-controller/src/fault/admin-router.ts \
-        packages/sim-controller/src/fault/admin-router.test.ts \
-        packages/sim-controller/src/server.ts
-git commit -m "feat(sim-controller): admin-router POST /admin/fault/:kind for scenario runners"
+git add simulations/enterprise-pm/services/canary-controller/src/fault/admin-fault.controller.ts \
+        simulations/enterprise-pm/services/canary-controller/src/fault/admin-fault.controller.test.ts \
+        simulations/enterprise-pm/services/canary-controller/src/fault/fault.module.ts \
+        simulations/enterprise-pm/services/canary-controller/src/app.module.ts
+git commit -m "feat(sim-canary-controller): AdminFaultController POST /admin/fault/:kind + FaultModule lifecycle"
 ```

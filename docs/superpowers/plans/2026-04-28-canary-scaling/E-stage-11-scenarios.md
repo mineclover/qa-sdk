@@ -2,7 +2,9 @@
 
 **Spec 참조:** `05-error-and-scenarios.md` §3
 
-본 단계는 spec 05 §3 매트릭스의 신규 시나리오 9~17을 9개 파일로 구현하고, 결정 객체(`SafetyDecision`/`ResourceDecision`)에 대한 단언을 압축하는 헬퍼 모듈을 도입한다. spec 05 §3.1 (a)/(b)/(c) 원칙에 따라 단언은 결정 record를 1차 입력으로, 부수효과(gateway weight, replica count, audit append)는 보강 단언으로만 사용한다. Plan A(Task 2.8/2.9/2.16 grammar), Plan B(controller config + fault-injector), Plan C(canary controller cycle write), Plan D(gateway routing push + compose scale executor) 산출물을 그대로 인용한다.
+본 단계는 spec 05 §3 매트릭스의 신규 시나리오 9~17을 9개 파일로 구현하고, 결정 객체(`SafetyDecisionRecordView`/`ResourceDecisionRecordView`)에 대한 단언을 압축하는 헬퍼 모듈을 도입한다. spec 05 §3.1 (a)/(b)/(c) 원칙에 따라 단언은 결정 record를 1차 입력으로, 부수효과(gateway weight, replica count, audit append)는 보강 단언으로만 사용한다. Plan A(Task 2.8/2.9/2.16 grammar), Plan B(controller config + fault-injector), Plan C(canary controller cycle write), Plan D(gateway routing push + compose scale executor) 산출물을 그대로 인용한다.
+
+> **구조 정정 (follow-up #23)**: 본 plan literal은 초기 작성 시 `@qa-sdk-sim/controller` 가 `SafetyDecision`/`ResourceDecision` 타입을 라이브러리 export 한다고 가정했으나, 실제 controller(`@qa-sdk/sim-canary-controller`)는 NestJS service이며 라이브러리 export가 없다. SSOT는 controller `decision-builder.service.ts` 의 `SafetyDecisionRecord`/`ResourceDecisionRecord` 이고, 시나리오 헬퍼 모듈(`audit-fetcher.ts`)에 `SafetyDecisionRecordView`/`ResourceDecisionRecordView` view 타입을 직접 정의해 controller import 의존을 끊는다. 또한 `parseDecisionId`/`parseCycleId` 는 invalid 시 *throw* 하므로 `ok(parser(...))` 패턴은 broken — try/catch wrapping helper(`assertGrammarRoundtrip`) 를 사용한다. fixture decisionId 는 grammar #8 (`safety-decision-<ULID 26 chars>`)이므로 `buildDecisionId({ pass: "safety", ulid })` 로 동적 생성한다. §11.3/§11.4 의 `revisionCounter` deepEqual은 module-level monotonic counter 특성상 시나리오 간 격리가 어려워 weight=0 invariant 만 분리 단언한다. + scenarios 패키지에 `vitest.config.ts` 신설 (parent 가 scenarios/ 제외) + `sim-identifier-grammar` workspace dep 추가.
 
 ### File Structure (단계 11)
 
@@ -48,9 +50,13 @@
 ```typescript
 // @def.boundary sim-scenarios
 // @def.doc canary-scaling-error-and-scenarios
-import type { SafetyDecision, ResourceDecision } from "@qa-sdk-sim/controller";
+// 헬퍼 모듈에서 record view 타입을 직접 정의 — controller(@qa-sdk/sim-canary-controller) 는
+// NestJS service이며 라이브러리 export가 없다. SSOT는 controller decision-builder.service.ts
+// `SafetyDecisionRecord`/`ResourceDecisionRecord` 이고, 본 view는 그 read-only projection 이다.
+export interface SafetyDecisionRecordView { /* decisionId, cycleId, pass: "safety", verdict, triggerCategory, categoryVerdicts, action, … */ }
+export interface ResourceDecisionRecordView { /* decisionId, cycleId, pass: "resource", verdict, rejectedBy, target, triggerSignals, … */ }
 
-export type AnyDecision = SafetyDecision | ResourceDecision;
+export type AnyDecision = SafetyDecisionRecordView | ResourceDecisionRecordView;
 
 export interface AuditFetcher {
   queryDecisions(filter: { cycleIds: readonly string[] }): Promise<AnyDecision[]>;
@@ -83,7 +89,7 @@ export async function waitForCycles(n: number, timeoutMs = 60_000): Promise<stri
 - `assertTriggerCategory` PASS/FAIL: rollback + categoryVerdicts.compatibility=FAIL 통과, WARN인 경우 reject(/FAIL/).
 - `assertResourceVerdict` PASS: rejected verdict + rejectedBy="resourceHeadroom" 통과.
 
-baseSafety fixture는 `decisionId="sim.dec.safety.01HXYZ0000000000000000"`, `cycleId="sim.cyc.01HXYZ0000000000000000"`, verdict="promote", 모든 categoryVerdicts=PASS, action.weight=25 revision=2 (Plan A Task 2.8/2.9 grammar 라운드트립 통과 식별자).
+baseSafety fixture는 `decisionId=buildDecisionId({ pass: "safety", ulid: "01HXYZ0000000000000000000" })` (실제 grammar #8 — `safety-decision-<ULID 26 chars>`), `cycleId=buildCycleId({ ulid: "01HXYZ0000000000000000000" })`, verdict="promote", 모든 categoryVerdicts=PASS, action.weight=25 revision=2 (Plan A Task 2.8/2.9 grammar 라운드트립 통과 식별자). plan literal `"sim.dec.safety.01HXYZ..."` 같은 dot-segmented 형태는 실제 grammar와 어긋나므로 사용 금지 — 모든 fixture 는 `buildDecisionId`/`buildCycleId` 로 동적 생성한다.
 
 `decision-assertions.ts`:
 
@@ -97,27 +103,35 @@ baseSafety fixture는 `decisionId="sim.dec.safety.01HXYZ0000000000000000"`, `cyc
 //   (c) (cycleId, pass) unique — 같은 cycleId 결정 row 정확히 1건
 
 import { equal, deepEqual, ok } from "node:assert/strict";
-import type { SafetyDecision, ResourceDecision } from "@qa-sdk-sim/controller";
+import type { SafetyDecisionRecordView, ResourceDecisionRecordView } from "../lib/audit-fetcher.js";
 import { parseDecisionId, parseCycleId } from "sim-identifier-grammar";
 
 export interface SafetyExpectation {
   verdict: "promote" | "hold" | "rollback";
-  triggerCategory?: SafetyDecision["triggerCategory"];
-  categoryVerdicts?: Partial<SafetyDecision["categoryVerdicts"]>;
-  action?: SafetyDecision["action"];
+  triggerCategory?: SafetyDecisionRecordView["triggerCategory"];
+  categoryVerdicts?: Partial<SafetyDecisionRecordView["categoryVerdicts"]>;
+  action?: SafetyDecisionRecordView["action"];
   minConfidence?: number;
 }
 
 export interface ResourceExpectation {
   verdict: "scale-up" | "scale-down" | "hold" | "rejected";
-  rejectedBy?: ResourceDecision["rejectedBy"];
+  rejectedBy?: ResourceDecisionRecordView["rejectedBy"];
   target?: { v1: number; v2: number };
   triggerSignals?: readonly string[];
 }
 
-export function assertSafetyVerdict(d: SafetyDecision, e: SafetyExpectation): void {
-  ok(parseDecisionId(d.decisionId), `decisionId grammar invalid: ${d.decisionId}`);
-  ok(parseCycleId(d.cycleId), `cycleId grammar invalid: ${d.cycleId}`);
+// parseDecisionId/parseCycleId 는 invalid 시 throw — `ok(parser(...))` 패턴 broken.
+// try/catch 로 wrapping 해 단언 메시지를 명확히 한다.
+function assertGrammarRoundtrip(parser: (s: string) => unknown, value: string, label: string): void {
+  try { parser(value); } catch (e) {
+    throw new Error(`${label} grammar invalid: ${value} (${(e as Error).message})`);
+  }
+}
+
+export function assertSafetyVerdict(d: SafetyDecisionRecordView, e: SafetyExpectation): void {
+  assertGrammarRoundtrip(parseDecisionId, d.decisionId, "decisionId");
+  assertGrammarRoundtrip(parseCycleId, d.cycleId, "cycleId");
   equal(d.pass, "safety", "pass must be 'safety'");
   equal(d.verdict, e.verdict, `verdict expected=${e.verdict} actual=${d.verdict}`);
   if (e.triggerCategory !== undefined) equal(d.triggerCategory, e.triggerCategory, `triggerCategory expected=${e.triggerCategory}`);
@@ -131,16 +145,16 @@ export function assertSafetyVerdict(d: SafetyDecision, e: SafetyExpectation): vo
   if (e.minConfidence !== undefined) ok(d.confidence >= e.minConfidence, `confidence ${d.confidence} < ${e.minConfidence}`);
 }
 
-export function assertTriggerCategory(d: SafetyDecision, expected: NonNullable<SafetyDecision["triggerCategory"]>): void {
+export function assertTriggerCategory(d: SafetyDecisionRecordView, expected: NonNullable<SafetyDecisionRecordView["triggerCategory"]>): void {
   equal(d.verdict, "rollback", "triggerCategory only valid on rollback");
   equal(d.triggerCategory, expected);
   const cv = d.categoryVerdicts[expected as keyof typeof d.categoryVerdicts];
   equal(cv, "FAIL", `categoryVerdicts.${expected} must be FAIL when trigger matches, got=${cv}`);
 }
 
-export function assertResourceVerdict(d: ResourceDecision, e: ResourceExpectation): void {
-  ok(parseDecisionId(d.decisionId), `decisionId grammar invalid: ${d.decisionId}`);
-  ok(parseCycleId(d.cycleId), `cycleId grammar invalid: ${d.cycleId}`);
+export function assertResourceVerdict(d: ResourceDecisionRecordView, e: ResourceExpectation): void {
+  assertGrammarRoundtrip(parseDecisionId, d.decisionId, "decisionId");
+  assertGrammarRoundtrip(parseCycleId, d.cycleId, "cycleId");
   equal(d.pass, "resource", "pass must be 'resource'");
   equal(d.verdict, e.verdict, `verdict expected=${e.verdict} actual=${d.verdict}`);
   if (e.verdict === "rejected") {
@@ -152,7 +166,7 @@ export function assertResourceVerdict(d: ResourceDecision, e: ResourceExpectatio
 }
 
 /** spec 05 §3.1 (c) — (cycleId, pass) unique 보장. */
-export function assertSingleDecisionPerCyclePass(decisions: readonly (SafetyDecision | ResourceDecision)[]): void {
+export function assertSingleDecisionPerCyclePass(decisions: readonly (SafetyDecisionRecordView | ResourceDecisionRecordView)[]): void {
   const seen = new Set<string>();
   for (const d of decisions) {
     const key = `${d.cycleId}::${d.pass}`;
@@ -190,7 +204,7 @@ spec 05 §3 시나리오 9 — v2 = v1 호환, 자연 트래픽, 30s × N 사이
 
 import { equal, deepEqual, ok } from "node:assert/strict";
 import type { Scenario } from "../runner/types.js";
-import type { SafetyDecision } from "@qa-sdk-sim/controller";
+import type { SafetyDecisionRecordView } from "../lib/audit-fetcher.js";
 import { getAuditFetcher, waitForCycles } from "../lib/audit-fetcher.js";
 import { assertSafetyVerdict, assertSingleDecisionPerCyclePass } from "../lib/assertions/decision-assertions.js";
 
@@ -233,7 +247,7 @@ export const scenario9CanaryHappyPromote: Scenario<S9Ctx> = {
     const decisions = await audit.queryDecisions({ cycleIds });
     assertSingleDecisionPerCyclePass(decisions);
 
-    const safety = decisions.filter((d): d is SafetyDecision => d.pass === "safety");
+    const safety = decisions.filter((d): d is SafetyDecisionRecordView => d.pass === "safety");
 
     // spec 05 §3.1 압축 예시 — promote action 시퀀스 deepEqual.
     deepEqual(
@@ -310,7 +324,7 @@ spec 05 §3 시나리오 10 — v2가 outbox에 신규 필수 필드 추가(호�
 
 import { equal, ok } from "node:assert/strict";
 import type { Scenario } from "../runner/types.js";
-import type { SafetyDecision } from "@qa-sdk-sim/controller";
+import type { SafetyDecisionRecordView } from "../lib/audit-fetcher.js";
 import { getAuditFetcher, waitForCycles } from "../lib/audit-fetcher.js";
 import {
   assertSafetyVerdict, assertTriggerCategory, assertSingleDecisionPerCyclePass,
@@ -348,14 +362,17 @@ export const scenario10CanaryRollbackCompatibility: Scenario<S10Ctx> = {
     const audit = getAuditFetcher();
     assertSingleDecisionPerCyclePass(await audit.queryDecisions({ cycleIds }));
 
-    const first = (await audit.queryFirstDecision({ pass: "safety", cycleIds })) as SafetyDecision | null;
+    const first = (await audit.queryFirstDecision({ pass: "safety", cycleIds })) as SafetyDecisionRecordView | null;
     ok(first, "first safety decision must exist");
 
     assertSafetyVerdict(first, {
       verdict: "rollback", triggerCategory: "compatibility",
       categoryVerdicts: { compatibility: "FAIL" },
-      action: { kind: "weight-update", weight: 0, revision: 1 },
+      // action 전체 deepEqual 은 사용 금지 — revisionCounter 가 module-level monotonic 이라
+      // 시나리오 간 격리가 어렵다. weight=0 invariant 만 분리 단언한다.
     });
+    equal(first.action.kind, "weight-update", "rollback action must be weight-update");
+    equal(first.action.weight, 0, "rollback weight must be 0");
     assertTriggerCategory(first, "compatibility");
 
     ok(
@@ -405,7 +422,7 @@ spec 05 §3 시나리오 11 — v2가 stage skip → audit critical anomaly 발�
 
 import { equal, ok } from "node:assert/strict";
 import type { Scenario } from "../runner/types.js";
-import type { SafetyDecision } from "@qa-sdk-sim/controller";
+import type { SafetyDecisionRecordView } from "../lib/audit-fetcher.js";
 import { getAuditFetcher, waitForCycles } from "../lib/audit-fetcher.js";
 import {
   assertSafetyVerdict, assertTriggerCategory, assertSingleDecisionPerCyclePass,
@@ -441,14 +458,17 @@ export const scenario11CanaryRollbackAuditSpike: Scenario<S11Ctx> = {
     const audit = getAuditFetcher();
     assertSingleDecisionPerCyclePass(await audit.queryDecisions({ cycleIds }));
 
-    const first = (await audit.queryFirstDecision({ pass: "safety", cycleIds })) as SafetyDecision | null;
+    const first = (await audit.queryFirstDecision({ pass: "safety", cycleIds })) as SafetyDecisionRecordView | null;
     ok(first, "first safety decision must exist");
 
     assertSafetyVerdict(first, {
       verdict: "rollback", triggerCategory: "auditSafety",
       categoryVerdicts: { auditSafety: "FAIL" },
-      action: { kind: "weight-update", weight: 0, revision: 1 },
+      // action 전체 deepEqual 은 사용 금지 — revisionCounter 가 module-level monotonic 이라
+      // 시나리오 간 격리가 어렵다. weight=0 invariant 만 분리 단언한다.
     });
+    equal(first.action.kind, "weight-update", "rollback action must be weight-update");
+    equal(first.action.weight, 0, "rollback weight must be 0");
     assertTriggerCategory(first, "auditSafety");
 
     ok(
@@ -493,7 +513,7 @@ spec 05 §3 시나리오 12 — RPS 폭증(자체 generator). 단언: Pass2 scal
 
 import { equal, ok } from "node:assert/strict";
 import type { Scenario } from "../runner/types.js";
-import type { ResourceDecision, SafetyDecision } from "@qa-sdk-sim/controller";
+import type { ResourceDecisionRecordView, SafetyDecisionRecordView } from "../lib/audit-fetcher.js";
 import { getAuditFetcher, waitForCycles } from "../lib/audit-fetcher.js";
 import { assertResourceVerdict } from "../lib/assertions/decision-assertions.js";
 
@@ -539,14 +559,14 @@ export const scenario12ScaleUpLoadPressure: Scenario<S12Ctx> = {
     const decisions = await audit.queryDecisions({ cycleIds });
 
     // Pass 1이 rollback이면 Pass 2 SKIP — spec 01 §4. scale-up 검증을 위해 Pass 1 hold/promote만 허용.
-    const safety = decisions.filter((d): d is SafetyDecision => d.pass === "safety");
+    const safety = decisions.filter((d): d is SafetyDecisionRecordView => d.pass === "safety");
     ok(
       safety.every((d) => d.verdict === "promote" || d.verdict === "hold"),
       "Pass 1 must not be rollback (otherwise Pass 2 would SKIP)",
     );
 
     // 첫 scale-up Pass 2.
-    const first = (await audit.queryFirstDecision({ pass: "resource", cycleIds })) as ResourceDecision | null;
+    const first = (await audit.queryFirstDecision({ pass: "resource", cycleIds })) as ResourceDecisionRecordView | null;
     ok(first, "first resource decision must exist");
 
     assertResourceVerdict(first, {
@@ -556,7 +576,7 @@ export const scenario12ScaleUpLoadPressure: Scenario<S12Ctx> = {
     });
 
     // 다음 사이클 — replica 증가 반영 후 loadPressure 회복.
-    const resourceDecisions = decisions.filter((d): d is ResourceDecision => d.pass === "resource");
+    const resourceDecisions = decisions.filter((d): d is ResourceDecisionRecordView => d.pass === "resource");
     if (resourceDecisions.length >= 2) {
       const next = resourceDecisions[1];
       ok(next.categoryVerdicts.loadPressure !== "FAIL",
