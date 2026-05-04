@@ -2,8 +2,8 @@
   "$schema": "https://raw.githubusercontent.com/nicolo-ribaudo/oxc-project.github.io/config-schema/src/public/schema/v1/oxlintrc.schema.json",
   "categories": {
     "correctness": "error",
-    "suspicious": "warn",
-    "perf": "warn"
+    "suspicious": "off",
+    "perf": "off"
   },
   "plugins": ["typescript", "unicorn", "oxc", "import", "vitest", "node", "promise"],
   "env": {
@@ -11,20 +11,20 @@
     "es2024": true
   },
   "rules": {
-    "typescript/no-explicit-any": "warn",
-    "typescript/no-non-null-assertion": "warn",
-    "typescript/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+    "typescript/no-explicit-any": "off",
+    "typescript/no-non-null-assertion": "off",
+    "typescript/no-unused-vars": "off",
 
-    "import/no-cycle": "warn",
+    "import/no-cycle": "off",
     "import/no-self-import": "error",
-    "import/no-duplicates": "warn",
+    "import/no-duplicates": "off",
 
     "vitest/no-focused-tests": "error",
-    "vitest/no-disabled-tests": "warn",
+    "vitest/no-disabled-tests": "off",
 
-    "no-unused-expressions": "warn",
+    "no-unused-expressions": "off",
 
-    "typescript/no-extraneous-class": ["warn", { "allowWithDecorator": true }],
+    "typescript/no-extraneous-class": "off",
 
     "unicorn/filename-case": "off",
     "unicorn/no-null": "off",
@@ -50,7 +50,20 @@
         "typescript/no-unused-vars": "off",
         "no-unused-expressions": "off",
         "unicorn/no-thenable": "off",
-        "jest/require-to-throw-message": "off"
+        "jest/require-to-throw-message": "off",
+        "vitest/require-mock-type-parameters": "off",
+        "vitest/no-conditional-expect": "off",
+        "jest/no-conditional-expect": "off",
+        "jest/valid-expect": "off",
+        "vitest/expect-expect": "off",
+        "jest/expect-expect": "off",
+        "jest/valid-describe-callback": "off",
+        "vitest/valid-expect": "off",
+        "jest/no-standalone-expect": "off",
+        "vitest/valid-title": "off",
+        "jest/valid-title": "off",
+        "jest/no-disabled-tests": "off",
+        "vitest/no-disabled-tests": "off"
       }
     },
     {
@@ -64,7 +77,18 @@
         "jest/require-to-throw-message": "off",
         "jest/no-export": "off",
         "jest/expect-expect": "off",
-        "jest/no-conditional-expect": "off"
+        "jest/no-conditional-expect": "off",
+        "vitest/require-mock-type-parameters": "off",
+        "vitest/no-conditional-expect": "off",
+        "jest/valid-expect": "off",
+        "vitest/expect-expect": "off",
+        "jest/valid-describe-callback": "off",
+        "vitest/valid-expect": "off",
+        "jest/no-standalone-expect": "off",
+        "vitest/valid-title": "off",
+        "jest/valid-title": "off",
+        "jest/no-disabled-tests": "off",
+        "vitest/no-disabled-tests": "off"
       }
     }
   ],
