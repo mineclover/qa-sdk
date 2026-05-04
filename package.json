@@ -42,7 +42,7 @@
     "concurrently": "^9.2.1",
     "eslint": "^10.3.0",
     "oxfmt": "^0.42.0",
-    "oxlint": "~1.57.0",
+    "oxlint": "^1.62.0",
     "protobufjs-cli": "^2.0.3",
     "sim-identifier-grammar": "workspace:*",
     "sim-service-catalog": "workspace:*",
