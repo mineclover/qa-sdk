@@ -19,6 +19,8 @@ level:       "contains 그래프에서 어떤 위치인가" — 보조 검증
 scope:       "이 단위는 어떤 종류인가" — 주제 분류
 ```
 
+> **tier 우선 분기 (validate.ts:222)**: `entry.tier`가 있으면 레거시 level 검증은 모두 생략된다. 신규 문서는 STC tier(`system`/`layout`/`component`/`entry`)로 검증 경로가 결정되고, level은 tier 미선언 문서에만 적용된다. 아래 5-level 마이그레이션 표는 레거시 level만 쓰는 문서가 대상이다.
+
 ## level 3종
 
 | level | 질문 | 의미 | 예시 |
@@ -50,7 +52,28 @@ module → leaf                      # 얕은 분해
 | `group` | contains 자식 1건 이상 필수 | error |
 | `module` | contains 자식 1건 이상 필수 | error |
 | `leaf` | contains 자식 금지 | error |
-| `leaf` | 150줄 초과 시 분할 경고 | warning |
+
+> **150줄 임계값**: validate.ts에는 leaf 길이 경고 규칙이 직접 존재하지 않는다. 150줄 기준은 `large-leaf-split.test.ts` (US-012/013) 회귀 테스트가 approved leaf의 누적 long-leaf 수를 추적하는 임계값이며, validator가 문서별로 warning을 발행하지는 않는다.
+
+## tier별 검증 경로 (validate.ts:222-272)
+
+tier가 있으면 level 분기는 건너뛴다. tier별 별도 규칙은 다음과 같다.
+
+| tier | contains 사용 | refs 사용 | level 적용 | validator 동작 |
+|------|---------------|-----------|------------|----------------|
+| `system` | non-tier/component/entry 자식만 허용. system→system은 `system-contains-system` error | 보통 사용 안 함 | 무시 | system 독립성 강제 |
+| `layout` | **금지** (`level-violation` error) | **필수** (`refs` 0건이면 error) | 무시 | layout = 카탈로그 묶음 |
+| `component` | warning (data-shape 분리 권장) | 사용 안 함 | 무시 | 수동적(링크 대상) |
+| `entry` | tier-specific 규칙 적용 (level 무시) | 사용 안 함 | 무시 | identity 단위 |
+| (없음) | level 규칙 적용 | 사용 안 함 | **적용** | 레거시 group/module/leaf 검증 |
+
+### tier:layout 절
+
+layout은 **level을 사용하지 않으며 `refs`로만 자식을 묶는다**. 근거: `validate.ts:228-245`.
+
+- `tier: layout` + `contains` → error (`level-violation`)
+- `tier: layout` + `refs` 0건 + `contains` 0건 → error (배치된 시스템 없음)
+- 따라서 layout 문서는 `level` 필드를 선언하지 않고, child 묶음은 `links: [{type: refs, target: ...}]`로 표현한다.
 
 ## level은 좌표에 인코딩하지 않는다
 
@@ -107,8 +130,8 @@ level은 **바운더리에 어떤 패싯이 존재하느냐**만으로 결정하
 children 유무는 구조적 검증이고, 패싯 조합은 의미적 검증이다.
 둘 다 일치해야 올바른 level이다.
 
-IR 자동 추론: `inferModuleLevel(relations)` (`core/src/meta-semantic/ir-types.ts`)
-— parent/children 관계에서 group/module/leaf를 자동 판별.
+IR 자동 추론: `inferModuleLevel(relations): FoldLevel` (`core/src/meta-semantic/ir-types.ts`)
+— parent/children 관계에서 group/module/leaf를 자동 판별. 반환 타입 `FoldLevel`은 `pipe/pipe-fold.ts`에 정의되며 DefLevel과 호환된다.
 `auditIRGraph`가 `level-mismatch`로 불일치를 감지.
 
 ## 검증

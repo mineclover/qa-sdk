@@ -36,11 +36,12 @@ description: "qa-sdk 좌표계/링크 구조 semantic 변경 시 따라야 할 �
 ### Step 1 — 영향 분석 (pre-implementation)
 
 - [ ] 변경이 **L1 Data 만** touching 인지, **L2 Validator** 까지 cascade 인지, **L3 Workflow / L4 Tooling** 까지 파급인지 판정
+- [ ] **tier:layout 승격** 시 자식 링크 `contains→refs` 강제 전환 + topdown 멤버십 재계산 (validate.ts `tier: layout` 은 `refs` 만 허용)
 - [ ] 암묵 가정 탐색 — 기존 CLI / skill / 외부 도구 가 어떤 데이터 shape 를 가정하는가?
-  - `collectDomainMembers` 는 contains ∪ depends_on← ∪ refines← 를 기대
+  - `collectDomainMembers` (def.ts `collectDomainRelations`) 는 (contains 순방향) ∪ (refs 순방향) ∪ (refines 역방향) 을 **구조 멤버**로 기대. `depends_on 역방향` 은 별도 **consumer 섹션**으로 분리됨
   - `collectDocumentFamilyOnlyScope` 는 same-family role docs + `tier: system`/legacy group/module `contains` + layout `refs` 를 기대
   - `@def.boundary` 는 `tier: system | layout` 을 기대
-  - `deriveDomainRoot` 는 outgoing `refines` / `depends_on` 만 walk
+  - `deriveDomainRoot` 는 outgoing `refines` / `depends_on` 우선 walk + self 귀결 시 **Hybrid D > A > C** 로 sub-doc rollup (D: id 접미 매칭, A: contains-inverse, C: file co-location). 근거: `domain-root.ts` `deriveDomainRoot` / `deriveSubDocRoot`
 - [ ] 역방향 데이터 참조 (reverse index, incoming link walk) 가 의존하는가?
 - [ ] 외부 tooling (`@def.boundary` 주석, `@def.doc` 주석, CLI 출력 파싱) 영향?
 
@@ -69,10 +70,10 @@ description: "qa-sdk 좌표계/링크 구조 semantic 변경 시 따라야 할 �
 - [ ] 새 suppression 수단이 필요하다면 `validator-suppression-tags.rule.md` 를 **먼저** 업데이트
 
 **L3 Workflow**:
-- [ ] `pnpm --filter @qa-sdk/cli test -- workflow-smoke` 전부 통과
-- [ ] `def topdown <core-root>` 가 silent empty 가 아님 (≥1 member)
-- [ ] `def list --type=rule` 이 ≥8 건 유지
-- [ ] `def doctor` 의 Core / Domains / Aspects / Annotations 4 섹션 모두 0 error
+- [ ] `pnpm --filter @qa-sdk/cli test -- workflow-smoke` 전부 통과 — **13 tests / 6 Scenario (A~F)**
+- [ ] Scenario A: `audit --by-domain` 핵심 루트 존재 / Scenario B: `def topdown <core-root>` ≥ 2 member
+- [ ] Scenario C: `list --domain-root` ≥ 3 / Scenario D: `list --type=rule` ≥ 8
+- [ ] Scenario E: `@def.boundary` round-trip / Scenario F: **`def doctor` 가 Core/Domains/Aspects/Annotations/Summary 5 섹션 + errors 집계를 구조화 출력**
 
 **L4 Tooling**:
 - [ ] `@def.boundary` 주석 타깃이 실존 + `lifecycle != deprecated`
@@ -83,11 +84,11 @@ description: "qa-sdk 좌표계/링크 구조 semantic 변경 시 따라야 할 �
 
 새 traversal / query 를 도입할 때 L3 workflow 에서는 단일 경로 의존을 피한다.
 
-- [ ] 단일 edge-type 의존 금지 (contains only, depends_on only 등)
-- [ ] 최소 2 개 edge-type 조합 허용 — migration 중 데이터 이질성 수용
-- [ ] 예: `collectDomainMembers` = (contains 순방향) ∪ (depends_on 역방향) ∪ (refines 역방향)
+- [ ] 단일 edge-type 의존 금지 (contains only, depends_on only, refs only 등)
+- [ ] 최소 2 개 edge-type 조합 허용 — migration 중 데이터 이질성 수용 (예: `contains` + `refs`, `contains` + `refines←`)
+- [ ] 예: `collectDomainMembers` (def.ts `collectDomainRelations`) = (contains 순방향) ∪ (refs 순방향) ∪ (refines 역방향). `depends_on 역방향` 은 consumer 로 분리되어 멤버에 포함되지 않음
 - [ ] Layout/Pack 탐색은 `refs`도 family scope에 포함해야 한다
-- [ ] silent empty 는 사용자에게 warning hint 출력 (예: `(멤버 없음 — contains/depends_on/refines 링크 부재)`)
+- [ ] silent empty 는 사용자에게 warning hint 출력 — 실제 def.ts:952 출력: `(멤버 없음 — contains/refs/refines 링크 부재)`
 
 ### Step 5 — 커밋 원칙
 
@@ -146,6 +147,10 @@ description: "qa-sdk 좌표계/링크 구조 semantic 변경 시 따라야 할 �
   - 근거: `docs/proposals/domain-hierarchy/reviews/2026-04-21-phase5b-exec.md`
 - **Phase 0 3회 iteration** (2026-04-20): `deriveDomainRoot` primary-parent 알고리즘이 definition-catalog-spec 에 90건 오흡수 → 규칙 수정 후 재시뮬. 코드 커밋 전에 잡음.
   - 근거: `docs/specs/system/change-simulation-precedence.rule.md` §4.1
+- **Parent link canonicalization** (2026-05-05, `a29d1c52`): motion-content-{system,editor-system,editor-demo-system} 이 `tier: system` 부모 viz-language-system 에 대해 `depends_on` 사용 → canonical `refines` 패턴으로 정렬. `selectPrimaryParent` 의 `refines > depends_on` 우선순위에 일관성 부여하여 domain-root 파생을 안정화.
+  - 근거: git `a29d1c52`, `domain-root.ts` `selectPrimaryParent`
+- **`contains` → `refs` 전환** (Phase 5e, `92b47fd1`): 3 systems 을 `tier: layout` 으로 승격하면서 자식 링크를 `contains` → `refs` 로 강제 전환. `link-type-usage.rule.md` §2 — `tier: layout` 은 `refs` 만 허용 (validator error). topdown 멤버십이 `refs` 순방향으로 재계산되며 `collectDomainMembers` union 에 흡수됨.
+  - 근거: `docs/specs/system/link-type-usage.rule.md` §2/§5
 
 ---
 

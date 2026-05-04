@@ -46,6 +46,8 @@ description: "문서/시스템 프로세스의 유한 상태 관리. lifecycle, 
 | GateState (9종) | idle → blocked → ready → gathering → running → passed/failed/stale/skipped | gate_execution |
 | BundleState (6종) | empty → pending → gathering → partial → complete → degraded | bundle_observation |
 
+> SSOT: `packages/work-domain/src/gate-kind.ts` `GATE_KINDS`. 변경 시 `work-domain.test.ts` 의 `toHaveLength(19)` 단언과 함께 갱신. 관련 소스에 더 적게 적힌 카운트(예: 18종)가 보이면 그 자리도 SSOT 기준으로 통일.
+
 ## Cross-Loop 브릿지
 
 6개 피드백 루프를 연결하는 브릿지 (`cross-loop-bridge.ts`):
@@ -57,6 +59,37 @@ description: "문서/시스템 프로세스의 유한 상태 관리. lifecycle, 
 ```
 
 **guard 순서**: Decision success → Doc approved → Gate complete → Convention compliant
+
+## 계층 구분 — validate green ≠ system green
+
+> `def validate` (L2) 통과는 필요조건일 뿐이다. **`workflow-smoke` + `def doctor` 가 L3 sentinel** 로서 silent-empty 회귀 (Phase 3b Option B 류) 를 차단한다. 근거: `docs/specs/system/layer-separation.rule.md` §1.2 (L2 정의), §1.3 (L3 workflow smoke 원칙).
+
+## 통합 헬스체크 (`def doctor`)
+
+신규 기여자/에이전트는 개별 머신 트래킹 전에 **`qa-sdk def doctor`** 로 시스템 전반의 건강도부터 본다.
+
+```bash
+qa-sdk def doctor             # 사람 친화 출력
+qa-sdk def doctor --json      # 기계 파싱용
+```
+
+출력 구조 (`packages/cli/src/commands/def.ts` `cmdDoctor`):
+
+| 섹션 | 점검 항목 |
+|------|----------|
+| Core | `validate` (errors/warnings) + `sync stats` |
+| Domains | `audit --by-domain` 도메인 루트 + 멤버 수, top 루트 N개 |
+| Aspects | aspect hierarchy + completeness |
+| Annotations | `@def.boundary` deprecated 여부 + valid 비율 |
+| Summary | 총 errors / warnings + 후속 명령 안내 |
+
+exit code 의미:
+
+- `0` — 깨끗 (errors=0, warnings=0)
+- `1` — errors 존재 — `def validate` 로 상세 확인
+- `2` — warnings only — 즉시 차단은 아니나 누적 시 검토
+
+`workflow-smoke` Scenario F 는 doctor 가 5섹션 + `errors` 집계를 항상 출력하는지 단언한다 (`packages/cli/src/workflow-smoke.test.ts`).
 
 ## 사용법
 
@@ -150,5 +183,7 @@ qa-sdk quality export quality-gates-system --output=artifacts/quality-gates-syst
 - `definition-catalog/src/cross-loop-bridge.ts` — Cross-Loop 브릿지 (③→②→⑤→⑥)
 - `work-domain/src/harness.ts` — 게이트 FSM (순수 함수)
 - `work-domain/src/gate-tracker.ts` — 게이트 트래커 (emit + listener)
-- `work-domain/src/gate-kind.ts` — 18종 게이트 유형 택소노미
+- `work-domain/src/gate-kind.ts` — 19종 게이트 유형 택소노미 (GATE_KINDS SSOT)
 - `definition-catalog/src/cross-loop-bridge.test.ts` — Cross-Loop 통합 테스트 (10건)
+- `packages/cli/src/commands/def.ts` `cmdDoctor` — 통합 헬스체크 명령 진입점
+- `packages/cli/src/workflow-smoke.test.ts` — L3 silent-empty 회귀 sentinel (Scenario A~F)

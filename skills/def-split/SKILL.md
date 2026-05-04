@@ -35,6 +35,7 @@ qa-sdk def audit    # 대형 리프 이슈 확인
 ## 시작 전 확인
 
 ```bash
+qa-sdk def doctor               # 통합 헬스체크 — 분할 시작 전 base line 확보
 qa-sdk def sync
 qa-sdk def context <문서ID>
 qa-sdk def bottomup <문서ID>
@@ -51,10 +52,12 @@ qa-sdk def bottomup <문서ID>
 
 1. `qa-sdk def context <문서ID>`로 책임지는 system boundary를 확인한다.
 2. system 후보가 없으면 `def-tier` 기준으로 system/layout/component/entry 중 무엇인지 먼저 판정한다.
+   - (a) `qa-sdk def tier classify` 로 자식 후보의 추천 tier 를 받아 분할 단위와 일치하는지 점검한다.
 3. `grep "^## " <파일>`로 섹션 구조를 분석한다.
 4. 각 섹션을 "System / Interface / Component / Entry 중 무엇인가" 기준으로 묶는다.
 5. System 문서는 behavior ownership만, Interface 문서는 소비 계약만, Component 문서는 데이터 vocabulary만, Entry 문서는 식별자만 소유하게 분리한다.
 6. 필요한 문서를 생성하고 `## 목적 ^purpose`를 채운다.
+   - (b) **component → system 승격** 또는 신규 system 분할 시 frontmatter 에 `sources:` 필드 부여 필수 (소유한 구현 파일 절대경로 목록). `def validate` 의 `missing-owner-system` 회피.
 7. 각 문서에 구현 참조(`## 구현 참조`)를 추가한다:
    - 구현: `패키지/src/파일.ts` — 핵심 함수/타입
    - 테스트: `패키지/src/파일.test.ts` — 관련 describe/it 라인번호
@@ -62,6 +65,7 @@ qa-sdk def bottomup <문서ID>
 9. 필요한 횡방향 관계는 `/def-link` 기준으로 보강한다.
 10. `qa-sdk def sync`로 local datasource를 갱신한다.
 11. 검증: system은 system을 contains하지 않고, Interface/Component/Entry가 behavior를 숨기지 않으며, shared source가 여러 책임을 과도하게 소유하지 않는다.
+    - (c) `qa-sdk def audit` (또는 `def validate`) 로 `owner-root-mismatch` / `missing-owner-system` 0 건 확인 — `sources:` 가 가리키는 코드의 domain root 가 문서 domain root 와 일치해야 한다.
 
 경험적 분할 힌트:
 
@@ -88,6 +92,10 @@ def:
   aspect: <aspect>
   depth: <depth>
   lifecycle: approved
+  # tier: system 으로 승격되거나 분할된 system 문서는 sources 필수
+  sources:
+    - packages/<pkg>/src/<file>.ts
+    - packages/<pkg>/src/<other>.ts
 ---
 # <제목>
 
@@ -97,6 +105,8 @@ def:
 ```
 
 `def:` 래퍼 + 2칸 들여쓰기. `## 목적 ^purpose` 필수.
+
+`sources:` 는 `tier: system` 문서가 어떤 코드 SSOT 를 소유하는지 선언한다. 분할 결과가 system 으로 승격되면 반드시 부여한다 (예: convergence-comparators, convergence-advisors). 없으면 `missing-owner-system` validator error.
 
 ## scope 결정: "주 독자가 누구인가"
 
@@ -141,6 +151,20 @@ pnpm --filter definition-catalog test
 - 한 코드 파일이 서로 다른 E/C/I/S + L/P 문서 3개 이상을 소유하면 `spec-lifecycle`과 함께 code split 후보로 본다.
 - 한 테스트 파일이 여러 source boundary를 검증하면 `test-split`을 사용한다.
 - 당장 code split을 못 하면 문서에 "현재 shared source"임을 명시하고, `.todo.md`에 code split follow-up을 남긴다.
+
+## Worked example — convergence-layer-group 분할
+
+`docs/specs/spec-engine-system/convergence-layer-group.md` 가 비교(comparator) 책임과 추천(advisor) 책임을 한꺼번에 소유하던 layout/group 을 두 개의 `tier: system` 자식 문서로 분할한 실 사례:
+
+- `convergence-comparators.spec.md` (`tier: system`, aspect: `analyzer_func`)
+  - `sources:` `packages/convergence/src/symbol-comparator.ts`, `decision-comparator.ts`, `causal-discovery.ts`
+  - 비교/인과 발견 behavior 만 소유
+- `convergence-advisors.spec.md` (`tier: system`, aspect: `func_def`)
+  - `sources:` `packages/convergence/src/simplification-advisor.ts`, `boundary-recommender.ts`, `headroom-advisor.ts`, `capacity-optimizer.ts`
+  - 추천/수렴 사이클 behavior 만 소유
+- 부모 `convergence-layer-group` 은 `refines` 링크로 묶이는 group 으로 남고, 두 system 이 독립 코드 SSOT 를 갖는다.
+
+핵심: 분할 결과가 system 이면 `sources:` 필수. validate 에서 `missing-owner-system` 또는 `owner-root-mismatch` 가 잡혀야 정상 (잡히면 도메인 root 재정렬 또는 sources 보정).
 
 ## 주의
 

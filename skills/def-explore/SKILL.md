@@ -7,6 +7,17 @@ description: "qa-sdk 시스템 구조와 문서 체계를 탐색하고 이해한
 
 시스템 구조와 문서 체계를 이해하기 위한 탐색 도구.
 
+## 0. 신규 기여자 onboarding — 통합 진입점
+
+탐색을 시작하기 전에 카탈로그 전체 헬스체크를 먼저 본다. 어떤 섹션이 깨져
+있는지에 따라 그 다음 명령이 달라진다.
+
+```bash
+qa-sdk def doctor               # L1-L4 통합 헬스체크 (한 화면)
+```
+
+이후 아래 1~9 의 탐색 경로 중 필요한 항목을 선택한다. 상세: `skills/def-doctor/SKILL.md`.
+
 ## 진입점
 
 ```bash
@@ -54,14 +65,16 @@ def context <service-id>      # 소속/의존/영향 컨텍스트
 ### 4. 코드 연결
 
 ```bash
-def find-by-file <파일경로[:symbol]>   # 코드 → 관련 문서
-def body <문서ID>            # 최신 본문 전체 확인
-def list --svc=<서비스명>     # 서비스별 문서 전체
+def find-by-file <파일경로[:symbol]>     # 코드 → 관련 문서
+def code-link-gaps [--scope=<path>] [--limit=N] [--json]   # 문서 연결 없는 코드 목록
+def body <문서ID>                        # 최신 본문 전체 확인
+def list --svc=<서비스명>                 # 서비스별 문서 전체
 ```
 
 `def find-by-file`는 DB의 `code_references`만 사용한다.
 입력은 문서 frontmatter `source:`와 코드 주석 `@def.boundary[#symbol]`, `@def.doc[#symbol]`이며, `qa-sdk def sync` 이후에만 반영된다.
-결과가 없으면 아직 구조적 code-boundary-map이 정의되지 않은 것이다.
+결과가 `kind=none`이면 아직 구조적 code-boundary-map이 정의되지 않은 것이다 — `def code-link-gaps` 로 갭을 한 번에 살펴보고, 권위 문서를 골라
+`source:` 또는 `@def.boundary` 주석을 추가해 연결한다 (상세: `skills/def-boundary/SKILL.md`).
 
 ### 5. Meta-Semantic IR 탐색
 
@@ -72,7 +85,7 @@ def children meta-semantic-ir   # IR 하위: pipe/data/module/rule/usecases
 def get meta-semantic-extraction # LLM 기반 코드 추출 파이프라인
 ```
 
-IR 코드: `packages/core/src/meta-semantic/` (11 source files, 124 tests)
+IR 코드: `packages/core/src/meta-semantic/` — source/test 카운트는 `qa-sdk def stats` 또는 패키지 smoke 결과에서 확인한다 (하드코딩 금지).
 
 문서 유형 7종: `.spec.md`(정의) / `.rule.md`(소비 규칙) / `.todo.md`(계획) / `.test.md`(검증) / `.cases.md`(시나리오) / `.memo.md`(기록) / `.plan.md`(방향)
 
@@ -129,7 +142,7 @@ def list --aspect func_def --include-children   # func_def + 10 후손 aspect �
 def audit --rollup-aspect                       # root aspect 별 전체 rollup
 
 # 소스 확장자 필터 — `.rule.md`, `.cases.md`, `.test.md`
-def list --type=rule                            # *.rule.md 만 (현재 19건)
+def list --type=rule                            # *.rule.md 만 (현재 N건 — 위 명령으로 확인)
 def list --type=cases                           # *.cases.md — consumer 기대 시나리오
 def list --type=test                            # *.test.md — provider 계약 문서
 def list --ext=rule                             # --type=rule 과 동치 (명시형)
@@ -137,7 +150,7 @@ def list --ext=rule                             # --type=rule 과 동치 (명시
 
 `--type={rule|cases|test|todo|plan|memo}` 는 `source_path` 기반 파일 확장자 필터다 (doc_type 컬럼이 아님). `--type={spec|knowledge|design}` 은 기존 `doc_type` 컬럼 필터 — backcompat 유지.
 
-system-wide rule 인덱스: `docs/specs/system/README.md` — 9 건의 rule.md 가 테이블로 정리되어 있다.
+system-wide rule 인덱스는 `docs/specs/system/README.md` 에 테이블로 정리되어 있으며, 전체 카운트는 `qa-sdk def list --type=rule` 로 동적 확인한다 (하드코딩 금지).
 
 ## 핵심 개념 요약
 
@@ -166,7 +179,7 @@ def get definition-metadata-source-map
 group/module/leaf는 contains 검증용 메타데이터다. authoring 방법론의 중심 언어가 아니다.
 
 ### 분류 (scope)
-ui, feature, flow, state, constraint, data, interface. "이 단위는 어떤 종류인가?"
+ui, feature, flow, state, constraint, data, interface, meta. "이 단위는 어떤 종류인가?" — 8 entries (SSOT: `packages/definition-catalog/src/vocabulary.ts` `DEF_SCOPE`). `meta` 는 메타-설계 제안 (정규 스펙의 규칙 자체를 재정의하는 RFC/proposal).
 
 ### 존재 이유 (layer)
 domain(본질), operation(인프라), mediation(중재), experience(경험). "왜 존재하는가?"

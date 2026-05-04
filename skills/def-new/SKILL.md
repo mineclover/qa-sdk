@@ -5,25 +5,28 @@ description: "definition-catalog 새 문서 생성. frontmatter + ^purpose + ^ov
 
 # Definition Catalog — 새 문서 생성
 
+> 이 skill은 수동 문서 작성 + `qa-sdk def sync`를 전제로 한다. `qa-sdk def new` 서브커맨드는 존재하지 않는다 — 파일을 직접 만든 뒤 `def sync`로 DB에 등록한다.
+
 ## 문서 템플릿
 
 ```markdown
 ---
 def:
   id: <고유 ID, kebab-case>
-  type: <spec|knowledge>             # 선택, 기본 spec
-  knowledge_kind: <philosophy|adr|guide|narrative|convention|pattern|concept>  # knowledge만
-  level: <group|module|leaf>  # 선택, 기본 leaf
-  scope: <ui|feature|flow|state|constraint|data|interface>
+  type: <design|spec|knowledge>      # 선택, 기본 spec (knowledge_kind 존재 시 knowledge 추론)
+  knowledge_kind: <philosophy|adr|guide|narrative|convention|pattern|concept|proposal|template>  # knowledge만 (9종)
+  tier: <system|layout|component|entry>   # STC 결정 대상 (exempt는 면제 마커)
+  level: <group|module|leaf>  # 선택, 기본 leaf (contains 검증 보조)
+  scope: <ui|feature|flow|state|constraint|data|interface|meta>
   aspect: <세부 유형>
-  depth: <overview|specification|implementation|validation>
-  lifecycle: approved
+  depth: <overview|specification|implementation|validation>   # 필수
+  lifecycle: <draft|review|approved|deprecated|archived>      # 필수, 기본 draft 권장
   layer: <domain|operation|mediation|experience>  # 선택
   svc: <serviceId>           # 선택
   tags: [<태그들>]           # 선택 — 예: entry-point, testing, contract, runtime
   links:                     # 선택
     - target: <대상 ID>
-      type: <depends_on|implements|refines|constrains|traces_to|contains>
+      type: <depends_on|implements|refines|constrains|traces_to|contains|refs>
 ---
 # <제목>
 
@@ -34,6 +37,87 @@ def:
 ## 구성 ^overview
 
 <핵심 사실 — 선택>
+
+## 정의 ^defines
+
+<이 문서가 새로 정의하는 개념/필드/규칙 — 선택>
+
+## 소비 ^consumes
+
+<이 문서가 의존하거나 참조하는 외부 정의 — 선택>
+
+## 위임 ^delegates
+
+<책임을 다른 문서로 넘기는 지점 — 선택>
+```
+
+마커는 권장 예시다. 코드/스펙에 강제 enum은 없으나, `^purpose`(필수)·`^defines`/`^consumes`/`^delegates`(구조)·`^method`(방법)는 카탈로그 전반의 컨벤션이다.
+
+### canonical 패턴
+
+#### 패턴 A — `tier: system` + `level: leaf` + `sources`
+
+독립 동작·코드 경계를 소유하는 system spec. 사례: `nest-service-event-envelope`, `motion-content-system`, `sim-decision-view`.
+
+```yaml
+---
+def:
+  id: <system-id>
+  type: spec
+  tier: system
+  level: leaf
+  scope: <data|feature|interface|...>
+  aspect: <system_data|func_def|api_contract|...>
+  depth: <specification|overview>
+  lifecycle: approved
+  layer: operation
+  svc: <serviceId>
+  tags: [contract, runtime]
+  links:
+    - target: <parent-or-peer-system>
+      type: refines
+sources:
+  - packages/<pkg>/src/<file>.ts
+---
+
+# <제목>
+
+## 목적 ^purpose
+
+## 정의 ^defines
+
+## 소비 ^consumes
+```
+
+#### 패턴 B — `tier: layout` + `owner_system` + `refs`
+
+여러 system/interface를 조망하는 layout/pack overview. behavior/data ownership 없음. 사례: `nest-service-kit`, `scaffold-system`, `system-packages`.
+
+```yaml
+---
+def:
+  id: <layout-id>
+  type: <design|spec>
+  tier: layout
+  owner_system: <layout-id>
+  scope: flow
+  aspect: <relation|process_flow>
+  depth: overview
+  lifecycle: approved
+  layer: operation
+  tags: [entry-point, structural]
+  links:
+    - target: <member-system-a>
+      type: refs
+    - target: <member-system-b>
+      type: refs
+---
+
+# <제목>
+
+## 목적 ^purpose
+
+## 구성 ^overview
 ```
 
 ## 문서 유형 (7종 확장자)
@@ -208,6 +292,7 @@ qa-sdk def find-by-file <관련 코드 경로[:symbol]>
 - `group` 또는 `module`이면 `## 구성 ^overview`를 실제로 채우고 `contains` 자식을 가져야 한다.
 - `leaf`면 `contains` 자식을 만들지 않는다.
 - 개념 자체를 정의하는 지식 문서는 `type: knowledge` + `knowledge_kind: concept`를 사용한다.
+- 본문 마커는 `^purpose`(필수), `^defines` / `^consumes` / `^delegates`(구조), `^method`(방법)를 권장. 코드에 강제 enum은 없으나 카탈로그 전반의 컨벤션이다.
 - 새 문서를 생성한 뒤 실행 환경의 `~/.codex/skills/`나 DB를 직접 고치지 않는다. repo 문서와 `def sync`가 기준이다.
 - 코드 경계와 실제로 맞추려면 top-level frontmatter에 `source: packages/.../file.ts[:symbol]`를 추가한다.
 - 코드 파일 안에는 `@def.boundary <system-doc-id>[#symbol]` 또는 `@def.doc <doc-id>[#symbol]` 주석을 붙일 수 있다.

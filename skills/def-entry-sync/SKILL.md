@@ -19,11 +19,14 @@ description: "기능 추가나 구조 변경 후 root entry 문서와 skill inde
 
 ```bash
 pnpm --filter @qa-sdk/cli build
+node packages/cli/dist/index.js def doctor       # onboarding 1차 진입점 — sync/validate/coverage/aspect/annotation 통합 헬스체크
 node packages/cli/dist/index.js def sync
 node packages/cli/dist/index.js def validate
 node packages/cli/dist/index.js def scan-audit
 node packages/cli/dist/index.js def audit-db
 ```
+
+`def doctor`는 이 skill의 onboarding 1차 진입점이다. 신규 기여자는 `def sync` 전에 `def doctor`를 먼저 실행해 전체 상태를 본다.
 
 ## 최소 체크리스트
 
@@ -86,6 +89,9 @@ ls ~/.claude/skills
 - 새 skill을 만들고 `docs/skills/README.md`에는 안 적음
 - CLI surface를 추가했는데 skill-catalog spec이나 command guide가 그대로임
 - taxonomy 숫자, axis entry 수, lifecycle 표가 예전 값으로 남음
+- 새 `*-system` stub spec을 추가하고 `docs/specs/system/system-root.md`의 카탈로그와 `docs/specs/system/system-packages.spec.md`의 패키지 매핑을 갱신하지 않음
+
+> 참고: 사용자 지시에서 종종 "tier:layout 전환" 전제가 등장한다. 현 코드베이스에서는 새 layout 전환 사례를 고정해 인용하지 않으며, 실제 전환이 필요한 경우 `nest-service-kit` / `scaffold-system` 같은 기존 layout 패턴을 참조한다.
 
 ## 판정 기준
 

@@ -15,6 +15,19 @@ argument-hint: "<spec-doc-id|service>"
 
 ## 핵심 원칙
 
+### 0. todo → spec 흡수 순서
+
+**.spec 흡수는 코드 구현 + 테스트 통과 이후에만 한다.** 구현 전에 spec으로 이름만 바꾸면 문서가 코드보다 앞서 SSOT 행세를 하게 되어 drift 시 어느 쪽이 정답인지 결정이 불가능해진다 (메모리: `feedback_todo-impl-first`).
+
+순서:
+
+1. `.todo.md`에 미구현 항목을 체크박스로 둔다.
+2. 코드 구현 → 테스트(`.test.md`로 명시한 시나리오 포함) 통과 확인.
+3. 통과한 항목만 `.spec.md`로 이전. 미통과 항목은 `.todo.md`에 잔류.
+4. 전부 끝나야 `.todo.md` 삭제.
+
+`.todo.md`가 남아 있는 동안 `.spec.md`는 **현재 동작하는 부분만** 다룬다 — todo 항목을 spec에 미리 적어 두지 않는다.
+
 ### 1. 구현 완료 시 코드 참조로 전환
 
 타입, API 시그니처 등 코드로 표현 가능한 내용은 구현 완료 후 **코드가 SSOT**가 된다.
@@ -50,6 +63,18 @@ interface ContractEvidence {
 - 코드도 나눌 수 있으면 code split을 먼저 하거나 같은 변경 묶음에서 닫는다.
 - 지금 나눌 수 없으면 문서에 shared source임을 명시하고 `.todo.md`에 code split follow-up을 남긴다.
 - 코드가 충분히 나뉘어 있지만 같은 책임을 함께 구현한다면 문서는 하나로 유지하고 `sources`에 여러 파일을 나열한다.
+
+#### tier 승격 트리거
+
+문서 분할 후 자식 문서가 본인 책임을 갖기 시작하면 **부모 문서의 tier도 승격**한다. 근거: `docs/specs/system/validator-suppression-tags.rule.md` §1.2 (L47) — "실질적 system 을 component 로 분류하여 dup-coord 회피 금지 — tier 승격 또는 aspect 세분화가 정답".
+
+| 현재 tier | 승격 트리거 | 다음 tier |
+|----------|-------------|----------|
+| `entry` / shape 전용 | behavior(동작)를 직접 보유하기 시작 | `component` |
+| `component` | `contains` 자식 문서가 새로 발생했거나 독립 behavior(동작/계약)를 가진다 | `component` 유지 검토 후 `system`으로 |
+| `component` | 다른 문서가 이 문서를 system처럼 참조하고 있다 (직접 의존 진입점) | `system` |
+
+승격 후에는 `duplicate-coordinate` 면제가 사라지므로 좌표 유일성을 다시 점검한다 (validate.ts L361 면제 조건).
 
 ### 2. 문서에 남는 것 vs 코드로 옮기는 것
 
@@ -135,7 +160,26 @@ qa-sdk def check <문서ID>
 
 # 전체 감사
 qa-sdk def audit
+
+# 소스 파일 ↔ 문서 역추적 (sources: frontmatter 기반)
+qa-sdk def find-by-file packages/<pkg>/src/types.ts
+qa-sdk def find-by-file packages/<pkg>/src/types.ts:DriftReport
+
+# 미연결 코드 점검 — 정식 게이트
+# 근거: docs/specs/definition-catalog/definition-code-link-coverage.spec.md
+# 근거: docs/specs/system/layer-separation.rule.md L78, L150
+qa-sdk def code-link-gaps --scope=<scope>
+qa-sdk def code-link-gaps --json
+
+# raw frontmatter/link 감사 (DB 미사용 — sync 전 빠른 점검)
+qa-sdk def scan-audit
 ```
+
+| 명령 | 입력 | 검증하는 것 |
+|------|------|-------------|
+| `find-by-file <path[:symbol]>` | 코드 경로 + 선택 심볼 | 어떤 문서가 sources로 이 코드를 소유하는가 |
+| `code-link-gaps` | (전체 스캔) | `@def.boundary`/`sources:` 어느 쪽으로도 연결 안 된 코드 목록 |
+| `scan-audit` | 디렉토리 | sync 없이 frontmatter/link 정합성 즉시 검사 |
 
 ## 판단 기준
 
@@ -154,6 +198,8 @@ qa-sdk def audit
 
 ### 전환 형식
 
+본문 — 소스 경로를 사람이 읽기 좋은 설명과 함께 나열:
+
 ```markdown
 ## 관련 소스
 
@@ -161,6 +207,31 @@ qa-sdk def audit
 - `packages/<pkg>/src/collector.ts:createSpecTracker` — 수집기 팩토리
 - `packages/<pkg>/src/routes.ts:POST /sync` — 동기화 엔드포인트
 ```
+
+frontmatter `sources:` — DB 역추적/`code-link-gaps` 게이트의 1급 입력 (배열 형식):
+
+```yaml
+---
+def:
+  id: <doc-id>
+  ...
+  sources:
+    - packages/<pkg>/src/types.ts
+    - packages/<pkg>/src/types.ts:DriftReport
+    - packages/<pkg>/src/collector.ts:createSpecTracker
+    - packages/<pkg>/src/routes.ts
+---
+```
+
+규칙:
+
+- 항목 형식: `<레포 상대경로>` 또는 `<레포 상대경로>:<symbol>` — symbol은 export name 또는 라우트(`POST /sync`).
+- 경로는 항상 레포 루트 기준. `./`, `../`, 절대경로 금지.
+- 같은 파일을 여러 symbol로 분리해서 등록 가능 — boundary 책임이 갈리면 등록도 분리.
+- `sources`가 비어 있으면 `code-link-gaps`에서 해당 문서 영역 코드가 미연결로 잡힌다.
+- 본문 "관련 소스" 목록과 `sources:` 배열은 **둘 다 유지**한다 — 본문은 사람용 설명, frontmatter는 도구용 SSOT.
+
+예시 참고: `docs/specs/sim-identifier-grammar/sim-identifier-grammar.spec.md` (다중 source 파일).
 
 ## 분해 시 E/C/I/S + L/P 전환
 
@@ -248,4 +319,4 @@ prefix-path-summation.spec.md  ← 전체 스펙
 - deprecated 전환은 대체 문서가 있을 때만. 무조건 deprecated하지 않음
 - 문서의 가치는 "왜(intent)" — 코드로 옮겨지는 건 "무엇(what)"
 - level 변경은 주소에 영향 없음 — 메타데이터 필드
-- CLAUDE.md 컨벤션 14: 인라인 코드 블록 금지 원칙과 동일 맥락
+- 인라인 코드 블록 금지 — `docs/specs/system/architecture-revealing-code-convention.rule.md` (구현 후 문서에 코드 사본을 남기지 말고 소스 참조로 전환). CLAUDE.md "코딩 컨벤션" 항목과 동일 맥락.

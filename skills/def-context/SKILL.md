@@ -9,11 +9,12 @@ description: "definition-catalog 노드 컨텍스트 조회. 특정 문서 작�
 
 ## 권장 순서
 
-문서를 방금 수정했거나 다른 사람이 갱신한 직후라면 먼저 local datasource를 맞춘다.
+전체 헬스체크가 먼저다. 카탈로그 상태가 깨져 있으면 단일 문서 컨텍스트만 봐도 오해를 부른다.
 
 ```bash
-qa-sdk def sync
-qa-sdk def context <문서ID>
+qa-sdk def doctor                # 1) L1-L4 통합 헬스체크 (선행)
+qa-sdk def sync                  # 2) 문서를 방금 수정했거나 외부 갱신이 있었다면 local DB 동기화
+qa-sdk def context <문서ID>      # 3) 개별 문서 컨텍스트 조회
 ```
 
 ## 실행
@@ -33,11 +34,11 @@ qa-sdk def context record-spec
 ```
 # 컨텍스트: <제목>
 scope: <scope>/<aspect>  depth: <depth>  lifecycle: <lifecycle>
-layer: <layer>  tier: <tier>
+type: <type>                          # type=knowledge 인 경우 knowledge/<kind>
+layer: <layer>
 svc: <serviceId>
 address: <address>
-도메인 루트: <domain_root>            # 파생 결과 (Phase 2)
-aspect family: <parent-aspect>        # deriveAspectParent 체인 상위 (Phase C-2)
+도메인 루트: <domain_root>            # 파생 결과 (deriveDomainRoot)
 
 ## 이 문서의 목적
 <purpose>
@@ -85,6 +86,18 @@ qa-sdk def topdown <rootId>                # 도메인 전체 purpose 조립 (co
 - 새 문서 추가 시: "어디에 넣어야 하지?"
 - feedback request나 synthetic trace가 걸린 문서인지 먼저 확인할 때
 
+### 인접 명령 (cross-link)
+
+- **코드 → 문서 역방향**: `qa-sdk def find-by-file <파일경로[:symbol]>` —
+  특정 코드 파일/심볼을 책임지는 문서를 찾는다. `kind=none` 이면 아직 연결되지
+  않은 코드 (`def code-link-gaps` 후속 명령으로 갭을 메운다).
+- **바운더리 통합 뷰**: `qa-sdk def boundary-context <문서ID> --mode direct|transitive` —
+  context 가 보여주는 단일 문서의 의존/제약을 바운더리 묶음으로 확장해서 본다.
+  `skills/def-boundary/SKILL.md` 참조.
+- **rollup aspect family**: `qa-sdk def audit --rollup-aspect` —
+  context 출력에는 aspect family 가 표시되지 않는다 (단일 문서 좁은 뷰).
+  aspect 계층 가시성이 필요하면 audit rollup 또는 `def list --aspect <root> --include-children` 사용.
+
 ## 판단 원칙 (meta-semantic 기반)
 
 > 상세: `ms-concept-contract-descent` 참조
@@ -104,9 +117,10 @@ qa-sdk def topdown <rootId>                # 도메인 전체 purpose 조립 (co
 본 skill 은 **L3 focused-view workflow**. 개별 문서 관점으로 L1 data + L2 파생 값을 조립한다.
 
 출력에는 L2 파생 값이 포함된다:
-- `도메인 루트` = `deriveDomainRoot` 결과 (L2 파생)
-- `aspect family` = `deriveAspectParent` 체인 상위 (L2 파생, Phase C-2)
+- `도메인 루트` = `deriveDomainRoot` 결과 (L2 파생). 자기 자신이 루트면 `self`
 - `owner_system` vs 파생 root 불일치 경고 = L2 `owner-root-mismatch` info 진단의 workflow 표현
+
+`deriveAspectParent` 체인 (aspect family) 은 단일 문서 컨텍스트에는 노출되지 않는다 — `def audit --rollup-aspect` 의 전용 가시성이다.
 
 L1 frontmatter (선언값) 와 L2 파생값이 어긋나면 경고가 붙는다 — 어느 쪽을 정답으로 볼지 판단하는 것은 본 skill 사용자 책임. 단순 조회 도구가 아니라 "정합성 체크포인트" 로 활용하라.
 

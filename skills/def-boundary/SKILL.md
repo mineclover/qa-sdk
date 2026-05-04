@@ -42,7 +42,7 @@ qa-sdk def body <문서ID>
 - 상위 그룹에서 내려오고 싶다
   `qa-sdk def topdown <그룹ID>`
 - 링크 누락을 메우고 싶다
-  `qa-sdk def link ...`
+  `def-link` skill 참조 또는 frontmatter `links:` 직접 편집 (전용 CLI 없음)
 
 ## boundary 문서 표준
 
@@ -55,6 +55,13 @@ qa-sdk def body <문서ID>
 | Layout / Pack view | `tier: layout` + `refs` |
 | 검증 시나리오 | `feature/scenario` + `depth: validation` |
 
+canonical 패턴 사례:
+
+- `nest-service-kit` (`docs/specs/system/nest-service-kit.spec.md`) — `tier: layout` + `owner_system: nest-service-kit` + `refs`로 bootstrap/envelope/port-contract 카탈로그.
+- `scaffold-system` (`docs/specs/scaffold/scaffold-system.spec.md`) — `tier: layout` + `owner_system: scaffold` + `refs`로 schematic/template/validator 묶음.
+
+추가 frontmatter 옵션 (선택): `owner_system`(소유 도메인), `projection_plane`(D-20 자동 추론), `intent_hierarchy`(layer 분류). 상세는 `packages/definition-catalog/src/frontmatter.ts`.
+
 ## 결합 표현 규칙
 
 - `contains`
@@ -65,6 +72,13 @@ qa-sdk def body <문서ID>
   provider 순서처럼 반드시 먼저 와야 하는 제약을 표현한다.
 - `refines`
   boundary overview에서 state/interaction/implementation 세부로 내려간다.
+
+`@def.boundary` 코드 주석 타깃 제약:
+
+- 타깃 문서는 반드시 `tier: system` 또는 `tier: layout` 이어야 한다.
+- `tier: component` / `tier: entry` / `interface/api_contract` spec은 금지.
+- 위반 시 validator가 `invalid-code-boundary` 에러로 차단한다.
+- 근거: `docs/specs/system/link-type-usage.rule.md` §1.2 / §2 (Phase 5e).
 
 방향 sanity check:
 

@@ -27,12 +27,12 @@ $ qa-sdk def doctor
 
 Core
   ⚠ validate  0 errors, 1 warning
-  ✓ sync      1248 docs, 3197 links
+  ✓ sync      <docs>건 docs, <links>건 links
 
 Domains
-  ✓ by-domain  517 roots
-      top: definition-catalog-spec, prefix-service, registry-system, storage-system, domain-hierarchy-readme
-  ✓ coverage   81.3% (1340/1649 source files linked)
+  ✓ by-domain  <roots>건 roots
+      top: definition-catalog-spec, meta-semantic-system, registry-system, prefix-service, storage-system
+  ✓ coverage   <adjusted>% adjusted (<linked>/<total>) — raw <raw>% (<linked>/<rawTotal>), <excluded> infra excluded
 
 Aspects
   ✓ hierarchy     48 total (23 roots, 25 parented), no drift
@@ -50,6 +50,19 @@ Summary
   → run `qa-sdk def audit --by-domain` for domain breakdown
 ```
 
+수치 placeholder 는 카탈로그 상태에 따라 매번 달라진다. 실측 예시 (2026-05 기준):
+`coverage  99.5% adjusted (1663/1671) — raw 96.5% (1663/1723), 52 infra excluded`.
+
+### Adjusted vs Raw coverage
+
+| 지표 | 계산 | 의미 |
+|------|------|------|
+| `raw` | `linked / totalFiles` | 전체 소스 파일 중 문서 연결이 있는 비율 |
+| `adjusted` | `linked / (totalFiles - excluded)` | infra 제외 비율 — 문서 연결 의무가 없는 인프라성 코드를 분모에서 뺀다 |
+| `excluded` | infra-only 파일 수 | bootstrap/wiring/index re-export 등 — `collectCodeLinkCoverage` 내부 규칙이 식별 |
+
+**임계값**: `def doctor` 의 coverage warning 트리거는 **adjusted** 80% 기준 (CON-004). raw 가 80% 미만이라도 adjusted ≥ 80% 면 pass. 즉 infra 제외 후의 의미 있는 커버리지를 게이트로 본다.
+
 ## 섹션별 의미
 
 | Section | Check | 의미 |
@@ -57,7 +70,7 @@ Summary
 | Core | `validate` | `validateGraph` 결과 — broken-link / circular-ref / missing-purpose 등 |
 | Core | `sync` | DB 에 적재된 문서 수 + 총 outgoing link 수. `qa-sdk def sync` 가 최신 상태면 OK |
 | Domains | `by-domain` | `deriveAllDomainRoots` 집계 루트 수 + 최상위 5 개 루트 이름 |
-| Domains | `coverage` | `@def.boundary` / `@def.doc` / frontmatter `source:` 로 문서에 연결된 소스 파일 비율 (CON-004: ≥ 80%) |
+| Domains | `coverage` | `@def.boundary` / `@def.doc` / frontmatter `source:` 로 문서에 연결된 소스 파일 비율. `adjusted` (infra 제외) / `raw` 두 값을 함께 보고하며, infra-only 파일 수도 표기한다. **warning 트리거는 adjusted < 80%** (CON-004) — raw 는 참고용 |
 | Aspects | `hierarchy` | `ASPECT_PARENTS` + `ROOT_ASPECTS` 완결성 불변식 4 경로 (aspect-parents.test.ts 와 동일 규율) |
 | Aspects | `ROOT_ASPECTS` | `DEF_ASPECT.entries` 전체가 ROOT_ASPECTS ∪ ASPECT_PARENTS 에 포함되는지 |
 | Annotations | `deprecated` | 코드 주석 타깃이 `lifecycle: deprecated`/`archived` 인 문서를 가리키는지 |

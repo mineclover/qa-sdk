@@ -17,7 +17,9 @@ qa-sdk def get definition-metadata-tier
 qa-sdk def get definition-frontmatter-metadata-system
 ```
 
-## 4종 티어
+## 5종 티어
+
+STC 결정 대상은 `system / layout / component / entry` 4종이며, `exempt`는 validator 면제 마커다. 새 authoring의 기본값으로 쓰지 않는다. canonical 정의: `definition-metadata-tier.spec.md`.
 
 | tier | 질문 | 본질 |
 |------|------|------|
@@ -25,6 +27,7 @@ qa-sdk def get definition-frontmatter-metadata-system
 | `layout` | "이것은 여러 시스템/팩을 조망하는 뷰인가?" | 조직화된 읽기/배치 뷰. 코드 경계 없음 |
 | `component` | "이것은 수동적으로 참조되는 데이터 형태인가?" | 링크 대상 전용. 독립 동작 없음. 6 sub-type |
 | `entry` | "이것은 ID로 컴포넌트들을 묶는 정체성인가?" | ECS entity 유사. R-2 조건부 존재 |
+| `exempt` | "이 문서는 구조 검증 대상에서 면제되어야 하는가?" | 운영상 예외. 새 authoring 기본값 아님 |
 
 ---
 
@@ -152,6 +155,11 @@ def:
 - **생성적 소비 컨텍스트** — 안에서 새 System/Component 발견 가능 (단, inline 정의 아닌 독립 문서로 promote)
 - **Pack 표현 가능** — 배포/문서 묶음이 behavior/data ownership 없이 여러 System/Interface를 조직하면 layout-like pack으로 본다.
 
+canonical 사례 (overview spec — `tier: layout` + `refs`만으로 여러 system을 조망):
+- `system-packages` — 모노레포 패키지 의존 관계 layout
+- `scaffold-system` — scaffold 도구 묶음 layout
+- `nest-service-kit` — Nest 서비스 부트스트랩/계약 묶음 layout
+
 ```yaml
 def:
   tier: layout
@@ -204,6 +212,7 @@ def:
 | `layout`인데 `refs`가 없음 | 뷰가 비어있음 | refs 추가 또는 `tier: system` 변경 |
 | `layout`인데 `contains`로 세부 문서를 소유 | Layout/Pack이 ownership을 가짐 | `contains → refs` 또는 owner System으로 이동 |
 | `component`인데 `contains` 자식 다수 | 실제로는 system | `tier: system`으로 변경 |
+| `component`인데 `@def.boundary <id>` 또는 `code_refs` 보유 | 코드 경계 소유는 system만 가능 | `tier: system`으로 승격 |
 | 상태 전이 로직이 System 내부에 직접 있음 | D-17 위반 | State enum → Component, 전이 → `lifecycle_ref` |
 | 코드 경계(`@def.boundary`)가 있는데 `layout` | 경계 소유는 system만 | `tier: system`으로 변경 |
 | `component` tier인데 좌표 중복 경고 | component는 좌표 유일성 불필요 | 검증기에서 component 제외됨 (정상) |

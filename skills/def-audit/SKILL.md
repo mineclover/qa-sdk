@@ -19,6 +19,8 @@ qa-sdk def audit-db             # approved 문서의 purpose/고립/svc 누락 �
 qa-sdk def validate             # synced graph + code reference boundary 검증
 qa-sdk def stats                # 분포 통계
 qa-sdk def link-rules           # LinkType 사용 규칙 조회
+qa-sdk def find-by-file <경로>  # 코드 → boundary 역추적 (어떤 spec이 이 파일을 참조하는지)
+qa-sdk def code-link-gaps       # L4 coverage 측정 — code reference 누락 진단
 ```
 
 권장 순서 (onboarding / pre-commit):
@@ -258,18 +260,36 @@ contains 계층이 4단계를 초과하면 warning.
 
 계층 분리 규칙: `docs/specs/system/layer-separation.rule.md` §1.3 (L3 workflow). Semantic 변경 시 본 리포트의 Before/After 비교를 PR 에 첨부 — `skills/semantic-change/SKILL.md` Step 2/3.
 
-## LinkType 사용 규칙 (taxonomy.ts LINK_TYPE_RULES)
+## LinkType 사용 규칙 (types.ts §LinkType, 9종 + verifies)
 
-| 유형 | 읽는 법 | 순환 | 다중부모 | 사용 기준 |
-|------|---------|------|---------|----------|
-| contains | A가 B를 포함한다 | 금지 | **경고** (cross-scope 태그 시 허용) | 그룹→멤버 소속 |
-| depends_on | A가 B에 의존한다 | 금지 | 허용 | A가 B 없이 동작 불가 |
-| implements | A가 B를 구현한다 | 금지 | 허용 | 계약→코드 |
-| refines | A가 B를 구체화한다 | 금지 | 허용 | 같은 계층 내 상세화 |
-| constrains | A가 B를 제약한다 | 금지 | 허용 | 규칙 부과 |
-| traces_to | A가 B로 추적한다 | 금지 | 허용 | 이력/마이그레이션 추적 |
+SSOT: `packages/definition-catalog/src/types.ts:217-227` + `docs/specs/system/link-type-usage.rule.md`. `cyclicTypes` = {depends_on, implements, refines}만 순환 검사 (`validate.ts:116`).
+
+| 유형 | 읽는 법 | 순환 검사 | 다중부모 | 사용 기준 |
+|------|---------|:--------:|---------|----------|
+| contains | A가 B를 포함한다 | — | **경고** (cross-scope 태그 시 허용) | 그룹→멤버 소속. tier: layout 금지 |
+| depends_on | A가 B에 의존한다 | **검사** | 허용 | A가 B 없이 동작 불가 |
+| implements | A가 B를 구현한다 | **검사** | 허용 | 계약→코드 |
+| refines | A가 B를 구체화한다 | **검사** | 허용 | 같은 계층 내 상세화 |
+| constrains | A가 B를 제약한다 | — | 허용 | 규칙 부과 |
+| traces_to | A가 B로 추적한다 | — | 허용 | 이력/마이그레이션 추적 |
+| refs | A가 B를 카탈로그로 참조 | — | 허용 | **tier: layout 전용** — System 배치 (STC D-4) |
+| verifies | A가 B를 검증 | — | 허용 | `.test.md` → 검증 대상 spec (test-md-convention §1.5) |
+| evolves_from | A가 B의 개정판 | — | 허용 | v2 → v1 버전 진화 DAG |
+| supersedes | A가 B를 대체 | — | 허용 | 신규 계약이 구 계약을 폐기 |
 
 혼동 주의:
 - "사용한다" → `depends_on`, "소속시킨다" → `contains`
 - "구체화한다" → `refines`, "필요로 한다" → `depends_on`
 - "계약→코드" → `implements`, "문서→상세문서" → `refines`
+- "Layout이 System 배치" → `refs` (`contains` 금지), "버전 진화" → `evolves_from` (`refines` 아님)
+
+## tier별 검증 (`validate.ts:218-273`)
+
+| tier | 검증 규칙 | 위반 시 | 보조 마커 |
+|------|----------|---------|----------|
+| `layout` | `refs` 강제 — `contains` 사용 금지. `refs`/`contains` 모두 0건도 위반. `owner_system` 필요 | error: `level-violation` | `@def.boundary` 가능 (Phase 5e) |
+| `system` | 다른 `tier: system`을 `contains` 금지 — `depends_on` 또는 `refs`로 전환 | error: `system-contains-system` | `@def.boundary` 가능 |
+| `component` | `contains` 자식 보유 비권장 — data-shape 분리 권장 | warning: `level-violation` | `@def.boundary` 금지 |
+| `entry` | (좌표 유일성 검사 제외) | — | `@def.boundary` 금지 |
+
+canonical 사례: `nest-service-kit` (tier: layout — 여러 NestJS service 시스템을 `refs`로 카탈로그 묶음).

@@ -12,8 +12,16 @@ qa-sdk def sync           # 파일 → DB 동기화 (항상 먼저)
 qa-sdk def validate       # 이슈 목록 출력
 ```
 
-출력은 최대 10건 + "외 N건" 형태로 잘린다.
-전체 목록이 필요하면 `validateGraph`를 직접 호출하거나 `def audit`으로 타입별 집계를 확인한다.
+출력은 errors 최대 10건 / warnings 최대 5건 + "외 N건" 형태로 잘린다.
+전체 목록이 필요하면 다음 중 하나:
+
+- **`QA_DEF_VALIDATE_VERBOSE=1`** — warning 5건 제한이 해제되고 각 항목 앞에 `[type]` 태그가 표시된다 (`packages/cli/src/commands/def.ts:514-515`).
+- `validateGraph` 를 직접 호출 — `info` severity 까지 모두 받는다.
+- `def audit` — 타입별 집계.
+
+```bash
+QA_DEF_VALIDATE_VERBOSE=1 qa-sdk def validate
+```
 
 ### `def doctor` 와의 관계
 
@@ -155,7 +163,7 @@ def:
 
 **원인**: `tier: component`인데 `contains` 자식이 있음.
 
-**의미**: component가 실제로는 독립 동작 단위일 수 있음.
+**의미**: component 는 "data-shape 분리" 를 표현하는 leaf-tier — 즉 같은 역할을 수행하는 데이터 형태들의 묶음을 표시하기 위한 좌표일 뿐, **자식을 소유하는 그룹이 아니다**. contains 자식이 붙었다는 것은 component 가 실제로는 독립 동작 단위(system) 거나 잘못된 부모-자식 관계가 들어왔다는 신호.
 
 **수정**:
 - 자식을 가져야 한다면: `tier: system`으로 변경
@@ -182,13 +190,21 @@ tags: [cross-scope]   # 추가하면 warning 억제
 
 ### `duplicate-coordinate`
 
-**원인**: `tier:scope:layer:aspect` 조합이 다른 문서와 동일.
+**원인**: `tier:scope:layer:aspect:domain_root` 5-tuple 키가 다른 문서와 동일 (`validate.ts:378`).
+
+**키 구성** (Phase 2 이후):
+- `tier` (system/layout/component/entry)
+- `scope` (constraint/data/feature/flow/interface/state/ui)
+- `layer` (domain/operation/mediation/experience)
+- `aspect` (func_def, contract, ...)
+- `domain_root` — 링크 그래프로 파생된 도메인 루트. 서로 다른 도메인의 같은 좌표는 중복으로 보지 않음.
 
 **판단**:
 - `tier: component`면 좌표 중복이 허용됨 (validator에서 자동 제외)
 - `tier: system/layout`이면 `aspect` 세분화하거나 `layer` 조정
+- 의도적 좌표 클러스터면 `coordinate-cluster` 태그 부여 (아래 suppression 참조)
 
-**component 예외 원칙**: component는 "같은 역할을 하는 여러 데이터 형태"가 존재할 수 있어 좌표 유일성 요구 불필요.
+**component 예외 원칙**: component는 "같은 역할을 하는 여러 데이터 형태(data-shape 분리)" 가 존재할 수 있어 좌표 유일성 요구 불필요.
 
 ---
 
@@ -213,6 +229,11 @@ tags: [cross-scope]   # 추가하면 warning 억제
 ### `owner-root-mismatch` (info)
 
 **심각도**: info — 자동 수정 대상 아님. 링크 그래프와 frontmatter 선언이 어긋남을 표면화한다.
+
+**가시성 주의**: `def validate` 출력 루프는 `errors` / `warnings` 만 슬라이스해 표시한다 (`def.ts:505-506`). info severity 인 본 항목을 보려면 다음 중 하나:
+
+- `qa-sdk def audit` — info 포함 집계 출력
+- `validateGraph` 를 코드에서 직접 호출 — 전체 issues 리스트 접근
 
 **원인**: `frontmatter.owner_system`과 링크 그래프 기반 파생 `domain_root`가 일치하지 않음. Phase 2 validator가 추가한 진단.
 
@@ -256,6 +277,7 @@ qa-sdk def validate
 - `tier: component` — `duplicate-coordinate` skip (수동 참조 대상 data-shape)
 - `knowledge_kind: proposal|adr|convention` — `duplicate-coordinate` skip (문서 묶음)
 - `tags: [cross-scope]` — `multi-parent` / `duplicate-coordinate` skip (의도적 공유, 그룹 전원 요구)
+- `tags: [coordinate-cluster]` — `duplicate-coordinate` 전용 opt-out (`validate.ts:388`). 같은 좌표를 의도적으로 공유하는 클러스터에 그룹 전원 부여.
 - `tags: [orphan-expected]` — `orphan` skip (독립 유효 문서)
 - `.cases.md` / `.test.md` 확장자 — `orphan` 자동 skip
 
@@ -287,13 +309,19 @@ pnpm --filter @qa-sdk/cli build
 |------|--------|----------|--------------|
 | `circular-ref` | error | 필수 | 패턴 분석 후 |
 | `broken-link` | error | 필수 | ID 오타면 가능 |
+| `self-ref` | error | 필수 | 링크 제거 |
 | `system-contains-system` | error | 필수 | contains→depends_on |
 | `level-violation` (layout) | error | 필수 | tier 규칙 확인 후 |
+| `contains-depth-violation` | error | 필수 | 트리 평탄화 |
 | `missing-owner-system` | error | 필수 | svc 기반 일괄 가능 |
+| `invalid-lifecycle-ref` | error | 필수 | target lifecycle 확인 |
 | `invalid-code-boundary` | error | 필수 | tier 변경 |
 | `ambiguous-code-boundary` | error | 필수 | @def.boundary 추가 |
+| `broken-code-reference` | error | 필수 | 코드 주석 / 경로 갱신 |
+| `inconsistent-code-boundary` | error | 필수 | 주석/DB 동기화 |
+| `coordinate-storage-violation` | error | 필수 | VersionedIndex 적용 |
 | `multi-parent` | warning | 케이스별 | cross-scope 태그 |
-| `duplicate-coordinate` | warning | tier 확인 | component 제외 |
+| `duplicate-coordinate` | warning | tier 확인 | component / coordinate-cluster 제외 |
 | `orphan` | warning | 케이스별 | 루트 연결 |
 | `invalid-type-classification` | warning | type 필드 수정 | 일괄 패치 가능 |
 | `level-violation` (component) | warning | tier 검토 | system 변경 |

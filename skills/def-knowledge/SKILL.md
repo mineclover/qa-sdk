@@ -31,9 +31,9 @@ qa-sdk def list --type=knowledge --svc=ingest-server
 3. 해당 스펙을 constrains하는 knowledge 문서 탐색 → `qa-sdk def incoming <spec-id>`
 4. knowledge 문서가 없으면 → `/def-new` knowledge 템플릿으로 생성
 
-## 7종 knowledge_kind
+## 9종 knowledge_kind
 
-| kind | 핵심 질문 | 마커 |
+| kind | 핵심 질문 | 마커 (권장 예시) |
 |------|----------|------|
 | **philosophy** | "이 시스템의 본질이 뭔가?" | ^insight, ^rationale |
 | **adr** | "이 결정을 왜 내렸는가?" | ^rationale, ^alternatives |
@@ -42,6 +42,21 @@ qa-sdk def list --type=knowledge --svc=ingest-server
 | **convention** | "뭘 따라야 하는가?" | ^rules, ^exceptions |
 | **pattern** | "이 패턴이 왜 반복되는가?" | ^structure, ^when-to-use |
 | **concept** | "이 개념이 정확히 무엇인가?" | ^definition, ^overview |
+| **proposal** | "이 제안의 변경/대안은 무엇인가?" | ^proposal, ^impact |
+| **template** | "이 양식의 뼈대/슬롯은 무엇인가?" | ^skeleton, ^slots |
+
+마커는 권장 예시다. 코드/스펙에 강제 enum은 없으며, `^purpose`(필수)와 위 마커는 가독성/링크 앵커 컨벤션이다.
+
+## frontmatter 필수 필드
+
+knowledge 문서도 `depth`와 `lifecycle`을 명시한다.
+
+| 필드 | 값 | 가이드 |
+|------|----|--------|
+| `type` | `knowledge` | 명시 권장. `knowledge_kind`가 있으면 자동 추론된다 |
+| `knowledge_kind` | 위 9종 중 하나 | type=knowledge일 때 필수 |
+| `depth` | `overview` / `specification` / `implementation` / `validation` | knowledge는 보통 `overview` 또는 `specification` |
+| `lifecycle` | `draft` / `review` / `approved` / `deprecated` / `archived` | 신규 작성은 `draft`로 시작 |
 
 ## spec ↔ knowledge 연결
 
