@@ -193,7 +193,8 @@ function printCatalog(): void {
     console.log(`${catalog.id}@${catalog.version} - ${catalog.description}`);
     console.log("artifacts:");
     for (const artifact of catalog.artifacts) {
-      console.log(`  - ${artifact.id} [${artifact.layer}/${artifact.topology}] ${artifact.path}`);
+      const optional = artifact.optional ? " optional" : "";
+      console.log(`  - ${artifact.id} [${artifact.layer}/${artifact.topology}${optional}] ${artifact.path}`);
     }
     console.log("rules:");
     for (const rule of catalog.rules) {

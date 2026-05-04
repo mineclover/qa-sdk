@@ -10,6 +10,7 @@ export interface TemplateArtifact {
   readonly layer: "domain" | "application" | "infrastructure" | "presentation" | "metadata" | "module";
   readonly responsibility: string;
   readonly topology: "entry" | "component" | "interface" | "system" | "layout";
+  readonly optional?: boolean;
 }
 
 export interface TemplateCatalog {
@@ -115,6 +116,14 @@ export const DOMAIN_TEMPLATE_CATALOG: TemplateCatalog = {
       layer: "application",
       responsibility: "Optional query-side read model contract.",
       topology: "interface",
+      optional: true,
+    },
+    {
+      id: "drizzle-db-token",
+      path: "infrastructure/persistence/<name>-db.token.ts",
+      layer: "infrastructure",
+      responsibility: "Drizzle database injection token for adapter wiring.",
+      topology: "entry",
     },
     {
       id: "drizzle-repository",
@@ -164,6 +173,7 @@ export const DOMAIN_TEMPLATE_CATALOG: TemplateCatalog = {
       layer: "infrastructure",
       responsibility: "Read-model port implementation.",
       topology: "system",
+      optional: true,
     },
     {
       id: "controller",
@@ -178,6 +188,7 @@ export const DOMAIN_TEMPLATE_CATALOG: TemplateCatalog = {
       layer: "presentation",
       responsibility: "UI-facing BFF composition surface.",
       topology: "system",
+      optional: true,
     },
     {
       id: "bff-controller",
@@ -185,6 +196,7 @@ export const DOMAIN_TEMPLATE_CATALOG: TemplateCatalog = {
       layer: "presentation",
       responsibility: "BFF input adapter.",
       topology: "interface",
+      optional: true,
     },
     {
       id: "openapi-fragment",

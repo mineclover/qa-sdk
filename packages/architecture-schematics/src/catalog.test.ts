@@ -19,6 +19,7 @@ describe("template catalog", () => {
       "transaction-port",
       "logger-port",
       "read-model-port",
+      "drizzle-db-token",
       "drizzle-repository",
       "drizzle-schema",
       "outbox-adapter",
@@ -34,10 +35,17 @@ describe("template catalog", () => {
       "nest-module",
     ]);
     expect(DOMAIN_TEMPLATE_CATALOG.artifacts.find((artifact) => artifact.id === "domain-identity")?.topology).toBe("entry");
+    expect(DOMAIN_TEMPLATE_CATALOG.artifacts.find((artifact) => artifact.id === "drizzle-db-token")?.topology).toBe("entry");
     expect(DOMAIN_TEMPLATE_CATALOG.artifacts.find((artifact) => artifact.id === "drizzle-schema")?.topology).toBe("component");
     expect(DOMAIN_TEMPLATE_CATALOG.artifacts.find((artifact) => artifact.id === "outbox-port")?.topology).toBe("interface");
     expect(DOMAIN_TEMPLATE_CATALOG.artifacts.find((artifact) => artifact.id === "application-use-case")?.topology).toBe("system");
     expect(DOMAIN_TEMPLATE_CATALOG.artifacts.find((artifact) => artifact.id === "nest-module")?.topology).toBe("layout");
+    expect(DOMAIN_TEMPLATE_CATALOG.artifacts.filter((artifact) => artifact.optional).map((artifact) => artifact.id)).toEqual([
+      "read-model-port",
+      "read-model-adapter",
+      "bff",
+      "bff-controller",
+    ]);
     expect(DOMAIN_TEMPLATE_CATALOG.rules.map((rule) => rule.id)).toEqual([
       "domain-is-pure",
       "application-uses-ports",

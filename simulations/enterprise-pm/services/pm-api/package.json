@@ -16,7 +16,10 @@
     },
     "./package.json": "./package.json"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsc",
@@ -38,6 +41,7 @@
     "@qa-sdk/sim-audit-recorder-provider": "workspace:*",
     "@qa-sdk/sim-authorization-graph-provider": "workspace:*",
     "@qa-sdk/sim-bitmap-cache": "workspace:*",
+    "@qa-sdk/sim-domain-slice-kit": "workspace:*",
     "authorization-ontology": "workspace:*",
     "audit-recorder-store": "workspace:*",
     "@qa-sdk/sim-otel-utils": "workspace:*",
