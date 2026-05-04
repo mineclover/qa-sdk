@@ -1,3 +1,5 @@
+/** @def.boundary apm-codegen-system */
+
 // ── SchemaSnapshot ─────────────────────────────────
 // registry-service의 SchemaSnapshot과 동일한 구조.
 

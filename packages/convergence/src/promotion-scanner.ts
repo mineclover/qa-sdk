@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * 좌표 승격 스캐너 — DKG 노드의 열거형 필드를 스캔하여 축 승격 후보를 제안한다.
  *

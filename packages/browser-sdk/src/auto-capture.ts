@@ -1,3 +1,4 @@
+/** @def.boundary browser-runtime-system */
 import type { AutoCaptureConfig } from "./types.js";
 
 type Emitter = (eventKey: string, payload?: Record<string, unknown>) => void;

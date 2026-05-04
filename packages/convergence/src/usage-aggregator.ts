@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * UsageAggregator — address_context에서 UsageData를 집계한다.
  *

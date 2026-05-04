@@ -1,3 +1,4 @@
+/** @def.boundary apm-codegen-system */
 import type { SchemaSnapshot, Axis } from "./types.js";
 import { toPascal, toEnumValue } from "./naming.js";
 

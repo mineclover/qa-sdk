@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * 배포 상태 스큐 감지 — 집계 기반.
  *

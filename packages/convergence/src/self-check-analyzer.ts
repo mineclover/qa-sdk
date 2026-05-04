@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * self-check-analyzer — self-check의 순수 분석 로직.
  *

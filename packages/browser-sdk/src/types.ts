@@ -1,3 +1,4 @@
+/** @def.boundary browser-runtime-system */
 import type { ServiceBootConfig } from "@qa-sdk/core";
 
 /** QaMonitor의 생명주기 상태 */

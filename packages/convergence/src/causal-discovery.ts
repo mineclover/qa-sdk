@@ -1,3 +1,4 @@
+// @def.boundary convergence-comparators
 /**
  * 인과 발견 — co-occurrence에서 인과 관계 후보를 추출한다.
  *

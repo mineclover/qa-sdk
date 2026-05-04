@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * 시간축 분석 — 트래픽 트렌드, 시간대별 분기 변화, SLA 위반 감지.
  *

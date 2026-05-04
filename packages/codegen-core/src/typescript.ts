@@ -1,3 +1,4 @@
+/** @def.boundary apm-codegen-system */
 import type { SchemaSnapshot, Axis, Composite } from "./types.js";
 import { toPascal, toTsConstKey } from "./naming.js";
 

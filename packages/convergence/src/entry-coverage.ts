@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * Entry 관측 커버리지 — catalog 정의 vs 실 트래픽 대조.
  *

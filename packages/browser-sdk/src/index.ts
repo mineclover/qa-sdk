@@ -1,3 +1,4 @@
+/** @def.boundary browser-runtime-system */
 export { QaMonitor, createQaMonitor, createQaMonitorAsync } from "./monitor.js";
 export { BeaconTransport } from "./transport.js";
 export type { QaMonitorConfig, AutoCaptureConfig, MonitorSession, MonitorStatus } from "./types.js";

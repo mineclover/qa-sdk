@@ -1,3 +1,4 @@
+/** @def.boundary browser-runtime-system */
 import { QaLogger, TraceContext } from '@qa-sdk/sdk';
 import {
   toTransmissionSource,

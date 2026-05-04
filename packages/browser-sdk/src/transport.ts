@@ -1,3 +1,4 @@
+/** @def.boundary browser-system */
 import type { TransmissionEnvelope } from "@qa-sdk/core";
 import type { Transport } from "@qa-sdk/sdk";
 

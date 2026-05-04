@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * Category Filter — UsageData를 schema category별로 슬라이싱.
  *

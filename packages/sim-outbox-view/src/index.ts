@@ -1,5 +1,4 @@
 // @def.boundary sim-outbox-view
-// @def.doc server-side-admin-endpoints
 //
 // Stage 4 §4.7 — approval-api outbox admin endpoint 응답 shape SSOT.
 // producer (sim-approval-api OutboxAdminController) 와 consumer (sim-handles outbox-client)

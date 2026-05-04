@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * 패턴 분류 엔진 — event_key 시퀀스 + actor 컨텍스트를 분석하여 패턴 자동 판정.
  *

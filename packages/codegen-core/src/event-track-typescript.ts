@@ -1,3 +1,4 @@
+/** @def.boundary apm-codegen-system */
 /**
  * event-track-typescript.ts — Event Catalog → 타입 안전 Track 코드 생성.
  *

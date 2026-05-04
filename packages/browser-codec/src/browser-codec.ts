@@ -1,3 +1,4 @@
+/** @def.boundary browser-runtime-system */
 /**
  * BrowserCodec — 브라우저에서 사용 가능한 경량 encode/decode.
  *

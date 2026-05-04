@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * RefEntries 동기화 — capacity 변경 후 refEntries를 최신 shape에 맞게 재생성.
  *

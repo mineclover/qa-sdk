@@ -1,3 +1,4 @@
+/** @def.boundary apm-codegen-system */
 /**
  * data-object-typescript.ts — DataObjectBinding → Typed SDK 파일 생성.
  *

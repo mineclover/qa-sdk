@@ -1,3 +1,4 @@
+/** @def.boundary apm-codegen-system */
 /**
  * 네이밍 변환 유틸리티.
  * SchemaSnapshot의 snake_case ID를 protobuf/TypeScript 규약에 맞게 변환.

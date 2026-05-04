@@ -1,3 +1,4 @@
+/** @def.boundary browser-runtime-system */
 export {
   encode,
   decode,

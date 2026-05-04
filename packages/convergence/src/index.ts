@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * @qa-sdk/convergence — 수렴 분석 독립 패키지.
  *

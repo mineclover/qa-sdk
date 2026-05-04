@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * Metric 타입 정의 — convergence 함수에 대한 표준 측정 명칭 체계.
  *

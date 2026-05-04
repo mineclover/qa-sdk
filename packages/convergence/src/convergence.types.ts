@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * Convergence Layer 타입 정의.
  *

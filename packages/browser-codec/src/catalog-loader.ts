@@ -1,3 +1,4 @@
+/** @def.boundary browser-runtime-system */
 /**
  * CatalogLoader — 런타임에 catalog을 API에서 로드.
  *

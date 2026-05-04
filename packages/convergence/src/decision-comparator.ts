@@ -1,3 +1,4 @@
+// @def.boundary convergence-comparators
 /**
  * 결정 비교 — 같은 대상에 대한 결정 간 충돌/중복을 검사한다.
  *

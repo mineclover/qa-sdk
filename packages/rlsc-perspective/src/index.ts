@@ -134,7 +134,7 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
   let selectedLayerId: string | null = null;
   let dragState: Css3DDragState | null = null;
   let suppressClick = false;
-  let viewState: Css3DViewState = { rotateX: 62, rotateZ: -18, zoom: 1, panX: 0, panY: 0 };
+  let viewState: Css3DViewState = { rotation: initialRotationMatrix(), zoom: 1, panX: 0, panY: 0 };
 
   const resizeObserver = new ResizeObserver(() => render());
   resizeObserver.observe(container);
@@ -152,8 +152,7 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
       "translate3d(-50%, -50%, 0)",
       `translate3d(${viewState.panX}px, ${viewState.panY}px, 0)`,
       `scale(${fitScale() * viewState.zoom})`,
-      `rotateX(${viewState.rotateX}deg)`,
-      `rotateZ(${viewState.rotateZ}deg)`,
+      matrixToCss(viewState.rotation),
     ].join(" ");
   }
 
@@ -298,8 +297,7 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
     dragState = {
       startX: event.clientX,
       startY: event.clientY,
-      startRotateX: viewState.rotateX,
-      startRotateZ: viewState.rotateZ,
+      startRotation: viewState.rotation,
       startPanX: viewState.panX,
       startPanY: viewState.panY,
       moved: false,
@@ -319,8 +317,7 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
       ? { ...viewState, panX: dragState.startPanX + dx, panY: dragState.startPanY + dy }
       : {
           ...viewState,
-          rotateZ: normalizeDegrees(dragState.startRotateZ + dx * 0.34),
-          rotateX: normalizeDegrees(dragState.startRotateX - dy * 0.28),
+          rotation: dragRotationMatrix(dx, dy).multiply(dragState.startRotation),
         };
     applyTransform();
   }
@@ -401,8 +398,7 @@ interface FlatNode {
 }
 
 interface Css3DViewState {
-  readonly rotateX: number;
-  readonly rotateZ: number;
+  readonly rotation: DOMMatrix;
   readonly zoom: number;
   readonly panX: number;
   readonly panY: number;
@@ -411,8 +407,7 @@ interface Css3DViewState {
 interface Css3DDragState {
   readonly startX: number;
   readonly startY: number;
-  readonly startRotateX: number;
-  readonly startRotateZ: number;
+  readonly startRotation: DOMMatrix;
   readonly startPanX: number;
   readonly startPanY: number;
   moved: boolean;
@@ -431,8 +426,29 @@ function style(element: HTMLElement, next: Partial<CSSStyleDeclaration>): void {
   Object.assign(element.style, next);
 }
 
-function normalizeDegrees(value: number): number {
-  return ((value % 360) + 540) % 360 - 180;
+function initialRotationMatrix(): DOMMatrix {
+  return new DOMMatrix().rotateSelf(62, 0, -18);
+}
+
+function dragRotationMatrix(dx: number, dy: number): DOMMatrix {
+  return new DOMMatrix()
+    .rotateAxisAngleSelf(0, 1, 0, dx * 0.34)
+    .rotateAxisAngleSelf(1, 0, 0, -dy * 0.28);
+}
+
+function matrixToCss(matrix: DOMMatrix): string {
+  const values = [
+    matrix.m11, matrix.m12, matrix.m13, matrix.m14,
+    matrix.m21, matrix.m22, matrix.m23, matrix.m24,
+    matrix.m31, matrix.m32, matrix.m33, matrix.m34,
+    matrix.m41, matrix.m42, matrix.m43, matrix.m44,
+  ];
+  return `matrix3d(${values.map((value) => cleanMatrixValue(value)).join(",")})`;
+}
+
+function cleanMatrixValue(value: number): string {
+  const normalized = Math.abs(value) < 1e-10 ? 0 : value;
+  return Number(normalized.toFixed(10)).toString();
 }
 
 function createIssueMap(options: PerspectiveViewerOptions): Map<string, readonly PerspectiveIssue[]> {

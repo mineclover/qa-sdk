@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * 패턴 집계 — 분류 결과를 통계로 변환.
  *

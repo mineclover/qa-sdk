@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * Metric Registry — 자동 측정 가능한 metric 정의 + 임계값 기반 Observation 생성.
  *

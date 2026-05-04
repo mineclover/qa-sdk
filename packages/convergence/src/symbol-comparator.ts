@@ -1,3 +1,4 @@
+// @def.boundary convergence-comparators
 /**
  * 심볼 비교 — 축/prefix 간 중복을 감지한다.
  *

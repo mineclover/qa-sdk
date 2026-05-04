@@ -1,3 +1,4 @@
+/** @def.boundary apm-codegen-system */
 /**
  * catalog-typescript.ts — Catalog + DkgConfig → Typed SDK 파일 생성.
  *

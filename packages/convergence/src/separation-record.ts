@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * 분리 유지 기록 — 중복이 발견됐지만 의도적으로 분리를 유지할 때
  * 그 근거를 Decision + Constraint로 DKG에 남긴다.

@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * Decision 유형별 구조화 템플릿.
  *

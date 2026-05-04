@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * 패턴 이상 감지 — 미분류 시퀀스, 비율 급변, 비정상 속도 탐지.
  *

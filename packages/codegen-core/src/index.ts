@@ -1,3 +1,4 @@
+/** @def.boundary apm-codegen-system */
 export { generateProto, type ProtoGenOptions } from "./proto.js";
 export { generateTypescript } from "./typescript.js";
 export {

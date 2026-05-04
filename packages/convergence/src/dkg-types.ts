@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * DKG 타입 부분집합 — convergence가 의존하는 최소 노드 타입만 복제.
  *

@@ -1,3 +1,4 @@
+/** @def.boundary browser-runtime-system */
 /**
  * DEMO_CATALOG의 브라우저용 경량 JSON.
  *

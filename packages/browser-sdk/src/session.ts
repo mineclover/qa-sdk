@@ -1,3 +1,4 @@
+/** @def.boundary browser-lifecycle-system */
 import { newQaSessionId, newTraceId } from "@qa-sdk/core";
 import type { MonitorSession } from "./types.js";
 

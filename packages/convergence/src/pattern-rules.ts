@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * 패턴 규칙 — 시스템 공통 + 도메인별 분리.
  *

@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * 영역 분리 집계 — DSL별 / category별 / 서비스별로 records를 분리하여 독립 집계.
  *

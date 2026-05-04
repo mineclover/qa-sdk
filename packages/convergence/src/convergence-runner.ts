@@ -1,3 +1,4 @@
+// @def.boundary convergence-layer-group
 /**
  * 수렴 분석 오케스트레이터 — 5개 서비스를 한번에 실행한다.
  *
