@@ -147,7 +147,7 @@ export function collectSchemaChanges(
 
 /** 변경 목록에서 호환성 판별 */
 export function determineCompatibility(changes: SchemaChange[]): SchemaCompatibility {
-  const breakingTypes: SchemaChangeType[] = new Set(["add-required", "remove", "rename", "type-change"]);
+  const breakingTypes: Set<SchemaChangeType> = new Set(["add-required", "remove", "rename", "type-change"]);
   const hasBreaking = changes.some(c => breakingTypes.has(c.type));
   const hasConstraintAdd = changes.some(c => c.type === "constraint-add");
 
