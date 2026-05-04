@@ -81,11 +81,9 @@ export class SafetyDecisionService {
       history,
       timeSincePromotionMs,
     } = input;
-    const rollbackAction = {
-      kind: "weight-update" as const,
-      weight: 0 as WeightStep,
-      revision: nextRevision(),
-    };
+    // revision 은 weight-update action 이 발생한 사이클에서만 단조 증가. hold/noop
+    // 사이클은 revision 을 소비하지 않아 promote 시퀀스 1,2,3,4 가 hold 빈도와
+    // 무관하게 보존된다 (시나리오 9 §3.1 압축 예시 deepEqual 가 monotonic 1..N 가정).
 
     // 1) Hard rollback first — spec 01 §3
     if (v.hardFail.length > 0) {
@@ -93,7 +91,11 @@ export class SafetyDecisionService {
         verdict: "rollback",
         triggerCategory: v.hardFail[0] as TriggerCategory,
         triggerSignals: v.triggerSignals,
-        action: { ...rollbackAction },
+        action: {
+          kind: "weight-update",
+          weight: 0,
+          revision: nextRevision(),
+        },
       };
     }
 
@@ -115,7 +117,11 @@ export class SafetyDecisionService {
         verdict: "rollback",
         triggerCategory: tc,
         triggerSignals: v.triggerSignals,
-        action: { ...rollbackAction },
+        action: {
+          kind: "weight-update",
+          weight: 0,
+          revision: nextRevision(),
+        },
       };
     }
 
@@ -145,6 +151,17 @@ export class SafetyDecisionService {
             ? seq[idx]
             : seq[idx + 1]
       ) as WeightStep;
+      // 시퀀스 끝 도달 (weight=100 currentWeight=100 next=100) — 더 이상 promote 할
+      // 단계가 없으므로 verdict=hold + action=noop (terminal, 시스템 stabilized).
+      // 이렇게 하면 audit 측 promote 필터 (시나리오 9 §3.1) 가 weight 100 을 1 회만
+      // 포함하고 후속 사이클은 자동 제외된다. revision 도 증가하지 않음.
+      if (next === currentWeight) {
+        return {
+          verdict: "hold",
+          triggerSignals: [],
+          action: { kind: "noop" },
+        };
+      }
       return {
         verdict: "promote",
         triggerSignals: [],

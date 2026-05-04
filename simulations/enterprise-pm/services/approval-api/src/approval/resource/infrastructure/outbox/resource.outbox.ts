@@ -22,10 +22,11 @@ export interface ResourceOutboxFactoryOpts {
 }
 
 // 단계 8(Plan C): build-time schemaHash. spec 02 §4.2.
+// EventName 계약: { domain, aggregate, verbPast } — sim-identifier-grammar/event-name.ts SSOT.
 const RESOURCE_EVENT_NAME = {
   domain: "approval",
-  entity: "resource",
-  action: "submitted",
+  aggregate: "resource",
+  verbPast: "submitted",
 } as const;
 const RESOURCE_PAYLOAD_SHAPE = {
   id: "string",

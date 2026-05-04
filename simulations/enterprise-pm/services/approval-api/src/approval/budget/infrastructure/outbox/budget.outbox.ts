@@ -22,10 +22,11 @@ export interface BudgetOutboxFactoryOpts {
 }
 
 // 단계 8(Plan C): build-time schemaHash. 모듈 로드 시 1회만 계산. spec 02 §4.2.
+// EventName 계약: { domain, aggregate, verbPast } — sim-identifier-grammar/event-name.ts SSOT.
 const BUDGET_EVENT_NAME = {
   domain: "approval",
-  entity: "budget",
-  action: "submitted",
+  aggregate: "budget",
+  verbPast: "submitted",
 } as const;
 const BUDGET_PAYLOAD_SHAPE = {
   id: "string",

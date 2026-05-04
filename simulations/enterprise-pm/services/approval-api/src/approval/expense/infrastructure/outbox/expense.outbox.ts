@@ -22,10 +22,11 @@ export interface ExpenseOutboxFactoryOpts {
 }
 
 // 단계 8(Plan C): build-time schemaHash. spec 02 §4.2.
+// EventName 계약: { domain, aggregate, verbPast } — sim-identifier-grammar/event-name.ts SSOT.
 const EXPENSE_EVENT_NAME = {
   domain: "approval",
-  entity: "expense",
-  action: "submitted",
+  aggregate: "expense",
+  verbPast: "submitted",
 } as const;
 const EXPENSE_PAYLOAD_SHAPE = {
   id: "string",
