@@ -16,9 +16,28 @@
 - SVG/canvas/context/query/monitor 계열 도구를 함께 제공한다.
 - 시각 구조를 좌표계 DSL로 다루는 핵심 분석 라이브러리다.
 
+## 경량 진입점
+
+분석과 렌더링은 subpath export로 분리한다.
+
+```ts
+import { analyzeAreas } from "rlsc/analysis";
+import { collectLayoutWithText } from "rlsc/browser";
+import { renderToSVG } from "rlsc/rendering";
+```
+
+- `rlsc/analysis`: DOM이나 렌더링 없이 `RLSCDocument`/`RLSCNode` 영역 분석, metrics, pattern, query를 사용한다.
+- `detectAreaOverflow()`는 child rect가 parent rect를 넘어서는 계층 containment leak을 감지한다.
+- `rlsc/browser`: 실제 브라우저 DOM 수집과 monitor만 포함한다.
+- `rlsc/rendering`: 분석 결과를 SVG/canvas로 시각화한다.
+- `rlsc`: 기존 통합 진입점으로 하위 호환을 유지한다.
+
 ## 코드 진입점
 
 - `src/index.ts` — public export
+- `src/analysis.ts` — 경량 영역 분석 export
+- `src/browser.ts` — 브라우저 DOM 수집/monitor export
+- `src/rendering.ts` — SVG/canvas 렌더링 export
 - `src/collector.ts`, `src/grid.ts`, `src/relations.ts`, `src/layers.ts` — 수집/구조 해석
 - `src/metrics.ts`, `src/pattern.ts`, `src/intent.ts` — 분석 계층
 - `src/query.ts`, `src/context.ts`, `src/monitor.ts` — 질의/요약/모니터링

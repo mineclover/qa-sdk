@@ -8,6 +8,21 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./analysis": {
+      "types": "./dist/analysis.d.ts",
+      "import": "./dist/analysis.js",
+      "require": "./dist/analysis.cjs"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js",
+      "require": "./dist/browser.cjs"
+    },
+    "./rendering": {
+      "types": "./dist/rendering.d.ts",
+      "import": "./dist/rendering.js",
+      "require": "./dist/rendering.cjs"
     }
   },
   "main": "./dist/index.cjs",

@@ -55,6 +55,13 @@ export { flattenTree } from "./tree-utils.js";
 export { encodeToMarkup, parseMarkup } from "./encoder.js";
 
 // 분석
+export { analyzeAreas, createAreaDocument, detectAreaOverflow } from "./area-analysis.js";
+export type {
+  AreaAnalysisOptions,
+  AreaAnalysisResult,
+  AreaDocumentInput,
+  AreaOverflowIssue,
+} from "./area-analysis.js";
 export { analyzeGrid, gridToText } from "./grid.js";
 export { classifyLayers, layersToText } from "./layers.js";
 export { detectRelations, relationsToText } from "./relations.js";
