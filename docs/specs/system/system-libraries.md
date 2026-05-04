@@ -10,6 +10,12 @@ def:
   layer: operation
   tags: [structural, entry-point]
   links:
+    - target: sim-decision-view
+      type: refs
+    - target: sim-internal-network
+      type: refs
+    - target: sim-outbox-view
+      type: refs
     - target: wi-system
       type: refs
     - target: weighted-index-system

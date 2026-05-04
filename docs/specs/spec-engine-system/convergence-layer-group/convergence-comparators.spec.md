@@ -1,10 +1,11 @@
 ---
 def:
-  tier: component
+  tier: system
+  level: leaf
   id: convergence-comparators
   address: def_document:v2:68748
   scope: feature
-  aspect: func_def
+  aspect: analyzer_func
   depth: specification
   lifecycle: approved
   layer: domain
@@ -15,6 +16,10 @@ def:
       type: depends_on
     - target: convergence-layer-group
       type: refines
+  sources:
+    - packages/convergence/src/symbol-comparator.ts
+    - packages/convergence/src/decision-comparator.ts
+    - packages/convergence/src/causal-discovery.ts
 ---
 
 # Convergence Layer - 비교와 인과 발견

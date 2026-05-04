@@ -1,7 +1,8 @@
 ---
 def:
   id: system-packages
-  tier: component
+  tier: layout
+  owner_system: system-packages
   address: def_document:v2:138240
   scope: flow
   aspect: relation
@@ -15,13 +16,13 @@ def:
     - target: registry-api
       type: refines
     - target: resource-policy-store-system
-      type: contains
+      type: refs
     - target: audit-recorder-store-system
-      type: contains
+      type: refs
     - target: infra-env-kit-system
-      type: contains
+      type: refs
     - target: scaffold-system
-      type: contains
+      type: refs
 ---
 
 # 패키지 구조

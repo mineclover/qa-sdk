@@ -2,8 +2,8 @@
 def:
   id: scaffold-governance-metadata
   type: spec
-  tier: component
-  level: leaf
+  tier: layout
+  owner_system: scaffold
   scope: data
   aspect: external_data
   depth: specification
@@ -17,12 +17,9 @@ def:
     - target: scaffold-domain-schematic
       type: constrains
     - target: scaffold-openmetadata-storage
-      type: contains
+      type: refs
     - target: scaffold-cache-key-dsl
-      type: contains
-  sources:
-    - packages/architecture-schematics/src/governance/openmetadata.ts
-    - packages/architecture-schematics/src/governance/cache-key-dsl.ts
+      type: refs
 ---
 
 # scaffold governance metadata

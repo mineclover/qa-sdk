@@ -1,6 +1,7 @@
 ---
 def:
-  tier: component
+  tier: system
+  level: leaf
   id: convergence-advisors
   address: def_document:v2:68747
   scope: feature
@@ -15,6 +16,11 @@ def:
       type: refines
     - target: convergence-comparators
       type: depends_on
+  sources:
+    - packages/convergence/src/simplification-advisor.ts
+    - packages/convergence/src/boundary-recommender.ts
+    - packages/convergence/src/headroom-advisor.ts
+    - packages/convergence/src/capacity-optimizer.ts
 ---
 
 # Convergence Layer - 추천과 수렴 사이클

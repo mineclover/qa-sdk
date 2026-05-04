@@ -2,8 +2,8 @@
 def:
   id: audit-recorder-store-system
   type: spec
-  tier: system
-  level: module
+  tier: layout
+  owner_system: audit-recorder-store
   scope: flow
   aspect: process_flow
   depth: overview
@@ -19,13 +19,13 @@ def:
     - target: authorization-ontology-rls-enforcement
       type: constrains
     - target: audit-recorder-store-port
-      type: contains
+      type: refs
     - target: audit-recorder-store-adapters
-      type: contains
+      type: refs
     - target: audit-recorder-store-rls-shadow
-      type: contains
+      type: refs
     - target: audit-recorder-store-validation
-      type: contains
+      type: refs
   sources:
     - packages/audit-recorder-store/src/index.ts
     - packages/audit-recorder-store/src/factory.ts

@@ -2,7 +2,8 @@
 def:
   id: nest-service-port-contract
   type: spec
-  tier: component
+  tier: system
+  level: leaf
   scope: interface
   aspect: api_contract
   depth: specification

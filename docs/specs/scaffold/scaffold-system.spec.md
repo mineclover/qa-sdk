@@ -2,8 +2,8 @@
 def:
   id: scaffold-system
   type: spec
-  tier: system
-  level: module
+  tier: layout
+  owner_system: scaffold
   scope: interface
   aspect: cli_contract
   depth: overview
@@ -15,23 +15,22 @@ def:
     - target: system-packages
       type: refines
     - target: scaffold-domain-schematic
-      type: contains
+      type: refs
     - target: scaffold-domain-development-convention
-      type: contains
+      type: refs
     - target: scaffold-template-catalog
-      type: contains
+      type: refs
     - target: scaffold-architecture-validator
-      type: contains
+      type: refs
     - target: scaffold-governance-metadata
-      type: contains
+      type: refs
     - target: scaffold-openmetadata-storage
-      type: contains
+      type: refs
     - target: scaffold-cache-key-dsl
-      type: contains
+      type: refs
   sources:
     - packages/architecture-schematics/package.json
     - packages/architecture-schematics/src/index.ts
-    - packages/architecture-schematics/src/cli.ts
 ---
 
 # scaffold system

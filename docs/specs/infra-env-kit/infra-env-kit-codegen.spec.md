@@ -5,7 +5,7 @@ def:
   tier: system
   level: leaf
   scope: flow
-  aspect: process_flow
+  aspect: pipeline_flow
   depth: specification
   lifecycle: approved
   layer: operation

@@ -1,7 +1,8 @@
 ---
 def:
   id: convergence-layer-group
-  tier: system
+  tier: layout
+  owner_system: convergence
   address: def_document:v2:68617
   scope: feature
   aspect: func_def
@@ -12,9 +13,9 @@ def:
   tags: [structural]
   links:
     - target: convergence-comparators
-      type: contains
+      type: refs
     - target: convergence-advisors
-      type: contains
+      type: refs
     - target: spec-architecture-system
       type: depends_on
 ---

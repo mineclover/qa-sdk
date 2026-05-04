@@ -6,8 +6,8 @@ def:
   projection_plane: intent
   intent_hierarchy: core
   level: leaf
-  scope: flow
-  aspect: process_flow
+  scope: constraint
+  aspect: biz_constraint
   depth: specification
   lifecycle: approved
   layer: mediation

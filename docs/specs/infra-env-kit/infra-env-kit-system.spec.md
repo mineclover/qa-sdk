@@ -2,8 +2,8 @@
 def:
   id: infra-env-kit-system
   type: spec
-  tier: system
-  level: module
+  tier: layout
+  owner_system: infra-env-kit
   scope: interface
   aspect: cli_contract
   depth: overview
@@ -17,13 +17,13 @@ def:
     - target: infra-engine-pipeline
       type: depends_on
     - target: infra-env-kit-env-bridge
-      type: contains
+      type: refs
     - target: infra-env-kit-export-surface
-      type: contains
+      type: refs
     - target: infra-env-kit-codegen
-      type: contains
+      type: refs
     - target: infra-env-kit-validation
-      type: contains
+      type: refs
   sources:
     - packages/infra-env-kit/src/index.ts
     - packages/infra-env-kit/src/cli.ts

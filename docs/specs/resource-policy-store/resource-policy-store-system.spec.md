@@ -2,8 +2,8 @@
 def:
   id: resource-policy-store-system
   type: spec
-  tier: system
-  level: module
+  tier: layout
+  owner_system: resource-policy-store
   scope: state
   aspect: domain_state
   depth: overview
@@ -19,13 +19,13 @@ def:
     - target: authorization-ontology-rls-enforcement
       type: constrains
     - target: resource-policy-store-port
-      type: contains
+      type: refs
     - target: resource-policy-store-adapters
-      type: contains
+      type: refs
     - target: resource-policy-store-rls
-      type: contains
+      type: refs
     - target: resource-policy-store-validation
-      type: contains
+      type: refs
   sources:
     - packages/resource-policy-store/src/index.ts
     - packages/resource-policy-store/src/factory.ts

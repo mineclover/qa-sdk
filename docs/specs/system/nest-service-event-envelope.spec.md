@@ -2,7 +2,8 @@
 def:
   id: nest-service-event-envelope
   type: spec
-  tier: component
+  tier: system
+  level: leaf
   scope: data
   aspect: system_data
   depth: specification
