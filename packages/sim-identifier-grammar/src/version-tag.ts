@@ -1,3 +1,4 @@
+// @def.boundary sim-identifier-grammar
 import { z } from "zod";
 
 export const VERSION_TAG_STATES = ["stable", "candidate", "retired"] as const;

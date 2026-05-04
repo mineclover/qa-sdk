@@ -1,3 +1,4 @@
+// @def.boundary sim-identifier-grammar
 import { z } from "zod";
 
 const AGGREGATE_ID_REGEX = /^[a-z][a-z0-9-]+$/;

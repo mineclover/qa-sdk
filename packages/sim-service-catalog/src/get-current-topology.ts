@@ -1,3 +1,4 @@
+// @def.boundary sim-service-catalog
 import {
   parseServicePrefix,
   parseVersionTag,

@@ -1,3 +1,4 @@
+// @def.boundary sim-identifier-grammar
 import { z } from "zod";
 
 export const HEADER_DOMAINS = ["service", "canary", "trace", "sim"] as const;

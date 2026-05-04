@@ -1,3 +1,4 @@
+// @def.boundary sim-identifier-grammar
 import { createHash } from "node:crypto";
 import type { EventName } from "./event-name.js"; // Task 2.6 결과 — type-only import
 

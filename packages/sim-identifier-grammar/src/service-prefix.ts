@@ -1,3 +1,4 @@
+// @def.boundary sim-identifier-grammar
 import { z } from "zod";
 
 export const SERVICE_PREFIX_NAMESPACES = ["sim"] as const;

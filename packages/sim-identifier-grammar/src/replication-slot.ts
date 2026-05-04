@@ -1,3 +1,4 @@
+// @def.boundary sim-identifier-grammar
 import { z } from "zod";
 
 export const REPLICATION_PURPOSES = ["read_replica", "audit_stream"] as const;

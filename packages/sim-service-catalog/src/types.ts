@@ -1,3 +1,4 @@
+// @def.boundary sim-service-catalog
 import type { ServicePrefix, VersionTag, VersionTagState } from "sim-identifier-grammar";
 
 export type ServiceState = VersionTagState; // retired | stable | candidate

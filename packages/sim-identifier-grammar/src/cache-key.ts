@@ -1,3 +1,4 @@
+// @def.boundary sim-identifier-grammar
 import { z } from "zod";
 import { buildServicePrefix, parseServicePrefix, type ServicePrefix } from "./service-prefix.js";
 import { buildVersionTag, parseVersionTag, type VersionTag } from "./version-tag.js";

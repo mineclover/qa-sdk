@@ -1,3 +1,4 @@
+// @def.boundary sim-service-catalog
 import { parseServicePrefix, parseVersionTag } from "sim-identifier-grammar";
 import type { CatalogPrefixDefinition, ServiceState } from "./types.js";
 

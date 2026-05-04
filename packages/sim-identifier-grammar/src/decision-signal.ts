@@ -1,3 +1,4 @@
+// @def.boundary sim-identifier-grammar
 import { z } from "zod";
 
 // spec 01 §2 신호 매트릭스 — 카테고리별 허용 signal 어휘 const 고정.

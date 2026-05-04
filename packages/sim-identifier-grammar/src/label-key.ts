@@ -1,3 +1,4 @@
+// @def.boundary sim-identifier-grammar
 import { z } from "zod";
 
 export const LABEL_KEYS = ["role", "version", "replica-of"] as const;

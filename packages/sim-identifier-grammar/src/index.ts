@@ -1,3 +1,4 @@
+// @def.boundary sim-identifier-grammar
 // sim-identifier-grammar — 시뮬 식별자 합성/역분해/검증 grammar 진입점.
 // 자세한 정의는 spec: docs/superpowers/specs/2026-04-28-canary-scaling/03-identifier-grammar.md
 
