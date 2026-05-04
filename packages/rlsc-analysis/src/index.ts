@@ -23,6 +23,24 @@ export type {
   TextRegionDensity,
 } from "./types.js";
 
+export {
+  BOUNDARY_ATTRIBUTE,
+  COMPONENT_ID_ATTRIBUTE,
+  DATA_BOUNDARY_ATTRIBUTE,
+  DATA_COMPONENT_ID_ATTRIBUTE,
+  DATA_DEBUG_LABEL_ATTRIBUTE,
+  DATA_QA_ADDRESS_ATTRIBUTE,
+  DEBUG_LABEL_ATTRIBUTE,
+  QA_ADDRESS_ATTRIBUTE,
+  annotateElement,
+  createMetadataAttributes,
+} from "./metadata.js";
+export type {
+  MetadataAttributeTarget,
+  MetadataAttributes,
+  ScreenMetadata,
+} from "./metadata.js";
+
 export type {
   AreaAnalysisOptions,
   AreaAnalysisResult,

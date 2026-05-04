@@ -119,3 +119,22 @@ export type {
   TextPreparedMap,
   TextOccupancyOptions,
 } from "@qa-sdk/rlsc-analysis";
+
+// 메타데이터 어노테이션
+export {
+  BOUNDARY_ATTRIBUTE,
+  COMPONENT_ID_ATTRIBUTE,
+  DATA_BOUNDARY_ATTRIBUTE,
+  DATA_COMPONENT_ID_ATTRIBUTE,
+  DATA_DEBUG_LABEL_ATTRIBUTE,
+  DATA_QA_ADDRESS_ATTRIBUTE,
+  DEBUG_LABEL_ATTRIBUTE,
+  QA_ADDRESS_ATTRIBUTE,
+  annotateElement,
+  createMetadataAttributes,
+} from "@qa-sdk/rlsc-analysis";
+export type {
+  MetadataAttributeTarget,
+  MetadataAttributes,
+  ScreenMetadata,
+} from "@qa-sdk/rlsc-analysis";
