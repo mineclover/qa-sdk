@@ -138,7 +138,7 @@ mount.innerHTML = `
           </article>
           <article>
             <h3>Boundary pressure</h3>
-            <p>텍스트가 컨테이너 경계에 얼마나 붙는지 occupancy 단계에서 계산됩니다.</p>
+            <p class="text-stress" data-component-id="TextStress">텍스트가 컨테이너 경계에 얼마나 붙는지 occupancy 단계에서 계산되며 긴 디버그 문장은 제한된 높이에서 overflow issue로 표시됩니다.</p>
           </article>
           <article>
             <h3>Mutation watch</h3>
@@ -169,7 +169,8 @@ mount.innerHTML = `
         <div class="layer-view" data-view="layers3d"></div>
         <div class="layer-actions">
           <button type="button" data-action="clearSelection">Clear selection</button>
-          <button type="button" data-action="copySelection">Copy selection</button>
+          <button type="button" data-action="copySelection">Copy identifier</button>
+          <button type="button" data-action="copySelectionJson">Copy JSON</button>
         </div>
         <div class="interaction-view" data-view="interactions" aria-live="polite"></div>
       </section>
@@ -210,6 +211,8 @@ mount.addEventListener("click", (event) => {
     clearSelection();
   } else if (action === "copySelection") {
     void copySelection();
+  } else if (action === "copySelectionJson") {
+    void copySelectionJson();
   }
 });
 
@@ -339,7 +342,6 @@ function viewerOptions(overflowIssues: readonly AreaOverflowIssue[]) {
   return {
     renderer: state.renderer,
     groupBy: state.groupBy,
-    copyFormat: "identifier" as const,
     overflowIssues,
     textOccupancies: state.text,
     onHover(event: PerspectiveNodeEvent): void {
@@ -365,6 +367,7 @@ function renderInteractions(): void {
     metric("Group", state.groupBy),
     metric("Hover", state.hoveredNodeId ?? "none"),
     metric("Selected", state.selectedNodeId ?? "none"),
+    metric("Identifier", detail?.identifier ? `${detail.identifier.kind}:${detail.identifier.value}` : "none"),
     metric("Preferred", detail?.preferredIdentifier ?? "none"),
     metric("Component", detail?.componentId ?? "none"),
     metric("QA address", detail?.qaAddress ?? "none"),
@@ -437,7 +440,24 @@ function clearSelection(): void {
 
 async function copySelection(): Promise<void> {
   if (!state.selectedDetail) return;
-  const text = state.selectedDetail.preferredIdentifier ?? state.selectedDetail.nodeId;
+  const text = state.selectedDetail.identifier.value;
+  await navigator.clipboard?.writeText(text).catch(() => undefined);
+  state.copiedText = text;
+  renderInteractions();
+}
+
+async function copySelectionJson(): Promise<void> {
+  if (!state.selectedDetail) return;
+  const text = JSON.stringify(
+    {
+      identifier: state.selectedDetail.identifier,
+      nodeId: state.selectedDetail.nodeId,
+      nodeIds: state.selectedDetail.nodeIds,
+      issues: state.selectedDetail.issues,
+    },
+    null,
+    2
+  );
   await navigator.clipboard?.writeText(text).catch(() => undefined);
   state.copiedText = text;
   renderInteractions();

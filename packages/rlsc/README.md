@@ -15,10 +15,27 @@
 - DOM/문서 레이아웃을 수집하고 grid/layer/relation/pattern/intent를 해석한다.
 - SVG/canvas/context/query/monitor 계열 도구를 함께 제공한다.
 - 시각 구조를 좌표계 DSL로 다루는 핵심 분석 라이브러리다.
+- 신규 화면 분석 API는 `@qa-sdk/rlsc-analysis`가 소유하며, `rlsc/analysis`와 `rlsc/browser`는 하위 호환용 re-export 진입점이다.
+- 3D Perspective 시각화는 `@qa-sdk/rlsc-perspective`가 소유한다. `rlsc`는 해당 viewer를 직접 포함하지 않는다.
+
+## Compatibility Exports
+
+```ts
+import { analyzeAreas } from "rlsc/analysis";
+import { collectLayoutWithText } from "rlsc/browser";
+import { renderToSVG } from "rlsc/rendering";
+```
+
+- `rlsc/analysis` → `@qa-sdk/rlsc-analysis`
+- `rlsc/browser` → `@qa-sdk/rlsc-analysis/browser`
+- `rlsc/rendering` → 기존 SVG/canvas 렌더링
 
 ## 코드 진입점
 
 - `src/index.ts` — public export
+- `src/analysis.ts` — `@qa-sdk/rlsc-analysis` compatibility export
+- `src/browser.ts` — `@qa-sdk/rlsc-analysis/browser` compatibility export
+- `src/rendering.ts` — SVG/canvas rendering subpath export
 - `src/collector.ts`, `src/grid.ts`, `src/relations.ts`, `src/layers.ts` — 수집/구조 해석
 - `src/metrics.ts`, `src/pattern.ts`, `src/intent.ts` — 분석 계층
 - `src/query.ts`, `src/context.ts`, `src/monitor.ts` — 질의/요약/모니터링

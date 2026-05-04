@@ -20,7 +20,7 @@ import {
   WebGLRenderer,
 } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import type { AreaOverflowIssue, RLSCDocument, RLSCNode, TextOccupancy } from "@qa-sdk/rlsc-analysis";
+import type { AreaOverflowIssue, RLSCDocument, RLSCNode, ScreenIdentifier, TextOccupancy } from "@qa-sdk/rlsc-analysis";
 
 export type PerspectiveRendererKind = "auto" | "webgl" | "canvas";
 export type PerspectiveGroupBy = "dom-node" | "componentId" | "qaAddress" | "role";
@@ -59,6 +59,7 @@ export interface PerspectiveLayer {
 export interface PerspectiveSelectionDetail {
   readonly nodeId: string;
   readonly nodeIds: readonly string[];
+  readonly identifier: ScreenIdentifier;
   readonly componentId?: string;
   readonly qaAddress?: string;
   readonly role?: string;
@@ -320,12 +321,12 @@ function addNodeLayer(
   depth: number,
   parentCenter: Vector3 | null,
   nodeMeshes: Map<string, Mesh<BoxGeometry, MeshStandardMaterial>>,
-  issueMap: ReadonlyMap<string, PerspectiveIssue>,
+  issueMap: ReadonlyMap<string, readonly PerspectiveIssue[]>,
   nodeToLayer: ReadonlyMap<string, string>,
 ): void {
   if (!node.visible) return;
 
-  const issue = issueMap.get(node.id);
+  const issue = primaryIssue(issueMap.get(node.id) ?? []);
   const width = Math.max(node.rect.width / VIEW_SCALE, 0.08);
   const height = Math.max(node.rect.height / VIEW_SCALE, 0.08);
   const thickness = MIN_THICKNESS + Math.min(0.08, Math.max(0, node.zIndex) / 6000);
@@ -449,7 +450,7 @@ function createCanvasPerspectiveViewer(
     }
     if (selectedLayerId && !currentLayers.layers.has(selectedLayerId)) selectedLayerId = null;
     for (const item of projectedNodes) {
-      drawNode(context, item, hoveredLayerId, selectedLayerId, currentLayers.nodeToLayer, issueMap.get(item.node.id));
+      drawNode(context, item, hoveredLayerId, selectedLayerId, currentLayers.nodeToLayer, primaryIssue(issueMap.get(item.node.id) ?? []));
     }
   }
 
@@ -529,15 +530,21 @@ function createCanvasPerspectiveViewer(
   return { update, clearSelection, dispose };
 }
 
-function createIssueMap(options: PerspectiveViewerOptions): Map<string, PerspectiveIssue> {
-  const result = new Map<string, PerspectiveIssue>();
+function createIssueMap(options: PerspectiveViewerOptions): Map<string, readonly PerspectiveIssue[]> {
+  const result = new Map<string, PerspectiveIssue[]>();
+  const addIssue = (nodeId: string | undefined, issue: PerspectiveIssue): void => {
+    if (!nodeId) return;
+    const issues = result.get(nodeId) ?? [];
+    issues.push(issue);
+    result.set(nodeId, issues);
+  };
   for (const issue of options.issues ?? []) {
     for (const id of [issue.nodeId, issue.childId, issue.parentId]) {
-      if (id) result.set(id, issue);
+      addIssue(id, issue);
     }
   }
   for (const issue of options.overflowIssues ?? []) {
-    result.set(issue.childId, {
+    addIssue(issue.childId, {
       childId: issue.childId,
       parentId: issue.parentId,
       kind: "containment-leak",
@@ -547,7 +554,7 @@ function createIssueMap(options: PerspectiveViewerOptions): Map<string, Perspect
   }
   for (const occupancy of options.textOccupancies ?? []) {
     if (!occupancy.overflows) continue;
-    result.set(occupancy.nodeId, {
+    addIssue(occupancy.nodeId, {
       nodeId: occupancy.nodeId,
       kind: "text-overflow",
       message: "Text overflows its visual content area",
@@ -555,6 +562,11 @@ function createIssueMap(options: PerspectiveViewerOptions): Map<string, Perspect
     });
   }
   return result;
+}
+
+function primaryIssue(issues: readonly PerspectiveIssue[]): PerspectiveIssue | undefined {
+  const rank = { error: 3, warning: 2, info: 1 } as const;
+  return issues.toSorted((a, b) => rank[b.severity ?? "warning"] - rank[a.severity ?? "warning"])[0];
 }
 
 function issueColor(issue: PerspectiveIssue | undefined): number | undefined {
@@ -688,13 +700,13 @@ interface LayerModel {
   readonly copyFormat: PerspectiveCopyFormat;
   readonly layers: ReadonlyMap<string, PerspectiveLayer>;
   readonly nodeToLayer: ReadonlyMap<string, string>;
-  readonly issueMap: ReadonlyMap<string, PerspectiveIssue>;
+  readonly issueMap: ReadonlyMap<string, readonly PerspectiveIssue[]>;
 }
 
 function createLayerModel(
   doc: RLSCDocument,
   groupBy: PerspectiveGroupBy = "dom-node",
-  issueMap: ReadonlyMap<string, PerspectiveIssue> = new Map(),
+  issueMap: ReadonlyMap<string, readonly PerspectiveIssue[]> = new Map(),
   copyFormat: PerspectiveCopyFormat = "identifier",
 ): LayerModel {
   const layerEntries = new Map<string, { value: string; nodes: RLSCNode[] }>();
@@ -770,15 +782,23 @@ function copyEvent(doc: RLSCDocument, model: LayerModel, layerId: string): Persp
 function selectionDetail(layer: PerspectiveLayer, node: RLSCNode, model: LayerModel): PerspectiveSelectionDetail {
   const componentId = node.identifier?.componentId ?? node.attributes["data-component-id"];
   const qaAddress = node.identifier?.qaAddress ?? node.address ?? node.attributes["data-qa-address"];
+  const identifier = node.identifier ?? {
+    kind: componentId ? "componentId" : qaAddress ? "qaAddress" : "nodeId",
+    value: componentId ?? qaAddress ?? node.id,
+    componentId,
+    qaAddress,
+    nodeId: node.id,
+  };
   return {
     nodeId: node.id,
     nodeIds: layer.nodeIds,
+    identifier,
     componentId,
     qaAddress,
     role: node.role,
     textHint: node.textContent,
-    preferredIdentifier: node.identifier?.value ?? componentId ?? qaAddress ?? node.id,
-    identifierKind: node.identifier?.kind,
+    preferredIdentifier: identifier.value,
+    identifierKind: identifier.kind,
     issues: layer.nodeIds.flatMap((nodeId) => model.issueMap.get(nodeId) ?? []),
   };
 }
