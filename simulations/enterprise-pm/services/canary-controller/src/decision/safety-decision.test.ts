@@ -146,7 +146,7 @@ describe("SafetyDecisionService (spec 01 §3)", () => {
     expect(d.verdict).toBe("hold");
   });
 
-  it("(h) currentWeight=100 + all PASS + dwell 경과 → promote 유지(100)", () => {
+  it("(h) currentWeight=100 + all PASS + dwell 경과 → hold + action=noop (terminal)", () => {
     const d = svc.decide({
       verdicts: okVerdicts(),
       confidence: 0.9,
@@ -154,7 +154,10 @@ describe("SafetyDecisionService (spec 01 §3)", () => {
       history: [],
       timeSincePromotionMs: 130_000,
     });
-    expect(d.verdict).toBe("promote");
-    expect(d.action).toMatchObject({ kind: "weight-update", weight: 100 });
+    // 시퀀스 끝 (weight=100) 에서는 verdict=hold + action=noop (terminal) —
+    // 시나리오 9 §3.1 압축 예시 (promote action 시퀀스 4 entry deepEqual) 의 단조 보장.
+    // weight 100 도달 후 후속 사이클은 promote 필터에서 자동 제외.
+    expect(d.verdict).toBe("hold");
+    expect(d.action).toEqual({ kind: "noop" });
   });
 });

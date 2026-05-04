@@ -89,9 +89,12 @@ function loadConfig(): ControllerConfigYaml {
       provide: SafetyDecisionService,
       useFactory: () => {
         const cfg = loadConfig();
+        // env.SIM_CONTROLLER_DWELL_MS 가 설정되면 yaml 보다 우선 — sim 환경에서
+        // 사이클 시간 단축에 비례하여 dwellMs 도 단축 (production 변경은 yaml).
+        const dwellMs = env.SIM_CONTROLLER_DWELL_MS ?? cfg.dwell.promotionMs;
         const safetyCfg: SafetyConfig = {
           weightSequence: cfg.weightSequence,
-          dwellMs: cfg.dwell.promotionMs,
+          dwellMs,
           confidenceHold: cfg.confidence.holdThreshold,
           windowCycles: cfg.window.rollingCycles,
           failQuorum: cfg.window.failQuorum,
