@@ -2275,6 +2275,9 @@ importers:
       '@qa-sdk/rlsc-perspective':
         specifier: workspace:*
         version: link:../rlsc-perspective
+      rlsc:
+        specifier: workspace:*
+        version: link:../rlsc
     devDependencies:
       typescript:
         specifier: ^5.8.2
