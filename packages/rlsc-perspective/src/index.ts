@@ -319,12 +319,12 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
 
   function setControlMode(mode: PerspectiveControlMode): void {
     controlMode = mode;
-    viewport.style.cursor = mode === "pan" ? "grab" : hoveredLayerId ? "pointer" : "grab";
+    viewport.style.cursor = "grab";
   }
 
   function handlePointerDown(event: PointerEvent): void {
     if (![0, 1, 2].includes(event.button)) return;
-    const mode = shouldPan(event) ? "pan" : controlMode;
+    const mode = dragMode(event, controlMode);
     dragState = {
       startX: event.clientX,
       startY: event.clientY,
@@ -345,7 +345,7 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
     const dy = event.clientY - dragState.startY;
     dragState.moved ||= Math.hypot(dx, dy) > 4;
     suppressClick = dragState.moved;
-    const mode = shouldPan(event) ? "pan" : dragState.mode;
+    const mode = dragMode(event, dragState.mode);
     viewState = mode === "pan"
       ? { ...viewState, panX: dragState.startPanX + dx, panY: dragState.startPanY + dy }
       : {
@@ -449,9 +449,11 @@ interface Css3DDragState {
   readonly startRotation: DOMMatrix;
   readonly startPanX: number;
   readonly startPanY: number;
-  readonly mode: PerspectiveControlMode;
+  readonly mode: DragMode;
   moved: boolean;
 }
+
+type DragMode = PerspectiveControlMode | "auto-axis";
 
 function nodeDepth(item: FlatNode): number {
   return item.depth * 38 + Math.max(0, item.node.zIndex) / 80;
@@ -477,7 +479,8 @@ function presetRotationMatrix(preset: PerspectiveViewPreset): DOMMatrix {
   return new DOMMatrix().rotateSelf(62, 0, -18);
 }
 
-function dragRotationMatrix(mode: PerspectiveControlMode, dx: number, dy: number): DOMMatrix {
+function dragRotationMatrix(mode: DragMode, dx: number, dy: number): DOMMatrix {
+  if (mode === "auto-axis") return dragRotationMatrix(resolveAutoAxis(dx, dy), dx, dy);
   if (mode === "x") return new DOMMatrix().rotateAxisAngleSelf(1, 0, 0, -dy * 0.28);
   if (mode === "y") return new DOMMatrix().rotateAxisAngleSelf(0, 1, 0, dx * 0.34);
   if (mode === "z") return new DOMMatrix().rotateAxisAngleSelf(0, 0, 1, dx * 0.34);
@@ -486,8 +489,14 @@ function dragRotationMatrix(mode: PerspectiveControlMode, dx: number, dy: number
     .rotateAxisAngleSelf(1, 0, 0, -dy * 0.28);
 }
 
-function shouldPan(event: PointerEvent): boolean {
-  return event.altKey || event.button === 1 || event.button === 2 || event.buttons === 4 || event.buttons === 2;
+function dragMode(event: PointerEvent, configuredMode: DragMode): DragMode {
+  if (event.altKey) return configuredMode === "orbit" || configuredMode === "pan" ? "auto-axis" : configuredMode;
+  if (event.button === 1 || event.button === 2 || event.buttons === 4 || event.buttons === 2) return "pan";
+  return "pan";
+}
+
+function resolveAutoAxis(dx: number, dy: number): "x" | "y" {
+  return Math.abs(dx) >= Math.abs(dy) ? "y" : "x";
 }
 
 function matrixToCss(matrix: DOMMatrix): string {
