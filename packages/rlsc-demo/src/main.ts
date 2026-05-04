@@ -13,7 +13,12 @@ import {
   createLayoutMonitor,
   type LayoutMonitor
 } from "@qa-sdk/rlsc-analysis/browser";
-import type { PerspectiveViewer } from "@qa-sdk/rlsc-perspective";
+import type {
+  PerspectiveCopyEvent,
+  PerspectiveNodeEvent,
+  PerspectiveRendererKind,
+  PerspectiveViewer
+} from "@qa-sdk/rlsc-perspective";
 import { renderToSVG } from "rlsc/rendering";
 import "./styles.css";
 
@@ -24,6 +29,10 @@ interface PipelineState {
   text: readonly TextOccupancy[];
   monitor: LayoutMonitor | null;
   layerScene: PerspectiveViewer | null;
+  renderer: PerspectiveRendererKind;
+  hoveredNodeId: string | null;
+  selectedNodeId: string | null;
+  copiedText: string;
   runCount: number;
 }
 
@@ -40,6 +49,10 @@ const state: PipelineState = {
   text: [],
   monitor: null,
   layerScene: null,
+  renderer: "auto",
+  hoveredNodeId: null,
+  selectedNodeId: null,
+  copiedText: "",
   runCount: 0
 };
 
@@ -56,6 +69,14 @@ mount.innerHTML = `
           <p>실제 DOM을 수집하고 분석 단계별 산출물을 확인합니다.</p>
         </div>
         <div class="actions">
+          <label class="renderer-control">
+            Renderer
+            <select data-action="renderer">
+              <option value="auto">Auto</option>
+              <option value="webgl">WebGL</option>
+              <option value="canvas">Canvas</option>
+            </select>
+          </label>
           <button type="button" data-action="run">Run</button>
           <button type="button" data-action="mutate">Mutate DOM</button>
           <button type="button" data-action="monitor">Start monitor</button>
@@ -131,6 +152,7 @@ mount.innerHTML = `
       <section class="layer-panel">
         <h2>Perspective layers</h2>
         <div class="layer-view" data-view="layers3d"></div>
+        <div class="interaction-view" data-view="interactions" aria-live="polite"></div>
       </section>
 
       <section class="json-panel">
@@ -146,10 +168,12 @@ const stepsView = queryRequired<HTMLElement>('[data-view="steps"]');
 const summaryView = queryRequired<HTMLElement>('[data-view="summary"]');
 const svgView = queryRequired<HTMLElement>('[data-view="svg"]');
 const layerView = queryRequired<HTMLElement>('[data-view="layers3d"]');
+const interactionsView = queryRequired<HTMLElement>('[data-view="interactions"]');
 const jsonView = queryRequired<HTMLElement>('[data-view="json"]');
 const monitorButton = queryRequired<HTMLButtonElement>('[data-action="monitor"]');
 
 renderSteps();
+renderInteractions();
 void runPipeline();
 
 mount.addEventListener("click", (event) => {
@@ -163,6 +187,16 @@ mount.addEventListener("click", (event) => {
     mutateSample();
   } else if (action === "monitor") {
     toggleMonitor();
+  }
+});
+
+mount.addEventListener("change", (event) => {
+  const target = event.target as HTMLElement;
+  if (target instanceof HTMLSelectElement && target.dataset["action"] === "renderer") {
+    state.renderer = target.value as PerspectiveRendererKind;
+    state.layerScene?.dispose();
+    state.layerScene = null;
+    if (state.doc) void runPipeline();
   }
 });
 
@@ -243,10 +277,10 @@ async function runPipeline(): Promise<void> {
   renderSummary(doc, text, textRegions, metrics, pattern, overflowIssues);
   svgView.innerHTML = svg;
   if (state.layerScene) {
-    state.layerScene.update(doc, { overflowIssues });
+    state.layerScene.update(doc, viewerOptions(overflowIssues));
   } else {
     const { createPerspectiveViewer } = await import("@qa-sdk/rlsc-perspective");
-    state.layerScene = createPerspectiveViewer(layerView, doc, { overflowIssues });
+    state.layerScene = createPerspectiveViewer(layerView, doc, viewerOptions(overflowIssues));
   }
   jsonView.textContent = JSON.stringify(
     {
@@ -268,6 +302,34 @@ async function runPipeline(): Promise<void> {
     null,
     2
   );
+}
+
+function viewerOptions(overflowIssues: readonly AreaOverflowIssue[]) {
+  return {
+    renderer: state.renderer,
+    overflowIssues,
+    onHover(event: PerspectiveNodeEvent): void {
+      state.hoveredNodeId = event.nodeId;
+      renderInteractions();
+    },
+    onSelect(event: PerspectiveNodeEvent): void {
+      state.selectedNodeId = event.nodeId;
+      renderInteractions();
+    },
+    onCopy(event: PerspectiveCopyEvent): void {
+      state.copiedText = event.text;
+      renderInteractions();
+    }
+  };
+}
+
+function renderInteractions(): void {
+  interactionsView.innerHTML = [
+    metric("Renderer", state.renderer),
+    metric("Hover", state.hoveredNodeId ?? "none"),
+    metric("Selected", state.selectedNodeId ?? "none"),
+    metric("Copied", state.copiedText ? "ready" : "none")
+  ].join("");
 }
 
 function renderSummary(
