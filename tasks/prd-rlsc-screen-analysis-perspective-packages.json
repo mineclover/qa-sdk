@@ -1,0 +1,304 @@
+{
+  "name": "RLSC Screen Analysis and Perspective Packages",
+  "description": "Split RLSC screen inspection into @qa-sdk/rlsc-analysis and @qa-sdk/rlsc-perspective while preserving rlsc compatibility and migrating rlsc-demo to consume the new packages.",
+  "branchName": "ralph/rlsc-screen-analysis-perspective-packages",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create Analysis Package Skeleton",
+      "description": "As a developer, I want a dedicated @qa-sdk/rlsc-analysis package so that screen scanning and layout analysis can be used independently of visualization.",
+      "acceptanceCriteria": [
+        "Add packages/rlsc-analysis/package.json",
+        "Add TypeScript and tsup configuration consistent with existing package patterns",
+        "Export a public package entry point from packages/rlsc-analysis/src/index.ts",
+        "Package builds independently",
+        "Package does not depend on Three.js or visual rendering libraries",
+        "pnpm --filter @qa-sdk/rlsc-analysis build passes",
+        "pnpm --filter @qa-sdk/rlsc-analysis test passes",
+        "pnpm --filter @qa-sdk/rlsc-perspective build passes",
+        "pnpm --filter @qa-sdk/rlsc-demo build passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Move Core Types and Analysis APIs",
+      "description": "As a developer, I want @qa-sdk/rlsc-analysis to own the screen document model and analysis APIs so that analysis has a single source of truth.",
+      "acceptanceCriteria": [
+        "@qa-sdk/rlsc-analysis exports RLSCDocument, RLSCNode, LayoutRect, and related analysis types",
+        "@qa-sdk/rlsc-analysis exports analyzeAreas, createAreaDocument, and detectAreaOverflow",
+        "Existing unit tests for area analysis are available under the analysis package",
+        "Analysis APIs can be imported without importing browser DOM collector or Three.js",
+        "pnpm --filter @qa-sdk/rlsc-analysis build passes",
+        "pnpm --filter @qa-sdk/rlsc-analysis test passes",
+        "pnpm --filter @qa-sdk/rlsc-perspective build passes",
+        "pnpm --filter @qa-sdk/rlsc-demo build passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "Add Metadata Annotation Helpers",
+      "description": "As an application developer, I want helpers for writing screen metadata into DOM elements so that components can be consistently identified before collection.",
+      "acceptanceCriteria": [
+        "Export metadata attribute constants for data-qa-address, data-component-id, data-debug-label, and data-boundary",
+        "Export createMetadataAttributes() for frameworks or template code that need plain attribute objects",
+        "Export annotateElement() for applying metadata to an existing DOM element",
+        "Export a ScreenMetadata type",
+        "Annotation helpers do not require DOM collection or perspective viewer imports",
+        "pnpm --filter @qa-sdk/rlsc-analysis build passes",
+        "pnpm --filter @qa-sdk/rlsc-analysis test passes",
+        "pnpm --filter @qa-sdk/rlsc-perspective build passes",
+        "pnpm --filter @qa-sdk/rlsc-demo build passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "Add Metadata and Identifier Extraction",
+      "description": "As a debugging user, I want DOM elements to expose stable identifiers so that I can identify and copy the component or screen region I selected.",
+      "acceptanceCriteria": [
+        "Support data-qa-address",
+        "Support data-component-id",
+        "Produce fallback CSS selector when metadata is missing",
+        "Export a ScreenIdentifier type",
+        "Preferred identifier order is componentId, then qaAddress, then cssSelector, then nodeId",
+        "pnpm --filter @qa-sdk/rlsc-analysis build passes",
+        "pnpm --filter @qa-sdk/rlsc-analysis test passes",
+        "pnpm --filter @qa-sdk/rlsc-perspective build passes",
+        "pnpm --filter @qa-sdk/rlsc-demo build passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "Move Browser Collection APIs",
+      "description": "As a developer, I want the analysis package to collect browser DOM metadata so that it can produce screen documents from live pages.",
+      "acceptanceCriteria": [
+        "@qa-sdk/rlsc-analysis/browser exports DOM collection APIs",
+        "Browser collector preserves data-qa-address and data-component-id",
+        "Browser collector attaches generated identifiers to collected nodes",
+        "Monitor APIs continue to support text-aware DOM change tracking",
+        "Browser APIs remain separate from pure analysis imports",
+        "pnpm --filter @qa-sdk/rlsc-analysis build passes",
+        "pnpm --filter @qa-sdk/rlsc-analysis test passes",
+        "pnpm --filter @qa-sdk/rlsc-perspective build passes",
+        "pnpm --filter @qa-sdk/rlsc-demo build passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-004"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "Create Perspective Package Skeleton",
+      "description": "As a developer, I want a dedicated @qa-sdk/rlsc-perspective package so that 3D screen visualization can be reused outside the demo.",
+      "acceptanceCriteria": [
+        "Add packages/rlsc-perspective/package.json",
+        "Add TypeScript and tsup configuration consistent with existing package patterns",
+        "Add three as a normal dependency",
+        "Export createPerspectiveViewer from the package entry point",
+        "Package builds independently",
+        "Package public API accepts RLSCDocument and optional issue data as inputs",
+        "Package does not export DOM scanner or collector APIs",
+        "pnpm --filter @qa-sdk/rlsc-analysis build passes",
+        "pnpm --filter @qa-sdk/rlsc-analysis test passes",
+        "pnpm --filter @qa-sdk/rlsc-perspective build passes",
+        "pnpm --filter @qa-sdk/rlsc-demo build passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "Move Perspective Viewer Implementation",
+      "description": "As a developer, I want the reusable 3D viewer to live in @qa-sdk/rlsc-perspective so that demo code does not own library functionality.",
+      "acceptanceCriteria": [
+        "Migrate reusable logic from packages/rlsc-demo/src/layer-scene.ts",
+        "Viewer accepts RLSCDocument from @qa-sdk/rlsc-analysis",
+        "Viewer exposes update(doc) and dispose() lifecycle methods",
+        "Viewer supports renderer: auto, webgl, and canvas",
+        "Canvas renderer is used when WebGL is unavailable or explicitly selected",
+        "Viewer implementation does not call querySelector, getBoundingClientRect, or DOM collector APIs for screen scanning",
+        "pnpm --filter @qa-sdk/rlsc-analysis build passes",
+        "pnpm --filter @qa-sdk/rlsc-analysis test passes",
+        "pnpm --filter @qa-sdk/rlsc-perspective build passes",
+        "pnpm --filter @qa-sdk/rlsc-demo build passes",
+        "Start local dev server for @qa-sdk/rlsc-demo",
+        "Verify in browser with screenshot or pixel check",
+        "Confirm hover/select/copy interactions work in the browser"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-006"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "Add Grouping, Hover, and Selection Model",
+      "description": "As a debugging user, I want to choose the grouping level and select visual layers so that I can inspect the right component boundary.",
+      "acceptanceCriteria": [
+        "Viewer supports groupBy values: dom-node, componentId, qaAddress, and role",
+        "Hover highlights only the hovered layer",
+        "Non-hovered layers visually recede while hover is active",
+        "Click selects a layer and keeps it selected",
+        "Selection can be cleared",
+        "Selection exposes node id, component id, qa address, role, text hint, and preferred identifier when available",
+        "pnpm --filter @qa-sdk/rlsc-analysis build passes",
+        "pnpm --filter @qa-sdk/rlsc-analysis test passes",
+        "pnpm --filter @qa-sdk/rlsc-perspective build passes",
+        "pnpm --filter @qa-sdk/rlsc-demo build passes",
+        "Start local dev server for @qa-sdk/rlsc-demo",
+        "Verify in browser with screenshot or pixel check",
+        "Confirm hover/select/copy interactions work in the browser"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-007"
+      ]
+    },
+    {
+      "id": "US-009",
+      "title": "Add Copy and Debug Issue Visualization",
+      "description": "As a debugging user, I want to copy selected identifiers and see layout issues in context so that I can feed precise debugging information back into tools.",
+      "acceptanceCriteria": [
+        "Perspective package exposes selected identifier data without requiring demo internals",
+        "Copy format defaults to plain identifier",
+        "Optional JSON copy payload can include identifier and issue details",
+        "Viewer accepts containment leak issues from analysis results",
+        "Viewer accepts text overflow issues when text analysis data is available",
+        "Layers with issues are visually marked",
+        "pnpm --filter @qa-sdk/rlsc-analysis build passes",
+        "pnpm --filter @qa-sdk/rlsc-analysis test passes",
+        "pnpm --filter @qa-sdk/rlsc-perspective build passes",
+        "pnpm --filter @qa-sdk/rlsc-demo build passes",
+        "Start local dev server for @qa-sdk/rlsc-demo",
+        "Verify in browser with screenshot or pixel check",
+        "Confirm hover/select/copy interactions work in the browser"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-008"
+      ]
+    },
+    {
+      "id": "US-010",
+      "title": "Preserve Existing RLSC Compatibility",
+      "description": "As an existing user, I want rlsc imports to keep working so that this split does not break current consumers.",
+      "acceptanceCriteria": [
+        "Existing rlsc import path continues to work",
+        "Existing rlsc/analysis, rlsc/browser, and rlsc/rendering exports continue to work",
+        "rlsc re-exports selected APIs from new packages where appropriate",
+        "Existing pnpm --filter rlsc test remains passing",
+        "Existing README documents the compatibility position",
+        "pnpm --filter @qa-sdk/rlsc-analysis build passes",
+        "pnpm --filter @qa-sdk/rlsc-analysis test passes",
+        "pnpm --filter @qa-sdk/rlsc-perspective build passes",
+        "pnpm --filter @qa-sdk/rlsc-demo build passes",
+        "pnpm --filter rlsc build passes",
+        "pnpm --filter rlsc test passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-005",
+        "US-006"
+      ]
+    },
+    {
+      "id": "US-011",
+      "title": "Migrate RLSC Demo to New Packages",
+      "description": "As a maintainer, I want rlsc-demo to consume the new packages so that the demo proves the package split works.",
+      "acceptanceCriteria": [
+        "Demo imports pure analysis APIs from @qa-sdk/rlsc-analysis",
+        "Demo imports browser collection APIs from @qa-sdk/rlsc-analysis/browser",
+        "Demo imports perspective viewer APIs from @qa-sdk/rlsc-perspective",
+        "Demo no longer owns reusable perspective renderer logic",
+        "Demo still supports Run, Mutate DOM, and Start Monitor",
+        "Demo exposes grouping selection UI",
+        "Demo shows selected identifier and copy button",
+        "Demo shows containment leak issue details when selecting affected layers",
+        "pnpm --filter @qa-sdk/rlsc-analysis build passes",
+        "pnpm --filter @qa-sdk/rlsc-analysis test passes",
+        "pnpm --filter @qa-sdk/rlsc-perspective build passes",
+        "pnpm --filter @qa-sdk/rlsc-demo build passes",
+        "Start local dev server for @qa-sdk/rlsc-demo",
+        "Verify in browser with screenshot or pixel check",
+        "Confirm hover/select/copy interactions work in the browser"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-009",
+        "US-010"
+      ]
+    },
+    {
+      "id": "US-012",
+      "title": "Document Package Boundaries and Usage",
+      "description": "As a developer, I want clear package documentation so that I can use analysis and visualization independently.",
+      "acceptanceCriteria": [
+        "packages/rlsc-analysis/README.md explains collection, metadata annotation, identifiers, and analysis",
+        "packages/rlsc-perspective/README.md explains viewer setup, lifecycle, grouping, hover/select, and copy workflow",
+        "Existing packages/rlsc/README.md explains compatibility exports",
+        "Example code shows analysis-only usage",
+        "Example code shows metadata annotation usage",
+        "Example code shows analysis plus perspective visualization usage",
+        "Documentation states that @qa-sdk/rlsc-perspective does not scan DOM directly",
+        "pnpm --filter @qa-sdk/rlsc-analysis build passes",
+        "pnpm --filter @qa-sdk/rlsc-analysis test passes",
+        "pnpm --filter @qa-sdk/rlsc-perspective build passes",
+        "pnpm --filter @qa-sdk/rlsc-demo build passes",
+        "pnpm --filter rlsc build passes",
+        "pnpm --filter rlsc test passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-011"
+      ]
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-05-04T08:08:54.102Z"
+  }
+}
