@@ -112,7 +112,8 @@ describe("review commands", () => {
       vi.mocked(console.log).mockClear();
 
       reviewLog(["package.json"]);
-      const output = vi.mocked(console.log).mock.calls.map(c => String(c[0])).join("\n");
+      const logSpy = console.log as unknown as { mock: { calls: unknown[][] } };
+      const output = logSpy.mock.calls.map(c => String(c[0])).join("\n");
       expect(output).toContain("reviewer-1");
       expect(output).toContain("claude");
     });
