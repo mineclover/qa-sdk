@@ -255,6 +255,13 @@ button {
   gap: 8px;
 }
 
+.layer-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
 .summary-item {
   min-width: 0;
   padding: 8px;

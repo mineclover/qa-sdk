@@ -15,8 +15,10 @@ import {
 } from "@qa-sdk/rlsc-analysis/browser";
 import type {
   PerspectiveCopyEvent,
+  PerspectiveGroupBy,
   PerspectiveNodeEvent,
   PerspectiveRendererKind,
+  PerspectiveSelectionDetail,
   PerspectiveViewer
 } from "@qa-sdk/rlsc-perspective";
 import { renderToSVG } from "rlsc/rendering";
@@ -30,8 +32,10 @@ interface PipelineState {
   monitor: LayoutMonitor | null;
   layerScene: PerspectiveViewer | null;
   renderer: PerspectiveRendererKind;
+  groupBy: PerspectiveGroupBy;
   hoveredNodeId: string | null;
   selectedNodeId: string | null;
+  selectedDetail: PerspectiveSelectionDetail | null;
   copiedText: string;
   runCount: number;
 }
@@ -50,8 +54,10 @@ const state: PipelineState = {
   monitor: null,
   layerScene: null,
   renderer: "auto",
+  groupBy: "dom-node",
   hoveredNodeId: null,
   selectedNodeId: null,
+  selectedDetail: null,
   copiedText: "",
   runCount: 0
 };
@@ -77,28 +83,37 @@ mount.innerHTML = `
               <option value="canvas">Canvas</option>
             </select>
           </label>
+          <label class="renderer-control">
+            Group
+            <select data-action="groupBy">
+              <option value="dom-node">DOM node</option>
+              <option value="componentId">Component</option>
+              <option value="qaAddress">QA address</option>
+              <option value="role">Role</option>
+            </select>
+          </label>
           <button type="button" data-action="run">Run</button>
           <button type="button" data-action="mutate">Mutate DOM</button>
           <button type="button" data-action="monitor">Start monitor</button>
         </div>
       </header>
 
-      <article id="sample-surface" class="sample-surface" data-qa-address="rlsc-demo:surface">
-        <header class="sample-header" data-qa-address="rlsc-demo:header">
-          <nav class="sample-nav" aria-label="demo navigation">
+      <article id="sample-surface" class="sample-surface" data-qa-address="rlsc-demo:surface" data-component-id="DemoSurface" role="main">
+        <header class="sample-header" data-qa-address="rlsc-demo:header" data-component-id="DemoHeader" role="banner">
+          <nav class="sample-nav" aria-label="demo navigation" data-component-id="DemoNav">
             <a href="#overview">Overview</a>
             <a href="#signals">Signals</a>
             <a href="#review">Review</a>
           </nav>
-          <button class="sample-alert" type="button" data-qa-address="rlsc-demo:alert">검토 필요 3</button>
+          <button class="sample-alert" type="button" data-qa-address="rlsc-demo:alert" data-component-id="ReviewAlert">검토 필요 3</button>
         </header>
 
-        <section class="hero-block" data-qa-address="rlsc-demo:hero">
+        <section class="hero-block" data-qa-address="rlsc-demo:hero" data-component-id="HeroBlock">
           <div class="hero-copy">
             <h2>Layout signal capture</h2>
             <p>RLSC는 화면의 시각 구조를 노드, 격자, 관계, 텍스트 점유율로 변환합니다.</p>
           </div>
-          <form class="hero-form" data-qa-address="rlsc-demo:form">
+          <form class="hero-form" data-qa-address="rlsc-demo:form" data-component-id="ScenarioForm">
             <label>
               Scenario
               <select>
@@ -110,13 +125,13 @@ mount.innerHTML = `
           </form>
         </section>
 
-        <section class="metric-grid" data-qa-address="rlsc-demo:metrics">
-          <div class="metric-tile"><span>Nodes</span><strong>pending</strong></div>
-          <div class="metric-tile"><span>Relations</span><strong>pending</strong></div>
-          <div class="metric-tile"><span>Text fill</span><strong>pending</strong></div>
+        <section class="metric-grid" data-qa-address="rlsc-demo:metrics" data-component-id="MetricGrid">
+          <div class="metric-tile" data-component-id="MetricTile"><span>Nodes</span><strong>pending</strong></div>
+          <div class="metric-tile" data-component-id="MetricTile"><span>Relations</span><strong>pending</strong></div>
+          <div class="metric-tile" data-component-id="MetricTile"><span>Text fill</span><strong>pending</strong></div>
         </section>
 
-        <section class="content-columns" data-qa-address="rlsc-demo:columns">
+        <section class="content-columns" data-qa-address="rlsc-demo:columns" data-component-id="ContentColumns">
           <article>
             <h3>Primary flow</h3>
             <p>카드 간 간격과 행 방향 흐름이 relation graph로 변환됩니다.</p>
@@ -152,6 +167,10 @@ mount.innerHTML = `
       <section class="layer-panel">
         <h2>Perspective layers</h2>
         <div class="layer-view" data-view="layers3d"></div>
+        <div class="layer-actions">
+          <button type="button" data-action="clearSelection">Clear selection</button>
+          <button type="button" data-action="copySelection">Copy selection</button>
+        </div>
         <div class="interaction-view" data-view="interactions" aria-live="polite"></div>
       </section>
 
@@ -187,6 +206,10 @@ mount.addEventListener("click", (event) => {
     mutateSample();
   } else if (action === "monitor") {
     toggleMonitor();
+  } else if (action === "clearSelection") {
+    clearSelection();
+  } else if (action === "copySelection") {
+    void copySelection();
   }
 });
 
@@ -197,6 +220,14 @@ mount.addEventListener("change", (event) => {
     state.layerScene?.dispose();
     state.layerScene = null;
     if (state.doc) void runPipeline();
+  } else if (target instanceof HTMLSelectElement && target.dataset["action"] === "groupBy") {
+    state.groupBy = target.value as PerspectiveGroupBy;
+    state.hoveredNodeId = null;
+    state.selectedNodeId = null;
+    state.selectedDetail = null;
+    state.copiedText = "";
+    if (state.doc) state.layerScene?.update(state.doc, viewerOptions(analyzeAreas(state.doc, { textOccupancies: state.text }).overflowIssues));
+    renderInteractions();
   }
 });
 
@@ -307,13 +338,17 @@ async function runPipeline(): Promise<void> {
 function viewerOptions(overflowIssues: readonly AreaOverflowIssue[]) {
   return {
     renderer: state.renderer,
+    groupBy: state.groupBy,
+    copyFormat: "identifier" as const,
     overflowIssues,
+    textOccupancies: state.text,
     onHover(event: PerspectiveNodeEvent): void {
       state.hoveredNodeId = event.nodeId;
       renderInteractions();
     },
     onSelect(event: PerspectiveNodeEvent): void {
       state.selectedNodeId = event.nodeId;
+      state.selectedDetail = event.selection ?? null;
       renderInteractions();
     },
     onCopy(event: PerspectiveCopyEvent): void {
@@ -324,10 +359,18 @@ function viewerOptions(overflowIssues: readonly AreaOverflowIssue[]) {
 }
 
 function renderInteractions(): void {
+  const detail = state.selectedDetail;
   interactionsView.innerHTML = [
     metric("Renderer", state.renderer),
+    metric("Group", state.groupBy),
     metric("Hover", state.hoveredNodeId ?? "none"),
     metric("Selected", state.selectedNodeId ?? "none"),
+    metric("Preferred", detail?.preferredIdentifier ?? "none"),
+    metric("Component", detail?.componentId ?? "none"),
+    metric("QA address", detail?.qaAddress ?? "none"),
+    metric("Role", detail?.role ?? "none"),
+    metric("Text", detail?.textHint ?? "none"),
+    metric("Issues", detail?.issues.length ? detail.issues.map((issue) => issue.kind ?? issue.severity ?? "issue").join(", ") : "none"),
     metric("Copied", state.copiedText ? "ready" : "none")
   ].join("");
 }
@@ -374,12 +417,30 @@ function mutateSample(): void {
 
   const article = document.createElement("article");
   article.className = "mutated";
+  article.setAttribute("data-component-id", "MutationCard");
+  article.setAttribute("data-qa-address", "rlsc-demo:mutation-card");
   article.innerHTML = `
     <span class="spill-chip">spill</span>
     <h3>New branch</h3>
     <p>오른쪽 badge는 parent article 경계를 넘도록 배치되어 containment leak 감지에 잡힙니다.</p>
   `;
   columns.appendChild(article);
+}
+
+function clearSelection(): void {
+  state.layerScene?.clearSelection();
+  state.selectedNodeId = null;
+  state.selectedDetail = null;
+  state.copiedText = "";
+  renderInteractions();
+}
+
+async function copySelection(): Promise<void> {
+  if (!state.selectedDetail) return;
+  const text = state.selectedDetail.preferredIdentifier ?? state.selectedDetail.nodeId;
+  await navigator.clipboard?.writeText(text).catch(() => undefined);
+  state.copiedText = text;
+  renderInteractions();
 }
 
 function toggleMonitor(): void {

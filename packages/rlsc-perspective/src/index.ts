@@ -20,14 +20,18 @@ import {
   WebGLRenderer,
 } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import type { AreaOverflowIssue, RLSCDocument, RLSCNode } from "@qa-sdk/rlsc-analysis";
+import type { AreaOverflowIssue, RLSCDocument, RLSCNode, TextOccupancy } from "@qa-sdk/rlsc-analysis";
 
 export type PerspectiveRendererKind = "auto" | "webgl" | "canvas";
+export type PerspectiveGroupBy = "dom-node" | "componentId" | "qaAddress" | "role";
+export type PerspectiveCopyFormat = "identifier" | "json";
 
 export interface PerspectiveIssue {
   readonly nodeId?: string;
   readonly parentId?: string;
   readonly childId?: string;
+  readonly kind?: "containment-leak" | "text-overflow" | "custom";
+  readonly message?: string;
   readonly severity?: "info" | "warning" | "error";
   readonly color?: number;
 }
@@ -35,16 +39,42 @@ export interface PerspectiveIssue {
 export interface PerspectiveNodeEvent {
   readonly nodeId: string | null;
   readonly node?: RLSCNode;
+  readonly layerId: string | null;
+  readonly layer?: PerspectiveLayer;
+  readonly selection?: PerspectiveSelectionDetail;
 }
 
 export interface PerspectiveCopyEvent extends PerspectiveNodeEvent {
   readonly text: string;
 }
 
+export interface PerspectiveLayer {
+  readonly id: string;
+  readonly groupBy: PerspectiveGroupBy;
+  readonly value: string;
+  readonly nodeIds: readonly string[];
+  readonly preferredNodeId: string;
+}
+
+export interface PerspectiveSelectionDetail {
+  readonly nodeId: string;
+  readonly nodeIds: readonly string[];
+  readonly componentId?: string;
+  readonly qaAddress?: string;
+  readonly role?: string;
+  readonly textHint?: string;
+  readonly preferredIdentifier?: string;
+  readonly identifierKind?: string;
+  readonly issues: readonly PerspectiveIssue[];
+}
+
 export interface PerspectiveViewerOptions {
   readonly renderer?: PerspectiveRendererKind;
+  readonly groupBy?: PerspectiveGroupBy;
+  readonly copyFormat?: PerspectiveCopyFormat;
   readonly issues?: readonly PerspectiveIssue[];
   readonly overflowIssues?: readonly AreaOverflowIssue[];
+  readonly textOccupancies?: readonly TextOccupancy[];
   readonly onHover?: (event: PerspectiveNodeEvent) => void;
   readonly onSelect?: (event: PerspectiveNodeEvent) => void;
   readonly onCopy?: (event: PerspectiveCopyEvent) => void;
@@ -52,6 +82,7 @@ export interface PerspectiveViewerOptions {
 
 export interface PerspectiveViewer {
   update(doc: RLSCDocument, options?: PerspectiveViewerOptions): void;
+  clearSelection(): void;
   dispose(): void;
 }
 
@@ -149,8 +180,10 @@ export function createPerspectiveViewer(
   let currentDoc = doc;
   let currentOptions = options;
   let hoveredNodeId: string | null = null;
-  let selectedNodeId: string | null = null;
+  let hoveredLayerId: string | null = null;
+  let selectedLayerId: string | null = null;
   let currentIssueMap = createIssueMap(options);
+  let currentLayers = createLayerModel(doc, currentOptions.groupBy, currentIssueMap, currentOptions.copyFormat);
 
   function resize(): void {
     const width = Math.max(1, container.clientWidth);
@@ -178,12 +211,16 @@ export function createPerspectiveViewer(
     currentDoc = nextDoc;
     currentOptions = nextOptions;
     currentIssueMap = createIssueMap(nextOptions);
+    currentLayers = createLayerModel(nextDoc, nextOptions.groupBy, currentIssueMap, nextOptions.copyFormat);
     clearRoot();
     root.add(new GridHelper(8, 32, 0xb7c2d0, 0xdce3ec));
-    addNodeLayer(root, nextDoc.root, nextDoc.viewport, 0, null, nodeMeshes, currentIssueMap);
-    if (hoveredNodeId && !nodeMeshes.has(hoveredNodeId)) hoveredNodeId = null;
-    if (selectedNodeId && !nodeMeshes.has(selectedNodeId)) selectedNodeId = null;
-    applyInteractionState(nodeMeshes, hoveredNodeId, selectedNodeId);
+    addNodeLayer(root, nextDoc.root, nextDoc.viewport, 0, null, nodeMeshes, currentIssueMap, currentLayers.nodeToLayer);
+    if (hoveredNodeId && !nodeMeshes.has(hoveredNodeId)) {
+      hoveredNodeId = null;
+      hoveredLayerId = null;
+    }
+    if (selectedLayerId && !currentLayers.layers.has(selectedLayerId)) selectedLayerId = null;
+    applyInteractionState(nodeMeshes, hoveredLayerId, selectedLayerId);
     resize();
     renderer.render(scene, camera);
   }
@@ -196,35 +233,39 @@ export function createPerspectiveViewer(
     raycaster.setFromCamera(pointer, camera);
     const hit = raycaster.intersectObjects([...nodeMeshes.values()], false)[0];
     const nextId = hit?.object.userData["nodeId"] as string | undefined;
+    const nextLayerId = nextId ? currentLayers.nodeToLayer.get(nextId) ?? null : null;
     const nextHovered = nextId ?? null;
-    if (nextHovered === hoveredNodeId) return;
+    if (nextHovered === hoveredNodeId && nextLayerId === hoveredLayerId) return;
 
     hoveredNodeId = nextHovered;
-    renderer.domElement.style.cursor = hoveredNodeId ? "pointer" : "default";
-    applyInteractionState(nodeMeshes, hoveredNodeId, selectedNodeId);
-    emitNodeEvent(container, "rlsc-perspective-hover", currentDoc, hoveredNodeId);
-    currentOptions.onHover?.(nodeEvent(currentDoc, hoveredNodeId));
+    hoveredLayerId = nextLayerId;
+    renderer.domElement.style.cursor = hoveredLayerId ? "pointer" : "default";
+    applyInteractionState(nodeMeshes, hoveredLayerId, selectedLayerId);
+    emitNodeEvent(container, "rlsc-perspective-hover", currentDoc, currentLayers, hoveredNodeId, hoveredLayerId);
+    currentOptions.onHover?.(nodeEvent(currentDoc, currentLayers, hoveredNodeId, hoveredLayerId));
   }
 
   function clearHover(): void {
-    if (!hoveredNodeId) return;
+    if (!hoveredNodeId && !hoveredLayerId) return;
     hoveredNodeId = null;
+    hoveredLayerId = null;
     renderer.domElement.style.cursor = "default";
-    applyInteractionState(nodeMeshes, hoveredNodeId, selectedNodeId);
-    emitNodeEvent(container, "rlsc-perspective-hover", currentDoc, hoveredNodeId);
-    currentOptions.onHover?.(nodeEvent(currentDoc, hoveredNodeId));
+    applyInteractionState(nodeMeshes, hoveredLayerId, selectedLayerId);
+    emitNodeEvent(container, "rlsc-perspective-hover", currentDoc, currentLayers, hoveredNodeId, hoveredLayerId);
+    currentOptions.onHover?.(nodeEvent(currentDoc, currentLayers, hoveredNodeId, hoveredLayerId));
   }
 
   function handleSelect(): void {
-    selectedNodeId = hoveredNodeId;
-    applyInteractionState(nodeMeshes, hoveredNodeId, selectedNodeId);
-    emitNodeEvent(container, "rlsc-perspective-select", currentDoc, selectedNodeId);
-    currentOptions.onSelect?.(nodeEvent(currentDoc, selectedNodeId));
+    selectedLayerId = hoveredLayerId;
+    applyInteractionState(nodeMeshes, hoveredLayerId, selectedLayerId);
+    emitNodeEvent(container, "rlsc-perspective-select", currentDoc, currentLayers, hoveredNodeId, selectedLayerId);
+    currentOptions.onSelect?.(nodeEvent(currentDoc, currentLayers, hoveredNodeId, selectedLayerId));
+    renderer.domElement.focus();
   }
 
   function handleCopy(event: ClipboardEvent): void {
-    if (!selectedNodeId) return;
-    const detail = copyEvent(currentDoc, selectedNodeId);
+    if (!selectedLayerId) return;
+    const detail = copyEvent(currentDoc, currentLayers, selectedLayerId);
     event.clipboardData?.setData("text/plain", detail.text);
     event.preventDefault();
     emitCopyEvent(container, detail);
@@ -232,11 +273,18 @@ export function createPerspectiveViewer(
   }
 
   function handleKeyDown(event: KeyboardEvent): void {
-    if (!selectedNodeId || event.key.toLowerCase() !== "c" || (!event.metaKey && !event.ctrlKey)) return;
-    const detail = copyEvent(currentDoc, selectedNodeId);
+    if (!selectedLayerId || event.key.toLowerCase() !== "c" || (!event.metaKey && !event.ctrlKey)) return;
+    const detail = copyEvent(currentDoc, currentLayers, selectedLayerId);
     void navigator.clipboard?.writeText(detail.text).catch(() => undefined);
     emitCopyEvent(container, detail);
     currentOptions.onCopy?.(detail);
+  }
+
+  function clearSelection(): void {
+    selectedLayerId = null;
+    applyInteractionState(nodeMeshes, hoveredLayerId, selectedLayerId);
+    emitNodeEvent(container, "rlsc-perspective-select", currentDoc, currentLayers, null, null);
+    currentOptions.onSelect?.(nodeEvent(currentDoc, currentLayers, null, null));
   }
 
   function dispose(): void {
@@ -262,7 +310,7 @@ export function createPerspectiveViewer(
   renderer.domElement.addEventListener("keydown", handleKeyDown);
   animate();
 
-  return { update, dispose };
+  return { update, clearSelection, dispose };
 }
 
 function addNodeLayer(
@@ -273,6 +321,7 @@ function addNodeLayer(
   parentCenter: Vector3 | null,
   nodeMeshes: Map<string, Mesh<BoxGeometry, MeshStandardMaterial>>,
   issueMap: ReadonlyMap<string, PerspectiveIssue>,
+  nodeToLayer: ReadonlyMap<string, string>,
 ): void {
   if (!node.visible) return;
 
@@ -296,6 +345,7 @@ function addNodeLayer(
   const mesh = new Mesh(new BoxGeometry(width, height, thickness), material);
   mesh.position.copy(center);
   mesh.userData["nodeId"] = node.id;
+  mesh.userData["layerId"] = nodeToLayer.get(node.id) ?? node.id;
   mesh.userData["baseOpacity"] = material.opacity;
   mesh.userData["baseScaleZ"] = mesh.scale.z;
   mesh.userData["baseEmissive"] = material.emissive.getHex();
@@ -319,22 +369,23 @@ function addNodeLayer(
   }
 
   for (const child of node.children) {
-    addNodeLayer(group, child, viewport, depth + 1, center, nodeMeshes, issueMap);
+    addNodeLayer(group, child, viewport, depth + 1, center, nodeMeshes, issueMap, nodeToLayer);
   }
 }
 
 function applyInteractionState(
   nodeMeshes: Map<string, Mesh<BoxGeometry, MeshStandardMaterial>>,
-  hoveredNodeId: string | null,
-  selectedNodeId: string | null,
+  hoveredLayerId: string | null,
+  selectedLayerId: string | null,
 ): void {
   for (const [nodeId, mesh] of nodeMeshes) {
     const material = mesh.material;
     const baseOpacity = mesh.userData["baseOpacity"] as number;
     const baseEmissive = mesh.userData["baseEmissive"] as number;
-    const isHovered = hoveredNodeId === nodeId;
-    const isSelected = selectedNodeId === nodeId;
-    material.opacity = hoveredNodeId || selectedNodeId ? (isHovered || isSelected ? 0.98 : Math.min(baseOpacity, 0.14)) : baseOpacity;
+    const layerId = mesh.userData["layerId"] as string | undefined ?? nodeId;
+    const isHovered = hoveredLayerId === layerId;
+    const isSelected = selectedLayerId === layerId;
+    material.opacity = hoveredLayerId ? (isHovered ? 0.98 : Math.min(baseOpacity, 0.14)) : selectedLayerId ? (isSelected ? 0.88 : baseOpacity) : baseOpacity;
     material.emissive.setHex(isHovered ? 0xffd43b : isSelected ? 0x40c057 : baseEmissive);
     mesh.scale.z = isHovered ? 3.2 : (mesh.userData["baseScaleZ"] as number);
     material.needsUpdate = true;
@@ -359,7 +410,9 @@ function createCanvasPerspectiveViewer(
   let currentDoc = doc;
   let currentOptions = options;
   let hoveredNodeId: string | null = null;
-  let selectedNodeId: string | null = null;
+  let hoveredLayerId: string | null = null;
+  let selectedLayerId: string | null = null;
+  let currentLayers = createLayerModel(doc, currentOptions.groupBy, createIssueMap(currentOptions), currentOptions.copyFormat);
   let projectedNodes: ProjectedNode[] = [];
 
   function resize(): void {
@@ -377,6 +430,7 @@ function createCanvasPerspectiveViewer(
     currentDoc = nextDoc;
     currentOptions = nextOptions;
     const issueMap = createIssueMap(currentOptions);
+    currentLayers = createLayerModel(nextDoc, nextOptions.groupBy, issueMap, nextOptions.copyFormat);
     resize();
     const width = container.clientWidth;
     const height = container.clientHeight;
@@ -391,12 +445,11 @@ function createCanvasPerspectiveViewer(
     projectedNodes = flat.map((item) => projectNode(item, nextDoc.viewport, width, height));
     if (hoveredNodeId && !projectedNodes.some((item) => item.node.id === hoveredNodeId)) {
       hoveredNodeId = null;
+      hoveredLayerId = null;
     }
-    if (selectedNodeId && !projectedNodes.some((item) => item.node.id === selectedNodeId)) {
-      selectedNodeId = null;
-    }
+    if (selectedLayerId && !currentLayers.layers.has(selectedLayerId)) selectedLayerId = null;
     for (const item of projectedNodes) {
-      drawNode(context, item, hoveredNodeId, selectedNodeId, issueMap.get(item.node.id));
+      drawNode(context, item, hoveredLayerId, selectedLayerId, currentLayers.nodeToLayer, issueMap.get(item.node.id));
     }
   }
 
@@ -404,35 +457,38 @@ function createCanvasPerspectiveViewer(
     const point = { x: event.offsetX, y: event.offsetY };
     const hit = projectedNodes.toReversed().find((item) => pointInPolygon(point, item.points));
     const nextHovered = hit?.node.id ?? null;
-    if (nextHovered === hoveredNodeId) return;
+    const nextLayerId = nextHovered ? currentLayers.nodeToLayer.get(nextHovered) ?? null : null;
+    if (nextHovered === hoveredNodeId && nextLayerId === hoveredLayerId) return;
 
     hoveredNodeId = nextHovered;
-    canvas.style.cursor = hoveredNodeId ? "pointer" : "default";
-    emitNodeEvent(container, "rlsc-perspective-hover", currentDoc, hoveredNodeId);
-    currentOptions.onHover?.(nodeEvent(currentDoc, hoveredNodeId));
+    hoveredLayerId = nextLayerId;
+    canvas.style.cursor = hoveredLayerId ? "pointer" : "default";
+    emitNodeEvent(container, "rlsc-perspective-hover", currentDoc, currentLayers, hoveredNodeId, hoveredLayerId);
+    currentOptions.onHover?.(nodeEvent(currentDoc, currentLayers, hoveredNodeId, hoveredLayerId));
     update(currentDoc, currentOptions);
   }
 
   function clearHover(): void {
-    if (!hoveredNodeId) return;
+    if (!hoveredNodeId && !hoveredLayerId) return;
     hoveredNodeId = null;
+    hoveredLayerId = null;
     canvas.style.cursor = "default";
-    emitNodeEvent(container, "rlsc-perspective-hover", currentDoc, hoveredNodeId);
-    currentOptions.onHover?.(nodeEvent(currentDoc, hoveredNodeId));
+    emitNodeEvent(container, "rlsc-perspective-hover", currentDoc, currentLayers, hoveredNodeId, hoveredLayerId);
+    currentOptions.onHover?.(nodeEvent(currentDoc, currentLayers, hoveredNodeId, hoveredLayerId));
     update(currentDoc, currentOptions);
   }
 
   function handleSelect(): void {
-    selectedNodeId = hoveredNodeId;
-    emitNodeEvent(container, "rlsc-perspective-select", currentDoc, selectedNodeId);
-    currentOptions.onSelect?.(nodeEvent(currentDoc, selectedNodeId));
+    selectedLayerId = hoveredLayerId;
+    emitNodeEvent(container, "rlsc-perspective-select", currentDoc, currentLayers, hoveredNodeId, selectedLayerId);
+    currentOptions.onSelect?.(nodeEvent(currentDoc, currentLayers, hoveredNodeId, selectedLayerId));
     canvas.focus();
     update(currentDoc, currentOptions);
   }
 
   function handleCopy(event: ClipboardEvent): void {
-    if (!selectedNodeId) return;
-    const detail = copyEvent(currentDoc, selectedNodeId);
+    if (!selectedLayerId) return;
+    const detail = copyEvent(currentDoc, currentLayers, selectedLayerId);
     event.clipboardData?.setData("text/plain", detail.text);
     event.preventDefault();
     emitCopyEvent(container, detail);
@@ -440,11 +496,18 @@ function createCanvasPerspectiveViewer(
   }
 
   function handleKeyDown(event: KeyboardEvent): void {
-    if (!selectedNodeId || event.key.toLowerCase() !== "c" || (!event.metaKey && !event.ctrlKey)) return;
-    const detail = copyEvent(currentDoc, selectedNodeId);
+    if (!selectedLayerId || event.key.toLowerCase() !== "c" || (!event.metaKey && !event.ctrlKey)) return;
+    const detail = copyEvent(currentDoc, currentLayers, selectedLayerId);
     void navigator.clipboard?.writeText(detail.text).catch(() => undefined);
     emitCopyEvent(container, detail);
     currentOptions.onCopy?.(detail);
+  }
+
+  function clearSelection(): void {
+    selectedLayerId = null;
+    emitNodeEvent(container, "rlsc-perspective-select", currentDoc, currentLayers, null, null);
+    currentOptions.onSelect?.(nodeEvent(currentDoc, currentLayers, null, null));
+    update(currentDoc, currentOptions);
   }
 
   function dispose(): void {
@@ -463,7 +526,7 @@ function createCanvasPerspectiveViewer(
   canvas.addEventListener("copy", handleCopy);
   canvas.addEventListener("keydown", handleKeyDown);
   update(doc, options);
-  return { update, dispose };
+  return { update, clearSelection, dispose };
 }
 
 function createIssueMap(options: PerspectiveViewerOptions): Map<string, PerspectiveIssue> {
@@ -474,7 +537,22 @@ function createIssueMap(options: PerspectiveViewerOptions): Map<string, Perspect
     }
   }
   for (const issue of options.overflowIssues ?? []) {
-    result.set(issue.childId, { childId: issue.childId, parentId: issue.parentId, severity: "error" });
+    result.set(issue.childId, {
+      childId: issue.childId,
+      parentId: issue.parentId,
+      kind: "containment-leak",
+      message: `Child exceeds parent by ${issue.exceededPx.toFixed(1)}px`,
+      severity: "error",
+    });
+  }
+  for (const occupancy of options.textOccupancies ?? []) {
+    if (!occupancy.overflows) continue;
+    result.set(occupancy.nodeId, {
+      nodeId: occupancy.nodeId,
+      kind: "text-overflow",
+      message: "Text overflows its visual content area",
+      severity: "warning",
+    });
   }
   return result;
 }
@@ -567,12 +645,14 @@ function projectNode(
 function drawNode(
   context: CanvasRenderingContext2D,
   item: ProjectedNode,
-  hoveredNodeId: string | null,
-  selectedNodeId: string | null,
+  hoveredLayerId: string | null,
+  selectedLayerId: string | null,
+  nodeToLayer: ReadonlyMap<string, string>,
   issue: PerspectiveIssue | undefined,
 ): void {
-  const isHovered = hoveredNodeId === item.node.id;
-  const isSelected = selectedNodeId === item.node.id;
+  const layerId = nodeToLayer.get(item.node.id) ?? item.node.id;
+  const isHovered = hoveredLayerId === layerId;
+  const isSelected = selectedLayerId === layerId;
   const color = issueColor(issue) ?? colorForNode(item.node, item.depth);
 
   if (item.parentCenter) {
@@ -594,7 +674,7 @@ function drawNode(
   context.closePath();
   context.fillStyle = cssColor(
     isHovered ? 0xffd43b : isSelected ? 0x40c057 : color,
-    hoveredNodeId || selectedNodeId ? (isHovered || isSelected ? 0.9 : 0.12) : issue ? 0.88 : item.node.children.length > 0 ? 0.38 : 0.72,
+    hoveredLayerId ? (isHovered ? 0.9 : 0.12) : selectedLayerId ? (isSelected ? 0.82 : issue ? 0.88 : item.node.children.length > 0 ? 0.38 : 0.72) : issue ? 0.88 : item.node.children.length > 0 ? 0.38 : 0.72,
   );
   context.strokeStyle = isHovered || issue ? "rgba(111, 76, 0, 0.9)" : isSelected ? "rgba(27, 126, 71, 0.95)" : "rgba(32, 48, 69, 0.5)";
   context.lineWidth = isHovered || isSelected || issue ? 2.5 : 1;
@@ -603,29 +683,115 @@ function drawNode(
   context.restore();
 }
 
-function nodeEvent(doc: RLSCDocument, nodeId: string | null): PerspectiveNodeEvent {
-  return { nodeId, node: nodeId ? findNodeById(doc.root, nodeId) : undefined };
+interface LayerModel {
+  readonly groupBy: PerspectiveGroupBy;
+  readonly copyFormat: PerspectiveCopyFormat;
+  readonly layers: ReadonlyMap<string, PerspectiveLayer>;
+  readonly nodeToLayer: ReadonlyMap<string, string>;
+  readonly issueMap: ReadonlyMap<string, PerspectiveIssue>;
 }
 
-function copyEvent(doc: RLSCDocument, nodeId: string): PerspectiveCopyEvent {
-  const detail = nodeEvent(doc, nodeId);
+function createLayerModel(
+  doc: RLSCDocument,
+  groupBy: PerspectiveGroupBy = "dom-node",
+  issueMap: ReadonlyMap<string, PerspectiveIssue> = new Map(),
+  copyFormat: PerspectiveCopyFormat = "identifier",
+): LayerModel {
+  const layerEntries = new Map<string, { value: string; nodes: RLSCNode[] }>();
+  for (const node of flattenNodes(doc.root).filter((item) => item.visible)) {
+    const value = layerValue(node, groupBy);
+    const id = `${groupBy}:${value}`;
+    const entry = layerEntries.get(id) ?? { value, nodes: [] };
+    entry.nodes.push(node);
+    layerEntries.set(id, entry);
+  }
+
+  const layers = new Map<string, PerspectiveLayer>();
+  const nodeToLayer = new Map<string, string>();
+  for (const [id, entry] of layerEntries) {
+    const preferred = entry.nodes.toSorted((a, b) => identifierRank(a) - identifierRank(b) || b.rect.width * b.rect.height - a.rect.width * a.rect.height)[0];
+    if (!preferred) continue;
+    const layer = {
+      id,
+      groupBy,
+      value: entry.value,
+      nodeIds: entry.nodes.map((node) => node.id),
+      preferredNodeId: preferred.id,
+    } satisfies PerspectiveLayer;
+    layers.set(id, layer);
+    for (const node of entry.nodes) nodeToLayer.set(node.id, id);
+  }
+  return { groupBy, copyFormat, layers, nodeToLayer, issueMap };
+}
+
+function layerValue(node: RLSCNode, groupBy: PerspectiveGroupBy): string {
+  if (groupBy === "componentId") return node.identifier?.componentId ?? node.attributes["data-component-id"] ?? node.id;
+  if (groupBy === "qaAddress") return node.identifier?.qaAddress ?? node.address ?? node.attributes["data-qa-address"] ?? node.id;
+  if (groupBy === "role") return node.role ?? node.tag;
+  return node.id;
+}
+
+function identifierRank(node: RLSCNode): number {
+  if (node.identifier?.componentId || node.attributes["data-component-id"]) return 0;
+  if (node.identifier?.qaAddress || node.address || node.attributes["data-qa-address"]) return 1;
+  if (node.textContent) return 2;
+  return 3;
+}
+
+function nodeEvent(
+  doc: RLSCDocument,
+  model: LayerModel,
+  nodeId: string | null,
+  layerId: string | null,
+): PerspectiveNodeEvent {
+  const layer = layerId ? model.layers.get(layerId) : undefined;
+  const preferredNodeId = layer?.preferredNodeId ?? nodeId;
+  const node = preferredNodeId ? findNodeById(doc.root, preferredNodeId) : undefined;
   return {
-    ...detail,
-    text: JSON.stringify(
-      {
-        nodeId,
-        address: detail.node?.address,
-        identifier: detail.node?.identifier,
-        rect: detail.node?.rect,
-      },
-      null,
-      2,
-    ),
+    nodeId: preferredNodeId ?? null,
+    node,
+    layerId,
+    layer,
+    selection: layer && node ? selectionDetail(layer, node, model) : undefined,
   };
 }
 
-function emitNodeEvent(container: HTMLElement, name: string, doc: RLSCDocument, nodeId: string | null): void {
-  container.dispatchEvent(new CustomEvent(name, { detail: nodeEvent(doc, nodeId), bubbles: true }));
+function copyEvent(doc: RLSCDocument, model: LayerModel, layerId: string): PerspectiveCopyEvent {
+  const detail = nodeEvent(doc, model, null, layerId);
+  const selection = detail.selection;
+  return {
+    ...detail,
+    text: model.copyFormat === "json"
+      ? JSON.stringify(selection ?? {}, null, 2)
+      : selection?.preferredIdentifier ?? detail.nodeId ?? "",
+  };
+}
+
+function selectionDetail(layer: PerspectiveLayer, node: RLSCNode, model: LayerModel): PerspectiveSelectionDetail {
+  const componentId = node.identifier?.componentId ?? node.attributes["data-component-id"];
+  const qaAddress = node.identifier?.qaAddress ?? node.address ?? node.attributes["data-qa-address"];
+  return {
+    nodeId: node.id,
+    nodeIds: layer.nodeIds,
+    componentId,
+    qaAddress,
+    role: node.role,
+    textHint: node.textContent,
+    preferredIdentifier: node.identifier?.value ?? componentId ?? qaAddress ?? node.id,
+    identifierKind: node.identifier?.kind,
+    issues: layer.nodeIds.flatMap((nodeId) => model.issueMap.get(nodeId) ?? []),
+  };
+}
+
+function emitNodeEvent(
+  container: HTMLElement,
+  name: string,
+  doc: RLSCDocument,
+  model: LayerModel,
+  nodeId: string | null,
+  layerId: string | null,
+): void {
+  container.dispatchEvent(new CustomEvent(name, { detail: nodeEvent(doc, model, nodeId, layerId), bubbles: true }));
 }
 
 function emitCopyEvent(container: HTMLElement, detail: PerspectiveCopyEvent): void {
@@ -639,6 +805,10 @@ function findNodeById(node: RLSCNode, nodeId: string): RLSCNode | undefined {
     if (found) return found;
   }
   return undefined;
+}
+
+function flattenNodes(node: RLSCNode): RLSCNode[] {
+  return [node, ...node.children.flatMap((child) => flattenNodes(child))];
 }
 
 function pointInPolygon(point: CanvasPoint, polygon: readonly CanvasPoint[]): boolean {

@@ -165,7 +165,7 @@
       "dependsOn": [
         "US-006"
       ],
-      "completionNotes": "WebGL availability pre-check (probe canvas getContext) added in createPerspectiveViewer. Canvas fallback verified via headless Chrome smoke (packages/e2e/rlsc-demo-smoke.mjs) \u2014 console errors 0, screenshot shows Perspective layers + SVG overlay rendering correctly."
+      "completionNotes": "WebGL availability pre-check (probe canvas getContext) added in createPerspectiveViewer. Canvas fallback verified via headless Chrome smoke (packages/e2e/rlsc-demo-smoke.mjs) — console errors 0, screenshot shows Perspective layers + SVG overlay rendering correctly."
     },
     {
       "id": "US-008",
@@ -187,11 +187,12 @@
         "Confirm hover/select/copy interactions work in the browser"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-007"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-009",
@@ -301,6 +302,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-05-04T09:11:49.000Z"
+    "updatedAt": "2026-05-04T11:40:02.169Z"
   }
 }

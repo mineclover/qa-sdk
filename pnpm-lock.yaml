@@ -2241,6 +2241,9 @@ importers:
       '@chenglou/pretext':
         specifier: 0.0.4
         version: 0.0.4
+      '@qa-sdk/rlsc-analysis':
+        specifier: workspace:*
+        version: link:../rlsc-analysis
     devDependencies:
       tsup:
         specifier: ^8.5.1

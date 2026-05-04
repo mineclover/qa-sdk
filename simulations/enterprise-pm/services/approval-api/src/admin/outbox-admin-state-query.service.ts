@@ -13,7 +13,9 @@ import { OUTBOX_INSERT_CLIENT } from "./outbox-admin.tokens.js";
 
 interface OutboxStateRow {
   id: string;
-  dispatched_at: number | null;
+  // postgres.js 는 BIGINT 를 JS Number 정밀도 손실 회피 위해 기본 string 반환.
+  // 본 컬럼 (epoch ms) 는 Number.MAX_SAFE_INTEGER 미만이라 안전하게 number 변환.
+  dispatched_at: string | number | null;
   scope_id: string;
 }
 
@@ -36,8 +38,14 @@ export class OutboxAdminStateQueryService {
     const publishedAt: Array<[string, number]> = [];
     const dispatcherIds: Array<[string, string]> = [];
     for (const r of rows) {
-      if (typeof r.dispatched_at === "number") {
-        publishedAt.push([r.id, r.dispatched_at]);
+      const ms =
+        typeof r.dispatched_at === "number"
+          ? r.dispatched_at
+          : typeof r.dispatched_at === "string"
+            ? Number(r.dispatched_at)
+            : null;
+      if (ms !== null && Number.isFinite(ms)) {
+        publishedAt.push([r.id, ms]);
         dispatcherIds.push([r.id, r.scope_id]);
       }
     }
