@@ -6,6 +6,7 @@ export type PerspectiveGroupBy = "dom-node" | "componentId" | "qaAddress" | "rol
 export type PerspectiveCopyFormat = "identifier" | "json";
 export type PerspectiveViewPreset = "default" | "top" | "front" | "side";
 export type PerspectiveControlMode = "orbit" | "x" | "y" | "z" | "pan";
+export type PerspectiveProjectionMode = "orthographic" | "perspective";
 
 export interface PerspectiveIssue {
   readonly nodeId?: string;
@@ -58,6 +59,7 @@ export interface PerspectiveViewerOptions {
   readonly overflowIssues?: readonly AreaOverflowIssue[];
   readonly textOccupancies?: readonly TextOccupancy[];
   readonly controlMode?: PerspectiveControlMode;
+  readonly projectionMode?: PerspectiveProjectionMode;
   readonly onHover?: (event: PerspectiveNodeEvent) => void;
   readonly onSelect?: (event: PerspectiveNodeEvent) => void;
   readonly onCopy?: (event: PerspectiveCopyEvent) => void;
@@ -70,6 +72,7 @@ export interface PerspectiveViewer {
   resetView(): void;
   setView(preset: PerspectiveViewPreset): void;
   setControlMode(mode: PerspectiveControlMode): void;
+  setProjectionMode(mode: PerspectiveProjectionMode): void;
   dispose(): void;
 }
 
@@ -112,8 +115,6 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
     borderRadius: "8px",
     cursor: "grab",
     outline: "none",
-    perspective: "980px",
-    perspectiveOrigin: "50% 48%",
     touchAction: "none",
     userSelect: "none",
   });
@@ -143,6 +144,7 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
   let dragState: Css3DDragState | null = null;
   let suppressClick = false;
   let controlMode: PerspectiveControlMode = options.controlMode ?? "orbit";
+  let projectionMode: PerspectiveProjectionMode = options.projectionMode ?? "orthographic";
   let viewState: Css3DViewState = createViewState("default");
 
   const resizeObserver = new ResizeObserver(() => render());
@@ -165,9 +167,15 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
     ].join(" ");
   }
 
+  function applyProjection(): void {
+    viewport.style.perspective = projectionMode === "perspective" ? "980px" : "none";
+    viewport.style.perspectiveOrigin = "50% 48%";
+  }
+
   function render(): void {
     elements = new Map();
     scene.replaceChildren(createGrid(currentDoc));
+    applyProjection();
     applyTransform();
     const flat = flattenVisibleNodes(currentDoc.root, 0, null).sort(
       (a, b) => a.depth - b.depth || a.node.rect.y - b.node.rect.y || a.node.rect.x - b.node.rect.x,
@@ -292,6 +300,7 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
     currentIssueMap = createIssueMap(nextOptions);
     currentLayers = createLayerModel(nextDoc, nextOptions.groupBy, currentIssueMap, nextOptions.copyFormat);
     controlMode = nextOptions.controlMode ?? controlMode;
+    projectionMode = nextOptions.projectionMode ?? projectionMode;
     render();
   }
 
@@ -320,6 +329,11 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
   function setControlMode(mode: PerspectiveControlMode): void {
     controlMode = mode;
     viewport.style.cursor = "grab";
+  }
+
+  function setProjectionMode(mode: PerspectiveProjectionMode): void {
+    projectionMode = mode;
+    applyProjection();
   }
 
   function handlePointerDown(event: PointerEvent): void {
@@ -427,7 +441,7 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
   viewport.addEventListener("keydown", handleKeyDown);
   render();
 
-  return { update, clearSelection, fitView, resetView, setView, setControlMode, dispose };
+  return { update, clearSelection, fitView, resetView, setView, setControlMode, setProjectionMode, dispose };
 }
 
 interface FlatNode {

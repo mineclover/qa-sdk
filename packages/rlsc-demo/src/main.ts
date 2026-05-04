@@ -19,6 +19,7 @@ import type {
   PerspectiveControlMode,
   PerspectiveGroupBy,
   PerspectiveNodeEvent,
+  PerspectiveProjectionMode,
   PerspectiveRendererKind,
   PerspectiveSelectionDetail,
   PerspectiveViewer
@@ -36,6 +37,7 @@ interface PipelineState {
   renderer: PerspectiveRendererKind;
   groupBy: PerspectiveGroupBy;
   controlMode: PerspectiveControlMode;
+  projectionMode: PerspectiveProjectionMode;
   hoveredNodeId: string | null;
   selectedNodeId: string | null;
   selectedDetail: PerspectiveSelectionDetail | null;
@@ -59,6 +61,7 @@ const state: PipelineState = {
   renderer: "auto",
   groupBy: "dom-node",
   controlMode: "orbit",
+  projectionMode: "orthographic",
   hoveredNodeId: null,
   selectedNodeId: null,
   selectedDetail: null,
@@ -172,6 +175,13 @@ mount.innerHTML = `
               <option value="pan">Pan</option>
             </select>
           </label>
+          <label class="renderer-control">
+            Projection
+            <select data-action="projectionMode">
+              <option value="orthographic">Orthographic</option>
+              <option value="perspective">Perspective</option>
+            </select>
+          </label>
           <button type="button" data-action="clearSelection">Clear selection</button>
           <button type="button" data-action="viewTop">Top view</button>
           <button type="button" data-action="viewReset">Reset view</button>
@@ -257,6 +267,10 @@ mount.addEventListener("change", (event) => {
   } else if (target instanceof HTMLSelectElement && target.dataset["action"] === "controlMode") {
     state.controlMode = target.value as PerspectiveControlMode;
     state.layerScene?.setControlMode(state.controlMode);
+    renderInteractions();
+  } else if (target instanceof HTMLSelectElement && target.dataset["action"] === "projectionMode") {
+    state.projectionMode = target.value as PerspectiveProjectionMode;
+    state.layerScene?.setProjectionMode(state.projectionMode);
     renderInteractions();
   }
 });
@@ -380,6 +394,7 @@ function viewerOptions(overflowIssues: readonly AreaOverflowIssue[]) {
     renderer: state.renderer,
     groupBy: state.groupBy,
     controlMode: state.controlMode,
+    projectionMode: state.projectionMode,
     overflowIssues,
     textOccupancies: state.text,
     onHover(event: PerspectiveNodeEvent): void {
@@ -404,6 +419,7 @@ function renderInteractions(): void {
     metric("Renderer", state.renderer),
     metric("Group", state.groupBy),
     metric("Control", state.controlMode),
+    metric("Projection", state.projectionMode),
     metric("Hover", state.hoveredNodeId ?? "none"),
     metric("Selected", state.selectedNodeId ?? "none"),
     metric("Identifier", detail?.identifier ? `${detail.identifier.kind}:${detail.identifier.value}` : "none"),
