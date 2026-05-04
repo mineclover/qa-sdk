@@ -296,7 +296,7 @@ function createCanvasPerspectiveViewer(
     context.fillRect(0, 0, width, height);
     drawGrid(context, width, height);
 
-    const flat = flattenVisibleNodes(nextDoc.root, 0, null).sort(
+    const flat = flattenVisibleNodes(nextDoc.root, 0, null).toSorted(
       (a, b) => a.depth - b.depth || a.node.rect.y - b.node.rect.y,
     );
     projectedNodes = flat.map((item) => projectNode(item, nextDoc.viewport, width, height));
@@ -311,7 +311,7 @@ function createCanvasPerspectiveViewer(
   function handlePointerMove(event: PointerEvent): void {
     const rect = canvas.getBoundingClientRect();
     const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
-    const hit = [...projectedNodes].reverse().find((item) => pointInPolygon(point, item.points));
+    const hit = projectedNodes.toReversed().find((item) => pointInPolygon(point, item.points));
     const nextHovered = hit?.node.id ?? null;
     if (nextHovered === hoveredNodeId) return;
 
@@ -478,8 +478,9 @@ function drawNode(
 function pointInPolygon(point: CanvasPoint, polygon: readonly CanvasPoint[]): boolean {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const a = polygon[i]!;
-    const b = polygon[j]!;
+    const a = polygon[i];
+    const b = polygon[j];
+    if (!a || !b) continue;
     const intersects = a.y > point.y !== b.y > point.y && point.x < ((b.x - a.x) * (point.y - a.y)) / (b.y - a.y) + a.x;
     if (intersects) inside = !inside;
   }
