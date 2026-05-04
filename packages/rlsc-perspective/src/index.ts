@@ -486,7 +486,7 @@ function dragRotationMatrix(mode: PerspectiveControlMode, dx: number, dy: number
 }
 
 function shouldPan(event: PointerEvent): boolean {
-  return event.shiftKey || event.altKey || event.button === 1 || event.button === 2 || event.buttons === 4 || event.buttons === 2;
+  return event.altKey || event.button === 1 || event.button === 2 || event.buttons === 4 || event.buttons === 2;
 }
 
 function matrixToCss(matrix: DOMMatrix): string {
