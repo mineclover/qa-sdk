@@ -37,7 +37,8 @@ afterEach(() => {
 });
 
 function getOutput(): string {
-  return vi.mocked(console.log).mock.calls.map(c => String(c[0])).join("\n");
+  const spy = console.log as unknown as { mock: { calls: unknown[][] } };
+  return spy.mock.calls.map(c => String(c[0])).join("\n");
 }
 
 function writeTestFile(name: string, content: string): string {

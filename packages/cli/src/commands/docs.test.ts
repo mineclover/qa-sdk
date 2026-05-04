@@ -572,7 +572,8 @@ Provide source-only completion proof for PRD sync precision tests.
   }
 
   function output(): string {
-    return vi.mocked(console.log).mock.calls.map((call) => String(call[0])).join("\n");
+    const spy = console.log as unknown as { mock: { calls: unknown[][] } };
+    return spy.mock.calls.map((call) => String(call[0])).join("\n");
   }
 
   function parsedOutput<T>(): T {
@@ -580,7 +581,8 @@ Provide source-only completion proof for PRD sync precision tests.
   }
 
   function errorOutput(): string {
-    return vi.mocked(console.error).mock.calls.map((call) => String(call[0])).join("\n");
+    const spy = console.error as unknown as { mock: { calls: unknown[][] } };
+    return spy.mock.calls.map((call) => String(call[0])).join("\n");
   }
 
   function parsedError<T>(): T {

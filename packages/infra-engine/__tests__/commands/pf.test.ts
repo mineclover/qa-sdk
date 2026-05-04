@@ -47,7 +47,8 @@ describe("pf commands", () => {
 
     vi.mocked(console.log).mockClear();
     await pfListHandler({ args: {}, options: {}, rest: [], rawArgs: [] });
-    const output = vi.mocked(console.log).mock.calls.map((call) => String(call[0])).join("\n");
+    const logSpy = console.log as unknown as { mock: { calls: unknown[][] } };
+    const output = logSpy.mock.calls.map((call) => String(call[0])).join("\n");
     expect(output).toContain("viz-web");
     expect(output).toContain("5201");
     expect(output).toContain("http://127.0.0.1:5201");
