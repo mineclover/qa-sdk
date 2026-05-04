@@ -1,10 +1,11 @@
 // @def.boundary sim-scenarios
 // @def.doc canary-scaling-error-and-scenarios
 //
-// wireSimHandles — Plan E Stage 11 follow-up #24 (a)/(d).
+// wireSimHandles — Plan E Stage 11 follow-up #24 (a)/(d) + 시나리오 1~8 HTTP 보강.
 //
-// 12개 globalThis handle을 시나리오 9~17이 사용할 수 있도록 binding한다.
-// e2e 부팅 시 sim-up + 본 함수 호출 후 SIM_SCENARIO_INPROC=1로 시나리오 PASS 검증.
+// 12개 globalThis handle (시나리오 9~17) + __simHandle/__simGatewayFetch (시나리오 1~8)
+// 을 binding 한다. e2e 부팅 시 sim-up + 본 함수 호출 후 SIM_SCENARIO_INPROC=1 로
+// 시나리오 PASS 검증.
 //
 // 각 handle은 HTTP fetch 기반(env-driven URL). 단위 테스트는 fetchImpl 주입으로
 // 격리한다.
@@ -24,6 +25,11 @@ import { createBitmapMetrics } from "./bitmap-metrics.js";
 import { createBitmapVersionMutator } from "./bitmap-version-mutator.js";
 import { createBitmapVersionCheck } from "./bitmap-version-check.js";
 import { createGatewayStickyConsistency } from "./gateway-sticky-consistency.js";
+import {
+  createSimGatewayFetch,
+  createSimHandle,
+  type SimHandle,
+} from "./sim-handle.js";
 
 export interface SimHandlesUrls {
   /** audit-recorder query API base URL. 시나리오 9~17 audit-fetcher/wait-for-cycles. */
@@ -66,12 +72,19 @@ const HANDLE_KEYS = [
   "__simBitmapVersionMutator",
   "__simBitmapVersionCheck",
   "__simGatewayStickyConsistency",
+  // 시나리오 1~8 — HTTP 모드 진입점.
+  "__simHandle",
+  "__simGatewayFetch",
 ] as const;
 
 type HandleKey = (typeof HANDLE_KEYS)[number];
 
 /**
- * wireSimHandles — 12 globalThis handle binding.
+ * wireSimHandles — 14 globalThis handle binding.
+ *
+ *   - 1~12: 시나리오 9~17 (canary/audit/bitmap-cache 인프라 handle).
+ *   - 13: __simHandle      → 시나리오 1~8 fixture + seedBudgetRequest + delegateProject + authApp shim
+ *   - 14: __simGatewayFetch → 시나리오 1~8 의 `new Request("http://sim/...")` 흐름을 외부 gateway URL 로 변환
  *
  * 멱등 보장: 같은 옵션으로 두 번 호출하면 두 번 다 binding이 갱신된다.
  * unwireSimHandles로 모든 handle 제거.
@@ -80,6 +93,12 @@ export function wireSimHandles(args: WireSimHandlesArgs): void {
   const t = args.timeoutMs;
   const burstUrl =
     args.burstLoadTargetUrl ?? `${args.gatewayUrl.replace(/\/$/, "")}/healthz`;
+
+  const simHandle: SimHandle = createSimHandle({
+    gatewayUrl: args.gatewayUrl,
+    authApiUrl: args.authApiUrl,
+    timeoutMs: t,
+  });
 
   const handles = {
     __simAuditFetcher: createAuditFetcher({
@@ -129,6 +148,10 @@ export function wireSimHandles(args: WireSimHandlesArgs): void {
       gatewayUrl: args.gatewayUrl,
       timeoutMs: t,
     }),
+    __simHandle: simHandle,
+    __simGatewayFetch: createSimGatewayFetch({
+      gatewayUrl: args.gatewayUrl,
+    }),
   };
 
   const g = globalThis as unknown as Record<HandleKey, unknown>;
@@ -138,7 +161,7 @@ export function wireSimHandles(args: WireSimHandlesArgs): void {
 }
 
 /**
- * unwireSimHandles — wireSimHandles로 binding된 12 handle을 모두 제거한다.
+ * unwireSimHandles — wireSimHandles로 binding된 14 handle을 모두 제거한다.
  *
  * 테스트 격리용. e2e 환경 종료 시 호출.
  */
@@ -162,4 +185,7 @@ export {
   createBitmapVersionMutator,
   createBitmapVersionCheck,
   createGatewayStickyConsistency,
+  createSimHandle,
+  createSimGatewayFetch,
 };
+export type { SimHandle, SimHandleFixtures } from "./sim-handle.js";

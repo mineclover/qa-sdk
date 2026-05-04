@@ -16,6 +16,8 @@ const HANDLE_KEYS = [
   "__simBitmapVersionMutator",
   "__simBitmapVersionCheck",
   "__simGatewayStickyConsistency",
+  "__simHandle",
+  "__simGatewayFetch",
 ] as const;
 
 describe("wireSimHandles", () => {
@@ -23,7 +25,7 @@ describe("wireSimHandles", () => {
     unwireSimHandles();
   });
 
-  it("12 handle을 globalThis에 binding한다", () => {
+  it("14 handle을 globalThis에 binding한다 (시나리오 1~17 전체)", () => {
     wireSimHandles({
       auditRecorderUrl: "http://audit",
       controllerUrl: "http://ctrl",
@@ -98,6 +100,40 @@ describe("wireSimHandles", () => {
     for (const k of HANDLE_KEYS) {
       expect(g[k]).toBeUndefined();
     }
+  });
+
+  it("__simHandle — fixtures.alice + authApp.address shim 노출", () => {
+    wireSimHandles({
+      auditRecorderUrl: "http://audit",
+      controllerUrl: "http://ctrl",
+      gatewayUrl: "http://gw",
+      authApiUrl: "http://auth:4400",
+      approvalApiUrl: "http://approval",
+      bffReadUrl: "http://bff/v1",
+    });
+    const g = globalThis as unknown as {
+      __simHandle?: {
+        fixtures: { alice: { email: string; password: string; id: string } };
+        authApp: { getHttpServer: () => { address: () => { port: number } | null } };
+      };
+    };
+    expect(g.__simHandle?.fixtures.alice.email).toBe("alice@example.com");
+    expect(g.__simHandle?.authApp.getHttpServer().address()).toEqual({ port: 4400 });
+  });
+
+  it("__simGatewayFetch — 함수로 노출", () => {
+    wireSimHandles({
+      auditRecorderUrl: "http://audit",
+      controllerUrl: "http://ctrl",
+      gatewayUrl: "http://gw",
+      authApiUrl: "http://auth",
+      approvalApiUrl: "http://approval",
+      bffReadUrl: "http://bff/v1",
+    });
+    const g = globalThis as unknown as {
+      __simGatewayFetch?: (req: Request) => Promise<Response>;
+    };
+    expect(typeof g.__simGatewayFetch).toBe("function");
   });
 
   it("재호출 멱등 — 동일 URL로 두 번 호출해도 binding 상태 유지", () => {
