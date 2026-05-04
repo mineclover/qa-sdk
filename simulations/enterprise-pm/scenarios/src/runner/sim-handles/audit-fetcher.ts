@@ -30,7 +30,7 @@ export type FetchLike = (
 
 export interface AuditFetcherFactoryArgs {
   /** audit-recorder query API base URL (예: "http://localhost:5100"). */
-  auditUrl: string;
+  controllerUrl: string;
   /** 외부 호출 timeout (기본 5_000ms — 서버 시작 시 외부 fetch convention). */
   timeoutMs?: number;
   /** 테스트용 fetch 주입. 미지정 시 globalThis.fetch. */
@@ -56,7 +56,7 @@ export function createAuditFetcher(
         ...(init ?? {}),
         signal: AbortSignal.timeout(args.timeoutMs ?? 5_000),
       }) as unknown as ReturnType<FetchLike>);
-  const base = args.auditUrl.replace(/\/$/, "");
+  const base = args.controllerUrl.replace(/\/$/, "");
 
   async function getDecisions(
     cycleIds: readonly string[],
@@ -80,7 +80,7 @@ export function createAuditFetcher(
     } catch (e) {
       throw new Error(`audit-fetcher JSON parse failed: ${(e as Error).message}`);
     }
-    const decisions = (json as { decisions?: unknown }).decisions;
+    const decisions = (json as { items?: unknown }).items;
     if (!Array.isArray(decisions)) {
       throw new Error(
         `audit-fetcher invalid response shape: ${JSON.stringify(json)}`,

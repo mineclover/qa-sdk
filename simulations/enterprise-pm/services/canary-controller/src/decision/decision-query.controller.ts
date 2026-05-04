@@ -27,7 +27,8 @@ const SafetyVerdict = z.enum(["promote", "hold", "rollback"]);
 const ResourceVerdict = z.enum(["scale-up", "scale-down", "hold", "rejected"]);
 
 const Q_DECISIONS = z.object({
-  pass: Pass,
+  // pass 미지정 시 양쪽 모두 (safety + resource) 반환 — sim-scenario audit-fetcher 호환.
+  pass: Pass.optional(),
   verdict: z.string().optional(),
   since: z.string().optional(),
   cycleIds: z.string().optional(),
@@ -92,14 +93,19 @@ export class DecisionQueryController {
   @Get("decisions")
   decisions(@Query() raw: Record<string, unknown>): { items: DecisionView[] } {
     const q = parse(Q_DECISIONS, raw);
-    checkVerdict(q.pass, q.verdict);
-    const records = this.ringBuffer.queryDecisions({
-      pass: q.pass,
-      verdict: q.verdict,
-      since: q.since,
-      cycleIds: splitCsv(q.cycleIds),
-      limit: q.limit,
-    });
+    if (q.pass !== undefined) checkVerdict(q.pass, q.verdict);
+    const cycleIds = splitCsv(q.cycleIds);
+    const passes: ("safety" | "resource")[] =
+      q.pass !== undefined ? [q.pass] : ["safety", "resource"];
+    const records = passes.flatMap((p) =>
+      this.ringBuffer.queryDecisions({
+        pass: p,
+        verdict: q.verdict,
+        since: q.since,
+        cycleIds,
+        limit: q.limit,
+      }),
+    );
     return { items: records.map((r) => toView(r)) };
   }
 

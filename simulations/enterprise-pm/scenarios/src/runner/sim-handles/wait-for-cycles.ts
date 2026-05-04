@@ -22,7 +22,7 @@ export type FetchLike = (
 
 export interface WaitForCyclesFactoryArgs {
   /** audit-recorder query API base URL. */
-  auditUrl: string;
+  controllerUrl: string;
   /** polling interval (기본 500ms). */
   pollIntervalMs?: number;
   /** 외부 호출 timeout (기본 5_000ms). */
@@ -61,7 +61,7 @@ export function createWaitForCycles(
     ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   const now = args.nowImpl ?? (() => Date.now());
   const interval = args.pollIntervalMs ?? 500;
-  const base = args.auditUrl.replace(/\/$/, "");
+  const base = args.controllerUrl.replace(/\/$/, "");
 
   return async function waitForCycles(
     n: number,

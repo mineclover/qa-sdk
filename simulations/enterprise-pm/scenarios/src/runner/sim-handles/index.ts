@@ -83,11 +83,11 @@ export function wireSimHandles(args: WireSimHandlesArgs): void {
 
   const handles = {
     __simAuditFetcher: createAuditFetcher({
-      auditUrl: args.auditRecorderUrl,
+      controllerUrl: args.controllerUrl,
       timeoutMs: t,
     }),
     __simWaitForCycles: createWaitForCycles({
-      auditUrl: args.auditRecorderUrl,
+      controllerUrl: args.controllerUrl,
       requestTimeoutMs: t,
     }),
     __simCatalogStore: createCatalogStore({

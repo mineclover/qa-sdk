@@ -25,9 +25,12 @@ const SIM_CATALOG_FIXTURES: Record<string, CatalogPrefixDefinition> = {
   "sim.svc.approval": {
     prefix: "sim.svc.approval",
     versionAxis: { kind: "version", capacity: 16 },
+    // 시나리오 9/10 setup: v3=stable, v4=undeployed (v4 미등록).
+    // 시나리오 진행 중 candidate 등록/promote 시 동적 갱신은 별도 — sim 이 후크.
     refEntries: [
-      { version: "v1", state: "stable" },
-      { version: "v2", state: "candidate" },
+      { version: "v1", state: "retired" },
+      { version: "v2", state: "retired" },
+      { version: "v3", state: "stable" },
     ],
   },
 };
