@@ -1,3 +1,4 @@
+// @def.boundary scaffold-domain-schematic
 export interface DomainOptions {
   /** Domain name, e.g. "payment" or "assignment". */
   name: string;

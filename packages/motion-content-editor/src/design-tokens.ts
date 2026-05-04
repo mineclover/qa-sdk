@@ -1,3 +1,4 @@
+// @def.boundary motion-content-editor-system
 import {
   MOTION_EDITOR_THEME_STORAGE_KEY,
   readMotionEditorPref,

@@ -1,3 +1,4 @@
+// @def.boundary motion-content-system
 /**
  * 로컬 세션 이벤트 로그 — motion-content 에디터 전용.
  *

@@ -1,3 +1,4 @@
+// @def.boundary platform-chain-system
 // ── Logger ────────────────────────────────
 export {
   QaLogger, TraceContext, applyMasking,

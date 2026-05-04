@@ -1,3 +1,4 @@
+// @def.boundary motion-content-system
 /** 값을 [minimum, maximum] 범위로 제한한다 */
 export function clamp(value: number, minimum: number, maximum: number): number {
   return Math.max(minimum, Math.min(maximum, value));

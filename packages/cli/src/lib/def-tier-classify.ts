@@ -1,3 +1,4 @@
+// @def.boundary definition-metadata-tier
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve, relative, join } from "node:path";
 import type { DefDataSource, DefDoc } from "definition-catalog";

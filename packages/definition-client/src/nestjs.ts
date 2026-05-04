@@ -1,3 +1,4 @@
+// @def.boundary definition-service-system
 /**
  * NestJS 통합 모듈
  *

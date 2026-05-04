@@ -1,3 +1,4 @@
+// @def.boundary scaffold-domain-schematic
 export function dasherize(value: string): string {
   return value
     .trim()

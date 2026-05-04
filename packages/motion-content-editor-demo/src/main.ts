@@ -1,3 +1,4 @@
+// @def.boundary motion-content-editor-demo-system
 import {
   createMotionDomStageAdapter,
   createMotionEventLog,

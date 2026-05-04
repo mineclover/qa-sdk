@@ -1,3 +1,4 @@
+// @def.boundary motion-content-editor-demo-system
 /**
  * Inspector Engine — 순수 로직. DOM/브라우저 의존 없음.
  *

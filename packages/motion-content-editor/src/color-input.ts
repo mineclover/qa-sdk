@@ -1,3 +1,4 @@
+// @def.boundary motion-content-editor-system
 function clampByte(value: number): number {
   return Math.max(0, Math.min(255, Math.round(value)));
 }

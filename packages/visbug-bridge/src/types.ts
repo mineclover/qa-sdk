@@ -1,3 +1,4 @@
+// @def.boundary rlsc
 export interface EditLogTarget {
   readonly selector: string
   readonly nodePath: string

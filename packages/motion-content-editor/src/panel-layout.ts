@@ -1,3 +1,4 @@
+// @def.boundary motion-content-editor-system
 export interface PanelGroupTab {
   readonly id: string;
   readonly label: string;

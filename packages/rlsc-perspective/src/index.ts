@@ -1,3 +1,4 @@
+// @def.boundary rlsc
 import type { AreaOverflowIssue, RLSCDocument, RLSCNode, ScreenIdentifier, TextOccupancy } from "@qa-sdk/rlsc-analysis";
 
 export type PerspectiveRendererKind = "auto" | "webgl" | "canvas";

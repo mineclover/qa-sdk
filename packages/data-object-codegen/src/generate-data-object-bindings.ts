@@ -1,3 +1,4 @@
+// @def.boundary meta-semantic-system
 import { createHash } from "node:crypto";
 import type {
   AxisVersionSnapshot,

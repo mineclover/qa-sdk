@@ -1,3 +1,4 @@
+// @def.boundary motion-content-editor-system
 import {
   createPromoGridComposition,
   MOTION_COMPOSITION_SCHEMA_V2,

@@ -1,3 +1,4 @@
+// @def.boundary motion-content-system
 /**
  * motion-content 도메인 액션 정의.
  *

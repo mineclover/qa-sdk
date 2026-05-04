@@ -1,3 +1,4 @@
+// @def.boundary motion-content-editor-system
 export interface InlineTextInputBindingOptions {
   readonly root: HTMLElement;
   readonly commit: (field: HTMLElement, value: string) => void;

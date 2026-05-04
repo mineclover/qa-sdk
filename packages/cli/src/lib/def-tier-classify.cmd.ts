@@ -1,3 +1,4 @@
+// @def.boundary definition-metadata-tier
 import type { DefDataSource } from "definition-catalog";
 import { classifyTier } from "./def-tier-classify.js";
 import { resolve } from "node:path";

@@ -1,3 +1,4 @@
+// @def.boundary motion-content-system
 /** 시간축 위의 구간을 가진 아이템의 공용 인터페이스 */
 export interface MotionTimeSpan {
   readonly id: string;

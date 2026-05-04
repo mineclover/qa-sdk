@@ -1,3 +1,4 @@
+// @def.boundary motion-content-editor-system
 export * from "./shell.js";
 export * from "./workspace.js";
 export * from "./design-tokens.js";

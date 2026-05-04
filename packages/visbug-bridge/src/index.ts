@@ -1,3 +1,4 @@
+// @def.boundary rlsc
 import 'visbug'
 export { mountVisBug } from './mount.js'
 export type {

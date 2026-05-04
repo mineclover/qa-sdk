@@ -1,3 +1,4 @@
+// @def.boundary motion-content-system
 import { serializeMotionComposition } from "./io.js";
 import type {
   MotionCompositionDef,

@@ -1,3 +1,4 @@
+// @def.boundary motion-content-editor-system
 export interface MotionEditorPrefsStore {
   read(key: string): string | null;
   write(key: string, value: string): boolean;

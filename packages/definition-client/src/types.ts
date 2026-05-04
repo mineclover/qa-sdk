@@ -1,3 +1,4 @@
+// @def.boundary definition-service-system
 /**
  * definition-service API 응답 타입
  *

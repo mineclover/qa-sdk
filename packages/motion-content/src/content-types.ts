@@ -1,3 +1,4 @@
+// @def.boundary motion-content-system
 import type { MotionLayerContentType } from "./model.js";
 
 /** 콘텐츠 타입 속성의 자료형 */

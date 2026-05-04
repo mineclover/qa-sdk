@@ -1,3 +1,4 @@
+// @def.boundary motion-content-editor-system
 export interface MotionEditorScenePresenceUser {
   readonly userId: string;
   readonly name: string;

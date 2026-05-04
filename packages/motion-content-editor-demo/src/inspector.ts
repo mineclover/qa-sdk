@@ -1,3 +1,4 @@
+// @def.boundary motion-content-editor-demo-system
 /**
  * Inspector — 브라우저 렌더러. DOM 조작만 담당.
  * 순수 로직은 inspector-engine.ts에 위임.

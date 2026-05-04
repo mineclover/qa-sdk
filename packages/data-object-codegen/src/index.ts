@@ -1,3 +1,4 @@
+// @def.boundary meta-semantic-system
 export {
   generateDataObjectBindings,
   type CodegenFile,

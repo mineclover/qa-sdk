@@ -1,3 +1,4 @@
+// @def.boundary definition-service-system
 /**
  * DefinitionClient — definition-service HTTP 클라이언트
  *

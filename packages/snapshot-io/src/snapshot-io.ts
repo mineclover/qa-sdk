@@ -1,3 +1,4 @@
+// @def.boundary apm-codegen-system
 import { readFile, writeFile, readdir, mkdir } from "node:fs/promises";
 import { join, extname } from "node:path";
 import type { SchemaSnapshot } from "codegen-core";

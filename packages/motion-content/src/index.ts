@@ -1,3 +1,4 @@
+// @def.boundary motion-content-system
 export * from "./model.js";
 export * from "./content-types.js";
 export { clamp, endMs } from "./utils.js";

@@ -1,3 +1,4 @@
+// @def.boundary rlsc
 export interface LayoutRect {
   readonly x: number;
   readonly y: number;

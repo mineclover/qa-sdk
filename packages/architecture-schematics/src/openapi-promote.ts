@@ -1,3 +1,4 @@
+// @def.boundary scaffold-domain-schematic
 import { copyFile, mkdir, stat } from "node:fs/promises";
 import { basename, dirname, join, normalize } from "node:path";
 

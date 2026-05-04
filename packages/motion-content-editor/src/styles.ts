@@ -1,3 +1,4 @@
+// @def.boundary motion-content-editor-system
 import {
   applyMotionEditorTheme,
   DEFAULT_MOTION_EDITOR_THEME,

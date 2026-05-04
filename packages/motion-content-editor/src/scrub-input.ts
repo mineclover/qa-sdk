@@ -1,3 +1,4 @@
+// @def.boundary motion-content-editor-system
 export interface ScrubInputConfig {
   readonly value: number;
   readonly step?: number;

@@ -1,3 +1,4 @@
+// @def.boundary indexing-core-system
 /* tag-search — 좌표계 외부 태그 기반 검색 */
 
 export {

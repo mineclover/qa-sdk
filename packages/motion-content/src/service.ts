@@ -1,3 +1,4 @@
+// @def.boundary motion-content-system
 /**
  * motion-content-editor 서비스 부트 설정.
  *

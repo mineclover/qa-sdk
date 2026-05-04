@@ -1,3 +1,4 @@
+// @def.boundary motion-content-system
 import type {
   MotionAssetDef,
   MotionCaptionCue,
