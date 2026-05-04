@@ -1,0 +1,1843 @@
+{
+  "schemaId": "qa-sdk-git",
+  "scannedAt": "2026-05-04T14:57:53.802Z",
+  "packages": [
+    {
+      "name": "address-index",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "apm",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core",
+        "sdk",
+        "weighted-index"
+      ]
+    },
+    {
+      "name": "scaffold",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "audit-recorder-store",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "db-bootstrap",
+        "permission-engine"
+      ]
+    },
+    {
+      "name": "authorization-monitor-web",
+      "version": "0.1.0",
+      "tier": "app",
+      "runtime": "browser",
+      "scope": "private",
+      "deps": [
+        "viz-core"
+      ]
+    },
+    {
+      "name": "authorization-ontology",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "operational-ontology"
+      ]
+    },
+    {
+      "name": "bench",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "context",
+        "core",
+        "event-catalog",
+        "sdk",
+        "demo-snapshot"
+      ]
+    },
+    {
+      "name": "bit-index",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "weighted-index"
+      ]
+    },
+    {
+      "name": "browser-codec",
+      "version": "0.1.0",
+      "tier": "app",
+      "runtime": "browser",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "browser",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "private",
+      "deps": [
+        "browser-codec",
+        "core",
+        "event-catalog",
+        "sdk"
+      ]
+    },
+    {
+      "name": "canvas-viewport",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "cli",
+      "version": "0.1.0",
+      "tier": "service",
+      "runtime": "server",
+      "scope": "public",
+      "deps": [
+        "convergence",
+        "core",
+        "registry-service",
+        "spec-core",
+        "authorization-ontology",
+        "operational-ontology",
+        "codegen-core",
+        "cli-command",
+        "config-loader",
+        "decision-flow",
+        "decision-flow-store",
+        "definition-catalog",
+        "definition-data-source",
+        "demo-snapshot",
+        "deterministic-label-registry",
+        "doc-envelope",
+        "dkg",
+        "git-utils",
+        "index-meta",
+        "motion-content",
+        "motion-workspace",
+        "motion-workspace-client",
+        "ontology-pack-validate",
+        "package-classifier",
+        "quality-ledger",
+        "ralph-tui-integration",
+        "review-ledger",
+        "snapshot-io",
+        "spec-analyzer",
+        "spec-tracker",
+        "spec-transition",
+        "test-scenario-store",
+        "test-types",
+        "work-domain"
+      ]
+    },
+    {
+      "name": "cli-command",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "codec",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core",
+        "weighted-index"
+      ]
+    },
+    {
+      "name": "codec-proto",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "private",
+      "deps": [
+        "core"
+      ]
+    },
+    {
+      "name": "codegen-core",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core"
+      ]
+    },
+    {
+      "name": "config-loader",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core"
+      ]
+    },
+    {
+      "name": "context",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core"
+      ]
+    },
+    {
+      "name": "convergence",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core",
+        "spec-schema",
+        "weighted-index"
+      ]
+    },
+    {
+      "name": "core",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "definition-catalog",
+        "pino",
+        "test-types"
+      ]
+    },
+    {
+      "name": "data-object-codegen",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core"
+      ]
+    },
+    {
+      "name": "db-bootstrap",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core"
+      ]
+    },
+    {
+      "name": "db-traffic-control",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "decision-flow",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "weighted-index"
+      ]
+    },
+    {
+      "name": "decision-flow-store",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core",
+        "decision-flow",
+        "index-meta"
+      ]
+    },
+    {
+      "name": "decision-service",
+      "version": "0.1.0",
+      "tier": "service",
+      "runtime": "server",
+      "scope": "private",
+      "deps": [
+        "core",
+        "logger",
+        "decision-flow"
+      ]
+    },
+    {
+      "name": "decode-service",
+      "version": "0.1.0",
+      "tier": "service",
+      "runtime": "server",
+      "scope": "private",
+      "deps": [
+        "core",
+        "logger",
+        "store",
+        "index-meta",
+        "index-meta-workers",
+        "pino",
+        "weighted-index"
+      ]
+    },
+    {
+      "name": "definition-catalog",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "work-domain",
+        "weighted-index"
+      ]
+    },
+    {
+      "name": "definition-client",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core",
+        "definition-catalog"
+      ]
+    },
+    {
+      "name": "definition-data-source",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "definition-catalog"
+      ]
+    },
+    {
+      "name": "definition-service",
+      "version": "0.1.0",
+      "tier": "service",
+      "runtime": "server",
+      "scope": "private",
+      "deps": [
+        "core",
+        "logger",
+        "definition-catalog",
+        "work-domain"
+      ]
+    },
+    {
+      "name": "demo-snapshot",
+      "version": "0.2.0",
+      "tier": "data",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core",
+        "decision-flow",
+        "weighted-index"
+      ]
+    },
+    {
+      "name": "demo-tests",
+      "version": "0.2.0",
+      "tier": "data",
+      "runtime": "library",
+      "scope": "private",
+      "deps": [
+        "demo-snapshot",
+        "index-meta",
+        "permission-engine",
+        "weighted-index",
+        "bit-index",
+        "registry-service",
+        "pino"
+      ]
+    },
+    {
+      "name": "demo-types",
+      "version": "0.1.0",
+      "tier": "data",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "codec",
+        "context"
+      ]
+    },
+    {
+      "name": "deterministic-label-registry",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "doc-envelope"
+      ]
+    },
+    {
+      "name": "dkg",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "spec-schema",
+        "spec-transition",
+        "core",
+        "convergence",
+        "decision-flow",
+        "weighted-index",
+        "index-meta"
+      ]
+    },
+    {
+      "name": "doc-envelope",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "docs-explorer",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "private",
+      "deps": [
+        "definition-catalog"
+      ]
+    },
+    {
+      "name": "e2e",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "private",
+      "deps": []
+    },
+    {
+      "name": "engine",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core"
+      ]
+    },
+    {
+      "name": "event-catalog",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core"
+      ]
+    },
+    {
+      "name": "facet-tests",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "private",
+      "deps": [
+        "index-meta"
+      ]
+    },
+    {
+      "name": "gate-service",
+      "version": "0.1.0",
+      "tier": "service",
+      "runtime": "server",
+      "scope": "private",
+      "deps": [
+        "core",
+        "logger",
+        "index-meta",
+        "index-meta-workers",
+        "pino"
+      ]
+    },
+    {
+      "name": "gateway",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "private",
+      "deps": []
+    },
+    {
+      "name": "git-utils",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "index-meta",
+      "version": "0.2.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "weighted-index"
+      ]
+    },
+    {
+      "name": "index-meta-workers",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "index-meta"
+      ]
+    },
+    {
+      "name": "infra-engine",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core",
+        "authorization-ontology",
+        "cli-command",
+        "demo-snapshot",
+        "infra-env-kit",
+        "operational-ontology"
+      ]
+    },
+    {
+      "name": "infra-env-kit",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core"
+      ]
+    },
+    {
+      "name": "ingest-server",
+      "version": "0.1.0",
+      "tier": "service",
+      "runtime": "server",
+      "scope": "private",
+      "deps": [
+        "codec-proto",
+        "core",
+        "engine",
+        "otel",
+        "registry-client",
+        "store",
+        "index-meta",
+        "pino"
+      ]
+    },
+    {
+      "name": "logger",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core"
+      ]
+    },
+    {
+      "name": "motion-content",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "motion-content-editor",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "motion-content",
+        "motion-workspace"
+      ]
+    },
+    {
+      "name": "motion-content-editor-demo",
+      "version": "0.1.0",
+      "tier": "app",
+      "runtime": "browser",
+      "scope": "private",
+      "deps": [
+        "motion-content",
+        "motion-content-editor",
+        "motion-workspace",
+        "motion-workspace-client"
+      ]
+    },
+    {
+      "name": "motion-workspace",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "motion-content"
+      ]
+    },
+    {
+      "name": "motion-workspace-client",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "motion-content",
+        "motion-workspace"
+      ]
+    },
+    {
+      "name": "motion-workspace-service",
+      "version": "0.1.0",
+      "tier": "service",
+      "runtime": "server",
+      "scope": "private",
+      "deps": [
+        "core",
+        "logger",
+        "index-meta",
+        "motion-workspace"
+      ]
+    },
+    {
+      "name": "nest-service-kit",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core",
+        "otel"
+      ]
+    },
+    {
+      "name": "ontology-pack-validate",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "authorization-ontology",
+        "definition-catalog",
+        "doc-envelope",
+        "operational-ontology"
+      ]
+    },
+    {
+      "name": "operational-ontology",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core"
+      ]
+    },
+    {
+      "name": "operational-ontology-web",
+      "version": "0.1.0",
+      "tier": "app",
+      "runtime": "browser",
+      "scope": "private",
+      "deps": [
+        "viz-core"
+      ]
+    },
+    {
+      "name": "otel",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "package-classifier",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "permission-engine",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "weighted-index",
+        "bit-index"
+      ]
+    },
+    {
+      "name": "pino",
+      "version": "9.9.4",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "pipe-store-sqlite",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core",
+        "index-meta"
+      ]
+    },
+    {
+      "name": "platform-demo",
+      "version": "0.2.0",
+      "tier": "app",
+      "runtime": "browser",
+      "scope": "private",
+      "deps": [
+        "bit-index",
+        "demo-snapshot",
+        "permission-engine",
+        "rlsc",
+        "weighted-index",
+        "weighted-ui"
+      ]
+    },
+    {
+      "name": "platform-demo-api",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "private",
+      "deps": [
+        "demo-snapshot",
+        "index-meta",
+        "permission-engine"
+      ]
+    },
+    {
+      "name": "quality-ledger",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "index-meta"
+      ]
+    },
+    {
+      "name": "query-service",
+      "version": "0.1.0",
+      "tier": "service",
+      "runtime": "server",
+      "scope": "private",
+      "deps": [
+        "core",
+        "logger",
+        "index-meta",
+        "index-meta-workers",
+        "pino"
+      ]
+    },
+    {
+      "name": "ralph-tui-integration",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "doc-envelope"
+      ]
+    },
+    {
+      "name": "registry-client",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "pino"
+      ]
+    },
+    {
+      "name": "registry-service",
+      "version": "0.1.0",
+      "tier": "service",
+      "runtime": "server",
+      "scope": "private",
+      "deps": [
+        "core",
+        "pipe-store-sqlite",
+        "otel",
+        "definition-client",
+        "event-catalog",
+        "logger",
+        "definition-catalog",
+        "index-meta",
+        "operational-ontology",
+        "pino",
+        "weighted-index"
+      ]
+    },
+    {
+      "name": "registry-ui",
+      "version": "0.1.0",
+      "tier": "app",
+      "runtime": "browser",
+      "scope": "private",
+      "deps": [
+        "canvas-viewport",
+        "git-utils",
+        "weighted-index"
+      ]
+    },
+    {
+      "name": "resource-policy-store",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "db-bootstrap",
+        "permission-engine",
+        "weighted-index"
+      ]
+    },
+    {
+      "name": "review-ledger",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core",
+        "index-meta"
+      ]
+    },
+    {
+      "name": "rlsc",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "rlsc-analysis"
+      ]
+    },
+    {
+      "name": "rlsc-analysis",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "rlsc-demo",
+      "version": "0.1.0",
+      "tier": "app",
+      "runtime": "browser",
+      "scope": "private",
+      "deps": [
+        "rlsc-analysis",
+        "rlsc-perspective",
+        "rlsc"
+      ]
+    },
+    {
+      "name": "rlsc-perspective",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "rlsc-analysis"
+      ]
+    },
+    {
+      "name": "roleplay-web",
+      "version": "0.1.0",
+      "tier": "app",
+      "runtime": "browser",
+      "scope": "private",
+      "deps": [
+        "browser-codec",
+        "core",
+        "event-catalog",
+        "sdk"
+      ]
+    },
+    {
+      "name": "sdk",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core",
+        "logger",
+        "codec",
+        "context"
+      ]
+    },
+    {
+      "name": "shop-web",
+      "version": "0.1.0",
+      "tier": "app",
+      "runtime": "browser",
+      "scope": "private",
+      "deps": []
+    },
+    {
+      "name": "sim-decision-view",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "sim-identifier-grammar",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "sim-internal-network",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "sim-outbox-view",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "sim-service-catalog",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "sim-identifier-grammar"
+      ]
+    },
+    {
+      "name": "simulation-tests",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "private",
+      "deps": [
+        "index-meta",
+        "core"
+      ]
+    },
+    {
+      "name": "snapshot-io",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "codegen-core"
+      ]
+    },
+    {
+      "name": "spec-analyzer",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "definition-catalog"
+      ]
+    },
+    {
+      "name": "spec-core",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "convergence",
+        "core",
+        "decision-flow",
+        "dkg",
+        "index-meta",
+        "spec-schema",
+        "spec-transition",
+        "weighted-index"
+      ]
+    },
+    {
+      "name": "spec-schema",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "spec-tracker",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "spec-transition",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core"
+      ]
+    },
+    {
+      "name": "store",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "core"
+      ]
+    },
+    {
+      "name": "tag-search",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "test-scenario-store",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": [
+        "index-meta",
+        "test-types"
+      ]
+    },
+    {
+      "name": "test-types",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "visbug-bridge",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "viteplus-sdk-smoke",
+      "version": "0.1.0",
+      "tier": "platform",
+      "runtime": "library",
+      "scope": "private",
+      "deps": [
+        "browser-codec",
+        "event-catalog",
+        "sdk"
+      ]
+    },
+    {
+      "name": "viz-3d",
+      "version": "0.1.0",
+      "tier": "app",
+      "runtime": "browser",
+      "scope": "private",
+      "deps": [
+        "browser-codec"
+      ]
+    },
+    {
+      "name": "viz-core",
+      "version": "0.1.0",
+      "tier": "app",
+      "runtime": "browser",
+      "scope": "public",
+      "deps": [
+        "core"
+      ]
+    },
+    {
+      "name": "viz-web",
+      "version": "0.1.0",
+      "tier": "app",
+      "runtime": "browser",
+      "scope": "private",
+      "deps": [
+        "canvas-viewport",
+        "core",
+        "viz-core",
+        "engine",
+        "event-catalog"
+      ]
+    },
+    {
+      "name": "weighted-gpu",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "weighted-index",
+      "version": "0.2.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "weighted-index-explorer",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "private",
+      "deps": [
+        "event-catalog",
+        "weighted-index",
+        "weighted-ui"
+      ]
+    },
+    {
+      "name": "weighted-ui",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "weighted-wasm",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    },
+    {
+      "name": "work-domain",
+      "version": "0.1.0",
+      "tier": "foundation",
+      "runtime": "library",
+      "scope": "public",
+      "deps": []
+    }
+  ],
+  "commitCounts": {
+    "rlsc-perspective": {
+      "refactor": 2,
+      "fix": 3,
+      "feat": 1
+    },
+    "sim-scenarios": {
+      "feat": 28,
+      "fix": 1,
+      "test": 1,
+      "chore": 1
+    },
+    "core": {
+      "fix": 6,
+      "feat": 13,
+      "refactor": 6,
+      "test": 1
+    },
+    "lint": {
+      "fix": 4
+    },
+    "rlsc-demo": {
+      "fix": 3,
+      "feat": 1
+    },
+    "rlsc": {
+      "feat": 6,
+      "chore": 1
+    },
+    "sim-approval-api": {
+      "feat": 24,
+      "fix": 1,
+      "test": 7,
+      "docs": 1,
+      "chore": 1
+    },
+    "ci": {
+      "fix": 2
+    },
+    "sim-audit-browser-api": {
+      "feat": 4
+    },
+    "sim-handles/outbox-client": {
+      "fix": 1
+    },
+    "infra-engine/init": {
+      "fix": 1
+    },
+    "sim/e2e": {
+      "fix": 1
+    },
+    "sim-base.Dockerfile": {
+      "fix": 2
+    },
+    "eslint": {
+      "fix": 1,
+      "feat": 1
+    },
+    "sim/validate-catalog": {
+      "fix": 1
+    },
+    "spec/canary-scaling": {
+      "docs": 1
+    },
+    "plan/canary-scaling": {
+      "docs": 1
+    },
+    "sim": {
+      "fix": 5,
+      "test": 5,
+      "chore": 6,
+      "feat": 48,
+      "docs": 23,
+      "refactor": 5
+    },
+    "sim-canary-controller": {
+      "test": 2,
+      "feat": 30,
+      "fix": 1,
+      "refactor": 1
+    },
+    "plan": {
+      "docs": 14
+    },
+    "sim-gateway": {
+      "test": 4,
+      "feat": 27,
+      "chore": 1,
+      "fix": 1
+    },
+    "sim-auth-api": {
+      "test": 1,
+      "feat": 23,
+      "fix": 1,
+      "chore": 2
+    },
+    "plan,spec": {
+      "docs": 1
+    },
+    "sim-decision-view": {
+      "fix": 1,
+      "feat": 2
+    },
+    "sim-internal-network": {
+      "feat": 3
+    },
+    "roadmap": {
+      "docs": 2
+    },
+    "scripts": {
+      "fix": 2,
+      "feat": 2
+    },
+    "spec/canary-cycle1": {
+      "docs": 2
+    },
+    "eslint-rules": {
+      "feat": 1
+    },
+    "eslint-rules/no-write-datasource-in-bff": {
+      "test": 1
+    },
+    "sim-bitmap-cache": {
+      "test": 2,
+      "feat": 9,
+      "refactor": 1
+    },
+    "sim/scripts": {
+      "feat": 2
+    },
+    "sim/contracts": {
+      "feat": 1
+    },
+    "sim-service-catalog": {
+      "feat": 4
+    },
+    "identifier-gate": {
+      "ci": 1
+    },
+    "sim-identifier-grammar": {
+      "test": 1,
+      "feat": 16,
+      "fix": 1
+    },
+    "sim-contracts": {
+      "feat": 1
+    },
+    "db-bootstrap": {
+      "feat": 13
+    },
+    "infra-engine": {
+      "feat": 45,
+      "fix": 8,
+      "test": 3,
+      "security": 1,
+      "refactor": 1,
+      "docs": 2
+    },
+    "ingest-server": {
+      "feat": 19,
+      "test": 5,
+      "chore": 1,
+      "refactor": 4,
+      "docs": 1
+    },
+    "lockfile": {
+      "chore": 2
+    },
+    "event-catalog": {
+      "fix": 2,
+      "feat": 3
+    },
+    "spec": {
+      "docs": 7
+    },
+    "vendor": {
+      "chore": 5
+    },
+    "visbug-bridge": {
+      "docs": 1,
+      "test": 1,
+      "feat": 4,
+      "chore": 1
+    },
+    "skills": {
+      "docs": 4,
+      "feat": 1
+    },
+    "scaffold": {
+      "feat": 4,
+      "refactor": 2,
+      "chore": 2
+    },
+    "specs": {
+      "docs": 11
+    },
+    "registry": {
+      "chore": 1,
+      "feat": 8,
+      "refactor": 2,
+      "fix": 1
+    },
+    "ingest": {
+      "feat": 6,
+      "refactor": 1,
+      "test": 3,
+      "fix": 1
+    },
+    "cli": {
+      "fix": 1,
+      "feat": 25,
+      "test": 3,
+      "chore": 1,
+      "refactor": 2
+    },
+    "auth-backlog": {
+      "docs": 12
+    },
+    "proposals": {
+      "docs": 31,
+      "feat": 3
+    },
+    "sim-reporting-api": {
+      "feat": 4
+    },
+    "sim-pm/approval-api": {
+      "refactor": 1,
+      "feat": 1
+    },
+    "sim-audit-recorder-provider": {
+      "feat": 1
+    },
+    "sim-seed": {
+      "fix": 1
+    },
+    "sim-pm-api": {
+      "feat": 10,
+      "chore": 1
+    },
+    "sim-otel-utils": {
+      "feat": 1
+    },
+    "sim-services": {
+      "feat": 1
+    },
+    "sim-document-api": {
+      "feat": 2
+    },
+    "sim-notification-api": {
+      "feat": 2
+    },
+    "sim-pm-api, sim-approval-api": {
+      "feat": 1
+    },
+    "rls-enforce": {
+      "test": 1
+    },
+    "@qa-sdk/cli": {
+      "feat": 2
+    },
+    "audit-recorder-store": {
+      "feat": 9,
+      "test": 3,
+      "chore": 1,
+      "refactor": 2
+    },
+    "resource-policy-store": {
+      "feat": 8,
+      "test": 3,
+      "docs": 1,
+      "refactor": 2,
+      "chore": 2
+    },
+    "sim-metrics-collector": {
+      "feat": 3
+    },
+    "store": {
+      "chore": 1,
+      "fix": 2,
+      "feat": 3,
+      "refactor": 3,
+      "test": 1
+    },
+    "infra": {
+      "docs": 2,
+      "feat": 4,
+      "fix": 1,
+      "test": 1,
+      "chore": 1
+    },
+    "coordinate-storage": {
+      "docs": 2
+    },
+    "definition-catalog": {
+      "feat": 20,
+      "test": 5,
+      "refactor": 1,
+      "docs": 3,
+      "fix": 3
+    },
+    "core,event-catalog": {
+      "feat": 1
+    },
+    "authorization": {
+      "fix": 1,
+      "docs": 1
+    },
+    "permission-engine": {
+      "feat": 4
+    },
+    "weighted-index": {
+      "fix": 1,
+      "feat": 15,
+      "test": 3,
+      "docs": 3,
+      "refactor": 7,
+      "chore": 1
+    },
+    "authorization+wi": {
+      "spec": 1
+    },
+    "authorization-ontology": {
+      "spec": 2
+    },
+    "system": {
+      "docs": 1
+    },
+    "monorepo": {
+      "build": 1
+    },
+    "skill": {
+      "docs": 8
+    },
+    "def": {
+      "test": 2,
+      "feat": 22,
+      "refactor": 12,
+      "fix": 50
+    },
+    "decode": {
+      "fix": 2,
+      "test": 1,
+      "feat": 1
+    },
+    "rule": {
+      "docs": 6
+    },
+    "service": {
+      "test": 1,
+      "feat": 4
+    },
+    "meta-semantic": {
+      "docs": 5,
+      "feat": 3
+    },
+    "ontology": {
+      "feat": 2
+    },
+    "ralph": {
+      "chore": 1
+    },
+    "tasks": {
+      "docs": 2,
+      "feat": 1,
+      "chore": 4
+    },
+    "docs": {
+      "feat": 2,
+      "chore": 1,
+      "fix": 1
+    },
+    "auth": {
+      "feat": 1
+    },
+    "event-taxonomy": {
+      "docs": 8,
+      "feat": 1,
+      "refactor": 2
+    },
+    "taxonomy": {
+      "docs": 1
+    },
+    "ops": {
+      "chore": 1
+    },
+    "platform-demo": {
+      "feat": 12,
+      "refactor": 7,
+      "fix": 4,
+      "style": 1
+    },
+    "gateway": {
+      "feat": 2
+    },
+    "git-utils": {
+      "test": 3
+    },
+    "query-service": {
+      "feat": 1,
+      "refactor": 2
+    },
+    "gate-service": {
+      "feat": 2
+    },
+    "index-meta/decode-service": {
+      "feat": 1
+    },
+    "core/store": {
+      "feat": 2
+    },
+    "viz-web": {
+      "feat": 3,
+      "test": 1,
+      "style": 1
+    },
+    "viz-core": {
+      "feat": 1
+    },
+    "core/pipe": {
+      "refactor": 1
+    },
+    "engine": {
+      "feat": 2,
+      "refactor": 1
+    },
+    "pino": {
+      "refactor": 1,
+      "feat": 1
+    },
+    "sdk": {
+      "chore": 1,
+      "feat": 2
+    },
+    "draft": {
+      "docs": 1
+    },
+    "definition-service": {
+      "fix": 1,
+      "refactor": 2,
+      "feat": 1
+    },
+    "decision-service": {
+      "feat": 1
+    },
+    "platform-demo-api": {
+      "refactor": 2,
+      "fix": 1,
+      "chore": 1,
+      "feat": 1
+    },
+    "index-meta": {
+      "refactor": 8,
+      "docs": 13,
+      "feat": 23,
+      "chore": 4,
+      "test": 2
+    },
+    "decode-service": {
+      "refactor": 1
+    },
+    "spec-core": {
+      "refactor": 4,
+      "feat": 6
+    },
+    "registry-service": {
+      "refactor": 8,
+      "feat": 5
+    },
+    "definition-client": {
+      "refactor": 1
+    },
+    "motion-content-editor-demo": {
+      "feat": 1
+    },
+    "motion-content-editor": {
+      "feat": 1
+    },
+    "motion-workspace-client": {
+      "feat": 1
+    },
+    "motion-workspace-service": {
+      "feat": 1
+    },
+    "motion-workspace": {
+      "feat": 1
+    },
+    "motion-content": {
+      "feat": 3
+    },
+    "otel": {
+      "feat": 1
+    },
+    "decision-flow": {
+      "feat": 7,
+      "docs": 3,
+      "test": 1
+    },
+    "docs-explorer": {
+      "feat": 1
+    },
+    "gate-api": {
+      "fix": 1
+    },
+    "gate-docs": {
+      "fix": 1
+    },
+    "spec-core/cli": {
+      "feat": 2
+    },
+    "demo-tests": {
+      "feat": 4
+    },
+    "demo-snapshot": {
+      "feat": 3,
+      "refactor": 1
+    },
+    "spec-core/transition": {
+      "feat": 1
+    },
+    "spec-core/skills": {
+      "feat": 1
+    },
+    "spec-core/loader": {
+      "feat": 1
+    },
+    "spec-core/dkg": {
+      "feat": 2
+    },
+    "convergence": {
+      "chore": 1
+    },
+    "AGENTS.md": {
+      "docs": 1
+    },
+    "@qa-sdk/core": {
+      "feat": 1
+    },
+    "ingest-server/query": {
+      "feat": 1
+    },
+    "ingest-server/insights": {
+      "feat": 1
+    },
+    "shop-web": {
+      "feat": 1
+    },
+    "viz-3d": {
+      "build": 1,
+      "feat": 1
+    },
+    "catalog": {
+      "feat": 1
+    },
+    "spec-engine": {
+      "feat": 1
+    },
+    "apm": {
+      "feat": 1
+    },
+    "specs/services": {
+      "docs": 1
+    },
+    "specs/spec-engine": {
+      "docs": 1
+    },
+    "specs/apm": {
+      "docs": 1
+    },
+    "specs/indexing": {
+      "docs": 1
+    },
+    "browser-sdk": {
+      "feat": 2
+    },
+    "bit-index": {
+      "feat": 1
+    },
+    "prd": {
+      "chore": 4
+    },
+    "overview": {
+      "docs": 1
+    },
+    "edge-cases": {
+      "test": 1
+    },
+    "adr": {
+      "docs": 1
+    },
+    "bigint": {
+      "test": 1
+    },
+    "weighted-wasm": {
+      "chore": 1
+    },
+    "project": {
+      "docs": 1
+    },
+    "benchmarks": {
+      "docs": 1
+    },
+    "logging": {
+      "feat": 1
+    },
+    "layout-sim": {
+      "feat": 1
+    },
+    "weighted-ui": {
+      "fix": 1,
+      "feat": 1
+    },
+    "deps": {
+      "chore": 1
+    },
+    "weighted-index-explorer": {
+      "refactor": 2,
+      "feat": 4
+    },
+    "e2e": {
+      "test": 1
+    },
+    "roleplay-web": {
+      "style": 1,
+      "feat": 1
+    },
+    "sdk/logger": {
+      "feat": 1
+    },
+    "weighted-index/obfuscate": {
+      "test": 1
+    },
+    "prd-spec-alignment": {
+      "feat": 1
+    },
+    "store,ingest-server": {
+      "fix": 1
+    }
+  }
+}

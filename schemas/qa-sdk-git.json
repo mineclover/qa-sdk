@@ -1,0 +1,218 @@
+{
+  "id": "qa-sdk-git",
+  "axes": [
+    {
+      "id": "pkg",
+      "entries": [
+        "address-index",
+        "apm",
+        "scaffold",
+        "audit-recorder-store",
+        "authorization-monitor-web",
+        "authorization-ontology",
+        "bench",
+        "bit-index",
+        "browser-codec",
+        "browser",
+        "canvas-viewport",
+        "cli",
+        "cli-command",
+        "codec",
+        "codec-proto",
+        "codegen-core",
+        "config-loader",
+        "context",
+        "convergence",
+        "core",
+        "data-object-codegen",
+        "db-bootstrap",
+        "db-traffic-control",
+        "decision-flow",
+        "decision-flow-store",
+        "decision-service",
+        "decode-service",
+        "definition-catalog",
+        "definition-client",
+        "definition-data-source",
+        "definition-service",
+        "demo-snapshot",
+        "demo-tests",
+        "demo-types",
+        "deterministic-label-registry",
+        "dkg",
+        "doc-envelope",
+        "docs-explorer",
+        "e2e",
+        "engine",
+        "event-catalog",
+        "facet-tests",
+        "gate-service",
+        "gateway",
+        "git-utils",
+        "index-meta",
+        "index-meta-workers",
+        "infra-engine",
+        "infra-env-kit",
+        "ingest-server",
+        "logger",
+        "motion-content",
+        "motion-content-editor",
+        "motion-content-editor-demo",
+        "motion-workspace",
+        "motion-workspace-client",
+        "motion-workspace-service",
+        "nest-service-kit",
+        "ontology-pack-validate",
+        "operational-ontology",
+        "operational-ontology-web",
+        "otel",
+        "package-classifier",
+        "permission-engine",
+        "pino",
+        "pipe-store-sqlite",
+        "platform-demo",
+        "platform-demo-api",
+        "quality-ledger",
+        "query-service",
+        "ralph-tui-integration",
+        "registry-client",
+        "registry-service",
+        "registry-ui",
+        "resource-policy-store",
+        "review-ledger",
+        "rlsc",
+        "rlsc-analysis",
+        "rlsc-demo",
+        "rlsc-perspective",
+        "roleplay-web",
+        "sdk",
+        "shop-web",
+        "sim-decision-view",
+        "sim-identifier-grammar",
+        "sim-internal-network",
+        "sim-outbox-view",
+        "sim-service-catalog",
+        "simulation-tests",
+        "snapshot-io",
+        "spec-analyzer",
+        "spec-core",
+        "spec-schema",
+        "spec-tracker",
+        "spec-transition",
+        "store",
+        "tag-search",
+        "test-scenario-store",
+        "test-types",
+        "visbug-bridge",
+        "viteplus-sdk-smoke",
+        "viz-3d",
+        "viz-core",
+        "viz-web",
+        "weighted-gpu",
+        "weighted-index",
+        "weighted-index-explorer",
+        "weighted-ui",
+        "weighted-wasm",
+        "work-domain"
+      ],
+      "capacity": 128
+    },
+    {
+      "id": "semver",
+      "entries": [
+        "0.1.0",
+        "0.2.0",
+        "9.9.4"
+      ],
+      "capacity": 16
+    },
+    {
+      "id": "cc_type",
+      "entries": [
+        "bench",
+        "build",
+        "chore",
+        "ci",
+        "docs",
+        "feat",
+        "fix",
+        "infra",
+        "init",
+        "merge",
+        "plan",
+        "refactor",
+        "revert",
+        "security",
+        "spec",
+        "style",
+        "test",
+        "wip"
+      ],
+      "capacity": 32
+    },
+    {
+      "id": "tier",
+      "entries": [
+        "app",
+        "data",
+        "foundation",
+        "platform",
+        "service"
+      ],
+      "capacity": 8
+    },
+    {
+      "id": "runtime",
+      "entries": [
+        "browser",
+        "library",
+        "server"
+      ],
+      "capacity": 8
+    },
+    {
+      "id": "scope",
+      "entries": [
+        "public",
+        "private"
+      ],
+      "capacity": 2
+    }
+  ],
+  "composites": [
+    {
+      "id": "pkg_version",
+      "dims": [
+        "pkg",
+        "semver"
+      ],
+      "owner": "qa-sdk"
+    },
+    {
+      "id": "change_map",
+      "dims": [
+        "pkg",
+        "semver",
+        "cc_type"
+      ],
+      "owner": "qa-sdk"
+    },
+    {
+      "id": "commit_addr",
+      "dims": [
+        "cc_type",
+        "pkg"
+      ],
+      "owner": "qa-sdk"
+    },
+    {
+      "id": "pkg_class",
+      "dims": [
+        "pkg",
+        "tier",
+        "runtime"
+      ],
+      "owner": "qa-sdk"
+    }
+  ]
+}
