@@ -13,6 +13,7 @@
 //   - replicationLag.inject(ms)         → kind="replication-lag", params={lagMs}
 //   - perfWarn.on()                     → kind="perf-warn"           (※ plan defect, 후속)
 //   - pubsubInvalidate.drop()           → kind="pubsub-invalidate-drop" (※ plan defect, 후속)
+//   - healthyMetrics.on()               → kind="healthy-metrics" (sim happy-path 진입)
 //
 // 모든 toggle은 `{ off: () => Promise<void> }` 핸들을 반환한다.
 
@@ -50,6 +51,13 @@ export interface FaultInjectorView {
   replicationLag: { inject(lagMs: number): Promise<FaultHandle> };
   perfWarn: { on(): Promise<FaultHandle> };
   pubsubInvalidate: { drop(): Promise<FaultHandle> };
+  /**
+   * sim 전용 happy-path 진입 — controller scrape 결과를 PASS 합성으로 wrap.
+   * 시뮬 환경의 외부 metrics endpoint 미연결/오류 응답으로 인한 영구 hold 회피용.
+   * 시나리오 9 (canary-happy-promote) 가 자연스러운 promote 시퀀스에 도달하는 최소
+   * 의존성. 실 prod 운영에서는 사용 금지 (fault 의도 = 의도적 입력 변경).
+   */
+  healthyMetrics: { on(): Promise<FaultHandle> };
 }
 
 /**
@@ -108,5 +116,6 @@ export function createFaultInjector(
     replicationLag: { inject: (lagMs) => on("replication-lag", { lagMs }) },
     perfWarn: { on: () => on("perf-warn") },
     pubsubInvalidate: { drop: () => on("pubsub-invalidate-drop") },
+    healthyMetrics: { on: () => on("healthy-metrics") },
   };
 }

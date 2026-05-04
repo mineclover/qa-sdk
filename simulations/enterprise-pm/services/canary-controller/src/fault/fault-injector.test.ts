@@ -57,8 +57,8 @@ describe("FaultInjector registry", () => {
   });
 });
 
-describe("FAULT_KINDS enum (spec §8)", () => {
-  it("contains 6 entries (4 existing + 2 new)", () => {
+describe("FAULT_KINDS enum (spec §8 + sim happy-path)", () => {
+  it("contains 7 entries (4 existing + 2 spec §8 + 1 sim happy-path)", () => {
     expect(FAULT_KINDS).toEqual([
       "schema-break",
       "audit-anomaly",
@@ -66,8 +66,9 @@ describe("FAULT_KINDS enum (spec §8)", () => {
       "db-pool-pressure",
       "pubsub-invalidate-drop",
       "perf-warn",
+      "healthy-metrics",
     ]);
-    expect(FAULT_KINDS).toHaveLength(6);
+    expect(FAULT_KINDS).toHaveLength(7);
   });
 
   it("getFault routes to PubsubInvalidateDropFault instance", async () => {

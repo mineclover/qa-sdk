@@ -39,6 +39,7 @@ import {
 } from "./db-pool-pressure.js";
 import { PubsubInvalidateDropFault } from "./pubsub-invalidate-drop.js";
 import { PerfWarnFault } from "./perf-warn.js";
+import { HealthyMetricsFault } from "./healthy-metrics.js";
 import { createLogger } from "../lib/logger.js";
 
 const logger = createLogger("sim-canary-controller:fault");
@@ -115,12 +116,17 @@ export class FaultInjectorLifecycle
 @Module({
   controllers: [AdminFaultController],
   providers: [
-    // 신규 2종 — singleton (admin controller / VerdictService / pub/sub proxy 가 동일 인스턴스 공유).
+    // 신규 3종 — singleton (admin controller / VerdictService / pub/sub proxy / scrape wrap 가 동일 인스턴스 공유).
     PubsubInvalidateDropFault,
     PerfWarnFault,
+    HealthyMetricsFault,
     {
       provide: FaultInjector,
-      useFactory: (pid: PubsubInvalidateDropFault, pw: PerfWarnFault) => {
+      useFactory: (
+        pid: PubsubInvalidateDropFault,
+        pw: PerfWarnFault,
+        hm: HealthyMetricsFault,
+      ) => {
         const registry: Record<FaultKind, Fault> = {
           "schema-break": new SchemaBreakFault(new InMemorySchemaBreakStore()),
           "audit-anomaly": new AuditAnomalyFault(
@@ -135,10 +141,11 @@ export class FaultInjectorLifecycle
           ),
           "pubsub-invalidate-drop": pid,
           "perf-warn": pw,
+          "healthy-metrics": hm,
         };
         return new FaultInjector(registry);
       },
-      inject: [PubsubInvalidateDropFault, PerfWarnFault],
+      inject: [PubsubInvalidateDropFault, PerfWarnFault, HealthyMetricsFault],
     },
     {
       provide: FAULT_INJECTOR_TOKEN,
@@ -146,6 +153,11 @@ export class FaultInjectorLifecycle
     },
     FaultInjectorLifecycle,
   ],
-  exports: [FaultInjector, PubsubInvalidateDropFault, PerfWarnFault],
+  exports: [
+    FaultInjector,
+    PubsubInvalidateDropFault,
+    PerfWarnFault,
+    HealthyMetricsFault,
+  ],
 })
 export class FaultModule {}

@@ -11,7 +11,7 @@
 // Pass 1 write 실패 → Pass 2 SKIP.
 // 다음 사이클은 SIM_CONTROLLER_CYCLE_MS 후.
 
-import { Inject, Injectable, type OnModuleInit } from "@nestjs/common";
+import { Inject, Injectable, Optional, type OnModuleInit } from "@nestjs/common";
 import { SchedulerRegistry } from "@nestjs/schedule";
 import { AdvisoryLockService } from "../lock/advisory-lock.service.js";
 import { MetricsScrapeService } from "../metrics/metrics-scrape.service.js";
@@ -21,6 +21,9 @@ import { ResourceDecisionService } from "../decision/resource-decision.service.j
 import { DecisionBuilderService } from "../decision/decision-builder.service.js";
 import { ActionExecutorService } from "../action/action-executor.service.js";
 import { DecisionRingBuffer } from "../decision/decision-ring-buffer.js";
+import { HealthyMetricsFault } from "../fault/healthy-metrics.js";
+import { SIM_SERVICE_CATALOG_TOKEN } from "../catalog/tokens.js";
+import { InMemorySimServiceCatalog } from "../catalog/catalog.provider.js";
 import { env } from "../config/env.js";
 import { createLogger } from "../lib/logger.js";
 
@@ -52,9 +55,27 @@ export class CycleSchedulerService implements OnModuleInit {
     private readonly action: ActionExecutorService,
     @Inject(DecisionRingBuffer)
     private readonly ringBuffer: DecisionRingBuffer,
+    // 시뮬 happy-path / catalog 전이 의존 — 테스트 backward compat 위해 optional.
+    // production AppModule 은 항상 wire (CycleModule 이 FaultModule + CatalogModule import).
+    @Optional()
+    @Inject(HealthyMetricsFault)
+    private readonly healthyMetrics?: HealthyMetricsFault,
+    @Optional()
+    @Inject(SIM_SERVICE_CATALOG_TOKEN)
+    private readonly catalogPort?: InMemorySimServiceCatalog,
   ) {}
 
   onModuleInit() {
+    // 시뮬 부팅 시 healthy-metrics 자동 enable — 외부 metrics 출처 미연결 환경에서
+    // controller 가 자연스럽게 promote 시퀀스 진행. fault toggle 은 admin endpoint 로
+    // 런타임 변경 가능 (POST /admin/fault/healthy-metrics).
+    if (env.SIM_CONTROLLER_HEALTHY_METRICS && this.healthyMetrics) {
+      void this.healthyMetrics.enable({});
+      this.logger.info(
+        {},
+        "healthy-metrics fault auto-enabled (SIM_CONTROLLER_HEALTHY_METRICS=true)",
+      );
+    }
     const handle = setInterval(
       () => void this.runCycle(),
       env.SIM_CONTROLLER_CYCLE_MS,
@@ -163,6 +184,54 @@ export class CycleSchedulerService implements OnModuleInit {
       ) {
         this.currentWeight = safetyOut.action.weight;
         this.lastPromotionAt = Date.now();
+        const targetPrefix = `sim.svc.${env.SIM_CONTROLLER_TARGET_SERVICE}`;
+        // weight=100 도달 시 catalog 전이 — 시뮬에서는 candidate 가 미등록 상태일
+        // 수 있으므로 (시나리오 9 setup 가정 v4=undeployed 보존) just-in-time 으로
+        // SIM_CONTROLLER_CANDIDATE_VERSION 기반 시드 후 즉시 promote (candidate→stable).
+        // 운영에서는 SIM_CONTROLLER_CANDIDATE_VERSION 미설정이라 시드 skip — catalog
+        // admin 이 사전 등록한 candidate 만 사용.
+        if (
+          safetyOut.action.weight === 100 &&
+          this.catalogPort !== undefined
+        ) {
+          if (
+            !this.catalogPort.hasCandidate(targetPrefix) &&
+            typeof env.SIM_CONTROLLER_CANDIDATE_VERSION === "number"
+          ) {
+            try {
+              this.catalogPort.seedCandidate(
+                targetPrefix,
+                env.SIM_CONTROLLER_CANDIDATE_VERSION,
+              );
+              this.logger.info(
+                {
+                  prefix: targetPrefix,
+                  version: env.SIM_CONTROLLER_CANDIDATE_VERSION,
+                },
+                "catalog candidate seeded (sim mode, on weight=100)",
+              );
+            } catch (err) {
+              this.logger.error(
+                { err, prefix: targetPrefix },
+                "catalog candidate seed failed",
+              );
+            }
+          }
+          if (this.catalogPort.hasCandidate(targetPrefix)) {
+            try {
+              this.catalogPort.promoteCandidate(targetPrefix);
+              this.logger.info(
+                { prefix: targetPrefix },
+                "catalog candidate promoted to stable (weight=100)",
+              );
+            } catch (err) {
+              this.logger.error(
+                { err, prefix: targetPrefix },
+                "catalog promote failed",
+              );
+            }
+          }
+        }
       }
     } catch (err) {
       this.logger.error({ err }, "cycle failed; next cycle continues");

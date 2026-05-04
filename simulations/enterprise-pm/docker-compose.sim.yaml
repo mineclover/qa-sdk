@@ -252,6 +252,12 @@ services:
       SIM_CONTROLLER_ID: ${SIM_CONTROLLER_ID:-CTRL0001}
       SIM_CONTROLLER_CYCLE_MS: ${SIM_CONTROLLER_CYCLE_MS:-30000}
       SIM_CONTROLLER_CONFIG_PATH: /app/simulations/enterprise-pm/services/canary-controller/controller-config.yaml
+      # sim happy-path 진입 — scenario 9 (canary-happy-promote) 가 자연 promote 시퀀스
+      # 도달 가능하도록 healthy-metrics fault 자동 enable + dwell 단축 + candidate 시드.
+      # production 운영에서는 모두 미설정 (yaml 기본값 사용).
+      SIM_CONTROLLER_HEALTHY_METRICS: ${SIM_CONTROLLER_HEALTHY_METRICS:-false}
+      SIM_CONTROLLER_DWELL_MS: ${SIM_CONTROLLER_DWELL_MS:-}
+      SIM_CONTROLLER_CANDIDATE_VERSION: ${SIM_CONTROLLER_CANDIDATE_VERSION:-}
       SIM_DB_WRITE_URL: ${SIM_DB_WRITE_URL}
       SIM_METRICS_COLLECTOR_URL: http://sim-metrics-collector:5200
       QA_INGEST_URL: http://qa-sdk-ingest:3200

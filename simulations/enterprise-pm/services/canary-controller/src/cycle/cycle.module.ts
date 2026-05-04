@@ -8,6 +8,8 @@ import { AdvisoryLockModule } from "../lock/advisory-lock.module.js";
 import { MetricsScrapeModule } from "../metrics/metrics-scrape.module.js";
 import { DecisionModule } from "../decision/decision.module.js";
 import { ActionModule } from "../action/action.module.js";
+import { CatalogModule } from "../catalog/catalog.module.js";
+import { FaultModule } from "../fault/fault.module.js";
 import { DecisionRingBuffer } from "../decision/decision-ring-buffer.js";
 
 @Module({
@@ -19,6 +21,10 @@ import { DecisionRingBuffer } from "../decision/decision-ring-buffer.js";
     MetricsScrapeModule,
     DecisionModule,
     ActionModule,
+    // catalog promote (weight=100 도달 시 candidate→stable 전이) 와 healthy-metrics
+    // fault 자동 enable 위해 CatalogModule + FaultModule 의존.
+    CatalogModule,
+    FaultModule,
   ],
   providers: [
     CycleSchedulerService,
