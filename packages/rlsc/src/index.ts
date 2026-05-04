@@ -26,6 +26,8 @@ export type {
   // 메트릭
   ProximityGroup,
   LayoutMetrics,
+  ScreenIdentifier,
+  ScreenIdentifierKind,
   // 패턴
   GridSystemPattern,
   SpacingPattern,
@@ -131,10 +133,15 @@ export {
   DEBUG_LABEL_ATTRIBUTE,
   QA_ADDRESS_ATTRIBUTE,
   annotateElement,
+  createCssSelector,
   createMetadataAttributes,
+  createScreenIdentifier,
+  identifyElement,
 } from "@qa-sdk/rlsc-analysis";
 export type {
   MetadataAttributeTarget,
   MetadataAttributes,
+  ScreenIdentifierElement,
+  ScreenIdentifierSource,
   ScreenMetadata,
 } from "@qa-sdk/rlsc-analysis";

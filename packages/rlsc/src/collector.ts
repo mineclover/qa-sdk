@@ -13,6 +13,7 @@ import { analyzeGrid } from "./grid.js";
 import { detectRelations } from "./relations.js";
 import { classifyLayers } from "./layers.js";
 import { prepareTextMap } from "./text-occupancy.js";
+import { identifyElement } from "@qa-sdk/rlsc-analysis";
 import type { TextPreparedMap } from "./text-occupancy.js";
 
 // ─── 기본 설정 ──────────────────────────────────────────────────────
@@ -186,8 +187,10 @@ function collectNode(
 
   const zIndex = parseInt(style.zIndex, 10);
 
+  const id = generateId(el);
+
   return {
-    id: generateId(el),
+    id,
     tag,
     classes: Array.from(el.classList),
     role: el.getAttribute("role") ?? inferRole(el) ?? undefined,
@@ -204,6 +207,7 @@ function collectNode(
         ? extractFontInfo(style)
         : undefined,
     address: el.getAttribute(opts.addressAttribute) ?? undefined,
+    identifier: identifyElement(el, { nodeId: id }),
     attributes: getSemanticAttributes(el),
     children,
   };

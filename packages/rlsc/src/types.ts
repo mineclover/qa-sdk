@@ -20,6 +20,8 @@ export type {
   RLSCNode,
   RLSCQuery,
   RLSCRelation,
+  ScreenIdentifier,
+  ScreenIdentifierKind,
   SpacingPattern,
   TextFontInfo,
   TextOccupancy,

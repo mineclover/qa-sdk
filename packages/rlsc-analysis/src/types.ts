@@ -1,6 +1,8 @@
 // @def.boundary shared-utility-group
 // @def.doc shared-utility-group
 
+import type { ScreenIdentifier } from "./metadata.js";
+
 // ─── R.L.S.C.™ Core Types ───────────────────────────────────────────
 
 /** 뷰포트 기준 물리적 위치와 크기 */
@@ -39,6 +41,8 @@ export interface RLSCNode {
   readonly textContent?: string;
   /** 기존 좌표계 주소 (data-qa-address 등에서 추출) */
   readonly address?: string;
+  /** 디버깅/복사용 안정 식별자 */
+  readonly identifier?: ScreenIdentifier;
   /** 폰트 정보 (텍스트가 있는 노드에만 존재) */
   readonly fontInfo?: TextFontInfo;
   /** 의미론적 속성 (data-*, aria-*) */

@@ -10,11 +10,20 @@ import {
   QA_ADDRESS_ATTRIBUTE,
   analyzeAreas,
   annotateElement,
+  createCssSelector,
   createAreaDocument,
   createMetadataAttributes,
+  createScreenIdentifier,
   detectAreaOverflow,
+  identifyElement,
 } from "./index.js";
-import type { LayoutRect, RLSCDocument, RLSCNode, ScreenMetadata } from "./index.js";
+import type {
+  LayoutRect,
+  RLSCDocument,
+  RLSCNode,
+  ScreenIdentifierElement,
+  ScreenMetadata,
+} from "./index.js";
 
 function node(
   id: string,
@@ -88,4 +97,95 @@ describe("@qa-sdk/rlsc-analysis public API", () => {
       [COMPONENT_ID_ATTRIBUTE]: "Toolbar",
     });
   });
+
+  it("extracts screen identifiers using the preferred stable order", () => {
+    expect(
+      createScreenIdentifier({
+        nodeId: "button.primary__1",
+        cssSelector: "main > button.primary",
+        qaAddress: "checkout:submit",
+        componentId: "SubmitButton",
+      }),
+    ).toMatchObject({
+      kind: "componentId",
+      value: "SubmitButton",
+      componentId: "SubmitButton",
+      qaAddress: "checkout:submit",
+      cssSelector: "main > button.primary",
+      nodeId: "button.primary__1",
+    });
+
+    expect(
+      createScreenIdentifier({
+        nodeId: "button.primary__1",
+        cssSelector: "main > button.primary",
+        attributes: { [QA_ADDRESS_ATTRIBUTE]: "checkout:submit" },
+      }),
+    ).toMatchObject({
+      kind: "qaAddress",
+      value: "checkout:submit",
+    });
+
+    expect(
+      createScreenIdentifier({
+        nodeId: "button.primary__1",
+        cssSelector: "main > button.primary",
+      }),
+    ).toMatchObject({
+      kind: "cssSelector",
+      value: "main > button.primary",
+    });
+
+    expect(createScreenIdentifier({ nodeId: "button.primary__1" })).toMatchObject({
+      kind: "nodeId",
+      value: "button.primary__1",
+    });
+  });
+
+  it("creates fallback CSS selectors and identifies structural elements", () => {
+    const main = element("MAIN", { id: "app" });
+    const first = element("BUTTON", { classes: ["cta"], parentElement: main });
+    const second = element("BUTTON", {
+      classes: ["cta", "primary"],
+      attributes: { [COMPONENT_ID_ATTRIBUTE]: "PrimaryCta" },
+      parentElement: main,
+    });
+    main.children = [first, second];
+
+    expect(createCssSelector(second)).toBe("main#app > button.cta.primary:nth-of-type(2)");
+    expect(identifyElement(second, { nodeId: "button.cta__2" })).toMatchObject({
+      kind: "componentId",
+      value: "PrimaryCta",
+      componentId: "PrimaryCta",
+      cssSelector: "main#app > button.cta.primary:nth-of-type(2)",
+      nodeId: "button.cta__2",
+    });
+  });
 });
+
+function element(
+  tagName: string,
+  options: {
+    id?: string;
+    classes?: readonly string[];
+    attributes?: Readonly<Record<string, string>>;
+    parentElement?: MutableScreenIdentifierElement;
+  } = {},
+): MutableScreenIdentifierElement {
+  const attributes = options.attributes ?? {};
+
+  return {
+    tagName,
+    id: options.id,
+    classList: options.classes ?? [],
+    parentElement: options.parentElement,
+    children: [],
+    getAttribute(name: string): string | null {
+      return attributes[name] ?? null;
+    },
+  };
+}
+
+interface MutableScreenIdentifierElement extends ScreenIdentifierElement {
+  children: ScreenIdentifierElement[];
+}

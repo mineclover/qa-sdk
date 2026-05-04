@@ -33,11 +33,18 @@ export {
   DEBUG_LABEL_ATTRIBUTE,
   QA_ADDRESS_ATTRIBUTE,
   annotateElement,
+  createCssSelector,
   createMetadataAttributes,
+  createScreenIdentifier,
+  identifyElement,
 } from "./metadata.js";
 export type {
   MetadataAttributeTarget,
   MetadataAttributes,
+  ScreenIdentifier,
+  ScreenIdentifierElement,
+  ScreenIdentifierKind,
+  ScreenIdentifierSource,
   ScreenMetadata,
 } from "./metadata.js";
 

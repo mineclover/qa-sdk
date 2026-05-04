@@ -255,6 +255,7 @@ async function runPipeline(): Promise<void> {
       root: doc.root.id,
       nodes: analysis.nodes.map((node) => ({
         id: node.id,
+        identifier: node.identifier,
         role: node.role,
         rect: node.rect,
         address: node.attributes["data-qa-address"]
