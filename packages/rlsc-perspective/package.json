@@ -23,11 +23,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@qa-sdk/rlsc-analysis": "workspace:*",
-    "three": "^0.170.0"
+    "@qa-sdk/rlsc-analysis": "workspace:*"
   },
   "devDependencies": {
-    "@types/three": "^0.170.0",
     "tsup": "^8.5.1",
     "typescript": "^5.8.2"
   }
