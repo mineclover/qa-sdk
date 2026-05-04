@@ -22,10 +22,12 @@ export interface TimeOffOutboxFactoryOpts {
 }
 
 // 단계 8(Plan C): build-time schemaHash. spec 02 §4.2.
+// EventName 계약: { domain, aggregate, verbPast } — sim-identifier-grammar/event-name.ts SSOT.
+// timeoff aggregate 식별자는 event-vocabulary 카탈로그에 "time-off" 으로 등록되어 있다.
 const TIMEOFF_EVENT_NAME = {
   domain: "approval",
-  entity: "timeoff",
-  action: "submitted",
+  aggregate: "time-off",
+  verbPast: "submitted",
 } as const;
 const TIMEOFF_PAYLOAD_SHAPE = {
   id: "string",
