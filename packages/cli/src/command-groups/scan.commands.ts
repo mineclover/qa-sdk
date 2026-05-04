@@ -35,6 +35,9 @@ export const SCAN_COMMAND_SPECS =
 
 export const SCAN_HANDLER_REGISTRY = {
   "scan.git": async (rest: string[]) => {
+    console.warn(
+      "[deprecated] 'qa-sdk scan git'은 향후 제거 예정. 대체: 'qa-sdk git scan'",
+    );
     const { values } = parseArgs({
       args: rest,
       options: {

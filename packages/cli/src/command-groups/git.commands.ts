@@ -10,6 +10,7 @@ import {
   type CommandUsageSpec,
 } from "../command-spec.js";
 import { gitConflicts, watchGitConflicts } from "../commands/git-conflicts.js";
+import { gitScan } from "../commands/git-scan.js";
 
 type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
@@ -32,6 +33,17 @@ export const GIT_COMMAND_DESCRIPTORS = [
       { flag: "--interval-ms", valueHint: "<n>", type: "string", description: "watch 주기 ms (기본: 5000)" },
       { flag: "--json", type: "boolean", description: "JSON으로 출력" },
       { flag: "--limit", valueHint: "<n>", type: "string", description: "사람이 읽는 출력 최대 개수 (기본: 10)" },
+    ],
+  },
+  {
+    id: "git.scan",
+    path: ["scan"],
+    usage: "qa-sdk git scan [options]          Git 메타데이터 수집 → SchemaSnapshot",
+    handlerKey: "git.scan",
+    options: [
+      { flag: "--root", valueHint: "<path>", type: "string", description: "모노레포 루트 (기본: .)" },
+      { flag: "--output", valueHint: "<dir>", type: "string", description: "저장 디렉토리 (기본: ./schemas)" },
+      { flag: "--id", valueHint: "<name>", type: "string", description: "스키마 ID (기본: repo 이름에서 추출)" },
     ],
   },
 ] as const satisfies readonly CommandDescriptor[];
@@ -84,5 +96,21 @@ export const GIT_HANDLER_REGISTRY = {
     }
 
     await gitConflicts(args);
+  },
+  "git.scan": async (rest: string[]) => {
+    const { values } = parseArgs({
+      args: rest,
+      options: {
+        root: { type: "string", default: "." },
+        output: { type: "string", default: "./schemas" },
+        id: { type: "string" },
+      },
+      strict: true,
+    });
+    await gitScan({
+      root: values.root ?? ".",
+      output: values.output ?? "./schemas",
+      id: values.id,
+    });
   },
 } satisfies Readonly<Record<string, RestCommandHandler>>;

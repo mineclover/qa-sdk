@@ -329,13 +329,17 @@ function createHandlerRegistry(dispatch: TreeDispatch): Record<string, (ctx: Com
   });
 }
 
+function printGroupHelp(group: TreeCommandGroup): void {
+  console.log(generateHelp(group.rootName, group.tree));
+}
+
 function tryPrintTreeHelp(args: string[]): boolean {
   const normalizedArgs = args.filter((arg) => arg !== '--help' && arg !== '-h');
 
   for (const group of TREE_COMMAND_GROUPS) {
     const [rootSegment] = group.rootSegments;
     if (normalizedArgs.length === group.rootSegments.length && normalizedArgs[0] === rootSegment) {
-      console.log(generateHelp(group.rootName, group.tree));
+      printGroupHelp(group);
       return true;
     }
 
@@ -422,6 +426,18 @@ export async function main(argv = process.argv.slice(2)) {
     emitCliEvent(sub.name);
   } catch {
     /* 관측 실패는 명령 실행에 영향 없음 */
+  }
+
+  // bare 그룹 명령(예: `qa-sdk gate`)은 그룹 도움말 출력
+  if (filteredArgs.length === 1) {
+    const candidate = filteredArgs[0];
+    const matchingGroup = TREE_COMMAND_GROUPS.find(
+      (g) => g.rootSegments.length === 1 && g.rootSegments[0] === candidate,
+    );
+    if (matchingGroup) {
+      printGroupHelp(matchingGroup);
+      return;
+    }
   }
 
   if (await tryExecuteTreeCommand(filteredArgs)) {

@@ -26,6 +26,18 @@ import {
   analyzeImpact,
 } from "dkg";
 
+// ── deprecation 경고 ────────────────────────────────
+//
+// top-level shortcut 명령은 향후 제거 예정. `qa-sdk dkg|spec` 정식 경로 사용을 안내한다.
+// QA_SDK_NO_DEPRECATION=1 로 경고 숨김 가능 (스크립트 호환성).
+// console.warn은 stderr로 나가므로 stdout 파이프에 영향 없음.
+function warnDeprecated(legacy: string, replacement: string): void {
+  if (process.env.QA_SDK_NO_DEPRECATION === "1") return;
+  console.warn(
+    `[deprecated] '${legacy}'은 향후 제거 예정. 대체: '${replacement}'`,
+  );
+}
+
 // ── qa encode ───────────────────────────────────────
 
 export function cliEncode(catalog: Catalog, args: {
@@ -34,6 +46,10 @@ export function cliEncode(catalog: Catalog, args: {
   version?: string;
   json?: boolean;
 }): void {
+  warnDeprecated(
+    "qa-sdk encode <prefix>",
+    "qa-sdk spec resolve --prefix <id> --values <json>",
+  );
   const prefix = catalog.prefixes[args.prefix];
   if (!prefix) {
     console.error(`Unknown prefix: ${args.prefix}`);
@@ -66,6 +82,7 @@ export function cliDecode(catalog: Catalog, args: {
   deep?: boolean;
   json?: boolean;
 }): void {
+  warnDeprecated("qa-sdk decode <addr>", "qa-sdk spec decode --address <addr>");
   let parsed;
   try {
     parsed = parseSerializedAddress(args.address);
@@ -143,6 +160,10 @@ export function cliResolve(catalog: Catalog, args: {
   to?: string;
   json?: boolean;
 }): void {
+  warnDeprecated(
+    "qa-sdk resolve <addr>",
+    "qa-sdk spec decode --address <addr> (자동 마이그레이션 옵션 포함)",
+  );
   try {
     const result = resolve(catalog, args.address, args.to);
     const values = Object.fromEntries(
@@ -175,6 +196,10 @@ export function cliFindVersion(catalog: Catalog, args: {
   axis: string;
   entry: string;
 }): void {
+  warnDeprecated(
+    "qa-sdk find-version <axis> <entry>",
+    "qa-sdk dkg axes 또는 qa-sdk prefix find",
+  );
   const versions = findVersionForEntry(catalog, args.axis, args.entry);
 
   if (versions.length === 0) {
@@ -204,6 +229,10 @@ export function cliFindVersion(catalog: Catalog, args: {
 export function cliDeriveRefs(catalog: Catalog, _args: {
   check?: boolean;
 }): void {
+  warnDeprecated(
+    "qa-sdk derive-refs",
+    "qa-sdk dkg overlaps",
+  );
   const semantics = getAllSemanticRefs();
 
   console.log("\n══ RefEntries 정합성 검증 ══\n");
@@ -241,6 +270,7 @@ export function cliImpact(
   graphOrConfig: Parameters<typeof analyzeImpact>[0] | Parameters<typeof bootstrapDkg>[0]["config"],
   args: { axis?: string; prefix?: string },
 ): void {
+  warnDeprecated("qa-sdk impact --axis <id>", "qa-sdk dkg impact <axis>");
   const graph = isGraphPort(graphOrConfig)
     ? graphOrConfig
     : bootstrapDkg({ catalog, config: graphOrConfig });
@@ -288,6 +318,7 @@ export function cliImpact(
 // ── qa list-prefixes ────────────────────────────────
 
 export function cliListPrefixes(catalog: Catalog, args: { json?: boolean }): void {
+  warnDeprecated("qa-sdk list-prefixes", "qa-sdk dkg prefixes");
   const prefixes = Object.entries(catalog.prefixes);
 
   if (args.json) {
@@ -321,6 +352,7 @@ export function cliListPrefixes(catalog: Catalog, args: { json?: boolean }): voi
 // ── qa list-axes ────────────────────────────────────
 
 export function cliListAxes(catalog: Catalog, args: { json?: boolean }): void {
+  warnDeprecated("qa-sdk list-axes", "qa-sdk dkg axes");
   const axes = Object.entries(catalog.axes);
 
   if (args.json) {
