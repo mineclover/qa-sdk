@@ -1,7 +1,6 @@
 {
   "name": "qa-sdk",
   "private": true,
-  "packageManager": "pnpm@10.30.3",
   "scripts": {
     "setup": "bash scripts/setup.sh",
     "health": "bash scripts/health.sh",
@@ -36,11 +35,6 @@
     "sim:scale": "tsx scripts/sim-scale.ts",
     "sim:smoke:full": "tsx scripts/sim-smoke-full.ts"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "better-sqlite3"
-    ]
-  },
   "devDependencies": {
     "@qa-sdk/scaffold": "workspace:*",
     "@typescript-eslint/parser": "^8.59.1",
@@ -48,7 +42,7 @@
     "concurrently": "^9.2.1",
     "eslint": "^10.3.0",
     "oxfmt": "^0.42.0",
-    "oxlint": "^1.62.0",
+    "oxlint": "~1.57.0",
     "protobufjs-cli": "^2.0.3",
     "sim-identifier-grammar": "workspace:*",
     "sim-service-catalog": "workspace:*",
@@ -57,5 +51,11 @@
     "typescript-eslint": "^8.59.1",
     "verdaccio": "^6.5.2",
     "vitest": "^1.6.1"
+  },
+  "packageManager": "pnpm@10.30.3",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
   }
 }
