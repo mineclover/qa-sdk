@@ -192,7 +192,7 @@
       "dependsOn": [
         "US-007"
       ],
-      "completionNotes": "Completed by agent"
+      "completionNotes": "Implemented grouping, hover, selection detail, clear selection, componentId/qaAddress/role grouping, and browser-verified selection/copy workflow with screenshot /tmp/rlsc-demo-perspective-selected.png."
     },
     {
       "id": "US-009",
@@ -219,7 +219,7 @@
       "dependsOn": [
         "US-008"
       ],
-      "completionNotes": "Completed by agent"
+      "completionNotes": "Implemented default plain identifier copy, optional JSON copy payload, containment leak issue markers, text overflow issue markers, and selected layer issue details."
     },
     {
       "id": "US-010",
@@ -239,12 +239,13 @@
         "pnpm --filter rlsc test passes"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-005",
         "US-006"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-011",
@@ -268,12 +269,13 @@
         "Confirm hover/select/copy interactions work in the browser"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-009",
         "US-010"
-      ]
+      ],
+      "completionNotes": "Migrated demo to @qa-sdk/rlsc-analysis, @qa-sdk/rlsc-analysis/browser, and @qa-sdk/rlsc-perspective; browser verification shows leaks=1, selected identifier copied, console errors=0."
     },
     {
       "id": "US-012",
@@ -295,14 +297,15 @@
         "pnpm --filter rlsc test passes"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-011"
-      ]
+      ],
+      "completionNotes": "Added/updated package docs for rlsc-analysis, rlsc-perspective, and rlsc compatibility boundaries."
     }
   ],
   "metadata": {
-    "updatedAt": "2026-05-04T11:44:59.213Z"
+    "updatedAt": "2026-05-04T11:48:26.139Z"
   }
 }

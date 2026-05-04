@@ -112,3 +112,32 @@ export type {
   TextPreparedMap,
   TextOccupancyOptions,
 } from "./text-occupancy.js";
+
+// Split-package compatibility APIs
+export {
+  DATA_QA_ADDRESS_ATTRIBUTE,
+  DATA_COMPONENT_ID_ATTRIBUTE,
+  DATA_DEBUG_LABEL_ATTRIBUTE,
+  DATA_BOUNDARY_ATTRIBUTE,
+  QA_ADDRESS_ATTRIBUTE,
+  COMPONENT_ID_ATTRIBUTE,
+  DEBUG_LABEL_ATTRIBUTE,
+  BOUNDARY_ATTRIBUTE,
+  createMetadataAttributes,
+  annotateElement,
+  createScreenIdentifier,
+  createAreaDocument,
+  analyzeAreas,
+  detectAreaOverflow,
+} from "@qa-sdk/rlsc-analysis";
+export type {
+  ScreenIdentifier,
+  ScreenMetadata,
+  MetadataAttributes,
+  MetadataAttributeTarget,
+  AreaOverflowIssue,
+  AreaDocumentInput,
+  AreaAnalysisOptions,
+  AreaAnalysisNode,
+  AreaAnalysisResult,
+} from "@qa-sdk/rlsc-analysis";

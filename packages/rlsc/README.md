@@ -20,12 +20,16 @@
 
 ## Compatibility Exports
 
+The `rlsc` package remains the compatibility package for existing consumers. Imports from `rlsc`, `rlsc/analysis`, `rlsc/browser`, and `rlsc/rendering` are expected to keep working while newer code may import directly from split packages.
+
 ```ts
-import { analyzeAreas } from "rlsc/analysis";
+import { analyzeAreas, createScreenIdentifier } from "rlsc";
+import { detectAreaOverflow } from "rlsc/analysis";
 import { collectLayoutWithText } from "rlsc/browser";
 import { renderToSVG } from "rlsc/rendering";
 ```
 
+- `rlsc` → legacy RLSC collection/query/rendering APIs plus selected analysis helpers from `@qa-sdk/rlsc-analysis`
 - `rlsc/analysis` → `@qa-sdk/rlsc-analysis`
 - `rlsc/browser` → `@qa-sdk/rlsc-analysis/browser`
 - `rlsc/rendering` → 기존 SVG/canvas 렌더링
