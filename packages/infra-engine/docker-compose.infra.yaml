@@ -123,9 +123,22 @@ services:
       - max_replication_slots=4
       - -c
       - hot_standby=on
+      # 커스텀 pg_hba.conf — docker bridge 서브넷에서 streaming replication 허용.
+      # PGDATA 가 보존되어도 본 파일이 마운트되면 인증 정책이 영속화된다.
+      - -c
+      - hba_file=/etc/postgresql/pg_hba.conf
+      # password_encryption=md5: pg_hba METHOD=md5 와 일치시켜 신규 role 생성/ALTER 시
+      # 항상 md5 hash 로 저장. 기존 PGDATA 의 md5 role 호환성도 유지.
+      - -c
+      - password_encryption=md5
     env_file: .env.docker
     environment:
       POSTGRES_DB: postgres
+      # 비초기화 PGDATA 에서도 init 스크립트를 수동 재적용할 수 있도록
+      # postgres docker image 의 password 인코딩을 md5 로 고정한다.
+      # (pg_hba.conf METHOD=md5 와 일치 → 새 role 생성 시 hash 호환성 보장)
+      POSTGRES_INITDB_ARGS: "--auth-host=md5 --auth-local=trust"
+      POSTGRES_HOST_AUTH_METHOD: md5
       # init.sql의 \getenv가 읽을 환경 변수 주입
       QA_SDK_AUTH_PASSWORD: ${QA_SDK_AUTH_PASSWORD}
       QA_SDK_AUDIT_PASSWORD: ${QA_SDK_AUDIT_PASSWORD}
@@ -142,6 +155,7 @@ services:
       - ./init/qa-sdk-db.sql:/docker-entrypoint-initdb.d/00-qa-sdk-db.sql:ro
       - ./init/qa-sdk-db-helpers.sql:/docker-entrypoint-initdb.d/10-qa-sdk-db-helpers.sql:ro
       - ./init/qa-sdk-db-replication.sql:/docker-entrypoint-initdb.d/20-qa-sdk-db-replication.sql:ro
+      - ./init/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d qa_sdk"]
       interval: 5s
