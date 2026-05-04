@@ -63,6 +63,12 @@ jobs:
         # qa-scaffold bin 은 dist/cli.js 를 가리키므로 빌드가 선행되어야 한다.
         run: pnpm --filter @qa-sdk/scaffold build
 
+      - name: Relink workspace bins (qa-scaffold)
+        # pnpm install 시점에 dist/cli.js 가 없으면 .bin/qa-scaffold shim 생성이
+        # 스킵된다 (WARN: Failed to create bin ... ENOENT). 빌드 직후 install 을
+        # 한 번 더 돌려 누락된 bin shim 을 복구한다.
+        run: pnpm install --frozen-lockfile
+
       - name: Validate every migration slice (per-slice validator)
         shell: bash
         run: |
