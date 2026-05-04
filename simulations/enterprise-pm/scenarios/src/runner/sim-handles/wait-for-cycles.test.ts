@@ -28,7 +28,7 @@ describe("wait-for-cycles handle", () => {
     let nowVal = 0;
     const sleeps: number[] = [];
     const wait = createWaitForCycles({
-      auditUrl: "http://x",
+      controllerUrl: "http://x",
       pollIntervalMs: 10,
       fetchImpl,
       nowImpl: () => {
@@ -57,7 +57,7 @@ describe("wait-for-cycles handle", () => {
     });
     let nowVal = 0;
     const wait = createWaitForCycles({
-      auditUrl: "http://x",
+      controllerUrl: "http://x",
       pollIntervalMs: 10,
       fetchImpl,
       nowImpl: () => {
@@ -71,7 +71,7 @@ describe("wait-for-cycles handle", () => {
 
   it("n이 양의 정수가 아니면 throw", async () => {
     const wait = createWaitForCycles({
-      auditUrl: "http://x",
+      controllerUrl: "http://x",
       fetchImpl: (async () => ({
         ok: true,
         status: 200,
@@ -99,7 +99,7 @@ describe("wait-for-cycles handle", () => {
       },
     });
     const wait = createWaitForCycles({
-      auditUrl: "http://x",
+      controllerUrl: "http://x",
       fetchImpl,
       sleepImpl: async () => {},
       nowImpl: () => 0,

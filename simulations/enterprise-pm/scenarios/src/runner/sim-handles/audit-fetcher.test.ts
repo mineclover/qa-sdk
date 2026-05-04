@@ -54,11 +54,11 @@ describe("audit-fetcher handle", () => {
     const { fetch, calls } = mockFetch([
       {
         urlMatch: (u) => u.includes("/v1/decisions"),
-        response: { ok: true, status: 200, body: { decisions } },
+        response: { ok: true, status: 200, body: { items: decisions } },
       },
     ]);
     const f = createAuditFetcher({
-      auditUrl: "http://test/",
+      controllerUrl: "http://test/",
       fetchImpl: fetch,
     });
     const result = await f.queryDecisions({ cycleIds: ["cyc-1", "cyc-2"] });
@@ -69,7 +69,7 @@ describe("audit-fetcher handle", () => {
   it("queryDecisions가 빈 cycleIds에 대해 [] 반환 (네트워크 호출 없음)", async () => {
     const fetchImpl = vi.fn();
     const f = createAuditFetcher({
-      auditUrl: "http://test",
+      controllerUrl: "http://test",
       fetchImpl: fetchImpl as unknown as FetchLike,
     });
     const result = await f.queryDecisions({ cycleIds: [] });
@@ -116,10 +116,10 @@ describe("audit-fetcher handle", () => {
     const { fetch } = mockFetch([
       {
         urlMatch: () => true,
-        response: { ok: true, status: 200, body: { decisions } },
+        response: { ok: true, status: 200, body: { items: decisions } },
       },
     ]);
-    const f = createAuditFetcher({ auditUrl: "http://x", fetchImpl: fetch });
+    const f = createAuditFetcher({ controllerUrl: "http://x", fetchImpl: fetch });
     const first = await f.queryFirstDecision({
       pass: "safety",
       cycleIds: ["cyc-1", "cyc-2"],
@@ -135,7 +135,7 @@ describe("audit-fetcher handle", () => {
         response: { ok: true, status: 200, body: { count: 3 } },
       },
     ]);
-    const f = createAuditFetcher({ auditUrl: "http://x", fetchImpl: fetch });
+    const f = createAuditFetcher({ controllerUrl: "http://x", fetchImpl: fetch });
     const n = await f.countAlerts({
       cycleIds: ["cyc-1"],
       kind: "audit-critical-anomaly",
@@ -151,7 +151,7 @@ describe("audit-fetcher handle", () => {
         response: { ok: false, status: 500, body: {}, text: "boom" },
       },
     ]);
-    const f = createAuditFetcher({ auditUrl: "http://x", fetchImpl: fetch });
+    const f = createAuditFetcher({ controllerUrl: "http://x", fetchImpl: fetch });
     await expect(
       f.queryDecisions({ cycleIds: ["c"] }),
     ).rejects.toThrow(/status=500/);
@@ -164,7 +164,7 @@ describe("audit-fetcher handle", () => {
         response: { ok: true, status: 200, body: { wrong: true } },
       },
     ]);
-    const f = createAuditFetcher({ auditUrl: "http://x", fetchImpl: fetch });
+    const f = createAuditFetcher({ controllerUrl: "http://x", fetchImpl: fetch });
     await expect(
       f.queryDecisions({ cycleIds: ["c"] }),
     ).rejects.toThrow(/invalid response shape/);

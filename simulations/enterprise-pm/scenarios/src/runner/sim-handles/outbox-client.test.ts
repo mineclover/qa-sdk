@@ -29,7 +29,22 @@ describe("outbox-client handle", () => {
     const ids = await c.insertEvents(3);
     expect(ids).toEqual(["e1", "e2", "e3"]);
     expect(calls[0].url).toBe("http://approval/admin/outbox/insert");
-    expect(JSON.parse(calls[0].body!)).toEqual({ count: 3 });
+    // Stage 4 endpoint contract: POST body { events: [...] } (array of grammar-compliant events).
+    const parsed = JSON.parse(calls[0].body!) as {
+      events: Array<{
+        aggregateId: string;
+        eventName: string;
+        payload: Record<string, unknown>;
+        occurredAt: number;
+      }>;
+    };
+    expect(Array.isArray(parsed.events)).toBe(true);
+    expect(parsed.events).toHaveLength(3);
+    for (const ev of parsed.events) {
+      expect(ev.eventName).toBe("approval.budget.submitted");
+      expect(typeof ev.aggregateId).toBe("string");
+      expect(typeof ev.occurredAt).toBe("number");
+    }
   });
 
   it("insertEvents count invalid → throw", async () => {
