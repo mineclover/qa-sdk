@@ -13,7 +13,7 @@ def:
   tags: [motion, frontend, runtime, contract]
   links:
     - target: viz-language-system
-      type: depends_on
+      type: refines
     - target: motion-content-contract
       type: depends_on
   sources:

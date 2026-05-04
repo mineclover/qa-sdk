@@ -13,7 +13,7 @@ def:
   tags: [motion, demo, frontend]
   links:
     - target: viz-language-system
-      type: depends_on
+      type: refines
     - target: motion-content-editor-demo
       type: depends_on
     - target: inspector-engine
