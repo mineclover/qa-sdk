@@ -8,6 +8,7 @@ import { env } from "./config/env.js";
 import { createLogger } from "./lib/logger.js";
 import { createSubscriberLogger } from "./lib/bitmap-cache-logger.js";
 import { AUDIT_BROWSER_SLICE_MODULES } from "./audit-browser-slices.registry.js";
+import { RecorderWriteModule } from "./recorder-write/recorder-write.module.js";
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AUDIT_BROWSER_SLICE_MODULES } from "./audit-browser-slices.registry.js"
       lruMax: 10_000,
       logger: createSubscriberLogger(createLogger("sim-audit-browser-api.bitmap-cache")),
     }),
+    RecorderWriteModule,
     ...AUDIT_BROWSER_SLICE_MODULES,
   ],
 })
