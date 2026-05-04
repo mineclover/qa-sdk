@@ -16,6 +16,12 @@ def:
       type: refs
     - target: sim-outbox-view
       type: refs
+    - target: motion-content-system
+      type: refs
+    - target: motion-content-editor-system
+      type: refs
+    - target: motion-content-editor-demo-system
+      type: refs
     - target: wi-system
       type: refs
     - target: weighted-index-system
