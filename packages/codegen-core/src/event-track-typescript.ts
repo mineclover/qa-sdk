@@ -77,10 +77,10 @@ export interface TrackCodegenOptions {
 
 function computeHash(events: readonly EventDef[], mappings: readonly EventMapping[]): string {
   const parts: string[] = [];
-  for (const e of [...events].sort((a, b) => a.event_key.localeCompare(b.event_key))) {
+  for (const e of [...events].toSorted((a, b) => a.event_key.localeCompare(b.event_key))) {
     parts.push(`${e.event_key}:${e.event_version}:${e.category}`);
   }
-  for (const m of [...mappings].sort((a, b) => a.event_key.localeCompare(b.event_key))) {
+  for (const m of [...mappings].toSorted((a, b) => a.event_key.localeCompare(b.event_key))) {
     parts.push(`${m.event_key}:${m.domain}:${m.prefixes.map(p => p.prefixId).join(",")}`);
   }
   return createHash("sha256").update(parts.join("|")).digest("hex").slice(0, 12);
@@ -152,10 +152,10 @@ export function generateTrackCode(
 
   // 매핑이 있는 이벤트만 track 함수 생성 (매핑 없으면 prefix 바인딩 불가)
   const trackableEvents = events.filter(e => mappingSet.has(e.event_key));
-  const sorted = [...trackableEvents].sort((a, b) => a.event_key.localeCompare(b.event_key));
+  const sorted = [...trackableEvents].toSorted((a, b) => a.event_key.localeCompare(b.event_key));
   const sortedMappings = [...mappings]
     .filter(m => trackableEvents.some(e => e.event_key === m.event_key))
-    .sort((a, b) => a.event_key.localeCompare(b.event_key));
+    .toSorted((a, b) => a.event_key.localeCompare(b.event_key));
 
   // 카테고리 그룹
   const categories = new Map<string, EventDef[]>();
@@ -195,7 +195,7 @@ function genEventKeys(
   lines.push(``);
 
   // 카테고리별 유니온
-  for (const [cat, evts] of [...categories.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+  for (const [cat, evts] of [...categories.entries()].toSorted((a, b) => a[0].localeCompare(b[0]))) {
     lines.push(`/** ${cat} 카테고리 이벤트 */`);
     lines.push(`export type ${toPascal(cat)}EventKey =`);
     for (let i = 0; i < evts.length; i++) {
@@ -393,7 +393,7 @@ function genIndex(h: string, events: EventDef[]): string {
   lines.push(`export { EVENT_KEYS } from "./event-keys.js";`);
 
   // 카테고리별 EventKey 타입들도 re-export
-  const cats = [...new Set(events.map(e => e.category))].sort();
+  const cats = [...new Set(events.map(e => e.category))].toSorted();
   for (const cat of cats) {
     lines.push(`export type { ${toPascal(cat)}EventKey } from "./event-keys.js";`);
   }

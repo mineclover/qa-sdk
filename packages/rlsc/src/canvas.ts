@@ -291,7 +291,7 @@ export function renderToSVG(
   const visibleNodes = allNodes.filter((n) => n.visible);
 
   // z-index 오름차순 정렬
-  const sorted = [...visibleNodes].sort((a, b) => a.zIndex - b.zIndex);
+  const sorted = [...visibleNodes].toSorted((a, b) => a.zIndex - b.zIndex);
 
   const colorMap = assignColors(sorted, options);
 
@@ -383,7 +383,7 @@ export function renderToCanvas(
   const visibleNodes = allNodes.filter((n) => n.visible);
 
   // z-index 오름차순 정렬
-  const sorted = [...visibleNodes].sort((a, b) => a.zIndex - b.zIndex);
+  const sorted = [...visibleNodes].toSorted((a, b) => a.zIndex - b.zIndex);
 
   const colorMap = assignColors(sorted, options);
 

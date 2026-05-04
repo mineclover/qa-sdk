@@ -51,7 +51,7 @@ function candidateCollisionSignature(
 ): string {
   const physicalRefs = candidate.physicalRefs
     .map((ref) => `${ref.kind}:${ref.ref}`)
-    .sort()
+    .toSorted()
     .join("|");
   return [
     candidate.kind,

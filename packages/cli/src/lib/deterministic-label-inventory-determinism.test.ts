@@ -47,7 +47,7 @@ describe("deterministic-label-registry — byte-identical fixture rerun", () => 
     };
     const reverseOptions = {
       ...forwardOptions,
-      documents: [...documents].reverse(),
+      documents: [...documents].toReversed(),
     };
 
     const forward = await buildDeterministicLabelInventory(forwardOptions);

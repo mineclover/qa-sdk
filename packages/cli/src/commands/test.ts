@@ -282,7 +282,7 @@ export function testStatus(opts: { db?: string }): void {
   if (Object.keys(byPhase).length > 1 || !byPhase["(미지정)"]) {
     console.log("\n단계별 분포");
     console.log("─".repeat(40));
-    for (const [phase, count] of Object.entries(byPhase).sort((a, b) => b[1] - a[1])) {
+    for (const [phase, count] of Object.entries(byPhase).toSorted((a, b) => b[1] - a[1])) {
       const bar = "█".repeat(count);
       console.log(`${phase.padEnd(18)} ${String(count).padStart(4)}  ${bar}`);
     }
@@ -322,7 +322,7 @@ export function testReport(opts: { db?: string }): void {
     return;
   }
 
-  const svcs = [...new Set(all.map(s => s.primarySvc))].sort();
+  const svcs = [...new Set(all.map(s => s.primarySvc))].toSorted();
 
   const colWidth = 10;
   const header = "서비스".padEnd(30) + KINDS.map(k => k.slice(0, colWidth - 1).padEnd(colWidth)).join("");

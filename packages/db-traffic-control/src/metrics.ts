@@ -58,7 +58,7 @@ export class InMemoryMetricsCollector implements TrafficMetricsCollector {
 
     const results: FingerprintAggregation[] = [];
     for (const [fingerprint, events] of groups) {
-      const durations = events.map((e) => e.durationMs).sort((a, b) => a - b);
+      const durations = events.map((e) => e.durationMs).toSorted((a, b) => a - b);
       const verdicts: Record<Verdict, number> = { allow: 0, throttled: 0, rejected: 0 };
       for (const e of events) verdicts[e.verdict] += 1;
 
@@ -71,7 +71,7 @@ export class InMemoryMetricsCollector implements TrafficMetricsCollector {
       });
     }
 
-    return results.sort((a, b) => b.count - a.count);
+    return results.toSorted((a, b) => b.count - a.count);
   }
 
   /** budget별 집계 */
@@ -111,7 +111,7 @@ export class InMemoryMetricsCollector implements TrafficMetricsCollector {
       });
     }
 
-    return results.sort((a, b) => b.totalQueries - a.totalQueries);
+    return results.toSorted((a, b) => b.totalQueries - a.totalQueries);
   }
 
   /** tags.event_key가 있는 쿼리에서 event_key 목록 추출 (중복 제거) */

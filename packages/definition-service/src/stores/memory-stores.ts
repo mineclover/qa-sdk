@@ -186,12 +186,7 @@ export class InMemoryDocStore implements DocStore {
       .flatMap((doc) =>
         doc.links
           .filter((link) => link.target === docId)
-          .map((link) => ({
-            source: doc.docId,
-            type: link.type,
-            ...(doc.address ? { sourceAddress: doc.address } : {}),
-            ...(targetAddress ? { targetAddress } : {}),
-          })),
+          .map((link) => (Object.assign({source:doc.docId,type:link.type}, doc.address?{sourceAddress:doc.address}:{}, targetAddress?{targetAddress}:{}))),
       )
       .toSorted((left, right) =>
         left.source.localeCompare(right.source) || left.type.localeCompare(right.type),
@@ -202,14 +197,7 @@ export class InMemoryDocStore implements DocStore {
     const doc = this.docs.get(docId);
     if (!doc) return [];
     return doc.links
-      .map((link) => ({
-        target: link.target,
-        type: link.type,
-        ...(doc.address ? { sourceAddress: doc.address } : {}),
-        ...(this.docs.get(link.target)?.address
-          ? { targetAddress: this.docs.get(link.target)?.address }
-          : {}),
-      }))
+      .map((link) => (Object.assign({target:link.target,type:link.type}, doc.address?{sourceAddress:doc.address}:{}, this.docs.get(link.target)?.address?{targetAddress:this.docs.get(link.target)?.address}:{})))
       .toSorted((left, right) =>
         left.target.localeCompare(right.target) || left.type.localeCompare(right.type),
       );

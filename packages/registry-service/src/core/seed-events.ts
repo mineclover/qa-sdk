@@ -64,14 +64,14 @@ function mergeMaterializedRecord(
   if (!existing) {
     records.set(key, {
       ...next,
-      prefixes: [...next.prefixes].sort((a, b) => a.localeCompare(b)),
-      packs: [...next.packs].sort((a, b) => a.localeCompare(b)),
+      prefixes: [...next.prefixes].toSorted((a, b) => a.localeCompare(b)),
+      packs: [...next.packs].toSorted((a, b) => a.localeCompare(b)),
     });
     return;
   }
 
-  existing.prefixes = [...new Set([...existing.prefixes, ...next.prefixes])].sort((a, b) => a.localeCompare(b));
-  existing.packs = [...new Set([...existing.packs, ...next.packs])].sort((a, b) => a.localeCompare(b));
+  existing.prefixes = [...new Set([...existing.prefixes, ...next.prefixes])].toSorted((a, b) => a.localeCompare(b));
+  existing.packs = [...new Set([...existing.packs, ...next.packs])].toSorted((a, b) => a.localeCompare(b));
 }
 
 /** EventSchema seed — event-catalog + prefix-mapping 기반 자동 등록 */

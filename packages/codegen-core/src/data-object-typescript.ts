@@ -36,8 +36,8 @@ export interface DataObjectCodegenOptions {
 
 function computeBindingsHash(bindings: readonly DataObjectBinding[]): string {
   const parts = bindings
-    .map(b => `${b.schemaId}:${b.prefixId}:${b.prefixVersion}:${Object.keys(b.columnToAxis).sort().join(",")}`)
-    .sort();
+    .map(b => `${b.schemaId}:${b.prefixId}:${b.prefixVersion}:${Object.keys(b.columnToAxis).toSorted().join(",")}`)
+    .toSorted();
   return createHash("sha256").update(parts.join("|")).digest("hex").slice(0, 12);
 }
 
@@ -48,7 +48,7 @@ export function generateDataObjectBindings(
   options?: DataObjectCodegenOptions,
 ): DataObjectCodegenResult {
   const prefix = options?.outDir ? `${options.outDir}/` : "";
-  const sorted = [...bindings].sort((a, b) => a.schemaId.localeCompare(b.schemaId));
+  const sorted = [...bindings].toSorted((a, b) => a.schemaId.localeCompare(b.schemaId));
   const ts = new Date().toISOString();
 
   const files: DataObjectCodegenFile[] = [
@@ -82,7 +82,7 @@ function generateDataObjectsFile(bindings: readonly DataObjectBinding[], ts: str
     lines.push(`  prefixId: "${b.prefixId}",`);
     lines.push(`  prefixVersion: "${b.prefixVersion}",`);
     lines.push(`  columnToAxis: {`);
-    for (const [col, mapping] of Object.entries(b.columnToAxis).sort((a, b) => a[0].localeCompare(b[0]))) {
+    for (const [col, mapping] of Object.entries(b.columnToAxis).toSorted((a, b) => a[0].localeCompare(b[0]))) {
       const seg = mapping.segmentId ? `, segmentId: "${mapping.segmentId}"` : "";
       lines.push(`    ${col}: { dimLabel: "${mapping.dimLabel}"${seg} },`);
     }

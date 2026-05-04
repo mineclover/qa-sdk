@@ -162,7 +162,7 @@ export class EventCatalogService {
 
   async listAdoptions(catalogId: string) {
     const parsed = await this.readRawAdoptions(catalogId);
-    return parsed.map((item) => this.normalizeAdoptionRecord(item)).sort((a, b) => a.serviceId.localeCompare(b.serviceId));
+    return parsed.map((item) => this.normalizeAdoptionRecord(item)).toSorted((a, b) => a.serviceId.localeCompare(b.serviceId));
   }
 
   async getServiceAdoption(catalogId: string, serviceId: string) {
@@ -234,9 +234,9 @@ export class EventCatalogService {
       if (!record.description?.includes("packs:")) recordsWithoutPackMetadata++;
     }
 
-    const prefixesWithoutOwnership = [...prefixUsage].filter((prefixId) => !ownershipSet.has(prefixId)).sort((a, b) => a.localeCompare(b));
+    const prefixesWithoutOwnership = [...prefixUsage].filter((prefixId) => !ownershipSet.has(prefixId)).toSorted((a, b) => a.localeCompare(b));
     const packRefs = normalizePackRefs(adoption?.eventPacks);
-    const missingPackIds = packRefs.map((ref) => ref.packId).filter((packId) => !getPack(packId)).sort((a, b) => a.localeCompare(b));
+    const missingPackIds = packRefs.map((ref) => ref.packId).filter((packId) => !getPack(packId)).toSorted((a, b) => a.localeCompare(b));
     const adoptedPrefixSet = new Set<string>();
     for (const ref of packRefs) {
       const pack = getPack(ref.packId);
@@ -250,7 +250,7 @@ export class EventCatalogService {
     }
     const adoptedPrefixesWithoutOwnership = [...adoptedPrefixSet]
       .filter((prefixId) => !ownershipSet.has(prefixId))
-      .sort((a, b) => a.localeCompare(b));
+      .toSorted((a, b) => a.localeCompare(b));
     const stalePackVersions = packRefs
       .filter((ref) => {
         const pack = getPack(ref.packId);
@@ -270,7 +270,7 @@ export class EventCatalogService {
       },
       materialized: {
         count: materialized.length,
-        eventKeys: materialized.map((record) => record.eventKey).sort((a, b) => a.localeCompare(b)),
+        eventKeys: materialized.map((record) => record.eventKey).toSorted((a, b) => a.localeCompare(b)),
         records: materialized.map((record) => ({
           eventKey: record.eventKey,
           eventVersion: record.eventVersion,
@@ -349,7 +349,7 @@ export class EventCatalogService {
     const serviceIds = [...new Set([
       ...adoptions.map((item) => item.serviceId),
       ...services.filter((item) => activePackOwners.has(item.serviceId)).map((item) => item.serviceId),
-    ])].sort((a, b) => a.localeCompare(b));
+    ])].toSorted((a, b) => a.localeCompare(b));
     const results = await Promise.all(serviceIds.map((serviceId) => this.checkServiceTaxonomy(catalogId, serviceId)));
     const failing = results.filter((result) => !result.ok);
     return {

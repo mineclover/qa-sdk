@@ -46,7 +46,7 @@ function unionRect(a: LayoutRect, b: LayoutRect): LayoutRect {
 /** 숫자 배열의 중앙값 반환 */
 function median(values: number[]): number {
   if (values.length === 0) return 0;
-  const sorted = [...values].sort((a, b) => a - b);
+  const sorted = [...values].toSorted((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   if (sorted.length % 2 === 0) {
     return (sorted[mid - 1]! + sorted[mid]!) / 2;
@@ -158,10 +158,10 @@ export function detectGridPattern(
   // 행 간격 편차 검증
   const rowStarts = rowGroups
     .map((g) => Math.min(...g))
-    .sort((a, b) => a - b);
+    .toSorted((a, b) => a - b);
   const colStarts = colGroups
     .map((g) => Math.min(...g))
-    .sort((a, b) => a - b);
+    .toSorted((a, b) => a - b);
 
   if (rowStarts.length > 1) {
     const rowGaps: number[] = [];
@@ -316,7 +316,7 @@ export function detectColumnSystem(
   if (visible.length === 0) return null;
 
   // x 좌표 클러스터링 (왼쪽 edge 기준)
-  const xValues = visible.map((n) => n.rect.x).sort((a, b) => a - b);
+  const xValues = visible.map((n) => n.rect.x).toSorted((a, b) => a - b);
   const clusters: number[][] = [];
 
   for (const x of xValues) {
@@ -349,7 +349,7 @@ export function detectColumnSystem(
   // 클러스터 대표 x값 (각 클러스터의 첫 번째)
   const clusterXs = clusters
     .map((g) => Math.min(...g))
-    .sort((a, b) => a - b);
+    .toSorted((a, b) => a - b);
 
   // gutterPx: 인접 클러스터 간격의 중앙값
   const gaps: number[] = [];
@@ -402,7 +402,7 @@ export function measureSpacing(
   }
 
   // 중복 제거·오름차순 정렬
-  const values = [...new Set(rawGaps)].sort((a, b) => a - b);
+  const values = [...new Set(rawGaps)].toSorted((a, b) => a - b);
 
   if (values.length === 0) return { values, base: null };
 
@@ -436,7 +436,7 @@ export function measureAspectRatios(
 
   return [...countMap.entries()]
     .map(([ratio, count]) => ({ ratio, count }))
-    .sort((a, b) => b.count - a.count);
+    .toSorted((a, b) => b.count - a.count);
 }
 
 /**

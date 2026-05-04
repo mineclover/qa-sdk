@@ -399,7 +399,7 @@ export function layoutOntologyGraph(
   });
 
   const width = Math.max(400, paddingX * 2 + laneOrder.length * laneGap);
-  const height = Math.max(240, paddingY * 2 + Math.max(...[...laneCounts.values(), 1]) * rowGap);
+  const height = Math.max(240, paddingY * 2 + Math.max(...laneCounts.values(), 1) * rowGap);
 
   return { nodes, edges: model.edges, width, height };
 }

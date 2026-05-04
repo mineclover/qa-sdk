@@ -86,8 +86,8 @@ function renderBoundaries() {
   const layer = svg.append("g").attr("class", "boundaries");
 
   grid.boundaries.forEach((boundary: ConceptGridBoundary) => {
-    const cols = boundary.columnIds.map((id: string) => columnIndex.get(id)!).sort((a: number, b: number) => a - b);
-    const rows = boundary.rowIds.map((id: string) => rowIndex.get(id)!).sort((a: number, b: number) => a - b);
+    const cols = boundary.columnIds.map((id: string) => columnIndex.get(id)!).toSorted((a: number, b: number) => a - b);
+    const rows = boundary.rowIds.map((id: string) => rowIndex.get(id)!).toSorted((a: number, b: number) => a - b);
     const x = cellX(cols[0]) - 18;
     const y = cellY(rows[0]) - 22;
     const w = cellX(cols[cols.length - 1]) + CELL_BASE_W - x + 18;

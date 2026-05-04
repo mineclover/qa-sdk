@@ -98,7 +98,7 @@ export function classifyLayout(metrics: LayoutMetrics): LayoutPattern {
   // spacing
   if (metrics.spacingValues.length > 0) {
     const base = metrics.spacingBase ?? undefined;
-    const scale = [...metrics.spacingValues].sort((a, b) => a - b);
+    const scale = [...metrics.spacingValues].toSorted((a, b) => a - b);
     let consistent = false;
     if (base !== undefined && base > 0) {
       consistent = scale.every((v) => v % base === 0);

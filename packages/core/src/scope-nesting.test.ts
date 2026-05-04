@@ -70,7 +70,7 @@ describe("validateScopeNesting", () => {
 
   it("정상 nesting — descent path가 모든 계약을 추적", () => {
     const result = validateScopeNesting(createPlaybookNesting());
-    const contractIds = result.descentPaths.map(d => d.contractId).sort();
+    const contractIds = result.descentPaths.map(d => d.contractId).toSorted();
     expect(contractIds).toEqual([
       "logging-session",
       "persist-adapter",
@@ -83,7 +83,7 @@ describe("validateScopeNesting", () => {
     const result = validateScopeNesting(createPlaybookNesting());
     const loggingPath = result.descentPaths.find(d => d.contractId === "logging-session")!;
     expect(loggingPath.providedBy).toBe("qa-bridge");
-    expect(loggingPath.consumedBy.sort()).toEqual(["feature-context", "handlers"]);
+    expect(loggingPath.consumedBy.toSorted()).toEqual(["feature-context", "handlers"]);
     expect(loggingPath.providerDepth).toBe(0);
   });
 

@@ -43,7 +43,7 @@ export function getIncidentEscalationData(
   ) as Partial<Record<IncidentEscalationField, string>>;
   const envelopes = context.bridge.getDebugEnvelopes();
   const latestEnvelope = envelopes[envelopes.length - 1];
-  const latestRecords = flattenRecords(envelopes).slice(-6).reverse();
+  const latestRecords = flattenRecords(envelopes).slice(-6).toReversed();
 
   return {
     draft: state.draft,

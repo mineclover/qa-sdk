@@ -171,7 +171,7 @@ export function generateIncludeList(facetFiles: FacetFile[], deps: DepFile[]): s
   for (const f of facetFiles) paths.add(f.relativePath);
   for (const d of deps) paths.add(d.relativePath);
 
-  const lines = [...paths].sort().map(p => `+ ${p}`);
+  const lines = [...paths].toSorted().map(p => `+ ${p}`);
   lines.push("- **");
   return lines.join("\n") + "\n";
 }

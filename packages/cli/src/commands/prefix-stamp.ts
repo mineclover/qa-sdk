@@ -819,7 +819,7 @@ export function prefixStamp(catalog: Catalog, opts: StampOptions = {}): void {
         }
       } else {
         // 뒤에서부터 삽입 (행 번호 안 밀리게)
-        const sorted = insertions.sort((a, b) => b.line - a.line);
+        const sorted = insertions.toSorted((a, b) => b.line - a.line);
         for (const ins of sorted) {
           lines.splice(ins.line, 0, ins.content);
         }
@@ -1022,7 +1022,7 @@ export function prefixFind(
       counts.set(m.stamp.prefixId, (counts.get(m.stamp.prefixId) || 0) + 1);
     }
     console.log("prefix 사용 현황:");
-    for (const [id, count] of [...counts.entries()].sort((a, b) => b[1] - a[1])) {
+    for (const [id, count] of [...counts.entries()].toSorted((a, b) => b[1] - a[1])) {
       console.log(`  ${id}: ${count}곳`);
     }
     return;

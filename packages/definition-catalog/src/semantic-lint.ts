@@ -59,7 +59,7 @@ export function collectSemanticFamilies(
   const families = SEMANTIC_LINT_FAMILIES
     .filter((family) => resolvesSemanticFamily(docId, registry, family))
     .map((family) => family.id)
-    .sort();
+    .toSorted();
 
   const result = [...families];
   cache.set(docId, result);

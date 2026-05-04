@@ -167,7 +167,7 @@ function cloneSmokeCheckSummary(
     checkCount: summary?.checkCount ?? 0,
     passedCheckCount: summary?.passedCheckCount ?? 0,
     failedCheckCount: summary?.failedCheckCount ?? 0,
-    byAllocationId: { ...(summary?.byAllocationId ?? {}) },
+    byAllocationId: { ...summary?.byAllocationId },
   };
 }
 

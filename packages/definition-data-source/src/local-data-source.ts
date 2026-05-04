@@ -319,12 +319,7 @@ export class LocalDataSource implements DefDataSource {
       source_id: string;
       link_type: string;
       source_address: string | null;
-    }[]).map((r) => ({
-      source: r.source_id,
-      type: r.link_type,
-      ...(r.source_address ? { sourceAddress: r.source_address } : {}),
-      ...(targetAddress ? { targetAddress } : {}),
-    }));
+    }[]).map((r) => (Object.assign({source:r.source_id,type:r.link_type}, r.source_address?{sourceAddress:r.source_address}:{}, targetAddress?{targetAddress}:{})));
   }
 
   async getSyntheticIncomingLinks(
@@ -346,12 +341,7 @@ export class LocalDataSource implements DefDataSource {
       target_id: string;
       link_type: string;
       target_address: string | null;
-    }[]).map((r) => ({
-      target: r.target_id,
-      type: r.link_type,
-      ...(sourceAddress ? { sourceAddress } : {}),
-      ...(r.target_address ? { targetAddress: r.target_address } : {}),
-    }));
+    }[]).map((r) => (Object.assign({target:r.target_id,type:r.link_type}, sourceAddress?{sourceAddress}:{}, r.target_address?{targetAddress:r.target_address}:{})));
   }
 
   /** 전체 링크를 한번에 조회 — validate() 등 일괄 처리용. source_id 기준 그룹핑. */

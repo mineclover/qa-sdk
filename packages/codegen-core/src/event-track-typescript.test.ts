@@ -104,7 +104,7 @@ describe("generateTrackCode", () => {
   });
 
   it("이벤트 순서 변경해도 같은 hash", () => {
-    const reversed = [...EVENTS].reverse();
+    const reversed = [...EVENTS].toReversed();
     const r1 = generateTrackCode(EVENTS, MAPPINGS, PAYLOAD_GUIDES, OPTS);
     const r2 = generateTrackCode(reversed, MAPPINGS, PAYLOAD_GUIDES, OPTS);
 

@@ -28,7 +28,7 @@ describe("generateDataObjectBindings", () => {
   it("3개 파일 생성", () => {
     const result = generateDataObjectBindings(SAMPLE_BINDINGS);
     expect(result.files).toHaveLength(3);
-    expect(result.files.map(f => f.path).sort()).toEqual([
+    expect(result.files.map(f => f.path).toSorted()).toEqual([
       "binding-registry.ts",
       "data-objects.ts",
       "lineage-types.ts",
@@ -80,7 +80,7 @@ describe("generateDataObjectBindings", () => {
 
   it("결정론성 — 순서 무관 같은 hash", () => {
     const r1 = generateDataObjectBindings(SAMPLE_BINDINGS);
-    const r2 = generateDataObjectBindings([...SAMPLE_BINDINGS].reverse());
+    const r2 = generateDataObjectBindings([...SAMPLE_BINDINGS].toReversed());
     expect(r1.contentHash).toBe(r2.contentHash);
   });
 

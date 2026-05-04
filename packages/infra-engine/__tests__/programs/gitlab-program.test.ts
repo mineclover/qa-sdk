@@ -245,7 +245,7 @@ describe("createGitlabProgram (mocked Pulumi runtime)", () => {
     for (const v of volumes) {
       expect(v.emptyDir).toBeDefined();
     }
-    const names = volumes.map((v) => v.name).sort();
+    const names = volumes.map((v) => v.name).toSorted();
     expect(names).toEqual(["gitlab-config", "gitlab-data", "gitlab-logs"]);
   });
 

@@ -26,7 +26,7 @@ export async function printFleetStatus(env: string): Promise<void> {
     byTier.set(service.tier, list);
   }
 
-  for (const [tier, services] of [...byTier.entries()].sort()) {
+  for (const [tier, services] of [...byTier.entries()].toSorted()) {
     console.log(`  [${tier}]`);
     for (const service of services) {
       const icon = service.deployed ? "✅" : service.running ? "🟢" : "⬜";

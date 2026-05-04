@@ -133,7 +133,7 @@ describe("RoleResolver", () => {
         { orgRoleId: "team_lead", directAssignments: [] },
         "project",
       );
-      expect(featureIds).toEqual([...featureIds].sort());
+      expect(featureIds).toEqual([...featureIds].toSorted());
     });
   });
 

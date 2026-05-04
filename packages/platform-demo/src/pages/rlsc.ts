@@ -186,7 +186,7 @@ function buildLayers(nodes: InlineNode[]): InlineLayer[] {
       z, role: classifyZ(z), nodes: ns,
       area: ns.reduce((s, n) => s + n.rect.w * n.rect.h, 0),
     }))
-    .sort((a, b) => a.z - b.z);
+    .toSorted((a, b) => a.z - b.z);
 }
 
 // ─── 관계 탐지 ────────────────────────────────────────
@@ -378,7 +378,7 @@ function renderContext(): void {
   if (!panel || !doc) return;
   const vis = doc.nodes.filter((n) => n.visible);
   const vpArea = doc.pageW * doc.pageH;
-  const top5 = [...vis].sort((a, b) => b.rect.w * b.rect.h - a.rect.w * a.rect.h).slice(0, 5);
+  const top5 = [...vis].toSorted((a, b) => b.rect.w * b.rect.h - a.rect.w * a.rect.h).slice(0, 5);
   const roleCounts: Record<string, number> = {};
   for (const n of vis) {
     const r = n.role ?? "none";
@@ -402,7 +402,7 @@ function renderContext(): void {
 ${top5.map((n) => `- ${n.id.split("__")[0]}${n.role ? ` (${n.role})` : ""}: @(${n.rect.x},${n.rect.y}) ${n.rect.w}×${n.rect.h} (${((n.rect.w * n.rect.h) / vpArea * 100).toFixed(1)}%)`).join("\n")}
 
 ## 역할 분포
-${Object.entries(roleCounts).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([r, c]) => `${r}: ${c}`).join(", ")}
+${Object.entries(roleCounts).toSorted((a, b) => b[1] - a[1]).slice(0, 10).map(([r, c]) => `${r}: ${c}`).join(", ")}
 
 ## 구조 (R.L.S.C. 마크업)
 \`\`\`
@@ -619,7 +619,7 @@ function renderTextOccupancy(): void {
     html += metricsSection(`영역별 텍스트 밀도 (${regions.length})`,
       regions
         .filter((r) => r.textArea > 0)
-        .sort((a, b) => b.density - a.density)
+        .toSorted((a, b) => b.density - a.density)
         .slice(0, 10)
         .map((r) =>
           row(r.regionId, `밀도 ${(r.density * 100).toFixed(1)}% · 접촉 ${r.contactCount}`),

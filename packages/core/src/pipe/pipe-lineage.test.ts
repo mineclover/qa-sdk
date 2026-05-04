@@ -42,7 +42,7 @@ describe("정적 계보 파생 — deriveStaticLineage", () => {
     const lineages = deriveStaticLineage(flow);
     expect(lineages).toHaveLength(1);
     expect(lineages[0].target.column).toBe("c");
-    expect(lineages[0].sources.map(s => s.column).sort()).toEqual(["a", "b"]);
+    expect(lineages[0].sources.map(s => s.column).toSorted()).toEqual(["a", "b"]);
     expect(lineages[0].transform).toBe("compute");
   });
 
@@ -203,10 +203,10 @@ describe("flow 계보 요약 — summarizeFlowLineage", () => {
 
     const summary = summarizeFlowLineage(flow);
 
-    expect(summary.inputs.sort()).toEqual(["a", "b"]);
+    expect(summary.inputs.toSorted()).toEqual(["a", "b"]);
     expect(summary.outputs).toEqual(["d"]);
     // d ← c ← [a, b] → 압축: d ← [a, b]
-    expect(summary.outputLineage.d?.sort()).toEqual(["a", "b"]);
+    expect(summary.outputLineage.d?.toSorted()).toEqual(["a", "b"]);
   });
 
   it("a 통과 + b 소비 → c, c → d — 최종 d의 계보 [a] (b 제외)", () => {
@@ -228,7 +228,7 @@ describe("flow 계보 요약 — summarizeFlowLineage", () => {
 
     const summary = summarizeFlowLineage(flow);
 
-    expect(summary.inputs.sort()).toEqual(["a", "b"]);
+    expect(summary.inputs.toSorted()).toEqual(["a", "b"]);
     expect(summary.outputs).toEqual(["d"]);
     // d ← c ← [a] → 압축: d ← [a] (b는 소비되어 사라짐)
     expect(summary.outputLineage.d).toEqual(["a"]);
@@ -258,7 +258,7 @@ describe("정적 계보 — branch", () => {
 
     const summary = summarizeFlowLineage(flow);
     // 두 경로 합집합: orderId, cardNo, bankAccount
-    expect(summary.inputs.sort()).toEqual(["bankAccount", "cardNo", "orderId"]);
+    expect(summary.inputs.toSorted()).toEqual(["bankAccount", "cardNo", "orderId"]);
     expect(summary.outputs).toEqual(["receipt"]);
   });
 });
@@ -320,10 +320,10 @@ describe("정적 계보 — transition-scope", () => {
     };
 
     const summary = summarizeFlowLineage(flow);
-    expect(summary.inputs.sort()).toEqual(["amount", "fromAccount", "toAccount"]);
+    expect(summary.inputs.toSorted()).toEqual(["amount", "fromAccount", "toAccount"]);
     expect(summary.outputs).toEqual(["creditResult"]);
     // creditResult ← debitResult ← [amount, fromAccount] + toAccount
-    expect(summary.outputLineage.creditResult?.sort()).toEqual(["amount", "fromAccount", "toAccount"]);
+    expect(summary.outputLineage.creditResult?.toSorted()).toEqual(["amount", "fromAccount", "toAccount"]);
   });
 });
 
@@ -358,10 +358,10 @@ describe("정적 계보 — 깊은 체인", () => {
     };
 
     const summary = summarizeFlowLineage(flow);
-    expect(summary.inputs.sort()).toEqual(["externalData", "raw"]);
+    expect(summary.inputs.toSorted()).toEqual(["externalData", "raw"]);
     expect(summary.outputs).toEqual(["final"]);
     // final ← transformed ← enriched ← [validated, externalData] ← [raw, externalData]
-    expect(summary.outputLineage.final?.sort()).toEqual(["externalData", "raw"]);
+    expect(summary.outputLineage.final?.toSorted()).toEqual(["externalData", "raw"]);
   });
 });
 
@@ -380,7 +380,7 @@ describe("정적 계보 — 다중 출력", () => {
 
     const summary = summarizeFlowLineage(flow);
     expect(summary.inputs).toEqual(["order"]);
-    expect(summary.outputs.sort()).toEqual(["invoice", "shipment"]);
+    expect(summary.outputs.toSorted()).toEqual(["invoice", "shipment"]);
     expect(summary.outputLineage.invoice).toEqual(["order"]);
     expect(summary.outputLineage.shipment).toEqual(["order"]);
   });
@@ -408,9 +408,9 @@ describe("정적 계보 — 컬럼명 충돌", () => {
 
     const summary = summarizeFlowLineage(flow);
     // stepB의 result ← [stepA의 result, inputB] ← [inputA, inputB]
-    expect(summary.inputs.sort()).toEqual(["inputA", "inputB"]);
+    expect(summary.inputs.toSorted()).toEqual(["inputA", "inputB"]);
     expect(summary.outputs).toEqual(["result"]);
-    expect(summary.outputLineage.result?.sort()).toEqual(["inputA", "inputB"]);
+    expect(summary.outputLineage.result?.toSorted()).toEqual(["inputA", "inputB"]);
   });
 });
 
@@ -476,11 +476,11 @@ describe("정적 계보 — 주문처리 실전 시나리오", () => {
     };
 
     const summary = summarizeFlowLineage(flow);
-    expect(summary.inputs.sort()).toEqual(["customerId", "rawOrder", "shippingAddress"]);
+    expect(summary.inputs.toSorted()).toEqual(["customerId", "rawOrder", "shippingAddress"]);
     expect(summary.outputs).toEqual(["trackingId"]);
     // trackingId ← [paymentResult, shippingAddress] ← [validatedOrder, shippingAddress] ← [rawOrder, shippingAddress]
     // customerId는 소비됨 — validatedOrder의 sources에 없으므로 계보에서 제외
-    expect(summary.outputLineage.trackingId?.sort()).toEqual(["rawOrder", "shippingAddress"]);
+    expect(summary.outputLineage.trackingId?.toSorted()).toEqual(["rawOrder", "shippingAddress"]);
   });
 });
 

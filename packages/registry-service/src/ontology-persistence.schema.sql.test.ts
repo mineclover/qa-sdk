@@ -65,7 +65,7 @@ describe("Ontology persistence SQL schema", () => {
       [...ONTOLOGY_TABLES],
     );
 
-    expect(rows.map((row) => row.name)).toEqual([...ONTOLOGY_TABLES].sort());
+    expect(rows.map((row) => row.name)).toEqual([...ONTOLOGY_TABLES].toSorted());
   });
 
   it("rejects duplicate ontology namespace values", async () => {

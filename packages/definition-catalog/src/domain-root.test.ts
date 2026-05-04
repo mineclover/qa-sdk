@@ -339,8 +339,8 @@ describe("Phase 0b 통합 fixture — 알려진 케이스 재현", () => {
 
 describe("SUB_DOC_EXTENSIONS", () => {
   it("6종 확장자 (.todo, .plan, .memo, .test, .cases, .rule)", () => {
-    expect([...SUB_DOC_EXTENSIONS].sort()).toEqual(
-      [".cases.md", ".memo.md", ".plan.md", ".rule.md", ".test.md", ".todo.md"].sort(),
+    expect([...SUB_DOC_EXTENSIONS].toSorted()).toEqual(
+      [".cases.md", ".memo.md", ".plan.md", ".rule.md", ".test.md", ".todo.md"].toSorted(),
     );
   });
 });

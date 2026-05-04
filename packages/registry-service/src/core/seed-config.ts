@@ -165,10 +165,10 @@ export async function seedConfigs(configStore: ConfigStore, logger: SeedLogger =
         });
         return acc;
       }, [])
-      .sort((a, b) => a.serviceId.localeCompare(b.serviceId))
+      .toSorted((a, b) => a.serviceId.localeCompare(b.serviceId))
       .map((item) => ({
         serviceId: item.serviceId,
-        eventPacks: item.eventPacks.sort((a, b) => a.packId.localeCompare(b.packId)),
+        eventPacks: item.eventPacks.toSorted((a, b) => a.packId.localeCompare(b.packId)),
       }));
 
     await configStore.set("demo", EVENT_ADOPTION_CONFIG_TYPE, JSON.stringify(adoptions));

@@ -225,7 +225,7 @@ export class OntologyRegistryService {
     }
 
     const policy = toReservedAllocationPolicy({
-      ...(input.options ?? {}),
+      ...input.options,
       ontologyId: input.options?.ontologyId ?? input.pack.packId,
     });
     const reservation = await this.projectAndWriteReservation({

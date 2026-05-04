@@ -655,7 +655,7 @@ function validateSumSegmentCoverage(
     );
   }
 
-  const orderedSegments = [...bundle.segments].sort((left, right) => {
+  const orderedSegments = [...bundle.segments].toSorted((left, right) => {
     const offsetDelta = left.addressOffset - right.addressOffset;
     return offsetDelta !== 0
       ? offsetDelta
@@ -1017,7 +1017,7 @@ function evaluateExactAllocationRangeCoverage(
 } {
   const allocationStart = allocation.addressOffset;
   const allocationEnd = allocationStart + allocation.addressSize;
-  const orderedSegments = [...segments].sort((left, right) => {
+  const orderedSegments = [...segments].toSorted((left, right) => {
     const offsetDelta = left.addressOffset - right.addressOffset;
     return offsetDelta !== 0
       ? offsetDelta

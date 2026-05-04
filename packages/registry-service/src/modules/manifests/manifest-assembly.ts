@@ -68,7 +68,7 @@ export function validateAssembleManifestBody(body: AssembleManifestBody): void {
 
 export function createManifestAssemblyContract(body: AssembleManifestBody): ManifestAssemblyContract {
   const normalizedPrefixes = Object.fromEntries(
-    Object.entries(body.prefixes).sort(([left], [right]) => left.localeCompare(right)),
+    Object.entries(body.prefixes).toSorted(([left], [right]) => left.localeCompare(right)),
   );
   const semanticsPayload = {
     serviceId: body.serviceId,

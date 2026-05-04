@@ -56,7 +56,7 @@ export function checkCompatibility(
 /** DataSchema의 구조적 해시 계산 (FNV-1a 32bit — IR computeSchemaHash와 동일 알고리즘) */
 export function computeSchemaHash(schema: DataSchema): string {
   const sorted = Object.entries(schema.columns)
-    .sort(([a], [b]) => a.localeCompare(b))
+    .toSorted(([a], [b]) => a.localeCompare(b))
     .map(([name, col]) => `${name}:${columnRefToString(col.ref)}:${col.required}`);
   return fnv1a32(sorted.join("|"));
 }
@@ -121,8 +121,8 @@ export function collectSchemaChanges(
     }
 
     // 제약 변경
-    const oldConstraints = (oldCol.constraints ?? []).map(c => c.type).sort();
-    const newConstraints = (newCol.constraints ?? []).map(c => c.type).sort();
+    const oldConstraints = (oldCol.constraints ?? []).map(c => c.type).toSorted();
+    const newConstraints = (newCol.constraints ?? []).map(c => c.type).toSorted();
     const addedConstraints = newConstraints.filter(c => !oldConstraints.includes(c));
     const removedConstraints = oldConstraints.filter(c => !newConstraints.includes(c));
 
@@ -147,8 +147,8 @@ export function collectSchemaChanges(
 
 /** 변경 목록에서 호환성 판별 */
 export function determineCompatibility(changes: SchemaChange[]): SchemaCompatibility {
-  const breakingTypes: SchemaChangeType[] = ["add-required", "remove", "rename", "type-change"];
-  const hasBreaking = changes.some(c => breakingTypes.includes(c.type));
+  const breakingTypes: SchemaChangeType[] = new Set(["add-required", "remove", "rename", "type-change"]);
+  const hasBreaking = changes.some(c => breakingTypes.has(c.type));
   const hasConstraintAdd = changes.some(c => c.type === "constraint-add");
 
   if (hasBreaking) return "breaking";

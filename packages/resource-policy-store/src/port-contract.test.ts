@@ -237,7 +237,7 @@ describe.each(matrix)(
       await registry.create({ resourceId: "a2", resourceType: "doc", ownerId: "U" });
       await registry.create({ resourceId: "b1", resourceType: "doc", ownerId: "V" });
       const owned = await registry.listByOwner("U");
-      const ids = owned.map((p) => p.resourceId).sort();
+      const ids = owned.map((p) => p.resourceId).toSorted();
       expect(ids).toEqual(["a1", "a2"]);
     });
 

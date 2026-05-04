@@ -213,6 +213,6 @@ function aggregateAddressContextCoverage(
     totalRecords,
     recordsWithAddressContext,
     prefixes,
-    uniquePrefixes: Object.keys(prefixes).sort(),
+    uniquePrefixes: Object.keys(prefixes).toSorted(),
   };
 }

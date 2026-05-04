@@ -91,7 +91,7 @@ export function summarizeDistribution(values: readonly number[]): DistributionSu
     return { min: 0, avg: 0, p50: 0, p95: 0, p99: 0, max: 0 };
   }
 
-  const sorted = [...values].sort((left, right) => left - right);
+  const sorted = [...values].toSorted((left, right) => left - right);
   const sum = sorted.reduce((acc, value) => acc + value, 0);
 
   return {
@@ -132,8 +132,8 @@ function applyEnvelopeStats(
   for (const record of envelope.records) {
     stats.addressContext.totalRecords += 1;
     const merged = {
-      ...(envelope.infra_context ?? {}),
-      ...(record.address_context ?? {}),
+      ...envelope.infra_context,
+      ...record.address_context,
     };
     const prefixes = Object.keys(merged);
     if (prefixes.length === 0) continue;
@@ -152,7 +152,7 @@ function finalizeAddressContextCoverage(
     totalRecords: coverage.totalRecords,
     recordsWithAddressContext: coverage.recordsWithAddressContext,
     prefixes: { ...coverage.prefixes },
-    uniquePrefixes: Object.keys(coverage.prefixes).sort(),
+    uniquePrefixes: Object.keys(coverage.prefixes).toSorted(),
   };
 }
 

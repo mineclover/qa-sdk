@@ -6234,7 +6234,7 @@ Convert markdown PRD state into ralph JSON. Inline marker text like \`[PRD]...[/
     expect(result.output).toBe("tasks/conversion-prd.json");
     expect(result.storyCount).toBe(3);
     expect(result.diagnostics).toEqual([]);
-    expect(Object.keys(generated).sort()).toEqual(["branchName", "description", "name", "userStories"].sort());
+    expect(Object.keys(generated).toSorted()).toEqual(["branchName", "description", "name", "userStories"].toSorted());
     expect(generated).toMatchObject({
       name: "Conversion PRD",
       branchName: "ralph/conversion",

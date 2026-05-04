@@ -34,7 +34,7 @@ const REGISTRY_ACTIVATE_PACK_ALLOWED_FLAGS = new Set([
   ...REGISTRY_ACTIVATE_PACK_BOOLEAN_FLAGS,
 ]);
 const REGISTRY_ACTIVATE_PACK_SUPPORTED_FLAGS = Object.freeze(
-  [...REGISTRY_ACTIVATE_PACK_ALLOWED_FLAGS].map((flag) => `--${flag}`).sort(),
+  [...REGISTRY_ACTIVATE_PACK_ALLOWED_FLAGS].map((flag) => `--${flag}`).toSorted(),
 );
 const EMPTY_ACTIVATION_SMOKE_CHECK_SUMMARY = Object.freeze({
   allocationCount: 0,

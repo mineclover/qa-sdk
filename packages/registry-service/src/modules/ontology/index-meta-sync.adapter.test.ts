@@ -866,7 +866,7 @@ function productBundle(overrides?: {
     addressOffset: 0,
     addressSize: 32,
     status: "active",
-    ...(overrides?.allocation ?? {}),
+    ...overrides?.allocation,
   } satisfies OntologyAddressAllocationRecord & { readonly status: "active" };
 
   return {
@@ -938,7 +938,7 @@ function sumBundle(overrides?: {
     addressOffset: 100,
     addressSize: 16,
     status: "active",
-    ...(overrides?.allocation ?? {}),
+    ...overrides?.allocation,
   } satisfies OntologyAddressAllocationRecord & { readonly status: "active" };
 
   return {

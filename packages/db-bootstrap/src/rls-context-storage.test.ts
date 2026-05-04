@@ -37,6 +37,6 @@ describe("rls-context-storage", () => {
         },
       ),
     ]);
-    expect(results.sort()).toEqual(["alice", "bob"]);
+    expect(results.toSorted()).toEqual(["alice", "bob"]);
   });
 });

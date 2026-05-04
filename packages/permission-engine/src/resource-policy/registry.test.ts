@@ -99,7 +99,7 @@ describe("InMemoryResourcePolicyRegistry", () => {
       await registry.create({ resourceId: "d3", resourceType: "doc", ownerId: "u-2", now: NOW });
       const mine = await registry.listByOwner("u-1");
       expect(mine).toHaveLength(2);
-      expect(mine.map((p) => p.resourceId).sort()).toEqual(["d1", "d2"]);
+      expect(mine.map((p) => p.resourceId).toSorted()).toEqual(["d1", "d2"]);
     });
   });
 

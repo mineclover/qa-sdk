@@ -15,7 +15,7 @@ export const versionListHandler: CommandHandler = async (ctx) => {
   }
 
   console.log(`\n=== 배포 버전${env ? ` (${env})` : ""} ===\n`);
-  for (const v of versions.sort((a, b) => a.serviceId.localeCompare(b.serviceId))) {
+  for (const v of versions.toSorted((a, b) => a.serviceId.localeCompare(b.serviceId))) {
     const prev = v.previousVersion ? ` (이전: ${v.previousVersion})` : "";
     console.log(`  ${v.serviceId.padEnd(28)} ${v.currentVersion.slice(0, 20).padEnd(22)} ${v.env}/${v.provider}${prev}`);
   }

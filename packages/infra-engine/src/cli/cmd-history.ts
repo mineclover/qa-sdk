@@ -27,9 +27,9 @@ export const historyHandler: CommandHandler = async (ctx) => {
         entries
           .filter((entry) => entry.mode === "fleet-summary")
           .filter((entry) => !envFilter || entry.env === envFilter)
-          .map((entry) => ({ historyKey, ...entry })),
+          .map((entry) => (Object.assign({historyKey}, entry))),
       )
-      .sort((left, right) => new Date(right.deployedAt).getTime() - new Date(left.deployedAt).getTime());
+      .toSorted((left, right) => new Date(right.deployedAt).getTime() - new Date(left.deployedAt).getTime());
 
     if (isJson) {
       console.log(JSON.stringify(fleetHistory, null, 2));

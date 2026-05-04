@@ -156,7 +156,7 @@ export function summarizeNodeSources(
         return map;
       }, new Map<string, number>()).entries()]
         .map(([status, count]) => ({ status, count }))
-        .sort((left, right) => right.count - left.count || left.status.localeCompare(right.status));
+        .toSorted((left, right) => right.count - left.count || left.status.localeCompare(right.status));
 
       const overlapCount = source.overlappingPaths.filter((path) => nodeContainsPath(node, path)).length;
 
@@ -171,7 +171,7 @@ export function summarizeNodeSources(
         overlapCount,
         commitCount: source.commitCount,
         statusCounts,
-        files: files.sort((left, right) => left.path.localeCompare(right.path)),
+        files: files.toSorted((left, right) => left.path.localeCompare(right.path)),
         commits: source.commits.filter((commit) =>
           commit.changedPaths.some((path: string) => nodeContainsPath(node, path))),
       };
@@ -179,7 +179,7 @@ export function summarizeNodeSources(
 
   return summaries
     .filter((summary): summary is NodeSourceSummary => summary !== null)
-    .sort((left, right) => {
+    .toSorted((left, right) => {
       const byOverlap = right.overlapCount - left.overlapCount;
       if (byOverlap !== 0) return byOverlap;
       const byFileCount = right.fileCount - left.fileCount;
@@ -434,7 +434,7 @@ function dedupePathMetrics(metrics: PathMetrics): PathMetrics {
 }
 
 function dedupe(values: string[]): string[] {
-  return [...new Set(values)].sort((left, right) => left.localeCompare(right));
+  return [...new Set(values)].toSorted((left, right) => left.localeCompare(right));
 }
 
 function cloneFilteredNode(

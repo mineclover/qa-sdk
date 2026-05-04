@@ -535,7 +535,7 @@ function analyzePortUsage(file: SourceFileInput): PortUsageAnalysis {
   const hasLoggerPortToken = anyMatch(
     importedValueSymbols,
     identifierReferenceNames,
-    (name) => /_LOGGER_PORT$/.test(name),
+    (name) => name.endsWith('_LOGGER_PORT'),
   );
 
   return {

@@ -58,10 +58,10 @@ describe("#7 Hybrid with VersionedIndex — address 정수 + version 동봉 저�
       .where(and(eq(events.prefixId, "perm"), eq(events.version, "pv1")))
       .all();
     const decoded = rows.map((r) => WI.decode(r.address));
-    const decodedSorted = [...decoded].sort((a, b) =>
+    const decodedSorted = [...decoded].toSorted((a, b) =>
       WI.encode(a) - WI.encode(b),
     );
-    const observationsSorted = [...observations].sort((a, b) =>
+    const observationsSorted = [...observations].toSorted((a, b) =>
       WI.encode([...a]) - WI.encode([...b]),
     );
     expect(decodedSorted).toEqual(observationsSorted);

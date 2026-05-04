@@ -20,7 +20,7 @@ function canonicalJSON(value: CanonicalShape): string {
   if (typeof value === "number") return Number.isFinite(value) ? String(value) : "null";
   if (typeof value === "boolean") return value ? "true" : "false";
   if (Array.isArray(value)) return `[${value.map((v) => canonicalJSON(v ?? null)).join(",")}]`;
-  const keys = Object.keys(value).filter((k) => value[k] !== undefined).sort();
+  const keys = Object.keys(value).filter((k) => value[k] !== undefined).toSorted();
   return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalJSON(value[k] as CanonicalShape)}`).join(",")}}`;
 }
 

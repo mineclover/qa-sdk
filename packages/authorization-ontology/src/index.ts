@@ -2014,14 +2014,14 @@ function parseCerbosPolicySource(
       return parseYaml(source) as CerbosResourcePolicyLike | CerbosDerivedRolesLike;
     } catch (error) {
       const message = error instanceof Error ? error.message : "unknown parse error";
-      throw new Error(`Invalid Cerbos policy YAML source: ${message}`);
+      throw new Error(`Invalid Cerbos policy YAML source: ${message}`, { cause: error });
     }
   }
   try {
     return JSON.parse(source) as CerbosResourcePolicyLike | CerbosDerivedRolesLike;
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown parse error";
-    throw new Error(`Invalid Cerbos policy JSON source: ${message}`);
+    throw new Error(`Invalid Cerbos policy JSON source: ${message}`, { cause: error });
   }
 }
 
@@ -2055,7 +2055,7 @@ function annotateGraphSourceMetadata(
         ? {
             ...node,
             metadata: {
-              ...(node.metadata ?? {}),
+              ...node.metadata,
               bundleId: metadata.bundleId,
               path: metadata.path,
               revision: metadata.revision,
@@ -3408,7 +3408,7 @@ export class InMemoryAuthorizationGraphStore implements AuthorizationGraphStore 
   ): Promise<AuthorizationGraphSnapshotRecord[]> {
     const records = [...this.snapshots.values()]
       .filter((record) => matchesSnapshotFilter(record, filter))
-      .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+      .toSorted((left, right) => left.createdAt.localeCompare(right.createdAt));
     return cloneJson(filter.limit ? records.slice(0, filter.limit) : records);
   }
 
@@ -3583,7 +3583,7 @@ export class AuthorizationGraphIngestService {
       tags: defaultTagsForIngest(input),
       labels: {
         ingestKind: input.kind,
-        ...(input.labels ?? {}),
+        ...input.labels,
       },
       metadata: input.metadata,
       audit: input.audit,
