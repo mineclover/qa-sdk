@@ -32,6 +32,8 @@ export interface OutboxInsertResult {
   inserted: number;
   idempotencyKeys: string[];
   ids: string[];
+  /** insert 완료 시각 (epoch ms) — sim-handle outbox-client polling 기준점. */
+  insertedAtMs: number;
 }
 
 @Injectable()
@@ -42,7 +44,7 @@ export class OutboxAdminInsertService {
 
   async insertEvents(events: OutboxEventInput[]): Promise<OutboxInsertResult> {
     if (events.length === 0) {
-      return { inserted: 0, idempotencyKeys: [], ids: [] };
+      return { inserted: 0, idempotencyKeys: [], ids: [], insertedAtMs: Date.now() };
     }
 
     // grammar #5 사전 검증 — 트랜잭션 진입 전에 throw 시켜 부분 INSERT 를 방지한다.
@@ -86,6 +88,7 @@ export class OutboxAdminInsertService {
       inserted: ids.length,
       idempotencyKeys: rows.map((r) => r.idempotency_key),
       ids,
+      insertedAtMs: Date.now(),
     };
   }
 }

@@ -97,20 +97,25 @@ export class InsertConnectionHolder implements OnModuleDestroy {
       provide: OUTBOX_ADMIN_REPO,
       inject: [InsertConnectionHolder],
       useFactory: (holder: InsertConnectionHolder): OutboxAdminRepo => {
+        // drizzle 1.0+ 에서는 root client 로부터 db 를 만들고, db.transaction(cb)
+        // 으로 트랜잭션 진입한다. 이전 패턴 (sql.begin → drizzle({client: txSql}))
+        // 은 txSql.options 가 undefined 라 driver.js 의 parser 등록에서 throw.
+        let dbInstance: ReturnType<typeof drizzle> | null = null;
+        const lazyDb = (): ReturnType<typeof drizzle> => {
+          if (dbInstance === null) {
+            dbInstance = drizzle({ client: holder.get() as unknown as Sql });
+          }
+          return dbInstance;
+        };
         return {
           transaction: async <T>(
             cb: (tx: OutboxAdminRepoTx) => Promise<T>,
           ): Promise<T> => {
-            const sql = holder.get();
-            // postgres.js 는 sql.begin 안에서 발급된 콜백을 transaction 으로 묶는다.
-            return (await sql.begin(async (txSql) => {
-              // postgres.js TransactionSql 은 Sql 의 sub-type 이지만 drizzle 의 client 시그니처가
-              // 정확히 matching 되지 않는다 — 런타임 호환은 보장되므로 unknown cast 로 좁힌다.
-              const txDb = drizzle({ client: txSql as unknown as Sql });
+            return lazyDb().transaction(async (tx) => {
               const txRepo: OutboxAdminRepoTx = {
                 async insertMany(rows) {
                   if (rows.length === 0) return [];
-                  const r = await txDb
+                  const r = await tx
                     .insert(approvalOutboxEvents)
                     .values(rows as never)
                     .returning({ id: approvalOutboxEvents.id });
@@ -118,7 +123,7 @@ export class InsertConnectionHolder implements OnModuleDestroy {
                 },
               };
               return cb(txRepo);
-            })) as T;
+            }) as Promise<T>;
           },
         };
       },
