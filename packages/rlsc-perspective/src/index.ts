@@ -132,11 +132,11 @@ export function createPerspectiveViewer(
   options: PerspectiveViewerOptions = {},
 ): PerspectiveViewer {
   container.innerHTML = "";
-  if (options.renderer === "canvas") {
+  if (options.renderer !== "webgl") {
     return createCanvasPerspectiveViewer(container, doc, options);
   }
-  // auto 모드 + 명시 webgl 모두 사전 체크. fallback 보장.
-  if (options.renderer !== "webgl" && !isWebGLAvailable()) {
+
+  if (!isWebGLAvailable()) {
     return createCanvasPerspectiveViewer(container, doc, options);
   }
 
@@ -442,7 +442,7 @@ function createCanvasPerspectiveViewer(
     context.fillRect(0, 0, width, height);
     drawGrid(context, width, height);
 
-    const flat = flattenVisibleNodes(nextDoc.root, 0, null).toSorted(
+    const flat = [...flattenVisibleNodes(nextDoc.root, 0, null)].sort(
       (a, b) => a.depth - b.depth || a.node.rect.y - b.node.rect.y,
     );
     projectedNodes = flat.map((item) => projectNode(item, nextDoc.viewport, width, height, viewState));
@@ -474,7 +474,7 @@ function createCanvasPerspectiveViewer(
     }
 
     const point = { x: event.offsetX, y: event.offsetY };
-    const hit = projectedNodes.toReversed().find((item) => pointInPolygon(point, item.points));
+    const hit = [...projectedNodes].reverse().find((item) => pointInPolygon(point, item.points));
     const nextHovered = hit?.node.id ?? null;
     const nextLayerId = nextHovered ? currentLayers.nodeToLayer.get(nextHovered) ?? null : null;
     if (nextHovered === hoveredNodeId && nextLayerId === hoveredLayerId) return;
