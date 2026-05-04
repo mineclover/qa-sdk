@@ -1,3 +1,4 @@
+// @def.boundary system-support
 import type { TrafficController } from "./controller.js";
 import type { QueryAttributes, QueryOperation } from "./types.js";
 import { extractFingerprint, extractOperation, extractTable, extractTableFromBuilder } from "./fingerprint.js";

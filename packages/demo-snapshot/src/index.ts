@@ -1,3 +1,4 @@
+// @def.boundary platform-chain-system
 export {
   DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS,
   DEMO_ROLES_V1, DEMO_ROLES_V2, DEMO_ROLES_V3, DEMO_ROLES_V4,

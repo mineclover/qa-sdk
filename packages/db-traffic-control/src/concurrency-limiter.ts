@@ -1,3 +1,4 @@
+// @def.boundary system-support
 import type { ConcurrencyStatus } from "./types.js";
 
 interface Slot {

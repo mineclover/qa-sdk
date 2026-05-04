@@ -1,3 +1,4 @@
+// @def.boundary platform-chain-system
 /**
  * demo-snapshot.ts — 데모/샘플 데이터 스냅샷.
  *

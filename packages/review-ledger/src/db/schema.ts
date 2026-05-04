@@ -1,3 +1,4 @@
+// @def.boundary system-root
 /**
  * Review Ledger — Drizzle ORM 스키마.
  *

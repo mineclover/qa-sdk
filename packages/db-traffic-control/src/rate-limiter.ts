@@ -1,3 +1,4 @@
+// @def.boundary system-support
 import type { RateStatus } from "./types.js";
 
 /** 윈도우 세그먼트 — 100ms 단위 카운트 */

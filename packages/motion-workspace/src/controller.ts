@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-spec
 import {
   applyMotionEditorSessionCommand,
   canRedoMotionEditorSession,

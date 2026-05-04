@@ -1,3 +1,4 @@
+// @def.boundary system-support
 /**
  * event-bridge — 쿼리 메트릭의 event_key ↔ event-catalog 교차 검증.
  *

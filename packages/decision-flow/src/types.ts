@@ -1,3 +1,4 @@
+// @def.boundary df-model-group
 /**
  * decision-flow — 의사결정 분기 관리 시스템 핵심 타입
  *

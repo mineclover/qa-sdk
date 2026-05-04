@@ -1,3 +1,4 @@
+// @def.boundary platform-chain-system
 /**
  * demo-domains.ts — 1차원 축(Axis) 기반 데이터 카탈로그.
  *

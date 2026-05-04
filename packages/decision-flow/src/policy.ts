@@ -1,3 +1,4 @@
+// @def.boundary df-system
 /**
  * 정책 엔진 — 조건 평가 + 자동 분기 선택
  *

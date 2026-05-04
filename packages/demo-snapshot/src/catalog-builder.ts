@@ -1,3 +1,4 @@
+// @def.boundary platform-chain-system
 /**
  * catalog-builder — refEntries를 semantic 정의에서 자동 파생하여 DEMO_CATALOG을 구성한다.
  *

@@ -1,3 +1,4 @@
+// @def.boundary platform-chain-system
 /**
  * DEMO_SCENARIOS — shop-web 13개 트래킹 포인트 기반 정식 ScenarioSpec.
  *

@@ -1,3 +1,4 @@
+// @def.boundary deterministic-label-architecture
 import { existsSync } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { extname, isAbsolute, relative, resolve } from "node:path";

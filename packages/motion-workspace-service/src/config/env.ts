@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-service-spec
 import { z } from "zod";
 import { getRequiredServicePort } from "@qa-sdk/core";
 

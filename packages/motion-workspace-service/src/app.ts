@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-service-spec
 import { createNodeWebSocket } from "@hono/node-ws";
 import type { Server } from "node:http";
 import type { Http2SecureServer, Http2Server } from "node:http2";

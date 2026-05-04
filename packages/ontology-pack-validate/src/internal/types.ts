@@ -1,3 +1,4 @@
+// @def.boundary deterministic-label-architecture
 import type { KnownOntologyPackId } from "../known-ontology-packs.js";
 
 export type OntologyPackValidateIssueLevel = "error" | "warning";

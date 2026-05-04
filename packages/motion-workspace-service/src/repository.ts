@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-service-spec
 import type { MotionSceneDef } from "motion-content";
 import type {
   MotionWorkspaceConflictErrorShape,

@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-service-spec
 import { serve } from "@hono/node-server";
 import { warnPortConflict } from "@qa-sdk/core";
 import { createLogger } from "./lib/logger.js";

@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-spec
 export {
   MOTION_COMPOSITION_SCHEMA_V1,
   type MotionCompositionDocumentV1,

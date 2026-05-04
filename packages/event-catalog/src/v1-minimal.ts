@@ -1,3 +1,4 @@
+// @def.boundary event-vocab-system
 import type { CoreEventDef } from "./types.js";
 import { coreEventMap } from "./registry.js";
 

@@ -1,3 +1,4 @@
+// @def.boundary system-support
 import type { QueryOperation } from "./types.js";
 
 /**

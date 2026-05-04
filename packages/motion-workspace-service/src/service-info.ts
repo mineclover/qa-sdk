@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-service-spec
 export const MOTION_WORKSPACE_SERVICE_ID = "motion-workspace-service";
 
 export interface MotionWorkspaceServiceInfo {

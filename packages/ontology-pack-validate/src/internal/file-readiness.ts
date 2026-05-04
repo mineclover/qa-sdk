@@ -1,3 +1,4 @@
+// @def.boundary deterministic-label-architecture
 import { stat } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 

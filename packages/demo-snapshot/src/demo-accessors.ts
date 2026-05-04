@@ -1,3 +1,4 @@
+// @def.boundary platform-chain-system
 /**
  * demo-accessors.ts — DEMO_CATALOG 선택적 접근 API.
  *

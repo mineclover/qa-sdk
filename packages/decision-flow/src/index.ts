@@ -1,3 +1,4 @@
+// @def.boundary df-system
 /**
  * decision-flow — 의사결정 좌표계
  *

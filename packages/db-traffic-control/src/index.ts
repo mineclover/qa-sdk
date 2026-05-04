@@ -1,3 +1,4 @@
+// @def.boundary system-support
 // ── 핵심 타입 ──────────────────────────────────────────────
 export type {
   QueryAttributes,

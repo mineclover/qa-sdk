@@ -1,3 +1,4 @@
+// @def.boundary platform-chain-system
 /**
  * demo-schema.ts — 데모 시나리오의 상위 스키마 정의.
  *

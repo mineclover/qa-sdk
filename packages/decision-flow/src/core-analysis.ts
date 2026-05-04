@@ -1,3 +1,4 @@
+// @def.boundary df-analysis-group
 /**
  * 코어 분석 — 의사결정 플로우의 구조적 분석
  *

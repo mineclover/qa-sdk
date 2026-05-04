@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-system
 import type { MotionEditorCommand, MotionSceneDef } from "motion-content";
 import type { MotionWorkspaceSnapshot } from "motion-workspace";
 import type {

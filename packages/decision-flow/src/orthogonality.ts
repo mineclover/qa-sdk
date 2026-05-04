@@ -1,3 +1,4 @@
+// @def.boundary df-model-group
 /**
  * 직교성 검증 (Orthogonality Check)
  *

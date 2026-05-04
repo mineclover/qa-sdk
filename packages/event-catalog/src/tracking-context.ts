@@ -1,3 +1,4 @@
+// @def.boundary event-vocab-system
 /**
  * TrackingContextManager — 런타임 컨텍스트 자동 관리.
  *

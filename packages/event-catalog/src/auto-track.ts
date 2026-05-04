@@ -1,3 +1,4 @@
+// @def.boundary event-vocab-system
 /**
  * autoTrack — event_key 하나로 prefix 인코딩까지 자동 처리.
  *

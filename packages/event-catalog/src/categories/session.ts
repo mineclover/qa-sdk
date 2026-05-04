@@ -1,3 +1,4 @@
+// @def.boundary event-vocab-system
 import type { CoreEventDef } from "../types.js";
 
 export const sessionEvents: CoreEventDef[] = [

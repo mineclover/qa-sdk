@@ -1,3 +1,4 @@
+// @def.boundary event-vocab-system
 import type { PayloadFieldGuide } from "./types.js";
 
 export const payloadGuides: readonly PayloadFieldGuide[] = [

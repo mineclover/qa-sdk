@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-service-spec
 /**
  * motion-workspace-service Drizzle 스키마 정의
  *

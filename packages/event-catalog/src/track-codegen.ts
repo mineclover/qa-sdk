@@ -1,3 +1,4 @@
+// @def.boundary event-vocab-system
 /**
  * track-codegen — 이벤트 카탈로그에서 타입 안전 track() 호출 코드 생성.
  *

@@ -1,3 +1,4 @@
+// @def.boundary df-model-group
 /**
  * FlowSchema 빌더 + 검증
  */

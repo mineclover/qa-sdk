@@ -1,3 +1,4 @@
+// @def.boundary df-model-group
 /**
  * 의사결정 도메인 축 정의 (Vocabulary)
  *

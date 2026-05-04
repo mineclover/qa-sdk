@@ -1,3 +1,4 @@
+// @def.boundary system-root
 /**
  * Git 기반 파일 변경 감지.
  *

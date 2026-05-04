@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-system
 const WS_OPEN_READY_STATE = 1;
 const DEFAULT_RECONNECT_INITIAL_DELAY_MS = 250;
 const DEFAULT_RECONNECT_MAX_DELAY_MS = 5_000;

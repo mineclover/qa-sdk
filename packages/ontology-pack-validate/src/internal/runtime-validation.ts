@@ -1,3 +1,4 @@
+// @def.boundary deterministic-label-architecture
 import {
   validateOperationalOntologyPack,
   type OperationalOntologyPack,

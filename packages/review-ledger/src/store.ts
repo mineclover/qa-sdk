@@ -1,3 +1,4 @@
+// @def.boundary system-root
 /**
  * SqliteReviewStore — review_entries 테이블 CRUD.
  *

@@ -1,3 +1,4 @@
+// @def.boundary df-model-group
 /**
  * 의사결정 도메인 카탈로그 — prefix 정의 + 좌표 공간 구성
  *

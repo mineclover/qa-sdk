@@ -1,3 +1,4 @@
+// @def.boundary df-system
 import type { InstanceStore } from "./instance-store.js";
 import type { Condition, FlowPolicy, FlowInstance, GateSelection } from "./types.js";
 

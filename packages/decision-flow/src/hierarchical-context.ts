@@ -1,3 +1,4 @@
+// @def.boundary df-narrative-group
 /**
  * 계층적 컨텍스트 조합 (Hierarchical Context Assembly)
  *

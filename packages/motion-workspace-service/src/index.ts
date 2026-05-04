@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-service-spec
 export * from "./app.js";
 export * from "./controller.js";
 export * from "./error-handler.js";

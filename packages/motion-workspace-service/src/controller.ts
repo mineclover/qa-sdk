@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-service-spec
 import {
   createMotionWorkspaceController as createRuntimeWorkspaceController,
   migrateMotionWorkspaceSnapshot,

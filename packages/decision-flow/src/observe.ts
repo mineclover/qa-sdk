@@ -1,3 +1,4 @@
+// @def.boundary df-interface-group
 /**
  * 관찰 레이어 (Observability)
  *

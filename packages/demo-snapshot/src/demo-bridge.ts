@@ -1,3 +1,4 @@
+// @def.boundary platform-chain-system
 /**
  * demo-bridge.ts — DEMO_CATALOG → 외부 시스템 변환 브릿지.
  *

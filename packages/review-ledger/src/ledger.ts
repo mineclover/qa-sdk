@@ -1,3 +1,4 @@
+// @def.boundary system-root
 /**
  * ReviewLedger — 리뷰 기록 오케스트레이션.
  *

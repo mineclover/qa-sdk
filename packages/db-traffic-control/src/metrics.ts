@@ -1,3 +1,4 @@
+// @def.boundary system-support
 import type { QueryMetricEvent, TrafficMetricsCollector, Verdict } from "./types.js";
 
 /** fingerprint별 집계 결과 */

@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-service-spec
 import type { NodeWebSocket } from "@hono/node-ws";
 import { Hono } from "hono";
 import type { Context } from "hono";

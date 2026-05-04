@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-service-spec
 export interface WorkspaceSceneLockInfo {
   readonly sceneId: string;
   readonly userId: string;

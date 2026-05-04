@@ -1,3 +1,4 @@
+// @def.boundary df-interface-group
 /**
  * Ingest 연동 어댑터
  *

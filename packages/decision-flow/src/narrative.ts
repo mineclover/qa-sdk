@@ -1,3 +1,4 @@
+// @def.boundary df-narrative-group
 /**
  * 서사 빌더 (Narrative Builder)
  *

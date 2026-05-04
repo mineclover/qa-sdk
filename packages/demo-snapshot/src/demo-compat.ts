@@ -1,3 +1,4 @@
+// @def.boundary platform-chain-system
 /**
  * demo-compat.ts — DEMO_CATALOG에서 기존 상수/함수를 파생하는 하위 호환 레이어.
  *

@@ -1,3 +1,4 @@
+// @def.boundary deterministic-label-architecture
 import { basename } from "node:path";
 
 import type { DocumentEnvelope, DocumentSource } from "doc-envelope";

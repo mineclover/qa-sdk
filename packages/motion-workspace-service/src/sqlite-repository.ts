@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-service-spec
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { createLogger } from "./lib/logger.js";

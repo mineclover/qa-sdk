@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-service-spec
 import { createLogger as _createLogger, type Logger } from "@qa-sdk/core";
 import { createIngestForwarder } from "@qa-sdk/logger";
 

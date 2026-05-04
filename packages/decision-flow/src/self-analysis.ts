@@ -1,3 +1,4 @@
+// @def.boundary df-system
 /**
  * 자기참조 분석 — qa-sdk의 설계 결정을 decision-flow로 기록
  *

@@ -1,3 +1,4 @@
+// @def.boundary df-system
 /**
  * 스프린트 파이프라인 — gstack(garrytan/gstack) 의사결정 흐름 모델링
  *

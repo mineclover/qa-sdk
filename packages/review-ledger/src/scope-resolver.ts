@@ -1,3 +1,4 @@
+// @def.boundary system-root
 /**
  * filePath → serviceScope 매핑.
  *

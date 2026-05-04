@@ -1,3 +1,4 @@
+// @def.boundary event-vocab-system
 /**
  * prefix-mapping — event_key → prefix 차원 자동 매핑.
  *

@@ -1,3 +1,4 @@
+// @def.boundary event-vocab-system
 /**
  * transition — 선언적 비즈니스 트랜잭션 레지스트리 + 검증.
  *

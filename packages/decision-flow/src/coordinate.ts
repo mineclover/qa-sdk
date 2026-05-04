@@ -1,3 +1,4 @@
+// @def.boundary df-model-group
 /**
  * 좌표 매핑 — FlowSchema ↔ WeightedIndex
  *

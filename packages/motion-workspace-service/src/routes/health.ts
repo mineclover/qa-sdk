@@ -1,3 +1,4 @@
+// @def.boundary motion-workspace-service-spec
 import { Hono } from "hono";
 import type { MotionWorkspaceController } from "../controller.js";
 
