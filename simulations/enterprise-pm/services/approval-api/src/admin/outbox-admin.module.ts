@@ -22,6 +22,7 @@ import postgres from "postgres";
 import type { Sql } from "postgres";
 import { OutboxAdminController } from "./outbox-admin.controller.js";
 import { OutboxAdminInsertService } from "./outbox-admin-insert.service.js";
+import { OutboxAdminStateQueryService } from "./outbox-admin-state-query.service.js";
 import {
   OutboxAdminDispatchService,
   type OutboxAdminDispatcher,
@@ -30,6 +31,7 @@ import {
 import {
   OUTBOX_ADMIN_REPO,
   OUTBOX_DISPATCHER_FACTORY,
+  OUTBOX_INSERT_CLIENT,
   type OutboxAdminRepo,
   type OutboxAdminRepoTx,
 } from "./outbox-admin.tokens.js";
@@ -93,6 +95,12 @@ export class InsertConnectionHolder implements OnModuleDestroy {
     InsertConnectionHolder,
     OutboxAdminInsertService,
     OutboxAdminDispatchService,
+    OutboxAdminStateQueryService,
+    {
+      provide: OUTBOX_INSERT_CLIENT,
+      inject: [InsertConnectionHolder],
+      useFactory: (holder: InsertConnectionHolder): Sql => holder.get(),
+    },
     {
       provide: OUTBOX_ADMIN_REPO,
       inject: [InsertConnectionHolder],

@@ -6,6 +6,8 @@
 
 export const OUTBOX_ADMIN_REPO = Symbol("OUTBOX_ADMIN_REPO");
 export const OUTBOX_DISPATCHER_FACTORY = Symbol("OUTBOX_DISPATCHER_FACTORY");
+/** raw postgres.js Sql instance — state query 등 raw SQL 호출용. */
+export const OUTBOX_INSERT_CLIENT = Symbol("OUTBOX_INSERT_CLIENT");
 
 export interface OutboxAdminRepoTx {
   /** 단일 트랜잭션 안에서 N건 outbox row 를 INSERT 후 id 배열 반환. */

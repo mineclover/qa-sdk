@@ -8,17 +8,20 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpException,
   HttpStatus,
   Inject,
   Post,
+  Query,
   UseGuards,
 } from "@nestjs/common";
 import { z } from "zod";
 import { InternalIpGuard } from "sim-internal-network";
 import { OutboxAdminInsertService } from "./outbox-admin-insert.service.js";
 import { OutboxAdminDispatchService } from "./outbox-admin-dispatch.service.js";
+import { OutboxAdminStateQueryService } from "./outbox-admin-state-query.service.js";
 
 const InsertBody = z.object({
   events: z.array(
@@ -60,6 +63,8 @@ export class OutboxAdminController {
     private readonly insertSvc: OutboxAdminInsertService,
     @Inject(OutboxAdminDispatchService)
     private readonly dispatchSvc: OutboxAdminDispatchService,
+    @Inject(OutboxAdminStateQueryService)
+    private readonly stateSvc: OutboxAdminStateQueryService,
   ) {}
 
   @Post("insert")
@@ -80,5 +85,41 @@ export class OutboxAdminController {
       throw validation("Invalid /admin/outbox/dispatch body", p.error.message);
     }
     return this.dispatchSvc.dispatchAll(p.data);
+  }
+
+  /**
+   * sim-handle outbox-client polling endpoint. ids CSV → 트리거 dispatch +
+   * per-id (publishedAt, dispatcherId) 응답.
+   *
+   * 응답 shape (sim-handle 기대):
+   *   { publishedAt: [[id, epochMs]...], dispatcherIds: [[id, scope_id]...] }
+   *
+   * scope_id 가 dispatcher 식별자로 사용 (sim 환경 dispatch worker 들은
+   * scope_id 로 자기 claim 마킹). dispatcher worker 자동 가동되지 않는
+   * 환경에서도 본 endpoint 호출 시 dispatchAll 트리거 후 state 조회 보장.
+   */
+  @Get("dispatch")
+  async dispatchState(
+    @Query("ids") idsCsv: string,
+  ): Promise<{
+    publishedAt: Array<[string, number]>;
+    dispatcherIds: Array<[string, string]>;
+  }> {
+    if (typeof idsCsv !== "string" || idsCsv.length === 0) {
+      throw validation(
+        "Invalid /admin/outbox/dispatch query",
+        "ids CSV query required",
+      );
+    }
+    const ids = idsCsv
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    if (ids.length === 0) {
+      return { publishedAt: [], dispatcherIds: [] };
+    }
+    // dispatcher 자동 가동 환경 — 이미 dispatched 면 no-op, 아니면 트리거.
+    await this.dispatchSvc.dispatchAll({ replicaCount: 1, timeoutMs: 3_000 });
+    return this.stateSvc.queryState(ids);
   }
 }
