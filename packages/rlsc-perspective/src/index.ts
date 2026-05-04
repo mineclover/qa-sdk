@@ -3,6 +3,7 @@ import type { AreaOverflowIssue, RLSCDocument, RLSCNode, ScreenIdentifier, TextO
 export type PerspectiveRendererKind = "auto" | "webgl" | "canvas";
 export type PerspectiveGroupBy = "dom-node" | "componentId" | "qaAddress" | "role";
 export type PerspectiveCopyFormat = "identifier" | "json";
+export type PerspectiveViewPreset = "default" | "top" | "front" | "side";
 
 export interface PerspectiveIssue {
   readonly nodeId?: string;
@@ -62,6 +63,9 @@ export interface PerspectiveViewerOptions {
 export interface PerspectiveViewer {
   update(doc: RLSCDocument, options?: PerspectiveViewerOptions): void;
   clearSelection(): void;
+  fitView(): void;
+  resetView(): void;
+  setView(preset: PerspectiveViewPreset): void;
   dispose(): void;
 }
 
@@ -134,7 +138,7 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
   let selectedLayerId: string | null = null;
   let dragState: Css3DDragState | null = null;
   let suppressClick = false;
-  let viewState: Css3DViewState = { rotation: initialRotationMatrix(), zoom: 1, panX: 0, panY: 0 };
+  let viewState: Css3DViewState = createViewState("default");
 
   const resizeObserver = new ResizeObserver(() => render());
   resizeObserver.observe(container);
@@ -292,14 +296,30 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
     currentOptions.onSelect?.(nodeEvent(currentDoc, currentLayers, null, null));
   }
 
+  function fitView(): void {
+    viewState = { ...viewState, zoom: 1, panX: 0, panY: 0 };
+    applyTransform();
+  }
+
+  function resetView(): void {
+    viewState = createViewState("default");
+    applyTransform();
+  }
+
+  function setView(preset: PerspectiveViewPreset): void {
+    viewState = createViewState(preset);
+    applyTransform();
+  }
+
   function handlePointerDown(event: PointerEvent): void {
-    if (event.button !== 0) return;
+    if (![0, 1, 2].includes(event.button)) return;
     dragState = {
       startX: event.clientX,
       startY: event.clientY,
       startRotation: viewState.rotation,
       startPanX: viewState.panX,
       startPanY: viewState.panY,
+      mode: shouldPan(event) ? "pan" : "rotate",
       moved: false,
     };
     suppressClick = false;
@@ -313,7 +333,8 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
     const dy = event.clientY - dragState.startY;
     dragState.moved ||= Math.hypot(dx, dy) > 4;
     suppressClick = dragState.moved;
-    viewState = event.shiftKey
+    const mode = shouldPan(event) ? "pan" : dragState.mode;
+    viewState = mode === "pan"
       ? { ...viewState, panX: dragState.startPanX + dx, panY: dragState.startPanY + dy }
       : {
           ...viewState,
@@ -350,6 +371,10 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
     applyTransform();
   }
 
+  function handleContextMenu(event: MouseEvent): void {
+    event.preventDefault();
+  }
+
   function handleCopy(event: ClipboardEvent): void {
     if (!selectedLayerId) return;
     const detail = copyEvent(currentDoc, currentLayers, selectedLayerId);
@@ -374,6 +399,7 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
     viewport.removeEventListener("pointerup", handlePointerUp);
     viewport.removeEventListener("pointerleave", handlePointerLeave);
     viewport.removeEventListener("wheel", handleWheel);
+    viewport.removeEventListener("contextmenu", handleContextMenu);
     viewport.removeEventListener("copy", handleCopy);
     viewport.removeEventListener("keydown", handleKeyDown);
     viewport.remove();
@@ -384,11 +410,12 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
   viewport.addEventListener("pointerup", handlePointerUp);
   viewport.addEventListener("pointerleave", handlePointerLeave);
   viewport.addEventListener("wheel", handleWheel, { passive: false });
+  viewport.addEventListener("contextmenu", handleContextMenu);
   viewport.addEventListener("copy", handleCopy);
   viewport.addEventListener("keydown", handleKeyDown);
   render();
 
-  return { update, clearSelection, dispose };
+  return { update, clearSelection, fitView, resetView, setView, dispose };
 }
 
 interface FlatNode {
@@ -410,6 +437,7 @@ interface Css3DDragState {
   readonly startRotation: DOMMatrix;
   readonly startPanX: number;
   readonly startPanY: number;
+  readonly mode: "rotate" | "pan";
   moved: boolean;
 }
 
@@ -426,7 +454,14 @@ function style(element: HTMLElement, next: Partial<CSSStyleDeclaration>): void {
   Object.assign(element.style, next);
 }
 
-function initialRotationMatrix(): DOMMatrix {
+function createViewState(preset: PerspectiveViewPreset): Css3DViewState {
+  return { rotation: presetRotationMatrix(preset), zoom: 1, panX: 0, panY: 0 };
+}
+
+function presetRotationMatrix(preset: PerspectiveViewPreset): DOMMatrix {
+  if (preset === "top") return new DOMMatrix();
+  if (preset === "front") return new DOMMatrix().rotateSelf(72, 0, 0);
+  if (preset === "side") return new DOMMatrix().rotateSelf(70, 0, 90);
   return new DOMMatrix().rotateSelf(62, 0, -18);
 }
 
@@ -434,6 +469,10 @@ function dragRotationMatrix(dx: number, dy: number): DOMMatrix {
   return new DOMMatrix()
     .rotateAxisAngleSelf(0, 1, 0, dx * 0.34)
     .rotateAxisAngleSelf(1, 0, 0, -dy * 0.28);
+}
+
+function shouldPan(event: PointerEvent): boolean {
+  return event.shiftKey || event.altKey || event.button === 1 || event.button === 2 || event.buttons === 4 || event.buttons === 2;
 }
 
 function matrixToCss(matrix: DOMMatrix): string {

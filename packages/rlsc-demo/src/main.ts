@@ -159,6 +159,9 @@ mount.innerHTML = `
         <div class="layer-view" data-view="layers3d"></div>
         <div class="layer-actions">
           <button type="button" data-action="clearSelection">Clear selection</button>
+          <button type="button" data-action="viewTop">Top view</button>
+          <button type="button" data-action="viewReset">Reset view</button>
+          <button type="button" data-action="viewFit">Fit</button>
           <button type="button" data-action="copySelection">Copy identifier</button>
           <button type="button" data-action="copySelectionJson">Copy JSON</button>
         </div>
@@ -209,6 +212,12 @@ mount.addEventListener("click", (event) => {
     toggleMonitor();
   } else if (action === "clearSelection") {
     clearSelection();
+  } else if (action === "viewTop") {
+    state.layerScene?.setView("top");
+  } else if (action === "viewReset") {
+    state.layerScene?.resetView();
+  } else if (action === "viewFit") {
+    state.layerScene?.fitView();
   } else if (action === "copySelection") {
     void copySelection();
   } else if (action === "copySelectionJson") {
