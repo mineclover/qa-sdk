@@ -310,6 +310,7 @@ async function runPipeline(): Promise<void> {
 
   renderSummary(doc, text, textRegions, metrics, pattern, overflowIssues);
   svgView.innerHTML = svg;
+  stabilizeSvgPreview();
   if (state.layerScene) {
     state.layerScene.update(doc, viewerOptions(overflowIssues));
   } else {
@@ -336,6 +337,15 @@ async function runPipeline(): Promise<void> {
     null,
     2
   );
+}
+
+function stabilizeSvgPreview(): void {
+  const svg = svgView.querySelector<SVGSVGElement>("svg");
+  if (!svg) return;
+  svg.setAttribute("width", "100%");
+  svg.setAttribute("height", "100%");
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+  svg.setAttribute("focusable", "false");
 }
 
 function viewerOptions(overflowIssues: readonly AreaOverflowIssue[]) {
