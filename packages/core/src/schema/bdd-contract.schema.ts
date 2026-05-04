@@ -99,6 +99,8 @@ export const bddContractSchema = z.preprocess(
     links: bddContractLinksSchema.optional(),
     given: bddGivenSchema,
     when: bddWhenSchema,
+    // BDD vocabulary: `then` is a clause name, not a Promise#then handler.
+    // oxlint-disable-next-line unicorn/no-thenable
     then: bddThenSchema,
   }).strict().superRefine((value, ctx) => {
     if (value.contractKind === "state-transition") {

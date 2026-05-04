@@ -121,7 +121,7 @@ async function createAutoRecoveryHandler(
   const { createAutoRecovery } = await import("../monitor/auto-recovery.js");
   const recoveryByEnv = new Map<string, ReturnType<typeof createAutoRecovery>>();
 
-  for (const env of [...new Set(Object.values(monitorEnvByService))]) {
+  for (const env of new Set(Object.values(monitorEnvByService))) {
     const runtimeRecovery = runtimeRecoveryByEnv[env];
     const enabled = cliEnabled || runtimeRecovery?.enabled === true;
     if (!enabled) continue;
