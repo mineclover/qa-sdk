@@ -176,8 +176,6 @@ function createCanvasPerspectiveViewer(
             ...viewState,
             yaw: clamp(dragState.startYaw + dx * 0.0028, -0.55, 0.75),
             pitch: clamp(dragState.startPitch + dy * 0.0024, 0.36, 0.95),
-            depthX: clamp(dragState.startDepthX + dx * 0.008, 0.4, 3.8),
-            depthY: clamp(dragState.startDepthY + dy * 0.007, 0.3, 2.8),
           };
       canvas.style.cursor = "grabbing";
       update(currentDoc, currentOptions);
@@ -194,8 +192,6 @@ function createCanvasPerspectiveViewer(
       startY: event.offsetY,
       startYaw: viewState.yaw,
       startPitch: viewState.pitch,
-      startDepthX: viewState.depthX,
-      startDepthY: viewState.depthY,
       startPanX: viewState.panX,
       startPanY: viewState.panY,
       moved: false,
@@ -315,13 +311,18 @@ interface CanvasViewState {
   readonly panY: number;
 }
 
+interface ProjectionFrame {
+  readonly scale: number;
+  readonly zCenter: number;
+  readonly offsetX: number;
+  readonly offsetY: number;
+}
+
 interface CanvasDragState {
   readonly startX: number;
   readonly startY: number;
   readonly startYaw: number;
   readonly startPitch: number;
-  readonly startDepthX: number;
-  readonly startDepthY: number;
   readonly startPanX: number;
   readonly startPanY: number;
   moved: boolean;
@@ -334,24 +335,15 @@ function projectScene(
   view: CanvasViewState,
   size: CanvasSize,
 ): CanvasSceneNode[] {
-  const scale = Math.min(size.width / doc.viewport.width, size.height / doc.viewport.height) * 0.62 * view.zoom;
-  const origin = {
-    x: size.width * 0.5 + view.panX,
-    y: size.height * 0.58 + view.panY,
-  };
-  const project = (x: number, y: number, z: number): CanvasPoint => {
-    const localX = x - doc.viewport.width / 2;
-    const localY = y - doc.viewport.height / 2;
-    return {
-      x: origin.x + localX * scale + localY * scale * view.yaw + z * view.depthX * view.zoom,
-      y: origin.y + localY * scale * view.pitch - z * view.depthY * view.zoom,
-    };
-  };
+  const flat = flattenVisibleNodes(doc.root, 0, null).sort(
+    (a, b) => a.depth - b.depth || a.node.rect.y - b.node.rect.y || a.node.rect.x - b.node.rect.x,
+  );
+  const frame = createProjectionFrame(doc, flat, view, size);
+  const project = (x: number, y: number, z: number): CanvasPoint => projectPoint(doc, view, frame, x, y, z);
 
-  return flattenVisibleNodes(doc.root, 0, null)
-    .sort((a, b) => a.depth - b.depth || a.node.rect.y - b.node.rect.y || a.node.rect.x - b.node.rect.x)
+  return flat
     .map((item) => {
-      const z = item.depth * 18 + Math.max(0, item.node.zIndex) / 140;
+      const z = nodeDepth(item);
       const left = item.node.rect.x;
       const top = item.node.rect.y;
       const right = left + item.node.rect.width;
@@ -363,7 +355,11 @@ function projectScene(
         project(left, bottom, z),
       ] as const;
       const parentCenter = item.parent
-        ? project(item.parent.rect.x + item.parent.rect.width / 2, item.parent.rect.y + item.parent.rect.height / 2, (item.depth - 1) * 18)
+        ? project(
+            item.parent.rect.x + item.parent.rect.width / 2,
+            item.parent.rect.y + item.parent.rect.height / 2,
+            parentDepth(item),
+          )
         : undefined;
       return {
         ...item,
@@ -374,6 +370,89 @@ function projectScene(
         parentCenter,
       };
     });
+}
+
+function createProjectionFrame(
+  doc: RLSCDocument,
+  flat: readonly FlatNode[],
+  view: CanvasViewState,
+  size: CanvasSize,
+): ProjectionFrame {
+  const scale = Math.min(size.width / doc.viewport.width, size.height / doc.viewport.height) * 0.62 * view.zoom;
+  const zValues = flat.map((item) => nodeDepth(item));
+  const minZ = Math.min(...zValues, 0);
+  const maxZ = Math.max(...zValues, 0);
+  const zCenter = (minZ + maxZ) / 2;
+  const points = flat.flatMap((item) => {
+    const z = nodeDepth(item);
+    const { x, y, width, height } = item.node.rect;
+    return [
+      rawProjectPoint(doc, view, scale, zCenter, x, y, z),
+      rawProjectPoint(doc, view, scale, zCenter, x + width, y, z),
+      rawProjectPoint(doc, view, scale, zCenter, x + width, y + height, z),
+      rawProjectPoint(doc, view, scale, zCenter, x, y + height, z),
+    ];
+  });
+  const bounds = pointBounds(points);
+  const centerX = (bounds.minX + bounds.maxX) / 2;
+  const centerY = (bounds.minY + bounds.maxY) / 2;
+  return {
+    scale,
+    zCenter,
+    offsetX: size.width / 2 - centerX + view.panX,
+    offsetY: size.height / 2 - centerY + view.panY,
+  };
+}
+
+function projectPoint(
+  doc: RLSCDocument,
+  view: CanvasViewState,
+  frame: ProjectionFrame,
+  x: number,
+  y: number,
+  z: number,
+): CanvasPoint {
+  const point = rawProjectPoint(doc, view, frame.scale, frame.zCenter, x, y, z);
+  return { x: point.x + frame.offsetX, y: point.y + frame.offsetY };
+}
+
+function rawProjectPoint(
+  doc: RLSCDocument,
+  view: CanvasViewState,
+  scale: number,
+  zCenter: number,
+  x: number,
+  y: number,
+  z: number,
+): CanvasPoint {
+  const localX = x - doc.viewport.width / 2;
+  const localY = y - doc.viewport.height / 2;
+  const localZ = z - zCenter;
+  return {
+    x: localX * scale + localY * scale * view.yaw + localZ * view.depthX * view.zoom,
+    y: localY * scale * view.pitch - localZ * view.depthY * view.zoom,
+  };
+}
+
+function pointBounds(points: readonly CanvasPoint[]): { minX: number; minY: number; maxX: number; maxY: number } {
+  if (points.length === 0) return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+  return points.reduce(
+    (bounds, point) => ({
+      minX: Math.min(bounds.minX, point.x),
+      minY: Math.min(bounds.minY, point.y),
+      maxX: Math.max(bounds.maxX, point.x),
+      maxY: Math.max(bounds.maxY, point.y),
+    }),
+    { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity },
+  );
+}
+
+function nodeDepth(item: FlatNode): number {
+  return item.depth * 18 + Math.max(0, item.node.zIndex) / 140;
+}
+
+function parentDepth(item: FlatNode): number {
+  return Math.max(0, item.depth - 1) * 18 + Math.max(0, item.parent?.zIndex ?? 0) / 140;
 }
 
 function drawScene(
@@ -417,16 +496,9 @@ function drawPerspectiveGrid(
   doc: RLSCDocument,
   view: CanvasViewState,
 ): void {
-  const scale = Math.min(size.width / doc.viewport.width, size.height / doc.viewport.height) * 0.62 * view.zoom;
-  const origin = { x: size.width * 0.5 + view.panX, y: size.height * 0.58 + view.panY };
-  const project = (x: number, y: number): CanvasPoint => {
-    const localX = x - doc.viewport.width / 2;
-    const localY = y - doc.viewport.height / 2;
-    return {
-      x: origin.x + localX * scale + localY * scale * view.yaw,
-      y: origin.y + localY * scale * view.pitch,
-    };
-  };
+  const flat = flattenVisibleNodes(doc.root, 0, null);
+  const frame = createProjectionFrame(doc, flat, view, size);
+  const project = (x: number, y: number): CanvasPoint => projectPoint(doc, view, frame, x, y, 0);
 
   context.save();
   context.lineWidth = 1;
