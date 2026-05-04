@@ -15,6 +15,7 @@ import {
 } from "@qa-sdk/rlsc-analysis/browser";
 import type {
   PerspectiveCopyEvent,
+  PerspectiveControlMode,
   PerspectiveGroupBy,
   PerspectiveNodeEvent,
   PerspectiveRendererKind,
@@ -33,6 +34,7 @@ interface PipelineState {
   layerScene: PerspectiveViewer | null;
   renderer: PerspectiveRendererKind;
   groupBy: PerspectiveGroupBy;
+  controlMode: PerspectiveControlMode;
   hoveredNodeId: string | null;
   selectedNodeId: string | null;
   selectedDetail: PerspectiveSelectionDetail | null;
@@ -55,6 +57,7 @@ const state: PipelineState = {
   layerScene: null,
   renderer: "auto",
   groupBy: "dom-node",
+  controlMode: "orbit",
   hoveredNodeId: null,
   selectedNodeId: null,
   selectedDetail: null,
@@ -158,6 +161,16 @@ mount.innerHTML = `
         <h2>Perspective layers</h2>
         <div class="layer-view" data-view="layers3d"></div>
         <div class="layer-actions">
+          <label class="renderer-control">
+            Control
+            <select data-action="controlMode">
+              <option value="orbit">Orbit</option>
+              <option value="x">X axis</option>
+              <option value="y">Y axis</option>
+              <option value="z">Z axis</option>
+              <option value="pan">Pan</option>
+            </select>
+          </label>
           <button type="button" data-action="clearSelection">Clear selection</button>
           <button type="button" data-action="viewTop">Top view</button>
           <button type="button" data-action="viewReset">Reset view</button>
@@ -239,6 +252,10 @@ mount.addEventListener("change", (event) => {
     state.selectedDetail = null;
     state.copiedText = "";
     if (state.doc) state.layerScene?.update(state.doc, viewerOptions(analyzeAreas(state.doc, { textOccupancies: state.text }).overflowIssues));
+    renderInteractions();
+  } else if (target instanceof HTMLSelectElement && target.dataset["action"] === "controlMode") {
+    state.controlMode = target.value as PerspectiveControlMode;
+    state.layerScene?.setControlMode(state.controlMode);
     renderInteractions();
   }
 });
@@ -361,6 +378,7 @@ function viewerOptions(overflowIssues: readonly AreaOverflowIssue[]) {
   return {
     renderer: state.renderer,
     groupBy: state.groupBy,
+    controlMode: state.controlMode,
     overflowIssues,
     textOccupancies: state.text,
     onHover(event: PerspectiveNodeEvent): void {
@@ -384,6 +402,7 @@ function renderInteractions(): void {
   interactionsView.innerHTML = [
     metric("Renderer", state.renderer),
     metric("Group", state.groupBy),
+    metric("Control", state.controlMode),
     metric("Hover", state.hoveredNodeId ?? "none"),
     metric("Selected", state.selectedNodeId ?? "none"),
     metric("Identifier", detail?.identifier ? `${detail.identifier.kind}:${detail.identifier.value}` : "none"),

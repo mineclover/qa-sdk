@@ -4,6 +4,7 @@ export type PerspectiveRendererKind = "auto" | "webgl" | "canvas";
 export type PerspectiveGroupBy = "dom-node" | "componentId" | "qaAddress" | "role";
 export type PerspectiveCopyFormat = "identifier" | "json";
 export type PerspectiveViewPreset = "default" | "top" | "front" | "side";
+export type PerspectiveControlMode = "orbit" | "x" | "y" | "z" | "pan";
 
 export interface PerspectiveIssue {
   readonly nodeId?: string;
@@ -55,6 +56,7 @@ export interface PerspectiveViewerOptions {
   readonly issues?: readonly PerspectiveIssue[];
   readonly overflowIssues?: readonly AreaOverflowIssue[];
   readonly textOccupancies?: readonly TextOccupancy[];
+  readonly controlMode?: PerspectiveControlMode;
   readonly onHover?: (event: PerspectiveNodeEvent) => void;
   readonly onSelect?: (event: PerspectiveNodeEvent) => void;
   readonly onCopy?: (event: PerspectiveCopyEvent) => void;
@@ -66,6 +68,7 @@ export interface PerspectiveViewer {
   fitView(): void;
   resetView(): void;
   setView(preset: PerspectiveViewPreset): void;
+  setControlMode(mode: PerspectiveControlMode): void;
   dispose(): void;
 }
 
@@ -138,6 +141,7 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
   let selectedLayerId: string | null = null;
   let dragState: Css3DDragState | null = null;
   let suppressClick = false;
+  let controlMode: PerspectiveControlMode = options.controlMode ?? "orbit";
   let viewState: Css3DViewState = createViewState("default");
 
   const resizeObserver = new ResizeObserver(() => render());
@@ -286,6 +290,7 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
     currentOptions = nextOptions;
     currentIssueMap = createIssueMap(nextOptions);
     currentLayers = createLayerModel(nextDoc, nextOptions.groupBy, currentIssueMap, nextOptions.copyFormat);
+    controlMode = nextOptions.controlMode ?? controlMode;
     render();
   }
 
@@ -311,15 +316,21 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
     applyTransform();
   }
 
+  function setControlMode(mode: PerspectiveControlMode): void {
+    controlMode = mode;
+    viewport.style.cursor = mode === "pan" ? "grab" : hoveredLayerId ? "pointer" : "grab";
+  }
+
   function handlePointerDown(event: PointerEvent): void {
     if (![0, 1, 2].includes(event.button)) return;
+    const mode = shouldPan(event) ? "pan" : controlMode;
     dragState = {
       startX: event.clientX,
       startY: event.clientY,
       startRotation: viewState.rotation,
       startPanX: viewState.panX,
       startPanY: viewState.panY,
-      mode: shouldPan(event) ? "pan" : "rotate",
+      mode,
       moved: false,
     };
     suppressClick = false;
@@ -338,7 +349,7 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
       ? { ...viewState, panX: dragState.startPanX + dx, panY: dragState.startPanY + dy }
       : {
           ...viewState,
-          rotation: dragRotationMatrix(dx, dy).multiply(dragState.startRotation),
+          rotation: dragRotationMatrix(mode, dx, dy).multiply(dragState.startRotation),
         };
     applyTransform();
   }
@@ -415,7 +426,7 @@ function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: P
   viewport.addEventListener("keydown", handleKeyDown);
   render();
 
-  return { update, clearSelection, fitView, resetView, setView, dispose };
+  return { update, clearSelection, fitView, resetView, setView, setControlMode, dispose };
 }
 
 interface FlatNode {
@@ -437,7 +448,7 @@ interface Css3DDragState {
   readonly startRotation: DOMMatrix;
   readonly startPanX: number;
   readonly startPanY: number;
-  readonly mode: "rotate" | "pan";
+  readonly mode: PerspectiveControlMode;
   moved: boolean;
 }
 
@@ -465,7 +476,10 @@ function presetRotationMatrix(preset: PerspectiveViewPreset): DOMMatrix {
   return new DOMMatrix().rotateSelf(62, 0, -18);
 }
 
-function dragRotationMatrix(dx: number, dy: number): DOMMatrix {
+function dragRotationMatrix(mode: PerspectiveControlMode, dx: number, dy: number): DOMMatrix {
+  if (mode === "x") return new DOMMatrix().rotateAxisAngleSelf(1, 0, 0, -dy * 0.28);
+  if (mode === "y") return new DOMMatrix().rotateAxisAngleSelf(0, 1, 0, dx * 0.34);
+  if (mode === "z") return new DOMMatrix().rotateAxisAngleSelf(0, 0, 1, dx * 0.34);
   return new DOMMatrix()
     .rotateAxisAngleSelf(0, 1, 0, dx * 0.34)
     .rotateAxisAngleSelf(1, 0, 0, -dy * 0.28);
