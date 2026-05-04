@@ -1,0 +1,20 @@
+{
+  "name": "@qa-sdk/rlsc-demo",
+  "version": "0.1.0",
+  "description": "RLSC browser execution demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@qa-sdk/rlsc-analysis": "workspace:*",
+    "@qa-sdk/rlsc-perspective": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2",
+    "vite": "^6.3.5"
+  }
+}
