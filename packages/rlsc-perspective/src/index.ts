@@ -85,73 +85,178 @@ export function createPerspectiveViewer(
   doc: RLSCDocument,
   options: PerspectiveViewerOptions = {},
 ): PerspectiveViewer {
-  return createCanvasPerspectiveViewer(container, doc, options);
+  return createCss3DViewer(container, doc, options);
 }
 
-function createCanvasPerspectiveViewer(
-  container: HTMLElement,
-  doc: RLSCDocument,
-  options: PerspectiveViewerOptions,
-): PerspectiveViewer {
+function createCss3DViewer(container: HTMLElement, doc: RLSCDocument, options: PerspectiveViewerOptions): PerspectiveViewer {
   container.innerHTML = "";
-  const canvas = document.createElement("canvas");
-  canvas.tabIndex = 0;
-  container.appendChild(canvas);
 
-  const rawContext = canvas.getContext("2d", { alpha: false });
-  if (!rawContext) throw new Error("2D canvas context unavailable");
-  const context: CanvasRenderingContext2D = rawContext;
+  const viewport = document.createElement("div");
+  viewport.tabIndex = 0;
+  viewport.className = "rlsc-css3d-viewport";
+  style(viewport, {
+    position: "relative",
+    width: "100%",
+    height: "100%",
+    overflow: "hidden",
+    background: "#f8fafc",
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
+    cursor: "grab",
+    outline: "none",
+    perspective: "980px",
+    perspectiveOrigin: "50% 48%",
+    touchAction: "none",
+    userSelect: "none",
+  });
 
-  const resizeObserver = new ResizeObserver(() => update(currentDoc, currentOptions));
-  resizeObserver.observe(container);
+  const scene = document.createElement("div");
+  scene.className = "rlsc-css3d-scene";
+  style(scene, {
+    position: "absolute",
+    left: "50%",
+    top: "50%",
+    transformOrigin: "50% 50%",
+    transformStyle: "preserve-3d",
+    pointerEvents: "none",
+  });
+
+  viewport.appendChild(scene);
+  container.appendChild(viewport);
 
   let currentDoc = doc;
   let currentOptions = options;
-  let currentLayers = createLayerModel(doc, options.groupBy, createIssueMap(options), options.copyFormat);
-  let sceneNodes: CanvasSceneNode[] = [];
+  let currentIssueMap = createIssueMap(options);
+  let currentLayers = createLayerModel(doc, options.groupBy, currentIssueMap, options.copyFormat);
+  let elements = new Map<string, HTMLElement>();
   let hoveredNodeId: string | null = null;
   let hoveredLayerId: string | null = null;
   let selectedLayerId: string | null = null;
-  let dragState: CanvasDragState | null = null;
-  let viewState: CanvasViewState = {
-    yaw: 0.28,
-    pitch: 0.68,
-    depthX: 2.15,
-    depthY: 1.35,
-    zoom: 1,
-    panX: 0,
-    panY: 0,
-  };
+  let dragState: Css3DDragState | null = null;
+  let suppressClick = false;
+  let viewState: Css3DViewState = { rotateX: 62, rotateZ: -18, zoom: 1, panX: 0, panY: 0 };
 
-  function resize(): CanvasSize {
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const resizeObserver = new ResizeObserver(() => render());
+  resizeObserver.observe(container);
+
+  function fitScale(): number {
     const width = Math.max(1, container.clientWidth);
     const height = Math.max(1, container.clientHeight);
-    const pixelWidth = Math.round(width * ratio);
-    const pixelHeight = Math.round(height * ratio);
-    if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
-    if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    return { width, height };
+    return Math.min(width / currentDoc.viewport.width, height / currentDoc.viewport.height) * 0.78;
   }
 
-  function update(nextDoc: RLSCDocument, nextOptions: PerspectiveViewerOptions = currentOptions): void {
-    currentDoc = nextDoc;
-    currentOptions = nextOptions;
-    const issueMap = createIssueMap(currentOptions);
-    currentLayers = createLayerModel(nextDoc, currentOptions.groupBy, issueMap, currentOptions.copyFormat);
-    const size = resize();
-    sceneNodes = projectScene(nextDoc, currentLayers, issueMap, viewState, size);
+  function applyTransform(): void {
+    scene.style.width = `${currentDoc.viewport.width}px`;
+    scene.style.height = `${currentDoc.viewport.height}px`;
+    scene.style.transform = [
+      "translate3d(-50%, -50%, 0)",
+      `translate3d(${viewState.panX}px, ${viewState.panY}px, 0)`,
+      `scale(${fitScale() * viewState.zoom})`,
+      `rotateX(${viewState.rotateX}deg)`,
+      `rotateZ(${viewState.rotateZ}deg)`,
+    ].join(" ");
+  }
 
-    if (hoveredNodeId && !sceneNodes.some((item) => item.node.id === hoveredNodeId)) {
+  function render(): void {
+    elements = new Map();
+    scene.replaceChildren(createGrid(currentDoc));
+    applyTransform();
+    const flat = flattenVisibleNodes(currentDoc.root, 0, null).sort(
+      (a, b) => a.depth - b.depth || a.node.rect.y - b.node.rect.y || a.node.rect.x - b.node.rect.x,
+    );
+    for (const item of flat) {
+      const element = createNodeElement(item);
+      elements.set(item.node.id, element);
+      scene.appendChild(element);
+    }
+    if (hoveredNodeId && !elements.has(hoveredNodeId)) {
       hoveredNodeId = null;
       hoveredLayerId = null;
     }
     if (selectedLayerId && !currentLayers.layers.has(selectedLayerId)) selectedLayerId = null;
+    applyInteractionState();
+  }
 
-    drawScene(context, size, nextDoc, sceneNodes, currentLayers, hoveredLayerId, selectedLayerId, viewState);
+  function createGrid(nextDoc: RLSCDocument): HTMLElement {
+    const grid = document.createElement("div");
+    grid.className = "rlsc-css3d-grid";
+    style(grid, {
+      position: "absolute",
+      left: "0",
+      top: "0",
+      width: `${nextDoc.viewport.width}px`,
+      height: `${nextDoc.viewport.height}px`,
+      transform: "translateZ(-8px)",
+      transformStyle: "preserve-3d",
+      backgroundImage:
+        "linear-gradient(rgba(148,163,184,.22) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.22) 1px, transparent 1px)",
+      backgroundSize: "80px 80px",
+      border: "1px solid rgba(71,85,105,.28)",
+      boxSizing: "border-box",
+      pointerEvents: "none",
+    });
+    return grid;
+  }
+
+  function createNodeElement(item: FlatNode): HTMLElement {
+    const node = item.node;
+    const issue = primaryIssue(currentIssueMap.get(node.id) ?? []);
+    const layerId = currentLayers.nodeToLayer.get(node.id) ?? node.id;
+    const color = issueColor(issue) ?? colorForNode(node, item.depth);
+    const element = document.createElement("button");
+    element.type = "button";
+    element.className = "rlsc-css3d-node";
+    element.dataset["nodeId"] = node.id;
+    element.dataset["layerId"] = layerId;
+    element.title = nodeLabel(node, currentLayers.layers.get(layerId));
+    element.setAttribute("aria-label", element.title);
+    style(element, {
+      position: "absolute",
+      left: `${node.rect.x}px`,
+      top: `${node.rect.y}px`,
+      width: `${Math.max(2, node.rect.width)}px`,
+      height: `${Math.max(2, node.rect.height)}px`,
+      margin: "0",
+      padding: "0",
+      border: `2px solid ${issue ? "rgba(185,28,28,.92)" : "rgba(30,41,59,.52)"}`,
+      borderRadius: "3px",
+      background: cssColor(color, issue ? 0.82 : node.children.length > 0 ? 0.32 : 0.68),
+      boxSizing: "border-box",
+      transform: `translateZ(${nodeDepth(item)}px)`,
+      transformStyle: "preserve-3d",
+      backfaceVisibility: "visible",
+      pointerEvents: "auto",
+      cursor: "pointer",
+      outline: "none",
+    });
+    element.addEventListener("pointerover", (event) => {
+      event.stopPropagation();
+      if (!dragState) setHover(node.id);
+    });
+    element.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (suppressClick) return;
+      setHover(node.id);
+      selectHovered();
+    });
+    return element;
+  }
+
+  function applyInteractionState(): void {
+    for (const [nodeId, element] of elements) {
+      const layerId = element.dataset["layerId"] ?? nodeId;
+      const isHovered = hoveredLayerId === layerId;
+      const isSelected = selectedLayerId === layerId;
+      element.style.opacity = "1";
+      element.style.boxShadow = isHovered
+        ? "0 0 0 4px rgba(255,212,59,.34), 0 14px 34px rgba(15,23,42,.22)"
+        : isSelected
+          ? "0 0 0 4px rgba(64,192,87,.28), 0 10px 26px rgba(15,23,42,.18)"
+          : "none";
+      if (isHovered) element.style.borderColor = "rgba(111,76,0,.96)";
+      if (isSelected) element.style.borderColor = "rgba(22,101,52,.96)";
+    }
   }
 
   function setHover(nodeId: string | null): void {
@@ -159,73 +264,93 @@ function createCanvasPerspectiveViewer(
     if (nodeId === hoveredNodeId && layerId === hoveredLayerId) return;
     hoveredNodeId = nodeId;
     hoveredLayerId = layerId;
-    canvas.style.cursor = hoveredLayerId ? "pointer" : "grab";
+    viewport.style.cursor = hoveredLayerId ? "pointer" : "grab";
+    applyInteractionState();
     emitNodeEvent(container, "rlsc-perspective-hover", currentDoc, currentLayers, hoveredNodeId, hoveredLayerId);
     currentOptions.onHover?.(nodeEvent(currentDoc, currentLayers, hoveredNodeId, hoveredLayerId));
-    update(currentDoc, currentOptions);
   }
 
-  function handlePointerMove(event: PointerEvent): void {
-    if (dragState) {
-      const dx = event.offsetX - dragState.startX;
-      const dy = event.offsetY - dragState.startY;
-      dragState.moved ||= Math.hypot(dx, dy) > 4;
-      viewState = event.shiftKey
-        ? { ...viewState, panX: dragState.startPanX + dx, panY: dragState.startPanY + dy }
-        : {
-            ...viewState,
-            yaw: clamp(dragState.startYaw + dx * 0.0028, -0.55, 0.75),
-            pitch: clamp(dragState.startPitch + dy * 0.0024, 0.36, 0.95),
-          };
-      canvas.style.cursor = "grabbing";
-      update(currentDoc, currentOptions);
-      return;
-    }
+  function selectHovered(): void {
+    selectedLayerId = hoveredLayerId;
+    applyInteractionState();
+    emitNodeEvent(container, "rlsc-perspective-select", currentDoc, currentLayers, hoveredNodeId, selectedLayerId);
+    currentOptions.onSelect?.(nodeEvent(currentDoc, currentLayers, hoveredNodeId, selectedLayerId));
+    viewport.focus();
+  }
 
-    setHover(hitTest({ x: event.offsetX, y: event.offsetY }, sceneNodes)?.node.id ?? null);
+  function update(nextDoc: RLSCDocument, nextOptions: PerspectiveViewerOptions = currentOptions): void {
+    currentDoc = nextDoc;
+    currentOptions = nextOptions;
+    currentIssueMap = createIssueMap(nextOptions);
+    currentLayers = createLayerModel(nextDoc, nextOptions.groupBy, currentIssueMap, nextOptions.copyFormat);
+    render();
+  }
+
+  function clearSelection(): void {
+    selectedLayerId = null;
+    applyInteractionState();
+    emitNodeEvent(container, "rlsc-perspective-select", currentDoc, currentLayers, null, null);
+    currentOptions.onSelect?.(nodeEvent(currentDoc, currentLayers, null, null));
   }
 
   function handlePointerDown(event: PointerEvent): void {
     if (event.button !== 0) return;
     dragState = {
-      startX: event.offsetX,
-      startY: event.offsetY,
-      startYaw: viewState.yaw,
-      startPitch: viewState.pitch,
+      startX: event.clientX,
+      startY: event.clientY,
+      startRotateX: viewState.rotateX,
+      startRotateZ: viewState.rotateZ,
       startPanX: viewState.panX,
       startPanY: viewState.panY,
       moved: false,
     };
-    canvas.setPointerCapture(event.pointerId);
-    canvas.style.cursor = "grabbing";
+    suppressClick = false;
+    viewport.setPointerCapture(event.pointerId);
+    viewport.style.cursor = "grabbing";
+  }
+
+  function handlePointerMove(event: PointerEvent): void {
+    if (!dragState) return;
+    const dx = event.clientX - dragState.startX;
+    const dy = event.clientY - dragState.startY;
+    dragState.moved ||= Math.hypot(dx, dy) > 4;
+    suppressClick = dragState.moved;
+    viewState = event.shiftKey
+      ? { ...viewState, panX: dragState.startPanX + dx, panY: dragState.startPanY + dy }
+      : {
+          ...viewState,
+          rotateZ: normalizeDegrees(dragState.startRotateZ + dx * 0.34),
+          rotateX: normalizeDegrees(dragState.startRotateX - dy * 0.28),
+        };
+    applyTransform();
   }
 
   function handlePointerUp(event: PointerEvent): void {
-    const wasClick = dragState !== null && !dragState.moved;
+    const shouldSelect = dragState !== null && !dragState.moved;
+    if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
+    viewport.style.cursor = hoveredLayerId ? "pointer" : "grab";
     dragState = null;
-    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
-    setHover(hitTest({ x: event.offsetX, y: event.offsetY }, sceneNodes)?.node.id ?? null);
-    canvas.style.cursor = hoveredLayerId ? "pointer" : "grab";
-    if (wasClick) selectHovered();
+    if (shouldSelect) {
+      const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>(".rlsc-css3d-node");
+      const nodeId = target?.dataset["nodeId"] ?? null;
+      if (nodeId) {
+        setHover(nodeId);
+        selectHovered();
+      }
+    }
+    window.setTimeout(() => {
+      suppressClick = false;
+    }, 0);
+  }
+
+  function handlePointerLeave(): void {
+    if (!dragState) setHover(null);
   }
 
   function handleWheel(event: WheelEvent): void {
     event.preventDefault();
-    const nextZoom = clamp(viewState.zoom * Math.exp(-event.deltaY * 0.0011), 0.45, 2.6);
-    viewState = { ...viewState, zoom: nextZoom };
-    update(currentDoc, currentOptions);
-  }
-
-  function clearHover(): void {
-    setHover(null);
-  }
-
-  function selectHovered(): void {
-    selectedLayerId = hoveredLayerId;
-    emitNodeEvent(container, "rlsc-perspective-select", currentDoc, currentLayers, hoveredNodeId, selectedLayerId);
-    currentOptions.onSelect?.(nodeEvent(currentDoc, currentLayers, hoveredNodeId, selectedLayerId));
-    canvas.focus();
-    update(currentDoc, currentOptions);
+    viewState = { ...viewState, zoom: clamp(viewState.zoom * Math.exp(-event.deltaY * 0.0011), 0.32, 3.2) };
+    applyTransform();
   }
 
   function handleCopy(event: ClipboardEvent): void {
@@ -245,46 +370,28 @@ function createCanvasPerspectiveViewer(
     currentOptions.onCopy?.(detail);
   }
 
-  function clearSelection(): void {
-    selectedLayerId = null;
-    emitNodeEvent(container, "rlsc-perspective-select", currentDoc, currentLayers, null, null);
-    currentOptions.onSelect?.(nodeEvent(currentDoc, currentLayers, null, null));
-    update(currentDoc, currentOptions);
-  }
-
   function dispose(): void {
     resizeObserver.disconnect();
-    canvas.removeEventListener("pointerdown", handlePointerDown);
-    canvas.removeEventListener("pointermove", handlePointerMove);
-    canvas.removeEventListener("pointerup", handlePointerUp);
-    canvas.removeEventListener("pointerleave", clearHover);
-    canvas.removeEventListener("copy", handleCopy);
-    canvas.removeEventListener("keydown", handleKeyDown);
-    canvas.removeEventListener("wheel", handleWheel);
-    canvas.remove();
+    viewport.removeEventListener("pointerdown", handlePointerDown);
+    viewport.removeEventListener("pointermove", handlePointerMove);
+    viewport.removeEventListener("pointerup", handlePointerUp);
+    viewport.removeEventListener("pointerleave", handlePointerLeave);
+    viewport.removeEventListener("wheel", handleWheel);
+    viewport.removeEventListener("copy", handleCopy);
+    viewport.removeEventListener("keydown", handleKeyDown);
+    viewport.remove();
   }
 
-  canvas.style.cursor = "grab";
-  canvas.addEventListener("pointerdown", handlePointerDown);
-  canvas.addEventListener("pointermove", handlePointerMove);
-  canvas.addEventListener("pointerup", handlePointerUp);
-  canvas.addEventListener("pointerleave", clearHover);
-  canvas.addEventListener("copy", handleCopy);
-  canvas.addEventListener("keydown", handleKeyDown);
-  canvas.addEventListener("wheel", handleWheel, { passive: false });
-  update(doc, options);
+  viewport.addEventListener("pointerdown", handlePointerDown);
+  viewport.addEventListener("pointermove", handlePointerMove);
+  viewport.addEventListener("pointerup", handlePointerUp);
+  viewport.addEventListener("pointerleave", handlePointerLeave);
+  viewport.addEventListener("wheel", handleWheel, { passive: false });
+  viewport.addEventListener("copy", handleCopy);
+  viewport.addEventListener("keydown", handleKeyDown);
+  render();
 
   return { update, clearSelection, dispose };
-}
-
-interface CanvasSize {
-  readonly width: number;
-  readonly height: number;
-}
-
-interface CanvasPoint {
-  readonly x: number;
-  readonly y: number;
 }
 
 interface FlatNode {
@@ -293,291 +400,39 @@ interface FlatNode {
   readonly parent?: RLSCNode;
 }
 
-interface CanvasSceneNode extends FlatNode {
-  readonly layerId: string;
-  readonly issue?: PerspectiveIssue;
-  readonly points: readonly [CanvasPoint, CanvasPoint, CanvasPoint, CanvasPoint];
-  readonly center: CanvasPoint;
-  readonly parentCenter?: CanvasPoint;
-}
-
-interface CanvasViewState {
-  readonly yaw: number;
-  readonly pitch: number;
-  readonly depthX: number;
-  readonly depthY: number;
+interface Css3DViewState {
+  readonly rotateX: number;
+  readonly rotateZ: number;
   readonly zoom: number;
   readonly panX: number;
   readonly panY: number;
 }
 
-interface ProjectionFrame {
-  readonly scale: number;
-  readonly zCenter: number;
-  readonly offsetX: number;
-  readonly offsetY: number;
-}
-
-interface CanvasDragState {
+interface Css3DDragState {
   readonly startX: number;
   readonly startY: number;
-  readonly startYaw: number;
-  readonly startPitch: number;
+  readonly startRotateX: number;
+  readonly startRotateZ: number;
   readonly startPanX: number;
   readonly startPanY: number;
   moved: boolean;
 }
 
-function projectScene(
-  doc: RLSCDocument,
-  model: LayerModel,
-  issueMap: ReadonlyMap<string, readonly PerspectiveIssue[]>,
-  view: CanvasViewState,
-  size: CanvasSize,
-): CanvasSceneNode[] {
-  const flat = flattenVisibleNodes(doc.root, 0, null).sort(
-    (a, b) => a.depth - b.depth || a.node.rect.y - b.node.rect.y || a.node.rect.x - b.node.rect.x,
-  );
-  const frame = createProjectionFrame(doc, flat, view, size);
-  const project = (x: number, y: number, z: number): CanvasPoint => projectPoint(doc, view, frame, x, y, z);
-
-  return flat
-    .map((item) => {
-      const z = nodeDepth(item);
-      const left = item.node.rect.x;
-      const top = item.node.rect.y;
-      const right = left + item.node.rect.width;
-      const bottom = top + item.node.rect.height;
-      const points = [
-        project(left, top, z),
-        project(right, top, z),
-        project(right, bottom, z),
-        project(left, bottom, z),
-      ] as const;
-      const parentCenter = item.parent
-        ? project(
-            item.parent.rect.x + item.parent.rect.width / 2,
-            item.parent.rect.y + item.parent.rect.height / 2,
-            parentDepth(item),
-          )
-        : undefined;
-      return {
-        ...item,
-        layerId: model.nodeToLayer.get(item.node.id) ?? item.node.id,
-        issue: primaryIssue(issueMap.get(item.node.id) ?? []),
-        points,
-        center: project(left + item.node.rect.width / 2, top + item.node.rect.height / 2, z),
-        parentCenter,
-      };
-    });
-}
-
-function createProjectionFrame(
-  doc: RLSCDocument,
-  flat: readonly FlatNode[],
-  view: CanvasViewState,
-  size: CanvasSize,
-): ProjectionFrame {
-  const scale = Math.min(size.width / doc.viewport.width, size.height / doc.viewport.height) * 0.62 * view.zoom;
-  const zValues = flat.map((item) => nodeDepth(item));
-  const minZ = Math.min(...zValues, 0);
-  const maxZ = Math.max(...zValues, 0);
-  const zCenter = (minZ + maxZ) / 2;
-  const points = flat.flatMap((item) => {
-    const z = nodeDepth(item);
-    const { x, y, width, height } = item.node.rect;
-    return [
-      rawProjectPoint(doc, view, scale, zCenter, x, y, z),
-      rawProjectPoint(doc, view, scale, zCenter, x + width, y, z),
-      rawProjectPoint(doc, view, scale, zCenter, x + width, y + height, z),
-      rawProjectPoint(doc, view, scale, zCenter, x, y + height, z),
-    ];
-  });
-  const bounds = pointBounds(points);
-  const centerX = (bounds.minX + bounds.maxX) / 2;
-  const centerY = (bounds.minY + bounds.maxY) / 2;
-  return {
-    scale,
-    zCenter,
-    offsetX: size.width / 2 - centerX + view.panX,
-    offsetY: size.height / 2 - centerY + view.panY,
-  };
-}
-
-function projectPoint(
-  doc: RLSCDocument,
-  view: CanvasViewState,
-  frame: ProjectionFrame,
-  x: number,
-  y: number,
-  z: number,
-): CanvasPoint {
-  const point = rawProjectPoint(doc, view, frame.scale, frame.zCenter, x, y, z);
-  return { x: point.x + frame.offsetX, y: point.y + frame.offsetY };
-}
-
-function rawProjectPoint(
-  doc: RLSCDocument,
-  view: CanvasViewState,
-  scale: number,
-  zCenter: number,
-  x: number,
-  y: number,
-  z: number,
-): CanvasPoint {
-  const localX = x - doc.viewport.width / 2;
-  const localY = y - doc.viewport.height / 2;
-  const localZ = z - zCenter;
-  return {
-    x: localX * scale + localY * scale * view.yaw + localZ * view.depthX * view.zoom,
-    y: localY * scale * view.pitch - localZ * view.depthY * view.zoom,
-  };
-}
-
-function pointBounds(points: readonly CanvasPoint[]): { minX: number; minY: number; maxX: number; maxY: number } {
-  if (points.length === 0) return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
-  return points.reduce(
-    (bounds, point) => ({
-      minX: Math.min(bounds.minX, point.x),
-      minY: Math.min(bounds.minY, point.y),
-      maxX: Math.max(bounds.maxX, point.x),
-      maxY: Math.max(bounds.maxY, point.y),
-    }),
-    { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity },
-  );
-}
-
 function nodeDepth(item: FlatNode): number {
-  return item.depth * 18 + Math.max(0, item.node.zIndex) / 140;
+  return item.depth * 38 + Math.max(0, item.node.zIndex) / 80;
 }
 
-function parentDepth(item: FlatNode): number {
-  return Math.max(0, item.depth - 1) * 18 + Math.max(0, item.parent?.zIndex ?? 0) / 140;
+function nodeLabel(node: RLSCNode, layer: PerspectiveLayer | undefined): string {
+  const identifier = node.identifier?.value ?? node.identifier?.componentId ?? node.identifier?.qaAddress ?? node.address;
+  return identifier ?? layer?.value ?? node.id;
 }
 
-function drawScene(
-  context: CanvasRenderingContext2D,
-  size: CanvasSize,
-  doc: RLSCDocument,
-  nodes: readonly CanvasSceneNode[],
-  model: LayerModel,
-  hoveredLayerId: string | null,
-  selectedLayerId: string | null,
-  view: CanvasViewState,
-): void {
-  context.clearRect(0, 0, size.width, size.height);
-  context.fillStyle = "#f8fafc";
-  context.fillRect(0, 0, size.width, size.height);
-  drawPerspectiveGrid(context, size, doc, view);
-
-  for (const node of nodes) {
-    if (node.parentCenter) {
-      context.save();
-      context.strokeStyle = "rgba(71, 85, 105, 0.28)";
-      context.lineWidth = 1;
-      context.beginPath();
-      context.moveTo(node.parentCenter.x, node.parentCenter.y);
-      context.lineTo(node.center.x, node.center.y);
-      context.stroke();
-      context.restore();
-    }
-  }
-
-  for (const node of nodes) drawSceneNode(context, node, hoveredLayerId, selectedLayerId);
-
-  const activeLayerId = hoveredLayerId ?? selectedLayerId;
-  const activeNode = activeLayerId ? [...nodes].reverse().find((node) => node.layerId === activeLayerId) : undefined;
-  if (activeNode && activeLayerId) drawNodeLabel(context, activeNode, model.layers.get(activeLayerId));
+function style(element: HTMLElement, next: Partial<CSSStyleDeclaration>): void {
+  Object.assign(element.style, next);
 }
 
-function drawPerspectiveGrid(
-  context: CanvasRenderingContext2D,
-  size: CanvasSize,
-  doc: RLSCDocument,
-  view: CanvasViewState,
-): void {
-  const flat = flattenVisibleNodes(doc.root, 0, null);
-  const frame = createProjectionFrame(doc, flat, view, size);
-  const project = (x: number, y: number): CanvasPoint => projectPoint(doc, view, frame, x, y, 0);
-
-  context.save();
-  context.lineWidth = 1;
-  context.strokeStyle = "rgba(148, 163, 184, 0.22)";
-  for (let x = 0; x <= doc.viewport.width; x += 80) drawLine(context, project(x, 0), project(x, doc.viewport.height));
-  for (let y = 0; y <= doc.viewport.height; y += 80) drawLine(context, project(0, y), project(doc.viewport.width, y));
-  context.strokeStyle = "rgba(71, 85, 105, 0.36)";
-  context.lineWidth = 1.5;
-  drawLine(context, project(0, 0), project(doc.viewport.width, 0));
-  drawLine(context, project(doc.viewport.width, 0), project(doc.viewport.width, doc.viewport.height));
-  drawLine(context, project(doc.viewport.width, doc.viewport.height), project(0, doc.viewport.height));
-  drawLine(context, project(0, doc.viewport.height), project(0, 0));
-  context.restore();
-}
-
-function drawSceneNode(
-  context: CanvasRenderingContext2D,
-  item: CanvasSceneNode,
-  hoveredLayerId: string | null,
-  selectedLayerId: string | null,
-): void {
-  const isHovered = hoveredLayerId === item.layerId;
-  const isSelected = selectedLayerId === item.layerId;
-  const color = issueColor(item.issue) ?? colorForNode(item.node, item.depth);
-  const faded = hoveredLayerId !== null && !isHovered;
-  const baseAlpha = item.issue ? 0.86 : item.node.children.length > 0 ? 0.34 : 0.68;
-  const alpha = faded ? 0.12 : isHovered ? 0.94 : isSelected ? 0.88 : baseAlpha;
-
-  context.save();
-  context.beginPath();
-  context.moveTo(item.points[0].x, item.points[0].y);
-  context.lineTo(item.points[1].x, item.points[1].y);
-  context.lineTo(item.points[2].x, item.points[2].y);
-  context.lineTo(item.points[3].x, item.points[3].y);
-  context.closePath();
-  context.shadowColor = isHovered || isSelected ? "rgba(15, 23, 42, 0.22)" : "transparent";
-  context.shadowBlur = isHovered || isSelected ? 10 : 0;
-  context.shadowOffsetY = isHovered || isSelected ? 4 : 0;
-  context.fillStyle = cssColor(isHovered ? 0xffd43b : isSelected ? 0x40c057 : color, alpha);
-  context.fill();
-  context.shadowColor = "transparent";
-  context.strokeStyle = item.issue
-    ? "rgba(185, 28, 28, 0.9)"
-    : isHovered
-      ? "rgba(111, 76, 0, 0.95)"
-      : isSelected
-        ? "rgba(22, 101, 52, 0.95)"
-        : "rgba(30, 41, 59, 0.46)";
-  context.lineWidth = isHovered || isSelected || item.issue ? 2.5 : 1;
-  context.stroke();
-  context.restore();
-}
-
-function drawNodeLabel(context: CanvasRenderingContext2D, item: CanvasSceneNode, layer: PerspectiveLayer | undefined): void {
-  const text = layer?.value ?? item.node.id;
-  const label = text.length > 42 ? `${text.slice(0, 39)}...` : text;
-  const x = clamp(item.center.x + 10, 8, context.canvas.clientWidth - 180);
-  const y = clamp(item.center.y - 26, 8, context.canvas.clientHeight - 34);
-  context.save();
-  context.font = "12px ui-sans-serif, system-ui, sans-serif";
-  const width = Math.min(176, Math.max(64, context.measureText(label).width + 18));
-  context.fillStyle = "rgba(15, 23, 42, 0.86)";
-  context.beginPath();
-  context.roundRect(x, y, width, 26, 6);
-  context.fill();
-  context.fillStyle = "#f8fafc";
-  context.fillText(label, x + 9, y + 17);
-  context.restore();
-}
-
-function drawLine(context: CanvasRenderingContext2D, from: CanvasPoint, to: CanvasPoint): void {
-  context.beginPath();
-  context.moveTo(from.x, from.y);
-  context.lineTo(to.x, to.y);
-  context.stroke();
-}
-
-function hitTest(point: CanvasPoint, nodes: readonly CanvasSceneNode[]): CanvasSceneNode | undefined {
-  return [...nodes].reverse().find((item) => pointInPolygon(point, item.points));
+function normalizeDegrees(value: number): number {
+  return ((value % 360) + 540) % 360 - 180;
 }
 
 function createIssueMap(options: PerspectiveViewerOptions): Map<string, readonly PerspectiveIssue[]> {
@@ -772,18 +627,6 @@ function flattenVisibleNodes(node: RLSCNode, depth: number, parent: RLSCNode | n
 
 function flattenNodes(node: RLSCNode): RLSCNode[] {
   return [node, ...node.children.flatMap((child) => flattenNodes(child))];
-}
-
-function pointInPolygon(point: CanvasPoint, polygon: readonly CanvasPoint[]): boolean {
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const a = polygon[i];
-    const b = polygon[j];
-    if (!a || !b) continue;
-    const intersects = a.y > point.y !== b.y > point.y && point.x < ((b.x - a.x) * (point.y - a.y)) / (b.y - a.y) + a.x;
-    if (intersects) inside = !inside;
-  }
-  return inside;
 }
 
 function clamp(value: number, min: number, max: number): number {
