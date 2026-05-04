@@ -38,7 +38,13 @@
   },
   "overrides": [
     {
-      "files": ["**/*.test.ts", "**/*.spec.ts", "**/test/**/*.ts", "**/*.contract.ts"],
+      "files": [
+        "**/*.test.ts",
+        "**/*.spec.ts",
+        "**/test/**/*.ts",
+        "**/__tests__/**/*.ts",
+        "**/*.contract.ts"
+      ],
       "rules": {
         "typescript/no-explicit-any": "off",
         "typescript/no-non-null-assertion": "off",
@@ -46,6 +52,24 @@
         "no-unused-expressions": "off",
         "unicorn/no-thenable": "off",
         "jest/require-to-throw-message": "off"
+      }
+    },
+    {
+      "files": [
+        "**/*.shared.ts",
+        "**/*.fixtures.ts",
+        "**/*.helpers.ts"
+      ],
+      "rules": {
+        "typescript/no-explicit-any": "off",
+        "typescript/no-non-null-assertion": "off",
+        "typescript/no-unused-vars": "off",
+        "no-unused-expressions": "off",
+        "unicorn/no-thenable": "off",
+        "jest/require-to-throw-message": "off",
+        "jest/no-export": "off",
+        "jest/expect-expect": "off",
+        "jest/no-conditional-expect": "off"
       }
     }
   ],
