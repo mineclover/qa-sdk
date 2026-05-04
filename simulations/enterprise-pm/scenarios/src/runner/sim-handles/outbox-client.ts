@@ -89,11 +89,20 @@ export function createOutboxClient(
       if (!Number.isInteger(count) || count <= 0) {
         throw new Error(`insertEvents: count must be positive integer, got ${count}`);
       }
+      // Stage 4 endpoint 는 events 배열을 받음 — count 만큼 minimal event 생성.
+      // grammar #5 EventName 어휘 (approval.budget.submitted) 사용 — sim-event-vocabulary SSOT.
+      const occurredAt = now();
+      const events = Array.from({ length: count }, (_, i) => ({
+        aggregateId: `budget-${occurredAt}-${i}`,
+        eventName: "approval.budget.submitted",
+        payload: { i },
+        occurredAt: occurredAt + i,
+      }));
       const url = `${base}/admin/outbox/insert`;
       const res = await fetchImpl(url, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ count }),
+        body: JSON.stringify({ events }),
       });
       if (!res.ok) {
         const body = await res.text();
