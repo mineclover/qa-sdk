@@ -133,7 +133,7 @@ function determineVerdict(
   }
 
   // 2. 게이트 fail → fail
-  if (gateResults.length > 0 && gateResults.some(g => g.verdict === "fail")) {
+  if (gateResults.some(g => g.verdict === "fail")) {
     const failedGates = gateResults.filter(g => g.verdict === "fail");
     reasons.push(`게이트 실패 ${failedGates.length}건: ${failedGates.map(g => g.gateId).join(", ")}`);
     return "fail";

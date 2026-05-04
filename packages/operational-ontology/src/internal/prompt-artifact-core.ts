@@ -1447,12 +1447,12 @@ function hasCompleteVerifiedQualityStatusSurface(
   const verifiedBundleRefs = evidence.verifiedBundleRefs ?? [];
   const hasCompleteBundleSurface =
     verifiedBundleRefs.length > 0 &&
-    (bundleRefs.length === 0 || bundleRefs.every((ref) => verifiedBundleRefs.includes(ref)));
+    bundleRefs.every((ref) => verifiedBundleRefs.includes(ref));
   const gateRefs = evidence.gateRefs ?? [];
   const verifiedGateRefs = evidence.verifiedGateRefs ?? [];
   const hasCompleteGateRefSurface =
     verifiedGateRefs.length > 0 &&
-    (gateRefs.length === 0 || gateRefs.every((ref) => verifiedGateRefs.includes(ref)));
+    gateRefs.every((ref) => verifiedGateRefs.includes(ref));
   const verifiedGateCount = evidence.verifiedGateCount ?? 0;
   const hasCompleteGateCountSurface =
     evidence.totalGateCount === undefined

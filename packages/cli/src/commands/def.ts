@@ -1148,7 +1148,7 @@ async function cmdContext(source: DefDataSource, docId: string) {
     console.log(`\n## concerns`);
     if (directConcerns.length > 0) console.log(`직접: ${directConcerns.join(", ")}`);
     if (inheritedConcerns.length > 0) {
-      for (const ic of [...new Set(inheritedConcerns)]) {
+      for (const ic of new Set(inheritedConcerns)) {
         console.log(`상속: ${ic}`);
       }
     }
