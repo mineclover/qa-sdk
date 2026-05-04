@@ -12,6 +12,10 @@ def:
   links:
     - target: sim-decision-view
       type: refs
+    - target: sim-identifier-grammar
+      type: refs
+    - target: sim-service-catalog
+      type: refs
     - target: sim-internal-network
       type: refs
     - target: sim-outbox-view
