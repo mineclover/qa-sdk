@@ -23,6 +23,9 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
+  "dependencies": {
+    "@chenglou/pretext": "0.0.4"
+  },
   "devDependencies": {
     "tsup": "^8.5.1",
     "typescript": "^5.8.2",

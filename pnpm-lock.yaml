@@ -2223,6 +2223,9 @@ importers:
       '@chenglou/pretext':
         specifier: 0.0.4
         version: 0.0.4
+      '@qa-sdk/rlsc-analysis':
+        specifier: workspace:*
+        version: link:../rlsc-analysis
     devDependencies:
       tsup:
         specifier: ^8.5.1
@@ -2238,6 +2241,10 @@ importers:
         version: 1.6.1(@types/node@25.5.0)(happy-dom@20.8.4)(jsdom@25.0.1)(lightningcss@1.32.0)
 
   packages/rlsc-analysis:
+    dependencies:
+      '@chenglou/pretext':
+        specifier: 0.0.4
+        version: 0.0.4
     devDependencies:
       tsup:
         specifier: ^8.5.1
@@ -2251,6 +2258,9 @@ importers:
 
   packages/rlsc-demo:
     dependencies:
+      '@qa-sdk/rlsc-analysis':
+        specifier: workspace:*
+        version: link:../rlsc-analysis
       rlsc:
         specifier: workspace:*
         version: link:../rlsc
@@ -3330,6 +3340,9 @@ importers:
       '@qa-sdk/sim-bitmap-cache':
         specifier: workspace:*
         version: link:../../packages/sim-bitmap-cache
+      '@qa-sdk/sim-domain-slice-kit':
+        specifier: workspace:*
+        version: link:../../packages/sim-domain-slice-kit
       '@qa-sdk/sim-otel-utils':
         specifier: workspace:*
         version: link:../../packages/sim-otel-utils
@@ -3501,6 +3514,9 @@ importers:
       '@qa-sdk/sim-bitmap-cache':
         specifier: workspace:*
         version: link:../../packages/sim-bitmap-cache
+      '@qa-sdk/sim-domain-slice-kit':
+        specifier: workspace:*
+        version: link:../../packages/sim-domain-slice-kit
       '@qa-sdk/sim-otel-utils':
         specifier: workspace:*
         version: link:../../packages/sim-otel-utils
@@ -3577,6 +3593,9 @@ importers:
       '@qa-sdk/sim-bitmap-cache':
         specifier: workspace:*
         version: link:../../packages/sim-bitmap-cache
+      '@qa-sdk/sim-domain-slice-kit':
+        specifier: workspace:*
+        version: link:../../packages/sim-domain-slice-kit
       '@qa-sdk/sim-otel-utils':
         specifier: workspace:*
         version: link:../../packages/sim-otel-utils
@@ -3665,6 +3684,9 @@ importers:
       '@qa-sdk/sim-bitmap-cache':
         specifier: workspace:*
         version: link:../../packages/sim-bitmap-cache
+      '@qa-sdk/sim-domain-slice-kit':
+        specifier: workspace:*
+        version: link:../../packages/sim-domain-slice-kit
       '@qa-sdk/sim-otel-utils':
         specifier: workspace:*
         version: link:../../packages/sim-otel-utils

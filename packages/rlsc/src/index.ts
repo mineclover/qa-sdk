@@ -49,22 +49,22 @@ export type {
 
 // 수집 (브라우저 전용)
 export { collectLayout, collectLayoutWithText } from "./collector.js";
-export { flattenTree } from "./tree-utils.js";
+export { flattenTree } from "@qa-sdk/rlsc-analysis";
 
 // 인코딩/디코딩
 export { encodeToMarkup, parseMarkup } from "./encoder.js";
 
 // 분석
-export { analyzeAreas, createAreaDocument, detectAreaOverflow } from "./area-analysis.js";
+export { analyzeAreas, createAreaDocument, detectAreaOverflow } from "@qa-sdk/rlsc-analysis";
 export type {
   AreaAnalysisOptions,
   AreaAnalysisResult,
   AreaDocumentInput,
   AreaOverflowIssue,
-} from "./area-analysis.js";
-export { analyzeGrid, gridToText } from "./grid.js";
-export { classifyLayers, layersToText } from "./layers.js";
-export { detectRelations, relationsToText } from "./relations.js";
+} from "@qa-sdk/rlsc-analysis";
+export { analyzeGrid, gridToText } from "@qa-sdk/rlsc-analysis";
+export { classifyLayers, layersToText } from "@qa-sdk/rlsc-analysis";
+export { detectRelations, relationsToText } from "@qa-sdk/rlsc-analysis";
 
 // Context Engineering
 export { generateDesignContext } from "./context.js";
@@ -79,8 +79,8 @@ export {
   replaceNode,
   removeNode,
   diffDocuments,
-} from "./query.js";
-export type { LayoutDiff } from "./query.js";
+} from "@qa-sdk/rlsc-analysis";
+export type { LayoutDiff } from "@qa-sdk/rlsc-analysis";
 
 // 메트릭
 export {
@@ -93,13 +93,13 @@ export {
   detectColumnSystem,
   measureSpacing,
   measureAspectRatios,
-} from "./metrics.js";
+} from "@qa-sdk/rlsc-analysis";
 
 // 패턴 분류
-export { classifyLayout } from "./pattern.js";
+export { classifyLayout } from "@qa-sdk/rlsc-analysis";
 
 // 적합성 검증
-export { checkConformance, recognizeLayout } from "./intent.js";
+export { checkConformance, recognizeLayout } from "@qa-sdk/rlsc-analysis";
 
 // 렌더링
 export { assignColors, renderToSVG, renderToCanvas } from "./canvas.js";
@@ -114,8 +114,8 @@ export {
   aggregateTextRegions,
   predictTextReflow,
   findBreakpointWidth,
-} from "./text-occupancy.js";
+} from "@qa-sdk/rlsc-analysis";
 export type {
   TextPreparedMap,
   TextOccupancyOptions,
-} from "./text-occupancy.js";
+} from "@qa-sdk/rlsc-analysis";

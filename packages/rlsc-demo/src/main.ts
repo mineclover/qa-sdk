@@ -7,7 +7,7 @@ import {
   type LayoutPattern,
   type RLSCDocument,
   type TextOccupancy
-} from "rlsc/analysis";
+} from "@qa-sdk/rlsc-analysis";
 import {
   collectLayoutWithText,
   createLayoutMonitor,

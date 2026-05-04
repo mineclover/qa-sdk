@@ -20,7 +20,7 @@ import {
   WebGLRenderer,
 } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import type { RLSCDocument, RLSCNode } from "rlsc/analysis";
+import type { RLSCDocument, RLSCNode } from "@qa-sdk/rlsc-analysis";
 
 export interface LayerSceneHandle {
   update(doc: RLSCDocument): void;

@@ -45,6 +45,7 @@
     "visbug-bridge": "workspace:*"
   },
   "dependencies": {
+    "@qa-sdk/rlsc-analysis": "workspace:*",
     "@chenglou/pretext": "0.0.4"
   }
 }
