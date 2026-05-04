@@ -25,7 +25,9 @@ async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter(),
-    { logger: false }, // pino logger를 직접 사용, NestJS 기본 로거 비활성화
+    // ExceptionFilter 가 catch 한 unhandled error 가 surface 되도록 error/warn level 만
+    // NestJS console logger 활성화. 도메인 로깅은 createLogger() pino 가 담당.
+    { logger: ["error", "warn"] },
   );
   // 단계 8(Plan C) — 모든 응답에 x-service-version 첨부. spec 02 §4.1.
   app.useGlobalInterceptors(new VersionStampInterceptor());
