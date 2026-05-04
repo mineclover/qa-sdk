@@ -292,11 +292,14 @@ button {
 
 .svg-view,
 .layer-view {
-  min-height: 300px;
   overflow: hidden;
   border: 1px solid #d6dde8;
   border-radius: 8px;
   background: #f8fafc;
+}
+
+.svg-view {
+  height: 190px;
 }
 
 .layer-view {
@@ -312,7 +315,8 @@ button {
 .svg-view svg {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
 }
 
 pre {
