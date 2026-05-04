@@ -7,11 +7,12 @@ This package renders an existing `RLSCDocument`. It does not scan the DOM, annot
 ## Usage
 
 ```ts
-import { createPerspectiveViewer } from "@qa-sdk/rlsc-perspective";
+import { createPerspectiveViewer } from '@qa-sdk/rlsc-perspective';
 
 const viewer = createPerspectiveViewer(container, doc, {
-  renderer: "auto",
-  groupBy: "componentId",
+  renderer: 'auto',
+  groupBy: 'componentId',
+  projectionMode: 'orthographic',
   overflowIssues: analysis.overflowIssues,
   textOccupancies,
   onSelect(event) {
@@ -20,19 +21,30 @@ const viewer = createPerspectiveViewer(container, doc, {
 });
 
 viewer.update(nextDoc);
+viewer.setView('top');
+viewer.setProjectionMode('perspective');
 viewer.clearSelection();
 viewer.dispose();
 ```
 
 ## Renderer
 
-The public renderer option is:
+The public renderer option is kept for API compatibility:
 
 ```ts
-renderer: "auto" | "webgl" | "canvas"
+renderer: 'auto' | 'webgl' | 'canvas';
 ```
 
-`auto` uses WebGL when available and falls back to canvas in headless or GPU-disabled environments.
+The current implementation renders with CSS 3D DOM elements. This keeps each screen node inspectable as a real DOM element while preserving 3D depth through `translateZ(...)`.
+
+## Projection
+
+The viewer supports two projection modes:
+
+- `orthographic` — default. Keeps 3D depth without perspective distortion, so top view preserves x/y alignment across stacked layers.
+- `perspective` — enables CSS perspective for a stronger spatial depth cue.
+
+Use `setProjectionMode()` to switch modes without recreating the viewer.
 
 ## Grouping
 
