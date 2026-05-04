@@ -335,20 +335,7 @@ function artifactSources(
 
   return refs
     .filter((ref) => ref.value && ref.value.trim().length > 0)
-    .map((ref) => ({
-      id: ref.id,
-      ...(pathLikeRef(ref.value!) ? { path: toRepoPath(rootDir, ref.value!) } : {}),
-      label: ref.value,
-      rawSource: {
-        path: loaded.sourcePath,
-        pointer: loaded.pointer,
-        sourceSchema: REGISTRY_SOURCE_SCHEMA,
-      },
-      metadata: {
-        value: ref.value,
-        sourceKind: ref.sourceKind,
-      },
-    }));
+    .map((ref) => (Object.assign({id:ref.id}, pathLikeRef(ref.value! )?{path:toRepoPath(rootDir,ref.value! )}:{}, {label:ref.value,rawSource:{path:loaded.sourcePath,pointer:loaded.pointer,sourceSchema:REGISTRY_SOURCE_SCHEMA},metadata:{value:ref.value,sourceKind:ref.sourceKind}})));
 }
 
 function artifactRelationMetadata(

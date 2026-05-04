@@ -477,9 +477,9 @@ export class ServiceComponentService {
     const componentSet = new Set(componentValues);
     const topologySet = new Set(topologyValues);
     return {
-      matching: [...componentSet].filter((value) => topologySet.has(value)).sort(),
-      onlyInComponent: [...componentSet].filter((value) => !topologySet.has(value)).sort(),
-      onlyInTopology: [...topologySet].filter((value) => !componentSet.has(value)).sort(),
+      matching: [...componentSet].filter((value) => topologySet.has(value)).toSorted(),
+      onlyInComponent: [...componentSet].filter((value) => !topologySet.has(value)).toSorted(),
+      onlyInTopology: [...topologySet].filter((value) => !componentSet.has(value)).toSorted(),
     };
   }
 
@@ -494,7 +494,7 @@ export class ServiceComponentService {
     return topologyServices
       .filter((service) => service.serviceId !== serviceId && (service.consumedPrefixes ?? []).includes(prefixId))
       .map((service) => service.serviceId)
-      .sort();
+      .toSorted();
   }
 
   private compareRecordRecency(left: ServiceComponentRecord, right: ServiceComponentRecord) {

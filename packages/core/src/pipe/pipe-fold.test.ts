@@ -262,7 +262,7 @@ describe("foldSubgraph", () => {
     const graph = chainGraph();
     const result = foldSubgraph(graph, ["B", "C", "D"], "fold_BCD");
     expect(result.graph.pipes).toHaveLength(4); // A, fold_BCD, E, F
-    expect(result.graph.pipes.map(p => p.pipeId).sort()).toEqual(["A", "E", "F", "fold_BCD"]);
+    expect(result.graph.pipes.map(p => p.pipeId).toSorted()).toEqual(["A", "E", "F", "fold_BCD"]);
   });
 
   it("접힌 노드의 연결 재배선 — A→fold, fold→E", () => {
@@ -333,8 +333,8 @@ describe("unfoldNode", () => {
     const folded = foldSubgraph(original, ["B", "C", "D"], "fold_BCD");
     const restored = unfoldNode(folded, "fold_BCD");
 
-    const originalIds = original.pipes.map(p => p.pipeId).sort();
-    const restoredIds = restored.pipes.map(p => p.pipeId).sort();
+    const originalIds = original.pipes.map(p => p.pipeId).toSorted();
+    const restoredIds = restored.pipes.map(p => p.pipeId).toSorted();
     expect(restoredIds).toEqual(originalIds);
   });
 
@@ -547,8 +547,8 @@ describe("접기 불변량", () => {
     const restored = unfoldNode(folded, "fold_BCD");
 
     // 파이프 ID 동일
-    expect(restored.pipes.map(p => p.pipeId).sort())
-      .toEqual(original.pipes.map(p => p.pipeId).sort());
+    expect(restored.pipes.map(p => p.pipeId).toSorted())
+      .toEqual(original.pipes.map(p => p.pipeId).toSorted());
 
     // 연결 수 동일
     expect(restored.connections.length).toBe(original.connections.length);
@@ -559,8 +559,8 @@ describe("접기 불변량", () => {
     const folded = foldSubgraph(original, ["B", "C"], "fold_BC");
     const restored = unfoldNode(folded, "fold_BC");
 
-    expect(restored.pipes.map(p => p.pipeId).sort())
-      .toEqual(original.pipes.map(p => p.pipeId).sort());
+    expect(restored.pipes.map(p => p.pipeId).toSorted())
+      .toEqual(original.pipes.map(p => p.pipeId).toSorted());
   });
 
   it("FoldedContract.summary.pipeCount는 접힌 파이프 수와 일치", () => {

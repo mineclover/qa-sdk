@@ -56,7 +56,7 @@ export async function bootstrapNestService(
   logger.info(
     {
       port: options.port,
-      ...(options.startedMeta ?? {}),
+      ...options.startedMeta,
     },
     `${options.serviceName} listening`,
   );

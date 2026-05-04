@@ -83,7 +83,7 @@ export class MemoryPipeGraphStore implements PipeGraphStore {
     for (const graph of this.graphs.values()) {
       if (graph.graphId === graphId) result.push(graph);
     }
-    return result.sort((a, b) => a.version.localeCompare(b.version, undefined, { numeric: true }));
+    return result.toSorted((a, b) => a.version.localeCompare(b.version, undefined, { numeric: true }));
   }
 
   listAll(): PipeGraph[] {

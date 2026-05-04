@@ -403,7 +403,7 @@ describe('OntologyPackActivationHelper', () => {
       'authz-runtime:authorization-decision:v2',
     ]);
     expect(result.syncReports.map((report) => report.syncStatus)).toEqual(['synced', 'synced']);
-    expect(Object.keys(result.syncSummariesByAllocationId).sort()).toEqual([
+    expect(Object.keys(result.syncSummariesByAllocationId).toSorted()).toEqual([
       'authz-runtime:authorization-decision:v2',
       'authz-runtime:authorization-resource:v2',
     ]);

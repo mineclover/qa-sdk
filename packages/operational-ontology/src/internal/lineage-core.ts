@@ -29,6 +29,6 @@ export function createDataLineageId(input: {
   sources: InformationFacetRef[];
   transform: LineageTransformKind;
 }): string {
-  const sourceKeys = input.sources.map((source) => source.key).sort().join(",");
+  const sourceKeys = input.sources.map((source) => source.key).toSorted().join(",");
   return `lineage:${sourceKeys}->${input.transform}->${input.target.key}`;
 }

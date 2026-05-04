@@ -690,18 +690,7 @@ function collectSpecUpdateCandidates(
         affectedEntry: affectedEntryByKey.get(documentKey(document)),
         options,
       });
-      return {
-        documentId: document.stableId,
-        path: document.path,
-        ...(titleOf(document) ? { title: titleOf(document) } : {}),
-        matchedStoryIds: effectiveStories.map((story) => story.id),
-        promotionState: assessment.promotionState,
-        reason: assessment.reason,
-        evidence,
-        support: assessment.support,
-        score: assessment.score,
-        blockedReasons: assessment.blockedReasons,
-      };
+      return Object.assign({documentId:document.stableId,path:document.path}, titleOf(document)?{title:titleOf(document)}:{}, {matchedStoryIds:effectiveStories.map(story=>story.id),promotionState:assessment.promotionState,reason:assessment.reason,evidence,support:assessment.support,score:assessment.score,blockedReasons:assessment.blockedReasons});
     })
     .toSorted((left, right) => left.path.localeCompare(right.path));
 }
@@ -714,13 +703,7 @@ function collectRoadmapUpdateCandidates(
     .filter((document) => document.kind === "plan" || looksLikeRoadmap(document))
     .map((document) => {
       const matchedStories = matchingStoriesForDocument(stories, document);
-      return {
-        documentId: document.stableId,
-        path: document.path,
-        ...(titleOf(document) ? { title: titleOf(document) } : {}),
-        matchedStoryIds: (matchedStories.length > 0 ? matchedStories : stories).map((story) => story.id),
-        reason: "Review roadmap/plan state so completed PRD work is marked complete without reopening future phases.",
-      };
+      return Object.assign({documentId:document.stableId,path:document.path}, titleOf(document)?{title:titleOf(document)}:{}, {matchedStoryIds:(matchedStories.length>0?matchedStories:stories).map(story=>story.id),reason:`Review roadmap/plan state so completed PRD work is marked complete without reopening future phases.`});
     })
     .toSorted((left, right) => left.path.localeCompare(right.path));
 }

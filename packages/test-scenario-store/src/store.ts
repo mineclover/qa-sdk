@@ -30,7 +30,7 @@ export class SqliteTestScenarioStore {
         migrationsFolder: new URL("../drizzle", import.meta.url).pathname,
       });
     } catch (err) {
-      throw new Error(`[test-scenario-store] 마이그레이션 실패: ${err instanceof Error ? err.message : String(err)}`);
+      throw new Error(`[test-scenario-store] 마이그레이션 실패: ${err instanceof Error ? err.message : String(err)}`, { cause: err });
     }
   }
 

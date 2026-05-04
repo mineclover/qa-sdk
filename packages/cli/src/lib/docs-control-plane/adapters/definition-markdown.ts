@@ -323,7 +323,7 @@ function toDocumentBddDiagnostic(
     metadata: {
       source: "bdd-contract",
       ...(diagnostic.contractId ? { contractId: diagnostic.contractId } : {}),
-      ...(diagnostic.metadata ?? {}),
+      ...diagnostic.metadata,
     },
   };
 }

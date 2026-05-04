@@ -244,7 +244,7 @@ function selectSubDocParent(parents: readonly DefinitionEntry[]): DefinitionEntr
     if (doc.tier === "layout") return 1;
     return 2;
   };
-  return [...parents].sort((a, b) => {
+  return [...parents].toSorted((a, b) => {
     const ta = tierRank(a);
     const tb = tierRank(b);
     if (ta !== tb) return ta - tb;

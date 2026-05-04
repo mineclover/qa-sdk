@@ -49,12 +49,12 @@ function makeGraph(pipe: PipeSpec): PipeGraph {
 
 /** FieldLineage를 (target.column, sources[].column, transform) 트리플로 정규화 */
 function normalizeLineage(lineage: FieldLineage): string {
-  const srcCols = lineage.sources.map(s => s.column).sort().join(",");
+  const srcCols = lineage.sources.map(s => s.column).toSorted().join(",");
   return `${lineage.target.column}←[${srcCols}]:${lineage.transform}`;
 }
 
 function normalizeSet(lineages: readonly FieldLineage[]): string[] {
-  return [...new Set(lineages.map(normalizeLineage))].sort();
+  return [...new Set(lineages.map(normalizeLineage))].toSorted();
 }
 
 // ── 교차 일관성 검증 ────────────────────────────────

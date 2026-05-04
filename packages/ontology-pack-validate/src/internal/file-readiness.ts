@@ -100,19 +100,7 @@ export function fileReadinessIssues(
 ): readonly OntologyPackValidateIssue[] {
   return refs
     .filter((ref) => !ref.exists)
-    .map((ref) => ({
-      level: "error" as const,
-      source: "file" as const,
-      path: `readiness.${ref.kind}Files.${ref.path}`,
-      code: `${ref.kind}-file-missing`,
-      message: `Referenced ${ref.kind} file "${ref.path}" does not exist.`,
-      ...(ref.blueprintId ? { blueprintId: ref.blueprintId } : {}),
-      details: {
-        ref: ref.ref,
-        source: ref.source,
-        ...(ref.surfaceKind ? { surfaceKind: ref.surfaceKind } : {}),
-      },
-    }));
+    .map((ref) => (Object.assign({level:`error` as const,source:`file` as const,path:`readiness.${ref.kind}Files.${ref.path}`,code:`${ref.kind}-file-missing`,message:`Referenced ${ref.kind} file "${ref.path}" does not exist.`}, ref.blueprintId?{blueprintId:ref.blueprintId}:{}, {details:{ref:ref.ref,source:ref.source,...ref.surfaceKind?{surfaceKind:ref.surfaceKind}:{}}})));
 }
 
 export function summarizeFileReadiness(

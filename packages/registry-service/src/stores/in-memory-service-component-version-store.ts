@@ -41,6 +41,6 @@ export class InMemoryServiceComponentVersionStore implements ServiceComponentVer
         && record.kind === kind
         && record.serviceId === serviceId,
       )
-      .sort((a, b) => a.version.localeCompare(b.version));
+      .toSorted((a, b) => a.version.localeCompare(b.version));
   }
 }

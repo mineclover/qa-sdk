@@ -34,9 +34,9 @@ export async function preflightEnforce(sql: RlsCliSql): Promise<EnforcePreflight
      WHERE n.nspname = 'auth'
        AND p.proname IN ('current_user_id','has_bit','resource_state','current_role_tag')
   `;
-  const helperNames = helpers.map((r) => r.proname);
+  const helperNames = new Set(helpers.map((r) => r.proname));
   const expectedHelpers = ["current_user_id", "has_bit", "resource_state", "current_role_tag"];
-  const missingHelpers = expectedHelpers.filter((n) => !helperNames.includes(n));
+  const missingHelpers = expectedHelpers.filter((n) => !helperNames.has(n));
 
   const policies = await sql<{ polname: string }>`
     SELECT polname FROM pg_policy
@@ -44,13 +44,13 @@ export async function preflightEnforce(sql: RlsCliSql): Promise<EnforcePreflight
                        'ae_select_policy','ae_insert_policy','ae_admin_bypass',
                        'ko_select_policy','er_select_policy')
   `;
-  const polnames = policies.map((r) => r.polname);
+  const polnames = new Set(policies.map((r) => r.polname));
   const expectedPolicies = [
     "rp_select_policy","rp_admin_bypass",
     "ae_select_policy","ae_admin_bypass",
     "ko_select_policy","er_select_policy",
   ];
-  const missingPolicies = expectedPolicies.filter((p) => !polnames.includes(p));
+  const missingPolicies = expectedPolicies.filter((p) => !polnames.has(p));
 
   const bypassRole = await sql<{ count: number }>`
     SELECT count(*)::int AS count FROM pg_roles WHERE rolname = 'qa_admin_bypass'

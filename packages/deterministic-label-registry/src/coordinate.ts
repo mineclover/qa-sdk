@@ -323,12 +323,7 @@ function normalizePhysicalRefs(
       const normalizedRef = normalizeCoordinatePart(ref.ref);
       if (!normalizedRef) return undefined;
       const role = ref.role ?? undefined;
-      return {
-        kind: ref.kind,
-        ref: normalizedRef,
-        ...(role ? { role } : {}),
-        metadata: normalizeMetadata(ref.metadata),
-      } satisfies SemanticPhysicalRef;
+      return Object.assign({kind:ref.kind,ref:normalizedRef}, role?{role}:{}, {metadata:normalizeMetadata(ref.metadata)}) satisfies SemanticPhysicalRef;
     })
     .filter((ref): ref is SemanticPhysicalRef => ref !== undefined);
 }

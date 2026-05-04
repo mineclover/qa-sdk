@@ -285,7 +285,7 @@ export function computeFoldedContract(
   }
 
   const { entry, exit } = identifyBoundary(graph, pipeSet);
-  const foldId = "fold_" + pipeIds.slice().sort().join("_");
+  const foldId = "fold_" + pipeIds.slice().toSorted().join("_");
 
   // inputs 수집: entryPipe의 trigger + consumes
   const inputs: FoldDataRef[] = [];
@@ -484,7 +484,7 @@ export function foldSubgraph(
 
   // 재배선 중복 제거 (같은 from+to+kind)
   const connKey = (c: PipeConnection) =>
-    `${JSON.stringify(toEndpointArray(c.from).map(endpointIdentity).sort())}→${JSON.stringify(toEndpointArray(c.to).map(endpointIdentity).sort())}:${c.kind}`;
+    `${JSON.stringify(toEndpointArray(c.from).map(endpointIdentity).toSorted())}→${JSON.stringify(toEndpointArray(c.to).map(endpointIdentity).toSorted())}:${c.kind}`;
   const seen = new Set<string>();
   const dedupedConnections = rewiredConnections.filter(c => {
     const key = connKey(c);
@@ -511,8 +511,8 @@ export function foldSubgraph(
     if (pipe.scope) scopeVotes.set(pipe.scope, (scopeVotes.get(pipe.scope) ?? 0) + 1);
     if (pipe.aspect) aspectVotes.set(pipe.aspect, (aspectVotes.get(pipe.aspect) ?? 0) + 1);
   }
-  const topScope = [...scopeVotes.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
-  const topAspect = [...aspectVotes.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const topScope = [...scopeVotes.entries()].toSorted((a, b) => b[1] - a[1])[0]?.[0];
+  const topAspect = [...aspectVotes.entries()].toSorted((a, b) => b[1] - a[1])[0]?.[0];
 
   const foldedPipe: PipeSpec = {
     pipeId: resolvedFoldId,

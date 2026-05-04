@@ -97,10 +97,10 @@ export function createDashboardData(infraProfile: InfraProfileAdapter): Dashboar
       // 가동 시간 계산
       let uptime: ServiceDashboard["uptime"];
       if (history.length > 0) {
-        const chronological = [...history].sort(
+        const chronological = [...history].toSorted(
           (left, right) => new Date(left.deployedAt).getTime() - new Date(right.deployedAt).getTime(),
         );
-        const lastSuccess = [...chronological].reverse().find((h) => h.success);
+        const lastSuccess = [...chronological].toReversed().find((h) => h.success);
         if (lastSuccess) {
           const since = lastSuccess.deployedAt;
           const durationMs = Date.now() - new Date(since).getTime();
@@ -159,7 +159,7 @@ export function createDashboardData(infraProfile: InfraProfileAdapter): Dashboar
         }
       }
 
-      return fleetRuns.sort(
+      return fleetRuns.toSorted(
         (left, right) => new Date(right.deployedAt).getTime() - new Date(left.deployedAt).getTime(),
       );
     },

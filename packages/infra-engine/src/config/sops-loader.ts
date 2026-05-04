@@ -18,9 +18,9 @@ export function createSopsLoader(): SopsLoader {
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes("ENOENT")) {
-          throw new Error("sops CLI가 설치되어 있지 않습니다. brew install sops 또는 공식 릴리스에서 설치하세요.");
+          throw new Error("sops CLI가 설치되어 있지 않습니다. brew install sops 또는 공식 릴리스에서 설치하세요.", { cause: err });
         }
-        throw new Error(`SOPS 복호화 실패: ${msg}`);
+        throw new Error(`SOPS 복호화 실패: ${msg}`, { cause: err });
       }
     },
   };

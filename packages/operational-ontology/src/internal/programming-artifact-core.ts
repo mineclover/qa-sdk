@@ -586,12 +586,7 @@ function summarizeRelatedQualityStatusRecord(
     verifiesRefs: [...(record.verifiesRefs ?? [])],
     materializesOutputRefs: [...(record.materializesOutputRefs ?? [])],
     sourceRefs: [...(record.sourceRefs ?? [])],
-    relations: qualityStatusRelationPairs(record).map((relation) => ({
-      kind: relation.kind,
-      fromRef: relation.fromRef,
-      toRef: relation.toRef,
-      ...(relation.evidenceRef ? { evidenceRef: relation.evidenceRef } : {}),
-    })),
+    relations: qualityStatusRelationPairs(record).map((relation) => (Object.assign({kind:relation.kind,fromRef:relation.fromRef,toRef:relation.toRef}, relation.evidenceRef?{evidenceRef:relation.evidenceRef}:{}))),
     matchRefs: unique(matchReasons.map((reason) => reason.ref)),
     matchReasons: [...matchReasons],
   };

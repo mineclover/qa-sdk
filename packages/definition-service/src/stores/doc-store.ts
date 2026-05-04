@@ -482,12 +482,7 @@ export class SqlDocStore implements DocStore {
       .leftJoin(documents, eq(documentLinks.targetId, documents.docId))
       .where(eq(documentLinks.sourceId, docId))
       .all()
-      .map(r => ({
-        target: r.target,
-        type: r.type,
-        ...(sourceAddress ? { sourceAddress } : {}),
-        ...(r.targetAddress ? { targetAddress: r.targetAddress } : {}),
-      }));
+      .map(r => (Object.assign({target:r.target,type:r.type}, sourceAddress?{sourceAddress}:{}, r.targetAddress?{targetAddress:r.targetAddress}:{})));
   }
 
   /** 특정 문서로 들어오는 링크 */
@@ -503,12 +498,7 @@ export class SqlDocStore implements DocStore {
       .leftJoin(documents, eq(documentLinks.sourceId, documents.docId))
       .where(eq(documentLinks.targetId, docId))
       .all()
-      .map(r => ({
-        source: r.source,
-        type: r.type,
-        ...(r.sourceAddress ? { sourceAddress: r.sourceAddress } : {}),
-        ...(targetAddress ? { targetAddress } : {}),
-      }));
+      .map(r => (Object.assign({source:r.source,type:r.type}, r.sourceAddress?{sourceAddress:r.sourceAddress}:{}, targetAddress?{targetAddress}:{})));
   }
 
   /** contains 링크로 연결된 자식 문서 */

@@ -552,7 +552,7 @@ export function findFieldOriginInGraph(
 export function lineageId(lineage: FieldLineage): string {
   const srcKey = lineage.sources
     .map(s => `${s.schemaId}:${s.column}`)
-    .sort()
+    .toSorted()
     .join("+");
   return `${lineage.target.schemaId}:${lineage.target.column}←${srcKey}|${lineage.transform}`;
 }

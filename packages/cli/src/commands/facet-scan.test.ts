@@ -46,7 +46,7 @@ describe("scanFacetFiles", () => {
     writeFileSync(join(TMP, "src/also-pure.ts"), "// @facet export calc\nfunction calc() { return 1; }\n");
 
     const result = scanFacetFiles(TMP);
-    expect(result.facetFiles.map(f => f.relativePath).sort()).toEqual(["src/also-pure.ts", "src/pure.ts"]);
+    expect(result.facetFiles.map(f => f.relativePath).toSorted()).toEqual(["src/also-pure.ts", "src/pure.ts"]);
     expect(result.facetFiles.find(f => f.relativePath === "src/also-pure.ts")!.marker.exports).toEqual(["calc"]);
   });
 

@@ -434,10 +434,7 @@ function acceptanceCriteria(
     .map((criterion) => {
       if (typeof criterion === "string") return { text: criterion };
       if (!isRecord(criterion) || typeof criterion.text !== "string") return null;
-      return {
-        text: criterion.text,
-        ...(typeof criterion.checked === "boolean" ? { checked: criterion.checked } : {}),
-      };
+      return Object.assign({text:criterion.text}, typeof criterion.checked===`boolean`?{checked:criterion.checked}:{});
     })
     .filter((criterion): criterion is { readonly text: string; readonly checked?: boolean } =>
       criterion !== null && criterion.text.trim().length > 0

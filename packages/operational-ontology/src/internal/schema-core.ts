@@ -96,7 +96,7 @@ export function applyRelationDefaults(
   axes: CoordAxes,
 ): CoordAxes {
   return {
-    ...(definition.defaultValues ?? {}),
+    ...definition.defaultValues,
     ...axes,
   };
 }

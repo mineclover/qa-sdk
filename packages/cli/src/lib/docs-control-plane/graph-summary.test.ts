@@ -140,7 +140,7 @@ function document(
     path,
     metadata: {
       documentKind: kind,
-      ...(options.metadata ?? {}),
+      ...options.metadata,
     },
     links: [],
     sources: [],

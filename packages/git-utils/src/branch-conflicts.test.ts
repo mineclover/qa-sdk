@@ -381,7 +381,7 @@ describe("에러 시나리오", () => {
 
     // 각 hotspot의 branches도 알파벳순 정렬
     for (const h of result.hotspots) {
-      const sorted = [...h.branches].sort();
+      const sorted = [...h.branches].toSorted();
       expect(h.branches).toEqual(sorted);
     }
   });

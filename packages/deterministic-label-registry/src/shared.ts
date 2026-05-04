@@ -9,7 +9,7 @@ import type { DocumentMetadata } from "doc-envelope";
 export function normalizeMetadata(
   metadata: DocumentMetadata | null | undefined,
 ): DocumentMetadata {
-  return { ...(metadata ?? {}) };
+  return { ...metadata };
 }
 
 export function normalizeCoordinatePart(

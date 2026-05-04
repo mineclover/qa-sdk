@@ -160,7 +160,7 @@ export interface ControlFlowGraph {
 
 function encodeAxes(axes: CoordAxes): string {
   return Object.entries(axes)
-    .sort(([left], [right]) => left.localeCompare(right))
+    .toSorted(([left], [right]) => left.localeCompare(right))
     .map(([key, value]) => `${key}=${value}`)
     .join("&");
 }
@@ -193,8 +193,8 @@ export function createRelationTypeCoord(
   input: Omit<RelationTypeCoord, "canonicalKey" | "axes"> & { axes?: CoordAxes },
 ): RelationTypeCoord {
   const axes = {
-    ...(definition.defaultValues ?? {}),
-    ...(input.axes ?? {}),
+    ...definition.defaultValues,
+    ...input.axes,
   };
 
   return {

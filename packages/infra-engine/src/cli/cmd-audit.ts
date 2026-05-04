@@ -26,7 +26,7 @@ export const auditHandler: CommandHandler = async (_ctx) => {
       list.push(w);
       byType.set(w.type, list);
     }
-    for (const [type, issues] of [...byType.entries()].sort()) {
+    for (const [type, issues] of [...byType.entries()].toSorted()) {
       console.log(`\n  [${type}] (${issues.length}건)`);
       for (const i of issues) console.log(`    ${i.serviceId}: ${i.message}`);
     }

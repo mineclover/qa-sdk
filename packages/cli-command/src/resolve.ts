@@ -44,7 +44,7 @@ export function resolveCommand(
       const segments = [...roots, ...matchedNodes.slice(0, i + 1).map((n) => n.segment)];
       return {
         commandName: segments.join(" "),
-        rest: [...args.slice(roots.length + i + 1)],
+        rest: args.slice(roots.length + i + 1),
         node,
       };
     }
@@ -56,7 +56,7 @@ export function resolveCommand(
     const segments = [...roots, ...matchedNodes.map((n) => n.segment)];
     return {
       commandName: segments.join(" "),
-      rest: [...args.slice(roots.length + matchedNodes.length)],
+      rest: args.slice(roots.length + matchedNodes.length),
       node: lastNode,
     };
   }

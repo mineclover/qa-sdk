@@ -149,7 +149,7 @@ describe("collectGraphEvents", () => {
     };
     const emits = collectGraphEvents(graph).filter(e => e.role === "emit");
     expect(emits).toHaveLength(2);
-    expect(emits.map(e => e.eventKey).sort()).toEqual(["path_a", "path_b"]);
+    expect(emits.map(e => e.eventKey).toSorted()).toEqual(["path_a", "path_b"]);
   });
 
   it("finally 내부 emit", () => {
@@ -185,7 +185,7 @@ describe("collectGraphEvents", () => {
     };
     const emits = collectGraphEvents(graph).filter(e => e.role === "emit");
     expect(emits).toHaveLength(2);
-    expect(emits.map(e => e.eventKey).sort()).toEqual(["forward_ok", "rollback"]);
+    expect(emits.map(e => e.eventKey).toSorted()).toEqual(["forward_ok", "rollback"]);
   });
 
   it("transition-scope 내부 emit 수집", () => {
@@ -209,7 +209,7 @@ describe("collectGraphEvents", () => {
     };
     const emits = collectGraphEvents(graph).filter(e => e.role === "emit");
     expect(emits).toHaveLength(2);
-    expect(emits.map(e => e.eventKey).sort()).toEqual(["account.credit", "account.debit"]);
+    expect(emits.map(e => e.eventKey).toSorted()).toEqual(["account.credit", "account.debit"]);
   });
 
   it("중복 emit — 같은 eventKey가 여러 경로에 존재하면 모두 수집", () => {

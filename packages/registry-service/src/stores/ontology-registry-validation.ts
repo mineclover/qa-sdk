@@ -252,7 +252,7 @@ export function validateOntologyAddressSegments(
   }
 
   for (const [allocationId, segments] of overlapCandidates.entries()) {
-    const sorted = [...segments].sort(
+    const sorted = [...segments].toSorted(
       (left, right) =>
         left.addressOffset - right.addressOffset ||
         left.addressSize - right.addressSize ||

@@ -206,7 +206,7 @@ function sortByQuery(docs: readonly DefDoc[], query: string): DefDoc[] {
   return docs
     .map((doc) => ({ doc, score: scoreQuery(doc, query) }))
     .filter((item): item is { doc: DefDoc; score: number } => item.score !== null)
-    .sort((left, right) => left.score - right.score || left.doc.docId.localeCompare(right.doc.docId))
+    .toSorted((left, right) => left.score - right.score || left.doc.docId.localeCompare(right.doc.docId))
     .map((item) => item.doc);
 }
 
@@ -237,7 +237,7 @@ export class ScanDataSource implements DefDataSource {
         const links = declaredLinks.get(entry.id) ?? [];
         return { ...doc, links };
       })
-      .sort((left, right) => left.docId.localeCompare(right.docId));
+      .toSorted((left, right) => left.docId.localeCompare(right.docId));
 
     const { outgoing, incoming } = buildDeclaredLinkMaps(docs);
 
@@ -297,7 +297,7 @@ export class ScanDataSource implements DefDataSource {
       .filter((link) => link.linkType === "contains")
       .map((link) => this.docs.find((doc) => doc.docId === link.targetId))
       .filter((doc): doc is DefDoc => doc !== undefined)
-      .sort((left, right) => left.docId.localeCompare(right.docId));
+      .toSorted((left, right) => left.docId.localeCompare(right.docId));
   }
 
   async getParent(docId: string): Promise<DefDoc | null> {

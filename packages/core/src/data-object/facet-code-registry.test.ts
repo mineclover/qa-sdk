@@ -38,7 +38,7 @@ describe("FacetCodeRegistry", () => {
 
     const results = reg.getByFile("validate.ts");
     expect(results).toHaveLength(2);
-    expect(results.map(r => r.facet).sort()).toEqual(["검증", "변환"]);
+    expect(results.map(r => r.facet).toSorted()).toEqual(["검증", "변환"]);
   });
 
   it("getBySchema — 스키마별 조회", () => {

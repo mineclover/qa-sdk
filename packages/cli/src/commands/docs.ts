@@ -1707,28 +1707,12 @@ function buildBddValidateResult(
   scope: { readonly documents: readonly DocumentEnvelope[]; readonly familyOnly: boolean },
 ): BddValidateResult {
   const metadataIssues = scope.documents.flatMap((document) =>
-    bddMetadata(document).diagnostics.map((issue) => ({
-      severity: issue.severity,
-      code: issue.code,
-      message: issue.message,
-      sourcePath: issue.sourcePath,
-      pointer: issue.pointer,
-      ...(issue.contractId ? { contractId: issue.contractId } : {}),
-      ...(issue.metadata ? { metadata: issue.metadata } : {}),
-    }))
+    bddMetadata(document).diagnostics.map((issue) => (Object.assign({severity:issue.severity,code:issue.code,message:issue.message,sourcePath:issue.sourcePath,pointer:issue.pointer}, issue.contractId?{contractId:issue.contractId}:{}, issue.metadata?{metadata:issue.metadata}:{})))
   );
   const scopeIssues = validateBddDocumentSet(scope.documents.map((document) => ({
     sourcePath: document.path,
     bdd: bddMetadata(document),
-  }))).map((issue) => ({
-    severity: issue.severity,
-    code: issue.code,
-    message: issue.message,
-    sourcePath: issue.sourcePath,
-    pointer: issue.pointer,
-    ...(issue.contractId ? { contractId: issue.contractId } : {}),
-    ...(issue.metadata ? { metadata: issue.metadata } : {}),
-  }));
+  }))).map((issue) => (Object.assign({severity:issue.severity,code:issue.code,message:issue.message,sourcePath:issue.sourcePath,pointer:issue.pointer}, issue.contractId?{contractId:issue.contractId}:{}, issue.metadata?{metadata:issue.metadata}:{})));
   const issues = [...metadataIssues, ...scopeIssues];
   return {
     target,
@@ -1789,12 +1773,7 @@ function buildBddUnitsResult(
   return {
     target,
     familyOnly: scope.familyOnly,
-    units: contractIds.map((contractId) => ({
-      contractId,
-      ...(contracts.get(contractId) ? { contract: contracts.get(contractId)! } : {}),
-      testUnits: testUnits.get(contractId) ?? [],
-      implementationUnits: implementationUnits.get(contractId) ?? [],
-    })),
+    units: contractIds.map((contractId) => (Object.assign({contractId}, contracts.get(contractId)?{contract:contracts.get(contractId)! }:{}, {testUnits:testUnits.get(contractId)??[],implementationUnits:implementationUnits.get(contractId)??[]}))),
   };
 }
 
@@ -3608,7 +3587,7 @@ function duplicateStrings(values: readonly string[]): readonly string[] {
   return [...counts.entries()]
     .filter(([, count]) => count > 1)
     .map(([value]) => value)
-    .sort();
+    .toSorted();
 }
 
 async function buildClosureResult(

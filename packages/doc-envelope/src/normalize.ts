@@ -197,7 +197,7 @@ function normalizeRawSourcePointer(
 function normalizeMetadata(
   metadata: DocumentMetadata | null | undefined,
 ): DocumentMetadata {
-  return { ...(metadata ?? {}) };
+  return { ...metadata };
 }
 
 function normalizeStringList(values: readonly string[] | null | undefined): readonly string[] {

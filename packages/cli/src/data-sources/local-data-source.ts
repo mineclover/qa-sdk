@@ -294,12 +294,7 @@ export class LocalDataSource implements DefDataSource {
       source_id: string;
       link_type: string;
       source_address: string | null;
-    }[]).map((r) => ({
-      source: r.source_id,
-      type: r.link_type,
-      ...(r.source_address ? { sourceAddress: r.source_address } : {}),
-      ...(targetAddress ? { targetAddress } : {}),
-    }));
+    }[]).map((r) => (Object.assign({source:r.source_id,type:r.link_type}, r.source_address?{sourceAddress:r.source_address}:{}, targetAddress?{targetAddress}:{})));
   }
 
   async getSyntheticIncomingLinks(_docId: string): Promise<DefSyntheticIncomingLink[]> {
@@ -319,12 +314,7 @@ export class LocalDataSource implements DefDataSource {
       target_id: string;
       link_type: string;
       target_address: string | null;
-    }[]).map((r) => ({
-      target: r.target_id,
-      type: r.link_type,
-      ...(sourceAddress ? { sourceAddress } : {}),
-      ...(r.target_address ? { targetAddress: r.target_address } : {}),
-    }));
+    }[]).map((r) => (Object.assign({target:r.target_id,type:r.link_type}, sourceAddress?{sourceAddress}:{}, r.target_address?{targetAddress:r.target_address}:{})));
   }
 
   async getFeedbackRequestsByDocId(

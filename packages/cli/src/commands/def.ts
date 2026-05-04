@@ -2523,7 +2523,7 @@ function printDistributionLine(label: string, states: string[]) {
     counts.set(s, (counts.get(s) ?? 0) + 1);
   }
   const parts = [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
+    .toSorted((a, b) => b[1] - a[1])
     .map(([state, count]) => `${state}(${count})`);
   console.log(`${label.padEnd(21)}${parts.join(" ")}`);
 }

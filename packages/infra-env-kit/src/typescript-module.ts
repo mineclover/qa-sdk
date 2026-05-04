@@ -25,7 +25,7 @@ export async function generateTypescriptModule(
     `export const SERVICE_URLS = {`,
   ];
 
-  for (const [id, url] of Object.entries(urls).sort(([left], [right]) =>
+  for (const [id, url] of Object.entries(urls).toSorted(([left], [right]) =>
     left.localeCompare(right),
   )) {
     const service = targets.find((target) => target.serviceId === id);

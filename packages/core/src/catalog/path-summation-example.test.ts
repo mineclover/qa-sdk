@@ -236,7 +236,7 @@ describe("예시 3 — 재귀 분기 (payment prefix)", () => {
   it("전이 3건 수집 (재귀 포함)", () => {
     const t = collectTransitions(segments);
     expect(t).toHaveLength(3);
-    expect(t.map(x => x.eventKey).sort()).toEqual([
+    expect(t.map(x => x.eventKey).toSorted()).toEqual([
       "auth.3ds.verify", "bank.confirm", "crypto.settle",
     ]);
   });
@@ -556,7 +556,7 @@ describe("예시 6 — 선택적 소비 + 분기 라우팅 복합", () => {
   it("collectTransitions — route 2건 + segment 2건 = 4건", () => {
     const t = collectTransitions(segments);
     expect(t).toHaveLength(4);
-    const eventKeys = t.map(x => x.eventKey).sort();
+    const eventKeys = t.map(x => x.eventKey).toSorted();
     expect(eventKeys).toEqual(["payment.bank", "payment.card", "payment.other", "shipping.dispatch"]);
   });
 });

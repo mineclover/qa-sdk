@@ -238,7 +238,7 @@ export async function loadLatestOperationalOntologyCorridorViewByScope(
   corridorId: string,
 ): Promise<OperationalOntologyCorridorView | null> {
   const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
-  for (const projection of [...projections].reverse()) {
+  for (const projection of [...projections].toReversed()) {
     const view = await loadOperationalOntologyCorridorView(
       store,
       projection.projectionId,
@@ -260,7 +260,7 @@ export async function loadLatestOperationalOntologyCheckpointLatticeByScope(
   rootCheckpointId: string,
 ): Promise<Awaited<ReturnType<typeof loadOperationalOntologyCheckpointLattice>>> {
   const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
-  for (const projection of [...projections].reverse()) {
+  for (const projection of [...projections].toReversed()) {
     const lattice = await loadOperationalOntologyCheckpointLattice(
       store,
       projection.projectionId,
@@ -282,7 +282,7 @@ export async function loadLatestOperationalOntologyJunctionViewByScope(
   junctionId: string,
 ): Promise<OperationalOntologyJunctionView | null> {
   const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
-  for (const projection of [...projections].reverse()) {
+  for (const projection of [...projections].toReversed()) {
     const view = await loadOperationalOntologyJunctionView(
       store,
       projection.projectionId,
@@ -304,7 +304,7 @@ export async function loadLatestOperationalOntologyRouteDecisionByScope(
   branchNodeId: string,
 ): Promise<Awaited<ReturnType<typeof loadOperationalOntologyRouteDecision>>> {
   const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
-  for (const projection of [...projections].reverse()) {
+  for (const projection of [...projections].toReversed()) {
     const route = await loadOperationalOntologyRouteDecision(
       store,
       projection.projectionId,
@@ -326,7 +326,7 @@ export async function loadLatestOperationalOntologyTraversalBundleByScope(
   traversalKey: string,
 ): Promise<Awaited<ReturnType<typeof loadOperationalOntologyTraversalBundle>>> {
   const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
-  for (const projection of [...projections].reverse()) {
+  for (const projection of [...projections].toReversed()) {
     const bundle = await loadOperationalOntologyTraversalBundle(
       store,
       projection.projectionId,

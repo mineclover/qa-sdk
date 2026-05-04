@@ -941,18 +941,18 @@ describe("ontology CLI", () => {
         warnings: [],
         errors: [],
       });
-      expect(first.allocationSummaries.map((summary) => summary.taxonomyId).sort()).toEqual([
+      expect(first.allocationSummaries.map((summary) => summary.taxonomyId).toSorted()).toEqual([
         "programming-artifact",
         "programming-artifact-relation",
       ]);
 
       const firstAllocationIds = first.allocationSummaries
         .map((summary) => summary.allocationId)
-        .sort();
-      expect(Object.keys(first.syncSummariesByAllocationId).sort()).toEqual(
+        .toSorted();
+      expect(Object.keys(first.syncSummariesByAllocationId).toSorted()).toEqual(
         firstAllocationIds,
       );
-      expect(Object.keys(first.smokeCheckSummary.byAllocationId).sort()).toEqual(
+      expect(Object.keys(first.smokeCheckSummary.byAllocationId).toSorted()).toEqual(
         firstAllocationIds,
       );
 
@@ -1590,7 +1590,7 @@ describe("ontology CLI", () => {
         errors: [],
       });
 
-      expect(parsed.allocationSummaries.map((summary) => summary.taxonomyId).sort()).toEqual(
+      expect(parsed.allocationSummaries.map((summary) => summary.taxonomyId).toSorted()).toEqual(
         AUTHORIZATION_TAXONOMY_IDS,
       );
       expect(parsed.allocationSummaries).toEqual(
@@ -1614,11 +1614,11 @@ describe("ontology CLI", () => {
 
       const allocationIds = parsed.allocationSummaries
         .map((summary) => summary.allocationId)
-        .sort();
-      expect(Object.keys(parsed.syncSummariesByAllocationId).sort()).toEqual(
+        .toSorted();
+      expect(Object.keys(parsed.syncSummariesByAllocationId).toSorted()).toEqual(
         allocationIds,
       );
-      expect(Object.keys(parsed.smokeCheckSummary.byAllocationId).sort()).toEqual(
+      expect(Object.keys(parsed.smokeCheckSummary.byAllocationId).toSorted()).toEqual(
         allocationIds,
       );
 
@@ -1680,7 +1680,7 @@ describe("ontology CLI", () => {
           .map((record) => record.axisId)
           .filter((axisId): axisId is string => typeof axisId === "string"),
       );
-      expect([...materializedAxisIds].sort()).toEqual([
+      expect([...materializedAxisIds].toSorted()).toEqual([
         "authorization_action_kind",
         "authorization_decision_effect",
         "authorization_enforcement_kind",
@@ -1773,7 +1773,7 @@ describe("ontology CLI", () => {
       });
       expect(sidecar.status).toBe("succeeded");
       expect(sidecar.activationEvidence).toBeUndefined();
-      expect(first.allocationSummaries.map((summary) => summary.taxonomyId).sort()).toEqual(
+      expect(first.allocationSummaries.map((summary) => summary.taxonomyId).toSorted()).toEqual(
         AUTHORIZATION_TAXONOMY_IDS,
       );
       expect(first.allocationSummaries).toHaveLength(8);
@@ -1784,11 +1784,11 @@ describe("ontology CLI", () => {
 
       const allocationIds = first.allocationSummaries
         .map((summary) => summary.allocationId)
-        .sort();
-      expect(Object.keys(first.syncSummariesByAllocationId).sort()).toEqual(
+        .toSorted();
+      expect(Object.keys(first.syncSummariesByAllocationId).toSorted()).toEqual(
         allocationIds,
       );
-      expect(Object.keys(first.smokeCheckSummary.byAllocationId).sort()).toEqual(
+      expect(Object.keys(first.smokeCheckSummary.byAllocationId).toSorted()).toEqual(
         allocationIds,
       );
       expect(first.warnings).toEqual([]);
@@ -1832,7 +1832,7 @@ describe("ontology CLI", () => {
         firstRecords[0]?.metadata?.smokeCheckSummary?.checkCount,
       );
       expect(
-        Object.keys(firstRecords[0]?.metadata?.smokeCheckSummary?.byAllocationId ?? {}).sort(),
+        Object.keys(firstRecords[0]?.metadata?.smokeCheckSummary?.byAllocationId ?? {}).toSorted(),
       ).toEqual(allocationIds);
 
       const validateOutput = await captureConsoleWithExitCode(async () => {

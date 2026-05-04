@@ -178,8 +178,8 @@ describe("pipe-interpret 퀄리티 게이트", () => {
 
   it("G2. ConnectionKind 8종 전부 전파 규칙 정의됨", () => {
     const ALL_KINDS = ["next", "conditional", "event", "error", "compensate", "fan-out", "join", "feedback"];
-    const definedKinds = PIPE_PROPAGATION_RULES.map(r => r.connectionKind);
-    const missing = ALL_KINDS.filter(k => !definedKinds.includes(k as any));
+    const definedKinds = new Set(PIPE_PROPAGATION_RULES.map(r => r.connectionKind));
+    const missing = ALL_KINDS.filter(k => !definedKinds.has(k as any));
 
     if (missing.length === 0) {
       collector.record({ specId: SPEC_ID, status: "pass", testName: "G2-propagation-rules", marker: "evidence" });
@@ -232,14 +232,14 @@ describe("pipe-interpret 퀄리티 게이트", () => {
     const map = propagatePipeConcerns(graph);
 
     // B: next를 통해 resilience + latency 상속
-    const bInherited = map.get("B")!.inherited.map(i => i.concern);
-    const bHasResilience = bInherited.includes("resilience");
-    const bHasLatency = bInherited.includes("latency");
+    const bInherited = new Set(map.get("B")!.inherited.map(i => i.concern));
+    const bHasResilience = bInherited.has("resilience");
+    const bHasLatency = bInherited.has("latency");
 
     // C: conditional은 [latency]만 전파 → resilience 차단
-    const cInherited = map.get("C")!.inherited.map(i => i.concern);
-    const cNoResilience = !cInherited.includes("resilience");
-    const cHasLatency = cInherited.includes("latency");
+    const cInherited = new Set(map.get("C")!.inherited.map(i => i.concern));
+    const cNoResilience = !cInherited.has("resilience");
+    const cHasLatency = cInherited.has("latency");
 
     const pass = bHasResilience && bHasLatency && cNoResilience && cHasLatency;
     collector.record({

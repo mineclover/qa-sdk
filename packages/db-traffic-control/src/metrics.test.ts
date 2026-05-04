@@ -115,7 +115,7 @@ describe("InMemoryMetricsCollector — event_key 수집", () => {
     collector.record(makeEvent({ tags: { event_key: "order.create" } }));
     collector.record(makeEvent({ tags: { event_key: "order.create" } }));
     collector.record(makeEvent({ tags: { event_key: "order.read" } }));
-    expect(collector.collectEventKeys().sort()).toEqual(["order.create", "order.read"]);
+    expect(collector.collectEventKeys().toSorted()).toEqual(["order.create", "order.read"]);
   });
 
   it("transition 그룹 수집", () => {
@@ -127,6 +127,6 @@ describe("InMemoryMetricsCollector — event_key 수집", () => {
 
     const groups = collector.collectTransitionGroups();
     expect(groups.size).toBe(1);
-    expect(groups.get("transfer")!.sort()).toEqual(["account.credit", "account.debit", "fee.record"]);
+    expect(groups.get("transfer")!.toSorted()).toEqual(["account.credit", "account.debit", "fee.record"]);
   });
 });

@@ -74,7 +74,7 @@ export class InMemoryOntologyRegistryStore implements OntologyRegistryStore {
   async listNamespaces(): Promise<OntologyNamespaceRecord[]> {
     return [...this.namespaces.values()]
       .map(cloneNamespace)
-      .sort((left, right) => left.ontologyId.localeCompare(right.ontologyId));
+      .toSorted((left, right) => left.ontologyId.localeCompare(right.ontologyId));
   }
 
   async getNamespace(ontologyId: string): Promise<OntologyNamespaceRecord | null> {
@@ -86,14 +86,14 @@ export class InMemoryOntologyRegistryStore implements OntologyRegistryStore {
     return [...this.axes.values()]
       .filter((axis) => axis.ontologyId === ontologyId && axis.versionId === versionId)
       .map(cloneAxis)
-      .sort((left, right) => left.axisId.localeCompare(right.axisId));
+      .toSorted((left, right) => left.axisId.localeCompare(right.axisId));
   }
 
   async listTaxonomies(ontologyId: string, versionId: string): Promise<OntologyTaxonomyRecord[]> {
     return [...this.taxonomies.values()]
       .filter((taxonomy) => taxonomy.ontologyId === ontologyId && taxonomy.versionId === versionId)
       .map(cloneTaxonomy)
-      .sort((left, right) => left.taxonomyId.localeCompare(right.taxonomyId));
+      .toSorted((left, right) => left.taxonomyId.localeCompare(right.taxonomyId));
   }
 
   async listAllocations(
@@ -105,7 +105,7 @@ export class InMemoryOntologyRegistryStore implements OntologyRegistryStore {
         (allocation) => allocation.ontologyId === ontologyId && allocation.versionId === versionId,
       )
       .map(cloneAllocation)
-      .sort((left, right) => left.allocationId.localeCompare(right.allocationId));
+      .toSorted((left, right) => left.allocationId.localeCompare(right.allocationId));
   }
 
   async getAllocation(allocationId: string): Promise<OntologyAddressAllocationRecord | null> {
@@ -117,7 +117,7 @@ export class InMemoryOntologyRegistryStore implements OntologyRegistryStore {
     return [...this.segments.values()]
       .filter((segment) => segment.allocationId === allocationId)
       .map(cloneSegment)
-      .sort(
+      .toSorted(
         (left, right) =>
           left.addressOffset - right.addressOffset || left.segmentId.localeCompare(right.segmentId),
       );
@@ -127,7 +127,7 @@ export class InMemoryOntologyRegistryStore implements OntologyRegistryStore {
     return [...this.allocations.values()]
       .filter((allocation) => allocation.status === "active")
       .map(cloneAllocation)
-      .sort((left, right) => left.allocationId.localeCompare(right.allocationId));
+      .toSorted((left, right) => left.allocationId.localeCompare(right.allocationId));
   }
 
   private snapshot(): OntologyRegistryRecordSet {

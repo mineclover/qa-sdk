@@ -142,7 +142,7 @@ export async function generateEnvFile(
 
   const configEntries = Object.entries(configVars)
     .filter(([key]) => key !== "PORT")
-    .sort(([left], [right]) => left.localeCompare(right));
+    .toSorted(([left], [right]) => left.localeCompare(right));
 
   if (configEntries.length > 0) {
     lines.push(``, `# 서비스 설정`);
@@ -169,7 +169,7 @@ export async function generateEnvFile(
 
   lines.push(``, `# 서비스 연결`);
 
-  const sortedEntries = Object.entries(urls).sort(([left], [right]) =>
+  const sortedEntries = Object.entries(urls).toSorted(([left], [right]) =>
     left.localeCompare(right),
   );
 

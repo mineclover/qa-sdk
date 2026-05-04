@@ -109,14 +109,7 @@ export class DocsService {
 
   resolveByFile(filePath: string): DefFileBoundaryResolution {
     const requested = this.normalizeCodeReferenceTarget(filePath);
-    const references = this.store.getCodeReferencesByPath(requested.codePath).map((ref) => ({
-      codePath: ref.codePath,
-      docId: ref.docId,
-      relationType: ref.relationType,
-      sourceKind: ref.sourceKind,
-      ...(ref.symbol ? { symbol: ref.symbol } : {}),
-      ...(ref.line !== undefined ? { line: ref.line } : {}),
-    })) as DefCodeReference[];
+    const references = this.store.getCodeReferencesByPath(requested.codePath).map((ref) => (Object.assign({codePath:ref.codePath,docId:ref.docId,relationType:ref.relationType,sourceKind:ref.sourceKind}, ref.symbol?{symbol:ref.symbol}:{}, ref.line!==undefined?{line:ref.line}:{}))) as DefCodeReference[];
 
     const scopedReferences = requested.symbol
       ? references.filter((ref) => (ref.symbol ?? "") === requested.symbol || !ref.symbol)

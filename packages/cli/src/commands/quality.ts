@@ -930,7 +930,7 @@ export function rankNextDocs(params: {
       status,
       reasons,
     };
-  }).sort((a, b) => b.score - a.score || a.doc.entry.id.localeCompare(b.doc.entry.id));
+  }).toSorted((a, b) => b.score - a.score || a.doc.entry.id.localeCompare(b.doc.entry.id));
 }
 
 async function findParentBundle(

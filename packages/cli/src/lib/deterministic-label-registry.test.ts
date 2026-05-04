@@ -977,7 +977,7 @@ function definitionDoc(
       defId: "docs-control-plane-def",
       sourcePath: "docs/specs/definition-catalog/docs-control-plane.spec.md",
       documentKind: "spec",
-      ...(overrides.metadata ?? {}),
+      ...overrides.metadata,
     },
     sources: [
       {
@@ -995,7 +995,7 @@ function definitionDoc(
     rawSource: {
       path: "docs/specs/definition-catalog/docs-control-plane.spec.md",
       sourceSchema: "definition-frontmatter",
-      ...(overrides.rawSource ?? {}),
+      ...overrides.rawSource,
     },
     ...withoutEnvelopeNested(overrides),
   });
@@ -1013,7 +1013,7 @@ function prdMarkdownDoc(
     metadata: {
       title: "Deterministic Label Registry FSM Read Model",
       sourcePath: "tasks/prd-deterministic-label-registry-fsm-read-model.md",
-      ...(overrides.metadata ?? {}),
+      ...overrides.metadata,
     },
     tasks: [
       {
@@ -1029,7 +1029,7 @@ function prdMarkdownDoc(
     rawSource: {
       path: "tasks/prd-deterministic-label-registry-fsm-read-model.md",
       sourceSchema: "prd-markdown",
-      ...(overrides.rawSource ?? {}),
+      ...overrides.rawSource,
     },
     ...withoutEnvelopeNested(overrides),
   });
@@ -1047,7 +1047,7 @@ function ralphPrdJsonDoc(
     metadata: {
       name: "Deterministic Label Registry FSM Read Model",
       sourcePath: "tasks/prd-deterministic-label-registry-fsm-read-model.json",
-      ...(overrides.metadata ?? {}),
+      ...overrides.metadata,
     },
     tasks: [
       {
@@ -1063,7 +1063,7 @@ function ralphPrdJsonDoc(
     rawSource: {
       path: "tasks/prd-deterministic-label-registry-fsm-read-model.json",
       sourceSchema: "ralph-prd-json",
-      ...(overrides.rawSource ?? {}),
+      ...overrides.rawSource,
     },
     ...withoutEnvelopeNested(overrides),
   });
@@ -1085,7 +1085,7 @@ function artifactEvidenceDoc(
       outputPath: "artifacts/activation/programming-artifact-ontology.json",
       packId: "programming-artifact-ontology",
       sourcePath: "artifacts/programming-artifacts.json",
-      ...(overrides.metadata ?? {}),
+      ...overrides.metadata,
     },
     evidence: [
       {
@@ -1101,7 +1101,7 @@ function artifactEvidenceDoc(
     rawSource: {
       path: "artifacts/programming-artifacts.json",
       sourceSchema: "programming-artifact-registry",
-      ...(overrides.rawSource ?? {}),
+      ...overrides.rawSource,
     },
     ...withoutEnvelopeNested(overrides),
   });

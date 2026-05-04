@@ -165,7 +165,7 @@ export class PipeContext implements IPipeContext {
     this.pipeId = opts.pipeId;
     this.graphId = opts.graphId;
     this.cancellation = opts.cancellation ?? new CancellationToken();
-    this.data = opts.data ? { ...opts.data } : { ...(opts.triggerEvent.payload ?? {}) };
+    this.data = opts.data ? { ...opts.data } : { ...opts.triggerEvent.payload };
   }
 
   get(path: string): unknown {

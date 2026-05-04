@@ -136,5 +136,5 @@ function extractPayloadFields(prefixes: readonly EventPrefixEntry[]): string[] {
       }
     }
   }
-  return [...fields].sort();
+  return [...fields].toSorted();
 }

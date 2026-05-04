@@ -31,7 +31,7 @@ export function matchAllBudgets(
 ): readonly BudgetDef[] {
   return budgets
     .filter((b) => matchesRule(attributes, b.match))
-    .sort((a, b) => a.priority - b.priority);
+    .toSorted((a, b) => a.priority - b.priority);
 }
 
 function matchesRule(attrs: QueryAttributes, rule: BudgetMatchRule): boolean {

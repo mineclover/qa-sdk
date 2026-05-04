@@ -42,7 +42,7 @@ describe("SqliteFacetCodeStore", () => {
 
     const results = store.getByFile("validate.ts");
     expect(results).toHaveLength(2);
-    expect(results.map(r => r.facet).sort()).toEqual(["검증", "변환"]);
+    expect(results.map(r => r.facet).toSorted()).toEqual(["검증", "변환"]);
   });
 
   it("getByFile — 부분 매칭 방지 (정확한 파일 경로만)", () => {

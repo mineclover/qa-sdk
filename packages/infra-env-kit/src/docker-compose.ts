@@ -23,7 +23,7 @@ export async function generateDockerComposeOverride(
     const port = service.url.match(/:(\d+)$/)?.[1] ?? "3200";
     const envVars: string[] = [];
 
-    for (const [id, url] of Object.entries(urls).sort(([left], [right]) =>
+    for (const [id, url] of Object.entries(urls).toSorted(([left], [right]) =>
       left.localeCompare(right),
     )) {
       if (id !== service.serviceId) {

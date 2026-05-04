@@ -1056,7 +1056,7 @@ function reasonFor(
     targetNodePath: input.target.path,
     metadata: {
       sourceDocumentKind: document.kind,
-      ...(input.metadata ?? {}),
+      ...input.metadata,
     },
   };
 }
@@ -1157,7 +1157,7 @@ class EdgeBuilder {
         reasons: [...existing.reasons, input.reason],
         metadata: {
           ...existing.metadata,
-          ...(input.metadata ?? {}),
+          ...input.metadata,
         },
       });
       return;

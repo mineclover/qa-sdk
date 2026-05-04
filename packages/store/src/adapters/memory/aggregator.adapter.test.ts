@@ -143,7 +143,7 @@ describe("InMemoryAggregator", () => {
       const r2 = await agg2.projectAxis(keys, ["env"]);
 
       // 정렬해서 비교 (순서 무관)
-      const sort = (arr: typeof r1) => [...arr].sort((a, b) => JSON.stringify(a.axisValues).localeCompare(JSON.stringify(b.axisValues)));
+      const sort = (arr: typeof r1) => [...arr].toSorted((a, b) => JSON.stringify(a.axisValues).localeCompare(JSON.stringify(b.axisValues)));
       expect(sort(r2)).toEqual(sort(r1));
     });
   });

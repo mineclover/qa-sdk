@@ -129,7 +129,7 @@ export class RoleRegistry {
     for (const roleId of domainMap.keys()) {
       for (const f of this.resolvedFeatures(domain, roleId)) all.add(f);
     }
-    const sorted = [...all].sort();
+    const sorted = [...all].toSorted();
     this._featureCache.set(domain, sorted);
     return sorted;
   }

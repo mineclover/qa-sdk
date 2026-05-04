@@ -198,7 +198,7 @@ export function inferModuleLevel(relations: ModuleRelations): FoldLevel {
  * 정렬된 필드 시그니처를 연결한 문자열의 해시.
  */
 export function computeSchemaHash(fields: readonly FieldDescriptor[]): string {
-  const sorted = [...fields].sort((a, b) => a.name.localeCompare(b.name));
+  const sorted = [...fields].toSorted((a, b) => a.name.localeCompare(b.name));
   const sig = sorted.map(f => `${f.name}:${f.type}:${f.optional}`).join("|");
   // 간단한 결정론적 해시 (FNV-1a 32bit)
   let hash = 0x811c9dc5;

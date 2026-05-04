@@ -88,7 +88,7 @@ export function computeSchemaHash(roleRegistry: RoleRegistry): string {
   for (const domain of roleRegistry.domains()) {
     snapshot[domain] = roleRegistry.domainFeatureIds(domain);
   }
-  const json = JSON.stringify(snapshot, Object.keys(snapshot).sort());
+  const json = JSON.stringify(snapshot, Object.keys(snapshot).toSorted());
   return _djb2(json).toString(16);
 }
 
