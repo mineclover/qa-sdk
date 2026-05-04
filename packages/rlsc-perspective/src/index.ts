@@ -194,7 +194,7 @@ function createCss3DViewer(
     scene.replaceChildren(createGrid(currentDoc));
     applyProjection();
     applyTransform();
-    const flat = flattenVisibleNodes(currentDoc.root, 0, null).sort(
+    const flat = flattenVisibleNodes(currentDoc.root, 0, null).toSorted(
       (a, b) => a.depth - b.depth || a.node.rect.y - b.node.rect.y || a.node.rect.x - b.node.rect.x,
     );
     for (const item of flat) {
@@ -641,7 +641,7 @@ function createIssueMap(
 
 function primaryIssue(issues: readonly PerspectiveIssue[]): PerspectiveIssue | undefined {
   const rank = { error: 3, warning: 2, info: 1 } as const;
-  return [...issues].sort(
+  return [...issues].toSorted(
     (a, b) => rank[b.severity ?? 'warning'] - rank[a.severity ?? 'warning'],
   )[0];
 }
@@ -685,7 +685,7 @@ function createLayerModel(
   const layers = new Map<string, PerspectiveLayer>();
   const nodeToLayer = new Map<string, string>();
   for (const [id, entry] of layerEntries) {
-    const preferred = [...entry.nodes].sort(
+    const preferred = [...entry.nodes].toSorted(
       (a, b) =>
         identifierRank(a) - identifierRank(b) ||
         b.rect.width * b.rect.height - a.rect.width * a.rect.height,

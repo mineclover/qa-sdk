@@ -97,7 +97,10 @@ describe('createPerspectiveViewer', () => {
   });
 
   it('preserves existing callbacks when update receives partial options', () => {
-    const onHover = vi.fn();
+    const onHover =
+      vi.fn<
+        Parameters<typeof createPerspectiveViewer>[2] extends { onHover?: infer T } ? T : never
+      >();
     const container = mount();
     const viewer = createPerspectiveViewer(container, fixture(), { onHover });
 
