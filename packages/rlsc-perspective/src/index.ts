@@ -415,6 +415,8 @@ function createCanvasPerspectiveViewer(
   let selectedLayerId: string | null = null;
   let currentLayers = createLayerModel(doc, currentOptions.groupBy, createIssueMap(currentOptions), currentOptions.copyFormat);
   let projectedNodes: ProjectedNode[] = [];
+  let viewState: CanvasViewState = { skewX: 1.8, skewY: 1.2, zoom: 1, panX: 0, panY: 0 };
+  let dragState: CanvasDragState | null = null;
 
   function resize(): void {
     const ratio = Math.min(window.devicePixelRatio, 2);
@@ -443,7 +445,7 @@ function createCanvasPerspectiveViewer(
     const flat = flattenVisibleNodes(nextDoc.root, 0, null).toSorted(
       (a, b) => a.depth - b.depth || a.node.rect.y - b.node.rect.y,
     );
-    projectedNodes = flat.map((item) => projectNode(item, nextDoc.viewport, width, height));
+    projectedNodes = flat.map((item) => projectNode(item, nextDoc.viewport, width, height, viewState));
     if (hoveredNodeId && !projectedNodes.some((item) => item.node.id === hoveredNodeId)) {
       hoveredNodeId = null;
       hoveredLayerId = null;
@@ -455,6 +457,22 @@ function createCanvasPerspectiveViewer(
   }
 
   function handlePointerMove(event: PointerEvent): void {
+    if (dragState) {
+      const dx = event.offsetX - dragState.startX;
+      const dy = event.offsetY - dragState.startY;
+      dragState.moved ||= Math.hypot(dx, dy) > 4;
+      viewState = event.shiftKey
+        ? { ...viewState, panX: dragState.startPanX + dx, panY: dragState.startPanY + dy }
+        : {
+            ...viewState,
+            skewX: clamp(dragState.startSkewX + dx * 0.018, -3.2, 3.2),
+            skewY: clamp(dragState.startSkewY + dy * 0.018, -2.8, 2.8),
+          };
+      canvas.style.cursor = "grabbing";
+      update(currentDoc, currentOptions);
+      return;
+    }
+
     const point = { x: event.offsetX, y: event.offsetY };
     const hit = projectedNodes.toReversed().find((item) => pointInPolygon(point, item.points));
     const nextHovered = hit?.node.id ?? null;
@@ -466,6 +484,37 @@ function createCanvasPerspectiveViewer(
     canvas.style.cursor = hoveredLayerId ? "pointer" : "default";
     emitNodeEvent(container, "rlsc-perspective-hover", currentDoc, currentLayers, hoveredNodeId, hoveredLayerId);
     currentOptions.onHover?.(nodeEvent(currentDoc, currentLayers, hoveredNodeId, hoveredLayerId));
+    update(currentDoc, currentOptions);
+  }
+
+  function handlePointerDown(event: PointerEvent): void {
+    if (event.button !== 0) return;
+    dragState = {
+      startX: event.offsetX,
+      startY: event.offsetY,
+      startSkewX: viewState.skewX,
+      startSkewY: viewState.skewY,
+      startPanX: viewState.panX,
+      startPanY: viewState.panY,
+      moved: false,
+    };
+    canvas.setPointerCapture(event.pointerId);
+    canvas.style.cursor = "grabbing";
+  }
+
+  function handlePointerUp(event: PointerEvent): void {
+    const shouldSelect = dragState !== null && !dragState.moved;
+    dragState = null;
+    if (canvas.hasPointerCapture(event.pointerId)) {
+      canvas.releasePointerCapture(event.pointerId);
+    }
+    canvas.style.cursor = hoveredLayerId ? "pointer" : "grab";
+    if (shouldSelect) handleSelect();
+  }
+
+  function handleWheel(event: WheelEvent): void {
+    event.preventDefault();
+    viewState = { ...viewState, zoom: clamp(viewState.zoom * Math.exp(-event.deltaY * 0.0012), 0.45, 2.5) };
     update(currentDoc, currentOptions);
   }
 
@@ -513,19 +562,24 @@ function createCanvasPerspectiveViewer(
 
   function dispose(): void {
     resizeObserver.disconnect();
+    canvas.removeEventListener("pointerdown", handlePointerDown);
     canvas.removeEventListener("pointermove", handlePointerMove);
+    canvas.removeEventListener("pointerup", handlePointerUp);
     canvas.removeEventListener("pointerleave", clearHover);
-    canvas.removeEventListener("click", handleSelect);
     canvas.removeEventListener("copy", handleCopy);
     canvas.removeEventListener("keydown", handleKeyDown);
+    canvas.removeEventListener("wheel", handleWheel);
     canvas.remove();
   }
 
+  canvas.style.cursor = "grab";
+  canvas.addEventListener("pointerdown", handlePointerDown);
   canvas.addEventListener("pointermove", handlePointerMove);
+  canvas.addEventListener("pointerup", handlePointerUp);
   canvas.addEventListener("pointerleave", clearHover);
-  canvas.addEventListener("click", handleSelect);
   canvas.addEventListener("copy", handleCopy);
   canvas.addEventListener("keydown", handleKeyDown);
+  canvas.addEventListener("wheel", handleWheel, { passive: false });
   update(doc, options);
   return { update, clearSelection, dispose };
 }
@@ -598,6 +652,24 @@ interface ProjectedNode extends FlatNode {
   readonly parentCenter?: CanvasPoint;
 }
 
+interface CanvasViewState {
+  readonly skewX: number;
+  readonly skewY: number;
+  readonly zoom: number;
+  readonly panX: number;
+  readonly panY: number;
+}
+
+interface CanvasDragState {
+  readonly startX: number;
+  readonly startY: number;
+  readonly startSkewX: number;
+  readonly startSkewY: number;
+  readonly startPanX: number;
+  readonly startPanY: number;
+  moved: boolean;
+}
+
 function flattenVisibleNodes(node: RLSCNode, depth: number, parent: RLSCNode | null): FlatNode[] {
   if (!node.visible) return [];
   const current = { node, depth, parent: parent ?? undefined };
@@ -628,13 +700,14 @@ function projectNode(
   viewport: RLSCDocument["viewport"],
   canvasWidth: number,
   canvasHeight: number,
+  viewState: CanvasViewState,
 ): ProjectedNode {
-  const scale = Math.min(canvasWidth / viewport.width, canvasHeight / viewport.height) * 0.72;
-  const baseX = canvasWidth / 2 - (viewport.width * scale) / 2;
-  const baseY = canvasHeight * 0.18;
+  const scale = Math.min(canvasWidth / viewport.width, canvasHeight / viewport.height) * 0.72 * viewState.zoom;
+  const baseX = canvasWidth / 2 - (viewport.width * scale) / 2 + viewState.panX;
+  const baseY = canvasHeight * 0.18 + viewState.panY;
   const z = item.depth * 14 + Math.max(0, item.node.zIndex) / 180;
-  const x = baseX + item.node.rect.x * scale + z * 1.8;
-  const y = baseY + item.node.rect.y * scale - z * 1.2;
+  const x = baseX + item.node.rect.x * scale + z * viewState.skewX * viewState.zoom;
+  const y = baseY + item.node.rect.y * scale - z * viewState.skewY * viewState.zoom;
   const w = Math.max(item.node.rect.width * scale, 2);
   const h = Math.max(item.node.rect.height * scale, 2);
   const skew = Math.min(42, 10 + item.depth * 4);
@@ -646,8 +719,14 @@ function projectNode(
   ] as const;
   const parentCenter = item.parent
     ? {
-        x: baseX + (item.parent.rect.x + item.parent.rect.width / 2) * scale + (item.depth - 1) * 14 * 1.8,
-        y: baseY + (item.parent.rect.y + item.parent.rect.height / 2) * scale - (item.depth - 1) * 14 * 1.2,
+        x:
+          baseX +
+          (item.parent.rect.x + item.parent.rect.width / 2) * scale +
+          (item.depth - 1) * 14 * viewState.skewX * viewState.zoom,
+        y:
+          baseY +
+          (item.parent.rect.y + item.parent.rect.height / 2) * scale -
+          (item.depth - 1) * 14 * viewState.skewY * viewState.zoom,
       }
     : undefined;
 
@@ -841,6 +920,10 @@ function pointInPolygon(point: CanvasPoint, polygon: readonly CanvasPoint[]): bo
     if (intersects) inside = !inside;
   }
   return inside;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 function cssColor(color: number, alpha: number): string {

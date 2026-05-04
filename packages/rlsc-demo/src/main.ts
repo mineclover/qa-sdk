@@ -154,16 +154,6 @@ mount.innerHTML = `
         <ol class="step-list" data-view="steps"></ol>
       </section>
 
-      <section class="summary-panel">
-        <h2>Summary</h2>
-        <div class="summary-grid" data-view="summary"></div>
-      </section>
-
-      <section class="svg-panel">
-        <h2>SVG overlay</h2>
-        <div class="svg-view" data-view="svg"></div>
-      </section>
-
       <section class="layer-panel">
         <h2>Perspective layers</h2>
         <div class="layer-view" data-view="layers3d"></div>
@@ -173,6 +163,16 @@ mount.innerHTML = `
           <button type="button" data-action="copySelectionJson">Copy JSON</button>
         </div>
         <div class="interaction-view" data-view="interactions" aria-live="polite"></div>
+      </section>
+
+      <section class="summary-panel">
+        <h2>Summary</h2>
+        <div class="summary-grid" data-view="summary"></div>
+      </section>
+
+      <section class="svg-panel">
+        <h2>SVG overlay</h2>
+        <div class="svg-view" data-view="svg"></div>
       </section>
 
       <section class="json-panel">
