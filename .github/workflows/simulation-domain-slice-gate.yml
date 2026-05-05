@@ -111,5 +111,10 @@ jobs:
       - name: OpenAPI fragment merge check
         run: node simulations/enterprise-pm/contracts/openapi/scripts/check-merge.mjs
 
+      - name: Build sim-scenarios transitive deps
+        # sim-scenarios 가 의존하는 sim-identifier-grammar 등 dist 산출이 없으면
+        # vitest 가 exports.import 경로를 resolve 하지 못한다.
+        run: pnpm --filter "...@qa-sdk/sim-scenarios" --filter "!@qa-sdk/sim-scenarios" build
+
       - name: scenarios test (architecture-manifest + cross-slice-conventions)
         run: pnpm --filter @qa-sdk/sim-scenarios test
