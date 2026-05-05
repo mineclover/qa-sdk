@@ -1,8 +1,8 @@
 // @def.doc definition-data-source
 
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { mkdirSync, readFileSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { sql } from "drizzle-orm";
@@ -130,7 +130,9 @@ export async function syncDocsToLocalDb(
   const rootDir = options.rootDir;
   const docsDir = options.docsDir ?? "docs";
   const dbPath = resolve(rootDir, options.dbPath ?? DEFAULT_DB_PATH);
-  
+  // CI/clean 환경에서 부모 디렉토리가 없으면 better-sqlite3 가 directory 미존재로 fail.
+  mkdirSync(dirname(dbPath), { recursive: true });
+
   // 1. 문서 스캔
   const scan = await scanAndBuild(rootDir, [join(rootDir, docsDir)]);
 
