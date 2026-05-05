@@ -41,7 +41,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "@qa-sdk/spec-core": "workspace:*",
     "demo-snapshot": "workspace:*",
     "drizzle-kit": "catalog:",
     "tsup": "^8.5.1",

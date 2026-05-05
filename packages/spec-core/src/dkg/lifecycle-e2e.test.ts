@@ -10,15 +10,19 @@
 
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, decodePrefix } from "demo-snapshot";
-import { bootstrapDkg } from "./bootstrap.js";
+import {
+  bootstrapDkg,
+  violationsToObservations,
+  resolve,
+  defineFlow,
+  serializeFlow,
+  deserializeFlow,
+  analyzeImpact,
+} from "dkg";
 import { DEMO_TRANSITION_SPECS } from "spec-transition";
-import { violationsToObservations } from "./violation-bridge.js";
-import { createTransitionFunctions } from "@qa-sdk/spec-core/transition";
+import { createTransitionFunctions } from "../transition/index.js";
 import { decodeAddressContext } from "spec-transition";
 import { encodePrefix } from "@qa-sdk/core";
-import { resolve } from "./resolve.js";
-import { defineFlow, serializeFlow, deserializeFlow } from "./flow-definition.js";
-import { analyzeImpact } from "./skills/analyze-impact.js";
 
 describe("종단 E2E: checkout 흐름", () => {
   const _pvRef = DEMO_CATALOG.prefixes.page_view.versions[0].refEntries!.svc_ref.values[0];
