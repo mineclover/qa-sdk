@@ -4,8 +4,8 @@
 import { describe, it, expect } from "vitest";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { eq, and } from "drizzle-orm";
-import * as schema from "../../db/schema.js";
-import { withQueryTracing } from "@qa-sdk/otel";
+import * as schema from "../../../store/src/db/schema.js";
+import { withQueryTracing } from "../../src/drizzle-instrument.js";
 
 /**
  * withQueryTracing + .comment() 통합 검증.
