@@ -3,20 +3,20 @@ export function renderIncidentEscalationExamplePage(): string {
     <section class="panel canonical-panel">
       <div class="example-heading">
         <div>
-          <p class="eyebrow">Second Feature</p>
-          <h2>Incident Escalation Playbook</h2>
+          <p class="eyebrow">Convention Feedback</p>
+          <h2>코딩 컨벤션 피드백 분류</h2>
         </div>
         <p class="summary">
-          첫 feature와 다른 도메인 입력을 쓰지만, shared state machine/store/dom helper와
-          qa-sdk bridge orchestration은 그대로 재사용합니다.
+          리뷰 중 발견한 코드 구조 피드백을 입력하면 컨벤션 위반 강도와 수정 route를 계산합니다.
+          목적은 “단순 nit인지, eng-review에서 구조 조정이 필요한지, office-hours급 설계 논의인지”를 빠르게 분류하는 것입니다.
         </p>
       </div>
 
       <div class="example-bullets">
-        <span>shared runtime = store, refs, default persist</span>
-        <span>shared state = idle/editing/invalid/submitting/success/error</span>
-        <span>shared dom = input/select/textarea + active field restore</span>
-        <span>feature docs = func_def + validation, template docs = func_def + process_flow</span>
+        <span>판정: feedback level + convention impact</span>
+        <span>출력: review route + convention risk score</span>
+        <span>관측: submit, reopen, reset, score metric</span>
+        <span>재사용: 같은 state/store/dom helper</span>
       </div>
 
       <div id="incident-escalation-root"></div>

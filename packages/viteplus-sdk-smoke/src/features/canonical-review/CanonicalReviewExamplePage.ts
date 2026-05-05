@@ -4,20 +4,19 @@ export function renderCanonicalReviewExamplePage(): string {
       <div class="example-heading">
         <div>
           <p class="eyebrow">Canonical Example</p>
-          <h2>qa-sdk logging + implementation-convention</h2>
+          <h2>변경 검토 라우팅</h2>
         </div>
         <p class="summary">
-          이 예제는 Vite+ 소비처 안에서 <code>business</code> 순수 함수,
-          <code>handlers</code> orchestration, <code>actions</code> input adapter,
-          <code>hooks</code> view-model 조립, <code>views</code> 렌더링을 한 번에 보여줍니다.
+          변경 제목, 담당자, 리스크, 롤백 계획을 입력하면 검토 route와 점수를 계산합니다.
+          목적은 “이 변경을 바로 ship할지, 엔지니어링 리뷰로 보낼지, office-hours로 올릴지”를 UI에서 관측 가능한 이벤트로 남기는 것입니다.
         </p>
       </div>
 
       <div class="example-bullets">
-        <span>contexts = store, refs, bridge</span>
-        <span>business = validation, result, state machine</span>
-        <span>handlers = focus 이동, flush, logging</span>
-        <span>validation = submit/focus/reset/reopen 테스트</span>
+        <span>판정: risk + rollback readiness</span>
+        <span>출력: route, score, rationale</span>
+        <span>관측: validation, submit, reopen, reset event</span>
+        <span>검증: context-action boundary contract</span>
       </div>
 
       <div id="canonical-review-root"></div>

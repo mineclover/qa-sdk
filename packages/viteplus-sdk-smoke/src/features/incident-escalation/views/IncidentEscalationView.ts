@@ -23,10 +23,10 @@ export function renderIncidentEscalationView(
       <div class="example-grid">
         <article class="panel nested-panel form-panel">
           <p class="section-title">Feature Form</p>
-          <h3>Incident Escalation Intake</h3>
+          <h3>Convention Feedback Intake</h3>
           <p class="summary-copy">
-            같은 Vite+ 소비처 안에서 두 번째 feature를 붙여도 shared state/store/dom helper와
-            qa-sdk logging facade를 그대로 재사용할 수 있는지 보여줍니다.
+            코드 리뷰 피드백을 입력하면 convention risk score와 다음 검토 route를 계산하고,
+            같은 qa-sdk bridge로 event와 metric을 남깁니다.
           </p>
 
           <div class="status-row">
@@ -44,37 +44,37 @@ export function renderIncidentEscalationView(
             ${renderInputField({
               field: 'incidentTitle',
               idPrefix: 'incident',
-              label: '인시던트 제목',
-              placeholder: '예: registry decode latency spike',
+              label: '피드백 제목',
+              placeholder: '예: view boundary가 persistence write를 직접 수행',
               value: viewModel.draft.incidentTitle,
               issue: viewModel.validationMessages.incidentTitle,
             })}
             ${renderInputField({
               field: 'serviceName',
               idPrefix: 'incident',
-              label: '영향 서비스',
-              placeholder: '예: registry-service',
+              label: '대상 모듈/파일',
+              placeholder: '예: features/review/views/ReviewView.ts',
               value: viewModel.draft.serviceName,
               issue: viewModel.validationMessages.serviceName,
             })}
             ${renderSelectField({
               field: 'severity',
               idPrefix: 'incident',
-              label: 'Severity',
+              label: '피드백 강도',
               value: viewModel.draft.severity,
               options: [
                 { value: '', label: '선택하세요' },
-                { value: 'sev2', label: 'sev2' },
-                { value: 'sev1', label: 'sev1' },
-                { value: 'sev0', label: 'sev0' },
+                { value: 'sev2', label: 'nit: naming/style drift' },
+                { value: 'sev1', label: 'structural: boundary responsibility drift' },
+                { value: 'sev0', label: 'blocking: architecture contract violation' },
               ],
               issue: viewModel.validationMessages.severity,
             })}
             ${renderTextareaField({
               field: 'customerImpact',
               idPrefix: 'incident',
-              label: '고객 영향',
-              placeholder: '고심각도면 실제 영향 범위를 구체적으로 적습니다.',
+              label: '컨벤션 영향',
+              placeholder: '어떤 책임 경계나 검증 계약이 흐려지는지 적습니다.',
               value: viewModel.draft.customerImpact,
               issue: viewModel.validationMessages.customerImpact,
               rows: 4,
@@ -82,8 +82,8 @@ export function renderIncidentEscalationView(
             ${renderTextareaField({
               field: 'mitigationPlan',
               idPrefix: 'incident',
-              label: '완화 계획',
-              placeholder: '실행 가능한 mitigation plan을 남깁니다.',
+              label: '수정 제안',
+              placeholder: '실행 가능한 리팩터링 또는 문서/테스트 보강안을 남깁니다.',
               value: viewModel.draft.mitigationPlan,
               issue: viewModel.validationMessages.mitigationPlan,
               rows: 4,
@@ -91,8 +91,8 @@ export function renderIncidentEscalationView(
             ${renderTextareaField({
               field: 'stakeholderNote',
               idPrefix: 'incident',
-              label: 'Stakeholder Note',
-              placeholder: '추가 공지 또는 handoff 메모가 있으면 남깁니다.',
+              label: 'Reviewer Note',
+              placeholder: '리뷰어가 handoff할 판단 근거를 남깁니다.',
               value: viewModel.draft.stakeholderNote,
               rows: 3,
             })}
@@ -101,6 +101,7 @@ export function renderIncidentEscalationView(
               <button class="primary" type="submit" ${
                 viewModel.canSubmit ? '' : 'disabled'
               }>${escapeHtml(viewModel.submitLabel)}</button>
+              <button id="incident-sample" class="ghost" type="button">샘플 입력</button>
               <button id="incident-reset" class="ghost" type="button">초기화</button>
             </div>
           </form>
@@ -109,6 +110,10 @@ export function renderIncidentEscalationView(
         <aside class="stack">
           <article class="panel nested-panel">
             <p class="section-title">Escalation Route</p>
+            <p class="explain-copy">
+              convention risk score는 코드 구조 피드백의 강도입니다. 높을수록 단순 수정이 아니라
+              architecture-revealing code convention 또는 context-action boundary 재검토가 필요합니다.
+            </p>
             ${
               viewModel.result
                 ? `
@@ -123,13 +128,16 @@ export function renderIncidentEscalationView(
                 `
                 : `
                   <h3>submit 전</h3>
-                  <p>incident business layer가 아직 route를 계산하지 않았습니다.</p>
+                  <p>피드백을 제출하면 컨벤션 위반 강도와 검토 route를 계산합니다.</p>
                 `
             }
           </article>
 
           <article class="panel nested-panel">
             <p class="section-title">Debug Session</p>
+            <p class="explain-copy">
+              session/trace는 이 컨벤션 피드백과 생성된 logging records를 묶는 관측 키입니다.
+            </p>
             <dl class="mini-meta">
               <div><dt>Session</dt><dd>${escapeHtml(viewModel.sessionId)}</dd></div>
               <div><dt>Trace</dt><dd>${escapeHtml(viewModel.traceId)}</dd></div>
@@ -143,6 +151,9 @@ export function renderIncidentEscalationView(
       <div class="detail-grid">
         <article class="panel nested-panel">
           <p class="section-title">Activity Log</p>
+          <p class="explain-copy">
+            사람이 먼저 읽는 feedback workflow 이력입니다. validation, route 계산, reopen 결과를 확인합니다.
+          </p>
           <ul class="activity-list">
             ${viewModel.activity
               .map(
@@ -160,6 +171,9 @@ export function renderIncidentEscalationView(
 
         <article class="panel nested-panel">
           <p class="section-title">Recent Records</p>
+          <p class="explain-copy">
+            SDK가 기록한 event/metric 이름입니다. convention score metric이 보이면 피드백 분류가 관측까지 닫힌 상태입니다.
+          </p>
           <ul class="record-list">
             ${
               viewModel.latestRecords.length > 0
@@ -172,8 +186,13 @@ export function renderIncidentEscalationView(
         </article>
 
         <article class="panel nested-panel wide-panel">
-          <p class="section-title">Latest Envelope</p>
-          <pre>${escapeHtml(viewModel.latestEnvelope)}</pre>
+          <p class="explain-copy">
+            raw envelope는 전송 payload를 직접 확인해야 할 때만 펼칩니다.
+          </p>
+          <details class="raw-details">
+            <summary>Latest envelope JSON 보기</summary>
+            <pre>${escapeHtml(viewModel.latestEnvelope)}</pre>
+          </details>
         </article>
       </div>
     </section>
@@ -239,6 +258,26 @@ export function renderIncidentEscalationView(
       event.preventDefault();
       void actions.submit();
     });
+  root.querySelector<HTMLButtonElement>('#incident-sample')?.addEventListener(
+    'click',
+    () => {
+      actions.updateTextField('incidentTitle', 'view boundary writes persistence directly');
+      actions.updateTextField('serviceName', 'features/review/views/ReviewView.ts');
+      actions.updateSeverity('sev0');
+      actions.updateTextField(
+        'customerImpact',
+        '전체 context-action contract가 흐려집니다. view가 persistence write와 logging side effect를 직접 수행하면 handlers/actions boundary가 증명되지 않습니다.',
+      );
+      actions.updateTextField(
+        'mitigationPlan',
+        'Move persistence and logging into handlers, keep view as input/render only, and add context-action-contract test coverage for the boundary.',
+      );
+      actions.updateTextField(
+        'stakeholderNote',
+        'Blocking review feedback: this should not merge until the code boundary matches context-action-convention.',
+      );
+    },
+  );
   root.querySelector<HTMLButtonElement>('#incident-reset')?.addEventListener(
     'click',
     () => {

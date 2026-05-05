@@ -25,8 +25,8 @@ export function renderCanonicalReviewView(
           <p class="section-title">Feature Form</p>
           <h3>Canonical Review Intake</h3>
           <p class="summary-copy">
-            Vite+ 환경에서 <code>contexts/business/handlers/actions/hooks/views</code> 책임을
-            나누고, submit/validation/reset을 qa-sdk logging과 함께 고정합니다.
+            변경 요청을 입력하면 business layer가 review route를 계산하고,
+            handlers가 validation/focus/logging side effect를 한 번에 처리합니다.
           </p>
 
           <div class="status-row">
@@ -92,6 +92,7 @@ export function renderCanonicalReviewView(
               <button class="primary" type="submit" ${
                 viewModel.canSubmit ? '' : 'disabled'
               }>${escapeHtml(viewModel.submitLabel)}</button>
+              <button id="canonical-sample" class="ghost" type="button">샘플 입력</button>
               <button id="canonical-reset" class="ghost" type="button">초기화</button>
             </div>
           </form>
@@ -100,6 +101,10 @@ export function renderCanonicalReviewView(
         <aside class="stack">
           <article class="panel nested-panel">
             <p class="section-title">Calculated Route</p>
+            <p class="explain-copy">
+              score는 변경 위험도입니다. 높을수록 바로 ship하기 어렵고,
+              eng-review나 office-hours 같은 상위 검토 레인으로 이동합니다.
+            </p>
             ${
               viewModel.result
                 ? `
@@ -121,6 +126,9 @@ export function renderCanonicalReviewView(
 
           <article class="panel nested-panel">
             <p class="section-title">Debug Session</p>
+            <p class="explain-copy">
+              같은 session/trace 아래에서 form interaction과 SDK records가 연결됩니다.
+            </p>
             <dl class="mini-meta">
               <div><dt>Session</dt><dd>${escapeHtml(viewModel.sessionId)}</dd></div>
               <div><dt>Trace</dt><dd>${escapeHtml(viewModel.traceId)}</dd></div>
@@ -134,6 +142,9 @@ export function renderCanonicalReviewView(
       <div class="detail-grid">
         <article class="panel nested-panel">
           <p class="section-title">Activity Log</p>
+          <p class="explain-copy">
+            사람이 읽는 상태 이력입니다. validation 실패, route 계산, reset 같은 UI 사건을 먼저 봅니다.
+          </p>
           <ul class="activity-list">
             ${viewModel.activity
               .map(
@@ -151,6 +162,9 @@ export function renderCanonicalReviewView(
 
         <article class="panel nested-panel">
           <p class="section-title">Recent Records</p>
+          <p class="explain-copy">
+            SDK가 남긴 최근 event/metric 이름입니다. activity와 record가 함께 증가하면 UI와 관측이 연결된 것입니다.
+          </p>
           <ul class="record-list">
             ${
               viewModel.latestRecords.length > 0
@@ -163,8 +177,13 @@ export function renderCanonicalReviewView(
         </article>
 
         <article class="panel nested-panel wide-panel">
-          <p class="section-title">Latest Envelope</p>
-          <pre>${escapeHtml(viewModel.latestEnvelope)}</pre>
+          <p class="explain-copy">
+            raw envelope는 전송 payload를 직접 확인해야 할 때만 펼칩니다.
+          </p>
+          <details class="raw-details">
+            <summary>Latest envelope JSON 보기</summary>
+            <pre>${escapeHtml(viewModel.latestEnvelope)}</pre>
+          </details>
         </article>
       </div>
     </section>
@@ -218,6 +237,19 @@ export function renderCanonicalReviewView(
       event.preventDefault();
       void actions.submit();
     });
+  root.querySelector<HTMLButtonElement>('#canonical-sample')?.addEventListener(
+    'click',
+    () => {
+      actions.updateTextField('changeTitle', 'definition graph drift cleanup');
+      actions.updateTextField('owner', 'platform-docs');
+      actions.updateRiskLevel('high');
+      actions.updateTextField(
+        'rollbackPlan',
+        'Revert the latest definition sync batch, restore the previous graph snapshot, and rerun def validate before reopening writes.',
+      );
+      actions.updateTextField('summary', '');
+    },
+  );
   root.querySelector<HTMLButtonElement>('#canonical-reset')?.addEventListener(
     'click',
     () => {

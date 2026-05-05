@@ -22,11 +22,11 @@ export function buildIncidentEscalationResult(
     actions: [
       resolveSeverityAction(draft.severity),
       draft.customerImpact.trim()
-        ? '고객 영향 설명이 있어 status update 문구를 바로 만들 수 있습니다.'
-        : '고객 영향 설명이 비어 있어 comms 초안 작성이 지연됩니다.',
+        ? '컨벤션 영향 설명이 있어 어떤 책임 경계가 깨지는지 리뷰 기록에 남길 수 있습니다.'
+        : '컨벤션 영향 설명이 비어 있어 수정 우선순위를 판단하기 어렵습니다.',
       draft.stakeholderNote.trim()
-        ? 'stakeholder note를 handoff payload에 함께 남깁니다.'
-        : 'stakeholder note가 비어 있어 escalation handoff는 core 필드만 사용합니다.',
+        ? 'reviewer note를 handoff payload에 함께 남깁니다.'
+        : 'reviewer note가 비어 있어 피드백 handoff는 core 필드만 사용합니다.',
     ],
   };
 }
@@ -62,25 +62,25 @@ function resolveIncidentEscalationSummary(
   route: IncidentEscalationRoute,
 ): string {
   if (route === 'office-hours') {
-    return `"${draft.incidentTitle}"는 sev0로 분류되어 strategic escalation 레인이 필요합니다.`;
+    return `"${draft.incidentTitle}"는 blocking convention feedback으로 분류되어 office-hours 설계 논의가 필요합니다.`;
   }
 
   if (route === 'eng-review') {
-    return `"${draft.incidentTitle}"는 eng-review에서 mitigation readiness를 먼저 확인해야 합니다.`;
+    return `"${draft.incidentTitle}"는 eng-review에서 책임 경계 수정안을 먼저 확인해야 합니다.`;
   }
 
-  return `"${draft.incidentTitle}"는 ship 레인에서 즉시 실행 가능한 수준의 incident playbook입니다.`;
+  return `"${draft.incidentTitle}"는 ship 레인에서 바로 수정 가능한 컨벤션 피드백입니다.`;
 }
 
 function resolveSeverityAction(severity: IncidentEscalationDraft['severity']): string {
   switch (severity) {
     case 'sev0':
-      return 'sev0는 executive context까지 함께 남겨야 합니다.';
+      return 'blocking feedback은 architecture contract나 context-action boundary가 깨진 상태입니다.';
     case 'sev1':
-      return 'sev1은 tactical review를 거쳐 on-call 조율을 고정합니다.';
+      return 'structural feedback은 eng-review에서 책임 분리 수정안을 확인해야 합니다.';
     case 'sev2':
-      return 'sev2는 실행 레인에서 mitigation 확인 후 바로 배포 가능합니다.';
+      return 'nit feedback은 실행 레인에서 naming/style drift를 바로 정리할 수 있습니다.';
     default:
-      return 'severity가 비어 있어 escalation route를 고정할 수 없습니다.';
+      return '피드백 강도가 비어 있어 review route를 고정할 수 없습니다.';
   }
 }
