@@ -18,6 +18,8 @@ def:
       type: traces_to
     - target: ms-concept-boundary
       type: implements
+    - target: context-action-convention
+      type: depends_on
 ---
 
 # Vite+ Playbook Boundary Relation
@@ -35,6 +37,7 @@ context-action 패턴에서 사용하는 바운더리 단위 5종과 각 boundar
 
 - `ScopeContract` / `ScopeNesting` — boundary를 scope로 모델링 (`@qa-sdk/core`)
 - `Boundary` 개념 — 패싯이 존재하는 검증 가능 기능 단위 (`ms-concept-boundary`)
+- `context-action-convention` — boundary 5종과 문서 책임 분리의 공통 규칙
 
 ## 구성 ^overview
 

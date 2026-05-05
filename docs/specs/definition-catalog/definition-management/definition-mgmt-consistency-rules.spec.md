@@ -25,6 +25,8 @@ def:
       type: depends_on
     - target: definition-mgmt-feedback-loop
       type: depends_on
+    - target: context-action-convention
+      type: depends_on
 ---
 
 # Definition Management — 일관성 규칙
@@ -40,6 +42,7 @@ definition 관리 전반에서 깨지면 안 되는 일관성 규칙을 정리�
 - E/C/I/S + L/P 중심 분할
 - Architecture-revealing code convention
 - 문서-코드 공동 분할
+- context-action boundary 문서화
 - 상태 변경의 좌표화
 - 피드백 순환 유지
 
@@ -131,6 +134,18 @@ E/C/I/S + L/P에서 행동과 이벤트는 같은 것이 아니다.
 - `when.event_key`와 `then.emits`는 event vocabulary/mapping pack에 존재해야 한다.
 - `then.state`, `then.returns`, `then.egress`가 참조하는 shape는 Component가 소유한다.
 - System 문서는 behavior ownership과 runtime boundary를 소유하지만, event vocabulary나 data shape를 새로 정의하지 않는다.
+
+## UI context/action boundary는 scope로 문서화
+
+프론트엔드 context/action 패턴은 `context-action-convention`을 따른다. 앱별 문서는 page root, bridge, feature context, handlers/actions, view boundary를 자기 system 안에서 정의하되, 공통 provider order나 scope-nesting 검증 규칙을 복제하지 않는다.
+
+판정 기준:
+
+- boundary는 같은 최신 state, refs, side effect 경계를 공유하는 scope여야 한다.
+- provider order는 앱별 `provider-stack` 또는 flow 문서가 상세화하고, 공통 순서 규칙은 `context-action-convention`을 참조한다.
+- state shape는 Component/state 문서, handler orchestration은 System/feature 문서, view interaction은 UI 문서가 소유한다.
+- `contains`는 앱 system 내부 하위 문서에만 사용하고, 공용 컨벤션과 검증 엔진은 `depends_on` 또는 `refs`로 연결한다.
+- 변경 뒤에는 `definition-mgmt-verification-loop`와 context-action 검증 체크리스트를 함께 돈다.
 
 ## 모든 상태 변경은 좌표화
 

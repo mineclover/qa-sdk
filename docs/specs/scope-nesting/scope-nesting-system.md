@@ -31,6 +31,8 @@ def:
       type: implements
     - target: ms-concept-boundary
       type: implements
+    - target: context-action-convention
+      type: refs
 ---
 
 # Scope Nesting System
@@ -75,6 +77,10 @@ contract descent 기반 스코프 중첩 검증 프레임워크. scope가 계약
 ### 외부 브릿지
 
 - `core/src/meta-semantic/ir-nesting-bridge.ts` → ScopeNesting ↔ ModuleIR 교차 검증 (`crossValidate`) + 자동 변환 (`nestingToModuleIRs`)
+
+### 소비 컨벤션
+
+- `context-action-convention` → UI context/action 구현체가 scope-nesting을 소비할 때의 provider order, boundary 문서화, 검증 체크리스트
 
 ## 구성 ^overview
 

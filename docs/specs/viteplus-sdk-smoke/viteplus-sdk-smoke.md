@@ -38,6 +38,8 @@ def:
       type: contains
     - target: scope-nesting-system
       type: depends_on
+    - target: context-action-convention
+      type: depends_on
     - target: platform-sdk-user-scenarios
       type: contains
     - target: sdk-vite-onboarding-guide
@@ -52,11 +54,11 @@ def:
 
 ## 목적 ^purpose
 
-`packages/viteplus-sdk-smoke`를 단순 import/build smoke를 넘어, qa-sdk logging과 implementation-convention 책임 분리를 함께 보여주는 canonical example 패키지로 고정한다.
+`packages/viteplus-sdk-smoke`를 단순 import/build smoke를 넘어, qa-sdk logging과 context-action convention 및 implementation-convention 책임 분리를 함께 보여주는 canonical example 패키지로 고정한다.
 
 ## 방법 ^method
 
-5개 boundary를 **contract descent 순서**로 중첩하고, 각 scope가 하위에 계약을 제공한다. scope-nesting 인프라(`scope-nesting-system`)를 소비하여 구조+마운트+전이+경로를 검증한다.
+5개 boundary를 **contract descent 순서**로 중첩하고, 각 scope가 하위에 계약을 제공한다. context-action 공통 규칙은 `context-action-convention`이 소유하고, scope-nesting 인프라(`scope-nesting-system`)를 소비하여 구조+마운트+전이+경로를 검증한다.
 
 1. **qa-bridge**가 logging-session 계약을 제공하여 하위 전체가 logging 가능
 2. **feature-context**가 state shape + persist 계약을 제공하여 handler/view가 공유 상태 접근 가능
@@ -67,7 +69,7 @@ handlers 계층 내부에서만 PipeSpec transformer 패턴(소비→관리→�
 
 ## 정의 ^defines
 
-- **context-action 패턴** — scope nesting 기반 UI 아키텍처. contract descent의 런타임 구현체
+- **context-action 패턴** — scope nesting 기반 UI 아키텍처. 공통 규칙은 `context-action-convention`, 검증 엔진은 `scope-nesting-system`이 소유
 - **playbook template** — 두 feature가 공유하는 runtime/store/dom/persist 유틸 세트
 
 ## 소비 ^consumes
@@ -75,6 +77,7 @@ handlers 계층 내부에서만 PipeSpec transformer 패턴(소비→관리→�
 - `@qa-sdk/sdk` — logging facade, NoopTransport
 - `@qa-sdk/core` — scope-nesting-system 전체 (validateScopeNesting, validateMountFlow, validateContractTiming, simulate)
 - `browser-monitor` — createQaMonitorAsync, emitWithCoords
+- `context-action-convention` — provider 순서, boundary 문서화, 검증 체크리스트
 
 ## 위임 ^delegates
 
@@ -124,6 +127,7 @@ handlers 계층 내부에서만 PipeSpec transformer 패턴(소비→관리→�
 | 문서 | 생산하는 것 |
 |------|-----------|
 | `template-implementation` | 공통 runtime/store/dom/persist helper 5개 |
+| `context-action-contract` | provider order + boundary manifest + mount-flow 검증 graph |
 | `canonical-review-implementation` | 첫 번째 feature 구현 단위 |
 | `incident-escalation-implementation` | 두 번째 feature 구현 단위 (대칭) |
 
@@ -148,5 +152,6 @@ handlers 계층 내부에서만 PipeSpec transformer 패턴(소비→관리→�
 
 ### 인프라 의존 (scope-nesting-system)
 
+context-action 공통 컨벤션은 `context-action-convention`이 소유한다.
 scope-nesting 검증 프레임워크는 `scope-nesting-system` module에서 독립 관리.
 `@qa-sdk/core`에 구현, viteplus-sdk-smoke은 canonical 소비처.

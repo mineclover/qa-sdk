@@ -18,6 +18,8 @@ def:
       type: depends_on
     - target: browser-monitor-operations
       type: depends_on
+    - target: context-action-convention
+      type: depends_on
 ---
 
 # Vite+ Playbook Template 구현
@@ -33,17 +35,21 @@ canonical review와 incident escalation 두 feature가 함께 재사용하는 �
 - `shared/runtime/playbookPersist.ts` — refs 생성과 기본 async persist stub
 - `shared/runtime/playbookHandlers.ts` — activity append, field focus, bridge flush helper
 - `shared/views/playbookDom.ts` — input/select/textarea 렌더링과 active-field 복원 helper
+- `context-action-contract.ts` — context-action provider order, boundary manifest, mount-flow 검증 graph
 
 ## 소비 ^consumes
 
 - `@qa-sdk/sdk` — NoopTransport, logging facade (`sdk-usage-guide`)
 - `browser-monitor` — createQaMonitorAsync, emitWithCoords (`browser-monitor-operations`)
+- `@qa-sdk/core` — ScopeNesting, validateScopeNesting, validateMountFlow (`scope-nesting-system`)
+- `context-action-convention` — boundary manifest와 검증 체크리스트
 
 ## 구성 ^overview
 
 - template는 코드 재사용 단위이므로 `feature/func_def`가 맞다.
 - 여기 정의된 shared 파일은 domain 규칙을 모르고, feature-specific draft/validation/result만 상위 레이어에서 주입받는다.
 - 둘째 feature가 추가되어도 DOM helper와 state/store/persist helper는 그대로 유지된다.
+- context-action contract는 두 feature가 같은 provider order와 boundary 책임을 유지하는지 검증하는 content contract로 분리한다.
 
 ## scope/aspect 배정 이유
 

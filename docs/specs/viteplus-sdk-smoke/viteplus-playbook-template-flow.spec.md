@@ -24,6 +24,8 @@ def:
       type: depends_on
     - target: definition-management
       type: depends_on
+    - target: context-action-convention
+      type: depends_on
 ---
 
 # Vite+ Playbook Template 확장 흐름
@@ -44,6 +46,7 @@ def:
 - SDK 온보딩 가이드 (`sdk-vite-onboarding-guide`)
 - scope 분류 기준 (`scope-classification-guide`)
 - definition 관리 체계 (`definition-management`)
+- context-action 문서화/검증 컨벤션 (`context-action-convention`)
 
 ## 구성 ^overview
 
@@ -59,7 +62,7 @@ def:
 3. `shared/views/playbookDom.ts`를 사용해 view를 만든다.
 4. submit/reset handler에서 domain별 logging key와 metric name을 연결한다.
 5. state machine test, feature orchestration test, build/test 명령을 추가한다.
-6. 구현 문서는 `feature/func_def`, 검증 문서는 `feature/scenario`로 등록한다.
+6. 구현 문서는 `feature/func_def`, 검증 문서는 `feature/scenario`로 등록하고, context-action 공통 규칙은 복제하지 않고 `context-action-convention`으로 링크한다.
 
 ## scope/aspect 배정 이유
 

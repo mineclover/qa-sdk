@@ -2743,6 +2743,9 @@ importers:
       '@qa-sdk/browser-codec':
         specifier: workspace:*
         version: link:../browser-codec
+      '@qa-sdk/core':
+        specifier: workspace:*
+        version: link:../core
       '@qa-sdk/event-catalog':
         specifier: workspace:*
         version: link:../event-catalog

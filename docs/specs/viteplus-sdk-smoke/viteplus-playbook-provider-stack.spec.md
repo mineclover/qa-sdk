@@ -16,6 +16,8 @@ def:
       type: depends_on
     - target: ms-concept-contract-descent
       type: implements
+    - target: context-action-convention
+      type: depends_on
 ---
 
 # Vite+ Playbook Provider Stack
@@ -36,6 +38,7 @@ context-action의 provider 선언 순서가 의미를 가지는 구조를 Vite+ 
 - `playbookStore` / `playbookPersist` — feature context의 store/refs (`viteplus-playbook-template-implementation`)
 - `playbookHandlers` — handler/action binding (`viteplus-playbook-template-implementation`)
 - `playbookDom` — view 렌더링 helper (`viteplus-playbook-template-implementation`)
+- `context-action-convention` — provider order와 검증 체크리스트의 공통 owner
 
 ## 구성 ^overview
 

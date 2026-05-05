@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@qa-sdk/browser-codec": "workspace:*",
+    "@qa-sdk/core": "workspace:*",
     "@qa-sdk/event-catalog": "workspace:*",
     "@qa-sdk/sdk": "workspace:*"
   },

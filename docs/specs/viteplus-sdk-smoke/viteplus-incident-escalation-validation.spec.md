@@ -16,6 +16,8 @@ def:
       type: depends_on
     - target: viteplus-playbook-interaction
       type: depends_on
+    - target: context-action-convention
+      type: depends_on
     - target: scenario-authoring-guide
       type: depends_on
 ---
@@ -30,6 +32,7 @@ incident escalation feature가 canonical template 위에서 invalid focus, succe
 
 - state machine 테스트로 공통 status 전이 계약을 확인한다.
 - handler orchestration 테스트로 severity 기반 validation, submit success, reopen, reset을 확인한다.
+- context-action contract 테스트로 provider order와 mount-flow 계약을 확인한다.
 - build/test 명령으로 Vite+ 번들 환경까지 함께 확인한다.
 
 ## 전제 ^preconditions
@@ -37,6 +40,7 @@ incident escalation feature가 canonical template 위에서 invalid focus, succe
 - `packages/viteplus-sdk-smoke/src/qa-bridge.ts`가 `NoopTransport` debug envelope를 제공한다.
 - incident escalation feature는 `incident_escalation_*` 이벤트와 `incident_escalation_score` 메트릭을 기록한다.
 - build는 `tsc && vp build` 기준으로 통과해야 한다.
+- `context-action-contract.ts`가 incident escalation boundary manifest를 생성한다.
 
 ## 스텝 ^steps
 
@@ -44,7 +48,8 @@ incident escalation feature가 canonical template 위에서 invalid focus, succe
 2. valid sev1 incident draft를 만들어 submit한다.
 3. success 이후 field 하나를 수정한다.
 4. reset으로 baseline draft로 되돌린다.
-5. package `test`와 `build`를 실행한다.
+5. context-action contract 테스트로 provider order와 mount-flow를 검증한다.
+6. package `test`와 `build`를 실행한다.
 
 ## 검증 ^assertions
 
@@ -53,6 +58,7 @@ incident escalation feature가 canonical template 위에서 invalid focus, succe
 - success 이후 draft 수정 시 상태가 `editing`으로 복귀한다.
 - reset 시 draft, validation, result, status가 baseline으로 복원된다.
 - qa-sdk debug envelope에 `incident_escalation_*` 이벤트와 `incident_escalation_score` 메트릭이 남는다.
+- `incident-escalation` contract는 Page Root -> qa-bridge -> feature context -> handlers/actions -> view render 순서를 만족한다.
 
 ## 변형 ^variants
 

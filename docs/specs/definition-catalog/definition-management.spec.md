@@ -38,6 +38,8 @@ def:
       type: refs
     - target: definition-mgmt-consistency-rules
       type: refs
+    - target: context-action-convention
+      type: refs
 ---
 
 # Definition Management — 좌표 기반 운영
@@ -57,6 +59,7 @@ def:
 - `definition-mgmt-semantic-lint`: structural lint 위에 meta-semantic 2층 override를 어떻게 얹는지 정리한다.
 - `definition-mgmt-verification-loop`: build, sync, validate, audit, quality, vitest 회귀를 어떤 순서로 반복해야 하는지 정리한다.
 - `definition-mgmt-consistency-rules`: 주소 불변, 단일 개념 원칙, 상태 좌표화 등 운영 규칙을 정리한다.
+- `context-action-convention`: UI context/action boundary 컨벤션을 scope-nesting 검증과 문서 유형 규칙에 연결한다.
 
 ## 관리 흐름
 
@@ -84,6 +87,7 @@ def:
 | 7 | 무엇을 어떤 순서로 검증하는가 | `definition-mgmt-verification-loop` |
 | 8 | 무엇을 지켜야 일관성이 유지되는가 | `definition-mgmt-consistency-rules` |
 | M | 각 frontmatter option은 무엇을 의미하는가 | `definition-frontmatter-metadata-system` |
+| C | UI context/action boundary를 어떻게 문서와 검증에 연결하는가 | `context-action-convention` |
 
 ## 사용 맥락 ^context
 
@@ -97,6 +101,7 @@ def:
 | meta-semantic 예외 규칙 점검 | `definition-mgmt-semantic-lint` |
 | 검증 순서 정하기 | `definition-mgmt-verification-loop` |
 | 규칙 점검 | `definition-mgmt-consistency-rules` |
+| UI context/action boundary 문서화 | `context-action-convention`, `scope-nesting-system` |
 
 ## 주의사항 ^caveat
 
