@@ -167,6 +167,18 @@ describe('createPerspectiveViewer', () => {
     expect(first?.style.boxShadow).toContain('rgba(14,165,233');
   });
 
+  it('isolates layer dimensions from host button styles', () => {
+    const container = mount();
+    createPerspectiveViewer(container, fixture());
+    const first = container.querySelector<HTMLElement>('[data-node-id="child-a"]');
+
+    expect(first?.style.width).toBe('180px');
+    expect(first?.style.height).toBe('90px');
+    expect(first?.style.minWidth).toBe('0');
+    expect(first?.style.minHeight).toBe('0');
+    expect(first?.style.appearance).toBe('none');
+  });
+
   it('clears stale hover border when hover moves to another node', () => {
     const container = mount();
     createPerspectiveViewer(container, fixture());
