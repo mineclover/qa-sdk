@@ -388,11 +388,15 @@ function wireDemo(container: HTMLElement, users: SampleUser[], vDef: VersionDef)
   const envSel = container.querySelector<HTMLSelectElement>("#fd-env");
   const result = container.querySelector<HTMLDivElement>("#fd-result");
   if (!resSel || !actSel || !envSel || !result) return;
+  const resourceSelect = resSel;
+  const actionSelect = actSel;
+  const envSelect = envSel;
+  const resultEl = result;
 
   function run(): void {
-    const resVal = resSel.value;
-    const actVal = actSel.value;
-    const envVal = envSel.value;
+    const resVal = resourceSelect.value;
+    const actVal = actionSelect.value;
+    const envVal = envSelect.value;
     const dims   = vDef.dims;
 
     // Build CoordConstraint array and compute address ranges via calcAddressRanges
@@ -448,7 +452,7 @@ function wireDemo(container: HTMLElement, users: SampleUser[], vDef: VersionDef)
       ? ranges.map(([f, t]) => f === t ? `${f}` : `${f}-${t}`).join(", ")
       : "(없음)";
 
-    result.innerHTML = `
+    resultEl.innerHTML = `
       <div class="fd-formula-box">
         <div class="fd-formula-title">검색 수식</div>
         <code class="fd-formula-code">${formulaLine}</code>
@@ -517,9 +521,8 @@ function wireDemo(container: HTMLElement, users: SampleUser[], vDef: VersionDef)
     `;
   }
 
-  resSel.addEventListener("change", run);
-  actSel.addEventListener("change", run);
-  envSel.addEventListener("change", run);
+  resourceSelect.addEventListener("change", run);
+  actionSelect.addEventListener("change", run);
+  envSelect.addEventListener("change", run);
   run();
 }
-

@@ -301,13 +301,17 @@ function setupUUIDDemo(container: HTMLElement): void {
   const dimContainer = container.querySelector<HTMLDivElement>("#mi-dim-selectors");
   const resultDiv = container.querySelector<HTMLDivElement>("#mi-uuid-result");
   if (!indexSel || !versionSel || !dimContainer || !resultDiv) return;
+  const indexSelect = indexSel;
+  const versionSelect = versionSel;
+  const dimSelectContainer = dimContainer;
+  const uuidResult = resultDiv;
 
-  function getIdx(): IndexDef | undefined { return INDICES.find((i) => i.id === indexSel.value); }
+  function getIdx(): IndexDef | undefined { return INDICES.find((i) => i.id === indexSelect.value); }
 
   function updateVersions(): void {
     const idx = getIdx();
     if (!idx) return;
-    versionSel.innerHTML = idx.versions.map((v) =>
+    versionSelect.innerHTML = idx.versions.map((v) =>
       `<option value="${v.id}">${v.id}</option>`
     ).join("");
     updateDimSelectors();
@@ -316,9 +320,9 @@ function setupUUIDDemo(container: HTMLElement): void {
   function updateDimSelectors(): void {
     const idx = getIdx();
     if (!idx) return;
-    const vIdx = idx.versions.findIndex((v) => v.id === versionSel.value);
+    const vIdx = idx.versions.findIndex((v) => v.id === versionSelect.value);
     const snap = idx.versions[Math.max(0, vIdx)].dimSnapshots;
-    dimContainer.innerHTML = idx.dims.map((d, i) => `
+    dimSelectContainer.innerHTML = idx.dims.map((d, i) => `
       <div>
         <label style="font-weight:500;font-size:0.85em">${d.label}:</label>
         <select class="recalc-sel mi-dim-val" data-dim="${i}">
@@ -326,7 +330,7 @@ function setupUUIDDemo(container: HTMLElement): void {
         </select>
       </div>
     `).join("");
-    dimContainer.querySelectorAll(".mi-dim-val").forEach((sel) =>
+    dimSelectContainer.querySelectorAll(".mi-dim-val").forEach((sel) =>
       sel.addEventListener("change", recalc)
     );
     recalc();
@@ -335,11 +339,11 @@ function setupUUIDDemo(container: HTMLElement): void {
   function recalc(): void {
     const idx = getIdx();
     if (!idx) return;
-    const vIdx = Math.max(0, idx.versions.findIndex((v) => v.id === versionSel.value));
+    const vIdx = Math.max(0, idx.versions.findIndex((v) => v.id === versionSelect.value));
     const v = idx.versions[vIdx];
     const wi = getWI(idx, vIdx);
 
-    const dimSels = dimContainer.querySelectorAll<HTMLSelectElement>(".mi-dim-val");
+    const dimSels = dimSelectContainer.querySelectorAll<HTMLSelectElement>(".mi-dim-val");
     const coords = Array.from(dimSels).map((sel, i) => {
       const entries = v.dimSnapshots[i];
       return entries.indexOf(sel.value) + 1;
@@ -360,7 +364,7 @@ function setupUUIDDemo(container: HTMLElement): void {
       FORMAT,
     );
 
-    resultDiv.innerHTML = `
+    uuidResult.innerHTML = `
       <div style="margin-bottom:8px">
         <span style="font-weight:600;color:var(--xl-green)">UUID:</span>
         <code style="font-size:0.9em;margin-left:6px">${uuid}</code>
@@ -374,8 +378,8 @@ function setupUUIDDemo(container: HTMLElement): void {
       ${hexBar}`;
   }
 
-  indexSel.addEventListener("change", updateVersions);
-  versionSel.addEventListener("change", updateDimSelectors);
+  indexSelect.addEventListener("change", updateVersions);
+  versionSelect.addEventListener("change", updateDimSelectors);
   updateVersions();
 }
 
@@ -384,22 +388,25 @@ function setupRouting(container: HTMLElement): void {
   const btn = container.querySelector<HTMLButtonElement>("#mi-route-btn");
   const resultDiv = container.querySelector<HTMLDivElement>("#mi-route-result");
   if (!input || !btn || !resultDiv) return;
+  const routeInput = input;
+  const routeButton = btn;
+  const routeResult = resultDiv;
 
   function analyze(): void {
-    const raw = input.value.trim();
-    if (!raw) { resultDiv.innerHTML = ""; return; }
+    const raw = routeInput.value.trim();
+    if (!raw) { routeResult.innerHTML = ""; return; }
 
     try {
       const addr = converter.parse(raw);
       const idx = INDICES.find((i) => i.id === addr.schema);
       if (!idx) {
-        resultDiv.innerHTML = `<div class="insight-box" style="color:#c00">알 수 없는 schema: "${addr.schema}"</div>`;
+        routeResult.innerHTML = `<div class="insight-box" style="color:#c00">알 수 없는 schema: "${addr.schema}"</div>`;
         return;
       }
 
       const v = idx.versions.find((ver) => ver.id === addr.version);
       if (!v) {
-        resultDiv.innerHTML = `<div class="insight-box" style="color:#c00">알 수 없는 version: "${addr.version}" (index: ${idx.id})</div>`;
+        routeResult.innerHTML = `<div class="insight-box" style="color:#c00">알 수 없는 version: "${addr.version}" (index: ${idx.id})</div>`;
         return;
       }
 
@@ -421,7 +428,7 @@ function setupRouting(container: HTMLElement): void {
         FORMAT,
       );
 
-      resultDiv.innerHTML = `
+      routeResult.innerHTML = `
         <div style="margin-bottom:8px">
           <span class="cb-badge" style="font-size:0.85em">${idx.label}</span>
           <span class="cb-badge" style="font-size:0.85em">${idx.id}:${v.id}</span>
@@ -433,15 +440,15 @@ function setupRouting(container: HTMLElement): void {
           <tbody>${entityRows}</tbody>
         </table>`;
     } catch (e) {
-      resultDiv.innerHTML = `<div class="insight-box" style="color:#c00">파싱 실패: ${e instanceof Error ? e.message : String(e)}</div>`;
+      routeResult.innerHTML = `<div class="insight-box" style="color:#c00">파싱 실패: ${e instanceof Error ? e.message : String(e)}</div>`;
     }
   }
 
-  btn.addEventListener("click", analyze);
-  input.addEventListener("keydown", (e) => { if (e.key === "Enter") analyze(); });
+  routeButton.addEventListener("click", analyze);
+  routeInput.addEventListener("keydown", (e) => { if (e.key === "Enter") analyze(); });
   container.querySelectorAll(".mi-example-btn").forEach((el) => {
     el.addEventListener("click", () => {
-      input.value = (el as HTMLElement).dataset.uuid ?? "";
+      routeInput.value = (el as HTMLElement).dataset.uuid ?? "";
       analyze();
     });
   });
@@ -453,12 +460,13 @@ function setupRouting(container: HTMLElement): void {
 function setupDecodeMapTabs(container: HTMLElement): void {
   const body = container.querySelector<HTMLDivElement>("#mi-dm-body");
   if (!body) return;
+  const bodyEl = body;
   const tabs = container.querySelectorAll<HTMLButtonElement>(".mi-dm-tab");
 
   function showIdx(idxId: string): void {
     const idx = INDICES.find((i) => i.id === idxId);
     if (!idx) return;
-    body.innerHTML = buildDecodeMapHtml(idx, 0);
+    bodyEl.innerHTML = buildDecodeMapHtml(idx, 0);
     tabs.forEach((t) => t.classList.toggle("active", t.dataset.idx === idxId));
   }
 

@@ -144,6 +144,19 @@ function setupPlannerInteractivity(container: HTMLElement): void {
   if (!shapeList || !shapeAddBtn || !prefixCharsIn || !verDigitsIn || !resultEl ||
       !sizeHint || !verHint || !verRangeEl || !expansionEl || !shardCharsIn ||
       !shardHintEl || !configText || !configCopy) return;
+  const shapeListEl = shapeList;
+  const shapeAddButton = shapeAddBtn;
+  const prefixCharsInput = prefixCharsIn;
+  const verDigitsInput = verDigitsIn;
+  const sizeHintEl = sizeHint;
+  const verHintEl = verHint;
+  const verRange = verRangeEl;
+  const result = resultEl;
+  const expansion = expansionEl;
+  const shardCharsInput = shardCharsIn;
+  const shardHint = shardHintEl;
+  const config = configText;
+  const copyButton = configCopy;
 
   const dims: ShapeDim[] = [
     { name: "resource", size: 8 },
@@ -153,7 +166,7 @@ function setupPlannerInteractivity(container: HTMLElement): void {
   ];
 
   function renderShapeDims(): void {
-    shapeList.innerHTML = "";
+    shapeListEl.innerHTML = "";
     dims.forEach((dim, i) => {
       const row = document.createElement("div");
       row.className = "plan-dim-row";
@@ -183,11 +196,11 @@ function setupPlannerInteractivity(container: HTMLElement): void {
         update();
       });
 
-      shapeList.appendChild(row);
+      shapeListEl.appendChild(row);
     });
   }
 
-  shapeAddBtn.addEventListener("click", () => {
+  shapeAddButton.addEventListener("click", () => {
     dims.push({ name: `dim${dims.length + 1}`, size: 2 });
     renderShapeDims();
     update();
@@ -196,9 +209,9 @@ function setupPlannerInteractivity(container: HTMLElement): void {
   function update(): void {
     const shapeParts = dims.map(d => d.size);
     const size = shapeParts.length > 0 ? shapeParts.reduce((a, b) => a * b, 1) : 0;
-    const prefixChars = Math.max(0, Math.min(16, Number(prefixCharsIn.value) || 0));
-    const verDigits   = Math.max(1, Math.min(16, Number(verDigitsIn.value) || 1));
-    const shardChars  = Math.max(0, Math.min(4, Number(shardCharsIn.value) || 0));
+    const prefixChars = Math.max(0, Math.min(16, Number(prefixCharsInput.value) || 0));
+    const verDigits   = Math.max(1, Math.min(16, Number(verDigitsInput.value) || 1));
+    const shardChars  = Math.max(0, Math.min(4, Number(shardCharsInput.value) || 0));
     const verMax      = parseInt("f".repeat(verDigits), 16);
 
     const leftFields = [
@@ -206,42 +219,38 @@ function setupPlannerInteractivity(container: HTMLElement): void {
       { name: "version", chars: verDigits },
     ];
 
-    sizeHint.textContent = size > 0
+    sizeHintEl.textContent = size > 0
       ? `size = ${size.toLocaleString()} · shape [${shapeParts.join(", ")}]`
       : "shape 입력 필요";
 
-    verHint.textContent = `max ${verMax.toLocaleString()} (0x${"f".repeat(verDigits)})`;
+    verHintEl.textContent = `max ${verMax.toLocaleString()} (0x${"f".repeat(verDigits)})`;
 
-    if (shardHintEl) {
-      if (shardChars === 0) {
-        shardHintEl.textContent = "0 = 샤딩 없음";
-      } else {
-        const maxShards = 16 ** shardChars;
-        shardHintEl.textContent = `${shardChars}자리 = 최대 ${maxShards} shards (0 ~ ${maxShards - 1})`;
-      }
+    if (shardChars === 0) {
+      shardHint.textContent = "0 = 샤딩 없음";
+    } else {
+      const maxShards = 16 ** shardChars;
+      shardHint.textContent = `${shardChars}자리 = 최대 ${maxShards} shards (0 ~ ${maxShards - 1})`;
     }
 
     // Config string
     const shapeStr = dims.map(d => `${d.name}:${d.size}`).join(",");
     const shardSuffix = shardChars > 0 ? ` shard=${shardChars}` : "";
     const configStr = `shape=${shapeStr} prefix=${prefixChars} ver=${verDigits}${shardSuffix}`;
-    if (configText) {
-      const shardTag = shardChars > 0
-        ? `<span class="pcfg-tag pcfg-ver">shard</span><span class="pcfg-val">${shardChars}</span>`
-        : "";
-      configText.innerHTML =
-        `<span class="pcfg-tag pcfg-shape">shape</span><span class="pcfg-val">${shapeStr}</span>` +
-        `<span class="pcfg-tag pcfg-prefix">prefix</span><span class="pcfg-val">${prefixChars}</span>` +
-        `<span class="pcfg-tag pcfg-ver">ver</span><span class="pcfg-val">${verDigits}</span>` +
-        shardTag;
-      configText.dataset.raw = configStr;
-    }
+    const shardTag = shardChars > 0
+      ? `<span class="pcfg-tag pcfg-ver">shard</span><span class="pcfg-val">${shardChars}</span>`
+      : "";
+    config.innerHTML =
+      `<span class="pcfg-tag pcfg-shape">shape</span><span class="pcfg-val">${shapeStr}</span>` +
+      `<span class="pcfg-tag pcfg-prefix">prefix</span><span class="pcfg-val">${prefixChars}</span>` +
+      `<span class="pcfg-tag pcfg-ver">ver</span><span class="pcfg-val">${verDigits}</span>` +
+      shardTag;
+    config.dataset.raw = configStr;
 
-    renderVersionRange(verRangeEl, verDigits, prefixChars, size);
-    if (expansionEl) renderExpansionStrategy(expansionEl, verDigits, prefixChars, size);
+    renderVersionRange(verRange, verDigits, prefixChars, size);
+    renderExpansionStrategy(expansion, verDigits, prefixChars, size);
 
     if (size <= 0) {
-      resultEl.innerHTML = `<span class="obf-param-hint">유효한 shape을 입력하세요</span>`;
+      result.innerHTML = `<span class="obf-param-hint">유효한 shape을 입력하세요</span>`;
       return;
     }
 
@@ -396,7 +405,7 @@ function setupPlannerInteractivity(container: HTMLElement): void {
           </tr>
     ` : "";
 
-    resultEl.innerHTML = `
+    result.innerHTML = `
       <table class="nd-table" style="margin-bottom:12px">
         <thead><tr><th>필드</th><th>위치</th><th>hex 자릿수</th><th>최댓값</th><th>비트</th></tr></thead>
         <tbody>
@@ -451,12 +460,12 @@ function setupPlannerInteractivity(container: HTMLElement): void {
     `;
   }
 
-  prefixCharsIn.addEventListener("input", update);
-  verDigitsIn.addEventListener("input", update);
-  shardCharsIn.addEventListener("input", update);
+  prefixCharsInput.addEventListener("input", update);
+  verDigitsInput.addEventListener("input", update);
+  shardCharsInput.addEventListener("input", update);
 
   // 적용 버튼 이벤트 위임
-  resultEl.addEventListener("click", (e) => {
+  result.addEventListener("click", (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".plan-fit-apply");
     if (!btn?.dataset.fit) return;
     const fitted: { n: string; s: number }[] = JSON.parse(btn.dataset.fit);
@@ -466,16 +475,14 @@ function setupPlannerInteractivity(container: HTMLElement): void {
     update();
   });
 
-  if (configCopy) {
-    configCopy.addEventListener("click", () => {
-      const text = configText?.dataset.raw ?? configText?.textContent ?? "";
-      navigator.clipboard.writeText(text).then(() => {
-        configCopy.textContent = "Copied!";
-        setTimeout(() => { configCopy.textContent = "Copy"; }, 1200);
-        return undefined;
-      });
+  copyButton.addEventListener("click", () => {
+    const text = config.dataset.raw ?? config.textContent ?? "";
+    navigator.clipboard.writeText(text).then(() => {
+      copyButton.textContent = "Copied!";
+      setTimeout(() => { copyButton.textContent = "Copy"; }, 1200);
+      return undefined;
     });
-  }
+  });
 
   renderShapeDims();
   update();
@@ -532,7 +539,7 @@ function renderCapacityPlanSection(): string {
           <span class="obf-label">대상 포맷</span>
           <select class="recalc-sel" id="cap-format">
             <option value="uuid" selected>UUID (128bit)</option>
-            <option value="int96">int96 (96bit)</option>
+            <option value="objectId">ObjectId (96bit)</option>
             <option value="int64">int64 (64bit)</option>
           </select>
         </div>
@@ -567,6 +574,13 @@ function setupCapacityPlanInteractivity(container: HTMLElement): void {
   const resultEl     = container.querySelector<HTMLElement>("#cap-result");
 
   if (!dimList || !dimAddBtn || !prefixIn || !versionIn || !formatSel || !growthFactIn || !resultEl) return;
+  const dimListEl = dimList;
+  const dimAddButton = dimAddBtn;
+  const prefixInput = prefixIn;
+  const versionInput = versionIn;
+  const formatSelect = formatSel;
+  const growthFactorInput = growthFactIn;
+  const capacityResult = resultEl;
 
   const capDims: CapDim[] = [
     { name: "resource", current: 8, growth: null },
@@ -576,7 +590,7 @@ function setupCapacityPlanInteractivity(container: HTMLElement): void {
   ];
 
   function renderCapDims(): void {
-    dimList.innerHTML = "";
+    dimListEl.innerHTML = "";
     capDims.forEach((dim, i) => {
       const row = document.createElement("div");
       row.className = "plan-dim-row";
@@ -615,21 +629,21 @@ function setupCapacityPlanInteractivity(container: HTMLElement): void {
         updateCapacity();
       });
 
-      dimList.appendChild(row);
+      dimListEl.appendChild(row);
     });
   }
 
-  dimAddBtn.addEventListener("click", () => {
+  dimAddButton.addEventListener("click", () => {
     capDims.push({ name: `dim${capDims.length + 1}`, current: 2, growth: null });
     renderCapDims();
     updateCapacity();
   });
 
   function updateCapacity(): void {
-    const prefixChars = Math.max(0, Math.min(16, Number(prefixIn.value) || 0));
-    const versionChars = Math.max(1, Math.min(16, Number(versionIn.value) || 1));
-    const formatName = formatSel.value;
-    const growthFactor = Math.max(0, Number(growthFactIn.value) || 1.0);
+    const prefixChars = Math.max(0, Math.min(16, Number(prefixInput.value) || 0));
+    const versionChars = Math.max(1, Math.min(16, Number(versionInput.value) || 1));
+    const formatName = formatSelect.value as keyof typeof PACK_FORMATS;
+    const growthFactor = Math.max(0, Number(growthFactorInput.value) || 1.0);
 
     const dims: CapacityPlanDim[] = capDims.map((d) => ({
       name: d.name,
@@ -670,7 +684,7 @@ function setupCapacityPlanInteractivity(container: HTMLElement): void {
       ? '<span style="color:#c05000;font-weight:600">권장 (고성장 dim 감지)</span>'
       : '<span style="color:var(--text-muted)">불필요</span>';
 
-    resultEl.innerHTML = `
+    capacityResult.innerHTML = `
       <div class="plan-ver-range-title" style="margin-bottom:8px">차원별 분석</div>
       <table class="nd-table" style="margin-bottom:12px">
         <thead>
@@ -711,10 +725,10 @@ function setupCapacityPlanInteractivity(container: HTMLElement): void {
     `;
   }
 
-  prefixIn.addEventListener("input", updateCapacity);
-  versionIn.addEventListener("input", updateCapacity);
-  formatSel.addEventListener("change", updateCapacity);
-  growthFactIn.addEventListener("input", updateCapacity);
+  prefixInput.addEventListener("input", updateCapacity);
+  versionInput.addEventListener("input", updateCapacity);
+  formatSelect.addEventListener("change", updateCapacity);
+  growthFactorInput.addEventListener("input", updateCapacity);
 
   renderCapDims();
   updateCapacity();
@@ -816,6 +830,10 @@ function setupShardingInteractivity(container: HTMLElement): void {
   const charsIn  = container.querySelector<HTMLInputElement>("#shard-chars");
   const resultEl = container.querySelector<HTMLElement>("#shard-result");
   if (!indexIn || !numIn || !charsIn || !resultEl) return;
+  const indexInput = indexIn;
+  const numInput = numIn;
+  const charsInput = charsIn;
+  const result = resultEl;
 
   function insertDashes(s: string): string {
     const groups = [8, 4, 4, 4, 12];
@@ -837,13 +855,13 @@ function setupShardingInteractivity(container: HTMLElement): void {
   }
 
   function update(): void {
-    const index    = Math.max(0, parseInt(indexIn.value, 10) || 0);
-    const chars    = Math.max(1, Math.min(4, parseInt(charsIn.value, 10) || 1));
+    const index    = Math.max(0, parseInt(indexInput.value, 10) || 0);
+    const chars    = Math.max(1, Math.min(4, parseInt(charsInput.value, 10) || 1));
     const capacity = 16 ** chars;
 
     // chars가 바뀌면 numIn의 max를 capacity로 갱신하고 초과된 값은 clamp
-    numIn.max = String(capacity);
-    const numShards = Math.max(1, Math.min(capacity, parseInt(numIn.value, 10) || 4));
+    numInput.max = String(capacity);
+    const numShards = Math.max(1, Math.min(capacity, parseInt(numInput.value, 10) || 4));
 
     const shard = index % numShards;
     let uuidStr = "—";
@@ -865,7 +883,7 @@ function setupShardingInteractivity(container: HTMLElement): void {
       `<span style="color:var(--xl-green);font-weight:700;text-decoration:underline">${shardHex}</span>` +
       rawForDisplay.slice(6 + chars);
 
-    resultEl.innerHTML = `
+    result.innerHTML = `
       <table class="nd-table" style="margin-bottom:12px">
         <thead><tr><th>계산</th><th>값</th></tr></thead>
         <tbody>

@@ -618,6 +618,14 @@ function setupInteractivity(container: HTMLElement): void {
   const ckeyInput = container.querySelector<HTMLInputElement>("#obf-ckey");
   const camtInput = container.querySelector<HTMLInputElement>("#obf-camount");
   if (!bwSlider || !bwNum || !slider || !numInput || !keyInput || !amtInput || !ckeyInput || !camtInput) return;
+  const bwSliderEl = bwSlider;
+  const bwNumberInput = bwNum;
+  const idSlider = slider;
+  const idNumberInput = numInput;
+  const keyNumberInput = keyInput;
+  const amountInput = amtInput;
+  const composeKeyInput = ckeyInput;
+  const composeAmountInput = camtInput;
 
   const paramXor     = container.querySelector<HTMLElement>("#param-xor");
   const paramRotate  = container.querySelector<HTMLElement>("#param-rotate");
@@ -633,7 +641,7 @@ function setupInteractivity(container: HTMLElement): void {
   };
 
   function getBitWidth(): number {
-    return Math.max(1, Math.min(30, Number(bwNum.value) || 10));
+    return Math.max(1, Math.min(30, Number(bwNumberInput.value) || 10));
   }
 
   function getType(): TransformType {
@@ -643,31 +651,31 @@ function setupInteractivity(container: HTMLElement): void {
   function getParams(): { key: number; amount: number } {
     const type = getType();
     return {
-      key:    type === "compose" ? Number(ckeyInput.value)  : Number(keyInput.value),
-      amount: type === "compose" ? Number(camtInput.value)  : Number(amtInput.value),
+      key:    type === "compose" ? Number(composeKeyInput.value)  : Number(keyNumberInput.value),
+      amount: type === "compose" ? Number(composeAmountInput.value)  : Number(amountInput.value),
     };
   }
 
   function update(): void {
     const bw     = getBitWidth();
     const maxId  = (1 << bw) - 1;
-    const id     = Math.max(0, Math.min(maxId, Number(numInput.value) || 0));
+    const id     = Math.max(0, Math.min(maxId, Number(idNumberInput.value) || 0));
     const type   = getType();
     const { key, amount } = getParams();
 
     // Sync ID slider range + value
-    slider.max     = String(maxId);
-    numInput.max   = String(maxId);
-    slider.value   = String(id);
-    numInput.value = String(id);
+    idSlider.max     = String(maxId);
+    idNumberInput.max   = String(maxId);
+    idSlider.value   = String(id);
+    idNumberInput.value = String(id);
 
     // Update param ranges + hints
     const keyMax = maxId;
     const amtMax = Math.max(1, bw - 1);
-    keyInput.max   = String(keyMax);
-    ckeyInput.max  = String(keyMax);
-    amtInput.max   = String(amtMax);
-    camtInput.max  = String(amtMax);
+    keyNumberInput.max   = String(keyMax);
+    composeKeyInput.max  = String(keyMax);
+    amountInput.max   = String(amtMax);
+    composeAmountInput.max  = String(amtMax);
 
     const keyLabelEl  = container.querySelector<HTMLElement>("#obf-key-label");
     const amtLabelEl  = container.querySelector<HTMLElement>("#obf-amount-label");
@@ -744,8 +752,8 @@ function setupInteractivity(container: HTMLElement): void {
 
   function onBwChange(): void {
     const bw = getBitWidth();
-    bwSlider.value = String(bw);
-    bwNum.value    = String(bw);
+    bwSliderEl.value = String(bw);
+    bwNumberInput.value    = String(bw);
     update();
   }
 
@@ -757,15 +765,15 @@ function setupInteractivity(container: HTMLElement): void {
     update();
   }
 
-  bwSlider.addEventListener("input", () => { bwNum.value = bwSlider.value; onBwChange(); });
-  bwNum.addEventListener("input",    () => { bwSlider.value = bwNum.value; onBwChange(); });
-  slider.addEventListener("input",   () => { numInput.value = slider.value; update(); });
-  numInput.addEventListener("input", () => { slider.value = numInput.value; update(); });
+  bwSliderEl.addEventListener("input", () => { bwNumberInput.value = bwSliderEl.value; onBwChange(); });
+  bwNumberInput.addEventListener("input",    () => { bwSliderEl.value = bwNumberInput.value; onBwChange(); });
+  idSlider.addEventListener("input",   () => { idNumberInput.value = idSlider.value; update(); });
+  idNumberInput.addEventListener("input", () => { idSlider.value = idNumberInput.value; update(); });
   radios.forEach(r => r.addEventListener("change", onTypeChange));
-  keyInput.addEventListener("input", update);
-  amtInput.addEventListener("input", update);
-  ckeyInput.addEventListener("input", update);
-  camtInput.addEventListener("input", update);
+  keyNumberInput.addEventListener("input", update);
+  amountInput.addEventListener("input", update);
+  composeKeyInput.addEventListener("input", update);
+  composeAmountInput.addEventListener("input", update);
 
   update();
 }

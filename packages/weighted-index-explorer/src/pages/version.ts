@@ -538,17 +538,22 @@ function wireDemo(container: HTMLElement): void {
   const runBtn  = container.querySelector<HTMLButtonElement>("#rc-run");
   const result  = container.querySelector<HTMLDivElement>("#rc-result");
   if (!fromSel || !toSel || !idInput || !runBtn || !result) return;
+  const fromSelect = fromSel;
+  const toSelect = toSel;
+  const idInputEl = idInput;
+  const runButton = runBtn;
+  const resultEl = result;
 
   function run(): void {
-    const fromV   = fromSel.value;
-    const toV     = toSel.value;
-    const inputId = parseInt(idInput.value, 10);
+    const fromV   = fromSelect.value;
+    const toV     = toSelect.value;
+    const inputId = parseInt(idInputEl.value, 10);
 
     const fromDef = getVersion(fromV);
     const toDef   = getVersion(toV);
 
     if (isNaN(inputId) || inputId < 0 || inputId >= fromDef.size) {
-      result.innerHTML = `<div class="recalc-error">ID ${inputId}는 ${fromV} 범위 [0, ${fromDef.size - 1}] 밖입니다.</div>`;
+      resultEl.innerHTML = `<div class="recalc-error">ID ${inputId}는 ${fromV} 범위 [0, ${fromDef.size - 1}] 밖입니다.</div>`;
       return;
     }
 
@@ -557,7 +562,7 @@ function wireDemo(container: HTMLElement): void {
 
     const [N1, N2, N3, N4] = toDef.shape;
     if (r > N1 || a > N2 || ro > N3 || e > N4) {
-      result.innerHTML = `<div class="recalc-error">
+      resultEl.innerHTML = `<div class="recalc-error">
         좌표 [${r},${a},${ro},${e}]는 ${toV} shape [${toDef.shape.join(",")}] 범위를 초과합니다.
       </div>`;
       return;
@@ -576,7 +581,7 @@ function wireDemo(container: HTMLElement): void {
     const wChange = JSON.stringify(wFrom) !== JSON.stringify(wTo);
     const isNewInTo = (toDef.newDimValues.role?.has(roVal) ?? false);
 
-    result.innerHTML = `
+    resultEl.innerHTML = `
       <div class="recalc-steps">
         <div class="rc-step">
           <span class="rc-step-num">①</span>
@@ -608,8 +613,8 @@ function wireDemo(container: HTMLElement): void {
     `;
   }
 
-  runBtn.addEventListener("click", run);
-  idInput.addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
+  runButton.addEventListener("click", run);
+  idInputEl.addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
   run();
 
   // ── Section 5: Cross-index migration wiring ────────────────────────────
@@ -634,10 +639,16 @@ function wireCrossIndexDemo(container: HTMLElement): void {
   const runBtn     = container.querySelector<HTMLButtonElement>("#ci-run");
   const resultDiv  = container.querySelector<HTMLDivElement>("#ci-result");
   if (!sourceSel || !targetSel || !srcDimsDiv || !missDimsDiv || !runBtn || !resultDiv) return;
+  const sourceSelect = sourceSel;
+  const targetSelect = targetSel;
+  const sourceDims = srcDimsDiv;
+  const missingDims = missDimsDiv;
+  const runButton = runBtn;
+  const resultEl = resultDiv;
 
   function buildSourceDimSelectors(): void {
-    const src = getCiIndex(sourceSel.value);
-    srcDimsDiv.innerHTML = src.dims.map((d) => `
+    const src = getCiIndex(sourceSelect.value);
+    sourceDims.innerHTML = src.dims.map((d) => `
       <div style="display:inline-flex;align-items:center;gap:4px;margin:4px 6px 4px 0">
         <label class="recalc-label">${d.label}:</label>
         <select class="recalc-sel ci-src-dim" data-dim="${d.id}">
@@ -649,15 +660,15 @@ function wireCrossIndexDemo(container: HTMLElement): void {
   }
 
   function updateMissingDims(): void {
-    const src = getCiIndex(sourceSel.value);
-    const tgt = getCiIndex(targetSel.value);
+    const src = getCiIndex(sourceSelect.value);
+    const tgt = getCiIndex(targetSelect.value);
     const srcDimIds = new Set(src.dims.map((d) => d.id));
     const missing = tgt.dims.filter((d) => !srcDimIds.has(d.id));
 
     if (missing.length === 0) {
-      missDimsDiv.innerHTML = '<span style="font-size:0.72rem;color:var(--text-muted);margin:4px 0">누락 dim 없음 — 모든 dim이 source에서 carry-over됩니다.</span>';
+      missingDims.innerHTML = '<span style="font-size:0.72rem;color:var(--text-muted);margin:4px 0">누락 dim 없음 — 모든 dim이 source에서 carry-over됩니다.</span>';
     } else {
-      missDimsDiv.innerHTML = missing.map((d) => `
+      missingDims.innerHTML = missing.map((d) => `
         <div style="display:inline-flex;align-items:center;gap:4px;margin:4px 6px 4px 0">
           <label class="recalc-label" style="color:#c05000">${d.label} (누락):</label>
           <select class="recalc-sel ci-miss-dim" data-dim="${d.id}">
@@ -669,11 +680,11 @@ function wireCrossIndexDemo(container: HTMLElement): void {
   }
 
   function run(): void {
-    const src = getCiIndex(sourceSel.value);
-    const tgt = getCiIndex(targetSel.value);
+    const src = getCiIndex(sourceSelect.value);
+    const tgt = getCiIndex(targetSelect.value);
 
     // Collect source coords
-    const srcDimSels = srcDimsDiv.querySelectorAll<HTMLSelectElement>(".ci-src-dim");
+    const srcDimSels = sourceDims.querySelectorAll<HTMLSelectElement>(".ci-src-dim");
     const sourceEntities: Record<string, string> = {};
     srcDimSels.forEach((sel) => {
       const dim = sel.dataset.dim;
@@ -703,7 +714,7 @@ function wireCrossIndexDemo(container: HTMLElement): void {
 
     // Collect missing dim values
     const missingEntities: Record<string, string> = {};
-    const missDimSels = missDimsDiv.querySelectorAll<HTMLSelectElement>(".ci-miss-dim");
+    const missDimSels = missingDims.querySelectorAll<HTMLSelectElement>(".ci-miss-dim");
     missDimSels.forEach((sel) => {
       const dim = sel.dataset.dim;
       if (dim) missingEntities[dim] = sel.value;
@@ -744,7 +755,7 @@ function wireCrossIndexDemo(container: HTMLElement): void {
       `<span class="lib-badge" style="background:#dce6f1;color:#1f497d">${d.id}:${allEntities[d.id]}</span>`
     ).join(" ");
 
-    resultDiv.innerHTML = `
+    resultEl.innerHTML = `
       <div class="recalc-steps">
         <div class="rc-step">
           <span class="rc-step-num">①</span>
@@ -785,9 +796,9 @@ function wireCrossIndexDemo(container: HTMLElement): void {
     `;
   }
 
-  sourceSel.addEventListener("change", buildSourceDimSelectors);
-  targetSel.addEventListener("change", updateMissingDims);
-  runBtn.addEventListener("click", run);
+  sourceSelect.addEventListener("change", buildSourceDimSelectors);
+  targetSelect.addEventListener("change", updateMissingDims);
+  runButton.addEventListener("click", run);
   buildSourceDimSelectors();
   run();
 }
@@ -820,9 +831,13 @@ function wireAddressStateGate(container: HTMLElement): void {
   const gridDiv  = container.querySelector<HTMLDivElement>("#gate-grid");
   const summaryDiv = container.querySelector<HTMLDivElement>("#gate-range-summary");
   if (!resCtrls || !envCtrls || !gridDiv || !summaryDiv) return;
+  const resourceControls = resCtrls;
+  const envControls = envCtrls;
+  const gateGrid = gridDiv;
+  const rangeSummary = summaryDiv;
 
   function buildControls(): void {
-    resCtrls.innerHTML = RESOURCE_NAMES.map((name, i) => `
+    resourceControls.innerHTML = RESOURCE_NAMES.map((name, i) => `
       <div class="gate-ctrl-item">
         <span class="gate-ctrl-name">${name}</span>
         <select class="recalc-sel gate-dim-sel" data-dim="resource" data-idx="${i}">
@@ -833,7 +848,7 @@ function wireAddressStateGate(container: HTMLElement): void {
       </div>
     `).join("");
 
-    envCtrls.innerHTML = ENV_NAMES.map((name, i) => `
+    envControls.innerHTML = ENV_NAMES.map((name, i) => `
       <div class="gate-ctrl-item">
         <span class="gate-ctrl-name">${name}</span>
         <select class="recalc-sel gate-dim-sel" data-dim="env" data-idx="${i}">
@@ -953,11 +968,10 @@ function wireAddressStateGate(container: HTMLElement): void {
       html += "</tr>";
     }
     html += "</tbody></table>";
-    gridDiv.innerHTML = html;
+    gateGrid.innerHTML = html;
 
     // Range summary panel
-    if (summaryDiv) {
-      summaryDiv.innerHTML = `
+    rangeSummary.innerHTML = `
         <div class="plan-ver-range-title" style="margin-bottom:8px">
           range 기반 상태 분석 — calcAddressRanges + 집합 연산
         </div>
@@ -999,8 +1013,7 @@ function wireAddressStateGate(container: HTMLElement): void {
           <code>reserved = intersect(allInactive, allOpen)</code><br/>
           <code>active = complement(inactive + open + reserved)</code>
         </div>
-      `;
-    }
+    `;
   }
 
   buildControls();
@@ -1015,6 +1028,8 @@ function wireSparseMigrationDemo(container: HTMLElement): void {
   const rowsDiv   = container.querySelector<HTMLDivElement>("#sparse-demo-rows");
   const summaryDiv = container.querySelector<HTMLDivElement>("#sparse-demo-summary");
   if (!rowsDiv || !summaryDiv) return;
+  const rows = rowsDiv;
+  const summary = summaryDiv;
 
   // v1: [A, B, C]  →  v2: [A, C, B, D]
   // Correct map: { 2→3, 3→2 }  (B and C swapped)
@@ -1024,7 +1039,7 @@ function wireSparseMigrationDemo(container: HTMLElement): void {
   const mapEnabled = [false, true, true]; // pos 1 = identity (no need), pos 2-3 = mapped
 
   function render(): void {
-    rowsDiv.innerHTML = v1Entries.map((entry, i) => {
+    rows.innerHTML = v1Entries.map((entry, i) => {
       const pos = i + 1;
       const targetPos = mapEnabled[i] ? (correctMap[pos] ?? pos) : pos;
       const targetEntry = v2Entries[targetPos - 1];
@@ -1077,7 +1092,7 @@ function wireSparseMigrationDemo(container: HTMLElement): void {
       ? `{ ${Object.entries(currentMap).map(([k, v]) => `${k}→${v}`).join(", ")} }`
       : "{ } (빈 맵)";
 
-    summaryDiv.innerHTML = `
+    summary.innerHTML = `
       <div class="insight-box" style="margin:0;${allCorrect ? "" : "border-color:#f0b0b0;background:#fff5f5"}">
         <span class="insight-icon">${allCorrect ? "✅" : "⚠"}</span>
         <span>
@@ -1091,7 +1106,7 @@ function wireSparseMigrationDemo(container: HTMLElement): void {
     `;
 
     // Wire toggle checkboxes
-    rowsDiv.querySelectorAll<HTMLInputElement>(".sparse-toggle-cb").forEach((cb) => {
+    rows.querySelectorAll<HTMLInputElement>(".sparse-toggle-cb").forEach((cb) => {
       cb.addEventListener("change", () => {
         const idx = Number(cb.dataset.idx);
         mapEnabled[idx] = cb.checked;

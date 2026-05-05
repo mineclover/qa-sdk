@@ -408,11 +408,13 @@ function setupDecoder(container: HTMLElement): void {
   const input  = container.querySelector<HTMLInputElement>("#dec-input");
   const result = container.querySelector<HTMLElement>("#dec-result");
   if (!input || !result) return;
+  const inputEl = input;
+  const resultEl = result;
 
   function decode(): void {
-    const raw = Number(input.value);
+    const raw = Number(inputEl.value);
     if (!Number.isInteger(raw) || raw < 0 || raw >= ADDR_WI.size) {
-      result.innerHTML = `<span class="addr-dec-error">유효 범위: 0 ~ ${(ADDR_WI.size - 1).toLocaleString()}</span>`;
+      resultEl.innerHTML = `<span class="addr-dec-error">유효 범위: 0 ~ ${(ADDR_WI.size - 1).toLocaleString()}</span>`;
       return;
     }
 
@@ -431,12 +433,12 @@ function setupDecoder(container: HTMLElement): void {
       return `⌊${raw}/${w.toLocaleString()}⌋ mod ${ni}+1 = <strong>${coords[i]}</strong>`;
     }).join(" · ");
 
-    result.innerHTML = `
+    resultEl.innerHTML = `
       <div class="addr-decoded-chips" style="margin-bottom:10px">${chips}</div>
       <div class="addr-dec-formula">${formula}</div>
     `;
   }
 
-  input.addEventListener("input", decode);
+  inputEl.addEventListener("input", decode);
   decode();
 }
