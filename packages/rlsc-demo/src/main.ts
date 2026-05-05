@@ -4,6 +4,7 @@ import {
   analyzeAreas,
   analyzeTextOccupancy,
   type AreaOverflowIssue,
+  type AreaAnalysisNode,
   type LayoutMetrics,
   type LayoutPattern,
   type RLSCDocument,
@@ -187,6 +188,7 @@ mount.innerHTML = `
           <button type="button" data-action="viewReset">Reset view</button>
           <button type="button" data-action="viewFit">Fit</button>
           <button type="button" data-action="copySelection">Copy identifier</button>
+          <button type="button" data-action="copySelectionXPath">Copy XPath</button>
           <button type="button" data-action="copySelectionJson">Copy JSON</button>
         </div>
         <div class="interaction-view" data-view="interactions" aria-live="polite"></div>
@@ -244,6 +246,8 @@ mount.addEventListener("click", (event) => {
     state.layerScene?.fitView();
   } else if (action === "copySelection") {
     void copySelection();
+  } else if (action === "copySelectionXPath") {
+    void copySelectionXPath();
   } else if (action === "copySelectionJson") {
     void copySelectionJson();
   }
@@ -363,7 +367,7 @@ async function runPipeline(): Promise<void> {
       run: state.runCount,
       viewport: doc.viewport,
       root: doc.root.id,
-      nodes: analysis.nodes.map((node) => ({
+      nodes: analysis.nodes.map((node: AreaAnalysisNode) => ({
         id: node.id,
         identifier: node.identifier,
         role: node.role,
@@ -424,6 +428,8 @@ function renderInteractions(): void {
     metric("Selected", state.selectedNodeId ?? "none"),
     metric("Identifier", detail?.identifier ? `${detail.identifier.kind}:${detail.identifier.value}` : "none"),
     metric("Preferred", detail?.preferredIdentifier ?? "none"),
+    metric("XPath", detail?.xpath ?? "none"),
+    metric("CSS selector", detail?.cssSelector ?? "none"),
     metric("Component", detail?.componentId ?? "none"),
     metric("QA address", detail?.qaAddress ?? "none"),
     metric("Role", detail?.role ?? "none"),
@@ -501,11 +507,21 @@ async function copySelection(): Promise<void> {
   renderInteractions();
 }
 
+async function copySelectionXPath(): Promise<void> {
+  if (!state.selectedDetail) return;
+  const text = state.selectedDetail.xpath ?? state.selectedDetail.cssSelector ?? state.selectedDetail.identifier.value;
+  await navigator.clipboard?.writeText(text).catch(() => undefined);
+  state.copiedText = text;
+  renderInteractions();
+}
+
 async function copySelectionJson(): Promise<void> {
   if (!state.selectedDetail) return;
   const text = JSON.stringify(
     {
       identifier: state.selectedDetail.identifier,
+      xpath: state.selectedDetail.xpath,
+      cssSelector: state.selectedDetail.cssSelector,
       nodeId: state.selectedDetail.nodeId,
       nodeIds: state.selectedDetail.nodeIds,
       issues: state.selectedDetail.issues,

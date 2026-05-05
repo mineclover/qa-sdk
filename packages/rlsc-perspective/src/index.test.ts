@@ -112,6 +112,46 @@ describe('createPerspectiveViewer', () => {
     expect(onHover).toHaveBeenCalledWith(expect.objectContaining({ nodeId: 'child-a' }));
   });
 
+  it('exposes xpath and css selector details for selected layers', () => {
+    const onSelect =
+      vi.fn<
+        Parameters<typeof createPerspectiveViewer>[2] extends { onSelect?: infer T } ? T : never
+      >();
+    const nextDoc = fixture();
+    const child = nextDoc.root.children[0];
+    const doc = {
+      ...nextDoc,
+      root: {
+        ...nextDoc.root,
+        children: [
+          {
+            ...child,
+            identifier: {
+              ...child.identifier,
+              cssSelector: 'main > section:first-child',
+            },
+          },
+          nextDoc.root.children[1],
+        ],
+      },
+    } satisfies RLSCDocument;
+    const container = mount();
+    createPerspectiveViewer(container, doc, { onSelect });
+
+    container
+      .querySelector<HTMLElement>('[data-node-id="child-a"]')
+      ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(onSelect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        selection: expect.objectContaining({
+          cssSelector: 'main > section:first-child',
+          xpath: '/main[1]/section[1]',
+        }),
+      }),
+    );
+  });
+
   it('clears stale hover border when hover moves to another node', () => {
     const container = mount();
     createPerspectiveViewer(container, fixture());

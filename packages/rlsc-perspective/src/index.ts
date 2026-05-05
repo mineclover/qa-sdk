@@ -9,7 +9,7 @@ import type {
 
 export type PerspectiveRendererKind = 'auto' | 'webgl' | 'canvas';
 export type PerspectiveGroupBy = 'dom-node' | 'componentId' | 'qaAddress' | 'role';
-export type PerspectiveCopyFormat = 'identifier' | 'json';
+export type PerspectiveCopyFormat = 'identifier' | 'json' | 'xpath';
 export type PerspectiveViewPreset = 'default' | 'top' | 'front' | 'side';
 export type PerspectiveControlMode = 'orbit' | 'x' | 'y' | 'z' | 'pan';
 export type PerspectiveProjectionMode = 'orthographic' | 'perspective';
@@ -52,6 +52,8 @@ export interface PerspectiveSelectionDetail {
   readonly qaAddress?: string;
   readonly role?: string;
   readonly textHint?: string;
+  readonly cssSelector?: string;
+  readonly xpath?: string;
   readonly preferredIdentifier?: string;
   readonly identifierKind?: string;
   readonly issues: readonly PerspectiveIssue[];
@@ -736,7 +738,7 @@ function nodeEvent(
     node,
     layerId,
     layer,
-    selection: layer && node ? selectionDetail(layer, node, model) : undefined,
+    selection: layer && node ? selectionDetail(doc.root, layer, node, model) : undefined,
   };
 }
 
@@ -745,14 +747,24 @@ function copyEvent(doc: RLSCDocument, model: LayerModel, layerId: string): Persp
   const selection = detail.selection;
   return {
     ...detail,
-    text:
-      model.copyFormat === 'json'
-        ? JSON.stringify(selection ?? {}, null, 2)
-        : (selection?.preferredIdentifier ?? detail.nodeId ?? ''),
+    text: copyText(model.copyFormat, selection, detail.nodeId),
   };
 }
 
+function copyText(
+  format: PerspectiveCopyFormat,
+  selection: PerspectiveSelectionDetail | undefined,
+  nodeId: string | null,
+): string {
+  if (format === 'json') return JSON.stringify(selection ?? {}, null, 2);
+  if (format === 'xpath') {
+    return selection?.xpath ?? selection?.cssSelector ?? selection?.preferredIdentifier ?? nodeId ?? '';
+  }
+  return selection?.preferredIdentifier ?? nodeId ?? '';
+}
+
 function selectionDetail(
+  root: RLSCNode,
   layer: PerspectiveLayer,
   node: RLSCNode,
   model: LayerModel,
@@ -760,11 +772,13 @@ function selectionDetail(
   const componentId = node.identifier?.componentId ?? node.attributes['data-component-id'];
   const qaAddress =
     node.identifier?.qaAddress ?? node.address ?? node.attributes['data-qa-address'];
+  const cssSelector = node.identifier?.cssSelector;
   const identifier = node.identifier ?? {
     kind: componentId ? 'componentId' : qaAddress ? 'qaAddress' : 'nodeId',
     value: componentId ?? qaAddress ?? node.id,
     componentId,
     qaAddress,
+    cssSelector,
     nodeId: node.id,
   };
   return {
@@ -775,6 +789,8 @@ function selectionDetail(
     qaAddress,
     role: node.role,
     textHint: node.textContent,
+    cssSelector,
+    xpath: createNodeXPath(root, node.id),
     preferredIdentifier: identifier.value,
     identifierKind: identifier.kind,
     issues: layer.nodeIds.flatMap((nodeId) => model.issueMap.get(nodeId) ?? []),
@@ -805,6 +821,31 @@ function findNodeById(node: RLSCNode, nodeId: string): RLSCNode | undefined {
     if (found) return found;
   }
   return undefined;
+}
+
+function createNodeXPath(root: RLSCNode, nodeId: string): string | undefined {
+  const path = findNodePath(root, nodeId);
+  if (!path) return undefined;
+  return `/${path.map((node, index) => xpathSegment(node, path[index - 1])).join('/')}`;
+}
+
+function findNodePath(node: RLSCNode, nodeId: string): RLSCNode[] | undefined {
+  if (node.id === nodeId) return [node];
+  for (const child of node.children) {
+    const childPath = findNodePath(child, nodeId);
+    if (childPath) return [node, ...childPath];
+  }
+  return undefined;
+}
+
+function xpathSegment(node: RLSCNode, parent: RLSCNode | undefined): string {
+  const tag = node.tag.toLowerCase();
+  const siblings = parent?.children.filter((child) => child.tag.toLowerCase() === tag) ?? [node];
+  const index = Math.max(
+    1,
+    siblings.findIndex((sibling) => sibling.id === node.id) + 1,
+  );
+  return `${tag}[${index}]`;
 }
 
 function flattenVisibleNodes(node: RLSCNode, depth: number, parent: RLSCNode | null): FlatNode[] {
