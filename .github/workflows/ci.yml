@@ -99,19 +99,10 @@ jobs:
           path: packages/*/dist/
           retention-days: 1
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-playwright-
-
-      - name: Install Playwright chromium
-        run: pnpm --filter @qa-sdk/e2e exec playwright install chromium
-
       - name: Run unit tests
-        run: pnpm run test
+        # @qa-sdk/e2e 는 별도 워크플로우(.github/workflows/e2e.yml)에서 검증.
+        # 여기는 unit/integration 만 실행.
+        run: pnpm -r --workspace-concurrency=1 --filter '!@qa-sdk/e2e' run test
 
       - name: Run CLI heavy smoke lane
         env:
