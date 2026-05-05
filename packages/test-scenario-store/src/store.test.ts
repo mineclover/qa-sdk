@@ -88,12 +88,17 @@ describe("SqliteTestScenarioStore", () => {
     expect(store.listByLifecycle("assigned").length).toBe(1);
   });
 
-  it("nextSeq → kind+scope 기준 순번 계산", () => {
+  it("nextSeq → 전역 B 좌표(test_scenario:v1:N) 단조 증가", () => {
+    // declared 만 있을 때는 B 좌표 미부여 → 0 행. nextSeq=1.
     store.upsertDeclared({
       aCoord: "def:20/unit", specAddress: "def:20", kind: "unit",
       scope: "single", intent: "테스트", primarySvc: "@qa-sdk/svc",
     });
-    expect(store.nextSeq("unit", "single")).toBe(2); // 1개 있으면 다음은 2
-    expect(store.nextSeq("e2e", "system")).toBe(1);  // 없으면 1
+    expect(store.nextSeq("unit", "single")).toBe(1);
+
+    // assign 으로 test_scenario:v1:1 부여 후에는 다음 N=2.
+    store.assign("def:20/unit", "test_scenario:v1:1", "svc.test.ts", false);
+    expect(store.nextSeq("unit", "single")).toBe(2);
+    expect(store.nextSeq("e2e", "system")).toBe(2); // kind/scope 무관 — 전역.
   });
 });
