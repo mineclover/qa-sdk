@@ -15,7 +15,7 @@ import {
   ScopedEngine,
   migratePermissions,
   type DimDef,
-} from "permission-engine";
+} from "permission-engine/browser";
 import {
   fetchFeatures,
   resetGrants,
