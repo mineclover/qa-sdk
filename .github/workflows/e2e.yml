@@ -38,6 +38,27 @@ jobs:
       - name: Install monorepo dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Rust toolchain (wasm-pack)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: latest
+
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli
+
+      - name: Build workspace deps
+        # webServer (ingest-server, viz-web, ...) 가 @qa-sdk/store/dist 등을
+        # 런타임에 import 하므로 미빌드 시 ERR_MODULE_NOT_FOUND.
+        run: pnpm -r run build
+
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
