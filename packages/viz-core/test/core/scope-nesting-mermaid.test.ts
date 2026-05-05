@@ -3,11 +3,17 @@
 
 import { describe, it, expect } from "vitest";
 import { nestingToMermaid, mountSnapshotToMermaid, timingToMermaid } from "viz-core";
-import { validateScopeNesting, type ScopeNesting } from "./scope-nesting.js";
-import { validateMountFlow, type MountFlowBinding } from "./scope-nesting-mount.js";
-import { validateContractTiming, type TimedMountFlowBinding } from "./scope-nesting-timing.js";
-import { simulate } from "./pipe/pipe-simulate.js";
-import type { PipeGraph, PipeFlow } from "./types/pipe-spec.js";
+import {
+  validateScopeNesting,
+  validateMountFlow,
+  validateContractTiming,
+  simulate,
+  type ScopeNesting,
+  type MountFlowBinding,
+  type TimedMountFlowBinding,
+  type PipeGraph,
+  type PipeFlow,
+} from "@qa-sdk/core";
 
 const step = (facet: string, eventKey?: string): PipeFlow => ({
   kind: "step" as const, facet, ...(eventKey != null ? { eventKey } : {}),

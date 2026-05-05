@@ -3,9 +3,15 @@
 
 import { describe, it, expect } from "vitest";
 import { pipeGraphToMermaid, zoomViewToMermaid } from "viz-core";
-import { computeZoomView } from "./pipe-zoom.js";
-import type { PipeGraph, PipeSpec, PipeConnection } from "../types/pipe-spec.js";
-import { step } from "./__fixtures__/pipe-fixtures.js";
+import {
+  computeZoomView,
+  type PipeGraph,
+  type PipeSpec,
+  type PipeConnection,
+  type PipeFlow,
+} from "@qa-sdk/core";
+
+const step = (): PipeFlow => ({ kind: "step", facet: "소비" });
 
 function makePipe(id: string, overrides?: Partial<PipeSpec>): PipeSpec {
   return { pipeId: id, version: "1.0.0", trigger: { eventKey: `${id}_trigger` }, flow: step(), ...overrides };

@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import { drawEdgePath, drawPortDots, standaloneEdgeSvg, standaloneNodeSvg } from "viz-core";
-import type { PipePort } from "../types/pipe-spec.js";
+import type { PipePort } from "@qa-sdk/core";
 
 describe("drawPortDots", () => {
   it("입출력 포트를 좌우 경계에 균등 배치한다", () => {
