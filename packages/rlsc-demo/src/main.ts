@@ -40,6 +40,7 @@ interface PipelineState {
   controlMode: PerspectiveControlMode;
   projectionMode: PerspectiveProjectionMode;
   hoveredNodeId: string | null;
+  hoveredDetail: PerspectiveSelectionDetail | null;
   selectedNodeId: string | null;
   selectedDetail: PerspectiveSelectionDetail | null;
   copiedText: string;
@@ -64,6 +65,7 @@ const state: PipelineState = {
   controlMode: 'orbit',
   projectionMode: 'orthographic',
   hoveredNodeId: null,
+  hoveredDetail: null,
   selectedNodeId: null,
   selectedDetail: null,
   copiedText: '',
@@ -155,6 +157,7 @@ mount.innerHTML = `
           </article>
         </section>
       </article>
+      <div class="dom-highlight-overlay" data-view="domHighlight" aria-hidden="true"></div>
     </section>
 
     <aside class="inspect-pane" aria-label="rlsc execution output">
@@ -214,6 +217,7 @@ mount.innerHTML = `
 `;
 
 const sampleSurface = queryRequired<HTMLElement>('#sample-surface');
+const domHighlightView = queryRequired<HTMLElement>('[data-view="domHighlight"]');
 const stepsView = queryRequired<HTMLElement>('[data-view="steps"]');
 const summaryView = queryRequired<HTMLElement>('[data-view="summary"]');
 const svgView = queryRequired<HTMLElement>('[data-view="svg"]');
@@ -264,15 +268,18 @@ mount.addEventListener('change', (event) => {
   } else if (target instanceof HTMLSelectElement && target.dataset['action'] === 'groupBy') {
     state.groupBy = target.value as PerspectiveGroupBy;
     state.hoveredNodeId = null;
+    state.hoveredDetail = null;
     state.selectedNodeId = null;
     state.selectedDetail = null;
     state.copiedText = '';
-    if (state.doc)
+    if (state.doc) {
       state.layerScene?.update(
         state.doc,
         viewerOptions(analyzeAreas(state.doc, { textOccupancies: state.text }).overflowIssues),
       );
+    }
     renderInteractions();
+    renderDomHighlights();
   } else if (target instanceof HTMLSelectElement && target.dataset['action'] === 'controlMode') {
     state.controlMode = target.value as PerspectiveControlMode;
     state.layerScene?.setControlMode(state.controlMode);
@@ -283,6 +290,9 @@ mount.addEventListener('change', (event) => {
     renderInteractions();
   }
 });
+
+window.addEventListener('resize', renderDomHighlights);
+window.addEventListener('scroll', renderDomHighlights, { passive: true });
 
 function queryRequired<T extends HTMLElement>(selector: string): T {
   const element = mount.querySelector<T>(selector);
@@ -387,6 +397,7 @@ async function runPipeline(): Promise<void> {
     null,
     2,
   );
+  renderDomHighlights();
 }
 
 function stabilizeSvgPreview(): void {
@@ -408,12 +419,15 @@ function viewerOptions(overflowIssues: readonly AreaOverflowIssue[]) {
     textOccupancies: state.text,
     onHover(event: PerspectiveNodeEvent): void {
       state.hoveredNodeId = event.nodeId;
+      state.hoveredDetail = event.selection ?? null;
       renderInteractions();
+      renderDomHighlights();
     },
     onSelect(event: PerspectiveNodeEvent): void {
       state.selectedNodeId = event.nodeId;
       state.selectedDetail = event.selection ?? null;
       renderInteractions();
+      renderDomHighlights();
     },
     onCopy(event: PerspectiveCopyEvent): void {
       state.copiedText = event.text;
@@ -457,6 +471,54 @@ function renderInteractions(): void {
     ),
     metric('Copied', state.copiedText ? 'ready' : 'none'),
   ].join('');
+}
+
+function renderDomHighlights(): void {
+  const boxes = [
+    ...highlightBoxesForSelection('selected', state.selectedDetail),
+    ...highlightBoxesForSelection('hover', state.hoveredDetail),
+  ];
+  domHighlightView.innerHTML = boxes
+    .map(
+      (box) => `
+        <span
+          class="dom-highlight-box ${box.kind === 'selected' ? 'is-selected' : 'is-hovered'}"
+          style="left:${box.left}px;top:${box.top}px;width:${box.width}px;height:${box.height}px"
+        ></span>
+      `,
+    )
+    .join('');
+}
+
+function highlightBoxesForSelection(
+  kind: 'hover' | 'selected',
+  detail: PerspectiveSelectionDetail | null,
+): HighlightBox[] {
+  if (!detail || !state.doc) return [];
+  const paneRect = domHighlightView.getBoundingClientRect();
+  const elements = detail.nodeIds
+    .map((nodeId) => findDocNode(state.doc?.root ?? null, nodeId))
+    .filter((node): node is RLSCDocument['root'] => node !== null)
+    .map((node) => resolveSourceElement(node))
+    .filter((element): element is HTMLElement => element !== null);
+  return [...new Set(elements)].map((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      kind,
+      left: Math.round(rect.left - paneRect.left),
+      top: Math.round(rect.top - paneRect.top),
+      width: Math.max(2, Math.round(rect.width)),
+      height: Math.max(2, Math.round(rect.height)),
+    };
+  });
+}
+
+interface HighlightBox {
+  readonly kind: 'hover' | 'selected';
+  readonly left: number;
+  readonly top: number;
+  readonly width: number;
+  readonly height: number;
 }
 
 function renderSummary(
@@ -510,6 +572,68 @@ function flattenDocNodes(node: RLSCDocument['root']): RLSCDocument['root'][] {
   return [node, ...node.children.flatMap((child) => flattenDocNodes(child))];
 }
 
+function findDocNode(node: RLSCDocument['root'] | null, nodeId: string): RLSCDocument['root'] | null {
+  if (!node) return null;
+  if (node.id === nodeId) return node;
+  for (const child of node.children) {
+    const found = findDocNode(child, nodeId);
+    if (found) return found;
+  }
+  return null;
+}
+
+function resolveSourceElement(node: RLSCDocument['root']): HTMLElement | null {
+  const selector = node.identifier?.cssSelector;
+  const selectorMatch = selector ? document.querySelector<HTMLElement>(selector) : null;
+  if (selectorMatch && sampleSurface.contains(selectorMatch)) return selectorMatch;
+
+  const xpathMatch = node.identifier?.xpath
+    ? resolveSampleXPath(sampleSurface, node.identifier.xpath)
+    : null;
+  if (xpathMatch) return xpathMatch;
+
+  if (node.id.startsWith('html#')) return null;
+  if (node.id.includes('#')) {
+    const id = node.id.slice(node.id.indexOf('#') + 1);
+    const idMatch = document.getElementById(id);
+    if (idMatch instanceof HTMLElement && sampleSurface.contains(idMatch)) return idMatch;
+  }
+  return null;
+}
+
+function resolveSampleXPath(root: HTMLElement, xpath: string): HTMLElement | null {
+  const documentMatch = document.evaluate(
+    xpath,
+    document,
+    null,
+    XPathResult.FIRST_ORDERED_NODE_TYPE,
+  ).singleNodeValue;
+  if (documentMatch instanceof HTMLElement && root.contains(documentMatch)) return documentMatch;
+
+  const segments = xpath.split('/').filter(Boolean);
+  if (segments.length === 0) return null;
+  let current: Element = root;
+  const first = parseXPathSegment(segments[0]);
+  let index = first && first.tag === root.tagName.toLowerCase() ? 1 : 0;
+  for (; index < segments.length; index += 1) {
+    const segment = parseXPathSegment(segments[index]);
+    if (!segment) return null;
+    const candidates = [...current.children].filter(
+      (child) => child.tagName.toLowerCase() === segment.tag,
+    );
+    const next = candidates[segment.index - 1];
+    if (!next) return null;
+    current = next;
+  }
+  return current instanceof HTMLElement ? current : null;
+}
+
+function parseXPathSegment(segment: string): { readonly tag: string; readonly index: number } | null {
+  const match = /^([a-z0-9-]+)\[(\d+)\]$/i.exec(segment);
+  if (!match) return null;
+  return { tag: match[1].toLowerCase(), index: Number(match[2]) };
+}
+
 function mutateSample(): void {
   const columns = sampleSurface.querySelector('.content-columns');
   if (!columns) return;
@@ -533,6 +657,7 @@ function clearSelection(): void {
   state.selectedDetail = null;
   state.copiedText = '';
   renderInteractions();
+  renderDomHighlights();
 }
 
 async function copySelection(): Promise<void> {

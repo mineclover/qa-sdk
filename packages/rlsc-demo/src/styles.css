@@ -22,6 +22,10 @@ body {
   min-width: 0;
 }
 
+.sample-pane {
+  position: relative;
+}
+
 .toolbar,
 .sample-surface,
 .step-panel,
@@ -100,6 +104,36 @@ button {
   padding: 18px;
   border-top: 0;
   border-radius: 0 0 8px 8px;
+}
+
+.dom-highlight-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.dom-highlight-box {
+  position: absolute;
+  border-radius: 7px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.dom-highlight-box.is-hovered {
+  z-index: 1;
+  border: 2px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.14);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+
+.dom-highlight-box.is-selected {
+  z-index: 2;
+  border: 3px solid #06b6d4;
+  background: rgba(6, 182, 212, 0.16);
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.9),
+    0 0 0 7px rgba(6, 182, 212, 0.28);
 }
 
 .sample-header,
