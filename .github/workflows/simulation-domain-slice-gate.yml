@@ -113,8 +113,10 @@ jobs:
 
       - name: Build sim-scenarios transitive deps
         # sim-scenarios 가 의존하는 sim-identifier-grammar 등 dist 산출이 없으면
-        # vitest 가 exports.import 경로를 resolve 하지 못한다.
-        run: pnpm --filter "...@qa-sdk/sim-scenarios" --filter "!@qa-sdk/sim-scenarios" build
+        # vitest 가 exports.import 경로를 resolve 하지 못한다. `...pkg` 는
+        # pkg + 그 dependencies 까지 빌드 — sim-scenarios 자신도 함께 빌드되지만
+        # idempotent 라 무해.
+        run: pnpm --filter "...@qa-sdk/sim-scenarios" build
 
       - name: scenarios test (architecture-manifest + cross-slice-conventions)
         run: pnpm --filter @qa-sdk/sim-scenarios test
