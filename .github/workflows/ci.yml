@@ -100,9 +100,8 @@ jobs:
           retention-days: 1
 
       - name: Run unit tests
-        # @qa-sdk/e2e 는 별도 워크플로우(.github/workflows/e2e.yml)에서 검증.
-        # 여기는 unit/integration 만 실행.
-        run: pnpm -r --workspace-concurrency=1 --filter '!@qa-sdk/e2e' run test
+        # @qa-sdk/e2e 의 test 는 noop — 실제 e2e 는 e2e.yml workflow 가 test:e2e 호출.
+        run: pnpm run test
 
       - name: Run CLI heavy smoke lane
         env:

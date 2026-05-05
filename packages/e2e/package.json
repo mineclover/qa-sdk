@@ -4,7 +4,8 @@
   "description": "Playwright 기반 cross-app 브라우저 E2E 테스트 패키지",
   "private": true,
   "scripts": {
-    "test": "playwright test",
+    "test": "echo 'e2e test는 e2e.yml workflow 또는 test:e2e 사용'",
+    "test:e2e": "playwright test",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "install:browsers": "playwright install --with-deps chromium"
