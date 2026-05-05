@@ -74,6 +74,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Rust toolchain (wasm-pack)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: latest
+
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli
+
       # CLI 는 workspace 전체 의존을 번들하므로 -r 빌드가 단순/안전하다.
       - name: Build workspace
         run: pnpm -r run build
