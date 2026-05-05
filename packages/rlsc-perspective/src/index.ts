@@ -815,7 +815,7 @@ function selectionDetail(
     role: node.role,
     textHint: node.textContent,
     cssSelector,
-    xpath: createNodeXPath(root, node.id),
+    xpath: node.identifier?.xpath ?? createNodeXPath(root, node.id),
     preferredIdentifier: identifier.value,
     identifierKind: identifier.kind,
     issues: layer.nodeIds.flatMap((nodeId) => model.issueMap.get(nodeId) ?? []),
