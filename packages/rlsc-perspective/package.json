@@ -19,7 +19,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "smoke:consumer": "node scripts/smoke-consumer.mjs",
+    "smoke:consumer": "node smoke/consumer.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"

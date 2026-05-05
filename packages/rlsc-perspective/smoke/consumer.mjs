@@ -1,11 +1,11 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const scriptDir = dirname(fileURLToPath(import.meta.url));
-const packageDir = dirname(scriptDir);
+const smokeDir = dirname(fileURLToPath(import.meta.url));
+const packageDir = dirname(smokeDir);
 const repoRoot = dirname(dirname(packageDir));
 const packDir = mkdtempSync(join(tmpdir(), 'rlsc-perspective-pack-'));
 const consumerDir = mkdtempSync(join(tmpdir(), 'rlsc-perspective-consumer-'));
@@ -20,6 +20,12 @@ function readJson(path) {
 
 function pack(filter) {
   run('pnpm', ['--filter', filter, 'pack', '--pack-destination', packDir]);
+}
+
+function findPackage(pattern) {
+  const file = readdirSync(packDir).find((entry) => pattern.test(entry));
+  if (!file) throw new Error(`packed archive not found for ${pattern}`);
+  return join(packDir, file);
 }
 
 function installConsumer(perspectivePackage, analysisPackage) {
@@ -151,8 +157,8 @@ try {
   pack('@qa-sdk/rlsc-analysis');
   pack('@qa-sdk/rlsc-perspective');
 
-  const analysisPackage = join(packDir, 'qa-sdk-rlsc-analysis-0.1.0.tgz');
-  const perspectivePackage = join(packDir, 'qa-sdk-rlsc-perspective-0.1.0.tgz');
+  const analysisPackage = findPackage(/^qa-sdk-rlsc-analysis-.+\.tgz$/);
+  const perspectivePackage = findPackage(/^qa-sdk-rlsc-perspective-.+\.tgz$/);
   installConsumer(perspectivePackage, analysisPackage);
   writeConsumerChecks();
 
