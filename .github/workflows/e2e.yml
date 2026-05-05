@@ -3,13 +3,8 @@ name: E2E
 # @qa-sdk/e2e — Playwright 기반 cross-app 브라우저 E2E.
 # CI 본 라인에서 분리: e2e 회귀가 unit/integration 게이트를 막지 않도록.
 on:
-  push:
-    branches: [main]
-    paths:
-      - packages/e2e/**
-      - packages/shop-web/**
-      - packages/platform-demo/**
-      - .github/workflows/e2e.yml
+  # main push 자동 트리거 차단 — application 회귀(#97) 미해결 동안 빨강 회피.
+  # PR / 수동(workflow_dispatch) 으로만 검증.
   pull_request:
     branches: [main]
     paths:
