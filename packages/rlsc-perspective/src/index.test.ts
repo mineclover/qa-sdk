@@ -147,9 +147,24 @@ describe('createPerspectiveViewer', () => {
         selection: expect.objectContaining({
           cssSelector: 'main > section:first-child',
           xpath: '/main[1]/section[1]',
+          rect: { x: 20, y: 24, width: 180, height: 90 },
         }),
       }),
     );
+  });
+
+  it('keeps selected layers visually strong while still hovered', () => {
+    const container = mount();
+    createPerspectiveViewer(container, fixture());
+    const first = container.querySelector<HTMLElement>('[data-node-id="child-a"]');
+
+    first?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));
+    first?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(first?.dataset['interactionState']).toBe('selected-hover');
+    expect(first?.style.borderColor).toMatch(/^rgba\(2, 132, 199, (?:0)?\.98\)$/);
+    expect(first?.style.background).toMatch(/^rgba\(14, 165, 233, (?:0)?\.74\)$/);
+    expect(first?.style.boxShadow).toContain('rgba(14,165,233');
   });
 
   it('clears stale hover border when hover moves to another node', () => {
@@ -159,11 +174,11 @@ describe('createPerspectiveViewer', () => {
     const second = container.querySelector<HTMLElement>('[data-node-id="child-b"]');
 
     first?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));
-    expect(first?.style.borderColor).toMatch(/^rgba\(111, 76, 0, (?:0)?\.96\)$/);
+    expect(first?.style.borderColor).toMatch(/^rgba\(146, 64, 14, (?:0)?\.98\)$/);
 
     second?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));
 
     expect(first?.style.borderColor).toMatch(/^rgba\(30, 41, 59, (?:0)?\.52\)$/);
-    expect(second?.style.borderColor).toMatch(/^rgba\(111, 76, 0, (?:0)?\.96\)$/);
+    expect(second?.style.borderColor).toMatch(/^rgba\(146, 64, 14, (?:0)?\.98\)$/);
   });
 });

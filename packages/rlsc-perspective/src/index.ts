@@ -1,6 +1,7 @@
 // @def.boundary rlsc
 import type {
   AreaOverflowIssue,
+  LayoutRect,
   RLSCDocument,
   RLSCNode,
   ScreenIdentifier,
@@ -48,6 +49,7 @@ export interface PerspectiveSelectionDetail {
   readonly nodeId: string;
   readonly nodeIds: readonly string[];
   readonly identifier: ScreenIdentifier;
+  readonly rect: LayoutRect;
   readonly componentId?: string;
   readonly qaAddress?: string;
   readonly role?: string;
@@ -238,11 +240,13 @@ function createCss3DViewer(
     const issue = primaryIssue(currentIssueMap.get(node.id) ?? []);
     const layerId = currentLayers.nodeToLayer.get(node.id) ?? node.id;
     const color = issueColor(issue) ?? colorForNode(node, item.depth);
+    const background = cssColor(color, issue ? 0.82 : node.children.length > 0 ? 0.32 : 0.68);
     const element = document.createElement('button');
     element.type = 'button';
     element.className = 'rlsc-css3d-node';
     element.dataset['nodeId'] = node.id;
     element.dataset['layerId'] = layerId;
+    element.dataset['baseBackground'] = background;
     element.title = nodeLabel(node, currentLayers.layers.get(layerId));
     element.setAttribute('aria-label', element.title);
     style(element, {
@@ -255,7 +259,7 @@ function createCss3DViewer(
       padding: '0',
       border: `2px solid ${issue ? 'rgba(185,28,28,.92)' : 'rgba(30,41,59,.52)'}`,
       borderRadius: '3px',
-      background: cssColor(color, issue ? 0.82 : node.children.length > 0 ? 0.32 : 0.68),
+      background,
       boxSizing: 'border-box',
       transform: `translateZ(${nodeDepth(item)}px)`,
       transformStyle: 'preserve-3d',
@@ -284,19 +288,37 @@ function createCss3DViewer(
       const isHovered = hoveredLayerId === layerId;
       const isSelected = selectedLayerId === layerId;
       const issue = primaryIssue(currentIssueMap.get(nodeId) ?? []);
+      const baseBackground = element.dataset['baseBackground'] ?? element.style.background;
       element.style.opacity = '1';
-      element.style.boxShadow = isHovered
-        ? '0 0 0 4px rgba(255,212,59,.34), 0 14px 34px rgba(15,23,42,.22)'
-        : isSelected
-          ? '0 0 0 4px rgba(64,192,87,.28), 0 10px 26px rgba(15,23,42,.18)'
-          : 'none';
-      element.style.borderColor = isHovered
-        ? 'rgba(111,76,0,.96)'
-        : isSelected
-          ? 'rgba(22,101,52,.96)'
+      element.dataset['interactionState'] =
+        isSelected && isHovered
+          ? 'selected-hover'
+          : isSelected
+            ? 'selected'
+            : isHovered
+              ? 'hover'
+              : 'idle';
+      element.style.boxShadow =
+        isSelected && isHovered
+          ? '0 0 0 3px rgba(255,255,255,.98), 0 0 0 9px rgba(14,165,233,.76), 0 18px 44px rgba(8,47,73,.38)'
+          : isSelected
+            ? '0 0 0 3px rgba(255,255,255,.92), 0 0 0 8px rgba(14,165,233,.66), 0 14px 36px rgba(8,47,73,.3)'
+            : isHovered
+              ? '0 0 0 5px rgba(245,158,11,.5), 0 14px 34px rgba(15,23,42,.24)'
+              : 'none';
+      element.style.borderColor = isSelected
+        ? 'rgba(2,132,199,.98)'
+        : isHovered
+          ? 'rgba(146,64,14,.98)'
           : issue
             ? 'rgba(185,28,28,.92)'
             : 'rgba(30,41,59,.52)';
+      element.style.background = isSelected
+        ? 'rgba(14,165,233,.74)'
+        : isHovered
+          ? 'rgba(245,158,11,.7)'
+          : baseBackground;
+      element.style.filter = isSelected || isHovered ? 'saturate(1.22) contrast(1.08)' : 'none';
     }
   }
 
@@ -787,6 +809,7 @@ function selectionDetail(
     nodeId: node.id,
     nodeIds: layer.nodeIds,
     identifier,
+    rect: node.rect,
     componentId,
     qaAddress,
     role: node.role,

@@ -437,6 +437,11 @@ function renderInteractions(): void {
     metric('Preferred', detail?.preferredIdentifier ?? 'none'),
     metric('XPath', detail?.xpath ?? 'none'),
     metric('CSS selector', detail?.cssSelector ?? 'none'),
+    metric('Rect', detail ? formatRect(detail.rect) : 'none'),
+    metric(
+      'Size',
+      detail ? `${detail.rect.width.toFixed(1)} x ${detail.rect.height.toFixed(1)}` : 'none',
+    ),
     metric('Component', detail?.componentId ?? 'none'),
     metric('QA address', detail?.qaAddress ?? 'none'),
     metric('Role', detail?.role ?? 'none'),
@@ -485,6 +490,10 @@ function renderSummary(
 
 function metric(label: string, value: string): string {
   return `<div class="summary-item"><span>${label}</span><strong>${escapeHtml(value)}</strong></div>`;
+}
+
+function formatRect(rect: PerspectiveSelectionDetail['rect']): string {
+  return `${rect.x.toFixed(1)}, ${rect.y.toFixed(1)}, ${rect.width.toFixed(1)}, ${rect.height.toFixed(1)}`;
 }
 
 function mutateSample(): void {
@@ -537,6 +546,7 @@ async function copySelectionJson(): Promise<void> {
       identifier: state.selectedDetail.identifier,
       xpath: state.selectedDetail.xpath,
       cssSelector: state.selectedDetail.cssSelector,
+      rect: state.selectedDetail.rect,
       nodeId: state.selectedDetail.nodeId,
       nodeIds: state.selectedDetail.nodeIds,
       issues: state.selectedDetail.issues,
