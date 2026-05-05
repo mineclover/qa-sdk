@@ -115,6 +115,75 @@ async function render(): Promise<void> {
         </article>
       </section>
 
+      <section class="panel interpretation-panel">
+        <div class="example-heading">
+          <div>
+            <p class="eyebrow">Tracked Value Interpretation</p>
+            <h2>추적된 값을 이렇게 읽습니다</h2>
+          </div>
+          <p class="summary">
+            qa-sdk가 남기는 값은 단순 로그가 아니라 “누가, 어떤 흐름에서, 어떤 판단을 만들었는가”를
+            재구성하기 위한 관측 좌표입니다. 아래 규칙으로 raw JSON을 열지 않고도 의미를 읽을 수 있습니다.
+          </p>
+        </div>
+
+        <div class="interpretation-grid">
+          <article>
+            <p class="section-title">Identity</p>
+            <h3>session / trace</h3>
+            <p>
+              session은 사용자가 연속해서 만든 작업 묶음이고, trace는 한 feature 흐름을 따라가는 관측 키입니다.
+              같은 session/trace 아래 record가 늘어나면 UI 행동과 logging이 연결된 것입니다.
+            </p>
+            <dl class="mini-meta">
+              <div><dt>Current session</dt><dd>${snapshot.sessionId}</dd></div>
+              <div><dt>Current trace</dt><dd>${snapshot.traceId}</dd></div>
+            </dl>
+          </article>
+
+          <article>
+            <p class="section-title">Evidence</p>
+            <h3>envelope / records</h3>
+            <p>
+              envelope는 전송 단위, record는 그 안의 사건 단위입니다. event는 “무엇이 일어났는가”,
+              metric은 “그 판단이 어떤 수치였는가”를 나타냅니다.
+            </p>
+            <dl class="mini-meta">
+              <div><dt>Envelope</dt><dd>${snapshot.flushedEnvelopeCount}건</dd></div>
+              <div><dt>Records</dt><dd>${snapshot.firstEnvelope.records.length}건</dd></div>
+            </dl>
+          </article>
+
+          <article>
+            <p class="section-title">Decision</p>
+            <h3>route / score</h3>
+            <p>
+              route는 다음 행동 레인입니다. score는 그 route를 고른 강도입니다.
+              변경 검토에서는 위험도, 컨벤션 피드백에서는 boundary 위반 강도로 읽습니다.
+            </p>
+            <ul class="meaning-list">
+              <li><strong>ship</strong><span>실행 레인에서 바로 처리</span></li>
+              <li><strong>eng-review</strong><span>구조나 완화 계획을 먼저 확인</span></li>
+              <li><strong>office-hours</strong><span>상위 설계 판단이 필요한 상태</span></li>
+            </ul>
+          </article>
+
+          <article>
+            <p class="section-title">Convention Signal</p>
+            <h3>activity / recent records</h3>
+            <p>
+              Activity Log는 사람이 읽는 상태 이력이고, Recent Records는 SDK가 남긴 관측 이름입니다.
+              둘이 같은 submit/reset/reopen 흐름을 가리키면 구현과 관측이 같은 의미를 말하고 있는 상태입니다.
+            </p>
+            <ul class="meaning-list">
+              <li><strong>validation_failed</strong><span>handler가 입력을 차단하고 focus를 이동</span></li>
+              <li><strong>score metric</strong><span>business 판단이 수치 evidence로 남음</span></li>
+              <li><strong>reopened</strong><span>success 이후 수정으로 stale result 제거</span></li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
       <section id="canonical-review-example"></section>
       <section id="incident-escalation-example"></section>
     </main>
