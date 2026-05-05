@@ -4,7 +4,9 @@
 import { describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { SubscriptionEntity } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import { SqliteSubscriptionRepository } from "../persistence/subscription.repository.js";
 import { SIM_NOTIF_SUBSCRIPTION_SQLITE_DDL } from "../persistence/sqlite.schema.js";
 import { createSubscriptionSqliteTransactionPort } from "./subscription.drizzle-transaction.js";
@@ -51,13 +53,20 @@ describe("SubscriptionUnitOfWork", () => {
     });
     await uow.withinTransaction("subscription.create", async (ctx) => {
       await ctx.repository.save(e, ctx.scope);
+      const occurredAt = new Date();
+      const eventName = "subscription.created";
       await ctx.outbox.append(
         {
           aggregateId: "u1:x",
-          eventName: "subscription.created",
+          eventName,
           eventVersion: 1,
           payload: {},
-          occurredAt: new Date(),
+          occurredAt,
+          idempotencyKey: buildIdempotencyKey({
+            aggregateId: toGrammarSafeAggregateId("u1:x"),
+            eventName,
+            occurredAt,
+          }),
         },
         ctx.scope,
       );
@@ -79,13 +88,20 @@ describe("SubscriptionUnitOfWork", () => {
           SubscriptionEntity.create({ userId: "u2", eventType: "y", channel: "email" }),
           ctx.scope,
         );
+        const occurredAt = new Date();
+        const eventName = "subscription.created";
         await ctx.outbox.append(
           {
             aggregateId: "u2:y",
-            eventName: "subscription.created",
+            eventName,
             eventVersion: 1,
             payload: {},
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId("u2:y"),
+              eventName,
+              occurredAt,
+            }),
           },
           ctx.scope,
         );

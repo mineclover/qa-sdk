@@ -1,7 +1,9 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { ProjectEntity, ProjectNotFoundException } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import type {
   CreateProjectCommand,
   DeleteProjectCommand,
@@ -79,21 +81,28 @@ export class ProjectUseCase {
         });
         await this.repository.save(project, scope);
         snapshotResult = project.toSnapshot();
+        const occurredAt = new Date();
         const payload: ProjectCreatedEventPayload = {
           id: command.id,
           name: command.name,
           ownerId: command.ownerId,
           departmentId: command.departmentId,
           status: snapshotResult.status,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
+        const eventName = "project.created";
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "project.created",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -180,18 +189,25 @@ export class ProjectUseCase {
         const next = cur.applyPatch(command.patch);
         await this.repository.save(next, scope);
         snapshotResult = next.toSnapshot();
+        const occurredAt = new Date();
         const payload: ProjectUpdatedEventPayload = {
           id: command.id,
           status: snapshotResult.status,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
+        const eventName = "project.updated";
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "project.updated",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -233,17 +249,24 @@ export class ProjectUseCase {
     try {
       await this.transaction.run("project.delete", async (scope) => {
         await this.repository.delete(command.id, scope);
+        const occurredAt = new Date();
         const payload: ProjectDeletedEventPayload = {
           id: command.id,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
+        const eventName = "project.deleted";
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "project.deleted",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -329,19 +352,26 @@ export class ProjectUseCase {
 
       // delegate event emit (별도 트랜잭션 - policy 외부 store 라 outbox 와 동일 tx 보장 안 됨).
       await this.transaction.run("project.delegate", async (scope) => {
+        const occurredAt = new Date();
         const payload: ProjectDelegatedEventPayload = {
           id: command.id,
           graphRootId: command.graphRootId,
           delegateUserId: command.delegateUserId,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
+        const eventName = "project.delegated";
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "project.delegated",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );

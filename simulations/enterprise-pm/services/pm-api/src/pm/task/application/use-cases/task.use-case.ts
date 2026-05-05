@@ -1,7 +1,9 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { TaskEntity, TaskNotFoundException } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import type {
   CreateTaskCommand,
   DeleteTaskCommand,
@@ -69,21 +71,28 @@ export class TaskUseCase {
         });
         await this.repository.save(task, scope);
         snapshotResult = task.toSnapshot();
+        const occurredAt = new Date();
         const payload: TaskCreatedEventPayload = {
           id: command.id,
           projectId: command.projectId,
           title: command.title,
           status: snapshotResult.status,
           parentTaskId: snapshotResult.parentTaskId,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
+        const eventName = "task.created";
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "task.created",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -145,19 +154,26 @@ export class TaskUseCase {
         const next = cur.applyPatch(command.patch);
         await this.repository.save(next, scope);
         snapshotResult = next.toSnapshot();
+        const occurredAt = new Date();
         const payload: TaskUpdatedEventPayload = {
           id: command.id,
           projectId: snapshotResult.projectId,
           status: snapshotResult.status,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
+        const eventName = "task.updated";
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "task.updated",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -205,17 +221,24 @@ export class TaskUseCase {
     try {
       await this.transaction.run("task.delete", async (scope) => {
         await this.repository.delete(command.id, scope);
+        const occurredAt = new Date();
         const payload: TaskDeletedEventPayload = {
           id: command.id,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
+        const eventName = "task.deleted";
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "task.deleted",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );

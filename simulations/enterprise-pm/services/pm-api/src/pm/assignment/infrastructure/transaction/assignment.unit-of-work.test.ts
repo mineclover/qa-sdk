@@ -4,7 +4,9 @@
 import { describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { AssignmentEntity } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import { SqliteAssignmentRepository } from "../persistence/assignment.repository.js";
 import { SIM_PM_ASSIGNMENT_SQLITE_DDL } from "../persistence/sqlite.schema.js";
 import { SIM_PM_SQLITE_DDL } from "../../../sqlite/schema.js";
@@ -37,13 +39,20 @@ describe("AssignmentUnitOfWork", () => {
 
     await uow.withinTransaction("assignment.create", async (ctx) => {
       await ctx.repository.save(entity, ctx.scope);
+      const occurredAt = new Date("2026-03-01T00:00:01.000Z");
+      const eventName = "assignment.created";
       await ctx.outbox.append(
         {
           aggregateId: "asg_uow_1",
-          eventName: "assignment.created",
+          eventName,
           eventVersion: 1,
           payload: { id: "asg_uow_1" },
-          occurredAt: new Date("2026-03-01T00:00:01.000Z"),
+          occurredAt,
+          idempotencyKey: buildIdempotencyKey({
+            aggregateId: toGrammarSafeAggregateId("asg_uow_1"),
+            eventName,
+            occurredAt,
+          }),
         },
         ctx.scope,
       );
@@ -80,13 +89,20 @@ describe("AssignmentUnitOfWork", () => {
           now: new Date(),
         });
         await ctx.repository.save(e, ctx.scope);
+        const occurredAt = new Date();
+        const eventName = "assignment.created";
         await ctx.outbox.append(
           {
             aggregateId: "asg_uow_2",
-            eventName: "assignment.created",
+            eventName,
             eventVersion: 1,
             payload: { id: "asg_uow_2" },
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId("asg_uow_2"),
+              eventName,
+              occurredAt,
+            }),
           },
           ctx.scope,
         );
@@ -110,13 +126,20 @@ describe("AssignmentUnitOfWork", () => {
     });
     await uow.withinTransaction("custom.label", async (ctx) => {
       await ctx.repository.save(e, ctx.scope);
+      const occurredAt = new Date();
+      const eventName = "assignment.created";
       await ctx.outbox.append(
         {
           aggregateId: "asg_uow_3",
-          eventName: "assignment.created",
+          eventName,
           eventVersion: 1,
           payload: {},
-          occurredAt: new Date(),
+          occurredAt,
+          idempotencyKey: buildIdempotencyKey({
+            aggregateId: toGrammarSafeAggregateId("asg_uow_3"),
+            eventName,
+            occurredAt,
+          }),
         },
         ctx.scope,
       );

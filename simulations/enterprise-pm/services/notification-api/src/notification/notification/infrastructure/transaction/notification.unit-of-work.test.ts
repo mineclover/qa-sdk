@@ -4,7 +4,9 @@
 import { describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { NotificationEntity } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import { SqliteNotificationRepository } from "../persistence/notification.repository.js";
 import {
   SIM_NOTIF_NOTIFICATION_SQLITE_DDL,
@@ -40,13 +42,20 @@ describe("NotificationUnitOfWork", () => {
 
     await uow.withinTransaction("notification.markSent", async (ctx) => {
       await ctx.repository.save(entity, ctx.scope);
+      const occurredAt = new Date("2026-03-01T00:00:01.000Z");
+      const eventName = "notification.sent";
       await ctx.outbox.append(
         {
           aggregateId: "ntf_uow_1",
-          eventName: "notification.sent",
+          eventName,
           eventVersion: 1,
           payload: { id: "ntf_uow_1" },
-          occurredAt: new Date("2026-03-01T00:00:01.000Z"),
+          occurredAt,
+          idempotencyKey: buildIdempotencyKey({
+            aggregateId: toGrammarSafeAggregateId("ntf_uow_1"),
+            eventName,
+            occurredAt,
+          }),
         },
         ctx.scope,
       );
@@ -87,13 +96,20 @@ describe("NotificationUnitOfWork", () => {
           now: new Date(),
         });
         await ctx.repository.save(e, ctx.scope);
+        const occurredAt = new Date();
+        const eventName = "notification.sent";
         await ctx.outbox.append(
           {
             aggregateId: "ntf_uow_2",
-            eventName: "notification.sent",
+            eventName,
             eventVersion: 1,
             payload: {},
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId("ntf_uow_2"),
+              eventName,
+              occurredAt,
+            }),
           },
           ctx.scope,
         );

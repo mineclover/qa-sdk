@@ -1,7 +1,9 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { MemberEntity } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import type {
   AddMemberCommand,
   RemoveMemberCommand,
@@ -59,19 +61,26 @@ export class MemberUseCase {
         });
         await this.repository.save(member, scope);
         snapshotResult = member.toSnapshot();
+        const occurredAt = new Date();
         const payload: MemberAddedEventPayload = {
           projectId: snapshotResult.projectId,
           userId: snapshotResult.userId,
           role: snapshotResult.role,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
+        const eventName = "member.added";
         await this.outbox.append(
           {
             aggregateId,
-            eventName: "member.added",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(aggregateId),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -120,18 +129,25 @@ export class MemberUseCase {
     try {
       await this.transaction.run("member.remove", async (scope) => {
         await this.repository.delete(command.projectId, command.userId, scope);
+        const occurredAt = new Date();
         const payload: MemberRemovedEventPayload = {
           projectId: command.projectId,
           userId: command.userId,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
+        const eventName = "member.removed";
         await this.outbox.append(
           {
             aggregateId,
-            eventName: "member.removed",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(aggregateId),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );

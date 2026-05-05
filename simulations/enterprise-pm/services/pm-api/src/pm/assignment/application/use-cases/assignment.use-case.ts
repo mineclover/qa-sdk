@@ -1,7 +1,9 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { AssignmentEntity } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import type { CreateAssignmentCommand } from "../commands/create-assignment.command.js";
 import type { AssignmentLoggerPort } from "../ports/assignment-logger.port.js";
 import type {
@@ -47,19 +49,26 @@ export class AssignmentUseCase {
       await this.transaction.run("assignment.create", async (scope) => {
         const assignment = AssignmentEntity.create(command).assign();
         await this.repository.save(assignment, scope);
+        const occurredAt = new Date();
         const payload: AssignmentCreatedEventPayload = {
           id: command.id,
           projectId: command.projectId,
           managerId: command.managerId,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
+        const eventName = "assignment.created";
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "assignment.created",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );

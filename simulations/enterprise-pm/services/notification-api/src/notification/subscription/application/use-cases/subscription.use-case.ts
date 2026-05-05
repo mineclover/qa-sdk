@@ -1,11 +1,13 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { SubscriptionEntity } from "../../domain/index.js";
 import {
   SubscriptionNotFoundException,
   SubscriptionUserUnknownException,
 } from "../../domain/subscription.exceptions.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import type { CreateSubscriptionCommand } from "../commands/create-subscription.command.js";
 import type { SetSubscriptionActiveCommand } from "../commands/set-subscription-active.command.js";
 import type { DeleteSubscriptionCommand } from "../commands/delete-subscription.command.js";
@@ -67,20 +69,27 @@ export class SubscriptionUseCase {
           isActive: command.isActive,
         });
         await this.repository.save(e, scope);
+        const occurredAt = new Date();
         const payload: SubscriptionCreatedEventPayload = {
           userId: e.userId,
           eventType: e.eventType,
           channel: e.channel,
           isActive: e.isActive,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
+        const eventName = "subscription.created";
         await this.outbox.append(
           {
             aggregateId,
-            eventName: "subscription.created",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(aggregateId),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -129,19 +138,26 @@ export class SubscriptionUseCase {
         if (!cur) throw new SubscriptionNotFoundException(command.userId, command.eventType);
         const next = cur.setActive(command.isActive);
         await this.repository.save(next, scope);
+        const occurredAt = new Date();
         const payload: SubscriptionActiveChangedEventPayload = {
           userId: next.userId,
           eventType: next.eventType,
           isActive: next.isActive,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
+        const eventName = "subscription.activeChanged";
         await this.outbox.append(
           {
             aggregateId,
-            eventName: "subscription.activeChanged",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(aggregateId),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -187,18 +203,25 @@ export class SubscriptionUseCase {
     try {
       await this.transaction.run("subscription.delete", async (scope) => {
         await this.repository.deleteById(command.userId, command.eventType, scope);
+        const occurredAt = new Date();
         const payload: SubscriptionDeletedEventPayload = {
           userId: command.userId,
           eventType: command.eventType,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
+        const eventName = "subscription.deleted";
         await this.outbox.append(
           {
             aggregateId,
-            eventName: "subscription.deleted",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(aggregateId),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );

@@ -1,8 +1,10 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { NotificationEntity } from "../../domain/index.js";
 import { NotificationNotFoundException } from "../../domain/notification.exceptions.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import type { NotificationStatus } from "../../domain/notification.types.js";
 import type { CreateNotificationCommand } from "../commands/create-notification.command.js";
 import type { MarkNotificationSentCommand } from "../commands/mark-notification-sent.command.js";
@@ -91,19 +93,26 @@ export class NotificationUseCase {
         if (!cur) throw new NotificationNotFoundException(command.id);
         const next = cur.markSent();
         await this.repository.save(next, scope);
+        const occurredAt = new Date();
         const payload: NotificationSentEventPayload = {
           id: next.id,
           recipientUserId: next.recipientUserId,
           type: next.toSnapshot().type,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
+        const eventName = "notification.sent";
         await this.outbox.append(
           {
             aggregateId: next.id,
-            eventName: "notification.sent",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(next.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -145,19 +154,26 @@ export class NotificationUseCase {
         if (!cur) throw new NotificationNotFoundException(command.id);
         const next = cur.markRead();
         await this.repository.save(next, scope);
+        const occurredAt = new Date();
         const payload: NotificationDeliveredEventPayload = {
           id: next.id,
           recipientUserId: next.recipientUserId,
           type: next.toSnapshot().type,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
+        const eventName = "notification.delivered";
         await this.outbox.append(
           {
             aggregateId: next.id,
-            eventName: "notification.delivered",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(next.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -203,19 +219,26 @@ export class NotificationUseCase {
         if (!cur) throw new NotificationNotFoundException(command.id);
         const next = cur.markFailed();
         await this.repository.save(next, scope);
+        const occurredAt = new Date();
         const payload: NotificationFailedEventPayload = {
           id: next.id,
           recipientUserId: next.recipientUserId,
           type: next.toSnapshot().type,
-          occurredAt: new Date().toISOString(),
+          occurredAt: occurredAt.toISOString(),
         };
+        const eventName = "notification.failed";
         await this.outbox.append(
           {
             aggregateId: next.id,
-            eventName: "notification.failed",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(next.id),
+              eventName,
+              occurredAt,
+            }),
           },
           scope,
         );

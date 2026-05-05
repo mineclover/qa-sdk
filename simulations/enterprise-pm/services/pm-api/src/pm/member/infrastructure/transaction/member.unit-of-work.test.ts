@@ -4,7 +4,9 @@
 import { describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { MemberEntity } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import { SqliteMemberRepository } from "../persistence/member.repository.js";
 import { SIM_PM_SQLITE_DDL } from "../../../sqlite/schema.js";
 import { createMemberSqliteTransactionPort } from "./member.drizzle-transaction.js";
@@ -33,13 +35,20 @@ describe("MemberUnitOfWork", () => {
     });
     await uow.withinTransaction("member.add", async (ctx) => {
       await ctx.repository.save(e, ctx.scope);
+      const occurredAt = new Date();
+      const eventName = "member.added";
       await ctx.outbox.append(
         {
           aggregateId: "prj_1:u_1",
-          eventName: "member.added",
+          eventName,
           eventVersion: 1,
           payload: {},
-          occurredAt: new Date(),
+          occurredAt,
+          idempotencyKey: buildIdempotencyKey({
+            aggregateId: toGrammarSafeAggregateId("prj_1:u_1"),
+            eventName,
+            occurredAt,
+          }),
         },
         ctx.scope,
       );

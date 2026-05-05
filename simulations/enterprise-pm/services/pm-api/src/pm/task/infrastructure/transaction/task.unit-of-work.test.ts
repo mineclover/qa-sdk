@@ -4,7 +4,9 @@
 import { describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { TaskEntity } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import { SqliteTaskRepository } from "../persistence/task.repository.js";
 import { SIM_PM_SQLITE_DDL } from "../../../sqlite/schema.js";
 import { createTaskSqliteTransactionPort } from "./task.drizzle-transaction.js";
@@ -35,13 +37,20 @@ describe("TaskUnitOfWork", () => {
 
     await uow.withinTransaction("task.create", async (ctx) => {
       await ctx.repository.save(entity, ctx.scope);
+      const occurredAt = new Date("2026-03-01T00:00:01.000Z");
+      const eventName = "task.created";
       await ctx.outbox.append(
         {
           aggregateId: "tsk_uow_1",
-          eventName: "task.created",
+          eventName,
           eventVersion: 1,
           payload: { id: "tsk_uow_1" },
-          occurredAt: new Date("2026-03-01T00:00:01.000Z"),
+          occurredAt,
+          idempotencyKey: buildIdempotencyKey({
+            aggregateId: toGrammarSafeAggregateId("tsk_uow_1"),
+            eventName,
+            occurredAt,
+          }),
         },
         ctx.scope,
       );
@@ -65,13 +74,20 @@ describe("TaskUnitOfWork", () => {
           TaskEntity.create({ id: "tsk_uow_2", projectId: "p", title: "T" }),
           ctx.scope,
         );
+        const occurredAt = new Date();
+        const eventName = "task.created";
         await ctx.outbox.append(
           {
             aggregateId: "tsk_uow_2",
-            eventName: "task.created",
+            eventName,
             eventVersion: 1,
             payload: {},
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId("tsk_uow_2"),
+              eventName,
+              occurredAt,
+            }),
           },
           ctx.scope,
         );
