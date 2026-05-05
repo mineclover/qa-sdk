@@ -111,12 +111,18 @@ jobs:
       - name: OpenAPI fragment merge check
         run: node simulations/enterprise-pm/contracts/openapi/scripts/check-merge.mjs
 
-      - name: Build sim-scenarios transitive deps
-        # sim-scenarios 가 의존하는 sim-identifier-grammar 등 dist 산출이 없으면
-        # vitest 가 exports.import 경로를 resolve 하지 못한다. `...pkg` 는
-        # pkg + 그 dependencies 까지 빌드 — sim-scenarios 자신도 함께 빌드되지만
-        # idempotent 라 무해.
-        run: pnpm --filter "...@qa-sdk/sim-scenarios" build
+      - name: Build sim-scenarios runtime deps
+        # sim-scenarios 가 의존하는 lib 패키지들의 dist 산출. exports.import 가
+        # ./dist/*.js 를 가리키므로 미빌드 시 vitest 가 resolve 실패.
+        # pnpm filter `...pkg` syntax 가 의도대로 deps 를 매치하지 않아 명시.
+        run: |
+          pnpm --filter sim-identifier-grammar \
+               --filter audit-recorder-store \
+               --filter permission-engine \
+               --filter sim-outbox-view \
+               --filter weighted-index \
+               --filter @qa-sdk/sim-audit-recorder-provider \
+               build
 
       - name: scenarios test (architecture-manifest + cross-slice-conventions)
         run: pnpm --filter @qa-sdk/sim-scenarios test
