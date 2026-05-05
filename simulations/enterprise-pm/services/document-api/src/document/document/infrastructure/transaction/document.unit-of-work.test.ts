@@ -4,10 +4,12 @@
 import { describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { DocumentEntity } from "../../domain/index.js";
 import { SqliteDocumentRepository } from "../persistence/document.repository.js";
 import { SIM_DOC_DOCUMENT_SQLITE_DDL } from "../persistence/sqlite.schema.js";
 import { SIM_DOC_OUTBOX_SQLITE_DDL } from "../../../shared/outbox/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import { createDocumentSqliteTransactionPort } from "./document.drizzle-transaction.js";
 import { createDocumentOutboxPort } from "../outbox/document.outbox.js";
 import { DocumentUnitOfWork } from "./document.unit-of-work.js";
@@ -37,13 +39,21 @@ describe("DocumentUnitOfWork", () => {
 
     await uow.withinTransaction("document.create", async (ctx) => {
       await ctx.repository.save(entity, ctx.scope);
+      const occurredAt = new Date("2026-03-01T00:00:01.000Z");
+      const eventName = "document.created";
+      const idempotencyEventName = "document.document.created";
       await ctx.outbox.append(
         {
           aggregateId: "doc_uow_1",
-          eventName: "document.created",
+          eventName,
           eventVersion: 1,
           payload: { id: "doc_uow_1" },
-          occurredAt: new Date("2026-03-01T00:00:01.000Z"),
+          occurredAt,
+          idempotencyKey: buildIdempotencyKey({
+            aggregateId: toGrammarSafeAggregateId("doc_uow_1"),
+            eventName: idempotencyEventName,
+            occurredAt,
+          }),
         },
         ctx.scope,
       );
@@ -77,13 +87,21 @@ describe("DocumentUnitOfWork", () => {
           ownerId: "u",
         });
         await ctx.repository.save(e, ctx.scope);
+        const occurredAt = new Date();
+        const eventName = "document.created";
+        const idempotencyEventName = "document.document.created";
         await ctx.outbox.append(
           {
             aggregateId: "doc_uow_2",
-            eventName: "document.created",
+            eventName,
             eventVersion: 1,
             payload: { id: "doc_uow_2" },
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId("doc_uow_2"),
+              eventName: idempotencyEventName,
+              occurredAt,
+            }),
           },
           ctx.scope,
         );

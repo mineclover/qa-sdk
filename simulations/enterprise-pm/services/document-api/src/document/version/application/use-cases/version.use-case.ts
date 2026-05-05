@@ -1,10 +1,12 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import {
   VersionDocumentNotFoundException,
   VersionEntity,
 } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import type { CreateVersionCommand } from "../commands/create-version.command.js";
 import type { VersionLoggerPort } from "../ports/version-logger.port.js";
 import type {
@@ -75,13 +77,21 @@ export class VersionUseCase {
           authorId: command.authorId,
           occurredAt: new Date().toISOString(),
         };
+        const occurredAt = new Date();
+        const eventName = "version.created";
+        const idempotencyEventName = "document.version.created";
         await this.outbox.append(
           {
             aggregateId: command.documentId,
-            eventName: "version.created",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.documentId),
+              eventName: idempotencyEventName,
+              occurredAt,
+            }),
           },
           scope,
         );

@@ -4,10 +4,12 @@
 import { describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { CommentEntity } from "../../domain/index.js";
 import { SqliteCommentRepository } from "../persistence/comment.repository.js";
 import { SIM_DOC_COMMENT_SQLITE_DDL } from "../persistence/sqlite.schema.js";
 import { SIM_DOC_OUTBOX_SQLITE_DDL } from "../../../shared/outbox/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import { createCommentSqliteTransactionPort } from "./comment.drizzle-transaction.js";
 import { createCommentOutboxPort } from "../outbox/comment.outbox.js";
 import { CommentUnitOfWork } from "./comment.unit-of-work.js";
@@ -34,13 +36,21 @@ describe("CommentUnitOfWork", () => {
     });
     await uow.withinTransaction("comment.create", async (ctx) => {
       await ctx.repository.save(e, ctx.scope);
+      const occurredAt = new Date();
+      const eventName = "comment.created";
+      const idempotencyEventName = "document.comment.created";
       await ctx.outbox.append(
         {
           aggregateId: "uw_1",
-          eventName: "comment.created",
+          eventName,
           eventVersion: 1,
           payload: { id: "uw_1" },
-          occurredAt: new Date(),
+          occurredAt,
+          idempotencyKey: buildIdempotencyKey({
+            aggregateId: toGrammarSafeAggregateId("uw_1"),
+            eventName: idempotencyEventName,
+            occurredAt,
+          }),
         },
         ctx.scope,
       );
@@ -59,13 +69,21 @@ describe("CommentUnitOfWork", () => {
           CommentEntity.create({ id: "uw_2", documentId: "d", authorId: "u", body: "x" }),
           ctx.scope,
         );
+        const occurredAt = new Date();
+        const eventName = "comment.created";
+        const idempotencyEventName = "document.comment.created";
         await ctx.outbox.append(
           {
             aggregateId: "uw_2",
-            eventName: "comment.created",
+            eventName,
             eventVersion: 1,
             payload: {},
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId("uw_2"),
+              eventName: idempotencyEventName,
+              occurredAt,
+            }),
           },
           ctx.scope,
         );

@@ -4,10 +4,12 @@
 import { describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { VersionEntity } from "../../domain/index.js";
 import { SqliteVersionRepository } from "../persistence/version.repository.js";
 import { SIM_DOC_VERSION_SQLITE_DDL } from "../persistence/sqlite.schema.js";
 import { SIM_DOC_OUTBOX_SQLITE_DDL } from "../../../shared/outbox/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import { createVersionSqliteTransactionPort } from "./version.drizzle-transaction.js";
 import { createVersionOutboxPort } from "../outbox/version.outbox.js";
 import { VersionUnitOfWork } from "./version.unit-of-work.js";
@@ -34,13 +36,21 @@ describe("VersionUnitOfWork", () => {
     });
     await uow.withinTransaction("version.create", async (ctx) => {
       await ctx.repository.save(e, ctx.scope);
+      const occurredAt = new Date();
+      const eventName = "version.created";
+      const idempotencyEventName = "document.version.created";
       await ctx.outbox.append(
         {
           aggregateId: "doc_1",
-          eventName: "version.created",
+          eventName,
           eventVersion: 1,
           payload: { documentId: "doc_1", versionNumber: 1 },
-          occurredAt: new Date(),
+          occurredAt,
+          idempotencyKey: buildIdempotencyKey({
+            aggregateId: toGrammarSafeAggregateId("doc_1"),
+            eventName: idempotencyEventName,
+            occurredAt,
+          }),
         },
         ctx.scope,
       );
@@ -64,13 +74,21 @@ describe("VersionUnitOfWork", () => {
           }),
           ctx.scope,
         );
+        const occurredAt = new Date();
+        const eventName = "version.created";
+        const idempotencyEventName = "document.version.created";
         await ctx.outbox.append(
           {
             aggregateId: "doc_2",
-            eventName: "version.created",
+            eventName,
             eventVersion: 1,
             payload: {},
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId("doc_2"),
+              eventName: idempotencyEventName,
+              occurredAt,
+            }),
           },
           ctx.scope,
         );

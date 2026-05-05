@@ -1,7 +1,9 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { DocumentEntity, DocumentNotFoundException } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import type { CreateDocumentCommand } from "../commands/create-document.command.js";
 import type { UpdateDocumentCommand } from "../commands/update-document.command.js";
 import type { DeleteDocumentCommand } from "../commands/delete-document.command.js";
@@ -64,13 +66,21 @@ export class DocumentUseCase {
           ownerId: command.ownerId,
           occurredAt: new Date().toISOString(),
         };
+        const occurredAt = new Date();
+        const eventName = "document.created";
+        const idempotencyEventName = "document.document.created";
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "document.created",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName: idempotencyEventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -137,13 +147,21 @@ export class DocumentUseCase {
           ownerId: snapshot.ownerId,
           occurredAt: new Date().toISOString(),
         };
+        const occurredAt = new Date();
+        const eventName = "document.updated";
+        const idempotencyEventName = "document.document.updated";
         await this.outbox.append(
           {
             aggregateId: snapshot.id,
-            eventName: "document.updated",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(snapshot.id),
+              eventName: idempotencyEventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -197,13 +215,21 @@ export class DocumentUseCase {
           id: command.id,
           occurredAt: new Date().toISOString(),
         };
+        const occurredAt = new Date();
+        const eventName = "document.deleted";
+        const idempotencyEventName = "document.document.deleted";
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "document.deleted",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName: idempotencyEventName,
+              occurredAt,
+            }),
           },
           scope,
         );

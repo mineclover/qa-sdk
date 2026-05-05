@@ -1,7 +1,9 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
+import { buildIdempotencyKey } from "sim-identifier-grammar";
 import { CommentEntity, CommentDocumentNotFoundException } from "../../domain/index.js";
+import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
 import type { CreateCommentCommand } from "../commands/create-comment.command.js";
 import type { DeleteCommentCommand } from "../commands/delete-comment.command.js";
 import type { CommentLoggerPort } from "../ports/comment-logger.port.js";
@@ -69,13 +71,21 @@ export class CommentUseCase {
           parentCommentId: command.parentCommentId ?? null,
           occurredAt: new Date().toISOString(),
         };
+        const occurredAt = new Date();
+        const eventName = "comment.created";
+        const idempotencyEventName = "document.comment.created";
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "comment.created",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName: idempotencyEventName,
+              occurredAt,
+            }),
           },
           scope,
         );
@@ -129,13 +139,21 @@ export class CommentUseCase {
           id: command.id,
           occurredAt: new Date().toISOString(),
         };
+        const occurredAt = new Date();
+        const eventName = "comment.deleted";
+        const idempotencyEventName = "document.comment.deleted";
         await this.outbox.append(
           {
             aggregateId: command.id,
-            eventName: "comment.deleted",
+            eventName,
             eventVersion: 1,
             payload,
-            occurredAt: new Date(),
+            occurredAt,
+            idempotencyKey: buildIdempotencyKey({
+              aggregateId: toGrammarSafeAggregateId(command.id),
+              eventName: idempotencyEventName,
+              occurredAt,
+            }),
           },
           scope,
         );
