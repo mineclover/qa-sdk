@@ -166,7 +166,7 @@ function createCss3DViewer(
   let suppressClick = false;
   let controlMode: PerspectiveControlMode = options.controlMode ?? 'orbit';
   let projectionMode: PerspectiveProjectionMode = options.projectionMode ?? 'orthographic';
-  let viewState: Css3DViewState = createViewState('default');
+  let viewState: Css3DViewState = createViewState('top');
 
   const resizeObserver = new ResizeObserver(() => render());
   resizeObserver.observe(container);
@@ -391,7 +391,7 @@ function createCss3DViewer(
   }
 
   function resetView(): void {
-    viewState = createViewState('default');
+    viewState = createViewState('top');
     applyTransform();
   }
 

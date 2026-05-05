@@ -69,9 +69,11 @@ describe('createPerspectiveViewer', () => {
     const viewer = createPerspectiveViewer(container, fixture());
 
     const viewport = container.querySelector<HTMLElement>('.rlsc-css3d-viewport');
+    const scene = container.querySelector<HTMLElement>('.rlsc-css3d-scene');
     const nodes = container.querySelectorAll<HTMLElement>('.rlsc-css3d-node');
 
     expect(viewport?.style.perspective).toBe('none');
+    expect(scene?.style.transform).toContain('matrix3d(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)');
     expect(nodes).toHaveLength(3);
     expect(container.querySelector('canvas')).toBeNull();
 
@@ -93,6 +95,19 @@ describe('createPerspectiveViewer', () => {
     viewer.setView('top');
 
     expect(viewport?.style.perspective).toBe('none');
+    expect(scene?.style.transform).toContain('matrix3d(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)');
+  });
+
+  it('resets to top view as the default inspection posture', () => {
+    const container = mount();
+    const viewer = createPerspectiveViewer(container, fixture());
+    const scene = container.querySelector<HTMLElement>('.rlsc-css3d-scene');
+
+    viewer.setView('default');
+    expect(scene?.style.transform).toContain('matrix3d(0.951056');
+
+    viewer.resetView();
+
     expect(scene?.style.transform).toContain('matrix3d(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)');
   });
 

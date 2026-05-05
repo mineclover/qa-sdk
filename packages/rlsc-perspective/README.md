@@ -46,6 +46,8 @@ The viewer supports two projection modes:
 
 Use `setProjectionMode()` to switch modes without recreating the viewer.
 
+The initial view and `resetView()` both use top view. This is the default inspection posture because it preserves x/y alignment while still showing depth through stacked `translateZ(...)` layers.
+
 ## Grouping
 
 The v1 grouping presets are:
