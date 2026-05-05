@@ -51,11 +51,14 @@ Use `setProjectionMode()` to switch modes without recreating the viewer.
 The v1 grouping presets are:
 
 - `dom-node`
+- `boundary`
 - `componentId`
 - `qaAddress`
 - `role`
 
 Hover highlights the active layer. Click selects a layer and exposes selection details through `onSelect`.
+
+Use `boundary` when the viewer is being used to inspect the context/component boundary currently under analysis. Boundary grouping reads `node.boundary` or `data-boundary` from documents collected by `@qa-sdk/rlsc-analysis/browser`.
 
 ## Copy Workflow
 
@@ -82,6 +85,8 @@ Selection payloads expose the identifier and geometry needed for debugging:
 - `selection.preferredIdentifier`
 - `selection.xpath`
 - `selection.cssSelector`
+- `selection.boundary`
+- `selection.debugLabel`
 - `selection.rect`
 - `selection.issues`
 

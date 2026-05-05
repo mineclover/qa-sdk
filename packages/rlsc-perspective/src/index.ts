@@ -9,7 +9,7 @@ import type {
 } from '@qa-sdk/rlsc-analysis';
 
 export type PerspectiveRendererKind = 'auto' | 'webgl' | 'canvas';
-export type PerspectiveGroupBy = 'dom-node' | 'componentId' | 'qaAddress' | 'role';
+export type PerspectiveGroupBy = 'dom-node' | 'boundary' | 'componentId' | 'qaAddress' | 'role';
 export type PerspectiveCopyFormat = 'identifier' | 'json' | 'xpath';
 export type PerspectiveViewPreset = 'default' | 'top' | 'front' | 'side';
 export type PerspectiveControlMode = 'orbit' | 'x' | 'y' | 'z' | 'pan';
@@ -52,6 +52,8 @@ export interface PerspectiveSelectionDetail {
   readonly rect: LayoutRect;
   readonly componentId?: string;
   readonly qaAddress?: string;
+  readonly boundary?: string;
+  readonly debugLabel?: string;
   readonly role?: string;
   readonly textHint?: string;
   readonly cssSelector?: string;
@@ -239,6 +241,7 @@ function createCss3DViewer(
     const node = item.node;
     const issue = primaryIssue(currentIssueMap.get(node.id) ?? []);
     const layerId = currentLayers.nodeToLayer.get(node.id) ?? node.id;
+    const boundary = boundaryValue(node);
     const color = issueColor(issue) ?? colorForNode(node, item.depth);
     const background = cssColor(color, issue ? 0.82 : node.children.length > 0 ? 0.32 : 0.68);
     const element = document.createElement('button');
@@ -259,7 +262,7 @@ function createCss3DViewer(
       minHeight: '0',
       margin: '0',
       padding: '0',
-      border: `2px solid ${issue ? 'rgba(185,28,28,.92)' : 'rgba(30,41,59,.52)'}`,
+      border: `2px solid ${issue ? 'rgba(185,28,28,.92)' : boundary ? 'rgba(124,58,237,.94)' : 'rgba(30,41,59,.52)'}`,
       borderRadius: '3px',
       background,
       appearance: 'none',
@@ -315,7 +318,9 @@ function createCss3DViewer(
           ? 'rgba(146,64,14,.98)'
           : issue
             ? 'rgba(185,28,28,.92)'
-            : 'rgba(30,41,59,.52)';
+            : boundaryValue(findNodeById(currentDoc.root, nodeId) ?? null)
+              ? 'rgba(124,58,237,.94)'
+              : 'rgba(30,41,59,.52)';
       element.style.background = isSelected
         ? 'rgba(14,165,233,.74)'
         : isHovered
@@ -732,6 +737,7 @@ function createLayerModel(
 }
 
 function layerValue(node: RLSCNode, groupBy: PerspectiveGroupBy): string {
+  if (groupBy === 'boundary') return boundaryValue(node) ?? node.id;
   if (groupBy === 'componentId')
     return node.identifier?.componentId ?? node.attributes['data-component-id'] ?? node.id;
   if (groupBy === 'qaAddress')
@@ -743,6 +749,7 @@ function layerValue(node: RLSCNode, groupBy: PerspectiveGroupBy): string {
 }
 
 function identifierRank(node: RLSCNode): number {
+  if (boundaryValue(node)) return 0;
   if (node.identifier?.componentId || node.attributes['data-component-id']) return 0;
   if (node.identifier?.qaAddress || node.address || node.attributes['data-qa-address']) return 1;
   if (node.textContent) return 2;
@@ -799,6 +806,7 @@ function selectionDetail(
   const componentId = node.identifier?.componentId ?? node.attributes['data-component-id'];
   const qaAddress =
     node.identifier?.qaAddress ?? node.address ?? node.attributes['data-qa-address'];
+  const boundary = boundaryValue(node);
   const cssSelector = node.identifier?.cssSelector;
   const identifier = node.identifier ?? {
     kind: componentId ? 'componentId' : qaAddress ? 'qaAddress' : 'nodeId',
@@ -815,6 +823,8 @@ function selectionDetail(
     rect: node.rect,
     componentId,
     qaAddress,
+    boundary,
+    debugLabel: node.debugLabel ?? node.attributes['data-debug-label'],
     role: node.role,
     textHint: node.textContent,
     cssSelector,
@@ -823,6 +833,10 @@ function selectionDetail(
     identifierKind: identifier.kind,
     issues: layer.nodeIds.flatMap((nodeId) => model.issueMap.get(nodeId) ?? []),
   };
+}
+
+function boundaryValue(node: RLSCNode | null): string | undefined {
+  return node?.boundary ?? node?.attributes['data-boundary'];
 }
 
 function emitNodeEvent(

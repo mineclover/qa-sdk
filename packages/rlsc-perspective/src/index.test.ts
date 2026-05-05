@@ -153,6 +153,52 @@ describe('createPerspectiveViewer', () => {
     );
   });
 
+  it('groups and exposes context boundary metadata', () => {
+    const onSelect =
+      vi.fn<
+        Parameters<typeof createPerspectiveViewer>[2] extends { onSelect?: infer T } ? T : never
+      >();
+    const nextDoc = fixture();
+    const child = nextDoc.root.children[0];
+    const doc = {
+      ...nextDoc,
+      root: {
+        ...nextDoc.root,
+        children: [
+          {
+            ...child,
+            boundary: 'checkout',
+            debugLabel: 'Checkout boundary',
+            attributes: {
+              ...child.attributes,
+              'data-boundary': 'checkout',
+              'data-debug-label': 'Checkout boundary',
+            },
+          },
+          nextDoc.root.children[1],
+        ],
+      },
+    } satisfies RLSCDocument;
+    const container = mount();
+    createPerspectiveViewer(container, doc, { groupBy: 'boundary', onSelect });
+    const boundaryNode = container.querySelector<HTMLElement>('[data-node-id="child-a"]');
+
+    expect(boundaryNode?.dataset['layerId']).toBe('boundary:checkout');
+    expect(boundaryNode?.style.borderColor).toMatch(/^rgba\(124, 58, 237, (?:0)?\.94\)$/);
+
+    boundaryNode?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(onSelect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        layerId: 'boundary:checkout',
+        selection: expect.objectContaining({
+          boundary: 'checkout',
+          debugLabel: 'Checkout boundary',
+        }),
+      }),
+    );
+  });
+
   it('keeps selected layers visually strong while still hovered', () => {
     const container = mount();
     createPerspectiveViewer(container, fixture());

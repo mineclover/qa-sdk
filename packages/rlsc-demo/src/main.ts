@@ -95,6 +95,7 @@ mount.innerHTML = `
             Group
             <select data-action="groupBy">
               <option value="dom-node">DOM node</option>
+              <option value="boundary">Boundary</option>
               <option value="componentId">Component</option>
               <option value="qaAddress">QA address</option>
               <option value="role">Role</option>
@@ -106,8 +107,8 @@ mount.innerHTML = `
         </div>
       </header>
 
-      <article id="sample-surface" class="sample-surface" data-qa-address="rlsc-demo:surface" data-component-id="DemoSurface" role="main">
-        <header class="sample-header" data-qa-address="rlsc-demo:header" data-component-id="DemoHeader" role="banner">
+      <article id="sample-surface" class="sample-surface" data-qa-address="rlsc-demo:surface" data-component-id="DemoSurface" data-boundary="screen" role="main">
+        <header class="sample-header" data-qa-address="rlsc-demo:header" data-component-id="DemoHeader" data-boundary="navigation" role="banner">
           <nav class="sample-nav" aria-label="demo navigation" data-component-id="DemoNav">
             <a href="#overview">Overview</a>
             <a href="#signals">Signals</a>
@@ -116,7 +117,7 @@ mount.innerHTML = `
           <button class="sample-alert" type="button" data-qa-address="rlsc-demo:alert" data-component-id="ReviewAlert">검토 필요 3</button>
         </header>
 
-        <section class="hero-block" data-qa-address="rlsc-demo:hero" data-component-id="HeroBlock">
+        <section class="hero-block" data-qa-address="rlsc-demo:hero" data-component-id="HeroBlock" data-boundary="hero">
           <div class="hero-copy">
             <h2>Layout signal capture</h2>
             <p>RLSC는 화면의 시각 구조를 노드, 격자, 관계, 텍스트 점유율로 변환합니다.</p>
@@ -133,13 +134,13 @@ mount.innerHTML = `
           </form>
         </section>
 
-        <section class="metric-grid" data-qa-address="rlsc-demo:metrics" data-component-id="MetricGrid">
+        <section class="metric-grid" data-qa-address="rlsc-demo:metrics" data-component-id="MetricGrid" data-boundary="metrics">
           <div class="metric-tile" data-component-id="MetricTile"><span>Nodes</span><strong>pending</strong></div>
           <div class="metric-tile" data-component-id="MetricTile"><span>Relations</span><strong>pending</strong></div>
           <div class="metric-tile" data-component-id="MetricTile"><span>Text fill</span><strong>pending</strong></div>
         </section>
 
-        <section class="content-columns" data-qa-address="rlsc-demo:columns" data-component-id="ContentColumns">
+        <section class="content-columns" data-qa-address="rlsc-demo:columns" data-component-id="ContentColumns" data-boundary="content">
           <article>
             <h3>Primary flow</h3>
             <p>카드 간 간격과 행 방향 흐름이 relation graph로 변환됩니다.</p>
@@ -437,6 +438,8 @@ function renderInteractions(): void {
     metric('Preferred', detail?.preferredIdentifier ?? 'none'),
     metric('XPath', detail?.xpath ?? 'none'),
     metric('CSS selector', detail?.cssSelector ?? 'none'),
+    metric('Boundary', detail?.boundary ?? 'none'),
+    metric('Debug label', detail?.debugLabel ?? 'none'),
     metric('Rect', detail ? formatRect(detail.rect) : 'none'),
     metric(
       'Size',
@@ -476,6 +479,7 @@ function renderSummary(
     metric('Spacing base', String(metrics.spacingBase)),
     metric('Text density', metrics.textDensity?.toFixed(3) ?? 'n/a'),
     metric('Text groups', String(textRegions.length)),
+    metric('Context boundaries', String(countBoundaries(doc))),
     metric('Containment leaks', String(overflowIssues.length)),
     metric('Pattern', JSON.stringify(pattern)),
   ].join('');
@@ -496,6 +500,16 @@ function formatRect(rect: PerspectiveSelectionDetail['rect']): string {
   return `${rect.x.toFixed(1)}, ${rect.y.toFixed(1)}, ${rect.width.toFixed(1)}, ${rect.height.toFixed(1)}`;
 }
 
+function countBoundaries(doc: RLSCDocument): number {
+  return flattenDocNodes(doc.root).filter(
+    (node) => node.boundary ?? node.attributes['data-boundary'],
+  ).length;
+}
+
+function flattenDocNodes(node: RLSCDocument['root']): RLSCDocument['root'][] {
+  return [node, ...node.children.flatMap((child) => flattenDocNodes(child))];
+}
+
 function mutateSample(): void {
   const columns = sampleSurface.querySelector('.content-columns');
   if (!columns) return;
@@ -504,6 +518,7 @@ function mutateSample(): void {
   article.className = 'mutated';
   article.setAttribute('data-component-id', 'MutationCard');
   article.setAttribute('data-qa-address', 'rlsc-demo:mutation-card');
+  article.setAttribute('data-boundary', 'mutation');
   article.innerHTML = `
     <span class="spill-chip">spill</span>
     <h3>New branch</h3>
@@ -546,6 +561,8 @@ async function copySelectionJson(): Promise<void> {
       identifier: state.selectedDetail.identifier,
       xpath: state.selectedDetail.xpath,
       cssSelector: state.selectedDetail.cssSelector,
+      boundary: state.selectedDetail.boundary,
+      debugLabel: state.selectedDetail.debugLabel,
       rect: state.selectedDetail.rect,
       nodeId: state.selectedDetail.nodeId,
       nodeIds: state.selectedDetail.nodeIds,
