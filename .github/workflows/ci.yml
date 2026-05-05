@@ -76,6 +76,13 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-sdk-build-dist
+          path: packages/*/dist/
+          retention-days: 1
+
       - name: Run unit tests
         run: pnpm run test
 
@@ -88,6 +95,35 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/qa_sdk_ci
         run: pnpm --filter @qa-sdk/store run test:integration
+
+  dkg-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: ci
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.30.3 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: qa-sdk-build-dist
+          path: packages
 
       - name: DKG self-check (빌드/테스트/커버리지/불변조건)
         run: node packages/cli/dist/index.js dkg self-check
