@@ -8,13 +8,13 @@ import {
   type LayoutMetrics,
   type LayoutPattern,
   type RLSCDocument,
-  type TextOccupancy
-} from "@qa-sdk/rlsc-analysis";
+  type TextOccupancy,
+} from '@qa-sdk/rlsc-analysis';
 import {
   collectLayoutWithText,
   createLayoutMonitor,
-  type LayoutMonitor
-} from "@qa-sdk/rlsc-analysis/browser";
+  type LayoutMonitor,
+} from '@qa-sdk/rlsc-analysis/browser';
 import type {
   PerspectiveCopyEvent,
   PerspectiveControlMode,
@@ -23,12 +23,12 @@ import type {
   PerspectiveProjectionMode,
   PerspectiveRendererKind,
   PerspectiveSelectionDetail,
-  PerspectiveViewer
-} from "@qa-sdk/rlsc-perspective";
-import { renderToSVG } from "rlsc/rendering";
-import "./styles.css";
+  PerspectiveViewer,
+} from '@qa-sdk/rlsc-perspective';
+import { renderToSVG } from 'rlsc/rendering';
+import './styles.css';
 
-type StepId = "collect" | "text" | "metrics" | "pattern" | "render";
+type StepId = 'collect' | 'text' | 'metrics' | 'pattern' | 'render';
 
 interface PipelineState {
   doc: RLSCDocument | null;
@@ -47,11 +47,11 @@ interface PipelineState {
 }
 
 const steps: { id: StepId; label: string; detail: string }[] = [
-  { id: "collect", label: "DOM collect", detail: "live DOM에서 rect, role, relation 수집" },
-  { id: "text", label: "Text occupancy", detail: "pretext 기반 텍스트 점유율 분석" },
-  { id: "metrics", label: "Metrics", detail: "balance, flow, spacing, proximity 계산" },
-  { id: "pattern", label: "Pattern", detail: "layout pattern vocabulary로 변환" },
-  { id: "render", label: "Render", detail: "RLSC document를 SVG overlay로 렌더링" }
+  { id: 'collect', label: 'DOM collect', detail: 'live DOM에서 rect, role, relation 수집' },
+  { id: 'text', label: 'Text occupancy', detail: 'pretext 기반 텍스트 점유율 분석' },
+  { id: 'metrics', label: 'Metrics', detail: 'balance, flow, spacing, proximity 계산' },
+  { id: 'pattern', label: 'Pattern', detail: 'layout pattern vocabulary로 변환' },
+  { id: 'render', label: 'Render', detail: 'RLSC document를 SVG overlay로 렌더링' },
 ];
 
 const state: PipelineState = {
@@ -59,19 +59,19 @@ const state: PipelineState = {
   text: [],
   monitor: null,
   layerScene: null,
-  renderer: "auto",
-  groupBy: "dom-node",
-  controlMode: "orbit",
-  projectionMode: "orthographic",
+  renderer: 'auto',
+  groupBy: 'dom-node',
+  controlMode: 'orbit',
+  projectionMode: 'orthographic',
   hoveredNodeId: null,
   selectedNodeId: null,
   selectedDetail: null,
-  copiedText: "",
-  runCount: 0
+  copiedText: '',
+  runCount: 0,
 };
 
-const app = document.querySelector<HTMLElement>("#app");
-if (!app) throw new Error("app mount failed");
+const app = document.querySelector<HTMLElement>('#app');
+if (!app) throw new Error('app mount failed');
 const mount = app;
 
 mount.innerHTML = `
@@ -212,7 +212,7 @@ mount.innerHTML = `
   </main>
 `;
 
-const sampleSurface = queryRequired<HTMLElement>("#sample-surface");
+const sampleSurface = queryRequired<HTMLElement>('#sample-surface');
 const stepsView = queryRequired<HTMLElement>('[data-view="steps"]');
 const summaryView = queryRequired<HTMLElement>('[data-view="summary"]');
 const svgView = queryRequired<HTMLElement>('[data-view="svg"]');
@@ -225,54 +225,58 @@ renderSteps();
 renderInteractions();
 void runPipeline();
 
-mount.addEventListener("click", (event) => {
+mount.addEventListener('click', (event) => {
   const target = event.target as HTMLElement;
-  const action = target.closest<HTMLButtonElement>("[data-action]")?.dataset["action"];
+  const action = target.closest<HTMLButtonElement>('[data-action]')?.dataset['action'];
   if (!action) return;
 
-  if (action === "run") {
+  if (action === 'run') {
     void runPipeline();
-  } else if (action === "mutate") {
+  } else if (action === 'mutate') {
     mutateSample();
-  } else if (action === "monitor") {
+  } else if (action === 'monitor') {
     toggleMonitor();
-  } else if (action === "clearSelection") {
+  } else if (action === 'clearSelection') {
     clearSelection();
-  } else if (action === "viewTop") {
-    state.layerScene?.setView("top");
-  } else if (action === "viewReset") {
+  } else if (action === 'viewTop') {
+    state.layerScene?.setView('top');
+  } else if (action === 'viewReset') {
     state.layerScene?.resetView();
-  } else if (action === "viewFit") {
+  } else if (action === 'viewFit') {
     state.layerScene?.fitView();
-  } else if (action === "copySelection") {
+  } else if (action === 'copySelection') {
     void copySelection();
-  } else if (action === "copySelectionXPath") {
+  } else if (action === 'copySelectionXPath') {
     void copySelectionXPath();
-  } else if (action === "copySelectionJson") {
+  } else if (action === 'copySelectionJson') {
     void copySelectionJson();
   }
 });
 
-mount.addEventListener("change", (event) => {
+mount.addEventListener('change', (event) => {
   const target = event.target as HTMLElement;
-  if (target instanceof HTMLSelectElement && target.dataset["action"] === "renderer") {
+  if (target instanceof HTMLSelectElement && target.dataset['action'] === 'renderer') {
     state.renderer = target.value as PerspectiveRendererKind;
     state.layerScene?.dispose();
     state.layerScene = null;
     if (state.doc) void runPipeline();
-  } else if (target instanceof HTMLSelectElement && target.dataset["action"] === "groupBy") {
+  } else if (target instanceof HTMLSelectElement && target.dataset['action'] === 'groupBy') {
     state.groupBy = target.value as PerspectiveGroupBy;
     state.hoveredNodeId = null;
     state.selectedNodeId = null;
     state.selectedDetail = null;
-    state.copiedText = "";
-    if (state.doc) state.layerScene?.update(state.doc, viewerOptions(analyzeAreas(state.doc, { textOccupancies: state.text }).overflowIssues));
+    state.copiedText = '';
+    if (state.doc)
+      state.layerScene?.update(
+        state.doc,
+        viewerOptions(analyzeAreas(state.doc, { textOccupancies: state.text }).overflowIssues),
+      );
     renderInteractions();
-  } else if (target instanceof HTMLSelectElement && target.dataset["action"] === "controlMode") {
+  } else if (target instanceof HTMLSelectElement && target.dataset['action'] === 'controlMode') {
     state.controlMode = target.value as PerspectiveControlMode;
     state.layerScene?.setControlMode(state.controlMode);
     renderInteractions();
-  } else if (target instanceof HTMLSelectElement && target.dataset["action"] === "projectionMode") {
+  } else if (target instanceof HTMLSelectElement && target.dataset['action'] === 'projectionMode') {
     state.projectionMode = target.value as PerspectiveProjectionMode;
     state.layerScene?.setProjectionMode(state.projectionMode);
     renderInteractions();
@@ -286,9 +290,9 @@ function queryRequired<T extends HTMLElement>(selector: string): T {
 }
 
 function setStepStatus(active: StepId | null, done: readonly StepId[] = []): void {
-  for (const item of stepsView.querySelectorAll<HTMLElement>("[data-step]")) {
-    const id = item.dataset["step"] as StepId;
-    item.dataset["state"] = id === active ? "active" : done.includes(id) ? "done" : "idle";
+  for (const item of stepsView.querySelectorAll<HTMLElement>('[data-step]')) {
+    const id = item.dataset['step'] as StepId;
+    item.dataset['state'] = id === active ? 'active' : done.includes(id) ? 'done' : 'idle';
   }
 }
 
@@ -302,55 +306,55 @@ function renderSteps(): void {
             <strong>${step.label}</strong>
             <small>${step.detail}</small>
           </div>
-        </li>`
+        </li>`,
     )
-    .join("");
+    .join('');
 }
 
 async function runPipeline(): Promise<void> {
   const done: StepId[] = [];
   state.runCount += 1;
 
-  setStepStatus("collect", done);
+  setStepStatus('collect', done);
   await settle();
   const { doc, textPrepared } = collectLayoutWithText(sampleSurface, {
     minSize: 8,
     maxDepth: 10,
-    addressAttribute: "data-qa-address"
+    addressAttribute: 'data-qa-address',
   });
   state.doc = doc;
-  done.push("collect");
+  done.push('collect');
 
-  setStepStatus("text", done);
+  setStepStatus('text', done);
   await settle();
   const text = analyzeTextOccupancy(doc, textPrepared);
   const textRegions = aggregateTextRegions(doc, text);
   state.text = text;
-  done.push("text");
+  done.push('text');
 
-  setStepStatus("metrics", done);
+  setStepStatus('metrics', done);
   await settle();
   const analysis = analyzeAreas(doc, { textOccupancies: text });
   const { metrics, overflowIssues } = analysis;
-  done.push("metrics");
+  done.push('metrics');
 
-  setStepStatus("pattern", done);
+  setStepStatus('pattern', done);
   await settle();
   const { pattern } = analysis;
-  done.push("pattern");
+  done.push('pattern');
 
-  setStepStatus("render", done);
+  setStepStatus('render', done);
   await settle();
   const svg = renderToSVG(doc, {
-    colorBy: "role",
+    colorBy: 'role',
     opacity: 0.62,
     showBalance: true,
     showFlow: true,
     showGrid: true,
     showGroups: true,
-    metrics
+    metrics,
   });
-  done.push("render");
+  done.push('render');
   setStepStatus(null, done);
 
   renderSummary(doc, text, textRegions, metrics, pattern, overflowIssues);
@@ -359,7 +363,7 @@ async function runPipeline(): Promise<void> {
   if (state.layerScene) {
     state.layerScene.update(doc, viewerOptions(overflowIssues));
   } else {
-    const { createPerspectiveViewer } = await import("@qa-sdk/rlsc-perspective");
+    const { createPerspectiveViewer } = await import('@qa-sdk/rlsc-perspective');
     state.layerScene = createPerspectiveViewer(layerView, doc, viewerOptions(overflowIssues));
   }
   jsonView.textContent = JSON.stringify(
@@ -372,25 +376,25 @@ async function runPipeline(): Promise<void> {
         identifier: node.identifier,
         role: node.role,
         rect: node.rect,
-        address: node.attributes["data-qa-address"]
+        address: node.attributes['data-qa-address'],
       })),
       relations: doc.relations.slice(0, 12),
       overflowIssues,
       metrics,
-      pattern
+      pattern,
     },
     null,
-    2
+    2,
   );
 }
 
 function stabilizeSvgPreview(): void {
-  const svg = svgView.querySelector<SVGSVGElement>("svg");
+  const svg = svgView.querySelector<SVGSVGElement>('svg');
   if (!svg) return;
-  svg.setAttribute("width", "100%");
-  svg.setAttribute("height", "100%");
-  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-  svg.setAttribute("focusable", "false");
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  svg.setAttribute('focusable', 'false');
 }
 
 function viewerOptions(overflowIssues: readonly AreaOverflowIssue[]) {
@@ -413,30 +417,38 @@ function viewerOptions(overflowIssues: readonly AreaOverflowIssue[]) {
     onCopy(event: PerspectiveCopyEvent): void {
       state.copiedText = event.text;
       renderInteractions();
-    }
+    },
   };
 }
 
 function renderInteractions(): void {
   const detail = state.selectedDetail;
   interactionsView.innerHTML = [
-    metric("Renderer", state.renderer),
-    metric("Group", state.groupBy),
-    metric("Control", state.controlMode),
-    metric("Projection", state.projectionMode),
-    metric("Hover", state.hoveredNodeId ?? "none"),
-    metric("Selected", state.selectedNodeId ?? "none"),
-    metric("Identifier", detail?.identifier ? `${detail.identifier.kind}:${detail.identifier.value}` : "none"),
-    metric("Preferred", detail?.preferredIdentifier ?? "none"),
-    metric("XPath", detail?.xpath ?? "none"),
-    metric("CSS selector", detail?.cssSelector ?? "none"),
-    metric("Component", detail?.componentId ?? "none"),
-    metric("QA address", detail?.qaAddress ?? "none"),
-    metric("Role", detail?.role ?? "none"),
-    metric("Text", detail?.textHint ?? "none"),
-    metric("Issues", detail?.issues.length ? detail.issues.map((issue) => issue.kind ?? issue.severity ?? "issue").join(", ") : "none"),
-    metric("Copied", state.copiedText ? "ready" : "none")
-  ].join("");
+    metric('Renderer', state.renderer),
+    metric('Group', state.groupBy),
+    metric('Control', state.controlMode),
+    metric('Projection', state.projectionMode),
+    metric('Hover', state.hoveredNodeId ?? 'none'),
+    metric('Selected', state.selectedNodeId ?? 'none'),
+    metric(
+      'Identifier',
+      detail?.identifier ? `${detail.identifier.kind}:${detail.identifier.value}` : 'none',
+    ),
+    metric('Preferred', detail?.preferredIdentifier ?? 'none'),
+    metric('XPath', detail?.xpath ?? 'none'),
+    metric('CSS selector', detail?.cssSelector ?? 'none'),
+    metric('Component', detail?.componentId ?? 'none'),
+    metric('QA address', detail?.qaAddress ?? 'none'),
+    metric('Role', detail?.role ?? 'none'),
+    metric('Text', detail?.textHint ?? 'none'),
+    metric(
+      'Issues',
+      detail?.issues.length
+        ? detail.issues.map((issue) => issue.kind ?? issue.severity ?? 'issue').join(', ')
+        : 'none',
+    ),
+    metric('Copied', state.copiedText ? 'ready' : 'none'),
+  ].join('');
 }
 
 function renderSummary(
@@ -445,29 +457,29 @@ function renderSummary(
   textRegions: ReturnType<typeof aggregateTextRegions>,
   metrics: LayoutMetrics,
   pattern: LayoutPattern,
-  overflowIssues: readonly AreaOverflowIssue[]
+  overflowIssues: readonly AreaOverflowIssue[],
 ): void {
   const { nodes } = analyzeAreas(doc);
   summaryView.innerHTML = [
-    metric("Run", String(state.runCount)),
-    metric("Nodes", String(nodes.length)),
-    metric("Relations", String(doc.relations.length)),
-    metric("Layers", String(doc.layers.length)),
-    metric("Text regions", String(text.length)),
-    metric("Dominant flow", metrics.dominantFlow),
-    metric("Balance X", metrics.balance.x.toFixed(2)),
-    metric("Spacing base", String(metrics.spacingBase)),
-    metric("Text density", metrics.textDensity?.toFixed(3) ?? "n/a"),
-    metric("Text groups", String(textRegions.length)),
-    metric("Containment leaks", String(overflowIssues.length)),
-    metric("Pattern", JSON.stringify(pattern))
-  ].join("");
+    metric('Run', String(state.runCount)),
+    metric('Nodes', String(nodes.length)),
+    metric('Relations', String(doc.relations.length)),
+    metric('Layers', String(doc.layers.length)),
+    metric('Text regions', String(text.length)),
+    metric('Dominant flow', metrics.dominantFlow),
+    metric('Balance X', metrics.balance.x.toFixed(2)),
+    metric('Spacing base', String(metrics.spacingBase)),
+    metric('Text density', metrics.textDensity?.toFixed(3) ?? 'n/a'),
+    metric('Text groups', String(textRegions.length)),
+    metric('Containment leaks', String(overflowIssues.length)),
+    metric('Pattern', JSON.stringify(pattern)),
+  ].join('');
 
-  const tiles = sampleSurface.querySelectorAll<HTMLElement>(".metric-tile strong");
+  const tiles = sampleSurface.querySelectorAll<HTMLElement>('.metric-tile strong');
   if (!state.monitor) {
     if (tiles[0]) tiles[0].textContent = String(nodes.length);
     if (tiles[1]) tiles[1].textContent = String(doc.relations.length);
-    if (tiles[2]) tiles[2].textContent = metrics.textDensity?.toFixed(3) ?? "n/a";
+    if (tiles[2]) tiles[2].textContent = metrics.textDensity?.toFixed(3) ?? 'n/a';
   }
 }
 
@@ -476,13 +488,13 @@ function metric(label: string, value: string): string {
 }
 
 function mutateSample(): void {
-  const columns = sampleSurface.querySelector(".content-columns");
+  const columns = sampleSurface.querySelector('.content-columns');
   if (!columns) return;
 
-  const article = document.createElement("article");
-  article.className = "mutated";
-  article.setAttribute("data-component-id", "MutationCard");
-  article.setAttribute("data-qa-address", "rlsc-demo:mutation-card");
+  const article = document.createElement('article');
+  article.className = 'mutated';
+  article.setAttribute('data-component-id', 'MutationCard');
+  article.setAttribute('data-qa-address', 'rlsc-demo:mutation-card');
   article.innerHTML = `
     <span class="spill-chip">spill</span>
     <h3>New branch</h3>
@@ -495,7 +507,7 @@ function clearSelection(): void {
   state.layerScene?.clearSelection();
   state.selectedNodeId = null;
   state.selectedDetail = null;
-  state.copiedText = "";
+  state.copiedText = '';
   renderInteractions();
 }
 
@@ -509,7 +521,10 @@ async function copySelection(): Promise<void> {
 
 async function copySelectionXPath(): Promise<void> {
   if (!state.selectedDetail) return;
-  const text = state.selectedDetail.xpath ?? state.selectedDetail.cssSelector ?? state.selectedDetail.identifier.value;
+  const text =
+    state.selectedDetail.xpath ??
+    state.selectedDetail.cssSelector ??
+    state.selectedDetail.identifier.value;
   await navigator.clipboard?.writeText(text).catch(() => undefined);
   state.copiedText = text;
   renderInteractions();
@@ -527,7 +542,7 @@ async function copySelectionJson(): Promise<void> {
       issues: state.selectedDetail.issues,
     },
     null,
-    2
+    2,
   );
   await navigator.clipboard?.writeText(text).catch(() => undefined);
   state.copiedText = text;
@@ -538,8 +553,8 @@ function toggleMonitor(): void {
   if (state.monitor) {
     state.monitor.stop();
     state.monitor = null;
-    monitorButton.textContent = "Start monitor";
-    monitorButton.dataset["active"] = "false";
+    monitorButton.textContent = 'Start monitor';
+    monitorButton.dataset['active'] = 'false';
     return;
   }
 
@@ -548,11 +563,11 @@ function toggleMonitor(): void {
     trackText: true,
     onTextOccupancyChange: () => {
       void runPipeline();
-    }
+    },
   });
   state.monitor.start();
-  monitorButton.textContent = "Stop monitor";
-  monitorButton.dataset["active"] = "true";
+  monitorButton.textContent = 'Stop monitor';
+  monitorButton.dataset['active'] = 'true';
 }
 
 function settle(): Promise<void> {
@@ -562,16 +577,16 @@ function settle(): Promise<void> {
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => {
     switch (char) {
-      case "&":
-        return "&amp;";
-      case "<":
-        return "&lt;";
-      case ">":
-        return "&gt;";
+      case '&':
+        return '&amp;';
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
       case '"':
-        return "&quot;";
+        return '&quot;';
       case "'":
-        return "&#39;";
+        return '&#39;';
       default:
         return char;
     }

@@ -758,7 +758,9 @@ function copyText(
 ): string {
   if (format === 'json') return JSON.stringify(selection ?? {}, null, 2);
   if (format === 'xpath') {
-    return selection?.xpath ?? selection?.cssSelector ?? selection?.preferredIdentifier ?? nodeId ?? '';
+    return (
+      selection?.xpath ?? selection?.cssSelector ?? selection?.preferredIdentifier ?? nodeId ?? ''
+    );
   }
   return selection?.preferredIdentifier ?? nodeId ?? '';
 }
@@ -841,10 +843,7 @@ function findNodePath(node: RLSCNode, nodeId: string): RLSCNode[] | undefined {
 function xpathSegment(node: RLSCNode, parent: RLSCNode | undefined): string {
   const tag = node.tag.toLowerCase();
   const siblings = parent?.children.filter((child) => child.tag.toLowerCase() === tag) ?? [node];
-  const index = Math.max(
-    1,
-    siblings.findIndex((sibling) => sibling.id === node.id) + 1,
-  );
+  const index = Math.max(1, siblings.findIndex((sibling) => sibling.id === node.id) + 1);
   return `${tag}[${index}]`;
 }
 
