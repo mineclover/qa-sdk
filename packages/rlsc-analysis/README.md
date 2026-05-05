@@ -97,3 +97,24 @@ const xpathNode = index.findByXPath('/main[1]/form[1]/button[1]');
 ```
 
 The index treats `node.id` as a runtime identifier and `ScreenIdentifier` fields as stable re-identification metadata. Prefer `componentId`, `qaAddress`, `xpath`, or `cssSelector` for cross-snapshot debugging.
+
+## Accuracy Smoke
+
+Use the browser accuracy smoke when changing collection, identifier, or perspective integration behavior.
+
+```bash
+pnpm --filter @qa-sdk/rlsc-analysis accuracy:browser
+```
+
+The smoke runs a real Chromium page and reports:
+
+- geometry accuracy between `getBoundingClientRect()` and `RLSCNode.rect`
+- XPath re-identification match rate through `scanScreen().byXPath()`
+- Perspective top-view aspect-ratio accuracy for a small absolutely positioned child
+
+Default thresholds:
+
+- max rect delta: `<= 1px`
+- min IoU: `>= 0.98`
+- max aspect-ratio error: `<= 0.01`
+- XPath match rate: `1.0`
