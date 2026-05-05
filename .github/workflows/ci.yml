@@ -3,6 +3,11 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "skills/**"
+      - "**/*.md"
+      - "tasks/**"
   pull_request:
     branches: [main]
   workflow_dispatch:
