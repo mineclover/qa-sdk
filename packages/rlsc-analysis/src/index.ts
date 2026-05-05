@@ -19,11 +19,12 @@ export interface TextFontInfo {
 }
 
 export interface ScreenIdentifier {
-  readonly kind: "componentId" | "qaAddress" | "cssSelector" | "nodeId";
+  readonly kind: 'componentId' | 'qaAddress' | 'cssSelector' | 'nodeId';
   readonly value: string;
   readonly componentId?: string;
   readonly qaAddress?: string;
   readonly cssSelector?: string;
+  readonly xpath?: string;
   readonly nodeId: string;
 }
 
@@ -41,6 +42,8 @@ export interface RLSCNode {
   readonly visible: boolean;
   readonly textContent?: string;
   readonly address?: string;
+  readonly debugLabel?: string;
+  readonly boundary?: string;
   readonly fontInfo?: TextFontInfo;
   readonly identifier?: ScreenIdentifier;
   readonly attributes: Readonly<Record<string, string>>;
@@ -61,7 +64,7 @@ export interface LayoutGrid {
   readonly cells: readonly (readonly GridCell[])[];
 }
 
-export type LayerRole = "background" | "content" | "sticky" | "overlay" | "modal" | "tooltip";
+export type LayerRole = 'background' | 'content' | 'sticky' | 'overlay' | 'modal' | 'tooltip';
 
 export interface LayerStack {
   readonly zIndex: number;
@@ -71,14 +74,14 @@ export interface LayerStack {
 }
 
 export type RelationType =
-  | "contains"
-  | "overlaps"
-  | "adjacent-x"
-  | "adjacent-y"
-  | "aligned-x"
-  | "aligned-y"
-  | "stacked"
-  | "flow";
+  | 'contains'
+  | 'overlaps'
+  | 'adjacent-x'
+  | 'adjacent-y'
+  | 'aligned-x'
+  | 'aligned-y'
+  | 'stacked'
+  | 'flow';
 
 export interface RLSCRelation {
   readonly type: RelationType;
@@ -88,7 +91,7 @@ export interface RLSCRelation {
 }
 
 export interface RLSCDocument {
-  readonly version: "1.0";
+  readonly version: '1.0';
   readonly viewport: { readonly width: number; readonly height: number };
   readonly url: string;
   readonly timestamp: string;
@@ -107,7 +110,7 @@ export interface ProximityGroup {
 
 export interface LayoutMetrics {
   readonly balance: { readonly x: number; readonly y: number };
-  readonly dominantFlow: "horizontal" | "vertical" | "grid" | "free";
+  readonly dominantFlow: 'horizontal' | 'vertical' | 'grid' | 'free';
   readonly gridPattern: { readonly cols: number; readonly rows: number } | null;
   readonly goldenRatioScore: number;
   readonly proximityGroups: readonly ProximityGroup[];
@@ -141,20 +144,27 @@ export interface SpacingPattern {
 
 export interface ProportionPattern {
   readonly dominant?: number;
-  readonly namedRatio?: "1:1" | "4:3" | "16:9" | "golden" | "2:1" | "3:1";
+  readonly namedRatio?: '1:1' | '4:3' | '16:9' | 'golden' | '2:1' | '3:1';
   readonly distribution: readonly { readonly ratio: number; readonly count: number }[];
 }
 
 export interface GestaltPattern {
-  readonly proximity?: "tight" | "loose";
-  readonly continuity?: "strong" | "weak";
+  readonly proximity?: 'tight' | 'loose';
+  readonly continuity?: 'strong' | 'weak';
   readonly minGroupCount?: number;
 }
 
 export interface LayoutPattern {
-  readonly gridPattern?: "3x3" | "2-col" | "1-col" | { readonly cols: number; readonly rows: number };
-  readonly balanceRatio?: { readonly x?: readonly [number, number]; readonly y?: readonly [number, number] };
-  readonly flowDirection?: "left-to-right" | "right-to-left" | "top-to-bottom" | "grid";
+  readonly gridPattern?:
+    | '3x3'
+    | '2-col'
+    | '1-col'
+    | { readonly cols: number; readonly rows: number };
+  readonly balanceRatio?: {
+    readonly x?: readonly [number, number];
+    readonly y?: readonly [number, number];
+  };
+  readonly flowDirection?: 'left-to-right' | 'right-to-left' | 'top-to-bottom' | 'grid';
   readonly goldenRatio?: boolean;
   readonly gestalt?: GestaltPattern;
   readonly gridSystem?: GridSystemPattern;
@@ -232,15 +242,30 @@ export interface AreaAnalysisNode extends RLSCNode {
 export interface AreaAnalysisResult {
   readonly doc: RLSCDocument;
   readonly nodes: readonly AreaAnalysisNode[];
+  readonly index: RLSCNodeIndex;
   readonly metrics: LayoutMetrics;
   readonly pattern: LayoutPattern;
   readonly overflowIssues: readonly AreaOverflowIssue[];
 }
 
-export const DATA_QA_ADDRESS_ATTRIBUTE = "data-qa-address";
-export const DATA_COMPONENT_ID_ATTRIBUTE = "data-component-id";
-export const DATA_DEBUG_LABEL_ATTRIBUTE = "data-debug-label";
-export const DATA_BOUNDARY_ATTRIBUTE = "data-boundary";
+export interface RLSCNodeIndex {
+  readonly all: readonly AreaAnalysisNode[];
+  readonly byId: ReadonlyMap<string, AreaAnalysisNode>;
+  readonly byXPath: ReadonlyMap<string, AreaAnalysisNode>;
+  readonly byCssSelector: ReadonlyMap<string, AreaAnalysisNode>;
+  readonly byComponentId: ReadonlyMap<string, readonly AreaAnalysisNode[]>;
+  readonly byQaAddress: ReadonlyMap<string, readonly AreaAnalysisNode[]>;
+  findById(id: string): AreaAnalysisNode | undefined;
+  findByXPath(xpath: string): AreaAnalysisNode | undefined;
+  findByCssSelector(cssSelector: string): AreaAnalysisNode | undefined;
+  findByComponentId(componentId: string): readonly AreaAnalysisNode[];
+  findByQaAddress(qaAddress: string): readonly AreaAnalysisNode[];
+}
+
+export const DATA_QA_ADDRESS_ATTRIBUTE = 'data-qa-address';
+export const DATA_COMPONENT_ID_ATTRIBUTE = 'data-component-id';
+export const DATA_DEBUG_LABEL_ATTRIBUTE = 'data-debug-label';
+export const DATA_BOUNDARY_ATTRIBUTE = 'data-boundary';
 export const QA_ADDRESS_ATTRIBUTE = DATA_QA_ADDRESS_ATTRIBUTE;
 export const COMPONENT_ID_ATTRIBUTE = DATA_COMPONENT_ID_ATTRIBUTE;
 export const DEBUG_LABEL_ATTRIBUTE = DATA_DEBUG_LABEL_ATTRIBUTE;
@@ -254,7 +279,7 @@ export interface ScreenMetadata {
 }
 
 export type MetadataAttributes = Readonly<Record<string, string>>;
-export type MetadataAttributeTarget = Pick<Element, "setAttribute">;
+export type MetadataAttributeTarget = Pick<Element, 'setAttribute'>;
 
 export function createMetadataAttributes(metadata: ScreenMetadata): MetadataAttributes {
   const attributes: Record<string, string> = {};
@@ -265,7 +290,10 @@ export function createMetadataAttributes(metadata: ScreenMetadata): MetadataAttr
   return attributes;
 }
 
-export function annotateElement<T extends MetadataAttributeTarget>(element: T, metadata: ScreenMetadata): T {
+export function annotateElement<T extends MetadataAttributeTarget>(
+  element: T,
+  metadata: ScreenMetadata,
+): T {
   for (const [name, value] of Object.entries(createMetadataAttributes(metadata))) {
     element.setAttribute(name, value);
   }
@@ -277,11 +305,12 @@ export function createScreenIdentifier(args: {
   readonly componentId?: string;
   readonly qaAddress?: string;
   readonly cssSelector?: string;
+  readonly xpath?: string;
 }): ScreenIdentifier {
-  if (args.componentId) return { ...args, kind: "componentId", value: args.componentId };
-  if (args.qaAddress) return { ...args, kind: "qaAddress", value: args.qaAddress };
-  if (args.cssSelector) return { ...args, kind: "cssSelector", value: args.cssSelector };
-  return { ...args, kind: "nodeId", value: args.nodeId };
+  if (args.componentId) return { ...args, kind: 'componentId', value: args.componentId };
+  if (args.qaAddress) return { ...args, kind: 'qaAddress', value: args.qaAddress };
+  if (args.cssSelector) return { ...args, kind: 'cssSelector', value: args.cssSelector };
+  return { ...args, kind: 'nodeId', value: args.nodeId };
 }
 
 export function flattenTree(node: RLSCNode): RLSCNode[] {
@@ -291,9 +320,9 @@ export function flattenTree(node: RLSCNode): RLSCNode[] {
 export function createAreaDocument(input: AreaDocumentInput): RLSCDocument {
   const nodes = flattenTree(input.root);
   return {
-    version: "1.0",
+    version: '1.0',
     viewport: input.viewport,
-    url: input.url ?? "about:blank",
+    url: input.url ?? 'about:blank',
     timestamp: input.timestamp ?? new Date().toISOString(),
     address: input.address,
     root: input.root,
@@ -303,17 +332,83 @@ export function createAreaDocument(input: AreaDocumentInput): RLSCDocument {
   };
 }
 
-export function analyzeAreas(input: RLSCDocument | AreaDocumentInput, options: AreaAnalysisOptions = {}): AreaAnalysisResult {
-  const doc = "grid" in input ? input : createAreaDocument(input);
+export function analyzeAreas(
+  input: RLSCDocument | AreaDocumentInput,
+  options: AreaAnalysisOptions = {},
+): AreaAnalysisResult {
+  const doc = 'grid' in input ? input : createAreaDocument(input);
   const nodes = flattenTree(doc.root).map((node) => withIdentifier(node));
+  const index = createNodeIndex(doc);
   const metrics = measureLayout(doc, options.textOccupancies);
   return {
     doc,
     nodes,
+    index,
     metrics,
     pattern: classifyLayout(metrics),
     overflowIssues: detectAreaOverflow(doc),
   };
+}
+
+export function createNodeIndex(doc: RLSCDocument): RLSCNodeIndex {
+  const all = flattenTree(doc.root).map((node) => withIdentifier(node));
+  const byId = new Map<string, AreaAnalysisNode>();
+  const byXPath = new Map<string, AreaAnalysisNode>();
+  const byCssSelector = new Map<string, AreaAnalysisNode>();
+  const byComponentId = new Map<string, AreaAnalysisNode[]>();
+  const byQaAddress = new Map<string, AreaAnalysisNode[]>();
+
+  for (const node of all) {
+    byId.set(node.id, node);
+    if (node.identifier.xpath) byXPath.set(node.identifier.xpath, node);
+    if (node.identifier.cssSelector) byCssSelector.set(node.identifier.cssSelector, node);
+    if (node.identifier.componentId)
+      appendIndexValue(byComponentId, node.identifier.componentId, node);
+    if (node.identifier.qaAddress) appendIndexValue(byQaAddress, node.identifier.qaAddress, node);
+  }
+
+  return {
+    all,
+    byId,
+    byXPath,
+    byCssSelector,
+    byComponentId,
+    byQaAddress,
+    findById: (id) => byId.get(id),
+    findByXPath: (xpath) => byXPath.get(xpath),
+    findByCssSelector: (cssSelector) => byCssSelector.get(cssSelector),
+    findByComponentId: (componentId) => byComponentId.get(componentId) ?? [],
+    findByQaAddress: (qaAddress) => byQaAddress.get(qaAddress) ?? [],
+  };
+}
+
+export function findNodeById(doc: RLSCDocument, id: string): AreaAnalysisNode | undefined {
+  return createNodeIndex(doc).findById(id);
+}
+
+export function findNodeByXPath(doc: RLSCDocument, xpath: string): AreaAnalysisNode | undefined {
+  return createNodeIndex(doc).findByXPath(xpath);
+}
+
+export function findNodeByCssSelector(
+  doc: RLSCDocument,
+  cssSelector: string,
+): AreaAnalysisNode | undefined {
+  return createNodeIndex(doc).findByCssSelector(cssSelector);
+}
+
+export function findNodesByComponentId(
+  doc: RLSCDocument,
+  componentId: string,
+): readonly AreaAnalysisNode[] {
+  return createNodeIndex(doc).findByComponentId(componentId);
+}
+
+export function findNodesByQaAddress(
+  doc: RLSCDocument,
+  qaAddress: string,
+): readonly AreaAnalysisNode[] {
+  return createNodeIndex(doc).findByQaAddress(qaAddress);
 }
 
 export function detectAreaOverflow(doc: RLSCDocument): AreaOverflowIssue[] {
@@ -323,11 +418,15 @@ export function detectAreaOverflow(doc: RLSCDocument): AreaOverflowIssue[] {
       const overflow = {
         top: Math.max(0, parent.rect.y - child.rect.y),
         right: Math.max(0, child.rect.x + child.rect.width - (parent.rect.x + parent.rect.width)),
-        bottom: Math.max(0, child.rect.y + child.rect.height - (parent.rect.y + parent.rect.height)),
+        bottom: Math.max(
+          0,
+          child.rect.y + child.rect.height - (parent.rect.y + parent.rect.height),
+        ),
         left: Math.max(0, parent.rect.x - child.rect.x),
       };
       const exceededPx = Math.max(overflow.top, overflow.right, overflow.bottom, overflow.left);
-      if (exceededPx > 0) issues.push({ parentId: parent.id, childId: child.id, overflow, exceededPx });
+      if (exceededPx > 0)
+        issues.push({ parentId: parent.id, childId: child.id, overflow, exceededPx });
     }
   });
   return issues;
@@ -343,7 +442,12 @@ export function analyzeGrid(
   const nodes = flattenTree(root).filter((node) => node.visible);
   const cells = Array.from({ length: rows }, (_rowToken, row) =>
     Array.from({ length: cols }, (_colToken, col): GridCell => {
-      const rect: LayoutRect = { x: col * cellSize, y: row * cellSize, width: cellSize, height: cellSize };
+      const rect: LayoutRect = {
+        x: col * cellSize,
+        y: row * cellSize,
+        width: cellSize,
+        height: cellSize,
+      };
       const covering = nodes.filter((node) => intersects(node.rect, rect));
       const sorted = covering.toSorted((a, b) => a.zIndex - b.zIndex);
       return {
@@ -382,30 +486,74 @@ export function detectRelations(nodes: readonly RLSCNode[]): RLSCRelation[] {
       const b = nodes[j];
       if (!a || !b) continue;
       if (!a.visible || !b.visible) continue;
-      if (contains(a.rect, b.rect)) relations.push({ type: "contains", source: a.id, target: b.id, strength: 1 });
-      else if (contains(b.rect, a.rect)) relations.push({ type: "contains", source: b.id, target: a.id, strength: 1 });
-      else if (intersects(a.rect, b.rect)) relations.push({ type: "overlaps", source: a.id, target: b.id, strength: 0.5 });
-      if (Math.abs(a.rect.y - b.rect.y) <= 4) relations.push({ type: "aligned-y", source: a.id, target: b.id });
-      if (Math.abs(a.rect.x - b.rect.x) <= 4) relations.push({ type: "aligned-x", source: a.id, target: b.id });
+      if (contains(a.rect, b.rect))
+        relations.push({ type: 'contains', source: a.id, target: b.id, strength: 1 });
+      else if (contains(b.rect, a.rect))
+        relations.push({ type: 'contains', source: b.id, target: a.id, strength: 1 });
+      else if (intersects(a.rect, b.rect))
+        relations.push({ type: 'overlaps', source: a.id, target: b.id, strength: 0.5 });
+      if (Math.abs(a.rect.y - b.rect.y) <= 4)
+        relations.push({ type: 'aligned-y', source: a.id, target: b.id });
+      if (Math.abs(a.rect.x - b.rect.x) <= 4)
+        relations.push({ type: 'aligned-x', source: a.id, target: b.id });
     }
   }
   return relations;
 }
 
-export function measureLayout(doc: RLSCDocument, textOccupancies: readonly TextOccupancy[] = []): LayoutMetrics {
+export function measureLayout(
+  doc: RLSCDocument,
+  textOccupancies: readonly TextOccupancy[] = [],
+): LayoutMetrics {
   const nodes = flattenTree(doc.root).filter((node) => node.visible);
   const viewportArea = doc.viewport.width * doc.viewport.height || 1;
-  const leftArea = nodes.reduce((sum, node) => sum + clippedArea(node.rect, { x: 0, y: 0, width: doc.viewport.width / 2, height: doc.viewport.height }), 0);
+  const leftArea = nodes.reduce(
+    (sum, node) =>
+      sum +
+      clippedArea(node.rect, {
+        x: 0,
+        y: 0,
+        width: doc.viewport.width / 2,
+        height: doc.viewport.height,
+      }),
+    0,
+  );
   const rightArea = nodes.reduce(
-    (sum, node) => sum + clippedArea(node.rect, { x: doc.viewport.width / 2, y: 0, width: doc.viewport.width / 2, height: doc.viewport.height }),
+    (sum, node) =>
+      sum +
+      clippedArea(node.rect, {
+        x: doc.viewport.width / 2,
+        y: 0,
+        width: doc.viewport.width / 2,
+        height: doc.viewport.height,
+      }),
     0,
   );
-  const topArea = nodes.reduce((sum, node) => sum + clippedArea(node.rect, { x: 0, y: 0, width: doc.viewport.width, height: doc.viewport.height / 2 }), 0);
+  const topArea = nodes.reduce(
+    (sum, node) =>
+      sum +
+      clippedArea(node.rect, {
+        x: 0,
+        y: 0,
+        width: doc.viewport.width,
+        height: doc.viewport.height / 2,
+      }),
+    0,
+  );
   const bottomArea = nodes.reduce(
-    (sum, node) => sum + clippedArea(node.rect, { x: 0, y: doc.viewport.height / 2, width: doc.viewport.width, height: doc.viewport.height / 2 }),
+    (sum, node) =>
+      sum +
+      clippedArea(node.rect, {
+        x: 0,
+        y: doc.viewport.height / 2,
+        width: doc.viewport.width,
+        height: doc.viewport.height / 2,
+      }),
     0,
   );
-  const ratios = nodes.map((node) => Math.round((node.rect.width / Math.max(1, node.rect.height)) * 100) / 100);
+  const ratios = nodes.map(
+    (node) => Math.round((node.rect.width / Math.max(1, node.rect.height)) * 100) / 100,
+  );
   const ratioCounts = [...new Set(ratios)].map((ratioValue) => ({
     ratio: ratioValue,
     count: ratios.filter((item) => item === ratioValue).length,
@@ -425,19 +573,42 @@ export function measureLayout(doc: RLSCDocument, textOccupancies: readonly TextO
     textDensity: textOccupancies.length > 0 ? textArea / viewportArea : undefined,
     textBoundaryContactRate:
       textOccupancies.length > 0
-        ? textOccupancies.filter((item) => item.boundaryContact.top || item.boundaryContact.right || item.boundaryContact.bottom || item.boundaryContact.left).length /
-          textOccupancies.length
+        ? textOccupancies.filter(
+            (item) =>
+              item.boundaryContact.top ||
+              item.boundaryContact.right ||
+              item.boundaryContact.bottom ||
+              item.boundaryContact.left,
+          ).length / textOccupancies.length
         : undefined,
-    textOverflowCount: textOccupancies.length > 0 ? textOccupancies.filter((item) => item.overflows).length : undefined,
+    textOverflowCount:
+      textOccupancies.length > 0
+        ? textOccupancies.filter((item) => item.overflows).length
+        : undefined,
   };
 }
 
 export function classifyLayout(metrics: LayoutMetrics): LayoutPattern {
   return {
-    gridPattern: metrics.gridPattern ? (metrics.gridPattern.cols === 1 ? "1-col" : metrics.gridPattern) : undefined,
-    flowDirection: metrics.dominantFlow === "vertical" ? "top-to-bottom" : metrics.dominantFlow === "horizontal" ? "left-to-right" : metrics.dominantFlow === "grid" ? "grid" : undefined,
+    gridPattern: metrics.gridPattern
+      ? metrics.gridPattern.cols === 1
+        ? '1-col'
+        : metrics.gridPattern
+      : undefined,
+    flowDirection:
+      metrics.dominantFlow === 'vertical'
+        ? 'top-to-bottom'
+        : metrics.dominantFlow === 'horizontal'
+          ? 'left-to-right'
+          : metrics.dominantFlow === 'grid'
+            ? 'grid'
+            : undefined,
     goldenRatio: metrics.goldenRatioScore >= 0.8 ? true : undefined,
-    spacing: { base: metrics.spacingBase ?? undefined, scale: metrics.spacingValues, consistent: metrics.spacingValues.length <= 6 },
+    spacing: {
+      base: metrics.spacingBase ?? undefined,
+      scale: metrics.spacingValues,
+      consistent: metrics.spacingValues.length <= 6,
+    },
     proportions: { distribution: metrics.aspectRatioDistribution },
   };
 }
@@ -456,7 +627,10 @@ export function analyzeTextOccupancy(
       const contentHeight = Math.max(1, node.rect.height - padding.top - padding.bottom);
       const naturalWidth = Math.min(contentWidth, (node.textContent?.length ?? 0) * 7);
       const lineHeight = node.fontInfo?.lineHeight ?? 16;
-      const lineCount = Math.max(1, Math.ceil(((node.textContent?.length ?? 0) * 7) / contentWidth));
+      const lineCount = Math.max(
+        1,
+        Math.ceil(((node.textContent?.length ?? 0) * 7) / contentWidth),
+      );
       const renderedRect = {
         x: node.rect.x + padding.left,
         y: node.rect.y + padding.top,
@@ -488,14 +662,17 @@ export function analyzeTextOccupancy(
     });
 }
 
-export function aggregateTextRegions(doc: RLSCDocument, occupancies: readonly TextOccupancy[]): TextRegionDensity[] {
+export function aggregateTextRegions(
+  doc: RLSCDocument,
+  occupancies: readonly TextOccupancy[],
+): TextRegionDensity[] {
   const byNode = new Map(occupancies.map((item) => [item.nodeId, item]));
-  return flattenTree(doc.root)
-    .flatMap((node) => {
-      const occupancy = byNode.get(node.id);
-      if (!occupancy) return [];
-      const regionArea = Math.max(1, area(node.rect));
-      return [{
+  return flattenTree(doc.root).flatMap((node) => {
+    const occupancy = byNode.get(node.id);
+    if (!occupancy) return [];
+    const regionArea = Math.max(1, area(node.rect));
+    return [
+      {
         regionId: node.id,
         textArea: area(occupancy.renderedRect),
         regionArea,
@@ -503,55 +680,91 @@ export function aggregateTextRegions(doc: RLSCDocument, occupancies: readonly Te
         avgFillX: occupancy.fillX,
         avgFillY: occupancy.fillY,
         contactCount:
-          occupancy.boundaryContact.top || occupancy.boundaryContact.right || occupancy.boundaryContact.bottom || occupancy.boundaryContact.left ? 1 : 0,
-      }];
-    });
+          occupancy.boundaryContact.top ||
+          occupancy.boundaryContact.right ||
+          occupancy.boundaryContact.bottom ||
+          occupancy.boundaryContact.left
+            ? 1
+            : 0,
+      },
+    ];
+  });
 }
 
 export function prepareTextMap(_doc: RLSCDocument): TextPreparedMap {
   return new Map();
 }
 
-export function detectDominantFlow(relations: readonly RLSCRelation[]): LayoutMetrics["dominantFlow"] {
-  const horizontal = relations.filter((relation) => relation.type === "adjacent-x" || relation.type === "aligned-y").length;
-  const vertical = relations.filter((relation) => relation.type === "adjacent-y" || relation.type === "aligned-x").length;
-  if (horizontal > vertical * 1.5) return "horizontal";
-  if (vertical > horizontal * 1.5) return "vertical";
-  if (horizontal > 0 && vertical > 0) return "grid";
-  return "free";
+export function detectDominantFlow(
+  relations: readonly RLSCRelation[],
+): LayoutMetrics['dominantFlow'] {
+  const horizontal = relations.filter(
+    (relation) => relation.type === 'adjacent-x' || relation.type === 'aligned-y',
+  ).length;
+  const vertical = relations.filter(
+    (relation) => relation.type === 'adjacent-y' || relation.type === 'aligned-x',
+  ).length;
+  if (horizontal > vertical * 1.5) return 'horizontal';
+  if (vertical > horizontal * 1.5) return 'vertical';
+  if (horizontal > 0 && vertical > 0) return 'grid';
+  return 'free';
 }
 
-export function detectGridPattern(grid: LayoutGrid): { readonly cols: number; readonly rows: number } | null {
+export function detectGridPattern(
+  grid: LayoutGrid,
+): { readonly cols: number; readonly rows: number } | null {
   return grid.cols > 0 && grid.rows > 0 ? { cols: grid.cols, rows: grid.rows } : null;
 }
 
-export function scoreGoldenRatio(viewport: { readonly width: number; readonly height: number }): number {
-  const ratioValue = Math.max(viewport.width, viewport.height) / Math.max(1, Math.min(viewport.width, viewport.height));
+export function scoreGoldenRatio(viewport: {
+  readonly width: number;
+  readonly height: number;
+}): number {
+  const ratioValue =
+    Math.max(viewport.width, viewport.height) /
+    Math.max(1, Math.min(viewport.width, viewport.height));
   return Math.max(0, 1 - Math.abs(ratioValue - 1.618) / 1.618);
 }
 
 export function detectProximityGroups(nodes: readonly RLSCNode[]): ProximityGroup[] {
   return nodes.length === 0
     ? []
-    : [{
-        nodeIds: nodes.map((node) => node.id),
-        centroid: {
-          x: nodes.reduce((sum, node) => sum + node.rect.x + node.rect.width / 2, 0) / nodes.length,
-          y: nodes.reduce((sum, node) => sum + node.rect.y + node.rect.height / 2, 0) / nodes.length,
+    : [
+        {
+          nodeIds: nodes.map((node) => node.id),
+          centroid: {
+            x:
+              nodes.reduce((sum, node) => sum + node.rect.x + node.rect.width / 2, 0) /
+              nodes.length,
+            y:
+              nodes.reduce((sum, node) => sum + node.rect.y + node.rect.height / 2, 0) /
+              nodes.length,
+          },
+          boundingRect: nodes.map((node) => node.rect).reduce(unionRect),
         },
-        boundingRect: nodes.map((node) => node.rect).reduce(unionRect),
-      }];
+      ];
 }
 
 export function detectColumnSystem(
   nodes: readonly RLSCNode[],
   viewport: { readonly width: number; readonly height: number },
-): LayoutMetrics["columnSystem"] {
-  const topLevel = nodes.filter((node) => node.depth <= 2 && node.rect.height < viewport.height * 0.9);
-  return topLevel.length >= 2 ? { cols: Math.min(topLevel.length, 12), gutterPx: 0, marginPx: Math.min(...topLevel.map((node) => node.rect.x)) } : null;
+): LayoutMetrics['columnSystem'] {
+  const topLevel = nodes.filter(
+    (node) => node.depth <= 2 && node.rect.height < viewport.height * 0.9,
+  );
+  return topLevel.length >= 2
+    ? {
+        cols: Math.min(topLevel.length, 12),
+        gutterPx: 0,
+        marginPx: Math.min(...topLevel.map((node) => node.rect.x)),
+      }
+    : null;
 }
 
-export function measureSpacing(_relations: readonly RLSCRelation[], nodes: readonly RLSCNode[]): { values: readonly number[]; base: number | null } {
+export function measureSpacing(
+  _relations: readonly RLSCRelation[],
+  nodes: readonly RLSCNode[],
+): { values: readonly number[]; base: number | null } {
   const sorted = nodes.toSorted((a, b) => a.rect.y - b.rect.y || a.rect.x - b.rect.x);
   const values = sorted
     .slice(1)
@@ -564,13 +777,24 @@ export function measureSpacing(_relations: readonly RLSCRelation[], nodes: reado
   return { values: unique, base: unique[0] ?? null };
 }
 
-export function measureBalance(nodes: readonly RLSCNode[], viewport: { readonly width: number; readonly height: number }): LayoutMetrics["balance"] {
-  return measureLayout(createAreaDocument({ root: syntheticRoot(nodes, viewport), viewport })).balance;
+export function measureBalance(
+  nodes: readonly RLSCNode[],
+  viewport: { readonly width: number; readonly height: number },
+): LayoutMetrics['balance'] {
+  return measureLayout(createAreaDocument({ root: syntheticRoot(nodes, viewport), viewport }))
+    .balance;
 }
 
-export function measureAspectRatios(nodes: readonly RLSCNode[]): readonly { readonly ratio: number; readonly count: number }[] {
-  const ratios = nodes.map((node) => Math.round((node.rect.width / Math.max(1, node.rect.height)) * 100) / 100);
-  return [...new Set(ratios)].map((value) => ({ ratio: value, count: ratios.filter((item) => item === value).length }));
+export function measureAspectRatios(
+  nodes: readonly RLSCNode[],
+): readonly { readonly ratio: number; readonly count: number }[] {
+  const ratios = nodes.map(
+    (node) => Math.round((node.rect.width / Math.max(1, node.rect.height)) * 100) / 100,
+  );
+  return [...new Set(ratios)].map((value) => ({
+    ratio: value,
+    count: ratios.filter((item) => item === value).length,
+  }));
 }
 
 export function gridToText(grid: LayoutGrid): string {
@@ -578,11 +802,13 @@ export function gridToText(grid: LayoutGrid): string {
 }
 
 export function layersToText(layers: readonly LayerStack[]): string {
-  return layers.map((layer) => `${layer.role}:${layer.nodeIds.length}`).join("\n");
+  return layers.map((layer) => `${layer.role}:${layer.nodeIds.length}`).join('\n');
 }
 
 export function relationsToText(relations: readonly RLSCRelation[]): string {
-  return relations.map((relation) => `${relation.source} ${relation.type} ${relation.target}`).join("\n");
+  return relations
+    .map((relation) => `${relation.source} ${relation.type} ${relation.target}`)
+    .join('\n');
 }
 
 export function predictTextReflow(): undefined {
@@ -596,12 +822,25 @@ export function findBreakpointWidth(): undefined {
 function withIdentifier(node: RLSCNode): AreaAnalysisNode {
   return {
     ...node,
-    identifier: node.identifier ?? createScreenIdentifier({
-      nodeId: node.id,
-      componentId: node.attributes[DATA_COMPONENT_ID_ATTRIBUTE],
-      qaAddress: node.attributes[DATA_QA_ADDRESS_ATTRIBUTE] ?? node.address,
-    }),
+    identifier:
+      node.identifier ??
+      createScreenIdentifier({
+        nodeId: node.id,
+        componentId: node.attributes[DATA_COMPONENT_ID_ATTRIBUTE],
+        qaAddress: node.attributes[DATA_QA_ADDRESS_ATTRIBUTE] ?? node.address,
+        xpath: node.attributes['data-rlsc-xpath'],
+      }),
   };
+}
+
+function appendIndexValue(
+  index: Map<string, AreaAnalysisNode[]>,
+  key: string,
+  node: AreaAnalysisNode,
+): void {
+  const nodes = index.get(key) ?? [];
+  nodes.push(node);
+  index.set(key, nodes);
 }
 
 function visit(node: RLSCNode, callback: (node: RLSCNode) => void): void {
@@ -632,7 +871,9 @@ function intersects(a: LayoutRect, b: LayoutRect): boolean {
 }
 
 function contains(a: LayoutRect, b: LayoutRect): boolean {
-  return b.x >= a.x && b.y >= a.y && b.x + b.width <= a.x + a.width && b.y + b.height <= a.y + a.height;
+  return (
+    b.x >= a.x && b.y >= a.y && b.x + b.width <= a.x + a.width && b.y + b.height <= a.y + a.height
+  );
 }
 
 function largestByArea(nodes: readonly RLSCNode[]): RLSCNode | undefined {
@@ -640,12 +881,12 @@ function largestByArea(nodes: readonly RLSCNode[]): RLSCNode | undefined {
 }
 
 function layerRole(zIndex: number): LayerRole {
-  if (zIndex <= 0) return "background";
-  if (zIndex < 10) return "content";
-  if (zIndex < 100) return "sticky";
-  if (zIndex < 1000) return "overlay";
-  if (zIndex < 10000) return "modal";
-  return "tooltip";
+  if (zIndex <= 0) return 'background';
+  if (zIndex < 10) return 'content';
+  if (zIndex < 100) return 'sticky';
+  if (zIndex < 1000) return 'overlay';
+  if (zIndex < 10000) return 'modal';
+  return 'tooltip';
 }
 
 function unionRect(a: LayoutRect, b: LayoutRect): LayoutRect {
@@ -656,17 +897,20 @@ function unionRect(a: LayoutRect, b: LayoutRect): LayoutRect {
   return { x, y, width: maxX - x, height: maxY - y };
 }
 
-function syntheticRoot(nodes: readonly RLSCNode[], viewport: { readonly width: number; readonly height: number }): RLSCNode {
+function syntheticRoot(
+  nodes: readonly RLSCNode[],
+  viewport: { readonly width: number; readonly height: number },
+): RLSCNode {
   return {
-    id: "root",
-    tag: "root",
+    id: 'root',
+    tag: 'root',
     classes: [],
     rect: { x: 0, y: 0, width: viewport.width, height: viewport.height },
     zIndex: 0,
     depth: 0,
-    display: "block",
-    position: "static",
-    overflow: "visible",
+    display: 'block',
+    position: 'static',
+    overflow: 'visible',
     visible: true,
     attributes: {},
     children: nodes,

@@ -45,22 +45,22 @@ export type {
   TextFontInfo,
   TextOccupancy,
   TextRegionDensity,
-} from "./types.js";
+} from './types.js';
 
 // 수집 (브라우저 전용)
-export { collectLayout, collectLayoutWithText } from "./collector.js";
-export { flattenTree } from "./tree-utils.js";
+export { collectLayout, collectLayoutWithText } from './collector.js';
+export { flattenTree } from './tree-utils.js';
 
 // 인코딩/디코딩
-export { encodeToMarkup, parseMarkup } from "./encoder.js";
+export { encodeToMarkup, parseMarkup } from './encoder.js';
 
 // 분석
-export { analyzeGrid, gridToText } from "./grid.js";
-export { classifyLayers, layersToText } from "./layers.js";
-export { detectRelations, relationsToText } from "./relations.js";
+export { analyzeGrid, gridToText } from './grid.js';
+export { classifyLayers, layersToText } from './layers.js';
+export { detectRelations, relationsToText } from './relations.js';
 
 // Context Engineering
-export { generateDesignContext } from "./context.js";
+export { generateDesignContext } from './context.js';
 
 // 쿼리
 export {
@@ -72,8 +72,8 @@ export {
   replaceNode,
   removeNode,
   diffDocuments,
-} from "./query.js";
-export type { LayoutDiff } from "./query.js";
+} from './query.js';
+export type { LayoutDiff } from './query.js';
 
 // 메트릭
 export {
@@ -86,19 +86,19 @@ export {
   detectColumnSystem,
   measureSpacing,
   measureAspectRatios,
-} from "./metrics.js";
+} from './metrics.js';
 
 // 패턴 분류
-export { classifyLayout } from "./pattern.js";
+export { classifyLayout } from './pattern.js';
 
 // 적합성 검증
-export { checkConformance, recognizeLayout } from "./intent.js";
+export { checkConformance, recognizeLayout } from './intent.js';
 
 // 렌더링
-export { assignColors, renderToSVG, renderToCanvas } from "./canvas.js";
+export { assignColors, renderToSVG, renderToCanvas } from './canvas.js';
 
 // 모니터 (브라우저 전용)
-export { createLayoutMonitor } from "./monitor.js";
+export { createLayoutMonitor } from './monitor.js';
 
 // 텍스트 점유 분석
 export {
@@ -107,11 +107,8 @@ export {
   aggregateTextRegions,
   predictTextReflow,
   findBreakpointWidth,
-} from "./text-occupancy.js";
-export type {
-  TextPreparedMap,
-  TextOccupancyOptions,
-} from "./text-occupancy.js";
+} from './text-occupancy.js';
+export type { TextPreparedMap, TextOccupancyOptions } from './text-occupancy.js';
 
 // Split-package compatibility APIs
 export {
@@ -127,9 +124,15 @@ export {
   annotateElement,
   createScreenIdentifier,
   createAreaDocument,
+  createNodeIndex,
   analyzeAreas,
   detectAreaOverflow,
-} from "@qa-sdk/rlsc-analysis";
+  findNodeById,
+  findNodeByXPath,
+  findNodeByCssSelector,
+  findNodesByComponentId,
+  findNodesByQaAddress,
+} from '@qa-sdk/rlsc-analysis';
 export type {
   ScreenIdentifier,
   ScreenMetadata,
@@ -140,4 +143,5 @@ export type {
   AreaAnalysisOptions,
   AreaAnalysisNode,
   AreaAnalysisResult,
-} from "@qa-sdk/rlsc-analysis";
+  RLSCNodeIndex,
+} from '@qa-sdk/rlsc-analysis';

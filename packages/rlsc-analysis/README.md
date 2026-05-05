@@ -9,12 +9,12 @@ This package does not depend on Three.js or perspective rendering.
 Use metadata helpers when application code can mark component boundaries before collection.
 
 ```ts
-import { createMetadataAttributes, annotateElement } from "@qa-sdk/rlsc-analysis";
+import { createMetadataAttributes, annotateElement } from '@qa-sdk/rlsc-analysis';
 
 const attrs = createMetadataAttributes({
-  componentId: "CheckoutForm.SubmitButton",
-  qaAddress: "checkout:form:submit",
-  debugLabel: "Submit order",
+  componentId: 'CheckoutForm.SubmitButton',
+  qaAddress: 'checkout:form:submit',
+  debugLabel: 'Submit order',
 });
 
 annotateElement(buttonElement, attrs);
@@ -30,10 +30,12 @@ Standard attributes:
 ## Analysis-Only Usage
 
 ```ts
-import { analyzeAreas, detectAreaOverflow } from "@qa-sdk/rlsc-analysis";
+import { analyzeAreas, createNodeIndex, detectAreaOverflow } from '@qa-sdk/rlsc-analysis';
 
 const result = analyzeAreas(doc, { textOccupancies });
 const containmentLeaks = detectAreaOverflow(doc);
+const index = createNodeIndex(doc);
+const selected = index.findByXPath('/article[1]/section[3]/article[4]/span[1]');
 ```
 
 The preferred identifier order is:
@@ -47,11 +49,27 @@ componentId > qaAddress > cssSelector > nodeId
 Browser-only APIs are exported from `@qa-sdk/rlsc-analysis/browser`.
 
 ```ts
-import { collectLayoutWithText } from "@qa-sdk/rlsc-analysis/browser";
+import { collectLayoutWithText, scanScreen } from '@qa-sdk/rlsc-analysis/browser';
 
 const { doc, textPrepared } = collectLayoutWithText(document.body, {
-  addressAttribute: "data-qa-address",
+  addressAttribute: 'data-qa-address',
 });
+
+const result = scanScreen(document.body, {
+  includeText: true,
+  collect: { addressAttribute: 'data-qa-address' },
+});
+
+const node = result.byXPath('/body[1]/main[1]/button[1]');
 ```
 
 Keep pure analysis imports separate from browser collection imports when building non-browser tooling.
+
+Browser collection records stable re-identification metadata when available:
+
+- `identifier.componentId`
+- `identifier.qaAddress`
+- `identifier.cssSelector`
+- `identifier.xpath`
+- `debugLabel`
+- `boundary`
