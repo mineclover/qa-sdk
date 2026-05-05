@@ -69,7 +69,9 @@ export function createOutboxDispatcher(
     async tick(): Promise<number> {
       let processed = 0;
       // tx 단위로 SELECT FOR UPDATE 락을 잡는다.
-      await opts.sql.begin(async (tx) => {
+      // postgres.js 3.4.8 TransactionSql<{}> callable signature 회귀 우회 — typeof opts.sql 로 cast.
+      await opts.sql.begin(async (txRaw) => {
+        const tx = txRaw as unknown as typeof opts.sql;
         // §2.1 폴링 락 — status='pending' 또는 backoff 만료된 'failed' row 모두 대상.
         const rows = await tx<
           {

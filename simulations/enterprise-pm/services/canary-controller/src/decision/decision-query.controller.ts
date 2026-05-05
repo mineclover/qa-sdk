@@ -97,14 +97,16 @@ export class DecisionQueryController {
     const cycleIds = splitCsv(q.cycleIds);
     const passes: ("safety" | "resource")[] =
       q.pass !== undefined ? [q.pass] : ["safety", "resource"];
-    const records = passes.flatMap((p) =>
-      this.ringBuffer.queryDecisions({
-        pass: p,
-        verdict: q.verdict,
-        since: q.since,
-        cycleIds,
-        limit: q.limit,
-      }),
+    // queryDecisions overload union (safety/resource) 으로 인한 flatMap 추론 손실 우회.
+    const records: DecisionRecord[] = passes.flatMap(
+      (p): DecisionRecord[] =>
+        this.ringBuffer.queryDecisions({
+          pass: p,
+          verdict: q.verdict,
+          since: q.since,
+          cycleIds,
+          limit: q.limit,
+        }) as DecisionRecord[],
     );
     return { items: records.map((r) => toView(r)) };
   }
