@@ -3,7 +3,7 @@ def:
   tier: component
   id: visbug-bridge-spec
   scope: interface
-  aspect: edit_log_contract
+  aspect: api_contract
   depth: specification
   lifecycle: approved
   layer: mediation
