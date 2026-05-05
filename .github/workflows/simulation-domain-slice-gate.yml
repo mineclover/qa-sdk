@@ -115,7 +115,8 @@ jobs:
         # sim-scenarios 가 의존하는 lib 패키지들의 dist 산출. exports.import 가
         # ./dist/*.js 를 가리키므로 미빌드 시 vitest 가 resolve 실패.
         # 트리가 깊어 명시 list 로는 누락 위험 — wasm 제외 전체 빌드 (wasm-pack 미설치).
-        run: pnpm -r --filter '!weighted-wasm' --filter '!viz-3d' run build
+        # YAML/shell 에서 `!` escape 회피 위해 double-quote 사용.
+        run: pnpm -r --filter "!weighted-wasm" --filter "!@qa-sdk/viz-3d" run build
 
       - name: scenarios test (architecture-manifest + cross-slice-conventions)
         run: pnpm --filter @qa-sdk/sim-scenarios test
