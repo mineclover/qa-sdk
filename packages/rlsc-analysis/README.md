@@ -65,6 +65,16 @@ const node = result.byXPath('/body[1]/main[1]/button[1]');
 
 Keep pure analysis imports separate from browser collection imports when building non-browser tooling.
 
+`scanScreen()` is the recommended browser-facing entrypoint when the caller wants a complete snapshot:
+
+- `doc` — collected `RLSCDocument`
+- `nodes` — analysis nodes with guaranteed identifiers
+- `index` — lookup maps and helpers
+- `metrics` / `pattern` — layout analysis result
+- `overflowIssues` — child elements that exceed parent bounds
+- `textOccupancies` — text fill and overflow estimates
+- `byId()` / `byXPath()` / `byCssSelector()` / `byComponentId()` / `byQaAddress()` — direct lookup helpers
+
 Browser collection records stable re-identification metadata when available:
 
 - `identifier.componentId`
@@ -73,3 +83,17 @@ Browser collection records stable re-identification metadata when available:
 - `identifier.xpath`
 - `debugLabel`
 - `boundary`
+
+## Node Index
+
+Use `createNodeIndex(doc)` when a document was collected elsewhere and only lookup helpers are needed.
+
+```ts
+import { createNodeIndex } from '@qa-sdk/rlsc-analysis';
+
+const index = createNodeIndex(doc);
+const componentNodes = index.findByComponentId('CheckoutForm.SubmitButton');
+const xpathNode = index.findByXPath('/main[1]/form[1]/button[1]');
+```
+
+The index treats `node.id` as a runtime identifier and `ScreenIdentifier` fields as stable re-identification metadata. Prefer `componentId`, `qaAddress`, `xpath`, or `cssSelector` for cross-snapshot debugging.

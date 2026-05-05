@@ -16,7 +16,7 @@ const viewer = createPerspectiveViewer(container, doc, {
   overflowIssues: analysis.overflowIssues,
   textOccupancies,
   onSelect(event) {
-    console.log(event.selection?.preferredIdentifier);
+    console.log(event.selection?.xpath);
   },
 });
 
@@ -65,7 +65,27 @@ Copy defaults to the plain preferred identifier:
 componentId > qaAddress > cssSelector > nodeId
 ```
 
-Use `copyFormat: "json"` when the consumer needs the full selection payload, including issue details.
+Use `copyFormat: "xpath"` when the consumer wants copy events and keyboard copy to return the selected DOM path. Use `copyFormat: "json"` when the consumer needs the full selection payload, including issue details.
+
+```ts
+const viewer = createPerspectiveViewer(container, doc, {
+  copyFormat: 'xpath',
+  onCopy(event) {
+    console.log(event.text);
+  },
+});
+```
+
+Selection payloads expose the identifier and geometry needed for debugging:
+
+- `selection.identifier`
+- `selection.preferredIdentifier`
+- `selection.xpath`
+- `selection.cssSelector`
+- `selection.rect`
+- `selection.issues`
+
+When `@qa-sdk/rlsc-analysis/browser` supplies `node.identifier.xpath`, the viewer uses that core XPath. It only falls back to local tree-derived XPath for older documents.
 
 ## Debug Issues
 
@@ -76,3 +96,9 @@ The viewer can mark:
 - custom issues through `issues`
 
 Issue data is attached to the selected layer so a consumer can feed precise debugging context into reports, tests, or prompts.
+
+## Host CSS Isolation
+
+Viewer nodes are real DOM buttons so they can receive focus, clicks, and clipboard keyboard events. The renderer explicitly resets button sizing with `min-width: 0`, `min-height: 0`, and `appearance: none` so application-level `button` styles do not distort layer geometry.
+
+This matters for small nodes such as absolutely positioned badges. The layer's `width` and `height` are derived from `RLSCNode.rect`; host UI styles should not change that ratio.

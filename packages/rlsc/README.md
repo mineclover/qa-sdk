@@ -23,16 +23,29 @@
 The `rlsc` package remains the compatibility package for existing consumers. Imports from `rlsc`, `rlsc/analysis`, `rlsc/browser`, and `rlsc/rendering` are expected to keep working while newer code may import directly from split packages.
 
 ```ts
-import { analyzeAreas, createScreenIdentifier } from "rlsc";
-import { detectAreaOverflow } from "rlsc/analysis";
-import { collectLayoutWithText } from "rlsc/browser";
-import { renderToSVG } from "rlsc/rendering";
+import { analyzeAreas, createNodeIndex, createScreenIdentifier } from 'rlsc';
+import { detectAreaOverflow } from 'rlsc/analysis';
+import { collectLayoutWithText, scanScreen } from 'rlsc/browser';
+import { renderToSVG } from 'rlsc/rendering';
 ```
 
 - `rlsc` → legacy RLSC collection/query/rendering APIs plus selected analysis helpers from `@qa-sdk/rlsc-analysis`
 - `rlsc/analysis` → `@qa-sdk/rlsc-analysis`
 - `rlsc/browser` → `@qa-sdk/rlsc-analysis/browser`
 - `rlsc/rendering` → 기존 SVG/canvas 렌더링
+
+Newer browser integrations should prefer `scanScreen()` from `rlsc/browser` or `@qa-sdk/rlsc-analysis/browser` when they need a complete document, layout metrics, issue detection, text occupancy, and node lookup helpers in one call.
+
+```ts
+const result = scanScreen(document.body, {
+  includeText: true,
+  collect: { addressAttribute: 'data-qa-address' },
+});
+
+const node = result.byXPath('/body[1]/main[1]/section[1]');
+```
+
+For documents that were already collected, use `createNodeIndex(doc)` to query by runtime id or stable metadata such as XPath, CSS selector, component id, and QA address.
 
 ## 코드 진입점
 
