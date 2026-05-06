@@ -1393,6 +1393,16 @@ export const DEMO_CATALOG = {
         },
       },
     },
+    def_layer: {
+      id: "def_layer", name: "문서 계층",
+      versions: {
+        v1: {
+          entries: ["domain", "operation", "mediation", "experience"],
+          capacity: 8,
+          ko: { domain: "도메인", operation: "운영", mediation: "중재", experience: "경험" },
+        },
+      },
+    },
     graph_action: {
       id: "graph_action", name: "그래프 액션",
       versions: {
