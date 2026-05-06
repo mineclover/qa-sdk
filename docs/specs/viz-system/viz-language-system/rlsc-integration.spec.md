@@ -59,12 +59,25 @@ RLSC는 DOM 수집 → 분석(grid/layers/relations) → 마크업 직렬화 →
 
 ## 기존 좌표계 통합
 
-RLSC는 별도 저장소를 갖지 않고 qa-sdk 좌표 인프라를 재사용한다:
+RLSC는 패키지 구현은 독립 repository/submodule로 공유할 수 있지만, 좌표 인프라 계약은 qa-sdk의 기존 주소 체계를 재사용한다:
 
 1. **수집 시점**: `data-qa-address` 속성에서 좌표 주소 추출 → `RLSCNode.address`
 2. **문서 단위**: `RLSCDocument.address` 에 페이지 수준 좌표 주소 저장
 3. **검색**: `findByAddress(doc, address)` 로 특정 좌표 주소를 가진 노드 검색
 4. **마크업**: `addr:page_view:v2:42` 형태로 직렬화
+
+## 패키지 경계
+
+| 패키지 | 책임 | 배포/공유 기준 |
+|--------|------|---------------|
+| `@qa-sdk/rlsc-analysis` | DOM 스캔, 메타데이터 수집, identifier/index, 영역/overflow 분석 | 독립 submodule + semver dependency |
+| `@qa-sdk/rlsc-perspective` | 수집된 `RLSCDocument`의 CSS 3D Perspective 시각화 | qa-sdk workspace package |
+| `rlsc` | 기존 RLSC DSL, rendering, compatibility export | 독립 submodule + semver dependency |
+| `@qa-sdk/rlsc-demo` | 분석/시각화 통합 데모 | qa-sdk 내부 demo app |
+
+qa-sdk root는 `pnpm.overrides["@qa-sdk/rlsc-analysis"] = "link:packages/rlsc-analysis"`로 monorepo 개발 중에도 `rlsc`, `rlsc-perspective`, demo가 같은 analysis 구현을 보게 한다. `pnpm check:rlsc`는 submodule URL/checkout 상태와 package version range 일관성을 검증한다.
+
+외부 소비자는 registry 또는 local tarball 산출물을 설치한다. 구현을 함께 검토하거나 공유해야 하는 경우에는 `git clone --recurse-submodules`로 qa-sdk parent repository와 submodule revision을 함께 고정한다.
 
 ## 쿼리 API
 
@@ -79,7 +92,7 @@ RLSC는 별도 저장소를 갖지 않고 qa-sdk 좌표 인프라를 재사용�
 | `removeNode(doc, id)` | 불변 노드 제거 |
 | `diffDocuments(before, after)` | 두 문서 간 차이 계산 (added/removed/moved/resized/reordered) |
 
-## 패키지 구조 — packages/rlsc
+## 레거시 패키지 구조 — packages/rlsc
 
 ```
 src/
