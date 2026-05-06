@@ -28,6 +28,7 @@
     "publish:local": "bash scripts/publish-local.sh",
     "pack:rlsc:local": "bash scripts/pack-rlsc-local.sh",
     "check:rlsc": "node scripts/check-rlsc-version-consistency.mjs",
+    "check:rlsc:tgz": "node scripts/check-rlsc-tgz-install.mjs",
     "test:e2e": "pnpm --filter @qa-sdk/e2e test",
     "sim:smoke": "./simulations/enterprise-pm/scripts/smoke.sh",
     "sim:smoke:keep": "./simulations/enterprise-pm/scripts/smoke.sh --keep-up",
