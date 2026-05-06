@@ -2257,6 +2257,9 @@ importers:
 
   packages/rlsc-analysis:
     devDependencies:
+      happy-dom:
+        specifier: ^20.8.4
+        version: 20.8.4
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
