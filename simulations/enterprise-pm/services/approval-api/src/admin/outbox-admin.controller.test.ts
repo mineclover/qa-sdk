@@ -16,6 +16,7 @@ import {
   OutboxAdminDispatchService,
   type OutboxAdminDispatcher,
 } from "./outbox-admin-dispatch.service.js";
+import { OutboxAdminStateQueryService } from "./outbox-admin-state-query.service.js";
 import {
   OUTBOX_ADMIN_REPO,
   OUTBOX_DISPATCHER_FACTORY,
@@ -57,6 +58,12 @@ describe("OutboxAdminController", () => {
         OutboxAdminDispatchService,
         { provide: OUTBOX_ADMIN_REPO, useValue: repoStub },
         { provide: OUTBOX_DISPATCHER_FACTORY, useValue: factoryStub },
+        {
+          provide: OutboxAdminStateQueryService,
+          useValue: {
+            queryState: async () => ({ publishedAt: [], dispatcherIds: [] }),
+          },
+        },
       ],
     }).compile();
     app = moduleRef.createNestApplication<NestFastifyApplication>(

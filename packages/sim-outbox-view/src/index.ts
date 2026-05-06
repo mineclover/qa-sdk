@@ -12,6 +12,7 @@ export const OutboxInsertResponseSchema = z.object({
   inserted: z.number().int().nonnegative(),
   idempotencyKeys: z.array(z.string()),
   ids: z.array(z.string()),
+  insertedAtMs: z.number().int().nonnegative(),
 });
 export type OutboxInsertResponse = z.infer<typeof OutboxInsertResponseSchema>;
 

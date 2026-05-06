@@ -67,11 +67,11 @@ describe("OutboxAdminInsertService", () => {
   });
 
   it("빈 배열 → inserted=0 + 트랜잭션 미실행", async () => {
-    expect(await svc.insertEvents([])).toEqual({
-      inserted: 0,
-      idempotencyKeys: [],
-      ids: [],
-    });
+    const r = await svc.insertEvents([]);
+    expect(r.inserted).toBe(0);
+    expect(r.idempotencyKeys).toEqual([]);
+    expect(r.ids).toEqual([]);
+    expect(typeof r.insertedAtMs).toBe("number");
     expect(repo.txCount).toBe(0);
   });
 

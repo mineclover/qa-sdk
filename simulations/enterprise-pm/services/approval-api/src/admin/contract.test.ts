@@ -19,6 +19,7 @@ import {
 } from "sim-outbox-view";
 import { OutboxAdminController } from "./outbox-admin.controller.js";
 import { OutboxAdminInsertService } from "./outbox-admin-insert.service.js";
+import { OutboxAdminStateQueryService } from "./outbox-admin-state-query.service.js";
 import {
   OutboxAdminDispatchService,
   type OutboxAdminDispatcher,
@@ -53,6 +54,12 @@ async function bootApp(
       OutboxAdminDispatchService,
       { provide: OUTBOX_ADMIN_REPO, useValue: repoStub },
       { provide: OUTBOX_DISPATCHER_FACTORY, useValue: factory },
+      {
+        provide: OutboxAdminStateQueryService,
+        useValue: {
+          queryState: async () => ({ publishedAt: [], dispatcherIds: [] }),
+        },
+      },
     ],
   }).compile();
   const app = moduleRef.createNestApplication<NestFastifyApplication>(
