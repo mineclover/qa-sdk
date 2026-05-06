@@ -28,6 +28,9 @@ catalogs:
       specifier: ^11.0.0
       version: 11.2.7
 
+overrides:
+  '@qa-sdk/rlsc-analysis': link:packages/rlsc-analysis
+
 importers:
 
   .:
@@ -2239,7 +2242,7 @@ importers:
         specifier: 0.0.4
         version: 0.0.4
       '@qa-sdk/rlsc-analysis':
-        specifier: workspace:*
+        specifier: link:../rlsc-analysis
         version: link:../rlsc-analysis
     devDependencies:
       tsup:
@@ -2248,9 +2251,6 @@ importers:
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
-      visbug-bridge:
-        specifier: workspace:*
-        version: link:../visbug-bridge
       vitest:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@25.5.0)(happy-dom@20.8.4)(jsdom@25.0.1)(lightningcss@1.32.0)
@@ -2270,7 +2270,7 @@ importers:
   packages/rlsc-demo:
     dependencies:
       '@qa-sdk/rlsc-analysis':
-        specifier: workspace:*
+        specifier: link:../rlsc-analysis
         version: link:../rlsc-analysis
       '@qa-sdk/rlsc-perspective':
         specifier: workspace:*
@@ -2289,7 +2289,7 @@ importers:
   packages/rlsc-perspective:
     dependencies:
       '@qa-sdk/rlsc-analysis':
-        specifier: workspace:*
+        specifier: link:../rlsc-analysis
         version: link:../rlsc-analysis
     devDependencies:
       esbuild:

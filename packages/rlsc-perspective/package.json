@@ -27,7 +27,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@qa-sdk/rlsc-analysis": "workspace:*"
+    "@qa-sdk/rlsc-analysis": "^0.1.0"
   },
   "devDependencies": {
     "esbuild": "^0.27.3",
