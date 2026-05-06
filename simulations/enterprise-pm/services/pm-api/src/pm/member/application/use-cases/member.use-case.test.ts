@@ -116,6 +116,6 @@ describe("MemberUseCase.remove", () => {
     const useCase = new MemberUseCase(m.repository, m.outbox, m.transaction, m.logger);
     await useCase.remove({ projectId: "prj_1", userId: "u_1" });
     expect(m.calls).toContain("repository.delete");
-    expect(m.outboxRecords[0].eventName).toBe("member.removed");
+    expect(m.outboxRecords[0].eventName).toBe("pm.member.removed");
   });
 });

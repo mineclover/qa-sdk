@@ -43,7 +43,7 @@ describe("NotificationUnitOfWork", () => {
     await uow.withinTransaction("notification.markSent", async (ctx) => {
       await ctx.repository.save(entity, ctx.scope);
       const occurredAt = new Date("2026-03-01T00:00:01.000Z");
-      const eventName = "notification.sent";
+      const eventName = "notification.notification.sent";
       await ctx.outbox.append(
         {
           aggregateId: "ntf_uow_1",
@@ -74,7 +74,7 @@ describe("NotificationUnitOfWork", () => {
     }>;
     expect(outboxRows).toHaveLength(1);
     expect(outboxRows[0].aggregate_id).toBe("ntf_uow_1");
-    expect(outboxRows[0].event_name).toBe("notification.sent");
+    expect(outboxRows[0].event_name).toBe("notification.notification.sent");
     expect(outboxRows[0].event_version).toBe(1);
     expect(outboxRows[0].status).toBe("pending");
     expect(outboxRows[0].scope_id).toMatch(/^notification\.markSent:/);
@@ -97,7 +97,7 @@ describe("NotificationUnitOfWork", () => {
         });
         await ctx.repository.save(e, ctx.scope);
         const occurredAt = new Date();
-        const eventName = "notification.sent";
+        const eventName = "notification.notification.sent";
         await ctx.outbox.append(
           {
             aggregateId: "ntf_uow_2",

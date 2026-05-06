@@ -100,7 +100,7 @@ export class NotificationUseCase {
           type: next.toSnapshot().type,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "notification.sent";
+        const eventName = "notification.notification.sent";
         await this.outbox.append(
           {
             aggregateId: next.id,
@@ -122,7 +122,7 @@ export class NotificationUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "notification.sent",
+          eventName: "notification.notification.sent",
           eventVersion: 1,
           outcome: "success",
         },
@@ -161,7 +161,7 @@ export class NotificationUseCase {
           type: next.toSnapshot().type,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "notification.delivered";
+        const eventName = "notification.notification.delivered";
         await this.outbox.append(
           {
             aggregateId: next.id,
@@ -183,7 +183,7 @@ export class NotificationUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "notification.delivered",
+          eventName: "notification.notification.delivered",
           eventVersion: 1,
           outcome: "success",
         },
@@ -226,7 +226,7 @@ export class NotificationUseCase {
           type: next.toSnapshot().type,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "notification.failed";
+        const eventName = "notification.notification.failed";
         await this.outbox.append(
           {
             aggregateId: next.id,
@@ -248,7 +248,7 @@ export class NotificationUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "notification.failed",
+          eventName: "notification.notification.failed",
           eventVersion: 1,
           outcome: "success",
         },

@@ -37,7 +37,7 @@ describe("CommentUnitOfWork", () => {
     await uow.withinTransaction("comment.create", async (ctx) => {
       await ctx.repository.save(e, ctx.scope);
       const occurredAt = new Date();
-      const eventName = "comment.created";
+      const eventName = "document.comment.created";
       const idempotencyEventName = "document.comment.created";
       await ctx.outbox.append(
         {
@@ -70,7 +70,7 @@ describe("CommentUnitOfWork", () => {
           ctx.scope,
         );
         const occurredAt = new Date();
-        const eventName = "comment.created";
+        const eventName = "document.comment.created";
         const idempotencyEventName = "document.comment.created";
         await ctx.outbox.append(
           {

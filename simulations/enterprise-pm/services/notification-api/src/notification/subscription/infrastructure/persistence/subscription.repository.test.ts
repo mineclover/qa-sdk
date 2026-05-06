@@ -86,7 +86,7 @@ describe("SqliteSubscriptionRepository", () => {
     );
     const subs = await repo.listSubscribersByEventType("budget.approved");
     expect(subs.map((s) => s.userId)).toEqual(["u1"]);
-    expect(await repo.listSubscribersByEventType("task.created")).toEqual([]);
+    expect(await repo.listSubscribersByEventType("pm.task.created")).toEqual([]);
     sqlite.close();
   });
 

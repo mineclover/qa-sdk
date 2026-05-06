@@ -40,7 +40,7 @@ describe("DocumentUnitOfWork", () => {
     await uow.withinTransaction("document.create", async (ctx) => {
       await ctx.repository.save(entity, ctx.scope);
       const occurredAt = new Date("2026-03-01T00:00:01.000Z");
-      const eventName = "document.created";
+      const eventName = "document.document.created";
       const idempotencyEventName = "document.document.created";
       await ctx.outbox.append(
         {
@@ -68,7 +68,7 @@ describe("DocumentUnitOfWork", () => {
     }>;
     expect(outboxRows).toHaveLength(1);
     expect(outboxRows[0].aggregate_id).toBe("doc_uow_1");
-    expect(outboxRows[0].event_name).toBe("document.created");
+    expect(outboxRows[0].event_name).toBe("document.document.created");
     expect(outboxRows[0].status).toBe("pending");
     expect(outboxRows[0].scope_id).toMatch(/^document\.create:/);
 
@@ -88,7 +88,7 @@ describe("DocumentUnitOfWork", () => {
         });
         await ctx.repository.save(e, ctx.scope);
         const occurredAt = new Date();
-        const eventName = "document.created";
+        const eventName = "document.document.created";
         const idempotencyEventName = "document.document.created";
         await ctx.outbox.append(
           {

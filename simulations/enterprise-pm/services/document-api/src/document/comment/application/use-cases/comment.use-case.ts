@@ -72,7 +72,7 @@ export class CommentUseCase {
           occurredAt: new Date().toISOString(),
         };
         const occurredAt = new Date();
-        const eventName = "comment.created";
+        const eventName = "document.comment.created";
         const idempotencyEventName = "document.comment.created";
         await this.outbox.append(
           {
@@ -94,7 +94,7 @@ export class CommentUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "comment.created",
+          eventName: "document.comment.created",
           eventVersion: 1,
           outcome: "success",
         },
@@ -140,7 +140,7 @@ export class CommentUseCase {
           occurredAt: new Date().toISOString(),
         };
         const occurredAt = new Date();
-        const eventName = "comment.deleted";
+        const eventName = "document.comment.deleted";
         const idempotencyEventName = "document.comment.deleted";
         await this.outbox.append(
           {
@@ -162,7 +162,7 @@ export class CommentUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "comment.deleted",
+          eventName: "document.comment.deleted",
           eventVersion: 1,
           outcome: "success",
         },

@@ -78,7 +78,7 @@ export class VersionUseCase {
           occurredAt: new Date().toISOString(),
         };
         const occurredAt = new Date();
-        const eventName = "version.created";
+        const eventName = "document.version.created";
         const idempotencyEventName = "document.version.created";
         await this.outbox.append(
           {
@@ -100,7 +100,7 @@ export class VersionUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "version.created",
+          eventName: "document.version.created",
           eventVersion: 1,
           outcome: "success",
         },

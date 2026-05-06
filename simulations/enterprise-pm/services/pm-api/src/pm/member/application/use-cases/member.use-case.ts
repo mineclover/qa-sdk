@@ -68,7 +68,7 @@ export class MemberUseCase {
           role: snapshotResult.role,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "member.added";
+        const eventName = "pm.member.added";
         await this.outbox.append(
           {
             aggregateId,
@@ -89,7 +89,7 @@ export class MemberUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "member.added",
+          eventName: "pm.member.added",
           eventVersion: 1,
           outcome: "success",
         },
@@ -135,7 +135,7 @@ export class MemberUseCase {
           userId: command.userId,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "member.removed";
+        const eventName = "pm.member.removed";
         await this.outbox.append(
           {
             aggregateId,
@@ -156,7 +156,7 @@ export class MemberUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "member.removed",
+          eventName: "pm.member.removed",
           eventVersion: 1,
           outcome: "success",
         },

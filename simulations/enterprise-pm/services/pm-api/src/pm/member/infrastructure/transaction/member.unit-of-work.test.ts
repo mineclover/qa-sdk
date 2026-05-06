@@ -36,7 +36,7 @@ describe("MemberUnitOfWork", () => {
     await uow.withinTransaction("member.add", async (ctx) => {
       await ctx.repository.save(e, ctx.scope);
       const occurredAt = new Date();
-      const eventName = "member.added";
+      const eventName = "pm.member.added";
       await ctx.outbox.append(
         {
           aggregateId: "prj_1:u_1",

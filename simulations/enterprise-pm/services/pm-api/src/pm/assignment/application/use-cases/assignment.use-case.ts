@@ -56,7 +56,7 @@ export class AssignmentUseCase {
           managerId: command.managerId,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "assignment.created";
+        const eventName = "pm.assignment.created";
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -77,7 +77,7 @@ export class AssignmentUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "assignment.created",
+          eventName: "pm.assignment.created",
           eventVersion: 1,
           outcome: "success",
         },

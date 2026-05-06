@@ -67,7 +67,7 @@ export class DocumentUseCase {
           occurredAt: new Date().toISOString(),
         };
         const occurredAt = new Date();
-        const eventName = "document.created";
+        const eventName = "document.document.created";
         const idempotencyEventName = "document.document.created";
         await this.outbox.append(
           {
@@ -89,7 +89,7 @@ export class DocumentUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "document.created",
+          eventName: "document.document.created",
           eventVersion: 1,
           outcome: "success",
         },
@@ -148,7 +148,7 @@ export class DocumentUseCase {
           occurredAt: new Date().toISOString(),
         };
         const occurredAt = new Date();
-        const eventName = "document.updated";
+        const eventName = "document.document.updated";
         const idempotencyEventName = "document.document.updated";
         await this.outbox.append(
           {
@@ -170,7 +170,7 @@ export class DocumentUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "document.updated",
+          eventName: "document.document.updated",
           eventVersion: 1,
           outcome: "success",
         },
@@ -216,7 +216,7 @@ export class DocumentUseCase {
           occurredAt: new Date().toISOString(),
         };
         const occurredAt = new Date();
-        const eventName = "document.deleted";
+        const eventName = "document.document.deleted";
         const idempotencyEventName = "document.document.deleted";
         await this.outbox.append(
           {
@@ -238,7 +238,7 @@ export class DocumentUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "document.deleted",
+          eventName: "document.document.deleted",
           eventVersion: 1,
           outcome: "success",
         },

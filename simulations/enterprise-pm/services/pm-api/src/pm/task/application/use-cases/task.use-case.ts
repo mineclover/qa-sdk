@@ -80,7 +80,7 @@ export class TaskUseCase {
           parentTaskId: snapshotResult.parentTaskId,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "task.created";
+        const eventName = "pm.task.created";
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -101,7 +101,7 @@ export class TaskUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "task.created",
+          eventName: "pm.task.created",
           eventVersion: 1,
           outcome: "success",
         },
@@ -161,7 +161,7 @@ export class TaskUseCase {
           status: snapshotResult.status,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "task.updated";
+        const eventName = "pm.task.updated";
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -182,7 +182,7 @@ export class TaskUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "task.updated",
+          eventName: "pm.task.updated",
           eventVersion: 1,
           outcome: "success",
         },
@@ -226,7 +226,7 @@ export class TaskUseCase {
           id: command.id,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "task.deleted";
+        const eventName = "pm.task.deleted";
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -247,7 +247,7 @@ export class TaskUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "task.deleted",
+          eventName: "pm.task.deleted",
           eventVersion: 1,
           outcome: "success",
         },

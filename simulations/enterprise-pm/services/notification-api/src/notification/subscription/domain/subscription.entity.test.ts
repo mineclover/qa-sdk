@@ -83,7 +83,7 @@ describe("matchesEventType", () => {
     expect(matchesEventType("budget.*", "budget.rejected")).toBe(true);
   });
   it("미일치", () => {
-    expect(matchesEventType("budget.*", "task.created")).toBe(false);
+    expect(matchesEventType("budget.*", "pm.task.created")).toBe(false);
     expect(matchesEventType("budget.approved", "budget.rejected")).toBe(false);
   });
 });

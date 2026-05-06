@@ -140,7 +140,7 @@ describe("TaskUseCase.update", () => {
     const useCase = new TaskUseCase(m.repository, m.outbox, m.transaction, m.logger);
     const result = await useCase.update({ id: "tsk_2", patch: { title: "Updated" } });
     expect(result.title).toBe("Updated");
-    expect(m.outboxRecords[0].eventName).toBe("task.updated");
+    expect(m.outboxRecords[0].eventName).toBe("pm.task.updated");
   });
 });
 
@@ -150,6 +150,6 @@ describe("TaskUseCase.delete", () => {
     const useCase = new TaskUseCase(m.repository, m.outbox, m.transaction, m.logger);
     await useCase.delete({ id: "tsk_3" });
     expect(m.calls).toContain("repository.delete");
-    expect(m.outboxRecords[0].eventName).toBe("task.deleted");
+    expect(m.outboxRecords[0].eventName).toBe("pm.task.deleted");
   });
 });

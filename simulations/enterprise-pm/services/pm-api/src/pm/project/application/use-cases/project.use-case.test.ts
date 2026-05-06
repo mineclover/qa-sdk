@@ -118,7 +118,7 @@ describe("ProjectUseCase.create", () => {
       "logger.info:started",
       "transaction.run.project.create",
       "repository.save",
-      "outbox.append:project.created",
+      "outbox.append:pm.project.created",
       "transaction.run.project.create.commit",
       "logger.info:success",
     ]);
@@ -193,7 +193,7 @@ describe("ProjectUseCase.update", () => {
     const useCase = new ProjectUseCase(m.repository, m.outbox, m.transaction, m.logger);
     const result = await useCase.update({ id: "prj_2", patch: { name: "New" } });
     expect(result.name).toBe("New");
-    expect(m.outboxRecords[0].eventName).toBe("project.updated");
+    expect(m.outboxRecords[0].eventName).toBe("pm.project.updated");
   });
 });
 
@@ -210,7 +210,7 @@ describe("ProjectUseCase.delete", () => {
     await useCase.delete({ id: "prj_3" });
     expect(m.repository.delete).toHaveBeenCalled();
     expect(m.policies.remove).toHaveBeenCalledWith("prj_3");
-    expect(m.outboxRecords[0].eventName).toBe("project.deleted");
+    expect(m.outboxRecords[0].eventName).toBe("pm.project.deleted");
   });
 });
 
@@ -249,7 +249,7 @@ describe("ProjectUseCase.delegate", () => {
     expect(m.policies.register).toHaveBeenCalled();
     expect(m.policies.delegate).toHaveBeenCalledWith("prj_d", { graphRootId: "g1" });
     expect(m.delegationGraph.grant).toHaveBeenCalledWith("g1", "u_d");
-    expect(m.outboxRecords.find((r) => r.eventName === "project.delegated")).toBeDefined();
+    expect(m.outboxRecords.find((r) => r.eventName === "pm.project.delegated")).toBeDefined();
   });
 });
 

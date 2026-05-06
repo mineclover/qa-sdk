@@ -126,7 +126,7 @@ describe("DocumentUseCase.create", () => {
     await useCase.create(command);
     expect(m.outboxRecords[0]).toMatchObject({
       aggregateId: "doc_001",
-      eventName: "document.created",
+      eventName: "document.document.created",
       eventVersion: 1,
     });
     expect(m.outboxRecords[0].payload).toMatchObject({
@@ -155,7 +155,7 @@ describe("DocumentUseCase.update", () => {
       ownerId: "u",
     });
     await useCase.update({ id: "doc_u1", title: "T2" });
-    const updated = m.outboxRecords.find((r) => r.eventName === "document.updated");
+    const updated = m.outboxRecords.find((r) => r.eventName === "document.document.updated");
     expect(updated).toBeDefined();
     expect((updated!.payload as { title: string }).title).toBe("T2");
   });
@@ -167,6 +167,6 @@ describe("DocumentUseCase.delete", () => {
     const useCase = new DocumentUseCase(m.repository, m.outbox, m.transaction, m.logger);
     await useCase.delete({ id: "doc_d1" });
     expect(m.calls).toContain("repository.delete");
-    expect(m.outboxRecords.find((r) => r.eventName === "document.deleted")).toBeDefined();
+    expect(m.outboxRecords.find((r) => r.eventName === "document.document.deleted")).toBeDefined();
   });
 });

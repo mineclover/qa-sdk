@@ -54,7 +54,7 @@ describe("SubscriptionUnitOfWork", () => {
     await uow.withinTransaction("subscription.create", async (ctx) => {
       await ctx.repository.save(e, ctx.scope);
       const occurredAt = new Date();
-      const eventName = "subscription.created";
+      const eventName = "notification.subscription.created";
       await ctx.outbox.append(
         {
           aggregateId: "u1:x",
@@ -75,7 +75,7 @@ describe("SubscriptionUnitOfWork", () => {
     const rows = sqlite
       .prepare("SELECT * FROM notification_outbox_events")
       .all() as Array<{ event_name: string; scope_id: string }>;
-    expect(rows[0].event_name).toBe("subscription.created");
+    expect(rows[0].event_name).toBe("notification.subscription.created");
     expect(rows[0].scope_id).toMatch(/^subscription\.create:/);
     sqlite.close();
   });
@@ -89,7 +89,7 @@ describe("SubscriptionUnitOfWork", () => {
           ctx.scope,
         );
         const occurredAt = new Date();
-        const eventName = "subscription.created";
+        const eventName = "notification.subscription.created";
         await ctx.outbox.append(
           {
             aggregateId: "u2:y",

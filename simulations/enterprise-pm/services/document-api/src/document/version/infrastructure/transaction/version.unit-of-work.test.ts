@@ -37,7 +37,7 @@ describe("VersionUnitOfWork", () => {
     await uow.withinTransaction("version.create", async (ctx) => {
       await ctx.repository.save(e, ctx.scope);
       const occurredAt = new Date();
-      const eventName = "version.created";
+      const eventName = "document.version.created";
       const idempotencyEventName = "document.version.created";
       await ctx.outbox.append(
         {
@@ -75,7 +75,7 @@ describe("VersionUnitOfWork", () => {
           ctx.scope,
         );
         const occurredAt = new Date();
-        const eventName = "version.created";
+        const eventName = "document.version.created";
         const idempotencyEventName = "document.version.created";
         await ctx.outbox.append(
           {

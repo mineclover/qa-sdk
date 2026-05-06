@@ -40,7 +40,7 @@ describe("AssignmentUnitOfWork", () => {
     await uow.withinTransaction("assignment.create", async (ctx) => {
       await ctx.repository.save(entity, ctx.scope);
       const occurredAt = new Date("2026-03-01T00:00:01.000Z");
-      const eventName = "assignment.created";
+      const eventName = "pm.assignment.created";
       await ctx.outbox.append(
         {
           aggregateId: "asg_uow_1",
@@ -69,7 +69,7 @@ describe("AssignmentUnitOfWork", () => {
     }>;
     expect(outboxRows).toHaveLength(1);
     expect(outboxRows[0].aggregate_id).toBe("asg_uow_1");
-    expect(outboxRows[0].event_name).toBe("assignment.created");
+    expect(outboxRows[0].event_name).toBe("pm.assignment.created");
     expect(outboxRows[0].event_version).toBe(1);
     expect(outboxRows[0].status).toBe("pending");
     expect(outboxRows[0].scope_id).toMatch(/^assignment\.create:/);
@@ -90,7 +90,7 @@ describe("AssignmentUnitOfWork", () => {
         });
         await ctx.repository.save(e, ctx.scope);
         const occurredAt = new Date();
-        const eventName = "assignment.created";
+        const eventName = "pm.assignment.created";
         await ctx.outbox.append(
           {
             aggregateId: "asg_uow_2",
@@ -127,7 +127,7 @@ describe("AssignmentUnitOfWork", () => {
     await uow.withinTransaction("custom.label", async (ctx) => {
       await ctx.repository.save(e, ctx.scope);
       const occurredAt = new Date();
-      const eventName = "assignment.created";
+      const eventName = "pm.assignment.created";
       await ctx.outbox.append(
         {
           aggregateId: "asg_uow_3",

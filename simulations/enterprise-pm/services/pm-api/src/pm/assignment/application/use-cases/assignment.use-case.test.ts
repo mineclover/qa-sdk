@@ -106,7 +106,7 @@ describe("AssignmentUseCase.create", () => {
     const successLog = m.logged.find((l) => l.msg === "assignment.create.success")!;
     expect(successLog.ctx).toMatchObject({
       outcome: "success",
-      eventName: "assignment.created",
+      eventName: "pm.assignment.created",
       eventVersion: 1,
     });
   });
@@ -134,7 +134,7 @@ describe("AssignmentUseCase.create", () => {
 
     expect(m.outboxRecords[0]).toMatchObject({
       aggregateId: "asg_001",
-      eventName: "assignment.created",
+      eventName: "pm.assignment.created",
       eventVersion: 1,
     });
     expect(m.outboxRecords[0].payload).toMatchObject({

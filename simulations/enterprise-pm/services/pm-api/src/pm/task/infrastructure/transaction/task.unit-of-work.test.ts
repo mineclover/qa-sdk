@@ -38,7 +38,7 @@ describe("TaskUnitOfWork", () => {
     await uow.withinTransaction("task.create", async (ctx) => {
       await ctx.repository.save(entity, ctx.scope);
       const occurredAt = new Date("2026-03-01T00:00:01.000Z");
-      const eventName = "task.created";
+      const eventName = "pm.task.created";
       await ctx.outbox.append(
         {
           aggregateId: "tsk_uow_1",
@@ -62,7 +62,7 @@ describe("TaskUnitOfWork", () => {
       event_name: string;
     }>;
     expect(outboxRows[0].aggregate_id).toBe("tsk_uow_1");
-    expect(outboxRows[0].event_name).toBe("task.created");
+    expect(outboxRows[0].event_name).toBe("pm.task.created");
     sqlite.close();
   });
 
@@ -75,7 +75,7 @@ describe("TaskUnitOfWork", () => {
           ctx.scope,
         );
         const occurredAt = new Date();
-        const eventName = "task.created";
+        const eventName = "pm.task.created";
         await ctx.outbox.append(
           {
             aggregateId: "tsk_uow_2",

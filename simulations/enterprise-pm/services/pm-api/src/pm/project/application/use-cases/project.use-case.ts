@@ -90,7 +90,7 @@ export class ProjectUseCase {
           status: snapshotResult.status,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "project.created";
+        const eventName = "pm.project.created";
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -141,7 +141,7 @@ export class ProjectUseCase {
       }
 
       this.logger.info(
-        { ...ctxBase, eventName: "project.created", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName: "pm.project.created", eventVersion: 1, outcome: "success" },
         "project.create.success",
       );
       return snapshotResult!;
@@ -195,7 +195,7 @@ export class ProjectUseCase {
           status: snapshotResult.status,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "project.updated";
+        const eventName = "pm.project.updated";
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -214,7 +214,7 @@ export class ProjectUseCase {
       });
 
       this.logger.info(
-        { ...ctxBase, eventName: "project.updated", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName: "pm.project.updated", eventVersion: 1, outcome: "success" },
         "project.update.success",
       );
       return snapshotResult!;
@@ -254,7 +254,7 @@ export class ProjectUseCase {
           id: command.id,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "project.deleted";
+        const eventName = "pm.project.deleted";
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -285,7 +285,7 @@ export class ProjectUseCase {
       }
 
       this.logger.info(
-        { ...ctxBase, eventName: "project.deleted", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName: "pm.project.deleted", eventVersion: 1, outcome: "success" },
         "project.delete.success",
       );
     } catch (error) {
@@ -359,7 +359,7 @@ export class ProjectUseCase {
           delegateUserId: command.delegateUserId,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "project.delegated";
+        const eventName = "pm.project.delegated";
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -378,7 +378,7 @@ export class ProjectUseCase {
       });
 
       this.logger.info(
-        { ...ctxBase, eventName: "project.delegated", eventVersion: 1, outcome: "success" },
+        { ...ctxBase, eventName: "pm.project.delegated", eventVersion: 1, outcome: "success" },
         "project.delegate.success",
       );
       return { state: "DELEGATED", graphRootId: command.graphRootId };

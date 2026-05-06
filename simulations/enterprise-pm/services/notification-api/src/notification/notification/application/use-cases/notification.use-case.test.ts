@@ -150,7 +150,7 @@ describe("NotificationUseCase.markSent", () => {
     expect(m.outboxRecords).toHaveLength(1);
     expect(m.outboxRecords[0]).toMatchObject({
       aggregateId: "ntf_002",
-      eventName: "notification.sent",
+      eventName: "notification.notification.sent",
       eventVersion: 1,
     });
     expect(m.outboxRecords[0].payload).toMatchObject({
@@ -186,7 +186,7 @@ describe("NotificationUseCase.markRead", () => {
     const result = await useCase.markRead({ id: "ntf_003" });
 
     expect(result.status).toBe("read");
-    expect(m.outboxRecords[0].eventName).toBe("notification.delivered");
+    expect(m.outboxRecords[0].eventName).toBe("notification.notification.delivered");
   });
 });
 
@@ -207,6 +207,6 @@ describe("NotificationUseCase.markFailed", () => {
     const result = await useCase.markFailed({ id: "ntf_004" });
 
     expect(result.status).toBe("failed");
-    expect(m.outboxRecords[0].eventName).toBe("notification.failed");
+    expect(m.outboxRecords[0].eventName).toBe("notification.notification.failed");
   });
 });

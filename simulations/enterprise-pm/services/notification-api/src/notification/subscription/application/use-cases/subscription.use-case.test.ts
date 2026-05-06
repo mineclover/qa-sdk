@@ -109,7 +109,7 @@ describe("SubscriptionUseCase.create", () => {
       "logger.info:success",
     ]);
     expect(m.outboxRecords[0]).toMatchObject({
-      eventName: "subscription.created",
+      eventName: "notification.subscription.created",
       eventVersion: 1,
     });
   });
@@ -152,7 +152,7 @@ describe("SubscriptionUseCase.setActive", () => {
       isActive: false,
     });
     expect(result.isActive).toBe(false);
-    expect(m.outboxRecords[0].eventName).toBe("subscription.activeChanged");
+    expect(m.outboxRecords[0].eventName).toBe("notification.subscription.active-changed");
   });
 
   it("미존재 → NotFoundError", async () => {
@@ -182,6 +182,6 @@ describe("SubscriptionUseCase.delete", () => {
     );
     const result = await useCase.delete({ userId: "u", eventType: "x" });
     expect(result).toEqual({ deleted: true });
-    expect(m.outboxRecords[0].eventName).toBe("subscription.deleted");
+    expect(m.outboxRecords[0].eventName).toBe("notification.subscription.deleted");
   });
 });

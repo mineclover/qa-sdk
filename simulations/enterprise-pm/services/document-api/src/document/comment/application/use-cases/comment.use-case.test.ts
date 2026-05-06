@@ -155,6 +155,6 @@ describe("CommentUseCase.delete", () => {
     );
     await useCase.delete({ id: "cmt_d1" });
     expect(m.calls).toContain("repository.delete");
-    expect(m.outboxRecords.find((r) => r.eventName === "comment.deleted")).toBeDefined();
+    expect(m.outboxRecords.find((r) => r.eventName === "document.comment.deleted")).toBeDefined();
   });
 });

@@ -77,7 +77,7 @@ export class SubscriptionUseCase {
           isActive: e.isActive,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "subscription.created";
+        const eventName = "notification.subscription.created";
         await this.outbox.append(
           {
             aggregateId,
@@ -99,7 +99,7 @@ export class SubscriptionUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "subscription.created",
+          eventName: "notification.subscription.created",
           eventVersion: 1,
           outcome: "success",
         },
@@ -145,7 +145,7 @@ export class SubscriptionUseCase {
           isActive: next.isActive,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "subscription.activeChanged";
+        const eventName = "notification.subscription.active-changed";
         await this.outbox.append(
           {
             aggregateId,
@@ -167,7 +167,7 @@ export class SubscriptionUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "subscription.activeChanged",
+          eventName: "notification.subscription.active-changed",
           eventVersion: 1,
           outcome: "success",
         },
@@ -209,7 +209,7 @@ export class SubscriptionUseCase {
           eventType: command.eventType,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "subscription.deleted";
+        const eventName = "notification.subscription.deleted";
         await this.outbox.append(
           {
             aggregateId,
@@ -230,7 +230,7 @@ export class SubscriptionUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "subscription.deleted",
+          eventName: "notification.subscription.deleted",
           eventVersion: 1,
           outcome: "success",
         },
