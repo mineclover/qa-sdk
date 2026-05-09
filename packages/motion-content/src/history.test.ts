@@ -11,7 +11,7 @@ import {
   redoMotionEditorSession,
   undoMotionEditorSession,
 } from "./history.js";
-import { migrateCompositionV1toV2 } from "./migrate-v2.js";
+import { migrateCompositionV1toV2 } from "./assemble.js";
 import { createMotionStageNodeTarget } from "./model.js";
 import { createPromoGridComposition } from "./presets.js";
 

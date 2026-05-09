@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { assembleComposition } from "./assemble.js";
+import { assembleComposition, migrateCompositionV1toV2 } from "./assemble.js";
 import {
   createMotionStageNodeTarget,
   type MotionCompositionDef,
   type MotionCompositionDefV2,
 } from "./model.js";
-import { migrateCompositionV1toV2 } from "./migrate-v2.js";
 import { createPromoGridComposition } from "./presets.js";
 import { parseMotionCompositionV2, serializeMotionCompositionV2 } from "./io.js";
 

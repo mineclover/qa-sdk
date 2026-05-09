@@ -58,4 +58,4 @@ const snapshot = player.snapshot();
 - 이 패키지는 UI를 알지 않는다.
 - 상위 패키지는 여기서 export한 타입과 함수만 소비해야 한다.
 
-상세 용어집과 V1 계약은 [docs/specs/motion-content/v1-glossary-and-contracts.md](/Users/junwoobang/workflow/qa-sdk/docs/specs/motion-content/v1-glossary-and-contracts.md)에서 본다.
+상세 용어집과 계약은 [docs/specs/motion-content/motion-content-contract.spec.md](/Users/junwoobang/workflow/qa-sdk/docs/specs/motion-content/motion-content-contract.spec.md)에서 본다.

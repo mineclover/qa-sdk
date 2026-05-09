@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createMotionStageNodeTarget } from "./model.js";
-import { migrateCompositionV1toV2 } from "./migrate-v2.js";
+import { migrateCompositionV1toV2 } from "./assemble.js";
 import { createPromoGridComposition } from "./presets.js";
 import { applyMotionEditorCommand, createMotionEditorState } from "./state.js";
 

@@ -10,9 +10,6 @@ def:
   layer: domain
   svc: motion-content
   tags: [contract, frontend, runtime]
-  links:
-    - target: viz-language-system
-      type: refines
 ---
 
 # Motion Content 계약

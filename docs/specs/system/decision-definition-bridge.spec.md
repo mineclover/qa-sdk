@@ -94,7 +94,7 @@ Decision → 문서 생성 → 문서가 컨텍스트 → 다음 Decision → �
 | 상태 모델 결정 | "state", "model" | state | gate-state-model |
 | 제약 조건 수립 | "policy", "rule" | constraint | gate-constraint |
 | API 계약 합의 | "api", "contract" | interface | decode-svc-api-contract |
-| UI 구성 결정 | "component", "page" | ui | motion-editor-component |
+| UI 구성 결정 | "component", "page" | ui | registry-ui-spec |
 
 | decision-flow 판정 | verdict | → DefLifecycle |
 |---|---|---|

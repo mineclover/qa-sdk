@@ -8,7 +8,6 @@ export * from "./history.js";
 export * from "./io.js";
 export * from "./runtime.js";
 export * from "./presets.js";
-export * from "./migrate-v2.js";
 export * from "./assemble.js";
 export * from "./examples.js";
 export * from "./event-log.js";

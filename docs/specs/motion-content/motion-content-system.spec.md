@@ -26,7 +26,6 @@ def:
     - packages/motion-content/src/history.ts
     - packages/motion-content/src/index.ts
     - packages/motion-content/src/io.ts
-    - packages/motion-content/src/migrate-v2.ts
     - packages/motion-content/src/model.ts
     - packages/motion-content/src/presets.ts
     - packages/motion-content/src/query.ts
@@ -47,6 +46,6 @@ Declarative motion composition model and GSAP runtime inspired by Remotion conce
 ## 구성 ^overview
 
 - `model.ts`, `types.ts`, `content-types.ts` — 모션 composition 모델, 선택 타입, 콘텐츠 타입 축.
-- `io.ts`, `migrate-v2.ts`, `assemble.ts`, `examples.ts`, `presets.ts` — JSON 파싱/직렬화/검증, v1 to v2 마이그레이션, composition 조립, 예시/프리셋 문서.
+- `io.ts`, `assemble.ts`, `examples.ts`, `presets.ts` — JSON 파싱/직렬화/검증, V1↔V2 composition 변환/조립, 예시/프리셋 문서.
 - `editor.ts`, `state.ts`, `history.ts`, `query.ts`, `snapshot.ts` — 에디터 상태, command/session/history, 시간축 조회와 스냅샷 계산.
 - `runtime.ts`, `service.ts`, `event-log.ts`, `events.ts`, `utils.ts`, `index.ts` — GSAP 런타임 player, 서비스 계층, 이벤트 로그/이벤트 export, 공용 유틸과 public barrel.

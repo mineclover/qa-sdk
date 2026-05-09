@@ -49,18 +49,18 @@ def:
 
 **실패 시 수정 대상**: `viz-system.md`의 `iframe-protocol-spec` — 프로토콜 버전 규약이 root 레벨에서 일관성 보증되지 않으면 surface/roleplay 가 독립 버전 bump 로 drift.
 
-## 시나리오 3: motion-editor + viz-language 의 의미 계약 조합 ^overview
+## 시나리오 3: viz-language 의미 계약 노출 ^overview
 
-**전제**: `viz-system`이 `motion-editor-component` 와 viz-language-system(motion-content-contract 포함) 을 함께 관장한다.
+**전제**: `viz-system`이 `viz-language-system`을 RLSC 선언형 UI 언어 계약으로 노출한다.
 
-**동작**: motion-editor 가 viz-language 의 계약을 로드하여 편집 상태를 DOM 으로 렌더.
+**동작**: platform-demo가 RLSC 계약을 로드해 화면 구조와 좌표계 통합 규칙을 해석한다.
 
 **기대**:
-- root 레벨에서 motion-editor 가 viz-language 계약 없이 build 실패 (암묵 의존 금지)
-- viz-language 의 용어집 변경은 motion-editor build 에 warning 전파
-- platform-demo-api 가 root 를 경유하여 motion-editor 와 viz-language 를 동일 소스에서 소비
+- root 레벨에서 RLSC 모델과 통합 계약이 같은 entry 아래 노출
+- viz-language 용어집 변경은 RLSC 소비 패키지의 문서 검증에 warning 전파
+- platform-demo-api 가 root 를 경유하여 RLSC 계약을 동일 소스에서 소비
 
-**실패 시 수정 대상**: `viz-system.md`의 motion-editor + viz-language 관계 선언 — root 에서 의존 명시가 없으면 motion-editor 가 viz-language 를 번들에서 missing 한 채 배포.
+**실패 시 수정 대상**: `viz-system.md`의 viz-language 관계 선언 — root 에서 의존 명시가 없으면 RLSC 계약이 시각화 스택에서 orphan 이 된다.
 
 ## 시나리오 4: 3D/2D 렌더러 선택 경로 ^overview
 

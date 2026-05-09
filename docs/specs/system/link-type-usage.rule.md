@@ -156,7 +156,7 @@ pnpm exec qa-sdk def incoming <layout-id>   # refs 관계만 나와야 함
 | RFC 진행 중 임시 위반 | review 문서에 명시하면 허용. 예: Phase 3a 는 error 14건을 일시 생성 후 revert 로 baseline 복구 |
 | `cross-scope` 태그 그룹 전원 부여된 `multi-parent contains` | validate.ts §contains 다중 부모 — 의도적 공유 소속 선언 |
 | `knowledge_kind: proposal/adr/convention` 의 중복 좌표 | validate.ts:357-362 — 의도적 co-location |
-| `viz-language-system → viz-system` 승격 보류 | Phase 3b — pre-existing 4-edge cycle(`viz-system → platform-demo-api-spec → motion-content-contract → viz-language-system`) 미해결. 별도 PR 에서 peer link 재검토 후 적용 |
+| `viz-language-system → viz-system` 승격 보류 | Phase 3b 당시 `motion-content-contract`의 viz 소속 링크로 cycle risk가 있었음. 현재 motion-content 계약은 motion-content 도메인으로 이동했으며, 승격 여부는 별도 parent-child 재검토 후 적용 |
 
 ---
 
