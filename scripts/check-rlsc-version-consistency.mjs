@@ -26,21 +26,21 @@ const rootPackage = readJson('package.json');
 
 const expectedAnalysisRange = `^${analysis.version}`;
 
-if (rlsc.dependencies?.['@qa-sdk/rlsc-analysis'] !== expectedAnalysisRange) {
+if (rlsc.dependencies?.['rlsc-analysis'] !== expectedAnalysisRange) {
   fail(
-    `rlsc depends on @qa-sdk/rlsc-analysis ${rlsc.dependencies?.['@qa-sdk/rlsc-analysis']}, expected ${expectedAnalysisRange}`,
+    `rlsc depends on rlsc-analysis ${rlsc.dependencies?.['rlsc-analysis']}, expected ${expectedAnalysisRange}`,
   );
 }
 
-if (perspective.dependencies?.['@qa-sdk/rlsc-analysis'] !== expectedAnalysisRange) {
+if (perspective.dependencies?.['rlsc-analysis'] !== expectedAnalysisRange) {
   fail(
-    `@qa-sdk/rlsc-perspective depends on @qa-sdk/rlsc-analysis ${perspective.dependencies?.['@qa-sdk/rlsc-analysis']}, expected ${expectedAnalysisRange}`,
+    `rlsc-perspective depends on rlsc-analysis ${perspective.dependencies?.['rlsc-analysis']}, expected ${expectedAnalysisRange}`,
   );
 }
 
-const override = rootPackage.pnpm?.overrides?.['@qa-sdk/rlsc-analysis'];
+const override = rootPackage.pnpm?.overrides?.['rlsc-analysis'];
 if (override !== 'link:packages/rlsc-analysis') {
-  fail(`root pnpm override for @qa-sdk/rlsc-analysis is ${override ?? 'missing'}`);
+  fail(`root pnpm override for rlsc-analysis is ${override ?? 'missing'}`);
 }
 
 const submoduleStatus = git(['submodule', 'status', '--recursive'])
@@ -74,6 +74,6 @@ for (const [path, url] of requiredSubmodules) {
 
 if (!process.exitCode) {
   console.log(
-    `RLSC version consistency ok: @qa-sdk/rlsc-analysis ${analysis.version}, rlsc ${rlsc.version}, @qa-sdk/rlsc-perspective ${perspective.version}`,
+    `RLSC version consistency ok: rlsc-analysis ${analysis.version}, rlsc ${rlsc.version}, rlsc-perspective ${perspective.version}`,
   );
 }

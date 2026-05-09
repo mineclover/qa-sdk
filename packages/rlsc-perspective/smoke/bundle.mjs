@@ -20,7 +20,7 @@ const cases = [
   {
     file: 'type-only.ts',
     code: `
-import type { PerspectiveViewerOptions } from "@qa-sdk/rlsc-perspective";
+import type { PerspectiveViewerOptions } from "rlsc-perspective";
 export const projection = "orthographic" satisfies NonNullable<PerspectiveViewerOptions["projectionMode"]>;
 console.log(projection);
 `,
@@ -30,7 +30,7 @@ console.log(projection);
   {
     file: 'unused-perspective.ts',
     code: `
-import { createPerspectiveViewer } from "@qa-sdk/rlsc-perspective";
+import { createPerspectiveViewer } from "rlsc-perspective";
 console.log("consumer only");
 `,
     maxBytes: 100,
@@ -39,7 +39,7 @@ console.log("consumer only");
   {
     file: 'unused-analysis-browser.ts',
     code: `
-import { collectLayoutWithText } from "@qa-sdk/rlsc-analysis/browser";
+import { collectLayoutWithText } from "rlsc-analysis/browser";
 console.log("consumer only");
 `,
     maxBytes: 100,
@@ -48,7 +48,7 @@ console.log("consumer only");
   {
     file: 'perspective-runtime.ts',
     code: `
-import { createPerspectiveViewer } from "@qa-sdk/rlsc-perspective";
+import { createPerspectiveViewer } from "rlsc-perspective";
 console.log(typeof createPerspectiveViewer);
 `,
     minBytes: 5000,

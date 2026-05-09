@@ -61,7 +61,7 @@
       "better-sqlite3"
     ],
     "overrides": {
-      "@qa-sdk/rlsc-analysis": "link:packages/rlsc-analysis"
+      "rlsc-analysis": "link:packages/rlsc-analysis"
     }
   }
 }

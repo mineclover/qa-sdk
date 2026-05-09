@@ -9,12 +9,12 @@ import {
   type LayoutPattern,
   type RLSCDocument,
   type TextOccupancy,
-} from '@qa-sdk/rlsc-analysis';
+} from 'rlsc-analysis';
 import {
   collectLayoutWithText,
   createLayoutMonitor,
   type LayoutMonitor,
-} from '@qa-sdk/rlsc-analysis/browser';
+} from 'rlsc-analysis/browser';
 import type {
   PerspectiveCopyEvent,
   PerspectiveControlMode,
@@ -24,7 +24,7 @@ import type {
   PerspectiveRendererKind,
   PerspectiveSelectionDetail,
   PerspectiveViewer,
-} from '@qa-sdk/rlsc-perspective';
+} from 'rlsc-perspective';
 import { renderToSVG } from 'rlsc/rendering';
 import './styles.css';
 
@@ -374,7 +374,7 @@ async function runPipeline(): Promise<void> {
   if (state.layerScene) {
     state.layerScene.update(doc, viewerOptions(overflowIssues));
   } else {
-    const { createPerspectiveViewer } = await import('@qa-sdk/rlsc-perspective');
+    const { createPerspectiveViewer } = await import('rlsc-perspective');
     state.layerScene = createPerspectiveViewer(layerView, doc, viewerOptions(overflowIssues));
   }
   jsonView.textContent = JSON.stringify(

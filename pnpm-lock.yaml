@@ -29,7 +29,7 @@ catalogs:
       version: 11.2.7
 
 overrides:
-  '@qa-sdk/rlsc-analysis': link:packages/rlsc-analysis
+  rlsc-analysis: link:packages/rlsc-analysis
 
 importers:
 
@@ -2241,7 +2241,7 @@ importers:
       '@chenglou/pretext':
         specifier: 0.0.4
         version: 0.0.4
-      '@qa-sdk/rlsc-analysis':
+      rlsc-analysis:
         specifier: link:../rlsc-analysis
         version: link:../rlsc-analysis
     devDependencies:
@@ -2272,15 +2272,15 @@ importers:
 
   packages/rlsc-demo:
     dependencies:
-      '@qa-sdk/rlsc-analysis':
-        specifier: link:../rlsc-analysis
-        version: link:../rlsc-analysis
-      '@qa-sdk/rlsc-perspective':
-        specifier: workspace:*
-        version: link:../rlsc-perspective
       rlsc:
         specifier: workspace:*
         version: link:../rlsc
+      rlsc-analysis:
+        specifier: link:../rlsc-analysis
+        version: link:../rlsc-analysis
+      rlsc-perspective:
+        specifier: workspace:*
+        version: link:../rlsc-perspective
     devDependencies:
       typescript:
         specifier: ^5.8.2
@@ -2291,7 +2291,7 @@ importers:
 
   packages/rlsc-perspective:
     dependencies:
-      '@qa-sdk/rlsc-analysis':
+      rlsc-analysis:
         specifier: link:../rlsc-analysis
         version: link:../rlsc-analysis
     devDependencies:

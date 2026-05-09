@@ -1,13 +1,13 @@
-# @qa-sdk/rlsc-perspective
+# rlsc-perspective
 
 Interactive 3D perspective viewer for RLSC screen documents.
 
-This package renders an existing `RLSCDocument`. It does not scan the DOM, annotate DOM elements, or run layout analysis. Callers pass document and issue data from `@qa-sdk/rlsc-analysis`.
+This package renders an existing `RLSCDocument`. It does not scan the DOM, annotate DOM elements, or run layout analysis. Callers pass document and issue data from `rlsc-analysis`.
 
 ## Usage
 
 ```ts
-import { createPerspectiveViewer } from '@qa-sdk/rlsc-perspective';
+import { createPerspectiveViewer } from 'rlsc-perspective';
 
 const viewer = createPerspectiveViewer(container, doc, {
   renderer: 'auto',
@@ -60,7 +60,7 @@ The v1 grouping presets are:
 
 Hover highlights the active layer. Click selects a layer and exposes selection details through `onSelect`.
 
-Use `boundary` when the viewer is being used to inspect the context/component boundary currently under analysis. Boundary grouping reads `node.boundary` or `data-boundary` from documents collected by `@qa-sdk/rlsc-analysis/browser`.
+Use `boundary` when the viewer is being used to inspect the context/component boundary currently under analysis. Boundary grouping reads `node.boundary` or `data-boundary` from documents collected by `rlsc-analysis/browser`.
 
 ## Copy Workflow
 
@@ -92,7 +92,7 @@ Selection payloads expose the identifier and geometry needed for debugging:
 - `selection.rect`
 - `selection.issues`
 
-When `@qa-sdk/rlsc-analysis/browser` supplies `node.identifier.xpath`, the viewer uses that core XPath. It only falls back to local tree-derived XPath for older documents.
+When `rlsc-analysis/browser` supplies `node.identifier.xpath`, the viewer uses that core XPath. It only falls back to local tree-derived XPath for older documents.
 
 ## Debug Issues
 

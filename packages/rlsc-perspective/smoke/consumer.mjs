@@ -39,11 +39,11 @@ function installConsumer(perspectivePackage, analysisPackage) {
         type: 'module',
         pnpm: {
           overrides: {
-            '@qa-sdk/rlsc-analysis': `file:${analysisPackage}`,
+            'rlsc-analysis': `file:${analysisPackage}`,
           },
         },
         dependencies: {
-          '@qa-sdk/rlsc-perspective': `file:${perspectivePackage}`,
+          'rlsc-perspective': `file:${perspectivePackage}`,
           'happy-dom': '20.8.4',
         },
       },
@@ -59,7 +59,7 @@ function writeConsumerChecks() {
     join(consumerDir, 'esm-check.mjs'),
     `
 import { Window } from "happy-dom";
-import { createPerspectiveViewer } from "@qa-sdk/rlsc-perspective";
+import { createPerspectiveViewer } from "rlsc-perspective";
 
 const window = new Window();
 globalThis.window = window;
@@ -142,7 +142,7 @@ console.log(JSON.stringify({ mode: "esm", nodes, perspective }));
   writeFileSync(
     join(consumerDir, 'cjs-check.cjs'),
     `
-const pkg = require("@qa-sdk/rlsc-perspective");
+const pkg = require("rlsc-perspective");
 if (typeof pkg.createPerspectiveViewer !== "function") {
   throw new Error("createPerspectiveViewer CJS export missing");
 }
@@ -152,13 +152,13 @@ console.log(JSON.stringify({ mode: "cjs", hasFactory: true }));
 }
 
 try {
-  run('pnpm', ['--filter', '@qa-sdk/rlsc-analysis', 'build']);
-  run('pnpm', ['--filter', '@qa-sdk/rlsc-perspective', 'build']);
-  pack('@qa-sdk/rlsc-analysis');
-  pack('@qa-sdk/rlsc-perspective');
+  run('pnpm', ['--filter', 'rlsc-analysis', 'build']);
+  run('pnpm', ['--filter', 'rlsc-perspective', 'build']);
+  pack('rlsc-analysis');
+  pack('rlsc-perspective');
 
-  const analysisPackage = findPackage(/^qa-sdk-rlsc-analysis-.+\.tgz$/);
-  const perspectivePackage = findPackage(/^qa-sdk-rlsc-perspective-.+\.tgz$/);
+  const analysisPackage = findPackage(/^rlsc-analysis-.+\.tgz$/);
+  const perspectivePackage = findPackage(/^rlsc-perspective-.+\.tgz$/);
   installConsumer(perspectivePackage, analysisPackage);
   writeConsumerChecks();
 

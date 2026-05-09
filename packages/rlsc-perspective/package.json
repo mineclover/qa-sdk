@@ -1,5 +1,5 @@
 {
-  "name": "@qa-sdk/rlsc-perspective",
+  "name": "rlsc-perspective",
   "version": "0.1.0",
   "description": "Reusable RLSC 3D perspective viewer",
   "files": [
@@ -27,7 +27,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@qa-sdk/rlsc-analysis": "^0.1.0"
+    "rlsc-analysis": "^0.1.0"
   },
   "devDependencies": {
     "esbuild": "^0.27.3",

@@ -26,8 +26,8 @@ function findPackage(pattern) {
 try {
   run('pnpm', ['pack:rlsc:local', packDir]);
 
-  const analysisPackage = findPackage(/^qa-sdk-rlsc-analysis-.+\.tgz$/);
-  const perspectivePackage = findPackage(/^qa-sdk-rlsc-perspective-.+\.tgz$/);
+  const analysisPackage = findPackage(/^rlsc-analysis-.+\.tgz$/);
+  const perspectivePackage = findPackage(/^rlsc-perspective-.+\.tgz$/);
   const rlscPackage = findPackage(/^rlsc-.+\.tgz$/);
 
   writeFileSync(
@@ -39,7 +39,7 @@ try {
         type: 'module',
         pnpm: {
           overrides: {
-            '@qa-sdk/rlsc-analysis': `file:${analysisPackage}`,
+            'rlsc-analysis': `file:${analysisPackage}`,
           },
         },
       },
@@ -54,8 +54,8 @@ try {
   writeFileSync(
     join(consumerDir, 'esm-smoke.mjs'),
     `import { Window } from 'happy-dom';
-import { scanScreen } from '@qa-sdk/rlsc-analysis/browser';
-import { createPerspectiveViewer } from '@qa-sdk/rlsc-perspective';
+import { scanScreen } from 'rlsc-analysis/browser';
+import { createPerspectiveViewer } from 'rlsc-perspective';
 import { renderToSVG } from 'rlsc/rendering';
 
 const window = new Window({ url: 'https://example.test/' });
@@ -98,8 +98,8 @@ console.log('esm smoke ok', result.nodes.length);
 
   writeFileSync(
     join(consumerDir, 'cjs-smoke.cjs'),
-    `const { analyzeAreas } = require('@qa-sdk/rlsc-analysis');
-const { createPerspectiveViewer } = require('@qa-sdk/rlsc-perspective');
+    `const { analyzeAreas } = require('rlsc-analysis');
+const { createPerspectiveViewer } = require('rlsc-perspective');
 const { renderToSVG } = require('rlsc/rendering');
 
 if (typeof analyzeAreas !== 'function') throw new Error('analysis CJS export missing');
@@ -131,9 +131,9 @@ console.log('cjs smoke ok');
 
   writeFileSync(
     join(consumerDir, 'type-smoke.ts'),
-    `import { analyzeAreas, type RLSCDocument } from '@qa-sdk/rlsc-analysis';
-import { scanScreen } from '@qa-sdk/rlsc-analysis/browser';
-import { createPerspectiveViewer, type PerspectiveViewerOptions } from '@qa-sdk/rlsc-perspective';
+    `import { analyzeAreas, type RLSCDocument } from 'rlsc-analysis';
+import { scanScreen } from 'rlsc-analysis/browser';
+import { createPerspectiveViewer, type PerspectiveViewerOptions } from 'rlsc-perspective';
 import { renderToSVG } from 'rlsc/rendering';
 
 const options: PerspectiveViewerOptions = { projectionMode: 'orthographic' };

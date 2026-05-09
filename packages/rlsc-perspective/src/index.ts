@@ -6,7 +6,7 @@ import type {
   RLSCNode,
   ScreenIdentifier,
   TextOccupancy,
-} from '@qa-sdk/rlsc-analysis';
+} from 'rlsc-analysis';
 
 export type PerspectiveRendererKind = 'auto' | 'webgl' | 'canvas';
 export type PerspectiveGroupBy = 'dom-node' | 'boundary' | 'componentId' | 'qaAddress' | 'role';

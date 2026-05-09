@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@qa-sdk/rlsc-analysis": "workspace:*",
-    "@qa-sdk/rlsc-perspective": "workspace:*",
+    "rlsc-analysis": "workspace:*",
+    "rlsc-perspective": "workspace:*",
     "rlsc": "workspace:*"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import type { RLSCDocument, RLSCNode } from '@qa-sdk/rlsc-analysis';
+import type { RLSCDocument, RLSCNode } from 'rlsc-analysis';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPerspectiveViewer } from './index';
 
