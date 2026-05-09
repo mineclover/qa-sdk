@@ -1,6 +1,6 @@
 {
   "schemaId": "qa-sdk-git",
-  "scannedAt": "2026-05-04T14:57:53.802Z",
+  "scannedAt": "2026-05-09T03:52:33.082Z",
   "packages": [
     {
       "name": "address-index",
@@ -595,30 +595,6 @@
       "deps": []
     },
     {
-      "name": "motion-content-editor",
-      "version": "0.1.0",
-      "tier": "foundation",
-      "runtime": "library",
-      "scope": "public",
-      "deps": [
-        "motion-content",
-        "motion-workspace"
-      ]
-    },
-    {
-      "name": "motion-content-editor-demo",
-      "version": "0.1.0",
-      "tier": "app",
-      "runtime": "browser",
-      "scope": "private",
-      "deps": [
-        "motion-content",
-        "motion-content-editor",
-        "motion-workspace",
-        "motion-workspace-client"
-      ]
-    },
-    {
       "name": "motion-workspace",
       "version": "0.1.0",
       "tier": "foundation",
@@ -881,7 +857,7 @@
     {
       "name": "rlsc-analysis",
       "version": "0.1.0",
-      "tier": "platform",
+      "tier": "foundation",
       "runtime": "library",
       "scope": "public",
       "deps": []
@@ -901,7 +877,7 @@
     {
       "name": "rlsc-perspective",
       "version": "0.1.0",
-      "tier": "platform",
+      "tier": "foundation",
       "runtime": "library",
       "scope": "public",
       "deps": [
@@ -1111,6 +1087,7 @@
       "scope": "private",
       "deps": [
         "browser-codec",
+        "core",
         "event-catalog",
         "sdk"
       ]
@@ -1203,10 +1180,168 @@
     }
   ],
   "commitCounts": {
-    "rlsc-perspective": {
-      "refactor": 2,
-      "fix": 3,
+    "rlsc": {
+      "chore": 4,
+      "docs": 3,
+      "test": 2,
+      "feat": 6
+    },
+    "cli": {
+      "test": 4,
+      "refactor": 3,
+      "fix": 1,
+      "feat": 25,
+      "chore": 1
+    },
+    "rlsc-analysis": {
+      "chore": 1,
+      "test": 1,
       "feat": 1
+    },
+    "sim-outbox-view,sim-approval-api": {
+      "fix": 1
+    },
+    "demo-snapshot": {
+      "fix": 1,
+      "feat": 3,
+      "refactor": 1
+    },
+    "sim-notification-api,sim-reporting-api": {
+      "fix": 1
+    },
+    "sim-pm/notification/document": {
+      "fix": 1
+    },
+    "sim-document-api": {
+      "fix": 1,
+      "feat": 2
+    },
+    "definition-data-source": {
+      "fix": 1
+    },
+    "simulation-tests": {
+      "fix": 1
+    },
+    "def-gate": {
+      "ci": 1
+    },
+    "e2e": {
+      "ci": 2,
+      "test": 1
+    },
+    "test-scenario-store": {
+      "test": 1
+    },
+    "spec": {
+      "docs": 8
+    },
+    "rlsc-demo": {
+      "feat": 2,
+      "fix": 4
+    },
+    "catalog": {
+      "chore": 1,
+      "feat": 1
+    },
+    "viteplus-smoke": {
+      "feat": 2
+    },
+    "facet-tests": {
+      "fix": 1
+    },
+    "rlsc-perspective": {
+      "fix": 7,
+      "feat": 8,
+      "test": 4,
+      "refactor": 2
+    },
+    "definition-catalog": {
+      "fix": 4,
+      "feat": 20,
+      "test": 5,
+      "refactor": 1,
+      "docs": 3
+    },
+    "test": {
+      "chore": 1
+    },
+    "sim": {
+      "fix": 7,
+      "test": 5,
+      "chore": 6,
+      "feat": 48,
+      "docs": 23,
+      "refactor": 5
+    },
+    "document-api": {
+      "fix": 1
+    },
+    "platform-demo": {
+      "fix": 5,
+      "feat": 12,
+      "refactor": 7,
+      "style": 1
+    },
+    "weighted-index-explorer": {
+      "fix": 1,
+      "refactor": 2,
+      "feat": 4
+    },
+    "build": {
+      "chore": 1,
+      "fix": 1
+    },
+    "otel": {
+      "test": 1,
+      "feat": 1
+    },
+    "spec-core": {
+      "test": 1,
+      "refactor": 4,
+      "feat": 6
+    },
+    "viz-core": {
+      "test": 1,
+      "feat": 1
+    },
+    "ci": {
+      "fix": 5
+    },
+    "lint": {
+      "fix": 5
+    },
+    "oxlint": {
+      "chore": 3
+    },
+    "skills": {
+      "docs": 5,
+      "feat": 1
+    },
+    "def-catalog": {
+      "chore": 4
+    },
+    "deps": {
+      "chore": 3
+    },
+    "def-boundary": {
+      "chore": 4
+    },
+    "sim-canary-controller": {
+      "feat": 31,
+      "test": 2,
+      "fix": 1,
+      "refactor": 1
+    },
+    "infra-engine": {
+      "feat": 46,
+      "fix": 8,
+      "test": 3,
+      "security": 1,
+      "refactor": 1,
+      "docs": 2
+    },
+    "schemas": {
+      "chore": 1
     },
     "sim-scenarios": {
       "feat": 28,
@@ -1220,26 +1355,12 @@
       "refactor": 6,
       "test": 1
     },
-    "lint": {
-      "fix": 4
-    },
-    "rlsc-demo": {
-      "fix": 3,
-      "feat": 1
-    },
-    "rlsc": {
-      "feat": 6,
-      "chore": 1
-    },
     "sim-approval-api": {
       "feat": 24,
       "fix": 1,
       "test": 7,
       "docs": 1,
       "chore": 1
-    },
-    "ci": {
-      "fix": 2
     },
     "sim-audit-browser-api": {
       "feat": 4
@@ -1268,20 +1389,6 @@
     },
     "plan/canary-scaling": {
       "docs": 1
-    },
-    "sim": {
-      "fix": 5,
-      "test": 5,
-      "chore": 6,
-      "feat": 48,
-      "docs": 23,
-      "refactor": 5
-    },
-    "sim-canary-controller": {
-      "test": 2,
-      "feat": 30,
-      "fix": 1,
-      "refactor": 1
     },
     "plan": {
       "docs": 14
@@ -1352,14 +1459,6 @@
     "db-bootstrap": {
       "feat": 13
     },
-    "infra-engine": {
-      "feat": 45,
-      "fix": 8,
-      "test": 3,
-      "security": 1,
-      "refactor": 1,
-      "docs": 2
-    },
     "ingest-server": {
       "feat": 19,
       "test": 5,
@@ -1374,9 +1473,6 @@
       "fix": 2,
       "feat": 3
     },
-    "spec": {
-      "docs": 7
-    },
     "vendor": {
       "chore": 5
     },
@@ -1385,10 +1481,6 @@
       "test": 1,
       "feat": 4,
       "chore": 1
-    },
-    "skills": {
-      "docs": 4,
-      "feat": 1
     },
     "scaffold": {
       "feat": 4,
@@ -1409,13 +1501,6 @@
       "refactor": 1,
       "test": 3,
       "fix": 1
-    },
-    "cli": {
-      "fix": 1,
-      "feat": 25,
-      "test": 3,
-      "chore": 1,
-      "refactor": 2
     },
     "auth-backlog": {
       "docs": 12
@@ -1446,9 +1531,6 @@
     },
     "sim-services": {
       "feat": 1
-    },
-    "sim-document-api": {
-      "feat": 2
     },
     "sim-notification-api": {
       "feat": 2
@@ -1494,13 +1576,6 @@
     },
     "coordinate-storage": {
       "docs": 2
-    },
-    "definition-catalog": {
-      "feat": 20,
-      "test": 5,
-      "refactor": 1,
-      "docs": 3,
-      "fix": 3
     },
     "core,event-catalog": {
       "feat": 1
@@ -1587,12 +1662,6 @@
     "ops": {
       "chore": 1
     },
-    "platform-demo": {
-      "feat": 12,
-      "refactor": 7,
-      "fix": 4,
-      "style": 1
-    },
     "gateway": {
       "feat": 2
     },
@@ -1616,9 +1685,6 @@
       "feat": 3,
       "test": 1,
       "style": 1
-    },
-    "viz-core": {
-      "feat": 1
     },
     "core/pipe": {
       "refactor": 1
@@ -1662,10 +1728,6 @@
     "decode-service": {
       "refactor": 1
     },
-    "spec-core": {
-      "refactor": 4,
-      "feat": 6
-    },
     "registry-service": {
       "refactor": 8,
       "feat": 5
@@ -1691,9 +1753,6 @@
     "motion-content": {
       "feat": 3
     },
-    "otel": {
-      "feat": 1
-    },
     "decision-flow": {
       "feat": 7,
       "docs": 3,
@@ -1713,10 +1772,6 @@
     },
     "demo-tests": {
       "feat": 4
-    },
-    "demo-snapshot": {
-      "feat": 3,
-      "refactor": 1
     },
     "spec-core/transition": {
       "feat": 1
@@ -1750,9 +1805,6 @@
     },
     "viz-3d": {
       "build": 1,
-      "feat": 1
-    },
-    "catalog": {
       "feat": 1
     },
     "spec-engine": {
@@ -1812,16 +1864,6 @@
     "weighted-ui": {
       "fix": 1,
       "feat": 1
-    },
-    "deps": {
-      "chore": 1
-    },
-    "weighted-index-explorer": {
-      "refactor": 2,
-      "feat": 4
-    },
-    "e2e": {
-      "test": 1
     },
     "roleplay-web": {
       "style": 1,

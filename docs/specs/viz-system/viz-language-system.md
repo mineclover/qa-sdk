@@ -17,8 +17,6 @@ def:
       type: contains
     - target: motion-content-contract
       type: contains
-    - target: motion-content-editor-demo
-      type: contains
     - target: canvas-viewport-spec
       type: refs
 ---

@@ -65,16 +65,10 @@ motion-content는 4가지 액션 카테고리를 정의한다:
 ## 서비스 메타데이터
 
 ```typescript
-const MOTION_EDITOR_SERVICE = {
-  serviceId: "motion-content-editor",
-  name: "모션 콘텐츠 편집기",
-  description: "GSAP 기반 선언형 모션 콘텐츠 편집기",
-};
-
-const MOTION_DEMO_SERVICE = {
-  serviceId: "motion-content-editor-demo",
-  name: "모션 편집기 데모",
-  description: "motion-content-editor의 브라우저 검증 앱",
+const MOTION_CONTENT_SERVICE = {
+  serviceId: "motion-content",
+  name: "모션 콘텐츠",
+  description: "GSAP 기반 선언형 모션 콘텐츠 코어",
 };
 ```
 

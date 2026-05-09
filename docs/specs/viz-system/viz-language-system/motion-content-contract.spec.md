@@ -19,11 +19,11 @@ def:
 
 ## 목적 ^purpose
 
-motion-content 계열 패키지의 용어집, 책임 경계, 런타임 비목표를 분리해 선언형 모션 편집 스택의 계약을 정리한다.
+motion-content 패키지의 용어집, 책임 경계, 런타임 비목표를 분리해 선언형 모션 콘텐츠 계약을 정리한다.
 
 ## 구성 ^overview
 
-motion-content는 Remotion식 Composition/Sequence/Layer 모델을 참고하되, 런타임은 GSAP 기반으로 한정한다. 세 패키지(코어 모델, 에디터 셸, 데모 앱)로 책임을 분리하고, IO 검증/직렬화/히스토리를 코어에 포함한다.
+motion-content는 Remotion식 Composition/Sequence/Layer 모델을 참고하되, 런타임은 GSAP 기반으로 한정한다. 현재 유지 범위는 코어 모델, IO 검증/직렬화, 런타임, 세션/히스토리 계약이다. DOM 기반 편집기 셸과 브라우저 데모 앱은 제거되었다.
 
 ## 용어집
 
@@ -53,16 +53,6 @@ motion-content는 Remotion식 Composition/Sequence/Layer 모델을 참고하되,
 - 이벤트 로그: 세션 내 액션 기록 (`event-log.ts`)
 - 콘텐츠 타입 축: dom/image/video/svg/canvas (`content-types.ts`)
 
-### motion-content-editor (에디터 셸)
-
-- 타임라인 UI, 파라미터 폼, 트리 뷰
-- motion-content 코어 소비
-
-### motion-content-editor-demo (데모 앱)
-
-- 브라우저 검증 앱
-- motion-content + motion-content-editor 통합
-
 ## 런타임 계약
 
 - **GSAP 전용**: `gsap.timeline()` + `fromTo`/`set` 으로 애니메이션 구성
@@ -77,6 +67,7 @@ motion-content는 Remotion식 Composition/Sequence/Layer 모델을 참고하되,
 - GSAP 런타임 player 동작 (play/pause/seek/destroy)
 - 에디터 state/command/session/history 동작
 - JSON 라운드트립: serialize → parse → validate = 동일 구조
+- DOM 편집기 셸은 이 계약의 완료 조건이 아니다.
 
 ## 비목표
 

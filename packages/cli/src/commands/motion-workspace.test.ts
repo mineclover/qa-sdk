@@ -35,7 +35,6 @@ import {
   MOTION_APPLY_USAGE,
   MOTION_EXPORT_USAGE,
   MOTION_IMPORT_USAGE,
-  MOTION_PREVIEW_USAGE,
   MOTION_SCENE_CREATE_USAGE,
   MOTION_SCENE_DELETE_USAGE,
   MOTION_SCENE_LIST_USAGE,
@@ -47,7 +46,6 @@ import {
   motionApply,
   motionExport,
   motionImport,
-  motionPreview,
   motionSceneCreate,
   motionSceneDelete,
   motionSceneList,
@@ -916,40 +914,6 @@ describe("motion workspace CLI", () => {
     ]);
   });
 
-  it("launches preview orchestration with the requested workspace", async () => {
-    const previewLauncher = vi.fn(async (options: {
-      readonly previewOrigin: string;
-      readonly workspaceBaseUrl: string;
-      readonly workspaceId?: string;
-    }) => ({
-      url: "http://localhost:4179/?workspace=demo%2Fworkspace-preview",
-      previewOrigin: options.previewOrigin,
-      workspaceBaseUrl: options.workspaceBaseUrl,
-      reusedWorkspaceService: false,
-      reusedPreviewServer: true,
-    }));
-
-    const output = await captureConsole(() => motionPreview([
-      "--workspace",
-      "demo/workspace-preview",
-      "--base-url",
-      "http://localhost:3810/api/motion-workspace",
-      "--preview-url",
-      "http://localhost:4279",
-    ], {
-      previewLauncher,
-    }));
-
-    expect(previewLauncher).toHaveBeenCalledWith({
-      previewOrigin: "http://localhost:4279",
-      workspaceBaseUrl: "http://localhost:3810/api/motion-workspace",
-      workspaceId: "demo/workspace-preview",
-    });
-    expect(output.stdout).toContain("motion preview 준비 완료: http://localhost:4179/?workspace=demo%2Fworkspace-preview");
-    expect(output.stdout).toContain("workspace service: started");
-    expect(output.stdout).toContain("preview app: reuse");
-  });
-
   it("prints command usage when required arguments are missing", async () => {
     const listOutput = await captureConsole(() => motionWorkspaceList(["--unknown"], {
       clientFactory: createMockClientFactory(state).clientFactory,
@@ -984,10 +948,6 @@ describe("motion workspace CLI", () => {
     const applyOutput = await captureConsole(() => motionApply([], {
       clientFactory: createMockClientFactory(state).clientFactory,
     }));
-    const previewOutput = await captureConsole(() => motionPreview(["demo"], {
-      clientFactory: createMockClientFactory(state).clientFactory,
-    }));
-
     expect(listOutput.stderr).toContain(MOTION_WORKSPACE_LIST_USAGE);
     expect(showOutput.stderr).toContain(MOTION_WORKSPACE_SHOW_USAGE);
     expect(createOutput.stderr).toContain(MOTION_WORKSPACE_CREATE_USAGE);
@@ -999,7 +959,6 @@ describe("motion workspace CLI", () => {
     expect(exportOutput.stderr).toContain(MOTION_EXPORT_USAGE);
     expect(importOutput.stderr).toContain(MOTION_IMPORT_USAGE);
     expect(applyOutput.stderr).toContain(MOTION_APPLY_USAGE);
-    expect(previewOutput.stderr).toContain(MOTION_PREVIEW_USAGE);
   });
 
   it("exposes scene/workspace motion commands in CLI usage and subcommand parsing", () => {
@@ -1014,7 +973,6 @@ describe("motion workspace CLI", () => {
     expect(USAGE).toContain("qa-sdk motion export --workspace <id> --out <file>");
     expect(USAGE).toContain("qa-sdk motion import <file> --workspace <id>");
     expect(USAGE).toContain("qa-sdk motion apply --workspace <id> --command <json>");
-    expect(USAGE).toContain("qa-sdk motion preview [--workspace <id>]");
     expect(resolveSubcommand(["motion", "workspace", "list"])).toEqual({
       name: "motion workspace list",
       rest: [],
@@ -1058,10 +1016,6 @@ describe("motion workspace CLI", () => {
     expect(resolveSubcommand(["motion", "apply", "--workspace", "demo", "--command", "{\"type\":\"play\"}"])).toEqual({
       name: "motion apply",
       rest: ["--workspace", "demo", "--command", "{\"type\":\"play\"}"],
-    });
-    expect(resolveSubcommand(["motion", "preview", "--workspace", "demo"])).toEqual({
-      name: "motion preview",
-      rest: ["--workspace", "demo"],
     });
   });
 });

@@ -31,11 +31,6 @@ import {
   type MotionWorkspaceSceneListResponse,
 } from "motion-workspace-client";
 import {
-  launchMotionPreview,
-  resolveMotionPreviewOrigin,
-  type MotionPreviewLaunchResult,
-} from "./motion-preview-orchestration.js";
-import {
   describeError,
   formatWorkspaceSource,
   isRecord,
@@ -56,7 +51,6 @@ export const MOTION_SCENE_DELETE_USAGE = "Usage: qa-sdk motion scene delete --wo
 export const MOTION_EXPORT_USAGE = "Usage: qa-sdk motion export --workspace <id> --out <file> [--base-url <url>]";
 export const MOTION_IMPORT_USAGE = "Usage: qa-sdk motion import <file> --workspace <id> [--base-url <url>]";
 export const MOTION_APPLY_USAGE = "Usage: qa-sdk motion apply --workspace <id> --command <json> [--base-url <url>]";
-export const MOTION_PREVIEW_USAGE = "Usage: qa-sdk motion preview [--workspace <id>] [--base-url <url>] [--preview-url <url>]";
 
 export interface MotionWorkspaceClientLike {
   list(): Promise<MotionWorkspaceListResponse>;
@@ -86,11 +80,6 @@ export interface MotionWorkspaceClientLike {
 export interface MotionWorkspaceCommandDeps {
   readonly clientFactory?: (baseUrl: string) => MotionWorkspaceClientLike;
   readonly now?: () => string;
-  readonly previewLauncher?: (options: {
-    readonly previewOrigin: string;
-    readonly workspaceBaseUrl: string;
-    readonly workspaceId?: string;
-  }) => Promise<MotionPreviewLaunchResult>;
 }
 
 function getNow(deps?: MotionWorkspaceCommandDeps): string {
@@ -839,50 +828,6 @@ export async function motionApply(
     printWorkspaceSummary(workspaceId, response.workspace);
   } catch (error) {
     console.error(`motion apply 실패: ${describeError(error)}`);
-    process.exitCode = 1;
-  }
-}
-
-export async function motionPreview(
-  args: string[],
-  deps?: MotionWorkspaceCommandDeps,
-): Promise<void> {
-  const parsed = parseOptions(args, MOTION_PREVIEW_USAGE, {
-    workspace: { type: "string" },
-    "base-url": { type: "string" },
-    "preview-url": { type: "string" },
-  });
-  if (!parsed) {
-    return;
-  }
-
-  if (rejectPositionals(parsed, MOTION_PREVIEW_USAGE)) {
-    return;
-  }
-
-  const workspaceId = typeof parsed.values.workspace === "string" && parsed.values.workspace.length > 0
-    ? parsed.values.workspace
-    : undefined;
-
-  try {
-    const workspaceBaseUrl = resolveBaseUrl(
-      typeof parsed.values["base-url"] === "string" ? parsed.values["base-url"] : undefined,
-    );
-    const previewOrigin = resolveMotionPreviewOrigin(
-      typeof parsed.values["preview-url"] === "string" ? parsed.values["preview-url"] : undefined,
-    );
-    const previewLauncher = deps?.previewLauncher ?? launchMotionPreview;
-    const result = await previewLauncher({
-      previewOrigin,
-      workspaceBaseUrl,
-      workspaceId,
-    });
-
-    console.log(`motion preview 준비 완료: ${result.url}`);
-    console.log(`  workspace service: ${result.reusedWorkspaceService ? "reuse" : "started"}`);
-    console.log(`  preview app: ${result.reusedPreviewServer ? "reuse" : "started"}`);
-  } catch (error) {
-    console.error(`motion preview 실패: ${describeError(error)}`);
     process.exitCode = 1;
   }
 }

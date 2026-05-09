@@ -20,7 +20,6 @@
 - `source`는 preset, storage key, import path 같은 provenance metadata만 담는다.
 - `editor`는 `values`, `selection`, `viewport`, `loop`, `playbackRate`만 round-trip 한다.
 - dock layout, theme 같은 editor-local preference는 workspace snapshot에 넣지 않고 셸 로컬 저장소 경계에 남긴다.
-- legacy browser-only demo 상태(`qa-sdk.motion-content-editor-demo/v1`)는 `migrateLegacyMotionEditorDemoState()`로 현재 workspace snapshot으로 올릴 수 있다.
 
 ## 포함하지 않는 것
 

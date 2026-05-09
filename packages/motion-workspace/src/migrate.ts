@@ -3,7 +3,6 @@ import {
   MOTION_COMPOSITION_SCHEMA_V2,
   createMotionCompositionDocumentV2,
   migrateCompositionV1toV2,
-  parseMotionComposition,
   type MotionCompositionDocumentV2,
   type MotionEditorSelectionV2,
 } from "motion-content";
@@ -16,19 +15,10 @@ import {
 import {
   MOTION_WORKSPACE_SCHEMA_V1,
   MOTION_WORKSPACE_SCHEMA_V2,
-  type MotionWorkspaceSourceMetadataV1,
   type MotionWorkspaceSnapshot,
   type MotionWorkspaceSnapshotV1,
   type MotionWorkspaceSnapshotV2,
 } from "./types.js";
-
-export const LEGACY_MOTION_EDITOR_DEMO_STORAGE_KEY = "qa-sdk.motion-content-editor-demo/v1";
-
-export interface LegacyMotionEditorDemoStateV1 {
-  readonly presetId: string | null;
-  readonly document: string;
-  readonly savedAt: string;
-}
 
 export interface MotionWorkspaceMigrateOptions {
   readonly expectedRevision?: number;
@@ -76,15 +66,8 @@ function hasOwn(record: Record<string, unknown>, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(record, key);
 }
 
-function describeValue(value: unknown): string {
-  if (value === undefined) return "undefined";
-  if (value === null) return "null";
-  if (Array.isArray(value)) return "array";
-  return typeof value;
-}
-
 function parseMigrationInput(
-  input: string | MotionWorkspaceSnapshot | LegacyMotionEditorDemoStateV1 | Record<string, unknown>,
+  input: string | MotionWorkspaceSnapshot | Record<string, unknown>,
 ): unknown {
   if (typeof input !== "string") {
     return input;
@@ -250,90 +233,6 @@ function getWorkspaceBaseRevision(workspace: MotionWorkspaceSnapshot): number {
   return workspace.schemaVersion === MOTION_WORKSPACE_SCHEMA_V2
     ? workspace.globalRevision
     : workspace.revision;
-}
-
-function validateLegacyMotionEditorDemoState(value: unknown): readonly string[] {
-  const issues: string[] = [];
-
-  if (!isRecord(value)) {
-    issues.push(`$: object여야 하지만 ${describeValue(value)}입니다.`);
-    return issues;
-  }
-
-  if (!hasOwn(value, "presetId")) {
-    issues.push("$.presetId: 필수 string | null 필드가 없습니다.");
-  } else if (value["presetId"] !== null && typeof value["presetId"] !== "string") {
-    issues.push(`$.presetId: string | null이어야 하지만 ${describeValue(value["presetId"])}입니다.`);
-  }
-
-  if (!hasOwn(value, "document")) {
-    issues.push("$.document: 필수 string 필드가 없습니다.");
-  } else if (typeof value["document"] !== "string") {
-    issues.push(`$.document: string여야 하지만 ${describeValue(value["document"])}입니다.`);
-  }
-
-  if (!hasOwn(value, "savedAt")) {
-    issues.push("$.savedAt: 필수 string 필드가 없습니다.");
-  } else if (typeof value["savedAt"] !== "string") {
-    issues.push(`$.savedAt: string여야 하지만 ${describeValue(value["savedAt"])}입니다.`);
-  }
-
-  return issues;
-}
-
-function createLegacyMotionEditorSource(
-  state: LegacyMotionEditorDemoStateV1,
-): MotionWorkspaceSourceMetadataV1 {
-  if (state.presetId) {
-    return {
-      presetId: state.presetId,
-      storageKey: LEGACY_MOTION_EDITOR_DEMO_STORAGE_KEY,
-    };
-  }
-
-  return {
-    storageKey: LEGACY_MOTION_EDITOR_DEMO_STORAGE_KEY,
-  };
-}
-
-export function parseLegacyMotionEditorDemoState(
-  input: string | LegacyMotionEditorDemoStateV1 | Record<string, unknown>,
-): LegacyMotionEditorDemoStateV1 {
-  const candidate = parseMigrationInput(input);
-  const issues = validateLegacyMotionEditorDemoState(candidate);
-
-  if (issues.length > 0) {
-    throw new MotionWorkspaceParseError(issues);
-  }
-
-  return candidate as LegacyMotionEditorDemoStateV1;
-}
-
-export function migrateLegacyMotionEditorDemoState(
-  input: string | LegacyMotionEditorDemoStateV1 | Record<string, unknown>,
-): MotionWorkspaceMigrationResult {
-  const legacyState = parseLegacyMotionEditorDemoState(input);
-  let composition: ReturnType<typeof parseMotionComposition>;
-
-  try {
-    composition = parseMotionComposition(legacyState.document);
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    throw new MotionWorkspaceParseError([`$.document: legacy demo composition 파싱에 실패했습니다. ${reason}`]);
-  }
-
-  return {
-    workspace: migrateMotionWorkspaceSnapshot(
-      createMotionWorkspaceSnapshot({
-        composition,
-        source: createLegacyMotionEditorSource(legacyState),
-        savedAt: legacyState.savedAt,
-      }),
-    ),
-    migrated: true,
-    fromSchemaVersion: LEGACY_MOTION_EDITOR_DEMO_STORAGE_KEY,
-    toSchemaVersion: MOTION_WORKSPACE_SCHEMA_V2,
-  };
 }
 
 export function migrateMotionWorkspace(

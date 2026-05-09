@@ -61,4 +61,4 @@ interface MotionEditorShell {
 
 - MotionCompositionDef 정의 자체 (motion-content 코어)
 - GSAP 런타임 계약 재정의 (motion-content 런타임)
-- 데모 앱 초기화 및 프리셋 선택 UX (motion-content-editor-demo)
+- 별도 데모 앱 초기화 및 프리셋 선택 UX

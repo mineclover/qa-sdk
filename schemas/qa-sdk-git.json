@@ -56,8 +56,6 @@
         "ingest-server",
         "logger",
         "motion-content",
-        "motion-content-editor",
-        "motion-content-editor-demo",
         "motion-workspace",
         "motion-workspace-client",
         "motion-workspace-service",

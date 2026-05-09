@@ -14,7 +14,6 @@ import {
   motionApply,
   motionExport,
   motionImport,
-  motionPreview,
   motionSceneCreate,
   motionSceneDelete,
   motionSceneList,
@@ -167,18 +166,6 @@ export const MOTION_COMMAND_DESCRIPTORS = [
     ],
     handlerKey: "motion.apply",
   },
-  {
-    id: "motion.preview",
-    path: ["preview"],
-    usage: "qa-sdk motion preview [--workspace <id>]",
-    description: "Online workspace preview 실행",
-    options: [
-      { flag: "--workspace", valueHint: "<id>", type: "string", description: "Workspace ID (선택)" },
-      { flag: "--base-url", valueHint: "<url>", type: "string", description: "Workspace 서비스 URL" },
-      { flag: "--preview-url", valueHint: "<url>", type: "string", description: "Preview 앱 URL" },
-    ],
-    handlerKey: "motion.preview",
-  },
 ] as const satisfies readonly CommandDescriptor[];
 
 export const MOTION_COMMAND_TREE =
@@ -201,5 +188,4 @@ export const MOTION_HANDLER_REGISTRY = {
   "motion.export": motionExport,
   "motion.import": motionImport,
   "motion.apply": motionApply,
-  "motion.preview": motionPreview,
 } satisfies Readonly<Record<string, RestCommandHandler>>;
