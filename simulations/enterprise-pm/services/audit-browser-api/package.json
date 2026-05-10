@@ -1,7 +1,7 @@
 {
   "name": "@qa-sdk/sim-audit-browser-api",
   "version": "0.1.0",
-  "description": "\uc2dc\ubbac \u2014 audit trace explorer NestJS \uc11c\ube44\uc2a4 (audit-recorder-store \uc870\ud68c)",
+  "description": "시뮬 — audit trace explorer NestJS 서비스 (audit-recorder-store 조회)",
   "private": true,
   "type": "module",
   "main": "dist/main.js",
@@ -16,7 +16,10 @@
     },
     "./package.json": "./package.json"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsc",
@@ -45,15 +48,19 @@
     "permission-engine": "workspace:*",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "zod": "^3.24.2"
+    "zod": "^3.25.76"
   },
   "peerDependencies": {
     "better-sqlite3": "catalog:",
     "postgres": "^3.4.0"
   },
   "peerDependenciesMeta": {
-    "better-sqlite3": { "optional": true },
-    "postgres": { "optional": true }
+    "better-sqlite3": {
+      "optional": true
+    },
+    "postgres": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@nestjs/testing": "^11.0.0",

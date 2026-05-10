@@ -33,7 +33,7 @@
     "sim-identifier-grammar": "workspace:*",
     "sim-outbox-view": "workspace:*",
     "weighted-index": "workspace:*",
-    "zod": "^3.24.2"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

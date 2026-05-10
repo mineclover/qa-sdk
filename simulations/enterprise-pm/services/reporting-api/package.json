@@ -1,7 +1,7 @@
 {
   "name": "@qa-sdk/sim-reporting-api",
   "version": "0.1.0",
-  "description": "\uc2dc\ubbac \u2014 \ubd84\uc11d\u00b7\ub300\uc2dc\ubcf4\ub4dc (marginal density \uce21\uc815) NestJS \uc11c\ube44\uc2a4",
+  "description": "시뮬 — 분석·대시보드 (marginal density 측정) NestJS 서비스",
   "private": true,
   "type": "module",
   "scripts": {
@@ -30,7 +30,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "weighted-index": "workspace:*",
-    "zod": "^3.24.2"
+    "zod": "^3.25.76"
   },
   "peerDependencies": {
     "better-sqlite3": "catalog:",

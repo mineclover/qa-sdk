@@ -1,7 +1,7 @@
 {
   "name": "@qa-sdk/sim-notification-api",
   "version": "0.1.0",
-  "description": "\uc2dc\ubbac \u2014 \uc54c\ub9bc/\uad6c\ub3c5 NestJS \uc11c\ube44\uc2a4 (Redis subscriber)",
+  "description": "시뮬 — 알림/구독 NestJS 서비스 (Redis subscriber)",
   "private": true,
   "type": "module",
   "scripts": {
@@ -29,7 +29,7 @@
     "drizzle-orm": "catalog:",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "zod": "^3.24.2"
+    "zod": "^3.25.76"
   },
   "peerDependencies": {
     "better-sqlite3": "catalog:",

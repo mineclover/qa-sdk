@@ -29,7 +29,7 @@
     "ioredis": "^5.10.1",
     "pino": "workspace:@qa-sdk/pino@*",
     "weighted-index": "workspace:*",
-    "zod": "^3.24.2"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

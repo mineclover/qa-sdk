@@ -564,7 +564,7 @@ importers:
         specifier: ^2.3.0
         version: 2.4.0
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -608,7 +608,7 @@ importers:
         specifier: 'catalog:'
         version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@nestjs/common':
@@ -737,7 +737,7 @@ importers:
         specifier: ^7.0.0
         version: 7.8.2
       zod:
-        specifier: ^3.22.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/better-sqlite3':
@@ -789,7 +789,7 @@ importers:
         specifier: workspace:*
         version: link:../weighted-index
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -928,7 +928,7 @@ importers:
         specifier: workspace:*
         version: link:../work-domain
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/better-sqlite3':
@@ -1187,7 +1187,7 @@ importers:
         specifier: workspace:@qa-sdk/pino@*
         version: link:../pino
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1327,7 +1327,7 @@ importers:
         specifier: workspace:*
         version: link:../operational-ontology
       zod:
-        specifier: ^3.23.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1434,7 +1434,7 @@ importers:
         specifier: ^8.19.0
         version: 8.19.0
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1556,7 +1556,7 @@ importers:
         specifier: workspace:*
         version: link:../motion-workspace
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1702,7 +1702,7 @@ importers:
         specifier: ^1.30.0
         version: 1.40.0
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@qa-sdk/store':
@@ -1933,7 +1933,7 @@ importers:
         specifier: workspace:@qa-sdk/pino@*
         version: link:../pino
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -2056,7 +2056,7 @@ importers:
         specifier: ^8.19.0
         version: 8.19.0
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@nestjs/testing':
@@ -2358,7 +2358,7 @@ importers:
         specifier: ^2.3.0
         version: 2.4.0
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -2401,7 +2401,7 @@ importers:
   packages/sim-outbox-view:
     dependencies:
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -2423,7 +2423,7 @@ importers:
         specifier: workspace:*
         version: link:../sim-identifier-grammar
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -3002,7 +3002,7 @@ importers:
         specifier: workspace:*
         version: link:../../../../packages/sim-identifier-grammar
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@nestjs/common':
@@ -3039,7 +3039,7 @@ importers:
         specifier: 'catalog:'
         version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@nestjs/common':
@@ -3152,7 +3152,7 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/weighted-index
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -3240,7 +3240,7 @@ importers:
         specifier: workspace:*
         version: link:../../../../packages/weighted-index
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@nestjs/testing':
@@ -3331,7 +3331,7 @@ importers:
         specifier: ^7.8.1
         version: 7.8.2
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@nestjs/testing':
@@ -3413,7 +3413,7 @@ importers:
         specifier: workspace:*
         version: link:../../../../packages/weighted-index
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@nestjs/testing':
@@ -3501,7 +3501,7 @@ importers:
         specifier: ^2.5.0
         version: 2.8.3
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@nestjs/testing':
@@ -3568,7 +3568,7 @@ importers:
         specifier: ^7.8.1
         version: 7.8.2
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@nestjs/testing':
@@ -3638,7 +3638,7 @@ importers:
         specifier: workspace:*
         version: link:../../../../packages/sim-internal-network
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@opentelemetry/context-async-hooks':
@@ -3696,7 +3696,7 @@ importers:
         specifier: ^15.1.3
         version: 15.1.3
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -3760,7 +3760,7 @@ importers:
         specifier: ^7.8.1
         version: 7.8.2
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@nestjs/testing':
@@ -3857,7 +3857,7 @@ importers:
         specifier: workspace:*
         version: link:../../../../packages/weighted-index
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@nestjs/testing':
@@ -3936,7 +3936,7 @@ importers:
         specifier: workspace:*
         version: link:../../../../packages/weighted-index
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@nestjs/testing':

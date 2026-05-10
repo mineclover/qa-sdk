@@ -54,7 +54,7 @@
     "permission-engine": "workspace:*",
     "sim-identifier-grammar": "workspace:*",
     "sim-internal-network": "workspace:*",
-    "zod": "^3.24.2"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@opentelemetry/context-async-hooks": "^1.30.1",
