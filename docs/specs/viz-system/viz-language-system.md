@@ -15,6 +15,8 @@ def:
       type: contains
     - target: rlsc-integration
       type: contains
+    - target: graphics-interface-adapter-coverage
+      type: contains
     - target: canvas-viewport-spec
       type: refs
 ---
@@ -29,5 +31,6 @@ RLSC 계약을 핵심 모델과 좌표계 통합 문서로 분리해 선언형 U
 
 - `rlsc-core-model`: RLSC의 정체성, 핵심 개념, 마크업 포맷을 정리한 문서.
 - `rlsc-integration`: context engineering, 기존 좌표계 통합, API/패키지 구조를 정리한 문서.
+- `graphics-interface-adapter-coverage`: CSS/DOM, Figma, Pencil, Photoshop, Stitch를 중앙 graphics interface로 흡수하기 위한 adapter coverage 문서.
 
 원본: `docs/specs/rlsc/rlsc.spec.md` (`rlsc-spec`)
