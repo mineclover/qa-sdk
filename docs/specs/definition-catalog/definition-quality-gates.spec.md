@@ -130,6 +130,7 @@ qa-sdk quality claims <bundle-doc-id>          # contract claim 감사표
 qa-sdk quality next <gate-doc-id>              # 다음 gate 추천
 qa-sdk quality diagnose <gate-doc-id>          # 최근 실행 결과 진단
 qa-sdk def code-link-gaps [--scope=...]        # explicit 문서 연결 없는 코드 목록
+pnpm docs:audit-quality -- docs/specs          # 중복 문단/누락 marker/분할 후보 리포트
 ```
 
 ## 운영 라이프사이클
@@ -145,6 +146,8 @@ qa-sdk def code-link-gaps [--scope=...]        # explicit 문서 연결 없는 �
 7. `quality bundle`, `quality status`, `quality export`로 bundle/system 수준 상태를 요약하고 JSON snapshot을 남긴다.
 
 code↔document coverage는 별도 진단 표면으로 운영한다. repo 전체 baseline이 큰 동안에는 `def code-link-gaps`로 범위를 좁혀 리스트업하고, 충분히 정리된 scope부터 `--strict`를 gate command로 승격한다.
+
+문서 본문 품질은 `pnpm docs:audit-quality`로 보조 점검한다. 이 검사는 `def validate`가 잡지 않는 exact duplicate paragraph, `^purpose`/`^overview` marker 누락, 대형 문서의 다중 책임 신호를 리포트한다. 기본 실행은 리포트 전용이며 CI 게이트로 승격할 때만 `--fail-on-warning`을 사용한다.
 
 ## Claim Audit
 
