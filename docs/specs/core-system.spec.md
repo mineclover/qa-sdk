@@ -9,6 +9,22 @@ def:
   lifecycle: approved
   layer: domain
   svc: core
+  tags: [structural, runtime]
+  links:
+    - target: weighted-index-system
+      type: depends_on
+    - target: indexing-core-system
+      type: depends_on
+    - target: index-meta-system
+      type: depends_on
+    - target: sdk-system
+      type: depends_on
+    - target: platform-chain-system
+      type: depends_on
+    - target: wi-api
+      type: refs
+    - target: sdk-api-surface
+      type: refs
 ---
 
 # QA-SDK Core System
@@ -19,6 +35,9 @@ def:
 
 ## 구성 ^overview
 
-- **Common Types**: URN, Identity, Metadata 기본 타입
-- **Domain Constants**: 축(Axis) 정의 및 도메인 상수
-- **Shared Utilities**: 공통 데이터 처리 로직
+- `weighted-index-system`: 주소 압축/해석의 수학적 core.
+- `indexing-core-system`: 좌표계 기반 원리, schema layer, traversal, table system.
+- `index-meta-system`: index metadata registry, codec, resolver, SDK 시나리오.
+- `sdk-system`: public SDK API surface, constants, dimension view.
+- `platform-chain-system`: platform runtime 공통 codec/context/logger/sdk 계약.
+- `wi-api`, `sdk-api-surface`: 외부 소비자가 직접 사용하는 core public API.

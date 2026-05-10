@@ -8,6 +8,17 @@ def:
   lifecycle: approved
   layer: operation
   tags: [structural, testing, ci]
+  links:
+    - target: testing-patterns
+      type: refines
+    - target: facet-test-isolation-rule
+      type: depends_on
+    - target: test-md-convention
+      type: depends_on
+    - target: quality-gates-system
+      type: constrains
+    - target: work-domain-quality-bundle
+      type: refs
 ---
 
 # CI Workspace Test Convention — 운영 규칙
@@ -15,6 +26,14 @@ def:
 ## 목적 ^purpose
 
 워크스페이스 테스트가 CI에서 안정적으로 그린이 되도록 하는 패턴 모음. `pnpm -r run test`가 매 패키지를 직렬로 실행하기 때문에 한 패키지의 환경 의존이 전체 게이트를 막는다. 본 규칙은 그 회귀 패턴 5종을 표준 처리법으로 묶는다.
+
+## 구성 ^overview
+
+- `testing-patterns`: 테스트가 SSOT와 환경 변화에 덜 흔들리도록 하는 일반 패턴.
+- `facet-test-isolation-rule`: 서비스/패키지 격리 테스트 운영 절차.
+- `test-md-convention`: provider-side 검증 시나리오 문서 표준.
+- `quality-gates-system`: CI/test/build/typecheck gate를 묶는 품질 게이트 루트.
+- `work-domain-quality-bundle`: workspace 품질 번들의 대표 gate 구성.
 
 ---
 

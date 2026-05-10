@@ -13,6 +13,8 @@ def:
   links:
     - target: viz-language-system
       type: refines
+    - target: visbug-bridge-spec
+      type: refs
 ---
 
 # RLSC 통합 경로

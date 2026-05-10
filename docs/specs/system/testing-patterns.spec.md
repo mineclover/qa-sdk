@@ -12,6 +12,8 @@ def:
   links:
     - target: facet-test-isolation
       type: traces_to
+    - target: ci-workspace-test-rule
+      type: refs
 ---
 
 # 테스트 패턴 — SSOT 파생 표준
