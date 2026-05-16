@@ -57,12 +57,12 @@ interface EditLogEntry {
 
 `merge: 'correlated'` 시 `MergedEditLogEntry`로 확장되어 `sources`, `agreement`, `divergence` 필드 포함.
 
-## rlsc와 통합
+## RLSC와 통합
 
 EditLogEntry → RLSCNode 좌표 join 패턴은 별도 문서 참조.
 
-- 패턴 + 코드 예: `packages/rlsc/docs/visbug-bridge-integration.md`
-- 좌표 join smoke test: `packages/rlsc/src/visbug-bridge-join.test.ts`
+- 패턴 + 코드 예: `pnpm-mcp/packages/rlsc/docs/visbug-bridge-integration.md`
+- 좌표 join smoke test: `pnpm-mcp/packages/rlsc/src/visbug-bridge-join.test.ts`
 
 ## 의존 + 빌드 절차
 

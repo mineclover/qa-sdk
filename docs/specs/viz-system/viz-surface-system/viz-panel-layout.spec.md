@@ -124,4 +124,3 @@ platform-demo의 각 페이지가 공통 레이아웃 패턴(nav + sidebar + mai
 | flow.html | 340px | flex:1 | 없음 |
 | monitor.html | 없음 | canvas 전체 | HUD 오버레이 |
 | insights.html | 없음 | 전체 (max-width 1200px) | 없음 |
-| rlsc.html | 없음 | canvas (grid) | 520px (탭) |

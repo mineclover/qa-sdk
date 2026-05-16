@@ -27,9 +27,6 @@
     "monitoring:down": "docker compose -f monitoring/docker-compose.monitoring.yml down",
     "registry": "npx verdaccio --config verdaccio/config.yml",
     "publish:local": "bash scripts/publish-local.sh",
-    "pack:rlsc:local": "bash scripts/pack-rlsc-local.sh",
-    "check:rlsc": "node scripts/check-rlsc-version-consistency.mjs",
-    "check:rlsc:tgz": "node scripts/check-rlsc-tgz-install.mjs",
     "test:e2e": "pnpm --filter @qa-sdk/e2e test",
     "sim:smoke": "./simulations/enterprise-pm/scripts/smoke.sh",
     "sim:smoke:keep": "./simulations/enterprise-pm/scripts/smoke.sh --keep-up",
@@ -60,9 +57,6 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "better-sqlite3"
-    ],
-    "overrides": {
-      "rlsc-analysis": "link:packages/rlsc-analysis"
-    }
+    ]
   }
 }

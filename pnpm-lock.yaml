@@ -28,9 +28,6 @@ catalogs:
       specifier: ^11.0.0
       version: 11.2.7
 
-overrides:
-  rlsc-analysis: link:packages/rlsc-analysis
-
 importers:
 
   .:
@@ -1815,9 +1812,6 @@ importers:
       permission-engine:
         specifier: workspace:*
         version: link:../permission-engine
-      rlsc:
-        specifier: workspace:*
-        version: link:../rlsc
       weighted-index:
         specifier: workspace:*
         version: link:../weighted-index
@@ -2191,81 +2185,6 @@ importers:
       vitest:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(jsdom@25.0.1)(lightningcss@1.32.0)
-
-  packages/rlsc:
-    dependencies:
-      '@chenglou/pretext':
-        specifier: 0.0.4
-        version: 0.0.4
-      rlsc-analysis:
-        specifier: link:../rlsc-analysis
-        version: link:../rlsc-analysis
-    devDependencies:
-      tsup:
-        specifier: ^8.5.1
-        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.3
-      vitest:
-        specifier: ^1.6.1
-        version: 1.6.1(@types/node@25.5.0)(happy-dom@20.8.4)(jsdom@25.0.1)(lightningcss@1.32.0)
-
-  packages/rlsc-analysis:
-    devDependencies:
-      happy-dom:
-        specifier: ^20.8.4
-        version: 20.8.4
-      tsup:
-        specifier: ^8.5.1
-        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.3
-      vitest:
-        specifier: ^1.6.1
-        version: 1.6.1(@types/node@25.5.0)(happy-dom@20.8.4)(jsdom@25.0.1)(lightningcss@1.32.0)
-
-  packages/rlsc-demo:
-    dependencies:
-      rlsc:
-        specifier: workspace:*
-        version: link:../rlsc
-      rlsc-analysis:
-        specifier: link:../rlsc-analysis
-        version: link:../rlsc-analysis
-      rlsc-perspective:
-        specifier: workspace:*
-        version: link:../rlsc-perspective
-    devDependencies:
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.3
-      vite:
-        specifier: ^6.3.5
-        version: 6.4.1(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.8.3)
-
-  packages/rlsc-perspective:
-    dependencies:
-      rlsc-analysis:
-        specifier: link:../rlsc-analysis
-        version: link:../rlsc-analysis
-    devDependencies:
-      esbuild:
-        specifier: ^0.27.3
-        version: 0.27.3
-      happy-dom:
-        specifier: ^20.8.4
-        version: 20.8.4
-      tsup:
-        specifier: ^8.5.1
-        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.3
-      vitest:
-        specifier: ^1.6.1
-        version: 1.6.1(@types/node@25.5.0)(happy-dom@20.8.4)(jsdom@25.0.1)(lightningcss@1.32.0)
 
   packages/roleplay-web:
     dependencies:
@@ -4080,9 +3999,6 @@ packages:
 
   '@borewit/text-codec@0.2.2':
     resolution: {integrity: sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ==}
-
-  '@chenglou/pretext@0.0.4':
-    resolution: {integrity: sha512-FnPAFMid1/p1j2V2gRPUVBarGUIb2PhkkC9YNnTOfPtTDgHKh8siO8PP9pCxpFfYlcodWPJpE1UbSHGQqt8pQQ==}
 
   '@cloudflare/kv-asset-handler@0.4.2':
     resolution: {integrity: sha512-SIOD2DxrRRwQ+jgzlXCqoEFiKOFqaPjhnNTGKXSRLvp1HiOvapLaFG2kEr9dYQTYe8rKrd9uvDUzmAITeNyaHQ==}
@@ -11142,8 +11058,6 @@ snapshots:
       '@babel/helper-validator-identifier': 7.28.5
 
   '@borewit/text-codec@0.2.2': {}
-
-  '@chenglou/pretext@0.0.4': {}
 
   '@cloudflare/kv-asset-handler@0.4.2': {}
 

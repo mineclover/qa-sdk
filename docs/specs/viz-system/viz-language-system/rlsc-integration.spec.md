@@ -72,14 +72,14 @@ RLSC는 패키지 구현은 독립 repository/submodule로 공유할 수 있지�
 
 | 패키지 | 책임 | 배포/공유 기준 |
 |--------|------|---------------|
-| `rlsc-analysis` | DOM 스캔, 메타데이터 수집, identifier/index, 영역/overflow 분석 | 독립 submodule + semver dependency |
-| `rlsc-perspective` | 수집된 `RLSCDocument`의 CSS 3D Perspective 시각화 | qa-sdk workspace package |
-| `rlsc` | 기존 RLSC DSL, rendering, compatibility export | 독립 submodule + semver dependency |
-| `@qa-sdk/rlsc-demo` | 분석/시각화 통합 데모 | qa-sdk 내부 demo app |
+| `rlsc-analysis` | DOM 스캔, 메타데이터 수집, identifier/index, 영역/overflow 분석 | `pnpm-mcp/packages/rlsc-analysis` |
+| `rlsc-perspective` | 수집된 `RLSCDocument`의 CSS 3D Perspective 시각화 | `pnpm-mcp/packages/rlsc-perspective` |
+| `rlsc` | 기존 RLSC DSL, rendering, compatibility export | `pnpm-mcp/packages/rlsc` |
+| `rlsc-demo` | 분석/시각화 통합 데모 | `pnpm-mcp/packages/rlsc-demo` |
 
-qa-sdk root는 `pnpm.overrides["rlsc-analysis"] = "link:packages/rlsc-analysis"`로 monorepo 개발 중에도 `rlsc`, `rlsc-perspective`, demo가 같은 analysis 구현을 보게 한다. `pnpm check:rlsc`는 submodule URL/checkout 상태와 package version range 일관성을 검증한다.
+qa-sdk는 더 이상 RLSC 구현 패키지나 demo를 workspace로 소유하지 않는다. qa-sdk 쪽 계약은 `data-qa-address` 기반 좌표 연결과 viz-language 문서 수준의 통합 설명으로 제한한다.
 
-외부 소비자는 registry 또는 local tarball 산출물을 설치한다. 구현을 함께 검토하거나 공유해야 하는 경우에는 `git clone --recurse-submodules`로 qa-sdk parent repository와 submodule revision을 함께 고정한다.
+외부 소비자는 `pnpm-mcp`에서 빌드/테스트된 registry 또는 local tarball 산출물을 설치한다. 구현과 테스트 하네스의 관리 주체는 `pnpm-mcp`다.
 
 ## 쿼리 API
 
@@ -94,7 +94,7 @@ qa-sdk root는 `pnpm.overrides["rlsc-analysis"] = "link:packages/rlsc-analysis"`
 | `removeNode(doc, id)` | 불변 노드 제거 |
 | `diffDocuments(before, after)` | 두 문서 간 차이 계산 (added/removed/moved/resized/reordered) |
 
-## 레거시 패키지 구조 — packages/rlsc
+## 레거시 패키지 구조 — pnpm-mcp/packages/rlsc
 
 ```
 src/
@@ -109,7 +109,7 @@ src/
   index.ts       ← 공개 export 배럴
 ```
 
-## platform-demo 통합 — rlsc.html
+## demo 통합 — pnpm-mcp/packages/rlsc-demo
 
 R.L.S.C. Inspector UI:
 
