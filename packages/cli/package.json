@@ -60,7 +60,6 @@
     "review-ledger": "workspace:*",
     "snapshot-io": "workspace:*",
     "spec-analyzer": "workspace:*",
-    "taxonomy-engine": "workspace:*",
     "spec-tracker": "workspace:*",
     "spec-transition": "workspace:*",
     "test-scenario-store": "workspace:*",

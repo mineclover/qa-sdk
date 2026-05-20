@@ -142,12 +142,6 @@ import {
   DOCS_COMMAND_TREE as DOCS_GROUP_COMMAND_TREE,
   DOCS_HANDLER_REGISTRY as DOCS_GROUP_HANDLER_REGISTRY,
 } from './command-groups/docs.commands.js';
-import {
-  TAXONOMY_COMMAND_SPECS as TAXONOMY_GROUP_COMMAND_SPECS,
-  TAXONOMY_COMMAND_TREE as TAXONOMY_GROUP_COMMAND_TREE,
-  TAXONOMY_HANDLER_REGISTRY as TAXONOMY_GROUP_HANDLER_REGISTRY,
-  TAXONOMY_TOP_LEVEL_USAGE_LINES as TAXONOMY_GROUP_TOP_LEVEL_USAGE_LINES,
-} from './command-groups/taxonomy.commands.js';
 
 // ── Usage ────────────────────────────────────────────
 
@@ -195,7 +189,6 @@ ${formatUsageSpecs(QUALITY_GROUP_COMMAND_SPECS)}
 ${formatUsageSpecs(CATALOG_GROUP_COMMAND_SPECS)}
 ${formatUsageSpecs(ONTOLOGY_GROUP_COMMAND_SPECS)}
 ${formatUsageLines(DEF_GROUP_TOP_LEVEL_USAGE_LINES)}
-${formatUsageLines(TAXONOMY_GROUP_TOP_LEVEL_USAGE_LINES)}
 ${formatUsageSpecs(DOCS_GROUP_COMMAND_SPECS)}
 ${formatUsageSpecs(OBS_GROUP_COMMAND_SPECS)}
 ${formatUsageSpecs(CACHE_GROUP_COMMAND_SPECS)}
@@ -218,10 +211,6 @@ async function dispatchDefCommand(handlerKey: string, rest: string[]): Promise<v
 
 async function dispatchDocsCommand(handlerKey: string, rest: string[]): Promise<void> {
   await dispatchFromRegistry(DOCS_GROUP_HANDLER_REGISTRY, handlerKey, rest);
-}
-
-async function dispatchTaxonomyCommand(handlerKey: string, rest: string[]): Promise<void> {
-  await dispatchFromRegistry(TAXONOMY_GROUP_HANDLER_REGISTRY, handlerKey, rest);
 }
 
 async function dispatchDkgCommand(handlerKey: string, rest: string[]): Promise<void> {
@@ -312,7 +301,6 @@ const TREE_COMMAND_GROUPS: readonly TreeCommandGroup[] = [
   { rootSegments: ['facet'], rootName: 'qa-sdk facet', tree: FACET_GROUP_COMMAND_TREE, dispatch: dispatchFacetCommand },
   { rootSegments: ['def'], rootName: 'qa-sdk def', tree: DEF_GROUP_COMMAND_TREE, dispatch: dispatchDefCommand },
   { rootSegments: ['docs'], rootName: 'qa-sdk docs', tree: DOCS_GROUP_COMMAND_TREE, dispatch: dispatchDocsCommand },
-  { rootSegments: ['tax'], rootName: 'qa-sdk tax', tree: TAXONOMY_GROUP_COMMAND_TREE, dispatch: dispatchTaxonomyCommand },
   { rootSegments: ['service'], rootName: 'qa-sdk service', tree: SERVICE_GROUP_COMMAND_TREE, dispatch: dispatchServiceCommand },
   { rootSegments: ['dkg'], rootName: 'qa-sdk dkg', tree: DKG_GROUP_COMMAND_TREE, dispatch: dispatchDkgCommand },
   { rootSegments: [], rootName: 'qa-sdk', tree: QUALITY_GROUP_COMMAND_TREE, dispatch: dispatchQualityCommand },
