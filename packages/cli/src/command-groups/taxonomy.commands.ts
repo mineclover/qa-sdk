@@ -6,7 +6,7 @@ import {
   type CommandUsageSpec,
   type RestCommandHandler,
 } from "../command-spec.js";
-import { cliTaxonomy } from "../commands/taxonomy.js";
+import { cliTaxonomy } from "../commands/taxonomy/index.js";
 
 export const TAXONOMY_COMMAND_DESCRIPTORS = [
   { id: "tax.help", path: ["help"], handlerKey: "tax.help" },

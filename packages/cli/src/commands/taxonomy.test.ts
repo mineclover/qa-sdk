@@ -3,7 +3,7 @@ import { writeFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execSync } from "node:child_process";
-import { cliTaxonomy } from "./taxonomy.js";
+import { cliTaxonomy } from "./taxonomy/index.js";
 import { randomBytes } from "node:crypto";
 
 const GOOD_YAML = `
