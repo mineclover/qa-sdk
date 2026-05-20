@@ -22,6 +22,9 @@ export { validate, type ValidateOptions } from "./validate/index.js";
 // Codegen (TS file output + deterministic contentHash)
 export { codegen, CodegenValidationError, type CodegenOptions, type CodegenResult } from "./codegen/index.js";
 
+// Codegen helpers (drift detection)
+export { checkContentHashDrift, validateRegistryVersions } from "./codegen/drift.js";
+
 // Types
 export type { TaxonomyIR, AxisIR, EntryIR, RelationIR, ConstraintIR, ImportIR, Coordinate, RelationKind, ConstraintKind, Severity } from "./schema/ir.js";
 export type { Diagnostic, DiagnosticCode } from "./schema/diagnostic.js";
