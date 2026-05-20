@@ -65,6 +65,10 @@ export function validateRefs(ir: TaxonomyIR, registry?: TaxonomyRegistry): Diagn
 }
 
 function inferAxis(rel: { from: string[]; to: string[] }, field: string): string | undefined {
+  // 1) 명시적 axis name: field 이름이 from/to에 있으면 그 axis
+  if (rel.from.includes(field)) return field;
+  if (rel.to.includes(field)) return field;
+  // 2) 기존 컨벤션 (backward compat)
   if (field === "upper" || field === "parent") return rel.from[0];
   if (field === "lower" || field === "child") return rel.to[0];
   return undefined;

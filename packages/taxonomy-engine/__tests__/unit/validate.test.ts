@@ -79,6 +79,77 @@ constraints:
     const diags = validate(r.ir);
     expect(diags.some((d) => d.code === "constraint-violated" && d.severity === "error")).toBe(true);
   });
+
+  describe("validate refs (generalized inferAxis)", () => {
+    it("depends-on relation에서 명시적 axis-name field 검증", () => {
+      const yaml = `
+taxonomy: t
+version: 1
+axes:
+  scope:
+    entries: [apm, ingest]
+relations:
+  service-deps:
+    from: scope
+    to: scope
+    kind: depends-on
+    rules:
+      - { scope: missing }
+`;
+      const r = parse(yaml);
+      if (!("ir" in r)) throw new Error();
+      const diags = validate(r.ir);
+      const broken = diags.filter((d) => d.code === "ref-broken");
+      expect(broken.length).toBe(1);
+      expect(broken[0].meta?.missing).toBe("missing");
+    });
+
+    it("binds relation cross-axis field 검증", () => {
+      const yaml = `
+taxonomy: t
+version: 1
+axes:
+  clip:
+    entries: [fade, slide]
+  asset:
+    entries: [text, image]
+relations:
+  clip-binds-asset:
+    from: clip
+    to: asset
+    kind: binds
+    rules:
+      - { clip: fade, asset: nonexistent }
+`;
+      const r = parse(yaml);
+      if (!("ir" in r)) throw new Error();
+      const diags = validate(r.ir);
+      const broken = diags.filter((d) => d.code === "ref-broken");
+      expect(broken.length).toBe(1);
+      expect(broken[0].meta?.axis).toBe("asset");
+    });
+
+    it("기존 upper/parent/lower/child 컨벤션 backward compat", () => {
+      const yaml = `
+taxonomy: t
+version: 1
+axes:
+  depth:
+    entries: [a, b]
+relations:
+  d-contains:
+    from: depth
+    to: depth
+    kind: contains
+    rules:
+      - { upper: a, lower: missing }
+`;
+      const r = parse(yaml);
+      if (!("ir" in r)) throw new Error();
+      const diags = validate(r.ir);
+      expect(diags.some((d) => d.code === "ref-broken" && d.meta?.field === "lower")).toBe(true);
+    });
+  });
 });
 
 describe("validate cross-taxonomy imports", () => {
