@@ -3,6 +3,7 @@ import { writeFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { cliTaxonomy } from "./taxonomy.js";
+import { randomBytes } from "node:crypto";
 
 const GOOD_YAML = `
 taxonomy: ok
@@ -173,6 +174,66 @@ describe("cli tax diff", () => {
     await cliTaxonomy(["diff", fileA, fileB]);
     expect(exit).not.toHaveBeenCalledWith(1);
     expect(log).toHaveBeenCalled();
+    log.mockRestore();
+    exit.mockRestore();
+  });
+});
+
+describe("cli tax --registry <dir>", () => {
+  it("validate — registry에 base taxonomy 있으면 cross-tax import 통과", async () => {
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const regDir = join(tmpdir(), `tax-reg-${Date.now()}-${randomBytes(4).toString("hex")}`);
+    mkdirSync(regDir, { recursive: true });
+
+    // base
+    writeFileSync(join(regDir, "base.yaml"), `taxonomy: base
+version: 1
+axes:
+  a:
+    entries: [x]
+    capacity: 2
+`);
+    // derived (imports base)
+    const derivedFile = join(regDir, "der.yaml");
+    writeFileSync(derivedFile, `taxonomy: der
+version: 1
+imports:
+  - { taxonomy: base, version: 1, as: b }
+axes:
+  s:
+    entries: [y]
+    capacity: 2
+`);
+
+    await cliTaxonomy(["validate", derivedFile, "--registry", regDir]);
+    expect(exit).not.toHaveBeenCalledWith(1);
+
+    rmSync(regDir, { recursive: true });
+    log.mockRestore();
+    err.mockRestore();
+    exit.mockRestore();
+  });
+
+  it("show — registry-wide 조회 (file 없이 ref만)", async () => {
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const regDir = join(tmpdir(), `tax-reg-show-${Date.now()}-${randomBytes(4).toString("hex")}`);
+    mkdirSync(regDir, { recursive: true });
+    writeFileSync(join(regDir, "x.yaml"), `taxonomy: x
+version: 1
+axes:
+  s:
+    entries: [aa, bb]
+    capacity: 4
+`);
+
+    await cliTaxonomy(["show", "x:s.aa", "--registry", regDir]);
+    expect(exit).not.toHaveBeenCalledWith(1);
+    expect(log).toHaveBeenCalled();
+
+    rmSync(regDir, { recursive: true });
     log.mockRestore();
     exit.mockRestore();
   });

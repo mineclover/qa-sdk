@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { parse, validate, show, codegen, CodegenValidationError, TaxonomyRegistry, diff } from "taxonomy-engine";
 import type { Diagnostic, RefResult, DiffEntry } from "taxonomy-engine";
@@ -28,11 +28,15 @@ function printHelp(): void {
   console.log(`qa-sdk tax — 텍소노미 yaml 검증/조회/생성
 
 사용법:
-  qa-sdk tax validate <file> [--strict] [--json]
+  qa-sdk tax validate <file> [--registry <dir>] [--strict] [--json]
   qa-sdk tax show <file> <ref> [--json]
+  qa-sdk tax show <ref> --registry <dir> [--json]
   qa-sdk tax codegen <file> --out <dir> [--skip-validate] [--json]
   qa-sdk tax diff <a> <b> [--json]
   qa-sdk tax help
+
+--registry <dir>: 디렉토리의 모든 .yaml을 TaxonomyRegistry에 로드.
+  cross-taxonomy import 검증 및 registry-wide ref 조회에 활용.
 
 ref 형식 (3-tier):
   taxonomy:axis.entry              dotted
@@ -41,12 +45,58 @@ ref 형식 (3-tier):
 `);
 }
 
+function loadRegistryDir(dir: string): TaxonomyRegistry {
+  const reg = new TaxonomyRegistry();
+  let entries;
+  try {
+    entries = readdirSync(dir);
+  } catch (e) {
+    console.error(`--registry 디렉토리 읽기 실패: ${dir} — ${(e as Error).message}`);
+    process.exit(1);
+    return reg;
+  }
+  for (const name of entries) {
+    if (!name.endsWith(".yaml")) continue;
+    const path = join(dir, name);
+    try {
+      const text = readFileSync(path, "utf8");
+      const r = parse(text);
+      if ("ir" in r) reg.add(r.ir);
+      else {
+        console.error(`--registry: ${name} parse 실패 (skip): ${r.error.message}`);
+      }
+    } catch (e) {
+      console.error(`--registry: ${name} 읽기 실패 (skip): ${(e as Error).message}`);
+    }
+  }
+  return reg;
+}
+
+function extractRegistryDir(args: string[]): string | undefined {
+  const idx = args.indexOf("--registry");
+  return idx >= 0 ? args[idx + 1] : undefined;
+}
+
+function filterRegistryArgs(args: string[]): string[] {
+  const result: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--registry") {
+      i++; // skip value
+      continue;
+    }
+    result.push(args[i]);
+  }
+  return result;
+}
+
 function validateCmd(args: string[]): void {
   const strict = args.includes("--strict");
   const json = args.includes("--json");
-  const file = args.find((a) => !a.startsWith("--"));
+  const registryDir = extractRegistryDir(args);
+  const filteredArgs = filterRegistryArgs(args);
+  const file = filteredArgs.find((a) => !a.startsWith("--"));
   if (!file) {
-    console.error("파일 경로 필요: qa-sdk tax validate <file>");
+    console.error("파일 경로 필요: qa-sdk tax validate <file> [--registry <dir>]");
     process.exit(1);
     return;
   }
@@ -67,17 +117,61 @@ function validateCmd(args: string[]): void {
     return;
   }
 
-  const diags = validate(parsed.ir, undefined, { strict });
+  const reg = registryDir ? loadRegistryDir(registryDir) : undefined;
+  // parsed.ir 자체도 reg에 추가해야 self-validate 가능
+  if (reg) reg.add(parsed.ir);
+
+  const diags = validate(parsed.ir, reg, { strict });
   printDiagnostics(diags, { json, file });
   const errors = diags.filter((d) => d.severity === "error");
   if (errors.length > 0) process.exit(1);
 }
 
+function runShowOnRegistry(reg: TaxonomyRegistry, ref: string, json: boolean): void {
+  let result: RefResult | undefined;
+  try {
+    result = show(ref, reg);
+  } catch (e) {
+    console.error(`ref 형식 오류: ${(e as Error).message}`);
+    process.exit(1);
+    return;
+  }
+
+  if (!result) {
+    console.error(`해소 실패: ${ref}`);
+    process.exit(1);
+    return;
+  }
+
+  if (json) {
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+  printShowResult(result);
+}
+
 function showCmd(args: string[]): void {
   const json = args.includes("--json");
-  const positional = args.filter((a) => !a.startsWith("--"));
+  const registryDir = extractRegistryDir(args);
+  const filteredArgs = filterRegistryArgs(args);
+  const positional = filteredArgs.filter((a) => !a.startsWith("--"));
+
+  // registryDir 있으면 file 없어도 OK (registry로 충분)
+  if (registryDir) {
+    if (positional.length < 1) {
+      console.error("사용법: qa-sdk tax show <ref> --registry <dir>");
+      process.exit(1);
+      return;
+    }
+    const ref = positional[0];
+    const reg = loadRegistryDir(registryDir);
+    runShowOnRegistry(reg, ref, json);
+    return;
+  }
+
+  // 기존: file + ref
   if (positional.length < 2) {
-    console.error("사용법: qa-sdk tax show <file> <ref>");
+    console.error("사용법: qa-sdk tax show <file> <ref> [--json]  또는  qa-sdk tax show <ref> --registry <dir>");
     process.exit(1);
     return;
   }
@@ -101,27 +195,7 @@ function showCmd(args: string[]): void {
 
   const reg = new TaxonomyRegistry();
   reg.add(parsed.ir);
-
-  let result: RefResult | undefined;
-  try {
-    result = show(ref, reg);
-  } catch (e) {
-    console.error(`ref 형식 오류: ${(e as Error).message}`);
-    process.exit(1);
-    return;
-  }
-
-  if (!result) {
-    console.error(`해소 실패: ${ref}`);
-    process.exit(1);
-    return;
-  }
-
-  if (json) {
-    console.log(JSON.stringify(result, null, 2));
-    return;
-  }
-  printShowResult(result);
+  runShowOnRegistry(reg, ref, json);
 }
 
 function codegenCmd(args: string[]): void {
