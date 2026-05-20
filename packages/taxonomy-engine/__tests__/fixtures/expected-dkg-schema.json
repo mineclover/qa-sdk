@@ -1,0 +1,64 @@
+{
+  "taxonomy": "dkg-schema",
+  "axes": {
+    "node-kind": {
+      "entries": [
+        { "id": "axis", "address": 0 },
+        { "id": "prefix", "address": 1 },
+        { "id": "spec", "address": 2 },
+        { "id": "schema", "address": 3 },
+        { "id": "decision", "address": 4 },
+        { "id": "version-event", "address": 5 },
+        { "id": "constraint", "address": 6 },
+        { "id": "observation", "address": 7 },
+        { "id": "domain", "address": 8 },
+        { "id": "consumer", "address": 9 },
+        { "id": "intent-link", "address": 10 },
+        { "id": "dsl-bundle", "address": 11 },
+        { "id": "skill", "address": 12 },
+        { "id": "transition-spec", "address": 13 },
+        { "id": "table", "address": 14 },
+        { "id": "flow-schema", "address": 15 }
+      ]
+    },
+    "node-tier": {
+      "entries": [
+        { "id": "catalog-derived", "address": 0 },
+        { "id": "design-ops", "address": 1 },
+        { "id": "external-structure", "address": 2 },
+        { "id": "extension", "address": 3 }
+      ]
+    },
+    "edge-kind": {
+      "entries": [
+        { "id": "satisfies", "address": 0 },
+        { "id": "implements", "address": 1 },
+        { "id": "tests", "address": 2 },
+        { "id": "traces-to", "address": 3 },
+        { "id": "depends-on", "address": 4 },
+        { "id": "composes", "address": 5 },
+        { "id": "references", "address": 6 },
+        { "id": "governs", "address": 7 },
+        { "id": "justifies", "address": 8 },
+        { "id": "constrains", "address": 9 },
+        { "id": "contains", "address": 10 },
+        { "id": "bridges", "address": 11 },
+        { "id": "consumes", "address": 12 },
+        { "id": "binds", "address": 13 },
+        { "id": "observes", "address": 14 },
+        { "id": "prompts", "address": 15 },
+        { "id": "evolves-from", "address": 16 },
+        { "id": "supersedes", "address": 17 }
+      ]
+    },
+    "edge-group": {
+      "entries": [
+        { "id": "spec-engine-derived", "address": 0 },
+        { "id": "design-forward", "address": 1 },
+        { "id": "domain-consume-link", "address": 2 },
+        { "id": "ops-reverse", "address": 3 },
+        { "id": "evolution", "address": 4 }
+      ]
+    }
+  }
+}

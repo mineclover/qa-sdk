@@ -1,0 +1,223 @@
+taxonomy: dkg-schema
+version: 1
+description: |
+  qa-sdk DKG (Distributed Knowledge Graph) schema를 taxonomy로 표현.
+  PoC — 노드 16종, 엣지 18종, edge-compat 패턴 표현 가능성 검증.
+  인스턴스 그래프는 scope 외 (그건 def-catalog의 SQLite 담당).
+
+  SSOT: docs/specs/dkg-system/dkg-node-types.spec.md
+        docs/specs/dkg-system/dkg-edge-types.spec.md
+
+axes:
+  node-kind:
+    description: DKG 그래프의 노드 종류 (16종)
+    entries:
+      # catalog-derived (4)
+      - { id: axis,            address: 0,  label: "AxisNode" }
+      - { id: prefix,          address: 1,  label: "PrefixNode" }
+      - { id: spec,            address: 2,  label: "SpecNode" }
+      - { id: schema,          address: 3,  label: "SchemaNode" }
+      # design-ops (4)
+      - { id: decision,        address: 4,  label: "DecisionNode" }
+      - { id: version-event,   address: 5,  label: "VersionEventNode" }
+      - { id: constraint,      address: 6,  label: "ConstraintNode" }
+      - { id: observation,     address: 7,  label: "ObservationNode" }
+      # external-structure (4)
+      - { id: domain,          address: 8,  label: "DomainNode" }
+      - { id: consumer,        address: 9,  label: "ConsumerNode" }
+      - { id: intent-link,     address: 10, label: "IntentLinkNode" }
+      - { id: dsl-bundle,      address: 11, label: "DslBundleNode" }
+      # extension (4)
+      - { id: skill,           address: 12, label: "SkillNode" }
+      - { id: transition-spec, address: 13, label: "TransitionSpecNode" }
+      - { id: table,           address: 14, label: "TableNode" }
+      - { id: flow-schema,     address: 15, label: "FlowSchemaNode" }
+    capacity: 32
+    version: 1
+
+  node-tier:
+    description: 노드의 분류 계층 (4 tier)
+    entries:
+      - { id: catalog-derived,     address: 0 }
+      - { id: design-ops,          address: 1 }
+      - { id: external-structure,  address: 2 }
+      - { id: extension,           address: 3 }
+    capacity: 8
+    version: 1
+
+  edge-kind:
+    description: DKG 엣지 종류 (18종)
+    entries:
+      # spec-engine-derived (5)
+      - { id: satisfies,     address: 0 }
+      - { id: implements,    address: 1 }
+      - { id: tests,         address: 2 }
+      - { id: traces-to,     address: 3 }
+      - { id: depends-on,    address: 4 }
+      # design-forward (5)
+      - { id: composes,      address: 5 }
+      - { id: references,    address: 6 }
+      - { id: governs,       address: 7 }
+      - { id: justifies,     address: 8 }
+      - { id: constrains,    address: 9 }
+      # domain-consume-link (4)
+      - { id: contains,      address: 10 }
+      - { id: bridges,       address: 11 }
+      - { id: consumes,      address: 12 }
+      - { id: binds,         address: 13 }
+      # ops-reverse (2)
+      - { id: observes,      address: 14 }
+      - { id: prompts,       address: 15 }
+      # evolution (2)
+      - { id: evolves-from,  address: 16 }
+      - { id: supersedes,    address: 17 }
+    capacity: 64
+    version: 1
+
+  edge-group:
+    description: 엣지의 의미 그룹 (5 그룹)
+    entries:
+      - { id: spec-engine-derived,   address: 0 }
+      - { id: design-forward,        address: 1 }
+      - { id: domain-consume-link,   address: 2 }
+      - { id: ops-reverse,           address: 3 }
+      - { id: evolution,             address: 4 }
+    capacity: 16
+    version: 1
+
+relations:
+  node-tier-membership:
+    description: 노드 종류 → 분류 계층 매핑
+    from: node-kind
+    to: node-tier
+    kind: depends-on
+    rules:
+      - { node-kind: axis,            node-tier: catalog-derived }
+      - { node-kind: prefix,          node-tier: catalog-derived }
+      - { node-kind: spec,            node-tier: catalog-derived }
+      - { node-kind: schema,          node-tier: catalog-derived }
+      - { node-kind: decision,        node-tier: design-ops }
+      - { node-kind: version-event,   node-tier: design-ops }
+      - { node-kind: constraint,      node-tier: design-ops }
+      - { node-kind: observation,     node-tier: design-ops }
+      - { node-kind: domain,          node-tier: external-structure }
+      - { node-kind: consumer,        node-tier: external-structure }
+      - { node-kind: intent-link,     node-tier: external-structure }
+      - { node-kind: dsl-bundle,      node-tier: external-structure }
+      - { node-kind: skill,           node-tier: extension }
+      - { node-kind: transition-spec, node-tier: extension }
+      - { node-kind: table,           node-tier: extension }
+      - { node-kind: flow-schema,     node-tier: extension }
+
+  edge-group-membership:
+    description: 엣지 종류 → 의미 그룹 매핑
+    from: edge-kind
+    to: edge-group
+    kind: depends-on
+    rules:
+      - { edge-kind: satisfies,    edge-group: spec-engine-derived }
+      - { edge-kind: implements,   edge-group: spec-engine-derived }
+      - { edge-kind: tests,        edge-group: spec-engine-derived }
+      - { edge-kind: traces-to,    edge-group: spec-engine-derived }
+      - { edge-kind: depends-on,   edge-group: spec-engine-derived }
+      - { edge-kind: composes,     edge-group: design-forward }
+      - { edge-kind: references,   edge-group: design-forward }
+      - { edge-kind: governs,      edge-group: design-forward }
+      - { edge-kind: justifies,    edge-group: design-forward }
+      - { edge-kind: constrains,   edge-group: design-forward }
+      - { edge-kind: contains,     edge-group: domain-consume-link }
+      - { edge-kind: bridges,      edge-group: domain-consume-link }
+      - { edge-kind: consumes,     edge-group: domain-consume-link }
+      - { edge-kind: binds,        edge-group: domain-consume-link }
+      - { edge-kind: observes,     edge-group: ops-reverse }
+      - { edge-kind: prompts,      edge-group: ops-reverse }
+      - { edge-kind: evolves-from, edge-group: evolution }
+      - { edge-kind: supersedes,   edge-group: evolution }
+
+  edge-compat:
+    description: |
+      어떤 from-kind 노드에서 어떤 edge-kind가 가능한지의 카탈로그.
+      dkg-edge-types.spec.md에서 추출. PoC 한계: from-kind만 표현, to-kind는 향후 확장.
+    from: node-kind
+    to: edge-kind
+    kind: depends-on
+    rules:
+      # satisfies — transition-spec → dsl-bundle
+      - { node-kind: transition-spec, edge-kind: satisfies }
+      # implements/tests/traces-to — spec → *
+      - { node-kind: spec, edge-kind: implements }
+      - { node-kind: spec, edge-kind: tests }
+      - { node-kind: spec, edge-kind: traces-to }
+      # depends-on — skill → skill, transition-spec → transition-spec
+      - { node-kind: skill,           edge-kind: depends-on }
+      - { node-kind: transition-spec, edge-kind: depends-on }
+      # composes — prefix→axis/prefix/table, table→axis, flow-schema→axis
+      - { node-kind: prefix,      edge-kind: composes }
+      - { node-kind: table,       edge-kind: composes }
+      - { node-kind: flow-schema, edge-kind: composes }
+      # references — prefix→prefix, table→prefix/table, flow-schema→flow-schema
+      - { node-kind: prefix,      edge-kind: references }
+      - { node-kind: table,       edge-kind: references }
+      - { node-kind: flow-schema, edge-kind: references }
+      # governs — decision→prefix/axis, spec→*
+      - { node-kind: decision, edge-kind: governs }
+      - { node-kind: spec,     edge-kind: governs }
+      # justifies — decision→axis/prefix/dsl-bundle
+      - { node-kind: decision, edge-kind: justifies }
+      # constrains — constraint→axis/prefix/transition-spec
+      - { node-kind: constraint, edge-kind: constrains }
+      # contains — domain→prefix, dsl-bundle→prefix, flow-schema→domain
+      - { node-kind: domain,      edge-kind: contains }
+      - { node-kind: dsl-bundle,  edge-kind: contains }
+      - { node-kind: flow-schema, edge-kind: contains }
+      # bridges — domain (간) 공유
+      - { node-kind: domain, edge-kind: bridges }
+      # consumes — consumer→domain/prefix, transition-spec→axis/prefix
+      - { node-kind: consumer,        edge-kind: consumes }
+      - { node-kind: transition-spec, edge-kind: consumes }
+      # binds — intent-link→prefix, dsl-bundle→prefix
+      - { node-kind: intent-link, edge-kind: binds }
+      - { node-kind: dsl-bundle,  edge-kind: binds }
+      # observes — observation→*, flow-schema→prefix
+      - { node-kind: observation, edge-kind: observes }
+      - { node-kind: flow-schema, edge-kind: observes }
+      # prompts — observation→decision
+      - { node-kind: observation, edge-kind: prompts }
+      # evolves-from — version-event→prefix/axis
+      - { node-kind: version-event, edge-kind: evolves-from }
+      # supersedes — prefix→prefix, decision→decision
+      - { node-kind: prefix,   edge-kind: supersedes }
+      - { node-kind: decision, edge-kind: supersedes }
+
+constraints:
+  - id: node-count-16
+    kind: capacity
+    rule:
+      axis: node-kind
+      prop: entries.length
+      op: eq
+      value: 16
+    severity: error
+
+  - id: edge-count-18
+    kind: capacity
+    rule:
+      axis: edge-kind
+      prop: entries.length
+      op: eq
+      value: 18
+    severity: error
+
+  - id: node-tier-required
+    kind: ref
+    rule:
+      axis: node-tier
+      mustExist: true
+    severity: error
+
+  - id: edge-group-required
+    kind: ref
+    rule:
+      axis: edge-group
+      mustExist: true
+    severity: error
