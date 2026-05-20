@@ -49,5 +49,3 @@ export function codegen(
 
   return { files, contentHash };
 }
-
-export type { CodegenOptions, CodegenResult };

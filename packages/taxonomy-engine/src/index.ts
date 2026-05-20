@@ -20,6 +20,6 @@ export { validate, type ValidateOptions } from "./validate/index.js";
 export { codegen, type CodegenOptions, type CodegenResult } from "./codegen/index.js";
 
 // Types
-export type { TaxonomyIR, AxisIR, EntryIR, RelationIR, ConstraintIR, ImportIR, Coordinate, RelationKind, ConstraintKind } from "./schema/ir.js";
+export type { TaxonomyIR, AxisIR, EntryIR, RelationIR, ConstraintIR, ImportIR, Coordinate, RelationKind, ConstraintKind, Severity } from "./schema/ir.js";
 export type { Diagnostic, DiagnosticCode } from "./schema/diagnostic.js";
 export type { TaxonomyDoc } from "./schema/zod.js";
