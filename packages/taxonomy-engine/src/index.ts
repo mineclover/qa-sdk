@@ -32,6 +32,7 @@ export {
   extractTextsFromMarkdownTable,
   extractDkgExpected,
   extractIngestExpected,
+  extractVocabExpected,
 } from "./doctor/extract.js";
 
 // Diff (두 IR 비교)

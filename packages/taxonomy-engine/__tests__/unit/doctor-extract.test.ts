@@ -7,6 +7,7 @@ import {
   extractTextsFromMarkdownTable,
   extractDkgExpected,
   extractIngestExpected,
+  extractVocabExpected,
 } from "../../src/doctor/extract.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -174,5 +175,31 @@ describe("extractDkgExpected", () => {
       (e: { id: string }) => e.id,
     );
     expect(extractedEdgeIds).toEqual(hardcodedEdgeIds);
+  });
+});
+
+const VOCAB_TS = join(
+  __dirname,
+  "../../../../packages/definition-catalog/src/vocabulary.ts",
+);
+
+describe("extractVocabExpected", () => {
+  it("vocabulary.ts에서 DEF_SCOPE/DEF_DEPTH/DEF_LEVEL/DEF_LIFECYCLE/LINK_TYPE/TAXONOMY_FAMILY 추출", () => {
+    const text = readFileSync(VOCAB_TS, "utf8");
+    const expected = extractVocabExpected(text);
+    expect(expected.taxonomy).toBe("qa-sdk-def-catalog");
+    expect(expected.axes["def_scope"].entries.length).toBe(8);
+    expect(expected.axes["def_depth"].entries.length).toBe(4);
+    expect(expected.axes["def_level"].entries.length).toBe(5);
+    expect(expected.axes["def_lifecycle"].entries.length).toBe(5);
+    expect(expected.axes["link_type"].entries.length).toBe(10);
+    expect(expected.axes["taxonomy_family"].entries.length).toBe(3);
+  });
+
+  it("DEF_LEVEL entries: system/area/unit/module/leaf 순서 정확", () => {
+    const text = readFileSync(VOCAB_TS, "utf8");
+    const expected = extractVocabExpected(text);
+    const ids = expected.axes["def_level"].entries.map((e) => e.id);
+    expect(ids).toEqual(["system", "area", "unit", "module", "leaf"]);
   });
 });

@@ -1,0 +1,64 @@
+{
+  "taxonomy": "qa-sdk-def-catalog",
+  "axes": {
+    "def_scope": {
+      "entries": [
+        { "id": "ui" },
+        { "id": "feature" },
+        { "id": "flow" },
+        { "id": "state" },
+        { "id": "constraint" },
+        { "id": "data" },
+        { "id": "interface" },
+        { "id": "meta" }
+      ]
+    },
+    "def_depth": {
+      "entries": [
+        { "id": "overview" },
+        { "id": "specification" },
+        { "id": "implementation" },
+        { "id": "validation" }
+      ]
+    },
+    "def_level": {
+      "entries": [
+        { "id": "system" },
+        { "id": "area" },
+        { "id": "unit" },
+        { "id": "module" },
+        { "id": "leaf" }
+      ]
+    },
+    "def_lifecycle": {
+      "entries": [
+        { "id": "draft" },
+        { "id": "review" },
+        { "id": "approved" },
+        { "id": "deprecated" },
+        { "id": "archived" }
+      ]
+    },
+    "link_type": {
+      "entries": [
+        { "id": "depends_on" },
+        { "id": "implements" },
+        { "id": "refines" },
+        { "id": "constrains" },
+        { "id": "traces_to" },
+        { "id": "contains" },
+        { "id": "evolves_from" },
+        { "id": "supersedes" },
+        { "id": "refs" },
+        { "id": "verifies" }
+      ]
+    },
+    "taxonomy_family": {
+      "entries": [
+        { "id": "topological" },
+        { "id": "functional" },
+        { "id": "bridge" }
+      ]
+    }
+  }
+}

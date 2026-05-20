@@ -1,0 +1,108 @@
+taxonomy: qa-sdk-def-catalog
+version: 1
+description: |
+  qa-sdk definition-catalog의 문서 메타데이터 좌표 체계.
+  vocabulary.ts의 DEF_* const에서 자동 추출.
+
+  이건 "qa-sdk가 자기 문서를 어떻게 분류하는가"의 표현.
+  서비스 토폴로지(qa-sdk-coordinate-system.yaml)와는 별개 — 같은 시스템의 두 차원.
+
+  SSOT: packages/definition-catalog/src/vocabulary.ts
+
+axes:
+  def_scope:
+    description: 문서 인지 관점 분류 (소프트웨어 정의 대분류)
+    entries:
+      - { id: ui,         address: 0 }
+      - { id: feature,    address: 1 }
+      - { id: flow,       address: 2 }
+      - { id: state,      address: 3 }
+      - { id: constraint, address: 4 }
+      - { id: data,       address: 5 }
+      - { id: interface,  address: 6 }
+      - { id: meta,       address: 7 }
+    capacity: 16
+    version: 1
+
+  def_depth:
+    description: 정의 깊이 (overview → validation)
+    entries:
+      - { id: overview,        address: 0 }
+      - { id: specification,   address: 1 }
+      - { id: implementation,  address: 2 }
+      - { id: validation,      address: 3 }
+    capacity: 8
+    version: 1
+
+  def_level:
+    description: 분해 레벨 (전체-부분 분해 위치)
+    entries:
+      - { id: system,  address: 0 }
+      - { id: area,    address: 1 }
+      - { id: unit,    address: 2 }
+      - { id: module,  address: 3 }
+      - { id: leaf,    address: 4 }
+    capacity: 16
+    version: 1
+
+  def_lifecycle:
+    description: 문서 lifecycle 상태
+    entries:
+      - { id: draft,      address: 0 }
+      - { id: review,     address: 1 }
+      - { id: approved,   address: 2 }
+      - { id: deprecated, address: 3 }
+      - { id: archived,   address: 4 }
+    capacity: 16
+    version: 1
+
+  link_type:
+    description: 문서 간 링크 종류 (DKG 엣지와 별개 — def-catalog 자체 link)
+    entries:
+      - { id: depends_on,    address: 0 }
+      - { id: implements,    address: 1 }
+      - { id: refines,       address: 2 }
+      - { id: constrains,    address: 3 }
+      - { id: traces_to,     address: 4 }
+      - { id: contains,      address: 5 }
+      - { id: evolves_from,  address: 6 }
+      - { id: supersedes,    address: 7 }
+      - { id: refs,          address: 8 }
+      - { id: verifies,      address: 9 }
+    capacity: 32
+    version: 1
+
+  taxonomy_family:
+    description: meta-taxonomy 분류 (DocLinker가 다루는 taxonomy의 종류)
+    entries:
+      - { id: topological,  address: 0 }
+      - { id: functional,   address: 1 }
+      - { id: bridge,       address: 2 }
+    capacity: 8
+    version: 1
+
+constraints:
+  - id: scope-8-entries
+    kind: capacity
+    rule:
+      axis: def_scope
+      prop: entries.length
+      op: eq
+      value: 8
+    severity: error
+
+  - id: level-5-entries
+    kind: capacity
+    rule:
+      axis: def_level
+      prop: entries.length
+      op: eq
+      value: 5
+    severity: error
+
+  - id: link-type-required
+    kind: ref
+    rule:
+      axis: link_type
+      mustExist: true
+    severity: error
