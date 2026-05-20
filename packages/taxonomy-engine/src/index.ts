@@ -27,6 +27,7 @@ export { checkContentHashDrift, validateRegistryVersions } from "./codegen/drift
 
 // Doctor (yaml ↔ external SSOT drift detection)
 export { doctor, type ExpectedTaxonomy } from "./doctor/index.js";
+export { extractIdsFromMarkdownTable, extractDkgExpected } from "./doctor/extract.js";
 
 // Types
 export type { TaxonomyIR, AxisIR, EntryIR, RelationIR, ConstraintIR, ImportIR, Coordinate, RelationKind, ConstraintKind, Severity } from "./schema/ir.js";
