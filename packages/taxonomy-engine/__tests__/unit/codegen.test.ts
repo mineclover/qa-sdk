@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { codegen, CodegenValidationError } from "../../src/codegen/index.js";
 import { parse } from "../../src/parser/index.js";
+
+const __dirname = join(fileURLToPath(import.meta.url), "..");
 
 const yaml = `
 taxonomy: qa
@@ -106,5 +111,22 @@ relations:
     if (!("ir" in r)) throw new Error();
     const result = codegen(r.ir, { skipValidate: true });
     expect(result.files).toBeDefined();
+  });
+});
+
+describe("codegen golden — 결정론 회귀 방지", () => {
+  const yamlPath = join(__dirname, "../fixtures/codegen-basic.yaml");
+  const goldenDir = join(__dirname, "../fixtures/codegen-basic.golden");
+
+  it("5개 파일이 골든과 char-for-char 일치", () => {
+    const yaml = readFileSync(yamlPath, "utf8");
+    const r = parse(yaml);
+    if (!("ir" in r)) throw new Error();
+    const { files } = codegen(r.ir);
+    const fileNames = ["axes.ts", "addresses.ts", "registry.ts", "relations.ts", "meta.ts"];
+    for (const name of fileNames) {
+      const expected = readFileSync(join(goldenDir, name), "utf8");
+      expect(files[name], `${name} mismatch`).toBe(expected);
+    }
   });
 });

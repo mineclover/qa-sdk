@@ -1,0 +1,18 @@
+taxonomy: cg-basic
+version: 1
+description: codegen 결정론 회귀 fixture
+axes:
+  scope:
+    entries: [apm, ingest]
+    capacity: 4
+  layer:
+    entries: [domain, op]
+    capacity: 4
+relations:
+  scope-deps:
+    from: scope
+    to: scope
+    kind: depends-on
+    rules:
+      - { scope: apm }
+      - { scope: ingest }
