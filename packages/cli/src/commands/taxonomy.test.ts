@@ -22,6 +22,15 @@ axes:
     capacity: 4
 `;
 
+const SHOW_YAML = `
+taxonomy: tx
+version: 1
+axes:
+  scope:
+    entries: [a, b]
+    capacity: 4
+`;
+
 function writeTmp(name: string, content: string): string {
   const dir = join(tmpdir(), `tax-test-${Date.now()}-${Math.random().toString(36).slice(2,8)}`);
   mkdirSync(dir, { recursive: true });
@@ -55,6 +64,29 @@ describe("cli tax validate", () => {
     await cliTaxonomy(["validate", "--strict", writeTmp("strict.yaml", BAD_YAML)]);
     expect(exit).toHaveBeenCalledWith(1);
     log.mockRestore();
+    exit.mockRestore();
+  });
+});
+
+describe("cli tax show", () => {
+  it("entry 조회 → exit 0 + 정보 출력", async () => {
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const file = writeTmp("show.yaml", SHOW_YAML);
+    await cliTaxonomy(["show", file, "tx:scope.a"]);
+    expect(exit).not.toHaveBeenCalledWith(1);
+    expect(log).toHaveBeenCalled();
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  it("해소 실패 → exit 1", async () => {
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const file = writeTmp("show.yaml", SHOW_YAML);
+    await cliTaxonomy(["show", file, "tx:scope.missing"]);
+    expect(exit).toHaveBeenCalledWith(1);
+    err.mockRestore();
     exit.mockRestore();
   });
 });
