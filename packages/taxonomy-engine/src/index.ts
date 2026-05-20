@@ -1,6 +1,9 @@
 // Parser
 export { parse, type ParseError, type ParseResult } from "./parser/index.js";
 
+// Query (show wrapper + 후속 slice/traverse)
+export { show } from "./query/index.js";
+
 // Ref grammar (3-tier parser + resolver)
 export { parseRef } from "./ref/parser.js";
 export { resolveRef } from "./ref/resolver.js";
@@ -22,4 +25,5 @@ export { codegen, CodegenValidationError, type CodegenOptions, type CodegenResul
 // Types
 export type { TaxonomyIR, AxisIR, EntryIR, RelationIR, ConstraintIR, ImportIR, Coordinate, RelationKind, ConstraintKind, Severity } from "./schema/ir.js";
 export type { Diagnostic, DiagnosticCode } from "./schema/diagnostic.js";
+export { TaxonomyDocSchema } from "./schema/zod.js";
 export type { TaxonomyDoc } from "./schema/zod.js";
