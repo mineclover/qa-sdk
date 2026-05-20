@@ -33,7 +33,7 @@ export {
   extractDkgExpected,
   extractIngestExpected,
   extractVocabExpected,
-} from "./doctor/extract.js";
+} from "./doctor/extract/index.js";
 
 // Diff (두 IR 비교)
 export { diff, type DiffEntry, type DiffResult } from "./diff/index.js";

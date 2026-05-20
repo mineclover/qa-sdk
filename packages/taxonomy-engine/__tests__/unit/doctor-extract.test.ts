@@ -8,7 +8,7 @@ import {
   extractDkgExpected,
   extractIngestExpected,
   extractVocabExpected,
-} from "../../src/doctor/extract.js";
+} from "../../src/doctor/extract/index.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
