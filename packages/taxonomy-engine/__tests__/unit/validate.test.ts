@@ -139,6 +139,125 @@ constraints:
     });
   });
 
+  describe("validate constraints — 구조화 DSL (T-E5)", () => {
+    it("capacity kind 구조화 rule — entries.length lte 위반 검출", () => {
+      const yaml = `
+taxonomy: c1
+version: 1
+axes:
+  scope:
+    entries: [a, b, c]
+constraints:
+  - id: scope-max-2
+    kind: capacity
+    rule:
+      axis: scope
+      prop: entries.length
+      op: lte
+      value: 2
+    severity: error
+`;
+      const r = parse(yaml);
+      if (!("ir" in r)) throw new Error();
+      const diags = validate(r.ir);
+      expect(diags.some((d) => d.code === "constraint-violated" && d.meta?.actual === 3)).toBe(true);
+    });
+
+    it("ref kind 구조화 rule — axis 부재 검출", () => {
+      const yaml = `
+taxonomy: c2
+version: 1
+axes:
+  a:
+    entries: [x]
+constraints:
+  - id: needs-layer
+    kind: ref
+    rule:
+      axis: layer
+      mustExist: true
+    severity: error
+`;
+      const r = parse(yaml);
+      if (!("ir" in r)) throw new Error();
+      const diags = validate(r.ir);
+      expect(diags.some((d) => d.meta?.missingAxis === "layer")).toBe(true);
+    });
+
+    it("structural kind 구조화 rule — relation에서 forbidden value 검출", () => {
+      const yaml = `
+taxonomy: c3
+version: 1
+axes:
+  l:
+    entries: [a, leaf]
+relations:
+  r:
+    from: l
+    to: l
+    kind: contains
+    rules:
+      - { upper: leaf, lower: a }
+constraints:
+  - id: no-leaf-upper
+    kind: structural
+    rule:
+      relationKind: contains
+      forbidden:
+        field: upper
+        value: leaf
+    severity: error
+`;
+      const r = parse(yaml);
+      if (!("ir" in r)) throw new Error();
+      const diags = validate(r.ir);
+      expect(diags.some((d) => d.code === "constraint-violated" && d.meta?.field === "upper")).toBe(true);
+    });
+
+    it("legacy string rule도 작동 + deprecated warning emit", () => {
+      const yaml = `
+taxonomy: c4
+version: 1
+axes:
+  s:
+    entries: [a, b, c]
+constraints:
+  - id: legacy-cap
+    kind: capacity
+    rule: "axes/s entries.length <= 2"
+    severity: error
+`;
+      const r = parse(yaml);
+      if (!("ir" in r)) throw new Error();
+      const diags = validate(r.ir);
+      expect(diags.some((d) => d.code === "constraint-deprecated-string-rule")).toBe(true);
+      expect(diags.some((d) => d.code === "constraint-violated")).toBe(true);
+    });
+
+    it("구조화 rule 형식 오류 — capacity 잘못된 op", () => {
+      const yaml = `
+taxonomy: c5
+version: 1
+axes:
+  s:
+    entries: [a]
+constraints:
+  - id: bad-cap
+    kind: capacity
+    rule:
+      axis: s
+      prop: entries.length
+      op: invalidOp
+      value: 1
+    severity: error
+`;
+      const r = parse(yaml);
+      if (!("ir" in r)) throw new Error();
+      const diags = validate(r.ir);
+      expect(diags.some((d) => d.message.includes("형식 오류"))).toBe(true);
+    });
+  });
+
   describe("validate axis structure", () => {
     it("structural-duplicate-address 검출", () => {
       const { yaml, golden } = loadFixture("duplicate-address");

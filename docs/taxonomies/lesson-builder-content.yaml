@@ -142,17 +142,25 @@ relations:
 constraints:
   - id: clip-only-binds-control
     kind: structural
-    rule: |
-      Clip은 param-kind=control에만 binds. content는 Asset 소유.
-      clip-binds-asset-control 관계의 모든 rule이 param-kind=control이어야.
+    rule:
+      relationKind: binds
+      forbidden:
+        field: to
+        value: content
     severity: error
 
   - id: asset-types-min-1
     kind: capacity
-    rule: "axes/asset-type entries.length >= 1"
+    rule:
+      axis: asset-type
+      prop: entries.length
+      op: gte
+      value: 1
     severity: error
 
   - id: layer-required
     kind: ref
-    rule: "axis=layer must exist"
+    rule:
+      axis: layer
+      mustExist: true
     severity: error

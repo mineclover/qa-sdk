@@ -37,10 +37,12 @@ export type RelationIR = {
   _loc?: { line: number; column: number };
 };
 
+export type ConstraintRule = string | Record<string, unknown>;
+
 export type ConstraintIR = {
   id: string;
   kind: ConstraintKind;
-  rule: string;
+  rule: ConstraintRule;
   severity: Severity;
   _loc?: { line: number; column: number };
 };

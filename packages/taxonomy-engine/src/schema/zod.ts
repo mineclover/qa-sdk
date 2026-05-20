@@ -24,10 +24,33 @@ const RelationSchema = z.object({
   rules: z.array(z.record(z.string(), z.string())).default([]),
 });
 
+export const CapacityRuleSchema = z.object({
+  axis: z.string().min(1),
+  prop: z.enum(["entries.length", "capacity"]),
+  op: z.enum(["eq", "ne", "lt", "lte", "gt", "gte"]),
+  value: z.number(),
+});
+
+export const RefRuleSchema = z.object({
+  axis: z.string().min(1),
+  mustExist: z.boolean(),
+});
+
+export const StructuralRuleSchema = z.object({
+  relationKind: z.string().min(1),
+  forbidden: z.object({
+    field: z.string().min(1),
+    value: z.string().min(1),
+  }),
+});
+
 const ConstraintSchema = z.object({
   id: z.string().min(1),
   kind: z.enum(["capacity", "structural", "ref", "custom"]),
-  rule: z.string().min(1),
+  rule: z.union([
+    z.string().min(1),                      // legacy string (deprecated)
+    z.record(z.string(), z.unknown()),      // 구조화 객체 (kind별 schema는 evaluator에서 재검증)
+  ]),
   severity: z.enum(["error", "warning", "info"]).default("error"),
 });
 

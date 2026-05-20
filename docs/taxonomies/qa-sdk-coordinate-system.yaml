@@ -54,5 +54,9 @@ relations:
 constraints:
   - id: level-leaf-no-children
     kind: structural
-    rule: "axis=level entry=leaf must not appear as upper in any contains relation"
+    rule:
+      relationKind: contains
+      forbidden:
+        field: upper
+        value: leaf
     severity: error
