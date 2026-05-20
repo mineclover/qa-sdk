@@ -4,7 +4,7 @@ import type { Diagnostic } from "../schema/diagnostic.js";
 export function validateConstraints(ir: TaxonomyIR): Diagnostic[] {
   const out: Diagnostic[] = [];
   for (const c of ir.constraints) {
-    if (c.kind === "structural" && /level=leaf.*must not appear as upper/i.test(c.rule)) {
+    if (c.kind === "structural" && /entry=leaf.*must not appear as upper/i.test(c.rule)) {
       const level = ir.axes.get("level");
       if (!level) continue;
       for (const [relName, rel] of ir.relations) {

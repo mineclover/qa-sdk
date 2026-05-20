@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { codegen } from "../../src/codegen/index.js";
+import { codegen, CodegenValidationError } from "../../src/codegen/index.js";
 import { parse } from "../../src/parser/index.js";
 
 const yaml = `
@@ -65,5 +65,46 @@ describe("codegen", () => {
       "registry.ts",
       "relations.ts",
     ]);
+  });
+
+  it("validate errors=0 아닐 때 거부 (spec §7.3)", () => {
+    const badYaml = `
+taxonomy: bad
+version: 1
+axes:
+  scope:
+    entries: [a, b]
+relations:
+  r:
+    from: scope
+    to: scope
+    kind: contains
+    rules:
+      - { upper: a, lower: missing }
+`;
+    const r = parse(badYaml);
+    if (!("ir" in r)) throw new Error();
+    expect(() => codegen(r.ir)).toThrow(CodegenValidationError);
+  });
+
+  it("skipValidate=true 시 broken IR도 codegen", () => {
+    const badYaml = `
+taxonomy: bad
+version: 1
+axes:
+  scope:
+    entries: [a, b]
+relations:
+  r:
+    from: scope
+    to: scope
+    kind: contains
+    rules:
+      - { upper: a, lower: missing }
+`;
+    const r = parse(badYaml);
+    if (!("ir" in r)) throw new Error();
+    const result = codegen(r.ir, { skipValidate: true });
+    expect(result.files).toBeDefined();
   });
 });

@@ -52,6 +52,32 @@ relations:
     expect(codes).toContain("capacity-headroom");
     expect(codes).toContain("ref-broken");
   });
+
+  it("constraint level-leaf-no-children 위반 검출", () => {
+    const yaml = `
+taxonomy: cv
+version: 1
+axes:
+  level:
+    entries: [group, module, leaf]
+relations:
+  bad:
+    from: level
+    to: level
+    kind: contains
+    rules:
+      - { upper: leaf, lower: group }
+constraints:
+  - id: level-leaf-no-children
+    kind: structural
+    rule: "axis=level entry=leaf must not appear as upper in any contains relation"
+    severity: error
+`;
+    const r = parse(yaml);
+    if (!("ir" in r)) throw new Error("parse failed");
+    const diags = validate(r.ir);
+    expect(diags.some((d) => d.code === "constraint-violated" && d.severity === "error")).toBe(true);
+  });
 });
 
 function stripLoc(diags: unknown[]): unknown[] {
