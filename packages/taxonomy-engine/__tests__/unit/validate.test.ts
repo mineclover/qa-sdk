@@ -80,6 +80,65 @@ constraints:
     expect(diags.some((d) => d.code === "constraint-violated" && d.severity === "error")).toBe(true);
   });
 
+  describe("validate constraints (확장된 kind)", () => {
+    it("capacity kind: entries.length 조건 위반 검출", () => {
+      const yaml = `
+taxonomy: cap-c
+version: 1
+axes:
+  scope:
+    entries: [a, b, c]
+constraints:
+  - id: scope-max-2
+    kind: capacity
+    rule: "axes/scope entries.length <= 2"
+    severity: error
+`;
+      const r = parse(yaml);
+      if (!("ir" in r)) throw new Error();
+      const diags = validate(r.ir);
+      expect(diags.some((d) => d.code === "constraint-violated" && d.severity === "error")).toBe(true);
+    });
+
+    it("ref kind: 필수 axis 부재 검출", () => {
+      const yaml = `
+taxonomy: ref-c
+version: 1
+axes:
+  scope:
+    entries: [a]
+constraints:
+  - id: needs-layer
+    kind: ref
+    rule: "axis=layer must exist"
+    severity: error
+`;
+      const r = parse(yaml);
+      if (!("ir" in r)) throw new Error();
+      const diags = validate(r.ir);
+      expect(diags.some((d) => d.code === "constraint-violated" && d.meta?.missingAxis === "layer")).toBe(true);
+    });
+
+    it("custom kind: info-level 진단 emit", () => {
+      const yaml = `
+taxonomy: custom-c
+version: 1
+axes:
+  scope:
+    entries: [a]
+constraints:
+  - id: my-rule
+    kind: custom
+    rule: "anything goes here"
+    severity: warning
+`;
+      const r = parse(yaml);
+      if (!("ir" in r)) throw new Error();
+      const diags = validate(r.ir);
+      expect(diags.some((d) => d.severity === "info" && d.meta?.kind === "custom")).toBe(true);
+    });
+  });
+
   describe("validate axis structure", () => {
     it("structural-duplicate-address 검출", () => {
       const { yaml, golden } = loadFixture("duplicate-address");
