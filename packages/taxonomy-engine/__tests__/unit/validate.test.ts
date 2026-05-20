@@ -80,6 +80,32 @@ constraints:
     expect(diags.some((d) => d.code === "constraint-violated" && d.severity === "error")).toBe(true);
   });
 
+  describe("validate axis structure", () => {
+    it("structural-duplicate-address 검출", () => {
+      const { yaml, golden } = loadFixture("duplicate-address");
+      const r = parse(yaml);
+      if (!("ir" in r)) throw new Error("parse failed");
+      const diags = validate(r.ir);
+      expect(stripLoc(diags)).toEqual(golden);
+    });
+
+    it("structural-duplicate-id 검출", () => {
+      const yaml = `
+taxonomy: dup-id
+version: 1
+axes:
+  scope:
+    entries:
+      - { id: a, address: 0 }
+      - { id: a, address: 1 }
+`;
+      const r = parse(yaml);
+      if (!("ir" in r)) throw new Error("parse failed");
+      const diags = validate(r.ir);
+      expect(diags.some((d) => d.code === "structural-duplicate-id")).toBe(true);
+    });
+  });
+
   describe("validate refs (generalized inferAxis)", () => {
     it("depends-on relation에서 명시적 axis-name field 검증", () => {
       const yaml = `

@@ -1,0 +1,8 @@
+taxonomy: dup-addr
+version: 1
+axes:
+  scope:
+    entries:
+      - { id: a, address: 0 }
+      - { id: b, address: 1 }
+      - { id: c, address: 1 }

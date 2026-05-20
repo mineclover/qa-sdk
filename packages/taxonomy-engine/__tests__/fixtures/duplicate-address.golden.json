@@ -1,0 +1,9 @@
+[
+  {
+    "severity": "error",
+    "code": "structural-duplicate-address",
+    "message": "axes/scope: address=1 가 \"b\" 와 \"c\"에 중복 할당",
+    "ref": "dup-addr#/axes/scope/entries/c",
+    "meta": { "axis": "scope", "address": 1, "ids": ["b", "c"] }
+  }
+]
