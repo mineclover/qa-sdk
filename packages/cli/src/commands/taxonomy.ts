@@ -334,9 +334,18 @@ function formatChange(c: DiffEntry): string {
     case "relation-added": return `+ relation ${c.name}`;
     case "relation-removed": return `- relation ${c.name}`;
     case "relation-rules-count-changed": return `~ relation ${c.name} rules ${c.from} → ${c.to}`;
+    case "relation-rule-added": return `+ ${c.relation} rule { ${formatRule(c.rule)} }`;
+    case "relation-rule-removed": return `- ${c.relation} rule { ${formatRule(c.rule)} }`;
     case "constraint-added": return `+ constraint ${c.id}`;
     case "constraint-removed": return `- constraint ${c.id}`;
   }
+}
+
+function formatRule(rule: Record<string, string>): string {
+  return Object.entries(rule)
+    .sort(([ka], [kb]) => ka.localeCompare(kb))
+    .map(([k, v]) => `${k}: ${v}`)
+    .join(", ");
 }
 
 function printShowResult(result: RefResult): void {

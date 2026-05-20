@@ -62,4 +62,112 @@ constraints:
     expect(r.changes.some((c) => c.kind === "relation-added" && (c as any).name === "r")).toBe(true);
     expect(r.changes.some((c) => c.kind === "constraint-added" && (c as any).id === "cap")).toBe(true);
   });
+
+  it("rule-level: rule 추가 검출", () => {
+    const a = parseOrThrow(`
+taxonomy: t
+version: 1
+axes:
+  s:
+    entries: [a, b]
+relations:
+  r:
+    from: s
+    to: s
+    kind: contains
+    rules:
+      - { upper: a, lower: b }
+`);
+    const b = parseOrThrow(`
+taxonomy: t
+version: 1
+axes:
+  s:
+    entries: [a, b]
+relations:
+  r:
+    from: s
+    to: s
+    kind: contains
+    rules:
+      - { upper: a, lower: b }
+      - { upper: b, lower: a }
+`);
+    const r = diff(a, b);
+    const added = r.changes.filter((c) => c.kind === "relation-rule-added");
+    expect(added.length).toBe(1);
+    expect((added[0] as any).rule).toEqual({ upper: "b", lower: "a" });
+  });
+
+  it("rule-level: rule 제거 검출", () => {
+    const a = parseOrThrow(`
+taxonomy: t
+version: 1
+axes:
+  s:
+    entries: [a, b, c]
+relations:
+  r:
+    from: s
+    to: s
+    kind: contains
+    rules:
+      - { upper: a, lower: b }
+      - { upper: a, lower: c }
+`);
+    const b = parseOrThrow(`
+taxonomy: t
+version: 1
+axes:
+  s:
+    entries: [a, b, c]
+relations:
+  r:
+    from: s
+    to: s
+    kind: contains
+    rules:
+      - { upper: a, lower: b }
+`);
+    const r = diff(a, b);
+    const removed = r.changes.filter((c) => c.kind === "relation-rule-removed");
+    expect(removed.length).toBe(1);
+    expect((removed[0] as any).rule).toEqual({ upper: "a", lower: "c" });
+  });
+
+  it("rule-level: 같은 rule을 다른 순서로 두면 변경 없음 (stable key)", () => {
+    const a = parseOrThrow(`
+taxonomy: t
+version: 1
+axes:
+  s:
+    entries: [a, b]
+relations:
+  r:
+    from: s
+    to: s
+    kind: contains
+    rules:
+      - { upper: a, lower: b }
+      - { upper: b, lower: a }
+`);
+    const b = parseOrThrow(`
+taxonomy: t
+version: 1
+axes:
+  s:
+    entries: [a, b]
+relations:
+  r:
+    from: s
+    to: s
+    kind: contains
+    rules:
+      - { upper: b, lower: a }
+      - { upper: a, lower: b }
+`);
+    const r = diff(a, b);
+    const ruleChanges = r.changes.filter((c) => c.kind.startsWith("relation-rule"));
+    expect(ruleChanges).toEqual([]);
+  });
 });
