@@ -1,0 +1,9 @@
+[
+  {
+    "severity": "error",
+    "code": "ref-broken",
+    "message": "relations/scope-contains/rules/0: lower=\"missing\" — axes/scope/entries에 없음",
+    "ref": "ref-bad#/relations/scope-contains/rules/0",
+    "meta": { "axis": "scope", "missing": "missing", "field": "lower" }
+  }
+]

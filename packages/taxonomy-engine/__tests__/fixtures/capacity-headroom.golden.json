@@ -1,0 +1,9 @@
+[
+  {
+    "severity": "warning",
+    "code": "capacity-headroom",
+    "message": "axes/scope: entries=4, capacity=4 (need >= 8)",
+    "ref": "cap-bad#/axes/scope",
+    "meta": { "entries": 4, "capacity": 4, "minRecommended": 8 }
+  }
+]

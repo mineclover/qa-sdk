@@ -13,6 +13,9 @@ export type { IndexedAxis } from "./indexer/index.js";
 // Registry
 export { TaxonomyRegistry } from "./registry/index.js";
 
+// Validator (capacity/ref/constraint/axis-5q + fail-collect)
+export { validate, type ValidateOptions } from "./validate/index.js";
+
 // Types
 export type { TaxonomyIR, AxisIR, EntryIR, RelationIR, ConstraintIR, ImportIR, Coordinate, RelationKind, ConstraintKind } from "./schema/ir.js";
 export type { Diagnostic, DiagnosticCode } from "./schema/diagnostic.js";
