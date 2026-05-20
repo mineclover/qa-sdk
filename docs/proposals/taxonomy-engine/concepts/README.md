@@ -30,9 +30,10 @@ Taxonomy (공간)
 
 1급은 아니지만 시스템 동작에 필수:
 
-- **Constraint** — 좌표/관계 조합의 선언적 제약. spec §7.2 DiagnosticCode + spec §4.1 yaml `constraints:` 필드 참조.
-- **Taxonomy** — Axis + Relation + Constraint의 묶음 (yaml 파일 단위). spec §4 참조.
-- **Registry** — 여러 Taxonomy를 함께 보관하고 cross-taxonomy 참조 허용. spec §5.3 참조.
+- [Constraint](./constraint.md) — 좌표/관계 조합의 선언적 무결성 규칙
+- [Taxonomy](./taxonomy.md) — Axis + Relation + Constraint의 묶음 (yaml 파일 단위)
+- [Registry](./registry.md) — 여러 Taxonomy를 보관하는 메모리 store
+- [Diagnostic](./diagnostic.md) — 검증/진단 결과 단위
 
 ## 다른 문서에서 인용 시
 
@@ -41,5 +42,5 @@ Taxonomy (공간)
 ## 참조
 
 - spec 본문: `../00-design.md`
-- 구현 plan: `../01-plan.md` (v0.1) + `../02-plan-v2.md` (v0.2)
+- 구현 plan: `../plans/v0.1.md` (v0.1) + `../plans/v0.2.md` (v0.2)
 - 좌표계 시스템 철학: `docs/definition-system-philosophy.md`
