@@ -1,6 +1,100 @@
 import type { ExpectedTaxonomy } from "./index.js";
 
 /**
+ * extractTextsFromMarkdownTable — markdown 표의 한 칼럼에서 cell의 plain text 추출.
+ * backtick 제거, **굵게** 표시된 행은 skipBold 옵션으로 제외.
+ * tableIndex (0-based): 문서 내 n번째 표에서만 추출. 기본값 0 (첫 표).
+ */
+export function extractTextsFromMarkdownTable(
+  markdown: string,
+  columnIndex: number,
+  opts: { skipBold?: boolean; tableIndex?: number } = {},
+): string[] {
+  const out: string[] = [];
+  const lines = markdown.split("\n");
+  let inTable = false;
+  let headerSeen = false;
+  const skipBold = opts.skipBold ?? true;
+  const tableIndex = opts.tableIndex ?? 0;
+  let tableCount = -1; // 첫 표 진입 시 0이 됨
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith("|")) {
+      if (inTable && trimmed === "") {
+        // 표 종료
+        inTable = false;
+        headerSeen = false;
+        // 이미 목표 표를 처리했으면 종료
+        if (tableCount === tableIndex) break;
+      }
+      continue;
+    }
+    if (!inTable) {
+      inTable = true;
+      headerSeen = false;
+      tableCount++;
+      continue;
+    }
+    // 목표 표가 아니면 skip
+    if (tableCount !== tableIndex) continue;
+    // separator line (|---|---|) skip
+    if (/^\|[\s:-]+\|/.test(trimmed)) {
+      headerSeen = true;
+      continue;
+    }
+    if (!headerSeen) continue;
+
+    // 데이터 row — 칼럼 추출
+    const cells = trimmed.split("|").slice(1, -1).map((c) => c.trim());
+    if (columnIndex >= cells.length) continue;
+    const cell = cells[columnIndex];
+    // skipBold: **텍스트** 형태의 셀 제외
+    if (skipBold && /^\*\*.*\*\*$/.test(cell)) continue;
+    // backtick 제거 (있을 경우)
+    const cleaned = cell.replace(/`/g, "").trim();
+    if (cleaned === "") continue;
+    out.push(cleaned);
+  }
+
+  return out;
+}
+
+/**
+ * pascalToKebabStripSuffix — "RecordStore" → "record", "ScenarioSpecStore" → "scenario-spec"
+ */
+function pascalToKebabStripSuffix(text: string, suffix: string): string {
+  let s = text;
+  if (s.endsWith(suffix)) s = s.slice(0, -suffix.length);
+  // PascalCase → kebab-case
+  return s
+    .replace(/([a-z])([A-Z])/g, "$1-$2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1-$2")
+    .toLowerCase();
+}
+
+/**
+ * extractIngestExpected — store-adapter-parity.spec.md에서 9 store-kind 추출.
+ * 첫 표 첫 칼럼 (Store 포트) — PascalCase class name → kebab-case id 변환.
+ */
+export function extractIngestExpected(adapterParityMd: string): ExpectedTaxonomy {
+  // 첫 표의 첫 칼럼 (Store 포트) — 9 PascalCase 이름
+  const storeNames = extractTextsFromMarkdownTable(adapterParityMd, 0);
+  const storeKindIds = storeNames.map((name) =>
+    pascalToKebabStripSuffix(name, "Store"),
+  );
+
+  return {
+    taxonomy: "ingest-coords",
+    axes: {
+      "store-kind": {
+        entries: storeKindIds.map((id) => ({ id })),
+      },
+    },
+  };
+}
+
+/**
  * extractIdsFromMarkdownTable — markdown 표의 한 칼럼에서 backtick으로 둘러싸인 id 목록을 추출.
  *
  * 입력 예시 (한 줄):

@@ -4,10 +4,17 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   extractIdsFromMarkdownTable,
+  extractTextsFromMarkdownTable,
   extractDkgExpected,
+  extractIngestExpected,
 } from "../../src/doctor/extract.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+const INGEST_SPEC = join(
+  __dirname,
+  "../../../../docs/specs/ingest/ingest-infra-system/store-adapter-parity.spec.md",
+);
 
 const NODE_SPEC = join(
   __dirname,
@@ -53,6 +60,81 @@ after table
 | c   | \`real-id\` | d |
 `;
     expect(extractIdsFromMarkdownTable(md, 1)).toEqual(["real-id"]);
+  });
+});
+
+describe("extractTextsFromMarkdownTable", () => {
+  it("plain text 칼럼 추출 + skipBold 기본 적용", () => {
+    const md = `
+| Name | Other |
+|------|-------|
+| RecordStore | a |
+| TraceStore | b |
+| **합계** | x |
+`;
+    expect(extractTextsFromMarkdownTable(md, 0)).toEqual([
+      "RecordStore",
+      "TraceStore",
+    ]);
+  });
+
+  it("skipBold: false 로 굵은 셀도 포함", () => {
+    const md = `
+| Name | Other |
+|------|-------|
+| RecordStore | a |
+| **합계** | x |
+`;
+    expect(
+      extractTextsFromMarkdownTable(md, 0, { skipBold: false }),
+    ).toEqual(["RecordStore", "**합계**"]);
+  });
+
+  it("backtick이 있는 셀도 plain text로 추출", () => {
+    const md = `
+| Name | File |
+|------|------|
+| RecordStore | \`record.ts\` |
+`;
+    expect(extractTextsFromMarkdownTable(md, 1)).toEqual(["record.ts"]);
+  });
+});
+
+describe("extractIngestExpected", () => {
+  it("store-adapter-parity.spec.md에서 9 store-kind 추출", () => {
+    const md = readFileSync(INGEST_SPEC, "utf8");
+    const expected = extractIngestExpected(md);
+    expect(expected.taxonomy).toBe("ingest-coords");
+    const entries = expected.axes["store-kind"].entries;
+    expect(entries.length).toBe(9);
+    const ids = entries.map((e) => e.id);
+    expect(ids).toContain("record");
+    expect(ids).toContain("trace");
+    expect(ids).toContain("session");
+    expect(ids).toContain("verdict");
+    expect(ids).toContain("graph");
+    expect(ids).toContain("scenario-spec");
+    expect(ids).toContain("transmission");
+    expect(ids).toContain("dlq");
+    expect(ids).toContain("key-observation");
+  });
+
+  it("추출 결과가 기존 hardcoded fixture의 store-kind와 일치", () => {
+    const md = readFileSync(INGEST_SPEC, "utf8");
+    const extracted = extractIngestExpected(md);
+    const hardcoded = JSON.parse(
+      readFileSync(
+        join(__dirname, "../fixtures/expected-ingest-coords.json"),
+        "utf8",
+      ),
+    );
+    const extractedIds = extracted.axes["store-kind"].entries
+      .map((e) => e.id)
+      .sort();
+    const hardcodedIds = hardcoded.axes["store-kind"].entries
+      .map((e: { id: string }) => e.id)
+      .sort();
+    expect(extractedIds).toEqual(hardcodedIds);
   });
 });
 

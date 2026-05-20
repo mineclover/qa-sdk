@@ -27,7 +27,12 @@ export { checkContentHashDrift, validateRegistryVersions } from "./codegen/drift
 
 // Doctor (yaml ↔ external SSOT drift detection)
 export { doctor, type ExpectedTaxonomy } from "./doctor/index.js";
-export { extractIdsFromMarkdownTable, extractDkgExpected } from "./doctor/extract.js";
+export {
+  extractIdsFromMarkdownTable,
+  extractTextsFromMarkdownTable,
+  extractDkgExpected,
+  extractIngestExpected,
+} from "./doctor/extract.js";
 
 // Diff (두 IR 비교)
 export { diff, type DiffEntry, type DiffResult } from "./diff/index.js";
