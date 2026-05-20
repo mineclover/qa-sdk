@@ -90,14 +90,14 @@
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
-    "zod": "catalog:"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.0.0",
     "tsup": "^8.5.1",
     "typescript": "^5.8.2",
-    "vitest": "^2.1.8"
+    "vitest": "^1.6.1"
   }
 }
 ```
@@ -122,15 +122,26 @@ export default defineConfig({
 
 ```json
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2023",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "outDir": "dist",
     "rootDir": "src"
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "__tests__/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
 ```
 
