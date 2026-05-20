@@ -135,43 +135,18 @@ constraints:
 
 ### 4.2 IR (정규화 표현)
 
-```typescript
-TaxonomyIR {
-  taxonomy: string
-  version: number
-  contentHash: string                    // 결정론 검증
-  axes: Map<AxisName, AxisIR>
-  relations: Map<RelationName, RelationIR>
-  constraints: ConstraintIR[]
-}
+코드 레벨 IR 타입은 `packages/taxonomy-engine/src/schema/ir.ts` 단일 소스. 형태는 위 yaml 구조를 그대로 반영하되 axes/relations는 `Map`, contentHash 필드 추가.
 
-AxisIR {
-  name, description?
-  entries: EntryIR[]                     // address 할당된 상태
-  capacity: number                       // 명시 또는 nextPowerOf2(entries*2)
-  version: number
-}
+### 4.3 1급 개념
 
-EntryIR {
-  id: string                             // kebab-case, 변경 가능
-  address: number                        // 정수, 불변, missing 시 indexer가 sequential 할당
-  label?: string
-  meta?: Record<string, unknown>
-}
+좌표 공간을 구성하는 4 추상은 [`concepts/`](./concepts/README.md)에 각각 1 파일로 분리:
 
-RelationIR { from: AxisRef[], to: AxisRef[], kind, rules: Rule[] }
-ConstraintIR { id, kind, severity, rule }
-```
+- [Axis](./concepts/axis.md) — 차원 (entries, capacity, version)
+- [Entry](./concepts/entry.md) — 좌표값 (id 가변 + address 불변 이중화)
+- [Coordinate](./concepts/coordinate.md) — 다축 점 (cross-product 주소화)
+- [Relation](./concepts/relation.md) — 점 사이 화살표 (contains/parent-of/depends-on/binds/projects-to)
 
-### 4.3 추상 모델의 목적
-
-| 개념 | 책임 | 사용자 강조 요구사항 매핑 |
-|------|------|--------------------------|
-| **Axis** | 차원 선언 (entries, capacity, version) | "상위/하위 구조 정의" — entries가 한 축의 모든 좌표값 |
-| **Entry** | 한 축의 좌표값 | id/address 이중화로 rename 안전 |
-| **Coordinate** | 다축 좌표 튜플 = 좌표점 | "인덱싱 전략" — cross-product 주소화 |
-| **Relation** | 좌표/Entry 간 관계 (contains, parent-of, depends-on, binds, projects-to) | "데이터 흐름" — 1급 시민 |
-| **Constraint** | 의미 제약 (선언적, 검증 시 적용) | 텍소노미 무결성 |
+Constraint는 의미 제약, Taxonomy는 한 공간 단위, Registry는 공간들의 우주 — 모두 supporting 개념으로 위 README에 요약.
 
 **왜 계층 대신 좌표 + Relation인가**: 단순 트리는 cross-cutting 관계(예: Clip이 Asset.controlParams를 구동)를 표현 못 한다. 좌표계는 직교성을 유지하면서도 Relation으로 임의의 관계를 1급으로 표현한다. lesson-builder/qa-sdk/DKG가 모두 같은 추상 모델 위에 표현 가능.
 
