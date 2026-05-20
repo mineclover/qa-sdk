@@ -152,6 +152,40 @@ relations:
     log.mockRestore();
     exit.mockRestore();
   });
+
+  it("codegen + --registry — cross-tax import 해소 후 codegen 성공", async () => {
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const regDir = join(tmpdir(), `tax-cg-reg-${Date.now()}-${randomBytes(4).toString("hex")}`);
+    mkdirSync(regDir, { recursive: true });
+    writeFileSync(join(regDir, "base.yaml"), `taxonomy: base
+version: 1
+axes:
+  a:
+    entries: [x]
+    capacity: 2
+`);
+    const derFile = join(regDir, "der.yaml");
+    writeFileSync(derFile, `taxonomy: der
+version: 1
+imports:
+  - { taxonomy: base, version: 1, as: b }
+axes:
+  s:
+    entries: [y]
+    capacity: 2
+`);
+    const outDir = join(tmpdir(), `tax-cg-out-${Date.now()}-${randomBytes(4).toString("hex")}`);
+
+    await cliTaxonomy(["codegen", derFile, "--out", outDir, "--registry", regDir]);
+    expect(exit).not.toHaveBeenCalledWith(1);
+    expect(existsSync(join(outDir, "axes.ts"))).toBe(true);
+
+    rmSync(regDir, { recursive: true });
+    rmSync(outDir, { recursive: true });
+    log.mockRestore();
+    exit.mockRestore();
+  });
 });
 
 describe("cli tax diff", () => {
@@ -174,6 +208,38 @@ describe("cli tax diff", () => {
     await cliTaxonomy(["diff", fileA, fileB]);
     expect(exit).not.toHaveBeenCalledWith(1);
     expect(log).toHaveBeenCalled();
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  it("diff + --registry — validate 진단 함께 출력", async () => {
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const regDir = join(tmpdir(), `tax-diff-reg-${Date.now()}-${randomBytes(4).toString("hex")}`);
+    mkdirSync(regDir, { recursive: true });
+    const fileA = join(regDir, "a.yaml");
+    const fileB = join(regDir, "b.yaml");
+    writeFileSync(fileA, `taxonomy: a
+version: 1
+axes:
+  s:
+    entries: [x]
+    capacity: 2
+`);
+    writeFileSync(fileB, `taxonomy: b
+version: 1
+axes:
+  s:
+    entries: [x, y]
+    capacity: 4
+`);
+
+    await cliTaxonomy(["diff", fileA, fileB, "--registry", regDir]);
+    expect(exit).not.toHaveBeenCalledWith(1);
+    // validate 메시지 출력 확인
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("[--registry"));
+
+    rmSync(regDir, { recursive: true });
     log.mockRestore();
     exit.mockRestore();
   });

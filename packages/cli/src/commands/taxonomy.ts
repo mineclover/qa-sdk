@@ -33,13 +33,15 @@ function printHelp(): void {
   qa-sdk tax validate <file> [--registry <dir>] [--strict] [--json]
   qa-sdk tax show <file> <ref> [--json]
   qa-sdk tax show <ref> --registry <dir> [--json]
-  qa-sdk tax codegen <file> --out <dir> [--skip-validate] [--json]
-  qa-sdk tax diff <a> <b> [--json]
+  qa-sdk tax codegen <file> --out <dir> [--registry <dir>] [--skip-validate] [--json]
+  qa-sdk tax diff <a> <b> [--registry <dir>] [--json]
   qa-sdk tax doctor <file> (--expected <file> | --auto) [--json]
   qa-sdk tax help
 
 --registry <dir>: 디렉토리의 모든 .yaml을 TaxonomyRegistry에 로드.
   cross-taxonomy import 검증 및 registry-wide ref 조회에 활용.
+  codegen: cross-tax import 해소 후 validate gate 강화 (errors=0 강제)
+  diff: 두 yaml의 validate 진단 함께 출력 (informational)
 
 --auto 지원 yaml: dkg-schema, ingest-coords, qa-sdk-def-catalog
   (yaml 파일명 기반 자동 매핑)
@@ -207,17 +209,19 @@ function showCmd(args: string[]): void {
 function codegenCmd(args: string[]): void {
   const json = args.includes("--json");
   const skipValidate = args.includes("--skip-validate");
+  const registryDir = extractRegistryDir(args);
   const outIdx = args.indexOf("--out");
   const outDir = outIdx >= 0 ? args[outIdx + 1] : undefined;
-  const positional = args.filter((a, i) => {
+  const filteredArgs = filterRegistryArgs(args);
+  const positional = filteredArgs.filter((a, i) => {
     if (a.startsWith("--")) return false;
-    if (i > 0 && args[i - 1] === "--out") return false;
+    if (i > 0 && filteredArgs[i - 1] === "--out") return false;
     return true;
   });
   const file = positional[0];
 
   if (!file) {
-    console.error("사용법: qa-sdk tax codegen <file> --out <dir> [--skip-validate] [--json]");
+    console.error("사용법: qa-sdk tax codegen <file> --out <dir> [--registry <dir>] [--skip-validate] [--json]");
     process.exit(1);
     return;
   }
@@ -243,8 +247,23 @@ function codegenCmd(args: string[]): void {
     return;
   }
 
+  // registry가 있으면 cross-tax import 해소를 위해 validate 강화
+  let reg: TaxonomyRegistry | undefined;
+  if (registryDir) {
+    reg = loadRegistryDir(registryDir);
+    reg.add(parsed.ir);
+  }
+
   let result;
   try {
+    // registry가 있으면 validate(errors only) 먼저 실행
+    if (!skipValidate && reg) {
+      const diags = validate(parsed.ir, reg);
+      const errors = diags.filter((d) => d.severity === "error");
+      if (errors.length > 0) {
+        throw new CodegenValidationError(errors);
+      }
+    }
     result = codegen(parsed.ir, { skipValidate });
   } catch (e) {
     if (e instanceof CodegenValidationError) {
@@ -280,9 +299,11 @@ function codegenCmd(args: string[]): void {
 
 function diffCmd(args: string[]): void {
   const json = args.includes("--json");
-  const positional = args.filter((a) => !a.startsWith("--"));
+  const registryDir = extractRegistryDir(args);
+  const filteredArgs = filterRegistryArgs(args);
+  const positional = filteredArgs.filter((a) => !a.startsWith("--"));
   if (positional.length < 2) {
-    console.error("사용법: qa-sdk tax diff <a.yaml> <b.yaml> [--json]");
+    console.error("사용법: qa-sdk tax diff <a.yaml> <b.yaml> [--registry <dir>] [--json]");
     process.exit(1);
     return;
   }
@@ -313,18 +334,43 @@ function diffCmd(args: string[]): void {
 
   const result = diff(ra.ir, rb.ir);
 
+  // registry가 있으면 validate 진단 정보 함께 수집
+  let validateInfo: { a: Diagnostic[]; b: Diagnostic[] } | undefined;
+  if (registryDir) {
+    const reg = loadRegistryDir(registryDir);
+    reg.add(ra.ir);
+    reg.add(rb.ir);
+    validateInfo = {
+      a: validate(ra.ir, reg),
+      b: validate(rb.ir, reg),
+    };
+  }
+
   if (json) {
-    console.log(JSON.stringify(result, null, 2));
+    console.log(JSON.stringify({ ...result, validate: validateInfo }, null, 2));
     return;
   }
 
   if (result.same) {
     console.log("✔ 두 yaml 동일");
-    return;
+  } else {
+    console.log(`${result.changes.length} 변경 발견:\n`);
+    for (const c of result.changes) {
+      console.log(`  ${formatChange(c)}`);
+    }
   }
-  console.log(`${result.changes.length} 변경 발견:\n`);
-  for (const c of result.changes) {
-    console.log(`  ${formatChange(c)}`);
+
+  // --registry 검증 진단 정보 출력
+  if (validateInfo) {
+    const aErrs = validateInfo.a.filter((d) => d.severity === "error").length;
+    const bErrs = validateInfo.b.filter((d) => d.severity === "error").length;
+    const aWarns = validateInfo.a.filter((d) => d.severity === "warning").length;
+    const bWarns = validateInfo.b.filter((d) => d.severity === "warning").length;
+    if (aErrs > 0 || bErrs > 0) {
+      console.log(`\n[--registry 검증] a errors=${aErrs} warnings=${aWarns}, b errors=${bErrs} warnings=${bWarns}`);
+    } else {
+      console.log(`\n[--registry 검증] a warnings=${aWarns}, b warnings=${bWarns} (errors=0)`);
+    }
   }
 }
 
