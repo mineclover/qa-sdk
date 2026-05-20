@@ -9,7 +9,7 @@ const YAML_PATH = join(__dirname, "../../../../docs/taxonomies/qa-sdk-coordinate
 
 describe("doctor", () => {
   const expected = JSON.parse(
-    readFileSync(join(FIX, "expected-qa-sdk-coords.json"), "utf8")
+    readFileSync(join(FIX, "expected-qa-sdk-coordinate-system.json"), "utf8")
   );
 
   it("qa-sdk-coordinate-system.yaml과 expected SSOT가 일치 (drift 없음)", () => {
