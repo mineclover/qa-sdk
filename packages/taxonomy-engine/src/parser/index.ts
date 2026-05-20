@@ -1,10 +1,11 @@
-import * as yaml from "js-yaml";
 import {
+  parse as parseYaml,
   parseDocument,
   LineCounter,
   isMap,
   isSeq,
   isScalar,
+  YAMLParseError,
 } from "yaml";
 import { createHash } from "node:crypto";
 import { TaxonomyDocSchema, type TaxonomyDoc } from "../schema/zod.js";
@@ -24,15 +25,19 @@ export type ParseResult = { ir: TaxonomyIR } | { error: ParseError };
 export function parse(yamlText: string): ParseResult {
   let raw: unknown;
   try {
-    raw = yaml.load(yamlText);
+    raw = parseYaml(yamlText);
   } catch (e) {
-    const mark = (e as { mark?: { line: number; column: number } }).mark;
+    let location: { line: number; column: number } | undefined;
+    if (e instanceof YAMLParseError && e.linePos) {
+      const linePos = Array.isArray(e.linePos) ? e.linePos[0] : e.linePos;
+      location = { line: linePos.line, column: linePos.col };
+    }
     return {
       error: {
         severity: "error",
         code: "parse-yaml-syntax",
         message: `YAML 문법 오류: ${(e as Error).message}`,
-        location: mark ? { line: mark.line + 1, column: mark.column + 1 } : undefined,
+        location,
       },
     };
   }

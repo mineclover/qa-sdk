@@ -24,12 +24,10 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "js-yaml": "^4.1.0",
     "yaml": "^2.8.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.0.0",
     "tsup": "^8.5.1",
     "typescript": "^5.8.2",
