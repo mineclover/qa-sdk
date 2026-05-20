@@ -1,6 +1,14 @@
 // Parser
 export { parse, type ParseError, type ParseResult } from "./parser/index.js";
 
+// Ref grammar (3-tier parser + resolver)
+export { parseRef } from "./ref/parser.js";
+export { resolveRef } from "./ref/resolver.js";
+export type { TaxonomyRef, RefResult } from "./ref/types.js";
+
+// Registry
+export { TaxonomyRegistry } from "./registry/index.js";
+
 // Types
 export type { TaxonomyIR, AxisIR, EntryIR, RelationIR, ConstraintIR, ImportIR, Coordinate, RelationKind, ConstraintKind } from "./schema/ir.js";
 export type { Diagnostic, DiagnosticCode } from "./schema/diagnostic.js";
