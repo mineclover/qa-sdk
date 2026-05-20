@@ -1,6 +1,6 @@
-import { readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs";
-import { join } from "node:path";
-import { parse, validate, show, codegen, CodegenValidationError, TaxonomyRegistry, diff } from "taxonomy-engine";
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from "node:fs";
+import { join, resolve as pathResolve, dirname } from "node:path";
+import { parse, validate, show, codegen, CodegenValidationError, TaxonomyRegistry, diff, doctor, extractDkgExpected, extractIngestExpected, extractVocabExpected, type ExpectedTaxonomy } from "taxonomy-engine";
 import type { Diagnostic, RefResult, DiffEntry } from "taxonomy-engine";
 
 export async function cliTaxonomy(rest: string[]): Promise<void> {
@@ -14,6 +14,8 @@ export async function cliTaxonomy(rest: string[]): Promise<void> {
       return codegenCmd(args);
     case "diff":
       return diffCmd(args);
+    case "doctor":
+      return doctorCmd(args);
     case "help":
     case undefined:
       printHelp();
@@ -33,10 +35,14 @@ function printHelp(): void {
   qa-sdk tax show <ref> --registry <dir> [--json]
   qa-sdk tax codegen <file> --out <dir> [--skip-validate] [--json]
   qa-sdk tax diff <a> <b> [--json]
+  qa-sdk tax doctor <file> (--expected <file> | --auto) [--json]
   qa-sdk tax help
 
 --registry <dir>: 디렉토리의 모든 .yaml을 TaxonomyRegistry에 로드.
   cross-taxonomy import 검증 및 registry-wide ref 조회에 활용.
+
+--auto 지원 yaml: dkg-schema, ingest-coords, qa-sdk-def-catalog
+  (yaml 파일명 기반 자동 매핑)
 
 ref 형식 (3-tier):
   taxonomy:axis.entry              dotted
@@ -346,6 +352,110 @@ function formatRule(rule: Record<string, string>): string {
     .sort(([ka], [kb]) => ka.localeCompare(kb))
     .map(([k, v]) => `${k}: ${v}`)
     .join(", ");
+}
+
+const AUTO_EXTRACT_MAP: Record<string, (repoRoot: string) => ExpectedTaxonomy> = {
+  "dkg-schema": (root) => {
+    const nodePath = join(root, "docs/specs/dkg-system/dkg-node-types.spec.md");
+    const edgePath = join(root, "docs/specs/dkg-system/dkg-edge-types.spec.md");
+    const nodeText = readFileSync(nodePath, "utf8");
+    const edgeText = readFileSync(edgePath, "utf8");
+    return extractDkgExpected(nodeText, edgeText);
+  },
+  "ingest-coords": (root) => {
+    const mdPath = join(root, "docs/specs/ingest/ingest-infra-system/store-adapter-parity.spec.md");
+    const mdText = readFileSync(mdPath, "utf8");
+    return extractIngestExpected(mdText);
+  },
+  "qa-sdk-def-catalog": (root) => {
+    const tsPath = join(root, "packages/definition-catalog/src/vocabulary.ts");
+    const tsText = readFileSync(tsPath, "utf8");
+    return extractVocabExpected(tsText);
+  },
+};
+
+function findRepoRoot(filePath: string): string | undefined {
+  let dir = pathResolve(dirname(filePath));
+  for (let i = 0; i < 10; i++) {
+    if (existsSync(join(dir, "pnpm-workspace.yaml"))) return dir;
+    const parent = pathResolve(dir, "..");
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return undefined;
+}
+
+function doctorCmd(args: string[]): void {
+  const json = args.includes("--json");
+  const auto = args.includes("--auto");
+  const expectedIdx = args.indexOf("--expected");
+  const expectedPath = expectedIdx >= 0 ? args[expectedIdx + 1] : undefined;
+  const positional = args.filter((a, i) => {
+    if (a.startsWith("--")) return false;
+    if (i > 0 && args[i - 1] === "--expected") return false;
+    return true;
+  });
+  const file = positional[0];
+
+  if (!file) {
+    console.error("사용법: qa-sdk tax doctor <file> (--expected <file> | --auto) [--json]");
+    process.exit(1);
+    return;
+  }
+  if (!expectedPath && !auto) {
+    console.error("--expected <file> 또는 --auto 필요");
+    process.exit(1);
+    return;
+  }
+
+  let yamlText: string;
+  try {
+    yamlText = readFileSync(file, "utf8");
+  } catch (e) {
+    console.error(`파일 읽기 실패: ${file} — ${(e as Error).message}`);
+    process.exit(1);
+    return;
+  }
+
+  const parsed = parse(yamlText);
+  if ("error" in parsed) {
+    console.error(`parse 실패: ${parsed.error.message}`);
+    process.exit(1);
+    return;
+  }
+
+  let expected: ExpectedTaxonomy;
+  if (auto) {
+    const base = file.split("/").pop()?.replace(".yaml", "") || "";
+    const extractor = AUTO_EXTRACT_MAP[base];
+    if (!extractor) {
+      const supportedNames = Object.keys(AUTO_EXTRACT_MAP).join(", ");
+      console.error(`--auto 지원 매핑 없음: ${base}. --expected로 명시 필요. 지원: ${supportedNames}`);
+      process.exit(1);
+      return;
+    }
+    const repoRoot = findRepoRoot(file) ?? process.cwd();
+    try {
+      expected = extractor(repoRoot);
+    } catch (e) {
+      console.error(`--auto 추출 실패: ${(e as Error).message}`);
+      process.exit(1);
+      return;
+    }
+  } else {
+    try {
+      expected = JSON.parse(readFileSync(expectedPath!, "utf8"));
+    } catch (e) {
+      console.error(`expected 파일 읽기 실패: ${(e as Error).message}`);
+      process.exit(1);
+      return;
+    }
+  }
+
+  const diags = doctor(parsed.ir, expected);
+  printDiagnostics(diags, { json, file });
+  const errors = diags.filter((d) => d.severity === "error");
+  if (errors.length > 0) process.exit(1);
 }
 
 function printShowResult(result: RefResult): void {

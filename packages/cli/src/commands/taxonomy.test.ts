@@ -238,3 +238,62 @@ axes:
     exit.mockRestore();
   });
 });
+
+describe("cli tax doctor", () => {
+  it("--expected fixture와 매칭 → exit 0", async () => {
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const yamlFile = writeTmp("ok.yaml", `taxonomy: ok
+version: 1
+axes:
+  s:
+    entries: [a, b]
+    capacity: 4
+`);
+    const expectedFile = writeTmp("expected.json", JSON.stringify({
+      taxonomy: "ok",
+      axes: { s: { entries: [{ id: "a" }, { id: "b" }] } },
+    }));
+    await cliTaxonomy(["doctor", yamlFile, "--expected", expectedFile]);
+    expect(exit).not.toHaveBeenCalledWith(1);
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  it("--expected drift 발생 → exit 1", async () => {
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const yamlFile = writeTmp("drift.yaml", `taxonomy: ok
+version: 1
+axes:
+  s:
+    entries: [a]
+    capacity: 4
+`);
+    const expectedFile = writeTmp("expected.json", JSON.stringify({
+      taxonomy: "ok",
+      axes: { s: { entries: [{ id: "a" }, { id: "missing" }] } },
+    }));
+    await cliTaxonomy(["doctor", yamlFile, "--expected", expectedFile]);
+    expect(exit).toHaveBeenCalledWith(1);
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  it("--auto 지원 없는 파일명 → exit 1", async () => {
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const yamlFile = writeTmp("unknown-name.yaml", `taxonomy: ok
+version: 1
+axes:
+  s:
+    entries: [a]
+    capacity: 2
+`);
+    await cliTaxonomy(["doctor", yamlFile, "--auto"]);
+    expect(exit).toHaveBeenCalledWith(1);
+    expect(err).toHaveBeenCalledWith(expect.stringContaining("--auto 지원 매핑 없음"));
+    err.mockRestore();
+    exit.mockRestore();
+  });
+});

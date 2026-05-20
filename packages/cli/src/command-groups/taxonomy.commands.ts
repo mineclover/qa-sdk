@@ -14,6 +14,7 @@ export const TAXONOMY_COMMAND_DESCRIPTORS = [
   { id: "tax.show", path: ["show"], handlerKey: "tax.show" },
   { id: "tax.codegen", path: ["codegen"], handlerKey: "tax.codegen" },
   { id: "tax.diff", path: ["diff"], handlerKey: "tax.diff" },
+  { id: "tax.doctor", path: ["doctor"], handlerKey: "tax.doctor" },
 ] as const satisfies readonly CommandDescriptor[];
 
 export const TAXONOMY_COMMAND_TREE =
@@ -28,6 +29,7 @@ export const TAXONOMY_TOP_LEVEL_USAGE_LINES = [
   "qa-sdk tax show <file> <ref>       텍소노미 단위 조회 (3-tier ref)",
   "qa-sdk tax codegen <file> --out    TS 5 파일 생성",
   "qa-sdk tax diff <a> <b>            두 yaml 비교",
+  "qa-sdk tax doctor <file> --auto    외부 SSOT drift 점검",
 ] as const;
 
 export const TAXONOMY_HANDLER_REGISTRY = new Proxy({} as Record<string, RestCommandHandler>, {
