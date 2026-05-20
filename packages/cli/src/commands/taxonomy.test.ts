@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { cliTaxonomy } from "./taxonomy.js";
@@ -87,6 +87,68 @@ describe("cli tax show", () => {
     await cliTaxonomy(["show", file, "tx:scope.missing"]);
     expect(exit).toHaveBeenCalledWith(1);
     err.mockRestore();
+    exit.mockRestore();
+  });
+});
+
+describe("cli tax codegen", () => {
+  it("정상 yaml → 5 파일 생성", async () => {
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const file = writeTmp("ok.yaml", GOOD_YAML);
+    const outDir = join(tmpdir(), `tax-cg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+
+    await cliTaxonomy(["codegen", file, "--out", outDir]);
+
+    expect(exit).not.toHaveBeenCalledWith(1);
+    expect(existsSync(join(outDir, "axes.ts"))).toBe(true);
+    expect(existsSync(join(outDir, "addresses.ts"))).toBe(true);
+    expect(existsSync(join(outDir, "registry.ts"))).toBe(true);
+    expect(existsSync(join(outDir, "relations.ts"))).toBe(true);
+    expect(existsSync(join(outDir, "meta.ts"))).toBe(true);
+
+    rmSync(outDir, { recursive: true });
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  it("--out 누락 → exit 1", async () => {
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const file = writeTmp("ok.yaml", GOOD_YAML);
+    await cliTaxonomy(["codegen", file]);
+    expect(exit).toHaveBeenCalledWith(1);
+    err.mockRestore();
+    exit.mockRestore();
+  });
+
+  it("broken IR + --skip-validate → 생성 성공", async () => {
+    const brokenYaml = `
+taxonomy: bad
+version: 1
+axes:
+  scope:
+    entries: [a, b]
+    capacity: 2
+relations:
+  r:
+    from: scope
+    to: scope
+    kind: contains
+    rules:
+      - { upper: a, lower: missing }
+`;
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const file = writeTmp("bad.yaml", brokenYaml);
+    const outDir = join(tmpdir(), `tax-cg-skip-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+
+    await cliTaxonomy(["codegen", file, "--out", outDir, "--skip-validate"]);
+    expect(exit).not.toHaveBeenCalledWith(1);
+    expect(existsSync(join(outDir, "axes.ts"))).toBe(true);
+
+    rmSync(outDir, { recursive: true });
+    log.mockRestore();
     exit.mockRestore();
   });
 });
