@@ -152,3 +152,28 @@ relations:
     exit.mockRestore();
   });
 });
+
+describe("cli tax diff", () => {
+  it("같은 yaml → 동일 메시지 + exit 0", async () => {
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const file = writeTmp("a.yaml", GOOD_YAML);
+    await cliTaxonomy(["diff", file, file]);
+    expect(exit).not.toHaveBeenCalledWith(1);
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("동일"));
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  it("다른 yaml → 변경 목록 출력", async () => {
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const fileA = writeTmp("a.yaml", GOOD_YAML);
+    const fileB = writeTmp("b.yaml", GOOD_YAML.replace("[a, b]", "[a, b, c]"));
+    await cliTaxonomy(["diff", fileA, fileB]);
+    expect(exit).not.toHaveBeenCalledWith(1);
+    expect(log).toHaveBeenCalled();
+    log.mockRestore();
+    exit.mockRestore();
+  });
+});

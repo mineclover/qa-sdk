@@ -29,6 +29,9 @@ export { checkContentHashDrift, validateRegistryVersions } from "./codegen/drift
 export { doctor, type ExpectedTaxonomy } from "./doctor/index.js";
 export { extractIdsFromMarkdownTable, extractDkgExpected } from "./doctor/extract.js";
 
+// Diff (두 IR 비교)
+export { diff, type DiffEntry, type DiffResult } from "./diff/index.js";
+
 // Types
 export type { TaxonomyIR, AxisIR, EntryIR, RelationIR, ConstraintIR, ImportIR, Coordinate, RelationKind, ConstraintKind, Severity } from "./schema/ir.js";
 export type { Diagnostic, DiagnosticCode } from "./schema/diagnostic.js";
