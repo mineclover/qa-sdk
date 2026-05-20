@@ -23,7 +23,7 @@ export { validate, type ValidateOptions } from "./validate/index.js";
 export { codegen, CodegenValidationError, type CodegenOptions, type CodegenResult } from "./codegen/index.js";
 
 // Codegen helpers (drift detection)
-export { checkContentHashDrift, validateRegistryVersions } from "./codegen/drift.js";
+export { checkContentHashDrift, validateRegistryVersions } from "./drift/index.js";
 
 // Doctor (yaml ↔ external SSOT drift detection)
 export { doctor, type ExpectedTaxonomy } from "./doctor/index.js";

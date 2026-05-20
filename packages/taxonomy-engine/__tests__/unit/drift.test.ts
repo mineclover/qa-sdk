@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { checkContentHashDrift, validateRegistryVersions } from "../../src/codegen/drift.js";
+import { checkContentHashDrift, validateRegistryVersions } from "../../src/drift/index.js";
 import { TaxonomyRegistry } from "../../src/registry/index.js";
 import { parse } from "../../src/parser/index.js";
 
