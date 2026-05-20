@@ -6,6 +6,10 @@ export { parseRef } from "./ref/parser.js";
 export { resolveRef } from "./ref/resolver.js";
 export type { TaxonomyRef, RefResult } from "./ref/types.js";
 
+// Indexer (bidirectional id/address + coordinate packing)
+export { indexAxis, packCoordinate, unpackCoordinate } from "./indexer/index.js";
+export type { IndexedAxis } from "./indexer/index.js";
+
 // Registry
 export { TaxonomyRegistry } from "./registry/index.js";
 
