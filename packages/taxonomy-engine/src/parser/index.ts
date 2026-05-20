@@ -1,4 +1,11 @@
 import * as yaml from "js-yaml";
+import {
+  parseDocument,
+  LineCounter,
+  isMap,
+  isSeq,
+  isScalar,
+} from "yaml";
 import { createHash } from "node:crypto";
 import { TaxonomyDocSchema, type TaxonomyDoc } from "../schema/zod.js";
 import type {
@@ -141,81 +148,64 @@ function stableStringify(v: unknown): string {
   return `{${keys.map((k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`).join(",")}}`;
 }
 
+/**
+ * `yaml` 라이브러리(eemeli/yaml)의 CST/AST를 활용한 _loc 추출.
+ *
+ * 옵션 B 채택 이유: js-yaml listener는 block sequence 아이템마다 open(null)이 2회
+ * 발생하고 인라인/블록 구분이 불명확해 경로 추적이 복잡함. `yaml` 라이브러리의
+ * parseDocument + LineCounter는 각 노드의 range[0] → linePos() 변환으로
+ * multi-line description, nested 객체, comments 등 모든 yaml 구조에서 정확한
+ * line/column을 제공한다.
+ */
 function extractLocs(yamlText: string): Map<string, { line: number; column: number }> {
   const locs = new Map<string, { line: number; column: number }>();
-  const lines = yamlText.split("\n");
-  let axisName: string | null = null;
-  let inAxes = false;
-  let inEntries = false;
-  let entryIdx = 0;
-  let entriesIndent = 0;
 
-  lines.forEach((line, i) => {
-    const trimmed = line.replace(/\s+$/, "");
-    if (/^axes:\s*$/.test(trimmed)) {
-      inAxes = true;
-      inEntries = false;
-    } else if (/^[a-zA-Z]/.test(trimmed) && !/^\s/.test(line)) {
-      inAxes = false;
-      inEntries = false;
-    }
+  try {
+    const lineCounter = new LineCounter();
+    const doc = parseDocument(yamlText, { lineCounter });
 
-    if (!inAxes) return;
+    if (!isMap(doc.contents)) return locs;
 
-    // 축 시작: "  scope:"
-    const axisMatch = trimmed.match(/^\s{2}([a-zA-Z_][\w-]*)\s*:/);
-    if (axisMatch && /^\s{2}\S/.test(line)) {
-      axisName = axisMatch[1];
-      entryIdx = 0;
-      inEntries = false;
-      locs.set(`axes.${axisName}`, { line: i + 1, column: line.indexOf(axisName) + 1 });
-      return;
-    }
+    // axes 키 찾기
+    const axesPair = doc.contents.items.find(
+      (p) => isScalar(p.key) && p.key.value === "axes",
+    );
+    if (!axesPair || !isMap(axesPair.value)) return locs;
 
-    // entries: 시작 — inline 또는 block
-    const inlineEntries = trimmed.match(/^\s{4}entries:\s*\[(.+)\]/);
-    if (inlineEntries && axisName) {
-      const items = inlineEntries[1].split(",").map((s) => s.trim());
-      items.forEach((_, j) => {
-        locs.set(`axes.${axisName}.entries.${j}`, {
-          line: i + 1,
-          column: line.indexOf(items[j]) + 1,
-        });
+    // 각 축 처리
+    for (const axisPair of axesPair.value.items) {
+      if (!isScalar(axisPair.key) || !axisPair.key.range) continue;
+
+      const axisName = axisPair.key.value as string;
+      const axisKeyPos = lineCounter.linePos(axisPair.key.range[0]);
+      locs.set(`axes.${axisName}`, {
+        line: axisKeyPos.line,
+        column: axisKeyPos.col,
       });
-      inEntries = false;
-      return;
-    }
 
-    const blockEntriesStart = trimmed.match(/^(\s{4})entries:\s*$/);
-    if (blockEntriesStart && axisName) {
-      inEntries = true;
-      entryIdx = 0;
-      entriesIndent = blockEntriesStart[1].length;
-      return;
-    }
+      if (!isMap(axisPair.value)) continue;
 
-    // 블록 entry: "      - apm"  또는  "      - { id: foo, ... }"
-    if (inEntries && axisName) {
-      const dashMatch = line.match(/^(\s+)-\s*(.+)$/);
-      if (dashMatch && dashMatch[1].length > entriesIndent) {
-        const valuePart = dashMatch[2].trim();
-        // 오브젝트면 id 추출
-        const idMatch = valuePart.match(/id\s*:\s*([^\s,}]+)/);
-        const display = idMatch ? idMatch[1] : valuePart;
-        const col = line.indexOf(display) + 1;
-        locs.set(`axes.${axisName}.entries.${entryIdx}`, {
-          line: i + 1,
-          column: col > 0 ? col : line.indexOf("-") + 1,
+      // entries 키 찾기
+      const entriesPair = axisPair.value.items.find(
+        (p) => isScalar(p.key) && p.key.value === "entries",
+      );
+      if (!entriesPair || !isSeq(entriesPair.value)) continue;
+
+      // 각 entry 처리
+      for (let i = 0; i < entriesPair.value.items.length; i++) {
+        const item = entriesPair.value.items[i];
+        if (!item || !item.range) continue;
+
+        const entryPos = lineCounter.linePos(item.range[0]);
+        locs.set(`axes.${axisName}.entries.${i}`, {
+          line: entryPos.line,
+          column: entryPos.col,
         });
-        entryIdx++;
-        return;
-      }
-      // entries 블록 종료 — indent가 줄어들거나 새 키
-      if (trimmed.length > 0 && !line.startsWith(" ".repeat(entriesIndent + 2))) {
-        inEntries = false;
       }
     }
-  });
+  } catch {
+    // syntax error는 parse()에서 별도 처리
+  }
 
   return locs;
 }

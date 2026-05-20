@@ -77,3 +77,72 @@ axes:
     expect(entries[2]._loc!.line).toBeGreaterThan(entries[1]._loc!.line);
   });
 });
+
+describe("_loc AST 정확성", () => {
+  it("multi-line description이 있어도 entries의 _loc 정확", () => {
+    const yaml = `
+taxonomy: t
+version: 1
+description: |
+  여러 줄
+  설명입니다
+  multi-line
+axes:
+  scope:
+    description: |
+      scope 축
+      설명
+    entries: [apm, ingest]
+`;
+    const r = parse(yaml);
+    if (!("ir" in r)) throw new Error();
+    const entries = r.ir.axes.get("scope")?.entries ?? [];
+    expect(entries.length).toBe(2);
+    expect(entries[0]._loc?.line).toBeGreaterThan(0);
+    expect(entries[1]._loc?.line).toBeGreaterThan(0);
+  });
+
+  it("comments가 있어도 _loc 정확", () => {
+    const yaml = `
+# 최상위 코멘트
+taxonomy: t
+version: 1
+axes:
+  # axis 코멘트
+  scope:
+    # entries 위 코멘트
+    entries:
+      - apm    # inline 코멘트
+      - ingest # 또 다른 코멘트
+`;
+    const r = parse(yaml);
+    if (!("ir" in r)) throw new Error();
+    const entries = r.ir.axes.get("scope")?.entries ?? [];
+    expect(entries.length).toBe(2);
+    expect(entries[0]._loc?.line).toBeGreaterThan(0);
+    expect(entries[1]._loc?.line).toBe(entries[0]._loc!.line + 1);
+  });
+
+  it("nested 객체 entry의 _loc도 정확", () => {
+    const yaml = `
+taxonomy: t
+version: 1
+axes:
+  s:
+    entries:
+      - id: a
+        address: 0
+        label: Alpha
+      - id: b
+        address: 1
+        meta:
+          owner: team-x
+`;
+    const r = parse(yaml);
+    if (!("ir" in r)) throw new Error();
+    const entries = r.ir.axes.get("s")?.entries ?? [];
+    expect(entries.length).toBe(2);
+    expect(entries[0]._loc?.line).toBeGreaterThan(0);
+    expect(entries[1]._loc?.line).toBeGreaterThan(entries[0]._loc!.line);
+  });
+});
