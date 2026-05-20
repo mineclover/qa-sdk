@@ -1,0 +1,8 @@
+taxonomy: derived-broken
+version: 1
+imports:
+  - taxonomy: missing-base
+    as: mb
+axes:
+  asset:
+    entries: [text]

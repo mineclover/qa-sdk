@@ -1,0 +1,9 @@
+taxonomy: derived
+version: 1
+imports:
+  - taxonomy: base-coords
+    version: 1
+    as: base
+axes:
+  asset:
+    entries: [text, image]

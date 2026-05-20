@@ -1,0 +1,9 @@
+[
+  {
+    "severity": "error",
+    "code": "ref-unresolved-import",
+    "message": "imports[0]: taxonomy=\"missing-base\" 가 registry에 없음",
+    "ref": "derived-broken#/imports/0",
+    "meta": { "missing": "missing-base", "as": "mb", "index": 0 }
+  }
+]

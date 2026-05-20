@@ -1,0 +1,5 @@
+taxonomy: base-coords
+version: 1
+axes:
+  layer:
+    entries: [domain, op]
