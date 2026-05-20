@@ -1,0 +1,6 @@
+taxonomy: cap-bad
+version: 1
+axes:
+  scope:
+    entries: [a, b, c, d]
+    capacity: 4

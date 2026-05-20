@@ -1,0 +1,14 @@
+taxonomy: ref-bad
+version: 1
+axes:
+  scope:
+    entries: [a, b]
+  aspect:
+    entries: [x, y]
+relations:
+  scope-contains:
+    from: scope
+    to: scope
+    kind: contains
+    rules:
+      - { upper: a, lower: missing }

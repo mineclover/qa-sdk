@@ -90,14 +90,14 @@
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
-    "zod": "catalog:"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.0.0",
     "tsup": "^8.5.1",
     "typescript": "^5.8.2",
-    "vitest": "^2.1.8"
+    "vitest": "^1.6.1"
   }
 }
 ```
@@ -122,15 +122,26 @@ export default defineConfig({
 
 ```json
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2023",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "outDir": "dist",
     "rootDir": "src"
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "__tests__/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
 ```
 
@@ -2406,8 +2417,9 @@ git commit -m "feat(cli): add 'tax validate' command backed by taxonomy-engine (
 
 ## 후속 (Out of Scope — Open Issues)
 
-이 plan은 spec §9의 Open Issues 중 핵심 라이브러리 + 최소 CLI만 다룬다. 후속 별도 plan:
+이 plan은 spec §9의 Open Issues 중 핵심 라이브러리 + 도그푸딩까지 다룬다 (T-0~T-9). **T-10 CLI 통합은 후속 별도 PR로 분리** (사유: `taxonomy-engine`이 main에 머지되기 전 worktree에서 CLI가 같은 패키지를 의존하면 pnpm workspace symlink가 main의 stub을 우선시하는 문제). 후속 별도 plan:
 
+- **T-10 재개 — CLI `tax validate` 통합** (`packages/cli`에 taxonomy.ts + command-groups + index.ts wiring). taxonomy-engine이 main에 머지된 후 별도 branch에서 진행. 코드 자체는 본 plan §Task 10 그대로 사용 가능.
 - **Web UI** — 시각화/탐색 (라이브러리 + 진단 형식 공유)
 - **lesson-builder 적용** — Layer 6단을 텍소노미로 표현, mono-story 런타임 연결
 - **DKG 표현 PoC** — 15노드/18엣지를 텍소노미로 표현 가능한지
