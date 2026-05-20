@@ -1,0 +1,158 @@
+taxonomy: lesson-builder-content
+version: 1
+description: |
+  pipe-builder의 lesson-builder 콘텐츠 모델 — Asset/Clip/Cue/Stage/Branch/Scenario
+  6-layer를 텍소노미 좌표계로 표현. mono-story 런타임 생태계와의 통합 방향.
+
+  원본 문서:
+  /Users/junwoobang/workflow/pipe-builder/packages/mono-story/packages/lesson-builder/TAXONOMY.md
+
+imports:
+  - taxonomy: qa-sdk-coordinate-system
+    version: 1
+    as: qac
+
+axes:
+  layer:
+    description: lesson-builder 콘텐츠 모델 6단계
+    entries:
+      - { id: type-schema, address: 0, label: "AssetTypeSchema (Layer 0)" }
+      - { id: asset,       address: 1, label: "Asset (Layer 1)" }
+      - { id: clip,        address: 2, label: "Clip (Layer 2)" }
+      - { id: cue,         address: 3, label: "Cue/Beat (Layer 3)" }
+      - { id: stage,       address: 4, label: "Stage/Cut (Layer 4)" }
+      - { id: branch,      address: 5, label: "Branch/Transition (Layer 4)" }
+      - { id: scenario,    address: 6, label: "Scenario/LessonDoc (Layer 5)" }
+    capacity: 16
+    version: 1
+
+  asset-type:
+    description: 빌트인 asset 타입
+    entries: [text, character, bubble, quiz, background, decoration]
+    capacity: 16
+    version: 1
+
+  param-kind:
+    description: Asset 파라미터 소유권 분리
+    entries:
+      - { id: content, address: 0, label: "Asset이 소유 (contentParams)" }
+      - { id: control, address: 1, label: "Clip이 구동 (controlParams)" }
+    capacity: 4
+    version: 1
+
+  clip-template:
+    description: 카탈로그 Clip 템플릿
+    entries:
+      - { id: appear-fade,     address: 0 }
+      - { id: appear-pop,      address: 1 }
+      - { id: disappear-fade,  address: 2 }
+      - { id: disappear-slide, address: 3 }
+      - { id: slide-in-left,   address: 4 }
+      - { id: slide-in-right,  address: 5 }
+      - { id: state-change,    address: 6 }
+    capacity: 16
+    version: 1
+
+  advance-kind:
+    description: Cue 진행 조건
+    entries: [auto, time, click, answer]
+    capacity: 8
+    version: 1
+
+  branch-kind:
+    description: Stage 전이 조건
+    entries:
+      - { id: auto,            address: 0 }
+      - { id: answer-correct,  address: 1 }
+      - { id: answer-wrong,    address: 2 }
+      - { id: click,           address: 3 }
+    capacity: 8
+    version: 1
+
+relations:
+  layer-contains:
+    description: 상위 Layer가 하위 Layer를 포함 (소속 관계)
+    from: layer
+    to: layer
+    kind: contains
+    rules:
+      - { upper: scenario, lower: stage }
+      - { upper: scenario, lower: branch }
+      - { upper: stage,    lower: cue }
+      - { upper: cue,      lower: asset }
+      - { upper: cue,      lower: clip }
+
+  type-defines-params:
+    description: asset-type이 두 param-kind를 정의
+    from: asset-type
+    to: param-kind
+    kind: depends-on
+    rules:
+      - { from: text,       to: content }
+      - { from: text,       to: control }
+      - { from: character,  to: content }
+      - { from: character,  to: control }
+      - { from: bubble,     to: content }
+      - { from: bubble,     to: control }
+      - { from: quiz,       to: content }
+      - { from: quiz,       to: control }
+      - { from: background, to: content }
+      - { from: background, to: control }
+      - { from: decoration, to: content }
+      - { from: decoration, to: control }
+
+  clip-binds-asset-control:
+    description: |
+      Clip은 Asset의 controlParams만 구동 (content는 Asset 소유).
+      파라미터 소유 경계의 핵심 — TAXONOMY.md §"파라미터 소유 경계" 참조.
+    from: clip-template
+    to: param-kind
+    kind: binds
+    rules:
+      - { from: appear-fade,     to: control }
+      - { from: appear-pop,      to: control }
+      - { from: disappear-fade,  to: control }
+      - { from: disappear-slide, to: control }
+      - { from: slide-in-left,   to: control }
+      - { from: slide-in-right,  to: control }
+      - { from: state-change,    to: control }
+
+  cue-uses-advance:
+    description: Cue는 한 가지 advance 조건 선택
+    from: layer
+    to: advance-kind
+    kind: depends-on
+    rules:
+      - { from: cue, to: auto }
+      - { from: cue, to: time }
+      - { from: cue, to: click }
+      - { from: cue, to: answer }
+
+  branch-uses-condition:
+    description: Branch는 한 가지 condition 사용
+    from: layer
+    to: branch-kind
+    kind: depends-on
+    rules:
+      - { from: branch, to: auto }
+      - { from: branch, to: answer-correct }
+      - { from: branch, to: answer-wrong }
+      - { from: branch, to: click }
+
+constraints:
+  - id: clip-only-binds-control
+    kind: structural
+    rule: |
+      Clip은 param-kind=control에만 binds. content는 Asset 소유.
+      clip-binds-asset-control 관계의 모든 rule이 param-kind=control이어야.
+    severity: error
+
+  - id: asset-types-min-1
+    kind: capacity
+    rule: "axes/asset-type entries.length >= 1"
+    severity: error
+
+  - id: layer-required
+    kind: ref
+    rule: "axis=layer must exist"
+    severity: error
