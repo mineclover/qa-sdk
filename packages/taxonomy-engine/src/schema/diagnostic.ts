@@ -8,7 +8,8 @@ export type DiagnosticCode =
   | `constraint-${string}`
   | `axis-5q-${string}`
   | `version-${string}`
-  | `codegen-${string}`;
+  | `codegen-${string}`
+  | `doctor-${string}`;
 
 export type Diagnostic = {
   severity: Severity;

@@ -25,6 +25,9 @@ export { codegen, CodegenValidationError, type CodegenOptions, type CodegenResul
 // Codegen helpers (drift detection)
 export { checkContentHashDrift, validateRegistryVersions } from "./codegen/drift.js";
 
+// Doctor (yaml ↔ external SSOT drift detection)
+export { doctor, type ExpectedTaxonomy } from "./doctor/index.js";
+
 // Types
 export type { TaxonomyIR, AxisIR, EntryIR, RelationIR, ConstraintIR, ImportIR, Coordinate, RelationKind, ConstraintKind, Severity } from "./schema/ir.js";
 export type { Diagnostic, DiagnosticCode } from "./schema/diagnostic.js";

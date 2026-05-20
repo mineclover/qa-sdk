@@ -1,0 +1,51 @@
+{
+  "taxonomy": "qa-sdk-coordinate-system",
+  "axes": {
+    "scope": {
+      "entries": [
+        { "id": "apm", "address": 0 },
+        { "id": "ingest", "address": 1 },
+        { "id": "registry", "address": 2 },
+        { "id": "gate", "address": 3 },
+        { "id": "query", "address": 4 },
+        { "id": "decode", "address": 5 },
+        { "id": "definition", "address": 6 },
+        { "id": "decision", "address": 7 }
+      ]
+    },
+    "aspect": {
+      "entries": [
+        { "id": "model", "address": 0 },
+        { "id": "protocol", "address": 1 },
+        { "id": "runtime", "address": 2 },
+        { "id": "policy", "address": 3 },
+        { "id": "ops", "address": 4 },
+        { "id": "io", "address": 5 }
+      ]
+    },
+    "depth": {
+      "entries": [
+        { "id": "overview", "address": 0 },
+        { "id": "system", "address": 1 },
+        { "id": "layer", "address": 2 },
+        { "id": "component", "address": 3 },
+        { "id": "entry", "address": 4 }
+      ]
+    },
+    "level": {
+      "entries": [
+        { "id": "group", "address": 0 },
+        { "id": "module", "address": 1 },
+        { "id": "leaf", "address": 2 }
+      ]
+    },
+    "layer": {
+      "entries": [
+        { "id": "domain", "address": 0 },
+        { "id": "operation", "address": 1 },
+        { "id": "mediation", "address": 2 },
+        { "id": "experience", "address": 3 }
+      ]
+    }
+  }
+}
