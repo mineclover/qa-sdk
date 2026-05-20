@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { writeFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { execSync } from "node:child_process";
 import { cliTaxonomy } from "./taxonomy.js";
 import { randomBytes } from "node:crypto";
 
@@ -300,6 +301,26 @@ axes:
     expect(log).toHaveBeenCalled();
 
     rmSync(regDir, { recursive: true });
+    log.mockRestore();
+    exit.mockRestore();
+  });
+});
+
+describe("cli tax git-diff", () => {
+  it("base=HEAD → 변경 없음 메시지 + exit 0", async () => {
+    // git 사용 가능한지 확인
+    try {
+      execSync("git rev-parse HEAD", { stdio: "ignore" });
+    } catch {
+      // git 없거나 repo 아니면 skip
+      return;
+    }
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await cliTaxonomy(["git-diff", "HEAD"]);
+    expect(exit).not.toHaveBeenCalledWith(1);
+    // "변경 없음" 또는 변경 메시지 기대
+    expect(log).toHaveBeenCalled();
     log.mockRestore();
     exit.mockRestore();
   });
