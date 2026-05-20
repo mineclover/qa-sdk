@@ -1,0 +1,39 @@
+{
+  "taxonomy": "ingest-coords",
+  "axes": {
+    "store-driver": {
+      "entries": [
+        { "id": "memory",     "address": 0 },
+        { "id": "pg",         "address": 1 },
+        { "id": "d1",         "address": 2 },
+        { "id": "clickhouse", "address": 3 }
+      ]
+    },
+    "insights-driver": {
+      "entries": [
+        { "id": "local",   "address": 0 },
+        { "id": "app-hub", "address": 1 }
+      ]
+    },
+    "store-kind": {
+      "entries": [
+        { "id": "record",          "address": 0 },
+        { "id": "trace",           "address": 1 },
+        { "id": "session",         "address": 2 },
+        { "id": "verdict",         "address": 3 },
+        { "id": "graph",           "address": 4 },
+        { "id": "scenario-spec",   "address": 5 },
+        { "id": "transmission",    "address": 6 },
+        { "id": "dlq",             "address": 7 },
+        { "id": "key-observation", "address": 8 }
+      ]
+    },
+    "store-coverage": {
+      "entries": [
+        { "id": "full",    "address": 0 },
+        { "id": "partial", "address": 1 },
+        { "id": "single",  "address": 2 }
+      ]
+    }
+  }
+}

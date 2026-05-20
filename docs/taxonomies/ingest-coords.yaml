@@ -1,0 +1,137 @@
+taxonomy: ingest-coords
+version: 1
+description: |
+  qa-sdk ingest 서비스의 좌표 체계 (port 3200, store/insights driver,
+  store-kind, store-coverage). 메타 시스템 외부 사용 사례 4번째.
+
+  SSOT: docs/specs/ingest/
+        docs/specs/ingest/ingest-infra-system/store-adapter-parity.spec.md
+        docs/specs/ingest/ingest-infra-system/ingest-runtime-operations.spec.md
+
+imports:
+  - taxonomy: qa-sdk-coordinate-system
+    version: 1
+    as: qac
+
+axes:
+  store-driver:
+    description: 데이터 영속화 드라이버 종류 (STORE_DRIVER 환경변수)
+    entries:
+      - { id: memory,     address: 0, label: "in-memory (기본, dev/test)" }
+      - { id: pg,         address: 1, label: "PostgreSQL (운영)" }
+      - { id: d1,         address: 2, label: "Cloudflare D1 / SQLite (경량 배포)" }
+      - { id: clickhouse, address: 3, label: "ClickHouse (OLAP 분석 전용)" }
+    capacity: 8
+    version: 1
+
+  insights-driver:
+    description: insights 송출 드라이버 (INSIGHTS_DRIVER 환경변수, fail-open)
+    entries:
+      - { id: local,   address: 0, label: "local Drizzle/SQLite (기본)" }
+      - { id: app-hub, address: 1, label: "Google App Hub (보류 — stub 유지)" }
+    capacity: 4
+    version: 1
+
+  store-kind:
+    description: |
+      9 Store 포트 종류. @qa-sdk/core에 정의된 인터페이스 단위.
+      SSOT: store-adapter-parity.spec.md §Store 포트 × 드라이버 매트릭스
+    entries:
+      - { id: record,        address: 0, label: "RecordStore — 이벤트 레코드" }
+      - { id: trace,         address: 1, label: "TraceStore — trace 집계" }
+      - { id: session,       address: 2, label: "SessionStore — QA 세션" }
+      - { id: verdict,       address: 3, label: "VerdictStore — 판정 결과" }
+      - { id: graph,         address: 4, label: "GraphStore — 실행 그래프" }
+      - { id: scenario-spec, address: 5, label: "ScenarioSpecStore — 시나리오 정의" }
+      - { id: transmission,  address: 6, label: "TransmissionStore — envelope 메타" }
+      - { id: dlq,           address: 7, label: "DlqStore — dead letter queue" }
+      - { id: key-observation, address: 8, label: "KeyObservationStore — 좌표 관측 빈도" }
+    capacity: 32
+    version: 1
+
+  store-coverage:
+    description: |
+      드라이버별 store-kind 지원 수준.
+      full=9/9, partial=일부만 native(나머지 InMemory fallback), single=1/9만
+    entries:
+      - { id: full,    address: 0, label: "전체 9 포트 native 구현" }
+      - { id: partial, address: 1, label: "일부 native + 나머지 InMemory fallback" }
+      - { id: single,  address: 2, label: "단일 포트만 native (OLAP 전용)" }
+    capacity: 8
+    version: 1
+
+relations:
+  store-supports-kind:
+    description: |
+      어떤 store driver가 어떤 store-kind를 native로 지원하는가.
+      SSOT: ingest-runtime-operations.spec.md §store-factory 드라이버 선택
+      - memory: 전체 InMemory 어댑터 9/9 (dev/test)
+      - pg: Drizzle + PG 어댑터 9/9 (운영)
+      - d1: D1 native 4종 (record/trace/session/verdict) + 나머지 InMemory
+      - clickhouse: ClickhouseRecordStore 1종 + 나머지 InMemory
+    from: store-driver
+    to: store-kind
+    kind: depends-on
+    rules:
+      # memory — 전체 InMemory 9종
+      - { store-driver: memory, store-kind: record }
+      - { store-driver: memory, store-kind: trace }
+      - { store-driver: memory, store-kind: session }
+      - { store-driver: memory, store-kind: verdict }
+      - { store-driver: memory, store-kind: graph }
+      - { store-driver: memory, store-kind: scenario-spec }
+      - { store-driver: memory, store-kind: transmission }
+      - { store-driver: memory, store-kind: dlq }
+      - { store-driver: memory, store-kind: key-observation }
+      # pg — Drizzle + PostgreSQL 9종
+      - { store-driver: pg, store-kind: record }
+      - { store-driver: pg, store-kind: trace }
+      - { store-driver: pg, store-kind: session }
+      - { store-driver: pg, store-kind: verdict }
+      - { store-driver: pg, store-kind: graph }
+      - { store-driver: pg, store-kind: scenario-spec }
+      - { store-driver: pg, store-kind: transmission }
+      - { store-driver: pg, store-kind: dlq }
+      - { store-driver: pg, store-kind: key-observation }
+      # d1 — native 4종 (record/trace/session/verdict), 나머지는 InMemory fallback
+      - { store-driver: d1, store-kind: record }
+      - { store-driver: d1, store-kind: trace }
+      - { store-driver: d1, store-kind: session }
+      - { store-driver: d1, store-kind: verdict }
+      # clickhouse — RecordStore 1종만 native
+      - { store-driver: clickhouse, store-kind: record }
+
+  driver-coverage:
+    description: 드라이버 → store-coverage 수준 매핑
+    from: store-driver
+    to: store-coverage
+    kind: depends-on
+    rules:
+      - { store-driver: memory,     store-coverage: full }
+      - { store-driver: pg,         store-coverage: full }
+      - { store-driver: d1,         store-coverage: partial }
+      - { store-driver: clickhouse, store-coverage: single }
+
+constraints:
+  - id: store-kinds-min-9
+    kind: capacity
+    rule:
+      axis: store-kind
+      prop: entries.length
+      op: gte
+      value: 9
+    severity: error
+
+  - id: insights-required
+    kind: ref
+    rule:
+      axis: insights-driver
+      mustExist: true
+    severity: error
+
+  - id: store-driver-required
+    kind: ref
+    rule:
+      axis: store-driver
+      mustExist: true
+    severity: error
