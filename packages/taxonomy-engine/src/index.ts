@@ -1,8 +1,8 @@
 // Parser
 export { parse, type ParseError, type ParseResult } from "./parser/index.js";
 
-// Query (show wrapper + 후속 slice/traverse)
-export { show } from "./query/index.js";
+// Query (show + slice + walkRelation)
+export { show, slice, walkRelation, type SliceRange } from "./query/index.js";
 
 // Ref grammar (3-tier parser + resolver)
 export { parseRef } from "./ref/parser.js";

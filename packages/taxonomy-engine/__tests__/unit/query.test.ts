@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { show } from "../../src/query/index.js";
+import { show, slice, walkRelation } from "../../src/query/index.js";
 import { TaxonomyRegistry } from "../../src/registry/index.js";
 import { parse } from "../../src/parser/index.js";
 
@@ -33,5 +33,87 @@ describe("show", () => {
   it("fail-open — unknown → undefined", () => {
     expect(show("t:scope.unknown", reg)).toBeUndefined();
     expect(show("unknown-tax:scope.apm", reg)).toBeUndefined();
+  });
+});
+
+const richYaml = `
+taxonomy: rich
+version: 1
+axes:
+  depth:
+    entries: [overview, system, layer, component, entry]
+relations:
+  d-contains:
+    from: [depth]
+    to: [depth]
+    kind: contains
+    rules:
+      - { upper: overview, lower: system }
+      - { upper: system, lower: layer }
+      - { upper: layer, lower: component }
+      - { upper: component, lower: entry }
+`;
+
+const richReg = (() => {
+  const reg = new TaxonomyRegistry();
+  const p = parse(richYaml);
+  if ("ir" in p) reg.add(p.ir);
+  return reg;
+})();
+
+const richIr = richReg.get("rich")!;
+
+describe("slice", () => {
+  it("ids 필터", () => {
+    const s = slice(richIr, "depth", { ids: ["overview", "layer"] });
+    expect(s.map((e) => e.id)).toEqual(["overview", "layer"]);
+  });
+
+  it("address 범위 필터 (inclusive)", () => {
+    const s = slice(richIr, "depth", { from: 1, to: 3 });
+    expect(s.map((e) => e.id)).toEqual(["system", "layer", "component"]);
+  });
+
+  it("unknown axis → empty", () => {
+    expect(slice(richIr, "missing")).toEqual([]);
+  });
+});
+
+describe("walkRelation", () => {
+  it("contains 그래프 순회 (overview → entry)", () => {
+    const visited = [...walkRelation(richIr, "d-contains", "overview")];
+    expect(visited).toEqual([
+      "overview",
+      "system",
+      "layer",
+      "component",
+      "entry",
+    ]);
+  });
+
+  it("순환 방지 — 동일 노드 재방문 안 함", () => {
+    const cycleYaml = `
+taxonomy: c
+version: 1
+axes:
+  a:
+    entries: [x, y]
+relations:
+  r:
+    from: [a]
+    to: [a]
+    kind: depends-on
+    rules:
+      - { from: x, to: y }
+      - { from: y, to: x }
+`;
+    const p = parse(cycleYaml);
+    if (!("ir" in p)) throw new Error("parse failed");
+    const visited = [...walkRelation(p.ir, "r", "x")];
+    expect(visited.sort()).toEqual(["x", "y"]);
+  });
+
+  it("unknown relation → empty", () => {
+    expect([...walkRelation(richIr, "missing", "x")]).toEqual([]);
   });
 });
