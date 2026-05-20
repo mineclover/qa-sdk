@@ -1,0 +1,58 @@
+taxonomy: qa-sdk-coordinate-system
+version: 1
+description: qa-sdk definition-catalog의 좌표/level/layer 시스템 (도그푸딩)
+
+axes:
+  scope:
+    description: 시스템 경계
+    entries: [apm, ingest, registry, gate, query, decode, definition, decision]
+    capacity: 16
+    version: 1
+  aspect:
+    description: 측면
+    entries: [model, protocol, runtime, policy, ops, io]
+    capacity: 16
+    version: 1
+  depth:
+    description: 추상 정도
+    entries: [overview, system, layer, component, entry]
+    capacity: 16
+    version: 1
+  level:
+    description: 분해 레벨 (메타)
+    entries: [group, module, leaf]
+    capacity: 8
+    version: 1
+  layer:
+    description: 4계층
+    entries: [domain, operation, mediation, experience]
+    capacity: 8
+    version: 1
+
+relations:
+  depth-contains:
+    from: depth
+    to: depth
+    kind: contains
+    rules:
+      - { upper: overview, lower: system }
+      - { upper: system, lower: layer }
+      - { upper: layer, lower: component }
+      - { upper: component, lower: entry }
+
+  aspect-parents:
+    from: aspect
+    to: aspect
+    kind: parent-of
+    rules:
+      - { child: protocol, parent: model }
+      - { child: runtime, parent: protocol }
+      - { child: policy, parent: runtime }
+      - { child: ops, parent: runtime }
+      - { child: io, parent: protocol }
+
+constraints:
+  - id: level-leaf-no-children
+    kind: structural
+    rule: "axis=level entry=leaf must not appear as upper in any contains relation"
+    severity: error
