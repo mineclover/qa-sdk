@@ -142,33 +142,80 @@ function stableStringify(v: unknown): string {
 }
 
 function extractLocs(yamlText: string): Map<string, { line: number; column: number }> {
-  // 최소 구현 — yaml 라인 인덱스만 보존. 정밀 위치는 후속 개선.
   const locs = new Map<string, { line: number; column: number }>();
   const lines = yamlText.split("\n");
   let axisName: string | null = null;
   let inAxes = false;
+  let inEntries = false;
+  let entryIdx = 0;
+  let entriesIndent = 0;
+
   lines.forEach((line, i) => {
     const trimmed = line.replace(/\s+$/, "");
-    if (/^axes:\s*$/.test(trimmed)) inAxes = true;
-    else if (/^[a-zA-Z]/.test(trimmed) && !/^\s/.test(line)) inAxes = false;
+    if (/^axes:\s*$/.test(trimmed)) {
+      inAxes = true;
+      inEntries = false;
+    } else if (/^[a-zA-Z]/.test(trimmed) && !/^\s/.test(line)) {
+      inAxes = false;
+      inEntries = false;
+    }
 
-    if (inAxes) {
-      const axisMatch = trimmed.match(/^\s{2}([a-zA-Z_][\w-]*)\s*:/);
-      if (axisMatch) {
-        axisName = axisMatch[1];
-        locs.set(`axes.${axisName}`, { line: i + 1, column: line.indexOf(axisName) + 1 });
-      }
-      const inlineEntries = trimmed.match(/^\s{4}entries:\s*\[(.+)\]/);
-      if (inlineEntries && axisName) {
-        const items = inlineEntries[1].split(",").map((s) => s.trim());
-        items.forEach((_, j) => {
-          locs.set(`axes.${axisName}.entries.${j}`, {
-            line: i + 1,
-            column: line.indexOf(items[j]) + 1,
-          });
+    if (!inAxes) return;
+
+    // 축 시작: "  scope:"
+    const axisMatch = trimmed.match(/^\s{2}([a-zA-Z_][\w-]*)\s*:/);
+    if (axisMatch && /^\s{2}\S/.test(line)) {
+      axisName = axisMatch[1];
+      entryIdx = 0;
+      inEntries = false;
+      locs.set(`axes.${axisName}`, { line: i + 1, column: line.indexOf(axisName) + 1 });
+      return;
+    }
+
+    // entries: 시작 — inline 또는 block
+    const inlineEntries = trimmed.match(/^\s{4}entries:\s*\[(.+)\]/);
+    if (inlineEntries && axisName) {
+      const items = inlineEntries[1].split(",").map((s) => s.trim());
+      items.forEach((_, j) => {
+        locs.set(`axes.${axisName}.entries.${j}`, {
+          line: i + 1,
+          column: line.indexOf(items[j]) + 1,
         });
+      });
+      inEntries = false;
+      return;
+    }
+
+    const blockEntriesStart = trimmed.match(/^(\s{4})entries:\s*$/);
+    if (blockEntriesStart && axisName) {
+      inEntries = true;
+      entryIdx = 0;
+      entriesIndent = blockEntriesStart[1].length;
+      return;
+    }
+
+    // 블록 entry: "      - apm"  또는  "      - { id: foo, ... }"
+    if (inEntries && axisName) {
+      const dashMatch = line.match(/^(\s+)-\s*(.+)$/);
+      if (dashMatch && dashMatch[1].length > entriesIndent) {
+        const valuePart = dashMatch[2].trim();
+        // 오브젝트면 id 추출
+        const idMatch = valuePart.match(/id\s*:\s*([^\s,}]+)/);
+        const display = idMatch ? idMatch[1] : valuePart;
+        const col = line.indexOf(display) + 1;
+        locs.set(`axes.${axisName}.entries.${entryIdx}`, {
+          line: i + 1,
+          column: col > 0 ? col : line.indexOf("-") + 1,
+        });
+        entryIdx++;
+        return;
+      }
+      // entries 블록 종료 — indent가 줄어들거나 새 키
+      if (trimmed.length > 0 && !line.startsWith(" ".repeat(entriesIndent + 2))) {
+        inEntries = false;
       }
     }
   });
+
   return locs;
 }

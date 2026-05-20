@@ -52,4 +52,28 @@ describe("parse", () => {
       expect(a.ir.contentHash).toBe(b.ir.contentHash);
     }
   });
+
+  it("블록 스타일 entries의 _loc 보존", () => {
+    const blockYaml = `
+taxonomy: bt
+version: 1
+axes:
+  scope:
+    entries:
+      - apm
+      - ingest
+      - { id: registry, address: 5 }
+`;
+    const r = parse(blockYaml);
+    if (!("ir" in r)) throw new Error();
+    const entries = r.ir.axes.get("scope")?.entries ?? [];
+    expect(entries.length).toBe(3);
+    // 각 entry에 _loc 있어야
+    for (const e of entries) {
+      expect(e._loc?.line).toBeGreaterThan(0);
+    }
+    // line이 strictly 증가
+    expect(entries[1]._loc!.line).toBeGreaterThan(entries[0]._loc!.line);
+    expect(entries[2]._loc!.line).toBeGreaterThan(entries[1]._loc!.line);
+  });
 });
