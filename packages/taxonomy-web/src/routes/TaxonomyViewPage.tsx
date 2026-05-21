@@ -123,34 +123,53 @@ export function TaxonomyViewPage({ file }: { file: string }) {
       {/* Context Panel */}
       <div className="flex-1 overflow-auto p-3 border-r space-y-2">
         <RefBar value={selectedRef} onChange={setSelectedRef} />
-        {selectedRef && (
-          <>
-            <Collapsible title="단위 상세" defaultOpen>
-              <UnitDetailPanel selectedRef={selectedRef} taxonomy={tax} />
-            </Collapsible>
-            <Collapsible title="관련 Relation Rules">
-              <RelatedRulesPanel selectedRef={selectedRef} taxonomy={tax} />
-            </Collapsible>
-            <Collapsible title="관련 Constraints">
-              <RelatedConstraintsPanel selectedRef={selectedRef} taxonomy={tax} />
-            </Collapsible>
-            <Collapsible title="형제 Entries">
-              <SiblingEntriesView selectedRef={selectedRef} taxonomy={tax} onSelectRef={setSelectedRef} />
-            </Collapsible>
-            <Collapsible title="Git Log (이 yaml)">
-              {yamlFile && <GitLogPanel file={yamlFile} selectedRef={selectedRef} />}
-            </Collapsible>
-            <Collapsible title="관련 문서 (plans/concepts)">
-              <RelatedDocsPanel selectedRef={selectedRef} />
-            </Collapsible>
-            <Collapsible title="main 대비 변경">
-              {yamlFile && <DiffContextPanel file={yamlFile} />}
-            </Collapsible>
-            <Collapsible title="Cross-axis 흐름">
-              <CoordinateFlowView selectedRef={selectedRef} taxonomy={tax} onSelectRef={setSelectedRef} />
-            </Collapsible>
-            {(() => {
-              try {
+        {selectedRef && (() => {
+          // Decision 그룹 표시 여부 사전 판단 (그룹 C 헤더 노출 제어)
+          let hasDecision = false;
+          try {
+            const ref = parseRef(selectedRef);
+            if (ref.kind === "entry") {
+              const entry = tax.axes[ref.axis]?.entries.find((e) => e.id === ref.entry);
+              if (entry?.decisionLink) hasDecision = true;
+            }
+          } catch {
+            hasDecision = false;
+          }
+          return (
+            <>
+              {/* 그룹 A — 단위 정보 */}
+              <div className="sticky top-0 z-10 bg-white text-xs font-bold uppercase text-gray-500 border-b mb-1 mt-3 pt-3">
+                A. 단위 정보
+              </div>
+              <Collapsible title="단위 상세" defaultOpen>
+                <UnitDetailPanel selectedRef={selectedRef} taxonomy={tax} />
+              </Collapsible>
+              <Collapsible title="형제 Entries">
+                <SiblingEntriesView selectedRef={selectedRef} taxonomy={tax} onSelectRef={setSelectedRef} />
+              </Collapsible>
+              <Collapsible title="Cross-axis 흐름">
+                <CoordinateFlowView selectedRef={selectedRef} taxonomy={tax} onSelectRef={setSelectedRef} />
+              </Collapsible>
+
+              {/* 그룹 B — 구조 / 제약 */}
+              <div className="sticky top-0 z-10 bg-white text-xs font-bold uppercase text-gray-500 border-b mb-1 mt-3 pt-3">
+                B. 구조 / 제약
+              </div>
+              <Collapsible title="관련 Relation Rules">
+                <RelatedRulesPanel selectedRef={selectedRef} taxonomy={tax} />
+              </Collapsible>
+              <Collapsible title="관련 Constraints">
+                <RelatedConstraintsPanel selectedRef={selectedRef} taxonomy={tax} />
+              </Collapsible>
+
+              {/* 그룹 C — 변경 / 결정 */}
+              <div className="sticky top-0 z-10 bg-white text-xs font-bold uppercase text-gray-500 border-b mb-1 mt-3 pt-3">
+                C. 변경 / 결정
+              </div>
+              <Collapsible title="main 대비 변경">
+                {yamlFile && <DiffContextPanel file={yamlFile} />}
+              </Collapsible>
+              {hasDecision && (() => {
                 const ref = parseRef(selectedRef);
                 if (ref.kind !== "entry") return null;
                 const entry = tax.axes[ref.axis]?.entries.find((e) => e.id === ref.entry);
@@ -163,15 +182,29 @@ export function TaxonomyViewPage({ file }: { file: string }) {
                     />
                   </Collapsible>
                 );
-              } catch {
-                return null;
-              }
-            })()}
-            <Collapsible title="이 ref의 모든 피드백" defaultOpen>
-              <FeedbackHistoryPanel selectedRef={selectedRef} feedbacks={feedbacks} />
-            </Collapsible>
-          </>
-        )}
+              })()}
+
+              {/* 그룹 D — 역사 */}
+              <div className="sticky top-0 z-10 bg-white text-xs font-bold uppercase text-gray-500 border-b mb-1 mt-3 pt-3">
+                D. 역사
+              </div>
+              <Collapsible title="Git Log (이 yaml)">
+                {yamlFile && <GitLogPanel file={yamlFile} selectedRef={selectedRef} />}
+              </Collapsible>
+              <Collapsible title="관련 문서 (plans/concepts)">
+                <RelatedDocsPanel selectedRef={selectedRef} />
+              </Collapsible>
+
+              {/* 그룹 E — 피드백 */}
+              <div className="sticky top-0 z-10 bg-white text-xs font-bold uppercase text-gray-500 border-b mb-1 mt-3 pt-3">
+                E. 피드백
+              </div>
+              <Collapsible title="이 ref의 모든 피드백" defaultOpen>
+                <FeedbackHistoryPanel selectedRef={selectedRef} feedbacks={feedbacks} />
+              </Collapsible>
+            </>
+          );
+        })()}
       </div>
 
       {/* Feedback Form + Active */}
