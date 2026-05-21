@@ -30,6 +30,7 @@ function decision(overrides: {
       phase: overrides.phase,
       weight: overrides.weight,
       dependsOn: overrides.dependsOn ?? [],
+      gates: [],
     },
     body: "",
   };
@@ -151,6 +152,42 @@ describe("toFlowSchema", () => {
   it("dependsOn 비어있으면 affects undefined", () => {
     const schema = toFlowSchema(decision({}));
     expect(schema.gates[0].affects).toBeUndefined();
+  });
+
+  it("markers.gates 채워졌으면 multi-gate N gates 반환", () => {
+    const file = decision({});
+    file.markers.gates = [
+      {
+        id: "risk",
+        options: [
+          { id: "low", body: "낮음" },
+          { id: "high", body: "높음" },
+        ],
+        evidence: [{ kind: "data", weight: 0.5, content: "x", source: "" }],
+        dependsOn: [],
+        phase: "evaluate",
+        weight: "core",
+      },
+      {
+        id: "scope",
+        options: [{ id: "expand", body: "확장" }],
+        evidence: [],
+        dependsOn: [{ gateId: "risk", kind: "constrains" }],
+      },
+    ];
+    const schema = toFlowSchema(file);
+    expect(schema.gates).toHaveLength(2);
+    expect(schema.gates[0].id).toBe("risk");
+    expect(schema.gates[0].phase).toBe("evaluate");
+    expect(schema.gates[0].weight).toBe("core");
+    expect(schema.gates[0].branches).toHaveLength(2);
+    expect(schema.gates[0].requiredEvidence).toEqual(["data"]);
+    expect(schema.gates[1].id).toBe("scope");
+    expect(schema.gates[1].phase).toBe("decide"); // default
+    expect(schema.gates[1].weight).toBe("tactical"); // default
+    expect(schema.gates[1].affects).toEqual([
+      { gateId: "risk", kind: "constrains" },
+    ]);
   });
 });
 

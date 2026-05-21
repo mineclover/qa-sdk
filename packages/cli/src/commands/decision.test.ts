@@ -435,6 +435,53 @@ updated: 2026-05-22T00:00:00Z
     exit.mockRestore();
   });
 
+  it("multi-gate decision → 각 gate 섹션 출력 (v0.13)", async () => {
+    const multiMd = `---
+id: test.layer.cue
+subject: tax:test:layer.cue
+lifecycle: review
+created: 2026-05-22T00:00:00Z
+updated: 2026-05-22T00:00:00Z
+---
+
+# Decision
+
+전체 질문 ^purpose
+
+^gate:risk ^phase:evaluate ^weight:core
+
+낮음 ^option:low
+
+높음 ^option:high
+
+데이터 ^evidence:data weight=0.5
+
+^gate:scope ^depends_on:risk:constrains
+
+확장 ^option:expand
+
+축소 ^option:shrink
+`;
+    const dir = setupRepo({
+      yaml: YAML_WITH_TBD,
+      decisionDir: "docs/decisions",
+      decisions: { "test.layer.cue.md": multiMd },
+    });
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await withCwd(dir, () => cliDecision(["analyze"]));
+    const out = log.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(out).toMatch(/gates:\s+2/);
+    expect(out).toContain("[risk]");
+    expect(out).toContain("phase=evaluate");
+    expect(out).toContain("weight=core");
+    expect(out).toContain("[scope]");
+    expect(exit).not.toHaveBeenCalledWith(1);
+    rmSync(dir, { recursive: true, force: true });
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
   it("render: decision 파일 → stdout markdown 출력 (^purpose 보존)", async () => {
     const decisionMd = `---
 id: test.layer.cue

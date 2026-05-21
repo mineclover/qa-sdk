@@ -47,6 +47,8 @@ function decision(opts: DecisionOverrides = {}): DecisionFile {
           content: `e${i}`,
           source: "",
         })),
+      dependsOn: [],
+      gates: [],
     },
     body: "",
   };

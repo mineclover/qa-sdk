@@ -146,21 +146,77 @@ describe("toMarkdown", () => {
     expect(text).not.toContain("이건 안 들어감");
   });
 
-  it("multi-gate schema → throw", () => {
+  it("schema gates 0개 → throw", () => {
     expect(() =>
       toMarkdown({
         schema: {
           id: "x",
-          name: "Multi",
+          name: "Empty",
           description: "",
           version: "1",
-          gates: [
-            { id: "g1", name: "G1", phase: "decide", branches: [] },
-            { id: "g2", name: "G2", phase: "decide", branches: [] },
-          ],
+          gates: [],
         },
         lifecycle: "draft",
       }),
-    ).toThrow(/단일 gate/);
+    ).toThrow(/gate가 0/);
+  });
+
+  it("multi-gate schema → ^gate:<id> 섹션 N개 생성 + 라운드트립", () => {
+    const MULTI = `---
+id: multi
+subject: "tax:test:multi"
+lifecycle: review
+created: 2026-05-22T00:00:00Z
+updated: 2026-05-22T00:00:00Z
+---
+
+전체 질문 ^purpose
+
+^gate:risk ^phase:evaluate ^weight:core
+
+낮음 ^option:low
+
+높음 ^option:high
+
+데이터 ^evidence:data weight=0.5
+
+^gate:scope ^depends_on:risk:constrains
+
+확장 ^option:expand
+
+축소 ^option:shrink
+
+선례 ^evidence:precedent weight=0.7
+`;
+    const original = parse(MULTI);
+    const schema = toFlowSchema(original);
+    const evidence = extractEvidence(original);
+    expect(schema.gates).toHaveLength(2);
+
+    const text = toMarkdownText({
+      schema,
+      lifecycle: original.meta.lifecycle,
+      evidence,
+      outcome: original.markers.outcome,
+      created: original.meta.created,
+      updated: original.meta.updated,
+    });
+    expect(text).toContain("^gate:risk");
+    expect(text).toContain("^gate:scope");
+    expect(text).toContain("^phase:evaluate");
+    expect(text).toContain("^weight:core");
+    expect(text).toContain("^depends_on:risk:constrains");
+
+    // 라운드트립 — 두 gate 구조 보존
+    const reparsed = parse(text);
+    const schema2 = toFlowSchema(reparsed);
+    expect(schema2.gates).toHaveLength(2);
+    expect(schema2.gates[0].id).toBe("risk");
+    expect(schema2.gates[0].phase).toBe("evaluate");
+    expect(schema2.gates[0].weight).toBe("core");
+    expect(schema2.gates[1].id).toBe("scope");
+    expect(schema2.gates[1].affects).toEqual([{ gateId: "risk", kind: "constrains" }]);
+    expect(schema2.gates[0].branches?.map((b) => b.id)).toEqual(["low", "high"]);
+    expect(schema2.gates[1].branches?.map((b) => b.id)).toEqual(["expand", "shrink"]);
   });
 });

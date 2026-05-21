@@ -127,8 +127,10 @@ function outputReport(reports: AnalyzeReport[], opts: AnalyzeArgs): void {
     return;
   }
   for (const r of reports) {
-    const branchCount = r.schema.gates[0].branches?.length ?? 0;
-    const isSkeleton = branchCount === 0 && r.evidenceCount === 0;
+    const gates = r.schema.gates;
+    const totalBranches = gates.reduce((sum, g) => sum + (g.branches?.length ?? 0), 0);
+    const isSkeleton = totalBranches === 0 && r.evidenceCount === 0;
+    const isMulti = gates.length > 1;
 
     console.log(`\n● ${r.ref}`);
     console.log(`  decision file: ${r.decisionPath}`);
@@ -142,21 +144,48 @@ function outputReport(reports: AnalyzeReport[], opts: AnalyzeArgs): void {
     }
 
     console.log(
-      `  branches:      ${branchCount}` +
-        (branchCount ? ` (${r.schema.gates[0].branches!.map((b) => b.id).join(", ")})` : ""),
+      `  gates:         ${gates.length}` +
+        (isMulti ? ` (${gates.map((g) => g.id).join(", ")})` : ""),
     );
-    const reqEv = r.schema.gates[0].requiredEvidence ?? [];
-    console.log(
-      `  evidence:      ${r.evidenceCount}` +
-        (reqEv.length ? ` (kinds: ${reqEv.join(", ")})` : ""),
-    );
-    const profile = r.profiles[0];
-    if (profile) {
-      const cascade = profile.cascadeImpact ?? 0;
+
+    if (isMulti) {
+      for (const g of gates) {
+        const branchCount = g.branches?.length ?? 0;
+        const reqEv = g.requiredEvidence ?? [];
+        const profile = r.profiles.find((p) => p.gateId === g.id);
+        const cascade = profile?.cascadeImpact ?? 0;
+        console.log(
+          `    [${g.id}] phase=${g.phase} weight=${g.weight ?? "tactical"}` +
+            ` branches=${branchCount}` +
+            (reqEv.length ? ` evidence=[${reqEv.join(",")}]` : ""),
+        );
+        if (profile) {
+          console.log(
+            `        directImpact=${profile.directImpact} cascadeImpact=${cascade}`,
+          );
+        }
+      }
+    } else {
+      const g = gates[0];
+      const branchCount = g.branches?.length ?? 0;
       console.log(
-        `  gate profile:  weight=${profile.weight} directImpact=${profile.directImpact} cascadeImpact=${cascade}`,
+        `  branches:      ${branchCount}` +
+          (branchCount ? ` (${g.branches!.map((b) => b.id).join(", ")})` : ""),
       );
+      const reqEv = g.requiredEvidence ?? [];
+      console.log(
+        `  evidence:      ${r.evidenceCount}` +
+          (reqEv.length ? ` (kinds: ${reqEv.join(", ")})` : ""),
+      );
+      const profile = r.profiles[0];
+      if (profile) {
+        const cascade = profile.cascadeImpact ?? 0;
+        console.log(
+          `  gate profile:  weight=${profile.weight} directImpact=${profile.directImpact} cascadeImpact=${cascade}`,
+        );
+      }
     }
+
     console.log(
       `  core gates:    ${r.coreGateIds.length}/${r.profiles.length}` +
         (r.coreGateIds.length ? ` (${r.coreGateIds.join(", ")})` : ""),

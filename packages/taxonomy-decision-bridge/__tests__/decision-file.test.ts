@@ -130,6 +130,54 @@ describe("extractMarkers", () => {
       { gateId: "c", kind: "constrains" }, // bogus → default
     ]);
   });
+
+  it("^gate 마커 없음 → single-gate (gates 빈 배열)", () => {
+    const m = extractMarkers("질문 ^purpose\n\nA ^option:a");
+    expect(m.gates).toEqual([]);
+    expect(m.options).toHaveLength(1);
+  });
+
+  it("^gate 마커 → multi-gate (각 gate 자체 options/evidence)", () => {
+    const body = `질문 ^purpose
+
+^gate:risk
+
+낮음 ^option:low ^weight:tactical
+
+높음 ^option:high
+
+데이터 ^evidence:data weight=0.5
+
+^gate:scope
+
+확장 ^option:expand ^phase:evaluate
+
+축소 ^option:shrink
+
+선례 ^evidence:precedent weight=0.7
+`;
+    const m = extractMarkers(body);
+    expect(m.purpose).toContain("질문");
+    expect(m.gates).toHaveLength(2);
+    expect(m.gates[0].id).toBe("risk");
+    expect(m.gates[0].options.map((o) => o.id)).toEqual(["low", "high"]);
+    expect(m.gates[0].weight).toBe("tactical");
+    expect(m.gates[0].evidence[0]).toMatchObject({ kind: "data", weight: 0.5 });
+    expect(m.gates[1].id).toBe("scope");
+    expect(m.gates[1].options.map((o) => o.id)).toEqual(["expand", "shrink"]);
+    expect(m.gates[1].phase).toBe("evaluate");
+    expect(m.gates[1].evidence[0]).toMatchObject({ kind: "precedent", weight: 0.7 });
+    // schema 전체 options/evidence는 비어있음
+    expect(m.options).toEqual([]);
+    expect(m.evidence).toEqual([]);
+  });
+
+  it("^outcome은 항상 schema 전체 (multi-gate에서도)", () => {
+    const body = `^gate:g1\n\nA ^option:a\n\n결정 ^outcome`;
+    const m = extractMarkers(body);
+    expect(m.outcome).toContain("결정");
+    expect(m.gates).toHaveLength(1);
+  });
 });
 
 describe("serializeDecisionFile 라운드트립", () => {

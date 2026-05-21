@@ -1,11 +1,23 @@
-import type { CognitivePhase, Evidence, FlowSchema, GateWeight } from "decision-flow";
+import type {
+  CognitivePhase,
+  Evidence,
+  FlowSchema,
+  GateSchema,
+  GateWeight,
+} from "decision-flow";
 import type { Lifecycle } from "taxonomy-engine";
-import type { DecisionFile, DecisionMeta } from "./decision-file.js";
+import type {
+  DecisionFile,
+  DecisionMeta,
+  GateDependency,
+  GateMarkers,
+} from "./decision-file.js";
 import { serializeDecisionFile } from "./decision-file.js";
 
 export type ToMarkdownOptions = {
   schema: FlowSchema;
   lifecycle: Lifecycle;
+  /** 전체 evidence (single-gate). multi-gate일 때는 무시되고 gate.requiredEvidence + 이 evidence 풀에서 매칭 시도. */
   evidence?: readonly Evidence[];
   /** 결정 완료 시 outcome 본문 (lifecycle === "approved"일 때만 출력). */
   outcome?: string;
@@ -20,27 +32,14 @@ const DEFAULT_WEIGHT: GateWeight = "tactical";
 /**
  * FlowSchema → DecisionFile (markdown). toFlowSchema의 역함수.
  *
- * 매핑 규칙:
- * - schema.id → meta.id
- * - schema.unit.topic → meta.subject (또는 schema.name)
- * - schema.unit.objective || schema.description → ^purpose
- * - gate.phase (default 제외) → ^phase:<phase> 마커
- * - gate.weight (default 제외) → ^weight:<weight> 마커
- * - gate.affects → ^depends_on:<id>:<kind> 마커 N건
- * - gate.branches → ## 옵션\n\n<label> ^option:<id> 형식
- * - evidence → ## 증거\n\n<content> ^evidence:<kind> weight=N
- * - outcome (lifecycle approved + outcome 있을 때) → ## 결정\n\n<outcome> ^outcome
- *
- * 전제: schema.gates.length === 1 (single gate). multi-gate는 v0.13.
+ * single-gate (schema.gates.length === 1): 기존처럼 ^purpose 라인에 inline 마커.
+ * multi-gate: schema 전체 ^purpose + 각 gate별 `^gate:<id>` 섹션.
  */
 export function toMarkdown(opts: ToMarkdownOptions): DecisionFile {
   const { schema, lifecycle } = opts;
-  if (schema.gates.length !== 1) {
-    throw new Error(
-      `toMarkdown: 단일 gate만 지원 (현재 ${schema.gates.length}개). multi-gate는 v0.13 이후.`,
-    );
+  if (schema.gates.length === 0) {
+    throw new Error("toMarkdown: schema에 gate가 0개");
   }
-  const gate = schema.gates[0];
   const subject = schema.unit?.topic ?? schema.name;
   const purpose = schema.unit?.objective ?? schema.description ?? "(목적 미정)";
   const now = new Date().toISOString();
@@ -53,79 +52,188 @@ export function toMarkdown(opts: ToMarkdownOptions): DecisionFile {
     updated: opts.updated ?? now,
   };
 
-  const body = buildBody({
-    purpose,
-    phase: gate.phase,
-    weight: gate.weight ?? DEFAULT_WEIGHT,
-    affects: gate.affects ?? [],
-    branches: gate.branches ?? [],
-    evidence: opts.evidence ?? [],
-    outcome: lifecycle === "approved" ? opts.outcome : undefined,
-  });
+  const isMulti = schema.gates.length > 1;
+  const allEvidence = opts.evidence ?? [];
+  const outcomeForBody = lifecycle === "approved" ? opts.outcome : undefined;
+
+  const body = isMulti
+    ? buildMultiGateBody({
+        purpose,
+        gates: schema.gates,
+        evidence: allEvidence,
+        outcome: outcomeForBody,
+      })
+    : buildSingleGateBody({
+        purpose,
+        gate: schema.gates[0],
+        evidence: allEvidence,
+        outcome: outcomeForBody,
+      });
 
   return {
     meta,
     body,
-    markers: {
-      purpose,
-      options: (gate.branches ?? []).map((b) => ({ id: b.id, body: b.label })),
-      evidence: (opts.evidence ?? []).map((e) => ({ ...e })),
-      outcome: lifecycle === "approved" ? opts.outcome : undefined,
-      phase: gate.phase !== DEFAULT_PHASE ? gate.phase : undefined,
-      weight: (gate.weight ?? DEFAULT_WEIGHT) !== DEFAULT_WEIGHT ? gate.weight : undefined,
-      dependsOn: [...(gate.affects ?? [])],
-    },
+    markers: isMulti
+      ? buildMultiGateMarkers({ purpose, gates: schema.gates, evidence: allEvidence, outcomeForBody })
+      : buildSingleGateMarkers({ purpose, gate: schema.gates[0], evidence: allEvidence, outcomeForBody }),
   };
 }
 
-/**
- * DecisionFile을 markdown 텍스트로 직렬화 (frontmatter + body).
- * serializeDecisionFile의 wrapper — `toMarkdown(opts).body` 만 필요한 경우 사용.
- */
 export function toMarkdownText(opts: ToMarkdownOptions): string {
   return serializeDecisionFile(toMarkdown(opts));
 }
 
-function buildBody(opts: {
+// ── single-gate ─────────────────────────────────────────
+
+function buildSingleGateMarkers(opts: {
   purpose: string;
-  phase: CognitivePhase;
-  weight: GateWeight;
-  affects: readonly { gateId: string; kind: "constrains" | "enables" | "invalidates" }[];
-  branches: readonly { id: string; label: string }[];
+  gate: GateSchema;
+  evidence: readonly Evidence[];
+  outcomeForBody: string | undefined;
+}) {
+  const { gate, evidence, outcomeForBody } = opts;
+  return {
+    purpose: opts.purpose,
+    options: (gate.branches ?? []).map((b) => ({ id: b.id, body: b.label })),
+    evidence: evidence.map((e) => ({ ...e })),
+    outcome: outcomeForBody,
+    phase: gate.phase !== DEFAULT_PHASE ? gate.phase : undefined,
+    weight:
+      (gate.weight ?? DEFAULT_WEIGHT) !== DEFAULT_WEIGHT
+        ? (gate.weight as GateWeight)
+        : undefined,
+    dependsOn: [...(gate.affects ?? [])],
+    gates: [],
+  };
+}
+
+function buildSingleGateBody(opts: {
+  purpose: string;
+  gate: GateSchema;
   evidence: readonly Evidence[];
   outcome: string | undefined;
 }): string {
-  const lines: string[] = [];
-  lines.push("");
-  lines.push(`# Decision\n`);
+  const { gate, evidence, outcome } = opts;
+  const lines: string[] = ["", "# Decision\n"];
+  const purposeMarkers = inlineMarkers({
+    phase: gate.phase,
+    weight: gate.weight ?? DEFAULT_WEIGHT,
+    affects: gate.affects ?? [],
+  });
+  lines.push(`${opts.purpose} ^purpose${formatInline(purposeMarkers)}\n`);
 
-  // purpose + phase/weight/depends_on inline
-  const purposeMarkers: string[] = ["^purpose"];
-  if (opts.phase !== DEFAULT_PHASE) purposeMarkers.push(`^phase:${opts.phase}`);
-  if (opts.weight !== DEFAULT_WEIGHT) purposeMarkers.push(`^weight:${opts.weight}`);
-  for (const dep of opts.affects) {
-    purposeMarkers.push(`^depends_on:${dep.gateId}:${dep.kind}`);
-  }
-  lines.push(`${opts.purpose} ${purposeMarkers.join(" ")}\n`);
-
-  if (opts.branches.length > 0) {
-    lines.push("## 옵션\n");
-    for (const b of opts.branches) {
-      lines.push(`${b.label} ^option:${b.id}\n`);
-    }
-  }
-
-  if (opts.evidence.length > 0) {
-    lines.push("## 증거\n");
-    for (const e of opts.evidence) {
-      lines.push(`${e.content} ^evidence:${e.kind} weight=${e.weight}\n`);
-    }
-  }
-
-  if (opts.outcome) {
-    lines.push("## 결정\n");
-    lines.push(`${opts.outcome} ^outcome\n`);
-  }
+  lines.push(...renderOptions(gate.branches ?? []));
+  lines.push(...renderEvidence(evidence));
+  lines.push(...renderOutcome(outcome));
 
   return lines.join("\n");
+}
+
+// ── multi-gate ──────────────────────────────────────────
+
+function buildMultiGateMarkers(opts: {
+  purpose: string;
+  gates: readonly GateSchema[];
+  evidence: readonly Evidence[];
+  outcomeForBody: string | undefined;
+}) {
+  return {
+    purpose: opts.purpose,
+    options: [],
+    evidence: [],
+    outcome: opts.outcomeForBody,
+    dependsOn: [],
+    gates: opts.gates.map((g) => gateSchemaToMarkers(g, opts.evidence)),
+  };
+}
+
+function gateSchemaToMarkers(g: GateSchema, allEvidence: readonly Evidence[]): GateMarkers {
+  // multi-gate evidence 분배: gate.requiredEvidence kind에 매칭되는 것만 그 gate에 할당.
+  // 추정만 — 정확한 매핑은 toFlowSchema → toMarkdown 라운드트립에서만 필요.
+  const required = new Set(g.requiredEvidence ?? []);
+  const gateEvidence = required.size > 0
+    ? allEvidence.filter((e) => required.has(e.kind))
+    : [];
+  return {
+    id: g.id,
+    name: g.name !== g.id ? g.name : undefined,
+    phase: g.phase !== DEFAULT_PHASE ? g.phase : undefined,
+    weight:
+      (g.weight ?? DEFAULT_WEIGHT) !== DEFAULT_WEIGHT
+        ? (g.weight as GateWeight)
+        : undefined,
+    options: (g.branches ?? []).map((b) => ({ id: b.id, body: b.label })),
+    evidence: gateEvidence.map((e) => ({ ...e })),
+    dependsOn: [...(g.affects ?? [])],
+  };
+}
+
+function buildMultiGateBody(opts: {
+  purpose: string;
+  gates: readonly GateSchema[];
+  evidence: readonly Evidence[];
+  outcome: string | undefined;
+}): string {
+  const lines: string[] = ["", "# Decision\n", `${opts.purpose} ^purpose\n`];
+  for (const g of opts.gates) {
+    lines.push(`## Gate: ${g.name ?? g.id}\n`);
+    const gateMarkers = inlineMarkers({
+      phase: g.phase,
+      weight: g.weight ?? DEFAULT_WEIGHT,
+      affects: g.affects ?? [],
+    });
+    lines.push(`^gate:${g.id}${formatInline(gateMarkers)}\n`);
+    lines.push(...renderOptions(g.branches ?? []));
+    const required = new Set(g.requiredEvidence ?? []);
+    const gateEvidence =
+      required.size > 0
+        ? opts.evidence.filter((e) => required.has(e.kind))
+        : [];
+    lines.push(...renderEvidence(gateEvidence));
+  }
+  lines.push(...renderOutcome(opts.outcome));
+  return lines.join("\n");
+}
+
+// ── shared helpers ──────────────────────────────────────
+
+function inlineMarkers(opts: {
+  phase?: CognitivePhase;
+  weight: GateWeight;
+  affects: readonly GateDependency[];
+}): string[] {
+  const out: string[] = [];
+  if (opts.phase !== undefined && opts.phase !== DEFAULT_PHASE) {
+    out.push(`^phase:${opts.phase}`);
+  }
+  if (opts.weight !== DEFAULT_WEIGHT) out.push(`^weight:${opts.weight}`);
+  for (const dep of opts.affects) {
+    out.push(`^depends_on:${dep.gateId}:${dep.kind}`);
+  }
+  return out;
+}
+
+function formatInline(markers: string[]): string {
+  return markers.length > 0 ? ` ${markers.join(" ")}` : "";
+}
+
+function renderOptions(branches: readonly { id: string; label: string }[]): string[] {
+  if (branches.length === 0) return [];
+  const lines: string[] = ["## 옵션\n"];
+  for (const b of branches) lines.push(`${b.label} ^option:${b.id}\n`);
+  return lines;
+}
+
+function renderEvidence(evidence: readonly Evidence[]): string[] {
+  if (evidence.length === 0) return [];
+  const lines: string[] = ["## 증거\n"];
+  for (const e of evidence) {
+    lines.push(`${e.content} ^evidence:${e.kind} weight=${e.weight}\n`);
+  }
+  return lines;
+}
+
+function renderOutcome(outcome: string | undefined): string[] {
+  if (!outcome) return [];
+  return ["## 결정\n", `${outcome} ^outcome\n`];
 }

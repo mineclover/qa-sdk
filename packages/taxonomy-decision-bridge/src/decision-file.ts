@@ -4,9 +4,17 @@ import type {
   CognitivePhase,
   Evidence,
   EvidenceKind,
-  GateDependency,
   GateWeight,
 } from "decision-flow";
+
+/**
+ * decision-flow의 GateDependency는 named export가 아니므로 동형 type을 자체 정의.
+ * GateSchema.affects의 element와 구조 동일 — decision-flow 변경 없이 매핑 호환.
+ */
+export type GateDependency = {
+  readonly gateId: string;
+  readonly kind: "constrains" | "enables" | "invalidates";
+};
 
 export type DecisionMeta = {
   id: string;
@@ -27,18 +35,32 @@ export type DecisionOption = {
  */
 export type DecisionEvidence = Evidence;
 
+/**
+ * multi-gate decision의 한 gate에 속한 마커들 (v0.13).
+ * ^gate:<id> 마커 이후 등장하는 ^option/^evidence/^phase/^weight/^depends_on이 이 gate 소속.
+ */
+export type GateMarkers = {
+  id: string;
+  name?: string;
+  phase?: CognitivePhase;
+  weight?: GateWeight;
+  options: DecisionOption[];
+  evidence: DecisionEvidence[];
+  dependsOn: GateDependency[];
+};
+
 export type DecisionMarkers = {
   purpose?: string;
   context?: string;
+  outcome?: string;
+  /** single-gate (backward compat) — gates 비어있을 때 사용. */
   options: DecisionOption[];
   evidence: DecisionEvidence[];
-  outcome?: string;
-  /** ^phase:<phase> — 인지 단계 (decision-flow CognitivePhase 7종) */
-  phase?: CognitivePhase;
-  /** ^weight:<weight> — 구조적 무게 (core/structural/tactical) */
-  weight?: GateWeight;
-  /** ^depends_on:<gateId>(:<kind>) — gate 간 인과 의존 (default kind: constrains) */
   dependsOn: GateDependency[];
+  phase?: CognitivePhase;
+  weight?: GateWeight;
+  /** multi-gate (v0.13) — 채워졌으면 toFlowSchema가 N gates 반환. */
+  gates: GateMarkers[];
 };
 
 /**
@@ -134,7 +156,7 @@ export function createDecisionSkeletonText(opts: {
       created: now,
       updated: now,
     },
-    markers: { options: [], evidence: [] },
+    markers: { options: [], evidence: [], dependsOn: [], gates: [] },
     body: `\n# Decision: ${opts.subject}\n\n${opts.question} ^purpose\n\n## 검토할 옵션\n\n(미정)\n\n## 증거\n\n(미정)\n\n## 결정\n\n(미정) ^outcome\n`,
   };
   return serializeDecisionFile(file);
@@ -189,17 +211,79 @@ export function extractMarkers(body: string): DecisionMarkers {
     options: [],
     evidence: [],
     dependsOn: [],
+    gates: [],
   };
+  // multi-gate 인식 — ^gate:<id> 마커 등장 시 그 이후 ^option/^evidence/^phase/^weight/^depends_on은
+  // 해당 gate에 push. 첫 ^gate 전 콘텐츠는 schema 전체(기존 single-gate 호환).
+  let currentGate: GateMarkers | undefined;
+
   const blocks = splitIntoBlocks(body);
   for (const block of blocks) {
-    // 한 블록에 여러 마커가 inline으로 섞일 수 있음 (^purpose ^phase:... ^depends_on:...).
-    // text 추출 시 모든 마커 substring을 한 번에 제거해야 다음 stripMarker 호출이 중복 없는 텍스트 반환.
     const cleanText = stripAllMarkers(block).trim();
     for (const marker of findMarkers(block)) {
-      applyMarker(result, marker, cleanText);
+      if (marker.kind === "gate") {
+        currentGate = {
+          id: marker.gateId,
+          options: [],
+          evidence: [],
+          dependsOn: [],
+        };
+        result.gates.push(currentGate);
+        continue;
+      }
+      // schema 전체 마커는 항상 result에
+      if (marker.kind === "purpose" || marker.kind === "context" || marker.kind === "outcome") {
+        applyMarker(result, marker, cleanText);
+        continue;
+      }
+      // gate 안에서 등장한 마커는 그 gate에 push, 아니면 schema 전체(기존 single-gate)
+      if (currentGate) {
+        applyMarkerToGate(currentGate, marker, cleanText);
+      } else {
+        applyMarker(result, marker, cleanText);
+      }
     }
   }
   return result;
+}
+
+function applyMarkerToGate(
+  gate: GateMarkers,
+  marker: MarkerToken,
+  text: string,
+): void {
+  switch (marker.kind) {
+    case "option":
+      gate.options.push({ id: marker.id, body: text });
+      return;
+    case "evidence":
+      if (!isEvidenceKind(marker.evKind)) return;
+      gate.evidence.push({
+        kind: marker.evKind,
+        weight: marker.weight,
+        content: text,
+        source: "",
+      });
+      return;
+    case "phase":
+      if (isPhase(marker.value)) gate.phase = marker.value;
+      return;
+    case "weight":
+      if (isWeight(marker.value)) gate.weight = marker.value;
+      return;
+    case "depends_on":
+      if (!marker.gateId) return;
+      {
+        const kind: GateDependency["kind"] =
+          marker.depKind && isDepKind(marker.depKind)
+            ? marker.depKind
+            : "constrains";
+        gate.dependsOn.push({ gateId: marker.gateId, kind });
+      }
+      return;
+    default:
+      return;
+  }
 }
 
 type MarkerToken =
@@ -210,10 +294,11 @@ type MarkerToken =
   | { kind: "outcome"; raw: string }
   | { kind: "phase"; value: string; raw: string }
   | { kind: "weight"; value: string; raw: string }
-  | { kind: "depends_on"; gateId: string; depKind?: string; raw: string };
+  | { kind: "depends_on"; gateId: string; depKind?: string; raw: string }
+  | { kind: "gate"; gateId: string; raw: string };
 
 const MARKER_RE =
-  /\^(purpose|context|outcome|option:[a-zA-Z][\w-]*|evidence:[a-zA-Z][\w-]*(?:\s+weight=[\d.]+)?|phase:[a-z]+|weight:[a-z]+|depends_on:[a-zA-Z][\w-]*(?::[a-z]+)?)/g;
+  /\^(purpose|context|outcome|option:[a-zA-Z][\w-]*|evidence:[a-zA-Z][\w-]*(?:\s+weight=[\d.]+)?|phase:[a-z]+|weight:[a-z]+|depends_on:[a-zA-Z][\w-]*(?::[a-z]+)?|gate:[a-zA-Z][\w-]*)/g;
 
 function findMarkers(block: string): MarkerToken[] {
   const tokens: MarkerToken[] = [];
@@ -240,6 +325,8 @@ function findMarkers(block: string): MarkerToken[] {
       const rest = body.slice("depends_on:".length);
       const [gateId, depKind] = rest.split(":");
       tokens.push({ kind: "depends_on", gateId, depKind, raw });
+    } else if (body.startsWith("gate:")) {
+      tokens.push({ kind: "gate", gateId: body.slice("gate:".length), raw });
     }
   }
   return tokens;
