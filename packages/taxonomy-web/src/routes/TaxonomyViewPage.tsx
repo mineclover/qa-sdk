@@ -16,6 +16,7 @@ import { RelatedDocsPanel } from "../components/RelatedDocsPanel";
 import { DiffContextPanel } from "../components/DiffContextPanel";
 import { FeedbackHistoryPanel } from "../components/FeedbackHistoryPanel";
 import { Collapsible } from "../components/Collapsible";
+import { CoordinateFlowView } from "../components/CoordinateFlowView";
 
 export function TaxonomyViewPage({ file }: { file: string }) {
   const [tax, setTax] = useState<StaticTaxonomy | null>(null);
@@ -74,6 +75,9 @@ export function TaxonomyViewPage({ file }: { file: string }) {
             </Collapsible>
             <Collapsible title="main 대비 변경">
               {yamlFile && <DiffContextPanel file={yamlFile} />}
+            </Collapsible>
+            <Collapsible title="Cross-axis 흐름">
+              <CoordinateFlowView selectedRef={selectedRef} taxonomy={tax} onSelectRef={setSelectedRef} />
             </Collapsible>
             <Collapsible title="이 ref의 모든 피드백" defaultOpen>
               <FeedbackHistoryPanel selectedRef={selectedRef} feedbacks={feedbacks} />
