@@ -26,7 +26,7 @@
 
 ### Decision 파일
 
-decision은 def-catalog 패턴을 따라 markdown + frontmatter:
+decision은 def-catalog 패턴을 따라 markdown + frontmatter. **frontmatter는 검색용 메타, 본문은 자연어 마커로 의미 추출**.
 
 ```
 docs/decisions/
@@ -35,26 +35,64 @@ docs/decisions/
   └── ...
 ```
 
-frontmatter 예:
+#### frontmatter (검색용 메타데이터 — DB로 indexed)
+
 ```yaml
 ---
 id: lesson-builder.layer.cue
 subject: tax:lesson-builder-content:layer.cue
-lifecycle: review                        # taxonomy-engine의 Lifecycle 동일 6값
-question: interaction(beat과의 경계) 정의 미정
-evidence:
-  - { kind: precedent, source: "TAXONOMY.md §Cue", weight: 0.8 }
-  - { kind: data,      source: "lesson-builder PoC", weight: 0.6 }
+lifecycle: review                        # taxonomy-engine Lifecycle 6값과 동일
 created: 2026-05-21T00:00:00Z
 updated: 2026-05-21T00:00:00Z
 ---
-
-# Decision: Cue/Beat 경계
-
-본문(markdown) — 결정 컨텍스트, 옵션 비교, ...
 ```
 
-본문은 markdown으로 자유 형식. 결정 완료 시 `lifecycle: approved`로 변경 + outcome 섹션 추가.
+빠른 lookup에 필요한 최소만. 평면 구조, list/nested 없음.
+
+#### 본문 (자연어 + 마커 추출)
+
+CLAUDE.md §Definition 시스템의 마커 컨벤션을 따름 — `^purpose` 등 spec 마커처럼 decision 전용 마커 도입.
+
+```markdown
+# Decision: Cue/Beat 경계
+
+interaction이 어디서 끝나고 다음 단위가 어디서 시작하는지의 경계를 정해야 한다. ^purpose
+
+현재 lesson-builder에서 Cue와 Beat이 같은 axis entry로 묶여있어... ^context
+
+## 검토한 옵션
+
+### 옵션 A — Cue가 interaction 전체 포함
+... ^option:cue-includes-interaction
+
+### 옵션 B — Beat을 별도 axis entry로
+... ^option:beat-as-entry
+
+## 증거
+
+TAXONOMY.md §Cue 섹션에서 "Cue is a meaningful unit ..." 정의가
+이미 interaction 포함을 함의. ^evidence:precedent weight=0.8
+
+lesson-builder PoC 실행 결과 Beat 분리 시 navigation 복잡도 증가. ^evidence:data weight=0.6
+
+## 결정 (lifecycle: approved 시 채워짐)
+
+(미정) ^outcome
+```
+
+#### 마커 → 추출 → DB
+
+| 마커 | 추출 항목 | DB 컬럼 |
+|------|----------|---------|
+| `^purpose` | 질문 한 줄 | `decisions.question` |
+| `^context` | 배경 문단 | (검색용 full-text only) |
+| `^option:<id>` | 옵션 N개 | `decision_options` 테이블 |
+| `^evidence:<kind> weight=N` | 증거 N개 | `decision_evidence` 테이블 |
+| `^outcome` | 결정 결과 (approved일 때) | `decisions.outcome` |
+
+bridge의 `parseDecisionFile()`이 frontmatter + 마커 둘 다 추출. evidence/option은 본문 안에 자연어 흐름으로 살아있고, DB는 그걸 인덱싱만 함.
+
+결정 완료 시 `lifecycle: approved` + `^outcome` 마커 채움 — frontmatter는 lookup, 본문은 readable narrative.
 
 ### yaml 측 ref
 
