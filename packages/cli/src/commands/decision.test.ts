@@ -340,3 +340,99 @@ initial purpose ^purpose
     exit.mockRestore();
   });
 });
+
+describe("cli decision analyze", () => {
+  it("decision 파일 있으면 schema/branches/evidence/coreGate 출력", async () => {
+    const decisionMd = `---
+id: test.layer.cue
+subject: tax:test:layer.cue
+lifecycle: review
+created: 2026-05-22T00:00:00Z
+updated: 2026-05-22T00:00:00Z
+---
+
+# Decision
+
+interaction 경계 결정 필요. ^purpose
+
+## 옵션
+
+Cue가 포함. ^option:cue-includes
+
+Beat 분리. ^option:beat-separate
+
+## 증거
+
+TAXONOMY.md §Cue. ^evidence:precedent weight=0.8
+
+PoC 데이터. ^evidence:data weight=0.6
+
+## 결정
+
+(미정) ^outcome
+`;
+    const dir = setupRepo({
+      yaml: YAML_WITH_TBD,
+      decisionDir: "docs/decisions",
+      decisions: { "test.layer.cue.md": decisionMd },
+    });
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await withCwd(dir, () => cliDecision(["analyze"]));
+    const out = log.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(out).toContain("tax:test:layer.cue");
+    expect(out).toContain("lifecycle:     review");
+    expect(out).toMatch(/branches:\s+2/);
+    expect(out).toMatch(/evidence:\s+2/);
+    expect(out).toContain("precedent");
+    expect(out).toContain("data");
+    expect(out).toContain("core gates:");
+    expect(exit).not.toHaveBeenCalledWith(1);
+    rmSync(dir, { recursive: true, force: true });
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  it("decision 파일 없으면 분석 대상 0건 + exit 0", async () => {
+    const dir = setupRepo({ yaml: YAML_WITH_TBD });
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await withCwd(dir, () => cliDecision(["analyze"]));
+    const out = log.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(out).toContain("분석 대상 decision 없음");
+    expect(exit).not.toHaveBeenCalledWith(1);
+    rmSync(dir, { recursive: true, force: true });
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  it("--json 출력 — schema/profiles 포함", async () => {
+    const minimal = `---
+id: test.layer.cue
+subject: tax:test:layer.cue
+lifecycle: draft
+created: 2026-05-22T00:00:00Z
+updated: 2026-05-22T00:00:00Z
+---
+
+질문. ^purpose
+`;
+    const dir = setupRepo({
+      yaml: YAML_WITH_TBD,
+      decisionDir: "docs/decisions",
+      decisions: { "test.layer.cue.md": minimal },
+    });
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await withCwd(dir, () => cliDecision(["analyze", "--json"]));
+    const out = log.mock.calls.map((c) => String(c[0])).join("\n");
+    const parsed = JSON.parse(out);
+    expect(parsed.reports).toHaveLength(1);
+    expect(parsed.reports[0].schema.id).toBe("test.layer.cue");
+    expect(parsed.reports[0].profiles).toBeDefined();
+    expect(exit).not.toHaveBeenCalledWith(1);
+    rmSync(dir, { recursive: true, force: true });
+    log.mockRestore();
+    exit.mockRestore();
+  });
+});

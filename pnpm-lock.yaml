@@ -2559,6 +2559,9 @@ importers:
 
   packages/taxonomy-decision-bridge:
     dependencies:
+      decision-flow:
+        specifier: workspace:*
+        version: link:../decision-flow
       taxonomy-engine:
         specifier: workspace:*
         version: link:../taxonomy-engine

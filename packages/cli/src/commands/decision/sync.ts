@@ -408,7 +408,7 @@ function renderEvidenceBlock(evidence: DecisionEvidence[]): string {
   if (evidence.length === 0) return "";
   const lines = ["  Evidence:"];
   for (const e of evidence) {
-    lines.push(`    - ${e.kind}: ${e.text} (weight ${e.weight})`);
+    lines.push(`    - ${e.kind}: ${e.content} (weight ${e.weight})`);
   }
   return lines.join("\n");
 }

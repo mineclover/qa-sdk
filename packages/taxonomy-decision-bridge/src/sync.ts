@@ -180,7 +180,7 @@ function markersChanged(
   for (let i = 0; i < cur.evidence.length; i++) {
     const a = cur.evidence[i];
     const b = prev.evidence[i];
-    if (a.kind !== b.kind || a.weight !== b.weight || a.text !== b.text) {
+    if (a.kind !== b.kind || a.weight !== b.weight || a.content !== b.content) {
       return true;
     }
   }

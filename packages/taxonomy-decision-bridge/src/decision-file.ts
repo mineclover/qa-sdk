@@ -1,5 +1,6 @@
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import type { Lifecycle } from "taxonomy-engine";
+import type { Evidence, EvidenceKind } from "decision-flow";
 
 export type DecisionMeta = {
   id: string;
@@ -14,11 +15,11 @@ export type DecisionOption = {
   body: string;
 };
 
-export type DecisionEvidence = {
-  kind: string;
-  weight: number;
-  text: string;
-};
+/**
+ * 마커에서 추출된 증거. decision-flow의 Evidence와 동일 모델.
+ * source는 변환 시점에 호출자가 채움 (markdown 파일 path 또는 빈 문자열).
+ */
+export type DecisionEvidence = Evidence;
 
 export type DecisionMarkers = {
   purpose?: string;
@@ -27,6 +28,21 @@ export type DecisionMarkers = {
   evidence: DecisionEvidence[];
   outcome?: string;
 };
+
+/**
+ * decision-flow EvidenceKind 5종. 마커의 kind가 이 안에 없으면 evidence에서 제외 (skip).
+ */
+const VALID_EVIDENCE_KINDS: ReadonlySet<EvidenceKind> = new Set([
+  "data",
+  "rule",
+  "precedent",
+  "intuition",
+  "external",
+]);
+
+function isEvidenceKind(s: string): s is EvidenceKind {
+  return VALID_EVIDENCE_KINDS.has(s as EvidenceKind);
+}
 
 export type DecisionFile = {
   meta: DecisionMeta;
@@ -191,10 +207,12 @@ function applyMarker(
       result.options.push({ id: marker.id, body: text });
       return;
     case "evidence":
+      if (!isEvidenceKind(marker.evKind)) return;
       result.evidence.push({
         kind: marker.evKind,
         weight: marker.weight,
-        text,
+        content: text,
+        source: "",
       });
       return;
   }

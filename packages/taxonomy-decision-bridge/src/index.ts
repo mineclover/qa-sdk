@@ -24,3 +24,10 @@ export {
   resolveDecisionLink,
   type ResolvedDecisionLink,
 } from "./resolve-link.js";
+
+// decision-flow 변환 어댑터 (Stage 4 가벼운 다리)
+export {
+  toFlowSchema,
+  extractEvidence,
+  type ToFlowSchemaOptions,
+} from "./to-flow-schema.js";

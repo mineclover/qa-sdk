@@ -74,7 +74,7 @@ export function DecisionPanel({
                   {e.kind}
                 </span>
                 <span className="text-gray-400 mx-1">w={e.weight}</span>
-                <span className="text-gray-700">{truncate(e.text, 60)}</span>
+                <span className="text-gray-700">{truncate(e.content, 60)}</span>
               </li>
             ))}
           </ul>

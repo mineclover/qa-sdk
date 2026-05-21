@@ -42,9 +42,10 @@ function decision(opts: DecisionOverrides = {}): DecisionFile {
       evidence:
         opts.evidence ??
         Array.from({ length: evidenceCount }, (_, i) => ({
-          kind: "data",
+          kind: "data" as const,
           weight: 1,
-          text: `e${i}`,
+          content: `e${i}`,
+          source: "",
         })),
     },
     body: "",
@@ -210,13 +211,13 @@ describe("computeSyncAction", () => {
   it("같은 lifecycle + markers만 변경 → markers-only (부채 #8)", () => {
     const prev = decision({
       meta: { lifecycle: "draft" },
-      evidence: [{ kind: "data", weight: 1, text: "원본" }],
+      evidence: [{ kind: "data", weight: 1, content: "원본", source: "" }],
     });
     const current = decision({
       meta: { lifecycle: "draft" },
       evidence: [
-        { kind: "data", weight: 1, text: "원본" },
-        { kind: "precedent", weight: 0.8, text: "신규" },
+        { kind: "data", weight: 1, content: "원본", source: "" },
+        { kind: "precedent", weight: 0.8, content: "신규", source: "" },
       ],
     });
     const action = computeSyncAction(

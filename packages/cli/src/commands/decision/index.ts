@@ -1,10 +1,13 @@
 import { decisionSyncCmd } from "./sync.js";
+import { decisionAnalyzeCmd } from "./analyze.js";
 
 export async function cliDecision(rest: string[]): Promise<void> {
   const [sub, ...args] = rest;
   switch (sub) {
     case "sync":
       return decisionSyncCmd(args);
+    case "analyze":
+      return decisionAnalyzeCmd(args);
     case "help":
     case undefined:
       printHelp();
@@ -16,13 +19,14 @@ export async function cliDecision(rest: string[]): Promise<void> {
 }
 
 function printHelp(): void {
-  console.log(`qa-sdk decision — taxonomy ↔ decision 양방향 sync
+  console.log(`qa-sdk decision — taxonomy ↔ decision 양방향 sync + 분석
 
 사용법:
   qa-sdk decision sync [<tax:ref>] [--dry-run] [--no-commit] [--json]
                        [--accept-yaml | --accept-decision | --merge]
+  qa-sdk decision analyze [<tax:ref>] [--json]
 
-옵션:
+옵션 (sync):
   --dry-run             변경 계획만 출력, 파일/commit 미적용
   --no-commit           파일 변경은 적용, git add/commit 생략 (사용자가 묶어서 commit)
   --accept-yaml         충돌 시 yaml 우선
@@ -30,6 +34,9 @@ function printHelp(): void {
   --merge               충돌 시 yaml lifecycle + decision evidence 병합
   --json                JSON 출력
 
-ref 없으면 전체 docs/taxonomies/*.yaml의 decisionLink 가진 entry 모두 sync.
+옵션 (analyze):
+  --json                schema + GateProfile + coreGate 결과 JSON 출력
+
+ref 없으면 전체 docs/taxonomies/*.yaml의 decisionLink 가진 entry 모두 처리.
 `);
 }

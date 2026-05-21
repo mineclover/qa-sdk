@@ -173,6 +173,10 @@ Registry 변경 없음. 신규 API는 `migrationPlan()` 1개 + `diff()` 결과 �
 
 ---
 
+## Stage 4 (부채 #6) — decision-flow 가벼운 다리 — 구현 완료 (v0.11)
+
+bridge에 `toFlowSchema` 변환 어댑터 + Evidence 타입 통합 + `qa-sdk decision analyze` 신규. decision-flow 패키지의 schemas/policies/gates 추상화를 markdown 결정에 적용 가능. 정체성은 분리 유지(bridge=사람용, decision-flow=시스템용). 상세: [`concepts/decision-flow-bridge.md`](./concepts/decision-flow-bridge.md), [`plans/v0.11.md`](./plans/v0.11.md).
+
 ## Stage 3 — Decision Sync (양방향) — 구현 완료 (v0.10)
 
 ### 핵심 결정 (확정)

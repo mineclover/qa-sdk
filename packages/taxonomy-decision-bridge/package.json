@@ -24,6 +24,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "decision-flow": "workspace:*",
     "taxonomy-engine": "workspace:*",
     "yaml": "^2.8.3"
   },

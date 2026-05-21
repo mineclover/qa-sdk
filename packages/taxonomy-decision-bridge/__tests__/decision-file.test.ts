@@ -86,7 +86,7 @@ describe("extractMarkers", () => {
     const data = f.markers.evidence.find((e) => e.kind === "data");
     expect(precedent?.weight).toBe(0.8);
     expect(data?.weight).toBe(0.6);
-    expect(precedent?.text).toContain("TAXONOMY.md");
+    expect(precedent?.content).toContain("TAXONOMY.md");
   });
 
   it("weight 없으면 1.0 default", () => {
