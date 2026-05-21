@@ -1,8 +1,8 @@
-<!-- status: draft (Stage 4 spec — 옵션 3 가벼운 다리) -->
+<!-- status: approved (Stage 4 구현 완료, v0.11) -->
 
-# Decision-Flow Bridge — markdown ↔ FlowSchema 변환 어댑터
+# Decision-Flow Bridge — markdown → FlowSchema 변환 어댑터
 
-> 부채 #6 해소. 기존 `decision-flow` 패키지(14k 줄)와 `taxonomy-decision-bridge`(markdown SSOT)의 도메인 중복을 **변환 어댑터**로 해소. 두 패키지 정체성은 분리 유지.
+> 부채 #6 해소. 기존 `decision-flow` 패키지(14k 줄)와 `taxonomy-decision-bridge`(markdown SSOT)의 도메인 중복을 **한 방향 변환 어댑터**로 해소. 두 패키지 정체성은 분리 유지.
 
 ## 비전 ^purpose
 

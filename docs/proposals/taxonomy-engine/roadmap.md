@@ -1,6 +1,6 @@
 ---
 status: approved
-date: 2026-05-21
+date: 2026-05-22
 part_of: taxonomy-engine
 role: roadmap
 supersedes: -
@@ -14,9 +14,18 @@ supersedes: -
 
 > 핵심 가치는 기록이 아니라 **일관된 컨텍스트 제공으로 결정을 쉽게 만드는 것**
 
-현재 (v0.7): yaml로 텍소노미 선언 + 검증 + 코드생성 + 도그푸딩 + Web 리뷰 사이트까지 도달. **결정의 결과**를 잘 다룸.
+현재 (v0.11): 결정 흐름 4 Stage 통합 완료 — Lifecycle(v0.8) → Semver+Migration(v0.9) → Decision Sync 양방향(v0.10) → decision-flow 변환 어댑터(v0.11). 진화 중인 텍소노미(확정+미정 섞임)를 1급으로 표현, markdown 결정 흐름과 양방향 동기화, decision-flow의 풍부한 분석 도구 활용 가능.
 
-다음 비전: **결정 자체**를 1급으로. 진화 중인 텍소노미 (확정 + 미정이 섞임, 결정 진행 중)를 자연스럽게 표현하고 추적.
+## 현재 상태 요약
+
+| Stage | 라운드 | 핵심 산출물 | 상태 |
+|-------|--------|-------------|------|
+| 1 | v0.8 | entry/axis lifecycle(6값) + placeholderReason + decisionLink + 4 신규 diagnostic + Web LifecycleBadge | ✅ |
+| 2 | v0.9 | diff breakingLevel(major/minor/patch/none) + migrationPlan + tax diff --semver + tax migration --base + Web BreakingLevel/MigrationPlan 패널 | ✅ |
+| 3 | v0.10 | DecisionFile(frontmatter+마커) + computeSyncAction 매트릭스 + qa-sdk decision sync(commit 자동/--no-commit/충돌 prompt) + Web DecisionPanel + 5그룹 위계 | ✅ |
+| 4 | v0.11 | toFlowSchema 변환 어댑터 + Evidence 타입 통합 + qa-sdk decision analyze (decision-flow 분석 함수 호출) | ✅ |
+
+부채 #1~#5, #7, #8 모두 해소. #6(decision-flow 패키지 연동)도 Stage 4 변환 어댑터 채택으로 해소.
 
 ## 케이스 (사용자 lesson-builder 정리)
 
@@ -173,9 +182,9 @@ Registry 변경 없음. 신규 API는 `migrationPlan()` 1개 + `diff()` 결과 �
 
 ---
 
-## Stage 4 (부채 #6) — decision-flow 가벼운 다리 — 구현 완료 (v0.11)
+## Stage 4 (부채 #6) — decision-flow 변환 어댑터 — 구현 완료 (v0.11)
 
-bridge에 `toFlowSchema` 변환 어댑터 + Evidence 타입 통합 + `qa-sdk decision analyze` 신규. decision-flow 패키지의 schemas/policies/gates 추상화를 markdown 결정에 적용 가능. 정체성은 분리 유지(bridge=사람용, decision-flow=시스템용). 상세: [`concepts/decision-flow-bridge.md`](./concepts/decision-flow-bridge.md), [`plans/v0.11.md`](./plans/v0.11.md).
+bridge에 `toFlowSchema` 변환 어댑터 + Evidence 타입 통합 + `qa-sdk decision analyze` 신규. markdown DecisionFile을 단일 gate FlowSchema로 한 방향 변환만 — 두 패키지 정체성은 분리 유지(bridge=사람용 markdown, decision-flow=시스템용 schema/분석). 상세: [`concepts/decision-flow-bridge.md`](./concepts/decision-flow-bridge.md), [`plans/v0.11.md`](./plans/v0.11.md).
 
 ## Stage 3 — Decision Sync (양방향) — 구현 완료 (v0.10)
 
