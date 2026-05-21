@@ -82,7 +82,12 @@ export function migrationCmd(args: string[]): void {
     `diff: ${diffResult.changes.length} changes  breakingLevel=${diffResult.breakingLevel}`,
   );
 
-  if (plan.idRenames.length === 0 && plan.addressConflicts.length === 0 && plan.manualReview.length === 0) {
+  if (
+    plan.idRenames.length === 0 &&
+    plan.addressConflicts.length === 0 &&
+    plan.manualReview.length === 0 &&
+    plan.decisionImpact.length === 0
+  ) {
     console.log("✔ migration 필요 없음");
     return;
   }
@@ -106,5 +111,30 @@ export function migrationCmd(args: string[]): void {
     for (const m of plan.manualReview) {
       console.log(`  - ${m}`);
     }
+  }
+
+  if (plan.decisionImpact.length > 0) {
+    console.log(`\ndecision impact (${plan.decisionImpact.length}):`);
+    for (const d of plan.decisionImpact) {
+      const detail = describeDecisionImpact(d);
+      console.log(`  - axis=${d.axis}  id=${d.id}  ${d.impact}${detail}  link=${d.decisionLink}`);
+    }
+  }
+}
+
+function describeDecisionImpact(d: {
+  impact: "lifecycle-changed" | "address-changed" | "removed";
+  fromLifecycle?: string;
+  toLifecycle?: string;
+  fromAddress?: number;
+  toAddress?: number;
+}): string {
+  switch (d.impact) {
+    case "lifecycle-changed":
+      return `  (${d.fromLifecycle ?? "∅"} → ${d.toLifecycle ?? "∅"})`;
+    case "address-changed":
+      return `  (${d.fromAddress} → ${d.toAddress})`;
+    case "removed":
+      return "";
   }
 }

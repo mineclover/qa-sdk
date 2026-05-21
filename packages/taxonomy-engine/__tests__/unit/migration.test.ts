@@ -30,6 +30,7 @@ axes:
     ]);
     expect(plan.addressConflicts).toEqual([]);
     expect(plan.manualReview).toEqual([]);
+    expect(plan.decisionImpact).toEqual([]);
   });
 
   it("address도 id도 다르면 rename 아님", () => {
@@ -144,5 +145,176 @@ axes:
     // 1:1 매칭이 두 건이면 idRenames 2개 (각 address 별로 단일 후보)
     expect(plan.idRenames).toHaveLength(2);
     expect(plan.addressConflicts).toEqual([]);
+  });
+
+  describe("decisionImpact", () => {
+    it("decisionLink 없는 entry → decisionImpact 빈 배열", () => {
+      const a = ir(`taxonomy: t
+version: 1
+axes:
+  l:
+    lifecycle: approved
+    entries:
+      - { id: x, address: 0, lifecycle: tbd }`);
+      const b = ir(`taxonomy: t
+version: 1
+axes:
+  l:
+    lifecycle: approved
+    entries:
+      - { id: x, address: 0, lifecycle: approved }`);
+      const plan = migrationPlan(a, b);
+      expect(plan.decisionImpact).toEqual([]);
+    });
+
+    it("decisionLink + lifecycle 변경 → lifecycle-changed", () => {
+      const a = ir(`taxonomy: t
+version: 1
+axes:
+  l:
+    lifecycle: approved
+    entries:
+      - { id: x, address: 0, lifecycle: tbd, decisionLink: "decision:t.l.x" }`);
+      const b = ir(`taxonomy: t
+version: 1
+axes:
+  l:
+    lifecycle: approved
+    entries:
+      - { id: x, address: 0, lifecycle: approved, decisionLink: "decision:t.l.x" }`);
+      const plan = migrationPlan(a, b);
+      expect(plan.decisionImpact).toEqual([
+        {
+          axis: "l",
+          id: "x",
+          decisionLink: "decision:t.l.x",
+          impact: "lifecycle-changed",
+          fromLifecycle: "tbd",
+          toLifecycle: "approved",
+        },
+      ]);
+    });
+
+    it("decisionLink + address 변경 (id 동일) → address-changed", () => {
+      const a = ir(`taxonomy: t
+version: 1
+axes:
+  l:
+    lifecycle: approved
+    entries:
+      - { id: x, address: 0, lifecycle: approved, decisionLink: "decision:t.l.x" }
+      - { id: y, address: 1, lifecycle: approved }`);
+      const b = ir(`taxonomy: t
+version: 1
+axes:
+  l:
+    lifecycle: approved
+    entries:
+      - { id: y, address: 0, lifecycle: approved }
+      - { id: x, address: 1, lifecycle: approved, decisionLink: "decision:t.l.x" }`);
+      const plan = migrationPlan(a, b);
+      const impacts = plan.decisionImpact.filter((d) => d.id === "x");
+      expect(impacts).toHaveLength(1);
+      expect(impacts[0]).toMatchObject({
+        axis: "l",
+        id: "x",
+        decisionLink: "decision:t.l.x",
+        impact: "address-changed",
+        fromAddress: 0,
+        toAddress: 1,
+      });
+    });
+
+    it("decisionLink + entry 제거 → removed", () => {
+      const a = ir(`taxonomy: t
+version: 1
+axes:
+  l:
+    lifecycle: approved
+    entries:
+      - { id: x, address: 0, lifecycle: approved, decisionLink: "decision:t.l.x" }
+      - { id: y, address: 1, lifecycle: approved }`);
+      const b = ir(`taxonomy: t
+version: 1
+axes:
+  l:
+    lifecycle: approved
+    entries:
+      - { id: y, address: 1, lifecycle: approved }`);
+      const plan = migrationPlan(a, b);
+      expect(plan.decisionImpact).toEqual([
+        {
+          axis: "l",
+          id: "x",
+          decisionLink: "decision:t.l.x",
+          impact: "removed",
+        },
+      ]);
+    });
+
+    it("axis 자체 제거 → decisionLink 가진 entry는 모두 removed", () => {
+      const a = ir(`taxonomy: t
+version: 1
+axes:
+  l:
+    lifecycle: approved
+    entries:
+      - { id: x, address: 0, lifecycle: approved, decisionLink: "decision:t.l.x" }
+  k:
+    lifecycle: approved
+    entries:
+      - { id: a, address: 0, lifecycle: approved }`);
+      const b = ir(`taxonomy: t
+version: 1
+axes:
+  k:
+    lifecycle: approved
+    entries:
+      - { id: a, address: 0, lifecycle: approved }`);
+      const plan = migrationPlan(a, b);
+      expect(plan.decisionImpact).toEqual([
+        {
+          axis: "l",
+          id: "x",
+          decisionLink: "decision:t.l.x",
+          impact: "removed",
+        },
+      ]);
+    });
+
+    it("address-changed가 lifecycle-changed보다 우선 (둘 다 발생해도 address만 보고)", () => {
+      const a = ir(`taxonomy: t
+version: 1
+axes:
+  l:
+    lifecycle: approved
+    entries:
+      - { id: x, address: 0, lifecycle: tbd, decisionLink: "decision:t.l.x" }
+      - { id: y, address: 1, lifecycle: approved }`);
+      const b = ir(`taxonomy: t
+version: 1
+axes:
+  l:
+    lifecycle: approved
+    entries:
+      - { id: y, address: 0, lifecycle: approved }
+      - { id: x, address: 1, lifecycle: approved, decisionLink: "decision:t.l.x" }`);
+      const plan = migrationPlan(a, b);
+      const impacts = plan.decisionImpact.filter((d) => d.id === "x");
+      expect(impacts).toHaveLength(1);
+      expect(impacts[0].impact).toBe("address-changed");
+    });
+
+    it("변경 없음 → decisionImpact 빈 배열", () => {
+      const a = ir(`taxonomy: t
+version: 1
+axes:
+  l:
+    lifecycle: approved
+    entries:
+      - { id: x, address: 0, lifecycle: approved, decisionLink: "decision:t.l.x" }`);
+      const plan = migrationPlan(a, a);
+      expect(plan.decisionImpact).toEqual([]);
+    });
   });
 });

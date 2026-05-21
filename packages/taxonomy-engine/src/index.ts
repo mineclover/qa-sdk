@@ -44,6 +44,7 @@ export {
   type MigrationPlan,
   type IdRename,
   type AddressConflict,
+  type DecisionImpact,
 } from "./migration/index.js";
 
 // Types

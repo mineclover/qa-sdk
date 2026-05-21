@@ -1,7 +1,13 @@
 import type { Plugin } from "vite";
 import { existsSync, readFileSync } from "node:fs";
-import { isAbsolute, resolve } from "node:path";
-import { parseDecisionFile, type DecisionFile } from "taxonomy-decision-bridge";
+import { resolve } from "node:path";
+import {
+  parseDecisionFile,
+  resolveDecisionLink,
+  type DecisionFile,
+} from "taxonomy-decision-bridge";
+
+const DECISIONS_DIR = "docs/decisions";
 
 export type DecisionResponse =
   | { kind: "found"; file: DecisionFile }
@@ -13,22 +19,15 @@ export function loadDecision(opts: {
   yamlFile: string; // 좌표 yaml의 repo-relative path (decisionLink 해소 기준 디렉토리)
   decisionLink: string;
 }): DecisionResponse {
-  if (
-    opts.decisionLink.startsWith("http://") ||
-    opts.decisionLink.startsWith("https://")
-  ) {
-    return { kind: "external", reason: "외부 URL — fetch 안 함" };
+  const resolved = resolveDecisionLink({
+    link: opts.decisionLink,
+    yamlAbsDir: resolve(opts.repoRoot, opts.yamlFile, ".."),
+    decisionsDir: resolve(opts.repoRoot, DECISIONS_DIR),
+  });
+  if (resolved.kind === "external" || resolved.kind === "unsupported") {
+    return { kind: "external", reason: resolved.reason };
   }
-  if (opts.decisionLink.startsWith("decision-flow://")) {
-    return { kind: "external", reason: "decision-flow:// — Stage 3 미지원" };
-  }
-  if (opts.decisionLink.startsWith("tax:")) {
-    return { kind: "external", reason: "tax: ref — registry 통한 해소 필요" };
-  }
-  const yamlAbsDir = resolve(opts.repoRoot, opts.yamlFile, "..");
-  const resolvedPath = isAbsolute(opts.decisionLink)
-    ? opts.decisionLink
-    : resolve(yamlAbsDir, opts.decisionLink);
+  const resolvedPath = resolved.absPath;
   if (!existsSync(resolvedPath)) {
     return { kind: "missing", resolvedPath };
   }

@@ -18,3 +18,9 @@ export {
   type SyncOptions,
   type ConflictResolution,
 } from "./sync.js";
+
+// decisionLink 형식 해소 (path / decision:<id> / external / unsupported)
+export {
+  resolveDecisionLink,
+  type ResolvedDecisionLink,
+} from "./resolve-link.js";

@@ -457,6 +457,111 @@ describe("cli tax migration", () => {
     err.mockRestore();
     exit.mockRestore();
   });
+
+  it("decisionImpact: lifecycle 변경된 entry → 출력에 표시", async () => {
+    // tmp git repo 구성: base commit에 yaml 추가, 그 다음 lifecycle 변경
+    const dir = join(tmpdir(), `tax-mig-${Date.now()}-${randomBytes(4).toString("hex")}`);
+    mkdirSync(join(dir, "docs/taxonomies"), { recursive: true });
+    const yamlPath = join(dir, "docs/taxonomies/t.yaml");
+    const baseYaml = `taxonomy: t
+version: 1
+axes:
+  layer:
+    lifecycle: approved
+    entries:
+      - { id: cue, address: 0, lifecycle: tbd, decisionLink: "decision:t.layer.cue" }
+`;
+    const headYaml = `taxonomy: t
+version: 1
+axes:
+  layer:
+    lifecycle: approved
+    entries:
+      - { id: cue, address: 0, lifecycle: approved, decisionLink: "decision:t.layer.cue" }
+`;
+    writeFileSync(yamlPath, baseYaml);
+    execSync("git init -q", { cwd: dir });
+    execSync('git config user.email "test@example.com"', { cwd: dir });
+    execSync('git config user.name "test"', { cwd: dir });
+    execSync("git add -A && git commit -q -m base", { cwd: dir });
+    writeFileSync(yamlPath, headYaml);
+
+    const prevCwd = process.cwd();
+    process.chdir(dir);
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      await cliTaxonomy(["migration", "--base", "HEAD", "docs/taxonomies/t.yaml"]);
+      const out = log.mock.calls.map((c) => String(c[0])).join("\n");
+      expect(out).toMatch(/decision impact/);
+      expect(out).toMatch(/id=cue/);
+      expect(out).toMatch(/lifecycle-changed/);
+      expect(out).toMatch(/decision:t\.layer\.cue/);
+      expect(out).toMatch(/tbd → approved/);
+      expect(exit).not.toHaveBeenCalledWith(1);
+    } finally {
+      process.chdir(prevCwd);
+      rmSync(dir, { recursive: true, force: true });
+      log.mockRestore();
+      err.mockRestore();
+      exit.mockRestore();
+    }
+  });
+
+  it("decisionImpact: --json 출력에 포함", async () => {
+    const dir = join(tmpdir(), `tax-mig-${Date.now()}-${randomBytes(4).toString("hex")}`);
+    mkdirSync(join(dir, "docs/taxonomies"), { recursive: true });
+    const yamlPath = join(dir, "docs/taxonomies/t.yaml");
+    const baseYaml = `taxonomy: t
+version: 1
+axes:
+  layer:
+    lifecycle: approved
+    entries:
+      - { id: cue, address: 0, lifecycle: approved, decisionLink: "decision:t.layer.cue" }
+      - { id: stage, address: 1, lifecycle: approved }
+`;
+    const headYaml = `taxonomy: t
+version: 1
+axes:
+  layer:
+    lifecycle: approved
+    entries:
+      - { id: stage, address: 1, lifecycle: approved }
+`;
+    writeFileSync(yamlPath, baseYaml);
+    execSync("git init -q", { cwd: dir });
+    execSync('git config user.email "test@example.com"', { cwd: dir });
+    execSync('git config user.name "test"', { cwd: dir });
+    execSync("git add -A && git commit -q -m base", { cwd: dir });
+    writeFileSync(yamlPath, headYaml);
+
+    const prevCwd = process.cwd();
+    process.chdir(dir);
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      await cliTaxonomy(["migration", "--base", "HEAD", "docs/taxonomies/t.yaml", "--json"]);
+      const out = log.mock.calls.map((c) => String(c[0])).join("\n");
+      const parsed = JSON.parse(out);
+      expect(parsed.plan.decisionImpact).toEqual([
+        {
+          axis: "layer",
+          id: "cue",
+          decisionLink: "decision:t.layer.cue",
+          impact: "removed",
+        },
+      ]);
+    } finally {
+      process.chdir(prevCwd);
+      rmSync(dir, { recursive: true, force: true });
+      log.mockRestore();
+      err.mockRestore();
+      exit.mockRestore();
+    }
+  });
 });
 
 describe("cli tax doctor", () => {
