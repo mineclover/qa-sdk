@@ -173,42 +173,30 @@ Registry 변경 없음. 신규 API는 `migrationPlan()` 1개 + `diff()` 결과 �
 
 ---
 
-## Stage 3 — 결정 Chain (구현 연기, roadmap에만)
+## Stage 3 — Decision Sync (양방향)
 
-### 핵심 결정
+### 핵심 결정 (확정)
 
-- **decision-flow와 양방향 sync** — 구현 연기 (decision-flow 자체 안정도 필요)
-- 진행 조건:
-  - decision-flow API 안정 (현재 evidence kind 5종 정의됨)
-  - 외부 시스템에서 yaml ref를 subject로 받을 수 있음
-- 구현 시:
-  - yaml entry의 decisionLink가 decision-flow decision id
-  - decision-flow에서 "이 결정 완료" 시 yaml lifecycle 자동 갱신 (`tbd → approved`)
-  - 결정 evidence (kind/source/content/weight) 가 lifecycle change 의 trigger
+- **trigger 방향**: 양쪽 자유 — yaml/decision 어디서 시작해도 반대편 push
+- **데이터 SSOT**: decision은 **def-catalog 통합** — markdown + frontmatter
+- **자동화 주체**: local dev에서 `qa-sdk decision sync` 수동 (Actions cron 아님)
+- **PR vs commit**: **commit** — 봇 아닌 사용자 본인의 commit
+- **충돌 정책**: 양쪽 비교 후 사용자 선택 (`--accept-yaml/--accept-decision/--merge`)
+- **작은 변경**: evidence weight 변경도 매번 commit (결정 흐름이 git log에 남음)
+- **Web UI**: taxonomy-web에 DecisionPanel 추가
 
-### 예상 API
-
-```typescript
-// decision-flow 통합 (Stage 3 시점)
-import { observeDecision } from "decision-flow";
-import { syncLifecycleFromDecision } from "taxonomy-engine/decision-bridge";
-
-observeDecision(decisionId, (decision) => {
-  if (decision.status === "completed") {
-    syncLifecycleFromDecision(decision, taxonomyRegistry);
-  }
-});
-```
-
-### 결정 Chain UI (Web)
-
-- chain 시각화: 결정 → 영향 entries → 변경 (diff) → 검증 통과
-- 미정 entry 선택 시 "어떤 결정이 필요한지" 표시
-- 결정 evidence 표시 (data/rule/precedent/intuition/external)
+상세 spec: [`concepts/decision-sync.md`](./concepts/decision-sync.md). 구현 계획: [`plans/v0.10.md`](./plans/v0.10.md).
 
 ### 작업 분량
 
-큰 spec 필요 — decision-flow 안정도에 따라 결정. 별도 brainstorming 세션.
+5 Phase, 약 10 task. 신규 패키지 `taxonomy-decision-bridge` + CLI `qa-sdk decision sync` + Web `DecisionPanel` + def-catalog 통합 + 도그푸딩.
+
+### 진행 조건
+
+- [x] Stage 1 (lifecycle + decisionLink) 안정 — v0.8 완료
+- [x] Stage 2 (semver + migration) 안정 — v0.9 완료
+- [ ] decision-flow API freeze 확인 (FlowEngine + InstanceStore)
+- [ ] definition-catalog `def_scope`에 `decision` 추가 합의
 
 ---
 
@@ -262,9 +250,9 @@ Stage 1만으로 사용자 케이스 충분. Stage 2는 도그푸딩 yaml의 첫
 - [ ] CI 게이트로 `--semver` 활용 — main → PR major 차단 정책?
 
 ### Stage 3
-- [ ] decision-flow API contract (현재 시점)
-- [ ] sync 방향 — yaml → decision (편집 시 trigger) vs decision → yaml (완료 시 trigger)
-- [ ] 결정 chain UI 데이터 모델
+- [ ] decision-flow의 FlowEngine과 markdown SSOT의 관계 — bridge만 두고 FlowEngine 직접 사용 안 함 vs FlowEngine 호출
+- [ ] decision 파일 디렉토리 위치 — `docs/decisions/` vs `docs/specs/decisions/`
+- [ ] evidence 변경 자동 commit 임계값 — 모두 commit (spec 기본) vs 일정 단위로 묶음
 
 ---
 
