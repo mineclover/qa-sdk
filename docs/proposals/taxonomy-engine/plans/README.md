@@ -15,3 +15,4 @@
 | [v0.9](./v0.9.md) | A~D: Stage 2 diff breakingLevel + migrationPlan + CLI/Web |
 | [v0.10](./v0.10.md) | A~E: Stage 3 decision-sync 양방향 + def-catalog 통합 + Web DecisionPanel |
 | [v0.11](./v0.11.md) | A~D: 부채 #6 — decision-flow 변환 어댑터(toFlowSchema + CLI analyze) |
+| [v0.12](./v0.12.md) | A~C: analyze UX + 마커 확장(^phase/^weight/^depends_on) + 역방향 변환(toMarkdown + CLI render) |

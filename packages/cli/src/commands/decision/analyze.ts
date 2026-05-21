@@ -127,14 +127,23 @@ function outputReport(reports: AnalyzeReport[], opts: AnalyzeArgs): void {
     return;
   }
   for (const r of reports) {
+    const branchCount = r.schema.gates[0].branches?.length ?? 0;
+    const isSkeleton = branchCount === 0 && r.evidenceCount === 0;
+
     console.log(`\n● ${r.ref}`);
     console.log(`  decision file: ${r.decisionPath}`);
     console.log(`  lifecycle:     ${r.decision.meta.lifecycle}`);
+    if (isSkeleton) {
+      console.log(`  🌱 skeleton — ^option/^evidence를 채우면 분석이 valid해집니다`);
+      if (r.decision.markers.outcome) {
+        console.log(`  outcome:       ${r.decision.markers.outcome}`);
+      }
+      continue;
+    }
+
     console.log(
-      `  branches:      ${r.schema.gates[0].branches?.length ?? 0}` +
-        (r.schema.gates[0].branches?.length
-          ? ` (${r.schema.gates[0].branches.map((b) => b.id).join(", ")})`
-          : ""),
+      `  branches:      ${branchCount}` +
+        (branchCount ? ` (${r.schema.gates[0].branches!.map((b) => b.id).join(", ")})` : ""),
     );
     const reqEv = r.schema.gates[0].requiredEvidence ?? [];
     console.log(
@@ -143,8 +152,9 @@ function outputReport(reports: AnalyzeReport[], opts: AnalyzeArgs): void {
     );
     const profile = r.profiles[0];
     if (profile) {
+      const cascade = profile.cascadeImpact ?? 0;
       console.log(
-        `  gate profile:  weight=${profile.weight} directImpact=${profile.directImpact} cascadeImpact=${profile.cascadeImpact}`,
+        `  gate profile:  weight=${profile.weight} directImpact=${profile.directImpact} cascadeImpact=${cascade}`,
       );
     }
     console.log(

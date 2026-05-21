@@ -100,6 +100,35 @@ describe("extractMarkers", () => {
     expect(m.purpose).toBeUndefined();
     expect(m.options).toEqual([]);
     expect(m.evidence).toEqual([]);
+    expect(m.dependsOn).toEqual([]);
+    expect(m.phase).toBeUndefined();
+    expect(m.weight).toBeUndefined();
+  });
+
+  it("^phase:<phase> 추출 (유효 값만)", () => {
+    expect(extractMarkers("진행 단계 ^phase:evaluate").phase).toBe("evaluate");
+    expect(extractMarkers("잘못된 값 ^phase:bogus").phase).toBeUndefined();
+  });
+
+  it("^weight:<weight> 추출 (유효 값만)", () => {
+    expect(extractMarkers("핵심 결정 ^weight:core").weight).toBe("core");
+    expect(extractMarkers("잘못된 값 ^weight:high").weight).toBeUndefined();
+  });
+
+  it("^depends_on:<id> default kind constrains", () => {
+    const m = extractMarkers("upstream 결정 ^depends_on:scope-mode");
+    expect(m.dependsOn).toEqual([{ gateId: "scope-mode", kind: "constrains" }]);
+  });
+
+  it("^depends_on:<id>:<kind> 유효 kind만 적용", () => {
+    const m = extractMarkers(
+      "여러 의존 ^depends_on:a:enables ^depends_on:b:invalidates ^depends_on:c:bogus",
+    );
+    expect(m.dependsOn).toEqual([
+      { gateId: "a", kind: "enables" },
+      { gateId: "b", kind: "invalidates" },
+      { gateId: "c", kind: "constrains" }, // bogus → default
+    ]);
   });
 });
 

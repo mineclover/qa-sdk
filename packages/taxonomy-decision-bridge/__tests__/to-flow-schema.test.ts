@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { CognitivePhase, GateDependency, GateWeight } from "decision-flow";
 import type { DecisionFile } from "../src/decision-file.js";
 import { toFlowSchema, extractEvidence } from "../src/to-flow-schema.js";
 
@@ -8,6 +9,9 @@ function decision(overrides: {
   options?: Array<{ id: string; body: string }>;
   evidence?: DecisionFile["markers"]["evidence"];
   outcome?: string;
+  phase?: CognitivePhase;
+  weight?: GateWeight;
+  dependsOn?: GateDependency[];
 }): DecisionFile {
   return {
     meta: {
@@ -23,6 +27,9 @@ function decision(overrides: {
       options: overrides.options ?? [],
       evidence: overrides.evidence ?? [],
       outcome: overrides.outcome,
+      phase: overrides.phase,
+      weight: overrides.weight,
+      dependsOn: overrides.dependsOn ?? [],
     },
     body: "",
   };
@@ -110,6 +117,40 @@ describe("toFlowSchema", () => {
     const schema = toFlowSchema(decision({}));
     expect(schema.description).toBe("(목적 미정)");
     expect(schema.unit?.objective).toBe("(목적 미정)");
+  });
+
+  it("phase/weight 마커 있으면 default 대신 사용", () => {
+    const schema = toFlowSchema(
+      decision({ phase: "evaluate", weight: "core" }),
+    );
+    expect(schema.gates[0].phase).toBe("evaluate");
+    expect(schema.gates[0].weight).toBe("core");
+  });
+
+  it("phase/weight 마커 없으면 default(decide/tactical)", () => {
+    const schema = toFlowSchema(decision({}));
+    expect(schema.gates[0].phase).toBe("decide");
+    expect(schema.gates[0].weight).toBe("tactical");
+  });
+
+  it("dependsOn → gate.affects 매핑", () => {
+    const schema = toFlowSchema(
+      decision({
+        dependsOn: [
+          { gateId: "scope-mode", kind: "constrains" },
+          { gateId: "architecture", kind: "enables" },
+        ],
+      }),
+    );
+    expect(schema.gates[0].affects).toEqual([
+      { gateId: "scope-mode", kind: "constrains" },
+      { gateId: "architecture", kind: "enables" },
+    ]);
+  });
+
+  it("dependsOn 비어있으면 affects undefined", () => {
+    const schema = toFlowSchema(decision({}));
+    expect(schema.gates[0].affects).toBeUndefined();
   });
 });
 

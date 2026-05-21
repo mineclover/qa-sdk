@@ -1,5 +1,6 @@
 import { decisionSyncCmd } from "./sync.js";
 import { decisionAnalyzeCmd } from "./analyze.js";
+import { decisionRenderCmd } from "./render.js";
 
 export async function cliDecision(rest: string[]): Promise<void> {
   const [sub, ...args] = rest;
@@ -8,6 +9,8 @@ export async function cliDecision(rest: string[]): Promise<void> {
       return decisionSyncCmd(args);
     case "analyze":
       return decisionAnalyzeCmd(args);
+    case "render":
+      return decisionRenderCmd(args);
     case "help":
     case undefined:
       printHelp();
@@ -25,6 +28,7 @@ function printHelp(): void {
   qa-sdk decision sync [<tax:ref>] [--dry-run] [--no-commit] [--json]
                        [--accept-yaml | --accept-decision | --merge]
   qa-sdk decision analyze [<tax:ref>] [--json]
+  qa-sdk decision render [<tax:ref>] [--out <path>]
 
 옵션 (sync):
   --dry-run             변경 계획만 출력, 파일/commit 미적용
@@ -36,6 +40,9 @@ function printHelp(): void {
 
 옵션 (analyze):
   --json                schema + GateProfile + coreGate 결과 JSON 출력
+
+옵션 (render):
+  --out <path>          파일로 저장 (지정 안 하면 stdout). 단일 ref만 지원.
 
 ref 없으면 전체 docs/taxonomies/*.yaml의 decisionLink 가진 entry 모두 처리.
 `);

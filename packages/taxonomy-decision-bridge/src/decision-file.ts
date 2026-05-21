@@ -1,6 +1,12 @@
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import type { Lifecycle } from "taxonomy-engine";
-import type { Evidence, EvidenceKind } from "decision-flow";
+import type {
+  CognitivePhase,
+  Evidence,
+  EvidenceKind,
+  GateDependency,
+  GateWeight,
+} from "decision-flow";
 
 export type DecisionMeta = {
   id: string;
@@ -27,6 +33,12 @@ export type DecisionMarkers = {
   options: DecisionOption[];
   evidence: DecisionEvidence[];
   outcome?: string;
+  /** ^phase:<phase> — 인지 단계 (decision-flow CognitivePhase 7종) */
+  phase?: CognitivePhase;
+  /** ^weight:<weight> — 구조적 무게 (core/structural/tactical) */
+  weight?: GateWeight;
+  /** ^depends_on:<gateId>(:<kind>) — gate 간 인과 의존 (default kind: constrains) */
+  dependsOn: GateDependency[];
 };
 
 /**
@@ -42,6 +54,40 @@ const VALID_EVIDENCE_KINDS: ReadonlySet<EvidenceKind> = new Set([
 
 function isEvidenceKind(s: string): s is EvidenceKind {
   return VALID_EVIDENCE_KINDS.has(s as EvidenceKind);
+}
+
+const VALID_PHASES: ReadonlySet<CognitivePhase> = new Set([
+  "perceive",
+  "interpret",
+  "evaluate",
+  "decide",
+  "plan",
+  "execute",
+  "reflect",
+]);
+
+function isPhase(s: string): s is CognitivePhase {
+  return VALID_PHASES.has(s as CognitivePhase);
+}
+
+const VALID_WEIGHTS: ReadonlySet<GateWeight> = new Set([
+  "core",
+  "structural",
+  "tactical",
+]);
+
+function isWeight(s: string): s is GateWeight {
+  return VALID_WEIGHTS.has(s as GateWeight);
+}
+
+const VALID_DEP_KINDS: ReadonlySet<GateDependency["kind"]> = new Set([
+  "constrains",
+  "enables",
+  "invalidates",
+]);
+
+function isDepKind(s: string): s is GateDependency["kind"] {
+  return VALID_DEP_KINDS.has(s as GateDependency["kind"]);
 }
 
 export type DecisionFile = {
@@ -142,12 +188,15 @@ export function extractMarkers(body: string): DecisionMarkers {
   const result: DecisionMarkers = {
     options: [],
     evidence: [],
+    dependsOn: [],
   };
   const blocks = splitIntoBlocks(body);
   for (const block of blocks) {
+    // 한 블록에 여러 마커가 inline으로 섞일 수 있음 (^purpose ^phase:... ^depends_on:...).
+    // text 추출 시 모든 마커 substring을 한 번에 제거해야 다음 stripMarker 호출이 중복 없는 텍스트 반환.
+    const cleanText = stripAllMarkers(block).trim();
     for (const marker of findMarkers(block)) {
-      const text = stripMarker(block, marker.raw).trim();
-      applyMarker(result, marker, text);
+      applyMarker(result, marker, cleanText);
     }
   }
   return result;
@@ -158,9 +207,13 @@ type MarkerToken =
   | { kind: "context"; raw: string }
   | { kind: "option"; id: string; raw: string }
   | { kind: "evidence"; evKind: string; weight: number; raw: string }
-  | { kind: "outcome"; raw: string };
+  | { kind: "outcome"; raw: string }
+  | { kind: "phase"; value: string; raw: string }
+  | { kind: "weight"; value: string; raw: string }
+  | { kind: "depends_on"; gateId: string; depKind?: string; raw: string };
 
-const MARKER_RE = /\^(purpose|context|outcome|option:[a-zA-Z][\w-]*|evidence:[a-zA-Z][\w-]*(?:\s+weight=[\d.]+)?)/g;
+const MARKER_RE =
+  /\^(purpose|context|outcome|option:[a-zA-Z][\w-]*|evidence:[a-zA-Z][\w-]*(?:\s+weight=[\d.]+)?|phase:[a-z]+|weight:[a-z]+|depends_on:[a-zA-Z][\w-]*(?::[a-z]+)?)/g;
 
 function findMarkers(block: string): MarkerToken[] {
   const tokens: MarkerToken[] = [];
@@ -179,13 +232,21 @@ function findMarkers(block: string): MarkerToken[] {
         ? Number(weightExpr.slice("weight=".length))
         : 1;
       tokens.push({ kind: "evidence", evKind, weight, raw });
+    } else if (body.startsWith("phase:")) {
+      tokens.push({ kind: "phase", value: body.slice("phase:".length), raw });
+    } else if (body.startsWith("weight:")) {
+      tokens.push({ kind: "weight", value: body.slice("weight:".length), raw });
+    } else if (body.startsWith("depends_on:")) {
+      const rest = body.slice("depends_on:".length);
+      const [gateId, depKind] = rest.split(":");
+      tokens.push({ kind: "depends_on", gateId, depKind, raw });
     }
   }
   return tokens;
 }
 
-function stripMarker(block: string, marker: string): string {
-  return block.replace(marker, "");
+function stripAllMarkers(block: string): string {
+  return block.replace(MARKER_RE, "").replace(/\s+/g, " ");
 }
 
 function applyMarker(
@@ -214,6 +275,22 @@ function applyMarker(
         content: text,
         source: "",
       });
+      return;
+    case "phase":
+      if (isPhase(marker.value)) result.phase = marker.value;
+      return;
+    case "weight":
+      if (isWeight(marker.value)) result.weight = marker.value;
+      return;
+    case "depends_on":
+      if (!marker.gateId) return;
+      {
+        const kind: GateDependency["kind"] =
+          marker.depKind && isDepKind(marker.depKind)
+            ? marker.depKind
+            : "constrains";
+        result.dependsOn.push({ gateId: marker.gateId, kind });
+      }
       return;
   }
 }

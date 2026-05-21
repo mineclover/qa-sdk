@@ -41,10 +41,11 @@ export function toFlowSchema(
   const decideGate: GateSchema = {
     id: "decide",
     name: "결정",
-    phase: "decide",
-    weight: "tactical",
+    phase: markers.phase ?? "decide",
+    weight: markers.weight ?? "tactical",
     branches,
     requiredEvidence: evidenceKinds.length > 0 ? evidenceKinds : undefined,
+    affects: markers.dependsOn.length > 0 ? markers.dependsOn : undefined,
   };
 
   const includeOutcomes = meta.lifecycle === "approved" && !!markers.outcome;

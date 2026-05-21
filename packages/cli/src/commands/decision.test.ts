@@ -393,6 +393,35 @@ PoC 데이터. ^evidence:data weight=0.6
     exit.mockRestore();
   });
 
+  it("skeleton 상태(branches/evidence 0건) → 친절 메시지, schema issues 미표시", async () => {
+    const skeleton = `---
+id: test.layer.cue
+subject: tax:test:layer.cue
+lifecycle: draft
+created: 2026-05-22T00:00:00Z
+updated: 2026-05-22T00:00:00Z
+---
+
+질문만 있음. ^purpose
+`;
+    const dir = setupRepo({
+      yaml: YAML_WITH_TBD,
+      decisionDir: "docs/decisions",
+      decisions: { "test.layer.cue.md": skeleton },
+    });
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await withCwd(dir, () => cliDecision(["analyze"]));
+    const out = log.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(out).toContain("🌱 skeleton");
+    expect(out).not.toMatch(/schema issues/);
+    expect(out).not.toMatch(/branches\s+0/);
+    expect(exit).not.toHaveBeenCalledWith(1);
+    rmSync(dir, { recursive: true, force: true });
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
   it("decision 파일 없으면 분석 대상 0건 + exit 0", async () => {
     const dir = setupRepo({ yaml: YAML_WITH_TBD });
     const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
@@ -400,6 +429,38 @@ PoC 데이터. ^evidence:data weight=0.6
     await withCwd(dir, () => cliDecision(["analyze"]));
     const out = log.mock.calls.map((c) => String(c[0])).join("\n");
     expect(out).toContain("분석 대상 decision 없음");
+    expect(exit).not.toHaveBeenCalledWith(1);
+    rmSync(dir, { recursive: true, force: true });
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  it("render: decision 파일 → stdout markdown 출력 (^purpose 보존)", async () => {
+    const decisionMd = `---
+id: test.layer.cue
+subject: tax:test:layer.cue
+lifecycle: review
+created: 2026-05-22T00:00:00Z
+updated: 2026-05-22T00:00:00Z
+---
+
+# Decision
+
+질문 ^purpose
+
+Cue 포함 ^option:a
+`;
+    const dir = setupRepo({
+      yaml: YAML_WITH_TBD,
+      decisionDir: "docs/decisions",
+      decisions: { "test.layer.cue.md": decisionMd },
+    });
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await withCwd(dir, () => cliDecision(["render"]));
+    const out = log.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(out).toContain("질문 ^purpose");
+    expect(out).toContain("^option:a");
     expect(exit).not.toHaveBeenCalledWith(1);
     rmSync(dir, { recursive: true, force: true });
     log.mockRestore();
