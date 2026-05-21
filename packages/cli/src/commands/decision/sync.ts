@@ -5,7 +5,7 @@ import {
   writeFileSync,
   mkdirSync,
 } from "node:fs";
-import { dirname, isAbsolute, join, resolve, basename } from "node:path";
+import { dirname, join, basename, relative } from "node:path";
 import { execSync } from "node:child_process";
 import { parse as parseYaml } from "taxonomy-engine";
 import type { EntryIR, Lifecycle } from "taxonomy-engine";
@@ -13,17 +13,21 @@ import {
   computeSyncAction,
   createDecisionSkeletonText,
   parseDecisionFile,
+  resolveDecisionLink,
   serializeDecisionFile,
   type ConflictResolution,
   type DecisionFile,
+  type DecisionEvidence,
   type SyncAction,
 } from "taxonomy-decision-bridge";
 
 const TAX_DIR = "docs/taxonomies";
+const DECISIONS_DIR = "docs/decisions";
 
 type SyncArgs = {
   dryRun: boolean;
   json: boolean;
+  noCommit: boolean;
   conflict?: ConflictResolution;
   refFilter?: string;
 };
@@ -69,7 +73,7 @@ export async function decisionSyncCmd(args: string[]): Promise<void> {
         });
         reports.push(report);
         if (!parsed.dryRun && report.applied) {
-          applyAndCommit(cwd, report);
+          applyAndCommit(cwd, report, parsed);
         }
       }
     }
@@ -79,11 +83,12 @@ export async function decisionSyncCmd(args: string[]): Promise<void> {
 }
 
 function parseSyncArgs(args: string[]): SyncArgs | { error: string } {
-  const opts: SyncArgs = { dryRun: false, json: false };
+  const opts: SyncArgs = { dryRun: false, json: false, noCommit: false };
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a === "--dry-run") opts.dryRun = true;
     else if (a === "--json") opts.json = true;
+    else if (a === "--no-commit") opts.noCommit = true;
     else if (a === "--accept-yaml") opts.conflict = "accept-yaml";
     else if (a === "--accept-decision") opts.conflict = "accept-decision";
     else if (a === "--merge") opts.conflict = "merge";
@@ -113,8 +118,21 @@ function processEntry(opts: ProcessOpts): SyncReport {
     }
   }
 
-  const action = computeSyncAction(entry, subject, decisionFile, {}, { conflict });
-  const applied = action.kind !== "noop" && action.kind !== "conflict";
+  // 부채 #2: state 추적 — git/mtime 기반 변경 감지.
+  // 양쪽 파일의 working tree 상태(unstaged 변경)와 마지막 commit 시각을 비교해서
+  // yamlChanged / decisionChanged를 산출. 변경 정보를 모르면 호출자가 단순 비교로 폴백.
+  const state = detectChangeState({
+    cwd,
+    yamlFile,
+    decisionPath,
+    decisionFile,
+  });
+
+  const action = computeSyncAction(entry, subject, decisionFile, state, {
+    conflict,
+  });
+  const applied =
+    action.kind !== "noop" && action.kind !== "conflict";
 
   return {
     ref: subject,
@@ -130,19 +148,117 @@ function resolveDecisionPath(
   yamlFile: string,
   decisionLink: string,
 ): string | undefined {
-  if (decisionLink.startsWith("http://") || decisionLink.startsWith("https://")) {
+  const resolved = resolveDecisionLink({
+    link: decisionLink,
+    yamlAbsDir: dirname(join(cwd, yamlFile)),
+    decisionsDir: join(cwd, DECISIONS_DIR),
+  });
+  if (resolved.kind === "external" || resolved.kind === "unsupported") {
     return undefined;
   }
-  if (decisionLink.startsWith("decision-flow://")) {
-    // Stage 3에서는 markdown SSOT만 지원
-    return undefined;
-  }
-  if (decisionLink.startsWith("tax:")) return undefined;
-  const yamlDir = dirname(join(cwd, yamlFile));
-  return isAbsolute(decisionLink) ? decisionLink : resolve(yamlDir, decisionLink);
+  return resolved.absPath;
 }
 
-function applyAndCommit(cwd: string, report: SyncReport): void {
+/**
+ * yaml/decision 파일의 변경 상태를 git+fs로 추정 (부채 #2).
+ *
+ * 휴리스틱:
+ * 1. 둘 다 같은 commit에서 마지막으로 변경됐고, working tree에 unstaged 변경 없음 → 둘 다 unchanged.
+ * 2. unstaged 변경이 있는 쪽은 changed=true.
+ * 3. unstaged 변경 없으면 마지막 commit 시각(--format=%at)이 늦은 쪽만 changed=true.
+ *    같은 commit이면 둘 다 unchanged.
+ *
+ * previousDecision은 markers 비교용 — git HEAD에 마지막 커밋된 버전을 파싱 시도.
+ * 파싱 실패하거나 git 정보 없으면 undefined (markers 비교 비활성).
+ *
+ * fail-open: git 호출 실패 시 빈 state 반환 (호출자가 단순 lifecycle 비교로 폴백).
+ */
+function detectChangeState(opts: {
+  cwd: string;
+  yamlFile: string;
+  decisionPath: string | undefined;
+  decisionFile: DecisionFile | undefined;
+}): { yamlChanged?: boolean; decisionChanged?: boolean; previousDecision?: DecisionFile } {
+  const { cwd, yamlFile, decisionPath } = opts;
+  if (!decisionPath || !opts.decisionFile) {
+    return {};
+  }
+  try {
+    const yamlRel = yamlFile;
+    const decisionRel = relative(cwd, decisionPath);
+    const yamlUnstaged = hasUnstagedChanges(cwd, yamlRel);
+    const decisionUnstaged = hasUnstagedChanges(cwd, decisionRel);
+
+    let yamlChanged = yamlUnstaged;
+    let decisionChanged = decisionUnstaged;
+
+    if (!yamlUnstaged && !decisionUnstaged) {
+      // 마지막 commit 시각 비교 — 늦게 변경된 쪽만 changed
+      const yamlTs = lastCommitTimestamp(cwd, yamlRel);
+      const decisionTs = lastCommitTimestamp(cwd, decisionRel);
+      if (yamlTs !== undefined && decisionTs !== undefined) {
+        if (yamlTs > decisionTs) yamlChanged = true;
+        else if (decisionTs > yamlTs) decisionChanged = true;
+      }
+    }
+
+    const previousDecision = readPreviousDecision(cwd, decisionRel);
+
+    return { yamlChanged, decisionChanged, previousDecision };
+  } catch {
+    return {};
+  }
+}
+
+function hasUnstagedChanges(cwd: string, relPath: string): boolean {
+  try {
+    const out = execSync(`git status --porcelain -- "${relPath}"`, {
+      cwd,
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    return out.trim().length > 0;
+  } catch {
+    return false;
+  }
+}
+
+function lastCommitTimestamp(cwd: string, relPath: string): number | undefined {
+  try {
+    const out = execSync(`git log -1 --format=%at -- "${relPath}"`, {
+      cwd,
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+    if (!out) return undefined;
+    const n = Number(out);
+    return Number.isFinite(n) ? n : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * git HEAD에 마지막으로 커밋된 decision 파일 버전을 파싱.
+ * markers 비교(부채 #8)에 사용. 실패 시 undefined.
+ */
+function readPreviousDecision(
+  cwd: string,
+  relPath: string,
+): DecisionFile | undefined {
+  try {
+    const text = execSync(`git show HEAD:"${relPath}"`, {
+      cwd,
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    return parseDecisionFile(text);
+  } catch {
+    return undefined;
+  }
+}
+
+function applyAndCommit(cwd: string, report: SyncReport, opts: SyncArgs): void {
   const action = report.action;
   if (action.kind === "push-create") {
     createDecisionSkeleton({
@@ -152,7 +268,9 @@ function applyAndCommit(cwd: string, report: SyncReport): void {
       question: action.question,
       lifecycle: action.initialLifecycle,
     });
-    commitChanges(cwd, [report.decisionPath!], buildCommitMessage(action, report));
+    if (!opts.noCommit) {
+      commitChanges(cwd, [report.decisionPath!], buildCommitMessage(action, report));
+    }
     return;
   }
   if (action.kind === "pull-yaml-lifecycle") {
@@ -162,11 +280,13 @@ function applyAndCommit(cwd: string, report: SyncReport): void {
       ref: report.ref,
       newLifecycle: action.newLifecycle,
     });
-    commitChanges(
-      cwd,
-      [report.taxonomyFile],
-      buildCommitMessage(action, report),
-    );
+    if (!opts.noCommit) {
+      commitChanges(
+        cwd,
+        [report.taxonomyFile],
+        buildCommitMessage(action, report),
+      );
+    }
     return;
   }
   if (action.kind === "pull-decision-lifecycle") {
@@ -174,7 +294,9 @@ function applyAndCommit(cwd: string, report: SyncReport): void {
       decisionPath: report.decisionPath!,
       newLifecycle: action.newLifecycle,
     });
-    commitChanges(cwd, [report.decisionPath!], buildCommitMessage(action, report));
+    if (!opts.noCommit) {
+      commitChanges(cwd, [report.decisionPath!], buildCommitMessage(action, report));
+    }
     return;
   }
 }
@@ -242,8 +364,10 @@ function updateDecisionLifecycle(opts: {
 function commitChanges(cwd: string, files: string[], message: string): void {
   try {
     execSync(`git add ${files.map((f) => `"${f}"`).join(" ")}`, { cwd });
-    execSync(`git commit -m "${message.replace(/"/g, '\\"')}"`, {
+    // multi-line 메시지 지원 — -F로 stdin 전달
+    execSync(`git commit -F -`, {
       cwd,
+      input: message,
       stdio: ["pipe", "pipe", "pipe"],
     });
   } catch (e) {
@@ -251,17 +375,42 @@ function commitChanges(cwd: string, files: string[], message: string): void {
   }
 }
 
+/**
+ * commit 메시지 생성 (부채 #8).
+ *
+ * spec:
+ * ```
+ * sync(taxonomy): <ref> lifecycle <from> → <to>
+ *
+ *   Evidence:
+ *     - precedent: TAXONOMY.md §Cue (weight 0.8)
+ *     - data: lesson-builder PoC (weight 0.6)
+ * ```
+ * evidence 0건이면 본문 생략.
+ */
 function buildCommitMessage(action: SyncAction, report: SyncReport): string {
   switch (action.kind) {
     case "push-create":
       return `chore(decision): create skeleton for ${report.ref}`;
-    case "pull-yaml-lifecycle":
-      return `sync(taxonomy): ${report.ref} lifecycle → ${action.newLifecycle}`;
+    case "pull-yaml-lifecycle": {
+      const header = `sync(taxonomy): ${report.ref} lifecycle → ${action.newLifecycle}`;
+      const body = renderEvidenceBlock(action.evidence);
+      return body ? `${header}\n\n${body}` : header;
+    }
     case "pull-decision-lifecycle":
       return `sync(decision): ${report.ref} lifecycle → ${action.newLifecycle}`;
     default:
       return `sync: ${report.ref}`;
   }
+}
+
+function renderEvidenceBlock(evidence: DecisionEvidence[]): string {
+  if (evidence.length === 0) return "";
+  const lines = ["  Evidence:"];
+  for (const e of evidence) {
+    lines.push(`    - ${e.kind}: ${e.text} (weight ${e.weight})`);
+  }
+  return lines.join("\n");
 }
 
 function outputReport(reports: SyncReport[], opts: SyncArgs): void {
@@ -282,12 +431,23 @@ function outputReport(reports: SyncReport[], opts: SyncArgs): void {
       );
       console.log(`       옵션: --accept-yaml | --accept-decision | --merge`);
     }
+    if (r.action.kind === "noop" && r.action.reason === "markers-only") {
+      console.log(
+        `       decision markers 변경 감지 (lifecycle 동일) — commit은 사용자 몫`,
+      );
+    }
   }
   const applied = reports.filter((r) => r.applied).length;
   const conflicts = reports.filter((r) => r.action.kind === "conflict").length;
   const noop = reports.filter((r) => r.action.kind === "noop").length;
+  const markersOnly = reports.filter(
+    (r) => r.action.kind === "noop" && r.action.reason === "markers-only",
+  ).length;
+  const noCommitNote = opts.noCommit ? ", commit 생략 (--no-commit)" : "";
+  const dryNote = opts.dryRun ? " (dry-run, 미적용)" : "";
+  const markersNote = markersOnly > 0 ? `, ${markersOnly}건 markers-only` : "";
   console.log(
-    `\n총 ${reports.length}건 — ${applied}건 적용${opts.dryRun ? " (dry-run, 미적용)" : ""}, ${conflicts}건 충돌, ${noop}건 변경 없음`,
+    `\n총 ${reports.length}건 — ${applied}건 적용${dryNote}${noCommitNote}, ${conflicts}건 충돌, ${noop}건 변경 없음${markersNote}`,
   );
   if (conflicts > 0) process.exit(1);
 }
@@ -298,6 +458,8 @@ function describeAction(r: SyncReport): string {
     case "pull-yaml-lifecycle": return "←";
     case "pull-decision-lifecycle": return "→";
     case "conflict": return "!";
-    case "noop": return "✔";
+    case "noop":
+      if (r.action.reason === "markers-only") return "≈";
+      return "✔";
   }
 }

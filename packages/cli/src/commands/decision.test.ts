@@ -111,6 +111,64 @@ updated: 2026-05-21T00:00:00Z
     exit.mockRestore();
   });
 
+  it("decisionLink 'decision:<id>' 형식 → docs/decisions/<id>.md 해소", async () => {
+    const yaml = `taxonomy: test
+version: 1
+axes:
+  layer:
+    lifecycle: approved
+    entries:
+      - { id: cue, address: 0, lifecycle: tbd, placeholderReason: "결정 대기", decisionLink: "decision:test.layer.cue" }
+      - { id: stage, address: 1, lifecycle: approved }
+`;
+    const decision = `---
+id: test.layer.cue
+subject: tax:test:layer.cue
+lifecycle: approved
+created: 2026-05-21T00:00:00Z
+updated: 2026-05-21T00:00:00Z
+---
+
+# Decision\n\n결정 완료. ^outcome\n`;
+    const dir = setupRepo({
+      yaml,
+      decisionDir: "docs/decisions",
+      decisions: { "test.layer.cue.md": decision },
+    });
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await withCwd(dir, () => cliDecision(["sync"]));
+    const yamlAfter = readFileSync(join(dir, "docs/taxonomies/test.yaml"), "utf8");
+    expect(yamlAfter).toMatch(/id: cue,[^\n]*lifecycle: approved/);
+    const log_out = execSync("git log --oneline", { cwd: dir, encoding: "utf8" });
+    expect(log_out).toMatch(/sync\(taxonomy\):.*lifecycle → approved/);
+    rmSync(dir, { recursive: true, force: true });
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  it("decisionLink 'decision:<id>' + 파일 없음 → push-create skeleton", async () => {
+    const yaml = `taxonomy: test
+version: 1
+axes:
+  layer:
+    lifecycle: approved
+    entries:
+      - { id: cue, address: 0, lifecycle: tbd, placeholderReason: "결정 대기", decisionLink: "decision:test.layer.cue" }
+`;
+    const dir = setupRepo({ yaml });
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await withCwd(dir, () => cliDecision(["sync"]));
+    const dPath = join(dir, "docs/decisions/test.layer.cue.md");
+    expect(existsSync(dPath)).toBe(true);
+    const created = readFileSync(dPath, "utf8");
+    expect(created).toMatch(/lifecycle: draft/);
+    rmSync(dir, { recursive: true, force: true });
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
   it("decisionLink 없음 → noop, exit 0", async () => {
     const yaml = `taxonomy: test
 version: 1
@@ -126,6 +184,157 @@ axes:
     const out = log.mock.calls.map((c) => String(c[0])).join("\n");
     expect(out).toMatch(/대상 없음/);
     expect(exit).not.toHaveBeenCalledWith(1);
+    rmSync(dir, { recursive: true, force: true });
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  // 부채 #1: yaml tbd + decision draft (skeleton 생성 직후 상태) → in-sync 보존
+  it("yaml tbd + decision draft → in-sync, yaml/decision 모두 변경 없음", async () => {
+    const decision = `---
+id: test.layer.cue
+subject: tax:test:layer.cue
+lifecycle: draft
+created: 2026-05-21T00:00:00Z
+updated: 2026-05-21T00:00:00Z
+---
+
+# Decision
+
+interaction 정의 미정 ^purpose
+`;
+    const dir = setupRepo({
+      yaml: YAML_WITH_TBD,
+      decisionDir: "docs/decisions",
+      decisions: { "test.layer.cue.md": decision },
+    });
+    const yamlBefore = readFileSync(join(dir, "docs/taxonomies/test.yaml"), "utf8");
+    const decisionBefore = readFileSync(
+      join(dir, "docs/decisions/test.layer.cue.md"),
+      "utf8",
+    );
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await withCwd(dir, () => cliDecision(["sync"]));
+    const out = log.mock.calls.map((c) => String(c[0])).join("\n");
+    // yaml tbd 유지, decision draft 유지, commit 없음
+    expect(readFileSync(join(dir, "docs/taxonomies/test.yaml"), "utf8")).toBe(yamlBefore);
+    expect(
+      readFileSync(join(dir, "docs/decisions/test.layer.cue.md"), "utf8"),
+    ).toBe(decisionBefore);
+    expect(out).toMatch(/✔\s+tax:test:layer\.cue/);
+    const log_out = execSync("git log --oneline", { cwd: dir, encoding: "utf8" });
+    expect(log_out.split("\n").filter((l) => l.length > 0)).toHaveLength(1); // initial commit만
+    rmSync(dir, { recursive: true, force: true });
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  // 부채 #4: --no-commit
+  it("--no-commit: 파일 변경 적용 + commit 생략", async () => {
+    const dir = setupRepo({ yaml: YAML_WITH_TBD });
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await withCwd(dir, () => cliDecision(["sync", "--no-commit"]));
+    const dPath = join(dir, "docs/decisions/test.layer.cue.md");
+    expect(existsSync(dPath)).toBe(true);
+    // 새 commit 없음 (initial만)
+    const log_out = execSync("git log --oneline", { cwd: dir, encoding: "utf8" });
+    expect(log_out.split("\n").filter((l) => l.length > 0)).toHaveLength(1);
+    // working tree에 untracked 파일 존재 (-u로 디렉토리 내부까지)
+    const status = execSync("git status --porcelain -uall", {
+      cwd: dir,
+      encoding: "utf8",
+    });
+    expect(status).toMatch(/test\.layer\.cue\.md/);
+    rmSync(dir, { recursive: true, force: true });
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  // 부채 #8: pull-yaml-lifecycle commit 메시지에 evidence 포함
+  it("commit 메시지에 evidence 멀티라인 포함 (부채 #8)", async () => {
+    const decision = `---
+id: test.layer.cue
+subject: tax:test:layer.cue
+lifecycle: approved
+created: 2026-05-21T00:00:00Z
+updated: 2026-05-21T00:00:00Z
+---
+
+# Decision
+
+전제 검토 ^purpose
+
+선행 사례 검토 ^evidence:precedent weight=0.8
+
+PoC 데이터 분석 ^evidence:data weight=0.6
+
+결정 완료 ^outcome
+`;
+    const dir = setupRepo({
+      yaml: YAML_WITH_TBD,
+      decisionDir: "docs/decisions",
+      decisions: { "test.layer.cue.md": decision },
+    });
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await withCwd(dir, () => cliDecision(["sync"]));
+    const msg = execSync("git log -1 --format=%B", { cwd: dir, encoding: "utf8" });
+    expect(msg).toMatch(/sync\(taxonomy\): tax:test:layer\.cue lifecycle → approved/);
+    expect(msg).toMatch(/Evidence:/);
+    expect(msg).toMatch(/- precedent:.*weight 0\.8/);
+    expect(msg).toMatch(/- data:.*weight 0\.6/);
+    rmSync(dir, { recursive: true, force: true });
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  // 부채 #8: markers-only 보고
+  it("같은 lifecycle + markers 변경 → markers-only 보고 (commit 안 함)", async () => {
+    // yaml에 tbd, decision draft 동일 + evidence 추가된 케이스
+    const decisionInitial = `---
+id: test.layer.cue
+subject: tax:test:layer.cue
+lifecycle: draft
+created: 2026-05-21T00:00:00Z
+updated: 2026-05-21T00:00:00Z
+---
+
+# Decision
+
+initial purpose ^purpose
+`;
+    const dir = setupRepo({
+      yaml: YAML_WITH_TBD,
+      decisionDir: "docs/decisions",
+      decisions: { "test.layer.cue.md": decisionInitial },
+    });
+    // 후속 변경: evidence 추가 (lifecycle 동일)
+    const decisionUpdated = `---
+id: test.layer.cue
+subject: tax:test:layer.cue
+lifecycle: draft
+created: 2026-05-21T00:00:00Z
+updated: 2026-05-22T00:00:00Z
+---
+
+# Decision
+
+initial purpose ^purpose
+
+신규 evidence ^evidence:data weight=1
+`;
+    writeFileSync(join(dir, "docs/decisions/test.layer.cue.md"), decisionUpdated);
+
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await withCwd(dir, () => cliDecision(["sync"]));
+    const out = log.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(out).toMatch(/markers/);
+    // commit 없음 (initial만)
+    const log_out = execSync("git log --oneline", { cwd: dir, encoding: "utf8" });
+    expect(log_out.split("\n").filter((l) => l.length > 0)).toHaveLength(1);
     rmSync(dir, { recursive: true, force: true });
     log.mockRestore();
     exit.mockRestore();

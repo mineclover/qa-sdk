@@ -19,11 +19,12 @@ function printHelp(): void {
   console.log(`qa-sdk decision — taxonomy ↔ decision 양방향 sync
 
 사용법:
-  qa-sdk decision sync [<tax:ref>] [--dry-run] [--json]
+  qa-sdk decision sync [<tax:ref>] [--dry-run] [--no-commit] [--json]
                        [--accept-yaml | --accept-decision | --merge]
 
 옵션:
-  --dry-run             변경 계획만 출력, commit 안 함
+  --dry-run             변경 계획만 출력, 파일/commit 미적용
+  --no-commit           파일 변경은 적용, git add/commit 생략 (사용자가 묶어서 commit)
   --accept-yaml         충돌 시 yaml 우선
   --accept-decision     충돌 시 decision 우선
   --merge               충돌 시 yaml lifecycle + decision evidence 병합

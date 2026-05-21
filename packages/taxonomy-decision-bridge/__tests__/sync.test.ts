@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { EntryIR } from "taxonomy-engine";
 import { computeSyncAction } from "../src/sync.js";
-import type { DecisionFile } from "../src/decision-file.js";
+import type { DecisionFile, DecisionEvidence, DecisionOption } from "../src/decision-file.js";
 
 const SUBJECT = "tax:lesson-builder-content:layer.cue";
 
@@ -13,7 +13,18 @@ function entry(partial: Partial<EntryIR>): EntryIR {
   };
 }
 
-function decision(partial: Partial<DecisionFile["meta"]> = {}, evidenceCount = 0): DecisionFile {
+type DecisionOverrides = {
+  meta?: Partial<DecisionFile["meta"]>;
+  evidenceCount?: number;
+  evidence?: DecisionEvidence[];
+  options?: DecisionOption[];
+  purpose?: string;
+  context?: string;
+  outcome?: string;
+};
+
+function decision(opts: DecisionOverrides = {}): DecisionFile {
+  const evidenceCount = opts.evidenceCount ?? 0;
   return {
     meta: {
       id: "lesson-builder.layer.cue",
@@ -21,15 +32,20 @@ function decision(partial: Partial<DecisionFile["meta"]> = {}, evidenceCount = 0
       lifecycle: "draft",
       created: "2026-05-21T00:00:00Z",
       updated: "2026-05-21T00:00:00Z",
-      ...partial,
+      ...(opts.meta ?? {}),
     },
     markers: {
-      options: [],
-      evidence: Array.from({ length: evidenceCount }, (_, i) => ({
-        kind: "data",
-        weight: 1,
-        text: `e${i}`,
-      })),
+      purpose: opts.purpose,
+      context: opts.context,
+      outcome: opts.outcome,
+      options: opts.options ?? [],
+      evidence:
+        opts.evidence ??
+        Array.from({ length: evidenceCount }, (_, i) => ({
+          kind: "data",
+          weight: 1,
+          text: `e${i}`,
+        })),
     },
     body: "",
   };
@@ -73,11 +89,32 @@ describe("computeSyncAction", () => {
     expect(action).toMatchObject({ kind: "push-create", question: "(질문 미정)" });
   });
 
+  it("yaml tbd + decision draft → in-sync-tbd-draft (사용자 의도 보존, 부채 #1)", () => {
+    const action = computeSyncAction(
+      entry({ lifecycle: "tbd", decisionLink: "./d.md" }),
+      SUBJECT,
+      decision({ meta: { lifecycle: "draft" } }),
+    );
+    expect(action).toEqual({ kind: "noop", reason: "in-sync-tbd-draft" });
+  });
+
+  it("yaml tbd + decision review → pull-yaml-lifecycle (decision 진행됨)", () => {
+    const action = computeSyncAction(
+      entry({ lifecycle: "tbd", decisionLink: "./d.md" }),
+      SUBJECT,
+      decision({ meta: { lifecycle: "review" }, evidenceCount: 1 }),
+    );
+    expect(action).toMatchObject({
+      kind: "pull-yaml-lifecycle",
+      newLifecycle: "review",
+    });
+  });
+
   it("yaml tbd + decision approved → pull-yaml-lifecycle (yaml에 반영)", () => {
     const action = computeSyncAction(
       entry({ lifecycle: "tbd", decisionLink: "./d.md" }),
       SUBJECT,
-      decision({ lifecycle: "approved" }, 2),
+      decision({ meta: { lifecycle: "approved" }, evidenceCount: 2 }),
     );
     expect(action).toMatchObject({
       kind: "pull-yaml-lifecycle",
@@ -92,7 +129,7 @@ describe("computeSyncAction", () => {
     const action = computeSyncAction(
       entry({ lifecycle: "approved", decisionLink: "./d.md" }),
       SUBJECT,
-      decision({ lifecycle: "draft" }),
+      decision({ meta: { lifecycle: "draft" } }),
       { yamlChanged: true, decisionChanged: false },
     );
     expect(action).toMatchObject({
@@ -105,7 +142,7 @@ describe("computeSyncAction", () => {
     const action = computeSyncAction(
       entry({ lifecycle: "approved", decisionLink: "./d.md" }),
       SUBJECT,
-      decision({ lifecycle: "review" }, 1),
+      decision({ meta: { lifecycle: "review" }, evidenceCount: 1 }),
       { yamlChanged: true, decisionChanged: true },
     );
     expect(action.kind).toBe("conflict");
@@ -120,7 +157,7 @@ describe("computeSyncAction", () => {
     const action = computeSyncAction(
       entry({ lifecycle: "approved", decisionLink: "./d.md" }),
       SUBJECT,
-      decision({ lifecycle: "review" }),
+      decision({ meta: { lifecycle: "review" } }),
       { yamlChanged: true, decisionChanged: true },
       { conflict: "accept-yaml" },
     );
@@ -134,7 +171,7 @@ describe("computeSyncAction", () => {
     const action = computeSyncAction(
       entry({ lifecycle: "approved", decisionLink: "./d.md" }),
       SUBJECT,
-      decision({ lifecycle: "review" }, 2),
+      decision({ meta: { lifecycle: "review" }, evidenceCount: 2 }),
       { yamlChanged: true, decisionChanged: true },
       { conflict: "accept-decision" },
     );
@@ -148,7 +185,7 @@ describe("computeSyncAction", () => {
     const action = computeSyncAction(
       entry({ lifecycle: "approved", decisionLink: "./d.md" }),
       SUBJECT,
-      decision({ lifecycle: "review" }, 3),
+      decision({ meta: { lifecycle: "review" }, evidenceCount: 3 }),
       { yamlChanged: true, decisionChanged: true },
       { conflict: "merge" },
     );
@@ -165,8 +202,52 @@ describe("computeSyncAction", () => {
     const action = computeSyncAction(
       entry({ lifecycle: "approved", decisionLink: "./d.md" }),
       SUBJECT,
-      decision({ lifecycle: "approved" }),
+      decision({ meta: { lifecycle: "approved" } }),
     );
     expect(action).toEqual({ kind: "noop", reason: "in-sync" });
+  });
+
+  it("같은 lifecycle + markers만 변경 → markers-only (부채 #8)", () => {
+    const prev = decision({
+      meta: { lifecycle: "draft" },
+      evidence: [{ kind: "data", weight: 1, text: "원본" }],
+    });
+    const current = decision({
+      meta: { lifecycle: "draft" },
+      evidence: [
+        { kind: "data", weight: 1, text: "원본" },
+        { kind: "precedent", weight: 0.8, text: "신규" },
+      ],
+    });
+    const action = computeSyncAction(
+      entry({ lifecycle: "tbd", decisionLink: "./d.md" }),
+      SUBJECT,
+      current,
+      { previousDecision: prev },
+    );
+    expect(action).toEqual({ kind: "noop", reason: "markers-only" });
+  });
+
+  it("같은 lifecycle + markers 변경 없음 → in-sync-tbd-draft 유지", () => {
+    const same = decision({ meta: { lifecycle: "draft" }, evidenceCount: 1 });
+    const action = computeSyncAction(
+      entry({ lifecycle: "tbd", decisionLink: "./d.md" }),
+      SUBJECT,
+      same,
+      { previousDecision: same },
+    );
+    expect(action).toEqual({ kind: "noop", reason: "in-sync-tbd-draft" });
+  });
+
+  it("approved 동일 + outcome 변경 → markers-only", () => {
+    const prev = decision({ meta: { lifecycle: "approved" }, outcome: "기존 결정" });
+    const current = decision({ meta: { lifecycle: "approved" }, outcome: "수정된 결정" });
+    const action = computeSyncAction(
+      entry({ lifecycle: "approved", decisionLink: "./d.md" }),
+      SUBJECT,
+      current,
+      { previousDecision: prev },
+    );
+    expect(action).toEqual({ kind: "noop", reason: "markers-only" });
   });
 });
