@@ -35,7 +35,7 @@
     "sim:canary": "tsx scripts/sim-canary.ts",
     "sim:scale": "tsx scripts/sim-scale.ts",
     "sim:smoke:full": "tsx scripts/sim-smoke-full.ts",
-    "tax:ci": "pnpm --filter taxonomy-engine build && pnpm --filter taxonomy-engine typecheck && pnpm --filter taxonomy-engine test && pnpm --filter @qa-sdk/cli test taxonomy.test && node scripts/tax-validate-fixtures.mjs && node scripts/tax-doctor.mjs && node scripts/tax-codegen-drift.mjs",
+    "tax:ci": "pnpm --filter taxonomy-engine build && pnpm --filter taxonomy-engine typecheck && pnpm --filter taxonomy-engine test && pnpm --filter @qa-sdk/cli test taxonomy.test && node scripts/tax-validate-fixtures.mjs && node scripts/tax-doctor.mjs && node scripts/tax-codegen-drift.mjs && pnpm --filter @qa-sdk/taxonomy-web build && pnpm --filter @qa-sdk/taxonomy-web test",
     "tax:codegen:update": "node scripts/tax-codegen-drift.mjs --update"
   },
   "devDependencies": {
