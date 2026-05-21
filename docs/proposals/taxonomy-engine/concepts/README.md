@@ -34,6 +34,7 @@ Taxonomy (공간)
 - [Taxonomy](./taxonomy.md) — Axis + Relation + Constraint의 묶음 (yaml 파일 단위)
 - [Registry](./registry.md) — 여러 Taxonomy를 보관하는 메모리 store
 - [Diagnostic](./diagnostic.md) — 검증/진단 결과 단위
+- [Lifecycle](./lifecycle.md) — entry/axis의 결정 진행 상태 (Stage 1, v0.8+)
 
 ## 다른 문서에서 인용 시
 

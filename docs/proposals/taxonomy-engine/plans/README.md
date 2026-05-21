@@ -11,3 +11,4 @@
 | [v0.5](./v0.5.md) | T-H + T-I1: 자동 추출 확장 + diff rule-level + Web UI spec |
 | [v0.6](./v0.6.md) | T-J1~T-J4: CLI 활성화 (doctor/--registry/git-diff) |
 | [v0.7](./v0.7.md) | T-K~T-M: 모듈화 라운드 |
+| [v0.8](./v0.8.md) | A~H: Stage 1 lifecycle + placeholder(tbd) + decisionLink |

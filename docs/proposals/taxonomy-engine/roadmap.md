@@ -40,10 +40,10 @@ supersedes: -
 |---|------|------|
 | 1 | entry-level lifecycle | Stage 1 |
 | 2 | 결정 ↔ 변경 link (decisionLink) | Stage 1 (부분) + Stage 3 (풀) |
-| 3 | multi-version Registry | Stage 2 |
+| 3 | ~~multi-version Registry~~ | ~~Stage 2~~ — git이 대체 (아래 §Stage 2 참조) |
 | 4 | DiffEntry breaking 분류 (semver) | Stage 2 |
 | 5 | placeholder/TBD entry | Stage 1 |
-| 6 | migration helper | Stage 2 |
+| 6 | migration helper | Stage 2 (git base 기반) |
 | 7 | 결정 chain UI 시각화 | Stage 3 |
 | 8 | decision-flow 양방향 통합 | Stage 3 |
 
@@ -113,72 +113,63 @@ axes:
 
 ---
 
-## Stage 2 — Multi-version + Breaking 분류
+## Stage 2 — Diff/Semver 보강 (git base 활용)
+
+### 폐기된 결정
+
+초기 roadmap에서 multi-version Registry (`Map<slug, Map<version, IR>>`)를 검토했으나 **폐기**.
+
+이유: git이 이미 모든 yaml 버전을 추적. `git show <base>:foo.yaml` + 현재 working tree 비교로 두 시점 IR을 충분히 얻을 수 있음. Registry에서 다중 버전을 메모리에 동시 보유하는 추상화는 빌드 시점 codegen 위주의 실제 사용 패턴에서 가치가 거의 없음. 라이브 마이그레이션이 필요한 시점에만 git checkout으로 처리.
 
 ### 핵심 결정 (확정)
 
-- **Registry 재설계**: `Map<slug, Map<version, IR>>` — 완전 다중 보존
-  - **breaking change** (v0.7 사용자 영향 있음)
-- **ref grammar 갱신**:
-  - 기본 `tax:scope.apm` → latest version (현 동작 유지)
-  - `tax@v1:scope.apm` 명시 사용은 그 version으로 정확 해소
-  - Registry에 여러 version이 있을 때 `@latest` 명시 가능
-- **DiffEntry breakingLevel**:
+- **Registry는 단일 버전 유지** — 기존 v0.7 API 그대로
+- **두 시점 비교는 git이 SSOT** — `tax diff --base <ref>`(이미 v0.7에 있음)을 보강
+- **DiffEntry breakingLevel** (semver 분류):
   - `major`: axis/entry 제거, address 변경, kind 변경
   - `minor`: axis/entry 추가, capacity 증가
   - `patch`: label/meta 변경
-- **migration helper**: 두 IR 비교 → id rename map 후보 + address conflict 보고
+- **migration helper**: git base와 working tree 비교 → id rename 후보 + address conflict 보고
 
 ### API 확장
 
 ```typescript
-// Registry
-class TaxonomyRegistry {
-  add(ir: TaxonomyIR): void                          // 기존: 같은 slug 덮어씀
-  addVersion(ir: TaxonomyIR): void                   // 신규: 같은 slug 다른 version 동시 보관
-  get(slug: string): TaxonomyIR | undefined          // latest 반환
-  getVersion(slug: string, version: number): TaxonomyIR | undefined
-  versions(slug: string): number[]                   // 보관 중인 version 목록
-  list(): string[]
-}
-
-// Diff
+// Diff (단일 함수 시그니처 보존, 결과에 breakingLevel 추가)
 diff(a: TaxonomyIR, b: TaxonomyIR): {
   same: boolean
   changes: DiffEntry[]
   breakingLevel: "major" | "minor" | "patch" | "none"
 }
 
-// Migration
+// Migration (두 IR 받음 — git base/working을 호출자가 준비)
 migrationPlan(from: TaxonomyIR, to: TaxonomyIR): {
-  idRenames: Array<{ axis: string; from: string; to: string }>  // 자동 추정
+  idRenames: Array<{ axis: string; from: string; to: string }>
   addressConflicts: Array<{ axis: string; address: number; ids: string[] }>
-  manualReview: string[]    // 자동 처리 못 함
+  manualReview: string[]
 }
 ```
 
+Registry 변경 없음. 신규 API는 `migrationPlan()` 1개 + `diff()` 결과 보강.
+
 ### CLI 확장
 
-- `tax diff --semver` — breakingLevel 출력
-- `tax migration <a.yaml> <b.yaml>` — migration plan 출력
-- `tax registry list` — multi-version 보관 상황 표시
+- `tax diff --semver` — breakingLevel 배지 출력
+- `tax migration --base <ref>` — git base와 working tree 비교, migration plan
+- `tax diff --base <ref> --json` — CI 게이트에서 breaking 차단
 
 ### Web UI 확장
 
-- 다중 version 동시 보기 (탭 또는 사이드바)
-- DiffViewer에 breakingLevel 배지
-- Migration plan 페이지
+- DiffViewer에 breakingLevel 배지 (major=red, minor=amber, patch=gray)
+- "Compare to main" 토글 — git-diff plugin endpoint와 결합
+- Migration plan 패널 (id rename 후보 + address conflict)
 
 ### 작업 분량
 
-10-12 task. taxonomy-engine v0.9 라운드.
+4-5 task — 축소됨. taxonomy-engine v0.9 라운드.
 
-### Migration 정책 (사용자 영향)
+### 사용자 영향
 
-- Registry `add()`는 기존 호환 유지 (slug 덮어씀)
-- `addVersion()`이 신규 API
-- v0.8까지의 yaml은 그대로 작동 — version 명시 안 하면 1 default
-- 멀티 version 활용은 opt-in
+없음 — `diff()` 결과에 `breakingLevel` 필드만 추가, 기존 호출 호환 유지.
 
 ---
 
@@ -233,7 +224,7 @@ observeDecision(decisionId, (decision) => {
 | 미정 1. cue (interaction) | `{ id: cue, lifecycle: tbd, placeholderReason: "interaction 정의 미정" }` | Stage 1 |
 | 미정 2. branch (transition) | `{ id: branch, lifecycle: tbd, placeholderReason: "분기 처리 vs cue 경계" }` | Stage 1 |
 | 미정 3. beat 분리 결정 | `{ id: beat, lifecycle: tbd, decisionLink: "...beat-consumption-layer.md" }` | Stage 1 |
-| v1과 v2 동시 검토 | `addVersion()` + ref `@v1` / `@v2` | Stage 2 |
+| v1과 v2 동시 검토 | git branch + `tax diff --base <ref>` | Stage 2 (git 활용) |
 | 어떤 변경이 breaking? | DiffEntry breakingLevel | Stage 2 |
 | 미정 → 확정 워크플로 | decision-flow trigger | Stage 3 |
 
@@ -246,13 +237,13 @@ Stage 1만으로 사용자 케이스의 80%가 표현됨. Stage 2는 진짜 mult
 ```
 Stage 1 (lifecycle + placeholder + decisionLink)
   ↓ (도그푸딩 5 yaml + lesson-builder 마이그레이션)
-Stage 2 (multi-version + breaking + migration)
-  ↓ (Web UI Registry tab + diff semver)
+Stage 2 (diff semver + migration helper, git base 활용)
+  ↓ (Web UI diff badge + compare-to-base 토글)
 Stage 3 (decision-flow 통합)
   ↓ (전체 결정 chain 시각화)
 ```
 
-Stage 1만으로 사용자 케이스 충분. Stage 2는 도그푸딩 yaml 중 어느 것이 v2 작업 시작될 때. Stage 3는 decision-flow 안정 시.
+Stage 1만으로 사용자 케이스 충분. Stage 2는 도그푸딩 yaml의 첫 breaking change 발생 시. Stage 3는 decision-flow 안정 시.
 
 ---
 
@@ -265,10 +256,10 @@ Stage 1만으로 사용자 케이스 충분. Stage 2는 도그푸딩 yaml 중 �
 - [ ] doctor의 external SSOT lifecycle 비교 — vocabulary.ts 외 어디서?
 
 ### Stage 2
-- [ ] Registry breaking change deprecation 정책 — 1 minor 후 deprecated, 1 major 후 제거?
-- [ ] migration helper의 id rename 추론 알고리즘 — 유사도 기반? 사용자 입력 요구?
+- [ ] breakingLevel 분류 우선순위 — `kind 변경 > address 변경 > entry 제거` 순서로 major 보고?
+- [ ] migration helper의 id rename 추론 알고리즘 — address 같으면 추정? 유사도?
 - [ ] address conflict 자동 해결 vs 보고만
-- [ ] `@latest` ref가 기본인가 명시 필수인가
+- [ ] CI 게이트로 `--semver` 활용 — main → PR major 차단 정책?
 
 ### Stage 3
 - [ ] decision-flow API contract (현재 시점)
