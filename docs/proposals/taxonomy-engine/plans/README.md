@@ -14,3 +14,4 @@
 | [v0.8](./v0.8.md) | A~H: Stage 1 lifecycle + placeholder(tbd) + decisionLink |
 | [v0.9](./v0.9.md) | A~D: Stage 2 diff breakingLevel + migrationPlan + CLI/Web |
 | [v0.10](./v0.10.md) | A~E: Stage 3 decision-sync 양방향 + def-catalog 통합 + Web DecisionPanel |
+| [v0.11](./v0.11.md) | A~D: 부채 #6 — decision-flow 가벼운 다리(toFlowSchema + CLI analyze) |
