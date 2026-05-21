@@ -4,6 +4,7 @@ import { feedbackApiPlugin } from "./plugins/feedback-api.js";
 import { gitLogApiPlugin } from "./plugins/git-log-api.js";
 import { relatedDocsApiPlugin } from "./plugins/related-docs-api.js";
 import { gitDiffApiPlugin } from "./plugins/git-diff-api.js";
+import { decisionApiPlugin } from "./plugins/decision-api.js";
 import { resolve } from "node:path";
 
 const repoRoot = resolve(__dirname, "../..");
@@ -15,6 +16,7 @@ export default defineConfig({
     gitLogApiPlugin(repoRoot),
     relatedDocsApiPlugin(repoRoot),
     gitDiffApiPlugin(repoRoot),
+    decisionApiPlugin(repoRoot),
   ],
   resolve: {
     alias: {

@@ -148,6 +148,11 @@ import {
   TAXONOMY_HANDLER_REGISTRY as TAXONOMY_GROUP_HANDLER_REGISTRY,
   TAXONOMY_TOP_LEVEL_USAGE_LINES as TAXONOMY_GROUP_TOP_LEVEL_USAGE_LINES,
 } from './command-groups/taxonomy.commands.js';
+import {
+  DECISION_COMMAND_TREE as DECISION_GROUP_COMMAND_TREE,
+  DECISION_HANDLER_REGISTRY as DECISION_GROUP_HANDLER_REGISTRY,
+  DECISION_TOP_LEVEL_USAGE_LINES as DECISION_GROUP_TOP_LEVEL_USAGE_LINES,
+} from './command-groups/decision.commands.js';
 
 // ── Usage ────────────────────────────────────────────
 
@@ -196,6 +201,7 @@ ${formatUsageSpecs(CATALOG_GROUP_COMMAND_SPECS)}
 ${formatUsageSpecs(ONTOLOGY_GROUP_COMMAND_SPECS)}
 ${formatUsageLines(DEF_GROUP_TOP_LEVEL_USAGE_LINES)}
 ${formatUsageLines(TAXONOMY_GROUP_TOP_LEVEL_USAGE_LINES)}
+${formatUsageLines(DECISION_GROUP_TOP_LEVEL_USAGE_LINES)}
 ${formatUsageSpecs(DOCS_GROUP_COMMAND_SPECS)}
 ${formatUsageSpecs(OBS_GROUP_COMMAND_SPECS)}
 ${formatUsageSpecs(CACHE_GROUP_COMMAND_SPECS)}
@@ -222,6 +228,10 @@ async function dispatchDocsCommand(handlerKey: string, rest: string[]): Promise<
 
 async function dispatchTaxonomyCommand(handlerKey: string, rest: string[]): Promise<void> {
   await dispatchFromRegistry(TAXONOMY_GROUP_HANDLER_REGISTRY, handlerKey, rest);
+}
+
+async function dispatchDecisionCommand(handlerKey: string, rest: string[]): Promise<void> {
+  await dispatchFromRegistry(DECISION_GROUP_HANDLER_REGISTRY, handlerKey, rest);
 }
 
 async function dispatchDkgCommand(handlerKey: string, rest: string[]): Promise<void> {
@@ -313,6 +323,7 @@ const TREE_COMMAND_GROUPS: readonly TreeCommandGroup[] = [
   { rootSegments: ['def'], rootName: 'qa-sdk def', tree: DEF_GROUP_COMMAND_TREE, dispatch: dispatchDefCommand },
   { rootSegments: ['docs'], rootName: 'qa-sdk docs', tree: DOCS_GROUP_COMMAND_TREE, dispatch: dispatchDocsCommand },
   { rootSegments: ['tax'], rootName: 'qa-sdk tax', tree: TAXONOMY_GROUP_COMMAND_TREE, dispatch: dispatchTaxonomyCommand },
+  { rootSegments: ['decision'], rootName: 'qa-sdk decision', tree: DECISION_GROUP_COMMAND_TREE, dispatch: dispatchDecisionCommand },
   { rootSegments: ['service'], rootName: 'qa-sdk service', tree: SERVICE_GROUP_COMMAND_TREE, dispatch: dispatchServiceCommand },
   { rootSegments: ['dkg'], rootName: 'qa-sdk dkg', tree: DKG_GROUP_COMMAND_TREE, dispatch: dispatchDkgCommand },
   { rootSegments: [], rootName: 'qa-sdk', tree: QUALITY_GROUP_COMMAND_TREE, dispatch: dispatchQualityCommand },

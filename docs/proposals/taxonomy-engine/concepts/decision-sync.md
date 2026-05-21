@@ -102,14 +102,17 @@ bridge의 `parseDecisionFile()`이 frontmatter + 마커 둘 다 추출. evidence
 
 두 형식 모두 같은 decision 객체로 해소. id 생성은 패턴 (`<scope>.<axis>.<entry>`)이므로 봇이 자동 생성.
 
-### def-catalog 통합
+### def-catalog 통합 (Stage 3에서는 패턴 통일까지)
 
-decision도 def-catalog scan 대상 → 좌표 부여:
-- `def_scope`에 `decision` 추가 (vocab 갱신)
-- decision frontmatter의 `id`가 좌표 식별자
-- DB에 메타데이터(lifecycle, subject ref, updated) 저장. 본문은 파일 SSOT
+decision 파일은 def-catalog와 같은 **frontmatter+마커 컨벤션**을 따른다:
+- frontmatter는 검색 메타 (id/subject/lifecycle/created/updated) — def-catalog와 동일 형식
+- 본문은 자연어 + 마커 (`^purpose`/`^evidence` 등) — def-catalog의 `^purpose`/`^defines` 패턴과 동형
 
-→ def-catalog DB로 "결정 중인 entry 목록" 조회 가능.
+단, `def_scope`에 `decision` enum 추가는 **별도 후속 작업** (이 라운드 비-목표). 이유: def_scope 변경이 ScopeRegistry / 주소 공간 인코딩 / scope-aspect 매트릭스 도미노가 큼. Stage 3 핵심(sync 메커니즘 + 컨벤션 통일)은 그 통합 없이도 충족.
+
+decision 파일은 `docs/decisions/`에 살고 frontmatter 컨벤션만 공유. 후속 작업에서 def_scope 확장 시 자연스럽게 좌표 부여 가능.
+
+→ 현재는 file SSOT만. DB indexing은 후속.
 
 ## qa-sdk decision sync 명령
 

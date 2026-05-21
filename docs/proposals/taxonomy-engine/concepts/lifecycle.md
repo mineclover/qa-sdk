@@ -86,7 +86,7 @@ entry에 결정 컨텍스트를 연결하는 string. 4 형식:
 | relative path | `./decisions/asset.md` | fs 존재 확인 |
 | URI | `https://github.com/.../decisions/123` | 형식만 (fetch 안 함) |
 | taxonomy ref | `tax:slug.axis.entry` | [[registry]] resolve |
-| decision-flow URI | `decision-flow://decisions/abc` | Stage 3 (미지원, warning) |
+| decision-flow URI | `decision-flow://decisions/abc` | 후속 (markdown SSOT 사용 시 path 권장) |
 
 검증 실패 시 `decision-link-broken` warning. ref/URI/path 형식 분기는 prefix로 판단 (`./`, `../`, `http://`, `https://`, `tax:`, `decision-flow://`).
 

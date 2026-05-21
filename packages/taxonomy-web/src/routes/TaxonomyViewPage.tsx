@@ -19,6 +19,8 @@ import { DiffContextPanel } from "../components/DiffContextPanel";
 import { FeedbackHistoryPanel } from "../components/FeedbackHistoryPanel";
 import { Collapsible } from "../components/Collapsible";
 import { CoordinateFlowView } from "../components/CoordinateFlowView";
+import { DecisionPanel } from "../components/DecisionPanel";
+import { parseRef } from "taxonomy-engine";
 
 export function TaxonomyViewPage({ file }: { file: string }) {
   const [tax, setTax] = useState<StaticTaxonomy | null>(null);
@@ -147,6 +149,24 @@ export function TaxonomyViewPage({ file }: { file: string }) {
             <Collapsible title="Cross-axis 흐름">
               <CoordinateFlowView selectedRef={selectedRef} taxonomy={tax} onSelectRef={setSelectedRef} />
             </Collapsible>
+            {(() => {
+              try {
+                const ref = parseRef(selectedRef);
+                if (ref.kind !== "entry") return null;
+                const entry = tax.axes[ref.axis]?.entries.find((e) => e.id === ref.entry);
+                if (!entry?.decisionLink) return null;
+                return (
+                  <Collapsible title="Decision" defaultOpen>
+                    <DecisionPanel
+                      yamlFile={yamlFile}
+                      decisionLink={entry.decisionLink}
+                    />
+                  </Collapsible>
+                );
+              } catch {
+                return null;
+              }
+            })()}
             <Collapsible title="이 ref의 모든 피드백" defaultOpen>
               <FeedbackHistoryPanel selectedRef={selectedRef} feedbacks={feedbacks} />
             </Collapsible>

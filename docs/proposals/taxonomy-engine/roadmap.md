@@ -173,7 +173,7 @@ Registry 변경 없음. 신규 API는 `migrationPlan()` 1개 + `diff()` 결과 �
 
 ---
 
-## Stage 3 — Decision Sync (양방향)
+## Stage 3 — Decision Sync (양방향) — 구현 완료 (v0.10)
 
 ### 핵심 결정 (확정)
 
