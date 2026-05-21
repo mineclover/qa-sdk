@@ -1,12 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { feedbackApiPlugin } from "./plugins/feedback-api.js";
+import { gitLogApiPlugin } from "./plugins/git-log-api.js";
 import { resolve } from "node:path";
+
+const repoRoot = resolve(__dirname, "../..");
 
 export default defineConfig({
   plugins: [
     react(),
-    feedbackApiPlugin(resolve(__dirname, "../../docs/taxonomies/.reviews.jsonl")),
+    feedbackApiPlugin(resolve(repoRoot, "docs/taxonomies/.reviews.jsonl")),
+    gitLogApiPlugin(repoRoot),
   ],
   resolve: {
     alias: {
