@@ -22,7 +22,7 @@ axes:
       - { id: clip,        address: 2, label: "Clip (Layer 2)", lifecycle: approved }
       - { id: cue,         address: 3, label: "Cue/Beat (Layer 3)", lifecycle: draft, placeholderReason: "interaction(beat과의 경계) 정의 미정 — Cue가 어디서 끝나고 Beat이 어디서 시작하는지 결정 필요", decisionLink: "../decisions/lesson-builder-content.layer.cue.md" }
       - { id: stage,       address: 4, label: "Stage/Cut (Layer 4)", lifecycle: approved }
-      - { id: branch,      address: 5, label: "Branch/Transition (Layer 4)", lifecycle: tbd, placeholderReason: "분기 처리 vs Cue 경계 미정 — branch와 cue 중 어디서 advance 결정할지 미정", decisionLink: "../decisions/lesson-builder-content.layer.branch.md" }
+      - { id: branch,      address: 5, label: "Branch/Transition (Layer 4)", lifecycle: draft, placeholderReason: "분기 처리 vs Cue 경계 미정 — branch와 cue 중 어디서 advance 결정할지 미정", decisionLink: "../decisions/lesson-builder-content.layer.branch.md" }
       - { id: scenario,    address: 6, label: "Scenario/LessonDoc (Layer 5)", lifecycle: approved }
     capacity: 16
     version: 1
