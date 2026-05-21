@@ -10,7 +10,8 @@
         { "id": "constraint" },
         { "id": "data" },
         { "id": "interface" },
-        { "id": "meta" }
+        { "id": "meta" },
+        { "id": "decision" }
       ]
     },
     "def_depth": {

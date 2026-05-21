@@ -22,7 +22,8 @@ axes:
       - { id: data,       address: 5, lifecycle: approved }
       - { id: interface,  address: 6, lifecycle: approved }
       - { id: meta,       address: 7, lifecycle: approved }
-    capacity: 16
+      - { id: decision,   address: 8, lifecycle: approved }
+    capacity: 32
     version: 1
 
   def_depth:
@@ -89,13 +90,13 @@ axes:
     version: 1
 
 constraints:
-  - id: scope-8-entries
+  - id: scope-9-entries
     kind: capacity
     rule:
       axis: def_scope
       prop: entries.length
       op: eq
-      value: 8
+      value: 9
     severity: error
 
   - id: level-5-entries

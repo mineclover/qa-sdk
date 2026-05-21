@@ -82,8 +82,8 @@ export const DEF_LEVEL = {
  * meta: 메타-설계 제안 (정규 스펙의 규칙 자체를 재정의 대상으로 삼는 RFC/proposal 문서).
  */
 export const DEF_SCOPE = {
-  entries: ["ui", "feature", "flow", "state", "constraint", "data", "interface", "meta"] as const,
-  capacity: 16,  // nextPowerOf2(8 * 2 = 16) = 16
+  entries: ["ui", "feature", "flow", "state", "constraint", "data", "interface", "meta", "decision"] as const,
+  capacity: 32,  // nextPowerOf2(9 * 2 = 18) = 32. v0.14에서 decision 추가로 8→9 entries.
   ko: {
     ui: "화면/UI",
     feature: "기능",
@@ -93,6 +93,7 @@ export const DEF_SCOPE = {
     data: "데이터",
     interface: "인터페이스",
     meta: "메타-설계",
+    decision: "의사결정",
   } as Record<string, string>,
 } as const;
 

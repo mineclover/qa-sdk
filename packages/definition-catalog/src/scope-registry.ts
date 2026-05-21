@@ -149,6 +149,10 @@ export class ScopeRegistry {
 
       const latest = entry.versions[entry.versions.length - 1];
       const aspectCount = latest.consumes.length;
+      // aspect 0개 scope (예: decision)는 좌표 공간에 차지하지 않고 segments에서 제외.
+      // 단일 단위 문서이므로 주소 인코딩 없이 metadata로만 활용.
+      if (aspectCount === 0) continue;
+
       const shape = [aspectCount, depthCount] as const;
       const totalSize = aspectCount * depthCount;
       const wi = new WeightedIndex([...shape], ["aspect", "depth"]);
@@ -175,6 +179,11 @@ export class ScopeRegistry {
     const v = this.getVersion(scopeId, version);
     const depthCount = DEF_DEPTH.entries.length;
     const aspectCount = v.consumes.length;
+    if (aspectCount === 0) {
+      throw new Error(
+        `scope "${scopeId}"는 aspect 0개 (segment 구축 불가). 단일 단위 문서 scope는 좌표 인코딩 대상이 아님.`,
+      );
+    }
     const shape = [aspectCount, depthCount] as const;
 
     // offset 계산: 이 scope 이전의 모든 세그먼트 크기 합

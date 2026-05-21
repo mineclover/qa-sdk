@@ -72,7 +72,10 @@ describe("ScopeRegistry", () => {
       const reg = new ScopeRegistry();
       const ranges: { scope: string; start: number; end: number }[] = [];
 
+      // aspect 0개 scope (예: decision)는 좌표 인코딩 대상이 아니므로 segment 없음 → skip.
+      const SCOPES_WITHOUT_SEGMENTS = new Set(["decision"]);
       for (const scopeId of DEF_SCOPE.entries) {
+        if (SCOPES_WITHOUT_SEGMENTS.has(scopeId)) continue;
         const range = reg.getAddressRange(scopeId as any);
         ranges.push({ scope: scopeId, ...range });
       }

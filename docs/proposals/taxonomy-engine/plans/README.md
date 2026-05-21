@@ -17,3 +17,4 @@
 | [v0.11](./v0.11.md) | A~D: 부채 #6 — decision-flow 변환 어댑터(toFlowSchema + CLI analyze) |
 | [v0.12](./v0.12.md) | A~C: analyze UX + 마커 확장(^phase/^weight/^depends_on) + 역방향 변환(toMarkdown + CLI render) |
 | [v0.13](./v0.13.md) | A~D: multi-gate decision (^gate:&lt;id&gt; 마커, single→multi backward compat) |
+| [v0.14](./v0.14.md) | A~C: def_scope enum에 decision 추가 (8→9, capacity 32) + scope-registry 도미노 정리 |

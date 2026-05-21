@@ -150,6 +150,12 @@ export const DEFINITION_TAXONOMY: DefinitionTaxonomy = {
         { id: "proposal_design", name: "제안 설계", description: "제안 문서 분류자 — RFC/proposal 단계의 메타 설계 문서" },
       ],
     },
+    {
+      id: "decision",
+      name: "의사결정",
+      description: "결정 단위 1건당 1 문서. taxonomy-engine Stage 3 markdown decision의 좌표 자리. aspect 분할 없음.",
+      aspects: [],
+    },
   ],
 };
 
@@ -196,6 +202,9 @@ export const VALID_SCOPE_ASPECTS: Record<DefScope, readonly DefAspect[]> = {
     "browser_contract", "pipeline_contract",
   ],
   meta: ["proposal_design"],
+  // decision scope는 자체 aspect 분할 없음 — 단일 단위로 의사결정 1건당 1 문서.
+  // taxonomy-engine Stage 3 markdown decision의 좌표 등록 시 자리.
+  decision: [],
 } as const;
 
 /**

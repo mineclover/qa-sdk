@@ -188,7 +188,7 @@ describe("extractVocabExpected", () => {
     const text = readFileSync(VOCAB_TS, "utf8");
     const expected = extractVocabExpected(text);
     expect(expected.taxonomy).toBe("qa-sdk-def-catalog");
-    expect(expected.axes["def_scope"].entries.length).toBe(8);
+    expect(expected.axes["def_scope"].entries.length).toBe(9);
     expect(expected.axes["def_depth"].entries.length).toBe(4);
     expect(expected.axes["def_level"].entries.length).toBe(5);
     // def_lifecycle: vocab 5 + schema tbd = 6 (extractor가 합집합으로 확장)

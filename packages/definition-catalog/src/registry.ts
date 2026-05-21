@@ -355,7 +355,7 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
   }
 
   stats(): DefinitionStats {
-    const byScope = { ui: 0, feature: 0, flow: 0, state: 0, constraint: 0, data: 0, interface: 0, meta: 0 } as Record<DefScope, number>;
+    const byScope = { ui: 0, feature: 0, flow: 0, state: 0, constraint: 0, data: 0, interface: 0, meta: 0, decision: 0 } as Record<DefScope, number>;
     const byLifecycle = { draft: 0, review: 0, approved: 0, deprecated: 0, archived: 0 } as Record<DefLifecycle, number>;
     const byDepth = { overview: 0, specification: 0, implementation: 0, validation: 0 } as Record<DefDepth, number>;
 
