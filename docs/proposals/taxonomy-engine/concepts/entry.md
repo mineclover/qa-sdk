@@ -20,6 +20,9 @@
 | `address` | 정수 — 시스템용, **불변** |
 | `label?` | UI 표시용 자연어 (선택) |
 | `meta?` | 도메인 부가 정보 (선택) |
+| `lifecycle?` | 결정 진행 상태 — `draft/review/approved/deprecated/archived/tbd` (선택, v0.8+) → [[lifecycle]] |
+| `placeholderReason?` | `lifecycle: tbd`일 때 미정 사유 한 줄 (선택) |
+| `decisionLink?` | 결정 컨텍스트 path/URI/ref (선택) |
 
 ## 핵심 원리
 

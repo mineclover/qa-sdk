@@ -1,5 +1,6 @@
 import { parseRef } from "taxonomy-engine";
 import type { StaticTaxonomy } from "../types/taxonomy";
+import { LifecycleBadge } from "./LifecycleBadge";
 
 export function UnitDetailPanel({
   selectedRef,
@@ -24,7 +25,10 @@ export function UnitDetailPanel({
     if (!axis) return <div className="text-sm text-red-600">axis 없음: {ref.axis}</div>;
     return (
       <div className="space-y-1 text-sm">
-        <div className="font-mono text-blue-700">{taxonomy.taxonomy}:{ref.axis}</div>
+        <div className="font-mono text-blue-700 flex items-center gap-2">
+          <span>{taxonomy.taxonomy}:{ref.axis}</span>
+          <LifecycleBadge value={axis.lifecycle} />
+        </div>
         {axis.description && <p className="text-gray-700">{axis.description}</p>}
         <dl className="grid grid-cols-2 gap-x-2 text-xs">
           <dt className="text-gray-500">entries</dt>
@@ -33,6 +37,12 @@ export function UnitDetailPanel({
           <dd>{axis.capacity}</dd>
           <dt className="text-gray-500">version</dt>
           <dd>{axis.version}</dd>
+          {axis.lifecycle && (
+            <>
+              <dt className="text-gray-500">lifecycle</dt>
+              <dd className="font-mono">{axis.lifecycle}</dd>
+            </>
+          )}
         </dl>
       </div>
     );
@@ -44,7 +54,10 @@ export function UnitDetailPanel({
     if (!entry) return <div className="text-sm text-red-600">entry 없음: {ref.entry}</div>;
     return (
       <div className="space-y-2 text-sm">
-        <div className="font-mono text-blue-700">{taxonomy.taxonomy}:{ref.axis}.{ref.entry}</div>
+        <div className="font-mono text-blue-700 flex items-center gap-2">
+          <span>{taxonomy.taxonomy}:{ref.axis}.{ref.entry}</span>
+          <LifecycleBadge value={entry.lifecycle} title={entry.placeholderReason} />
+        </div>
         {entry.label && <p className="text-gray-700">{entry.label}</p>}
         <dl className="grid grid-cols-2 gap-x-2 text-xs">
           <dt className="text-gray-500">id</dt>
@@ -53,7 +66,32 @@ export function UnitDetailPanel({
           <dd className="font-mono">#{entry.address}</dd>
           <dt className="text-gray-500">소속 axis</dt>
           <dd className="font-mono">{ref.axis}</dd>
+          {entry.lifecycle && (
+            <>
+              <dt className="text-gray-500">lifecycle</dt>
+              <dd className="font-mono">{entry.lifecycle}</dd>
+            </>
+          )}
         </dl>
+        {entry.placeholderReason && (
+          <div className="text-xs bg-red-50 border border-dashed border-red-200 rounded p-2">
+            <div className="text-red-700 font-semibold mb-0.5">미정 사유</div>
+            <div className="text-gray-700">{entry.placeholderReason}</div>
+          </div>
+        )}
+        {entry.decisionLink && (
+          <div className="text-xs">
+            <div className="text-gray-500 mb-0.5">decisionLink</div>
+            <a
+              href={entry.decisionLink.startsWith("http") ? entry.decisionLink : undefined}
+              className="font-mono text-blue-600 hover:underline break-all"
+              target={entry.decisionLink.startsWith("http") ? "_blank" : undefined}
+              rel="noreferrer"
+            >
+              {entry.decisionLink}
+            </a>
+          </div>
+        )}
         {entry.meta && Object.keys(entry.meta).length > 0 && (
           <details className="text-xs">
             <summary className="cursor-pointer">meta</summary>

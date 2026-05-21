@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { Lifecycle } from "taxonomy-engine";
 import type { StaticTaxonomy } from "../types/taxonomy";
 import type { Feedback } from "../types/feedback";
 import type { TaxonomyIndex } from "../types/taxonomy";
 import { loadTaxonomy, loadTaxonomyIndex } from "../data/loadStaticTaxonomies";
 import { fetchFeedbacks } from "../data/feedbacksApi";
 import { TaxonomyTree } from "../components/TaxonomyTree";
+import { LIFECYCLE_VALUES, LifecycleBadge } from "../components/LifecycleBadge";
 import { RefBar } from "../components/RefBar";
 import { FeedbackPanel } from "../components/FeedbackPanel";
 import { UnitDetailPanel } from "../components/UnitDetailPanel";
@@ -39,6 +41,31 @@ export function TaxonomyViewPage({ file }: { file: string }) {
   const refresh = () => fetchFeedbacks().then(setFeedbacks);
   useEffect(() => { refresh(); }, []);
 
+  const [activeLifecycles, setActiveLifecycles] = useState<Set<Lifecycle | "_none">>(
+    new Set(),
+  );
+
+  const lifecycleCounts = useMemo(() => {
+    if (!tax) return {} as Record<string, number>;
+    const counts: Record<string, number> = {};
+    for (const axis of Object.values(tax.axes)) {
+      for (const e of axis.entries) {
+        const key = e.lifecycle ?? "_none";
+        counts[key] = (counts[key] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }, [tax]);
+
+  const toggleLifecycle = (value: Lifecycle | "_none") => {
+    setActiveLifecycles((prev) => {
+      const next = new Set(prev);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+      return next;
+    });
+  };
+
   if (!tax) return <div>로딩 중...</div>;
 
   return (
@@ -47,7 +74,48 @@ export function TaxonomyViewPage({ file }: { file: string }) {
       <div className="flex-1 overflow-auto p-3 border-r">
         <h2 className="font-bold text-lg mb-2">{tax.taxonomy} v{tax.version}</h2>
         {tax.description && <p className="text-xs text-gray-600 mb-3">{tax.description}</p>}
-        <TaxonomyTree taxonomy={tax} onSelectRef={setSelectedRef} />
+        <div className="flex flex-wrap gap-1 mb-3 items-center">
+          <span className="text-xs text-gray-500 mr-1">lifecycle:</span>
+          {LIFECYCLE_VALUES.map((lc) => {
+            const count = lifecycleCounts[lc] ?? 0;
+            if (count === 0) return null;
+            const on = activeLifecycles.has(lc);
+            return (
+              <button
+                key={lc}
+                onClick={() => toggleLifecycle(lc)}
+                className={`flex items-center gap-1 ${on ? "ring-2 ring-blue-400 rounded" : ""}`}
+                title={`${lc} ${count}건`}
+              >
+                <LifecycleBadge value={lc} />
+                <span className="text-[10px] text-gray-500">{count}</span>
+              </button>
+            );
+          })}
+          {(lifecycleCounts["_none"] ?? 0) > 0 && (
+            <button
+              onClick={() => toggleLifecycle("_none")}
+              className={`flex items-center gap-1 ${activeLifecycles.has("_none") ? "ring-2 ring-blue-400 rounded" : ""}`}
+              title={`(none) ${lifecycleCounts["_none"]}건`}
+            >
+              <LifecycleBadge value={undefined} />
+              <span className="text-[10px] text-gray-500">{lifecycleCounts["_none"]}</span>
+            </button>
+          )}
+          {activeLifecycles.size > 0 && (
+            <button
+              onClick={() => setActiveLifecycles(new Set())}
+              className="text-[10px] text-blue-600 hover:underline ml-1"
+            >
+              clear
+            </button>
+          )}
+        </div>
+        <TaxonomyTree
+          taxonomy={tax}
+          onSelectRef={setSelectedRef}
+          lifecycleFilter={activeLifecycles.size > 0 ? activeLifecycles : undefined}
+        />
       </div>
 
       {/* Context Panel */}

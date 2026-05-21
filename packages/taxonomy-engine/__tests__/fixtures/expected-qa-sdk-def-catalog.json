@@ -36,7 +36,8 @@
         { "id": "review" },
         { "id": "approved" },
         { "id": "deprecated" },
-        { "id": "archived" }
+        { "id": "archived" },
+        { "id": "tbd" }
       ]
     },
     "link_type": {

@@ -11,77 +11,81 @@ description: |
 axes:
   node-kind:
     description: DKG 그래프의 노드 종류 (16종)
+    lifecycle: approved
     entries:
       # catalog-derived (4)
-      - { id: axis,            address: 0,  label: "AxisNode" }
-      - { id: prefix,          address: 1,  label: "PrefixNode" }
-      - { id: spec,            address: 2,  label: "SpecNode" }
-      - { id: schema,          address: 3,  label: "SchemaNode" }
+      - { id: axis,            address: 0,  label: "AxisNode", lifecycle: approved }
+      - { id: prefix,          address: 1,  label: "PrefixNode", lifecycle: approved }
+      - { id: spec,            address: 2,  label: "SpecNode", lifecycle: approved }
+      - { id: schema,          address: 3,  label: "SchemaNode", lifecycle: approved }
       # design-ops (4)
-      - { id: decision,        address: 4,  label: "DecisionNode" }
-      - { id: version-event,   address: 5,  label: "VersionEventNode" }
-      - { id: constraint,      address: 6,  label: "ConstraintNode" }
-      - { id: observation,     address: 7,  label: "ObservationNode" }
+      - { id: decision,        address: 4,  label: "DecisionNode", lifecycle: approved }
+      - { id: version-event,   address: 5,  label: "VersionEventNode", lifecycle: approved }
+      - { id: constraint,      address: 6,  label: "ConstraintNode", lifecycle: approved }
+      - { id: observation,     address: 7,  label: "ObservationNode", lifecycle: approved }
       # external-structure (4)
-      - { id: domain,          address: 8,  label: "DomainNode" }
-      - { id: consumer,        address: 9,  label: "ConsumerNode" }
-      - { id: intent-link,     address: 10, label: "IntentLinkNode" }
-      - { id: dsl-bundle,      address: 11, label: "DslBundleNode" }
+      - { id: domain,          address: 8,  label: "DomainNode", lifecycle: approved }
+      - { id: consumer,        address: 9,  label: "ConsumerNode", lifecycle: approved }
+      - { id: intent-link,     address: 10, label: "IntentLinkNode", lifecycle: approved }
+      - { id: dsl-bundle,      address: 11, label: "DslBundleNode", lifecycle: approved }
       # extension (4)
-      - { id: skill,           address: 12, label: "SkillNode" }
-      - { id: transition-spec, address: 13, label: "TransitionSpecNode" }
-      - { id: table,           address: 14, label: "TableNode" }
-      - { id: flow-schema,     address: 15, label: "FlowSchemaNode" }
+      - { id: skill,           address: 12, label: "SkillNode", lifecycle: approved }
+      - { id: transition-spec, address: 13, label: "TransitionSpecNode", lifecycle: approved }
+      - { id: table,           address: 14, label: "TableNode", lifecycle: approved }
+      - { id: flow-schema,     address: 15, label: "FlowSchemaNode", lifecycle: approved }
     capacity: 32
     version: 1
 
   node-tier:
     description: 노드의 분류 계층 (4 tier)
+    lifecycle: approved
     entries:
-      - { id: catalog-derived,     address: 0 }
-      - { id: design-ops,          address: 1 }
-      - { id: external-structure,  address: 2 }
-      - { id: extension,           address: 3 }
+      - { id: catalog-derived,     address: 0, lifecycle: approved }
+      - { id: design-ops,          address: 1, lifecycle: approved }
+      - { id: external-structure,  address: 2, lifecycle: approved }
+      - { id: extension,           address: 3, lifecycle: approved }
     capacity: 8
     version: 1
 
   edge-kind:
     description: DKG 엣지 종류 (18종)
+    lifecycle: approved
     entries:
       # spec-engine-derived (5)
-      - { id: satisfies,     address: 0 }
-      - { id: implements,    address: 1 }
-      - { id: tests,         address: 2 }
-      - { id: traces-to,     address: 3 }
-      - { id: depends-on,    address: 4 }
+      - { id: satisfies,     address: 0, lifecycle: approved }
+      - { id: implements,    address: 1, lifecycle: approved }
+      - { id: tests,         address: 2, lifecycle: approved }
+      - { id: traces-to,     address: 3, lifecycle: approved }
+      - { id: depends-on,    address: 4, lifecycle: approved }
       # design-forward (5)
-      - { id: composes,      address: 5 }
-      - { id: references,    address: 6 }
-      - { id: governs,       address: 7 }
-      - { id: justifies,     address: 8 }
-      - { id: constrains,    address: 9 }
+      - { id: composes,      address: 5, lifecycle: approved }
+      - { id: references,    address: 6, lifecycle: approved }
+      - { id: governs,       address: 7, lifecycle: approved }
+      - { id: justifies,     address: 8, lifecycle: approved }
+      - { id: constrains,    address: 9, lifecycle: approved }
       # domain-consume-link (4)
-      - { id: contains,      address: 10 }
-      - { id: bridges,       address: 11 }
-      - { id: consumes,      address: 12 }
-      - { id: binds,         address: 13 }
+      - { id: contains,      address: 10, lifecycle: approved }
+      - { id: bridges,       address: 11, lifecycle: approved }
+      - { id: consumes,      address: 12, lifecycle: approved }
+      - { id: binds,         address: 13, lifecycle: approved }
       # ops-reverse (2)
-      - { id: observes,      address: 14 }
-      - { id: prompts,       address: 15 }
+      - { id: observes,      address: 14, lifecycle: approved }
+      - { id: prompts,       address: 15, lifecycle: approved }
       # evolution (2)
-      - { id: evolves-from,  address: 16 }
-      - { id: supersedes,    address: 17 }
+      - { id: evolves-from,  address: 16, lifecycle: approved }
+      - { id: supersedes,    address: 17, lifecycle: approved }
     capacity: 64
     version: 1
 
   edge-group:
     description: 엣지의 의미 그룹 (5 그룹)
+    lifecycle: approved
     entries:
-      - { id: spec-engine-derived,   address: 0 }
-      - { id: design-forward,        address: 1 }
-      - { id: domain-consume-link,   address: 2 }
-      - { id: ops-reverse,           address: 3 }
-      - { id: evolution,             address: 4 }
+      - { id: spec-engine-derived,   address: 0, lifecycle: approved }
+      - { id: design-forward,        address: 1, lifecycle: approved }
+      - { id: domain-consume-link,   address: 2, lifecycle: approved }
+      - { id: ops-reverse,           address: 3, lifecycle: approved }
+      - { id: evolution,             address: 4, lifecycle: approved }
     capacity: 16
     version: 1
 

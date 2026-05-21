@@ -16,19 +16,21 @@ imports:
 axes:
   store-driver:
     description: 데이터 영속화 드라이버 종류 (STORE_DRIVER 환경변수)
+    lifecycle: approved
     entries:
-      - { id: memory,     address: 0, label: "in-memory (기본, dev/test)" }
-      - { id: pg,         address: 1, label: "PostgreSQL (운영)" }
-      - { id: d1,         address: 2, label: "Cloudflare D1 / SQLite (경량 배포)" }
-      - { id: clickhouse, address: 3, label: "ClickHouse (OLAP 분석 전용)" }
+      - { id: memory,     address: 0, label: "in-memory (기본, dev/test)", lifecycle: approved }
+      - { id: pg,         address: 1, label: "PostgreSQL (운영)", lifecycle: approved }
+      - { id: d1,         address: 2, label: "Cloudflare D1 / SQLite (경량 배포)", lifecycle: approved }
+      - { id: clickhouse, address: 3, label: "ClickHouse (OLAP 분석 전용)", lifecycle: approved }
     capacity: 8
     version: 1
 
   insights-driver:
     description: insights 송출 드라이버 (INSIGHTS_DRIVER 환경변수, fail-open)
+    lifecycle: approved
     entries:
-      - { id: local,   address: 0, label: "local Drizzle/SQLite (기본)" }
-      - { id: app-hub, address: 1, label: "Google App Hub (보류 — stub 유지)" }
+      - { id: local,   address: 0, label: "local Drizzle/SQLite (기본)", lifecycle: approved }
+      - { id: app-hub, address: 1, label: "Google App Hub (보류 — stub 유지)", lifecycle: approved }
     capacity: 4
     version: 1
 
@@ -36,16 +38,17 @@ axes:
     description: |
       9 Store 포트 종류. @qa-sdk/core에 정의된 인터페이스 단위.
       SSOT: store-adapter-parity.spec.md §Store 포트 × 드라이버 매트릭스
+    lifecycle: approved
     entries:
-      - { id: record,        address: 0, label: "RecordStore — 이벤트 레코드" }
-      - { id: trace,         address: 1, label: "TraceStore — trace 집계" }
-      - { id: session,       address: 2, label: "SessionStore — QA 세션" }
-      - { id: verdict,       address: 3, label: "VerdictStore — 판정 결과" }
-      - { id: graph,         address: 4, label: "GraphStore — 실행 그래프" }
-      - { id: scenario-spec, address: 5, label: "ScenarioSpecStore — 시나리오 정의" }
-      - { id: transmission,  address: 6, label: "TransmissionStore — envelope 메타" }
-      - { id: dlq,           address: 7, label: "DlqStore — dead letter queue" }
-      - { id: key-observation, address: 8, label: "KeyObservationStore — 좌표 관측 빈도" }
+      - { id: record,        address: 0, label: "RecordStore — 이벤트 레코드", lifecycle: approved }
+      - { id: trace,         address: 1, label: "TraceStore — trace 집계", lifecycle: approved }
+      - { id: session,       address: 2, label: "SessionStore — QA 세션", lifecycle: approved }
+      - { id: verdict,       address: 3, label: "VerdictStore — 판정 결과", lifecycle: approved }
+      - { id: graph,         address: 4, label: "GraphStore — 실행 그래프", lifecycle: approved }
+      - { id: scenario-spec, address: 5, label: "ScenarioSpecStore — 시나리오 정의", lifecycle: approved }
+      - { id: transmission,  address: 6, label: "TransmissionStore — envelope 메타", lifecycle: approved }
+      - { id: dlq,           address: 7, label: "DlqStore — dead letter queue", lifecycle: approved }
+      - { id: key-observation, address: 8, label: "KeyObservationStore — 좌표 관측 빈도", lifecycle: approved }
     capacity: 32
     version: 1
 
@@ -53,10 +56,11 @@ axes:
     description: |
       드라이버별 store-kind 지원 수준.
       full=9/9, partial=일부만 native(나머지 InMemory fallback), single=1/9만
+    lifecycle: approved
     entries:
-      - { id: full,    address: 0, label: "전체 9 포트 native 구현" }
-      - { id: partial, address: 1, label: "일부 native + 나머지 InMemory fallback" }
-      - { id: single,  address: 2, label: "단일 포트만 native (OLAP 전용)" }
+      - { id: full,    address: 0, label: "전체 9 포트 native 구현", lifecycle: approved }
+      - { id: partial, address: 1, label: "일부 native + 나머지 InMemory fallback", lifecycle: approved }
+      - { id: single,  address: 2, label: "단일 포트만 native (OLAP 전용)", lifecycle: approved }
     capacity: 8
     version: 1
 

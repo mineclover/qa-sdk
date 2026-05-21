@@ -5,27 +5,58 @@ description: qa-sdk definition-catalog의 좌표/level/layer 시스템 (도그�
 axes:
   scope:
     description: 시스템 경계
-    entries: [apm, ingest, registry, gate, query, decode, definition, decision]
+    lifecycle: approved
+    entries:
+      - { id: apm,        address: 0, lifecycle: approved }
+      - { id: ingest,     address: 1, lifecycle: approved }
+      - { id: registry,   address: 2, lifecycle: approved }
+      - { id: gate,       address: 3, lifecycle: approved }
+      - { id: query,      address: 4, lifecycle: approved }
+      - { id: decode,     address: 5, lifecycle: approved }
+      - { id: definition, address: 6, lifecycle: approved }
+      - { id: decision,   address: 7, lifecycle: approved }
     capacity: 16
     version: 1
   aspect:
     description: 측면
-    entries: [model, protocol, runtime, policy, ops, io]
+    lifecycle: approved
+    entries:
+      - { id: model,    address: 0, lifecycle: approved }
+      - { id: protocol, address: 1, lifecycle: approved }
+      - { id: runtime,  address: 2, lifecycle: approved }
+      - { id: policy,   address: 3, lifecycle: approved }
+      - { id: ops,      address: 4, lifecycle: approved }
+      - { id: io,       address: 5, lifecycle: approved }
     capacity: 16
     version: 1
   depth:
     description: 추상 정도
-    entries: [overview, system, layer, component, entry]
+    lifecycle: approved
+    entries:
+      - { id: overview,  address: 0, lifecycle: approved }
+      - { id: system,    address: 1, lifecycle: approved }
+      - { id: layer,     address: 2, lifecycle: approved }
+      - { id: component, address: 3, lifecycle: approved }
+      - { id: entry,     address: 4, lifecycle: approved }
     capacity: 16
     version: 1
   level:
     description: 분해 레벨 (메타)
-    entries: [group, module, leaf]
+    lifecycle: approved
+    entries:
+      - { id: group,  address: 0, lifecycle: approved }
+      - { id: module, address: 1, lifecycle: approved }
+      - { id: leaf,   address: 2, lifecycle: approved }
     capacity: 8
     version: 1
   layer:
     description: 4계층
-    entries: [domain, operation, mediation, experience]
+    lifecycle: approved
+    entries:
+      - { id: domain,     address: 0, lifecycle: approved }
+      - { id: operation,  address: 1, lifecycle: approved }
+      - { id: mediation,  address: 2, lifecycle: approved }
+      - { id: experience, address: 3, lifecycle: approved }
     capacity: 8
     version: 1
 

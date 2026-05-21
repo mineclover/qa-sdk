@@ -12,72 +12,79 @@ description: |
 axes:
   def_scope:
     description: 문서 인지 관점 분류 (소프트웨어 정의 대분류)
+    lifecycle: approved
     entries:
-      - { id: ui,         address: 0 }
-      - { id: feature,    address: 1 }
-      - { id: flow,       address: 2 }
-      - { id: state,      address: 3 }
-      - { id: constraint, address: 4 }
-      - { id: data,       address: 5 }
-      - { id: interface,  address: 6 }
-      - { id: meta,       address: 7 }
+      - { id: ui,         address: 0, lifecycle: approved }
+      - { id: feature,    address: 1, lifecycle: approved }
+      - { id: flow,       address: 2, lifecycle: approved }
+      - { id: state,      address: 3, lifecycle: approved }
+      - { id: constraint, address: 4, lifecycle: approved }
+      - { id: data,       address: 5, lifecycle: approved }
+      - { id: interface,  address: 6, lifecycle: approved }
+      - { id: meta,       address: 7, lifecycle: approved }
     capacity: 16
     version: 1
 
   def_depth:
     description: 정의 깊이 (overview → validation)
+    lifecycle: approved
     entries:
-      - { id: overview,        address: 0 }
-      - { id: specification,   address: 1 }
-      - { id: implementation,  address: 2 }
-      - { id: validation,      address: 3 }
+      - { id: overview,        address: 0, lifecycle: approved }
+      - { id: specification,   address: 1, lifecycle: approved }
+      - { id: implementation,  address: 2, lifecycle: approved }
+      - { id: validation,      address: 3, lifecycle: approved }
     capacity: 8
     version: 1
 
   def_level:
     description: 분해 레벨 (전체-부분 분해 위치)
+    lifecycle: approved
     entries:
-      - { id: system,  address: 0 }
-      - { id: area,    address: 1 }
-      - { id: unit,    address: 2 }
-      - { id: module,  address: 3 }
-      - { id: leaf,    address: 4 }
+      - { id: system,  address: 0, lifecycle: approved }
+      - { id: area,    address: 1, lifecycle: approved }
+      - { id: unit,    address: 2, lifecycle: approved }
+      - { id: module,  address: 3, lifecycle: approved }
+      - { id: leaf,    address: 4, lifecycle: approved }
     capacity: 16
     version: 1
 
   def_lifecycle:
-    description: 문서 lifecycle 상태
+    description: 문서 lifecycle 상태 (vocabulary 5 + taxonomy-engine schema 추가 tbd)
+    lifecycle: approved
     entries:
-      - { id: draft,      address: 0 }
-      - { id: review,     address: 1 }
-      - { id: approved,   address: 2 }
-      - { id: deprecated, address: 3 }
-      - { id: archived,   address: 4 }
+      - { id: draft,      address: 0, lifecycle: approved }
+      - { id: review,     address: 1, lifecycle: approved }
+      - { id: approved,   address: 2, lifecycle: approved }
+      - { id: deprecated, address: 3, lifecycle: approved }
+      - { id: archived,   address: 4, lifecycle: approved }
+      - { id: tbd,        address: 5, lifecycle: approved }
     capacity: 16
     version: 1
 
   link_type:
     description: 문서 간 링크 종류 (DKG 엣지와 별개 — def-catalog 자체 link)
+    lifecycle: approved
     entries:
-      - { id: depends_on,    address: 0 }
-      - { id: implements,    address: 1 }
-      - { id: refines,       address: 2 }
-      - { id: constrains,    address: 3 }
-      - { id: traces_to,     address: 4 }
-      - { id: contains,      address: 5 }
-      - { id: evolves_from,  address: 6 }
-      - { id: supersedes,    address: 7 }
-      - { id: refs,          address: 8 }
-      - { id: verifies,      address: 9 }
+      - { id: depends_on,    address: 0, lifecycle: approved }
+      - { id: implements,    address: 1, lifecycle: approved }
+      - { id: refines,       address: 2, lifecycle: approved }
+      - { id: constrains,    address: 3, lifecycle: approved }
+      - { id: traces_to,     address: 4, lifecycle: approved }
+      - { id: contains,      address: 5, lifecycle: approved }
+      - { id: evolves_from,  address: 6, lifecycle: approved }
+      - { id: supersedes,    address: 7, lifecycle: approved }
+      - { id: refs,          address: 8, lifecycle: approved }
+      - { id: verifies,      address: 9, lifecycle: approved }
     capacity: 32
     version: 1
 
   taxonomy_family:
     description: meta-taxonomy 분류 (DocLinker가 다루는 taxonomy의 종류)
+    lifecycle: approved
     entries:
-      - { id: topological,  address: 0 }
-      - { id: functional,   address: 1 }
-      - { id: bridge,       address: 2 }
+      - { id: topological,  address: 0, lifecycle: approved }
+      - { id: functional,   address: 1, lifecycle: approved }
+      - { id: bridge,       address: 2, lifecycle: approved }
     capacity: 8
     version: 1
 

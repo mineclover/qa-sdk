@@ -68,6 +68,42 @@ describe("cli tax validate", () => {
     log.mockRestore();
     exit.mockRestore();
   });
+
+  it("--lifecycle-strict 시 lifecycle 누락 → exit 1", async () => {
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await cliTaxonomy([
+      "validate",
+      "--lifecycle-strict",
+      writeTmp("lc.yaml", GOOD_YAML),
+    ]);
+    expect(exit).toHaveBeenCalledWith(1);
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  it("lifecycle 모두 부여된 yaml + --lifecycle-strict → exit 0", async () => {
+    const yaml = `
+taxonomy: lcok
+version: 1
+axes:
+  scope:
+    lifecycle: approved
+    entries:
+      - { id: a, address: 0, lifecycle: approved }
+      - { id: b, address: 1, lifecycle: approved }
+`;
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await cliTaxonomy([
+      "validate",
+      "--lifecycle-strict",
+      writeTmp("lcok.yaml", yaml),
+    ]);
+    expect(exit).not.toHaveBeenCalledWith(1);
+    log.mockRestore();
+    exit.mockRestore();
+  });
 });
 
 describe("cli tax show", () => {
@@ -89,6 +125,28 @@ describe("cli tax show", () => {
     await cliTaxonomy(["show", file, "tx:scope.missing"]);
     expect(exit).toHaveBeenCalledWith(1);
     err.mockRestore();
+    exit.mockRestore();
+  });
+
+  it("entry lifecycle/placeholderReason 출력에 포함", async () => {
+    const yaml = `
+taxonomy: lc
+version: 1
+axes:
+  s:
+    lifecycle: approved
+    entries:
+      - { id: pending, address: 0, lifecycle: tbd, placeholderReason: "결정 대기" }
+`;
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const file = writeTmp("lcshow.yaml", yaml);
+    await cliTaxonomy(["show", file, "lc:s.pending"]);
+    expect(exit).not.toHaveBeenCalledWith(1);
+    const lines = log.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(lines).toMatch(/lifecycle:\s*tbd/);
+    expect(lines).toMatch(/reason:\s*결정 대기/);
+    log.mockRestore();
     exit.mockRestore();
   });
 });

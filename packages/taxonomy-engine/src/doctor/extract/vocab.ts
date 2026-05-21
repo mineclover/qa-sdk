@@ -30,6 +30,14 @@ export function extractVocabExpected(vocabTsText: string): ExpectedTaxonomy {
     const entriesRaw = m[1];
     // entriesRaw 예: '"ui", "feature", "flow", ...'
     const ids = [...entriesRaw.matchAll(/["']([^"']+)["']/g)].map((mm) => mm[1]);
+
+    // def_lifecycle: schema가 추가 보유한 placeholder 값(tbd) 합집합으로 확장.
+    // schema.Lifecycle = DEF_LIFECYCLE.entries ∪ {"tbd"} 이므로 doctor 비교 기준도
+    // 합집합이어야 yaml에 두 출처 모두 반영됐는지 정확히 검출됨.
+    if (axis === "def_lifecycle" && !ids.includes("tbd")) {
+      ids.push("tbd");
+    }
+
     axes[axis] = { entries: ids.map((id) => ({ id })) };
   }
 

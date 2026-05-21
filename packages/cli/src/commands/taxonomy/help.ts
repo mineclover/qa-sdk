@@ -2,7 +2,7 @@ export function printHelp(): void {
   console.log(`qa-sdk tax — 텍소노미 yaml 검증/조회/생성
 
 사용법:
-  qa-sdk tax validate <file> [--registry <dir>] [--strict] [--json]
+  qa-sdk tax validate <file> [--registry <dir>] [--strict] [--lifecycle-strict] [--json]
   qa-sdk tax show <file> <ref> [--json]
   qa-sdk tax show <ref> --registry <dir> [--json]
   qa-sdk tax codegen <file> --out <dir> [--registry <dir>] [--skip-validate] [--json]

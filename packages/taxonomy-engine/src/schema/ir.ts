@@ -9,11 +9,22 @@ export type RelationKind =
 
 export type ConstraintKind = "capacity" | "structural" | "ref" | "custom";
 
+export type Lifecycle =
+  | "draft"
+  | "review"
+  | "approved"
+  | "deprecated"
+  | "archived"
+  | "tbd";
+
 export type EntryIR = {
   id: string;
   address: number;
   label?: string;
   meta?: Record<string, unknown>;
+  lifecycle?: Lifecycle;
+  placeholderReason?: string;
+  decisionLink?: string;
   _loc?: { line: number; column: number };
 };
 
@@ -23,6 +34,7 @@ export type AxisIR = {
   entries: EntryIR[];
   capacity: number;
   version: number;
+  lifecycle?: Lifecycle;
   _loc?: { line: number; column: number };
 };
 

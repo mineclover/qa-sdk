@@ -18,7 +18,7 @@ describe("validate", () => {
     const { yaml, golden } = loadFixture("capacity-headroom");
     const r = parse(yaml);
     if (!("ir" in r)) throw new Error("parse failed");
-    const diags = validate(r.ir);
+    const diags = validate(r.ir, undefined, { skip: ["lifecycle"] });
     expect(stripLoc(diags)).toEqual(golden);
   });
 
@@ -26,7 +26,7 @@ describe("validate", () => {
     const { yaml, golden } = loadFixture("ref-broken");
     const r = parse(yaml);
     if (!("ir" in r)) throw new Error("parse failed");
-    const diags = validate(r.ir);
+    const diags = validate(r.ir, undefined, { skip: ["lifecycle"] });
     expect(stripLoc(diags)).toEqual(golden);
   });
 
@@ -263,7 +263,7 @@ constraints:
       const { yaml, golden } = loadFixture("duplicate-address");
       const r = parse(yaml);
       if (!("ir" in r)) throw new Error("parse failed");
-      const diags = validate(r.ir);
+      const diags = validate(r.ir, undefined, { skip: ["lifecycle"] });
       expect(stripLoc(diags)).toEqual(golden);
     });
 
@@ -376,7 +376,7 @@ describe("validate cross-taxonomy imports", () => {
     const derR = parse(loadYaml("cross-tax-import-broken"));
     if (!("ir" in derR)) throw new Error();
     const reg = new TaxonomyRegistry();  // empty
-    const diags = validate(derR.ir, reg);
+    const diags = validate(derR.ir, reg, { skip: ["lifecycle"] });
     const golden = JSON.parse(
       readFileSync(join(FIX, "cross-tax-import-broken.golden.json"), "utf8")
     );

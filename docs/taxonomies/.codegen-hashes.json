@@ -1,4 +1,7 @@
 {
-  "lesson-builder-content.yaml": "e850eb8437adb298",
-  "qa-sdk-coordinate-system.yaml": "f854800cba2d0c55"
+  "dkg-schema.yaml": "d4126f1329296a22",
+  "ingest-coords.yaml": "a9f1834d44688ea8",
+  "lesson-builder-content.yaml": "ebd295d19f8b32dd",
+  "qa-sdk-coordinate-system.yaml": "d85bbcc5b2613789",
+  "qa-sdk-def-catalog.yaml": "4b76c180b6d3571a"
 }

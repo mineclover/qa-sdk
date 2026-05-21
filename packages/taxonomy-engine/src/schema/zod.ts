@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+const LifecycleSchema = z.enum([
+  "draft",
+  "review",
+  "approved",
+  "deprecated",
+  "archived",
+  "tbd",
+]);
+
 const EntrySchema = z.union([
   z.string().min(1),
   z.object({
@@ -7,6 +16,9 @@ const EntrySchema = z.union([
     address: z.number().int().nonnegative().optional(),
     label: z.string().optional(),
     meta: z.record(z.string(), z.unknown()).optional(),
+    lifecycle: LifecycleSchema.optional(),
+    placeholderReason: z.string().min(1).optional(),
+    decisionLink: z.string().min(1).optional(),
   }),
 ]);
 
@@ -15,6 +27,7 @@ const AxisSchema = z.object({
   entries: z.array(EntrySchema).min(1, "entries는 최소 1개 필요"),
   capacity: z.number().int().positive().optional(),
   version: z.number().int().positive().optional(),
+  lifecycle: LifecycleSchema.optional(),
 });
 
 const RelationSchema = z.object({

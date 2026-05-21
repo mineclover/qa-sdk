@@ -69,6 +69,23 @@
 | `doctor-drift` | warning | yaml과 expected의 address 또는 label 불일치 | `{ axis, entry, yaml, expected, field? }` |
 | `doctor-unexpected` | warning | yaml에 있는데 expected에 없음 | `{ axis, unexpected }` |
 
+## lifecycle-* (v0.8 Stage 1 추가)
+
+| code | severity | 언제 | meta |
+|------|----------|------|------|
+| `lifecycle-missing` | warning (strict: error) | entry/axis에 lifecycle 필드 없음 | - |
+| `lifecycle-tbd` | info | placeholder(tbd) entry 집계 보고 | `{ count }` |
+| `lifecycle-tbd-orphan` | info | tbd인데 placeholderReason과 decisionLink 둘 다 없음 | - |
+| `lifecycle-transition-invalid` | error | git base 비교 시 부적절 전이 (예: `archived → *`) | (Stage 2) |
+
+## decision-link-* (v0.8 Stage 1 추가)
+
+| code | severity | 언제 | meta |
+|------|----------|------|------|
+| `decision-link-broken` | warning | decisionLink path/URI 해소 실패 | - |
+
+상세 spec: [`lifecycle.md`](./lifecycle.md)
+
 ## 운영 가이드
 
 - **code는 안정 식별자**. message는 변경 가능, code는 한 번 정하면 유지.

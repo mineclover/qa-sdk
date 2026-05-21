@@ -78,19 +78,35 @@ function printShowResult(result: RefResult): void {
   console.log(`kind: ${result.kind}`);
   switch (result.kind) {
     case "entry": {
-      const entry = result.entry as { id: string; address: number; label?: string };
-      console.log(`id:      ${entry.id}`);
-      console.log(`address: ${entry.address}`);
-      if (entry.label) console.log(`label:   ${entry.label}`);
+      const entry = result.entry as {
+        id: string;
+        address: number;
+        label?: string;
+        lifecycle?: string;
+        placeholderReason?: string;
+        decisionLink?: string;
+      };
+      console.log(`id:        ${entry.id}`);
+      console.log(`address:   ${entry.address}`);
+      if (entry.label) console.log(`label:     ${entry.label}`);
+      if (entry.lifecycle) console.log(`lifecycle: ${entry.lifecycle}`);
+      if (entry.placeholderReason) console.log(`reason:    ${entry.placeholderReason}`);
+      if (entry.decisionLink) console.log(`decision:  ${entry.decisionLink}`);
       break;
     }
     case "axis": {
-      const axis = result.axis as { name: string; entries?: Array<{ id: string; address: number }>; capacity: number };
-      console.log(`name:     ${axis.name}`);
+      const axis = result.axis as {
+        name: string;
+        entries?: Array<{ id: string; address: number }>;
+        capacity: number;
+        lifecycle?: string;
+      };
+      console.log(`name:      ${axis.name}`);
       if (axis.entries) {
-        console.log(`entries:  ${axis.entries.length} (${axis.entries.map((e) => e.id).join(", ")})`);
+        console.log(`entries:   ${axis.entries.length} (${axis.entries.map((e) => e.id).join(", ")})`);
       }
-      console.log(`capacity: ${axis.capacity}`);
+      console.log(`capacity:  ${axis.capacity}`);
+      if (axis.lifecycle) console.log(`lifecycle: ${axis.lifecycle}`);
       break;
     }
     case "coordinate": {

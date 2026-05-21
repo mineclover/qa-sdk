@@ -22,6 +22,10 @@ export default defineConfig({
       // parseRef (the only runtime usage in the browser) does not use crypto.
       // This stub prevents the browser build from failing.
       crypto: resolve(__dirname, "src/stubs/crypto.ts"),
+      // validateLifecycle은 decisionLink path 검증에 fs/path를 사용. 브라우저에서는
+      // validate를 호출하지 않으므로 no-op stub으로 충분.
+      fs: resolve(__dirname, "src/stubs/fs.ts"),
+      path: resolve(__dirname, "src/stubs/path.ts"),
     },
   },
 });

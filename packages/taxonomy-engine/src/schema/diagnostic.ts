@@ -9,7 +9,9 @@ export type DiagnosticCode =
   | `axis-5q-${string}`
   | `version-${string}`
   | `codegen-${string}`
-  | `doctor-${string}`;
+  | `doctor-${string}`
+  | `lifecycle-${string}`
+  | `decision-link-${string}`;
 
 export type Diagnostic = {
   severity: Severity;

@@ -6,10 +6,16 @@ import { validateRefs } from "./ref.js";
 import { validateConstraints } from "./constraint.js";
 import { validateAxis5Q } from "./axis5q.js";
 import { validateAxisStructure } from "./structure.js";
+import {
+  validateLifecycle,
+  type LifecycleValidateOptions,
+} from "./lifecycle.js";
 
-export type ValidateOptions = {
+export type ValidateOptions = LifecycleValidateOptions & {
   strict?: boolean;
-  skip?: Array<"capacity" | "ref" | "constraint" | "axis-5q" | "structure">;
+  skip?: Array<
+    "capacity" | "ref" | "constraint" | "axis-5q" | "structure" | "lifecycle"
+  >;
 };
 
 export function validate(
@@ -24,6 +30,7 @@ export function validate(
   if (!skip.has("ref")) out.push(...validateRefs(ir, registry));
   if (!skip.has("constraint")) out.push(...validateConstraints(ir));
   if (!skip.has("axis-5q")) out.push(...validateAxis5Q(ir));
+  if (!skip.has("lifecycle")) out.push(...validateLifecycle(ir, opts));
   if (opts.strict) {
     return out.map((d) => (d.severity === "warning" ? { ...d, severity: "error" } : d));
   }

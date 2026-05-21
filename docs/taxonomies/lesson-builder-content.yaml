@@ -15,57 +15,73 @@ imports:
 axes:
   layer:
     description: lesson-builder 콘텐츠 모델 6단계
+    lifecycle: approved
     entries:
-      - { id: type-schema, address: 0, label: "AssetTypeSchema (Layer 0)" }
-      - { id: asset,       address: 1, label: "Asset (Layer 1)" }
-      - { id: clip,        address: 2, label: "Clip (Layer 2)" }
-      - { id: cue,         address: 3, label: "Cue/Beat (Layer 3)" }
-      - { id: stage,       address: 4, label: "Stage/Cut (Layer 4)" }
-      - { id: branch,      address: 5, label: "Branch/Transition (Layer 4)" }
-      - { id: scenario,    address: 6, label: "Scenario/LessonDoc (Layer 5)" }
+      - { id: type-schema, address: 0, label: "AssetTypeSchema (Layer 0)", lifecycle: approved }
+      - { id: asset,       address: 1, label: "Asset (Layer 1)", lifecycle: approved }
+      - { id: clip,        address: 2, label: "Clip (Layer 2)", lifecycle: approved }
+      - { id: cue,         address: 3, label: "Cue/Beat (Layer 3)", lifecycle: tbd, placeholderReason: "interaction(beat과의 경계) 정의 미정 — Cue가 어디서 끝나고 Beat이 어디서 시작하는지 결정 필요" }
+      - { id: stage,       address: 4, label: "Stage/Cut (Layer 4)", lifecycle: approved }
+      - { id: branch,      address: 5, label: "Branch/Transition (Layer 4)", lifecycle: tbd, placeholderReason: "분기 처리 vs Cue 경계 미정 — branch와 cue 중 어디서 advance 결정할지 미정" }
+      - { id: scenario,    address: 6, label: "Scenario/LessonDoc (Layer 5)", lifecycle: approved }
     capacity: 16
     version: 1
 
   asset-type:
     description: 빌트인 asset 타입
-    entries: [text, character, bubble, quiz, background, decoration]
+    lifecycle: approved
+    entries:
+      - { id: text,       address: 0, lifecycle: approved }
+      - { id: character,  address: 1, lifecycle: approved }
+      - { id: bubble,     address: 2, lifecycle: approved }
+      - { id: quiz,       address: 3, lifecycle: approved }
+      - { id: background, address: 4, lifecycle: approved }
+      - { id: decoration, address: 5, lifecycle: approved }
     capacity: 16
     version: 1
 
   param-kind:
     description: Asset 파라미터 소유권 분리
+    lifecycle: approved
     entries:
-      - { id: content, address: 0, label: "Asset이 소유 (contentParams)" }
-      - { id: control, address: 1, label: "Clip이 구동 (controlParams)" }
+      - { id: content, address: 0, label: "Asset이 소유 (contentParams)", lifecycle: approved }
+      - { id: control, address: 1, label: "Clip이 구동 (controlParams)", lifecycle: approved }
     capacity: 4
     version: 1
 
   clip-template:
     description: 카탈로그 Clip 템플릿
+    lifecycle: approved
     entries:
-      - { id: appear-fade,     address: 0 }
-      - { id: appear-pop,      address: 1 }
-      - { id: disappear-fade,  address: 2 }
-      - { id: disappear-slide, address: 3 }
-      - { id: slide-in-left,   address: 4 }
-      - { id: slide-in-right,  address: 5 }
-      - { id: state-change,    address: 6 }
+      - { id: appear-fade,     address: 0, lifecycle: approved }
+      - { id: appear-pop,      address: 1, lifecycle: approved }
+      - { id: disappear-fade,  address: 2, lifecycle: approved }
+      - { id: disappear-slide, address: 3, lifecycle: approved }
+      - { id: slide-in-left,   address: 4, lifecycle: approved }
+      - { id: slide-in-right,  address: 5, lifecycle: approved }
+      - { id: state-change,    address: 6, lifecycle: approved }
     capacity: 16
     version: 1
 
   advance-kind:
     description: Cue 진행 조건
-    entries: [auto, time, click, answer]
+    lifecycle: approved
+    entries:
+      - { id: auto,   address: 0, lifecycle: approved }
+      - { id: time,   address: 1, lifecycle: approved }
+      - { id: click,  address: 2, lifecycle: approved }
+      - { id: answer, address: 3, lifecycle: approved }
     capacity: 8
     version: 1
 
   branch-kind:
     description: Stage 전이 조건
+    lifecycle: approved
     entries:
-      - { id: auto,            address: 0 }
-      - { id: answer-correct,  address: 1 }
-      - { id: answer-wrong,    address: 2 }
-      - { id: click,           address: 3 }
+      - { id: auto,            address: 0, lifecycle: approved }
+      - { id: answer-correct,  address: 1, lifecycle: approved }
+      - { id: answer-wrong,    address: 2, lifecycle: approved }
+      - { id: click,           address: 3, lifecycle: approved }
     capacity: 8
     version: 1
 

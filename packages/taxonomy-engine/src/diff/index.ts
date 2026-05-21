@@ -1,12 +1,16 @@
-import type { TaxonomyIR } from "../schema/ir.js";
+import type { Lifecycle, TaxonomyIR } from "../schema/ir.js";
 
 export type DiffEntry =
   | { kind: "axis-added"; axis: string }
   | { kind: "axis-removed"; axis: string }
+  | { kind: "axis-lifecycle-changed"; axis: string; from?: Lifecycle; to?: Lifecycle }
   | { kind: "entry-added"; axis: string; id: string; address: number }
   | { kind: "entry-removed"; axis: string; id: string; address: number }
   | { kind: "entry-address-changed"; axis: string; id: string; from: number; to: number }
   | { kind: "entry-label-changed"; axis: string; id: string; from?: string; to?: string }
+  | { kind: "entry-lifecycle-changed"; axis: string; id: string; from?: Lifecycle; to?: Lifecycle }
+  | { kind: "entry-placeholder-reason-changed"; axis: string; id: string; from?: string; to?: string }
+  | { kind: "entry-decision-link-changed"; axis: string; id: string; from?: string; to?: string }
   | { kind: "capacity-changed"; axis: string; from: number; to: number }
   | { kind: "relation-added"; name: string }
   | { kind: "relation-removed"; name: string }
@@ -42,6 +46,9 @@ export function diff(a: TaxonomyIR, b: TaxonomyIR): DiffResult {
     if (axisA.capacity !== axisB.capacity) {
       changes.push({ kind: "capacity-changed", axis: name, from: axisA.capacity, to: axisB.capacity });
     }
+    if (axisA.lifecycle !== axisB.lifecycle) {
+      changes.push({ kind: "axis-lifecycle-changed", axis: name, from: axisA.lifecycle, to: axisB.lifecycle });
+    }
     const entriesA = new Map(axisA.entries.map((e) => [e.id, e]));
     const entriesB = new Map(axisB.entries.map((e) => [e.id, e]));
     for (const [id, ea] of entriesA) {
@@ -54,6 +61,15 @@ export function diff(a: TaxonomyIR, b: TaxonomyIR): DiffResult {
         }
         if (ea.label !== eb.label) {
           changes.push({ kind: "entry-label-changed", axis: name, id, from: ea.label, to: eb.label });
+        }
+        if (ea.lifecycle !== eb.lifecycle) {
+          changes.push({ kind: "entry-lifecycle-changed", axis: name, id, from: ea.lifecycle, to: eb.lifecycle });
+        }
+        if (ea.placeholderReason !== eb.placeholderReason) {
+          changes.push({ kind: "entry-placeholder-reason-changed", axis: name, id, from: ea.placeholderReason, to: eb.placeholderReason });
+        }
+        if (ea.decisionLink !== eb.decisionLink) {
+          changes.push({ kind: "entry-decision-link-changed", axis: name, id, from: ea.decisionLink, to: eb.decisionLink });
         }
       }
     }

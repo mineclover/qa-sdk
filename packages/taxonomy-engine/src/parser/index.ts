@@ -79,11 +79,18 @@ function buildIR(
       const address = typeof e === "string" ? i : (e.address ?? i);
       const label = typeof e === "string" ? undefined : e.label;
       const meta = typeof e === "string" ? undefined : e.meta;
+      const lifecycle = typeof e === "string" ? undefined : e.lifecycle;
+      const placeholderReason =
+        typeof e === "string" ? undefined : e.placeholderReason;
+      const decisionLink = typeof e === "string" ? undefined : e.decisionLink;
       return {
         id,
         address,
         label,
         meta,
+        lifecycle,
+        placeholderReason,
+        decisionLink,
         _loc: locs.get(`axes.${name}.entries.${i}`),
       };
     });
@@ -94,6 +101,7 @@ function buildIR(
       entries,
       capacity,
       version: axis.version ?? 1,
+      lifecycle: axis.lifecycle,
       _loc: locs.get(`axes.${name}`),
     });
   }
