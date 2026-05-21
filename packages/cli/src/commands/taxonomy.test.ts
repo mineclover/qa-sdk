@@ -271,6 +271,44 @@ describe("cli tax diff", () => {
     exit.mockRestore();
   });
 
+  it("diff --semver: major 변경 → exit 1 + breakingLevel 출력", async () => {
+    const a = writeTmp("a.yaml", GOOD_YAML);
+    const b = writeTmp("b.yaml", GOOD_YAML.replace("[a, b]", "[a]"));
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await cliTaxonomy(["diff", a, b, "--semver"]);
+    expect(exit).toHaveBeenCalledWith(1);
+    const out = log.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(out).toMatch(/breakingLevel:\s*major/);
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  it("diff --semver: 변경 없음 → exit 0 + breakingLevel none", async () => {
+    const f = writeTmp("a.yaml", GOOD_YAML);
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await cliTaxonomy(["diff", f, f, "--semver"]);
+    expect(exit).not.toHaveBeenCalledWith(1);
+    const out = log.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(out).toMatch(/breakingLevel:\s*none/);
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
+  it("diff --semver: minor 변경 → exit 0", async () => {
+    const a = writeTmp("a.yaml", GOOD_YAML);
+    const b = writeTmp("b.yaml", GOOD_YAML.replace("[a, b]", "[a, b, c]"));
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await cliTaxonomy(["diff", a, b, "--semver"]);
+    expect(exit).not.toHaveBeenCalledWith(1);
+    const out = log.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(out).toMatch(/breakingLevel:\s*minor/);
+    log.mockRestore();
+    exit.mockRestore();
+  });
+
   it("diff + --registry — validate 진단 함께 출력", async () => {
     const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
     const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
@@ -380,6 +418,43 @@ describe("cli tax git-diff", () => {
     // "변경 없음" 또는 변경 메시지 기대
     expect(log).toHaveBeenCalled();
     log.mockRestore();
+    exit.mockRestore();
+  });
+});
+
+describe("cli tax migration", () => {
+  it("--base HEAD vs working tree — 명령 정상 실행 (git 없으면 skip)", async () => {
+    let repoRoot: string;
+    try {
+      repoRoot = execSync("git rev-parse --show-toplevel", {
+        encoding: "utf8",
+      }).trim();
+    } catch {
+      return;
+    }
+    const relPath = "docs/taxonomies/qa-sdk-coordinate-system.yaml";
+    const prevCwd = process.cwd();
+    process.chdir(repoRoot);
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      await cliTaxonomy(["migration", "--base", "HEAD", relPath]);
+      expect(exit).not.toHaveBeenCalledWith(1);
+    } finally {
+      process.chdir(prevCwd);
+      log.mockRestore();
+      err.mockRestore();
+      exit.mockRestore();
+    }
+  });
+
+  it("file 누락 → exit 1", async () => {
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    await cliTaxonomy(["migration", "--base", "main"]);
+    expect(exit).toHaveBeenCalledWith(1);
+    err.mockRestore();
     exit.mockRestore();
   });
 });

@@ -6,8 +6,9 @@ export function printHelp(): void {
   qa-sdk tax show <file> <ref> [--json]
   qa-sdk tax show <ref> --registry <dir> [--json]
   qa-sdk tax codegen <file> --out <dir> [--registry <dir>] [--skip-validate] [--json]
-  qa-sdk tax diff <a> <b> [--registry <dir>] [--json]
+  qa-sdk tax diff <a> <b> [--registry <dir>] [--semver] [--json]
   qa-sdk tax git-diff [base-ref] [--json]   git base 대비 yaml 변경 자동 diff
+  qa-sdk tax migration --base <ref> <file> [--json]   git base vs working tree 마이그레이션 계획
   qa-sdk tax doctor <file> (--expected <file> | --auto) [--json]
   qa-sdk tax help
 

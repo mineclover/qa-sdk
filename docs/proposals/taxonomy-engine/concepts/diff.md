@@ -12,32 +12,37 @@
 function diff(a: TaxonomyIR, b: TaxonomyIR): {
   same: boolean
   changes: DiffEntry[]
+  breakingLevel: "major" | "minor" | "patch" | "none"   // v0.9+
 }
 ```
 
 **입력**: 두 IR (`parse` 결과)
-**출력**: `{ same, changes }` — 같으면 `same=true, changes=[]`
+**출력**: `{ same, changes, breakingLevel }`. `breakingLevel`은 최고 등급(major > minor > patch > none). 분류 표는 [`semver-migration.md`](./semver-migration.md).
 
 **결정론**: 같은 두 IR 입력 → 항상 같은 출력.
 
-## 13 DiffEntry kinds
+## 18 DiffEntry kinds (v0.9 기준)
 
-| kind | 의미 | 주요 필드 |
-|------|------|----------|
-| `axis-added` | b에 새 axis 추가 | `axis` |
-| `axis-removed` | a에 있던 axis 제거 | `axis` |
-| `entry-added` | axis에 entry 추가 | `axis, entry` |
-| `entry-removed` | axis에서 entry 제거 | `axis, entry` |
-| `entry-address-changed` | entry의 address 변경 | `axis, entry, from, to` |
-| `entry-label-changed` | entry의 label 변경 | `axis, entry, from, to` |
-| `capacity-changed` | axis capacity 변경 | `axis, from, to` |
-| `relation-added` | b에 새 relation 추가 | `relation` |
-| `relation-removed` | a에 있던 relation 제거 | `relation` |
-| `relation-rules-count-changed` | rule 수 변경 (v0.4 초기) | `relation, from, to` |
-| `relation-rule-added` | 특정 rule 추가 (v0.5 이후) | `relation, rule` |
-| `relation-rule-removed` | 특정 rule 제거 (v0.5 이후) | `relation, rule` |
-| `constraint-added` | b에 새 constraint 추가 | `constraint` |
-| `constraint-removed` | a에 있던 constraint 제거 | `constraint` |
+| kind | 의미 | 주요 필드 | breakingLevel |
+|------|------|----------|---------------|
+| `axis-added` | b에 새 axis 추가 | `axis` | minor |
+| `axis-removed` | a에 있던 axis 제거 | `axis` | major |
+| `axis-lifecycle-changed` | axis lifecycle 변경 (v0.8+) | `axis, from, to` | patch |
+| `entry-added` | axis에 entry 추가 | `axis, id` | minor |
+| `entry-removed` | axis에서 entry 제거 | `axis, id` | major |
+| `entry-address-changed` | entry의 address 변경 | `axis, id, from, to` | major |
+| `entry-label-changed` | entry의 label 변경 | `axis, id, from, to` | patch |
+| `entry-lifecycle-changed` | entry lifecycle 변경 (v0.8+) | `axis, id, from, to` | patch |
+| `entry-placeholder-reason-changed` | placeholderReason 변경 (v0.8+) | `axis, id, from, to` | patch |
+| `entry-decision-link-changed` | decisionLink 변경 (v0.8+) | `axis, id, from, to` | patch |
+| `capacity-changed` | axis capacity 변경 | `axis, from, to` | minor (증가) / major (감소) |
+| `relation-added` | b에 새 relation 추가 | `relation` | minor |
+| `relation-removed` | a에 있던 relation 제거 | `relation` | major |
+| `relation-rules-count-changed` | rule 수 변경 | `relation, from, to` | patch (rule-* 가 실제 영향 결정) |
+| `relation-rule-added` | 특정 rule 추가 | `relation, rule` | minor |
+| `relation-rule-removed` | 특정 rule 제거 | `relation, rule` | major |
+| `constraint-added` | b에 새 constraint 추가 | `constraint` | minor |
+| `constraint-removed` | a에 있던 constraint 제거 | `constraint` | major |
 
 ### DiffEntry 타입
 

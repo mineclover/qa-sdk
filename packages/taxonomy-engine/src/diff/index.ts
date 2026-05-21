@@ -20,10 +20,59 @@ export type DiffEntry =
   | { kind: "constraint-added"; id: string }
   | { kind: "constraint-removed"; id: string };
 
+export type BreakingLevel = "major" | "minor" | "patch" | "none";
+
 export type DiffResult = {
   same: boolean;
   changes: DiffEntry[];
+  breakingLevel: BreakingLevel;
 };
+
+const LEVEL_RANK: Record<BreakingLevel, number> = {
+  none: 0,
+  patch: 1,
+  minor: 2,
+  major: 3,
+};
+
+/**
+ * 단일 DiffEntry의 영향도 등급. capacity-changed는 from/to 방향에 따라 갈림.
+ */
+function classifyChange(c: DiffEntry): BreakingLevel {
+  switch (c.kind) {
+    case "axis-removed":
+    case "entry-removed":
+    case "entry-address-changed":
+    case "relation-removed":
+    case "relation-rule-removed":
+    case "constraint-removed":
+      return "major";
+    case "axis-added":
+    case "entry-added":
+    case "relation-added":
+    case "relation-rule-added":
+    case "constraint-added":
+      return "minor";
+    case "capacity-changed":
+      return c.from > c.to ? "major" : "minor";
+    case "axis-lifecycle-changed":
+    case "entry-label-changed":
+    case "entry-lifecycle-changed":
+    case "entry-placeholder-reason-changed":
+    case "entry-decision-link-changed":
+    case "relation-rules-count-changed":
+      return "patch";
+  }
+}
+
+function highestLevel(changes: DiffEntry[]): BreakingLevel {
+  let max: BreakingLevel = "none";
+  for (const c of changes) {
+    const lv = classifyChange(c);
+    if (LEVEL_RANK[lv] > LEVEL_RANK[max]) max = lv;
+  }
+  return max;
+}
 
 export function diff(a: TaxonomyIR, b: TaxonomyIR): DiffResult {
   const changes: DiffEntry[] = [];
@@ -127,7 +176,11 @@ export function diff(a: TaxonomyIR, b: TaxonomyIR): DiffResult {
     if (!aCons.has(id)) changes.push({ kind: "constraint-added", id });
   }
 
-  return { same: changes.length === 0, changes };
+  return {
+    same: changes.length === 0,
+    changes,
+    breakingLevel: highestLevel(changes),
+  };
 }
 
 /**

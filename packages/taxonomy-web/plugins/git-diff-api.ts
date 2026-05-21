@@ -2,14 +2,19 @@ import type { Plugin } from "vite";
 import { execSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { parse, diff } from "taxonomy-engine";
-import type { DiffResult } from "taxonomy-engine";
+import { parse, diff, migrationPlan } from "taxonomy-engine";
+import type { DiffResult, MigrationPlan } from "taxonomy-engine";
+
+export type GitDiffResponse = {
+  diff: DiffResult;
+  migration: MigrationPlan;
+};
 
 export function computeFileDiff(opts: {
   repoRoot: string;
   file: string;
   base: string;
-}): DiffResult | undefined {
+}): GitDiffResponse | undefined {
   const absPath = join(opts.repoRoot, opts.file);
   if (!existsSync(absPath)) return undefined;
 
@@ -29,7 +34,10 @@ export function computeFileDiff(opts: {
   const currentIR = parse(currentText);
   if ("error" in baseIR || "error" in currentIR) return undefined;
 
-  return diff(baseIR.ir, currentIR.ir);
+  return {
+    diff: diff(baseIR.ir, currentIR.ir),
+    migration: migrationPlan(baseIR.ir, currentIR.ir),
+  };
 }
 
 export function gitDiffApiPlugin(repoRoot: string): Plugin {

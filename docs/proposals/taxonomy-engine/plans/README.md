@@ -12,3 +12,4 @@
 | [v0.6](./v0.6.md) | T-J1~T-J4: CLI 활성화 (doctor/--registry/git-diff) |
 | [v0.7](./v0.7.md) | T-K~T-M: 모듈화 라운드 |
 | [v0.8](./v0.8.md) | A~H: Stage 1 lifecycle + placeholder(tbd) + decisionLink |
+| [v0.9](./v0.9.md) | A~D: Stage 2 diff breakingLevel + migrationPlan + CLI/Web |

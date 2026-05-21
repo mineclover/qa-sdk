@@ -7,10 +7,14 @@ export function formatChange(c: DiffEntry): string {
   switch (c.kind) {
     case "axis-added": return `+ axis ${c.axis}`;
     case "axis-removed": return `- axis ${c.axis}`;
+    case "axis-lifecycle-changed": return `~ axis ${c.axis} lifecycle ${c.from ?? "(none)"} → ${c.to ?? "(none)"}`;
     case "entry-added": return `+ ${c.axis}.${c.id} (address=${c.address})`;
     case "entry-removed": return `- ${c.axis}.${c.id} (address=${c.address})`;
     case "entry-address-changed": return `~ ${c.axis}.${c.id} address ${c.from} → ${c.to}`;
     case "entry-label-changed": return `~ ${c.axis}.${c.id} label "${c.from ?? ""}" → "${c.to ?? ""}"`;
+    case "entry-lifecycle-changed": return `~ ${c.axis}.${c.id} lifecycle ${c.from ?? "(none)"} → ${c.to ?? "(none)"}`;
+    case "entry-placeholder-reason-changed": return `~ ${c.axis}.${c.id} placeholderReason changed`;
+    case "entry-decision-link-changed": return `~ ${c.axis}.${c.id} decisionLink "${c.from ?? ""}" → "${c.to ?? ""}"`;
     case "capacity-changed": return `~ ${c.axis} capacity ${c.from} → ${c.to}`;
     case "relation-added": return `+ relation ${c.name}`;
     case "relation-removed": return `- relation ${c.name}`;
@@ -31,11 +35,12 @@ export function formatRule(rule: Record<string, string>): string {
 
 export function diffCmd(args: string[]): void {
   const json = args.includes("--json");
+  const semver = args.includes("--semver");
   const registryDir = extractRegistryDir(args);
   const filteredArgs = filterRegistryArgs(args);
   const positional = filteredArgs.filter((a) => !a.startsWith("--"));
   if (positional.length < 2) {
-    console.error("사용법: qa-sdk tax diff <a.yaml> <b.yaml> [--registry <dir>] [--json]");
+    console.error("사용법: qa-sdk tax diff <a.yaml> <b.yaml> [--registry <dir>] [--semver] [--json]");
     process.exit(1);
     return;
   }
@@ -89,6 +94,16 @@ export function diffCmd(args: string[]): void {
     console.log(`${result.changes.length} 변경 발견:\n`);
     for (const c of result.changes) {
       console.log(`  ${formatChange(c)}`);
+    }
+  }
+
+  // semver 게이트
+  if (semver) {
+    console.log(`\nbreakingLevel: ${result.breakingLevel}`);
+    if (result.breakingLevel === "major") {
+      console.log("✖ major 변경 감지 — --semver 게이트 차단");
+      process.exit(1);
+      return;
     }
   }
 

@@ -4,6 +4,7 @@ import { codegenCmd } from "./codegen.js";
 import { diffCmd } from "./diff.js";
 import { doctorCmd } from "./doctor.js";
 import { gitDiffCmd } from "./git-diff.js";
+import { migrationCmd } from "./migration.js";
 import { printHelp } from "./help.js";
 
 export async function cliTaxonomy(rest: string[]): Promise<void> {
@@ -19,6 +20,8 @@ export async function cliTaxonomy(rest: string[]): Promise<void> {
       return diffCmd(args);
     case "git-diff":
       return gitDiffCmd(args);
+    case "migration":
+      return migrationCmd(args);
     case "doctor":
       return doctorCmd(args);
     case "help":

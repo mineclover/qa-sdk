@@ -15,6 +15,7 @@ export const TAXONOMY_COMMAND_DESCRIPTORS = [
   { id: "tax.codegen", path: ["codegen"], handlerKey: "tax.codegen" },
   { id: "tax.diff", path: ["diff"], handlerKey: "tax.diff" },
   { id: "tax.git-diff", path: ["git-diff"], handlerKey: "tax.git-diff" },
+  { id: "tax.migration", path: ["migration"], handlerKey: "tax.migration" },
   { id: "tax.doctor", path: ["doctor"], handlerKey: "tax.doctor" },
 ] as const satisfies readonly CommandDescriptor[];
 
@@ -31,6 +32,7 @@ export const TAXONOMY_TOP_LEVEL_USAGE_LINES = [
   "qa-sdk tax codegen <file> --out    TS 5 파일 생성",
   "qa-sdk tax diff <a> <b>            두 yaml 비교",
   "qa-sdk tax git-diff [base]         git base 대비 yaml 변경 diff",
+  "qa-sdk tax migration --base <ref>  git base vs working tree 마이그레이션 계획",
   "qa-sdk tax doctor <file> --auto    외부 SSOT drift 점검",
 ] as const;
 

@@ -36,10 +36,18 @@ export {
 } from "./doctor/extract/index.js";
 
 // Diff (두 IR 비교)
-export { diff, type DiffEntry, type DiffResult } from "./diff/index.js";
+export { diff, type DiffEntry, type DiffResult, type BreakingLevel } from "./diff/index.js";
+
+// Migration (두 IR 간 마이그레이션 계획 추정)
+export {
+  migrationPlan,
+  type MigrationPlan,
+  type IdRename,
+  type AddressConflict,
+} from "./migration/index.js";
 
 // Types
-export type { TaxonomyIR, AxisIR, EntryIR, RelationIR, ConstraintIR, ImportIR, Coordinate, RelationKind, ConstraintKind, Severity } from "./schema/ir.js";
+export type { TaxonomyIR, AxisIR, EntryIR, RelationIR, ConstraintIR, ImportIR, Coordinate, RelationKind, ConstraintKind, Severity, Lifecycle } from "./schema/ir.js";
 export type { Diagnostic, DiagnosticCode } from "./schema/diagnostic.js";
 export { TaxonomyDocSchema } from "./schema/zod.js";
 export type { TaxonomyDoc } from "./schema/zod.js";

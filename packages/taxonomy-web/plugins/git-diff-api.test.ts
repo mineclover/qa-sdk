@@ -5,14 +5,18 @@ import { resolve } from "node:path";
 const repoRoot = resolve(__dirname, "../../..");
 
 describe("computeFileDiff", () => {
-  it("같은 ref 비교 → same=true", () => {
+  it("HEAD ↔ working tree 비교 → diff + migration plan 반환", () => {
     const result = computeFileDiff({
       repoRoot,
       file: "docs/taxonomies/qa-sdk-coordinate-system.yaml",
       base: "HEAD",
     });
     if (result) {
-      expect(result.same).toBe(true);
+      // working tree와 HEAD가 같으면 same=true, 다르면 false — 둘 다 valid
+      expect(typeof result.diff.same).toBe("boolean");
+      expect(["major", "minor", "patch", "none"]).toContain(result.diff.breakingLevel);
+      expect(result.migration).toBeDefined();
+      expect(Array.isArray(result.migration.idRenames)).toBe(true);
     }
   });
 
