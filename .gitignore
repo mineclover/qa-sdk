@@ -28,6 +28,7 @@ tasks/archive/
 # claude code
 .claude/
 data/
+!packages/taxonomy-web/src/data/
 dist/tarballs/
 verdaccio/storage/
 
