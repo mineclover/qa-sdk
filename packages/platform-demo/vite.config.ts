@@ -1,14 +1,23 @@
 import { defineConfig } from "vite";
 import obfuscatorPlugin from "rollup-plugin-obfuscator";
 import { vitePfPlugin } from "../../packages/infra-engine/src/lib/vite-pf-plugin.js";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
+  base: "./",
   root: ".",
   appType: "mpa",
   build: {
     outDir: "dist",
     emptyOutDir: true,
     rollupOptions: {
+      input: {
+        main: resolve(__dirname, "index.html"),
+        "infra-control": resolve(__dirname, "infra-control.html"),
+      },
       plugins: [
         obfuscatorPlugin({
           options: {

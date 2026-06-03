@@ -288,6 +288,61 @@ function resolveConnectionEnv(
 
 배포 후 각 서비스에 주입할 `.env` 파일을 config JSON에서 자동 생성한다. 현재 공급 구현은 `infra-env-kit` 패키지의 `configToEnvVars()`와 `generateEnvFile()`이 담당하고, `infra-engine`은 이를 소비한다.
 
+### `infra-env-kit` 설정 및 사용법
+
+`infra-env-kit`는 설정 데이터와 암호화된 비밀 값들을 파이프라인에서 추출해, 로컬 또는 클라우드 실행에 필요한 다양한 환경 데이터를 제공합니다.
+
+#### A. CLI 사용법
+
+`infra-env-kit` 패키지에서 제공하는 CLI(`infra-env`)는 `.env`, TypeScript 연결 코드, 그리고 `docker-compose` 오버라이드 파일을 즉석에서 생성합니다.
+
+```bash
+# 1. 패키지 빌드
+pnpm --filter infra-env-kit build
+
+# 2. 특정 서비스 및 환경에 대한 .env 생성
+pnpm --filter infra-env-kit cli env ingest-server dev
+
+# 3. 서비스 간 TypeScript 연결 정의 모듈 생성
+pnpm --filter infra-env-kit cli ts dev
+
+# 4. 개발 환경에 맞는 docker-compose.override.yml 생성
+pnpm --filter infra-env-kit cli compose dev
+```
+
+* CLI 옵션:
+  * `--out <path>`: 출력되는 파일 경로를 직접 지정합니다.
+  * `--registry-url <url>`: registry-service 연동을 위한 base URL을 오버라이드합니다.
+
+#### B. API 연동 및 라이브러리 사용법
+
+코드 내부나 스크립트에서 직접 환경 변수 공급 체계를 가져와 활용할 수 있습니다.
+
+```typescript
+import { 
+  configToEnvVars, 
+  generateEnvFile, 
+  runPostDeployCodegen 
+} from "infra-env-kit";
+
+// 1. 서비스 JSON 설정을 환경변수로 매핑
+const serviceEnv = configToEnvVars({
+  port: 3200,
+  store_driver: "pg",
+  database_url: "postgresql://user:pass@localhost:5432/db",
+  depends_on: ["registry-service"] // 내부 키는 변환에서 자동 필터링됨
+});
+// 결과: { PORT: "3200", STORE_DRIVER: "pg", DATABASE_URL: "..." }
+
+// 2. 서비스 전용 .env 파일로 저장
+await generateEnvFile({
+  serviceId: "ingest-server",
+  env: "dev",
+  config: resolvedConfig, // ResolvedConfig 타입 객체
+  outPath: "./.env.ingest-server"
+});
+```
+
 ### 변환 규칙
 
 1. config JSON의 `services.<serviceId>` 객체에서 **primitive 값**(string, number, boolean)만 추출

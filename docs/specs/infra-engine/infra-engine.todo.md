@@ -58,6 +58,8 @@ infra-engine 패키지의 잔여 작업을 추적한다. 구현 완료 항목은
 - CF 프로바이더 안정화: 비파괴적 롤백, 로컬 의존 스킵, warn-not-fail, --skip-verify, wrangler 경로 수정
 - 엔드포인트 피드백 루프: resolve 체인 (config→profile→skip), 자동 config 피드백, 최초 배포 지원
 - index-meta-workers: Workers/Edge 호환 서브셋 패키지 생성, 3서비스 마이그레이션 완료
+- env 공급 독립화: `infra-env-kit` 환경 공급 패키지 분리 및 CLI/API를 통한 비밀값 및 .env 공급 체계 구현 완료
+- 통합 관제 뷰 구축: `infra-control.html` 통합 관제 포털 구축 (포트 충돌 감지, .env 생성 및 JWT Bitmask 시뮬레이터 연동 완료)
 
 ### 현재 규모
 
@@ -124,5 +126,6 @@ infra-engine 패키지의 잔여 작업을 추적한다. 구현 완료 항목은
 
 ### 고도화
 
+- [x] **통합 관제 및 인프라 제어 웹 대시보드(Infra Portal) 구축** — 포트 충돌, 비밀값 공급 시뮬레이션, AuthZ 비트마스크 시뮬레이터 원스톱 뷰 구축 및 Vite MPA 빌드 연동 완료.
 - [ ] **Grafana 연동** — dashboard export → Grafana 데이터소스
 - [ ] **webhook 알림** — Slack/Discord POST (OutOfSync/Unknown)
