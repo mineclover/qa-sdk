@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: cdd6d61890cb) at 2026-03-23T15:35:18
+// Generated from Catalog "demo" (hash: 9bf649aab9a4) at 2026-06-03T23:14:15
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 import type * as Axes from "./axes.js";
@@ -17,6 +17,13 @@ export interface BuildEventDims {
   qa_pkg: Axes.QaPkg;
   qa_module: Axes.QaModule;
   build_result: Axes.BuildResult;
+}
+
+/** bundle_observation — 번들 관측 */
+export interface BundleObservationDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  bundle_state: Axes.BundleState;
 }
 
 /** cart_event — 장바구니 이벤트 */
@@ -59,6 +66,14 @@ export interface ContractCheckDims {
   qa_pkg: Axes.QaPkg;
   api_surface: Axes.ApiSurface;
   test_result: Axes.TestResult;
+}
+
+/** convergence_event — 수렴 파이프라인 이벤트 */
+export interface ConvergenceEventDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  convergence_phase: Axes.ConvergencePhase;
+  convergence_result: Axes.ConvergenceResult;
 }
 
 /** data_policy — 데이터 정책 관측 */
@@ -181,11 +196,56 @@ export interface ForcingResponseDims {
   confidence_band: Axes.ConfidenceBand;
 }
 
+/** gate_execution — 게이트 실행 */
+export interface GateExecutionDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  gate_kind: Axes.GateKind;
+  gate_scope: Axes.GateScope;
+  gate_state: Axes.GateState;
+}
+
 /** gate_point — 주소 상태 관측 */
 export interface GatePointDims {
   /** prefix_ref → service */
   svc_ref: number;
   address_state: Axes.AddressState;
+}
+
+/** graph_event — 그래프 이벤트 */
+export interface GraphEventDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  def_level: Axes.DefLevel;
+  graph_action: Axes.GraphAction;
+  link_type: Axes.LinkType;
+}
+
+/** harness_guard — 하네스 가드 검증 */
+export interface HarnessGuardDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  harness_machine: Axes.HarnessMachine;
+  harness_state: Axes.HarnessState;
+  harness_verdict: Axes.HarnessVerdict;
+}
+
+/** harness_process_step — 하네스 프로세스 스텝 */
+export interface HarnessProcessStepDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  harness_process: Axes.HarnessProcess;
+  harness_machine: Axes.HarnessMachine;
+  harness_verdict: Axes.HarnessVerdict;
+}
+
+/** harness_transition — 하네스 상태 전이 */
+export interface HarnessTransitionDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  harness_machine: Axes.HarnessMachine;
+  harness_state: Axes.HarnessState;
+  harness_trigger: Axes.HarnessTrigger;
 }
 
 /** health_event — 헬스 이벤트 */
@@ -200,6 +260,37 @@ export interface IngestRecordDims {
   /** prefix_ref → service */
   svc_ref: number;
   record_type: Axes.RecordType;
+}
+
+/** ir_data — 데이터 수명 관측 */
+export interface IrDataDims {
+  ir_certainty: Axes.IrCertainty;
+  ir_transaction_scope: Axes.IrTransactionScope;
+  ir_retention: Axes.IrRetention;
+  ir_storage_type: Axes.IrStorageType;
+}
+
+/** ir_intent_path — 시공간 경로 관측 */
+export interface IrIntentPathDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  ir_call_kind: Axes.IrCallKind;
+  ir_pipe_state: Axes.IrPipeState;
+}
+
+/** ir_module — 모듈 정의 관측 */
+export interface IrModuleDims {
+  def_level: Axes.DefLevel;
+  def_layer: Axes.DefLayer;
+  ir_certainty: Axes.IrCertainty;
+}
+
+/** ir_pipe — 파이프 트랜잭션 관측 */
+export interface IrPipeDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  ir_pipe_state: Axes.IrPipeState;
+  ir_call_kind: Axes.IrCallKind;
 }
 
 /** metric_aggregate — 다차원 메트릭 집계 */
@@ -287,6 +378,14 @@ export interface PipelinePointDims {
   temporal_strategy: Axes.TemporalStrategy;
 }
 
+/** quality_event — 품질 이벤트 */
+export interface QualityEventDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  quality_severity: Axes.QualitySeverity;
+  quality_kind: Axes.QualityKind;
+}
+
 /** rbac — 역할 기반 접근 제어 */
 export interface RbacDims {
   role: Axes.RbacRole;
@@ -310,6 +409,14 @@ export interface ResourceLifecycleDims {
   resource_location: Axes.ResourceLocation;
 }
 
+/** rpc_event — RPC 이벤트 */
+export interface RpcEventDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  rpc_protocol: Axes.RpcProtocol;
+  rpc_phase: Axes.RpcPhase;
+}
+
 /** schema_event — 스키마 마이그레이션 이벤트 */
 export interface SchemaEventDims {
   /** prefix_ref → service */
@@ -325,6 +432,14 @@ export interface SchemaValidationDims {
   validation_layer: Axes.ValidationLayer;
   constraint_rule: Axes.ConstraintRule;
   verdict_result: Axes.VerdictResult;
+}
+
+/** sdk_lifecycle — SDK 생명주기 */
+export interface SdkLifecycleDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  sdk_action: Axes.SdkAction;
+  sdk_channel: Axes.SdkChannel;
 }
 
 /** service — 서비스 */
@@ -357,6 +472,14 @@ export interface TagLifecycleDims {
   lifecycle_state: Axes.LifecycleState;
 }
 
+/** task_event — 작업 이벤트 */
+export interface TaskEventDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  task_type: Axes.TaskType;
+  task_phase: Axes.TaskPhase;
+}
+
 /** test_coverage — 테스트 커버리지 매트릭스 */
 export interface TestCoverageDims {
   qa_pkg: Axes.QaPkg;
@@ -372,6 +495,13 @@ export interface TestEventDims {
   test_result: Axes.TestResult;
 }
 
+/** test_scenario — 테스트 시나리오 */
+export interface TestScenarioDims {
+  test_kind: Axes.TestKind;
+  test_scope: Axes.TestScope;
+  test_phase: Axes.TestPhase;
+}
+
 /** tracking — 사용자 행동 추적 */
 export interface TrackingDims {
   /** prefix_ref → service */
@@ -379,6 +509,14 @@ export interface TrackingDims {
   trackAction: Axes.Trackaction;
   page: Axes.Page;
   userType: Axes.Usertype;
+}
+
+/** transition_event — 전이 이벤트 */
+export interface TransitionEventDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  effect_kind: Axes.EffectKind;
+  match_mode: Axes.MatchMode;
 }
 
 /** validation_event — 검증 연산 이벤트 */
@@ -409,11 +547,13 @@ export interface VersionStateDims {
 export interface PrefixDimsMap {
   auth_event: AuthEventDims;
   build_event: BuildEventDims;
+  bundle_observation: BundleObservationDims;
   cart_event: CartEventDims;
   cli_event: CliEventDims;
   cli_tracking: CliTrackingDims;
   content: ContentDims;
   contract_check: ContractCheckDims;
+  convergence_event: ConvergenceEventDims;
   data_policy: DataPolicyDims;
   decision_event: DecisionEventDims;
   decision_path: DecisionPathDims;
@@ -430,9 +570,18 @@ export interface PrefixDimsMap {
   execution_context: ExecutionContextDims;
   flow_point: FlowPointDims;
   forcing_response: ForcingResponseDims;
+  gate_execution: GateExecutionDims;
   gate_point: GatePointDims;
+  graph_event: GraphEventDims;
+  harness_guard: HarnessGuardDims;
+  harness_process_step: HarnessProcessStepDims;
+  harness_transition: HarnessTransitionDims;
   health_event: HealthEventDims;
   ingest_record: IngestRecordDims;
+  ir_data: IrDataDims;
+  ir_intent_path: IrIntentPathDims;
+  ir_module: IrModuleDims;
+  ir_pipe: IrPipeDims;
   metric_aggregate: MetricAggregateDims;
   metric_point: MetricPointDims;
   model_apply: ModelApplyDims;
@@ -443,18 +592,24 @@ export interface PrefixDimsMap {
   pattern_match: PatternMatchDims;
   permission: PermissionDims;
   pipeline_point: PipelinePointDims;
+  quality_event: QualityEventDims;
   rbac: RbacDims;
   relational: RelationalDims;
   resource_lifecycle: ResourceLifecycleDims;
+  rpc_event: RpcEventDims;
   schema_event: SchemaEventDims;
   schema_validation: SchemaValidationDims;
+  sdk_lifecycle: SdkLifecycleDims;
   service: ServiceDims;
   skill_execution: SkillExecutionDims;
   spec_event: SpecEventDims;
   tag_lifecycle: TagLifecycleDims;
+  task_event: TaskEventDims;
   test_coverage: TestCoverageDims;
   test_event: TestEventDims;
+  test_scenario: TestScenarioDims;
   tracking: TrackingDims;
+  transition_event: TransitionEventDims;
   validation_event: ValidationEventDims;
   version_point: VersionPointDims;
   version_state: VersionStateDims;

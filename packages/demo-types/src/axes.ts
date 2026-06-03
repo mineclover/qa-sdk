@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: cdd6d61890cb) at 2026-03-23T15:35:18
+// Generated from Catalog "demo" (hash: 9bf649aab9a4) at 2026-06-03T23:14:15
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 /** action — 액션 (entries: 4, capacity: 32) */
@@ -95,6 +95,17 @@ export const BUILD_RESULT = {
   SKIPPED: "skipped",
 } as const;
 export type BuildResult = typeof BUILD_RESULT[keyof typeof BUILD_RESULT];
+
+/** bundle_state — 번들 상태 (entries: 6, capacity: 8) */
+export const BUNDLE_STATE = {
+  EMPTY: "empty",
+  PENDING: "pending",
+  GATHERING: "gathering",
+  PARTIAL: "partial",
+  COMPLETE: "complete",
+  DEGRADED: "degraded",
+} as const;
+export type BundleState = typeof BUNDLE_STATE[keyof typeof BUNDLE_STATE];
 
 /** cart_action — 장바구니 행위 (entries: 3, capacity: 32) */
 export const CART_ACTION = {
@@ -214,6 +225,27 @@ export const CONSTRAINT_RULE = {
 } as const;
 export type ConstraintRule = typeof CONSTRAINT_RULE[keyof typeof CONSTRAINT_RULE];
 
+/** convergence_phase — 수렴 단계 (entries: 7, capacity: 16) */
+export const CONVERGENCE_PHASE = {
+  BUFFER: "buffer",
+  FLUSH: "flush",
+  AGGREGATE: "aggregate",
+  CLASSIFY: "classify",
+  METRICS: "metrics",
+  OBSERVATIONS: "observations",
+  PERSIST: "persist",
+} as const;
+export type ConvergencePhase = typeof CONVERGENCE_PHASE[keyof typeof CONVERGENCE_PHASE];
+
+/** convergence_result — 수렴 결과 (entries: 4, capacity: 8) */
+export const CONVERGENCE_RESULT = {
+  OK: "ok",
+  PARTIAL: "partial",
+  EMPTY: "empty",
+  ERROR: "error",
+} as const;
+export type ConvergenceResult = typeof CONVERGENCE_RESULT[keyof typeof CONVERGENCE_RESULT];
+
 /** decision_outcome — 결정 결과 (entries: 5, capacity: 16) */
 export const DECISION_OUTCOME = {
   COMPLETED: "completed",
@@ -235,6 +267,23 @@ export const DECISION_TYPE = {
   SEPARATION: "separation",
 } as const;
 export type DecisionType = typeof DECISION_TYPE[keyof typeof DECISION_TYPE];
+
+/** def_layer — 문서 계층 (entries: 4, capacity: 8) */
+export const DEF_LAYER = {
+  DOMAIN: "domain",
+  OPERATION: "operation",
+  MEDIATION: "mediation",
+  EXPERIENCE: "experience",
+} as const;
+export type DefLayer = typeof DEF_LAYER[keyof typeof DEF_LAYER];
+
+/** def_level — 문서 역할 (entries: 3, capacity: 8) */
+export const DEF_LEVEL = {
+  GROUP: "group",
+  MODULE: "module",
+  LEAF: "leaf",
+} as const;
+export type DefLevel = typeof DEF_LEVEL[keyof typeof DEF_LEVEL];
 
 /** deploy_action — 배포 행위 (entries: 8, capacity: 32) */
 export const DEPLOY_ACTION = {
@@ -271,15 +320,15 @@ export const DKG_TARGET_KIND = {
   PREFIX: "prefix",
   SPEC: "spec",
   SCHEMA: "schema",
-  DOMAIN: "domain",
-  DSL_BUNDLE: "dsl-bundle",
   DECISION: "decision",
   VERSION_EVENT: "version-event",
-  OBSERVATION: "observation",
   CONSTRAINT: "constraint",
+  OBSERVATION: "observation",
+  DOMAIN: "domain",
   CONSUMER: "consumer",
-  SKILL: "skill",
   INTENT_LINK: "intent-link",
+  DSL_BUNDLE: "dsl-bundle",
+  SKILL: "skill",
   TRANSITION_SPEC: "transition-spec",
   TABLE: "table",
   FLOW_SCHEMA: "flow-schema",
@@ -309,6 +358,17 @@ export const EDGE_TYPE = {
   SUPERSEDES: "supersedes",
 } as const;
 export type EdgeType = typeof EDGE_TYPE[keyof typeof EDGE_TYPE];
+
+/** effect_kind — 전이 효과 유형 (entries: 6, capacity: 8) */
+export const EFFECT_KIND = {
+  CREATE: "create",
+  UPDATE: "update",
+  MOVE: "move",
+  CONSUME: "consume",
+  OPEN: "open",
+  CLOSE: "close",
+} as const;
+export type EffectKind = typeof EFFECT_KIND[keyof typeof EFFECT_KIND];
 
 /** env — 환경 (entries: 5, capacity: 32) */
 export const ENV = {
@@ -449,6 +509,152 @@ export const FORCING_QUESTION = {
 } as const;
 export type ForcingQuestion = typeof FORCING_QUESTION[keyof typeof FORCING_QUESTION];
 
+/** gate_kind — 게이트 유형 (entries: 19, capacity: 32) */
+export const GATE_KIND = {
+  TYPECHECK: "typecheck",
+  LINT: "lint",
+  STATIC_ANALYSIS: "static-analysis",
+  UNIT_TEST: "unit-test",
+  SNAPSHOT_TEST: "snapshot-test",
+  INTEGRATION_TEST: "integration-test",
+  TRANSACTION_TEST: "transaction-test",
+  API_CONTRACT: "api-contract",
+  E2E_TEST: "e2e-test",
+  VISUAL_CHECK: "visual-check",
+  PERF_BENCHMARK: "perf-benchmark",
+  BUILD: "build",
+  BUILD_AFFECTED: "build-affected",
+  SECURITY_AUDIT: "security-audit",
+  A11Y_CHECK: "a11y-check",
+  DOC_BUILD: "doc-build",
+  LICENSE_CHECK: "license-check",
+  EVAL_BENCHMARK: "eval-benchmark",
+  COST_TRACK: "cost-track",
+} as const;
+export type GateKind = typeof GATE_KIND[keyof typeof GATE_KIND];
+
+/** gate_scope — 게이트 범위 (entries: 7, capacity: 16) */
+export const GATE_SCOPE = {
+  STATIC: "static",
+  UNIT: "unit",
+  INTEGRATION: "integration",
+  SYSTEM: "system",
+  BUILD: "build",
+  AUDIT: "audit",
+  AI: "ai",
+} as const;
+export type GateScope = typeof GATE_SCOPE[keyof typeof GATE_SCOPE];
+
+/** gate_state — 게이트 상태 (entries: 9, capacity: 16) */
+export const GATE_STATE = {
+  IDLE: "idle",
+  BLOCKED: "blocked",
+  READY: "ready",
+  GATHERING: "gathering",
+  RUNNING: "running",
+  PASSED: "passed",
+  FAILED: "failed",
+  STALE: "stale",
+  SKIPPED: "skipped",
+} as const;
+export type GateState = typeof GATE_STATE[keyof typeof GATE_STATE];
+
+/** graph_action — 그래프 액션 (entries: 6, capacity: 8) */
+export const GRAPH_ACTION = {
+  LINK_ADD: "link_add",
+  LINK_REMOVE: "link_remove",
+  PROMOTE: "promote",
+  DEMOTE: "demote",
+  SPLIT: "split",
+  MERGE: "merge",
+} as const;
+export type GraphAction = typeof GRAPH_ACTION[keyof typeof GRAPH_ACTION];
+
+/** harness_machine — 상태 머신 (entries: 11, capacity: 16) */
+export const HARNESS_MACHINE = {
+  DOC_LIFECYCLE: "doc-lifecycle",
+  SPEC_IMPL: "spec-impl",
+  CONVENTION_COMPLIANCE: "convention-compliance",
+  DB_SYNC: "db-sync",
+  ADDRESS_STATE: "address-state",
+  VERSION_LIFECYCLE: "version-lifecycle",
+  DECISION_FLOW: "decision-flow",
+  SERVICE_STATUS: "service-status",
+  EVENT_STATUS: "event-status",
+  METRIC_HEALTH: "metric-health",
+  POLICY_CANDIDATE: "policy-candidate",
+} as const;
+export type HarnessMachine = typeof HARNESS_MACHINE[keyof typeof HARNESS_MACHINE];
+
+/** harness_process — 하네스 프로세스 (entries: 3, capacity: 8) */
+export const HARNESS_PROCESS = {
+  PREFIX_RELEASE: "prefix-release",
+  DOC_APPROVAL: "doc-approval",
+  SERVICE_DEPRECATION: "service-deprecation",
+} as const;
+export type HarnessProcess = typeof HARNESS_PROCESS[keyof typeof HARNESS_PROCESS];
+
+/** harness_state — 엔티티 상태 (entries: 34, capacity: 64) */
+export const HARNESS_STATE = {
+  DRAFT: "draft",
+  REVIEW: "review",
+  APPROVED: "approved",
+  DEPRECATED: "deprecated",
+  ARCHIVED: "archived",
+  ACTIVE: "active",
+  INACTIVE: "inactive",
+  OPEN: "open",
+  RESERVED: "reserved",
+  RELEASED: "released",
+  PENDING: "pending",
+  COMPLETED: "completed",
+  ABANDONED: "abandoned",
+  BLOCKED: "blocked",
+  RETIRED: "retired",
+  OK: "ok",
+  WARNING: "warning",
+  CRITICAL: "critical",
+  DESIGNED: "designed",
+  IMPLEMENTING: "implementing",
+  IMPLEMENTED: "implemented",
+  VERIFIED: "verified",
+  SOURCE_REFERENCED: "source-referenced",
+  UNVERIFIED: "unverified",
+  PARTIAL: "partial",
+  COMPLIANT: "compliant",
+  VIOLATED: "violated",
+  OUT_OF_SYNC: "out-of-sync",
+  SYNCING: "syncing",
+  SYNCED: "synced",
+  DRIFT_DETECTED: "drift-detected",
+  CANDIDATE: "candidate",
+  REJECTED: "rejected",
+  MODIFIED: "modified",
+} as const;
+export type HarnessState = typeof HARNESS_STATE[keyof typeof HARNESS_STATE];
+
+/** harness_trigger — 전이 트리거 (entries: 10, capacity: 16) */
+export const HARNESS_TRIGGER = {
+  USER_ACTION: "user_action",
+  SYSTEM_AUTO: "system_auto",
+  CASCADE: "cascade",
+  GUARD_PASS: "guard_pass",
+  GUARD: "guard",
+  NOTIFY: "notify",
+  TIMEOUT: "timeout",
+  ERROR: "error",
+  SCHEDULE: "schedule",
+  API_CALL: "api_call",
+} as const;
+export type HarnessTrigger = typeof HARNESS_TRIGGER[keyof typeof HARNESS_TRIGGER];
+
+/** harness_verdict — 검증 결과 (entries: 2, capacity: 4) */
+export const HARNESS_VERDICT = {
+  PASS: "pass",
+  FAIL: "fail",
+} as const;
+export type HarnessVerdict = typeof HARNESS_VERDICT[keyof typeof HARNESS_VERDICT];
+
 /** health_status — 헬스 상태 (entries: 4, capacity: 32) */
 export const HEALTH_STATUS = {
   HEALTHY: "healthy",
@@ -484,6 +690,53 @@ export const INITIATOR = {
 } as const;
 export type Initiator = typeof INITIATOR[keyof typeof INITIATOR];
 
+/** ir_call_kind — 호출 종류 (entries: 4, capacity: 8) */
+export const IR_CALL_KIND = {
+  METHOD_CALL: "method-call",
+  EVENT_EMIT: "event-emit",
+  HTTP_REQUEST: "http-request",
+  DB_QUERY: "db-query",
+} as const;
+export type IrCallKind = typeof IR_CALL_KIND[keyof typeof IR_CALL_KIND];
+
+/** ir_certainty — 타입 확신도 (entries: 2, capacity: 4) */
+export const IR_CERTAINTY = {
+  STRICT: "strict",
+  FLEXIBLE: "flexible",
+} as const;
+export type IrCertainty = typeof IR_CERTAINTY[keyof typeof IR_CERTAINTY];
+
+/** ir_pipe_state — 파이프 트랜잭션 상태 (entries: 3, capacity: 4) */
+export const IR_PIPE_STATE = {
+  PENDING: "pending",
+  COMMITTED: "committed",
+  ROLLEDBACK: "rolledBack",
+} as const;
+export type IrPipeState = typeof IR_PIPE_STATE[keyof typeof IR_PIPE_STATE];
+
+/** ir_retention — 데이터 보존 (entries: 3, capacity: 4) */
+export const IR_RETENTION = {
+  EPHEMERAL: "ephemeral",
+  SESSION: "session",
+  PERSISTENT: "persistent",
+} as const;
+export type IrRetention = typeof IR_RETENTION[keyof typeof IR_RETENTION];
+
+/** ir_storage_type — 저장 유형 (entries: 3, capacity: 4) */
+export const IR_STORAGE_TYPE = {
+  MEMORY: "memory",
+  DB: "db",
+  EVENT_STREAM: "event-stream",
+} as const;
+export type IrStorageType = typeof IR_STORAGE_TYPE[keyof typeof IR_STORAGE_TYPE];
+
+/** ir_transaction_scope — 트랜잭션 범위 (entries: 2, capacity: 4) */
+export const IR_TRANSACTION_SCOPE = {
+  LOCAL: "local",
+  DISTRIBUTED: "distributed",
+} as const;
+export type IrTransactionScope = typeof IR_TRANSACTION_SCOPE[keyof typeof IR_TRANSACTION_SCOPE];
+
 /** lifecycle_state — 생명주기 상태 (entries: 6, capacity: 16) */
 export const LIFECYCLE_STATE = {
   DRAFT: "draft",
@@ -494,6 +747,19 @@ export const LIFECYCLE_STATE = {
   REVERSED: "reversed",
 } as const;
 export type LifecycleState = typeof LIFECYCLE_STATE[keyof typeof LIFECYCLE_STATE];
+
+/** link_type — 관계 유형 (entries: 8, capacity: 16) */
+export const LINK_TYPE = {
+  DEPENDS_ON: "depends_on",
+  IMPLEMENTS: "implements",
+  REFINES: "refines",
+  CONSTRAINS: "constrains",
+  TRACES_TO: "traces_to",
+  CONTAINS: "contains",
+  EVOLVES_FROM: "evolves_from",
+  SUPERSEDES: "supersedes",
+} as const;
+export type LinkType = typeof LINK_TYPE[keyof typeof LINK_TYPE];
 
 /** locale — 로케일 (entries: 3, capacity: 32) */
 export const LOCALE = {
@@ -520,6 +786,15 @@ export const MASK_MODE = {
   HASH: "hash",
 } as const;
 export type MaskMode = typeof MASK_MODE[keyof typeof MASK_MODE];
+
+/** match_mode — 매칭 모드 (entries: 4, capacity: 8) */
+export const MATCH_MODE = {
+  SINGLE: "single",
+  ORDERED: "ordered",
+  UNORDERED: "unordered",
+  WINDOWED: "windowed",
+} as const;
+export type MatchMode = typeof MATCH_MODE[keyof typeof MATCH_MODE];
 
 /** mental_model — 인지 모델 (entries: 13, capacity: 32) */
 export const MENTAL_MODEL = {
@@ -685,38 +960,137 @@ export const QA_MODULE = {
 } as const;
 export type QaModule = typeof QA_MODULE[keyof typeof QA_MODULE];
 
-/** qa_pkg — 패키지 (entries: 28, capacity: 64) */
+/** qa_pkg — 패키지 (entries: 108, capacity: 256) */
 export const QA_PKG = {
-  SPEC_CORE: "spec-core",
+  ARCHI: "archi",
+  TAXONOMY_WEB: "taxonomy-web",
   CLI: "cli",
-  SDK: "sdk",
-  DEMO_SNAPSHOT: "demo-snapshot",
-  WEIGHTED_INDEX: "weighted-index",
-  BIT_INDEX: "bit-index",
-  PERMISSION_ENGINE: "permission-engine",
-  INDEX_META: "index-meta",
+  CLI_COMMAND: "cli-command",
+  TAXONOMY_ENGINE: "taxonomy-engine",
+  TAXONOMY_DECISION_BRIDGE: "taxonomy-decision-bridge",
+  DEFINITION_CATALOG: "definition-catalog",
+  DECISION_FLOW: "decision-flow",
   PLATFORM_DEMO: "platform-demo",
+  E2E: "e2e",
+  TEST_TYPES: "test-types",
+  SNAPSHOT_IO: "snapshot-io",
+  SIM_SERVICE_CATALOG: "sim-service-catalog",
+  SIM_OUTBOX_VIEW: "sim-outbox-view",
+  INDEX_META_WORKERS: "index-meta-workers",
+  DOCS_EXPLORER: "docs-explorer",
+  DETERMINISTIC_LABEL_REGISTRY: "deterministic-label-registry",
+  CONTEXT: "context",
+  CONFIG_LOADER: "config-loader",
+  CODEC: "codec",
+  CANVAS_VIEWPORT: "canvas-viewport",
+  VISBUG_BRIDGE: "visbug-bridge",
+  DEMO_SNAPSHOT: "demo-snapshot",
+  DEFINITION_DATA_SOURCE: "definition-data-source",
+  SIMULATION_TESTS: "simulation-tests",
+  VITEPLUS_SDK_SMOKE: "viteplus-sdk-smoke",
+  FACET_TESTS: "facet-tests",
+  INFRA_ENV_KIT: "infra-env-kit",
+  CORE: "core",
   INGEST_SERVER: "ingest-server",
   REGISTRY_SERVICE: "registry-service",
-  E2E: "e2e",
-  CORE: "core",
-  ENGINE: "engine",
-  STORE: "store",
-  GATE_SERVICE: "gate-service",
+  ONTOLOGY_PACK_VALIDATE: "ontology-pack-validate",
+  DKG: "dkg",
+  INFRA_ENGINE: "infra-engine",
+  AUDIT_RECORDER_STORE: "audit-recorder-store",
+  SPEC_TRANSITION: "spec-transition",
+  RESOURCE_POLICY_STORE: "resource-policy-store",
   QUERY_SERVICE: "query-service",
+  MOTION_WORKSPACE_SERVICE: "motion-workspace-service",
+  GATE_SERVICE: "gate-service",
+  DEFINITION_SERVICE: "definition-service",
   DECODE_SERVICE: "decode-service",
-  REGISTRY_SERVER: "registry-server",
-  REGISTRY_CLIENT: "registry-client",
+  DECISION_SERVICE: "decision-service",
+  AUTHORIZATION_ONTOLOGY: "authorization-ontology",
+  VIZ_CORE: "viz-core",
+  REVIEW_LEDGER: "review-ledger",
+  PIPE_STORE_SQLITE: "pipe-store-sqlite",
+  OPERATIONAL_ONTOLOGY: "operational-ontology",
+  ADDRESS_INDEX: "address-index",
   APM: "apm",
+  ARCHITECTURE_SCHEMATICS: "architecture-schematics",
+  AUTHORIZATION_MONITOR_WEB: "authorization-monitor-web",
+  BENCH: "bench",
+  BIT_INDEX: "bit-index",
+  BROWSER_CODEC: "browser-codec",
   BROWSER_SDK: "browser-sdk",
+  CODEC_PROTO: "codec-proto",
+  CODEGEN_CORE: "codegen-core",
+  CONVERGENCE: "convergence",
+  DATA_OBJECT_CODEGEN: "data-object-codegen",
+  DB_BOOTSTRAP: "db-bootstrap",
+  DB_TRAFFIC_CONTROL: "db-traffic-control",
+  DECISION_FLOW_STORE: "decision-flow-store",
+  DEFINITION_CLIENT: "definition-client",
+  DEMO_TESTS: "demo-tests",
+  DEMO_TYPES: "demo-types",
+  DOC_ENVELOPE: "doc-envelope",
+  ENGINE: "engine",
   EVENT_CATALOG: "event-catalog",
+  GATEWAY: "gateway",
+  GIT_UTILS: "git-utils",
+  INDEX_META: "index-meta",
+  LOGGER: "logger",
+  MOTION_CONTENT: "motion-content",
+  MOTION_WORKSPACE_CLIENT: "motion-workspace-client",
+  MOTION_WORKSPACE: "motion-workspace",
+  NEST_SERVICE_KIT: "nest-service-kit",
+  OPERATIONAL_ONTOLOGY_WEB: "operational-ontology-web",
+  OTEL: "otel",
+  PACKAGE_CLASSIFIER: "package-classifier",
+  PERMISSION_ENGINE: "permission-engine",
   PINO: "pino",
+  PLATFORM_DEMO_API: "platform-demo-api",
+  QUALITY_LEDGER: "quality-ledger",
+  RALPH_TUI_INTEGRATION: "ralph-tui-integration",
+  REGISTRY_CLIENT: "registry-client",
+  REGISTRY_UI: "registry-ui",
+  ROLEPLAY_WEB: "roleplay-web",
+  SDK: "sdk",
+  SHOP_WEB: "shop-web",
+  SIM_DECISION_VIEW: "sim-decision-view",
+  SIM_IDENTIFIER_GRAMMAR: "sim-identifier-grammar",
+  SIM_INTERNAL_NETWORK: "sim-internal-network",
+  SPEC_ANALYZER: "spec-analyzer",
+  SPEC_CORE: "spec-core",
+  SPEC_SCHEMA: "spec-schema",
+  SPEC_TRACKER: "spec-tracker",
+  STORE: "store",
+  TAG_SEARCH: "tag-search",
+  TEST_SCENARIO_STORE: "test-scenario-store",
   VIZ_3D: "viz-3d",
   VIZ_WEB: "viz-web",
-  DEMO_TESTS: "demo-tests",
+  WEIGHTED_GPU: "weighted-gpu",
+  WEIGHTED_INDEX_EXPLORER: "weighted-index-explorer",
+  WEIGHTED_INDEX: "weighted-index",
+  WEIGHTED_UI: "weighted-ui",
   WEIGHTED_WASM: "weighted-wasm",
+  WORK_DOMAIN: "work-domain",
 } as const;
 export type QaPkg = typeof QA_PKG[keyof typeof QA_PKG];
+
+/** quality_kind — 품질 유형 (entries: 6, capacity: 8) */
+export const QUALITY_KIND = {
+  ERROR: "error",
+  ASSERTION: "assertion",
+  MASK: "mask",
+  FIELD_CHECK: "field_check",
+  POLICY_VIOLATION: "policy_violation",
+  UNEXPECTED: "unexpected",
+} as const;
+export type QualityKind = typeof QUALITY_KIND[keyof typeof QUALITY_KIND];
+
+/** quality_severity — 품질 심각도 (entries: 3, capacity: 8) */
+export const QUALITY_SEVERITY = {
+  ERROR: "error",
+  WARNING: "warning",
+  INFO: "info",
+} as const;
+export type QualitySeverity = typeof QUALITY_SEVERITY[keyof typeof QUALITY_SEVERITY];
 
 /** rbac_role — 역할 (entries: 3, capacity: 32) */
 export const RBAC_ROLE = {
@@ -787,6 +1161,25 @@ export const ROLE = {
 } as const;
 export type Role = typeof ROLE[keyof typeof ROLE];
 
+/** rpc_phase — RPC 단계 (entries: 6, capacity: 8) */
+export const RPC_PHASE = {
+  OPEN: "open",
+  MESSAGE: "message",
+  CLOSE: "close",
+  REQUEST: "request",
+  RESPONSE: "response",
+  ERROR: "error",
+} as const;
+export type RpcPhase = typeof RPC_PHASE[keyof typeof RPC_PHASE];
+
+/** rpc_protocol — RPC 프로토콜 (entries: 3, capacity: 8) */
+export const RPC_PROTOCOL = {
+  GRPC: "grpc",
+  WEBSOCKET: "websocket",
+  HTTP2: "http2",
+} as const;
+export type RpcProtocol = typeof RPC_PROTOCOL[keyof typeof RPC_PROTOCOL];
+
 /** scope_mode — 스코프 모드 (entries: 4, capacity: 8) */
 export const SCOPE_MODE = {
   EXPANSION: "expansion",
@@ -795,6 +1188,24 @@ export const SCOPE_MODE = {
   REDUCTION: "reduction",
 } as const;
 export type ScopeMode = typeof SCOPE_MODE[keyof typeof SCOPE_MODE];
+
+/** sdk_action — SDK 동작 (entries: 4, capacity: 8) */
+export const SDK_ACTION = {
+  INIT: "init",
+  FLUSH: "flush",
+  ERROR: "error",
+  RECONNECT: "reconnect",
+} as const;
+export type SdkAction = typeof SDK_ACTION[keyof typeof SDK_ACTION];
+
+/** sdk_channel — SDK 채널 (entries: 4, capacity: 8) */
+export const SDK_CHANNEL = {
+  BROWSER: "browser",
+  NODE: "node",
+  MOBILE: "mobile",
+  AGENT: "agent",
+} as const;
+export type SdkChannel = typeof SDK_CHANNEL[keyof typeof SDK_CHANNEL];
 
 /** skill_category — 스킬 카테고리 (entries: 4, capacity: 8) */
 export const SKILL_CATEGORY = {
@@ -887,7 +1298,7 @@ export const SUBJECTKIND = {
 } as const;
 export type Subjectkind = typeof SUBJECTKIND[keyof typeof SUBJECTKIND];
 
-/** svc_name — 서비스명 (entries: 14, capacity: 32) */
+/** svc_name — 서비스명 (entries: 16, capacity: 32) */
 export const SVC_NAME = {
   SHOPPING_WEB: "shopping-web",
   SHOPPING_BACKEND: "shopping-backend",
@@ -903,6 +1314,8 @@ export const SVC_NAME = {
   QUERY_SERVICE: "query-service",
   DECODE_SERVICE: "decode-service",
   PLATFORM_DEMO_API: "platform-demo-api",
+  ROLEPLAY_WEB: "roleplay-web",
+  VITEPLUS_SDK_SMOKE: "viteplus-sdk-smoke",
 } as const;
 export type SvcName = typeof SVC_NAME[keyof typeof SVC_NAME];
 
@@ -916,12 +1329,60 @@ export const TAG = {
 } as const;
 export type Tag = typeof TAG[keyof typeof TAG];
 
+/** task_phase — 작업 단계 (entries: 5, capacity: 8) */
+export const TASK_PHASE = {
+  START: "start",
+  FINISH: "finish",
+  RETRY: "retry",
+  TIMEOUT: "timeout",
+  CANCEL: "cancel",
+} as const;
+export type TaskPhase = typeof TASK_PHASE[keyof typeof TASK_PHASE];
+
+/** task_type — 작업 유형 (entries: 4, capacity: 8) */
+export const TASK_TYPE = {
+  TASK: "task",
+  JOB: "job",
+  CRON: "cron",
+  PIPELINE: "pipeline",
+} as const;
+export type TaskType = typeof TASK_TYPE[keyof typeof TASK_TYPE];
+
 /** temporal_strategy — 시간 전략 (entries: 2, capacity: 32) */
 export const TEMPORAL_STRATEGY = {
   SPAN_LOCAL: "span_local",
   GLOBAL: "global",
 } as const;
 export type TemporalStrategy = typeof TEMPORAL_STRATEGY[keyof typeof TEMPORAL_STRATEGY];
+
+/** test_kind — 테스트 유형 (entries: 8, capacity: 16) */
+export const TEST_KIND = {
+  UNIT: "unit",
+  UI_LOGIC: "ui-logic",
+  UI: "ui",
+  DB_TRANSACTION: "db-transaction",
+  DATA_EXCHANGE: "data-exchange",
+  AUTH_FLOW: "auth-flow",
+  E2E: "e2e",
+  SIMULATION: "simulation",
+} as const;
+export type TestKind = typeof TEST_KIND[keyof typeof TEST_KIND];
+
+/** test_phase — 테스트 단계 (entries: 11, capacity: 32) */
+export const TEST_PHASE = {
+  PRECONDITION: "precondition",
+  FIXTURE: "fixture",
+  ARRANGE: "arrange",
+  ACT: "act",
+  OBSERVE: "observe",
+  ASSERT_PRIMARY: "assert-primary",
+  ASSERT_SIDE: "assert-side",
+  ASSERT_NEGATIVE: "assert-negative",
+  SNAPSHOT: "snapshot",
+  TEARDOWN: "teardown",
+  REPORT: "report",
+} as const;
+export type TestPhase = typeof TEST_PHASE[keyof typeof TEST_PHASE];
 
 /** test_result — 테스트결과 (entries: 5, capacity: 16) */
 export const TEST_RESULT = {
@@ -932,6 +1393,15 @@ export const TEST_RESULT = {
   TIMEOUT: "timeout",
 } as const;
 export type TestResult = typeof TEST_RESULT[keyof typeof TEST_RESULT];
+
+/** test_scope — 테스트 범위 (entries: 4, capacity: 8) */
+export const TEST_SCOPE = {
+  SINGLE: "single",
+  PAIR: "pair",
+  MULTI: "multi",
+  SYSTEM: "system",
+} as const;
+export type TestScope = typeof TEST_SCOPE[keyof typeof TEST_SCOPE];
 
 /** trackAction — 행동 (entries: 8, capacity: 32) */
 export const TRACKACTION = {

@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: cdd6d61890cb) at 2026-03-23T15:35:18
+// Generated from Catalog "demo" (hash: 9bf649aab9a4) at 2026-06-03T23:14:15
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 import { createIndexSDK } from "@qa-sdk/codec";
@@ -41,6 +41,10 @@ const SCHEMA = {
       entries: ["success", "failure", "type-error", "skipped"],
       capacity: 8,
     },
+    bundle_state: {
+      entries: ["empty", "pending", "gathering", "partial", "complete", "degraded"],
+      capacity: 8,
+    },
     cart_action: {
       entries: ["add", "remove", "checkout"],
       capacity: 32,
@@ -81,6 +85,14 @@ const SCHEMA = {
       entries: ["required", "maxCount", "minCount", "requiredIf", "exclusive", "type", "multi", "unknownAxis"],
       capacity: 32,
     },
+    convergence_phase: {
+      entries: ["buffer", "flush", "aggregate", "classify", "metrics", "observations", "persist"],
+      capacity: 16,
+    },
+    convergence_result: {
+      entries: ["ok", "partial", "empty", "error"],
+      capacity: 8,
+    },
     decision_outcome: {
       entries: ["completed", "abandoned", "blocked", "auto_resolved", "escalated"],
       capacity: 16,
@@ -88,6 +100,14 @@ const SCHEMA = {
     decision_type: {
       entries: ["capacity", "new-axis", "new-prefix", "dim-add", "merge", "deprecate", "separation"],
       capacity: 16,
+    },
+    def_layer: {
+      entries: ["domain", "operation", "mediation", "experience"],
+      capacity: 8,
+    },
+    def_level: {
+      entries: ["group", "module", "leaf"],
+      capacity: 8,
     },
     deploy_action: {
       entries: ["deploy", "rollback", "scale_up", "scale_down", "restart", "canary_start", "canary_promote", "migrate"],
@@ -104,6 +124,10 @@ const SCHEMA = {
     edge_type: {
       entries: ["satisfies", "implements", "tests", "traces-to", "depends-on", "composes", "references", "governs", "justifies", "constrains", "contains", "bridges", "consumes", "binds", "observes", "prompts", "evolves-from", "supersedes"],
       capacity: 32,
+    },
+    effect_kind: {
+      entries: ["create", "update", "move", "consume", "open", "close"],
+      capacity: 8,
     },
     env: {
       entries: ["dev", "stage", "prod", "test", "local"],
@@ -153,6 +177,42 @@ const SCHEMA = {
       entries: ["demand_reality", "status_quo", "desperate_specificity", "narrowest_wedge", "observation", "future_fit"],
       capacity: 16,
     },
+    gate_kind: {
+      entries: ["typecheck", "lint", "static-analysis", "unit-test", "snapshot-test", "integration-test", "transaction-test", "api-contract", "e2e-test", "visual-check", "perf-benchmark", "build", "build-affected", "security-audit", "a11y-check", "doc-build", "license-check", "eval-benchmark", "cost-track"],
+      capacity: 32,
+    },
+    gate_scope: {
+      entries: ["static", "unit", "integration", "system", "build", "audit", "ai"],
+      capacity: 16,
+    },
+    gate_state: {
+      entries: ["idle", "blocked", "ready", "gathering", "running", "passed", "failed", "stale", "skipped"],
+      capacity: 16,
+    },
+    graph_action: {
+      entries: ["link_add", "link_remove", "promote", "demote", "split", "merge"],
+      capacity: 8,
+    },
+    harness_machine: {
+      entries: ["doc-lifecycle", "spec-impl", "convention-compliance", "db-sync", "address-state", "version-lifecycle", "decision-flow", "service-status", "event-status", "metric-health", "policy-candidate"],
+      capacity: 16,
+    },
+    harness_process: {
+      entries: ["prefix-release", "doc-approval", "service-deprecation"],
+      capacity: 8,
+    },
+    harness_state: {
+      entries: ["draft", "review", "approved", "deprecated", "archived", "active", "inactive", "open", "reserved", "released", "pending", "completed", "abandoned", "blocked", "retired", "ok", "warning", "critical", "designed", "implementing", "implemented", "verified", "source-referenced", "unverified", "partial", "compliant", "violated", "out-of-sync", "syncing", "synced", "drift-detected", "candidate", "rejected", "modified"],
+      capacity: 64,
+    },
+    harness_trigger: {
+      entries: ["user_action", "system_auto", "cascade", "guard_pass", "guard", "notify", "timeout", "error", "schedule", "api_call"],
+      capacity: 16,
+    },
+    harness_verdict: {
+      entries: ["pass", "fail"],
+      capacity: 4,
+    },
     health_status: {
       entries: ["healthy", "degraded", "unhealthy", "maintenance"],
       capacity: 32,
@@ -169,8 +229,36 @@ const SCHEMA = {
       entries: ["web", "mobile"],
       capacity: 32,
     },
+    ir_call_kind: {
+      entries: ["method-call", "event-emit", "http-request", "db-query"],
+      capacity: 8,
+    },
+    ir_certainty: {
+      entries: ["strict", "flexible"],
+      capacity: 4,
+    },
+    ir_pipe_state: {
+      entries: ["pending", "committed", "rolledBack"],
+      capacity: 4,
+    },
+    ir_retention: {
+      entries: ["ephemeral", "session", "persistent"],
+      capacity: 4,
+    },
+    ir_storage_type: {
+      entries: ["memory", "db", "event-stream"],
+      capacity: 4,
+    },
+    ir_transaction_scope: {
+      entries: ["local", "distributed"],
+      capacity: 4,
+    },
     lifecycle_state: {
       entries: ["draft", "active", "deprecated", "archived", "superseded", "reversed"],
+      capacity: 16,
+    },
+    link_type: {
+      entries: ["depends_on", "implements", "refines", "constrains", "traces_to", "contains", "evolves_from", "supersedes"],
       capacity: 16,
     },
     locale: {
@@ -184,6 +272,10 @@ const SCHEMA = {
     mask_mode: {
       entries: ["raw", "mask", "drop", "hash"],
       capacity: 32,
+    },
+    match_mode: {
+      entries: ["single", "ordered", "unordered", "windowed"],
+      capacity: 8,
     },
     mental_model: {
       entries: ["bezos_doors", "munger_inversion", "jobs_subtraction", "speed_calibration", "proxy_skepticism", "boil_the_lake", "three_layer", "narrative_coherence", "temporal_depth", "founder_mode", "wartime_awareness", "design_trust", "edge_paranoia"],
@@ -242,8 +334,16 @@ const SCHEMA = {
       capacity: 64,
     },
     qa_pkg: {
-      entries: ["spec-core", "cli", "sdk", "demo-snapshot", "weighted-index", "bit-index", "permission-engine", "index-meta", "platform-demo", "ingest-server", "registry-service", "e2e", "core", "engine", "store", "gate-service", "query-service", "decode-service", "registry-server", "registry-client", "apm", "browser-sdk", "event-catalog", "pino", "viz-3d", "viz-web", "demo-tests", "weighted-wasm"],
-      capacity: 64,
+      entries: ["archi", "taxonomy-web", "cli", "cli-command", "taxonomy-engine", "taxonomy-decision-bridge", "definition-catalog", "decision-flow", "platform-demo", "e2e", "test-types", "snapshot-io", "sim-service-catalog", "sim-outbox-view", "index-meta-workers", "docs-explorer", "deterministic-label-registry", "context", "config-loader", "codec", "canvas-viewport", "visbug-bridge", "demo-snapshot", "definition-data-source", "simulation-tests", "viteplus-sdk-smoke", "facet-tests", "infra-env-kit", "core", "ingest-server", "registry-service", "ontology-pack-validate", "dkg", "infra-engine", "audit-recorder-store", "spec-transition", "resource-policy-store", "query-service", "motion-workspace-service", "gate-service", "definition-service", "decode-service", "decision-service", "authorization-ontology", "viz-core", "review-ledger", "pipe-store-sqlite", "operational-ontology", "address-index", "apm", "architecture-schematics", "authorization-monitor-web", "bench", "bit-index", "browser-codec", "browser-sdk", "codec-proto", "codegen-core", "convergence", "data-object-codegen", "db-bootstrap", "db-traffic-control", "decision-flow-store", "definition-client", "demo-tests", "demo-types", "doc-envelope", "engine", "event-catalog", "gateway", "git-utils", "index-meta", "logger", "motion-content", "motion-workspace-client", "motion-workspace", "nest-service-kit", "operational-ontology-web", "otel", "package-classifier", "permission-engine", "pino", "platform-demo-api", "quality-ledger", "ralph-tui-integration", "registry-client", "registry-ui", "roleplay-web", "sdk", "shop-web", "sim-decision-view", "sim-identifier-grammar", "sim-internal-network", "spec-analyzer", "spec-core", "spec-schema", "spec-tracker", "store", "tag-search", "test-scenario-store", "viz-3d", "viz-web", "weighted-gpu", "weighted-index-explorer", "weighted-index", "weighted-ui", "weighted-wasm", "work-domain"],
+      capacity: 256,
+    },
+    quality_kind: {
+      entries: ["error", "assertion", "mask", "field_check", "policy_violation", "unexpected"],
+      capacity: 8,
+    },
+    quality_severity: {
+      entries: ["error", "warning", "info"],
+      capacity: 8,
     },
     rbac_role: {
       entries: ["admin", "editor", "viewer"],
@@ -277,8 +377,24 @@ const SCHEMA = {
       entries: ["admin", "developer", "operator", "viewer", "readonly", "customer", "auditor"],
       capacity: 32,
     },
+    rpc_phase: {
+      entries: ["open", "message", "close", "request", "response", "error"],
+      capacity: 8,
+    },
+    rpc_protocol: {
+      entries: ["grpc", "websocket", "http2"],
+      capacity: 8,
+    },
     scope_mode: {
       entries: ["expansion", "selective", "hold", "reduction"],
+      capacity: 8,
+    },
+    sdk_action: {
+      entries: ["init", "flush", "error", "reconnect"],
+      capacity: 8,
+    },
+    sdk_channel: {
+      entries: ["browser", "node", "mobile", "agent"],
       capacity: 8,
     },
     skill_category: {
@@ -306,20 +422,40 @@ const SCHEMA = {
       capacity: 32,
     },
     svc_name: {
-      entries: ["shopping-web", "shopping-backend", "auth", "payment", "gateway", "registry-service", "ingest-server", "platform-demo", "content-service", "infra-controller", "gate-service", "query-service", "decode-service", "platform-demo-api"],
+      entries: ["shopping-web", "shopping-backend", "auth", "payment", "gateway", "registry-service", "ingest-server", "platform-demo", "content-service", "infra-controller", "gate-service", "query-service", "decode-service", "platform-demo-api", "roleplay-web", "viteplus-sdk-smoke"],
       capacity: 32,
     },
     tag: {
       entries: ["frontend", "backend", "devops", "ai", "database"],
       capacity: 32,
     },
+    task_phase: {
+      entries: ["start", "finish", "retry", "timeout", "cancel"],
+      capacity: 8,
+    },
+    task_type: {
+      entries: ["task", "job", "cron", "pipeline"],
+      capacity: 8,
+    },
     temporal_strategy: {
       entries: ["span_local", "global"],
+      capacity: 32,
+    },
+    test_kind: {
+      entries: ["unit", "ui-logic", "ui", "db-transaction", "data-exchange", "auth-flow", "e2e", "simulation"],
+      capacity: 16,
+    },
+    test_phase: {
+      entries: ["precondition", "fixture", "arrange", "act", "observe", "assert-primary", "assert-side", "assert-negative", "snapshot", "teardown", "report"],
       capacity: 32,
     },
     test_result: {
       entries: ["passed", "failed", "error", "skipped", "timeout"],
       capacity: 16,
+    },
+    test_scope: {
+      entries: ["single", "pair", "multi", "system"],
+      capacity: 8,
     },
     trackAction: {
       entries: ["click", "view", "scroll", "submit", "navigate", "add_to_cart", "purchase", "close"],
@@ -349,11 +485,13 @@ const SCHEMA = {
   prefixes: {
     auth_event: { dims: ["action"] },
     build_event: { dims: ["qa_pkg", "qa_module", "build_result"] },
+    bundle_observation: { dims: ["bundle_state"] },
     cart_event: { dims: ["action"] },
     cli_event: { dims: ["cli_intent", "cli_domain", "cli_subject"] },
     cli_tracking: { dims: ["cli_intent", "cli_domain", "cli_subject", "skill_outcome"] },
     content: { dims: ["tag", "category", "status", "locale", "channel"] },
     contract_check: { dims: ["qa_pkg", "api_surface", "test_result"] },
+    convergence_event: { dims: ["convergence_phase", "convergence_result"] },
     data_policy: { dims: ["mask_mode"] },
     decision_event: { dims: ["flow_type", "cognitive_phase", "evidence_kind", "confidence_band"] },
     decision_path: { dims: ["flow_type", "decision_outcome", "scope_mode"] },
@@ -370,9 +508,18 @@ const SCHEMA = {
     execution_context: { dims: ["execution_mode"] },
     flow_point: { dims: ["flow_name", "flow_step", "flow_variant"] },
     forcing_response: { dims: ["forcing_question", "evidence_kind", "confidence_band"] },
+    gate_execution: { dims: ["gate_kind", "gate_scope", "gate_state"] },
     gate_point: { dims: ["address_state"] },
+    graph_event: { dims: ["def_level", "graph_action", "link_type"] },
+    harness_guard: { dims: ["harness_machine", "harness_state", "harness_verdict"] },
+    harness_process_step: { dims: ["harness_process", "harness_machine", "harness_verdict"] },
+    harness_transition: { dims: ["harness_machine", "harness_state", "harness_trigger"] },
     health_event: { dims: ["health_status"] },
     ingest_record: { dims: ["record_type"] },
+    ir_data: { dims: ["ir_certainty", "ir_transaction_scope", "ir_retention", "ir_storage_type"] },
+    ir_intent_path: { dims: ["ir_call_kind", "ir_pipe_state"] },
+    ir_module: { dims: ["def_level", "def_layer", "ir_certainty"] },
+    ir_pipe: { dims: ["ir_pipe_state", "ir_call_kind"] },
     metric_aggregate: { dims: ["metric_type", "execution_mode", "health_status"] },
     metric_point: { dims: ["metric_type", "record_type"] },
     model_apply: { dims: ["mental_model", "reversibility", "magnitude"] },
@@ -383,18 +530,24 @@ const SCHEMA = {
     pattern_match: { dims: ["identification_mode", "behavior_pattern", "pattern_confidence"] },
     permission: { dims: ["role"] },
     pipeline_point: { dims: ["pipeline_phase", "validation_mode", "verdict_result", "temporal_strategy"] },
+    quality_event: { dims: ["quality_severity", "quality_kind"] },
     rbac: { dims: ["role", "action", "resource"] },
     relational: { dims: ["subjectKind", "predicate", "objectKind"] },
     resource_lifecycle: { dims: ["resource_type", "lifecycle_state", "resource_location"] },
+    rpc_event: { dims: ["rpc_protocol", "rpc_phase"] },
     schema_event: { dims: ["migration_pattern", "deploy_action"] },
     schema_validation: { dims: ["validation_layer", "constraint_rule", "verdict_result"] },
+    sdk_lifecycle: { dims: ["sdk_action", "sdk_channel"] },
     service: { dims: ["env", "region", "svc_name", "namespace"] },
     skill_execution: { dims: ["skill_id", "skill_category", "skill_outcome"] },
     spec_event: { dims: ["spec_type", "lifecycle_state"] },
     tag_lifecycle: { dims: ["tag", "resource_type", "lifecycle_state"] },
+    task_event: { dims: ["task_type", "task_phase"] },
     test_coverage: { dims: ["qa_pkg", "qa_module", "test_result", "flow_variant"] },
     test_event: { dims: ["qa_pkg", "qa_module", "test_result"] },
+    test_scenario: { dims: ["test_kind", "test_scope", "test_phase"] },
     tracking: { dims: ["trackAction", "page", "userType"] },
+    transition_event: { dims: ["effect_kind", "match_mode"] },
     validation_event: { dims: ["validation_layer", "constraint_op", "verdict_result"] },
     version_point: { dims: ["version_lifecycle"] },
     version_state: { dims: ["version_lifecycle", "address_state"] },
@@ -408,11 +561,13 @@ export const sdk = createIndexSDK(SCHEMA);
 export const SNAPSHOT_SUPPLY = {
   "auth_event": "envelope" as const,
   "build_event": "implicit" as const,
+  "bundle_observation": "envelope" as const,
   "cart_event": "envelope" as const,
   "cli_event": "implicit" as const,
   "cli_tracking": "implicit" as const,
   "content": "implicit" as const,
   "contract_check": "implicit" as const,
+  "convergence_event": "envelope" as const,
   "data_policy": "envelope" as const,
   "decision_event": "implicit" as const,
   "decision_path": "implicit" as const,
@@ -429,9 +584,18 @@ export const SNAPSHOT_SUPPLY = {
   "execution_context": "envelope" as const,
   "flow_point": "envelope" as const,
   "forcing_response": "implicit" as const,
+  "gate_execution": "envelope" as const,
   "gate_point": "envelope" as const,
+  "graph_event": "envelope" as const,
+  "harness_guard": "envelope" as const,
+  "harness_process_step": "envelope" as const,
+  "harness_transition": "envelope" as const,
   "health_event": "envelope" as const,
   "ingest_record": "envelope" as const,
+  "ir_data": "implicit" as const,
+  "ir_intent_path": "envelope" as const,
+  "ir_module": "implicit" as const,
+  "ir_pipe": "envelope" as const,
   "metric_aggregate": "envelope" as const,
   "metric_point": "envelope" as const,
   "model_apply": "implicit" as const,
@@ -442,18 +606,24 @@ export const SNAPSHOT_SUPPLY = {
   "pattern_match": "envelope" as const,
   "permission": "envelope" as const,
   "pipeline_point": "envelope" as const,
+  "quality_event": "envelope" as const,
   "rbac": "implicit" as const,
   "relational": "implicit" as const,
   "resource_lifecycle": "envelope" as const,
+  "rpc_event": "envelope" as const,
   "schema_event": "envelope" as const,
   "schema_validation": "envelope" as const,
+  "sdk_lifecycle": "envelope" as const,
   "service": "implicit" as const,
   "skill_execution": "implicit" as const,
   "spec_event": "implicit" as const,
   "tag_lifecycle": "envelope" as const,
+  "task_event": "envelope" as const,
   "test_coverage": "implicit" as const,
   "test_event": "implicit" as const,
+  "test_scenario": "implicit" as const,
   "tracking": "envelope" as const,
+  "transition_event": "envelope" as const,
   "validation_event": "envelope" as const,
   "version_point": "envelope" as const,
   "version_state": "envelope" as const,

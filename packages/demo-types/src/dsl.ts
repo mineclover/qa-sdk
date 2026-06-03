@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: cdd6d61890cb) at 2026-03-23T15:35:18
+// Generated from Catalog "demo" (hash: 9bf649aab9a4) at 2026-06-03T23:14:15
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 /** 관측 DSL — 화면/API/흐름 관측 포인트 + 패턴 분류를 서비스 단위로 묶는 DSL. 모든 관측 prefix가 동일한 svc_ref를 공유한다. */
