@@ -368,10 +368,12 @@ export function createSimHandle(args: SimHandleFactoryArgs): SimHandle {
  */
 export function createSimGatewayFetch(args: {
   gatewayUrl: string;
+  timeoutMs?: number;
   fetchImpl?: FetchLike;
 }): (req: Request) => Promise<Response> {
   const fetchImpl: FetchLike = args.fetchImpl ?? globalThis.fetch.bind(globalThis);
   const gw = args.gatewayUrl.replace(/\/$/, "");
+  const timeoutMs = args.timeoutMs ?? 5_000;
 
   return async (req: Request): Promise<Response> => {
     const original = new URL(req.url);
@@ -385,6 +387,7 @@ export function createSimGatewayFetch(args: {
         req.method === "GET" || req.method === "HEAD"
           ? undefined
           : await req.clone().arrayBuffer(),
+      signal: AbortSignal.timeout(timeoutMs),
     };
     return fetchImpl(target, init);
   };

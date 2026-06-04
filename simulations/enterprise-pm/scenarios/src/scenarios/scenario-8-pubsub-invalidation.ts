@@ -46,32 +46,18 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
   ],
 
   async setup() {
-    const handle = (globalThis as unknown as { __simHandle?: unknown })
-      .__simHandle as
-      | {
-          fixtures: {
-            bob: { id: string; email: string; password: string };
-            admin: { email: string; password: string };
-            alice: { id: string };
-            departments: { eng: string };
-            roles: { manager: { id: string } };
-            seedBudgetRequest: (args: {
-              projectId: string;
-              projectDepartmentId: string;
-              amount: number;
-              requesterId: string;
-            }) => Promise<{ id: string }>;
-          };
-          authApp: {
-            getHttpServer: () => { address: () => { port: number } | null };
-          };
-        }
-      | undefined;
+    const handle = (globalThis as any).__simHandle;
     if (!handle) throw new Error("__simHandle not bound");
     const fx = handle.fixtures;
+    
+    // authApp shim 을 통해 auth-api URL 획득.
+    // In-process 는 dynamic port, HTTP mode 는 factory 에 주입된 authApiUrl 을 사용.
     const addr = handle.authApp.getHttpServer().address();
     if (!addr) throw new Error("authApp address not available");
-    const authApiBaseUrl = `http://127.0.0.1:${addr.port}`;
+    
+    const authApiBaseUrl = (addr as any).port 
+      ? `http://127.0.0.1:${(addr as any).port}`
+      : (handle as any).authApiUrl || "http://localhost:4400";
 
     // engineering budget request 를 하나 시드 — bob 이 approve 시도할 대상.
     // requesterId=alice, bob 은 member 로 initial bitmap mask 가 budget.approve (addr 10) 미포함.
@@ -98,9 +84,8 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
   },
 
   async act(ctx) {
-    const gatewayFetch = (globalThis as unknown as {
-      __simGatewayFetch?: (r: Request) => Promise<Response>;
-    }).__simGatewayFetch!;
+    const gatewayFetch = (globalThis as any).__simGatewayFetch;
+    if (!gatewayFetch) throw new Error("__simGatewayFetch not bound");
     const traceIds: string[] = [];
 
     // 1. bob login → token1 (초기 mask 0x0f00)

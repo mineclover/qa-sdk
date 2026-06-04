@@ -201,4 +201,72 @@ describe("createSimHandle", () => {
     expect(captured[0]?.init?.method ?? "GET").toBe("GET");
     expect(captured[0]?.init?.body).toBeUndefined();
   });
+
+  it("createSimGatewayFetch — Authorization 헤더 전파", async () => {
+    const captured: Array<{ url: string; init?: RequestInit }> = [];
+    const responses = new Map<string, { status: number; body: unknown }>([
+      ["http://gateway/secure", { status: 200, body: { ok: true } }],
+    ]);
+    const gatewayFetch = createSimGatewayFetch({
+      gatewayUrl: "http://gateway",
+      fetchImpl: fakeFetch(responses, captured),
+    });
+    const headers = new Headers();
+    headers.set("Authorization", "Bearer secret-token");
+    headers.set("X-Custom", "value");
+
+    await gatewayFetch(new Request("http://sim/secure", { headers }));
+
+    const sentHeaders = captured[0]?.init?.headers as Headers;
+    expect(sentHeaders.get("Authorization")).toBe("Bearer secret-token");
+    expect(sentHeaders.get("X-Custom")).toBe("value");
+  });
+
+  it("createSimGatewayFetch — timeoutMs 및 AbortSignal 전파", async () => {
+    let capturedSignal: AbortSignal | undefined;
+    const fetchImpl = (async (_url: string, init?: RequestInit) => {
+      capturedSignal = init?.signal;
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }) as unknown as FetchLike;
+
+    const gatewayFetch = createSimGatewayFetch({
+      gatewayUrl: "http://gateway",
+      timeoutMs: 1234,
+      fetchImpl,
+    });
+
+    await gatewayFetch(new Request("http://sim/any"));
+    expect(capturedSignal).toBeDefined();
+    // signal 이 존재하고 AbortSignal.timeout(1234) 에서 생성되었는지 직접 검증은 
+    // 브라우저/Node 구현에 따라 어렵지만, signal 주입 여부는 확인됨.
+  });
+
+  it("seedBudgetRequest — 발급된 Bearer 토큰이 모든 후속 호출에 포함됨", async () => {
+    const captured: Array<{ url: string; init?: RequestInit }> = [];
+    const responses = new Map<string, { status: number; body: unknown }>([
+      ["http://gateway/auth/login", { status: 200, body: { token: "alice-jwt" } }],
+      ["http://gateway/approvals/requests", { status: 201, body: { id: "br-1" } }],
+      ["http://gateway/approvals/requests/br-1/submit", { status: 200, body: { ok: true } }],
+      ["http://gateway/approvals/requests/br-1/start-review", { status: 200, body: { ok: true } }],
+    ]);
+    const handle = createSimHandle({
+      gatewayUrl: "http://gateway",
+      authApiUrl: "http://auth-api:4001",
+      fetchImpl: fakeFetch(responses, captured),
+    });
+
+    await handle.fixtures.seedBudgetRequest({
+      projectId: "p1",
+      projectDepartmentId: "d1",
+      amount: 100,
+      requesterId: handle.fixtures.alice.id,
+    });
+
+    // 1번은 login (no auth), 2~4번은 Bearer alice-jwt 확인
+    const requests = captured.slice(1);
+    for (const req of requests) {
+      const h = req.init?.headers as Record<string, string>;
+      expect(h["Authorization"]).toBe("Bearer alice-jwt");
+    }
+  });
 });

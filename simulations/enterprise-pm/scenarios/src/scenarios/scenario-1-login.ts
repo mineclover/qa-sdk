@@ -31,10 +31,8 @@ export const scenario1Login: Scenario<S1Ctx> = {
   ],
 
   async setup() {
-    const handle = (globalThis as unknown as {
-      __simHandle?: { fixtures: { alice: { email: string; password: string } } };
-    }).__simHandle;
-    if (!handle) throw new Error("__simHandle not bound — in-process bootstrap required");
+    const handle = (globalThis as any).__simHandle;
+    if (!handle) throw new Error("__simHandle not bound");
     return {
       email: handle.fixtures.alice.email,
       password: handle.fixtures.alice.password,
@@ -43,11 +41,9 @@ export const scenario1Login: Scenario<S1Ctx> = {
   },
 
   async act(ctx) {
-    const gatewayFetch = (globalThis as unknown as {
-      __simGatewayFetch?: (r: Request) => Promise<Response>;
-    }).__simGatewayFetch;
+    const gatewayFetch = (globalThis as any).__simGatewayFetch;
     if (!gatewayFetch) {
-      throw new Error("__simGatewayFetch not bound — in-process bootstrap required");
+      throw new Error("__simGatewayFetch not bound");
     }
     const loginRes = await gatewayFetch(
       new Request("http://sim/auth/login", {
@@ -115,6 +111,6 @@ export const scenario1Login: Scenario<S1Ctx> = {
   },
 
   async teardown() {
-    // in-process bootstrap 이 cleanup
+    // handles (in-process or http) cleanup
   },
 };

@@ -29,14 +29,7 @@ export const scenario2ProjectCreate: Scenario<S2Ctx> = {
   ],
 
   async setup() {
-    const handle = (globalThis as unknown as {
-      __simHandle?: {
-        fixtures: {
-          alice: { email: string; password: string; departmentId: string };
-          departments: { eng: string };
-        };
-      };
-    }).__simHandle;
+    const handle = (globalThis as any).__simHandle;
     if (!handle) throw new Error("__simHandle not bound");
     return {
       email: handle.fixtures.alice.email,
@@ -46,9 +39,7 @@ export const scenario2ProjectCreate: Scenario<S2Ctx> = {
   },
 
   async act(ctx) {
-    const gatewayFetch = (globalThis as unknown as {
-      __simGatewayFetch?: (r: Request) => Promise<Response>;
-    }).__simGatewayFetch;
+    const gatewayFetch = (globalThis as any).__simGatewayFetch;
     if (!gatewayFetch) throw new Error("__simGatewayFetch not bound");
 
     const traceIds: string[] = [];
@@ -148,6 +139,6 @@ export const scenario2ProjectCreate: Scenario<S2Ctx> = {
   },
 
   async teardown() {
-    // in-process — 별도 cleanup 없음
+    // handles — 별도 cleanup 없음
   },
 };

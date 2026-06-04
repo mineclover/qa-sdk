@@ -47,24 +47,13 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
   ],
 
   async setup() {
-    const handle = (globalThis as unknown as { __simHandle?: unknown })
-      .__simHandle as
-      | {
-          fixtures: {
-            alice: { email: string; password: string; departmentId: string };
-            frank: { id: string; email: string; password: string };
-            eve: { id: string };
-            departments: { eng: string };
-          };
-        }
-      | undefined;
+    const handle = (globalThis as any).__simHandle;
     if (!handle) throw new Error("__simHandle not bound");
     const fx = handle.fixtures;
 
     // setup 단계에서 project 생성 — alice token 으로 gateway 경유
-    const gatewayFetch = (globalThis as unknown as {
-      __simGatewayFetch?: (r: Request) => Promise<Response>;
-    }).__simGatewayFetch!;
+    const gatewayFetch = (globalThis as any).__simGatewayFetch;
+    if (!gatewayFetch) throw new Error("__simGatewayFetch not bound");
     const aliceLogin = await gatewayFetch(
       new Request("http://sim/auth/login", {
         method: "POST",

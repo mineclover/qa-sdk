@@ -11,6 +11,7 @@ import type {
   DecisionMeta,
   GateDependency,
   GateMarkers,
+  OptionAnnotation,
 } from "./decision-file.js";
 import { serializeDecisionFile } from "./decision-file.js";
 
@@ -24,6 +25,11 @@ export type ToMarkdownOptions = {
   /** 기존 timestamp 보존 시 사용. 미지정 시 현재 시각. */
   created?: string;
   updated?: string;
+  /**
+   * option id → annotations. 라운드트립 시 ^cost/^benefit/^risk 보존.
+   * schema(BranchSchema)는 annotation을 carry하지 않으므로 외부에서 따로 주입.
+   */
+  optionAnnotations?: Record<string, readonly OptionAnnotation[]>;
 };
 
 const DEFAULT_PHASE: CognitivePhase = "decide";
@@ -55,6 +61,7 @@ export function toMarkdown(opts: ToMarkdownOptions): DecisionFile {
   const isMulti = schema.gates.length > 1;
   const allEvidence = opts.evidence ?? [];
   const outcomeForBody = lifecycle === "approved" ? opts.outcome : undefined;
+  const annotations = opts.optionAnnotations ?? {};
 
   const body = isMulti
     ? buildMultiGateBody({
@@ -62,21 +69,42 @@ export function toMarkdown(opts: ToMarkdownOptions): DecisionFile {
         gates: schema.gates,
         evidence: allEvidence,
         outcome: outcomeForBody,
+        annotations,
       })
     : buildSingleGateBody({
         purpose,
         gate: schema.gates[0],
         evidence: allEvidence,
         outcome: outcomeForBody,
+        annotations,
       });
 
   return {
     meta,
     body,
     markers: isMulti
-      ? buildMultiGateMarkers({ purpose, gates: schema.gates, evidence: allEvidence, outcomeForBody })
-      : buildSingleGateMarkers({ purpose, gate: schema.gates[0], evidence: allEvidence, outcomeForBody }),
+      ? buildMultiGateMarkers({ purpose, gates: schema.gates, evidence: allEvidence, outcomeForBody, annotations })
+      : buildSingleGateMarkers({ purpose, gate: schema.gates[0], evidence: allEvidence, outcomeForBody, annotations }),
   };
+}
+
+/**
+ * DecisionFile.markers에서 option id → annotations 맵 추출.
+ * single-gate / multi-gate 모두 합산.
+ */
+export function extractOptionAnnotations(
+  file: DecisionFile,
+): Record<string, readonly OptionAnnotation[]> {
+  const out: Record<string, readonly OptionAnnotation[]> = {};
+  for (const o of file.markers.options) {
+    if (o.annotations && o.annotations.length > 0) out[o.id] = o.annotations;
+  }
+  for (const g of file.markers.gates) {
+    for (const o of g.options) {
+      if (o.annotations && o.annotations.length > 0) out[o.id] = o.annotations;
+    }
+  }
+  return out;
 }
 
 export function toMarkdownText(opts: ToMarkdownOptions): string {
@@ -90,11 +118,16 @@ function buildSingleGateMarkers(opts: {
   gate: GateSchema;
   evidence: readonly Evidence[];
   outcomeForBody: string | undefined;
+  annotations: Record<string, readonly OptionAnnotation[]>;
 }) {
-  const { gate, evidence, outcomeForBody } = opts;
+  const { gate, evidence, outcomeForBody, annotations } = opts;
   return {
     purpose: opts.purpose,
-    options: (gate.branches ?? []).map((b) => ({ id: b.id, body: b.label })),
+    options: (gate.branches ?? []).map((b) => ({
+      id: b.id,
+      body: b.label,
+      annotations: annotations[b.id],
+    })),
     evidence: evidence.map((e) => ({ ...e })),
     outcome: outcomeForBody,
     phase: gate.phase !== DEFAULT_PHASE ? gate.phase : undefined,
@@ -112,8 +145,9 @@ function buildSingleGateBody(opts: {
   gate: GateSchema;
   evidence: readonly Evidence[];
   outcome: string | undefined;
+  annotations: Record<string, readonly OptionAnnotation[]>;
 }): string {
-  const { gate, evidence, outcome } = opts;
+  const { gate, evidence, outcome, annotations } = opts;
   const lines: string[] = ["", "# Decision\n"];
   const purposeMarkers = inlineMarkers({
     phase: gate.phase,
@@ -122,7 +156,7 @@ function buildSingleGateBody(opts: {
   });
   lines.push(`${opts.purpose} ^purpose${formatInline(purposeMarkers)}\n`);
 
-  lines.push(...renderOptions(gate.branches ?? []));
+  lines.push(...renderOptions(gate.branches ?? [], annotations));
   lines.push(...renderEvidence(evidence));
   lines.push(...renderOutcome(outcome));
 
@@ -136,6 +170,7 @@ function buildMultiGateMarkers(opts: {
   gates: readonly GateSchema[];
   evidence: readonly Evidence[];
   outcomeForBody: string | undefined;
+  annotations: Record<string, readonly OptionAnnotation[]>;
 }) {
   return {
     purpose: opts.purpose,
@@ -143,11 +178,15 @@ function buildMultiGateMarkers(opts: {
     evidence: [],
     outcome: opts.outcomeForBody,
     dependsOn: [],
-    gates: opts.gates.map((g) => gateSchemaToMarkers(g, opts.evidence)),
+    gates: opts.gates.map((g) => gateSchemaToMarkers(g, opts.evidence, opts.annotations)),
   };
 }
 
-function gateSchemaToMarkers(g: GateSchema, allEvidence: readonly Evidence[]): GateMarkers {
+function gateSchemaToMarkers(
+  g: GateSchema,
+  allEvidence: readonly Evidence[],
+  annotations: Record<string, readonly OptionAnnotation[]>,
+): GateMarkers {
   // multi-gate evidence 분배: gate.requiredEvidence kind에 매칭되는 것만 그 gate에 할당.
   // 추정만 — 정확한 매핑은 toFlowSchema → toMarkdown 라운드트립에서만 필요.
   const required = new Set(g.requiredEvidence ?? []);
@@ -162,7 +201,11 @@ function gateSchemaToMarkers(g: GateSchema, allEvidence: readonly Evidence[]): G
       (g.weight ?? DEFAULT_WEIGHT) !== DEFAULT_WEIGHT
         ? (g.weight as GateWeight)
         : undefined,
-    options: (g.branches ?? []).map((b) => ({ id: b.id, body: b.label })),
+    options: (g.branches ?? []).map((b) => ({
+      id: b.id,
+      body: b.label,
+      annotations: annotations[b.id],
+    })),
     evidence: gateEvidence.map((e) => ({ ...e })),
     dependsOn: [...(g.affects ?? [])],
   };
@@ -173,6 +216,7 @@ function buildMultiGateBody(opts: {
   gates: readonly GateSchema[];
   evidence: readonly Evidence[];
   outcome: string | undefined;
+  annotations: Record<string, readonly OptionAnnotation[]>;
 }): string {
   const lines: string[] = ["", "# Decision\n", `${opts.purpose} ^purpose\n`];
   for (const g of opts.gates) {
@@ -183,7 +227,7 @@ function buildMultiGateBody(opts: {
       affects: g.affects ?? [],
     });
     lines.push(`^gate:${g.id}${formatInline(gateMarkers)}\n`);
-    lines.push(...renderOptions(g.branches ?? []));
+    lines.push(...renderOptions(g.branches ?? [], opts.annotations));
     const required = new Set(g.requiredEvidence ?? []);
     const gateEvidence =
       required.size > 0
@@ -217,10 +261,19 @@ function formatInline(markers: string[]): string {
   return markers.length > 0 ? ` ${markers.join(" ")}` : "";
 }
 
-function renderOptions(branches: readonly { id: string; label: string }[]): string[] {
+function renderOptions(
+  branches: readonly { id: string; label: string }[],
+  annotations: Record<string, readonly OptionAnnotation[]>,
+): string[] {
   if (branches.length === 0) return [];
   const lines: string[] = ["## 옵션\n"];
-  for (const b of branches) lines.push(`${b.label} ^option:${b.id}\n`);
+  for (const b of branches) {
+    lines.push(`${b.label} ^option:${b.id}\n`);
+    const anns = annotations[b.id] ?? [];
+    for (const a of anns) {
+      lines.push(`${a.body} ^${a.kind}:${b.id}\n`);
+    }
+  }
   return lines;
 }
 

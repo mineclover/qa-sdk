@@ -19,9 +19,8 @@ export interface CatalogStoreFactoryArgs {
   fetchImpl?: FetchLike;
 }
 
-export interface CatalogStateView {
-  v3: string;
-  v4: string;
+export interface CatalogStateView extends Record<string, string> {
+  // v3, v4 등 특정 버전 키를 가질 수 있음.
 }
 
 export interface CatalogStoreHandle {
@@ -36,16 +35,10 @@ interface TopologyResponse {
 
 /**
  * createCatalogStore — controller `/v1/catalog/states` topology 응답을 시나리오용
- * `{v3, v4}` per-version state map 으로 transform.
+ * per-version state map 으로 transform.
  *
  * topology 응답 shape: `{ stable: {value: N}, candidate: {value: M} | null, retired: [{value}...] }`
- * 시나리오 기대 shape: `{ v3: "stable"|"candidate"|"retired"|"undeployed", v4: 동일 }`
- *
- * 매핑 규칙 (sim 가정: 버전 정수 = "v" + 정수):
- * - 어떤 vN 의 numeric value 가 topology.stable.value → state="stable"
- * - candidate.value → state="candidate"
- * - retired 배열에 포함 → state="retired"
- * - 그 외 → "undeployed"
+ * 시나리오 기대 shape: `{ v1: "retired", v3: "stable", ... }`
  */
 export function createCatalogStore(
   args: CatalogStoreFactoryArgs,
@@ -59,13 +52,6 @@ export function createCatalogStore(
       }) as unknown as ReturnType<FetchLike>);
   const base = args.controllerUrl.replace(/\/$/, "");
   const prefix = args.prefix ?? "sim.svc.approval";
-
-  function stateFor(version: number, t: TopologyResponse): string {
-    if (t.stable.value === version) return "stable";
-    if (t.candidate?.value === version) return "candidate";
-    if (t.retired.some((r) => r.value === version)) return "retired";
-    return "undeployed";
-  }
 
   return {
     async getStates() {
@@ -94,10 +80,26 @@ export function createCatalogStore(
           `catalog-store invalid topology shape: ${JSON.stringify(json)}`,
         );
       }
-      return {
-        v3: stateFor(3, t),
-        v4: stateFor(4, t),
+
+      const states: CatalogStateView = {
+        v3: "undeployed",
+        v4: "undeployed",
       };
+      
+      // 1. Stable
+      states[`v${t.stable.value}`] = "stable";
+      
+      // 2. Candidate
+      if (t.candidate) {
+        states[`v${t.candidate.value}`] = "candidate";
+      }
+      
+      // 3. Retired
+      for (const r of t.retired) {
+        states[`v${r.value}`] = "retired";
+      }
+
+      return states;
     },
   };
 }

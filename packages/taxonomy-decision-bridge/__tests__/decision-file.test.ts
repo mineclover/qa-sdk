@@ -180,6 +180,47 @@ describe("extractMarkers", () => {
   });
 });
 
+describe("option annotation (^cost/^benefit/^risk)", () => {
+  it("blank line 분리된 annotation 추출 (kind 별 1건씩)", () => {
+    const body = `A 옵션 ^option:a\n\n비용 높음 ^cost:a\n\n이점 큼 ^benefit:a\n\n위험 중간 ^risk:a`;
+    const m = extractMarkers(body);
+    expect(m.options.length).toBe(1);
+    const opt = m.options[0];
+    expect(opt.id).toBe("a");
+    expect(opt.annotations?.map((x) => x.kind).sort()).toEqual([
+      "benefit",
+      "cost",
+      "risk",
+    ]);
+    const ann = (k: string) => opt.annotations?.find((x) => x.kind === k)?.body;
+    expect(ann("cost")).toBe("비용 높음");
+    expect(ann("benefit")).toBe("이점 큼");
+    expect(ann("risk")).toBe("위험 중간");
+  });
+
+  it("annotation은 별도 block에서도 option id로 매칭", () => {
+    const body = `A 옵션 ^option:a\n\nB 옵션 ^option:b\n\nA비용 ^cost:a\n\nB비용 ^cost:b`;
+    const m = extractMarkers(body);
+    expect(m.options.find((o) => o.id === "a")?.annotations?.[0].body).toBe("A비용");
+    expect(m.options.find((o) => o.id === "b")?.annotations?.[0].body).toBe("B비용");
+  });
+
+  it("multi-gate — annotation은 같은 gate option 우선 매칭", () => {
+    const body = `^gate:g1\n\nA ^option:a\n\n비용1 ^cost:a\n\n^gate:g2\n\nA ^option:a\n\n비용2 ^cost:a`;
+    const m = extractMarkers(body);
+    const g1opt = m.gates[0].options[0];
+    const g2opt = m.gates[1].options[0];
+    expect(g1opt.annotations?.[0].body).toBe("비용1");
+    expect(g2opt.annotations?.[0].body).toBe("비용2");
+  });
+
+  it("매칭 option 없으면 annotation 폐기 (silent skip)", () => {
+    const body = `A ^option:a\n\n고아 ^cost:nonexistent`;
+    const m = extractMarkers(body);
+    expect(m.options[0].annotations).toBeUndefined();
+  });
+});
+
 describe("serializeDecisionFile 라운드트립", () => {
   it("parse → serialize → parse 동일 meta + body 보존", () => {
     const f1 = parseDecisionFile(SAMPLE);

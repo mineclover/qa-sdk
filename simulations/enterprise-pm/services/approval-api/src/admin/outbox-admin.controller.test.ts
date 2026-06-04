@@ -136,4 +136,28 @@ describe("OutboxAdminController", () => {
     });
     expect(res.statusCode).toBe(404);
   });
+
+  it("GET /admin/outbox/dispatch?ids=id1,id2 — 200 + sim-handle shape", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/admin/outbox/dispatch?ids=id1,id2",
+      headers: internal,
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toHaveProperty("publishedAt");
+    expect(body).toHaveProperty("dispatcherIds");
+    expect(Array.isArray(body.publishedAt)).toBe(true);
+    expect(Array.isArray(body.dispatcherIds)).toBe(true);
+  });
+
+  it("GET /admin/outbox/dispatch — ids 누락 시 400", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/admin/outbox/dispatch",
+      headers: internal,
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().title).toMatch(/Invalid \/admin\/outbox\/dispatch query/);
+  });
 });

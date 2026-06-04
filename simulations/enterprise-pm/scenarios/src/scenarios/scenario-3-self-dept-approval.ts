@@ -38,20 +38,7 @@ export const scenario3SelfDeptApproval: Scenario<S3Ctx> = {
   ],
 
   async setup() {
-    const handle = (globalThis as unknown as {
-      __simHandle?: {
-        fixtures: {
-          alice: { id: string; email: string; password: string; departmentId: string };
-          departments: { eng: string };
-          seedBudgetRequest: (args: {
-            projectId: string;
-            projectDepartmentId: string;
-            amount: number;
-            requesterId: string;
-          }) => Promise<{ id: string }>;
-        };
-      };
-    }).__simHandle;
+    const handle = (globalThis as any).__simHandle;
     if (!handle) throw new Error("__simHandle not bound");
     // alice 가 승인자이자 requester — Pass 2 UNREGISTERED ownerId 매칭 통과.
     // amount = 500_000 (< 1M) → totalStages=1, 1회 승인 = 최종.
@@ -75,10 +62,8 @@ export const scenario3SelfDeptApproval: Scenario<S3Ctx> = {
   },
 
   async act(ctx) {
-    const gatewayFetch = (globalThis as unknown as {
-      __simGatewayFetch?: (r: Request) => Promise<Response>;
-    }).__simGatewayFetch!;
-    const traceIds: string[] = [];
+    const gatewayFetch = (globalThis as any).__simGatewayFetch;
+    if (!gatewayFetch) throw new Error("__simGatewayFetch not bound");
 
     // 1. login (alice)
     const loginRes = await gatewayFetch(
@@ -186,5 +171,7 @@ export const scenario3SelfDeptApproval: Scenario<S3Ctx> = {
     equal(d.firstFailure, null, "firstFailure must be null (all allow)");
   },
 
-  async teardown() {},
+  async teardown() {
+    // handles cleanup
+  },
 };

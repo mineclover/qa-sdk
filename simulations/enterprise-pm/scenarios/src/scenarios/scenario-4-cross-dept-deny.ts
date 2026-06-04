@@ -44,21 +44,7 @@ export const scenario4CrossDeptDeny: Scenario<S4Ctx> = {
   ],
 
   async setup() {
-    const handle = (globalThis as unknown as {
-      __simHandle?: {
-        fixtures: {
-          alice: { id: string; email: string; password: string };
-          bob: { email: string; password: string };
-          departments: { eng: string };
-          seedBudgetRequest: (args: {
-            projectId: string;
-            projectDepartmentId: string;
-            amount: number;
-            requesterId: string;
-          }) => Promise<{ id: string }>;
-        };
-      };
-    }).__simHandle;
+    const handle = (globalThis as any).__simHandle;
     if (!handle) throw new Error("__simHandle not bound");
     const req = await handle.fixtures.seedBudgetRequest({
       projectId: "proj-scenario-4",
@@ -84,10 +70,8 @@ export const scenario4CrossDeptDeny: Scenario<S4Ctx> = {
   },
 
   async act(ctx) {
-    const gatewayFetch = (globalThis as unknown as {
-      __simGatewayFetch?: (r: Request) => Promise<Response>;
-    }).__simGatewayFetch!;
-    const traceIds: string[] = [];
+    const gatewayFetch = (globalThis as any).__simGatewayFetch;
+    if (!gatewayFetch) throw new Error("__simGatewayFetch not bound");
 
     // 1. bob login
     const bobLogin = await gatewayFetch(
@@ -262,5 +246,7 @@ export const scenario4CrossDeptDeny: Scenario<S4Ctx> = {
     equal(replay.outcome, "deny", "replayed entry outcome must be deny");
   },
 
-  async teardown() {},
+  async teardown() {
+    // handles cleanup
+  },
 };

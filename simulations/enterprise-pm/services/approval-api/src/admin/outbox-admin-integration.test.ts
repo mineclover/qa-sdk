@@ -24,17 +24,29 @@ import {
 } from "../approval/pg/schema.js";
 import { OutboxAdminModule } from "./outbox-admin.module.js";
 
-const PG = process.env.SIM_TEST_PG === "1";
+const PG_AVAILABLE = process.env.QA_TEST_PG === "1";
 const internal = { "x-forwarded-for": "127.0.0.1" };
 
-describe.skipIf(!PG)("OutboxAdmin integration (PG)", () => {
+describe.skipIf(!PG_AVAILABLE)("OutboxAdmin integration (PG)", () => {
+  const PG_HOST = process.env.QA_TEST_PG_HOST ?? "localhost";
+  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? "5434");
+  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? "qa_sdk_test";
+  const PG_USER = process.env.QA_TEST_PG_USER ?? "qa_admin";
+  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? "";
+
   let app: NestFastifyApplication;
   let sql: ReturnType<typeof postgres>;
 
   beforeAll(async () => {
-    const url = process.env.SIM_APPROVAL_PG_URL;
-    if (!url) throw new Error("SIM_APPROVAL_PG_URL must be set when SIM_TEST_PG=1");
-    sql = postgres(url, { onnotice: () => {} });
+    sql = postgres({
+      host: PG_HOST,
+      port: PG_PORT,
+      database: PG_DATABASE,
+      user: PG_USER,
+      password: PG_PASSWORD,
+      max: 5,
+      onnotice: () => {},
+    });
 
     const moduleRef = await Test.createTestingModule({
       imports: [OutboxAdminModule],

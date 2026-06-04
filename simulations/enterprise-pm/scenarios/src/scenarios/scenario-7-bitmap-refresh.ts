@@ -22,7 +22,7 @@ interface S7Ctx {
  *   - 단계 5: POST /auth/refresh → 200 + 새 token (이전 token 과 다름)
  *   - 단계 6: 새 token 으로 protected route 200
  *
- * 본 시나리오는 jwtTtlSeconds=2 로 부팅된 InProcessHandle 이 필요 — test beforeAll 에서 설정.
+ * 본 시나리오는 jwtTtlSeconds=2 로 설정된 환경이 필요.
  */
 export const scenario7BitmapRefresh: Scenario<S7Ctx> = {
   name: "scenario-7-bitmap-refresh",
@@ -34,22 +34,14 @@ export const scenario7BitmapRefresh: Scenario<S7Ctx> = {
   ],
 
   async setup() {
-    const handle = (globalThis as unknown as {
-      __simHandle?: {
-        fixtures: {
-          alice: { email: string; password: string; departmentId: string };
-          departments: { eng: string };
-        };
-      };
-    }).__simHandle;
+    const handle = (globalThis as any).__simHandle;
     if (!handle) throw new Error("__simHandle not bound");
     return { alice: handle.fixtures.alice };
   },
 
   async act(ctx) {
-    const gatewayFetch = (globalThis as unknown as {
-      __simGatewayFetch?: (r: Request) => Promise<Response>;
-    }).__simGatewayFetch!;
+    const gatewayFetch = (globalThis as any).__simGatewayFetch;
+    if (!gatewayFetch) throw new Error("__simGatewayFetch not bound");
     const traceIds: string[] = [];
 
     // 1. login — short TTL bootstrap (jwtTtlSeconds=2)

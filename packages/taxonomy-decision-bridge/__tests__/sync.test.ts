@@ -32,7 +32,7 @@ function decision(opts: DecisionOverrides = {}): DecisionFile {
       lifecycle: "draft",
       created: "2026-05-21T00:00:00Z",
       updated: "2026-05-21T00:00:00Z",
-      ...(opts.meta ?? {}),
+      ...opts.meta,
     },
     markers: {
       purpose: opts.purpose,

@@ -149,4 +149,33 @@ describe.skipIf(!PG_AVAILABLE)("createOutboxDispatcher", () => {
     expect(delta).toBeGreaterThanOrEqual(800);
     expect(delta).toBeLessThanOrEqual(1_200);
   });
+
+  it("maxRetries 초과 → status='failed' 고정 + tick 에서 제외", async () => {
+    // 1. 이미 4회 실패한 row 생성
+    await sql`UPDATE sim.approval_outbox_events SET retry_count = 4 WHERE id = 'evt-1'`;
+
+    const disp = createOutboxDispatcher({
+      db,
+      sql,
+      consume: async () => {
+        throw new Error("fail again");
+      },
+      batchSize: 1,
+      maxRetries: 5,
+    });
+
+    // 2. 5회차 시도 (실패)
+    expect(await disp.tick()).toBe(0);
+
+    const row = await sql<{ status: string; retry_count: number }[]>`
+      SELECT status, retry_count FROM sim.approval_outbox_events WHERE id = 'evt-1'`;
+    expect(row[0].status).toBe("failed");
+    expect(row[0].retry_count).toBe(5);
+
+    // 3. 다음 tick (이미 retry_count >= maxRetries 이므로 pick 안 됨)
+    expect(await disp.tick()).toBe(0);
+    const row2 = await sql<{ status: string; retry_count: number }[]>`
+      SELECT status, retry_count FROM sim.approval_outbox_events WHERE id = 'evt-1'`;
+    expect(row2[0].retry_count).toBe(5); // 그대로 5회
+  });
 });

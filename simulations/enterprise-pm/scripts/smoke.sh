@@ -68,9 +68,9 @@ for entry in "${SERVICES[@]}"; do
   fi
 done
 
-echo "==> 4. 8 시나리오 batch 실행"
+echo "==> 4. 17 시나리오 batch 실행 (HTTP mode)"
 SCENARIOS_RESULT=/tmp/sim-smoke-scenarios.json
-node scenarios/dist/cli.js run --all --json \
+node scenarios/dist/cli.js run --all --mode http --json \
   --gateway-url http://localhost:8888 \
   > "$SCENARIOS_RESULT" 2>&1 || true
 

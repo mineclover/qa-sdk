@@ -1,7 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { parseDecisionFile } from "../src/decision-file.js";
 import { toFlowSchema, extractEvidence } from "../src/to-flow-schema.js";
-import { toMarkdown, toMarkdownText } from "../src/from-flow-schema.js";
+import {
+  toMarkdown,
+  toMarkdownText,
+  extractOptionAnnotations,
+} from "../src/from-flow-schema.js";
 import type { DecisionFile } from "../src/decision-file.js";
 
 const RICH_DECISION = `---
@@ -218,5 +222,82 @@ updated: 2026-05-22T00:00:00Z
     expect(schema2.gates[1].affects).toEqual([{ gateId: "risk", kind: "constrains" }]);
     expect(schema2.gates[0].branches?.map((b) => b.id)).toEqual(["low", "high"]);
     expect(schema2.gates[1].branches?.map((b) => b.id)).toEqual(["expand", "shrink"]);
+  });
+});
+
+describe("option annotation 라운드트립", () => {
+  const WITH_ANNOTATIONS = `---
+id: opt-eval
+subject: 옵션 평가
+lifecycle: review
+created: 2026-05-22T00:00:00Z
+updated: 2026-05-22T00:00:00Z
+---
+
+# Decision
+
+선택 ^purpose
+
+## 옵션
+
+옵션 A ^option:a
+
+A의 비용 ^cost:a
+
+A의 이점 ^benefit:a
+
+옵션 B ^option:b
+
+B의 위험 ^risk:b
+`;
+
+  it("extractOptionAnnotations — 옵션별 annotation 추출", () => {
+    const file = parseDecisionFile(WITH_ANNOTATIONS);
+    const map = extractOptionAnnotations(file);
+    expect(map.a?.length).toBe(2);
+    expect(map.a?.map((x) => x.kind).sort()).toEqual(["benefit", "cost"]);
+    expect(map.b?.[0].kind).toBe("risk");
+  });
+
+  it("toMarkdown + optionAnnotations로 라운드트립 시 annotation 보존", () => {
+    const file = parseDecisionFile(WITH_ANNOTATIONS);
+    const schema = toFlowSchema(file);
+    const md = toMarkdownText({
+      schema,
+      lifecycle: file.meta.lifecycle,
+      evidence: extractEvidence(file),
+      optionAnnotations: extractOptionAnnotations(file),
+      created: file.meta.created,
+      updated: file.meta.updated,
+    });
+    const reparsed = parseDecisionFile(md);
+    const optA = reparsed.markers.options.find((o) => o.id === "a");
+    expect(optA?.annotations?.map((x) => x.kind).sort()).toEqual([
+      "benefit",
+      "cost",
+    ]);
+    const optB = reparsed.markers.options.find((o) => o.id === "b");
+    expect(optB?.annotations?.[0].kind).toBe("risk");
+  });
+
+  it("annotation 없으면 라운드트립이 plain options만 생성", () => {
+    const file = parseDecisionFile(`---
+id: x
+subject: y
+lifecycle: draft
+created: 2026-01-01T00:00:00Z
+updated: 2026-01-01T00:00:00Z
+---
+^purpose 질문
+opt A ^option:a
+`);
+    const schema = toFlowSchema(file);
+    const md = toMarkdownText({
+      schema,
+      lifecycle: file.meta.lifecycle,
+    });
+    expect(md).not.toContain("^cost:");
+    expect(md).not.toContain("^benefit:");
+    expect(md).not.toContain("^risk:");
   });
 });

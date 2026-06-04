@@ -31,7 +31,12 @@ describe("catalog-store handle", () => {
       fetchImpl,
     });
     const states = await store.getStates();
-    expect(states).toEqual({ v3: "stable", v4: "undeployed" });
+    expect(states).toEqual({
+      v1: "retired",
+      v2: "retired",
+      v3: "stable",
+      v4: "undeployed", // Defaulted
+    });
   });
 
   it("invalid topology shape에 throw", async () => {

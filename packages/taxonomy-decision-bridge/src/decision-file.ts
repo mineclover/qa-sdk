@@ -24,10 +24,33 @@ export type DecisionMeta = {
   updated: string;
 };
 
+/**
+ * 옵션 평가 annotation. ^cost:<id> / ^benefit:<id> / ^risk:<id> 마커가 동일 id의
+ * option에 attach. 같은 option에 여러 annotation이 가능 (kind별 1건씩).
+ *
+ * 마커-only 확장 — toFlowSchema는 annotation을 schema에 반영하지 않음 (BranchSchema
+ * 변경 없음). 라운드트립은 toMarkdown이 본문에 다시 출력하여 보존.
+ */
+export type OptionAnnotation = {
+  kind: "cost" | "benefit" | "risk";
+  body: string;
+};
+
 export type DecisionOption = {
   id: string;
   body: string;
+  annotations?: readonly OptionAnnotation[];
 };
+
+const VALID_ANNOTATION_KINDS: ReadonlySet<OptionAnnotation["kind"]> = new Set([
+  "cost",
+  "benefit",
+  "risk",
+]);
+
+function isAnnotationKind(s: string): s is OptionAnnotation["kind"] {
+  return VALID_ANNOTATION_KINDS.has(s as OptionAnnotation["kind"]);
+}
 
 /**
  * 마커에서 추출된 증거. decision-flow의 Evidence와 동일 모델.
@@ -216,6 +239,13 @@ export function extractMarkers(body: string): DecisionMarkers {
   // multi-gate 인식 — ^gate:<id> 마커 등장 시 그 이후 ^option/^evidence/^phase/^weight/^depends_on은
   // 해당 gate에 push. 첫 ^gate 전 콘텐츠는 schema 전체(기존 single-gate 호환).
   let currentGate: GateMarkers | undefined;
+  type PendingAnnotation = {
+    annKind: string;
+    optionId: string;
+    body: string;
+    inGateId?: string;
+  };
+  const pendingAnnotations: PendingAnnotation[] = [];
 
   const blocks = splitIntoBlocks(body);
   for (const block of blocks) {
@@ -231,6 +261,15 @@ export function extractMarkers(body: string): DecisionMarkers {
         result.gates.push(currentGate);
         continue;
       }
+      if (marker.kind === "annotation") {
+        pendingAnnotations.push({
+          annKind: marker.annKind,
+          optionId: marker.optionId,
+          body: cleanText,
+          inGateId: currentGate?.id,
+        });
+        continue;
+      }
       // schema 전체 마커는 항상 result에
       if (marker.kind === "purpose" || marker.kind === "context" || marker.kind === "outcome") {
         applyMarker(result, marker, cleanText);
@@ -244,7 +283,72 @@ export function extractMarkers(body: string): DecisionMarkers {
       }
     }
   }
+  // annotation 2차 패스: option id로 매칭해 attach.
+  // 같은 gate 우선 → 다른 gate → single-gate options.
+  for (const pa of pendingAnnotations) {
+    if (!isAnnotationKind(pa.annKind)) continue;
+    const target = findOptionById(result, pa.optionId, pa.inGateId);
+    if (!target) continue;
+    appendAnnotation(target, { kind: pa.annKind, body: pa.body });
+  }
   return result;
+}
+
+function findOptionById(
+  result: DecisionMarkers,
+  optionId: string,
+  preferredGateId: string | undefined,
+): { ref: DecisionOption; replace: (next: DecisionOption) => void } | undefined {
+  // 1. preferred gate 우선
+  if (preferredGateId) {
+    const gate = result.gates.find((g) => g.id === preferredGateId);
+    if (gate) {
+      const idx = gate.options.findIndex((o) => o.id === optionId);
+      if (idx >= 0) {
+        return {
+          ref: gate.options[idx],
+          replace: (next) => {
+            gate.options[idx] = next;
+          },
+        };
+      }
+    }
+  }
+  // 2. 다른 gates
+  for (const gate of result.gates) {
+    if (gate.id === preferredGateId) continue;
+    const idx = gate.options.findIndex((o) => o.id === optionId);
+    if (idx >= 0) {
+      return {
+        ref: gate.options[idx],
+        replace: (next) => {
+          gate.options[idx] = next;
+        },
+      };
+    }
+  }
+  // 3. single-gate options
+  const idx = result.options.findIndex((o) => o.id === optionId);
+  if (idx >= 0) {
+    return {
+      ref: result.options[idx],
+      replace: (next) => {
+        result.options[idx] = next;
+      },
+    };
+  }
+  return undefined;
+}
+
+function appendAnnotation(
+  target: { ref: DecisionOption; replace: (next: DecisionOption) => void },
+  annotation: OptionAnnotation,
+): void {
+  const existing = target.ref.annotations ?? [];
+  target.replace({
+    ...target.ref,
+    annotations: [...existing, annotation],
+  });
 }
 
 function applyMarkerToGate(
@@ -253,6 +357,9 @@ function applyMarkerToGate(
   text: string,
 ): void {
   switch (marker.kind) {
+    case "annotation":
+      // annotation은 2차 패스에서 처리 — 여기선 no-op.
+      return;
     case "option":
       gate.options.push({ id: marker.id, body: text });
       return;
@@ -295,10 +402,11 @@ type MarkerToken =
   | { kind: "phase"; value: string; raw: string }
   | { kind: "weight"; value: string; raw: string }
   | { kind: "depends_on"; gateId: string; depKind?: string; raw: string }
-  | { kind: "gate"; gateId: string; raw: string };
+  | { kind: "gate"; gateId: string; raw: string }
+  | { kind: "annotation"; annKind: string; optionId: string; raw: string };
 
 const MARKER_RE =
-  /\^(purpose|context|outcome|option:[a-zA-Z][\w-]*|evidence:[a-zA-Z][\w-]*(?:\s+weight=[\d.]+)?|phase:[a-z]+|weight:[a-z]+|depends_on:[a-zA-Z][\w-]*(?::[a-z]+)?|gate:[a-zA-Z][\w-]*)/g;
+  /\^(purpose|context|outcome|option:[a-zA-Z][\w-]*|evidence:[a-zA-Z][\w-]*(?:\s+weight=[\d.]+)?|phase:[a-z]+|weight:[a-z]+|depends_on:[a-zA-Z][\w-]*(?::[a-z]+)?|gate:[a-zA-Z][\w-]*|cost:[a-zA-Z][\w-]*|benefit:[a-zA-Z][\w-]*|risk:[a-zA-Z][\w-]*)/g;
 
 function findMarkers(block: string): MarkerToken[] {
   const tokens: MarkerToken[] = [];
@@ -327,13 +435,28 @@ function findMarkers(block: string): MarkerToken[] {
       tokens.push({ kind: "depends_on", gateId, depKind, raw });
     } else if (body.startsWith("gate:")) {
       tokens.push({ kind: "gate", gateId: body.slice("gate:".length), raw });
+    } else if (
+      body.startsWith("cost:") ||
+      body.startsWith("benefit:") ||
+      body.startsWith("risk:")
+    ) {
+      const colon = body.indexOf(":");
+      const annKind = body.slice(0, colon);
+      const optionId = body.slice(colon + 1);
+      tokens.push({ kind: "annotation", annKind, optionId, raw });
     }
   }
   return tokens;
 }
 
 function stripAllMarkers(block: string): string {
-  return block.replace(MARKER_RE, "").replace(/\s+/g, " ");
+  // 마커 제거 후 줄바꿈은 보존하되, 각 줄의 양 끝 공백과 연속된 가로 공백만 정리한다.
+  return block
+    .replace(MARKER_RE, "")
+    .split("\n")
+    .map((line) => line.trim().replace(/[ \t]+/g, " "))
+    .join("\n")
+    .trim();
 }
 
 function applyMarker(
@@ -342,6 +465,10 @@ function applyMarker(
   text: string,
 ): void {
   switch (marker.kind) {
+    case "annotation":
+    case "gate":
+      // 별도 처리. 여기선 no-op.
+      return;
     case "purpose":
       result.purpose = text;
       return;

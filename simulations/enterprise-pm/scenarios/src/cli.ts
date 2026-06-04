@@ -141,11 +141,9 @@ export function buildCli(): Command {
         }
 
         // sim-handles wiring — Plan E Stage 11 follow-up #24.
-        // SIM_SCENARIO_INPROC=1일 때만 12 globalThis handle을 binding한다.
-        // 시나리오 9~17이 audit-recorder/controller/gateway/auth-api/approval-api에
-        // 의존하므로 e2e 환경에서만 활성화. unit test 격리는 unwireSimHandles로 보장.
-        const inproc = env.SIM_SCENARIO_INPROC === "1";
-        if (inproc) {
+        // mode가 'http'거나 SIM_SCENARIO_INPROC=1일 때 14개 globalThis handle을 binding한다.
+        const shouldWire = opts.mode === "http" || env.SIM_SCENARIO_INPROC === "1";
+        if (shouldWire) {
           wireSimHandles({
             auditRecorderUrl: env.SIM_AUDIT_RECORDER_URL,
             controllerUrl: env.SIM_CONTROLLER_URL,
@@ -161,12 +159,12 @@ export function buildCli(): Command {
           for (const s of targets) {
             const result = await runScenario(s, {
               gatewayUrl: env.SCENARIO_GATEWAY_URL,
-              mode: env.SCENARIO_MODE,
+              mode: env.SCENARIO_MODE as "in-process" | "http",
             });
             results.push(result);
           }
         } finally {
-          if (inproc) unwireSimHandles();
+          if (shouldWire) unwireSimHandles();
         }
 
         if (opts.json) {

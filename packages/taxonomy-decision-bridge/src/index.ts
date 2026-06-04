@@ -9,6 +9,7 @@ export {
   type DecisionMarkers,
   type DecisionOption,
   type DecisionEvidence,
+  type OptionAnnotation,
 } from "./decision-file.js";
 
 // Sync action 계산기
@@ -36,5 +37,6 @@ export {
 export {
   toMarkdown,
   toMarkdownText,
+  extractOptionAnnotations,
   type ToMarkdownOptions,
 } from "./from-flow-schema.js";

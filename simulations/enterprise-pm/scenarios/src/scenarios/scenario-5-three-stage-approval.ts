@@ -41,24 +41,7 @@ export const scenario5ThreeStageApproval: Scenario<S5Ctx> = {
   ],
 
   async setup() {
-    const handle = (globalThis as unknown as { __simHandle?: unknown })
-      .__simHandle as
-      | {
-          fixtures: {
-            alice: { id: string };
-            carol: { email: string; password: string; departmentId: string };
-            david: { email: string; password: string };
-            eve: { email: string; password: string };
-            departments: { eng: string };
-            seedBudgetRequest: (args: {
-              projectId: string;
-              projectDepartmentId: string;
-              amount: number;
-              requesterId: string;
-            }) => Promise<{ id: string }>;
-          };
-        }
-      | undefined;
+    const handle = (globalThis as any).__simHandle;
     if (!handle) throw new Error("__simHandle not bound");
     const fx = handle.fixtures;
     const req = await fx.seedBudgetRequest({
@@ -80,9 +63,8 @@ export const scenario5ThreeStageApproval: Scenario<S5Ctx> = {
   },
 
   async act(ctx) {
-    const gatewayFetch = (globalThis as unknown as {
-      __simGatewayFetch?: (r: Request) => Promise<Response>;
-    }).__simGatewayFetch!;
+    const gatewayFetch = (globalThis as any).__simGatewayFetch;
+    if (!gatewayFetch) throw new Error("__simGatewayFetch not bound");
     const traceIds: string[] = [];
     const stageRootSpanIds: string[] = [];
 
@@ -232,5 +214,7 @@ export const scenario5ThreeStageApproval: Scenario<S5Ctx> = {
     }
   },
 
-  async teardown() {},
+  async teardown() {
+    // handles cleanup
+  },
 };

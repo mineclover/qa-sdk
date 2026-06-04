@@ -20,7 +20,7 @@ function decision(overrides: {
       lifecycle: "review",
       created: "2026-05-22T00:00:00Z",
       updated: "2026-05-22T00:00:00Z",
-      ...(overrides.meta ?? {}),
+      ...overrides.meta,
     },
     markers: {
       purpose: overrides.purpose,
