@@ -84,7 +84,8 @@ export type DefScope =
   | "constraint"
   | "data"
   | "interface"
-  | "meta";
+  | "meta"
+  | "decision";
 
 /** 세부 측면 — 어떤 측면을 정의하는가 (40종, flat) */
 export type DefAspect =
