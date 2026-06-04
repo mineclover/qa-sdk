@@ -1,0 +1,67 @@
+# =============================================================================
+# Archi-ADR DSL Model — v0.1
+# Architecture Definition Operating System
+# =============================================================================
+
+meta:
+  id: archi-adr-v0.1
+  name: Core Architecture Model
+  version: 0.1.0
+  created_at: 2026-05-27
+  updated_at: 2026-05-27
+  description: |
+    이 프로젝트의 아키텍처 모델 정의.
+
+scopes:
+  - id: SCOPE-DSL
+    name: DSL Definitions
+    description: YAML DSL 모델 정의
+  - id: SCOPE-GOVERNANCE
+    name: Governance Layer
+    description: 아키텍처 거버넌스 메타데이터
+
+document_types:
+  governance:
+    - RoadmapDocument
+    - PRDDocument
+    - ProgressDocument
+    - SessionHistoryDocument
+    - HandoffDocument
+    - TimelineDocument
+    - HistoryIndexDocument
+
+lifecycle:
+  states:
+    - id: draft
+      description: 작성 중
+    - id: active
+      description: 현재 유효
+    - id: resolved
+      description: 완료/해결됨
+    - id: deprecated
+      description: 더 이상 권장하지 않음
+    - id: archived
+      description: 현재 맥락에서 제외된 보관 상태
+
+naming_rules:
+  principles:
+    - "구조 = 폴더"
+    - "시간 = 파일명 suffix"
+    - "current.md = 현재 활성 상태 (HEAD pointer)"
+    - "날짜 파일 = immutable snapshot"
+  patterns:
+    roadmap: "roadmap-YYYY-MM-DD.md"
+    prd: "{scope}-prd-YYYY-MM-DD.md"
+    progress: "progress-YYYY-MM-DD.md"
+    handoff: "handoff-YYYY-MM-DD.md"
+    session: "session-YYYY-MM-DD-NNN.md"
+
+elements:
+  - id: CORE-001
+    type: Concept
+    name: CoreSystem
+    description: 핵심 비즈니스 아키텍처 시스템 요소
+
+relations: []
+
+views: []
