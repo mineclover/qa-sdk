@@ -1,0 +1,191 @@
+# =============================================================================
+# Semantic Validation Rules
+# Architecture Definition Operating System v0.1
+# =============================================================================
+#
+# 카테고리:
+#   governance/structure  — 파일 구조 및 네이밍 규칙
+#   governance/content    — 문서 내용 검증
+#   governance/lifecycle  — 상태 및 참조 정합성
+#   model/integrity       — DSL 모델 무결성
+#
+# severity: error | warning | info
+# automatable: true | false
+
+rules:
+
+  # ---------------------------------------------------------------------------
+  # Category: governance/structure — 파일 구조 및 네이밍
+  # ---------------------------------------------------------------------------
+
+  - id: SR-001
+    name: unique-current
+    category: governance/structure
+    description: governance/current.md는 각 영역별 하나만 존재해야 한다.
+    severity: error
+    automatable: true
+    check:
+      type: file-count
+      pattern: "docs/governance/*/current.md"
+      constraint: exactly-one-per-directory
+
+  - id: SR-002
+    name: immutable-snapshot
+    category: governance/structure
+    description: 날짜 suffix 파일은 immutable snapshot으로 취급한다.
+    severity: warning
+    automatable: false
+    note: Git diff로 검증 가능하나 런타임 검증은 불가
+    check:
+      type: file-integrity
+      pattern: "docs/governance/**/*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.md"
+      constraint: no-modification-after-creation
+
+  # ---------------------------------------------------------------------------
+  # Category: governance/content — 문서 내용 검증
+  # ---------------------------------------------------------------------------
+
+  - id: SR-003
+    name: session-timeline-registration
+    category: governance/content
+    description: SessionHistoryDocument는 timeline.md에 반드시 등록되어야 한다.
+    severity: error
+    automatable: true
+    check:
+      type: cross-reference
+      source_pattern: "docs/governance/sessions/**/*.md"
+      target_file: "docs/governance/timeline.md"
+      constraint: source-id-in-target
+
+  - id: SR-004
+    name: handoff-next-actions
+    category: governance/content
+    description: HandoffDocument는 Next Recommended Actions를 가져야 한다.
+    severity: error
+    automatable: true
+    check:
+      type: section-exists
+      document_type: HandoffDocument
+      required_section: "## Next Recommended Actions"
+
+  - id: SR-005
+    name: history-index-completeness
+    category: governance/content
+    description: HistoryIndexDocument는 주요 결정과 중요 파일 목록을 가져야 한다.
+    severity: error
+    automatable: true
+    check:
+      type: section-exists
+      document_type: HistoryIndexDocument
+      required_sections:
+        - "### Key Decisions"
+        - "### Important Files"
+
+  - id: SR-010
+    name: timeline-append-only
+    category: governance/content
+    description: TimelineDocument는 시간순 append-only로 관리한다.
+    severity: error
+    automatable: true
+    check:
+      type: ordering
+      document_type: TimelineDocument
+      constraint: chronological-append-only
+
+  # ---------------------------------------------------------------------------
+  # Category: governance/lifecycle — 상태 및 참조 정합성
+  # ---------------------------------------------------------------------------
+
+  - id: SR-006
+    name: active-current-alignment
+    category: governance/lifecycle
+    description: active 상태 문서는 current.md 또는 current.md가 참조하는 문서여야 한다.
+    severity: warning
+    automatable: true
+    check:
+      type: lifecycle-location
+      state: active
+      constraint: must-be-current-or-referenced-by-current
+
+  - id: SR-007
+    name: archived-view-exclusion
+    category: governance/lifecycle
+    description: archived 상태 문서는 기본 Governance View에서 제외할 수 있다.
+    severity: info
+    automatable: false
+    check:
+      type: view-membership
+      state: archived
+      constraint: may-exclude-from-default-view
+
+  - id: SR-011
+    name: scope-reference-valid
+    category: governance/lifecycle
+    description: scope 필드는 정의된 Scope Unit을 참조해야 한다.
+    severity: error
+    automatable: true
+    check:
+      type: reference-valid
+      field: scope
+      registry: model/archi-adr.yaml#scopes
+
+  - id: SR-012
+    name: session-scope-consistency
+    category: governance/lifecycle
+    description: Session의 scope는 실제 변경 영역과 일치해야 한다.
+    severity: warning
+    automatable: false
+    check:
+      type: content-scope-match
+      document_type: SessionHistoryDocument
+      constraint: scope-matches-changed-areas
+
+  # ---------------------------------------------------------------------------
+  # Category: model/integrity — DSL 모델 무결성
+  # ---------------------------------------------------------------------------
+
+  - id: SR-008
+    name: business-metadata-separation
+    category: model/integrity
+    description: BusinessLogicDocument와 MetadataDefinitionDocument는 별도 타입이어야 한다.
+    severity: error
+    automatable: true
+    check:
+      type: type-separation
+      types:
+        - BusinessLogicDocument
+        - MetadataDefinitionDocument
+      constraint: distinct-type-required
+
+  - id: SR-009
+    name: metadata-no-business-logic
+    category: model/integrity
+    description: MetadataDefinitionDocument는 Business Logic Layer를 직접 정의하면 안 된다.
+    severity: error
+    automatable: false
+    check:
+      type: content-boundary
+      document_type: MetadataDefinitionDocument
+      forbidden_layer: BusinessLogicLayer
+
+  - id: SR-013
+    name: relation-source-target-valid
+    category: model/integrity
+    description: 모든 Relation의 source/target은 유효한 Element ID여야 한다.
+    severity: error
+    automatable: true
+    check:
+      type: reference-valid
+      field: relations[].source, relations[].target
+      registry: model/archi-adr.yaml#elements
+
+  - id: SR-014
+    name: view-element-exists
+    category: model/integrity
+    description: View가 참조하는 모든 Element/Relation이 존재해야 한다.
+    severity: error
+    automatable: true
+    check:
+      type: reference-valid
+      field: views[].elements, views[].relations
+      registry: model/archi-adr.yaml#elements, model/archi-adr.yaml#relations

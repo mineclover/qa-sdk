@@ -1,0 +1,12 @@
+flowchart TB
+  subgraph Asset
+    PI["Params Interface<br/>text, src, mode, value, data"]
+    EI["Event Interface<br/>clicked, hover, focus, submit"]
+    MI["Method Interface<br/>focus(), reset(), scrollTo(), play()"]
+    VI["Visual Interface<br/>visual.*, styleVars.*, animParams.*"]
+  end
+
+  CLIP["Clip"] -->|controls| VI
+  RT["Runtime"] -->|reads/writes| PI
+  RT -->|subscribes| EI
+  RT -->|calls| MI

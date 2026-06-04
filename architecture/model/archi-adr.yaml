@@ -1,0 +1,1071 @@
+# =============================================================================
+# Archi-ADR DSL Model — v0.1
+# Architecture Definition Operating System
+# =============================================================================
+#
+# 이 파일은 아키텍처 정의 시스템의 원본(SSOT)이다.
+# Mermaid, 보고서, 검증은 모두 이 파일에서 생성된다.
+#
+# 구조:
+#   meta          → 모델 메타데이터
+#   scopes        → Scope Unit 정의
+#   document_types → 문서 타입 정의
+#   lifecycle     → 상태 정의
+#   naming_rules  → 파일명 규칙
+#   elements      → Element 정의 (Core System + Governance)
+#   relations     → Relation 정의
+#   views         → View 정의
+#   validation    → 검증 규칙
+#   operation     → 운영 원칙
+
+# =============================================================================
+# Meta
+# =============================================================================
+
+meta:
+  id: archi-adr-v0.1
+  name: Architecture Definition Operating System
+  version: 0.1.0
+  created_at: 2026-05-26
+  updated_at: 2026-05-26
+  description: |
+    기존 Web 구현을 에디터에서 제어 가능한 형태로 감싸고,
+    Event → Flow → Action 구조로 orchestration하는
+    Event-driven Visual Runtime System의 아키텍처 정의.
+
+# =============================================================================
+# Scope Units
+# =============================================================================
+# Scope Unit은 governance artifact의 분류 및 압축 단위이다.
+# Session → Scope → Timeline → Scope Summary → Global Summary
+
+scopes:
+  - id: SCOPE-DSL
+    name: Archi-ADR DSL
+    description: YAML DSL 모델 정의
+
+  - id: SCOPE-VALIDATOR
+    name: Semantic Validator
+    description: 검증 스키마 및 의미적 규칙
+
+  - id: SCOPE-RENDERER
+    name: Mermaid Renderer
+    description: Mermaid 다이어그램 생성
+
+  - id: SCOPE-METADATA
+    name: Metadata Layer
+    description: 메타데이터 정의 계층
+
+  - id: SCOPE-GOVERNANCE
+    name: Governance Layer
+    description: 아키텍처 거버넌스 메타데이터
+
+# =============================================================================
+# Document Types
+# =============================================================================
+
+document_types:
+  governance:
+    - RoadmapDocument
+    - PRDDocument
+    - ProgressDocument
+    - SessionHistoryDocument
+    - HandoffDocument
+    - TimelineDocument
+    - HistoryIndexDocument
+
+  architecture:
+    - BusinessLogicDocument
+    - MetadataDefinitionDocument
+    - ArchitectureDecisionRecord
+    - RuleDocument
+
+# =============================================================================
+# Lifecycle States
+# =============================================================================
+
+lifecycle:
+  states:
+    - id: draft
+      description: 작성 중
+    - id: active
+      description: 현재 유효
+    - id: resolved
+      description: 완료/해결됨
+    - id: deprecated
+      description: 더 이상 권장하지 않음
+    - id: archived
+      description: 현재 맥락에서 제외된 보관 상태
+
+# =============================================================================
+# Naming Rules
+# =============================================================================
+
+naming_rules:
+  principles:
+    - "구조 = 폴더"
+    - "시간 = 파일명 suffix"
+    - "current.md = 현재 활성 상태 (HEAD pointer)"
+    - "날짜 파일 = immutable snapshot"
+
+  patterns:
+    roadmap: "roadmap-YYYY-MM-DD.md"
+    prd: "{scope}-prd-YYYY-MM-DD.md"
+    progress: "progress-YYYY-MM-DD.md"
+    handoff: "handoff-YYYY-MM-DD.md"
+    session: "session-YYYY-MM-DD-NNN.md"
+
+# =============================================================================
+# Elements — Core System
+# =============================================================================
+# Core System은 기존 Web 구현을 Web Component Asset으로 감싸고,
+# Event → Flow → Action → Event 루프를 통해 orchestration하는 Runtime이다.
+#
+# 핵심 한 줄:
+#   Asset emits Event.
+#   Stage filters Event.
+#   Flow handles Event.
+#   Guard routes Action.
+#   Action controls Runtime.
+#   Clip controls Visual Interface.
+#   Runtime emits Event again.
+
+elements:
+
+  # ---------------------------------------------------------------------------
+  # Core Concepts
+  # ---------------------------------------------------------------------------
+
+  - id: CORE-001
+    type: Concept
+    name: Asset
+    description: |
+      기존 Web 구현을 감싼 Web Component Wrapper.
+      내부 DOM과 기능을 소유하며, Runtime과 인터페이스로 연결된다.
+    interfaces:
+      - ParamsInterface    # 기능/데이터 상태 (text, src, mode, value, data)
+      - EventInterface     # Runtime에 보내는 표준 이벤트 (clicked, hover, focus, submit)
+      - MethodInterface    # Imperative bridge (focus(), reset(), scrollTo(), play())
+      - VisualInterface    # Runtime이 제어하는 시각 상태 계층
+
+  - id: CORE-002
+    type: Concept
+    name: Event
+    description: |
+      시스템 안에서 발생한 사실 또는 신호의 표준 포맷.
+      모든 trigger는 Event로 통일한다.
+    structure:
+      - eid
+      - type
+      - source
+      - target
+      - at
+      - payload
+      - cause
+    examples:
+      - asset.event
+      - clip.ended
+      - media.ended
+      - clock.at
+      - state.changed
+      - resource.loaded
+      - input.idle
+
+  - id: CORE-003
+    type: Concept
+    name: Stage
+    description: |
+      큰 흐름에서 Event 영역을 관리하는 Event Activation Scope.
+      "이 Event를 지금 받을 수 있는가?"를 판단한다.
+      Flow를 실행하지 않고, Guard를 평가하지 않는다. Event 영역만 제어한다.
+    examples:
+      - story.stage.intro
+      - story.stage.quiz
+      - modal.stage.confirm
+      - settings.stage.open
+
+  - id: CORE-004
+    type: Concept
+    name: Flow
+    description: |
+      특정 Event Pattern에 반응하는 실행 규칙.
+      on = 어떤 Event를 받을 것인가
+      guard = 실행 가능한가 / 어디로 분기할 것인가
+      do = 무엇을 실행할 것인가
+    structure:
+      - id
+      - enabled
+      - priority
+      - once
+      - "on"
+      - guard
+      - run
+      - do
+
+  - id: CORE-005
+    type: Concept
+    name: Guard
+    description: |
+      Flow 내부에서 Action 실행 가능 여부와 경로를 제어하는 조건.
+      Store, RuntimeState, ResourceState, InteractionState를 기반으로 분기한다.
+    distinction: |
+      Stage = 이 이벤트를 받을 수 있는가? (Event 영역 제어)
+      Guard = 이 Flow를 실행해도 되는가? (Flow 실행/분기 제어)
+
+  - id: CORE-006
+    type: Concept
+    name: Action
+    description: |
+      Runtime에 부작용을 요청하는 실행 명령.
+    examples:
+      - emit
+      - state.set
+      - param.set
+      - layout.set
+      - clip.play
+      - media.play
+      - clock.start
+      - wait
+      - parallel
+      - method.call
+
+  - id: CORE-007
+    type: Concept
+    name: Clip
+    description: |
+      Asset의 Visual Interface를 시간 기반으로 제어하는
+      animation / visual control unit.
+      animation, transition, interaction visual effect, timeline visual control을 담당한다.
+    controls:
+      - position
+      - size
+      - rotation
+      - scale
+      - opacity
+      - filter
+      - css variable
+      - anim parameter
+      - interaction visual state
+
+  - id: CORE-008
+    type: Concept
+    name: VisualInterface
+    description: |
+      Runtime이 공통적으로 제어 가능한 시각 상태 계층.
+      Asset의 네 번째 인터페이스이다.
+    namespaces:
+      - "visual.*"         # x, opacity, scaleX 등
+      - "styleVars.*"      # --glow, --accent-color 등
+      - "animParams.*"     # progress, blur 등
+      - interactionVisualState
+
+  - id: CORE-009
+    type: Concept
+    name: ClipDefinition
+    description: |
+      Clip이 Visual Interface를 어떻게 변화시킬지 정의하는 spec.
+      tracks 배열로 구성되며, 각 track은 path와 keyframes를 가진다.
+
+  - id: CORE-010
+    type: Concept
+    name: Runtime
+    description: |
+      전체 실행 환경과 side effect를 관리하는 orchestration layer.
+
+  # ---------------------------------------------------------------------------
+  # Runtime Subsystems
+  # ---------------------------------------------------------------------------
+
+  # Event System
+  - id: RT-ES-001
+    type: Subsystem
+    name: EventSystem
+    parent: CORE-010
+    description: Event 전달 및 활성화 관리
+
+  - id: RT-ES-002
+    type: Module
+    name: EventBus
+    parent: RT-ES-001
+    description: |
+      Event 전달만 담당. emit, subscribe, wait, queue flush.
+      EventBus는 실행하지 않는다.
+
+  - id: RT-ES-003
+    type: Module
+    name: StageManager
+    parent: RT-ES-001
+    description: Stage 상태 관리
+
+  - id: RT-ES-004
+    type: Module
+    name: StageGate
+    parent: RT-ES-001
+    description: 현재 활성 Stage 기준으로 Event 허용 여부 판단
+
+  - id: RT-ES-005
+    type: Module
+    name: InputMonitor
+    parent: RT-ES-001
+    description: DOM/User input → Runtime Event 변환
+
+  # Flow System
+  - id: RT-FS-001
+    type: Subsystem
+    name: FlowSystem
+    parent: CORE-010
+    description: Event와 Flow 매칭 및 실행
+
+  - id: RT-FS-002
+    type: Module
+    name: FlowEngine
+    parent: RT-FS-001
+    description: |
+      flow 등록, event 수신, trigger match, run policy 적용, flow 실행 시작.
+
+  - id: RT-FS-003
+    type: Module
+    name: GuardEvaluator
+    parent: RT-FS-001
+    description: Flow 실행 가능 여부 / 분기 평가
+
+  - id: RT-FS-004
+    type: Module
+    name: ActionRunner
+    parent: RT-FS-001
+    description: Action type별 handler 실행
+
+  # Visual Control System
+  - id: RT-VC-001
+    type: Subsystem
+    name: VisualControlSystem
+    parent: CORE-010
+    description: Asset Visual Interface를 Runtime이 제어하는 시스템
+
+  - id: RT-VC-002
+    type: Module
+    name: ClipEngine
+    parent: RT-VC-001
+    description: Clip 실행
+
+  - id: RT-VC-003
+    type: Module
+    name: VisualStateStore
+    parent: RT-VC-001
+    description: |
+      최종 Visual Interface 상태 저장.
+      Base Visual + Clip Overlay + Interaction Overlay = Final Visual
+
+  - id: RT-VC-004
+    type: Module
+    name: StyleAdapter
+    parent: RT-VC-001
+    description: Visual Interface → DOM style 변환
+
+  - id: RT-VC-005
+    type: Module
+    name: TransformResolver
+    parent: RT-VC-001
+    description: TransformGroup 계산
+
+  - id: RT-VC-006
+    type: Module
+    name: LayerManager
+    parent: RT-VC-001
+    description: z-index / render order / pointer layer 관리
+
+  - id: RT-VC-007
+    type: Module
+    name: ConflictResolver
+    parent: RT-VC-001
+    description: 여러 Clip이 같은 Visual Path를 제어할 때 정책 적용
+
+  # Asset System
+  - id: RT-AS-001
+    type: Subsystem
+    name: AssetSystem
+    parent: CORE-010
+    description: Asset 등록 및 이벤트 브릿지
+
+  - id: RT-AS-002
+    type: Module
+    name: AssetRegistry
+    parent: RT-AS-001
+    description: Asset 등록/조회
+
+  - id: RT-AS-003
+    type: Module
+    name: AssetWrapper
+    parent: RT-AS-001
+    description: Web Component 래핑
+
+  - id: RT-AS-004
+    type: Module
+    name: AssetEventBridge
+    parent: RT-AS-001
+    description: Asset 내부 이벤트 → Runtime Event 변환
+
+  # Runtime Modules
+  - id: RT-RM-001
+    type: Module
+    name: Store
+    parent: CORE-010
+    description: 전역 상태 저장
+
+  - id: RT-RM-002
+    type: Module
+    name: ResourceManager
+    parent: CORE-010
+    description: image / video / audio preload
+
+  - id: RT-RM-003
+    type: Module
+    name: MediaManager
+    parent: CORE-010
+    description: audio / video playback control
+
+  - id: RT-RM-004
+    type: Module
+    name: Scheduler
+    parent: CORE-010
+    description: clock, wait, timeline point, idle timer
+
+  - id: RT-RM-005
+    type: Module
+    name: Debugger
+    parent: CORE-010
+    description: 디버그 도구
+
+  # ---------------------------------------------------------------------------
+  # Editors
+  # ---------------------------------------------------------------------------
+
+  - id: EDITOR-001
+    type: Editor
+    name: ae-editor
+    description: |
+      ClipDefinition 제작 에디터.
+      keyframe, easing, duration, track, visual path, styleVars, animParams 편집.
+
+  - id: EDITOR-002
+    type: Editor
+    name: story-editor
+    description: |
+      Story orchestration 편집 에디터.
+      asset 배치, flow 작성, stage 관리, guard 작성,
+      action sequence 작성, clip binding, store state 연결.
+
+  # ---------------------------------------------------------------------------
+  # Governance Documents
+  # ---------------------------------------------------------------------------
+
+  - id: GOV-001
+    type: RoadmapDocument
+    name: docs/governance/roadmap/current.md
+
+  - id: GOV-002
+    type: PRDDocument
+    name: docs/governance/prd/current.md
+
+  - id: GOV-003
+    type: ProgressDocument
+    name: docs/governance/progress/current.md
+
+  - id: GOV-004
+    type: SessionHistoryDocument
+    name: docs/governance/sessions/2026/05/session-2026-05-26-001.md
+
+  - id: GOV-005
+    type: HandoffDocument
+    name: docs/governance/handoff/current.md
+
+  - id: GOV-006
+    type: TimelineDocument
+    name: docs/governance/timeline.md
+
+  - id: GOV-007
+    type: HistoryIndexDocument
+    name: docs/governance/history-index.md
+
+# =============================================================================
+# Relations — Core System
+# =============================================================================
+
+relations:
+
+  # ---------------------------------------------------------------------------
+  # Core Concept Relations (Event-driven loop)
+  # ---------------------------------------------------------------------------
+
+  - id: REL-CORE-001
+    type: emits
+    source: CORE-001      # Asset
+    target: CORE-002      # Event
+    description: Asset이 Event를 발생시킨다
+
+  - id: REL-CORE-002
+    type: filters
+    source: CORE-003      # Stage
+    target: CORE-002      # Event
+    description: Stage가 Event 활성 여부를 필터링한다
+
+  - id: REL-CORE-003
+    type: handles
+    source: CORE-004      # Flow
+    target: CORE-002      # Event
+    description: Flow가 Event를 처리한다
+
+  - id: REL-CORE-004
+    type: routes
+    source: CORE-005      # Guard
+    target: CORE-006      # Action
+    description: Guard가 Action 실행 경로를 결정한다
+
+  - id: REL-CORE-005
+    type: controls
+    source: CORE-006      # Action
+    target: CORE-010      # Runtime
+    description: Action이 Runtime Module을 조작한다
+
+  - id: REL-CORE-006
+    type: controls
+    source: CORE-007      # Clip
+    target: CORE-008      # VisualInterface
+    description: Clip이 Visual Interface를 시간 기반으로 제어한다
+
+  - id: REL-CORE-007
+    type: emits
+    source: CORE-010      # Runtime
+    target: CORE-002      # Event
+    description: Runtime Module이 다시 Event를 발생시킨다 (루프)
+
+  - id: REL-CORE-008
+    type: contains
+    source: CORE-004      # Flow
+    target: CORE-005      # Guard
+    description: Flow 내부에 Guard가 존재한다
+
+  - id: REL-CORE-009
+    type: contains
+    source: CORE-004      # Flow
+    target: CORE-006      # Action
+    description: Flow 내부에 Action이 존재한다
+
+  - id: REL-CORE-010
+    type: exposes
+    source: CORE-001      # Asset
+    target: CORE-008      # VisualInterface
+    description: Asset이 Visual Interface를 노출한다
+
+  - id: REL-CORE-011
+    type: defines
+    source: CORE-009      # ClipDefinition
+    target: CORE-007      # Clip
+    description: ClipDefinition이 Clip의 동작을 정의한다
+
+  # ---------------------------------------------------------------------------
+  # Runtime Subsystem Relations
+  # ---------------------------------------------------------------------------
+
+  - id: REL-RT-001
+    type: contains
+    source: CORE-010      # Runtime
+    target: RT-ES-001     # EventSystem
+
+  - id: REL-RT-002
+    type: contains
+    source: CORE-010
+    target: RT-FS-001     # FlowSystem
+
+  - id: REL-RT-003
+    type: contains
+    source: CORE-010
+    target: RT-VC-001     # VisualControlSystem
+
+  - id: REL-RT-004
+    type: contains
+    source: CORE-010
+    target: RT-AS-001     # AssetSystem
+
+  - id: REL-RT-005
+    type: delegates
+    source: RT-ES-004     # StageGate
+    target: CORE-003      # Stage
+    description: StageGate가 Stage 상태를 참조하여 Event를 필터링한다
+
+  - id: REL-RT-006
+    type: delegates
+    source: RT-FS-003     # GuardEvaluator
+    target: CORE-005      # Guard
+    description: GuardEvaluator가 Guard 조건을 평가한다
+
+  - id: REL-RT-007
+    type: delegates
+    source: RT-FS-004     # ActionRunner
+    target: CORE-006      # Action
+    description: ActionRunner가 Action을 실행한다
+
+  - id: REL-RT-008
+    type: delegates
+    source: RT-VC-002     # ClipEngine
+    target: CORE-007      # Clip
+    description: ClipEngine이 Clip을 실행한다
+
+  # ---------------------------------------------------------------------------
+  # Editor Relations
+  # ---------------------------------------------------------------------------
+
+  - id: REL-EDITOR-001
+    type: edits
+    source: EDITOR-001    # ae-editor
+    target: CORE-009      # ClipDefinition
+    description: ae-editor가 ClipDefinition을 제작한다
+
+  - id: REL-EDITOR-002
+    type: edits
+    source: EDITOR-002    # story-editor
+    target: CORE-004      # Flow
+    description: story-editor가 Flow를 편집한다
+
+  - id: REL-EDITOR-003
+    type: edits
+    source: EDITOR-002    # story-editor
+    target: CORE-003      # Stage
+    description: story-editor가 Stage를 관리한다
+
+  # ---------------------------------------------------------------------------
+  # Governance Relations
+  # ---------------------------------------------------------------------------
+
+  - id: REL-GOV-001
+    type: defines_phase
+    source: GOV-001       # Roadmap
+    target: GOV-002       # PRD
+
+  - id: REL-GOV-002
+    type: tracks
+    source: GOV-003       # Progress
+    target: GOV-002       # PRD
+
+  - id: REL-GOV-003
+    type: records
+    source: GOV-004       # Session
+    target: GOV-006       # Timeline
+
+  - id: REL-GOV-004
+    type: summarizes
+    source: GOV-004       # Session
+    target: GOV-005       # Handoff
+
+  - id: REL-GOV-005
+    type: indexes
+    source: GOV-007       # HistoryIndex
+    target: GOV-006       # Timeline
+
+# =============================================================================
+# Views
+# =============================================================================
+
+views:
+
+  # ---------------------------------------------------------------------------
+  # V-001: Core Concept View — 핵심 개념 관계
+  # ---------------------------------------------------------------------------
+
+  - id: V-001
+    type: CoreConceptView
+    name: Core Concept View
+    layout: LR
+    description: |
+      Asset → Event → Stage → Flow → Guard → Action → Runtime → Event 루프.
+      Clip → VisualInterface 제어 관계.
+    elements:
+      - CORE-001   # Asset
+      - CORE-002   # Event
+      - CORE-003   # Stage
+      - CORE-004   # Flow
+      - CORE-005   # Guard
+      - CORE-006   # Action
+      - CORE-007   # Clip
+      - CORE-008   # VisualInterface
+      - CORE-010   # Runtime
+    relations:
+      - REL-CORE-001   # Asset emits Event
+      - REL-CORE-002   # Stage filters Event
+      - REL-CORE-003   # Flow handles Event
+      - REL-CORE-004   # Guard routes Action
+      - REL-CORE-005   # Action controls Runtime
+      - REL-CORE-006   # Clip controls VisualInterface
+      - REL-CORE-007   # Runtime emits Event (loop)
+      - REL-CORE-010   # Asset exposes VisualInterface
+    mermaid: |
+      flowchart LR
+        ASSET["Asset<br/>Web Component Wrapper"]
+        EVENT["Event<br/>Standard Signal"]
+        STAGE["Stage<br/>Event Activation Scope"]
+        FLOW["Flow<br/>Event Reaction Rule"]
+        GUARD["Guard<br/>Condition/Router"]
+        ACTION["Action<br/>Side Effect Command"]
+        CLIP["Clip<br/>Visual Control Unit"]
+        VI["VisualInterface<br/>Visual State Layer"]
+        RUNTIME["Runtime<br/>Orchestration Layer"]
+
+        ASSET -->|emits| EVENT
+        STAGE -->|filters| EVENT
+        FLOW -->|handles| EVENT
+        GUARD -->|routes| ACTION
+        ACTION -->|controls| RUNTIME
+        RUNTIME -->|emits| EVENT
+        ASSET -->|exposes| VI
+        CLIP -->|controls| VI
+
+  # ---------------------------------------------------------------------------
+  # V-002: Execution Flow View — 실행 흐름
+  # ---------------------------------------------------------------------------
+
+  - id: V-002
+    type: ExecutionFlowView
+    name: Execution Flow View
+    layout: TB
+    description: 전체 실행 흐름 10단계
+    mermaid: |
+      flowchart TB
+        E1["1. Asset/Runtime Module<br/>Event 발생"]
+        E2["2. EventBus<br/>queue 적재"]
+        E3["3. StageGate<br/>Event 활성 여부 판단"]
+        E4["4. FlowEngine<br/>Event ↔ Flow.on 매칭"]
+        E5["5. GuardEvaluator<br/>guard 평가"]
+        E6["6. ActionRunner<br/>Action 실행"]
+        E7["7. Runtime Module<br/>side effect 수행"]
+        E8["8. ClipEngine<br/>Visual Interface 제어"]
+        E9["9. Runtime Module<br/>다시 Event 발생"]
+        E10["10. Event → Flow → Action<br/>루프 반복"]
+
+        E1 --> E2 --> E3 --> E4 --> E5 --> E6 --> E7 --> E8 --> E9 --> E10
+        E10 -.->|loop| E1
+
+  # ---------------------------------------------------------------------------
+  # V-003: Runtime Architecture View — 런타임 내부 구조
+  # ---------------------------------------------------------------------------
+
+  - id: V-003
+    type: RuntimeArchitectureView
+    name: Runtime Architecture View
+    layout: TB
+    elements:
+      - CORE-010
+      - RT-ES-001
+      - RT-ES-002
+      - RT-ES-003
+      - RT-ES-004
+      - RT-ES-005
+      - RT-FS-001
+      - RT-FS-002
+      - RT-FS-003
+      - RT-FS-004
+      - RT-VC-001
+      - RT-VC-002
+      - RT-VC-003
+      - RT-VC-004
+      - RT-VC-005
+      - RT-VC-006
+      - RT-VC-007
+      - RT-AS-001
+      - RT-AS-002
+      - RT-AS-003
+      - RT-AS-004
+      - RT-RM-001
+      - RT-RM-002
+      - RT-RM-003
+      - RT-RM-004
+      - RT-RM-005
+    mermaid: |
+      flowchart TB
+        subgraph Runtime
+          subgraph EventSystem["Event System"]
+            EB["EventBus"]
+            SM["StageManager"]
+            SG["StageGate"]
+            IM["InputMonitor"]
+          end
+
+          subgraph FlowSystem["Flow System"]
+            FE["FlowEngine"]
+            GE["GuardEvaluator"]
+            AR["ActionRunner"]
+          end
+
+          subgraph VisualControl["Visual Control System"]
+            CE["ClipEngine"]
+            VSS["VisualStateStore"]
+            SA["StyleAdapter"]
+            TR["TransformResolver"]
+            LM["LayerManager"]
+            CR["ConflictResolver"]
+          end
+
+          subgraph AssetSys["Asset System"]
+            AReg["AssetRegistry"]
+            AW["AssetWrapper"]
+            AEB["AssetEventBridge"]
+          end
+
+          subgraph Modules["Runtime Modules"]
+            Store
+            RM["ResourceManager"]
+            MM["MediaManager"]
+            Sched["Scheduler"]
+            Debug["Debugger"]
+          end
+        end
+
+  # ---------------------------------------------------------------------------
+  # V-004: Web Correspondence View — Web 구조 대응
+  # ---------------------------------------------------------------------------
+
+  - id: V-004
+    type: WebCorrespondenceView
+    name: Web Correspondence View
+    layout: LR
+    description: |
+      Web 표준 구조와 Core System의 대응 관계.
+
+      | Web             | Core             |
+      |-----------------|------------------|
+      | DOM Element     | Asset            |
+      | DOM Event       | Event            |
+      | Event Listener  | Flow             |
+      | if 조건          | Guard            |
+      | CSS Style       | Visual Interface |
+      | CSS Animation   | Clip             |
+      | Browser Runtime | Runtime          |
+    mermaid: |
+      flowchart LR
+        subgraph WEB["Web Standard"]
+          DOM_EL["DOM Element"]
+          DOM_EV["DOM Event"]
+          EV_LIS["Event Listener"]
+          IF_COND["if Condition"]
+          CSS_STY["CSS Style"]
+          CSS_ANI["CSS Animation"]
+          BR_RT["Browser Runtime"]
+        end
+
+        subgraph CORE["Core System"]
+          ASSET["Asset"]
+          EVENT["Event"]
+          FLOW["Flow"]
+          GUARD["Guard"]
+          VI["Visual Interface"]
+          CLIP["Clip"]
+          RUNTIME["Runtime"]
+        end
+
+        DOM_EL -.->|corresponds to| ASSET
+        DOM_EV -.->|corresponds to| EVENT
+        EV_LIS -.->|corresponds to| FLOW
+        IF_COND -.->|corresponds to| GUARD
+        CSS_STY -.->|corresponds to| VI
+        CSS_ANI -.->|corresponds to| CLIP
+        BR_RT -.->|corresponds to| RUNTIME
+
+  # ---------------------------------------------------------------------------
+  # V-005: Editor View — 에디터 구조
+  # ---------------------------------------------------------------------------
+
+  - id: V-005
+    type: EditorView
+    name: Editor View
+    layout: LR
+    elements:
+      - EDITOR-001
+      - EDITOR-002
+      - CORE-009
+      - CORE-004
+      - CORE-003
+    relations:
+      - REL-EDITOR-001
+      - REL-EDITOR-002
+      - REL-EDITOR-003
+    mermaid: |
+      flowchart LR
+        AE["ae-editor<br/>ClipDefinition 제작"]
+        SE["story-editor<br/>Story Orchestration"]
+        CD["ClipDefinition"]
+        FLOW["Flow"]
+        STAGE["Stage"]
+
+        AE -->|edits| CD
+        SE -->|edits| FLOW
+        SE -->|edits| STAGE
+
+  # ---------------------------------------------------------------------------
+  # V-006: Asset Interface View — Asset 인터페이스 구조
+  # ---------------------------------------------------------------------------
+
+  - id: V-006
+    type: AssetInterfaceView
+    name: Asset Interface View
+    layout: TB
+    mermaid: |
+      flowchart TB
+        subgraph Asset
+          PI["Params Interface<br/>text, src, mode, value, data"]
+          EI["Event Interface<br/>clicked, hover, focus, submit"]
+          MI["Method Interface<br/>focus(), reset(), scrollTo(), play()"]
+          VI["Visual Interface<br/>visual.*, styleVars.*, animParams.*"]
+        end
+
+        CLIP["Clip"] -->|controls| VI
+        RT["Runtime"] -->|reads/writes| PI
+        RT -->|subscribes| EI
+        RT -->|calls| MI
+
+  # ---------------------------------------------------------------------------
+  # V-007: Governance Tracking View
+  # ---------------------------------------------------------------------------
+
+  - id: V-007
+    type: GovernanceTrackingView
+    name: Governance Tracking View
+    layout: LR
+    elements:
+      - GOV-001
+      - GOV-002
+      - GOV-003
+      - GOV-004
+      - GOV-005
+      - GOV-006
+      - GOV-007
+    relations:
+      - REL-GOV-001
+      - REL-GOV-002
+      - REL-GOV-003
+      - REL-GOV-004
+      - REL-GOV-005
+    mermaid: |
+      flowchart LR
+        ROADMAP["RoadmapDocument<br/>current.md"]
+        PRD["PRDDocument<br/>current.md"]
+        PROGRESS["ProgressDocument<br/>current.md"]
+        SESSION["SessionHistoryDocument"]
+        HANDOFF["HandoffDocument<br/>current.md"]
+        TIMELINE["TimelineDocument<br/>timeline.md"]
+        INDEX["HistoryIndexDocument<br/>history-index.md"]
+
+        ROADMAP -->|defines_phase| PRD
+        PROGRESS -->|tracks| PRD
+        SESSION -->|records| TIMELINE
+        SESSION -->|summarizes| HANDOFF
+        INDEX -->|indexes| TIMELINE
+
+# =============================================================================
+# Validation Rules
+# =============================================================================
+
+validation:
+  rules:
+    - id: SR-001
+      name: unique-current
+      description: governance/current.md는 각 영역별 하나만 존재해야 한다.
+      severity: error
+
+    - id: SR-002
+      name: immutable-snapshot
+      description: 날짜 suffix 파일은 immutable snapshot으로 취급한다.
+      severity: warning
+
+    - id: SR-003
+      name: session-timeline-registration
+      description: SessionHistoryDocument는 timeline.md에 반드시 등록되어야 한다.
+      severity: error
+
+    - id: SR-004
+      name: handoff-next-actions
+      description: HandoffDocument는 Next Recommended Actions를 가져야 한다.
+      severity: error
+
+    - id: SR-005
+      name: history-index-completeness
+      description: HistoryIndexDocument는 주요 결정과 중요 파일 목록을 가져야 한다.
+      severity: error
+
+    - id: SR-006
+      name: active-current-alignment
+      description: active 상태 문서는 current.md 또는 current.md가 참조하는 문서여야 한다.
+      severity: warning
+
+    - id: SR-007
+      name: archived-view-exclusion
+      description: archived 상태 문서는 기본 Governance View에서 제외할 수 있다.
+      severity: info
+
+    - id: SR-008
+      name: business-metadata-separation
+      description: BusinessLogicDocument와 MetadataDefinitionDocument는 별도 타입이어야 한다.
+      severity: error
+
+    - id: SR-009
+      name: metadata-no-business-logic
+      description: MetadataDefinitionDocument는 Business Logic Layer를 직접 정의하면 안 된다.
+      severity: error
+
+    - id: SR-010
+      name: timeline-append-only
+      description: TimelineDocument는 시간순 append-only로 관리한다.
+      severity: error
+
+    - id: SR-011
+      name: scope-reference-valid
+      description: scope 필드는 정의된 Scope Unit 참조 필수.
+      severity: error
+
+    - id: SR-012
+      name: session-scope-consistency
+      description: Session의 scope는 실제 변경 영역과 일치해야 한다.
+      severity: warning
+
+    - id: SR-013
+      name: relation-source-target-valid
+      description: 모든 Relation의 source/target은 유효한 Element ID여야 한다.
+      severity: error
+
+    - id: SR-014
+      name: view-element-exists
+      description: View가 참조하는 모든 Element/Relation이 존재해야 한다.
+      severity: error
+
+# =============================================================================
+# Operation Principles — 운영 원칙
+# =============================================================================
+
+operation:
+  principles:
+    - id: OP-001
+      rule: 세션이 끝나면 SessionHistoryDocument를 추가한다.
+
+    - id: OP-002
+      rule: timeline.md에 세션과 주요 변경을 기록한다.
+
+    - id: OP-003
+      rule: handoff/current.md를 갱신한다.
+
+    - id: OP-004
+      rule: 구조가 안정되면 progress/current.md를 갱신한다.
+
+    - id: OP-005
+      rule: 큰 단계가 종료되면 history-index.md에 압축 요약을 추가한다.
+
+    - id: OP-006
+      rule: 오래된 snapshot은 삭제하지 않고 lifecycle.state만 변경한다.
+
+  definition: |
+    Governance Layer는 아키텍처 정의 시스템의 계획, 요구사항, 진행 상태,
+    세션 이력, 핸드오프, 시간순 기록, 압축 히스토리 색인을 관리하는 문서 계층이다.
+
+    구조는 디렉터리로 표현하고, 시간은 파일명 suffix로 표현한다.
+
+    timeline.md는 시간순 원본 포인터이며,
+    history-index.md는 사람이 훑어보기 위한 압축 색인이다.
+
+    current.md는 각 Governance 영역의 현재 활성 상태를 나타낸다.

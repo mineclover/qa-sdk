@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Feedback, FeedbackTag } from "../types/feedback";
 import { FEEDBACK_TAGS } from "../types/feedback";
 import { newFeedbackId } from "../lib/newFeedbackId";
@@ -13,6 +13,9 @@ export function FeedbackForm({
   onSubmitted?: (feedback: Feedback) => void;
 }) {
   const [ref, setRef] = useState(initialRef ?? "");
+  useEffect(() => {
+    setRef(initialRef ?? "");
+  }, [initialRef]);
   const [tag, setTag] = useState<FeedbackTag>("improvement");
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);

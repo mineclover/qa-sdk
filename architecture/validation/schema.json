@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qa-sdk.dev/architecture/governance-frontmatter",
+  "title": "Governance Document Frontmatter",
+  "description": "JSON Schema for validating governance document frontmatter in the Architecture Definition Operating System",
+  "type": "object",
+  "required": ["id", "type", "title", "date", "lifecycle"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^GOV-(ROADMAP|PRD|PROGRESS|SESSION|HANDOFF|TIMELINE|HISTORY-INDEX)-[0-9]{8}(-[0-9]{3})?$",
+      "description": "Unique governance document identifier"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "RoadmapDocument",
+        "PRDDocument",
+        "ProgressDocument",
+        "SessionHistoryDocument",
+        "HandoffDocument",
+        "TimelineDocument",
+        "HistoryIndexDocument"
+      ],
+      "description": "Governance document type"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable document title"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Document date in YYYY-MM-DD format"
+    },
+    "scope": {
+      "type": "string",
+      "pattern": "^SCOPE-[A-Z]+(-[A-Z]+)*$",
+      "description": "Scope Unit reference"
+    },
+    "lifecycle": {
+      "$ref": "#/$defs/lifecycle"
+    },
+    "refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "References to related files"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Classification tags"
+    }
+  },
+  "$defs": {
+    "lifecycle": {
+      "type": "object",
+      "required": ["state"],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["draft", "active", "resolved", "deprecated", "archived"],
+          "description": "Current lifecycle state"
+        },
+        "created_at": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "Creation date"
+        },
+        "updated_at": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "Last update date"
+        },
+        "resolved_at": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "Resolution date"
+        },
+        "archived_at": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "Archive date"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "type": { "const": "SessionHistoryDocument" } }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "pattern": "^GOV-SESSION-[0-9]{8}-[0-9]{3}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "type": { "const": "TimelineDocument" } }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "pattern": "^GOV-TIMELINE$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "type": { "const": "HistoryIndexDocument" } }
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "pattern": "^GOV-HISTORY-INDEX$"
+          }
+        }
+      }
+    }
+  ]
+}

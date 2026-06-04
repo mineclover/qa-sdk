@@ -1,0 +1,38 @@
+flowchart TB
+  subgraph Runtime
+    subgraph EventSystem["Event System"]
+      EB["EventBus"]
+      SM["StageManager"]
+      SG["StageGate"]
+      IM["InputMonitor"]
+    end
+
+    subgraph FlowSystem["Flow System"]
+      FE["FlowEngine"]
+      GE["GuardEvaluator"]
+      AR["ActionRunner"]
+    end
+
+    subgraph VisualControl["Visual Control System"]
+      CE["ClipEngine"]
+      VSS["VisualStateStore"]
+      SA["StyleAdapter"]
+      TR["TransformResolver"]
+      LM["LayerManager"]
+      CR["ConflictResolver"]
+    end
+
+    subgraph AssetSys["Asset System"]
+      AReg["AssetRegistry"]
+      AW["AssetWrapper"]
+      AEB["AssetEventBridge"]
+    end
+
+    subgraph Modules["Runtime Modules"]
+      Store
+      RM["ResourceManager"]
+      MM["MediaManager"]
+      Sched["Scheduler"]
+      Debug["Debugger"]
+    end
+  end

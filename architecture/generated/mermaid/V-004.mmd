@@ -1,0 +1,28 @@
+flowchart LR
+  subgraph WEB["Web Standard"]
+    DOM_EL["DOM Element"]
+    DOM_EV["DOM Event"]
+    EV_LIS["Event Listener"]
+    IF_COND["if Condition"]
+    CSS_STY["CSS Style"]
+    CSS_ANI["CSS Animation"]
+    BR_RT["Browser Runtime"]
+  end
+
+  subgraph CORE["Core System"]
+    ASSET["Asset"]
+    EVENT["Event"]
+    FLOW["Flow"]
+    GUARD["Guard"]
+    VI["Visual Interface"]
+    CLIP["Clip"]
+    RUNTIME["Runtime"]
+  end
+
+  DOM_EL -.->|corresponds to| ASSET
+  DOM_EV -.->|corresponds to| EVENT
+  EV_LIS -.->|corresponds to| FLOW
+  IF_COND -.->|corresponds to| GUARD
+  CSS_STY -.->|corresponds to| VI
+  CSS_ANI -.->|corresponds to| CLIP
+  BR_RT -.->|corresponds to| RUNTIME

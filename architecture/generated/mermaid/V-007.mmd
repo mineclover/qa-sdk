@@ -1,0 +1,14 @@
+flowchart LR
+  ROADMAP["RoadmapDocument<br/>current.md"]
+  PRD["PRDDocument<br/>current.md"]
+  PROGRESS["ProgressDocument<br/>current.md"]
+  SESSION["SessionHistoryDocument"]
+  HANDOFF["HandoffDocument<br/>current.md"]
+  TIMELINE["TimelineDocument<br/>timeline.md"]
+  INDEX["HistoryIndexDocument<br/>history-index.md"]
+
+  ROADMAP -->|defines_phase| PRD
+  PROGRESS -->|tracks| PRD
+  SESSION -->|records| TIMELINE
+  SESSION -->|summarizes| HANDOFF
+  INDEX -->|indexes| TIMELINE

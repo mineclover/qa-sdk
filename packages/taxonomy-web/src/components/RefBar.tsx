@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { isValidRef, displayRef } from "../lib/refFormat";
 
 export function RefBar({
@@ -9,6 +9,9 @@ export function RefBar({
   onChange: (ref: string) => void;
 }) {
   const [input, setInput] = useState(value);
+  useEffect(() => {
+    setInput(value);
+  }, [value]);
   const valid = input === "" || isValidRef(input);
 
   return (

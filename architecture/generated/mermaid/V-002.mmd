@@ -1,0 +1,14 @@
+flowchart TB
+  E1["1. Asset/Runtime Module<br/>Event 발생"]
+  E2["2. EventBus<br/>queue 적재"]
+  E3["3. StageGate<br/>Event 활성 여부 판단"]
+  E4["4. FlowEngine<br/>Event ↔ Flow.on 매칭"]
+  E5["5. GuardEvaluator<br/>guard 평가"]
+  E6["6. ActionRunner<br/>Action 실행"]
+  E7["7. Runtime Module<br/>side effect 수행"]
+  E8["8. ClipEngine<br/>Visual Interface 제어"]
+  E9["9. Runtime Module<br/>다시 Event 발생"]
+  E10["10. Event → Flow → Action<br/>루프 반복"]
+
+  E1 --> E2 --> E3 --> E4 --> E5 --> E6 --> E7 --> E8 --> E9 --> E10
+  E10 -.->|loop| E1

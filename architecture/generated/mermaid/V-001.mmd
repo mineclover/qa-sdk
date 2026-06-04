@@ -1,0 +1,19 @@
+flowchart LR
+  ASSET["Asset<br/>Web Component Wrapper"]
+  EVENT["Event<br/>Standard Signal"]
+  STAGE["Stage<br/>Event Activation Scope"]
+  FLOW["Flow<br/>Event Reaction Rule"]
+  GUARD["Guard<br/>Condition/Router"]
+  ACTION["Action<br/>Side Effect Command"]
+  CLIP["Clip<br/>Visual Control Unit"]
+  VI["VisualInterface<br/>Visual State Layer"]
+  RUNTIME["Runtime<br/>Orchestration Layer"]
+
+  ASSET -->|emits| EVENT
+  STAGE -->|filters| EVENT
+  FLOW -->|handles| EVENT
+  GUARD -->|routes| ACTION
+  ACTION -->|controls| RUNTIME
+  RUNTIME -->|emits| EVENT
+  ASSET -->|exposes| VI
+  CLIP -->|controls| VI

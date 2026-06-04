@@ -2,10 +2,15 @@ import { useState } from "react";
 import { TaxonomyListPage } from "./routes/TaxonomyListPage";
 import { TaxonomyViewPage } from "./routes/TaxonomyViewPage";
 import { FeedbacksPage } from "./routes/FeedbacksPage";
+import { DecisionDemoPage } from "./routes/DecisionDemoPage";
 import { SearchBar } from "./components/SearchBar";
 import { loadTaxonomyIndex } from "./data/loadStaticTaxonomies";
 
-type View = { kind: "list" } | { kind: "taxonomy"; file: string } | { kind: "feedbacks" };
+type View =
+  | { kind: "list" }
+  | { kind: "taxonomy"; file: string }
+  | { kind: "feedbacks" }
+  | { kind: "decision-demo" };
 
 export function App() {
   const [view, setView] = useState<View>({ kind: "list" });
@@ -22,6 +27,7 @@ export function App() {
         <nav className="flex gap-3 text-sm">
           <button onClick={() => setView({ kind: "list" })}>Taxonomies</button>
           <button onClick={() => setView({ kind: "feedbacks" })}>전체 피드백</button>
+          <button onClick={() => setView({ kind: "decision-demo" })}>Decision Demo</button>
         </nav>
         <div className="ml-auto">
           <SearchBar
@@ -47,6 +53,7 @@ export function App() {
         )}
         {view.kind === "taxonomy" && <TaxonomyViewPage file={view.file} />}
         {view.kind === "feedbacks" && <FeedbacksPage />}
+        {view.kind === "decision-demo" && <DecisionDemoPage />}
       </main>
     </div>
   );

@@ -1,0 +1,10 @@
+flowchart LR
+  AE["ae-editor<br/>ClipDefinition 제작"]
+  SE["story-editor<br/>Story Orchestration"]
+  CD["ClipDefinition"]
+  FLOW["Flow"]
+  STAGE["Stage"]
+
+  AE -->|edits| CD
+  SE -->|edits| FLOW
+  SE -->|edits| STAGE
