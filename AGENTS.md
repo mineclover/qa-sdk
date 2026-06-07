@@ -99,6 +99,16 @@ qa-sdk flow analyze <schema-id>            # 구조적 분석
 qa-sdk flow analyze <id> --impact <gate>   # 영향 범위 분석
 ```
 
+### arch (아키텍처 거버넌스)
+
+```bash
+pnpm arch:feedback                         # (권장) 통합 피드백 루프
+pnpm arch:check                            # 5계층 의존성 경계 검사
+pnpm arch:impact                           # API 및 소비자 영향도 분석
+pnpm arch:usage                            # 패키지 사용량 및 건강 상태
+pnpm arch:signals                          # 이벤트 신호 연결망 분석
+```
+
 ### dkg decide (좌표계 설계 결정)
 
 ```bash
@@ -223,6 +233,8 @@ knowledge 문서는 `knowledge_kind`로 세분화: philosophy, adr, guide, narra
 | `/def-state` | 11개 상태 머신 + 게이트 + Cross-Loop |
 | `/def-knowledge` | 지식 문서 조회/생성 유도 |
 | `/def-explore` | 시스템 구조 탐색 |
+| `/arch-governance` | 패키지 및 시그널 계층 거버넌스 |
+
 
 ### 문서 frontmatter 형식
 

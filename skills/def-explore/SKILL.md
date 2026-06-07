@@ -36,9 +36,21 @@ qa-sdk def concepts             # knowledge/concept 문서 목록
 ```bash
 def audit --by-domain         # domain root와 System/Layout 진입점
 def topdown <root-id>         # root에서 포함/참조 문서 조립
-def context <doc-id>          # 특정 문서의 상위/의존/제약 확인
+def context <doc-id>         # 특정 문서의 상위/의존/제약 확인
 def children <doc-id>         # contains 자식 목록
 ```
+
+### 1.1 패키지 및 시그널 탐색 (Architecture Governance)
+
+문서 단위를 넘어 패키지 계층과 이벤트 신호 흐름을 파악하려면 아키텍처 거버넌스 도구를 사용한다.
+
+```bash
+pnpm arch:usage               # 패키지별 사용량 및 건강 상태
+pnpm arch:signals             # 이벤트 심볼 기반 암묵적 연결망
+pnpm arch:check               # 5계층 의존성 경계 검사
+```
+
+상세 전략은 `skills/arch-governance/SKILL.md` 참조.
 
 ### 2. 핵심 개념 이해
 
