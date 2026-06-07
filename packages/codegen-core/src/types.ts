@@ -1,29 +1,6 @@
 /** @def.boundary apm-codegen-system */
 
-// ── SchemaSnapshot ─────────────────────────────────
-// registry-service의 SchemaSnapshot과 동일한 구조.
+import type { SchemaSnapshot, Axis, Composite, SnapshotSupply } from "spec-schema";
 
-export interface Axis {
-  id: string;
-  entries: string[];
-  capacity: number;
-}
+export type { SchemaSnapshot, Axis, Composite, SnapshotSupply };
 
-export type SnapshotSupply =
-  | { type: "axis"; capacity: number }
-  | { type: "envelope" }
-  | { type: "context" }
-  | { type: "implicit" }
-
-export interface Composite {
-  id: string;
-  dims: string[];
-  owner: string;
-  snapshotSupply?: SnapshotSupply;
-}
-
-export interface SchemaSnapshot {
-  id: string;
-  axes: Axis[];
-  composites: Composite[];
-}

@@ -8,7 +8,7 @@
  */
 
 import type { DefinitionEntry, DefinitionEntryInput } from "./types.js";
-import type { QualityGateSpec } from "work-domain";
+import type { QualityGateSpec } from "test-types";
 
 /** validate()용 DB row → DefinitionEntryInput 변환에 필요한 최소 필드 */
 export interface DocRow {

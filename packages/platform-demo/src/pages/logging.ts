@@ -8,6 +8,7 @@
 import { serializeAddress, varintByteSize } from "weighted-index";
 import {
   DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS, DEMO_KO,
+  DEMO_SVC_STRIDES,
   DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES, DEMO_EVENT_CAP,
   demoEncodeSvc, demoDecodeSvc, demoEventsFor,
   demoRoleStride, demoEvtStride,
@@ -537,8 +538,13 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
   const _rs = roleStride(ver);
   const _es = evtStrideFor(ver);
 
-  const exSvc = 40;
+  const exSvcCoordsSeed = [3, 1, 1, 1] as const;
+  const exSvc = encodeSvc([...exSvcCoordsSeed]);
   const exSvcCoords = decodeSvc(exSvc);
+  const svcShapeLabel = `[${SVC_DIMS.map(dim => dim.values.length).join(", ")}]`;
+  const svcFormula = exSvcCoords
+    .map((coord, i) => `(${coord}-1)×${DEMO_SVC_STRIDES[i]}`)
+    .join(" + ");
   const exSvcDims = exSvcCoords.map((c, i) => {
     const dim = SVC_DIMS[i];
     const v = dim.values.find(vv => vv.idx1 === c);
@@ -562,7 +568,7 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
         <div class="log-anat-head">
           <span class="log-anat-schema">svc</span>
           <span class="log-anat-idx">= ${exSvc}</span>
-          <span class="log-anat-shape">shape [5, 2, 5, 2]</span>
+          <span class="log-anat-shape">entries ${svcShapeLabel}</span>
         </div>
         <div class="log-anat-body">
           ${exSvcDims.map(d => `
@@ -573,7 +579,7 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
               <span class="log-anat-dim-coord">${d.coord}</span>
             </div>`).join("")}
           <div class="log-anat-formula">
-            (${exSvcCoords[0]}-1)×20 + (${exSvcCoords[1]}-1)×10 + (${exSvcCoords[2]}-1)×2 + (${exSvcCoords[3]}-1) = <strong>${exSvc}</strong>
+            ${svcFormula} = <strong>${exSvc}</strong>
           </div>
         </div>
       </div>

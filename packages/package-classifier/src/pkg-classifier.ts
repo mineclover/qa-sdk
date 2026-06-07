@@ -99,7 +99,7 @@ export async function scanAndClassify(root: string): Promise<ClassifiedPackage[]
 
 function classifyTier(raw: RawPkg): string {
   const n = raw.displayName;
-  
+
   // Tier 1: Foundation (Absolute Base)
   if (
     n === "core" || 
@@ -107,15 +107,18 @@ function classifyTier(raw: RawPkg): string {
     n === "weighted-index" || 
     n === "bit-index" ||
     n === "address-index" ||
-    n === "pino" ||
-    n === "logger" ||
-    n === "store" ||
-    n === "git-utils"
+    n === "pino" || 
+    n === "logger" || 
+    n === "store" || 
+    n === "git-utils" ||
+    n === "definition-catalog" ||
+    n === "event-catalog" ||
+    n === "infra-env-kit"
   ) {
     return "foundation";
   }
 
-  // Tier 2: Kernel (Metadata & Specs)
+  // Tier 2: Kernel (Metadata & Models)
   if (
     n.endsWith("-catalog") || 
     n.startsWith("spec-") || 
@@ -123,9 +126,9 @@ function classifyTier(raw: RawPkg): string {
     n === "index-meta" ||
     n === "snapshot-io" ||
     n === "doc-envelope" ||
-    n.startsWith("demo-") ||
+    n === "motion-content" ||
     n === "work-domain" ||
-    n === "event-catalog"
+    n === "demo-snapshot"
   ) {
     return "kernel";
   }
@@ -157,7 +160,7 @@ function classifyTier(raw: RawPkg): string {
     return "bridge";
   }
 
-  // Tier 5: Consumer (Apps & Services)
+  // Tier 5: Consumer (Apps, Services & Tests)
   return "consumer";
 }
 

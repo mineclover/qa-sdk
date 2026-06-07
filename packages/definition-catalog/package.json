@@ -33,7 +33,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "work-domain": "workspace:*",
+    "test-types": "workspace:*",
     "weighted-index": "workspace:*"
   },
   "devDependencies": {

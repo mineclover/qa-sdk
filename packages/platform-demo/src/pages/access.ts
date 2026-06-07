@@ -7,12 +7,15 @@
 
 import { serializeAddress } from "weighted-index";
 import {
-  DEMO_SVCS, DEMO_NSS, DEMO_KO,
+  DEMO_KO,
+  DEMO_PERM_SVC_VALUES,
+  DEMO_EVT_SVC_VALUES,
   demoRolesFor, demoEventsFor,
   demoRoleStride, demoEvtStride,
   demoCalcPermAddr, demoCalcEvtAddr,
   type DemoVer,
 } from "demo-snapshot";
+import { buildRefSvcRows, type DemoRefSvcRow } from "./demo-display-data.js";
 
 type Ver = DemoVer;
 
@@ -20,22 +23,12 @@ function fmtAddr(schema: string, ver: Ver, index: number): string {
   return serializeAddress({ schema, version: ver, index }, "colon");
 }
 
-// ── perm_svc: svc_name(5) × namespace(2) → 1D (1..10) ──────────────────
+// ── Page-specific ref rows ───────────────────────────────────────────────
+// The source service axis can grow independently. This page renders the
+// prefix_ref subsets that permission/event actually expose.
 
-interface PermSvcMeta {
-  pos: number; svcId: string; svcKo: string; nsId: string; nsKo: string;
-}
-
-const SVC_NAMES = DEMO_SVCS.map(id => ({ id, ko: DEMO_KO.svc[id] }));
-const NS = DEMO_NSS.map(id => ({ id, ko: DEMO_KO.ns[id] }));
-
-const PERM_SVCS: PermSvcMeta[] = [];
-{
-  let p = 1;
-  for (const s of SVC_NAMES)
-    for (const n of NS)
-      PERM_SVCS.push({ pos: p++, svcId: s.id, svcKo: s.ko, nsId: n.id, nsKo: n.ko });
-}
+const PERM_SVCS = buildRefSvcRows(DEMO_PERM_SVC_VALUES);
+const EVT_SVCS = buildRefSvcRows(DEMO_EVT_SVC_VALUES);
 
 // ── Role / Event metadata (demoRolesFor/demoEventsFor에서 동적 생성) ────
 
@@ -55,9 +48,9 @@ const evtStride = demoEvtStride;
 const calcPermAddr = demoCalcPermAddr;
 const calcEvtAddr = demoCalcEvtAddr;
 
-// 백엔드 서비스는 모바일 이니시에이터 미지원 (SSOT의 DEMO_SVCS 기반)
-const BACKEND_SVCS = new Set<string>(DEMO_SVCS.filter(s => s.includes("backend")));
-function svcSupportsInit(ps: PermSvcMeta, init: number): boolean {
+// 백엔드 서비스는 모바일 이니시에이터 미지원 (refEntry view에서 판정)
+const BACKEND_SVCS = new Set<string>([...PERM_SVCS, ...EVT_SVCS].filter(s => s.svcId.includes("backend")).map(s => s.svcId));
+function svcSupportsInit(ps: DemoRefSvcRow, init: number): boolean {
   return !(BACKEND_SVCS.has(ps.svcId) && init === 2);
 }
 
@@ -166,21 +159,25 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
     // eslint-disable-next-line typescript/no-non-null-assertion -- roleIdx1는 curRoles에서 유래
     const curRole = curRoles.find(r => r.idx1 === st.roleIdx1)!;
     const totalPermCells = PERM_SVCS.length * rc(ver);
-    const totalEvtCells = PERM_SVCS.length * curEvents.length;
+    const totalEvtCells = EVT_SVCS.length * curEvents.length;
 
-    const selectedSvcs = st.permSvc !== null
+    const selectedPermSvcs = st.permSvc !== null
       ? [st.permSvc]
       : PERM_SVCS.map(ps => ps.pos);
+    const selectedSvcAddrs = new Set(
+      selectedPermSvcs.map(pos => PERM_SVCS[pos - 1]?.addr).filter((addr): addr is number => typeof addr === "number")
+    );
 
     // Highlighted addresses
     const permHits = new Set<number>();
     const evtHits = new Set<number>();
-    for (const svc of selectedSvcs) {
+    for (const svc of selectedPermSvcs) {
       permHits.add(calcPermAddr(svc, st.roleIdx1, ver));
-      const ps = PERM_SVCS[svc - 1];
-      if (svcSupportsInit(ps, st.initiator)) {
+    }
+    for (const evtSvc of EVT_SVCS) {
+      if (selectedSvcAddrs.has(evtSvc.addr) && svcSupportsInit(evtSvc, st.initiator)) {
         for (const evt of curEvents) {
-          evtHits.add(calcEvtAddr(svc, evt.idx1, st.initiator, ver));
+          evtHits.add(calcEvtAddr(evtSvc.pos, evt.idx1, st.initiator, ver));
         }
       }
     }
@@ -191,7 +188,7 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
     svcLabel.className = "acc-dim-label";
     svcLabel.innerHTML = `
       <span class="acc-dim-key">perm_svc</span>
-      <span class="acc-dim-info">서비스(${SVC_NAMES.length}) × 네임스페이스(${NS.length}) → ${PERM_SVCS.length}개</span>
+      <span class="acc-dim-info">permission refEntries → ${PERM_SVCS.length}개</span>
     `;
     svcCtrl.appendChild(svcLabel);
 
@@ -207,8 +204,8 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
     for (const ps of PERM_SVCS) {
       const btn = document.createElement("button");
       btn.className = "acc-btn" + (st.permSvc === ps.pos ? " acc-btn-active" : "");
-      btn.innerHTML = `<span class="acc-btn-id">${ps.pos}</span><span class="acc-btn-ko">${ps.svcKo}/${ps.nsKo}</span>`;
-      btn.title = `${ps.svcId} / ${ps.nsId}`;
+      btn.innerHTML = `<span class="acc-btn-id">${ps.pos}</span><span class="acc-btn-ko">${ps.label}</span>`;
+      btn.title = ps.title;
       btn.addEventListener("click", () => { st.permSvc = ps.pos; repaint(); });
       svcBtns.appendChild(btn);
     }
@@ -253,9 +250,9 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
 
     let permBody = "";
     for (const ps of PERM_SVCS) {
-      const isRow = selectedSvcs.includes(ps.pos);
+      const isRow = selectedPermSvcs.includes(ps.pos);
       permBody += `<tr class="${isRow ? "acc-tbl-row-active" : ""}">`;
-      permBody += `<th class="acc-tbl-rh" title="${ps.svcId}/${ps.nsId}">${ps.svcKo}<br/><span class="acc-tbl-rh-sub">${ps.nsKo}</span></th>`;
+      permBody += `<th class="acc-tbl-rh" title="${ps.title}">${ps.svcKo}<br/><span class="acc-tbl-rh-sub">${ps.nsKo}</span></th>`;
       for (const role of curRoles) {
         const addr = calcPermAddr(ps.pos, role.idx1, ver);
         const isHit = permHits.has(addr);
@@ -288,11 +285,11 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
     evtHead += `</tr>`;
 
     let evtBody = "";
-    for (const ps of PERM_SVCS) {
-      const isRow = selectedSvcs.includes(ps.pos);
+    for (const ps of EVT_SVCS) {
+      const isRow = selectedSvcAddrs.has(ps.addr);
       const supported = svcSupportsInit(ps, st.initiator);
       evtBody += `<tr class="${isRow ? "acc-tbl-row-active" : ""}">`;
-      evtBody += `<th class="acc-tbl-rh" title="${ps.svcId}/${ps.nsId}">${ps.svcKo}<br/><span class="acc-tbl-rh-sub">${ps.nsKo}</span></th>`;
+      evtBody += `<th class="acc-tbl-rh" title="${ps.title}">${ps.svcKo}<br/><span class="acc-tbl-rh-sub">${ps.nsKo}</span></th>`;
       for (const evt of curEvents) {
         if (!supported) {
           evtBody += `<td class="acc-tbl-td acc-tbl-td-disabled">—</td>`;
@@ -313,7 +310,7 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
 
     // ── Summary ──
     const svcDisplay = st.permSvc !== null
-      ? PERM_SVCS[st.permSvc - 1].svcKo + "/" + PERM_SVCS[st.permSvc - 1].nsKo
+      ? PERM_SVCS[st.permSvc - 1].label
       : "* (전체)";
     const permAddrStr = st.permSvc !== null
       ? `permission:${ver}:${calcPermAddr(st.permSvc, st.roleIdx1, ver)}`
@@ -336,12 +333,13 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
     `;
 
     // ── Insight ──
-    const totalEvtFull = PERM_SVCS.length * curEvents.length * 2;
+    const totalEvtFull = EVT_SVCS.length * curEvents.length * 2;
+    const serviceRefCount = new Set(PERM_SVCS.map(ps => ps.addr)).size;
     insightEl.innerHTML = `
       <div class="acc-insight-inner">
         <span class="acc-insight-mark">i</span>
         <span class="acc-insight-text">
-          <strong>perm_svc</strong>는 서비스(${SVC_NAMES.length})×네임스페이스(${NS.length})를 1차원(${PERM_SVCS.length})으로 압축한 축입니다.
+          <strong>perm_svc</strong>는 service prefix의 refEntries(<strong>${serviceRefCount}</strong>개)를 1차원으로 보여주는 데모 view입니다.
           이 축에 <strong>역할</strong>을 곱하면 <em>권한 좌표</em>(<strong>${totalPermCells}</strong>개),
           <strong>이벤트×발원</strong>을 곱하면 <em>감사 좌표</em>(<strong>${totalEvtFull}</strong>개).
           각 좌표는 주소 공간에서의 고유 위치입니다.
@@ -363,9 +361,9 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
         const type = td.dataset["type"] ?? "";
         const addr = Number(td.dataset.addr);
         const svcPos = Number(td.dataset.svc);
-        const ps = PERM_SVCS[svcPos - 1];
 
         if (type === "permission") {
+          const ps = PERM_SVCS[svcPos - 1];
           const roleIdx1 = Number(td.dataset.role);
           // eslint-disable-next-line typescript/no-non-null-assertion -- roleIdx1는 curRoles에서 유래
           const role = curRoles.find(r => r.idx1 === roleIdx1)!;
@@ -381,7 +379,7 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
               </div>
               <div class="acc-detail-row">
                 <span class="acc-detail-key">perm_svc</span>
-                <span class="acc-detail-val">${ps.svcKo} / ${ps.nsKo} <code>${ps.svcId}/${ps.nsId}</code> (#${svcPos})</span>
+                <span class="acc-detail-val">${ps.svcFullKo} / ${ps.nsFullKo} <code>${ps.svcId}/${ps.nsId}</code> (#${svcPos}, service:${ps.addr})</span>
               </div>
               <div class="acc-detail-row">
                 <span class="acc-detail-key">역할</span>
@@ -394,6 +392,7 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
             </div>
           `;
         } else {
+          const ps = EVT_SVCS[svcPos - 1];
           const evtIdx1 = Number(td.dataset.evt);
           const initIdx = Number(td.dataset.init);
           // eslint-disable-next-line typescript/no-non-null-assertion -- evtIdx1는 curEvents에서 유래
@@ -411,7 +410,7 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
               </div>
               <div class="acc-detail-row">
                 <span class="acc-detail-key">perm_svc</span>
-                <span class="acc-detail-val">${ps.svcKo} / ${ps.nsKo} <code>${ps.svcId}/${ps.nsId}</code> (#${svcPos})</span>
+                <span class="acc-detail-val">${ps.svcFullKo} / ${ps.nsFullKo} <code>${ps.svcId}/${ps.nsId}</code> (#${svcPos}, service:${ps.addr})</span>
               </div>
               <div class="acc-detail-row">
                 <span class="acc-detail-key">감사 이벤트</span>

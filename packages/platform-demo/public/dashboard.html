@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QA-SDK Dashboard</title>
 <script src="config.js"></script>
+<script src="demo-fallback-data.js"></script>
 <style>
 :root {
   --bg-primary: #0d1117;
@@ -852,6 +853,7 @@ body {
   "use strict";
 
   const _cfg = window.__QA_CONFIG__ || {};
+  const _fallback = window.__QA_DEMO_FALLBACK__ || {};
   const _regUrl = _cfg.REGISTRY_URL || "";
   const API_BASE = _regUrl + "/api/dashboard";
   const MONITOR_URL = _cfg.MONITOR_URL || (location.origin + "/monitor.html");
@@ -935,6 +937,24 @@ body {
     return resp.json();
   }
 
+  function cloneData(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function applyDashboardFallback() {
+    const fb = _fallback.dashboard;
+    if (!fb || !fb.overview || !fb.flowMap || !fb.metrics || !fb.timeline) return false;
+
+    state.overview = cloneData(fb.overview);
+    state.flowMap = cloneData(fb.flowMap);
+    state.metrics = cloneData(fb.metrics);
+    state.timeline = cloneData(fb.timeline);
+    state.observedPrefixes = cloneData(fb.observedPrefixes || {});
+    state.lastFetchTime = Date.now();
+    state.error = null;
+    return true;
+  }
+
   async function loadAll() {
     state.loading = true;
     state.error = null;
@@ -965,7 +985,9 @@ body {
       state.lastFetchTime = Date.now();
       state.loading = false;
     } catch (e) {
-      state.error = e.message || "Failed to fetch data";
+      if (!applyDashboardFallback()) {
+        state.error = e.message || "Failed to fetch data";
+      }
       state.loading = false;
     }
     render();

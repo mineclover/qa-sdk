@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QA-SDK Flow</title>
 <script src="config.js"></script>
+<script src="demo-fallback-data.js"></script>
 <style>
 :root {
   --bg: #0d1117;
@@ -1191,10 +1192,11 @@ body {
 (function() {
   var SVG_NS = 'http://www.w3.org/2000/svg';
   var cfg = window.__QA_CONFIG__ || {};
+  var fallback = window.__QA_DEMO_FALLBACK__ || {};
   var INGEST_URL = cfg.INGEST_URL || '';
   var REGISTRY_URL = cfg.REGISTRY_URL || '';
   var FLOW_MAP_URL = REGISTRY_URL + '/api/dashboard/flow-map';
-  var DIAGRAMS_URL = REGISTRY_URL + '/api/diagrams';
+  var DIAGRAMS_URL = cfg.DIAGRAM_URL ? cfg.DIAGRAM_URL + '/api/diagrams' : '';
   var PREFIX_INSIGHTS_URL = INGEST_URL + '/v1/insights/prefixes';
   var TRACE_RECENT_URL = INGEST_URL + '/v1/traces/recent?limit=15';
   var FEED_MAX_ITEMS = 30;
@@ -1297,6 +1299,84 @@ body {
       if (!response.ok) throw new Error('HTTP ' + response.status + ' on ' + url);
       return response.json();
     });
+  }
+
+  function cloneData(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function getFlowFallback() {
+    return fallback.flow || {};
+  }
+
+  function applyObservedPrefixes(items) {
+    state.observedCounts = {};
+    (Array.isArray(items) ? items : []).forEach(function(item) {
+      if (!item || !item.prefix) return;
+      state.observedCounts[item.prefix] = item.count || 0;
+    });
+  }
+
+  function applyFlowFallback() {
+    var fb = getFlowFallback();
+    if (!fb.flowMap) return false;
+
+    state.flowMap = cloneData(fb.flowMap);
+    applyObservedPrefixes(fb.observedPrefixes || []);
+    state.error = null;
+    state.viewport.autoFitPending = true;
+    state.viewport.initialized = false;
+    syncSelection(getPrefixes());
+    syncIntentLinkSelection();
+    rehydrateFallbackTraces();
+    return true;
+  }
+
+  function applyIntentLinksFallback() {
+    var entries = getFlowFallback().intentLinks;
+    if (!Array.isArray(entries) || !entries.length) return false;
+
+    state.intentLinks = cloneData(entries)
+      .filter(function(item) {
+        return item && item.id && item.id !== '__all__';
+      })
+      .sort(function(a, b) {
+        return String(a.id).localeCompare(String(b.id));
+      });
+    state.intentLinksError = null;
+    syncIntentLinkSelection();
+    return true;
+  }
+
+  function getFallbackTraceRecords(traceId) {
+    var byId = getFlowFallback().traceRecordsById || {};
+    var records = byId[traceId];
+    return Array.isArray(records) ? cloneData(records) : [];
+  }
+
+  function hydrateFallbackTrace(traceId) {
+    var records = getFallbackTraceRecords(traceId);
+    if (!records.length) return;
+
+    state.traceRecordsById[traceId] = records;
+    state.traceFirstEventById[traceId] = records[0].eventKey || records[0].event_key || '-';
+    state.tracePrefixIdsById[traceId] = extractTracePrefixIds(records, buildPrefixLookup(getPrefixes()));
+  }
+
+  function rehydrateFallbackTraces() {
+    state.recentTraces.forEach(function(trace) {
+      hydrateFallbackTrace(trace.traceId);
+    });
+  }
+
+  function applyRecentTraceFallback() {
+    var traces = getFlowFallback().recentTraces;
+    if (!Array.isArray(traces) || !traces.length) return false;
+
+    state.recentTraces = mergeRecentTraces(cloneData(traces));
+    rehydrateFallbackTraces();
+    state.feedError = null;
+    return true;
   }
 
   function formatTimestamp(iso) {
@@ -1442,7 +1522,9 @@ body {
           : '-';
       })
       .catch(function() {
-        state.traceFirstEventById[traceId] = '-';
+        var fallbackRecords = getFallbackTraceRecords(traceId);
+        var first = fallbackRecords[0];
+        state.traceFirstEventById[traceId] = first ? (first.eventKey || first.event_key || '-') : '-';
       })
       .finally(function() {
         delete state.traceSummaryLoadingById[traceId];
@@ -1451,6 +1533,9 @@ body {
   }
 
   function fetchAllTraceRecords(traceId) {
+    var fallbackRecords = getFallbackTraceRecords(traceId);
+    if (fallbackRecords.length) return Promise.resolve(fallbackRecords);
+
     var items = [];
     var nextCursor = null;
 
@@ -2726,7 +2811,9 @@ body {
         enrichVisibleTraceSummaries();
       })
       .catch(function(error) {
-        state.feedError = error && error.message ? error.message : 'Failed to load recent traces';
+        if (!applyRecentTraceFallback()) {
+          state.feedError = error && error.message ? error.message : 'Failed to load recent traces';
+        }
       })
       .finally(function() {
         state.feedLoading = false;
@@ -2739,6 +2826,18 @@ body {
     state.intentLinksLoading = true;
     state.intentLinksError = null;
     renderIntentLinkControls();
+
+    if (!DIAGRAMS_URL) {
+      if (!applyIntentLinksFallback()) {
+        state.intentLinks = [];
+        state.intentLinksError = 'No IntentLinks configured';
+        syncIntentLinkSelection();
+      }
+      state.intentLinksLoading = false;
+      renderIntentLinkControls();
+      renderDetail(getPrefixes());
+      return Promise.resolve();
+    }
 
     return fetchJson(DIAGRAMS_URL)
       .then(function(data) {
@@ -2760,9 +2859,11 @@ body {
         syncIntentLinkSelection();
       })
       .catch(function(error) {
-        state.intentLinks = [];
-        state.intentLinksError = error && error.message ? error.message : 'Failed to load IntentLinks';
-        syncIntentLinkSelection();
+        if (!applyIntentLinksFallback()) {
+          state.intentLinks = [];
+          state.intentLinksError = error && error.message ? error.message : 'Failed to load IntentLinks';
+          syncIntentLinkSelection();
+        }
       })
       .finally(function() {
         state.intentLinksLoading = false;
@@ -2791,8 +2892,11 @@ body {
       state.viewport.initialized = false;
       syncSelection(getPrefixes());
       syncIntentLinkSelection();
+      rehydrateFallbackTraces();
     }).catch(function(error) {
-      state.error = error && error.message ? error.message : 'Failed to load flow-map data';
+      if (!applyFlowFallback()) {
+        state.error = error && error.message ? error.message : 'Failed to load flow-map data';
+      }
     }).finally(function() {
       state.loading = false;
       render();

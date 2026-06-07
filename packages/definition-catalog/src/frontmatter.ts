@@ -33,7 +33,7 @@ import {
   ALL_GATE_KIND_IDS,
   getSubDomain,
   type QualityGateSpec,
-} from "work-domain";
+} from "test-types";
 import type {
   DefLevel,
   DefTier,

@@ -1,7 +1,7 @@
 // @def.boundary platform-demo-system
 // @def.doc platform-demo-system
 
-import { MetaRegistry } from "index-meta";
+import { MetaRegistry } from "index-meta/workers";
 import {
   DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS, DEMO_KO,
   DEMO_ROLES_V1, DEMO_ROLES_V2,

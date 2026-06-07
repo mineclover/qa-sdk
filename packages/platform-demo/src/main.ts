@@ -36,6 +36,7 @@ import { renderCasbinPage } from "./pages/casbin.js";
 import { renderPermEnginePage } from "./pages/perm-engine.js";
 import { renderPrefixMetaPage } from "./pages/prefix-meta.js";
 import {
+  DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS,
   DEMO_ROLE_CAP, DEMO_EVENT_CAP, DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
   DEMO_INITIATORS, demoRolesFor, demoEventsFor, demoFeatures,
   demoRoleStride, demoEvtStride,
@@ -194,16 +195,18 @@ function getSheetInfo(sheet: SheetId, ver: Ver): { shape: string; slots: string 
   const esc = DEMO_EVT_SVC_VALUES.length;
   const fc = demoFeatures(ver).length;
   const rn = demoRolesFor(ver).length;
+  const serviceEntriesShape = `[${DEMO_ENVS.length}, ${DEMO_REGIONS.length}, ${DEMO_SVCS.length}, ${DEMO_NSS.length}]`;
+  const serviceValidSlots = DEMO_ENVS.length * DEMO_REGIONS.length * DEMO_SVCS.length * DEMO_NSS.length;
 
   switch (sheet) {
     case "overview":   return { shape: "n차원 참조 주소 체계", slots: "프로젝트 개요" };
-    case "service":    return { shape: "service:v1 · shape [5, 2, 5, 2]", slots: "100개 슬롯" };
+    case "service":    return { shape: `service:v1 · entries ${serviceEntriesShape}`, slots: `${serviceValidSlots}개 유효 조합` };
     case "permission": return { shape: `permission:${ver} · shape [${psc}, ${rc}]`, slots: `${psc * rc}개 슬롯` };
     case "event":      return { shape: `event:${ver} · shape [${esc}, ${ec}, ${ic}]`, slots: `${esc * ec * ic}개 슬롯` };
     case "scenario":   return { shape: `시나리오 — ${ver} 역할별 접근 제어`, slots: "워크플로우 시뮬레이션" };
     case "grant":      return { shape: `기능 ${fc} × 역할 ${rn} = ${fc * rn} 조합`, slots: "권한 부여 관리" };
     case "casbin":     return { shape: "Casbin RBAC/ABAC 권한 모델 해설", slots: "qa-sdk ↔ Casbin 대비" };
-    case "range":      return { shape: "service:v1 · shape [5, 2, 5, 2]", slots: "범위 탐색" };
+    case "range":      return { shape: `service:v1 · entries ${serviceEntriesShape}`, slots: `${serviceValidSlots}개 범위 탐색` };
     case "access":     return { shape: `perm_svc(${psc}) × role(${rc}) + event(${ec}×${ic})`, slots: "접근 제어" };
     case "logging":    return { shape: "구조화 로그 · svc+perm+evt 주소 태깅", slots: `로깅 통합 (${ver})` };
     case "layout":     return { shape: "UUID 레이아웃 시뮬레이터", slots: "N차원 인덱스 → UUID PK 매핑" };

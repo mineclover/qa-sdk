@@ -7,9 +7,10 @@
 
 import { serializeAddress } from "weighted-index";
 import {
-  DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS, DEMO_KO,
+  DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS,
   DEMO_SVC_STRIDES, DEMO_SVC_SHAPE,
 } from "demo-snapshot";
+import { displayValue, type DemoDisplayValue } from "./demo-display-data.js";
 
 const SVC_PREFIX = "service";
 const SVC_VER    = "v1";
@@ -18,36 +19,70 @@ function svcAddr(index: number): string {
   return serializeAddress({ schema: SVC_PREFIX, version: SVC_VER, index }, "colon");
 }
 
-// ── Dimension metadata (service:v1 shape [5,2,5,2] = 100) ────────────────
+// ── Dimension metadata (source capacity is large; UI renders valid entries) ─
 
 interface DimMeta {
   key:    string;
   label:  string;
   size:   number;
   stride: number;
-  values: { idx1: number; id: string; ko: string }[];
+  values: DemoDisplayValue[];
 }
 
 const DIMS: DimMeta[] = [
   {
     key: "env", label: "환경 (env)", size: DEMO_ENVS.length, stride: DEMO_SVC_STRIDES[0],
-    values: DEMO_ENVS.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.env[id] })),
+    values: DEMO_ENVS.map((id, i) => displayValue("env", id, i + 1)),
   },
   {
     key: "region", label: "리전 (region)", size: DEMO_REGIONS.length, stride: DEMO_SVC_STRIDES[1],
-    values: DEMO_REGIONS.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.region[id] })),
+    values: DEMO_REGIONS.map((id, i) => displayValue("region", id, i + 1)),
   },
   {
     key: "svc_name", label: "서비스 (svc_name)", size: DEMO_SVCS.length, stride: DEMO_SVC_STRIDES[2],
-    values: DEMO_SVCS.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.svc[id] })),
+    values: DEMO_SVCS.map((id, i) => displayValue("svc", id, i + 1)),
   },
   {
     key: "namespace", label: "네임스페이스 (ns)", size: DEMO_NSS.length, stride: DEMO_SVC_STRIDES[3],
-    values: DEMO_NSS.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.ns[id] })),
+    values: DEMO_NSS.map((id, i) => displayValue("ns", id, i + 1)),
   },
 ];
 
-const TOTAL_SLOTS = DEMO_SVC_SHAPE.reduce((a: number, b: number) => a * b, 1);
+interface ServiceCell {
+  ordinal: number;
+  address: number;
+  serialized: string;
+  coords: DemoDisplayValue[];
+}
+
+function buildServiceCells(): ServiceCell[] {
+  const cells: ServiceCell[] = [];
+
+  for (const env of DIMS[0].values) {
+    for (const region of DIMS[1].values) {
+      for (const svc of DIMS[2].values) {
+        for (const ns of DIMS[3].values) {
+          const coords = [env, region, svc, ns];
+          const address = coords.reduce((sum, coord, dimIdx) =>
+            sum + (coord.idx1 - 1) * DIMS[dimIdx].stride, 0);
+          cells.push({
+            ordinal: cells.length,
+            address,
+            serialized: svcAddr(address),
+            coords,
+          });
+        }
+      }
+    }
+  }
+
+  return cells;
+}
+
+const SERVICE_CELLS = buildServiceCells();
+const TOTAL_SLOTS = SERVICE_CELLS.length;
+const CAPACITY_SLOTS = DEMO_SVC_SHAPE.reduce((a: number, b: number) => a * b, 1);
+const GRID_COLS = Math.min(16, Math.max(1, Math.ceil(Math.sqrt(TOTAL_SLOTS))));
 
 // ── State ─────────────────────────────────────────────────────────────────
 
@@ -60,46 +95,10 @@ interface RangeState {
 
 // ── Compute matching addresses ────────────────────────────────────────────
 
-function computeRange(selections: DimSelection[]): number[] {
-  // Start with a single partial sum [0], then for each dimension either
-  // add a fixed offset or fan out across all values.
-  let partials = [0];
-
-  for (let d = 0; d < DIMS.length; d++) {
-    const dim = DIMS[d];
-    const sel = selections[d];
-    const next: number[] = [];
-
-    if (sel !== null) {
-      // Fixed: add (sel-1)*stride to every partial
-      const offset = (sel - 1) * dim.stride;
-      for (const p of partials) next.push(p + offset);
-    } else {
-      // Wildcard: fan out for every value
-      for (const v of dim.values) {
-        const offset = (v.idx1 - 1) * dim.stride;
-        for (const p of partials) next.push(p + offset);
-      }
-    }
-
-    partials = next;
-  }
-
-  return partials.toSorted((a, b) => a - b);
-}
-
-// ── Decode a value back to 4D coordinates ─────────────────────────────────
-
-function decodeValue(v: number): { dimIdx1: number; id: string; ko: string }[] {
-  const result: { dimIdx1: number; id: string; ko: string }[] = [];
-  let remainder = v;
-  for (const dim of DIMS) {
-    const idx0 = Math.floor(remainder / dim.stride);
-    remainder = remainder % dim.stride;
-    const entry = dim.values[idx0];
-    result.push({ dimIdx1: idx0 + 1, id: entry?.id ?? "?", ko: entry?.ko ?? "?" });
-  }
-  return result;
+function computeRange(selections: DimSelection[]): ServiceCell[] {
+  return SERVICE_CELLS.filter((cell) =>
+    selections.every((sel, dimIdx) => sel === null || cell.coords[dimIdx].idx1 === sel)
+  );
 }
 
 // ── Build formula string ──────────────────────────────────────────────────
@@ -200,7 +199,7 @@ export function renderRangePage(container: HTMLElement): void {
     for (const v of dim.values) {
       const btn = document.createElement("button");
       btn.className = "rng-btn" + (st.selections[d] === v.idx1 ? " rng-btn-active" : "");
-      btn.innerHTML = `<span class="rng-btn-id">${v.id}</span><span class="rng-btn-ko">${v.ko}</span>`;
+      btn.innerHTML = `<span class="rng-btn-id">${v.id}</span><span class="rng-btn-ko">${v.shortKo}</span>`;
       btn.title = `${v.id} (${v.ko}) — idx ${v.idx1}`;
       btn.addEventListener("click", () => {
         st.selections[d] = v.idx1;
@@ -226,7 +225,7 @@ export function renderRangePage(container: HTMLElement): void {
   detail.className = "rng-detail";
   left.appendChild(detail);
 
-  // ── LEFT PANEL: grid (fixed size) ────────────────────────────────────
+  // ── Grid panel ────────────────────────────────────────────────────────
   const right = document.createElement("div");
   right.className = "rng-right";
 
@@ -236,6 +235,7 @@ export function renderRangePage(container: HTMLElement): void {
 
   const grid = document.createElement("div");
   grid.className = "rng-grid";
+  grid.style.setProperty("--rng-grid-cols", String(GRID_COLS));
   right.appendChild(grid);
 
   columns.appendChild(right);
@@ -251,7 +251,7 @@ export function renderRangePage(container: HTMLElement): void {
     detail.className = "rng-detail";
 
     const matched = computeRange(st.selections);
-    const matchedSet = new Set(matched);
+    const matchedSet = new Set(matched.map((cell) => cell.address));
     const wildcardDims = st.selections.reduce<number>((c, s) => c + (s === null ? 1 : 0), 0);
 
     // Update button active states
@@ -288,7 +288,7 @@ export function renderRangePage(container: HTMLElement): void {
 
     // Grid title
     gridTitle.innerHTML = `
-      <span class="rng-grid-title-text">서비스 주소 공간 0–99</span>
+      <span class="rng-grid-title-text" title="capacity slots: ${CAPACITY_SLOTS}">유효 서비스 조합 ${TOTAL_SLOTS}개</span>
       <span class="rng-grid-title-count">
         <span class="rng-count-matched">${matched.length}</span> / ${TOTAL_SLOTS}
       </span>
@@ -296,49 +296,40 @@ export function renderRangePage(container: HTMLElement): void {
 
     // Grid cells
     grid.innerHTML = "";
-    for (let row = 0; row < 10; row++) {
-      const rowEl = document.createElement("div");
-      rowEl.className = "rng-grid-row";
+    for (const svcCell of SERVICE_CELLS) {
+      const isMatched = matchedSet.has(svcCell.address);
+      const cell = document.createElement("div");
+      cell.className = "rng-cell" + (isMatched ? " rng-cell-hit" : "");
+      cell.title = `${svcCell.serialized} · ${svcCell.coords.map(c => c.id).join(" / ")}`;
+      cell.innerHTML = `
+        <span class="rng-cell-val">${svcCell.ordinal}</span>
+        <span class="rng-cell-addr">${svcCell.address}</span>
+      `;
 
-      // Row header
-      const rh = document.createElement("div");
-      rh.className = "rng-grid-rh";
-      rh.textContent = String(row * 10);
-      rowEl.appendChild(rh);
+      cell.addEventListener("mouseenter", () => {
+        if (pinnedCell === null) showDetail(svcCell, isMatched);
+      });
+      cell.addEventListener("mouseleave", () => {
+        if (pinnedCell === null) clearDetail();
+      });
+      cell.addEventListener("click", () => {
+        if (pinnedCell === svcCell.address) {
+          // Unpin
+          pinnedCell = null;
+          cell.classList.remove("rng-cell-pinned");
+          clearDetail();
+        } else {
+          // Unpin previous
+          const prev = grid.querySelector(".rng-cell-pinned");
+          if (prev) prev.classList.remove("rng-cell-pinned");
+          // Pin new
+          pinnedCell = svcCell.address;
+          cell.classList.add("rng-cell-pinned");
+          showDetail(svcCell, isMatched, true);
+        }
+      });
 
-      for (let col = 0; col < 10; col++) {
-        const v = row * 10 + col;
-        const cell = document.createElement("div");
-        cell.className = "rng-cell" + (matchedSet.has(v) ? " rng-cell-hit" : "");
-        cell.innerHTML = `<span class="rng-cell-val">${v}</span><span class="rng-cell-addr">${svcAddr(v)}</span>`;
-
-        cell.addEventListener("mouseenter", () => {
-          if (pinnedCell === null) showDetail(v, matchedSet.has(v));
-        });
-        cell.addEventListener("mouseleave", () => {
-          if (pinnedCell === null) clearDetail();
-        });
-        cell.addEventListener("click", () => {
-          if (pinnedCell === v) {
-            // Unpin
-            pinnedCell = null;
-            cell.classList.remove("rng-cell-pinned");
-            clearDetail();
-          } else {
-            // Unpin previous
-            const prev = grid.querySelector(".rng-cell-pinned");
-            if (prev) prev.classList.remove("rng-cell-pinned");
-            // Pin new
-            pinnedCell = v;
-            cell.classList.add("rng-cell-pinned");
-            showDetail(v, matchedSet.has(v), true);
-          }
-        });
-
-        rowEl.appendChild(cell);
-      }
-
-      grid.appendChild(rowEl);
+      grid.appendChild(cell);
     }
 
     // Show range summary in detail
@@ -351,30 +342,28 @@ export function renderRangePage(container: HTMLElement): void {
     }
   }
 
-  function buildRangeSummary(addresses: number[], total?: number): string {
-    const rows = addresses.map((v) => {
-      const coords = decodeValue(v);
-      const coordStr = coords.map((c, i) => {
+  function buildRangeSummary(cells: ServiceCell[], total?: number): string {
+    const rows = cells.map((cell) => {
+      const coordStr = cell.coords.map((c, i) => {
         const isWild = st.selections[i] === null;
-        return `<span class="rng-coord-val${isWild ? " rng-coord-wild" : ""}">${c.id}</span>`;
+        return `<span class="rng-coord-val${isWild ? " rng-coord-wild" : ""}" title="${c.id}">${c.shortKo}</span>`;
       }).join(`<span class="rng-coord-sep">·</span>`);
       return `
         <div class="rng-summary-row">
-          <span class="rng-summary-val">${v}</span>
+          <span class="rng-summary-val">${cell.address}</span>
           <span class="rng-summary-coords">${coordStr}</span>
         </div>`;
     }).join("");
 
-    const more = total && total > addresses.length
-      ? `<div class="rng-summary-more">… 외 ${total - addresses.length}개</div>`
+    const more = total && total > cells.length
+      ? `<div class="rng-summary-more">… 외 ${total - cells.length}개</div>`
       : "";
 
     return `<div class="rng-summary">${rows}${more}</div>`;
   }
 
-  function showDetail(v: number, isMatch: boolean, pinned = false): void {
-    const coords = decodeValue(v);
-    const coordParts = coords.map((c, i) => {
+  function showDetail(cell: ServiceCell, isMatch: boolean, pinned = false): void {
+    const coordParts = cell.coords.map((c, i) => {
       const dim = DIMS[i];
       const isWild = st.selections[i] === null;
       return `
@@ -394,10 +383,11 @@ export function renderRangePage(container: HTMLElement): void {
     detail.innerHTML = `
       <div class="rng-detail-hover">
         <div class="rng-dtl-header">
-          <span class="rng-dtl-value">${v}</span>
+          <span class="rng-dtl-value">${cell.address}</span>
           <span class="rng-dtl-status ${isMatch ? "rng-dtl-match" : "rng-dtl-miss"}">${isMatch ? "매칭" : "미매칭"}</span>
           ${pinnedIcon}
         </div>
+        <code class="rng-dtl-address">${cell.serialized}</code>
         <div class="rng-dtl-coords">${coordParts}</div>
       </div>`;
   }

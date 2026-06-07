@@ -1,7 +1,7 @@
 // @def.boundary apm-codegen-system
 import { readFile, writeFile, readdir, mkdir } from "node:fs/promises";
 import { join, extname } from "node:path";
-import type { SchemaSnapshot } from "codegen-core";
+import type { SchemaSnapshot } from "spec-schema";
 
 /** JSON 파일에서 SchemaSnapshot 읽기 */
 export async function readSnapshot(path: string): Promise<SchemaSnapshot> {

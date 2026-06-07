@@ -27,3 +27,8 @@
 
 - **[TD-001] scenario 16/17 fault KIND 확장**: 현재 `perfWarn`, `pubsubInvalidate` fault가 controller `FaultKind` 정의에 부재하여 시뮬레이션 제약 존재.
 - **[TD-002] evidence 멀티라인 처리**: commit 메시지 내 `evidence` 데이터의 줄바꿈 보존 로직 보강 필요.
+- **[TD-003] 아키텍처 계층 정합성 개선**: `check-dependency-boundaries` 도구로 발견된 9건의 위반 사항 해결 필요.
+    - `spec-core`, `dkg` (Kernel) → `decision-flow`, `convergence` (Logic) 의존성 제거 (인터페이스 추상화).
+    - `infra-engine` (Bridge) → `authorization-ontology` (Consumer) 도메인 오염 제거.
+    - `demo-snapshot` (Kernel) → `decision-flow` (Logic) 의존성 제거.
+    - `sim-service-catalog` (Kernel) → `sim-identifier-grammar` (Logic) 계층 조정 또는 통합.

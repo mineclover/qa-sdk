@@ -7,7 +7,7 @@
  * 구현체: LocalDataSource (SQLite 직접), ServerDataSource (HTTP), ScanDataSource (frontmatter scan)
  */
 
-import type { QualityGateSpec } from "work-domain";
+import type { QualityGateSpec } from "test-types";
 
 /** 문서 메타데이터 (DB 기준) */
 export interface DefDoc {

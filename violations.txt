@@ -1,0 +1,18 @@
+❌ [Tier Violation] "core" (foundation) cannot depend on "definition-catalog" (kernel)
+❌ [Tier Violation] "demo-snapshot" (kernel) cannot depend on "decision-flow" (logic)
+❌ [Tier Violation] "demo-tests" (kernel) cannot depend on "permission-engine" (logic)
+❌ [Tier Violation] "demo-tests" (kernel) cannot depend on "registry-service" (consumer)
+❌ [Tier Violation] "demo-types" (kernel) cannot depend on "codec" (bridge)
+❌ [Tier Violation] "demo-types" (kernel) cannot depend on "context" (logic)
+❌ [Tier Violation] "dkg" (kernel) cannot depend on "convergence" (logic)
+❌ [Tier Violation] "dkg" (kernel) cannot depend on "decision-flow" (logic)
+❌ [Tier Violation] "infra-engine" (bridge) cannot depend on "authorization-ontology" (consumer)
+❌ [Tier Violation] "infra-engine" (bridge) cannot depend on "cli-command" (consumer)
+❌ [Tier Violation] "motion-workspace-client" (bridge) cannot depend on "motion-content" (consumer)
+❌ [Tier Violation] "motion-workspace-client" (bridge) cannot depend on "motion-workspace" (consumer)
+❌ [Tier Violation] "sim-service-catalog" (kernel) cannot depend on "sim-identifier-grammar" (logic)
+❌ [Tier Violation] "snapshot-io" (kernel) cannot depend on "codegen-core" (consumer)
+❌ [Tier Violation] "spec-core" (kernel) cannot depend on "convergence" (logic)
+❌ [Tier Violation] "spec-core" (kernel) cannot depend on "decision-flow" (logic)
+
+Total 16 tier violations found.

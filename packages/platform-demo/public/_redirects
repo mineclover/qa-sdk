@@ -1,6 +1,18 @@
 # Cloudflare Pages는 Pretty URLs로 /dashboard → dashboard.html 자동 매핑
 # HTML rewrite 규칙 불필요 (오히려 redirect loop 유발)
 
-# API 프록시
+# Registry/Gateway 관찰 surface
+/api/dashboard/* https://platform-demo-api.astralclover.workers.dev/api/dashboard/:splat 200
+/api/dashboard https://platform-demo-api.astralclover.workers.dev/api/dashboard 200
+/api/diagrams/* https://qa-gateway.astralclover.workers.dev/api/diagrams/:splat 200
+/api/diagrams https://qa-gateway.astralclover.workers.dev/api/diagrams 200
+/api/event-catalog/* https://qa-gateway.astralclover.workers.dev/api/event-catalog/:splat 200
+/api/event-catalog https://qa-gateway.astralclover.workers.dev/api/event-catalog 200
+/dev/* https://qa-gateway.astralclover.workers.dev/dev/:splat 200
+/health https://qa-gateway.astralclover.workers.dev/health 200
+
+# Ingest 관찰 surface
+/v1/* https://qa-gateway.astralclover.workers.dev/v1/:splat 200
+
+# Platform demo API
 /api/* https://platform-demo-api.astralclover.workers.dev/api/:splat 200
-/v1/*  https://platform-demo-api.astralclover.workers.dev/v1/:splat 200

@@ -20,7 +20,14 @@ import {
   type DemoVer, type DemoFeatureDef,
 } from "demo-snapshot";
 import { PermissionSet, type DimDef } from "permission-engine";
-import { snapshotCapacity } from "index-meta";
+import { snapshotCapacity } from "index-meta/workers";
+import {
+  demoDashboardFlowMap,
+  demoDashboardMetrics,
+  demoDashboardOverview,
+  demoDashboardSchema,
+  demoDashboardTimeline,
+} from "./demo-dashboard-read-model.js";
 
 // ── Version helpers ─────────────────────────────────────────────────────────
 
@@ -135,6 +142,15 @@ app.use("*", cors({
 // GET /health, /api/health
 app.get("/health", (c) => c.json({ ok: true, service: "platform-demo-api" }));
 app.get("/api/health", (c) => c.json({ ok: true, service: "platform-demo-api" }));
+
+// ── Dashboard demo read-model routes ───────────────────────────────────────
+
+app.get("/api/dashboard/overview", (c) => c.json(demoDashboardOverview));
+app.get("/api/dashboard/flow-map", (c) => c.json(demoDashboardFlowMap));
+app.get("/api/dashboard/metrics", (c) => c.json(demoDashboardMetrics));
+app.get("/api/dashboard/timeline", (c) => c.json(demoDashboardTimeline));
+app.get("/api/dashboard/schema", (c) => c.json(demoDashboardSchema));
+app.post("/api/dashboard/refresh", (c) => c.json({ collected: false, changes: [] }));
 
 // ── Prefix meta route ─────────────────────────────────────────────────────
 

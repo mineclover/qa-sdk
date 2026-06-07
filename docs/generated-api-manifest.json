@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-07T13:02:58.453Z",
+  "generatedAt": "2026-06-07T14:52:43.189Z",
   "layers": {
     "consumer": [
       {
@@ -282,6 +282,35 @@
         ]
       },
       {
+        "id": "demo-tests",
+        "name": "@qa-sdk/demo-tests",
+        "version": "0.2.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "demo-snapshot",
+          "index-meta",
+          "permission-engine",
+          "weighted-index",
+          "bit-index",
+          "registry-service",
+          "pino"
+        ]
+      },
+      {
+        "id": "demo-types",
+        "name": "demo-types",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "codec",
+          "context"
+        ]
+      },
+      {
         "id": "deterministic-label-registry",
         "name": "deterministic-label-registry",
         "version": "0.1.0",
@@ -375,15 +404,6 @@
           "index-meta",
           "pino"
         ]
-      },
-      {
-        "id": "motion-content",
-        "name": "motion-content",
-        "version": "0.1.0",
-        "tier": "consumer",
-        "boundary": "motion-content-system",
-        "docRef": "none",
-        "internalDeps": []
       },
       {
         "id": "motion-workspace",
@@ -802,17 +822,6 @@
         ]
       },
       {
-        "id": "infra-env-kit",
-        "name": "infra-env-kit",
-        "version": "0.1.0",
-        "tier": "bridge",
-        "boundary": "shared-utility-group",
-        "docRef": "shared-utility-group",
-        "internalDeps": [
-          "core"
-        ]
-      },
-      {
         "id": "motion-workspace-client",
         "name": "motion-workspace-client",
         "version": "0.1.0",
@@ -1010,18 +1019,6 @@
     ],
     "kernel": [
       {
-        "id": "definition-catalog",
-        "name": "definition-catalog",
-        "version": "0.1.0",
-        "tier": "kernel",
-        "boundary": "definition-catalog-spec",
-        "docRef": "definition-catalog-spec",
-        "internalDeps": [
-          "work-domain",
-          "weighted-index"
-        ]
-      },
-      {
         "id": "demo-snapshot",
         "name": "demo-snapshot",
         "version": "0.2.0",
@@ -1032,35 +1029,6 @@
           "core",
           "decision-flow",
           "weighted-index"
-        ]
-      },
-      {
-        "id": "demo-tests",
-        "name": "@qa-sdk/demo-tests",
-        "version": "0.2.0",
-        "tier": "kernel",
-        "boundary": "unknown",
-        "docRef": "none",
-        "internalDeps": [
-          "demo-snapshot",
-          "index-meta",
-          "permission-engine",
-          "weighted-index",
-          "bit-index",
-          "registry-service",
-          "pino"
-        ]
-      },
-      {
-        "id": "demo-types",
-        "name": "demo-types",
-        "version": "0.1.0",
-        "tier": "kernel",
-        "boundary": "unknown",
-        "docRef": "none",
-        "internalDeps": [
-          "codec",
-          "context"
         ]
       },
       {
@@ -1090,17 +1058,6 @@
         "internalDeps": []
       },
       {
-        "id": "event-catalog",
-        "name": "@qa-sdk/event-catalog",
-        "version": "0.1.0",
-        "tier": "kernel",
-        "boundary": "unknown",
-        "docRef": "none",
-        "internalDeps": [
-          "core"
-        ]
-      },
-      {
         "id": "index-meta",
         "name": "index-meta",
         "version": "0.2.0",
@@ -1110,6 +1067,15 @@
         "internalDeps": [
           "weighted-index"
         ]
+      },
+      {
+        "id": "motion-content",
+        "name": "motion-content",
+        "version": "0.1.0",
+        "tier": "kernel",
+        "boundary": "motion-content-system",
+        "docRef": "none",
+        "internalDeps": []
       },
       {
         "id": "sim-service-catalog",
@@ -1130,7 +1096,7 @@
         "boundary": "apm-codegen-system",
         "docRef": "none",
         "internalDeps": [
-          "codegen-core"
+          "spec-schema"
         ]
       },
       {
@@ -1236,6 +1202,29 @@
         ]
       },
       {
+        "id": "definition-catalog",
+        "name": "definition-catalog",
+        "version": "0.1.0",
+        "tier": "foundation",
+        "boundary": "definition-catalog-spec",
+        "docRef": "definition-catalog-spec",
+        "internalDeps": [
+          "test-types",
+          "weighted-index"
+        ]
+      },
+      {
+        "id": "event-catalog",
+        "name": "@qa-sdk/event-catalog",
+        "version": "0.1.0",
+        "tier": "foundation",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "core"
+        ]
+      },
+      {
         "id": "git-utils",
         "name": "git-utils",
         "version": "0.1.0",
@@ -1243,6 +1232,17 @@
         "boundary": "shared-utility-group",
         "docRef": "shared-utility-group",
         "internalDeps": []
+      },
+      {
+        "id": "infra-env-kit",
+        "name": "infra-env-kit",
+        "version": "0.1.0",
+        "tier": "foundation",
+        "boundary": "shared-utility-group",
+        "docRef": "shared-utility-group",
+        "internalDeps": [
+          "core"
+        ]
       },
       {
         "id": "logger",

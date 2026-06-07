@@ -32,6 +32,14 @@ export type {
   SchemaConstraint,
 } from "./schema.types.js";
 
+// ── Snapshot Types ─────────────────────────────────
+export type {
+  SchemaSnapshot,
+  Axis,
+  Composite,
+  SnapshotSupply,
+} from "./snapshot-types.js";
+
 // ── Registry ───────────────────────────────────────
 export { SchemaRegistry } from "./schema.registry.js";
 

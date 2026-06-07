@@ -7,7 +7,7 @@
  * 좌표계로 분류하고 관리하기 위한 타입 정의.
  */
 
-import type { QualityGateSpec } from "work-domain";
+import type { QualityGateSpec } from "test-types";
 
 // ─── 축 값 타입 (Dimension Value Types) ─────────────────
 
