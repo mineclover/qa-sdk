@@ -16,6 +16,7 @@
     "arch:check": "npx tsx scripts/check-dependency-boundaries.ts",
     "arch:impact": "npx tsx scripts/api-impact-analyzer.ts",
     "arch:usage": "npx tsx scripts/analyze-package-usage.ts",
+    "arch:signals": "npx tsx scripts/discover-event-flow.ts",
     "arch:feedback": "npx tsx scripts/ai-feedback-loop.ts",
     "arch:manifest": "npx tsx scripts/generate-api-reference.ts",
     "clean": "pnpm -r run clean",

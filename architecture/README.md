@@ -170,6 +170,7 @@ Architecture Definition Operating System
 
 ## References
 
+- Handbook: [Architectural Governance Handbook](docs/rules/architectural-governance-handbook.md)
 - Model: [archi-adr.yaml](model/archi-adr.yaml)
 - Validation Schema: [schema.json](validation/schema.json)
 - Semantic Rules: [semantic-rules.yaml](validation/semantic-rules.yaml)
