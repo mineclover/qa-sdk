@@ -10,11 +10,13 @@ const TIER_ORDER: Record<string, number> = {
 };
 
 async function main() {
+  const isJson = process.argv.includes("--json");
   const root = resolve(process.cwd());
   const pkgs = await scanAndClassify(root);
   const pkgMap = new Map<string, ClassifiedPackage>(pkgs.map(p => [p.displayName, p]));
 
   let violations = 0;
+  const results: any[] = [];
 
   for (const pkg of pkgs) {
     const currentTierRank = TIER_ORDER[pkg.tier] || 0;
@@ -25,13 +27,25 @@ async function main() {
 
       const depTierRank = TIER_ORDER[dep.tier] || 0;
 
-      // Higher tier cannot be imported by lower tier (Inversion)
-      // Exception: same tier is allowed.
       if (depTierRank > currentTierRank) {
-        console.error(`❌ [Tier Violation] "${pkg.displayName}" (${pkg.tier}) cannot depend on "${dep.displayName}" (${dep.tier})`);
+        if (!isJson) {
+          console.error(`❌ [Tier Violation] "${pkg.displayName}" (${pkg.tier}) cannot depend on "${dep.displayName}" (${dep.tier})`);
+        }
+        results.push({
+          type: "tier-violation",
+          package: pkg.displayName,
+          tier: pkg.tier,
+          dependency: dep.displayName,
+          depTier: dep.tier
+        });
         violations++;
       }
     }
+  }
+
+  if (isJson) {
+    process.stdout.write(JSON.stringify({ violations: results }, null, 2));
+    process.exit(violations > 0 ? 1 : 0);
   }
 
   if (violations > 0) {

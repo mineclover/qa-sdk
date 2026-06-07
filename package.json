@@ -15,6 +15,7 @@
     "format:check": "oxfmt --check packages/",
     "arch:check": "npx tsx scripts/check-dependency-boundaries.ts",
     "arch:impact": "npx tsx scripts/api-impact-analyzer.ts",
+    "arch:feedback": "npx tsx scripts/ai-feedback-loop.ts",
     "arch:manifest": "npx tsx scripts/generate-api-reference.ts",
     "clean": "pnpm -r run clean",
     "sync:skills": "bash scripts/sync-skills.sh",
