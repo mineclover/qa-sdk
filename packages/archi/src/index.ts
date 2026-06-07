@@ -6,6 +6,8 @@ import { buildTimeline } from "./commands/timeline.js";
 import { showStatus } from "./commands/status.js";
 import { renderMermaidViews } from "./commands/render.js";
 import { exploreArchitecture } from "./commands/explore.js";
+import { findArchitecture } from "./commands/find.js";
+import { analyzeImpact } from "./commands/impact.js";
 
 const program = new Command();
 
@@ -86,6 +88,25 @@ program
   .option("-d, --dir <path>", "작업할 루트 폴더 지정 (기본값: 현재 디렉토리)")
   .action((options) => {
     exploreArchitecture(options.dir || process.cwd());
+  });
+
+// 8. find
+program
+  .command("find <pattern>")
+  .alias("search")
+  .description("모델 요소(Scope, Element) 및 거버넌스 문서 내용 검색")
+  .option("-d, --dir <path>", "작업할 루트 폴더 지정 (기본값: 현재 디렉토리)")
+  .action((pattern, options) => {
+    findArchitecture(options.dir || process.cwd(), pattern);
+  });
+
+// 9. impact
+program
+  .command("impact <package-id>")
+  .description("특정 패키지 변경 시의 상하방 의존성 및 아키텍처 영향도 분석")
+  .option("-d, --dir <path>", "작업할 루트 폴더 지정 (기본값: 현재 디렉토리)")
+  .action((packageId, options) => {
+    analyzeImpact(options.dir || process.cwd(), packageId);
   });
 
 program.parse(process.argv);

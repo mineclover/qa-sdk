@@ -24,22 +24,24 @@ tags: ["governance", "guide", "workflow"]
    * 의도된 위반인 경우 `PENDING_WORK.md`의 [TD-xxx] 항목으로 등록합니다.
 3. **매니페스트 갱신**: `docs/generated-api-manifest.json` 변경 사항을 검토합니다.
 
-## 2. 의사결정 추적 (Decision Tracking)
+## 2. 의사결정 추적 및 영향도 분석 (Decision & Impact)
 
-중요한 아키텍처 변경(신규 패키지, 계층 이동, 인터페이스 변경) 발생 시 `archi` 도구를 사용하여 기록을 남깁니다.
+아키텍처 구조를 변경하거나 재정렬할 때는 다음 도구를 활용하여 변경의 정당성을 확보하고 사이드 이펙트를 참조합니다.
 
 ```bash
-# 1. 새 세션 문서 생성
-node packages/archi/dist/index.js new session --title "변경 내용 요약"
+# 1. 아키텍처 검색 (Search/Reference)
+# - 특정 기능이나 경계(Boundary)가 이미 정의되어 있는지 확인
+node packages/archi/dist/index.js find "<pattern>"
 
-# 2. 내용 작성 (architecture/docs/governance/sessions/...)
-# - 결정 사항, 작업 요약, 액션 아이템 업데이트
+# 2. 영향도 분석 (Impact Analysis)
+# - 특정 패키지 변경 시 상/하방 의존성 및 아키텍처 계층 위반 확인
+node packages/archi/dist/index.js impact <package-id>
 
-# 3. 타임라인 및 인덱스 동기화
-node packages/archi/dist/index.js timeline
+# 3. 새 세션 문서 생성 및 기록
+node packages/archi/dist/index.js new session --title "구조 변경 사유"
 ```
 
-## 3. 계층 정합성 규칙 (Tier Rules)
+## 3. 계층 정합성 및 구조 변경 규칙 (Structure Rules)
 
 `scripts/check-dependency-boundaries.ts`에 정의된 5계층 원칙을 준수합니다.
 
