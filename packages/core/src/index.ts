@@ -154,6 +154,7 @@ export type { SimpleShutdownDeps } from "./lib/graceful-shutdown.js";
 // ── Ports ───────────────────────────────────────────────
 
 export type { RecordStore, RecordInsert, RecordPaginationCursor, RecordPaginationParams, StoredRecord, StoredRecordPage, TimeRangeParams } from "./ports/record-store.port.js";
+export type { ResiliencePolicy, RetryPolicy, CircuitBreakerPolicy, FallbackPolicy, TimeoutPolicy, ResilientRunner } from "./ports/resilience.port.js";
 export type { TraceStore, TraceUpsert, StoredTrace } from "./ports/trace-store.port.js";
 export type { GraphStore } from "./ports/graph-store.port.js";
 export type { VerdictStore, VerdictInsert, StoredVerdict } from "./ports/verdict-store.port.js";

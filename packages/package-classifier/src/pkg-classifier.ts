@@ -99,18 +99,66 @@ export async function scanAndClassify(root: string): Promise<ClassifiedPackage[]
 
 function classifyTier(raw: RawPkg): string {
   const n = raw.displayName;
-  if (/(-server|-service)$/.test(n)) return "service";
+  
+  // Tier 1: Foundation (Absolute Base)
   if (
-    /(-demo|-web)$/.test(n) ||
-    n.startsWith("browser-") ||
-    n.startsWith("viz-") ||
-    n.startsWith("registry-ui")
-  )
-    return "app";
-  if (n.startsWith('demo-')) return "data";
-  if (n === "cli") return "service";
-  if (raw.isScoped) return "platform";
-  return "foundation";
+    n === "core" || 
+    n === "test-types" || 
+    n === "weighted-index" || 
+    n === "bit-index" ||
+    n === "address-index" ||
+    n === "pino" ||
+    n === "logger" ||
+    n === "store" ||
+    n === "git-utils"
+  ) {
+    return "foundation";
+  }
+
+  // Tier 2: Kernel (Metadata & Specs)
+  if (
+    n.endsWith("-catalog") || 
+    n.startsWith("spec-") || 
+    n === "dkg" || 
+    n === "index-meta" ||
+    n === "snapshot-io" ||
+    n === "doc-envelope" ||
+    n.startsWith("demo-") ||
+    n === "work-domain" ||
+    n === "event-catalog"
+  ) {
+    return "kernel";
+  }
+
+  // Tier 3: Logic (Engines & Simulations)
+  if (
+    n === "engine" || 
+    n === "context" || 
+    n === "decision-flow" || 
+    n.startsWith("taxonomy-") ||
+    n.startsWith("sim-") ||
+    n === "permission-engine" ||
+    n === "convergence" ||
+    n === "operational-ontology"
+  ) {
+    return "logic";
+  }
+
+  // Tier 4: Bridge (SDK & Codec)
+  if (
+    n === "sdk" || 
+    n.endsWith("-client") || 
+    n.includes("codec") || 
+    n.endsWith("-bridge") ||
+    n === "package-classifier" ||
+    n.startsWith("infra-") ||
+    n.startsWith("browser-")
+  ) {
+    return "bridge";
+  }
+
+  // Tier 5: Consumer (Apps & Services)
+  return "consumer";
 }
 
 function classifyRuntime(raw: RawPkg): string {

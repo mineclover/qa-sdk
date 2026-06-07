@@ -1,0 +1,1298 @@
+{
+  "generatedAt": "2026-06-07T13:02:58.453Z",
+  "layers": {
+    "consumer": [
+      {
+        "id": "apm",
+        "name": "@qa-sdk/apm",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "observability-system-root",
+        "docRef": "observability-system-root",
+        "internalDeps": [
+          "core",
+          "sdk",
+          "weighted-index"
+        ]
+      },
+      {
+        "id": "archi",
+        "name": "@qa-sdk/archi",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "scaffold",
+        "name": "@qa-sdk/scaffold",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "audit-recorder-store",
+        "name": "audit-recorder-store",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "permission-engine-spec",
+        "docRef": "authorization-ontology-nested-audit-tracing",
+        "internalDeps": [
+          "db-bootstrap",
+          "permission-engine"
+        ]
+      },
+      {
+        "id": "authorization-monitor-web",
+        "name": "@qa-sdk/authorization-monitor-web",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "experience-layer-group",
+        "docRef": "experience-layer-group",
+        "internalDeps": [
+          "viz-core"
+        ]
+      },
+      {
+        "id": "authorization-ontology",
+        "name": "authorization-ontology",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "operational-ontology"
+        ]
+      },
+      {
+        "id": "bench",
+        "name": "@qa-sdk/bench",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "context",
+          "core",
+          "event-catalog",
+          "sdk",
+          "demo-snapshot"
+        ]
+      },
+      {
+        "id": "browser",
+        "name": "@qa-sdk/browser",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "browser-runtime-system",
+        "docRef": "none",
+        "internalDeps": [
+          "browser-codec",
+          "core",
+          "event-catalog",
+          "sdk"
+        ]
+      },
+      {
+        "id": "canvas-viewport",
+        "name": "canvas-viewport",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "canvas-viewport-spec",
+        "docRef": "canvas-viewport-spec",
+        "internalDeps": []
+      },
+      {
+        "id": "cli",
+        "name": "@qa-sdk/cli",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "docs-control-plane",
+        "docRef": "docs-control-plane",
+        "internalDeps": [
+          "convergence",
+          "core",
+          "registry-service",
+          "spec-core",
+          "authorization-ontology",
+          "operational-ontology",
+          "codegen-core",
+          "cli-command",
+          "config-loader",
+          "decision-flow",
+          "decision-flow-store",
+          "definition-catalog",
+          "definition-data-source",
+          "demo-snapshot",
+          "deterministic-label-registry",
+          "doc-envelope",
+          "dkg",
+          "git-utils",
+          "index-meta",
+          "motion-content",
+          "motion-workspace",
+          "motion-workspace-client",
+          "ontology-pack-validate",
+          "package-classifier",
+          "quality-ledger",
+          "ralph-tui-integration",
+          "review-ledger",
+          "snapshot-io",
+          "spec-analyzer",
+          "taxonomy-decision-bridge",
+          "taxonomy-engine",
+          "spec-tracker",
+          "spec-transition",
+          "test-scenario-store",
+          "test-types",
+          "work-domain"
+        ]
+      },
+      {
+        "id": "cli-command",
+        "name": "cli-command",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "cli-command-spec",
+        "docRef": "cli-command-spec",
+        "internalDeps": []
+      },
+      {
+        "id": "codegen-core",
+        "name": "codegen-core",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "apm-codegen-system",
+        "docRef": "none",
+        "internalDeps": [
+          "core"
+        ]
+      },
+      {
+        "id": "config-loader",
+        "name": "config-loader",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "shared-utility-group",
+        "docRef": "shared-utility-group",
+        "internalDeps": [
+          "core"
+        ]
+      },
+      {
+        "id": "data-object-codegen",
+        "name": "data-object-codegen",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "meta-semantic-system",
+        "docRef": "none",
+        "internalDeps": [
+          "core"
+        ]
+      },
+      {
+        "id": "db-bootstrap",
+        "name": "db-bootstrap",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "db-bootstrap",
+        "docRef": "db-bootstrap",
+        "internalDeps": [
+          "core"
+        ]
+      },
+      {
+        "id": "db-traffic-control",
+        "name": "db-traffic-control",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "system-support",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "decision-flow-store",
+        "name": "decision-flow-store",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "persistence-system-root",
+        "docRef": "persistence-system-root",
+        "internalDeps": [
+          "core",
+          "decision-flow",
+          "index-meta"
+        ]
+      },
+      {
+        "id": "decision-service",
+        "name": "@qa-sdk/decision-service",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "decision-service-spec",
+        "docRef": "decision-service-spec",
+        "internalDeps": [
+          "core",
+          "logger",
+          "decision-flow"
+        ]
+      },
+      {
+        "id": "decode-service",
+        "name": "@qa-sdk/decode-service",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "core",
+          "logger",
+          "store",
+          "index-meta",
+          "index-meta-workers",
+          "pino",
+          "weighted-index"
+        ]
+      },
+      {
+        "id": "definition-data-source",
+        "name": "definition-data-source",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "definition-data-source",
+        "docRef": "definition-data-source",
+        "internalDeps": [
+          "definition-catalog"
+        ]
+      },
+      {
+        "id": "definition-service",
+        "name": "@qa-sdk/definition-service",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "definition-service-system",
+        "docRef": "definition-service",
+        "internalDeps": [
+          "core",
+          "logger",
+          "definition-catalog",
+          "work-domain"
+        ]
+      },
+      {
+        "id": "deterministic-label-registry",
+        "name": "deterministic-label-registry",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "deterministic-label-architecture",
+        "docRef": "none",
+        "internalDeps": [
+          "doc-envelope"
+        ]
+      },
+      {
+        "id": "docs-explorer",
+        "name": "@qa-sdk/docs-explorer",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "definition-catalog"
+        ]
+      },
+      {
+        "id": "e2e",
+        "name": "@qa-sdk/e2e",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "facet-tests",
+        "name": "@qa-sdk/facet-tests",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "index-meta"
+        ]
+      },
+      {
+        "id": "gate-service",
+        "name": "gate-service",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "core",
+          "logger",
+          "index-meta",
+          "index-meta-workers",
+          "pino"
+        ]
+      },
+      {
+        "id": "gateway",
+        "name": "@qa-sdk/gateway",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "index-meta-workers",
+        "name": "index-meta-workers",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "index-meta-system",
+        "docRef": "index-meta-system",
+        "internalDeps": [
+          "index-meta"
+        ]
+      },
+      {
+        "id": "ingest-server",
+        "name": "@qa-sdk/ingest-server",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "codec-proto",
+          "core",
+          "engine",
+          "otel",
+          "registry-client",
+          "store",
+          "index-meta",
+          "pino"
+        ]
+      },
+      {
+        "id": "motion-content",
+        "name": "motion-content",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "motion-content-system",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "motion-workspace",
+        "name": "motion-workspace",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "motion-workspace-spec",
+        "docRef": "none",
+        "internalDeps": [
+          "motion-content"
+        ]
+      },
+      {
+        "id": "motion-workspace-service",
+        "name": "@qa-sdk/motion-workspace-service",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "motion-workspace-service-spec",
+        "docRef": "none",
+        "internalDeps": [
+          "core",
+          "logger",
+          "index-meta",
+          "motion-workspace"
+        ]
+      },
+      {
+        "id": "nest-service-kit",
+        "name": "@qa-sdk/nest-service-kit",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "nest-service-kit",
+        "docRef": "nest-service-kit",
+        "internalDeps": [
+          "core",
+          "otel"
+        ]
+      },
+      {
+        "id": "ontology-pack-validate",
+        "name": "ontology-pack-validate",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "authorization-ontology",
+          "definition-catalog",
+          "doc-envelope",
+          "operational-ontology"
+        ]
+      },
+      {
+        "id": "operational-ontology-web",
+        "name": "@qa-sdk/operational-ontology-web",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "experience-layer-group",
+        "docRef": "experience-layer-group",
+        "internalDeps": [
+          "viz-core"
+        ]
+      },
+      {
+        "id": "otel",
+        "name": "@qa-sdk/otel",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "observability-system-root",
+        "docRef": "observability-system-root",
+        "internalDeps": []
+      },
+      {
+        "id": "pipe-store-sqlite",
+        "name": "pipe-store-sqlite",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "persistence-system-root",
+        "docRef": "persistence-system-root",
+        "internalDeps": [
+          "core",
+          "index-meta"
+        ]
+      },
+      {
+        "id": "platform-demo",
+        "name": "@qa-sdk/platform-demo",
+        "version": "0.2.0",
+        "tier": "consumer",
+        "boundary": "platform-demo-system",
+        "docRef": "platform-demo-system",
+        "internalDeps": [
+          "bit-index",
+          "demo-snapshot",
+          "permission-engine",
+          "weighted-index",
+          "weighted-ui"
+        ]
+      },
+      {
+        "id": "platform-demo-api",
+        "name": "@qa-sdk/platform-demo-api",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "platform-demo-system",
+        "docRef": "platform-demo-system",
+        "internalDeps": [
+          "demo-snapshot",
+          "index-meta",
+          "permission-engine"
+        ]
+      },
+      {
+        "id": "quality-ledger",
+        "name": "quality-ledger",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "shared-utility-group",
+        "docRef": "shared-utility-group",
+        "internalDeps": [
+          "index-meta"
+        ]
+      },
+      {
+        "id": "query-service",
+        "name": "query-service",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "query-api-spec",
+        "docRef": "query-api-spec",
+        "internalDeps": [
+          "core",
+          "logger",
+          "index-meta",
+          "index-meta-workers",
+          "pino"
+        ]
+      },
+      {
+        "id": "ralph-tui-integration",
+        "name": "ralph-tui-integration",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "deterministic-label-architecture",
+        "docRef": "ralph-tui-integration",
+        "internalDeps": [
+          "doc-envelope"
+        ]
+      },
+      {
+        "id": "registry-service",
+        "name": "@qa-sdk/registry-service",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "registry-system",
+        "docRef": "registry-system",
+        "internalDeps": [
+          "core",
+          "pipe-store-sqlite",
+          "otel",
+          "definition-client",
+          "event-catalog",
+          "logger",
+          "definition-catalog",
+          "index-meta",
+          "operational-ontology",
+          "pino",
+          "weighted-index"
+        ]
+      },
+      {
+        "id": "registry-ui",
+        "name": "@qa-sdk/registry-ui",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "experience-layer-group",
+        "docRef": "experience-layer-group",
+        "internalDeps": [
+          "canvas-viewport",
+          "git-utils",
+          "weighted-index"
+        ]
+      },
+      {
+        "id": "resource-policy-store",
+        "name": "resource-policy-store",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "permission-engine-spec",
+        "docRef": "authorization-ontology-resource-lifecycle",
+        "internalDeps": [
+          "db-bootstrap",
+          "permission-engine",
+          "weighted-index"
+        ]
+      },
+      {
+        "id": "review-ledger",
+        "name": "review-ledger",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "system-root",
+        "docRef": "none",
+        "internalDeps": [
+          "core",
+          "index-meta"
+        ]
+      },
+      {
+        "id": "roleplay-web",
+        "name": "@qa-sdk/roleplay-web",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "experience-layer-group",
+        "docRef": "experience-layer-group",
+        "internalDeps": [
+          "browser-codec",
+          "core",
+          "event-catalog",
+          "sdk"
+        ]
+      },
+      {
+        "id": "shop-web",
+        "name": "@qa-sdk/shop-web",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "simulation-tests",
+        "name": "@qa-sdk/simulation-tests",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "index-meta",
+          "core"
+        ]
+      },
+      {
+        "id": "tag-search",
+        "name": "tag-search",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "indexing-core-system",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "test-scenario-store",
+        "name": "test-scenario-store",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "persistence-system-root",
+        "docRef": "persistence-system-root",
+        "internalDeps": [
+          "index-meta",
+          "test-types"
+        ]
+      },
+      {
+        "id": "viteplus-sdk-smoke",
+        "name": "@qa-sdk/viteplus-sdk-smoke",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "browser-codec",
+          "core",
+          "event-catalog",
+          "sdk"
+        ]
+      },
+      {
+        "id": "viz-3d",
+        "name": "@qa-sdk/viz-3d",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "viz-system-root",
+        "docRef": "viz-system-root",
+        "internalDeps": [
+          "browser-codec"
+        ]
+      },
+      {
+        "id": "viz-core",
+        "name": "viz-core",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "viz-system-root",
+        "docRef": "viz-system-root",
+        "internalDeps": [
+          "core"
+        ]
+      },
+      {
+        "id": "viz-web",
+        "name": "@qa-sdk/viz-web",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "viz-system-root",
+        "docRef": "viz-system-root",
+        "internalDeps": [
+          "canvas-viewport",
+          "core",
+          "viz-core",
+          "engine",
+          "event-catalog"
+        ]
+      },
+      {
+        "id": "weighted-gpu",
+        "name": "weighted-gpu",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "weighted-index-system",
+        "docRef": "weighted-index-system",
+        "internalDeps": []
+      },
+      {
+        "id": "weighted-index-explorer",
+        "name": "weighted-index-explorer",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "weighted-index-system",
+        "docRef": "weighted-index-system",
+        "internalDeps": [
+          "event-catalog",
+          "weighted-index",
+          "weighted-ui"
+        ]
+      },
+      {
+        "id": "weighted-ui",
+        "name": "weighted-ui",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "weighted-index-system",
+        "docRef": "weighted-index-system",
+        "internalDeps": []
+      },
+      {
+        "id": "weighted-wasm",
+        "name": "weighted-wasm",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": []
+      }
+    ],
+    "bridge": [
+      {
+        "id": "browser-codec",
+        "name": "@qa-sdk/browser-codec",
+        "version": "0.1.0",
+        "tier": "bridge",
+        "boundary": "browser-runtime-system",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "codec",
+        "name": "@qa-sdk/codec",
+        "version": "0.1.0",
+        "tier": "bridge",
+        "boundary": "shared-utility-group",
+        "docRef": "shared-utility-group",
+        "internalDeps": [
+          "core",
+          "weighted-index"
+        ]
+      },
+      {
+        "id": "codec-proto",
+        "name": "@qa-sdk/codec-proto",
+        "version": "0.1.0",
+        "tier": "bridge",
+        "boundary": "shared-utility-group",
+        "docRef": "shared-utility-group",
+        "internalDeps": [
+          "core"
+        ]
+      },
+      {
+        "id": "definition-client",
+        "name": "@qa-sdk/definition-client",
+        "version": "0.1.0",
+        "tier": "bridge",
+        "boundary": "definition-service-system",
+        "docRef": "none",
+        "internalDeps": [
+          "core",
+          "definition-catalog"
+        ]
+      },
+      {
+        "id": "infra-engine",
+        "name": "infra-engine",
+        "version": "0.1.0",
+        "tier": "bridge",
+        "boundary": "infra-engine-system",
+        "docRef": "infra-engine-system",
+        "internalDeps": [
+          "core",
+          "authorization-ontology",
+          "cli-command",
+          "demo-snapshot",
+          "infra-env-kit",
+          "operational-ontology"
+        ]
+      },
+      {
+        "id": "infra-env-kit",
+        "name": "infra-env-kit",
+        "version": "0.1.0",
+        "tier": "bridge",
+        "boundary": "shared-utility-group",
+        "docRef": "shared-utility-group",
+        "internalDeps": [
+          "core"
+        ]
+      },
+      {
+        "id": "motion-workspace-client",
+        "name": "motion-workspace-client",
+        "version": "0.1.0",
+        "tier": "bridge",
+        "boundary": "motion-workspace-system",
+        "docRef": "none",
+        "internalDeps": [
+          "motion-content",
+          "motion-workspace"
+        ]
+      },
+      {
+        "id": "package-classifier",
+        "name": "package-classifier",
+        "version": "0.1.0",
+        "tier": "bridge",
+        "boundary": "shared-utility-group",
+        "docRef": "shared-utility-group",
+        "internalDeps": []
+      },
+      {
+        "id": "registry-client",
+        "name": "@qa-sdk/registry-client",
+        "version": "0.1.0",
+        "tier": "bridge",
+        "boundary": "registry-system",
+        "docRef": "registry-system",
+        "internalDeps": [
+          "pino"
+        ]
+      },
+      {
+        "id": "sdk",
+        "name": "@qa-sdk/sdk",
+        "version": "0.1.0",
+        "tier": "bridge",
+        "boundary": "platform-chain-system",
+        "docRef": "none",
+        "internalDeps": [
+          "core",
+          "logger",
+          "codec",
+          "context"
+        ]
+      },
+      {
+        "id": "visbug-bridge",
+        "name": "visbug-bridge",
+        "version": "0.1.0",
+        "tier": "bridge",
+        "boundary": "rlsc",
+        "docRef": "none",
+        "internalDeps": []
+      }
+    ],
+    "logic": [
+      {
+        "id": "context",
+        "name": "@qa-sdk/context",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "shared-utility-group",
+        "docRef": "shared-utility-group",
+        "internalDeps": [
+          "core"
+        ]
+      },
+      {
+        "id": "convergence",
+        "name": "@qa-sdk/convergence",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "convergence-layer-group",
+        "docRef": "none",
+        "internalDeps": [
+          "core",
+          "spec-schema",
+          "weighted-index"
+        ]
+      },
+      {
+        "id": "decision-flow",
+        "name": "decision-flow",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "df-system",
+        "docRef": "none",
+        "internalDeps": [
+          "weighted-index"
+        ]
+      },
+      {
+        "id": "engine",
+        "name": "@qa-sdk/engine",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "qa-sdk-engine-system",
+        "docRef": "qa-sdk-engine-system",
+        "internalDeps": [
+          "core"
+        ]
+      },
+      {
+        "id": "operational-ontology",
+        "name": "operational-ontology",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "core"
+        ]
+      },
+      {
+        "id": "permission-engine",
+        "name": "permission-engine",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "permission-engine-spec",
+        "docRef": "permission-engine-spec",
+        "internalDeps": [
+          "weighted-index",
+          "bit-index"
+        ]
+      },
+      {
+        "id": "sim-decision-view",
+        "name": "sim-decision-view",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "sim-decision-view",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "sim-identifier-grammar",
+        "name": "sim-identifier-grammar",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "sim-identifier-grammar",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "sim-internal-network",
+        "name": "sim-internal-network",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "sim-internal-network",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "sim-outbox-view",
+        "name": "sim-outbox-view",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "sim-outbox-view",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "taxonomy-decision-bridge",
+        "name": "taxonomy-decision-bridge",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "decision-flow",
+          "taxonomy-engine"
+        ]
+      },
+      {
+        "id": "taxonomy-engine",
+        "name": "taxonomy-engine",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "taxonomy-web",
+        "name": "@qa-sdk/taxonomy-web",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "taxonomy-decision-bridge",
+          "taxonomy-engine"
+        ]
+      }
+    ],
+    "kernel": [
+      {
+        "id": "definition-catalog",
+        "name": "definition-catalog",
+        "version": "0.1.0",
+        "tier": "kernel",
+        "boundary": "definition-catalog-spec",
+        "docRef": "definition-catalog-spec",
+        "internalDeps": [
+          "work-domain",
+          "weighted-index"
+        ]
+      },
+      {
+        "id": "demo-snapshot",
+        "name": "demo-snapshot",
+        "version": "0.2.0",
+        "tier": "kernel",
+        "boundary": "platform-chain-system",
+        "docRef": "none",
+        "internalDeps": [
+          "core",
+          "decision-flow",
+          "weighted-index"
+        ]
+      },
+      {
+        "id": "demo-tests",
+        "name": "@qa-sdk/demo-tests",
+        "version": "0.2.0",
+        "tier": "kernel",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "demo-snapshot",
+          "index-meta",
+          "permission-engine",
+          "weighted-index",
+          "bit-index",
+          "registry-service",
+          "pino"
+        ]
+      },
+      {
+        "id": "demo-types",
+        "name": "demo-types",
+        "version": "0.1.0",
+        "tier": "kernel",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "codec",
+          "context"
+        ]
+      },
+      {
+        "id": "dkg",
+        "name": "dkg",
+        "version": "0.1.0",
+        "tier": "kernel",
+        "boundary": "dkg-system-root",
+        "docRef": "dkg-system-root",
+        "internalDeps": [
+          "spec-schema",
+          "spec-transition",
+          "core",
+          "convergence",
+          "decision-flow",
+          "weighted-index",
+          "index-meta"
+        ]
+      },
+      {
+        "id": "doc-envelope",
+        "name": "doc-envelope",
+        "version": "0.1.0",
+        "tier": "kernel",
+        "boundary": "deterministic-label-architecture",
+        "docRef": "doc-envelope",
+        "internalDeps": []
+      },
+      {
+        "id": "event-catalog",
+        "name": "@qa-sdk/event-catalog",
+        "version": "0.1.0",
+        "tier": "kernel",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "core"
+        ]
+      },
+      {
+        "id": "index-meta",
+        "name": "index-meta",
+        "version": "0.2.0",
+        "tier": "kernel",
+        "boundary": "index-meta-system",
+        "docRef": "index-meta-system",
+        "internalDeps": [
+          "weighted-index"
+        ]
+      },
+      {
+        "id": "sim-service-catalog",
+        "name": "sim-service-catalog",
+        "version": "0.1.0",
+        "tier": "kernel",
+        "boundary": "sim-service-catalog",
+        "docRef": "none",
+        "internalDeps": [
+          "sim-identifier-grammar"
+        ]
+      },
+      {
+        "id": "snapshot-io",
+        "name": "snapshot-io",
+        "version": "0.1.0",
+        "tier": "kernel",
+        "boundary": "apm-codegen-system",
+        "docRef": "none",
+        "internalDeps": [
+          "codegen-core"
+        ]
+      },
+      {
+        "id": "spec-analyzer",
+        "name": "spec-analyzer",
+        "version": "0.1.0",
+        "tier": "kernel",
+        "boundary": "spec-engine-system",
+        "docRef": "spec-engine-system",
+        "internalDeps": [
+          "definition-catalog"
+        ]
+      },
+      {
+        "id": "spec-core",
+        "name": "@qa-sdk/spec-core",
+        "version": "0.1.0",
+        "tier": "kernel",
+        "boundary": "spec-engine-system",
+        "docRef": "spec-engine-system",
+        "internalDeps": [
+          "convergence",
+          "core",
+          "decision-flow",
+          "dkg",
+          "index-meta",
+          "spec-schema",
+          "spec-transition",
+          "weighted-index"
+        ]
+      },
+      {
+        "id": "spec-schema",
+        "name": "spec-schema",
+        "version": "0.1.0",
+        "tier": "kernel",
+        "boundary": "spec-engine-system",
+        "docRef": "spec-engine-system",
+        "internalDeps": []
+      },
+      {
+        "id": "spec-tracker",
+        "name": "spec-tracker",
+        "version": "0.1.0",
+        "tier": "kernel",
+        "boundary": "spec-engine-system",
+        "docRef": "spec-engine-system",
+        "internalDeps": []
+      },
+      {
+        "id": "spec-transition",
+        "name": "spec-transition",
+        "version": "0.1.0",
+        "tier": "kernel",
+        "boundary": "spec-engine-system",
+        "docRef": "spec-engine-system",
+        "internalDeps": [
+          "core"
+        ]
+      },
+      {
+        "id": "work-domain",
+        "name": "work-domain",
+        "version": "0.1.0",
+        "tier": "kernel",
+        "boundary": "shared-utility-group",
+        "docRef": "shared-utility-group",
+        "internalDeps": []
+      }
+    ],
+    "foundation": [
+      {
+        "id": "address-index",
+        "name": "address-index",
+        "version": "0.1.0",
+        "tier": "foundation",
+        "boundary": "persistence-system-root",
+        "docRef": "persistence-system-root",
+        "internalDeps": []
+      },
+      {
+        "id": "bit-index",
+        "name": "bit-index",
+        "version": "0.1.0",
+        "tier": "foundation",
+        "boundary": "persistence-system-root",
+        "docRef": "persistence-system-root",
+        "internalDeps": [
+          "weighted-index"
+        ]
+      },
+      {
+        "id": "core",
+        "name": "@qa-sdk/core",
+        "version": "0.1.0",
+        "tier": "foundation",
+        "boundary": "qa-sdk-core-system",
+        "docRef": "qa-sdk-core-system",
+        "internalDeps": [
+          "definition-catalog",
+          "pino",
+          "test-types"
+        ]
+      },
+      {
+        "id": "git-utils",
+        "name": "git-utils",
+        "version": "0.1.0",
+        "tier": "foundation",
+        "boundary": "shared-utility-group",
+        "docRef": "shared-utility-group",
+        "internalDeps": []
+      },
+      {
+        "id": "logger",
+        "name": "@qa-sdk/logger",
+        "version": "0.1.0",
+        "tier": "foundation",
+        "boundary": "observability-system-root",
+        "docRef": "observability-system-root",
+        "internalDeps": [
+          "core"
+        ]
+      },
+      {
+        "id": "pino",
+        "name": "@qa-sdk/pino",
+        "version": "9.9.4",
+        "tier": "foundation",
+        "boundary": "observability-system-root",
+        "docRef": "observability-system-root",
+        "internalDeps": []
+      },
+      {
+        "id": "store",
+        "name": "@qa-sdk/store",
+        "version": "0.1.0",
+        "tier": "foundation",
+        "boundary": "persistence-system-root",
+        "docRef": "persistence-system-root",
+        "internalDeps": [
+          "core"
+        ]
+      },
+      {
+        "id": "test-types",
+        "name": "test-types",
+        "version": "0.1.0",
+        "tier": "foundation",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "weighted-index",
+        "name": "weighted-index",
+        "version": "0.2.0",
+        "tier": "foundation",
+        "boundary": "weighted-index-system",
+        "docRef": "weighted-index-system",
+        "internalDeps": []
+      }
+    ]
+  }
+}
