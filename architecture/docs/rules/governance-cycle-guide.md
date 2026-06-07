@@ -24,7 +24,15 @@ tags: ["governance", "guide", "workflow"]
    * 의도된 위반인 경우 `PENDING_WORK.md`의 [TD-xxx] 항목으로 등록합니다.
 3. **매니페스트 갱신**: `docs/generated-api-manifest.json` 변경 사항을 검토합니다.
 
-## 2. 의사결정 추적 및 영향도 분석 (Decision & Impact)
+## 2. 패키지 사용성 및 건강 상태 분석 (Usage & Health) ^purpose
+
+모노레포의 복잡도를 관리하고 최적화 대상을 식별하기 위해 `pnpm arch:usage` 도구를 활용합니다.
+
+1. **핵심 인프라 (High Fan-In)**: 많은 패키지가 의존하는 모듈(예: `index-meta`, `weighted-index`) 수정 시에는 더욱 엄격한 영향도 분석이 필요합니다.
+2. **데드 웨이트 (Dead Weight)**: 의존자가 0인 패키지는 통합하거나 아카이빙 대상으로 검토합니다.
+3. **스켈레톤 (Skeletons)**: 엔트리 포인트가 없는 패키지는 구현 우선순위를 조정하거나 불필요한 폴더를 정리합니다.
+
+## 3. 의사결정 추적 및 영향도 분석 (Decision & Impact)
 
 아키텍처 구조를 변경하거나 재정렬할 때는 다음 도구를 활용하여 변경의 정당성을 확보하고 사이드 이펙트를 참조합니다.
 
