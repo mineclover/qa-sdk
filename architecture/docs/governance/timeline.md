@@ -29,3 +29,4 @@ tags: ["timeline", "governance"]
 
 ## 2026-06-08
 * [GOV-SESSION-20260608-002](sessions/2026/06/session-2026-06-08-002.md) - Standardize Package Usage and Health Analysis
+* [GOV-SESSION-20260608-004](sessions/2026/06/session-2026-06-08-004.md) - Adopt Makefile and Git Hooks for Automated Governance Enforcement
