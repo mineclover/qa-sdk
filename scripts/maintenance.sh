@@ -10,7 +10,10 @@ npx tsx scripts/check-dependency-boundaries.ts
 echo "==> 3. API Manifest Regeneration"
 npx tsx scripts/generate-api-reference.ts
 
-echo "==> 4. Building Core & SDK"
+echo "==> 4. Package Usage & Health Analysis"
+pnpm run arch:usage
+
+echo "==> 5. Building Core & SDK"
 pnpm --filter @qa-sdk/core build
 pnpm --filter @qa-sdk/sdk build
 

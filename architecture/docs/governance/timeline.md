@@ -25,3 +25,6 @@ tags: ["timeline", "governance"]
 
 ## 2026-06-07
 * [GOV-SESSION-20260607-001](sessions/2026/06/session-2026-06-07-001.md) - Project Stabilization and Architectural Guardrails Implementation
+
+## 2026-06-08
+* [GOV-SESSION-20260608-002](sessions/2026/06/session-2026-06-08-002.md) - Standardize Package Usage and Health Analysis

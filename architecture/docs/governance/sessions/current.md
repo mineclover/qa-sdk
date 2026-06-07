@@ -1,7 +1,7 @@
 ---
-id: GOV-SESSION-20260608-001
+id: GOV-SESSION-20260608-002
 type: SessionHistoryDocument
-title: "Establish Governance Operational Cycle and Guidelines"
+title: "Standardize Package Usage and Health Analysis"
 date: 2026-06-08
 lifecycle:
   state: resolved
@@ -11,7 +11,7 @@ tags: ["session"]
 refs: []
 ---
 
-# Session: Establish Governance Operational Cycle and Guidelines
+# Session: Standardize Package Usage and Health Analysis
 
 ## 목적 ^purpose
 2026-06-08 설계 세션에서 도출된 핵심 설계 의사결정과 향후 일감을 영구적으로 기록합니다.

@@ -14,12 +14,14 @@ pnpm arch:feedback
 1.  **Lint Check**: 문법 오류 및 스타일 위반 즉시 탐지.
 2.  **Architectural Boundaries**: 5계층(Foundation → ... → Consumer) 의존성 원칙 위반 여부 검사.
 3.  **API Impact Analysis**: 수정된 파일이 어떤 OpenAPI 엔드포인트에 영향을 주며, 이를 사용하는 소비자(Scenario 등)가 어디인지 역추적.
+4.  **Package Usage Analysis**: 특정 패키지의 중요도(Fan-In) 및 미사용 여부(Dead Weight) 분석.
 
 ## 🛡️ 아키텍처 원칙
 
 1.  **단방향 의존성**: 하위 계층은 상위 계층을 절대 참조할 수 없습니다. (Violation 발견 시 즉시 리팩토링)
-2.  **스펙 우선 (Spec-First)**: 모든 API 변경은 `oa-sdk`의 OpenAPI 스펙과 동기화되어야 합니다.
-3.  **경계 명시**: 신규 패키지나 모듈 생성 시 `index.ts` 상단에 `@def.boundary` 및 `@def.doc` 태그를 반드시 명시합니다.
+2.  **임팩트 기반 개발**: `index-meta`, `weighted-index` 등 Fan-In이 높은 핵심 패키지 수정 시에는 `pnpm arch:usage`로 영향 범위를 먼저 파악해야 합니다.
+3.  **스펙 우선 (Spec-First)**: 모든 API 변경은 `oa-sdk`의 OpenAPI 스펙과 동기화되어야 합니다.
+4.  **경계 명시**: 신규 패키지나 모듈 생성 시 `index.ts` 상단에 `@def.boundary` 및 `@def.doc` 태그를 반드시 명시합니다.
 
 ## 📝 메모리 및 상태 관리
 
