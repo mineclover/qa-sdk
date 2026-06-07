@@ -1,7 +1,7 @@
 ---
-id: GOV-SESSION-20260608-002
+id: GOV-SESSION-20260608-003
 type: SessionHistoryDocument
-title: "Standardize Package Usage and Health Analysis"
+title: "Establish Cross-Boundary Identifier Mapping Routine"
 date: 2026-06-08
 lifecycle:
   state: resolved
@@ -11,7 +11,7 @@ tags: ["session"]
 refs: []
 ---
 
-# Session: Standardize Package Usage and Health Analysis
+# Session: Establish Cross-Boundary Identifier Mapping Routine
 
 ## 목적 ^purpose
 2026-06-08 설계 세션에서 도출된 핵심 설계 의사결정과 향후 일감을 영구적으로 기록합니다.

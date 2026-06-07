@@ -38,6 +38,7 @@ tags: ["handbook", "cli", "guide", "workflow"]
 | `pnpm arch:impact` | 파일 변경이 미치는 API 및 소비자(Scenario) 역추적 | `--json` |
 | `pnpm arch:usage` | 패키지별 사용량(Fan-In) 및 관리 상태 리포트 | - |
 | `pnpm arch:signals` | 이벤트 심볼 기반의 암묵적 연결망 분석 | `--json` |
+| `pnpm arch:identity` | UI, API, Service, Event 간의 식별자(ID) 정합성 맵핑 및 누락 감지 | `--json` |
 
 ### 3. 거버넌스 및 문서화 (`archi` CLI)
 | 명령어 | 용도 |

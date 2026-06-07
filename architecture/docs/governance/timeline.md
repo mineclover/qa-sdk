@@ -22,6 +22,7 @@ tags: ["timeline", "governance"]
 
 ## 2026-06-04
 * [GOV-SESSION-20260608-001](sessions/2026/06/session-2026-06-08-001.md) - Establish Governance Operational Cycle and Guidelines
+* [GOV-SESSION-20260608-003](sessions/2026/06/session-2026-06-08-003.md) - Establish Cross-Boundary Identifier Mapping Routine
 
 ## 2026-06-07
 * [GOV-SESSION-20260607-001](sessions/2026/06/session-2026-06-07-001.md) - Project Stabilization and Architectural Guardrails Implementation

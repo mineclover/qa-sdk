@@ -61,7 +61,20 @@ pnpm arch:usage
 pnpm arch:signals
 ```
 
-### 5. 거버넌스 관리 (`archi` CLI)
+### 5. 식별자 정합성 맵핑 (`arch:identity`)
+
+데이터, 이벤트, UI, API, 서비스 경계면 간의 고유 식별자(ID)가 잘 매핑되어 있는지 교차 분석하여 'Identity Drift(식별자 표류)' 현상을 감지한다.
+
+```bash
+pnpm arch:identity
+```
+
+- **OpenAPI**: `operationId`
+- **Service**: `apiId` (Access Control Port)
+- **Event**: `eventName` (Outbox/Domain Event)
+- **UI**: `data-action-id` (추후 도입 예정)
+
+### 6. 거버넌스 관리 (`archi` CLI)
 
 아키텍처 결정 사항(ADR)을 기록하고 시스템 지도를 관리한다.
 
