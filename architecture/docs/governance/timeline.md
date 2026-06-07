@@ -20,5 +20,8 @@ tags: ["timeline", "governance"]
 ## 2026-05-26
 * [GOV-SESSION-20260526-001](sessions/2026/05/session-2026-05-26-001.md) - Session 2026-05-26 001
 
+## 2026-06-04
+* [GOV-SESSION-20260608-001](sessions/2026/06/session-2026-06-08-001.md) - Establish Governance Operational Cycle and Guidelines
+
 ## 2026-06-07
 * [GOV-SESSION-20260607-001](sessions/2026/06/session-2026-06-07-001.md) - Project Stabilization and Architectural Guardrails Implementation
