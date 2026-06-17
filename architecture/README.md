@@ -96,6 +96,10 @@ session-2026-05-26-001.md
 
 이 프로젝트는 아키텍처 거버넌스를 완벽히 자동화하기 위해 전용 **`archi` CLI** 도구를 사용합니다.
 
+> **참고 — `vendor/archi-adr`와의 관계**  
+> [archi-adr](https://github.com/mineclover/archi-adr)는 qa-sdk **외부에서 별도로 시도 중인** 아키텍처 설계 라이브러리로, `vendor/archi-adr` submodule로만 참조한다.  
+> 이 디렉터리의 `archi` CLI(`packages/archi`)·`model/archi-adr.yaml`과는 `file:`/`workspace` 연동 없이 독립 운영한다. 상세: [`vendor/README.md`](../vendor/README.md).
+
 ```text
 archi
 ├── init                  # 템플릿 기반의 architecture/ 폴더 구조 초기화

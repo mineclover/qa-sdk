@@ -4,3 +4,6 @@
 [submodule "vendor/headroom"]
 	path = vendor/headroom
 	url = https://github.com/chopratejas/headroom
+[submodule "vendor/archi-adr"]
+	path = vendor/archi-adr
+	url = https://github.com/mineclover/archi-adr
