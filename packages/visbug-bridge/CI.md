@@ -55,4 +55,4 @@ on:
 
 ## 미완
 
-- vendor의 npm test (`cd vendor/projectvisbug && npm test`)를 monorepo CI에 포함시키는 방식 — 미결정. 현재는 vendor 작업 시 로컬 검증만.
+- ~~vendor test를 monorepo CI에 포함~~ → `visbug-bridge-e2e` 잡에 `pnpm --filter visbug run test:unit` 추가 (`.github/workflows-disabled/visbug-bridge-e2e.yml`). 워크플로 활성화는 별도.

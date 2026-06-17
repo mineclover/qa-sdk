@@ -37,10 +37,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build vendor visbug bundle
-        working-directory: vendor/projectvisbug
-        run: |
-          npm install
-          npm run bundle
+        run: pnpm --filter visbug run bundle
+
+      - name: Run vendor edit-log unit tests
+        run: pnpm --filter visbug run test:unit
 
       - name: Build visbug-bridge
         run: pnpm --filter visbug-bridge build

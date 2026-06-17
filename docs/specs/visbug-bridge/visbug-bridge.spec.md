@@ -12,6 +12,8 @@ def:
   links:
     - target: rlsc
       type: depends_on
+    - target: visbug-edit-log-spec
+      type: refines
   source: packages/visbug-bridge/src/index.ts
 ---
 
@@ -86,7 +88,7 @@ WeakRef / AsyncIterator / CustomElements v1 / MutationObserver — Chrome 86+, F
 - localStorage 영속화: host 책임
 - replay UI 노출: v1은 verification 도구로만 (UI 없음)
 - Chrome/Firefox/Safari/Edge extension 빌드: 별도 PR
-- def-catalog `visbug-edit-log` 서브 스펙 (vendor 모듈 8개): 본 spec의 후속 분할 가능
+- def-catalog `visbug-edit-log` 서브 스펙: `docs/specs/visbug-bridge/visbug-edit-log.spec.md`
 
 ## 변경 이력
 

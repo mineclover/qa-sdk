@@ -3,7 +3,7 @@
 
 SHELL := /bin/bash
 
-.PHONY: help install-git-hooks precheck test test-parity arch-feedback arch-impact arch-usage arch-signals sim-up sim-down
+.PHONY: help install-git-hooks precheck test test-parity arch-feedback arch-impact arch-usage arch-signals sim-up sim-down visbug-smoke
 
 help:
 	@echo "QA-SDK Development Targets:"
@@ -16,6 +16,7 @@ help:
 	@echo "  make arch-signals     - Map implicit event-driven connections across the system."
 	@echo "  make sim-up           - Boot the local Docker simulation stack."
 	@echo "  make sim-down         - Tear down the local Docker simulation stack."
+	@echo "  make visbug-smoke     - Build visbug bundle + run visbug-bridge unit/e2e tests."
 	@echo "  make install-hooks    - Install pre-push Git hook to enforce architecture boundaries."
 
 install-hooks:
@@ -58,3 +59,10 @@ sim-up:
 
 sim-down:
 	bash simulations/enterprise-pm/scripts/sim-down.sh
+
+visbug-smoke:
+	pnpm --filter visbug run bundle
+	pnpm --filter visbug run test:unit
+	pnpm --filter visbug-bridge build
+	pnpm --filter visbug-bridge test
+	pnpm --filter visbug-bridge test:e2e
