@@ -159,6 +159,34 @@ export const payloadGuides: readonly PayloadFieldGuide[] = [
       { name: "reason", required: false, type: "string", description: "실패/종료 이유" },
     ],
   },
+  {
+    event_key: "tool_invoke",
+    fields: [
+      { name: "tool", required: true, type: "string", description: "facade action 이름 (예: echoAdd)" },
+      { name: "provider_id", required: true, type: "string", description: "provider catalog id (예: echo-demo)" },
+      { name: "channel", required: true, type: "string", description: "호출 경로: facade | mcp | direct" },
+      { name: "trace_id", required: false, type: "string", description: "분산 trace id" },
+      { name: "session_id", required: false, type: "string", description: "QA 세션 id" },
+    ],
+  },
+  {
+    event_key: "tool_result",
+    fields: [
+      { name: "tool", required: true, type: "string", description: "facade action 이름" },
+      { name: "provider_id", required: true, type: "string", description: "provider catalog id" },
+      { name: "channel", required: true, type: "string", description: "호출 경로: facade | mcp | direct" },
+      { name: "kind", required: true, type: "string", description: "FacadeCallResult kind" },
+      { name: "ok", required: true, type: "boolean", description: "성공 여부 (kind === success)" },
+      { name: "duration_ms", required: true, type: "number", description: "호출 소요 시간(ms)" },
+      { name: "status", required: false, type: "number", description: "HTTP status" },
+      { name: "url", required: false, type: "string", description: "facade/direct 요청 URL" },
+      { name: "error_code", required: false, type: "string", description: "application_error 코드" },
+      { name: "error_message", required: false, type: "string", description: "오류 메시지" },
+      { name: "validation_issue_count", required: false, type: "number", description: "validation_error 이슈 수" },
+      { name: "trace_id", required: false, type: "string", description: "분산 trace id" },
+      { name: "session_id", required: false, type: "string", description: "QA 세션 id" },
+    ],
+  },
 
   // ── Outcome ──────────────────────────────────────────
   {

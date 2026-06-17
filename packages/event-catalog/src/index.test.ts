@@ -7,6 +7,7 @@ import {
   isV1MinimalEvent,
   payloadGuideMap,
   payloadGuides,
+  getPayloadGuide,
   v1MinimalSet,
 } from "./index.js";
 import type { EventCategory, GraphRole } from "./types.js";
@@ -135,12 +136,21 @@ describe("@qa-sdk/event-catalog", () => {
   });
 
   it("provides payload guides for the 20 v1 minimal events", () => {
-    expect(payloadGuides).toHaveLength(20);
-    expect(payloadGuideMap.size).toBe(20);
+    const v1Guides = payloadGuides.filter((guide) =>
+      (expectedV1MinimalKeys as readonly string[]).includes(guide.event_key),
+    );
 
-    expect(new Set(payloadGuides.map((guide) => guide.event_key))).toEqual(
+    expect(v1Guides).toHaveLength(20);
+    expect(new Set(v1Guides.map((guide) => guide.event_key))).toEqual(
       new Set(expectedV1MinimalKeys),
     );
+  });
+
+  it("extends payload guides beyond v1 minimal for agent tool bridge events", () => {
+    expect(payloadGuides).toHaveLength(22);
+    expect(payloadGuideMap.size).toBe(22);
+    expect(getPayloadGuide("tool_invoke")).toBeDefined();
+    expect(getPayloadGuide("tool_result")).toBeDefined();
   });
 
   it("marks each required payload field as required", () => {
