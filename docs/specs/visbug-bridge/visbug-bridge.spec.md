@@ -30,9 +30,9 @@ def:
 - **공개 API**: `mountVisBug(host, opts) → VisBugController`
   - controller: `getHistory({merge})`, `clearHistory()`, `replay(entry, {mode})`, `unmount()`, `entries: AsyncIterable<EditLogEntry>`
   - opts: `bufferSize?`, `onEntry?: (entry) => void`, `logger?: { warn }`
-- **Entry 형태**: `EditLogEntry = { id, ts, feature, args, target: {selector, nodePath, weakRef}, beforeCSS, afterCSS, source: 'feature'|'mutation', correlationId }`
+- **Entry 형태**: `EditLogEntry = { id, ts, feature, args, target: {selector, nodePath, weakRef}, beforeCSS, afterCSS, beforeDOM?, afterDOM?, source: 'feature'|'mutation', correlationId }`
 - **Merge 정책**: `'none'` (raw) / `'correlated'` (correlationId 그룹핑 + agreement/divergence) / `'analyzed'` (host 정의 policy)
-- **Replay 모드**: `'css'` (afterCSS 직접 적용, SPA-safe) / `'feature'` (registry로 visbug feature 함수 재호출, best-effort)
+- **Replay 모드**: `'css'` (afterCSS 직접 적용) / `'feature'` (registry로 visbug feature 함수 재호출) / `'dom'` (`afterDOM.textContent` 복원)
 
 ## 데이터 흐름
 
@@ -59,7 +59,7 @@ def:
 | 책임 | 위치 |
 |---|---|
 | in-page 편집 UI + DOM mutation | `vendor/projectvisbug` (Web Component) |
-| capture / dispatch / merge / replay | `vendor/projectvisbug/app/edit-log/` (8 모듈) |
+| capture / dispatch / merge / replay | `vendor/projectvisbug/app/edit-log/` (10 모듈 + `feature-bind`) |
 | typed API surface (브라우저 향) | `packages/visbug-bridge/src/` |
 | 인텐트 좌표 join + 적재 | host (rlsc / 측정 파이프라인) |
 | 영속화 / 송신 | host |
@@ -92,6 +92,9 @@ WeakRef / AsyncIterator / CustomElements v1 / MutationObserver — Chrome 86+, F
 
 ## 변경 이력
 
+- **2026-06-17** — feature-wrapper 전면 확장 + DOM 캡처 (`dom-bind`, `beforeDOM`/`afterDOM`, replay `dom` mode)
+  - feature: padding~imageswap, text (contenteditable), move drag `swapElements`
+  - 검증: vendor vitest 54/54, edit-log integration 15/15
 - **2026-04-27** — Phase B'1/B'2/B'3 완료 + FU 4건 머지 (def-catalog 좌표, font 회귀 fix, CI e2e 잡, rlsc 통합 smoke)
   - vendor `194264c` (main), monorepo `58cd8ae5` (main)
   - 검증: vendor playwright 61/61, vendor vitest 42/42, bridge unit 8/8 + e2e 2/2, rlsc 155/155

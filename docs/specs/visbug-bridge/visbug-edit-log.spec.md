@@ -25,12 +25,14 @@ def:
 
 | 모듈 | 책임 |
 |------|------|
-| `entry.js` | nodePath, CSS snapshot diff, correlationId, `createEntry()` |
+| `entry.js` | nodePath, CSS/DOM snapshot diff, correlationId, `createEntry()` |
+| `feature-bind.js` | `bindFeatureCall()` — feature 모듈 export lazy wrap |
 | `dispatcher.js` | ring buffer, subscribe/push, overflow 정책 |
 | `mutation-watcher.js` | MutationObserver baseline (`style`/`class` attr) |
-| `feature-wrapper.js` | visbug feature 함수 direct wrap (`source: 'feature'`) |
+| `feature-wrapper.js` | visbug feature 함수 direct wrap (`source: 'feature'`, optional `snapshotDOM`) |
+| `dom-bind.js` | contenteditable blur/escape 등 DOM 캡처 (`beforeDOM`/`afterDOM`) |
 | `merge.js` | correlationId 그룹 + agreement/divergence |
-| `replay.js` | `css` / `feature` 모드 재적용 |
+| `replay.js` | `css` / `feature` / `dom` 모드 재적용 |
 | `formatters.js` | CSS / Script / JSON 클립보드 포맷 |
 | `index.js` | `installEditLog(host)` — host API 부착 |
 
@@ -40,17 +42,43 @@ def:
 - `getHistory({ merge })` / `clearHistory()` / `replay(entry, opts)`
 - `_editLogFormatters` — panel copy용 (내부)
 
+## EditLogEntry (확장 필드)
+
+| 필드 | 필수 | 설명 |
+|------|------|------|
+| `beforeCSS` / `afterCSS` | 항상 | style snapshot diff |
+| `beforeDOM` / `afterDOM` | 선택 | DOM 캡처 (`textContent`, sibling index 등) |
+| `correlationId` | 항상 | CSS 변경 prop + DOM 변경(`dom`) 키로 bucket |
+
+`beforeDOM` / `afterDOM` 예:
+
+```json
+{ "textContent": "hello" }
+{ "src": { "parentPath": "...", "index": 0 }, "target": { "index": 1 } }
+```
+
 ## capture 정책
 
 1. **MutationObserver** — 모든 style/class 변경 capture (`source: 'mutation'`)
 2. **Active tool inference (v1.1)** — mutation entry의 `feature`는 `host.active_tool.dataset.tool`에서 추론
-3. **Feature wrapper (pilot)** — `feature-bind.js` + `bindFeatureCall()`:
+3. **Feature wrapper** — `feature-bind.js` + `bindFeatureCall()`:
    - spacing: `padding`, `margin`
-   - typography: `font` (size/leading/kerning/weight/alignment)
+   - typography: `font` (size/leading/kerning/weight/alignment, `cmd+b`/`cmd+i`)
    - layout: `move`, `flex` (toolbar `align`), `position`, `boxshadow`
-4. **Feature wrapper (확장)** — `text`, `hueshift`, `imageswap`, `color`, drag-reorder replay
+   - color: `hueshift` (`changeHue`), `color` (picker `applyForegroundColor` / `applyBackgroundColor` / `applyBorderColor`)
+   - media: `imageswap` (`updateContentImage`, `applyBackgroundImage`)
+   - content: `text` (blur/escape 시 `textContent` → `dom-bind`)
+   - structural: `move` drag-reorder (`swapElements` + `beforeDOM`/`afterDOM` sibling index)
 
 dedup 없음. `merge: 'correlated'`는 host/bridge 분석 단계.
+
+## replay 모드
+
+| mode | 적용 대상 |
+|------|-----------|
+| `css` | `afterCSS` → `element.style` |
+| `feature` | `registry[entry.feature](...entry.args)` |
+| `dom` | `afterDOM.textContent` (text 편집). structural swap은 `feature` + `swapElements` registry 권장 |
 
 ## 의존 방향
 
@@ -61,14 +89,16 @@ edit-log       →  (visbug Web Component 내부 only)
 
 ## 테스트
 
-- vitest: `app/edit-log/*.spec.js` (unit)
-- playwright: `app/edit-log/integration.test.js` (padding tool E2E)
+- vitest: `app/edit-log/**/*.spec.js`, `app/features/**/*.wrap.spec.js`, `app/components/edit-log-panel/**/*.spec.js` (54 tests)
+- playwright: `app/edit-log/integration.test.js` (15 tests — padding~text/swap feature capture)
 
 로컬:
 
 ```bash
+make visbug-smoke   # bundle + visbug unit + bridge unit/e2e
+# 또는
 pnpm --filter visbug run bundle
-pnpm --filter visbug test:unit
+pnpm --filter visbug run test:unit
 pnpm --filter visbug test -- app/edit-log/integration.test.js
 ```
 

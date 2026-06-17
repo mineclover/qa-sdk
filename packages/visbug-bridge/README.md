@@ -35,7 +35,7 @@ ctrl.unmount()
 |---|---|
 | `getHistory(opts?)` | `merge: 'none' \| 'correlated' \| 'analyzed'` 옵션. 기본 `'none'` (raw). |
 | `clearHistory()` | ring buffer 비움. |
-| `replay(entry, {mode})` | `mode: 'css'` (afterCSS 직접 적용) 또는 `'feature'` (registry로 visbug feature 함수 재호출). 결과 `{ ok, reason?, warning?, divergence? }`. |
+| `replay(entry, {mode})` | `mode: 'css'` (afterCSS) / `'feature'` (registry 재호출) / `'dom'` (`afterDOM.textContent`). 결과 `{ ok, reason?, warning?, divergence? }`. |
 | `unmount()` | `<vis-bug>` 제거 + listener 해제. |
 | `entries` | `AsyncIterable<EditLogEntry>`. `for await` 또는 stream 소비. |
 
@@ -45,12 +45,14 @@ ctrl.unmount()
 interface EditLogEntry {
   id: string
   ts: number
-  feature: string                // 'unknown' (mutation source) 또는 visbug feature name
+  feature: string                // visbug tool/feature name
   args: unknown
   target: { selector, nodePath, weakRef }
   beforeCSS: Record<string, string>
   afterCSS: Record<string, string>
-  source: 'feature' | 'mutation' // v1은 모든 entry 'mutation'
+  beforeDOM?: Record<string, unknown>  // textContent, sibling index 등
+  afterDOM?: Record<string, unknown>
+  source: 'feature' | 'mutation'
   correlationId: string
 }
 ```
