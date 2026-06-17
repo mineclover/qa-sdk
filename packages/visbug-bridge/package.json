@@ -19,6 +19,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "demo": "pnpm --filter visbug run bundle && pnpm build && pnpm exec http-server ../.. -p 4173 -c-1",
     "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",

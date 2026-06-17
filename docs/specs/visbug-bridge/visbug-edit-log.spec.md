@@ -95,11 +95,8 @@ edit-log       →  (visbug Web Component 내부 only)
 로컬:
 
 ```bash
-make visbug-smoke   # bundle + visbug unit + bridge unit/e2e
-# 또는
-pnpm --filter visbug run bundle
-pnpm --filter visbug run test:unit
-pnpm --filter visbug test -- app/edit-log/integration.test.js
+make visbug-demo   # 브라우저 프리뷰 (feature-wrapper 체험)
+make visbug-smoke  # bundle + visbug unit + bridge unit/e2e
 ```
 
 ## 참조

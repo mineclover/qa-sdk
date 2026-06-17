@@ -26,6 +26,7 @@ ctrl.unmount()
 
 - `host: HTMLElement` — `<vis-bug>`이 append될 부모. 필수.
 - `opts.bufferSize?: number` — ring buffer 최대 크기. 기본 1000.
+- `opts.colorScheme?: 'light' | 'dark' | 'auto'` — `<vis-bug color-scheme>` (기본 auto)
 - `opts.onEntry?: (entry: EditLogEntry) => void` — 단일 listener. 예외는 `logger.warn`으로 격리.
 - `opts.logger?: { warn }` — 미지정 시 `console.warn`.
 
@@ -88,6 +89,31 @@ pnpm --filter visbug-bridge build
 pnpm --filter visbug-bridge test       # vitest 단위 (controller + mount, 8 tests)
 pnpm --filter visbug-bridge test:e2e   # playwright e2e (chromium + http-server, 2 tests)
 ```
+
+## edit-log 프리뷰 데모
+
+feature-wrapper로 캡처되는 편집을 브라우저에서 확인:
+
+```bash
+make visbug-demo
+# 또는
+pnpm --filter visbug-bridge demo
+```
+
+브라우저: [http://localhost:4173/packages/visbug-bridge/demo/edit-log-preview.html](http://localhost:4173/packages/visbug-bridge/demo/edit-log-preview.html)
+
+- 오른쪽 패널: `source: feature` / `mutation` 실시간 스트림
+- 섹션별 체크리스트: 해당 feature 엔트리가 한 번이라도 기록되면 초록 테두리
+- 내장 history 패널: <kbd>Cmd+Shift+L</kbd>
+
+vendor만 단독 실행 (bridge 없이):
+
+```bash
+pnpm --filter visbug run demo:edit-log
+# → http://localhost:3000/edit-log-demo.html
+```
+
+데모 소스: `packages/visbug-bridge/demo/` (`edit-log-preview.html`, `demo.css`, `edit-log-preview.js`)
 
 E2E는 chromium이 설치되어 있어야 함:
 ```bash

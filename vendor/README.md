@@ -5,7 +5,7 @@ qa-sdk 모노레포에서 fork·실험·참조용으로 포함하는 외부 저�
 
 | 경로 | 저장소 | qa-sdk 연동 |
 |------|--------|-------------|
-| `projectvisbug` | [mineclover/ProjectVisBug](https://github.com/mineclover/ProjectVisBug) | pnpm workspace(`visbug`) + `packages/visbug-bridge`가 `workspace:*`로 소비 |
+| `projectvisbug` | [mineclover/ProjectVisBug](https://github.com/mineclover/ProjectVisBug) | pnpm workspace(`visbug`) + `packages/visbug-bridge`가 `workspace:*`로 소비. **edit-log 프로토콜 SSOT는 fork 쪽** (`app/edit-log/`). bridge는 typed 소비층만 담당 |
 | `headroom` | [chopratejas/headroom](https://github.com/chopratejas/headroom) | submodule 참조만 (패키지 `file:` 의존 없음) |
 | `archi-adr` | [mineclover/archi-adr](https://github.com/mineclover/archi-adr) | submodule 참조만 (패키지 `file:` 의존 없음) |
 

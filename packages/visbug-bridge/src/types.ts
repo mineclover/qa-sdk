@@ -58,6 +58,8 @@ export interface VisBugMountOptions {
   readonly bufferSize?: number
   readonly onEntry?: EditLogListener
   readonly logger?: { warn: (...args: unknown[]) => void }
+  /** `<vis-bug color-scheme>` — light / dark / auto (기본 auto) */
+  readonly colorScheme?: 'light' | 'dark' | 'auto'
 }
 
 export interface VisBugController {

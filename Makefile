@@ -3,7 +3,7 @@
 
 SHELL := /bin/bash
 
-.PHONY: help install-git-hooks precheck test test-parity arch-feedback arch-impact arch-usage arch-signals sim-up sim-down visbug-smoke
+.PHONY: help install-git-hooks precheck test test-parity arch-feedback arch-impact arch-usage arch-signals sim-up sim-down visbug-smoke visbug-demo
 
 help:
 	@echo "QA-SDK Development Targets:"
@@ -17,6 +17,7 @@ help:
 	@echo "  make sim-up           - Boot the local Docker simulation stack."
 	@echo "  make sim-down         - Tear down the local Docker simulation stack."
 	@echo "  make visbug-smoke     - Build visbug bundle + run visbug-bridge unit/e2e tests."
+	@echo "  make visbug-demo     - Start edit-log feature-wrapper preview (http://localhost:4173/...)."
 	@echo "  make install-hooks    - Install pre-push Git hook to enforce architecture boundaries."
 
 install-hooks:
@@ -66,3 +67,7 @@ visbug-smoke:
 	pnpm --filter visbug-bridge build
 	pnpm --filter visbug-bridge test
 	pnpm --filter visbug-bridge test:e2e
+
+visbug-demo:
+	@echo "Building visbug + bridge, starting preview server on :4173 ..."
+	@pnpm --filter visbug-bridge demo

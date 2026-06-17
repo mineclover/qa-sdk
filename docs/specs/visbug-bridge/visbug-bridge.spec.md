@@ -29,7 +29,7 @@ def:
 - **vendor 의존**: `"visbug": "workspace:*"` (`vendor/projectvisbug` git submodule, pnpm workspace 편입)
 - **공개 API**: `mountVisBug(host, opts) → VisBugController`
   - controller: `getHistory({merge})`, `clearHistory()`, `replay(entry, {mode})`, `unmount()`, `entries: AsyncIterable<EditLogEntry>`
-  - opts: `bufferSize?`, `onEntry?: (entry) => void`, `logger?: { warn }`
+  - opts: `bufferSize?`, `colorScheme?: 'light'|'dark'|'auto'`, `onEntry?: (entry) => void`, `logger?: { warn }`
 - **Entry 형태**: `EditLogEntry = { id, ts, feature, args, target: {selector, nodePath, weakRef}, beforeCSS, afterCSS, beforeDOM?, afterDOM?, source: 'feature'|'mutation', correlationId }`
 - **Merge 정책**: `'none'` (raw) / `'correlated'` (correlationId 그룹핑 + agreement/divergence) / `'analyzed'` (host 정의 policy)
 - **Replay 모드**: `'css'` (afterCSS 직접 적용) / `'feature'` (registry로 visbug feature 함수 재호출) / `'dom'` (`afterDOM.textContent` 복원)

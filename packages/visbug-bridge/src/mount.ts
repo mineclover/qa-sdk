@@ -21,6 +21,9 @@ export function mountVisBug(host: HTMLElement, opts: VisBugMountOptions = {}): V
     replay: VisBugController['replay']
     editLogStream: () => AsyncIterable<EditLogEntry>
   }
+  if (opts.colorScheme) {
+    visbug.setAttribute('color-scheme', opts.colorScheme)
+  }
   host.appendChild(visbug)
 
   if (opts.onEntry) {
