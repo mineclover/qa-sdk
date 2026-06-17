@@ -38,8 +38,8 @@ describe('mountVisBug', () => {
     const onEntry = vi.fn()
     const ctrl = mountVisBug(document.body, { onEntry })
     const visbug: any = document.body.querySelector('vis-bug')
-    visbug.onEditLog?.({ id: 'e1' })
-    expect(onEntry).toHaveBeenCalledWith({ id: 'e1' })
+    visbug.onEditLog?.({ id: 'e1', source: 'feature' })
+    expect(onEntry).toHaveBeenCalledWith({ id: 'e1', source: 'feature' })
     ctrl.unmount()
   })
 
@@ -49,8 +49,30 @@ describe('mountVisBug', () => {
     const onEntry = () => { throw new Error('boom') }
     const ctrl = mountVisBug(document.body, { onEntry, logger: { warn } })
     const visbug: any = document.body.querySelector('vis-bug')
-    visbug.onEditLog?.({ id: 'e1' })
+    visbug.onEditLog?.({ id: 'e1', source: 'feature' })
     expect(warn).toHaveBeenCalled()
+    ctrl.unmount()
+  })
+
+  it('entryFilter feature skips mutation entries by default wiring', async () => {
+    const { mountVisBug } = await import('../src/mount.js')
+    const onEntry = vi.fn()
+    const ctrl = mountVisBug(document.body, { onEntry })
+    const visbug: any = document.body.querySelector('vis-bug')
+    visbug.onEditLog?.({ id: 'm1', source: 'mutation' })
+    visbug.onEditLog?.({ id: 'f1', source: 'feature' })
+    expect(onEntry).toHaveBeenCalledTimes(1)
+    expect(onEntry).toHaveBeenCalledWith({ id: 'f1', source: 'feature' })
+    ctrl.unmount()
+  })
+
+  it('entryFilter all forwards mutation entries', async () => {
+    const { mountVisBug } = await import('../src/mount.js')
+    const onEntry = vi.fn()
+    const ctrl = mountVisBug(document.body, { onEntry, entryFilter: 'all' })
+    const visbug: any = document.body.querySelector('vis-bug')
+    visbug.onEditLog?.({ id: 'm1', source: 'mutation' })
+    expect(onEntry).toHaveBeenCalledTimes(1)
     ctrl.unmount()
   })
 })

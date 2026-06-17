@@ -29,7 +29,7 @@ def:
 - **vendor 의존**: `"visbug": "workspace:*"` (`vendor/projectvisbug` git submodule, pnpm workspace 편입)
 - **공개 API**: `mountVisBug(host, opts) → VisBugController`
   - controller: `getHistory({merge})`, `clearHistory()`, `replay(entry, {mode})`, `unmount()`, `entries: AsyncIterable<EditLogEntry>`
-  - opts: `bufferSize?`, `colorScheme?: 'light'|'dark'|'auto'`, `onEntry?: (entry) => void`, `logger?: { warn }`
+  - opts: `bufferSize?`, `colorScheme?: 'light'|'dark'|'auto'`, `onEntry?: (entry) => void`, `entryFilter?: 'feature'|'intent'|'all'|'mutation-debug'` (기본 `feature`), `logger?: { warn }`
 - **Entry 형태**: `EditLogEntry = { id, ts, feature, args, target: {selector, nodePath, weakRef}, beforeCSS, afterCSS, beforeDOM?, afterDOM?, source: 'feature'|'mutation', correlationId }`
 - **Merge 정책**: `'none'` (raw) / `'correlated'` (correlationId 그룹핑 + agreement/divergence) / `'analyzed'` (host 정의 policy)
 - **Replay 모드**: `'css'` (afterCSS 직접 적용) / `'feature'` (registry로 visbug feature 함수 재호출) / `'dom'` (`afterDOM.textContent` 복원)
@@ -92,6 +92,7 @@ WeakRef / AsyncIterator / CustomElements v1 / MutationObserver — Chrome 86+, F
 
 ## 변경 이력
 
+- **2026-06-17** — edit-log v1.2: mutation noise filter, `merge: 'intent'`, bridge `entryFilter`, extension build scripts
 - **2026-06-17** — feature-wrapper 전면 확장 + DOM 캡처 (`dom-bind`, `beforeDOM`/`afterDOM`, replay `dom` mode)
   - feature: padding~imageswap, text (contenteditable), move drag `swapElements`
   - 검증: vendor vitest 54/54, edit-log integration 15/15

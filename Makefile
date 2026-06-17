@@ -3,7 +3,7 @@
 
 SHELL := /bin/bash
 
-.PHONY: help install-git-hooks precheck test test-parity arch-feedback arch-impact arch-usage arch-signals sim-up sim-down visbug-smoke visbug-demo
+.PHONY: help install-git-hooks precheck test test-parity arch-feedback arch-impact arch-usage arch-signals sim-up sim-down visbug-smoke visbug-demo visbug-ext
 
 help:
 	@echo "QA-SDK Development Targets:"
@@ -18,6 +18,7 @@ help:
 	@echo "  make sim-down         - Tear down the local Docker simulation stack."
 	@echo "  make visbug-smoke     - Build visbug bundle + run visbug-bridge unit/e2e tests."
 	@echo "  make visbug-demo     - Start edit-log feature-wrapper preview (http://localhost:4173/...)."
+	@echo "  make visbug-ext      - Build Chrome/Firefox/Edge extension bundle (vendor/projectvisbug/extension/)."
 	@echo "  make install-hooks    - Install pre-push Git hook to enforce architecture boundaries."
 
 install-hooks:
@@ -71,3 +72,8 @@ visbug-smoke:
 visbug-demo:
 	@echo "Building visbug + bridge, starting preview server on :4173 ..."
 	@pnpm --filter visbug-bridge demo
+
+visbug-ext:
+	@echo "Building extension artifacts (toolbar/bundle.min.js + bundle.css) ..."
+	@pnpm --filter visbug run extension:build
+	@echo "Load unpacked: vendor/projectvisbug/extension/ in chrome://extensions"

@@ -9,6 +9,7 @@ import { mountVisBug } from 'visbug-bridge'
 
 const ctrl = mountVisBug(document.body, {
   bufferSize: 500,
+  entryFilter: 'feature', // 기본값 — mutation 노이즈 제외
   onEntry: (entry) => {
     // entry: EditLogEntry
   },

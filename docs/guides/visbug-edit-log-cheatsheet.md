@@ -13,7 +13,7 @@
 | 도움말 | `?` (도구 활성 시) |
 | 스타일 되돌리기 | `Opt+Delete` |
 
-**edit-log 엔트리:** `source: feature` (wrapper) + `source: mutation` (Observer) 동시 기록. 분석 시 `getHistory({ merge: 'correlated' })`.
+**edit-log 엔트리:** 실시간 스트림은 `source: feature` 위주. mutation은 wrapper 없는 편집 fallback. 분석 시 `getHistory({ merge: 'intent' })` (기본 권장).
 
 ---
 
@@ -91,6 +91,7 @@ ctrl.replay(entry, { mode: 'feature', registry: { move: swapElements } })
 ```ts
 mountVisBug(host, {
   colorScheme: 'light' | 'dark' | 'auto',
+  entryFilter: 'feature', // 기본 — mutation 노이즈 제외
   onEntry: (e) => { /* EditLogEntry */ },
 })
 ```

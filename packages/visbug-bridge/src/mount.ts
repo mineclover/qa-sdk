@@ -1,4 +1,3 @@
-// @def.boundary rlsc
 import type {
   VisBugMountOptions,
   VisBugController,
@@ -7,6 +6,15 @@ import type {
 import { createController } from './controller.js'
 
 const DEFAULT_LOGGER = { warn: (...args: unknown[]) => console.warn('[visbug-bridge]', ...args) }
+
+function passesEntryFilter(
+  entry: EditLogEntry,
+  filter: VisBugMountOptions['entryFilter'] = 'feature',
+): boolean {
+  if (filter === 'all') return true
+  if (filter === 'mutation-debug') return entry.source === 'mutation'
+  return entry.source === 'feature'
+}
 
 export function mountVisBug(host: HTMLElement, opts: VisBugMountOptions = {}): VisBugController {
   if (!host || !(host instanceof HTMLElement)) {
@@ -28,7 +36,9 @@ export function mountVisBug(host: HTMLElement, opts: VisBugMountOptions = {}): V
 
   if (opts.onEntry) {
     const cb = opts.onEntry
+    const entryFilter = opts.entryFilter ?? 'feature'
     visbug.onEditLog = (entry: EditLogEntry) => {
+      if (!passesEntryFilter(entry, entryFilter)) return
       try {
         cb(entry)
       } catch (err) {

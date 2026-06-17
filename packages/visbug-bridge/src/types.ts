@@ -33,9 +33,12 @@ export interface MergedEditLogEntry extends EditLogEntry {
 }
 
 export type GetHistoryOptions =
-  | { merge?: 'none' }
+  | { merge?: 'none'; filter?: 'all' | 'feature' | 'intent' | 'mutation-debug' }
   | { merge: 'correlated' }
+  | { merge: 'intent' }
   | { merge: 'analyzed'; policy: (entries: ReadonlyArray<EditLogEntry>) => ReadonlyArray<EditLogEntry> }
+
+export type EntryFilter = 'all' | 'feature' | 'intent' | 'mutation-debug'
 
 export type ReplayMode = 'css' | 'feature' | 'dom'
 
@@ -60,6 +63,11 @@ export interface VisBugMountOptions {
   readonly logger?: { warn: (...args: unknown[]) => void }
   /** `<vis-bug color-scheme>` — light / dark / auto (기본 auto) */
   readonly colorScheme?: 'light' | 'dark' | 'auto'
+  /**
+   * editlog 이벤트 필터. 기본 `feature` — mutation 노이즈 제외.
+   * `intent`는 feature와 동일(소비자 preset). `all`은 mutation 포함.
+   */
+  readonly entryFilter?: EntryFilter
 }
 
 export interface VisBugController {

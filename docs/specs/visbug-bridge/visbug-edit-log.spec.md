@@ -10,7 +10,9 @@ def:
   svc: visbug-bridge
   tags: [measurement, browser, edit-log, web-component]
   links:
-    - target: visbug-bridge-spec
+    - target: visbug-edit-log-spec
+      type: refines
+    - target: visbug-dom-ref-roadmap
       type: refines
   source: vendor/projectvisbug/app/edit-log/index.js
 ---
@@ -28,7 +30,10 @@ def:
 | `entry.js` | nodePath, CSS/DOM snapshot diff, correlationId, `createEntry()` |
 | `feature-bind.js` | `bindFeatureCall()` — feature 모듈 export lazy wrap |
 | `dispatcher.js` | ring buffer, subscribe/push, overflow 정책 |
-| `mutation-watcher.js` | MutationObserver baseline (`style`/`class` attr) |
+| `mutation-watcher.js` | MutationObserver baseline (`style`/`class` attr), v1.2 noise filter |
+| `target-filter.js` | VisBug chrome 요소 mutation 제외 |
+| `mutation-mute.js` | 일시 UI mutation 억제 (resize drag 등) |
+| `filter.js` | `filterEntries`, `mergeIntent` 소비자 preset |
 | `feature-wrapper.js` | visbug feature 함수 direct wrap (`source: 'feature'`, optional `snapshotDOM`) |
 | `dom-bind.js` | contenteditable blur/escape 등 DOM 캡처 (`beforeDOM`/`afterDOM`) |
 | `merge.js` | correlationId 그룹 + agreement/divergence |
@@ -39,7 +44,8 @@ def:
 ## host API ( `<vis-bug>` )
 
 - `onEditLog` setter / `editlog` CustomEvent / `editLogStream()` AsyncIterable
-- `getHistory({ merge })` / `clearHistory()` / `replay(entry, opts)`
+- `getHistory({ merge: 'none' | 'correlated' | 'intent' | 'analyzed' })` / `filter` 옵션
+- `muteEditLogMutations()` / `unmuteEditLogMutations()` — resize 등 일시 UI mutation 억제
 - `_editLogFormatters` — panel copy용 (내부)
 
 ## EditLogEntry (확장 필드)
@@ -57,11 +63,19 @@ def:
 { "src": { "parentPath": "...", "index": 0 }, "target": { "index": 1 } }
 ```
 
-## capture 정책
+## capture 정책 (v1.2)
 
-1. **MutationObserver** — 모든 style/class 변경 capture (`source: 'mutation'`)
-2. **Active tool inference (v1.1)** — mutation entry의 `feature`는 `host.active_tool.dataset.tool`에서 추론
-3. **Feature wrapper** — `feature-bind.js` + `bindFeatureCall()`:
+1. **MutationObserver** — `style`/`class` attribute 변경 (`source: 'mutation'`)
+2. **Noise filter (기본 `mutationCapture: 'filtered'`)**  
+   - VisBug chrome (`visbug-*`, `vis-bug`, `edit-log-panel` 등) 제외  
+   - **`mutationScope: 'page-edits'` (기본)** — `data-selected` 또는 `contenteditable` 노드만 mutation 수집  
+   - **`contentRoot`** — Observer root = vis-bug 부모 (bridge `mountVisBug(host)` 시 `host` 경계)  
+   - computed style diff 없음 → skip  
+   - 동일 `correlationId`의 `feature` 엔트리 존재 시 mutation skip  
+   - resize drag 중 `muteEditLogMutations()` 구간 skip  
+3. **Debug** — `mutationCapture: 'all'` + `mutationScope: 'document'`로 v1 capture-all 복원
+4. **Active tool inference (v1.1)** — mutation entry의 `feature`는 `host.active_tool.dataset.tool`에서 추론
+5. **Feature wrapper** — `feature-bind.js` + `bindFeatureCall()`:
    - spacing: `padding`, `margin`
    - typography: `font` (size/leading/kerning/weight/alignment, `cmd+b`/`cmd+i`)
    - layout: `move`, `flex` (toolbar `align`), `position`, `boxshadow`
@@ -70,7 +84,9 @@ def:
    - content: `text` (blur/escape 시 `textContent` → `dom-bind`)
    - structural: `move` drag-reorder (`swapElements` + `beforeDOM`/`afterDOM` sibling index)
 
-dedup 없음. `merge: 'correlated'`는 host/bridge 분석 단계.
+소비 기본값: `getHistory({ merge: 'intent' })` — feature 우선, redundant mutation 제거.  
+`merge: 'correlated'` — agreement/divergence 검증용.  
+bridge `entryFilter` 기본 `'feature'`.
 
 ## replay 모드
 
@@ -101,5 +117,6 @@ make visbug-smoke  # bundle + visbug unit + bridge unit/e2e
 
 ## 참조
 
+- DomRef 로드맵: `docs/specs/visbug-bridge/visbug-dom-ref-roadmap.md`
 - bridge spec: `docs/specs/visbug-bridge/visbug-bridge.spec.md`
 - 설계: `docs/superpowers/specs/2026-04-27-visbug-modernization-and-edit-log-design.md`

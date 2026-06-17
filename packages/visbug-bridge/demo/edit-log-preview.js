@@ -64,6 +64,7 @@ function markSection(feature) {
 }
 
 function prependEntry(entry) {
+  if (entry.source !== 'feature') return
   if (entry.source === 'feature') featureCount++
   else mutationCount++
   statFeature.textContent = `feature ${featureCount}`
@@ -126,7 +127,7 @@ export function wireEditLogDemo(visbug) {
     featureCount = 0
     mutationCount = 0
     seenFeatures.clear()
-    const merged = visbug.getHistory({ merge: 'correlated' })
+    const merged = visbug.getHistory({ merge: 'intent' })
     if (!merged.length) {
       logEl.innerHTML = '<div class="demo-log-empty">병합할 기록이 없습니다.</div>'
       statFeature.textContent = 'feature 0'
