@@ -44,8 +44,11 @@ def:
 
 1. **MutationObserver** — 모든 style/class 변경 capture (`source: 'mutation'`)
 2. **Active tool inference (v1.1)** — mutation entry의 `feature`는 `host.active_tool.dataset.tool`에서 추론
-3. **Feature wrapper (pilot)** — `feature-bind.js` + `bindFeatureCall()`으로 padding/margin/font export 함수 wrap → `source: 'feature'`, `args` 포함
-4. **Feature wrapper (확장)** — move, flex, boxshadow 등 나머지 feature 모듈
+3. **Feature wrapper (pilot)** — `feature-bind.js` + `bindFeatureCall()`:
+   - spacing: `padding`, `margin`
+   - typography: `font` (size/leading/kerning/weight/alignment)
+   - layout: `move`, `flex` (toolbar `align`), `position`, `boxshadow`
+4. **Feature wrapper (확장)** — `text`, `hueshift`, `imageswap`, `color`, drag-reorder replay
 
 dedup 없음. `merge: 'correlated'`는 host/bridge 분석 단계.
 
