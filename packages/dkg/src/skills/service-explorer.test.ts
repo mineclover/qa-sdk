@@ -6,8 +6,9 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
-import { bootstrapDkg } from "../bootstrap.js";
+import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
+import { bootstrapDkg } from "dkg-enrichment";
 import { createDemoTopology } from "../service-topology.js";
 import {
   exploreService,

@@ -9,16 +9,10 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, decodePrefix } from "demo-snapshot";
-import {
-  bootstrapDkg,
-  violationsToObservations,
-  resolve,
-  defineFlow,
-  serializeFlow,
-  deserializeFlow,
-  analyzeImpact,
-} from "dkg";
+import { DEMO_CATALOG, encodePrefixByValue, decodePrefix } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
+import { violationsToObservations, resolve, defineFlow, serializeFlow, deserializeFlow, analyzeImpact } from "dkg";
+import { bootstrapDkg } from "dkg-enrichment";
 import { DEMO_TRANSITION_SPECS } from "spec-transition";
 import { createTransitionFunctions } from "../transition/index.js";
 import { decodeAddressContext } from "spec-transition";

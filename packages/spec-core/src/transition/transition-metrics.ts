@@ -8,7 +8,8 @@
  * MetricValue[]로 변환한다. convergence-runner에서 병합 가능.
  */
 
-import type { MetricValue, MetricStatus } from "@qa-sdk/convergence";
+import type { MetricStatus } from "../shared/metric-port.js";
+import type { MetricValue } from "../shared/metric-port.js";
 import type { TransitionSessionResult, TransitionFlushResult } from "./transition-pipeline.js";
 
 const METRIC_IDS = {

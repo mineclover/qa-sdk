@@ -57,7 +57,7 @@ async function setupConvergence() {
     const { createGraphProvider } = await import("./lib/convergence-graph-provider.js");
     const dkgSqlitePath = process.env["CONVERGENCE_DKG_SQLITE_PATH"] ?? ":memory:";
     const provider = await createGraphProvider({ dkgSqlitePath });
-    const specConvergence = await import("@qa-sdk/spec-core/convergence");
+    const specConvergence = await import("@qa-sdk/convergence");
     const specDkg = await import("@qa-sdk/spec-core/dkg");
 
     const graph = provider.getGraph();

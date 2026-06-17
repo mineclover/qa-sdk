@@ -9,8 +9,10 @@
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue } from "demo-snapshot";
-import { GraphRegistry, deriveFromCatalog, bootstrapDkg, analyzeImpact, transitionPrefix, transitionDecision, resolveObservation, generateLifecycleReport, createDemoTopology, buildDependencyGraph, buildTimeline } from "dkg";
+import { DEMO_CATALOG, encodePrefixByValue } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
+import { GraphRegistry, deriveFromCatalog, analyzeImpact, transitionPrefix, transitionDecision, resolveObservation, generateLifecycleReport, createDemoTopology, buildDependencyGraph, buildTimeline } from "dkg";
+import { bootstrapDkg } from "dkg-enrichment";
 import { scanAxisOverlaps, comparePrefixes, analyzeSimplification, analyzeTemporalTrends, aggregateUsageData, analyzeEntryCoverage, type AddressContextRecord } from "@qa-sdk/convergence";
 import { catalogToPrefixSpecs } from "./loader/catalog-bridge.js";
 import type { AxisNode, PrefixNode, ObservationNode, DecisionNode } from "dkg";

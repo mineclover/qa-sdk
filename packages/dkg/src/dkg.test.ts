@@ -2,10 +2,11 @@
 // @def.doc dkg-system-root
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
+import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
 import { GraphRegistry } from "./graph-registry.js";
 import { deriveFromCatalog } from "./catalog-derive.js";
-import { bootstrapDkg } from "./bootstrap.js";
+import { bootstrapDkg } from "dkg-enrichment";
 import { analyzeImpact } from "./skills/analyze-impact.js";
 import { inferMigrator } from "./skills/infer-migrator.js";
 import { versionEventFromDiff } from "./skills/version-event-derive.js";

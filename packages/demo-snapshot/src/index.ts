@@ -74,7 +74,6 @@ export {
   type LabelRegistryInput, type PrefixCodecPrefixInput, type PrefixCodecInput,
 } from "./demo-bridge.js";
 
-export { DEMO_DKG_CONFIG } from "./demo-dkg-config.js";
 export {
   SCENARIO_LOGIN,
   SCENARIO_CHECKOUT_ENTRY,

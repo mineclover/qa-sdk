@@ -9,8 +9,9 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { bootstrapDkg } from "dkg";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
+import { bootstrapDkg } from "dkg-enrichment";
+import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
 import type { GraphRegistry } from "dkg";
 import {
   intentLinkDiagram,

@@ -1,4 +1,3 @@
-// @def.boundary platform-chain-system
 /**
  * DEMO_DKG_CONFIG — DKG bootstrap 설정 데이터 (SSOT).
  * bootstrap.ts의 하드코딩 데이터를 선언적 구조로 추출.

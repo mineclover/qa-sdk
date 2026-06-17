@@ -3,15 +3,10 @@
 
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
-import {
-  bootstrapDkg,
-  GraphRegistry,
-  recordDecision,
-  type DecisionNode,
-  type DecisionType,
-  type ObservationNode,
-} from "dkg";
+import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
+import { GraphRegistry, recordDecision, type DecisionNode, type DecisionType, type ObservationNode } from "dkg";
+import { bootstrapDkg } from "dkg-enrichment";
 import { DkgSqliteStore } from "dkg/store";
 import type { FeedbackRequest } from "review-ledger";
 import { getQaSdkDir } from "./qa-dir.js";

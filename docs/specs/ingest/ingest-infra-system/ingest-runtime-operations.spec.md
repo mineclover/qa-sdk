@@ -123,8 +123,8 @@ SIGTERM/SIGINT 수신
 
 | 기능 | 환경변수 | 동적 import | 실패 처리 |
 |------|---------|------------|----------|
-| Convergence Pipeline | `CONVERGENCE_ENABLED` | `spec-core/convergence`, `spec-core/dkg` | error 로그 후 disabled |
-| 패턴 분류 | `PATTERN_CLASSIFICATION_ENABLED` | `spec-core/convergence.classifyPattern` | warn 로그 후 skip |
+| Convergence Pipeline | `CONVERGENCE_ENABLED` | `@qa-sdk/convergence`, `dkg-enrichment` | error 로그 후 disabled |
+| 패턴 분류 | `PATTERN_CLASSIFICATION_ENABLED` | `@qa-sdk/convergence` (`classifyPattern`) | warn 로그 후 skip |
 | Transition Engine | `TRANSITION_ENGINE_ENABLED` | `spec-core/transition` | error 로그 후 disabled |
 | gRPC Debug Server | `GRPC_PORT` | `grpc/debug-server.js` | warn 로그 후 skip |
 | Cleanup Scheduler | `CLEANUP_CRON_ENABLED` | 내부 | disabled |

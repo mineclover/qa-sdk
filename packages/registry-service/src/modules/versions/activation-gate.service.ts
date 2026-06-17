@@ -44,9 +44,18 @@ export async function buildActivationGatePort(
       (options.loadPropagationModule
         ?? (async () => import("@qa-sdk/spec-core/propagation") as unknown as PropagationModulePort))(),
       (options.loadAnalysisModule
-        ?? (async () => import("@qa-sdk/spec-core/dkg") as unknown as AnalysisModulePort))(),
+        ?? (async () => import("dkg-enrichment") as unknown as AnalysisModulePort))(),
       (options.loadDemoSnapshot
-        ?? (async () => import("demo-snapshot") as unknown as DemoSnapshotModulePort))(),
+        ?? (async () => {
+          const [catalogMod, configMod] = await Promise.all([
+            import("demo-snapshot"),
+            import("demo-dkg-config"),
+          ]);
+          return {
+            DEMO_CATALOG: catalogMod.DEMO_CATALOG,
+            DEMO_DKG_CONFIG: configMod.DEMO_DKG_CONFIG,
+          } as DemoSnapshotModulePort;
+        }))(),
     ]);
 
     const graph = analysis.bootstrapDkg({

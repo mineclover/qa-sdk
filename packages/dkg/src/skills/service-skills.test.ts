@@ -2,8 +2,9 @@
 // @def.doc dkg-system-root
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { bootstrapDkg } from "../bootstrap.js";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
+import { bootstrapDkg } from "dkg-enrichment";
+import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
 import { serviceHealthCheck, eventCoverageCheck } from "./service-skills.js";
 
 const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });

@@ -7,7 +7,7 @@
  */
 
 import { DEMO_CATALOG } from "demo-snapshot";
-import { DEMO_DKG_CONFIG } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
 
 const BASE = process.argv[2] ?? "https://qa-registry-service.astralclover.workers.dev";
 

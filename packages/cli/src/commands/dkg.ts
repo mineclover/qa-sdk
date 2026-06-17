@@ -9,7 +9,8 @@
  */
 
 import { parseArgs } from "node:util";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, latestPrefixVersion, type DemoAxisId } from "demo-snapshot";
+import { DEMO_CATALOG, encodePrefixByValue, latestPrefixVersion, type DemoAxisId } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
 import { extractCausalGraph, type FlowSchema } from "decision-flow";
 import { DEMO_TRANSITION_SPECS } from "spec-transition";
 import {
@@ -33,41 +34,8 @@ import {
   type TransmissionEnvelope,
 } from "@qa-sdk/core";
 import { catalogToPrefixSpecs, catalogToSchemaSnapshot } from "@qa-sdk/spec-core";
-import {
-  bootstrapDkg,
-  GraphRegistry,
-  analyzeImpact,
-  createDemoTopology,
-  exploreService,
-  explorePrefix,
-  exploreDsl,
-  systemOverview,
-  traceNode,
-  recordDecision,
-  recordObservation,
-  prepareClaim,
-  prepareRelease,
-  claimKey,
-  resolveObservation,
-  safeEntryAdd,
-  checkConstraints,
-  checkDomainHealth,
-  checkAllDomainsHealth,
-  entryAddChain,
-  systemHealthChain,
-  convergeChain,
-  traceFlows,
-  validateDslInvariants,
-  scaffoldDecision,
-  inferMigrator,
-  auditCoverage,
-  transitionPrefix,
-  transitionDecision,
-  serviceHealthCheck,
-  eventCoverageCheck,
-  analyzeDslVersionSkew,
-  type DkgNode, type DkgNodeDetails, type DecisionType, type ClaimData, type ObservationNode, type DecisionNode, type SkillNode, type TableNode, type ConstraintNode, type DkgEdgeType, type SpecNode, type ConvergeAction, type ObservationSuggestion, type TransitionSpecNode,
-} from "dkg";
+import { GraphRegistry, analyzeImpact, createDemoTopology, exploreService, explorePrefix, exploreDsl, systemOverview, traceNode, recordDecision, recordObservation, prepareClaim, prepareRelease, claimKey, resolveObservation, safeEntryAdd, checkConstraints, checkDomainHealth, checkAllDomainsHealth, entryAddChain, systemHealthChain, convergeChain, traceFlows, validateDslInvariants, scaffoldDecision, inferMigrator, auditCoverage, transitionPrefix, transitionDecision, serviceHealthCheck, eventCoverageCheck, analyzeDslVersionSkew, type DkgNode, type DkgNodeDetails, type DecisionType, type ClaimData, type ObservationNode, type DecisionNode, type SkillNode, type TableNode, type ConstraintNode, type DkgEdgeType, type SpecNode, type ConvergeAction, type ObservationSuggestion, type TransitionSpecNode } from "dkg";
+import { bootstrapDkg } from "dkg-enrichment";
 import {
   scanAxisOverlaps,
   scanDecisionConflicts,

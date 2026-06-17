@@ -31,6 +31,7 @@
     "demo-snapshot": { "optional": true }
   },
   "devDependencies": {
+    "demo-dkg-config": "workspace:*",
     "demo-snapshot": "workspace:*",
     "@types/node": "^22.0.0",
     "tsup": "^8.5.1",

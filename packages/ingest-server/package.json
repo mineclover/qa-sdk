@@ -41,7 +41,9 @@
     "@qa-sdk/convergence": "workspace:*",
     "@qa-sdk/event-catalog": "workspace:*",
     "@qa-sdk/spec-core": "workspace:*",
+    "demo-dkg-config": "workspace:*",
     "demo-snapshot": "workspace:*",
+    "dkg-enrichment": "workspace:*",
     "postgres": "^3.4.0"
   },
   "peerDependenciesMeta": {

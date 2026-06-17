@@ -11,4 +11,4 @@ export type { NodeSource, CliAuditEventInput, CliAuditEventRow } from "./dkg-sql
 // ── Metric-aware snapshot ──
 // collectMetrics + metricsToObservations are passed in to avoid store → convergence dependency
 
-export type { MetricValue } from "@qa-sdk/convergence";
+export type { UsageData, VersionUsage, MetricValue } from "./usage-types.js";

@@ -12,7 +12,7 @@
 
 import type { Catalog } from "@qa-sdk/core";
 import type { GraphPort, EntryUsage, AddressUsage, CoverageReport } from "@qa-sdk/convergence";
-import type { ObservationNode, DecisionNode } from "../dkg.types.js";
+import type { ObservationNode, DecisionNode } from "dkg";
 import { analyzeEntryCoverage } from "@qa-sdk/convergence";
 
 export interface CoverageAuditResult {

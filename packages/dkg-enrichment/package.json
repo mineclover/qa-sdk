@@ -1,0 +1,38 @@
+{
+  "name": "dkg-enrichment",
+  "version": "0.1.0",
+  "description": "DKG bootstrap enrichment + convergence/decision-flow 분석 스킬 (logic tier)",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@qa-sdk/convergence": "workspace:*",
+    "@qa-sdk/core": "workspace:*",
+    "decision-flow": "workspace:*",
+    "dkg": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "demo-dkg-config": "workspace:*",
+    "demo-snapshot": "workspace:*",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
+  }
+}

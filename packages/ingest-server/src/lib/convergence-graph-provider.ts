@@ -50,13 +50,18 @@ export async function createGraphProvider(
   config: GraphProviderConfig,
 ): Promise<GraphProviderResult> {
   // spec-core 동적 import — unknown 모듈을 port 인터페이스로 단언
-  const [analysisModule, storeModule] = await Promise.all([
-    import("@qa-sdk/spec-core/dkg") as unknown as AnalysisModulePort,
+  const [storeModule, enrichmentModule] = await Promise.all([
     import("@qa-sdk/spec-core/store") as unknown as StoreModulePort,
+    import("dkg-enrichment"),
   ]);
 
   // demo-snapshot도 동적 import (catalog + config 제공)
-  const demoSnapshot = await import("demo-snapshot") as unknown as DemoSnapshotModulePort;
+  const demoSnapshot = await import("demo-snapshot") as unknown as Pick<DemoSnapshotModulePort, "DEMO_CATALOG">;
+  const demoDkgConfig = await import("demo-dkg-config") as unknown as Pick<DemoSnapshotModulePort, "DEMO_DKG_CONFIG">;
+  const demoDkg = {
+    DEMO_CATALOG: demoSnapshot.DEMO_CATALOG,
+    DEMO_DKG_CONFIG: demoDkgConfig.DEMO_DKG_CONFIG,
+  };
 
   let cachedGraph: GraphRegistryPort | null = null;
   let cachedCatalog: unknown = null;
@@ -89,7 +94,7 @@ export async function createGraphProvider(
   function ensureInit(): void {
     if (cachedGraph) return;
 
-    const catalog = registryCatalog ?? config.catalog ?? demoSnapshot.DEMO_CATALOG;
+    const catalog = registryCatalog ?? config.catalog ?? demoDkg.DEMO_CATALOG;
     cachedCatalog = catalog;
 
     if (config.dkgSqlitePath) {
@@ -104,14 +109,14 @@ export async function createGraphProvider(
       // 노드가 비어있으면 부트스트랩 후 저장
       if (loaded.getAllNodes().length === 0) {
         config.logger?.info("DKG store empty, bootstrapping...");
-        cachedGraph = analysisModule.bootstrapDkg({ catalog, config: demoSnapshot.DEMO_DKG_CONFIG });
+        cachedGraph = enrichmentModule.bootstrapDkg({ catalog, config: demoDkg.DEMO_DKG_CONFIG });
         store.saveGraph(cachedGraph, "bootstrap");
       } else {
         cachedGraph = loaded;
       }
     } else {
       // 인메모리 부트스트랩
-      cachedGraph = analysisModule.bootstrapDkg({ catalog, config: demoSnapshot.DEMO_DKG_CONFIG });
+      cachedGraph = enrichmentModule.bootstrapDkg({ catalog, config: demoDkg.DEMO_DKG_CONFIG });
     }
 
     config.logger?.info("convergence graph provider initialized");

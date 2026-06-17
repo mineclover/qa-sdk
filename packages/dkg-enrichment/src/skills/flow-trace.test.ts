@@ -5,8 +5,9 @@
  * flow-trace 단위 테스트 — IntentLink invariant 위반 감지.
  */
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
-import { bootstrapDkg } from "../bootstrap.js";
+import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
+import { bootstrapDkg } from "dkg-enrichment";
 import { traceFlows, validateDslInvariants } from "./flow-trace.js";
 import type { AddressContextRecord } from "@qa-sdk/convergence";
 

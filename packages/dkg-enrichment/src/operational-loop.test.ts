@@ -11,12 +11,12 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue } from "demo-snapshot";
-import { DkgSqliteStore } from "../store/dkg-sqlite-store.js";
-import { bootstrapDkg } from "../bootstrap.js";
+import { DEMO_CATALOG, encodePrefixByValue } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
+import { DkgSqliteStore } from "dkg/store";
+import { bootstrapDkg, convergeChain } from "dkg-enrichment";
+import { systemHealthChain } from "dkg";
 import { aggregateUsageData, analyzeDeploymentSkew, type AddressContextRecord } from "@qa-sdk/convergence";
-import { convergeChain } from "./converge-chain.js";
-import { systemHealthChain } from "./skill-chain.js";
 
 let store: DkgSqliteStore;
 const svcRef = () => DEMO_CATALOG.prefixes.endpoint.versions[0].refEntries!.svc_ref.values[0];

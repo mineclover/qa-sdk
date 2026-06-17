@@ -11,7 +11,7 @@
  */
 
 import type { GraphPort, AddressContextRecord } from "@qa-sdk/convergence";
-import type { DslBundleNode, IntentLinkNode, ObservationNode } from "../dkg.types.js";
+import type { DslBundleNode, IntentLinkNode, ObservationNode } from "dkg";
 
 // ═══════════════════════════════════════════════════════════════
 //  Types

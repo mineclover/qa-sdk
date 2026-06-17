@@ -28,7 +28,7 @@ dkg-system > dkg-skills-system > dkg-skill-catalog > **dkg-skill-catalog-registr
 
 DKG에 등록된 39개 skill의 전체 목록. 카테고리별 분류, CLI 연결 상태, 구현 소스 매핑.
 
-정의: `demo-dkg-config.ts` SkillDef[]
+정의: `packages/demo-dkg-config` (`DEMO_DKG_CONFIG`)
 구현: `spec-core/src/dkg/skills/*.ts`
 CLI: `cli/src/commands/dkg.ts` dkgRun() switch
 

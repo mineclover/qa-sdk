@@ -36,7 +36,7 @@ import {
 } from "../db/schema.js";
 import { GraphRegistry } from "../graph-registry.js";
 import type { DkgNode, DkgEdge } from "../dkg.types.js";
-import type { UsageData, VersionUsage } from "@qa-sdk/convergence";
+import type { UsageData, VersionUsage } from "./usage-types.js";
 
 export type NodeSource = "bootstrap" | "manual" | "auto";
 

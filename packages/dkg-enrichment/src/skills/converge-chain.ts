@@ -9,9 +9,9 @@
 
 import type { Catalog } from "@qa-sdk/core";
 import type { GraphPort, UsageData, AxisOverlap, PrefixOverlap } from "@qa-sdk/convergence";
-import type { ObservationNode, DecisionNode } from "../dkg.types.js";
+import type { ObservationNode, DecisionNode } from "dkg";
 import { scanAxisOverlaps, comparePrefixes, analyzeSimplification, discoverCausality, analyzeDeploymentSkew } from "@qa-sdk/convergence";
-import { scaffoldDecision } from "./decision-scaffold.js";
+import { scaffoldDecision } from "dkg";
 
 // ═══════════════════════════════════════════════════════════════
 //  Action 구분 — 4가지 행위

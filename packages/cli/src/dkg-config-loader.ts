@@ -154,7 +154,7 @@ function extractDkgConfig(mod: ModuleShape): DkgConfig {
 
 async function loadDemoDkgConfig(): Promise<DkgConfig | undefined> {
   try {
-    const { DEMO_DKG_CONFIG } = await import("demo-snapshot");
+    const { DEMO_DKG_CONFIG } = await import("demo-dkg-config");
     return isDkgConfig(DEMO_DKG_CONFIG) ? DEMO_DKG_CONFIG : undefined;
   } catch {
     return undefined;

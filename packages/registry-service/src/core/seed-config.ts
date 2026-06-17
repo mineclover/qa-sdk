@@ -16,7 +16,7 @@ const EVENT_ADOPTION_CONFIG_TYPE = "event-adoption";
 /** DkgConfig + PatternRules + 서비스 목록 seed */
 export async function seedConfigs(configStore: ConfigStore, logger: SeedLogger = noopLogger) {
   try {
-    const { DEMO_DKG_CONFIG } = await import("demo-snapshot");
+    const { DEMO_DKG_CONFIG } = await import("demo-dkg-config");
     await configStore.set("demo", "dkg-config", JSON.stringify(DEMO_DKG_CONFIG));
     logger.info("seeded DEMO_DKG_CONFIG to config store");
   } catch (error) {
@@ -24,7 +24,7 @@ export async function seedConfigs(configStore: ConfigStore, logger: SeedLogger =
   }
 
   try {
-    const convergence = await import("@qa-sdk/spec-core/convergence");
+    const convergence = await import("@qa-sdk/convergence");
     await configStore.set("demo", "pattern-rules", JSON.stringify(convergence.DEMO_PATTERN_RULES));
     logger.info("seeded DEMO_PATTERN_RULES to config store");
   } catch (error) {

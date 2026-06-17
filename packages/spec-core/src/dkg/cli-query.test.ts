@@ -9,14 +9,10 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, decodePrefix, getPrefixShape, getPrefixStructure, type DemoPrefixId } from "demo-snapshot";
-import {
-  bootstrapDkg,
-  resolve,
-  findVersionForEntry,
-  findRefAddress,
-  analyzeImpact,
-} from "dkg";
+import { DEMO_CATALOG, encodePrefixByValue, decodePrefix, getPrefixShape, getPrefixStructure, type DemoPrefixId } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
+import { resolve, findVersionForEntry, findRefAddress, analyzeImpact } from "dkg";
+import { bootstrapDkg } from "dkg-enrichment";
 import { catalogToPrefixSpecs } from "../loader/catalog-bridge.js";
 
 describe("CLI 조회: prefix 식별자 기반", () => {

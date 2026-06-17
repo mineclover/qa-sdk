@@ -371,6 +371,9 @@ importers:
       definition-data-source:
         specifier: workspace:*
         version: link:../definition-data-source
+      demo-dkg-config:
+        specifier: workspace:*
+        version: link:../demo-dkg-config
       demo-snapshot:
         specifier: workspace:*
         version: link:../demo-snapshot
@@ -380,6 +383,9 @@ importers:
       dkg:
         specifier: workspace:*
         version: link:../dkg
+      dkg-enrichment:
+        specifier: workspace:*
+        version: link:../dkg-enrichment
       doc-envelope:
         specifier: workspace:*
         version: link:../doc-envelope
@@ -541,6 +547,9 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.15
+      demo-dkg-config:
+        specifier: workspace:*
+        version: link:../demo-dkg-config
       demo-snapshot:
         specifier: workspace:*
         version: link:../demo-snapshot
@@ -990,14 +999,27 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@25.5.0)(happy-dom@20.8.4)(jsdom@29.1.1)(lightningcss@1.32.0)(stylus@0.54.8)(terser@5.48.0)
 
+  packages/demo-dkg-config:
+    dependencies:
+      decision-flow:
+        specifier: workspace:*
+        version: link:../decision-flow
+    devDependencies:
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.15)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@25.5.0)(happy-dom@20.8.4)(jsdom@29.1.1)(lightningcss@1.32.0)(stylus@0.54.8)(terser@5.48.0)
+
   packages/demo-snapshot:
     dependencies:
       '@qa-sdk/core':
         specifier: workspace:*
         version: link:../core
-      decision-flow:
-        specifier: workspace:*
-        version: link:../decision-flow
       weighted-index:
         specifier: workspace:*
         version: link:../weighted-index
@@ -1086,15 +1108,9 @@ importers:
 
   packages/dkg:
     dependencies:
-      '@qa-sdk/convergence':
-        specifier: workspace:*
-        version: link:../convergence
       '@qa-sdk/core':
         specifier: workspace:*
         version: link:../core
-      decision-flow:
-        specifier: workspace:*
-        version: link:../decision-flow
       drizzle-orm:
         specifier: 'catalog:'
         version: 1.0.0-beta.22(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
@@ -1114,12 +1130,52 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.15
+      demo-dkg-config:
+        specifier: workspace:*
+        version: link:../demo-dkg-config
       demo-snapshot:
         specifier: workspace:*
         version: link:../demo-snapshot
+      dkg-enrichment:
+        specifier: workspace:*
+        version: link:../dkg-enrichment
       drizzle-kit:
         specifier: 'catalog:'
         version: 1.0.0-beta.22
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.15)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(jsdom@29.1.1)(lightningcss@1.32.0)(stylus@0.54.8)(terser@5.48.0)
+
+  packages/dkg-enrichment:
+    dependencies:
+      '@qa-sdk/convergence':
+        specifier: workspace:*
+        version: link:../convergence
+      '@qa-sdk/core':
+        specifier: workspace:*
+        version: link:../core
+      decision-flow:
+        specifier: workspace:*
+        version: link:../decision-flow
+      dkg:
+        specifier: workspace:*
+        version: link:../dkg
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.15
+      demo-dkg-config:
+        specifier: workspace:*
+        version: link:../demo-dkg-config
+      demo-snapshot:
+        specifier: workspace:*
+        version: link:../demo-snapshot
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.15)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
@@ -1452,9 +1508,15 @@ importers:
       bullmq:
         specifier: ^5.0.0
         version: 5.71.0
+      demo-dkg-config:
+        specifier: workspace:*
+        version: link:../demo-dkg-config
       demo-snapshot:
         specifier: workspace:*
         version: link:../demo-snapshot
+      dkg-enrichment:
+        specifier: workspace:*
+        version: link:../dkg-enrichment
       dotenv:
         specifier: ^17.3.1
         version: 17.3.1
@@ -2114,9 +2176,15 @@ importers:
       '@types/node':
         specifier: ^22.13.10
         version: 22.19.15
+      demo-dkg-config:
+        specifier: workspace:*
+        version: link:../demo-dkg-config
       demo-snapshot:
         specifier: workspace:*
         version: link:../demo-snapshot
+      dkg-enrichment:
+        specifier: workspace:*
+        version: link:../dkg-enrichment
       drizzle-kit:
         specifier: 'catalog:'
         version: 1.0.0-beta.22
@@ -2281,6 +2349,9 @@ importers:
       '@qa-sdk/spec-core':
         specifier: workspace:*
         version: link:../spec-core
+      demo-dkg-config:
+        specifier: workspace:*
+        version: link:../demo-dkg-config
       demo-snapshot:
         specifier: workspace:*
         version: link:../demo-snapshot
@@ -2290,6 +2361,9 @@ importers:
       dkg:
         specifier: workspace:*
         version: link:../dkg
+      dkg-enrichment:
+        specifier: workspace:*
+        version: link:../dkg-enrichment
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
@@ -2454,15 +2528,9 @@ importers:
 
   packages/spec-core:
     dependencies:
-      '@qa-sdk/convergence':
-        specifier: workspace:*
-        version: link:../convergence
       '@qa-sdk/core':
         specifier: workspace:*
         version: link:../core
-      decision-flow:
-        specifier: workspace:*
-        version: link:../decision-flow
       dkg:
         specifier: workspace:*
         version: link:../dkg
@@ -2482,12 +2550,21 @@ importers:
         specifier: workspace:*
         version: link:../weighted-index
     devDependencies:
+      '@qa-sdk/convergence':
+        specifier: workspace:*
+        version: link:../convergence
       '@types/node':
         specifier: ^22.13.10
         version: 22.19.15
+      demo-dkg-config:
+        specifier: workspace:*
+        version: link:../demo-dkg-config
       demo-snapshot:
         specifier: workspace:*
         version: link:../demo-snapshot
+      dkg-enrichment:
+        specifier: workspace:*
+        version: link:../dkg-enrichment
       drizzle-kit:
         specifier: 'catalog:'
         version: 1.0.0-beta.22

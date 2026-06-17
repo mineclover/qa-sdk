@@ -52,7 +52,7 @@ export interface ConvergenceGraphPort {
   addEdge?(type: string, from: string, to: string, meta?: Record<string, unknown>): void;
 }
 
-/** convergence 분석 함수 (spec-core/convergence에서 동적 import) */
+/** convergence 분석 함수 (@qa-sdk/convergence에서 동적 import) */
 export interface ConvergenceFunctions {
   aggregateUsageData: (catalog: Catalog, records: readonly AddressContextRecord[]) => UsageData;
   collectMetrics: (catalog: Catalog, graph: ConvergenceGraphPort, usage: UsageData | null) => MetricValue[];

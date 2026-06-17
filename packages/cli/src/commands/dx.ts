@@ -17,14 +17,8 @@ import {
   encodePrefixByValue, decodePrefixAsResult, decodeResultToEntities, decomposeAddress, resolveAddress,
   getPrefixShape, latestPrefixVersion,
 } from "@qa-sdk/core";
-import {
-  resolve,
-  findVersionForEntry,
-  validateRefEntries,
-  getAllSemanticRefs,
-  bootstrapDkg,
-  analyzeImpact,
-} from "dkg";
+import { resolve, findVersionForEntry, validateRefEntries, getAllSemanticRefs, analyzeImpact } from "dkg";
+import { bootstrapDkg } from "dkg-enrichment";
 
 // ── deprecation 경고 ────────────────────────────────
 //

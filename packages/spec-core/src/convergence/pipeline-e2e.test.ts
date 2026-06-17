@@ -9,9 +9,11 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue } from "demo-snapshot";
+import { DEMO_CATALOG, encodePrefixByValue } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
 import { aggregateUsageData, analyzeCollectionHealth, analyzeEntryCoverage, discoverCausality, analyzeSimplification, type AddressContextRecord } from "@qa-sdk/convergence";
-import { auditCoverage, traceFlows, deriveFromCatalog, bootstrapDkg, analyzeAllVersionSkew, defineDslBundle, DslBundleRegistry } from "dkg";
+import { auditCoverage, traceFlows, deriveFromCatalog, analyzeAllVersionSkew, defineDslBundle, DslBundleRegistry } from "dkg";
+import { bootstrapDkg } from "dkg-enrichment";
 import type { DslBundleNode } from "dkg";
 
 describe("E2E: 수집 → 집계 → 수렴 파이프라인", () => {

@@ -3,10 +3,12 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
+import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
 import { createQaContext } from "@qa-sdk/context";
 import { catalogToPrefixSpecs } from "@qa-sdk/spec-core";
-import { auditCoverage, traceFlows, bootstrapDkg } from "dkg";
+import { auditCoverage, traceFlows } from "dkg";
+import { bootstrapDkg } from "dkg-enrichment";
 import {
   aggregateUsageData, analyzeCollectionHealth,
   type AddressContextRecord,

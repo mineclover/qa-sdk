@@ -113,7 +113,8 @@ function classifyTier(raw: RawPkg): string {
     n === "git-utils" ||
     n === "definition-catalog" ||
     n === "event-catalog" ||
-    n === "infra-env-kit"
+    n === "infra-env-kit" ||
+    n === "cli-command"
   ) {
     return "foundation";
   }
@@ -128,7 +129,8 @@ function classifyTier(raw: RawPkg): string {
     n === "doc-envelope" ||
     n === "motion-content" ||
     n === "work-domain" ||
-    n === "demo-snapshot"
+    n === "demo-snapshot" ||
+    n === "sim-identifier-grammar"
   ) {
     return "kernel";
   }
@@ -138,11 +140,15 @@ function classifyTier(raw: RawPkg): string {
     n === "engine" || 
     n === "context" || 
     n === "decision-flow" || 
+    n === "demo-dkg-config" ||
+    n === "dkg-enrichment" ||
     n.startsWith("taxonomy-") ||
     n.startsWith("sim-") ||
     n === "permission-engine" ||
     n === "convergence" ||
-    n === "operational-ontology"
+    n === "operational-ontology" ||
+    n === "authorization-ontology" ||
+    n === "motion-workspace"
   ) {
     return "logic";
   }

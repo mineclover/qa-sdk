@@ -7,8 +7,10 @@
  */
 
 import { describe, it } from "vitest";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, decodePrefix } from "demo-snapshot";
-import { bootstrapDkg, analyzeImpact, defineFlow, serializeFlow, resolve, findVersionForEntry, findRefAddress } from "dkg";
+import { DEMO_CATALOG, encodePrefixByValue, decodePrefix } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
+import { analyzeImpact, defineFlow, serializeFlow, resolve, findVersionForEntry, findRefAddress } from "dkg";
+import { bootstrapDkg } from "dkg-enrichment";
 import { compareAxes, optimizeCapacities } from "@qa-sdk/convergence";
 
 const SEP = "─".repeat(60);

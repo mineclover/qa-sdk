@@ -58,10 +58,10 @@ DKG 그래프 위에서 구조 분석·의사결정 기록·자동화 연산을 
 ### 구현 계층
 
 ```
-SkillDef (demo-dkg-config.ts, 39개 정의)
-  ↓ bootstrapDkg()
+SkillDef (demo-dkg-config 패키지, 39개 정의)
+  ↓ bootstrapDkg() — dkg-enrichment (base+enrich+finalize)
 SkillNode (DKG 그래프 노드)
-  ↓ spec-core/src/dkg/skills/ (17개 TS 모듈)
+  ↓ dkg 스킬 모듈 + dkg-enrichment 수렴 스킬
 skill 함수 구현
   ↓ cli/src/commands/dkg.ts (dkg run switch)
 CLI 실행 경로 (39/39 연결)

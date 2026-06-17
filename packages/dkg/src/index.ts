@@ -66,7 +66,8 @@ export type { FlowSchemaRelationInput, GraphEdgeWriter } from "./flow-schema-rel
 // ── Derivation + Bootstrap ─────────────────────────
 export { deriveFromCatalog } from "./catalog-derive.js";
 export type { DeriveInput } from "./catalog-derive.js";
-export { bootstrapDkg } from "./bootstrap.js";
+export { bootstrapDkgBase, bootstrapDkgFinalize } from "./bootstrap.js";
+export type { BootstrapDkgOptions, DkgConfigInput, FlowSchemaEntry } from "./bootstrap.js";
 
 // ── Doc Sync ───────────────────────────────────────
 export { generateDocSyncReport } from "./doc-sync.js";
@@ -128,10 +129,6 @@ export type { TransitionResult, LifecycleReport } from "./skills/lifecycle-trans
 export { ServiceTopologyRegistry, createDemoTopology } from "./service-topology.js";
 export type { ServiceOwnership, SharedContract, ServiceRegistration, TopologyReport, BreakingChange, ContractViolation, DrainPlan, ApprovalRequest, DependencyEdge, DependencyGraph, TimelineEvent } from "./service-topology.js";
 export { buildDependencyGraph, buildTimeline } from "./service-topology.js";
-export { auditCoverage } from "./skills/coverage-audit.js";
-export type { CoverageAuditResult } from "./skills/coverage-audit.js";
-export { traceFlows, validateDslInvariants } from "./skills/flow-trace.js";
-export type { FlowViolation, FlowTraceResult, DslInvariantViolation, DslInvariantResult } from "./skills/flow-trace.js";
 export { checkConstraints, checkAllConstraints, auditAllConstraints } from "./skills/constraint-check.js";
 export type { ConstraintCheckResult, PassedConstraint } from "./skills/constraint-check.js";
 export { safeEntryAdd } from "./skills/safe-entry-add.js";
@@ -139,8 +136,6 @@ export type { SafeEntryAddInput, SafeEntryAddResult } from "./skills/safe-entry-
 export { checkDomainHealth, checkAllDomainsHealth } from "./skills/domain-health.js";
 export type { DomainHealthResult, PrefixHealthSummary } from "./skills/domain-health.js";
 export { entryAddChain, systemHealthChain } from "./skills/skill-chain.js";
-export { convergeChain } from "./skills/converge-chain.js";
-export type { ConvergeAction, ConvergeChainResult } from "./skills/converge-chain.js";
 export type { ChainStepResult, SkillChainResult } from "./skills/skill-chain.js";
 export { exploreService, explorePrefix, exploreDsl, systemOverview } from "./skills/service-explorer.js";
 export { traceNode } from "./skills/trace.js";

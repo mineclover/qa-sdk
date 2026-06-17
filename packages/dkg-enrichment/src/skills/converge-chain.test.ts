@@ -2,9 +2,10 @@
 // @def.doc dkg-system-root
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue } from "demo-snapshot";
-import { bootstrapDkg } from "../bootstrap.js";
-import { deriveFromCatalog } from "../catalog-derive.js";
+import { DEMO_CATALOG, encodePrefixByValue } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
+import { bootstrapDkg } from "dkg-enrichment";
+import { deriveFromCatalog } from "dkg";
 import { aggregateUsageData, type AddressContextRecord } from "@qa-sdk/convergence";
 import { convergeChain } from "./converge-chain.js";
 

@@ -374,7 +374,7 @@ export function createRootHandlerRegistry(
     "root.impact": async (rest) => {
       const axisIdx = rest.indexOf("--axis");
       const prefixIdx = rest.indexOf("--prefix");
-      const { DEMO_DKG_CONFIG } = await import("demo-snapshot");
+      const { DEMO_DKG_CONFIG } = await import("demo-dkg-config");
       const dkgConfig = DEMO_DKG_CONFIG;
       if (!loadedCatalog) { console.error("카탈로그 로딩 실패"); return; }
       if (axisIdx >= 0) cliImpact(loadedCatalog, dkgConfig, { axis: rest[axisIdx + 1] });

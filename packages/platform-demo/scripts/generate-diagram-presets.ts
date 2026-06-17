@@ -12,10 +12,9 @@ import { writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
-import {
-  bootstrapDkg,
-} from "dkg";
+import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
+import { bootstrapDkg } from "dkg-enrichment";
 import {
   intentLinkDiagram,
   allIntentLinksDiagram,

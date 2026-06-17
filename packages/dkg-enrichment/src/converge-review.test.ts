@@ -9,14 +9,11 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
-import { bootstrapDkg } from "../bootstrap.js";
-import { deriveFromCatalog } from "../catalog-derive.js";
+import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
+import { bootstrapDkg, convergeChain } from "dkg-enrichment";
+import { deriveFromCatalog, scaffoldDecision, systemHealthChain, type PrefixNode } from "dkg";
 import { scanAxisOverlaps, comparePrefixes } from "@qa-sdk/convergence";
-import { scaffoldDecision } from "./decision-scaffold.js";
-import { convergeChain } from "./converge-chain.js";
-import { systemHealthChain } from "./skill-chain.js";
-import type { PrefixNode } from "../dkg.types.js";
 
 describe("행위 체인 리뷰 — 현재 시스템 결정 사항", () => {
 

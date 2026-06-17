@@ -2,8 +2,9 @@
 // @def.doc docs-control-plane
 
 import { describe, expect, it } from "vitest";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
-import { bootstrapDkg } from "dkg";
+import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
+import { bootstrapDkg } from "dkg-enrichment";
 
 import {
   getFlowSchemaProfile,

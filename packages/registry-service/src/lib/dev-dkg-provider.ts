@@ -46,18 +46,19 @@ export interface DevDkgProvider {
 export async function createDevDkgProvider(
   config: DevDkgProviderConfig,
 ): Promise<DevDkgProvider> {
-  const dkgModule = await import("@qa-sdk/spec-core/dkg");
-  const convergenceModule = await import("@qa-sdk/spec-core/convergence");
+  const enrichmentModule = await import("dkg-enrichment");
+  const convergenceModule = await import("@qa-sdk/convergence");
   const storeModuleImport = await import("@qa-sdk/spec-core/store");
   const demoSnapshotImport = await import("demo-snapshot");
+  const demoDkgConfigImport = await import("demo-dkg-config");
 
   const analysis: AnalysisModulePort = {
     bootstrapDkg(options) {
-      return dkgModule.bootstrapDkg({
-        catalog: options.catalog as Parameters<typeof dkgModule.bootstrapDkg>[0]["catalog"],
-        config: options.config as Parameters<typeof dkgModule.bootstrapDkg>[0]["config"],
+      return enrichmentModule.bootstrapDkg({
+        catalog: options.catalog as Parameters<typeof enrichmentModule.bootstrapDkg>[0]["catalog"],
+        config: options.config as Parameters<typeof enrichmentModule.bootstrapDkg>[0]["config"],
         date: options.date,
-        transitionSpecs: options.transitionSpecs as Parameters<typeof dkgModule.bootstrapDkg>[0]["transitionSpecs"],
+        transitionSpecs: options.transitionSpecs as Parameters<typeof enrichmentModule.bootstrapDkg>[0]["transitionSpecs"],
       });
     },
     collectMetrics(catalog, graph, usage) {
@@ -137,7 +138,7 @@ export async function createDevDkgProvider(
 
   const demoSnapshot: { DEMO_CATALOG: CatalogPort; DEMO_DKG_CONFIG: DkgConfigPort } = {
     DEMO_CATALOG: demoSnapshotImport.DEMO_CATALOG,
-    DEMO_DKG_CONFIG: demoSnapshotImport.DEMO_DKG_CONFIG,
+    DEMO_DKG_CONFIG: demoDkgConfigImport.DEMO_DKG_CONFIG,
   };
 
   const ttl = config.cacheTtlMs ?? 10 * 60 * 1000; // 10분

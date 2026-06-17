@@ -16,10 +16,6 @@
       "import": "./dist/dkg/index.js",
       "types": "./dist/dkg/index.d.ts"
     },
-    "./convergence": {
-      "import": "./dist/convergence/index.js",
-      "types": "./dist/convergence/index.d.ts"
-    },
     "./propagation": {
       "import": "./dist/propagation/index.js",
       "types": "./dist/propagation/index.d.ts"
@@ -44,9 +40,7 @@
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
-    "@qa-sdk/convergence": "workspace:*",
     "@qa-sdk/core": "workspace:*",
-    "decision-flow": "workspace:*",
     "dkg": "workspace:*",
     "drizzle-orm": "catalog:",
     "index-meta": "workspace:*",
@@ -55,8 +49,11 @@
     "weighted-index": "workspace:*"
   },
   "devDependencies": {
+    "@qa-sdk/convergence": "workspace:*",
     "@types/node": "^22.13.10",
+    "demo-dkg-config": "workspace:*",
     "demo-snapshot": "workspace:*",
+    "dkg-enrichment": "workspace:*",
     "drizzle-kit": "catalog:",
     "typescript": "^5.7.0",
     "vitest": "^1.6.1"

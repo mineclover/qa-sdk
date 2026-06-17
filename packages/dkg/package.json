@@ -33,15 +33,15 @@
     "spec-schema": "workspace:*",
     "spec-transition": "workspace:*",
     "@qa-sdk/core": "workspace:*",
-    "@qa-sdk/convergence": "workspace:*",
-    "decision-flow": "workspace:*",
     "weighted-index": "workspace:*",
     "index-meta": "workspace:*",
     "drizzle-orm": "catalog:"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "demo-dkg-config": "workspace:*",
     "demo-snapshot": "workspace:*",
+    "dkg-enrichment": "workspace:*",
     "drizzle-kit": "catalog:",
     "tsup": "^8.5.1",
     "typescript": "^5.8.2",

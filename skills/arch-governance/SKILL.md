@@ -28,7 +28,7 @@ pnpm arch:check          # 위반 사항 요약 리포트
 pnpm arch:check --json   # 기계 읽기용 데이터 출력
 ```
 
-**가드레일 정책**: 하위 계층은 상위 계층을 절대 참조할 수 없다. 위반 발견 시 즉시 리팩토링하거나 `PENDING_WORK.md` [TD-003]에 등록해야 한다.
+**가드레일 정책**: 하위 계층은 상위 계층을 절대 참조할 수 없다. 위반 발견 시 즉시 리팩토링한다. (TD-003: 2026-06-17 해소 — `demo-dkg-config`, `dkg-enrichment` 분리 + classifier 정정)
 
 ### 2. 미세 입도 API 영향도 분석 (`arch:impact`)
 

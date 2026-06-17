@@ -92,7 +92,7 @@ ingest-server
 
 ```
 CONVERGENCE_ENABLED
-  → spec-core/convergence + spec-core/dkg (동적 import)
+  → @qa-sdk/convergence + dkg-enrichment (동적 import, graph는 dkg-enrichment.bootstrapDkg)
   → CONVERGENCE_DKG_SQLITE_PATH 또는 CONVERGENCE_REGISTRY_URL
   → PATTERN_CLASSIFICATION_ENABLED (선택적 하위 기능)
 

@@ -9,7 +9,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
+import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
 import { createActivationGate } from "./activation-gate-adapter.js";
 import { createPostActivationHook } from "./post-activation-hook.js";
 

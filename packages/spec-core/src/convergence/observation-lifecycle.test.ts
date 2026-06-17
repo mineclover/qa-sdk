@@ -13,11 +13,12 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
+import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
 import { metricsToObservations, resolveRecoveredMetrics, collectMetrics } from "@qa-sdk/convergence";
 import type { MetricValue, ObservationNode } from "@qa-sdk/convergence";
 import { DkgSqliteStore } from "dkg/store";
-import { bootstrapDkg } from "dkg";
+import { bootstrapDkg } from "dkg-enrichment";
 
 // ── 결정적 ID ────────────────────────────────────────
 

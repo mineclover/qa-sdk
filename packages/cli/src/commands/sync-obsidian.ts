@@ -11,9 +11,10 @@
  */
 
 import { execaSync, type ExecaSyncError } from "execa";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
+import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_DKG_CONFIG } from "demo-dkg-config";
 import type { Catalog, DimRef, PrefixDef, VersionedAxis } from "@qa-sdk/core";
-import { bootstrapDkg } from "dkg";
+import { bootstrapDkg } from "dkg-enrichment";
 
 // ── DimRef 헬퍼 ──────────────────────────────────────
 
