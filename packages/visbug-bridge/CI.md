@@ -16,7 +16,7 @@
 1. `actions/checkout@v4` with `submodules: recursive`
 2. Node 22 + pnpm 10.30.3 (corepack)
 3. `pnpm install --frozen-lockfile`
-4. `cd vendor/projectvisbug && npm install && npm run bundle` (e2e용 vendor bundle)
+4. `pnpm --filter visbug run bundle` (e2e용 vendor bundle)
 5. `pnpm --filter visbug-bridge build` (tsup ESM/CJS/DTS)
 6. `pnpm --filter visbug-bridge exec playwright install --with-deps chromium`
 7. `pnpm --filter visbug-bridge test` (vitest 단위, 8개)
@@ -30,8 +30,8 @@
 `.github/workflows/ci.yml`의 `ci`/`security`/`visbug-bridge-e2e` 잡 모두 `submodules: recursive` 설정.
 `def-gate.yml`도 동일.
 
-근거: visbug-bridge가 `"visbug": "file:../../vendor/projectvisbug"`를 declare하므로 `pnpm install`
-시점에 vendor 디렉터리가 비어 있으면 경로 해석 실패. submodule recursive 체크아웃이 필수 조건.
+근거: `visbug` 패키지가 `vendor/projectvisbug` submodule에 있으므로 `pnpm install`
+시점에 해당 디렉터리가 비어 있으면 workspace resolve 실패. submodule recursive 체크아웃이 필수 조건.
 
 ## 보조 패턴 (필요 시)
 

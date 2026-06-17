@@ -24,7 +24,7 @@ def:
 ## 구성 ^overview
 
 - **패키지 위치**: `packages/visbug-bridge/` (unscoped, tsup ESM/CJS dual)
-- **vendor 의존**: `"visbug": "file:../../vendor/projectvisbug"` (git submodule)
+- **vendor 의존**: `"visbug": "workspace:*"` (`vendor/projectvisbug` git submodule, pnpm workspace 편입)
 - **공개 API**: `mountVisBug(host, opts) → VisBugController`
   - controller: `getHistory({merge})`, `clearHistory()`, `replay(entry, {mode})`, `unmount()`, `entries: AsyncIterable<EditLogEntry>`
   - opts: `bufferSize?`, `onEntry?: (entry) => void`, `logger?: { warn }`

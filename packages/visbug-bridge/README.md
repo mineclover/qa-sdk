@@ -67,14 +67,12 @@ EditLogEntry → RLSCNode 좌표 join 패턴은 별도 문서 참조.
 ## 의존 + 빌드 절차
 
 ```
-visbug-bridge → file:../../vendor/projectvisbug → vendor의 dist (rollup 4 ESM)
+visbug-bridge → visbug (workspace:*) → vendor/projectvisbug/app/bundle.js (rollup 4 ESM)
 ```
 
 vendor 산출물 빌드:
 ```bash
-cd vendor/projectvisbug
-npm install
-npm run bundle
+pnpm --filter visbug run bundle
 ```
 
 bridge 빌드:

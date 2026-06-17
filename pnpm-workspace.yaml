@@ -1,5 +1,6 @@
 packages:
   - "packages/*"
+  - "vendor/projectvisbug"
   - "simulations/enterprise-pm"
   - "simulations/enterprise-pm/services/*"
   - "simulations/enterprise-pm/packages/*"
