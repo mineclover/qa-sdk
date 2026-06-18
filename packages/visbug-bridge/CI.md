@@ -11,7 +11,7 @@
 
 ## 전용 e2e 잡 (`visbug-bridge-e2e`)
 
-`.github/workflows/ci.yml`에 정의됨. 단계:
+현재 전용 잡 정의는 `.github/workflows-disabled/visbug-bridge-e2e.yml`에 보관됨. 활성화 시 단계:
 
 1. `actions/checkout@v4` with `submodules: recursive`
 2. Node 22 + pnpm 10.30.3 (corepack)
@@ -19,7 +19,7 @@
 4. `pnpm --filter visbug run bundle` (e2e용 vendor bundle)
 5. `pnpm --filter visbug-bridge build` (tsup ESM/CJS/DTS)
 6. `pnpm --filter visbug-bridge exec playwright install --with-deps chromium`
-7. `pnpm --filter visbug-bridge test` (vitest 단위, 8개)
+7. `pnpm --filter visbug-bridge test` (vitest 단위, 18개)
 8. `pnpm --filter visbug-bridge test:e2e` (playwright, 2개)
 9. 실패 시 `test-results/` artifact 업로드 (7일 보관)
 
@@ -27,8 +27,7 @@
 
 ## Checkout 스텝의 submodules 필수
 
-`.github/workflows/ci.yml`의 `ci`/`security`/`visbug-bridge-e2e` 잡 모두 `submodules: recursive` 설정.
-`def-gate.yml`도 동일.
+`.github/workflows-disabled/ci.yml`의 `ci`/`security`, `.github/workflows-disabled/visbug-bridge-e2e.yml`, `.github/workflows-disabled/def-gate.yml` 모두 `submodules: recursive` 설정.
 
 근거: `visbug` 패키지가 `vendor/projectvisbug` submodule에 있으므로 `pnpm install`
 시점에 해당 디렉터리가 비어 있으면 workspace resolve 실패. submodule recursive 체크아웃이 필수 조건.
@@ -48,11 +47,12 @@ on:
     paths:
       - 'packages/visbug-bridge/**'
       - 'vendor/projectvisbug'   # submodule pointer
-      - '.github/workflows/ci.yml'
+      - '.github/workflows/visbug-bridge-e2e.yml'
 ```
 
-현재 워크플로는 path filter 없이 항상 실행 (vendor bundle 빌드 비용은 작음).
+활성화된 워크플로가 없으므로 현재는 수동 실행/로컬 `make visbug-smoke`가 기준이다.
 
 ## 미완
 
-- ~~vendor test를 monorepo CI에 포함~~ → `visbug-bridge-e2e` 잡에 `pnpm --filter visbug run test:unit` 추가 (`.github/workflows-disabled/visbug-bridge-e2e.yml`). 워크플로 활성화는 별도.
+- ~~vendor test를 monorepo CI에 포함~~ → `visbug-bridge-e2e` 잡에 `pnpm --filter visbug run test:unit` 포함됨.
+- 전용 workflow 활성화 여부 결정은 별도.

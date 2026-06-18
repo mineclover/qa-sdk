@@ -10,10 +10,8 @@ def:
   svc: visbug-bridge
   tags: [measurement, browser, edit-log, dom-ref, selector]
   links:
-    - target: visbug-edit-log-spec
-      type: refines
-    - target: visbug-bridge-spec
-      type: refines
+    - target: rlsc-integration
+      type: depends_on
   source: vendor/projectvisbug/app/dom-ref/index.js
 ---
 
@@ -58,7 +56,7 @@ Element
 | **D3** | 완료 | formatter DomRef primary/catalog 사용, host DomRef API 노출 | formatter/dom-ref/edit-log unit |
 | **D4** | 완료 | search/selectable UI가 `queryTargets` API 사용, bridge controller DomRef API 노출 | feature/bridge unit |
 | **D5** | 완료(훅) | `resolveDomRefSymbols(element)`로 `rlsc`/`qa-coord` 심볼 주입 | dom-ref/edit-log/bridge unit |
-| **D5b** | 완료(bridge adapter) | `createDomRefSymbolResolver()`로 rlsc-style `locateElement` 결과를 DomRefSymbol로 변환 | bridge unit |
+| **D5b** | 완료(bridge adapter + smoke) | `createDomRefSymbolResolver()`로 rlsc-style `locateElement` 결과를 DomRefSymbol로 변환하고 실제 RLSC node index와 join | bridge unit + RLSC smoke |
 | **D6** | 완료 | 세션 `TargetRegistry` (element/canonical/labelId → catalog 캐시) | dom-ref/edit-log/bridge unit |
 
 ### D1 상세 (현재)
@@ -109,7 +107,7 @@ Element
 ### D5b
 
 - `createDomRefSymbolResolver({ rlsc, qaCoord })` — `locateElement(element)` 결과를 `rlsc`/`qa-coord` 심볼로 변환
-- 실제 `packages/rlsc` 패키지 smoke는 패키지 복구/연결 시 추가
+- `packages/visbug-bridge/test/rlsc-integration.spec.ts` — 실제 `pnpm-mcp/packages/rlsc-analysis` browser collector/index를 사용해 `rlsc` 심볼(`data-qa-address`)과 XPath fallback join을 검증
 
 ### D6 상세 (완료)
 
@@ -125,7 +123,7 @@ Element
 | DomRef SSOT | `vendor/projectvisbug/app/dom-ref/` |
 | edit-log 소비 | `app/edit-log/entry.js` (D2~) |
 | typed surface | `packages/visbug-bridge` (D2~) |
-| 좌표 join | `packages/rlsc` (D5) |
+| 좌표 join | host/downstream 측정 도구 + `pnpm-mcp/packages/rlsc-analysis` index (D5b smoke) |
 
 ## 참조
 

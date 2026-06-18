@@ -28,6 +28,7 @@ ctrl.unmount()
 - `host: HTMLElement` — `<vis-bug>`이 append될 부모. 필수.
 - `opts.bufferSize?: number` — ring buffer 최대 크기. 기본 1000.
 - `opts.colorScheme?: 'light' | 'dark' | 'auto'` — `<vis-bug color-scheme>` (기본 auto)
+- `opts.entryFilter?: 'feature' | 'intent' | 'all' | 'mutation-debug'` — `onEntry` 전달 필터. 기본 `feature`.
 - `opts.onEntry?: (entry: EditLogEntry) => void` — 단일 listener. 예외는 `logger.warn`으로 격리.
 - `opts.logger?: { warn }` — 미지정 시 `console.warn`.
 - `opts.resolveDomRefSymbols?: (element) => DomRefSymbol[]` — rlsc/qa-coord 등 외부 좌표 심볼 주입.
@@ -81,10 +82,11 @@ interface EditLogEntry {
 
 ## RLSC와 통합
 
-EditLogEntry → RLSCNode 좌표 join 패턴은 별도 문서 참조.
+EditLogEntry → RLSCNode 좌표 join은 `createDomRefSymbolResolver()`가 주입한 `rlsc`/`qa-coord` 심볼을 우선 사용하고, 없으면 DomRef XPath로 fallback한다.
 
-- 패턴 + 코드 예: `pnpm-mcp/packages/rlsc/docs/visbug-bridge-integration.md`
-- 좌표 join smoke test: `pnpm-mcp/packages/rlsc/src/visbug-bridge-join.test.ts`
+- bridge 소비자 관점 smoke test: `packages/visbug-bridge/test/rlsc-integration.spec.ts`
+- RLSC 분석 경계: `docs/specs/viz-system/viz-language-system/rlsc-integration.spec.md`
+- 구현 smoke 의존: `pnpm-mcp/packages/rlsc-analysis/src/browser.js`
 
 ## 의존 + 빌드 절차
 
@@ -97,6 +99,13 @@ vendor 산출물 빌드:
 pnpm --filter visbug run bundle
 ```
 
+extension 산출물 빌드:
+```bash
+pnpm -C vendor/projectvisbug run extension:build
+```
+
+`extension:build`는 toolbar bundle/css와 tutorial GIF 자산(`app/tuts/*.gif` → `extension/tuts/`)을 함께 복사한다.
+
 bridge 빌드:
 ```bash
 pnpm --filter visbug-bridge build
@@ -105,7 +114,7 @@ pnpm --filter visbug-bridge build
 ## 테스트
 
 ```bash
-pnpm --filter visbug-bridge test       # vitest 단위 (controller + mount, 8 tests)
+pnpm --filter visbug-bridge test       # vitest 단위 (controller + mount + coordinate symbols + rlsc smoke, 18 tests)
 pnpm --filter visbug-bridge test:e2e   # playwright e2e (chromium + http-server, 2 tests)
 ```
 

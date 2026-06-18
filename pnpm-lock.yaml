@@ -3006,6 +3006,10 @@ importers:
         version: 5.9.3
 
   packages/work-domain:
+    dependencies:
+      test-types:
+        specifier: workspace:*
+        version: link:../test-types
     devDependencies:
       '@types/node':
         specifier: ^25.5.0

@@ -10,10 +10,8 @@ def:
   svc: visbug-bridge
   tags: [measurement, browser, edit-log, web-component]
   links:
-    - target: visbug-edit-log-spec
-      type: refines
     - target: visbug-dom-ref-roadmap
-      type: refines
+      type: depends_on
   source: vendor/projectvisbug/app/edit-log/index.js
 ---
 
@@ -111,7 +109,7 @@ edit-log       →  (visbug Web Component 내부 only)
 
 ## 테스트
 
-- vitest: `app/edit-log/**/*.spec.js`, `app/features/**/*.wrap.spec.js`, `app/components/edit-log-panel/**/*.spec.js` (54 tests)
+- unit: `pnpm -C vendor/projectvisbug test:unit` — edit-log, DomRef, feature wrapper, selection, tutorial image fallback 포함 (현재 105 tests)
 - playwright: `app/edit-log/integration.test.js` (15 tests — padding~text/swap feature capture)
 
 로컬:

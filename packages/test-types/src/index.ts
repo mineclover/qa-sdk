@@ -49,9 +49,7 @@ export const TEST_LIFECYCLES: readonly TestLifecycle[] = [
   "declared", "assigned", "collected", "verified", "archived",
 ] as const;
 
-// ── Quality Gate — 품질 게이트 ──────────────────────
-
-export type { WorkDomainId, QualityGateSpec } from "./quality-gate.js";
 export * from "./work-domain-data.js";
+export type { QualityGateSpec } from "./quality-gate.js";
 
 

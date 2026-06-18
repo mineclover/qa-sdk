@@ -10,10 +10,10 @@ def:
   svc: visbug-bridge
   tags: [measurement, browser, edit-log, web-component]
   links:
-    - target: rlsc
+    - target: rlsc-integration
       type: depends_on
     - target: visbug-edit-log-spec
-      type: refines
+      type: depends_on
   source: packages/visbug-bridge/src/index.ts
 ---
 
@@ -76,7 +76,7 @@ host (rlsc / 측정 도구)  →  visbug-bridge  →  vendor/projectvisbug/dist/
 
 ## 테스트 전략
 
-- **단위 (vitest + jsdom)**: `controller.spec.ts` (4 tests), `mount.spec.ts` (4 tests). `<vis-bug>` 실제 모듈은 jsdom 호환 안 됨 → stub element로 대체.
+- **단위 (vitest + jsdom)**: `controller.spec.ts`, `mount.spec.ts`, `coordinate-symbols.spec.ts`, `rlsc-integration.spec.ts` (18 tests). `<vis-bug>` 실제 모듈은 jsdom 호환 안 됨 → stub element로 대체.
 - **e2e (playwright + chromium)**: `test/e2e/bridge.test.ts` (2 tests). http-server로 monorepo root 제공, importmap으로 vendor bundle을 `'visbug'` 식별자에 바인딩.
 
 ## 브라우저 지원선
@@ -87,15 +87,17 @@ WeakRef / AsyncIterator / CustomElements v1 / MutationObserver — Chrome 86+, F
 
 - localStorage 영속화: host 책임
 - replay UI 노출: v1은 verification 도구로만 (UI 없음)
-- Chrome/Firefox/Safari/Edge extension 빌드: 별도 PR
+- Chrome/Firefox/Edge extension build script는 vendor fork에 포함. Safari Xcode release pipeline은 후속.
 - def-catalog `visbug-edit-log` 서브 스펙: `docs/specs/visbug-bridge/visbug-edit-log.spec.md`
 
 ## 변경 이력
 
+- **2026-06-18** — DomRef D5b smoke 복원: `pnpm-mcp/packages/rlsc-analysis` collector/index 기반 `rlsc` symbol + XPath fallback join 검증 (`packages/visbug-bridge/test/rlsc-integration.spec.ts`)
+  - 검증: bridge unit 18/18 + typecheck, vendor unit 105/105
 - **2026-06-17** — edit-log v1.2: mutation noise filter, `merge: 'intent'`, bridge `entryFilter`, extension build scripts
 - **2026-06-17** — feature-wrapper 전면 확장 + DOM 캡처 (`dom-bind`, `beforeDOM`/`afterDOM`, replay `dom` mode)
   - feature: padding~imageswap, text (contenteditable), move drag `swapElements`
-  - 검증: vendor vitest 54/54, edit-log integration 15/15
+  - 검증(당시): vendor vitest 54/54, edit-log integration 15/15
 - **2026-04-27** — Phase B'1/B'2/B'3 완료 + FU 4건 머지 (def-catalog 좌표, font 회귀 fix, CI e2e 잡, rlsc 통합 smoke)
   - vendor `194264c` (main), monorepo `58cd8ae5` (main)
   - 검증: vendor playwright 61/61, vendor vitest 42/42, bridge unit 8/8 + e2e 2/2, rlsc 155/155
