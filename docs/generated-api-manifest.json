@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-18T03:15:28.554Z",
+  "generatedAt": "2026-06-18T03:22:19.465Z",
   "layers": {
     "consumer": [
       {
@@ -532,6 +532,7 @@
         "boundary": "registry-system",
         "docRef": "registry-system",
         "internalDeps": [
+          "convergence",
           "core",
           "pipe-store-sqlite",
           "otel",

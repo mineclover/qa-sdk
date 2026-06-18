@@ -21,6 +21,7 @@ import {
 
 const registryInput = buildDemoRegistryInput();
 const registry = new MetaRegistry(registryInput);
+const eventSvcRefDim = registryInput.indices.event.dims[0];
 
 function serviceAddr(input: {
   env: string;
@@ -72,8 +73,8 @@ describe("MetaRegistry — demo 스키마 통합", () => {
     const v1 = registry.createCodec("event", "v1");
     const v2 = registry.createCodec("event", "v2");
 
-    expect(v1.shape).toEqual([10, DEMO_EVENTS_V1.length, 2]);
-    expect(v2.shape).toEqual([10, DEMO_EVENTS_V2.length, 2]);
+    expect(v1.shape).toEqual([registryInput.dims[eventSvcRefDim].snapshots.v1.entries.length, DEMO_EVENTS_V1.length, 2]);
+    expect(v2.shape).toEqual([registryInput.dims[eventSvcRefDim].snapshots.v2.entries.length, DEMO_EVENTS_V2.length, 2]);
   });
 
   it("이벤트 코덱 — stride가 demo-snapshot과 일치", () => {
