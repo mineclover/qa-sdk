@@ -16,6 +16,37 @@ import { auditCoverage, traceFlows, deriveFromCatalog, analyzeAllVersionSkew, de
 import { bootstrapDkg } from "dkg-enrichment";
 import type { DslBundleNode } from "dkg";
 
+type ConvergenceEntryUsage = {
+  readonly axisId: string;
+  readonly entry: string;
+  readonly count: number;
+};
+
+type DkgEntryUsage = {
+  readonly prefixId: string;
+  readonly entryId: string;
+  readonly count: number;
+};
+
+function toDkgEntryUsages(entryUsages: readonly ConvergenceEntryUsage[]): DkgEntryUsage[] {
+  const prefixes = Object.values(DEMO_CATALOG.prefixes) as Array<{
+    readonly id: string;
+    readonly dims: Record<string, { readonly kind: string; readonly axisId?: string }>;
+  }>;
+
+  return entryUsages.flatMap((usage) =>
+    prefixes
+      .filter((prefix) =>
+        Object.values(prefix.dims).some((dim) => dim.kind === "axis" && dim.axisId === usage.axisId),
+      )
+      .map((prefix) => ({
+        prefixId: prefix.id,
+        entryId: usage.entry,
+        count: usage.count,
+      })),
+  );
+}
+
 describe("E2E: 수집 → 집계 → 수렴 파이프라인", () => {
 
   it("이벤트 시뮬레이션 → 집계 → EntryUsage/AddressUsage 생성", () => {
@@ -938,7 +969,7 @@ describe("E2E: skills — coverage-audit + flow-trace", () => {
     }
 
     const usage = aggregateUsageData(DEMO_CATALOG, records);
-    const result = auditCoverage(DEMO_CATALOG, graph, usage.entryUsages, usage.addressUsages, { date: "2026-03-20" });
+    const result = auditCoverage(DEMO_CATALOG, graph, toDkgEntryUsages(usage.entryUsages), [], { date: "2026-03-20" });
 
     console.log("\n══ coverage-audit skill ══");
     console.log(`  ${result.report.summary}`);
