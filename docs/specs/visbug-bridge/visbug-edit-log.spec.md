@@ -45,6 +45,9 @@ def:
 
 - `onEditLog` setter / `editlog` CustomEvent / `editLogStream()` AsyncIterable
 - `getHistory({ merge: 'none' | 'correlated' | 'intent' | 'analyzed' })` / `filter` 옵션
+- `buildTargetRef(element, { labelId? })` / `resolveTargetRef(catalog)` / `queryTargets(spec)` — DomRef 기반 선택·resolve API
+- `getTargetRefByLabelId(labelId)` / `getTargetRefByElement(element)` — 세션 `TargetRegistry` 조회
+- `resolveDomRefSymbols(element)` 옵션 — rlsc/qa-coord 같은 외부 좌표 심볼을 catalog에 주입
 - `muteEditLogMutations()` / `unmuteEditLogMutations()` — resize 등 일시 UI mutation 억제
 - `_editLogFormatters` — panel copy용 (내부)
 
@@ -54,7 +57,10 @@ def:
 |------|------|------|
 | `beforeCSS` / `afterCSS` | 항상 | style snapshot diff |
 | `beforeDOM` / `afterDOM` | 선택 | DOM 캡처 (`textContent`, sibling index 등) |
-| `correlationId` | 항상 | CSS 변경 prop + DOM 변경(`dom`) 키로 bucket |
+| `target.catalog` | 항상 | full XPath canonical + multi-symbol catalog (`dom-ref`) |
+| `target.primary` | 선택 | 사람이 읽기 좋은 1순위 심볼 (`id`/`attr`/`css` 등) |
+| `target.selector` / `target.nodePath` | 항상 | 하위 호환 필드. `selector`는 `primary.value` 우선 |
+| `correlationId` | 항상 | canonical target id + CSS 변경 prop + DOM 변경(`dom`) 키로 bucket |
 
 `beforeDOM` / `afterDOM` 예:
 

@@ -30,6 +30,17 @@ ctrl.unmount()
 - `opts.colorScheme?: 'light' | 'dark' | 'auto'` — `<vis-bug color-scheme>` (기본 auto)
 - `opts.onEntry?: (entry: EditLogEntry) => void` — 단일 listener. 예외는 `logger.warn`으로 격리.
 - `opts.logger?: { warn }` — 미지정 시 `console.warn`.
+- `opts.resolveDomRefSymbols?: (element) => DomRefSymbol[]` — rlsc/qa-coord 등 외부 좌표 심볼 주입.
+
+```ts
+import { createDomRefSymbolResolver, mountVisBug } from 'visbug-bridge'
+
+mountVisBug(host, {
+  resolveDomRefSymbols: createDomRefSymbolResolver({
+    rlsc: { locateElement: (el) => rlsc.locateElement(el) },
+  }),
+})
+```
 
 ### `VisBugController`
 
@@ -38,6 +49,10 @@ ctrl.unmount()
 | `getHistory(opts?)` | `merge: 'none' \| 'correlated' \| 'analyzed'` 옵션. 기본 `'none'` (raw). |
 | `clearHistory()` | ring buffer 비움. |
 | `replay(entry, {mode})` | `mode: 'css'` (afterCSS) / `'feature'` (registry 재호출) / `'dom'` (`afterDOM.textContent`). 결과 `{ ok, reason?, warning?, divergence? }`. |
+| `buildTargetRef(element)` | 요소 → DomRef catalog 생성. |
+| `resolveTargetRef(catalog)` | DomRef catalog → live Element resolve. |
+| `queryTargets(spec)` | `{ by: 'css'|'xpath'|'symbol'|'catalog' }` 기반 선택 쿼리. |
+| `getTargetRefByLabelId(labelId)` | VisBug 선택 label id → cached DomRef catalog. |
 | `unmount()` | `<vis-bug>` 제거 + listener 해제. |
 | `entries` | `AsyncIterable<EditLogEntry>`. `for await` 또는 stream 소비. |
 
@@ -49,7 +64,10 @@ interface EditLogEntry {
   ts: number
   feature: string                // visbug tool/feature name
   args: unknown
-  target: { selector, nodePath, weakRef }
+  target: {
+    selector, nodePath, weakRef,       // legacy 호환
+    catalog, primary                  // DomRef catalog + 1순위 심볼
+  }
   beforeCSS: Record<string, string>
   afterCSS: Record<string, string>
   beforeDOM?: Record<string, unknown>  // textContent, sibling index 등

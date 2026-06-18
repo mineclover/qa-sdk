@@ -1,7 +1,28 @@
 // @def.boundary rlsc
+export interface DomRefSymbol {
+  readonly kind: 'xpath' | 'css' | 'id' | 'attr' | 'nodePath' | 'xpath-relative' | 'rlsc' | 'qa-coord'
+  readonly value: string
+  readonly matchCount: number
+  readonly stability: number
+  readonly provenance?: string
+}
+
+export interface DomRefCatalog {
+  readonly canonical: Readonly<{ kind: 'xpath'; value: string }>
+  readonly symbols: ReadonlyArray<DomRefSymbol>
+  readonly primary: DomRefSymbol | null
+  readonly fingerprint: Readonly<{
+    tagName: string
+    textSnippet?: string
+  }>
+  readonly capturedAt: number
+}
+
 export interface EditLogTarget {
   readonly selector: string
   readonly nodePath: string
+  readonly catalog?: DomRefCatalog
+  readonly primary?: DomRefSymbol
   readonly weakRef: WeakRef<Element> | null
 }
 
@@ -42,6 +63,12 @@ export type EntryFilter = 'all' | 'feature' | 'intent' | 'mutation-debug'
 
 export type ReplayMode = 'css' | 'feature' | 'dom'
 
+export type DomQuerySpec =
+  | { by: 'css'; value: string }
+  | { by: 'xpath'; value: string }
+  | { by: 'symbol'; symbol: DomRefSymbol }
+  | { by: 'catalog'; catalog: DomRefCatalog }
+
 export interface ReplayResult {
   readonly ok: boolean
   readonly reason?: 'target-not-found' | 'style-apply-failed' | 'feature-replay-failed' | 'dom-replay-unsupported' | 'dom-apply-failed' | 'unknown-mode'
@@ -68,12 +95,18 @@ export interface VisBugMountOptions {
    * `intent`는 feature와 동일(소비자 preset). `all`은 mutation 포함.
    */
   readonly entryFilter?: EntryFilter
+  /** 캡처 시 DomRef catalog에 rlsc/qa-coord 등 외부 좌표 심볼을 주입한다. */
+  readonly resolveDomRefSymbols?: (element: Element) => ReadonlyArray<DomRefSymbol>
 }
 
 export interface VisBugController {
   getHistory(opts?: GetHistoryOptions): ReadonlyArray<EditLogEntry | MergedEditLogEntry>
   clearHistory(): void
   replay(entry: EditLogEntry | MergedEditLogEntry, opts?: ReplayOptions): ReplayResult
+  buildTargetRef(element: Element): DomRefCatalog
+  resolveTargetRef(catalog: DomRefCatalog): Element | null
+  queryTargets(spec: DomQuerySpec): ReadonlyArray<Element>
+  getTargetRefByLabelId(labelId: string | number): DomRefCatalog | null
   unmount(): void
   readonly entries: AsyncIterable<EditLogEntry>
 }

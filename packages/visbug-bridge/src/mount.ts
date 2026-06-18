@@ -2,6 +2,8 @@ import type {
   VisBugMountOptions,
   VisBugController,
   EditLogEntry,
+  DomRefCatalog,
+  DomQuerySpec,
 } from './types.js'
 import { createController } from './controller.js'
 
@@ -27,7 +29,15 @@ export function mountVisBug(host: HTMLElement, opts: VisBugMountOptions = {}): V
     getHistory: VisBugController['getHistory']
     clearHistory: VisBugController['clearHistory']
     replay: VisBugController['replay']
+    buildTargetRef: (element: Element) => DomRefCatalog
+    resolveTargetRef: (catalog: DomRefCatalog) => Element | null
+    queryTargets: (spec: DomQuerySpec) => ReadonlyArray<Element>
+    getTargetRefByLabelId: (labelId: string | number) => DomRefCatalog | null
+    resolveDomRefSymbols?: VisBugMountOptions['resolveDomRefSymbols']
     editLogStream: () => AsyncIterable<EditLogEntry>
+  }
+  if (opts.resolveDomRefSymbols) {
+    visbug.resolveDomRefSymbols = opts.resolveDomRefSymbols
   }
   if (opts.colorScheme) {
     visbug.setAttribute('color-scheme', opts.colorScheme)

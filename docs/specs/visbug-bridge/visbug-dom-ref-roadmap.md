@@ -54,11 +54,12 @@ Element
 | Phase | 상태 | 산출 | 검증 |
 |-------|------|------|------|
 | **D1** | 완료 | `app/dom-ref/` — xpath, symbols, catalog, matchCount, stability, resolve/query (최소) | vitest 9건 |
-| **D2** | 예정 | `EditLogTarget.catalog` + `entry.js` 연동, legacy 필드 파생 | edit-log unit + integration |
-| **D3** | 예정 | `replay` / formatters → `resolveDomRef` | replay spec |
-| **D4** | 예정 | `queryTargets` + search/selectable API | playwright |
-| **D5** | 예정 | rlsc `locateElement` join 확장 | rlsc smoke |
-| **D6** | 예정 | 세션 `TargetRegistry` (canonical → catalog 캐시) | optional |
+| **D2** | 완료 | `EditLogTarget.catalog` + `entry.js` 연동, legacy 필드 파생, replay catalog fallback | edit-log unit |
+| **D3** | 완료 | formatter DomRef primary/catalog 사용, host DomRef API 노출 | formatter/dom-ref/edit-log unit |
+| **D4** | 완료 | search/selectable UI가 `queryTargets` API 사용, bridge controller DomRef API 노출 | feature/bridge unit |
+| **D5** | 완료(훅) | `resolveDomRefSymbols(element)`로 `rlsc`/`qa-coord` 심볼 주입 | dom-ref/edit-log/bridge unit |
+| **D5b** | 완료(bridge adapter) | `createDomRefSymbolResolver()`로 rlsc-style `locateElement` 결과를 DomRefSymbol로 변환 | bridge unit |
+| **D6** | 완료 | 세션 `TargetRegistry` (element/canonical/labelId → catalog 캐시) | dom-ref/edit-log/bridge unit |
 
 ### D1 상세 (현재)
 
@@ -78,18 +79,44 @@ Element
 | `nodePath` | 25 | legacy `computeNodePath` |
 | `xpath` (canonical) | 100 | resolve fallback SSOT |
 
-### D2 상세
+### D2 상세 (완료)
 
 - `createEntry()` → `target.catalog`, `target.primary`
 - `selector` / `nodePath` — `primary`·legacy에서 파생 (하위 호환)
-- `correlationId` — `canonical.value` 기반 전환 검토
+- `correlationId` — `catalog.canonical.value` 기반
+- `replay` — `weakRef` → legacy selector → `resolveDomRef(catalog)` fallback
 
-### D3–D6
+### D3 상세 (완료)
 
-- D3: replay weakRef → symbols → canonical
-- D4: VisBug search를 `queryTargets({ by: 'css' })` 래핑
-- D5: 캡처 시 rlsc 심볼 주입
-- D6: 선택 시 catalog 캐시 (`data-label-id` 매핑)
+- `toCSS()` — `target.primary`가 CSS-compatible(`attr`/`id`/`css`)이면 legacy selector보다 우선
+- `toCSS()` — primary가 XPath이면 `catalog.symbols`의 CSS-compatible 심볼로 fallback
+- `queryTargets()` — `{ by: 'symbol' }`, `{ by: 'catalog' }` 지원
+- `<vis-bug>` host API — `buildTargetRef(element)`, `resolveTargetRef(catalog)`, `queryTargets(spec)` 노출
+
+### D4 상세 (완료)
+
+- `Search/queryPage()` — `SelectorEngine.queryTargets({ by: 'css', value })` 우선 사용
+- `Selectable()` — 반환 API에 `queryTargets` 노출
+- `visbug-bridge` controller — `buildTargetRef`, `resolveTargetRef`, `queryTargets` 노출
+
+### D5 상세 (완료: 주입 훅)
+
+- `buildDomRefCatalog(element, { resolveSymbols })` — 외부 심볼 주입
+- `createEntry({ resolveDomRefSymbols })` — 캡처 시점에 `rlsc`/`qa-coord` 심볼 포함
+- `installEditLog(host, { resolveDomRefSymbols })` — host API와 캡처 경로에 resolver 전달
+- `mountVisBug(host, { resolveDomRefSymbols })` — bridge에서 resolver 주입
+
+### D5b
+
+- `createDomRefSymbolResolver({ rlsc, qaCoord })` — `locateElement(element)` 결과를 `rlsc`/`qa-coord` 심볼로 변환
+- 실제 `packages/rlsc` 패키지 smoke는 패키지 복구/연결 시 추가
+
+### D6 상세 (완료)
+
+- `createTargetRegistry()` — element/canonical/labelId별 catalog 캐시
+- `installEditLog()` — `host.targetRegistry`, `getTargetRefByLabelId`, `getTargetRefByElement` 노출
+- `buildTargetRef(element, { labelId })` — catalog 생성과 label 매핑을 동시에 수행
+- `Selectable.select()` — 선택 시 `data-label-id`와 catalog를 registry에 등록
 
 ## 책임
 

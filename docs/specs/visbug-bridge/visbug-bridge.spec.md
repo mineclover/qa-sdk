@@ -28,9 +28,9 @@ def:
 - **패키지 위치**: `packages/visbug-bridge/` (unscoped, tsup ESM/CJS dual)
 - **vendor 의존**: `"visbug": "workspace:*"` (`vendor/projectvisbug` git submodule, pnpm workspace 편입)
 - **공개 API**: `mountVisBug(host, opts) → VisBugController`
-  - controller: `getHistory({merge})`, `clearHistory()`, `replay(entry, {mode})`, `unmount()`, `entries: AsyncIterable<EditLogEntry>`
-  - opts: `bufferSize?`, `colorScheme?: 'light'|'dark'|'auto'`, `onEntry?: (entry) => void`, `entryFilter?: 'feature'|'intent'|'all'|'mutation-debug'` (기본 `feature`), `logger?: { warn }`
-- **Entry 형태**: `EditLogEntry = { id, ts, feature, args, target: {selector, nodePath, weakRef}, beforeCSS, afterCSS, beforeDOM?, afterDOM?, source: 'feature'|'mutation', correlationId }`
+  - controller: `getHistory({merge})`, `clearHistory()`, `replay(entry, {mode})`, `buildTargetRef(element)`, `resolveTargetRef(catalog)`, `queryTargets(spec)`, `getTargetRefByLabelId(labelId)`, `unmount()`, `entries: AsyncIterable<EditLogEntry>`
+  - opts: `bufferSize?`, `colorScheme?: 'light'|'dark'|'auto'`, `onEntry?: (entry) => void`, `entryFilter?: 'feature'|'intent'|'all'|'mutation-debug'` (기본 `feature`), `resolveDomRefSymbols?: (element) => DomRefSymbol[]`, `createDomRefSymbolResolver({ rlsc, qaCoord })`, `logger?: { warn }`
+- **Entry 형태**: `EditLogEntry = { id, ts, feature, args, target: {selector, nodePath, catalog, primary, weakRef}, beforeCSS, afterCSS, beforeDOM?, afterDOM?, source: 'feature'|'mutation', correlationId }`
 - **Merge 정책**: `'none'` (raw) / `'correlated'` (correlationId 그룹핑 + agreement/divergence) / `'analyzed'` (host 정의 policy)
 - **Replay 모드**: `'css'` (afterCSS 직접 적용) / `'feature'` (registry로 visbug feature 함수 재호출) / `'dom'` (`afterDOM.textContent` 복원)
 
@@ -50,7 +50,7 @@ def:
      ('editlog') setter
               ↓
         host (rlsc / 측정 도구)
-        - rlsc.locate(entry.target.selector) → 좌표 join
+        - `resolveDomRefSymbols(element)` → `entry.target.catalog.symbols[]`에 `rlsc`/`qa-coord` 심볼 주입
         - 인텐트 데이터 적재
 ```
 

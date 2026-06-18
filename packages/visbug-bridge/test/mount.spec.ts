@@ -75,4 +75,15 @@ describe('mountVisBug', () => {
     expect(onEntry).toHaveBeenCalledTimes(1)
     ctrl.unmount()
   })
+
+  it('sets resolveDomRefSymbols on <vis-bug> before mount', async () => {
+    const { mountVisBug } = await import('../src/mount.js')
+    const resolveDomRefSymbols = vi.fn(() => [
+      { kind: 'rlsc' as const, value: 'rlsc:button:save', matchCount: 1, stability: 90 },
+    ])
+    const ctrl = mountVisBug(document.body, { resolveDomRefSymbols })
+    const visbug: any = document.body.querySelector('vis-bug')
+    expect(visbug.resolveDomRefSymbols).toBe(resolveDomRefSymbols)
+    ctrl.unmount()
+  })
 })
