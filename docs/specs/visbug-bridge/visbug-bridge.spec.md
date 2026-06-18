@@ -78,6 +78,7 @@ host (rlsc / 측정 도구)  →  visbug-bridge  →  vendor/projectvisbug/dist/
 
 - **단위 (vitest + jsdom)**: `controller.spec.ts`, `mount.spec.ts`, `coordinate-symbols.spec.ts`, `rlsc-integration.spec.ts` (18 tests). `<vis-bug>` 실제 모듈은 jsdom 호환 안 됨 → stub element로 대체.
 - **e2e (playwright + chromium)**: `test/e2e/bridge.test.ts` (2 tests). http-server로 monorepo root 제공, importmap으로 vendor bundle을 `'visbug'` 식별자에 바인딩.
+- **extension smoke**: `pnpm -C vendor/projectvisbug run extension:build` 후 unpacked extension을 Chromium에 로드하고 `chrome-extension://.../tuts/*.gif` 13개가 200인지 확인.
 
 ## 브라우저 지원선
 
@@ -92,6 +93,7 @@ WeakRef / AsyncIterator / CustomElements v1 / MutationObserver — Chrome 86+, F
 
 ## 변경 이력
 
+- **2026-06-18** — E2E + extension asset smoke 확인: bridge Playwright 2/2, extension build 성공, unpacked extension의 tutorial GIF 13개 200 확인
 - **2026-06-18** — DomRef D5b smoke 복원: `pnpm-mcp/packages/rlsc-analysis` collector/index 기반 `rlsc` symbol + XPath fallback join 검증 (`packages/visbug-bridge/test/rlsc-integration.spec.ts`)
   - 검증: bridge unit 18/18 + typecheck, vendor unit 105/105
 - **2026-06-17** — edit-log v1.2: mutation noise filter, `merge: 'intent'`, bridge `entryFilter`, extension build scripts
