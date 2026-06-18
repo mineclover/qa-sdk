@@ -36,6 +36,7 @@
     "@nestjs/platform-fastify": "^11.0.0",
     "@nestjs/platform-ws": "^11.0.0",
     "@nestjs/websockets": "^11.0.0",
+    "@qa-sdk/convergence": "workspace:*",
     "@qa-sdk/core": "workspace:*",
     "pipe-store-sqlite": "workspace:*",
     "@qa-sdk/otel": "workspace:*",

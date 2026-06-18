@@ -17,7 +17,7 @@ import { createPostActivationHook } from "./post-activation-hook.js";
 describe("activation gate — 실제 spec-core 동적 import", () => {
   it("bootstrapDkg() → GraphRegistry 반환 + checkActivationReadiness 호출 가능", async () => {
     const specCore = await import("@qa-sdk/spec-core/propagation");
-    const analysis = await import("@qa-sdk/spec-core/dkg");
+    const analysis = await import("dkg-enrichment");
 
     // bootstrapDkg가 GraphRegistry를 직접 반환하는지 확인 (.graph가 아님)
     const graph = (analysis as any).bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
@@ -41,7 +41,7 @@ describe("activation gate — 실제 spec-core 동적 import", () => {
 
   it("strict 모드: DEMO_CATALOG prefix에 대한 gate check", async () => {
     const specCore = await import("@qa-sdk/spec-core/propagation");
-    const analysis = await import("@qa-sdk/spec-core/dkg");
+    const analysis = await import("dkg-enrichment");
 
     const graph = (analysis as any).bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
 
@@ -100,7 +100,7 @@ describe("post-activation hook — 실제 spec-core 동적 import", () => {
 describe("전체 activate 경로 시뮬레이션", () => {
   it("gate check → activate → hook 순서 실행", async () => {
     const specCore = await import("@qa-sdk/spec-core/propagation");
-    const analysis = await import("@qa-sdk/spec-core/dkg");
+    const analysis = await import("dkg-enrichment");
     const storeModule = await import("@qa-sdk/spec-core/store");
 
     const graph = (analysis as any).bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
