@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-07T14:52:43.189Z",
+  "generatedAt": "2026-06-18T02:46:54.653Z",
   "layers": {
     "consumer": [
       {
@@ -54,17 +54,6 @@
         "docRef": "experience-layer-group",
         "internalDeps": [
           "viz-core"
-        ]
-      },
-      {
-        "id": "authorization-ontology",
-        "name": "authorization-ontology",
-        "version": "0.1.0",
-        "tier": "consumer",
-        "boundary": "unknown",
-        "docRef": "none",
-        "internalDeps": [
-          "operational-ontology"
         ]
       },
       {
@@ -126,10 +115,12 @@
           "decision-flow-store",
           "definition-catalog",
           "definition-data-source",
+          "demo-dkg-config",
           "demo-snapshot",
           "deterministic-label-registry",
           "doc-envelope",
           "dkg",
+          "dkg-enrichment",
           "git-utils",
           "index-meta",
           "motion-content",
@@ -150,15 +141,6 @@
           "test-types",
           "work-domain"
         ]
-      },
-      {
-        "id": "cli-command",
-        "name": "cli-command",
-        "version": "0.1.0",
-        "tier": "consumer",
-        "boundary": "cli-command-spec",
-        "docRef": "cli-command-spec",
-        "internalDeps": []
       },
       {
         "id": "codegen-core",
@@ -406,17 +388,6 @@
         ]
       },
       {
-        "id": "motion-workspace",
-        "name": "motion-workspace",
-        "version": "0.1.0",
-        "tier": "consumer",
-        "boundary": "motion-workspace-spec",
-        "docRef": "none",
-        "internalDeps": [
-          "motion-content"
-        ]
-      },
-      {
         "id": "motion-workspace-service",
         "name": "@qa-sdk/motion-workspace-service",
         "version": "0.1.0",
@@ -611,6 +582,15 @@
           "core",
           "index-meta"
         ]
+      },
+      {
+        "id": "rlsc-analysis",
+        "name": "rlsc-analysis",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "rlsc",
+        "docRef": "none",
+        "internalDeps": []
       },
       {
         "id": "roleplay-web",
@@ -879,6 +859,17 @@
     ],
     "logic": [
       {
+        "id": "authorization-ontology",
+        "name": "authorization-ontology",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "operational-ontology"
+        ]
+      },
+      {
         "id": "context",
         "name": "@qa-sdk/context",
         "version": "0.1.0",
@@ -914,6 +905,31 @@
         ]
       },
       {
+        "id": "demo-dkg-config",
+        "name": "demo-dkg-config",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "decision-flow"
+        ]
+      },
+      {
+        "id": "dkg-enrichment",
+        "name": "dkg-enrichment",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "convergence",
+          "core",
+          "decision-flow",
+          "dkg"
+        ]
+      },
+      {
         "id": "engine",
         "name": "@qa-sdk/engine",
         "version": "0.1.0",
@@ -922,6 +938,17 @@
         "docRef": "qa-sdk-engine-system",
         "internalDeps": [
           "core"
+        ]
+      },
+      {
+        "id": "motion-workspace",
+        "name": "motion-workspace",
+        "version": "0.1.0",
+        "tier": "logic",
+        "boundary": "motion-workspace-spec",
+        "docRef": "none",
+        "internalDeps": [
+          "motion-content"
         ]
       },
       {
@@ -953,15 +980,6 @@
         "version": "0.1.0",
         "tier": "logic",
         "boundary": "sim-decision-view",
-        "docRef": "none",
-        "internalDeps": []
-      },
-      {
-        "id": "sim-identifier-grammar",
-        "name": "sim-identifier-grammar",
-        "version": "0.1.0",
-        "tier": "logic",
-        "boundary": "sim-identifier-grammar",
         "docRef": "none",
         "internalDeps": []
       },
@@ -1027,7 +1045,6 @@
         "docRef": "none",
         "internalDeps": [
           "core",
-          "decision-flow",
           "weighted-index"
         ]
       },
@@ -1042,8 +1059,6 @@
           "spec-schema",
           "spec-transition",
           "core",
-          "convergence",
-          "decision-flow",
           "weighted-index",
           "index-meta"
         ]
@@ -1074,6 +1089,15 @@
         "version": "0.1.0",
         "tier": "kernel",
         "boundary": "motion-content-system",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "sim-identifier-grammar",
+        "name": "sim-identifier-grammar",
+        "version": "0.1.0",
+        "tier": "kernel",
+        "boundary": "sim-identifier-grammar",
         "docRef": "none",
         "internalDeps": []
       },
@@ -1118,9 +1142,7 @@
         "boundary": "spec-engine-system",
         "docRef": "spec-engine-system",
         "internalDeps": [
-          "convergence",
           "core",
-          "decision-flow",
           "dkg",
           "index-meta",
           "spec-schema",
@@ -1164,7 +1186,9 @@
         "tier": "kernel",
         "boundary": "shared-utility-group",
         "docRef": "shared-utility-group",
-        "internalDeps": []
+        "internalDeps": [
+          "test-types"
+        ]
       }
     ],
     "foundation": [
@@ -1187,6 +1211,15 @@
         "internalDeps": [
           "weighted-index"
         ]
+      },
+      {
+        "id": "cli-command",
+        "name": "cli-command",
+        "version": "0.1.0",
+        "tier": "foundation",
+        "boundary": "cli-command-spec",
+        "docRef": "cli-command-spec",
+        "internalDeps": []
       },
       {
         "id": "core",
