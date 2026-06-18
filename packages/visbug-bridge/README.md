@@ -86,7 +86,7 @@ EditLogEntry → RLSCNode 좌표 join은 `createDomRefSymbolResolver()`가 주�
 
 - bridge 소비자 관점 smoke test: `packages/visbug-bridge/test/rlsc-integration.spec.ts`
 - RLSC 분석 경계: `docs/specs/viz-system/viz-language-system/rlsc-integration.spec.md`
-- 구현 smoke 의존: `pnpm-mcp/packages/rlsc-analysis/src/browser.js`
+- 구현 smoke 의존: `rlsc-analysis/browser`
 
 ## 의존 + 빌드 절차
 
@@ -106,6 +106,16 @@ pnpm -C vendor/projectvisbug run extension:build
 
 `extension:build`는 toolbar bundle/css와 tutorial GIF 자산(`app/tuts/*.gif` → `extension/tuts/`)을 함께 복사한다.
 
+Safari archive smoke:
+```bash
+pnpm -C vendor/projectvisbug run safari:archive:unsigned
+```
+
+실제 Developer ID signing + notarization:
+```bash
+APPLE_TEAM_ID=... APPLE_ID=... APPLE_APP_PASSWORD=... pnpm -C vendor/projectvisbug run safari:notarize
+```
+
 bridge 빌드:
 ```bash
 pnpm --filter visbug-bridge build
@@ -116,6 +126,7 @@ pnpm --filter visbug-bridge build
 ```bash
 pnpm --filter visbug-bridge test       # vitest 단위 (controller + mount + coordinate symbols + rlsc smoke, 18 tests)
 pnpm --filter visbug-bridge test:e2e   # playwright e2e (chromium + http-server, 2 tests)
+pnpm --filter visbug-bridge test:extension # extension build + tutorial GIF asset smoke (1 test)
 ```
 
 ## edit-log 프리뷰 데모

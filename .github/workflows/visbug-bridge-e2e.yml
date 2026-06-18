@@ -1,0 +1,66 @@
+name: Visbug Bridge E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - packages/visbug-bridge/**
+      - vendor/projectvisbug
+      - .github/workflows/visbug-bridge-e2e.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - packages/visbug-bridge/**
+      - vendor/projectvisbug
+      - .github/workflows/visbug-bridge-e2e.yml
+  workflow_dispatch:
+
+jobs:
+  visbug-bridge-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.30.3 --activate
+
+      - name: Install monorepo dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build vendor visbug bundle
+        run: pnpm --filter visbug run bundle
+
+      - name: Run vendor unit tests
+        run: pnpm --filter visbug run test:unit
+
+      - name: Build visbug-bridge
+        run: pnpm --filter visbug-bridge build
+
+      - name: Install Playwright chromium
+        run: pnpm --filter visbug-bridge exec playwright install --with-deps chromium
+
+      - name: Run visbug-bridge unit tests
+        run: pnpm --filter visbug-bridge test
+
+      - name: Run visbug-bridge e2e tests
+        run: pnpm --filter visbug-bridge test:e2e
+
+      - name: Run extension asset smoke
+        run: pnpm --filter visbug-bridge test:extension
+
+      - name: Upload playwright trace on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visbug-bridge-playwright-trace
+          path: packages/visbug-bridge/test-results/
+          retention-days: 7

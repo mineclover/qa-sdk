@@ -11,7 +11,7 @@
 
 ## 전용 e2e 잡 (`visbug-bridge-e2e`)
 
-현재 전용 잡 정의는 `.github/workflows-disabled/visbug-bridge-e2e.yml`에 보관됨. 활성화 시 단계:
+전용 잡은 `.github/workflows/visbug-bridge-e2e.yml`에서 활성화되어 있다. 실행 단계:
 
 1. `actions/checkout@v4` with `submodules: recursive`
 2. Node 22 + pnpm 10.30.3 (corepack)
@@ -21,13 +21,15 @@
 6. `pnpm --filter visbug-bridge exec playwright install --with-deps chromium`
 7. `pnpm --filter visbug-bridge test` (vitest 단위, 18개)
 8. `pnpm --filter visbug-bridge test:e2e` (playwright, 2개)
-9. 실패 시 `test-results/` artifact 업로드 (7일 보관)
+9. `pnpm --filter visbug-bridge test:extension` (extension build + tutorial GIF asset smoke, 1개)
+10. 실패 시 `test-results/` artifact 업로드 (7일 보관)
 
 병렬 실행: 기존 `ci`/`security` 잡과 같은 워크플로 안에서 별도 잡으로 동시 실행.
 
 ## Checkout 스텝의 submodules 필수
 
-`.github/workflows-disabled/ci.yml`의 `ci`/`security`, `.github/workflows-disabled/visbug-bridge-e2e.yml`, `.github/workflows-disabled/def-gate.yml` 모두 `submodules: recursive` 설정.
+`.github/workflows/visbug-bridge-e2e.yml`는 `submodules: recursive` 설정.
+다른 비활성 workflow들도 재활성화할 때 동일 설정이 필요하다.
 
 근거: `visbug` 패키지가 `vendor/projectvisbug` submodule에 있으므로 `pnpm install`
 시점에 해당 디렉터리가 비어 있으면 workspace resolve 실패. submodule recursive 체크아웃이 필수 조건.
@@ -50,9 +52,9 @@ on:
       - '.github/workflows/visbug-bridge-e2e.yml'
 ```
 
-활성화된 워크플로가 없으므로 현재는 수동 실행/로컬 `make visbug-smoke`가 기준이다.
+활성 workflow가 있으므로 PR/Push path filter와 수동 `workflow_dispatch`가 기준이다.
 
 ## 미완
 
 - ~~vendor test를 monorepo CI에 포함~~ → `visbug-bridge-e2e` 잡에 `pnpm --filter visbug run test:unit` 포함됨.
-- 전용 workflow 활성화 여부 결정은 별도.
+- ~~extension asset smoke 자동화~~ → `pnpm --filter visbug-bridge test:extension` 포함됨.
