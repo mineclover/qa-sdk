@@ -22,6 +22,7 @@
     "demo": "pnpm --filter visbug run bundle && pnpm build && pnpm exec http-server ../.. -p 4173 -c-1",
     "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test",
+    "test:extension": "pnpm -C ../../vendor/projectvisbug run extension:build && playwright test -c playwright.extension.config.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
@@ -33,6 +34,7 @@
     "@types/node": "^20.0.0",
     "http-server": "^14.1.1",
     "jsdom": "^25.0.0",
+    "rlsc-analysis": "workspace:*",
     "tsup": "^8.5.1",
     "typescript": "^5.8.2",
     "vitest": "^2.1.0"

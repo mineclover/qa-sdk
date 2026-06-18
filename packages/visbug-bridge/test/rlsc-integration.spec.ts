@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createDomRefSymbolResolver } from '../src/coordinate-symbols.js'
 import type { DomRefCatalog, EditLogEntry } from '../src/types.js'
-import { collectLayout, scanScreen } from '../../../../pnpm-mcp/packages/rlsc-analysis/src/browser.js'
+import { collectLayout, scanScreen } from 'rlsc-analysis/browser'
 
 describe('visbug-bridge DomRef ↔ rlsc smoke', () => {
   it('joins an EditLogEntry target catalog to an rlsc node by qa address', () => {

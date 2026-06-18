@@ -107,7 +107,7 @@ Element
 ### D5b
 
 - `createDomRefSymbolResolver({ rlsc, qaCoord })` — `locateElement(element)` 결과를 `rlsc`/`qa-coord` 심볼로 변환
-- `packages/visbug-bridge/test/rlsc-integration.spec.ts` — 실제 `pnpm-mcp/packages/rlsc-analysis` browser collector/index를 사용해 `rlsc` 심볼(`data-qa-address`)과 XPath fallback join을 검증
+- `packages/visbug-bridge/test/rlsc-integration.spec.ts` — `rlsc-analysis/browser` workspace export의 collector/index를 사용해 `rlsc` 심볼(`data-qa-address`)과 XPath fallback join을 검증
 
 ### D6 상세 (완료)
 
@@ -120,10 +120,12 @@ Element
 
 | 우선순위 | 작업 | 완료 기준 |
 |----------|------|-----------|
-| P1 | 실제 `@qa-sdk/rlsc-analysis` / `@qa-sdk/rlsc` 패키지 경계로 bridge smoke 이전 | `packages/visbug-bridge/test/rlsc-integration.spec.ts`가 `pnpm-mcp` legacy 경로가 아닌 workspace package export를 소비 |
-| P1 | extension smoke 자동화 | `extension:build` 후 unpacked extension에서 `chrome-extension://.../tuts/*.gif` 13개가 200인지 CI 또는 script로 검증 |
-| P2 | Safari Xcode release pipeline 복구 | `VisBug/` Xcode 프로젝트가 최신 toolbar bundle과 `extension/tuts` 자산을 포함해 archive 가능 |
-| P2 | DomRef stability tuning | 동적 id 패널티, stable attr vocabulary, fingerprint fallback 기준을 실제 캡처 샘플로 재보정 |
+| 완료 | `rlsc-analysis` workspace export로 bridge smoke 이전 | `packages/visbug-bridge/test/rlsc-integration.spec.ts`가 `rlsc-analysis/browser` package export를 소비 |
+| 완료 | extension smoke 자동화 | `pnpm --filter visbug-bridge test:extension`이 `extension:build` 후 unpacked extension에서 `chrome-extension://.../tuts/*.gif` 13개가 200인지 검증 |
+| 완료(빌드 검증) | Safari Xcode release pipeline 복구 | `VisBug/` Xcode 프로젝트가 `toolbar`와 `extension/tuts`를 Resources에 포함하고, `pnpm -C vendor/projectvisbug run safari:archive:unsigned` 통과 |
+| 완료(2차) | DomRef stability tuning | `data-qa-address`를 stable attr vocabulary에 포함하고, 의도 기록형 합성 fixture로 동적 id/중복 test id/안정 id의 primary 선택 기준을 회귀 테스트로 고정 |
+| 대기(자격증명) | Safari notarization 검증 | `pnpm -C vendor/projectvisbug run safari:notarize` 추가 완료. 실제 실행은 `APPLE_TEAM_ID`, `APPLE_ID`, `APPLE_APP_PASSWORD` 필요 |
+| P2 | DomRef stability 실제 캡처 확장 | 실제 캡처 샘플이 확보되면 `app/dom-ref/stability-samples.js` 포맷으로 추가하고 fingerprint fallback 기준을 재보정 |
 
 ## 책임
 
@@ -132,7 +134,7 @@ Element
 | DomRef SSOT | `vendor/projectvisbug/app/dom-ref/` |
 | edit-log 소비 | `app/edit-log/entry.js` (D2~) |
 | typed surface | `packages/visbug-bridge` (D2~) |
-| 좌표 join | host/downstream 측정 도구 + `pnpm-mcp/packages/rlsc-analysis` index (D5b smoke) |
+| 좌표 join | host/downstream 측정 도구 + `rlsc-analysis/browser` index (D5b smoke) |
 
 ## 참조
 

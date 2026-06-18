@@ -7,3 +7,6 @@
 [submodule "vendor/archi-adr"]
 	path = vendor/archi-adr
 	url = https://github.com/mineclover/archi-adr
+[submodule "packages/rlsc-analysis"]
+	path = packages/rlsc-analysis
+	url = https://github.com/mineclover/rlsc-analysis.git
