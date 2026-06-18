@@ -25,6 +25,6 @@ export default defineConfig({
     exclude: ["dist/**"],
     fileParallelism: false,
     passWithNoTests: true,
-    env: loadEnvFile(".env"),
+    env: process.env.QA_TEST_PG === "1" ? loadEnvFile(".env") : {},
   },
 });
