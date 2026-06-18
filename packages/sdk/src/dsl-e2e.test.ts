@@ -15,6 +15,37 @@ import {
   aggregateByDsl, aggregateByCategory, aggregateByService,
 } from "@qa-sdk/convergence";
 
+type ConvergenceEntryUsage = {
+  readonly axisId: string;
+  readonly entry: string;
+  readonly count: number;
+};
+
+type DkgEntryUsage = {
+  readonly prefixId: string;
+  readonly entryId: string;
+  readonly count: number;
+};
+
+function toDkgEntryUsages(entryUsages: readonly ConvergenceEntryUsage[]): DkgEntryUsage[] {
+  const prefixes = Object.values(DEMO_CATALOG.prefixes) as Array<{
+    readonly id: string;
+    readonly dims: Record<string, { readonly kind: string; readonly axisId?: string }>;
+  }>;
+
+  return entryUsages.flatMap((usage) =>
+    prefixes
+      .filter((prefix) =>
+        Object.values(prefix.dims).some((dim) => dim.kind === "axis" && dim.axisId === usage.axisId),
+      )
+      .map((prefix) => ({
+        prefixId: prefix.id,
+        entryId: usage.entry,
+        count: usage.count,
+      })),
+  );
+}
+
 describe("DSL 종단 E2E", () => {
 
   const qa = createQaContext({
@@ -65,9 +96,9 @@ describe("DSL 종단 E2E", () => {
 
     const usage = aggregateUsageData(DEMO_CATALOG, records);
     const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG, date: "2026-03-20" });
-    const audit = auditCoverage(DEMO_CATALOG, graph, usage.entryUsages, usage.addressUsages, { date: "2026-03-20" });
+    const audit = auditCoverage(DEMO_CATALOG, graph, toDkgEntryUsages(usage.entryUsages), [], { date: "2026-03-20" });
 
-    console.log(`  coverage: ${audit.report.summary}`);
+    console.log(`  coverage: dormant=${audit.report.dormantCount} phantom=${audit.report.phantomCount}`);
     console.log(`  OBS=${audit.observations.length} DEC=${audit.decisions.length}`);
 
     expect(audit.report.dormantCount).toBeGreaterThan(0);
