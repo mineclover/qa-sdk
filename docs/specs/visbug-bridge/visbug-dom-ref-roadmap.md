@@ -116,6 +116,15 @@ Element
 - `buildTargetRef(element, { labelId })` — catalog 생성과 label 매핑을 동시에 수행
 - `Selectable.select()` — 선택 시 `data-label-id`와 catalog를 registry에 등록
 
+## 후속 Backlog
+
+| 우선순위 | 작업 | 완료 기준 |
+|----------|------|-----------|
+| P1 | 실제 `@qa-sdk/rlsc-analysis` / `@qa-sdk/rlsc` 패키지 경계로 bridge smoke 이전 | `packages/visbug-bridge/test/rlsc-integration.spec.ts`가 `pnpm-mcp` legacy 경로가 아닌 workspace package export를 소비 |
+| P1 | extension smoke 자동화 | `extension:build` 후 unpacked extension에서 `chrome-extension://.../tuts/*.gif` 13개가 200인지 CI 또는 script로 검증 |
+| P2 | Safari Xcode release pipeline 복구 | `VisBug/` Xcode 프로젝트가 최신 toolbar bundle과 `extension/tuts` 자산을 포함해 archive 가능 |
+| P2 | DomRef stability tuning | 동적 id 패널티, stable attr vocabulary, fingerprint fallback 기준을 실제 캡처 샘플로 재보정 |
+
 ## 책임
 
 | 레이어 | 위치 |
