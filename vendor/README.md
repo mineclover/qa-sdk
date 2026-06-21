@@ -7,11 +7,10 @@ qa-sdk 모노레포에서 fork·실험·참조용으로 포함하는 외부 저�
 |------|--------|-------------|
 | `projectvisbug` | [mineclover/ProjectVisBug](https://github.com/mineclover/ProjectVisBug) | pnpm workspace(`visbug`) + `packages/visbug-bridge`가 `workspace:*`로 소비. **edit-log 프로토콜 SSOT는 fork 쪽** (`app/edit-log/`). bridge는 typed 소비층만 담당 |
 | `headroom` | [chopratejas/headroom](https://github.com/chopratejas/headroom) | submodule 참조만 (패키지 `file:` 의존 없음) |
-| `archi-adr` | [mineclover/archi-adr](https://github.com/mineclover/archi-adr) | submodule 참조만 (패키지 `file:` 의존 없음) |
 
 ## archi-adr
 
-[archi-adr](https://github.com/mineclover/archi-adr)는 **qa-sdk 외부에서 별도로 시도 중인 아키텍처 설계 라이브러리**다.
+[archi-adr](https://github.com/mineclover/archi-adr)는 **qa-sdk 외부에서 별도로 시도 중인 아키텍처 설계 라이브러리**다. 현재 로컬 checkout은 `../architecture-labs/archi-adr`로 이동했다.
 TypeSpec 기반 YAML 모델·검증·Mermaid 렌더 CLI(`@archi-adr/cli`)를 제공한다.
 
 - qa-sdk `packages/archi`(`archi` CLI) 및 `architecture/` DSL과 **직접 연동되지 않는다**
@@ -21,7 +20,7 @@ TypeSpec 기반 YAML 모델·검증·Mermaid 렌더 CLI(`@archi-adr/cli`)를 제
 로컬 작업:
 
 ```bash
-cd vendor/archi-adr
+cd ../architecture-labs/archi-adr
 pnpm install
 pnpm run build:spec
 pnpm run demo:minimal
