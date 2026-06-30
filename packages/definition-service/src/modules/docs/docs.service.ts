@@ -18,7 +18,9 @@ import {
   formatCodeReferenceTarget,
   parseCodeReferenceTarget,
 } from "definition-catalog";
+import { mergeSemanticDocumentResults } from "../../core/semantic-grounding/planner.js";
 import { SearchService } from "../search/search.service.js";
+import { SemanticGroundingService } from "../semantic-grounding/semantic-grounding.service.js";
 import {
   getFeedbackRequestSummariesForDoc,
   getSyntheticIncomingLinksForDoc,
@@ -31,6 +33,7 @@ export class DocsService {
   constructor(
     @Inject(DRIZZLE_DB) db: DefinitionServiceDatabase,
     @Optional() @Inject(SearchService) private readonly search?: SearchService,
+    @Optional() @Inject(SemanticGroundingService) private readonly semantic?: SemanticGroundingService,
   ) {
     this.store = new SqlDocStore(db);
   }
@@ -43,7 +46,7 @@ export class DocsService {
   list(filter?: DocListFilter): DocRecord[] {
     // 전문 검색은 SearchService로 위임
     if (filter?.q && this.search) {
-      return this.search.search(filter.q, filter?.limit ?? 50, filter?.offset ?? 0);
+      return this.searchWithSemanticGrounding(filter.q, filter?.limit ?? 50, filter?.offset ?? 0);
     }
     return this.store.list(filter);
   }
@@ -54,14 +57,46 @@ export class DocsService {
     const offset = filter?.offset ?? 0;
 
     if (filter?.q && this.search) {
-      const docs = this.search.search(filter.q, limit, offset);
-      const total = this.search.searchCount(filter.q);
+      const docs = this.searchWithSemanticGrounding(filter.q, limit, offset);
+      const total = this.semanticSearchCount(filter.q);
       return { docs, total, offset, limit };
     }
 
     const docs = this.store.list(filter);
     const total = this.store.count(filter);
     return { docs, total, offset, limit };
+  }
+
+  private searchWithSemanticGrounding(query: string, limit: number, offset: number): DocRecord[] {
+    const legacyDocs = this.search?.search(query, Math.max(limit + offset, 50), 0) ?? [];
+    if (!this.semantic) return legacyDocs.slice(offset, offset + limit);
+
+    const plan = this.semantic.planDocumentSearch(query);
+    const semanticDocs = plan.candidateDocIds.length > 0
+      ? this.store.list({ limit: 10000 }).filter((doc) => plan.candidateDocIds.includes(doc.docId))
+      : [];
+    const merged = mergeSemanticDocumentResults({
+      semanticDocs,
+      legacyDocs,
+      candidateDocIds: plan.candidateDocIds,
+      limit,
+      offset,
+    });
+    this.semantic.recordDocumentSearch({
+      query,
+      plan,
+      docs: merged,
+      legacyCount: legacyDocs.length,
+    });
+    return [...merged];
+  }
+
+  private semanticSearchCount(query: string): number {
+    const legacyCount = this.search?.searchCount(query) ?? 0;
+    if (!this.semantic) return legacyCount;
+    const plan = this.semantic.planDocumentSearch(query);
+    const semanticCount = new Set(plan.candidateDocIds).size;
+    return Math.max(legacyCount, semanticCount);
   }
 
   get(docId: string): DocRecord | null {
@@ -181,6 +216,7 @@ export class DocsService {
     if (result && result.action === "updated") {
       const doc = this.store.get(docId);
       if (doc) this.search?.index(docId, doc.purpose, doc.intent, doc.context, doc.caveat);
+      if (doc) this.semantic?.materializeDocuments([doc]);
     }
     return result;
   }
