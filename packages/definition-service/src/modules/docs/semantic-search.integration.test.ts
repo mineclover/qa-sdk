@@ -183,11 +183,11 @@ describe("semantic document search integration", () => {
     const docs = new DocsService(
       db,
       {
-        search(query) {
+        search(query: string) {
           legacyQueries.push(query);
           return [];
         },
-        searchCount(query) {
+        searchCount(query: string) {
           legacyQueries.push(`${query}:count`);
           return 0;
         },
