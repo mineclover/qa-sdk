@@ -272,9 +272,110 @@ describe("DocsService semantic search integration", () => {
     const result = service.listPaginated({ q: "semantic", limit: 1, offset: 1 });
 
     expect(result.docs.map((item) => item.docId)).toEqual(["semantic-b"]);
-    expect(result.total).toBe(2);
+    expect(result.total).toBe(3);
     expect(result.offset).toBe(1);
     expect(result.limit).toBe(1);
+  });
+
+  it("records pre-pagination semantic hits when the requested page is empty", () => {
+    const { service, recordCalls } = createService();
+    seedDocs(service, [doc("semantic-a"), doc("semantic-b"), doc("legacy-c")]);
+
+    const search = {
+      search() {
+        return [doc("semantic-a"), doc("legacy-c")];
+      },
+      searchCount() {
+        return 2;
+      },
+      index() {},
+    };
+    (service as any).search = search;
+    (service as any).semantic = {
+      planDocumentSearch() {
+        return {
+          kind: "document-search",
+          query: "semantic",
+          candidateDocIds: ["semantic-a", "semantic-b"],
+          candidates: [],
+        };
+      },
+      recordDocumentSearch(input: any) {
+        recordCalls.push(input);
+      },
+      materializeDocuments() {
+        return { terms: 0, aliases: 0 };
+      },
+    };
+
+    const result = service.listPaginated({ q: "semantic", limit: 1, offset: 5 });
+
+    expect(result.docs).toHaveLength(0);
+    expect(result.total).toBe(3);
+    expect(recordCalls[0]?.docs.map((item: DocRecord) => item.docId)).toEqual(["semantic-a", "semantic-b", "legacy-c"]);
+  });
+
+  it("keeps legacy list behavior when semantic grounding is absent", () => {
+    const db = createDb();
+    const search = {
+      search(query: string, limit: number, offset: number) {
+        return [doc("legacy-a"), doc("legacy-b")].slice(offset, offset + limit);
+      },
+      searchCount() {
+        return 2;
+      },
+      index() {},
+    };
+    const service = new DocsService(db, search as any);
+    seedDocs(service, [doc("legacy-a"), doc("legacy-b")]);
+
+    const docs = service.list({ q: "legacy", limit: 10, offset: 0 });
+    const paginated = service.listPaginated({ q: "legacy", limit: 1, offset: 1 });
+
+    expect(docs.map((item) => item.docId)).toEqual(["legacy-a", "legacy-b"]);
+    expect(paginated.docs.map((item) => item.docId)).toEqual(["legacy-b"]);
+    expect(paginated.total).toBe(2);
+  });
+
+  it("keeps legacy counts stable when semantic planning yields no candidates", () => {
+    const { service, planCalls, recordCalls } = createService();
+    seedDocs(service, [doc("legacy-a"), doc("legacy-b")]);
+
+    const search = {
+      search(query: string, limit: number, offset: number) {
+        return [doc("legacy-a"), doc("legacy-b")].slice(offset, offset + limit);
+      },
+      searchCount() {
+        return 2;
+      },
+      index() {},
+    };
+    (service as any).search = search;
+    (service as any).semantic = {
+      planDocumentSearch(query: string) {
+        planCalls.push(query);
+        return {
+          kind: "document-search",
+          query,
+          candidateDocIds: [],
+          candidates: [],
+          fallbackReason: "no-candidate",
+        };
+      },
+      recordDocumentSearch(input: any) {
+        recordCalls.push(input);
+      },
+      materializeDocuments() {
+        return { terms: 0, aliases: 0 };
+      },
+    };
+
+    const result = service.listPaginated({ q: "legacy", limit: 1, offset: 1 });
+
+    expect(result.docs.map((item) => item.docId)).toEqual(["legacy-b"]);
+    expect(result.total).toBe(2);
+    expect(planCalls).toEqual(["legacy"]);
+    expect(recordCalls[0]?.docs.map((item: DocRecord) => item.docId)).toEqual(["legacy-a", "legacy-b"]);
   });
 
   it("materializes updated documents after metadata updates", () => {

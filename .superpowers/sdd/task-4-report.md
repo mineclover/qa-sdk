@@ -27,3 +27,16 @@
 ## Notes
 - I did not modify any files outside the Task 4 scope.
 - `git diff --check` is clean.
+
+## Task 4 Fix
+- Fixed paginated semantic search totals so the merged unique result set is counted before slicing, which restores the `[semantic-a, semantic-b, legacy-c]` case to total `3`.
+- Fixed `recordDocumentSearch()` input to use pre-pagination merged docs, so offset-empty pages with real hits no longer look like no-hit fallback events.
+- Added regressions for legacy-only behavior when semantic grounding is absent and when semantic planning returns no candidates, keeping legacy docs and counts stable.
+
+### Command Run
+- `../../node_modules/.bin/vitest run src/modules/docs/docs.service.test.ts src/core/semantic-grounding/planner.test.ts`
+
+### Output Summary
+- PASS: `src/core/semantic-grounding/planner.test.ts`
+- PASS: `src/modules/docs/docs.service.test.ts`
+- Result: `12` tests passed across `2` files.

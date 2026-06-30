@@ -46,7 +46,7 @@ export class DocsService {
   list(filter?: DocListFilter): DocRecord[] {
     // 전문 검색은 SearchService로 위임
     if (filter?.q && this.search) {
-      return this.searchWithSemanticGrounding(filter.q, filter?.limit ?? 50, filter?.offset ?? 0);
+      return this.searchWithSemanticGrounding(filter.q, filter?.limit ?? 50, filter?.offset ?? 0).docs;
     }
     return this.store.list(filter);
   }
@@ -57,9 +57,8 @@ export class DocsService {
     const offset = filter?.offset ?? 0;
 
     if (filter?.q && this.search) {
-      const docs = this.searchWithSemanticGrounding(filter.q, limit, offset);
-      const total = this.semanticSearchCount(filter.q);
-      return { docs, total, offset, limit };
+      const result = this.searchWithSemanticGrounding(filter.q, limit, offset);
+      return { docs: result.docs, total: result.total, offset, limit };
     }
 
     const docs = this.store.list(filter);
@@ -67,36 +66,34 @@ export class DocsService {
     return { docs, total, offset, limit };
   }
 
-  private searchWithSemanticGrounding(query: string, limit: number, offset: number): DocRecord[] {
+  private searchWithSemanticGrounding(query: string, limit: number, offset: number): { docs: DocRecord[]; total: number } {
     const legacyDocs = this.search?.search(query, Math.max(limit + offset, 50), 0) ?? [];
-    if (!this.semantic) return legacyDocs.slice(offset, offset + limit);
+    const legacyCount = this.search?.searchCount(query) ?? legacyDocs.length;
+    if (!this.semantic) {
+      return { docs: legacyDocs.slice(offset, offset + limit), total: legacyCount };
+    }
 
     const plan = this.semantic.planDocumentSearch(query);
-    const semanticDocs = plan.candidateDocIds.length > 0
+    const hasSemanticCandidates = plan.candidateDocIds.length > 0;
+    const semanticDocs = hasSemanticCandidates
       ? this.store.list({ limit: 10000 }).filter((doc) => plan.candidateDocIds.includes(doc.docId))
       : [];
-    const merged = mergeSemanticDocumentResults({
-      semanticDocs,
-      legacyDocs,
-      candidateDocIds: plan.candidateDocIds,
-      limit,
-      offset,
-    });
+    const merged = hasSemanticCandidates
+      ? mergeSemanticDocumentResults({
+          semanticDocs,
+          legacyDocs,
+          candidateDocIds: plan.candidateDocIds,
+          limit: semanticDocs.length + legacyDocs.length,
+          offset: 0,
+        })
+      : legacyDocs;
     this.semantic.recordDocumentSearch({
       query,
       plan,
       docs: merged,
-      legacyCount: legacyDocs.length,
+      legacyCount,
     });
-    return [...merged];
-  }
-
-  private semanticSearchCount(query: string): number {
-    const legacyCount = this.search?.searchCount(query) ?? 0;
-    if (!this.semantic) return legacyCount;
-    const plan = this.semantic.planDocumentSearch(query);
-    const semanticCount = new Set(plan.candidateDocIds).size;
-    return Math.max(legacyCount, semanticCount);
+    return { docs: merged.slice(offset, offset + limit), total: hasSemanticCandidates ? merged.length : legacyCount };
   }
 
   get(docId: string): DocRecord | null {
