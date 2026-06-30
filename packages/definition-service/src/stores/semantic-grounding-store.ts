@@ -107,13 +107,15 @@ export class SqlSemanticGroundingStore implements SemanticGroundingStore {
         createdAt: record.createdAt,
       })
       .onConflictDoUpdate({
-        target: semanticAliases.aliasId,
+        target: [semanticAliases.termId, semanticAliases.normalizedAlias, semanticAliases.source],
         set: {
+          aliasId: record.aliasId,
           alias: record.alias,
           normalizedAlias: record.normalizedAlias,
           locale: record.locale ?? null,
           source: record.source,
           confidence: record.confidence,
+          createdAt: record.createdAt,
         },
       })
       .run();
@@ -215,6 +217,8 @@ export class SqlSemanticGroundingStore implements SemanticGroundingStore {
       .onConflictDoUpdate({
         target: semanticFeedbackProposals.dedupeKey,
         set: {
+          kind: input.kind,
+          normalizedTerm: input.normalizedTerm,
           term: input.term,
           payloadJson: input.payload,
           evidenceJson: input.evidence,
@@ -223,8 +227,26 @@ export class SqlSemanticGroundingStore implements SemanticGroundingStore {
       })
       .run();
 
-    return this.listOpenFeedbackProposals().find((item) => item.proposalId === proposalId)
-      ?? {
+    const row = this.db
+      .select()
+      .from(semanticFeedbackProposals)
+      .where(eq(semanticFeedbackProposals.proposalId, proposalId))
+      .get();
+
+    return row
+      ? {
+          proposalId: row.proposalId,
+          kind: row.kind as FeedbackProposalRecord["kind"],
+          term: row.term,
+          normalizedTerm: row.normalizedTerm,
+          dedupeKey: row.dedupeKey,
+          payload: row.payloadJson,
+          evidence: row.evidenceJson,
+          status: row.status as FeedbackProposalRecord["status"],
+          createdAt: row.createdAt,
+          updatedAt: row.updatedAt,
+        }
+      : {
         proposalId,
         status: "open",
         createdAt: existing?.createdAt ?? now,
