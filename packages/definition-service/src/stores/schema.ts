@@ -18,4 +18,9 @@ export {
   consumptionSnapshots,
   testRegistry,
   testResults,
+  semanticTerms,
+  semanticAliases,
+  semanticRelations,
+  semanticGroundingEvents,
+  semanticFeedbackProposals,
 } from "../db/schema.js";

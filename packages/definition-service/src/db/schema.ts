@@ -294,6 +294,109 @@ export const testResults = sqliteTable(
   (table) => [index("idx_tres_doc").on(table.docId, table.runAt)],
 );
 
+// ── semantic_grounding ──────────────────────────────────────────
+export const semanticTerms = sqliteTable(
+  "semantic_terms",
+  {
+    termId: text("term_id").primaryKey(),
+    kind: text("kind").notNull(),
+    canonicalLabel: text("canonical_label").notNull(),
+    normalizedLabel: text("normalized_label").notNull(),
+    coordinate: text("coordinate"),
+    prefixId: text("prefix_id"),
+    versionId: text("version_id"),
+    address: integer("address"),
+    docId: text("doc_id"),
+    sourcePath: text("source_path"),
+    evidenceJson: text("evidence_json", { mode: "json" }).$type<Record<string, unknown>>().notNull().default({}),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("semantic_terms_identity_unique").on(
+      table.kind,
+      table.canonicalLabel,
+      table.coordinate,
+      table.docId,
+    ),
+    index("idx_semantic_terms_label").on(table.normalizedLabel),
+    index("idx_semantic_terms_doc").on(table.docId),
+    index("idx_semantic_terms_address").on(table.prefixId, table.versionId, table.address),
+  ],
+);
+
+export const semanticAliases = sqliteTable(
+  "semantic_aliases",
+  {
+    aliasId: text("alias_id").primaryKey(),
+    termId: text("term_id").notNull(),
+    alias: text("alias").notNull(),
+    normalizedAlias: text("normalized_alias").notNull(),
+    locale: text("locale"),
+    source: text("source").notNull(),
+    confidence: real("confidence").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("semantic_aliases_term_alias_source_unique").on(table.termId, table.normalizedAlias, table.source),
+    index("idx_semantic_aliases_alias").on(table.normalizedAlias),
+    index("idx_semantic_aliases_term").on(table.termId),
+  ],
+);
+
+export const semanticRelations = sqliteTable(
+  "semantic_relations",
+  {
+    relationId: text("relation_id").primaryKey(),
+    sourceTermId: text("source_term_id").notNull(),
+    relationType: text("relation_type").notNull(),
+    targetTermId: text("target_term_id").notNull(),
+    evidenceJson: text("evidence_json", { mode: "json" }).$type<Record<string, unknown>>().notNull().default({}),
+  },
+  (table) => [
+    index("idx_semantic_relations_source").on(table.sourceTermId),
+    index("idx_semantic_relations_target").on(table.targetTermId),
+  ],
+);
+
+export const semanticGroundingEvents = sqliteTable(
+  "semantic_grounding_events",
+  {
+    eventId: text("event_id").primaryKey(),
+    query: text("query").notNull(),
+    intent: text("intent").notNull(),
+    candidateJson: text("candidate_json", { mode: "json" }).$type<unknown[]>().notNull().default([]),
+    planJson: text("plan_json", { mode: "json" }).$type<Record<string, unknown>>().notNull().default({}),
+    outcome: text("outcome").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [index("idx_semantic_grounding_events_created").on(table.createdAt)],
+);
+
+export const semanticFeedbackProposals = sqliteTable(
+  "semantic_feedback_proposals",
+  {
+    proposalId: text("proposal_id").primaryKey(),
+    kind: text("kind").notNull(),
+    term: text("term").notNull(),
+    normalizedTerm: text("normalized_term").notNull(),
+    dedupeKey: text("dedupe_key").notNull(),
+    payloadJson: text("payload_json", { mode: "json" }).$type<Record<string, unknown>>().notNull().default({}),
+    evidenceJson: text("evidence_json", { mode: "json" }).$type<Record<string, unknown>>().notNull().default({}),
+    status: text("status").notNull().default("open"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("semantic_feedback_proposals_dedupe_unique").on(table.dedupeKey),
+    index("idx_semantic_feedback_status_kind").on(table.status, table.kind),
+  ],
+);
+
+export type SemanticTermRow = typeof semanticTerms.$inferSelect;
+export type SemanticAliasRow = typeof semanticAliases.$inferSelect;
+export type SemanticRelationRow = typeof semanticRelations.$inferSelect;
+export type SemanticFeedbackProposalRow = typeof semanticFeedbackProposals.$inferSelect;
+
 // ── aspect_parents ───────────────────────────────────────────────
 // Phase C-0 (aspect-schema-hierarchy RFC): Aspect 계층 구조 metadata.
 // Source of truth: definition-catalog/src/vocabulary.ts §ASPECT_PARENTS (build-time).
