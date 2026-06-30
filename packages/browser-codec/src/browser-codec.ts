@@ -76,10 +76,13 @@ export function encode(
       positions.push(idx);
     } else {
       const vals = dim.values ?? [];
+      if (vals.length === 0) return null;
       shape.push(vals.length);
-      const v = values[label] ?? vals[0];
+      const v = values[label];
+      if (v === undefined) return null;
       const idx = vals.indexOf(v as number);
-      positions.push(idx < 0 ? 0 : idx);
+      if (idx < 0) return null;
+      positions.push(idx);
     }
   }
 
@@ -109,13 +112,16 @@ export function decode(
   // canonical: @qa-sdk/core/lib/address-parser.ts (브라우저 번들 격리 위해 인라인)
   const parts = serialized.split(':');
   // 3파트: prefix:ver:addr / 4파트: catalogId:prefix:ver:addr
+  if (parts.length !== 3 && parts.length !== 4) return null;
   const [prefixId, version, addrStr] =
     parts.length === 4 ? [parts[1], parts[2], parts[3]] : [parts[0], parts[1], parts[2]];
   const def = catalog[prefixId];
   if (!def) return null;
+  if (version !== def.version) return null;
 
-  let addr = parseInt(addrStr);
-  if (isNaN(addr)) return null;
+  if (!/^\d+$/.test(addrStr)) return null;
+  let addr = Number(addrStr);
+  if (!Number.isInteger(addr) || addr < 0) return null;
 
   const shape: number[] = [];
   const labels: { label: string; dim: BrowserDimDef }[] = [];
@@ -131,6 +137,8 @@ export function decode(
     }
     labels.push({ label, dim });
   }
+  const capacity = shape.reduce((acc, cur) => acc * cur, 1);
+  if (capacity <= 0 || addr >= capacity) return null;
 
   // canonical: weighted-index/calc.ts → calcWeights (브라우저 번들 격리 위해 인라인)
   const strides = new Array(shape.length);
@@ -152,7 +160,7 @@ export function decode(
 }
 
 /**
- * 여러 prefix를 한번에 encode + service 자동 주입.
+ * 여러 prefix를 한번에 encode.
  */
 export function track(
   catalog: BrowserCatalog,
@@ -165,15 +173,6 @@ export function track(
     if (!def) continue;
 
     const fullDims = { ...dims };
-    // prefix_ref 자동 주입
-    for (const label of def.labels) {
-      const dim = def.dims[label];
-      if (dim?.kind === 'prefix_ref' && !(label in fullDims)) {
-        const vals = dim.values ?? [];
-        if (vals.length > 0) fullDims[label] = vals[0];
-      }
-    }
-
     const result = encode(catalog, prefixId, fullDims);
     if (result) ctx[prefixId] = result.serialized;
   }

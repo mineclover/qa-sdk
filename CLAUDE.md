@@ -134,17 +134,16 @@
 
 좌표계(scope×aspect×depth)로 문서 분류, 분해 레벨(level)로 전체-부분 위치 표현. DB = 메타데이터 SSOT, 파일 = 본문 SSOT. 철학: `docs/definition-system-philosophy.md`
 
-### 분해 레벨 (DefLevel) — 5단계
+### 분해 레벨 (DefLevel) — 3단계
 
 | level | 정의하는 것 |
 |---|---|
-| `system` | 시스템 전체 경계 |
-| `area` | 시스템 내 큰 영역 |
-| `unit` | 영역 내 독립 단위 |
-| `module` | 단위 내 모듈 (구성 요소 참조) |
+| `group` | 묶임의 이유 |
+| `module` | 단일 개념 + 구성 참조 |
 | `leaf` | 최종 명세 (구현 경계). 기본값 |
 
-- system/area/unit/module은 자식 1건 이상 필수, leaf는 자식 금지
+- group/module은 자식 1건 이상 필수, leaf는 자식 금지
+- 구조적 책임은 `tier`(entry/component/system/layout)가 담당하고, level은 contains 검증 보조 메타데이터로 유지
 - SSOT: `packages/definition-catalog/src/vocabulary.ts` DEF_LEVEL.entries
 
 ### 좌표 주소

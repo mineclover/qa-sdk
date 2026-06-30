@@ -85,7 +85,7 @@ DEMO_CATALOG = {
 }
 ```
 
-현재: 85축, 51 prefix, 19 tables. DKG: 16종 노드 (FlowSchemaNode 포함).
+현재 수량은 `DEMO_CATALOG`에서 `Object.keys(catalog.axes/prefixes/tables)`로 파생한다. 문서에 축/prefix/table 수를 고정하지 않는다.
 
 ### Axis 소비 방식
 

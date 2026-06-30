@@ -2,6 +2,7 @@
 // @def.doc qa-sdk-core-system
 
 import { z } from "zod";
+import { AddressContextV1Schema } from "../coordinates/address-context-schema.js";
 
 export const recordKindSchema = z.enum(["log", "span", "metric"]);
 
@@ -46,7 +47,7 @@ export const eventRecordSchema = z.object({
   qa_session_id: z.string().optional(),
 
   // Address context
-  address_context: z.record(z.string(), z.string()).optional(),
+  address_context: AddressContextV1Schema.optional(),
 
   // Metric (when record_kind === "metric")
   metric_type: metricTypeSchema.optional(),

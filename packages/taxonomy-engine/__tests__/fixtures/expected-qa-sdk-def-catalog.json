@@ -24,9 +24,7 @@
     },
     "def_level": {
       "entries": [
-        { "id": "system" },
-        { "id": "area" },
-        { "id": "unit" },
+        { "id": "group" },
         { "id": "module" },
         { "id": "leaf" }
       ]

@@ -38,15 +38,13 @@ axes:
     version: 1
 
   def_level:
-    description: 분해 레벨 (전체-부분 분해 위치)
+    description: contains 그래프 검증용 역할 레벨
     lifecycle: approved
     entries:
-      - { id: system,  address: 0, lifecycle: approved }
-      - { id: area,    address: 1, lifecycle: approved }
-      - { id: unit,    address: 2, lifecycle: approved }
-      - { id: module,  address: 3, lifecycle: approved }
-      - { id: leaf,    address: 4, lifecycle: approved }
-    capacity: 16
+      - { id: group,   address: 0, lifecycle: approved }
+      - { id: module,  address: 1, lifecycle: approved }
+      - { id: leaf,    address: 2, lifecycle: approved }
+    capacity: 8
     version: 1
 
   def_lifecycle:
@@ -99,13 +97,13 @@ constraints:
       value: 9
     severity: error
 
-  - id: level-5-entries
+  - id: level-3-entries
     kind: capacity
     rule:
       axis: def_level
       prop: entries.length
       op: eq
-      value: 5
+      value: 3
     severity: error
 
   - id: link-type-required

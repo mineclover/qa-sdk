@@ -287,6 +287,31 @@ function getShapeAndStrides(catalog: Catalog, prefixId: string, version: string)
   return { shape, strides: calcWeights(shape) };
 }
 
+function validateAddress(catalog: Catalog, prefixId: string, version: string, address: number): void {
+  const { capacity } = getPrefixShape(catalog, prefixId, version);
+  if (!Number.isInteger(address) || address < 0 || address >= capacity) {
+    throw new Error(`address for ${prefixId}@${version} must be in [0, ${capacity - 1}], got ${address}`);
+  }
+}
+
+function validatePositions(
+  catalog: Catalog,
+  prefixId: string,
+  version: string,
+  labels: readonly string[],
+  positions: Record<string, number>,
+): void {
+  const { shape } = getPrefixShape(catalog, prefixId, version);
+  for (let i = 0; i < labels.length; i++) {
+    const label = labels[i];
+    const pos = positions[label];
+    const max = shape[i] - 1;
+    if (!Number.isInteger(pos) || pos < 0 || pos > max) {
+      throw new Error(`position for ${prefixId}@${version}.${label} must be in [0, ${max}], got ${pos}`);
+    }
+  }
+}
+
 // ── encode: 차원 좌표 → 1D 주소 ─────────────────────────────────────────────
 
 /**
@@ -303,13 +328,12 @@ export function encodePrefix(
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
   const fixedLabels = getFixedLabels(prefix);
   const { strides } = getShapeAndStrides(catalog, prefixId, version);
+  validatePositions(catalog, prefixId, version, fixedLabels, positions);
 
   let addr = 0;
   for (let i = 0; i < fixedLabels.length; i++) {
     const label = fixedLabels[i];
-    const pos = positions[label];
-    if (pos === undefined) throw new Error(`Missing position for dim: ${label}`);
-    addr += pos * strides[i];
+    addr += positions[label] * strides[i];
   }
   return addr;
 }
@@ -337,6 +361,7 @@ export function decodePrefix(
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
   const vdef = prefix.versions.find(v => v.version === version);
   if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
+  validateAddress(catalog, prefixId, version, address);
   const fixedLabels = getFixedLabels(prefix);
   const { strides } = getShapeAndStrides(catalog, prefixId, version);
 
@@ -379,6 +404,7 @@ export function decodePrefixPartial(
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
   const vdef = prefix.versions.find(v => v.version === version);
   if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
+  validateAddress(catalog, prefixId, version, address);
   const fixedLabels = getFixedLabels(prefix);
   const { shape } = getPrefixShape(catalog, prefixId, version);
   const { strides } = getShapeAndStrides(catalog, prefixId, version);

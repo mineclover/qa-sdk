@@ -2,6 +2,7 @@
 // @def.doc qa-sdk-core-system
 
 import { z } from "zod";
+import { AddressContextV1Schema } from "../coordinates/address-context-schema.js";
 import { eventRecordSchema } from "./record.schema.js";
 
 export const ownerTypeSchema = z.enum([
@@ -44,7 +45,7 @@ export const transmissionEnvelopeSchema = z.object({
   source: transmissionSourceSchema,
   runtime: transmissionRuntimeSchema,
   build: transmissionBuildSchema,
-  infra_context: z.record(z.string(), z.string()).optional(),
+  infra_context: AddressContextV1Schema.optional(),
   entry_snapshot: z.string().optional(),
   records: z.array(eventRecordSchema).min(1),
 });

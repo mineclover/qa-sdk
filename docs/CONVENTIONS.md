@@ -288,17 +288,9 @@ const monitor = createQaMonitor({
   autoCapture: { clicks: true, navigation: true },
 });
 
-// 2. svc_ref 자동 주입
-const SVC_REF_PREFIXES = new Set(['page_view', 'tracking', 'cart_event', ...]);
-const SVC_ADDR = { env: 'dev', region: 'asia', svc_name: 'shopping-web', namespace: 'shop' };
-
+// 2. emitWithCoords — serviceConfig 기반 service 주소를 필요한 prefix_ref 슬롯에 주입
 function qaTrack(eventKey, prefixes) {
-  const enriched = {};
-  for (const [pid, dims] of Object.entries(prefixes)) {
-    enriched[pid] = SVC_REF_PREFIXES.has(pid) && !dims.svc_ref
-      ? { svc_ref: SVC_ADDR, ...dims } : dims;
-  }
-  monitor.emitWithCoords(eventKey, enriched);
+  monitor.emitWithCoords(eventKey, prefixes);
 }
 
 // 3. 이벤트 발생

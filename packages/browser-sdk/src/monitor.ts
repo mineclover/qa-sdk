@@ -11,7 +11,34 @@ import { BeaconTransport } from './transport.js';
 import { getOrCreateSession, clearSession } from './session.js';
 import { createAutoCapture } from './auto-capture.js';
 import type { QaMonitorConfig, MonitorSession, MonitorStatus } from './types.js';
-import { track as browserTrack, BROWSER_CATALOG } from '@qa-sdk/browser-codec';
+import {
+  track as browserTrack,
+  BROWSER_CATALOG,
+  withServiceOverlay,
+  type BrowserCatalog,
+  type BrowserServiceDims,
+} from '@qa-sdk/browser-codec';
+
+function withServiceOverlayIfPossible(
+  catalog: BrowserCatalog,
+  serviceDims: BrowserServiceDims,
+): BrowserCatalog {
+  try {
+    return withServiceOverlay(catalog, serviceDims);
+  } catch {
+    return catalog;
+  }
+}
+
+function parseSerializedAddress(serialized: string | undefined): number | undefined {
+  if (!serialized) return undefined;
+  const parts = serialized.split(':');
+  if (parts.length !== 3 && parts.length !== 4) return undefined;
+  const addressToken = parts[parts.length - 1];
+  if (!/^\d+$/.test(addressToken)) return undefined;
+  const address = Number(addressToken);
+  return Number.isInteger(address) && address >= 0 ? address : undefined;
+}
 
 /**
  * QaMonitor — 브라우저 모니터링 SDK 진입점.
@@ -33,6 +60,8 @@ export class QaMonitor {
   private readonly logger: QaLogger;
   private session: MonitorSession;
   private readonly storageKey: string;
+  private readonly catalog: BrowserCatalog;
+  private readonly serviceRefAddress?: number;
   private destroyAutoCapture: (() => void) | null = null;
   private readonly unloadHandler: () => void;
   private _status: MonitorStatus = 'active';
@@ -44,6 +73,11 @@ export class QaMonitor {
     const transport = new BeaconTransport(`${config.ingestUrl}/v1/ingest`);
 
     const svc = config.serviceConfig;
+    const serviceDims = svc ? toServiceDims(svc) : undefined;
+    this.catalog = serviceDims
+      ? withServiceOverlayIfPossible(config.catalog ?? BROWSER_CATALOG, serviceDims)
+      : (config.catalog ?? BROWSER_CATALOG);
+
     const source = svc
       ? toTransmissionSource(svc, '@qa-sdk/browser', '0.1.0')
       : {
@@ -55,14 +89,14 @@ export class QaMonitor {
 
     // infra_context 자동 생성: serviceConfig → service prefix 좌표
     let infraContext = config.infraContext;
-    if (!infraContext && svc) {
+    if (!infraContext && serviceDims) {
       try {
-        const serviceDims = toServiceDims(svc);
-        infraContext = browserTrack(BROWSER_CATALOG, { service: serviceDims });
+        infraContext = browserTrack(this.catalog, { service: serviceDims });
       } catch {
         // BROWSER_CATALOG에 service prefix가 없으면 무시
       }
     }
+    this.serviceRefAddress = parseSerializedAddress(infraContext?.service);
 
     this.logger = new QaLogger({
       transport,
@@ -157,11 +191,40 @@ export class QaMonitor {
   ): void {
     let ctx: Record<string, string> | undefined;
     try {
-      ctx = browserTrack(BROWSER_CATALOG, prefixes);
+      ctx = browserTrack(this.catalog, this.withServiceRef(prefixes));
     } catch {
       // encoding 실패 — coordinate 없이 emit (UI 크래시 방지)
     }
     this.emit(eventKey, payload ?? { event: eventKey }, ctx ? { address_context: ctx } : undefined);
+  }
+
+  private withServiceRef(
+    prefixes: Record<string, Record<string, string | number>>,
+  ): Record<string, Record<string, string | number>> {
+    if (this.serviceRefAddress === undefined) return prefixes;
+
+    let enriched = prefixes;
+    for (const [prefixId, dims] of Object.entries(prefixes)) {
+      const def = this.catalog[prefixId];
+      if (!def) continue;
+
+      let nextDims: Record<string, string | number> | undefined;
+      for (const label of def.labels) {
+        if (label in dims) continue;
+        const dim = def.dims[label];
+        if (dim?.kind !== 'prefix_ref') continue;
+        if (!(dim.values ?? []).includes(this.serviceRefAddress)) continue;
+
+        if (enriched === prefixes) enriched = { ...prefixes };
+        if (!nextDims) {
+          nextDims = { ...dims };
+          enriched[prefixId] = nextDims;
+        }
+        nextDims[label] = this.serviceRefAddress;
+      }
+    }
+
+    return enriched;
   }
 
   /**
@@ -294,20 +357,22 @@ export async function createQaMonitorAsync(config: QaMonitorConfig): Promise<QaM
   if (config.registry) {
     try {
       const { loadCatalog: loadBrowserCatalog } = await import('@qa-sdk/browser-codec');
+      const serviceDims = config.serviceConfig ? toServiceDims(config.serviceConfig) : undefined;
       const result = await loadBrowserCatalog({
         registryUrl: config.registry,
         cacheKey: `qa-catalog-${config.catalogId ?? 'demo'}`,
-        ...(config.serviceConfig ? { serviceOverlay: toServiceDims(config.serviceConfig) } : {}),
+        ...(serviceDims ? { serviceOverlay: serviceDims } : {}),
       });
 
-      // 로드된 catalog으로 infra_context 재계산
-      if (config.serviceConfig && !config.infraContext) {
-        const serviceDims = toServiceDims(config.serviceConfig);
-        config = {
-          ...config,
-          infraContext: browserTrack(result.catalog, { service: serviceDims }),
-        };
+      const nextConfig: QaMonitorConfig = {
+        ...config,
+        catalog: result.catalog,
+      };
+
+      if (serviceDims && !config.infraContext) {
+        nextConfig.infraContext = browserTrack(result.catalog, { service: serviceDims });
       }
+      config = nextConfig;
     } catch (err) {
       console.warn(
         `[QaMonitorAsync] registry fetch failed: ${err instanceof Error ? err.message : String(err)}. Using static BROWSER_CATALOG fallback.`,

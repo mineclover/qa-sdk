@@ -12,6 +12,7 @@ describe('@qa-sdk/browser-codec smoke test', () => {
 
   it('encode/decode roundtrip — tracking', () => {
     const result = encode(BROWSER_CATALOG, 'tracking', {
+      svc_ref: BROWSER_CATALOG.tracking.dims.svc_ref.values![0],
       trackAction: 'click',
       page: 'home',
       userType: 'guest',
@@ -44,10 +45,43 @@ describe('@qa-sdk/browser-codec smoke test', () => {
 
   it('track returns address_context', () => {
     const ctx = track(BROWSER_CATALOG, {
-      tracking: { trackAction: 'click', page: 'home', userType: 'guest' },
+      tracking: {
+        svc_ref: BROWSER_CATALOG.tracking.dims.svc_ref.values![0],
+        trackAction: 'click',
+        page: 'home',
+        userType: 'guest',
+      },
     });
     expect(ctx).toBeDefined();
     expect(ctx['tracking']).toMatch(/^tracking:v/);
+  });
+
+  it('encode returns null when a prefix_ref dim is missing or unknown', () => {
+    expect(encode(BROWSER_CATALOG, 'tracking', {
+      trackAction: 'click',
+      page: 'home',
+      userType: 'guest',
+    })).toBeNull();
+
+    expect(encode(BROWSER_CATALOG, 'tracking', {
+      svc_ref: 999999,
+      trackAction: 'click',
+      page: 'home',
+      userType: 'guest',
+    })).toBeNull();
+  });
+
+  it('decode returns null when address is malformed or outside capacity', () => {
+    expect(decode(BROWSER_CATALOG, 'tracking:v3:999999')).toBeNull();
+    expect(decode(BROWSER_CATALOG, 'tracking:v3:1abc')).toBeNull();
+    expect(decode(BROWSER_CATALOG, 'tracking:v3:1e3')).toBeNull();
+  });
+
+  it('track does not synthesize missing prefix_ref dims', () => {
+    const ctx = track(BROWSER_CATALOG, {
+      tracking: { trackAction: 'click', page: 'home', userType: 'guest' },
+    });
+    expect(ctx).not.toHaveProperty('tracking');
   });
 
   it('encode with invalid prefix returns null', () => {

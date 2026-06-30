@@ -52,11 +52,11 @@ describe("qa-sdk-def-catalog 도그푸딩 (5번째 사례 — vocabulary 자동 
     expect(a.contentHash).toBe(b.contentHash);
   });
 
-  it("def_level entries 5종 (system/area/unit/module/leaf) — CLAUDE.md drift 검증", () => {
+  it("def_level entries 3종 (group/module/leaf) — CLAUDE.md drift 검증", () => {
     const r = parse(yamlText);
     if (!("ir" in r)) throw new Error("parse failed");
     const level = r.ir.axes.get("def_level");
     const ids = level?.entries.map((e) => e.id) ?? [];
-    expect(ids).toEqual(["system", "area", "unit", "module", "leaf"]);
+    expect(ids).toEqual(["group", "module", "leaf"]);
   });
 });

@@ -70,6 +70,13 @@ describe("eventRecordSchema — 유효한 레코드", () => {
     }));
     expect(result.success).toBe(true);
   });
+
+  it("address_context packed key 형식이면 파싱 성공", () => {
+    const result = eventRecordSchema.safeParse(makeValidRecord({
+      address_context: { endpoint: "endpoint:v1:42" },
+    }));
+    expect(result.success).toBe(true);
+  });
 });
 
 describe("eventRecordSchema — 잘못된 입력 거부", () => {
@@ -112,6 +119,13 @@ describe("eventRecordSchema — 잘못된 입력 거부", () => {
     expect(eventRecordSchema.safeParse(makeValidRecord({ log_id: "" })).success).toBe(false);
     expect(eventRecordSchema.safeParse(makeValidRecord({ event_key: "" })).success).toBe(false);
   });
+
+  it("address_context packed key 형식이 아니면 실패", () => {
+    const result = eventRecordSchema.safeParse(makeValidRecord({
+      address_context: { endpoint: "bad-format" },
+    }));
+    expect(result.success).toBe(false);
+  });
 });
 
 // ── transmissionEnvelopeSchema ────────────────────────────
@@ -127,6 +141,13 @@ describe("transmissionEnvelopeSchema — 유효한 envelope", () => {
       ...makeValidEnvelope(),
       records: [makeValidRecord(), makeValidRecord({ event_key: "page_view" })],
     };
+    expect(transmissionEnvelopeSchema.safeParse(envelope).success).toBe(true);
+  });
+
+  it("record address_context packed key 형식이면 성공", () => {
+    const envelope = makeValidEnvelope({
+      address_context: { tracking: "tracking:v3:0" },
+    });
     expect(transmissionEnvelopeSchema.safeParse(envelope).success).toBe(true);
   });
 });
@@ -162,6 +183,13 @@ describe("transmissionEnvelopeSchema — 잘못된 입력 거부", () => {
 
   it("records 내 레코드에 유효하지 않은 event_version이 있으면 실패", () => {
     const envelope = makeValidEnvelope({ event_version: "1" });
+    expect(transmissionEnvelopeSchema.safeParse(envelope).success).toBe(false);
+  });
+
+  it("record address_context packed key 형식이 아니면 실패", () => {
+    const envelope = makeValidEnvelope({
+      address_context: { tracking: "bad-format" },
+    });
     expect(transmissionEnvelopeSchema.safeParse(envelope).success).toBe(false);
   });
 });

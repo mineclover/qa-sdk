@@ -20,7 +20,14 @@ import {
   isContractMarker,
   getContractMarkerDef,
 } from "./taxonomy.js";
-import { DEF_SCOPE, DEF_ASPECT } from "./vocabulary.js";
+import { DEF_SCOPE, DEF_ASPECT, DEF_LEVEL } from "./vocabulary.js";
+
+describe("DEF_LEVEL", () => {
+  it("frontmatter 검증과 같은 3단계 역할 level을 사용한다", () => {
+    expect(DEF_LEVEL.entries).toEqual(["group", "module", "leaf"]);
+    expect(DEF_LEVEL.capacity).toBe(8);
+  });
+});
 
 describe("DEFINITION_TAXONOMY", () => {
   it("7대 분류(scope)를 포함한다", () => {

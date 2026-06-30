@@ -190,18 +190,18 @@ describe("extractVocabExpected", () => {
     expect(expected.taxonomy).toBe("qa-sdk-def-catalog");
     expect(expected.axes["def_scope"].entries.length).toBe(9);
     expect(expected.axes["def_depth"].entries.length).toBe(4);
-    expect(expected.axes["def_level"].entries.length).toBe(5);
+    expect(expected.axes["def_level"].entries.length).toBe(3);
     // def_lifecycle: vocab 5 + schema tbd = 6 (extractor가 합집합으로 확장)
     expect(expected.axes["def_lifecycle"].entries.length).toBe(6);
     expect(expected.axes["link_type"].entries.length).toBe(10);
     expect(expected.axes["taxonomy_family"].entries.length).toBe(3);
   });
 
-  it("DEF_LEVEL entries: system/area/unit/module/leaf 순서 정확", () => {
+  it("DEF_LEVEL entries: group/module/leaf 순서 정확", () => {
     const text = readFileSync(VOCAB_TS, "utf8");
     const expected = extractVocabExpected(text);
     const ids = expected.axes["def_level"].entries.map((e) => e.id);
-    expect(ids).toEqual(["system", "area", "unit", "module", "leaf"]);
+    expect(ids).toEqual(["group", "module", "leaf"]);
   });
 
   it("def_lifecycle entries에 schema 전용 tbd 포함", () => {

@@ -86,6 +86,36 @@ describe('QaMonitor — 전송 envelope 구조', () => {
     expect(record.trace_id).toBe(traceId);
     expect(record.qa_session_id).toBe(sessionId);
   });
+
+  it('serviceConfig가 있으면 emitWithCoords prefix_ref 차원에 service 주소를 명시 주입한다', async () => {
+    const { calls } = setupCaptureFetch();
+    const monitor = new QaMonitor({
+      ingestUrl: 'http://localhost:3200',
+      serviceConfig: {
+        namespace: 'shop',
+        name: 'shopping-web',
+        env: 'prod',
+        region: 'asia',
+      },
+    });
+
+    monitor.emitWithCoords('page.home', {
+      page_view: { page: 'home', locale: 'ko', userType: 'guest' },
+      tracking: { trackAction: 'view', page: 'home', userType: 'guest' },
+    });
+
+    await monitor.flush();
+    await monitor.shutdown();
+
+    const record = calls()[0].records[0];
+    expect(record.address_context?.page_view).toMatch(/^page_view:v2:\d+$/);
+    expect(record.address_context?.tracking).toMatch(/^tracking:v3:\d+$/);
+
+    const pageView = decode(BROWSER_CATALOG, record.address_context!.page_view!);
+    const tracking = decode(BROWSER_CATALOG, record.address_context!.tracking!);
+    expect(pageView?.values.svc_ref).toBe(65536);
+    expect(tracking?.values.svc_ref).toBe(65536);
+  });
 });
 
 describe('QaMonitor — event-catalog 버전 해석', () => {

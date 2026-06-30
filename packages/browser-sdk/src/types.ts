@@ -1,5 +1,6 @@
 /** @def.boundary browser-runtime-system */
-import type { ServiceBootConfig } from "@qa-sdk/core";
+import type { BrowserCatalog } from "@qa-sdk/browser-codec";
+import type { ServiceBootConfig, TransmissionOwner } from "@qa-sdk/core";
 
 /** QaMonitor의 생명주기 상태 */
 export type MonitorStatus = "active" | "stopped";
@@ -10,7 +11,7 @@ export interface QaMonitorConfig {
   /** 통합 서비스 설정. meta보다 우선. */
   serviceConfig?: ServiceBootConfig;
   /** 엔벨로프 소유자. 기본: { owner_type: "tenant", owner_id: "browser-monitor" } */
-  owner?: { owner_type: string; owner_id: string };
+  owner?: TransmissionOwner;
   /** 시나리오 ID — session_start 이벤트 payload에 포함 */
   scenarioId?: string;
   /** 자동 이벤트 수집 설정 */
@@ -36,6 +37,8 @@ export interface QaMonitorConfig {
   registry?: string;
   /** catalog ID (registry 모드에서 사용, default: "demo") */
   catalogId?: string;
+  /** registry/테스트에서 주입하는 브라우저 좌표 catalog. */
+  catalog?: BrowserCatalog;
 }
 
 export interface AutoCaptureConfig {

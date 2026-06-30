@@ -24,7 +24,7 @@ def:
 > Created: 2026-03-21
 > Last verified: 2026-03-24
 >
-> **달성**: G1~G5, R2, R5 해결. 현재 85축, 51 prefix, 267 nodes, 625 edges.
+> **달성**: G1~G5, R2, R5 해결. 현재 수량은 `DEMO_CATALOG`와 DKG store에서 파생한다.
 > **G5 해소**: flow-trace skill이 AddressContextRecord를 직접 소비 (CLI self-check + ingest convergence pipeline). 나머지 skill은 UsageData(집계 결과) 소비가 올바른 설계.
 
 ## 1. 배경
@@ -138,7 +138,7 @@ CLI: `dkg converge [--persist] [--verbose]`
 ## 6. 현재 수치
 
 ```
-DKG:        85 axes, 51 prefixes, 19 tables, 11 DSL bundles, 15 intent-links, 19 transition-specs
+DKG:        catalog/store에서 파생 (문서에 axes/prefixes/tables 수 고정 금지)
 spec-core:  48 test files, 535 tests
 demo-tests: 54 test files, 928 tests (846 passed, 82 skipped)
 decision-flow: 12 test files, 185 tests

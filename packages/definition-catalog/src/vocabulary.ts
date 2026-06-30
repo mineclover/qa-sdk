@@ -56,19 +56,17 @@ function toVersionedAxis(
 // ─── 축 정의 ─────────────────────────────────────────────
 
 /**
- * def_level — 분해 레벨 (5 entries, capacity 8)
+ * def_level — 분해 레벨 (3 entries, capacity 8)
  *
- * 5Q: ✓유한(5) ✓분류 관련(분해 단위 결정) ✓공유(전 prefix) ✓안정(시스템 구조 안정) ✓capacity
- * 설명력: 문서가 전체-부분 분해 구조에서 어느 레벨인지. scope보다 상위 개념.
- * L0~L1에서는 scope가 의미 약화, L2 이하에서 scope가 본래 역할 수행.
+ * 5Q: ✓유한(3) ✓분류 관련(분해 역할 결정) ✓공유(전 prefix) ✓안정(역할 체계 안정) ✓capacity
+ * 설명력: 문서가 contains 그래프에서 어떤 역할인지 표현한다.
+ * tier가 구조적 책임을 표현하고, level은 group/module/leaf 검증 보조 메타데이터로 남는다.
  */
 export const DEF_LEVEL = {
-  entries: ["system", "area", "unit", "module", "leaf"] as const,
-  capacity: 16,  // nextPowerOf2(5 * 2 = 10) = 16
+  entries: ["group", "module", "leaf"] as const,
+  capacity: 8,  // nextPowerOf2(3 * 2 = 6) = 8
   ko: {
-    system: "시스템",
-    area: "영역",
-    unit: "단위",
+    group: "그룹",
     module: "모듈",
     leaf: "리프",
   } as Record<string, string>,
