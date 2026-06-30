@@ -71,10 +71,10 @@ class FakeStore implements SemanticGroundingStore {
   }
 }
 
-function doc(): DocRecord {
+function doc(overrides: Partial<DocRecord> = {}): DocRecord {
   return {
     docId: "prefix-cart_event",
-    title: "Cart Event",
+    title: "Cart System",
     scope: "data",
     aspect: "domain_data",
     depth: "overview",
@@ -91,6 +91,7 @@ function doc(): DocRecord {
     context: "alias: 상품 담기",
     syncedAt: "2026-06-30T00:00:00.000Z",
     sourcePath: "docs/specs/prefix-catalog/event-prefix-group/prefix-cart_event.spec.md",
+    ...overrides,
   };
 }
 
@@ -105,11 +106,50 @@ describe("SemanticGroundingService", () => {
     expect(report.aliases).toBeGreaterThanOrEqual(1);
     expect([...store.terms.values()][0]).toMatchObject({
       docId: "prefix-cart_event",
-      canonicalLabel: "Cart Event",
+      canonicalLabel: "Cart System",
       coordinate: "def_document:v2:123",
       prefixId: "cart_event",
     });
     expect(store.aliases.map((alias) => alias.normalizedAlias)).toContain("상품 담기");
+  });
+
+  it("keeps same-normalized aliases from different sources without collision", () => {
+    const store = new FakeStore();
+    const service = new SemanticGroundingService(store);
+
+    const report = service.materializeDocuments([
+      doc({
+        purpose: "alias: cart event",
+      }),
+    ]);
+
+    expect(report.aliases).toBeGreaterThanOrEqual(2);
+    expect(
+      store.aliases
+        .filter((alias) => alias.normalizedAlias === "cart event")
+        .map((alias) => alias.source)
+        .sort(),
+    ).toEqual(["deterministic-label", "document"]);
+  });
+
+  it("re-materializes documents by replacing stale aliases", () => {
+    const store = new FakeStore();
+    const service = new SemanticGroundingService(store);
+
+    service.materializeDocuments([
+      doc({
+        purpose: "alias: old grounding",
+      }),
+    ]);
+    service.materializeDocuments([
+      doc({
+        purpose: "alias: new grounding",
+      }),
+    ]);
+
+    const aliases = store.aliases.map((alias) => alias.normalizedAlias);
+    expect(aliases).toContain("new grounding");
+    expect(aliases).not.toContain("old grounding");
   });
 
   it("resolves aliases and records unresolved fallback proposals", () => {
@@ -130,5 +170,30 @@ describe("SemanticGroundingService", () => {
       kind: "alias-add",
       normalizedTerm: "없는 용어",
     });
+  });
+
+  it("does not create proposals for blank query searches", () => {
+    const store = new FakeStore();
+    const service = new SemanticGroundingService(store);
+
+    service.recordDocumentSearch({
+      query: "   ",
+      plan: service.planDocumentSearch("   "),
+      docs: [],
+      legacyCount: 0,
+    });
+
+    expect(store.proposals).toHaveLength(0);
+  });
+
+  it("keeps low-confidence tag and svc matches below the planner threshold", () => {
+    const store = new FakeStore();
+    const service = new SemanticGroundingService(store);
+    service.materializeDocuments([doc()]);
+
+    const plan = service.planDocumentSearch("weighted index");
+
+    expect(plan.candidateDocIds).toEqual([]);
+    expect(plan.fallbackReason).toBe("no-confident-candidate");
   });
 });

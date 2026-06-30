@@ -32,3 +32,10 @@
 - The service uses the brief’s allowed fallback constructor shape with an in-memory store-compatible branch for tests.
 - Marker-derived aliases needed stronger confidence than structural tags so exact semantic aliases could survive planner thresholding.
 - The code commit is clean; the report file is tracked separately for handoff visibility.
+
+## Task 3 Fix
+- Fixed alias ID derivation so same-normalized aliases from different sources do not collide during materialization.
+- Skipped `alias-add` proposal creation for `empty-query` fallbacks and blank normalized queries.
+- Added regressions for same-normalized alias sources, stale alias replacement on re-materialization, blank-query proposal suppression, and low-confidence tag/svc planner filtering.
+- Command run: `../../node_modules/.bin/vitest run src/modules/semantic-grounding/semantic-grounding.service.test.ts`
+- Output summary: `6 tests` passed.

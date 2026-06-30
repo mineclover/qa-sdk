@@ -68,11 +68,17 @@ export class SemanticGroundingService {
       });
       terms++;
 
+      const canonicalNormalizedLabel = normalizeSemanticText(canonicalLabel);
+      const aliasKeys = new Set<string>();
+
       for (const alias of aliasesForDoc(doc)) {
         const normalizedAlias = normalizeSemanticText(alias.value);
-        if (!normalizedAlias || normalizedAlias === normalizeSemanticText(canonicalLabel)) continue;
+        if (!normalizedAlias || normalizedAlias === canonicalNormalizedLabel) continue;
+        const aliasKey = `${alias.source}:${normalizedAlias}`;
+        if (aliasKeys.has(aliasKey)) continue;
+        aliasKeys.add(aliasKey);
         this.store.upsertAlias({
-          aliasId: `sem-alias-${termId}-${hashAlias(normalizedAlias)}`,
+          aliasId: `sem-alias-${termId}-${hashAlias(aliasKey)}`,
           termId,
           alias: alias.value,
           normalizedAlias,
@@ -118,7 +124,9 @@ export class SemanticGroundingService {
       outcome,
     });
 
-    if (input.plan.fallbackReason || input.docs.length === 0) {
+    if ((input.plan.fallbackReason && input.plan.fallbackReason !== "empty-query") || input.docs.length === 0) {
+      const normalizedQuery = normalizeSemanticText(input.query);
+      if (!normalizedQuery) return;
       this.store.upsertFeedbackProposal(buildFeedbackProposal({
         kind: "alias-add",
         term: input.query,
