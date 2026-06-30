@@ -18,10 +18,12 @@ import { GraphModule } from "./modules/graph/graph.module.js";
 import { TestsModule } from "./modules/tests/tests.module.js";
 import { DefinitionGraphQLModule } from "./modules/graphql/graphql.module.js";
 import { SearchModule } from "./modules/search/search.module.js";
+import { SemanticGroundingModule } from "./modules/semantic-grounding/semantic-grounding.module.js";
 
 @Module({
   imports: [
     DatabaseModule,
+    SemanticGroundingModule,
     SearchModule,
     GraphQLModule.forRoot<MercuriusDriverConfig>({
       driver: MercuriusDriver,
