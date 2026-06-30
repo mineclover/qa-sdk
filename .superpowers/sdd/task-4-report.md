@@ -40,3 +40,15 @@
 - PASS: `src/core/semantic-grounding/planner.test.ts`
 - PASS: `src/modules/docs/docs.service.test.ts`
 - Result: `12` tests passed across `2` files.
+
+## Task 4 Fix 2
+- Fixed paginated semantic totals so they now use the full legacy `searchCount()` universe plus semantic-only candidate docs, instead of the capped fetched buffer length.
+- Added a regression covering `searchCount() > fetched buffer` with one semantic-only doc; `listPaginated().total` now returns `101` instead of `51`.
+
+### Command Run
+- `../../node_modules/.bin/vitest run src/modules/docs/docs.service.test.ts src/core/semantic-grounding/planner.test.ts`
+
+### Output Summary
+- PASS: `src/core/semantic-grounding/planner.test.ts`
+- PASS: `src/modules/docs/docs.service.test.ts`
+- Result: `13` tests passed across `2` files.

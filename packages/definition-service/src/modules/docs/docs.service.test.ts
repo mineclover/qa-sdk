@@ -249,7 +249,7 @@ describe("DocsService semantic search integration", () => {
         return [doc("semantic-a"), doc("legacy-c")];
       },
       searchCount() {
-        return 1;
+        return 2;
       },
       index() {},
     };
@@ -275,6 +275,46 @@ describe("DocsService semantic search integration", () => {
     expect(result.total).toBe(3);
     expect(result.offset).toBe(1);
     expect(result.limit).toBe(1);
+  });
+
+  it("uses the full legacy count when semantic candidates extend beyond the fetched buffer", () => {
+    const { service, searchCalls } = createService();
+    seedDocs(service, [doc("semantic-only")]);
+
+    const search = {
+      search(query: string, limit: number, offset: number) {
+        searchCalls.push({ query, limit, offset });
+        return Array.from({ length: limit }, (_, index) => doc(`legacy-${index + 1}`));
+      },
+      searchCount() {
+        return 100;
+      },
+      index() {},
+    };
+    (service as any).search = search;
+    (service as any).semantic = {
+      planDocumentSearch() {
+        return {
+          kind: "document-search",
+          query: "semantic",
+          candidateDocIds: ["semantic-only"],
+          candidates: [],
+        };
+      },
+      recordDocumentSearch() {},
+      materializeDocuments() {
+        return { terms: 0, aliases: 0 };
+      },
+    };
+
+    const result = service.listPaginated({ q: "semantic", limit: 1, offset: 0 });
+
+    expect(result.docs.map((item) => item.docId)).toEqual(["semantic-only"]);
+    expect(result.total).toBe(101);
+    expect(searchCalls).toEqual([
+      { query: "semantic", limit: 50, offset: 0 },
+      { query: "semantic", limit: 100, offset: 0 },
+    ]);
   });
 
   it("records pre-pagination semantic hits when the requested page is empty", () => {

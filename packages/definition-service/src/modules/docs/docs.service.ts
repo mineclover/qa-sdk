@@ -93,7 +93,18 @@ export class DocsService {
       docs: merged,
       legacyCount,
     });
-    return { docs: merged.slice(offset, offset + limit), total: hasSemanticCandidates ? merged.length : legacyCount };
+    if (!hasSemanticCandidates) {
+      return { docs: merged.slice(offset, offset + limit), total: legacyCount };
+    }
+
+    const legacyUniverseDocs =
+      legacyCount > legacyDocs.length ? this.search?.search(query, legacyCount, 0) ?? legacyDocs : legacyDocs;
+    const legacyUniverseDocIds = new Set(legacyUniverseDocs.map((doc) => doc.docId));
+    const semanticOnlyCount = new Set(
+      plan.candidateDocIds.filter((docId) => !legacyUniverseDocIds.has(docId)),
+    ).size;
+
+    return { docs: merged.slice(offset, offset + limit), total: legacyCount + semanticOnlyCount };
   }
 
   get(docId: string): DocRecord | null {
