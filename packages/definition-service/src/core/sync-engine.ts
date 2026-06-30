@@ -13,6 +13,16 @@ import { extractByMarker, type DefinitionEntry } from "definition-catalog";
 import type { DocRecord } from "./types.js";
 import { computeDocumentAddress } from "./compute-address.js";
 
+type CoordinateKey = "scope" | "aspect" | "depth";
+
+function requireCoordinatePart(entry: DefinitionEntry, key: CoordinateKey): string {
+  const value = entry[key];
+  if (!value) {
+    throw new Error(`definition "${entry.id}" is missing required def.${key}`);
+  }
+  return value;
+}
+
 /** body 문자열의 SHA-256 해시 */
 export function hashBody(body: string): string {
   return createHash("sha256").update(body).digest("hex");
@@ -55,9 +65,12 @@ export function buildDocRecord(
   sourcePath: string,
 ): DocRecord {
   const markers = extractMarkers(body);
-  const address = entry.serialized ?? computeDocumentAddress(entry.scope, entry.aspect, entry.depth);
+  const scope = requireCoordinatePart(entry, "scope");
+  const aspect = requireCoordinatePart(entry, "aspect");
+  const depth = requireCoordinatePart(entry, "depth");
+  const address = entry.serialized ?? computeDocumentAddress(scope, aspect, depth);
   // prefix_schema 문서의 target_prefix 자동 추론: prefix-<id> → <id>
-  const targetPrefix = entry.aspect === "prefix_schema" && entry.id.startsWith("prefix-")
+  const targetPrefix = aspect === "prefix_schema" && entry.id.startsWith("prefix-")
     ? entry.id.slice("prefix-".length)
     : undefined;
 
@@ -67,9 +80,10 @@ export function buildDocRecord(
     docType: entry.type,
     knowledgeKind: entry.knowledgeKind,
     level: entry.level,
-    scope: entry.scope,
-    aspect: entry.aspect,
-    depth: entry.depth,
+    tier: entry.tier,
+    scope,
+    aspect,
+    depth,
     lifecycle: entry.lifecycle,
     layer: entry.layer,
     tags: entry.tags ? [...entry.tags] : [],

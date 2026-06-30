@@ -27,7 +27,10 @@ function rowToDoc(row: typeof documents.$inferSelect): DocRecord {
   return {
     docId: row.docId,
     title: row.title || row.docId,
+    docType: row.docType || undefined,
+    knowledgeKind: row.knowledgeKind || undefined,
     level: row.level || undefined,
+    tier: row.tier || undefined,
     scope: row.scope,
     aspect: row.aspect,
     depth: row.depth,

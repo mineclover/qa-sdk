@@ -50,9 +50,9 @@ export class FeedbackRequestSummary {
 export class BoundaryDoc {
   @Field(() => String) docId!: string;
   @Field(() => String) title!: string;
-  @Field(() => String) scope!: string;
-  @Field(() => String) aspect!: string;
-  @Field(() => String) depth!: string;
+  @Field(() => String, { nullable: true }) scope?: string;
+  @Field(() => String, { nullable: true }) aspect?: string;
+  @Field(() => String, { nullable: true }) depth?: string;
   @Field(() => String) lifecycle!: string;
   @Field(() => String, { nullable: true }) layer?: string;
   @Field(() => String, { nullable: true }) svc?: string;
@@ -64,9 +64,9 @@ export class BoundaryDoc {
 export class BoundaryMember {
   @Field(() => String) docId!: string;
   @Field(() => String) title!: string;
-  @Field(() => String) scope!: string;
-  @Field(() => String) aspect!: string;
-  @Field(() => String) depth!: string;
+  @Field(() => String, { nullable: true }) scope?: string;
+  @Field(() => String, { nullable: true }) aspect?: string;
+  @Field(() => String, { nullable: true }) depth?: string;
   @Field(() => String) summary!: string;
 }
 
@@ -172,6 +172,7 @@ export class Doc {
   @Field(() => String) docId!: string;
   @Field(() => String) title!: string;
   @Field(() => String, { nullable: true }) level?: string;
+  @Field(() => String, { nullable: true }) tier?: string;
   @Field(() => String) scope!: string;
   @Field(() => String) aspect!: string;
   @Field(() => String) depth!: string;

@@ -76,6 +76,7 @@ function metadataMatch(prev: DocRecord, next: DocRecord): boolean {
     prev.docType === next.docType &&
     prev.knowledgeKind === next.knowledgeKind &&
     prev.level === next.level &&
+    prev.tier === next.tier &&
     prev.scope === next.scope &&
     prev.aspect === next.aspect &&
     prev.depth === next.depth &&

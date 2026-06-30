@@ -26,6 +26,7 @@ function toEntry(doc: DocRecord): DefinitionEntry {
   return {
     id: doc.docId,
     title: doc.docId,
+    ...(doc.tier ? { tier: doc.tier as DefinitionEntry["tier"] } : {}),
     scope: doc.scope as DefinitionEntry["scope"],
     aspect: doc.aspect as DefinitionEntry["aspect"],
     depth: doc.depth as DefinitionEntry["depth"],

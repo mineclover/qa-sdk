@@ -78,6 +78,8 @@ export const documents = sqliteTable(
     knowledgeKind: text("knowledge_kind"),
     /** group | module | leaf */
     level: text("level"),
+    /** entry | component | system | layout | exempt */
+    tier: text("tier"),
     scope: text("scope").notNull(),
     aspect: text("aspect").notNull(),
     depth: text("depth").notNull(),
@@ -112,6 +114,7 @@ export const documents = sqliteTable(
     index("idx_doc_type").on(table.docType),
     index("idx_doc_knowledge_kind").on(table.knowledgeKind),
     index("idx_doc_level").on(table.level),
+    index("idx_doc_tier").on(table.tier),
   ],
 );
 
@@ -148,6 +151,7 @@ export const documentHistory = sqliteTable(
     docType: text("doc_type"),
     knowledgeKind: text("knowledge_kind"),
     level: text("level"),
+    tier: text("tier"),
     scope: text("scope").notNull(),
     aspect: text("aspect").notNull(),
     depth: text("depth").notNull(),

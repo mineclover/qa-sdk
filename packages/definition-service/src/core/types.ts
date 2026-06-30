@@ -16,6 +16,8 @@ export interface DocRecord {
   knowledgeKind?: string;
   /** group | module | leaf */
   level?: string;
+  /** entry | component | system | layout | exempt */
+  tier?: string;
   scope: string;
   aspect: string;
   depth: string;

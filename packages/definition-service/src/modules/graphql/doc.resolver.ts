@@ -195,6 +195,7 @@ export class DocResolver {
       docId: record.docId,
       title: record.title,
       level: record.level,
+      tier: record.tier,
       scope: record.scope,
       aspect: record.aspect,
       depth: record.depth,
