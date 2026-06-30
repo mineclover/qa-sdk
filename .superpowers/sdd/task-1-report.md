@@ -24,3 +24,10 @@ Implemented the semantic-grounding core for `definition-service` in the `codex/s
 ## Notes
 - The planner uses inclusive thresholding for document selection while resolution confidence remains strict, matching the test contract.
 - The branch worktree is clean after commit.
+
+## Task 1 Fix
+- Fixed resolver confidence boundary handling from `>` to `>=` so candidates exactly at the threshold are treated as confident.
+- Fixed planner fallback selection so filtered-out candidate sets return `no-confident-candidate` when raw candidates were present, while empty input still returns `no-candidate`.
+- Added regression tests for the exact-threshold resolver boundary and the planner raw-candidate filtering case.
+- Verified with `../../node_modules/.bin/vitest run src/core/semantic-grounding/resolver.test.ts src/core/semantic-grounding/planner.test.ts src/core/semantic-grounding/normalize.test.ts`.
+- Output summary: 3 test files passed, 9 tests passed, 0 failures.

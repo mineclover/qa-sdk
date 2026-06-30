@@ -61,11 +61,20 @@ describe("resolveSemanticCandidates", () => {
   });
 
   it("keeps ambiguous candidates instead of collapsing them", () => {
-    const resolution = resolveSemanticCandidates("cart", terms, { confidenceThreshold: 0.5 });
+    const resolution = resolveSemanticCandidates("cart", terms, { confidenceThreshold: 0.51 });
     expect(resolution.candidates.map((candidate) => candidate.termId)).toEqual([
       "term-cart-add",
       "term-cart-remove",
     ]);
     expect(resolution.confident).toBe(false);
+  });
+
+  it("treats confidence equal to the threshold as confident", () => {
+    const resolution = resolveSemanticCandidates("상품 담기", terms, { confidenceThreshold: 0.95 });
+    expect(resolution.candidates[0]).toMatchObject({
+      termId: "term-cart-add",
+      confidence: 0.95,
+    });
+    expect(resolution.confident).toBe(true);
   });
 });

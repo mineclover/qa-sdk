@@ -3,14 +3,18 @@ import type { DocRecord } from "../types.js";
 import { mergeSemanticDocumentResults, planDocumentSearch } from "./planner.js";
 import type { SemanticResolution } from "./types.js";
 
-function resolution(docIds: readonly string[], confident = true): SemanticResolution {
+function resolution(
+  docIds: readonly string[],
+  confident = true,
+  confidence = 0.9,
+): SemanticResolution {
   return {
     query: { raw: "상품 담기", normalized: "상품 담기", tokens: ["상품", "담기"] },
     confident,
     candidates: docIds.map((docId, index) => ({
       termId: `term-${index}`,
       canonicalLabel: `label-${index}`,
-      confidence: 0.9 - index * 0.1,
+      confidence: confidence - index * 0.1,
       matchedBy: "alias",
       evidence: [{ kind: "alias", ref: "상품 담기", weight: 0.95 }],
       docId,
@@ -49,6 +53,14 @@ describe("document grounding planner", () => {
 
   it("keeps legacy fallback when no candidate is confident", () => {
     const plan = planDocumentSearch("없는 용어", resolution([], false));
+    expect(plan.candidateDocIds).toEqual([]);
+    expect(plan.fallbackReason).toBe("no-candidate");
+  });
+
+  it("keeps no-confident-candidate when planner threshold filters all raw candidates", () => {
+    const plan = planDocumentSearch("상품 담기", resolution(["doc-a", "doc-b"], true, 0.7), {
+      confidenceThreshold: 0.8,
+    });
     expect(plan.candidateDocIds).toEqual([]);
     expect(plan.fallbackReason).toBe("no-confident-candidate");
   });

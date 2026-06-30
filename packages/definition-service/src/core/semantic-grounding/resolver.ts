@@ -34,7 +34,7 @@ export function resolveSemanticCandidates(
   return {
     query: { raw: query, normalized, tokens },
     candidates,
-    confident: candidates.some((candidate) => candidate.confidence > threshold),
+    confident: candidates.some((candidate) => candidate.confidence >= threshold),
   };
 }
 

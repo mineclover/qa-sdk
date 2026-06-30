@@ -30,7 +30,7 @@ export function planDocumentSearch(
   const candidateDocIds = [
     ...new Set(candidates.map((candidate) => candidate.docId).filter((value): value is string => Boolean(value))),
   ];
-  const fallbackReason = resolution.confident ? "no-candidate" : "no-confident-candidate";
+  const fallbackReason = resolution.candidates.length > 0 ? "no-confident-candidate" : "no-candidate";
 
   return {
     kind: "document-search",
