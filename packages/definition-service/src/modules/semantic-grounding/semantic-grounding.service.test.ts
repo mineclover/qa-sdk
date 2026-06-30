@@ -28,6 +28,14 @@ class FakeStore implements SemanticGroundingStore {
     this.aliases = this.aliases.filter((alias) => this.terms.has(alias.termId));
   }
 
+  deleteTermsNotInDocIds(docIds: readonly string[]): void {
+    const keep = new Set(docIds);
+    for (const [termId, term] of this.terms.entries()) {
+      if (term.docId && !keep.has(term.docId)) this.terms.delete(termId);
+    }
+    this.aliases = this.aliases.filter((alias) => this.terms.has(alias.termId));
+  }
+
   upsertAlias(record: SemanticAliasRecord): void {
     this.aliases = this.aliases.filter((alias) => alias.aliasId !== record.aliasId);
     this.aliases.push(record);
@@ -180,6 +188,10 @@ describe("SemanticGroundingService", () => {
       plan: service.planDocumentSearch("없는 용어"),
       docs: [],
       legacyCount: 0,
+      semanticCandidateCount: 0,
+      semanticHitCount: 0,
+      semanticOnlyCount: 0,
+      legacyOnlyCount: 0,
     });
     expect(store.proposals[0]).toMatchObject({
       kind: "alias-add",
@@ -196,9 +208,85 @@ describe("SemanticGroundingService", () => {
       plan: service.planDocumentSearch("   "),
       docs: [],
       legacyCount: 0,
+      semanticCandidateCount: 0,
+      semanticHitCount: 0,
+      semanticOnlyCount: 0,
+      legacyOnlyCount: 0,
     });
 
     expect(store.proposals).toHaveLength(0);
+  });
+
+  it("records wrong-scope feedback when semantic candidates miss and legacy hits remain", () => {
+    const store = new FakeStore();
+    const service = new SemanticGroundingService(store);
+    service.materializeDocuments([doc()]);
+
+    service.recordDocumentSearch({
+      query: "상품 담기",
+      plan: service.planDocumentSearch("상품 담기"),
+      docs: [doc()],
+      legacyCount: 1,
+      semanticCandidateCount: 1,
+      semanticHitCount: 0,
+      semanticOnlyCount: 0,
+      legacyOnlyCount: 1,
+    });
+
+    expect(store.proposals[0]).toMatchObject({
+      kind: "wrong-scope-or-alias-missing",
+      normalizedTerm: "상품 담기",
+    });
+    expect(store.proposals[0]?.evidence).toMatchObject({
+      reason: "semantic-candidates-no-scoped-hits",
+      semanticCandidateCount: 1,
+      semanticHitCount: 0,
+      legacyCount: 1,
+    });
+  });
+
+  it("records wrong-scope feedback when semantic and legacy results disagree", () => {
+    const store = new FakeStore();
+    const service = new SemanticGroundingService(store);
+    service.materializeDocuments([doc()]);
+
+    service.recordDocumentSearch({
+      query: "상품 담기 mismatch",
+      plan: service.planDocumentSearch("상품 담기"),
+      docs: [doc()],
+      legacyCount: 1,
+      semanticCandidateCount: 1,
+      semanticHitCount: 1,
+      semanticOnlyCount: 1,
+      legacyOnlyCount: 1,
+    });
+
+    expect(store.proposals[0]).toMatchObject({
+      kind: "wrong-scope-or-alias-missing",
+      normalizedTerm: "상품 담기 mismatch",
+    });
+    expect(store.proposals[0]?.evidence).toMatchObject({
+      reason: "semantic-legacy-disagreement",
+      semanticOnlyCount: 1,
+      legacyOnlyCount: 1,
+    });
+  });
+
+  it("removes stale terms when a full snapshot omits a previously materialized document", () => {
+    const store = new FakeStore();
+    const service = new SemanticGroundingService(store);
+
+    service.materializeDocuments([
+      doc({ docId: "prefix-cart_event", title: "Cart System" }),
+      doc({ docId: "prefix-checkout_event", title: "Checkout System" }),
+    ]);
+    service.materializeDocuments([
+      doc({ docId: "prefix-cart_event", title: "Cart System Updated" }),
+    ], { replaceSnapshot: true });
+
+    const remainingTermIds = new Set([...store.terms.keys()]);
+    expect([...store.terms.values()].map((term) => term.docId).sort()).toEqual(["prefix-cart_event"]);
+    expect(store.aliases.every((alias) => remainingTermIds.has(alias.termId))).toBe(true);
   });
 
   it("keeps low-confidence tag and svc matches below the planner threshold", () => {

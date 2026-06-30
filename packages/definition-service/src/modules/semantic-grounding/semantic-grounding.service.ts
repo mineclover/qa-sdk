@@ -11,6 +11,7 @@ import {
   resolveSemanticCandidates,
   type GroundingPlan,
   type SemanticResolution,
+  type SemanticDocumentSearchRecordInput,
   type SemanticTermWithAliases,
 } from "../../core/semantic-grounding/index.js";
 import {
@@ -32,12 +33,14 @@ export class SemanticGroundingService {
       : new SqlSemanticGroundingStore(dbOrStore);
   }
 
-  materializeDocuments(docs: readonly DocRecord[]): { terms: number; aliases: number } {
+  materializeDocuments(docs: readonly DocRecord[], options: { replaceSnapshot?: boolean } = {}): { terms: number; aliases: number } {
     let terms = 0;
     let aliases = 0;
     const now = new Date().toISOString();
+    const docIds: string[] = [];
 
     for (const doc of docs) {
+      docIds.push(doc.docId);
       this.store.deleteTermsForDoc(doc.docId);
       const canonicalLabel = doc.title || doc.docId;
       const parsedAddress = parseCoordinate(doc.address);
@@ -91,6 +94,10 @@ export class SemanticGroundingService {
       }
     }
 
+    if (options.replaceSnapshot) {
+      this.store.deleteTermsNotInDocIds(docIds);
+    }
+
     return { terms, aliases };
   }
 
@@ -106,15 +113,13 @@ export class SemanticGroundingService {
     return this.store.listTermsByDocIds(docIds);
   }
 
-  recordDocumentSearch(input: {
-    readonly query: string;
-    readonly plan: GroundingPlan;
-    readonly docs: readonly DocRecord[];
-    readonly legacyCount: number;
-  }): void {
-    const outcome = input.docs.length > 0 && input.plan.candidates.length > 0
-      ? input.legacyCount > 0 ? "mixed" as const : "semantic-hit" as const
-      : input.legacyCount > 0 ? "legacy-fallback" as const : "no-hit" as const;
+  recordDocumentSearch(input: SemanticDocumentSearchRecordInput): void {
+    const hasSemanticHits = input.semanticHitCount > 0;
+    const hasLegacyHits = input.legacyCount > 0;
+    const hasDisagreement = input.semanticOnlyCount > 0 || input.legacyOnlyCount > 0;
+    const outcome = hasSemanticHits
+      ? hasLegacyHits ? "mixed" as const : "semantic-hit" as const
+      : hasLegacyHits ? "legacy-fallback" as const : "no-hit" as const;
 
     this.store.recordGroundingEvent({
       query: input.query,
@@ -124,9 +129,28 @@ export class SemanticGroundingService {
       outcome,
     });
 
-    if ((input.plan.fallbackReason && input.plan.fallbackReason !== "empty-query") || input.docs.length === 0) {
-      const normalizedQuery = normalizeSemanticText(input.query);
-      if (!normalizedQuery) return;
+    const normalizedQuery = normalizeSemanticText(input.query);
+    if (!normalizedQuery) return;
+
+    if (input.semanticCandidateCount > 0 && (input.semanticHitCount === 0 || hasDisagreement)) {
+      this.store.upsertFeedbackProposal(buildFeedbackProposal({
+        kind: "wrong-scope-or-alias-missing",
+        term: input.query,
+        query: input.query,
+        evidence: {
+          reason: input.semanticHitCount === 0 ? "semantic-candidates-no-scoped-hits" : "semantic-legacy-disagreement",
+          legacyCount: input.legacyCount,
+          semanticCandidateCount: input.semanticCandidateCount,
+          semanticHitCount: input.semanticHitCount,
+          semanticOnlyCount: input.semanticOnlyCount,
+          legacyOnlyCount: input.legacyOnlyCount,
+          fallbackReason: input.plan.fallbackReason ?? null,
+        },
+      }));
+      return;
+    }
+
+    if ((input.plan.fallbackReason && input.plan.fallbackReason !== "empty-query") || (!hasSemanticHits && !hasLegacyHits)) {
       this.store.upsertFeedbackProposal(buildFeedbackProposal({
         kind: "alias-add",
         term: input.query,
@@ -134,6 +158,10 @@ export class SemanticGroundingService {
         evidence: {
           fallbackReason: input.plan.fallbackReason ?? "no-hit",
           legacyCount: input.legacyCount,
+          semanticCandidateCount: input.semanticCandidateCount,
+          semanticHitCount: input.semanticHitCount,
+          semanticOnlyCount: input.semanticOnlyCount,
+          legacyOnlyCount: input.legacyOnlyCount,
         },
       }));
     }

@@ -106,6 +106,10 @@ function createService() {
     plan: { candidateDocIds: readonly string[] };
     docs: readonly DocRecord[];
     legacyCount: number;
+    semanticCandidateCount: number;
+    semanticHitCount: number;
+    semanticOnlyCount: number;
+    legacyOnlyCount: number;
   }> = [];
   const materializeCalls: Array<readonly DocRecord[]> = [];
 
@@ -138,6 +142,10 @@ function createService() {
       plan: { candidateDocIds: readonly string[] };
       docs: readonly DocRecord[];
       legacyCount: number;
+      semanticCandidateCount: number;
+      semanticHitCount: number;
+      semanticOnlyCount: number;
+      legacyOnlyCount: number;
     }) {
       recordCalls.push(input);
     },
@@ -416,6 +424,53 @@ describe("DocsService semantic search integration", () => {
     expect(result.total).toBe(2);
     expect(planCalls).toEqual(["legacy"]);
     expect(recordCalls[0]?.docs.map((item: DocRecord) => item.docId)).toEqual(["legacy-a", "legacy-b"]);
+  });
+
+  it("ignores stale semantic candidates that no longer have matching docs", () => {
+    const { service, planCalls, recordCalls } = createService();
+    seedDocs(service, [doc("legacy-a")]);
+
+    const search = {
+      search(query: string, limit: number, offset: number) {
+        return [doc("legacy-a")].slice(offset, offset + limit);
+      },
+      searchCount() {
+        return 1;
+      },
+      index() {},
+    };
+    (service as any).search = search;
+    (service as any).semantic = {
+      planDocumentSearch(query: string) {
+        planCalls.push(query);
+        return {
+          kind: "document-search",
+          query,
+          candidateDocIds: ["stale-semantic-doc"],
+          candidates: [],
+        };
+      },
+      recordDocumentSearch(input: any) {
+        recordCalls.push(input);
+      },
+      materializeDocuments() {
+        return { terms: 0, aliases: 0 };
+      },
+    };
+
+    const result = service.listPaginated({ q: "semantic", limit: 10, offset: 0 });
+
+    expect(result.docs.map((item) => item.docId)).toEqual(["legacy-a"]);
+    expect(result.total).toBe(1);
+    expect(planCalls).toEqual(["semantic"]);
+    expect(recordCalls[0]).toMatchObject({
+      semanticCandidateCount: 1,
+      semanticHitCount: 0,
+      legacyCount: 1,
+      semanticOnlyCount: 0,
+      legacyOnlyCount: 1,
+    });
+    expect(recordCalls[0]?.docs.map((item: DocRecord) => item.docId)).toEqual(["legacy-a"]);
   });
 
   it("materializes updated documents after metadata updates", () => {

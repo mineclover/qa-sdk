@@ -1,7 +1,7 @@
 // @def.doc definition-service
 
 import { createHash } from "node:crypto";
-import { eq, inArray, like, or } from "drizzle-orm";
+import { eq, inArray, isNotNull, like, or } from "drizzle-orm";
 import type { DefinitionServiceDatabase } from "../database.module.js";
 import {
   semanticAliases,
@@ -24,6 +24,7 @@ import type {
 export interface SemanticGroundingStore {
   upsertTerm(record: SemanticTermRecord): void;
   deleteTermsForDoc(docId: string): void;
+  deleteTermsNotInDocIds(docIds: readonly string[]): void;
   upsertAlias(record: SemanticAliasRecord): void;
   upsertRelation(record: SemanticRelationRecord): void;
   listTermsForResolution(query: string, limit?: number): SemanticTermWithAliases[];
@@ -85,12 +86,25 @@ export class SqlSemanticGroundingStore implements SemanticGroundingStore {
   }
 
   deleteTermsForDoc(docId: string): void {
-    const rows = this.db.select({ termId: semanticTerms.termId }).from(semanticTerms).where(eq(semanticTerms.docId, docId)).all();
-    const termIds = rows.map((row) => row.termId);
-    if (termIds.length === 0) return;
-    this.db.delete(semanticAliases).where(inArray(semanticAliases.termId, termIds)).run();
-    this.db.delete(semanticRelations).where(or(inArray(semanticRelations.sourceTermId, termIds), inArray(semanticRelations.targetTermId, termIds))).run();
-    this.db.delete(semanticTerms).where(inArray(semanticTerms.termId, termIds)).run();
+    const rows = this.db
+      .select({ termId: semanticTerms.termId })
+      .from(semanticTerms)
+      .where(eq(semanticTerms.docId, docId))
+      .all();
+    this.deleteTermsByIds(rows.map((row) => row.termId));
+  }
+
+  deleteTermsNotInDocIds(docIds: readonly string[]): void {
+    const keepDocIds = new Set(docIds);
+    const rows = this.db
+      .select({ termId: semanticTerms.termId, docId: semanticTerms.docId })
+      .from(semanticTerms)
+      .where(isNotNull(semanticTerms.docId))
+      .all();
+    const staleTermIds = rows
+      .filter((row) => !row.docId || !keepDocIds.has(row.docId))
+      .map((row) => row.termId);
+    this.deleteTermsByIds(staleTermIds);
   }
 
   upsertAlias(record: SemanticAliasRecord): void {
@@ -318,5 +332,15 @@ export class SqlSemanticGroundingStore implements SemanticGroundingStore {
           evidence: relation.evidenceJson,
         })),
     }));
+  }
+
+  private deleteTermsByIds(termIds: readonly string[]): void {
+    if (termIds.length === 0) return;
+    this.db.delete(semanticAliases).where(inArray(semanticAliases.termId, termIds)).run();
+    this.db
+      .delete(semanticRelations)
+      .where(or(inArray(semanticRelations.sourceTermId, termIds), inArray(semanticRelations.targetTermId, termIds)))
+      .run();
+    this.db.delete(semanticTerms).where(inArray(semanticTerms.termId, termIds)).run();
   }
 }

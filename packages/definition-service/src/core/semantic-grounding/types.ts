@@ -106,6 +106,17 @@ export interface GroundingPlan {
   readonly fallbackReason?: "empty-query" | "no-candidate" | "no-confident-candidate";
 }
 
+export interface SemanticDocumentSearchRecordInput {
+  readonly query: string;
+  readonly plan: GroundingPlan;
+  readonly docs: readonly DocRecord[];
+  readonly legacyCount: number;
+  readonly semanticCandidateCount: number;
+  readonly semanticHitCount: number;
+  readonly semanticOnlyCount: number;
+  readonly legacyOnlyCount: number;
+}
+
 export interface SemanticDocumentMergeInput {
   readonly semanticDocs: readonly DocRecord[];
   readonly legacyDocs: readonly DocRecord[];

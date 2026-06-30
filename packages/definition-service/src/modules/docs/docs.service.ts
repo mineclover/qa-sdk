@@ -78,11 +78,18 @@ export class DocsService {
     const semanticDocs = hasSemanticCandidates
       ? this.store.list({ limit: 10000 }).filter((doc) => plan.candidateDocIds.includes(doc.docId))
       : [];
+    const semanticDocIdSet = new Set(semanticDocs.map((doc) => doc.docId));
+    const realizedCandidateDocIds = plan.candidateDocIds.filter((docId) => semanticDocIdSet.has(docId));
+    const legacyUniverseDocs =
+      legacyCount > legacyDocs.length ? this.search?.search(query, legacyCount, 0) ?? legacyDocs : legacyDocs;
+    const legacyUniverseDocIds = new Set(legacyUniverseDocs.map((doc) => doc.docId));
+    const semanticOnlyDocs = semanticDocs.filter((doc) => !legacyUniverseDocIds.has(doc.docId));
+    const legacyOnlyDocs = legacyUniverseDocs.filter((doc) => !semanticDocIdSet.has(doc.docId));
     const merged = hasSemanticCandidates
       ? mergeSemanticDocumentResults({
           semanticDocs,
           legacyDocs,
-          candidateDocIds: plan.candidateDocIds,
+          candidateDocIds: realizedCandidateDocIds,
           limit: semanticDocs.length + legacyDocs.length,
           offset: 0,
         })
@@ -92,19 +99,16 @@ export class DocsService {
       plan,
       docs: merged,
       legacyCount,
+      semanticCandidateCount: plan.candidateDocIds.length,
+      semanticHitCount: semanticDocs.length,
+      semanticOnlyCount: semanticOnlyDocs.length,
+      legacyOnlyCount: legacyOnlyDocs.length,
     });
     if (!hasSemanticCandidates) {
       return { docs: merged.slice(offset, offset + limit), total: legacyCount };
     }
 
-    const legacyUniverseDocs =
-      legacyCount > legacyDocs.length ? this.search?.search(query, legacyCount, 0) ?? legacyDocs : legacyDocs;
-    const legacyUniverseDocIds = new Set(legacyUniverseDocs.map((doc) => doc.docId));
-    const semanticOnlyCount = new Set(
-      plan.candidateDocIds.filter((docId) => !legacyUniverseDocIds.has(docId)),
-    ).size;
-
-    return { docs: merged.slice(offset, offset + limit), total: legacyCount + semanticOnlyCount };
+    return { docs: merged.slice(offset, offset + limit), total: legacyCount + semanticOnlyDocs.length };
   }
 
   get(docId: string): DocRecord | null {

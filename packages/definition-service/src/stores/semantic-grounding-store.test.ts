@@ -192,6 +192,83 @@ describe("SqlSemanticGroundingStore", () => {
     });
   });
 
+  it("deletes stale doc terms and dependent aliases during snapshot replacement", () => {
+    const { raw, store } = createStore();
+    const keepTermId = createSemanticTermId({
+      kind: "document",
+      canonicalLabel: "cart add",
+      coordinate: "cart_event:v2:10",
+      docId: "prefix-cart_event",
+    });
+    const staleTermId = createSemanticTermId({
+      kind: "document",
+      canonicalLabel: "cart remove",
+      coordinate: "cart_event:v2:11",
+      docId: "prefix-checkout_event",
+    });
+
+    store.upsertTerm({
+      termId: keepTermId,
+      kind: "document",
+      canonicalLabel: "cart add",
+      normalizedLabel: "cart add",
+      coordinate: "cart_event:v2:10",
+      prefixId: "cart_event",
+      versionId: "v2",
+      address: 10,
+      docId: "prefix-cart_event",
+      evidence: { source: "test" },
+      updatedAt: "2026-06-30T00:00:00.000Z",
+    });
+    store.upsertAlias({
+      aliasId: "alias-cart-add",
+      termId: keepTermId,
+      alias: "상품 담기",
+      normalizedAlias: "상품 담기",
+      source: "manual",
+      confidence: 0.95,
+      createdAt: "2026-06-30T00:00:00.000Z",
+    });
+    store.upsertTerm({
+      termId: staleTermId,
+      kind: "document",
+      canonicalLabel: "cart remove",
+      normalizedLabel: "cart remove",
+      coordinate: "cart_event:v2:11",
+      prefixId: "cart_event",
+      versionId: "v2",
+      address: 11,
+      docId: "prefix-checkout_event",
+      evidence: { source: "test" },
+      updatedAt: "2026-06-30T00:00:00.000Z",
+    });
+    store.upsertAlias({
+      aliasId: "alias-cart-remove",
+      termId: staleTermId,
+      alias: "상품 제거",
+      normalizedAlias: "상품 제거",
+      source: "manual",
+      confidence: 0.9,
+      createdAt: "2026-06-30T00:00:00.000Z",
+    });
+
+    store.deleteTermsNotInDocIds(["prefix-cart_event"]);
+
+    const termRows = raw
+      .prepare("SELECT term_id, doc_id FROM semantic_terms ORDER BY term_id")
+      .all() as Array<{ term_id: string; doc_id: string | null }>;
+    const aliasRows = raw
+      .prepare("SELECT alias_id, term_id FROM semantic_aliases ORDER BY alias_id")
+      .all() as Array<{ alias_id: string; term_id: string }>;
+
+    expect(termRows).toEqual([
+      { term_id: keepTermId, doc_id: "prefix-cart_event" },
+    ]);
+    expect(aliasRows).toEqual([
+      { alias_id: "alias-cart-add", term_id: keepTermId },
+    ]);
+  });
+
   it("deduplicates feedback proposals by kind and normalized term", () => {
     const { store } = createStore();
     const first = store.upsertFeedbackProposal({

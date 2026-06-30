@@ -98,7 +98,7 @@ export class SyncService implements OnModuleInit {
 
     // sync 완료 후 검색 인덱스 재구축
     const allDocs = this.rebuildSearchIndex(); // @facet.hierarchy core
-    const semanticReport = this.semantic.materializeDocuments(allDocs);
+    const semanticReport = this.semantic.materializeDocuments(allDocs, { replaceSnapshot: true });
     logger.info(semanticReport, "semantic grounding materialization 완료");
 
     logger.info({ synced: result.synced }, "동기화 완료"); // @facet.hierarchy auxiliary
