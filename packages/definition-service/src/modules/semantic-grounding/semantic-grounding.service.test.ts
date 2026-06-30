@@ -152,6 +152,21 @@ describe("SemanticGroundingService", () => {
     expect(aliases).not.toContain("old grounding");
   });
 
+  it("replaces stale document terms when a document is rematerialized", () => {
+    const store = new FakeStore();
+    const service = new SemanticGroundingService(store);
+    const first = doc();
+    service.materializeDocuments([first]);
+    expect([...store.terms.values()][0].canonicalLabel).toBe("Cart System");
+
+    service.materializeDocuments([{ ...first, title: "Cart Event Updated", tags: ["updated"] }]);
+
+    const terms = [...store.terms.values()];
+    expect(terms).toHaveLength(1);
+    expect(terms[0].canonicalLabel).toBe("Cart Event Updated");
+    expect(store.aliases.some((alias) => alias.normalizedAlias === "updated")).toBe(true);
+  });
+
   it("resolves aliases and records unresolved fallback proposals", () => {
     const store = new FakeStore();
     const service = new SemanticGroundingService(store);

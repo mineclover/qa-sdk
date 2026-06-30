@@ -3,7 +3,9 @@
 
 import { Injectable, Inject, OnModuleInit } from "@nestjs/common";
 import { createLogger } from "../../lib/logger.js";
+import type { DocRecord } from "../../core/types.js";
 import { DocsService } from "../docs/docs.service.js";
+import { SemanticGroundingService } from "../semantic-grounding/semantic-grounding.service.js";
 import { SearchService } from "../search/search.service.js";
 import { syncDocsToDb, type SyncResult } from "../../sync/scanner.js";
 import { syncDbToFiles, type ReverseSyncResult } from "../../sync/reverse-sync.js";
@@ -21,6 +23,7 @@ export class SyncService implements OnModuleInit {
   constructor(
     @Inject(DocsService) private readonly docs: DocsService,
     @Inject(SearchService) private readonly search: SearchService,
+    @Inject(SemanticGroundingService) private readonly semantic: SemanticGroundingService,
     @Inject(DRIZZLE_DB) private readonly db: DefinitionServiceDatabase,
   ) {}
 
@@ -94,14 +97,16 @@ export class SyncService implements OnModuleInit {
     }
 
     // sync 완료 후 검색 인덱스 재구축
-    this.rebuildSearchIndex(); // @facet.hierarchy core
+    const allDocs = this.rebuildSearchIndex(); // @facet.hierarchy core
+    const semanticReport = this.semantic.materializeDocuments(allDocs);
+    logger.info(semanticReport, "semantic grounding materialization 완료");
 
     logger.info({ synced: result.synced }, "동기화 완료"); // @facet.hierarchy auxiliary
     return result;
   }
 
   /** 전체 문서 검색 인덱스 재구축 */
-  private rebuildSearchIndex() {
+  private rebuildSearchIndex(): DocRecord[] {
     const allDocs = this.docs.list({ limit: 10000 });
     let indexed = 0;
     for (const doc of allDocs) {
@@ -109,6 +114,7 @@ export class SyncService implements OnModuleInit {
       indexed++;
     }
     logger.info({ indexed }, "검색 인덱스 재구축 완료");
+    return allDocs;
   }
 
   async runReverse(): Promise<ReverseSyncResult> {
