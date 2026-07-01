@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qa-sdk:data-structure-profile:fixtures:order-event",
+  "title": "Commerce Order Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "occurred_at",
+    "tenant_id",
+    "order_id",
+    "customer_no",
+    "shipping_zip",
+    "currency",
+    "items"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tenant_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "order_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "customer_no": {
+      "type": "string",
+      "minLength": 1
+    },
+    "shipping_zip": {
+      "type": "string",
+      "minLength": 3
+    },
+    "currency": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 3
+    },
+    "items": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "line_no",
+          "sku",
+          "quantity",
+          "unit_price"
+        ],
+        "properties": {
+          "line_no": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "sku": {
+            "type": "string",
+            "minLength": 1
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "unit_price": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

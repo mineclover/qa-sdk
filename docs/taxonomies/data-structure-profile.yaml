@@ -1,0 +1,248 @@
+taxonomy: data-structure-profile
+version: 1
+description: |
+  Data Structure Profile vocabulary for stream flattening, measurement,
+  quality gates, and optional DPM readiness.
+
+  This taxonomy owns reusable data-structure vocabulary only. Concrete Kafka
+  topics, JSON paths, fact tables, measurement values, and DPM policy refs are
+  profile-level artifacts under docs/proposals/data-structure-profile/fixtures/.
+
+axes:
+  data-source-kind:
+    description: Source or target system kinds that can participate in a profile.
+    lifecycle: draft
+    entries:
+      - { id: postgres, address: 0, label: "PostgreSQL table or query source", lifecycle: approved }
+      - { id: kafka, address: 1, label: "Kafka-compatible topic stream", lifecycle: approved }
+      - { id: clickhouse, address: 2, label: "ClickHouse analytical table or materialized view", lifecycle: approved }
+      - { id: file, address: 3, label: "File-backed batch source", lifecycle: review }
+      - { id: api, address: 4, label: "Request or response payload source", lifecycle: review }
+      - { id: cdc, address: 5, label: "Change-data-capture envelope source", lifecycle: review }
+    capacity: 16
+    version: 1
+
+  structure-kind:
+    description: Reusable structural node kinds in profile lineage graphs.
+    lifecycle: draft
+    entries:
+      - { id: table, address: 0, label: "Relational or analytical table", lifecycle: approved }
+      - { id: topic, address: 1, label: "Stream topic", lifecycle: approved }
+      - { id: event, address: 2, label: "Event payload", lifecycle: approved }
+      - { id: object, address: 3, label: "Nested object", lifecycle: approved }
+      - { id: array, address: 4, label: "Repeated array structure", lifecycle: approved }
+      - { id: field, address: 5, label: "Scalar or structured field", lifecycle: approved }
+      - { id: relationship, address: 6, label: "Join or semantic relationship", lifecycle: approved }
+      - { id: fact, address: 7, label: "Fact surface", lifecycle: approved }
+      - { id: metric, address: 8, label: "Metric surface", lifecycle: approved }
+    capacity: 32
+    version: 1
+
+  transform-kind:
+    description: Reusable transform kinds that profile instances can reference.
+    lifecycle: draft
+    entries:
+      - { id: project, address: 0, label: "Select or rename fields", lifecycle: approved }
+      - { id: cast, address: 1, label: "Convert field type", lifecycle: approved }
+      - { id: normalize, address: 2, label: "Canonicalize shape or value representation", lifecycle: approved }
+      - { id: flatten, address: 3, label: "Flatten nested object fields", lifecycle: approved }
+      - { id: explode, address: 4, label: "Expand repeated array elements", lifecycle: approved }
+      - { id: join, address: 5, label: "Join structures by relationship key", lifecycle: review }
+      - { id: aggregate, address: 6, label: "Aggregate facts into metrics", lifecycle: approved }
+      - { id: pseudonymize, address: 7, label: "Apply external privacy policy reference", lifecycle: review }
+    capacity: 16
+    version: 1
+
+  measurement-kind:
+    description: Reusable measurement dimensions emitted by profile dry-runs.
+    lifecycle: draft
+    entries:
+      - { id: event-rate, address: 0, label: "Input events per second", lifecycle: approved }
+      - { id: payload-size, address: 1, label: "Input payload bytes", lifecycle: approved }
+      - { id: array-length, address: 2, label: "Repeated element count", lifecycle: approved }
+      - { id: row-multiplier, address: 3, label: "Output rows per input row or event", lifecycle: approved }
+      - { id: latency, address: 4, label: "Processing latency", lifecycle: review }
+      - { id: storage, address: 5, label: "Estimated output storage", lifecycle: review }
+      - { id: cost, address: 6, label: "Estimated compute or storage cost", lifecycle: review }
+    capacity: 16
+    version: 1
+
+  quality-risk:
+    description: Reusable risks that profile validators and quality gates can report.
+    lifecycle: draft
+    entries:
+      - { id: dedup, address: 0, label: "Duplicate event or fact rows", lifecycle: approved }
+      - { id: replay, address: 1, label: "Replay or backfill policy gap", lifecycle: approved }
+      - { id: schema-drift, address: 2, label: "Source schema changes without review", lifecycle: approved }
+      - { id: late-event, address: 3, label: "Late event handling gap", lifecycle: review }
+      - { id: orphan, address: 4, label: "Orphaned source or target relationship", lifecycle: review }
+      - { id: array-explosion, address: 5, label: "Unbounded repeated structure expansion", lifecycle: approved }
+      - { id: pii-leak, address: 6, label: "Sensitive field reaches an unsafe surface", lifecycle: approved }
+      - { id: relationship-break, address: 7, label: "Relationship key or grain mismatch", lifecycle: approved }
+    capacity: 16
+    version: 1
+
+  adapter-capability:
+    description: Stable adapter capabilities referenced by profile decisions.
+    lifecycle: draft
+    entries:
+      - { id: array-join, address: 0, label: "Native array expansion", lifecycle: approved }
+      - { id: materialized-view, address: 1, label: "Materialized view projection", lifecycle: approved }
+      - { id: watermark, address: 2, label: "Event-time watermark handling", lifecycle: review }
+      - { id: stateful-join, address: 3, label: "Stateful stream join", lifecycle: review }
+      - { id: replay, address: 4, label: "Retained replay or backfill", lifecycle: approved }
+      - { id: schema-registry, address: 5, label: "External schema registry", lifecycle: review }
+    capacity: 16
+    version: 1
+
+relations:
+  source-can-hold-structure:
+    from: data-source-kind
+    to: structure-kind
+    kind: depends-on
+    rules:
+      - { data-source-kind: kafka, structure-kind: topic }
+      - { data-source-kind: kafka, structure-kind: event }
+      - { data-source-kind: postgres, structure-kind: table }
+      - { data-source-kind: postgres, structure-kind: relationship }
+      - { data-source-kind: clickhouse, structure-kind: table }
+      - { data-source-kind: clickhouse, structure-kind: fact }
+      - { data-source-kind: clickhouse, structure-kind: metric }
+      - { data-source-kind: file, structure-kind: object }
+      - { data-source-kind: file, structure-kind: array }
+      - { data-source-kind: api, structure-kind: object }
+      - { data-source-kind: api, structure-kind: field }
+      - { data-source-kind: cdc, structure-kind: event }
+      - { data-source-kind: cdc, structure-kind: relationship }
+
+  structure-can-contain:
+    from: structure-kind
+    to: structure-kind
+    kind: contains
+    rules:
+      - { parent: topic, child: event }
+      - { parent: event, child: object }
+      - { parent: event, child: array }
+      - { parent: event, child: field }
+      - { parent: object, child: field }
+      - { parent: object, child: array }
+      - { parent: array, child: object }
+      - { parent: array, child: field }
+      - { parent: table, child: field }
+      - { parent: fact, child: field }
+      - { parent: metric, child: field }
+
+  transform-applies-to:
+    from: transform-kind
+    to: structure-kind
+    kind: depends-on
+    rules:
+      - { transform-kind: project, structure-kind: field }
+      - { transform-kind: project, structure-kind: fact }
+      - { transform-kind: cast, structure-kind: field }
+      - { transform-kind: normalize, structure-kind: object }
+      - { transform-kind: normalize, structure-kind: field }
+      - { transform-kind: flatten, structure-kind: object }
+      - { transform-kind: explode, structure-kind: array }
+      - { transform-kind: join, structure-kind: relationship }
+      - { transform-kind: aggregate, structure-kind: fact }
+      - { transform-kind: pseudonymize, structure-kind: field }
+
+  transform-produces-measurement:
+    from: transform-kind
+    to: measurement-kind
+    kind: projects-to
+    rules:
+      - { transform-kind: explode, measurement-kind: array-length }
+      - { transform-kind: explode, measurement-kind: row-multiplier }
+      - { transform-kind: flatten, measurement-kind: payload-size }
+      - { transform-kind: project, measurement-kind: payload-size }
+      - { transform-kind: aggregate, measurement-kind: row-multiplier }
+      - { transform-kind: aggregate, measurement-kind: latency }
+      - { transform-kind: join, measurement-kind: latency }
+      - { transform-kind: normalize, measurement-kind: cost }
+
+  risk-observed-by:
+    from: quality-risk
+    to: measurement-kind
+    kind: depends-on
+    rules:
+      - { quality-risk: dedup, measurement-kind: event-rate }
+      - { quality-risk: replay, measurement-kind: event-rate }
+      - { quality-risk: schema-drift, measurement-kind: payload-size }
+      - { quality-risk: late-event, measurement-kind: latency }
+      - { quality-risk: orphan, measurement-kind: row-multiplier }
+      - { quality-risk: array-explosion, measurement-kind: array-length }
+      - { quality-risk: array-explosion, measurement-kind: row-multiplier }
+      - { quality-risk: pii-leak, measurement-kind: payload-size }
+      - { quality-risk: relationship-break, measurement-kind: row-multiplier }
+
+  source-provides-capability:
+    from: data-source-kind
+    to: adapter-capability
+    kind: depends-on
+    rules:
+      - { data-source-kind: kafka, adapter-capability: replay }
+      - { data-source-kind: kafka, adapter-capability: schema-registry }
+      - { data-source-kind: kafka, adapter-capability: watermark }
+      - { data-source-kind: clickhouse, adapter-capability: array-join }
+      - { data-source-kind: clickhouse, adapter-capability: materialized-view }
+      - { data-source-kind: postgres, adapter-capability: materialized-view }
+      - { data-source-kind: cdc, adapter-capability: replay }
+      - { data-source-kind: cdc, adapter-capability: schema-registry }
+
+  capability-enables-transform:
+    from: adapter-capability
+    to: transform-kind
+    kind: binds
+    rules:
+      - { adapter-capability: array-join, transform-kind: explode }
+      - { adapter-capability: materialized-view, transform-kind: project }
+      - { adapter-capability: materialized-view, transform-kind: aggregate }
+      - { adapter-capability: watermark, transform-kind: aggregate }
+      - { adapter-capability: stateful-join, transform-kind: join }
+      - { adapter-capability: replay, transform-kind: normalize }
+      - { adapter-capability: schema-registry, transform-kind: normalize }
+
+constraints:
+  - id: data-source-kind-required
+    kind: ref
+    rule:
+      axis: data-source-kind
+      mustExist: true
+    severity: error
+
+  - id: structure-kind-required
+    kind: ref
+    rule:
+      axis: structure-kind
+      mustExist: true
+    severity: error
+
+  - id: transform-kind-required
+    kind: ref
+    rule:
+      axis: transform-kind
+      mustExist: true
+    severity: error
+
+  - id: measurement-kind-required
+    kind: ref
+    rule:
+      axis: measurement-kind
+      mustExist: true
+    severity: error
+
+  - id: quality-risk-required
+    kind: ref
+    rule:
+      axis: quality-risk
+      mustExist: true
+    severity: error
+
+  - id: adapter-capability-required
+    kind: ref
+    rule:
+      axis: adapter-capability
+      mustExist: true
+    severity: error

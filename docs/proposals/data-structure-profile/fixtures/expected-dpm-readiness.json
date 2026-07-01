@@ -1,0 +1,24 @@
+{
+  "kind": "data-structure-profile.dpm-readiness.v1",
+  "profile": "order-events-to-order-item-facts",
+  "required": false,
+  "policyRef": null,
+  "sensitivePaths": [
+    {
+      "path": "$.customer_no",
+      "role": "direct-customer-key"
+    },
+    {
+      "path": "$.shipping_zip",
+      "role": "location-quasi-identifier"
+    }
+  ],
+  "diagnostics": [
+    {
+      "code": "dsp-privacy-dpm-ref-missing",
+      "severity": "warning",
+      "target": "privacy.dpm_policy_ref",
+      "message": "Sensitive paths exist but no DPM policy reference is declared."
+    }
+  ]
+}

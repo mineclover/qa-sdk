@@ -1,0 +1,23 @@
+{
+  "event_id": "evt_20260701_000001",
+  "occurred_at": "2026-07-01T01:23:45.000Z",
+  "tenant_id": "tenant_demo",
+  "order_id": "ord_10001",
+  "customer_no": "cust_8901",
+  "shipping_zip": "04524",
+  "currency": "KRW",
+  "items": [
+    {
+      "line_no": 1,
+      "sku": "SKU-COFFEE-001",
+      "quantity": 2,
+      "unit_price": 12000
+    },
+    {
+      "line_no": 2,
+      "sku": "SKU-FILTER-009",
+      "quantity": 1,
+      "unit_price": 8000
+    }
+  ]
+}

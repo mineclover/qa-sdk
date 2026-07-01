@@ -1,0 +1,21 @@
+{
+  "kind": "data-structure-profile.measurement-report.v1",
+  "profile": "order-events-to-order-item-facts",
+  "inputs": {
+    "expectedEventRatePerSec": 1000,
+    "averagePayloadBytes": 2048,
+    "averageArrayLength": 5,
+    "maxArrayLength": 200,
+    "estimatedFactRowBytes": 256
+  },
+  "estimates": {
+    "rowMultiplier": 5,
+    "estimatedFactRowsPerSec": 5000,
+    "estimatedOutputBytesPerSec": 1280000,
+    "estimatedDailyFactRows": 432000000
+  },
+  "thresholds": {
+    "maxRowMultiplier": 200
+  },
+  "warnings": []
+}

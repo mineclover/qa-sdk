@@ -1,0 +1,55 @@
+{
+  "kind": "data-structure-profile.validation-report.v1",
+  "profile": "order-events-to-order-item-facts",
+  "status": "needs-review",
+  "summary": {
+    "errors": 0,
+    "warnings": 1,
+    "infos": 0
+  },
+  "checkedGates": [
+    {
+      "id": "event-id-dedup-required",
+      "risk": "dedup",
+      "severity": "error",
+      "result": "pass",
+      "evidence": "$.event_id"
+    },
+    {
+      "id": "replay-policy-required",
+      "risk": "replay",
+      "severity": "error",
+      "result": "pass",
+      "evidence": "source.replay_policy"
+    },
+    {
+      "id": "schema-drift-watch",
+      "risk": "schema-drift",
+      "severity": "warning",
+      "result": "pass",
+      "evidence": "./order-event.schema.json"
+    },
+    {
+      "id": "array-explosion-budget",
+      "risk": "array-explosion",
+      "severity": "error",
+      "result": "pass",
+      "evidence": "max_array_length=200"
+    },
+    {
+      "id": "privacy-readiness",
+      "risk": "pii-leak",
+      "severity": "warning",
+      "result": "warn",
+      "evidence": "privacy.dpm_policy_ref"
+    }
+  ],
+  "diagnostics": [
+    {
+      "code": "dsp-privacy-dpm-ref-missing",
+      "severity": "warning",
+      "target": "privacy.dpm_policy_ref",
+      "message": "Sensitive paths exist but no DPM policy reference is declared."
+    }
+  ]
+}

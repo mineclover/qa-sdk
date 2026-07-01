@@ -1,0 +1,165 @@
+kind: data-structure-profile.profile.v1
+profile: order-events-to-order-item-facts
+version: 1
+taxonomy_ref: data-structure-profile@draft
+description: >
+  Flatten a Kafka-like commerce order event into one fact row per order item.
+
+source:
+  id: commerce-orders-topic
+  kind: kafka
+  ref: kafka://commerce.orders.v1
+  payload_format: json
+  schema_ref: ./order-event.schema.json
+  sample_ref: ./order-event.sample.json
+  event_id_path: $.event_id
+  event_time_path: $.occurred_at
+  partition_key_path: $.order_id
+  replay_policy:
+    mode: retained-topic-replay
+    backfill_window_days: 7
+
+structures:
+  - id: order-event
+    kind: event
+    source_path: $
+    lifecycle: draft
+
+  - id: order-id
+    kind: field
+    source_path: $.order_id
+    parent: order-event
+
+  - id: customer-no
+    kind: field
+    source_path: $.customer_no
+    parent: order-event
+    sensitivity: direct-customer-key
+
+  - id: shipping-zip
+    kind: field
+    source_path: $.shipping_zip
+    parent: order-event
+    sensitivity: quasi-identifier
+
+  - id: item-array
+    kind: array
+    source_path: $.items[*]
+    parent: order-event
+
+  - id: item-line-no
+    kind: field
+    source_path: $.items[*].line_no
+    parent: item-array
+
+  - id: item-sku
+    kind: field
+    source_path: $.items[*].sku
+    parent: item-array
+
+  - id: item-quantity
+    kind: field
+    source_path: $.items[*].quantity
+    parent: item-array
+
+  - id: item-unit-price
+    kind: field
+    source_path: $.items[*].unit_price
+    parent: item-array
+
+  - id: order-item-fact
+    kind: fact
+    target_ref: clickhouse://analytics.fact_order_items
+    grain: one-row-per-order-item
+
+relationships:
+  - id: event-contains-items
+    kind: contains
+    from: order-event
+    to: item-array
+
+  - id: item-fact-keeps-order-grain
+    kind: projects-to
+    from: item-array
+    to: order-item-fact
+
+transforms:
+  - id: explode-items
+    kind: explode
+    from: item-array
+    to: order-item-fact
+    source_path: $.items[*]
+    semantics:
+      empty_array: drop-parent-row
+      output_grain: one-row-per-item
+      max_array_length: 200
+      dedup_key_paths:
+        - $.event_id
+        - $.items[*].line_no
+
+  - id: project-order-item-fields
+    kind: project
+    from: order-event
+    to: order-item-fact
+    mappings:
+      event_id: $.event_id
+      occurred_at: $.occurred_at
+      order_id: $.order_id
+      customer_no: $.customer_no
+      shipping_zip: $.shipping_zip
+      line_no: $.items[*].line_no
+      sku: $.items[*].sku
+      quantity: $.items[*].quantity
+      unit_price: $.items[*].unit_price
+
+measurements:
+  expected_event_rate_per_sec: 1000
+  average_payload_bytes: 2048
+  average_array_length: 5
+  max_array_length: 200
+  estimated_fact_row_bytes: 256
+
+quality_gates:
+  - id: event-id-dedup-required
+    risk: dedup
+    severity: error
+    evidence:
+      path: $.event_id
+      expectation: present-and-unique-within-replay-window
+
+  - id: replay-policy-required
+    risk: replay
+    severity: error
+    evidence:
+      path: source.replay_policy
+      expectation: backfill-window-declared
+
+  - id: schema-drift-watch
+    risk: schema-drift
+    severity: warning
+    evidence:
+      path: source.schema_ref
+      expectation: checked-in-schema-ref
+
+  - id: array-explosion-budget
+    risk: array-explosion
+    severity: error
+    threshold:
+      max_array_length: 200
+      max_row_multiplier: 200
+
+privacy:
+  mode: readiness-check
+  dpm_policy_ref: null
+  required: false
+  sensitive_paths:
+    - path: $.customer_no
+      role: direct-customer-key
+    - path: $.shipping_zip
+      role: location-quasi-identifier
+
+outputs:
+  lineage_ref: ./expected-lineage.json
+  validation_report_ref: ./expected-validation-report.json
+  measurement_report_ref: ./expected-measurement-report.json
+  dpm_readiness_ref: ./expected-dpm-readiness.json
