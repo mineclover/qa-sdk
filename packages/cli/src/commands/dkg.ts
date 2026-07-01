@@ -60,7 +60,10 @@ import {
   EntryAddError,
   writeCatalogFile,
 } from "@qa-sdk/spec-core/propagation";
-import { DkgSqliteStore } from "dkg/store";
+import {
+  DkgSqliteStore,
+  type UsageData as DkgUsageData,
+} from "dkg/store";
 import { join, dirname } from "node:path";
 import { mkdirSync, existsSync, writeFileSync, readFileSync } from "node:fs";
 import { execaSync } from "execa";
@@ -85,6 +88,8 @@ let activeCatalogId = "demo";
 type BootstrapConfigInput = Parameters<typeof bootstrapDkg>[0]["config"];
 type BootstrapCatalogInput = Parameters<typeof bootstrapDkg>[0]["catalog"];
 type FlowSchemaConfigEntry = NonNullable<BootstrapConfigInput["flowSchemas"]>[number];
+type DkgEntryUsage = DkgUsageData["entryUsages"][number];
+type DkgAddressUsage = DkgUsageData["addressUsages"][number];
 type DecisionListData = {
   title?: string;
   finding?: string;
@@ -468,6 +473,40 @@ function serializeAddressContext(prefix: string, version: string, address: numbe
   return `${prefix}:${version}:${address}`;
 }
 
+function toDkgEntryUsages(catalog: Catalog, entryUsages: readonly EntryUsage[]): DkgEntryUsage[] {
+  return entryUsages.flatMap((usage) =>
+    Object.values(catalog.prefixes)
+      .filter((prefix) =>
+        Object.values(prefix.dims).some((dim) => dim.kind === "axis" && dim.axisId === usage.axisId),
+      )
+      .map((prefix) => ({
+        prefixId: prefix.id,
+        entryId: usage.entry,
+        count: usage.count,
+      })),
+  );
+}
+
+function toDkgAddressUsages(addressUsages: readonly AddressUsage[]): DkgAddressUsage[] {
+  return addressUsages.map((usage) => ({
+    prefixId: usage.prefix,
+    version: usage.version,
+    address: usage.address,
+    count: usage.count,
+  }));
+}
+
+function toDkgUsageData(catalog: Catalog, usage: UsageData): DkgUsageData {
+  return {
+    entryUsages: toDkgEntryUsages(catalog, usage.entryUsages),
+    addressUsages: toDkgAddressUsages(usage.addressUsages),
+    coOccurrences: usage.coOccurrences,
+    versionUsages: usage.versionUsages,
+    collectionPeriod: usage.collectionPeriod,
+    ...(usage.sourceStats ? { sourceStats: usage.sourceStats } : {}),
+  };
+}
+
 function saveUsageTelemetry(input: {
   collectedAt: string;
   entryUsages?: EntryUsage[];
@@ -490,12 +529,12 @@ function saveUsageTelemetry(input: {
 
   const store = getStore();
   store.saveUsageSnapshot({
-    entryUsages,
-    addressUsages,
+    entryUsages: toDkgEntryUsages(DEMO_CATALOG, entryUsages),
+    addressUsages: toDkgAddressUsages(addressUsages),
     coOccurrences: [],
     versionUsages,
     collectionPeriod: { from: input.collectedAt, to: input.collectedAt },
-  } satisfies UsageData);
+  } satisfies DkgUsageData);
 }
 
 function makeAuditRecord(
@@ -3491,8 +3530,8 @@ export function dkgRun(skillId: string, args: string[]): void {
     }
 
     case "skill-observation-coverage": {
-      const entryUsages: EntryUsage[] = [];
-      const addressUsages: AddressUsage[] = [];
+      const entryUsages: DkgUsageData["entryUsages"] = [];
+      const addressUsages: DkgUsageData["addressUsages"] = [];
       const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
       const result = auditCoverage(catalog, graph, entryUsages, addressUsages);
       const report = result.report;
@@ -4023,7 +4062,8 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
 
   // 4. Converge Chain
   const entriesMap = buildEntriesMap(catalog);
-  const convergeResult = convergeChain(catalog, graph, usage, { entriesMap });
+  const dkgUsage = usage ? toDkgUsageData(catalog, usage) : null;
+  const convergeResult = convergeChain(catalog, graph, dkgUsage, { entriesMap });
   console.log(`\n  converge chain:`);
   console.log(`    actions: ${convergeResult.actions.length}건`);
   console.log(`    merges=${convergeResult.summary.merges}, deactivations=${convergeResult.summary.deactivations}, simplifications=${convergeResult.summary.simplifications}, observations=${convergeResult.summary.observations}`);
@@ -4079,7 +4119,7 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
 
     // Usage snapshot + auto observations
     if (usage) {
-      const snapResult = store.saveUsageSnapshotWithObservations(usage, autoObs);
+      const snapResult = store.saveUsageSnapshotWithObservations(dkgUsage!, autoObs);
       console.log(`    usage snapshot #${snapResult.snapshotId} 저장 (observations: ${snapResult.observationsWritten})`);
     } else if (autoObs.length > 0) {
       // usage 없어도 observation은 저장
@@ -5210,7 +5250,7 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
 
   if (apply && store) {
     console.log(`\n  ── Apply ──`);
-    const snapshotId = store.saveUsageSnapshot(usage);
+    const snapshotId = store.saveUsageSnapshot(toDkgUsageData(DEMO_CATALOG, usage));
     console.log(`    snapshot #${snapshotId} 저장`);
 
     for (const { obs, reason } of resolveTargets) {

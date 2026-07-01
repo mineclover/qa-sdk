@@ -153,7 +153,7 @@ function outputReport(reports: AnalyzeReport[], opts: AnalyzeArgs): void {
         const branchCount = g.branches?.length ?? 0;
         const reqEv = g.requiredEvidence ?? [];
         const profile = r.profiles.find((p) => p.gateId === g.id);
-        const cascade = profile?.cascadeImpact ?? 0;
+        const transitiveImpact = profile?.transitiveImpact ?? 0;
         console.log(
           `    [${g.id}] phase=${g.phase} weight=${g.weight ?? "tactical"}` +
             ` branches=${branchCount}` +
@@ -161,7 +161,7 @@ function outputReport(reports: AnalyzeReport[], opts: AnalyzeArgs): void {
         );
         if (profile) {
           console.log(
-            `        directImpact=${profile.directImpact} cascadeImpact=${cascade}`,
+            `        directImpact=${profile.directImpact} transitiveImpact=${transitiveImpact}`,
           );
         }
       }
@@ -179,9 +179,9 @@ function outputReport(reports: AnalyzeReport[], opts: AnalyzeArgs): void {
       );
       const profile = r.profiles[0];
       if (profile) {
-        const cascade = profile.cascadeImpact ?? 0;
+        const transitiveImpact = profile.transitiveImpact ?? 0;
         console.log(
-          `  gate profile:  weight=${profile.weight} directImpact=${profile.directImpact} cascadeImpact=${cascade}`,
+          `  gate profile:  weight=${profile.weight} directImpact=${profile.directImpact} transitiveImpact=${transitiveImpact}`,
         );
       }
     }
