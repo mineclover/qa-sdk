@@ -31,6 +31,10 @@
     "./transition": {
       "import": "./dist/transition/index.js",
       "types": "./dist/transition/index.d.ts"
+    },
+    "./semantic-indexing-pack": {
+      "import": "./dist/semantic-indexing-pack/index.js",
+      "types": "./dist/semantic-indexing-pack/index.d.ts"
     }
   },
   "scripts": {

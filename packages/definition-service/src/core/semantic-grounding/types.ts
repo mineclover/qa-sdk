@@ -51,6 +51,16 @@ export interface SemanticTermWithAliases extends SemanticTermRecord {
   readonly relations: readonly SemanticRelationRecord[];
 }
 
+export type SemanticGroundingRuntimeStoreKind = "sqlite" | "memory-fixture";
+
+export interface SemanticGroundingRuntimeSnapshot {
+  readonly source: "definition-service.semantic-grounding";
+  readonly storeKind: SemanticGroundingRuntimeStoreKind;
+  readonly capturedAt: string;
+  readonly terms: readonly SemanticTermWithAliases[];
+  readonly feedbackProposals: readonly FeedbackProposalRecord[];
+}
+
 export interface SemanticQuery {
   readonly raw: string;
   readonly normalized: string;

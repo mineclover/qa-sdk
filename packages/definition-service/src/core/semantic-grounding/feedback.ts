@@ -10,9 +10,7 @@ export function buildFeedbackProposal(input: FeedbackProposalInput): FeedbackPro
     term: input.term,
     normalizedTerm,
     dedupeKey: `${input.kind}:${normalizedTerm}`,
-    payload: {
-      ...(input.query ? { query: input.query } : {}),
-    },
+    payload: input.query ? { query: input.query } : {},
     evidence: input.evidence ?? {},
   };
 }

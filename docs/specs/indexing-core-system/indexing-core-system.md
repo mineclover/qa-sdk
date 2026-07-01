@@ -62,6 +62,7 @@ def:
 - `coord-foundation`: 이 시스템은 좌표 시스템(Coordinate System)이다.
   - `coord-id-allocation-design`: Snowflake, TiDB, Kafka의 ID/offset 설계를 비교하고 `recordId`, stream pointer, storage placement, semantic address 책임을 분리한다.
   - `coord-semantic-indexing-logic`: RAG, text-to-SQL, 사용자 검색을 위한 의미론 catalog/resolver/materializer/planner/feedback 루프를 정의한다.
+  - `coord-semantic-indexing-pack`: spec-transition, taxonomy 관리, 좌표 배정, 파생 인덱스, feedback proposal을 하나의 semantic snapshot 호환성 단위로 묶는다.
 - `data-design-group`: 좌표 시스템의 압축, 편입, 카탈로그 운영을 데이터 설계 관점에서 분할한 그룹.
 - `index-arch-group`: vocabulary부터 semantic까지 인덱싱 레이어와 추적 경계를 정리한 그룹.
 - `schema-layer-spec`: Status: DRAFT "스키마 시스템은 구조를 정의하고 검증하지만, 그 구조의 의미를 소유하지 않는다." Schema validates composition, not truth.

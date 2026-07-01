@@ -59,6 +59,8 @@ raw docs / schema / events / code
 
 이 루프의 핵심은 자연어를 바로 검색/SQL로 보내지 않고, 먼저 의미 후보와 좌표 후보로 제한하는 것이다.
 
+이 흐름을 실제 검토/배포 단위로 묶을 때는 [`Semantic Indexing Pack`](foundation-semantic-indexing-pack.md)을 사용한다. Pack은 taxonomy 관리, spec-transition, 좌표 배정, 파생 인덱스, feedback proposal이 같은 semantic snapshot에서 호환되는지 판단하는 Layout/Pack 단위다.
+
 ## 컴포넌트 책임
 
 | 컴포넌트 | 입력 | 출력 | 책임 |
@@ -136,6 +138,7 @@ natural language
 3. materializer는 파생 인덱스를 만든다. 의미 판단을 새로 하지 않는다.
 4. planner는 목적별 검색 계획을 만든다. RAG/text-to-SQL/search의 scoring을 한 함수에 합치지 않는다.
 5. feedback은 즉시 catalog 변경이 아니라 proposal로 남긴다. axis 승격은 5Q를 통과해야 한다.
+6. taxonomy, transition, coordinate 변경이 함께 움직이는 경우 단일 컴포넌트 변경으로 보지 않고 semantic indexing pack 변경으로 검토한다.
 
 ## 채택 기준
 

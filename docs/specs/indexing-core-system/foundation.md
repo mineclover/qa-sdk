@@ -25,6 +25,8 @@ def:
       type: contains
     - target: coord-semantic-indexing-logic
       type: contains
+    - target: coord-semantic-indexing-pack
+      type: contains
 ---
 
 # 좌표 시스템 기반 원리
@@ -52,6 +54,7 @@ Axis와 Prefix는 개념 계층(Entry → Taxonomy → System)에 적용되는 *
 - **3-레이어 분리**: 수학(weighted-index, 정수↔좌표) → 스키마(index-meta, 축 의미/엔티티) → 데이터(사용자 구현, DB 저장)
 - **ID 책임 분리**: `recordId`, stream pointer, storage placement, semantic address는 서로 다른 계약. 하나의 숫자로 유일성/순서/분산/의미 복원을 동시에 해결하지 않는다
 - **의미론 인덱싱 루프**: catalog → resolver → materializer → grounding planner → feedback promoter로 RAG/text-to-SQL/검색 grounding을 닫는다
+- **의미론 인덱싱 Pack**: spec-transition, taxonomy 관리, 좌표 배정, 파생 인덱스, feedback proposal을 같은 semantic snapshot의 호환성 단위로 묶는다
 - **가속 지향 설계**: 문자열은 스키마 레이어에서 정수로 변환, 수학 레이어 이하는 정수만 — 하드웨어 가속 경계가 자연스럽게 형성
 - **packed key = identity**: 동일 의미는 항상 동일 key — 캐시 키, DB PK, 비교 연산의 기반
 
@@ -65,6 +68,7 @@ Axis와 Prefix는 개념 계층(Entry → Taxonomy → System)에 적용되는 *
 | [레이어 분리](foundation-layer-separation.md) | 수학/스키마/데이터 3-레이어, weighted-index 내부 구조 |
 | [ID 할당과 좌표 주소 설계](foundation-id-allocation-design.md) | Snowflake, TiDB, Kafka 비교와 `recordId`/stream pointer/semantic address 책임 분리 |
 | [의미론 인덱싱 기본 로직](foundation-semantic-indexing-logic.md) | RAG, text-to-SQL, 사용자 검색을 위한 catalog/resolver/materializer/planner/feedback 루프 |
+| [Semantic Indexing Pack](foundation-semantic-indexing-pack.md) | spec-transition, taxonomy 관리, 좌표 배정, 파생 인덱스를 묶는 호환성 단위 |
 | [가속 지향 설계 원칙](foundation-acceleration.md) | 문자열 경계, ref_id 수렴, packed key identity, 불변성 |
 
 ## 참조

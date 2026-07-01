@@ -82,3 +82,6 @@ export { loadSpecs, parseSpecFile } from "./loader/spec-loader.js";
 export { mergeCatalogs, extractServiceCatalog } from "./loader/catalog-merge.js";
 export type { PartialCatalog, MergeResult, MergeConflict } from "./loader/catalog-merge.js";
 export type { LoadResult, LoadError, ParseResult } from "./loader/spec-loader.js";
+
+// ── Semantic Indexing Pack ───────────────────────────────
+export * from "./semantic-indexing-pack/index.js";

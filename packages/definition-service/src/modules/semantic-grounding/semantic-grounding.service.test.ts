@@ -7,6 +7,7 @@ import type {
   SemanticGroundingEventInput,
   SemanticTermRecord,
   SemanticTermWithAliases,
+  SemanticGroundingRuntimeSnapshot,
 } from "../../core/semantic-grounding/index.js";
 import { SemanticGroundingService } from "./semantic-grounding.service.js";
 import type { SemanticGroundingStore } from "../../stores/semantic-grounding-store.js";
@@ -76,6 +77,16 @@ class FakeStore implements SemanticGroundingStore {
 
   listOpenFeedbackProposals(): FeedbackProposalRecord[] {
     return this.proposals;
+  }
+
+  createRuntimeSnapshot(): SemanticGroundingRuntimeSnapshot {
+    return {
+      source: "definition-service.semantic-grounding",
+      storeKind: "memory-fixture",
+      capturedAt: "2026-06-30T00:00:00.000Z",
+      terms: this.listTermsForResolution(),
+      feedbackProposals: this.proposals,
+    };
   }
 }
 
@@ -284,7 +295,7 @@ describe("SemanticGroundingService", () => {
       doc({ docId: "prefix-cart_event", title: "Cart System Updated" }),
     ], { replaceSnapshot: true });
 
-    const remainingTermIds = new Set([...store.terms.keys()]);
+    const remainingTermIds = new Set(store.terms.keys());
     expect([...store.terms.values()].map((term) => term.docId).sort()).toEqual(["prefix-cart_event"]);
     expect(store.aliases.every((alias) => remainingTermIds.has(alias.termId))).toBe(true);
   });
@@ -298,5 +309,28 @@ describe("SemanticGroundingService", () => {
 
     expect(plan.candidateDocIds).toEqual([]);
     expect(plan.fallbackReason).toBe("no-confident-candidate");
+  });
+
+  it("exposes a runtime snapshot for pack-level grounding adapters", () => {
+    const store = new FakeStore();
+    const service = new SemanticGroundingService(store);
+    service.materializeDocuments([doc()]);
+    service.recordDocumentSearch({
+      query: "없는 용어",
+      plan: service.planDocumentSearch("없는 용어"),
+      docs: [],
+      legacyCount: 0,
+      semanticCandidateCount: 0,
+      semanticHitCount: 0,
+      semanticOnlyCount: 0,
+      legacyOnlyCount: 0,
+    });
+
+    const snapshot = service.createRuntimeSnapshot();
+
+    expect(snapshot.source).toBe("definition-service.semantic-grounding");
+    expect(snapshot.storeKind).toBe("memory-fixture");
+    expect(snapshot.terms).toHaveLength(1);
+    expect(snapshot.feedbackProposals).toHaveLength(1);
   });
 });

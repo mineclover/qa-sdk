@@ -321,4 +321,93 @@ describe("SqlSemanticGroundingStore", () => {
     expect(rerun.status).toBe("accepted");
     expect(rerun.evidence).toEqual({ count: 2 });
   });
+
+  it("creates a sqlite runtime snapshot with terms, aliases, relations, and open proposals", () => {
+    const { store } = createStore();
+    const sourceTermId = createSemanticTermId({
+      kind: "document",
+      canonicalLabel: "cart event",
+      coordinate: "cart_event:v2:10",
+      docId: "prefix-cart_event",
+    });
+    const targetTermId = createSemanticTermId({
+      kind: "document",
+      canonicalLabel: "checkout event",
+      coordinate: "checkout_event:v1:20",
+      docId: "prefix-checkout_event",
+    });
+
+    store.upsertTerm({
+      termId: sourceTermId,
+      kind: "document",
+      canonicalLabel: "cart event",
+      normalizedLabel: "cart event",
+      coordinate: "cart_event:v2:10",
+      prefixId: "cart_event",
+      versionId: "v2",
+      address: 10,
+      docId: "prefix-cart_event",
+      evidence: { source: "test" },
+      updatedAt: "2026-06-30T00:00:00.000Z",
+    });
+    store.upsertTerm({
+      termId: targetTermId,
+      kind: "document",
+      canonicalLabel: "checkout event",
+      normalizedLabel: "checkout event",
+      coordinate: "checkout_event:v1:20",
+      prefixId: "checkout_event",
+      versionId: "v1",
+      address: 20,
+      docId: "prefix-checkout_event",
+      evidence: { source: "test" },
+      updatedAt: "2026-06-30T00:00:00.000Z",
+    });
+    store.upsertAlias({
+      aliasId: "alias-cart-event",
+      termId: sourceTermId,
+      alias: "장바구니 이벤트",
+      normalizedAlias: "장바구니 이벤트",
+      source: "manual",
+      confidence: 0.95,
+      createdAt: "2026-06-30T00:00:00.000Z",
+    });
+    store.upsertRelation({
+      relationId: "relation-cart-checkout",
+      sourceTermId,
+      relationType: "depends-on",
+      targetTermId,
+      evidence: { source: "test" },
+    });
+    store.upsertFeedbackProposal({
+      kind: "axis-promotion",
+      term: "결제 흐름",
+      normalizedTerm: "결제 흐름",
+      dedupeKey: "axis-promotion:결제 흐름",
+      payload: { query: "결제 흐름" },
+      evidence: { fallbackReason: "no-confident-candidate" },
+    });
+
+    const snapshot = store.createRuntimeSnapshot();
+
+    expect(snapshot.source).toBe("definition-service.semantic-grounding");
+    expect(snapshot.storeKind).toBe("sqlite");
+    expect(snapshot.terms.map((term) => term.termId).sort()).toEqual([sourceTermId, targetTermId].sort());
+    expect(snapshot.terms.find((term) => term.termId === sourceTermId)?.aliases).toHaveLength(1);
+    expect(snapshot.terms.find((term) => term.termId === sourceTermId)?.relations).toEqual([
+      {
+        relationId: "relation-cart-checkout",
+        sourceTermId,
+        relationType: "depends-on",
+        targetTermId,
+        evidence: { source: "test" },
+      },
+    ]);
+    expect(snapshot.feedbackProposals).toHaveLength(1);
+    expect(snapshot.feedbackProposals[0]).toMatchObject({
+      kind: "axis-promotion",
+      normalizedTerm: "결제 흐름",
+      status: "open",
+    });
+  });
 });

@@ -1,7 +1,7 @@
 // @def.doc definition-service
 
 import { createHash } from "node:crypto";
-import { eq, inArray, isNotNull, like, or } from "drizzle-orm";
+import { asc, eq, inArray, isNotNull, like, or } from "drizzle-orm";
 import type { DefinitionServiceDatabase } from "../database.module.js";
 import {
   semanticAliases,
@@ -16,6 +16,7 @@ import type {
   FeedbackProposalRecord,
   SemanticAliasRecord,
   SemanticGroundingEventInput,
+  SemanticGroundingRuntimeSnapshot,
   SemanticRelationRecord,
   SemanticTermRecord,
   SemanticTermWithAliases,
@@ -32,6 +33,7 @@ export interface SemanticGroundingStore {
   recordGroundingEvent(input: SemanticGroundingEventInput): string;
   upsertFeedbackProposal(input: FeedbackProposalDraft): FeedbackProposalRecord;
   listOpenFeedbackProposals(): FeedbackProposalRecord[];
+  createRuntimeSnapshot(): SemanticGroundingRuntimeSnapshot;
 }
 
 export function createSemanticTermId(input: {
@@ -274,6 +276,7 @@ export class SqlSemanticGroundingStore implements SemanticGroundingStore {
       .select()
       .from(semanticFeedbackProposals)
       .where(eq(semanticFeedbackProposals.status, "open"))
+      .orderBy(asc(semanticFeedbackProposals.proposalId))
       .all()
       .map((row) => ({
         proposalId: row.proposalId,
@@ -287,6 +290,23 @@ export class SqlSemanticGroundingStore implements SemanticGroundingStore {
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
       }));
+  }
+
+  createRuntimeSnapshot(): SemanticGroundingRuntimeSnapshot {
+    const termIds = this.db
+      .select({ termId: semanticTerms.termId })
+      .from(semanticTerms)
+      .orderBy(asc(semanticTerms.termId))
+      .all()
+      .map((row) => row.termId);
+
+    return {
+      source: "definition-service.semantic-grounding",
+      storeKind: "sqlite",
+      capturedAt: new Date().toISOString(),
+      terms: this.listTermsByIds(termIds),
+      feedbackProposals: this.listOpenFeedbackProposals(),
+    };
   }
 
   private listTermsByIds(termIds: readonly string[]): SemanticTermWithAliases[] {

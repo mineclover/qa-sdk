@@ -10,6 +10,7 @@ import {
   planDocumentSearch,
   resolveSemanticCandidates,
   type GroundingPlan,
+  type SemanticGroundingRuntimeSnapshot,
   type SemanticResolution,
   type SemanticDocumentSearchRecordInput,
   type SemanticTermWithAliases,
@@ -111,6 +112,10 @@ export class SemanticGroundingService {
 
   listTermsByDocIds(docIds: readonly string[]): SemanticTermWithAliases[] {
     return this.store.listTermsByDocIds(docIds);
+  }
+
+  createRuntimeSnapshot(): SemanticGroundingRuntimeSnapshot {
+    return this.store.createRuntimeSnapshot();
   }
 
   recordDocumentSearch(input: SemanticDocumentSearchRecordInput): void {

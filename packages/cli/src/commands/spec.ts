@@ -19,6 +19,13 @@ import {
 } from "@qa-sdk/spec-core";
 import type { PrefixSpec } from "@qa-sdk/spec-core";
 import {
+  buildSemanticIndexingPackReport,
+  formatSemanticIndexingPackReportMarkdown,
+  type SemanticIndexingPackManifest,
+  type SemanticIndexingPromotionProposal,
+  type SemanticIndexingSurfaceChangeInput,
+} from "@qa-sdk/spec-core/semantic-indexing-pack";
+import {
   buildIR,
   generateFromIR,
   generateJSFromIR,
@@ -31,6 +38,9 @@ import type { AxisInput } from "@qa-sdk/spec-core/codegen";
 import { resolveAddress, type DemoCatalog } from "demo-snapshot";
 import { decodePrefixAsResult, type ResolvedAddress, type ResolvedDimValue } from "@qa-sdk/core";
 import { parseArgs } from "node:util";
+import { execFile } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import { promisify } from "node:util";
 
 // ── Shared bootstrap ────────────────────────────────
 
@@ -137,6 +147,71 @@ const SPEC_BASE_OPTIONS = {
   catalog: { type: "boolean" as const, default: false },
 };
 
+const execFileAsync = promisify(execFile);
+
+const DEFAULT_SEMANTIC_INDEXING_PACK_MANIFEST: SemanticIndexingPackManifest = {
+  packId: "coord-semantic-indexing-pack",
+  version: "v1",
+  planes: [
+    {
+      plane: "semantic-source",
+      refs: [
+        {
+          id: "coord-semantic-indexing-logic",
+          kind: "doc",
+          path: "docs/specs/indexing-core-system/coord-foundation/foundation-semantic-indexing-logic.md",
+          role: "public-library",
+        },
+        {
+          id: "definition-service-semantic-grounding",
+          kind: "source",
+          path: "packages/definition-service/src/core/semantic-grounding/types.ts",
+          role: "runtime-service",
+        },
+      ],
+    },
+    {
+      plane: "taxonomy",
+      refs: [
+        { id: "taxonomy-boundaries", kind: "doc", path: "docs/specs/system/taxonomy-boundaries.spec.md", role: "public-library" },
+        { id: "taxonomy-engine", kind: "package", path: "packages/taxonomy-engine/src/index.ts", role: "public-library" },
+      ],
+    },
+    {
+      plane: "coordinate",
+      refs: [
+        { id: "index-meta-system", kind: "doc", path: "docs/specs/index-meta-system/index-meta-system.md", role: "public-library" },
+        { id: "weighted-index", kind: "package", path: "packages/weighted-index/src/index.ts", role: "public-library" },
+      ],
+    },
+    {
+      plane: "transition",
+      refs: [
+        { id: "spec-transition", kind: "package", path: "packages/spec-transition/src/index.ts", role: "public-library" },
+        { id: "spec-core-transition", kind: "source", path: "packages/spec-core/src/transition/index.ts", role: "public-library" },
+      ],
+    },
+    {
+      plane: "materialization",
+      refs: [
+        { id: "address-index", kind: "package", path: "packages/address-index/src/index.ts", role: "public-library" },
+        { id: "query-service", kind: "package", path: "packages/query-service/src/index.ts", role: "runtime-service" },
+      ],
+    },
+    {
+      plane: "feedback",
+      refs: [
+        {
+          id: "semantic-feedback",
+          kind: "source",
+          path: "packages/definition-service/src/core/semantic-grounding/feedback.ts",
+          role: "runtime-service",
+        },
+      ],
+    },
+  ],
+};
+
 function isSchemaValidationInput(value: unknown): value is SchemaValidationInput {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
@@ -149,6 +224,98 @@ async function loadCatalogInput(): Promise<CatalogInputLike | undefined> {
     console.error("demo-snapshot 패키지를 로딩할 수 없습니다");
     process.exit(1);
   }
+}
+
+async function readJsonFile<T>(path: string): Promise<T> {
+  return JSON.parse(await readFile(path, "utf8")) as T;
+}
+
+async function gitOutput(args: readonly string[]): Promise<string | undefined> {
+  try {
+    const { stdout } = await execFileAsync("git", [...args], { cwd: process.cwd() });
+    const output = String(stdout).trim();
+    return output.length > 0 ? output : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function enrichSemanticPackManifestWithGit(
+  manifest: SemanticIndexingPackManifest,
+): Promise<SemanticIndexingPackManifest> {
+  return {
+    ...manifest,
+    planes: await Promise.all(
+      manifest.planes.map(async (plane) => ({
+        ...plane,
+        refs: await Promise.all(
+          plane.refs.map(async (ref) => {
+            if (!ref.path) return ref;
+            const [status, lastChangedAt] = await Promise.all([
+              gitOutput(["status", "--short", "--", ref.path]),
+              gitOutput(["log", "-1", "--format=%cI", "--", ref.path]),
+            ]);
+            return {
+              ...ref,
+              dirty: ref.dirty ?? Boolean(status),
+              lastChangedAt: ref.lastChangedAt ?? lastChangedAt,
+            };
+          }),
+        ),
+      })),
+    ),
+  };
+}
+
+// ── spec semantic-pack report ───────────────────────────
+
+export async function specSemanticPackReport(options: {
+  manifest?: SemanticIndexingPackManifest;
+  changes?: readonly SemanticIndexingSurfaceChangeInput[];
+  promotionProposals?: readonly SemanticIndexingPromotionProposal[];
+  format?: "json" | "markdown";
+  includeGit?: boolean;
+}): Promise<void> {
+  const manifest = options.includeGit === false
+    ? (options.manifest ?? DEFAULT_SEMANTIC_INDEXING_PACK_MANIFEST)
+    : await enrichSemanticPackManifestWithGit(options.manifest ?? DEFAULT_SEMANTIC_INDEXING_PACK_MANIFEST);
+  const report = buildSemanticIndexingPackReport({
+    manifest,
+    changes: options.changes,
+    promotionProposals: options.promotionProposals,
+  });
+
+  if (options.format === "json") {
+    console.log(JSON.stringify(report, null, 2));
+    return;
+  }
+
+  console.log(formatSemanticIndexingPackReportMarkdown(report));
+}
+
+export async function runSpecSemanticPackReport(argv: string[]): Promise<void> {
+  const includeGit = !argv.includes("--no-git");
+  const args = argv.filter((arg) => arg !== "--no-git");
+  const { values } = parseArgs({
+    args,
+    options: {
+      manifest: { type: "string" },
+      changes: { type: "string" },
+      proposals: { type: "string" },
+      format: { type: "string", default: "markdown" },
+    },
+    strict: true,
+  });
+
+  await specSemanticPackReport({
+    manifest: values.manifest ? await readJsonFile<SemanticIndexingPackManifest>(values.manifest) : undefined,
+    changes: values.changes ? await readJsonFile<readonly SemanticIndexingSurfaceChangeInput[]>(values.changes) : undefined,
+    promotionProposals: values.proposals
+      ? await readJsonFile<readonly SemanticIndexingPromotionProposal[]>(values.proposals)
+      : undefined,
+    format: values.format === "json" ? "json" : "markdown",
+    includeGit,
+  });
 }
 
 // ── spec list ───────────────────────────────────────

@@ -14,6 +14,7 @@ import {
   runSpecDecode,
   runSpecList,
   runSpecResolve,
+  runSpecSemanticPackReport,
   runSpecTrace,
   runSpecValidate,
 } from "../commands/spec.js";
@@ -102,6 +103,21 @@ export const SPEC_COMMAND_DESCRIPTORS = [
     description: "Spec drift 감지",
     handlerKey: "spec.drift",
   },
+  {
+    id: "spec.semantic-pack.report",
+    path: ["semantic-pack", "report"],
+    usage:
+      "qa-sdk spec semantic-pack report [--manifest <file>] [--changes <file>] [--proposals <file>] [--format json|markdown] [--no-git]",
+    description: "Semantic Indexing Pack compatibility report 생성",
+    options: [
+      { flag: "--manifest", valueHint: "<file>", type: "string", description: "SemanticIndexingPackManifest JSON" },
+      { flag: "--changes", valueHint: "<file>", type: "string", description: "SemanticIndexingSurfaceChangeInput[] JSON" },
+      { flag: "--proposals", valueHint: "<file>", type: "string", description: "SemanticIndexingPromotionProposal[] JSON" },
+      { flag: "--format", valueHint: "<json|markdown>", type: "string", description: "출력 형식" },
+      { flag: "--no-git", type: "boolean", description: "git dirty/freshness 보강 비활성화" },
+    ],
+    handlerKey: "spec.semantic-pack.report",
+  },
 ] as const satisfies readonly CommandDescriptor[];
 
 export const SPEC_COMMAND_TREE =
@@ -121,4 +137,5 @@ export const SPEC_HANDLER_REGISTRY = {
     const { cliSpecDrift } = await import("../commands/spec-drift.js");
     return cliSpecDrift(rest);
   },
+  "spec.semantic-pack.report": runSpecSemanticPackReport,
 } satisfies Readonly<Record<string, RestCommandHandler>>;
