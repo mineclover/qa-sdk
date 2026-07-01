@@ -4,7 +4,10 @@ import { collectCodeReferences, parseDocument, scanAndBuild } from "definition-c
 import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { DocStore } from "../core/interfaces.js";
+import type { DocRecord } from "../core/types.js";
 import { extractBody, buildDocRecord } from "../core/sync-engine.js";
+
+const EXISTING_DOC_PAGE_SIZE = 1000;
 
 export interface SyncResult {
   synced: number;
@@ -88,7 +91,14 @@ export async function syncDocsToDb(
     }
   }
 
-  for (const existing of docStore.list({ limit: 100000 })) {
+  const existingDocs: DocRecord[] = [];
+  for (let offset = 0; ; offset += EXISTING_DOC_PAGE_SIZE) {
+    const page = docStore.list({ limit: EXISTING_DOC_PAGE_SIZE, offset });
+    existingDocs.push(...page);
+    if (page.length < EXISTING_DOC_PAGE_SIZE) break;
+  }
+
+  for (const existing of existingDocs) {
     if (scannedDocIds.has(existing.docId)) continue;
     if (docStore.delete(existing.docId)) {
       result.deleted++;

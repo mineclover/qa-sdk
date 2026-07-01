@@ -22,6 +22,8 @@ def:
       type: depends_on
     - target: axis-decision-guide
       type: traces_to
+    - target: def-svc-semantic-grounding-module
+      type: traces_to
 ---
 
 # 의미론 인덱싱 기본 로직
@@ -66,6 +68,20 @@ raw docs / schema / events / code
 | `IndexMaterializer` | catalog snapshot | address/FTS/vector/SQL metadata indices | 같은 semantic source를 여러 검색 인덱스로 투영 |
 | `GroundingPlanner` | intent + candidates + context | retrieval/search/SQL plan | RAG, text-to-SQL, 검색별 후보 공간과 fallback 결정 |
 | `FeedbackPromoter` | unresolved term, wrong hit, failed SQL | alias/entry/axis/version proposal | 실패를 catalog 변경 후보로 되돌림 |
+
+## 현재 구현 매핑
+
+definition-service의 1차 구현은 메모리 상주 catalog가 아니라 SQLite projection을 기준으로 둔다. 문서 수가 커져도 semantic snapshot과 feedback event를 프로세스 메모리에 전부 들고 있지 않기 위해서다.
+
+| 개념 컴포넌트 | 현재 구현 |
+|---|---|
+| `SemanticCatalog` | `semantic_terms`/`semantic_aliases`/`semantic_relations` + `SqlSemanticGroundingStore` |
+| `SemanticResolver` | `resolveSemanticCandidates()` |
+| `IndexMaterializer` | `SemanticGroundingService.materializeDocuments()` + `SyncService.rebuildSearchIndex()` |
+| `GroundingPlanner` | `planDocumentSearch()` + `DocsService.searchWithSemanticGrounding()` |
+| `FeedbackPromoter` | `recordDocumentSearch()` + `semantic_feedback_proposals` |
+
+관련 소스는 `def-svc-semantic-grounding-module`의 `sources`를 따른다. 현재 채택한 단순화는 docId 직접 조회, candidate subset overlap, no-candidate 경로의 요청 `limit/offset` 유지, sync rebuild의 페이지 순회다.
 
 ## RAG 기본 로직
 

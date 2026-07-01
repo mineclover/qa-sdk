@@ -29,6 +29,8 @@ def:
       type: contains
     - target: def-svc-search-module
       type: contains
+    - target: def-svc-semantic-grounding-module
+      type: contains
     - target: definition-client-spec
       type: contains
     - target: docs-explorer
@@ -43,7 +45,8 @@ def:
 ## 구성 ^overview
 
 - NestJS + Fastify + Mercurius(GraphQL) + SQLite
-- 포트 3700, 8개 모듈: docs, graph, sync, graphql, prefixes, intents, consumption, tests
-- DB: documents + document_links(edge) + documents_fts(FTS5) + document_history
+- 포트 3700, 핵심 모듈: docs, graph, sync, search, semantic-grounding, graphql, prefixes, intents, consumption, tests
+- DB: documents + document_links(edge) + documents_fts(FTS5) + document_history + semantic_grounding 계열 테이블
 - 양방향 동기화: file→DB (`POST /sync`), DB→file (`POST /sync/to-files`)
 - GraphQL 읽기 + REST 쓰기 하이브리드 API
+- 검색 grounding: 문서 sync 후 semantic terms/aliases를 SQLite에 materialize하고, `GET /docs?q=`에서 semantic 후보와 FTS 결과를 병합한다.

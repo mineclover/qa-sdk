@@ -65,6 +65,28 @@ describe("parseDrizzleTables", () => {
     const tables = parseDrizzleTables("t.ts", code);
     expect(tables[0].isExempt).toBe(false);
   });
+
+  it("uniqueIndex 컬럼에서 callback alias를 제거해 coordinate unique를 인식한다", () => {
+    const code = `
+      import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+
+      export const semanticTerms = sqliteTable(
+        "semantic_terms",
+        {
+          prefixId: text("prefix_id"),
+          version: text("version"),
+          address: integer("address"),
+        },
+        (table) => [
+          uniqueIndex("semantic_terms_coord_unique").on(table.prefixId, table.version, table.address),
+        ],
+      );
+    `;
+
+    const tables = parseDrizzleTables("schema.ts", code);
+
+    expect(tables[0].hasUniqueOnCoord).toBe(true);
+  });
 });
 
 describe("checkCoordinateStorage — 위반 분류", () => {

@@ -3,9 +3,11 @@
 /**
  * definition-service Drizzle ORM 스키마
  *
- * 8개 테이블 (Drizzle 관리):
+ * Drizzle 관리 테이블:
  *   prefix_registry, documents, document_links, document_history,
- *   slice_intents, consumption_snapshots, test_registry, test_results
+ *   slice_intents, consumption_snapshots, test_registry, test_results,
+ *   semantic_terms, semantic_aliases, semantic_relations,
+ *   semantic_grounding_events, semantic_feedback_proposals, aspect_parents
  *
  * NOTE: documents_fts (FTS5 virtual table)는 Drizzle에서 지원하지 않으므로
  * 마이그레이션 SQL에서 직접 관리한다.
@@ -308,7 +310,7 @@ export const semanticTerms = sqliteTable(
     normalizedLabel: text("normalized_label").notNull(),
     coordinate: text("coordinate"),
     prefixId: text("prefix_id"),
-    versionId: text("version_id"),
+    version: text("version"),
     address: integer("address"),
     docId: text("doc_id"),
     sourcePath: text("source_path"),
@@ -322,9 +324,16 @@ export const semanticTerms = sqliteTable(
       table.coordinate,
       table.docId,
     ),
+    uniqueIndex("semantic_terms_coord_unique").on(
+      table.prefixId,
+      table.version,
+      table.address,
+      table.kind,
+      table.docId,
+    ),
     index("idx_semantic_terms_label").on(table.normalizedLabel),
     index("idx_semantic_terms_doc").on(table.docId),
-    index("idx_semantic_terms_address").on(table.prefixId, table.versionId, table.address),
+    index("idx_semantic_terms_address").on(table.prefixId, table.version, table.address),
   ],
 );
 

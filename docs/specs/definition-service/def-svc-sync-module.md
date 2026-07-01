@@ -15,7 +15,14 @@ def:
       type: refines
     - target: def-svc-data-model
       type: depends_on
-source: packages/definition-service/src/sync/reverse-sync.ts
+    - target: def-svc-search-module
+      type: depends_on
+    - target: def-svc-semantic-grounding-module
+      type: depends_on
+  sources:
+    - packages/definition-service/src/modules/sync/sync.service.ts
+    - packages/definition-service/src/sync/scanner.ts
+    - packages/definition-service/src/sync/reverse-sync.ts
 ---
 # Definition Service — Sync Module
 
@@ -33,7 +40,8 @@ POST /sync (file → DB)
   2. buildDocRecord() — address 계산, markers 추출, body_hash
   3. docStore.upsert() — 변경 감지 (created/updated/unchanged)
   4. syncLinks() — document_links edge 테이블 동기화
-  5. syncFts() — FTS5 인덱스 갱신
+  5. rebuildSearchIndex() — 전체 문서를 페이지 단위로 순회하며 FTS5 인덱스 재구축
+  6. semantic.materializeDocuments(..., replaceSnapshot=true) — semantic terms/aliases snapshot 재생성
 
 POST /sync/to-files (DB → file)
   1. docStore.list() — 전체 문서 조회
@@ -46,3 +54,10 @@ POST /sync/to-files (DB → file)
 
 - `onModuleInit()` — SYNC_ON_START=true 시 자동 동기화
 - sync 후 definition-service.triggerSync() 호출 (fail-open)
+
+### 안정화 규칙
+
+- 검색 인덱스 재구축은 고정 상한을 두지 않고 `limit=1000` 페이지를 끝까지 순회한다.
+- 삭제된 문서 prune도 고정 상한 없이 기존 문서를 페이지 단위로 모은 뒤 삭제한다.
+- semantic snapshot 교체는 search index 재구축에서 실제로 순회한 `DocRecord[]`를 입력으로 받는다.
+- `replaceSnapshot=true`는 이번 sync에 존재하지 않는 문서 term을 제거해 stale semantic candidate가 검색 결과에 섞이지 않게 한다.

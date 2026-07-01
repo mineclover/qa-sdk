@@ -152,7 +152,7 @@ export function parseDrizzleTables(filePath: string, source: string): ScannedTab
     UNIQUE_RE.lastIndex = 0;
     let um: RegExpExecArray | null;
     while ((um = UNIQUE_RE.exec(fullDecl)) !== null) {
-      const cols = um[1].split(",").map((c) => c.trim().replace(/^t\./, ""));
+      const cols = um[1].split(",").map((c) => c.trim().replace(/^[a-zA-Z_][\w$]*\./, ""));
       const hasPrefix = cols.some((c) => PREFIX_COL_NAMES.has(c));
       const hasVersion = cols.some((c) => VERSION_COL_NAMES.has(c));
       const hasAddr = cols.some((c) => ADDR_COL_NAMES.has(c) || PACKED_COL_NAMES.has(c));

@@ -14,7 +14,7 @@ function createStore() {
       normalized_label text NOT NULL,
       coordinate text,
       prefix_id text,
-      version_id text,
+      version text,
       address integer,
       doc_id text,
       source_path text,
@@ -22,9 +22,10 @@ function createStore() {
       updated_at text NOT NULL
     );
     CREATE UNIQUE INDEX semantic_terms_identity_unique ON semantic_terms (kind, canonical_label, coordinate, doc_id);
+    CREATE UNIQUE INDEX semantic_terms_coord_unique ON semantic_terms (prefix_id, version, address, kind, doc_id);
     CREATE INDEX idx_semantic_terms_label ON semantic_terms (normalized_label);
     CREATE INDEX idx_semantic_terms_doc ON semantic_terms (doc_id);
-    CREATE INDEX idx_semantic_terms_address ON semantic_terms (prefix_id, version_id, address);
+    CREATE INDEX idx_semantic_terms_address ON semantic_terms (prefix_id, version, address);
 
     CREATE TABLE semantic_aliases (
       alias_id text PRIMARY KEY NOT NULL,

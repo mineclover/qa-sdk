@@ -13,6 +13,8 @@ def:
   links:
     - target: definition-service-system
       type: refines
+  sources:
+    - packages/definition-service/src/db/schema.ts
 ---
 # Definition Service — 데이터 모델
 
@@ -26,10 +28,16 @@ definition-service가 관리하는 SQLite 테이블 구조와 데이터 흐름�
 
 | 테이블 | 역할 | 행 수 기준 |
 |--------|------|-----------|
-| documents | 문서 메타데이터 최신 버전 | ~471 |
-| document_links | 문서 간 관계 (정규화 edge) | ~800 |
-| documents_fts | 전문 검색 (FTS5, purpose/intent/context) | ~471 |
+| documents | 문서 메타데이터 최신 버전 | 문서 수와 동일 |
+| document_links | 문서 간 관계 (정규화 edge) | link frontmatter와 동기화 |
+| documents_fts | 전문 검색 (FTS5, purpose/intent/context/caveat) | documents 재색인 결과 |
 | document_history | 버전 이력 (body 포함) | 누적 |
+| semantic_terms | canonical semantic term | sync materialization 결과 |
+| semantic_aliases | term별 alias/label 후보 | materialization + 수동/feedback source |
+| semantic_relations | term 간 relation edge | semantic graph 확장 지점 |
+| semantic_grounding_events | query grounding 관측 이벤트 | 검색 실행 누적 |
+| semantic_feedback_proposals | unresolved/wrong-scope 보정 후보 | dedupeKey 기준 누적 |
+| aspect_parents | aspect 계층 파생 복제본 | definition-catalog vocabulary와 동기화 |
 
 ### documents 컬럼
 
@@ -48,6 +56,16 @@ definition-service가 관리하는 SQLite 테이블 구조와 데이터 흐름�
 | purpose, intent, context, caveat | TEXT | 파일 | ^marker 추출 |
 | source_path | TEXT | 파일 | docs/ 기준 상대 경로 |
 
+### semantic_grounding 계열 테이블
+
+| 테이블 | 핵심 키 | 설명 |
+|--------|---------|------|
+| semantic_terms | term_id | `kind`, canonical label, optional coordinate/prefix/version/address/docId를 묶은 semantic SSOT projection |
+| semantic_aliases | alias_id + `(term_id, normalized_alias, source)` unique | 동일 alias라도 source별 confidence를 보존한다 |
+| semantic_relations | relation_id | same-scope/depends-on/contains/refines/mentions 관계 확장 슬롯 |
+| semantic_grounding_events | event_id | query, intent, candidates, plan, outcome을 기록한다 |
+| semantic_feedback_proposals | proposal_id + dedupe_key unique | alias-add/entry-add/axis-promotion/version-transition/wrong-scope 후보 |
+
 ### 인덱스
 
 - `idx_doc_scope ON (scope, aspect)` — scope×aspect 필터
@@ -56,3 +74,5 @@ definition-service가 관리하는 SQLite 테이블 구조와 데이터 흐름�
 - `idx_doc_svc ON (svc)` — 서비스별 조회
 - `idx_doc_address ON (address)` — 좌표 조회
 - `idx_dl_target ON document_links(target_id, link_type)` — 역링크 조회
+- `idx_semantic_terms_label`, `idx_semantic_aliases_alias` — resolver 후보 검색
+- `idx_semantic_terms_address` — prefix/version/address 기반 grounding

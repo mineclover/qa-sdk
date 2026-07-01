@@ -15,7 +15,9 @@ def:
       type: refines
     - target: def-svc-data-model
       type: depends_on
-source: packages/definition-service/src/modules/search/search.service.ts
+  sources:
+    - packages/definition-service/src/modules/search/search.service.ts
+    - packages/definition-service/src/modules/search/search.service.test.ts
 ---
 # Definition Service — Search Module
 
@@ -29,14 +31,16 @@ drizzle이 관리하지 않는 FTS5 VIRTUAL TABLE의 lifecycle을 독립 관리�
 - `index(docId, purpose, intent, context, caveat)`: 문서 인덱싱 (upsert 후 호출)
 - `search(query, limit, offset)`: FTS5 MATCH → LIKE fallback → DocRecord[]
 - `searchCount(query)`: 검색 전체 매칭 건수 (pagination용)
-- SyncService가 sync 완료 후 rebuildSearchIndex() 호출 (549건 벌크)
-- DocsService가 `?q=` 필터 시 SearchService.search()로 위임
+- `matchDocIds(query, docIds)`: semantic candidate가 기존 FTS/LIKE 결과와 겹치는지 docId subset에서 판정
+- SyncService가 sync 완료 후 전체 문서를 페이지 단위로 순회하며 `index()`를 호출
+- DocsService가 `?q=` 필터 시 SearchService.search/searchCount/matchDocIds를 semantic grounding plan과 함께 사용
 
 ### 토크나이저 전략
 
 - **기본**: FTS5 `trigram` 토크나이저 — 3글자 단위 토큰으로 CJK(한국어/중국어/일본어) 부분 문자열 매칭 지원
 - **fallback**: trigram 미지원 환경에서는 기본 토크나이저로 생성
 - **LIKE fallback**: FTS5 MATCH 결과가 0건이거나 실패 시 `WHERE purpose LIKE ? OR intent LIKE ? ...` 쿼리로 자동 전환
+- **candidate overlap**: semantic candidate docId에 대해서는 전체 legacy result를 재조회하지 않고 `doc_id IN (...)` 범위에서 FTS/LIKE 매칭 여부만 확인
 
 ### 아키텍처 컨벤션
 

@@ -417,8 +417,10 @@ describe("DocsService semantic search integration", () => {
 
   it("keeps legacy list behavior when semantic grounding is absent", () => {
     const db = createDb();
+    const searchCalls: Array<{ query: string; limit: number; offset: number }> = [];
     const search = {
       search(query: string, limit: number, offset: number) {
+        searchCalls.push({ query, limit, offset });
         return [doc("legacy-a"), doc("legacy-b")].slice(offset, offset + limit);
       },
       searchCount() {
@@ -435,14 +437,19 @@ describe("DocsService semantic search integration", () => {
     expect(docs.map((item) => item.docId)).toEqual(["legacy-a", "legacy-b"]);
     expect(paginated.docs.map((item) => item.docId)).toEqual(["legacy-b"]);
     expect(paginated.total).toBe(2);
+    expect(searchCalls).toEqual([
+      { query: "legacy", limit: 10, offset: 0 },
+      { query: "legacy", limit: 1, offset: 1 },
+    ]);
   });
 
   it("keeps legacy counts stable when semantic planning yields no candidates", () => {
-    const { service, planCalls, recordCalls } = createService();
+    const { service, planCalls, recordCalls, searchCalls } = createService();
     seedDocs(service, [doc("legacy-a"), doc("legacy-b")]);
 
     const search = {
       search(query: string, limit: number, offset: number) {
+        searchCalls.push({ query, limit, offset });
         return [doc("legacy-a"), doc("legacy-b")].slice(offset, offset + limit);
       },
       searchCount() {
@@ -474,8 +481,9 @@ describe("DocsService semantic search integration", () => {
 
     expect(result.docs.map((item) => item.docId)).toEqual(["legacy-b"]);
     expect(result.total).toBe(2);
+    expect(searchCalls).toEqual([{ query: "legacy", limit: 1, offset: 1 }]);
     expect(planCalls).toEqual(["legacy"]);
-    expect(recordCalls[0]?.docs.map((item: DocRecord) => item.docId)).toEqual(["legacy-a", "legacy-b"]);
+    expect(recordCalls[0]?.docs.map((item: DocRecord) => item.docId)).toEqual(["legacy-b"]);
   });
 
   it("ignores stale semantic candidates that no longer have matching docs", () => {
