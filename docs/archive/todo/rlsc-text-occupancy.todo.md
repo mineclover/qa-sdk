@@ -10,7 +10,7 @@ def:
   svc: rlsc
   tags: [text, measurement, pretext]
   links:
-    - target: rlsc
+    - target: rlsc-integration
       type: refines
 ---
 
