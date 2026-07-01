@@ -77,4 +77,39 @@ describe("resolveSemanticCandidates", () => {
     });
     expect(resolution.confident).toBe(true);
   });
+
+  it("uses the highest-confidence exact alias when several sources share one normalized alias", () => {
+    const resolution = resolveSemanticCandidates("상품 담기", [
+      {
+        ...terms[0],
+        aliases: [
+          {
+            aliasId: "alias-low",
+            termId: "term-cart-add",
+            alias: "상품 담기",
+            normalizedAlias: "상품 담기",
+            source: "document",
+            confidence: 0.85,
+            createdAt: "2026-06-30T00:00:00.000Z",
+          },
+          {
+            aliasId: "alias-high",
+            termId: "term-cart-add",
+            alias: "상품 담기",
+            normalizedAlias: "상품 담기",
+            locale: "ko",
+            source: "manual",
+            confidence: 0.97,
+            createdAt: "2026-06-30T00:00:00.000Z",
+          },
+        ],
+      },
+    ]);
+
+    expect(resolution.candidates[0]).toMatchObject({
+      termId: "term-cart-add",
+      confidence: 0.97,
+      matchedBy: "alias",
+    });
+  });
 });

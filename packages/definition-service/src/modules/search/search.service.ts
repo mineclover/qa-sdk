@@ -14,7 +14,7 @@
 
 import { Inject, Injectable, OnModuleInit } from "@nestjs/common";
 import type Database from "better-sqlite3";
-import { sql, eq, like, or, asc, count } from "drizzle-orm";
+import { sql, eq, like, or, asc, count, and, inArray } from "drizzle-orm";
 import { DATABASE, DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";
 import { documents } from "../../db/schema.js";
 import { createLogger } from "../../lib/logger.js";
@@ -160,6 +160,27 @@ export class SearchService implements OnModuleInit {
     return this.searchCountByLike(query);
   }
 
+  matchDocIds(query: string, docIds: readonly string[]): Set<string> {
+    if (docIds.length === 0) return new Set();
+
+    try {
+      const placeholders = docIds.map(() => "?").join(", ");
+      const rows = this.rawDb
+        .prepare(`
+          SELECT d.doc_id AS docId
+          FROM documents d
+          JOIN documents_fts fts ON fts.doc_id = d.doc_id
+          WHERE documents_fts MATCH ? AND d.doc_id IN (${placeholders})
+        `)
+        .all(query, ...docIds) as Array<{ docId: string }>;
+      if (rows.length > 0) return new Set(rows.map((row) => row.docId));
+    } catch {
+      // FTS MATCH 실패 시 LIKE fallback
+    }
+
+    return this.matchDocIdsByLike(query, docIds);
+  }
+
   /** LIKE 기반 검색 (CJK fallback) */
   private searchByLike(query: string, limit: number, offset: number): DocRecord[] {
     const pattern = `%${query}%`;
@@ -206,5 +227,31 @@ export class SearchService implements OnModuleInit {
       )
       .get();
     return result?.cnt ?? 0;
+  }
+
+  private matchDocIdsByLike(query: string, docIds: readonly string[]): Set<string> {
+    if (docIds.length === 0) return new Set();
+    const pattern = `%${query}%`;
+    const rows = this.db
+      .select({ docId: documents.docId })
+      .from(documents)
+      .where(
+        and(
+          inArray(documents.docId, [...docIds]),
+          or(
+            like(documents.purpose, pattern),
+            like(documents.intent, pattern),
+            like(documents.context, pattern),
+            like(documents.caveat, pattern),
+            like(documents.docId, pattern),
+            like(documents.title, pattern),
+            like(documents.svc, pattern),
+            like(documents.address, pattern),
+            like(documents.tagsJson, pattern),
+          ),
+        ),
+      )
+      .all();
+    return new Set(rows.map((row) => row.docId));
   }
 }

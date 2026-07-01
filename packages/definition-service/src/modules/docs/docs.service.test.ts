@@ -287,7 +287,7 @@ describe("DocsService semantic search integration", () => {
     expect(result.limit).toBe(1);
   });
 
-  it("uses the full legacy count when semantic candidates extend beyond the fetched buffer", () => {
+  it("does not load the full legacy result set when semantic candidates extend beyond the fetched buffer", () => {
     const { service, searchCalls } = createService();
     seedDocs(service, [doc("semantic-only")]);
 
@@ -298,6 +298,9 @@ describe("DocsService semantic search integration", () => {
       },
       searchCount() {
         return 100;
+      },
+      matchDocIds() {
+        return new Set<string>();
       },
       index() {},
     };
@@ -321,10 +324,57 @@ describe("DocsService semantic search integration", () => {
 
     expect(result.docs.map((item) => item.docId)).toEqual(["semantic-only"]);
     expect(result.total).toBe(101);
-    expect(searchCalls).toEqual([
-      { query: "semantic", limit: 50, offset: 0 },
-      { query: "semantic", limit: 100, offset: 0 },
-    ]);
+    expect(searchCalls).toEqual([{ query: "semantic", limit: 50, offset: 0 }]);
+  });
+
+  it("looks up semantic candidate docs by id instead of scanning the first 10000 docs", () => {
+    const { service } = createService();
+    const lateDoc = doc("zz-semantic-late");
+    (service as any).store = {
+      list() {
+        return [];
+      },
+      get(docId: string) {
+        return docId === lateDoc.docId ? lateDoc : null;
+      },
+      getMany(docIds: readonly string[]) {
+        return docIds
+          .map((docId) => docId === lateDoc.docId ? lateDoc : null)
+          .filter((item): item is DocRecord => Boolean(item));
+      },
+    };
+
+    (service as any).search = {
+      search() {
+        return [];
+      },
+      searchCount() {
+        return 0;
+      },
+      matchDocIds() {
+        return new Set<string>();
+      },
+      index() {},
+    };
+    (service as any).semantic = {
+      planDocumentSearch() {
+        return {
+          kind: "document-search",
+          query: "late",
+          candidateDocIds: ["zz-semantic-late"],
+          candidates: [],
+        };
+      },
+      recordDocumentSearch() {},
+      materializeDocuments() {
+        return { terms: 0, aliases: 0 };
+      },
+    };
+
+    const result = service.listPaginated({ q: "late", limit: 10, offset: 0 });
+
+    expect(result.docs.map((item) => item.docId)).toEqual(["zz-semantic-late"]);
+    expect(result.total).toBe(1);
   });
 
   it("records pre-pagination semantic hits when the requested page is empty", () => {

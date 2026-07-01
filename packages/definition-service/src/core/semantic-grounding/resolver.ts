@@ -45,7 +45,14 @@ function scoreTerm(
 ): SemanticCandidate | null {
   if (!normalizedQuery) return null;
 
-  const exactAlias = term.aliases.find((alias) => alias.normalizedAlias === normalizedQuery);
+  const exactAlias = term.aliases
+    .filter((alias) => alias.normalizedAlias === normalizedQuery)
+    .toSorted(
+      (left, right) =>
+        right.confidence - left.confidence ||
+        left.source.localeCompare(right.source) ||
+        left.aliasId.localeCompare(right.aliasId),
+    )[0];
   if (exactAlias) {
     return candidate(term, exactAlias.confidence, "alias", [
       { kind: "alias", ref: exactAlias.alias, weight: exactAlias.confidence },

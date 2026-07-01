@@ -107,12 +107,23 @@ export class SyncService implements OnModuleInit {
 
   /** 전체 문서 검색 인덱스 재구축 */
   private rebuildSearchIndex(): DocRecord[] {
-    const allDocs = this.docs.list({ limit: 10000 });
+    const allDocs: DocRecord[] = [];
+    const pageSize = 1000;
     let indexed = 0;
-    for (const doc of allDocs) {
-      this.search.index(doc.docId, doc.purpose, doc.intent, doc.context, doc.caveat);
-      indexed++;
+
+    for (let offset = 0; ; offset += pageSize) {
+      const page = this.docs.list({ limit: pageSize, offset });
+      if (page.length === 0) break;
+
+      for (const doc of page) {
+        this.search.index(doc.docId, doc.purpose, doc.intent, doc.context, doc.caveat);
+        allDocs.push(doc);
+        indexed++;
+      }
+
+      if (page.length < pageSize) break;
     }
+
     logger.info({ indexed }, "검색 인덱스 재구축 완료");
     return allDocs;
   }

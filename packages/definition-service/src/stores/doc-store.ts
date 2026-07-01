@@ -24,6 +24,7 @@ import {
   desc,
   like,
   count,
+  inArray,
   sql,
   type SQL,
 } from "drizzle-orm";
@@ -556,6 +557,19 @@ export class SqlDocStore implements DocStore {
   get(docId: string): DocRecord | null {
     const row = this.getSnapshotRow(docId);
     return row ? rowToDoc(row) : null;
+  }
+
+  getMany(docIds: readonly string[]): DocRecord[] {
+    if (docIds.length === 0) return [];
+    const rows = this.db
+      .select()
+      .from(documents)
+      .where(inArray(documents.docId, [...docIds]))
+      .all();
+    const docsById = new Map(rows.map((row) => [row.docId, rowToDoc(row)]));
+    return docIds
+      .map((docId) => docsById.get(docId))
+      .filter((doc): doc is DocRecord => Boolean(doc));
   }
 
   getByAddress(address: string): DocRecord | null {

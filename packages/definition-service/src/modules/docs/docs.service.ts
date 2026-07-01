@@ -76,15 +76,15 @@ export class DocsService {
     const plan = this.semantic.planDocumentSearch(query);
     const hasSemanticCandidates = plan.candidateDocIds.length > 0;
     const semanticDocs = hasSemanticCandidates
-      ? this.store.list({ limit: 10000 }).filter((doc) => plan.candidateDocIds.includes(doc.docId))
+      ? this.store.getMany(plan.candidateDocIds)
       : [];
     const semanticDocIdSet = new Set(semanticDocs.map((doc) => doc.docId));
     const realizedCandidateDocIds = plan.candidateDocIds.filter((docId) => semanticDocIdSet.has(docId));
-    const legacyUniverseDocs =
-      legacyCount > legacyDocs.length ? this.search?.search(query, legacyCount, 0) ?? legacyDocs : legacyDocs;
-    const legacyUniverseDocIds = new Set(legacyUniverseDocs.map((doc) => doc.docId));
-    const semanticOnlyDocs = semanticDocs.filter((doc) => !legacyUniverseDocIds.has(doc.docId));
-    const legacyOnlyDocs = legacyUniverseDocs.filter((doc) => !semanticDocIdSet.has(doc.docId));
+    const legacyCandidateDocIds = realizedCandidateDocIds.length > 0
+      ? this.matchLegacyDocIds(query, realizedCandidateDocIds, legacyDocs, semanticDocIdSet)
+      : new Set<string>();
+    const semanticOnlyDocs = semanticDocs.filter((doc) => !legacyCandidateDocIds.has(doc.docId));
+    const legacyOnlyCount = Math.max(legacyCount - legacyCandidateDocIds.size, 0);
     const merged = hasSemanticCandidates
       ? mergeSemanticDocumentResults({
           semanticDocs,
@@ -102,13 +102,26 @@ export class DocsService {
       semanticCandidateCount: plan.candidateDocIds.length,
       semanticHitCount: semanticDocs.length,
       semanticOnlyCount: semanticOnlyDocs.length,
-      legacyOnlyCount: legacyOnlyDocs.length,
+      legacyOnlyCount,
     });
     if (!hasSemanticCandidates) {
       return { docs: merged.slice(offset, offset + limit), total: legacyCount };
     }
 
     return { docs: merged.slice(offset, offset + limit), total: legacyCount + semanticOnlyDocs.length };
+  }
+
+  private matchLegacyDocIds(
+    query: string,
+    candidateDocIds: readonly string[],
+    legacyDocs: readonly DocRecord[],
+    semanticDocIdSet: ReadonlySet<string>,
+  ): Set<string> {
+    return this.search?.matchDocIds?.(query, candidateDocIds) ?? new Set(
+          legacyDocs
+            .filter((doc) => semanticDocIdSet.has(doc.docId))
+            .map((doc) => doc.docId),
+        );
   }
 
   get(docId: string): DocRecord | null {
