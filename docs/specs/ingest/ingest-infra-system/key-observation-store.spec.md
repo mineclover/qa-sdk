@@ -109,7 +109,7 @@ RecordInsert[]
 |---------|:---:|------|
 | D1/SQLite | 완료 | `ingest-server/src/stores/d1-key-observation-store.ts` |
 | Drizzle/PG | 미구현 | StoreSet에서 optional, D1과 동일 Drizzle ORM |
-| ClickHouse | DDL만 | `ingest-server/src/stores/clickhouse-schema.sql.ts` |
+| ClickHouse | DDL + 분석 조회 | `clickhouse-schema.sql.ts`, `ClickHouseAnalyticsStore.queryKeyObservations()` |
 
 ## 테스트
 

@@ -37,7 +37,7 @@ infra-engine이 주력 인프라 관측 파이프라인. App Hub은 현재 미�
 
 - [ ] ClickHouse RecordStore 외 나머지 store 구현
 - [ ] `CLICKHOUSE_URL` 기반 연결 관리
-- [ ] 대량 분석 쿼리 최적화
+- [x] 대량 분석 쿼리 포트 분리 (`ClickHouseAnalyticsStore`: time series/top keys/distribution/key observations/trace stats)
 
 ## 비고
 

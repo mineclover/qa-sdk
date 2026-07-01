@@ -25,10 +25,10 @@ def:
 | `memory` | (기본) | D1+`:memory:` 자동 업그레이드, insights 활성. 실패 시 InMemory fallback |
 | `pg` | `TRACE_DATABASE_URL` 필수 | Drizzle + PostgreSQL (운영, `packages/store`) |
 | `d1` | `SQLITE_PATH` | D1/SQLite via SqlDriver (CF Workers) |
-| `clickhouse` | `CLICKHOUSE_URL` | ClickHouse RecordStore (대량 분석) |
+| `clickhouse` | `CLICKHOUSE_URL` | ClickHouse RecordStore + OLAP AnalyticsStore (대량 분석) |
 
 - D1 store: 4개 core (Record, Trace, Session, Verdict) + 나머지 InMemory
-- ClickHouse store: RecordStore만 구현, 나머지 InMemory
+- ClickHouse runtime store: RecordStore만 StoreSet에 포함, 나머지 InMemory. OLAP 조회는 `ClickHouseAnalyticsStore` 별도 사용.
 - `store-factory.ts`에서 드라이버 선택 + 생성
 - 상세: `docs/specs/ingest/ingest-infra-system/ingest-store-drivers.todo.md`
 

@@ -26,7 +26,7 @@ D1(SQLite)과 PostgreSQL 두 드라이버에서 동일한 Store 포트 인터페
 - **D1 어댑터 9종** — ingest-server/stores/d1-*.ts. SQLite + Drizzle ORM.
 - **PG 어댑터 9종** — store/adapters/drizzle/*.adapter.ts. PostgreSQL + Drizzle ORM.
 - **교차 테스트 31 케이스** — 동일 테스트를 D1/PG 양쪽에서 실행.
-- **ClickHouse** — DDL만 (11 테이블). OLAP 전용 AnalyticsStore는 별도 설계.
+- **ClickHouse** — DDL 11 테이블 + RecordStore + OLAP 전용 `ClickHouseAnalyticsStore`. CRUD 포트와 분석 포트를 분리.
 
 ## Store 포트 × 드라이버 매트릭스 ^defines
 
@@ -195,10 +195,10 @@ DATABASE_URL=postgres://... pnpm --filter ingest-server test -- --run cross-adap
 
 ## ClickHouse 분리 ^consumes
 
-ClickHouse는 OLAP 분석 전용. CRUD 포트와 분리된 AnalyticsStore 인터페이스로 별도 설계.
+ClickHouse는 OLAP 분석 전용이다. CRUD 포트와 분리된 `AnalyticsStore` 인터페이스를 `ClickHouseAnalyticsStore`로 구현한다.
 - DDL 11 테이블 완료
 - Store 어댑터: RecordStore 1종만 기존 구현 (ClickhouseRecordStore)
-- 향후: `docs/specs/ingest/ingest-infra-system/clickhouse-analytics.todo.md` 참조
+- 분석 어댑터: `bulkInsert`, time series, top keys, distribution, key observation, trace stats 집계 구현
 
 ## store-factory 드라이버 선택 ^delegates
 

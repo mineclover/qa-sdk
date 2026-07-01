@@ -94,7 +94,7 @@ SIGTERM/SIGINT 수신
 | `memory` (기본) | 전체 InMemory (8종) | dynamic import, DB 없이 동작 |
 | `pg` | Drizzle + PostgreSQL (8종) | `TRACE_DATABASE_URL` 필수 |
 | `d1` | D1/SQLite core 4종 + 나머지 InMemory | Record, Trace, Session, Verdict만 D1 |
-| `clickhouse` | ClickHouse RecordStore + 나머지 InMemory | RecordStore만 ClickHouse |
+| `clickhouse` | ClickHouse RecordStore + 나머지 InMemory | runtime write path는 RecordStore만 ClickHouse. OLAP 조회는 별도 `ClickHouseAnalyticsStore` |
 
 **D1 모드 store 매핑:**
 
@@ -109,7 +109,7 @@ SIGTERM/SIGINT 수신
 | `ScenarioSpecStore` | `InMemoryScenarioSpecStore` | D1 구현 후순위 |
 | `DlqStore` | `InMemoryDlqStore` | D1 구현 후순위 |
 
-**ClickHouse 모드:** `ClickhouseRecordStore`만 구현, 나머지 7종 InMemory.
+**ClickHouse 모드:** runtime store set은 `ClickhouseRecordStore`만 사용하고, 나머지 7종은 InMemory다. OLAP 조회는 runtime CRUD 포트가 아니라 `ClickHouseAnalyticsStore`를 별도 주입해 사용한다.
 
 ### 트랜잭션 경계
 

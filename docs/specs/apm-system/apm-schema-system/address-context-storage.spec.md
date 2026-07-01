@@ -52,7 +52,7 @@ store-factory.ts (STORE_DRIVER 환경변수)가 백엔드를 선택한다:
 | pg | JSONB | GIN 인덱스 가능 | drizzle + TRACE_DATABASE_URL |
 | clickhouse | Map(String, String) | mapContains | clickhouse-record-store.ts |
 
-D1 store는 4개 core store(Record, Trace, Session, Verdict)를 구현하고, 나머지는 InMemory이다. ClickHouse store는 RecordStore만 구현한다.
+D1 store는 4개 core store(Record, Trace, Session, Verdict)를 구현하고, 나머지는 InMemory이다. ClickHouse runtime store는 RecordStore만 구현하고, OLAP 조회는 별도 `ClickHouseAnalyticsStore`가 담당한다.
 
 TransmissionEnvelope에서 받은 infra_context는 `enrichAddressContext()`에서 머지된 후 record에 반영되므로, 저장 시점에는 이미 최종 머지된 상태이다.
 

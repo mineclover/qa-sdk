@@ -15,6 +15,240 @@ export interface ClickHouseClient {
   exec(sql: string): Promise<void>;
 }
 
+export type AnalyticsInterval = "minute" | "hour" | "day";
+
+export interface TimeSeriesQuery {
+  table?: string;
+  timestampColumn?: string;
+  interval: AnalyticsInterval;
+  from?: Date;
+  to?: Date;
+  eventKey?: string;
+  limit?: number;
+}
+
+export interface TimeSeriesBucket {
+  bucket: Date;
+  count: number;
+}
+
+export interface TopKeysQuery {
+  table?: string;
+  keyColumn?: string;
+  timestampColumn?: string;
+  from?: Date;
+  to?: Date;
+  limit?: number;
+}
+
+export interface TopKeyEntry {
+  key: string;
+  count: number;
+}
+
+export interface DistributionQuery {
+  table?: string;
+  valueColumn: string;
+  timestampColumn?: string;
+  from?: Date;
+  to?: Date;
+  bucketSize?: number;
+  limit?: number;
+}
+
+export interface DistributionBucket {
+  bucket: number;
+  count: number;
+}
+
+export interface KeyObservationAnalyticsQuery {
+  prefixId?: string;
+  registered?: boolean;
+  orderBy?: "count" | "last_seen";
+  limit?: number;
+}
+
+export interface KeyObservationAnalyticsEntry {
+  prefixId: string;
+  packedKey: string;
+  registered: boolean;
+  count: number;
+  firstSeen: Date;
+  lastSeen: Date;
+}
+
+export interface TraceAnalyticsQuery {
+  serviceName?: string;
+  from?: Date;
+  to?: Date;
+  limit?: number;
+}
+
+export interface TraceServiceStats {
+  serviceName: string;
+  traceCount: number;
+  recordCount: number;
+  firstTimestamp: Date | null;
+  lastTimestamp: Date | null;
+}
+
+export interface AnalyticsStore {
+  bulkInsert(table: string, rows: Record<string, unknown>[]): Promise<void>;
+  queryTimeSeries(params: TimeSeriesQuery): Promise<TimeSeriesBucket[]>;
+  queryTopKeys(params?: TopKeysQuery): Promise<TopKeyEntry[]>;
+  queryDistribution(params: DistributionQuery): Promise<DistributionBucket[]>;
+  queryKeyObservations(params?: KeyObservationAnalyticsQuery): Promise<KeyObservationAnalyticsEntry[]>;
+  queryTraceStats(params?: TraceAnalyticsQuery): Promise<TraceServiceStats[]>;
+}
+
+export class ClickHouseAnalyticsStore implements AnalyticsStore {
+  constructor(private readonly client: ClickHouseClient) {}
+
+  async bulkInsert(table: string, rows: Record<string, unknown>[]): Promise<void> {
+    if (rows.length === 0) return;
+    const tableName = sqlIdentifier(table, "table");
+    const columns = Object.keys(rows[0]).map((column) => sqlIdentifier(column, "column"));
+    await this.client.insert(tableName, rows, columns);
+  }
+
+  async queryTimeSeries(params: TimeSeriesQuery): Promise<TimeSeriesBucket[]> {
+    const table = sqlIdentifier(params.table ?? "event_records", "table");
+    const timestampColumn = sqlIdentifier(params.timestampColumn ?? "timestamp", "timestamp column");
+    const bucketFn = bucketFunction(params.interval);
+    const { where, values } = buildTimeRangeWhere(params, timestampColumn);
+    const limit = normalizeLimit(params.limit, 1000);
+    const sql = [
+      `SELECT ${bucketFn}(${timestampColumn}) AS bucket, count() AS count`,
+      `FROM ${table}`,
+      where,
+      "GROUP BY bucket",
+      "ORDER BY bucket",
+      `LIMIT ${limit}`,
+    ].filter(Boolean).join(" ");
+
+    const { rows } = await this.client.query(sql, values);
+    return rows.map((row) => ({
+      bucket: parseClickHouseDate(row.bucket),
+      count: Number(row.count),
+    }));
+  }
+
+  async queryTopKeys(params: TopKeysQuery = {}): Promise<TopKeyEntry[]> {
+    const table = sqlIdentifier(params.table ?? "event_records", "table");
+    const keyColumn = sqlIdentifier(params.keyColumn ?? "event_key", "key column");
+    const timestampColumn = sqlIdentifier(params.timestampColumn ?? "timestamp", "timestamp column");
+    const { where, values } = buildTimeRangeWhere(params, timestampColumn);
+    const limit = normalizeLimit(params.limit, 100);
+    const sql = [
+      `SELECT ${keyColumn} AS key, count() AS count`,
+      `FROM ${table}`,
+      where,
+      "GROUP BY key",
+      "ORDER BY count DESC",
+      `LIMIT ${limit}`,
+    ].filter(Boolean).join(" ");
+
+    const { rows } = await this.client.query(sql, values);
+    return rows.map((row) => ({
+      key: String(row.key),
+      count: Number(row.count),
+    }));
+  }
+
+  async queryDistribution(params: DistributionQuery): Promise<DistributionBucket[]> {
+    const table = sqlIdentifier(params.table ?? "event_records", "table");
+    const valueColumn = sqlIdentifier(params.valueColumn, "value column");
+    const timestampColumn = sqlIdentifier(params.timestampColumn ?? "timestamp", "timestamp column");
+    const bucketSize = normalizeBucketSize(params.bucketSize);
+    const { where, values } = buildTimeRangeWhere(params, timestampColumn);
+    values.bucketSize = bucketSize;
+    const limit = normalizeLimit(params.limit, 100);
+    const sql = [
+      `SELECT floor(${valueColumn} / {bucketSize:Float64}) * {bucketSize:Float64} AS bucket, count() AS count`,
+      `FROM ${table}`,
+      where,
+      "GROUP BY bucket",
+      "ORDER BY bucket",
+      `LIMIT ${limit}`,
+    ].filter(Boolean).join(" ");
+
+    const { rows } = await this.client.query(sql, values);
+    return rows.map((row) => ({
+      bucket: Number(row.bucket),
+      count: Number(row.count),
+    }));
+  }
+
+  async queryKeyObservations(params: KeyObservationAnalyticsQuery = {}): Promise<KeyObservationAnalyticsEntry[]> {
+    const conditions: string[] = [];
+    const values: Record<string, unknown> = {};
+    if (params.prefixId) {
+      conditions.push("prefix_id = {prefixId:String}");
+      values.prefixId = params.prefixId;
+    }
+    if (params.registered !== undefined) {
+      conditions.push("registered = {registered:UInt8}");
+      values.registered = params.registered ? 1 : 0;
+    }
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const orderBy = params.orderBy === "last_seen" ? "last_seen" : "count";
+    const limit = normalizeLimit(params.limit, 100);
+    const sql = [
+      "SELECT prefix_id, packed_key, registered, count, first_seen, last_seen",
+      "FROM key_observations",
+      where,
+      `ORDER BY ${orderBy} DESC`,
+      `LIMIT ${limit}`,
+    ].filter(Boolean).join(" ");
+
+    const { rows } = await this.client.query(sql, values);
+    return rows.map((row) => ({
+      prefixId: String(row.prefix_id),
+      packedKey: String(row.packed_key),
+      registered: Number(row.registered) === 1,
+      count: Number(row.count),
+      firstSeen: parseClickHouseDate(row.first_seen),
+      lastSeen: parseClickHouseDate(row.last_seen),
+    }));
+  }
+
+  async queryTraceStats(params: TraceAnalyticsQuery = {}): Promise<TraceServiceStats[]> {
+    const conditions: string[] = [];
+    const values: Record<string, unknown> = {};
+    if (params.serviceName) {
+      conditions.push("service_name = {serviceName:String}");
+      values.serviceName = params.serviceName;
+    }
+    if (params.from) {
+      conditions.push("first_timestamp >= {from:DateTime64(3)}");
+      values.from = formatClickHouseDate(params.from);
+    }
+    if (params.to) {
+      conditions.push("last_timestamp <= {to:DateTime64(3)}");
+      values.to = formatClickHouseDate(params.to);
+    }
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const limit = normalizeLimit(params.limit, 100);
+    const sql = [
+      "SELECT service_name, count() AS trace_count, sum(record_count) AS record_count, min(first_timestamp) AS first_timestamp, max(last_timestamp) AS last_timestamp",
+      "FROM traces",
+      where,
+      "GROUP BY service_name",
+      "ORDER BY trace_count DESC",
+      `LIMIT ${limit}`,
+    ].filter(Boolean).join(" ");
+
+    const { rows } = await this.client.query(sql, values);
+    return rows.map((row) => ({
+      serviceName: String(row.service_name ?? ""),
+      traceCount: Number(row.trace_count),
+      recordCount: Number(row.record_count),
+      firstTimestamp: row.first_timestamp == null ? null : parseClickHouseDate(row.first_timestamp),
+      lastTimestamp: row.last_timestamp == null ? null : parseClickHouseDate(row.last_timestamp),
+    }));
+  }
+}
+
 export class ClickhouseRecordStore implements RecordStore {
   constructor(private readonly client: ClickHouseClient) {}
 
@@ -84,7 +318,21 @@ export class ClickhouseRecordStore implements RecordStore {
   }
 
   async findBySessionIdPaginated(sessionId: string, params?: RecordPaginationParams): Promise<StoredRecordPage> {
-    return this.findByTraceIdPaginated(sessionId, params); // 동일 패턴
+    const limit = params?.limit ?? 100;
+    const cursor = params?.cursor;
+    let sql = "SELECT * FROM event_records WHERE qa_session_id = {sessionId:String}";
+    const p: Record<string, unknown> = { sessionId };
+    if (cursor) {
+      sql += " AND (timestamp > {cursorTs:DateTime64(3)} OR (timestamp = {cursorTs:DateTime64(3)} AND log_id > {cursorId:String}))";
+      p.cursorTs = cursor.timestamp.toISOString().replace("T", " ").replace("Z", "");
+      p.cursorId = cursor.logId;
+    }
+    sql += ` ORDER BY timestamp, log_id LIMIT ${limit + 1}`;
+    const { rows } = await this.client.query(sql, p);
+    const items = rows.slice(0, limit).map(toStoredRecord);
+    const hasMore = rows.length > limit;
+    const last = items[items.length - 1];
+    return { items, hasMore, nextCursor: hasMore && last ? { timestamp: last.timestamp, logId: last.logId } : null };
   }
 
   async findByTraceAndEventKey(traceId: string, eventKey: string): Promise<StoredRecord[]> {
@@ -122,6 +370,72 @@ export class ClickhouseRecordStore implements RecordStore {
 }
 
 import { parseJsonColumn } from "../db/json-types.js";
+
+function sqlIdentifier(value: string, label: string): string {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
+    throw new Error(`Invalid ClickHouse ${label}: ${value}`);
+  }
+  return value;
+}
+
+function bucketFunction(interval: AnalyticsInterval): string {
+  switch (interval) {
+    case "minute": return "toStartOfMinute";
+    case "hour": return "toStartOfHour";
+    case "day": return "toStartOfDay";
+  }
+}
+
+function buildTimeRangeWhere(
+  params: { from?: Date; to?: Date; eventKey?: string },
+  timestampColumn: string,
+): { where: string; values: Record<string, unknown> } {
+  const conditions: string[] = [];
+  const values: Record<string, unknown> = {};
+  if (params.from) {
+    conditions.push(`${timestampColumn} >= {from:DateTime64(3)}`);
+    values.from = formatClickHouseDate(params.from);
+  }
+  if (params.to) {
+    conditions.push(`${timestampColumn} <= {to:DateTime64(3)}`);
+    values.to = formatClickHouseDate(params.to);
+  }
+  if (params.eventKey) {
+    conditions.push("event_key = {eventKey:String}");
+    values.eventKey = params.eventKey;
+  }
+  return {
+    where: conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "",
+    values,
+  };
+}
+
+function normalizeLimit(limit: number | undefined, fallback: number): number {
+  const maxLimit = 10_000;
+  if (limit === undefined) return fallback;
+  if (!Number.isFinite(limit)) return fallback;
+  return Math.min(maxLimit, Math.max(1, Math.trunc(limit)));
+}
+
+function normalizeBucketSize(bucketSize: number | undefined): number {
+  if (bucketSize === undefined) return 1;
+  if (!Number.isFinite(bucketSize) || bucketSize <= 0) {
+    throw new Error(`Invalid ClickHouse distribution bucketSize: ${bucketSize}`);
+  }
+  return bucketSize;
+}
+
+function formatClickHouseDate(date: Date): string {
+  return date.toISOString().replace("T", " ").replace("Z", "");
+}
+
+function parseClickHouseDate(value: unknown): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === "string" && value.includes(" ")) {
+    return new Date(`${value.replace(" ", "T")}Z`);
+  }
+  return new Date(value as string | number);
+}
 
 function parseJson<T>(val: string | null | undefined): T | undefined {
   return parseJsonColumn<T | undefined>(val, undefined);
