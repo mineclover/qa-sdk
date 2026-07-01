@@ -106,6 +106,47 @@ describe("decode-service", () => {
       const json = await res.json();
       expect(json.status).toBe("ok");
       expect(json.decoders_loaded).toBe(3);
+      expect(json.cache).toEqual({
+        driver: "memory",
+        status: "disabled",
+      });
+    });
+
+    it("Redis L2 캐시가 주입되면 health에 connected 상태를 표시", async () => {
+      const pool = new DecoderPool(0);
+      const decodeCache: KeyCache = {
+        get: async () => undefined,
+        set: async () => {},
+        delete: async () => false,
+        clear: async () => {},
+        has: async () => false,
+        stats: () => ({ size: 0, hits: 0, misses: 0, evictions: 0 }),
+      };
+      const cacheApp = createApp({ pool, decodeCache });
+
+      const res = await cacheApp.request("/health");
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.cache).toEqual({
+        driver: "redis",
+        status: "connected",
+      });
+    });
+
+    it("Redis L2 캐시 초기화 실패 상태를 health에 표시", async () => {
+      const pool = new DecoderPool(0);
+      const cacheApp = createApp({
+        pool,
+        cacheHealth: { driver: "redis", status: "disconnected" },
+      });
+
+      const res = await cacheApp.request("/health");
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.cache).toEqual({
+        driver: "redis",
+        status: "disconnected",
+      });
     });
   });
 

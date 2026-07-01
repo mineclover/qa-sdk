@@ -37,7 +37,7 @@ Redis 기반 L2 캐시 레이어를 구축하고, decode 결과 공유·콜드 �
 | 2-1 | DecoderPool Redis fallback | ✅ | CACHE_DRIVER=redis 환경변수 + server.ts 초기화 |
 | 2-2 | decode 결과 Redis 저장 | ✅ | POST /decode 캐시 조회/저장. 4 integration tests |
 | 2-3 | decode-service env 확장 | ✅ | CACHE_DRIVER, REDIS_URL config/env.ts 추가 |
-| 2-4 | decode-service health에 Redis 상태 포함 | 미구현 | /health 응답에 redis connected/disconnected 표시 (낮은 우선순위) |
+| 2-4 | decode-service health에 Redis 상태 포함 | ✅ | /health 응답에 cache driver/status 표시. Redis ping 성공 후 connected |
 
 ## Phase 3: 서비스 간 캐시 공유
 
@@ -67,7 +67,7 @@ Redis 기반 L2 캐시 레이어를 구축하고, decode 결과 공유·콜드 �
 
 ## 이번 작업 범위
 
-**Phase 1 전체 + Phase 2 (2-1, 2-2, 2-3) + Phase 4 (4-1, 4-2)** 를 I-4로 진행.
+**Phase 1 전체 + Phase 2 전체 + Phase 4 (4-1, 4-2)** 를 I-4로 진행.
 
 Phase 3, Phase 5, Phase 4 (4-3)은 후속 작업.
 

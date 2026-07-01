@@ -7,6 +7,7 @@ import type { KeyCache } from "@qa-sdk/core";
 import { requestId } from "./middleware/request-id.js";
 import { createErrorHandler } from "./middleware/error-handler.js";
 import { createHealthRoutes } from "./routes/health.js";
+import type { DecodeCacheHealth } from "./routes/health.js";
 import { createMetricsRoutes } from "./routes/metrics.js";
 import { createDecodeRoutes } from "./routes/decode.js";
 import { DecoderPool } from "./lib/decoder-pool.js";
@@ -21,6 +22,7 @@ export interface AppDeps {
   decodeCache?: KeyCache;
   /** 캐시 TTL (밀리초) */
   cacheTtlMs?: number;
+  cacheHealth?: DecodeCacheHealth;
 }
 
 export function createApp(deps: AppDeps) {
@@ -35,6 +37,8 @@ export function createApp(deps: AppDeps) {
     pool: deps.pool,
     getUptimeSeconds: deps.getUptimeSeconds,
     version: deps.version,
+    decodeCache: deps.decodeCache,
+    cacheHealth: deps.cacheHealth,
   }));
   app.route(
     "/",

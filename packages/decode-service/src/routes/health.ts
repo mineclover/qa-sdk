@@ -2,12 +2,20 @@
 // @def.doc decode-service-system
 
 import { Hono } from "hono";
+import type { KeyCache } from "@qa-sdk/core";
 import type { DecoderPool } from "../lib/decoder-pool.js";
+
+export interface DecodeCacheHealth {
+  driver: "memory" | "redis";
+  status: "disabled" | "connected" | "disconnected";
+}
 
 export interface HealthDeps {
   pool: DecoderPool;
   getUptimeSeconds?: () => number;
   version?: string;
+  decodeCache?: KeyCache;
+  cacheHealth?: DecodeCacheHealth;
 }
 
 export function createHealthRoutes(deps: HealthDeps) {
@@ -19,6 +27,11 @@ export function createHealthRoutes(deps: HealthDeps) {
       decoders_loaded: deps.pool.size,
       uptime_seconds: deps.getUptimeSeconds?.() ?? undefined,
       version: deps.version ?? undefined,
+      cache: deps.cacheHealth ?? (
+        deps.decodeCache
+          ? { driver: "redis", status: "connected" }
+          : { driver: "memory", status: "disabled" }
+      ),
     });
   });
 

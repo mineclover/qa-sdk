@@ -9,7 +9,9 @@ import type { DecodeMap } from "index-meta-workers";
 import { env } from "./config/env.js";
 import { createApp } from "./app.js";
 import { DecoderPool } from "./lib/decoder-pool.js";
+import { initializeDecodeCache } from "./lib/decode-cache.js";
 import { createLogger } from "./lib/logger.js";
+import type { DecodeCacheHealth } from "./routes/health.js";
 
 const logger = createLogger("decode-service");
 const pool = new DecoderPool(env.CACHE_TTL_MS);
@@ -17,16 +19,11 @@ const startedAt = Date.now();
 
 // Redis L2 캐시 초기화 (CACHE_DRIVER=redis)
 let decodeCache: KeyCache | undefined;
+let cacheHealth: DecodeCacheHealth = { driver: "memory", status: "disabled" };
 if (env.CACHE_DRIVER === "redis" && env.REDIS_URL) {
-  try {
-    const Redis = (await import("ioredis")).default;
-    const { RedisKeyCache } = await import("@qa-sdk/store");
-    const redis = new Redis(env.REDIS_URL);
-    decodeCache = new RedisKeyCache(redis, { prefix: "decode:" });
-    logger.info({ url: env.REDIS_URL }, "Redis L2 cache connected");
-  } catch (err) {
-    logger.warn({ err }, "Redis L2 cache init failed — using memory only");
-  }
+  const redisCache = await initializeDecodeCache(env.REDIS_URL, { logger });
+  decodeCache = redisCache.decodeCache;
+  cacheHealth = redisCache.cacheHealth;
 }
 
 /** registry-service에서 전체 DecodeMap 자동 fetch */
@@ -61,6 +58,7 @@ const app = createApp({
   getUptimeSeconds: () => Math.floor((Date.now() - startedAt) / 1000),
   decodeCache,
   cacheTtlMs: env.CACHE_TTL_MS,
+  cacheHealth,
 });
 
 const serviceConfig = createServiceBootConfig("decode-service");
