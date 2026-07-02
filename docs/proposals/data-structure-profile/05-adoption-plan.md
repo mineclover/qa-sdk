@@ -158,21 +158,32 @@ Verification:
 
 ## Phase 5 - Visualization Pilot
 
+Status: implemented as read-only `viz-web` static preview.
+
 Artifacts:
 
-- static lineage JSON
-- viz-web or registry-ui read-only route
+- `packages/viz-web/src/data-structure-profile/lineage-view.ts`
+- `packages/viz-web/src/data-structure-profile/sample-lineage.ts`
+- `packages/viz-web/src/data-structure-profile-preview.ts`
+- `packages/viz-web/data-structure-profile.html`
 
 Tasks:
 
-1. Render source -> structure -> transform -> fact/metric graph.
-2. Overlay diagnostics by node/edge.
-3. Keep editing out of scope.
+1. Render source -> structure -> transform -> fact/metric graph. Implemented by SVG, Mermaid,
+   and D3 projection helpers.
+2. Overlay diagnostics by node/edge. Implemented by mapping validation diagnostics to lineage
+   nodes through compiled diagnostic targets.
+3. Keep editing out of scope. Preserved; the route uses static sample artifacts only.
 
 Exit criteria:
 
 - graph can be inspected without live backend.
 - diagnostics map to graph elements.
+
+Verification:
+
+- `pnpm --filter @qa-sdk/viz-web test`
+- `pnpm --filter @qa-sdk/viz-web build`
 
 ## Acceptance Criteria For Proposal
 

@@ -222,4 +222,20 @@ Implemented source surfaces:
 - `src/profile.test.ts` — fixture-backed contract tests.
 
 Current limitation: the package does not write to SQLite, run `@qa-sdk/bench`, or render a
-visualization. It emits plain JSON artifacts and adapter inputs for those later bridges.
+visualization. It emits plain JSON artifacts and adapter inputs for those bridges.
+
+## 8. Visualization Pilot
+
+The first read-only visualization bridge lives in
+[`../../../packages/viz-web/data-structure-profile.html`](../../../packages/viz-web/data-structure-profile.html).
+
+Implemented surfaces:
+
+- `src/data-structure-profile/lineage-view.ts` — compiled lineage to D3, Mermaid, and SVG
+  projections.
+- `src/data-structure-profile/sample-lineage.ts` — static fixture-like examples for backend-free
+  inspection.
+- `src/data-structure-profile-preview.ts` — tabbed preview route wiring.
+
+The preview remains downstream from deterministic profile artifacts. It does not edit profile YAML,
+run live connectors, or make DPM policy decisions.

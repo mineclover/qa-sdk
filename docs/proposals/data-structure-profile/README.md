@@ -83,3 +83,4 @@ Current drafted artifacts:
 - [`../../taxonomies/data-structure-profile.yaml`](../../taxonomies/data-structure-profile.yaml)
 - [fixtures/order-events.profile.yaml](./fixtures/order-events.profile.yaml)
 - [`../../../packages/data-structure-profile`](../../../packages/data-structure-profile) package spike
+- [`../../../packages/viz-web/data-structure-profile.html`](../../../packages/viz-web/data-structure-profile.html) read-only visualization pilot
