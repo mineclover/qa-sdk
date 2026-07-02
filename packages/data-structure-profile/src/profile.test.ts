@@ -35,6 +35,22 @@ describe("Data Structure Profile fixture compiler", () => {
     expect(assessDpmReadiness(profile)).toEqual(readJsonFixture("expected-dpm-readiness.json"));
   });
 
+  test("compiles the relational customer-orders fixture into deterministic artifacts", () => {
+    const taxonomy = parseProfileTaxonomy(readFileSync(taxonomyPath, "utf8"));
+    const profile = parseProfile(readFixture("customer-orders.profile.yaml"));
+
+    expect(validateProfile(profile, { taxonomy })).toEqual(
+      readJsonFixture("expected-customer-orders-validation-report.json"),
+    );
+    expect(compileLineage(profile)).toEqual(readJsonFixture("expected-customer-orders-lineage.json"));
+    expect(measureProfile(profile)).toEqual(
+      readJsonFixture("expected-customer-orders-measurement-report.json"),
+    );
+    expect(assessDpmReadiness(profile)).toEqual(
+      readJsonFixture("expected-customer-orders-dpm-readiness.json"),
+    );
+  });
+
   test("reports missing stream safety evidence with stable diagnostic codes", () => {
     const profile = parseProfile(readFixture("order-events.profile.yaml"));
     delete profile.source.event_id_path;

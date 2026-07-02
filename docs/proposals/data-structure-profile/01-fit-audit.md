@@ -3,14 +3,14 @@ def:
   id: data-structure-profile-01-fit-audit
   type: knowledge
   knowledge_kind: proposal
-  lifecycle: draft
+  lifecycle: review
   owner_system: taxonomy-engine
   projection_plane: intent
   scope: meta
   aspect: proposal_design
   tier: system
   depth: specification
-status: draft
+status: under-review
 date: 2026-07-01
 part_of: data-structure-profile
 role: fit-audit

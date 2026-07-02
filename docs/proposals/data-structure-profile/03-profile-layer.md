@@ -3,14 +3,14 @@ def:
   id: data-structure-profile-03-profile-layer
   type: knowledge
   knowledge_kind: proposal
-  lifecycle: draft
+  lifecycle: review
   owner_system: taxonomy-engine
   projection_plane: intent
   scope: meta
   aspect: proposal_design
   tier: system
   depth: specification
-status: draft
+status: under-review
 date: 2026-07-01
 part_of: data-structure-profile
 role: profile-layer
@@ -219,10 +219,15 @@ Implemented source surfaces:
 - `src/measurement.ts` — row multiplier and dry-run estimates.
 - `src/dpm.ts` — optional DPM readiness diagnostics.
 - `src/adapters.ts` — quality-ledger run inputs and bench-compatible report input.
+- `src/cli-runner.ts` — file-backed CLI runner for validation, compile, measurement, and DPM
+  readiness artifacts.
 - `src/profile.test.ts` — fixture-backed contract tests.
+- `scripts/data-structure-profile-bridge-smoke.mjs` — repo-level smoke that feeds adapter
+  outputs into actual `quality-ledger` and `@qa-sdk/bench` public surfaces.
 
-Current limitation: the package does not write to SQLite, run `@qa-sdk/bench`, or render a
-visualization. It emits plain JSON artifacts and adapter inputs for those bridges.
+Runtime boundary: the package itself still does not write to SQLite, run `@qa-sdk/bench`, or render a
+visualization. It emits plain JSON artifacts and adapter inputs; the repo-level smoke script verifies
+that those adapter inputs can be consumed by `quality-ledger` and `@qa-sdk/bench`.
 
 ## 8. Visualization Pilot
 

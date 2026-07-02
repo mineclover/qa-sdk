@@ -1,0 +1,93 @@
+{
+  "kind": "data-structure-profile.compiled.v1",
+  "profile": "customer-orders-to-pseudonymized-analytics",
+  "taxonomyRef": "data-structure-profile@draft",
+  "lineage": {
+    "nodes": [
+      {
+        "id": "crm-postgres",
+        "kind": "source",
+        "label": "crm",
+        "taxonomyRef": "data-source-kind:postgres"
+      },
+      {
+        "id": "customer-table",
+        "kind": "table",
+        "label": "crm.customers",
+        "taxonomyRef": "structure-kind:table"
+      },
+      {
+        "id": "order-table",
+        "kind": "table",
+        "label": "crm.orders",
+        "taxonomyRef": "structure-kind:table"
+      },
+      {
+        "id": "customer-order-relationship",
+        "kind": "relationship",
+        "label": "crm.orders.customer_id = crm.customers.customer_id",
+        "taxonomyRef": "structure-kind:relationship"
+      },
+      {
+        "id": "join-customer-orders",
+        "kind": "transform",
+        "label": "join customer orders",
+        "taxonomyRef": "transform-kind:join"
+      },
+      {
+        "id": "pseudonymize-customer-keys",
+        "kind": "transform",
+        "label": "pseudonymize customer keys",
+        "taxonomyRef": "transform-kind:pseudonymize"
+      },
+      {
+        "id": "customer-analytics-dataset",
+        "kind": "fact",
+        "label": "analytics.customer_order_features",
+        "taxonomyRef": "structure-kind:fact"
+      }
+    ],
+    "edges": [
+      {
+        "from": "crm-postgres",
+        "to": "customer-table",
+        "kind": "contains"
+      },
+      {
+        "from": "crm-postgres",
+        "to": "order-table",
+        "kind": "contains"
+      },
+      {
+        "from": "customer-table",
+        "to": "customer-order-relationship",
+        "kind": "joins"
+      },
+      {
+        "from": "order-table",
+        "to": "customer-order-relationship",
+        "kind": "joins"
+      },
+      {
+        "from": "customer-order-relationship",
+        "to": "join-customer-orders",
+        "kind": "input"
+      },
+      {
+        "from": "join-customer-orders",
+        "to": "pseudonymize-customer-keys",
+        "kind": "feeds"
+      },
+      {
+        "from": "pseudonymize-customer-keys",
+        "to": "customer-analytics-dataset",
+        "kind": "produces"
+      }
+    ]
+  },
+  "diagnosticTargets": {
+    "relationship-join-key-required": "relationships.customer-order-relationship",
+    "pii-policy-required": "privacy.dpm_policy_ref",
+    "dsp-privacy-dpm-ref-missing": "privacy.dpm_policy_ref"
+  }
+}

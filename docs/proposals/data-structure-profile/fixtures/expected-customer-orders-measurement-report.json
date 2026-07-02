@@ -1,0 +1,21 @@
+{
+  "kind": "data-structure-profile.measurement-report.v1",
+  "profile": "customer-orders-to-pseudonymized-analytics",
+  "inputs": {
+    "expectedEventRatePerSec": 100,
+    "averagePayloadBytes": 1024,
+    "averageArrayLength": 1,
+    "maxArrayLength": 1,
+    "estimatedFactRowBytes": 512
+  },
+  "estimates": {
+    "rowMultiplier": 1,
+    "estimatedFactRowsPerSec": 100,
+    "estimatedOutputBytesPerSec": 51200,
+    "estimatedDailyFactRows": 8640000
+  },
+  "thresholds": {
+    "maxRowMultiplier": 0
+  },
+  "warnings": []
+}

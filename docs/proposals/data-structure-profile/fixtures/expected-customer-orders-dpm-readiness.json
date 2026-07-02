@@ -1,0 +1,21 @@
+{
+  "kind": "data-structure-profile.dpm-readiness.v1",
+  "profile": "customer-orders-to-pseudonymized-analytics",
+  "required": true,
+  "policyRef": "dpm://customer-analytics-v1",
+  "sensitivePaths": [
+    {
+      "path": "crm.customers.customer_id",
+      "role": "direct-customer-key"
+    },
+    {
+      "path": "crm.customers.email",
+      "role": "direct-contact"
+    },
+    {
+      "path": "crm.orders.customer_id",
+      "role": "relationship-key"
+    }
+  ],
+  "diagnostics": []
+}

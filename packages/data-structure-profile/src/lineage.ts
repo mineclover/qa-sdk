@@ -4,8 +4,15 @@ export function compileLineage(profile: DataStructureProfile): CompiledLineage {
   const rootEvent = profile.structures.find(
     (structure) => structure.kind === "event" && structure.source_path === "$",
   );
-  const arrays = profile.structures.filter((structure) => structure.kind === "array");
-  const facts = profile.structures.filter((structure) => structure.kind === "fact");
+  const lineageStructures = profile.structures.filter((structure) => (
+    structure.kind === "event"
+    || structure.kind === "array"
+    || structure.kind === "table"
+    || structure.kind === "relationship"
+  ));
+  const outputStructures = profile.structures.filter((structure) => (
+    structure.kind === "fact" || structure.kind === "metric"
+  ));
 
   const nodes: LineageNode[] = [
     {
@@ -16,11 +23,8 @@ export function compileLineage(profile: DataStructureProfile): CompiledLineage {
     },
   ];
 
-  if (rootEvent) {
-    nodes.push(structureNode(rootEvent.id, rootEvent.kind, labelFromId(rootEvent.id)));
-  }
-  for (const array of arrays) {
-    nodes.push(structureNode(array.id, array.kind, array.source_path ?? array.id));
+  for (const structure of lineageStructures) {
+    nodes.push(structureNode(structure.id, structure.kind, labelForStructure(structure, rootEvent?.id)));
   }
   for (const transform of profile.transforms) {
     nodes.push({
@@ -30,17 +34,16 @@ export function compileLineage(profile: DataStructureProfile): CompiledLineage {
       taxonomyRef: `transform-kind:${transform.kind}`,
     });
   }
-  for (const fact of facts) {
-    nodes.push(structureNode(fact.id, fact.kind, stripRefScheme(fact.target_ref ?? fact.id)));
+  for (const structure of outputStructures) {
+    nodes.push(structureNode(structure.id, structure.kind, labelForStructure(structure, rootEvent?.id)));
   }
-
   const edges: LineageEdge[] = [];
   if (rootEvent) {
     edges.push({ from: profile.source.id, to: rootEvent.id, kind: "emits" });
   }
   for (const relationship of profile.relationships) {
-    if (relationship.kind === "contains") {
-      edges.push({ from: relationship.from, to: relationship.to, kind: "contains" });
+    if (relationship.kind === "contains" || relationship.kind === "joins") {
+      edges.push({ from: relationship.from, to: relationship.to, kind: relationship.kind });
     }
   }
   const [firstTransform] = profile.transforms;
@@ -75,6 +78,19 @@ function structureNode(id: string, kind: string, label: string): LineageNode {
     label,
     taxonomyRef: `structure-kind:${kind}`,
   };
+}
+
+function labelForStructure(
+  structure: DataStructureProfile["structures"][number],
+  rootEventId: string | undefined,
+): string {
+  if (structure.id === rootEventId) {
+    return labelFromId(structure.id);
+  }
+  if (structure.kind === "fact" || structure.kind === "metric") {
+    return stripRefScheme(structure.target_ref ?? structure.id);
+  }
+  return stripRefScheme(structure.source_path ?? structure.target_ref ?? structure.id);
 }
 
 function stripRefScheme(ref: string): string {

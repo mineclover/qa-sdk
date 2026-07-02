@@ -1,0 +1,133 @@
+kind: data-structure-profile.profile.v1
+profile: customer-orders-to-pseudonymized-analytics
+version: 1
+taxonomy_ref: data-structure-profile@draft
+description: >
+  Join relational customer and order tables into a pseudonymized analytics dataset.
+
+source:
+  id: crm-postgres
+  kind: postgres
+  ref: postgres://crm
+  payload_format: relational
+  schema_ref: ./customer-orders.schema.sql
+
+structures:
+  - id: customer-table
+    kind: table
+    source_path: crm.customers
+    lifecycle: draft
+
+  - id: customer-id
+    kind: field
+    source_path: crm.customers.customer_id
+    parent: customer-table
+    sensitivity: direct-customer-key
+
+  - id: customer-email
+    kind: field
+    source_path: crm.customers.email
+    parent: customer-table
+    sensitivity: direct-contact
+
+  - id: order-table
+    kind: table
+    source_path: crm.orders
+    lifecycle: draft
+
+  - id: order-customer-id
+    kind: field
+    source_path: crm.orders.customer_id
+    parent: order-table
+    sensitivity: relationship-key
+
+  - id: customer-order-relationship
+    kind: relationship
+    source_path: crm.orders.customer_id = crm.customers.customer_id
+    lifecycle: draft
+
+  - id: customer-analytics-dataset
+    kind: fact
+    target_ref: postgres://analytics.customer_order_features
+    grain: one-row-per-customer
+
+relationships:
+  - id: source-has-customers
+    kind: contains
+    from: crm-postgres
+    to: customer-table
+
+  - id: source-has-orders
+    kind: contains
+    from: crm-postgres
+    to: order-table
+
+  - id: customers-join-relationship
+    kind: joins
+    from: customer-table
+    to: customer-order-relationship
+
+  - id: orders-join-relationship
+    kind: joins
+    from: order-table
+    to: customer-order-relationship
+
+transforms:
+  - id: join-customer-orders
+    kind: join
+    from: customer-order-relationship
+    to: customer-analytics-dataset
+    semantics:
+      join_type: left
+      output_grain: one-row-per-customer
+      join_key_paths:
+        - crm.customers.customer_id
+        - crm.orders.customer_id
+
+  - id: pseudonymize-customer-keys
+    kind: pseudonymize
+    from: customer-analytics-dataset
+    to: customer-analytics-dataset
+    semantics:
+      policy_ref: dpm://customer-analytics-v1
+      output_grain: one-row-per-customer
+
+measurements:
+  expected_event_rate_per_sec: 100
+  average_payload_bytes: 1024
+  average_array_length: 1
+  max_array_length: 1
+  estimated_fact_row_bytes: 512
+
+quality_gates:
+  - id: relationship-join-key-required
+    risk: relationship-break
+    severity: error
+    evidence:
+      path: relationships.customer-order-relationship
+      expectation: join-key-declared
+
+  - id: pii-policy-required
+    risk: pii-leak
+    severity: error
+    evidence:
+      path: privacy.dpm_policy_ref
+      expectation: dpm-policy-ref-declared
+
+privacy:
+  mode: readiness-check
+  dpm_policy_ref: dpm://customer-analytics-v1
+  required: true
+  sensitive_paths:
+    - path: crm.customers.customer_id
+      role: direct-customer-key
+    - path: crm.customers.email
+      role: direct-contact
+    - path: crm.orders.customer_id
+      role: relationship-key
+
+outputs:
+  lineage_ref: ./expected-customer-orders-lineage.json
+  validation_report_ref: ./expected-customer-orders-validation-report.json
+  measurement_report_ref: ./expected-customer-orders-measurement-report.json
+  dpm_readiness_ref: ./expected-customer-orders-dpm-readiness.json

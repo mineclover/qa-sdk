@@ -3,14 +3,14 @@ def:
   id: data-structure-profile-05-adoption-plan
   type: knowledge
   knowledge_kind: proposal
-  lifecycle: draft
+  lifecycle: review
   owner_system: taxonomy-engine
   projection_plane: intent
   scope: meta
   aspect: proposal_design
   tier: system
   depth: specification
-status: draft
+status: under-review
 date: 2026-07-01
 part_of: data-structure-profile
 role: adoption-plan
@@ -185,6 +185,75 @@ Verification:
 - `pnpm --filter @qa-sdk/viz-web test`
 - `pnpm --filter @qa-sdk/viz-web build`
 
+## Phase 6 - CLI / Fixture Runner
+
+Status: implemented as package CLI.
+
+Artifacts:
+
+- `packages/data-structure-profile/src/cli-runner.ts`
+- `packages/data-structure-profile/src/cli.ts`
+- `packages/data-structure-profile/src/cli-runner.test.ts`
+- `scripts/data-structure-profile-bridge-smoke.mjs`
+- package `bin`: `data-structure-profile`
+
+Tasks:
+
+1. Expose package APIs through `data-structure-profile validate|compile|measure|dpm-readiness
+   <profile>`.
+2. Support taxonomy-backed validation via `--taxonomy`.
+3. Support bridge smoke payloads via `validate --adapter quality-ledger` and
+   `measure --adapter bench`.
+4. Keep the CLI file-backed and deterministic; no live Kafka, DB, ledger, bench, or DPM execution.
+5. Verify the adapter payloads against actual `quality-ledger` and `@qa-sdk/bench` public APIs from a
+   repo-level smoke script.
+
+Exit criteria:
+
+- a checked-in profile can produce validation, lineage, measurement, and DPM readiness JSON through
+  one command family.
+- adapter payloads can be generated from the same entrypoint used by tests and docs.
+- adapter payloads can be recorded by `QualityLedger.recordRun()` and rendered by
+  `renderBenchmarkReport()` without adding runtime dependencies to `data-structure-profile`.
+
+Verification:
+
+- `pnpm --filter data-structure-profile test`
+- `pnpm --filter data-structure-profile typecheck`
+- `pnpm --filter data-structure-profile build`
+- `pnpm --filter quality-ledger build`
+- `pnpm --filter @qa-sdk/bench build`
+- `node scripts/data-structure-profile-bridge-smoke.mjs`
+- `node packages/data-structure-profile/dist/cli.js validate docs/proposals/data-structure-profile/fixtures/order-events.profile.yaml --taxonomy docs/taxonomies/data-structure-profile.yaml`
+
+## Phase 7 - Relational Fixture
+
+Status: implemented as second deterministic fixture pack.
+
+Artifacts:
+
+- `docs/proposals/data-structure-profile/fixtures/customer-orders.profile.yaml`
+- `docs/proposals/data-structure-profile/fixtures/expected-customer-orders-*.json`
+
+Tasks:
+
+1. Add a PostgreSQL-style customer/orders relationship fixture.
+2. Represent `table`, `relationship`, `join`, `pseudonymize`, and pseudonymized analytics fact
+   lineage.
+3. Exercise DPM-sensitive roles such as direct customer key, direct contact, and relationship key.
+4. Reuse the checked-in expected artifacts in the `viz-web` preview to prevent sample drift.
+
+Exit criteria:
+
+- the fixture validates against the taxonomy draft.
+- lineage includes table and relationship nodes.
+- DPM readiness proves a required policy reference can satisfy sensitive-path checks.
+
+Verification:
+
+- `pnpm --filter data-structure-profile test`
+- `pnpm --filter @qa-sdk/viz-web test`
+
 ## Acceptance Criteria For Proposal
 
 Move from draft to under-review when:
@@ -192,6 +261,8 @@ Move from draft to under-review when:
 1. Phase 1 taxonomy draft exists.
 2. Phase 2 fixture profile exists.
 3. Fit audit has been checked against actual taxonomy-engine/package surfaces.
+
+Current status: satisfied. The proposal document set is now `under-review`.
 
 Move from under-review to accepted when:
 

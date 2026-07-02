@@ -3,14 +3,14 @@ def:
   id: data-structure-profile-06-reference-map
   type: knowledge
   knowledge_kind: proposal
-  lifecycle: draft
+  lifecycle: review
   owner_system: taxonomy-engine
   projection_plane: intent
   scope: meta
   aspect: proposal_design
   tier: system
   depth: specification
-status: draft
+status: under-review
 date: 2026-07-01
 part_of: data-structure-profile
 role: reference-map
@@ -73,6 +73,8 @@ Current package spike:
 - `toQualityLedgerRunInputs()` emits `quality-ledger` `recordRun()`-compatible objects.
 - `toBenchReportInput()` emits a bench-compatible summary, title, and metadata object.
 - Neither function imports `quality-ledger` or `@qa-sdk/bench`.
+- `scripts/data-structure-profile-bridge-smoke.mjs` validates those adapter objects against the
+  actual built `quality-ledger` and `@qa-sdk/bench` public APIs.
 
 ## 4. Practical Decisions ^decision-point
 

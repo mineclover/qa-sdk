@@ -1,0 +1,27 @@
+{
+  "kind": "data-structure-profile.validation-report.v1",
+  "profile": "customer-orders-to-pseudonymized-analytics",
+  "status": "pass",
+  "summary": {
+    "errors": 0,
+    "warnings": 0,
+    "infos": 0
+  },
+  "checkedGates": [
+    {
+      "id": "relationship-join-key-required",
+      "risk": "relationship-break",
+      "severity": "error",
+      "result": "pass",
+      "evidence": "relationships.customer-order-relationship"
+    },
+    {
+      "id": "pii-policy-required",
+      "risk": "pii-leak",
+      "severity": "error",
+      "result": "pass",
+      "evidence": "privacy.dpm_policy_ref"
+    }
+  ],
+  "diagnostics": []
+}

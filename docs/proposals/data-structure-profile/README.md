@@ -3,14 +3,14 @@ def:
   id: data-structure-profile-readme
   type: knowledge
   knowledge_kind: proposal
-  lifecycle: draft
+  lifecycle: review
   owner_system: taxonomy-engine
   projection_plane: intent
   scope: meta
   aspect: proposal_design
   tier: system
   depth: overview
-status: draft
+status: under-review
 date: 2026-07-01
 part_of: data-structure-profile
 role: index
@@ -73,14 +73,20 @@ and visualization consumption, but should own concrete source-to-target profile 
 Minimum acceptance evidence:
 
 1. `docs/taxonomies/data-structure-profile.yaml` draft can validate.
-2. One checked-in order-event profile compiles to lineage JSON.
+2. Checked-in Kafka and relational profiles compile to lineage JSON.
 3. Measurement dry-run reports deterministic row multiplier.
 4. Quality diagnostics catch dedup, unbounded array, and schema drift risks.
 5. DPM readiness remains optional string reference, not a package dependency.
+6. `data-structure-profile` CLI can produce validation, lineage, measurement, and DPM readiness
+   artifacts from the same fixture paths used by tests and demos.
+7. Repo-level smoke can feed adapter outputs into actual `quality-ledger` and `@qa-sdk/bench`
+   public APIs without adding runtime dependencies to the profile package.
 
-Current drafted artifacts:
+Current under-review artifacts:
 
 - [`../../taxonomies/data-structure-profile.yaml`](../../taxonomies/data-structure-profile.yaml)
 - [fixtures/order-events.profile.yaml](./fixtures/order-events.profile.yaml)
+- [fixtures/customer-orders.profile.yaml](./fixtures/customer-orders.profile.yaml)
 - [`../../../packages/data-structure-profile`](../../../packages/data-structure-profile) package spike
 - [`../../../packages/viz-web/data-structure-profile.html`](../../../packages/viz-web/data-structure-profile.html) read-only visualization pilot
+- [`../../../scripts/data-structure-profile-bridge-smoke.mjs`](../../../scripts/data-structure-profile-bridge-smoke.mjs) bridge smoke
