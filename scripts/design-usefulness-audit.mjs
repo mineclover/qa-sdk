@@ -153,12 +153,20 @@ function classifyPackage(packageJsonPath) {
   const packagePath = repoPath(packageDir);
   const scripts = manifest.scripts ?? {};
   const hasSrc = existsSync(join(packageDir, "src"));
+  const hasLib = existsSync(join(packageDir, "lib"));
+  const hasRootRuntimeEntry = [
+    "index.ts",
+    "main.ts",
+    "server.ts",
+    "worker.ts",
+    "cli.ts",
+  ].some((entry) => existsSync(join(packageDir, entry)));
   const hasPublic = existsSync(join(packageDir, "public"));
   const testFiles = walk(packageDir, (path) => /\.(test|spec)\.[cm]?[jt]sx?$/.test(path));
   const hasTestSurface = testFiles.length > 0
     || existsSync(join(packageDir, "tests"))
     || existsSync(join(packageDir, "scenarios"));
-  const hasRuntimeSurface = hasSrc || hasPublic || hasTestSurface;
+  const hasRuntimeSurface = hasSrc || hasLib || hasRootRuntimeEntry || hasPublic || hasTestSurface;
   const hasReadme = existsSync(join(packageDir, "README.md"));
   const hasTestScript = Object.keys(scripts).some((scriptName) => scriptName === "test" || scriptName.startsWith("test:"));
   const hasBuildScript = Boolean(scripts.build);

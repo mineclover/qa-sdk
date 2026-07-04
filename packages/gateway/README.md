@@ -10,6 +10,7 @@
 # 게이트웨이 시작
 cd packages/gateway
 pnpm dev                    # http://localhost:8787
+pnpm test                   # build + route permission smoke
 
 # Tailscale로 VPN 노출
 tailscale serve --bg 8787   # https://<machine-name>.<tailnet>.ts.net

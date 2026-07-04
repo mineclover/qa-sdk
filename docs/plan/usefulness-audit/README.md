@@ -76,3 +76,5 @@ pnpm docs:usefulness-audit -- --format json --all
 그 다음 후보였던 `packages/e2e`, `packages/facet-tests`, `packages/simulation-tests`는 runtime source가 없는 게 아니라 test-only package다. 감사 스크립트는 `tests/`, `scenarios/`, `*.spec.*`, `*.test.*`를 실행 증거 표면으로 인정하도록 조정한다.
 
 `packages/codec`와 `packages/context`는 `@qa-sdk/sdk`, `demo-types`, `bench`, codegen에서 소비하는 플랫폼 체인 기반 패키지다. 삭제 후보가 아니라 package-local smoke가 빠진 상태였으므로 `test = build + scripts/smoke.mjs`를 추가해 typed SDK, dim-wire, QaContext, CatalogProvider의 최소 계약을 증명한다.
+
+`packages/gateway`는 `src/`가 없어서 audit에서 `runtime=false`로 보였지만 실제 런타임은 루트 `server.ts`/`worker.ts`와 `lib/`에 있다. 감사 스크립트는 root runtime entry와 `lib/`도 source evidence로 인정하도록 보정하고, gateway 자체에는 route permission/bitmask smoke를 추가해 인증 라우팅의 최소 계약을 package-local `test`로 닫는다.
