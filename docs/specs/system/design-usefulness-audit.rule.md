@@ -60,6 +60,7 @@ qa-sdk 설계 문서와 패키지가 실제 작업을 줄이거나 실패를 막
 - 첫 라운드는 기존 동작을 바꾸지 않는 감사 장치와 후보 목록 생성까지만 포함한다.
 - package 후보는 `pnpm-workspace.yaml`에 등록된 workspace root만 대상으로 삼는다. nested `package.json`은 빌드 산출물이나 배포 manifest일 수 있으므로 자동 정리 후보로 보지 않는다.
 - workspace glob 아래 hidden directory는 pnpm workspace filter에 잡히지 않는 경우가 있으므로 package 후보에서 제외한다.
+- test-only package는 `tests/`, `scenarios/`, `*.spec.*`, `*.test.*` 파일을 실행 증거 표면으로 인정한다.
 
 ## 감사 절차 ^validation
 

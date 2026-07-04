@@ -26,6 +26,7 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
+    "test": "pnpm run validate",
     "validate": "tsup && node -e \"const f=require('fs').readFileSync('dist/index.js','utf8');const bad=['node:fs','node:path','node:module','node:sqlite','better-sqlite3','bun:sqlite'];const found=bad.filter(b=>f.includes(b));if(found.length){console.error('Node.js leak:',found);process.exit(1)}else console.log('OK: no Node.js leak')\"",
     "clean": "rm -rf dist"
   },

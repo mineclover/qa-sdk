@@ -72,3 +72,5 @@ pnpm docs:usefulness-audit -- --format json --all
 같은 라운드에서 `simulations/enterprise-pm/services/.placeholder`도 package 후보로 잡혔지만, 현재 `docker-compose.sim.yaml`과 `scripts/sim-up.sh`는 실제 서비스 Dockerfile을 사용하고 `pnpm --filter @qa-sdk-sim/placeholder build`도 workspace project를 찾지 못한다. hidden directory는 pnpm workspace filter와 다르게 수동 glob에만 잡힌 false positive이므로 audit 후보에서 제외한다.
 
 첫 실제 package 후보였던 `packages/shop-web`은 삭제/격리 대상이 아니라 package-local 증명 보강 대상이었다. `public/` 정적 앱, `dev/start` script, E2E 소비자가 이미 있으므로 `packages/shop-web/scripts/static-smoke.mjs`와 `pnpm --filter @qa-sdk/shop-web test`를 추가해 정적 번들, 주요 `data-testid`, QA config, Pages 설정을 검증한다. 이 변경 뒤 `shop-web`은 audit에서 `keep`으로 올라간다.
+
+그 다음 후보였던 `packages/e2e`, `packages/facet-tests`, `packages/simulation-tests`는 runtime source가 없는 게 아니라 test-only package다. 감사 스크립트는 `tests/`, `scenarios/`, `*.spec.*`, `*.test.*`를 실행 증거 표면으로 인정하도록 조정한다.

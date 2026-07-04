@@ -154,12 +154,13 @@ function classifyPackage(packageJsonPath) {
   const scripts = manifest.scripts ?? {};
   const hasSrc = existsSync(join(packageDir, "src"));
   const hasPublic = existsSync(join(packageDir, "public"));
-  const hasRuntimeSurface = hasSrc || hasPublic;
+  const testFiles = walk(packageDir, (path) => /\.(test|spec)\.[cm]?[jt]sx?$/.test(path));
+  const hasTestSurface = testFiles.length > 0
+    || existsSync(join(packageDir, "tests"))
+    || existsSync(join(packageDir, "scenarios"));
+  const hasRuntimeSurface = hasSrc || hasPublic || hasTestSurface;
   const hasReadme = existsSync(join(packageDir, "README.md"));
-  const testFiles = hasSrc
-    ? walk(join(packageDir, "src"), (path) => /\.(test|spec)\.[cm]?[jt]sx?$/.test(path))
-    : [];
-  const hasTestScript = Boolean(scripts.test);
+  const hasTestScript = Object.keys(scripts).some((scriptName) => scriptName === "test" || scriptName.startsWith("test:"));
   const hasBuildScript = Boolean(scripts.build);
   const hasRunScript = Boolean(scripts.dev || scripts.start);
   const hasBin = Boolean(manifest.bin);
@@ -206,6 +207,7 @@ function classifyPackage(packageJsonPath) {
     evidenceScore,
     hasReadme,
     hasRuntimeSurface,
+    hasTestSurface,
     hasTestScript,
     testFiles: testFiles.length,
     hasBuildScript,
@@ -315,7 +317,7 @@ function renderMarkdown() {
   lines.push("| Verdict | Score | Package | Evidence | Reason |");
   lines.push("|---|---:|---|---|---|");
   for (const item of [...packages].sort(byPriority).slice(0, limit)) {
-    lines.push(`| ${item.verdict} | ${item.evidenceScore} | \`${item.name}\`<br>\`${item.path}\` | runtime=${item.hasRuntimeSurface}, readme=${item.hasReadme}, testScript=${item.hasTestScript}, tests=${item.testFiles}, build=${item.hasBuildScript}, run=${item.hasRunScript}, bin=${item.hasBin} | ${item.reasons.join("; ")} |`);
+    lines.push(`| ${item.verdict} | ${item.evidenceScore} | \`${item.name}\`<br>\`${item.path}\` | runtime=${item.hasRuntimeSurface}, testSurface=${item.hasTestSurface}, readme=${item.hasReadme}, testScript=${item.hasTestScript}, tests=${item.testFiles}, build=${item.hasBuildScript}, run=${item.hasRunScript}, bin=${item.hasBin} | ${item.reasons.join("; ")} |`);
   }
   lines.push("");
   lines.push("## Doc Candidates");
