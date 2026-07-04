@@ -24,7 +24,8 @@
 
 ```bash
 pnpm --filter snapshot-io build
+pnpm --filter snapshot-io test
 pnpm --filter snapshot-io typecheck
 ```
 
-이 패키지 자체는 얇기 때문에, 포맷을 바꾸는 변경은 snapshot을 소비하는 상위 spec과 함께 검토하는 편이 맞다.
+`test`는 `spec-schema` 타입 산출물을 먼저 준비한 뒤 production build를 실행하고, 임시 디렉토리에서 `writeOutput`, `readSnapshot`, `readSnapshots`의 valid round-trip과 duplicate axis/missing dim validation 실패를 확인한다. 이 패키지 자체는 얇기 때문에, 포맷을 바꾸는 변경은 snapshot을 소비하는 상위 spec과 함께 검토하는 편이 맞다.
