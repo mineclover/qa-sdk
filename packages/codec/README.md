@@ -24,4 +24,5 @@
 
 ```bash
 pnpm --filter @qa-sdk/codec build
+pnpm --filter @qa-sdk/codec test
 ```

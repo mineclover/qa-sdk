@@ -74,3 +74,5 @@ pnpm docs:usefulness-audit -- --format json --all
 첫 실제 package 후보였던 `packages/shop-web`은 삭제/격리 대상이 아니라 package-local 증명 보강 대상이었다. `public/` 정적 앱, `dev/start` script, E2E 소비자가 이미 있으므로 `packages/shop-web/scripts/static-smoke.mjs`와 `pnpm --filter @qa-sdk/shop-web test`를 추가해 정적 번들, 주요 `data-testid`, QA config, Pages 설정을 검증한다. 이 변경 뒤 `shop-web`은 audit에서 `keep`으로 올라간다.
 
 그 다음 후보였던 `packages/e2e`, `packages/facet-tests`, `packages/simulation-tests`는 runtime source가 없는 게 아니라 test-only package다. 감사 스크립트는 `tests/`, `scenarios/`, `*.spec.*`, `*.test.*`를 실행 증거 표면으로 인정하도록 조정한다.
+
+`packages/codec`와 `packages/context`는 `@qa-sdk/sdk`, `demo-types`, `bench`, codegen에서 소비하는 플랫폼 체인 기반 패키지다. 삭제 후보가 아니라 package-local smoke가 빠진 상태였으므로 `test = build + scripts/smoke.mjs`를 추가해 typed SDK, dim-wire, QaContext, CatalogProvider의 최소 계약을 증명한다.

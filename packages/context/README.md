@@ -24,4 +24,5 @@
 
 ```bash
 pnpm --filter @qa-sdk/context build
+pnpm --filter @qa-sdk/context test
 ```
