@@ -51,6 +51,62 @@ describe("Data Structure Profile fixture compiler", () => {
     );
   });
 
+  test("keeps multiple profile artifacts and adapter payloads isolated", () => {
+    const taxonomy = parseProfileTaxonomy(readFileSync(taxonomyPath, "utf8"));
+    const orderProfile = parseProfile(readFixture("order-events.profile.yaml"));
+    const customerProfile = parseProfile(readFixture("customer-orders.profile.yaml"));
+
+    const orderValidation = validateProfile(orderProfile, { taxonomy });
+    const customerValidation = validateProfile(customerProfile, { taxonomy });
+    const orderLineage = compileLineage(orderProfile);
+    const customerLineage = compileLineage(customerProfile);
+    const orderMeasurement = measureProfile(orderProfile);
+    const customerMeasurement = measureProfile(customerProfile);
+    const orderDpm = assessDpmReadiness(orderProfile);
+    const customerDpm = assessDpmReadiness(customerProfile);
+    const orderLedgerRuns = toQualityLedgerRunInputs(orderValidation);
+    const customerLedgerRuns = toQualityLedgerRunInputs(customerValidation);
+    const orderBenchInput = toBenchReportInput(orderMeasurement);
+    const customerBenchInput = toBenchReportInput(customerMeasurement);
+
+    expect(orderValidation.profile).toBe("order-events-to-order-item-facts");
+    expect(customerValidation.profile).toBe("customer-orders-to-pseudonymized-analytics");
+    expect(orderLineage.profile).toBe(orderValidation.profile);
+    expect(customerLineage.profile).toBe(customerValidation.profile);
+    expect(orderMeasurement.profile).toBe(orderValidation.profile);
+    expect(customerMeasurement.profile).toBe(customerValidation.profile);
+    expect(orderDpm.profile).toBe(orderValidation.profile);
+    expect(customerDpm.profile).toBe(customerValidation.profile);
+
+    expect(orderLineage.lineage.nodes.map((node) => node.id)).toContain("order-item-fact");
+    expect(orderLineage.lineage.nodes.map((node) => node.id)).not.toContain("customer-analytics-dataset");
+    expect(customerLineage.lineage.nodes.map((node) => node.id)).toContain("customer-analytics-dataset");
+    expect(customerLineage.lineage.nodes.map((node) => node.id)).not.toContain("order-item-fact");
+
+    expect(orderLedgerRuns.every((run) => (
+      run.bundleId === "data-structure-profile/order-events-to-order-item-facts"
+      && run.gateDocId.startsWith("data-structure-profile/order-events-to-order-item-facts/")
+    ))).toBe(true);
+    expect(customerLedgerRuns.every((run) => (
+      run.bundleId === "data-structure-profile/customer-orders-to-pseudonymized-analytics"
+      && run.gateDocId.startsWith("data-structure-profile/customer-orders-to-pseudonymized-analytics/")
+    ))).toBe(true);
+
+    expect(orderBenchInput.summary.scenarioId).toBe(
+      "data-structure-profile:order-events-to-order-item-facts:measurement-dry-run",
+    );
+    expect(customerBenchInput.summary.scenarioId).toBe(
+      "data-structure-profile:customer-orders-to-pseudonymized-analytics:measurement-dry-run",
+    );
+    expect(orderBenchInput.metadata.profile).toBe(orderValidation.profile);
+    expect(customerBenchInput.metadata.profile).toBe(customerValidation.profile);
+
+    expect(orderDpm.policyRef).toBeNull();
+    expect(customerDpm.policyRef).toBe("dpm://customer-analytics-v1");
+    expect(orderValidation.status).toBe("needs-review");
+    expect(customerValidation.status).toBe("pass");
+  });
+
   test("reports missing stream safety evidence with stable diagnostic codes", () => {
     const profile = parseProfile(readFixture("order-events.profile.yaml"));
     delete profile.source.event_id_path;
@@ -112,6 +168,37 @@ describe("Data Structure Profile fixture compiler", () => {
         severity: "error",
         target: "quality_gates.event-id-dedup-required.risk",
         message: 'Unknown quality-risk "duplicates".',
+      },
+    ]);
+  });
+
+  test("rejects references to nodes that are not local to the profile", () => {
+    const profile = parseProfile(readFixture("customer-orders.profile.yaml"));
+    profile.structures[1]!.parent = "order-event";
+    profile.relationships[0]!.from = "commerce-orders-topic";
+    profile.transforms[0]!.to = "order-item-fact";
+
+    const report = validateProfile(profile);
+
+    expect(report.status).toBe("fail");
+    expect(report.diagnostics.filter((diagnostic) => diagnostic.code === "dsp-profile-ref-unknown")).toEqual([
+      {
+        code: "dsp-profile-ref-unknown",
+        severity: "error",
+        target: "structures.customer-id.parent",
+        message: 'Unknown profile-local reference "order-event".',
+      },
+      {
+        code: "dsp-profile-ref-unknown",
+        severity: "error",
+        target: "relationships.source-has-customers.from",
+        message: 'Unknown profile-local reference "commerce-orders-topic".',
+      },
+      {
+        code: "dsp-profile-ref-unknown",
+        severity: "error",
+        target: "transforms.join-customer-orders.to",
+        message: 'Unknown profile-local reference "order-item-fact".',
       },
     ]);
   });

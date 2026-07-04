@@ -3,14 +3,14 @@ def:
   id: data-structure-profile-readme
   type: knowledge
   knowledge_kind: proposal
-  lifecycle: review
+  lifecycle: approved
   owner_system: taxonomy-engine
   projection_plane: intent
   scope: meta
   aspect: proposal_design
   tier: system
   depth: overview
-status: under-review
+status: implemented
 date: 2026-07-01
 part_of: data-structure-profile
 role: index
@@ -50,6 +50,21 @@ taxonomy-engine은 finite vocabulary, coordinate, relation, lifecycle, decision 
 | [06-reference-map.md](./06-reference-map.md) | existing qa-sdk surfaces to reuse, bridge, or keep as references |
 | [fixtures/](./fixtures/) | first Kafka-like order event profile and deterministic expected outputs |
 
+## Implemented Baseline Specs
+
+The implemented fixture-first baseline has been promoted to regular specs:
+
+| Spec | Role |
+|---|---|
+| [`../../specs/data-structure-profile/data-structure-profile-system.spec.md`](../../specs/data-structure-profile/data-structure-profile-system.spec.md) | approved system boundary and public surface |
+| [`../../specs/data-structure-profile/data-structure-profile-taxonomy.spec.md`](../../specs/data-structure-profile/data-structure-profile-taxonomy.spec.md) | finite vocabulary and relation grammar |
+| [`../../specs/data-structure-profile/data-structure-profile-profile-contract.spec.md`](../../specs/data-structure-profile/data-structure-profile-profile-contract.spec.md) | profile input and derived artifact contract |
+| [`../../specs/data-structure-profile/data-structure-profile-validation.spec.md`](../../specs/data-structure-profile/data-structure-profile-validation.spec.md) | diagnostics and quality gate semantics |
+| [`../../specs/data-structure-profile/data-structure-profile-cli.spec.md`](../../specs/data-structure-profile/data-structure-profile-cli.spec.md) | package-local CLI fixture runner |
+| [`../../specs/data-structure-profile/data-structure-profile-system.test.md`](../../specs/data-structure-profile/data-structure-profile-system.test.md) | verification surface |
+| [`../../specs/data-structure-profile/data-structure-profile-operations.rule.md`](../../specs/data-structure-profile/data-structure-profile-operations.rule.md) | operating guide and profile isolation rules |
+| [`../../specs/data-structure-profile/data-structure-profile-system.todo.md`](../../specs/data-structure-profile/data-structure-profile-system.todo.md) | future adapter/runtime scope |
+
 ## Core Boundaries
 
 | Concern | Owner |
@@ -82,7 +97,7 @@ Minimum acceptance evidence:
 7. Repo-level smoke can feed adapter outputs into actual `quality-ledger` and `@qa-sdk/bench`
    public APIs without adding runtime dependencies to the profile package.
 
-Current under-review artifacts:
+Implemented baseline artifacts:
 
 - [`../../taxonomies/data-structure-profile.yaml`](../../taxonomies/data-structure-profile.yaml)
 - [fixtures/order-events.profile.yaml](./fixtures/order-events.profile.yaml)

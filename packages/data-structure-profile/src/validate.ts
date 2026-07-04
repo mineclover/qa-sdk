@@ -15,7 +15,10 @@ export function validateProfile(
   options: ValidateProfileOptions = {},
 ): ValidationReport {
   const checkedGates: CheckedGate[] = [];
-  const diagnostics: ProfileDiagnostic[] = [...validateTaxonomyRefs(profile, options)];
+  const diagnostics: ProfileDiagnostic[] = [
+    ...validateTaxonomyRefs(profile, options),
+    ...validateLocalGraphRefs(profile),
+  ];
 
   for (const gate of profile.quality_gates) {
     const result = checkGate(profile, gate);
@@ -94,6 +97,47 @@ function validateTaxonomyRefs(
   }
 
   return diagnostics;
+}
+
+function validateLocalGraphRefs(profile: DataStructureProfile): ProfileDiagnostic[] {
+  const diagnostics: ProfileDiagnostic[] = [];
+  const structureIds = new Set(profile.structures.map((structure) => structure.id));
+  const localNodeIds = new Set([profile.source.id, ...structureIds]);
+
+  for (const structure of profile.structures) {
+    if (structure.parent && !structureIds.has(structure.parent)) {
+      diagnostics.push(localRefDiagnostic(`structures.${structure.id}.parent`, structure.parent));
+    }
+  }
+
+  for (const relationship of profile.relationships) {
+    if (!localNodeIds.has(relationship.from)) {
+      diagnostics.push(localRefDiagnostic(`relationships.${relationship.id}.from`, relationship.from));
+    }
+    if (!localNodeIds.has(relationship.to)) {
+      diagnostics.push(localRefDiagnostic(`relationships.${relationship.id}.to`, relationship.to));
+    }
+  }
+
+  for (const transform of profile.transforms) {
+    if (!localNodeIds.has(transform.from)) {
+      diagnostics.push(localRefDiagnostic(`transforms.${transform.id}.from`, transform.from));
+    }
+    if (!localNodeIds.has(transform.to)) {
+      diagnostics.push(localRefDiagnostic(`transforms.${transform.id}.to`, transform.to));
+    }
+  }
+
+  return diagnostics;
+}
+
+function localRefDiagnostic(target: string, ref: string): ProfileDiagnostic {
+  return {
+    code: "dsp-profile-ref-unknown",
+    severity: "error",
+    target,
+    message: `Unknown profile-local reference "${ref}".`,
+  };
 }
 
 function addUnknownRefDiagnostic(

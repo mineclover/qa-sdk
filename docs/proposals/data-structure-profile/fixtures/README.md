@@ -3,14 +3,14 @@ def:
   id: data-structure-profile-fixtures-readme
   type: knowledge
   knowledge_kind: proposal
-  lifecycle: review
+  lifecycle: approved
   owner_system: taxonomy-engine
   projection_plane: intent
   scope: meta
   aspect: proposal_fixture
   tier: component
   depth: specification
-status: under-review
+status: implemented
 date: 2026-07-01
 part_of: data-structure-profile
 role: fixture-index

@@ -57,7 +57,7 @@
 |------|------|------|
 | [bdd-contract-system](./bdd-contract-system/) | `draft` | BDD Given/When/Then을 AI-DLC 행동 계약으로 정의하고 test unit / implementation unit / ScenarioSpec / PipeGraph / docs CLI 소비 표면을 기계화 |
 | [ai-dlc-dspy-harness](./ai-dlc-dspy-harness/) | `draft` | DSPy를 시스템 단위로 탈부착 가능한 sidecar harness로 도입하고, 계약/증거/게이트만 기존 문서 시스템에 편입 |
-| [data-structure-profile](./data-structure-profile/) | `draft` | 가명처리에서 시작된 데이터 구조 관리, stream flattening, measurement, quality gate, DPM readiness 판단 기준을 qa-sdk taxonomy 철학 위에 정렬 |
+| [data-structure-profile](./data-structure-profile/) | `implemented` | 구현된 baseline은 `docs/specs/data-structure-profile/`로 이식됨. future adapter/runtime scope는 `data-structure-profile-system.todo`가 소유 |
 | [tier-redesign](./tier-redesign/) | `under-review` | 4-tier(Component/Entry/System/Layout) 좌표계 및 이중 평면(Intent/Execution) 거버넌스 재설계 |
 | [domain-hierarchy](./domain-hierarchy/) | `implemented` | 시스템의 도메인 소속을 링크 그래프에서 파생해 duplicate-coordinate 경고 해소. 실행 기록은 [aspect-evolution-index.md](./aspect-evolution-index.md) 참조 |
 | [aspect-vocab-split](./aspect-vocab-split/) | `implemented` | aspect 어휘 분할 (func_def / process_flow / api_contract / domain_data 세분화). Phase B-0 ~ B-3 완료 |
