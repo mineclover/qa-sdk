@@ -153,19 +153,23 @@ function classifyPackage(packageJsonPath) {
   const packagePath = repoPath(packageDir);
   const scripts = manifest.scripts ?? {};
   const hasSrc = existsSync(join(packageDir, "src"));
+  const hasPublic = existsSync(join(packageDir, "public"));
+  const hasRuntimeSurface = hasSrc || hasPublic;
   const hasReadme = existsSync(join(packageDir, "README.md"));
   const testFiles = hasSrc
     ? walk(join(packageDir, "src"), (path) => /\.(test|spec)\.[cm]?[jt]sx?$/.test(path))
     : [];
   const hasTestScript = Boolean(scripts.test);
   const hasBuildScript = Boolean(scripts.build);
+  const hasRunScript = Boolean(scripts.dev || scripts.start);
   const hasBin = Boolean(manifest.bin);
   const evidenceScore = [
-    hasSrc,
+    hasRuntimeSurface,
     hasReadme,
     hasTestScript,
     testFiles.length > 0,
     hasBuildScript,
+    hasRunScript,
     hasBin,
   ].filter(Boolean).length;
 
@@ -177,12 +181,12 @@ function classifyPackage(packageJsonPath) {
     reasons.push("has package source, docs, tests/build/bin evidence");
   }
 
-  if (hasSrc && !hasTestScript && testFiles.length === 0) {
+  if (hasRuntimeSurface && !hasTestScript && testFiles.length === 0) {
     verdict = "prove";
     reasons.push("source package has no local test evidence");
   }
 
-  if (!hasSrc && !hasBin && Object.keys(scripts).length === 0) {
+  if (!hasRuntimeSurface && !hasBin && Object.keys(scripts).length === 0) {
     verdict = "quarantine";
     reasons.push("package has no source, bin, or scripts");
   }
@@ -201,17 +205,74 @@ function classifyPackage(packageJsonPath) {
     verdict,
     evidenceScore,
     hasReadme,
+    hasRuntimeSurface,
     hasTestScript,
     testFiles: testFiles.length,
     hasBuildScript,
+    hasRunScript,
     hasBin,
     reasons,
   };
 }
 
+function workspacePackageJsonPaths() {
+  const workspacePath = join(repoRoot, "pnpm-workspace.yaml");
+  const patterns = existsSync(workspacePath)
+    ? readWorkspacePackagePatterns(readText(workspacePath))
+    : ["packages/*"];
+  const packageJsonPaths = new Set();
+
+  for (const pattern of patterns) {
+    addWorkspacePatternPackageJsons(pattern, packageJsonPaths);
+  }
+
+  return [...packageJsonPaths].sort();
+}
+
+function readWorkspacePackagePatterns(text) {
+  const patterns = [];
+  let inPackages = false;
+
+  for (const line of text.split("\n")) {
+    if (/^packages:\s*$/.test(line)) {
+      inPackages = true;
+      continue;
+    }
+    if (inPackages && /^[^\s#][^:]*:\s*/.test(line)) break;
+    const packageMatch = inPackages
+      ? line.match(/^\s*-\s+["']?([^"'\n]+)["']?\s*$/)
+      : null;
+    if (packageMatch && !packageMatch[1].startsWith("!")) {
+      patterns.push(packageMatch[1]);
+    }
+  }
+
+  return patterns;
+}
+
+function addWorkspacePatternPackageJsons(pattern, packageJsonPaths) {
+  if (!pattern.includes("*")) {
+    const manifestPath = join(repoRoot, pattern, "package.json");
+    if (existsSync(manifestPath)) packageJsonPaths.add(manifestPath);
+    return;
+  }
+
+  if (!pattern.endsWith("/*")) return;
+  const baseDir = join(repoRoot, pattern.slice(0, -2));
+  if (!existsSync(baseDir)) return;
+
+  for (const entry of readdirSync(baseDir)) {
+    if (EXCLUDED_DIRS.has(entry) || entry.startsWith(".")) continue;
+    const manifestPath = join(baseDir, entry, "package.json");
+    if (existsSync(manifestPath) && statSync(join(baseDir, entry)).isDirectory()) {
+      packageJsonPaths.add(manifestPath);
+    }
+  }
+}
+
 const docs = walk(join(repoRoot, "docs"), (path) => path.endsWith(".md"))
   .map(classifyDoc);
-const packages = walk(join(repoRoot, "packages"), (path) => path.endsWith("package.json"))
+const packages = workspacePackageJsonPaths()
   .map(classifyPackage);
 
 const report = {
@@ -254,7 +315,7 @@ function renderMarkdown() {
   lines.push("| Verdict | Score | Package | Evidence | Reason |");
   lines.push("|---|---:|---|---|---|");
   for (const item of [...packages].sort(byPriority).slice(0, limit)) {
-    lines.push(`| ${item.verdict} | ${item.evidenceScore} | \`${item.name}\`<br>\`${item.path}\` | readme=${item.hasReadme}, testScript=${item.hasTestScript}, tests=${item.testFiles}, build=${item.hasBuildScript}, bin=${item.hasBin} | ${item.reasons.join("; ")} |`);
+    lines.push(`| ${item.verdict} | ${item.evidenceScore} | \`${item.name}\`<br>\`${item.path}\` | runtime=${item.hasRuntimeSurface}, readme=${item.hasReadme}, testScript=${item.hasTestScript}, tests=${item.testFiles}, build=${item.hasBuildScript}, run=${item.hasRunScript}, bin=${item.hasBin} | ${item.reasons.join("; ")} |`);
   }
   lines.push("");
   lines.push("## Doc Candidates");

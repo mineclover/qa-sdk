@@ -456,6 +456,6 @@ Domain Slice Architecture를 빠르게 코드와 템플릿으로 물질화하는
 | meta-semantic | `meta-semantic/` |
 | infra-engine | `infra-engine/` |
 | infra-env-kit | `infra-env-kit/` |
-| shop-web | — (데모 사이트, 별도 스펙 없음) |
+| shop-web | `browser-system/shop-web.spec.md` |
 | platform-demo | — (3D 모니터 + 레이아웃 데모) |
 | e2e | — (Playwright E2E 테스트) |

@@ -1,6 +1,6 @@
 # @qa-sdk/shop-web
 
-`@qa-sdk/shop-web`은 브라우저 SDK와 카탈로그 로더를 소비하는 쇼핑 데모 사이트다. 전용 package spec은 없고, 브라우저/ingest 문서를 기준으로 읽는다.
+`@qa-sdk/shop-web`은 브라우저 SDK와 카탈로그 로더를 소비하는 쇼핑 데모 사이트다. 패키지 계약은 `shop-web.spec.md`를 기준으로 읽고, 브라우저/ingest 문서가 상위 문맥을 제공한다.
 
 ## 먼저 볼 문서
 
@@ -30,4 +30,5 @@
 ```bash
 pnpm --filter @qa-sdk/shop-web dev
 pnpm --filter @qa-sdk/shop-web start
+pnpm --filter @qa-sdk/shop-web test
 ```

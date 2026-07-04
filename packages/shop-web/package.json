@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "npx serve public -p 5220 --no-clipboard",
-    "start": "npx serve public -p 5220 --no-clipboard"
+    "start": "npx serve public -p 5220 --no-clipboard",
+    "test": "node scripts/static-smoke.mjs"
   }
 }
