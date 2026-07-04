@@ -26,7 +26,10 @@
 
 ```bash
 pnpm --filter @qa-sdk/platform-demo-api dev
+pnpm --filter @qa-sdk/platform-demo-api test
 pnpm --filter @qa-sdk/platform-demo-api typecheck
 pnpm --filter @qa-sdk/platform-demo-api db:generate
 pnpm --filter @qa-sdk/platform-demo-api deploy
 ```
+
+`test`는 Worker를 띄우지 않고 Hono `app.request()`로 health, dashboard read-model, prefix metadata, service/permission/event read-only routes를 검증한다. D1 grant/log mutation routes는 별도 runtime 검증 대상으로 둔다.
