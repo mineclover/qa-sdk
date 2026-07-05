@@ -29,7 +29,7 @@ pnpm docs:usefulness-audit -- --format json
 pnpm docs:usefulness-audit -- --format json --all
 ```
 
-기본 리포트는 우선순위가 높은 후보만 보여준다. active 문서를 먼저 올리고 `docs/archive/`, `docs/proposals/_template/`, `docs/decisions/`의 미결정 skeleton 같은 낮은 신호 표면은 기본 후보 목록 뒤로 보낸다. 전체 인벤토리가 필요할 때만 `--all`을 붙인다. `prove`나 `quarantine` 후보를 바로 삭제하지 말고, 해당 package/docs의 실제 소비자와 검증 명령을 먼저 확인한다. approved 문서는 증거가 약해도 첫 판정을 `prove`로 유지한다.
+기본 리포트는 우선순위가 높은 후보만 보여준다. active 문서를 먼저 올리고 `docs/archive/`, `docs/proposals/_template/`, `docs/decisions/`의 미결정 skeleton, frontmatter 없는 `docs/plan/` planning note 같은 낮은 신호 표면은 기본 후보 목록 뒤로 보낸다. 전체 인벤토리가 필요할 때만 `--all`을 붙인다. `prove`나 `quarantine` 후보를 바로 삭제하지 말고, 해당 package/docs의 실제 소비자와 검증 명령을 먼저 확인한다. approved 문서는 증거가 약해도 첫 판정을 `prove`로 유지한다.
 
 ## 1차 감사 기준
 
@@ -104,3 +104,5 @@ pnpm docs:usefulness-audit -- --format json --all
 첫 doc 후보였던 `docs/data-model.md`는 삭제/격리 대상이 아니라 stale 경로와 실행 증거가 빠진 entry guide였다. `docs/specs/data-model/` 참조를 현재 `docs/specs/ingest/` + `docs/specs/storage-system/`로 보정하고, core 타입/포트, store memory adapter tests, 관련 spec 문서, `@qa-sdk/core` typecheck, `@qa-sdk/store` memory test, `def validate`를 증거로 연결한다.
 
 그 다음 상단 후보였던 `docs/decisions/lesson-builder-content.layer.cue.md`와 `docs/decisions/lesson-builder-content.layer.branch.md`는 taxonomy entry의 `decisionLink`가 만든 의도적 미결정 skeleton이다. 삭제나 가짜 증거 보강 대상이 아니므로 기본 후보 정렬에서는 뒤로 보내되, `--all` 인벤토리와 decision workflow에서는 계속 `prove`로 남긴다.
+
+`docs/plan/schema-builder/ddl-inventory.md`처럼 frontmatter가 없는 planning note는 현재 상태의 구현 증거라기보다 당시 설계/인벤토리 맥락이다. 기본 후보 목록에서는 `plan-note`로 뒤로 보내고, 실제 구현 여부를 증명하려면 별도 작업에서 현재 소스(`index-meta` table schema, ingest DDL, registry schema 등)와 검증 명령을 붙여 approved/draft 문서로 승격한다.

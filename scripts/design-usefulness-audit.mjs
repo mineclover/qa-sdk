@@ -92,6 +92,8 @@ function classifyDoc(path) {
     && frontmatter.lifecycle === "draft"
     && /^\s*subject:\s*tax:/m.test(text)
     && /## 결정\s*\n\s*\(미정\)/m.test(text);
+  const isPlanningNote = relativePath.startsWith("docs/plan/")
+    && !text.startsWith("---\n");
   const isProposal = relativePath.startsWith("docs/proposals/");
   const isSpec = relativePath.startsWith("docs/specs/");
   const isRule = relativePath.endsWith(".rule.md");
@@ -150,6 +152,7 @@ function classifyDoc(path) {
     isArchivedDoc,
     isTemplateDoc,
     isDecisionSkeleton,
+    isPlanningNote,
     evidenceScore,
     sourceRefs: frontmatter.sourceRefs.length,
     reasons,
@@ -320,7 +323,12 @@ function byPriority(left, right) {
 }
 
 function isLowSignalDefaultDoc(item) {
-  return Boolean(item.isArchivedDoc || item.isTemplateDoc || item.isDecisionSkeleton);
+  return Boolean(
+    item.isArchivedDoc
+    || item.isTemplateDoc
+    || item.isDecisionSkeleton
+    || item.isPlanningNote
+  );
 }
 
 function renderMarkdown() {
@@ -360,6 +368,7 @@ function docScope(item) {
   if (item.isArchivedDoc) return "archive";
   if (item.isTemplateDoc) return "template";
   if (item.isDecisionSkeleton) return "decision-draft";
+  if (item.isPlanningNote) return "plan-note";
   return "active";
 }
 
