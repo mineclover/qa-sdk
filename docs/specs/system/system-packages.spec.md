@@ -57,9 +57,16 @@ qa-sdk 전체를 단일 제품 플랫폼으로 확장하지 않는다. 패키지
 | Taxonomy tooling | 유한 vocabulary 선언·검증·diff/codegen | `taxonomy-engine`, `taxonomy-decision-bridge`, `@qa-sdk/taxonomy-web` |
 | Profile contract tooling | profile fixture 계약과 adapter payload | `data-structure-profile`, `quality-ledger`, `@qa-sdk/bench`, `@qa-sdk/viz-web` |
 | Decision recording | 판단 과정과 증거 기록 | `decision-flow`, `decision-flow-store`, `dkg` |
+| Spec analysis kernel | 스펙/전이/수렴/코드생성 증거 | `@qa-sdk/spec-core`, `spec-schema`, `spec-transition`, `codegen-core` |
+| Infra governance tooling | CLI, scaffolding, config/db/git/infra 보조 | `@qa-sdk/cli`, `@qa-sdk/archi`, `package-classifier`, `infra-env-kit` |
+| Authorization support | 권한 정책/감사 영속 보조 | `resource-policy-store`, `audit-recorder-store` |
+| Motion authoring | motion content/workspace authoring | `motion-content`, `motion-workspace`, `motion-workspace-client` |
+| Simulation contracts | 시뮬레이션 producer/consumer DTO 계약 | `sim-service-catalog`, `sim-decision-view`, `sim-outbox-view` |
+| Visual analysis tools | 시각화/브릿지/레이아웃 분석 도구 | `viz-core`, `@qa-sdk/viz-3d`, `visbug-bridge` |
+| Verification suites | 테스트 하니스와 시나리오 저장소 | `test-types`, `@qa-sdk/e2e`, `test-scenario-store` |
 | Quarantine candidates | 제품 surface 승격 보류 | `request-contract`, `weighted-gpu` |
 
-상세 승격/격리 규칙은 `package-surface-separation-rule`을 따른다.
+상세 승격/격리 규칙은 `package-surface-separation-rule`을 따른다. 전체 workspace package coverage는 `pnpm arch:surfaces`가 검증한다.
 
 ## 인코딩 체인
 
