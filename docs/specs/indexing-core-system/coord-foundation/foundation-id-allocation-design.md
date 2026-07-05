@@ -67,7 +67,6 @@ Snowflake, TiDB, Kafka의 ID/주소/offset 설계를 비교하여 qa-sdk의 좌�
 type RecordIdentity = {
   recordId: string;       // opaque. Snowflake, ULID, UUID 등
 };
-
 type SemanticAddress = {
   prefixId: string;
   version: string;
