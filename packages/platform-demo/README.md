@@ -8,27 +8,31 @@
 - [viz-surface-system.md](../../docs/specs/viz-system/viz-surface-system.md) — 패널/그래프 렌더러 표면
 - [platform-demo-api.spec.md](../../docs/specs/viz-system/platform-demo-api.spec.md) — 데모가 소비하는 API 경계
 - [indexing/README.md](../../docs/specs/indexing/README.md) — 좌표 시스템 개념 맵과 플랫폼 데모 위치
-- [rlsc.spec.md](../../docs/specs/rlsc/rlsc.spec.md) — `rlsc` 페이지가 시연하는 모델
+- [rlsc-core-model.spec.md](../../docs/specs/viz-system/viz-language-system/rlsc-core-model.spec.md) — RLSC 모델 계약
+- [rlsc-integration.spec.md](../../docs/specs/viz-system/viz-language-system/rlsc-integration.spec.md) — RLSC와 좌표계 통합 경계
 
 ## 패키지 역할
 
 - monitor/diagram/debugger 성격의 시각화 페이지와 좌표계 데모 페이지를 묶는다.
-- `weighted-index`, `permission-engine`, `demo-snapshot`, `rlsc`, `weighted-ui`를 조합해 브라우저에서 개념을 시연한다.
+- `weighted-index`, `permission-engine`, `demo-snapshot`, `weighted-ui`, viz-language 계약을 조합해 브라우저에서 개념을 시연한다.
 - 별도 백엔드 없이 Vite 앱으로 동작하며, 필요한 데이터는 registry/ingest/platform-demo-api에서 읽는다.
 
 ## 코드 진입점
 
 - `src/main.ts` — 앱 부팅
 - `src/pages/*.ts` — 데모 페이지 단위 구현
-- `src/pages/rlsc.ts` — RLSC 데모
 - `src/pages/layout.ts` — 레이아웃/시각화 시나리오
 - `src/registry.ts` — registry 관련 연결
+- `public/*.html` — monitor/dashboard/diagram/flow/debugger 정적 관찰 페이지
 
 ## 실행
 
 ```bash
 pnpm --filter @qa-sdk/platform-demo dev
 pnpm --filter @qa-sdk/platform-demo build
+pnpm --filter @qa-sdk/platform-demo test
 ```
+
+`test`는 production build 뒤 workbook HTML/asset, public 정적 관찰 페이지 복사, `def-catalog-data.json`, fallback read-model, diagram preset 전역 등록을 검증한다.
 
 개별 페이지를 수정할 때는 먼저 관련 spec이 어느 그룹에 속하는지 확인한 뒤, 그 문서 링크를 README와 코드 변경에 함께 반영한다.
