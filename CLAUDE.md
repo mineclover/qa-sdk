@@ -29,7 +29,7 @@
 
 ## 빌드
 
-- `pnpm --filter <pkg> build` — 개별 빌드
+- `corepack pnpm --filter <pkg> build` — 개별 빌드
 - TypeScript target: **ES2023** 전체 통일 (루트 + 32개 패키지)
 - weighted-index DTS 빌드에 기존 에러 있음 (calc.js exports); ESM/CJS는 정상
 - **CLI tsup 번들 제약**: CLI는 tsup 단일 번들 (`dist/index.js`). 내부 동적 import 불가 — 정적 import 또는 re-export 사용
@@ -180,7 +180,7 @@ broken-link(error), circular-ref(error), self-ref(error), orphan(warning), multi
 - **Insights Driver**: local(기본) / app-hub. fail-open
 - **Drizzle**: `docs/specs/system/drizzle-orm-convention.spec.md`
 - **Protobuf**: 로컬→JSON, 원격→Proto. `@qa-sdk/codec-proto`
-- **Verdaccio**: `pnpm registry` + `pnpm publish:local`
+- **Verdaccio**: `corepack pnpm registry` + `corepack pnpm publish:local`
 
 ## CI gates
 

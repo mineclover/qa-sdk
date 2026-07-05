@@ -102,11 +102,11 @@ qa-sdk flow analyze <id> --impact <gate>   # 영향 범위 분석
 ### arch (아키텍처 거버넌스)
 
 ```bash
-pnpm arch:feedback                         # (권장) 통합 피드백 루프
-pnpm arch:check                            # 5계층 의존성 경계 검사
-pnpm arch:impact                           # API 및 소비자 영향도 분석
-pnpm arch:usage                            # 패키지 사용량 및 건강 상태
-pnpm arch:signals                          # 이벤트 신호 연결망 분석
+corepack pnpm arch:feedback                # (권장) 통합 피드백 루프
+corepack pnpm arch:check                   # 5계층 의존성 경계 검사
+corepack pnpm arch:impact                  # API 및 소비자 영향도 분석
+corepack pnpm arch:usage                   # 패키지 사용량 및 건강 상태
+corepack pnpm arch:signals                 # 이벤트 신호 연결망 분석
 ```
 
 ### dkg decide (좌표계 설계 결정)

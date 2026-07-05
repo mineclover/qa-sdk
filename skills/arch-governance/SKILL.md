@@ -12,7 +12,7 @@ description: "qa-sdk 모노레포의 아키텍처 계층 정합성, API 영향�
 코드 변경(논리 수정, 패키지 추가, API 변경 등) 후에는 반드시 다음 통합 루프를 실행하여 시스템 영향을 자가 진단한다.
 
 ```bash
-pnpm arch:feedback
+corepack pnpm arch:feedback
 ```
 
 이 명령은 **Lint → Architectural Boundaries → API Impact → Analysis OS Accuracy** 4단계를 순차적으로 검증한다. 어떤 단계든 실패하면 non-zero로 종료한다.
@@ -24,8 +24,8 @@ pnpm arch:feedback
 시스템의 5계층(Foundation → Kernel → Logic → Bridge → Consumer) 원칙을 준수하는지 검사한다.
 
 ```bash
-pnpm arch:check          # 위반 사항 요약 리포트
-pnpm arch:check --json   # 기계 읽기용 데이터 출력
+corepack pnpm arch:check          # 위반 사항 요약 리포트
+corepack pnpm arch:check --json   # 기계 읽기용 데이터 출력
 ```
 
 **가드레일 정책**: 하위 계층은 상위 계층을 절대 참조할 수 없다. 위반 발견 시 즉시 리팩토링한다. (TD-003: 2026-06-17 해소 — `demo-dkg-config`, `dkg-enrichment` 분리 + classifier 정정)
@@ -35,8 +35,8 @@ pnpm arch:check --json   # 기계 읽기용 데이터 출력
 OpenAPI 스펙을 지도로 삼아, 수정된 파일이 어떤 엔드포인트에 영향을 주며 이를 사용하는 소비자(Scenario 등)가 어디인지 역추적한다.
 
 ```bash
-pnpm arch:impact          # 시각적 영향도 리포트
-pnpm arch:impact --json   # 상세 데이터 출력
+corepack pnpm arch:impact          # 시각적 영향도 리포트
+corepack pnpm arch:impact --json   # 상세 데이터 출력
 ```
 
 **사용 시나리오**: 도메인 서비스 로직 수정 시, 이로 인해 깨질 수 있는 타 프로젝트의 시나리오를 미리 파악하여 선별적 테스트를 수행할 때 사용한다.
@@ -46,8 +46,8 @@ pnpm arch:impact --json   # 상세 데이터 출력
 `packages/*` surface-managed 패키지의 내부 의존성 수(Fan-In)를 계산하여 핵심 인프라와 정리 대상을 식별한다.
 
 ```bash
-pnpm arch:usage
-pnpm --silent arch:usage -- --json   # raw JSON stdout
+corepack pnpm arch:usage
+corepack pnpm --silent arch:usage -- --json   # raw JSON stdout
 ```
 
 - **Critical Infrastructure**: Fan-In >= 3인 모듈. 수정 시 파급력이 크므로 극도의 주의 필요.
@@ -60,7 +60,7 @@ pnpm --silent arch:usage -- --json   # raw JSON stdout
 판정 순서:
 
 1. `arch:surfaces`로 모든 `packages/*` surface-managed package가 정확히 하나의 surface에 배정됐는지 확인한다.
-2. `pnpm --silent arch:usage -- --json`에서 `archiveCandidates`, `deadWeight`, `entrypointGaps`를 먼저 본다. `--silent` 없이 pnpm script를 실행하면 run banner가 stdout에 섞여 raw JSON으로 파싱할 수 없다.
+2. `corepack pnpm --silent arch:usage -- --json`에서 `archiveCandidates`, `deadWeight`, `entrypointGaps`를 먼저 본다. `--silent` 없이 package-manager script를 실행하면 run banner가 stdout에 섞여 raw JSON으로 파싱할 수 없다.
 3. `zeroFanIn`과 `missingEntrypoints`는 사실 신호다. `disposition`을 확인한 뒤 독립 boundary 근거 또는 실제 정리 후보를 구분한다.
 4. 예전 보조 스크립트인 `scripts/find-unused-candidates.ts`도 `arch:usage`에 위임되어야 하며, 별도 heuristics를 추가하지 않는다.
 
@@ -71,7 +71,7 @@ pnpm --silent arch:usage -- --json   # raw JSON stdout
 이벤트 카탈로그의 심볼(event_key)을 기반으로 물리적 의존성 없는 패키지 간의 암묵적 연결망을 분석한다.
 
 ```bash
-pnpm arch:signals
+corepack pnpm arch:signals
 ```
 
 ### 5. 식별자 정합성 맵핑 (`arch:identity`)
@@ -79,7 +79,7 @@ pnpm arch:signals
 데이터, 이벤트, UI, API, 서비스 경계면 간의 고유 식별자(ID)가 잘 매핑되어 있는지 교차 분석하여 'Identity Drift(식별자 표류)' 현상을 감지한다.
 
 ```bash
-pnpm arch:identity
+corepack pnpm arch:identity
 ```
 
 - **OpenAPI**: `operationId`
@@ -92,7 +92,7 @@ pnpm arch:identity
 분석 도구 자체가 현재 baseline을 제대로 증명하는지 확인한다.
 
 ```bash
-pnpm arch:verify
+corepack pnpm arch:verify
 ```
 
 - `arch:surfaces`: `packages/*` surface-managed package가 정확히 하나의 surface에 배정됐는지, taxonomy/profile 기능 surface가 다시 합쳐지지 않았는지, surface 문서 표가 manifest와 같은 목록/판정을 말하는지 확인한다.
@@ -115,7 +115,7 @@ archi timeline    # 아키텍처 진화 이력 동기화
 ## AI 에이전트 작업 지침
 
 1. **임팩트 우선**: `index-meta`, `weighted-index` 등 Fan-In이 높은 패키지 수정 전에는 반드시 `arch:usage`로 영향 범위를 먼저 파악한다. 단, `zeroFanIn` 또는 `missingEntrypoints`는 그 자체로 정리 대상이 아니라 disposition 기반 후속 판정의 입력이다.
-2. **정합성 강제**: 모든 유의미한 변경 후에는 `arch:feedback`을 실행하고, 위반 사항이 발생하면 즉시 해결책을 제시한다.
+2. **정합성 강제**: 모든 유의미한 변경 후에는 `corepack pnpm arch:feedback`을 실행하고, 위반 사항이 발생하면 즉시 해결책을 제시한다.
 3. **거버넌스 기록**: 아키텍처 구조 변경(계층 이동, 신규 경계 정의) 시에는 `archi new session`으로 기록을 남긴다.
 
 참조: `architecture/docs/rules/architectural-governance-handbook.md`
