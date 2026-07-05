@@ -10,6 +10,17 @@ def:
   aspect: proposal_design
   tier: system
   depth: specification
+  sources:
+    - docs/taxonomies/data-structure-profile.yaml
+    - docs/specs/data-structure-profile/data-structure-profile-taxonomy.spec.md
+    - docs/specs/data-structure-profile/data-structure-profile-operations.rule.md
+    - packages/data-structure-profile/src/taxonomy.ts
+    - packages/data-structure-profile/src/validate.ts
+    - packages/data-structure-profile/src/profile.test.ts
+    - packages/data-structure-profile/src/cli-runner.test.ts
+    - scripts/data-structure-profile-bridge-smoke.mjs
+    - docs/proposals/data-structure-profile/fixtures/order-events.profile.yaml
+    - docs/proposals/data-structure-profile/fixtures/customer-orders.profile.yaml
 status: implemented
 date: 2026-07-01
 part_of: data-structure-profile
@@ -163,3 +174,24 @@ The draft intentionally uses only relation kinds currently accepted by taxonomy-
 Profile-specific lineage edges such as `emits`, `input`, `feeds`, and `produces` remain derived
 artifact vocabulary in [fixtures/expected-lineage.json](./fixtures/expected-lineage.json), not
 taxonomy relation kinds.
+
+## 7. Implementation Evidence
+
+The implemented taxonomy boundary is now owned by the approved spec set under
+[`docs/specs/data-structure-profile/`](../../specs/data-structure-profile/), with
+`docs/taxonomies/data-structure-profile.yaml` as the finite vocabulary SSOT and
+`packages/data-structure-profile/src/taxonomy.ts` as the package lookup adapter.
+
+Verification commands:
+
+```bash
+pnpm --filter data-structure-profile test
+pnpm --filter data-structure-profile typecheck
+pnpm --filter data-structure-profile build
+pnpm --filter quality-ledger build
+pnpm --filter @qa-sdk/bench build
+node packages/data-structure-profile/dist/cli.js validate docs/proposals/data-structure-profile/fixtures/order-events.profile.yaml --taxonomy docs/taxonomies/data-structure-profile.yaml
+node packages/data-structure-profile/dist/cli.js validate docs/proposals/data-structure-profile/fixtures/customer-orders.profile.yaml --taxonomy docs/taxonomies/data-structure-profile.yaml
+node scripts/data-structure-profile-bridge-smoke.mjs docs/proposals/data-structure-profile/fixtures/order-events.profile.yaml
+node scripts/data-structure-profile-bridge-smoke.mjs docs/proposals/data-structure-profile/fixtures/customer-orders.profile.yaml
+```
