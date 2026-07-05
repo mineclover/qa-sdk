@@ -75,8 +75,8 @@ Taxonomy (공간)
 - [Diagnostic](./diagnostic.md) — 검증/진단 결과 단위
 - [Lifecycle](./lifecycle.md) — entry/axis의 결정 진행 상태 (Stage 1, v0.8+)
 - [Semver + Migration](./semver-migration.md) — diff breakingLevel 분류 + id rename 추정 (Stage 2, v0.9+)
-- [Decision Sync](./decision-sync.md) — taxonomy ↔ decision-flow 양방향 동기화 + def-catalog 통합 (Stage 3, v0.10+)
-- [Decision-Flow Bridge](./decision-flow-bridge.md) — markdown DecisionFile → FlowSchema 한 방향 변환 어댑터 (Stage 4, v0.11+)
+- [Decision Sync](./decision-sync.md) — taxonomy yaml lifecycle ↔ decision markdown lifecycle sync (Stage 3, v0.10+)
+- [Decision-Flow Bridge](./decision-flow-bridge.md) — decision markdown ↔ FlowSchema projection, analyze/render (Stage 4+, v0.11~v0.13)
 
 ## 다른 문서에서 인용 시
 

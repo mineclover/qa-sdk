@@ -14,7 +14,7 @@ supersedes: -
 
 > 핵심 가치는 기록이 아니라 **일관된 컨텍스트 제공으로 결정을 쉽게 만드는 것**
 
-현재 (v0.11): 결정 흐름 4 Stage 통합 완료 — Lifecycle(v0.8) → Semver+Migration(v0.9) → Decision Sync 양방향(v0.10) → decision-flow 변환 어댑터(v0.11). 진화 중인 텍소노미(확정+미정 섞임)를 1급으로 표현, markdown 결정 흐름과 양방향 동기화, decision-flow의 풍부한 분석 도구 활용 가능.
+현재 (v0.13+): 결정 흐름 4 Stage 통합 완료 — Lifecycle(v0.8) → Semver+Migration(v0.9) → Decision Sync(v0.10) → decision-flow projection(v0.11~v0.13). 진화 중인 텍소노미(확정+미정 섞임)를 1급으로 표현하고, markdown decision을 lifecycle sync와 FlowSchema 분석/render 표면으로 연결한다.
 
 ## 현재 상태 요약
 
@@ -22,8 +22,8 @@ supersedes: -
 |-------|--------|-------------|------|
 | 1 | v0.8 | entry/axis lifecycle(6값) + placeholderReason + decisionLink + 4 신규 diagnostic + Web LifecycleBadge | ✅ |
 | 2 | v0.9 | diff breakingLevel(major/minor/patch/none) + migrationPlan + tax diff --semver + tax migration --base + Web BreakingLevel/MigrationPlan 패널 | ✅ |
-| 3 | v0.10 | DecisionFile(frontmatter+마커) + computeSyncAction 매트릭스 + qa-sdk decision sync(commit 자동/--no-commit/충돌 prompt) + Web DecisionPanel + 5그룹 위계 | ✅ |
-| 4 | v0.11 | toFlowSchema 변환 어댑터 + Evidence 타입 통합 + qa-sdk decision analyze (decision-flow 분석 함수 호출) | ✅ |
+| 3 | v0.10 | DecisionFile(frontmatter+마커) + computeSyncAction 매트릭스 + qa-sdk decision sync(commit 자동/--no-commit/명시 conflict option) + Web DecisionPanel | ✅ |
+| 4 | v0.11~v0.13 | toFlowSchema/toMarkdown projection + Evidence 타입 통합 + qa-sdk decision analyze/render + multi-gate marker | ✅ |
 
 부채 #1~#5, #7, #8 모두 해소. #6(decision-flow 패키지 연동)도 Stage 4 변환 어댑터 채택으로 해소.
 
@@ -54,7 +54,7 @@ supersedes: -
 | 5 | placeholder/TBD entry | Stage 1 |
 | 6 | migration helper | Stage 2 (git base 기반) |
 | 7 | 결정 chain UI 시각화 | Stage 3 |
-| 8 | decision-flow 양방향 통합 | Stage 3 |
+| 8 | decision markdown ↔ decision-flow projection | Stage 4 |
 
 ---
 
@@ -182,27 +182,27 @@ Registry 변경 없음. 신규 API는 `migrationPlan()` 1개 + `diff()` 결과 �
 
 ---
 
-## Stage 4 (부채 #6) — decision-flow 변환 어댑터 — 구현 완료 (v0.11)
+## Stage 4 (부채 #6) — decision-flow 변환 어댑터 — 구현 완료 (v0.11~v0.13)
 
-bridge에 `toFlowSchema` 변환 어댑터 + Evidence 타입 통합 + `qa-sdk decision analyze` 신규. markdown DecisionFile을 단일 gate FlowSchema로 한 방향 변환만 — 두 패키지 정체성은 분리 유지(bridge=사람용 markdown, decision-flow=시스템용 schema/분석). 상세: [`concepts/decision-flow-bridge.md`](./concepts/decision-flow-bridge.md), [`plans/v0.11.md`](./plans/v0.11.md).
+bridge에 `toFlowSchema`/`toMarkdown` projection + Evidence 타입 통합 + `qa-sdk decision analyze/render` 명령이 있다. markdown DecisionFile은 single-gate와 multi-gate를 모두 지원하며, 두 패키지 정체성은 분리 유지한다(bridge=사람용 markdown, decision-flow=시스템용 schema/분석). 상세: [`concepts/decision-flow-bridge.md`](./concepts/decision-flow-bridge.md), [`plans/v0.11.md`](./plans/v0.11.md), [`plans/v0.12.md`](./plans/v0.12.md), [`plans/v0.13.md`](./plans/v0.13.md).
 
 ## Stage 3 — Decision Sync (양방향) — 구현 완료 (v0.10)
 
 ### 핵심 결정 (확정)
 
 - **trigger 방향**: 양쪽 자유 — yaml/decision 어디서 시작해도 반대편 push
-- **데이터 SSOT**: decision은 **def-catalog 통합** — markdown + frontmatter
+- **데이터 SSOT**: decision markdown(frontmatter + markers). def-catalog scope 확장은 별도 라운드
 - **자동화 주체**: local dev에서 `qa-sdk decision sync` 수동 (Actions cron 아님)
 - **PR vs commit**: **commit** — 봇 아닌 사용자 본인의 commit
 - **충돌 정책**: 양쪽 비교 후 사용자 선택 (`--accept-yaml/--accept-decision/--merge`)
-- **작은 변경**: evidence weight 변경도 매번 commit (결정 흐름이 git log에 남음)
+- **작은 변경**: lifecycle sync는 commit하고, markers-only 변경은 보고만 함
 - **Web UI**: taxonomy-web에 DecisionPanel 추가
 
 상세 spec: [`concepts/decision-sync.md`](./concepts/decision-sync.md). 구현 계획: [`plans/v0.10.md`](./plans/v0.10.md).
 
 ### 작업 분량
 
-5 Phase, 약 10 task. 신규 패키지 `taxonomy-decision-bridge` + CLI `qa-sdk decision sync` + Web `DecisionPanel` + def-catalog 통합 + 도그푸딩.
+5 Phase, 약 10 task. 신규 패키지 `taxonomy-decision-bridge` + CLI `qa-sdk decision sync` + Web `DecisionPanel` + 도그푸딩.
 
 ### 진행 조건
 

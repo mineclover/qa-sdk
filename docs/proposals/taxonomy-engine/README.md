@@ -3,13 +3,17 @@
 YAML로 좌표 텍소노미를 선언 → 검증 → 인덱싱 → 코드 생성 → 시각화/탐색 → 결정 흐름과 양방향 동기화.
 qa-sdk 내 라이브러리 + CLI + 로컬 CI 게이트 + Web 리뷰 사이트.
 
+## 목적 ^purpose
+
+taxonomy-engine proposal의 첫 진입점으로, 핵심 개념/로드맵/계획/패키지 표면을 현재 구현 기준으로 연결한다.
+
 ## 첫 진입 순서
 
 1. **개념 이해**: [`concepts/README.md`](./concepts/README.md) — 1급 4개(Axis/Entry/Coordinate/Relation) + 지원 5개 + 결정 흐름 2개
 2. **시스템 개요**: [`00-design.md`](./00-design.md) — 목적, 아키텍처
 3. **사용 사례**: [`../taxonomies/`](../../taxonomies/) — 5 도그푸딩 yaml
 4. **진화 로드맵**: [`roadmap.md`](./roadmap.md) — Stage 1~4 결정 흐름 통합
-5. **버전 history**: [`plans/README.md`](./plans/README.md) — v0.1~v0.11
+5. **버전 history**: [`plans/README.md`](./plans/README.md) — v0.1~v0.14
 
 ## Stage 진행 상태
 
@@ -18,7 +22,7 @@ qa-sdk 내 라이브러리 + CLI + 로컬 CI 게이트 + Web 리뷰 사이트.
 | 1 | v0.8 | entry/axis [Lifecycle](./concepts/lifecycle.md) + placeholder(tbd) + decisionLink | ✅ |
 | 2 | v0.9 | [Semver + Migration](./concepts/semver-migration.md) — diff breakingLevel + migrationPlan | ✅ |
 | 3 | v0.10 | [Decision Sync](./concepts/decision-sync.md) — yaml ↔ markdown 양방향 (마커 컨벤션 통일) | ✅ |
-| 4 | v0.11 | [Decision-Flow Bridge](./concepts/decision-flow-bridge.md) — markdown → FlowSchema 변환 어댑터 | ✅ |
+| 4 | v0.11+ | [Decision-Flow Bridge](./concepts/decision-flow-bridge.md) — decision markdown ↔ FlowSchema projection | ✅ |
 
 ## 패키지 토폴로지
 
@@ -31,7 +35,8 @@ taxonomy-decision-bridge         (lib, dual format) — Stage 3-4 추가
   ├ DecisionFile (frontmatter + 본문 마커)
   ├ resolveDecisionLink (path / decision:<id> / external)
   ├ computeSyncAction (yaml↔markdown sync 매트릭스)
-  ├ toFlowSchema + extractEvidence (decision-flow 변환)
+  ├ toFlowSchema + extractEvidence + toMarkdown (decision-flow projection)
+  ├ single-gate + multi-gate decision marker support
   └ decision-flow Evidence 재사용 (DecisionEvidence 별도 타입 없음)
 
 decision-flow                    (lib, dual format, 14k 줄) — 풍부 모델/분석
@@ -39,7 +44,7 @@ decision-flow                    (lib, dual format, 14k 줄) — 풍부 모델/�
 
 @qa-sdk/cli                      (서비스, tsup 번들)
   ├ tax {validate|show|codegen|diff|git-diff|migration|doctor|help}
-  └ decision {sync|analyze|help}
+  └ decision {sync|analyze|render|help}
 
 @qa-sdk/taxonomy-web             (SPA, dev plugin 5개)
   ├ Tree + UnitDetail + lifecycle filter
@@ -99,19 +104,19 @@ qa-sdk decision analyze [<tax:ref>]                    # decision → FlowSchema
 3. **양방향 sync 검증**:
    - yaml `lifecycle: tbd` + decision draft = in-sync (사용자 의도 보존)
    - decision lifecycle 변경 → 다음 sync에서 yaml 자동 갱신 + commit
-   - 양쪽 동시 변경 → conflict prompt
+   - 양쪽 동시 변경 → conflict report + `--accept-yaml|--accept-decision|--merge`
 4. **변환 검증**:
    - DecisionFile → FlowSchema: ^option 수 = branches 수, ^evidence kind 집합 = requiredEvidence
    - decision-flow의 분석 함수 호출 결과(coreGates/profiles) 출력
 5. **회귀 패턴**:
    - 코드/yaml 변경 후 `pnpm tax:ci` + `pnpm --filter taxonomy-decision-bridge test`
 
-## Status (v0.11)
+## Status (v0.13+)
 
 - **라이브러리**:
   - taxonomy-engine: 183 tests, ~30 public API
-  - taxonomy-decision-bridge: 46 tests, 4 모듈(decision-file/resolve-link/sync/to-flow-schema)
-- **CLI**: 10 명령 (tax 8 + decision 2)
+  - taxonomy-decision-bridge: 71 tests, 5 표면(resolve-link/sync/decision-file/to-flow-schema/from-flow-schema)
+- **CLI**: 12 명령 (tax 8 + decision 4)
 - **Web UI**: 4 컴포넌트 신규(LifecycleBadge/BreakingLevelBadge/MigrationPlanPanel/DecisionPanel) + 5-그룹 Context Panel
 - **도그푸딩**: 5 yaml + 2 decision(lesson-builder cue/branch tbd)
 - **로컬 CI**: `tax:ci` — 5 게이트(build/typecheck/test/validate fixtures/doctor/codegen drift) + Web build + Web test
