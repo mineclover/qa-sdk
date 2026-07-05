@@ -125,7 +125,7 @@ async function main() {
     const manifestLabels = new Set(report.surfaces.map((surface: { id: string }) => surfaceLabel(surface.id)));
     const ruleRows = parseMarkdownTable(
       "docs/specs/system/package-surface-separation.rule.md",
-      "| Surface | 판정 | 포함 패키지 | 승격 기준 |",
+      "| Surface | 판정 | 대표 패키지/그룹 | 승격 기준 |",
     );
     const packageRows = parseMarkdownTable(
       "docs/specs/system/system-packages.spec.md",

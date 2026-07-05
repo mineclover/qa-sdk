@@ -64,6 +64,8 @@ pnpm arch:usage -- --json
 3. `zeroFanIn`과 `missingEntrypoints`는 사실 신호다. `disposition`을 확인한 뒤 독립 boundary 근거 또는 실제 정리 후보를 구분한다.
 4. 예전 보조 스크립트인 `scripts/find-unused-candidates.ts`도 `arch:usage`에 위임되어야 하며, 별도 heuristics를 추가하지 않는다.
 
+정확한 surface별 패키지 배정 SSOT는 `scripts/package-surfaces.mjs`다. 문서 표는 surface 이름/판정/대표 그룹을 요약하고, `arch:verify`가 문서 표의 surface 목록과 판정이 manifest와 drift하지 않는지 확인한다.
+
 ### 4. 이벤트 신호 연결 분석 (`arch:signals`)
 
 이벤트 카탈로그의 심볼(event_key)을 기반으로 물리적 의존성 없는 패키지 간의 암묵적 연결망을 분석한다.

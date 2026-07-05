@@ -30,7 +30,7 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 
 ## Surface 분류
 
-| Surface | 판정 | 포함 패키지 | 승격 기준 |
+| Surface | 판정 | 대표 패키지/그룹 | 승격 기준 |
 |---------|------|-------------|-----------|
 | Coordinate kernel | keep | weighted/index/address/search packages | 다수 내부 소비자, package tests, `arch:usage` fan-in 근거 |
 | Observability runtime | maintain | core/sdk/browser/ingest/registry/store/logging/codec services | ingest/registry/runtime smoke 또는 서비스별 quality gate |
@@ -84,6 +84,8 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 | `verdict: no-promotion` | package-local test는 허용하지만 제품 core 문서, roadmap, quality bundle에는 승격하지 않는다. |
 
 정리 작업은 `arch:surfaces`로 전체 배정이 깨지지 않는지 먼저 확인하고, `arch:usage`로 surface별 zero-fan-in/archive/dead/missing-entrypoint/entrypoint-gap 잔여를 확인한 뒤 진행한다.
+
+정확한 패키지 배정의 SSOT는 `scripts/package-surfaces.mjs`다. 위 표는 리뷰 가능한 surface 이름, 판정, 대표 패키지/그룹, 승격 기준을 요약한다. 전체 패키지 coverage와 누락/중복은 `pnpm arch:surfaces`와 `pnpm arch:verify`가 manifest 기준으로 증명한다.
 
 ## 검증 명령
 
