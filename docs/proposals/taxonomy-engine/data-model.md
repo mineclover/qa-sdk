@@ -31,6 +31,10 @@ role: data-model
 
 > 00-design.md §4 분리. v0.7 모듈화 (T-L1).
 
+## 목적 ^purpose
+
+taxonomy yaml 입력 구조와 정규화된 IR shape를 현재 parser/indexer/validator 구현 기준으로 설명한다.
+
 ## 4.1 YAML 구조 (qa-sdk 좌표계 도그푸딩)
 
 ```yaml

@@ -6,6 +6,10 @@
 
 **spec/code SSOT 문서에서 ExpectedTaxonomy를 자동으로 추출**하는 함수 집합. doctor가 `--auto` 플래그로 호출될 때 yaml 파일명에 따라 올바른 extractor를 선택한다.
 
+## 목적 ^purpose
+
+외부 SSOT 문서와 taxonomy yaml 사이의 drift를 사람이 fixture를 수동 갱신하지 않아도 검출할 수 있게 한다.
+
 기대 효과: expected fixture를 손으로 유지하는 대신, 원본 SSOT 문서가 바뀌면 CI가 drift를 즉시 감지.
 
 ## 3 Extractor
@@ -120,7 +124,7 @@ CLI `tax doctor --auto`에서 yaml basename → extractor 매핑:
 | `qa-sdk-def-catalog.yaml` | `extractVocabExpected` | `vocabulary.ts` |
 | 기타 | — | `--expected <file>` 명시 필요 |
 
-매핑 코드: `packages/cli/src/commands/taxonomy.ts` (T-M1에서 분리 예정)
+매핑 코드: `packages/cli/src/commands/taxonomy/doctor.ts`
 
 ## 한계
 

@@ -6,6 +6,10 @@
 
 **두 TaxonomyIR을 비교해 변경 카탈로그(DiffEntry[])를 반환**하는 순수 함수. yaml 텍스트 diff가 아니라 IR 구조 diff — id/address/relation rule 수준의 변화를 1급으로 표현.
 
+## 목적 ^purpose
+
+taxonomy 변경을 구조적 DiffEntry와 breakingLevel로 분류해 리뷰, migration, CI 판단의 공통 입력으로 만든다.
+
 ## API
 
 ```typescript

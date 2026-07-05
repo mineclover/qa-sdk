@@ -6,6 +6,10 @@
 
 Taxonomy IR을 입력으로 받아 **entry, coordinate, relation을 조회/순회**하는 순수 함수 집합. I/O 없음, throw 없음 (fail-open).
 
+## 목적 ^purpose
+
+검증된 taxonomy IR을 사람이 쓰는 ref, axis slice, relation traversal, coordinate traversal로 안전하게 탐색한다.
+
 ## 함수
 
 ### `show`

@@ -29,6 +29,10 @@ role: api-surface
 
 CLI 표면을 미리 박지 않는다. 라이브러리 API가 1급이고 CLI는 그 위의 최소 진입점. 사용 경험으로 명령이 자라난다.
 
+## 목적 ^purpose
+
+taxonomy-engine의 public library API와 `@qa-sdk/cli tax` wrapper가 제공하는 현재 호출 표면을 한곳에 고정한다.
+
 ## 6.1 라이브러리 public API (taxonomy-engine)
 
 ```typescript
