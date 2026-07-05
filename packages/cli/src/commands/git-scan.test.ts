@@ -38,9 +38,9 @@ describe("lib/git", () => {
   });
 });
 
-describe("lib/pkg-classifier", () => {
+describe("package-classifier", () => {
   it("scanAndClassify: packages/ 디렉토리 스캔", async () => {
-    const { scanAndClassify } = await import("../lib/pkg-classifier.js");
+    const { scanAndClassify } = await import("package-classifier");
     const pkgs = await scanAndClassify(MONO_ROOT);
 
     expect(pkgs.length).toBeGreaterThan(0);
@@ -53,7 +53,7 @@ describe("lib/pkg-classifier", () => {
 
     // 분류 검증
     for (const p of pkgs) {
-      expect(["foundation", "platform", "service", "app", "data"]).toContain(
+      expect(["foundation", "kernel", "logic", "bridge", "consumer"]).toContain(
         p.tier,
       );
       expect(["library", "server", "browser"]).toContain(p.runtime);
@@ -62,26 +62,26 @@ describe("lib/pkg-classifier", () => {
   });
 
   it("tier 분류: 패턴 기반 heuristic", async () => {
-    const { scanAndClassify } = await import("../lib/pkg-classifier.js");
+    const { scanAndClassify } = await import("package-classifier");
     const pkgs = await scanAndClassify(MONO_ROOT);
     const byName = new Map(pkgs.map((p) => [p.displayName, p]));
 
-    // foundation: unscoped library
+    // foundation: low-level libraries
     expect(byName.get("weighted-index")?.tier).toBe("foundation");
 
-    // platform: @qa-sdk/* scoped
-    expect(byName.get("core")?.tier).toBe("platform");
+    // logic: decision/runtime engines
+    expect(byName.get("decision-flow")?.tier).toBe("logic");
 
-    // service: *-server, *-service
-    expect(byName.get("ingest-server")?.tier).toBe("service");
-    expect(byName.get("registry-service")?.tier).toBe("service");
+    // bridge: SDK/client/codec/helper surfaces
+    expect(byName.get("sdk")?.tier).toBe("bridge");
+    expect(byName.get("browser-codec")?.tier).toBe("bridge");
 
-    // app: *-demo, browser-*
-    expect(byName.get("platform-demo")?.tier).toBe("app");
+    // consumer: apps, services, and review/demo surfaces
+    expect(byName.get("platform-demo")?.tier).toBe("consumer");
   });
 
   it("내부 의존 해석: weighted-index의 역참조", async () => {
-    const { scanAndClassify } = await import("../lib/pkg-classifier.js");
+    const { scanAndClassify } = await import("package-classifier");
     const pkgs = await scanAndClassify(MONO_ROOT);
     const byName = new Map(pkgs.map((p) => [p.displayName, p]));
 

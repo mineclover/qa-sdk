@@ -17,7 +17,7 @@
  *   pkg      패키지 식별자 (packages/*)
  *   semver   시맨틱 버전 (git tag + package.json)
  *   cc_type  conventional commit 타입
- *   tier     아키텍처 계층 (foundation/platform/service/app/data)
+ *   tier     아키텍처 계층 (foundation/kernel/logic/bridge/consumer)
  *   runtime  실행 환경 (library/server/browser)
  *   scope    npm 공개 범위 (public/private)
  *

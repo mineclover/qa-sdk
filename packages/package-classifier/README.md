@@ -1,6 +1,6 @@
 # package-classifier
 
-`package-classifier`는 모노레포 패키지를 스캔해 `tier/runtime/scope`로 분류하는 유틸리티다. 아직 전용 package spec은 없고, 저장소 구조 문서를 기준으로 읽는다.
+`package-classifier`는 `packages/*` surface-managed 패키지를 스캔해 `tier/runtime/scope`로 분류하는 유틸리티다. CLI와 리뷰 도구는 이 패키지를 분류 SSOT로 소비하고, 별도 classifier 사본을 유지하지 않는다.
 
 ## 먼저 볼 문서
 
