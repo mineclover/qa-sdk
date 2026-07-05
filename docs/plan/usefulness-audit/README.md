@@ -86,3 +86,5 @@ pnpm docs:usefulness-audit -- --format json --all
 `packages/snapshot-io`는 `SchemaSnapshot` JSON의 얇은 read/write/validation layer다. `test = spec-schema build + snapshot-io build + scripts/smoke.test.mjs`를 추가해 임시 디렉토리 round-trip, nested output directory creation, duplicate axis, missing dim validation failure를 package-local로 증명한다.
 
 `packages/authorization-monitor-web`은 authorization ontology의 proxy/application enforcement graph를 보여주는 Vite 앱이다. `test = build + scripts/static-smoke.mjs`를 추가해 production bundle, graph snapshot copy, proxy route/domain resource payload, RLSC `data-qa-address` marker를 package-local로 증명한다.
+
+`packages/config-loader`는 catalog/DKG config 파일 탐색과 fallback을 맡는 shared utility다. `test = build + scripts/smoke.test.mjs`를 추가해 explicit JSON/module loading, `qa-sdk.config.js` discovery, invalid catalog/DKG config rejection을 임시 디렉토리에서 package-local로 증명한다.

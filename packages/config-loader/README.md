@@ -25,7 +25,8 @@
 
 ```bash
 pnpm --filter config-loader build
+pnpm --filter config-loader test
 pnpm --filter config-loader typecheck
 ```
 
-이 패키지는 작지만 catalog bootstrap 경로를 결정하므로, 동작을 바꿀 때는 registry 연결 문서와 소비자 초기화 흐름을 먼저 확인한다.
+`test`는 production build 후 임시 디렉토리에서 explicit JSON/module loading, `qa-sdk.config.js` discovery, invalid catalog/DKG config rejection을 확인한다. 이 패키지는 작지만 catalog bootstrap 경로를 결정하므로, 동작을 바꿀 때는 registry 연결 문서와 소비자 초기화 흐름을 먼저 확인한다.
