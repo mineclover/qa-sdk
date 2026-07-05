@@ -2,12 +2,14 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createSurfaceIndex } from "./package-surfaces.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
 const format = readOption("--format", "markdown");
 const limit = Number(readOption("--limit", "40"));
 const includeAll = args.includes("--all");
+const surfaceIndex = createSurfaceIndex();
 
 const EXCLUDED_DIRS = new Set([
   ".git",
@@ -174,6 +176,9 @@ function classifyPackage(packageJsonPath) {
   const packageDir = resolve(packageJsonPath, "..");
   const manifest = JSON.parse(readText(packageJsonPath));
   const packagePath = repoPath(packageDir);
+  const packageName = manifest.name ?? packagePath;
+  const displayName = packagePath.split("/").at(-1) ?? packageName;
+  const surface = surfaceIndex.get(packageName) ?? surfaceIndex.get(displayName);
   const scripts = manifest.scripts ?? {};
   const hasSrc = existsSync(join(packageDir, "src"));
   const hasLib = existsSync(join(packageDir, "lib"));
@@ -213,6 +218,11 @@ function classifyPackage(packageJsonPath) {
     reasons.push("has package source, docs, tests/build/bin evidence");
   }
 
+  if (surface?.verdict === "no-promotion") {
+    verdict = "quarantine";
+    reasons.push("surface manifest marks this package no-promotion");
+  }
+
   if (hasRuntimeSurface && !hasTestScript && testFiles.length === 0) {
     verdict = "prove";
     reasons.push("source package has no local test evidence");
@@ -233,7 +243,9 @@ function classifyPackage(packageJsonPath) {
 
   return {
     path: packagePath,
-    name: manifest.name ?? packagePath,
+    name: packageName,
+    surface: surface?.id ?? "unassigned",
+    surfaceVerdict: surface?.verdict ?? "unassigned",
     verdict,
     evidenceScore,
     hasReadme,

@@ -45,9 +45,15 @@ pnpm docs:usefulness-audit -- --format json --all
 | 표면 | 이유 | 확인 명령 |
 |---|---|---|
 | `packages/data-structure-profile` | fixture-first contract, CLI, profile isolation validator, bridge smoke가 있음 | `pnpm --filter data-structure-profile test` |
-| `packages/request-contract` | request/observation normalize/validate/evaluate가 package-local test로 닫힘 | package-local test/build |
 | `definition-catalog` + CLI def validation | 문서 감사와 링크 정합성의 현재 실행 기반 | `node packages/cli/dist/index.js def validate` |
 | `spec-core` semantic indexing pack | report/compatibility kernel과 CLI smoke가 있음 | `node packages/cli/dist/index.js spec semantic-pack report --no-git --format json` |
+
+## 삭제 금지, 승격 보류 후보
+
+| 표면 | 이유 | 확인 명령 |
+|---|---|---|
+| `packages/request-contract` | request/observation normalize/validate/evaluate package-local 증거는 있지만 surface manifest는 `no-promotion`으로 격리한다 | `pnpm --filter request-contract test`; `pnpm --silent arch:usage -- --json` |
+| `packages/weighted-gpu` | WebGPU 구현과 package-local test는 있지만 실제 consumer/performance promotion 근거가 생길 때까지 제품 축으로 승격하지 않는다 | `pnpm --filter weighted-gpu test`; `pnpm --silent arch:usage -- --json` |
 
 ## 먼저 증명할 후보군
 

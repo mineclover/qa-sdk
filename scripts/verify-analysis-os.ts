@@ -79,6 +79,18 @@ async function main() {
            && archiveCandidates["weighted-gpu"]?.disposition === "archive-candidate",
            "Usage Analysis: no-promotion packages remain in the archive decision queue");
 
+    const usefulnessOutput = execSync("node scripts/design-usefulness-audit.mjs --format json --all", { encoding: "utf-8" });
+    const usefulness = JSON.parse(usefulnessOutput);
+    const usefulnessPackages = Object.fromEntries(
+      usefulness.packages.map((item: { name: string }) => [item.name, item]),
+    ) as Record<string, { verdict: string; surfaceVerdict: string }>;
+    assert(usefulnessPackages["request-contract"]?.verdict === "quarantine"
+           && usefulnessPackages["weighted-gpu"]?.verdict === "quarantine",
+           "Usefulness Audit: no-promotion packages stay quarantine candidates");
+    assert(usefulnessPackages["request-contract"]?.surfaceVerdict === "no-promotion"
+           && usefulnessPackages["weighted-gpu"]?.surfaceVerdict === "no-promotion",
+           "Usefulness Audit: quarantine candidates are derived from package surface manifest");
+
     // missing entrypoints는 실제 public entrypoint gap과 분리되어야 함
     const missingEntrypoints = Object.fromEntries(
       usage.missingEntrypoints.map((item: { id: string }) => [item.id, item]),
