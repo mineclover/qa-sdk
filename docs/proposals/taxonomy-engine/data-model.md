@@ -1,3 +1,32 @@
+---
+def:
+  id: taxonomy-engine-data-model
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: data
+  aspect: domain_model
+  tier: component
+  depth: specification
+  sources:
+    - packages/taxonomy-engine/src/schema/ir.ts
+    - packages/taxonomy-engine/src/schema/zod.ts
+    - packages/taxonomy-engine/src/parser/index.ts
+    - packages/taxonomy-engine/src/indexer/index.ts
+    - packages/taxonomy-engine/src/validate/capacity.ts
+    - packages/taxonomy-engine/__tests__/unit/schema.test.ts
+    - packages/taxonomy-engine/__tests__/unit/parser.test.ts
+    - packages/taxonomy-engine/__tests__/unit/indexer.test.ts
+    - packages/taxonomy-engine/__tests__/dogfooding.test.ts
+    - docs/taxonomies/qa-sdk-coordinate-system.yaml
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: data-model
+---
+
 # Data Model
 
 > 00-design.md §4 분리. v0.7 모듈화 (T-L1).
@@ -113,3 +142,11 @@ interface EntryIR {
 - IR 타입 소스: `packages/taxonomy-engine/src/schema/ir.ts`
 - 도그푸딩 yaml: `docs/taxonomies/qa-sdk-coordinate-system.yaml`
 - v0.1 계획: [plans/v0.1.md](./plans/v0.1.md)
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter taxonomy-engine exec vitest run __tests__/unit/schema.test.ts __tests__/unit/parser.test.ts __tests__/unit/indexer.test.ts __tests__/dogfooding.test.ts
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```

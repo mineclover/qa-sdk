@@ -1,3 +1,28 @@
+---
+def:
+  id: taxonomy-engine-api-surface
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: interface
+  aspect: api_surface
+  tier: component
+  depth: specification
+  sources:
+    - packages/taxonomy-engine/src/index.ts
+    - packages/taxonomy-engine/src/registry/index.ts
+    - packages/taxonomy-engine/__tests__/unit/public-api.test.ts
+    - packages/cli/src/commands/taxonomy/index.ts
+    - packages/cli/src/commands/taxonomy/shared.ts
+    - packages/cli/src/commands/taxonomy.test.ts
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: api-surface
+---
+
 # API Surface
 
 > 00-design.md §6 분리. v0.7 모듈화 (T-L1).
@@ -43,19 +68,27 @@ export function unpackCoordinate(packed: number, axes: AxisIR[]): Coordinate
 // codegen (concepts/codegen-output.md 참조)
 export function codegen(ir: TaxonomyIR, opts: CodegenOptions): CodegenResult
 export function checkContentHashDrift(previous: string, current: string): Diagnostic | undefined
+export function validateRegistryVersions(ir: TaxonomyIR, registry: TaxonomyRegistry): Diagnostic[]
 
 // doctor (concepts/doctor.md 참조)
 export function doctor(ir: TaxonomyIR, expected: ExpectedTaxonomy): Diagnostic[]
+export function extractIdsFromMarkdownTable(markdown: string, column: string): string[]
+export function extractTextsFromMarkdownTable(markdown: string, column: string): string[]
+export function extractDkgExpected(markdown: string): ExpectedTaxonomy
+export function extractIngestExpected(markdown: string): ExpectedTaxonomy
+export function extractVocabExpected(markdown: string): ExpectedTaxonomy
 
 // diff (concepts/diff.md 참조)
 export function diff(a: TaxonomyIR, b: TaxonomyIR): { same: boolean; changes: DiffEntry[] }
+
+// migration
+export function migrationPlan(a: TaxonomyIR, b: TaxonomyIR): MigrationPlan
 
 // multi-taxonomy registry
 export class TaxonomyRegistry {
   add(ir: TaxonomyIR): void
   get(taxonomy: string): TaxonomyIR | undefined
   list(): string[]
-  loadDir(dirPath: string): void   // CLI 전용 helper (I/O 포함)
 }
 ```
 
@@ -63,6 +96,7 @@ export class TaxonomyRegistry {
 - 모두 순수 함수 (TaxonomyRegistry 외)
 - 파일 I/O 없음 — 모든 입력은 yaml 텍스트 또는 IR
 - 사용자가 라이브러리만으로 ad-hoc 스크립트 작성 가능
+- 디렉터리 로딩 같은 I/O는 `packages/cli/src/commands/taxonomy/shared.ts`의 `loadRegistryDir()`가 소유한다
 
 ## 6.2 CLI 명령 (v0.2~v0.6 누적)
 
@@ -93,3 +127,12 @@ export class TaxonomyRegistry {
 - codegen 상세: [concepts/codegen-output.md](./concepts/codegen-output.md)
 - doctor 상세: [concepts/doctor.md](./concepts/doctor.md)
 - diff 상세: [concepts/diff.md](./concepts/diff.md)
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter taxonomy-engine exec vitest run __tests__/unit/public-api.test.ts __tests__/unit/registry.test.ts
+pnpm --filter @qa-sdk/cli test taxonomy.test
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```

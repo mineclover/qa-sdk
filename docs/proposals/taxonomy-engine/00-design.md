@@ -1,4 +1,23 @@
 ---
+def:
+  id: taxonomy-engine-design
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: meta
+  aspect: proposal_design
+  tier: system
+  depth: overview
+  sources:
+    - packages/taxonomy-engine/src/index.ts
+    - packages/taxonomy-engine/package.json
+    - packages/taxonomy-engine/__tests__/unit/public-api.test.ts
+    - packages/taxonomy-engine/__tests__/dogfooding.test.ts
+    - packages/cli/src/commands/taxonomy/index.ts
+    - packages/cli/src/commands/taxonomy.test.ts
+    - package.json
 status: draft
 date: 2026-05-20
 part_of: taxonomy-engine
@@ -54,6 +73,10 @@ OpenAPI가 HTTP API에 대해 했던 것을 텍소노미에 대해 한다 — YA
 | [diagnostics.md](./diagnostics.md) | 에러 처리 정책 + fail 정책 + 위치 정보 | §7 |
 | [testing.md](./testing.md) | 테스트 전략, 4계층, round-trip, CI | §8 |
 
+## 구현 상태 ^implementation-status
+
+core library와 thin CLI 표면은 `packages/taxonomy-engine` 및 `@qa-sdk/cli tax` 명령으로 구현되어 있다. Web UI와 registry 서비스화 같은 확장은 별도 proposal/plan에서 추적하며, 이 문서의 구현 증거는 YAML SSOT → parse/validate/query/codegen/doctor/diff/migration → CLI wrapper 경계까지만 닫는다.
+
 ## 미결 사항 (Open Issues)
 
 - [ ] lesson-builder를 후속 사례로 적용하는 시점/spec (별도 proposal)
@@ -71,3 +94,12 @@ OpenAPI가 HTTP API에 대해 했던 것을 텍소노미에 대해 한다 — YA
 - `/Users/junwoobang/workflow/pipe-builder/packages/mono-story/packages/lesson-builder/TAXONOMY.md` — 후속 사례 후보 (lesson-builder 6-layer)
 - [concepts/README.md](./concepts/README.md) — 1급 개념 인덱스
 - [plans/](./plans/README.md) — v0.1~v0.7 구현 계획
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter taxonomy-engine test
+pnpm --filter @qa-sdk/cli test taxonomy.test
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```

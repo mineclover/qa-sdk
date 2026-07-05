@@ -1,3 +1,36 @@
+---
+def:
+  id: taxonomy-engine-architecture
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: meta
+  aspect: architecture
+  tier: system
+  depth: specification
+  sources:
+    - packages/taxonomy-engine/package.json
+    - packages/taxonomy-engine/src/index.ts
+    - packages/taxonomy-engine/src/schema/ir.ts
+    - packages/taxonomy-engine/src/parser/index.ts
+    - packages/taxonomy-engine/src/indexer/index.ts
+    - packages/taxonomy-engine/src/query/index.ts
+    - packages/taxonomy-engine/src/ref/parser.ts
+    - packages/taxonomy-engine/src/ref/resolver.ts
+    - packages/taxonomy-engine/src/codegen/index.ts
+    - packages/taxonomy-engine/src/validate/index.ts
+    - packages/taxonomy-engine/src/doctor/index.ts
+    - packages/taxonomy-engine/src/diff/index.ts
+    - packages/cli/src/commands/taxonomy/index.ts
+    - packages/cli/src/commands/taxonomy/shared.ts
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: architecture
+---
+
 # Architecture
 
 > 00-design.md §3 분리. v0.7 모듈화 (T-L1).
@@ -61,3 +94,12 @@ qa-sdk 내부 다른 패키지 의존 없음 (peer-zero). 라이브러리는 순
 - 에러 처리/진단: [diagnostics.md](./diagnostics.md)
 - 개념 체계: [concepts/README.md](./concepts/README.md)
 - 패키지 컨벤션: `CLAUDE.md` §패키지 규칙
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter taxonomy-engine typecheck
+pnpm --filter taxonomy-engine test
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```
