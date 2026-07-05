@@ -22,6 +22,15 @@ def:
       type: traces_to
     - target: work-topic-schema-plan
       type: traces_to
+  sources:
+    - docs/specs/system/work-lifecycle.cases.md
+    - docs/specs/definition-catalog/responsibility-closure-harness.rule.md
+    - docs/specs/definition-catalog/responsibility-closure-harness.cases.md
+    - packages/cli/src/lib/docs-control-plane/work-topic-extract.ts
+    - packages/cli/src/lib/docs-control-plane/bdd-contract-extract.ts
+    - packages/cli/src/lib/docs-control-plane/completed-record-review.ts
+    - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
+    - packages/cli/src/commands/docs.test.ts
 ---
 
 # Work Lifecycle
@@ -78,9 +87,22 @@ Responsibility closure 관점:
 
 작업 토픽은 `work-topic-schema-plan`이 정의하는 `work_topic` shape를 사용한다. BDD contract는 behavior truth이고, `work_topic`은 delivery slice다.
 
+## 현재 구현 경계 ^boundary
+
+- docs-control-plane은 BDD block, work_topic block, completed-record cleanup review를 read-only로 투영한다.
+- lifecycle은 artifact authority와 handoff 규칙을 소유한다. 자동 삭제, 자동 spec 승격, package quality gate 분류는 소유하지 않는다.
+- `work-domain` package는 작업 종류와 gate mapping을 소유하고, 이 문서는 plan/cases/todo/test/spec loop를 소유한다.
+
 ## 소비 ^consumes
 
 - `doc-type-convention` — 문서 유형별 owner와 reference-first compression 규칙
 - `bdd-contract-system` — behavior contract, test unit, implementation unit
 - `work-topic-schema-plan` — delivery slice shape와 split heuristic
 - `work-lifecycle-cases` — 실제 사용 시나리오와 실패 시 수정 대상
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/cli test -- docs
+node packages/cli/dist/index.js def validate
+```

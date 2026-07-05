@@ -16,6 +16,12 @@ def:
       type: traces_to
     - target: work-lifecycle-plan
       type: traces_to
+  sources:
+    - docs/specs/system/work-lifecycle.spec.md
+    - docs/specs/system/work-lifecycle.plan.md
+    - packages/cli/src/lib/docs-control-plane/work-topic-extract.ts
+    - packages/cli/src/lib/docs-control-plane/completed-record-review.ts
+    - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
 ---
 
 # Work Lifecycle — TODO
@@ -23,6 +29,10 @@ def:
 ## 목적 ^purpose
 
 `work-lifecycle`의 남은 실행 작업만 추적한다. 구현된 사실은 `work-lifecycle` spec과 관련 rule/test 문서가 소유한다.
+
+## 운영 경계 ^boundary
+
+이 문서는 backlog다. 이미 구현된 work_topic parsing, BDD extraction, completed-record review는 source/test evidence로만 참조하고, 현재 사실은 `work-lifecycle` spec과 docs-control-plane 문서가 소유한다.
 
 ## 실행 항목
 

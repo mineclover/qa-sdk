@@ -17,6 +17,13 @@ def:
       type: depends_on
     - target: scenario-authoring-guide
       type: traces_to
+  sources:
+    - docs/specs/system/work-lifecycle.spec.md
+    - docs/specs/system/work-lifecycle.cases.md
+    - packages/cli/src/lib/docs-control-plane/work-topic-extract.ts
+    - packages/cli/src/lib/docs-control-plane/completed-record-review.ts
+    - packages/cli/src/lib/docs-control-plane/completed-record-cleanup-plan.ts
+    - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
 ---
 
 # Work Lifecycle — Roadmap Plan
@@ -51,3 +58,10 @@ def:
 - spec 자동 승격
 - LLM/DSPy가 lifecycle truth를 결정
 - hidden write command 추가
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/cli test -- docs
+node packages/cli/dist/index.js def validate
+```
