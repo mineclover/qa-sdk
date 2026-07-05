@@ -54,8 +54,13 @@ qa-sdk 전체를 단일 제품 플랫폼으로 확장하지 않는다. 패키지
 | Coordinate kernel | 좌표 인코딩과 주소 수학 | `weighted-index`, `index-meta`, `bit-index`, `permission-engine` |
 | Observability runtime | 이벤트 수집·저장·SDK runtime | `@qa-sdk/core`, `@qa-sdk/sdk`, `@qa-sdk/ingest-server`, `@qa-sdk/registry-service` |
 | Definition control plane | 문서 그래프와 품질 gate | `definition-catalog`, `@qa-sdk/definition-service`, `doc-envelope` |
-| Taxonomy tooling | 유한 vocabulary 선언·검증·diff/codegen | `taxonomy-engine`, `taxonomy-decision-bridge`, `@qa-sdk/taxonomy-web` |
-| Profile contract tooling | profile fixture 계약과 adapter payload | `data-structure-profile`, `quality-ledger`, `@qa-sdk/bench`, `@qa-sdk/viz-web` |
+| Taxonomy tooling | 유한 vocabulary 선언·검증·diff/codegen | `taxonomy-engine` |
+| Taxonomy decision bridge | taxonomy artifact와 decision-flow 변환 계약 | `taxonomy-decision-bridge` |
+| Taxonomy preview surfaces | taxonomy artifact 브라우저 탐색 consumer | `@qa-sdk/taxonomy-web` |
+| Profile contract tooling | profile fixture 계약과 adapter payload | `data-structure-profile` |
+| Quality evidence ledgers | gate/review 결과 영속 기록 | `quality-ledger`, `review-ledger` |
+| Measurement tooling | 측정 실행과 리포트 표면 | `@qa-sdk/bench` |
+| Profile preview surfaces | lineage/graph artifact 브라우저 consumer | `@qa-sdk/viz-web` |
 | Decision recording | 판단 과정과 증거 기록 | `decision-flow`, `decision-flow-store`, `dkg` |
 | Spec analysis kernel | 스펙/전이/수렴/코드생성 증거 | `@qa-sdk/spec-core`, `spec-schema`, `spec-transition`, `codegen-core` |
 | Infra governance tooling | CLI, scaffolding, config/db/git/infra 보조 | `@qa-sdk/cli`, `@qa-sdk/archi`, `package-classifier`, `infra-env-kit` |

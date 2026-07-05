@@ -59,18 +59,37 @@ export const SURFACES = [
   {
     id: "taxonomy-tooling",
     verdict: "keep-as-tooling",
-    packages: ["taxonomy-engine", "taxonomy-decision-bridge", "@qa-sdk/taxonomy-web"],
+    packages: ["taxonomy-engine"],
+  },
+  {
+    id: "taxonomy-decision-bridge",
+    verdict: "keep-as-bridge",
+    packages: ["taxonomy-decision-bridge"],
+  },
+  {
+    id: "taxonomy-preview-surfaces",
+    verdict: "consumer-only",
+    packages: ["@qa-sdk/taxonomy-web"],
   },
   {
     id: "profile-contract-tooling",
     verdict: "keep-as-contract-tool",
-    packages: [
-      "data-structure-profile",
-      "quality-ledger",
-      "review-ledger",
-      "@qa-sdk/bench",
-      "@qa-sdk/viz-web",
-    ],
+    packages: ["data-structure-profile"],
+  },
+  {
+    id: "quality-evidence-ledgers",
+    verdict: "maintain",
+    packages: ["quality-ledger", "review-ledger"],
+  },
+  {
+    id: "measurement-tooling",
+    verdict: "keep-as-tooling",
+    packages: ["@qa-sdk/bench"],
+  },
+  {
+    id: "profile-preview-surfaces",
+    verdict: "consumer-only",
+    packages: ["@qa-sdk/viz-web"],
   },
   {
     id: "decision-recording",

@@ -89,7 +89,43 @@ async function main() {
     assert(false, "Usage Analysis: command completed successfully and produced valid JSON");
   }
 
-  // 3. Verify arch:check (Boundary) Consistency
+  // 3. Verify package surface coverage and feature separation
+  try {
+    const surfaceOutput = execSync("node scripts/report-package-surfaces.mjs --json", { encoding: "utf-8" });
+    const report = JSON.parse(surfaceOutput);
+
+    assert(report.assignedPackages === report.totalWorkspacePackages,
+           `Surface Report: all workspace packages are assigned (${report.assignedPackages}/${report.totalWorkspacePackages})`);
+    assert(Array.isArray(report.missing) && report.missing.length === 0,
+           "Surface Report: no declared surface points at a missing package");
+    assert(Array.isArray(report.duplicates) && report.duplicates.length === 0,
+           "Surface Report: no package is assigned to multiple surfaces");
+    assert(Array.isArray(report.unassigned) && report.unassigned.length === 0,
+           "Surface Report: no workspace package is left without a surface");
+
+    const surfaces = Object.fromEntries(
+      report.surfaces.map((surface: { id: string; packages: string[] }) => [surface.id, surface.packages]),
+    ) as Record<string, string[]>;
+    assert(hasExactly(surfaces["taxonomy-tooling"], ["taxonomy-engine"]),
+           "Surface Report: taxonomy-engine owns finite vocabulary tooling separately");
+    assert(hasExactly(surfaces["taxonomy-decision-bridge"], ["taxonomy-decision-bridge"]),
+           "Surface Report: taxonomy decision bridge is not folded into taxonomy-engine");
+    assert(hasExactly(surfaces["taxonomy-preview-surfaces"], ["@qa-sdk/taxonomy-web"]),
+           "Surface Report: taxonomy web preview is a consumer surface");
+    assert(hasExactly(surfaces["profile-contract-tooling"], ["data-structure-profile"]),
+           "Surface Report: data-structure-profile owns profile contracts separately");
+    assert(hasExactly(surfaces["quality-evidence-ledgers"], ["quality-ledger", "review-ledger"]),
+           "Surface Report: quality/review ledgers are evidence stores, not profile contracts");
+    assert(hasExactly(surfaces["measurement-tooling"], ["@qa-sdk/bench"]),
+           "Surface Report: bench remains measurement tooling");
+    assert(hasExactly(surfaces["profile-preview-surfaces"], ["@qa-sdk/viz-web"]),
+           "Surface Report: viz-web remains a profile/graph consumer preview");
+  } catch (err) {
+    console.error("Surface verification failed:", err);
+    assert(false, "Surface Report: command completed successfully and produced valid JSON");
+  }
+
+  // 4. Verify arch:check (Boundary) Consistency
   try {
     const checkOutput = execSync("npx tsx scripts/check-dependency-boundaries.ts --json", { encoding: "utf-8" });
     const boundary = JSON.parse(checkOutput);
@@ -120,3 +156,9 @@ main().catch(err => {
   console.error(err);
   process.exit(1);
 });
+
+function hasExactly(actual: string[] | undefined, expected: string[]): boolean {
+  return Array.isArray(actual)
+    && actual.length === expected.length
+    && expected.every((item) => actual.includes(item));
+}
