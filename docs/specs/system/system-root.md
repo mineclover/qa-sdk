@@ -26,6 +26,12 @@ def:
       type: refs
     - target: system-support
       type: refs
+  sources:
+    - scripts/package-surfaces.mjs
+    - scripts/report-package-surfaces.mjs
+    - scripts/verify-analysis-os.ts
+    - docs/specs/system/system-packages.spec.md
+    - docs/specs/system/package-surface-separation.rule.md
 ---
 
 # QA-SDK 시스템
@@ -36,13 +42,22 @@ def:
 
 ## 구성 ^overview
 
-4개 기본 문서 + 5개 계층:
+시스템 개요는 runtime, governance, taxonomy, profile, domain support, consumer verification, quarantine surface를 한 화면에서 찾기 위한 navigation root다. 패키지 소유권의 SSOT는 `system-packages`와 `package-surface-separation-rule`이며, 실제 배정은 `scripts/package-surfaces.mjs`가 소유한다.
+
 - `system-overview`: 시스템을 한 문단씩 빠르게 훑는 교차 개요 문서.
 - `system-concepts`: 이벤트, 좌표, 축, Prefix, prefix_ref 기본 개념.
 - `system-data-flow`: 이벤트 발생 → 수집 → 저장 → 판정 → 시각화 전체 흐름.
-- `system-packages`: 패키지 의존 관계.
-- `system-infra`: 인프라 서비스 6종 (ingest, gate, decode, query, registry, pipeline).
-- `system-libraries`: 좌표 라이브러리 5종 (weighted-index, coord-query, indexing-core, index-meta, storage).
-- `system-design-tools`: 설계 도구 5종 (DKG, decision-flow, spec-engine, analysis, definition-catalog).
-- `system-frontend`: 프론트엔드 2종 (browser SDK, 시각화).
-- `system-support`: 지원 4종 (권한, APM, 이벤트 어휘, 가이드).
+- `system-packages`: package surface manifest를 리뷰 가능한 기능군 표로 요약한다.
+- `system-infra`: observability runtime service와 infra governance tooling의 운영 경계를 가리킨다.
+- `system-libraries`: coordinate kernel과 observability runtime library surface를 가리킨다.
+- `system-design-tools`: definition governance surface를 가리키며 taxonomy/profile 소유권을 직접 흡수하지 않는다.
+- `system-frontend`: browser/runtime consumer, taxonomy preview, profile preview, product demo surface를 구분한다.
+- `system-support`: authorization/domain support, verification suite, guide/skill 등 횡단 지원 surface를 구분한다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm arch:surfaces
+corepack pnpm arch:verify
+node scripts/design-usefulness-audit.mjs --format json --all
+```

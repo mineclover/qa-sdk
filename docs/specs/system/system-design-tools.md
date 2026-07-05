@@ -38,20 +38,35 @@ def:
       type: refs
     - target: qa-sdk-engine-system
       type: refs
+  sources:
+    - scripts/package-surfaces.mjs
+    - docs/specs/system/system-packages.spec.md
+    - docs/specs/system/package-surface-separation.rule.md
+    - packages/definition-catalog/package.json
+    - packages/decision-flow/package.json
+    - packages/spec-core/package.json
+    - packages/cli/package.json
 ---
 # 설계 도구 계층
 
 ## 목적 ^purpose
 
-DKG(설계 그래프), Decision Flow(의사결정), Spec Engine(설계 규칙), Analysis(관측 분석), Definition Catalog(문서 관리) — 좌표 시스템의 설계와 관측을 지원하는 도구. 각 도메인의 서브그룹 루트와 거버넌스 가이드도 함께 묶는다.
+Definition governance surface를 찾기 위한 layout 문서다. DKG, Decision Flow, Spec Engine, Analysis, Definition Catalog, CLI/arch tooling은 설계·검증 control plane으로 묶되, taxonomy vocabulary ownership이나 profile contract ownership을 직접 흡수하지 않는다.
 
 ## 구성 ^overview
 
 - DKG(설계 그래프) — dkg-system, dkg-system-root
 - decision-flow(의사결정) — df-system + 서브그룹 4종 (model/analysis/interface/narrative)
 - definition-catalog(문서 관리) — definition-catalog-spec, document-governance-guideline
-- taxonomy-boundaries(분류 체계 경계 관리)
+- taxonomy-boundaries(분류 체계 경계 관리) — taxonomy capability의 소유권은 `taxonomy-engine`, `taxonomy-decision-bridge`, `taxonomy-web` surface로 분리
 - spec-engine(설계 규칙)
 - analysis(관측)
 - prefix-catalog(도메인 prefix 카탈로그)
 - qa-sdk-engine-system(추론/실행 엔진)
+
+## 검증 ^validation
+
+```bash
+corepack pnpm arch:surfaces
+corepack pnpm arch:verify
+```

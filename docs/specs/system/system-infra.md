@@ -36,15 +36,36 @@ def:
       type: refs
     - target: system-libraries
       type: depends_on
+  sources:
+    - scripts/package-surfaces.mjs
+    - docs/specs/system/system-packages.spec.md
+    - docs/specs/system/package-surface-separation.rule.md
+    - packages/ingest-server/package.json
+    - packages/registry-service/package.json
+    - packages/gate-service/package.json
+    - packages/query-service/package.json
+    - packages/decode-service/package.json
+    - packages/infra-engine/package.json
 ---
 # 인프라 서비스 계층
 
 ## 목적 ^purpose
 
-이벤트 수집, 주소 유효성, 디코딩, 질의, 레지스트리, 파이프라인 — 좌표 시스템의 런타임 인프라를 구성하는 서비스 및 공통 인프라 도메인.
+이벤트 수집, 주소 유효성, 디코딩, 질의, 레지스트리 등 observability runtime service와 infra governance tooling을 구분해 찾기 위한 layout 문서다.
 
 ## 구성 ^overview
 
-6개 코어 서비스: ingest-server(수집), gate-service(유효성) + gate-engine-group(엔진 그룹), decode-service(디코딩) + decode-service-system(서비스 시스템), query-service(질의), registry-service(등록), pipeline(처리 흐름).
+Runtime service surface:
+
+- `Observability runtime`: ingest-server(수집), gate-service(유효성), decode-service(디코딩), query-service(질의), registry-service(등록), gateway/store/logger/codec/context 계열.
+- `Infra governance tooling`: infra-engine, infra-env-kit, db-bootstrap, db-traffic-control, config-loader, package-classifier, CLI/archi/scaffold 계열.
+- `Decision recording`: decision-service는 운영 서비스 형태를 가질 수 있지만 판단/증거 기록 surface로 분리한다.
 
 부속 인프라 도메인: decision-service-spec(결정 서비스 계약), infra-engine-system(인프라 엔진), persistence-system-root(영속성), observability-system-root(관측성).
+
+## 검증 ^validation
+
+```bash
+corepack pnpm arch:surfaces
+corepack pnpm arch:verify
+```

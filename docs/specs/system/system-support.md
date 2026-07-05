@@ -50,17 +50,39 @@ def:
       type: refs
     - target: shared-utility-group
       type: refs
+  sources:
+    - scripts/package-surfaces.mjs
+    - docs/specs/system/system-packages.spec.md
+    - docs/specs/system/package-surface-separation.rule.md
+    - packages/resource-policy-store/package.json
+    - packages/audit-recorder-store/package.json
+    - packages/demo-tests/package.json
+    - packages/e2e/package.json
+    - packages/facet-tests/package.json
 ---
 # 지원 계층
 
 ## 목적 ^purpose
 
-권한 엔진, APM 관측 인프라, 이벤트 어휘, 개발자 가이드, 공통 유틸리티 — 핵심 시스템을 보조하는 횡단 관심사.
+권한 지원, 이벤트 어휘, 개발자 가이드, 테스트/검증 suite, 공통 유틸리티를 찾기 위한 횡단 navigation 문서다. APM runtime은 `Observability runtime` surface에 속하므로 여기서는 지원 문서 링크만 제공하고 runtime ownership을 가져오지 않는다.
 
 ## 구성 ^overview
 
-권한: permission-system + permission-engine-spec. 관측: apm-system. 어휘: event-vocab-system. 가이드/skill: guides-system, skill-catalog-system.
+현재 지원 surface는 다음처럼 나뉜다.
+
+- `Authorization support`: resource-policy-store, audit-recorder-store, permission-system 관련 persistence/감사 보조.
+- `Simulation contracts`: sim-* DTO, service catalog, internal network, outbox view, simulation test 계약.
+- `Verification suites`: test-types, demo/e2e/facet/scenario test packages.
+- `Domain support`: motion authoring, visual analysis tools, event vocabulary, auth/config/db/otel 보조 문서.
+- `Guides/skill catalog`: 운영자가 runtime과 definition surface를 사용할 때 참조하는 guide 문서.
 
 테스트 환경: e2e/facet/simulation 스펙 + validation-layer-group(통합).
 
 인프라 보조: auth/config/db-traffic/db-bootstrap/otel/package-classifier/review-ledger/tag-search/error-handling-convention + shared-utility-group(공통 유틸).
+
+## 검증 ^validation
+
+```bash
+corepack pnpm arch:surfaces
+corepack pnpm arch:verify
+```

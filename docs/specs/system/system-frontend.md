@@ -18,16 +18,33 @@ def:
       type: refs
     - target: experience-layer-group
       type: refs
+  sources:
+    - scripts/package-surfaces.mjs
+    - docs/specs/system/system-packages.spec.md
+    - docs/specs/system/package-surface-separation.rule.md
+    - packages/browser-sdk/package.json
+    - packages/taxonomy-web/package.json
+    - packages/viz-web/package.json
+    - packages/platform-demo/package.json
+    - packages/shop-web/package.json
 ---
-# 프론트엔드 계층
+# Consumer/Preview 표면
 
 ## 목적 ^purpose
 
-브라우저 SDK(이벤트 수집/세션)와 시각화(패널/렌더러/에디터) — 클라이언트 측 좌표 시스템 소비자 및 경험 계층 그룹.
+클라이언트 측 소비자와 preview 앱을 찾기 위한 layout 문서다. Browser SDK는 observability runtime consumer entry이고, taxonomy/profile/product demo UI는 각 capability의 읽기 전용 consumer surface다.
 
 ## 구성 ^overview
 
-- browser-system(SDK 수집/세션)
-- viz-system(시각화 + 내부 서브시스템)
-- viz-system-root(Visualization 도메인 루트)
-- experience-layer-group(UX 그룹 — viz + platform-demo)
+- `@qa-sdk/browser`: 브라우저 이벤트 수집/runtime SDK. taxonomy/profile 소유권 없음.
+- `@qa-sdk/taxonomy-web`: taxonomy artifact preview consumer. vocabulary SSOT가 아님.
+- `@qa-sdk/viz-web`: profile lineage/graph preview consumer. profile schema나 ledger write surface가 아님.
+- `Product demo surfaces`: platform-demo, shop-web, roleplay-web, registry-ui 등 상위 capability를 소비해 보여주는 앱.
+- `viz-system`, `viz-system-root`, `experience-layer-group`: visual/experience 문서 navigation.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm arch:surfaces
+corepack pnpm arch:verify
+```
