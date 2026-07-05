@@ -1,4 +1,5 @@
-// @def.boundary system-support
+// @def.boundary db-traffic-control-spec
+// @def.doc db-traffic-control-spec
 import type { ConcurrencyStatus } from "./types.js";
 
 interface Slot {

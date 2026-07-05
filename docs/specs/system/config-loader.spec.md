@@ -1,7 +1,8 @@
 ---
 def:
   id: config-loader-spec
-  tier: component
+  type: spec
+  tier: system
   scope: feature
   aspect: func_def
   depth: specification
@@ -12,6 +13,18 @@ def:
   links:
     - target: system-support
       type: refines
+    - target: shared-utility-group
+      type: refs
+    - target: config-loader-rule
+      type: traces_to
+    - target: config-loader-test
+      type: traces_to
+  sources:
+    - packages/config-loader/package.json
+    - packages/config-loader/src/catalog-loader.ts
+    - packages/config-loader/src/dkg-config-loader.ts
+    - packages/config-loader/src/index.ts
+    - packages/config-loader/scripts/smoke.test.mjs
 ---
 # config-loader
 
@@ -26,8 +39,17 @@ Catalog와 DKG 설정 파일을 `.ts/.js/.json`에서 자동 탐지해 로드하
 - 확장자 fallback — `.ts → .js → .json` 순으로 시도
 - runtime direct import와 registry 기반 대체 경로 사이의 얇은 adapter 역할
 
-## 관련 소스
+## 기능 경계 ^constraint
 
-- `packages/config-loader/src/catalog-loader.ts`
-- `packages/config-loader/src/dkg-config-loader.ts`
-- `packages/config-loader/src/index.ts`
+- 이 패키지는 파일 탐색, dynamic import, JSON/module export 추출, 최소 shape guard만 소유한다.
+- Catalog/DKG vocabulary 의미, axis/prefix 검증, decision-flow schema 검증은 `@qa-sdk/core`와 각 domain package가 소유한다.
+- CLI command parsing과 사용자 출력은 소비자 패키지가 소유한다. `config-loader`는 path 입력을 받아 객체를 반환하는 library boundary로 유지한다.
+- 기본 fallback은 demo config를 읽을 수 있지만 demo catalog 자체의 SSOT가 되지 않는다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter config-loader typecheck
+corepack pnpm --filter config-loader test
+corepack pnpm --filter config-loader build
+```

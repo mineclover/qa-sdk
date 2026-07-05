@@ -1,4 +1,5 @@
-// @def.boundary system-support
+// @def.boundary db-traffic-control-spec
+// @def.doc db-traffic-control-spec
 import type { QueryMetricEvent, TrafficMetricsCollector, Verdict } from "./types.js";
 
 /** fingerprint별 집계 결과 */

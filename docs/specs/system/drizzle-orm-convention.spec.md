@@ -11,6 +11,15 @@ def:
   links:
     - target: doc-type-convention
       type: depends_on
+  sources:
+    - packages/cli/drizzle.config.ts
+    - packages/cli/src/db/schema.ts
+    - packages/index-meta/drizzle.config.ts
+    - packages/index-meta/src/db/schema.ts
+    - packages/registry-service/drizzle.config.ts
+    - packages/registry-service/src/db/schema.ts
+    - packages/db-traffic-control/src/drizzle-middleware.ts
+    - packages/drizzle/meta/_journal.json
 ---
 
 # Drizzle ORM 컨벤션
@@ -24,6 +33,12 @@ QA-SDK 모노레포 전체 Drizzle ORM/Kit 사용 규칙을 정의한다. 모든
 ## 버전
 
 - `drizzle-orm` / `drizzle-kit` 모두 `1.0.0-beta.20` 고정
+
+## 기능 경계
+
+- 이 문서는 repo-wide ORM convention만 소유한다. runtime DB connection은 `db-bootstrap`, query budget middleware는 `db-traffic-control`, domain schema는 각 store/service package가 소유한다.
+- `packages/drizzle/`은 migration meta 보관 경로이며 workspace package가 아니다.
+- 새 DB package를 추가할 때는 `drizzle.config.ts`, `src/db/schema.ts`, migration output path를 함께 유지하고, package-specific behavior는 별도 system spec에 둔다.
 
 ## 스키마 & 설정
 
@@ -70,3 +85,10 @@ QA-SDK 모노레포 전체 Drizzle ORM/Kit 사용 규칙을 정의한다. 모든
 ## tsup 번들
 
 - `drizzle/` 폴더는 `onSuccess` 훅으로 `dist`에 복사 (`publicDir` 아님)
+
+## 검증
+
+```bash
+corepack pnpm arch:verify
+corepack pnpm arch:feedback
+```

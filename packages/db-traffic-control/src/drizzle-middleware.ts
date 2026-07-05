@@ -1,4 +1,5 @@
-// @def.boundary system-support
+// @def.boundary db-traffic-control-spec
+// @def.doc db-traffic-control-spec
 import type { TrafficController } from "./controller.js";
 import type { QueryAttributes, QueryOperation } from "./types.js";
 import { extractFingerprint, extractOperation, extractTable, extractTableFromBuilder } from "./fingerprint.js";

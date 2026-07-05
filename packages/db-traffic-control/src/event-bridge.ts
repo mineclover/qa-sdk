@@ -1,4 +1,5 @@
-// @def.boundary system-support
+// @def.boundary db-traffic-control-spec
+// @def.doc db-traffic-control-spec
 /**
  * event-bridge — 쿼리 메트릭의 event_key ↔ event-catalog 교차 검증.
  *

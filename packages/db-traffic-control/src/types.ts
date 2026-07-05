@@ -1,4 +1,5 @@
-// @def.boundary system-support
+// @def.boundary db-traffic-control-spec
+// @def.doc db-traffic-control-spec
 // ── 쿼리 속성 (분류 입력) ──────────────────────────────────
 
 /** 쿼리 실행 시 자동 추출되는 속성 */
