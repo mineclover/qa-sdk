@@ -29,7 +29,7 @@ pnpm docs:usefulness-audit -- --format json
 pnpm docs:usefulness-audit -- --format json --all
 ```
 
-기본 리포트는 우선순위가 높은 후보만 보여준다. 전체 인벤토리가 필요할 때만 `--all`을 붙인다. `prove`나 `quarantine` 후보를 바로 삭제하지 말고, 해당 package/docs의 실제 소비자와 검증 명령을 먼저 확인한다. approved 문서는 증거가 약해도 첫 판정을 `prove`로 유지한다.
+기본 리포트는 우선순위가 높은 후보만 보여준다. active 문서를 먼저 올리고 `docs/archive/`, `docs/proposals/_template/` 같은 낮은 신호 표면은 기본 후보 목록 뒤로 보낸다. 전체 인벤토리가 필요할 때만 `--all`을 붙인다. `prove`나 `quarantine` 후보를 바로 삭제하지 말고, 해당 package/docs의 실제 소비자와 검증 명령을 먼저 확인한다. approved 문서는 증거가 약해도 첫 판정을 `prove`로 유지한다.
 
 ## 1차 감사 기준
 
@@ -100,3 +100,5 @@ pnpm docs:usefulness-audit -- --format json --all
 `packages/test-types`는 테스트 분류 타입과 품질 게이트/작업 도메인 vocabulary의 zero-dependency SSOT다. `test = build + typecheck + scripts/smoke.test.mjs`를 추가해 ESM/CJS 산출물이 동일한 `TEST_*` 배열, `GATE_KINDS`, `WORK_DOMAINS`, `getSubDomain()` 계약과 declaration export를 제공하는지 package-local로 증명한다.
 
 `packages/weighted-index-explorer`는 weighted-index 개념을 페이지 단위로 설명하는 Vite 데모다. `test = build + scripts/static-smoke.test.mjs`를 추가해 주요 sheet/container marker, JS/CSS asset, v1/v2/v3 mixed-radix shape와 encode/decode 예시를 package-local로 증명한다.
+
+첫 doc 후보였던 `docs/data-model.md`는 삭제/격리 대상이 아니라 stale 경로와 실행 증거가 빠진 entry guide였다. `docs/specs/data-model/` 참조를 현재 `docs/specs/ingest/` + `docs/specs/storage-system/`로 보정하고, core 타입/포트, store memory adapter tests, 관련 spec 문서, `@qa-sdk/core` typecheck, `@qa-sdk/store` memory test, `def validate`를 증거로 연결한다.

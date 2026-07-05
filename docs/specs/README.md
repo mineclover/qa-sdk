@@ -4,21 +4,21 @@
 
 ## 관심사별 인덱스
 
-### data-model/ — 시스템 공유 타입 & 포트
+### ingest/ + storage-system/ — 시스템 공유 타입 & 포트
 
-시스템 전체가 공유하는 도메인 모델과 저장소 포트 계약.
+시스템 전체가 공유하는 도메인 모델과 저장소 포트 계약. 예전 `data-model/` 관심사는 현재 ingest 계약과 storage-system 스펙으로 나뉘어 있다.
 
 | 스펙 | 설명 | 원본 패키지 | 상태 |
 |---|---|---|---|
-| [record.spec.md](data-model/record.spec.md) | EventRecord 타입 + RecordStore 포트 | @qa-sdk/core | implemented |
-| [trace.spec.md](data-model/trace.spec.md) | Trace 메타데이터 + TraceStore 포트 | @qa-sdk/core | implemented |
-| [session.spec.md](data-model/session.spec.md) | QaSession + SessionStore 포트 | @qa-sdk/core | implemented |
-| [transmission.spec.md](data-model/transmission.spec.md) | TransmissionEnvelope + TransmissionStore 포트 | @qa-sdk/core | implemented |
-| [scenario-spec-store.spec.md](data-model/scenario-spec-store.spec.md) | ScenarioSpec + ScenarioSpecStore 포트 | @qa-sdk/core | implemented |
-| [graph.spec.md](data-model/graph.spec.md) | RuntimeGraph / SpecGraph + GraphStore 포트 | @qa-sdk/core | implemented |
-| [verdict.spec.md](data-model/verdict.spec.md) | VerdictReport + VerdictStore 포트 | @qa-sdk/core | implemented |
-| [dlq-store.spec.md](data-model/dlq-store.spec.md) | DlqPhase / DlqInsert / StoredDlqItem + DlqStore 포트 | @qa-sdk/core | implemented |
-| [utils.spec.md](data-model/utils.spec.md) | ID 생성 (ULID), Clock 유틸리티 | @qa-sdk/core | implemented |
+| [record.spec.md](ingest/record.spec.md) | EventRecord 타입 + RecordStore 포트 | @qa-sdk/core | implemented |
+| [trace.spec.md](ingest/trace.spec.md) | Trace 메타데이터 + TraceStore 포트 | @qa-sdk/core | implemented |
+| [session-spec.md](ingest/session-spec.md) | QaSession + SessionStore 포트 | @qa-sdk/core | implemented |
+| [transmission.spec.md](ingest/transmission.spec.md) | TransmissionEnvelope + TransmissionStore 포트 | @qa-sdk/core | implemented |
+| [scenario-spec-store.spec.md](storage-system/scenario-spec-store.spec.md) | ScenarioSpec + ScenarioSpecStore 포트 | @qa-sdk/core | implemented |
+| [graph.spec.md](storage-system/graph.spec.md) | RuntimeGraph / SpecGraph + GraphStore 포트 | @qa-sdk/core | implemented |
+| [verdict.spec.md](storage-system/verdict.spec.md) | VerdictReport + VerdictStore 포트 | @qa-sdk/core | implemented |
+| [dlq-store.spec.md](ingest/dlq-store.spec.md) | DlqPhase / DlqInsert / StoredDlqItem + DlqStore 포트 | @qa-sdk/core | implemented |
+| [utils.spec.md](storage-system/utils.spec.md) | ID 생성 (ULID), Clock 유틸리티 | @qa-sdk/core | implemented |
 
 ### event-vocabulary/ — 이벤트 어휘
 
@@ -428,11 +428,11 @@ Domain Slice Architecture를 빠르게 코드와 템플릿으로 물질화하는
 
 | 패키지 | 스펙 위치 |
 |---|---|
-| @qa-sdk/core | `data-model/` |
+| @qa-sdk/core | `ingest/record.spec.md`, `ingest/trace.spec.md`, `ingest/session-spec.md`, `ingest/transmission.spec.md`, `storage-system/graph.spec.md`, `storage-system/verdict.spec.md` |
 | @qa-sdk/event-catalog | `event-vocabulary/` |
 | @qa-sdk/sdk | `collection/` |
 | @qa-sdk/engine | `spec-engine-system/spec-phases-runtime.spec.md`, `system/system-data-flow.spec.md` |
-| @qa-sdk/store | `storage/` |
+| @qa-sdk/store | `storage-system/` |
 | @qa-sdk/ingest-server | `ingest/ingest-interface-pipeline.spec.md` + `server/ingest/` |
 | @qa-sdk/registry-server | `registry-system/registry-api.spec.md`, `server/registry/services.spec.md`, `server/registry/events.spec.md` |
 | @qa-sdk/registry-client | `server/registry/client.spec.md` |

@@ -11,6 +11,27 @@ def:
   links:
     - target: guides-system
       type: refines
+  sources:
+    - packages/core/src/types/record.ts
+    - packages/core/src/types/envelope.ts
+    - packages/core/src/types/session.ts
+    - packages/core/src/types/scenario.ts
+    - packages/core/src/types/graph.ts
+    - packages/core/src/types/verdict.ts
+    - packages/core/src/ports/record-store.port.ts
+    - packages/core/src/ports/trace-store.port.ts
+    - packages/core/src/ports/session-store.port.ts
+    - packages/core/src/ports/transmission-store.port.ts
+    - packages/core/src/ports/scenario-spec-store.port.ts
+    - packages/core/src/ports/graph-store.port.ts
+    - packages/core/src/ports/verdict-store.port.ts
+    - packages/store/src/adapters/memory/record.adapter.test.ts
+    - packages/store/src/adapters/memory/graph.adapter.test.ts
+    - docs/specs/ingest/record.spec.md
+    - docs/specs/ingest/trace.spec.md
+    - docs/specs/ingest/transmission.spec.md
+    - docs/specs/storage-system/graph.spec.md
+    - docs/specs/storage-system/verdict.spec.md
 ---
 # Data Model
 
@@ -19,7 +40,15 @@ def:
 ingest-server의 핵심 데이터 모델(Record, Trace, Session, Verdict, Scenario)의 스키마와 관계를 정의한다.
 
 
-시스템 전체 데이터 구성 요약. 상세 스펙은 `docs/specs/data-model/` 참조.
+시스템 전체 데이터 구성 요약. 상세 스펙은 현재 `docs/specs/ingest/`와 `docs/specs/storage-system/`에 나뉘어 있다.
+
+## 검증 명령
+
+```bash
+pnpm --filter @qa-sdk/core typecheck
+pnpm --filter @qa-sdk/store test -- src/adapters/memory
+node packages/cli/dist/index.js def validate
+```
 
 ---
 

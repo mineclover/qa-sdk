@@ -86,6 +86,8 @@ function classifyDoc(path) {
   const text = readText(path);
   const frontmatter = parseFrontmatter(text);
   const relativePath = repoPath(path);
+  const isArchivedDoc = relativePath.startsWith("docs/archive/");
+  const isTemplateDoc = relativePath.startsWith("docs/proposals/_template/");
   const isProposal = relativePath.startsWith("docs/proposals/");
   const isSpec = relativePath.startsWith("docs/specs/");
   const isRule = relativePath.endsWith(".rule.md");
@@ -141,6 +143,8 @@ function classifyDoc(path) {
     lifecycle: frontmatter.lifecycle || "-",
     type: frontmatter.type || "-",
     tier: frontmatter.tier || "-",
+    isArchivedDoc,
+    isTemplateDoc,
     evidenceScore,
     sourceRefs: frontmatter.sourceRefs.length,
     reasons,
@@ -305,8 +309,13 @@ function summarize(items) {
 function byPriority(left, right) {
   const rank = { quarantine: 0, prove: 1, keep: 2 };
   return (rank[left.verdict] ?? 9) - (rank[right.verdict] ?? 9)
+    || Number(isLowSignalDefaultDoc(left)) - Number(isLowSignalDefaultDoc(right))
     || left.evidenceScore - right.evidenceScore
     || left.path.localeCompare(right.path);
+}
+
+function isLowSignalDefaultDoc(item) {
+  return Boolean(item.isArchivedDoc || item.isTemplateDoc);
 }
 
 function renderMarkdown() {
@@ -330,16 +339,22 @@ function renderMarkdown() {
   lines.push("");
   lines.push("## Doc Candidates");
   lines.push("");
-  lines.push("| Verdict | Score | Lifecycle | Doc | Sources | Reason |");
-  lines.push("|---|---:|---|---|---:|---|");
+  lines.push("| Verdict | Score | Scope | Lifecycle | Doc | Sources | Reason |");
+  lines.push("|---|---:|---|---|---|---:|---|");
   for (const item of [...docs].sort(byPriority).slice(0, limit)) {
-    lines.push(`| ${item.verdict} | ${item.evidenceScore} | ${item.lifecycle} | \`${item.path}\` | ${item.sourceRefs} | ${item.reasons.join("; ")} |`);
+    lines.push(`| ${item.verdict} | ${item.evidenceScore} | ${docScope(item)} | ${item.lifecycle} | \`${item.path}\` | ${item.sourceRefs} | ${item.reasons.join("; ")} |`);
   }
   lines.push("");
   lines.push("## Rule");
   lines.push("");
   lines.push("This report is a candidate generator, not an automatic deletion list. Use `docs/specs/system/design-usefulness-audit.rule.md` before changing lifecycle, archiving, or removing docs/packages.");
   return `${lines.join("\n")}\n`;
+}
+
+function docScope(item) {
+  if (item.isArchivedDoc) return "archive";
+  if (item.isTemplateDoc) return "template";
+  return "active";
 }
 
 function formatSummary(summary) {
