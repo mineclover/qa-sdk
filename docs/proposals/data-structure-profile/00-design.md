@@ -151,8 +151,9 @@ for current taxonomy-engine limitations. In practice:
 
 - taxonomy owns finite vocabularies and relation grammar,
 - profile owns stream/table/field/fact/metric lineage instances,
-- quality-ledger owns observed gate outcomes,
-- bench owns measurement runs,
+- quality evidence ledgers own persisted gate/review outcomes after adapter import,
+- measurement tooling owns benchmark/report surfaces, while profile dry-run owns row multiplier calculation,
+- preview consumers render lineage/graph artifacts without owning profile schema,
 - DPM remains an optional privacy policy reference.
 
 ## 3.1 Planning Documents
@@ -179,11 +180,11 @@ The following table is the first design gate for any new concept.
 | Is it a finite vocabulary with stable entries? | Make it a taxonomy axis. | taxonomy-engine |
 | Does it connect two taxonomy entries or coordinates? | Make it a taxonomy relation. | taxonomy-engine |
 | Does it describe a concrete source-to-target structure mapping? | Make it a profile node/edge. | Data Structure Profile |
-| Does it calculate row/latency/storage/cost impact? | Make it a measurement report. | bench / profile dry-run |
-| Does it decide pass/fail or warning/error? | Make it a quality diagnostic/gate. | quality-ledger / profile validator |
+| Does it calculate row/latency/storage/cost impact? | Make it a measurement report. | profile dry-run, then measurement tooling adapter |
+| Does it decide pass/fail or warning/error? | Make it a quality diagnostic/gate. | profile validator, then quality evidence ledger adapter |
 | Does it expose PII/token/vault semantics? | Reference DPM, do not duplicate it. | oa-sdk DPM |
 | Does it need live connector I/O or scheduling? | Keep out of MVP; evaluate separate adapter. | future data-flow adapter |
-| Does it need human graph editing? | Use profile lineage graph as the UI model. | viz-web / registry-ui |
+| Does it need human graph inspection? | Use profile lineage graph as the UI model. | profile preview surface |
 
 The rule of thumb:
 
@@ -297,9 +298,9 @@ The profile should compile to derived artifacts:
 | taxonomy-engine | Parse/validate axes, relations, lifecycle, decision links. |
 | definition-catalog | Store proposal/spec documents and decision evidence. |
 | event-catalog | Reuse event vocabulary for Kafka/event source names where possible. |
-| quality-ledger | Record profile gate outcomes and drift decisions. |
-| `@qa-sdk/bench` | Run fixture-backed measurement and benchmark reports. |
-| `viz-web` / `registry-ui` | Render lineage and decision graph from derived Visualization JSON. |
+| quality evidence ledgers | Record profile gate outcomes and drift decisions after adapter import. |
+| measurement tooling | Render or compare fixture-backed measurement reports from profile dry-run output. |
+| profile preview surfaces | Render lineage and decision graph from derived Visualization JSON. |
 | oa-sdk DPM | Optional external privacy policy reference, not a dependency of taxonomy-engine. |
 
 See [06-reference-map.md](./06-reference-map.md) for the concrete reuse depth. The profile layer is
@@ -354,7 +355,7 @@ Diagnostic prefixes should be separate from taxonomy-engine core:
 ### Phase 0 - Proposal and Fit Check
 
 Write this proposal and review it against existing qa-sdk taxonomy-engine, event-catalog,
-quality-ledger, bench, and visualization surfaces.
+quality evidence ledgers, measurement tooling, and preview surfaces.
 
 Exit:
 - The team agrees whether Option B is still the right default.
@@ -387,7 +388,7 @@ Exit:
 
 ### Phase 4 - Measurement and Quality Evidence
 
-Connect dry-run outputs to bench and quality-ledger.
+Connect dry-run outputs to measurement tooling and quality evidence ledgers through adapter payloads.
 
 Exit:
 - Row multiplier and quality gate evidence can be recorded and compared.

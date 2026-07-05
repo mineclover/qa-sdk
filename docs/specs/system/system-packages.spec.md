@@ -42,7 +42,7 @@ qa-sdk 모노레포의 패키지 의존 관계. 인코딩 라이브러리 체인
 - `환경 공급 패키지`: infra-env-kit이 `.env`/연결 코드/compose override 공급 책임을 가진다.
 - `스캐폴딩 패키지`: @qa-sdk/scaffold가 도메인 계층 구조와 데이터 거버넌스 표준을 코드/템플릿/검증 규칙으로 물질화한다.
 - `스펙/분석 패키지`: spec-core, convergence, decision-flow, event-catalog의 역할을 정리한다.
-- `프론트엔드/데모`: platform-demo, shop-web, viz-web, browser-sdk의 위치를 기술한다.
+- `프론트엔드/데모`: platform-demo, shop-web, taxonomy-web, viz-web, browser SDK의 소비자/preview 위치를 기술한다.
 - `기능 surface 분리`: 검증된 코어, contract tooling, consumer-only, quarantine 후보를 구분한다.
 
 ## 기능 Surface 분리
@@ -168,7 +168,8 @@ SERVICE_PORTS (core/src/lib/service-ports.ts) SSOT:
 | 패키지 | 역할 |
 |--------|------|
 | platform-demo | 3D 모니터 + 다이어그램 뷰어 (Vite) |
-| shop-web | 쇼핑 데모 사이트 (browser-sdk 소비자) |
-| viz-web | 시각화 웹 |
-| browser-sdk | 범용 브라우저 SDK (특정 도메인 데이터 금지) |
+| shop-web | 쇼핑 데모 사이트 (`@qa-sdk/browser` 소비자) |
+| @qa-sdk/taxonomy-web | taxonomy artifact와 decision bridge 결과를 탐색하는 preview consumer |
+| @qa-sdk/viz-web | lineage/graph artifact를 탐색하는 profile preview consumer |
+| @qa-sdk/browser | 범용 브라우저 SDK (특정 도메인 데이터 금지) |
 | motion-content | 모션 콘텐츠 (platform-demo에서 분리) |

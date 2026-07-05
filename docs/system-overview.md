@@ -14,6 +14,10 @@ def:
       type: depends_on
     - target: package-implementation-review
       type: traces_to
+    - target: system-packages
+      type: refs
+    - target: package-surface-separation-rule
+      type: refs
 ---
 # QA-SDK 시스템 개요
 
@@ -292,7 +296,7 @@ user.login TransitionSpec:
 수학/인코딩 ────── weighted-index → bit-index → permission-engine
 Core ──────────── @qa-sdk/core (타입, catalog runtime)
 SDK 레이어 ────── logger → codec → context → sdk → apm
-Browser ────────── browser-codec (encode/decode SSOT) → browser-sdk (범용 SDK — 도메인 데이터 없음)
+Browser ────────── browser-codec (encode/decode SSOT) → @qa-sdk/browser (범용 SDK — 도메인 데이터 없음)
 의사결정 ────────── decision-flow (분기 엔진) → decision-flow-store (SQLite 영속)
 분석 ──────────── convergence (독립) → spec-core (DKG + skills + FlowSchemaNode)
 코드 생성 ────── codegen-core (순수 함수) → snapshot-io (JSON I/O)
@@ -301,11 +305,13 @@ Browser ────────── browser-codec (encode/decode SSOT) → br
 문서 데이터 ──── definition-data-source (SQLite local + HTTP 서버 팩토리)
 Git/모노레포 ── git-utils (execa 기반) → package-classifier (tier/runtime/scope)
 리뷰 추적 ────── review-ledger (파일별 커밋 기준 리뷰 원장 + AI 피드백 요청 artifact + DKG bridge)
+Taxonomy ─────── taxonomy-engine (유한 vocabulary) → taxonomy-decision-bridge (decision-flow 변환) → taxonomy-web (preview consumer)
+Profile ──────── data-structure-profile (profile contract) → quality/review ledger, bench, viz-web (adapter/consumer)
 서비스 ──────────── ingest, registry-server, registry-service, gate, query, decode
 데모/참조 ────────── demo-snapshot, demo-types, shop-web, viz-3d
 ```
 
-패키지별 구현 목표와 문서 보강 우선순위는 [package-implementation-review.md](package-implementation-review.md)에서 별도로 관리한다.
+패키지별 구현 목표와 문서 보강 우선순위는 [package-implementation-review.md](package-implementation-review.md)에서 별도로 관리한다. 기능 surface의 승격·격리 기준은 [system-packages.spec.md](specs/system/system-packages.spec.md)와 [package-surface-separation.rule.md](specs/system/package-surface-separation.rule.md)를 따른다.
 
 ---
 
