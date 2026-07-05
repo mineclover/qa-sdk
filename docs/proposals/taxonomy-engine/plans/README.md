@@ -1,4 +1,43 @@
+---
+def:
+  id: taxonomy-engine-plans-index
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: meta
+  aspect: proposal_design
+  tier: layout
+  depth: overview
+  sources:
+    - docs/proposals/taxonomy-engine/plans/v0.1.md
+    - docs/proposals/taxonomy-engine/plans/v0.8.md
+    - docs/proposals/taxonomy-engine/plans/v0.10.md
+    - docs/proposals/taxonomy-engine/plans/v0.11.md
+    - docs/proposals/taxonomy-engine/plans/v0.12.md
+    - docs/proposals/taxonomy-engine/plans/v0.13.md
+    - docs/proposals/taxonomy-engine/plans/v0.14.md
+    - packages/taxonomy-engine/src/index.ts
+    - packages/taxonomy-decision-bridge/src/index.ts
+    - packages/taxonomy-decision-bridge/src/decision-file.ts
+    - packages/taxonomy-decision-bridge/src/from-flow-schema.ts
+    - packages/definition-catalog/src/taxonomy.ts
+status: accepted
+date: 2026-07-05
+part_of: taxonomy-engine
+role: plans-index
+supersedes: -
+superseded_by: -
+---
+
 # Plans
+
+## 목적 ^purpose
+
+taxonomy-engine 구현 라운드별 계획을 찾기 위한 version-history layout 문서다. 개별 계획의
+완료/후속 여부는 각 `v*.md`가 소유하고, 이 문서는 구현 흐름과 현재 패키지 표면을 연결하는
+색인 역할만 한다.
 
 각 버전의 구현 계획 + task 분해.
 
@@ -18,3 +57,20 @@
 | [v0.12](./v0.12.md) | A~C: analyze UX + 마커 확장(^phase/^weight/^depends_on) + 역방향 변환(toMarkdown + CLI render) |
 | [v0.13](./v0.13.md) | A~D: multi-gate decision (^gate:&lt;id&gt; 마커, single→multi backward compat) |
 | [v0.14](./v0.14.md) | A~C: def_scope enum에 decision 추가 (8→9, capacity 32) + scope-registry 도미노 정리 |
+
+## 구현/검증 증거 ^implementation-evidence
+
+초기 라운드는 `taxonomy-engine` 패키지의 parse/validate/query/codegen/doctor public surface로,
+Stage 3~4 이후 라운드는 `taxonomy-decision-bridge`와 `decision` CLI surface로 이어진다.
+`v0.14`의 definition-catalog 도미노는 현재 `packages/definition-catalog/src/taxonomy.ts`
+검증 표면과 함께 확인한다.
+
+검증 명령:
+
+```bash
+pnpm --filter taxonomy-engine test
+pnpm --filter taxonomy-decision-bridge test
+pnpm --filter definition-catalog exec vitest run src/taxonomy.test.ts src/scope-registry.test.ts
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```
