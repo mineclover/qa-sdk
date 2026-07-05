@@ -29,7 +29,8 @@
 
 ```bash
 pnpm --filter @qa-sdk/decision-service build
+pnpm --filter @qa-sdk/decision-service test
 pnpm --filter @qa-sdk/decision-service start
 ```
 
-현재 README는 spec 인덱스 역할만 한다. API/상태 전이 semantics는 중앙 spec을 기준으로 유지한다.
+`test`는 production build와 `tsc` build 후 in-memory SQLite에 실제 migrations를 적용하고 health, schema upsert/delete, instance save/update/list, flow link create/query/unlink를 검증한다. API/상태 전이 semantics는 중앙 spec을 기준으로 유지한다.

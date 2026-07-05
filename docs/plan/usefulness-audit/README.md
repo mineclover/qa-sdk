@@ -88,3 +88,5 @@ pnpm docs:usefulness-audit -- --format json --all
 `packages/authorization-monitor-web`은 authorization ontology의 proxy/application enforcement graph를 보여주는 Vite 앱이다. `test = build + scripts/static-smoke.mjs`를 추가해 production bundle, graph snapshot copy, proxy route/domain resource payload, RLSC `data-qa-address` marker를 package-local로 증명한다.
 
 `packages/config-loader`는 catalog/DKG config 파일 탐색과 fallback을 맡는 shared utility다. `test = build + scripts/smoke.test.mjs`를 추가해 explicit JSON/module loading, `qa-sdk.config.js` discovery, invalid catalog/DKG config rejection을 임시 디렉토리에서 package-local로 증명한다.
+
+`packages/decision-service`는 Nest service shell이지만 package-local smoke는 서버를 띄우지 않고 in-memory SQLite와 실제 migrations로 닫는다. `test = build + build:tsc + scripts/services.test.ts`를 추가해 health, schema upsert/delete, instance save/update/list, flow link create/query/unlink를 검증한다.
