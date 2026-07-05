@@ -1,6 +1,6 @@
 # @qa-sdk/otel
 
-`@qa-sdk/otel`은 OpenTelemetry 초기화와 Drizzle 계측 보조층이다. 아직 전용 package spec은 없고, APM/metrics/logger 문맥에서 읽는 것이 맞다.
+`@qa-sdk/otel`은 OpenTelemetry 초기화와 Drizzle 계측 보조층이다. 패키지 계약은 `otel-package-spec`이 소유하고, APM/metrics/logger 문맥은 상위 observability 맥락으로 함께 읽는다.
 
 ## 먼저 볼 문서
 
@@ -28,6 +28,6 @@
 ## 실행
 
 ```bash
-pnpm --filter @qa-sdk/otel build
-pnpm --filter @qa-sdk/otel test
+corepack pnpm --filter @qa-sdk/otel build
+corepack pnpm --filter @qa-sdk/otel test
 ```

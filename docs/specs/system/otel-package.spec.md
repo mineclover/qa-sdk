@@ -14,6 +14,15 @@ def:
       type: refines
     - target: apm-system
       type: depends_on
+  sources:
+    - packages/otel/src/index.ts
+    - packages/otel/src/init.ts
+    - packages/otel/src/tracer.ts
+    - packages/otel/src/env.ts
+    - packages/otel/src/drizzle-instrument.ts
+    - packages/otel/src/sqlcommenter.ts
+    - packages/otel/src/drizzle-instrument.test.ts
+    - packages/otel/src/sqlcommenter.test.ts
 ---
 # @qa-sdk/otel
 
@@ -42,3 +51,10 @@ OpenTelemetry 초기화, tracer 유틸리티, Drizzle instrumentation, SQL comme
 - `packages/otel/src/tracer.ts`
 - `packages/otel/src/drizzle-instrument.ts`
 - `packages/otel/src/sqlcommenter.ts`
+
+## 검증
+
+```bash
+corepack pnpm --filter @qa-sdk/otel test
+corepack pnpm --filter @qa-sdk/otel build
+```
