@@ -88,6 +88,10 @@ function classifyDoc(path) {
   const relativePath = repoPath(path);
   const isArchivedDoc = relativePath.startsWith("docs/archive/");
   const isTemplateDoc = relativePath.startsWith("docs/proposals/_template/");
+  const isDecisionSkeleton = relativePath.startsWith("docs/decisions/")
+    && frontmatter.lifecycle === "draft"
+    && /^\s*subject:\s*tax:/m.test(text)
+    && /## 결정\s*\n\s*\(미정\)/m.test(text);
   const isProposal = relativePath.startsWith("docs/proposals/");
   const isSpec = relativePath.startsWith("docs/specs/");
   const isRule = relativePath.endsWith(".rule.md");
@@ -145,6 +149,7 @@ function classifyDoc(path) {
     tier: frontmatter.tier || "-",
     isArchivedDoc,
     isTemplateDoc,
+    isDecisionSkeleton,
     evidenceScore,
     sourceRefs: frontmatter.sourceRefs.length,
     reasons,
@@ -315,7 +320,7 @@ function byPriority(left, right) {
 }
 
 function isLowSignalDefaultDoc(item) {
-  return Boolean(item.isArchivedDoc || item.isTemplateDoc);
+  return Boolean(item.isArchivedDoc || item.isTemplateDoc || item.isDecisionSkeleton);
 }
 
 function renderMarkdown() {
@@ -354,6 +359,7 @@ function renderMarkdown() {
 function docScope(item) {
   if (item.isArchivedDoc) return "archive";
   if (item.isTemplateDoc) return "template";
+  if (item.isDecisionSkeleton) return "decision-draft";
   return "active";
 }
 
