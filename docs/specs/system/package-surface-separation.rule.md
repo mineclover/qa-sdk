@@ -4,7 +4,7 @@ def:
   type: spec
   level: leaf
   scope: constraint
-  aspect: package-boundary
+  aspect: tech_constraint
   depth: specification
   lifecycle: approved
   layer: operation

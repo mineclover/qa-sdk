@@ -89,6 +89,16 @@ assert.equal(catalog.stats.total, catalog.nodes.length, "catalog stats.total mus
 assert.ok(catalog.nodes.length >= 1000, "platform demo should ship the real definition catalog snapshot");
 assert.ok(catalog.nodes.some((node) => node.id === "system-root"), "catalog snapshot must include system-root");
 
+const catalogById = new Map(catalog.nodes.map((node) => [node.id, node]));
+const surfaceRule = catalogById.get("package-surface-separation-rule");
+assert.ok(surfaceRule, "catalog snapshot must include package surface separation rule");
+assert.ok(surfaceRule.body.includes("Taxonomy tooling"), "surface rule must keep taxonomy tooling visible");
+assert.ok(surfaceRule.body.includes("Profile contract tooling"), "surface rule must keep profile contract tooling visible");
+assert.ok(
+  surfaceRule.body.includes("runtime dependency가 아니라 adapter, fixture, smoke script, 또는 CLI 계약"),
+  "surface rule must keep cross-surface integration out of runtime dependencies",
+);
+
 const fallbackSandbox = { window: {}, Date };
 vm.runInNewContext(copied["demo-fallback-data.js"], fallbackSandbox);
 const fallback = fallbackSandbox.window.__QA_DEMO_FALLBACK__;

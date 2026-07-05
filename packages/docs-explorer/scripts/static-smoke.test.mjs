@@ -57,6 +57,16 @@ assert.ok(explorerSpec, "docs-explorer spec node must be exported");
 assert.equal(explorerSpec.ref, "docs/specs/docs-explorer/docs-explorer.md");
 assert.ok(explorerSpec.purpose.length > 0, "docs-explorer spec should expose purpose text");
 
+const surfaceRule = byId.get("package-surface-separation-rule");
+assert.ok(surfaceRule, "package surface separation rule must be exported");
+assert.equal(surfaceRule.ref, "docs/specs/system/package-surface-separation.rule.md");
+assert.ok(surfaceRule.body.includes("Taxonomy tooling"), "surface rule must keep taxonomy tooling visible");
+assert.ok(surfaceRule.body.includes("Profile contract tooling"), "surface rule must keep profile contract tooling visible");
+assert.ok(
+  surfaceRule.body.includes("runtime dependency가 아니라 adapter, fixture, smoke script, 또는 CLI 계약"),
+  "surface rule must keep cross-surface integration out of runtime dependencies",
+);
+
 const brokenContains = [];
 for (const node of data.nodes) {
   assert.ok(Array.isArray(node.contains), `${node.id} contains must be an array`);
