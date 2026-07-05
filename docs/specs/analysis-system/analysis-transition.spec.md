@@ -2,17 +2,34 @@
 def:
   tier: component
   id: analysis-transition
+  type: spec
   address: def_document:v2:205952
   scope: state
   aspect: domain_state
   depth: specification
   lifecycle: approved
   layer: domain
-  svc: spec-core
+  svc: spec-transition
   tags: [observability]
   links:
     - target: analysis-prefix
       type: depends_on
+    - target: spec-transition
+      type: traces_to
+  sources:
+    - packages/spec-transition/src/index.ts
+    - packages/spec-transition/src/transition.types.ts
+    - packages/spec-transition/src/transition-engine.ts
+    - packages/spec-transition/src/transition.schema.ts
+    - packages/spec-transition/src/catalog-validator.ts
+    - packages/spec-transition/src/demo-transition-specs.ts
+    - packages/spec-transition/src/transition.test.ts
+    - packages/spec-transition/src/transition-engine.test.ts
+    - packages/spec-transition/src/proof-of-value.test.ts
+    - packages/spec-core/src/transition/index.ts
+    - packages/spec-core/src/transition/transition-pipeline.ts
+    - packages/spec-core/src/transition/transition-metrics.ts
+    - packages/spec-core/src/dkg/lifecycle-e2e.test.ts
 ---
 # TransitionSpec — 상태 전이
 
@@ -291,20 +308,31 @@ interface TransitionFunctions {
 
 | 파일 | 역할 |
 |------|------|
-| `packages/spec-core/src/transition/transition.types.ts` | 타입 정의 (TransitionSpec, MatchPattern, StateCondition 등) |
-| `packages/spec-core/src/transition/transition-engine.ts` | 7단계 파이프라인 (TransitionEngine, TransitionResult) |
-| `packages/spec-core/src/transition/transition.registry.ts` | 인메모리 레지스트리 (Map<name, Map<version, spec>>) |
-| `packages/spec-core/src/transition/transition.schema.ts` | Tier 1 구조 검증 (validateTransitionSpec) |
-| `packages/spec-core/src/transition/catalog-validator.ts` | Tier 2 카탈로그 검증 (validateWithCatalog) |
-| `packages/spec-core/src/transition/state-store.ts` | StateStore 인터페이스 + InMemoryStateStore |
-| `packages/spec-core/src/transition/sqlite-state-store.ts` | SqliteStateStore (AsyncStateStore) |
-| `packages/spec-core/src/transition/bind-extractor.ts` | 이벤트에서 identity 추출 (extractBind) |
-| `packages/spec-core/src/transition/input-validator.ts` | 축 기준 상태 조건 검증 (validateInput) |
-| `packages/spec-core/src/transition/output-applier.ts` | 축 entry 변경 적용 (applyOutput) |
-| `packages/spec-core/src/transition/match-adapter.ts` | MatchPattern → ScenarioStep 변환 |
-| `packages/spec-core/src/transition/decode-adapter.ts` | address_context 디코딩 어댑터 |
-| `packages/spec-core/src/transition/dkg-bridge.ts` | DKG 노드/엣지 파생 |
-| `packages/spec-core/src/transition/violation-bridge.ts` | 위반 → ObservationNode 변환 |
+| `packages/spec-transition/src/transition.types.ts` | 타입 정의 (TransitionSpec, MatchPattern, StateCondition 등) |
+| `packages/spec-transition/src/transition-engine.ts` | 7단계 파이프라인 (TransitionEngine, TransitionResult) |
+| `packages/spec-transition/src/transition.registry.ts` | 인메모리 레지스트리 (Map<name, Map<version, spec>>) |
+| `packages/spec-transition/src/transition.schema.ts` | Tier 1 구조 검증 (validateTransitionSpec) |
+| `packages/spec-transition/src/catalog-validator.ts` | Tier 2 카탈로그 검증 (validateWithCatalog) |
+| `packages/spec-transition/src/state-store.ts` | StateStore 인터페이스 + InMemoryStateStore |
+| `packages/spec-transition/src/sqlite-state-store.ts` | SqliteStateStore (AsyncStateStore) |
+| `packages/spec-transition/src/bind-extractor.ts` | 이벤트에서 identity 추출 (extractBind) |
+| `packages/spec-transition/src/input-validator.ts` | 축 기준 상태 조건 검증 (validateInput) |
+| `packages/spec-transition/src/output-applier.ts` | 축 entry 변경 적용 (applyOutput) |
+| `packages/spec-transition/src/match-adapter.ts` | MatchPattern → ScenarioStep 변환 |
+| `packages/spec-transition/src/decode-adapter.ts` | address_context 디코딩 어댑터 |
+| `packages/dkg/src/dkg-bridge.ts` | DKG 노드/엣지 파생 |
+| `packages/dkg/src/violation-bridge.ts` | 위반 → ObservationNode 변환 |
+| `packages/spec-core/src/transition/index.ts` | spec-transition + DKG bridge + pipeline re-export |
 | `packages/spec-core/src/transition/transition-pipeline.ts` | convergence 통합 팩토리 |
 | `packages/spec-core/src/transition/transition-metrics.ts` | metric 계산 (coverage, violation-rate, orphan-sequences) |
-| `packages/spec-core/src/transition/demo-transition-specs.ts` | 데모 spec 32종 |
+| `packages/spec-transition/src/demo-transition-specs.ts` | 데모 spec 32종 |
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter spec-transition test
+pnpm --filter spec-transition typecheck
+pnpm --filter @qa-sdk/spec-core exec vitest run src/dkg/lifecycle-e2e.test.ts
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```
