@@ -1,10 +1,37 @@
+---
+def:
+  id: taxonomy-engine-doctor-concept
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: constraint
+  aspect: ssot_drift
+  tier: component
+  depth: specification
+  sources:
+    - packages/taxonomy-engine/src/doctor/index.ts
+    - packages/taxonomy-engine/src/doctor/extract/index.ts
+    - packages/taxonomy-engine/src/index.ts
+    - packages/taxonomy-engine/__tests__/unit/doctor.test.ts
+    - packages/taxonomy-engine/__tests__/unit/doctor-extract.test.ts
+    - packages/cli/src/commands/taxonomy/doctor.ts
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: doctor
+---
+
 # Doctor — SSOT Drift 검출
 
-> `src/doctor/` 모듈 spec. v0.3에서 추가. 자동 추출 함수는 [auto-extract.md](./auto-extract.md) 참조.
+> `packages/taxonomy-engine/src/doctor/` 구현 표면. yaml IR과 외부 SSOT에서 추출한 expected vocabulary를 비교한다.
 
-## 정의
+## 목적 ^purpose
 
-**yaml IR ↔ 외부 SSOT의 drift를 검출**하는 순수 함수. "내 taxonomy yaml이 실제 코드/스펙과 일치하는가?"를 진단으로 답한다.
+- taxonomy yaml이 실제 코드/스펙 vocabulary와 어긋났는지 진단한다.
+- validate가 보지 못하는 외부 drift를 `Diagnostic[]`로 수집한다.
+- CLI `--auto`에서 repo 내 대표 SSOT 세트를 보수적으로 자동 연결한다.
 
 ## API
 
@@ -12,56 +39,59 @@
 function doctor(ir: TaxonomyIR, expected: ExpectedTaxonomy): Diagnostic[]
 ```
 
-**입력**
+입력:
 - `ir` — `parse(yamlText).ir` 결과
-- `expected` — 외부 SSOT에서 추출한 기대값 (`ExpectedTaxonomy`)
+- `expected` — 외부 SSOT에서 추출한 기대값
 
-**출력**: `Diagnostic[]` — drift가 없으면 빈 배열, drift 있으면 진단 목록
-
-**fail-collect** — 한 번에 모든 drift를 수집해서 반환. validate와 동일한 정책.
+출력:
+- `Diagnostic[]` — drift가 없으면 빈 배열, drift가 있으면 fail-collect로 모두 반환
 
 ## ExpectedTaxonomy 형식
 
 ```typescript
 type ExpectedTaxonomy = {
-  [axisName: string]: ExpectedAxis
-}
-
-type ExpectedAxis = {
-  entries: Array<{
-    id: string
-    address?: number   // 명시 시 address 비교
-    label?: string     // 명시 시 label 비교
+  taxonomy: string
+  axes: Record<string, {
+    entries: Array<{
+      id: string
+      address?: number
+      label?: string
+    }>
   }>
 }
 ```
 
-**예시**:
+예시:
 ```json
 {
-  "node-type": {
-    "entries": [
-      { "id": "service", "address": 0 },
-      { "id": "edge-type", "address": 1 },
-      { "id": "prefix", "address": 2 }
-    ]
-  },
-  "edge-type": {
-    "entries": [
-      { "id": "depends-on" },
-      { "id": "owns" }
-    ]
+  "taxonomy": "dkg-schema",
+  "axes": {
+    "node-type": {
+      "entries": [
+        { "id": "service", "address": 0 },
+        { "id": "edge-type", "address": 1 },
+        { "id": "prefix", "address": 2 }
+      ]
+    },
+    "edge-type": {
+      "entries": [
+        { "id": "depends-on" },
+        { "id": "owns" }
+      ]
+    }
   }
 }
 ```
 
+`taxonomy` 이름이 다르면 `doctor-missing` error 하나를 반환하고 축 비교를 진행하지 않는다.
+
 ## 3 진단 코드
 
 | code | severity | 발생 조건 | meta 키 |
-|------|----------|----------|---------|
-| `doctor-missing` | error | expected에 있는데 yaml에 없음 | `{ axis, missing: string[] }` 또는 `{ axis }` |
-| `doctor-drift` | warning | yaml과 expected의 address 또는 label 불일치 | `{ axis, entry, yaml, expected, field? }` |
-| `doctor-unexpected` | warning | yaml에 있는데 expected에 없음 | `{ axis, unexpected: string[] }` |
+|------|----------|-----------|---------|
+| `doctor-missing` | error | expected taxonomy/axis/entry가 yaml에 없음 | `{ yaml, expected }`, `{ axis }`, `{ axis, missing }` |
+| `doctor-drift` | warning | yaml과 expected의 address 또는 label 불일치 | `{ axis, entry, field, yaml, expected }` |
+| `doctor-unexpected` | warning | yaml entry가 expected에 없음 | `{ axis, unexpected }` |
 
 **진단 코드 상세**: [diagnostics-catalog.md](./diagnostics-catalog.md) §doctor-*
 
@@ -70,62 +100,71 @@ type ExpectedAxis = {
 ### 직접 기대값 사용
 
 ```typescript
-import { parse, doctor } from 'taxonomy-engine'
+import { parse, doctor, type ExpectedTaxonomy } from "taxonomy-engine"
 
-const ir = parse(readFileSync('docs/taxonomies/dkg-schema.yaml', 'utf8')).ir
+const parsed = parse(yamlText)
+if ("error" in parsed) throw parsed.error
+
 const expected: ExpectedTaxonomy = {
-  'node-type': {
-    entries: [
-      { id: 'service' },
-      { id: 'prefix' },
-      { id: 'dkg-node' },
-    ]
-  }
+  taxonomy: "dkg-schema",
+  axes: {
+    "node-type": {
+      entries: [
+        { id: "service" },
+        { id: "prefix" },
+        { id: "dkg-node" },
+      ],
+    },
+  },
 }
-const diags = doctor(ir, expected)
-// diags.length === 0 이면 drift 없음
+
+const diags = doctor(parsed.ir, expected)
 ```
 
-### 자동 추출 사용 (`--auto`)
+### 자동 추출 사용
 
 ```typescript
-import { extractDkgExpected } from 'taxonomy-engine/doctor/extract'
+import { extractDkgExpected } from "taxonomy-engine"
 
-const specText = readFileSync('docs/specs/dkg-system/dkg-node-types.spec.md', 'utf8')
-const expected = extractDkgExpected(specText)
-const diags = doctor(ir, expected)
+const expected = extractDkgExpected(nodeSpecMarkdown, edgeSpecMarkdown)
+const diags = doctor(parsed.ir, expected)
 ```
 
-자동 추출 상세: [auto-extract.md](./auto-extract.md)
+자동 추출 함수는 패키지 루트에서 export된다. 구현 파일은 `packages/taxonomy-engine/src/doctor/extract/index.ts` 아래에 있다.
 
 ## 도그푸딩 사례
 
-qa-sdk 도그푸딩에서 doctor가 실제로 검출하는 drift:
+qa-sdk CLI `--auto`가 현재 연결하는 매핑:
 
 | yaml 파일 | SSOT 출처 | 검출 대상 |
-|-----------|----------|----------|
-| `dkg-schema.yaml` | `dkg-node-types.spec.md`, `dkg-edge-types.spec.md` | DKG 15 노드종/18 엣지종 추가/변경/누락 |
-| `ingest-coords.yaml` | `store-adapter-parity.spec.md` | store-driver/store-kind entries |
-| `qa-sdk-def-catalog.yaml` | `vocabulary.ts` (DEF_LEVEL, DEF_ASPECT) | qa-sdk 좌표 entries |
+|-----------|-----------|-----------|
+| `dkg-schema.yaml` | `dkg-node-types.spec.md`, `dkg-edge-types.spec.md` | DKG node/edge vocabulary |
+| `ingest-coords.yaml` | `store-adapter-parity.spec.md` | ingest store-driver/store-kind vocabulary |
+| `qa-sdk-def-catalog.yaml` | `packages/definition-catalog/src/vocabulary.ts` | definition-catalog vocabulary |
 
-이 세 사례가 `--auto` 매핑에 hardcoded됨 — [concepts/cli-commands.md](./cli-commands.md) §--auto 매핑 참조.
+매핑 구현은 `packages/cli/src/commands/taxonomy/doctor.ts`의 `AUTO_EXTRACT_MAP`이 소유한다.
 
 ## doctor vs validate 차이
 
 | | `validate` | `doctor` |
 |---|---|---|
-| 비교 대상 | yaml IR 내부 규칙 (capacity, ref, constraint) | yaml IR ↔ 외부 SSOT |
-| expected 입력 | 없음 (yaml 자체가 기준) | `ExpectedTaxonomy` 필수 |
-| 목적 | yaml 형식/의미 정합성 | 코드/스펙과의 동기화 확인 |
-| CI 역할 | validate gate (errors=0 강제) | drift 점검 (warning 허용 가능) |
+| 비교 대상 | yaml IR 내부 규칙 | yaml IR과 외부 SSOT |
+| expected 입력 | 없음 | `ExpectedTaxonomy` 필수 |
+| 목적 | 형식/의미 정합성 | 코드/스펙과의 동기화 확인 |
+| CI 역할 | error=0 gate | drift 점검. error는 실패, warning은 정책 선택 |
 
 ## 참조
 
 - 코드 위치: `packages/taxonomy-engine/src/doctor/index.ts`
-- 자동 추출 함수: [auto-extract.md](./auto-extract.md), `packages/taxonomy-engine/src/doctor/extract.ts`
-- 진단 코드: [diagnostics-catalog.md](./diagnostics-catalog.md) §doctor-*
-- CLI `tax doctor`: [cli-commands.md](./cli-commands.md)
-- v0.3 계획: [plans/v0.3.md](../plans/v0.3.md) §T-E2
-- v0.4 계획: [plans/v0.4.md](../plans/v0.4.md) §T-F2
-- v0.5 계획: [plans/v0.5.md](../plans/v0.5.md) §T-H1~H3
-- CI 스크립트: `scripts/tax-doctor.mjs`
+- 자동 추출 함수: `packages/taxonomy-engine/src/doctor/extract/index.ts`
+- public export: `packages/taxonomy-engine/src/index.ts`
+- CLI `tax doctor`: `packages/cli/src/commands/taxonomy/doctor.ts`
+- 자동 추출 상세: [auto-extract.md](./auto-extract.md)
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter taxonomy-engine exec vitest run __tests__/unit/doctor.test.ts __tests__/unit/doctor-extract.test.ts
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```
