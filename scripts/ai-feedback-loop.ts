@@ -13,7 +13,7 @@ async function main() {
   // 1. Lint Check
   console.log(chalk.dim("\n[1/4] Checking syntax & lint..."));
   try {
-    execSync("pnpm run lint", { stdio: "inherit" });
+    execSync("corepack pnpm run lint", { stdio: "inherit" });
     console.log(chalk.green("✨ Lint passed."));
   } catch {
     failures++;
@@ -23,7 +23,7 @@ async function main() {
   // 2. Architectural Boundaries
   console.log(chalk.dim("\n[2/4] Verifying architectural tiers..."));
   try {
-    execSync("npx tsx scripts/check-dependency-boundaries.ts", { stdio: "inherit" });
+    execSync("tsx scripts/check-dependency-boundaries.ts", { stdio: "inherit" });
     console.log(chalk.green("✨ Tier boundaries intact."));
   } catch {
     failures++;
@@ -33,7 +33,7 @@ async function main() {
   // 3. API Impact Analysis
   console.log(chalk.dim("\n[3/4] Analyzing API Impact Radius..."));
   try {
-    execSync("npx tsx scripts/api-impact-analyzer.ts", { stdio: "inherit" });
+    execSync("tsx scripts/api-impact-analyzer.ts", { stdio: "inherit" });
   } catch {
     failures++;
     console.error(chalk.red("❌ Impact analysis failed."));
@@ -42,7 +42,7 @@ async function main() {
   // 4. Analysis OS Accuracy
   console.log(chalk.dim("\n[4/4] Verifying analysis system accuracy..."));
   try {
-    execSync("pnpm run arch:verify", { stdio: "inherit" });
+    execSync("corepack pnpm run arch:verify", { stdio: "inherit" });
     console.log(chalk.green("✨ Analysis accuracy checks passed."));
   } catch {
     failures++;

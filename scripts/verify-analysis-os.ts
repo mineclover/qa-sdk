@@ -28,7 +28,7 @@ async function main() {
 
   // 1. Verify arch:signals Accuracy
   try {
-    const signalsOutput = execSync("npx tsx scripts/discover-event-flow.ts", { encoding: "utf-8" });
+    const signalsOutput = execSync("tsx scripts/discover-event-flow.ts", { encoding: "utf-8" });
     
     // 실측 기반 체크: core 패키지는 반드시 'error' 신호와 연결되어 있어야 함
     assert(signalsOutput.includes("core") && signalsOutput.includes("error"), 
@@ -46,7 +46,7 @@ async function main() {
 
   // 2. Verify arch:usage Accuracy
   try {
-    const usageOutput = execSync("npx tsx scripts/analyze-package-usage.ts --json", { encoding: "utf-8" });
+    const usageOutput = execSync("tsx scripts/analyze-package-usage.ts --json", { encoding: "utf-8" });
     const usage = JSON.parse(usageOutput);
     const usageManagedPackageScope = usage.managedPackageScope ?? "packages/*";
     totalUsageSurfaceManagedPackages = usage.totalSurfaceManagedPackages ?? usage.totalPackages;
@@ -199,7 +199,7 @@ async function main() {
 
   // 4. Verify arch:check (Boundary) Consistency
   try {
-    const checkOutput = execSync("npx tsx scripts/check-dependency-boundaries.ts --json", { encoding: "utf-8" });
+    const checkOutput = execSync("tsx scripts/check-dependency-boundaries.ts --json", { encoding: "utf-8" });
     const boundary = JSON.parse(checkOutput);
     const violationCount = Array.isArray(boundary.violations) ? boundary.violations.length : -1;
 
@@ -219,9 +219,9 @@ async function main() {
 
   // 5. Verify package scripts don't bypass the pinned package manager.
   try {
-    const barePnpmScripts = findBarePnpmPackageScripts(["packages", "simulations"]);
+    const barePnpmScripts = findBarePnpmPackageScripts(["."]);
     assert(barePnpmScripts.length === 0,
-           `Toolchain Scripts: package scripts avoid bare pnpm (${barePnpmScripts.slice(0, 5).join("; ") || "ok"})`);
+           `Toolchain Scripts: root/workspace package scripts avoid bare pnpm (${barePnpmScripts.slice(0, 5).join("; ") || "ok"})`);
   } catch (err) {
     console.error("Toolchain script verification failed:", err);
     assert(false, "Toolchain Scripts: package script scan completed successfully");
@@ -299,7 +299,17 @@ function walkPackageJsonFiles(root: string): string[] {
   if (!existsSync(root)) return files;
 
   for (const entry of readdirSync(root)) {
-    if (["node_modules", "dist", "build", "coverage", ".turbo", ".next", ".vite"].includes(entry)) continue;
+    if ([
+      ".git",
+      ".claude",
+      "node_modules",
+      "dist",
+      "build",
+      "coverage",
+      ".turbo",
+      ".next",
+      ".vite",
+    ].includes(entry)) continue;
     const path = join(root, entry);
     const stats = statSync(path);
     if (stats.isDirectory()) {
@@ -313,6 +323,9 @@ function walkPackageJsonFiles(root: string): string[] {
 }
 
 function usesBarePnpm(command: string): boolean {
-  const tokens = command.split(/\s+/).filter(Boolean);
+  const tokens = command
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((token) => token.replace(/^["']+|["']+$/g, ""));
   return tokens.some((token, index) => token === "pnpm" && tokens[index - 1] !== "corepack");
 }
