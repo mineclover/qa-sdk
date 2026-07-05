@@ -38,8 +38,12 @@ async function main() {
                      existsSync(join(pkgDir, "src/main.ts")) ||
                      existsSync(join(pkgDir, "src/index.js"));
     
-    const dependents = fanInMap.get(pkg.name) || fanInMap.get(`@qa-sdk/${pkg.displayName}`) || [];
-    const usageCount = dependents.length;
+    const dependents = [
+      ...(fanInMap.get(pkg.displayName) || []),
+      ...(fanInMap.get(pkg.name) || []),
+    ];
+    const uniqueDependents = [...new Set(dependents)].sort();
+    const usageCount = uniqueDependents.length;
     const surface = surfaceIndex.get(pkg.name) || surfaceIndex.get(pkg.displayName);
     const surfaceId = surface?.id ?? "unassigned";
     const verdict = surface?.verdict ?? "needs-decision";
@@ -66,7 +70,7 @@ async function main() {
         summary.deadWeight += 1;
       }
     } else if (usageCount >= 3) {
-      highUsage.push({ id: pkg.displayName, count: usageCount, tier: pkg.tier, surface: surfaceId, verdict, dependents });
+      highUsage.push({ id: pkg.displayName, count: usageCount, tier: pkg.tier, surface: surfaceId, verdict, dependents: uniqueDependents });
       summary.highUsage += 1;
     }
   }
