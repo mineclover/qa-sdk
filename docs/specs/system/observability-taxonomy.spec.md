@@ -20,6 +20,14 @@ def:
       type: contains
     - target: taxonomy-boundaries
       type: traces_to
+  sources:
+    - packages/event-catalog/src/prefix-mapping.ts
+    - packages/event-catalog/src/auto-track.ts
+    - packages/event-catalog/src/auto-track.contract.test.ts
+    - docs/specs/system/tracking-three-axes.spec.md
+    - docs/specs/apm-system/apm-schema-system/address-context-storage.spec.md
+    - docs/specs/system/otel-package.spec.md
+    - docs/specs/infra-engine/infra-observe-stage.spec.md
 ---
 
 # Observability Taxonomy — 관측 책임 경계
@@ -59,6 +67,7 @@ qa-sdk의 관측 체계를 목적별로 분리한다. 앱 데이터 관측, sema
 - `address_context`는 semantic meaning layer다. OTEL transport 자체를 대체하지 않는다.
 - OTEL은 서비스 관측의 프로토콜/계측 계층이다. 도메인 semantic taxonomy를 소유하지 않는다.
 - infra observe는 운영/배포 관측을 소유한다. 앱 데이터 시나리오 taxonomy를 소유하지 않는다.
+- event-catalog는 event_key vocabulary와 prefix mapping을 소유한다. observability taxonomy는 그 결과를 관측 층위로 배치할 뿐, taxonomy-engine IR이나 PM delivery hierarchy를 소유하지 않는다.
 
 ## 관련 소스
 
@@ -66,3 +75,10 @@ qa-sdk의 관측 체계를 목적별로 분리한다. 앱 데이터 관측, sema
 - `docs/specs/apm-system/apm-schema-system/address-context-storage.spec.md`
 - `docs/specs/system/otel-package.spec.md`
 - `docs/specs/infra-engine/infra-observe-stage.spec.md`
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/event-catalog test
+node packages/cli/dist/index.js def validate
+```

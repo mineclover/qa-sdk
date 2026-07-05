@@ -20,6 +20,14 @@ def:
       type: traces_to
     - target: structural-taxonomy
       type: traces_to
+  sources:
+    - docs/specs/system/status-crosswalk.spec.md
+    - docs/specs/decision-flow/df-taxonomy.spec.md
+    - docs/specs/definition-catalog/definition-taxonomy.spec.md
+    - docs/specs/system/structural-taxonomy.spec.md
+    - packages/decision-flow/src/types.ts
+    - packages/decision-flow/src/vocabulary.ts
+    - packages/decision-flow/src/catalog.ts
 ---
 
 # PM Taxonomy — delivery 상태 관리 분류 체계
@@ -68,6 +76,7 @@ delivery 중심 프로젝트 관리를 위한 상태 관리 taxonomy를 정의�
 3. PM taxonomy는 cognitive phase, mental model, forcing question을 core 축으로 편입하지 않는다.
 4. PM taxonomy는 decision-flow의 `DecisionUnit`, `DecisionLayer`, `DecisionVerdict`를 재사용할 수 있지만, delivery 단위의 계층과 책임은 스스로 소유한다.
 5. PM taxonomy는 프로젝트 관리 상태를 소유하지만, 문서 lifecycle·판단 상태·배포 상태를 직접 대체하지 않는다.
+6. PM taxonomy는 package runtime surface가 아니다. delivery 상태 vocabulary를 정리하되 taxonomy-engine, decision-flow, definition-catalog의 구현 책임을 흡수하지 않는다.
 
 ## 링크 규칙
 
@@ -75,3 +84,10 @@ delivery 중심 프로젝트 관리를 위한 상태 관리 taxonomy를 정의�
 - `structural_refs` → boundary, runtime scope, contract 관련 문서 ID
 - `decision_refs` → FlowInstance, DecisionNarrative, policy candidate, escalation request
 - `evidence_refs` → gate 결과, 테스트 결과, PR, 데모, 문서 검증 결과
+
+## 검증 ^validation
+
+```bash
+node packages/cli/dist/index.js def validate
+corepack pnpm --filter decision-flow test
+```

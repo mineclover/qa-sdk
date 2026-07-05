@@ -18,6 +18,14 @@ def:
       type: traces_to
     - target: definition-taxonomy
       type: depends_on
+  sources:
+    - packages/core/src/meta-semantic/ir-types.ts
+    - packages/core/src/pipe/data-contract.ts
+    - packages/definition-catalog/src/types.ts
+    - docs/specs/meta-semantic/meta-semantic-concepts.spec.md
+    - docs/specs/scope-nesting/scope-nesting-system.md
+    - docs/specs/viz-system/viz-surface-system/concept-hierarchy-grid.spec.md
+    - docs/specs/definition-catalog/definition-taxonomy.spec.md
 ---
 
 # Structural Taxonomy — 실제 단위와 배열의 분류 체계
@@ -65,9 +73,17 @@ structural taxonomy는 두 단계로 읽는다.
 - structural taxonomy는 owner, due date, priority, milestone을 소유하지 않는다. 그것은 PM taxonomy의 책임이다.
 - structural taxonomy는 판단의 인지 단계, 근거 종류, mental model을 소유하지 않는다. 그것은 decision-flow taxonomy의 책임이다.
 - `runtime scope`와 `definition scope`는 같은 단어를 쓰지만 같은 축이 아니다.
+- structural taxonomy는 package surface manifest를 직접 소유하지 않는다. surface 배정은 `package-surface-separation-rule`과 `scripts/package-surfaces.mjs`가 검증한다.
 
 ## 관련 소스
 
 - `docs/specs/meta-semantic/meta-semantic-concepts.spec.md`
 - `docs/specs/scope-nesting/scope-nesting-system.md`
 - `docs/specs/viz-system/viz-surface-system/concept-hierarchy-grid.spec.md`
+
+## 검증 ^validation
+
+```bash
+node packages/cli/dist/index.js def validate
+corepack pnpm arch:verify
+```

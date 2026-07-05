@@ -24,6 +24,18 @@ def:
       type: traces_to
     - target: dual-coordinate-system
       type: traces_to
+  sources:
+    - scripts/package-surfaces.mjs
+    - packages/taxonomy-engine/src/index.ts
+    - packages/taxonomy-engine/__tests__/unit/public-api.test.ts
+    - packages/taxonomy-decision-bridge/src/index.ts
+    - packages/taxonomy-decision-bridge/__tests__/sync.test.ts
+    - packages/taxonomy-web/src/data/loadStaticTaxonomies.ts
+    - packages/taxonomy-web/src/lib/lib.test.ts
+    - packages/event-catalog/src/prefix-mapping.ts
+    - packages/event-catalog/src/auto-track.contract.test.ts
+    - docs/specs/definition-catalog/definition-taxonomy.spec.md
+    - docs/specs/decision-flow/df-taxonomy.spec.md
 ---
 
 # Taxonomy Boundaries — 분류 체계 패밀리와 경계
@@ -62,6 +74,15 @@ qa-sdk에서 함께 쓰이는 taxonomy 패밀리들의 소유 범위와 경계�
 | decision-flow | 왜 이렇게 판단했는가 | DecisionUnit, Evidence, DecisionLayer, verdict | owner, milestone, task hierarchy |
 | PM | 무엇을 누가 언제 끝내는가 | initiative, epic, deliverable, task, checkpoint | cognitive phase, mental model |
 
+## 패키지 surface 관계 ^package-surface
+
+| surface | 소유 | 소유하지 않는 것 |
+|---|---|---|
+| `taxonomy-engine` | 유한 vocabulary의 parse/validate/diff/codegen 도구 | decision-flow 판단 상태, web preview 상태, profile 측정 |
+| `taxonomy-decision-bridge` | taxonomy IR과 decision-flow schema 사이의 변환 계약 | vocabulary SSOT, preview UI state |
+| `@qa-sdk/taxonomy-web` | taxonomy artifact를 읽는 preview consumer | vocabulary entry 작성/검증 규칙 |
+| `@qa-sdk/event-catalog` | event_key vocabulary와 prefix mapping | taxonomy-engine IR, PM backlog hierarchy |
+
 ## 경계 규칙 ^constraint
 
 1. `scope`라는 단어는 taxonomy별 의미를 구분한다.
@@ -83,3 +104,13 @@ qa-sdk에서 함께 쓰이는 taxonomy 패밀리들의 소유 범위와 경계�
 - `docs/specs/decision-flow/df-taxonomy.spec.md`
 - `docs/specs/system/pm-taxonomy.spec.md`
 - `docs/specs/system/decision-definition-bridge.spec.md`
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter taxonomy-engine test
+corepack pnpm --filter taxonomy-decision-bridge test
+corepack pnpm --filter @qa-sdk/taxonomy-web test
+corepack pnpm --filter @qa-sdk/event-catalog test
+corepack pnpm arch:verify
+```

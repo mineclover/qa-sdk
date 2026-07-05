@@ -22,6 +22,14 @@ def:
       type: constrains
     - target: pm-taxonomy
       type: constrains
+  sources:
+    - docs/specs/system/taxonomy-boundaries.spec.md
+    - scripts/package-surfaces.mjs
+    - packages/taxonomy-engine/src/index.ts
+    - packages/taxonomy-decision-bridge/src/index.ts
+    - packages/event-catalog/src/prefix-mapping.ts
+    - docs/specs/definition-catalog/definition-taxonomy.spec.md
+    - docs/specs/decision-flow/df-taxonomy.spec.md
 ---
 
 # Meta-Taxonomy — taxonomy 분류군
@@ -107,6 +115,7 @@ taxonomy를 meta-taxonomy에 등록할 때 필요한 정보:
 - `taxonomy-boundaries`의 5개 taxonomy 패밀리를 분류 대상으로 한다.
 - 각 taxonomy의 1차 질문과 소유 개념은 `taxonomy-boundaries`에서 가져온다.
 - `document-addressing-contract`은 이 분류를 전제로 주소 계약을 설계한다.
+- package surface 분류는 구현 증거로만 소비한다. meta-taxonomy의 분류군이 package runtime ownership을 대신하지 않는다.
 
 ## 확장 규칙
 
@@ -118,3 +127,10 @@ taxonomy를 meta-taxonomy에 등록할 때 필요한 정보:
 4. 분류군을 결정한다.
 5. `TaxonomyMeta` 형식으로 등록한다.
 6. `taxonomy-boundaries`에 경계 규칙을 추가한다.
+
+## 검증 ^validation
+
+```bash
+node packages/cli/dist/index.js def validate
+corepack pnpm arch:verify
+```
