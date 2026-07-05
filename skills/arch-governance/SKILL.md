@@ -59,12 +59,12 @@ pnpm arch:usage -- --json
 
 판정 순서:
 
-1. `arch:surfaces`로 모든 workspace package가 정확히 하나의 surface에 배정됐는지 확인한다.
+1. `arch:surfaces`로 모든 `packages/*` surface-managed package가 정확히 하나의 surface에 배정됐는지 확인한다.
 2. `arch:usage -- --json`에서 `archiveCandidates`, `deadWeight`, `entrypointGaps`를 먼저 본다.
 3. `zeroFanIn`과 `missingEntrypoints`는 사실 신호다. `disposition`을 확인한 뒤 독립 boundary 근거 또는 실제 정리 후보를 구분한다.
 4. 예전 보조 스크립트인 `scripts/find-unused-candidates.ts`도 `arch:usage`에 위임되어야 하며, 별도 heuristics를 추가하지 않는다.
 
-정확한 surface별 패키지 배정 SSOT는 `scripts/package-surfaces.mjs`다. 문서 표는 surface 이름/판정/대표 그룹을 요약하고, `arch:verify`가 문서 표의 surface 목록과 판정이 manifest와 drift하지 않는지 확인한다.
+정확한 surface별 `packages/*` 패키지 배정 SSOT는 `scripts/package-surfaces.mjs`다. 문서 표는 surface 이름/판정/대표 그룹을 요약하고, `arch:verify`가 문서 표의 surface 목록과 판정이 manifest와 drift하지 않는지 확인한다.
 
 ### 4. 이벤트 신호 연결 분석 (`arch:signals`)
 
@@ -95,7 +95,7 @@ pnpm arch:identity
 pnpm arch:verify
 ```
 
-- `arch:surfaces`: 전체 workspace package가 정확히 하나의 surface에 배정됐는지, taxonomy/profile 기능 surface가 다시 합쳐지지 않았는지, surface 문서 표가 manifest와 같은 목록/판정을 말하는지 확인한다.
+- `arch:surfaces`: `packages/*` surface-managed package가 정확히 하나의 surface에 배정됐는지, taxonomy/profile 기능 surface가 다시 합쳐지지 않았는지, surface 문서 표가 manifest와 같은 목록/판정을 말하는지 확인한다.
 - `arch:signals`: 핵심 이벤트 연결이 유지되는지 확인한다.
 - `arch:usage`: `zeroFanIn`, `archiveCandidates`, `deadWeight`, `missingEntrypoints`, `entrypointGaps` 분리가 현재 baseline과 맞는지 확인한다.
 - `arch:check --json`: tier violation이 0건인지 확인한다.

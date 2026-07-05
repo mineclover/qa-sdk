@@ -83,9 +83,9 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 | `verdict: conditional-keep` + dead/entrypoint gap | 실제 소비자, bridge smoke, 또는 quality gate가 없으면 promotion 금지 상태로 둔다. |
 | `verdict: no-promotion` | package-local test는 허용하지만 제품 core 문서, roadmap, quality bundle에는 승격하지 않는다. |
 
-정리 작업은 `arch:surfaces`로 전체 배정이 깨지지 않는지 먼저 확인하고, `arch:usage`로 surface별 zero-fan-in/archive/dead/missing-entrypoint/entrypoint-gap 잔여를 확인한 뒤 진행한다.
+정리 작업은 `arch:surfaces`로 `packages/*` surface-managed 배정이 깨지지 않는지 먼저 확인하고, `arch:usage`로 surface별 zero-fan-in/archive/dead/missing-entrypoint/entrypoint-gap 잔여를 확인한 뒤 진행한다.
 
-정확한 패키지 배정의 SSOT는 `scripts/package-surfaces.mjs`다. 위 표는 리뷰 가능한 surface 이름, 판정, 대표 패키지/그룹, 승격 기준을 요약한다. 전체 패키지 coverage와 누락/중복은 `pnpm arch:surfaces`와 `pnpm arch:verify`가 manifest 기준으로 증명한다.
+정확한 `packages/*` surface-managed 패키지 배정의 SSOT는 `scripts/package-surfaces.mjs`다. 위 표는 리뷰 가능한 surface 이름, 판정, 대표 패키지/그룹, 승격 기준을 요약한다. `packages/*` package coverage와 누락/중복은 `pnpm arch:surfaces`와 `pnpm arch:verify`가 manifest 기준으로 증명한다.
 
 ## 검증 명령
 
@@ -96,4 +96,4 @@ pnpm arch:verify
 pnpm arch:feedback
 ```
 
-`pnpm arch:surfaces`는 이 문서의 핵심 분류를 스크립트 surface manifest와 맞춘다. 없는 패키지, 중복 배정, 또는 surface 없는 workspace package가 있으면 실패한다. `pnpm arch:verify`는 taxonomy/profile 관련 surface가 다시 한 덩어리로 합쳐지지 않았는지와 이 문서 및 `system-packages`의 surface 표가 manifest와 같은 목록/판정을 말하는지도 고정한다.
+`pnpm arch:surfaces`는 이 문서의 핵심 분류를 스크립트 surface manifest와 맞춘다. 없는 패키지, 중복 배정, 또는 surface 없는 `packages/*` package가 있으면 실패한다. `pnpm arch:verify`는 taxonomy/profile 관련 surface가 다시 한 덩어리로 합쳐지지 않았는지와 이 문서 및 `system-packages`의 surface 표가 manifest와 같은 목록/판정을 말하는지도 고정한다.

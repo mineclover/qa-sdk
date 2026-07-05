@@ -94,15 +94,20 @@ async function main() {
   try {
     const surfaceOutput = execSync("node scripts/report-package-surfaces.mjs --json", { encoding: "utf-8" });
     const report = JSON.parse(surfaceOutput);
+    const managedPackageScope = report.managedPackageScope ?? "packages/*";
+    const assignedSurfaceManagedPackages = report.assignedSurfaceManagedPackages ?? report.assignedPackages;
+    const totalSurfaceManagedPackages = report.totalSurfaceManagedPackages ?? report.totalWorkspacePackages;
 
-    assert(report.assignedPackages === report.totalWorkspacePackages,
-           `Surface Report: all workspace packages are assigned (${report.assignedPackages}/${report.totalWorkspacePackages})`);
+    assert(managedPackageScope === "packages/*",
+           `Surface Report: managed package scope is packages/* (${managedPackageScope})`);
+    assert(assignedSurfaceManagedPackages === totalSurfaceManagedPackages,
+           `Surface Report: all surface-managed packages are assigned (${assignedSurfaceManagedPackages}/${totalSurfaceManagedPackages})`);
     assert(Array.isArray(report.missing) && report.missing.length === 0,
            "Surface Report: no declared surface points at a missing package");
     assert(Array.isArray(report.duplicates) && report.duplicates.length === 0,
            "Surface Report: no package is assigned to multiple surfaces");
     assert(Array.isArray(report.unassigned) && report.unassigned.length === 0,
-           "Surface Report: no workspace package is left without a surface");
+           "Surface Report: no surface-managed package is left without a surface");
 
     const surfaces = Object.fromEntries(
       report.surfaces.map((surface: { id: string; packages: string[] }) => [surface.id, surface.packages]),

@@ -4,9 +4,10 @@ import { join, resolve } from "node:path";
 import { SURFACES } from "./package-surfaces.mjs";
 
 const root = resolve(process.cwd());
+const managedPackageScope = "packages/*";
 const packagesDir = join(root, "packages");
-const workspacePackages = new Map();
-const workspacePackageRows = [];
+const surfaceManagedPackages = new Map();
+const surfaceManagedPackageRows = [];
 
 for (const dir of readdirSync(packagesDir)) {
   const packageJsonPath = join(packagesDir, dir, "package.json");
@@ -14,9 +15,9 @@ for (const dir of readdirSync(packagesDir)) {
   const pkg = JSON.parse(readFileSync(packageJsonPath, "utf8"));
   const name = pkg.name ?? dir;
   const row = { dir, name };
-  workspacePackageRows.push(row);
-  workspacePackages.set(name, row);
-  workspacePackages.set(name.replace(/^@[^/]+\//, ""), row);
+  surfaceManagedPackageRows.push(row);
+  surfaceManagedPackages.set(name, row);
+  surfaceManagedPackages.set(name.replace(/^@[^/]+\//, ""), row);
 }
 
 const assignments = new Map();
@@ -24,7 +25,7 @@ const missing = [];
 
 for (const surface of SURFACES) {
   for (const pkgName of surface.packages) {
-    const pkg = workspacePackages.get(pkgName);
+    const pkg = surfaceManagedPackages.get(pkgName);
     if (!pkg) {
       missing.push({ surface: surface.id, pkgName });
       continue;
@@ -43,14 +44,17 @@ for (const surface of SURFACES) {
 }
 
 const duplicates = [...assignments.values()].filter((assignment) => assignment.surfaces.length > 1);
-const unassigned = workspacePackageRows
+const unassigned = surfaceManagedPackageRows
   .filter((pkg) => !assignments.has(pkg.name))
   .sort((a, b) => a.name.localeCompare(b.name));
 
 if (process.argv.includes("--json")) {
   console.log(JSON.stringify({
     surfaces: SURFACES,
-    totalWorkspacePackages: workspacePackageRows.length,
+    managedPackageScope,
+    totalSurfaceManagedPackages: surfaceManagedPackageRows.length,
+    assignedSurfaceManagedPackages: assignments.size,
+    totalWorkspacePackages: surfaceManagedPackageRows.length,
     assignedPackages: assignments.size,
     missing,
     duplicates,
@@ -58,17 +62,17 @@ if (process.argv.includes("--json")) {
   }, null, 2));
 } else {
   console.log("Package Surface Report");
-  console.log(`  workspace packages assigned: ${assignments.size}/${workspacePackageRows.length}`);
+  console.log(`  surface-managed (${managedPackageScope}) packages assigned: ${assignments.size}/${surfaceManagedPackageRows.length}`);
   for (const surface of SURFACES) {
     console.log(`\n[${surface.id}] ${surface.verdict}`);
     for (const pkgName of surface.packages) {
-      const pkg = workspacePackages.get(pkgName);
+      const pkg = surfaceManagedPackages.get(pkgName);
       const marker = pkg ? "ok" : "missing";
       console.log(`  ${marker.padEnd(7)} ${pkgName}`);
     }
   }
   if (unassigned.length > 0) {
-    console.log("\n[unassigned] needs surface decision");
+    console.log("\n[unassigned] surface-managed package needs surface decision");
     for (const pkg of unassigned) {
       console.log(`  missing ${pkg.name}`);
     }
@@ -89,7 +93,7 @@ if (missing.length > 0 || duplicates.length > 0 || unassigned.length > 0) {
     }
   }
   if (unassigned.length > 0) {
-    console.error("\nUnassigned workspace packages:");
+    console.error("\nUnassigned surface-managed packages:");
     for (const item of unassigned) {
       console.error(`  ${item.name}`);
     }
