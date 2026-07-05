@@ -1,41 +1,72 @@
+---
+def:
+  id: taxonomy-engine-constraint-concept
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: constraint
+  aspect: concept
+  tier: component
+  depth: specification
+  sources:
+    - packages/taxonomy-engine/src/schema/ir.ts
+    - packages/taxonomy-engine/src/schema/zod.ts
+    - packages/taxonomy-engine/src/validate/constraint.ts
+    - packages/taxonomy-engine/src/validate/index.ts
+    - packages/taxonomy-engine/__tests__/unit/validate.test.ts
+    - docs/taxonomies/qa-sdk-coordinate-system.yaml
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: concept-constraint
+---
+
 # Constraint — 의미 제약
 
 > [[axis]]/[[entry]]/[[relation]] 조합에 대한 선언적 무결성 규칙.
 
+## 목적 ^purpose
+
+- 좌표 공간 안에서 허용되지 않는 조합을 yaml에 명시한다.
+- `validate()`의 fail-collect 진단 흐름에 무결성 규칙을 통합한다.
+- relation의 의미 선언과 constraint의 무결성 검사를 분리한다.
+
 ## 정의
 
-좌표 공간의 형태를 강제하는 규칙. yaml에 선언적으로 박혀 있고, validate 단계에서 위반 검출.
+`ConstraintIR`는 `id`, `kind`, `rule`, `severity`를 가진다. parser는 yaml의 `constraints` 배열을 IR에 보존하고, `validateConstraints()`가 kind별 evaluator로 위반을 `Diagnostic[]`에 추가한다.
 
-## 목적
+```typescript
+type ConstraintKind = "capacity" | "structural" | "ref" | "custom"
 
-- "이 좌표 조합은 허용 안 됨" / "이 axis는 반드시 존재해야" 같은 무결성 보장
-- 검증 단계의 fail-collect 정책에 통합
-- 4 kind로 표현력 분리
+type ConstraintIR = {
+  id: string
+  kind: ConstraintKind
+  rule: string | Record<string, unknown>
+  severity: "error" | "warning" | "info"
+}
+```
 
 ## kind 4종
 
-| kind | 의미 | rule 예시 |
+| kind | 현재 evaluator | rule 예시 |
+|------|----------------|-----------|
+| `capacity` | axis의 `entries.length` 또는 `capacity` 숫자 비교 | `{ axis: scope, prop: entries.length, op: lte, value: 16 }` |
+| `ref` | 필수 axis 존재 확인 | `{ axis: layer, mustExist: true }` |
+| `structural` | 특정 relation kind의 rule field 금지값 확인 | `{ relationKind: contains, forbidden: { field: upper, value: leaf } }` |
+| `custom` | engine이 실행하지 않고 info 진단으로 caller 책임을 표면화 | 임의 객체 |
+
+구조화 rule은 `CapacityRuleSchema`, `RefRuleSchema`, `StructuralRuleSchema`로 재검증된다. 기존 string rule은 backward compatibility로 평가하되 `constraint-deprecated-string-rule` info 진단을 함께 낸다.
+
+## 진단 정책
+
+| 상황 | code | severity |
 |------|------|----------|
-| `capacity` | axis prop 비교 | `{ axis: scope, prop: entries.length, op: lte, value: 16 }` |
-| `ref` | axis 존재 보장 | `{ axis: layer, mustExist: true }` |
-| `structural` | relation rule field 금지값 | `{ relationKind: contains, forbidden: { field: upper, value: leaf } }` |
-| `custom` | caller-책임 (info 진단만) | 임의 객체 |
-
-(v0.3 구조화 형식. v0.1~v0.2의 string rule도 backward compat — `constraint-deprecated-string-rule` info 진단.)
-
-## 핵심 원리
-
-### Relation과의 분리
-
-[[relation]]은 "이런 화살표가 있다" 선언. Constraint는 "이런 조합 금지/필수". 두 개념 분리로 의미와 무결성 따로 관리.
-
-### Severity
-
-`error` / `warning` / `info`. validate 결과의 fail-collect 정책 그대로.
-
-### 진단 코드
-
-위반 시 `constraint-violated` (또는 형식 오류 시 같은 코드 + meta로 구분).
+| 구조화 rule shape 오류 | `constraint-violated` | `error` |
+| capacity/ref/structural 위반 | `constraint-violated` | constraint의 `severity` |
+| legacy string rule 사용 | `constraint-deprecated-string-rule` | `info` |
+| custom constraint | `constraint-violated` | `info` |
 
 ## 사용 예시
 
@@ -52,7 +83,7 @@ constraints:
     severity: error
 ```
 
-dkg-schema:
+capacity rule:
 ```yaml
 constraints:
   - id: node-count-16
@@ -67,12 +98,21 @@ constraints:
 
 ## 다른 개념과의 관계
 
-- [[axis]]: capacity/ref kind가 axis 자체 검증
-- [[relation]]: structural kind가 relation rules 검증
-- [[diagnostic]]: 위반은 `constraint-violated` 진단으로 emit
+- [[axis]]: `capacity`와 `ref` kind가 axis 속성/존재를 검증한다.
+- [[relation]]: `structural` kind가 relation rules를 검사한다.
+- [[diagnostic]]: 위반은 안정 code로 반환된다.
 
 ## 참조
 
-- spec: `../00-design.md` §7
 - 코드: `packages/taxonomy-engine/src/validate/constraint.ts`
-- DSL 구조화 결정 (v0.3): `../plans/v0.3.md` T-E5
+- 타입: `packages/taxonomy-engine/src/schema/ir.ts`
+- rule schema: `packages/taxonomy-engine/src/schema/zod.ts`
+- DSL 구조화 결정: `../plans/v0.3.md` T-E5
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter taxonomy-engine exec vitest run __tests__/unit/validate.test.ts
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```

@@ -1,95 +1,139 @@
+---
+def:
+  id: taxonomy-engine-reference-grammar
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: interface
+  aspect: reference_grammar
+  tier: component
+  depth: specification
+  sources:
+    - packages/taxonomy-engine/src/ref/parser.ts
+    - packages/taxonomy-engine/src/ref/resolver.ts
+    - packages/taxonomy-engine/src/ref/types.ts
+    - packages/taxonomy-engine/src/registry/index.ts
+    - packages/taxonomy-engine/__tests__/unit/ref.test.ts
+    - packages/taxonomy-engine/__tests__/unit/query.test.ts
+    - packages/cli/src/commands/taxonomy/show.ts
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: reference-grammar
+---
+
 # Reference Grammar
 
-> 00-design.md §5 분리. v0.7 모듈화 (T-L1).
+> taxonomy-engine의 `parseRef()` / `resolveRef()`가 구현한 3-tier 참조 문법.
 
-OpenAPI의 `$ref: '#/components/schemas/Foo'`에 대응하는 메커니즘. 좌표계에선 **id rename에 강건**해야 하므로 3-tier로 설계.
+## 목적 ^purpose
+
+- 사람이 쓰는 짧은 ref와 도구가 쓰는 정확한 ref를 같은 resolver로 처리한다.
+- entry id가 바뀌는 경우를 대비해 entry address 기반 조회를 제공한다.
+- CLI `tax show`와 라이브러리 `show()`가 같은 ref grammar를 공유한다.
 
 ## 5.1 3-tier 참조
 
 **Tier 1 — Path-based (JSON Pointer 스타일)**
-정확/verbose. 도구·codegen·진단 메시지의 입력.
 
-```
-qa-sdk-coordinate-system                                            # 전체 taxonomy
-qa-sdk-coordinate-system#/axes/scope                                # 차원 전체
-qa-sdk-coordinate-system#/axes/scope/entries/apm                    # 한 entry
-qa-sdk-coordinate-system#/axes/scope/entries/apm/meta/owner         # 내부 깊숙한 필드
-qa-sdk-coordinate-system#/relations/depth-contains/rules/0          # 특정 rule
-qa-sdk-coordinate-system#/constraints/capacity-headroom             # constraint
+정확하고 verbose한 형식. parser는 `#` 뒤의 path를 `TaxonomyRef` kind로 변환한다.
+
+```text
+qa-sdk-coordinate-system
+qa-sdk-coordinate-system#/axes/scope
+qa-sdk-coordinate-system#/axes/scope/entries/apm
+qa-sdk-coordinate-system#/axes/scope/entries/apm/meta/owner
+qa-sdk-coordinate-system#/relations/depth-contains
+qa-sdk-coordinate-system#/relations/depth-contains/rules/0
+qa-sdk-coordinate-system#/constraints/level-leaf-no-children
 ```
 
 **Tier 2 — Dotted shorthand**
-사람·CLI 친화, lossy. `tax show qa-sdk-coordinate-system:scope.apm` 같은 사용.
 
-```
-qa-sdk-coordinate-system:scope.apm
+사람과 CLI에 가까운 단축형.
+
+```text
 qa-sdk-coordinate-system:scope
+qa-sdk-coordinate-system:scope.apm
 qa-sdk-coordinate-system:relations/depth-contains
+qa-sdk-coordinate-system:relations/depth-contains/rules/0
+qa-sdk-coordinate-system:constraints/level-leaf-no-children
 qa-sdk-coordinate-system:coord{scope=apm,aspect=model,depth=layer}
 ```
 
-**Tier 3 — Address-based**
-id rename에 강건. 정수 hash로 빠른 lookup. 깊은 binding이 자주 일어나는 곳(lesson-builder의 Clip 호출)에서 안전.
+**Tier 3 — Entry address-based**
 
+axis 안의 address로 entry를 조회한다. 현재 구현은 `axis#decimal-address`만 지원한다.
+
+```text
+qa-sdk-coordinate-system::scope#1
+qa-sdk-coordinate-system@v1::scope#1
 ```
-qa-sdk-coordinate-system::scope#1                  # scope axis의 address=1
-qa-sdk-coordinate-system::coord:0x010203           # packed integer 좌표
-```
 
-## 5.2 참조 가능한 단위 7종
+Packed coordinate address 형식(`::coord:0x...`)은 parser가 의도적으로 거부한다. 좌표 packed integer를 풀려면 axis 정보가 필요하므로 별도 resolver 설계가 필요하다.
 
-| 단위 | 예시 | 용도 |
+## 5.2 참조 가능한 단위
+
+| 단위 | kind | 예시 |
 |------|------|------|
-| Taxonomy | `qa-sdk-coordinate-system` | 다른 yaml에서 통째 의존 |
-| Axis | `:scope` | "이 축의 entries를 가져와" (codegen) |
-| Entry | `:scope.apm` | 가장 흔한 참조 |
-| Coordinate | `:coord{scope=apm,aspect=model}` | 좌표점 = 노드 자체 |
-| Relation | `:relations/depth-contains` | 다른 taxonomy가 같은 관계 재사용 |
-| Rule | `:relations/depth-contains/rules/0` | constraint 진단 메시지 |
-| Meta field | `:scope.apm#/meta/owner` | "내부 깊숙히" |
+| Taxonomy | `taxonomy` | `qa-sdk-coordinate-system` |
+| Axis | `axis` | `qa-sdk-coordinate-system:scope` |
+| Entry | `entry` | `qa-sdk-coordinate-system:scope.apm` |
+| Entry by address | `entry-by-address` | `qa-sdk-coordinate-system::scope#0` |
+| Entry field | `entry-field` | `qa-sdk-coordinate-system#/axes/scope/entries/apm/meta/owner` |
+| Coordinate | `coordinate` | `qa-sdk-coordinate-system:coord{scope=apm,aspect=model}` |
+| Relation | `relation` | `qa-sdk-coordinate-system:relations/depth-contains` |
+| Relation rule | `relation-rule` | `qa-sdk-coordinate-system:relations/depth-contains/rules/0` |
+| Constraint | `constraint` | `qa-sdk-coordinate-system:constraints/level-leaf-no-children` |
 
-## 5.3 Cross-taxonomy 참조
+## 5.3 Cross-taxonomy import 검증
 
 ```yaml
-# lesson-builder-taxonomy.yaml
 imports:
   - taxonomy: qa-sdk-coordinate-system
     version: 1
     as: qac
-
-axes:
-  asset-layer:
-    entries: [type-schema, asset, clip, cue, stage, branch, scenario]
-    projects-to: qac:layer       # cross-taxonomy projection
 ```
 
-registry에 import target이 없으면 `ref-unresolved-import` error ([diagnostics-catalog.md](./concepts/diagnostics-catalog.md) 참조).
+`validateRefs()`는 registry가 제공될 때 import target 존재와 version을 확인한다.
+
+| 상황 | 진단 |
+|------|------|
+| registry 없음 | import 검증 skip (backward compatibility) |
+| target taxonomy 없음 | `ref-unresolved-import` |
+| target version 불일치 | `ref-version-missing` |
 
 ## 5.4 Resolver 동작
 
-1. **Parse**: `parseTaxonomyRef("qa-sdk-coordinate-system:scope.apm#/meta/owner")` → `{taxonomy, axis, entry, jsonPointer}`
-2. **Resolve**: Taxonomy registry에서 taxonomy 찾고 IR 따라 값 추출
-3. **Strict mode**: 모든 ref가 해소되어야 validate 통과 (broken-ref = error, qa-sdk LinkType broken-link 정책 답습)
-4. **Address fallback**: id 변경 시에도 address-based ref는 유효. Indexer가 (id↔address) 양방향 인덱스 보유
+1. `parseRef("qa-sdk-coordinate-system:scope.apm")`가 문자열을 `TaxonomyRef` union으로 변환한다.
+2. `resolveRef(ref, registry)`가 `registry.get(ref.taxonomy)`로 IR을 찾는다.
+3. ref에 `@v<n>`이 있으면 저장된 IR의 `version`과 정확히 일치해야 한다.
+4. 대상 축/entry/relation/constraint가 없으면 `undefined`를 반환한다.
+
+resolver는 fail-open이다. CLI와 validate 계층이 `undefined`를 사용자 오류나 진단으로 바꾼다.
 
 ## 5.5 버전 정책
 
-- ref에 `@v<n>` 미명시 → latest
-- `qa-sdk-coordinate-system@v1:scope.apm` → v1 entries 기준
-- IR의 `axes.<name>.version` stamp로 cross-version 참조 가능
-
-## 5.6 왜 3-tier인가 (설계 의도)
-
-- **Tier 1 (JSON pointer)**: 도구/codegen의 정확한 입력. 정규 형식. 자동화 친화.
-- **Tier 2 (dotted)**: 사람이 CLI에 타이핑하는 단축형. 일상 사용.
-- **Tier 3 (address)**: 영속 링크. id rename 안전. lesson-builder처럼 깊은 binding이 자주 일어나는 곳에서 안전망.
-
-OpenAPI는 Tier 1만 있어서 ref가 rename 따라 깨지는 약점이 있다. qa-sdk의 (address 불변 / id 가변) 컨벤션을 답습해 그 약점을 메운다.
+- `@v<n>`이 있으면 저장된 IR의 `version`과 exact match해야 한다.
+- `@v<n>`이 없으면 registry에 저장된 해당 taxonomy IR을 사용한다.
+- 현재 `TaxonomyRegistry`는 slug당 IR 하나만 저장하므로 여러 version을 동시에 보관하지 않는다.
+- axis-level `version`은 IR에 보존되지만 ref resolver의 taxonomy 선택 기준은 top-level `TaxonomyIR.version`이다.
 
 ## 참조
 
-- ref grammar 코드: `packages/taxonomy-engine/src/ref/`
+- ref parser: `packages/taxonomy-engine/src/ref/parser.ts`
+- ref resolver: `packages/taxonomy-engine/src/ref/resolver.ts`
+- ref types: `packages/taxonomy-engine/src/ref/types.ts`
 - ref 관련 진단 코드: [concepts/diagnostics-catalog.md](./concepts/diagnostics-catalog.md) §ref-*
-- 라이브러리 API: [api-surface.md](./api-surface.md) (parseRef, resolveRef, show)
-- cross-tax 계획: [plans/v0.2.md](./plans/v0.2.md) §T-A2
-- 좌표 컨벤션: `docs/CONVENTIONS.md` §DimRef
+- 라이브러리 API: [api-surface.md](./api-surface.md)
+- CLI show: [concepts/cli-commands.md](./concepts/cli-commands.md)
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter taxonomy-engine exec vitest run __tests__/unit/ref.test.ts __tests__/unit/query.test.ts __tests__/unit/validate.test.ts
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```
