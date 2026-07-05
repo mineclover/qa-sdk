@@ -44,22 +44,23 @@ const STAGES: readonly Stage[] = [
   {
     id: "grammar-roundtrip",
     label: "identifier-grammar 라운드트립",
-    cmd: "pnpm",
-    args: ["--filter", "sim-identifier-grammar", "test"],
+    cmd: "corepack",
+    args: ["pnpm", "--filter", "sim-identifier-grammar", "test"],
     spec: "05 §4 #1",
   },
   {
     id: "identifier-lint",
     label: "identifier 정적 lint (host.docker.internal grep + image tag + label key)",
-    cmd: "pnpm",
-    args: ["sim:lint:identifiers"],
+    cmd: "corepack",
+    args: ["pnpm", "sim:lint:identifiers"],
     spec: "05 §4 #2 + #4",
   },
   {
     id: "catalog-validate",
     label: "catalog 4-way 정합성",
-    cmd: "pnpm",
+    cmd: "corepack",
     args: [
+      "pnpm",
       "--filter",
       "@qa-sdk-sim/enterprise-pm",
       "sim:catalog:validate",
@@ -69,8 +70,9 @@ const STAGES: readonly Stage[] = [
   {
     id: "eslint-flat-config",
     label: "ESLint flat config (BFF write import + read write call 차단)",
-    cmd: "pnpm",
+    cmd: "corepack",
     args: [
+      "pnpm",
       "exec",
       "eslint",
       "simulations/enterprise-pm/services",
@@ -96,15 +98,16 @@ const STAGES: readonly Stage[] = [
   {
     id: "sim-scenarios-static",
     label: "sim-scenarios 정적 PASS (17 시나리오 등록/타입)",
-    cmd: "pnpm",
-    args: ["--filter", "@qa-sdk/sim-scenarios", "test"],
+    cmd: "corepack",
+    args: ["pnpm", "--filter", "@qa-sdk/sim-scenarios", "test"],
     spec: "06 §5 DoD #2 (정적 검증)",
   },
   {
     id: "sim-scenarios-e2e",
     label: "sim-scenarios e2e 통합 실행 (17 시나리오 --all)",
-    cmd: "pnpm",
+    cmd: "corepack",
     args: [
+      "pnpm",
       "--filter",
       "@qa-sdk/sim-scenarios",
       "start",

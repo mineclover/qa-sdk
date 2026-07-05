@@ -24,14 +24,14 @@ qa-sdk의 설계를 계속 확장하기보다, 실제로 작업을 줄이고 실
 ## 시작 명령
 
 ```bash
-pnpm docs:usefulness-audit
-pnpm docs:usefulness-audit -- --format json
-pnpm docs:usefulness-audit -- --format json --all
+corepack pnpm docs:usefulness-audit
+corepack pnpm docs:usefulness-audit -- --format json
+corepack pnpm docs:usefulness-audit -- --format json --all
 ```
 
 기본 리포트는 우선순위가 높은 후보만 보여준다. active 문서를 먼저 올리고 `docs/archive/`, `docs/proposals/_template/`, `docs/decisions/`의 미결정 skeleton, frontmatter 없는 `docs/plan/` planning note, `status: superseded` proposal redirect note 같은 낮은 신호 표면은 기본 후보 목록 뒤로 보낸다. 전체 인벤토리가 필요할 때만 `--all`을 붙인다. `prove`나 `quarantine` 후보를 바로 삭제하지 말고, 해당 package/docs의 실제 소비자와 검증 명령을 먼저 확인한다. approved 문서는 증거가 약해도 첫 판정을 `prove`로 유지한다.
 
-package 감사는 `pnpm-workspace.yaml`의 workspace roots를 읽지만 기능 surface 승격/격리 판정은 `packages/*`에만 적용한다. `simulations/*`와 `vendor/*`는 `workspace-support` scope로 표시해 실행 증거를 보존하되, 이름 끝부분이 같아도 `package-surface-separation-rule`의 제품/도구/격리 surface와 섞지 않는다.
+package 감사는 `pnpm-workspace.yaml`의 workspace roots를 읽지만 기능 surface 승격/격리 판정은 `packages/*`에만 적용한다. `simulations/*`와 `vendor/*`는 `workspace-support` scope로 표시해 실행 증거를 보존하되, 이름 끝부분이 같아도 `package-surface-separation-rule`의 제품/도구/격리 surface와 섞지 않는다. `packages/*` 항목은 `surfaceGroup`으로 runtime core, taxonomy capability, profile capability, consumer verification, quarantine 같은 실제 기능군도 함께 노출한다.
 
 ## 1차 감사 기준
 
@@ -46,7 +46,7 @@ package 감사는 `pnpm-workspace.yaml`의 workspace roots를 읽지만 기능 s
 
 | 표면 | 이유 | 확인 명령 |
 |---|---|---|
-| `packages/data-structure-profile` | fixture-first contract, CLI, profile isolation validator, bridge smoke가 있음 | `pnpm --filter data-structure-profile test` |
+| `packages/data-structure-profile` | fixture-first contract, CLI, profile isolation validator, bridge smoke가 있음 | `corepack pnpm --filter data-structure-profile test` |
 | `definition-catalog` + CLI def validation | 문서 감사와 링크 정합성의 현재 실행 기반 | `node packages/cli/dist/index.js def validate` |
 | `spec-core` semantic indexing pack | report/compatibility kernel과 CLI smoke가 있음 | `node packages/cli/dist/index.js spec semantic-pack report --no-git --format json` |
 
@@ -54,8 +54,8 @@ package 감사는 `pnpm-workspace.yaml`의 workspace roots를 읽지만 기능 s
 
 | 표면 | 이유 | 확인 명령 |
 |---|---|---|
-| `packages/request-contract` | request/observation normalize/validate/evaluate package-local 증거는 있지만 surface manifest는 `no-promotion`으로 격리한다 | `pnpm --filter request-contract test`; `pnpm --silent arch:usage -- --json` |
-| `packages/weighted-gpu` | WebGPU 구현과 package-local test는 있지만 실제 consumer/performance promotion 근거가 생길 때까지 제품 축으로 승격하지 않는다 | `pnpm --filter weighted-gpu test`; `pnpm --silent arch:usage -- --json` |
+| `packages/request-contract` | request/observation normalize/validate/evaluate package-local 증거는 있지만 surface manifest는 `no-promotion`으로 격리한다 | `corepack pnpm --filter request-contract test`; `corepack pnpm --silent arch:usage -- --json` |
+| `packages/weighted-gpu` | WebGPU 구현과 package-local test는 있지만 실제 consumer/performance promotion 근거가 생길 때까지 제품 축으로 승격하지 않는다 | `corepack pnpm --filter weighted-gpu test`; `corepack pnpm --silent arch:usage -- --json` |
 
 ## 먼저 증명할 후보군
 

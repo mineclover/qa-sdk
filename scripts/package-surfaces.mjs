@@ -1,8 +1,40 @@
 export const MANAGED_PACKAGE_SCOPE = "packages/*";
 
+export const SURFACE_GROUPS = [
+  {
+    id: "runtime-core",
+    description: "coordinate math and observability runtime packages that production flows can depend on directly",
+  },
+  {
+    id: "definition-governance",
+    description: "definition, decision, spec, and architecture governance packages",
+  },
+  {
+    id: "taxonomy-capability",
+    description: "finite vocabulary tooling, adapters, and taxonomy-only preview consumers",
+  },
+  {
+    id: "profile-capability",
+    description: "profile contract tooling, evidence adapters, measurement, and profile-only preview consumers",
+  },
+  {
+    id: "domain-support",
+    description: "domain-specific support, authoring, simulation, and analysis packages",
+  },
+  {
+    id: "consumer-verification",
+    description: "demo, smoke, and test surfaces that consume other capabilities",
+  },
+  {
+    id: "quarantine",
+    description: "packages with local evidence but no product-surface promotion",
+  },
+];
+
 export const SURFACES = [
   {
     id: "coordinate-kernel",
+    group: "runtime-core",
     verdict: "keep",
     packages: [
       "weighted-index",
@@ -18,6 +50,7 @@ export const SURFACES = [
   },
   {
     id: "observability-runtime",
+    group: "runtime-core",
     verdict: "maintain",
     packages: [
       "@qa-sdk/apm",
@@ -45,6 +78,7 @@ export const SURFACES = [
   },
   {
     id: "definition-control-plane",
+    group: "definition-governance",
     verdict: "keep",
     packages: [
       "definition-catalog",
@@ -60,41 +94,49 @@ export const SURFACES = [
   },
   {
     id: "taxonomy-tooling",
+    group: "taxonomy-capability",
     verdict: "keep-as-tooling",
     packages: ["taxonomy-engine"],
   },
   {
     id: "taxonomy-decision-bridge",
+    group: "taxonomy-capability",
     verdict: "keep-as-bridge",
     packages: ["taxonomy-decision-bridge"],
   },
   {
     id: "taxonomy-preview-surfaces",
+    group: "taxonomy-capability",
     verdict: "consumer-only",
     packages: ["@qa-sdk/taxonomy-web"],
   },
   {
     id: "profile-contract-tooling",
+    group: "profile-capability",
     verdict: "keep-as-contract-tool",
     packages: ["data-structure-profile"],
   },
   {
     id: "quality-evidence-ledgers",
+    group: "profile-capability",
     verdict: "maintain",
     packages: ["quality-ledger", "review-ledger"],
   },
   {
     id: "measurement-tooling",
+    group: "profile-capability",
     verdict: "keep-as-tooling",
     packages: ["@qa-sdk/bench"],
   },
   {
     id: "profile-preview-surfaces",
+    group: "profile-capability",
     verdict: "consumer-only",
     packages: ["@qa-sdk/viz-web"],
   },
   {
     id: "decision-recording",
+    group: "definition-governance",
     verdict: "conditional-keep",
     packages: [
       "decision-flow",
@@ -110,6 +152,7 @@ export const SURFACES = [
   },
   {
     id: "spec-analysis-kernel",
+    group: "definition-governance",
     verdict: "keep",
     packages: [
       "@qa-sdk/spec-core",
@@ -127,6 +170,7 @@ export const SURFACES = [
   },
   {
     id: "infra-governance-tooling",
+    group: "definition-governance",
     verdict: "maintain",
     packages: [
       "@qa-sdk/cli",
@@ -146,11 +190,13 @@ export const SURFACES = [
   },
   {
     id: "authorization-support",
+    group: "domain-support",
     verdict: "maintain",
     packages: ["audit-recorder-store", "resource-policy-store"],
   },
   {
     id: "motion-authoring",
+    group: "domain-support",
     verdict: "conditional-keep",
     packages: [
       "motion-content",
@@ -161,6 +207,7 @@ export const SURFACES = [
   },
   {
     id: "simulation-contracts",
+    group: "domain-support",
     verdict: "consumer-contract",
     packages: [
       "sim-decision-view",
@@ -173,6 +220,7 @@ export const SURFACES = [
   },
   {
     id: "visual-analysis-tools",
+    group: "domain-support",
     verdict: "consumer-tooling",
     packages: [
       "canvas-viewport",
@@ -184,6 +232,7 @@ export const SURFACES = [
   },
   {
     id: "verification-suites",
+    group: "consumer-verification",
     verdict: "test-only",
     packages: [
       "test-types",
@@ -195,6 +244,7 @@ export const SURFACES = [
   },
   {
     id: "product-demo-surfaces",
+    group: "consumer-verification",
     verdict: "consumer-only",
     packages: [
       "@qa-sdk/authorization-monitor-web",
@@ -210,6 +260,7 @@ export const SURFACES = [
   },
   {
     id: "quarantine-candidates",
+    group: "quarantine",
     verdict: "no-promotion",
     packages: ["request-contract", "weighted-gpu"],
   },
@@ -225,6 +276,7 @@ export function createSurfaceIndex(surfaces = SURFACES) {
     for (const packageName of surface.packages) {
       const value = {
         id: surface.id,
+        group: surface.group,
         verdict: surface.verdict,
       };
       index.set(packageName, value);

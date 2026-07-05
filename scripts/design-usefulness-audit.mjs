@@ -184,6 +184,7 @@ function classifyPackage(packageJsonPath) {
     : undefined;
   const surfaceScope = surfaceManaged ? "surface-managed" : "workspace-support";
   const surfaceId = surface?.id ?? (surfaceManaged ? "unassigned" : "workspace-support");
+  const surfaceGroup = surface?.group ?? (surfaceManaged ? "unassigned" : "workspace-support");
   const surfaceVerdict = surface?.verdict ?? (surfaceManaged ? "unassigned" : "workspace-support");
   const scripts = manifest.scripts ?? {};
   const hasSrc = existsSync(join(packageDir, "src"));
@@ -251,6 +252,7 @@ function classifyPackage(packageJsonPath) {
     path: packagePath,
     name: packageName,
     surface: surfaceId,
+    surfaceGroup,
     surfaceVerdict,
     surfaceScope,
     surfaceManaged,
@@ -341,6 +343,7 @@ const report = {
     docs: summarize(docs),
     packages: summarize(packages),
     packageScopes: summarizeBy(packages, "surfaceScope"),
+    packageFeatureGroups: summarizeBy(packages, "surfaceGroup"),
   },
   docs,
   packages,
@@ -390,13 +393,14 @@ function renderMarkdown() {
   lines.push(`- Docs: ${formatSummary(report.summary.docs)}`);
   lines.push(`- Packages: ${formatSummary(report.summary.packages)}`);
   lines.push(`- Package scopes: ${formatScopeSummary(report.summary.packageScopes)}`);
+  lines.push(`- Package feature groups: ${formatScopeSummary(report.summary.packageFeatureGroups)}`);
   lines.push("");
   lines.push("## Package Candidates");
   lines.push("");
-  lines.push("| Verdict | Scope | Score | Package | Evidence | Reason |");
-  lines.push("|---|---|---:|---|---|---|");
+  lines.push("| Verdict | Scope | Feature group | Score | Package | Evidence | Reason |");
+  lines.push("|---|---|---|---:|---|---|---|");
   for (const item of [...packages].sort(byPriority).slice(0, limit)) {
-    lines.push(`| ${item.verdict} | ${item.surfaceScope}<br>${item.surface} | ${item.evidenceScore} | \`${item.name}\`<br>\`${item.path}\` | runtime=${item.hasRuntimeSurface}, testSurface=${item.hasTestSurface}, readme=${item.hasReadme}, testScript=${item.hasTestScript}, tests=${item.testFiles}, build=${item.hasBuildScript}, run=${item.hasRunScript}, bin=${item.hasBin} | ${item.reasons.join("; ")} |`);
+    lines.push(`| ${item.verdict} | ${item.surfaceScope}<br>${item.surface} | ${item.surfaceGroup} | ${item.evidenceScore} | \`${item.name}\`<br>\`${item.path}\` | runtime=${item.hasRuntimeSurface}, testSurface=${item.hasTestSurface}, readme=${item.hasReadme}, testScript=${item.hasTestScript}, tests=${item.testFiles}, build=${item.hasBuildScript}, run=${item.hasRunScript}, bin=${item.hasBin} | ${item.reasons.join("; ")} |`);
   }
   lines.push("");
   lines.push("## Doc Candidates");

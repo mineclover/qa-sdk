@@ -29,33 +29,31 @@ jobs:
           node-version: 22
 
       - name: Enable Corepack
-        run: |
-          corepack enable
-          corepack prepare pnpm@10.30.3 --activate
+        run: corepack enable
 
       - name: Install monorepo dependencies
-        run: pnpm install --frozen-lockfile
+        run: corepack pnpm install --frozen-lockfile
 
       - name: Build vendor visbug bundle
-        run: pnpm --filter visbug run bundle
+        run: corepack pnpm --filter visbug run bundle
 
       - name: Run vendor unit tests
-        run: pnpm --filter visbug run test:unit
+        run: corepack pnpm --filter visbug run test:unit
 
       - name: Build visbug-bridge
-        run: pnpm --filter visbug-bridge build
+        run: corepack pnpm --filter visbug-bridge build
 
       - name: Install Playwright chromium
-        run: pnpm --filter visbug-bridge exec playwright install --with-deps chromium
+        run: corepack pnpm --filter visbug-bridge exec playwright install --with-deps chromium
 
       - name: Run visbug-bridge unit tests
-        run: pnpm --filter visbug-bridge test
+        run: corepack pnpm --filter visbug-bridge test
 
       - name: Run visbug-bridge e2e tests
-        run: pnpm --filter visbug-bridge test:e2e
+        run: corepack pnpm --filter visbug-bridge test:e2e
 
       - name: Run extension asset smoke
-        run: pnpm --filter visbug-bridge test:extension
+        run: corepack pnpm --filter visbug-bridge test:extension
 
       - name: Upload playwright trace on failure
         if: failure()

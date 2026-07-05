@@ -3,42 +3,42 @@
 ARG SERVICE=decision-service
 
 FROM node:22-slim AS base
-RUN corepack enable pnpm
+RUN corepack enable
 
 FROM base AS build
 WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages/ packages/
-RUN pnpm install --frozen-lockfile
+RUN corepack pnpm install --frozen-lockfile
 # 런타임 의존 패키지 빌드 (서비스의 tsup external workspace 패키지)
 # logger: Docker 환경 @types/node 미해석 → tsc 타입 에러, noEmitOnError=false이므로 JS 정상 생성
 # viz-core/spec-tracker: 기존 DTS 에러 → 제외
 ARG SERVICE
-RUN pnpm --filter @qa-sdk/pino run build && \
-    pnpm --filter test-types run build && \
-    pnpm --filter @qa-sdk/core run build && \
-    (pnpm --filter @qa-sdk/logger run build || true) && \
-    pnpm --filter weighted-index run build || true
+RUN corepack pnpm --filter @qa-sdk/pino run build && \
+    corepack pnpm --filter test-types run build && \
+    corepack pnpm --filter @qa-sdk/core run build && \
+    (corepack pnpm --filter @qa-sdk/logger run build || true) && \
+    corepack pnpm --filter weighted-index run build || true
 # 서비스별 추가 의존 빌드 (각 서비스가 external로 선언한 workspace 패키지)
 # DTS 에러가 있어도 ESM/CJS JS 파일은 정상 생성 (noEmitOnError=false 기본값)
 RUN if [ "$SERVICE" = "decision-service" ]; then \
-      (pnpm --filter decision-flow run build || true); \
+      (corepack pnpm --filter decision-flow run build || true); \
     elif [ "$SERVICE" = "definition-service" ]; then \
-      (pnpm --filter definition-catalog run build || true) && \
-      (pnpm --filter work-domain run build || true); \
+      (corepack pnpm --filter definition-catalog run build || true) && \
+      (corepack pnpm --filter work-domain run build || true); \
     elif [ "$SERVICE" = "motion-workspace-service" ]; then \
-      (pnpm --filter index-meta run build || true) && \
-      (pnpm --filter motion-content run build || true) && \
-      (pnpm --filter motion-workspace run build || true); \
+      (corepack pnpm --filter index-meta run build || true) && \
+      (corepack pnpm --filter motion-content run build || true) && \
+      (corepack pnpm --filter motion-workspace run build || true); \
     fi
 # 서비스 자체 빌드
 # definition-service: GraphQL reflection이 tsup 번들과 호환 안 됨 → tsc 빌드 사용
 # tsc에서 DTS 에러가 나도 JS는 정상 생성 (noEmitOnError=false 기본값)
 # --filter: @qa-sdk/${SERVICE} 시도 후 실패 시 unscoped ${SERVICE} 폴백
 RUN if [ "$SERVICE" = "definition-service" ]; then \
-      (pnpm --filter @qa-sdk/${SERVICE} run build:tsc || true); \
+      (corepack pnpm --filter @qa-sdk/${SERVICE} run build:tsc || true); \
     else \
-      pnpm --filter @qa-sdk/${SERVICE}... build 2>/dev/null || pnpm --filter ${SERVICE}... build; \
+      corepack pnpm --filter @qa-sdk/${SERVICE}... build 2>/dev/null || corepack pnpm --filter ${SERVICE}... build; \
     fi
 
 FROM node:22-slim AS production

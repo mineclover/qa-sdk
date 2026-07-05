@@ -42,7 +42,7 @@ services:
       - sh
       - -lc
       - |
-        pnpm --filter @qa-sdk/store db:migrate
+        corepack pnpm --filter @qa-sdk/store db:migrate
     restart: "no"
 
   ingest-server:

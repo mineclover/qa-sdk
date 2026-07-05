@@ -47,32 +47,32 @@ qa-sdk 모노레포의 패키지 의존 관계. 인코딩 라이브러리 체인
 
 ## 기능 Surface 분리
 
-qa-sdk 전체를 단일 제품 플랫폼으로 확장하지 않는다. 패키지는 기능 surface별로 유지하며, 새 기능은 먼저 하나의 surface에 배정한다.
+qa-sdk 전체를 단일 제품 플랫폼으로 확장하지 않는다. 패키지는 기능 surface별로 유지하며, 새 기능은 먼저 하나의 surface와 하나의 기능군에 배정한다.
 
-| Surface | 역할 | 대표 패키지 |
-|---------|------|-------------|
-| Coordinate kernel | 좌표 인코딩과 주소 수학 | `weighted-index`, `index-meta`, `bit-index`, `permission-engine` |
-| Observability runtime | 이벤트 수집·저장·SDK runtime | `@qa-sdk/core`, `@qa-sdk/sdk`, `@qa-sdk/ingest-server`, `@qa-sdk/registry-service` |
-| Definition control plane | 문서 그래프와 품질 gate | `definition-catalog`, `@qa-sdk/definition-service`, `doc-envelope` |
-| Taxonomy tooling | 유한 vocabulary 선언·검증·diff/codegen | `taxonomy-engine` |
-| Taxonomy decision bridge | taxonomy artifact와 decision-flow 변환 계약 | `taxonomy-decision-bridge` |
-| Taxonomy preview surfaces | taxonomy artifact 브라우저 탐색 consumer | `@qa-sdk/taxonomy-web` |
-| Profile contract tooling | profile fixture 계약과 adapter payload | `data-structure-profile` |
-| Quality evidence ledgers | gate/review 결과 영속 기록 | `quality-ledger`, `review-ledger` |
-| Measurement tooling | 측정 실행과 리포트 표면 | `@qa-sdk/bench` |
-| Profile preview surfaces | lineage/graph artifact 브라우저 consumer | `@qa-sdk/viz-web` |
-| Decision recording | 판단 과정과 증거 기록 | `decision-flow`, `decision-flow-store`, `dkg` |
-| Spec analysis kernel | 스펙/전이/수렴/코드생성 증거 | `@qa-sdk/spec-core`, `spec-schema`, `spec-transition`, `codegen-core` |
-| Infra governance tooling | CLI, scaffolding, config/db/git/infra 보조 | `@qa-sdk/cli`, `@qa-sdk/archi`, `package-classifier`, `infra-env-kit` |
-| Authorization support | 권한 정책/감사 영속 보조 | `resource-policy-store`, `audit-recorder-store` |
-| Motion authoring | motion content/workspace authoring | `motion-content`, `motion-workspace`, `motion-workspace-client` |
-| Simulation contracts | 시뮬레이션 producer/consumer DTO 계약 | `sim-service-catalog`, `sim-decision-view`, `sim-outbox-view` |
-| Visual analysis tools | 시각화/브릿지/레이아웃 분석 도구 | `viz-core`, `@qa-sdk/viz-3d`, `visbug-bridge` |
-| Verification suites | 테스트 하니스와 시나리오 저장소 | `test-types`, `@qa-sdk/e2e`, `test-scenario-store` |
-| Product demo surfaces | 제품 데모/스모크 UI와 API consumer | `@qa-sdk/platform-demo`, `@qa-sdk/shop-web`, `@qa-sdk/registry-ui` |
-| Quarantine candidates | 제품 surface 승격 보류 | `request-contract`, `weighted-gpu` |
+| Surface | 기능군 | 역할 | 대표 패키지 |
+|---------|--------|------|-------------|
+| Coordinate kernel | runtime core | 좌표 인코딩과 주소 수학 | `weighted-index`, `index-meta`, `bit-index`, `permission-engine` |
+| Observability runtime | runtime core | 이벤트 수집·저장·SDK runtime | `@qa-sdk/core`, `@qa-sdk/sdk`, `@qa-sdk/ingest-server`, `@qa-sdk/registry-service` |
+| Definition control plane | definition governance | 문서 그래프와 품질 gate | `definition-catalog`, `@qa-sdk/definition-service`, `doc-envelope` |
+| Taxonomy tooling | taxonomy capability | 유한 vocabulary 선언·검증·diff/codegen | `taxonomy-engine` |
+| Taxonomy decision bridge | taxonomy capability | taxonomy artifact와 decision-flow 변환 계약 | `taxonomy-decision-bridge` |
+| Taxonomy preview surfaces | taxonomy capability | taxonomy artifact 브라우저 탐색 consumer | `@qa-sdk/taxonomy-web` |
+| Profile contract tooling | profile capability | profile fixture 계약과 adapter payload | `data-structure-profile` |
+| Quality evidence ledgers | profile capability | gate/review 결과 영속 기록 | `quality-ledger`, `review-ledger` |
+| Measurement tooling | profile capability | 측정 실행과 리포트 표면 | `@qa-sdk/bench` |
+| Profile preview surfaces | profile capability | lineage/graph artifact 브라우저 consumer | `@qa-sdk/viz-web` |
+| Decision recording | definition governance | 판단 과정과 증거 기록 | `decision-flow`, `decision-flow-store`, `dkg` |
+| Spec analysis kernel | definition governance | 스펙/전이/수렴/코드생성 증거 | `@qa-sdk/spec-core`, `spec-schema`, `spec-transition`, `codegen-core` |
+| Infra governance tooling | definition governance | CLI, scaffolding, config/db/git/infra 보조 | `@qa-sdk/cli`, `@qa-sdk/archi`, `package-classifier`, `infra-env-kit` |
+| Authorization support | domain support | 권한 정책/감사 영속 보조 | `resource-policy-store`, `audit-recorder-store` |
+| Motion authoring | domain support | motion content/workspace authoring | `motion-content`, `motion-workspace`, `motion-workspace-client` |
+| Simulation contracts | domain support | 시뮬레이션 producer/consumer DTO 계약 | `sim-service-catalog`, `sim-decision-view`, `sim-outbox-view` |
+| Visual analysis tools | domain support | 시각화/브릿지/레이아웃 분석 도구 | `viz-core`, `@qa-sdk/viz-3d`, `visbug-bridge` |
+| Verification suites | consumer verification | 테스트 하니스와 시나리오 저장소 | `test-types`, `@qa-sdk/e2e`, `test-scenario-store` |
+| Product demo surfaces | consumer verification | 제품 데모/스모크 UI와 API consumer | `@qa-sdk/platform-demo`, `@qa-sdk/shop-web`, `@qa-sdk/registry-ui` |
+| Quarantine candidates | quarantine | 제품 surface 승격 보류 | `request-contract`, `weighted-gpu` |
 
-상세 승격/격리 규칙은 `package-surface-separation-rule`을 따른다. `packages/*` surface-managed package coverage는 `pnpm arch:surfaces`가 검증한다. `simulations/*`와 `vendor/*` workspace는 support scope로만 감사하며, 기능 surface 표에는 승격하지 않는다.
+상세 승격/격리 규칙은 `package-surface-separation-rule`을 따른다. `packages/*` surface-managed package coverage와 기능군 drift는 `corepack pnpm arch:surfaces`와 `corepack pnpm arch:verify`가 검증한다. `simulations/*`와 `vendor/*` workspace는 support scope로만 감사하며, 기능 surface 표에는 승격하지 않는다.
 
 ## 인코딩 체인
 

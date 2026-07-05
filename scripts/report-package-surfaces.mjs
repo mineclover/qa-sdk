@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { MANAGED_PACKAGE_SCOPE, SURFACES } from "./package-surfaces.mjs";
+import { MANAGED_PACKAGE_SCOPE, SURFACE_GROUPS, SURFACES } from "./package-surfaces.mjs";
 
 const root = resolve(process.cwd());
 const packagesDir = join(root, "packages");
@@ -21,8 +21,13 @@ for (const dir of readdirSync(packagesDir)) {
 
 const assignments = new Map();
 const missing = [];
+const surfaceGroupIds = new Set(SURFACE_GROUPS.map((group) => group.id));
+const unknownSurfaceGroups = [];
 
 for (const surface of SURFACES) {
+  if (!surfaceGroupIds.has(surface.group)) {
+    unknownSurfaceGroups.push({ surface: surface.id, group: surface.group });
+  }
   for (const pkgName of surface.packages) {
     const pkg = surfaceManagedPackages.get(pkgName);
     if (!pkg) {
@@ -50,6 +55,7 @@ const unassigned = surfaceManagedPackageRows
 if (process.argv.includes("--json")) {
   console.log(JSON.stringify({
     surfaces: SURFACES,
+    surfaceGroups: SURFACE_GROUPS,
     managedPackageScope: MANAGED_PACKAGE_SCOPE,
     totalSurfaceManagedPackages: surfaceManagedPackageRows.length,
     assignedSurfaceManagedPackages: assignments.size,
@@ -58,12 +64,13 @@ if (process.argv.includes("--json")) {
     missing,
     duplicates,
     unassigned,
+    unknownSurfaceGroups,
   }, null, 2));
 } else {
   console.log("Package Surface Report");
   console.log(`  surface-managed (${MANAGED_PACKAGE_SCOPE}) packages assigned: ${assignments.size}/${surfaceManagedPackageRows.length}`);
   for (const surface of SURFACES) {
-    console.log(`\n[${surface.id}] ${surface.verdict}`);
+    console.log(`\n[${surface.group} / ${surface.id}] ${surface.verdict}`);
     for (const pkgName of surface.packages) {
       const pkg = surfaceManagedPackages.get(pkgName);
       const marker = pkg ? "ok" : "missing";
@@ -78,7 +85,13 @@ if (process.argv.includes("--json")) {
   }
 }
 
-if (missing.length > 0 || duplicates.length > 0 || unassigned.length > 0) {
+if (missing.length > 0 || duplicates.length > 0 || unassigned.length > 0 || unknownSurfaceGroups.length > 0) {
+  if (unknownSurfaceGroups.length > 0) {
+    console.error("\nUnknown surface groups:");
+    for (const item of unknownSurfaceGroups) {
+      console.error(`  ${item.surface}: ${item.group}`);
+    }
+  }
   if (missing.length > 0) {
     console.error("\nMissing packages:");
     for (const item of missing) {

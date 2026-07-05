@@ -60,16 +60,17 @@ qa-sdk 설계 문서와 패키지가 실제 작업을 줄이거나 실패를 막
 - 첫 라운드는 기존 동작을 바꾸지 않는 감사 장치와 후보 목록 생성까지만 포함한다.
 - package 후보는 `pnpm-workspace.yaml`에 등록된 workspace root만 대상으로 삼는다. nested `package.json`은 빌드 산출물이나 배포 manifest일 수 있으므로 자동 정리 후보로 보지 않는다.
 - package 감사는 모든 workspace root를 보지만, 기능 surface 승격/격리 판정은 `packages/*` surface-managed 범위에만 적용한다. `simulations/*`와 `vendor/*`는 `workspace-support`로 표시하고, package 이름 끝부분이 `packages/*` surface package와 같아도 package surface manifest의 `keep`/`no-promotion` 큐와 섞지 않는다.
+- `packages/*` 후보는 `surfaceGroup`을 함께 노출한다. runtime core, taxonomy capability, profile capability, consumer verification, quarantine을 같은 제품 기능처럼 해석하지 않는다.
 - workspace glob 아래 hidden directory는 pnpm workspace filter에 잡히지 않는 경우가 있으므로 package 후보에서 제외한다.
 - test-only package는 `tests/`, `scenarios/`, `*.spec.*`, `*.test.*` 파일을 실행 증거 표면으로 인정한다.
 
 ## 감사 절차 ^validation
 
-1. `pnpm docs:usefulness-audit -- --limit 40`으로 후보를 생성한다.
+1. `corepack pnpm docs:usefulness-audit -- --limit 40`으로 후보를 생성한다.
 2. `prove` 후보는 한 번에 한 topic만 골라 작은 실행 증거를 추가한다.
 3. 실행 증거를 만들 수 없으면 참조자를 먼저 찾고, 별도 변경에서 `quarantine`으로 낮춘다.
 4. `quarantine` 후보는 바로 삭제하지 않는다. 먼저 링크, package dependency, CLI entry, tests를 확인한다.
-5. 삭제/아카이브 PR은 `node packages/cli/dist/index.js def validate`, `pnpm arch:feedback`, `git diff --check`를 통과해야 한다.
+5. 삭제/아카이브 PR은 `node packages/cli/dist/index.js def validate`, `corepack pnpm arch:feedback`, `git diff --check`를 통과해야 한다.
 
 ## 보존 우선순위 ^constraint
 
@@ -81,9 +82,9 @@ qa-sdk 설계 문서와 패키지가 실제 작업을 줄이거나 실패를 막
 
 ## 관련 명령
 
-- `pnpm docs:usefulness-audit`
-- `pnpm docs:usefulness-audit -- --format json`
-- `pnpm docs:usefulness-audit -- --format json --all`
+- `corepack pnpm docs:usefulness-audit`
+- `corepack pnpm docs:usefulness-audit -- --format json`
+- `corepack pnpm docs:usefulness-audit -- --format json --all`
 - `node packages/cli/dist/index.js def validate`
 - `node packages/cli/dist/index.js def scan-audit`
-- `pnpm arch:feedback`
+- `corepack pnpm arch:feedback`

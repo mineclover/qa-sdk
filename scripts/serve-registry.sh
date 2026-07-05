@@ -37,7 +37,7 @@ fi
 # ── 빌드 확인 ──
 if [ ! -f "${ROOT_DIR}/packages/registry-service/dist/server.js" ]; then
   echo "🔨 빌드 필요..."
-  cd "$ROOT_DIR" && pnpm --filter @qa-sdk/registry-service build
+  cd "$ROOT_DIR" && corepack pnpm --filter @qa-sdk/registry-service build
 fi
 
 # ── 서버 시작 ──

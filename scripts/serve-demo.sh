@@ -51,14 +51,14 @@ sleep 2
 
 # ── shop-web (5220) ──
 echo "🚀 shop-web (5220)..."
-cd "${ROOT_DIR}/packages/shop-web" && npx serve public -p 5220 -s &
+cd "$ROOT_DIR" && corepack pnpm --filter @qa-sdk/shop-web start -- --port 5220 &
 PIDS+=($!)
 cd "$ROOT_DIR"
 sleep 1
 
 # ── platform-demo / monitor (5176) ──
 echo "🚀 monitor (5176)..."
-cd "${ROOT_DIR}/packages/platform-demo" && npx serve public -p 5176 -s &
+cd "$ROOT_DIR" && corepack pnpm --filter @qa-sdk/platform-demo dev -- --host 127.0.0.1 --port 5176 &
 PIDS+=($!)
 cd "$ROOT_DIR"
 sleep 1

@@ -10,13 +10,13 @@ ARG SITE=shop-web
 
 # ── Build (platform-demo만 Vite 빌드 필요) ────────────────
 FROM node:22-slim AS build
-RUN corepack enable pnpm
+RUN corepack enable
 WORKDIR /app
 COPY . .
 ARG SITE
 RUN if [ "$SITE" = "platform-demo" ]; then \
-      pnpm install --frozen-lockfile && \
-      pnpm --filter platform-demo build; \
+      corepack pnpm install --frozen-lockfile && \
+      corepack pnpm --filter platform-demo build; \
     fi
 # 통합 출력 디렉토리 생성: platform-demo → dist/, shop-web → public/
 RUN mkdir -p /out && \

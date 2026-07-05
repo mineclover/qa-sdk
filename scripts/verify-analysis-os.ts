@@ -84,7 +84,7 @@ async function main() {
     const usefulness = JSON.parse(usefulnessOutput);
     const usefulnessPackages = Object.fromEntries(
       usefulness.packages.map((item: { name: string }) => [item.name, item]),
-    ) as Record<string, { verdict: string; surfaceVerdict: string; surfaceScope: string }>;
+    ) as Record<string, { verdict: string; surfaceGroup: string; surfaceVerdict: string; surfaceScope: string }>;
     assert(usefulnessPackages["request-contract"]?.verdict === "quarantine"
            && usefulnessPackages["weighted-gpu"]?.verdict === "quarantine",
            "Usefulness Audit: no-promotion packages stay quarantine candidates");
@@ -103,6 +103,11 @@ async function main() {
            && usefulnessPackages["@qa-sdk/sim-gateway"]?.surfaceVerdict === "workspace-support"
            && usefulnessPackages["visbug"]?.surfaceScope === "workspace-support",
            "Usefulness Audit: simulation/vendor workspaces stay outside package surface promotion scope");
+    assert(usefulnessPackages["taxonomy-engine"]?.surfaceGroup === "taxonomy-capability"
+           && usefulnessPackages["data-structure-profile"]?.surfaceGroup === "profile-capability"
+           && usefulnessPackages["@qa-sdk/viz-web"]?.surfaceGroup === "profile-capability"
+           && usefulnessPackages["request-contract"]?.surfaceGroup === "quarantine",
+           "Usefulness Audit: packages expose separated feature groups");
 
     // missing entrypoints는 실제 public entrypoint gap과 분리되어야 함
     const missingEntrypoints = Object.fromEntries(
@@ -147,6 +152,11 @@ async function main() {
     const surfaces = Object.fromEntries(
       report.surfaces.map((surface: { id: string; packages: string[] }) => [surface.id, surface.packages]),
     ) as Record<string, string[]>;
+    const surfaceGroups = Object.fromEntries(
+      report.surfaces.map((surface: { id: string; group: string }) => [surface.id, surface.group]),
+    ) as Record<string, string>;
+    assert(Array.isArray(report.unknownSurfaceGroups) && report.unknownSurfaceGroups.length === 0,
+           "Surface Report: every surface uses a known feature group");
     assert(hasExactly(surfaces["taxonomy-tooling"], ["taxonomy-engine"]),
            "Surface Report: taxonomy-engine owns finite vocabulary tooling separately");
     assert(hasExactly(surfaces["taxonomy-decision-bridge"], ["taxonomy-decision-bridge"]),
@@ -161,15 +171,24 @@ async function main() {
            "Surface Report: bench remains measurement tooling");
     assert(hasExactly(surfaces["profile-preview-surfaces"], ["@qa-sdk/viz-web"]),
            "Surface Report: viz-web remains a profile/graph consumer preview");
+    assert(surfaceGroups["taxonomy-tooling"] === "taxonomy-capability"
+           && surfaceGroups["taxonomy-decision-bridge"] === "taxonomy-capability"
+           && surfaceGroups["taxonomy-preview-surfaces"] === "taxonomy-capability"
+           && surfaceGroups["profile-contract-tooling"] === "profile-capability"
+           && surfaceGroups["quality-evidence-ledgers"] === "profile-capability"
+           && surfaceGroups["measurement-tooling"] === "profile-capability"
+           && surfaceGroups["profile-preview-surfaces"] === "profile-capability"
+           && surfaceGroups["quarantine-candidates"] === "quarantine",
+           "Surface Report: taxonomy, profile, and quarantine feature groups stay separated");
 
     const manifestLabels = new Set(report.surfaces.map((surface: { id: string }) => surfaceLabel(surface.id)));
     const ruleRows = parseMarkdownTable(
       "docs/specs/system/package-surface-separation.rule.md",
-      "| Surface | 판정 | 대표 패키지/그룹 | 승격 기준 |",
+      "| Surface | 기능군 | 판정 | 대표 패키지/그룹 | 승격 기준 |",
     );
     const packageRows = parseMarkdownTable(
       "docs/specs/system/system-packages.spec.md",
-      "| Surface | 역할 | 대표 패키지 |",
+      "| Surface | 기능군 | 역할 | 대표 패키지 |",
     );
     const ruleByLabel = new Map(ruleRows.map((row) => [row[0], row]));
     const packageByLabel = new Map(packageRows.map((row) => [row[0], row]));
@@ -181,8 +200,22 @@ async function main() {
       .map((surface: { id: string; verdict: string }) => {
         const label = surfaceLabel(surface.id);
         const expected = surface.verdict.replaceAll("-", " ");
-        const actual = ruleByLabel.get(label)?.[1];
+        const actual = ruleByLabel.get(label)?.[2];
         return actual === expected ? null : `${label}: expected ${expected}, found ${actual ?? "missing"}`;
+      })
+      .filter(Boolean);
+    const groupMismatches = report.surfaces
+      .flatMap((surface: { id: string; group: string }) => {
+        const label = surfaceLabel(surface.id);
+        const expected = surface.group.replaceAll("-", " ");
+        return [
+          ruleByLabel.get(label)?.[1] === expected
+            ? null
+            : `${label} rule: expected ${expected}, found ${ruleByLabel.get(label)?.[1] ?? "missing"}`,
+          packageByLabel.get(label)?.[1] === expected
+            ? null
+            : `${label} packages: expected ${expected}, found ${packageByLabel.get(label)?.[1] ?? "missing"}`,
+        ];
       })
       .filter(Boolean);
 
@@ -190,6 +223,8 @@ async function main() {
            `Surface Docs: separation rule table matches manifest surfaces (${formatDiff(ruleMissing, ruleExtras)})`);
     assert(packageMissing.length === 0 && packageExtras.length === 0,
            `Surface Docs: system package table matches manifest surfaces (${formatDiff(packageMissing, packageExtras)})`);
+    assert(groupMismatches.length === 0,
+           `Surface Docs: feature groups match manifest (${groupMismatches.join("; ") || "ok"})`);
     assert(verdictMismatches.length === 0,
            `Surface Docs: separation rule verdicts match manifest (${verdictMismatches.join("; ") || "ok"})`);
   } catch (err) {
@@ -222,9 +257,12 @@ async function main() {
     const toolchainScriptViolations = findToolchainScriptViolations(["."]);
     assert(toolchainScriptViolations.length === 0,
            `Toolchain Scripts: root/workspace package scripts avoid bare pnpm/npx (${toolchainScriptViolations.slice(0, 5).join("; ") || "ok"})`);
+    const automationToolchainViolations = findAutomationToolchainViolations();
+    assert(automationToolchainViolations.length === 0,
+           `Toolchain Scripts: active workflow/operator/Docker surfaces avoid bare pnpm/npx (${automationToolchainViolations.slice(0, 5).join("; ") || "ok"})`);
   } catch (err) {
     console.error("Toolchain script verification failed:", err);
-    assert(false, "Toolchain Scripts: package script scan completed successfully");
+    assert(false, "Toolchain Scripts: toolchain surface scan completed successfully");
   }
 
   console.log(chalk.bold.cyan(`\nVerification Complete: ${passedTests}/${totalTests} passed.\n`));
@@ -336,4 +374,61 @@ function commandTokens(command: string): string[] {
     .split(/\s+/)
     .filter(Boolean)
     .map((token) => token.replace(/^["']+|["']+$/g, ""));
+}
+
+function findAutomationToolchainViolations(): string[] {
+  const files = [
+    ".github/workflows/visbug-bridge-e2e.yml",
+    "scripts/maintenance.sh",
+    "scripts/setup.sh",
+    "scripts/publish-local.sh",
+    "scripts/serve-registry.sh",
+    "scripts/serve-demo.sh",
+    "scripts/find-unused-candidates.ts",
+    "scripts/sim-smoke-full.ts",
+    "Dockerfile.gateway",
+    "Dockerfile.ingest-server",
+    "Dockerfile.nestjs",
+    "Dockerfile.services",
+    "Dockerfile.static",
+    "docker-compose.yml",
+  ];
+  const violations: string[] = [];
+
+  for (const path of files) {
+    if (!existsSync(path)) continue;
+    const lines = readFileSync(path, "utf-8").split(/\r?\n/);
+    lines.forEach((line, index) => {
+      if (line.includes("npx")) {
+        violations.push(`${path}:${index + 1}:npx`);
+      }
+      if (usesBarePnpmInAutomationLine(path, line)) {
+        violations.push(`${path}:${index + 1}:pnpm`);
+      }
+    });
+  }
+
+  return violations;
+}
+
+function usesBarePnpmInAutomationLine(path: string, line: string): boolean {
+  const trimmed = line.trim();
+  if (trimmed === "" || trimmed.startsWith("#") || trimmed.startsWith("//") || trimmed.startsWith("*")) {
+    return false;
+  }
+  if (!/\bpnpm\b/.test(trimmed)) return false;
+  if (/\bcorepack\s+pnpm\b/.test(trimmed)) return false;
+  if (path.endsWith("sim-smoke-full.ts")) {
+    return /cmd:\s*["']pnpm["']/.test(trimmed);
+  }
+  if (path.endsWith("find-unused-candidates.ts")) {
+    return /execFileSync\(["']pnpm["']/.test(trimmed);
+  }
+  if (path.startsWith("Dockerfile.")) {
+    return /\bRUN\s+pnpm\b|\b&&\s*pnpm\b|\|\|\s*pnpm\b|;\s*pnpm\b/.test(trimmed);
+  }
+  if (/docker-compose.*\.ya?ml$/.test(path)) {
+    return /^\s*pnpm\b/.test(trimmed);
+  }
+  return true;
 }

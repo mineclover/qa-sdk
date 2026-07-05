@@ -3,8 +3,8 @@
 #  QA-SDK → Verdaccio 로컬 배포
 #
 #  사용법:
-#    1. pnpm registry     (Verdaccio 시작)
-#    2. pnpm publish:local (이 스크립트 — 전 패키지 publish)
+#    1. corepack pnpm registry     (Verdaccio 시작)
+#    2. corepack pnpm publish:local (이 스크립트 — 전 패키지 publish)
 #
 #  소비자:
 #    npm install @qa-sdk/core --registry http://localhost:4873
@@ -21,13 +21,13 @@ echo ""
 # Verdaccio 접근 확인
 if ! curl -s "$REGISTRY/-/ping" > /dev/null 2>&1; then
   echo -e "${R}✕${N} Verdaccio가 실행 중이지 않습니다."
-  echo "  먼저 실행: pnpm registry"
+  echo "  먼저 실행: corepack pnpm registry"
   exit 1
 fi
 
 # 빌드
 echo "빌드 중..."
-pnpm build 2>&1 | tail -1
+corepack pnpm build 2>&1 | tail -1
 
 echo ""
 

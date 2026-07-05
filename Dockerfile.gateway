@@ -1,14 +1,14 @@
 # Dockerfile.gateway — Gateway (Hono Node.js) 전용
 # 사용: docker build -t qa-sdk/gateway:latest -f Dockerfile.gateway .
 FROM node:22-slim AS base
-RUN corepack enable pnpm
+RUN corepack enable
 
 FROM base AS build
 WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages/ packages/
-RUN pnpm install --frozen-lockfile
-RUN pnpm --filter @qa-sdk/gateway build
+RUN corepack pnpm install --frozen-lockfile
+RUN corepack pnpm --filter @qa-sdk/gateway build
 
 FROM node:22-slim AS production
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
