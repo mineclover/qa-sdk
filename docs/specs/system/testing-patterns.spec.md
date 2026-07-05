@@ -14,6 +14,16 @@ def:
       type: traces_to
     - target: ci-workspace-test-rule
       type: refs
+    - target: demo-tests
+      type: refs
+    - target: test-scenario-store
+      type: refs
+  sources:
+    - packages/demo-tests/src/schema-consistency.test.ts
+    - packages/demo-tests/src/index-meta/invariants.test.ts
+    - packages/test-scenario-store/src/store.test.ts
+    - packages/facet-tests/package.json
+    - packages/test-types/scripts/smoke.test.mjs
 ---
 
 # 테스트 패턴 — SSOT 파생 표준
@@ -114,3 +124,11 @@ const store = new D1RecordStore(driver);
 
 - `spec-core/shared/graph-port.ts` 변경 시 `convergence/graph-port.ts` 동기화 필수
 - `copy-drift.test.ts`가 자동 감지
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/demo-tests test
+corepack pnpm --filter test-scenario-store test
+corepack pnpm --filter test-types test
+```

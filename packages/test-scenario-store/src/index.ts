@@ -1,5 +1,5 @@
 // @def.boundary persistence-system-root
-// @def.doc persistence-system-root
+// @def.doc test-scenario-store
 
 export { SqliteTestScenarioStore } from "./store.js";
 export type {

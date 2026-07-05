@@ -1,5 +1,5 @@
 // @def.boundary persistence-system-root
-// @def.doc persistence-system-root
+// @def.doc test-scenario-store
 
 import { getDatabaseSync, type DatabaseSyncInstance } from "index-meta";
 import { drizzle } from "drizzle-orm/node-sqlite";
