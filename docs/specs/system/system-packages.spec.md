@@ -15,6 +15,8 @@ def:
       type: refines
     - target: registry-api
       type: refines
+    - target: package-surface-separation-rule
+      type: refs
     - target: resource-policy-store-system
       type: refs
     - target: audit-recorder-store-system
@@ -41,6 +43,23 @@ qa-sdk 모노레포의 패키지 의존 관계. 인코딩 라이브러리 체인
 - `스캐폴딩 패키지`: @qa-sdk/scaffold가 도메인 계층 구조와 데이터 거버넌스 표준을 코드/템플릿/검증 규칙으로 물질화한다.
 - `스펙/분석 패키지`: spec-core, convergence, decision-flow, event-catalog의 역할을 정리한다.
 - `프론트엔드/데모`: platform-demo, shop-web, viz-web, browser-sdk의 위치를 기술한다.
+- `기능 surface 분리`: 검증된 코어, contract tooling, consumer-only, quarantine 후보를 구분한다.
+
+## 기능 Surface 분리
+
+qa-sdk 전체를 단일 제품 플랫폼으로 확장하지 않는다. 패키지는 기능 surface별로 유지하며, 새 기능은 먼저 하나의 surface에 배정한다.
+
+| Surface | 역할 | 대표 패키지 |
+|---------|------|-------------|
+| Coordinate kernel | 좌표 인코딩과 주소 수학 | `weighted-index`, `index-meta`, `bit-index`, `permission-engine` |
+| Observability runtime | 이벤트 수집·저장·SDK runtime | `@qa-sdk/core`, `@qa-sdk/sdk`, `@qa-sdk/ingest-server`, `@qa-sdk/registry-service` |
+| Definition control plane | 문서 그래프와 품질 gate | `definition-catalog`, `@qa-sdk/definition-service`, `doc-envelope` |
+| Taxonomy tooling | 유한 vocabulary 선언·검증·diff/codegen | `taxonomy-engine`, `taxonomy-decision-bridge`, `@qa-sdk/taxonomy-web` |
+| Profile contract tooling | profile fixture 계약과 adapter payload | `data-structure-profile`, `quality-ledger`, `@qa-sdk/bench`, `@qa-sdk/viz-web` |
+| Decision recording | 판단 과정과 증거 기록 | `decision-flow`, `decision-flow-store`, `dkg` |
+| Quarantine candidates | 제품 surface 승격 보류 | `request-contract`, `weighted-gpu` |
+
+상세 승격/격리 규칙은 `package-surface-separation-rule`을 따른다.
 
 ## 인코딩 체인
 

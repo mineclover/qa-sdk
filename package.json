@@ -18,6 +18,7 @@
     "arch:usage": "npx tsx scripts/analyze-package-usage.ts",
     "arch:identity": "npx tsx scripts/identifier-mapper.ts",
     "arch:signals": "npx tsx scripts/discover-event-flow.ts",
+    "arch:surfaces": "node scripts/report-package-surfaces.mjs",
     "arch:feedback": "npx tsx scripts/ai-feedback-loop.ts",
     "arch:manifest": "npx tsx scripts/generate-api-reference.ts",
     "clean": "pnpm -r run clean",
