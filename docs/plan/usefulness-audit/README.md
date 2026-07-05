@@ -5,7 +5,7 @@ def:
   knowledge_kind: guide
   lifecycle: draft
   owner_system: qa-sdk
-  scope: meta
+  scope: flow
   aspect: quality_flow
   tier: layout
   depth: overview

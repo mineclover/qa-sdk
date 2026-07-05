@@ -11,6 +11,18 @@ def:
   links:
     - target: guides-system
       type: refines
+  sources:
+    - packages/definition-catalog/src/vocabulary.ts
+    - packages/definition-catalog/src/taxonomy.ts
+    - packages/definition-catalog/src/taxonomy.test.ts
+    - packages/core/src/types/record.ts
+    - packages/core/src/types/envelope.ts
+    - packages/core/src/coordinates/address-context-schema.ts
+    - packages/core/src/lib/clock.ts
+    - packages/core/src/lib/clock.test.ts
+    - packages/context/src/qa-context.ts
+    - packages/logger/src/logger.ts
+    - packages/cli/src/commands/dkg.ts
 ---
 # QA-SDK 개발 컨벤션
 
@@ -804,3 +816,21 @@ await catalogStore.upsert({ id: "demo", data: catalog, hash: currentHash });
 - 서비스 구조: `docs/msa-architecture.md` — 서비스 토폴로지
 - 설계 결정: `docs/architecture-decisions.md` — ADR-001~009
 - 상세 스펙: `docs/specs/README.md` — 관심사별 인덱스
+
+## 구현/검증 증거 ^implementation-evidence
+
+이 문서는 공용 컨벤션이라 단일 패키지의 상세 스펙이 아니다. 대표 구현 증거는
+definition-catalog의 scope/aspect vocabulary, core의 EventRecord/TransmissionEnvelope와
+address_context schema, context/logger의 address_context 조립·전송, CLI의 `cli_event`
+매핑이다.
+
+검증 명령:
+
+```bash
+pnpm --filter definition-catalog exec vitest run src/taxonomy.test.ts src/scope-registry.test.ts
+pnpm --filter @qa-sdk/core test
+pnpm --filter @qa-sdk/context test
+pnpm --filter @qa-sdk/logger test
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```
