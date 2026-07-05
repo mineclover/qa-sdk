@@ -93,7 +93,7 @@ pnpm arch:identity
 pnpm arch:verify
 ```
 
-- `arch:surfaces`: 전체 workspace package가 정확히 하나의 surface에 배정됐는지, taxonomy/profile 기능 surface가 다시 합쳐지지 않았는지 확인한다.
+- `arch:surfaces`: 전체 workspace package가 정확히 하나의 surface에 배정됐는지, taxonomy/profile 기능 surface가 다시 합쳐지지 않았는지, surface 문서 표가 manifest와 같은 목록/판정을 말하는지 확인한다.
 - `arch:signals`: 핵심 이벤트 연결이 유지되는지 확인한다.
 - `arch:usage`: `zeroFanIn`, `archiveCandidates`, `deadWeight`, `missingEntrypoints`, `entrypointGaps` 분리가 현재 baseline과 맞는지 확인한다.
 - `arch:check --json`: tier violation이 0건인지 확인한다.

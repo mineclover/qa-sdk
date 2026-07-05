@@ -69,6 +69,7 @@ qa-sdk 전체를 단일 제품 플랫폼으로 확장하지 않는다. 패키지
 | Simulation contracts | 시뮬레이션 producer/consumer DTO 계약 | `sim-service-catalog`, `sim-decision-view`, `sim-outbox-view` |
 | Visual analysis tools | 시각화/브릿지/레이아웃 분석 도구 | `viz-core`, `@qa-sdk/viz-3d`, `visbug-bridge` |
 | Verification suites | 테스트 하니스와 시나리오 저장소 | `test-types`, `@qa-sdk/e2e`, `test-scenario-store` |
+| Product demo surfaces | 제품 데모/스모크 UI와 API consumer | `@qa-sdk/platform-demo`, `@qa-sdk/shop-web`, `@qa-sdk/registry-ui` |
 | Quarantine candidates | 제품 surface 승격 보류 | `request-contract`, `weighted-gpu` |
 
 상세 승격/격리 규칙은 `package-surface-separation-rule`을 따른다. 전체 workspace package coverage는 `pnpm arch:surfaces`가 검증한다.

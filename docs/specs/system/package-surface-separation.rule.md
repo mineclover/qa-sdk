@@ -94,4 +94,4 @@ pnpm arch:verify
 pnpm arch:feedback
 ```
 
-`pnpm arch:surfaces`는 이 문서의 핵심 분류를 스크립트 surface manifest와 맞춘다. 없는 패키지, 중복 배정, 또는 surface 없는 workspace package가 있으면 실패한다. `pnpm arch:verify`는 taxonomy/profile 관련 surface가 다시 한 덩어리로 합쳐지지 않았는지도 고정한다.
+`pnpm arch:surfaces`는 이 문서의 핵심 분류를 스크립트 surface manifest와 맞춘다. 없는 패키지, 중복 배정, 또는 surface 없는 workspace package가 있으면 실패한다. `pnpm arch:verify`는 taxonomy/profile 관련 surface가 다시 한 덩어리로 합쳐지지 않았는지와 이 문서 및 `system-packages`의 surface 표가 manifest와 같은 목록/판정을 말하는지도 고정한다.

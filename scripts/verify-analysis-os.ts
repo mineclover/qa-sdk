@@ -1,4 +1,5 @@
 import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import chalk from "chalk";
 
 /**
@@ -120,6 +121,37 @@ async function main() {
            "Surface Report: bench remains measurement tooling");
     assert(hasExactly(surfaces["profile-preview-surfaces"], ["@qa-sdk/viz-web"]),
            "Surface Report: viz-web remains a profile/graph consumer preview");
+
+    const manifestLabels = new Set(report.surfaces.map((surface: { id: string }) => surfaceLabel(surface.id)));
+    const ruleRows = parseMarkdownTable(
+      "docs/specs/system/package-surface-separation.rule.md",
+      "| Surface | 판정 | 포함 패키지 | 승격 기준 |",
+    );
+    const packageRows = parseMarkdownTable(
+      "docs/specs/system/system-packages.spec.md",
+      "| Surface | 역할 | 대표 패키지 |",
+    );
+    const ruleByLabel = new Map(ruleRows.map((row) => [row[0], row]));
+    const packageByLabel = new Map(packageRows.map((row) => [row[0], row]));
+    const ruleMissing = [...manifestLabels].filter((label) => !ruleByLabel.has(label));
+    const packageMissing = [...manifestLabels].filter((label) => !packageByLabel.has(label));
+    const ruleExtras = [...ruleByLabel.keys()].filter((label) => !manifestLabels.has(label));
+    const packageExtras = [...packageByLabel.keys()].filter((label) => !manifestLabels.has(label));
+    const verdictMismatches = report.surfaces
+      .map((surface: { id: string; verdict: string }) => {
+        const label = surfaceLabel(surface.id);
+        const expected = surface.verdict.replaceAll("-", " ");
+        const actual = ruleByLabel.get(label)?.[1];
+        return actual === expected ? null : `${label}: expected ${expected}, found ${actual ?? "missing"}`;
+      })
+      .filter(Boolean);
+
+    assert(ruleMissing.length === 0 && ruleExtras.length === 0,
+           `Surface Docs: separation rule table matches manifest surfaces (${formatDiff(ruleMissing, ruleExtras)})`);
+    assert(packageMissing.length === 0 && packageExtras.length === 0,
+           `Surface Docs: system package table matches manifest surfaces (${formatDiff(packageMissing, packageExtras)})`);
+    assert(verdictMismatches.length === 0,
+           `Surface Docs: separation rule verdicts match manifest (${verdictMismatches.join("; ") || "ok"})`);
   } catch (err) {
     console.error("Surface verification failed:", err);
     assert(false, "Surface Report: command completed successfully and produced valid JSON");
@@ -161,4 +193,37 @@ function hasExactly(actual: string[] | undefined, expected: string[]): boolean {
   return Array.isArray(actual)
     && actual.length === expected.length
     && expected.every((item) => actual.includes(item));
+}
+
+function surfaceLabel(id: string): string {
+  return id
+    .split("-")
+    .map((part, index) => index === 0 ? `${part[0]?.toUpperCase() ?? ""}${part.slice(1)}` : part)
+    .join(" ");
+}
+
+function parseMarkdownTable(path: string, headerLine: string): string[][] {
+  const lines = readFileSync(path, "utf-8").split(/\r?\n/);
+  const start = lines.findIndex((line) => line.trim() === headerLine);
+  if (start < 0) return [];
+
+  const rows: string[][] = [];
+  for (let index = start + 2; index < lines.length; index++) {
+    const line = lines[index].trim();
+    if (!line.startsWith("|")) break;
+    rows.push(line
+      .replace(/^\|/, "")
+      .replace(/\|$/, "")
+      .split("|")
+      .map((cell) => cell.trim()));
+  }
+  return rows;
+}
+
+function formatDiff(missing: string[], extras: string[]): string {
+  const parts = [
+    missing.length > 0 ? `missing=${missing.join(", ")}` : "",
+    extras.length > 0 ? `extra=${extras.join(", ")}` : "",
+  ].filter(Boolean);
+  return parts.join("; ") || "ok";
 }
