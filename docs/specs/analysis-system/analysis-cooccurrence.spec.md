@@ -2,6 +2,7 @@
 def:
   tier: component
   id: analysis-cooccurrence
+  type: spec
   address: def_document:v2:68738
   scope: feature
   aspect: func_def
@@ -15,6 +16,15 @@ def:
       type: depends_on
     - target: analysis-transition
       type: depends_on
+  sources:
+    - packages/ingest-server/src/routes/insights.ts
+    - packages/ingest-server/src/stores/drizzle-insights-store.ts
+    - packages/ingest-server/src/ports/insights-store.port.ts
+    - packages/ingest-server/src/insights-store.e2e.test.ts
+    - packages/convergence/src/usage-aggregator.ts
+    - packages/convergence/src/causal-discovery.ts
+    - packages/spec-core/src/convergence/pipeline-e2e.test.ts
+    - packages/spec-core/src/convergence/convergence.test.ts
 ---
 # Co-occurrence — 세션 기반 공출현 패턴
 
@@ -116,4 +126,18 @@ Jaccard ≥ 0.5인 쌍을 간선으로 하는 그래프에서 BFS로 connected c
 ## 관련 소스
 
 - `packages/ingest-server/src/routes/insights.ts` — `GET /v1/insights/correlations`
-- `packages/convergence/src/usage-aggregator.ts` — `CoOccurrence` 타입 정의
+- `packages/ingest-server/src/stores/drizzle-insights-store.ts` — 세션/trace 그룹핑, Jaccard 계산, IntentLink 후보 제안
+- `packages/ingest-server/src/insights-store.e2e.test.ts` — correlations API 소비자 검증
+- `packages/convergence/src/usage-aggregator.ts` — `UsageData.coOccurrences` 집계
+- `packages/convergence/src/causal-discovery.ts` — co-occurrence 기반 IntentLink/constraint 후보 판정
+- `packages/spec-core/src/convergence/pipeline-e2e.test.ts` — co-occurrence 안정화/소비자 E2E 검증
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter @qa-sdk/ingest-server exec vitest run src/insights-store.e2e.test.ts src/routes/insights.test.ts
+pnpm --filter @qa-sdk/convergence test
+pnpm --filter @qa-sdk/spec-core exec vitest run src/convergence/pipeline-e2e.test.ts src/convergence/convergence.test.ts
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```
