@@ -14,6 +14,16 @@ def:
       type: depends_on
     - target: taxonomy-boundaries
       type: depends_on
+    - target: definition-addressing
+      type: traces_to
+  sources:
+    - docs/specs/definition-catalog/definition-taxonomy/definition-addressing.spec.md
+    - docs/specs/definition-catalog/definition-taxonomy/definition-addressing.plan.md
+    - docs/specs/definition-catalog/definition-taxonomy.spec.md
+    - docs/specs/system/taxonomy-boundaries.spec.md
+    - packages/definition-catalog/src/address-assign.ts
+    - packages/definition-catalog/src/address-assign.test.ts
+    - packages/definition-data-source/src/sync-local-db.test.ts
 ---
 
 # Document Addressing Contract — 메모
@@ -39,3 +49,16 @@ def:
 ## 관련 spec
 
 - `docs/specs/system/meta-taxonomy.spec.md` — taxonomy 분류군 정의 (코드 반영 완료)
+- `docs/specs/definition-catalog/definition-taxonomy/definition-addressing.spec.md` — 현재 운영되는 문서 주소 체계
+
+## 현재 권위 ^authority
+
+이 메모는 청사진 기록이다. 현재 주소 계약의 운영 권위는 `definition-addressing` spec과 definition data-source/CLI의 address 병행 저장·조회 구현에 둔다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter definition-catalog test
+corepack pnpm --filter definition-data-source test
+node packages/cli/dist/index.js def validate
+```

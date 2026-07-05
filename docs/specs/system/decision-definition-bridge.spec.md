@@ -20,6 +20,17 @@ def:
       type: refines
     - target: dual-coordinate-system
       type: refines
+    - target: definition-cross-loop-bridge
+      type: traces_to
+  sources:
+    - packages/definition-catalog/src/bridge.ts
+    - packages/definition-catalog/src/cross-loop-bridge.ts
+    - packages/definition-catalog/src/cross-loop-bridge.test.ts
+    - packages/decision-flow/src/context-provider.ts
+    - packages/decision-flow/src/context-provider.test.ts
+    - packages/decision-flow/src/engine.ts
+    - docs/specs/definition-catalog/definition-cross-loop-bridge.spec.md
+    - docs/specs/decision-flow/df-system.md
 ---
 # Decision ↔ Definition 브릿지
 
@@ -57,7 +68,7 @@ decision-flow(왜 이렇게 결정했는가)와 definition-catalog(무엇을 정
 ```
 문서 (definition-catalog)
   docs: [gate-state-model, gate-flow, gate-constraint, ...]
-  ↓ buildDefinitionContext()
+  ↓ caller/adapter가 decision context에 주입
 의사결정 시작 전 (decision-flow)
   ContextProvider.provide(schemaId, {
     existingDocs: ["gate-state-model", "gate-flow"],
@@ -67,6 +78,8 @@ decision-flow(왜 이렇게 결정했는가)와 definition-catalog(무엇을 정
   })
   → 결정자가 기존 문서를 보고 판단
 ```
+
+`ContextProvider` 자체는 definition-catalog를 직접 조회하지 않는다. decision history, pattern, policy, mental-model hints를 제공하고, definition 문서 목록은 호출자나 adapter가 context payload로 넘기는 경계다.
 
 ### 순환 구조
 
@@ -106,26 +119,28 @@ Decision → 문서 생성 → 문서가 컨텍스트 → 다음 Decision → �
 이 매핑은 `definition-catalog/src/bridge.ts`의 `suggestLifecycleFromVerdict()` 구현을 따른다.
 더 넓은 상태 체계 번역은 `status-crosswalk` 문서를 따른다.
 
-### CLI에서 확인
-
-```bash
-# 의사결정으로 만들어진 문서 목록 (decision 태그)
-qa-sdk def list --tag=decision
-
-# 특정 문서의 의사결정 컨텍스트
-qa-sdk def incoming gate-state-model
-# → gate-system (contains), gate-api (depends_on), ...
-
-# 의사결정 이력 (decision-flow CLI)
-qa-sdk flow history scope-expansion
-```
-
 ## 구현 위치
 
 | 컴포넌트 | 파일 | 역할 |
 |----------|------|------|
 | bridge.ts | definition-catalog/src/bridge.ts | artifact→scope, verdict→lifecycle 매핑 |
-| ContextProvider | decision-flow/src/context-provider.ts | 기존 문서를 의사결정 컨텍스트로 제공 |
+| cross-loop-bridge.ts | definition-catalog/src/cross-loop-bridge.ts | gate/decision 결과를 definition lifecycle 제안으로 연결 |
+| ContextProvider | decision-flow/src/context-provider.ts | decision history/policy/model context 제공. definition docs는 adapter가 context payload로 주입 |
 | FlowEngine | decision-flow/src/engine.ts | 의사결정 실행, outcome 산출 |
 | definition-service | PATCH /docs/:id | outcome에 따라 lifecycle 변경 |
 | CLI def-new skill | Claude skill | 의사결정 결과로 새 문서 생성 |
+
+## 현재 구현 경계 ^boundary
+
+- `bridge.ts`는 artifact/lifecycle/address_context 매핑만 소유한다.
+- `cross-loop-bridge.ts`는 gate complete, harness compliance, decision verdict, definition lifecycle 제안을 연결한다.
+- `decision-flow`는 판단 history와 선택 흐름을 소유하고, definition 문서 저장소를 runtime dependency로 끌어오지 않는다.
+- definition 문서를 decision context로 넣는 일은 adapter/caller boundary에 둔다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter definition-catalog test
+corepack pnpm --filter decision-flow test
+node packages/cli/dist/index.js def validate
+```

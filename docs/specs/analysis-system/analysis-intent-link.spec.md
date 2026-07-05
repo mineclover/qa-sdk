@@ -30,7 +30,6 @@ def:
 ## 목적 ^purpose
 
 특정 prefix들이 함께 관측되어야 하는 조건(IntentLink)을 정의하고, 위반 시 invariant violation을 감지한다. 순서 없는 공출현 — 같은 서비스 컨텍스트에서 동시에 나타나기만 하면 된다.
-
 ## 구성 ^overview
 
 IntentLink는 관측 체계 3단계 중 1단계(수동 선언)에 해당한다. DKG config에 사람이 직접 정의하는 prefix 공출현 조건이며, `traceFlows()` 함수로 위반을 감지한다.
@@ -57,7 +56,6 @@ interface IntentLinkNode {
 1. 각 레코드의 address_context에서 prefix 집합 추출
 2. IntentLink의 endpoints 중 일부만 존재하고 나머지가 누락되면 잠재적 위반
 3. invariant 텍스트가 있으면 패턴 매칭으로 구체적 위반 판정
-
 **invariant 패턴 매칭:**
 
 - **"A 없이 B" 패턴** — A가 없고 B가 있으면 위반 (예: `"page_view 없이 flow_point"`)

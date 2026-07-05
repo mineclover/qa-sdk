@@ -66,12 +66,7 @@ def:
 | `owner:<owner_system>` | owner boundary를 대표하는 system/layout |
 | `family:<familyId>` | family 내부 entry-point overview |
 
-루트 인덱스 문서는 다음을 만족하는 것이 좋다.
-
-- `entry-point` 태그 또는 equivalent root 역할
-- `depth: overview`
-- `tier: system` 또는 `tier: layout`
-- 다음 탐색 경로(Interface, Component, Event/Payload/Insight, Operations, Closure)를 guide할 수 있는 `^overview`
+루트 인덱스 문서는 `entry-point` 역할, `depth: overview`, `tier: system|layout`, Interface/Component/Event/Payload/Insight/Operations/Closure 탐색 경로를 guide하는 `^overview`를 갖는 것이 좋다.
 
 이 규칙은 Next.js의 폴더 기반 라우팅처럼 "경로/셀렉터가 먼저 root index에 도착하고, 그 다음 하위 구조를 따라 내려간다"는 탐색 모델을 문서화한 것이다.
 
@@ -79,22 +74,16 @@ def:
 
 1. **System boundary**를 먼저 정한다.
    서비스가 독립 behavior/runtime owner인지, 단순 component인지, layout/pack인지 판정한다.
-
 2. **Interface**를 분리한다.
    API/CLI/event input, route, command, public query는 Interface가 소유한다. System behavior나 data shape를 Interface 문서에 섞지 않는다.
-
 3. **Component data/state**를 분리한다.
    schema, state enum, payload/evidence shape, validation vocabulary는 Component가 소유한다.
-
 4. **Behavior contract**를 작성한다.
    BDD contract는 frontend behavior unit, request path, then state/effect/event를 연결한다.
-
 5. **Event/Payload/Insight**를 분리한다.
    Event는 semantic fact key, payload는 해석 증거, insight는 event stream을 해석한 판단 결과다.
-
 6. **Operations/observability**를 붙인다.
    deploy/config/verify/observe/runbook은 service operation 문서가 소유한다.
-
 7. **Closure를 확인한다.**
    `docs closure <service-system>`과 `def find-by-file <source>`로 source/rule/test/cases/evidence가 닫혔는지 본다.
 
@@ -106,7 +95,7 @@ def:
 | payload | event를 판단하기 위한 증거 envelope | requester, route, subject, effect_kind, changed_fields |
 | insight | event/payload stream에서 파생된 판단 | `policy.disable.rate_spike`, `missing_actor_context` |
 
-Backend가 `status: 1 -> 2`를 수행했다는 사실만으로는 event intent가 정해지지 않는다. request path, requester, frontend behavior unit, persistence outcome이 결합되어 event key와 alert routing이 결정된다.
+Backend의 `status: 1 -> 2` 사실만으로는 event intent가 정해지지 않는다. request path, requester, behavior unit, persistence outcome이 결합되어 event key와 alert routing이 결정된다.
 
 ## 표준 문서 family
 
@@ -127,9 +116,7 @@ Backend가 `status: 1 -> 2`를 수행했다는 사실만으로는 event intent�
 
 ## Reference Scaffold
 
-`qa-sdk init --nest-service <packages/<service>>`는 이 표준 구조의 baseline scaffold를 생성한다. 생성 범위는 `main.ts`, `AppModule`, `config/env.ts`, health endpoint, `api/application/infrastructure` 예시 domain, `@qa-sdk/nest-service-kit` wiring까지다.
-
-템플릿은 시작 구조만 제공한다. 실제 서비스는 example domain 교체, outbox/event adapter 연결, service family docs 생성, closure evidence 연결을 별도로 수행해야 한다. 구체 scaffold behavior는 `nest-service-template`, bootstrap/event/port baseline은 `nest-service-kit`이 소유한다.
+`qa-sdk init --nest-service <packages/<service>>`는 `main.ts`, `AppModule`, env, health endpoint, 예시 domain, `@qa-sdk/nest-service-kit` wiring까지의 baseline scaffold만 생성한다. 실제 서비스는 example domain 교체, event adapter, service family docs, closure evidence를 별도 소유한다. 구체 scaffold behavior는 `nest-service-template`, bootstrap/event/port baseline은 `nest-service-kit`이 소유한다.
 
 ## Frontmatter 기준
 
@@ -141,8 +128,6 @@ Backend가 `status: 1 -> 2`를 수행했다는 사실만으로는 event intent�
 | layout/pack | `tier: layout`, `refs`만 사용 |
 | rule | `.rule.md`, `scope: constraint`, `aspect: tech_constraint` |
 | cases/test | `depth: validation`, `scope: flow|feature`, `aspect: user_scenario|scenario` |
-
-개별 metadata option의 의미는 `definition-frontmatter-metadata-system`이 소유한다.
 
 ## 검증 ^constraint
 

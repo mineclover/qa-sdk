@@ -48,37 +48,24 @@ CLI에서 하네스 상태를 직접 관리할 때 사용한다. 자동 파생(`
 ## CLI 인터페이스 ^api-surface
 
 ```bash
-# ── 조회 ──────────────────────────────────────────────
-
 # 전체 상태 분포 (11개 머신)
 qa-sdk def state
-
 # 특정 머신의 분포
 qa-sdk def state doc-lifecycle
 qa-sdk def state version-lifecycle
 qa-sdk def state address-state
-
 # 특정 엔티티의 모든 상태 조회
 qa-sdk def state <entityId>
-
 # 가능한 전이 조회
 qa-sdk def state <entityId> --transitions
-
-# ── 전이 실행 ─────────────────────────────────────────
-
 # 단일 전이 (guard 자동 검증, cascade 자동 실행)
 qa-sdk def state <entityId> --machine doc-lifecycle --to review
-
 # 프로세스 실행
 qa-sdk def state <entityId> --process prefix-release
 qa-sdk def state <entityId> --process doc-approval
 qa-sdk def state <entityId> --process service-deprecation
-
-# ── 진단 ──────────────────────────────────────────────
-
 # 의존 관계 시각화
 qa-sdk def state --deps
-
 # 프로세스 사전 검증 (dry-run)
 qa-sdk def state <entityId> --process prefix-release --dry-run
 ```

@@ -16,6 +16,17 @@ def:
       type: traces_to
     - target: taxonomy-boundaries
       type: traces_to
+    - target: definition-addressing-plan
+      type: traces_to
+  sources:
+    - docs/specs/definition-catalog/definition-taxonomy/definition-addressing.spec.md
+    - docs/specs/definition-catalog/definition-taxonomy/definition-addressing.plan.md
+    - packages/definition-catalog/src/address-assign.ts
+    - packages/definition-catalog/src/address-assign.test.ts
+    - packages/definition-catalog/src/address-collision.test.ts
+    - packages/definition-data-source/src/sync-local-db.ts
+    - packages/definition-data-source/src/sync-local-db.test.ts
+    - packages/cli/src/data-sources/local-data-source.ts
 ---
 
 # Document Addressing Contract — 계획
@@ -30,6 +41,12 @@ def:
 - `identity / family / path` 3계층 주소 모델 정리
 - 파일 경로와 링크 그래프의 책임 분리
 - 이후 spec 승격 기준 마련
+
+## 현재 구현 상태 ^status
+
+이 계획의 spec 승격은 `definition-addressing` 문서에서 먼저 진행되었다. 현재 운영 상태는 id 제거가 아니라 `id` 주식별 + explicit `def_document:v2:*` 보존 + legacy v1 fallback 병행이다.
+
+system plan은 남은 사고 모델(문서 family, role view, projection view)을 추적하고, address-first 저장/조회 전환의 실행 상태는 `definition-addressing-plan`이 관리한다.
 
 ## 단계
 
@@ -99,3 +116,11 @@ def:
 3. role taxonomy가 family 분할 규칙으로 정리된다
 4. projection view 목록이 고정된다
 5. spec 승격 후보 문서가 결정된다
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter definition-catalog test
+corepack pnpm --filter definition-data-source test
+node packages/cli/dist/index.js def validate
+```

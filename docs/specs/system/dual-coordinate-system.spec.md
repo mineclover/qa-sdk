@@ -14,6 +14,19 @@ def:
       type: refines
     - target: definition-catalog-spec
       type: depends_on
+    - target: definition-addressing
+      type: depends_on
+    - target: df-ingest-emission
+      type: traces_to
+  sources:
+    - docs/specs/definition-catalog/definition-taxonomy/definition-addressing.spec.md
+    - docs/specs/definition-catalog/definition-taxonomy.spec.md
+    - packages/definition-catalog/src/bridge.ts
+    - packages/definition-catalog/src/address-assign.ts
+    - packages/definition-data-source/src/sync-local-db.ts
+    - packages/definition-data-source/src/sync-local-db.test.ts
+    - packages/decision-flow/src/ingest-adapter.ts
+    - docs/specs/decision-flow/df-interface-group/df-ingest-emission.spec.md
 ---
 # 이중 좌표 시스템 — Prefix(이벤트) × Scope(문서)
 
@@ -106,3 +119,19 @@ prefix_schema 문서 (scope 좌표: data/prefix_schema/specification)
 - **이벤트 관측**: `GET /v1/insights/correlations` — prefix 공출현 패턴
 - **문서 관측**: `POST /graph/validate` — 깨진 링크, 고아 문서, 순환 참조
 - **교차 관측**: prefix가 추가/변경되면 → prefix_schema 문서 갱신 필요 → definition-service에서 drift 감지
+
+## 현재 운영 경계 ^boundary
+
+- prefix/event 좌표는 runtime event의 `address_context`에 실린다.
+- definition/document 좌표는 `DefinitionEntry.serialized`와 frontmatter `address`로 보존된다.
+- `definition-catalog/src/bridge.ts`는 definition 문서를 `def_document` address_context로 투영하지만, prefix catalog의 SSOT가 되지는 않는다.
+- explicit v2 문서 주소가 없으면 legacy v1 fallback이 남아 있으므로, 현재 상태는 완전 address-first가 아니라 병행 전환 단계다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter definition-catalog test
+corepack pnpm --filter definition-data-source test
+corepack pnpm --filter decision-flow test
+node packages/cli/dist/index.js def validate
+```
