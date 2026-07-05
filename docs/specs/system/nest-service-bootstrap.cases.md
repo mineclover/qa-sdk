@@ -13,6 +13,9 @@ def:
   links:
     - target: nest-service-bootstrap
       type: refines
+  sources:
+    - packages/nest-service-kit/src/bootstrap.ts
+    - packages/nest-service-kit/src/bootstrap.test.ts
 ---
 
 # Nest Service Bootstrap — Use Cases
@@ -42,3 +45,9 @@ bootstrap helper가 telemetry, trace, runtime log, warning surface를 어떤 흐
 - shutdown log가 기록된다.
 - telemetry flush가 수행된다.
 - app close가 완료된다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/nest-service-kit test bootstrap
+```

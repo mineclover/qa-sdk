@@ -13,6 +13,10 @@ def:
   links:
     - target: nest-service-bootstrap
       type: constrains
+  sources:
+    - packages/nest-service-kit/src/bootstrap.ts
+    - packages/nest-service-kit/src/bootstrap.test.ts
+    - packages/nest-service-kit/src/logger.ts
 ---
 
 # Nest Service Bootstrap — Observability Rule
@@ -27,3 +31,9 @@ bootstrap 단계의 telemetry, audit log, runtime log, metric, trace wiring이 �
 - startup/shutdown log는 service boot 상태를 남겨야 한다.
 - port conflict warning은 runtime log surface로 노출되어야 한다.
 - WebSocket adapter는 optional이지만, 활성화 시 trace/log lifecycle 안에 포함되어야 한다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/nest-service-kit test bootstrap
+```

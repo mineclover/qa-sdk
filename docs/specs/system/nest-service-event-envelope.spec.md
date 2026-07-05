@@ -26,10 +26,11 @@ def:
       type: traces_to
     - target: nest-service-event-envelope-test
       type: traces_to
+  sources:
+    - packages/nest-service-kit/src/event-envelope.ts
+    - packages/nest-service-kit/src/event-envelope.test.ts
+    - packages/nest-service-kit/src/ports.ts
 ---
-sources:
-  - packages/nest-service-kit/src/event-envelope.ts
-
 
 # Nest Service Event Envelope
 
@@ -54,3 +55,10 @@ Nest 서비스가 raw mutation이 아니라 requester-aware semantic event를 �
 - 같은 data delta라도 requester, request path, behavior unit, effect kind가 다르면 event intent가 달라질 수 있다.
 - `payload`는 service-specific 확장을 허용하지만 envelope 밖의 core field는 request/effect semantics를 우선 소유한다.
 - alert/insight에 소비되는 event는 가능하면 `requesterType`, `behaviorUnit`, `subjectType`, `effectKind`, `outcome`을 함께 채운다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/nest-service-kit test event-envelope
+corepack pnpm --filter @qa-sdk/nest-service-kit typecheck
+```

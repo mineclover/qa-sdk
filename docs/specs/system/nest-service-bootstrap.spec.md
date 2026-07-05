@@ -23,10 +23,11 @@ def:
       type: traces_to
     - target: nest-service-bootstrap-test
       type: traces_to
+  sources:
+    - packages/nest-service-kit/src/bootstrap.ts
+    - packages/nest-service-kit/src/bootstrap.test.ts
+    - packages/nest-service-kit/src/logger.ts
 ---
-sources:
-  - packages/nest-service-kit/src/bootstrap.ts
-  - packages/nest-service-kit/src/logger.ts
 
 # Nest Service Bootstrap
 
@@ -47,3 +48,10 @@ Nest 서비스 entrypoint가 같은 방식으로 Fastify app, telemetry, CORS, s
 - shutdown hook과 telemetry flush는 bootstrap 단계에서 일괄 관리한다.
 - WebSocket adapter는 opt-in이다. 기본 bootstrap이 `@nestjs/platform-ws` 설치를 강제하면 안 된다.
 - logger는 `info`, `warn`, `error` surface를 제공해야 한다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/nest-service-kit test bootstrap
+corepack pnpm --filter @qa-sdk/nest-service-kit typecheck
+```

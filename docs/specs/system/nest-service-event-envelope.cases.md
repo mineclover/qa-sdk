@@ -13,6 +13,10 @@ def:
   links:
     - target: nest-service-event-envelope
       type: refines
+  sources:
+    - packages/nest-service-kit/src/event-envelope.ts
+    - packages/nest-service-kit/src/event-envelope.test.ts
+    - packages/nest-service-kit/src/ports.ts
 ---
 
 # Nest Service Event Envelope — Use Cases
@@ -41,3 +45,9 @@ event envelope가 requester, event, trace-like context, subject/effect evidence�
 **기대**:
 - event key/version과 producer service가 유지된다.
 - payload contract가 손상되지 않는다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/nest-service-kit test event-envelope
+```
