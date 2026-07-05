@@ -27,6 +27,9 @@
 ```bash
 pnpm --filter @qa-sdk/registry-ui dev
 pnpm --filter @qa-sdk/registry-ui build
+pnpm --filter @qa-sdk/registry-ui test
 ```
+
+`test`는 production build 뒤 SPA 탭/컨테이너 marker, JS/CSS asset, `public/__generated__/git-conflicts.e2e.json`의 dist 복사와 conflict fixture shape을 검증한다.
 
 이 패키지의 동작 의미는 registry-service가 SSOT다. UI에서 새 개념을 추가하기보다 먼저 registry 쪽 문서와 API surface가 맞는지 확인한다.

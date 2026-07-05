@@ -94,3 +94,5 @@ pnpm docs:usefulness-audit -- --format json --all
 `packages/docs-explorer`는 definition-catalog를 정적 JSON으로 export하는 Vite 문서 탐색기다. `test = build + scripts/static-smoke.test.mjs`를 추가해 production index의 탐색 UI marker, `dist/data.json`과 `public/data.json` 스냅샷 일치, `system-root` 링크 기반 첫 화면 탐색 대상, `docs-explorer` 노드, contains/parents 참조 무결성을 package-local로 증명한다. 같은 입력에서 export timestamp만 바뀌어 dirty가 생기지 않도록 기존 `generatedAt`을 보존한다.
 
 `packages/platform-demo`는 workbook형 Vite 앱과 monitor/dashboard/diagram/flow/debugger 정적 관찰 페이지를 함께 배포하는 viz-system 프론트엔드다. `test = build + scripts/static-smoke.test.mjs`를 추가해 production workbook asset, public 정적 페이지 복사, `def-catalog-data.json`, fallback read-model, diagram preset 전역 등록을 package-local로 증명한다.
+
+`packages/registry-ui`는 registry-service 데이터를 탐색·구성하는 Vanilla TS + Vite UI다. `test = build + scripts/static-smoke.test.mjs`를 추가해 SPA 탭/컨테이너 marker, JS/CSS asset, generated git-conflicts fixture의 dist 복사와 shape을 package-local로 증명한다. 독립 `tsc --noEmit`은 기존 file-map 타입 drift가 있어 이번 보수 증명 범위에는 넣지 않았다.
