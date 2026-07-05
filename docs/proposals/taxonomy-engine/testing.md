@@ -4,6 +4,10 @@
 
 라이브러리 코어가 순수 함수 + 결정론 + 좌표 round-trip이라 테스트 패턴이 잘 결정됨. `feedback_testing-philosophy`의 "라운드트립 증명 + demo-tests 분리 + 변환 경로 맵" 적용.
 
+## 목적 ^purpose
+
+taxonomy-engine의 순수 함수, fixture, dogfooding, CLI integration 검증 계층과 회귀 패턴을 고정한다.
+
 ## 8.1 테스트 분류 (4계층)
 
 | 계층 | 위치 | 대상 | 카운트 (목표) |
