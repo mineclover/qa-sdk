@@ -89,15 +89,22 @@ async function main() {
 
   // 3. Verify arch:check (Boundary) Consistency
   try {
-    // 임의의 잘못된 의존성 시뮬레이션 없이 현재 기지(known)의 위반 사항 수 확인
-    const checkOutput = execSync("npx tsx scripts/check-dependency-boundaries.ts", { encoding: "utf-8" }).catch(e => e.stdout);
-    const violationCountMatch = checkOutput.match(/Total (\d+) tier violations/);
-    const count = violationCountMatch ? parseInt(violationCountMatch[1]) : -1;
-    
-    // 현재 리팩토링 후 기지 위반 사항은 9건이어야 함
-    assert(count === 9, `Boundary Check: Detects exactly 9 known violations (found ${count})`);
+    const checkOutput = execSync("npx tsx scripts/check-dependency-boundaries.ts --json", { encoding: "utf-8" });
+    const boundary = JSON.parse(checkOutput);
+    const violationCount = Array.isArray(boundary.violations) ? boundary.violations.length : -1;
+
+    assert(violationCount === 0, `Boundary Check: Detects no tier violations (found ${violationCount})`);
   } catch (err) {
-    // Ignore as it might exit with 1
+    const output = typeof (err as { stdout?: unknown }).stdout === "string"
+      ? (err as { stdout: string }).stdout
+      : String((err as { stdout?: Buffer }).stdout ?? "");
+    try {
+      const boundary = JSON.parse(output);
+      const violationCount = Array.isArray(boundary.violations) ? boundary.violations.length : -1;
+      assert(violationCount === 0, `Boundary Check: Detects no tier violations (found ${violationCount})`);
+    } catch {
+      assert(false, "Boundary Check: produced parseable JSON");
+    }
   }
 
   console.log(chalk.bold.cyan(`\nVerification Complete: ${passedTests}/${totalTests} passed.\n`));
