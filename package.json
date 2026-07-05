@@ -20,6 +20,7 @@
     "arch:signals": "npx tsx scripts/discover-event-flow.ts",
     "arch:surfaces": "node scripts/report-package-surfaces.mjs",
     "arch:feedback": "npx tsx scripts/ai-feedback-loop.ts",
+    "arch:verify": "npx tsx scripts/verify-analysis-os.ts",
     "arch:manifest": "npx tsx scripts/generate-api-reference.ts",
     "clean": "pnpm -r run clean",
     "sync:skills": "bash scripts/sync-skills.sh",

@@ -8,34 +8,56 @@ import chalk from "chalk";
 
 async function main() {
   console.log(chalk.bold.cyan("\n🤖 AI Development Feedback Loop starting..."));
+  let failures = 0;
 
   // 1. Lint Check
-  console.log(chalk.dim("\n[1/3] Checking syntax & lint..."));
+  console.log(chalk.dim("\n[1/4] Checking syntax & lint..."));
   try {
     execSync("pnpm run lint", { stdio: "inherit" });
     console.log(chalk.green("✨ Lint passed."));
   } catch {
+    failures++;
     console.error(chalk.red("❌ Lint failed. Fix syntax errors first."));
   }
 
   // 2. Architectural Boundaries
-  console.log(chalk.dim("\n[2/3] Verifying architectural tiers..."));
+  console.log(chalk.dim("\n[2/4] Verifying architectural tiers..."));
   try {
     execSync("npx tsx scripts/check-dependency-boundaries.ts", { stdio: "inherit" });
     console.log(chalk.green("✨ Tier boundaries intact."));
   } catch {
-    console.warn(chalk.yellow("⚠️ Architectural violations detected. Review the report."));
+    failures++;
+    console.error(chalk.red("❌ Architectural violations detected. Review the report."));
   }
 
   // 3. API Impact Analysis
-  console.log(chalk.dim("\n[3/3] Analyzing API Impact Radius..."));
+  console.log(chalk.dim("\n[3/4] Analyzing API Impact Radius..."));
   try {
     execSync("npx tsx scripts/api-impact-analyzer.ts", { stdio: "inherit" });
-  } catch (err) {
+  } catch {
+    failures++;
     console.error(chalk.red("❌ Impact analysis failed."));
+  }
+
+  // 4. Analysis OS Accuracy
+  console.log(chalk.dim("\n[4/4] Verifying analysis system accuracy..."));
+  try {
+    execSync("pnpm run arch:verify", { stdio: "inherit" });
+    console.log(chalk.green("✨ Analysis accuracy checks passed."));
+  } catch {
+    failures++;
+    console.error(chalk.red("❌ Analysis accuracy verification failed."));
+  }
+
+  if (failures > 0) {
+    console.error(chalk.bold.red(`\n🚫 Feedback Loop failed with ${failures} failing stage(s).\n`));
+    process.exit(1);
   }
 
   console.log(chalk.bold.cyan("\n🚀 Feedback Loop Complete. Proceed with caution.\n"));
 }
 
-main().catch(console.error);
+main().catch(err => {
+  console.error(err);
+  process.exit(1);
+});

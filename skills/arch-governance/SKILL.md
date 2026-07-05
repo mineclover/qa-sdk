@@ -15,7 +15,7 @@ description: "qa-sdk 모노레포의 아키텍처 계층 정합성, API 영향�
 pnpm arch:feedback
 ```
 
-이 명령은 **Lint → Architectural Boundaries → API Impact** 3단계를 순차적으로 검증한다.
+이 명령은 **Lint → Architectural Boundaries → API Impact → Analysis OS Accuracy** 4단계를 순차적으로 검증한다. 어떤 단계든 실패하면 non-zero로 종료한다.
 
 ## 핵심 도구 가이드
 
@@ -85,7 +85,19 @@ pnpm arch:identity
 - **Event**: `eventName` (Outbox/Domain Event)
 - **UI**: `data-action-id` (추후 도입 예정)
 
-### 6. 거버넌스 관리 (`archi` CLI)
+### 6. 분석 시스템 정확도 검증 (`arch:verify`)
+
+분석 도구 자체가 현재 baseline을 제대로 증명하는지 확인한다.
+
+```bash
+pnpm arch:verify
+```
+
+- `arch:signals`: 핵심 이벤트 연결이 유지되는지 확인한다.
+- `arch:usage`: `zeroFanIn`, `archiveCandidates`, `deadWeight`, `missingEntrypoints`, `entrypointGaps` 분리가 현재 baseline과 맞는지 확인한다.
+- `arch:check --json`: tier violation이 0건인지 확인한다.
+
+### 7. 거버넌스 관리 (`archi` CLI)
 
 아키텍처 결정 사항(ADR)을 기록하고 시스템 지도를 관리한다.
 
