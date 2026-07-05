@@ -33,6 +33,17 @@ def:
       type: refs
     - target: aspect-evolution-index
       type: refs
+    - target: design-usefulness-audit
+      type: refs
+    - target: package-surface-separation-rule
+      type: refs
+  sources:
+    - scripts/design-usefulness-audit.mjs
+    - scripts/package-surfaces.mjs
+    - scripts/report-package-surfaces.mjs
+    - scripts/verify-analysis-os.ts
+    - docs/specs/system/design-usefulness-audit.rule.md
+    - docs/specs/system/package-surface-separation.rule.md
 ---
 
 # System-level Rules & Conventions Index
@@ -58,6 +69,7 @@ def:
 | [layer-separation](./layer-separation.rule.md) | data / validator / workflow / tooling 4 계층 책임 모델 + workflow smoke 원칙 |
 | [coordinate-storage](./coordinate-storage.rule.md) | weighted-index 좌표를 저장할 때 `(prefix_id, version, address)` VersionedIndex 패턴 필수 |
 | [design-usefulness-audit](./design-usefulness-audit.rule.md) | 실행 증거 없는 설계 문서/패키지를 keep/prove/quarantine/remove로 판정하는 감사 규칙 |
+| [package-surface-separation](./package-surface-separation.rule.md) | package surface를 runtime, governance, taxonomy, profile, domain support, consumer verification, quarantine으로 분리하는 승격/격리 규칙 |
 
 ---
 
@@ -82,6 +94,11 @@ qa-sdk def list --ext=test
 # 개별 규칙 본문 조회
 qa-sdk def body aspect-naming-convention
 qa-sdk def context aspect-naming-convention
+
+# package surface / usefulness audit 검증
+corepack pnpm arch:surfaces
+corepack pnpm arch:verify
+corepack pnpm docs:usefulness-audit -- --format json --all
 ```
 
 ---
@@ -90,3 +107,11 @@ qa-sdk def context aspect-naming-convention
 
 - `doc_type` frontmatter 는 대부분 `spec` 으로 통일되어 있어 `--type=rule` CLI 플래그는 **소스 파일 확장자** (`source_path LIKE '%.rule.md'`) 기준으로 필터링한다. 내부적으로 `DefListFilter.ext` 를 사용한다.
 - 추가 규율이 필요할 때는 `docs/specs/system/<topic>.rule.md` 를 생성하고 본 인덱스에 `refs` 링크를 추가한다.
+
+## 검증 ^validation
+
+```bash
+node packages/cli/dist/index.js def validate
+corepack pnpm arch:verify
+node scripts/design-usefulness-audit.mjs --format json --all
+```
