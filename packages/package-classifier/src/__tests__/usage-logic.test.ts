@@ -1,3 +1,6 @@
+// @def.boundary package-classifier-spec
+// @def.doc package-classifier-test
+
 import { describe, expect, it } from "vitest";
 import { scanAndClassify } from "../pkg-classifier.js";
 import { resolve, dirname } from "node:path";

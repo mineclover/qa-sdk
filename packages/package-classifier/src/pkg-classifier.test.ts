@@ -1,5 +1,5 @@
-// @def.boundary shared-utility-group
-// @def.doc shared-utility-group
+// @def.boundary package-classifier-spec
+// @def.doc package-classifier-test
 
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
