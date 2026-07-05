@@ -1,15 +1,16 @@
 import { scanAndClassify } from "../packages/package-classifier/src/pkg-classifier.js";
 import { createSurfaceIndex } from "./package-surfaces.mjs";
 import { resolve, join } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import chalk from "chalk";
 
 /**
  * Package Activity & Usage Analyzer
  * 
  * 1. Skeletons: No entry points.
- * 2. Dead Weight: No internal dependents.
- * 3. Critical Infrastructure: High fan-in count.
+ * 2. Zero Fan-In: No internal dependents, classified by package disposition.
+ * 3. Dead Weight Candidates: Zero fan-in packages that still need evidence or archive decisions.
+ * 4. Critical Infrastructure: High fan-in count.
  */
 
 async function main() {
@@ -29,11 +30,13 @@ async function main() {
 
   const skeletons: any[] = [];
   const deadWeight: any[] = [];
+  const zeroFanIn: any[] = [];
   const highUsage: any[] = [];
-  const surfaceSummary = new Map<string, { total: number; highUsage: number; deadWeight: number; skeletons: number }>();
+  const surfaceSummary = new Map<string, { total: number; highUsage: number; zeroFanIn: number; deadWeight: number; skeletons: number }>();
 
   for (const pkg of pkgs) {
     const pkgDir = pkg.dir.startsWith("/") ? pkg.dir : join(root, "packages", pkg.dir);
+    const pkgJson = readPackageJson(pkgDir);
     const hasIndex = existsSync(join(pkgDir, "src/index.ts")) || 
                      existsSync(join(pkgDir, "src/main.ts")) ||
                      existsSync(join(pkgDir, "src/index.js"));
@@ -50,6 +53,7 @@ async function main() {
     const summary = surfaceSummary.get(surfaceId) || {
       total: 0,
       highUsage: 0,
+      zeroFanIn: 0,
       deadWeight: 0,
       skeletons: 0,
     };
@@ -64,10 +68,17 @@ async function main() {
 
     // B. Usage Classification
     if (usageCount === 0) {
-      // Exclude consumers and core tools from dead weight
+      const disposition = classifyZeroFanIn(pkg, pkgJson, verdict);
+      const zeroFanInItem = { id: pkg.displayName, tier: pkg.tier, surface: surfaceId, verdict, disposition };
+      zeroFanIn.push(zeroFanInItem);
+      summary.zeroFanIn += 1;
+
+      // Exclude consumers and core tools from dead weight candidates.
       if (pkg.tier !== "consumer" && !["sdk", "cli", "archi"].includes(pkg.displayName)) {
-        deadWeight.push({ id: pkg.displayName, tier: pkg.tier, surface: surfaceId, verdict });
-        summary.deadWeight += 1;
+        if (disposition === "archive-candidate" || disposition === "needs-evidence") {
+          deadWeight.push(zeroFanInItem);
+          summary.deadWeight += 1;
+        }
       }
     } else if (usageCount >= 3) {
       highUsage.push({ id: pkg.displayName, count: usageCount, tier: pkg.tier, surface: surfaceId, verdict, dependents: uniqueDependents });
@@ -75,15 +86,21 @@ async function main() {
     }
   }
 
+  const highUsageByCount = [...highUsage].sort((a, b) => b.count - a.count || a.id.localeCompare(b.id));
+  const zeroFanInById = [...zeroFanIn].sort((a, b) => a.id.localeCompare(b.id));
+  const deadWeightById = [...deadWeight].sort((a, b) => a.id.localeCompare(b.id));
+  const skeletonsById = [...skeletons].sort((a, b) => a.id.localeCompare(b.id));
+
   if (process.argv.includes("--json")) {
     console.log(JSON.stringify({
       totalPackages: pkgs.length,
       surfaces: [...surfaceSummary.entries()]
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([surface, stats]) => ({ surface, ...stats })),
-      highUsage,
-      deadWeight,
-      skeletons,
+      highUsage: highUsageByCount,
+      zeroFanIn: zeroFanInById,
+      deadWeight: deadWeightById,
+      skeletons: skeletonsById,
     }, null, 2));
     return;
   }
@@ -97,26 +114,33 @@ async function main() {
     .sort(([a], [b]) => a.localeCompare(b))
     .forEach(([surface, stats]) => {
       console.log(
-        `  ${chalk.cyan(surface.padEnd(28))} | Total: ${chalk.bold(stats.total)} | High: ${stats.highUsage} | Dead: ${stats.deadWeight} | Skeleton: ${stats.skeletons}`,
+        `  ${chalk.cyan(surface.padEnd(28))} | Total: ${chalk.bold(stats.total)} | High: ${stats.highUsage} | Zero: ${stats.zeroFanIn} | Dead: ${stats.deadWeight} | Skeleton: ${stats.skeletons}`,
       );
     });
 
   console.log(chalk.bold.green(`[1] Critical Infrastructure (High Usage: Fan-In >= 3)`));
-  highUsage.sort((a, b) => b.count - a.count).forEach(h => {
+  highUsageByCount.forEach(h => {
     console.log(`  🔥 ${chalk.yellow(h.id.padEnd(25))} | Count: ${chalk.bold(h.count)} | Tier: ${h.tier} | Surface: ${h.surface}`);
     // console.log(chalk.dim(`     Deps: ${h.dependents.join(", ")}`));
   });
 
-  console.log(chalk.bold.red(`\n[2] Dead Weight (Library/Bridge with 0 dependents)`));
-  if (deadWeight.length > 0) {
-    deadWeight.forEach(d => console.log(`  📦 ${chalk.dim(d.id.padEnd(25))} | Tier: ${d.tier} | Surface: ${d.surface} | Verdict: ${d.verdict}`));
+  console.log(chalk.bold.magenta(`\n[2] Zero Fan-In Packages (Disposition)`));
+  if (zeroFanInById.length > 0) {
+    zeroFanInById.forEach(d => console.log(`  ◌ ${chalk.dim(d.id.padEnd(25))} | Tier: ${d.tier} | Surface: ${d.surface} | Verdict: ${d.verdict} | Disposition: ${d.disposition}`));
   } else {
     console.log("  (None found)");
   }
 
-  console.log(chalk.bold.yellow(`\n[3] Skeletons (Missing src/index.ts entry point)`));
-  if (skeletons.length > 0) {
-    skeletons.forEach(s => console.log(`  💀 ${chalk.dim(s.id.padEnd(25))} | Tier: ${s.tier} | Surface: ${s.surface} | Verdict: ${s.verdict}`));
+  console.log(chalk.bold.red(`\n[3] Dead Weight Candidates (Needs Evidence or Archive Decision)`));
+  if (deadWeightById.length > 0) {
+    deadWeightById.forEach(d => console.log(`  📦 ${chalk.dim(d.id.padEnd(25))} | Tier: ${d.tier} | Surface: ${d.surface} | Verdict: ${d.verdict} | Disposition: ${d.disposition}`));
+  } else {
+    console.log("  (None found)");
+  }
+
+  console.log(chalk.bold.yellow(`\n[4] Skeletons (Missing src/index.ts entry point)`));
+  if (skeletonsById.length > 0) {
+    skeletonsById.forEach(s => console.log(`  💀 ${chalk.dim(s.id.padEnd(25))} | Tier: ${s.tier} | Surface: ${s.surface} | Verdict: ${s.verdict}`));
   } else {
     console.log("  (None found)");
   }
@@ -125,3 +149,33 @@ async function main() {
 }
 
 main().catch(console.error);
+
+function readPackageJson(pkgDir: string): Record<string, any> {
+  return JSON.parse(readFileSync(join(pkgDir, "package.json"), "utf8"));
+}
+
+function classifyZeroFanIn(
+  pkg: { tier: string; displayName: string },
+  pkgJson: Record<string, any>,
+  verdict: string,
+): string {
+  if (verdict === "no-promotion") return "archive-candidate";
+  if (["consumer-contract", "consumer-tooling", "test-only"].includes(verdict)) {
+    return "standalone-contract";
+  }
+  if (pkgJson.private === true) return "standalone-app";
+
+  const hasLibraryEntrypoint = Boolean(pkgJson.exports || pkgJson.main || pkgJson.module || pkgJson.bin);
+  const scripts = pkgJson.scripts ?? {};
+  const hasOperationalScript = ["start", "preview", "deploy", "deploy:local", "demo", "infra", "build:data", "test:e2e"].some(
+    (script) => scripts[script],
+  );
+  if (hasOperationalScript) return "standalone-tool";
+
+  if (["keep", "maintain", "keep-as-tooling", "conditional-keep"].includes(verdict) && hasLibraryEntrypoint) {
+    return "kept-library";
+  }
+
+  if (pkg.tier === "consumer") return "standalone-app";
+  return "needs-evidence";
+}

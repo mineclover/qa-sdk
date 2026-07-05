@@ -26,7 +26,7 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 - surface를 넘는 연결은 runtime dependency가 아니라 adapter, fixture, smoke script, 또는 CLI 계약으로 시작한다.
 - package-local test만 있는 패키지는 제품 surface로 승격하지 않는다.
 - 제품 surface 승격에는 실제 소비자 또는 repo-level bridge smoke가 필요하다.
-- reverse dependency가 0이고 consumer smoke도 없는 패키지는 quarantine 후보로 둔다.
+- reverse dependency가 0인 패키지는 `zeroFanIn`으로 먼저 분류하고, consumer smoke나 독립 실행 계약도 없을 때만 dead weight 후보로 둔다.
 
 ## Surface 분류
 
@@ -61,16 +61,17 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 
 ## 사용성 신호 처리
 
-`pnpm arch:usage`의 `Dead Weight`와 `Skeletons`는 삭제 지시가 아니라 surface별 정리 큐다.
+`pnpm arch:usage`는 `zeroFanIn`과 `Dead Weight`를 분리한다. `zeroFanIn`은 독립 앱·계약·툴·라이브러리일 수 있다는 사실 신호이고, `Dead Weight`는 유지 근거가 없거나 archive 판정이 필요한 정리 큐다. `Skeletons`도 삭제 지시가 아니라 surface별 구현 형태 확인 신호다.
 
 | 신호 | 처리 |
 |------|------|
-| `verdict: keep` 또는 `maintain` + dead weight | public entrypoint, CLI, service endpoint, external consumer smoke 중 하나로 유지 근거를 보강한다. |
+| `verdict: keep` 또는 `maintain` + `zeroFanIn` | public entrypoint, CLI, service endpoint, external consumer smoke 중 하나로 독립 boundary 근거를 확인한다. |
+| `disposition: needs-evidence` 또는 `archive-candidate` + dead weight | 유지 근거를 추가하거나 quarantine/archive 결정을 명시한다. |
 | `verdict: consumer-only`, `consumer-contract`, `consumer-tooling`, `test-only` + skeleton | 앱·서비스·테스트 패키지는 `src/index.ts`가 없을 수 있다. build/test/script surface가 있으면 skeleton로만 기록한다. |
 | `verdict: conditional-keep` + dead/skeleton | 실제 소비자, bridge smoke, 또는 quality gate가 없으면 promotion 금지 상태로 둔다. |
 | `verdict: no-promotion` | package-local test는 허용하지만 제품 core 문서, roadmap, quality bundle에는 승격하지 않는다. |
 
-정리 작업은 `arch:surfaces`로 전체 배정이 깨지지 않는지 먼저 확인하고, `arch:usage`로 surface별 dead/skeleton 잔여를 확인한 뒤 진행한다.
+정리 작업은 `arch:surfaces`로 전체 배정이 깨지지 않는지 먼저 확인하고, `arch:usage`로 surface별 zero-fan-in/dead/skeleton 잔여를 확인한 뒤 진행한다.
 
 ## 검증 명령
 

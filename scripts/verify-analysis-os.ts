@@ -42,16 +42,20 @@ async function main() {
 
   // 2. Verify arch:usage Accuracy
   try {
-    const usageOutput = execSync("npx tsx scripts/analyze-package-usage.ts", { encoding: "utf-8" });
-    
+    const usageOutput = execSync("npx tsx scripts/analyze-package-usage.ts --json", { encoding: "utf-8" });
+    const usage = JSON.parse(usageOutput);
+
     // index-meta가 Critical Infrastructure 상위에 있는지 확인
-    const topUsage = usageOutput.split("\n").filter(l => l.includes("🔥")).slice(0, 5);
-    assert(topUsage.some(l => l.includes("index-meta")), 
+    const topUsage = usage.highUsage.slice(0, 5);
+    assert(topUsage.some((item: { id: string }) => item.id === "index-meta"),
            "Usage Analysis: 'index-meta' correctly identified as Critical Infrastructure");
-    
-    // dead weight에 실험적 모듈 포함 여부
-    assert(usageOutput.includes("address-index"), 
-           "Usage Analysis: 'address-index' correctly identified as Dead Weight");
+
+    // zero fan-in은 dead weight가 아니라 disposition으로 분리되어야 함
+    const addressIndex = usage.zeroFanIn.find((item: { id: string }) => item.id === "address-index");
+    assert(addressIndex?.disposition === "kept-library",
+           "Usage Analysis: 'address-index' correctly classified as zero fan-in kept library");
+    assert(Array.isArray(usage.deadWeight) && usage.deadWeight.length === 0,
+           "Usage Analysis: dead weight only contains unresolved archive/evidence candidates");
   } catch (err) {
     console.error("Usage verification failed:", err);
   }
