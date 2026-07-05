@@ -2,7 +2,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createSurfaceIndex } from "./package-surfaces.mjs";
+import { createSurfaceIndex, MANAGED_PACKAGE_SCOPE } from "./package-surfaces.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -178,7 +178,13 @@ function classifyPackage(packageJsonPath) {
   const packagePath = repoPath(packageDir);
   const packageName = manifest.name ?? packagePath;
   const displayName = packagePath.split("/").at(-1) ?? packageName;
-  const surface = surfaceIndex.get(packageName) ?? surfaceIndex.get(displayName);
+  const surfaceManaged = isSurfaceManagedPackagePath(packagePath);
+  const surface = surfaceManaged
+    ? surfaceIndex.get(packageName) ?? surfaceIndex.get(displayName)
+    : undefined;
+  const surfaceScope = surfaceManaged ? "surface-managed" : "workspace-support";
+  const surfaceId = surface?.id ?? (surfaceManaged ? "unassigned" : "workspace-support");
+  const surfaceVerdict = surface?.verdict ?? (surfaceManaged ? "unassigned" : "workspace-support");
   const scripts = manifest.scripts ?? {};
   const hasSrc = existsSync(join(packageDir, "src"));
   const hasLib = existsSync(join(packageDir, "lib"));
@@ -244,8 +250,10 @@ function classifyPackage(packageJsonPath) {
   return {
     path: packagePath,
     name: packageName,
-    surface: surface?.id ?? "unassigned",
-    surfaceVerdict: surface?.verdict ?? "unassigned",
+    surface: surfaceId,
+    surfaceVerdict,
+    surfaceScope,
+    surfaceManaged,
     verdict,
     evidenceScore,
     hasReadme,
@@ -258,6 +266,13 @@ function classifyPackage(packageJsonPath) {
     hasBin,
     reasons,
   };
+}
+
+function isSurfaceManagedPackagePath(packagePath) {
+  if (MANAGED_PACKAGE_SCOPE !== "packages/*") {
+    throw new Error(`Unsupported managed package scope: ${MANAGED_PACKAGE_SCOPE}`);
+  }
+  return packagePath.startsWith("packages/") && packagePath.split("/").length === 2;
 }
 
 function workspacePackageJsonPaths() {
@@ -325,6 +340,7 @@ const report = {
   summary: {
     docs: summarize(docs),
     packages: summarize(packages),
+    packageScopes: summarizeBy(packages, "surfaceScope"),
   },
   docs,
   packages,
@@ -333,6 +349,14 @@ const report = {
 function summarize(items) {
   return items.reduce((acc, item) => {
     acc[item.verdict] = (acc[item.verdict] ?? 0) + 1;
+    return acc;
+  }, {});
+}
+
+function summarizeBy(items, key) {
+  return items.reduce((acc, item) => {
+    const value = item[key] ?? "unknown";
+    acc[value] = (acc[value] ?? 0) + 1;
     return acc;
   }, {});
 }
@@ -365,13 +389,14 @@ function renderMarkdown() {
   lines.push("");
   lines.push(`- Docs: ${formatSummary(report.summary.docs)}`);
   lines.push(`- Packages: ${formatSummary(report.summary.packages)}`);
+  lines.push(`- Package scopes: ${formatScopeSummary(report.summary.packageScopes)}`);
   lines.push("");
   lines.push("## Package Candidates");
   lines.push("");
-  lines.push("| Verdict | Score | Package | Evidence | Reason |");
-  lines.push("|---|---:|---|---|---|");
+  lines.push("| Verdict | Scope | Score | Package | Evidence | Reason |");
+  lines.push("|---|---|---:|---|---|---|");
   for (const item of [...packages].sort(byPriority).slice(0, limit)) {
-    lines.push(`| ${item.verdict} | ${item.evidenceScore} | \`${item.name}\`<br>\`${item.path}\` | runtime=${item.hasRuntimeSurface}, testSurface=${item.hasTestSurface}, readme=${item.hasReadme}, testScript=${item.hasTestScript}, tests=${item.testFiles}, build=${item.hasBuildScript}, run=${item.hasRunScript}, bin=${item.hasBin} | ${item.reasons.join("; ")} |`);
+    lines.push(`| ${item.verdict} | ${item.surfaceScope}<br>${item.surface} | ${item.evidenceScore} | \`${item.name}\`<br>\`${item.path}\` | runtime=${item.hasRuntimeSurface}, testSurface=${item.hasTestSurface}, readme=${item.hasReadme}, testScript=${item.hasTestScript}, tests=${item.testFiles}, build=${item.hasBuildScript}, run=${item.hasRunScript}, bin=${item.hasBin} | ${item.reasons.join("; ")} |`);
   }
   lines.push("");
   lines.push("## Doc Candidates");
@@ -401,6 +426,13 @@ function formatSummary(summary) {
   return ["keep", "prove", "quarantine", "remove"]
     .filter((key) => summary[key])
     .map((key) => `${key}=${summary[key]}`)
+    .join(", ");
+}
+
+function formatScopeSummary(summary) {
+  return Object.entries(summary)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `${key}=${value}`)
     .join(", ");
 }
 

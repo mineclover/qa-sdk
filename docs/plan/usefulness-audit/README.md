@@ -31,6 +31,8 @@ pnpm docs:usefulness-audit -- --format json --all
 
 기본 리포트는 우선순위가 높은 후보만 보여준다. active 문서를 먼저 올리고 `docs/archive/`, `docs/proposals/_template/`, `docs/decisions/`의 미결정 skeleton, frontmatter 없는 `docs/plan/` planning note, `status: superseded` proposal redirect note 같은 낮은 신호 표면은 기본 후보 목록 뒤로 보낸다. 전체 인벤토리가 필요할 때만 `--all`을 붙인다. `prove`나 `quarantine` 후보를 바로 삭제하지 말고, 해당 package/docs의 실제 소비자와 검증 명령을 먼저 확인한다. approved 문서는 증거가 약해도 첫 판정을 `prove`로 유지한다.
 
+package 감사는 `pnpm-workspace.yaml`의 workspace roots를 읽지만 기능 surface 승격/격리 판정은 `packages/*`에만 적용한다. `simulations/*`와 `vendor/*`는 `workspace-support` scope로 표시해 실행 증거를 보존하되, 이름 끝부분이 같아도 `package-surface-separation-rule`의 제품/도구/격리 surface와 섞지 않는다.
+
 ## 1차 감사 기준
 
 | 판정 | 기준 |

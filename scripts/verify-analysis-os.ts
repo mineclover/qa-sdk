@@ -84,13 +84,25 @@ async function main() {
     const usefulness = JSON.parse(usefulnessOutput);
     const usefulnessPackages = Object.fromEntries(
       usefulness.packages.map((item: { name: string }) => [item.name, item]),
-    ) as Record<string, { verdict: string; surfaceVerdict: string }>;
+    ) as Record<string, { verdict: string; surfaceVerdict: string; surfaceScope: string }>;
     assert(usefulnessPackages["request-contract"]?.verdict === "quarantine"
            && usefulnessPackages["weighted-gpu"]?.verdict === "quarantine",
            "Usefulness Audit: no-promotion packages stay quarantine candidates");
     assert(usefulnessPackages["request-contract"]?.surfaceVerdict === "no-promotion"
            && usefulnessPackages["weighted-gpu"]?.surfaceVerdict === "no-promotion",
            "Usefulness Audit: quarantine candidates are derived from package surface manifest");
+    const unassignedSurfaceManagedPackages = usefulness.packages
+      .filter((item: { surfaceScope: string; surfaceVerdict: string }) =>
+        item.surfaceScope === "surface-managed" && item.surfaceVerdict === "unassigned");
+    assert(unassignedSurfaceManagedPackages.length === 0,
+           `Usefulness Audit: surface-managed packages are not left unassigned (${unassignedSurfaceManagedPackages.map((item: { name: string }) => item.name).join(", ") || "ok"})`);
+    assert(usefulness.summary.packageScopes?.["surface-managed"] === totalUsageSurfaceManagedPackages,
+           `Usefulness Audit: surface-managed scope matches package surface scope (${usefulness.summary.packageScopes?.["surface-managed"]}/${totalUsageSurfaceManagedPackages})`);
+    assert(usefulnessPackages["@qa-sdk-sim/enterprise-pm"]?.surfaceScope === "workspace-support"
+           && usefulnessPackages["@qa-sdk/sim-gateway"]?.surfaceScope === "workspace-support"
+           && usefulnessPackages["@qa-sdk/sim-gateway"]?.surfaceVerdict === "workspace-support"
+           && usefulnessPackages["visbug"]?.surfaceScope === "workspace-support",
+           "Usefulness Audit: simulation/vendor workspaces stay outside package surface promotion scope");
 
     // missing entrypoints는 실제 public entrypoint gap과 분리되어야 함
     const missingEntrypoints = Object.fromEntries(

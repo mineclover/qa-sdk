@@ -68,6 +68,7 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 11. `Product demo surfaces`, `Visual analysis tools`, `Verification suites`는 consumer surface다. 상위 surface의 ownership을 가져오지 않는다.
 12. `Quarantine candidates`는 package-local build/test를 유지할 수 있지만 README, roadmap, quality gate에서 제품 core처럼 홍보하지 않는다.
 13. 모든 `packages/*/package.json` 항목은 정확히 하나의 surface에 배정되어야 한다.
+14. `simulations/*`와 `vendor/*` workspace package는 support workspace로 감사할 수 있지만, package surface manifest에는 포함하지 않는다. 이름 끝부분이 `packages/*` package와 같아도 surface를 상속하지 않는다.
 
 ## 사용성 신호 처리
 
@@ -85,7 +86,7 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 
 정리 작업은 `arch:surfaces`로 `packages/*` surface-managed 배정이 깨지지 않는지 먼저 확인하고, `arch:usage`로 surface별 zero-fan-in/archive/dead/missing-entrypoint/entrypoint-gap 잔여를 확인한 뒤 진행한다.
 
-정확한 `packages/*` surface-managed 패키지 배정의 SSOT는 `scripts/package-surfaces.mjs`다. 위 표는 리뷰 가능한 surface 이름, 판정, 대표 패키지/그룹, 승격 기준을 요약한다. `packages/*` package coverage와 누락/중복은 `pnpm arch:surfaces`와 `pnpm arch:verify`가 manifest 기준으로 증명한다.
+정확한 `packages/*` surface-managed 패키지 배정의 SSOT는 `scripts/package-surfaces.mjs`다. 위 표는 리뷰 가능한 surface 이름, 판정, 대표 패키지/그룹, 승격 기준을 요약한다. `packages/*` package coverage와 누락/중복은 `pnpm arch:surfaces`와 `pnpm arch:verify`가 manifest 기준으로 증명한다. `simulations/*`와 `vendor/*`는 workspace-support로 usefulness audit에 남길 수 있으나, 기능 surface 승격 또는 quarantine 후보로 계산하지 않는다.
 
 ## 검증 명령
 
