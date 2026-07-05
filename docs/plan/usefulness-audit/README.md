@@ -84,3 +84,5 @@ pnpm docs:usefulness-audit -- --format json --all
 `packages/platform-demo-api`는 Worker 배포 패키지라 별도 build script 대신 `typecheck`와 Hono `app.request()` 기반 read-route smoke를 증거로 삼는다. health, dashboard read-model, prefix metadata, service/permission/event read-only route를 검증하고 D1 grant/log mutation route는 runtime 검증 대상으로 분리한다.
 
 `packages/snapshot-io`는 `SchemaSnapshot` JSON의 얇은 read/write/validation layer다. `test = spec-schema build + snapshot-io build + scripts/smoke.test.mjs`를 추가해 임시 디렉토리 round-trip, nested output directory creation, duplicate axis, missing dim validation failure를 package-local로 증명한다.
+
+`packages/authorization-monitor-web`은 authorization ontology의 proxy/application enforcement graph를 보여주는 Vite 앱이다. `test = build + scripts/static-smoke.mjs`를 추가해 production bundle, graph snapshot copy, proxy route/domain resource payload, RLSC `data-qa-address` marker를 package-local로 증명한다.

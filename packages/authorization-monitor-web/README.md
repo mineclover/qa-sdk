@@ -53,4 +53,7 @@ const doc = collectLayout(document.querySelector("#app")!, {
 ```bash
 pnpm --filter @qa-sdk/authorization-monitor-web dev
 pnpm --filter @qa-sdk/authorization-monitor-web build
+pnpm --filter @qa-sdk/authorization-monitor-web test
 ```
+
+`test`는 production build 후 `dist/index.html`, JS/CSS asset, `authorization-graph-snapshot.json` 복사, proxy/application resource graph payload, RLSC `data-qa-address` marker를 확인한다.
