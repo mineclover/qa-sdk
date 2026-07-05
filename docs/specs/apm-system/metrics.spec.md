@@ -15,6 +15,14 @@ def:
       type: depends_on
     - target: record-spec
       type: depends_on
+  sources:
+    - packages/core/src/types/record.ts
+    - packages/core/src/schema/record.schema.ts
+    - packages/core/src/schema/schema.test.ts
+    - packages/logger/src/logger.ts
+    - packages/sdk/src/logger.test.ts
+    - packages/apm/src/apm-logger.ts
+    - packages/apm/src/apm-logger.test.ts
 ---
 # Metric RecordKind — 메트릭 수집 및 집계
 
@@ -27,10 +35,10 @@ EventRecord의 RecordKind를 "metric"으로 확장하고, 메트릭 전용 필�
 - **RecordKind 확장**: 기존 `"log" | "span"`에 `"metric"`을 추가하여 메트릭 수집 경로 활성화
 - **4가지 MetricType**: counter(단조 증가 합산), gauge(현재값 last-value), histogram(버킷별 분포), summary(클라이언트 분위수, 서버 집계 불가)
 - **네이밍 규칙**: `{domain}.{resource}.{measurement}` dot-notation (예: `k8s.pod.cpu_usage`, `http.request.duration_ms`)
-- **필수 필드**: record_kind가 "metric"일 때 metric_type, metric_name, metric_value 3개 필수 + metric_labels/unit/buckets/quantiles 선택
+- **생성 필드**: `QaLogger.metric()`/`ApmLogger.metric()` 호출 경로가 metric_type, metric_name, metric_value를 채우고 metric_labels/unit/buckets/quantiles를 선택적으로 전달
 - **3단계 집계 윈도우**: 1분(raw, 7일 보존) → 1시간(90일) → 1일(1년) 롤업, MetricType별 전략 차별화
 - **하위 호환성**: metric 전용 필드 전부 optional이며, 기존 log/span 처리 코드에 영향 없음. verdict 경로는 log/span 전용 유지
-- **Zod 검증**: refine()으로 record_kind === "metric" 시 필수 필드 존재를 런타임 검증
+- **Zod 검증**: `eventRecordSchema`가 metric 전용 필드의 타입을 검증한다. 필드 존재성은 SDK/logger 생성 경로 테스트로 고정한다.
 
 ## RecordKind 확장
 
@@ -201,7 +209,7 @@ interface Aggregator {
 
 > Zod 스키마: `packages/core/src/schema/record.schema.ts` — `metricTypeSchema`, `eventRecordSchema`
 >
-> `record_kind === "metric"` 시 `metric_type`, `metric_name`, `metric_value` 필수 검증 (`.refine()`).
+> `metric_type`, `metric_name`, `metric_value`는 optional 필드로 구조 검증된다. `QaLogger.metric()`와 `ApmLogger.metric()` 테스트가 metric record 생성 시 세 필드를 채우는 계약을 고정한다.
 
 ## 하위 호환성
 
@@ -209,3 +217,11 @@ interface Aggregator {
 - metric 전용 필드는 모두 optional — 기존 레코드에 영향 없음
 - Phase 2 worker는 `record_kind === "metric"` 분기로 집계 로직 활성화
 - 기존 reconstruction → verdict 경로는 log/span에서만 동작 (metric은 집계 전용 경로)
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/core test schema
+corepack pnpm --filter @qa-sdk/sdk test logger
+corepack pnpm --filter @qa-sdk/apm test apm-logger
+```

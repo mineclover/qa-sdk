@@ -13,6 +13,13 @@ def:
   links:
     - target: address-context-format
       type: depends_on
+  sources:
+    - packages/logger/src/transport/transport.ts
+    - packages/logger/src/transport/http.ts
+    - packages/logger/src/transport/noop.ts
+    - packages/sdk/src/transport/transport.test.ts
+    - packages/logger/src/transport/ingest-forwarder.ts
+    - packages/logger/src/transport/ingest-forwarder.test.ts
 ---
 
 # Transport
@@ -47,6 +54,13 @@ interface Transport {
 ### HttpTransport
 
 HTTP POST로 envelope을 JSON 전송.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/sdk test transport
+corepack pnpm --filter @qa-sdk/logger test ingest-forwarder
+```
 
 ```typescript
 class HttpTransport implements Transport {

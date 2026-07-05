@@ -1,6 +1,5 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join, resolve, relative } from "node:path";
-import chalk from "chalk";
+import { lstatSync, readFileSync, readdirSync } from "node:fs";
+import { basename, join } from "node:path";
 
 export interface ImplementationSite {
   filePath: string;
@@ -73,13 +72,21 @@ export function findImplementations(root: string, endpoints: any[]): Map<string,
   return mapping;
 }
 
+const EXCLUDED_SOURCE_DIRS = new Set(["node_modules", "dist", ".vite", "coverage"]);
+
 function findTsFiles(dir: string): string[] {
   let results: string[] = [];
   const list = readdirSync(dir);
   list.forEach((file) => {
     file = join(dir, file);
-    const stat = statSync(file);
-    if (stat && stat.isDirectory()) {
+    const stat = lstatSync(file);
+    if (stat.isSymbolicLink()) {
+      return;
+    }
+    if (stat.isDirectory()) {
+      if (EXCLUDED_SOURCE_DIRS.has(basename(file))) {
+        return;
+      }
       results = results.concat(findTsFiles(file));
     } else if (file.endsWith(".ts") && !file.endsWith(".test.ts") && !file.endsWith(".d.ts")) {
       results.push(file);

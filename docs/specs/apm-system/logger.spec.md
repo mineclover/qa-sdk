@@ -13,6 +13,14 @@ def:
   links:
     - target: logger-contract
       type: depends_on
+  sources:
+    - packages/pino/src/index.ts
+    - packages/pino/src/index.test.ts
+    - packages/core/src/lib/create-logger.ts
+    - packages/core/src/lib/create-logger.test.ts
+    - packages/logger/src/logger.ts
+    - packages/logger/src/transport/ingest-forwarder.ts
+    - packages/logger/src/transport/ingest-forwarder.test.ts
 ---
 
 # Logger
@@ -139,3 +147,11 @@ re-export: `import type { Logger } from "@qa-sdk/core";`
 | `packages/core/src/lib/create-logger.ts` | createLogger 팩토리 |
 | `packages/logger/src/` | Transport 구현체 (Http, Protobuf, OTLP, IngestForwarder) |
 | `packages/logger/src/transport/ingest-forwarder.ts` | 로그 → Ingest 브릿지 |
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/pino test
+corepack pnpm --filter @qa-sdk/core test create-logger
+corepack pnpm --filter @qa-sdk/logger test ingest-forwarder
+```

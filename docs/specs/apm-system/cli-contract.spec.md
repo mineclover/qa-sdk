@@ -17,6 +17,15 @@ def:
       type: depends_on
     - target: git-utils
       type: depends_on
+  sources:
+    - packages/cli/src/index.ts
+    - packages/cli/src/command-groups/root.commands.ts
+    - packages/cli/src/commands/codegen.ts
+    - packages/cli/src/commands/flow.ts
+    - packages/cli/src/commands/quality.ts
+    - packages/cli/src/commands/ingest.ts
+    - packages/cli/src/commands/codegen.test.ts
+    - packages/cli/src/scenarios.e2e.test.ts
 ---
 # QA-SDK CLI 계약
 
@@ -108,3 +117,12 @@ CLI는 **관측 도구**다. 시스템을 제어하지 않는다.
 - dry-run: 시뮬레이션
 - codegen: 인터페이스 생성
 - 실제 버전 범프, 빌드, 배포는 환경 도구가 담당
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/cli test codegen
+corepack pnpm --filter @qa-sdk/cli test flow
+corepack pnpm --filter @qa-sdk/cli test quality
+corepack pnpm --filter @qa-sdk/cli test ingest-mode
+```
