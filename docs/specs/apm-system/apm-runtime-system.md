@@ -23,6 +23,12 @@ def:
       type: depends_on
     - target: pino-logger
       type: contains
+  sources:
+    - packages/logger/src/logger.ts
+    - packages/logger/src/transport/ingest-forwarder.ts
+    - packages/ingest-server/src/routes/ingest.ts
+    - packages/ingest-server/src/lib/phase-two-worker.ts
+    - packages/ingest-server/src/lib/record-stream-broker.ts
 ---
 
 # APM 런타임 그룹
@@ -38,5 +44,13 @@ def:
 - `logger-contract`: QaLogger의 인터페이스, 설정, 파라미터 계약을 정리한 문서.
 - `logger-runtime-rules`: 로거의 동작 제약과 테스트 커버리지 기준을 정리한 문서.
 - `log-ingest-bridge`: pino 구조화 로그 중 좌표(`addressContext`)가 포함된 로그만 필터링하여 ingest 파이프라인에 EventRecord로 전달하는 브릿지.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/logger test ingest-forwarder
+corepack pnpm --filter @qa-sdk/ingest-server test routes/ingest
+corepack pnpm --filter @qa-sdk/ingest-server test phase-two-worker
+```
 
 원본: `docs/specs/operations/runtime-flows.spec.md` (`runtime-flows-spec`), `docs/specs/collection/logger.spec.md` (`logger-spec`)

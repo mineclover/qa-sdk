@@ -31,6 +31,11 @@ consumes:
   - "@qa-sdk/core :: EventRecord, TransmissionEnvelope, newLogId, newTransmissionId, newTraceId, newSpanId, now"
   - "@qa-sdk/core :: createLogger (destinations 옵션)"
   - "ingest-server :: POST /v1/ingest"
+sources:
+  - packages/logger/src/transport/ingest-forwarder.ts
+  - packages/logger/src/transport/ingest-forwarder.test.ts
+  - packages/logger/src/transport/ingest-forwarder.e2e.test.ts
+  - packages/core/src/lib/create-logger.ts
 ---
 
 # Log → Ingest Bridge
@@ -91,3 +96,9 @@ pino 구조화 로그 중 좌표 데이터(`addressContext`)를 포함한 로그
 | `packages/logger/src/transport/ingest-forwarder.ts` | `IngestForwarder`, `createIngestForwarder`, `LogIngestBridgeConfig`, `ForwarderStats` | pino Destination → ingest HTTP 전송 |
 | `packages/core/src/lib/create-logger.ts` | `createMultiDestination`, `CreateLoggerOptions`, `LoggerDestination` | stdout + extras 동시 write |
 | `packages/*/src/lib/logger.ts` | 서비스별 `createLogger` 래퍼 | QA_INGEST_ENDPOINT 조건부 활성화 |
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/logger test ingest-forwarder
+```

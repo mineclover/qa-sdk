@@ -13,6 +13,12 @@ def:
   links:
     - target: platform-logger-spec
       type: refines
+  sources:
+    - packages/logger/src/logger.ts
+    - packages/logger/src/config.ts
+    - packages/logger/src/context.ts
+    - packages/logger/src/transport/transport.ts
+    - packages/logger/src/transport/noop.ts
 ---
 
 # 로거 계약
@@ -94,3 +100,9 @@ interface Transport {
 ## Actor 주입
 
 `setActor(actor)` → 이후 emit되는 모든 레코드에 actor_id, user_id, user_attributes를 자동 주입한다. `clearActor()`로 해제. ActorContext는 @qa-sdk/core에서 정의한 행위 주체 식별 타입이다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/logger test
+```

@@ -13,6 +13,12 @@ def:
   links:
     - target: apm-runtime-system
       type: refines
+  sources:
+    - packages/ingest-server/src/stores/store-factory.ts
+    - packages/ingest-server/src/lib/in-memory-task-queue.ts
+    - packages/ingest-server/src/lib/bullmq-task-queue.ts
+    - packages/ingest-server/src/lib/convergence-pipeline.ts
+    - packages/ingest-server/src/routes/streams.ts
 ---
 
 # 런타임 흐름 도입 규칙
@@ -83,3 +89,11 @@ def:
 | 디버깅 스트림 | 포트 미설정으로 비활성화 | 실시간 관찰 불가 |
 
 경로를 늘릴 때는 런타임 비용보다 **장애 시 되돌리기 쉬운지** 먼저 본다. 환경변수 하나로 비활성화할 수 없는 기능은 도입하지 않는다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/ingest-server test in-memory-task-queue
+corepack pnpm --filter @qa-sdk/ingest-server test bullmq-task-queue
+corepack pnpm --filter @qa-sdk/ingest-server test convergence-pipeline
+```

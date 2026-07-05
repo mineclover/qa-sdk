@@ -13,6 +13,13 @@ def:
   links:
     - target: apm-runtime-system
       type: refines
+  sources:
+    - packages/ingest-server/src/routes/ingest.ts
+    - packages/ingest-server/src/routes/ingest.test.ts
+    - packages/ingest-server/src/lib/phase-two-worker.ts
+    - packages/ingest-server/src/lib/phase-two-worker.test.ts
+    - packages/ingest-server/src/lib/record-stream-broker.ts
+    - packages/ingest-server/src/lib/record-stream-broker.test.ts
 ---
 
 # 런타임 흐름 경로
@@ -90,3 +97,11 @@ TaskQueue 구현체: InMemoryTaskQueue (개발), BullMQ (운영). convergence �
 | RecordStreamBroker | O (publish) | — | O (subscribe) |
 | DebugStore | — | — | O (캐시) |
 | ConvergencePipeline | — | O (선택) | — |
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/ingest-server test routes/ingest
+corepack pnpm --filter @qa-sdk/ingest-server test phase-two-worker
+corepack pnpm --filter @qa-sdk/ingest-server test record-stream-broker
+```

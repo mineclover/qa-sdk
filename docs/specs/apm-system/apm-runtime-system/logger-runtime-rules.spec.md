@@ -13,6 +13,12 @@ def:
   links:
     - target: infra-logger-spec
       type: refines
+  sources:
+    - packages/logger/src/logger.ts
+    - packages/logger/src/masking.ts
+    - packages/logger/src/transport/http.ts
+    - packages/logger/src/transport/ingest-forwarder.test.ts
+    - packages/logger/src/transport/ingest-forwarder.e2e.test.ts
 ---
 
 # 로거 런타임 규칙
@@ -74,3 +80,9 @@ payload의 민감 필드를 4가지 모드로 처리한다 (logger/src/masking.t
 3. **마스킹**: 각 모드별 payload 변환 정확성, maskedFields 목록 정확성
 4. **런타임 차이**: 공통 계약 테스트(log/startSpan/metric 반환값)와 런타임별 얇은 어댑터 테스트 분리
 5. **동시성**: flushInProgress 플래그 동작, interval + batch 동시 트리거 시 안전성
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/logger test ingest-forwarder
+```

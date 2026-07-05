@@ -19,6 +19,10 @@ defines:
 consumes:
   - "@qa-sdk/core :: createLogger"
   - "@qa-sdk/logger :: createIngestForwarder"
+sources:
+  - packages/core/src/lib/create-logger.ts
+  - packages/logger/src/transport/ingest-forwarder.ts
+  - packages/logger/src/transport/ingest-forwarder.e2e.test.ts
 ---
 
 # Log → Ingest 서비스 배선
@@ -168,3 +172,9 @@ logger.info({
 | multi-destination | mockStream에 동시 write |
 | level 필터 | warn 이상만 전달 |
 | 빈 배열 | destinations: [] → 기본 동작 |
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/logger test ingest-forwarder
+```

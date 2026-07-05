@@ -20,6 +20,10 @@ defines:
 consumes:
   - "@qa-sdk/core :: EventRecord, TransmissionEnvelope, newLogId, newTransmissionId, newTraceId, newSpanId, now"
   - "ingest-server :: POST /v1/ingest"
+sources:
+  - packages/logger/src/transport/ingest-forwarder.ts
+  - packages/logger/src/transport/ingest-forwarder.test.ts
+  - packages/logger/src/transport/ingest-forwarder.e2e.test.ts
 ---
 
 # IngestForwarder 구현
@@ -171,3 +175,9 @@ interface ForwarderStats {
 | 서비스 배선 패턴 | 실제 HTTP 서버 → createLogger + forwarder → 좌표 로그만 수신 확인 |
 | 일반 로그 격리 | 좌표 없는 로그 10건 → ingest 0건 전달 |
 | 명시 eventKey | `auth.login.success` 그대로 전달 |
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/logger test ingest-forwarder
+```
