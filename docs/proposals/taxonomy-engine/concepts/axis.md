@@ -1,3 +1,30 @@
+---
+def:
+  id: taxonomy-engine-axis-concept
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: data
+  aspect: concept
+  tier: component
+  depth: specification
+  sources:
+    - packages/taxonomy-engine/src/schema/ir.ts
+    - packages/taxonomy-engine/src/schema/zod.ts
+    - packages/taxonomy-engine/src/validate/capacity.ts
+    - packages/taxonomy-engine/src/validate/axis5q.ts
+    - packages/taxonomy-engine/src/indexer/index.ts
+    - packages/taxonomy-engine/__tests__/unit/schema.test.ts
+    - packages/taxonomy-engine/__tests__/unit/validate.test.ts
+    - packages/taxonomy-engine/__tests__/unit/indexer.test.ts
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: concept-axis
+---
+
 # Axis — 차원
 
 > taxonomy 좌표 공간의 한 방향. 텍소노미의 가장 기본적인 1급 개념.
@@ -29,11 +56,11 @@ axis끼리 서로 모른다. 한 axis의 entry가 다른 axis의 어떤 entry와
 
 ### 유한성
 
-axis는 **유한한** entries만 가져야 한다. unbounded (예: timestamp, uuid)는 좌표가 아니다. 사용자 메모리 `feedback_axis-5q-checklist`의 5Q 중 첫 번째 항목이 "유한"인 이유.
+axis는 **유한한** entries만 가져야 한다. unbounded (예: timestamp, uuid)는 좌표가 아니다. `validateAxis5Q()`는 이름상 무한 집합일 가능성이 큰 axis를 `axis-5q-finite` warning으로 표면화한다.
 
 ### Capacity headroom
 
-`capacity ≥ entries.length * 2`. 즉 절반은 항상 비워둔다. 이유: entry 추가에 대한 여유. 사용자 메모리 `feedback_capacity-minimum` 참조. 이 규칙 위반은 `capacity-headroom` warning.
+`capacity ≥ entries.length * 2`. 즉 절반은 항상 비워둔다. 이유: entry 추가에 대한 여유. 이 규칙 위반은 `validateCapacity()`의 `capacity-headroom` warning으로 보고한다.
 
 ### Version은 정수, entries 변경의 경계
 
@@ -61,5 +88,13 @@ qa-sdk-coordinate-system:
 
 - spec: `docs/proposals/taxonomy-engine/00-design.md` §4.3
 - 시스템 철학: `docs/definition-system-philosophy.md`
-- 5Q checklist: 메모리 `feedback_axis-5q-checklist`
-- capacity 정책: 메모리 `feedback_capacity-minimum`
+- 5Q finite 검증: `packages/taxonomy-engine/src/validate/axis5q.ts`
+- capacity 정책: `packages/taxonomy-engine/src/validate/capacity.ts`
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter taxonomy-engine exec vitest run __tests__/unit/schema.test.ts __tests__/unit/validate.test.ts __tests__/unit/indexer.test.ts
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```

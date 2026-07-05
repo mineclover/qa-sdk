@@ -1,3 +1,29 @@
+---
+def:
+  id: taxonomy-engine-coordinate-concept
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: data
+  aspect: concept
+  tier: component
+  depth: specification
+  sources:
+    - packages/taxonomy-engine/src/schema/ir.ts
+    - packages/taxonomy-engine/src/indexer/index.ts
+    - packages/taxonomy-engine/src/query/walk-by-coordinate.ts
+    - packages/taxonomy-engine/src/ref/parser.ts
+    - packages/taxonomy-engine/__tests__/unit/indexer.test.ts
+    - packages/taxonomy-engine/__tests__/unit/query.test.ts
+    - packages/taxonomy-engine/__tests__/unit/ref.test.ts
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: concept-coordinate
+---
+
 # Coordinate — 점
 
 > 여러 [[axis]]의 [[entry]]를 동시에 지정한 좌표 튜플. 텍소노미 공간의 한 점.
@@ -64,5 +90,13 @@ lesson-builder-content:
 ## 참조
 
 - spec: `docs/proposals/taxonomy-engine/00-design.md` §4.3, §5.2
-- 좌표 저장 컨벤션: `docs/specs/system/coordinate-storage.rule.md`
-- 좌표계 정체성: 메모리 `project_coordinate-system-identity`
+- 좌표 packing 구현: `packages/taxonomy-engine/src/indexer/index.ts`
+- 좌표 ref 문법: `packages/taxonomy-engine/src/ref/parser.ts`
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter taxonomy-engine exec vitest run __tests__/unit/indexer.test.ts __tests__/unit/query.test.ts __tests__/unit/ref.test.ts
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```

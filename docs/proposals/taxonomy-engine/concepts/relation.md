@@ -1,3 +1,30 @@
+---
+def:
+  id: taxonomy-engine-relation-concept
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: data
+  aspect: concept
+  tier: component
+  depth: specification
+  sources:
+    - packages/taxonomy-engine/src/schema/ir.ts
+    - packages/taxonomy-engine/src/validate/ref.ts
+    - packages/taxonomy-engine/src/validate/constraint.ts
+    - packages/taxonomy-engine/src/query/walk-relation.ts
+    - packages/taxonomy-engine/src/query/walk-by-coordinate.ts
+    - packages/taxonomy-engine/__tests__/unit/query.test.ts
+    - packages/taxonomy-engine/__tests__/unit/validate.test.ts
+    - packages/taxonomy-engine/__tests__/unit/ref.test.ts
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: concept-relation
+---
+
 # Relation — 화살표
 
 > [[coordinate]] 사이의 의미적 연결. 텍소노미 공간 안의 1급 시민.
@@ -117,3 +144,11 @@ clip-binds-asset-control:
 - spec: `docs/proposals/taxonomy-engine/00-design.md` §4.1, §4.2
 - LinkType 정책 (qa-sdk): `docs/specs/definition-catalog/` 의 contains/depends_on/implements/refines/constrains/traces_to
 - 관계의 일반화 결정 (T-A3): 코드 `packages/taxonomy-engine/src/validate/ref.ts`의 `inferAxis`
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter taxonomy-engine exec vitest run __tests__/unit/query.test.ts __tests__/unit/validate.test.ts __tests__/unit/ref.test.ts
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```

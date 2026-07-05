@@ -1,3 +1,32 @@
+---
+def:
+  id: taxonomy-engine-entry-concept
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: data
+  aspect: concept
+  tier: component
+  depth: specification
+  sources:
+    - packages/taxonomy-engine/src/schema/ir.ts
+    - packages/taxonomy-engine/src/parser/index.ts
+    - packages/taxonomy-engine/src/indexer/index.ts
+    - packages/taxonomy-engine/src/validate/structure.ts
+    - packages/taxonomy-engine/src/ref/parser.ts
+    - packages/taxonomy-engine/src/ref/resolver.ts
+    - packages/taxonomy-engine/__tests__/unit/parser.test.ts
+    - packages/taxonomy-engine/__tests__/unit/indexer.test.ts
+    - packages/taxonomy-engine/__tests__/unit/ref.test.ts
+    - packages/taxonomy-engine/__tests__/unit/validate.test.ts
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: concept-entry
+---
+
 # Entry — 좌표값
 
 > 한 [[axis]] 위의 한 점. 텍소노미의 가장 작은 의미 단위.
@@ -67,5 +96,13 @@ parser가 yaml 줄/칸을 entry에 부착. IDE/LSP의 jump-to-definition 기반.
 ## 참조
 
 - spec: `docs/proposals/taxonomy-engine/00-design.md` §4.2, §5.1 (ref tier)
-- address 분리 결정: 메모리 `project_adr-address-separation`
-- 좌표계 본질: 메모리 `project_coordinate-system-identity`
+- address 분리 구현: `packages/taxonomy-engine/src/indexer/index.ts`
+- address 기반 ref: `packages/taxonomy-engine/src/ref/parser.ts`, `packages/taxonomy-engine/src/ref/resolver.ts`
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter taxonomy-engine exec vitest run __tests__/unit/parser.test.ts __tests__/unit/indexer.test.ts __tests__/unit/ref.test.ts __tests__/unit/validate.test.ts
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```
