@@ -187,7 +187,7 @@ function renderTree(groupId) {
   const tree = document.getElementById('tree');
   tree.innerHTML = '';
 
-  const members = (group.contains || [])
+  const members = getTreeMemberIds(group)
     .map(id => nodeMap[id]).filter(Boolean)
     .sort((a, b) => SCOPE_ORDER.indexOf(a.scope) - SCOPE_ORDER.indexOf(b.scope));
 
@@ -206,6 +206,11 @@ function renderTree(groupId) {
     div.onclick = () => selectNode(m.id, groupId);
     tree.appendChild(div);
   });
+}
+
+function getTreeMemberIds(node) {
+  if ((node.contains || []).length > 0) return node.contains;
+  return [...new Set((node.links || []).map(l => l.target).filter(id => nodeMap[id]))];
 }
 
 function selectNode(id, parentGroupId) {

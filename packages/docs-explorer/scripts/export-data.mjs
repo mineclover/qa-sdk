@@ -12,6 +12,11 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "../../..");
+const outPath = join(__dirname, "../public/data.json");
+
+function comparableExport(value) {
+  return JSON.stringify({ ...value, generatedAt: null });
+}
 
 const result = await scanAndBuild(ROOT, [join(ROOT, "docs")]);
 const reg = result.registry;
@@ -71,6 +76,12 @@ const output = {
   nodes,
 };
 
-const outPath = join(__dirname, "../public/data.json");
+try {
+  const previous = JSON.parse(await readFile(outPath, "utf-8"));
+  if (previous.generatedAt && comparableExport(previous) === comparableExport(output)) {
+    output.generatedAt = previous.generatedAt;
+  }
+} catch { /* no previous export */ }
+
 await writeFile(outPath, JSON.stringify(output));
 console.log(`${nodes.length}건 → ${outPath} (${(JSON.stringify(output).length / 1024).toFixed(0)}KB)`);

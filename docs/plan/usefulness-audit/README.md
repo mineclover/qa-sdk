@@ -90,3 +90,5 @@ pnpm docs:usefulness-audit -- --format json --all
 `packages/config-loader`는 catalog/DKG config 파일 탐색과 fallback을 맡는 shared utility다. `test = build + scripts/smoke.test.mjs`를 추가해 explicit JSON/module loading, `qa-sdk.config.js` discovery, invalid catalog/DKG config rejection을 임시 디렉토리에서 package-local로 증명한다.
 
 `packages/decision-service`는 Nest service shell이지만 package-local smoke는 서버를 띄우지 않고 in-memory SQLite와 실제 migrations로 닫는다. `test = build + build:tsc + scripts/services.test.ts`를 추가해 health, schema upsert/delete, instance save/update/list, flow link create/query/unlink를 검증한다.
+
+`packages/docs-explorer`는 definition-catalog를 정적 JSON으로 export하는 Vite 문서 탐색기다. `test = build + scripts/static-smoke.test.mjs`를 추가해 production index의 탐색 UI marker, `dist/data.json`과 `public/data.json` 스냅샷 일치, `system-root` 링크 기반 첫 화면 탐색 대상, `docs-explorer` 노드, contains/parents 참조 무결성을 package-local로 증명한다. 같은 입력에서 export timestamp만 바뀌어 dirty가 생기지 않도록 기존 `generatedAt`을 보존한다.

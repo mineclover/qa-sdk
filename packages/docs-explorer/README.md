@@ -29,4 +29,7 @@ pnpm --filter @qa-sdk/docs-explorer dev
 pnpm --filter @qa-sdk/docs-explorer build
 pnpm --filter @qa-sdk/docs-explorer preview
 pnpm --filter @qa-sdk/docs-explorer export
+pnpm --filter @qa-sdk/docs-explorer test
 ```
+
+`test`는 production build 뒤 `dist/index.html`의 탐색 UI marker와 `dist/data.json`/`public/data.json` 스냅샷 일치, `system-root`의 링크 기반 첫 화면 탐색 대상, `docs-explorer` 문서 노드, contains/parents 참조 무결성을 검증한다.
