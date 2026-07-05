@@ -47,11 +47,21 @@ pnpm arch:impact --json   # 상세 데이터 출력
 
 ```bash
 pnpm arch:usage
+pnpm arch:usage -- --json
 ```
 
 - **Critical Infrastructure**: Fan-In >= 3인 모듈. 수정 시 파급력이 크므로 극도의 주의 필요.
-- **Dead Weight**: 의존자가 0인 패키지. 아카이빙 또는 통합 검토 대상.
-- **Skeletons**: 엔트리 포인트(`index.ts`)가 없는 빈 패키지.
+- **Zero Fan-In**: repo 내부 의존자가 0인 패키지. 독립 앱, CLI/tool, contract/test suite, public library, archive 후보를 `disposition`으로 먼저 분리한다.
+- **Dead Weight Candidates**: `zeroFanIn` 중 `needs-evidence` 또는 `archive-candidate`만 정리 후보로 본다. 0 fan-in 자체를 삭제 지시로 해석하지 않는다.
+- **Missing Entrypoints**: conventional `src/index.ts`류 entrypoint가 없는 패키지. runtime service, browser app, test/contract suite, wasm package를 `disposition`으로 분리한다.
+- **Entrypoint Gaps**: public/library surface인데 conventional entrypoint 근거가 약한 실제 조치 후보. 이 항목이 남을 때만 entrypoint 추가 또는 boundary 재판정이 필요하다.
+
+판정 순서:
+
+1. `arch:surfaces`로 모든 workspace package가 정확히 하나의 surface에 배정됐는지 확인한다.
+2. `arch:usage -- --json`에서 `deadWeight`와 `entrypointGaps`를 먼저 본다.
+3. `zeroFanIn`과 `missingEntrypoints`는 사실 신호다. `disposition`을 확인한 뒤 독립 boundary 근거 또는 실제 정리 후보를 구분한다.
+4. 예전 보조 스크립트인 `scripts/find-unused-candidates.ts`도 `arch:usage`에 위임되어야 하며, 별도 heuristics를 추가하지 않는다.
 
 ### 4. 이벤트 신호 연결 분석 (`arch:signals`)
 
@@ -88,7 +98,7 @@ archi timeline    # 아키텍처 진화 이력 동기화
 
 ## AI 에이전트 작업 지침
 
-1. **임팩트 우선**: `index-meta`, `weighted-index` 등 Fan-In이 높은 패키지 수정 전에는 반드시 `arch:usage`로 영향 범위를 먼저 파악한다.
+1. **임팩트 우선**: `index-meta`, `weighted-index` 등 Fan-In이 높은 패키지 수정 전에는 반드시 `arch:usage`로 영향 범위를 먼저 파악한다. 단, `zeroFanIn` 또는 `missingEntrypoints`는 그 자체로 정리 대상이 아니라 disposition 기반 후속 판정의 입력이다.
 2. **정합성 강제**: 모든 유의미한 변경 후에는 `arch:feedback`을 실행하고, 위반 사항이 발생하면 즉시 해결책을 제시한다.
 3. **거버넌스 기록**: 아키텍처 구조 변경(계층 이동, 신규 경계 정의) 시에는 `archi new session`으로 기록을 남긴다.
 
