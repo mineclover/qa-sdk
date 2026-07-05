@@ -61,17 +61,18 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 
 ## 사용성 신호 처리
 
-`pnpm arch:usage`는 `zeroFanIn`과 `Dead Weight`를 분리한다. `zeroFanIn`은 독립 앱·계약·툴·라이브러리일 수 있다는 사실 신호이고, `Dead Weight`는 유지 근거가 없거나 archive 판정이 필요한 정리 큐다. `Skeletons`도 삭제 지시가 아니라 surface별 구현 형태 확인 신호다.
+`pnpm arch:usage`는 `zeroFanIn`과 `Dead Weight`, `missingEntrypoints`와 `entrypointGaps`를 분리한다. `zeroFanIn`은 독립 앱·계약·툴·라이브러리일 수 있다는 사실 신호이고, `Dead Weight`는 유지 근거가 없거나 archive 판정이 필요한 정리 큐다. `missingEntrypoints`는 conventional `src/index.ts`류 entrypoint가 없다는 형태 신호이고, `entrypointGaps`만 public/library surface 검토 후보로 다룬다.
 
 | 신호 | 처리 |
 |------|------|
 | `verdict: keep` 또는 `maintain` + `zeroFanIn` | public entrypoint, CLI, service endpoint, external consumer smoke 중 하나로 독립 boundary 근거를 확인한다. |
 | `disposition: needs-evidence` 또는 `archive-candidate` + dead weight | 유지 근거를 추가하거나 quarantine/archive 결정을 명시한다. |
-| `verdict: consumer-only`, `consumer-contract`, `consumer-tooling`, `test-only` + skeleton | 앱·서비스·테스트 패키지는 `src/index.ts`가 없을 수 있다. build/test/script surface가 있으면 skeleton로만 기록한다. |
-| `verdict: conditional-keep` + dead/skeleton | 실제 소비자, bridge smoke, 또는 quality gate가 없으면 promotion 금지 상태로 둔다. |
+| `missingEntrypoints` + `runtime-service`, `browser-app`, `test-or-contract-suite`, `wasm-package` | 앱·서비스·테스트·wasm 패키지는 `src/index.ts`가 없을 수 있다. build/test/script surface가 있으면 형태 신호로만 기록한다. |
+| `entrypointGaps` | public/library 패키지인데 conventional entrypoint 근거가 약한 상태다. entrypoint를 추가하거나 package boundary를 재판정한다. |
+| `verdict: conditional-keep` + dead/entrypoint gap | 실제 소비자, bridge smoke, 또는 quality gate가 없으면 promotion 금지 상태로 둔다. |
 | `verdict: no-promotion` | package-local test는 허용하지만 제품 core 문서, roadmap, quality bundle에는 승격하지 않는다. |
 
-정리 작업은 `arch:surfaces`로 전체 배정이 깨지지 않는지 먼저 확인하고, `arch:usage`로 surface별 zero-fan-in/dead/skeleton 잔여를 확인한 뒤 진행한다.
+정리 작업은 `arch:surfaces`로 전체 배정이 깨지지 않는지 먼저 확인하고, `arch:usage`로 surface별 zero-fan-in/dead/missing-entrypoint/entrypoint-gap 잔여를 확인한 뒤 진행한다.
 
 ## 검증 명령
 

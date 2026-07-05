@@ -51,11 +51,30 @@ async function main() {
            "Usage Analysis: 'index-meta' correctly identified as Critical Infrastructure");
 
     // zero fan-in은 dead weight가 아니라 disposition으로 분리되어야 함
-    const addressIndex = usage.zeroFanIn.find((item: { id: string }) => item.id === "address-index");
-    assert(addressIndex?.disposition === "kept-library",
+    const zeroFanIn = Object.fromEntries(
+      usage.zeroFanIn.map((item: { id: string }) => [item.id, item]),
+    ) as Record<string, { disposition: string }>;
+    assert(zeroFanIn["address-index"]?.disposition === "kept-library",
            "Usage Analysis: 'address-index' correctly classified as zero fan-in kept library");
+    assert(zeroFanIn["cli"]?.disposition === "standalone-tool",
+           "Usage Analysis: CLI packages with bin entrypoints are standalone tools");
     assert(Array.isArray(usage.deadWeight) && usage.deadWeight.length === 0,
            "Usage Analysis: dead weight only contains unresolved archive/evidence candidates");
+
+    // missing entrypoints는 실제 public entrypoint gap과 분리되어야 함
+    const missingEntrypoints = Object.fromEntries(
+      usage.missingEntrypoints.map((item: { id: string }) => [item.id, item]),
+    ) as Record<string, { disposition: string }>;
+    assert(Array.isArray(usage.entrypointGaps) && usage.entrypointGaps.length === 0,
+           "Usage Analysis: entrypoint gaps only contains unresolved public/library gaps");
+    assert(missingEntrypoints["decode-service"]?.disposition === "runtime-service",
+           "Usage Analysis: service packages without src/index.ts are runtime services");
+    assert(missingEntrypoints["taxonomy-web"]?.disposition === "browser-app",
+           "Usage Analysis: Vite packages without src/index.ts are browser apps");
+    assert(missingEntrypoints["shop-web"]?.disposition === "browser-app",
+           "Usage Analysis: static web packages without src/index.ts are browser apps");
+    assert(missingEntrypoints["weighted-wasm"]?.disposition === "wasm-package",
+           "Usage Analysis: wasm packages use wasm/js entrypoints instead of src/index.ts");
   } catch (err) {
     console.error("Usage verification failed:", err);
   }

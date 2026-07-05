@@ -6,8 +6,8 @@ import chalk from "chalk";
 
 /**
  * Package Activity & Usage Analyzer
- * 
- * 1. Skeletons: No entry points.
+ *
+ * 1. Missing Entrypoints: No conventional src/index.ts-style entry point.
  * 2. Zero Fan-In: No internal dependents, classified by package disposition.
  * 3. Dead Weight Candidates: Zero fan-in packages that still need evidence or archive decisions.
  * 4. Critical Infrastructure: High fan-in count.
@@ -28,11 +28,15 @@ async function main() {
     });
   });
 
-  const skeletons: any[] = [];
+  const missingEntrypoints: any[] = [];
+  const entrypointGaps: any[] = [];
   const deadWeight: any[] = [];
   const zeroFanIn: any[] = [];
   const highUsage: any[] = [];
-  const surfaceSummary = new Map<string, { total: number; highUsage: number; zeroFanIn: number; deadWeight: number; skeletons: number }>();
+  const surfaceSummary = new Map<
+    string,
+    { total: number; highUsage: number; zeroFanIn: number; deadWeight: number; missingEntrypoints: number; entrypointGaps: number }
+  >();
 
   for (const pkg of pkgs) {
     const pkgDir = pkg.dir.startsWith("/") ? pkg.dir : join(root, "packages", pkg.dir);
@@ -55,15 +59,23 @@ async function main() {
       highUsage: 0,
       zeroFanIn: 0,
       deadWeight: 0,
-      skeletons: 0,
+      missingEntrypoints: 0,
+      entrypointGaps: 0,
     };
     summary.total += 1;
     surfaceSummary.set(surfaceId, summary);
 
-    // A. Skeleton Check
+    // A. Entrypoint Check
     if (!hasIndex) {
-      skeletons.push({ id: pkg.displayName, tier: pkg.tier, surface: surfaceId, verdict });
-      summary.skeletons += 1;
+      const disposition = classifyMissingEntrypoint(pkg, pkgJson, pkgDir, verdict);
+      const item = { id: pkg.displayName, tier: pkg.tier, surface: surfaceId, verdict, disposition };
+      missingEntrypoints.push(item);
+      summary.missingEntrypoints += 1;
+
+      if (disposition === "entrypoint-gap") {
+        entrypointGaps.push(item);
+        summary.entrypointGaps += 1;
+      }
     }
 
     // B. Usage Classification
@@ -89,18 +101,25 @@ async function main() {
   const highUsageByCount = [...highUsage].sort((a, b) => b.count - a.count || a.id.localeCompare(b.id));
   const zeroFanInById = [...zeroFanIn].sort((a, b) => a.id.localeCompare(b.id));
   const deadWeightById = [...deadWeight].sort((a, b) => a.id.localeCompare(b.id));
-  const skeletonsById = [...skeletons].sort((a, b) => a.id.localeCompare(b.id));
+  const missingEntrypointsById = [...missingEntrypoints].sort((a, b) => a.id.localeCompare(b.id));
+  const entrypointGapsById = [...entrypointGaps].sort((a, b) => a.id.localeCompare(b.id));
 
   if (process.argv.includes("--json")) {
     console.log(JSON.stringify({
       totalPackages: pkgs.length,
       surfaces: [...surfaceSummary.entries()]
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([surface, stats]) => ({ surface, ...stats })),
+        .map(([surface, stats]) => ({
+          surface,
+          ...stats,
+          skeletons: stats.missingEntrypoints,
+        })),
       highUsage: highUsageByCount,
       zeroFanIn: zeroFanInById,
       deadWeight: deadWeightById,
-      skeletons: skeletonsById,
+      missingEntrypoints: missingEntrypointsById,
+      entrypointGaps: entrypointGapsById,
+      skeletons: missingEntrypointsById,
     }, null, 2));
     return;
   }
@@ -114,7 +133,7 @@ async function main() {
     .sort(([a], [b]) => a.localeCompare(b))
     .forEach(([surface, stats]) => {
       console.log(
-        `  ${chalk.cyan(surface.padEnd(28))} | Total: ${chalk.bold(stats.total)} | High: ${stats.highUsage} | Zero: ${stats.zeroFanIn} | Dead: ${stats.deadWeight} | Skeleton: ${stats.skeletons}`,
+        `  ${chalk.cyan(surface.padEnd(28))} | Total: ${chalk.bold(stats.total)} | High: ${stats.highUsage} | Zero: ${stats.zeroFanIn} | Dead: ${stats.deadWeight} | Missing: ${stats.missingEntrypoints} | Gaps: ${stats.entrypointGaps}`,
       );
     });
 
@@ -138,9 +157,16 @@ async function main() {
     console.log("  (None found)");
   }
 
-  console.log(chalk.bold.yellow(`\n[4] Skeletons (Missing src/index.ts entry point)`));
-  if (skeletonsById.length > 0) {
-    skeletonsById.forEach(s => console.log(`  💀 ${chalk.dim(s.id.padEnd(25))} | Tier: ${s.tier} | Surface: ${s.surface} | Verdict: ${s.verdict}`));
+  console.log(chalk.bold.yellow(`\n[4] Missing Conventional Entrypoints (Disposition)`));
+  if (missingEntrypointsById.length > 0) {
+    missingEntrypointsById.forEach(s => console.log(`  ◇ ${chalk.dim(s.id.padEnd(25))} | Tier: ${s.tier} | Surface: ${s.surface} | Verdict: ${s.verdict} | Disposition: ${s.disposition}`));
+  } else {
+    console.log("  (None found)");
+  }
+
+  console.log(chalk.bold.red(`\n[5] Entrypoint Gaps (Public/Library Surface Needs Review)`));
+  if (entrypointGapsById.length > 0) {
+    entrypointGapsById.forEach(s => console.log(`  💀 ${chalk.dim(s.id.padEnd(25))} | Tier: ${s.tier} | Surface: ${s.surface} | Verdict: ${s.verdict} | Disposition: ${s.disposition}`));
   } else {
     console.log("  (None found)");
   }
@@ -164,6 +190,7 @@ function classifyZeroFanIn(
     return "standalone-contract";
   }
   if (pkgJson.private === true) return "standalone-app";
+  if (pkgJson.bin) return "standalone-tool";
 
   const hasLibraryEntrypoint = Boolean(pkgJson.exports || pkgJson.main || pkgJson.module || pkgJson.bin);
   const scripts = pkgJson.scripts ?? {};
@@ -178,4 +205,52 @@ function classifyZeroFanIn(
 
   if (pkg.tier === "consumer") return "standalone-app";
   return "needs-evidence";
+}
+
+function classifyMissingEntrypoint(
+  pkg: { tier: string; displayName: string },
+  pkgJson: Record<string, any>,
+  pkgDir: string,
+  verdict: string,
+): string {
+  if (["test-only", "consumer-contract"].includes(verdict)) return "test-or-contract-suite";
+
+  const scripts = pkgJson.scripts ?? {};
+  const hasScript = (...names: string[]) => names.some((name) => scripts[name]);
+
+  if (hasScript("build:wasm") || existsSync(join(pkgDir, "Cargo.toml")) || String(pkgJson.main ?? "").startsWith("js/")) {
+    return "wasm-package";
+  }
+
+  if (
+    existsSync(join(pkgDir, "index.html"))
+    || existsSync(join(pkgDir, "public/index.html"))
+    || existsSync(join(pkgDir, "src/App.tsx"))
+    || existsSync(join(pkgDir, "vite.config.ts"))
+    || hasScript("preview", "build:data")
+  ) {
+    return "browser-app";
+  }
+
+  if (
+    existsSync(join(pkgDir, "src/server.ts"))
+    || existsSync(join(pkgDir, "server.ts"))
+    || existsSync(join(pkgDir, "src/worker.ts"))
+    || existsSync(join(pkgDir, "worker.ts"))
+    || hasScript("start", "deploy", "deploy:prod", "dev:worker")
+  ) {
+    return "runtime-service";
+  }
+
+  if (
+    existsSync(join(pkgDir, "playwright.config.ts"))
+    || existsSync(join(pkgDir, "vitest.config.ts"))
+    || existsSync(join(pkgDir, "tests"))
+    || hasScript("test:e2e", "test:ui", "test:headed")
+  ) {
+    return "test-or-contract-suite";
+  }
+
+  if (pkgJson.private === true && pkg.tier === "consumer") return "private-consumer";
+  return "entrypoint-gap";
 }
