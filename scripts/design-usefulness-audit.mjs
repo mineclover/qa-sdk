@@ -56,6 +56,7 @@ function parseFrontmatter(text) {
   const end = text.indexOf("\n---", 4);
   if (end === -1) return emptyFrontmatter();
   const frontmatter = text.slice(4, end);
+  const sourceRefs = collectSourceRefs(frontmatter);
   return {
     lifecycle: matchValue(frontmatter, "lifecycle"),
     status: matchValue(frontmatter, "status"),
@@ -63,10 +64,31 @@ function parseFrontmatter(text) {
     tier: matchValue(frontmatter, "tier"),
     scope: matchValue(frontmatter, "scope"),
     aspect: matchValue(frontmatter, "aspect"),
-    hasSources: /^\s*sources:\s*$/m.test(frontmatter),
-    sourceRefs: [...frontmatter.matchAll(/^\s*-\s+((?:packages|docs|scripts)\/[^\n#]+)/gm)]
-      .map((match) => match[1].trim()),
+    hasSources: /^\s*sources:\s*$/m.test(frontmatter) || /^\s*source:\s*(?:packages|docs|scripts)\//m.test(frontmatter),
+    sourceRefs,
   };
+}
+
+function collectSourceRefs(frontmatter) {
+  const refs = [
+    ...frontmatter.matchAll(/^\s*source:\s+((?:packages|docs|scripts)\/[^\n#]+)/gm),
+    ...frontmatter.matchAll(/^\s*-\s+((?:packages|docs|scripts)\/[^\n#]+)/gm),
+  ].map((match) => cleanSourceRef(match[1]));
+  return [...new Set(refs)];
+}
+
+function cleanSourceRef(source) {
+  return source.trim().replace(/^['"]|['"]$/g, "");
+}
+
+function sourceRefFilePath(source) {
+  const cleaned = cleanSourceRef(source);
+  const match = cleaned.match(/^((?:packages|docs|scripts)\/.*?\.(?:[cm]?[jt]sx?|mjs|cjs|md|json|ya?ml|sql))(?:[:#].*)?$/);
+  return match?.[1] ?? cleaned;
+}
+
+function sourceRefExists(source) {
+  return existsSync(join(repoRoot, sourceRefFilePath(source)));
 }
 
 function emptyFrontmatter() {
@@ -107,8 +129,8 @@ function classifyDoc(path) {
   const hasTestWords = /\b(test|fixture|smoke|verification|검증|validation)\b/i.test(text);
   const hasPackageRef = /\bpackages\//.test(text);
   const hasSourceRefs = frontmatter.sourceRefs.length > 0;
-  const existingSourceRefs = frontmatter.sourceRefs.filter((source) => existsSync(join(repoRoot, source)));
-  const missingSourceRefs = frontmatter.sourceRefs.filter((source) => !existsSync(join(repoRoot, source)));
+  const existingSourceRefs = frontmatter.sourceRefs.filter(sourceRefExists);
+  const missingSourceRefs = frontmatter.sourceRefs.filter((source) => !sourceRefExists(source));
   const evidenceScore = [
     hasSourceRefs,
     existingSourceRefs.length > 0,

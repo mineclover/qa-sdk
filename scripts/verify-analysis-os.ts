@@ -85,6 +85,9 @@ async function main() {
     const usefulnessPackages = Object.fromEntries(
       usefulness.packages.map((item: { name: string }) => [item.name, item]),
     ) as Record<string, { verdict: string; surfaceGroup: string; surfaceVerdict: string; surfaceScope: string }>;
+    const usefulnessDocs = Object.fromEntries(
+      usefulness.docs.map((item: { path: string }) => [item.path, item]),
+    ) as Record<string, { verdict: string; sourceRefs: number; reasons: string[] }>;
     assert(usefulnessPackages["request-contract"]?.verdict === "quarantine"
            && usefulnessPackages["weighted-gpu"]?.verdict === "quarantine",
            "Usefulness Audit: no-promotion packages stay quarantine candidates");
@@ -108,6 +111,12 @@ async function main() {
            && usefulnessPackages["@qa-sdk/viz-web"]?.surfaceGroup === "profile-capability"
            && usefulnessPackages["request-contract"]?.surfaceGroup === "quarantine",
            "Usefulness Audit: packages expose separated feature groups");
+    assert(usefulnessDocs["docs/specs/prefix-catalog/entity-prefix-group/prefix-service.spec.md"]?.verdict === "keep"
+           && usefulnessDocs["docs/specs/prefix-catalog/entity-prefix-group/prefix-service.spec.md"]?.sourceRefs === 1,
+           "Usefulness Audit: singular source refs with symbol suffix count as source evidence");
+    assert(!usefulnessDocs["docs/specs/authorization-ontology/authorization-ontology-resource-lifecycle.spec.md"]?.reasons
+      ?.some((reason) => reason.includes("missing source refs")),
+           "Usefulness Audit: source refs with symbol suffix are resolved by file path");
 
     // missing entrypoints는 실제 public entrypoint gap과 분리되어야 함
     const missingEntrypoints = Object.fromEntries(
