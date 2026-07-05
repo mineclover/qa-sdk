@@ -17,6 +17,16 @@ def:
       type: depends_on
     - target: observability-taxonomy
       type: refines
+  sources:
+    - packages/event-catalog/src/prefix-mapping.ts
+    - packages/event-catalog/src/auto-track.ts
+    - packages/event-catalog/src/auto-track.contract.test.ts
+    - docs/specs/meta-semantic/concepts/ms-concept-data-facets.spec.md
+    - packages/core/src/meta-semantic/ir-types.ts
+    - packages/core/src/pipe/pipe-lineage.ts
+    - packages/core/src/pipe/data-contract.ts
+    - packages/definition-catalog/src/types.ts
+    - packages/definition-catalog/src/impact.ts
 ---
 
 # 앱 데이터 관측 3축 체계 — 이벤트 × 패싯 × 데이터 분류
@@ -191,3 +201,11 @@ E2E:
 | `core/src/pipe/data-contract.ts` | 2 | 스키마 호환 검증 |
 | `definition-catalog/src/types.ts` | 3 | DefLayer 정의 |
 | `definition-catalog/src/impact.ts` | 3 | layer별 영향 전파 규칙 |
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/event-catalog test auto-track
+corepack pnpm --filter @qa-sdk/core test meta-semantic
+corepack pnpm --filter @qa-sdk/core test pipe-lineage data-contract
+```

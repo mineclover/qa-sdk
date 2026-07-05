@@ -14,6 +14,14 @@ def:
       type: refines
     - target: browser-runtime-system
       type: refines
+  sources:
+    - packages/logger/src/logger.ts
+    - packages/sdk/src/transport/transport.test.ts
+    - packages/ingest-server/src/routes/ingest.ts
+    - packages/ingest-server/src/lib/enrich-address-context.ts
+    - packages/ingest-server/src/lib/phase-two-worker.ts
+    - packages/ingest-server/src/sdk-to-ingest.e2e.test.ts
+    - packages/ingest-server/src/async-worker.e2e.test.ts
 ---
 # 데이터 흐름
 
@@ -78,15 +86,15 @@ POST /v1/ingest
 비동기 worker (phase-two-worker.ts)가 처리한다.
 
 ```
-TaskQueue.dequeue(reconstructionTask)
-  → TraceStore.findByTrace(traceId) — trace의 모든 record 조회
-  → 이벤트 순서 정렬 (timestamp 기반)
-  → ScenarioSpec 매칭 — 정상 흐름과 비교
-  → VerdictStore.save(verdict) — pass/fail/pending 판정
-  → [선택] convergence-pipeline — 메트릭 집계, 패턴 분류, 관측 생성
+TaskQueue.process(reconstructionTask) 또는 inline processPendingPhaseTwo()
+  → reconstructPendingTraces() — record/trace/graph 기반 trace 재구성
+  → aggregateMetrics() — metric rollup store가 있으면 metric 레코드 집계
+  → computePendingVerdicts() — ScenarioSpec 기반 pass/fail/pending 판정
+  → [선택] transition matching — address_context decode 후 전이 위반 탐지
+  → [선택] convergence-pipeline notifyCompletion — 후속 관측 파이프라인 알림
 ```
 
-convergence 실패가 verdict를 차단하지 않는다(에러 격리). Phase 2에서 생성된 verdict는 insights API로 조회 가능하다.
+transition matching과 convergence notification 실패는 verdict를 차단하지 않는다(에러 격리). Phase 2에서 생성된 verdict는 insights API로 조회 가능하다.
 
 ## 5단계: 시각화
 
@@ -101,3 +109,12 @@ platform-demo (포트 5176)와 viz-web이 데이터를 소비한다.
 | 이벤트 조회 | REST /v1/records | RecordStore |
 
 모든 단계에서 address_context(좌표)가 이벤트에 부착되어, 시각화 시 3D 좌표 공간에서 이벤트의 위치를 결정한다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/sdk test logger
+corepack pnpm --filter @qa-sdk/sdk test transport
+corepack pnpm --filter @qa-sdk/ingest-server test sdk-to-ingest
+corepack pnpm --filter @qa-sdk/ingest-server test async-worker
+```
