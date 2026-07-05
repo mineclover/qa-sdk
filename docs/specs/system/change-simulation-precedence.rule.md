@@ -14,6 +14,12 @@ def:
       type: constrains
     - target: testing-patterns
       type: refines
+  sources:
+    - docs/proposals/domain-hierarchy/reviews/2026-04-20-phase0-simulation.md
+    - docs/proposals/domain-hierarchy/reviews/2026-04-20-phase0b-q2-resim.md
+    - docs/proposals/domain-hierarchy/reviews/2026-04-20-phase0c-owner-heuristic.md
+    - packages/definition-catalog/src/domain-root.ts
+    - packages/definition-catalog/src/domain-root.test.ts
 ---
 
 # Change Simulation Precedence — 구조 변경 전 시뮬레이션 선행 규율

@@ -15,6 +15,18 @@ def:
   links:
     - target: service-definition-standard
       type: refines
+  sources:
+    - docs/specs/system/service-definition-standard.rule.md
+    - docs/specs/system/nest-service-kit.spec.md
+    - docs/specs/definition-catalog/responsibility-closure-harness.spec.md
+    - packages/cli/src/templates/nest-service-template.ts
+    - packages/cli/src/commands/init.ts
+    - packages/cli/src/commands/init.test.ts
+    - packages/cli/src/commands/docs.ts
+    - packages/cli/src/commands/docs.test.ts
+    - packages/nest-service-kit/src/index.ts
+    - packages/nest-service-kit/src/bootstrap.test.ts
+    - packages/nest-service-kit/src/event-envelope.test.ts
 ---
 
 # Service Definition Standard — Use Cases
@@ -52,3 +64,10 @@ def:
 
 **실패 시 수정 대상**: event-intent-definition-rule, payload guide, service BDD cases.
 
+## 검증 ^consumes
+
+```bash
+corepack pnpm --filter @qa-sdk/cli test -- init.test.ts docs.test.ts
+corepack pnpm --filter @qa-sdk/nest-service-kit test
+node packages/cli/dist/index.js docs closure nest-service-kit
+```

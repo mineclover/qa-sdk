@@ -19,6 +19,13 @@ def:
       type: depends_on
     - target: dsl-bundle-spec
       type: depends_on
+  sources:
+    - docs/specs/system/system-concepts.spec.md
+    - docs/specs/indexing-core-system/dsl-bundle.md
+    - packages/core/src/catalog/runtime.ts
+    - packages/weighted-index/src/index.ts
+    - packages/definition-catalog/src/hierarchy.test.ts
+    - packages/definition-catalog/src/overview-docs.test.ts
 ---
 
 # 조립 계층 원칙 — E/C/I/S + L/P
@@ -28,6 +35,10 @@ def:
 이 시스템의 개념 계층(Entry, Component, Interface/DSL, System, Layout/Pack)과 좌표 표현 수단(Axis, Prefix)이 어떻게 분리되어 적용되는지를 정의한다. 각 계층의 상세는 전문 문서로 위임하고, 이 문서는 연결 고리 역할만 한다.
 
 ---
+
+## 구성 ^overview
+
+이 문서는 Entry/Component/Interface/System/Layout의 책임 분리를 조망하고, Axis/Prefix가 그 책임 계층을 대체하지 않는다는 원칙을 연결한다.
 
 ## 1. 개념 계층 ^defines
 
@@ -185,3 +196,10 @@ Taxonomy가 다음 조건을 만족하면 System으로 취급한다.
 | Taxonomy 분류군 (topological / functional / bridge) | [meta-taxonomy.spec.md](meta-taxonomy.spec.md) |
 | 두 좌표 시스템 동형성 (이벤트 ↔ 문서) | [dual-coordinate-system.spec.md](dual-coordinate-system.spec.md) |
 | 서비스 정의 표준 구조 | [service-definition-standard.rule.md](service-definition-standard.rule.md) |
+
+## 검증 ^consumes
+
+```bash
+corepack pnpm --filter definition-catalog exec vitest run src/hierarchy.test.ts src/overview-docs.test.ts
+node packages/cli/dist/index.js def validate
+```

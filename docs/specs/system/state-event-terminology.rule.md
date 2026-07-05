@@ -18,6 +18,16 @@ def:
       type: traces_to
     - target: responsibility-closure-harness
       type: traces_to
+  sources:
+    - packages/definition-catalog/src/state-model.ts
+    - packages/definition-catalog/src/state-model.test.ts
+    - packages/definition-catalog/src/harness-tracker.ts
+    - packages/definition-catalog/src/harness-machines.test.ts
+    - packages/work-domain/src/gate-fsm.ts
+    - packages/work-domain/src/gate-fsm.test.ts
+    - packages/permission-engine/src/resource-policy/state.ts
+    - packages/permission-engine/src/resource-policy/state.test.ts
+    - packages/event-catalog/src/prefix-mapping.ts
 ---
 
 # State/Event Terminology — 상태와 이벤트 역할 분리 규칙
@@ -73,10 +83,10 @@ FSM, state model, transition, event, readiness/read model이 서로 다른 autho
 구조 변경 시 확인한다.
 
 ```bash
-qa-sdk docs search "FSM"
-qa-sdk docs search "transition dry-run"
-qa-sdk docs collect <target> --family-only
-qa-sdk docs closure <target>
+corepack pnpm --filter definition-catalog exec vitest run src/state-model.test.ts src/harness-machines.test.ts
+corepack pnpm --filter work-domain exec vitest run src/gate-fsm.test.ts
+corepack pnpm --filter permission-engine exec vitest run src/resource-policy/state.test.ts
+node packages/cli/dist/index.js def validate
 ```
 
 상태 전이 코드가 있다면 최소 테스트는 다음을 포함해야 한다.

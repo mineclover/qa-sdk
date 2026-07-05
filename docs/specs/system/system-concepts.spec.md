@@ -13,6 +13,13 @@ def:
   links:
     - target: coord-foundation
       type: traces_to
+  sources:
+    - packages/core/src/catalog/runtime.ts
+    - packages/core/src/catalog/runtime-boundary.test.ts
+    - packages/weighted-index/src/math/weighted-index.ts
+    - packages/weighted-index/src/math/weighted-index.test.ts
+    - packages/weighted-index/src/vocab/prefix-registry.ts
+    - packages/weighted-index/src/vocab/prefix-registry.test.ts
 ---
 
 # 핵심 개념
@@ -43,3 +50,11 @@ prefix_ref: prefix 간 참조(디코딩 시 참조된 차원이 펼쳐짐).
 개념 계층(Entry → Taxonomy → System)의 각 단위에 Prefix가 부여되면 `Prefix:Axis` 형태로 주소를 가진다.
 
 계층 원칙 전체: [composition-hierarchy.spec.md](composition-hierarchy.spec.md)
+
+## 검증 ^consumes
+
+```bash
+corepack pnpm --filter @qa-sdk/core exec vitest run src/catalog/runtime-boundary.test.ts
+corepack pnpm --filter weighted-index exec vitest run src/math/weighted-index.test.ts src/vocab/prefix-registry.test.ts
+node packages/cli/dist/index.js def validate
+```

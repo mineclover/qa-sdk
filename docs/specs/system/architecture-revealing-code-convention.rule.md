@@ -18,6 +18,14 @@ def:
       type: traces_to
     - target: test-md-convention
       type: traces_to
+  sources:
+    - packages/definition-catalog/src/code-references.ts
+    - packages/definition-catalog/src/code-references.test.ts
+    - packages/definition-catalog/src/contract-evidence.ts
+    - packages/definition-catalog/src/contract-evidence.test.ts
+    - packages/cli/src/lib/docs-control-plane/graph-index.ts
+    - packages/cli/src/lib/docs-control-plane/graph-index.test.ts
+    - packages/cli/src/commands/docs.test.ts
 ---
 
 # Architecture-Revealing Code Convention — Responsibility Topology 코드 구조 규칙
@@ -184,10 +192,9 @@ export interface DocumentGraphNode { ... }
 최소 검증 루프:
 
 ```bash
-qa-sdk def sync
-qa-sdk def find-by-file <source-file[:symbol]>
-qa-sdk def validate
-pnpm --filter <pkg> test
+corepack pnpm --filter definition-catalog exec vitest run src/code-references.test.ts src/contract-evidence.test.ts
+corepack pnpm --filter @qa-sdk/cli test -- docs.test.ts
+node packages/cli/dist/index.js def validate
 ```
 
 구조 변경이면 `skills/semantic-change/SKILL.md`의 L1-L4 검증을 추가로 따른다.

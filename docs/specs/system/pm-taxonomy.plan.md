@@ -19,6 +19,15 @@ def:
       type: traces_to
     - target: structural-taxonomy
       type: traces_to
+  sources:
+    - docs/specs/system/pm-taxonomy.spec.md
+    - docs/specs/system/status-crosswalk.spec.md
+    - docs/specs/decision-flow/df-taxonomy.spec.md
+    - docs/specs/definition-catalog/definition-taxonomy.spec.md
+    - docs/specs/system/structural-taxonomy.spec.md
+    - packages/decision-flow/src/types.ts
+    - packages/decision-flow/src/vocabulary.ts
+    - packages/decision-flow/src/catalog.ts
 ---
 
 # PM Taxonomy — 상태 관리 초안 계획
@@ -90,3 +99,10 @@ PM taxonomy의 중심은 다음 4개다.
 - PM taxonomy를 어떤 저장 모델로 둘지 결정
 - 기존 `.plan.md` / `.todo.md` / `decision-flow`와의 정합성 규칙 정의
 - owner/priority/target_window를 어떤 시스템이 authoritative 하게 관리할지 결정
+
+## 검증 ^consumes
+
+```bash
+corepack pnpm --filter decision-flow test
+node packages/cli/dist/index.js def validate
+```
