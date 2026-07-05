@@ -1,217 +1,188 @@
-<!-- status: draft (Stage 3 spec) -->
+---
+def:
+  id: taxonomy-engine-decision-sync
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: flow
+  aspect: decision_sync
+  tier: component
+  depth: specification
+  sources:
+    - packages/taxonomy-decision-bridge/src/decision-file.ts
+    - packages/taxonomy-decision-bridge/src/resolve-link.ts
+    - packages/taxonomy-decision-bridge/src/sync.ts
+    - packages/taxonomy-decision-bridge/__tests__/resolve-link.test.ts
+    - packages/taxonomy-decision-bridge/__tests__/sync.test.ts
+    - packages/cli/src/commands/decision/index.ts
+    - packages/cli/src/commands/decision/sync.ts
+    - packages/cli/src/commands/decision.test.ts
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: decision-sync
+---
 
-# Decision Sync — taxonomy ↔ decision-flow 양방향 동기화
+# Decision Sync — taxonomy entry와 decision markdown 동기화
 
-> Stage 3 (v0.10) 신규 개념. yaml entry의 lifecycle 진행을 [decision-flow](../../../../packages/decision-flow/) 의사결정 시스템과 양방향 동기화. **decision-flow가 SSOT, yaml은 ref + 결과 반영**.
+> `qa-sdk decision sync`는 taxonomy yaml entry의 `lifecycle`과 decision markdown frontmatter의 `lifecycle`을 로컬 파일 시스템에서 맞춘다. decision markdown이 사람용 결정 기록이고, yaml은 taxonomy 소비자가 읽는 현재 상태다.
 
-## 비전 ^purpose
+## 목적 ^purpose
 
-- 결정 진행 중인 entry를 보면 양쪽 상태(yaml + decision)가 즉시 보임 — `feedback_decision-context-over-tracking`
-- 작업자가 yaml/decision 어느 쪽에서 시작해도 반대편 skeleton이 자동 생성됨
-- 결정 완료 시 yaml lifecycle 자동 갱신 commit (PR 아님 — 로컬 commit)
+- `lifecycle: tbd` entry가 실제 결정 파일로 이어지게 한다.
+- decision이 진행되면 taxonomy yaml의 lifecycle을 따라오게 한다.
+- yaml이 먼저 확정되면 decision markdown lifecycle을 따라오게 한다.
+- 양쪽이 동시에 바뀐 경우에는 자동 판단하지 않고 명시 옵션으로만 해소한다.
 
-## 통합 결정 (확정)
+## 파일 모델
 
-| 결정 항목 | 결정 |
-|----------|------|
-| trigger 방향 | 양쪽 자유 — yaml/decision 어디서 시작해도 반대편 push |
-| 데이터 SSOT | decision 객체는 **def-catalog 통합** — markdown + frontmatter 패턴, DB는 메타 |
-| 자동화 주체 | local dev에서 `qa-sdk decision sync` 수동 명령 (Actions cron/webhook 아님) |
-| PR vs commit | **commit으로 대체** — 봇/CI 아닌 사용자 본인의 commit |
-| 충돌 정책 | 양쪽 변경 비교 후 사용자 선택 (`--accept-yaml` / `--accept-decision` / `--merge`) |
-| 작은 변경 단위 | evidence weight 변경도 매번 commit — 결정 진행 흐름이 git log에 남음 |
-| Web UI | taxonomy-web에 DecisionPanel 추가 (양쪽 상태 한 화면) |
+taxonomy entry는 `decisionLink`를 가진다.
 
-## 데이터 모델
-
-### Decision 파일
-
-decision은 def-catalog 패턴을 따라 markdown + frontmatter. **frontmatter는 검색용 메타, 본문은 자연어 마커로 의미 추출**.
-
+```yaml
+axes:
+  layer:
+    entries:
+      - id: cue
+        address: 3
+        lifecycle: tbd
+        placeholderReason: "interaction 정의 미정"
+        decisionLink: "decision:lesson-builder.layer.cue"
 ```
-docs/decisions/
-  ├── lesson-builder.layer.cue.md
-  ├── lesson-builder.layer.branch.md
-  └── ...
-```
 
-#### frontmatter (검색용 메타데이터 — DB로 indexed)
+decision 파일은 기본적으로 `docs/decisions/<id>.md`에 둔다.
 
 ```yaml
 ---
 id: lesson-builder.layer.cue
 subject: tax:lesson-builder-content:layer.cue
-lifecycle: review                        # taxonomy-engine Lifecycle 6값과 동일
+lifecycle: draft
 created: 2026-05-21T00:00:00Z
 updated: 2026-05-21T00:00:00Z
 ---
 ```
 
-빠른 lookup에 필요한 최소만. 평면 구조, list/nested 없음.
+`createDecisionSkeletonText()`는 decision 파일이 없을 때 skeleton을 만든다. skeleton의 lifecycle은 `draft`이고 질문은 `placeholderReason`을 사용한다. `placeholderReason`이 없으면 `(질문 미정)`을 사용한다.
 
-#### 본문 (자연어 + 마커 추출)
+## decisionLink 해소
 
-CLAUDE.md §Definition 시스템의 마커 컨벤션을 따름 — `^purpose` 등 spec 마커처럼 decision 전용 마커 도입.
+`resolveDecisionLink()`가 지원하는 형식:
 
-```markdown
-# Decision: Cue/Beat 경계
+| 형식 | 동작 |
+|------|------|
+| `decision:<id>` | `docs/decisions/<id>.md`로 해소 |
+| relative path | yaml 파일 디렉토리 기준 path로 해소 |
+| absolute path | 그대로 path로 해소 |
+| `http://...`, `https://...` | external로 분류, fetch하지 않음 |
+| `decision-flow://...` | unsupported |
+| `tax:...` | unsupported |
 
-interaction이 어디서 끝나고 다음 단위가 어디서 시작하는지의 경계를 정해야 한다. ^purpose
+CLI `sync`, `analyze`, `render`는 external 또는 unsupported link를 건너뛴다.
 
-현재 lesson-builder에서 Cue와 Beat이 같은 axis entry로 묶여있어... ^context
+## Sync 액션
 
-## 검토한 옵션
+`computeSyncAction()`은 yaml entry, decision file, 변경 상태, 충돌 옵션으로 액션을 결정한다.
 
-### 옵션 A — Cue가 interaction 전체 포함
-... ^option:cue-includes-interaction
+| 조건 | 액션 |
+|------|------|
+| `decisionLink` 없음 | noop `no-decision-link` |
+| yaml lifecycle 없음 | noop `lifecycle-missing` |
+| decision 파일 없음 | `push-create` |
+| yaml `tbd` + decision `draft` | noop `in-sync-tbd-draft` |
+| lifecycle 동일 | noop `in-sync` |
+| lifecycle 동일 + marker 변경 감지 | noop `markers-only` |
+| yaml만 변경 | `pull-decision-lifecycle` |
+| decision만 변경 또는 변경 상태 모름 | `pull-yaml-lifecycle` |
+| yaml과 decision 모두 변경 | `conflict` |
 
-### 옵션 B — Beat을 별도 axis entry로
-... ^option:beat-as-entry
+`markers-only`는 lifecycle이 같고 `purpose`, `context`, `outcome`, `option`, `evidence`만 바뀐 경우다. 이 경우 yaml에는 반영할 값이 없으므로 CLI는 보고만 하고 commit하지 않는다.
 
-## 증거
+## 충돌 해소
 
-TAXONOMY.md §Cue 섹션에서 "Cue is a meaningful unit ..." 정의가
-이미 interaction 포함을 함의. ^evidence:precedent weight=0.8
-
-lesson-builder PoC 실행 결과 Beat 분리 시 navigation 복잡도 증가. ^evidence:data weight=0.6
-
-## 결정 (lifecycle: approved 시 채워짐)
-
-(미정) ^outcome
-```
-
-#### 마커 → 추출 → DB
-
-| 마커 | 추출 항목 | DB 컬럼 |
-|------|----------|---------|
-| `^purpose` | 질문 한 줄 | `decisions.question` |
-| `^context` | 배경 문단 | (검색용 full-text only) |
-| `^option:<id>` | 옵션 N개 | `decision_options` 테이블 |
-| `^evidence:<kind> weight=N` | 증거 N개 | `decision_evidence` 테이블 |
-| `^outcome` | 결정 결과 (approved일 때) | `decisions.outcome` |
-
-bridge의 `parseDecisionFile()`이 frontmatter + 마커 둘 다 추출. evidence/option은 본문 안에 자연어 흐름으로 살아있고, DB는 그걸 인덱싱만 함.
-
-결정 완료 시 `lifecycle: approved` + `^outcome` 마커 채움 — frontmatter는 lookup, 본문은 readable narrative.
-
-### yaml 측 ref
-
-기존 [[lifecycle]] spec의 `decisionLink`를 그대로 사용. 형식 추가:
-- `./decisions/<id>.md` — 상대 path (기존 path 형식 활용)
-- `decision-flow://<id>` — 절차적 URI (Stage 3 활성화 후 인식)
-
-두 형식 모두 같은 decision 객체로 해소. id 생성은 패턴 (`<scope>.<axis>.<entry>`)이므로 봇이 자동 생성.
-
-### def-catalog 통합 (Stage 3에서는 패턴 통일까지)
-
-decision 파일은 def-catalog와 같은 **frontmatter+마커 컨벤션**을 따른다:
-- frontmatter는 검색 메타 (id/subject/lifecycle/created/updated) — def-catalog와 동일 형식
-- 본문은 자연어 + 마커 (`^purpose`/`^evidence` 등) — def-catalog의 `^purpose`/`^defines` 패턴과 동형
-
-단, `def_scope`에 `decision` enum 추가는 **별도 후속 작업** (이 라운드 비-목표). 이유: def_scope 변경이 ScopeRegistry / 주소 공간 인코딩 / scope-aspect 매트릭스 도미노가 큼. Stage 3 핵심(sync 메커니즘 + 컨벤션 통일)은 그 통합 없이도 충족.
-
-decision 파일은 `docs/decisions/`에 살고 frontmatter 컨벤션만 공유. 후속 작업에서 def_scope 확장 시 자연스럽게 좌표 부여 가능.
-
-→ 현재는 file SSOT만. DB indexing은 후속.
-
-## qa-sdk decision sync 명령
-
-### 동작 매트릭스
-
-| yaml 상태 | decision 파일 상태 | sync 동작 |
-|----------|-------------------|----------|
-| `lifecycle: tbd` + `decisionLink` | 없음 | **push**: skeleton 생성 (`question = placeholderReason`, `lifecycle = draft`) |
-| `lifecycle: tbd` + `decisionLink` | `lifecycle: approved` | **pull**: yaml lifecycle = approved + commit |
-| `lifecycle: approved` | `lifecycle: draft/review` | **pull**: decision lifecycle = approved + commit (yaml 우선 인정) |
-| 양쪽 동시 변경 | (양쪽 다 변경) | **충돌 prompt** — 사용자 선택 |
-| `lifecycle` 없음 | 없음 | skip |
-| (양쪽 동일) | (양쪽 동일) | no-op |
-
-### CLI 사양
+양쪽 모두 변경됐고 lifecycle이 다르면 기본 액션은 `conflict`다. CLI는 interactive prompt를 띄우지 않고 선택 가능한 옵션을 출력한다.
 
 ```bash
-qa-sdk decision sync                          # 전체 yaml scan + 양방향 sync
-qa-sdk decision sync <tax:ref>                # 특정 entry만
-qa-sdk decision sync --dry-run                # 변경 계획 출력, commit 안 함
-qa-sdk decision sync --accept-yaml            # 충돌 시 yaml 우선
-qa-sdk decision sync --accept-decision        # 충돌 시 decision 우선
-qa-sdk decision sync --json                   # JSON 출력 (CI 통합용)
+qa-sdk decision sync --accept-yaml
+qa-sdk decision sync --accept-decision
+qa-sdk decision sync --merge
 ```
 
-### commit 메시지 패턴
+| 옵션 | 동작 |
+|------|------|
+| `--accept-yaml` | yaml lifecycle을 decision frontmatter에 반영 |
+| `--accept-decision` | decision lifecycle을 yaml entry에 반영 |
+| `--merge` | yaml lifecycle 우선, decision evidence는 commit 메시지에 보존 |
 
-```
-chore(decision): create skeleton for tax:lesson-builder-content:layer.cue
+## CLI
 
-sync(taxonomy): lesson-builder-content.layer.cue lifecycle tbd → approved
-
-  Evidence:
-    - precedent: TAXONOMY.md §Cue (weight 0.8)
-    - data: lesson-builder PoC (weight 0.6)
-
-chore(decision): update evidence for tax:lesson-builder-content:layer.cue
-
-  weight: precedent 0.8 → 0.9
-```
-
-evidence 작은 변경도 commit (단위가 작아도 흐름이 git log에 남음).
-
-## 충돌 비교 UI
-
-`qa-sdk decision sync` 실행 시 양쪽 모두 변경 감지하면:
-
-```
-충돌 감지: tax:lesson-builder-content:layer.cue
-
-  [yaml]      lifecycle: approved (수정됨, 2025-05-21 14:20)
-  [decision]  lifecycle: review   (수정됨, 2025-05-21 14:15, evidence 1건 추가)
-
-옵션:
-  (y) yaml 우선  — decision lifecycle = approved
-  (d) decision 우선 — yaml lifecycle = review (yaml 변경 되돌림)
-  (m) merge     — yaml lifecycle = approved + decision evidence 보존
-  (s) skip      — 이번 sync 제외 (다음 실행에 재시도)
-
-선택:
+```bash
+qa-sdk decision sync
+qa-sdk decision sync tax:lesson-builder-content:layer.cue
+qa-sdk decision sync --dry-run
+qa-sdk decision sync --no-commit
+qa-sdk decision sync --json
+qa-sdk decision sync --accept-yaml
+qa-sdk decision sync --accept-decision
+qa-sdk decision sync --merge
 ```
 
-Web 패널에서도 같은 비교 뷰 — 클릭으로 선택 + 자동 commit.
+동작 범위:
 
-## DecisionPanel (Web)
+- `docs/taxonomies/*.yaml`을 scan한다.
+- `<tax:ref>` 인자가 있으면 해당 entry만 처리한다.
+- `--dry-run`은 report만 출력하고 파일을 바꾸지 않는다.
+- `--no-commit`은 파일 변경은 적용하지만 git commit은 만들지 않는다.
+- `--json`은 `{ dryRun, reports }`를 출력한다.
 
-taxonomy-web의 기존 3-pane 컨텍스트 영역에 새 Collapsible 섹션:
+## 파일 변경과 commit
 
-- 선택된 entry의 `decisionLink` 발견 → DecisionPanel 활성화
-- 표시: decision lifecycle 배지, question, evidence 목록, last updated
-- 액션: "Open decision" (markdown 파일 링크), "Sync now" 버튼 (`/api/decision-sync` 호출)
-- 양쪽 변경 있으면 충돌 UI inline 표시
+`sync`는 `--dry-run`이 아니고 액션이 적용 대상이면 파일을 수정한다.
 
-신규 dev plugin: `decision-api` (decision 파일 읽기 + sync 명령 wrapping).
+| 액션 | 파일 변경 | commit 메시지 |
+|------|-----------|---------------|
+| `push-create` | decision skeleton 생성 | `chore(decision): create skeleton for <tax:ref>` |
+| `pull-yaml-lifecycle` | yaml entry lifecycle 갱신 | `sync(taxonomy): <tax:ref> lifecycle → <newLifecycle>` |
+| `pull-decision-lifecycle` | decision frontmatter lifecycle 갱신 | `sync(decision): <tax:ref> lifecycle → <newLifecycle>` |
 
-## 다른 개념과의 관계
+기본적으로 CLI가 변경 파일을 stage하고 commit한다. commit 실패는 stderr에 출력하지만 sync report 출력은 계속된다.
 
-- [[lifecycle]] — sync의 대상 (yaml entry의 lifecycle)
-- [[semver-migration]] — `entry-lifecycle-changed`는 patch (이 sync가 trigger)
-- decision-flow (`packages/decision-flow/`) — 이미 존재하는 FlowEngine + InstanceStore를 markdown SSOT로 감쌈
-- definition-catalog — decision도 한 def_scope 도메인으로 통합
+`pull-yaml-lifecycle`은 decision evidence가 있으면 commit message 본문에 evidence 목록을 포함한다.
 
-## 진행 조건 (확정)
+## 변경 감지
 
-- [x] taxonomy-engine Stage 1 (lifecycle + decisionLink) 안정 — v0.8 완료
-- [x] taxonomy-engine Stage 2 (semver + migration) 안정 — v0.9 완료
-- [ ] decision-flow API 안정 확인 (FlowEngine + InstanceStore 인터페이스 freeze)
-- [ ] definition-catalog의 `def_scope`에 `decision` 추가 합의
+CLI는 git과 filesystem 정보로 변경 상태를 추정한다.
 
-## 비-목표
+- working tree에 변경이 있는 파일은 changed로 본다.
+- 둘 다 clean이면 마지막 commit timestamp가 더 늦은 쪽을 changed로 본다.
+- 이전 decision 파일은 `git show HEAD:<path>`로 읽어서 marker 변경 여부를 비교한다.
+- git 정보 읽기에 실패하면 빈 state로 fail-open하고 lifecycle 비교로 폴백한다.
 
-- decision-flow 자체 신규 기능 (이미 충분히 성숙)
-- GitHub Actions cron 자동화 (local CLI 수동만)
-- decision-flow의 다른 시스템(ingest-server 등)과의 통합 (별도)
+이 방식은 로컬 개발용 heuristic이다. 원격 DB나 중앙 lock을 사용하지 않는다.
 
-## 참조
+## 지원하지 않는 것
 
-- roadmap Stage 3: `../roadmap.md`
-- v0.10 plan: `../plans/v0.10.md`
-- decision-flow: `packages/decision-flow/src/index.ts`
-- definition-catalog SSOT: `packages/definition-catalog/src/`
-- 비전 메모리: `feedback_decision-context-over-tracking`
+- external URL decisionLink fetch
+- `decision-flow://` URI 해소
+- `tax:` ref registry 해소
+- interactive conflict prompt
+- GitHub Actions cron/webhook 자동화
+- DB indexing 또는 def-catalog scope 확장
+- Web UI에서 직접 sync commit 생성
+
+## 검증
+
+대표 회귀 범위:
+
+```bash
+pnpm --filter taxonomy-decision-bridge test
+pnpm --filter @qa-sdk/cli test decision.test
+```
+
+현재 문서화된 표면은 `resolve-link`, `sync`, CLI `decision sync` 테스트로 증명한다.
+
+## 관련 문서
+
+- [[lifecycle]] — taxonomy lifecycle과 `decisionLink`
+- [[decision-flow-bridge]] — decision markdown과 `FlowSchema` 변환
+- [[semver-migration]] — lifecycle/decisionLink 변경의 diff 영향
