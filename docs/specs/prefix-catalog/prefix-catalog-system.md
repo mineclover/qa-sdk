@@ -18,6 +18,8 @@ def:
       type: depends_on
     - target: observation-prefix-group
       type: depends_on
+    - target: state-prefix-group
+      type: depends_on
     - target: entity-prefix-group
       type: refs
     - target: policy-prefix-group
@@ -28,6 +30,14 @@ def:
       type: refs
     - target: observation-prefix-group
       type: refs
+    - target: state-prefix-group
+      type: refs
+  sources:
+    - packages/definition-catalog/scripts/gen-prefix-docs.mjs
+    - packages/demo-snapshot/src/demo-catalog.ts
+    - packages/demo-snapshot/src/demo-catalog.test.ts
+    - packages/demo-types/src/prefix-ids.ts
+    - packages/demo-types/src/lifecycle.test.ts
 ---
 
 ## 목적 ^purpose
@@ -37,6 +47,14 @@ DEMO_CATALOG이 코드 SSOT이고, 이 문서 체계는 탐색/조립/영향분�
 
 ## 구성 ^overview
 
-- 총 63개 prefix
-- 5개 도메인 그룹: entity, policy, event, relation, observation
+- 총 68개 prefix
+- 6개 도메인 그룹: entity, policy, event, relation, observation, state
 - 자동 생성: scripts/gen-prefix-docs.mjs
+
+## 검증 ^consumes
+
+```bash
+corepack pnpm --filter demo-snapshot test
+corepack pnpm --filter demo-types test
+node packages/cli/dist/index.js def validate
+```

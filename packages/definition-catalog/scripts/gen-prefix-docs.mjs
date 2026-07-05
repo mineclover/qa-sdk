@@ -131,6 +131,7 @@ function generatePrefixDoc(prefix, catalog) {
 
   const doc = `---
 def:
+  tier: component
   id: prefix-${prefix.id}
   scope: data
   aspect: prefix_schema
@@ -178,14 +179,21 @@ function generateGroupDoc(group, memberIds) {
 
   const doc = `---
 def:
+  tier: system
   id: ${group.id}
   scope: data
   aspect: prefix_schema
   depth: overview
   lifecycle: approved
-  tags: [structural, entry-point, generated]
+  tags: [structural, entry-point, generated, cross-scope]
   links:
 ${links}
+  sources:
+    - packages/definition-catalog/scripts/gen-prefix-docs.mjs
+    - packages/demo-snapshot/src/demo-catalog.ts
+    - packages/demo-snapshot/src/demo-catalog.test.ts
+    - packages/demo-types/src/prefix-ids.ts
+    - packages/demo-types/src/lifecycle.test.ts
 ---
 
 ## 목적 ^purpose
@@ -196,6 +204,14 @@ category: ${group.id.replace("-prefix-group", "")}에 해당하는 prefix를 모
 ## 구성 ^overview
 
 ${memberIds.map(id => `- \`${id}\``).join("\n")}
+
+## 검증 ^consumes
+
+\`\`\`bash
+corepack pnpm --filter demo-snapshot test
+corepack pnpm --filter demo-types test
+node packages/cli/dist/index.js def validate
+\`\`\`
 `;
 
   return doc.trim() + "\n";
@@ -204,18 +220,28 @@ ${memberIds.map(id => `- \`${id}\``).join("\n")}
 // ── prefix-catalog 루트 문서 ─────────────────────────────
 
 function generateRootDoc(groupIds, totalPrefixes) {
-  const groupLinks = groupIds.map(id => `    - target: ${id}\n      type: contains`).join("\n");
+  const groupLinks = [
+    ...groupIds.map(id => `    - target: ${id}\n      type: depends_on`),
+    ...groupIds.map(id => `    - target: ${id}\n      type: refs`),
+  ].join("\n");
 
   const doc = `---
 def:
+  tier: layout
   id: prefix-catalog-system
   scope: data
   aspect: prefix_schema
   depth: overview
   lifecycle: approved
-  tags: [structural, entry-point, generated]
+  tags: [structural, entry-point, generated, cross-scope]
   links:
 ${groupLinks}
+  sources:
+    - packages/definition-catalog/scripts/gen-prefix-docs.mjs
+    - packages/demo-snapshot/src/demo-catalog.ts
+    - packages/demo-snapshot/src/demo-catalog.test.ts
+    - packages/demo-types/src/prefix-ids.ts
+    - packages/demo-types/src/lifecycle.test.ts
 ---
 
 ## 목적 ^purpose
@@ -228,6 +254,14 @@ DEMO_CATALOG이 코드 SSOT이고, 이 문서 체계는 탐색/조립/영향분�
 - 총 ${totalPrefixes}개 prefix
 - ${groupIds.length}개 도메인 그룹: ${groupIds.map(id => id.replace("-prefix-group", "")).join(", ")}
 - 자동 생성: scripts/gen-prefix-docs.mjs
+
+## 검증 ^consumes
+
+\`\`\`bash
+corepack pnpm --filter demo-snapshot test
+corepack pnpm --filter demo-types test
+node packages/cli/dist/index.js def validate
+\`\`\`
 `;
 
   return doc.trim() + "\n";
@@ -257,13 +291,17 @@ async function main() {
 
   // 1. 개별 prefix 문서 생성
   for (const p of prefixes) {
+    const cat = p.meta?.category ?? "entity";
+    const group = DOMAIN_GROUPS[cat];
     const filename = `prefix-${p.id}.spec.md`;
     const content = generatePrefixDoc(p, catalog);
+    const outputDir = group ? join(OUT_DIR, group.id) : OUT_DIR;
 
     if (DRY_RUN) {
-      console.log(`[dry-run] ${filename} (${content.split("\n").length}줄)`);
+      console.log(`[dry-run] ${group ? `${group.id}/` : ""}${filename} (${content.split("\n").length}줄)`);
     } else {
-      writeFileSync(join(OUT_DIR, filename), content);
+      mkdirSync(outputDir, { recursive: true });
+      writeFileSync(join(outputDir, filename), content);
       totalWritten++;
     }
   }

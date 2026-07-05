@@ -253,7 +253,30 @@ async function main() {
     assert(false, "Surface Report: command completed successfully and produced valid JSON");
   }
 
-  // 4. Verify arch:check (Boundary) Consistency
+  // 4. Verify generated prefix catalog docs match the generated prefix id surface.
+  try {
+    const prefixIds = readGeneratedPrefixIds();
+    const expectedPrefixDocIds = prefixIds.map((id) => `prefix-${id}`);
+    const prefixCatalogDocIds = collectDefinitionDocIds("docs/specs/prefix-catalog");
+    const missingPrefixDocs = expectedPrefixDocIds.filter((id) => !prefixCatalogDocIds.has(id));
+    const extraPrefixDocs = [...prefixCatalogDocIds]
+      .filter((id) => id.startsWith("prefix-") && id !== "prefix-catalog-system" && !expectedPrefixDocIds.includes(id))
+      .sort();
+    const prefixCatalogRoot = readFileSync("docs/specs/prefix-catalog/prefix-catalog-system.md", "utf-8");
+    const declaredPrefixCount = Number(prefixCatalogRoot.match(/- 총 (\d+)개 prefix/)?.[1] ?? NaN);
+
+    assert(missingPrefixDocs.length === 0 && extraPrefixDocs.length === 0,
+           `Prefix Catalog Docs: generated prefix docs match PREFIX_IDS (${formatDiff(missingPrefixDocs, extraPrefixDocs)})`);
+    assert(declaredPrefixCount === prefixIds.length,
+           `Prefix Catalog Docs: root prefix count matches PREFIX_IDS (${declaredPrefixCount}/${prefixIds.length})`);
+    assert(prefixCatalogDocIds.has("state-prefix-group"),
+           "Prefix Catalog Docs: state prefix group is documented");
+  } catch (err) {
+    console.error("Prefix catalog docs verification failed:", err);
+    assert(false, "Prefix Catalog Docs: coverage scan completed successfully");
+  }
+
+  // 5. Verify arch:check (Boundary) Consistency
   try {
     const checkOutput = execSync("tsx scripts/check-dependency-boundaries.ts --json", { encoding: "utf-8" });
     const boundary = JSON.parse(checkOutput);
@@ -273,7 +296,7 @@ async function main() {
     }
   }
 
-  // 5. Verify package scripts don't bypass the pinned package manager or use external npx shims.
+  // 6. Verify package scripts don't bypass the pinned package manager or use external npx shims.
   try {
     const toolchainScriptViolations = findToolchainScriptViolations(["."]);
     assert(toolchainScriptViolations.length === 0,
@@ -335,6 +358,39 @@ function formatDiff(missing: string[], extras: string[]): string {
     extras.length > 0 ? `extra=${extras.join(", ")}` : "",
   ].filter(Boolean);
   return parts.join("; ") || "ok";
+}
+
+function readGeneratedPrefixIds(): string[] {
+  const text = readFileSync("packages/demo-types/src/prefix-ids.ts", "utf-8");
+  const match = text.match(/export const PREFIX_IDS = \[([\s\S]*?)\] as const;/);
+  if (!match) return [];
+  return [...match[1].matchAll(/"([^"]+)"/g)].map((item) => item[1]);
+}
+
+function collectDefinitionDocIds(root: string): Set<string> {
+  const ids = new Set<string>();
+  for (const path of walkMarkdownFiles(root)) {
+    const id = readFileSync(path, "utf-8").match(/^\s*id:\s*(\S+)/m)?.[1];
+    if (id) ids.add(id);
+  }
+  return ids;
+}
+
+function walkMarkdownFiles(root: string): string[] {
+  const files: string[] = [];
+  if (!existsSync(root)) return files;
+
+  for (const entry of readdirSync(root)) {
+    const path = join(root, entry);
+    const stats = statSync(path);
+    if (stats.isDirectory()) {
+      files.push(...walkMarkdownFiles(path));
+    } else if (entry.endsWith(".md")) {
+      files.push(path);
+    }
+  }
+
+  return files;
 }
 
 function findToolchainScriptViolations(roots: string[]): string[] {

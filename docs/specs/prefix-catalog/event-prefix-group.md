@@ -52,8 +52,16 @@ def:
       type: contains
     - target: prefix-forcing_response
       type: contains
+    - target: prefix-ir_pipe
+      type: contains
     - target: prefix-service
       type: depends_on
+  sources:
+    - packages/definition-catalog/scripts/gen-prefix-docs.mjs
+    - packages/demo-snapshot/src/demo-catalog.ts
+    - packages/demo-snapshot/src/demo-catalog.test.ts
+    - packages/demo-types/src/prefix-ids.ts
+    - packages/demo-types/src/lifecycle.test.ts
 ---
 
 ## 목적 ^purpose
@@ -85,3 +93,12 @@ category: event에 해당하는 prefix를 모아 관리한다.
 - `decision_event`
 - `escalation_event`
 - `forcing_response`
+- `ir_pipe`
+
+## 검증 ^consumes
+
+```bash
+corepack pnpm --filter demo-snapshot test
+corepack pnpm --filter demo-types test
+node packages/cli/dist/index.js def validate
+```
