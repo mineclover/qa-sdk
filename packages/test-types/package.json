@@ -15,7 +15,8 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "pnpm run build && pnpm run typecheck && node scripts/smoke.test.mjs"
   },
   "devDependencies": {
     "tsup": "^8.5.1",

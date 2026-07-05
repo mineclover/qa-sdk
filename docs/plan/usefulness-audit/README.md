@@ -96,3 +96,5 @@ pnpm docs:usefulness-audit -- --format json --all
 `packages/platform-demo`는 workbook형 Vite 앱과 monitor/dashboard/diagram/flow/debugger 정적 관찰 페이지를 함께 배포하는 viz-system 프론트엔드다. `test = build + scripts/static-smoke.test.mjs`를 추가해 production workbook asset, public 정적 페이지 복사, `def-catalog-data.json`, fallback read-model, diagram preset 전역 등록을 package-local로 증명한다.
 
 `packages/registry-ui`는 registry-service 데이터를 탐색·구성하는 Vanilla TS + Vite UI다. `test = build + scripts/static-smoke.test.mjs`를 추가해 SPA 탭/컨테이너 marker, JS/CSS asset, generated git-conflicts fixture의 dist 복사와 shape을 package-local로 증명한다. 독립 `tsc --noEmit`은 기존 file-map 타입 drift가 있어 이번 보수 증명 범위에는 넣지 않았다.
+
+`packages/test-types`는 테스트 분류 타입과 품질 게이트/작업 도메인 vocabulary의 zero-dependency SSOT다. `test = build + typecheck + scripts/smoke.test.mjs`를 추가해 ESM/CJS 산출물이 동일한 `TEST_*` 배열, `GATE_KINDS`, `WORK_DOMAINS`, `getSubDomain()` 계약과 declaration export를 제공하는지 package-local로 증명한다.

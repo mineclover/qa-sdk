@@ -21,4 +21,7 @@
 ```bash
 pnpm --filter test-types build
 pnpm --filter test-types typecheck
+pnpm --filter test-types test
 ```
+
+`test`는 build/typecheck 뒤 ESM/CJS 산출물이 동일한 `TEST_*` vocabulary, `GATE_KINDS`, `WORK_DOMAINS`, `getSubDomain()` 계약과 declaration export를 제공하는지 검증한다.
