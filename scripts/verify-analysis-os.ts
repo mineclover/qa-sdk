@@ -38,6 +38,7 @@ async function main() {
            `Signal Analysis: 'page_view' has valid connectivity (${linkedPkgsCount} peers)`);
   } catch (err) {
     console.error("Signal verification failed:", err);
+    assert(false, "Signal Analysis: command completed successfully");
   }
 
   // 2. Verify arch:usage Accuracy
@@ -85,6 +86,7 @@ async function main() {
            "Usage Analysis: wasm packages use wasm/js entrypoints instead of src/index.ts");
   } catch (err) {
     console.error("Usage verification failed:", err);
+    assert(false, "Usage Analysis: command completed successfully and produced valid JSON");
   }
 
   // 3. Verify arch:check (Boundary) Consistency
@@ -114,4 +116,7 @@ async function main() {
   }
 }
 
-main().catch(console.error);
+main().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
