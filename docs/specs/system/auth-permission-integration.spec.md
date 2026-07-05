@@ -21,6 +21,13 @@ def:
       type: contains
     - target: system-support
       type: depends_on
+  sources:
+    - packages/permission-engine/src/auth-provider.ts
+    - packages/permission-engine/src/permission-version.ts
+    - packages/permission-engine/src/permission-change-notifier.ts
+    - packages/permission-engine/src/token-enrichment.ts
+    - packages/permission-engine/src/permission-middleware.ts
+    - packages/permission-engine/src/auth-integration.test.ts
 ---
 
 # Auth × Permission 통합
@@ -38,6 +45,16 @@ OAuth provider(Zitadel, Keycloak 등)를 인증 레이어로, permission-engine�
 - `permission-change-notifier`: 권한 변경의 단일 진입점. 버전 bump + 선택적 하드 취소.
 - `token-enrichment-handler`: 토큰 발급 시 bitmask + 버전 + schema hash를 JWT claims로 계산.
 - `permission-middleware`: 요청 시 schema → version → permission 3단계 체크.
+
+## 기능 경계 ^boundary
+
+| 기능 | 소유 | 소유하지 않는 것 |
+|------|------|------------------|
+| provider 취소 | `AuthProvider` | role/group 배정, permission 계산 |
+| 권한 버전 | `PermissionVersionStore` | persistence 구현 선택, 토큰 판정 |
+| 변경 알림 | `PermissionChangeNotifier` | permission DB 변경 자체, 요청 권한 판정 |
+| 토큰 claim 생성 | `TokenEnrichmentHandler` | provider 세션 관리, 요청 middleware 응답 |
+| 요청 권한 판정 | `PermissionMiddleware` | 토큰 발급, 권한 변경 기록 |
 
 ## 방법 ^method
 

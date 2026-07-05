@@ -11,7 +11,12 @@ def:
   links:
     - target: auth-permission-integration
       type: refines
-  source: packages/permission-engine/src/permission-middleware.ts
+  sources:
+    - packages/permission-engine/src/permission-middleware.ts
+    - packages/permission-engine/src/token-enrichment.ts
+    - packages/permission-engine/src/permission-version.ts
+    - packages/permission-engine/src/role-registry.ts
+    - packages/permission-engine/src/auth-integration.test.ts
 ---
 
 # PermissionMiddleware
@@ -36,6 +41,7 @@ PermissionMiddleware.check(claims, domain, feature)
 ```
 
 schema hash는 매 체크 시 동적 계산 — registry 변경 즉시 반영, 캐시 없음.
+middleware는 provider 세션 취소나 토큰 발급을 수행하지 않는다. 실패 종류를 반환하고, HTTP 상태 매핑은 호출자 adapter가 담당한다.
 
 ### 에러 종류 (MiddlewareErrorKind)
 

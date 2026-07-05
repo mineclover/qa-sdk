@@ -11,6 +11,12 @@ def:
   links:
     - target: auth-permission-integration
       type: refines
+  sources:
+    - packages/permission-engine/src/token-enrichment.ts
+    - packages/permission-engine/src/user-permission-engine.ts
+    - packages/permission-engine/src/role-registry.ts
+    - packages/permission-engine/src/permission-version.ts
+    - packages/permission-engine/src/auth-integration.test.ts
 ---
 
 # TokenEnrichmentHandler
@@ -52,6 +58,8 @@ Zitadel Action / Keycloak Protocol Mapper 에서 호출:
 - 같은 registry → 항상 같은 hash
 - feature 추가/삭제/순서 변경 → hash 변경 → 구 토큰 자동 무효
 - 암호학적 강도 불필요 — 빠른 변경 감지 목적
+
+handler는 permission claims 계산만 소유한다. provider별 JWT 병합 훅, session revoke, 요청 시 HTTP 응답 변환은 각각 provider adapter, notifier, middleware adapter의 책임이다.
 
 ## 소비 ^consumes
 

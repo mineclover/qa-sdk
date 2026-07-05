@@ -11,7 +11,11 @@ def:
   links:
     - target: auth-permission-integration
       type: refines
-  source: packages/permission-engine/src/permission-change-notifier.ts
+  sources:
+    - packages/permission-engine/src/permission-change-notifier.ts
+    - packages/permission-engine/src/permission-version.ts
+    - packages/permission-engine/src/auth-provider.ts
+    - packages/permission-engine/src/auth-integration.test.ts
 ---
 
 # PermissionChangeNotifier
@@ -35,13 +39,20 @@ Permission DB 변경 (role 배정 / override 추가)
 ### API
 
 ```typescript
-interface PermissionChangeNotifier {
-  notify(userId: string, options?: { hardRevoke?: boolean }): Promise<void>;
-  notifyBatch(userIds: string[], options?: { hardRevoke?: boolean }): Promise<void>;
+interface NotifyResult {
+  userId: string;
+  newVersion: number;
+  hardRevoked: boolean;
+}
+
+class PermissionChangeNotifier {
+  notify(userId: string, options?: { hardRevoke?: boolean }): Promise<NotifyResult>;
+  notifyBatch(userIds: readonly string[], options?: { hardRevoke?: boolean }): Promise<NotifyResult[]>;
 }
 ```
 
 `notifyBatch()`는 대량 권한 변경 시 사용한다 (예: role 정의 변경으로 전체 영향).
+notifier는 권한 데이터를 직접 수정하지 않는다. role 배정/override 변경은 호출자가 완료하고, notifier는 변경 후 토큰 무효화 신호만 소유한다.
 
 ## 소비 ^consumes
 

@@ -11,6 +11,9 @@ def:
   links:
     - target: auth-permission-integration
       type: refines
+  sources:
+    - packages/permission-engine/src/auth-provider.ts
+    - packages/permission-engine/src/auth-integration.test.ts
 ---
 
 # AuthProvider 계약
@@ -26,8 +29,9 @@ permission-engine이 특정 provider에 의존하지 않도록 인터페이스�
 
 ```typescript
 interface AuthProvider {
+  readonly id: string;
   revokeUserSessions(userId: string): Promise<void>;
-  revokeUserToken(userId: string, tokenId: string): Promise<void>;
+  revokeRefreshToken?(refreshToken: string): Promise<void>;
 }
 ```
 
@@ -41,9 +45,11 @@ interface AuthProvider {
 
 ### hardRevoke 사용 기준
 
-`hardRevoke: true`는 `AuthProvider.revokeUserSessions()`를 호출한다.
+`hardRevoke: true`는 `PermissionChangeNotifier`를 통해 `AuthProvider.revokeUserSessions()`를 호출한다.
 보안 이슈 또는 즉각적인 효력이 필요한 경우에만 사용한다 — provider API 부하가 높음.
 일반 권한 변경은 소프트 revoke(버전 bump만)로 충분하다.
+
+`revokeRefreshToken()`은 provider가 지원할 때만 노출되는 선택 API다. 권한 변경 기본 흐름은 refresh token 단건 취소가 아니라 유저별 permission version bump를 기준으로 한다.
 
 ## 소비 ^consumes
 

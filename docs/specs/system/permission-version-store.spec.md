@@ -11,6 +11,12 @@ def:
   links:
     - target: auth-permission-integration
       type: refines
+  sources:
+    - packages/permission-engine/src/permission-version.ts
+    - packages/permission-engine/src/permission-change-notifier.ts
+    - packages/permission-engine/src/token-enrichment.ts
+    - packages/permission-engine/src/permission-middleware.ts
+    - packages/permission-engine/src/auth-integration.test.ts
 ---
 
 # PermissionVersionStore
@@ -28,6 +34,7 @@ def:
 interface PermissionVersionStore {
   getVersion(userId: string): Promise<number>;
   bumpVersion(userId: string): Promise<number>;
+  batchGetVersions(userIds: readonly string[]): Promise<Map<string, number>>;
 }
 ```
 
@@ -49,6 +56,7 @@ CREATE TABLE permission_versions (
 
 Drizzle SQLite/D1 또는 Redis 구현을 소비자가 직접 주입한다.
 permission-engine 패키지에 Drizzle 구현을 포함하지 않는다 — 라이브러리 순수성 유지.
+store는 version counter만 소유한다. role assignment, override payload, provider token revoke, HTTP response mapping은 별도 기능 경계에 둔다.
 
 ## 소비 ^consumes
 
