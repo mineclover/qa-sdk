@@ -1,33 +1,68 @@
-<!-- status: approved (v0.8 구현 완료) -->
+---
+def:
+  id: taxonomy-engine-lifecycle-concept
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: state
+  aspect: lifecycle
+  tier: component
+  depth: specification
+  sources:
+    - packages/taxonomy-engine/src/schema/ir.ts
+    - packages/taxonomy-engine/src/schema/zod.ts
+    - packages/taxonomy-engine/src/validate/lifecycle.ts
+    - packages/taxonomy-engine/src/diff/index.ts
+    - packages/taxonomy-engine/__tests__/unit/lifecycle-schema.test.ts
+    - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
+    - packages/taxonomy-engine/__tests__/unit/lifecycle-diff.test.ts
+    - packages/cli/src/commands/taxonomy/validate.ts
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: concept-lifecycle
+---
 
 # Lifecycle — 결정 진행 상태
 
-> entry/axis에 부여하는 결정 상태. **결정의 결과만** 다루던 v0.7에서 **결정 자체**를 1급으로 격상.
-
-## 정의
-
-[[entry]]와 [[axis]]에 선택적으로 부여하는 결정 진행 상태. 6 값 — `draft / review / approved / deprecated / archived / tbd`.
-
-앞 5개는 vocabulary.ts `DEF_LIFECYCLE`(qa-sdk 공용 어휘) 그대로. 마지막 `tbd`만 taxonomy-engine 신규 — placeholder/미정 표현용.
+> axis/entry에 선택적으로 부여하는 결정 상태. 확정 vocabulary와 아직 결정 중인 placeholder를 같은 taxonomy 안에 표현한다.
 
 ## 목적 ^purpose
 
-- 진화 중인 텍소노미(확정 + 미정 섞임)를 자연스럽게 표현
-- 리뷰어가 "이 entry는 결정 완료인가, 진행 중인가, 미정인가"를 좌표 단위로 즉시 식별
-- 미정 entry에 `decisionLink`를 달아 결정 컨텍스트(왜, 누가, 무엇이 필요한가)로 연결
+- 진화 중인 taxonomy에서 확정/검토/미정 entry를 명시한다.
+- `validate()`가 lifecycle 누락과 tbd orphan을 진단하게 한다.
+- diff/migration 단계에서 lifecycle과 decisionLink 변경을 별도 영향으로 추적한다.
+
+## 정의
+
+`Lifecycle`은 6개 값이다.
+
+```typescript
+type Lifecycle =
+  | "draft"
+  | "review"
+  | "approved"
+  | "deprecated"
+  | "archived"
+  | "tbd"
+```
+
+`AxisIR.lifecycle`과 `EntryIR.lifecycle`에 선택적으로 들어간다. relation과 constraint에는 lifecycle 필드를 두지 않는다.
 
 ## 6 값
 
-| value | 의미 | UI |
-|------|------|----|
-| `draft` | 초안, 작성 중 | blue |
-| `review` | 검토 중, 피드백 수집 | amber |
-| `approved` | 승인, 결정 완료 | green |
-| `deprecated` | 폐기 예정, 새 사용 금지 | gray |
-| `archived` | 보관, 변경 금지 | dark |
-| `tbd` | **미정** — placeholder entry | red dashed |
+| value | 의미 |
+|-------|------|
+| `draft` | 초안, 작성 중 |
+| `review` | 검토 중 |
+| `approved` | 승인, 결정 완료 |
+| `deprecated` | 폐기 예정, 새 사용 금지 |
+| `archived` | 보관 |
+| `tbd` | 미정 placeholder |
 
-`tbd`는 taxonomy-engine 신규. 다른 5개는 DEF_LIFECYCLE 그대로 → vocabulary.ts와 자동 추출로 동기화 가능 ([[doctor]] 참조).
+앞 5개 값은 definition-catalog `DEF_LIFECYCLE`과 맞는 공용 lifecycle이고, `tbd`는 taxonomy-engine이 미정 vocabulary를 표현하기 위해 추가로 허용한다.
 
 ## 적용 위치
 
@@ -35,108 +70,84 @@
 axes:
   layer:
     description: lesson-builder Layer
-    lifecycle: approved          # axis 단위 (선택)
+    lifecycle: approved
     entries:
       - { id: type-schema, address: 0, lifecycle: approved }
-      - { id: asset,       address: 1, lifecycle: approved, decisionLink: "../proposals/lesson-builder/decisions/asset-interface.md" }
-      - { id: cue,         address: 12, lifecycle: tbd, placeholderReason: "interaction 정의 미정" }
+      - { id: asset, address: 1, lifecycle: approved, decisionLink: "./decisions/asset.md" }
+      - { id: cue, address: 12, lifecycle: tbd, placeholderReason: "interaction 정의 미정" }
 ```
-
-- entry: 가장 흔함, 결정 단위
-- axis: 차원 전체의 성숙도 (선택, 누락 시 entries에서 추론 가능하지만 명시가 권장)
-- relation/constraint: 부여 안 함 (선언이 곧 결정)
 
 ## 누락 정책
 
-`lifecycle` 필드는 **optional**. 기존 yaml은 lifecycle 없이도 valid.
+`lifecycle` 필드는 optional이다. parser는 누락을 허용하고 IR에는 `undefined`를 보존한다.
 
 | 시점 | 동작 |
 |------|------|
-| parse | 누락 OK, IR에 `undefined` |
-| validate (기본) | `lifecycle-missing` **warning** |
-| validate (`--lifecycle-strict`) | `lifecycle-missing` **error** |
-| codegen | 누락 entry는 출력에 lifecycle 필드 자체 생략 |
-| UI | "(미지정)" 회색 배지 |
+| parse | 누락 OK |
+| validate 기본 | `lifecycle-missing` warning |
+| validate `{ lifecycleStrict: true }` | `lifecycle-missing` error |
+| validate `{ strict: true }` | warning 전체가 error로 승격 |
+| codegen | 값이 없으면 해당 필드가 생성 객체에서 생략 |
 
-**default 값을 자동 부여하지 않는다.** "어떤 entry는 의도적으로 미지정"과 "어떤 entry는 결정 완료(approved)"를 구분 가능해야 하기 때문.
+CLI에서는 `qa-sdk tax validate <file> --lifecycle-strict`가 `lifecycleStrict` 옵션을 켠다.
 
-마이그레이션 흐름: yaml에 lifecycle 추가 → warning 사라짐 → 충분히 부여되면 `--lifecycle-strict` CI 게이트 활성화.
+## tbd와 placeholderReason
 
-## 전이 규칙 (`lifecycle-transition-invalid`)
+`lifecycle: tbd` entry는 placeholder로 집계된다.
 
-`validate --lifecycle-strict --base <ref>` 시 git base와 비교, 부적절 전이 감지.
+| 상황 | 진단 |
+|------|------|
+| tbd entry가 1개 이상 | `lifecycle-tbd` info, `meta.count` |
+| tbd인데 `placeholderReason`과 `decisionLink`가 모두 없음 | `lifecycle-tbd-orphan` info |
+| `placeholderReason` 또는 `decisionLink`가 있음 | orphan 진단 없음 |
 
-| from | 허용 to |
-|------|---------|
-| `draft` | `review`, `approved`, `deprecated`, `tbd` |
-| `review` | `draft`, `approved`, `deprecated`, `tbd` |
-| `approved` | `review`, `deprecated`, `tbd` |
-| `deprecated` | `approved`, `archived`, `tbd` (재활성화 허용) |
-| `archived` | **불가** — 영구 보관 |
-| `tbd` | **모두** — 미정에서 임의 결정 가능 |
-
-`archived → *` 시도 시 error. 그 외 표 외 전이는 warning (실수 가능성 표시).
+`placeholderReason`은 자유 텍스트다. engine은 문자열 존재 여부만 본다.
 
 ## decisionLink
 
-entry에 결정 컨텍스트를 연결하는 string. 4 형식:
+entry에 결정 컨텍스트를 연결하는 string이다. 현재 검증은 `validateLifecycle()` 안에서 수행한다.
 
-| 형식 | 예 | 검증 |
-|------|-----|------|
-| relative path | `./decisions/asset.md` | fs 존재 확인 |
-| URI | `https://github.com/.../decisions/123` | 형식만 (fetch 안 함) |
-| taxonomy ref | `tax:slug.axis.entry` | [[registry]] resolve |
-| decision-flow URI | `decision-flow://decisions/abc` | 후속 (markdown SSOT 사용 시 path 권장) |
+| 형식 | 검증 |
+|------|------|
+| `http://...`, `https://...` | 형식만 허용. fetch 없음 |
+| `tax:...` | 현재는 형식만 허용. registry resolve 없음 |
+| `decision-flow://...` | Stage 3 미지원으로 `decision-link-broken` warning |
+| 그 외 path | `decisionLinkBaseDir`가 있을 때 파일 존재 확인 |
 
-검증 실패 시 `decision-link-broken` warning. ref/URI/path 형식 분기는 prefix로 판단 (`./`, `../`, `http://`, `https://`, `tax:`, `decision-flow://`).
+CLI validate는 `decisionLinkBaseDir`를 yaml 파일의 directory로 넘긴다. 라이브러리 직접 호출에서 base dir을 생략하면 path 존재 확인은 skip된다.
 
-Stage 1에서는 단순 string. Stage 3에서 decision-flow 양방향 sync 활성화 시 decision id로 진화.
+## diff 확장
 
-## placeholderReason
+`diff()`는 lifecycle 관련 변경을 patch급으로 분류한다.
 
-`lifecycle: tbd` entry에 선택적 부여. **왜 미정인지 한 줄 설명**.
-
-```yaml
-- { id: cue, address: 12, lifecycle: tbd, placeholderReason: "interaction 정의 미정 — beat과의 경계 결정 필요" }
-```
-
-UI에서 tbd 배지 hover 시 표시. validate는 검사하지 않음 (자유 텍스트). 단 `lifecycle: tbd`인데 `placeholderReason`도 `decisionLink`도 없으면 `lifecycle-tbd-orphan` info — "이 미정 entry는 컨텍스트가 없습니다, 추가하세요" 안내.
-
-## DiagnosticCode (신규 4종)
-
-`lifecycle-*` prefix 신설. 전체 카탈로그: [`diagnostics-catalog.md`](./diagnostics-catalog.md).
-
-| code | severity | 언제 | hint |
-|------|----------|------|------|
-| `lifecycle-missing` | warning (strict: error) | entry/axis에 lifecycle 없음 | `lifecycle: <value>` 추가 |
-| `lifecycle-tbd` | info | placeholder entry 감지 (개수 보고) | (없음, 정보성) |
-| `lifecycle-transition-invalid` | error | 부적절 전이 (git base 비교 시) | 허용 전이 표 안내 |
-| `lifecycle-tbd-orphan` | info | tbd인데 reason/link 둘 다 없음 | `placeholderReason` 또는 `decisionLink` 추가 |
-| `decision-link-broken` | warning | decisionLink 해소 실패 | 파일/URI 확인 |
-
-## diff 확장 (Stage 2 일부 선행)
-
-DiffEntry kind 추가:
-- `entry-lifecycle-changed` — `{ axis, id, from, to }` — Stage 1에서 추가, Stage 2의 breakingLevel 분류 시 `patch`로 분류.
+| DiffEntry kind | breakingLevel |
+|----------------|---------------|
+| `axis-lifecycle-changed` | `patch` |
+| `entry-lifecycle-changed` | `patch` |
+| `entry-placeholder-reason-changed` | `patch` |
+| `entry-decision-link-changed` | `patch` |
 
 ## 다른 개념과의 관계
 
-- [[entry]] — lifecycle을 가질 수 있는 주된 단위
-- [[axis]] — axis 단위 lifecycle (선택)
-- [[diagnostic]] — `lifecycle-*` 4 신규
-- [[diff]] — `entry-lifecycle-changed` 신규 kind
-- [[doctor]] — vocabulary.ts DEF_LIFECYCLE와 taxonomy의 lifecycle 사용을 cross-check (extract-vocab 보강)
-- decision-flow (Stage 3) — decisionLink로 양방향 sync 예정
-
-## SSOT 위치
-
-- vocabulary.ts `DEF_LIFECYCLE` — 5 entries (`tbd` 제외) SSOT
-- taxonomy-engine schema — `tbd` 합쳐 6 entries 허용
-- 두 곳 일치 검증: doctor extract-vocab가 `DEF_LIFECYCLE.entries`를 비교 시 `tbd`만 차이로 보고 (예외 처리)
+- [[entry]]: lifecycle을 갖는 주된 단위
+- [[axis]]: axis 단위 lifecycle을 선택적으로 가짐
+- [[diagnostic]]: `lifecycle-*`, `decision-link-*`
+- [[semver-migration]]: lifecycle 변경은 patch, decisionLink가 있는 entry 영향은 `decisionImpact`
+- [[doctor]]: definition-catalog vocabulary 추출에서 lifecycle vocabulary를 비교한다
 
 ## 참조
 
-- roadmap Stage 1: `../roadmap.md`
+- 타입: `packages/taxonomy-engine/src/schema/ir.ts`
+- schema: `packages/taxonomy-engine/src/schema/zod.ts`
+- validate: `packages/taxonomy-engine/src/validate/lifecycle.ts`
+- diff: `packages/taxonomy-engine/src/diff/index.ts`
+- CLI validate: `packages/cli/src/commands/taxonomy/validate.ts`
 - DEF_LIFECYCLE: `packages/definition-catalog/src/vocabulary.ts`
-- 결정 컨텍스트 비전: 메모리 `feedback_decision-context-over-tracking`
-- 도그푸딩 케이스 (lesson-builder): `../roadmap.md` §케이스 매핑
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter taxonomy-engine exec vitest run __tests__/unit/lifecycle-schema.test.ts __tests__/unit/lifecycle-validate.test.ts __tests__/unit/lifecycle-diff.test.ts __tests__/unit/diff-semver.test.ts
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```
