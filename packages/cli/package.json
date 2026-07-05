@@ -17,12 +17,12 @@
     "dist"
   ],
   "scripts": {
-    "build": "pnpm --filter cli-command build && tsup",
-    "dev": "pnpm --filter cli-command build && tsup --watch",
-    "test": "pnpm --filter cli-command build && node scripts/run-vitest.mjs --parallel",
-    "test:parallel": "pnpm --filter cli-command build && node scripts/run-vitest.mjs --parallel",
-    "test:serial": "pnpm --filter cli-command build && node scripts/run-vitest.mjs --serial",
-    "test:slow": "pnpm --filter cli-command build && node scripts/run-vitest.mjs --slow",
+    "build": "corepack pnpm --filter cli-command build && tsup",
+    "dev": "corepack pnpm --filter cli-command build && tsup --watch",
+    "test": "corepack pnpm --filter cli-command build && node scripts/run-vitest.mjs --parallel",
+    "test:parallel": "corepack pnpm --filter cli-command build && node scripts/run-vitest.mjs --parallel",
+    "test:serial": "corepack pnpm --filter cli-command build && node scripts/run-vitest.mjs --serial",
+    "test:slow": "corepack pnpm --filter cli-command build && node scripts/run-vitest.mjs --slow",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "db:generate": "drizzle-kit generate"

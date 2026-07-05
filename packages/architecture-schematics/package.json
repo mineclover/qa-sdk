@@ -24,7 +24,7 @@
   ],
   "scripts": {
     "build": "tsup",
-    "test": "pnpm build && vitest run",
+    "test": "tsup && vitest run",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },

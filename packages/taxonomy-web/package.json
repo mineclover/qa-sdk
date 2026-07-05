@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "build:data": "node ../../scripts/taxonomy-web-build-data.mjs",
-    "dev": "pnpm build:data && vite",
-    "build": "pnpm build:data && vite build",
+    "dev": "node ../../scripts/taxonomy-web-build-data.mjs && vite",
+    "build": "node ../../scripts/taxonomy-web-build-data.mjs && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"

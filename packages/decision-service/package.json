@@ -16,7 +16,7 @@
     "dev": "tsx watch src/main.ts",
     "build": "tsup",
     "build:tsc": "tsc",
-    "test": "pnpm run build && pnpm run build:tsc && tsx scripts/services.test.ts",
+    "test": "tsup && tsc && tsx scripts/services.test.ts",
     "start": "node dist/main.js",
     "db:generate": "drizzle-kit generate"
   },

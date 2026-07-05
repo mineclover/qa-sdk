@@ -19,10 +19,10 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "demo": "pnpm --filter visbug run bundle && pnpm build && pnpm exec http-server ../.. -p 4173 -c-1",
+    "demo": "corepack pnpm --filter visbug run bundle && tsup && http-server ../.. -p 4173 -c-1",
     "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test",
-    "test:extension": "pnpm -C ../../vendor/projectvisbug run extension:build && playwright test -c playwright.extension.config.ts",
+    "test:extension": "corepack pnpm -C ../../vendor/projectvisbug run extension:build && playwright test -c playwright.extension.config.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },

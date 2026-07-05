@@ -5,8 +5,8 @@
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
-    "test": "pnpm exec vitest run",
-    "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
     "@webgpu/types": "^0.1.54",

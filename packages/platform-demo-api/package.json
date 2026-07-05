@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "test": "pnpm run typecheck && tsx scripts/read-api.test.ts",
+    "test": "tsc --noEmit && tsx scripts/read-api.test.ts",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate"
   },

@@ -1,5 +1,6 @@
 import { execSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import chalk from "chalk";
 
 /**
@@ -204,6 +205,16 @@ async function main() {
     }
   }
 
+  // 5. Verify package scripts don't bypass the pinned package manager.
+  try {
+    const barePnpmScripts = findBarePnpmPackageScripts(["packages", "simulations"]);
+    assert(barePnpmScripts.length === 0,
+           `Toolchain Scripts: package scripts avoid bare pnpm (${barePnpmScripts.slice(0, 5).join("; ") || "ok"})`);
+  } catch (err) {
+    console.error("Toolchain script verification failed:", err);
+    assert(false, "Toolchain Scripts: package script scan completed successfully");
+  }
+
   console.log(chalk.bold.cyan(`\nVerification Complete: ${passedTests}/${totalTests} passed.\n`));
   
   if (passedTests < totalTests) {
@@ -253,4 +264,43 @@ function formatDiff(missing: string[], extras: string[]): string {
     extras.length > 0 ? `extra=${extras.join(", ")}` : "",
   ].filter(Boolean);
   return parts.join("; ") || "ok";
+}
+
+function findBarePnpmPackageScripts(roots: string[]): string[] {
+  const packageJsonFiles = roots.flatMap((root) => walkPackageJsonFiles(root));
+  const violations: string[] = [];
+
+  for (const path of packageJsonFiles) {
+    const manifest = JSON.parse(readFileSync(path, "utf-8")) as { scripts?: Record<string, string> };
+    for (const [scriptName, command] of Object.entries(manifest.scripts ?? {})) {
+      if (usesBarePnpm(command)) {
+        violations.push(`${path}#${scriptName}`);
+      }
+    }
+  }
+
+  return violations;
+}
+
+function walkPackageJsonFiles(root: string): string[] {
+  const files: string[] = [];
+  if (!existsSync(root)) return files;
+
+  for (const entry of readdirSync(root)) {
+    if (["node_modules", "dist", "build", "coverage", ".turbo", ".next", ".vite"].includes(entry)) continue;
+    const path = join(root, entry);
+    const stats = statSync(path);
+    if (stats.isDirectory()) {
+      files.push(...walkPackageJsonFiles(path));
+    } else if (entry === "package.json") {
+      files.push(path);
+    }
+  }
+
+  return files;
+}
+
+function usesBarePnpm(command: string): boolean {
+  const tokens = command.split(/\s+/).filter(Boolean);
+  return tokens.some((token, index) => token === "pnpm" && tokens[index - 1] !== "corepack");
 }

@@ -6,11 +6,11 @@
   "main": "js/index.ts",
   "scripts": {
     "build:wasm": "wasm-pack build --target web --out-dir pkg",
-    "build": "pnpm run build:wasm",
-    "test:js": "pnpm exec vitest run",
+    "build": "wasm-pack build --target web --out-dir pkg",
+    "test:js": "vitest run",
     "test:rust": "cargo test",
-    "test": "pnpm run test:js && cargo test",
-    "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json"
+    "test": "vitest run && cargo test",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
     "typescript": "^5.8.2"

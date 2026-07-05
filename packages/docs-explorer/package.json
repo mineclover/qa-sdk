@@ -9,7 +9,7 @@
     "build": "node scripts/export-data.mjs && vite build",
     "preview": "vite preview",
     "export": "node scripts/export-data.mjs",
-    "test": "pnpm run build && node scripts/static-smoke.test.mjs"
+    "test": "node scripts/export-data.mjs && vite build && node scripts/static-smoke.test.mjs"
   },
   "dependencies": {
     "definition-catalog": "workspace:*"
