@@ -98,3 +98,5 @@ pnpm docs:usefulness-audit -- --format json --all
 `packages/registry-ui`는 registry-service 데이터를 탐색·구성하는 Vanilla TS + Vite UI다. `test = build + scripts/static-smoke.test.mjs`를 추가해 SPA 탭/컨테이너 marker, JS/CSS asset, generated git-conflicts fixture의 dist 복사와 shape을 package-local로 증명한다. 독립 `tsc --noEmit`은 기존 file-map 타입 drift가 있어 이번 보수 증명 범위에는 넣지 않았다.
 
 `packages/test-types`는 테스트 분류 타입과 품질 게이트/작업 도메인 vocabulary의 zero-dependency SSOT다. `test = build + typecheck + scripts/smoke.test.mjs`를 추가해 ESM/CJS 산출물이 동일한 `TEST_*` 배열, `GATE_KINDS`, `WORK_DOMAINS`, `getSubDomain()` 계약과 declaration export를 제공하는지 package-local로 증명한다.
+
+`packages/weighted-index-explorer`는 weighted-index 개념을 페이지 단위로 설명하는 Vite 데모다. `test = build + scripts/static-smoke.test.mjs`를 추가해 주요 sheet/container marker, JS/CSS asset, v1/v2/v3 mixed-radix shape와 encode/decode 예시를 package-local로 증명한다.

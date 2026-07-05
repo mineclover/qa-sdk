@@ -1,6 +1,6 @@
 # weighted-index-explorer
 
-`weighted-index-explorer`는 `weighted-index` 개념을 브라우저에서 탐색하는 데모 앱이다. 아직 전용 package spec은 없고, indexing 루트 문서를 기준으로 읽는다.
+`weighted-index-explorer`는 `weighted-index` 개념을 브라우저에서 탐색하는 데모 앱이다. 전용 package spec과 indexing 루트 문서를 함께 기준으로 읽는다.
 
 ## 먼저 볼 문서
 
@@ -29,6 +29,9 @@
 ```bash
 pnpm --filter weighted-index-explorer dev
 pnpm --filter weighted-index-explorer build
+pnpm --filter weighted-index-explorer test
 ```
 
-전용 spec이 없는 만큼, 새 페이지를 추가할 때는 먼저 어떤 indexing 개념을 시각화하는지 central docs에 대응점을 잡는 것이 좋다.
+`test`는 production build 뒤 주요 sheet/container marker, JS/CSS asset, v1/v2/v3 mixed-radix shape와 encode/decode 예시를 검증한다.
+
+새 페이지를 추가할 때는 먼저 어떤 indexing 개념을 시각화하는지 central docs와 전용 spec의 대응점을 잡는 것이 좋다.
