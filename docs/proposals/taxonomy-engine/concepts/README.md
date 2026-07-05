@@ -1,4 +1,43 @@
+---
+def:
+  id: taxonomy-engine-concepts-index
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: meta
+  aspect: proposal_design
+  tier: layout
+  depth: overview
+  sources:
+    - docs/proposals/taxonomy-engine/concepts/axis.md
+    - docs/proposals/taxonomy-engine/concepts/entry.md
+    - docs/proposals/taxonomy-engine/concepts/coordinate.md
+    - docs/proposals/taxonomy-engine/concepts/relation.md
+    - packages/taxonomy-engine/src/schema/ir.ts
+    - packages/taxonomy-engine/src/indexer/index.ts
+    - packages/taxonomy-engine/src/registry/index.ts
+    - packages/taxonomy-engine/src/query/index.ts
+    - packages/taxonomy-engine/__tests__/unit/schema.test.ts
+    - packages/taxonomy-engine/__tests__/unit/indexer.test.ts
+    - packages/taxonomy-decision-bridge/src/to-flow-schema.ts
+    - packages/taxonomy-decision-bridge/__tests__/to-flow-schema.test.ts
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: concepts-index
+supersedes: -
+superseded_by: -
+---
+
 # Taxonomy Engine — 1급 개념
+
+## 목적 ^purpose
+
+taxonomy-engine의 핵심 개념 문서를 한 화면에서 찾게 하는 layout 문서다. Axis, Entry,
+Coordinate, Relation 4개를 1급 개념으로 고정하고, validation/query/codegen/decision
+bridge 같은 지원 개념은 별도 문서로 연결한다.
 
 > 텍소노미 좌표 공간을 구성하는 1급(first-class) 추상 4종. 다른 모든 시스템 요소는 이것들의 조합 또는 위의 도구.
 
@@ -48,3 +87,18 @@ Taxonomy (공간)
 - spec 본문: `../00-design.md`
 - 구현 plan: `../plans/v0.1.md` (v0.1) + `../plans/v0.2.md` (v0.2)
 - 좌표계 시스템 철학: `docs/definition-system-philosophy.md`
+
+## 구현/검증 증거 ^implementation-evidence
+
+1급 개념은 `packages/taxonomy-engine/src/schema/ir.ts`의 IR shape와 indexer/query/registry
+구현에서 소비된다. decision-flow 연동 개념은 `taxonomy-decision-bridge`의 FlowSchema 변환
+테스트가 대표 증거다.
+
+검증 명령:
+
+```bash
+pnpm --filter taxonomy-engine test
+pnpm --filter taxonomy-decision-bridge test
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```
