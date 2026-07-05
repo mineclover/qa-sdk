@@ -108,7 +108,7 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 
 정리 작업은 `arch:surfaces`로 `packages/*` surface-managed 배정이 깨지지 않는지 먼저 확인하고, `arch:usage`로 surface별 zero-fan-in/archive/dead/missing-entrypoint/entrypoint-gap 잔여를 확인한 뒤 진행한다.
 
-정확한 `packages/*` surface-managed 패키지 배정의 SSOT는 `scripts/package-surfaces.mjs`다. 위 표는 리뷰 가능한 surface 이름, 기능군, 판정, 대표 패키지/그룹, 승격 기준을 요약한다. `packages/*` package coverage와 누락/중복은 `corepack pnpm arch:surfaces`와 `corepack pnpm arch:verify`가 manifest 기준으로 증명한다. `simulations/*`와 `vendor/*`는 workspace-support로 usefulness audit에 남길 수 있으나, 기능 surface 승격 또는 quarantine 후보로 계산하지 않는다.
+정확한 `packages/*` surface-managed 패키지 배정의 SSOT는 `scripts/package-surfaces.mjs`다. 위 표는 리뷰 가능한 surface 이름, 기능군, 판정, 대표 패키지/그룹, 승격 기준을 요약한다. `packages/*` package coverage와 누락/중복은 `corepack pnpm arch:surfaces`와 `corepack pnpm arch:verify`가 manifest 기준으로 증명한다. `corepack pnpm arch:surfaces -- --json`은 기능군별 surface 수, package 수, 판정 분포도 내보내며, `arch:verify`는 taxonomy/profile/quarantine 기능군이 다시 섞이지 않도록 이 요약을 고정한다. `simulations/*`와 `vendor/*`는 workspace-support로 usefulness audit에 남길 수 있으나, 기능 surface 승격 또는 quarantine 후보로 계산하지 않는다.
 
 `design-usefulness-audit`는 이 규칙을 소비해 package 후보의 `surfaceGroup`, `surfaceVerdict`, `surfaceScope`를 계산한다. 이 문서가 새 surface를 추가하면 `scripts/package-surfaces.mjs`와 `system-packages` 표를 먼저 맞추고, `arch:verify`가 rule table과 manifest drift를 잡도록 둔다.
 
@@ -122,4 +122,4 @@ corepack pnpm arch:verify
 corepack pnpm arch:feedback
 ```
 
-`corepack pnpm arch:surfaces`는 이 문서의 핵심 분류를 스크립트 surface manifest와 맞춘다. 없는 패키지, 중복 배정, 또는 surface 없는 `packages/*` package가 있으면 실패한다. `corepack pnpm arch:verify`는 taxonomy/profile 관련 surface가 다시 한 덩어리로 합쳐지지 않았는지와 이 문서 및 `system-packages`의 surface 표가 manifest와 같은 목록/기능군/판정을 말하는지도 고정한다.
+`corepack pnpm arch:surfaces`는 이 문서의 핵심 분류를 스크립트 surface manifest와 맞춘다. 없는 패키지, 중복 배정, 또는 surface 없는 `packages/*` package가 있으면 실패하고, 출력의 feature group 요약으로 기능군별 분리 상태를 즉시 확인할 수 있다. `corepack pnpm arch:verify`는 taxonomy/profile 관련 surface가 다시 한 덩어리로 합쳐지지 않았는지와 이 문서 및 `system-packages`의 surface 표가 manifest와 같은 목록/기능군/판정을 말하는지도 고정한다.

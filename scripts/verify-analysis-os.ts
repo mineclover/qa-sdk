@@ -155,8 +155,13 @@ async function main() {
     const surfaceGroups = Object.fromEntries(
       report.surfaces.map((surface: { id: string; group: string }) => [surface.id, surface.group]),
     ) as Record<string, string>;
+    const groupSummaries = Object.fromEntries(
+      (report.groupSummaries ?? []).map((group: { id: string; surfaceCount: number; packageCount: number }) => [group.id, group]),
+    ) as Record<string, { surfaceCount: number; packageCount: number }>;
     assert(Array.isArray(report.unknownSurfaceGroups) && report.unknownSurfaceGroups.length === 0,
            "Surface Report: every surface uses a known feature group");
+    assert(Array.isArray(report.groupSummaries) && report.groupSummaries.length === report.surfaceGroups.length,
+           "Surface Report: feature group summary covers every known group");
     assert(hasExactly(surfaces["taxonomy-tooling"], ["taxonomy-engine"]),
            "Surface Report: taxonomy-engine owns finite vocabulary tooling separately");
     assert(hasExactly(surfaces["taxonomy-decision-bridge"], ["taxonomy-decision-bridge"]),
@@ -180,6 +185,13 @@ async function main() {
            && surfaceGroups["profile-preview-surfaces"] === "profile-capability"
            && surfaceGroups["quarantine-candidates"] === "quarantine",
            "Surface Report: taxonomy, profile, and quarantine feature groups stay separated");
+    assert(groupSummaries["taxonomy-capability"]?.surfaceCount === 3
+           && groupSummaries["taxonomy-capability"]?.packageCount === 3
+           && groupSummaries["profile-capability"]?.surfaceCount === 4
+           && groupSummaries["profile-capability"]?.packageCount === 5
+           && groupSummaries["quarantine"]?.surfaceCount === 1
+           && groupSummaries["quarantine"]?.packageCount === 2,
+           "Surface Report: separated feature group summary stays stable");
 
     const manifestLabels = new Set(report.surfaces.map((surface: { id: string }) => surfaceLabel(surface.id)));
     const ruleRows = parseMarkdownTable(

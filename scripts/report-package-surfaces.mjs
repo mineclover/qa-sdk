@@ -51,11 +51,22 @@ const duplicates = [...assignments.values()].filter((assignment) => assignment.s
 const unassigned = surfaceManagedPackageRows
   .filter((pkg) => !assignments.has(pkg.name))
   .sort((a, b) => a.name.localeCompare(b.name));
+const groupSummaries = SURFACE_GROUPS.map((group) => {
+  const surfaces = SURFACES.filter((surface) => surface.group === group.id);
+  return {
+    id: group.id,
+    description: group.description,
+    surfaceCount: surfaces.length,
+    packageCount: surfaces.reduce((count, surface) => count + surface.packages.length, 0),
+    verdicts: summarizeSurfaceVerdicts(surfaces),
+  };
+});
 
 if (process.argv.includes("--json")) {
   console.log(JSON.stringify({
     surfaces: SURFACES,
     surfaceGroups: SURFACE_GROUPS,
+    groupSummaries,
     managedPackageScope: MANAGED_PACKAGE_SCOPE,
     totalSurfaceManagedPackages: surfaceManagedPackageRows.length,
     assignedSurfaceManagedPackages: assignments.size,
@@ -69,6 +80,10 @@ if (process.argv.includes("--json")) {
 } else {
   console.log("Package Surface Report");
   console.log(`  surface-managed (${MANAGED_PACKAGE_SCOPE}) packages assigned: ${assignments.size}/${surfaceManagedPackageRows.length}`);
+  console.log("  feature groups:");
+  for (const group of groupSummaries) {
+    console.log(`    ${group.id}: ${group.surfaceCount} surfaces, ${group.packageCount} packages, verdicts ${formatVerdicts(group.verdicts)}`);
+  }
   for (const surface of SURFACES) {
     console.log(`\n[${surface.group} / ${surface.id}] ${surface.verdict}`);
     for (const pkgName of surface.packages) {
@@ -111,4 +126,18 @@ if (missing.length > 0 || duplicates.length > 0 || unassigned.length > 0 || unkn
     }
   }
   process.exit(1);
+}
+
+function summarizeSurfaceVerdicts(surfaces) {
+  return surfaces.reduce((acc, surface) => {
+    acc[surface.verdict] = (acc[surface.verdict] ?? 0) + 1;
+    return acc;
+  }, {});
+}
+
+function formatVerdicts(verdicts) {
+  return Object.entries(verdicts)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([verdict, count]) => `${verdict}=${count}`)
+    .join(", ");
 }

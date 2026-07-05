@@ -72,7 +72,7 @@ qa-sdk 전체를 단일 제품 플랫폼으로 확장하지 않는다. 패키지
 | Product demo surfaces | consumer verification | 제품 데모/스모크 UI와 API consumer | `@qa-sdk/platform-demo`, `@qa-sdk/shop-web`, `@qa-sdk/registry-ui` |
 | Quarantine candidates | quarantine | 제품 surface 승격 보류 | `request-contract`, `weighted-gpu` |
 
-상세 승격/격리 규칙은 `package-surface-separation-rule`을 따른다. `packages/*` surface-managed package coverage와 기능군 drift는 `corepack pnpm arch:surfaces`와 `corepack pnpm arch:verify`가 검증한다. `simulations/*`와 `vendor/*` workspace는 support scope로만 감사하며, 기능 surface 표에는 승격하지 않는다.
+상세 승격/격리 규칙은 `package-surface-separation-rule`을 따른다. `packages/*` surface-managed package coverage와 기능군 drift는 `corepack pnpm arch:surfaces`와 `corepack pnpm arch:verify`가 검증한다. `arch:surfaces`는 기능군별 surface/package 요약도 출력하므로 taxonomy capability, profile capability, quarantine이 같은 제품 surface로 다시 합쳐졌는지 즉시 확인할 수 있다. `simulations/*`와 `vendor/*` workspace는 support scope로만 감사하며, 기능 surface 표에는 승격하지 않는다.
 
 ## 인코딩 체인
 

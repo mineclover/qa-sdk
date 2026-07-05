@@ -19,6 +19,13 @@ def:
       type: depends_on
     - target: event-intent-definition-rule
       type: depends_on
+  sources:
+    - packages/nest-service-kit/src/index.ts
+    - packages/nest-service-kit/src/bootstrap.ts
+    - packages/nest-service-kit/src/event-envelope.ts
+    - packages/nest-service-kit/src/ports.ts
+    - packages/nest-service-kit/src/bootstrap.test.ts
+    - packages/nest-service-kit/src/event-envelope.test.ts
 ---
 
 # Nest Service Kit — Consumption Rule
@@ -39,8 +46,8 @@ def:
 ## 검증 ^consumes
 
 ```bash
-pnpm --filter @qa-sdk/nest-service-kit typecheck
-pnpm --filter @qa-sdk/nest-service-kit test
-pnpm --filter @qa-sdk/nest-service-kit build
+corepack pnpm --filter @qa-sdk/nest-service-kit typecheck
+corepack pnpm --filter @qa-sdk/nest-service-kit test
+corepack pnpm --filter @qa-sdk/nest-service-kit build
 qa-sdk docs closure nest-service-kit
 ```

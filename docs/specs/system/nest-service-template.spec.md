@@ -21,11 +21,11 @@ def:
       type: traces_to
     - target: nest-service-template-test
       type: traces_to
+  sources:
+    - packages/cli/src/templates/nest-service-template.ts
+    - packages/cli/src/commands/init.ts
+    - packages/cli/src/commands/init.test.ts
 ---
-sources:
-  - packages/cli/src/templates/nest-service-template.ts
-  - packages/cli/src/commands/init.ts
-
 
 # Nest Service Template
 

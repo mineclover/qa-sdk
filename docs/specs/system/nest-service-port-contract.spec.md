@@ -22,10 +22,11 @@ def:
       type: traces_to
     - target: nest-service-port-contract-test
       type: traces_to
+  sources:
+    - packages/nest-service-kit/src/ports.ts
+    - packages/nest-service-kit/src/event-envelope.ts
+    - packages/nest-service-kit/src/event-envelope.test.ts
 ---
-sources:
-  - packages/nest-service-kit/src/ports.ts
-
 
 # Nest Service Port Contract
 

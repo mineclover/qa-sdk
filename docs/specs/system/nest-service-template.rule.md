@@ -17,6 +17,11 @@ def:
       type: depends_on
     - target: service-definition-standard
       type: depends_on
+  sources:
+    - packages/cli/src/templates/nest-service-template.ts
+    - packages/cli/src/commands/init.ts
+    - packages/cli/src/commands/init.test.ts
+    - packages/cli/src/commands/index-usage.test.ts
 ---
 
 # Nest Service Template — Scaffold Rule
@@ -37,8 +42,8 @@ def:
 ## 검증 ^consumes
 
 ```bash
-pnpm --filter @qa-sdk/cli test -- init.test.ts index-usage.test.ts
-pnpm --filter @qa-sdk/cli typecheck
-pnpm --filter @qa-sdk/cli build
+corepack pnpm --filter @qa-sdk/cli test -- init.test.ts index-usage.test.ts
+corepack pnpm --filter @qa-sdk/cli typecheck
+corepack pnpm --filter @qa-sdk/cli build
 qa-sdk docs closure nest-service-template
 ```

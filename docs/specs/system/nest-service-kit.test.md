@@ -19,9 +19,9 @@ def:
       type: depends_on
     - target: nest-service-port-contract
       type: depends_on
-sources:
-  - packages/nest-service-kit/src/bootstrap.test.ts
-  - packages/nest-service-kit/src/event-envelope.test.ts
+  sources:
+    - packages/nest-service-kit/src/bootstrap.test.ts
+    - packages/nest-service-kit/src/event-envelope.test.ts
 ---
 
 # Nest Service Kit — Validation Mapping
@@ -42,5 +42,5 @@ sources:
 ## 검증 명령
 
 ```bash
-pnpm --filter @qa-sdk/nest-service-kit test
+corepack pnpm --filter @qa-sdk/nest-service-kit test
 ```

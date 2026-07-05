@@ -13,9 +13,9 @@ def:
   links:
     - target: nest-service-template
       type: refines
-sources:
-  - packages/cli/src/commands/init.test.ts
-  - packages/cli/src/commands/index-usage.test.ts
+  sources:
+    - packages/cli/src/commands/init.test.ts
+    - packages/cli/src/commands/index-usage.test.ts
 ---
 
 # Nest Service Template — Validation Mapping
@@ -35,5 +35,5 @@ sources:
 ## 검증 명령
 
 ```bash
-pnpm --filter @qa-sdk/cli test -- init.test.ts index-usage.test.ts
+corepack pnpm --filter @qa-sdk/cli test -- init.test.ts index-usage.test.ts
 ```

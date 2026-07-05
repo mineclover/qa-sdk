@@ -13,8 +13,8 @@ def:
   links:
     - target: nest-service-port-contract
       type: refines
-sources:
-  - packages/nest-service-kit/src/event-envelope.test.ts
+  sources:
+    - packages/nest-service-kit/src/event-envelope.test.ts
 ---
 
 # Nest Service Port Contract — Validation Mapping
