@@ -92,6 +92,7 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 ```bash
 pnpm arch:surfaces
 pnpm arch:usage
+pnpm --silent arch:usage -- --json
 pnpm arch:verify
 pnpm arch:feedback
 ```

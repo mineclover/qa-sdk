@@ -47,7 +47,7 @@ pnpm arch:impact --json   # 상세 데이터 출력
 
 ```bash
 pnpm arch:usage
-pnpm arch:usage -- --json
+pnpm --silent arch:usage -- --json   # raw JSON stdout
 ```
 
 - **Critical Infrastructure**: Fan-In >= 3인 모듈. 수정 시 파급력이 크므로 극도의 주의 필요.
@@ -60,7 +60,7 @@ pnpm arch:usage -- --json
 판정 순서:
 
 1. `arch:surfaces`로 모든 `packages/*` surface-managed package가 정확히 하나의 surface에 배정됐는지 확인한다.
-2. `arch:usage -- --json`에서 `archiveCandidates`, `deadWeight`, `entrypointGaps`를 먼저 본다.
+2. `pnpm --silent arch:usage -- --json`에서 `archiveCandidates`, `deadWeight`, `entrypointGaps`를 먼저 본다. `--silent` 없이 pnpm script를 실행하면 run banner가 stdout에 섞여 raw JSON으로 파싱할 수 없다.
 3. `zeroFanIn`과 `missingEntrypoints`는 사실 신호다. `disposition`을 확인한 뒤 독립 boundary 근거 또는 실제 정리 후보를 구분한다.
 4. 예전 보조 스크립트인 `scripts/find-unused-candidates.ts`도 `arch:usage`에 위임되어야 하며, 별도 heuristics를 추가하지 않는다.
 
