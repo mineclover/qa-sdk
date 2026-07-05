@@ -1,4 +1,44 @@
+---
+def:
+  id: taxonomy-engine-diagnostics-catalog
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: constraint
+  aspect: validation
+  tier: component
+  depth: specification
+  sources:
+    - packages/taxonomy-engine/src/schema/diagnostic.ts
+    - packages/taxonomy-engine/src/parser/index.ts
+    - packages/taxonomy-engine/src/validate/structure.ts
+    - packages/taxonomy-engine/src/validate/capacity.ts
+    - packages/taxonomy-engine/src/validate/ref.ts
+    - packages/taxonomy-engine/src/validate/constraint.ts
+    - packages/taxonomy-engine/src/validate/axis5q.ts
+    - packages/taxonomy-engine/src/validate/lifecycle.ts
+    - packages/taxonomy-engine/src/doctor/index.ts
+    - packages/taxonomy-engine/src/drift/index.ts
+    - packages/taxonomy-engine/__tests__/unit/validate.test.ts
+    - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
+    - packages/taxonomy-engine/__tests__/unit/doctor.test.ts
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: diagnostics-catalog
+supersedes: -
+superseded_by: -
+---
+
 # DiagnosticCode 카탈로그
+
+## 목적 ^purpose
+
+taxonomy-engine의 진단 코드는 CLI, 테스트, 문서에서 공유하는 안정 식별자다. 이 문서는
+각 코드 prefix와 대표 코드를 한 곳에 고정해 구현 drift를 줄이고, 새 진단 추가 시 갱신해야
+하는 카탈로그 역할을 한다.
 
 전체 진단 코드를 한 표에. 새 코드 추가 시 여기도 갱신 필수.
 
@@ -91,3 +131,26 @@
 - **code는 안정 식별자**. message는 변경 가능, code는 한 번 정하면 유지.
 - CI/grep으로 안전하게 필터링하려면 code 사용.
 - 새 진단 추가 시 이 카탈로그 갱신 필수 (drift 방지).
+
+## 구현 증거 ^implementation-evidence
+
+대표 코드들은 `packages/taxonomy-engine/src/schema/diagnostic.ts`의 `DiagnosticCode`
+prefix 타입과 parser/validate/doctor/drift 구현에서 생성된다. `validate.test.ts`,
+`lifecycle-validate.test.ts`, `doctor.test.ts`, `drift.test.ts`가 각 prefix의 대표
+diagnostic을 고정한다.
+
+다음 코드는 의도적으로 예약/후속 상태다.
+
+- `axis-5q-decisional`
+- `axis-5q-stable`
+- `version-incompatible-rename`
+
+검증 명령:
+
+```bash
+pnpm --filter taxonomy-engine test
+pnpm --filter taxonomy-engine typecheck
+pnpm --filter taxonomy-engine build
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```
