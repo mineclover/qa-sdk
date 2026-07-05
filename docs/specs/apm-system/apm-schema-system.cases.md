@@ -15,6 +15,12 @@ def:
       type: refines
     - target: apm-system
       type: depends_on
+  sources:
+    - packages/spec-schema/src/schema.test.ts
+    - packages/demo-snapshot/src/event-schema.test.ts
+    - packages/core/src/coordinates/address-context-schema.test.ts
+    - packages/ingest-server/src/lib/enrich-address-context.test.ts
+    - packages/ingest-server/src/stores/d1-record-store.test.ts
 ---
 
 # APM Schema — 소비자 기대 시나리오
@@ -43,11 +49,11 @@ def:
 **동작**: `address-context-format`의 머지 규칙이 layer 별 주입을 합친다.
 
 **기대**:
-- downstream 값이 upstream 값을 덮어쓰지 않는다 (namespace 구분자로 격리)
-- 중복 key 충돌 시 ValidationError + 충돌 namespace 표시
-- Ingest 저장 시 `address_context`는 canonical 순서로 재정렬되어 저장
+- envelope의 `infra_context`만 있으면 record에 같은 객체 참조를 공유한다
+- record의 `address_context`가 같은 key를 갖고 있으면 record 값이 우선한다
+- Ingest 저장 시점에는 `enrichAddressContext()`가 만든 최종 merged map을 보존한다
 
-**실패 시 수정 대상**: `apm-system`의 `address-context-format` 스펙이 머지 규칙을 명시해야 함. namespace 충돌 정책 결여 → 상위 스펙 수정.
+**실패 시 수정 대상**: `apm-system`의 `address-context-format` 스펙과 `ingest-server/src/lib/enrich-address-context.ts`의 merge 규칙을 함께 확인한다. 주소 컨텍스트 merge는 fail-open이어야 하며 로그 수집 경로를 차단하지 않는다.
 
 ## 시나리오 3: storage 스키마 Zod 호환 ^overview
 
@@ -56,11 +62,11 @@ def:
 **동작**: ingest-server가 EventRecord를 수신하여 Zod parse를 수행한다.
 
 **기대**:
-- SDK가 emit 한 모든 address_context 필드가 Zod 스키마에 정의되어 있다
-- 미정의 필드는 `.strict()` 모드로 거부 또는 `.passthrough()` 모드로 보존 (모드 선택은 apm-system 결정)
+- SDK가 emit 한 모든 address_context 값은 `AddressContextV1Schema`의 packed address 형식을 통과해야 한다
+- invalid packed value는 Zod parse 단계에서 거부된다
 - 저장된 레코드를 재조회 시 round-trip (input → parse → store → fetch → parse) 에서 정보 손실이 없다
 
-**실패 시 수정 대상**: `apm-system`의 `address-context-storage` 스펙이 strict/passthrough 모드를 고정해야 한다. 또한 schema evolution 정책(필드 추가 시 기존 저장 데이터 호환)을 명시.
+**실패 시 수정 대상**: `apm-system`의 `address-context-storage` 스펙, `AddressContextV1Schema`, D1/ClickHouse/PG store adapter의 round-trip 구현을 함께 확인한다.
 
 ## 시나리오 4: composite axis 선언 ^overview
 
@@ -74,3 +80,13 @@ def:
 - composite 엔트리 생성은 자동 파생 (하위 축 entry 조합)
 
 **실패 시 수정 대상**: `apm-system`의 `dsl-schema-domain-model`이 composite 파생 규칙을 명시. capacity 계산 방법과 엔트리 자동 파생 정책이 고정되어야 함.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter spec-schema test
+corepack pnpm --filter demo-snapshot test event-schema
+corepack pnpm --filter @qa-sdk/core test address-context-schema
+corepack pnpm --filter @qa-sdk/ingest-server test enrich-address-context
+corepack pnpm --filter @qa-sdk/ingest-server test d1-record-store
+```

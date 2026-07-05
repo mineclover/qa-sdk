@@ -13,6 +13,13 @@ def:
   links:
     - target: apm-schema-system
       type: refines
+  sources:
+    - packages/core/src/lib/address-parser.ts
+    - packages/core/src/lib/address-parser.test.ts
+    - packages/core/src/coordinates/address-context-schema.ts
+    - packages/core/src/coordinates/address-context-schema.test.ts
+    - packages/ingest-server/src/lib/enrich-address-context.ts
+    - packages/ingest-server/src/lib/enrich-address-context.test.ts
 ---
 
 # Address Context 형식
@@ -60,10 +67,10 @@ envelope의 `infra_context`와 record의 `address_context`가 동시에 존재�
 ## Zod 스키마 검증
 
 `transmissionEnvelopeSchema` (core/src/schema/envelope.schema.ts):
-- `infra_context`: `z.record(z.string(), z.string()).optional()`
-- `records[].address_context`: eventRecordSchema 내부에서 동일 규칙 적용
+- `infra_context`: `AddressContextV1Schema.optional()`
+- `records[].address_context`: eventRecordSchema 내부에서 `AddressContextV1Schema.optional()` 적용
 
-구조 검증만 수행하고, 의미 검증(prefix 존재 여부, version 유효성)은 `checkAddressHealth()`에서 별도 처리한다.
+`AddressContextV1Schema`는 key를 prefix 또는 `catalogId:prefix` 형태로 받고, value는 3파트/4파트 packed address 형식이어야 한다. prefix 등록 여부와 최신 version 여부 같은 catalog 의미 검증은 `checkAddressHealth()`에서 별도 처리한다.
 
 ## 하위 호환 정책
 
@@ -82,3 +89,11 @@ envelope의 `infra_context`와 record의 `address_context`가 동시에 존재�
 - `staleVersions`: 최신이 아닌 version 사용 탐지
 - `healthRate`: validAddresses / totalAddresses 비율
 - 이벤트를 거부하지 않고 경고로 기록한다(fail-open).
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/core test address-parser
+corepack pnpm --filter @qa-sdk/core test address-context-schema
+corepack pnpm --filter @qa-sdk/ingest-server test enrich-address-context
+```

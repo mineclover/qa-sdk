@@ -13,6 +13,12 @@ def:
   links:
     - target: apm-schema-system
       type: refines
+  sources:
+    - packages/spec-schema/src/schema.types.ts
+    - packages/spec-schema/src/category-rules.ts
+    - packages/spec-schema/src/schema.test.ts
+    - packages/demo-snapshot/src/demo-catalog.ts
+    - packages/demo-snapshot/src/event-schema.test.ts
 ---
 
 # DSL 스키마 도메인 모델
@@ -88,3 +94,10 @@ valueType별 의미:
 - 도메인별 차이는 축/entry 집합에서 표현하고, SchemaSnapshot shape 자체는 공유한다.
 - 새 도메인 추가 시 기존 6종 카테고리 중 가장 가까운 것을 선택한다. 도메인 전용 카테고리를 만들지 않는다.
 - Fragment(HasActor, HasTarget, HasOutcome, Identified)를 재사용하여 도메인 간 공통 구조를 일관되게 유지한다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter spec-schema test
+corepack pnpm --filter demo-snapshot test event-schema
+```

@@ -13,6 +13,16 @@ def:
   links:
     - target: apm-schema-system
       type: refines
+  sources:
+    - packages/core/src/types/record.ts
+    - packages/core/src/schema/envelope.schema.ts
+    - packages/core/src/schema/record.schema.ts
+    - packages/ingest-server/src/stores/d1-record-store.ts
+    - packages/ingest-server/src/stores/d1-record-store.test.ts
+    - packages/ingest-server/src/stores/clickhouse-record-store.ts
+    - packages/ingest-server/src/stores/clickhouse-record-store.test.ts
+    - packages/ingest-server/src/stores/pg/event-record.adapter.ts
+    - packages/ingest-server/src/stores/pg/event-record.adapter.test.ts
 ---
 
 # Address Context 저장 계약
@@ -79,7 +89,15 @@ Transport 구현체(HttpTransport, ProtobufTransport 등)는 address_context를 
 
 ingest-server에서 수집 시 address_context 검증은 두 단계:
 
-1. **스키마 검증**: Zod `transmissionEnvelopeSchema`로 구조 검증 — `z.record(z.string(), z.string()).optional()`
+1. **스키마 검증**: Zod `transmissionEnvelopeSchema`로 구조 검증 — `AddressContextV1Schema.optional()`
 2. **건전성 검증**: `checkAddressHealth(records, knownPrefixes, latestVersions)` — orphan prefix, stale version 탐지
 
 건전성 검증 결과는 이벤트를 거부하지 않고 경고로 기록한다(fail-open). healthRate가 낮으면 SDK 버전 불일치 또는 catalog 동기화 지연을 의심한다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/core test schema
+corepack pnpm --filter @qa-sdk/ingest-server test d1-record-store
+corepack pnpm --filter @qa-sdk/ingest-server test clickhouse-record-store
+```

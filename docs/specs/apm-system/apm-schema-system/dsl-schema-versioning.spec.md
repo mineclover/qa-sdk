@@ -13,6 +13,13 @@ def:
   links:
     - target: apm-schema-system
       type: refines
+  sources:
+    - packages/demo-snapshot/src/demo-snapshot.ts
+    - packages/demo-snapshot/src/demo-snapshot.test.ts
+    - packages/demo-snapshot/src/__tests__/catalog-validation.test.ts
+    - packages/demo-types/src/index.ts
+    - packages/demo-types/src/lifecycle.test.ts
+    - packages/codegen-core/src/catalog-typescript.ts
 ---
 
 # DSL 스키마 버전 정책
@@ -78,3 +85,11 @@ released → active + 이전 버전 deprecate (activateAndPropagate)
 | version 승격 | 재생성 필요 | 두 version 공존 | 이전 주소 decode 가능 유지 |
 
 entry 변경 전에 `getPrefixProfile(catalog, prefixId, version)`로 headroom을 확인한다. headroom이 0이면 capacity 확장(새 version) 없이 entry를 추가할 수 없다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter demo-snapshot test demo-snapshot
+corepack pnpm --filter demo-snapshot test catalog-validation
+corepack pnpm --filter demo-types test lifecycle
+```
