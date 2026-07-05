@@ -52,14 +52,15 @@ pnpm arch:usage -- --json
 
 - **Critical Infrastructure**: Fan-In >= 3인 모듈. 수정 시 파급력이 크므로 극도의 주의 필요.
 - **Zero Fan-In**: repo 내부 의존자가 0인 패키지. 독립 앱, CLI/tool, contract/test suite, public library, archive 후보를 `disposition`으로 먼저 분리한다.
-- **Dead Weight Candidates**: `zeroFanIn` 중 `needs-evidence` 또는 `archive-candidate`만 정리 후보로 본다. 0 fan-in 자체를 삭제 지시로 해석하지 않는다.
+- **Archive Decision Candidates**: `zeroFanIn` 중 `archive-candidate` 항목이다. 이미 `no-promotion` surface로 격리된 quarantine/archive 결정 큐로 보고, 제품 core로 승격하지 않는다.
+- **Dead Weight Candidates**: `zeroFanIn` 중 `needs-evidence` 항목이다. 유지 근거를 추가하거나 package boundary를 재판정한다. 0 fan-in 자체를 삭제 지시로 해석하지 않는다.
 - **Missing Entrypoints**: conventional `src/index.ts`류 entrypoint가 없는 패키지. runtime service, browser app, test/contract suite, wasm package를 `disposition`으로 분리한다.
 - **Entrypoint Gaps**: public/library surface인데 conventional entrypoint 근거가 약한 실제 조치 후보. 이 항목이 남을 때만 entrypoint 추가 또는 boundary 재판정이 필요하다.
 
 판정 순서:
 
 1. `arch:surfaces`로 모든 workspace package가 정확히 하나의 surface에 배정됐는지 확인한다.
-2. `arch:usage -- --json`에서 `deadWeight`와 `entrypointGaps`를 먼저 본다.
+2. `arch:usage -- --json`에서 `archiveCandidates`, `deadWeight`, `entrypointGaps`를 먼저 본다.
 3. `zeroFanIn`과 `missingEntrypoints`는 사실 신호다. `disposition`을 확인한 뒤 독립 boundary 근거 또는 실제 정리 후보를 구분한다.
 4. 예전 보조 스크립트인 `scripts/find-unused-candidates.ts`도 `arch:usage`에 위임되어야 하며, 별도 heuristics를 추가하지 않는다.
 

@@ -59,7 +59,15 @@ async function main() {
     assert(zeroFanIn["cli"]?.disposition === "standalone-tool",
            "Usage Analysis: CLI packages with bin entrypoints are standalone tools");
     assert(Array.isArray(usage.deadWeight) && usage.deadWeight.length === 0,
-           "Usage Analysis: dead weight only contains unresolved archive/evidence candidates");
+           "Usage Analysis: dead weight only contains unresolved evidence candidates");
+    const archiveCandidates = Object.fromEntries(
+      usage.archiveCandidates.map((item: { id: string }) => [item.id, item]),
+    ) as Record<string, { disposition: string }>;
+    assert(Array.isArray(usage.archiveCandidates) && usage.archiveCandidates.length === 2,
+           "Usage Analysis: archive candidates are tracked separately from dead weight");
+    assert(archiveCandidates["request-contract"]?.disposition === "archive-candidate"
+           && archiveCandidates["weighted-gpu"]?.disposition === "archive-candidate",
+           "Usage Analysis: no-promotion packages remain in the archive decision queue");
 
     // missing entrypoints는 실제 public entrypoint gap과 분리되어야 함
     const missingEntrypoints = Object.fromEntries(

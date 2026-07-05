@@ -9,8 +9,9 @@ import chalk from "chalk";
  *
  * 1. Missing Entrypoints: No conventional src/index.ts-style entry point.
  * 2. Zero Fan-In: No internal dependents, classified by package disposition.
- * 3. Dead Weight Candidates: Zero fan-in packages that still need evidence or archive decisions.
- * 4. Critical Infrastructure: High fan-in count.
+ * 3. Archive Decision Candidates: Zero fan-in packages already marked no-promotion.
+ * 4. Dead Weight Candidates: Zero fan-in packages that still need evidence.
+ * 5. Critical Infrastructure: High fan-in count.
  */
 
 async function main() {
@@ -30,12 +31,13 @@ async function main() {
 
   const missingEntrypoints: any[] = [];
   const entrypointGaps: any[] = [];
+  const archiveCandidates: any[] = [];
   const deadWeight: any[] = [];
   const zeroFanIn: any[] = [];
   const highUsage: any[] = [];
   const surfaceSummary = new Map<
     string,
-    { total: number; highUsage: number; zeroFanIn: number; deadWeight: number; missingEntrypoints: number; entrypointGaps: number }
+    { total: number; highUsage: number; zeroFanIn: number; archiveCandidates: number; deadWeight: number; missingEntrypoints: number; entrypointGaps: number }
   >();
 
   for (const pkg of pkgs) {
@@ -58,6 +60,7 @@ async function main() {
       total: 0,
       highUsage: 0,
       zeroFanIn: 0,
+      archiveCandidates: 0,
       deadWeight: 0,
       missingEntrypoints: 0,
       entrypointGaps: 0,
@@ -85,12 +88,12 @@ async function main() {
       zeroFanIn.push(zeroFanInItem);
       summary.zeroFanIn += 1;
 
-      // Exclude consumers and core tools from dead weight candidates.
-      if (pkg.tier !== "consumer" && !["sdk", "cli", "archi"].includes(pkg.displayName)) {
-        if (disposition === "archive-candidate" || disposition === "needs-evidence") {
-          deadWeight.push(zeroFanInItem);
-          summary.deadWeight += 1;
-        }
+      if (disposition === "archive-candidate") {
+        archiveCandidates.push(zeroFanInItem);
+        summary.archiveCandidates += 1;
+      } else if (disposition === "needs-evidence") {
+        deadWeight.push(zeroFanInItem);
+        summary.deadWeight += 1;
       }
     } else if (usageCount >= 3) {
       highUsage.push({ id: pkg.displayName, count: usageCount, tier: pkg.tier, surface: surfaceId, verdict, dependents: uniqueDependents });
@@ -100,6 +103,7 @@ async function main() {
 
   const highUsageByCount = [...highUsage].sort((a, b) => b.count - a.count || a.id.localeCompare(b.id));
   const zeroFanInById = [...zeroFanIn].sort((a, b) => a.id.localeCompare(b.id));
+  const archiveCandidatesById = [...archiveCandidates].sort((a, b) => a.id.localeCompare(b.id));
   const deadWeightById = [...deadWeight].sort((a, b) => a.id.localeCompare(b.id));
   const missingEntrypointsById = [...missingEntrypoints].sort((a, b) => a.id.localeCompare(b.id));
   const entrypointGapsById = [...entrypointGaps].sort((a, b) => a.id.localeCompare(b.id));
@@ -116,6 +120,7 @@ async function main() {
         })),
       highUsage: highUsageByCount,
       zeroFanIn: zeroFanInById,
+      archiveCandidates: archiveCandidatesById,
       deadWeight: deadWeightById,
       missingEntrypoints: missingEntrypointsById,
       entrypointGaps: entrypointGapsById,
@@ -133,7 +138,7 @@ async function main() {
     .sort(([a], [b]) => a.localeCompare(b))
     .forEach(([surface, stats]) => {
       console.log(
-        `  ${chalk.cyan(surface.padEnd(28))} | Total: ${chalk.bold(stats.total)} | High: ${stats.highUsage} | Zero: ${stats.zeroFanIn} | Dead: ${stats.deadWeight} | Missing: ${stats.missingEntrypoints} | Gaps: ${stats.entrypointGaps}`,
+        `  ${chalk.cyan(surface.padEnd(28))} | Total: ${chalk.bold(stats.total)} | High: ${stats.highUsage} | Zero: ${stats.zeroFanIn} | Archive: ${stats.archiveCandidates} | Dead: ${stats.deadWeight} | Missing: ${stats.missingEntrypoints} | Gaps: ${stats.entrypointGaps}`,
       );
     });
 
@@ -150,21 +155,28 @@ async function main() {
     console.log("  (None found)");
   }
 
-  console.log(chalk.bold.red(`\n[3] Dead Weight Candidates (Needs Evidence or Archive Decision)`));
+  console.log(chalk.bold.red(`\n[3] Archive Decision Candidates (Quarantine / No Promotion)`));
+  if (archiveCandidatesById.length > 0) {
+    archiveCandidatesById.forEach(d => console.log(`  ⧉ ${chalk.dim(d.id.padEnd(25))} | Tier: ${d.tier} | Surface: ${d.surface} | Verdict: ${d.verdict} | Disposition: ${d.disposition}`));
+  } else {
+    console.log("  (None found)");
+  }
+
+  console.log(chalk.bold.red(`\n[4] Dead Weight Candidates (Needs Evidence)`));
   if (deadWeightById.length > 0) {
     deadWeightById.forEach(d => console.log(`  📦 ${chalk.dim(d.id.padEnd(25))} | Tier: ${d.tier} | Surface: ${d.surface} | Verdict: ${d.verdict} | Disposition: ${d.disposition}`));
   } else {
     console.log("  (None found)");
   }
 
-  console.log(chalk.bold.yellow(`\n[4] Missing Conventional Entrypoints (Disposition)`));
+  console.log(chalk.bold.yellow(`\n[5] Missing Conventional Entrypoints (Disposition)`));
   if (missingEntrypointsById.length > 0) {
     missingEntrypointsById.forEach(s => console.log(`  ◇ ${chalk.dim(s.id.padEnd(25))} | Tier: ${s.tier} | Surface: ${s.surface} | Verdict: ${s.verdict} | Disposition: ${s.disposition}`));
   } else {
     console.log("  (None found)");
   }
 
-  console.log(chalk.bold.red(`\n[5] Entrypoint Gaps (Public/Library Surface Needs Review)`));
+  console.log(chalk.bold.red(`\n[6] Entrypoint Gaps (Public/Library Surface Needs Review)`));
   if (entrypointGapsById.length > 0) {
     entrypointGapsById.forEach(s => console.log(`  💀 ${chalk.dim(s.id.padEnd(25))} | Tier: ${s.tier} | Surface: ${s.surface} | Verdict: ${s.verdict} | Disposition: ${s.disposition}`));
   } else {
