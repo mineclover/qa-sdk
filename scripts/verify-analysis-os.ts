@@ -217,11 +217,11 @@ async function main() {
     }
   }
 
-  // 5. Verify package scripts don't bypass the pinned package manager.
+  // 5. Verify package scripts don't bypass the pinned package manager or use external npx shims.
   try {
-    const barePnpmScripts = findBarePnpmPackageScripts(["."]);
-    assert(barePnpmScripts.length === 0,
-           `Toolchain Scripts: root/workspace package scripts avoid bare pnpm (${barePnpmScripts.slice(0, 5).join("; ") || "ok"})`);
+    const toolchainScriptViolations = findToolchainScriptViolations(["."]);
+    assert(toolchainScriptViolations.length === 0,
+           `Toolchain Scripts: root/workspace package scripts avoid bare pnpm/npx (${toolchainScriptViolations.slice(0, 5).join("; ") || "ok"})`);
   } catch (err) {
     console.error("Toolchain script verification failed:", err);
     assert(false, "Toolchain Scripts: package script scan completed successfully");
@@ -278,14 +278,14 @@ function formatDiff(missing: string[], extras: string[]): string {
   return parts.join("; ") || "ok";
 }
 
-function findBarePnpmPackageScripts(roots: string[]): string[] {
+function findToolchainScriptViolations(roots: string[]): string[] {
   const packageJsonFiles = roots.flatMap((root) => walkPackageJsonFiles(root));
   const violations: string[] = [];
 
   for (const path of packageJsonFiles) {
     const manifest = JSON.parse(readFileSync(path, "utf-8")) as { scripts?: Record<string, string> };
     for (const [scriptName, command] of Object.entries(manifest.scripts ?? {})) {
-      if (usesBarePnpm(command)) {
+      if (usesBarePnpm(command) || usesNpx(command)) {
         violations.push(`${path}#${scriptName}`);
       }
     }
@@ -323,9 +323,17 @@ function walkPackageJsonFiles(root: string): string[] {
 }
 
 function usesBarePnpm(command: string): boolean {
-  const tokens = command
+  const tokens = commandTokens(command);
+  return tokens.some((token, index) => token === "pnpm" && tokens[index - 1] !== "corepack");
+}
+
+function usesNpx(command: string): boolean {
+  return commandTokens(command).includes("npx");
+}
+
+function commandTokens(command: string): string[] {
+  return command
     .split(/\s+/)
     .filter(Boolean)
     .map((token) => token.replace(/^["']+|["']+$/g, ""));
-  return tokens.some((token, index) => token === "pnpm" && tokens[index - 1] !== "corepack");
 }

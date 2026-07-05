@@ -22,10 +22,15 @@ const indexHtml = readRelative("public/index.html");
 const configJs = readRelative("public/config.js");
 const redirects = readRelative("public/_redirects");
 const wranglerToml = readRelative("wrangler.toml");
+const packageJson = JSON.parse(readRelative("package.json"));
 
 for (const file of ["public/qa-browser-sdk.js", "public/viz-3d-core.js"]) {
   assert(existsSync(join(packageRoot, file)), `Missing required bundle: ${file}`);
 }
+
+assert(existsSync(join(packageRoot, "scripts/serve-public.mjs")), "Missing package-local static server");
+assert(packageJson.scripts.dev === "node scripts/serve-public.mjs", "dev script must use package-local static server");
+assert(packageJson.scripts.start === "node scripts/serve-public.mjs", "start script must use package-local static server");
 
 const catalogLoaders = readdirSync(publicDir).filter((file) => /^catalog-loader-.+\.js$/.test(file));
 assert(catalogLoaders.length > 0, "Missing catalog-loader bundle in public/");

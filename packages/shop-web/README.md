@@ -24,11 +24,12 @@
 - `public/catalog-loader-*.js`, `public/viz-3d-core.js` — 보조 번들
 - `public/_redirects` — 프록시 규칙
 - `wrangler.toml` — Pages 설정
+- `scripts/serve-public.mjs` — dependency 없는 로컬 정적 서버
 
 ## 실행
 
 ```bash
-pnpm --filter @qa-sdk/shop-web dev
-pnpm --filter @qa-sdk/shop-web start
-pnpm --filter @qa-sdk/shop-web test
+corepack pnpm --filter @qa-sdk/shop-web dev
+corepack pnpm --filter @qa-sdk/shop-web start
+corepack pnpm --filter @qa-sdk/shop-web test
 ```

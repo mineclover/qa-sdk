@@ -5,8 +5,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npx serve public -p 5220 --no-clipboard",
-    "start": "npx serve public -p 5220 --no-clipboard",
-    "test": "node scripts/static-smoke.mjs"
+    "dev": "node scripts/serve-public.mjs",
+    "start": "node scripts/serve-public.mjs",
+    "test": "node scripts/static-smoke.mjs && node scripts/serve-public.mjs --check"
   }
 }
