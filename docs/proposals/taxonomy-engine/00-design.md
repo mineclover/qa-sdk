@@ -16,9 +16,10 @@ def:
     - packages/taxonomy-engine/__tests__/unit/public-api.test.ts
     - packages/taxonomy-engine/__tests__/dogfooding.test.ts
     - packages/cli/src/commands/taxonomy/index.ts
+    - packages/cli/src/commands/taxonomy/shared.ts
     - packages/cli/src/commands/taxonomy.test.ts
     - package.json
-status: draft
+status: implemented
 date: 2026-05-20
 part_of: taxonomy-engine
 role: overview
@@ -83,8 +84,12 @@ core library와 thin CLI 표면은 `packages/taxonomy-engine` 및 `@qa-sdk/cli t
 - [ ] Web UI spec (별도 proposal — 라이브러리 + 진단 형식 공유). v0.5 brainstorming 참조: [plans/v0.5.md](./plans/v0.5.md)
 - [ ] Taxonomy registry 영속/검색 (메모리 registry로 시작, 서비스화는 별도 결정)
 - [ ] DKG 연관 — 15노드/18엣지를 taxonomy로 표현 가능한지 PoC (v0.4에서 부분 진행)
-- [ ] frontmatter 컨벤션 — 이 proposal 승격 시 def-catalog frontmatter 부여 (`docs/specs/taxonomy-engine/`)
-- [ ] T-M1~M5 모듈화 — CLI/query/doctor/schema/codegen 파일 분리 예정 (v0.7 Phase M)
+- [ ] docs/specs 승격 여부 — proposal frontmatter는 부여됐고, 정식 spec 위치로의 이동은 별도 결정
+
+## 완료된 정리
+
+- v0.7 문서 분해: `architecture.md`/`data-model.md`/`reference-grammar.md`/`api-surface.md`/`diagnostics.md`/`testing.md` 분해 완료
+- v0.7 코드 분해: CLI taxonomy command modules, query submodules, doctor extract submodules, schema barrel, drift module 분리 완료
 
 ## 참고
 
@@ -93,7 +98,7 @@ core library와 thin CLI 표면은 `packages/taxonomy-engine` 및 `@qa-sdk/cli t
 - `packages/cli/src/commands/def.ts` — qa-sdk CLI 컨벤션 참고
 - `/Users/junwoobang/workflow/pipe-builder/packages/mono-story/packages/lesson-builder/TAXONOMY.md` — 후속 사례 후보 (lesson-builder 6-layer)
 - [concepts/README.md](./concepts/README.md) — 1급 개념 인덱스
-- [plans/](./plans/README.md) — v0.1~v0.7 구현 계획
+- [plans/](./plans/README.md) — v0.1~v0.14 구현 계획
 
 ## 검증 명령 ^validation
 

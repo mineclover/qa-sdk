@@ -35,6 +35,10 @@ role: architecture
 
 > 00-design.md §3 분리. v0.7 모듈화 (T-L1).
 
+## 목적 ^purpose
+
+taxonomy-engine 패키지와 `@qa-sdk/cli tax` wrapper의 책임 경계, 파일 구조, 의존 방향을 현재 구현 기준으로 고정한다.
+
 ## 3.1 패키지 구조
 
 ```
@@ -47,12 +51,24 @@ packages/
       query/         # 좌표 조회/순회/슬라이스
       ref/           # 참조 grammar parser + resolver (3-tier)
       codegen/       # IR → TS 타입/registry (결정론, contentHash)
+      drift/          # codegen contentHash drift + registry version check
       validate/      # 의미 검증 (axis 5Q, capacity ≥ entries*2, constraint)
       doctor/        # yaml ↔ 외부 SSOT drift 검출
       diff/          # 두 IR 비교, 변경 카탈로그
+      migration/      # 두 IR 사이 rename/conflict/decision impact 추정
       index.ts
   cli/                                   ← 기존 @qa-sdk/cli 확장
-    src/commands/taxonomy.ts             # 명령 구현 (T-M1에서 분리 예정)
+    src/commands/taxonomy/
+      index.ts                           # subcommand dispatch
+      validate.ts
+      show.ts
+      codegen.ts
+      diff.ts
+      git-diff.ts
+      migration.ts
+      doctor.ts
+      help.ts
+      shared.ts                          # CLI file/registry loading helpers
     src/command-groups/taxonomy.commands.ts
 ```
 
@@ -69,7 +85,9 @@ packages/
 | `validate` | 의미 검증 (axis 5Q, capacity, constraint) | 자동 수정 |
 | `doctor` | yaml ↔ 외부 SSOT drift 검출 + 진단 발행 | 자동 수정 |
 | `diff` | 두 IR 비교, DiffEntry 목록 생성 | I/O, 편집 |
-| `cli/commands/taxonomy.ts` | CLI thin wrapper, exit code | 비즈니스 로직 |
+| `migration` | 두 IR 사이 rename/conflict/decision impact 추정 | 자동 rewrite |
+| `drift` | codegen contentHash drift + registry version check | 파일 읽기 |
+| `cli/commands/taxonomy/*` | CLI thin wrapper, file loading, exit code | taxonomy core 비즈니스 로직 |
 
 ## 3.3 의존 방향
 
