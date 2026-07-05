@@ -391,6 +391,48 @@ describe("ConvergencePipelineRunner", () => {
     expect(result!.metricsCollected).toBe(1);
   });
 
+  it("IntentLink flow-trace observation이 metric observation과 함께 저장됨", async () => {
+    const convergenceFns = {
+      ...createMockConvergenceFns(),
+      traceFlows: vi.fn().mockReturnValue({
+        violations: [
+          {
+            intentLinkId: "IL-checkout-flow",
+            invariant: "checkout page_view 없이 checkout flow_point(success)가 관측되면 안 됨",
+            presentPrefixes: ["flow_point"],
+            missingPrefixes: ["page_view"],
+            count: 1,
+          },
+        ],
+        observations: [
+          {
+            kind: "observation",
+            id: "OBS-FLOW-IL-checkout-flow-page_view",
+            date: "2026-03-21",
+            source: "runtime",
+            subjects: ["IL-checkout-flow", "flow_point", "page_view"],
+            finding: "IL-checkout-flow invariant 위반 1건: page_view 누락",
+          },
+        ],
+        summary: "1종 흐름 위반 (1건)",
+      }),
+    };
+    const dkgStore = createMockDkgStore();
+    const deps = createDeps({ convergenceFns, dkgStore });
+    pipeline = new ConvergencePipelineRunner(deps, {
+      recordThreshold: 999,
+      flushIntervalMs: 999_999,
+    });
+
+    pipeline.notifyCompletion(["t1"]);
+    const result = await pipeline.flush();
+
+    expect(result!.flowViolations).toBe(1);
+    expect(convergenceFns.traceFlows).toHaveBeenCalledTimes(1);
+    const savedObs = (dkgStore.saveUsageSnapshotWithObservations as any).mock.calls[0][1];
+    expect(savedObs.map((o: any) => o.id)).toContain("OBS-FLOW-IL-checkout-flow-page_view");
+  });
+
   it("이전 윈도우 통계 비교 — 두 번째 flush에서 previous 전달", async () => {
     const patternFns = createMockPatternFns();
     const deps = createDeps({

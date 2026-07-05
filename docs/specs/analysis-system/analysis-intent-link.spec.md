@@ -2,6 +2,7 @@
 def:
   tier: component
   id: analysis-intent-link
+  type: spec
   address: def_document:v2:68739
   scope: feature
   aspect: func_def
@@ -15,6 +16,14 @@ def:
       type: depends_on
     - target: analysis-transition
       type: depends_on
+  sources:
+    - packages/dkg-enrichment/src/skills/flow-trace.ts
+    - packages/dkg-enrichment/src/skills/flow-trace.test.ts
+    - packages/ingest-server/src/lib/convergence-pipeline.ts
+    - packages/ingest-server/src/lib/convergence-pipeline.test.ts
+    - packages/ingest-server/src/routes/labels.ts
+    - packages/ingest-server/src/db/schema.ts
+    - packages/spec-core/src/convergence/pipeline-e2e.test.ts
 ---
 # IntentLink — Prefix 공출현 조건
 
@@ -122,7 +131,20 @@ if (convergenceFns.traceFlows) {
 
 ## 관련 소스
 
-- `packages/spec-core/src/dkg/skills/flow-trace.ts` — `traceFlows()`, `validateDslInvariants()`
+- `packages/dkg-enrichment/src/skills/flow-trace.ts` — `traceFlows()`, `validateDslInvariants()`
+- `packages/dkg-enrichment/src/skills/flow-trace.test.ts` — IntentLink/DSL invariant 단위 검증
 - `packages/ingest-server/src/lib/convergence-pipeline.ts` — 파이프라인 통합
+- `packages/ingest-server/src/lib/convergence-pipeline.test.ts` — `traceFlows` 결과 observation 저장 검증
 - `packages/ingest-server/src/routes/labels.ts` — 라벨링 API
-- `packages/spec-core/src/dkg/dkg.types.ts` — `IntentLinkNode` 타입
+- `packages/ingest-server/src/db/schema.ts` — `insight_labels` 저장 스키마
+- `packages/spec-core/src/convergence/pipeline-e2e.test.ts` — DSL 우회 시 IntentLink 위반 E2E
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter dkg-enrichment exec vitest run src/skills/flow-trace.test.ts
+pnpm --filter @qa-sdk/ingest-server exec vitest run src/lib/convergence-pipeline.test.ts
+pnpm --filter @qa-sdk/spec-core exec vitest run src/convergence/pipeline-e2e.test.ts
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```
