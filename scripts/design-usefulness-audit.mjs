@@ -56,6 +56,7 @@ function parseFrontmatter(text) {
   const frontmatter = text.slice(4, end);
   return {
     lifecycle: matchValue(frontmatter, "lifecycle"),
+    status: matchValue(frontmatter, "status"),
     type: matchValue(frontmatter, "type"),
     tier: matchValue(frontmatter, "tier"),
     scope: matchValue(frontmatter, "scope"),
@@ -69,6 +70,7 @@ function parseFrontmatter(text) {
 function emptyFrontmatter() {
   return {
     lifecycle: "",
+    status: "",
     type: "",
     tier: "",
     scope: "",
@@ -94,6 +96,8 @@ function classifyDoc(path) {
     && /## 결정\s*\n\s*\(미정\)/m.test(text);
   const isPlanningNote = relativePath.startsWith("docs/plan/")
     && !text.startsWith("---\n");
+  const isSupersededNote = relativePath.startsWith("docs/proposals/")
+    && frontmatter.status === "superseded";
   const isProposal = relativePath.startsWith("docs/proposals/");
   const isSpec = relativePath.startsWith("docs/specs/");
   const isRule = relativePath.endsWith(".rule.md");
@@ -124,9 +128,14 @@ function classifyDoc(path) {
     reasons.push("approved spec needs execution evidence");
   }
 
-  if (isProposal && !/status:\s*(implemented|accepted)/.test(text) && evidenceScore < 2) {
+  if (isProposal && !/status:\s*(implemented|accepted|superseded)/.test(text) && evidenceScore < 2) {
     verdict = "prove";
     reasons.push("open proposal needs execution evidence");
+  }
+
+  if (isSupersededNote) {
+    verdict = "prove";
+    reasons.push("superseded proposal redirect note");
   }
 
   if (isRule && evidenceScore < 2) {
@@ -147,12 +156,14 @@ function classifyDoc(path) {
     path: relativePath,
     verdict,
     lifecycle: frontmatter.lifecycle || "-",
+    status: frontmatter.status || "-",
     type: frontmatter.type || "-",
     tier: frontmatter.tier || "-",
     isArchivedDoc,
     isTemplateDoc,
     isDecisionSkeleton,
     isPlanningNote,
+    isSupersededNote,
     evidenceScore,
     sourceRefs: frontmatter.sourceRefs.length,
     reasons,
@@ -328,6 +339,7 @@ function isLowSignalDefaultDoc(item) {
     || item.isTemplateDoc
     || item.isDecisionSkeleton
     || item.isPlanningNote
+    || item.isSupersededNote
   );
 }
 
@@ -369,6 +381,7 @@ function docScope(item) {
   if (item.isTemplateDoc) return "template";
   if (item.isDecisionSkeleton) return "decision-draft";
   if (item.isPlanningNote) return "plan-note";
+  if (item.isSupersededNote) return "superseded-note";
   return "active";
 }
 
