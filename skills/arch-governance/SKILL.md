@@ -43,7 +43,7 @@ pnpm arch:impact --json   # 상세 데이터 출력
 
 ### 3. 패키지 사용성 및 건강 상태 분석 (`arch:usage`)
 
-패키지별 내부 의존성 수(Fan-In)를 계산하여 핵심 인프라와 정리 대상을 식별한다.
+`packages/*` surface-managed 패키지의 내부 의존성 수(Fan-In)를 계산하여 핵심 인프라와 정리 대상을 식별한다.
 
 ```bash
 pnpm arch:usage
@@ -51,7 +51,7 @@ pnpm arch:usage -- --json
 ```
 
 - **Critical Infrastructure**: Fan-In >= 3인 모듈. 수정 시 파급력이 크므로 극도의 주의 필요.
-- **Zero Fan-In**: repo 내부 의존자가 0인 패키지. 독립 앱, CLI/tool, contract/test suite, public library, archive 후보를 `disposition`으로 먼저 분리한다.
+- **Zero Fan-In**: `packages/*` surface-managed 범위 안에서 내부 의존자가 0인 패키지. 독립 앱, CLI/tool, contract/test suite, public library, archive 후보를 `disposition`으로 먼저 분리한다.
 - **Archive Decision Candidates**: `zeroFanIn` 중 `archive-candidate` 항목이다. 이미 `no-promotion` surface로 격리된 quarantine/archive 결정 큐로 보고, 제품 core로 승격하지 않는다.
 - **Dead Weight Candidates**: `zeroFanIn` 중 `needs-evidence` 항목이다. 유지 근거를 추가하거나 package boundary를 재판정한다. 0 fan-in 자체를 삭제 지시로 해석하지 않는다.
 - **Missing Entrypoints**: conventional `src/index.ts`류 entrypoint가 없는 패키지. runtime service, browser app, test/contract suite, wasm package를 `disposition`으로 분리한다.
@@ -97,7 +97,7 @@ pnpm arch:verify
 
 - `arch:surfaces`: `packages/*` surface-managed package가 정확히 하나의 surface에 배정됐는지, taxonomy/profile 기능 surface가 다시 합쳐지지 않았는지, surface 문서 표가 manifest와 같은 목록/판정을 말하는지 확인한다.
 - `arch:signals`: 핵심 이벤트 연결이 유지되는지 확인한다.
-- `arch:usage`: `zeroFanIn`, `archiveCandidates`, `deadWeight`, `missingEntrypoints`, `entrypointGaps` 분리가 현재 baseline과 맞는지 확인한다.
+- `arch:usage`: `packages/*` surface-managed 범위와 `zeroFanIn`, `archiveCandidates`, `deadWeight`, `missingEntrypoints`, `entrypointGaps` 분리가 현재 baseline과 맞는지 확인한다.
 - `arch:check --json`: tier violation이 0건인지 확인한다.
 
 ### 7. 거버넌스 관리 (`archi` CLI)

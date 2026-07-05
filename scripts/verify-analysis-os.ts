@@ -13,6 +13,7 @@ async function main() {
 
   let totalTests = 0;
   let passedTests = 0;
+  let totalUsageSurfaceManagedPackages: number | undefined;
 
   function assert(condition: boolean, message: string) {
     totalTests++;
@@ -46,6 +47,13 @@ async function main() {
   try {
     const usageOutput = execSync("npx tsx scripts/analyze-package-usage.ts --json", { encoding: "utf-8" });
     const usage = JSON.parse(usageOutput);
+    const usageManagedPackageScope = usage.managedPackageScope ?? "packages/*";
+    totalUsageSurfaceManagedPackages = usage.totalSurfaceManagedPackages ?? usage.totalPackages;
+
+    assert(usageManagedPackageScope === "packages/*",
+           `Usage Analysis: managed package scope is packages/* (${usageManagedPackageScope})`);
+    assert(totalUsageSurfaceManagedPackages === usage.totalPackages,
+           `Usage Analysis: surface-managed package count matches total package count (${totalUsageSurfaceManagedPackages})`);
 
     // index-meta가 Critical Infrastructure 상위에 있는지 확인
     const topUsage = usage.highUsage.slice(0, 5);
@@ -102,6 +110,8 @@ async function main() {
            `Surface Report: managed package scope is packages/* (${managedPackageScope})`);
     assert(assignedSurfaceManagedPackages === totalSurfaceManagedPackages,
            `Surface Report: all surface-managed packages are assigned (${assignedSurfaceManagedPackages}/${totalSurfaceManagedPackages})`);
+    assert(totalUsageSurfaceManagedPackages === undefined || totalUsageSurfaceManagedPackages === totalSurfaceManagedPackages,
+           `Surface Report: usage and surface package counts agree (${totalUsageSurfaceManagedPackages ?? "unknown"}/${totalSurfaceManagedPackages})`);
     assert(Array.isArray(report.missing) && report.missing.length === 0,
            "Surface Report: no declared surface points at a missing package");
     assert(Array.isArray(report.duplicates) && report.duplicates.length === 0,

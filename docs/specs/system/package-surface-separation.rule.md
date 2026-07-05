@@ -71,7 +71,7 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 
 ## 사용성 신호 처리
 
-`pnpm arch:usage`는 `zeroFanIn`, `archiveCandidates`, `Dead Weight`, `missingEntrypoints`, `entrypointGaps`를 분리한다. `zeroFanIn`은 독립 앱·계약·툴·라이브러리일 수 있다는 사실 신호이고, `archiveCandidates`는 이미 `no-promotion` surface로 분리된 quarantine 결정 큐다. `Dead Weight`는 유지 근거가 아직 없는 evidence 보강 큐다. `missingEntrypoints`는 conventional `src/index.ts`류 entrypoint가 없다는 형태 신호이고, `entrypointGaps`만 public/library surface 검토 후보로 다룬다.
+`pnpm arch:usage`는 `packages/*` surface-managed 패키지를 대상으로 `zeroFanIn`, `archiveCandidates`, `Dead Weight`, `missingEntrypoints`, `entrypointGaps`를 분리한다. `zeroFanIn`은 독립 앱·계약·툴·라이브러리일 수 있다는 사실 신호이고, `archiveCandidates`는 이미 `no-promotion` surface로 분리된 quarantine 결정 큐다. `Dead Weight`는 유지 근거가 아직 없는 evidence 보강 큐다. `missingEntrypoints`는 conventional `src/index.ts`류 entrypoint가 없다는 형태 신호이고, `entrypointGaps`만 public/library surface 검토 후보로 다룬다.
 
 | 신호 | 처리 |
 |------|------|

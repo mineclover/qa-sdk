@@ -1,5 +1,5 @@
 import { scanAndClassify } from "../packages/package-classifier/src/pkg-classifier.js";
-import { createSurfaceIndex } from "./package-surfaces.mjs";
+import { createSurfaceIndex, MANAGED_PACKAGE_SCOPE } from "./package-surfaces.mjs";
 import { resolve, join } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
 import chalk from "chalk";
@@ -110,6 +110,8 @@ async function main() {
 
   if (process.argv.includes("--json")) {
     console.log(JSON.stringify({
+      managedPackageScope: MANAGED_PACKAGE_SCOPE,
+      totalSurfaceManagedPackages: pkgs.length,
       totalPackages: pkgs.length,
       surfaces: [...surfaceSummary.entries()]
         .sort(([a], [b]) => a.localeCompare(b))
@@ -132,6 +134,7 @@ async function main() {
   // ─── Reporting ─────────────────────────────────────────────────────────────
 
   console.log(chalk.bold.cyan("\n📊 Package Usage & Health Analysis Report\n"));
+  console.log(chalk.cyan(`Scope: surface-managed packages (${MANAGED_PACKAGE_SCOPE})`));
 
   console.log(chalk.bold.blue(`[0] Surface Summary`));
   [...surfaceSummary.entries()]
@@ -183,7 +186,7 @@ async function main() {
     console.log("  (None found)");
   }
 
-  console.log(chalk.cyan(`\nAnalysis complete. Total packages scanned: ${pkgs.length}\n`));
+  console.log(chalk.cyan(`\nAnalysis complete. Surface-managed packages scanned: ${pkgs.length}\n`));
 }
 
 main().catch(console.error);

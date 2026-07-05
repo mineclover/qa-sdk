@@ -24,7 +24,7 @@ def:
 - `scanAndClassify(root)` — `packages/*` 순회
 - `tier` heuristic — foundation/kernel/logic/bridge/consumer 분류
 - `runtime` heuristic — server/browser/library 분류
-- 내부 의존 패키지 해석 — workspace package name/displayName 기준
+- 내부 의존 패키지 해석 — `packages/*` surface-managed package name/displayName 기준
 - CLI/review 도구는 `package-classifier` public export를 소비한다. 도구별 local classifier 사본은 분류 SSOT로 두지 않는다.
 
 ## 관련 소스

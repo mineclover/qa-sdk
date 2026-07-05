@@ -1,3 +1,5 @@
+export const MANAGED_PACKAGE_SCOPE = "packages/*";
+
 export const SURFACES = [
   {
     id: "coordinate-kernel",

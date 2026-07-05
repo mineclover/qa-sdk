@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { SURFACES } from "./package-surfaces.mjs";
+import { MANAGED_PACKAGE_SCOPE, SURFACES } from "./package-surfaces.mjs";
 
 const root = resolve(process.cwd());
-const managedPackageScope = "packages/*";
 const packagesDir = join(root, "packages");
 const surfaceManagedPackages = new Map();
 const surfaceManagedPackageRows = [];
@@ -51,7 +50,7 @@ const unassigned = surfaceManagedPackageRows
 if (process.argv.includes("--json")) {
   console.log(JSON.stringify({
     surfaces: SURFACES,
-    managedPackageScope,
+    managedPackageScope: MANAGED_PACKAGE_SCOPE,
     totalSurfaceManagedPackages: surfaceManagedPackageRows.length,
     assignedSurfaceManagedPackages: assignments.size,
     totalWorkspacePackages: surfaceManagedPackageRows.length,
@@ -62,7 +61,7 @@ if (process.argv.includes("--json")) {
   }, null, 2));
 } else {
   console.log("Package Surface Report");
-  console.log(`  surface-managed (${managedPackageScope}) packages assigned: ${assignments.size}/${surfaceManagedPackageRows.length}`);
+  console.log(`  surface-managed (${MANAGED_PACKAGE_SCOPE}) packages assigned: ${assignments.size}/${surfaceManagedPackageRows.length}`);
   for (const surface of SURFACES) {
     console.log(`\n[${surface.id}] ${surface.verdict}`);
     for (const pkgName of surface.packages) {
