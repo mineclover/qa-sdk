@@ -2,6 +2,7 @@
 def:
   tier: component
   id: analysis-convergence
+  type: spec
   address: def_document:v2:68737
   scope: feature
   aspect: func_def
@@ -17,6 +18,14 @@ def:
       type: depends_on
     - target: analysis-convergence-rule
       type: traces_to
+  sources:
+    - packages/convergence/src/index.ts
+    - packages/convergence/src/usage-aggregator.ts
+    - packages/convergence/src/metric-registry.ts
+    - packages/convergence/src/convergence-runner.ts
+    - packages/ingest-server/src/lib/convergence-pipeline.ts
+    - packages/ingest-server/src/lib/convergence-pipeline.test.ts
+    - packages/spec-core/src/convergence/pipeline-e2e.test.ts
 ---
 # Convergence — 수렴 분석
 
@@ -94,4 +103,14 @@ prefix 간 중복이나 낭비를 감지하는 수렴 분석. 유사한 축 조�
 
 - `packages/convergence/src/` — 순수 분석 함수
 - `packages/ingest-server/src/lib/convergence-pipeline.ts` — 런타임 오케스트레이터
-- `packages/spec-core/src/convergence/index.ts` — re-export barrel
+- `packages/spec-core/src/convergence/pipeline-e2e.test.ts` — encode → aggregate → converge 소비자 검증
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter @qa-sdk/convergence test
+pnpm --filter @qa-sdk/ingest-server exec vitest run src/lib/convergence-pipeline.test.ts
+pnpm --filter @qa-sdk/spec-core exec vitest run src/convergence/pipeline-e2e.test.ts src/convergence/convergence.test.ts
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```
