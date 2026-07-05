@@ -15,6 +15,12 @@ def:
       type: depends_on
     - target: df-system
       type: depends_on
+  sources:
+    - packages/cli/src/lib/docs-control-plane/README.md
+    - packages/cli/src/lib/docs-control-plane/graph-traverse.test.ts
+    - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
+    - packages/cli/src/commands/docs.test.ts
+    - packages/cli/src/command-groups/docs.commands.ts
 ---
 
 # Document Type Convention — Use Cases
@@ -124,3 +130,11 @@ ralph PRD JSON
 
 - PRD markdown이 의사결정, non-goal, 품질 게이트, 실행 범위를 명시한다.
 - ralph JSON은 실행 호환 adapter output으로만 취급한다.
+
+## 검증
+
+```bash
+corepack pnpm --filter cli-command build
+corepack pnpm --filter @qa-sdk/cli exec vitest run --no-file-parallelism src/lib/docs-control-plane/graph-traverse.test.ts src/lib/docs-control-plane/docs-control-plane.test.ts
+node packages/cli/dist/index.js def validate
+```

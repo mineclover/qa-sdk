@@ -17,6 +17,13 @@ def:
       type: depends_on
     - target: architecture-revealing-code-convention
       type: depends_on
+  sources:
+    - packages/definition-catalog/src/frontmatter.ts
+    - packages/definition-catalog/src/validate.ts
+    - packages/definition-catalog/src/domain-root.ts
+    - packages/definition-catalog/src/frontmatter.test.ts
+    - packages/definition-catalog/src/domain-root.test.ts
+    - packages/cli/src/lib/def-tier-classify.ts
 ---
 
 # 문서 거버넌스 가이드라인 — 일관된 지식 관리 체계
@@ -104,3 +111,10 @@ def:
 - 설계 문서는 코드 구조와 따로 존재하지 않는다. 코드는 E/C/I/S + L/P 책임이 드러나게 작성하고, 문서는 그 책임을 좌표화한다.
 - `architecture-revealing-code-convention`이 코드 작성 규칙의 owner다. 이 문서는 governance 관점에서 해당 규칙을 소비한다.
 - code split은 문서 분할의 자동 결과가 아니라 책임 경계가 코드에서 숨을 때 수행한다.
+
+## 검증
+
+```bash
+corepack pnpm --filter definition-catalog exec vitest run src/frontmatter.test.ts src/domain-root.test.ts src/validate-semantic.test.ts
+node packages/cli/dist/index.js def validate
+```

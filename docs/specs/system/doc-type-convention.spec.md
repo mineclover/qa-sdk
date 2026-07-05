@@ -14,6 +14,14 @@ def:
       type: contains
     - target: drizzle-orm-convention
       type: traces_to
+  sources:
+    - packages/definition-catalog/src/frontmatter.ts
+    - packages/definition-catalog/src/validate.ts
+    - packages/definition-catalog/src/domain-root.ts
+    - packages/definition-catalog/src/data-source.ts
+    - packages/definition-catalog/src/frontmatter.test.ts
+    - packages/definition-catalog/src/domain-root.test.ts
+    - packages/cli/src/commands/def.ts
 ---
 
 # 문서 유형 컨벤션 — 7종 확장자 체계
