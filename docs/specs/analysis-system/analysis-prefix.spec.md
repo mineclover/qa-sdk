@@ -2,17 +2,34 @@
 def:
   tier: component
   id: analysis-prefix
+  type: spec
   address: def_document:v2:342148
   scope: data
   aspect: domain_data
   depth: specification
   lifecycle: approved
   layer: domain
-  svc: spec-core
+  svc: dkg
   tags: [observability]
   links:
     - target: system-concepts
       type: depends_on
+    - target: dkg-system-root
+      type: traces_to
+  sources:
+    - packages/dkg/src/dkg.types.ts
+    - packages/dkg/src/dsl-bundle.ts
+    - packages/dkg/src/catalog-derive.ts
+    - packages/dkg/src/graph-registry.ts
+    - packages/dkg/src/skills/flow-trace.ts
+    - packages/dkg/src/dkg.test.ts
+    - packages/dkg/src/skills/flow-trace.test.ts
+    - packages/ingest-server/src/routes/insights.ts
+    - packages/ingest-server/src/stores/drizzle-insights-store.ts
+    - packages/ingest-server/src/ports/insights-store.port.ts
+    - packages/ingest-server/src/insights-store.e2e.test.ts
+    - packages/core/src/catalog/runtime.ts
+    - packages/core/src/catalog/runtime-boundary.test.ts
 ---
 # Prefix — 의미의 재사용 단위
 
@@ -87,7 +104,7 @@ address_context에서 prefix별 사용 빈도를 집계한다. 최대 500개 레
 
 #### 서비스별 prefix 활성도 — `GET /v1/insights/service-prefixes`
 
-서비스가 실제로 사용하는 prefix를 추적한다. registry의 `ownedPrefixes` 정의와 실제 수집된 address_context를 매칭한다.
+서비스가 실제로 사용하는 prefix를 추적한다. 현재 API는 trace의 `serviceName`과 실제 수집된 `address_context`를 기준으로 서비스별 활성 prefix와 빈도를 집계한다.
 
 ```typescript
 // 응답 형식
@@ -99,9 +116,9 @@ address_context에서 prefix별 사용 빈도를 집계한다. 최대 500개 레
 }]
 ```
 
-**정의와 실제 사용의 gap**이 관측 피드백의 기반이 된다:
+**정의와 실제 사용의 gap**은 이 집계 결과를 registry/DKG의 선언 정보와 결합할 때 관측 피드백의 기반이 된다:
 - 선언했지만 미사용 prefix → 미구현 또는 불필요
-- 미선언이지만 사용 중인 prefix → ownedPrefixes 갱신 필요
+- 미선언이지만 사용 중인 prefix → 소유 prefix 정의 갱신 필요
 
 ### prefix 프로파일 (getPrefixProfile)
 
@@ -138,6 +155,24 @@ event_key를 8개 범용 카테고리로 자동 분류한다:
 ## 관련 소스
 
 - `packages/ingest-server/src/routes/insights.ts` — prefix/service-prefixes API
-- `packages/spec-core/src/dkg/dkg.types.ts` — PrefixNode, DomainNode, DslBundleNode
-- `packages/spec-core/src/dkg/dsl-bundle.ts` — DSL Bundle 정의
+- `packages/ingest-server/src/stores/drizzle-insights-store.ts` — `getPrefixUsage()`, `getServicePrefixes()`, `getCorrelations()`
+- `packages/ingest-server/src/ports/insights-store.port.ts` — prefix insight 응답 계약
+- `packages/ingest-server/src/insights-store.e2e.test.ts` — insights 라우트/스토어 E2E 검증
+- `packages/dkg/src/dkg.types.ts` — `PrefixNode`, `DomainNode`, `DslBundleNode`
+- `packages/dkg/src/dsl-bundle.ts` — DSL Bundle 정의와 coverage/skew 분석
+- `packages/dkg/src/catalog-derive.ts` — catalog prefix → DKG prefix 노드/엣지 파생
+- `packages/dkg/src/skills/flow-trace.ts` — IntentLink/DSL invariant 검증
+- `packages/dkg/src/dkg.test.ts` — prefix/domain/consumer cascade 검증
+- `packages/dkg/src/skills/flow-trace.test.ts` — DSL bundle invariant 검증
 - `packages/core/src/catalog/runtime.ts` — `getPrefixProfile`, `encodePrefixByValue`
+- `packages/core/src/catalog/runtime-boundary.test.ts` — prefix closed-space boundary 검증
+
+## 검증 명령 ^validation
+
+```bash
+pnpm --filter dkg exec vitest run src/dkg.test.ts src/skills/flow-trace.test.ts
+pnpm --filter @qa-sdk/ingest-server exec vitest run src/insights-store.e2e.test.ts
+pnpm --filter @qa-sdk/core exec vitest run src/catalog/runtime-boundary.test.ts
+node packages/cli/dist/index.js def validate
+pnpm arch:feedback
+```
