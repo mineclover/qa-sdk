@@ -524,6 +524,9 @@ importers:
       '@qa-sdk/core':
         specifier: workspace:*
         version: link:../core
+      spec-schema:
+        specifier: workspace:*
+        version: link:../spec-schema
     devDependencies:
       '@types/node':
         specifier: ^22.0.0

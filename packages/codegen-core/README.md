@@ -26,6 +26,6 @@
 ## 실행
 
 ```bash
-pnpm --filter codegen-core build
-pnpm --filter codegen-core test
+corepack pnpm --filter codegen-core build
+corepack pnpm --filter codegen-core test
 ```

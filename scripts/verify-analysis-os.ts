@@ -386,6 +386,7 @@ function findAutomationToolchainViolations(): string[] {
     "scripts/serve-demo.sh",
     "scripts/find-unused-candidates.ts",
     "scripts/sim-smoke-full.ts",
+    "packages/cli/scripts/run-vitest.mjs",
     "Dockerfile.gateway",
     "Dockerfile.ingest-server",
     "Dockerfile.nestjs",
@@ -423,6 +424,9 @@ function usesBarePnpmInAutomationLine(path: string, line: string): boolean {
   }
   if (path.endsWith("find-unused-candidates.ts")) {
     return /execFileSync\(["']pnpm["']/.test(trimmed);
+  }
+  if (path.endsWith("run-vitest.mjs")) {
+    return /spawn\(["']pnpm["']/.test(trimmed);
   }
   if (path.startsWith("Dockerfile.")) {
     return /\bRUN\s+pnpm\b|\b&&\s*pnpm\b|\|\|\s*pnpm\b|;\s*pnpm\b/.test(trimmed);

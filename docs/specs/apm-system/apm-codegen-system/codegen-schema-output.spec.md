@@ -13,6 +13,11 @@ def:
   links:
     - target: apm-codegen-system
       type: refines
+  sources:
+    - packages/codegen-core/src/proto.ts
+    - packages/codegen-core/src/typescript.ts
+    - packages/codegen-core/src/proto.test.ts
+    - packages/codegen-core/src/typescript.test.ts
 ---
 
 # 코드젠 산출물 계약
@@ -32,3 +37,9 @@ APM codegen이 만드는 protobuf 메시지와 TypeScript 타입의 구조, 버�
 - 메시지 번호와 타입 이름은 같은 snapshot에서 안정적으로 다시 생성돼야 한다.
 - 전송 최적화나 SDK 예시는 산출물을 소비하는 단계이지, 산출물 정의 자체를 바꾸는 확장 지점이 아니다.
 - 새 도메인을 추가할 때는 생성기 플러그인을 늘리기 전에 snapshot 표현력이 충분한지 먼저 검토한다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter codegen-core test
+```

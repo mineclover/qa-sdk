@@ -19,11 +19,12 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "corepack pnpm --filter spec-schema build && tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@qa-sdk/core": "workspace:*"
+    "@qa-sdk/core": "workspace:*",
+    "spec-schema": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

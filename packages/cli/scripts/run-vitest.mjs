@@ -32,7 +32,7 @@ const args = [
   ...filters,
 ];
 
-const child = spawn("pnpm", ["exec", ...args], {
+const child = spawn("corepack", ["pnpm", "exec", ...args], {
   cwd: new URL("..", import.meta.url),
   stdio: "inherit",
 });

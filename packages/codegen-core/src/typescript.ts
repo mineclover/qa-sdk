@@ -12,7 +12,7 @@ import { toPascal, toTsConstKey } from "./naming.js";
  */
 export function generateTypescript(snapshot: SchemaSnapshot): string {
   const lines: string[] = [];
-  const axisMap = new Map(snapshot.axes.map((a) => [a.id, a]));
+  const axisMap: Map<string, Axis> = new Map(snapshot.axes.map((axis) => [axis.id, axis]));
 
   lines.push(`// Generated from SchemaSnapshot "${snapshot.id}"`);
   lines.push(`// !! 자동 생성 파일 — 직접 수정 금지 !!`);
@@ -42,7 +42,7 @@ export function generateTypescript(snapshot: SchemaSnapshot): string {
 
 function generateSchemaMeta(snapshot: SchemaSnapshot): string[] {
   const lines: string[] = [];
-  const axisMap = new Map(snapshot.axes.map((a) => [a.id, a]));
+  const axisMap: Map<string, Axis> = new Map(snapshot.axes.map((axis) => [axis.id, axis]));
 
   lines.push(`/** SchemaSnapshot ID — 주소의 v 세그먼트. stride를 확정한 version */`);
   lines.push(`export const GENERATION = "${snapshot.id}" as const;`);

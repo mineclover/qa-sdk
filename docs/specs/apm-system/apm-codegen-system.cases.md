@@ -15,6 +15,11 @@ def:
       type: refines
     - target: apm-system
       type: depends_on
+  sources:
+    - packages/cli/src/scenarios.e2e.test.ts
+    - packages/codegen-core/src/proto.test.ts
+    - packages/codegen-core/src/typescript.test.ts
+    - packages/snapshot-io/scripts/smoke.test.mjs
 ---
 
 # APM Codegen — 소비자 기대 시나리오
@@ -72,3 +77,11 @@ def:
 - CI 파이프라인이 이 명령으로 코드 동기화를 게이팅할 수 있다
 
 **실패 시 수정 대상**: `apm-system`이 catalog 파생 규칙(SSOT 원칙)을 고정해야 한다. 카탈로그 외부에서 axis를 주입하는 경로가 생기면 drift 감지가 무의미해진다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/cli test scenarios.e2e
+corepack pnpm --filter codegen-core test
+corepack pnpm --filter snapshot-io test
+```

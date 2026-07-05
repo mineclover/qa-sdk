@@ -12,6 +12,10 @@ def:
   links:
     - target: apm-codegen-system
       type: refines
+  sources:
+    - packages/snapshot-io/src/index.ts
+    - packages/snapshot-io/src/snapshot-io.ts
+    - packages/snapshot-io/scripts/smoke.test.mjs
 ---
 # snapshot-io
 
@@ -26,7 +30,9 @@ SchemaSnapshot JSON 파일을 읽고 쓰고 검증하는 I/O 유틸리티. codeg
 - snapshot 기본 검증
 - `codegen-core`와 결합되는 I/O 전용 역할
 
-## 관련 소스
+## 검증 ^validation
 
-- `packages/snapshot-io/src/snapshot-io.ts`
-- `packages/snapshot-io/src/index.ts`
+```bash
+corepack pnpm --filter snapshot-io test
+corepack pnpm --filter snapshot-io typecheck
+```

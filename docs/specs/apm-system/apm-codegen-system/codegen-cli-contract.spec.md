@@ -15,6 +15,10 @@ def:
       type: refines
     - target: cli-contract-spec
       type: depends_on
+  sources:
+    - packages/cli/src/commands/codegen.ts
+    - packages/cli/src/commands/codegen.test.ts
+    - packages/cli/src/scenarios.e2e.test.ts
 ---
 
 # 코드젠 CLI 계약
@@ -35,3 +39,9 @@ Catalog 또는 Registry를 입력으로 받아 TypeScript SDK 생성 파이프�
 - 생성물은 같은 catalog contentHash를 공유해야 한다.
 - 확장 포인트는 생성 단계 사이에만 허용하고, catalog 파싱 규칙 자체는 분기시키지 않는다.
 - 실패 시 부분 생성물을 남기기보다 전체 배치를 다시 생성하는 편이 drift를 줄인다.
+
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/cli test codegen
+```
