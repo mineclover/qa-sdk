@@ -19,6 +19,17 @@ def:
       type: depends_on
     - target: definition-service-sync
       type: refs
+  sources:
+    - packages/definition-service/src/modules/docs/docs.service.ts
+    - packages/definition-service/src/modules/docs/docs.service.test.ts
+    - packages/definition-service/src/modules/graph/graph.service.ts
+    - packages/definition-service/src/modules/sync/sync.service.ts
+    - packages/definition-service/src/db/schema.ts
+    - packages/definition-service/src/stores/doc-store.ts
+    - packages/definition-data-source/src/factory.ts
+    - packages/definition-data-source/src/local-data-source.ts
+    - packages/definition-data-source/src/server-data-source.ts
+    - packages/cli/src/commands/def.ts
 ---
 
 # Definition Service — 문서 카탈로그 API 서비스
@@ -29,7 +40,24 @@ def:
 
 ## 구성 ^overview
 
-- **Docs Module**: 문서 단건 조회, 본문 조회, 검색 제공
-- **Graph Module**: 문서 간 링크 분석, 바운더리 해석, 영향 범위 역추적
-- **Ingest Module**: CLI가 동기화한 데이터를 DB에 반영
-- **Core Database**: `definition-service.sqlite` 스키마 및 트랜잭션 관리
+- **Docs Module**: 문서 단건 조회, address 조회, 본문 조회, 검색/semantic merge, 파일→문서 boundary 해석
+- **Graph Module**: 링크 검증, concern 전파, impact, boundary-context 조회
+- **Sync Module**: file→DB sync, DB→file reverse sync, aspect parent self-heal, 검색/semantic materialization
+- **Data Source Layer**: CLI에서 local SQLite, HTTP server, scan fallback을 동일 `DefDataSource` 인터페이스로 소비
+- **Core Database**: `definition-service.sqlite`의 documents, document_links, history, code_references, semantic grounding 테이블
+
+## 조회 표면 ^api-surface
+
+- CLI: `qa-sdk def sync|validate|get|incoming|outgoing|boundary|boundary-context`
+- Local DB: `definition-data-source`의 `LocalDataSource`
+- HTTP service: `definition-service`의 Docs/Graph/Sync controllers와 `ServerDataSource`
+- Fallback: DB와 service가 없으면 scan mode가 read-only 조회를 제공
+
+## 관련 소스
+
+- `packages/definition-service/src/modules/docs/docs.service.ts` — 문서 조회/search/boundary API
+- `packages/definition-service/src/modules/graph/graph.service.ts` — graph validate/impact/concern/boundary-context
+- `packages/definition-service/src/modules/sync/sync.service.ts` — sync orchestration
+- `packages/definition-service/src/db/schema.ts` — SQLite/Drizzle schema
+- `packages/definition-data-source/src/factory.ts` — CLI data source 자동 선택
+- `packages/cli/src/commands/def.ts` — 사용자 CLI 표면
