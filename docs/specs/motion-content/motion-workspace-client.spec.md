@@ -15,6 +15,13 @@ def:
       type: depends_on
     - target: motion-workspace-service-spec
       type: depends_on
+sources:
+  - packages/motion-workspace-client/src/index.ts
+  - packages/motion-workspace-client/src/client.ts
+  - packages/motion-workspace-client/src/types.ts
+  - packages/motion-workspace-client/src/ws-client.ts
+  - packages/motion-workspace-client/src/client.test.ts
+  - packages/motion-workspace-client/src/ws-client.test.ts
 ---
 # Motion Workspace Client
 

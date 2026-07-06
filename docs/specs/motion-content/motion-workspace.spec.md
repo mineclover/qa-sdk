@@ -17,6 +17,15 @@ def:
       type: contains
     - target: motion-workspace-system
       type: depends_on
+sources:
+  - packages/motion-workspace/src/index.ts
+  - packages/motion-workspace/src/types.ts
+  - packages/motion-workspace/src/io.ts
+  - packages/motion-workspace/src/migrate.ts
+  - packages/motion-workspace/src/controller.ts
+  - packages/motion-workspace/src/io.test.ts
+  - packages/motion-workspace/src/migrate.test.ts
+  - packages/motion-workspace/src/controller.test.ts
 ---
 # Motion Workspace
 

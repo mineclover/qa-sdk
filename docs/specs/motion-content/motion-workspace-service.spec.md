@@ -17,6 +17,18 @@ def:
       type: contains
     - target: mws-data
       type: contains
+sources:
+  - packages/motion-workspace-service/src/index.ts
+  - packages/motion-workspace-service/src/app.ts
+  - packages/motion-workspace-service/src/controller.ts
+  - packages/motion-workspace-service/src/repository.ts
+  - packages/motion-workspace-service/src/sqlite-repository.ts
+  - packages/motion-workspace-service/src/routes/workspaces.ts
+  - packages/motion-workspace-service/src/ws-hub.ts
+  - packages/motion-workspace-service/src/ws-protocol.ts
+  - packages/motion-workspace-service/test/app.test.ts
+  - packages/motion-workspace-service/test/repository.test.ts
+  - packages/motion-workspace-service/test/ws-hub.test.ts
 ---
 # Motion Workspace Service
 

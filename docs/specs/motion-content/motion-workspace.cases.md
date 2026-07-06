@@ -15,6 +15,13 @@ def:
       type: refines
     - target: motion-workspace-system
       type: depends_on
+sources:
+  - packages/motion-workspace/src/io.test.ts
+  - packages/motion-workspace/src/migrate.test.ts
+  - packages/motion-workspace/src/controller.test.ts
+  - packages/motion-workspace-service/test/app.test.ts
+  - packages/motion-workspace-service/test/ws-hub.test.ts
+  - docs/specs/motion-workspace/motion-workspace-system.md
 ---
 
 # Motion Workspace Spec — 소비자 기대 시나리오

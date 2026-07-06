@@ -10,6 +10,18 @@ def:
   layer: domain
   svc: motion-content
   tags: [contract, frontend, runtime]
+sources:
+  - packages/motion-content/src/index.ts
+  - packages/motion-content/src/model.ts
+  - packages/motion-content/src/io.ts
+  - packages/motion-content/src/runtime.ts
+  - packages/motion-content/src/editor.ts
+  - packages/motion-content/src/history.ts
+  - packages/motion-content/src/content-types.ts
+  - packages/motion-content/src/model.test.ts
+  - packages/motion-content/src/io.test.ts
+  - packages/motion-content/src/runtime.test.ts
+  - packages/motion-content/src/editor.test.ts
 ---
 
 # Motion Content 계약

@@ -126,12 +126,15 @@ vi.mock("gsap", () => {
     }
   }
 
+  const mockGsap = {
+    timeline: (options: { paused?: boolean; repeat?: number; onUpdate?: () => void; onComplete?: () => void }) =>
+      new MockTimeline(options),
+    set: applySet,
+  };
+
   return {
-    default: {
-      timeline: (options: { paused?: boolean; repeat?: number; onUpdate?: () => void; onComplete?: () => void }) =>
-        new MockTimeline(options),
-      set: applySet,
-    },
+    default: mockGsap,
+    gsap: mockGsap,
   };
 });
 
