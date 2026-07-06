@@ -27,6 +27,12 @@ def:
       type: contains
     - target: meta-registry-spec
       type: contains
+sources:
+  - packages/registry-service/src/app.module.ts
+  - packages/registry-service/src/registry-core.module.ts
+  - packages/registry-service/src/runtime.module.ts
+  - packages/registry-client/src/index.ts
+  - packages/index-meta/src/meta-registry.ts
 ---
 
 # Registry 시스템
@@ -37,11 +43,11 @@ Prefix DAG, 버전 라이프사이클, DraftWorkspace를 중앙에서 관리하�
 
 ## 구성 ^overview
 
-- `registry-api`: Prefix 등록/조회, 버전 생성/전이, DAG 관계 질의를 제공하는 REST 엔드포인트.
-- `registry-data-model`: PrefixRecord(prefix 메타데이터), VersionRecord(버전별 상태/capacity/refs), DimRef(DAG 참조)의 3개 핵심 엔티티를 정의한다.
+- `registry-api`: Prefix 등록/조회, 버전 생성/전이, DAG 관계 질의, catalog/config, service topology, event schema 조회를 제공하는 REST 엔드포인트.
+- `registry-data-model`: PrefixOwnerRecord, ExtendedVersionRecord, DimRef, EventSchemaRecord, ServiceRecord의 핵심 엔티티를 정의한다.
 - `registry-version-lifecycle`: prefix 버전의 상태 전이 규칙.
 - `registry-constraint`: Registry 시스템의 기술적 불변 조건.
-- `registry-services-api-spec`: 서비스 디스커버리에 쓰이는 서비스 메타데이터를 등록, 조회, 수정하는 Registry API 계약과 검증 범위를 정의한다.
-- `registry-events-spec`: 이벤트 정의 CRUD.
-- `registry-client-spec`: 이벤트 레지스트리에 대한 검증 HTTP 클라이언트.
+- `registry-services-api-spec`: 서비스 topology, svc-owner projection, runtime URL overlay, gateway route를 등록, 조회, 수정하는 Registry API 계약과 검증 범위를 정의한다.
+- `registry-events-spec`: 저장형 이벤트 스키마 CRUD와 정적 event-catalog 조회.
+- `registry-client-spec`: registry-service 설정/엔드포인트 조회 클라이언트와 legacy 이벤트 검증 HTTP 클라이언트.
 - `meta-registry-spec`: MetaRegistry — 주소 게이트웨이.

@@ -19,6 +19,14 @@ def:
       type: constrains
     - target: registry-client-spec
       type: constrains
+sources:
+  - packages/registry-service/src/lib/registry-service.ts
+  - packages/registry-service/src/lib/draft-workspace.ts
+  - packages/registry-service/src/lib/activation-gate-adapter.ts
+  - packages/registry-service/src/modules/versions/activation-gate.service.ts
+  - packages/registry-service/src/lib/errors.ts
+  - packages/registry-service/src/app.sql.test.ts
+  - packages/registry-service/src/lib/draft-workspace.test.ts
 ---
 # Registry 기술적 제약
 

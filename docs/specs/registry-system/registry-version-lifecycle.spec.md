@@ -13,6 +13,13 @@ def:
   links:
     - target: registry-data-model
       type: depends_on
+sources:
+  - packages/registry-service/src/modules/versions/version.controller.ts
+  - packages/registry-service/src/modules/versions/version.service.ts
+  - packages/registry-service/src/lib/registry-service.ts
+  - packages/registry-service/src/schemas/version.ts
+  - packages/registry-service/src/modules/versions/version.controller.test.ts
+  - packages/registry-service/src/modules/versions/version.service.test.ts
 ---
 # Registry 버전 라이프사이클
 

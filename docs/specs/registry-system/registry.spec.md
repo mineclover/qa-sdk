@@ -13,6 +13,12 @@ def:
   links:
     - target: registry-data-model
       type: depends_on
+sources:
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/types.ts
 ---
 
 # MetaRegistry 스펙

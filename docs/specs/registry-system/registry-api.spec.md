@@ -15,6 +15,15 @@ def:
       type: depends_on
     - target: registry-version-lifecycle
       type: depends_on
+sources:
+  - packages/registry-service/src/modules/prefixes/prefix.controller.ts
+  - packages/registry-service/src/modules/versions/version.controller.ts
+  - packages/registry-service/src/modules/dag/dag.controller.ts
+  - packages/registry-service/src/modules/catalog/catalog.controller.ts
+  - packages/registry-service/src/modules/catalog/decode-map.controller.ts
+  - packages/registry-service/src/modules/services/service.controller.ts
+  - packages/registry-service/src/modules/events/event-schema.controller.ts
+  - packages/registry-service/src/modules/events/event-catalog.controller.ts
 ---
 # Registry Service REST API
 
@@ -31,7 +40,7 @@ Prefix 등록/조회, 버전 생성/전이, DAG 관계 질의, Catalog/설정/�
 - **서비스 토폴로지** — 서비스 등록/조회, svc-owners 맵, URL 맵, 게이트웨이 라우팅.
 - **축 프로필** — 축별 capacity/version/entryCount 관리.
 - **DecodeMap 공급** — decode-service에 디코딩 번들 공급.
-- **이벤트 스키마** — event-catalog 기반 스키마 등록/조회.
+- **이벤트 스키마** — 저장형 `/api/event-schemas`와 정적 `/api/event-catalog` 조회.
 
 ## Prefix 관리
 
@@ -119,6 +128,20 @@ prefix를 삭제한다.
 | `GET /api/services/urls` | 서비스별 URL 맵 (?env=dev/prod) |
 | `GET /api/services/gateway` | 게이트웨이 라우팅 구성 (path, url, strip) |
 
+## 이벤트 스키마/카탈로그
+
+| 엔드포인트 | 설명 |
+|:---|:---|
+| `GET /api/event-schemas` | 저장형 이벤트 스키마 목록. `catalog`, `service` 쿼리로 범위를 좁힌다. |
+| `GET /api/event-schemas/:serviceId/:eventKey` | 해당 이벤트 키의 버전 목록 |
+| `GET /api/event-schemas/:serviceId/:eventKey/:version` | 특정 이벤트 스키마 버전 조회 |
+| `PUT /api/event-schemas/:serviceId/:eventKey/:version` | 저장형 이벤트 스키마 생성/갱신 |
+| `DELETE /api/event-schemas/:serviceId/:eventKey/:version` | 저장형 이벤트 스키마 삭제 |
+| `GET /api/event-catalog` | 정적 event-catalog 요약 |
+| `GET /api/event-catalog/events` | 정적 이벤트 목록. `category`, `channel` 필터 지원 |
+| `GET /api/event-catalog/adoptions` | catalog별 service adoption 목록 |
+| `GET /api/event-catalog/services/:serviceId/taxonomy` | service adoption 기반 taxonomy 조회 |
+
 ## DecodeMap 공급
 
 | 엔드포인트 | 설명 |
@@ -147,7 +170,7 @@ decode-service가 startup 시 이 API를 호출하여 디코더를 로드한다.
 1. `DEMO_CATALOG` — 해시 비교 후 변경 시 자동 업데이트 (auto-reseed)
 2. `DEMO_DKG_CONFIG` — DKG 설정
 3. `DEMO_PATTERN_RULES` — 패턴 규칙
-4. 서비스 목록 (18개 서비스: 프론트엔드/백엔드/인프라/시스템/모니터링)
+4. 서비스 목록 (23개 서비스: 프론트엔드/백엔드/인프라/시스템/모니터링)
 5. 서비스 엔드포인트 (dev/prod 환경별 URL)
 6. 이벤트 스키마 (event-catalog의 core events + prefix-mapping events)
 7. 축 프로필 (catalog 기준)

@@ -15,20 +15,28 @@ def:
       type: depends_on
     - target: registry-version-lifecycle
       type: depends_on
+sources:
+  - packages/registry-service/src/modules/events/event-schema.controller.ts
+  - packages/registry-service/src/modules/events/event-schema.service.ts
+  - packages/registry-service/src/modules/events/event-catalog.controller.ts
+  - packages/registry-service/src/modules/events/event-catalog.service.ts
+  - packages/registry-service/src/stores/event-schema-store.ts
+  - packages/registry-service/src/modules/events/event.controller.test.ts
+  - packages/registry-service/src/e2e/dashboard-and-events.test.ts
 ---
 
 # Events API
 
 ## 목적 ^purpose
 
-이벤트 정의 CRUD. event_key + event_version 으로 시맨틱 버전 관리.
+저장형 이벤트 스키마 CRUD와 정적 event-catalog 조회를 함께 제공한다. 저장형 스키마는 catalogId + serviceId + eventKey + eventVersion 조합으로 버전 관리한다.
 
 ## 구성 ^overview
 
-- **이벤트 CRUD**: 서비스별 이벤트 정의 생성, 조회, 수정 엔드포인트 제공
-- **버전 자동 발급**: event_version은 3자리 문자열로 자동 증가 (e.g. "001" → "002")
-- **복합 유일성**: (service_id, event_key, event_version) 조합이 unique 제약
-- **내부 계층**: EventService(비즈니스 로직) → EventRepository(데이터 접근) + Zod 검증 스키마
+- **저장형 스키마 CRUD**: `/api/event-schemas`에서 서비스별 이벤트 스키마를 list/get/upsert/delete한다.
+- **정적 카탈로그 조회**: `/api/event-catalog`에서 event-catalog 요약, events, mappings, packs, adoptions, taxonomy 점검을 제공한다.
+- **복합 키**: (catalogId, serviceId, eventKey, eventVersion) 조합이 저장소 primary key다.
+- **내부 계층**: `EventSchemaController` → `EventSchemaService` → `EventSchemaStore`, `EventCatalogController` → `EventCatalogService`.
 
 ## 상태
 
@@ -36,51 +44,47 @@ implemented
 
 ## 엔드포인트
 
-### POST /services/:serviceId/events
+### GET /api/event-schemas
 
-이벤트 정의 생성. 버전 자동 발급.
+저장형 이벤트 스키마 목록. `catalog`, `service` 쿼리 지원.
 
-요청:
-```json
-{
-  "event_key": "page_view",
-  "description": "User viewed a page",
-  "category": "navigation",
-  "payload_schema": { ... }
-}
-```
+### GET /api/event-schemas/:serviceId/:eventKey
 
-응답 201: 생성된 EventEntry (event_version 자동 할당).
+특정 service/eventKey의 버전 목록.
 
-### GET /services/:serviceName/events/:eventKey
+### GET /api/event-schemas/:serviceId/:eventKey/:version
 
-해당 event_key의 모든 버전 목록.
+특정 이벤트 스키마 버전 조회.
 
-응답 200: EventEntry[].
+### PUT /api/event-schemas/:serviceId/:eventKey/:version
 
-### GET /services/:serviceName/events/:eventKey/versions/:eventVersion
+저장형 이벤트 스키마 생성/갱신. displayName, description, recordKind, status를 body로 받는다.
 
-특정 버전 조회.
+### DELETE /api/event-schemas/:serviceId/:eventKey/:version
 
-응답 200: EventEntry.
-응답 404: 이벤트/버전 없음.
+저장형 이벤트 스키마 삭제.
 
-### PATCH /events/:eventId
+### GET /api/event-catalog
 
-이벤트 수정.
+정적 event-catalog 요약.
 
-요청: 변경할 필드만 포함.
-응답 200: 수정된 EventEntry.
+### GET /api/event-catalog/events
+
+정적 이벤트 목록. `category`, `channel` 필터 지원.
+
+### GET /api/event-catalog/adoptions
+
+service adoption 목록. `catalog` 기본값은 `demo`.
 
 ## 내부 구조
 
-- `EventService` — 비즈니스 로직 (버전 자동 발급 포함)
-- `EventRepository` — 데이터 접근
-- `createEventSchema` / `updateEventSchema` — Zod 검증
+- `EventSchemaController` — 저장형 이벤트 스키마 HTTP adapter
+- `EventSchemaService` — EventSchemaStore 접근과 404/응답 shape 처리
+- `EventCatalogController` — 정적 event-catalog와 adoption/taxonomy 조회 adapter
+- `EventCatalogService` — event-catalog 정적 데이터와 catalog adoption config 조합
 
 ## 제약 조건
 
-- (service_id, event_key, event_version) 복합 unique
-- event_version은 3자리 문자열 (e.g. "001", "002")
-- 버전 자동 증가: 기존 최대 버전 + 1
-- event_key는 snake_case 권장 (강제 아님)
+- (catalogId, serviceId, eventKey, eventVersion) 복합 키
+- eventVersion은 호출자가 경로에서 명시한다.
+- recordKind는 `log | span | both`, status는 `active | deprecated | retired`

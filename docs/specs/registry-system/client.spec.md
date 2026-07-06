@@ -15,20 +15,25 @@ def:
       type: depends_on
     - target: registry-version-lifecycle
       type: depends_on
+sources:
+  - packages/registry-client/src/index.ts
+  - packages/registry-client/src/registry-client.test.ts
 ---
 
 # RegistryClient
 
 ## 목적 ^purpose
 
-이벤트 레지스트리에 대한 검증 HTTP 클라이언트. TTL+LRU 캐시로 중복 호출 방지.
+registry-service를 소비하는 HTTP 클라이언트. 현재 운영 표면은 catalog/config/endpoint 조회용 `createRegistryConfigClient()`이고, legacy 이벤트 검증 표면은 `RegistryClient.validateEvent()`가 TTL+LRU 캐시와 fail-open 정책으로 제공한다.
 
 ## 구성 ^overview
 
-- **validateEvent**: serviceName + eventKey + eventVersion 조합으로 레지스트리에 등록 여부 검증 → ValidationResult(valid, reason?)
+- **createRegistryConfigClient**: registry-service에서 endpoint, catalog, config, decode-map, event schema, gateway route를 조회한다.
+- **validateEvent**: serviceName + eventKey + eventVersion 조합으로 legacy 이벤트 검증 HTTP target에 등록 여부를 질의한다 → ValidationResult(valid, reason?)
 - **캐시**: TTL(기본 5분) + LRU(기본 1000개) in-memory 캐시, 성공(200)과 실패(404) 모두 저장
 - **Fail-Open**: 네트워크 에러·5xx 등 장애 시 valid: true 반환 + 경고 로깅 (이벤트 차단하지 않음)
-- **HTTP 경로**: GET {baseUrl}/services/{serviceName}/events/{eventKey}/versions/{eventVersion}
+- **Legacy 검증 HTTP 경로**: GET {baseUrl}/services/{serviceName}/events/{eventKey}/versions/{eventVersion}
+- **Registry config HTTP 경로**: `/api/endpoints`, `/api/services/*`, `/catalogs/:id/*`, `/api/decode-map`, `/api/event-schemas`, `/health/generation`
 - **제약**: 단일 인스턴스 내 in-process 캐시 (서버 간 공유 없음), 캐시 무효화 API 없이 TTL 만료에 의존
 
 ## 상태
@@ -46,6 +51,10 @@ class RegistryClient {
     eventVersion: string,
   ): Promise<ValidationResult>;
 }
+```
+
+```typescript
+function createRegistryConfigClient(config: RegistryConfig): RegistryConfigClient;
 ```
 
 ## RegistryClientOptions
@@ -82,7 +91,16 @@ interface ValidationResult {
 
 ## 동작
 
-### 검증 흐름
+### Config 조회 흐름
+
+```
+1. createRegistryConfigClient({ registryUrl, catalogId?, env?, namespace?, region?, timeoutMs? })
+2. endpoint/config/catalog/decode-map/event-schema/gateway 메서드 호출
+3. registry-service HTTP 응답이 실패하거나 timeout이면 null, 빈 배열, 빈 객체 등 fail-soft 기본값 반환
+4. 정상 응답이면 JSON payload 반환
+```
+
+### Legacy 이벤트 검증 흐름
 
 ```
 1. 캐시 조회 (serviceName + eventKey + eventVersion 키)
