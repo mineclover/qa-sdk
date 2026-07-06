@@ -13,12 +13,20 @@ def:
   links:
     - target: payment-service-spec
       type: refines
+sources:
+  - packages/demo-types/src/prefix-ids.ts
+  - packages/demo-types/src/sdk-factory.ts
+  - packages/demo-types/src/axes.ts
+  - packages/demo-types/src/dsl.ts
+  - packages/platform-demo-api/src/registry.ts
+  - packages/platform-demo-api/src/index.ts
+  - packages/dkg/src/service-topology.ts
 ---
 # Payment — data/domain_data
 
 ## 목적 ^purpose
 
-결제 트랜잭션 데이터. 결제 상태, 환불, 정산 레코드.
+결제 흐름 관측 데이터. payment service enum, payment.* event_name, checkout flow/payment step, permission/order_event 소비 관계, seed log의 payment.initiate/payment.refund.fail 이벤트를 정의한다.
 
 ## 구성 ^overview
 

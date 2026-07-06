@@ -17,12 +17,20 @@ def:
       type: contains
     - target: payment-data
       type: contains
+sources:
+  - packages/dkg/src/service-topology.ts
+  - packages/demo-types/src/dsl.ts
+  - packages/dkg/src/skills/trace-demo.test.ts
+  - packages/dkg/src/skills/claim-operation.test.ts
+  - packages/platform-demo-api/src/index.ts
+  - packages/platform-demo-api/src/registry.ts
+  - packages/platform-demo-api/scripts/read-api.test.ts
 ---
 # Payment Service
 
 ## 목적 ^purpose
 
-결제 처리 서비스. 주문 완료 후 결제 트랜잭션을 처리하고, 결제 상태 변경 이벤트를 생산한다. shopping-backend와 협력하여 주문-결제 흐름을 구성한다.
+checkout DSL의 DKG/demo 결제 서비스 경계. payment는 prefix를 직접 소유하지 않고 permission, order_event, endpoint, service를 소비하며, platform-demo-api의 scenario/log/event 표면에서 결제 흐름 관측으로 나타난다.
 
 ## 구성 ^overview
 

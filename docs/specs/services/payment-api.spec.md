@@ -13,12 +13,17 @@ def:
   links:
     - target: payment-service-spec
       type: refines
+sources:
+  - packages/platform-demo-api/src/index.ts
+  - packages/platform-demo-api/scripts/read-api.test.ts
+  - packages/platform-demo-api/src/registry.ts
+  - packages/platform-demo-api/package.json
 ---
 # Payment — interface/api_contract
 
 ## 목적 ^purpose
 
-결제 서비스 API 계약. 결제 요청, 상태 조회, 웹훅 엔드포인트.
+platform-demo-api가 노출하는 payment 관련 관측 API 계약. scenario, permission/event 조회, logs/log seed 표면으로 결제 서비스의 권한 주소와 payment.* 이벤트 상태를 읽는다.
 
 ## 구성 ^overview
 
