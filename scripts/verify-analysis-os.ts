@@ -87,7 +87,7 @@ async function main() {
     ) as Record<string, { verdict: string; surfaceGroup: string; surfaceVerdict: string; surfaceScope: string }>;
     const usefulnessDocs = Object.fromEntries(
       usefulness.docs.map((item: { path: string }) => [item.path, item]),
-    ) as Record<string, { verdict: string; sourceRefs: number; reasons: string[] }>;
+    ) as Record<string, { verdict: string; sourceRefs: number; reasons: string[]; isTemplateDoc?: boolean }>;
     assert(usefulnessPackages["request-contract"]?.verdict === "quarantine"
            && usefulnessPackages["weighted-gpu"]?.verdict === "quarantine",
            "Usefulness Audit: no-promotion packages stay quarantine candidates");
@@ -123,6 +123,14 @@ async function main() {
            && usefulnessPackages["@qa-sdk/platform-demo"]?.surfaceGroup === "demo-consumer-surfaces"
            && usefulnessPackages["request-contract"]?.surfaceGroup === "quarantine",
            "Usefulness Audit: packages expose separated feature groups");
+    const proposalTemplateDocs = usefulness.docs
+      .filter((item: { path: string }) => item.path.startsWith("docs/proposals/_template/"));
+    assert(proposalTemplateDocs.length > 0
+           && proposalTemplateDocs.every((item: { verdict: string; isTemplateDoc?: boolean; reasons: string[] }) =>
+             item.verdict === "keep"
+             && item.isTemplateDoc === true
+             && item.reasons.includes("proposal template scaffold")),
+           "Usefulness Audit: proposal templates stay scaffold docs");
     assert(usefulnessDocs["docs/specs/prefix-catalog/entity-prefix-group/prefix-service.spec.md"]?.verdict === "keep"
            && usefulnessDocs["docs/specs/prefix-catalog/entity-prefix-group/prefix-service.spec.md"]?.sourceRefs === 1,
            "Usefulness Audit: singular source refs with symbol suffix count as source evidence");

@@ -123,7 +123,8 @@ function classifyDoc(path) {
     && !text.startsWith("---\n");
   const isSupersededNote = relativePath.startsWith("docs/proposals/")
     && frontmatter.status === "superseded";
-  const isProposal = relativePath.startsWith("docs/proposals/");
+  const isProposal = relativePath.startsWith("docs/proposals/")
+    && !isTemplateDoc;
   const isSpec = relativePath.startsWith("docs/specs/");
   const isRule = relativePath.endsWith(".rule.md");
   const hasCommand = /\b(pnpm|node|tsx|qa-sdk|vitest|smoke|arch:feedback|def validate)\b/.test(text);
@@ -148,6 +149,11 @@ function classifyDoc(path) {
   if (evidenceScore >= 3) {
     verdict = "keep";
     reasons.push("has executable/source evidence");
+  }
+
+  if (isTemplateDoc) {
+    verdict = "keep";
+    reasons.push("proposal template scaffold");
   }
 
   if (frontmatter.lifecycle === "approved" && evidenceScore < 2 && isSpec) {
