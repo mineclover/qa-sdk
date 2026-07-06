@@ -15,6 +15,13 @@ def:
       type: refines
     - target: browser-lifecycle-system
       type: depends_on
+sources:
+  - packages/browser-sdk/src/monitor.ts
+  - packages/browser-sdk/src/transport.ts
+  - packages/browser-codec/src/catalog-loader.ts
+  - packages/browser-sdk/src/monitor.integration.test.ts
+  - packages/browser-codec/src/catalog-loader.test.ts
+  - packages/browser-sdk/vite.config.ts
 ---
 
 # 브라우저 모니터 운영 규칙

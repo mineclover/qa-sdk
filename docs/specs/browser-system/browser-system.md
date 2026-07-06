@@ -19,6 +19,13 @@ def:
       type: refs
     - target: ingest-system
       type: depends_on
+sources:
+  - packages/browser-sdk/package.json
+  - packages/browser-sdk/src/index.ts
+  - packages/browser-sdk/src/monitor.ts
+  - packages/browser-sdk/src/transport.ts
+  - packages/browser-codec/src/index.ts
+  - packages/shop-web/package.json
 ---
 
 ## 목적 ^purpose

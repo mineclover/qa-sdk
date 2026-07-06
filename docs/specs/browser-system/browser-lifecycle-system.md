@@ -17,6 +17,12 @@ def:
       type: contains
     - target: browser-system
       type: depends_on
+sources:
+  - packages/browser-sdk/src/monitor.ts
+  - packages/browser-sdk/src/session.ts
+  - packages/browser-sdk/src/types.ts
+  - packages/browser-sdk/src/monitor.lifecycle.test.ts
+  - packages/browser-sdk/src/session.test.ts
 ---
 
 # 브라우저 생명주기 그룹

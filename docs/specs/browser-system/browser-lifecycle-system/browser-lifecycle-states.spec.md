@@ -13,6 +13,11 @@ def:
   links:
     - target: browser-lifecycle-system
       type: refines
+sources:
+  - packages/browser-sdk/src/monitor.ts
+  - packages/browser-sdk/src/types.ts
+  - packages/browser-sdk/src/monitor.lifecycle.test.ts
+  - packages/browser-sdk/src/monitor.integration.test.ts
 ---
 
 # 브라우저 생명주기 상태

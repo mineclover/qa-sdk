@@ -13,6 +13,12 @@ def:
   links:
     - target: browser-runtime-system
       type: refines
+sources:
+  - packages/browser-sdk/src/index.ts
+  - packages/browser-sdk/src/monitor.ts
+  - packages/browser-sdk/src/types.ts
+  - packages/browser-sdk/src/monitor.test.ts
+  - packages/browser-sdk/src/monitor.integration.test.ts
 ---
 
 # 브라우저 모니터 API

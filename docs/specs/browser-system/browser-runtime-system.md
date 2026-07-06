@@ -21,6 +21,13 @@ def:
       type: contains
     - target: browser-system
       type: depends_on
+sources:
+  - packages/browser-sdk/src/index.ts
+  - packages/browser-sdk/src/monitor.ts
+  - packages/browser-sdk/src/types.ts
+  - packages/browser-sdk/src/auto-capture.ts
+  - packages/browser-codec/src/index.ts
+  - packages/browser-codec/src/browser-codec.ts
 ---
 
 # 브라우저 런타임 그룹

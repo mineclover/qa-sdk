@@ -14,6 +14,12 @@ def:
       type: refines
     - target: sdk-vite-onboarding-guide
       type: depends_on
+sources:
+  - packages/shop-web/package.json
+  - packages/shop-web/public/index.html
+  - packages/shop-web/public/config.js
+  - packages/shop-web/scripts/static-smoke.mjs
+  - packages/shop-web/wrangler.toml
 ---
 # Shop Web
 

@@ -15,6 +15,11 @@ def:
       type: depends_on
     - target: address-context-format
       type: depends_on
+sources:
+  - packages/browser-sdk/src/transport.ts
+  - packages/browser-sdk/src/transport.test.ts
+  - packages/browser-sdk/src/monitor.ts
+  - packages/browser-sdk/src/monitor.integration.test.ts
 ---
 
 # BeaconTransport

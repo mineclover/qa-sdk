@@ -15,6 +15,11 @@ def:
       type: refines
     - target: browser-system
       type: depends_on
+sources:
+  - packages/browser-sdk/src/monitor.lifecycle.test.ts
+  - packages/browser-sdk/src/monitor.integration.test.ts
+  - packages/browser-sdk/src/session.test.ts
+  - packages/browser-sdk/src/transport.test.ts
 ---
 
 # 브라우저 생명주기 그룹 — 소비자 기대 시나리오

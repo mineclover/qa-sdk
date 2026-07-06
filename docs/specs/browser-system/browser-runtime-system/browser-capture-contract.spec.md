@@ -13,6 +13,10 @@ def:
   links:
     - target: browser-runtime-system
       type: refines
+sources:
+  - packages/browser-sdk/src/auto-capture.ts
+  - packages/browser-sdk/src/auto-capture.test.ts
+  - packages/browser-sdk/src/monitor.integration.test.ts
 ---
 
 # 브라우저 자동 수집 계약

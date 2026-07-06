@@ -14,6 +14,12 @@ def:
   links:
     - target: browser-lifecycle-system
       type: traces_to
+sources:
+  - packages/browser-sdk/src/session.ts
+  - packages/browser-sdk/src/types.ts
+  - packages/browser-sdk/src/session.test.ts
+  - packages/browser-sdk/src/monitor.lifecycle.test.ts
+  - packages/browser-sdk/src/monitor.integration.test.ts
 ---
 
 # 브라우저 세션 패턴

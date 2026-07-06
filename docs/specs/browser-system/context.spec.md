@@ -13,6 +13,11 @@ def:
   links:
     - target: session-spec
       type: depends_on
+sources:
+  - packages/logger/src/context.ts
+  - packages/logger/src/logger.ts
+  - packages/sdk/src/index.ts
+  - packages/sdk/src/context.test.ts
 ---
 # TraceContext
 

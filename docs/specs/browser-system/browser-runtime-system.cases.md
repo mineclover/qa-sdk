@@ -15,6 +15,11 @@ def:
       type: refines
     - target: browser-system
       type: depends_on
+sources:
+  - packages/browser-sdk/src/monitor.test.ts
+  - packages/browser-sdk/src/monitor.integration.test.ts
+  - packages/browser-sdk/src/auto-capture.test.ts
+  - packages/browser-codec/src/smoke.test.ts
 ---
 
 # 브라우저 런타임 그룹 — 소비자 기대 시나리오
