@@ -1,10 +1,11 @@
 # canvas-viewport
 
-`canvas-viewport`는 여러 캔버스/미니맵 UI에서 재사용하는 viewport 수학과 상태 보조층이다. 아직 전용 package spec은 없어서, 현재는 가장 가까운 central spec을 기준으로 읽는다.
+`canvas-viewport`는 여러 캔버스/미니맵 UI에서 재사용하는 viewport 수학과 상태 보조층이다. 패키지 계약은 `canvas-viewport-spec`이 소유하고, overview 문서는 소비 UI가 같은 viewport abstraction을 경유하도록 라우팅한다.
 
 ## 먼저 볼 문서
 
 - [canvas-viewport.spec.md](../../docs/specs/viz-system/canvas-viewport.spec.md) — 패키지 계약
+- [canvas-viewport-spec.spec.md](../../docs/specs/canvas-viewport-spec.spec.md) — overview/routing entry
 - [scope-nesting-visualization.spec.md](../../docs/specs/scope-nesting/scope-nesting-visualization.spec.md) — viewport/preview 계열 시각화가 어떤 역할로 분리되는지
 - [viz-system.md](../../docs/specs/viz-system/viz-system.md) — 시각화 UI 계층 전체 경계
 - [system-packages.spec.md](../../docs/specs/system/system-packages.spec.md) — 프론트엔드/데모 패키지의 저장소 내 위치
@@ -27,8 +28,8 @@
 ## 실행
 
 ```bash
-pnpm --filter canvas-viewport build
-pnpm --filter canvas-viewport typecheck
+corepack pnpm --filter canvas-viewport build
+corepack pnpm --filter canvas-viewport typecheck
 ```
 
-전용 central spec이 아직 없기 때문에, 계약을 넓히는 변경이 생기면 관련 visualization spec부터 먼저 보강하는 흐름이 안전하다.
+계약을 넓히는 변경이 생기면 `docs/specs/viz-system/canvas-viewport.spec.md`와 소비자 시나리오를 함께 보강하는 흐름이 안전하다.
