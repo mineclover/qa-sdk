@@ -33,6 +33,19 @@ def:
       type: depends_on
     - target: address-index
       type: contains
+sources:
+  - packages/index-meta/src/index.ts
+  - packages/index-meta/src/client.ts
+  - packages/index-meta/src/workers.ts
+  - packages/index-meta/package.json
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/prefix-decoder.ts
+  - packages/index-meta/src/index-sdk.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/meta-resolver.test.ts
 ---
 
 ## 목적 ^purpose

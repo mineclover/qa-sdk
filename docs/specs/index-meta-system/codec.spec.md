@@ -17,6 +17,15 @@ def:
       type: depends_on
     - target: index-meta-store-group
       type: depends_on
+sources:
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/meta-codec-big.ts
+  - packages/index-meta/src/meta-codec-big.test.ts
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/meta-resolver.test.ts
 ---
 
 # MetaCodec 스펙

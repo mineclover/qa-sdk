@@ -12,6 +12,13 @@ def:
   links:
     - target: index-meta-system
       type: refines
+sources:
+  - packages/address-index/src/index.ts
+  - packages/address-index/src/types.ts
+  - packages/address-index/src/port.ts
+  - packages/address-index/src/memory-store.ts
+  - packages/address-index/src/address-index.test.ts
+  - packages/address-index/package.json
 ---
 # address-index
 

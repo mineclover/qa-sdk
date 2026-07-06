@@ -13,6 +13,13 @@ def:
   links:
     - target: meta-registry-spec
       type: depends_on
+sources:
+  - packages/index-meta/src/address-protocol-manager.ts
+  - packages/index-meta/src/address-protocol-manager.test.ts
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/weighted-index/src/protocol/semantic-address.ts
+  - packages/weighted-index/src/protocol/semantic-address.test.ts
 ---
 
 # Address 프로토콜 바인딩 스펙

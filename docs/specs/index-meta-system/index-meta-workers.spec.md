@@ -12,6 +12,11 @@ def:
   links:
     - target: index-meta-system
       type: refines
+sources:
+  - packages/index-meta-workers/src/index.ts
+  - packages/index-meta-workers/package.json
+  - packages/index-meta/src/workers.ts
+  - packages/index-meta/package.json
 ---
 
 # index-meta-workers 스펙

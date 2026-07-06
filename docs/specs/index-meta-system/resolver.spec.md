@@ -17,6 +17,13 @@ def:
       type: depends_on
     - target: canonical-format-spec
       type: depends_on
+sources:
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/meta-resolver.test.ts
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/prefix-decoder.ts
+  - packages/index-meta/src/prefix-decoder.test.ts
 ---
 
 # MetaResolver 스펙

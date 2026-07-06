@@ -15,6 +15,16 @@ def:
       type: traces_to
     - target: resolver-spec
       type: traces_to
+sources:
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/meta-resolver.test.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/address-protocol-manager.test.ts
+  - packages/index-meta/src/address-resolver.test.ts
+  - packages/index-meta/src/prefix-registry.test.ts
+  - packages/index-meta/src/schema-sync.test.ts
+  - packages/index-meta/src/table-def.test.ts
+  - packages/index-meta/src/migrate-address.test.ts
 ---
 
 # 유저 시나리오 테스트 커버리지
@@ -23,7 +33,7 @@ def:
 
 MetaCodec + MetaResolver + MetaRegistry + PrefixRegistry + IndexMetaStore 통합 시나리오.
 파일: `meta-codec.test.ts`, `meta-resolver.test.ts`, `meta-registry.test.ts`,
-      `prefix-registry.test.ts`, `table-flow.e2e.test.ts`, `address-resolver.test.ts`,
+      `prefix-registry.test.ts`, `table-def.test.ts`, `schema-sync.test.ts`, `address-resolver.test.ts`,
       `migrate-address.test.ts`
 
 외부 시스템 통합 시나리오 (AddressProtocolManager): [../../index-meta-system/address-scenarios-group.md](../../index-meta-system/address-scenarios-group.md)
@@ -256,7 +266,7 @@ article:v1 = content_type(4) × perm(2048) × lang(2)
 ## 15. 1D 엔트리 테이블 전체 조회 + 분류
 
 > 목적: capacity 기반 full 1D 뷰에서 normal / reserved / empty를 분류하고 index-label 매핑 획득
-> 파일: `table-flow.e2e.test.ts`
+> 파일: `table-def.test.ts`, `schema-sync.test.ts`
 
 | ID | 항목 | 검증 내용 |
 |---|---|---|

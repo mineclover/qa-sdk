@@ -17,6 +17,19 @@ def:
       type: constrains
     - target: sdk-system
       type: constrains
+sources:
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/meta-codec-big.test.ts
+  - packages/index-meta/src/address-protocol-manager.test.ts
+  - packages/index-meta/src/migrate-address.test.ts
+  - packages/index-meta/src/invalid-ranges.test.ts
+  - packages/index-meta/src/gate-engine.test.ts
+  - packages/index-meta/src/cross-index-query.test.ts
+  - packages/weighted-index/src/math/weighted-index.test.ts
+  - packages/weighted-index/src/math/weighted-index-big.test.ts
+  - packages/weighted-index/src/obfuscate/compose.test.ts
+  - packages/weighted-index/src/protocol/semantic-address.test.ts
+  - packages/weighted-index/src/format-adapter.test.ts
 ---
 
 # 변환 불변조건 (Invariants) 명세
@@ -29,7 +42,7 @@ def:
 
 - **불변조건 12종**: encode/decode roundtrip(INV-1~2), serialize/parse roundtrip(INV-3), obfuscation roundtrip(INV-4), migration 보존(INV-5), gate 상태 3종(INV-6~8), BigInt 동등성(INV-9), 순환 방지(INV-10), full stack/cross-protocol roundtrip(INV-11~12)
 - **조건 분류**: 무조건 적용(대부분)과 gate 활성 시/version 호환 시 조건부 적용으로 구분
-- **검증 전략**: 기존 단위 테스트 커버 + `invariants.test.ts` 갭 보강(INV-G1~G4)
+- **검증 전략**: 전용 `invariants.test.ts`가 아니라 codec/address/gate/migration/cross-index 단위 테스트에 불변조건을 분산 고정한다
 - **핵심 보증**: 어떤 경로(encode→serialize→parse→decode)로든 원본 데이터가 손실 없이 복원됨
 
 ## 불변조건 목록
@@ -84,13 +97,12 @@ version 간 migration 시 shared dim의 entity가 보존된다.
 각 상태의 encode/decode 허용 여부가 ADDRESS_GATE 상수에 부합한다.
 
 - **커버**: `invalid-ranges.test.ts`, `gate-engine.test.ts`
-- **갭 보강**: `invariants.test.ts` INV-G1
 
 ## INV-9: BigInt/Number 동등성
 
 shape ≤ 2^53 범위에서 WeightedIndex와 WeightedIndexBig가 동일 결과를 생성한다.
 
-- **갭 보강**: `invariants.test.ts` INV-G3
+- **커버**: `meta-codec-big.test.ts`, `format-adapter.test.ts`
 
 ## INV-10: deepDecode 순환 방지
 
@@ -102,10 +114,10 @@ visited set으로 동일 주소 재방문을 방지하여 무한 루프를 차�
 
 encode → serialize → parse → decode 전체 파이프라인 roundtrip.
 
-- **갭 보강**: `invariants.test.ts` INV-G2, INV-G4
+- **커버**: `meta-codec.test.ts`, `address-protocol-manager.test.ts`
 
 ## INV-12: Cross-protocol roundtrip
 
 serialize(p1) → convert(p2) → parse → 동일 VersionedValue.
 
-- **갭 보강**: `invariants.test.ts` INV-G4
+- **커버**: `address-protocol-manager.test.ts`, `semantic-address.test.ts`

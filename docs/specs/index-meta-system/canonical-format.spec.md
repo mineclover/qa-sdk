@@ -13,6 +13,12 @@ def:
   links:
     - target: address-spec
       type: depends_on
+sources:
+  - packages/weighted-index/src/protocol/semantic-address.ts
+  - packages/weighted-index/src/protocol/semantic-address.test.ts
+  - packages/weighted-index/src/protocol/index.ts
+  - packages/index-meta/src/address-protocol-manager.ts
+  - packages/index-meta/src/address-protocol-manager.test.ts
 ---
 
 # Canonical Format Specification
