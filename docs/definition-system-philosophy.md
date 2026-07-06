@@ -13,12 +13,42 @@ def:
   links:
     - target: definition-catalog-spec
       type: refines
+    - target: definition-management
+      type: refs
+    - target: dual-coordinate-system
+      type: refs
+    - target: decision-definition-bridge
+      type: refs
+    - target: definition-runtime-guide
+      type: refs
+    - target: document-governance-guideline
+      type: refs
+    - target: composition-hierarchy
+      type: refs
+sources:
+  - packages/definition-catalog/src/index.ts
+  - packages/definition-catalog/src/vocabulary.ts
+  - packages/definition-catalog/src/taxonomy.ts
+  - packages/definition-catalog/src/registry.ts
+  - packages/definition-catalog/src/validate.ts
+  - packages/definition-catalog/src/impact.ts
+  - packages/definition-catalog/src/runtime.ts
+  - packages/definition-catalog/src/bridge.ts
+  - packages/definition-catalog/src/cross-loop-bridge.ts
+  - packages/cli/src/commands/def.ts
+  - docs/specs/definition-catalog/definition-catalog.spec.md
+  - docs/specs/definition-catalog/definition-management.spec.md
+  - docs/specs/guides-system/definition-runtime-guide.md
+  - docs/specs/system/document-governance-guideline.spec.md
+  - docs/specs/system/composition-hierarchy.spec.md
+  - docs/specs/system/dual-coordinate-system.spec.md
+  - docs/specs/system/decision-definition-bridge.spec.md
 ---
 # Definition System — 문서화 철학
 
 ## 목적 ^purpose
 
-소프트웨어를 구성하는 모든 정의를 **좌표계의 소비 방식**으로 분류하여, 체계적이고 반복 가능한 문서화 시스템을 구축한다. 하나의 서비스/모듈을 여러 관점(상수, 구현, 분기, UX, 비즈니스)으로 분해하되, 각 관점이 좌표 공간에서 고유한 위치를 가지게 하여 중복 없이 식별 가능하게 만든다.
+소프트웨어를 구성하는 모든 정의를 **좌표계의 소비 방식**으로 분류하여, 체계적이고 반복 가능한 문서화 시스템을 구축한다. 하나의 서비스/모듈을 여러 관점(상수, 구현, 분기, UX, 비즈니스)으로 분해하되, 각 관점이 좌표 공간에서 고유한 위치를 가지게 하여 중복 없이 식별 가능하게 만든다. 현행 구현 증거는 `definition-catalog`의 vocabulary/taxonomy/registry/validate/impact/runtime 소스와 `qa-sdk def` CLI가 소유하고, 이 문서는 그 설계 이유를 설명하는 knowledge entry다.
 
 ## 동기 — 왜 이 시스템이 필요한가 ^intent
 
@@ -75,13 +105,14 @@ def:
 
 ### 1. 좌표계가 기본 분류 체계다
 
-모든 문서는 3차원 좌표를 가진다:
+모든 문서는 기본적으로 scope × aspect × depth 좌표를 가진다. 현행 vocabulary 기준은 scope 9종, aspect 48종, depth 4종이며, 유효 조합과 aspect family는 `definition-catalog/src/taxonomy.ts`와 `vocabulary.ts`가 검증한다:
 
 ```
-scope(7) × aspect(22) × depth(4) → def_document:v1:<address>
+scope(9) × aspect(48) × depth(4) → def_document:v1:<address>
+def_document:v2:<address> = scope × aspect × depth × doc_seq 기반 유일 문서 주소
 ```
 
-**address는 분류 좌표이지 고유 식별자가 아니다.** 같은 scope×aspect×depth 조합이면 같은 address가 나온다 (예: feature/func_def/specification → 537에 77건). 문서의 유일한 식별자는 `doc_id`이며, address는 "이 문서가 어떤 종류인가"를 숫자로 표현한 것이다.
+legacy `def_document:v1` address는 분류 좌표이지 고유 식별자가 아니다. 같은 scope×aspect×depth 조합이면 같은 address가 나온다. 문서의 안정 식별자는 `doc_id`이며, 유일 주소가 필요할 때는 `doc_seq`를 포함한 `def_document:v2` 주소를 사용한다.
 
 - **scope**: 이 정의가 소프트웨어의 **무엇**인가 (UI, 기능, 흐름, 상태, 제약, 데이터, 인터페이스)
 - **aspect**: 그 중에서 **어떤 측면**인가 (레이아웃, 기능정의, 프로세스흐름, 도메인상태, API계약 ...)
@@ -133,7 +164,7 @@ scope(구조)와 layer(존재 이유)는 **직교**한다. 같은 `feature/func_
 
 ### 4. 관계형 링크가 문서 간 구조를 만든다
 
-6종 링크로 문서 그래프를 구성한다:
+10종 링크로 문서 그래프를 구성한다:
 
 | 링크 | 의미 | 예 |
 |------|------|-----|
@@ -143,6 +174,10 @@ scope(구조)와 layer(존재 이유)는 **직교**한다. 같은 `feature/func_
 | constrains | 불변 조건 부과 | gate-constraint → gate-engine-core |
 | implements | 명세의 구현 | gate-engine-spec → gate-api |
 | traces_to | 추적 가능한 연결 | gate-scenario → gate-flow |
+| evolves_from | 개정/버전 진화 | v2 문서 → v1 문서 |
+| supersedes | 이전 개정 대체 | 새 운영 규칙 → 폐기 규칙 |
+| refs | layout/entry 문서의 카탈로그성 참조 | system-root → system-packages |
+| verifies | `.test.md`가 대상 spec을 검증 | provider test → provider spec |
 
 이 링크 구조가 제공하는 것:
 - **역추적(bottomup)**: "이 문서를 바꾸면 어디에 영향?"
@@ -150,15 +185,16 @@ scope(구조)와 layer(존재 이유)는 **직교**한다. 같은 `feature/func_
 - **concern 전파**: security 태그가 depends_on 링크를 따라 하위로 전파
 - **검증**: 깨진 링크, 순환 참조, 고아 문서 자동 탐지
 
-### 5. DB가 메타데이터 SSOT, 파일이 본문 SSOT
+### 5. 파일 frontmatter가 SSOT, DB는 운영 인덱스
 
 ```
-파일 소유: id, address, body (purpose/intent/context/caveat)
-DB 소유:  scope, aspect, depth, lifecycle, layer, tags, links, svc
+파일 소유: def frontmatter(id, scope, aspect, depth, lifecycle, layer, tags, links, address) + body
+DB 소유:  sync된 조회/검색/그래프/이력 인덱스
 ```
 
-- 메타데이터 변경 → `PATCH /docs/:id` → DB 업데이트 → `POST /sync/to-files` → frontmatter 갱신
-- 본문 변경 → 마크다운 편집 → `POST /sync` → DB에 body/markers 반영
+- 메타데이터 변경 → 마크다운 frontmatter 수정 → `def sync`/`syncDocsToLocalDb()` → DB 파생 인덱스 갱신
+- 운영 UI/API 변경 → DB 업데이트 → DB→file 역동기화 표면을 통해 frontmatter 갱신
+- 본문 변경 → 마크다운 편집 → `def sync` → DB에 body/markers 반영
 - 양방향 동기화로 git 가독성과 DB 정합성을 동시에 보장
 
 ### 6. 반복 가능한 문서화 패턴
@@ -176,7 +212,7 @@ DB 소유:  scope, aspect, depth, lifecycle, layer, tags, links, svc
    - 검증 시나리오  → feature/scenario
 3. 링크 연결: contains(그룹→멤버), depends_on, constrains
 4. 메타데이터: layer, svc, tags 부여
-5. address 자동 계산: scope × aspect × depth → def_document:v1:<N>
+5. address 자동 계산: scope × aspect × depth → legacy `def_document:v1:<N>`, 필요 시 doc_seq 포함 `def_document:v2:<N>`
 ```
 
 이 패턴을 반복하면:
@@ -226,12 +262,12 @@ DB: documents.doc_id = 'dec-svc-constraints', target_prefix = null, svc = 'decod
    본문: purpose/intent/context (파일 소유)
 
 ④ DB 동기화
-   POST /sync → 문서 → DB (body, markers, address 계산)
-   POST /sync/to-files → DB → 문서 (메타데이터 역동기화)
+   def sync → 문서 → DB (body, markers, address 계산)
+   DB→file 역동기화 → DB → 문서 (메타데이터 역동기화)
 
 ⑤ 연결 기록
    decision-service: flow_links (instance_id → doc_id, link_type)
-   definition-service: document_links (doc → doc, 6종 관계)
+   definition-service: document_links (doc → doc, 10종 관계)
 
 ⑥ 다음 의사결정의 컨텍스트
    ContextProvider.provide(schemaId, { existingDocs, constraints, concerns })
@@ -339,9 +375,9 @@ prefix 정의 (DEMO_CATALOG)
 좌표계 (scope × aspect × depth)
   └── 소비 방식 (상수/구현/분기/UX/비즈니스)으로 관점 분해
         └── layer (domain/operation/mediation/experience)로 존재 이유 분류
-              └── links (6종)로 관계 구조화
+              └── links (10종)로 관계 구조화
                     └── 식별자 (prefix, svc, doc_id)로 대상 참조
-                          └── DB가 메타데이터 SSOT
+                          └── 파일 frontmatter가 SSOT, DB가 운영 인덱스
                                 └── 의사결정 → 문서 → DB → 다음 의사결정 (순환)
                                       └── 관측 + 경고 → 지침 없는 변경 방지
                                             └── 에이전트 하네스: 변수 제어 + 컨텍스트 관리 + 자기 치유
