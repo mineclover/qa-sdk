@@ -22,7 +22,12 @@ def:
       type: depends_on
     - target: docs-control-plane
       type: depends_on
-  source: packages/deterministic-label-registry/src/candidates.ts
+sources:
+  - packages/deterministic-label-registry/src/coordinate.ts
+  - packages/deterministic-label-registry/src/projection.ts
+  - packages/deterministic-label-registry/src/collision.ts
+  - packages/deterministic-label-registry/src/shared.ts
+  - packages/cli/src/lib/deterministic-label-registry.test.ts
 ---
 
 # Deterministic Label — 좌표 안정성 계약
@@ -72,7 +77,7 @@ version 생략 시 `urn:<domain>:<subtype>:<id>` 형식이 유효 (예: `source-
 | `prd-story` | `prd` | `story` | `urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-001` |
 | `evidence` | `artifact` | `evidence` | `urn:artifact:evidence:checkout-proof:v1` |
 
-kind/domain 매핑은 `packages/deterministic-label-registry/src/candidates.ts`의 `DOMAIN_BY_KIND`에서 **frozen**이다. 신규 매핑은 v2에서만 허용.
+kind/domain 매핑은 `packages/deterministic-label-registry/src/coordinate.ts`의 `DOMAIN_BY_KIND`에서 **frozen**이다. 신규 매핑은 v2에서만 허용.
 
 ## 3. subtype 추론 규칙
 
@@ -175,7 +180,7 @@ Windows 경로 구분자를 `/`로 통일하고 중복 `/`를 제거한다. loca
 
 ## 7. 불변 공개 API (v1)
 
-다음은 `packages/deterministic-label-registry/src/candidates.ts`에서 **frozen**:
+다음은 `packages/deterministic-label-registry/src/coordinate.ts`를 중심으로 **frozen**:
 
 - `SEMANTIC_COORDINATE_LABEL_KINDS` — 8 kind 리스트
 - `SEMANTIC_COORDINATE_DOMAINS` — 5 domain 리스트
@@ -187,6 +192,9 @@ Windows 경로 구분자를 `/`로 통일하고 중복 `/`를 제거한다. loca
 - `SEMANTIC_COORDINATE_CANONICAL_EXAMPLES` — canonical URN 예시 집합
 - `versionPattern` 정규식
 - URN 조립 규칙 (`buildSemanticCoordinate`)
+- `sourceSubtype` — source-file subtype 추론 (`projection.ts`)
+- `candidateCollisionSignature` — label collision signature (`collision.ts`)
+- `normalizeCoordinatePart` — locale-free path separator normalization (`shared.ts`)
 
 ## 8. 진화 분류
 
@@ -237,7 +245,11 @@ Windows 경로 구분자를 `/`로 통일하고 중복 `/`를 제거한다. loca
 
 ## 구현 참조
 
-- 구현: `packages/deterministic-label-registry/src/candidates.ts`
+- 좌표/URN 구현: `packages/deterministic-label-registry/src/coordinate.ts`
+- 문서 투영 subtype/version 구현: `packages/deterministic-label-registry/src/projection.ts`
+- collision signature 구현: `packages/deterministic-label-registry/src/collision.ts`
+- 공통 정규화 구현: `packages/deterministic-label-registry/src/shared.ts`
+- 회귀 검증: `packages/cli/src/lib/deterministic-label-registry.test.ts`
   - `buildSemanticCoordinateCandidate()`
   - `buildSemanticCoordinate()`
   - `normalizeKind()`, `normalizeVersion()`, `normalizePhysicalRefs()`

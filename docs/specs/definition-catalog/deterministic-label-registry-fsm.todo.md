@@ -19,6 +19,13 @@ def:
       type: traces_to
     - target: deterministic-label-stability-boundary
       type: traces_to
+sources:
+  - packages/deterministic-label-registry/src/index.ts
+  - packages/deterministic-label-registry/src/inventory.ts
+  - packages/deterministic-label-registry/src/records.ts
+  - packages/deterministic-label-registry/README.md
+  - packages/cli/src/lib/deterministic-label-boundary.test.ts
+  - packages/cli/src/lib/deterministic-label-inventory-determinism-live.test.ts
 ---
 
 # Deterministic Label Registry And FSM — TODO

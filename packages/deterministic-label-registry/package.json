@@ -1,11 +1,11 @@
 {
   "name": "deterministic-label-registry",
   "version": "0.1.0",
-  "description": "Read-only deterministic label registry — projects DocumentEnvelope and ontology-pack-validate results into semantic coordinate candidates, label records, FSM readiness, and transition dry-run.",
+  "description": "Read-only deterministic label registry — projects DocumentEnvelope and caller-provided extra records into semantic coordinate candidates, label records, and inventory summaries.",
   "keywords": [
     "deterministic-label",
     "urn",
-    "fsm",
+    "projection",
     "registry"
   ],
   "license": "MIT",

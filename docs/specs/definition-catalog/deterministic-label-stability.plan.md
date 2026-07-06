@@ -17,6 +17,13 @@ def:
       type: traces_to
     - target: definition-catalog-spec
       type: traces_to
+sources:
+  - docs/specs/definition-catalog/deterministic-label-coordinate-stability.spec.md
+  - docs/specs/definition-catalog/deterministic-label-projection-determinism.spec.md
+  - docs/specs/definition-catalog/deterministic-label-stability-boundary.memo.md
+  - packages/deterministic-label-registry/src/index.ts
+  - packages/deterministic-label-registry/src/inventory.ts
+  - packages/cli/src/lib/deterministic-label-inventory-determinism-live.test.ts
 ---
 
 # Deterministic Label Stability — 정의 방법 탐색 계획
