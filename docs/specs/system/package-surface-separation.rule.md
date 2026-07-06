@@ -21,6 +21,7 @@ def:
     - scripts/design-usefulness-audit.mjs
     - scripts/verify-analysis-os.ts
     - docs/specs/system/system-packages.spec.md
+    - docs/specs/system/system-operational-ontology.md
 ---
 
 # Package Surface Separation Rule
@@ -46,6 +47,7 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 | `definition governance` | definition, decision, spec, architecture governance처럼 작업/문서/검증을 통제하는 표면 |
 | `taxonomy capability` | 유한 vocabulary tooling, taxonomy adapter, taxonomy-only preview consumer |
 | `profile capability` | profile contract tooling, evidence ledger adapter, measurement, profile-only preview consumer |
+| `operational ontology capability` | operational ontology runtime, pack projection, programming artifact registry, ontology-only preview consumer |
 | `domain support` | 권한 보조, authoring, simulation, visual analysis처럼 특정 도메인을 지원하는 표면 |
 | `consumer verification` | demo, smoke, test suite처럼 상위 capability를 소비해 증명하는 표면 |
 | `quarantine` | package-local 증거는 있으나 제품 surface로 승격하지 않는 격리 큐 |
@@ -64,7 +66,9 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 | Quality evidence ledgers | profile capability | maintain | `quality-ledger`, `review-ledger` | persistence tests and adapter smoke from producer reports |
 | Measurement tooling | profile capability | keep as tooling | `@qa-sdk/bench` | benchmark CLI/tests and report rendering evidence |
 | Profile preview surfaces | profile capability | consumer only | `@qa-sdk/viz-web` | viz-web build/test from lineage/graph artifacts; no profile ownership |
-| Decision recording | definition governance | conditional keep | decision-flow, DKG, ontology/work-domain decision packages | decision-flow tests, CLI/service use, quality bundle evidence |
+| Operational ontology runtime | operational ontology capability | conditional keep | `operational-ontology` | package tests, pack/projector/persistence evidence, explicit consumer bridge before product promotion |
+| Operational ontology preview surfaces | operational ontology capability | consumer only | `@qa-sdk/operational-ontology-web` | operational ontology web build/test/static smoke; no schema or registry ownership |
+| Decision recording | definition governance | conditional keep | decision-flow, DKG, authorization/work-domain decision packages | decision-flow tests, CLI/service use, quality bundle evidence |
 | Spec analysis kernel | definition governance | keep | spec-core/schema/transition/tracker/analyzer/codegen/demo snapshot packages | spec package tests, propagation/convergence/codegen evidence |
 | Infra governance tooling | definition governance | maintain | CLI, archi, scaffolding, service kit, config/db/git/infra helpers | arch feedback, package-local tests, generated contract checks |
 | Authorization support | domain support | maintain | audit recorder and resource policy stores | authorization ontology smoke, persistence tests |
@@ -85,12 +89,14 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 6. `Quality evidence ledgers`는 gate/review 실행 결과의 영속 기록을 소유한다. `dsp-*` 진단 의미나 row multiplier 계산을 소유하지 않는다.
 7. `Measurement tooling`은 측정 실행과 리포트 표면을 소유한다. profile source-path parsing이나 transform semantics를 소유하지 않는다.
 8. `Profile preview surfaces`는 lineage/graph artifact를 읽는 consumer다. profile schema나 ledger 결과를 쓰기 표면으로 승격하지 않는다.
-9. `Decision recording`은 판단 과정과 증거의 "왜"를 기록한다. taxonomy나 profile의 vocabulary source of truth가 되지 않는다.
-10. `Spec analysis kernel`은 spec/codegen/transition/convergence evidence를 소유한다. runtime service ownership으로 승격하지 않는다.
-11. `Product demo surfaces`, `Visual analysis tools`, `Verification suites`는 consumer surface다. 상위 surface의 ownership을 가져오지 않는다.
-12. `Quarantine candidates`는 package-local build/test를 유지할 수 있지만 README, roadmap, quality gate에서 제품 core처럼 홍보하지 않는다.
-13. 모든 `packages/*/package.json` 항목은 정확히 하나의 surface에 배정되어야 한다.
-14. `simulations/*`와 `vendor/*` workspace package는 support workspace로 감사할 수 있지만, package surface manifest에는 포함하지 않는다. 이름 끝부분이 `packages/*` package와 같아도 surface를 상속하지 않는다.
+9. `Operational ontology runtime`은 schema/pack/runtime/projector/persistence boundary를 소유한다. decision-flow instance lifecycle, taxonomy vocabulary SSOT, generic product demo ownership을 흡수하지 않는다.
+10. `Operational ontology preview surfaces`는 ontology store JSON을 읽는 consumer다. schema 작성, registry persistence, pack validation rule ownership을 가져오지 않는다.
+11. `Decision recording`은 판단 과정과 증거의 "왜"를 기록한다. taxonomy, profile, operational ontology runtime의 source of truth가 되지 않는다.
+12. `Spec analysis kernel`은 spec/codegen/transition/convergence evidence를 소유한다. runtime service ownership으로 승격하지 않는다.
+13. `Product demo surfaces`, `Visual analysis tools`, `Verification suites`는 consumer surface다. 상위 surface의 ownership을 가져오지 않는다.
+14. `Quarantine candidates`는 package-local build/test를 유지할 수 있지만 README, roadmap, quality gate에서 제품 core처럼 홍보하지 않는다.
+15. 모든 `packages/*/package.json` 항목은 정확히 하나의 surface에 배정되어야 한다.
+16. `simulations/*`와 `vendor/*` workspace package는 support workspace로 감사할 수 있지만, package surface manifest에는 포함하지 않는다. 이름 끝부분이 `packages/*` package와 같아도 surface를 상속하지 않는다.
 
 ## 사용성 신호 처리
 
@@ -108,7 +114,7 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 
 정리 작업은 `arch:surfaces`로 `packages/*` surface-managed 배정이 깨지지 않는지 먼저 확인하고, `arch:usage`로 surface별 zero-fan-in/archive/dead/missing-entrypoint/entrypoint-gap 잔여를 확인한 뒤 진행한다.
 
-정확한 `packages/*` surface-managed 패키지 배정의 SSOT는 `scripts/package-surfaces.mjs`다. 위 표는 리뷰 가능한 surface 이름, 기능군, 판정, 대표 패키지/그룹, 승격 기준을 요약한다. `packages/*` package coverage와 누락/중복은 `corepack pnpm arch:surfaces`와 `corepack pnpm arch:verify`가 manifest 기준으로 증명한다. `corepack pnpm arch:surfaces -- --json`은 기능군별 surface 수, package 수, 판정 분포도 내보내며, `arch:verify`는 taxonomy/profile/quarantine 기능군이 다시 섞이지 않도록 이 요약을 고정한다. `simulations/*`와 `vendor/*`는 workspace-support로 usefulness audit에 남길 수 있으나, 기능 surface 승격 또는 quarantine 후보로 계산하지 않는다.
+정확한 `packages/*` surface-managed 패키지 배정의 SSOT는 `scripts/package-surfaces.mjs`다. 위 표는 리뷰 가능한 surface 이름, 기능군, 판정, 대표 패키지/그룹, 승격 기준을 요약한다. `packages/*` package coverage와 누락/중복은 `corepack pnpm arch:surfaces`와 `corepack pnpm arch:verify`가 manifest 기준으로 증명한다. `corepack pnpm arch:surfaces -- --json`은 기능군별 surface 수, package 수, 판정 분포도 내보내며, `arch:verify`는 taxonomy/profile/operational-ontology/quarantine 기능군이 다시 섞이지 않도록 이 요약을 고정한다. `simulations/*`와 `vendor/*`는 workspace-support로 usefulness audit에 남길 수 있으나, 기능 surface 승격 또는 quarantine 후보로 계산하지 않는다.
 
 `design-usefulness-audit`는 이 규칙을 소비해 package 후보의 `surfaceGroup`, `surfaceVerdict`, `surfaceScope`를 계산한다. 이 문서가 새 surface를 추가하면 `scripts/package-surfaces.mjs`와 `system-packages` 표를 먼저 맞추고, `arch:verify`가 rule table과 manifest drift를 잡도록 둔다.
 
@@ -122,4 +128,4 @@ corepack pnpm arch:verify
 corepack pnpm arch:feedback
 ```
 
-`corepack pnpm arch:surfaces`는 이 문서의 핵심 분류를 스크립트 surface manifest와 맞춘다. 없는 패키지, 중복 배정, 또는 surface 없는 `packages/*` package가 있으면 실패하고, 출력의 feature group 요약으로 기능군별 분리 상태를 즉시 확인할 수 있다. `corepack pnpm arch:verify`는 taxonomy/profile 관련 surface가 다시 한 덩어리로 합쳐지지 않았는지와 이 문서 및 `system-packages`의 surface 표가 manifest와 같은 목록/기능군/판정을 말하는지도 고정한다.
+`corepack pnpm arch:surfaces`는 이 문서의 핵심 분류를 스크립트 surface manifest와 맞춘다. 없는 패키지, 중복 배정, 또는 surface 없는 `packages/*` package가 있으면 실패하고, 출력의 feature group 요약으로 기능군별 분리 상태를 즉시 확인할 수 있다. `corepack pnpm arch:verify`는 taxonomy/profile/operational-ontology 관련 surface가 다시 한 덩어리로 합쳐지지 않았는지와 이 문서 및 `system-packages`의 surface 표가 manifest와 같은 목록/기능군/판정을 말하는지도 고정한다.

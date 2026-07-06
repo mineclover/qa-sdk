@@ -21,6 +21,8 @@ def:
       type: refs
     - target: system-profile
       type: refs
+    - target: system-operational-ontology
+      type: refs
     - target: resource-policy-store-system
       type: refs
     - target: audit-recorder-store-system
@@ -46,7 +48,7 @@ qa-sdk 모노레포의 패키지 의존 관계. 인코딩 라이브러리 체인
 - `환경 공급 패키지`: infra-env-kit이 `.env`/연결 코드/compose override 공급 책임을 가진다.
 - `스캐폴딩 패키지`: @qa-sdk/scaffold가 도메인 계층 구조와 데이터 거버넌스 표준을 코드/템플릿/검증 규칙으로 물질화한다.
 - `스펙/분석 패키지`: spec-core, convergence, decision-flow, event-catalog의 역할을 정리한다.
-- `프론트엔드/데모`: platform-demo, shop-web, taxonomy-web, viz-web, browser SDK의 소비자/preview 위치를 기술한다.
+- `프론트엔드/데모`: platform-demo, shop-web, taxonomy-web, viz-web, operational-ontology-web, browser SDK의 소비자/preview 위치를 기술한다.
 - `기능 surface 분리`: 검증된 코어, contract tooling, consumer-only, quarantine 후보를 구분한다.
 
 ## 기능 Surface 분리
@@ -65,6 +67,8 @@ qa-sdk 전체를 단일 제품 플랫폼으로 확장하지 않는다. 패키지
 | Quality evidence ledgers | profile capability | gate/review 결과 영속 기록 | `quality-ledger`, `review-ledger` |
 | Measurement tooling | profile capability | 측정 실행과 리포트 표면 | `@qa-sdk/bench` |
 | Profile preview surfaces | profile capability | lineage/graph artifact 브라우저 consumer | `@qa-sdk/viz-web` |
+| Operational ontology runtime | operational ontology capability | schema/pack/runtime/projector와 programming artifact registry | `operational-ontology` |
+| Operational ontology preview surfaces | operational ontology capability | ontology store JSON 브라우저 탐색 consumer | `@qa-sdk/operational-ontology-web` |
 | Decision recording | definition governance | 판단 과정과 증거 기록 | `decision-flow`, `decision-flow-store`, `dkg` |
 | Spec analysis kernel | definition governance | 스펙/전이/수렴/코드생성 증거 | `@qa-sdk/spec-core`, `spec-schema`, `spec-transition`, `codegen-core` |
 | Infra governance tooling | definition governance | CLI, scaffolding, config/db/git/infra 보조 | `@qa-sdk/cli`, `@qa-sdk/archi`, `package-classifier`, `infra-env-kit` |
@@ -76,9 +80,9 @@ qa-sdk 전체를 단일 제품 플랫폼으로 확장하지 않는다. 패키지
 | Product demo surfaces | consumer verification | 제품 데모/스모크 UI와 API consumer | `@qa-sdk/platform-demo`, `@qa-sdk/shop-web`, `@qa-sdk/registry-ui` |
 | Quarantine candidates | quarantine | 제품 surface 승격 보류 | `request-contract`, `weighted-gpu` |
 
-상세 승격/격리 규칙은 `package-surface-separation-rule`을 따른다. `packages/*` surface-managed package coverage와 기능군 drift는 `corepack pnpm arch:surfaces`와 `corepack pnpm arch:verify`가 검증한다. `arch:surfaces`는 기능군별 surface/package 요약도 출력하므로 taxonomy capability, profile capability, quarantine이 같은 제품 surface로 다시 합쳐졌는지 즉시 확인할 수 있다. `simulations/*`와 `vendor/*` workspace는 support scope로만 감사하며, 기능 surface 표에는 승격하지 않는다.
+상세 승격/격리 규칙은 `package-surface-separation-rule`을 따른다. `packages/*` surface-managed package coverage와 기능군 drift는 `corepack pnpm arch:surfaces`와 `corepack pnpm arch:verify`가 검증한다. `arch:surfaces`는 기능군별 surface/package 요약도 출력하므로 taxonomy capability, profile capability, operational ontology capability, quarantine이 같은 제품 surface로 다시 합쳐졌는지 즉시 확인할 수 있다. `simulations/*`와 `vendor/*` workspace는 support scope로만 감사하며, 기능 surface 표에는 승격하지 않는다.
 
-운영자가 실제 패키지를 고를 때는 taxonomy 기능군은 `system-taxonomy`, profile 기능군은 `system-profile`을 먼저 본다. 두 문서는 package ownership을 새로 만들지 않고 이 표와 `package-surface-separation-rule`의 배정을 소비하는 얇은 entry surface다.
+운영자가 실제 패키지를 고를 때는 taxonomy 기능군은 `system-taxonomy`, profile 기능군은 `system-profile`, operational ontology 기능군은 `system-operational-ontology`를 먼저 본다. 이 문서들은 package ownership을 새로 만들지 않고 이 표와 `package-surface-separation-rule`의 배정을 소비하는 얇은 entry surface다.
 
 ## 인코딩 체인
 

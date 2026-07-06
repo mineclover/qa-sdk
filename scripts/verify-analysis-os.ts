@@ -327,6 +327,10 @@ async function main() {
            "Surface Report: bench remains measurement tooling");
     assert(hasExactly(surfaces["profile-preview-surfaces"], ["@qa-sdk/viz-web"]),
            "Surface Report: viz-web remains a profile/graph consumer preview");
+    assert(hasExactly(surfaces["operational-ontology-runtime"], ["operational-ontology"]),
+           "Surface Report: operational-ontology owns ontology runtime separately");
+    assert(hasExactly(surfaces["operational-ontology-preview-surfaces"], ["@qa-sdk/operational-ontology-web"]),
+           "Surface Report: operational ontology web remains an ontology consumer preview");
     assert(surfaceGroups["taxonomy-tooling"] === "taxonomy-capability"
            && surfaceGroups["taxonomy-decision-bridge"] === "taxonomy-capability"
            && surfaceGroups["taxonomy-preview-surfaces"] === "taxonomy-capability"
@@ -334,12 +338,16 @@ async function main() {
            && surfaceGroups["quality-evidence-ledgers"] === "profile-capability"
            && surfaceGroups["measurement-tooling"] === "profile-capability"
            && surfaceGroups["profile-preview-surfaces"] === "profile-capability"
+           && surfaceGroups["operational-ontology-runtime"] === "operational-ontology-capability"
+           && surfaceGroups["operational-ontology-preview-surfaces"] === "operational-ontology-capability"
            && surfaceGroups["quarantine-candidates"] === "quarantine",
-           "Surface Report: taxonomy, profile, and quarantine feature groups stay separated");
+           "Surface Report: taxonomy, profile, operational ontology, and quarantine feature groups stay separated");
     assert(groupSummaries["taxonomy-capability"]?.surfaceCount === 3
            && groupSummaries["taxonomy-capability"]?.packageCount === 3
            && groupSummaries["profile-capability"]?.surfaceCount === 4
            && groupSummaries["profile-capability"]?.packageCount === 5
+           && groupSummaries["operational-ontology-capability"]?.surfaceCount === 2
+           && groupSummaries["operational-ontology-capability"]?.packageCount === 2
            && groupSummaries["quarantine"]?.surfaceCount === 1
            && groupSummaries["quarantine"]?.packageCount === 2,
            "Surface Report: separated feature group summary stays stable");
@@ -393,6 +401,7 @@ async function main() {
 
     const taxonomyEntry = readFileSync("docs/specs/system/system-taxonomy.md", "utf-8");
     const profileEntry = readFileSync("docs/specs/system/system-profile.md", "utf-8");
+    const operationalOntologyEntry = readFileSync("docs/specs/system/system-operational-ontology.md", "utf-8");
     const rootEntry = readFileSync("docs/specs/system/system-root.md", "utf-8");
     const taxonomySurfaceIds = [
       "taxonomy-tooling",
@@ -405,15 +414,27 @@ async function main() {
       "measurement-tooling",
       "profile-preview-surfaces",
     ];
+    const operationalOntologySurfaceIds = [
+      "operational-ontology-runtime",
+      "operational-ontology-preview-surfaces",
+    ];
     assert(taxonomySurfaceIds.every((id) => taxonomyEntry.includes(id)),
            "Surface Docs: taxonomy capability has its own operator entry");
     assert(profileSurfaceIds.every((id) => profileEntry.includes(id)),
            "Surface Docs: profile capability has its own operator entry");
+    assert(operationalOntologySurfaceIds.every((id) => operationalOntologyEntry.includes(id)),
+           "Surface Docs: operational ontology capability has its own operator entry");
     assert(profileSurfaceIds.every((id) => !taxonomyEntry.includes(id))
            && taxonomySurfaceIds.slice(1).every((id) => !profileEntry.includes(id)),
            "Surface Docs: taxonomy and profile operator entries do not merge surfaces");
-    assert(rootEntry.includes("system-taxonomy") && rootEntry.includes("system-profile"),
-           "Surface Docs: system root links separate taxonomy and profile entries");
+    assert(operationalOntologySurfaceIds.every((id) => !taxonomyEntry.includes(id) && !profileEntry.includes(id))
+           && taxonomySurfaceIds.every((id) => !operationalOntologyEntry.includes(id))
+           && profileSurfaceIds.every((id) => !operationalOntologyEntry.includes(id)),
+           "Surface Docs: operational ontology entry does not merge taxonomy/profile surfaces");
+    assert(rootEntry.includes("system-taxonomy")
+           && rootEntry.includes("system-profile")
+           && rootEntry.includes("system-operational-ontology"),
+           "Surface Docs: system root links separate taxonomy, profile, and operational ontology entries");
   } catch (err) {
     console.error("Surface verification failed:", err);
     assert(false, "Surface Report: command completed successfully and produced valid JSON");

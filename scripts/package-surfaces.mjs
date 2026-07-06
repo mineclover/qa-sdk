@@ -18,6 +18,10 @@ export const SURFACE_GROUPS = [
     description: "profile contract tooling, evidence adapters, measurement, and profile-only preview consumers",
   },
   {
+    id: "operational-ontology-capability",
+    description: "operational ontology runtime, pack projection, and ontology-only preview consumers",
+  },
+  {
     id: "domain-support",
     description: "domain-specific support, authoring, simulation, and analysis packages",
   },
@@ -135,6 +139,18 @@ export const SURFACES = [
     packages: ["@qa-sdk/viz-web"],
   },
   {
+    id: "operational-ontology-runtime",
+    group: "operational-ontology-capability",
+    verdict: "conditional-keep",
+    packages: ["operational-ontology"],
+  },
+  {
+    id: "operational-ontology-preview-surfaces",
+    group: "operational-ontology-capability",
+    verdict: "consumer-only",
+    packages: ["@qa-sdk/operational-ontology-web"],
+  },
+  {
     id: "decision-recording",
     group: "definition-governance",
     verdict: "conditional-keep",
@@ -145,7 +161,6 @@ export const SURFACES = [
       "dkg",
       "dkg-enrichment",
       "demo-dkg-config",
-      "operational-ontology",
       "authorization-ontology",
       "work-domain",
     ],
@@ -254,7 +269,6 @@ export const SURFACES = [
       "@qa-sdk/roleplay-web",
       "@qa-sdk/viteplus-sdk-smoke",
       "weighted-index-explorer",
-      "@qa-sdk/operational-ontology-web",
       "@qa-sdk/registry-ui",
     ],
   },
