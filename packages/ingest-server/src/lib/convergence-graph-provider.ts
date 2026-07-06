@@ -10,7 +10,6 @@
 
 import type { Logger } from "pino";
 import type {
-  AnalysisModulePort,
   StoreModulePort,
   DemoSnapshotModulePort,
   DkgSqliteStorePort,
@@ -109,14 +108,20 @@ export async function createGraphProvider(
       // 노드가 비어있으면 부트스트랩 후 저장
       if (loaded.getAllNodes().length === 0) {
         config.logger?.info("DKG store empty, bootstrapping...");
-        cachedGraph = enrichmentModule.bootstrapDkg({ catalog, config: demoDkg.DEMO_DKG_CONFIG });
+        cachedGraph = enrichmentModule.bootstrapDkg({
+          catalog: catalog as Parameters<typeof enrichmentModule.bootstrapDkg>[0]["catalog"],
+          config: demoDkg.DEMO_DKG_CONFIG as Parameters<typeof enrichmentModule.bootstrapDkg>[0]["config"],
+        }) as unknown as GraphRegistryPort;
         store.saveGraph(cachedGraph, "bootstrap");
       } else {
-        cachedGraph = loaded;
+        cachedGraph = loaded as unknown as GraphRegistryPort;
       }
     } else {
       // 인메모리 부트스트랩
-      cachedGraph = enrichmentModule.bootstrapDkg({ catalog, config: demoDkg.DEMO_DKG_CONFIG });
+      cachedGraph = enrichmentModule.bootstrapDkg({
+        catalog: catalog as Parameters<typeof enrichmentModule.bootstrapDkg>[0]["catalog"],
+        config: demoDkg.DEMO_DKG_CONFIG as Parameters<typeof enrichmentModule.bootstrapDkg>[0]["config"],
+      }) as unknown as GraphRegistryPort;
     }
 
     config.logger?.info("convergence graph provider initialized");

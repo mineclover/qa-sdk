@@ -116,7 +116,7 @@ export function graphStoreTests(
         },
       ],
       edges: [
-        { source: "n1", target: "n2", type: "parent" },
+        { source: "n1", target: "n2", type: "parent_child" },
       ],
     });
     await store.upsert("t1", complexGraph);
