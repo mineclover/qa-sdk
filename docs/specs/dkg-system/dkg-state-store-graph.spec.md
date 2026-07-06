@@ -16,6 +16,12 @@ def:
       type: depends_on
     - target: dkg-edge-types
       type: depends_on
+sources:
+  - packages/dkg/src/store/dkg-sqlite-store.ts
+  - packages/dkg/src/store/dkg-sqlite-store.test.ts
+  - packages/dkg/src/db/schema.ts
+  - packages/dkg/src/graph-registry.ts
+  - packages/dkg/src/dkg.types.ts
 ---
 # DKG State Store — Graph Facet
 

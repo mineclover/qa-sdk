@@ -13,6 +13,13 @@ def:
   links:
     - target: system-concepts
       type: depends_on
+sources:
+  - packages/dkg/src/dkg.types.ts
+  - packages/dkg/src/catalog-derive.ts
+  - packages/dkg/src/bootstrap.ts
+  - packages/dkg/src/graph-registry.ts
+  - packages/dkg/src/dkg.test.ts
+  - packages/dkg/src/doc-sync.test.ts
 ---
 # DKG 노드 유형
 
@@ -125,7 +132,7 @@ DKG 엣지: `depends-on` (A.outputAxes ∩ B.inputAxes), `satisfies` (slotRefs �
 
 ## 노드 유니온 타입
 
-소스 위치: `packages/spec-core/src/dkg/dkg.types.ts`
+소스 위치: `packages/dkg/src/dkg.types.ts`
 
 ```typescript
 type DkgNode =

@@ -20,6 +20,12 @@ def:
       type: contains
     - target: dkg-state-store-observability
       type: contains
+sources:
+  - packages/dkg/src/store/dkg-sqlite-store.ts
+  - packages/dkg/src/store/dkg-sqlite-store.test.ts
+  - packages/dkg/src/store/usage-types.ts
+  - packages/dkg/src/db/schema.ts
+  - packages/dkg/src/graph-registry.ts
 ---
 # DKG State Store
 

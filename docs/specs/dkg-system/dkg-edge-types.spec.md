@@ -13,6 +13,14 @@ def:
   links:
     - target: dkg-node-types
       type: depends_on
+sources:
+  - packages/dkg/src/dkg.types.ts
+  - packages/dkg/src/graph-registry.ts
+  - packages/dkg/src/catalog-derive.ts
+  - packages/dkg/src/flow-schema-relations.ts
+  - packages/dkg/src/flow-schema-relations.test.ts
+  - packages/dkg/src/dkg-bridge.ts
+  - packages/dkg/src/dkg.test.ts
 ---
 # DKG 엣지 유형
 
@@ -171,7 +179,7 @@ DKG 노드 간 관계를 표현하는 18종 엣지 타입. 각 엣지는 설계 
 
 ## 엣지 구조
 
-소스 위치: `packages/spec-core/src/dkg/dkg.types.ts`
+소스 위치: `packages/dkg/src/dkg.types.ts`
 
 ```typescript
 interface DkgEdge {

@@ -23,6 +23,17 @@ def:
       type: refs
     - target: dkg-service-topology
       type: refs
+    - target: dkg-state-store
+      type: refs
+sources:
+  - packages/dkg/src/index.ts
+  - packages/dkg/src/bootstrap.ts
+  - packages/dkg/src/catalog-derive.ts
+  - packages/dkg/src/graph-registry.ts
+  - packages/dkg/src/dkg.types.ts
+  - packages/dkg/src/service-topology.ts
+  - packages/dkg/src/store/dkg-sqlite-store.ts
+  - packages/dkg/src/doc-sync.test.ts
 ---
 
 # DKG (Design Knowledge Graph) 시스템

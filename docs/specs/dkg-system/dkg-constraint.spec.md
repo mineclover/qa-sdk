@@ -17,6 +17,13 @@ def:
       type: constrains
     - target: dkg-skills-system
       type: constrains
+sources:
+  - packages/dkg/src/semantic-ref.ts
+  - packages/dkg/src/semantic-ref.test.ts
+  - packages/dkg/src/skills/constraint-check.ts
+  - packages/dkg/src/skills/skills-suite.test.ts
+  - packages/dkg/src/schema-health-audit.ts
+  - packages/dkg/src/schema-observation-bridge.ts
 ---
 # DKG 불변식
 
@@ -43,7 +50,7 @@ DKG 그래프의 구조적 불변 조건 7종(CON-001~CON-007). 그래프의 일
 
 ## CON-006 구현: SemanticRef (deriveRefEntries / validateRefEntries)
 
-소스: `packages/spec-core/src/dkg/semantic-ref.ts`
+소스: `packages/dkg/src/semantic-ref.ts`
 
 refEntries의 원본은 **의미(문자열 조합)**이고, 정수 주소는 **파생**이다. capacity가 바뀌면 `deriveRefEntries`를 재실행하여 정수를 재생성한다. 이것이 "문자열이 원본, 정수는 파생"의 핵심 구현.
 

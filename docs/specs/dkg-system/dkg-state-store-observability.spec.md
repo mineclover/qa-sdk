@@ -14,6 +14,13 @@ def:
       type: refines
     - target: definition-mgmt-observability-model
       type: depends_on
+sources:
+  - packages/dkg/src/store/dkg-sqlite-store.ts
+  - packages/dkg/src/store/dkg-sqlite-store.test.ts
+  - packages/dkg/src/store/usage-types.ts
+  - packages/dkg/src/db/schema.ts
+  - packages/cli/src/commands/dkg.ts
+  - packages/cli/src/command-groups/dkg.commands.ts
 ---
 # DKG State Store — Observability Facet
 
@@ -85,4 +92,6 @@ DKG 로컬 상태 저장소에서 관측성과 감사 추적을 담당하는 fac
 ## 관련 소스
 
 - `packages/dkg/src/store/dkg-sqlite-store.ts`
+- `packages/dkg/src/store/usage-types.ts`
+- `packages/dkg/src/db/schema.ts`
 - `packages/cli/src/commands/dkg.ts`
